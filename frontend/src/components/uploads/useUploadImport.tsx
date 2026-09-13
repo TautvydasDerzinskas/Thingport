@@ -11,93 +11,14 @@ import { useCollectionImportPrompt } from "./CollectionImportModal";
 import { useImportModePrompt, type ImportMode } from "./ImportModeModal";
 import { useImportJob } from "../Layout/ImportJobContext";
 import { useToast } from "../ToastProvider";
-
-/** MakerWorld collection URLs (`/en/collections/{id}-{slug}`) list many models rather than
- * being one model page -- route those to the collection picker instead of the single-link
- * inspect/zip flow. */
-function isMakerworldCollectionUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url.includes("://") ? url : `https://${url}`);
-    return parsed.hostname.toLowerCase().endsWith("makerworld.com") && /\/collections\/\d+/i.test(parsed.pathname);
-  } catch {
-    return false;
-  }
-}
-
-/** A Thingiverse Thing import goes through its own backend path entirely (see
- * importService.ts's importThingiverseThing) rather than the generic inspect/zip-picker flow --
- * skip straight to a plain import call so the zip-entry picker (meant for arbitrary remote
- * zips) never shows up for one. Every recognized model file on the Thing becomes its own plate
- * automatically. */
-function isThingiverseThingUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url.includes("://") ? url : `https://${url}`);
-    const host = parsed.hostname.toLowerCase();
-    if (host !== "thingiverse.com" && host !== "www.thingiverse.com") return false;
-    return /thing:\d+/i.test(parsed.pathname) || /\/things\/\d+/i.test(parsed.pathname);
-  } catch {
-    return false;
-  }
-}
-
-/** A Thingiverse user's own "Likes" page (`thingiverse.com/{username}/likes`) -- the site's own
- * bookmark/save mechanism many people use to collect prints worth making. Lists many Things
- * rather than being one Thing page, so route it to the same collection picker MakerWorld
- * collections use. */
-function isThingiverseLikesUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url.includes("://") ? url : `https://${url}`);
-    const host = parsed.hostname.toLowerCase();
-    if (host !== "thingiverse.com" && host !== "www.thingiverse.com") return false;
-    return /^\/[^/]+\/likes\/?$/i.test(parsed.pathname);
-  } catch {
-    return false;
-  }
-}
-
-/** A user-curated, named Thingiverse Collection (`thingiverse.com/{username}/collections/{id}`,
- * optionally with a trailing `/things`) -- the site's other bookmark mechanism besides the
- * automatic Likes list above. Also routed to the collection picker. */
-function isThingiverseCollectionUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url.includes("://") ? url : `https://${url}`);
-    const host = parsed.hostname.toLowerCase();
-    if (host !== "thingiverse.com" && host !== "www.thingiverse.com") return false;
-    return /\/collections\/\d+/i.test(parsed.pathname);
-  } catch {
-    return false;
-  }
-}
-
-/** A user-curated, named Printables Collection (`printables.com/@handle/collections/{id}`) --
- * the site's bookmark mechanism, one page listing many models rather than a single model page.
- * Routed to the same collection picker MakerWorld/Thingiverse collections use. */
-function isPrintablesCollectionUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url.includes("://") ? url : `https://${url}`);
-    const host = parsed.hostname.toLowerCase();
-    if (host !== "printables.com" && host !== "www.printables.com") return false;
-    return /\/collections\/\d+/i.test(parsed.pathname);
-  } catch {
-    return false;
-  }
-}
-
-/** A Printables model import goes through its own backend path entirely (see
- * importService.ts's importPrintablesModel) rather than the generic inspect/zip-picker flow --
- * skip straight to a plain import call, same reasoning as isThingiverseThingUrl above (and
- * necessary here too: www.printables.com is Cloudflare-gated, so the generic inspect flow
- * couldn't resolve one of these URLs anyway). */
-function isPrintablesModelUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url.includes("://") ? url : `https://${url}`);
-    const host = parsed.hostname.toLowerCase();
-    if (host !== "printables.com" && host !== "www.printables.com") return false;
-    return /\/model\/\d+/i.test(parsed.pathname);
-  } catch {
-    return false;
-  }
-}
+import {
+  isMakerworldCollectionUrl,
+  isPrintablesCollectionUrl,
+  isPrintablesModelUrl,
+  isThingiverseCollectionUrl,
+  isThingiverseLikesUrl,
+  isThingiverseThingUrl,
+} from "../../utils/importLinkDetection";
 
 // Every dropped/picked entry's relativePath equals its bare filename when the
 // selection has no folder structure. A webkitdirectory folder pick always
@@ -128,7 +49,6 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
   const collectionPrompt = useCollectionImportPrompt();
   const importModePrompt = useImportModePrompt();
   const {
-    startCollectionImport,
     startZipImport,
     startThingiverseLikesImport,
     startThingiverseCollectionImport,
@@ -276,32 +196,12 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
       };
 
       if (isMakerworldCollectionUrl(url)) {
-        setImporting(false);
-        await collectionPrompt.prompt({
-          label: url,
-          loadEntries: async () => {
-            try {
-              return await importsApi.listCollectionEntries(payload);
-            } catch (err) {
-              if (err instanceof UnauthorizedError) onUnauthorized?.();
-              throw err;
-            }
-          },
-          onImportSelected: async (designIds: string[]) => {
-            // Registers the batch as a background job and returns almost immediately -- the
-            // global progress bar (ImportJobContext) takes over from here, and a notification
-            // + grid refresh follow once it actually finishes.
-            try {
-              await startCollectionImport({ ...payload, design_ids: designIds });
-            } catch (err) {
-              if (err instanceof UnauthorizedError) {
-                onUnauthorized?.();
-                return;
-              }
-              throw err;
-            }
-          },
-        });
+        // MakerWorld collections are no longer importable from this dialog -- only via the
+        // Thingport Grab browser extension. AddMenu's own inline warning (driven by the same
+        // isMakerworldCollectionUrl check) should already stop the user from reaching this point
+        // via the dialog's Import button; this is the same guard for any other caller of
+        // submitImport.
+        alert(t("addMenu.makerworldCollectionBlocked"));
         return;
       }
 

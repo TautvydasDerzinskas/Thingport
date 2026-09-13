@@ -162,7 +162,12 @@
     },
     "addMenu": {
       "importTitle": "Importuoti iš nuorodos",
-      "disabledWhileImporting": "Palaukite, kol baigsis dabartinis importas, prieš pradėdami kitą"
+      "disabledWhileImporting": "Palaukite, kol baigsis dabartinis importas, prieš pradėdami kitą",
+      "exampleLinksFor": "Pavyzdinės {{provider}} nuorodos",
+      "exampleModel": "Modelis",
+      "exampleCollection": "Kolekcija",
+      "makerworldCollectionExtensionOnly": "reikalingas Thingport Grab",
+      "makerworldCollectionBlocked": "MakerWorld kolekcijas galima importuoti tik naudojant Thingport Grab naršyklės plėtinį, ne šį langą. Įklijuokite vieno modelio nuorodą arba naudokite Thingport Grab visai kolekcijai importuoti."
     },
     "userMenu": {
       "theme": "Tema",

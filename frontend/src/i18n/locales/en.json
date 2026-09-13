@@ -162,7 +162,12 @@
     },
     "addMenu": {
       "importTitle": "Import from link",
-      "disabledWhileImporting": "Wait for the current import to finish before starting another"
+      "disabledWhileImporting": "Wait for the current import to finish before starting another",
+      "exampleLinksFor": "Example {{provider}} links",
+      "exampleModel": "Model",
+      "exampleCollection": "Collection",
+      "makerworldCollectionExtensionOnly": "requires Thingport Grab",
+      "makerworldCollectionBlocked": "MakerWorld collections can only be imported using the Thingport Grab browser extension, not this dialog. Paste a single model link instead, or use Thingport Grab to bulk-import a whole collection."
     },
     "userMenu": {
       "theme": "Theme",
