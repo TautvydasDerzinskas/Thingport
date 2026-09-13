@@ -16,6 +16,13 @@ COPY . .
 RUN npm run build
 
 FROM node:20-alpine AS runtime
+# Set by build-image.yml to the commit that triggered this image's build -- exposed via
+# GET /settings/version-check so the admin settings page can tell whether a newer commit
+# touching backend/ has landed on main since this image was published. Left "unknown" for a
+# manual/local `docker build` with no --build-arg, which the update checker treats as
+# "can't check" rather than as outdated.
+ARG GIT_SHA=unknown
+ENV GIT_SHA=$GIT_SHA
 RUN apk add --no-cache openssl su-exec
 WORKDIR /app
 

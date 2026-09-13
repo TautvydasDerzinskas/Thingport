@@ -239,6 +239,18 @@
     },
     "adminSettings": {
       "pageTitle": "Admin Settings",
+      "updateCheck": {
+        "heading": "Update Checker",
+        "subtitle": "Checks whether a newer Thingport version is available for this backend and frontend.",
+        "checking": "Checking for updates…",
+        "unknown": "Can't check for updates — this build wasn't published as a Docker image (e.g. a local dev build).",
+        "failed": "Couldn't check for updates. Try again later.",
+        "upToDate": "You're running the latest version of Thingport.",
+        "availableTitle": "An update is available",
+        "backendOutdated": "The backend has a newer version available.",
+        "frontendOutdated": "The frontend has a newer version available.",
+        "howTo": "Update by pulling the latest Docker images: run \"docker compose pull\" followed by \"docker compose up -d\" (or the equivalent for your deployment)."
+      },
       "storage": {
         "heading": "Storage Structure",
         "subtitle": "Choose how managed model files are organized on disk.",

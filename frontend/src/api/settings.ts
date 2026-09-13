@@ -45,7 +45,27 @@ export type DatabaseCredentialsInput = {
   password: string;
 };
 
+export type VersionCheck = {
+  backend_sha: string | null;
+  latest_backend_sha: string | null;
+  latest_frontend_sha: string | null;
+};
+
+// This bundle's own build commit, inlined by Vite at build time from the frontend Dockerfile's
+// GIT_SHA build arg -- null for `npm run dev` / a hand-built image with no --build-arg, which the
+// update checker treats as "can't check" rather than as outdated.
+export const FRONTEND_GIT_SHA: string | null =
+  (import.meta.env.VITE_GIT_SHA as string | undefined) || null;
+
 export const settingsApi = {
+  // Admin-only. See versionService.ts (backend) for why latest_backend_sha/latest_frontend_sha
+  // are each the latest commit touching that project's own directory, not raw main HEAD.
+  getVersionCheck: async (): Promise<VersionCheck> => {
+    const res = await fetch(`${apiBase()}/settings/version-check`, { headers: authHeaders() });
+    assertOk(res, "Failed to check for updates");
+    return res.json();
+  },
+
   getStorage: async (): Promise<StorageSettings> => {
     const res = await fetch(`${apiBase()}/settings/storage`, { headers: authHeaders() });
     assertOk(res, "Failed to load storage settings");

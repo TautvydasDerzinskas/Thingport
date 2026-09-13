@@ -73,33 +73,150 @@ Instead of having your collection scattered across different websites and your f
 
 ## Installation
 
-### Docker
+### Docker Compose
 
-Clone the repository:
+Runs entirely from the pre-built images on GHCR -- no local build, no git clone needed. Works on any Docker host, including a NAS (Synology, QNAP, Unraid, etc).
 
-```bash
-git clone https://github.com/TautvydasDerzinskas/Thingport.git
-cd Thingport
-cp .env.example .env
+Create a folder for Thingport and add these two files to it:
+
+<details>
+<summary><code>docker-compose.yml</code></summary>
+
+```yaml
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-thingport}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-thingport}
+      - POSTGRES_DB=${POSTGRES_DB:-thingport}
+    volumes:
+      - thingport_db:/var/lib/postgresql/data
+    networks:
+      - app-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-thingport}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    restart: unless-stopped
+    environment:
+      - LOG_LEVEL=${FLARESOLVERR_LOG_LEVEL:-info}
+      - TZ=${TZ:-UTC}
+    networks:
+      - app-net
+
+  backend:
+    image: ${BACKEND_IMAGE:-ghcr.io/tautvydasderzinskas/thingport-backend:latest}
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - INITIAL_ADMIN_EMAIL=${INITIAL_ADMIN_EMAIL:-}
+      - AUTH_SECRET=${AUTH_SECRET:-changeme-secret}
+      - AUTH_TOKEN_TTL=${AUTH_TOKEN_TTL:-43200}
+      - PUBLIC_URL=${PUBLIC_URL:-}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_SECURE=${SMTP_SECURE:-false}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_FROM=${SMTP_FROM:-Thingport <no-reply@localhost>}
+      - FILE_STORAGE=/app/storage
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-thingport}:${POSTGRES_PASSWORD:-thingport}@db:5432/${POSTGRES_DB:-thingport}?schema=public
+      - CORS_ORIGINS=${CORS_ORIGINS:-}
+      - FLARESOLVERR_URL=${FLARESOLVERR_URL:-http://flaresolverr:8191/v1}
+    depends_on:
+      db:
+        condition: service_healthy
+      flaresolverr:
+        condition: service_started
+    volumes:
+      - thingport_storage:/app/storage
+    networks:
+      - app-net
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-ghcr.io/tautvydasderzinskas/thingport-frontend:latest}
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-80}:80"
+    depends_on:
+      - backend
+    networks:
+      - app-net
+
+volumes:
+  thingport_storage:
+  thingport_db:
+
+networks:
+  app-net:
+    driver: bridge
 ```
 
-Configure `.env` if needed, then start Thingport:
+</details>
+
+<details>
+<summary><code>.env</code></summary>
+
+```env
+# Required
+# AUTH_SECRET signs login tokens -- use your own random value
+AUTH_SECRET=b1193c7014e833a063f750d6e4644d615e90e6ee81dbde619e1818e9675a3374
+# the first account to register with this email becomes admin
+INITIAL_ADMIN_EMAIL=you@example.com
+POSTGRES_PASSWORD=change-this-password
+
+# Optional (defaults shown)
+PUID=1000
+PGID=1000
+WEB_PORT=80
+POSTGRES_USER=thingport
+POSTGRES_DB=thingport
+BACKEND_IMAGE=ghcr.io/tautvydasderzinskas/thingport-backend:latest
+FRONTEND_IMAGE=ghcr.io/tautvydasderzinskas/thingport-frontend:latest
+# e.g. https://thingport.example.com -- needed for links in verification emails
+PUBLIC_URL=
+# login token lifetime, in seconds
+AUTH_TOKEN_TTL=43200
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=Thingport <no-reply@localhost>
+FLARESOLVERR_URL=http://flaresolverr:8191/v1
+TZ=UTC
+```
+
+</details>
+
+Then start it:
 
 ```bash
 docker compose up -d
 ```
 
-The application will be available at:
+Thingport will be available at `http://<host>:<WEB_PORT>` (default port 80).
 
-```text
-http://localhost
-```
-
-For a deployment using the published container images:
+<details>
+<summary>Building from source instead</summary>
 
 ```bash
-docker compose -f docker-compose.deploy.yml up -d
+git clone https://github.com/TautvydasDerzinskas/Thingport.git
+cd Thingport
+cp .env.example .env
+docker compose up -d
 ```
+
+This builds the images locally rather than pulling from GHCR.
+
+</details>
 
 ## Components
 

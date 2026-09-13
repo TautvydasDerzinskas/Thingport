@@ -27,6 +27,7 @@ import {
 } from "../services/printService";
 import { getUserMakerworldCookie, setUserMakerworldCookie } from "../services/makerworldCookieService";
 import { SLICER_IDS, getUserSlicer, setUserSlicer } from "../services/slicerPreferenceService";
+import { checkForUpdates } from "../services/versionService";
 
 const router = Router();
 router.use(requireAuth);
@@ -41,6 +42,19 @@ function storageSettingsOut(template: string, moved = 0, skipped = 0) {
     skipped,
   };
 }
+
+// Admin-only, read-only -- queries GitHub for the latest commit touching backend/ and frontend/
+// on main and compares each against this backend's own baked-in build commit (see
+// versionService.ts for why raw main HEAD isn't the right comparison). Frontend compares its own
+// baked commit (VITE_GIT_SHA, embedded at build time) against latest_frontend_sha itself; the
+// backend doesn't know what commit served the calling browser's bundle.
+router.get(
+  "/settings/version-check",
+  requireAdmin,
+  asyncHandler(async (_req, res) => {
+    res.json(await checkForUpdates());
+  }),
+);
 
 // Admin-only end to end now: the storage template affects every user's files, and the only UI
 // that reads this lives in the admin settings panel.

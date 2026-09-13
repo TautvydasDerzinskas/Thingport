@@ -9,6 +9,12 @@ RUN npm run verify
 CMD ["npm", "run", "verify"]
 
 FROM dependencies AS build
+# Set by build-image.yml to the commit that triggered this image's build. Vite inlines any
+# VITE_-prefixed env var into the bundle at build time, so the running app can report its own
+# commit to AdminSettingsPage's update checker -- see backend/Dockerfile's matching GIT_SHA for
+# why this is compared against the latest commit touching frontend/, not raw main HEAD.
+ARG GIT_SHA=unknown
+ENV VITE_GIT_SHA=$GIT_SHA
 COPY . .
 RUN npm run build
 

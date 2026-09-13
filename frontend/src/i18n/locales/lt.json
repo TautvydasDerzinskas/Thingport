@@ -239,6 +239,18 @@
     },
     "adminSettings": {
       "pageTitle": "Administravimo nustatymai",
+      "updateCheck": {
+        "heading": "Atnaujinimų tikrinimas",
+        "subtitle": "Patikrina, ar yra naujesnė Thingport versija šiam backend ir frontend.",
+        "checking": "Tikrinama, ar yra atnaujinimų…",
+        "unknown": "Negalima patikrinti atnaujinimų — ši versija nebuvo paskelbta kaip Docker atvaizdas (pvz., vietinė kūrimo versija).",
+        "failed": "Nepavyko patikrinti atnaujinimų. Bandykite vėliau.",
+        "upToDate": "Naudojate naujausią Thingport versiją.",
+        "availableTitle": "Yra atnaujinimas",
+        "backendOutdated": "Backend turi naujesnę versiją.",
+        "frontendOutdated": "Frontend turi naujesnę versiją.",
+        "howTo": "Atnaujinkite atsisiųsdami naujausius Docker atvaizdus: paleiskite „docker compose pull“, o tada „docker compose up -d“ (arba atitinkamą komandą pagal jūsų diegimą)."
+      },
       "storage": {
         "heading": "Saugojimo struktūra",
         "subtitle": "Pasirinkite, kaip valdomi modelių failai tvarkomi diske.",
