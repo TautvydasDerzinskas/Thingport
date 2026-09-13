@@ -25,7 +25,10 @@ type Status =
 // Runs automatically on every visit to this page -- see versionService.ts (backend) for what
 // "latest" is compared against. Both this bundle's own commit (FRONTEND_GIT_SHA, inlined at
 // build time) and the backend's are only ever set on a published Docker image; a local dev
-// build has neither, so the check reports "unknown" instead of a false "outdated".
+// build has neither, so the check reports "unknown" instead of a false "outdated". Lives on the
+// Administration hub (not AdminSettingsPage) since it's a hub-level status, not a per-instance
+// setting -- still under the "adminSettings" i18n namespace though, like the hub's own section
+// labels (see AdminPage's SECTIONS), to avoid churning translations for a page move.
 export default function UpdateCheckSection({ onUnauthorized }: Props) {
   const { t } = useTranslation("app");
   const [status, setStatus] = React.useState<Status>({ kind: "checking" });

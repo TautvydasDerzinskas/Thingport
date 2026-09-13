@@ -35,6 +35,11 @@ model User {
   // slicer's own registered URL protocol (e.g. bambustudio://) -- see
   // services/slicerPreferenceService.ts. Not yet acted on anywhere; just stored for now.
   slicer                   String?
+  // "light" | "dark" | "system" -- the user's chosen theme (see services/themePreferenceService.ts).
+  // Null means never set, so a new/never-visited-Profile browser falls back to the frontend's own
+  // default rather than to a stored value. Server-persisted (not just localStorage) so it follows
+  // the account across devices/browsers, same reasoning as slicer/makerworldCookie above.
+  themePreference          String?
   // Tags saved from the Tags list/detail pages' bookmark toggle, for quick access from the
   // sidebar -- just tag strings (there's no Tag row anywhere else to reference; a tag is only
   // ever a value inside Print.tags), so a bookmark that no longer matches any print just quietly

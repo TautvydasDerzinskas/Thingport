@@ -33,7 +33,7 @@ import { settingsApi, type PreviewMode } from "./api/settings";
 import { clearToken, clearUser, readToken, readUser, storeToken, storeUser } from "./utils/auth";
 import { type AppSettings, loadSettings, saveSettings } from "./utils/settings";
 import { useResolvedTheme } from "./hooks/useResolvedTheme";
-import type { ResolvedTheme } from "./constants/settingsOptions";
+import type { ResolvedTheme, ThemeSelection } from "./constants/settingsOptions";
 import { buildTheme } from "./theme";
 
 const DEFAULT_REFRESH_SECONDS = 6 * 60 * 60; // 6 hours
@@ -46,6 +46,8 @@ type AppShellProps = {
   setSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
   previewMode: PreviewMode;
   setPreviewMode: (mode: PreviewMode) => void;
+  themeSelection: ThemeSelection;
+  onThemeChange: (theme: ThemeSelection) => void;
   resolvedTheme: ResolvedTheme;
   muiTheme: ReturnType<typeof buildTheme>;
   onUnauthorized: () => void;
@@ -63,6 +65,8 @@ function AppShell({
   setSettings,
   previewMode,
   setPreviewMode,
+  themeSelection,
+  onThemeChange,
   resolvedTheme,
   muiTheme,
   onUnauthorized,
@@ -98,7 +102,7 @@ function AppShell({
   return (
     <AppLayout
       muiTheme={muiTheme}
-      themeSelection={settings.theme.selected}
+      themeSelection={themeSelection}
       apiUp={apiUp}
       categoryId={categoryId}
       onSelectCategory={setCategoryId}
@@ -110,7 +114,7 @@ function AppShell({
       onLogout={onLogout}
       makerworldCookie={settings.makerworld.cookie}
       user={user}
-      onThemeChange={selected => setSettings(prev => ({ ...prev, theme: { selected } }))}
+      onThemeChange={onThemeChange}
     >
       <Routes>
         <Route path="/" element={<DashboardPage onUnauthorized={onUnauthorized} />} />
@@ -184,7 +188,7 @@ function AppShell({
         <Route path="/downloads" element={<DownloadPage />} />
         <Route
           path="/admin"
-          element={isAdmin ? <AdminPage /> : <Navigate to="/" replace />}
+          element={isAdmin ? <AdminPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
         />
         <Route
           path="/admin-settings"
@@ -229,7 +233,12 @@ export default function App() {
   const sessionExpiredRef = React.useRef(false);
   const [settings, setSettings] = React.useState<AppSettings>(() => loadSettings());
   const [previewMode, setPreviewMode] = React.useState<PreviewMode>("automatic");
-  const resolvedTheme = useResolvedTheme(settings.theme.selected);
+  // Server-persisted (see settings/theme, services/themePreferenceService.ts), not localStorage
+  // -- unlike the old per-browser mirror, this follows the account across devices. "light" until
+  // the fetch below resolves is the same fallback the old localStorage default used, so a
+  // logged-in-elsewhere-first visit still starts on a sane theme rather than an empty one.
+  const [themeSelection, setThemeSelection] = React.useState<ThemeSelection>("light");
+  const resolvedTheme = useResolvedTheme(themeSelection);
   const muiTheme = React.useMemo(() => buildTheme(resolvedTheme), [resolvedTheme]);
   const isAdmin = user?.role === "ADMIN";
   React.useEffect(() => { (async ()=> setHealth(await healthApi.get()))(); }, []);
@@ -243,6 +252,27 @@ export default function App() {
       }
     })();
   }, [token]);
+  React.useEffect(() => {
+    if (!token) return;
+    (async () => {
+      try {
+        const { theme } = await settingsApi.getTheme();
+        // Null means this account has never set one (e.g. its very first login) -- keep
+        // whatever's already showing rather than overwriting it with nothing.
+        if (theme) setThemeSelection(theme);
+      } catch {
+        // Keep the current theme -- this just means it won't have synced from another device
+        // yet, not a reason to block the app.
+      }
+    })();
+  }, [token]);
+  const handleThemeChange = React.useCallback((selected: ThemeSelection) => {
+    setThemeSelection(selected);
+    void settingsApi.updateTheme(selected).catch(() => {
+      // Best-effort, like the extension's own cookie sync -- the UI already reflects the
+      // change locally; a failed sync just means it won't follow to another device yet.
+    });
+  }, []);
   React.useEffect(() => {
     saveSettings(settings);
   }, [settings]);
@@ -364,6 +394,8 @@ export default function App() {
           setSettings={setSettings}
           previewMode={previewMode}
           setPreviewMode={setPreviewMode}
+          themeSelection={themeSelection}
+          onThemeChange={handleThemeChange}
           resolvedTheme={resolvedTheme}
           muiTheme={muiTheme}
           onUnauthorized={handleUnauthorized}

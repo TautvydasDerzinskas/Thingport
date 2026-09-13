@@ -24,6 +24,11 @@ const PROFILE_DOWNLOAD_BASE = "https://api.bambulab.com/v1/iot-service/api/user/
 // like the other makerworld.com /api/v1/* paths already used elsewhere (favorites/collections),
 // it's a clean, unauthenticated, non-Cloudflare-gated JSON endpoint. Confirmed live.
 const AUTHOR_PROFILE_BASE = "https://makerworld.com/api/v1/design-user-service/user/profile";
+// Same host/service family as AUTHOR_PROFILE_BASE above, but the "who am I" variant -- requires
+// a valid bearer and returns the *authenticated* account's own preferences, so unlike the public
+// author-profile lookup this is exactly what a cookie test needs: it can only succeed for a
+// currently-logged-in session, not merely a well-formed token.
+const SELF_PREFERENCE_URL = "https://makerworld.com/api/v1/design-user-service/my/preference";
 const CLOUD_API_TIMEOUT_MS = IMPORT_TIMEOUT_SECONDS * 1000;
 const MAKERWORLD_PROVIDER = "makerworld";
 
@@ -94,6 +99,36 @@ export function extractMakerworldBearerToken(rawCookieOrToken: string | null | u
     return raw;
   }
   return null;
+}
+
+/** Called before storing a cookie pasted into Profile > MakerWorld (see routes/settings.ts'
+ * PATCH /settings/makerworld), so a stale/expired/mistyped paste is rejected up front instead of
+ * only surfacing as a failed import later. A malformed paste (extractMakerworldBearerToken
+ * finding no usable token at all) is rejected without a network call; otherwise this is the
+ * same self-profile request api.bambulab.com/MakerWorld clients use right after login, so a 200
+ * here means the account is genuinely logged in, not just that the string looks token-shaped. */
+export async function verifyMakerworldCookie(rawCookieOrToken: string): Promise<boolean> {
+  const bearerToken = extractMakerworldBearerToken(rawCookieOrToken);
+  if (!bearerToken) return false;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), CLOUD_API_TIMEOUT_MS);
+  try {
+    const res = await fetch(SELF_PREFERENCE_URL, {
+      headers: {
+        "User-Agent": IMPORT_BROWSER_USER_AGENT,
+        Accept: "application/json",
+        Authorization: `Bearer ${bearerToken}`,
+        Referer: "https://makerworld.com/",
+      },
+      redirect: "follow",
+      signal: controller.signal,
+    });
+    return res.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export function parseMakerworldModelUrl(url: string): { designId: string; requestedInstanceId: string | null } | null {

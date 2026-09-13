@@ -1,24 +1,20 @@
-import { THEME_OPTIONS, type ThemeSelection } from "../constants/settingsOptions";
-
-export type ThemeSettings = {
-  selected: ThemeSelection;
-};
-
 export type MakerWorldSettings = {
   cookie: string;
 };
 
+// Theme used to live here too, mirrored to localStorage -- it's now server-persisted instead
+// (see App.tsx's themeSelection state and api/settings.ts's getTheme/updateTheme) so it follows
+// the account across devices rather than being stuck in one browser. MakerWorld's cookie stays
+// local-mirrored: unlike theme it's write-only server-side (see makerworldCookieService.ts), so
+// there's no value to fetch back -- this is just what the current browser last sent, used as the
+// live cookie for this browser's own outgoing import requests.
 export type AppSettings = {
-  theme: ThemeSettings;
   makerworld: MakerWorldSettings;
 };
 
 const STORAGE_KEY = "thingport_settings";
 
 const DEFAULT_SETTINGS: AppSettings = {
-  theme: {
-    selected: "light",
-  },
   makerworld: {
     cookie: "",
   },
@@ -29,15 +25,9 @@ export function loadSettings(): AppSettings {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) || {} : {};
-    const theme = parsed.theme || {};
-    const themeSelected = typeof theme.selected === "string" ? theme.selected : DEFAULT_SETTINGS.theme.selected;
-    const themeValid = THEME_OPTIONS.some(opt => opt.id === themeSelected);
     const makerworld = parsed.makerworld || {};
     const cookie = typeof makerworld.cookie === "string" ? makerworld.cookie : DEFAULT_SETTINGS.makerworld.cookie;
     return {
-      theme: {
-        selected: (themeValid ? themeSelected : DEFAULT_SETTINGS.theme.selected) as ThemeSelection,
-      },
       makerworld: {
         cookie,
       },

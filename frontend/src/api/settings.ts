@@ -1,5 +1,6 @@
 import { authHeaders } from "../utils/auth";
 import { apiBase, assertOk, readErrorMessage, UnauthorizedError } from "./client";
+import type { ThemeSelection } from "../constants/settingsOptions";
 
 export type StorageSettings = {
   template: string;
@@ -187,11 +188,16 @@ export const settingsApi = {
     return res.json();
   },
 
+  // `verify: true` -- unlike the extension's own best-effort PATCH to this same endpoint (a
+  // live-captured browser cookie it already knows just worked) -- has the backend test a
+  // non-empty cookie against MakerWorld before storing it, so a stale/mistyped paste is caught
+  // here instead of only surfacing as a failed import later. Clearing the cookie (null) is
+  // never tested, only a new value.
   updateMakerworld: async (cookie: string | null): Promise<{ configured: boolean }> => {
     const res = await fetch(`${apiBase()}/settings/makerworld`, {
       method: "PATCH",
       headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ cookie }),
+      body: JSON.stringify({ cookie, verify: true }),
     });
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) {
@@ -217,6 +223,29 @@ export const settingsApi = {
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) {
       throw new Error(await readErrorMessage(res, "Failed to update slicer setting"));
+    }
+    return res.json();
+  },
+
+  // Per-user theme (light/dark/system), server-persisted so it follows the account across
+  // devices/browsers instead of being stuck in one browser's localStorage -- see App.tsx's
+  // themeSelection state. Not a secret, so like slicer above this echoes the value back plainly.
+  // Null means "never set"; the caller falls back to its own default in that case.
+  getTheme: async (): Promise<{ theme: ThemeSelection | null }> => {
+    const res = await fetch(`${apiBase()}/settings/theme`, { headers: authHeaders() });
+    assertOk(res, "Failed to load theme setting");
+    return res.json();
+  },
+
+  updateTheme: async (theme: ThemeSelection): Promise<{ theme: ThemeSelection | null }> => {
+    const res = await fetch(`${apiBase()}/settings/theme`, {
+      method: "PATCH",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ theme }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) {
+      throw new Error(await readErrorMessage(res, "Failed to update theme setting"));
     }
     return res.json();
   },

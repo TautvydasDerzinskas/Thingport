@@ -13,20 +13,26 @@ export function getBackendGitSha(): string | null {
   return process.env.GIT_SHA && process.env.GIT_SHA !== "unknown" ? process.env.GIT_SHA : null;
 }
 
-// backend-image.yml / frontend-image.yml only rebuild+publish an image when a commit actually
-// touches that project's own directory (path filters), so the commit that matters for "is the
-// published image stale" is the most recent one touching backend/ or frontend/ on main -- not
-// main's raw HEAD, which may have moved for unrelated reasons (docs, the other project, CI
-// config) without a new image ever being built.
-async function latestCommitTouching(path: string): Promise<string | null> {
+// The commit that actually produced the currently published `:latest` image -- i.e. the head_sha
+// of the most recent successful, push-triggered run of that project's own image workflow. This
+// asks CI directly what it last published rather than guessing from a path filter: backend-
+// image.yml also republishes on a change to the *shared* build-image.yml (its own `paths:` list
+// includes that file), so a commit that only touches CI config or the other project can still be
+// the one baked into a freshly-published image, without ever having touched backend/ or
+// frontend/ itself -- a path-filtered "latest commit touching backend/" query would miss exactly
+// that commit and report a stale, unrelated SHA as "latest" (a real false positive this project
+// hit: see commit 33e6114, which only touched build-image.yml and frontend/package.json but
+// still triggered a fresh backend image publish).
+async function latestPublishedSha(workflowFile: string): Promise<string | null> {
   try {
     const res = await fetch(
-      `https://api.github.com/repos/${GITHUB_REPO}/commits?path=${path}&sha=main&per_page=1`,
+      `https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/${workflowFile}/runs` +
+        "?branch=main&event=push&status=success&per_page=1",
       { headers: { Accept: "application/vnd.github+json" } },
     );
     if (!res.ok) return null;
-    const commits = (await res.json()) as Array<{ sha: string }>;
-    return commits[0]?.sha ?? null;
+    const data = (await res.json()) as { workflow_runs: Array<{ head_sha: string }> };
+    return data.workflow_runs[0]?.head_sha ?? null;
   } catch {
     return null;
   }
@@ -34,8 +40,8 @@ async function latestCommitTouching(path: string): Promise<string | null> {
 
 export async function checkForUpdates(): Promise<VersionCheckResult> {
   const [latest_backend_sha, latest_frontend_sha] = await Promise.all([
-    latestCommitTouching("backend"),
-    latestCommitTouching("frontend"),
+    latestPublishedSha("backend-image.yml"),
+    latestPublishedSha("frontend-image.yml"),
   ]);
   return { backend_sha: getBackendGitSha(), latest_backend_sha, latest_frontend_sha };
 }

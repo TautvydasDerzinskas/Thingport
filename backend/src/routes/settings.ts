@@ -26,7 +26,9 @@ import {
   validateStorageTemplate,
 } from "../services/printService";
 import { getUserMakerworldCookie, setUserMakerworldCookie } from "../services/makerworldCookieService";
+import { verifyMakerworldCookie } from "../services/makerworldCloudApi";
 import { SLICER_IDS, getUserSlicer, setUserSlicer } from "../services/slicerPreferenceService";
+import { THEME_SELECTIONS, getUserTheme, setUserTheme } from "../services/themePreferenceService";
 import { checkForUpdates } from "../services/versionService";
 
 const router = Router();
@@ -233,11 +235,27 @@ router.get(
   }),
 );
 
-const makerworldSettingsSchema = z.object({ cookie: z.string().nullable() });
+// `verify` is opt-in (defaults off) rather than always-on: this same endpoint also gets a
+// best-effort background PATCH from the Chrome extension (extension/background.js,
+// maybeSyncMakerworldCookie) piggybacking a live-captured browser cookie onto an import request
+// -- that path already knows the cookie just worked (it came straight from an active MakerWorld
+// tab) and deliberately swallows failures, so adding a live network test there would only add
+// latency for no benefit. Only ProfilePage's manual Save (settingsApi.updateMakerworld) sends
+// `verify: true`.
+const makerworldSettingsSchema = z.object({ cookie: z.string().nullable(), verify: z.boolean().optional() });
 router.patch(
   "/settings/makerworld",
   asyncHandler(async (req, res) => {
     const body = parseBody(makerworldSettingsSchema, req.body);
+    const trimmed = (body.cookie ?? "").trim();
+    // Only a new, non-empty cookie needs testing -- clearing it (trimmed === "") always
+    // succeeds, since there's nothing to verify a logged-out state against.
+    if (body.verify && trimmed && !(await verifyMakerworldCookie(trimmed))) {
+      throw new HttpError(
+        422,
+        "Couldn't verify this MakerWorld cookie -- it may be invalid or expired. Copy a fresh Cookie header from a logged-in makerworld.com tab and try again.",
+      );
+    }
     const configured = await setUserMakerworldCookie(req.userId!, body.cookie);
     res.json({ configured });
   }),
@@ -260,6 +278,27 @@ router.patch(
     const body = parseBody(slicerSettingsSchema, req.body);
     const slicer = await setUserSlicer(req.userId!, body.slicer);
     res.json({ slicer });
+  }),
+);
+
+// Per-user theme (light/dark/system), server-persisted so it follows the account across
+// devices/browsers instead of being stuck in one browser's localStorage -- see
+// services/themePreferenceService.ts. Not a secret, so like slicer above this echoes the value
+// back plainly. Null means "never set"; the frontend falls back to its own default in that case.
+router.get(
+  "/settings/theme",
+  asyncHandler(async (req, res) => {
+    res.json({ theme: await getUserTheme(req.userId!) });
+  }),
+);
+
+const themeSettingsSchema = z.object({ theme: z.enum(THEME_SELECTIONS).nullable() });
+router.patch(
+  "/settings/theme",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(themeSettingsSchema, req.body);
+    const theme = await setUserTheme(req.userId!, body.theme);
+    res.json({ theme });
   }),
 );
 

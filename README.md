@@ -225,3 +225,10 @@ This builds the images locally rather than pulling from GHCR.
 | `db` | PostgreSQL database |
 | `flaresolverr` | Web request / anti-bot handling |
 
+## Support
+
+If Thingport is useful to you, consider supporting its development:
+
+- [GitHub Sponsors](https://github.com/sponsors/TautvydasDerzinskas)
+- [Buy Me a Coffee](https://buymeacoffee.com/TautvydasDerzinskas)
+

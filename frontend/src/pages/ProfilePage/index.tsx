@@ -63,13 +63,13 @@ export default function ProfilePage({ user, makerworldCookie, onUpdateMakerWorld
       </Stack>
 
       <Divider />
-      <LanguagePicker />
+      <SlicerPicker onUnauthorized={onUnauthorized} />
 
       <Divider />
       <MakerworldCookieSection cookie={makerworldCookie} onUpdateMakerWorld={onUpdateMakerWorld} onUnauthorized={onUnauthorized} />
 
       <Divider />
-      <SlicerPicker onUnauthorized={onUnauthorized} />
+      <LanguagePicker />
     </Stack>
   );
 }
