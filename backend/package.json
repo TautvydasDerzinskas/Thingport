@@ -13,7 +13,6 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
-    "tags:normalize-casing": "tsx src/scripts/normalizeTagCasing.ts",
     "test": "vitest run",
     "lint": "oxlint ."
   },

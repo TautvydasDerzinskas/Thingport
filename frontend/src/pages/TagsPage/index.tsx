@@ -23,10 +23,12 @@ type Props = {
  *  "<name> (<count>)" plus a bookmark toggle (Chip's own deleteIcon slot, repurposed -- its click
  *  target is already separate from the chip's own onClick, exactly the two independent actions
  *  this needs) -- wrapping left-to-right instead of one per row, so far more fit on screen at
- *  once. Colored like the sidebar's own inactive nav rows (thingport.navInactiveText) with the
- *  same divider-in-light/invisible-in-dark border used by Sidebar/CategoriesPanel/ModelSidePanel
- *  (dividerBorderColor), so this reads as an extension of that same nav chrome rather than a
- *  one-off style. Sorted Popular (most models, default) or Name. Bookmarking surfaces the tag in
+ *  once. Colored and backgrounded like the sidebar itself (thingport.navInactiveText text,
+ *  background.paper fill -- the same values Sidebar's own <aside> uses, not the page's own
+ *  background behind it) with the same divider-in-light/invisible-in-dark border used by
+ *  Sidebar/CategoriesPanel/ModelSidePanel (dividerBorderColor), so this reads as an extension of
+ *  that same nav chrome rather than a one-off style. Sorted Popular (most models, default) or
+ *  Name. Bookmarking surfaces the tag in
  *  the sidebar's own quick-access list (see Sidebar). A "hide rarely-used tags" switch (on by
  *  default) filters out anything used by fewer than 2 models -- purely a client-side filter over
  *  the same already-fetched list, not a separate API call. */
@@ -126,7 +128,9 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
               onDelete={() => void toggleBookmark(tag)}
               aria-label={tag.bookmarked ? (t("models:tags.unbookmarkTag") ?? undefined) : (t("models:tags.bookmarkTag") ?? undefined)}
               sx={{
+                p: 1,
                 color: (theme) => theme.thingport.navInactiveText,
+                bgcolor: "background.paper",
                 borderColor: dividerBorderColor,
                 "& .MuiChip-deleteIcon": {
                   color: tag.bookmarked ? "primary.main" : "inherit",

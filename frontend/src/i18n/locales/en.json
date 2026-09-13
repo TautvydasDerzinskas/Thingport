@@ -54,7 +54,8 @@
       "models": "Models",
       "collections": "Collections",
       "tags": "Tags",
-      "downloads": "Downloads"
+      "downloads": "Downloads",
+      "bookmarks": "Bookmarks"
     },
     "uploadBar": {
       "uploading": "Uploading…",

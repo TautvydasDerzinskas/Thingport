@@ -6,6 +6,7 @@ import { dividerBorderColor } from "../../../theme";
 import Box from "@mui/material/Box";
 import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
@@ -97,10 +98,10 @@ type Props = {
   tagBookmarksVersion?: number;
 };
 
-/** The persistent app-wide navigation rail: Dashboard, Models, Collections, Tags, Downloads, and
- *  (for admins) Administration. Category browsing lives inside the Models page itself, not here.
- *  Tags additionally grows a quick-access sub-list of bookmarked tags underneath it, once any
- *  exist and the sidebar isn't collapsed to its icon-only rail (no room for tag names there). */
+/** The persistent app-wide navigation rail: Dashboard, Models, Collections, Tags, Downloads, then
+ *  (once any tag is bookmarked) a divider, a "Bookmarks" heading, and one row per bookmarked tag,
+ *  and finally (for admins) Administration. Category browsing lives inside the Models page
+ *  itself, not here. */
 export default function Sidebar({ isAdmin, onSelectCategory, tagBookmarksVersion }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const location = useLocation();
@@ -256,56 +257,23 @@ export default function Sidebar({ isAdmin, onSelectCategory, tagBookmarksVersion
           )}
 
           {collapsed ? (
-            <>
-              <CollapsedNavIcon
-                icon={<LocalOfferIcon fontSize="small" />}
-                label={t("sidebar.tags")}
-                selected={onTags && location.pathname === "/models/tags"}
-                onClick={() => navigate("/models/tags")}
-              />
-              {bookmarkedTags.map(tag => {
-                const target = `/models/tags/${encodeURIComponent(tag)}`;
-                return (
-                  <CollapsedNavIcon
-                    key={tag}
-                    icon={<BookmarkIcon fontSize="small" />}
-                    label={tag}
-                    selected={location.pathname === target}
-                    onClick={() => navigate(target)}
-                  />
-                );
-              })}
-            </>
+            <CollapsedNavIcon
+              icon={<LocalOfferIcon fontSize="small" />}
+              label={t("sidebar.tags")}
+              selected={onTags && location.pathname === "/models/tags"}
+              onClick={() => navigate("/models/tags")}
+            />
           ) : (
-            <>
-              <ListItemButton
-                selected={onTags && location.pathname === "/models/tags"}
-                onClick={() => navigate("/models/tags")}
-                sx={{ borderRadius: 1, mb: 0.5, ...navRowSx(onTags && location.pathname === "/models/tags") }}
-              >
-                <ListItemIcon sx={{ minWidth: 30 }}>
-                  <LocalOfferIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText primary={t("sidebar.tags")} primaryTypographyProps={{ variant: "body2" }} />
-              </ListItemButton>
-              {bookmarkedTags.map(tag => {
-                const target = `/models/tags/${encodeURIComponent(tag)}`;
-                const selected = location.pathname === target;
-                return (
-                  <ListItemButton
-                    key={tag}
-                    selected={selected}
-                    onClick={() => navigate(target)}
-                    sx={{ borderRadius: 1, mb: 0.5, pl: 4, ...navRowSx(selected) }}
-                  >
-                    <ListItemText
-                      primary={tag}
-                      primaryTypographyProps={{ variant: "body2", noWrap: true }}
-                    />
-                  </ListItemButton>
-                );
-              })}
-            </>
+            <ListItemButton
+              selected={onTags && location.pathname === "/models/tags"}
+              onClick={() => navigate("/models/tags")}
+              sx={{ borderRadius: 1, mb: 0.5, ...navRowSx(onTags && location.pathname === "/models/tags") }}
+            >
+              <ListItemIcon sx={{ minWidth: 30 }}>
+                <LocalOfferIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary={t("sidebar.tags")} primaryTypographyProps={{ variant: "body2" }} />
+            </ListItemButton>
           )}
 
           {collapsed ? (
@@ -326,6 +294,50 @@ export default function Sidebar({ isAdmin, onSelectCategory, tagBookmarksVersion
               </ListItemIcon>
               <ListItemText primary={t("sidebar.downloads")} primaryTypographyProps={{ variant: "body2" }} />
             </ListItemButton>
+          )}
+
+          {/* Bookmarked tags -- only once any exist, so an empty section never shows just a bare
+              divider with nothing under it. The "Bookmarks" label is a plain heading (nothing to
+              click), so it's skipped entirely while collapsed rather than rendered as dead space
+              -- unlike every row above, the collapsed rail has no way to show it at all. */}
+          {bookmarkedTags.length > 0 && (
+            <>
+              <Divider sx={{ my: 1 }} />
+              {!collapsed && (
+                <Typography
+                  variant="caption"
+                  fontWeight={700}
+                  sx={{ display: "block", px: 1.5, mb: 0.5, color: (theme) => theme.thingport.navInactiveText }}
+                >
+                  {t("sidebar.bookmarks")}
+                </Typography>
+              )}
+              {bookmarkedTags.map(tag => {
+                const target = `/models/tags/${encodeURIComponent(tag)}`;
+                const selected = location.pathname === target;
+                return collapsed ? (
+                  <CollapsedNavIcon
+                    key={tag}
+                    icon={<BookmarkIcon fontSize="small" />}
+                    label={tag}
+                    selected={selected}
+                    onClick={() => navigate(target)}
+                  />
+                ) : (
+                  <ListItemButton
+                    key={tag}
+                    selected={selected}
+                    onClick={() => navigate(target)}
+                    sx={{ borderRadius: 1, mb: 0.5, ...navRowSx(selected) }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 30 }}>
+                      <BookmarkIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText primary={tag} primaryTypographyProps={{ variant: "body2", noWrap: true }} />
+                  </ListItemButton>
+                );
+              })}
+            </>
           )}
 
           {isAdmin && (

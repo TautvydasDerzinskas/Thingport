@@ -54,7 +54,8 @@
       "models": "Modeliai",
       "collections": "Kolekcijos",
       "tags": "Žymos",
-      "downloads": "Atsisiuntimai"
+      "downloads": "Atsisiuntimai",
+      "bookmarks": "Įsimintos"
     },
     "uploadBar": {
       "uploading": "Įkeliama…",
