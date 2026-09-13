@@ -56,6 +56,9 @@ jobs:
         working-directory: ${{ inputs.project_dir }}
         run: npm run lint
 
+      - name: Set up QEMU (for the arm64 leg of the multi-arch build below)
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -83,6 +86,9 @@ jobs:
         with:
           context: ${{ inputs.context }}
           file: ${{ inputs.dockerfile }}
+          # arm64 covers Apple Silicon and most ARM-based NAS units (Synology, QNAP, etc) --
+          # built via QEMU emulation above since GitHub-hosted runners are amd64-only.
+          platforms: linux/amd64,linux/arm64
           push: ${{ inputs.push }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

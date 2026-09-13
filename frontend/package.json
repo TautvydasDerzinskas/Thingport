@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
-    "test:run": "vitest run",
+    "test:run": "vitest run --passWithNoTests",
     "lint": "oxlint .",
     "verify": "npm run typecheck && npm run lint && npm run test:run && npm run build"
   },

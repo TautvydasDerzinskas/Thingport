@@ -111,7 +111,7 @@ services:
       - app-net
 
   backend:
-    image: ${BACKEND_IMAGE:-ghcr.io/tautvydasderzinskas/thingport-backend:latest}
+    image: ghcr.io/tautvydasderzinskas/thingport-backend:latest
     restart: unless-stopped
     environment:
       - PUID=${PUID:-1000}
@@ -141,7 +141,7 @@ services:
       - app-net
 
   frontend:
-    image: ${FRONTEND_IMAGE:-ghcr.io/tautvydasderzinskas/thingport-frontend:latest}
+    image: ghcr.io/tautvydasderzinskas/thingport-frontend:latest
     restart: unless-stopped
     ports:
       - "${WEB_PORT:-80}:80"
@@ -178,8 +178,6 @@ PGID=1000
 WEB_PORT=80
 POSTGRES_USER=thingport
 POSTGRES_DB=thingport
-BACKEND_IMAGE=ghcr.io/tautvydasderzinskas/thingport-backend:latest
-FRONTEND_IMAGE=ghcr.io/tautvydasderzinskas/thingport-frontend:latest
 # e.g. https://thingport.example.com -- needed for links in verification emails
 PUBLIC_URL=
 # login token lifetime, in seconds
