@@ -17,9 +17,9 @@ type Props = {
 export default function AdminSettingsPage({ onUnauthorized, onPreviewModeChanged }: Props) {
   return (
     <Stack spacing={4} divider={<Divider />}>
+      <ThingiverseSection onUnauthorized={onUnauthorized} />
       <StorageSection onUnauthorized={onUnauthorized} />
       <PreviewsSection onUnauthorized={onUnauthorized} onSaved={onPreviewModeChanged} />
-      <ThingiverseSection onUnauthorized={onUnauthorized} />
     </Stack>
   );
 }

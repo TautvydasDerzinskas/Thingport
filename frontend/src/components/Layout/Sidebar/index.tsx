@@ -12,7 +12,6 @@ import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
-import Collapse from "@mui/material/Collapse";
 import Divider from "@mui/material/Divider";
 import Tooltip from "@mui/material/Tooltip";
 import SpaceDashboardIcon from "@mui/icons-material/SpaceDashboard";
@@ -22,13 +21,6 @@ import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import DownloadIcon from "@mui/icons-material/Download";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
-import SettingsIcon from "@mui/icons-material/Settings";
-import PeopleIcon from "@mui/icons-material/People";
-import HistoryIcon from "@mui/icons-material/History";
-import BoltIcon from "@mui/icons-material/Bolt";
-import CableIcon from "@mui/icons-material/Cable";
-import ExpandLessIcon from "@mui/icons-material/ExpandLess";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import Wordmark from "../../Wordmark";
@@ -100,8 +92,9 @@ type Props = {
 
 /** The persistent app-wide navigation rail: Dashboard, Models, Collections, Tags, Downloads, then
  *  (once any tag is bookmarked) a divider, a "Bookmarks" heading, and one row per bookmarked tag,
- *  and finally (for admins) Administration. Category browsing lives inside the Models page
- *  itself, not here. */
+ *  and finally (for admins) a single "Administration" row -- it's just a link to the /admin hub
+ *  page now, not an expandable list of every admin sub-page (see AdminPage). Category browsing
+ *  lives inside the Models page itself, not here. */
 export default function Sidebar({ isAdmin, onSelectCategory, tagBookmarksVersion }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const location = useLocation();
@@ -110,7 +103,6 @@ export default function Sidebar({ isAdmin, onSelectCategory, tagBookmarksVersion
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY) === "true";
   });
-  const [adminExpanded, setAdminExpanded] = useState(false);
   const [bookmarkedTags, setBookmarkedTags] = useState<string[]>([]);
 
   useEffect(() => {
@@ -128,13 +120,10 @@ export default function Sidebar({ isAdmin, onSelectCategory, tagBookmarksVersion
   const onTags = location.pathname.startsWith("/models/tags");
   const onModels = (location.pathname.startsWith("/models") && !onCollections && !onTags) || location.pathname.startsWith("/authors");
   const onDownload = location.pathname.startsWith("/downloads");
-  const onAdminSettings = location.pathname.startsWith("/admin-settings");
-  const onAdminUsers = location.pathname.startsWith("/admin-users");
-  const onAdminLogs = location.pathname.startsWith("/admin-logs");
-  const onAdminTriggers = location.pathname.startsWith("/admin-triggers");
-  const onAdminConnections = location.pathname.startsWith("/admin-connections");
-  const onAdmin = onAdminSettings || onAdminUsers || onAdminLogs || onAdminTriggers || onAdminConnections;
-  const adminOpen = adminExpanded || onAdmin;
+  // Covers both the hub itself (/admin) and every sub-page (/admin-settings, /admin-users, ...)
+  // as a plain string-prefix match -- they're only ever reached from that hub now, not listed
+  // individually here any more, so one flag is all this row needs.
+  const onAdmin = location.pathname.startsWith("/admin");
 
   const toggleCollapsed = () => {
     setCollapsed(prev => {
@@ -344,106 +333,23 @@ export default function Sidebar({ isAdmin, onSelectCategory, tagBookmarksVersion
             <>
               <Divider sx={{ my: 1 }} />
               {collapsed ? (
-                <>
-                  <CollapsedNavIcon
-                    icon={<SettingsIcon fontSize="small" />}
-                    label={t("common:settings")}
-                    selected={onAdminSettings}
-                    onClick={() => navigate("/admin-settings")}
-                  />
-                  <CollapsedNavIcon
-                    icon={<PeopleIcon fontSize="small" />}
-                    label={t("adminSettings.users.heading")}
-                    selected={onAdminUsers}
-                    onClick={() => navigate("/admin-users")}
-                  />
-                  <CollapsedNavIcon
-                    icon={<HistoryIcon fontSize="small" />}
-                    label={t("adminSettings.logs.heading")}
-                    selected={onAdminLogs}
-                    onClick={() => navigate("/admin-logs")}
-                  />
-                  <CollapsedNavIcon
-                    icon={<BoltIcon fontSize="small" />}
-                    label={t("adminSettings.triggers.heading")}
-                    selected={onAdminTriggers}
-                    onClick={() => navigate("/admin-triggers")}
-                  />
-                  <CollapsedNavIcon
-                    icon={<CableIcon fontSize="small" />}
-                    label={t("adminSettings.connections.heading")}
-                    selected={onAdminConnections}
-                    onClick={() => navigate("/admin-connections")}
-                  />
-                </>
+                <CollapsedNavIcon
+                  icon={<AdminPanelSettingsIcon fontSize="small" />}
+                  label={t("sidebar.administration")}
+                  selected={onAdmin}
+                  onClick={() => navigate("/admin")}
+                />
               ) : (
-                <>
-                  <ListItemButton
-                    selected={false}
-                    onClick={() => setAdminExpanded(v => !v)}
-                    sx={{ borderRadius: 1, mb: 0.5, ...navRowSx(onAdmin) }}
-                  >
-                    <ListItemIcon sx={{ minWidth: 30 }}>
-                      <AdminPanelSettingsIcon fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText primary={t("sidebar.administration")} primaryTypographyProps={{ variant: "body2" }} />
-                    {adminOpen ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
-                  </ListItemButton>
-                  <Collapse in={adminOpen}>
-                    <List disablePadding>
-                      <ListItemButton
-                        selected={onAdminSettings}
-                        onClick={() => navigate("/admin-settings")}
-                        sx={{ borderRadius: 1, mb: 0.5, pl: 4, ...navRowSx(onAdminSettings) }}
-                      >
-                        <ListItemIcon sx={{ minWidth: 30 }}>
-                          <SettingsIcon fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText primary={t("common:settings")} primaryTypographyProps={{ variant: "body2" }} />
-                      </ListItemButton>
-                      <ListItemButton
-                        selected={onAdminUsers}
-                        onClick={() => navigate("/admin-users")}
-                        sx={{ borderRadius: 1, mb: 0.5, pl: 4, ...navRowSx(onAdminUsers) }}
-                      >
-                        <ListItemIcon sx={{ minWidth: 30 }}>
-                          <PeopleIcon fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText primary={t("adminSettings.users.heading")} primaryTypographyProps={{ variant: "body2" }} />
-                      </ListItemButton>
-                      <ListItemButton
-                        selected={onAdminLogs}
-                        onClick={() => navigate("/admin-logs")}
-                        sx={{ borderRadius: 1, mb: 0.5, pl: 4, ...navRowSx(onAdminLogs) }}
-                      >
-                        <ListItemIcon sx={{ minWidth: 30 }}>
-                          <HistoryIcon fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText primary={t("adminSettings.logs.heading")} primaryTypographyProps={{ variant: "body2" }} />
-                      </ListItemButton>
-                      <ListItemButton
-                        selected={onAdminTriggers}
-                        onClick={() => navigate("/admin-triggers")}
-                        sx={{ borderRadius: 1, mb: 0.5, pl: 4, ...navRowSx(onAdminTriggers) }}
-                      >
-                        <ListItemIcon sx={{ minWidth: 30 }}>
-                          <BoltIcon fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText primary={t("adminSettings.triggers.heading")} primaryTypographyProps={{ variant: "body2" }} />
-                      </ListItemButton>
-                      <ListItemButton
-                        selected={onAdminConnections}
-                        onClick={() => navigate("/admin-connections")}
-                        sx={{ borderRadius: 1, mb: 0.5, pl: 4, ...navRowSx(onAdminConnections) }}
-                      >
-                        <ListItemIcon sx={{ minWidth: 30 }}>
-                          <CableIcon fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText primary={t("adminSettings.connections.heading")} primaryTypographyProps={{ variant: "body2" }} />
-                      </ListItemButton>
-                    </List>
-                  </Collapse>
-                </>
+                <ListItemButton
+                  selected={onAdmin}
+                  onClick={() => navigate("/admin")}
+                  sx={{ borderRadius: 1, mb: 0.5, ...navRowSx(onAdmin) }}
+                >
+                  <ListItemIcon sx={{ minWidth: 30 }}>
+                    <AdminPanelSettingsIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText primary={t("sidebar.administration")} primaryTypographyProps={{ variant: "body2" }} />
+                </ListItemButton>
               )}
             </>
           )}
