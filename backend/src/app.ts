@@ -11,6 +11,7 @@ import platesRoutes from "./routes/plates";
 import previewImagesRoutes from "./routes/previewImages";
 import categoriesRoutes from "./routes/categories";
 import printFilesRoutes from "./routes/printFiles";
+import tagsRoutes from "./routes/tags";
 import settingsRoutes from "./routes/settings";
 import importsRoutes from "./routes/imports";
 import collectionsRoutes from "./routes/collections";
@@ -43,6 +44,7 @@ export function createApp(): Express {
   app.use("/api", previewImagesRoutes);
   app.use("/api", categoriesRoutes);
   app.use("/api", printFilesRoutes);
+  app.use("/api", tagsRoutes);
   app.use("/api", importsRoutes);
   app.use("/api", collectionsRoutes);
   app.use("/api", notificationsRoutes);

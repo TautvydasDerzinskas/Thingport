@@ -12,6 +12,7 @@ import ModelsPage from "./pages/ModelsPage";
 import ModelDetailPage from "./pages/ModelDetailPage";
 import CollectionsPage from "./pages/CollectionsPage";
 import CollectionDetailPage from "./pages/CollectionDetailPage";
+import TagsPage from "./pages/TagsPage";
 import TagDetailPage from "./pages/TagDetailPage";
 import AuthorPage from "./pages/AuthorPage";
 import AuthPage from "./pages/AuthPage";
@@ -79,9 +80,14 @@ function AppShell({
   });
   const [nonce, setNonce] = React.useState(0);
   const [categoryVersion, setCategoryVersion] = React.useState(0);
+  const [tagBookmarksVersion, setTagBookmarksVersion] = React.useState(0);
 
   const handleCategoriesChanged = React.useCallback(() => {
     setCategoryVersion(v => v + 1);
+  }, []);
+
+  const handleTagBookmarksChanged = React.useCallback(() => {
+    setTagBookmarksVersion(v => v + 1);
   }, []);
 
   const handlePrintsChanged = React.useCallback(() => {
@@ -96,6 +102,7 @@ function AppShell({
       categoryId={categoryId}
       onSelectCategory={setCategoryId}
       onPrintsChanged={handlePrintsChanged}
+      tagBookmarksVersion={tagBookmarksVersion}
       onUnauthorized={onUnauthorized}
       isAdmin={isAdmin}
       onOpenProfile={() => navigate("/profile")}
@@ -131,8 +138,20 @@ function AppShell({
           element={<CollectionDetailPage theme={resolvedTheme} previewMode={previewMode} onUnauthorized={onUnauthorized} viewer={user} />}
         />
         <Route
+          path="/models/tags"
+          element={<TagsPage onUnauthorized={onUnauthorized} onBookmarksChanged={handleTagBookmarksChanged} />}
+        />
+        <Route
           path="/models/tags/:tagName"
-          element={<TagDetailPage theme={resolvedTheme} previewMode={previewMode} onUnauthorized={onUnauthorized} viewer={user} />}
+          element={
+            <TagDetailPage
+              theme={resolvedTheme}
+              previewMode={previewMode}
+              onUnauthorized={onUnauthorized}
+              onBookmarksChanged={handleTagBookmarksChanged}
+              viewer={user}
+            />
+          }
         />
         <Route
           path="/models/:printId"

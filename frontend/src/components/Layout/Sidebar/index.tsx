@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import type { Theme } from "@mui/material/styles";
@@ -17,6 +17,8 @@ import Tooltip from "@mui/material/Tooltip";
 import SpaceDashboardIcon from "@mui/icons-material/SpaceDashboard";
 import ViewInArIcon from "@mui/icons-material/ViewInAr";
 import CollectionsIcon from "@mui/icons-material/Collections";
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+import BookmarkIcon from "@mui/icons-material/Bookmark";
 import DownloadIcon from "@mui/icons-material/Download";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import SettingsIcon from "@mui/icons-material/Settings";
@@ -29,6 +31,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import Wordmark from "../../Wordmark";
+import { tagsApi } from "../../../api/tags";
 
 const SIDEBAR_WIDTH = 240;
 const SIDEBAR_COLLAPSED_WIDTH = 72;
@@ -88,11 +91,17 @@ function CollapsedNavIcon({ icon, label, selected, onClick }: {
 type Props = {
   isAdmin: boolean;
   onSelectCategory: (id: string | null) => void;
+  /** Bumped whenever a tag is bookmarked/unbookmarked elsewhere (the Tags list page, or a tag
+   *  detail page's title-row toggle) so the quick-access list below refetches without needing a
+   *  full remount -- same shape as ModelsPage's categoriesVersion/onCategoriesChanged. */
+  tagBookmarksVersion?: number;
 };
 
-/** The persistent app-wide navigation rail: Dashboard, Models, Collections, Downloads, and
- *  (for admins) Administration. Category browsing lives inside the Models page itself, not here. */
-export default function Sidebar({ isAdmin, onSelectCategory }: Props) {
+/** The persistent app-wide navigation rail: Dashboard, Models, Collections, Tags, Downloads, and
+ *  (for admins) Administration. Category browsing lives inside the Models page itself, not here.
+ *  Tags additionally grows a quick-access sub-list of bookmarked tags underneath it, once any
+ *  exist and the sidebar isn't collapsed to its icon-only rail (no room for tag names there). */
+export default function Sidebar({ isAdmin, onSelectCategory, tagBookmarksVersion }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const location = useLocation();
   const navigate = useNavigate();
@@ -101,10 +110,22 @@ export default function Sidebar({ isAdmin, onSelectCategory }: Props) {
     return window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY) === "true";
   });
   const [adminExpanded, setAdminExpanded] = useState(false);
+  const [bookmarkedTags, setBookmarkedTags] = useState<string[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    tagsApi.listBookmarked()
+      .then(tags => { if (!cancelled) setBookmarkedTags(tags); })
+      .catch(() => { /* non-critical nav aid -- swallow and leave the list as-is */ });
+    return () => { cancelled = true; };
+    // tagBookmarksVersion is a deliberate refetch trigger, not read inside the effect itself.
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
+  }, [tagBookmarksVersion]);
 
   const onDashboard = location.pathname === "/";
   const onCollections = location.pathname.startsWith("/models/collections");
-  const onModels = (location.pathname.startsWith("/models") && !onCollections) || location.pathname.startsWith("/authors");
+  const onTags = location.pathname.startsWith("/models/tags");
+  const onModels = (location.pathname.startsWith("/models") && !onCollections && !onTags) || location.pathname.startsWith("/authors");
   const onDownload = location.pathname.startsWith("/downloads");
   const onAdminSettings = location.pathname.startsWith("/admin-settings");
   const onAdminUsers = location.pathname.startsWith("/admin-users");
@@ -232,6 +253,59 @@ export default function Sidebar({ isAdmin, onSelectCategory }: Props) {
               </ListItemIcon>
               <ListItemText primary={t("sidebar.collections")} primaryTypographyProps={{ variant: "body2" }} />
             </ListItemButton>
+          )}
+
+          {collapsed ? (
+            <>
+              <CollapsedNavIcon
+                icon={<LocalOfferIcon fontSize="small" />}
+                label={t("sidebar.tags")}
+                selected={onTags && location.pathname === "/models/tags"}
+                onClick={() => navigate("/models/tags")}
+              />
+              {bookmarkedTags.map(tag => {
+                const target = `/models/tags/${encodeURIComponent(tag)}`;
+                return (
+                  <CollapsedNavIcon
+                    key={tag}
+                    icon={<BookmarkIcon fontSize="small" />}
+                    label={tag}
+                    selected={location.pathname === target}
+                    onClick={() => navigate(target)}
+                  />
+                );
+              })}
+            </>
+          ) : (
+            <>
+              <ListItemButton
+                selected={onTags && location.pathname === "/models/tags"}
+                onClick={() => navigate("/models/tags")}
+                sx={{ borderRadius: 1, mb: 0.5, ...navRowSx(onTags && location.pathname === "/models/tags") }}
+              >
+                <ListItemIcon sx={{ minWidth: 30 }}>
+                  <LocalOfferIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary={t("sidebar.tags")} primaryTypographyProps={{ variant: "body2" }} />
+              </ListItemButton>
+              {bookmarkedTags.map(tag => {
+                const target = `/models/tags/${encodeURIComponent(tag)}`;
+                const selected = location.pathname === target;
+                return (
+                  <ListItemButton
+                    key={tag}
+                    selected={selected}
+                    onClick={() => navigate(target)}
+                    sx={{ borderRadius: 1, mb: 0.5, pl: 4, ...navRowSx(selected) }}
+                  >
+                    <ListItemText
+                      primary={tag}
+                      primaryTypographyProps={{ variant: "body2", noWrap: true }}
+                    />
+                  </ListItemButton>
+                );
+              })}
+            </>
           )}
 
           {collapsed ? (

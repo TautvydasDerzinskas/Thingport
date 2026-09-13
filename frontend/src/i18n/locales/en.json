@@ -53,6 +53,7 @@
       "collapseSidebar": "Collapse sidebar",
       "models": "Models",
       "collections": "Collections",
+      "tags": "Tags",
       "downloads": "Downloads"
     },
     "uploadBar": {
@@ -1137,6 +1138,12 @@
       }
     },
     "tags": {
+      "pageTitle": "Tags",
+      "sortByName": "Name",
+      "empty": "No tags yet.",
+      "bookmarkTag": "Bookmark tag",
+      "unbookmarkTag": "Remove bookmark",
+      "bookmarkFailed": "Failed to update bookmark. Please try again.",
       "detail": {
         "title": "Tag: {{name}}",
         "empty": "No models with this tag yet."

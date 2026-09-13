@@ -35,6 +35,11 @@ model User {
   // slicer's own registered URL protocol (e.g. bambustudio://) -- see
   // services/slicerPreferenceService.ts. Not yet acted on anywhere; just stored for now.
   slicer                   String?
+  // Tags saved from the Tags list/detail pages' bookmark toggle, for quick access from the
+  // sidebar -- just tag strings (there's no Tag row anywhere else to reference; a tag is only
+  // ever a value inside Print.tags), so a bookmark that no longer matches any print just quietly
+  // shows a zero count rather than needing cleanup.
+  bookmarkedTags           String[]       @default([])
   // Populated by linking an imported Author to this account (the Author page's "It's me!"
   // button -- see AuthorLink below) rather than edited directly: the first link with bio/cover
   // data fills these in if they're still empty, later links never overwrite them. Shown on this

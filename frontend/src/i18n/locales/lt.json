@@ -53,6 +53,7 @@
       "collapseSidebar": "Suskleisti šoninę juostą",
       "models": "Modeliai",
       "collections": "Kolekcijos",
+      "tags": "Žymos",
       "downloads": "Atsisiuntimai"
     },
     "uploadBar": {
@@ -1138,6 +1139,12 @@
       }
     },
     "tags": {
+      "pageTitle": "Žymos",
+      "sortByName": "Pavadinimas",
+      "empty": "Kol kas nėra žymų.",
+      "bookmarkTag": "Įsiminti žymą",
+      "unbookmarkTag": "Pašalinti iš įsimintų",
+      "bookmarkFailed": "Nepavyko atnaujinti įsimintos žymos. Bandykite dar kartą.",
       "detail": {
         "title": "Žyma: {{name}}",
         "empty": "Su šia žyma modelių kol kas nėra."

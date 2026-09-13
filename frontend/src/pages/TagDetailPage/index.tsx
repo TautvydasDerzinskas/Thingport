@@ -9,6 +9,7 @@ import { UnauthorizedError } from "../../api/client";
 import { type Print, type PrintSortMode, printsApi } from "../../api/prints";
 import { type Collection, collectionsApi } from "../../api/collections";
 import { type PreviewMode } from "../../api/settings";
+import { tagsApi } from "../../api/tags";
 import type { AuthUser } from "../../api/auth";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
 import { usePageHeader } from "../../components/Layout/PageHeaderContext";
@@ -16,6 +17,7 @@ import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
 import ModelCard from "../ModelsPage/ModelCard";
 import SortTabs from "../ModelsPage/SortTabs";
 import CollectionCard from "../CollectionsPage/CollectionCard";
+import TagBookmarkButton from "./TagBookmarkButton";
 
 const PAGE_SIZE = 24;
 
@@ -23,21 +25,25 @@ type Props = {
   theme: ResolvedTheme;
   previewMode: PreviewMode;
   onUnauthorized?: () => void;
+  onBookmarksChanged?: () => void;
   viewer?: AuthUser | null;
 };
 
 /** Same list/grid/sort/infinite-scroll shape as CollectionDetailPage, but for a tag: tags aren't
- *  entities with their own id/description/menu, just a string carried in the URL, so there's no
+ *  entities with their own id/description, just a string carried in the URL, so there's no
  *  fetch-by-id step (or "not found" state) -- the page header title comes directly from the
  *  route param and the list is prints filtered by that tag, plus (since collections can carry
- *  tags too) any collections carrying it, shown first in the same grid as CollectionCards. */
-export default function TagDetailPage({ theme, previewMode, onUnauthorized, viewer }: Props) {
+ *  tags too) any collections carrying it, shown first in the same grid as CollectionCards. The
+ *  title row's only action is a bookmark toggle (TagBookmarkButton) -- no dropdown menu, since
+ *  there's nothing else to put in one. */
+export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBookmarksChanged, viewer }: Props) {
   const { tagName } = useParams<{ tagName: string }>();
   const tag = tagName ? decodeURIComponent(tagName) : "";
   const { t } = useTranslation(["models", "common"]);
   const [items, setItems] = useState<Print[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
+  const [bookmarked, setBookmarked] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
@@ -54,7 +60,17 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, view
     });
   };
 
-  usePageHeader({ title: tag ? t("models:tags.detail.title", { name: tag }) : undefined });
+  usePageHeader({
+    title: tag ? t("models:tags.detail.title", { name: tag }) : undefined,
+    actions: tag ? (
+      <TagBookmarkButton
+        tag={tag}
+        bookmarked={bookmarked}
+        onUnauthorized={onUnauthorized}
+        onBookmarksChanged={onBookmarksChanged}
+      />
+    ) : undefined,
+  });
 
   const handleError = (err: unknown, message?: string) => {
     if (err instanceof UnauthorizedError) {
@@ -87,6 +103,21 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, view
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tag, sortMode]);
+
+  useEffect(() => {
+    if (!tag) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const bookmarks = await tagsApi.listBookmarked();
+        if (!cancelled) setBookmarked(bookmarks.includes(tag));
+      } catch (err) {
+        if (!cancelled) handleError(err);
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tag]);
 
   // Collections list has no server-side tag filter (and isn't paginated -- CollectionsPage
   // fetches all of them too), so this filters client-side and refetches only on tag change, not

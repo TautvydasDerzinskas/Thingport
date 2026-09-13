@@ -28,6 +28,7 @@ type AppLayoutProps = {
   categoryId: string | null;
   onSelectCategory: (id: string | null) => void;
   onPrintsChanged: () => void;
+  tagBookmarksVersion: number;
   onUnauthorized: () => void;
   isAdmin: boolean;
   onOpenProfile: () => void;
@@ -63,6 +64,9 @@ function useRouteChrome() {
     // Overridden by CollectionDetailPage's usePageHeader once the collection loads.
     title = t("models:collections.pageTitle");
     onBack = goBack;
+  } else if (path === "/models/tags") {
+    title = t("models:tags.pageTitle");
+    onBack = () => navigate("/");
   } else if (path.startsWith("/models/tags/")) {
     // The tag name is already known from the URL (unlike a collection, a tag isn't a fetched
     // entity), so this is set directly rather than waiting on TagDetailPage's usePageHeader --
@@ -124,6 +128,7 @@ function AppLayoutShell({
   categoryId,
   onSelectCategory,
   onPrintsChanged,
+  tagBookmarksVersion,
   onUnauthorized,
   isAdmin,
   onOpenProfile,
@@ -152,7 +157,7 @@ function AppLayoutShell({
           display: "flex",
         }}
       >
-        <Sidebar isAdmin={isAdmin} onSelectCategory={onSelectCategory} />
+        <Sidebar isAdmin={isAdmin} onSelectCategory={onSelectCategory} tagBookmarksVersion={tagBookmarksVersion} />
         <Box component="main" sx={{ flex: 1, p: 2, pt: 0 }}>
           {apiUp === false && (
             <Alert severity="error" sx={{ mb: 1.5 }}>
