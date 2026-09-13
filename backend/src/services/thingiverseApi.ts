@@ -145,6 +145,23 @@ async function fetchThingiverseApiJson(path: string, accessToken: string): Promi
   return data;
 }
 
+/** Called before storing an Access Token pasted into Admin Settings > Thingiverse (see
+ * routes/settings.ts' POST /settings/thingiverse), so a mistyped/revoked token is rejected up
+ * front instead of only surfacing as a failed import later. Reuses the same fetch path (and its
+ * FlareSolverr/rate-limit handling) as every other Thingiverse call here, against /users/me --
+ * the official API's own "who am I" endpoint, so a success means the token is genuinely valid,
+ * not just well-formed. A transient Cloudflare rate-limit (ThingiverseRateLimitError) is treated
+ * the same as an invalid token here: either way this specific check can't confirm the token
+ * right now, and the caller's message covers both cases rather than guessing which one it was. */
+export async function verifyThingiverseAccessToken(accessToken: string): Promise<boolean> {
+  try {
+    const data = await fetchThingiverseApiJson("/users/me", accessToken);
+    return isRecord(data);
+  } catch {
+    return false;
+  }
+}
+
 export type ThingiversePlateFile = { name: string; url: string };
 export type ThingiverseGalleryImage = { name: string; url: string };
 

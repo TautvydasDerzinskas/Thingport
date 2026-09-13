@@ -27,6 +27,7 @@ import {
 } from "../services/printService";
 import { getUserMakerworldCookie, setUserMakerworldCookie } from "../services/makerworldCookieService";
 import { verifyMakerworldCookie } from "../services/makerworldCloudApi";
+import { verifyThingiverseAccessToken } from "../services/thingiverseApi";
 import { SLICER_IDS, getUserSlicer, setUserSlicer } from "../services/slicerPreferenceService";
 import { THEME_SELECTIONS, getUserTheme, setUserTheme } from "../services/themePreferenceService";
 import { checkForUpdates } from "../services/versionService";
@@ -143,8 +144,17 @@ router.post(
   requireAdmin,
   asyncHandler(async (req, res) => {
     const body = parseBody(thingiverseSettingsSchema, req.body);
+    const trimmed = (body.access_token ?? "").trim();
+    // Only a new, non-empty token needs testing -- clearing it always succeeds, since there's
+    // nothing to verify a logged-out state against.
+    if (trimmed && !(await verifyThingiverseAccessToken(trimmed))) {
+      throw new HttpError(
+        422,
+        "Couldn't verify this Thingiverse Access Token -- it may be invalid, revoked, or Thingiverse is rate-limiting this instance right now. Double-check the token at thingiverse.com/apps/create and try again.",
+      );
+    }
     await setThingiverseAccessToken(body.access_token);
-    res.json({ configured: Boolean(body.access_token && body.access_token.trim()) });
+    res.json({ configured: Boolean(trimmed) });
   }),
 );
 
