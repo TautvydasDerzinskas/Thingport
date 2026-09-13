@@ -13,10 +13,9 @@ from the places where you discover them.
   <img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/frontend-image.yml/badge.svg" alt="Frontend">
   <img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/backend-image.yml/badge.svg" alt="Backend">
   <img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/bridge-release.yml/badge.svg" alt="Slicer Bridge">
-  <img src="https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white" alt="Docker">
-  <img src="https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black" alt="React">
-  <img src="https://img.shields.io/badge/Three.js-000000?logo=three.js&logoColor=white" alt="Three.js">
-  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL">
+  <img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/extension-release.yml/badge.svg" alt="Thingport Grab">
+  <a href="https://github.com/sponsors/TautvydasDerzinskas"><img src="https://img.shields.io/github/sponsors/TautvydasDerzinskas" alt="GitHub Sponsors"></a>
+  <a href="https://buymeacoffee.com/TautvydasDerzinskas"><img src="https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-FFDD00?logo=buy-me-a-coffee&logoColor=black" alt="Buy Me A Coffee"></a>
 </p>
 
 </div>
@@ -70,6 +69,17 @@ Instead of having your collection scattered across different websites and your f
     <td width="33%"><a href="frontend/src/assets/screenshots/12_extension_makerworld.png" target="_blank"><img src="frontend/src/assets/screenshots/12_extension_makerworld.png" width="100%" alt="Thingport Grab on MakerWorld"></a><br><sub><b>Thingport Grab — MakerWorld</b></sub></td>
   </tr>
 </table>
+
+## Companion Apps
+
+Thingport ships two small companion tools, each downloadable from the in-app Download page or GitHub Releases:
+
+- **[Thingport Bridge](bridge/README.md)** — a lightweight desktop helper that makes "Open in {Slicer}" work for slicers (Bambu Studio, PrusaSlicer, Cura) whose own URL-protocol handlers won't accept a link from a self-hosted domain.
+- **[Thingport Grab](extension/README.md)** — a Chrome extension that imports MakerWorld, Thingiverse, and Printables models straight from their own pages, without leaving the site (see the screenshots above).
+
+## Provider Setup
+
+Printables imports work with no setup. MakerWorld and Thingiverse each need a credential from your own account first -- see **[docs/PROVIDER_SETUP.md](docs/PROVIDER_SETUP.md)** for how to create a Thingiverse Access Token and how to grab a MakerWorld session cookie.
 
 ## Installation
 
@@ -215,15 +225,6 @@ docker compose up -d
 This builds the images locally rather than pulling from GHCR.
 
 </details>
-
-## Components
-
-| Component | Description |
-|-----------|-------------|
-| `frontend` | React web application with Three.js 3D viewer |
-| `backend` | Node.js / Express API |
-| `db` | PostgreSQL database |
-| `flaresolverr` | Web request / anti-bot handling |
 
 ## Support
 
