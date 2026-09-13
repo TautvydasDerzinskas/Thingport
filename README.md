@@ -48,7 +48,28 @@ Instead of having your collection scattered across different websites and your f
 
 ## Screenshots
 
-<!-- Screenshots will be added here -->
+<table>
+  <tr>
+    <td width="33%"><img src="frontend/src/assets/screenshots/01_dashboard.png" width="100%" alt="Dashboard"><br><sub><b>Dashboard</b></sub></td>
+    <td width="33%"><img src="frontend/src/assets/screenshots/02_models.png" width="100%" alt="Models"><br><sub><b>Models</b></sub></td>
+    <td width="33%"><img src="frontend/src/assets/screenshots/03_model_details.png" width="100%" alt="Model details"><br><sub><b>Model Details</b></sub></td>
+  </tr>
+  <tr>
+    <td width="33%"><img src="frontend/src/assets/screenshots/04_model_details_3d_preview.png" width="100%" alt="3D preview"><br><sub><b>3D Preview</b></sub></td>
+    <td width="33%"><img src="frontend/src/assets/screenshots/05_collections.png" width="100%" alt="Collections"><br><sub><b>Collections</b></sub></td>
+    <td width="33%"><img src="frontend/src/assets/screenshots/06_tags.png" width="100%" alt="Tags"><br><sub><b>Tags</b></sub></td>
+  </tr>
+  <tr>
+    <td width="33%"><img src="frontend/src/assets/screenshots/07_downloads.png" width="100%" alt="Downloads"><br><sub><b>Downloads</b></sub></td>
+    <td width="33%"><img src="frontend/src/assets/screenshots/08_my_models.png" width="100%" alt="My models"><br><sub><b>My Models</b></sub></td>
+    <td width="33%"><img src="frontend/src/assets/screenshots/09_dark_theme.png" width="100%" alt="Dark theme"><br><sub><b>Dark Theme</b></sub></td>
+  </tr>
+  <tr>
+    <td width="33%"><img src="frontend/src/assets/screenshots/10_extension_printables.png" width="100%" alt="Thingport Grab on Printables"><br><sub><b>Thingport Grab — Printables</b></sub></td>
+    <td width="33%"><img src="frontend/src/assets/screenshots/11_extension_thingyverse.png" width="100%" alt="Thingport Grab on Thingiverse"><br><sub><b>Thingport Grab — Thingiverse</b></sub></td>
+    <td width="33%"><img src="frontend/src/assets/screenshots/12_extension_makerworld.png" width="100%" alt="Thingport Grab on MakerWorld"><br><sub><b>Thingport Grab — MakerWorld</b></sub></td>
+  </tr>
+</table>
 
 ## Installation
 
@@ -89,16 +110,3 @@ docker compose -f docker-compose.deploy.yml up -d
 | `db` | PostgreSQL database |
 | `flaresolverr` | Web request / anti-bot handling |
 
-## Tech Stack
-
-- **Frontend:** React, TypeScript, Vite, Material UI, Three.js
-- **Backend:** Node.js, TypeScript, Express, Prisma
-- **Database:** PostgreSQL
-- **3D rendering:** Three.js / OpenCTM
-- **Deployment:** Docker Compose
-- **Testing:** Vitest
-- **Linting:** Oxlint
-
-## License
-
-See [LICENSE](LICENSE) for license information.
