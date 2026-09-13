@@ -66,18 +66,19 @@ export default function UsersPage({ onUnauthorized }: Props) {
               <TableHead>
                 <TableRow>
                   <TableCell>{t("adminSettings.users.columnEmail")}</TableCell>
+                  <TableCell>{t("adminSettings.users.columnCreated")}</TableCell>
                   <TableCell>{t("adminSettings.users.columnDisplayName")}</TableCell>
                   <TableCell>{t("adminSettings.users.columnRole")}</TableCell>
                   <TableCell align="right">{t("adminSettings.users.columnModels")}</TableCell>
-                  <TableCell>{t("adminSettings.users.columnMakerworld")}</TableCell>
                   <TableCell align="right">{t("adminSettings.users.columnCollections")}</TableCell>
-                  <TableCell>{t("adminSettings.users.columnCreated")}</TableCell>
+                  <TableCell>{t("adminSettings.users.columnMakerworld")}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {users.map((u) => (
                   <TableRow key={u.id} hover>
                     <TableCell>{u.email}</TableCell>
+                    <TableCell>{formatDate(u.created_at)}</TableCell>
                     <TableCell>{u.display_name}</TableCell>
                     <TableCell>
                       <Chip
@@ -88,6 +89,7 @@ export default function UsersPage({ onUnauthorized }: Props) {
                       />
                     </TableCell>
                     <TableCell align="right">{u.print_count}</TableCell>
+                    <TableCell align="right">{u.collection_count}</TableCell>
                     <TableCell>
                       <Chip
                         label={u.makerworld_connected ? t("adminSettings.users.makerworldConnected") : t("adminSettings.users.makerworldNotConnected")}
@@ -96,8 +98,6 @@ export default function UsersPage({ onUnauthorized }: Props) {
                         variant={u.makerworld_connected ? "filled" : "outlined"}
                       />
                     </TableCell>
-                    <TableCell align="right">{u.collection_count}</TableCell>
-                    <TableCell>{formatDate(u.created_at)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

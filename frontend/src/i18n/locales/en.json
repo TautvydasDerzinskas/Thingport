@@ -144,7 +144,7 @@
       },
       "makerworld": {
         "heading": "MakerWorld",
-        "description": "Required to import links or models from MakerWorld. Paste the Cookie header from a logged-in makerworld.com request -- saved to your account, so it follows you across devices.",
+        "description": "Required to import links or models from MakerWorld. Paste the Cookie header from a logged-in makerworld.com request.",
         "added": "Added",
         "notAdded": "Not added",
         "add": "Add",
@@ -304,7 +304,7 @@
       "thingiverse": {
         "heading": "Thingiverse Access Token",
         "subtitle": "Instance-wide credential for the official Thingiverse Developer API.",
-        "helpText": "Create an app at thingiverse.com/apps/create (any type, e.g. \"Desktop\") and paste the Access Token it shows you. This is different from your Thingiverse login.",
+        "helpText": "Create an app at thingiverse.com/apps/create (any type, e.g. \"Desktop\") and paste the Access Token it shows you.",
         "statusConfigured": "An Access Token is currently configured.",
         "statusNotConfigured": "No Access Token is configured yet -- Thingiverse imports will fail until one is set.",
         "tokenLabel": "Access Token",
