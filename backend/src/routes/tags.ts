@@ -4,6 +4,7 @@ import { prisma } from "../db";
 import { requireAuth } from "../auth";
 import { HttpError } from "../utils/fileUtils";
 import { asyncHandler } from "../utils/asyncHandler";
+import { normalizeTag } from "../utils/tagNormalization";
 
 const router = Router();
 router.use(requireAuth);
@@ -31,7 +32,7 @@ router.get(
     const counts = new Map<string, number>();
     for (const print of prints) {
       for (const tag of print.tags) {
-        const cleaned = tag.trim();
+        const cleaned = normalizeTag(tag);
         if (!cleaned) continue;
         counts.set(cleaned, (counts.get(cleaned) ?? 0) + 1);
       }
@@ -64,7 +65,7 @@ router.get(
 router.post(
   "/tags/:tag/bookmark",
   asyncHandler(async (req, res) => {
-    const tag = req.params.tag.trim();
+    const tag = normalizeTag(req.params.tag);
     if (!tag) throw new HttpError(400, "Tag is required");
     const user = await prisma.user.findUnique({ where: { id: req.userId! }, select: { bookmarkedTags: true } });
     const next = user?.bookmarkedTags.includes(tag) ? user.bookmarkedTags : [...(user?.bookmarkedTags ?? []), tag];
@@ -76,7 +77,7 @@ router.post(
 router.delete(
   "/tags/:tag/bookmark",
   asyncHandler(async (req, res) => {
-    const tag = req.params.tag.trim();
+    const tag = normalizeTag(req.params.tag);
     const user = await prisma.user.findUnique({ where: { id: req.userId! }, select: { bookmarkedTags: true } });
     const next = (user?.bookmarkedTags ?? []).filter((t) => t !== tag);
     await prisma.user.update({ where: { id: req.userId! }, data: { bookmarkedTags: next } });

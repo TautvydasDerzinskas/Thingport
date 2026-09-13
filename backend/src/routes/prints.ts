@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "../db";
 import { requireAuth } from "../auth";
 import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
+import { normalizeTags } from "../utils/tagNormalization";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { modelUpload } from "../uploadMiddleware";
@@ -440,7 +441,7 @@ router.post(
     if (!print) throw new HttpError(404, "Print not found");
     const updated = await prisma.print.update({
       where: { id: print.id },
-      data: { tags: body.tags.map((t) => t.trim()).filter(Boolean) },
+      data: { tags: normalizeTags(body.tags) },
     });
     const plates = await prisma.plate.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } });
     await relocatePrint(updated, plates);

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "../db";
 import { requireAuth } from "../auth";
 import { HttpError } from "../utils/fileUtils";
+import { normalizeTags } from "../utils/tagNormalization";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { validateParentCategory } from "../services/categoryService";
@@ -65,7 +66,7 @@ router.post(
     const body = parseBody(categorySchema, req.body);
     const parentId = await validateParentCategory(req.userId!, body.parent_id ?? null);
     const category = await prisma.category.create({
-      data: { userId: req.userId!, name: body.name, tags: body.tags.map((t) => t.trim()).filter(Boolean), parentId },
+      data: { userId: req.userId!, name: body.name, tags: normalizeTags(body.tags), parentId },
     });
     res.json(toCategoryOut(category));
   }),
@@ -80,7 +81,7 @@ router.patch(
     const parentId = await validateParentCategory(req.userId!, body.parent_id ?? null, category.id);
     const updated = await prisma.category.update({
       where: { id: category.id },
-      data: { name: body.name, tags: body.tags.map((t) => t.trim()).filter(Boolean), parentId },
+      data: { name: body.name, tags: normalizeTags(body.tags), parentId },
     });
     await reorganizeManagedPrints(undefined, req.userId);
     res.json(toCategoryOut(updated));

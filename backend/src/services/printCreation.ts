@@ -4,6 +4,7 @@ import path from "node:path";
 import { prisma } from "../db";
 import { STORAGE } from "../config";
 import { HttpError, sanitizeFilename, guessMimeFromPath, mimeFromContentType } from "../utils/fileUtils";
+import { normalizeTags } from "../utils/tagNormalization";
 import { inspectPreparedPrint } from "./preparedPrint";
 import {
   availableModelName,
@@ -179,7 +180,7 @@ export async function createPrint(
       notes: meta.notes ?? null,
       creator: meta.creator?.trim() || null,
       collection: meta.collection?.trim() || null,
-      tags: (meta.tags || []).map((t) => t.trim()).filter(Boolean),
+      tags: normalizeTags(meta.tags || []),
       categoryId: meta.categoryId ?? null,
       authorId: meta.authorId ?? null,
       sourceProvider: meta.sourceProvider ?? null,

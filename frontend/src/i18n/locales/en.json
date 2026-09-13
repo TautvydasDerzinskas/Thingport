@@ -1141,6 +1141,8 @@
       "pageTitle": "Tags",
       "sortByName": "Name",
       "empty": "No tags yet.",
+      "hideRarelyUsed": "Hide tags used once",
+      "allHidden": "No tags with 2+ models. Turn off the filter above to see all tags.",
       "bookmarkTag": "Bookmark tag",
       "unbookmarkTag": "Remove bookmark",
       "bookmarkFailed": "Failed to update bookmark. Please try again.",

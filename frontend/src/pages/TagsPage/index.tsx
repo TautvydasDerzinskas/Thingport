@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import CircularProgress from "@mui/material/CircularProgress";
-import IconButton from "@mui/material/IconButton";
+import Chip from "@mui/material/Chip";
+import Switch from "@mui/material/Switch";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import { UnauthorizedError } from "../../api/client";
 import { type TagSortMode, type TagSummary, tagsApi } from "../../api/tags";
+import { dividerBorderColor } from "../../theme";
 import TagSortTabs from "./TagSortTabs";
 
 type Props = {
@@ -17,9 +19,17 @@ type Props = {
   onBookmarksChanged?: () => void;
 };
 
-/** The standalone Tags list: every tag across the user's library as a small row --
- *  "<name> (<count>)" plus a bookmark toggle -- sorted Popular (most models, default) or Name.
- *  Bookmarking surfaces the tag in the sidebar's own quick-access list (see Sidebar). */
+/** The standalone Tags list: every tag across the user's library as a small chip --
+ *  "<name> (<count>)" plus a bookmark toggle (Chip's own deleteIcon slot, repurposed -- its click
+ *  target is already separate from the chip's own onClick, exactly the two independent actions
+ *  this needs) -- wrapping left-to-right instead of one per row, so far more fit on screen at
+ *  once. Colored like the sidebar's own inactive nav rows (thingport.navInactiveText) with the
+ *  same divider-in-light/invisible-in-dark border used by Sidebar/CategoriesPanel/ModelSidePanel
+ *  (dividerBorderColor), so this reads as an extension of that same nav chrome rather than a
+ *  one-off style. Sorted Popular (most models, default) or Name. Bookmarking surfaces the tag in
+ *  the sidebar's own quick-access list (see Sidebar). A "hide rarely-used tags" switch (on by
+ *  default) filters out anything used by fewer than 2 models -- purely a client-side filter over
+ *  the same already-fetched list, not a separate API call. */
 export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const navigate = useNavigate();
@@ -27,6 +37,8 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
   const [loading, setLoading] = useState(true);
   const [sortMode, setSortMode] = useState<TagSortMode>("popular");
   const [pendingTag, setPendingTag] = useState<string | null>(null);
+  const [hideRarelyUsed, setHideRarelyUsed] = useState(true);
+  const visibleTags = hideRarelyUsed ? tags.filter(tag => tag.count >= 2) : tags;
 
   const handleError = (err: unknown, message?: string) => {
     if (err instanceof UnauthorizedError) {
@@ -85,48 +97,50 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
   }
 
   return (
-    <Stack spacing={2} sx={{ maxWidth: 640 }}>
-      <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+    <Stack spacing={2}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between">
+        <FormControlLabel
+          control={
+            <Switch
+              size="small"
+              checked={hideRarelyUsed}
+              onChange={(e) => setHideRarelyUsed(e.target.checked)}
+            />
+          }
+          label={<Typography variant="body2" color="text.secondary">{t("models:tags.hideRarelyUsed")}</Typography>}
+        />
         <TagSortTabs value={sortMode} onChange={setSortMode} />
-      </Box>
+      </Stack>
 
-      {tags.length ? (
-        <Stack spacing={0.5}>
-          {tags.map(tag => (
-            <Stack
+      {visibleTags.length ? (
+        <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1}>
+          {visibleTags.map(tag => (
+            <Chip
               key={tag.name}
-              direction="row"
-              alignItems="center"
-              justifyContent="space-between"
+              size="small"
+              clickable
+              variant="outlined"
               onClick={() => navigate(`/models/tags/${encodeURIComponent(tag.name)}`)}
+              label={`${tag.name} (${tag.count})`}
+              deleteIcon={tag.bookmarked ? <BookmarkIcon fontSize="inherit" /> : <BookmarkBorderIcon fontSize="inherit" />}
+              onDelete={() => void toggleBookmark(tag)}
+              aria-label={tag.bookmarked ? (t("models:tags.unbookmarkTag") ?? undefined) : (t("models:tags.bookmarkTag") ?? undefined)}
               sx={{
-                px: 1.5,
-                py: 0.75,
-                borderRadius: 1.5,
-                cursor: "pointer",
-                "&:hover": { bgcolor: "action.hover" },
+                color: (theme) => theme.thingport.navInactiveText,
+                borderColor: dividerBorderColor,
+                "& .MuiChip-deleteIcon": {
+                  color: tag.bookmarked ? "primary.main" : "inherit",
+                  "&:hover": { color: tag.bookmarked ? "primary.main" : "inherit" },
+                },
               }}
-            >
-              <Typography variant="body2" noWrap sx={{ minWidth: 0 }}>
-                {tag.name}
-                <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 0.75 }}>
-                  ({tag.count})
-                </Typography>
-              </Typography>
-              <IconButton
-                size="small"
-                disabled={pendingTag === tag.name}
-                onClick={(e) => { e.stopPropagation(); void toggleBookmark(tag); }}
-                aria-label={tag.bookmarked ? t("models:tags.unbookmarkTag") : t("models:tags.bookmarkTag")}
-              >
-                {tag.bookmarked ? <BookmarkIcon fontSize="small" color="primary" /> : <BookmarkBorderIcon fontSize="small" />}
-              </IconButton>
-            </Stack>
+            />
           ))}
         </Stack>
       ) : (
         <Stack alignItems="center" spacing={1} sx={{ py: 8, color: "text.secondary" }}>
-          <Typography variant="body2">{t("models:tags.empty")}</Typography>
+          <Typography variant="body2">
+            {tags.length ? t("models:tags.allHidden") : t("models:tags.empty")}
+          </Typography>
         </Stack>
       )}
     </Stack>

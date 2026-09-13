@@ -1142,6 +1142,8 @@
       "pageTitle": "Žymos",
       "sortByName": "Pavadinimas",
       "empty": "Kol kas nėra žymų.",
+      "hideRarelyUsed": "Slėpti vieną kartą naudotas žymas",
+      "allHidden": "Nėra žymų su 2+ modeliais. Išjunkite filtrą aukščiau, kad matytumėte visas žymas.",
       "bookmarkTag": "Įsiminti žymą",
       "unbookmarkTag": "Pašalinti iš įsimintų",
       "bookmarkFailed": "Nepavyko atnaujinti įsimintos žymos. Bandykite dar kartą.",

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "../db";
 import { requireAuth } from "../auth";
 import { HttpError } from "../utils/fileUtils";
+import { normalizeTags } from "../utils/tagNormalization";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import {
@@ -69,7 +70,7 @@ router.post(
         name: body.name,
         nameNormalized: normalizeCollectionName(body.name),
         description: body.description?.trim() || null,
-        tags: body.tags.map((t) => t.trim()).filter(Boolean),
+        tags: normalizeTags(body.tags),
       },
     });
     res.json(toCollectionOut(collection, 0, []));
@@ -115,7 +116,7 @@ router.patch(
         name: body.name,
         nameNormalized: normalizeCollectionName(body.name),
         description: body.description?.trim() || null,
-        tags: body.tags.map((t) => t.trim()).filter(Boolean),
+        tags: normalizeTags(body.tags),
       },
     });
     const itemCount = await prisma.collectionItem.count({ where: { collectionId: updated.id } });
