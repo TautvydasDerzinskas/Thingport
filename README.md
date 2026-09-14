@@ -241,3 +241,7 @@ If Thingport is useful to you, consider supporting its development:
 - [GitHub Sponsors](https://github.com/sponsors/TautvydasDerzinskas)
 - [Buy Me a Coffee](https://buymeacoffee.com/TautvydasDerzinskas)
 
+## License
+
+Thingport is licensed under the [MIT License](LICENSE).
+

@@ -1,6 +1,7 @@
 {
   "name": "thingport",
   "private": true,
+  "license": "MIT",
   "devDependencies": {
     "husky": "^9.1.7",
     "lint-staged": "^15.2.10"
