@@ -18,7 +18,6 @@ this on SCALE, depending on your version:
    - `APPDATA_PATH` -- a dataset on one of your pools, e.g. `/mnt/tank/apps/thingport`
      (replace `tank` with your actual pool name)
    - `AUTH_SECRET` -- any random string, e.g. `openssl rand -hex 32` from a terminal
-   - `INITIAL_ADMIN_EMAIL` -- the email you'll register with; that account becomes admin
    - `POSTGRES_PASSWORD` -- any password
 4. **Save/Install**.
 
@@ -44,7 +43,7 @@ already have configured for that pool.
 ## Open it
 
 Once all 4 containers show healthy/running, open `http://<your-truenas-ip>:<WEB_PORT>`
-(default port 80).
+(default port 80). The first account you register becomes the admin account.
 
 ## Notes
 

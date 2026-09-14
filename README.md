@@ -136,7 +136,6 @@ services:
     environment:
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1000}
-      - INITIAL_ADMIN_EMAIL=${INITIAL_ADMIN_EMAIL:-}
       - AUTH_SECRET=${AUTH_SECRET:-changeme-secret}
       - AUTH_TOKEN_TTL=${AUTH_TOKEN_TTL:-43200}
       - PUBLIC_URL=${PUBLIC_URL:-}
@@ -188,8 +187,6 @@ networks:
 # Required
 # AUTH_SECRET signs login tokens -- use your own random value
 AUTH_SECRET=b1193c7014e833a063f750d6e4644d615e90e6ee81dbde619e1818e9675a3374
-# the first account to register with this email becomes admin
-INITIAL_ADMIN_EMAIL=you@example.com
 POSTGRES_PASSWORD=change-this-password
 
 # Optional (defaults shown)
@@ -220,7 +217,8 @@ Then start it:
 docker compose up -d
 ```
 
-Thingport will be available at `http://<host>:<WEB_PORT>` (default port 80).
+Thingport will be available at `http://<host>:<WEB_PORT>` (default port 80). The first
+account you register becomes the admin account.
 
 <details>
 <summary>Building from source instead</summary>

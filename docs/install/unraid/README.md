@@ -27,7 +27,6 @@ plugin.
 3. Copy [`.env.example`](.env.example) into the stack's environment variables (Compose
    Manager exposes an `.env` editor per stack) and fill in:
    - `AUTH_SECRET` -- any random string, e.g. `openssl rand -hex 32` from a terminal
-   - `INITIAL_ADMIN_EMAIL` -- the email you'll register with; that account becomes admin
    - `POSTGRES_PASSWORD` -- any password
 4. **Compose Up**.
 
@@ -41,7 +40,7 @@ appdata share.
 Once all 4 containers show healthy/running, open `http://<your-unraid-ip>:<WEB_PORT>`
 (default port 80). The frontend and backend containers also get a WebUI button and the
 Thingport icon in the Docker tab, via the `net.unraid.docker.*` labels already set in the
-compose file.
+compose file. The first account you register becomes the admin account.
 
 ## Notes
 

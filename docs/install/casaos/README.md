@@ -17,7 +17,6 @@ the full stack into that editor or running compose yourself over SSH.
 2. Paste in [`docker-compose.yml`](docker-compose.yml) from this folder.
 3. Copy [`.env.example`](.env.example) into the environment variables section and fill in:
    - `AUTH_SECRET` -- any random string, e.g. `openssl rand -hex 32` from a terminal
-   - `INITIAL_ADMIN_EMAIL` -- the email you'll register with; that account becomes admin
    - `POSTGRES_PASSWORD` -- any password
 4. Install/submit the form.
 
@@ -41,7 +40,7 @@ app alongside your other apps' data.
 Once all 4 containers show healthy/running, open `http://<your-casaos-ip>:<WEB_PORT>`
 (default port 80). If you used Option A, CasaOS should also pick up the exposed port and
 add a dashboard tile for it automatically; if not, add one manually from the app's
-settings.
+settings. The first account you register becomes the admin account.
 
 ## Notes
 

@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { AUTH_TOKEN_TTL, INITIAL_ADMIN_EMAIL } from "../config";
+import { AUTH_TOKEN_TTL } from "../config";
 import { createToken, requireAuth } from "../auth";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
@@ -41,12 +41,11 @@ router.post(
     const body = parseBody(registerSchema, req.body);
     const email = body.email.toLowerCase();
 
-    // The designated initial-admin address may always create the first admin account, even
-    // if registrations are otherwise disabled -- an operator can never lock themselves out of
+    // The very first account on the instance always becomes admin and may register even if
+    // registrations are otherwise disabled -- an operator can never lock themselves out of
     // bootstrapping the instance. Once any admin exists, this exception no longer applies.
-    const isInitialAdminEmail = Boolean(INITIAL_ADMIN_EMAIL) && email === INITIAL_ADMIN_EMAIL;
     const adminExists = (await prisma.user.count({ where: { role: "ADMIN" } })) > 0;
-    const bootstrapping = isInitialAdminEmail && !adminExists;
+    const bootstrapping = !adminExists;
 
     if (!bootstrapping && !(await getAllowRegistrations(true))) {
       throw new HttpError(403, "Registration is currently disabled");
@@ -56,7 +55,7 @@ router.post(
     }
 
     const passwordHash = await bcrypt.hash(body.password, PASSWORD_HASH_COST);
-    const role: Role = isInitialAdminEmail ? "ADMIN" : "MEMBER";
+    const role: Role = bootstrapping ? "ADMIN" : "MEMBER";
     // Bootstrapping the very first (admin) account always skips verification -- SMTP can't have
     // been configured yet by an operator who isn't able to sign in until this account exists.
     // Otherwise, email verification only actually happens when SMTP is configured; unconfigured
@@ -105,23 +104,11 @@ router.post(
   asyncHandler(async (req, res) => {
     const body = parseBody(loginSchema, req.body);
     const email = body.email.toLowerCase();
-    let user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email } });
     // Same generic message whether the email doesn't exist or the password is wrong -- don't
     // let a login attempt be used to enumerate registered addresses.
     if (!user || !(await bcrypt.compare(body.password, user.passwordHash))) {
       throw new HttpError(401, "Invalid email or password");
-    }
-
-    // Mirrors /register's bootstrap exception: if this account registered as the initial-admin
-    // address before INITIAL_ADMIN_EMAIL was actually visible to the process (a common ordering
-    // issue -- e.g. a compose .env added after the container was first created), it would be
-    // stuck as MEMBER forever since role is otherwise only ever set at creation. Promote it here
-    // too, under the same "only while no admin exists yet" guard.
-    if (user.role !== "ADMIN" && Boolean(INITIAL_ADMIN_EMAIL) && email === INITIAL_ADMIN_EMAIL) {
-      const adminExists = (await prisma.user.count({ where: { role: "ADMIN" } })) > 0;
-      if (!adminExists) {
-        user = await prisma.user.update({ where: { id: user.id }, data: { role: "ADMIN" } });
-      }
     }
 
     if (!user.emailVerified) {

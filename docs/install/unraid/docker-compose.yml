@@ -5,7 +5,7 @@
 #   1. Docker tab -> Compose -> Add New Stack -> name it "thingport"
 #   2. Paste this file as the stack's docker-compose.yml
 #   3. Copy .env.example (next to this file) to the stack's .env and fill in the
-#      required values (AUTH_SECRET, INITIAL_ADMIN_EMAIL, POSTGRES_PASSWORD)
+#      required values (AUTH_SECRET, POSTGRES_PASSWORD)
 #   4. Compose Up
 #
 # See docs/install/unraid/README.md in the Thingport repo for the full walkthrough.
@@ -51,7 +51,6 @@ services:
       # Unraid's conventional "nobody:users" ids -- change if your appdata share uses different ownership
       - PUID=${PUID:-99}
       - PGID=${PGID:-100}
-      - INITIAL_ADMIN_EMAIL=${INITIAL_ADMIN_EMAIL:-}
       - AUTH_SECRET=${AUTH_SECRET:-changeme-secret}
       - AUTH_TOKEN_TTL=${AUTH_TOKEN_TTL:-43200}
       - PUBLIC_URL=${PUBLIC_URL:-}

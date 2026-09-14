@@ -39,10 +39,6 @@ export const PUBLIC_URL = (process.env.PUBLIC_URL || "").trim().replace(/\/+$/, 
 export const AUTH_SECRET = process.env.AUTH_SECRET || "changeme-secret";
 export const AUTH_TOKEN_TTL = envInt("AUTH_TOKEN_TTL", 43200);
 export const AUTH_ALGO = "HS256" as const;
-// A user registering with this exact (lowercased) email becomes ADMIN automatically, and may
-// register even while registrations are otherwise disabled, as long as no admin exists yet --
-// the bootstrap escape hatch so an operator can never lock themselves out of the first account.
-export const INITIAL_ADMIN_EMAIL = (process.env.INITIAL_ADMIN_EMAIL || "").trim().toLowerCase();
 
 export const IMPORT_ALLOWED_EXTS = new Set([".stl", ".3mf", ".step", ".stp", ".obj", ".lbrn", ".lbrn2", ".zip"]);
 // Extensions the 3D viewer can actually render as a Plate -- mirrors frontend's MODEL_EXTS
