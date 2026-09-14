@@ -1,18 +1,12 @@
-# Thingport for Unraid
+# Thingport for CasaOS
 #
-# Install with the "Compose Manager" (or "Compose Manager Plus") plugin from Community
-# Applications, or with Unraid's built-in Docker > Compose tab on Unraid 7.2+:
-#   1. Docker tab -> Compose -> Add New Stack -> name it "thingport"
-#   2. Paste this file as the stack's docker-compose.yml
-#   3. Copy .env.example (next to this file) to the stack's .env and fill in the
-#      required values (AUTH_SECRET, INITIAL_ADMIN_EMAIL, POSTGRES_PASSWORD)
-#   4. Compose Up
+# Install via App Store -> "Install a customized app" -> paste this as the Docker
+# Compose source, or SSH in and run `docker compose` directly from a folder under /DATA.
+# See docs/install/casaos/README.md in the Thingport repo for both walkthroughs.
 #
-# See unraid/README.md in the Thingport repo for the full walkthrough.
-#
-# This mirrors the project's root docker-compose.yml, adapted for Unraid conventions:
-# appdata paths under /mnt/user/appdata, and net.unraid.docker.* labels so the frontend
-# and backend containers get Thingport's icon and a WebUI button in the Docker tab.
+# This mirrors the project's root docker-compose.yml, adapted for CasaOS conventions:
+# appdata under /DATA/AppData/thingport, matching where CasaOS keeps app data so it shows
+# up in the Files app and gets picked up by CasaOS's backup tools.
 
 services:
   db:
@@ -23,7 +17,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-thingport}
       - POSTGRES_DB=${POSTGRES_DB:-thingport}
     volumes:
-      - /mnt/user/appdata/thingport/postgres:/var/lib/postgresql/data
+      - /DATA/AppData/thingport/postgres:/var/lib/postgresql/data
     networks:
       - app-net
     healthcheck:
@@ -48,9 +42,9 @@ services:
     container_name: backend
     restart: unless-stopped
     environment:
-      # Unraid's conventional "nobody:users" ids -- change if your appdata share uses different ownership
-      - PUID=${PUID:-99}
-      - PGID=${PGID:-100}
+      # CasaOS's conventional appdata owner -- change if /DATA has different ownership
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
       - INITIAL_ADMIN_EMAIL=${INITIAL_ADMIN_EMAIL:-}
       - AUTH_SECRET=${AUTH_SECRET:-changeme-secret}
       - AUTH_TOKEN_TTL=${AUTH_TOKEN_TTL:-43200}
@@ -71,11 +65,9 @@ services:
       flaresolverr:
         condition: service_started
     volumes:
-      - /mnt/user/appdata/thingport/storage:/app/storage
+      - /DATA/AppData/thingport/storage:/app/storage
     networks:
       - app-net
-    labels:
-      - net.unraid.docker.icon=https://raw.githubusercontent.com/TautvydasDerzinskas/Thingport/main/unraid/icon.png
 
   frontend:
     image: ghcr.io/tautvydasderzinskas/thingport-frontend:latest
@@ -86,9 +78,6 @@ services:
       - backend
     networks:
       - app-net
-    labels:
-      - net.unraid.docker.icon=https://raw.githubusercontent.com/TautvydasDerzinskas/Thingport/main/unraid/icon.png
-      - net.unraid.docker.webui=http://[IP]:[PORT:80]/
 
 networks:
   app-net:

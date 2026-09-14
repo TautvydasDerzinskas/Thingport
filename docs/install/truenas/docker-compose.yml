@@ -2,7 +2,7 @@
 #
 # Install via Apps -> Discover Apps -> Custom App -> "Install via YAML" (SCALE 24.10+),
 # or by SSH'ing in and running `docker compose` directly from a dataset -- see
-# truenas/README.md in the Thingport repo for both walkthroughs.
+# docs/install/truenas/README.md in the Thingport repo for both walkthroughs.
 #
 # Before deploying, set APPDATA_PATH in your .env to a dataset on one of your pools,
 # e.g. /mnt/tank/apps/thingport -- replace "tank" with your actual pool name.

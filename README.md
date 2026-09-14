@@ -87,12 +87,15 @@ Printables imports work with no setup. MakerWorld and Thingiverse each need a cr
 
 Runs entirely from the pre-built images on GHCR -- no local build, no git clone needed. Works on any Docker host, including a NAS (Synology, QNAP, Unraid, etc).
 
-> **Unraid users:** see [unraid/README.md](unraid/README.md) for an Unraid-flavored compose
+> **Unraid users:** see [docs/install/unraid/README.md](docs/install/unraid/README.md) for an Unraid-flavored compose
 > file (appdata paths, Docker tab icons/WebUI) and Compose plugin setup steps.
 >
-> **TrueNAS SCALE users:** see [truenas/README.md](truenas/README.md) for a TrueNAS-flavored
+> **TrueNAS SCALE users:** see [docs/install/truenas/README.md](docs/install/truenas/README.md) for a TrueNAS-flavored
 > compose file (dataset-backed appdata paths) and both the Custom App (YAML) and SSH setup
 > steps.
+>
+> **CasaOS users:** see [docs/install/casaos/README.md](docs/install/casaos/README.md) for a CasaOS-flavored compose
+> file (`/DATA/AppData` appdata paths) and both the customized-app and SSH setup steps.
 
 Create a folder for Thingport and add these two files to it:
 

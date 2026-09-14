@@ -53,8 +53,8 @@ Once all 4 containers show healthy/running, open `http://<your-truenas-ip>:<WEB_
 - If the backend can't write to `$APPDATA_PATH/storage`, check the dataset's owning
   uid/gid (`ls -n` on the parent folder) and set `PUID`/`PGID` in your `.env` to match.
 - Provider setup (MakerWorld / Thingiverse credentials) works the same as any other install
-  -- see [`docs/PROVIDER_SETUP.md`](../docs/PROVIDER_SETUP.md) in the main repo.
+  -- see [`docs/PROVIDER_SETUP.md`](../../PROVIDER_SETUP.md) in the main repo.
 - To pin a specific build instead of `:latest`, see the tagging note in
-  [`docker-compose.deploy.yml`](../docker-compose.deploy.yml) and set `BACKEND_IMAGE`/
+  [`docker-compose.deploy.yml`](../../../docker-compose.deploy.yml) and set `BACKEND_IMAGE`/
   `FRONTEND_IMAGE` accordingly (add those two env vars to the stack and swap the `image:`
   lines to `${BACKEND_IMAGE:-...}` / `${FRONTEND_IMAGE:-...}` if you want that flexibility).

@@ -48,8 +48,8 @@ compose file.
 - **Do not rename the `backend` service/container.** The frontend's nginx config resolves
   it by that exact name over the compose network; renaming it breaks `/api/*` requests.
 - Provider setup (MakerWorld / Thingiverse credentials) works the same as any other install
-  -- see [`docs/PROVIDER_SETUP.md`](../docs/PROVIDER_SETUP.md) in the main repo.
+  -- see [`docs/PROVIDER_SETUP.md`](../../PROVIDER_SETUP.md) in the main repo.
 - To pin a specific build instead of `:latest`, see the tagging note in
-  [`docker-compose.deploy.yml`](../docker-compose.deploy.yml) and set `BACKEND_IMAGE`/
+  [`docker-compose.deploy.yml`](../../../docker-compose.deploy.yml) and set `BACKEND_IMAGE`/
   `FRONTEND_IMAGE` accordingly (add those two env vars to the stack and swap the `image:`
   lines to `${BACKEND_IMAGE:-...}` / `${FRONTEND_IMAGE:-...}` if you want that flexibility).
