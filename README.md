@@ -89,6 +89,10 @@ Runs entirely from the pre-built images on GHCR -- no local build, no git clone 
 
 > **Unraid users:** see [unraid/README.md](unraid/README.md) for an Unraid-flavored compose
 > file (appdata paths, Docker tab icons/WebUI) and Compose plugin setup steps.
+>
+> **TrueNAS SCALE users:** see [truenas/README.md](truenas/README.md) for a TrueNAS-flavored
+> compose file (dataset-backed appdata paths) and both the Custom App (YAML) and SSH setup
+> steps.
 
 Create a folder for Thingport and add these two files to it:
 

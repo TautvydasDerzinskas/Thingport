@@ -1,0 +1,88 @@
+# Thingport for TrueNAS SCALE
+#
+# Install via Apps -> Discover Apps -> Custom App -> "Install via YAML" (SCALE 24.10+),
+# or by SSH'ing in and running `docker compose` directly from a dataset -- see
+# truenas/README.md in the Thingport repo for both walkthroughs.
+#
+# Before deploying, set APPDATA_PATH in your .env to a dataset on one of your pools,
+# e.g. /mnt/tank/apps/thingport -- replace "tank" with your actual pool name.
+#
+# This mirrors the project's root docker-compose.yml, adapted for TrueNAS conventions:
+# appdata under a dataset path instead of named volumes, so the data lives on ZFS and is
+# covered by your existing pool snapshots/replication.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-thingport}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-thingport}
+      - POSTGRES_DB=${POSTGRES_DB:-thingport}
+    volumes:
+      - ${APPDATA_PATH}/postgres:/var/lib/postgresql/data
+    networks:
+      - app-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-thingport}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    restart: unless-stopped
+    environment:
+      - LOG_LEVEL=${FLARESOLVERR_LOG_LEVEL:-info}
+      - TZ=${TZ:-UTC}
+    networks:
+      - app-net
+
+  # Container must stay named "backend" -- the frontend's nginx.conf proxies /api/* to
+  # http://backend:8000 by container/service name, not by an env var.
+  backend:
+    image: ghcr.io/tautvydasderzinskas/thingport-backend:latest
+    container_name: backend
+    restart: unless-stopped
+    environment:
+      # Match these to the owner of APPDATA_PATH if you see permission errors
+      # (`ls -n` on the dataset shows the numeric uid/gid)
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - INITIAL_ADMIN_EMAIL=${INITIAL_ADMIN_EMAIL:-}
+      - AUTH_SECRET=${AUTH_SECRET:-changeme-secret}
+      - AUTH_TOKEN_TTL=${AUTH_TOKEN_TTL:-43200}
+      - PUBLIC_URL=${PUBLIC_URL:-}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_SECURE=${SMTP_SECURE:-false}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_FROM=${SMTP_FROM:-Thingport <no-reply@localhost>}
+      - FILE_STORAGE=/app/storage
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-thingport}:${POSTGRES_PASSWORD:-thingport}@db:5432/${POSTGRES_DB:-thingport}?schema=public
+      - CORS_ORIGINS=${CORS_ORIGINS:-}
+      - FLARESOLVERR_URL=${FLARESOLVERR_URL:-http://flaresolverr:8191/v1}
+    depends_on:
+      db:
+        condition: service_healthy
+      flaresolverr:
+        condition: service_started
+    volumes:
+      - ${APPDATA_PATH}/storage:/app/storage
+    networks:
+      - app-net
+
+  frontend:
+    image: ghcr.io/tautvydasderzinskas/thingport-frontend:latest
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-80}:80"
+    depends_on:
+      - backend
+    networks:
+      - app-net
+
+networks:
+  app-net:
+    driver: bridge
