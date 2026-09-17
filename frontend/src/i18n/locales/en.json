@@ -408,15 +408,23 @@
       "intro": "Companion tools that work alongside your Thingport instance.",
       "extension": {
         "heading": "Thingport Grab",
-        "intro": "A Chrome extension that imports MakerWorld, Thingiverse, and Printables models straight from their own pages.",
+        "intro": "A browser extension that imports MakerWorld, Thingiverse, and Printables models straight from their own pages.",
         "name": "Thingport Grab",
         "modal": {
-          "heading": "Install Thingport Grab",
-          "step1": "Unzip the downloaded file somewhere permanent -- Chrome loads the extension from this folder every time it starts.",
-          "step2": "Open chrome://extensions in a new tab.",
-          "step3": "Turn on Developer mode (top right).",
-          "step4": "Click \"Load unpacked\" and select the unzipped folder.",
-          "step5": "Click the new Thingport icon in your toolbar and enter your instance URL and login."
+          "chrome": {
+            "heading": "Install Thingport Grab",
+            "step1": "Unzip the downloaded file somewhere permanent -- Chrome loads the extension from this folder every time it starts.",
+            "step2": "Open chrome://extensions in a new tab.",
+            "step3": "Turn on Developer mode (top right).",
+            "step4": "Click \"Load unpacked\" and select the unzipped folder.",
+            "step5": "Click the new Thingport icon in your toolbar and enter your instance URL and login."
+          },
+          "firefox": {
+            "heading": "Install Thingport Grab",
+            "step1": "Open the downloaded .xpi file directly, or drag it onto a Firefox window.",
+            "step2": "Click \"Add\" on Firefox's install confirmation prompt.",
+            "step3": "Click the new Thingport icon in your toolbar and enter your instance URL and login."
+          }
         }
       },
       "bridge": {

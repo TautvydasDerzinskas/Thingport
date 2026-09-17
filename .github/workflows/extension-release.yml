@@ -7,7 +7,7 @@ name: Extension release
 # ran most recently, breaking the OTHER track's /releases/latest/download/<asset> links. Instead
 # this always publishes to the same fixed tag, "extension-latest" -- deleting and recreating it
 # each run -- and the Downloads page links to the tag-scoped path
-# (.../releases/download/extension-latest/thingport-grab.zip), never the /latest/ alias.
+# (.../releases/download/extension-latest/<asset>), never the /latest/ alias.
 on:
   push:
     branches: [main]
@@ -26,7 +26,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  build-chrome:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -41,9 +41,56 @@ jobs:
           path: dist/thingport-grab.zip
           if-no-files-found: error
 
+  build-firefox:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Lint (validates the manifest for both PRs and pushes, no AMO credentials needed)
+        run: npx --yes web-ext@8 lint --source-dir extension
+      # Signing only happens on a push to main (it needs the AMO_JWT_* secrets, which forked PRs
+      # don't get, and there's nothing useful to attach to a PR run anyway).
+      #
+      # AMO rejects re-uploading a version number it has already seen for this add-on ID, even on
+      # the unlisted channel -- and extension/manifest.json's own version isn't bumped on every
+      # commit. So this signs a copy of the manifest with the run number appended as an extra
+      # version segment (e.g. 1.0.1.456), guaranteeing a unique version on every run without
+      # touching the checked-in version Chrome's build (or the repo) actually uses.
+      - name: Patch a build-local version for signing
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          cp -r extension firefox-src
+          base_version=$(jq -r .version firefox-src/manifest.json)
+          jq --arg v "${base_version}.${{ github.run_number }}" '.version = $v' \
+            extension/manifest.json > firefox-src/manifest.json.tmp
+          mv firefox-src/manifest.json.tmp firefox-src/manifest.json
+      - name: Sign (unlisted -- not published to addons.mozilla.org's public listing)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        run: |
+          npx --yes web-ext@8 sign \
+            --source-dir firefox-src \
+            --artifacts-dir dist \
+            --channel unlisted
+      - name: Rename to a stable filename
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          xpi=$(ls dist/*.xpi | head -n1)
+          mv "$xpi" dist/thingport-grab.xpi
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          name: thingport-grab-firefox
+          path: dist/thingport-grab.xpi
+          if-no-files-found: error
+
   release:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [build]
+    needs: [build-chrome, build-firefox]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -52,6 +99,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: thingport-grab
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: thingport-grab-firefox
           path: dist
       - name: Move the extension-latest tag to this commit
         env:
@@ -66,7 +117,15 @@ jobs:
             Automated build of the Thingport Grab browser extension (see `extension/README.md`)
             from ${{ github.sha }}.
 
-            Not published to the Chrome Web Store -- unzip `thingport-grab.zip`, then in Chrome:
-            `chrome://extensions` → enable **Developer mode** → **Load unpacked** → select the
-            unzipped folder.
-          files: dist/thingport-grab.zip
+            Not published to either browser's extension store -- see `extension/README.md` for
+            install instructions:
+
+            - **Chrome / Edge / other Chromium browsers**: unzip `thingport-grab.zip`, then
+              `chrome://extensions` → enable **Developer mode** → **Load unpacked** → select the
+              unzipped folder.
+            - **Firefox**: download `thingport-grab.xpi` and open it directly (or drag it onto a
+              Firefox window). It's signed by Mozilla for self-distribution, so it installs and
+              updates like any other extension -- no Developer mode needed.
+          files: |
+            dist/thingport-grab.zip
+            dist/thingport-grab.xpi

@@ -17,7 +17,7 @@ import TerminalIcon from "@mui/icons-material/Terminal";
 import CableIcon from "@mui/icons-material/Cable";
 import { usePageHeader } from "../../components/Layout/PageHeaderContext";
 import { BRIDGE_DOWNLOADS, bridgeDownloadUrl, type BridgeDownload } from "../../constants/bridge";
-import { EXTENSION_DOWNLOAD_URL } from "../../constants/extension";
+import { EXTENSION_DOWNLOADS, extensionDownloadUrl, type ExtensionDownload } from "../../constants/extension";
 import extensionIcon from "../../assets/logos/thingport-icon-color.svg";
 
 const OS_ICON = { windows: LaptopWindowsIcon, macos: AppleIcon, linux: TerminalIcon };
@@ -81,7 +81,22 @@ export default function DownloadPage() {
   usePageHeader({ title: t("sidebar.downloads") });
 
   const [installOs, setInstallOs] = useState<BridgeDownload["os"] | null>(null);
-  const [extensionInstallOpen, setExtensionInstallOpen] = useState(false);
+  const [extensionInstallBrowser, setExtensionInstallBrowser] = useState<ExtensionDownload["browser"] | null>(null);
+
+  const extensionInstallSteps: Record<ExtensionDownload["browser"], InstallStep[]> = {
+    chrome: [
+      { text: t("download.extension.modal.chrome.step1") },
+      { text: t("download.extension.modal.chrome.step2") },
+      { text: t("download.extension.modal.chrome.step3") },
+      { text: t("download.extension.modal.chrome.step4") },
+      { text: t("download.extension.modal.chrome.step5") },
+    ],
+    firefox: [
+      { text: t("download.extension.modal.firefox.step1") },
+      { text: t("download.extension.modal.firefox.step2") },
+      { text: t("download.extension.modal.firefox.step3") },
+    ],
+  };
 
   const installSteps: Record<BridgeDownload["os"], InstallStep[]> = {
     windows: [{ text: t("download.modal.windows.step1") }],
@@ -116,22 +131,28 @@ export default function DownloadPage() {
             <Typography variant="body2" color="text.secondary">{t("download.extension.intro")}</Typography>
           </Box>
         </Stack>
-        <Paper variant="outlined" sx={{ p: 2.5, maxWidth: 340 }}>
-          <Stack spacing={1.5} alignItems="flex-start">
-            <Box component="img" src={extensionIcon} alt="" sx={{ width: 40, height: 40 }} />
-            <Typography variant="subtitle2" fontWeight={600}>{t("download.extension.name")}</Typography>
-            <Button
-              component="a"
-              href={EXTENSION_DOWNLOAD_URL}
-              variant="outlined"
-              size="small"
-              startIcon={<DownloadIcon fontSize="small" />}
-              onClick={() => setExtensionInstallOpen(true)}
-            >
-              {t("common:download")}
-            </Button>
-          </Stack>
-        </Paper>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+          {EXTENSION_DOWNLOADS.map(({ browser, label, asset }) => (
+            <Paper key={browser} variant="outlined" sx={{ p: 2.5, flex: 1, maxWidth: 340 }}>
+              <Stack spacing={1.5} alignItems="flex-start">
+                <Box component="img" src={extensionIcon} alt="" sx={{ width: 40, height: 40 }} />
+                <Typography variant="subtitle2" fontWeight={600}>
+                  {t("download.extension.name")} ({label})
+                </Typography>
+                <Button
+                  component="a"
+                  href={extensionDownloadUrl(asset)}
+                  variant="outlined"
+                  size="small"
+                  startIcon={<DownloadIcon fontSize="small" />}
+                  onClick={() => setExtensionInstallBrowser(browser)}
+                >
+                  {t("common:download")}
+                </Button>
+              </Stack>
+            </Paper>
+          ))}
+        </Stack>
       </Stack>
 
       <Divider />
@@ -191,25 +212,26 @@ export default function DownloadPage() {
         )}
       </Dialog>
 
-      <Dialog open={extensionInstallOpen} onClose={() => setExtensionInstallOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>{t("download.extension.modal.heading")}</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
-            {t("download.modal.startedNote")}
-          </Typography>
-          <InstallSteps
-            steps={[
-              { text: t("download.extension.modal.step1") },
-              { text: t("download.extension.modal.step2") },
-              { text: t("download.extension.modal.step3") },
-              { text: t("download.extension.modal.step4") },
-              { text: t("download.extension.modal.step5") },
-            ]}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setExtensionInstallOpen(false)}>{t("common:close")}</Button>
-        </DialogActions>
+      <Dialog
+        open={extensionInstallBrowser !== null}
+        onClose={() => setExtensionInstallBrowser(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        {extensionInstallBrowser && (
+          <>
+            <DialogTitle>{t(`download.extension.modal.${extensionInstallBrowser}.heading`)}</DialogTitle>
+            <DialogContent>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
+                {t("download.modal.startedNote")}
+              </Typography>
+              <InstallSteps steps={extensionInstallSteps[extensionInstallBrowser]} />
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setExtensionInstallBrowser(null)}>{t("common:close")}</Button>
+            </DialogActions>
+          </>
+        )}
       </Dialog>
     </Stack>
   );

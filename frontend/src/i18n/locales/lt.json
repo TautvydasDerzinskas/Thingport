@@ -408,15 +408,23 @@
       "intro": "Papildomi įrankiai, veikiantys kartu su jūsų Thingport aplinka.",
       "extension": {
         "heading": "Thingport Grab",
-        "intro": "Chrome plėtinys, importuojantis MakerWorld, Thingiverse ir Printables modelius tiesiai iš jų puslapių.",
+        "intro": "Naršyklės plėtinys, importuojantis MakerWorld, Thingiverse ir Printables modelius tiesiai iš jų puslapių.",
         "name": "Thingport Grab",
         "modal": {
-          "heading": "Įdiegti Thingport Grab",
-          "step1": "Išarchyvuokite atsisiųstą failą kur nors nuolatinėje vietoje -- Chrome įkelia plėtinį iš šio aplanko kaskart paleidus naršyklę.",
-          "step2": "Naujame skirtuke atidarykite chrome://extensions.",
-          "step3": "Įjunkite Developer mode (viršuje dešinėje).",
-          "step4": "Spustelėkite „Load unpacked“ ir pasirinkite išarchyvuotą aplanką.",
-          "step5": "Spustelėkite naują Thingport piktogramą įrankių juostoje ir įveskite savo aplinkos URL bei prisijungimo duomenis."
+          "chrome": {
+            "heading": "Įdiegti Thingport Grab",
+            "step1": "Išarchyvuokite atsisiųstą failą kur nors nuolatinėje vietoje -- Chrome įkelia plėtinį iš šio aplanko kaskart paleidus naršyklę.",
+            "step2": "Naujame skirtuke atidarykite chrome://extensions.",
+            "step3": "Įjunkite Developer mode (viršuje dešinėje).",
+            "step4": "Spustelėkite „Load unpacked“ ir pasirinkite išarchyvuotą aplanką.",
+            "step5": "Spustelėkite naują Thingport piktogramą įrankių juostoje ir įveskite savo aplinkos URL bei prisijungimo duomenis."
+          },
+          "firefox": {
+            "heading": "Įdiegti Thingport Grab",
+            "step1": "Atidarykite atsisiųstą .xpi failą tiesiogiai arba nutempkite jį į Firefox langą.",
+            "step2": "Firefox diegimo lange spustelėkite „Add“.",
+            "step3": "Spustelėkite naują Thingport piktogramą įrankių juostoje ir įveskite savo aplinkos URL bei prisijungimo duomenis."
+          }
         }
       },
       "bridge": {
