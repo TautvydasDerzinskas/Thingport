@@ -18,6 +18,7 @@ import ModelCard from "../ModelsPage/ModelCard";
 import SortTabs from "../ModelsPage/SortTabs";
 import CollectionCard from "../CollectionsPage/CollectionCard";
 import TagBookmarkButton from "./TagBookmarkButton";
+import TagActionsMenu from "./TagActionsMenu";
 
 const PAGE_SIZE = 24;
 
@@ -34,8 +35,9 @@ type Props = {
  *  fetch-by-id step (or "not found" state) -- the page header title comes directly from the
  *  route param and the list is prints filtered by that tag, plus (since collections can carry
  *  tags too) any collections carrying it, shown first in the same grid as CollectionCards. The
- *  title row's only action is a bookmark toggle (TagBookmarkButton) -- no dropdown menu, since
- *  there's nothing else to put in one. */
+ *  title row has a bookmark toggle (TagBookmarkButton) plus a "..." menu (TagActionsMenu, so far
+ *  just "Download all Tag models as zip") -- same two-control layout as CollectionDetailPage's
+ *  own title row. */
 export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBookmarksChanged, viewer }: Props) {
   const { tagName } = useParams<{ tagName: string }>();
   const tag = tagName ? decodeURIComponent(tagName) : "";
@@ -63,12 +65,15 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
   usePageHeader({
     title: tag ? t("models:tags.detail.title", { name: tag }) : undefined,
     actions: tag ? (
-      <TagBookmarkButton
-        tag={tag}
-        bookmarked={bookmarked}
-        onUnauthorized={onUnauthorized}
-        onBookmarksChanged={onBookmarksChanged}
-      />
+      <Stack direction="row" alignItems="center" spacing={0.5}>
+        <TagBookmarkButton
+          tag={tag}
+          bookmarked={bookmarked}
+          onUnauthorized={onUnauthorized}
+          onBookmarksChanged={onBookmarksChanged}
+        />
+        <TagActionsMenu tag={tag} onUnauthorized={onUnauthorized} />
+      </Stack>
     ) : undefined,
   });
 

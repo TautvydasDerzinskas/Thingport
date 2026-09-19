@@ -546,6 +546,17 @@
       "uploading": "Uploading to {{target}}...",
       "prompt": "Drop files or folders to upload to {{target}}"
     },
+    "downloadZip": {
+      "loading": "Calculating…",
+      "summary_one": "{{count}} model (~{{size}})",
+      "summary_other": "{{count}} models (~{{size}})",
+      "summaryNoSize_one": "{{count}} model",
+      "summaryNoSize_other": "{{count}} models",
+      "summaryFailed": "Couldn't calculate the download size. Please try again.",
+      "empty": "No downloadable model files found.",
+      "downloading": "Downloading…",
+      "failed": "Failed to download the zip file. Please try again."
+    },
     "errors": {
       "loadPrintsFailed": "Failed to load prints. Please sign in again or refresh.",
       "loadMoreFailed": "Failed to load more prints.",
@@ -1162,6 +1173,8 @@
       "bookmarkCollection": "Bookmark collection",
       "unbookmarkCollection": "Remove bookmark",
       "bookmarkFailed": "Failed to update bookmark. Please try again.",
+      "downloadAllZip": "Download all models as zip",
+      "downloadZipTitle": "Download \"{{name}}\" as zip",
       "system": {
         "favorites": "Favourites",
         "history": "Browsing History"
@@ -1201,6 +1214,8 @@
       "bookmarkTag": "Bookmark tag",
       "unbookmarkTag": "Remove bookmark",
       "bookmarkFailed": "Failed to update bookmark. Please try again.",
+      "downloadAllZip": "Download all Tag models as zip",
+      "downloadZipTitle": "Download tag \"{{name}}\" as zip",
       "detail": {
         "title": "Tag: {{name}}",
         "empty": "No models with this tag yet."

@@ -546,6 +546,17 @@
       "uploading": "Įkeliama į {{target}}...",
       "prompt": "Vilkite failus ar aplankus, kad įkeltumėte į {{target}}"
     },
+    "downloadZip": {
+      "loading": "Skaičiuojama…",
+      "summary_one": "{{count}} modelis (~{{size}})",
+      "summary_other": "{{count}} modeliai (~{{size}})",
+      "summaryNoSize_one": "{{count}} modelis",
+      "summaryNoSize_other": "{{count}} modeliai",
+      "summaryFailed": "Nepavyko apskaičiuoti atsisiuntimo dydžio. Bandykite dar kartą.",
+      "empty": "Nerasta modelių failų atsisiuntimui.",
+      "downloading": "Atsisiunčiama…",
+      "failed": "Nepavyko atsisiųsti zip failo. Bandykite dar kartą."
+    },
     "errors": {
       "loadPrintsFailed": "Nepavyko įkelti spaudinių. Prisijunkite iš naujo arba atnaujinkite puslapį.",
       "loadMoreFailed": "Nepavyko įkelti daugiau spaudinių.",
@@ -1163,6 +1174,8 @@
       "bookmarkCollection": "Įsiminti kolekciją",
       "unbookmarkCollection": "Pašalinti iš įsimintų",
       "bookmarkFailed": "Nepavyko atnaujinti įsimintos kolekcijos. Bandykite dar kartą.",
+      "downloadAllZip": "Atsisiųsti visus modelius kaip zip",
+      "downloadZipTitle": "Atsisiųsti „{{name}}“ kaip zip",
       "system": {
         "favorites": "Mėgstami",
         "history": "Naršymo istorija"
@@ -1202,6 +1215,8 @@
       "bookmarkTag": "Įsiminti žymą",
       "unbookmarkTag": "Pašalinti iš įsimintų",
       "bookmarkFailed": "Nepavyko atnaujinti įsimintos žymos. Bandykite dar kartą.",
+      "downloadAllZip": "Atsisiųsti visus žymos modelius kaip zip",
+      "downloadZipTitle": "Atsisiųsti žymą „{{name}}“ kaip zip",
       "detail": {
         "title": "Žyma: {{name}}",
         "empty": "Su šia žyma modelių kol kas nėra."

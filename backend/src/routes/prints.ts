@@ -17,7 +17,7 @@ import { toPrintOut } from "../dto";
 import { loadFullPrint, printOutById } from "../services/printLoader";
 import { deleteAllPrintFiles, saveFileFromTemp } from "../services/printFileService";
 import { RENDERABLE_MODEL_EXTS } from "../config";
-import { sendPrintsZip } from "../services/downloadZip";
+import { estimateDownloadSize, resolvePrintsForDownload, sendPrintsZip } from "../services/downloadZip";
 import { systemCollectionKeyForId } from "../services/collectionService";
 import { createLog } from "../services/auditLog";
 import type { Prisma } from "@prisma/client";
@@ -337,33 +337,48 @@ router.get(
   }),
 );
 
-// ---- POST /download/zip --------------------------------------------------------------------
+// ---- POST /download/zip[/summary] ----------------------------------------------------------
+// Both routes accept the same filter (see DownloadZipFilter): print_ids, tag, category_id, and/or
+// collection_id, combined with AND when more than one is given. /summary is the "are you sure?"
+// confirmation step -- model count + an upper-bound size estimate, computed straight from stored
+// Plate/PrintFile size columns with no filesystem access and no zip actually built (see
+// estimateDownloadSize) -- called before the real download in DownloadZipConfirmDialog.
 
-const downloadSchema = z.object({
+const downloadFilterSchema = z.object({
   print_ids: z.array(z.string()).optional(),
   tag: z.string().optional(),
   category_id: z.string().optional(),
-  filename: z.string().optional(),
+  collection_id: z.string().optional(),
 });
+const downloadSchema = downloadFilterSchema.extend({ filename: z.string().optional() });
+
+function assertDownloadFilterGiven(body: z.infer<typeof downloadFilterSchema>): void {
+  if (!(body.print_ids?.length || body.tag || body.category_id || body.collection_id)) {
+    throw new HttpError(400, "Provide print_ids, tag, category_id, or collection_id to download.");
+  }
+}
+
+router.post(
+  "/download/zip/summary",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(downloadFilterSchema, req.body);
+    assertDownloadFilterGiven(body);
+    const prints = await resolvePrintsForDownload(req.userId!, body);
+    res.json({ count: prints.length, size_bytes: await estimateDownloadSize(prints) });
+  }),
+);
 
 router.post(
   "/download/zip",
   asyncHandler(async (req, res) => {
     const body = parseBody(downloadSchema, req.body);
-    if (!(body.print_ids?.length || body.tag || body.category_id)) {
-      throw new HttpError(400, "Provide print_ids, tag, or category_id to download.");
-    }
-    const where: Prisma.PrintWhereInput = { userId: req.userId };
-    if (body.print_ids?.length) where.id = { in: body.print_ids };
-    if (body.category_id) where.categoryId = body.category_id;
-    let prints = await prisma.print.findMany({
-      where,
-      include: { plates: { orderBy: { position: "asc" } }, category: true },
-    });
-    if (body.tag) {
-      const tag = body.tag.trim();
-      prints = prints.filter((p) => p.tags.includes(tag));
-    }
+    assertDownloadFilterGiven(body);
+    const prints = await resolvePrintsForDownload(req.userId!, body);
+
+    // A tag or collection download cuts across categories by nature, so its zip skips the usual
+    // per-category subfolder (see buildZipEntries) -- a category download's entries all share one
+    // category anyway, and a bare print_ids selection keeps its existing nested layout.
+    const flatten = Boolean(body.tag || body.collection_id);
 
     let downloadName = body.filename || "thingport.zip";
     if (body.tag) {
@@ -377,7 +392,14 @@ router.post(
         downloadName = `${safeName}.zip`;
       }
     }
-    await sendPrintsZip(res, prints, downloadName);
+    if (body.collection_id) {
+      const collection = await prisma.collection.findFirst({ where: { id: body.collection_id, userId: req.userId } });
+      if (collection) {
+        const safeName = collection.name.replace(/ /g, "_").slice(0, 50) || "collection";
+        downloadName = `${safeName}.zip`;
+      }
+    }
+    await sendPrintsZip(res, prints, downloadName, { flatten });
   }),
 );
 

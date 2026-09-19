@@ -96,6 +96,21 @@ export type UploadPrintsResult = {
 
 export type PrintSortMode = "newest" | "popular" | "downloads";
 
+/** Selects which prints a zip download covers -- combined with AND when more than one is set.
+ *  See backend's downloadZip.ts (DownloadZipFilter/resolvePrintsForDownload), which both
+ *  POST /download/zip and POST /download/zip/summary resolve this the same way. */
+export type DownloadZipFilter = {
+  print_ids?: string[];
+  tag?: string;
+  category_id?: string;
+  collection_id?: string;
+};
+
+export type DownloadZipSummary = {
+  count: number;
+  size_bytes: number;
+};
+
 export const printsApi = {
   // API returns relative URLs. Join with API base.
   fileUrl: (rel: string) => {
@@ -400,7 +415,7 @@ export const printsApi = {
     return res.json();
   },
 
-  downloadZip: async (opts: { print_ids?: string[]; tag?: string; category_id?: string; filename?: string }) => {
+  downloadZip: async (opts: DownloadZipFilter & { filename?: string }) => {
     const res = await fetch(`${apiBase()}/download/zip`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),
@@ -408,6 +423,19 @@ export const printsApi = {
     });
     assertOk(res, "Download failed");
     return res;
+  },
+
+  /** How many models `filter` resolves to, and an upper-bound size estimate (bytes) for their
+   *  combined model files -- straight from stored file sizes, no zip actually built. Backs
+   *  DownloadZipConfirmDialog's "are you sure?" step before the real download above. */
+  downloadZipSummary: async (filter: DownloadZipFilter): Promise<DownloadZipSummary> => {
+    const res = await fetch(`${apiBase()}/download/zip/summary`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(filter),
+    });
+    assertOk(res, "Failed to estimate download size");
+    return res.json();
   },
 
   /** Records a completed download of this print (called once per explicit download action --
