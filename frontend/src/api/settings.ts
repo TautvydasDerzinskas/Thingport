@@ -13,6 +13,10 @@ export type StorageSettings = {
 
 export type PreviewMode = "automatic" | "on-demand" | "disabled";
 
+export type AuthSettings = {
+  token_ttl_seconds: number;
+};
+
 export type SmtpSettings = {
   host: string | null;
   port: number;
@@ -128,6 +132,28 @@ export const settingsApi = {
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) {
       throw new Error(await readErrorMessage(res, "Failed to update Thingiverse settings"));
+    }
+    return res.json();
+  },
+
+  // Instance-wide: how long a signed-in session's token stays valid before requiring another
+  // login (see backend's auth.ts issueToken). Admin-only both ways, like Storage above -- this
+  // affects every session on the instance, not just the caller's own.
+  getAuth: async (): Promise<AuthSettings> => {
+    const res = await fetch(`${apiBase()}/settings/auth`, { headers: authHeaders() });
+    assertOk(res, "Failed to load session settings");
+    return res.json();
+  },
+
+  updateAuth: async (tokenTtlSeconds: number): Promise<AuthSettings> => {
+    const res = await fetch(`${apiBase()}/settings/auth`, {
+      method: "PATCH",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ token_ttl_seconds: tokenTtlSeconds }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) {
+      throw new Error(await readErrorMessage(res, "Failed to update session settings"));
     }
     return res.json();
   },

@@ -4,6 +4,7 @@ import type { PreviewMode } from "../../api/settings";
 import StorageSection from "./StorageSection";
 import PreviewsSection from "./PreviewsSection";
 import ThingiverseSection from "./ThingiverseSection";
+import SessionSection from "./SessionSection";
 
 type Props = {
   onUnauthorized?: () => void;
@@ -21,6 +22,7 @@ export default function AdminSettingsPage({ onUnauthorized, onPreviewModeChanged
       <ThingiverseSection onUnauthorized={onUnauthorized} />
       <StorageSection onUnauthorized={onUnauthorized} />
       <PreviewsSection onUnauthorized={onUnauthorized} onSaved={onPreviewModeChanged} />
+      <SessionSection onUnauthorized={onUnauthorized} />
     </Stack>
   );
 }

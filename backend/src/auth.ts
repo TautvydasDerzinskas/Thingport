@@ -1,15 +1,26 @@
 import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import type { Role } from "@prisma/client";
-import { AUTH_ALGO, AUTH_SECRET, AUTH_TOKEN_TTL } from "./config";
+import { AUTH_ALGO, AUTH_SECRET } from "./config";
+import { getAuthTokenTtl } from "./services/settingsService";
 
 export type TokenPayload = { sub: string; role: Role };
 
-export function createToken(userId: string, role: Role): string {
+function createToken(userId: string, role: Role, ttlSeconds: number): string {
   return jwt.sign({ sub: userId, role }, AUTH_SECRET, {
     algorithm: AUTH_ALGO,
-    expiresIn: AUTH_TOKEN_TTL,
+    expiresIn: ttlSeconds,
   });
+}
+
+/** Signs a fresh JWT for `userId`, using the instance's current session length (admin-configurable
+ *  -- see settingsService.ts's getAuthTokenTtl / AdminSettingsPage's Session section) -- and
+ *  returns that same length alongside it so the caller can echo it back as the login response's
+ *  `expires_in`. Every route that issues a token (register/login/verify-email/refresh) goes
+ *  through this instead of calling createToken directly. */
+export async function issueToken(userId: string, role: Role): Promise<{ token: string; expiresIn: number }> {
+  const expiresIn = await getAuthTokenTtl();
+  return { token: createToken(userId, role, expiresIn), expiresIn };
 }
 
 export function verifyToken(token: string): TokenPayload | null {

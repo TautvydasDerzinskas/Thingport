@@ -2,8 +2,7 @@ import crypto from "node:crypto";
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { AUTH_TOKEN_TTL } from "../config";
-import { createToken, requireAuth } from "../auth";
+import { issueToken, requireAuth } from "../auth";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { parseBody } from "../utils/validate";
@@ -94,8 +93,8 @@ router.post(
       return;
     }
 
-    const token = createToken(user.id, user.role);
-    res.json({ token, expires_in: AUTH_TOKEN_TTL, user: toUserOut(user) });
+    const { token, expiresIn } = await issueToken(user.id, user.role);
+    res.json({ token, expires_in: expiresIn, user: toUserOut(user) });
   }),
 );
 
@@ -115,8 +114,8 @@ router.post(
       throw new HttpError(403, "Please verify your email before signing in.", "EMAIL_NOT_VERIFIED");
     }
 
-    const token = createToken(user.id, user.role);
-    res.json({ token, expires_in: AUTH_TOKEN_TTL, user: toUserOut(user) });
+    const { token, expiresIn } = await issueToken(user.id, user.role);
+    res.json({ token, expires_in: expiresIn, user: toUserOut(user) });
     void createLog({ userId: user.id, action: "user_logged_in", details: { email: user.email } });
   }),
 );
@@ -160,8 +159,8 @@ router.post(
     // Verifying doubles as signing in -- the user just proved control of the mailbox, and
     // making them turn around and log in again with a password they only just typed is friction
     // with no security benefit.
-    const token = createToken(verified.id, verified.role);
-    res.json({ token, expires_in: AUTH_TOKEN_TTL, user: toUserOut(verified) });
+    const { token, expiresIn } = await issueToken(verified.id, verified.role);
+    res.json({ token, expires_in: expiresIn, user: toUserOut(verified) });
     void createLog({ userId: verified.id, action: "user_logged_in", details: { email: verified.email } });
   }),
 );
@@ -282,8 +281,8 @@ router.post(
   asyncHandler(async (req, res) => {
     const user = await prisma.user.findUnique({ where: { id: req.userId! } });
     if (!user) throw new HttpError(401, "Invalid or expired token");
-    const token = createToken(user.id, user.role);
-    res.json({ token, expires_in: AUTH_TOKEN_TTL });
+    const { token, expiresIn } = await issueToken(user.id, user.role);
+    res.json({ token, expires_in: expiresIn });
   }),
 );
 

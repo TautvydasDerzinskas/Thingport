@@ -130,6 +130,33 @@ export async function setSmtpSettings(patch: Partial<SmtpSettings>): Promise<Smt
   return next;
 }
 
+const AUTH_TOKEN_TTL_KEY = "auth_token_ttl_seconds";
+// Matches the old AUTH_TOKEN_TTL env default (12 hours) -- used only when neither a DB row nor
+// the env var itself is set.
+const DEFAULT_AUTH_TOKEN_TTL_SECONDS = 43200;
+
+// How long a signed-in session's token stays valid before requiring another login (see
+// auth.ts's issueToken, which every login/register/verify route goes through). Seeds from the
+// AUTH_TOKEN_TTL env var the first time this is read on a fresh instance -- once an admin saves
+// a value via PATCH /settings/auth (AdminSettingsPage's Session section), the DB row becomes the
+// sole source of truth, same pattern as SMTP/preview mode/Thingiverse token above. Changing this
+// only affects tokens issued *after* the change; anyone already signed in keeps whatever TTL was
+// active when their token was issued, since that's baked into the JWT itself.
+export async function getAuthTokenTtl(): Promise<number> {
+  const row = await prisma.setting.findUnique({ where: { key: AUTH_TOKEN_TTL_KEY } });
+  const value = row?.value;
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) return Math.trunc(value);
+  return envInt("AUTH_TOKEN_TTL", DEFAULT_AUTH_TOKEN_TTL_SECONDS);
+}
+
+export async function setAuthTokenTtl(seconds: number): Promise<void> {
+  await prisma.setting.upsert({
+    where: { key: AUTH_TOKEN_TTL_KEY },
+    create: { key: AUTH_TOKEN_TTL_KEY, value: seconds },
+    update: { value: seconds },
+  });
+}
+
 // Database connection info + the live "Test & Save" switch live in databaseSettingsService.ts,
 // not here -- unlike everything else in this file, it isn't just a Setting-table row; it needs
 // db.ts's client-swap primitive and its own Postgres-specific connection testing.

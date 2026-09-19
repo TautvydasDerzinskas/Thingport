@@ -317,6 +317,32 @@
         "cleared": "Access Token removed.",
         "failed": "Failed to save Thingiverse settings."
       },
+      "session": {
+        "heading": "Session Length",
+        "subtitle": "Control how long a signed-in session stays valid for the whole instance.",
+        "infoTitle": "What this controls",
+        "infoBody": "How long a freshly issued sign-in token stays valid before that user is asked to log in again. Applies instance-wide to every new login, registration, and email verification. Changing this only affects tokens issued from now on -- anyone already signed in keeps whatever length was active when they logged in.",
+        "tokenTtlLabel": "Session length (seconds)",
+        "tokenTtlHelp": "Between 5 minutes and 1 year.",
+        "invalid": "Enter a number between 300 (5 minutes) and 31536000 (1 year) seconds.",
+        "approx": "≈ {{value}}",
+        "units": {
+          "minutes_one": "{{count}} minute",
+          "minutes_other": "{{count}} minutes",
+          "hours_one": "{{count}} hour",
+          "hours_other": "{{count}} hours",
+          "days_one": "{{count}} day",
+          "days_other": "{{count}} days",
+          "weeks_one": "{{count}} week",
+          "weeks_other": "{{count}} weeks",
+          "months_one": "{{count}} month",
+          "months_other": "{{count}} months"
+        },
+        "save": "Save",
+        "saving": "Saving…",
+        "saved": "Saved.",
+        "failed": "Failed to save session settings."
+      },
       "connections": {
         "heading": "Connections"
       },

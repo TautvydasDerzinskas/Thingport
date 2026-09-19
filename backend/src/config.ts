@@ -37,8 +37,11 @@ export const MODEL_PREVIEWS = path.join(STORAGE, "model-previews");
 export const PUBLIC_URL = (process.env.PUBLIC_URL || "").trim().replace(/\/+$/, "");
 
 export const AUTH_SECRET = process.env.AUTH_SECRET || "changeme-secret";
-export const AUTH_TOKEN_TTL = envInt("AUTH_TOKEN_TTL", 43200);
 export const AUTH_ALGO = "HS256" as const;
+// The AUTH_TOKEN_TTL env var itself is read in services/settingsService.ts (getAuthTokenTtl),
+// not here -- it's only ever consulted as the seed value for a fresh instance's first read, same
+// as SMTP_HOST/SMTP_PORT/etc. are read directly in that file rather than exported from this one.
+// Once an admin saves a session length via the Admin Settings page, the DB row wins from then on.
 
 export const IMPORT_ALLOWED_EXTS = new Set([".stl", ".3mf", ".step", ".stp", ".obj", ".lbrn", ".lbrn2", ".zip"]);
 // Extensions the 3D viewer can actually render as a Plate -- mirrors frontend's MODEL_EXTS

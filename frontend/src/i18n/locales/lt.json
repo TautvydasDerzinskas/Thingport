@@ -317,6 +317,32 @@
         "cleared": "Prieigos raktas pašalintas.",
         "failed": "Nepavyko išsaugoti Thingiverse nustatymų."
       },
+      "session": {
+        "heading": "Sesijos trukmė",
+        "subtitle": "Valdykite, kiek laiko galioja prisijungimo sesija visai sistemai.",
+        "infoTitle": "Ką tai valdo",
+        "infoBody": "Kiek laiko galioja naujai išduotas prisijungimo žetonas, kol naudotojo bus paprašyta prisijungti iš naujo. Taikoma visai sistemai -- kiekvienam naujam prisijungimui, registracijai ir el. pašto patvirtinimui. Pakeitimas paveikia tik nuo šiol išduodamus žetonus -- jau prisijungę naudotojai išlaiko tą trukmę, kuri galiojo jiems prisijungiant.",
+        "tokenTtlLabel": "Sesijos trukmė (sekundėmis)",
+        "tokenTtlHelp": "Nuo 5 minučių iki 1 metų.",
+        "invalid": "Įveskite skaičių nuo 300 (5 minutės) iki 31536000 (1 metai) sekundžių.",
+        "approx": "≈ {{value}}",
+        "units": {
+          "minutes_one": "{{count}} minutė",
+          "minutes_other": "{{count}} minučių",
+          "hours_one": "{{count}} valanda",
+          "hours_other": "{{count}} valandų",
+          "days_one": "{{count}} diena",
+          "days_other": "{{count}} dienų",
+          "weeks_one": "{{count}} savaitė",
+          "weeks_other": "{{count}} savaičių",
+          "months_one": "{{count}} mėnuo",
+          "months_other": "{{count}} mėnesių"
+        },
+        "save": "Išsaugoti",
+        "saving": "Saugoma…",
+        "saved": "Išsaugota.",
+        "failed": "Nepavyko išsaugoti sesijos nustatymų."
+      },
       "connections": {
         "heading": "Ryšiai"
       },

@@ -6,10 +6,12 @@ import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import {
   getAllowRegistrations,
+  getAuthTokenTtl,
   getPreviewMode,
   getSmtpSettings,
   getThingiverseAccessToken,
   setAllowRegistrations,
+  setAuthTokenTtl,
   setPreviewMode,
   setSmtpSettings,
   setThingiverseAccessToken,
@@ -102,6 +104,34 @@ router.post(
     const body = parseBody(registrationsSchema, req.body);
     await setAllowRegistrations(body.allow_registrations);
     res.json({ allow_registrations: body.allow_registrations });
+  }),
+);
+
+// Admin-only both ways, like Storage above -- this affects every session on the instance
+// (including whoever's editing it), not just the caller's own login.
+router.get(
+  "/settings/auth",
+  requireAdmin,
+  asyncHandler(async (_req, res) => {
+    res.json({ token_ttl_seconds: await getAuthTokenTtl() });
+  }),
+);
+
+// 5 minutes to 1 year -- wide enough to cover any real deployment, narrow enough that a typo
+// (e.g. an extra zero) still lands somewhere sane instead of "never expires" or "expires
+// immediately". Only affects tokens issued *after* saving -- see auth.ts's issueToken.
+const MIN_AUTH_TOKEN_TTL_SECONDS = 5 * 60;
+const MAX_AUTH_TOKEN_TTL_SECONDS = 365 * 24 * 60 * 60;
+const authSettingsSchema = z.object({
+  token_ttl_seconds: z.number().int().min(MIN_AUTH_TOKEN_TTL_SECONDS).max(MAX_AUTH_TOKEN_TTL_SECONDS),
+});
+router.patch(
+  "/settings/auth",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const body = parseBody(authSettingsSchema, req.body);
+    await setAuthTokenTtl(body.token_ttl_seconds);
+    res.json({ token_ttl_seconds: body.token_ttl_seconds });
   }),
 );
 
