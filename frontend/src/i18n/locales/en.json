@@ -1095,6 +1095,7 @@
       "uploadedDirectly": "Uploaded directly to Thingport"
     },
     "detail": {
+      "subtitle": "Model",
       "preview3d": "3D Preview",
       "description": "Description",
       "noDescription": "No description yet.",
@@ -1151,7 +1152,8 @@
     },
     "author": {
       "pageTitle": "Author",
-      "pageTitleWithName": "Author - {{name}}",
+      "pageTitleWithName": "{{name}}",
+      "subtitle": "Author",
       "myModelsPageTitle": "My models",
       "bio": "Bio",
       "noBio": "No bio yet.",
@@ -1195,7 +1197,8 @@
         "saveFailed": "Failed to save the collection. Please try again."
       },
       "detail": {
-        "title": "Collection: {{name}}",
+        "title": "{{name}}",
+        "subtitle": "Collection",
         "empty": "No models in this collection yet.",
         "confirmDelete": "Delete \"{{name}}\"? Models in it are not deleted.",
         "deleteFailed": "Failed to delete the collection."
@@ -1217,7 +1220,8 @@
       "downloadAllZip": "Download all Tag models as zip",
       "downloadZipTitle": "Download tag \"{{name}}\" as zip",
       "detail": {
-        "title": "Tag: {{name}}",
+        "title": "{{name}}",
+        "subtitle": "Tag",
         "empty": "No models with this tag yet."
       }
     },
@@ -1244,6 +1248,7 @@
     },
     "categories": {
       "title": "Categories",
+      "subtitle": "Category",
       "all": "All",
       "untitled": "Untitled",
       "empty": "No categories yet",

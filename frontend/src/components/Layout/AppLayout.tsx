@@ -54,6 +54,7 @@ function useRouteChrome() {
   const path = location.pathname;
 
   let title = t("sidebar.dashboard");
+  let subtitle: string | undefined;
   let onBack: (() => void) | undefined;
   if (path === "/") {
     title = t("sidebar.dashboard");
@@ -72,7 +73,12 @@ function useRouteChrome() {
     // entity), so this is set directly rather than waiting on TagDetailPage's usePageHeader --
     // avoids a "Models" title flash before that effect runs.
     const tagName = path.slice("/models/tags/".length);
-    title = tagName ? t("models:tags.detail.title", { name: decodeURIComponent(tagName) }) : t("models:pageTitle");
+    if (tagName) {
+      title = t("models:tags.detail.title", { name: decodeURIComponent(tagName) });
+      subtitle = t("models:tags.detail.subtitle");
+    } else {
+      title = t("models:pageTitle");
+    }
     onBack = goBack;
   } else if (path.startsWith("/models/")) {
     title = t("models:pageTitle");
@@ -118,7 +124,7 @@ function useRouteChrome() {
     onBack = () => navigate("/admin");
   }
 
-  return { title, onBack };
+  return { title, subtitle, onBack };
 }
 
 type ShellProps = Omit<AppLayoutProps, "muiTheme">;
@@ -144,7 +150,7 @@ function AppLayoutShell({
   children,
 }: ShellProps) {
   const { t } = useTranslation(["app", "common"]);
-  const { title: routeTitle, onBack: routeOnBack } = useRouteChrome();
+  const { title: routeTitle, subtitle: routeSubtitle, onBack: routeOnBack } = useRouteChrome();
   const [pageHeader, setPageHeader] = React.useState<PageHeader>(null);
   const { refresh: refreshNotifications } = useNotifications();
 
@@ -171,6 +177,7 @@ function AppLayoutShell({
           )}
           <TopBar
             title={pageHeader?.title || routeTitle}
+            subtitle={pageHeader?.subtitle ?? routeSubtitle}
             onBack={pageHeader?.onBack ?? routeOnBack}
             actions={pageHeader?.actions}
             categoryId={categoryId}

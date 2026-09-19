@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import InputBase from "@mui/material/InputBase";
@@ -40,6 +40,7 @@ type Props = {
 export default function GlobalSearch({ onUnauthorized }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const navigate = useNavigate();
+  const location = useLocation();
   const anchorRef = useRef<HTMLDivElement | null>(null);
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
@@ -63,6 +64,19 @@ export default function GlobalSearch({ onUnauthorized }: Props) {
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+
+  // Clears any typed-but-not-acted-on query the moment the route actually changes -- `goTo`
+  // below already clears it for the "picked a result" path, but this covers every other way of
+  // leaving the page (a sidebar link, browser back/forward, a different page's own navigation)
+  // so a stale search never lingers into the next page. Keyed on pathname specifically, not the
+  // full location, so same-page changes (a sort tab, a search-param tweak) don't wipe it --
+  // only an actual change of route counts as "leaving".
+  useEffect(() => {
+    setQuery("");
+    setFocused(false);
+    // Only the pathname itself should trigger this -- see the comment above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   useEffect(() => {
     if (debouncedQuery.length < MIN_QUERY_LENGTH) {

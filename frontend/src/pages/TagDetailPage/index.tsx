@@ -64,6 +64,7 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
 
   usePageHeader({
     title: tag ? t("models:tags.detail.title", { name: tag }) : undefined,
+    subtitle: tag ? t("models:tags.detail.subtitle") : undefined,
     actions: tag ? (
       <Stack direction="row" alignItems="center" spacing={0.5}>
         <TagBookmarkButton

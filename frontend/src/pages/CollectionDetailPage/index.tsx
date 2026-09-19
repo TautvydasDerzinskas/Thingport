@@ -57,6 +57,7 @@ export default function CollectionDetailPage({ theme, previewMode, onUnauthorize
 
   usePageHeader({
     title: collection ? t("models:collections.detail.title", { name: collectionDisplayName(collection, t) }) : undefined,
+    subtitle: collection ? t("models:collections.detail.subtitle") : undefined,
     actions: collection && !collection.system_key ? (
       <Stack direction="row" alignItems="center" spacing={0.5}>
         <CollectionBookmarkButton

@@ -1095,6 +1095,7 @@
       "uploadedDirectly": "Įkelta tiesiai į Thingport"
     },
     "detail": {
+      "subtitle": "Modelis",
       "preview3d": "3D peržiūra",
       "description": "Aprašymas",
       "noDescription": "Aprašymo dar nėra.",
@@ -1152,7 +1153,8 @@
     },
     "author": {
       "pageTitle": "Autorius",
-      "pageTitleWithName": "Autorius - {{name}}",
+      "pageTitleWithName": "{{name}}",
+      "subtitle": "Autorius",
       "myModelsPageTitle": "Mano modeliai",
       "bio": "Biografija",
       "noBio": "Biografijos dar nėra.",
@@ -1196,7 +1198,8 @@
         "saveFailed": "Nepavyko išsaugoti kolekcijos. Bandykite dar kartą."
       },
       "detail": {
-        "title": "Kolekcija: {{name}}",
+        "title": "{{name}}",
+        "subtitle": "Kolekcija",
         "empty": "Šioje kolekcijoje kol kas nėra modelių.",
         "confirmDelete": "Ištrinti „{{name}}“? Joje esantys modeliai nebus ištrinti.",
         "deleteFailed": "Nepavyko ištrinti kolekcijos."
@@ -1218,7 +1221,8 @@
       "downloadAllZip": "Atsisiųsti visus žymos modelius kaip zip",
       "downloadZipTitle": "Atsisiųsti žymą „{{name}}“ kaip zip",
       "detail": {
-        "title": "Žyma: {{name}}",
+        "title": "{{name}}",
+        "subtitle": "Žyma",
         "empty": "Su šia žyma modelių kol kas nėra."
       }
     },
@@ -1245,6 +1249,7 @@
     },
     "categories": {
       "title": "Kategorijos",
+      "subtitle": "Kategorija",
       "all": "Visos",
       "untitled": "Be pavadinimo",
       "empty": "Kol kas nėra kategorijų",

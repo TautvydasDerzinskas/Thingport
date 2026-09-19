@@ -1,7 +1,16 @@
 import { createContext, useContext, useEffect } from "react";
 import type React from "react";
 
-export type PageHeader = { title?: string; actions?: React.ReactNode; onBack?: () => void } | null;
+export type PageHeader = {
+  title?: string;
+  /** Shown smaller, under the title (see TopBar) -- the entity kind ("Collection", "Tag",
+   *  "Model") for a detail page, so that context doesn't have to be spelled out as a
+   *  "Collection: " prefix baked into the title text itself, competing with the name for the
+   *  same line's limited width. */
+  subtitle?: string;
+  actions?: React.ReactNode;
+  onBack?: () => void;
+} | null;
 
 /** Default no-op setter so usePageHeader is a harmless no-op for any page rendered outside
  *  AppLayout (e.g. tests) rather than throwing. */
@@ -15,12 +24,14 @@ export const PageHeaderContext = createContext<(header: PageHeader) => void>(() 
 export function usePageHeader(header: PageHeader) {
   const setHeader = useContext(PageHeaderContext);
   const title = header?.title;
+  const subtitle = header?.subtitle;
   const actions = header?.actions;
   const onBack = header?.onBack;
   useEffect(() => {
-    setHeader({ title, actions, onBack });
+    setHeader({ title, subtitle, actions, onBack });
     return () => setHeader(null);
-    // title/actions/onBack are the only meaningful inputs; setHeader is stable from AppLayout's state setter.
+    // title/subtitle/actions/onBack are the only meaningful inputs; setHeader is stable from
+    // AppLayout's state setter.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, actions, onBack]);
+  }, [title, subtitle, actions, onBack]);
 }

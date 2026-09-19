@@ -15,6 +15,10 @@ import GlobalSearch from "./GlobalSearch";
 
 type Props = {
   title: string;
+  /** Shown smaller, under the title -- the entity kind ("Collection", "Tag", "Model") for a
+   *  detail page, kept off the title's own line so a long name gets the full line's width
+   *  instead of sharing it with a "Collection: " prefix (see PageHeaderContext). */
+  subtitle?: string;
   onBack?: () => void;
   /** Slot for page-specific actions next to the title (an overflow "more" menu, etc.) --
    *  nothing currently populates it, but the header supports it the same way it will once a
@@ -39,6 +43,7 @@ type Props = {
  *  cluster on the right. */
 export default function TopBar({
   title,
+  subtitle,
   onBack,
   actions,
   categoryId,
@@ -73,7 +78,10 @@ export default function TopBar({
       ref={rootRef}
       sx={{
         display: "grid",
-        gridTemplateColumns: "1fr minmax(0, 480px) 1fr",
+        // Capped at 360px (3/4 of the original 480px) -- on narrower laptop screens the title
+        // column doesn't have enough room left to share with a still-wide search box before a
+        // long collection/tag/model name has to ellipsize hard.
+        gridTemplateColumns: "1fr minmax(0, 360px) 1fr",
         alignItems: "center",
         gap: 1.5,
         // Both of these used to live on `main` (pt) / as this bar's own margin (mb) -- moved to
@@ -108,7 +116,14 @@ export default function TopBar({
             </IconButton>
           </Tooltip>
         )}
-        <Typography variant="h6" fontWeight={700} noWrap>{title}</Typography>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography variant="h6" fontWeight={700} noWrap>{title}</Typography>
+          {subtitle && (
+            <Typography variant="caption" noWrap sx={{ display: "block", mt: "-4px", color: "text.secondary" }}>
+              {subtitle}
+            </Typography>
+          )}
+        </Box>
         {actions}
       </Stack>
       <Box sx={{ minWidth: 0, justifySelf: "center", width: "100%" }}>

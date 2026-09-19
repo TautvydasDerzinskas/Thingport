@@ -113,11 +113,15 @@ export default function ModelsPage({ categoryId, onSelectCategory, categoriesVer
   }, [categoryId, categories]);
 
   // Plain "Models" (and the route's default back-to-Dashboard) while nothing's selected; once a
-  // category is active, the title reflects it and back instead clears the filter -- "back to
-  // all" one level at a time, matching the sidebar's own initial-vs-filtered framing.
+  // category is active, the title becomes its name (with a small "Category" subtitle underneath
+  // instead of a "Models - " prefix competing with the name for the same line's width -- same
+  // treatment as the collection/tag/model detail pages' own subtitles) and back instead clears
+  // the filter -- "back to all" one level at a time, matching the sidebar's own
+  // initial-vs-filtered framing.
   const selectedCategory = categoryId ? categories.find(f => f.id === categoryId) ?? null : null;
   usePageHeader({
-    title: selectedCategory ? `${t("models:pageTitle")} - ${selectedCategory.name || t("models:categories.untitled")}` : undefined,
+    title: selectedCategory ? selectedCategory.name || t("models:categories.untitled") : undefined,
+    subtitle: selectedCategory ? t("models:categories.subtitle") : undefined,
     onBack: categoryId ? () => onSelectCategory(null) : undefined,
   });
 

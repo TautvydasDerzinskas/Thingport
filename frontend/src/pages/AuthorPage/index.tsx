@@ -86,8 +86,13 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
 
   // Only overrides the title -- the route's own default onBack (see AppLayout's useRouteChrome,
   // "/authors/" -> useSmartBack) already does exactly "back button goes to the previous page".
+  // A real (non-self) author gets a small "Author" subtitle under their name instead of an
+  // "Author - " prefix sharing the title line with it -- same treatment as the collection/tag/
+  // model/category detail headers. "My models" has no such prefix to move in the first place,
+  // so the self view stays plain.
   usePageHeader({
     title: isSelf ? t("models:author.myModelsPageTitle") : author ? t("models:author.pageTitleWithName", { name: displayName }) : undefined,
+    subtitle: !isSelf && author ? t("models:author.subtitle") : undefined,
   });
 
   const handleError = (err: unknown, message?: string) => {

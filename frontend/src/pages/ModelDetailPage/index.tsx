@@ -55,6 +55,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
 
   usePageHeader({
     title: print ? (print.title || print.name) : undefined,
+    subtitle: print ? t("models:detail.subtitle") : undefined,
     actions: print ? (
       <Stack direction="row" alignItems="center" spacing={0.5}>
         <FavoriteButton print={print} onUpdated={setPrint} onUnauthorized={onUnauthorized} />
