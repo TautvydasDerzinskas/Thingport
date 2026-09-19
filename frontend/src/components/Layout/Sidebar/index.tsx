@@ -117,6 +117,11 @@ export default function Sidebar({ isAdmin, onSelectCategory, bookmarksVersion }:
   // The bookmark id currently being dragged, if any -- set on that row's dragstart, read by every
   // other row's drop handler, cleared once the gesture ends (drop, or a drag that's cancelled).
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  // Whichever row the pointer is currently over mid-drag -- purely visual (a highlighted drop
+  // target), so it's obvious where a drop will land instead of just a generic cursor. Updated on
+  // every dragover rather than dragenter/dragleave, which fire unreliably as the pointer crosses
+  // a row's own child elements (icon/text) due to event bubbling.
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -146,6 +151,37 @@ export default function Sidebar({ isAdmin, onSelectCategory, bookmarksVersion }:
       });
       return next;
     });
+  };
+
+  // Native HTML5 drag defaults to snapshotting the *entire* dragged element as the ghost image --
+  // here that's a full sidebar-width row (padding included, for a comfortable click target), not
+  // just the short label it visibly shows. Left alone, the ghost reads as much wider than "the
+  // item" the label suggests, and can visually overlap neighboring rows enough that it feels like
+  // they're being dragged too. Supplying a small custom drag image (just the label, sized to fit)
+  // keeps the ghost honest about what's actually moving. The temporary node is built off-screen
+  // and removed on the next frame -- setDragImage snapshots it synchronously when called, so it
+  // only needs to exist for that one instant.
+  const handleDragStart = (e: React.DragEvent<HTMLElement>, id: string, label: string) => {
+    setDraggingId(id);
+    const preview = document.createElement("div");
+    preview.textContent = label;
+    Object.assign(preview.style, {
+      position: "fixed",
+      top: "-1000px",
+      left: "-1000px",
+      padding: "4px 10px",
+      borderRadius: "6px",
+      background: "#1f2430",
+      color: "#fff",
+      fontSize: "13px",
+      fontFamily: "inherit",
+      whiteSpace: "nowrap",
+      boxShadow: "0 2px 8px rgba(0,0,0,.25)",
+    });
+    document.body.appendChild(preview);
+    e.dataTransfer.setDragImage(preview, 12, 14);
+    e.dataTransfer.effectAllowed = "move";
+    requestAnimationFrame(() => preview.remove());
   };
 
   const onDashboard = location.pathname === "/";
@@ -352,17 +388,37 @@ export default function Sidebar({ isAdmin, onSelectCategory, bookmarksVersion }:
                   <ListItemButton
                     key={entry.id}
                     draggable
-                    onDragStart={() => setDraggingId(entry.id)}
-                    onDragOver={e => e.preventDefault()}
+                    onDragStart={e => handleDragStart(e, entry.id, label)}
+                    onDragOver={e => {
+                      e.preventDefault();
+                      if (draggingId && draggingId !== entry.id) setDragOverId(entry.id);
+                    }}
                     onDrop={e => {
                       e.preventDefault();
                       if (draggingId) handleDrop(draggingId, entry.id);
                       setDraggingId(null);
+                      setDragOverId(null);
                     }}
-                    onDragEnd={() => setDraggingId(null)}
+                    onDragEnd={() => {
+                      setDraggingId(null);
+                      setDragOverId(null);
+                    }}
                     selected={selected}
                     onClick={() => navigate(href)}
-                    sx={{ borderRadius: 1, mb: 0.5, cursor: "grab", ...navRowSx(selected) }}
+                    sx={{
+                      borderRadius: 1,
+                      mb: 0.5,
+                      cursor: "grab",
+                      // The row being lifted fades a bit (its "real" position, distinct from the
+                      // small custom ghost following the cursor -- see handleDragStart) and the
+                      // row currently under the cursor gets an inset outline, so it's unambiguous
+                      // which row a drop will land on instead of just a generic cursor change.
+                      opacity: draggingId === entry.id ? 0.4 : 1,
+                      ...(dragOverId === entry.id && draggingId !== entry.id
+                        ? { outline: "2px solid", outlineColor: "primary.main", outlineOffset: "-2px" }
+                        : {}),
+                      ...navRowSx(selected),
+                    }}
                   >
                     <ListItemIcon sx={{ minWidth: 30 }}>
                       <BookmarkIcon fontSize="small" />

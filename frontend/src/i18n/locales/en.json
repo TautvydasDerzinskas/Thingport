@@ -557,17 +557,6 @@
       "uploading": "Uploading to {{target}}...",
       "prompt": "Drop files or folders to upload to {{target}}"
     },
-    "downloadZip": {
-      "loading": "Calculating…",
-      "summary_one": "{{count}} model (~{{size}})",
-      "summary_other": "{{count}} models (~{{size}})",
-      "summaryNoSize_one": "{{count}} model",
-      "summaryNoSize_other": "{{count}} models",
-      "summaryFailed": "Couldn't calculate the download size. Please try again.",
-      "empty": "No downloadable model files found.",
-      "downloading": "Downloading…",
-      "failed": "Failed to download the zip file. Please try again."
-    },
     "errors": {
       "loadPrintsFailed": "Failed to load prints. Please sign in again or refresh.",
       "loadMoreFailed": "Failed to load more prints.",
@@ -1231,6 +1220,17 @@
         "title": "Tag: {{name}}",
         "empty": "No models with this tag yet."
       }
+    },
+    "downloadZip": {
+      "loading": "Calculating…",
+      "summary_one": "{{count}} model (~{{size}})",
+      "summary_other": "{{count}} models (~{{size}})",
+      "summaryNoSize_one": "{{count}} model",
+      "summaryNoSize_other": "{{count}} models",
+      "summaryFailed": "Couldn't calculate the download size. Please try again.",
+      "empty": "No downloadable model files found.",
+      "downloading": "Downloading…",
+      "failed": "Failed to download the zip file. Please try again."
     },
     "errors": {
       "loadFailed": "Unable to load models.",

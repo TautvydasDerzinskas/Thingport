@@ -27,7 +27,6 @@ import { useDebouncedValue } from "../../../hooks/useDebouncedValue";
 
 const MIN_QUERY_LENGTH = 2;
 const DEBOUNCE_MS = 250;
-const DROPDOWN_WIDTH = 420;
 
 type Props = {
   onUnauthorized?: () => void;
@@ -47,7 +46,23 @@ export default function GlobalSearch({ onUnauthorized }: Props) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SearchResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // The dropdown's width is pinned to this (not a fixed constant) so it always exactly matches
+  // the search box, not just approximates it -- the box itself is fluid (TopBar's center grid
+  // column is `minmax(0, 480px)`, so its real width varies with the window). Tracked live via
+  // ResizeObserver rather than read once, so resizing the window (or collapsing the sidebar,
+  // which changes how much room the center column has) keeps them in sync.
+  const [anchorWidth, setAnchorWidth] = useState<number>();
   const debouncedQuery = useDebouncedValue(query.trim(), DEBOUNCE_MS);
+
+  useEffect(() => {
+    const el = anchorRef.current;
+    if (!el) return;
+    const update = () => setAnchorWidth(el.offsetWidth);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (debouncedQuery.length < MIN_QUERY_LENGTH) {
@@ -135,9 +150,9 @@ export default function GlobalSearch({ onUnauthorized }: Props) {
         disableAutoFocus
         disableEnforceFocus
         disableRestoreFocus
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-        transformOrigin={{ vertical: "top", horizontal: "center" }}
-        slotProps={{ paper: { sx: { width: DROPDOWN_WIDTH, maxWidth: "90vw", mt: 0.5, maxHeight: 480, overflow: "auto" } } }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        slotProps={{ paper: { sx: { width: anchorWidth, mt: 0, maxHeight: 480, overflow: "auto" } } }}
       >
         {loading && (
           <Stack alignItems="center" sx={{ py: 3 }}>
