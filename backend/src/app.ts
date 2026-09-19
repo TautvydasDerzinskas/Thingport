@@ -15,6 +15,7 @@ import tagsRoutes from "./routes/tags";
 import settingsRoutes from "./routes/settings";
 import importsRoutes from "./routes/imports";
 import collectionsRoutes from "./routes/collections";
+import bookmarksRoutes from "./routes/bookmarks";
 import notificationsRoutes from "./routes/notifications";
 import adminRoutes from "./routes/admin";
 import dashboardRoutes from "./routes/dashboard";
@@ -47,6 +48,7 @@ export function createApp(): Express {
   app.use("/api", tagsRoutes);
   app.use("/api", importsRoutes);
   app.use("/api", collectionsRoutes);
+  app.use("/api", bookmarksRoutes);
   app.use("/api", notificationsRoutes);
   app.use("/api", adminRoutes);
   app.use("/api", dashboardRoutes);

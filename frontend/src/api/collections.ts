@@ -16,6 +16,9 @@ export type Collection = {
    *  be edited or deleted, and their card/detail title should come from a translated label keyed
    *  off this instead of `name`. */
   system_key: SystemCollectionKey | null;
+  /** Whether this user has bookmarked this collection into the sidebar's quick-access list --
+   *  always false for a system pseudo-collection, which can't be bookmarked. */
+  bookmarked: boolean;
 };
 
 export type CollectionInput = {
@@ -97,5 +100,18 @@ export const collectionsApi = {
     const res = await fetch(`${apiBase()}/print/${printId}/collections`, { headers: authHeaders() });
     assertOk(res, "Failed to list collections");
     return res.json();
+  },
+
+  /** Adds/removes a (real, non-system) collection from the sidebar's quick-access "Bookmarks"
+   *  list -- same shape as tagsApi.bookmark/unbookmark. Used by the Collections grid card's "..."
+   *  menu and the collection detail page's title-row toggle. */
+  bookmark: async (id: string): Promise<void> => {
+    const res = await fetch(`${apiBase()}/collection/${id}/bookmark`, { method: "POST", headers: authHeaders() });
+    assertOk(res, "Failed to bookmark collection");
+  },
+
+  unbookmark: async (id: string): Promise<void> => {
+    const res = await fetch(`${apiBase()}/collection/${id}/bookmark`, { method: "DELETE", headers: authHeaders() });
+    assertOk(res, "Failed to remove bookmark");
   },
 };

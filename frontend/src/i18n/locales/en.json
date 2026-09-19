@@ -1133,6 +1133,9 @@
       "pageTitle": "Collections",
       "newCollection": "New Collection",
       "empty": "No collections yet.",
+      "bookmarkCollection": "Bookmark collection",
+      "unbookmarkCollection": "Remove bookmark",
+      "bookmarkFailed": "Failed to update bookmark. Please try again.",
       "system": {
         "favorites": "Favourites",
         "history": "Browsing History"

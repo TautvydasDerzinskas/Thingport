@@ -85,14 +85,17 @@ function AppShell({
   });
   const [nonce, setNonce] = React.useState(0);
   const [categoryVersion, setCategoryVersion] = React.useState(0);
-  const [tagBookmarksVersion, setTagBookmarksVersion] = React.useState(0);
+  // Bumped whenever a tag or collection is bookmarked/unbookmarked anywhere (Tags list/detail,
+  // Collections grid/detail) so the sidebar's quick-access list refetches -- see Sidebar's own
+  // bookmarksVersion prop.
+  const [bookmarksVersion, setBookmarksVersion] = React.useState(0);
 
   const handleCategoriesChanged = React.useCallback(() => {
     setCategoryVersion(v => v + 1);
   }, []);
 
-  const handleTagBookmarksChanged = React.useCallback(() => {
-    setTagBookmarksVersion(v => v + 1);
+  const handleBookmarksChanged = React.useCallback(() => {
+    setBookmarksVersion(v => v + 1);
   }, []);
 
   const handlePrintsChanged = React.useCallback(() => {
@@ -107,7 +110,7 @@ function AppShell({
       categoryId={categoryId}
       onSelectCategory={setCategoryId}
       onPrintsChanged={handlePrintsChanged}
-      tagBookmarksVersion={tagBookmarksVersion}
+      bookmarksVersion={bookmarksVersion}
       onUnauthorized={onUnauthorized}
       isAdmin={isAdmin}
       onOpenProfile={() => navigate("/profile")}
@@ -136,15 +139,30 @@ function AppShell({
         />
         <Route
           path="/models/collections"
-          element={<CollectionsPage theme={resolvedTheme} previewMode={previewMode} onUnauthorized={onUnauthorized} />}
+          element={
+            <CollectionsPage
+              theme={resolvedTheme}
+              previewMode={previewMode}
+              onUnauthorized={onUnauthorized}
+              onBookmarksChanged={handleBookmarksChanged}
+            />
+          }
         />
         <Route
           path="/models/collections/:collectionId"
-          element={<CollectionDetailPage theme={resolvedTheme} previewMode={previewMode} onUnauthorized={onUnauthorized} viewer={user} />}
+          element={
+            <CollectionDetailPage
+              theme={resolvedTheme}
+              previewMode={previewMode}
+              onUnauthorized={onUnauthorized}
+              onBookmarksChanged={handleBookmarksChanged}
+              viewer={user}
+            />
+          }
         />
         <Route
           path="/models/tags"
-          element={<TagsPage onUnauthorized={onUnauthorized} onBookmarksChanged={handleTagBookmarksChanged} />}
+          element={<TagsPage onUnauthorized={onUnauthorized} onBookmarksChanged={handleBookmarksChanged} />}
         />
         <Route
           path="/models/tags/:tagName"
@@ -153,7 +171,7 @@ function AppShell({
               theme={resolvedTheme}
               previewMode={previewMode}
               onUnauthorized={onUnauthorized}
-              onBookmarksChanged={handleTagBookmarksChanged}
+              onBookmarksChanged={handleBookmarksChanged}
               viewer={user}
             />
           }

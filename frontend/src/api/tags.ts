@@ -25,21 +25,19 @@ export const tagsApi = {
     return res.json();
   },
 
-  bookmark: async (tag: string): Promise<string[]> => {
+  bookmark: async (tag: string): Promise<void> => {
     const res = await fetch(`${apiBase()}/tags/${encodeURIComponent(tag)}/bookmark`, {
       method: "POST",
       headers: authHeaders(),
     });
     assertOk(res, "Failed to bookmark tag");
-    return res.json();
   },
 
-  unbookmark: async (tag: string): Promise<string[]> => {
+  unbookmark: async (tag: string): Promise<void> => {
     const res = await fetch(`${apiBase()}/tags/${encodeURIComponent(tag)}/bookmark`, {
       method: "DELETE",
       headers: authHeaders(),
     });
     assertOk(res, "Failed to remove bookmark");
-    return res.json();
   },
 };

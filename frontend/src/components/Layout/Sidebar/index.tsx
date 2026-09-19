@@ -24,7 +24,7 @@ import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import Wordmark from "../../Wordmark";
-import { tagsApi } from "../../../api/tags";
+import { type BookmarkEntry, bookmarksApi } from "../../../api/bookmarks";
 
 const SIDEBAR_WIDTH = 240;
 const SIDEBAR_COLLAPSED_WIDTH = 72;
@@ -84,18 +84,28 @@ function CollapsedNavIcon({ icon, label, selected, onClick }: {
 type Props = {
   isAdmin: boolean;
   onSelectCategory: (id: string | null) => void;
-  /** Bumped whenever a tag is bookmarked/unbookmarked elsewhere (the Tags list page, or a tag
-   *  detail page's title-row toggle) so the quick-access list below refetches without needing a
-   *  full remount -- same shape as ModelsPage's categoriesVersion/onCategoriesChanged. */
-  tagBookmarksVersion?: number;
+  /** Bumped whenever a tag or collection is bookmarked/unbookmarked elsewhere (the Tags/
+   *  Collections list pages, or a tag/collection detail page's title-row toggle) so the
+   *  quick-access list below refetches without needing a full remount -- same shape as
+   *  ModelsPage's categoriesVersion/onCategoriesChanged. */
+  bookmarksVersion?: number;
 };
 
+/** Where a bookmark entry navigates to, and its display label -- tags and collections share one
+ *  ordered list (see BookmarkEntry) but differ in both. */
+function bookmarkTarget(entry: BookmarkEntry): { href: string; label: string } {
+  return entry.type === "tag"
+    ? { href: `/models/tags/${encodeURIComponent(entry.tag)}`, label: entry.tag }
+    : { href: `/models/collections/${entry.collection_id}`, label: entry.name };
+}
+
 /** The persistent app-wide navigation rail: Dashboard, Models, Collections, Tags, Downloads, then
- *  (once any tag is bookmarked) a divider, a "Bookmarks" heading, and one row per bookmarked tag,
- *  and finally (for admins) a single "Administration" row -- it's just a link to the /admin hub
- *  page now, not an expandable list of every admin sub-page (see AdminPage). Category browsing
- *  lives inside the Models page itself, not here. */
-export default function Sidebar({ isAdmin, onSelectCategory, tagBookmarksVersion }: Props) {
+ *  (once any tag or collection is bookmarked) a divider, a "Bookmarks" heading, and one row per
+ *  bookmark -- tags and collections interleaved, in the user's own manual order (drag a row up or
+ *  down to reorder; see handleDrop) -- and finally (for admins) a single "Administration" row --
+ *  it's just a link to the /admin hub page now, not an expandable list of every admin sub-page
+ *  (see AdminPage). Category browsing lives inside the Models page itself, not here. */
+export default function Sidebar({ isAdmin, onSelectCategory, bookmarksVersion }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const location = useLocation();
   const navigate = useNavigate();
@@ -103,17 +113,40 @@ export default function Sidebar({ isAdmin, onSelectCategory, tagBookmarksVersion
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY) === "true";
   });
-  const [bookmarkedTags, setBookmarkedTags] = useState<string[]>([]);
+  const [bookmarks, setBookmarks] = useState<BookmarkEntry[]>([]);
+  // The bookmark id currently being dragged, if any -- set on that row's dragstart, read by every
+  // other row's drop handler, cleared once the gesture ends (drop, or a drag that's cancelled).
+  const [draggingId, setDraggingId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    tagsApi.listBookmarked()
-      .then(tags => { if (!cancelled) setBookmarkedTags(tags); })
+    bookmarksApi.list()
+      .then(entries => { if (!cancelled) setBookmarks(entries); })
       .catch(() => { /* non-critical nav aid -- swallow and leave the list as-is */ });
     return () => { cancelled = true; };
-    // tagBookmarksVersion is a deliberate refetch trigger, not read inside the effect itself.
+    // bookmarksVersion is a deliberate refetch trigger, not read inside the effect itself.
     // oxlint-disable-next-line react/exhaustive-effect-dependencies
-  }, [tagBookmarksVersion]);
+  }, [bookmarksVersion]);
+
+  // Drops `draggedId` immediately before/after `targetId` (wherever it lands in the array once
+  // moved next to it) -- applied optimistically so the row jumps right away, then persisted via
+  // POST /bookmarks/reorder; a failed save just refetches the server's own order rather than
+  // trying to roll back the local splice by hand.
+  const handleDrop = (draggedId: string, targetId: string) => {
+    if (draggedId === targetId) return;
+    setBookmarks(prev => {
+      const from = prev.findIndex(b => b.id === draggedId);
+      const to = prev.findIndex(b => b.id === targetId);
+      if (from === -1 || to === -1) return prev;
+      const next = prev.slice();
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      bookmarksApi.reorder(next.map(b => b.id)).catch(() => {
+        bookmarksApi.list().then(setBookmarks).catch(() => { /* leave the optimistic order as-is */ });
+      });
+      return next;
+    });
+  };
 
   const onDashboard = location.pathname === "/";
   const onCollections = location.pathname.startsWith("/models/collections");
@@ -285,11 +318,14 @@ export default function Sidebar({ isAdmin, onSelectCategory, tagBookmarksVersion
             </ListItemButton>
           )}
 
-          {/* Bookmarked tags -- only once any exist, so an empty section never shows just a bare
-              divider with nothing under it. The "Bookmarks" label is a plain heading (nothing to
-              click), so it's skipped entirely while collapsed rather than rendered as dead space
-              -- unlike every row above, the collapsed rail has no way to show it at all. */}
-          {bookmarkedTags.length > 0 && (
+          {/* Bookmarked tags + collections, interleaved in the user's own manual order -- only
+              once any exist, so an empty section never shows just a bare divider with nothing
+              under it. The "Bookmarks" label is a plain heading (nothing to click), so it's
+              skipped entirely while collapsed rather than rendered as dead space -- unlike every
+              row above, the collapsed rail has no way to show it at all. Dragging is only wired
+              up while expanded too: the collapsed rail is icon-only, with no room for a
+              meaningful drag target. */}
+          {bookmarks.length > 0 && (
             <>
               <Divider sx={{ my: 1 }} />
               {!collapsed && (
@@ -301,28 +337,37 @@ export default function Sidebar({ isAdmin, onSelectCategory, tagBookmarksVersion
                   {t("sidebar.bookmarks")}
                 </Typography>
               )}
-              {bookmarkedTags.map(tag => {
-                const target = `/models/tags/${encodeURIComponent(tag)}`;
-                const selected = location.pathname === target;
+              {bookmarks.map(entry => {
+                const { href, label } = bookmarkTarget(entry);
+                const selected = location.pathname === href;
                 return collapsed ? (
                   <CollapsedNavIcon
-                    key={tag}
+                    key={entry.id}
                     icon={<BookmarkIcon fontSize="small" />}
-                    label={tag}
+                    label={label}
                     selected={selected}
-                    onClick={() => navigate(target)}
+                    onClick={() => navigate(href)}
                   />
                 ) : (
                   <ListItemButton
-                    key={tag}
+                    key={entry.id}
+                    draggable
+                    onDragStart={() => setDraggingId(entry.id)}
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={e => {
+                      e.preventDefault();
+                      if (draggingId) handleDrop(draggingId, entry.id);
+                      setDraggingId(null);
+                    }}
+                    onDragEnd={() => setDraggingId(null)}
                     selected={selected}
-                    onClick={() => navigate(target)}
-                    sx={{ borderRadius: 1, mb: 0.5, ...navRowSx(selected) }}
+                    onClick={() => navigate(href)}
+                    sx={{ borderRadius: 1, mb: 0.5, cursor: "grab", ...navRowSx(selected) }}
                   >
                     <ListItemIcon sx={{ minWidth: 30 }}>
                       <BookmarkIcon fontSize="small" />
                     </ListItemIcon>
-                    <ListItemText primary={tag} primaryTypographyProps={{ variant: "body2", noWrap: true }} />
+                    <ListItemText primary={label} primaryTypographyProps={{ variant: "body2", noWrap: true }} />
                   </ListItemButton>
                 );
               })}

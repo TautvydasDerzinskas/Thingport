@@ -17,6 +17,7 @@ import { collectionDisplayName } from "../../utils/collectionDisplay";
 import ModelCard from "../ModelsPage/ModelCard";
 import SortTabs from "../ModelsPage/SortTabs";
 import CollectionActionsMenu from "./CollectionActionsMenu";
+import CollectionBookmarkButton from "./CollectionBookmarkButton";
 
 const PAGE_SIZE = 24;
 
@@ -24,10 +25,11 @@ type Props = {
   theme: ResolvedTheme;
   previewMode: PreviewMode;
   onUnauthorized?: () => void;
+  onBookmarksChanged?: () => void;
   viewer?: AuthUser | null;
 };
 
-export default function CollectionDetailPage({ theme, previewMode, onUnauthorized, viewer }: Props) {
+export default function CollectionDetailPage({ theme, previewMode, onUnauthorized, onBookmarksChanged, viewer }: Props) {
   const { collectionId } = useParams<{ collectionId: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation(["models", "common"]);
@@ -56,12 +58,22 @@ export default function CollectionDetailPage({ theme, previewMode, onUnauthorize
   usePageHeader({
     title: collection ? t("models:collections.detail.title", { name: collectionDisplayName(collection, t) }) : undefined,
     actions: collection && !collection.system_key ? (
-      <CollectionActionsMenu
-        collection={collection}
-        onUpdated={setCollection}
-        onUnauthorized={onUnauthorized}
-        onDeleted={goBack}
-      />
+      <Stack direction="row" alignItems="center" spacing={0.5}>
+        <CollectionBookmarkButton
+          collectionId={collection.id}
+          bookmarked={collection.bookmarked}
+          onUnauthorized={onUnauthorized}
+          onBookmarksChanged={onBookmarksChanged}
+          onToggled={bookmarked => setCollection(prev => (prev ? { ...prev, bookmarked } : prev))}
+        />
+        <CollectionActionsMenu
+          collection={collection}
+          onUpdated={setCollection}
+          onUnauthorized={onUnauthorized}
+          onDeleted={goBack}
+          onBookmarksChanged={onBookmarksChanged}
+        />
+      </Stack>
     ) : undefined,
   });
 

@@ -15,6 +15,7 @@ import {
   normalizeCollectionName,
   systemCollectionKeyForId,
 } from "../services/collectionService";
+import { addCollectionBookmark, listBookmarkedCollectionIdSet, removeCollectionBookmark } from "../services/bookmarkService";
 import { printOutsByIds } from "../services/printLoader";
 import { createLog } from "../services/auditLog";
 import { toCollectionOut, type PrintOut } from "../dto";
@@ -33,7 +34,7 @@ const COVER_ITEM_LIMIT = 4;
 router.get(
   "/collections",
   asyncHandler(async (req, res) => {
-    const [systemCollections, collections] = await Promise.all([
+    const [systemCollections, collections, bookmarkedIds] = await Promise.all([
       listSystemCollectionOuts(req.userId!),
       prisma.collection.findMany({
         where: { userId: req.userId },
@@ -43,6 +44,7 @@ router.get(
           items: { orderBy: { position: "asc" }, take: COVER_ITEM_LIMIT },
         },
       }),
+      listBookmarkedCollectionIdSet(req.userId!),
     ]);
     const coverPrintIds = collections.flatMap((c) => c.items.map((i) => i.printId));
     const printOuts = await printOutsByIds(req.userId!, coverPrintIds);
@@ -53,6 +55,7 @@ router.get(
           c,
           c._count.items,
           c.items.map((i) => printOuts.get(i.printId)).filter((p): p is PrintOut => Boolean(p)),
+          bookmarkedIds.has(c.id),
         ),
       ),
     ]);
@@ -73,7 +76,7 @@ router.post(
         tags: normalizeTags(body.tags),
       },
     });
-    res.json(toCollectionOut(collection, 0, []));
+    res.json(toCollectionOut(collection, 0, [], false));
     void createLog({
       userId: req.userId!,
       action: "collection_created",
@@ -96,7 +99,10 @@ router.get(
       include: { _count: { select: { items: true } } },
     });
     if (!collection) throw new HttpError(404, "Collection not found");
-    res.json(toCollectionOut(collection, collection._count.items, []));
+    const bookmarked = Boolean(
+      await prisma.bookmark.findFirst({ where: { userId: req.userId, type: "COLLECTION", collectionId: collection.id } }),
+    );
+    res.json(toCollectionOut(collection, collection._count.items, [], bookmarked));
   }),
 );
 
@@ -119,8 +125,11 @@ router.patch(
         tags: normalizeTags(body.tags),
       },
     });
-    const itemCount = await prisma.collectionItem.count({ where: { collectionId: updated.id } });
-    res.json(toCollectionOut(updated, itemCount, []));
+    const [itemCount, bookmarked] = await Promise.all([
+      prisma.collectionItem.count({ where: { collectionId: updated.id } }),
+      prisma.bookmark.findFirst({ where: { userId: req.userId, type: "COLLECTION", collectionId: updated.id } }),
+    ]);
+    res.json(toCollectionOut(updated, itemCount, [], Boolean(bookmarked)));
     void createLog({
       userId: req.userId!,
       action: "collection_edited",
@@ -195,6 +204,38 @@ router.post(
       targetId: collection.id,
       details: { printId: print.id, name: print.name },
     });
+  }),
+);
+
+// ---- POST/DELETE /collection/:id/bookmark ----------------------------------------------------
+// Adds/removes this collection from the sidebar's quick-access "Bookmarks" section -- the
+// Collections grid card's "..." menu and the collection detail page's title-row toggle. Same
+// system-collection restriction as the item add/remove routes above: Favourites/Browsing History
+// have no real Collection row for a Bookmark to reference.
+
+router.post(
+  "/collection/:id/bookmark",
+  asyncHandler(async (req, res) => {
+    if (isSystemCollectionId(req.params.id)) {
+      throw new HttpError(400, "This collection can't be bookmarked");
+    }
+    const collection = await prisma.collection.findFirst({ where: { id: req.params.id, userId: req.userId } });
+    if (!collection) throw new HttpError(404, "Collection not found");
+    await addCollectionBookmark(req.userId!, collection.id);
+    res.json({ ok: true });
+  }),
+);
+
+router.delete(
+  "/collection/:id/bookmark",
+  asyncHandler(async (req, res) => {
+    if (isSystemCollectionId(req.params.id)) {
+      throw new HttpError(400, "This collection can't be bookmarked");
+    }
+    const collection = await prisma.collection.findFirst({ where: { id: req.params.id, userId: req.userId } });
+    if (!collection) throw new HttpError(404, "Collection not found");
+    await removeCollectionBookmark(req.userId!, collection.id);
+    res.json({ ok: true });
   }),
 );
 

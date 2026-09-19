@@ -15,11 +15,12 @@ import CollectionsActionsMenu from "./CollectionsActionsMenu";
 
 type Props = {
   onUnauthorized?: () => void;
+  onBookmarksChanged?: () => void;
   theme: ResolvedTheme;
   previewMode: PreviewMode;
 };
 
-export default function CollectionsPage({ onUnauthorized, theme, previewMode }: Props) {
+export default function CollectionsPage({ onUnauthorized, onBookmarksChanged, theme, previewMode }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(false);
@@ -97,6 +98,7 @@ export default function CollectionsPage({ onUnauthorized, theme, previewMode }: 
               onUpdated={handleCollectionUpdated}
               onDeleted={handleCollectionDeleted}
               onUnauthorized={onUnauthorized}
+              onBookmarksChanged={onBookmarksChanged}
             />
           ))}
         </Box>

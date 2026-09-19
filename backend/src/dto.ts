@@ -309,11 +309,21 @@ export type CollectionOut = {
    * collectionService.ts's SYSTEM_COLLECTIONS) -- the frontend uses this to pick a translated
    * display name instead of `name`, and to hide the edit/delete actions those can't support. */
   system_key: SystemCollectionKey | null;
+  /** Whether this user has bookmarked this collection (see services/bookmarkService.ts) -- backs
+   * the Collections grid card's "..." menu and the collection detail page's title-row toggle.
+   * Always false for a system pseudo-collection: there's no real Collection row for a Bookmark to
+   * point at, so those can't be bookmarked (the frontend hides the toggle for them entirely). */
+  bookmarked: boolean;
 };
 
 /** `coverPrints` should already be the up-to-4 cover PrintOuts (see collections.ts), ordered by
  * the collection's item position ascending. */
-export function toCollectionOut(collection: Collection, itemCount: number, coverPrints: PrintOut[]): CollectionOut {
+export function toCollectionOut(
+  collection: Collection,
+  itemCount: number,
+  coverPrints: PrintOut[],
+  bookmarked: boolean,
+): CollectionOut {
   return {
     id: collection.id,
     name: collection.name,
@@ -323,6 +333,7 @@ export function toCollectionOut(collection: Collection, itemCount: number, cover
     cover_items: coverPrints,
     created_at: collection.createdAt.toISOString(),
     system_key: null,
+    bookmarked,
   };
 }
 
@@ -346,6 +357,7 @@ export function toSystemCollectionOut(
     cover_items: coverPrints,
     created_at: new Date(0).toISOString(),
     system_key: key,
+    bookmarked: false,
   };
 }
 

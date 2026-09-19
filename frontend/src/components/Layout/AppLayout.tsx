@@ -28,7 +28,7 @@ type AppLayoutProps = {
   categoryId: string | null;
   onSelectCategory: (id: string | null) => void;
   onPrintsChanged: () => void;
-  tagBookmarksVersion: number;
+  bookmarksVersion: number;
   onUnauthorized: () => void;
   isAdmin: boolean;
   onOpenProfile: () => void;
@@ -133,7 +133,7 @@ function AppLayoutShell({
   categoryId,
   onSelectCategory,
   onPrintsChanged,
-  tagBookmarksVersion,
+  bookmarksVersion,
   onUnauthorized,
   isAdmin,
   onOpenProfile,
@@ -162,7 +162,7 @@ function AppLayoutShell({
           display: "flex",
         }}
       >
-        <Sidebar isAdmin={isAdmin} onSelectCategory={onSelectCategory} tagBookmarksVersion={tagBookmarksVersion} />
+        <Sidebar isAdmin={isAdmin} onSelectCategory={onSelectCategory} bookmarksVersion={bookmarksVersion} />
         <Box component="main" sx={{ flex: 1, p: 2, pt: 0 }}>
           {apiUp === false && (
             <Alert severity="error" sx={{ mb: 1.5 }}>

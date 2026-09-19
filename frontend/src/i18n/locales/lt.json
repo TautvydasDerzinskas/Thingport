@@ -1134,6 +1134,9 @@
       "pageTitle": "Kolekcijos",
       "newCollection": "Nauja kolekcija",
       "empty": "Kol kas nėra kolekcijų.",
+      "bookmarkCollection": "Įsiminti kolekciją",
+      "unbookmarkCollection": "Pašalinti iš įsimintų",
+      "bookmarkFailed": "Nepavyko atnaujinti įsimintos kolekcijos. Bandykite dar kartą.",
       "system": {
         "favorites": "Mėgstami",
         "history": "Naršymo istorija"

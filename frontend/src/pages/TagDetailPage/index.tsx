@@ -194,6 +194,7 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
                 onUpdated={updated => setCollections(prev => prev.map(c => (c.id === updated.id ? updated : c)))}
                 onDeleted={deletedId => setCollections(prev => prev.filter(c => c.id !== deletedId))}
                 onUnauthorized={onUnauthorized}
+                onBookmarksChanged={onBookmarksChanged}
               />
             ))}
             {items.map(item => (

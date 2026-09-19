@@ -20,6 +20,7 @@ type Props = {
   onUpdated: (collection: Collection) => void;
   onDeleted: (id: string) => void;
   onUnauthorized?: () => void;
+  onBookmarksChanged?: () => void;
 };
 
 const COVER_TILE_LIMIT = 4;
@@ -69,7 +70,7 @@ function CoverTile({
   );
 }
 
-export default function CollectionCard({ collection, theme, previewMode, onUpdated, onDeleted, onUnauthorized }: Props) {
+export default function CollectionCard({ collection, theme, previewMode, onUpdated, onDeleted, onUnauthorized, onBookmarksChanged }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const navigate = useNavigate();
   const coverItems = collection.cover_items.slice(0, COVER_TILE_LIMIT);
@@ -150,6 +151,7 @@ export default function CollectionCard({ collection, theme, previewMode, onUpdat
             onUpdated={onUpdated}
             onDeleted={() => onDeleted(collection.id)}
             onUnauthorized={onUnauthorized}
+            onBookmarksChanged={onBookmarksChanged}
             triggerSx={{ color: "#fff" }}
           />
         </Box>

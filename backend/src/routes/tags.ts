@@ -2,15 +2,15 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../db";
 import { requireAuth } from "../auth";
-import { HttpError } from "../utils/fileUtils";
 import { asyncHandler } from "../utils/asyncHandler";
 import { normalizeTag } from "../utils/tagNormalization";
+import { addTagBookmark, listBookmarkedTagSet, removeTagBookmark } from "../services/bookmarkService";
 
 const router = Router();
 router.use(requireAuth);
 
-function sortedBookmarks(tags: string[]): string[] {
-  return tags.toSorted((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+function sortedBookmarks(tags: Iterable<string>): string[] {
+  return [...tags].toSorted((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 }
 
 // ---- GET /tags/summary?sort=popular|name -------------------------------------------------------
@@ -24,11 +24,10 @@ router.get(
   "/tags/summary",
   asyncHandler(async (req, res) => {
     const sort = sortSchema.parse(req.query.sort);
-    const [prints, user] = await Promise.all([
+    const [prints, bookmarked] = await Promise.all([
       prisma.print.findMany({ where: { userId: req.userId }, select: { tags: true } }),
-      prisma.user.findUnique({ where: { id: req.userId }, select: { bookmarkedTags: true } }),
+      listBookmarkedTagSet(req.userId!),
     ]);
-    const bookmarked = new Set(user?.bookmarkedTags ?? []);
     const counts = new Map<string, number>();
     for (const print of prints) {
       for (const tag of print.tags) {
@@ -49,39 +48,37 @@ router.get(
 );
 
 // ---- GET /tags/bookmarked ------------------------------------------------------------------------
-// Just the bookmarked tag names, for the sidebar's quick-access list -- deliberately not
-// /tags/summary, which scans every print; this is a single-row lookup.
+// Just the bookmarked tag names -- for TagsPage/TagDetailPage's own bookmark toggles, so they can
+// tell whether the tag they're showing is already bookmarked. Deliberately not /tags/summary,
+// which scans every print. The sidebar's quick-access list itself reads GET /bookmarks instead
+// (routes/bookmarks.ts), which also carries the manual sort order and the bookmarked collections.
 
 router.get(
   "/tags/bookmarked",
   asyncHandler(async (req, res) => {
-    const user = await prisma.user.findUnique({ where: { id: req.userId }, select: { bookmarkedTags: true } });
-    res.json(sortedBookmarks(user?.bookmarkedTags ?? []));
+    res.json(sortedBookmarks(await listBookmarkedTagSet(req.userId!)));
   }),
 );
 
 // ---- POST/DELETE /tags/:tag/bookmark --------------------------------------------------------------
+// Adds/removes this tag from the sidebar's quick-access "Bookmarks" section (see
+// services/bookmarkService.ts and GET /bookmarks in routes/bookmarks.ts, which is what the
+// sidebar itself actually reads -- these two just flip membership from the Tags list/detail
+// pages' own toggle).
 
 router.post(
   "/tags/:tag/bookmark",
   asyncHandler(async (req, res) => {
-    const tag = normalizeTag(req.params.tag);
-    if (!tag) throw new HttpError(400, "Tag is required");
-    const user = await prisma.user.findUnique({ where: { id: req.userId! }, select: { bookmarkedTags: true } });
-    const next = user?.bookmarkedTags.includes(tag) ? user.bookmarkedTags : [...(user?.bookmarkedTags ?? []), tag];
-    await prisma.user.update({ where: { id: req.userId! }, data: { bookmarkedTags: next } });
-    res.json(sortedBookmarks(next));
+    await addTagBookmark(req.userId!, req.params.tag);
+    res.json({ ok: true });
   }),
 );
 
 router.delete(
   "/tags/:tag/bookmark",
   asyncHandler(async (req, res) => {
-    const tag = normalizeTag(req.params.tag);
-    const user = await prisma.user.findUnique({ where: { id: req.userId! }, select: { bookmarkedTags: true } });
-    const next = (user?.bookmarkedTags ?? []).filter((t) => t !== tag);
-    await prisma.user.update({ where: { id: req.userId! }, data: { bookmarkedTags: next } });
-    res.json(sortedBookmarks(next));
+    await removeTagBookmark(req.userId!, req.params.tag);
+    res.json({ ok: true });
   }),
 );
 
