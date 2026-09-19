@@ -136,6 +136,13 @@ model Print {
   collectionItems  CollectionItem[]
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
+  // Generated column (name/title weight A, tags weight B, notes weight C, creator weight D) that
+  // backs the global search box -- see services/searchService.ts and the hand-written migration
+  // that actually creates it (`GENERATED ALWAYS AS (...) STORED`, plus its own GIN index).
+  // `Unsupported` because Prisma's schema DSL can't express a generated tsvector column; that
+  // also means `prisma migrate dev` won't try to diff/manage this field or its index itself, so
+  // there's deliberately no `@@index` line for it here -- both live only in that migration.
+  searchVector     Unsupported("tsvector")?
 
   @@unique([userId, categoryId, nameNormalized])
   @@unique([userId, sourceProvider, sourceExternalId])
@@ -163,6 +170,9 @@ model Collection {
   bookmarks      Bookmark[]
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
+  // Same generated-tsvector search column as Print.searchVector above (name weight A, tags
+  // weight B, description weight C) -- see that field's comment and services/searchService.ts.
+  searchVector   Unsupported("tsvector")?
 
   @@unique([userId, nameNormalized])
   @@index([tags], type: Gin)

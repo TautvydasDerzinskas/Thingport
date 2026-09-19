@@ -11,6 +11,7 @@ import type { ThemeSelection } from "../../constants/settingsOptions";
 import AddMenu from "./AddMenu";
 import NotificationBell from "./NotificationBell";
 import { UserMenu } from "./UserMenu";
+import GlobalSearch from "./GlobalSearch";
 
 type Props = {
   title: string;
@@ -31,7 +32,11 @@ type Props = {
 };
 
 /** The persistent header row above the active view's content: an optional back button + title
- *  (+ page actions) on the left, and the global Add/Notifications/User cluster on the right. */
+ *  (+ page actions) on the left, the global search box truly centered in the middle (a CSS grid
+ *  with two equal `1fr` side columns, not just "whatever's left between the other two" -- the
+ *  left/right clusters are very different widths depending on the page, and only a grid keeps the
+ *  middle column centered on the bar as a whole regardless), and the global Add/Notifications/User
+ *  cluster on the right. */
 export default function TopBar({
   title,
   onBack,
@@ -67,11 +72,10 @@ export default function TopBar({
     <Box
       ref={rootRef}
       sx={{
-        display: "flex",
-        justifyContent: "space-between",
+        display: "grid",
+        gridTemplateColumns: "1fr minmax(0, 480px) 1fr",
         alignItems: "center",
         gap: 1.5,
-        flexWrap: "wrap",
         // Both of these used to live on `main` (pt) / as this bar's own margin (mb) -- moved to
         // padding on this box itself so they're part of what's actually pinned. As margin/an
         // ancestor's padding, that space isn't covered by this bar's own background, so it either
@@ -92,6 +96,10 @@ export default function TopBar({
         bgcolor: (muiTheme) => muiTheme.thingport.pageBackground,
       }}
     >
+      {/* minWidth: 0 overrides the grid item default of `min-width: auto` -- without it, this
+          column refuses to shrink below its content's natural width (the title, mainly), which
+          would push the center/right columns off `justify-content` center/right well before the
+          window actually runs out of room. */}
       <Stack direction="row" alignItems="center" spacing={1} minWidth={0}>
         {onBack && (
           <Tooltip title={t("shell.backToLibrary")}>
@@ -103,7 +111,10 @@ export default function TopBar({
         <Typography variant="h6" fontWeight={700} noWrap>{title}</Typography>
         {actions}
       </Stack>
-      <Stack direction="row" alignItems="center" spacing={1}>
+      <Box sx={{ minWidth: 0, justifySelf: "center", width: "100%" }}>
+        <GlobalSearch onUnauthorized={onUnauthorized} />
+      </Box>
+      <Stack direction="row" alignItems="center" spacing={1} minWidth={0} justifySelf="end">
         <AddMenu
           categoryId={categoryId}
           makerworldCookie={makerworldCookie}

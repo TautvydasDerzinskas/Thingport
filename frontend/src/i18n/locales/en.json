@@ -192,6 +192,17 @@
       "daysAgo_one": "{{count}} day ago",
       "daysAgo_other": "{{count}} days ago"
     },
+    "search": {
+      "placeholder": "Search models, collections, tags…",
+      "clear": "Clear search",
+      "failed": "Search failed. Please try again.",
+      "noResults": "No results for “{{query}}”.",
+      "sectionModels": "Models",
+      "sectionCollections": "Collections",
+      "sectionTags": "Tags",
+      "modelCount_one": "{{count}} model",
+      "modelCount_other": "{{count}} models"
+    },
     "importProgress": {
       "starting": "Starting import…",
       "label": "Importing… {{processed}} of {{total}}",

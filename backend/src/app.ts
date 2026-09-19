@@ -16,6 +16,7 @@ import settingsRoutes from "./routes/settings";
 import importsRoutes from "./routes/imports";
 import collectionsRoutes from "./routes/collections";
 import bookmarksRoutes from "./routes/bookmarks";
+import searchRoutes from "./routes/search";
 import notificationsRoutes from "./routes/notifications";
 import adminRoutes from "./routes/admin";
 import dashboardRoutes from "./routes/dashboard";
@@ -49,6 +50,7 @@ export function createApp(): Express {
   app.use("/api", importsRoutes);
   app.use("/api", collectionsRoutes);
   app.use("/api", bookmarksRoutes);
+  app.use("/api", searchRoutes);
   app.use("/api", notificationsRoutes);
   app.use("/api", adminRoutes);
   app.use("/api", dashboardRoutes);

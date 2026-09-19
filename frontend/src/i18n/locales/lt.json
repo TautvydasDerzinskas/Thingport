@@ -192,6 +192,17 @@
       "daysAgo_one": "prieš {{count}} dieną",
       "daysAgo_other": "prieš {{count}} dienų"
     },
+    "search": {
+      "placeholder": "Ieškoti modelių, kolekcijų, žymų…",
+      "clear": "Išvalyti paiešką",
+      "failed": "Paieška nepavyko. Bandykite dar kartą.",
+      "noResults": "Nerasta rezultatų pagal „{{query}}“.",
+      "sectionModels": "Modeliai",
+      "sectionCollections": "Kolekcijos",
+      "sectionTags": "Žymos",
+      "modelCount_one": "{{count}} modelis",
+      "modelCount_other": "{{count}} modeliai"
+    },
     "importProgress": {
       "starting": "Pradedamas importas…",
       "label": "Importuojama… {{processed}} iš {{total}}",
