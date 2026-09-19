@@ -19,7 +19,7 @@ downloads do.
 
 As a developer-mode "unpacked" extension:
 
-1. Download `thingport-grab.zip` from the in-app Download page (or the
+1. Download `thingport-grab-chrome.zip` from the in-app Download page (or the
    [`extension-latest` release](https://github.com/TautvydasDerzinskas/Thingport/releases/tag/extension-latest))
    and unzip it somewhere permanent (don't delete the folder afterwards -- Chrome loads the
    extension from it every time it starts).
@@ -34,7 +34,7 @@ Firefox refuses to install *any* unsigned extension outside of Developer Edition
 local/unpacked use -- so unlike Chrome, this needs an actual Mozilla-signed build, not just a zip.
 CI signs one on every push to `main` (see [Build / package](#build--package) below):
 
-1. Download `thingport-grab.xpi` from the in-app Download page (or the
+1. Download `thingport-grab-firefox.xpi` from the in-app Download page (or the
    [`extension-latest` release](https://github.com/TautvydasDerzinskas/Thingport/releases/tag/extension-latest)).
 2. Open it directly (double-click, or `File > Open File` in Firefox) -- or drag it onto a Firefox
    window -- and confirm the install prompt.
@@ -96,7 +96,7 @@ To produce the Chrome zip by hand:
 
 ```bash
 cd extension
-zip -r ../thingport-grab.zip . -x '*.DS_Store'
+zip -r ../thingport-grab-chrome.zip . -x '*.DS_Store'
 ```
 
 To produce a signed Firefox build by hand, you need a Mozilla Add-on Developer account's API

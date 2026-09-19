@@ -13,8 +13,8 @@ export type ExtensionDownload = { browser: "chrome" | "firefox"; label: string; 
 // Firefox's asset is a Mozilla-signed .xpi rather than a zip -- see extension/README.md's
 // "Firefox" install section for why an unpacked zip won't do there.
 export const EXTENSION_DOWNLOADS: ExtensionDownload[] = [
-  { browser: "chrome", label: "Chrome", asset: "thingport-grab.zip" },
-  { browser: "firefox", label: "Firefox", asset: "thingport-grab.xpi" },
+  { browser: "chrome", label: "Chrome", asset: "thingport-grab-chrome.zip" },
+  { browser: "firefox", label: "Firefox", asset: "thingport-grab-firefox.xpi" },
 ];
 
 export function extensionDownloadUrl(asset: string): string {

@@ -34,11 +34,11 @@ jobs:
         run: |
           mkdir -p dist
           cd extension
-          zip -r ../dist/thingport-grab.zip . -x '*.DS_Store'
+          zip -r ../dist/thingport-grab-chrome.zip . -x '*.DS_Store'
       - uses: actions/upload-artifact@v4
         with:
-          name: thingport-grab
-          path: dist/thingport-grab.zip
+          name: thingport-grab-chrome
+          path: dist/thingport-grab-chrome.zip
           if-no-files-found: error
 
   build-firefox:
@@ -80,12 +80,12 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           xpi=$(ls dist/*.xpi | head -n1)
-          mv "$xpi" dist/thingport-grab.xpi
+          mv "$xpi" dist/thingport-grab-firefox.xpi
       - uses: actions/upload-artifact@v4
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           name: thingport-grab-firefox
-          path: dist/thingport-grab.xpi
+          path: dist/thingport-grab-firefox.xpi
           if-no-files-found: error
 
   release:
@@ -98,7 +98,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: thingport-grab
+          name: thingport-grab-chrome
           path: dist
       - uses: actions/download-artifact@v4
         with:
@@ -120,12 +120,12 @@ jobs:
             Not published to either browser's extension store -- see `extension/README.md` for
             install instructions:
 
-            - **Chrome / Edge / other Chromium browsers**: unzip `thingport-grab.zip`, then
+            - **Chrome / Edge / other Chromium browsers**: unzip `thingport-grab-chrome.zip`, then
               `chrome://extensions` → enable **Developer mode** → **Load unpacked** → select the
               unzipped folder.
-            - **Firefox**: download `thingport-grab.xpi` and open it directly (or drag it onto a
-              Firefox window). It's signed by Mozilla for self-distribution, so it installs and
-              updates like any other extension -- no Developer mode needed.
+            - **Firefox**: download `thingport-grab-firefox.xpi` and open it directly (or drag it
+              onto a Firefox window). It's signed by Mozilla for self-distribution, so it installs
+              and updates like any other extension -- no Developer mode needed.
           files: |
-            dist/thingport-grab.zip
-            dist/thingport-grab.xpi
+            dist/thingport-grab-chrome.zip
+            dist/thingport-grab-firefox.xpi
