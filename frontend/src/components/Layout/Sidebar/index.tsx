@@ -19,6 +19,7 @@ import ViewInArIcon from "@mui/icons-material/ViewInAr";
 import CollectionsIcon from "@mui/icons-material/Collections";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import DownloadIcon from "@mui/icons-material/Download";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
@@ -424,6 +425,7 @@ export default function Sidebar({ isAdmin, onSelectCategory, bookmarksVersion }:
                       <BookmarkIcon fontSize="small" />
                     </ListItemIcon>
                     <ListItemText primary={label} primaryTypographyProps={{ variant: "body2", noWrap: true }} />
+                    <DragIndicatorIcon fontSize="small" sx={{ ml: "auto", flexShrink: 0, color: "text.disabled" }} />
                   </ListItemButton>
                 );
               })}

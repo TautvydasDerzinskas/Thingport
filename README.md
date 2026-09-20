@@ -14,8 +14,6 @@ from the places where you discover them.
   <img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/backend-image.yml/badge.svg" alt="Backend">
   <img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/bridge-release.yml/badge.svg" alt="Slicer Bridge">
   <img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/extension-release.yml/badge.svg" alt="Thingport Grab">
-  <a href="https://github.com/sponsors/TautvydasDerzinskas"><img src="https://img.shields.io/github/sponsors/TautvydasDerzinskas" alt="GitHub Sponsors"></a>
-  <a href="https://buymeacoffee.com/TautvydasDerzinskas"><img src="https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-FFDD00?logo=buy-me-a-coffee&logoColor=black" alt="Buy Me A Coffee"></a>
 </p>
 
 </div>
