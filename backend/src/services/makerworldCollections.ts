@@ -1,5 +1,5 @@
 import { IMPORT_BROWSER_USER_AGENT, IMPORT_TIMEOUT_SECONDS } from "../config";
-import { fetchViaFlaresolverr, isFlaresolverrEnabled, looksLikeCloudflareBlock } from "./flaresolverr";
+import { extractJsonFromBrowserBody, fetchViaFlaresolverr, isFlaresolverrEnabled, looksLikeCloudflareBlock } from "./flaresolverr";
 import { maybeSleep } from "../utils/concurrency";
 import {
   isCaptchaChallenge,
@@ -60,14 +60,10 @@ async function fetchCollectionJson(url: string, bearerToken: string | null, pace
   try {
     const res = await fetch(url, { headers: collectionHeaders(bearerToken), redirect: "follow", signal: controller.signal });
     if (res.status === 403 && isFlaresolverrEnabled() && looksLikeCloudflareBlock(res.headers)) {
-      const solved = await fetchViaFlaresolverr(url, null);
+      const solved = await fetchViaFlaresolverr(url, bearerToken ? `token=${bearerToken}` : null);
       if (!solved) return null;
-      let data: unknown;
-      try {
-        data = JSON.parse(solved.body);
-      } catch {
-        return null;
-      }
+      const data = extractJsonFromBrowserBody(solved.body);
+      if (data === null) return null;
       if (isCaptchaChallenge(data)) {
         noteCaptchaChallenge();
         throw new MakerworldCaptchaError();

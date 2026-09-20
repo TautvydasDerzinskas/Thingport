@@ -1,5 +1,5 @@
 import { IMPORT_BROWSER_USER_AGENT, IMPORT_TIMEOUT_SECONDS } from "../config";
-import { fetchViaFlaresolverr, isFlaresolverrEnabled, looksLikeCloudflareBlock } from "./flaresolverr";
+import { extractJsonFromBrowserBody, fetchViaFlaresolverr, isFlaresolverrEnabled, looksLikeCloudflareBlock } from "./flaresolverr";
 import { decodeHtmlEntities, htmlToPlainText, type ImportedAuthorInfo, type ImportedPageMetadata } from "./importResolvers";
 import { maybeSleep, sleep } from "../utils/concurrency";
 import {
@@ -123,6 +123,15 @@ export async function verifyMakerworldCookie(rawCookieOrToken: string): Promise<
       redirect: "follow",
       signal: controller.signal,
     });
+    if (res.status === 403 && isFlaresolverrEnabled() && looksLikeCloudflareBlock(res.headers)) {
+      // This endpoint answers 200 with an empty body through FlareSolverr's browser when the
+      // session isn't actually logged in, so a bare status check would accept any string here.
+      // Assert on the parsed body instead -- only a genuinely authenticated session has a `uid`.
+      const solved = await fetchViaFlaresolverr(SELF_PREFERENCE_URL, `token=${bearerToken}`);
+      if (!solved) return false;
+      const data = extractJsonFromBrowserBody(solved.body);
+      return isRecord(data) && data.uid != null;
+    }
     return res.ok;
   } catch {
     return false;
@@ -179,11 +188,7 @@ async function fetchAuthorProfileJson(uid: string, paceMs?: number): Promise<unk
     if (res.status === 403 && isFlaresolverrEnabled() && looksLikeCloudflareBlock(res.headers)) {
       const solved = await fetchViaFlaresolverr(url, null);
       if (!solved) return null;
-      try {
-        return JSON.parse(solved.body);
-      } catch {
-        return null;
-      }
+      return extractJsonFromBrowserBody(solved.body);
     }
     if (!res.ok) return null;
     const text = await res.text();
