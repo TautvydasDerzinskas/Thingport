@@ -1151,6 +1151,7 @@
       "addToFavorites": "Pridėti prie mėgstamų",
       "removeFromFavorites": "Pašalinti iš mėgstamų",
       "favoriteFailed": "Nepavyko atnaujinti mėgstamų. Bandykite dar kartą.",
+      "title": "Pavadinimas",
       "category": "Kategorija",
       "author": "Autorius",
       "downloadModelFiles": "Atsisiųsti modelio failus",

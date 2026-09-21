@@ -38,7 +38,7 @@ type Props = {
 };
 
 /** The model detail page's right-hand summary card, sticky so it stays in view while the
- *  description/tags column scrolls: author (jumps to their author page), category (jumps back
+ *  description/tags column scrolls: the full title, author (jumps to their author page), category (jumps back
  *  to the Models grid filtered to it), "Open in {Slicer}" (only when both a preference is set
  *  and this print has a slicer_url -- same condition ModelActionsMenu's menu item uses),
  *  "Download model files" (the same picker-or-direct-download flow as ModelActionsMenu's
@@ -97,6 +97,19 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
       }}
     >
       <Stack spacing={2}>
+        <Box>
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+            {t("models:detail.title")}
+          </Typography>
+          {/* Full title, wrapped -- unlike the page header, this box never truncates it. */}
+          <Typography
+            variant="body2"
+            sx={{ color: (muiTheme) => muiTheme.thingport.headingText, overflowWrap: "anywhere" }}
+          >
+            {print.title || print.name}
+          </Typography>
+        </Box>
+
         <Box>
           <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
             {t("models:detail.author")}

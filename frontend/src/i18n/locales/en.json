@@ -1150,6 +1150,7 @@
       "addToFavorites": "Add to Favourites",
       "removeFromFavorites": "Remove from Favourites",
       "favoriteFailed": "Failed to update favourites. Please try again.",
+      "title": "Title",
       "category": "Category",
       "author": "Author",
       "downloadModelFiles": "Download model files",
