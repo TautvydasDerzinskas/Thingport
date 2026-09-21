@@ -524,13 +524,14 @@ async function buildGlbGroup(parsed: ParsedModel): Promise<import("three").Group
       if (!objectData) continue;
       for (const mesh of objectData.meshes) {
         const positioned = item.transform ? applyAffineToVertices(mesh.vertices, item.transform) : mesh.vertices;
-        // 3MF: X right, Y back, Z up -> three.js: X right, Y up, Z forward (Y/Z swap, no sign
-        // flip) -- kept identical to bambuThreeMf.ts's createGeometryFromMesh.
+        // 3MF Z-up -> three.js Y-up as a rotation, (x, y, z) -> (x, z, -y) -- kept identical to
+        // bambuThreeMf.ts's createGeometryFromMesh (see there for why it can't be a plain swap).
+        // Changing this changes every cached GLB: bump PREVIEW_FORMAT_VERSION.
         const swapped = new Float32Array(positioned.length);
         for (let i = 0; i < positioned.length; i += 3) {
           swapped[i] = positioned[i];
           swapped[i + 1] = positioned[i + 2];
-          swapped[i + 2] = positioned[i + 1];
+          swapped[i + 2] = -positioned[i + 1];
         }
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute("position", new THREE.BufferAttribute(swapped, 3));
@@ -587,7 +588,17 @@ async function buildGlbGroup(parsed: ParsedModel): Promise<import("three").Group
 
 // ---- Cache path helpers (same shape as printService.ts's plateThumbPath/plateThumbExists) -----
 
+// Part of the cache filename, so a change to what buildGlbGroup produces (v2: the Z-up -> Y-up
+// conversion became a rotation instead of a mirroring swap) makes every older GLB a cache miss
+// and gets it regenerated on next view, rather than serving stale geometry forever.
+const PREVIEW_FORMAT_VERSION = 2;
+
 export function modelPreviewGlbPath(plateId: string): string {
+  return path.join(MODEL_PREVIEWS, `${plateId}.v${PREVIEW_FORMAT_VERSION}.glb`);
+}
+
+/** Pre-versioning filename (v1) -- removed once its replacement is written. */
+function legacyModelPreviewGlbPath(plateId: string): string {
   return path.join(MODEL_PREVIEWS, `${plateId}.glb`);
 }
 
@@ -633,6 +644,7 @@ export async function generateModelPreviewGlb(plateId: string, srcPath: string):
     await fs.writeFile(tmp, buf);
     await fs.rename(tmp, dest);
     await fs.rm(modelPreviewErrorPath(plateId), { force: true });
+    await fs.rm(legacyModelPreviewGlbPath(plateId), { force: true });
   } catch (err) {
     console.error(`Model preview generation failed for plate ${plateId}:`, err);
     await fs.writeFile(modelPreviewErrorPath(plateId), String(err)).catch(() => undefined);

@@ -8,7 +8,7 @@ import { generateModelPreviewGlb, modelPreviewGlbExists, modelPreviewGlbPath } f
 
 // A hand-built 2-object/2-extruder/2-plate Bambu-style .3mf, small enough to commit as test
 // data inline rather than shipping a binary fixture file. Exercises the same fast regex-based
-// mesh extraction, extruder/plate resolution, and affine-transform + Y/Z-swap math the real
+// mesh extraction, extruder/plate resolution, and affine-transform + Z-up->Y-up rotation math the real
 // (huge) repro file that motivated this feature goes through.
 const MODEL_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <model xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" unit="millimeter">
@@ -149,6 +149,12 @@ async function buildWrapperFixture3mf(destPath: string): Promise<void> {
   ]);
 }
 
+// Vertex positions as plain numbers. `+ 0` turns the -0 the Z-up -> Y-up rotation produces for
+// every vertex at 3MF y=0 (z = -y) into 0, which toEqual would otherwise treat as different.
+function positionsOf(mesh: any): number[] {
+  return Array.from(mesh.geometry.attributes.position.array as ArrayLike<number>, v => v + 0);
+}
+
 describe("modelPreviewCache", () => {
   let fixturePath: string;
   const plateId = `test-fixture-${Date.now()}`;
@@ -198,7 +204,7 @@ describe("modelPreviewCache", () => {
       if (obj.isMesh) {
         meshes[obj.name] = {
           color: `#${obj.material.color.getHexString()}`,
-          positions: Array.from(obj.geometry.attributes.position.array),
+          positions: positionsOf(obj),
         };
       }
     });
@@ -207,10 +213,11 @@ describe("modelPreviewCache", () => {
     expect(meshes["extruder-0"].color.toLowerCase()).toBe("#00b800");
     expect(meshes["extruder-1"].color.toLowerCase()).toBe("#ff0000");
 
-    // Object 1: identity transform, then the fixed Y/Z swap (3MF X,Y,Z -> three.js X,Z,Y).
-    expect(meshes["extruder-0"].positions).toEqual([0, 0, 0, 10, 0, 0, 0, 0, 10]);
-    // Object 2: +50 X translation applied in 3MF space before the same swap.
-    expect(meshes["extruder-1"].positions).toEqual([50, 0, 0, 70, 0, 0, 50, 0, 20]);
+    // Object 1: identity transform, then the Z-up -> Y-up rotation (3MF x,y,z -> three.js x,z,-y).
+    // A plain swap (x,z,y) would mirror the model and flip its triangle winding.
+    expect(meshes["extruder-0"].positions).toEqual([0, 0, 0, 10, 0, 0, 0, 0, -10]);
+    // Object 2: +50 X translation applied in 3MF space before the same rotation.
+    expect(meshes["extruder-1"].positions).toEqual([50, 0, 0, 70, 0, 0, 50, 0, -20]);
 
     void THREE; // imported only to force-load three before GLTFLoader in some module graphs
   });
@@ -263,13 +270,13 @@ describe("modelPreviewCache -- internal <component> references", () => {
     const meshes: Record<string, { positions: number[] }> = {};
     gltf.scene.traverse((obj: any) => {
       if (obj.isMesh) {
-        meshes[obj.name] = { positions: Array.from(obj.geometry.attributes.position.array) };
+        meshes[obj.name] = { positions: positionsOf(obj) };
       }
     });
 
     expect(Object.keys(meshes)).toEqual(["extruder-0"]);
     // Object 1's vertices, translated by the component's own +5 X transform (build item itself
-    // is identity), then the fixed Y/Z swap.
-    expect(meshes["extruder-0"].positions).toEqual([5, 0, 0, 15, 0, 0, 5, 0, 10]);
+    // is identity), then the Z-up -> Y-up rotation.
+    expect(meshes["extruder-0"].positions).toEqual([5, 0, 0, 15, 0, 0, 5, 0, -10]);
   });
 });

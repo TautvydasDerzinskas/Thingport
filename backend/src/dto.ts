@@ -159,10 +159,16 @@ function plateThumbUrl(plateId: string): string | null {
   return `/plate/${plateId}/thumb.jpg?v=${mtime}`;
 }
 
-function previewGlbUrl(plateId: string): string | null {
-  if (!modelPreviewGlbExists(plateId)) return null;
-  const mtime = fs.statSync(modelPreviewGlbPath(plateId)).mtimeMs;
-  return `/plate/${plateId}/preview.glb?v=${mtime}`;
+function previewGlbUrl(plate: Plate): string | null {
+  if (!modelPreviewGlbExists(plate.id)) {
+    // Still hand out the URL for a 3MF with no (current-version) cache yet: requesting it is
+    // what kicks off generation (see routes/plates.ts's self-heal), and the viewer falls back to
+    // the live parser on the 404. Returning null here would mean nothing ever requests it, so a
+    // plate that predates the cache (or a cache-format bump) would never get one.
+    return plate.filename.toLowerCase().endsWith(".3mf") ? `/plate/${plate.id}/preview.glb` : null;
+  }
+  const mtime = fs.statSync(modelPreviewGlbPath(plate.id)).mtimeMs;
+  return `/plate/${plate.id}/preview.glb?v=${mtime}`;
 }
 
 export function toPlateOut(printId: string, plate: Plate): PlateOut {
@@ -175,7 +181,7 @@ export function toPlateOut(printId: string, plate: Plate): PlateOut {
     size: plate.size,
     url: `/print/${printId}/plate/${plate.id}/file/${encodeURIComponent(plate.filename)}`,
     thumb_url: plateThumbUrl(plate.id),
-    preview_glb_url: previewGlbUrl(plate.id),
+    preview_glb_url: previewGlbUrl(plate),
   };
 }
 

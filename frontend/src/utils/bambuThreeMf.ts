@@ -5,9 +5,8 @@
 // a single imported/uploaded 3MF here always stays one Plate, its internal plates are a purely
 // client-side rendering/browsing concept) and to a filament/extruder index; Metadata/
 // project_settings.config carries the filament_colour palette. The coordinate swap in
-// createGeometryFromMesh below is kept identical to the original (a Y/Z swap with no sign flip) --
-// Thingport's own STL/OBJ/STEP loaders use a rotateX(-90deg) instead, which is not the same
-// transform (it negates one axis), so callers must not apply that rotation to this loader's output.
+// createGeometryFromMesh below already bakes in the Z-up -> Y-up rotateX(-90deg) that Thingport's
+// STL/OBJ/STEP loaders apply as an object rotation, so callers must not rotate this output again.
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
@@ -501,16 +500,17 @@ export async function loadCachedBambuGlb(url: string): Promise<CachedBambuGlb | 
 
 function createGeometryFromMesh(mesh: MeshData): THREE.BufferGeometry {
   const geometry = new THREE.BufferGeometry();
-  // 3MF: X right, Y back, Z up -> three.js: X right, Y up, Z forward. This is a Y/Z swap with
-  // no sign flip -- NOT the same transform as the rotateX(-90deg) used to convert STL/OBJ/STEP
-  // (that maps 3MF-Y to -Z, mirroring a Bambu 3MF's chirality). Kept as the original per-vertex
-  // swap rather than a whole-object rotation so it matches bambuddy's validated orientation
-  // exactly; loadObjectFromAsset's centralized rotation is skipped for 3MF for this reason.
+  // 3MF: X right, Y back, Z up -> three.js: X right, Y up, Z toward the viewer, i.e.
+  // (x, y, z) -> (x, z, -y): the same rotateX(-90deg) loadObjectFromAsset applies to STL/OBJ/STEP,
+  // baked per-vertex here (loadObjectFromAsset skips 3MF so it isn't applied twice). It must stay
+  // a rotation: a plain Y/Z swap (no sign flip) is a mirror, which reverses every triangle's
+  // winding -- front faces get culled, so models render inside-out/see-through, and mirrored.
+  // Keep identical to backend/src/services/modelPreviewCache.ts's buildGlbGroup.
   const positions = new Float32Array(mesh.vertices.length);
   for (let i = 0; i < mesh.vertices.length; i += 3) {
     positions[i] = mesh.vertices[i];
     positions[i + 1] = mesh.vertices[i + 2];
-    positions[i + 2] = mesh.vertices[i + 1];
+    positions[i + 2] = -mesh.vertices[i + 1];
   }
   geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
   geometry.setIndex(mesh.triangles);
