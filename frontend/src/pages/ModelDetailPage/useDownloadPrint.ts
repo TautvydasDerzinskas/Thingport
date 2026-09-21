@@ -25,8 +25,16 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRe
   };
 
   // Fire-and-forget: a failure to count a use must never look like the download/launch failed.
+  // Only a real print is passed on: the frontend and backend images are published separately, and
+  // a backend older than this endpoint's print response still answers `{ ok: true }` -- which,
+  // handed to onRecorded as-is, would replace the whole print in the caller's state.
   const recordUse = () => {
-    printsApi.recordDownload(print.id).then(updated => onRecorded?.(updated)).catch(() => {});
+    printsApi
+      .recordDownload(print.id)
+      .then(updated => {
+        if (updated && typeof updated === "object" && updated.id === print.id) onRecorded?.(updated);
+      })
+      .catch(() => {});
   };
 
   const downloadPlate = async (plate: Plate) => {
