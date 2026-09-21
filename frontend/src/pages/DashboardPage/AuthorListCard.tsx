@@ -14,6 +14,7 @@ import StarIcon from "@mui/icons-material/Star";
 import PersonIcon from "@mui/icons-material/Person";
 import { dashboardApi, type DashboardAuthor } from "../../api/dashboard";
 import SeeMoreDialog from "./SeeMoreDialog";
+import AuthorHoverCard from "../../components/AuthorHoverCard";
 
 type Props = {
   authors: DashboardAuthor[];
@@ -26,18 +27,20 @@ function AuthorRow({ author, rank, modelCountLabel, onClick }: {
   onClick: () => void;
 }) {
   return (
-    <ListItemButton onClick={onClick} sx={{ borderRadius: 1, px: 1 }}>
-      <Typography sx={{ width: 24, flexShrink: 0, color: "text.secondary", fontWeight: 600 }}>{rank}</Typography>
-      <ListItemAvatar sx={{ minWidth: 48 }}>
-        <Avatar src={author.avatar_url ?? undefined} sx={{ width: 40, height: 40 }}>
-          <PersonIcon fontSize="small" />
-        </Avatar>
-      </ListItemAvatar>
-      <ListItemText primary={author.name || author.handle || "—"} primaryTypographyProps={{ noWrap: true }} />
-      <Typography variant="body2" color="text.secondary" sx={{ flexShrink: 0, pl: 1 }}>
-        {modelCountLabel(author.model_count)}
-      </Typography>
-    </ListItemButton>
+    <AuthorHoverCard authorId={author.id}>
+      <ListItemButton onClick={onClick} sx={{ borderRadius: 1, px: 1 }}>
+        <Typography sx={{ width: 24, flexShrink: 0, color: "text.secondary", fontWeight: 600 }}>{rank}</Typography>
+        <ListItemAvatar sx={{ minWidth: 48 }}>
+          <Avatar src={author.avatar_url ?? undefined} sx={{ width: 40, height: 40 }}>
+            <PersonIcon fontSize="small" />
+          </Avatar>
+        </ListItemAvatar>
+        <ListItemText primary={author.name || author.handle || "—"} primaryTypographyProps={{ noWrap: true }} />
+        <Typography variant="body2" color="text.secondary" sx={{ flexShrink: 0, pl: 1 }}>
+          {modelCountLabel(author.model_count)}
+        </Typography>
+      </ListItemButton>
+    </AuthorHoverCard>
   );
 }
 

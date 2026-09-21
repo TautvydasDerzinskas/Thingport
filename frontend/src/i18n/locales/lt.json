@@ -1191,7 +1191,16 @@
       "linkConfirmMessage": "Tai susies „{{name}}“ kaip jūsų pačių tapatybę. Jūsų „Mano modeliai“ puslapyje taip pat bus rodomi jų modeliai, o jūsų profilio biografija / viršelio nuotrauka bus užpildyta iš jų, jei dar neturite savo nustatytos.",
       "linkConfirmLabel": "Taip, tai aš",
       "linkSuccess": "„{{name}}“ susieta su jūsų paskyra",
-      "linkFailed": "Nepavyko susieti šio autoriaus su jūsų paskyra"
+      "linkFailed": "Nepavyko susieti šio autoriaus su jūsų paskyra",
+      "popup": {
+        "modelCount_one": "{{count}} modelis importuotas iš {{provider}}",
+        "modelCount_few": "{{count}} modeliai importuoti iš {{provider}}",
+        "modelCount_other": "{{count}} modelių importuota iš {{provider}}",
+        "selfModelCount_one": "{{count}} modelis įkeltas",
+        "selfModelCount_few": "{{count}} modeliai įkelti",
+        "selfModelCount_other": "{{count}} modelių įkelta",
+        "loadFailed": "Nepavyko įkelti autoriaus."
+      }
     },
     "collections": {
       "pageTitle": "Kolekcijos",

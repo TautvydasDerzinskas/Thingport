@@ -88,6 +88,8 @@ export type ListPrintsResult = {
   items: Print[];
   hasMore: boolean;
   nextOffset?: number;
+  /** Total matches across all pages -- only sent when `limit` is. */
+  total?: number;
 };
 
 export type UploadPrintsResult = {
@@ -147,7 +149,9 @@ export const printsApi = {
     const hasMore = (res.headers.get("X-Has-More") || "").toLowerCase() === "true";
     const nextOffsetRaw = res.headers.get("X-Next-Offset");
     const nextOffset = nextOffsetRaw ? Number(nextOffsetRaw) : undefined;
-    return { items, hasMore, nextOffset };
+    const totalRaw = res.headers.get("X-Total-Count");
+    const total = totalRaw ? Number(totalRaw) : undefined;
+    return { items, hasMore, nextOffset, total };
   },
 
   get: async (id: string): Promise<Print> => {

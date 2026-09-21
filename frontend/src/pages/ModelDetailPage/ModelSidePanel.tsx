@@ -23,6 +23,7 @@ import { dividerBorderColor } from "../../theme";
 import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
 import { useDownloadPrint } from "./useDownloadPrint";
 import RollingNumber from "../../components/RollingNumber";
+import AuthorHoverCard from "../../components/AuthorHoverCard";
 import DownloadPickerDialog from "./DownloadPickerDialog";
 
 type Props = {
@@ -114,28 +115,34 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
           <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
             {t("models:detail.author")}
           </Typography>
-          <Stack
-            direction="row"
-            alignItems="center"
-            spacing={1}
-            sx={{
-              width: "fit-content",
-              cursor: print.author || showViewerAsAuthor ? "pointer" : "default",
-              color: (muiTheme) => muiTheme.thingport.headingText,
-              ...(print.author || showViewerAsAuthor ? { "&:hover": { color: "primary.main" } } : undefined),
-            }}
-            onClick={() => {
-              if (print.author) navigate(`/authors/${print.author.id}`);
-              else if (showViewerAsAuthor) navigate(`/authors/${SELF_AUTHOR_ID}`);
-            }}
+          <AuthorHoverCard
+            authorId={print.author ? print.author.id : SELF_AUTHOR_ID}
+            viewer={viewer}
+            disabled={!print.author && !showViewerAsAuthor}
           >
-            <Avatar src={authorAvatarUrl || undefined} sx={{ width: 28, height: 28, fontSize: 13, color: "inherit !important" }}>
-              {(authorName || "?").slice(0, 1).toUpperCase()}
-            </Avatar>
-            <Typography variant="body2" sx={{ color: "inherit" }}>
-              {authorName || t("models:card.unknownAuthor")}
-            </Typography>
-          </Stack>
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={1}
+              sx={{
+                width: "fit-content",
+                cursor: print.author || showViewerAsAuthor ? "pointer" : "default",
+                color: (muiTheme) => muiTheme.thingport.headingText,
+                ...(print.author || showViewerAsAuthor ? { "&:hover": { color: "primary.main" } } : undefined),
+              }}
+              onClick={() => {
+                if (print.author) navigate(`/authors/${print.author.id}`);
+                else if (showViewerAsAuthor) navigate(`/authors/${SELF_AUTHOR_ID}`);
+              }}
+            >
+              <Avatar src={authorAvatarUrl || undefined} sx={{ width: 28, height: 28, fontSize: 13, color: "inherit !important" }}>
+                {(authorName || "?").slice(0, 1).toUpperCase()}
+              </Avatar>
+              <Typography variant="body2" sx={{ color: "inherit" }}>
+                {authorName || t("models:card.unknownAuthor")}
+              </Typography>
+            </Stack>
+          </AuthorHoverCard>
         </Box>
 
         {print.category_id && print.category_name && (

@@ -29,7 +29,7 @@ export function createApp(): Express {
     cors({
       origin: origins.includes("*") ? true : origins,
       credentials: true,
-      exposedHeaders: ["X-Has-More", "X-Next-Offset"],
+      exposedHeaders: ["X-Has-More", "X-Next-Offset", "X-Total-Count"],
     }),
   );
 

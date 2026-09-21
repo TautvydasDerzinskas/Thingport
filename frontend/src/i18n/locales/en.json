@@ -1190,7 +1190,14 @@
       "linkConfirmMessage": "This links \"{{name}}\" as your own identity. Your \"My models\" page will also list their models, and your profile bio/cover picture will be filled in from theirs if you don't already have one set.",
       "linkConfirmLabel": "Yes, it's me",
       "linkSuccess": "Linked \"{{name}}\" to your account",
-      "linkFailed": "Failed to link this author to your account"
+      "linkFailed": "Failed to link this author to your account",
+      "popup": {
+        "modelCount_one": "{{count}} model imported from {{provider}}",
+        "modelCount_other": "{{count}} models imported from {{provider}}",
+        "selfModelCount_one": "{{count}} model uploaded",
+        "selfModelCount_other": "{{count}} models uploaded",
+        "loadFailed": "Couldn't load this author."
+      }
     },
     "collections": {
       "pageTitle": "Collections",

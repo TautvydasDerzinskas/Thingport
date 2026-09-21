@@ -19,6 +19,7 @@ import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
 import { useGravatarUrl } from "../../hooks/useGravatarUrl";
 import StarToggle from "../../components/StarToggle";
 import HoverSlideshow from "../../components/media/HoverSlideshow";
+import AuthorHoverCard from "../../components/AuthorHoverCard";
 import RollingNumber from "../../components/RollingNumber";
 import { useFavoriteToggle } from "../../hooks/useFavoriteToggle";
 import ModelActionsMenu from "../ModelDetailPage/ModelActionsMenu";
@@ -204,28 +205,34 @@ export default function ModelCard({
           {item.title || item.name}
         </Typography>
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mt: 0.75 }}>
-          <Stack
-            direction="row"
-            alignItems="center"
-            spacing={0.75}
-            sx={{
-              minWidth: 0,
-              color: "#858585",
-              ...(author || showViewerAsAuthor ? { cursor: "pointer", "&:hover": { color: "#00b800" } } : undefined),
-            }}
-            onClick={e => {
-              if (!author && !showViewerAsAuthor) return;
-              e.stopPropagation();
-              navigate(`/authors/${author ? author.id : SELF_AUTHOR_ID}`);
-            }}
+          <AuthorHoverCard
+            authorId={author ? author.id : SELF_AUTHOR_ID}
+            viewer={viewer}
+            disabled={!author && !showViewerAsAuthor}
           >
-            <Avatar src={authorAvatarUrl || undefined} sx={{ width: 20, height: 20, fontSize: 11, color: "inherit !important" }}>
-              {(authorName || "?").slice(0, 1).toUpperCase()}
-            </Avatar>
-            <Typography variant="caption" noWrap sx={{ color: "inherit" }}>
-              {authorName || t("models:card.unknownAuthor")}
-            </Typography>
-          </Stack>
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={0.75}
+              sx={{
+                minWidth: 0,
+                color: "#858585",
+                ...(author || showViewerAsAuthor ? { cursor: "pointer", "&:hover": { color: "#00b800" } } : undefined),
+              }}
+              onClick={e => {
+                if (!author && !showViewerAsAuthor) return;
+                e.stopPropagation();
+                navigate(`/authors/${author ? author.id : SELF_AUTHOR_ID}`);
+              }}
+            >
+              <Avatar src={authorAvatarUrl || undefined} sx={{ width: 20, height: 20, fontSize: 11, color: "inherit !important" }}>
+                {(authorName || "?").slice(0, 1).toUpperCase()}
+              </Avatar>
+              <Typography variant="caption" noWrap sx={{ color: "inherit" }}>
+                {authorName || t("models:card.unknownAuthor")}
+              </Typography>
+            </Stack>
+          </AuthorHoverCard>
           <Stack direction="row" spacing={1.5} sx={{ color: "#858585", flexShrink: 0 }}>
             <Stack direction="row" alignItems="center" spacing={0.4}>
               <VisibilityIcon sx={{ fontSize: 14 }} />

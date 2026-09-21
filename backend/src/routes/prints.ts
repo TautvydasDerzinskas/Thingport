@@ -248,6 +248,9 @@ router.get(
       const hasMore = sorted.length > start + paged.length;
       res.setHeader("X-Has-More", hasMore ? "true" : "false");
       res.setHeader("X-Next-Offset", String(start + paged.length));
+      // Every match, not just this page -- e.g. an author hover card's "N models" alongside a
+      // 4-item preview, without a second request.
+      res.setHeader("X-Total-Count", String(sorted.length));
     }
 
     const out = paged.map((p) => {
