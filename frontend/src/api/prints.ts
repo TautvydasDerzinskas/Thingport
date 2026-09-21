@@ -438,9 +438,10 @@ export const printsApi = {
     return res.json();
   },
 
-  /** Records a completed download of this print (called once per explicit download action --
-   *  single-file, per-plate, or "download all as zip" -- from the model detail page). */
-  recordDownload: async (id: string) => {
+  /** Records one use of this print -- bumps its print count -- once per explicit download action
+   *  (single-file, per-plate, or "download all as zip") or "Open in {Slicer}". Returns the updated
+   *  print so the caller can show the new count straight away. */
+  recordDownload: async (id: string): Promise<Print> => {
     const res = await fetch(`${apiBase()}/print/${id}/download`, {
       method: "POST",
       headers: authHeaders(),

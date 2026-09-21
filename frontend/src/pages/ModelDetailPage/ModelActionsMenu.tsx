@@ -87,8 +87,8 @@ export default function ModelActionsMenu({
   // Driven by the URL (?edit=<id>) rather than local state, per spec -- lets a direct link (or the
   // back button) open/close it too, and lets the grid-card trigger below just navigate there.
   const editOpen = searchParams.get("edit") === print.id;
-  const { pickerOpen, setPickerOpen, downloading, handleDownload, downloadPlate, downloadAllZip, sortedPlates } =
-    useDownloadPrint(print, onUnauthorized);
+  const { pickerOpen, setPickerOpen, downloading, handleDownload, downloadPlate, downloadAllZip, sortedPlates, recordUse } =
+    useDownloadPrint(print, onUnauthorized, onUpdated);
 
   const closeMenu = () => setAnchorEl(null);
 
@@ -207,7 +207,15 @@ export default function ModelActionsMenu({
           <ListItemText sx={{ color: "error.main" }}>{t("common:delete")}</ListItemText>
         </MenuItem>
         <Divider />
-        <MenuItem component="a" href={openInSlicerHref} onClick={closeMenu} disabled={!openInSlicerHref}>
+        <MenuItem
+          component="a"
+          href={openInSlicerHref}
+          onClick={() => {
+            closeMenu();
+            recordUse();
+          }}
+          disabled={!openInSlicerHref}
+        >
           <ListItemIcon><LaunchIcon fontSize="small" /></ListItemIcon>
           <ListItemText>
             {slicerOption

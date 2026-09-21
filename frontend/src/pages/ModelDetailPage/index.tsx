@@ -327,7 +327,13 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
             it room to travel as the page scrolls instead of being stuck the moment its own
             (short) content ends. */}
         <Box sx={{ alignSelf: "stretch" }}>
-          <ModelSidePanel print={print} onSelectCategory={onSelectCategory} onUnauthorized={onUnauthorized} viewer={viewer} />
+          <ModelSidePanel
+            print={print}
+            onSelectCategory={onSelectCategory}
+            onUnauthorized={onUnauthorized}
+            onUpdated={setPrint}
+            viewer={viewer}
+          />
         </Box>
       </Box>
 

@@ -7,8 +7,10 @@ import { saveResponseToDisk } from "../../utils/downloadResponse";
 /** Shared download logic for a Print: a single-plate model downloads its one file directly; a
  *  multi-plate one opens a picker (download-all-as-zip, or pick one plate) -- see
  *  DownloadPickerDialog. Used by both ModelActionsMenu's "Download" menu item and the model
- *  detail page's own big "Download model files" button, so the two behaviors can't drift apart. */
-export function useDownloadPrint(print: Print, onUnauthorized?: () => void) {
+ *  detail page's own big "Download model files" button, so the two behaviors can't drift apart.
+ *  `recordUse` bumps the print count for the other ways of using a model (Open in {Slicer});
+ *  every bump hands the updated print to `onRecorded` so the new count shows up immediately. */
+export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRecorded?: (print: Print) => void) {
   const { t } = useTranslation(["models"]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -22,6 +24,11 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void) {
     alert(t("models:detail.downloadFailed"));
   };
 
+  // Fire-and-forget: a failure to count a use must never look like the download/launch failed.
+  const recordUse = () => {
+    printsApi.recordDownload(print.id).then(updated => onRecorded?.(updated)).catch(() => {});
+  };
+
   const downloadPlate = async (plate: Plate) => {
     setDownloading(true);
     try {
@@ -30,7 +37,7 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void) {
       if (!res.ok) throw new Error("Download failed");
       await saveResponseToDisk(res, plate.filename || "download");
       setPickerOpen(false);
-      printsApi.recordDownload(print.id).catch(() => {});
+      recordUse();
     } catch (err) {
       handleDownloadError(err);
     } finally {
@@ -44,7 +51,7 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void) {
       const res = await printsApi.downloadZip({ print_ids: [print.id] });
       await saveResponseToDisk(res, `${print.name || "model"}.zip`);
       setPickerOpen(false);
-      printsApi.recordDownload(print.id).catch(() => {});
+      recordUse();
     } catch (err) {
       handleDownloadError(err);
     } finally {
@@ -63,5 +70,5 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void) {
 
   const sortedPlates = print.plates.toSorted((a, b) => a.position - b.position);
 
-  return { pickerOpen, setPickerOpen, downloading, handleDownload, downloadPlate, downloadAllZip, sortedPlates };
+  return { pickerOpen, setPickerOpen, downloading, handleDownload, downloadPlate, downloadAllZip, sortedPlates, recordUse };
 }

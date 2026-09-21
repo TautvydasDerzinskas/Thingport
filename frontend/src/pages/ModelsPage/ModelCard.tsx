@@ -17,6 +17,7 @@ import { printProviderInfo } from "../../constants/importProviders";
 import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
 import { useGravatarUrl } from "../../hooks/useGravatarUrl";
 import StarToggle from "../../components/StarToggle";
+import RollingNumber from "../../components/RollingNumber";
 import { useFavoriteToggle } from "../../hooks/useFavoriteToggle";
 import ModelActionsMenu from "../ModelDetailPage/ModelActionsMenu";
 import type { AuthUser } from "../../api/auth";
@@ -219,7 +220,7 @@ export default function ModelCard({
             </Stack>
             <Stack direction="row" alignItems="center" spacing={0.4}>
               <PrintIcon sx={{ fontSize: 14 }} />
-              <Typography variant="caption">{item.print_count}</Typography>
+              <Typography variant="caption"><RollingNumber value={item.print_count} /></Typography>
             </Stack>
           </Stack>
         </Stack>

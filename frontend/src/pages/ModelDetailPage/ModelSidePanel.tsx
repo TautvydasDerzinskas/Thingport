@@ -22,12 +22,15 @@ import { useGravatarUrl } from "../../hooks/useGravatarUrl";
 import { dividerBorderColor } from "../../theme";
 import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
 import { useDownloadPrint } from "./useDownloadPrint";
+import RollingNumber from "../../components/RollingNumber";
 import DownloadPickerDialog from "./DownloadPickerDialog";
 
 type Props = {
   print: Print;
   onSelectCategory: (id: string) => void;
   onUnauthorized?: () => void;
+  /** Receives the updated print after a download or Open in {Slicer} bumps its print count. */
+  onUpdated?: (print: Print) => void;
   /** Only used as a fallback when the print has neither an Author nor a plain `creator` string --
    *  a direct upload has no import-source author at all, so it shows the viewer's own identity
    *  instead of "Unknown", since every print here is the viewer's own. */
@@ -41,13 +44,13 @@ type Props = {
  *  "Download model files" (the same picker-or-direct-download flow as ModelActionsMenu's
  *  Download, via useDownloadPrint so the two can't drift), view/print counts, and -- only for an
  *  actually-imported print, per source_provider -- when it was imported. */
-export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized, viewer }: Props) {
+export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized, onUpdated, viewer }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const navigate = useNavigate();
   const slicerPreference = useSlicerPreference();
   const viewerAvatarUrl = useGravatarUrl(viewer?.email, 56);
-  const { pickerOpen, setPickerOpen, downloading, handleDownload, downloadPlate, downloadAllZip, sortedPlates } =
-    useDownloadPrint(print, onUnauthorized);
+  const { pickerOpen, setPickerOpen, downloading, handleDownload, downloadPlate, downloadAllZip, sortedPlates, recordUse } =
+    useDownloadPrint(print, onUnauthorized, onUpdated);
 
   // "other" has no registered URL protocol to launch -- treated the same as no preference set.
   const slicerOption = SLICER_OPTIONS.find(opt => opt.id === slicerPreference && opt.id !== "other");
@@ -149,6 +152,7 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
           <Button
             component="a"
             href={openInSlicerHref}
+            onClick={recordUse}
             startIcon={<LaunchIcon fontSize="small" />}
             fullWidth
             sx={{
@@ -196,7 +200,7 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
             sx={{ flex: 1, py: 1, border: "1px solid", borderColor: "divider", borderRadius: 2 }}
           >
             <PrintIcon fontSize="small" sx={{ color: "text.secondary" }} />
-            <Typography variant="body2" fontWeight={600}>{print.print_count}</Typography>
+            <Typography variant="body2" fontWeight={600}><RollingNumber value={print.print_count} /></Typography>
           </Stack>
         </Stack>
 

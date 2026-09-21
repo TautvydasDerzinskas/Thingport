@@ -306,14 +306,16 @@ router.post(
   "/print/:id/download",
   asyncHandler(async (req, res) => {
     // Recorded explicitly from the detail page's download actions (single-file, per-plate, or
-    // "download all as zip"), rather than inside the plate-file/zip routes themselves -- those
-    // are shared by the 3D viewer, snapshot generation, and bulk tag/category zips, none of which
-    // are a user downloading *this* model.
-    await prisma.print.updateMany({
+    // "download all as zip") and "Open in {Slicer}", rather than inside the plate-file/zip routes
+    // themselves -- those are shared by the 3D viewer, snapshot generation, and bulk tag/category
+    // zips, none of which are a user downloading *this* model. Returns the updated print (like
+    // the favorite routes) so the caller can show the new count without refetching.
+    const result = await prisma.print.updateMany({
       where: { id: req.params.id, userId: req.userId },
       data: { printCount: { increment: 1 } },
     });
-    res.json({ ok: true });
+    if (result.count === 0) throw new HttpError(404, "Print not found");
+    res.json(await printOutById(req.userId!, req.params.id));
   }),
 );
 
