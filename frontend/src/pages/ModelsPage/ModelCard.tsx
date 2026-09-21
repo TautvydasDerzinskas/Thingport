@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import Paper from "@mui/material/Paper";
@@ -9,7 +10,7 @@ import Tooltip from "@mui/material/Tooltip";
 import { useTheme } from "@mui/material/styles";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PrintIcon from "@mui/icons-material/Print";
-import type { Print } from "../../api/prints";
+import { type Print, printsApi } from "../../api/prints";
 import { type PreviewMode } from "../../api/settings";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
 import { renderPreviewContent } from "../../components/media/renderPreviewContent";
@@ -17,6 +18,7 @@ import { printProviderInfo } from "../../constants/importProviders";
 import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
 import { useGravatarUrl } from "../../hooks/useGravatarUrl";
 import StarToggle from "../../components/StarToggle";
+import HoverSlideshow from "../../components/media/HoverSlideshow";
 import RollingNumber from "../../components/RollingNumber";
 import { useFavoriteToggle } from "../../hooks/useFavoriteToggle";
 import ModelActionsMenu from "../ModelDetailPage/ModelActionsMenu";
@@ -91,11 +93,17 @@ export default function ModelCard({
   const authorName = author?.name || author?.handle || item.creator || (showViewerAsAuthor ? viewer!.display_name : null);
   const authorAvatarUrl = author?.avatar_url || (showViewerAsAuthor ? viewerAvatarUrl : undefined);
   const providerInfo = printProviderInfo(item.source_provider);
+  // Hover slideshow through the gallery -- only worth running with more than one image, and
+  // only mounted while hovered so it neither loads the images nor ticks for idle cards.
+  const [hovered, setHovered] = useState(false);
+  const slideshowImages = item.preview_images.length > 1 ? item.preview_images.map(img => printsApi.fileUrl(img.url)) : [];
 
   return (
     <Paper
       variant="outlined"
       onClick={() => navigate(`/models/${item.id}`)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       sx={{
         position: "relative",
         cursor: "pointer",
@@ -113,8 +121,13 @@ export default function ModelCard({
         "&:hover .model-card-actions": { opacity: 1 },
       }}
     >
-      <Box sx={{ width: "100%", aspectRatio: "4 / 3" }}>
+      {/* zIndex 0 makes this its own stacking context, so the slideshow's layered slides stay
+          under the provider badge and hover actions rendered after it. */}
+      <Box sx={{ position: "relative", zIndex: 0, width: "100%", aspectRatio: "4 / 3" }}>
         {renderPreviewContent(item, "card", theme, t, previewMode)}
+        {hovered && slideshowImages.length > 0 && (
+          <HoverSlideshow images={slideshowImages} alt={item.title || item.name} />
+        )}
       </Box>
 
       <Tooltip
