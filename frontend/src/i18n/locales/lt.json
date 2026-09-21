@@ -436,7 +436,9 @@
           "model_deleted": "Modelis ištrintas",
           "collection_created": "Kolekcija sukurta",
           "collection_edited": "Kolekcija redaguota",
-          "collection_deleted": "Kolekcija ištrinta"
+          "collection_deleted": "Kolekcija ištrinta",
+          "collection_item_added": "Pridėta į kolekciją",
+          "collection_item_removed": "Pašalinta iš kolekcijos"
         }
       }
     },

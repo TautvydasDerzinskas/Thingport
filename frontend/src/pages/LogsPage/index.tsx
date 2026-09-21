@@ -38,6 +38,8 @@ const ACTION_COLORS: Record<LogAction, ActionColor> = {
   collection_created: "success",
   collection_edited: "warning",
   collection_deleted: "error",
+  collection_item_added: "info",
+  collection_item_removed: "default",
 };
 
 function isoDateOnly(d: Date): string {
@@ -51,7 +53,7 @@ function defaultFromDate(): string {
 }
 
 /** Admin-only audit-trail viewer -- logins/logouts, uploads, imports, model edits/deletes, and
- *  collection creates/edits/deletes. Filters mirror the write side's granularity: one entry per
+ *  collection creates/edits/deletes/item adds/removes. Filters mirror the write side's granularity: one entry per
  *  action, not per file, so a batch import shows as a single "import completed" row (see
  *  services/importJobRunner.ts) rather than one row per model. */
 export default function LogsPage({ onUnauthorized }: Props) {
@@ -97,6 +99,8 @@ export default function LogsPage({ onUnauthorized }: Props) {
       case "collection_created":
       case "collection_edited":
       case "collection_deleted":
+      case "collection_item_added":
+      case "collection_item_removed":
         return typeof d.name === "string" ? d.name : "";
       case "model_edited":
         return typeof d.field === "string" ? t("adminSettings.logs.editedField", { field: d.field }) : "";

@@ -436,7 +436,9 @@
           "model_deleted": "Model deleted",
           "collection_created": "Collection created",
           "collection_edited": "Collection edited",
-          "collection_deleted": "Collection deleted"
+          "collection_deleted": "Collection deleted",
+          "collection_item_added": "Added to collection",
+          "collection_item_removed": "Removed from collection"
         }
       }
     },

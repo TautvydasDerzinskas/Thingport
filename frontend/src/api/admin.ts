@@ -22,7 +22,9 @@ export type LogAction =
   | "model_deleted"
   | "collection_created"
   | "collection_edited"
-  | "collection_deleted";
+  | "collection_deleted"
+  | "collection_item_added"
+  | "collection_item_removed";
 
 export type LogEntry = {
   id: string;
