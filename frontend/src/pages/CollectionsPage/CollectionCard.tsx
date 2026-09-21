@@ -4,6 +4,7 @@ import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import type { Theme } from "@mui/material/styles";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import LockIcon from "@mui/icons-material/Lock";
 import { type Collection } from "../../api/collections";
@@ -70,6 +71,18 @@ function CoverTile({
   );
 }
 
+// Two smaller cards peeking out below the real one, so a collection reads as a stack of models
+// at a glance. Listed back to front: each is inset further from the sides and drops further below
+// the main card's bottom edge (the wrapper's bottom padding makes room for the deepest one).
+const STACK_LAYERS = [
+  { insetPx: 20, dropPx: 12, opacity: 0.55 },
+  { insetPx: 10, dropPx: 6, opacity: 0.8 },
+];
+const STACK_DEPTH_PX = Math.max(...STACK_LAYERS.map(layer => layer.dropPx));
+
+const cardBackground = (muiTheme: Theme) =>
+  muiTheme.palette.mode === "dark" ? muiTheme.thingport.pageBackground : muiTheme.palette.grey[100];
+
 export default function CollectionCard({ collection, theme, previewMode, onUpdated, onDeleted, onUnauthorized, onBookmarksChanged }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const navigate = useNavigate();
@@ -82,111 +95,131 @@ export default function CollectionCard({ collection, theme, previewMode, onUpdat
   const openTarget = soleModelId ? `/models/${soleModelId}` : `/models/collections/${collection.id}`;
 
   return (
-    <Paper
-      variant="outlined"
-      sx={{
-        position: "relative",
-        overflow: "hidden",
-        borderRadius: "12px",
-        borderColor: "divider",
-        bgcolor: (muiTheme) => (muiTheme.palette.mode === "dark" ? muiTheme.thingport.pageBackground : muiTheme.palette.grey[100]),
-        "&:hover .collection-card-actions": { opacity: 1 },
-      }}
-    >
-      <Box
-        sx={{
-          width: "100%",
-          aspectRatio: "4 / 3",
-          bgcolor: (muiTheme) => (muiTheme.palette.mode === "dark" ? muiTheme.thingport.pageBackground : muiTheme.palette.grey[200]),
-        }}
-      >
-        {coverItems.length === 0 && (
-          <Stack alignItems="center" justifyContent="center" sx={{ width: "100%", height: "100%", color: "text.disabled" }}>
-            <Typography variant="caption">{t("models:collections.card.empty")}</Typography>
-          </Stack>
-        )}
-        {coverItems.length === 1 && (
-          <CoverTile print={coverItems[0]} theme={theme} previewMode={previewMode} />
-        )}
-        {coverItems.length > 1 && (
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: "repeat(2, 1fr)",
-              gridTemplateRows: "repeat(2, 1fr)",
-              gap: "2px",
-              width: "100%",
-              height: "100%",
-            }}
-          >
-            {coverItems.map((item, idx) => (
-              <CoverTile
-                key={item.id}
-                print={item}
-                theme={theme}
-                previewMode={previewMode}
-                overlayCount={idx === coverItems.length - 1 ? extraCount : undefined}
-              />
-            ))}
-          </Box>
-        )}
-      </Box>
-
-      {!collection.system_key && (
+    <Box sx={{ position: "relative", pb: `${STACK_DEPTH_PX}px` }}>
+      {STACK_LAYERS.map(({ insetPx, dropPx, opacity }) => (
         <Box
-          className="collection-card-actions"
-          onClick={e => e.stopPropagation()}
+          key={dropPx}
+          aria-hidden
           sx={{
             position: "absolute",
-            top: 8,
-            right: 8,
-            opacity: 0,
-            transition: "opacity .15s ease",
-            bgcolor: "rgba(0, 0, 0, 0.55)",
-            borderRadius: "50%",
+            top: 0,
+            left: insetPx,
+            right: insetPx,
+            bottom: STACK_DEPTH_PX - dropPx,
+            borderRadius: "12px",
+            border: "1px solid",
+            borderColor: "divider",
+            bgcolor: cardBackground,
+            opacity,
           }}
-        >
-          <CollectionActionsMenu
-            collection={collection}
-            onUpdated={onUpdated}
-            onDeleted={() => onDeleted(collection.id)}
-            onUnauthorized={onUnauthorized}
-            onBookmarksChanged={onBookmarksChanged}
-            triggerSx={{ color: "#fff" }}
-          />
-        </Box>
-      )}
-
-      <Box
-        onClick={() => navigate(openTarget)}
+        />
+      ))}
+      <Paper
+        variant="outlined"
         sx={{
-          p: 1.5,
-          cursor: "pointer",
-          transition: "background-color .15s ease",
-          "&:hover": { bgcolor: "background.paper" },
+          position: "relative",
+          overflow: "hidden",
+          borderRadius: "12px",
+          borderColor: "divider",
+          bgcolor: cardBackground,
+          "&:hover .collection-card-actions": { opacity: 1 },
         }}
       >
-        <Stack direction="row" alignItems="center" spacing={0.5} minWidth={0}>
-          {collection.system_key && (
-            <LockIcon sx={{ fontSize: 14, color: "text.disabled", flexShrink: 0 }} />
+        <Box
+          sx={{
+            width: "100%",
+            aspectRatio: "4 / 3",
+            bgcolor: (muiTheme) => (muiTheme.palette.mode === "dark" ? muiTheme.thingport.pageBackground : muiTheme.palette.grey[200]),
+          }}
+        >
+          {coverItems.length === 0 && (
+            <Stack alignItems="center" justifyContent="center" sx={{ width: "100%", height: "100%", color: "text.disabled" }}>
+              <Typography variant="caption">{t("models:collections.card.empty")}</Typography>
+            </Stack>
           )}
-          <Typography
-            variant="body2"
-            fontWeight={600}
-            noWrap
-            title={displayName}
-            sx={{ color: (muiTheme) => muiTheme.thingport.headingText }}
+          {coverItems.length === 1 && (
+            <CoverTile print={coverItems[0]} theme={theme} previewMode={previewMode} />
+          )}
+          {coverItems.length > 1 && (
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, 1fr)",
+                gridTemplateRows: "repeat(2, 1fr)",
+                gap: "2px",
+                width: "100%",
+                height: "100%",
+              }}
+            >
+              {coverItems.map((item, idx) => (
+                <CoverTile
+                  key={item.id}
+                  print={item}
+                  theme={theme}
+                  previewMode={previewMode}
+                  overlayCount={idx === coverItems.length - 1 ? extraCount : undefined}
+                />
+              ))}
+            </Box>
+          )}
+        </Box>
+
+        {!collection.system_key && (
+          <Box
+            className="collection-card-actions"
+            onClick={e => e.stopPropagation()}
+            sx={{
+              position: "absolute",
+              top: 8,
+              right: 8,
+              opacity: 0,
+              transition: "opacity .15s ease",
+              bgcolor: "rgba(0, 0, 0, 0.55)",
+              borderRadius: "50%",
+            }}
           >
-            {displayName}
-          </Typography>
-        </Stack>
-        <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.5, color: "#858585" }}>
-          <Inventory2OutlinedIcon sx={{ fontSize: 14 }} />
-          <Typography variant="caption">
-            {t("models:collections.card.itemCount", { count: collection.item_count })}
-          </Typography>
-        </Stack>
-      </Box>
-    </Paper>
+            <CollectionActionsMenu
+              collection={collection}
+              onUpdated={onUpdated}
+              onDeleted={() => onDeleted(collection.id)}
+              onUnauthorized={onUnauthorized}
+              onBookmarksChanged={onBookmarksChanged}
+              triggerSx={{ color: "#fff" }}
+            />
+          </Box>
+        )}
+
+        <Box
+          onClick={() => navigate(openTarget)}
+          sx={{
+            p: 1.5,
+            cursor: "pointer",
+            transition: "background-color .15s ease",
+            "&:hover": { bgcolor: "background.paper" },
+          }}
+        >
+          <Stack direction="row" alignItems="center" spacing={0.5} minWidth={0}>
+            {collection.system_key && (
+              <LockIcon sx={{ fontSize: 14, color: "text.disabled", flexShrink: 0 }} />
+            )}
+            <Typography
+              variant="body2"
+              fontWeight={600}
+              noWrap
+              title={displayName}
+              sx={{ color: (muiTheme) => muiTheme.thingport.headingText }}
+            >
+              {displayName}
+            </Typography>
+          </Stack>
+          <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.5, color: "#858585" }}>
+            <Inventory2OutlinedIcon sx={{ fontSize: 14 }} />
+            <Typography variant="caption">
+              {t("models:collections.card.itemCount", { count: collection.item_count })}
+            </Typography>
+          </Stack>
+        </Box>
+      </Paper>
+    </Box>
   );
 }
