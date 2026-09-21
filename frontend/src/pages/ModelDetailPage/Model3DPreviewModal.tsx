@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Dialog from "@mui/material/Dialog";
 import Box from "@mui/material/Box";
@@ -15,14 +15,13 @@ import CloseIcon from "@mui/icons-material/Close";
 import { type Print, printsApi } from "../../api/prints";
 import { MODEL_EXTS } from "../../constants/fileTypes";
 import { extOf } from "../../utils/fileExtensions";
-import ModelViewer from "../../components/media/ModelViewer";
+import ModelViewer, { type CameraView, type ModelViewerHandle, type RenderStyle } from "../../components/media/ModelViewer";
 import type { PlateSummary } from "../../utils/bambuThreeMf";
+import PreviewToolbar, { DEFAULT_PREVIEW_COLOR } from "./PreviewToolbar";
 
 // A neutral, theme-independent canvas -- this is a fixed "product shot" style preview, not part
 // of the app's light/dark chrome, so it stays the same regardless of the viewer's theme.
 const PREVIEW_BG = "#e7e7ea";
-// Matches the reference preview's solid red plate color; unrelated to theme.thingport.modelColor.
-const PREVIEW_MODEL_COLOR = "#d32f2f";
 
 type Props = {
   print: Print;
@@ -30,9 +29,10 @@ type Props = {
 };
 
 /** The "3D Preview" modal opened from the model detail page's main image: a fixed neutral canvas
- *  rendering the active plate in a fixed red so it reads as a print preview rather than a themed
- *  UI element, with a plate-switcher overlay always shown on the left (even for a single plate,
- *  so the panel doesn't jump in/out of existence as plates are added/removed). */
+ *  rendering the active plate in a picked flat color (green by default) so it reads as a print
+ *  preview rather than a themed UI element, with a plate-switcher overlay always shown on the left
+ *  (even for a single plate, so the panel doesn't jump in/out of existence as plates are
+ *  added/removed) and the camera/render-style/color/grid/spin toolbar along the bottom. */
 export default function Model3DPreviewModal({ print, onClose }: Props) {
   const { t } = useTranslation(["models", "library", "common"]);
   const sortedPlates = useMemo(() => print.plates.toSorted((a, b) => a.position - b.position), [print.plates]);
@@ -48,6 +48,22 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
   const [internalPlates, setInternalPlates] = useState<PlateSummary[]>([]);
   const [internalThumbnails, setInternalThumbnails] = useState<Record<number, string | null>>({});
   const [selectedInternalPlateId, setSelectedInternalPlateId] = useState<number | null>(null);
+
+  // Toolbar state lives here rather than in the viewer so it survives switching files (the
+  // viewer remounts per file).
+  const viewerRef = useRef<ModelViewerHandle>(null);
+  const [renderStyle, setRenderStyle] = useState<RenderStyle>("solid");
+  const [modelColor, setModelColor] = useState<string>(DEFAULT_PREVIEW_COLOR);
+  const [cameraView, setCameraView] = useState<CameraView>("front");
+  const [showGrid, setShowGrid] = useState(true);
+  const [spin, setSpin] = useState(true);
+
+  // A preset is a fixed viewpoint -- spinning would immediately carry the camera away from it.
+  const handleCameraView = (view: CameraView) => {
+    setSpin(false);
+    setCameraView(view);
+    viewerRef.current?.setCameraView(view);
+  };
 
   // A lone file that is itself a multi-plate project would otherwise show one "Plate 1" file row
   // above its real plates -- redundant, and reads as if it were one of them.
@@ -204,12 +220,17 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
         <Box sx={{ width: "100%", height: "100%" }}>
           {is3d && activePlate ? (
             <ModelViewer
+              ref={viewerRef}
               key={activePlate.id}
               url={printsApi.fileUrl(activePlate.url)}
               ext={ext}
-              viewKey={`preview-${print.id}-${activePlate.id}`}
+              initialCameraView={cameraView}
               theme="light"
-              colorOverride={PREVIEW_MODEL_COLOR}
+              colorOverride={modelColor}
+              renderStyle={renderStyle}
+              showBuildPlate={showGrid}
+              buildPlateForMeshes
+              autoRotate={spin}
               selectedPlateId={selectedInternalPlateId}
               previewGlbUrl={activePlate.preview_glb_url ? printsApi.fileUrl(activePlate.preview_glb_url) : null}
               onPlatesDetected={handlePlatesDetected}
@@ -220,6 +241,21 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
             </Box>
           )}
         </Box>
+
+        {is3d && (
+          <PreviewToolbar
+            cameraView={cameraView}
+            onCameraView={handleCameraView}
+            renderStyle={renderStyle}
+            onRenderStyleChange={setRenderStyle}
+            color={modelColor}
+            onColorChange={setModelColor}
+            showGrid={showGrid}
+            onShowGridChange={setShowGrid}
+            spin={spin}
+            onSpinChange={setSpin}
+          />
+        )}
       </Box>
     </Dialog>
   );

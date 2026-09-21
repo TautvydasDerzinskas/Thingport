@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import Box from "@mui/material/Box";
@@ -24,6 +24,15 @@ import BrandMark from "../../BrandMark";
 // same license -- see LICENSE at the repo root. Multi-plate parsing itself lives in
 // ../../../utils/bambuThreeMf.ts, ported from the same source.
 
+export type RenderStyle = "solid" | "wire" | "xray";
+export type CameraView = "top" | "front" | "side";
+
+/** Imperative controls for a mounted viewer -- a camera preset is a one-off action (clicking
+ *  "Top" twice should re-frame twice), not state, so it's a method rather than a prop. */
+export type ModelViewerHandle = {
+  setCameraView: (view: CameraView) => void;
+};
+
 type ModelViewerProps = {
   url: string;
   ext: string;
@@ -43,7 +52,30 @@ type ModelViewerProps = {
    *  file. `getThumbnail` is bound to the already-fetched file bytes, so a caller building a
    *  plate picker doesn't need to refetch the (often tens of MB) file itself. */
   onPlatesDetected?: (plates: PlateSummary[], getThumbnail: (index: number) => Promise<string | null>) => void;
+  /** Solid (default), wireframe, or see-through "X-ray" materials. */
+  renderStyle?: RenderStyle;
+  /** Whether the build plate + grid is drawn, for formats that have one (see buildPlateForMeshes). */
+  showBuildPlate?: boolean;
+  /** STL/OBJ/STEP (and a non-Bambu 3MF) carry no bed size, so by default they get no plate.
+   *  Set to draw a standard DEFAULT_BED_SIZE bed under them anyway (grown to fit a bigger model). */
+  buildPlateForMeshes?: boolean;
+  /** Slowly orbits the camera around the model. */
+  autoRotate?: boolean;
+  /** Camera preset to frame the model from on load and on plate switches (until setCameraView
+   *  picks another). Unset keeps the per-format defaults and restores a saved view if any. */
+  initialCameraView?: CameraView;
 };
+
+// Appearance props that change without reloading the model: read through a ref by the setup
+// effect (for whatever it builds next) and pushed onto the live scene by their own effect.
+type Appearance = Required<Pick<ModelViewerProps, "renderStyle" | "showBuildPlate" | "autoRotate">> & {
+  colorOverride?: string;
+};
+
+const XRAY_OPACITY = 0.3;
+
+// Bambu X1/P1/A1's 256x256mm bed -- the stand-in for formats with no bed size of their own.
+const DEFAULT_BED_SIZE = 256;
 
 type ViewErrorKey = "unsupported" | "failed";
 
@@ -54,6 +86,14 @@ const BAMBU_PLATE_COLOR = 0x00ae42;
 // uploaded model loads facing the viewer rather than from a corner.
 const BAMBU_VIEW_DIRECTION = new THREE.Vector3(0.7, 0.5, 0.7).normalize();
 const FRONT_VIEW_DIRECTION = new THREE.Vector3(0.9, 0.7, 2.1).normalize();
+
+// Axis-aligned presets for the preview toolbar. +Z is "front", matching the default views above.
+// Top keeps a hair of +Z so OrbitControls' up vector isn't parallel to the view direction.
+const CAMERA_VIEW_DIRECTIONS: Record<CameraView, THREE.Vector3> = {
+  top: new THREE.Vector3(0, 1, 0.0001).normalize(),
+  front: new THREE.Vector3(0, 0, 1),
+  side: new THREE.Vector3(1, 0, 0),
+};
 
 /** Frame the camera on a bounding box, solving for distance against both the vertical and
  *  (aspect-derived) horizontal field of view so the model fills the frame -- with margin from
@@ -66,7 +106,11 @@ function fitCameraToBox(
   controls: any,
   box: THREE.Box3,
   direction: THREE.Vector3 = BAMBU_VIEW_DIRECTION,
-  padding = 1.15
+  padding = 1.15,
+  /** Size of scenery around the model (the build plate's diagonal) that must not be cut off by
+   *  the far plane -- the camera frames the model, so a bed much larger than it would otherwise
+   *  end in a hard clipped edge a few model-lengths behind it. */
+  sceneryExtent = 0
 ): void {
   const size = box.getSize(new THREE.Vector3());
   const center = box.getCenter(new THREE.Vector3());
@@ -76,15 +120,39 @@ function fitCameraToBox(
   const distance = padding * Math.max(radius / Math.sin(vFov / 2), radius / Math.sin(hFov / 2));
   camera.position.copy(center).addScaledVector(direction, distance);
   camera.near = Math.max(distance / 1000, 0.01);
-  camera.far = distance + radius * 4;
+  camera.far = distance + Math.max(radius * 4, sceneryExtent);
   camera.updateProjectionMatrix();
   controls.target.copy(center);
   controls.update();
 }
 
-export default function ModelViewer({ url, ext, viewKey, theme, colorOverride, selectedPlateId = null, previewGlbUrl, onPlatesDetected }: ModelViewerProps) {
+const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function ModelViewer(
+  {
+    url,
+    ext,
+    viewKey,
+    theme,
+    colorOverride,
+    selectedPlateId = null,
+    previewGlbUrl,
+    onPlatesDetected,
+    renderStyle = "solid",
+    showBuildPlate = true,
+    autoRotate = false,
+    buildPlateForMeshes = false,
+    initialCameraView,
+  },
+  ref
+) {
   const { t } = useTranslation(["library"]);
   const mountRef = useRef<HTMLDivElement | null>(null);
+  const appearanceRef = useRef<Appearance>({ colorOverride, renderStyle, showBuildPlate, autoRotate });
+  appearanceRef.current = { colorOverride, renderStyle, showBuildPlate, autoRotate };
+  // Set by the setup effect once its scene exists; cleared on teardown.
+  const sceneApiRef = useRef<{
+    applyAppearance: () => void;
+    setCameraView: (view: CameraView) => void;
+  } | null>(null);
   // Bridges the setup effect below to the selectedPlateId effect further down, so switching
   // plates rebuilds the already-parsed group in place instead of refetching/reparsing the file.
   const rebuildBambuPlateRef = useRef<((plateId: number | null) => void) | null>(null);
@@ -97,7 +165,6 @@ export default function ModelViewer({ url, ext, viewKey, theme, colorOverride, s
     const mount = mountRef.current;
     if (!mount) return;
     const palette = paletteForTheme(theme);
-    if (colorOverride) palette.color = new THREE.Color(colorOverride);
     setViewError(null);
     setIsLoading(true);
     const reportError = (key: ViewErrorKey) => {
@@ -179,11 +246,9 @@ export default function ModelViewer({ url, ext, viewKey, theme, colorOverride, s
 
     // Build-plate group: grid + tinted plane + a dedicated shadow-catcher plane just above it
     // (the tinted plane is unlit MeshBasicMaterial and can't receive shadows itself). Sized/
-    // repositioned from the asset's own build volume once known -- only 3MF (Bambu Studio
-    // project files) carries a real one, so this stays hidden for STL/OBJ/STEP: a fixed 256mm
-    // bed drawn under, say, a 15mm keychain reads as a camera stuck inside a giant grid, not
-    // "here's the print bed" (there's no real bed-size data for those formats to size it from).
-    let buildVolume = { x: 256, y: 256 };
+    // repositioned from the asset's own build volume once known -- only a Bambu 3MF carries a
+    // real one; STL/OBJ/STEP get a DEFAULT_BED_SIZE stand-in only with buildPlateForMeshes.
+    let buildVolume = { x: DEFAULT_BED_SIZE, y: DEFAULT_BED_SIZE };
     const gridHelper = new THREE.GridHelper(buildVolume.x, Math.ceil(buildVolume.x / 16), 0x444444, 0x333333);
     gridHelper.visible = false;
     scene.add(gridHelper);
@@ -205,10 +270,17 @@ export default function ModelViewer({ url, ext, viewKey, theme, colorOverride, s
     shadowCatcher.visible = false;
     scene.add(shadowCatcher);
 
+    let buildPlateLaidOut = false;
+    const syncBuildPlateVisibility = () => {
+      const visible = buildPlateLaidOut && appearanceRef.current.showBuildPlate;
+      gridHelper.visible = visible;
+      plateMesh.visible = visible;
+      shadowCatcher.visible = visible;
+    };
+
     const layoutBuildPlate = () => {
-      gridHelper.visible = true;
-      plateMesh.visible = true;
-      shadowCatcher.visible = true;
+      buildPlateLaidOut = true;
+      syncBuildPlateVisibility();
 
       const shadowExtent = Math.max(buildVolume.x, buildVolume.y) * 0.75;
       keyLight.shadow.camera.left = -shadowExtent;
@@ -230,6 +302,37 @@ export default function ModelViewer({ url, ext, viewKey, theme, colorOverride, s
       shadowCatcher.geometry.dispose();
       shadowCatcher.geometry = new THREE.PlaneGeometry(buildVolume.x, buildVolume.y);
     };
+
+    // Color / render style for everything under `obj`. Colors only change with a colorOverride
+    // (otherwise the theme palette or per-filament colors stay); X-ray also turns off depth
+    // writes and backface culling so inner walls show through. Shadows are for solid only.
+    const applyAppearance = (obj: THREE.Object3D | null) => {
+      if (!obj) return;
+      const { colorOverride: color, renderStyle: style } = appearanceRef.current;
+      const xray = style === "xray";
+      obj.traverse(child => {
+        if (!(child instanceof THREE.Mesh)) return;
+        child.castShadow = style === "solid";
+        const materials = Array.isArray(child.material) ? child.material : [child.material];
+        materials.forEach(mat => {
+          const typed = mat as THREE.MeshStandardMaterial;
+          if (color) typed.color?.set(color);
+          if (typed.userData.baseSide === undefined) typed.userData.baseSide = typed.side;
+          typed.wireframe = style === "wire";
+          typed.transparent = xray;
+          typed.opacity = xray ? XRAY_OPACITY : 1;
+          typed.depthWrite = !xray;
+          typed.side = xray ? THREE.DoubleSide : typed.userData.baseSide;
+          typed.needsUpdate = true;
+        });
+      });
+    };
+
+    // Last framed bounds, so camera presets can re-frame without re-measuring.
+    let lastFitBox: THREE.Box3 | null = null;
+    // Active camera preset direction; null keeps the per-format default (3/4 view for Bambu 3MF,
+    // raised front for everything else).
+    let presetDirection: THREE.Vector3 | null = initialCameraView ? CAMERA_VIEW_DIRECTIONS[initialCameraView] : null;
 
     // 3MF-only state: kept around so a selectedPlateId change (switching plates) rebuilds the
     // group locally instead of refetching/reparsing the whole file.
@@ -260,7 +363,16 @@ export default function ModelViewer({ url, ext, viewKey, theme, colorOverride, s
     // plate with no visible geometry) must still clear loading rather than leaving the spinner
     // stuck forever, regardless of which path produced it. `refitCamera` is set on a plate
     // switch so the newly shown plate is framed, rather than restoring the previous saved view.
-    const finalizeGroupPlacement = (group: THREE.Object3D, centerOnBuildPlate: boolean, refitCamera = false) => {
+    const bedExtent = () => (buildPlateLaidOut ? Math.hypot(buildVolume.x, buildVolume.y) : 0);
+    const fitCamera = (box: THREE.Box3, defaultDirection: THREE.Vector3) =>
+      fitCameraToBox(camera, controls, box, presetDirection ?? defaultDirection, undefined, bedExtent());
+
+    const finalizeGroupPlacement = (
+      group: THREE.Object3D,
+      centerOnBuildPlate: boolean,
+      refitCamera = false,
+      defaultDirection = BAMBU_VIEW_DIRECTION
+    ) => {
       const box = visibleBox(group);
       if (box.isEmpty()) {
         setIsLoading(false);
@@ -279,7 +391,8 @@ export default function ModelViewer({ url, ext, viewKey, theme, colorOverride, s
       gridHelper.position.set(buildVolume.x / 2, 0, buildVolume.y / 2);
 
       const finalBox = visibleBox(group);
-      if (refitCamera || !loadSavedView()) fitCameraToBox(camera, controls, finalBox);
+      lastFitBox = finalBox;
+      if (refitCamera || !loadSavedView()) fitCamera(finalBox, defaultDirection);
       setIsLoading(false);
     };
 
@@ -290,17 +403,7 @@ export default function ModelViewer({ url, ext, viewKey, theme, colorOverride, s
         disposeObject3D(activeObject);
       }
       const group = buildBambuModelGroup(bambuParsed, currentPlateId, bambuFilamentColors);
-      if (colorOverride) {
-        group.traverse(child => {
-          if (child instanceof THREE.Mesh) {
-            const mat = child.material as THREE.MeshStandardMaterial;
-            mat.color?.set(colorOverride);
-          }
-        });
-      }
-      group.traverse(child => {
-        if (child instanceof THREE.Mesh) child.castShadow = true;
-      });
+      applyAppearance(group);
       activeObject = group;
       scene.add(group);
       finalizeGroupPlacement(group, centerOnBuildPlate, refitCamera);
@@ -332,10 +435,33 @@ export default function ModelViewer({ url, ext, viewKey, theme, colorOverride, s
         controls.dampingFactor = 0.05;
         controls.enablePan = true;
         controls.target.set(0, 50, 0);
-        controls.addEventListener("change", saveView);
+        // "end" (a finished drag/zoom), not "change": auto-rotate and programmatic framing move
+        // the camera every frame, and only the user's own view is worth restoring next time.
+        controls.addEventListener("end", saveView);
 
-        const centerSceneOn = (box: THREE.Box3) => {
-          if (!loadSavedView()) fitCameraToBox(camera, controls, box, FRONT_VIEW_DIRECTION);
+        // Shared by every non-Bambu path (STL/OBJ/STEP, plain 3MF): theme it, add it, and either
+        // set it on a stand-in bed or just frame it as-is.
+        const showMeshObject = (obj: THREE.Object3D) => {
+          applyThemeToObject(obj, palette);
+          applyAppearance(obj);
+          activeObject = obj;
+          scene.add(obj);
+          const box = visibleBox(obj);
+          if (buildPlateForMeshes && !box.isEmpty()) {
+            // Grow past the default for a model that wouldn't fit on it (10% margin).
+            const size = box.getSize(new THREE.Vector3());
+            buildVolume = {
+              x: Math.max(DEFAULT_BED_SIZE, Math.ceil(size.x * 1.1)),
+              y: Math.max(DEFAULT_BED_SIZE, Math.ceil(size.z * 1.1)),
+            };
+            layoutBuildPlate();
+            finalizeGroupPlacement(obj, true, false, FRONT_VIEW_DIRECTION);
+            return;
+          }
+          setIsLoading(false);
+          if (box.isEmpty()) return;
+          lastFitBox = box;
+          if (!loadSavedView()) fitCamera(box, FRONT_VIEW_DIRECTION);
         };
 
         const e = (ext || "").toLowerCase();
@@ -350,17 +476,7 @@ export default function ModelViewer({ url, ext, viewKey, theme, colorOverride, s
           cachedGlbRoot = cached.rootGroup;
           buildVolume = cached.buildVolume;
           layoutBuildPlate();
-          if (colorOverride) {
-            cachedGlbRoot.traverse(child => {
-              if (child instanceof THREE.Mesh) {
-                const mat = child.material as THREE.MeshStandardMaterial;
-                mat.color?.set(colorOverride);
-              }
-            });
-          }
-          cachedGlbRoot.traverse(child => {
-            if (child instanceof THREE.Mesh) child.castShadow = true;
-          });
+          applyAppearance(cachedGlbRoot);
           activeObject = cachedGlbRoot;
           scene.add(cachedGlbRoot);
           if (currentPlateId == null && cached.plates.length > 0) currentPlateId = cached.plates[0].index;
@@ -387,12 +503,7 @@ export default function ModelViewer({ url, ext, viewKey, theme, colorOverride, s
                   disposeObject3D(obj);
                   return;
                 }
-                applyThemeToObject(obj, palette);
-                activeObject = obj;
-                scene.add(obj);
-                if (!disposed) setIsLoading(false);
-                const box = new THREE.Box3().setFromObject(obj);
-                if (!box.isEmpty()) centerSceneOn(box);
+                showMeshObject(obj);
               } else if (!disposed) {
                 bambuParsed = result.parsedData;
                 bambuFilamentColors = result.filamentColors;
@@ -413,15 +524,7 @@ export default function ModelViewer({ url, ext, viewKey, theme, colorOverride, s
               disposeObject3D(obj);
               return;
             }
-            applyThemeToObject(obj, palette);
-            obj.traverse(child => {
-              if (child instanceof THREE.Mesh) child.castShadow = true;
-            });
-            activeObject = obj;
-            scene.add(obj);
-            if (!disposed) setIsLoading(false);
-            const box = new THREE.Box3().setFromObject(obj);
-            if (!box.isEmpty()) centerSceneOn(box);
+            showMeshObject(obj);
           }
         } catch (err) {
           console.error("Viewer asset load failed:", err);
@@ -455,12 +558,27 @@ export default function ModelViewer({ url, ext, viewKey, theme, colorOverride, s
 
       const animate = () => {
         if (disposed) return;
+        // Read per frame so a toggle made while the model was still loading isn't lost.
+        if (controls) controls.autoRotate = appearanceRef.current.autoRotate;
         controls?.update();
         renderer.render(scene, camera);
         gizmo.render(camera, controls?.target ?? new THREE.Vector3(), width, height);
         requestAnimationFrame(animate);
       };
       animate();
+
+      sceneApiRef.current = {
+        applyAppearance: () => {
+          applyAppearance(activeObject);
+          syncBuildPlateVisibility();
+        },
+        setCameraView: view => {
+          presetDirection = CAMERA_VIEW_DIRECTIONS[view];
+          if (lastFitBox && controls) {
+            fitCameraToBox(camera, controls, lastFitBox, CAMERA_VIEW_DIRECTIONS[view], undefined, bedExtent());
+          }
+        },
+      };
 
       rebuildBambuPlateRef.current = plateId => {
         if (plateId === currentPlateId) return;
@@ -480,7 +598,7 @@ export default function ModelViewer({ url, ext, viewKey, theme, colorOverride, s
       disposeObject3D(activeObject);
     }
     try {
-      controls?.removeEventListener("change", saveView);
+      controls?.removeEventListener("end", saveView);
       controls?.dispose();
     } catch {}
     try {
@@ -492,7 +610,12 @@ export default function ModelViewer({ url, ext, viewKey, theme, colorOverride, s
     } catch {}
     renderer.dispose();
     rebuildBambuPlateRef.current = null;
+    sceneApiRef.current = null;
   };
+  // initialCameraView is read once, like selectedPlateId: later presets go through
+  // setCameraView, and a parent tracking the active preset in state must not trigger a reload.
+  // colorOverride and the other appearance props are read via appearanceRef and applied live by
+  // the appearance effect below, so changing them never reloads the model.
   // selectedPlateId and onPlatesDetected are deliberately excluded: this effect does the full
   // parse/scene setup, reading selectedPlateId only once as the initial plate. Switching plates
   // afterward is handled by the separate lightweight effect below via rebuildBambuPlateRef,
@@ -501,12 +624,20 @@ export default function ModelViewer({ url, ext, viewKey, theme, colorOverride, s
   // unmemoized callback prop).
   // oxlint-disable-next-line react/exhaustive-effect-dependencies
   // oxlint-disable-next-line react-hooks/exhaustive-deps
-}, [url, ext, viewKey, theme, colorOverride, previewGlbUrl]);
+}, [url, ext, viewKey, theme, previewGlbUrl]);
 
   // Switching the selected plate rebuilds the already-parsed group in place (no refetch).
   useEffect(() => {
     rebuildBambuPlateRef.current?.(selectedPlateId ?? null);
   }, [selectedPlateId]);
+
+  useEffect(() => {
+    sceneApiRef.current?.applyAppearance();
+  }, [colorOverride, renderStyle, showBuildPlate, autoRotate]);
+
+  useImperativeHandle(ref, () => ({
+    setCameraView: view => sceneApiRef.current?.setCameraView(view),
+  }), []);
 
   return (
     <Box
@@ -559,4 +690,6 @@ export default function ModelViewer({ url, ext, viewKey, theme, colorOverride, s
       )}
     </Box>
   );
-}
+});
+
+export default ModelViewer;

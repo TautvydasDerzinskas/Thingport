@@ -1106,6 +1106,27 @@
       "internalPlateObjectCount_one": "{{count}} objektas",
       "internalPlateObjectCount_few": "{{count}} objektai",
       "internalPlateObjectCount_other": "{{count}} objektų",
+      "previewToolbar": {
+        "label": "Peržiūros parinktys",
+        "top": "Viršus",
+        "front": "Priekis",
+        "side": "Šonas",
+        "solid": "Vientisas",
+        "wire": "Tinklelis",
+        "xray": "Rentgenas",
+        "grid": "Plokštė",
+        "spin": "Sukimas",
+        "colorLabel": "Modelio spalva: {{name}}",
+        "colors": {
+          "red": "Raudona",
+          "orange": "Oranžinė",
+          "yellow": "Geltona",
+          "green": "Žalia",
+          "blue": "Mėlyna",
+          "purple": "Violetinė",
+          "grey": "Pilka"
+        }
+      },
       "downloadFailed": "Nepavyko atsisiųsti. Bandykite dar kartą.",
       "deleteFailed": "Nepavyko ištrinti modelio.",
       "confirmDelete": "Ištrinti „{{name}}“? Šio veiksmo nebus galima atšaukti.",

@@ -1105,6 +1105,27 @@
       "internalPlatesDivider": "{{count}} plates in this file",
       "internalPlateObjectCount_one": "{{count}} object",
       "internalPlateObjectCount_other": "{{count}} objects",
+      "previewToolbar": {
+        "label": "Preview options",
+        "top": "Top",
+        "front": "Front",
+        "side": "Side",
+        "solid": "Solid",
+        "wire": "Wire",
+        "xray": "X-Ray",
+        "grid": "Grid",
+        "spin": "Spin",
+        "colorLabel": "Model color: {{name}}",
+        "colors": {
+          "red": "Red",
+          "orange": "Orange",
+          "yellow": "Yellow",
+          "green": "Green",
+          "blue": "Blue",
+          "purple": "Purple",
+          "grey": "Grey"
+        }
+      },
       "downloadFailed": "Download failed. Please try again.",
       "deleteFailed": "Failed to delete the model.",
       "confirmDelete": "Delete \"{{name}}\"? This cannot be undone.",
