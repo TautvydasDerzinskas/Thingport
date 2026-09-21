@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import Paper from "@mui/material/Paper";
@@ -10,16 +9,15 @@ import Tooltip from "@mui/material/Tooltip";
 import { useTheme } from "@mui/material/styles";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PrintIcon from "@mui/icons-material/Print";
-import { type Print, printsApi } from "../../api/prints";
+import type { Print } from "../../api/prints";
 import { type PreviewMode } from "../../api/settings";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
-import { UnauthorizedError } from "../../api/client";
-import { useToast } from "../../components/ToastProvider";
 import { renderPreviewContent } from "../../components/media/renderPreviewContent";
 import { printProviderInfo } from "../../constants/importProviders";
 import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
 import { useGravatarUrl } from "../../hooks/useGravatarUrl";
 import StarToggle from "../../components/StarToggle";
+import { useFavoriteToggle } from "../../hooks/useFavoriteToggle";
 import ModelActionsMenu from "../ModelDetailPage/ModelActionsMenu";
 import type { AuthUser } from "../../api/auth";
 
@@ -73,18 +71,15 @@ export default function ModelCard({
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const navigate = useNavigate();
-  const showToast = useToast();
   const muiTheme = useTheme();
   // headingText is dark text in light mode, white in dark mode -- exactly the contrast an icon
   // needs against overlayButtonSx's own bgcolor (background.paper: white in light mode, the panel
   // color in dark mode).
   const overlayIconColor = muiTheme.thingport.headingText;
-  // Flips immediately on click (optimistic, rolled back on failure) instead of waiting on the
-  // request behind a spinner -- StarToggle's burst animation only plays on an actual
-  // false->true prop transition while mounted, so swapping it for a spinner mid-request (then
-  // remounting it already-flipped once the response lands) skipped the animation entirely.
-  const [isFavorite, setIsFavorite] = useState(item.is_favorite);
-  const favoritePendingRef = useRef(false);
+  const { isFavorite, toggle: toggleFavorite, label: favoriteLabel } = useFavoriteToggle(item, {
+    onUpdated: onFavoriteChange,
+    onUnauthorized,
+  });
   const author = item.author;
   const viewerAvatarUrl = useGravatarUrl(viewer?.email, 40);
   // Direct uploads have no Author row and usually no `creator` string either -- fall back to the
@@ -95,36 +90,6 @@ export default function ModelCard({
   const authorName = author?.name || author?.handle || item.creator || (showViewerAsAuthor ? viewer!.display_name : null);
   const authorAvatarUrl = author?.avatar_url || (showViewerAsAuthor ? viewerAvatarUrl : undefined);
   const providerInfo = printProviderInfo(item.source_provider);
-
-  useEffect(() => { setIsFavorite(item.is_favorite); }, [item.is_favorite]);
-
-  const toggleFavorite = async () => {
-    if (favoritePendingRef.current) return;
-    favoritePendingRef.current = true;
-    const next = !isFavorite;
-    setIsFavorite(next);
-    try {
-      const updated = next ? await printsApi.favorite(item.id) : await printsApi.unfavorite(item.id);
-      onFavoriteChange?.(updated);
-      showToast({
-        message: t(updated.is_favorite ? "models:card.addedToFavorites" : "models:card.removedFromFavorites", {
-          name: updated.title || updated.name,
-        }),
-      });
-    } catch (err) {
-      setIsFavorite(!next);
-      if (err instanceof UnauthorizedError) {
-        onUnauthorized?.();
-        return;
-      }
-      console.error(err);
-      showToast({ message: t("models:detail.favoriteFailed"), severity: "error" });
-    } finally {
-      favoritePendingRef.current = false;
-    }
-  };
-
-  const favoriteLabel = isFavorite ? t("models:detail.removeFromFavorites") : t("models:detail.addToFavorites");
 
   return (
     <Paper
