@@ -165,7 +165,32 @@ export function buildTheme(id: ResolvedTheme): Theme {
       // A success toast (see ToastProvider) should always read as "this worked" in the brand
       // green (#00b800) with white text -- e.g. favoriting a model -- not MUI's own default
       // success palette, in either theme.
-      MuiAlert: { styleOverrides: { filledSuccess: { backgroundColor: d.accent, color: d.accentContrast } } },
+      MuiAlert: {
+        styleOverrides: {
+          filledSuccess: { backgroundColor: d.accent, color: d.accentContrast },
+          // Dark mode only: MUI's default standard/outlined alerts use fixed near-black tints
+          // (darken(color, 0.9)) that read as muddy black boxes on this theme's navy panels. A
+          // translucent tint of the severity color instead lets the panel show through, with a
+          // matching hairline border and light text. Success uses the brand green, like the
+          // success toast above. Filled alerts (toasts) keep their own solid styling.
+          ...(d.mode === "dark"
+            ? {
+                root: ({ ownerState, theme }) => {
+                  if (ownerState.variant === "filled") return {};
+                  const severity = ownerState.severity ?? "success";
+                  const color = severity === "success" ? d.accent : theme.palette[severity].main;
+                  return {
+                    backgroundColor: alpha(color, ownerState.variant === "outlined" ? 0.04 : 0.1),
+                    border: `1px solid ${alpha(color, ownerState.variant === "outlined" ? 0.6 : 0.35)}`,
+                    color: alpha("#ffffff", 0.8),
+                    "& .MuiAlert-icon": { color },
+                    "& .MuiAlertTitle-root": { color: d.headingText },
+                  };
+                },
+              }
+            : {}),
+        },
+      },
       // Dark mode is deliberately square everywhere -- corners, chips, avatars, the back-to-top
       // FAB, all of it. `sx`-set radii (the vast majority of them: cards, panels, the info box,
       // etc.) beat theme.shape.borderRadius and component styleOverrides alike, so nothing short
