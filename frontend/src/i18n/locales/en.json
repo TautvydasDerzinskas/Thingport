@@ -158,6 +158,12 @@
         "failed": "Failed to save -- try again.",
         "bridgeRequiredPrefix": "{{slicer}} needs the Thingport Bridge helper app installed to open files from here --",
         "bridgeRequiredLink": "get it from the Download page."
+      },
+      "authorPreview": {
+        "heading": "Author preview",
+        "description": "Show a preview card with the author's cover, details and latest models when you hover an author's name or avatar.",
+        "label": "Show author preview on hover",
+        "failed": "Failed to save -- try again."
       }
     },
     "addMenu": {

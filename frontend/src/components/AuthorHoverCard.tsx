@@ -14,6 +14,7 @@ import { type Print, printsApi } from "../api/prints";
 import { printProviderInfo } from "../constants/importProviders";
 import { SELF_AUTHOR_ID } from "../constants/selfAuthor";
 import { useGravatarUrl } from "../hooks/useGravatarUrl";
+import { useAuthorPreviewEnabled } from "../hooks/useAuthorPreviewEnabled";
 
 const PREVIEW_MODEL_COUNT = 3;
 // The card's width follows from its one-row model grid: PREVIEW_MODEL_COUNT squares of
@@ -215,9 +216,11 @@ type Props = CardProps & {
 /** Wraps an author link so resting the pointer on it (or focusing it) opens a preview card: the
  *  author's cover, avatar/name/@handle, how many of their models are in this library, and their
  *  latest few. `authorId` may be SELF_AUTHOR_ID for the viewer's own uploads (pass `viewer`).
- *  Nothing is fetched until the card actually opens. */
+ *  Nothing is fetched until the card actually opens. Off entirely when the user has turned the
+ *  preview off on their Profile page. */
 export default function AuthorHoverCard({ authorId, viewer, children, disabled }: Props) {
-  if (disabled) return children;
+  const enabled = useAuthorPreviewEnabled();
+  if (disabled || !enabled) return children;
   return (
     <Tooltip
       title={<AuthorPreviewCard authorId={authorId} viewer={viewer} />}

@@ -40,6 +40,9 @@ model User {
   // default rather than to a stored value. Server-persisted (not just localStorage) so it follows
   // the account across devices/browsers, same reasoning as slicer/makerworldCookie above.
   themePreference          String?
+  // Whether hovering an author link opens the author preview card (frontend's AuthorHoverCard).
+  // On by default -- see services/authorPreviewPreferenceService.ts.
+  authorPreviewEnabled     Boolean        @default(true)
   // Populated by linking an imported Author to this account (the Author page's "It's me!"
   // button -- see AuthorLink below) rather than edited directly: the first link with bio/cover
   // data fills these in if they're still empty, later links never overwrite them. Shown on this

@@ -275,4 +275,25 @@ export const settingsApi = {
     }
     return res.json();
   },
+
+  // Per-user on/off for the author preview card shown on hovering an author link (see
+  // hooks/useAuthorPreviewEnabled.ts). On by default server-side.
+  getAuthorPreview: async (): Promise<{ enabled: boolean }> => {
+    const res = await fetch(`${apiBase()}/settings/author-preview`, { headers: authHeaders() });
+    assertOk(res, "Failed to load author preview setting");
+    return res.json();
+  },
+
+  updateAuthorPreview: async (enabled: boolean): Promise<{ enabled: boolean }> => {
+    const res = await fetch(`${apiBase()}/settings/author-preview`, {
+      method: "PATCH",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ enabled }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) {
+      throw new Error(await readErrorMessage(res, "Failed to update author preview setting"));
+    }
+    return res.json();
+  },
 };

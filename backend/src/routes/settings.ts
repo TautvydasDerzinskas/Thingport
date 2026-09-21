@@ -32,6 +32,7 @@ import { type MakerworldCookieCheck, verifyMakerworldCookie } from "../services/
 import { verifyThingiverseAccessToken } from "../services/thingiverseApi";
 import { SLICER_IDS, getUserSlicer, setUserSlicer } from "../services/slicerPreferenceService";
 import { THEME_SELECTIONS, getUserTheme, setUserTheme } from "../services/themePreferenceService";
+import { getUserAuthorPreviewEnabled, setUserAuthorPreviewEnabled } from "../services/authorPreviewPreferenceService";
 import { checkForUpdates } from "../services/versionService";
 
 const router = Router();
@@ -355,6 +356,24 @@ router.patch(
     const body = parseBody(themeSettingsSchema, req.body);
     const theme = await setUserTheme(req.userId!, body.theme);
     res.json({ theme });
+  }),
+);
+
+// Per-user on/off for the author preview card shown on hovering an author link -- see
+// services/authorPreviewPreferenceService.ts. On by default.
+router.get(
+  "/settings/author-preview",
+  asyncHandler(async (req, res) => {
+    res.json({ enabled: await getUserAuthorPreviewEnabled(req.userId!) });
+  }),
+);
+
+const authorPreviewSettingsSchema = z.object({ enabled: z.boolean() });
+router.patch(
+  "/settings/author-preview",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(authorPreviewSettingsSchema, req.body);
+    res.json({ enabled: await setUserAuthorPreviewEnabled(req.userId!, body.enabled) });
   }),
 );
 

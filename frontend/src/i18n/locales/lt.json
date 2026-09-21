@@ -158,6 +158,12 @@
         "failed": "Nepavyko išsaugoti -- bandykite dar kartą.",
         "bridgeRequiredPrefix": "{{slicer}} failams atverti iš čia reikalinga įdiegta Thingport Bridge pagalbinė programa --",
         "bridgeRequiredLink": "atsisiųskite ją atsisiuntimo puslapyje."
+      },
+      "authorPreview": {
+        "heading": "Autoriaus peržiūra",
+        "description": "Užvedus pelę ant autoriaus vardo ar avataro, rodyti kortelę su autoriaus viršelio nuotrauka, informacija ir naujausiais modeliais.",
+        "label": "Rodyti autoriaus peržiūrą užvedus pelę",
+        "failed": "Nepavyko išsaugoti -- bandykite dar kartą."
       }
     },
     "addMenu": {

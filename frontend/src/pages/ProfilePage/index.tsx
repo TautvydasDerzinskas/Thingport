@@ -12,6 +12,7 @@ import { useGravatarUrl } from "../../hooks/useGravatarUrl";
 import LanguagePicker from "./LanguagePicker";
 import MakerworldCookieSection from "./MakerworldCookieSection";
 import SlicerPicker from "./SlicerPicker";
+import AuthorPreviewSetting from "./AuthorPreviewSetting";
 
 type Props = {
   user: AuthUser | null;
@@ -70,6 +71,9 @@ export default function ProfilePage({ user, makerworldCookie, onUpdateMakerWorld
 
       <Divider />
       <LanguagePicker />
+
+      <Divider />
+      <AuthorPreviewSetting onUnauthorized={onUnauthorized} />
     </Stack>
   );
 }
