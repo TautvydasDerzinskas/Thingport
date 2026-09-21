@@ -19,8 +19,13 @@ import { usePageHeader } from "../../components/Layout/PageHeaderContext";
 import { BRIDGE_DOWNLOADS, bridgeDownloadUrl, type BridgeDownload } from "../../constants/bridge";
 import { EXTENSION_DOWNLOADS, extensionDownloadUrl, type ExtensionDownload } from "../../constants/extension";
 import extensionIcon from "../../assets/logos/thingport-icon-color.svg";
+// Official browser logos (github.com/alrra/browser-logos), shown only to mark which browser each
+// extension download is for.
+import chromeLogo from "../../assets/logos/browsers/chrome.svg";
+import firefoxLogo from "../../assets/logos/browsers/firefox.svg";
 
 const OS_ICON = { windows: LaptopWindowsIcon, macos: AppleIcon, linux: TerminalIcon };
+const BROWSER_LOGO: Record<ExtensionDownload["browser"], string> = { chrome: chromeLogo, firefox: firefoxLogo };
 
 type InstallStep = { text: string; code?: string };
 
@@ -135,7 +140,10 @@ export default function DownloadPage() {
           {EXTENSION_DOWNLOADS.map(({ browser, label, asset }) => (
             <Paper key={browser} variant="outlined" sx={{ p: 2.5, flex: 1, maxWidth: 340 }}>
               <Stack spacing={1.5} alignItems="flex-start">
-                <Box component="img" src={extensionIcon} alt="" sx={{ width: 40, height: 40 }} />
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Box component="img" src={extensionIcon} alt="" sx={{ width: 40, height: 40 }} />
+                  <Box component="img" src={BROWSER_LOGO[browser]} alt={label} sx={{ width: 32, height: 32 }} />
+                </Stack>
                 <Typography variant="subtitle2" fontWeight={600}>
                   {t("download.extension.name")} ({label})
                 </Typography>
