@@ -8,10 +8,12 @@ import Stack from "@mui/material/Stack";
 import Divider from "@mui/material/Divider";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import CircularProgress from "@mui/material/CircularProgress";
 import DownloadIcon from "@mui/icons-material/Download";
 import type { Plate } from "../../api/prints";
+import PlateThumbnail from "../../components/media/PlateThumbnail";
 
 type Props = {
   open: boolean;
@@ -44,6 +46,9 @@ export default function DownloadPickerDialog({ open, onClose, downloading, sorte
           <List disablePadding>
             {sortedPlates.map((plate, idx) => (
               <ListItemButton key={plate.id} onClick={() => downloadPlate(plate)} disabled={downloading} sx={{ borderRadius: 1 }}>
+                <ListItemIcon sx={{ minWidth: 60 }}>
+                  <PlateThumbnail plate={plate} size={48} />
+                </ListItemIcon>
                 <ListItemText
                   primary={t("models:detail.plateLabel", { n: idx + 1 })}
                   secondary={plate.filename}

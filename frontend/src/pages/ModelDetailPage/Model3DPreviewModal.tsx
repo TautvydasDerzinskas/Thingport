@@ -15,6 +15,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import { type Print, printsApi } from "../../api/prints";
 import { MODEL_EXTS } from "../../constants/fileTypes";
 import { extOf } from "../../utils/fileExtensions";
+import PlateThumbnail from "../../components/media/PlateThumbnail";
 import ModelViewer, { type CameraView, type ModelViewerHandle, type RenderStyle } from "../../components/media/ModelViewer";
 import type { PlateSummary } from "../../utils/bambuThreeMf";
 import PreviewToolbar, { DEFAULT_PREVIEW_COLOR } from "./PreviewToolbar";
@@ -137,16 +138,7 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
                   sx={{ borderRadius: 1, mb: 0.5 }}
                 >
                   <ListItemIcon sx={{ minWidth: 40 }}>
-                    {plate.thumb_url ? (
-                      <Box
-                        component="img"
-                        src={printsApi.fileUrl(plate.thumb_url)}
-                        alt={plate.filename}
-                        sx={{ width: 32, height: 32, borderRadius: 0.75, objectFit: "cover" }}
-                      />
-                    ) : (
-                      <Box sx={{ width: 32, height: 32, borderRadius: 0.75, bgcolor: "action.hover" }} />
-                    )}
+                    <PlateThumbnail plate={plate} />
                   </ListItemIcon>
                   <ListItemText
                     primary={t("models:detail.plateLabel", { n: idx + 1 })}

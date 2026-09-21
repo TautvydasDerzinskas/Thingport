@@ -3,6 +3,7 @@ import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
 import { useTranslation } from "react-i18next";
 import { printsApi } from "../../../api/prints";
 import { type ResolvedTheme } from "../../../constants/settingsOptions";
@@ -15,7 +16,16 @@ type ModelSnapshotProps = {
   plateId?: string;
   theme: ResolvedTheme;
   mode?: "automatic" | "on-demand";
+  /** For tiny slots (e.g. a plate list's 32px thumbnail): no status text or buttons, just the
+   *  image once ready (a small spinner while generating). Also renders at a fixed card-sized
+   *  resolution instead of the slot's own size -- the result is persisted as the plate's
+   *  thumbnail (see uploadGeneratedThumbnail) and reused by full-size grid cards. */
+  compact?: boolean;
 };
+
+// Render size for compact snapshots: the same 4:3 as a grid card, large enough to stay sharp there.
+const COMPACT_RENDER_WIDTH = 480;
+const COMPACT_RENDER_HEIGHT = 360;
 
 // Every ModelSnapshot on the page shares one job queue (see queueSnapshotJob), so a single model
 // that hangs mid-load (bad network response, pathological geometry) would otherwise wedge every
@@ -38,7 +48,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   });
 }
 
-export function ModelSnapshot({ url, ext, plateId, mode = "automatic" }: ModelSnapshotProps) {
+export function ModelSnapshot({ url, ext, plateId, mode = "automatic", compact = false }: ModelSnapshotProps) {
   const { t } = useTranslation(["library", "common"]);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [snapshot, setSnapshot] = useState<string | null>(null);
@@ -63,8 +73,8 @@ export function ModelSnapshot({ url, ext, plateId, mode = "automatic" }: ModelSn
       setState("loading");
       try {
         const rect = containerRef.current.getBoundingClientRect();
-        const width = Math.max(120, Math.floor(rect.width || 240));
-        const height = Math.max(120, Math.floor(rect.height || 180));
+        const width = compact ? COMPACT_RENDER_WIDTH : Math.max(120, Math.floor(rect.width || 240));
+        const height = compact ? COMPACT_RENDER_HEIGHT : Math.max(120, Math.floor(rect.height || 180));
         const image = await queueSnapshotJob(async () => {
           if (disposed) return null;
           return withTimeout(generateModelSnapshot(url, ext, width, height, "light"), SNAPSHOT_TIMEOUT_MS);
@@ -109,7 +119,7 @@ export function ModelSnapshot({ url, ext, plateId, mode = "automatic" }: ModelSn
     // retryToken isn't read in the effect body -- it's a bump counter whose only job is to
     // force this effect to re-run when the user clicks Retry.
     // oxlint-disable-next-line react/exhaustive-effect-dependencies
-  }, [url, ext, plateId, mode, requested, retryToken]);
+  }, [url, ext, plateId, mode, requested, retryToken, compact]);
 
   return (
     <Box
@@ -132,6 +142,8 @@ export function ModelSnapshot({ url, ext, plateId, mode = "automatic" }: ModelSn
           alt={t("library:modelViewer.previewAlt")}
           sx={{ width: "100%", height: "100%", objectFit: "cover" }}
         />
+      ) : compact ? (
+        state === "loading" && <CircularProgress size={14} />
       ) : state === "loading" ? (
         <Typography variant="caption" color="text.secondary">
           {t("library:modelViewer.generatingPreview")}
