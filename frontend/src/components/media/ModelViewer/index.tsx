@@ -241,32 +241,49 @@ export default function ModelViewer({ url, ext, viewKey, theme, colorOverride, s
     // toggle on its child groups rather than rebuilding geometry from raw parsed data.
     let cachedGlbRoot: THREE.Group | null = null;
 
+    // World-space bounds of only the *visible* meshes under `root`. Box3.setFromObject ignores
+    // visibility, which for a cached GLB (every plate's meshes loaded, all but one hidden) would
+    // measure the whole multi-plate grid Bambu Studio lays plates out on, not the active plate.
+    const visibleBox = (root: THREE.Object3D): THREE.Box3 => {
+      root.updateMatrixWorld(true);
+      const box = new THREE.Box3();
+      root.traverseVisible(child => {
+        if (!(child instanceof THREE.Mesh)) return;
+        if (!child.geometry.boundingBox) child.geometry.computeBoundingBox();
+        box.union(child.geometry.boundingBox!.clone().applyMatrix4(child.matrixWorld));
+      });
+      return box;
+    };
+
     // Shared tail for both the live-parse and cached-GLB paths: position the (already-built)
     // group on the build plate, frame the camera, and clear loading -- an empty box (e.g. a
     // plate with no visible geometry) must still clear loading rather than leaving the spinner
-    // stuck forever, regardless of which path produced it.
-    const finalizeGroupPlacement = (group: THREE.Object3D, centerOnBuildPlate: boolean) => {
-      const box = new THREE.Box3().setFromObject(group);
+    // stuck forever, regardless of which path produced it. `refitCamera` is set on a plate
+    // switch so the newly shown plate is framed, rather than restoring the previous saved view.
+    const finalizeGroupPlacement = (group: THREE.Object3D, centerOnBuildPlate: boolean, refitCamera = false) => {
+      const box = visibleBox(group);
       if (box.isEmpty()) {
         setIsLoading(false);
         return;
       }
+      // Offsets are relative (+=): the cached-GLB root is reused across plate switches, so its
+      // position already carries the previous plate's offset, which the world-space box includes.
       const center = box.getCenter(new THREE.Vector3());
-      group.position.y = -box.min.y;
+      group.position.y -= box.min.y;
       if (centerOnBuildPlate) {
-        group.position.x = -center.x + buildVolume.x / 2;
-        group.position.z = -center.z + buildVolume.y / 2;
+        group.position.x += buildVolume.x / 2 - center.x;
+        group.position.z += buildVolume.y / 2 - center.z;
       }
       plateMesh.position.set(buildVolume.x / 2, plateMesh.position.y, buildVolume.y / 2);
       shadowCatcher.position.set(buildVolume.x / 2, shadowCatcher.position.y, buildVolume.y / 2);
       gridHelper.position.set(buildVolume.x / 2, 0, buildVolume.y / 2);
 
-      const finalBox = new THREE.Box3().setFromObject(group);
-      if (!loadSavedView()) fitCameraToBox(camera, controls, finalBox);
+      const finalBox = visibleBox(group);
+      if (refitCamera || !loadSavedView()) fitCameraToBox(camera, controls, finalBox);
       setIsLoading(false);
     };
 
-    const renderBambuGroup = (centerOnBuildPlate: boolean) => {
+    const renderBambuGroup = (centerOnBuildPlate: boolean, refitCamera = false) => {
       if (!bambuParsed) return;
       if (activeObject) {
         scene.remove(activeObject);
@@ -286,13 +303,13 @@ export default function ModelViewer({ url, ext, viewKey, theme, colorOverride, s
       });
       activeObject = group;
       scene.add(group);
-      finalizeGroupPlacement(group, centerOnBuildPlate);
+      finalizeGroupPlacement(group, centerOnBuildPlate, refitCamera);
     };
 
     // Cached-GLB equivalent of renderBambuGroup: the group (and every plate's meshes) is already
     // in the scene from the initial load below -- switching plates is just showing the matching
     // "plate-{id}" child group and hiding the rest, no rebuild/refetch.
-    const showCachedGlbPlate = (plateId: number | null, centerOnBuildPlate: boolean) => {
+    const showCachedGlbPlate = (plateId: number | null, centerOnBuildPlate: boolean, refitCamera = false) => {
       if (!cachedGlbRoot) return;
       const targetName = plateId != null ? `plate-${plateId}` : null;
       let matched = false;
@@ -304,7 +321,7 @@ export default function ModelViewer({ url, ext, viewKey, theme, colorOverride, s
       // Requested plate id isn't one of this file's plates (shouldn't normally happen) -- show
       // everything rather than an empty scene.
       if (!matched) cachedGlbRoot.children.forEach(child => { child.visible = true; });
-      finalizeGroupPlacement(cachedGlbRoot, centerOnBuildPlate);
+      finalizeGroupPlacement(cachedGlbRoot, centerOnBuildPlate, refitCamera);
     };
 
     (async () => {
@@ -446,9 +463,10 @@ export default function ModelViewer({ url, ext, viewKey, theme, colorOverride, s
       animate();
 
       rebuildBambuPlateRef.current = plateId => {
+        if (plateId === currentPlateId) return;
         currentPlateId = plateId;
-        if (cachedGlbRoot) showCachedGlbPlate(plateId, true);
-        else renderBambuGroup(true);
+        if (cachedGlbRoot) showCachedGlbPlate(plateId, true, true);
+        else renderBambuGroup(true, true);
       };
     })();
 
