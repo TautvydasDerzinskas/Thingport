@@ -255,6 +255,11 @@
       }
     },
     "adminSettings": {
+      "storageUsage": {
+        "summary_one": "{{size}} used by {{count}} model",
+        "summary_other": "{{size}} used by {{count}} models",
+        "hint": "Disk space used by every user's model files (plates, supporting and prepared files). Thumbnails and gallery images aren't included."
+      },
       "pageTitle": "Admin Settings",
       "updateCheck": {
         "heading": "Update Checker",
@@ -1158,6 +1163,8 @@
       "favoriteFailed": "Failed to update favourites. Please try again.",
       "title": "Title",
       "category": "Category",
+      "size": "Size",
+      "sizeHint": "Total size of all this model's files in storage",
       "author": "Author",
       "downloadModelFiles": "Download model files",
       "imported": "Imported {{date}}"

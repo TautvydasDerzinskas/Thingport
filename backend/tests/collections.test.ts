@@ -69,7 +69,8 @@ describe("collections routes", () => {
       .send({ name: "Renamed Collection", tags: ["c"] });
     expect(res.status).toBe(200);
     expect(res.body.name).toBe("Renamed Collection");
-    expect(res.body.tags).toEqual(["c"]);
+    // Tags are stored in canonical casing (see utils/tagNormalization.ts).
+    expect(res.body.tags).toEqual(["C"]);
   });
 
   it("filters /prints by collection_id (empty collection -> empty list)", async () => {

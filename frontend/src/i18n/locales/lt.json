@@ -255,6 +255,12 @@
       }
     },
     "adminSettings": {
+      "storageUsage": {
+        "summary_one": "{{size}} užima {{count}} modelis",
+        "summary_few": "{{size}} užima {{count}} modeliai",
+        "summary_other": "{{size}} užima {{count}} modelių",
+        "hint": "Visų naudotojų modelių failų (plokščių, papildomų ir paruoštų failų) užimama vieta diske. Miniatiūros ir galerijos paveikslėliai neįskaičiuoti."
+      },
       "pageTitle": "Administravimo nustatymai",
       "updateCheck": {
         "heading": "Atnaujinimų tikrinimas",
@@ -1159,6 +1165,8 @@
       "favoriteFailed": "Nepavyko atnaujinti mėgstamų. Bandykite dar kartą.",
       "title": "Pavadinimas",
       "category": "Kategorija",
+      "size": "Dydis",
+      "sizeHint": "Bendras visų šio modelio failų dydis saugykloje",
       "author": "Autorius",
       "downloadModelFiles": "Atsisiųsti modelio failus",
       "imported": "Importuota {{date}}"

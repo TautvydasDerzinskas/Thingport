@@ -8,6 +8,7 @@ import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
 import ButtonBase from "@mui/material/ButtonBase";
 import FolderIcon from "@mui/icons-material/Folder";
+import StorageIcon from "@mui/icons-material/Storage";
 import LaunchIcon from "@mui/icons-material/Launch";
 import DownloadIcon from "@mui/icons-material/Download";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -23,6 +24,7 @@ import { dividerBorderColor } from "../../theme";
 import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
 import { useDownloadPrint } from "./useDownloadPrint";
 import RollingNumber from "../../components/RollingNumber";
+import { formatFileSize } from "../../utils/fileSize";
 import AuthorHoverCard from "../../components/AuthorHoverCard";
 import DownloadPickerDialog from "./DownloadPickerDialog";
 
@@ -165,6 +167,24 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
               <FolderIcon fontSize="small" />
               <Typography variant="body2" fontWeight={600}>{print.category_name}</Typography>
             </ButtonBase>
+          </Box>
+        )}
+
+        {typeof print.total_size === "number" && (
+          <Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+              {t("models:detail.size")}
+            </Typography>
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={0.75}
+              title={t("models:detail.sizeHint")}
+              sx={{ width: "fit-content", color: (muiTheme) => muiTheme.thingport.headingText }}
+            >
+              <StorageIcon fontSize="small" />
+              <Typography variant="body2" fontWeight={600}>{formatFileSize(print.total_size)}</Typography>
+            </Stack>
           </Box>
         )}
 

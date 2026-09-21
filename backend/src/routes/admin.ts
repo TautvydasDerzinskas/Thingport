@@ -3,7 +3,7 @@ import { prisma } from "../db";
 import { requireAdmin, requireAuth } from "../auth";
 import { HttpError } from "../utils/fileUtils";
 import { asyncHandler } from "../utils/asyncHandler";
-import { deleteAllPrintsForUser, listLogs, listUsersWithPrintCounts } from "../services/adminService";
+import { deleteAllPrintsForUser, getStorageUsage, listLogs, listUsersWithPrintCounts } from "../services/adminService";
 
 const router = Router();
 router.use(requireAuth);
@@ -25,6 +25,16 @@ router.get(
         created_at: u.createdAt,
       })),
     );
+  }),
+);
+
+// Total disk use by models across the whole instance -- shown at the bottom of the Administration
+// hub. See getStorageUsage for exactly what's counted.
+router.get(
+  "/admin/storage",
+  asyncHandler(async (_req, res) => {
+    const usage = await getStorageUsage();
+    res.json({ model_bytes: usage.modelBytes, model_count: usage.modelCount });
   }),
 );
 

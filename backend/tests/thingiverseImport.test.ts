@@ -139,7 +139,9 @@ describe("importPrintFromUrl -- Thingiverse", () => {
     expect(result.print.sourceProvider).toBe("thingiverse");
     expect(result.print.sourceExternalId).toBe(THING_ID);
     expect(result.print.notes).toContain("test");
-    expect(result.print.tags.toSorted()).toEqual(["Test Fixture", "Widget"]);
+    // Tags are stored in canonical casing (see utils/tagNormalization.ts): only the first
+    // character stays uppercase, so "Test Fixture" becomes "Test fixture".
+    expect(result.print.tags.toSorted()).toEqual(["Test fixture", "Widget"]);
     expect(result.print.categoryId).toBe(category.id);
 
     // instructions.pdf is not a recognized plate format -- only the two .stl files should have

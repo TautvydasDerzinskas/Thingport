@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import Stack from "@mui/material/Stack";
@@ -6,13 +7,19 @@ import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
+import Skeleton from "@mui/material/Skeleton";
+import Typography from "@mui/material/Typography";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import StorageIcon from "@mui/icons-material/Storage";
 import SettingsIcon from "@mui/icons-material/Settings";
 import PeopleIcon from "@mui/icons-material/People";
 import HistoryIcon from "@mui/icons-material/History";
 import BoltIcon from "@mui/icons-material/Bolt";
 import CableIcon from "@mui/icons-material/Cable";
 import UpdateCheckSection from "./UpdateCheckSection";
+import { adminApi, type StorageUsage } from "../../api/admin";
+import { UnauthorizedError } from "../../api/client";
+import { formatFileSize } from "../../utils/fileSize";
 
 type Section = {
   path: string;
@@ -41,6 +48,21 @@ type Props = {
 export default function AdminPage({ onUnauthorized }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const navigate = useNavigate();
+  // undefined = loading, null = failed (the footer just hides -- it's informational only).
+  const [storage, setStorage] = useState<StorageUsage | null | undefined>(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+    adminApi.getStorageUsage().then(
+      usage => { if (!cancelled) setStorage(usage); },
+      err => {
+        if (cancelled) return;
+        if (err instanceof UnauthorizedError) onUnauthorized?.();
+        setStorage(null);
+      },
+    );
+    return () => { cancelled = true; };
+  }, [onUnauthorized]);
 
   return (
     <Stack spacing={3} sx={{ maxWidth: 480 }}>
@@ -67,6 +89,28 @@ export default function AdminPage({ onUnauthorized }: Props) {
           ))}
         </List>
       </Paper>
+
+      {storage !== null && (
+        <Stack
+          direction="row"
+          alignItems="center"
+          spacing={1}
+          title={t("adminSettings.storageUsage.hint")}
+          sx={{ px: 0.5, color: "text.secondary" }}
+        >
+          <StorageIcon fontSize="small" />
+          {storage === undefined ? (
+            <Skeleton width={220} />
+          ) : (
+            <Typography variant="body2">
+              {t("adminSettings.storageUsage.summary", {
+                size: formatFileSize(storage.model_bytes),
+                count: storage.model_count,
+              })}
+            </Typography>
+          )}
+        </Stack>
+      )}
     </Stack>
   );
 }

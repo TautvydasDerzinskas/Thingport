@@ -116,7 +116,8 @@ describe("importPrintFromUrl -- Printables", () => {
     expect(result.print.sourceProvider).toBe("printables");
     expect(result.print.sourceExternalId).toBe(MODEL_ID);
     expect(result.print.notes).toContain("Mounting");
-    expect(result.print.tags.toSorted()).toEqual(["garden", "hose"]);
+    // Tags are stored in canonical casing (see utils/tagNormalization.ts).
+    expect(result.print.tags.toSorted()).toEqual(["Garden", "Hose"]);
     expect(result.print.categoryId).toBe(category.id);
 
     expect(result.plates.map((p) => p.filename)).toEqual(["garden-hose-holder.3mf"]);

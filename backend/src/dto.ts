@@ -124,6 +124,9 @@ export type PrintOut = {
   preview_images: PreviewImageOut[];
   thumb_url: string | null;
   supporting_file_count: number;
+  /** Bytes on disk across every model file: all plates plus supporting and prepared files.
+   *  Gallery preview images aren't model files and aren't counted. */
+  total_size: number;
   prepared_print: PreparedPrintOut | null;
   slicer_url: string | null;
   slicer_filename: string | null;
@@ -233,6 +236,8 @@ export function toPrintOut(
   const sortedPlates = plates.toSorted((a, b) => a.position - b.position);
   const plateOuts = sortedPlates.map((p) => toPlateOut(print.id, p));
   const supportingCount = files.filter((f) => f.role === "SUPPORTING").length;
+  const totalSize =
+    plates.reduce((sum, p) => sum + p.size, 0) + files.reduce((sum, f) => sum + f.size, 0);
   const previewImageOuts = previewImages
     .toSorted((a, b) => a.position - b.position)
     .map(toPreviewImageOut)
@@ -290,6 +295,7 @@ export function toPrintOut(
     preview_images: previewImageOuts,
     thumb_url: plateOuts[0]?.thumb_url ?? null,
     supporting_file_count: supportingCount,
+    total_size: totalSize,
     prepared_print: prepared,
     slicer_url: slicerUrl,
     slicer_filename: slicerFilename,

@@ -176,3 +176,27 @@ describe("admin audit logs", () => {
     expect((res.body as Array<{ user_id: string }>).every((l) => l.user_id === memberUserId)).toBe(true);
   });
 });
+
+describe("admin storage usage", () => {
+  it("rejects a non-admin", async () => {
+    const res = await request(app).get("/api/admin/storage").set(auth(memberToken));
+    expect(res.status).toBe(403);
+  });
+
+  it("grows by exactly an uploaded model's file size and count", async () => {
+    const before = await request(app).get("/api/admin/storage").set(auth(adminToken));
+    expect(before.status).toBe(200);
+
+    const content = "solid storage-usage endsolid";
+    const upload = await request(app)
+      .post("/api/upload")
+      .set(auth(memberToken))
+      .attach("files", tmpFile("admin-storage-test.stl", content));
+    expect(upload.status).toBe(200);
+
+    const after = await request(app).get("/api/admin/storage").set(auth(adminToken));
+    expect(after.status).toBe(200);
+    expect(after.body.model_count).toBe(before.body.model_count + 1);
+    expect(after.body.model_bytes).toBe(before.body.model_bytes + Buffer.byteLength(content));
+  });
+});

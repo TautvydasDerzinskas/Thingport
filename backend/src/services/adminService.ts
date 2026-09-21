@@ -101,3 +101,22 @@ export async function deleteAllPrintsForUser(userId: string): Promise<number> {
   }
   return prints.length;
 }
+
+export type StorageUsage = {
+  modelBytes: number;
+  modelCount: number;
+};
+
+/** Instance-wide disk use by models, across every user: every plate plus every supporting and
+ *  prepared file -- the same files a model detail page's Size sums for one model (dto.ts's
+ *  total_size), so the two always agree. Read from the stored per-file sizes rather than walking
+ *  the storage directory, so it stays instant however large the library is. Gallery preview
+ *  images and generated caches (thumbnails, 3D previews) aren't model files and aren't counted. */
+export async function getStorageUsage(): Promise<StorageUsage> {
+  const [plates, files, modelCount] = await Promise.all([
+    prisma.plate.aggregate({ _sum: { size: true } }),
+    prisma.printFile.aggregate({ _sum: { size: true } }),
+    prisma.print.count(),
+  ]);
+  return { modelBytes: (plates._sum.size ?? 0) + (files._sum.size ?? 0), modelCount };
+}

@@ -72,6 +72,9 @@ export type Print = {
   preview_images: PreviewImage[]; // ordered by position; [0] is the default/main gallery image
   thumb_url?: string | null; // denormalized = plates[0].thumb_url
   supporting_file_count: number;
+  // Bytes across all plates + supporting/prepared files (not gallery images). Optional: an older
+  // backend image (published separately from this frontend) doesn't send it.
+  total_size?: number;
   prepared_print?: PreparedPrint | null;
   slicer_url?: string | null;
   slicer_filename?: string | null;

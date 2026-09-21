@@ -37,7 +37,18 @@ export type LogEntry = {
   created_at: string;
 };
 
+export type StorageUsage = {
+  model_bytes: number; // every plate + supporting/prepared file, across all users
+  model_count: number;
+};
+
 export const adminApi = {
+  getStorageUsage: async (): Promise<StorageUsage> => {
+    const res = await fetch(`${apiBase()}/admin/storage`, { headers: authHeaders() });
+    assertOk(res, "Failed to load storage usage");
+    return res.json();
+  },
+
   listUsers: async (): Promise<AdminUser[]> => {
     const res = await fetch(`${apiBase()}/admin/users`, { headers: authHeaders() });
     assertOk(res, "Failed to load users");
