@@ -101,15 +101,23 @@ export function extractMakerworldBearerToken(rawCookieOrToken: string | null | u
   return null;
 }
 
+/** Outcome of verifyMakerworldCookie. "unverifiable" means the check never got an answer about
+ * the cookie itself -- Cloudflare challenged the request and FlareSolverr is unset, unreachable,
+ * or couldn't solve it, or MakerWorld didn't respond -- so the cookie may be perfectly fine. */
+export type MakerworldCookieCheck =
+  | { result: "valid" }
+  | { result: "invalid" }
+  | { result: "unverifiable"; reason: "cloudflare_no_flaresolverr" | "flaresolverr_failed" | "network" };
+
 /** Called before storing a cookie pasted into Profile > MakerWorld (see routes/settings.ts'
  * PATCH /settings/makerworld), so a stale/expired/mistyped paste is rejected up front instead of
  * only surfacing as a failed import later. A malformed paste (extractMakerworldBearerToken
  * finding no usable token at all) is rejected without a network call; otherwise this is the
  * same self-profile request api.bambulab.com/MakerWorld clients use right after login, so a 200
  * here means the account is genuinely logged in, not just that the string looks token-shaped. */
-export async function verifyMakerworldCookie(rawCookieOrToken: string): Promise<boolean> {
+export async function verifyMakerworldCookie(rawCookieOrToken: string): Promise<MakerworldCookieCheck> {
   const bearerToken = extractMakerworldBearerToken(rawCookieOrToken);
-  if (!bearerToken) return false;
+  if (!bearerToken) return { result: "invalid" };
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), CLOUD_API_TIMEOUT_MS);
   try {
@@ -123,18 +131,21 @@ export async function verifyMakerworldCookie(rawCookieOrToken: string): Promise<
       redirect: "follow",
       signal: controller.signal,
     });
-    if (res.status === 403 && isFlaresolverrEnabled() && looksLikeCloudflareBlock(res.headers)) {
+    if (res.status === 403 && looksLikeCloudflareBlock(res.headers)) {
+      // A Cloudflare challenge is about this server's IP, not the token -- it says nothing
+      // either way about the cookie, so without a way past it the answer is "couldn't check".
+      if (!isFlaresolverrEnabled()) return { result: "unverifiable", reason: "cloudflare_no_flaresolverr" };
       // This endpoint answers 200 with an empty body through FlareSolverr's browser when the
       // session isn't actually logged in, so a bare status check would accept any string here.
       // Assert on the parsed body instead -- only a genuinely authenticated session has a `uid`.
       const solved = await fetchViaFlaresolverr(SELF_PREFERENCE_URL, `token=${bearerToken}`);
-      if (!solved) return false;
+      if (!solved) return { result: "unverifiable", reason: "flaresolverr_failed" };
       const data = extractJsonFromBrowserBody(solved.body);
-      return isRecord(data) && data.uid != null;
+      return isRecord(data) && data.uid != null ? { result: "valid" } : { result: "invalid" };
     }
-    return res.ok;
+    return res.ok ? { result: "valid" } : { result: "invalid" };
   } catch {
-    return false;
+    return { result: "unverifiable", reason: "network" };
   } finally {
     clearTimeout(timeout);
   }

@@ -28,7 +28,7 @@ import {
   validateStorageTemplate,
 } from "../services/printService";
 import { getUserMakerworldCookie, setUserMakerworldCookie } from "../services/makerworldCookieService";
-import { verifyMakerworldCookie } from "../services/makerworldCloudApi";
+import { type MakerworldCookieCheck, verifyMakerworldCookie } from "../services/makerworldCloudApi";
 import { verifyThingiverseAccessToken } from "../services/thingiverseApi";
 import { SLICER_IDS, getUserSlicer, setUserSlicer } from "../services/slicerPreferenceService";
 import { THEME_SELECTIONS, getUserTheme, setUserTheme } from "../services/themePreferenceService";
@@ -282,6 +282,17 @@ router.get(
 // tab) and deliberately swallows failures, so adding a live network test there would only add
 // latency for no benefit. Only ProfilePage's manual Save (settingsApi.updateMakerworld) sends
 // `verify: true`.
+const MAKERWORLD_UNVERIFIABLE_MESSAGES: Record<
+  Extract<MakerworldCookieCheck, { result: "unverifiable" }>["reason"],
+  string
+> = {
+  cloudflare_no_flaresolverr:
+    "Couldn't check this cookie: MakerWorld's Cloudflare protection blocked the request and FlareSolverr isn't configured. Set FLARESOLVERR_URL and try again.",
+  flaresolverr_failed:
+    "Couldn't check this cookie: MakerWorld's Cloudflare protection blocked the request and FlareSolverr didn't get past it. Make sure FlareSolverr is running and reachable at FLARESOLVERR_URL, then try again.",
+  network: "Couldn't check this cookie: MakerWorld didn't respond. Check this server's internet connection and try again.",
+};
+
 const makerworldSettingsSchema = z.object({ cookie: z.string().nullable(), verify: z.boolean().optional() });
 router.patch(
   "/settings/makerworld",
@@ -290,11 +301,16 @@ router.patch(
     const trimmed = (body.cookie ?? "").trim();
     // Only a new, non-empty cookie needs testing -- clearing it (trimmed === "") always
     // succeeds, since there's nothing to verify a logged-out state against.
-    if (body.verify && trimmed && !(await verifyMakerworldCookie(trimmed))) {
-      throw new HttpError(
-        422,
-        "Couldn't verify this MakerWorld cookie -- it may be invalid or expired. Copy a fresh Cookie header from a logged-in makerworld.com tab and try again.",
-      );
+    if (body.verify && trimmed) {
+      const check = await verifyMakerworldCookie(trimmed);
+      if (check.result === "invalid") {
+        throw new HttpError(
+          422,
+          "MakerWorld rejected this cookie -- it may be invalid or expired. Copy a fresh Cookie header from a logged-in makerworld.com tab and try again.",
+        );
+      }
+      // 503, not 422: nothing is known to be wrong with the cookie, the check itself couldn't run.
+      if (check.result === "unverifiable") throw new HttpError(503, MAKERWORLD_UNVERIFIABLE_MESSAGES[check.reason]);
     }
     const configured = await setUserMakerworldCookie(req.userId!, body.cookie);
     res.json({ configured });
