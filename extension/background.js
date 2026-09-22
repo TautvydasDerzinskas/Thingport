@@ -4,7 +4,11 @@
 // expiry/401) and the instance URL live in exactly one place. `host_permissions` for the saved
 // instance origin (requested at setup time, see handleSaveConfig) is what lets this fetch() the
 // user's self-hosted instance free of that instance's own CORS config.
-importScripts("common.js");
+// Chrome runs this file as a service worker, where importScripts() exists. Firefox has no
+// extension service workers and runs it as a background page instead, where importScripts is
+// undefined and this line used to throw before onMessage was ever registered (so the popup
+// got "Receiving end does not exist"). There, common.js comes in via background.scripts.
+if (typeof importScripts === "function") importScripts("common.js");
 
 const TOKEN_REFRESH_MARGIN_MS = 5 * 60 * 1000;
 
