@@ -56,6 +56,15 @@ jobs:
         working-directory: ${{ inputs.project_dir }}
         run: npm run lint
 
+      # Second quality gate. The frontend's image build runs `vite build`, which strips types
+      # with esbuild without ever checking them -- so without this, a type error ships green.
+      # Backend deliberately has no typecheck script (its build stage already runs tsc, and a
+      # bare tsc here would fail anyway since this job doesn't `prisma generate`), so
+      # --if-present makes this a no-op there.
+      - name: Typecheck (quality gate — frontend only, see comment)
+        working-directory: ${{ inputs.project_dir }}
+        run: npm run --if-present typecheck
+
       - name: Set up QEMU (for the arm64 leg of the multi-arch build below)
         uses: docker/setup-qemu-action@v3
 

@@ -232,6 +232,12 @@ This builds the images locally rather than pulling from GHCR.
 
 </details>
 
+## Contributing
+
+Bug reports and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the branch,
+commit and pull request workflow, and [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for how to run
+Thingport locally with hot reload.
+
 ## Support
 
 If Thingport is useful to you, consider supporting its development:
