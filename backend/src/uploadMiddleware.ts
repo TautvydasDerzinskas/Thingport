@@ -12,8 +12,17 @@ const diskStorage = multer.diskStorage({
   },
 });
 
+// Browsers send multipart filenames as raw UTF-8 bytes, but multer decodes them as Latin-1 by
+// default -- `哨子.3mf` would arrive as mojibake, and sanitizeFilename then strips the C1 bytes
+// needed to recover it.
+const defParamCharset = "utf8";
+
 /** Disk-backed multer instance for model file uploads (never memoryStorage — files can be large). */
-export const modelUpload = multer({ storage: diskStorage, limits: { fileSize: IMPORT_MAX_BYTES } });
+export const modelUpload = multer({ storage: diskStorage, limits: { fileSize: IMPORT_MAX_BYTES }, defParamCharset });
 
 /** Small in-memory multer instance for the 8MB-capped client-rendered thumbnail upload. */
-export const thumbnailUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 + 1 } });
+export const thumbnailUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024 + 1 },
+  defParamCharset,
+});

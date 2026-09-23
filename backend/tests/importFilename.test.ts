@@ -1,4 +1,7 @@
+import express from "express";
+import request from "supertest";
 import { describe, expect, it } from "vitest";
+import { modelUpload } from "../src/uploadMiddleware";
 import { buildImportFilename, parseContentDisposition, sanitizeFilename } from "../src/utils/fileUtils";
 
 // HTTP header values are ISO-8859-1 (RFC 7230 section 3.2.4). A server that puts raw UTF-8 bytes
@@ -57,5 +60,26 @@ describe("buildImportFilename", () => {
     expect(name).toBe("哨子.3mf");
     // oxlint-disable-next-line no-control-regex -- asserting there are no control chars is the point here.
     expect(/[\u0000-\u001f\u007f-\u009f]/.test(name)).toBe(false);
+  });
+});
+
+describe("parseContentDisposition with already-decoded input", () => {
+  it("leaves a string with characters above U+00FF alone", () => {
+    // Not a byte string, so there is nothing to re-decode -- and latin1 would truncate `哨`.
+    expect(parseContentDisposition('attachment; filename="café哨.stl"')).toBe("café哨.stl");
+  });
+});
+
+describe("modelUpload", () => {
+  it("decodes a browser's raw UTF-8 multipart filename as UTF-8, not Latin-1", async () => {
+    const app = express();
+    app.post("/upload", modelUpload.single("file"), (req, res) => {
+      res.json({ name: sanitizeFilename(req.file?.originalname) });
+    });
+    const res = await request(app)
+      .post("/upload")
+      .attach("file", Buffer.from("solid x\nendsolid x\n"), { filename: "哨子.stl", contentType: "model/stl" });
+    expect(res.status).toBe(200);
+    expect(res.body.name).toBe("哨子.stl");
   });
 });

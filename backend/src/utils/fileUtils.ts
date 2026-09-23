@@ -28,7 +28,9 @@ export function sanitizeFilename(name: string | null | undefined): string {
  * alone instead of being mangled by the fix.
  */
 function decodeLatin1AsUtf8(value: string): string {
-  if (!/[\u0080-\u00ff]/.test(value)) return value;
+  // Only a pure byte string can be one; anything above U+00FF was already decoded properly, and
+  // Buffer.from(..., "latin1") would silently truncate it.
+  if (!/[\u0080-\u00ff]/.test(value) || /[\u0100-\uffff]/.test(value)) return value;
   const bytes = Buffer.from(value, "latin1");
   const decoded = bytes.toString("utf8");
   return Buffer.from(decoded, "utf8").equals(bytes) ? decoded : value;
