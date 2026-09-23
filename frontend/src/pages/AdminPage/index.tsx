@@ -9,6 +9,7 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Skeleton from "@mui/material/Skeleton";
 import Typography from "@mui/material/Typography";
+import Link from "@mui/material/Link";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import StorageIcon from "@mui/icons-material/Storage";
 import SettingsIcon from "@mui/icons-material/Settings";
@@ -16,10 +17,12 @@ import PeopleIcon from "@mui/icons-material/People";
 import HistoryIcon from "@mui/icons-material/History";
 import BoltIcon from "@mui/icons-material/Bolt";
 import CableIcon from "@mui/icons-material/Cable";
+import PublicIcon from "@mui/icons-material/Public";
 import UpdateCheckSection from "./UpdateCheckSection";
 import { adminApi, type StorageUsage } from "../../api/admin";
 import { UnauthorizedError } from "../../api/client";
 import { formatFileSize } from "../../utils/fileSize";
+import { THINGPORT_WEBSITE_URL } from "../../constants/website";
 
 type Section = {
   path: string;
@@ -111,6 +114,19 @@ export default function AdminPage({ onUnauthorized }: Props) {
           )}
         </Stack>
       )}
+
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={1}
+        title={t("adminSettings.website.hint")}
+        sx={{ px: 0.5, color: "text.secondary" }}
+      >
+        <PublicIcon fontSize="small" />
+        <Link href={THINGPORT_WEBSITE_URL} target="_blank" rel="noopener" variant="body2" underline="hover">
+          {t("adminSettings.website.link")}
+        </Link>
+      </Stack>
     </Stack>
   );
 }

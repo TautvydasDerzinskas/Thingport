@@ -261,6 +261,10 @@
         "summary_other": "{{size}} užima {{count}} modelių",
         "hint": "Visų naudotojų modelių failų (plokščių, papildomų ir paruoštų failų) užimama vieta diske. Miniatiūros ir galerijos paveikslėliai neįskaičiuoti."
       },
+      "website": {
+        "link": "Thingport svetainė ir dokumentacija",
+        "hint": "Diegimo gidai, šaltinių nustatymas ir Thingport naujienos"
+      },
       "pageTitle": "Administravimo nustatymai",
       "updateCheck": {
         "heading": "Atnaujinimų tikrinimas",

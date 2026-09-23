@@ -10,6 +10,15 @@ from the places where you discover them.
 </p>
 
 <p>
+  <a href="https://tautvydasderzinskas.github.io/Thingport/"><b>Website</b></a> ·
+  <a href="https://tautvydasderzinskas.github.io/Thingport/docs/">Docs</a> ·
+  <a href="https://tautvydasderzinskas.github.io/Thingport/features/">Features</a> ·
+  <a href="https://tautvydasderzinskas.github.io/Thingport/blog/">Blog</a>
+</p>
+
+<p>
+  <a href="https://tautvydasderzinskas.github.io/Thingport/"><img src="https://img.shields.io/badge/website-thingport-00b800?logo=googlechrome&logoColor=white" alt="Website"></a>
+  <img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/web-pages.yml/badge.svg" alt="Website build">
   <img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/frontend-image.yml/badge.svg" alt="Frontend">
   <img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/backend-image.yml/badge.svg" alt="Backend">
   <img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/bridge-release.yml/badge.svg" alt="Slicer Bridge">
@@ -80,6 +89,9 @@ Thingport ships two small companion tools, each downloadable from the in-app Dow
 Printables imports work with no setup. MakerWorld and Thingiverse each need a credential from your own account first -- see **[docs/PROVIDER_SETUP.md](docs/PROVIDER_SETUP.md)** for how to create a Thingiverse Access Token and how to grab a MakerWorld session cookie.
 
 ## Installation
+
+> Step-by-step guides for Docker Compose, Unraid, TrueNAS SCALE and CasaOS are also on the
+> **[Thingport website](https://tautvydasderzinskas.github.io/Thingport/docs/)**.
 
 ### Docker Compose
 

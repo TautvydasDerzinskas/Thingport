@@ -260,6 +260,10 @@
         "summary_other": "{{size}} used by {{count}} models",
         "hint": "Disk space used by every user's model files (plates, supporting and prepared files). Thumbnails and gallery images aren't included."
       },
+      "website": {
+        "link": "Thingport website & docs",
+        "hint": "Install guides, provider setup and news about Thingport"
+      },
       "pageTitle": "Admin Settings",
       "updateCheck": {
         "heading": "Update Checker",
