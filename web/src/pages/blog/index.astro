@@ -1,0 +1,103 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Icon from "../../components/Icon.astro";
+import { formatDate, url } from "../../lib/url";
+
+const posts = (await getCollection("blog", ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+---
+
+<BaseLayout title="Blog" description="Release notes, guides and news from the Thingport project.">
+  <div class="container page-head">
+    <span class="eyebrow">Blog</span>
+    <h1>News and release notes</h1>
+    <p>
+      What's new in Thingport, and how to get more out of it.
+      <a class="rss" href={url("rss.xml")}><Icon name="rss" size={16} /> RSS feed</a>
+    </p>
+  </div>
+  <div class="container">
+    <ul class="posts">
+      {
+        posts.map((post) => (
+          <li>
+            <article class="card post">
+              <time class="muted" datetime={post.data.pubDate.toISOString()}>
+                {formatDate(post.data.pubDate)}
+              </time>
+              <h2>
+                <a href={url(`blog/${post.id}/`)}>{post.data.title}</a>
+              </h2>
+              <p>{post.data.description}</p>
+              {post.data.tags.length > 0 && (
+                <ul class="tags" aria-label="Tags">
+                  {post.data.tags.map((t) => (
+                    <li>{t}</li>
+                  ))}
+                </ul>
+              )}
+            </article>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</BaseLayout>
+
+<style>
+  .rss {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-left: 0.5rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .posts {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 1.25rem;
+    max-width: 48rem;
+  }
+  .post {
+    padding: 1.5rem;
+  }
+  .post h2 {
+    font-size: 1.4rem;
+    margin: 0.35rem 0 0.5rem;
+  }
+  .post h2 a {
+    color: var(--heading);
+    text-decoration: none;
+  }
+  .post h2 a:hover {
+    color: var(--link);
+  }
+  .post p {
+    margin: 0;
+    color: var(--text-muted);
+  }
+  time {
+    font-size: 0.875rem;
+  }
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0 0;
+  }
+  .tags li {
+    padding: 0.15rem 0.6rem;
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    color: var(--link);
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+</style>

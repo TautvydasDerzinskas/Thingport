@@ -1,0 +1,71 @@
+---
+import Icon from "./Icon.astro";
+---
+
+<!-- Follows the OS setting by default; the button cycles system -> light -> dark. -->
+<button class="theme-toggle" type="button" data-theme-toggle aria-label="Colour theme: system">
+  <span data-mode="system"><Icon name="monitor" size={18} /></span>
+  <span data-mode="light" hidden><Icon name="sun" size={18} /></span>
+  <span data-mode="dark" hidden><Icon name="moon" size={18} /></span>
+</button>
+
+<script>
+  const KEY = "thingport-theme";
+  const ORDER = ["system", "light", "dark"] as const;
+  type Mode = (typeof ORDER)[number];
+
+  const read = (): Mode => {
+    try {
+      const v = localStorage.getItem(KEY);
+      return v === "light" || v === "dark" ? v : "system";
+    } catch {
+      return "system";
+    }
+  };
+
+  const apply = (mode: Mode) => {
+    const root = document.documentElement;
+    if (mode === "system") delete root.dataset.theme;
+    else root.dataset.theme = mode;
+    try {
+      if (mode === "system") localStorage.removeItem(KEY);
+      else localStorage.setItem(KEY, mode);
+    } catch {
+      /* storage blocked: the choice just won't persist */
+    }
+    for (const button of document.querySelectorAll<HTMLButtonElement>("[data-theme-toggle]")) {
+      button.setAttribute("aria-label", `Colour theme: ${mode}`);
+      button.title = `Theme: ${mode}`;
+      for (const icon of button.querySelectorAll<HTMLElement>("[data-mode]")) icon.hidden = icon.dataset.mode !== mode;
+    }
+  };
+
+  apply(read());
+  for (const button of document.querySelectorAll("[data-theme-toggle]")) {
+    button.addEventListener("click", () => apply(ORDER[(ORDER.indexOf(read()) + 1) % ORDER.length]));
+  }
+</script>
+
+<style>
+  .theme-toggle {
+    display: inline-grid;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--panel);
+    color: var(--heading);
+    cursor: pointer;
+  }
+  .theme-toggle:hover {
+    border-color: var(--accent);
+  }
+  .theme-toggle span {
+    display: inline-grid;
+  }
+  .theme-toggle span[hidden] {
+    display: none;
+  }
+</style>

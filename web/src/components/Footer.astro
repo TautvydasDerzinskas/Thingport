@@ -1,0 +1,116 @@
+---
+import { DOCS, LINKS, TAGLINE } from "../lib/site.mjs";
+import { url } from "../lib/url";
+import Logo from "./Logo.astro";
+
+const doc = (slug: string) => DOCS.find((d) => d.slug === slug)!;
+const COLUMNS = [
+  {
+    title: "Product",
+    links: [
+      { label: "Features", href: url("features/") },
+      { label: "Thingport Grab", href: url("docs/grab/") },
+      { label: "Thingport Bridge", href: url("docs/bridge/") },
+      { label: "Blog", href: url("blog/") },
+      { label: "RSS feed", href: url("rss.xml") },
+    ],
+  },
+  {
+    title: "Docs",
+    links: ["install", "providers", "install/unraid", "install/truenas", "install/casaos"].map((slug) => ({
+      label: doc(slug).nav,
+      href: url(`docs/${slug}/`),
+    })),
+  },
+  {
+    title: "Project",
+    links: [
+      { label: "GitHub", href: LINKS.github },
+      { label: "Releases", href: LINKS.releases },
+      { label: "Report an issue", href: LINKS.issues },
+      { label: "Contributing", href: url("docs/contributing/") },
+      { label: "Sponsor", href: LINKS.sponsors },
+    ],
+  },
+];
+---
+
+<footer class="site-footer">
+  <div class="container grid">
+    <div class="about">
+      <Logo height={26} />
+      <p class="muted">{TAGLINE}. Free, open source and self-hosted.</p>
+      <p class="muted small">
+        MIT licensed · <a href={LINKS.license}>License</a> · <a href={LINKS.coffee}>Buy me a coffee</a>
+      </p>
+    </div>
+    {
+      COLUMNS.map((col) => (
+        <nav aria-label={col.title}>
+          <h2>{col.title}</h2>
+          <ul>
+            {col.links.map((l) => (
+              <li>
+                <a href={l.href}>{l.label}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ))
+    }
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    margin-top: 4rem;
+    padding-block: 3rem;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 2fr repeat(3, 1fr);
+    gap: 2rem;
+  }
+  .about p {
+    margin: 0.75rem 0 0;
+    max-width: 22rem;
+  }
+  .small {
+    font-size: 0.875rem;
+  }
+  h2 {
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--heading);
+  }
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  li + li {
+    margin-top: 0.4rem;
+  }
+  nav a {
+    color: var(--text);
+    text-decoration: none;
+    font-size: 0.95rem;
+  }
+  nav a:hover {
+    color: var(--link);
+    text-decoration: underline;
+  }
+  @media (max-width: 48rem) {
+    .grid {
+      grid-template-columns: 1fr 1fr;
+    }
+    .about {
+      grid-column: 1 / -1;
+    }
+  }
+</style>

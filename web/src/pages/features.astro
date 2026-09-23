@@ -1,0 +1,282 @@
+---
+import { Image } from "astro:assets";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Icon from "../components/Icon.astro";
+import { url } from "../lib/url";
+import models from "../../../frontend/src/assets/screenshots/02_models.png";
+import preview3d from "../../../frontend/src/assets/screenshots/04_model_details_3d_preview.png";
+import tags from "../../../frontend/src/assets/screenshots/06_tags.png";
+import downloads from "../../../frontend/src/assets/screenshots/07_downloads.png";
+import myModels from "../../../frontend/src/assets/screenshots/08_my_models.png";
+import grabPrintables from "../../../frontend/src/assets/screenshots/10_extension_printables.png";
+
+const SECTIONS = [
+  {
+    id: "import",
+    short: "Import",
+    icon: "import",
+    title: "Import from the sites you already use",
+    intro: "Thingport keeps a real copy of every model, so it's still there if the original page disappears.",
+    points: [
+      "Paste a MakerWorld, Printables or Thingiverse link, or any direct link to a model file.",
+      "Import whole collections and your likes in one go. Big imports run as background jobs you can follow.",
+      "Title, description, tags, photos, author and source link come with the files.",
+      "Upload your own STL, 3MF, STEP, OBJ and LightBurn files, or a ZIP to pick files from.",
+      "Printables works with no setup. MakerWorld and Thingiverse need a credential from your own account (see provider setup).",
+    ],
+    link: { label: "Provider setup", href: url("docs/providers/") },
+    image: grabPrintables,
+    alt: "Thingport Grab importing a model from Printables",
+  },
+  {
+    id: "preview",
+    short: "3D preview",
+    icon: "cube",
+    title: "Preview models in 3D",
+    intro: "Check what a file actually is before you slice it.",
+    points: [
+      "An interactive 3D viewer for STL, 3MF, OBJ and STEP files, right in the browser.",
+      "Thumbnails for every plate in a multi-plate 3MF project.",
+      "A photo gallery per model, separate from its printable files.",
+    ],
+    image: preview3d,
+    alt: "A model's 3D preview in Thingport",
+  },
+  {
+    id: "organize",
+    short: "Organize",
+    icon: "folder",
+    title: "Organize and find anything",
+    intro: "However you think about your collection, there's a way to file it.",
+    points: [
+      "Nested categories, collections, tags and favourites.",
+      "Full-text search across model names, tags, notes and authors.",
+      "Author pages with their cover, details and every model of theirs you've saved.",
+      "Link an author to your own account so your own designs show up under My models.",
+    ],
+    image: tags,
+    alt: "Browsing models by tag in Thingport",
+  },
+  {
+    id: "print",
+    short: "Print",
+    icon: "printer",
+    title: "Go from library to printer",
+    intro: "Everything you need to print a model lives with the model.",
+    points: [
+      "Attach assembly instructions, notes and other supporting files.",
+      "Keep a sliced, ready-to-print project next to the source files.",
+      "Open files directly in Bambu Studio, PrusaSlicer or Cura. Thingport Bridge handles the slicers that won't open links from a self-hosted server.",
+      "Download a model's files individually or all together.",
+    ],
+    link: { label: "Thingport Bridge", href: url("docs/bridge/") },
+    image: downloads,
+    alt: "The downloads view in Thingport",
+  },
+  {
+    id: "storage",
+    short: "Storage",
+    icon: "server",
+    title: "Your files stay yours",
+    intro: "Thingport stores models as ordinary files on your own disk, not locked inside a database.",
+    points: [
+      "Choose the folder layout, for example category / model / file, and reorganize existing files when you change it.",
+      "Mount folders you already have without copying them.",
+      "See how much disk space each user's models take.",
+      "Back up the storage folder with whatever tool you already use.",
+    ],
+    image: models,
+    alt: "The Thingport model library",
+  },
+  {
+    id: "team",
+    short: "Multi-user",
+    icon: "users",
+    title: "Made to share with your household",
+    intro: "One server, separate libraries for everyone who prints.",
+    points: [
+      "Multiple user accounts. The first person to sign up becomes the admin.",
+      "Optional email verification over your own SMTP server.",
+      "User management, import logs and an audit trail for admins.",
+      "Light and dark themes, in English and Lithuanian.",
+    ],
+    image: myModels,
+    alt: "A user's own models in Thingport",
+  },
+] as const;
+---
+
+<BaseLayout
+  title="Features"
+  description="Everything Thingport can do: import from MakerWorld, Printables and Thingiverse, preview STL, 3MF, STEP and OBJ in 3D, organize with categories and tags, and send files to your slicer."
+>
+  <div class="container page-head">
+    <span class="eyebrow">Features</span>
+    <h1>Everything you need to keep your 3D models under control</h1>
+    <p>From finding a model to printing it, Thingport covers every step, and it all runs on hardware you own.</p>
+    <nav class="jump" aria-label="On this page">
+      {
+        SECTIONS.map((s) => (
+          <a href={`#${s.id}`}>
+            <Icon name={s.icon} size={16} />
+            {s.short}
+          </a>
+        ))
+      }
+    </nav>
+  </div>
+
+  {
+    SECTIONS.map((s, i) => (
+      <section id={s.id} class:list={["section", "feature", { alt: i % 2 === 1 }]}>
+        <div class="container split">
+          <div>
+            <span class="feature-icon">
+              <Icon name={s.icon} size={22} />
+            </span>
+            <h2>{s.title}</h2>
+            <p class="intro">{s.intro}</p>
+            <ul class="checks">
+              {s.points.map((p) => (
+                <li>
+                  <Icon name="check" size={18} class="check" />
+                  <span>{p}</span>
+                </li>
+              ))}
+            </ul>
+            {"link" in s && s.link && (
+              <a class="more" href={s.link.href}>
+                {s.link.label} <Icon name="arrow" size={16} />
+              </a>
+            )}
+          </div>
+          <figure class="shot">
+            <Image src={s.image} alt={s.alt} widths={[480, 800, 1100]} sizes="(min-width: 48rem) 36rem, 100vw" />
+          </figure>
+        </div>
+      </section>
+    ))
+  }
+
+  <section class="section">
+    <div class="container final">
+      <h2>Ready to give it a try?</h2>
+      <p class="muted">It takes about five minutes on any machine that runs Docker.</p>
+      <a class="btn btn-primary" href={url("docs/install/")}>Install Thingport <Icon name="arrow" /></a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .jump {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+  }
+  .jump a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--panel);
+    color: var(--heading);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  :global(:root[data-theme="dark"]) .jump a {
+    border-radius: 0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme="light"])) .jump a {
+      border-radius: 0;
+    }
+  }
+  .jump a:hover {
+    border-color: var(--accent);
+  }
+  .alt {
+    background: var(--panel-alt);
+    border-block: 1px solid var(--border);
+  }
+  .split {
+    display: grid;
+    gap: 2.5rem;
+    align-items: center;
+    grid-template-columns: 1fr 1.15fr;
+  }
+  .alt .split > figure {
+    order: -1;
+  }
+  h2 {
+    font-size: clamp(1.5rem, 3.2vw, 2rem);
+    margin-top: 1rem;
+  }
+  .intro {
+    color: var(--text-muted);
+    font-size: 1.075rem;
+  }
+  .feature-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    color: var(--link);
+  }
+  .checks {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.25rem;
+  }
+  .checks li {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+  }
+  .checks li + li {
+    margin-top: 0.55rem;
+  }
+  .checks :global(.check) {
+    flex: none;
+    margin-top: 0.2rem;
+    color: var(--accent);
+  }
+  .more {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-weight: 600;
+  }
+  .shot {
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--panel);
+    box-shadow: var(--shadow);
+  }
+  .shot :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .final {
+    text-align: center;
+  }
+  .final h2 {
+    margin-top: 0;
+  }
+  @media (max-width: 48rem) {
+    .split {
+      grid-template-columns: 1fr;
+    }
+    .alt .split > figure {
+      order: 0;
+    }
+  }
+</style>

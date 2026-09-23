@@ -1,0 +1,113 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Icon from "../../components/Icon.astro";
+import { DOCS } from "../../lib/site.mjs";
+import { url } from "../../lib/url";
+
+const groups = [...new Set(DOCS.map((d) => d.group))].map((group) => ({
+  group,
+  docs: DOCS.filter((d) => d.group === group),
+}));
+---
+
+<BaseLayout
+  title="Documentation"
+  description="Install Thingport with Docker Compose, on Unraid, TrueNAS SCALE or CasaOS, connect MakerWorld and Thingiverse, and set up the Thingport Grab and Bridge companion apps."
+>
+  <div class="container page-head">
+    <span class="eyebrow">Documentation</span>
+    <h1>Thingport docs</h1>
+    <p>Everything you need to install Thingport, connect your model sources and get the most out of it.</p>
+  </div>
+  <div class="container">
+    <a class="card start" href={url("docs/install/")}>
+      <span class="icon"><Icon name="server" size={24} /></span>
+      <span>
+        <strong>New here? Start with the install guide</strong>
+        <span class="muted">Get Thingport running with Docker Compose in a few minutes.</span>
+      </span>
+      <Icon name="arrow" class="arrow" />
+    </a>
+    {
+      groups.map(({ group, docs }) => (
+        <section class="group">
+          <h2>{group}</h2>
+          <ul>
+            {docs.map((d) => (
+              <li>
+                <a class="card doc" href={url(`docs/${d.slug}/`)}>
+                  <strong>{d.title}</strong>
+                  <span class="muted">{d.description}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .start {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    text-decoration: none;
+    background: var(--hero-glow), var(--panel);
+  }
+  .start > span:nth-child(2) {
+    display: flex;
+    flex-direction: column;
+    margin-right: auto;
+  }
+  .start strong,
+  .doc strong {
+    color: var(--heading);
+    font-size: 1.05rem;
+  }
+  .icon {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 3rem;
+    height: 3rem;
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    color: var(--link);
+  }
+  .start :global(.arrow) {
+    flex: none;
+    color: var(--link);
+  }
+  .group {
+    margin-top: 2.5rem;
+  }
+  .group h2 {
+    font-size: 1.3rem;
+  }
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+  }
+  .doc {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    height: 100%;
+    padding: 1.25rem;
+    text-decoration: none;
+  }
+  .doc:hover,
+  .start:hover {
+    border-color: var(--accent);
+  }
+  .doc span {
+    font-size: 0.95rem;
+  }
+</style>

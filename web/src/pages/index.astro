@@ -1,0 +1,468 @@
+---
+import { Image } from "astro:assets";
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Icon from "../components/Icon.astro";
+import { LINKS, SITE_DESCRIPTION, SITE_NAME } from "../lib/site.mjs";
+import { formatDate, url } from "../lib/url";
+import dashboard from "../../../frontend/src/assets/screenshots/01_dashboard.png";
+import dashboardDark from "../../../frontend/src/assets/screenshots/09_dark_theme.png";
+import models from "../../../frontend/src/assets/screenshots/02_models.png";
+import modelDetails from "../../../frontend/src/assets/screenshots/03_model_details.png";
+import preview3d from "../../../frontend/src/assets/screenshots/04_model_details_3d_preview.png";
+import collections from "../../../frontend/src/assets/screenshots/05_collections.png";
+import grabMakerworld from "../../../frontend/src/assets/screenshots/12_extension_makerworld.png";
+
+const FEATURES = [
+  {
+    icon: "import",
+    title: "Import from where you find models",
+    text: "Paste a MakerWorld, Printables or Thingiverse link, or bring in whole collections and likes at once. Files, photos, tags, description and author come along.",
+  },
+  {
+    icon: "cube",
+    title: "3D preview in the browser",
+    text: "Spin STL, 3MF, STEP and OBJ files without opening a slicer. Multi-plate 3MF projects get a thumbnail for every plate.",
+  },
+  {
+    icon: "folder",
+    title: "Organized your way",
+    text: "Nested categories, collections, tags and favourites, plus full-text search across everything you've saved.",
+  },
+  {
+    icon: "printer",
+    title: "Ready to print",
+    text: "Keep instructions and sliced prints next to the model, and open files straight in Bambu Studio, PrusaSlicer or Cura.",
+  },
+  {
+    icon: "server",
+    title: "Your files, on your disk",
+    text: "Models are stored as plain files in a folder layout you choose, not in a black box. Mount existing folders without copying them.",
+  },
+  {
+    icon: "users",
+    title: "Built for a household",
+    text: "Multiple accounts, an admin panel, audit logs, light and dark themes, and English and Lithuanian out of the box.",
+  },
+] as const;
+
+const posts = (await getCollection("blog", ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 3);
+
+const jsonLd = [
+  {
+    "@type": "SoftwareApplication",
+    name: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    applicationCategory: "MultimediaApplication",
+    operatingSystem: "Linux, macOS, Windows (Docker)",
+    url: new URL(url(), Astro.site).href,
+    downloadUrl: LINKS.github,
+    license: "https://opensource.org/licenses/MIT",
+    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    screenshot: new URL(dashboard.src, Astro.site).href,
+  },
+  {
+    "@type": "SoftwareSourceCode",
+    name: SITE_NAME,
+    codeRepository: LINKS.github,
+    programmingLanguage: ["TypeScript"],
+    license: "https://opensource.org/licenses/MIT",
+  },
+];
+---
+
+<BaseLayout title="Thingport · Self-hosted 3D model library for 3D printing" jsonLd={jsonLd}>
+  <section class="hero">
+    <div class="container hero-inner">
+      <span class="eyebrow">Free · Open source · Self-hosted</span>
+      <h1>Your personal <span class="accent">3D model library</span></h1>
+      <p class="lead">
+        Collect, organize and preview the 3D printing models you find on MakerWorld, Printables and Thingiverse, in one
+        library that runs on your own server.
+      </p>
+      <div class="ctas">
+        <a class="btn btn-primary" href={url("docs/install/")}>Install Thingport <Icon name="arrow" /></a>
+        <a class="btn btn-secondary" href={LINKS.github}><Icon name="github" /> View on GitHub</a>
+      </div>
+      <p class="hint muted">Runs anywhere Docker does, including a NAS. <code>docker compose up -d</code> and you're in.</p>
+    </div>
+    <div class="container">
+      <div class="shot hero-shot">
+        <Image
+          class="only-light"
+          src={dashboard}
+          alt="The Thingport dashboard, showing library stats, recent imports and top authors"
+          widths={[640, 960, 1280, 1600]}
+          sizes="(min-width: 72rem) 70rem, 100vw"
+          loading="eager"
+          fetchpriority="high"
+        />
+        <Image
+          class="only-dark"
+          src={dashboardDark}
+          alt="The Thingport dashboard in the dark theme"
+          widths={[640, 960, 1280, 1600]}
+          sizes="(min-width: 72rem) 70rem, 100vw"
+        />
+      </div>
+    </div>
+  </section>
+
+  <section class="sources" aria-label="Supported sources">
+    <div class="container sources-inner">
+      <span class="muted">Imports from</span>
+      <strong>MakerWorld</strong>
+      <strong>Printables</strong>
+      <strong>Thingiverse</strong>
+      <span class="muted">and your own</span>
+      <strong>STL · 3MF · STEP · OBJ · ZIP</strong>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Why Thingport</span>
+        <h2>Bookmarks, downloads and random folders, replaced by one library</h2>
+        <p>
+          Models you want to keep end up scattered across sites, browser bookmarks and your Downloads folder. Thingport
+          keeps a real copy of each one, with its files, photos and source link, where you can actually find it again.
+        </p>
+      </div>
+      <ul class="feature-grid">
+        {
+          FEATURES.map((f) => (
+            <li class="card feature">
+              <span class="feature-icon">
+                <Icon name={f.icon} size={22} />
+              </span>
+              <h3>{f.title}</h3>
+              <p>{f.text}</p>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="more"><a href={url("features/")}>See all features <Icon name="arrow" size={16} /></a></p>
+    </div>
+  </section>
+
+  <section class="section alt">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Tour</span>
+        <h2>See your whole collection at a glance</h2>
+      </div>
+      <div class="gallery">
+        {
+          [
+            { img: models, caption: "Browse and filter the library" },
+            { img: modelDetails, caption: "Every model's files, photos and source" },
+            { img: preview3d, caption: "Inspect models in 3D" },
+            { img: collections, caption: "Group models into collections" },
+          ].map(({ img, caption }) => (
+            <figure class="shot">
+              <Image src={img} alt={caption} widths={[480, 800, 1100]} sizes="(min-width: 48rem) 34rem, 100vw" />
+              <figcaption>{caption}</figcaption>
+            </figure>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container split">
+      <div>
+        <span class="eyebrow">Companion apps</span>
+        <h2>Save a model without leaving the page you found it on</h2>
+        <p>
+          <strong>Thingport Grab</strong> adds an import button to MakerWorld, Printables and Thingiverse model pages, and
+          picks up your MakerWorld login for you.
+        </p>
+        <p>
+          <strong>Thingport Bridge</strong> is a small desktop helper that lets “Open in slicer” launch Bambu Studio,
+          PrusaSlicer or Cura from your own server.
+        </p>
+        <div class="ctas">
+          <a class="btn btn-secondary" href={url("docs/grab/")}><Icon name="puzzle" /> Thingport Grab</a>
+          <a class="btn btn-secondary" href={url("docs/bridge/")}><Icon name="printer" /> Thingport Bridge</a>
+        </div>
+      </div>
+      <div class="shot">
+        <Image
+          src={grabMakerworld}
+          alt="Thingport Grab importing a model from a MakerWorld page"
+          widths={[480, 800, 1100]}
+          sizes="(min-width: 48rem) 34rem, 100vw"
+        />
+      </div>
+    </div>
+  </section>
+
+  <section class="section alt">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Get started</span>
+        <h2>Up and running in three steps</h2>
+        <p>Thingport ships as pre-built Docker images, so there's nothing to compile.</p>
+      </div>
+      <ol class="steps">
+        <li class="card">
+          <span class="step-no">1</span>
+          <h3>Grab the compose file</h3>
+          <p>Create a folder with <code>docker-compose.yml</code> and a <code>.env</code> holding your secrets.</p>
+        </li>
+        <li class="card">
+          <span class="step-no">2</span>
+          <h3>Start it</h3>
+          <p>Run <code>docker compose up -d</code>. Postgres, the API and the web app all start together.</p>
+        </li>
+        <li class="card">
+          <span class="step-no">3</span>
+          <h3>Sign up</h3>
+          <p>Open Thingport in your browser. The first account you register becomes the admin.</p>
+        </li>
+      </ol>
+      <div class="ctas">
+        <a class="btn btn-primary" href={url("docs/install/")}>Read the install guide <Icon name="arrow" /></a>
+        <span class="muted platforms">
+          Guides for <a href={url("docs/install/unraid/")}>Unraid</a>, <a href={url("docs/install/truenas/")}
+            >TrueNAS SCALE</a
+          > and <a href={url("docs/install/casaos/")}>CasaOS</a>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  {
+    posts.length > 0 && (
+      <section class="section">
+        <div class="container">
+          <div class="section-head">
+            <span class="eyebrow">Blog</span>
+            <h2>Latest news</h2>
+          </div>
+          <ul class="posts">
+            {posts.map((post) => (
+              <li class="card post">
+                <time datetime={post.data.pubDate.toISOString()} class="muted">
+                  {formatDate(post.data.pubDate)}
+                </time>
+                <h3>
+                  <a href={url(`blog/${post.id}/`)}>{post.data.title}</a>
+                </h3>
+                <p>{post.data.description}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    )
+  }
+
+  <section class="section">
+    <div class="container">
+      <div class="card cta-band">
+        <div>
+          <h2>Thingport is free and open source</h2>
+          <p class="muted">
+            MIT licensed and built in the open. Star it, report a bug, send a pull request, or help fund development.
+          </p>
+        </div>
+        <div class="ctas">
+          <a class="btn btn-primary" href={LINKS.github}><Icon name="github" /> Star on GitHub</a>
+          <a class="btn btn-secondary" href={LINKS.sponsors}><Icon name="heart" /> Sponsor</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    background: var(--hero-glow);
+    padding-top: clamp(3rem, 9vw, 6rem);
+  }
+  .hero-inner {
+    text-align: center;
+    max-width: 52rem;
+  }
+  h1 {
+    font-size: clamp(2.3rem, 7vw, 4rem);
+    margin-bottom: 1.25rem;
+  }
+  .accent {
+    color: var(--accent);
+  }
+  .lead {
+    font-size: clamp(1.075rem, 2.2vw, 1.25rem);
+    color: var(--text-muted);
+    max-width: 40rem;
+    margin-inline: auto;
+  }
+  .ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    margin-top: 1.75rem;
+  }
+  .hero .ctas {
+    justify-content: center;
+  }
+  .hint {
+    margin-top: 1.25rem;
+    font-size: 0.925rem;
+  }
+  .shot {
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--panel);
+    box-shadow: var(--shadow);
+  }
+  .shot :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .hero-shot {
+    margin-top: clamp(2.5rem, 6vw, 4rem);
+    box-shadow: 0 30px 80px -20px rgba(16, 24, 40, 0.25);
+  }
+  .sources {
+    border-block: 1px solid var(--border);
+    background: var(--panel);
+    margin-top: clamp(2.5rem, 6vw, 4rem);
+  }
+  .sources-inner {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: baseline;
+    gap: 0.5rem 1.25rem;
+    padding-block: 1.25rem;
+  }
+  .sources strong {
+    color: var(--heading);
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 1.1rem;
+  }
+  .feature-grid,
+  .steps,
+  .posts {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+  }
+  .feature,
+  .steps li,
+  .post {
+    padding: 1.5rem;
+  }
+  .feature h3,
+  .steps h3,
+  .post h3 {
+    font-size: 1.15rem;
+    margin-top: 0.9rem;
+  }
+  .feature p,
+  .steps p,
+  .post p {
+    margin: 0;
+    color: var(--text-muted);
+  }
+  .feature-icon,
+  .step-no {
+    display: inline-grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    color: var(--link);
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+  .more {
+    margin-top: 1.75rem;
+  }
+  .more a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-weight: 600;
+  }
+  .alt {
+    background: var(--panel-alt);
+    border-block: 1px solid var(--border);
+  }
+  .gallery {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+  }
+  figcaption {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--border);
+    font-weight: 600;
+    color: var(--heading);
+    font-size: 0.95rem;
+  }
+  .split {
+    display: grid;
+    gap: 2.5rem;
+    align-items: center;
+    grid-template-columns: 1fr 1.1fr;
+  }
+  .split h2 {
+    font-size: clamp(1.6rem, 3.5vw, 2.25rem);
+  }
+  .platforms {
+    font-size: 0.95rem;
+  }
+  .post h3 {
+    margin-top: 0.4rem;
+  }
+  .post h3 a {
+    color: var(--heading);
+    text-decoration: none;
+  }
+  .post h3 a:hover {
+    color: var(--link);
+  }
+  .post time {
+    font-size: 0.875rem;
+  }
+  .cta-band {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+    background: var(--hero-glow), var(--panel);
+  }
+  .cta-band h2 {
+    font-size: clamp(1.4rem, 3vw, 1.9rem);
+  }
+  .cta-band p {
+    margin: 0;
+    max-width: 34rem;
+  }
+  .cta-band .ctas {
+    margin-top: 0;
+  }
+  @media (max-width: 48rem) {
+    .split {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

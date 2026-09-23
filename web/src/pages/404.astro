@@ -1,0 +1,29 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { url } from "../lib/url";
+---
+
+<BaseLayout title="Page not found" description="This page doesn't exist." noindex>
+  <div class="container page-head notfound">
+    <span class="eyebrow">404</span>
+    <h1>This page doesn't exist</h1>
+    <p>It may have moved, or the link may be wrong.</p>
+    <p>
+      <a class="btn btn-primary" href={url()}>Go to the home page</a>
+      <a class="btn btn-secondary" href={url("docs/")}>Browse the docs</a>
+    </p>
+  </div>
+</BaseLayout>
+
+<style>
+  .notfound {
+    text-align: center;
+    padding-block: 6rem;
+  }
+  .notfound p {
+    margin-inline: auto;
+  }
+  .notfound .btn {
+    margin: 0.35rem;
+  }
+</style>

@@ -1,0 +1,246 @@
+---
+import type { MarkdownHeading } from "astro";
+import BaseLayout from "./BaseLayout.astro";
+import { DOCS, LINKS, BRANCH } from "../lib/site.mjs";
+import { url } from "../lib/url";
+
+type Props = { slug: string; headings?: MarkdownHeading[] };
+const { slug, headings = [] } = Astro.props;
+const doc = DOCS.find((d) => d.slug === slug)!;
+const groups = [...new Set(DOCS.map((d) => d.group))].map((group) => ({
+  group,
+  docs: DOCS.filter((d) => d.group === group),
+}));
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const editUrl = doc.source ? `${LINKS.github}/edit/${BRANCH}/${doc.source}` : `${LINKS.github}/tree/${BRANCH}/web`;
+
+const index = DOCS.indexOf(doc);
+const prev = DOCS[index - 1];
+const next = DOCS[index + 1];
+
+const jsonLd = [
+  {
+    "@type": "TechArticle",
+    headline: doc.title,
+    description: doc.description,
+    url: new URL(Astro.url.pathname, Astro.site).href,
+    isPartOf: { "@id": new URL(url(), Astro.site).href + "#website" },
+  },
+  {
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Docs", item: new URL(url("docs/"), Astro.site).href },
+      { "@type": "ListItem", position: 2, name: doc.title, item: new URL(Astro.url.pathname, Astro.site).href },
+    ],
+  },
+];
+---
+
+<BaseLayout title={doc.title} description={doc.description} ogType="article" jsonLd={jsonLd}>
+  <div class="container docs">
+    <aside class="sidebar">
+      <details open>
+        <summary>Documentation</summary>
+        <nav aria-label="Docs">
+          {
+            groups.map(({ group, docs }) => (
+              <div class="group">
+                <h2>{group}</h2>
+                <ul>
+                  {docs.map((d) => (
+                    <li>
+                      <a href={url(`docs/${d.slug}/`)} aria-current={d.slug === slug ? "page" : undefined}>
+                        {d.nav}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))
+          }
+        </nav>
+      </details>
+    </aside>
+
+    <article class="prose content">
+      <slot />
+      <footer class="doc-footer">
+        <a href={editUrl}>Edit this page on GitHub</a>
+        <nav class="pager" aria-label="Previous and next page">
+          {prev && <a class="card" href={url(`docs/${prev.slug}/`)}><span class="muted">Previous</span>{prev.nav}</a>}
+          {next && <a class="card next" href={url(`docs/${next.slug}/`)}><span class="muted">Next</span>{next.nav}</a>}
+        </nav>
+      </footer>
+    </article>
+
+    {
+      toc.length > 1 && (
+        <nav class="toc" aria-label="On this page">
+          <h2>On this page</h2>
+          <ul>
+            {toc.map((h) => (
+              <li class={`d${h.depth}`}>
+                <a href={`#${h.slug}`}>{h.text}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .docs {
+    display: grid;
+    grid-template-columns: 14rem minmax(0, 1fr) 13rem;
+    gap: 2.5rem;
+    padding-top: 2.5rem;
+    align-items: start;
+  }
+  .sidebar,
+  .toc {
+    position: sticky;
+    top: 5.5rem;
+    max-height: calc(100vh - 7rem);
+    overflow-y: auto;
+    font-size: 0.925rem;
+  }
+  summary {
+    display: none;
+  }
+  .group + .group {
+    margin-top: 1.5rem;
+  }
+  h2 {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0 0 0.5rem;
+  }
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .sidebar a {
+    display: block;
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    text-decoration: none;
+  }
+  .sidebar a:hover {
+    background: var(--accent-soft);
+    color: var(--heading);
+  }
+  .sidebar a[aria-current="page"] {
+    background: var(--accent-soft);
+    color: var(--link);
+    font-weight: 600;
+  }
+  .content {
+    padding: clamp(1.25rem, 3vw, 2.5rem);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .toc li {
+    border-left: 2px solid var(--border);
+  }
+  .toc a {
+    display: block;
+    padding: 0.25rem 0 0.25rem 0.85rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    line-height: 1.4;
+  }
+  .toc .d3 a {
+    padding-left: 1.6rem;
+  }
+  .toc a:hover {
+    color: var(--link);
+  }
+  .doc-footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.95rem;
+  }
+  .pager {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1.25rem;
+  }
+  .pager a {
+    display: flex;
+    flex-direction: column;
+    padding: 0.85rem 1rem;
+    text-decoration: none;
+    font-weight: 600;
+    box-shadow: none;
+  }
+  .pager a:hover {
+    border-color: var(--accent);
+  }
+  .pager span {
+    font-size: 0.8rem;
+    font-weight: 400;
+  }
+  .pager .next {
+    grid-column: 2;
+    text-align: right;
+  }
+  @media (max-width: 72rem) {
+    .docs {
+      grid-template-columns: 13rem minmax(0, 1fr);
+    }
+    .toc {
+      display: none;
+    }
+  }
+  /* Phones/tablets: the sidebar collapses into a disclosure above the page. */
+  @media (max-width: 52rem) {
+    .docs {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1.25rem;
+      padding-top: 1.25rem;
+    }
+    .sidebar {
+      position: static;
+      max-height: none;
+    }
+    summary {
+      display: list-item;
+      cursor: pointer;
+      padding: 0.7rem 1rem;
+      font-weight: 600;
+      color: var(--heading);
+    }
+    details {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    details nav {
+      padding: 0 0.5rem 1rem;
+    }
+    .pager {
+      grid-template-columns: 1fr;
+    }
+    .pager .next {
+      grid-column: 1;
+    }
+  }
+</style>
+
+<!-- On small screens, start with the docs menu closed so the page itself comes first. -->
+<script>
+  if (window.matchMedia("(max-width: 52rem)").matches) {
+    document.querySelector(".sidebar details")?.removeAttribute("open");
+  }
+</script>

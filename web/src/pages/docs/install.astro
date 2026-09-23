@@ -1,0 +1,90 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+import { url } from "../../lib/url";
+// The exact files from the repo, so this page always shows what's actually published.
+import compose from "../../../../docker-compose.deploy.yml?raw";
+import envExample from "../../../../.env.example?raw";
+
+const headings = [
+  { depth: 2, slug: "requirements", text: "Requirements" },
+  { depth: 2, slug: "1-create-the-files", text: "1. Create the files" },
+  { depth: 2, slug: "2-start-thingport", text: "2. Start Thingport" },
+  { depth: 2, slug: "3-sign-up", text: "3. Sign up" },
+  { depth: 2, slug: "updating", text: "Updating" },
+  { depth: 2, slug: "building-from-source", text: "Building from source" },
+];
+---
+
+<DocsLayout slug="install" headings={headings}>
+  <h1>Install with Docker Compose</h1>
+  <p>
+    Thingport runs from pre-built images on the GitHub Container Registry, so there's no build step and no need to
+    clone the repository. It works on any Docker host, including a NAS such as Synology, QNAP or Unraid.
+  </p>
+  <blockquote>
+    <p>
+      On <a href={url("docs/install/unraid/")}>Unraid</a>, <a href={url("docs/install/truenas/")}>TrueNAS SCALE</a>
+      or <a href={url("docs/install/casaos/")}>CasaOS</a>? Follow the platform guide instead. They use each platform's own
+      app-data paths and setup screens.
+    </p>
+  </blockquote>
+
+  <h2 id="requirements">Requirements</h2>
+  <ul>
+    <li>Docker with the Compose plugin (<code>docker compose version</code> should work).</li>
+    <li>
+      A few hundred MB of RAM for the stack: Postgres, FlareSolverr, the API and the web app. Disk space depends on the
+      size of your library.
+    </li>
+  </ul>
+
+  <h2 id="1-create-the-files">1. Create the files</h2>
+  <p>Create a folder for Thingport, for example <code>~/thingport</code>, and add these two files to it.</p>
+  <h3><code>docker-compose.yml</code></h3>
+  <Code code={compose} lang="yaml" themes={{ light: "github-light", dark: "github-dark" }} defaultColor={false} />
+  <h3><code>.env</code></h3>
+  <p>
+    At minimum, set <code>AUTH_SECRET</code> (it signs login tokens; generate one with <code>openssl rand -hex 32</code>)
+    and <code>POSTGRES_PASSWORD</code>. Everything else has sensible defaults.
+  </p>
+  <Code code={envExample} lang="ini" themes={{ light: "github-light", dark: "github-dark" }} defaultColor={false} />
+
+  <h2 id="2-start-thingport">2. Start Thingport</h2>
+  <Code code="docker compose up -d" lang="bash" themes={{ light: "github-light", dark: "github-dark" }} defaultColor={false} />
+  <p>
+    Thingport is then available at <code>http://&lt;host&gt;:&lt;WEB_PORT&gt;</code>. The default port is 80.
+  </p>
+
+  <h2 id="3-sign-up">3. Sign up</h2>
+  <p>
+    Open Thingport in your browser and register. <strong>The first account you register becomes the admin.</strong> Then
+    <a href={url("docs/providers/")}>set up your providers</a> so you can import from MakerWorld and Thingiverse. Printables
+    works right away.
+  </p>
+
+  <h2 id="updating">Updating</h2>
+  <p>Pull the latest images and recreate the containers. Your database and files live in Docker volumes and are kept.</p>
+  <Code
+    code={"docker compose pull\ndocker compose up -d"}
+    lang="bash"
+    themes={{ light: "github-light", dark: "github-dark" }}
+    defaultColor={false}
+  />
+  <p>
+    To stay on a specific build, set <code>BACKEND_IMAGE</code> and <code>FRONTEND_IMAGE</code> in <code>.env</code> to a
+    pinned tag, as shown in the comments in the compose file.
+  </p>
+
+  <h2 id="building-from-source">Building from source</h2>
+  <p>To build the images yourself instead of pulling them:</p>
+  <Code
+    code={"git clone https://github.com/TautvydasDerzinskas/Thingport.git\ncd Thingport\ncp .env.example .env\ndocker compose up -d"}
+    lang="bash"
+    themes={{ light: "github-light", dark: "github-dark" }}
+    defaultColor={false}
+  />
+  <p>
+    For hot-reload development, see <a href={url("docs/development/")}>Development setup</a>.
+  </p>
+</DocsLayout>

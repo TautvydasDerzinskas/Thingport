@@ -1,0 +1,104 @@
+---
+import { getImage } from "astro:assets";
+import "../styles/global.css";
+import Footer from "../components/Footer.astro";
+import Header from "../components/Header.astro";
+import { SITE_DESCRIPTION, SITE_NAME } from "../lib/site.mjs";
+import { url } from "../lib/url";
+import defaultOgSource from "../../../frontend/src/assets/screenshots/01_dashboard.png";
+import faviconSvg from "../../../frontend/public/favicon.svg?url";
+import favicon32 from "../../../frontend/public/favicon-32x32.png?url";
+import appleTouchIcon from "../../../frontend/public/apple-touch-icon.png?url";
+
+type Props = {
+  /** The page's own title; " · Thingport" is appended unless it already is the brand title. */
+  title: string;
+  description?: string;
+  ogType?: "website" | "article";
+  /** Structured data (schema.org) for this page, merged into one JSON-LD graph. */
+  jsonLd?: Record<string, unknown>[];
+  article?: { published: Date; modified?: Date; tags?: string[] };
+  noindex?: boolean;
+};
+
+const { title, description = SITE_DESCRIPTION, ogType = "website", jsonLd = [], article, noindex } = Astro.props;
+const fullTitle = title.includes(SITE_NAME) ? title : `${title} · ${SITE_NAME}`;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogImage = await getImage({ src: defaultOgSource, width: 1200, height: 630, fit: "cover", position: "top", format: "jpg" });
+const ogImageUrl = new URL(ogImage.src, Astro.site);
+
+const graph = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": new URL(url(), Astro.site).href + "#website",
+      url: new URL(url(), Astro.site).href,
+      name: SITE_NAME,
+      description: SITE_DESCRIPTION,
+      inLanguage: "en",
+    },
+    ...jsonLd,
+  ],
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <meta name="theme-color" content="#f7f7f7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#181f39" media="(prefers-color-scheme: dark)" />
+    <meta name="generator" content={Astro.generator} />
+
+    <link rel="icon" type="image/svg+xml" href={faviconSvg} />
+    <link rel="icon" type="image/png" sizes="32x32" href={favicon32} />
+    <link rel="apple-touch-icon" sizes="180x180" href={appleTouchIcon} />
+    <link rel="sitemap" href={url("sitemap-index.xml")} />
+    <link rel="alternate" type="application/rss+xml" title="Thingport blog" href={new URL(url("rss.xml"), Astro.site)} />
+
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="The Thingport dashboard" />
+    <meta property="og:locale" content="en_US" />
+    {article && <meta property="article:published_time" content={article.published.toISOString()} />}
+    {article?.modified && <meta property="article:modified_time" content={article.modified.toISOString()} />}
+    {article?.tags?.map((tag) => <meta property="article:tag" content={tag} />)}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+
+    <script type="application/ld+json" set:html={JSON.stringify(graph)} />
+    <!-- Applies a saved theme before first paint, so a returning visitor never sees a flash. -->
+    <script is:inline>
+      try {
+        const t = localStorage.getItem("thingport-theme");
+        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <Header />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

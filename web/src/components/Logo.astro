@@ -1,0 +1,11 @@
+---
+import lockupColor from "../../../frontend/src/assets/logos/thingport-lockup-compact-color.svg";
+import lockupOnDark from "../../../frontend/src/assets/logos/thingport-lockup-compact-on-dark.svg";
+
+type Props = { height?: number };
+const { height = 30 } = Astro.props;
+const width = (h: number, img: { width: number; height: number }) => Math.round((img.width / img.height) * h);
+---
+
+<img class="only-light" src={lockupColor.src} alt="Thingport" height={height} width={width(height, lockupColor)} />
+<img class="only-dark" src={lockupOnDark.src} alt="Thingport" height={height} width={width(height, lockupOnDark)} />

@@ -1,0 +1,398 @@
+/* Tokens come from frontend/src/theme.ts (THEME_DEFS) so the site looks like the app. Two text
+ * colours are nudged for readability of long-form text: light --text-muted and dark --text. Links
+ * and buttons use a deeper green than the brand #00b800, which is too light for AA text contrast. */
+
+@font-face {
+  font-family: "Thingport";
+  src: url("../../../frontend/src/assets/fonts/thingport-500.woff") format("woff");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Thingport";
+  src: url("../../../frontend/src/assets/fonts/thingport-700.woff") format("woff");
+  font-weight: 700;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light;
+  --bg: #f7f7f7;
+  --panel: #ffffff;
+  --panel-alt: #fbfbfb;
+  --border: #ebebeb;
+  --text: #1f1f1f;
+  --text-muted: #666666;
+  --heading: #1f1f1f;
+  --accent: #00b800;
+  --accent-light: #5be584;
+  --accent-soft: rgba(0, 184, 0, 0.12);
+  --link: #007a00;
+  --button: #008a00;
+  --button-hover: #007300;
+  --button-text: #ffffff;
+  --alt: rgb(255, 114, 32);
+  --radius: 10px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.06);
+  --hero-glow: radial-gradient(60% 60% at 50% 0%, rgba(91, 229, 132, 0.28) 0%, rgba(91, 229, 132, 0) 70%);
+
+  --font-body: "Open Sans", system-ui, "Segoe UI", Roboto, Oxygen, Ubuntu, "Fira Sans", "Helvetica Neue", sans-serif;
+  --font-display: "Thingport", var(--font-body);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --container: 72rem;
+  --gutter: 1.25rem;
+}
+
+/* Dark mode. The app goes square everywhere in dark mode, so the site does too. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #181f39;
+    --panel: #1e2746;
+    --panel-alt: #1b2340;
+    --border: #333a54;
+    --text: #b3b7c0;
+    --text-muted: #969ba0;
+    --heading: #ffffff;
+    --accent-soft: rgba(0, 184, 0, 0.16);
+    --link: #5be584;
+    --shadow: none;
+    --radius: 0;
+    --radius-sm: 0;
+    --hero-glow: radial-gradient(60% 60% at 50% 0%, rgba(0, 184, 0, 0.22) 0%, rgba(0, 184, 0, 0) 70%);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #181f39;
+  --panel: #1e2746;
+  --panel-alt: #1b2340;
+  --border: #333a54;
+  --text: #b3b7c0;
+  --text-muted: #969ba0;
+  --heading: #ffffff;
+  --accent-soft: rgba(0, 184, 0, 0.16);
+  --link: #5be584;
+  --shadow: none;
+  --radius: 0;
+  --radius-sm: 0;
+  --hero-glow: radial-gradient(60% 60% at 50% 0%, rgba(0, 184, 0, 0.22) 0%, rgba(0, 184, 0, 0) 70%);
+}
+
+/* Anything that has a light and a dark variant (logos, screenshots) carries one of these. */
+.only-dark {
+  display: none !important;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .only-light {
+    display: none !important;
+  }
+  :root:not([data-theme="light"]) .only-dark {
+    display: revert !important;
+  }
+}
+:root[data-theme="dark"] .only-light {
+  display: none !important;
+}
+:root[data-theme="dark"] .only-dark {
+  display: revert !important;
+}
+
+/* Base */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: 5rem;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+img,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+a {
+  color: var(--link);
+  text-underline-offset: 0.18em;
+}
+a:hover {
+  text-decoration-thickness: 2px;
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+h1,
+h2,
+h3,
+h4 {
+  color: var(--heading);
+  font-family: var(--font-display);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.6em;
+  text-wrap: balance;
+}
+p {
+  margin: 0 0 1em;
+}
+code,
+kbd,
+pre {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.skip-link {
+  position: absolute;
+  left: 0.5rem;
+  top: -3rem;
+  z-index: 100;
+  padding: 0.5rem 0.75rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+.skip-link:focus {
+  top: 0.5rem;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.2rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.btn svg {
+  width: 1.15em;
+  height: 1.15em;
+  flex: none;
+}
+.btn-primary {
+  background: var(--button);
+  color: var(--button-text);
+}
+.btn-primary:hover {
+  background: var(--button-hover);
+}
+.btn-secondary {
+  background: var(--panel);
+  border-color: var(--border);
+  color: var(--heading);
+}
+.btn-secondary:hover {
+  border-color: var(--accent);
+}
+
+/* Panels */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.eyebrow {
+  display: inline-block;
+  color: var(--link);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+.muted {
+  color: var(--text-muted);
+}
+.section {
+  padding-block: clamp(3rem, 8vw, 5.5rem);
+}
+.section-head {
+  max-width: 44rem;
+  margin-bottom: 2.5rem;
+}
+.section-head h2 {
+  font-size: clamp(1.6rem, 3.5vw, 2.25rem);
+}
+.section-head p {
+  color: var(--text-muted);
+  font-size: 1.075rem;
+}
+.page-head {
+  padding-block: clamp(2.5rem, 6vw, 4rem) 1rem;
+}
+.page-head h1 {
+  font-size: clamp(2rem, 5vw, 3rem);
+}
+.page-head p {
+  color: var(--text-muted);
+  font-size: 1.125rem;
+  max-width: 44rem;
+}
+
+/* Long-form Markdown (docs + blog) */
+.prose {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.prose > :first-child {
+  margin-top: 0;
+}
+.prose h1 {
+  font-size: clamp(1.9rem, 4.5vw, 2.5rem);
+}
+.prose h2 {
+  font-size: 1.5rem;
+  margin-top: 2.2em;
+  padding-bottom: 0.35em;
+  border-bottom: 1px solid var(--border);
+}
+.prose h3 {
+  font-size: 1.2rem;
+  margin-top: 1.8em;
+}
+.prose ul,
+.prose ol {
+  padding-left: 1.4em;
+  margin: 0 0 1em;
+}
+.prose li + li {
+  margin-top: 0.3em;
+}
+.prose li > ul,
+.prose li > ol {
+  margin: 0.3em 0 0;
+}
+.prose blockquote {
+  margin: 1.25em 0;
+  padding: 0.75em 1em;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+.prose blockquote > :last-child {
+  margin-bottom: 0;
+}
+.prose :not(pre) > code {
+  padding: 0.12em 0.35em;
+  background: var(--accent-soft);
+  border-radius: 4px;
+  color: var(--heading);
+}
+.prose :is(h1, h2, h3, h4) code {
+  padding: 0;
+  background: none;
+}
+.prose table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 1.25em 0;
+}
+.prose th,
+.prose td {
+  border: 1px solid var(--border);
+  padding: 0.45em 0.8em;
+  text-align: left;
+}
+.prose th {
+  background: var(--panel-alt);
+  color: var(--heading);
+}
+.prose img {
+  border-radius: var(--radius-sm);
+}
+.prose details {
+  margin: 1em 0;
+  padding: 0.6em 1em;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel-alt);
+}
+.prose summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--heading);
+}
+.prose hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 2em 0;
+}
+/* The GitHub-style centered icon block at the top of the install guides. */
+.prose > div[align="center"] {
+  text-align: center;
+}
+
+/* Code blocks: Shiki emits both themes as CSS variables (see astro.config.mjs). */
+pre.astro-code {
+  margin: 1.25em 0;
+  padding: 1rem 1.1rem;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  background-color: var(--shiki-light-bg) !important;
+}
+pre.astro-code,
+pre.astro-code span {
+  color: var(--shiki-light);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) pre.astro-code {
+    background-color: #111731 !important;
+  }
+  :root:not([data-theme="light"]) pre.astro-code,
+  :root:not([data-theme="light"]) pre.astro-code span {
+    color: var(--shiki-dark);
+  }
+}
+:root[data-theme="dark"] pre.astro-code {
+  background-color: #111731 !important;
+}
+:root[data-theme="dark"] pre.astro-code,
+:root[data-theme="dark"] pre.astro-code span {
+  color: var(--shiki-dark);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,76 @@
+---
+import { getCollection, render } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { formatDate, url } from "../../lib/url";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("blog", ({ data }) => !data.draft);
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const { title, description, pubDate, updatedDate, author, tags } = post.data;
+const pageUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+const jsonLd = [
+  {
+    "@type": "BlogPosting",
+    headline: title,
+    description,
+    datePublished: pubDate.toISOString(),
+    dateModified: (updatedDate ?? pubDate).toISOString(),
+    author: { "@type": "Person", name: author },
+    url: pageUrl,
+    mainEntityOfPage: pageUrl,
+    keywords: tags.join(", "),
+    isPartOf: { "@id": new URL(url(), Astro.site).href + "#website" },
+  },
+];
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  ogType="article"
+  article={{ published: pubDate, modified: updatedDate, tags }}
+  jsonLd={jsonLd}
+>
+  <article class="container post">
+    <header>
+      <a class="back" href={url("blog/")}>← All posts</a>
+      <h1>{title}</h1>
+      <p class="meta muted">
+        <time datetime={pubDate.toISOString()}>{formatDate(pubDate)}</time> · {author}
+        {updatedDate && <> · Updated <time datetime={updatedDate.toISOString()}>{formatDate(updatedDate)}</time></>}
+      </p>
+    </header>
+    <div class="prose">
+      <Content />
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .post {
+    max-width: 46rem;
+    padding-top: clamp(2rem, 5vw, 3.5rem);
+  }
+  .back {
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 0.95rem;
+  }
+  h1 {
+    font-size: clamp(2rem, 5vw, 2.75rem);
+    margin-top: 1rem;
+  }
+  .meta {
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .prose {
+    font-size: 1.075rem;
+  }
+</style>

@@ -1,0 +1,90 @@
+name: Website
+
+# Builds the static site in web/ and deploys it to GitHub Pages. Only runs when something the site
+# is built from changes: web/ itself, plus the repo docs it renders (docs/, the Grab/Bridge READMEs,
+# CONTRIBUTING.md), the compose/.env files it embeds, and the app's logos/fonts/screenshots.
+# Conversely, every other workflow is path-filtered to its own folder, so a web/-only change
+# triggers this workflow and nothing else.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - "docs/**"
+      - "bridge/README.md"
+      - "extension/README.md"
+      - "CONTRIBUTING.md"
+      - "docker-compose.deploy.yml"
+      - ".env.example"
+      - "frontend/src/assets/**"
+      - "frontend/public/**"
+      - ".github/workflows/web-pages.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "web/**"
+      - "docs/**"
+      - "bridge/README.md"
+      - "extension/README.md"
+      - "CONTRIBUTING.md"
+      - "docker-compose.deploy.yml"
+      - ".env.example"
+      - "frontend/src/assets/**"
+      - "frontend/public/**"
+      - ".github/workflows/web-pages.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+# One deployment at a time; a newer push supersedes a queued one, but never cancels one mid-deploy.
+concurrency:
+  group: pages-${{ github.event_name == 'pull_request' && github.ref || 'deploy' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  ASTRO_TELEMETRY_DISABLED: "1"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      # Supplies the live Pages URL and base path (/Thingport, or "" with a custom domain).
+      # PR builds skip it -- they may come from forks -- and fall back to astro.config.mjs's defaults.
+      - id: pages
+        if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v5
+      - run: npm ci
+        working-directory: web
+      - run: npx astro check
+        working-directory: web
+      - run: npm run build
+        working-directory: web
+        env:
+          SITE_URL: ${{ steps.pages.outputs.origin }}
+          # A custom domain has an empty base_path, which must become "/" (empty means "use the default").
+          BASE_PATH: ${{ steps.pages.outputs.base_path || (github.event_name != 'pull_request' && '/' || '') }}
+      - if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

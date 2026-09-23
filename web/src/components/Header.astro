@@ -1,0 +1,104 @@
+---
+import { LINKS } from "../lib/site.mjs";
+import { url } from "../lib/url";
+import Icon from "./Icon.astro";
+import Logo from "./Logo.astro";
+import ThemeToggle from "./ThemeToggle.astro";
+
+const NAV = [
+  { label: "Features", route: "features/" },
+  { label: "Docs", route: "docs/" },
+  { label: "Blog", route: "blog/" },
+];
+const current = Astro.url.pathname;
+---
+
+<header class="site-header">
+  <div class="container bar">
+    <a class="brand" href={url()} aria-label="Thingport home"><Logo /></a>
+    <nav class="nav" aria-label="Main">
+      {
+        NAV.map((item) => (
+          <a href={url(item.route)} aria-current={current.startsWith(url(item.route)) ? "page" : undefined}>
+            {item.label}
+          </a>
+        ))
+      }
+    </nav>
+    <div class="actions">
+      <a class="gh" href={LINKS.github} rel="noopener"><Icon name="github" size={18} /><span>GitHub</span></a>
+      <ThemeToggle />
+    </div>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: color-mix(in srgb, var(--panel) 88%, transparent);
+    backdrop-filter: saturate(1.4) blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    min-height: 4rem;
+    flex-wrap: wrap;
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+  }
+  .nav {
+    display: flex;
+    gap: 0.25rem;
+    margin-right: auto;
+  }
+  .nav a,
+  .gh {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.75rem;
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-decoration: none;
+  }
+  .nav a:hover,
+  .gh:hover {
+    color: var(--heading);
+    background: var(--accent-soft);
+  }
+  .nav a[aria-current="page"] {
+    color: var(--link);
+    background: var(--accent-soft);
+  }
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  /* Phones: logo + actions on the first row, the nav as a full-width second row. */
+  @media (max-width: 40rem) {
+    .bar {
+      gap: 0.5rem 1rem;
+      padding-block: 0.6rem;
+    }
+    .nav {
+      order: 3;
+      width: 100%;
+      margin: 0 0 0 -0.75rem;
+    }
+    .actions {
+      margin-left: auto;
+    }
+    .gh span {
+      display: none;
+    }
+  }
+</style>
