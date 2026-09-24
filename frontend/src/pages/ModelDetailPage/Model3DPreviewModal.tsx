@@ -19,6 +19,7 @@ import PlateThumbnail from "../../components/media/PlateThumbnail";
 import ModelViewer, { type CameraView, type ModelViewerHandle, type RenderStyle } from "../../components/media/ModelViewer";
 import type { PlateSummary } from "../../utils/bambuThreeMf";
 import PreviewToolbar, { DEFAULT_PREVIEW_COLOR } from "./PreviewToolbar";
+import { fileRowText } from "./fileRowText";
 
 // A neutral, theme-independent canvas -- this is a fixed "product shot" style preview, not part
 // of the app's light/dark chrome, so it stays the same regardless of the viewer's theme.
@@ -66,8 +67,8 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
     viewerRef.current?.setCameraView(view);
   };
 
-  // A lone file that is itself a multi-plate project would otherwise show one "Plate 1" file row
-  // above its real plates -- redundant, and reads as if it were one of them.
+  // A lone file that is itself a multi-plate project would otherwise show its one file row above
+  // its real plates -- redundant, since there's no other file to switch to.
   const showFileRows = sortedPlates.length > 1 || internalPlates.length === 0;
 
   const handlePlatesDetected = (plates: PlateSummary[], getThumbnail: (index: number) => Promise<string | null>) => {
@@ -131,19 +132,22 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
           {showFileRows && (
             <List disablePadding>
               {sortedPlates.map((plate, idx) => (
+                // Named by file, not "Plate N": each row is a separate file (an STL, or e.g. one
+                // MakerWorld print profile's 3MF) -- "plate" is kept for the build plates inside a
+                // 3MF, listed below the divider.
                 <ListItemButton
                   key={plate.id}
                   selected={plate.id === activePlate?.id}
                   onClick={() => selectPlate(plate.id)}
+                  title={plate.filename}
                   sx={{ borderRadius: 1, mb: 0.5 }}
                 >
                   <ListItemIcon sx={{ minWidth: 40 }}>
                     <PlateThumbnail plate={plate} />
                   </ListItemIcon>
                   <ListItemText
-                    primary={t("models:detail.plateLabel", { n: idx + 1 })}
-                    secondary={plate.filename}
-                    primaryTypographyProps={{ variant: "body2" }}
+                    {...fileRowText(t, plate.filename, idx)}
+                    primaryTypographyProps={{ variant: "body2", noWrap: true }}
                     secondaryTypographyProps={{ variant: "caption", noWrap: true }}
                   />
                 </ListItemButton>

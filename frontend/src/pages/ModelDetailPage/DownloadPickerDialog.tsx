@@ -14,6 +14,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import DownloadIcon from "@mui/icons-material/Download";
 import type { Plate } from "../../api/prints";
 import PlateThumbnail from "../../components/media/PlateThumbnail";
+import { fileRowText } from "./fileRowText";
 
 type Props = {
   open: boolean;
@@ -24,7 +25,7 @@ type Props = {
   downloadPlate: (plate: Plate) => void;
 };
 
-/** The "which plate?" picker shown when a multi-plate model's download is triggered -- see
+/** The "which file?" picker shown when a multi-file model's download is triggered -- see
  *  useDownloadPrint. Shared by ModelActionsMenu's "Download" menu item and the detail page's
  *  "Download model files" button. */
 export default function DownloadPickerDialog({ open, onClose, downloading, sortedPlates, downloadAllZip, downloadPlate }: Props) {
@@ -45,13 +46,19 @@ export default function DownloadPickerDialog({ open, onClose, downloading, sorte
           <Divider>{t("models:detail.orDownloadOne")}</Divider>
           <List disablePadding>
             {sortedPlates.map((plate, idx) => (
-              <ListItemButton key={plate.id} onClick={() => downloadPlate(plate)} disabled={downloading} sx={{ borderRadius: 1 }}>
+              <ListItemButton
+                key={plate.id}
+                onClick={() => downloadPlate(plate)}
+                disabled={downloading}
+                title={plate.filename}
+                sx={{ borderRadius: 1 }}
+              >
                 <ListItemIcon sx={{ minWidth: 60 }}>
                   <PlateThumbnail plate={plate} size={48} />
                 </ListItemIcon>
                 <ListItemText
-                  primary={t("models:detail.plateLabel", { n: idx + 1 })}
-                  secondary={plate.filename}
+                  {...fileRowText(t, plate.filename, idx)}
+                  primaryTypographyProps={{ noWrap: true }}
                   secondaryTypographyProps={{ noWrap: true }}
                 />
               </ListItemButton>
