@@ -47,7 +47,7 @@ import {
 } from "./printablesApi";
 import { getThingiverseAccessToken } from "./settingsService";
 import { upsertAuthorFromImport } from "./authorService";
-import { createPrint, type NewPlateInput, type PrintMetaInput } from "./printCreation";
+import { addPlatesToPrint, createPrint, resolvePlateFilePath, type NewPlateInput, type PrintMetaInput } from "./printCreation";
 import { plateThumbExists, saveThumbFromBytes } from "./printService";
 import { addPreviewImage } from "./previewImageService";
 import { prisma } from "../db";
@@ -70,6 +70,9 @@ export type ImportRequestBody = ImportCookies & {
    *  in that page's context, so real cookies attach automatically). When present, openImportResponse
    *  skips both of its own resolution paths for this url -- see its use there. */
   resolved_download_url?: string | null;
+  /** Sent alongside resolved_download_url: the MakerWorld profile that URL downloads -- see
+   *  ImportedPageMetadata.makerworldProfile. Null when the extension couldn't tell. */
+  resolved_instance_id?: string | null;
   /** Internal only -- never comes from the request body/schema. Set by runCollectionImportJob
    *  on each per-design body it builds for a MakerWorld collection batch import, and read
    *  wherever a MakerWorld-bound call happens along this whole chain (tryMakerworldCloudApi,
@@ -268,6 +271,7 @@ export async function openImportResponse(
       author: extracted.author ?? inheritedMeta.author,
       siteCategoryIds: extracted.siteCategoryIds.length ? extracted.siteCategoryIds : inheritedMeta.siteCategoryIds,
       categorySite: extracted.categorySite ?? inheritedMeta.categorySite,
+      makerworldProfile: inheritedMeta.makerworldProfile,
     };
     if (pageHost.endsWith("makerworld.com")) {
       // Same short-circuit as the cloud API above -- resolveMakerworldDownloadUrl's own
@@ -275,9 +279,15 @@ export async function openImportResponse(
       // CAPTCHA cooloff, so a client-supplied resolution skips it rather than resolving twice.
       if (body.resolved_download_url) {
         downloadUrl = body.resolved_download_url;
+        resolvedMeta.makerworldProfile = { instanceId: body.resolved_instance_id ?? null };
       } else {
         if (!makerworldCookie) makerworldCookie = resolveMakerworldCookie(body);
-        downloadUrl = await resolveMakerworldDownloadUrl(html, finalUrl, makerworldCookie);
+        const requestedInstanceId = parseMakerworldModelUrl(validatedUrl)?.requestedInstanceId ?? null;
+        const resolved = await resolveMakerworldDownloadUrl(html, finalUrl, makerworldCookie, requestedInstanceId);
+        if (resolved) {
+          downloadUrl = resolved.downloadUrl;
+          resolvedMeta.makerworldProfile = resolved.profile;
+        }
       }
     }
     if (!downloadUrl) {
@@ -329,7 +339,15 @@ export async function downloadImportToTemp(
   url: string,
   body: ImportRequestBody,
 ): Promise<{ tempPath: string; filename: string; mime: string; meta: ImportedPageMetadata }> {
-  const { response, finalUrl, meta } = await openImportResponse(url, body);
+  return saveImportResponseToTemp(await openImportResponse(url, body), body);
+}
+
+/** The second half of downloadImportToTemp, split out so a caller can look at the resolved
+ *  metadata first and skip downloading the body entirely (see addMakerworldProfileToPrint). */
+async function saveImportResponseToTemp(
+  { response, finalUrl, meta }: OpenImportResult,
+  body: ImportRequestBody,
+): Promise<{ tempPath: string; filename: string; mime: string; meta: ImportedPageMetadata }> {
   const contentLength = response.headers.get("content-length");
   if (contentLength && Number(contentLength) > IMPORT_MAX_BYTES) {
     await response.body?.cancel().catch(() => undefined);
@@ -470,7 +488,16 @@ export function identifySourceModel(url: string): { provider: string; externalId
   return null;
 }
 
-export type ImportStatus = { recognized: boolean; already_imported: boolean; print_id: string | null };
+/** `state` refines already_imported for a MakerWorld URL naming a print profile, where the model
+ *  can be in the library without that profile's file: "profile_missing" when every plate on the
+ *  print is a known, different profile, "profile_unknown" when some plates predate profile
+ *  tracking and might be it. already_imported stays for older extension versions. */
+export type ImportStatus = {
+  recognized: boolean;
+  already_imported: boolean;
+  print_id: string | null;
+  state: "not_imported" | "imported" | "profile_missing" | "profile_unknown";
+};
 
 /** Cheap "is this page importable, and have I already imported it" check -- unlike
  * inspectImportLink, this never fetches the provider's page itself, so it's safe to call on
@@ -480,12 +507,22 @@ export type ImportStatus = { recognized: boolean; already_imported: boolean; pri
  * sense for a single model, never a listing page. */
 export async function checkImportStatus(userId: string, url: string): Promise<ImportStatus> {
   const source = identifySourceModel(url);
-  if (!source) return { recognized: false, already_imported: false, print_id: null };
+  if (!source) return { recognized: false, already_imported: false, print_id: null, state: "not_imported" };
   const print = await prisma.print.findFirst({
     where: { userId, sourceProvider: source.provider, sourceExternalId: source.externalId },
-    select: { id: true },
+    select: { id: true, plates: { select: { sourceInstanceId: true } } },
   });
-  return { recognized: true, already_imported: Boolean(print), print_id: print?.id ?? null };
+  if (!print) return { recognized: true, already_imported: false, print_id: null, state: "not_imported" };
+  // A MakerWorld URL naming a specific profile only counts as imported once that profile's file
+  // is on the print (see addMakerworldProfileToPrint). Without a hash there's no way to tell
+  // which profile is meant short of asking MakerWorld -- not worth it on every page view -- so
+  // any imported profile counts.
+  const requestedInstanceId = source.provider === "makerworld" ? parseMakerworldModelUrl(url)?.requestedInstanceId : null;
+  if (requestedInstanceId && !print.plates.some((plate) => plate.sourceInstanceId === requestedInstanceId)) {
+    const state = print.plates.some((plate) => plate.sourceInstanceId == null) ? "profile_unknown" : "profile_missing";
+    return { recognized: true, already_imported: false, print_id: print.id, state };
+  }
+  return { recognized: true, already_imported: true, print_id: print.id, state: "imported" };
 }
 
 /** The inverse of identifySourceModel above -- rebuilds the original model page URL from the
@@ -515,6 +552,94 @@ async function findExistingImportedPrint(
     prisma.previewImage.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } }),
   ]);
   return { print, plates, author: print.author, previewImages };
+}
+
+type ExistingImportedPrint = NonNullable<Awaited<ReturnType<typeof findExistingImportedPrint>>>;
+
+async function sha256OfFile(filePath: string): Promise<string> {
+  const hash = crypto.createHash("sha256");
+  for await (const chunk of fsSync.createReadStream(filePath)) hash.update(chunk as Buffer);
+  return hash.digest("hex");
+}
+
+/** A plate's stored contentSha256, computing (and storing) it on first use. Null when its file
+ *  can't be read. */
+async function plateContentSha256(plate: Plate): Promise<string | null> {
+  if (plate.contentSha256) return plate.contentSha256;
+  const filePath = resolvePlateFilePath(plate);
+  if (!filePath || !fsSync.existsSync(filePath)) return null;
+  const sha = await sha256OfFile(filePath);
+  await prisma.plate.update({ where: { id: plate.id }, data: { contentSha256: sha } });
+  return sha;
+}
+
+/** Re-import of a MakerWorld design that's already a Print: each print profile has its own 3MF
+ * (with its own print settings, so they can't be merged into one file), so a profile not on the
+ * print yet is added as another plate rather than treated as a duplicate. The print's own
+ * metadata/images are left as they are.
+ *
+ * Plates without a sourceInstanceId (imported before profiles were tracked, or uploaded by hand)
+ * could be any profile, so the downloaded file is compared against them by SHA-256 first: a
+ * match tags that plate instead of adding a copy. Once a print's plates are all tagged, this
+ * never downloads anything for a profile it already has. */
+async function addMakerworldProfileToPrint(
+  existing: ExistingImportedPrint,
+  url: string,
+  body: ImportRequestBody,
+): Promise<ExistingImportedPrint & { alreadyImported: boolean; profileAdded?: boolean }> {
+  const alreadyImported = { ...existing, alreadyImported: true };
+  const hasProfile = (instanceId: string) => existing.plates.some((plate) => plate.sourceInstanceId === instanceId);
+
+  // Checked before any MakerWorld request: no hash (and no profile from the extension) means
+  // "whichever profile is the default", which can only be told apart from what's already
+  // imported by asking MakerWorld -- and a collection re-import runs this for every design it
+  // already has, where that would mean one extra (CAPTCHA-prone) lookup per design.
+  const wanted = body.resolved_instance_id ?? parseMakerworldModelUrl(url)?.requestedInstanceId ?? null;
+  if (!wanted || hasProfile(wanted)) return alreadyImported;
+
+  const opened = await openImportResponse(url, body);
+  const instanceId = opened.meta.makerworldProfile?.instanceId ?? null;
+  // Unknown profile (can't dedupe it), or the resolver fell back to one already on the print
+  // (e.g. the hash named a profile this design doesn't have, so it resolved the default).
+  if (!instanceId || hasProfile(instanceId)) {
+    await opened.response.body?.cancel().catch(() => undefined);
+    return alreadyImported;
+  }
+
+  const { tempPath, filename, mime } = await saveImportResponseToTemp(opened, body);
+  try {
+    const untagged = existing.plates.filter((plate) => plate.sourceInstanceId == null);
+    if (untagged.length) {
+      const downloadedSha = await sha256OfFile(tempPath);
+      for (const plate of untagged) {
+        if ((await plateContentSha256(plate)) !== downloadedSha) continue;
+        try {
+          await prisma.plate.update({ where: { id: plate.id }, data: { sourceInstanceId: instanceId } });
+        } catch (err) {
+          // Race guard: a concurrent import of this same profile tagged/added it first.
+          if (!isUniqueConstraintError(err)) throw err;
+        }
+        return { ...alreadyImported, plates: await platesOf(existing.print.id) };
+      }
+    }
+
+    try {
+      await addPlatesToPrint(existing.print.userId, existing.print.id, [
+        { filename, mime, tempFilePath: tempPath, sourceInstanceId: instanceId },
+      ]);
+    } catch (err) {
+      // Race guard: a concurrent import of this same profile added it first.
+      if (isUniqueConstraintError(err)) return alreadyImported;
+      throw err;
+    }
+    return { ...existing, plates: await platesOf(existing.print.id), alreadyImported: false, profileAdded: true };
+  } finally {
+    if (fsSync.existsSync(tempPath)) await fs.rm(tempPath, { force: true }).catch(() => undefined);
+  }
+}
+
+function platesOf(printId: string): Promise<Plate[]> {
+  return prisma.plate.findMany({ where: { printId }, orderBy: { position: "asc" } });
 }
 
 /** Bulk version of findExistingImportedPrint's lookup -- used by the collection/likes ".../entries"
@@ -745,10 +870,20 @@ export async function importPrintFromUrl(
   userId: string,
   url: string,
   body: ImportRequestBody,
-): Promise<{ print: Print; plates: Plate[]; author: Author | null; previewImages: PreviewImage[]; alreadyImported: boolean }> {
+): Promise<{
+  print: Print;
+  plates: Plate[];
+  author: Author | null;
+  previewImages: PreviewImage[];
+  alreadyImported: boolean;
+  /** Set when an existing MakerWorld print gained another profile's file (see
+   *  addMakerworldProfileToPrint) rather than being created. */
+  profileAdded?: boolean;
+}> {
   const source = identifySourceModel(url);
   if (source) {
     const existing = await findExistingImportedPrint(userId, source);
+    if (existing && source.provider === "makerworld") return addMakerworldProfileToPrint(existing, url, body);
     if (existing) return { ...existing, alreadyImported: true };
   }
 
@@ -778,7 +913,7 @@ export async function importPrintFromUrl(
     let result: { print: Print; plates: Plate[] };
     try {
       result = await createPrint(userId, printMeta, path.parse(filename).name, [
-        { filename, mime, tempFilePath: tempPath },
+        { filename, mime, tempFilePath: tempPath, sourceInstanceId: meta.makerworldProfile?.instanceId ?? null },
       ]);
     } catch (err) {
       // Race guard: another concurrent import of the same source model won between our

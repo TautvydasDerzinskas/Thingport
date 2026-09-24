@@ -171,15 +171,23 @@ async function pollJobToCompletion(jobId) {
  *  the import (and any collection filing) runs to completion regardless of what the calling page
  *  does next -- only the reply back to a since-destroyed content script can get lost, never the
  *  work itself. */
-async function handleImportSingle({ url, entries, collectionId, resolvedDownloadUrl }) {
+async function handleImportSingle({ url, entries, collectionId, resolved }) {
   // For a MakerWorld model, content.js resolves the actual download URL itself, straight from
   // the live page (see its resolveMakerworldDownloadUrlFromPage) -- passing it through as
   // resolved_download_url lets the backend skip its own resolution entirely (both its
   // api.bambulab.com cloud-API call and its api/v1 HTML-scrape fallback), which are the only two
   // places able to trip MakerWorld's CAPTCHA and the resulting 2-hour account-wide lockout. Left
   // undefined/null for anything else, or when the page-side resolution didn't find one -- the
-  // backend then falls back to resolving it exactly as before.
-  const extra = resolvedDownloadUrl ? { resolved_download_url: resolvedDownloadUrl } : null;
+  // backend then falls back to resolving it exactly as before. The profile ids tell the backend
+  // which MakerWorld print profile that file is, so importing another profile of a model that's
+  // already in the library adds it as a second file instead of being skipped as a duplicate.
+  const extra =
+    resolved && resolved.downloadUrl
+      ? {
+          resolved_download_url: resolved.downloadUrl,
+          resolved_instance_id: resolved.instanceId || null,
+        }
+      : null;
   let print;
   if (entries) {
     const { job_id } = await apiCall("POST", "/import/zip", { url, entries, ...extra });
@@ -385,16 +393,16 @@ async function advanceMakerworldJob(tabId) {
   // This matters most right here, not just for a plain single-model import: it's this per-model
   // loop that fires MakerWorld resolution calls back-to-back, exactly the pattern that trips its
   // CAPTCHA. Best-effort -- if the content script isn't ready yet or the page structure doesn't
-  // match, resolvedDownloadUrl stays null and the backend just resolves it the old way.
-  let resolvedDownloadUrl = null;
+  // match, `resolved` stays null and the backend just resolves it the old way.
+  let resolved = null;
   try {
     const res = await withTimeout(chrome.tabs.sendMessage(tabId, { type: "RESOLVE_MAKERWORLD_DOWNLOAD_URL" }), MAKERWORLD_DOWNLOAD_RESOLVE_TIMEOUT_MS);
-    if (res && res.ok) resolvedDownloadUrl = res.downloadUrl;
+    if (res && res.ok) resolved = res.resolved;
   } catch {
     // No listener yet, or the tab navigated away already -- fine, see above.
   }
   try {
-    await handleImportSingle({ url: currentUrl, collectionId: job.collectionId, resolvedDownloadUrl });
+    await handleImportSingle({ url: currentUrl, collectionId: job.collectionId, resolved });
   } catch (err) {
     // A manual "Import next" (see handleForceAdvanceMakerworldJob) may have already moved the job
     // past this step while this request was still in flight -- if so, this failure is stale and

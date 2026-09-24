@@ -1,11 +1,11 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
-import { identifySourceModel, importPrintFromUrl } from "../src/services/importService";
+import { checkImportStatus, identifySourceModel, importPrintFromUrl } from "../src/services/importService";
 import { createJob, getActiveJob, updateJob } from "../src/services/importJobService";
 import { createNotification, listNotifications, markAllRead } from "../src/services/notificationService";
 
@@ -94,6 +94,141 @@ describe("import dedup", () => {
     expect(countAfter).toBe(countBefore);
 
     await request(app).delete(`/api/print/${printId}`).set(auth());
+  });
+});
+
+// Distinct bytes per MakerWorld profile, like the real thing -- what the SHA-256 match keys on.
+function profileFileContents(instanceId: string) {
+  return `solid profile-${instanceId} endsolid`;
+}
+
+describe("MakerWorld print profiles", () => {
+  // One design, several print profiles ("instances"), each with its own 3MF -- see
+  // importService.ts's addMakerworldProfileToPrint. Every import here goes through the extension's
+  // pre-resolved path (resolved_download_url + profile ids), so the only fetches are the model page
+  // itself and the file; both are intercepted.
+  const designId = "888777";
+  const pageUrl = `https://makerworld.com/en/models/${designId}-profile-slug`;
+  const originalFetch = global.fetch;
+
+  function mockMakerworldFetch() {
+    const fetchMock = vi.fn<(input: RequestInfo | URL) => Promise<Response>>(async (input) => {
+      const url = String(input);
+      if (url.startsWith("https://makerworld.com/en/models/")) {
+        return new Response("<html><head><title>Profile Test</title></head><body></body></html>", {
+          headers: { "content-type": "text/html; charset=utf-8" },
+        });
+      }
+      const file = url.match(/^https:\/\/makerworld\.com\/files\/profile-(\w+)\.stl$/);
+      if (file) {
+        return new Response(profileFileContents(file[1]), { headers: { "content-type": "application/octet-stream" } });
+      }
+      throw new Error(`Unexpected fetch to ${url}`);
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+    return fetchMock;
+  }
+
+  function importProfile(url: string, instanceId: string | null) {
+    return importPrintFromUrl(userId, url, {
+      url,
+      tags: [],
+      resolved_download_url: `https://makerworld.com/files/profile-${instanceId ?? "unknown"}.stl`,
+      resolved_instance_id: instanceId,
+    });
+  }
+
+  async function createLegacyPrint(contents: string) {
+    const uploadRes = await request(app).post("/api/upload").set(auth()).attach("files", tmpFile("legacy-profile.stl", contents));
+    expect(uploadRes.status).toBe(200);
+    const printId = uploadRes.body.prints[0].id as string;
+    await prisma.print.update({ where: { id: printId }, data: { sourceProvider: "makerworld", sourceExternalId: designId } });
+    return printId;
+  }
+
+  afterEach(async () => {
+    global.fetch = originalFetch;
+    const prints = await prisma.print.findMany({ where: { userId, sourceProvider: "makerworld", sourceExternalId: designId } });
+    for (const print of prints) await request(app).delete(`/api/print/${print.id}`).set(auth());
+  });
+
+  it("adds a second profile as another plate on the same print, and skips a profile it already has", async () => {
+    mockMakerworldFetch();
+    const first = await importProfile(pageUrl, "100");
+    expect(first.alreadyImported).toBe(false);
+    expect(first.plates.map((plate) => plate.sourceInstanceId)).toEqual(["100"]);
+
+    const second = await importProfile(`${pageUrl}#profileId-200`, "200");
+    expect(second.alreadyImported).toBe(false);
+    expect(second.print.id).toBe(first.print.id);
+    expect(second.plates.map((plate) => plate.sourceInstanceId)).toEqual(["100", "200"]);
+
+    const fetchMock = mockMakerworldFetch();
+    const again = await importProfile(`${pageUrl}#profileId-200`, "200");
+    expect(again.alreadyImported).toBe(true);
+    expect(again.plates).toHaveLength(2);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("reports what POST /import did via import_outcome", async () => {
+    mockMakerworldFetch();
+    const post = (url: string, instanceId: string) =>
+      request(app)
+        .post("/api/import")
+        .set(auth())
+        .send({ url, resolved_download_url: `https://makerworld.com/files/profile-${instanceId}.stl`, resolved_instance_id: instanceId });
+
+    expect((await post(pageUrl, "100")).body.import_outcome).toBe("created");
+    expect((await post(`${pageUrl}#profileId-200`, "200")).body.import_outcome).toBe("profile_added");
+    expect((await post(`${pageUrl}#profileId-200`, "200")).body.import_outcome).toBe("already_imported");
+  });
+
+  it("treats a bare model URL as already imported without asking MakerWorld", async () => {
+    mockMakerworldFetch();
+    await importProfile(pageUrl, "100");
+
+    const fetchMock = mockMakerworldFetch();
+    const result = await importPrintFromUrl(userId, pageUrl, { url: pageUrl, tags: [] });
+    expect(result.alreadyImported).toBe(true);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("reports import status per profile when the URL names one", async () => {
+    expect((await checkImportStatus(userId, `${pageUrl}#profileId-200`)).state).toBe("not_imported");
+
+    mockMakerworldFetch();
+    await importProfile(`${pageUrl}#profileId-200`, "200");
+
+    const imported = await checkImportStatus(userId, `${pageUrl}#profileId-200`);
+    expect(imported).toMatchObject({ already_imported: true, state: "imported" });
+    const missing = await checkImportStatus(userId, `${pageUrl}#profileId-300`);
+    expect(missing).toMatchObject({ already_imported: false, state: "profile_missing", print_id: imported.print_id });
+    expect((await checkImportStatus(userId, pageUrl)).state).toBe("imported");
+  });
+
+  it("reports a profile as unknown while the print has plates from before profiles were tracked", async () => {
+    await createLegacyPrint("solid anything endsolid");
+    const status = await checkImportStatus(userId, `${pageUrl}#profileId-300`);
+    expect(status).toMatchObject({ already_imported: false, state: "profile_unknown" });
+    expect((await checkImportStatus(userId, pageUrl)).state).toBe("imported");
+  });
+
+  it("tags an untagged plate whose file matches the downloaded profile instead of adding a copy", async () => {
+    // Deliberately a non-default profile -- older imports could come from any profile.
+    const printId = await createLegacyPrint(profileFileContents("200"));
+
+    mockMakerworldFetch();
+    const other = await importProfile(`${pageUrl}#profileId-100`, "100");
+    expect(other.alreadyImported).toBe(false);
+    expect(other.profileAdded).toBe(true);
+    expect(other.plates.map((plate) => plate.sourceInstanceId)).toEqual([null, "100"]);
+
+    const matched = await importProfile(`${pageUrl}#profileId-200`, "200");
+    expect(matched.alreadyImported).toBe(true);
+    expect(matched.print.id).toBe(printId);
+    expect(matched.plates.map((plate) => plate.sourceInstanceId)).toEqual(["200", "100"]);
+    // The hash is stored on first use, so later comparisons don't re-read the file.
+    expect(matched.plates[0].contentSha256).toMatch(/^[0-9a-f]{64}$/);
   });
 });
 

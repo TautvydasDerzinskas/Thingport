@@ -43,7 +43,11 @@ function thingportIsMakerworldModelUrl(url) {
   }
   if (!parsed.hostname.toLowerCase().endsWith("makerworld.com")) return null;
   const m = parsed.pathname.match(/\/models?\/(\d+)/i);
-  return m ? { designId: m[1] } : null;
+  if (!m) return null;
+  // The print profile picked on the page, if any (e.g. #profileId-123456) -- same as the
+  // backend's parseMakerworldModelUrl.
+  const hashMatch = parsed.hash.match(/profileid-(\d+)/i);
+  return { designId: m[1], requestedInstanceId: hashMatch ? hashMatch[1] : null };
 }
 
 /** Mirrors the backend's buildImportSourceUrl (importService.ts) for MakerWorld -- lets the

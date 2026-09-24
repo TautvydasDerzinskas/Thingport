@@ -66,6 +66,8 @@
       "multiplateImportFailedWithMessage": "Multi-plate import ({{message}})",
       "multiplateImportFailed": "Multi-plate import",
       "imported": "Imported \"{{name}}\"",
+      "profileAdded": "Added a print profile to \"{{name}}\"",
+      "alreadyInLibrary": "\"{{name}}\" is already in your library",
       "uploaded": "Uploaded \"{{name}}\"",
       "uploadedMultiple": "Uploaded {{count}} models"
     },

@@ -48,8 +48,8 @@
     await injectStyles(shadowRoot);
 
     const button = document.createElement("button");
-    button.className = "tg-fab";
-    button.setAttribute("aria-label", "Import to Thingport");
+    button.className = context.library ? "tg-fab tg-fab-in-library" : "tg-fab";
+    button.setAttribute("aria-label", context.library ? "Add this print profile to Thingport" : "Import to Thingport");
     button.innerHTML = `<img src="${ICON_URL}" alt="" />`;
     button.addEventListener("click", togglePanel);
     shadowRoot.appendChild(button);
@@ -141,6 +141,14 @@
   }
 
   async function loadSingleItem() {
+    // Nothing inspect would tell us matters here (a MakerWorld profile is always a single 3MF),
+    // and inspecting would make the backend resolve the download from MakerWorld just to show
+    // the panel.
+    if (context.library) {
+      renderPanel(addProfileHtml());
+      bindImportButton(() => runDirectImport());
+      return;
+    }
     renderPanel(`<div class="tg-status">Checking link…</div>`);
     const { provider, type } = context.classification;
     // Printables' generic page-fetch flow is Cloudflare-gated (inspectImportLink would just fail)
@@ -181,6 +189,35 @@
       ${collectionHtml}
       <button class="tg-btn" data-action="import">Import</button>
     `;
+  }
+
+  /** The model's already in the library, but this page's print profile isn't known to be --
+   *  each MakerWorld profile has its own 3MF (own print settings), stored as its own file on the
+   *  one model. No collection picker: the model's collections are already whatever they are. */
+  function addProfileHtml() {
+    const { state, printId } = context.library;
+    const profileName = currentMakerworldProfileTitle();
+    const profileLabel = profileName ? `the "${escapeHtml(profileName)}" profile` : "this print profile";
+    const hint =
+      state === "profile_missing"
+        ? `You already have this model. Add ${profileLabel} as another file on it?`
+        : `This model is in your library. Add ${profileLabel} if you don't have it yet -- if one of the model's files already is this profile, nothing is downloaded twice.`;
+    const modelLink = printId ? `${context.instanceUrl}/models/${printId}` : `${context.instanceUrl}/models`;
+    return `
+      <div class="tg-title">In your library</div>
+      <div class="tg-hint">${hint}</div>
+      <button class="tg-btn" data-action="import">Add profile</button>
+      <a class="tg-btn tg-btn-secondary tg-link" href="${escapeHtml(modelLink)}" target="_blank" rel="noopener noreferrer">Open model in Thingport</a>
+    `;
+  }
+
+  /** The title of the print profile named in this page's URL hash, read from the page's own data
+   *  -- null when there's no hash or the page data is stale (see readMakerworldDesignForPage). */
+  function currentMakerworldProfileTitle() {
+    const page = readMakerworldDesignForPage(context.url);
+    if (!page || !page.requestedInstanceId || !Array.isArray(page.design.instances)) return null;
+    const instance = page.design.instances.find((inst) => inst && String(inst.id) === page.requestedInstanceId);
+    return instance && typeof instance.title === "string" && instance.title.trim() ? instance.title.trim() : null;
   }
 
   async function zipChoiceHtml(filename) {
@@ -250,9 +287,9 @@
     // `classification` (captured above, before any await) rather than `context.classification`
     // afterward, for the same reason `url`/`instanceUrl` are destructured up front: an SPA nav
     // mid-flight nulls `context` out from under this still-running function.
-    const resolvedDownloadUrl =
+    const resolved =
       classification.provider === "makerworld" && classification.type === "model"
-        ? await resolveMakerworldDownloadUrl().catch(() => null)
+        ? await resolveMakerworldDownloadUrl(url).catch(() => null)
         : null;
     try {
       // One message, not two -- import (and, per collectionId, filing the result into a
@@ -260,8 +297,15 @@
       // whether this tab/page is still around by the time it finishes (see background.js's
       // handleImportSingle for why that matters: a content script's own execution ends the
       // moment the page navigates or fully reloads, but the service worker doesn't).
-      const print = await call("IMPORT_SINGLE", { url, entries: opts && opts.entries, collectionId, resolvedDownloadUrl }).then(unwrap);
-      renderPanel(successHtml(print ? `${instanceUrl}/models/${print.id}` : `${instanceUrl}/models`));
+      const print = await call("IMPORT_SINGLE", { url, entries: opts && opts.entries, collectionId, resolved }).then(unwrap);
+      const link = print ? `${instanceUrl}/models/${print.id}` : `${instanceUrl}/models`;
+      if (print && print.import_outcome === "profile_added") {
+        renderPanel(successHtml(link, "Added this print profile's file to the model you already had.", "Profile added"));
+      } else if (print && print.import_outcome === "already_imported") {
+        renderPanel(successHtml(link, "This print profile's file was already on the model -- nothing new was added.", "Already in your library"));
+      } else {
+        renderPanel(successHtml(link));
+      }
     } catch (err) {
       renderPanel(errorHtml(err));
     }
@@ -376,41 +420,74 @@
 
   /** The single entry point every caller below uses: tries the real-click capture first (far
    *  higher fidelity, since it's not a guess), falling back to reconstructing the API call
-   *  ourselves only if that didn't pan out. */
-  async function resolveMakerworldDownloadUrl() {
+   *  ourselves only if that didn't pan out. `pageUrl` is the model page the caller means to
+   *  import, captured before any await -- see readMakerworldDesignForPage for why it's needed.
+   *  Resolves to { downloadUrl, instanceId } (the MakerWorld print profile the file belongs to,
+   *  null when unknown -- the backend uses it to add a second profile of an already-imported
+   *  model as its own file), or null. */
+  async function resolveMakerworldDownloadUrl(pageUrl) {
     const viaClick = await captureDownloadUrlViaRealClick().catch(() => null);
-    if (viaClick) return viaClick;
-    return resolveMakerworldDownloadUrlFromPage().catch(() => null);
+    if (viaClick) {
+      // The page's own button downloads whichever profile the page has selected, which follows
+      // the URL hash. Without trustworthy page data, the hash is all there is to go on.
+      const page = readMakerworldDesignForPage(pageUrl);
+      if (!page) {
+        const parsed = thingportIsMakerworldModelUrl(pageUrl);
+        return { downloadUrl: viaClick, instanceId: (parsed && parsed.requestedInstanceId) || null };
+      }
+      return { downloadUrl: viaClick, instanceId: pickMakerworldInstanceId(page.design, page.requestedInstanceId) };
+    }
+    return resolveMakerworldDownloadUrlFromPage(pageUrl).catch(() => null);
+  }
+
+  /** The page's own MakerWorld design data, or null if missing -- or stale: Next.js only writes
+   *  __NEXT_DATA__ on a full page load, so after a client-side route change from one model to
+   *  another it still describes the first-loaded design, and resolving from it would pair this
+   *  page's metadata with that other model's 3MF. */
+  function readMakerworldDesignForPage(pageUrl) {
+    const nextData = readMakerworldNextData();
+    if (!nextData) return null;
+    const design = getPath(nextData, "props", "pageProps", "design");
+    if (!design || typeof design !== "object") return null;
+    const expected = thingportIsMakerworldModelUrl(pageUrl);
+    if (!expected || design.id == null || String(design.id) !== expected.designId) return null;
+    const nonce = getPath(nextData, "props", "pageProps", "x-nonce");
+    return {
+      design,
+      nonce: typeof nonce === "string" && nonce.trim() ? nonce : null,
+      requestedInstanceId: expected.requestedInstanceId,
+    };
+  }
+
+  /** Same precedence as the backend's resolveMakerworldViaCloudApi: the requested profile (only
+   *  if this design actually has it), then the design's default, then the first one. */
+  function pickMakerworldInstanceId(design, requestedInstanceId) {
+    const instances = Array.isArray(design.instances) ? design.instances.filter((inst) => inst && inst.id) : [];
+    if (requestedInstanceId && instances.some((inst) => String(inst.id) === requestedInstanceId)) return requestedInstanceId;
+    if (design.defaultInstanceId) return String(design.defaultInstanceId);
+    return instances.length ? String(instances[0].id) : null;
   }
 
   /** Mirrors the backend's own two-step MakerWorld resolution (importResolvers.ts's
    *  resolveMakerworldDownloadUrl) -- instance-scoped endpoint first, model-scoped as a fallback
    *  -- just run from the page itself instead of the server. Fallback only -- see
    *  resolveMakerworldDownloadUrl above, which tries the real-click capture first. */
-  async function resolveMakerworldDownloadUrlFromPage() {
-    const nextData = readMakerworldNextData();
-    if (!nextData) return null;
-    const design = getPath(nextData, "props", "pageProps", "design");
-    if (!design || typeof design !== "object") return null;
-    const nonce = getPath(nextData, "props", "pageProps", "x-nonce");
-    const validNonce = typeof nonce === "string" && nonce.trim() ? nonce : null;
-
-    let instanceId = design.defaultInstanceId ? String(design.defaultInstanceId) : null;
-    if (!instanceId && Array.isArray(design.instances)) {
-      const first = design.instances.find((inst) => inst && inst.id);
-      if (first) instanceId = String(first.id);
-    }
+  async function resolveMakerworldDownloadUrlFromPage(pageUrl) {
+    // Stale or missing page data -- let the backend resolve from the URL instead.
+    const page = readMakerworldDesignForPage(pageUrl);
+    if (!page) return null;
+    const { design, nonce } = page;
+    const instanceId = pickMakerworldInstanceId(design, page.requestedInstanceId);
     if (instanceId) {
       const apiUrl = `https://makerworld.com/api/v1/design-service/instance/${instanceId}/f3mf?type=download&fileType=`;
-      const data = await fetchMakerworldApiJson(apiUrl, validNonce);
-      const url = extractDownloadUrlFromJson(data);
-      if (url) return url;
+      const downloadUrl = extractDownloadUrlFromJson(await fetchMakerworldApiJson(apiUrl, nonce));
+      if (downloadUrl) return { downloadUrl, instanceId };
     }
 
-    const modelId = design.id ? String(design.id) : null;
-    if (!modelId) return null;
-    const apiUrl = `https://makerworld.com/api/v1/models/${modelId}/download`;
-    return extractDownloadUrlFromJson(await fetchMakerworldApiJson(apiUrl, validNonce));
+    // Model-level, i.e. the default profile's file.
+    const apiUrl = `https://makerworld.com/api/v1/models/${String(design.id)}/download`;
+    const downloadUrl = extractDownloadUrlFromJson(await fetchMakerworldApiJson(apiUrl, nonce));
+    return downloadUrl ? { downloadUrl, instanceId: pickMakerworldInstanceId(design, null) } : null;
   }
 
   // -- Batch flow (a collection/Likes listing page) ---------------------------------------------
@@ -707,9 +784,9 @@
 
   // -- Shared result states -----------------------------------------------------------------
 
-  function successHtml(link, note) {
+  function successHtml(link, note, title = "Imported!") {
     return `
-      <div class="tg-title">Imported!</div>
+      <div class="tg-title">${escapeHtml(title)}</div>
       ${note ? `<div class="tg-hint">${escapeHtml(note)}</div>` : ""}
       <a class="tg-btn tg-link" href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer">Open in Thingport</a>
     `;
@@ -833,6 +910,10 @@
       return;
     }
 
+    // Set when the model is already in the library but this page's MakerWorld print profile might
+    // not be (see the backend's checkImportStatus) -- the icon and panel then offer to add the
+    // profile's file to the existing model rather than presenting it as a new import.
+    let library = null;
     if (classification.kind === "single") {
       try {
         const status = await api("GET", `/import/status?url=${encodeURIComponent(location.href)}`);
@@ -841,6 +922,9 @@
           reportTabIconState(false);
           return;
         }
+        if (status.state === "profile_missing" || status.state === "profile_unknown") {
+          library = { state: status.state, printId: status.print_id };
+        }
       } catch {
         // If the status check fails (instance unreachable, bad credentials, etc.) still show the
         // icon -- the panel's own error state will surface the real problem when they try it.
@@ -848,7 +932,7 @@
     }
     if (myToken !== initToken) return;
 
-    context = { url: location.href, instanceUrl: stateRes.data.instanceUrl, classification };
+    context = { url: location.href, instanceUrl: stateRes.data.instanceUrl, classification, library };
     await mount();
     if (myToken !== initToken) return;
     reportTabIconState(true);
@@ -914,9 +998,9 @@
   // back-to-back resolution pattern most likely to trip MakerWorld's CAPTCHA.
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (!message || message.type !== "RESOLVE_MAKERWORLD_DOWNLOAD_URL") return undefined;
-    resolveMakerworldDownloadUrl()
-      .then((downloadUrl) => sendResponse({ ok: true, downloadUrl }))
-      .catch(() => sendResponse({ ok: true, downloadUrl: null }));
+    resolveMakerworldDownloadUrl(location.href)
+      .then((resolved) => sendResponse({ ok: true, resolved }))
+      .catch(() => sendResponse({ ok: true, resolved: null }));
     return true; // keep the message channel open for the async sendResponse above
   });
 

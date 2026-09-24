@@ -343,19 +343,29 @@ model AuthorLink {
 }
 
 model Plate {
-  id          String   @id @default(cuid())
-  printId     String
-  print       Print    @relation(fields: [printId], references: [id], onDelete: Cascade)
-  position    Int
-  filename    String
-  mime        String
-  size        Int      @default(0)
-  storagePath String   @unique
-  sourcePath  String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               String   @id @default(cuid())
+  printId          String
+  print            Print    @relation(fields: [printId], references: [id], onDelete: Cascade)
+  position         Int
+  filename         String
+  mime             String
+  size             Int      @default(0)
+  storagePath      String   @unique
+  sourcePath       String?
+  // The MakerWorld print profile ("instance") this file was imported from -- one Print per
+  // MakerWorld design, one Plate per imported profile, since each profile's 3MF carries its own
+  // print settings and can't be merged. Null for everything else, and for plates imported before
+  // this was tracked (see importService.ts's addMakerworldProfileToPrint for how those get adopted).
+  sourceInstanceId String?
+  // SHA-256 (hex) of the file, computed lazily and only when needed: matching a freshly
+  // downloaded MakerWorld profile against untagged plates (addMakerworldProfileToPrint). Plate
+  // files are never rewritten in place, so once set it stays valid.
+  contentSha256    String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@unique([printId, position])
+  @@unique([printId, sourceInstanceId])
   @@index([printId])
 }
 

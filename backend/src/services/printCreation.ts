@@ -30,6 +30,8 @@ export type NewPlateInput = {
   tempFilePath?: string; // moved (renamed) into managed storage, source is deleted
   copyFromPath?: string; // copied into managed storage, source left intact
   sourcePath?: string; // no-copy: file stays at this path, storagePath is still rendered/recorded
+  /** The MakerWorld profile this file was imported from -- see Plate.sourceInstanceId. */
+  sourceInstanceId?: string | null;
 };
 
 export type PrintMetaInput = {
@@ -137,17 +139,26 @@ async function createPlateAtPosition(
   const size = await resolveSize(input, effectivePath);
   const mime = input.mime || guessMimeFromPath(desiredFilename) || "application/octet-stream";
 
-  const record = await prisma.plate.create({
-    data: {
-      printId: print.id,
-      position,
-      filename: desiredFilename,
-      mime,
-      size,
-      storagePath,
-      sourcePath: input.sourcePath ?? null,
-    },
-  });
+  let record: Plate;
+  try {
+    record = await prisma.plate.create({
+      data: {
+        printId: print.id,
+        position,
+        filename: desiredFilename,
+        mime,
+        size,
+        storagePath,
+        sourcePath: input.sourcePath ?? null,
+        sourceInstanceId: input.sourceInstanceId ?? null,
+      },
+    });
+  } catch (err) {
+    // e.g. a concurrent import of the same MakerWorld profile winning the (printId,
+    // sourceInstanceId) unique index -- don't leave the file we just placed orphaned in storage.
+    if (effectivePath && !input.sourcePath) await fs.rm(effectivePath, { force: true }).catch(() => undefined);
+    throw err;
+  }
 
   await thumbnailAndSniff(record.id, desiredFilename, mime, effectivePath);
   return { record, effectivePath };

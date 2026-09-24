@@ -64,8 +64,12 @@ type ImportLinkPayload = {
   makerworld_cookie?: string;
 };
 
+/** What POST /import did -- "profile_added" when a MakerWorld model already in the library
+ *  gained another print profile's file instead of a new model being created. */
+export type ImportOutcome = "created" | "profile_added" | "already_imported";
+
 export const importsApi = {
-  fromLink: async (payload: ImportLinkPayload): Promise<Print> => {
+  fromLink: async (payload: ImportLinkPayload): Promise<Print & { import_outcome?: ImportOutcome }> => {
     const res = await fetch(`${apiBase()}/import`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),

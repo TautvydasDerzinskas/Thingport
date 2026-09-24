@@ -374,6 +374,7 @@ export async function resolveMakerworldViaCloudApi(
       author,
       siteCategoryIds,
       categorySite: siteCategoryIds.length ? "makerworld" : null,
+      makerworldProfile: { instanceId: selected.id != null ? String(selected.id) : null },
     },
   };
 }

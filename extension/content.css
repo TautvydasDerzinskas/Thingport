@@ -20,6 +20,24 @@
 }
 .tg-fab:hover { transform: scale(1.06); }
 .tg-fab img { width: 34px; height: 34px; pointer-events: none; }
+/* The model's already in the library, only this page's MakerWorld print profile might not be --
+   see content.js's addProfileHtml. A checkmark badge rather than a different icon, so it still
+   reads as Thingport but not as "you don't have this yet". */
+.tg-fab-in-library::after {
+  content: "\2713";
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-sizing: border-box;
+  background: #00b800;
+  color: #ffffff;
+  font: 700 11px/16px -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  text-align: center;
+}
 
 /* `all: initial` below resets `display` to its CSS-initial value ("inline") as an *author* rule,
    which otherwise beats the UA stylesheet's `[hidden] { display: none }` regardless of the

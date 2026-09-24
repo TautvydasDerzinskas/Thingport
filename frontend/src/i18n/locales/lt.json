@@ -66,6 +66,8 @@
       "multiplateImportFailedWithMessage": "Kelių plokščių importas ({{message}})",
       "multiplateImportFailed": "Kelių plokščių importas",
       "imported": "Importuota „{{name}}“",
+      "profileAdded": "Pridėtas spausdinimo profilis prie „{{name}}“",
+      "alreadyInLibrary": "„{{name}}“ jau yra jūsų bibliotekoje",
       "uploaded": "Įkelta „{{name}}“",
       "uploadedMultiple": "Įkelta {{count}} modelių"
     },

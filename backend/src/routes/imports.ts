@@ -53,6 +53,7 @@ const importRequestSchema = z.object({
   // fallback) entirely, since those are the only two call sites that can trip MakerWorld's
   // CAPTCHA and its 2-hour blanket cooloff (see makerworldCaptcha.ts).
   resolved_download_url: z.string().nullable().optional(),
+  resolved_instance_id: z.string().nullable().optional(),
 });
 
 // The frontend normally sends the browser's own locally-stored MakerWorld cookie on every
@@ -70,8 +71,12 @@ router.post(
   asyncHandler(async (req, res) => {
     const body = await withStoredMakerworldCookie(req.userId!, parseBody(importRequestSchema, req.body));
     const url = await normalizeImportUrl(body.url);
-    const { print, plates, author, previewImages } = await importPrintFromUrl(req.userId!, url, body);
-    res.json(toPrintOut(print, plates, [], null, author, previewImages));
+    const result = await importPrintFromUrl(req.userId!, url, body);
+    const { print, plates, author, previewImages } = result;
+    // Lets a client tell "added this MakerWorld profile to a model you already had" apart from
+    // a fresh import and from a no-op (see importService.ts's addMakerworldProfileToPrint).
+    const importOutcome = result.alreadyImported ? "already_imported" : result.profileAdded ? "profile_added" : "created";
+    res.json({ ...toPrintOut(print, plates, [], null, author, previewImages), import_outcome: importOutcome });
     void createLog({ userId: req.userId!, action: "model_imported", targetId: print.id, details: { name: print.name, url } });
   }),
 );

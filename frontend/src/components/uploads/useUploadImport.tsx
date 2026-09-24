@@ -2,7 +2,7 @@ import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { UnauthorizedError } from "../../api/client";
-import { importsApi } from "../../api/imports";
+import { importsApi, type ImportOutcome } from "../../api/imports";
 import { printsApi, type Print } from "../../api/prints";
 import { entriesFromFileList, uploadEntriesToCategory } from "../../utils/uploadTree";
 import { buildUploadEntriesFromZip, isZipFile, readZipEntries } from "../../utils/zipUtils";
@@ -183,6 +183,17 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
     />
   );
 
+  const showImportedToast = (imported: Print & { import_outcome?: ImportOutcome }) => {
+    const name = imported.title || imported.name;
+    const key =
+      imported.import_outcome === "profile_added"
+        ? "uploadBar.profileAdded"
+        : imported.import_outcome === "already_imported"
+          ? "uploadBar.alreadyInLibrary"
+          : "uploadBar.imported";
+    showToast({ message: t(key, { name }) });
+  };
+
   const submitImport = async (rawUrl: string) => {
     const url = rawUrl.trim();
     if (!url) return;
@@ -290,7 +301,7 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
         // Both always resolve to several files; skip straight past the inspect/zip-picker steps
         // -- the backend already splits them into plates automatically.
         const imported = await importsApi.fromLink(payload);
-        showToast({ message: t("uploadBar.imported", { name: imported.title || imported.name }) });
+        showImportedToast(imported);
         onUploaded();
         openForViewing(imported);
         return;
@@ -299,7 +310,7 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
       const inspect = await importsApi.inspectLink(payload);
       if (!inspect.is_zip) {
         const imported = await importsApi.fromLink(payload);
-        showToast({ message: t("uploadBar.imported", { name: imported.title || imported.name }) });
+        showImportedToast(imported);
         onUploaded();
         openForViewing(imported);
         return;
@@ -310,7 +321,7 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
         onImportAsZip: async () => {
           try {
             const imported = await importsApi.fromLink(payload);
-            showToast({ message: t("uploadBar.imported", { name: imported.title || imported.name }) });
+            showImportedToast(imported);
             onUploaded();
             openForViewing(imported);
           } catch (err) {

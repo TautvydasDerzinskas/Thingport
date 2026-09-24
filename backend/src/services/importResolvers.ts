@@ -471,7 +471,15 @@ export type ImportedPageMetadata = {
    * resolveCategoryIdByCategory). Empty/null when the resolver doesn't expose categories. */
   siteCategoryIds: number[];
   categorySite: "makerworld" | "thingiverse" | "printables" | null;
+  /** Which MakerWorld print profile the resolved download belongs to, when known -- lets
+   *  importPrintFromUrl add a second profile of an already-imported design as its own plate
+   *  instead of treating it as a duplicate. Unset for every other provider. */
+  makerworldProfile?: MakerworldProfileRef;
 };
+
+/** `instanceId` is the profile the downloaded file came from; null when the resolver couldn't
+ *  tell. */
+export type MakerworldProfileRef = { instanceId: string | null };
 
 export type ImportedAuthorInfo = {
   provider: string;
@@ -521,9 +529,12 @@ export function extractPageMetadata(html: string, pageHost: string): ImportedPag
   return meta;
 }
 
-function makerworldInstanceIdFromNextData(data: unknown): string | null {
+/** Same precedence as makerworldCloudApi.ts's resolveMakerworldViaCloudApi: the profile named
+ *  in the URL hash (only if this design actually has it), then the default, then the first. */
+function makerworldInstanceIdFromNextData(data: unknown, requestedInstanceId: string | null): string | null {
   const design = getPath(data, "props", "pageProps", "design") as Record<string, unknown> | undefined;
   if (!design) return null;
+  if (requestedInstanceId && makerworldDesignHasInstance(design, requestedInstanceId)) return requestedInstanceId;
   const defaultInstance = design.defaultInstanceId;
   if (defaultInstance) return String(defaultInstance);
   const instances = design.instances;
@@ -535,6 +546,14 @@ function makerworldInstanceIdFromNextData(data: unknown): string | null {
     }
   }
   return null;
+}
+
+function makerworldDesignHasInstance(design: Record<string, unknown>, instanceId: string): boolean {
+  const instances = design.instances;
+  if (!Array.isArray(instances)) return false;
+  return instances.some(
+    (inst) => inst && typeof inst === "object" && String((inst as Record<string, unknown>).id) === instanceId,
+  );
 }
 
 function makerworldNonceFromNextData(data: unknown): string | null {
@@ -572,32 +591,44 @@ async function fetchMakerworldModelDownloadUrl(
   return data ? extractDownloadUrlFromResponse(data, apiUrl) : null;
 }
 
+/** `requestedInstanceId` is the print profile from the page URL's #profileId-… hash, passed in
+ *  separately because `pageUrl` here is the fetch response's URL, which never carries a hash.
+ *  Every fallback past the instance-scoped endpoint is model-level, i.e. the default profile's
+ *  file, so the returned profile says so. */
 export async function resolveMakerworldDownloadUrl(
   html: string,
   pageUrl: string,
   makerworldCookie: string | null,
-): Promise<string | null> {
+  requestedInstanceId: string | null = null,
+): Promise<{ downloadUrl: string; profile: MakerworldProfileRef } | null> {
   const nextData = extractNextDataJson(html);
   let designId: string | null = null;
   let nonce: string | null = null;
   let instanceId: string | null = null;
+  let defaultInstanceId: string | null = null;
+  const asDefault = (downloadUrl: string) => ({ downloadUrl, profile: { instanceId: defaultInstanceId } });
   if (nextData) {
-    const url = findDownloadUrlInJson(nextData, pageUrl);
-    if (url) return url;
+    instanceId = makerworldInstanceIdFromNextData(nextData, requestedInstanceId);
+    defaultInstanceId = makerworldInstanceIdFromNextData(nextData, null);
+    // A generic URL found in the page data belongs to whichever profile the page embedded (the
+    // default), so it's only trusted when no other profile was asked for.
+    if (!requestedInstanceId || instanceId !== requestedInstanceId) {
+      const url = findDownloadUrlInJson(nextData, pageUrl);
+      if (url) return asDefault(url);
+    }
     designId = makerworldDesignIdFromNextData(nextData);
     nonce = makerworldNonceFromNextData(nextData);
-    instanceId = makerworldInstanceIdFromNextData(nextData);
   }
 
   if (instanceId) {
     const url = await fetchMakerworldInstanceDownloadUrl(instanceId, pageUrl, makerworldCookie);
-    if (url) return url;
+    if (url) return { downloadUrl: url, profile: { instanceId } };
   }
 
   const modelId = designId || makerworldModelIdFromUrl(pageUrl);
   if (!modelId) return null;
   const url = await fetchMakerworldModelDownloadUrl(modelId, pageUrl, nonce, makerworldCookie);
-  if (url) return url;
+  if (url) return asDefault(url);
 
   const apiCandidates = [
     `https://makerworld.com/api/v1/models/${modelId}`,
@@ -609,7 +640,7 @@ export async function resolveMakerworldDownloadUrl(
     const data = await fetchJsonFromUrl(apiUrl, pageUrl);
     if (!data) continue;
     const found = findDownloadUrlInJson(data, apiUrl);
-    if (found) return found;
+    if (found) return asDefault(found);
   }
   return null;
 }
