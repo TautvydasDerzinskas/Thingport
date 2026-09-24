@@ -171,7 +171,7 @@ async function pollJobToCompletion(jobId) {
  *  the import (and any collection filing) runs to completion regardless of what the calling page
  *  does next -- only the reply back to a since-destroyed content script can get lost, never the
  *  work itself. */
-async function handleImportSingle({ url, entries, collectionId, resolved }) {
+async function handleImportSingle({ url, entries, collectionId, resolved, title }) {
   // For a MakerWorld model, content.js resolves the actual download URL itself, straight from
   // the live page (see its resolveMakerworldDownloadUrlFromPage) -- passing it through as
   // resolved_download_url lets the backend skip its own resolution entirely (both its
@@ -199,6 +199,12 @@ async function handleImportSingle({ url, entries, collectionId, resolved }) {
   }
   if (collectionId && print && print.id) {
     await apiCall("POST", `/collection/${collectionId}/items/${print.id}`).catch(() => undefined);
+  }
+  // A no-op import (already in the library) isn't something the user just imported. Another
+  // MakerWorld print profile of a model they already had returns that same model, so it lands
+  // as the one entry, moved to the front.
+  if (print && print.id && print.import_outcome !== "already_imported") {
+    await recordRecentImport(print, title).catch(() => undefined);
   }
   return print;
 }
@@ -476,6 +482,68 @@ async function setTabIconState(tabId, active) {
   await chrome.action.setIcon({ tabId, path: iconPaths(active) }).catch(() => undefined);
 }
 
+// -- Recent imports (the popup's thumbnail strip) ------------------------------------------------
+//
+// The last few models imported through this extension, in this browser -- deliberately kept
+// entirely in extension storage, title and thumbnail included, so the popup never has to ask the
+// instance for anything. The flip side: an entry reflects the model as it was when imported (a
+// later rename or delete in Thingport doesn't show here).
+const RECENT_IMPORTS_STORAGE_KEY = "recentImports";
+const RECENT_IMPORTS_KEPT = 5;
+const RECENT_IMPORT_THUMB_PX = 96;
+
+/** `print` is POST /import's response (or just `{ id }` for a zip import, whose job reports only
+ *  the id -- `titleHint`, the page's own title, covers that case). Entries are scoped to the
+ *  instance + account they were imported into, so switching either shows that one's own list. */
+async function recordRecentImport(print, titleHint) {
+  const config = await getStoredConfig();
+  if (!isConfigured(config)) return;
+  const instanceUrl = thingportNormalizeInstanceUrl(config.instanceUrl);
+  // Same cover the web app's model cards use, falling back to the first photo.
+  const thumbPath = print.thumb_url || (print.preview_images && print.preview_images[0] && print.preview_images[0].url) || null;
+  const entry = {
+    printId: print.id,
+    title: print.title || print.name || titleHint || null,
+    url: `${instanceUrl}/models/${print.id}`,
+    thumbDataUrl: thumbPath ? await fetchThumbDataUrl(config, thumbPath).catch(() => null) : null,
+    instanceUrl,
+    email: config.email,
+  };
+  const stored = (await chrome.storage.local.get(RECENT_IMPORTS_STORAGE_KEY))[RECENT_IMPORTS_STORAGE_KEY] || [];
+  // Another MakerWorld print profile of a model already in the list is the same model -- it moves
+  // to the front rather than taking a second slot.
+  const rest = stored.filter((e) => !(e.printId === entry.printId && e.instanceUrl === instanceUrl && e.email === entry.email));
+  await chrome.storage.local.set({ [RECENT_IMPORTS_STORAGE_KEY]: [entry, ...rest].slice(0, RECENT_IMPORTS_KEPT) });
+}
+
+/** Downloads the model's cover once and shrinks it to a small square JPEG data URL (a few KB),
+ *  center-cropped the way the popup shows it. */
+async function fetchThumbDataUrl(config, thumbPath) {
+  const res = await fetch(thingportApiUrl(config.instanceUrl, thumbPath), {
+    headers: { Authorization: `Bearer ${await ensureToken(config)}` },
+  });
+  if (!res.ok) return null;
+  const bitmap = await createImageBitmap(await res.blob());
+  const side = Math.min(bitmap.width, bitmap.height);
+  const canvas = new OffscreenCanvas(RECENT_IMPORT_THUMB_PX, RECENT_IMPORT_THUMB_PX);
+  canvas
+    .getContext("2d")
+    .drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, RECENT_IMPORT_THUMB_PX, RECENT_IMPORT_THUMB_PX);
+  bitmap.close();
+  const jpeg = new Uint8Array(await (await canvas.convertToBlob({ type: "image/jpeg", quality: 0.8 })).arrayBuffer());
+  let binary = "";
+  for (let i = 0; i < jpeg.length; i += 0x8000) binary += String.fromCharCode(...jpeg.subarray(i, i + 0x8000));
+  return `data:image/jpeg;base64,${btoa(binary)}`;
+}
+
+async function handleGetRecentImports() {
+  const config = await getStoredConfig();
+  if (!isConfigured(config)) return [];
+  const instanceUrl = thingportNormalizeInstanceUrl(config.instanceUrl);
+  const stored = (await chrome.storage.local.get(RECENT_IMPORTS_STORAGE_KEY))[RECENT_IMPORTS_STORAGE_KEY] || [];
+  return stored.filter((e) => e.instanceUrl === instanceUrl && e.email === config.email);
+}
+
 // The host permission for the chosen instance origin is requested by popup.js itself, not here --
 // chrome.permissions.request() must run within the user gesture that triggered it (the popup's
 // own submit click), which doesn't survive a chrome.runtime.sendMessage hop into this service
@@ -500,7 +568,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           const config = await getStoredConfig();
           sendResponse({
             ok: true,
-            data: { configured: isConfigured(config), disabled: Boolean(config.disabled), instanceUrl: config.instanceUrl || "" },
+            data: {
+              configured: isConfigured(config),
+              disabled: Boolean(config.disabled),
+              instanceUrl: config.instanceUrl || "",
+              email: config.email || "",
+            },
           });
           return;
         }
@@ -511,6 +584,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case "SET_DISABLED":
           await handleSetDisabled(message.payload.disabled);
           sendResponse({ ok: true });
+          return;
+        case "GET_RECENT_IMPORTS":
+          sendResponse({ ok: true, data: await handleGetRecentImports() });
           return;
         case "SET_TAB_ICON_STATE":
           // Only content scripts send this, and every content script runs attached to a tab, so

@@ -26,15 +26,114 @@
       .header {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
         margin-bottom: 14px;
       }
-      .header img { width: 24px; height: 24px; }
+      .header > img { width: 32px; height: 32px; flex-shrink: 0; }
+      .header-text { min-width: 0; flex: 1; }
       .header h1 {
         font-size: 15px;
         font-weight: 700;
         margin: 0;
+        line-height: 1.2;
       }
+      .instance-row {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        min-width: 0;
+      }
+      .instance-url {
+        font-size: 12px;
+        color: var(--text-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+      }
+      .icon-btn {
+        margin: 0;
+        width: 22px;
+        height: 22px;
+        padding: 3px;
+        flex-shrink: 0;
+        border-radius: 4px;
+        background: transparent;
+        color: var(--text-muted);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .icon-btn:hover { background: rgba(0, 0, 0, 0.06); color: var(--text); }
+      .icon-btn svg { width: 14px; height: 14px; }
+      .section {
+        border-top: 1px solid var(--border);
+        padding-top: 12px;
+        margin-top: 12px;
+      }
+      .section-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin: 0 0 8px;
+      }
+      .toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .toggle-row label { margin: 0; font-weight: 600; cursor: pointer; }
+      .switch {
+        appearance: none;
+        position: relative;
+        width: 34px;
+        height: 20px;
+        margin: 0;
+        flex-shrink: 0;
+        border-radius: 10px;
+        background: #c4c4c4;
+        cursor: pointer;
+        transition: background 0.15s ease;
+      }
+      .switch::after {
+        content: "";
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #ffffff;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        transition: transform 0.15s ease;
+      }
+      .switch:checked { background: var(--accent); }
+      .switch:checked::after { transform: translateX(14px); }
+      .switch:disabled { opacity: 0.6; cursor: default; }
+      .recent-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
+      }
+      .recent-item {
+        position: relative;
+        aspect-ratio: 1;
+        border-radius: 6px;
+        overflow: hidden;
+        background: rgba(0, 0, 0, 0.05);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-muted);
+        font-weight: 700;
+        font-size: 16px;
+        text-decoration: none;
+      }
+      .recent-item:hover, .recent-item:focus-visible { border-color: var(--accent); }
+      .recent-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+      .recent-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
       label {
         display: block;
         font-weight: 600;
@@ -83,38 +182,36 @@
         color: var(--text-muted);
         margin: 10px 0 0;
       }
-      .configured-url {
-        font-size: 12px;
-        color: var(--text-muted);
-        word-break: break-all;
-        padding: 8px;
-        background: rgba(0, 0, 0, 0.04);
-        border-radius: 6px;
-      }
-      .checkbox-row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-top: 14px;
-      }
-      .checkbox-row label { margin: 0; font-weight: 500; }
       [hidden] { display: none !important; }
     </style>
   </head>
   <body>
     <div class="header">
       <img src="icons/thingport-icon-color.svg" alt="" />
-      <h1>Thingport Grab</h1>
+      <div class="header-text">
+        <h1>Thingport Grab</h1>
+        <div class="instance-row" id="instance-row" hidden>
+          <span class="instance-url" id="instance-url-text"></span>
+          <button type="button" class="icon-btn" id="edit-instance-btn" aria-label="Edit instance" title="Edit instance">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+            </svg>
+          </button>
+        </div>
+      </div>
     </div>
 
     <div id="configured-view" hidden>
-      <label>Instance</label>
-      <div class="configured-url" id="configured-url"></div>
-      <button type="button" class="secondary" id="change-url-btn">Change URL</button>
-      <div class="checkbox-row">
-        <input type="checkbox" id="disabled-checkbox" />
-        <label for="disabled-checkbox">Disable extension</label>
+      <div class="toggle-row">
+        <label for="enabled-switch">Extension enabled</label>
+        <input type="checkbox" role="switch" class="switch" id="enabled-switch" />
       </div>
+      <div class="section" id="recent-section" hidden>
+        <h2 class="section-title">Recent imports</h2>
+        <div class="recent-grid" id="recent-grid"></div>
+      </div>
+      <div class="error" id="configured-error"></div>
     </div>
 
     <form id="setup-form">

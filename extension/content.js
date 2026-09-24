@@ -280,7 +280,7 @@
   // renderPanel's own guard for that).
   async function runDirectImport(opts) {
     const collectionId = selectedCollectionId();
-    const { url, instanceUrl, classification } = context;
+    const { url, instanceUrl, classification, title } = context;
     renderPanel(`<div class="tg-status">Importing…</div>`);
     // Only meaningful for a MakerWorld model page -- see resolveMakerworldDownloadUrlFromPage's
     // own doc comment for why resolving it here beats leaving it to the backend. Read from
@@ -297,7 +297,7 @@
       // whether this tab/page is still around by the time it finishes (see background.js's
       // handleImportSingle for why that matters: a content script's own execution ends the
       // moment the page navigates or fully reloads, but the service worker doesn't).
-      const print = await call("IMPORT_SINGLE", { url, entries: opts && opts.entries, collectionId, resolved }).then(unwrap);
+      const print = await call("IMPORT_SINGLE", { url, entries: opts && opts.entries, collectionId, resolved, title }).then(unwrap);
       const link = print ? `${instanceUrl}/models/${print.id}` : `${instanceUrl}/models`;
       if (print && print.import_outcome === "profile_added") {
         renderPanel(successHtml(link, "Added this print profile's file to the model you already had.", "Profile added"));
