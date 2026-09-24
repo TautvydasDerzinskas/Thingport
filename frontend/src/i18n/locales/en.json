@@ -1147,6 +1147,7 @@
       "openInProvider": "Open in {{provider}}",
       "openInSlicer": "Open in {{slicer}}",
       "openInSlicerGeneric": "Open in Slicer",
+      "preparedPrintFile": "Prepared print",
       "downloadPickerTitle": "Download",
       "downloadAllZip": "Download all {{count}} files (.zip)",
       "orDownloadOne": "or download one file",

@@ -22,12 +22,11 @@ import { UnauthorizedError } from "../../api/client";
 import { type Print, printsApi } from "../../api/prints";
 import type { AuthUser } from "../../api/auth";
 import { collectionsApi } from "../../api/collections";
-import { slicerLaunchUrl } from "../../utils/slicerLaunch";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { importProviderInfo } from "../../constants/importProviders";
-import { SLICER_OPTIONS } from "../../constants/settingsOptions";
-import { useSlicerPreference } from "../../hooks/useSlicerPreference";
 import { useDownloadPrint } from "./useDownloadPrint";
+import { useOpenInSlicer } from "./useOpenInSlicer";
+import SlicerFileMenu from "./SlicerFileMenu";
 import DownloadPickerDialog from "./DownloadPickerDialog";
 import AddToCollectionModal from "./AddToCollectionModal";
 import EditModelModal from "./EditModelModal";
@@ -77,10 +76,10 @@ export default function ModelActionsMenu({
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const confirmDialog = useConfirm();
-  const slicerPreference = useSlicerPreference();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const [slicerMenuAnchor, setSlicerMenuAnchor] = useState<HTMLElement | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [removingFromCollection, setRemovingFromCollection] = useState(false);
   const [addToCollectionOpen, setAddToCollectionOpen] = useState(false);
@@ -156,11 +155,8 @@ export default function ModelActionsMenu({
   };
 
   const providerInfo = importProviderInfo(print.source_provider);
-  // "other" has no registered URL protocol to launch -- treated the same as no preference set.
-  const slicerOption = SLICER_OPTIONS.find(opt => opt.id === slicerPreference && opt.id !== "other");
-  const openInSlicerHref = slicerOption && print.slicer_url
-    ? slicerLaunchUrl(slicerOption.id, printsApi.fileUrl(print.slicer_url), print.slicer_filename ?? undefined)
-    : undefined;
+  const { slicerOption, targets: slicerTargets } = useOpenInSlicer(print);
+  const openInSlicerHref = slicerTargets.length === 1 ? slicerTargets[0].href : undefined;
 
   return (
     <>
@@ -207,14 +203,21 @@ export default function ModelActionsMenu({
           <ListItemText sx={{ color: "error.main" }}>{t("common:delete")}</ListItemText>
         </MenuItem>
         <Divider />
+        {/* One target: a plain link to it. Several: this menu hands over to SlicerFileMenu,
+            anchored on the same trigger, to pick which. */}
         <MenuItem
           component="a"
           href={openInSlicerHref}
           onClick={() => {
+            if (slicerTargets.length > 1) {
+              setSlicerMenuAnchor(anchorEl);
+              closeMenu();
+              return;
+            }
             closeMenu();
             recordUse();
           }}
-          disabled={!openInSlicerHref}
+          disabled={slicerTargets.length === 0}
         >
           <ListItemIcon><LaunchIcon fontSize="small" /></ListItemIcon>
           <ListItemText>
@@ -236,6 +239,16 @@ export default function ModelActionsMenu({
           </MenuItem>
         )}
       </Menu>
+
+      {slicerOption && slicerTargets.length > 1 && (
+        <SlicerFileMenu
+          anchorEl={slicerMenuAnchor}
+          onClose={() => setSlicerMenuAnchor(null)}
+          slicerLabel={slicerOption.label}
+          targets={slicerTargets}
+          onOpen={recordUse}
+        />
+      )}
 
       <DownloadPickerDialog
         open={pickerOpen}

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import Paper from "@mui/material/Paper";
@@ -10,19 +11,18 @@ import ButtonBase from "@mui/material/ButtonBase";
 import FolderIcon from "@mui/icons-material/Folder";
 import StorageIcon from "@mui/icons-material/Storage";
 import LaunchIcon from "@mui/icons-material/Launch";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import DownloadIcon from "@mui/icons-material/Download";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PrintIcon from "@mui/icons-material/Print";
 import type { Print } from "../../api/prints";
-import { printsApi } from "../../api/prints";
 import type { AuthUser } from "../../api/auth";
-import { slicerLaunchUrl } from "../../utils/slicerLaunch";
-import { SLICER_OPTIONS } from "../../constants/settingsOptions";
-import { useSlicerPreference } from "../../hooks/useSlicerPreference";
 import { useGravatarUrl } from "../../hooks/useGravatarUrl";
 import { dividerBorderColor } from "../../theme";
 import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
 import { useDownloadPrint } from "./useDownloadPrint";
+import { useOpenInSlicer } from "./useOpenInSlicer";
+import SlicerFileMenu from "./SlicerFileMenu";
 import RollingNumber from "../../components/RollingNumber";
 import { formatFileSize } from "../../utils/fileSize";
 import AuthorHoverCard from "../../components/AuthorHoverCard";
@@ -43,23 +43,20 @@ type Props = {
 /** The model detail page's right-hand summary card, sticky so it stays in view while the
  *  description/tags column scrolls: the full title, author (jumps to their author page), category (jumps back
  *  to the Models grid filtered to it), "Open in {Slicer}" (only when both a preference is set
- *  and this print has a slicer_url -- same condition ModelActionsMenu's menu item uses),
+ *  and this print has a slicer_url, and a pick of which file when there are several -- see
+ *  useOpenInSlicer, shared with ModelActionsMenu's menu item),
  *  "Download model files" (the same picker-or-direct-download flow as ModelActionsMenu's
  *  Download, via useDownloadPrint so the two can't drift), view/print counts, and -- only for an
  *  actually-imported print, per source_provider -- when it was imported. */
 export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized, onUpdated, viewer }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const navigate = useNavigate();
-  const slicerPreference = useSlicerPreference();
   const viewerAvatarUrl = useGravatarUrl(viewer?.email, 56);
   const { pickerOpen, setPickerOpen, downloading, handleDownload, downloadPlate, downloadAllZip, sortedPlates, recordUse } =
     useDownloadPrint(print, onUnauthorized, onUpdated);
 
-  // "other" has no registered URL protocol to launch -- treated the same as no preference set.
-  const slicerOption = SLICER_OPTIONS.find(opt => opt.id === slicerPreference && opt.id !== "other");
-  const openInSlicerHref = slicerOption && print.slicer_url
-    ? slicerLaunchUrl(slicerOption.id, printsApi.fileUrl(print.slicer_url), print.slicer_filename ?? undefined)
-    : undefined;
+  const { slicerOption, targets: slicerTargets } = useOpenInSlicer(print);
+  const [slicerMenuAnchor, setSlicerMenuAnchor] = useState<HTMLElement | null>(null);
 
   const goToCategory = () => {
     if (!print.category_id) return;
@@ -188,11 +185,12 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
           </Box>
         )}
 
-        {openInSlicerHref && (
+        {slicerOption && slicerTargets.length > 0 && (
           <Button
-            component="a"
-            href={openInSlicerHref}
-            onClick={recordUse}
+            // One target: a plain link to it. Several: pick which (see SlicerFileMenu).
+            {...(slicerTargets.length === 1
+              ? { component: "a" as const, href: slicerTargets[0].href, onClick: recordUse }
+              : { onClick: (e: React.MouseEvent<HTMLElement>) => setSlicerMenuAnchor(e.currentTarget), endIcon: <ArrowDropDownIcon /> })}
             startIcon={<LaunchIcon fontSize="small" />}
             fullWidth
             sx={{
@@ -203,8 +201,18 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
               "&:hover": { bgcolor: "action.hover", borderColor: "primary.dark" },
             }}
           >
-            {t("models:detail.openInSlicer", { slicer: slicerOption!.label })}
+            {t("models:detail.openInSlicer", { slicer: slicerOption.label })}
           </Button>
+        )}
+        {slicerOption && slicerTargets.length > 1 && (
+          <SlicerFileMenu
+            anchorEl={slicerMenuAnchor}
+            onClose={() => setSlicerMenuAnchor(null)}
+            slicerLabel={slicerOption.label}
+            targets={slicerTargets}
+            onOpen={recordUse}
+            matchAnchorWidth
+          />
         )}
 
         <Button
