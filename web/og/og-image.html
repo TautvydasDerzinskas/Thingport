@@ -1,0 +1,65 @@
+<!doctype html>
+<!--
+  Source for src/assets/og-default.png (the social preview card). Colours are the dark tokens from
+  src/styles/global.css. To regenerate after editing, from web/:
+
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --hide-scrollbars \
+      --force-device-scale-factor=1 --window-size=1200,630 \
+      --screenshot=src/assets/og-default.png "file://$PWD/og/og-image.html"
+-->
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  @font-face { font-family: "Thingport"; src: url("../../frontend/src/assets/fonts/thingport-700.woff") format("woff"); font-weight: 700; }
+  @font-face { font-family: "Thingport"; src: url("../../frontend/src/assets/fonts/thingport-500.woff") format("woff"); font-weight: 500; }
+  :root { --bg: #181f39; --panel: #1e2746; --border: #333a54; --text: #b3b7c0; --heading: #ffffff; --accent: #00b800; --accent-light: #5be584; --alt: rgb(255, 114, 32); }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    position: relative;
+    background:
+      radial-gradient(55% 70% at 18% 0%, rgba(0, 184, 0, 0.26) 0%, rgba(0, 184, 0, 0) 70%),
+      radial-gradient(40% 60% at 100% 100%, rgba(91, 229, 132, 0.10) 0%, rgba(91, 229, 132, 0) 70%),
+      var(--bg);
+    font-family: "Thingport", system-ui, sans-serif;
+    color: var(--text);
+  }
+  .grid {
+    position: absolute; inset: 0;
+    background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px; opacity: 0.25;
+    mask-image: radial-gradient(70% 90% at 25% 40%, #000 0%, transparent 80%);
+  }
+  .copy { position: absolute; left: 72px; top: 72px; width: 520px; }
+  .logo { height: 64px; display: block; }
+  h1 { margin-top: 64px; font-size: 60px; line-height: 1.05; font-weight: 700; color: var(--heading); letter-spacing: -0.01em; }
+  h1 em { font-style: normal; color: var(--accent-light); }
+  p { margin-top: 24px; font-size: 25px; line-height: 1.4; font-weight: 500; }
+  .pills { position: absolute; left: 72px; bottom: 64px; display: flex; gap: 12px; }
+  .pill { padding: 8px 16px; font-size: 20px; font-weight: 500; color: #fff; background: var(--accent); }
+  .pill.alt { background: var(--alt); }
+  .pill.ghost { background: transparent; border: 2px solid var(--border); color: var(--text); padding: 6px 14px; }
+  .shot {
+    position: absolute; left: 650px; top: 92px; width: 860px;
+    border: 1px solid var(--border); background: var(--panel); padding: 10px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45), 0 0 0 8px rgba(0, 184, 0, 0.08);
+  }
+  .shot img { display: block; width: 100%; }
+</style>
+</head>
+<body>
+  <div class="grid"></div>
+  <div class="copy">
+    <img class="logo" src="../../frontend/src/assets/logos/thingport-lockup-compact-on-dark.svg" alt="" />
+    <h1>Your personal <em>3D model</em> library</h1>
+    <p>Free, open-source and self-hosted. Import, preview and organise every model in one place.</p>
+  </div>
+  <div class="pills">
+    <span class="pill">MakerWorld</span>
+    <span class="pill alt">Printables</span>
+    <span class="pill ghost">Thingiverse</span>
+  </div>
+  <div class="shot"><img src="../../frontend/src/assets/screenshots/02_models.png" alt="" /></div>
+</body>
+</html>

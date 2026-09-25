@@ -1,0 +1,52 @@
+name: Wiki
+
+# Regenerates the GitHub wiki from the repo's Markdown (see .github/wiki/build.mjs) and pushes it.
+# The wiki is output only: anything edited there directly is overwritten on the next run.
+# GitHub only creates the wiki's git repo once its first page exists, so create any page in the
+# Wiki tab once before the first run.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "README.md"
+      - "CONTRIBUTING.md"
+      - "docs/**"
+      - "bridge/README.md"
+      - "extension/README.md"
+      - "web/src/lib/site.mjs"
+      - ".github/wiki/**"
+      - ".github/workflows/wiki.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wiki
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: web/.nvmrc
+      - run: node .github/wiki/build.mjs "$RUNNER_TEMP/wiki-out"
+      - name: Push to the wiki
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.wiki.git" "$RUNNER_TEMP/wiki"
+          cd "$RUNNER_TEMP/wiki"
+          git rm -rq --ignore-unmatch .
+          cp "$RUNNER_TEMP"/wiki-out/*.md .
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Wiki is already up to date."
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -qm "Sync from ${{ github.repository }}@${GITHUB_SHA::7}"
+          git push

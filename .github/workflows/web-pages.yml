@@ -4,7 +4,7 @@ name: Website
 # is built from changes: web/ itself, plus the repo docs it renders (docs/, the Grab/Bridge READMEs,
 # CONTRIBUTING.md), the compose/.env files it embeds, and the app's logos/fonts/screenshots.
 # Conversely, every other workflow is path-filtered to its own folder, so a web/-only change
-# triggers this workflow and nothing else.
+# triggers this workflow and nothing else (except web/src/lib/site.mjs, which also drives wiki.yml).
 on:
   push:
     branches: [main]
