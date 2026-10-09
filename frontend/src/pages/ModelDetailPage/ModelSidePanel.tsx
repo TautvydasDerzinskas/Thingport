@@ -7,6 +7,7 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
 import ButtonBase from "@mui/material/ButtonBase";
 import FolderIcon from "@mui/icons-material/Folder";
 import StorageIcon from "@mui/icons-material/Storage";
@@ -16,6 +17,9 @@ import DownloadIcon from "@mui/icons-material/Download";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PrintIcon from "@mui/icons-material/Print";
 import type { Print } from "../../api/prints";
+import { aiCategorizationApi } from "../../api/aiCategorization";
+import { UnauthorizedError } from "../../api/client";
+import { useToast } from "../../components/ToastProvider";
 import type { AuthUser } from "../../api/auth";
 import { useGravatarUrl } from "../../hooks/useGravatarUrl";
 import { dividerBorderColor } from "../../theme";
@@ -43,6 +47,8 @@ type Props = {
 export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized, onUpdated, viewer }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const navigate = useNavigate();
+  const showToast = useToast();
+  const [suggestionBusy, setSuggestionBusy] = useState(false);
   const viewerAvatarUrl = useGravatarUrl(viewer?.email, 56);
   const {
     pickerOpen,
@@ -161,8 +167,77 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
               <Typography variant="body2" fontWeight={600}>
                 {print.category_name}
               </Typography>
+              {print.category_source === "ai" && (
+                <Chip size="small" label={t("models:aiCategorization.byAi")} color="secondary" variant="outlined" />
+              )}
             </ButtonBase>
           </Box>
+        )}
+
+        {print.ai_suggestion && (
+          <Paper variant="outlined" sx={{ p: 1.5, bgcolor: "action.hover" }}>
+            <Stack spacing={1}>
+              <Typography variant="caption" color="text.secondary">
+                {t("models:aiCategorization.suggestionLabel")}
+              </Typography>
+              <Typography variant="body2" fontWeight={600}>
+                {print.ai_suggestion.category_path} · {Math.round(print.ai_suggestion.confidence * 100)}%
+              </Typography>
+              {print.ai_suggestion.reason && (
+                <Typography variant="caption" color="text.secondary">
+                  {print.ai_suggestion.reason}
+                </Typography>
+              )}
+              <Stack direction="row" spacing={1}>
+                <Button
+                  size="small"
+                  variant="contained"
+                  disabled={suggestionBusy}
+                  onClick={() =>
+                    void (async () => {
+                      setSuggestionBusy(true);
+                      try {
+                        const result = await aiCategorizationApi.accept(print.id);
+                        onUpdated?.(result.print);
+                        showToast({ message: t("models:aiCategorization.accepted") });
+                      } catch (err) {
+                        if (err instanceof UnauthorizedError) onUnauthorized?.();
+                        else
+                          showToast({ message: err instanceof Error ? err.message : String(err), severity: "error" });
+                      } finally {
+                        setSuggestionBusy(false);
+                      }
+                    })()
+                  }
+                >
+                  {t("models:aiCategorization.accept")}
+                </Button>
+                <Button
+                  size="small"
+                  color="inherit"
+                  disabled={suggestionBusy}
+                  onClick={() =>
+                    void (async () => {
+                      setSuggestionBusy(true);
+                      try {
+                        const result = await aiCategorizationApi.reject(print.id);
+                        onUpdated?.(result.print);
+                        showToast({ message: t("models:aiCategorization.rejected") });
+                      } catch (err) {
+                        if (err instanceof UnauthorizedError) onUnauthorized?.();
+                        else
+                          showToast({ message: err instanceof Error ? err.message : String(err), severity: "error" });
+                      } finally {
+                        setSuggestionBusy(false);
+                      }
+                    })()
+                  }
+                >
+                  {t("models:aiCategorization.reject")}
+                </Button>
+              </Stack>
+            </Stack>
+          </Paper>
         )}
 
         {typeof print.total_size === "number" && (

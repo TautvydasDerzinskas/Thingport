@@ -124,6 +124,15 @@ export type PrintOut = {
   category_id: string | null;
   // Only populated by the detail fetch; list endpoints skip the join.
   category_name: string | null;
+  category_source: "manual" | "rule" | "ai" | "legacy" | null;
+  ai_suggestion: {
+    category_id: string;
+    category_path: string;
+    confidence: number;
+    reason: string;
+    model: string;
+    created_at: string;
+  } | null;
   created_at: string;
   storage_path: string | null;
   plates: PlateOut[];
@@ -230,6 +239,7 @@ export function toPrintOut(
   author?: Author | null,
   previewImages?: PreviewImage[],
   category?: Category | null,
+  aiSuggestion?: PrintOut["ai_suggestion"],
 ): PrintOut {
   const sortedPlates = plates.toSorted((a, b) => a.position - b.position);
   const plateOuts = sortedPlates.map((p) => toPlateOut(print.id, p));
@@ -285,6 +295,8 @@ export function toPrintOut(
     tags: print.tags,
     category_id: print.categoryId,
     category_name: category?.name ?? null,
+    category_source: print.categorySource ? (print.categorySource.toLowerCase() as PrintOut["category_source"]) : null,
+    ai_suggestion: aiSuggestion ?? null,
     created_at: print.createdAt.toISOString(),
     storage_path: storageParentDir(sortedPlates),
     plates: plateOuts,

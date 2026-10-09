@@ -103,7 +103,10 @@ async function fillEmptyMetadata(
   }
   if (gaps.has("category")) {
     const categoryId = await resolveCategoryIdByCategory(userId, meta.categorySite, meta.siteCategoryIds);
-    if (categoryId) updates.category = { connect: { id: categoryId } };
+    if (categoryId) {
+      updates.category = { connect: { id: categoryId } };
+      updates.categorySource = "RULE";
+    }
   }
   if (Object.keys(updates).length) await prisma.print.update({ where: { id: print.id }, data: updates });
 }

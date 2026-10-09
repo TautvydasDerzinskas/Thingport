@@ -11,6 +11,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { modelUpload } from "../uploadMiddleware";
 import { createPrint, deletePlateFiles, resolvePlateFilePath, type NewPlateInput } from "../services/printCreation";
 import { plateThumbPath, relocatePrint, relocatePrintsForToken, uniqueModelName } from "../services/printService";
+import { setPrintCategory } from "../services/printCategoryService";
 import { previewImagePath, deleteAllPreviewImages } from "../services/previewImageService";
 import {
   deleteAllDescriptionImages,
@@ -124,6 +125,7 @@ router.post(
         notes: body.notes || null,
         tags,
         categoryId: body.category_id || null,
+        categorySource: body.category_id ? ("MANUAL" as const) : null,
       };
 
       const printsOut = [];
@@ -552,27 +554,21 @@ router.post(
   "/print/:id/category",
   asyncHandler(async (req, res) => {
     const body = parseBody(categoryUpdateSchema, req.body);
-    const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
-    if (!print) throw new HttpError(404, "Print not found");
-    const categoryId = body.category_id || null;
-    const data: Prisma.PrintUpdateInput = {};
-    if (categoryId) {
-      const category = await prisma.category.findFirst({ where: { id: categoryId, userId: req.userId } });
-      if (!category) throw new HttpError(400, "Category not found");
-      await uniqueModelName(req.userId!, print.name, category.id, print.id);
-      data.category = { connect: { id: category.id } };
-    } else {
-      await uniqueModelName(req.userId!, print.name, null, print.id);
-      data.category = { disconnect: true };
-    }
-    const updated = await prisma.print.update({ where: { id: print.id }, data });
-    const plates = await prisma.plate.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } });
-    await relocatePrint(updated, plates);
-    res.json({ print: await printOutById(req.userId!, print.id) });
+    const updated = await setPrintCategory(
+      req.userId!,
+      req.params.id,
+      body.category_id || null,
+      body.category_id ? "MANUAL" : null,
+      {
+        clearSuggestion: true,
+      },
+    );
+    if (!updated) throw new HttpError(409, "Category changed concurrently");
+    res.json({ print: await printOutById(req.userId!, updated.id) });
     void createLog({
       userId: req.userId!,
       action: "model_edited",
-      targetId: print.id,
+      targetId: updated.id,
       details: { field: "category", name: updated.name },
     });
   }),

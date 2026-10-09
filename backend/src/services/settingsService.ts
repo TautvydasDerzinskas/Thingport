@@ -157,6 +157,78 @@ export async function setSmtpSettings(patch: Partial<SmtpSettings>): Promise<Smt
   return next;
 }
 
+export type AiCategorizationMode = "off" | "suggest" | "auto";
+export type AiCategorizationSettings = {
+  mode: AiCategorizationMode;
+  baseUrl: string | null;
+  apiKey: string | null;
+  model: string | null;
+  threshold: number;
+  onImport: boolean;
+  concurrency: number;
+  sendImage: boolean;
+  timeoutMs: number;
+};
+
+const AI_CATEGORIZATION_KEY = "ai_categorization";
+export const DEFAULT_AI_CATEGORIZATION_SETTINGS: AiCategorizationSettings = {
+  mode: "off",
+  baseUrl: null,
+  apiKey: null,
+  model: null,
+  threshold: 0.8,
+  onImport: true,
+  concurrency: 1,
+  sendImage: false,
+  timeoutMs: 60000,
+};
+
+function validAiSettings(value: unknown): Partial<AiCategorizationSettings> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const raw = value as Record<string, unknown>;
+  return {
+    ...(raw.mode === "off" || raw.mode === "suggest" || raw.mode === "auto" ? { mode: raw.mode } : {}),
+    ...(typeof raw.baseUrl === "string" || raw.baseUrl === null ? { baseUrl: raw.baseUrl?.trim() || null } : {}),
+    ...(typeof raw.apiKey === "string" || raw.apiKey === null ? { apiKey: raw.apiKey?.trim() || null } : {}),
+    ...(typeof raw.model === "string" || raw.model === null ? { model: raw.model?.trim() || null } : {}),
+    ...(typeof raw.threshold === "number" && raw.threshold >= 0 && raw.threshold <= 1
+      ? { threshold: raw.threshold }
+      : {}),
+    ...(typeof raw.onImport === "boolean" ? { onImport: raw.onImport } : {}),
+    ...(typeof raw.concurrency === "number" &&
+    Number.isInteger(raw.concurrency) &&
+    raw.concurrency >= 1 &&
+    raw.concurrency <= 4
+      ? { concurrency: raw.concurrency }
+      : {}),
+    ...(typeof raw.sendImage === "boolean" ? { sendImage: raw.sendImage } : {}),
+    ...(typeof raw.timeoutMs === "number" && Number.isInteger(raw.timeoutMs) && raw.timeoutMs > 0
+      ? { timeoutMs: raw.timeoutMs }
+      : {}),
+  };
+}
+
+export async function getAiCategorizationSettings(): Promise<AiCategorizationSettings> {
+  const row = await prisma.setting.findUnique({ where: { key: AI_CATEGORIZATION_KEY } });
+  return { ...DEFAULT_AI_CATEGORIZATION_SETTINGS, ...validAiSettings(row?.value) };
+}
+
+export async function setAiCategorizationSettings(
+  patch: Partial<AiCategorizationSettings>,
+): Promise<AiCategorizationSettings> {
+  const next = { ...(await getAiCategorizationSettings()), ...patch };
+  await prisma.setting.upsert({
+    where: { key: AI_CATEGORIZATION_KEY },
+    create: { key: AI_CATEGORIZATION_KEY, value: next as unknown as Prisma.InputJsonValue },
+    update: { value: next as unknown as Prisma.InputJsonValue },
+  });
+  return next;
+}
+
+export function aiCategorizationEnabled(settings: AiCategorizationSettings): boolean {
+  return settings.mode !== "off" && Boolean(settings.baseUrl && settings.model);
+}
+
 const AUTH_TOKEN_TTL_KEY = "auth_token_ttl_seconds";
 const DEFAULT_AUTH_TOKEN_TTL_SECONDS = 43200;
 

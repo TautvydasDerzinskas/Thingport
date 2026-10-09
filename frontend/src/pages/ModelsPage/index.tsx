@@ -20,6 +20,7 @@ import CategoriesViewToggle from "./CategoriesViewToggle";
 import CategoryBanner from "./CategoryBanner";
 import ModelCard from "./ModelCard";
 import SortTabs from "./SortTabs";
+import AiCategorizationControls from "./AiCategorizationControls";
 
 const PAGE_SIZE = 24;
 
@@ -260,6 +261,10 @@ export default function ModelsPage({
         <CategoriesViewToggle value={categoriesView} onChange={switchCategoriesView} />
         <SortTabs value={sortMode} onChange={setSortMode} />
       </Box>
+      <AiCategorizationControls
+        onUnauthorized={onUnauthorized}
+        onPrintUpdated={(updated) => setItems((prev) => prev.map((item) => (item.id === updated.id ? updated : item)))}
+      />
       <Stack direction="row" spacing={2} alignItems="flex-start">
         <CategoriesPanel
           kind={panelKind}

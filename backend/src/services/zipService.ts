@@ -169,6 +169,7 @@ export async function extractZipEntriesToPrints(
         notes: options.notes ?? null,
         tags: options.tags ?? [],
         categoryId: targetCategoryId,
+        categorySource: targetCategoryId ? "MANUAL" : null,
         creator: options.creator ?? null,
         authorId: options.authorId ?? null,
       };

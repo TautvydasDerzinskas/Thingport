@@ -20,7 +20,8 @@ import { generateModelPreviewGlb } from "./modelPreviewCache";
 import { deleteNormalized3mf } from "./normalized3mfCache";
 import { getPreviewMode } from "./settingsService";
 import { Prisma } from "@prisma/client";
-import type { Plate, Print } from "@prisma/client";
+import type { CategorySource, Plate, Print } from "@prisma/client";
+import { enqueueAiCategorization } from "./aiCategorizationService";
 
 const IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".webp", ".bmp"]);
 
@@ -41,6 +42,7 @@ export type PrintMetaInput = {
   notes?: string | null;
   tags?: string[];
   categoryId?: string | null;
+  categorySource?: CategorySource | null;
   creator?: string | null;
   authorId?: string | null;
   /** Backs de-duplication of future imports of the same source model. */
@@ -180,6 +182,7 @@ export async function createPrint(
       creator: meta.creator?.trim() || null,
       tags: normalizeTags(meta.tags || []),
       categoryId: meta.categoryId ?? null,
+      categorySource: meta.categoryId ? (meta.categorySource ?? "MANUAL") : null,
       authorId: meta.authorId ?? null,
       sourceProvider: meta.sourceProvider ?? null,
       sourceExternalId: meta.sourceExternalId ?? null,
@@ -209,6 +212,9 @@ export async function createPrint(
       }
     }
 
+    // Background classification is intentionally detached: importing a model must not wait for,
+    // or fail because of, a third-party AI provider.
+    if (!print.categoryId) void enqueueAiCategorization(userId, print.id);
     return { print, plates };
   } catch (err) {
     await discardPrint(print.id);

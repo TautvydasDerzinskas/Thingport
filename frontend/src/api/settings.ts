@@ -1,6 +1,7 @@
 import { authHeaders } from "../utils/auth";
 import { apiBase, assertOk, readErrorMessage, UnauthorizedError } from "./client";
 import type { ThemeSelection } from "../constants/settingsOptions";
+import { invalidateAiCategorizationStatus } from "./aiCategorization";
 
 export type StorageSettings = {
   template: string;
@@ -48,6 +49,22 @@ export type AuthSettings = {
   token_ttl_seconds: number;
 };
 
+export type AiCategorizationSettings = {
+  mode: "off" | "suggest" | "auto";
+  base_url: string | null;
+  model: string | null;
+  has_api_key: boolean;
+  threshold: number;
+  on_import: boolean;
+  concurrency: number;
+  send_image: boolean;
+  timeout_ms: number;
+};
+
+export type AiCategorizationSettingsInput = Partial<Omit<AiCategorizationSettings, "has_api_key">> & {
+  api_key?: string | null;
+};
+
 export type SmtpSettings = {
   host: string | null;
   port: number;
@@ -91,6 +108,35 @@ export type VersionCheck = {
 export const FRONTEND_GIT_SHA: string | null = (import.meta.env.VITE_GIT_SHA as string | undefined) || null;
 
 export const settingsApi = {
+  getAiCategorization: async (): Promise<AiCategorizationSettings> => {
+    const res = await fetch(`${apiBase()}/settings/ai-categorization`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    assertOk(res, "Failed to load AI categorization settings");
+    return res.json();
+  },
+
+  updateAiCategorization: async (payload: AiCategorizationSettingsInput): Promise<AiCategorizationSettings> => {
+    const res = await fetch(`${apiBase()}/settings/ai-categorization`, {
+      method: "PATCH",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update AI categorization settings"));
+    invalidateAiCategorizationStatus();
+    return res.json();
+  },
+
+  testAiCategorization: async (): Promise<{ ok: boolean; latency_ms?: number; model?: string; error?: string }> => {
+    const res = await fetch(`${apiBase()}/settings/ai-categorization/test`, {
+      method: "POST",
+      headers: authHeaders(),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to test AI connection"));
+    return res.json();
+  },
+
   getVersionCheck: async (): Promise<VersionCheck> => {
     const res = await fetch(`${apiBase()}/settings/version-check`, { headers: authHeaders() });
     assertOk(res, "Failed to check for updates");

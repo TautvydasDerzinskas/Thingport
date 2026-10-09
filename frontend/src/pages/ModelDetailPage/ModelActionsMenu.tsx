@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import IconButton from "@mui/material/IconButton";
@@ -17,10 +17,13 @@ import PlaylistAddIcon from "@mui/icons-material/PlaylistAdd";
 import PlaylistRemoveIcon from "@mui/icons-material/PlaylistRemove";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import LaunchIcon from "@mui/icons-material/Launch";
 import type { SxProps, Theme } from "@mui/material/styles";
 import { UnauthorizedError } from "../../api/client";
-import { type Print, printsApi } from "../../api/prints";
+import { type Print, PrintApiError, printsApi } from "../../api/prints";
+import { aiCategorizationApi } from "../../api/aiCategorization";
+import { useToast } from "../../components/ToastProvider";
 import type { AuthUser } from "../../api/auth";
 import { collectionsApi } from "../../api/collections";
 import { useConfirm } from "../../components/ConfirmProvider";
@@ -63,6 +66,23 @@ export default function ModelActionsMenu({
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const confirmDialog = useConfirm();
+  const showToast = useToast();
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [recategorizing, setRecategorizing] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void aiCategorizationApi
+      .status()
+      .then((status) => {
+        if (active) setAiEnabled(status.enabled);
+      })
+      .catch((err: unknown) => {
+        if (err instanceof UnauthorizedError) onUnauthorized?.();
+      });
+    return () => {
+      active = false;
+    };
+  }, [onUnauthorized]);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -151,6 +171,34 @@ export default function ModelActionsMenu({
     }
   };
 
+  const recategorize = async (force = false) => {
+    closeMenu();
+    setRecategorizing(true);
+    try {
+      const result = await printsApi.recategorize(print.id, force);
+      onUpdated?.(result.print);
+      showToast({ message: t(`models:aiCategorization.outcome.${result.outcome}`) });
+    } catch (err) {
+      if (err instanceof UnauthorizedError) onUnauthorized?.();
+      else if (err instanceof PrintApiError && err.code === "manual_category" && !force) {
+        const confirmed = await confirmDialog({
+          message: t("models:aiCategorization.confirmManual", { name: print.title || print.name }),
+          confirmLabel: t("models:aiCategorization.recategorize"),
+        });
+        if (confirmed) await recategorize(true);
+      } else if (err instanceof PrintApiError && err.code === "folder") {
+        showToast({ message: t("models:aiCategorization.folderSkipped"), severity: "warning" });
+      } else {
+        showToast({
+          message: err instanceof Error ? err.message : t("models:aiCategorization.failed"),
+          severity: "error",
+        });
+      }
+    } finally {
+      setRecategorizing(false);
+    }
+  };
+
   const providerInfo = importProviderInfo(print.source_provider);
   const { slicerOption, targets: slicerTargets, normalizedTargets } = useOpenInSlicer(print);
   const openInSlicerHref = slicerTargets.length === 1 ? slicerTargets[0].href : undefined;
@@ -215,6 +263,14 @@ export default function ModelActionsMenu({
           </ListItemIcon>
           <ListItemText>{t("common:edit")}</ListItemText>
         </MenuItem>
+        {aiEnabled && (
+          <MenuItem onClick={() => void recategorize()} disabled={recategorizing}>
+            <ListItemIcon>
+              {recategorizing ? <CircularProgress size={18} /> : <AutoAwesomeIcon fontSize="small" />}
+            </ListItemIcon>
+            <ListItemText>{t("models:aiCategorization.recategorize")}</ListItemText>
+          </MenuItem>
+        )}
         <MenuItem onClick={handleDelete}>
           <ListItemIcon>
             <DeleteIcon fontSize="small" color="error" />

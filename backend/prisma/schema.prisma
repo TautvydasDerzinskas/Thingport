@@ -12,6 +12,13 @@ enum Role {
   MEMBER
 }
 
+enum CategorySource {
+  MANUAL
+  RULE
+  AI
+  LEGACY
+}
+
 model User {
   id                       String           @id @default(cuid())
   email                    String           @unique
@@ -108,43 +115,48 @@ model Category {
 }
 
 model Print {
-  id                String                   @id @default(cuid())
-  userId            String
-  user              User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name              String
-  nameNormalized    String
-  title             String?
-  notes             String?
-  creator           String?
-  tags              String[]                 @default([])
-  viewCount         Int                      @default(0)
-  printCount        Int                      @default(0)
+  id                    String                   @id @default(cuid())
+  userId                String
+  user                  User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                  String
+  nameNormalized        String
+  title                 String?
+  notes                 String?
+  creator               String?
+  tags                  String[]                 @default([])
+  viewCount             Int                      @default(0)
+  printCount            Int                      @default(0)
   // Back the Favourites and Browsing History pseudo-collections.
-  favoritedAt       DateTime?
-  lastViewedAt      DateTime?
+  favoritedAt           DateTime?
+  lastViewedAt          DateTime?
   // Dedupes re-imports of the same design. Null for uploads and unidentifiable sources.
-  sourceProvider    String?
-  sourceExternalId  String?
+  sourceProvider        String?
+  sourceExternalId      String?
   // Gaps (see services/sourceGaps.ts) the source had nothing for at the last fill.
-  unfillableGaps    String[]                 @default([])
-  categoryId        String?
-  category          Category?                @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  authorId          String?
-  author            Author?                  @relation(fields: [authorId], references: [id], onDelete: SetNull)
-  sourcePath        String?
-  plates            Plate[]
-  previewImages     PreviewImage[]
-  descriptionImages DescriptionImage[]
-  files             PrintFile[]              @relation("PrintFiles")
-  preparedFileId    String?                  @unique
-  preparedFile      PrintFile?               @relation("PreparedFile", fields: [preparedFileId], references: [id], onDelete: SetNull)
-  preparedMetadata  Json?
-  collectionItems   CollectionItem[]
-  createdAt         DateTime                 @default(now())
-  updatedAt         DateTime                 @updatedAt
+  unfillableGaps        String[]                 @default([])
+  categoryId            String?
+  category              Category?                @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categorySource        CategorySource?
+  // A provider result awaiting the owner's review: { categoryId, confidence, reason, model, createdAt }.
+  aiSuggestion          Json?
+  // A rejected category is never offered to the provider for this model again.
+  aiRejectedCategoryIds String[]                 @default([])
+  authorId              String?
+  author                Author?                  @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  sourcePath            String?
+  plates                Plate[]
+  previewImages         PreviewImage[]
+  descriptionImages     DescriptionImage[]
+  files                 PrintFile[]              @relation("PrintFiles")
+  preparedFileId        String?                  @unique
+  preparedFile          PrintFile?               @relation("PreparedFile", fields: [preparedFileId], references: [id], onDelete: SetNull)
+  preparedMetadata      Json?
+  collectionItems       CollectionItem[]
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
   // Generated column (name A, tags B, notes C, creator D) created with its GIN index in a
   // hand-written migration, since Prisma can't express a generated tsvector.
-  searchVector      Unsupported("tsvector")?
+  searchVector          Unsupported("tsvector")?
 
   @@unique([userId, categoryId, nameNormalized])
   @@unique([userId, sourceProvider, sourceExternalId])

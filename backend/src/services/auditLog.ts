@@ -23,7 +23,8 @@ export type LogAction =
   | "collection_item_added"
   | "collection_item_removed"
   | "collection_sync_enabled"
-  | "collection_sync_disabled";
+  | "collection_sync_disabled"
+  | "ai_categorization_run";
 
 /** Fire-and-forget: a logging failure must never break the action it records. */
 export async function createLog(params: {

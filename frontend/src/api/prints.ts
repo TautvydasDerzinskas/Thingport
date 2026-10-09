@@ -62,6 +62,15 @@ export type Print = {
   tags: string[];
   category_id?: string | null;
   category_name?: string | null;
+  category_source?: "manual" | "rule" | "ai" | "legacy" | null;
+  ai_suggestion?: {
+    category_id: string;
+    category_path: string;
+    confidence: number;
+    reason: string;
+    model: string;
+    created_at: string;
+  } | null;
   created_at: string;
   storage_path?: string | null;
   plates: Plate[]; // ordered by position, length >= 1
@@ -105,6 +114,17 @@ export type FillGapsResult = {
 };
 
 export type PrintSortMode = "newest" | "popular" | "downloads";
+
+export class PrintApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly code: string | null,
+  ) {
+    super(message);
+    this.name = "PrintApiError";
+  }
+}
 
 /** Filters combine with AND. */
 export type DownloadZipFilter = {
@@ -369,6 +389,33 @@ export const printsApi = {
   },
 
   /** Fills the model's empty details and images from its source; never overwrites an edit. */
+  recategorize: async (
+    id: string,
+    force = false,
+  ): Promise<{ print: Print; outcome: "applied" | "suggested" | "no_match" | "unchanged" }> => {
+    const res = await fetch(`${apiBase()}/print/${id}/recategorize`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ force }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) {
+      let body: unknown;
+      try {
+        body = await res.json();
+      } catch {
+        body = null;
+      }
+      const record = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
+      throw new PrintApiError(
+        typeof record.error === "string" ? record.error : `AI recategorization failed (${res.status})`,
+        res.status,
+        typeof record.code === "string" ? record.code : null,
+      );
+    }
+    return res.json();
+  },
+
   fillGaps: async (id: string): Promise<FillGapsResult> => {
     const res = await fetch(`${apiBase()}/print/${id}/fill-gaps`, { method: "POST", headers: authHeaders() });
     if (res.status === 401) throw new UnauthorizedError();

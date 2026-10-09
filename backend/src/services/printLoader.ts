@@ -1,6 +1,7 @@
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { toPrintOut, type PrintOut } from "../dto";
+import { aiCategoryPaths, aiSuggestionOut } from "./aiCategorizationService";
 import type { Author, Category, Plate, PreviewImage, Print, PrintFile } from "@prisma/client";
 
 export type FullPrint = {
@@ -29,7 +30,7 @@ export async function loadFullPrint(userId: string, printId: string): Promise<Fu
 }
 
 export async function printOutById(userId: string, printId: string): Promise<PrintOut> {
-  const full = await loadFullPrint(userId, printId);
+  const [full, categoryPaths] = await Promise.all([loadFullPrint(userId, printId), aiCategoryPaths(userId)]);
   return toPrintOut(
     full.print,
     full.plates,
@@ -38,6 +39,7 @@ export async function printOutById(userId: string, printId: string): Promise<Pri
     full.print.author,
     full.previewImages,
     full.print.category,
+    await aiSuggestionOut(userId, full.print.aiSuggestion, categoryPaths),
   );
 }
 
@@ -55,11 +57,12 @@ function groupByPrintId<T extends { printId: string }>(rows: T[]): Map<string, T
 export async function printOutsByIds(userId: string, printIds: string[]): Promise<Map<string, PrintOut>> {
   const out = new Map<string, PrintOut>();
   if (!printIds.length) return out;
-  const [prints, plates, files, previewImages] = await Promise.all([
+  const [prints, plates, files, previewImages, categoryPaths] = await Promise.all([
     prisma.print.findMany({ where: { id: { in: printIds }, userId }, include: { author: true, category: true } }),
     prisma.plate.findMany({ where: { printId: { in: printIds } }, orderBy: { position: "asc" } }),
     prisma.printFile.findMany({ where: { printId: { in: printIds } } }),
     prisma.previewImage.findMany({ where: { printId: { in: printIds } }, orderBy: { position: "asc" } }),
+    aiCategoryPaths(userId),
   ]);
   const platesByPrint = groupByPrintId(plates);
   const filesByPrint = groupByPrintId(files);
@@ -78,6 +81,7 @@ export async function printOutsByIds(userId: string, printIds: string[]): Promis
         previewsByPrint.get(print.id) || [],
         // The search palette shows it under each model.
         print.category,
+        await aiSuggestionOut(userId, print.aiSuggestion, categoryPaths),
       ),
     );
   }

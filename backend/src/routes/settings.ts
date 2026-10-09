@@ -19,6 +19,8 @@ import {
   setSmtpSettings,
   setThingiverseAccessToken,
   type SmtpSettings,
+  getAiCategorizationSettings,
+  setAiCategorizationSettings,
 } from "../services/settingsService";
 import { getDatabaseInfo, testAndSwitchDatabase } from "../services/databaseSettingsService";
 import {
@@ -49,6 +51,7 @@ import { THEME_SELECTIONS, getUserTheme, setUserTheme } from "../services/themeP
 import { getUserAuthorPreviewEnabled, setUserAuthorPreviewEnabled } from "../services/authorPreviewPreferenceService";
 import { checkForUpdates } from "../services/versionService";
 import { dropPreviewsAffectedBySimplification } from "../services/modelPreviewCache";
+import { testAiCategorizationProvider } from "../services/aiCategorizationService";
 
 const router = Router();
 router.use(requireAuth);
@@ -457,6 +460,70 @@ router.patch(
   asyncHandler(async (req, res) => {
     const body = parseBody(authorPreviewSettingsSchema, req.body);
     res.json({ enabled: await setUserAuthorPreviewEnabled(req.userId!, body.enabled) });
+  }),
+);
+
+function aiCategorizationSettingsOut(settings: Awaited<ReturnType<typeof getAiCategorizationSettings>>) {
+  return {
+    mode: settings.mode,
+    base_url: settings.baseUrl,
+    model: settings.model,
+    has_api_key: Boolean(settings.apiKey),
+    threshold: settings.threshold,
+    on_import: settings.onImport,
+    concurrency: settings.concurrency,
+    send_image: settings.sendImage,
+    timeout_ms: settings.timeoutMs,
+  };
+}
+
+router.get(
+  "/settings/ai-categorization",
+  requireAdmin,
+  asyncHandler(async (_req, res) => {
+    res.json(aiCategorizationSettingsOut(await getAiCategorizationSettings()));
+  }),
+);
+
+const aiCategorizationSettingsSchema = z
+  .object({
+    mode: z.enum(["off", "suggest", "auto"]).optional(),
+    base_url: z.string().trim().nullable().optional(),
+    api_key: z.string().nullable().optional(),
+    model: z.string().trim().nullable().optional(),
+    threshold: z.number().min(0).max(1).optional(),
+    on_import: z.boolean().optional(),
+    concurrency: z.number().int().min(1).max(4).optional(),
+    send_image: z.boolean().optional(),
+    timeout_ms: z.number().int().min(1).max(300000).optional(),
+  })
+  .strict();
+router.patch(
+  "/settings/ai-categorization",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const body = parseBody(aiCategorizationSettingsSchema, req.body);
+    const settings = await setAiCategorizationSettings({
+      ...(body.mode !== undefined ? { mode: body.mode } : {}),
+      ...(body.base_url !== undefined ? { baseUrl: body.base_url?.replace(/\/+$/, "") || null } : {}),
+      ...(body.api_key !== undefined ? { apiKey: body.api_key } : {}),
+      ...(body.model !== undefined ? { model: body.model } : {}),
+      ...(body.threshold !== undefined ? { threshold: body.threshold } : {}),
+      ...(body.on_import !== undefined ? { onImport: body.on_import } : {}),
+      ...(body.concurrency !== undefined ? { concurrency: body.concurrency } : {}),
+      ...(body.send_image !== undefined ? { sendImage: body.send_image } : {}),
+      ...(body.timeout_ms !== undefined ? { timeoutMs: body.timeout_ms } : {}),
+    });
+    res.json(aiCategorizationSettingsOut(settings));
+  }),
+);
+
+router.post(
+  "/settings/ai-categorization/test",
+  requireAdmin,
+  asyncHandler(async (_req, res) => {
+    const result = await testAiCategorizationProvider();
+    res.json(result.ok ? { ok: true, latency_ms: result.latencyMs, model: result.model } : result);
   }),
 );
 

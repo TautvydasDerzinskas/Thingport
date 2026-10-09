@@ -220,7 +220,10 @@ export async function consumeFolder(dir = CONSUME_DIR): Promise<ConsumeSummary |
       const filename = sanitizeFilename(path.basename(item.rel));
       const { print } = await createPrint(
         userId,
-        { categoryId: await categoryFor(foldersOf(item.rel)) },
+        {
+          categoryId: await categoryFor(foldersOf(item.rel)),
+          categorySource: "MANUAL",
+        },
         path.parse(filename).name,
         [{ filename, mime: guessMimeFromPath(filename), copyFromPath: item.path }],
       );
@@ -250,7 +253,11 @@ export async function consumeFolder(dir = CONSUME_DIR): Promise<ConsumeSummary |
       });
       const { print, plates: created } = await createPrint(
         userId,
-        { title: name, categoryId: await categoryFor(folders.slice(0, -1)) },
+        {
+          title: name,
+          categoryId: await categoryFor(folders.slice(0, -1)),
+          categorySource: "MANUAL",
+        },
         name,
         inputs,
       );

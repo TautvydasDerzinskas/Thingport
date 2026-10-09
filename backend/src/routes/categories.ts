@@ -244,7 +244,7 @@ router.delete(
     const prints = await prisma.print.findMany({ where: { categoryId: category.id, userId: req.userId } });
     for (const print of prints) {
       const nextName = await availableModelName(req.userId!, print.name, null, print.id);
-      const data: Prisma.PrintUpdateInput = { category: { disconnect: true } };
+      const data: Prisma.PrintUpdateInput = { category: { disconnect: true }, categorySource: null };
       if (nextName !== print.name) {
         data.name = nextName;
         data.nameNormalized = nextName.trim().toLowerCase();
