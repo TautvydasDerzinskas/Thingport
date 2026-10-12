@@ -301,7 +301,10 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
           )}
 
           {needsGeneratedPreview && firstPlate && (
-            <Box sx={{ position: "absolute", width: 1, height: 1, overflow: "hidden", opacity: 0 }} aria-hidden="true">
+            <Box
+              sx={{ position: "absolute", width: 1, height: 1, overflow: "hidden", opacity: 0, pointerEvents: "none" }}
+              aria-hidden="true"
+            >
               <ModelSnapshot
                 url={printsApi.fileUrl(firstPlate.url)}
                 ext={extOf(firstPlate.filename)}
