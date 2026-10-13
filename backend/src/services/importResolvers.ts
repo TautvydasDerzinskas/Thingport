@@ -536,13 +536,15 @@ export function extractPageMetadata(html: string, pageHost: string): ImportedPag
   return meta;
 }
 
-/** The profile named in the URL hash (if the design has it), then the default, then the first. */
-function makerworldInstanceIdFromNextData(data: unknown, requestedInstanceId: string | null): string | null {
+/** The profile named in the URL hash (if the design has it), then the default (if the design still
+ *  has it), then the first. MakerWorld can leave `defaultInstanceId` pointing at a deleted profile,
+ *  whose download answers 403 "The client does not have access rights to the content." */
+export function makerworldInstanceIdFromNextData(data: unknown, requestedInstanceId: string | null): string | null {
   const design = getPath(data, "props", "pageProps", "design") as Record<string, unknown> | undefined;
   if (!design) return null;
   if (requestedInstanceId && makerworldDesignHasInstance(design, requestedInstanceId)) return requestedInstanceId;
   const defaultInstance = design.defaultInstanceId;
-  if (defaultInstance) return String(defaultInstance);
+  if (defaultInstance && makerworldDesignHasInstance(design, String(defaultInstance))) return String(defaultInstance);
   const instances = design.instances;
   if (Array.isArray(instances)) {
     for (const inst of instances) {

@@ -100,12 +100,16 @@ export async function loadMakerworldCollectionTotal(pageUrl: string): Promise<nu
   );
 }
 
-/** The requested profile (if the design has it), then the default, then the first. */
+/** The requested profile (if the design has it), then the default (if the design still has it),
+ *  then the first. MakerWorld can leave `defaultInstanceId` pointing at a profile that was since
+ *  deleted, and asking for that one's download answers 403 "The client does not have access rights
+ *  to the content." */
 export function pickMakerworldInstanceId(design: MakerworldDesign, requestedInstanceId: string | null): string | null {
   const instances = Array.isArray(design.instances) ? design.instances.filter((inst) => inst && inst.id) : [];
-  if (requestedInstanceId && instances.some((inst) => String(inst.id) === requestedInstanceId))
-    return requestedInstanceId;
-  if (design.defaultInstanceId) return String(design.defaultInstanceId);
+  const has = (id: string) => instances.some((inst) => String(inst.id) === id);
+  if (requestedInstanceId && has(requestedInstanceId)) return requestedInstanceId;
+  const defaultId = design.defaultInstanceId ? String(design.defaultInstanceId) : null;
+  if (defaultId && has(defaultId)) return defaultId;
   return instances.length ? String(instances[0].id) : null;
 }
 
