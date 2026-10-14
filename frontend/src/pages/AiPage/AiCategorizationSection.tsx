@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import FormControl from "@mui/material/FormControl";
@@ -12,19 +13,21 @@ import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import { UnauthorizedError } from "../../api/client";
 import { settingsApi, type AiCategorizationSettings } from "../../api/settings";
 import SectionHeader from "../../components/SectionHeader";
 
 type Props = { onUnauthorized?: () => void };
-type Draft = Pick<AiCategorizationSettings, "mode" | "threshold" | "on_import" | "send_image">;
-const defaults: Draft = { mode: "off", threshold: 0.8, on_import: true, send_image: false };
+type Draft = Pick<AiCategorizationSettings, "mode" | "threshold" | "on_import" | "send_image" | "thinking">;
+const defaults: Draft = { mode: "off", threshold: 0.8, on_import: true, send_image: false, thinking: true };
 
 const pick = (settings: AiCategorizationSettings): Draft => ({
   mode: settings.mode,
   threshold: settings.threshold,
   on_import: settings.on_import,
   send_image: settings.send_image,
+  thinking: settings.thinking,
 });
 
 export default function AiCategorizationSection({ onUnauthorized }: Props) {
@@ -123,6 +126,23 @@ export default function AiCategorizationSection({ onUnauthorized }: Props) {
               />
             }
             label={t("adminSettings.aiCategorization.sendImage")}
+          />
+          <FormControlLabel
+            control={
+              <Switch
+                checked={draft.thinking}
+                onChange={(event) => update("thinking", event.target.checked)}
+                disabled={loading || saving}
+              />
+            }
+            label={
+              <Box>
+                <Typography variant="body2">{t("adminSettings.aiCategorization.thinking")}</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {t("adminSettings.aiCategorization.thinkingHint")}
+                </Typography>
+              </Box>
+            }
           />
           <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
             <Button variant="contained" onClick={() => void save()} disabled={loading || saving}>

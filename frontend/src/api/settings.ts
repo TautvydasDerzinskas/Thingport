@@ -67,6 +67,7 @@ export type AiCategorizationSettings = {
   on_import: boolean;
   concurrency: number;
   send_image: boolean;
+  thinking: boolean;
   timeout_ms: number;
 };
 

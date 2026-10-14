@@ -125,6 +125,7 @@ export type PrintOut = {
   // Only populated by the detail fetch; list endpoints skip the join.
   category_name: string | null;
   category_source: "manual" | "rule" | "ai" | "legacy" | null;
+  category_kind: "category" | "folder" | null;
   ai_suggestion: {
     category_id: string;
     category_path: string;
@@ -296,6 +297,7 @@ export function toPrintOut(
     category_id: print.categoryId,
     category_name: category?.name ?? null,
     category_source: print.categorySource ? (print.categorySource.toLowerCase() as PrintOut["category_source"]) : null,
+    category_kind: category ? (category.kind as PrintOut["category_kind"]) : null,
     ai_suggestion: aiSuggestion ?? null,
     created_at: print.createdAt.toISOString(),
     storage_path: storageParentDir(sortedPlates),

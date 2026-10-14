@@ -13,6 +13,7 @@ import {
   cancelAiCategorizationRun,
   categorizePrint,
   currentAiCategorizationRun,
+  queueAiCategorization,
   rejectAiSuggestion,
   startAiCategorizationRun,
   type AiCategorizationRun,
@@ -33,6 +34,7 @@ function runOut(run: AiCategorizationRun | null) {
     applied: run.applied,
     suggested: run.suggested,
     no_match: run.noMatch,
+    unchanged: run.unchanged,
     failed: run.failed,
     cancelled: run.cancelled,
     last_error: run.lastError,
@@ -55,14 +57,20 @@ router.get(
   }),
 );
 
-const recategorizeSchema = z.object({ force: z.boolean().optional() });
+// `background` answers 202 at once and reports the outcome as a notification; without it the request waits.
+const recategorizeSchema = z.object({ force: z.boolean().optional(), background: z.boolean().optional() });
 router.post(
   "/print/:id/recategorize",
   asyncHandler(async (req, res) => {
     const body = parseBody(recategorizeSchema, req.body);
+    if (body.background) {
+      await queueAiCategorization(req.userId!, req.params.id, { force: body.force });
+      res.status(202).json({ queued: true });
+      return;
+    }
     let outcome;
     try {
-      outcome = await categorizePrint(req.userId!, req.params.id, body);
+      outcome = await categorizePrint(req.userId!, req.params.id, { force: body.force, folders: true });
     } catch (error) {
       aiFailure(error);
     }
@@ -145,7 +153,13 @@ router.get(
   }),
 );
 
-const runSchema = z.object({ include_ai: z.boolean(), include_rule: z.boolean(), include_legacy: z.boolean() });
+const runSchema = z.object({
+  include_uncategorized: z.boolean(),
+  include_folders: z.boolean(),
+  include_ai: z.boolean(),
+  include_rule: z.boolean(),
+  include_manual: z.boolean(),
+});
 router.post(
   "/ai-categorization/run",
   asyncHandler(async (req, res) => {
@@ -153,9 +167,11 @@ router.post(
     if (!aiCategorizationEnabled(settings)) throw new HttpError(503, "AI categorization is disabled", "ai_disabled");
     const body = parseBody(runSchema, req.body);
     const run = startAiCategorizationRun(req.userId!, {
-      includeAi: body.include_ai,
-      includeRule: body.include_rule,
-      includeLegacy: body.include_legacy,
+      uncategorized: body.include_uncategorized,
+      folders: body.include_folders,
+      ai: body.include_ai,
+      rule: body.include_rule,
+      manual: body.include_manual,
     });
     if (!run) throw new HttpError(409, "AI categorization run is already active", "running");
     res.status(202).json({ run: runOut(run) });

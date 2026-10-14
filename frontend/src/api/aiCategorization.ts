@@ -22,16 +22,22 @@ export type AiRun = {
   applied: number;
   suggested: number;
   no_match: number;
+  unchanged: number;
   failed: number;
   cancelled: boolean;
   last_error: string | null;
 };
 export type AiRunState = { counts: AiRunCounts; run: AiRun | null };
-export type AiRunScope = { include_ai: boolean; include_rule: boolean; include_legacy: boolean };
+export type AiRunScope = {
+  include_uncategorized: boolean;
+  include_folders: boolean;
+  include_ai: boolean;
+  include_rule: boolean;
+  /** Also takes older categories, which may have been picked by hand. */
+  include_manual: boolean;
+};
 export type AiSuggestions = { total: number; items: Print[] };
 export type AiBulkResult = { accepted: number; rejected: number; failed: number };
-export type AiRecategorizeOutcome = "applied" | "suggested" | "no_match" | "unchanged";
-export type AiRecategorizeResult = { print: Print; outcome: AiRecategorizeOutcome };
 
 export class AiCategorizationError extends Error {
   constructor(

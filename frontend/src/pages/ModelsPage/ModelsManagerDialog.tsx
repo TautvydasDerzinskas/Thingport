@@ -115,6 +115,7 @@ export default function ModelsManagerDialog({
           onUnauthorized={onUnauthorized}
           onPrintUpdated={onPrintUpdated}
           onLibraryChanged={onLibraryChanged}
+          onRunStarted={onClose}
         />
       )}
     </SectionedDialog>

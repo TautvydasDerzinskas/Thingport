@@ -42,11 +42,6 @@ export default function ImportProgressBar() {
         <Box
           onClick={() => setDetailsOpen(true)}
           sx={{
-            position: "fixed",
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: (theme) => theme.zIndex.snackbar,
             bgcolor: hasFailures ? "warning.main" : "background.paper",
             color: hasFailures ? "warning.contrastText" : "inherit",
             borderTop: "1px solid",

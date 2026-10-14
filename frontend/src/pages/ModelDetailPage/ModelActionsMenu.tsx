@@ -37,6 +37,7 @@ import DownloadPickerDialog from "./DownloadPickerDialog";
 import AddToCollectionModal from "./AddToCollectionModal";
 import EditModelModal from "./EditModelModal";
 import FillGapsDialog from "./FillGapsDialog";
+import { useAiOutcomeWatch } from "./useAiOutcomeWatch";
 
 type Props = {
   print: Print;
@@ -171,13 +172,15 @@ export default function ModelActionsMenu({
     }
   };
 
+  // A model in a folder has no category yet as far as AI is concerned; categorizing it moves it out.
+  const uncategorized = !print.category_id || print.category_kind === "folder";
+  const queueWatched = useAiOutcomeWatch(print.id, onUpdated);
   const recategorize = async (force = false) => {
     closeMenu();
     setRecategorizing(true);
     try {
-      const result = await printsApi.recategorize(print.id, force);
-      onUpdated?.(result.print);
-      showToast({ message: t(`models:aiCategorization.outcome.${result.outcome}`) });
+      await queueWatched(() => printsApi.recategorize(print.id, force));
+      showToast({ message: t("models:aiCategorization.queued") });
     } catch (err) {
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       else if (err instanceof PrintApiError && err.code === "manual_category" && !force) {
@@ -186,8 +189,6 @@ export default function ModelActionsMenu({
           confirmLabel: t("models:aiCategorization.recategorize"),
         });
         if (confirmed) await recategorize(true);
-      } else if (err instanceof PrintApiError && err.code === "folder") {
-        showToast({ message: t("models:aiCategorization.folderSkipped"), severity: "warning" });
       } else {
         showToast({
           message: err instanceof Error ? err.message : t("models:aiCategorization.failed"),
@@ -263,20 +264,22 @@ export default function ModelActionsMenu({
           </ListItemIcon>
           <ListItemText>{t("common:edit")}</ListItemText>
         </MenuItem>
-        {aiEnabled && (
-          <MenuItem onClick={() => void recategorize()} disabled={recategorizing}>
-            <ListItemIcon>
-              {recategorizing ? <CircularProgress size={18} /> : <AutoAwesomeIcon fontSize="small" />}
-            </ListItemIcon>
-            <ListItemText>{t("models:aiCategorization.recategorize")}</ListItemText>
-          </MenuItem>
-        )}
         <MenuItem onClick={handleDelete}>
           <ListItemIcon>
             <DeleteIcon fontSize="small" color="error" />
           </ListItemIcon>
           <ListItemText sx={{ color: "error.main" }}>{t("common:delete")}</ListItemText>
         </MenuItem>
+        {aiEnabled && (
+          <MenuItem onClick={() => void recategorize()} disabled={recategorizing}>
+            <ListItemIcon>
+              {recategorizing ? <CircularProgress size={18} /> : <AutoAwesomeIcon fontSize="small" />}
+            </ListItemIcon>
+            <ListItemText>
+              {t(uncategorized ? "models:aiCategorization.categorize" : "models:aiCategorization.recategorize")}
+            </ListItemText>
+          </MenuItem>
+        )}
         <Divider />
         {/* One target: a plain link to it. Several: this menu hands over to SlicerFileMenu,
             anchored on the same trigger, to pick which. */}

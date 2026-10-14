@@ -308,6 +308,12 @@
       "builtInCollection": "Įtaisyta kolekcija",
       "sectionPages": "Puslapiai"
     },
+    "aiRunProgress": {
+      "starting": "Pradedamas DI kategorizavimas…",
+      "label": "Kategorizuojama naudojant DI… {{done}} iš {{total}}",
+      "stopping": "Sustabdoma po dabartinio modelio…",
+      "stop": "Stabdyti kategorizavimą"
+    },
     "importProgress": {
       "starting": "Pradedamas importas…",
       "label": "Importuojama… {{processed}} iš {{total}}",
@@ -639,6 +645,8 @@
         "threshold": "Automatinio taikymo patikimumo riba",
         "onImport": "Kategorizuoti naujus importus",
         "sendImage": "Siųsti pirmą peržiūros paveikslėlį",
+        "thinking": "Leisti modeliui pagalvoti prieš atsakant",
+        "thinkingHint": "Išjunkite, kad samprotaujantis modelis (pvz., qwen3) lėtoje įrangoje atsakytų greičiau. Jei tiekėjas nepalaiko samprotavimo išjungimo, užklausa siunčiama be šio nustatymo.",
         "save": "Išsaugoti nustatymus",
         "saved": "DI kategorizavimo nustatymai išsaugoti.",
         "failed": "Nepavyko įkelti arba išsaugoti DI kategorizavimo nustatymų."
@@ -1684,21 +1692,26 @@
       "uploadedDirectly": "Įkelta tiesiai į Thingport"
     },
     "aiCategorization": {
-      "folderSkipped": "Modeliai aplankuose paliekami kaip yra: aplankai yra jūsų pačių medis.",
       "section": "DI kategorizavimas",
       "recategorize": "Kategorizuoti iš naujo naudojant DI",
-      "runAll": "Kategorizuoti visus iš naujo naudojant DI",
-      "runHint": "Surūšiuoja nekategorizuotus modelius ir gali iš naujo patikrinti jau kategorizuotus.",
-      "runTitle": "Kategorizuoti modelius naudojant DI",
-      "countUncategorized": "Nekategorizuoti modeliai visada įtraukiami: {{count}}",
-      "includeAi": "Įtraukti DI anksčiau kategorizuotus modelius: {{count}}",
-      "includeRule": "Įtraukti pagal šaltinio taisykles kategorizuotus modelius: {{count}}",
-      "includeLegacy": "Įtraukti seniau kategorizuotus modelius: {{count}}",
-      "skipped": "{{manual}} rankiniu būdu kategorizuoti modeliai ir {{folder}} aplankų modeliai praleidžiami.",
-      "progress": "Apdorota {{done}} iš {{total}}, pritaikyta {{applied}}, pasiūlyta {{suggested}}, nepavyko {{failed}}.",
-      "finished": "Baigta: pritaikyta {{applied}}, pasiūlyta {{suggested}}, nepavyko {{failed}}.",
-      "cancel": "Atšaukti vykdymą",
-      "start": "Pradėti",
+      "categorize": "Kategorizuoti naudojant DI",
+      "queued": "Įtraukta į DI kategorizavimo eilę. Kai bus baigta, gausite pranešimą.",
+      "scopeTitle": "Kategorizuoti modelius",
+      "runInProgress": "Kategorizuojama naudojant DI. Eiga rodoma puslapio apačioje.",
+      "nothingToCategorize": "Nėra modelių, kuriuos būtų galima kategorizuoti.",
+      "scope": {
+        "uncategorized": "Be kategorijos ({{count}})",
+        "uncategorizedHelp": "Modeliai, kurie dar neturi kategorijos, pavyzdžiui, jūsų įkelti.",
+        "folders": "Aplankuose ({{count}})",
+        "foldersHelp": "Modeliai, kuriuos įdėjote į aplanką. Pritaikius kategoriją, modelis iškeliamas iš aplanko.",
+        "ai": "Pagal DI ({{count}})",
+        "aiHelp": "Modeliai, kurių kategoriją anksčiau parinko DI. Patikrina juos iš naujo, pavyzdžiui, pridėjus kategorijų.",
+        "rule": "Importuojant ({{count}})",
+        "ruleHelp": "Modeliai, kurie kategoriją gavo automatiškai importuojant, pagal šaltinio svetainės kategoriją.",
+        "manual": "Rankiniai ({{count}})",
+        "manualHelp": "Modeliai, kurių kategoriją parinkote patys, ir kategorizuoti dar prieš atsirandant DI kategorizavimui, nes nežinoma, kaip jiems kategorija buvo parinkta. Automatiniu režimu DI gali pakeisti jūsų pasirinkimą."
+      },
+      "start": "Kategorizuoti",
       "suggestionsTitle": "Laukiantys pasiūlymai ({{count}})",
       "selectAll": "Pažymėti visus",
       "deselectAll": "Panaikinti žymėjimą",
@@ -1716,13 +1729,7 @@
       "accepted": "DI pasiūlymas priimtas.",
       "rejected": "DI pasiūlymas atmestas.",
       "confirmManual": "{{name}} turi jūsų rankiniu būdu pasirinktą kategoriją. Pakeisti ją DI rezultatu?",
-      "failed": "DI kategorizuoti nepavyko.",
-      "outcome": {
-        "applied": "DI kategorija pritaikyta.",
-        "suggested": "Pridėtas DI pasiūlymas peržiūrai.",
-        "no_match": "DI nerado tinkamos kategorijos.",
-        "unchanged": "Kategorija nepakeista."
-      }
+      "failed": "DI kategorizuoti nepavyko."
     },
     "detail": {
       "subtitle": "Modelis",
@@ -2118,7 +2125,7 @@
       }
     },
     "manager": {
-      "title": "Kategorijų tvarkymas"
+      "title": "Kategorijų ir aplankų tvarkymas"
     }
   }
 }

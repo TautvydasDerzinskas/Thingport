@@ -7,6 +7,7 @@ import { HttpError } from "../utils/fileUtils";
 import { createLogger } from "../logger";
 import { previewImagePath } from "./previewImageService";
 import { createLog } from "./auditLog";
+import { createNotification } from "./notificationService";
 import { setPrintCategory } from "./printCategoryService";
 import { aiCategorizationEnabled, getAiCategorizationSettings, type AiCategorizationSettings } from "./settingsService";
 
@@ -142,12 +143,43 @@ function parseAnswerJson(text: string): unknown {
   }
 }
 
+function normalizePath(path: string): string {
+  return path.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+type LabelledCandidate = Candidate & { label: string };
+
+/** Names aren't unique, so two categories can share a path; a number on the repeats keeps every label pointing at
+ * one category. */
+function withLabels(candidates: Candidate[]): LabelledCandidate[] {
+  const used = new Set<string>();
+  return candidates.map((candidate) => {
+    let label = candidate.path;
+    for (let n = 2; used.has(label); n++) label = `${candidate.path} (${n})`;
+    used.add(label);
+    return { ...candidate, label };
+  });
+}
+
+/** Providers without a grammar may change the case or spacing of a label, which counts only when it can't mean two
+ * candidates; anything else isn't a candidate. */
+function candidateByLabel(candidates: LabelledCandidate[], answer: string): LabelledCandidate | undefined {
+  const exact = candidates.find((candidate) => candidate.label === answer);
+  if (exact) return exact;
+  const loose = candidates.filter((candidate) => normalizePath(candidate.label) === normalizePath(answer));
+  return loose.length === 1 ? loose[0] : undefined;
+}
+
+// Connections (base URL and model) that answered 400 to reasoning_effort, so later requests leave it out.
+const reasoningEffortRejected = new Set<string>();
+
 async function requestProvider(
   print: Print,
-  candidates: Candidate[],
+  categories: Candidate[],
   settings: AiCategorizationSettings,
   attempts = 3,
 ): Promise<ProviderResult> {
+  const candidates = withLabels(categories);
   const image = await previewPart(print.id, settings.sendImage);
   // A model that already has a category says so; on its own the model often misses an obvious fit.
   const current = print.categoryId ? candidates.find((candidate) => candidate.id === print.categoryId) : undefined;
@@ -159,17 +191,20 @@ async function requestProvider(
         "Pick the candidate category that best fits this model. It is a file for a physical object that gets 3D printed, " +
           "so choose by what the printed object is or is used for, not by the fact that it is 3D printed. " +
           "Categories about 3D printers fit only parts and accessories for a 3D printer itself.",
-        "Give your reason first and name the category you pick in it, then give that candidate's number. " +
+        "Give a short reason first, then the full path of the candidate you pick, exactly as listed. " +
           "If the model has a current category that still fits, pick it again. Use null only if no candidate fits.",
+        // What every model shares comes first, so a provider can reuse the prompt prefix it already read: on a CPU,
+        // reading the candidate list again for each model took most of the time.
+        "Candidates:",
+        ...candidates.map((candidate) => candidate.label),
+        "",
+        "The model:",
         `Title: ${print.title ?? print.name}`,
         `Tags: ${print.tags.join(", ") || "none"}`,
         `Creator: ${print.creator ?? "unknown"}`,
         `Source: ${print.sourceProvider ?? "unknown"}`,
-        ...(current ? [`Current category: ${current.path}`] : []),
+        ...(current ? [`Current category: ${current.label}`] : []),
         `Description: ${plainText(print.notes) || "none"}`,
-        "Candidates:",
-        // Numbered rather than by id: small models misread near-identical ids and return a neighbour's.
-        ...candidates.map((candidate, index) => `${index + 1}: ${candidate.path}`),
       ].join("\n"),
     },
   ];
@@ -181,13 +216,17 @@ async function requestProvider(
     // justified afterwards.
     properties: {
       reason: { type: "string", maxLength: 300 },
-      category: { anyOf: [{ type: "integer", enum: candidates.map((_, index) => index + 1) }, { type: "null" }] },
+      // By path: answering with a number, a small model named one category in its reason and then typed the
+      // number of another from the long list. Near-identical ids were misread the same way.
+      category: { anyOf: [{ type: "string", enum: candidates.map((candidate) => candidate.label) }, { type: "null" }] },
       confidence: { type: "number", minimum: 0, maximum: 1 },
     },
     required: ["reason", "category", "confidence"],
   };
 
   const requestLog = log.child({ print: print.id, model: settings.model });
+  const connection = `${settings.baseUrl}|${settings.model}`;
+  let skipThinking = !settings.thinking && !reasoningEffortRejected.has(connection);
   for (let attempt = 0; attempt < attempts; attempt++) {
     const last = attempt === attempts - 1;
     const started = Date.now();
@@ -208,10 +247,22 @@ async function requestProvider(
           // closing brace, and reasoning models spend part of the budget before answering.
           max_tokens: 1024,
           response_format: { type: "json_schema", json_schema: { name: "categorization", strict: true, schema } },
+          // A reasoning model (qwen3) on a CPU spends minutes thinking; this one choice rarely needs it.
+          ...(skipThinking ? { reasoning_effort: "none" } : {}),
           messages: [{ role: "user", content }],
         }),
       });
       if (!response.ok) {
+        // Strict providers reject the field outright, e.g. OpenAI for a model that doesn't reason: ask again
+        // without it, which doesn't count as an attempt. Only when the error names it, so another bad request
+        // isn't taken for proof that the connection can't skip thinking.
+        if (response.status === 400 && skipThinking && /reasoning/i.test(await response.clone().text())) {
+          skipThinking = false;
+          reasoningEffortRejected.add(connection);
+          requestLog.warn("provider rejected reasoning_effort, asking again without it");
+          attempt--;
+          continue;
+        }
         const retryable = response.status === 429 || response.status >= 500;
         if (!retryable || last) throw new Error(`AI provider returned HTTP ${response.status}`);
         const retryAfterHeader = response.headers.get("retry-after");
@@ -266,8 +317,7 @@ async function requestProvider(
       }
       const parsed = z
         .object({
-          // Providers without a grammar sometimes quote the number.
-          category: z.union([z.number().int(), z.string().regex(/^\d+$/).transform(Number)]).nullable(),
+          category: z.string().nullable(),
           confidence: z.number().finite(),
           reason: z.string(),
         })
@@ -277,7 +327,7 @@ async function requestProvider(
       const { confidence: stated } = parsed.data;
       const confidence = Number.isInteger(stated) && stated > 1 && stated <= 100 ? stated / 100 : stated;
       if (confidence < 0 || confidence > 1) throw unusable("AI provider returned invalid classification");
-      const chosen = parsed.data.category === null ? null : candidates[parsed.data.category - 1];
+      const chosen = parsed.data.category === null ? null : candidateByLabel(candidates, parsed.data.category);
       if (chosen === undefined) throw unusable("AI provider returned a category outside the candidate list");
       requestLog.debug("provider answered", { ...answer, category: parsed.data.category, confidence });
       return {
@@ -322,11 +372,27 @@ function isExpectedSkip(error: unknown): boolean {
   );
 }
 
+/** `force` overrides a manual category; `folders` lets a model in a folder be categorized, which moves it out of the
+ * folder once applied. Imports pass neither, so a model filed into a folder or by hand stays there. */
+type CategorizeOptions = { force?: boolean; folders?: boolean };
+
+async function loadCategorizable(userId: string, printId: string, options: CategorizeOptions) {
+  const print = await prisma.print.findFirst({ where: { id: printId, userId }, include: { category: true } });
+  if (!print) throw new HttpError(404, "Print not found");
+  const inFolder = isFolder(print);
+  if (inFolder && !options.folders) throw new HttpError(409, "Models in folders are not AI-categorized", "folder");
+  // Folder models are filed by hand too, but asking for folders is asking to move them.
+  if (!inFolder && print.categorySource === "MANUAL" && !options.force) {
+    throw new HttpError(409, "This category was set manually", "manual_category");
+  }
+  return { print, overrideManual: inFolder || Boolean(options.force) };
+}
+
 /** `source` only labels the log line: an import, a bulk run, or a request for one model. */
 export async function categorizePrint(
   userId: string,
   printId: string,
-  options: { force?: boolean; source?: "import" | "run" | "request" } = {},
+  options: CategorizeOptions & { source?: "import" | "run" | "request" } = {},
 ): Promise<CategorizationOutcome> {
   const fields = { print: printId, source: options.source ?? "request" };
   const started = Date.now();
@@ -344,16 +410,11 @@ export async function categorizePrint(
 async function categorizeOne(
   userId: string,
   printId: string,
-  options: { force?: boolean },
+  options: CategorizeOptions,
 ): Promise<CategorizationOutcome> {
   const settings = await getAiCategorizationSettings();
   if (!aiCategorizationEnabled(settings)) throw new HttpError(503, "AI categorization is disabled", "ai_disabled");
-  const print = await prisma.print.findFirst({ where: { id: printId, userId }, include: { category: true } });
-  if (!print) throw new HttpError(404, "Print not found");
-  if (isFolder(print)) throw new HttpError(409, "Models in folders are not AI-categorized", "folder");
-  if (print.categorySource === "MANUAL" && !options.force) {
-    throw new HttpError(409, "This category was set manually", "manual_category");
-  }
+  const { print, overrideManual } = await loadCategorizable(userId, printId, options);
   const candidates = await candidateCategories(userId, print.aiRejectedCategoryIds);
   if (!candidates.length) {
     await clearSuggestion(print.id);
@@ -391,7 +452,7 @@ async function categorizeOne(
     }
   }
   const where: Prisma.PrintWhereInput = { id: print.id, categoryId: expected.categoryId };
-  if (!options.force) {
+  if (!overrideManual) {
     // SQL's `!=` excludes NULL, but uncategorized prints intentionally have no source.
     where.OR = [{ categorySource: null }, { categorySource: { not: "MANUAL" } }];
   }
@@ -412,6 +473,65 @@ export function enqueueAiCategorization(userId: string, printId: string): void {
     },
     (error) => log.warn("could not read the AI settings for an imported model", { print: printId, error }),
   );
+}
+
+// Models waiting on the provider for one owner's request, so a second click doesn't ask twice.
+const queuedPrints = new Set<string>();
+
+/**
+ * Categorizes one model in the background and tells its owner the outcome as a notification: a slow local model
+ * would otherwise outlast the proxy in front of the request. What the caller can act on (AI turned off, a missing
+ * model, a manual category to confirm) is still thrown here, before anything is queued.
+ */
+export async function queueAiCategorization(userId: string, printId: string, options: { force?: boolean } = {}) {
+  const settings = await getAiCategorizationSettings();
+  if (!aiCategorizationEnabled(settings)) throw new HttpError(503, "AI categorization is disabled", "ai_disabled");
+  const categorize = { force: options.force, folders: true };
+  await loadCategorizable(userId, printId, categorize);
+  if (queuedPrints.has(printId)) return;
+  queuedPrints.add(printId);
+  void categorizePrint(userId, printId, { ...categorize, source: "request" })
+    .then(
+      (outcome) => notifyOutcome(userId, printId, outcome),
+      (error) => notifyFailure(userId, printId, error),
+    )
+    .catch((error) => log.warn("could not notify the AI categorization outcome", { print: printId, error }))
+    .finally(() => queuedPrints.delete(printId));
+}
+
+async function notifyOutcome(userId: string, printId: string, outcome: CategorizationOutcome): Promise<void> {
+  const print = await prisma.print.findFirst({ where: { id: printId, userId } });
+  if (!print) return;
+  const name = print.title || print.name;
+  const paths = await aiCategoryPaths(userId);
+  const suggestion = suggestionSchema.safeParse(print.aiSuggestion);
+  const suggested = suggestion.success ? paths.get(suggestion.data.categoryId) : undefined;
+  const current = print.categoryId ? paths.get(print.categoryId) : undefined;
+  const title =
+    outcome === "applied"
+      ? `"${name}" was categorized as ${current ?? "a category"}`
+      : outcome === "suggested"
+        ? `AI suggests ${suggested ?? "a category"} for "${name}"`
+        : outcome === "unchanged"
+          ? `"${name}" keeps its category${current ? ` ${current}` : ""}`
+          : `AI found no category that fits "${name}"`;
+  await createNotification(userId, {
+    type: "ai",
+    title,
+    body: outcome === "suggested" && suggestion.success ? suggestion.data.reason : null,
+    internalPath: `/models/${printId}`,
+  });
+}
+
+async function notifyFailure(userId: string, printId: string, error: unknown): Promise<void> {
+  const print = await prisma.print.findFirst({ where: { id: printId, userId }, select: { name: true, title: true } });
+  if (!print) return;
+  await createNotification(userId, {
+    type: "ai",
+    title: `Couldn't categorize "${print.title || print.name}"`,
+    body: noSecretError(error).message,
+    internalPath: `/models/${printId}`,
+  });
 }
 
 export async function acceptAiSuggestion(userId: string, printId: string): Promise<void> {
@@ -473,6 +593,8 @@ export type AiCategorizationRun = {
   applied: number;
   suggested: number;
   noMatch: number;
+  /** The category it had was already the best fit. */
+  unchanged: number;
   failed: number;
   cancelled: boolean;
   lastError: string | null;
@@ -504,10 +626,10 @@ export async function aiCategorizationCounts(userId: string) {
   return counts;
 }
 
-export function startAiCategorizationRun(
-  userId: string,
-  scope: { includeAi: boolean; includeRule: boolean; includeLegacy: boolean },
-): AiCategorizationRun | null {
+/** Which models a run takes. `manual` also takes older categories, which may have been picked by hand. */
+export type AiRunScope = { uncategorized: boolean; folders: boolean; ai: boolean; rule: boolean; manual: boolean };
+
+export function startAiCategorizationRun(userId: string, scope: AiRunScope): AiCategorizationRun | null {
   const running = runs.get(userId);
   if (running?.running) return null;
   const run: AiCategorizationRun = {
@@ -519,17 +641,13 @@ export function startAiCategorizationRun(
     applied: 0,
     suggested: 0,
     noMatch: 0,
+    unchanged: 0,
     failed: 0,
     cancelled: false,
     lastError: null,
   };
   runs.set(userId, run);
-  log.info("run started", {
-    user: userId,
-    include_ai: scope.includeAi,
-    include_rule: scope.includeRule,
-    include_legacy: scope.includeLegacy,
-  });
+  log.info("run started", { user: userId, ...scope });
   void runAiCategorization(userId, run, scope)
     .catch((error) => {
       run.failed++;
@@ -546,6 +664,7 @@ export function startAiCategorizationRun(
         applied: run.applied,
         suggested: run.suggested,
         no_match: run.noMatch,
+        unchanged: run.unchanged,
         failed: run.failed,
         cancelled: run.cancelled,
         last_error: run.lastError ?? undefined,
@@ -553,28 +672,25 @@ export function startAiCategorizationRun(
       if (run.failed) log.warn("run finished with failures", summary);
       else log.info("run finished", summary);
       void createLog({ userId, action: "ai_categorization_run", details: { ...run } });
+      void notifyRunFinished(userId, run).catch((error) =>
+        log.warn("could not notify the AI categorization run", { user: userId, error }),
+      );
     });
   return run;
 }
 
-async function runAiCategorization(
-  userId: string,
-  run: AiCategorizationRun,
-  scope: { includeAi: boolean; includeRule: boolean; includeLegacy: boolean },
-): Promise<void> {
+async function runAiCategorization(userId: string, run: AiCategorizationRun, scope: AiRunScope): Promise<void> {
   const prints = await prisma.print.findMany({
     where: { userId },
     include: { category: { select: { kind: true } } },
     orderBy: { createdAt: "asc" },
   });
   const selected = prints.filter((print) => {
-    if (print.category?.kind === "folder" || print.categorySource === "MANUAL") return false;
-    if (!print.categoryId) return true;
-    return (
-      (print.categorySource === "AI" && scope.includeAi) ||
-      (print.categorySource === "RULE" && scope.includeRule) ||
-      (print.categorySource === "LEGACY" && scope.includeLegacy)
-    );
+    if (print.category?.kind === "folder") return scope.folders;
+    if (!print.categoryId) return scope.uncategorized;
+    if (print.categorySource === "AI") return scope.ai;
+    if (print.categorySource === "RULE") return scope.rule;
+    return scope.manual;
   });
   run.total = selected.length;
   log.info("run selected models", { user: userId, total: run.total, library: prints.length });
@@ -583,11 +699,16 @@ async function runAiCategorization(
     if (run.cancelled) break;
     let stop = false;
     try {
-      const outcome = await categorizePrint(userId, print.id, { source: "run" });
+      const outcome = await categorizePrint(userId, print.id, {
+        force: scope.manual,
+        folders: scope.folders,
+        source: "run",
+      });
       consecutiveProviderFailures = 0;
       if (outcome === "applied") run.applied++;
       else if (outcome === "suggested") run.suggested++;
       else if (outcome === "no_match") run.noMatch++;
+      else run.unchanged++;
     } catch (error) {
       if (
         error instanceof HttpError &&
@@ -614,6 +735,35 @@ async function runAiCategorization(
     run.done++;
     if (stop) break;
   }
+}
+
+function models(count: number, one: string, many: string): string {
+  return `${count} ${count === 1 ? one : many}`;
+}
+
+async function notifyRunFinished(userId: string, run: AiCategorizationRun): Promise<void> {
+  if (!run.total) return;
+  // Only what happened: "0 models have no fitting category" tells the owner nothing.
+  const parts = [
+    run.applied && models(run.applied, "model was categorized", "models were categorized"),
+    run.suggested && models(run.suggested, "model got a suggested category", "models got a suggested category"),
+    run.unchanged &&
+      models(
+        run.unchanged,
+        "model already has the best fitting category",
+        "models already have the best fitting category",
+      ),
+    run.noMatch && models(run.noMatch, "model has no fitting category", "models have no fitting category"),
+    run.failed && models(run.failed, "model couldn't be categorized", "models couldn't be categorized"),
+  ].filter(Boolean);
+  const lastError = run.failed && run.lastError ? ` Last error: ${run.lastError}` : "";
+  await createNotification(userId, {
+    type: "ai",
+    title: run.cancelled
+      ? `AI categorization stopped after ${run.done} of ${run.total} models`
+      : `AI categorization finished ${run.total} ${run.total === 1 ? "model" : "models"}`,
+    body: parts.length ? `${parts.join(". ")}.${lastError}` : null,
+  });
 }
 
 export function cancelAiCategorizationRun(userId: string): AiCategorizationRun | null {

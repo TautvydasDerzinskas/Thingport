@@ -6,6 +6,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Zoom from "@mui/material/Zoom";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { useImportJob } from "./ImportJobContext";
+import { useAiRun } from "./AiRunContext";
 
 const SCROLL_SHOW_THRESHOLD = 200;
 
@@ -14,11 +15,12 @@ function scrollToTop() {
 }
 
 /** The app scrolls at the window level, so one listener covers every route. Shifts up while
- *  ImportProgressBar shows. */
+ *  ImportProgressBar or AiRunProgressBar shows. */
 export default function BackToTopButton() {
   const { t } = useTranslation("app");
   const [visible, setVisible] = useState(false);
   const { activeJob } = useImportJob();
+  const { running: aiRunning } = useAiRun();
 
   useEffect(() => {
     const onScroll = () => setVisible(window.scrollY > SCROLL_SHOW_THRESHOLD);
@@ -36,7 +38,7 @@ export default function BackToTopButton() {
         sx={{
           position: "fixed",
           right: 24,
-          bottom: activeJob ? 88 : 24,
+          bottom: 24 + (activeJob ? 64 : 0) + (aiRunning ? 64 : 0),
           zIndex: (theme) => theme.zIndex.fab,
           transition: (theme) => theme.transitions.create("bottom"),
         }}

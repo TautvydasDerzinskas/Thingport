@@ -206,6 +206,7 @@ export type AiCategorizationSettings = {
   onImport: boolean;
   concurrency: number;
   sendImage: boolean;
+  thinking: boolean;
   timeoutMs: number;
 };
 
@@ -219,6 +220,7 @@ export const DEFAULT_AI_CATEGORIZATION_SETTINGS: AiCategorizationSettings = {
   onImport: true,
   concurrency: 1,
   sendImage: false,
+  thinking: true,
   timeoutMs: 60000,
 };
 
@@ -253,6 +255,7 @@ function validAiSettings(value: unknown): Partial<AiCategorizationSettings> {
       ? { concurrency: raw.concurrency }
       : {}),
     ...(typeof raw.sendImage === "boolean" ? { sendImage: raw.sendImage } : {}),
+    ...(typeof raw.thinking === "boolean" ? { thinking: raw.thinking } : {}),
     ...(typeof raw.timeoutMs === "number" && Number.isInteger(raw.timeoutMs) && raw.timeoutMs > 0
       ? { timeoutMs: raw.timeoutMs }
       : {}),

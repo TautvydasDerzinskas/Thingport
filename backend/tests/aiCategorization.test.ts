@@ -49,26 +49,24 @@ function promptText(body: Record<string, unknown>): string {
   return (body.messages as { content: { text: string }[] }[])[0].content[0].text;
 }
 
-// Handlers answer with real category ids for readability; the prompt numbers its candidates, so
-// translate an id into its number there. An id the prompt doesn't list becomes an out-of-range number.
-async function candidateNumber(body: Record<string, unknown>, categoryId: string): Promise<number> {
+// Handlers answer with real category ids for readability; the provider answers with a candidate's path, so
+// translate an id into the path the prompt lists. An id the prompt doesn't list becomes a path that isn't there.
+async function candidatePath(body: Record<string, unknown>, categoryId: string): Promise<string> {
   const row = await prisma.category.findUnique({ where: { id: categoryId } });
   const path = row ? (await aiCategoryPaths(row.userId)).get(categoryId) : undefined;
-  const line = promptText(body)
-    .split("\n")
-    .find((text) => path !== undefined && text.replace(/^\d+: /, "") === path);
-  return line ? Number(line.split(":")[0]) : 9999;
+  const listed = path !== undefined && promptText(body).split("\n").includes(path);
+  return listed ? path : "Not a candidate";
 }
 
 async function toProviderJson(body: Record<string, unknown>, answer: ProviderAnswer) {
   const { category_id: categoryId, ...rest } = answer;
-  return { category: categoryId === null ? null : await candidateNumber(body, categoryId), ...rest };
+  return { category: categoryId === null ? null : await candidatePath(body, categoryId), ...rest };
 }
 
 async function toProviderText(body: Record<string, unknown>, text: string): Promise<string> {
   let out = text.replace(/"category_id":null/g, '"category":null');
   for (const [match, categoryId] of text.matchAll(/"category_id":"([^"]+)"/g)) {
-    out = out.replace(match, `"category":${await candidateNumber(body, categoryId)}`);
+    out = out.replace(match, `"category":${JSON.stringify(await candidatePath(body, categoryId))}`);
   }
   return out;
 }
@@ -122,6 +120,12 @@ async function stopProvider() {
   provider = null;
 }
 
+// What the models manager sends; by default only uncategorized models, as before folders and manual ones could be picked.
+function runScope(include: Partial<Record<"uncategorized" | "folders" | "ai" | "rule" | "manual", boolean>> = {}) {
+  const scope = { uncategorized: true, folders: false, ai: false, rule: false, manual: false, ...include };
+  return Object.fromEntries(Object.entries(scope).map(([key, value]) => [`include_${key}`, value]));
+}
+
 async function enable(baseUrl: string, patch: Partial<typeof DEFAULT_AI_CATEGORIZATION_SETTINGS> = {}) {
   await setAiCategorizationSettings({
     mode: "suggest",
@@ -138,7 +142,7 @@ async function enable(baseUrl: string, patch: Partial<typeof DEFAULT_AI_CATEGORI
 }
 
 async function categoryFor(ownerId: string, name: string, kind = "category") {
-  // Unique, so a test's answer maps to exactly one numbered candidate in the prompt.
+  // Unique, so a test's answer maps to exactly one candidate path in the prompt.
   const row = await prisma.category.create({ data: { userId: ownerId, name: `${name} ${categoryNumber++}`, kind } });
   createdCategories.push(row.id);
   return row;
@@ -373,8 +377,10 @@ describe("AI categorization", () => {
       { category_id: "not-a-candidate", confidence: 1, reason: "bad" },
     ];
     let schema: Record<string, unknown> | null = null;
+    let prompt = "";
     const baseUrl = await startProvider((body) => {
       schema = body.response_format as Record<string, unknown>;
+      prompt = promptText(body);
       return replies.shift()!;
     });
     await enable(baseUrl, { mode: "suggest" });
@@ -395,9 +401,11 @@ describe("AI categorization", () => {
     // Answered as a whole percentage, which some providers do despite the 0-1 range.
     expect(fenced.body.print.ai_suggestion.confidence).toBe(0.5);
     expect(JSON.stringify(schema)).toContain('"maxLength":300');
-    // Candidates go out as numbers; a near-identical id is easy for a small model to misread.
+    // Candidates are answered by path: a near-identical id or a number from a long list is easy to get wrong.
     expect(JSON.stringify(schema)).not.toContain(target.id);
-    expect(JSON.stringify(schema)).toContain('"type":"integer"');
+    expect(JSON.stringify(schema)).toContain(JSON.stringify(target.name));
+    // The shared part goes first, so a provider can reuse the prefix; the model's own details come last.
+    expect(prompt.indexOf("Candidates:")).toBeLessThan(prompt.indexOf("Title:"));
     // The reason is generated before the answer.
     const properties = (schema as unknown as { json_schema: { schema: { properties: object } } }).json_schema.schema
       .properties;
@@ -411,6 +419,31 @@ describe("AI categorization", () => {
       expect(invalid.status).toBe(502);
       expect(invalid.body.code).toBe("ai_failed");
     }
+  });
+
+  it("matches a path answered with different case or spacing, but nothing else", async () => {
+    const target = await category("Path match target");
+    const replies: ProviderReply[] = [
+      {
+        status: 200,
+        content: `{"category":${JSON.stringify(`  ${target.name.toUpperCase()} `)},"confidence":0.9,"reason":"x"}`,
+      },
+      { status: 200, content: `{"category":${JSON.stringify(`${target.name} extra`)},"confidence":0.9,"reason":"x"}` },
+    ];
+    const baseUrl = await startProvider(() => replies.shift()!);
+    await enable(baseUrl);
+
+    const loose = await request(app)
+      .post(`/api/print/${(await print()).id}/recategorize`)
+      .set(auth())
+      .send({});
+    expect(loose.body).toMatchObject({ outcome: "suggested", print: { ai_suggestion: { category_id: target.id } } });
+    const other = await request(app)
+      .post(`/api/print/${(await print()).id}/recategorize`)
+      .set(auth())
+      .send({});
+    expect(other.status).toBe(502);
+    expect(other.body.error).toBe("AI provider failed: AI provider returned a category outside the candidate list");
   });
 
   it("explains an answer cut off by the token limit instead of a JSON parse position", async () => {
@@ -525,10 +558,7 @@ describe("AI categorization", () => {
       vi.spyOn(console, stream).mockImplementation((line: unknown) => void lines.push(String(line)));
     }
     try {
-      const started = await request(app)
-        .post("/api/ai-categorization/run")
-        .set(auth(runner.token))
-        .send({ include_ai: false, include_rule: false, include_legacy: false });
+      const started = await request(app).post("/api/ai-categorization/run").set(auth(runner.token)).send(runScope());
       expect(started.status).toBe(202);
       await waitForRun(runner.token);
       await waitFor(() => lines.some((line) => line.includes("run finished")), "run finish was not logged");
@@ -549,6 +579,147 @@ describe("AI categorization", () => {
     expect(finished).toContain("total=2");
     expect(finished).toContain("failed=1");
     expect(finished).toContain("no_match=1");
+    // The owner may have left the page: the totals also arrive as a notification.
+    await waitFor(
+      async () => (await prisma.notification.count({ where: { userId: runner.id, type: "ai" } })) === 1,
+      "run finish was not notified",
+    );
+    expect(await prisma.notification.findFirst({ where: { userId: runner.id, type: "ai" } })).toMatchObject({
+      title: "AI categorization finished 2 models",
+      // Nothing was suggested or kept, so those aren't mentioned.
+      body:
+        "1 model has no fitting category. 1 model couldn't be categorized. " +
+        "Last error: AI provider returned an answer that is not valid JSON",
+    });
+  });
+
+  it("categorizes one model in the background, folders included, and notifies the outcome", async () => {
+    const owner = await newUser();
+    const target = await categoryFor(owner.id, "Background target");
+    const folder = await categoryFor(owner.id, "Background folder", "folder");
+    const inFolder = await printFor(owner.id, folder.id, "MANUAL", { name: "Folder model" });
+    const manual = await printFor(owner.id, target.id, "MANUAL", { name: "Hand-picked model" });
+    const unreadable = await printFor(owner.id, null, null, { name: "Unreadable answer model" });
+    const baseUrl = await startProvider(async (body) =>
+      promptText(body).includes(unreadable.name)
+        ? { status: 200, content: "not json" }
+        : { category_id: target.id, confidence: 0.6, reason: "fits the target" },
+    );
+    await enable(baseUrl);
+    const recategorize = (id: string) =>
+      request(app).post(`/api/print/${id}/recategorize`).set(auth(owner.token)).send({ background: true });
+    const notifications = () =>
+      prisma.notification.findMany({ where: { userId: owner.id, type: "ai" }, orderBy: { createdAt: "asc" } });
+
+    // A manual category is still confirmed before anything is queued.
+    const refused = await recategorize(manual.id);
+    expect(refused.status).toBe(409);
+    expect(refused.body.code).toBe("manual_category");
+
+    expect((await recategorize(inFolder.id)).status).toBe(202);
+    await waitFor(async () => (await notifications()).length === 1, "the suggestion was not notified");
+    expect((await notifications())[0]).toMatchObject({
+      title: `AI suggests ${target.name} for "Folder model"`,
+      body: "fits the target",
+      internalPath: `/models/${inFolder.id}`,
+    });
+    // Accepting takes the model out of its folder.
+    const accepted = await request(app).post(`/api/print/${inFolder.id}/ai-suggestion/accept`).set(auth(owner.token));
+    expect(accepted.body.print).toMatchObject({ category_id: target.id, category_kind: "category" });
+
+    expect((await recategorize(unreadable.id)).status).toBe(202);
+    await waitFor(async () => (await notifications()).length === 2, "the failure was not notified");
+    expect((await notifications())[1]).toMatchObject({
+      title: 'Couldn\'t categorize "Unreadable answer model"',
+      body: "AI provider returned an answer that is not valid JSON",
+    });
+  });
+
+  it("asks a reasoning model not to think only when thinking is turned off", async () => {
+    const bodies: Record<string, unknown>[] = [];
+    const baseUrl = await startProvider((body) => {
+      bodies.push(body);
+      return { category_id: null, confidence: 1, reason: "none" };
+    });
+    await enable(baseUrl);
+    const recategorize = async () =>
+      (
+        await request(app)
+          .post(`/api/print/${(await print()).id}/recategorize`)
+          .set(auth())
+          .send({})
+      ).status;
+
+    expect(await recategorize()).toBe(200);
+    expect(bodies[0]).not.toHaveProperty("reasoning_effort");
+
+    const off = await request(app).patch("/api/settings/ai-categorization").set(auth()).send({ thinking: false });
+    expect(off.status).toBe(200);
+    expect(off.body.thinking).toBe(false);
+    expect(await recategorize()).toBe(200);
+    expect(bodies[1].reasoning_effort).toBe("none");
+  });
+
+  it("asks again without reasoning_effort when a strict provider rejects it, and remembers that", async () => {
+    const bodies: Record<string, unknown>[] = [];
+    // What OpenAI answers for a model that doesn't reason.
+    const baseUrl = await startProvider((body) => {
+      bodies.push(body);
+      return "reasoning_effort" in body
+        ? { status: 400, content: "Unsupported parameter: 'reasoning_effort' is not supported with this model." }
+        : { category_id: null, confidence: 1, reason: "none" };
+    });
+    await enable(baseUrl, { thinking: false });
+    const recategorize = async () =>
+      (
+        await request(app)
+          .post(`/api/print/${(await print()).id}/recategorize`)
+          .set(auth())
+          .send({})
+      ).status;
+
+    expect(await recategorize()).toBe(200);
+    expect(bodies.map((body) => "reasoning_effort" in body)).toEqual([true, false]);
+    expect(await recategorize()).toBe(200);
+    expect(bodies.map((body) => "reasoning_effort" in body)).toEqual([true, false, false]);
+  });
+
+  it("treats a 400 that isn't about reasoning as a failed request, not a rejected reasoning_effort", async () => {
+    const bodies: Record<string, unknown>[] = [];
+    const baseUrl = await startProvider((body) => {
+      bodies.push(body);
+      return { status: 400, content: "The model `missing` does not exist" };
+    });
+    await enable(baseUrl, { thinking: false });
+    for (let i = 0; i < 2; i++) {
+      const failed = await request(app)
+        .post(`/api/print/${(await print()).id}/recategorize`)
+        .set(auth())
+        .send({});
+      expect(failed.status).toBe(502);
+    }
+    // Neither asked again without it, nor stopped sending it.
+    expect(bodies.map((body) => "reasoning_effort" in body)).toEqual([true, true]);
+  });
+
+  it("numbers categories that share a path, so each answer means one of them", async () => {
+    const owner = await newUser();
+    const [, second] = await Promise.all(
+      [0, 1].map((position) =>
+        prisma.category.create({ data: { userId: owner.id, name: "Twin", kind: "category", position } }),
+      ),
+    );
+    const model = await printFor(owner.id);
+    let prompt = "";
+    const baseUrl = await startProvider((body) => {
+      prompt = promptText(body);
+      return { status: 200, content: '{"reason":"the second twin","category":"Twin (2)","confidence":0.9}' };
+    });
+    await enable(baseUrl);
+
+    const response = await request(app).post(`/api/print/${model.id}/recategorize`).set(auth(owner.token)).send({});
+    expect(response.body).toMatchObject({ outcome: "suggested", print: { ai_suggestion: { category_id: second.id } } });
+    expect(prompt.split("\n")).toEqual(expect.arrayContaining(["Twin", "Twin (2)"]));
   });
 
   it("tells the provider a model's current category", async () => {
@@ -735,7 +906,7 @@ describe("AI categorization", () => {
     expect(suggestions.body.items.map((item: { id: string }) => item.id)).toEqual([ownPrint.id]);
   });
 
-  it("honors run scope, excludes MANUAL and folders, rejects duplicate starts, and cancels", async () => {
+  it("honors run scope, rejects duplicate starts, and cancels", async () => {
     const runner = await newUser();
     const target = await categoryFor(runner.id, "Run target");
     const folder = await categoryFor(runner.id, "Run folder", "folder");
@@ -753,11 +924,22 @@ describe("AI categorization", () => {
     const onlyUncategorized = await request(app)
       .post("/api/ai-categorization/run")
       .set(auth(runner.token))
-      .send({ include_ai: false, include_rule: false, include_legacy: false });
+      .send(runScope());
     expect(onlyUncategorized.status).toBe(202);
     const firstRun = await waitForRun(runner.token);
     expect(firstRun.body.run).toMatchObject({ total: 1, done: 1, failed: 0 });
     expect(providerRequests).toBe(1);
+
+    // Older categories go with the manual ones: nothing recorded whether they were picked by hand.
+    for (const [include, total] of [
+      [{ uncategorized: false, folders: true }, 1],
+      [{ uncategorized: false, manual: true }, 2],
+    ] as const) {
+      expect(
+        (await request(app).post("/api/ai-categorization/run").set(auth(runner.token)).send(runScope(include))).status,
+      ).toBe(202);
+      expect((await waitForRun(runner.token)).body.run).toMatchObject({ total, done: total, failed: 0 });
+    }
 
     let release!: () => void;
     let arrived!: () => void;
@@ -777,20 +959,20 @@ describe("AI categorization", () => {
     const started = await request(app)
       .post("/api/ai-categorization/run")
       .set(auth(runner.token))
-      .send({ include_ai: true, include_rule: true, include_legacy: true });
+      .send(runScope({ folders: true, ai: true, rule: true, manual: true }));
     expect(started.status).toBe(202);
     await arrivedAtProvider;
     const duplicate = await request(app)
       .post("/api/ai-categorization/run")
       .set(auth(runner.token))
-      .send({ include_ai: true, include_rule: true, include_legacy: true });
+      .send(runScope({ folders: true, ai: true, rule: true, manual: true }));
     expect(duplicate.status).toBe(409);
     expect(duplicate.body.code).toBe("running");
     const cancelled = await request(app).post("/api/ai-categorization/run/cancel").set(auth(runner.token)).send({});
     expect(cancelled.body.run.cancelled).toBe(true);
     release();
     const stopped = await waitForRun(runner.token);
-    expect(stopped.body.run).toMatchObject({ total: 4, done: 1, cancelled: true, failed: 0 });
+    expect(stopped.body.run).toMatchObject({ total: 6, done: 1, cancelled: true, failed: 0 });
   });
 
   it("counts manual and folder conflicts raised mid-run as completed work", async () => {
@@ -814,10 +996,7 @@ describe("AI categorization", () => {
       return { category_id: null, confidence: 1, reason: "none" };
     });
     await enable(baseUrl);
-    await request(app)
-      .post("/api/ai-categorization/run")
-      .set(auth(runner.token))
-      .send({ include_ai: false, include_rule: false, include_legacy: false });
+    await request(app).post("/api/ai-categorization/run").set(auth(runner.token)).send(runScope());
     await arrivedAtProvider;
     await prisma.print.update({
       where: { id: changedToManual.id },
@@ -841,10 +1020,7 @@ describe("AI categorization", () => {
     for (let i = 0; i < 6; i++) await printFor(runner.id);
     const baseUrl = await startProvider(() => ({ status: 500 }));
     await enable(baseUrl);
-    const started = await request(app)
-      .post("/api/ai-categorization/run")
-      .set(auth(runner.token))
-      .send({ include_ai: false, include_rule: false, include_legacy: false });
+    const started = await request(app).post("/api/ai-categorization/run").set(auth(runner.token)).send(runScope());
     expect(started.status).toBe(202);
     const stopped = await waitForRun(runner.token);
     expect(stopped.body.run).toMatchObject({ total: 6, done: 5, failed: 5 });
@@ -871,10 +1047,7 @@ describe("AI categorization", () => {
       return { category_id: null, confidence: 1, reason: "none" };
     });
     await enable(baseUrl);
-    await request(app)
-      .post("/api/ai-categorization/run")
-      .set(auth(runner.token))
-      .send({ include_ai: false, include_rule: false, include_legacy: false });
+    await request(app).post("/api/ai-categorization/run").set(auth(runner.token)).send(runScope());
     await arrivedAtProvider;
     await setAiCategorizationSettings(DEFAULT_AI_CATEGORIZATION_SETTINGS);
     release();

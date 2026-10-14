@@ -258,6 +258,8 @@ router.get(
         plates: { orderBy: { position: "asc" } },
         previewImages: { orderBy: { position: "asc" } },
         author: true,
+        // A card's menu needs to know a folder from a category, as the detail page does.
+        category: true,
       },
     });
     const prints = tagList.length ? allMatching.filter((p) => matchesTagList(p.tags, tagList)) : allMatching;
@@ -303,7 +305,7 @@ router.get(
     const out = paged.map((p) => {
       const printFiles = filesByPrint.get(p.id) ?? [];
       const preparedFile = p.preparedFileId ? (printFiles.find((f) => f.id === p.preparedFileId) ?? null) : null;
-      return toPrintOut(p, p.plates, printFiles, preparedFile, p.author, p.previewImages);
+      return toPrintOut(p, p.plates, printFiles, preparedFile, p.author, p.previewImages, p.category);
     });
     res.json(out);
   }),

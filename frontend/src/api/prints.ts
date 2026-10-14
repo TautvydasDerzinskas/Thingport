@@ -63,6 +63,7 @@ export type Print = {
   category_id?: string | null;
   category_name?: string | null;
   category_source?: "manual" | "rule" | "ai" | "legacy" | null;
+  category_kind?: "category" | "folder" | null;
   ai_suggestion?: {
     category_id: string;
     category_path: string;
@@ -401,15 +402,12 @@ export const printsApi = {
     return res.json();
   },
 
-  /** Fills the model's empty details and images from its source; never overwrites an edit. */
-  recategorize: async (
-    id: string,
-    force = false,
-  ): Promise<{ print: Print; outcome: "applied" | "suggested" | "no_match" | "unchanged" }> => {
+  /** Queues the model for AI categorization; the outcome arrives as a notification. */
+  recategorize: async (id: string, force = false): Promise<void> => {
     const res = await fetch(`${apiBase()}/print/${id}/recategorize`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ force }),
+      body: JSON.stringify({ force, background: true }),
     });
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) {
@@ -426,7 +424,6 @@ export const printsApi = {
         typeof record.code === "string" ? record.code : null,
       );
     }
-    return res.json();
   },
 
   fillGaps: async (id: string): Promise<FillGapsResult> => {

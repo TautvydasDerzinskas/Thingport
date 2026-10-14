@@ -582,6 +582,7 @@ function aiCategorizationSettingsOut(settings: Awaited<ReturnType<typeof getAiCa
     on_import: settings.onImport,
     concurrency: settings.concurrency,
     send_image: settings.sendImage,
+    thinking: settings.thinking,
     timeout_ms: settings.timeoutMs,
   };
 }
@@ -604,6 +605,7 @@ const aiCategorizationSettingsSchema = z
     on_import: z.boolean().optional(),
     concurrency: z.number().int().min(1).max(4).optional(),
     send_image: z.boolean().optional(),
+    thinking: z.boolean().optional(),
     timeout_ms: z.number().int().min(1).max(300000).optional(),
   })
   .strict();
@@ -634,6 +636,7 @@ router.patch(
       ...(body.on_import !== undefined ? { onImport: body.on_import } : {}),
       ...(body.concurrency !== undefined ? { concurrency: body.concurrency } : {}),
       ...(body.send_image !== undefined ? { sendImage: body.send_image } : {}),
+      ...(body.thinking !== undefined ? { thinking: body.thinking } : {}),
     });
     res.json(aiCategorizationSettingsOut(settings));
   }),

@@ -8,12 +8,14 @@ import Alert from "@mui/material/Alert";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 import ImportProgressBar from "./ImportProgressBar";
+import AiRunProgressBar from "./AiRunProgressBar";
 import BackToTopButton from "./BackToTopButton";
 import { ConfirmProvider } from "../ConfirmProvider";
 import { ToastProvider } from "../ToastProvider";
 import { PageHeaderContext, type PageHeader } from "./PageHeaderContext";
 import { NavigationHistoryProvider, useSmartBack } from "./NavigationHistoryContext";
 import { ImportJobProvider } from "./ImportJobContext";
+import { AiRunProvider } from "./AiRunContext";
 import { NotificationsProvider, useNotifications } from "./NotificationsContext";
 import type { ThemeSelection } from "../../constants/settingsOptions";
 import type { AuthUser } from "../../api/auth";
@@ -163,41 +165,47 @@ function AppLayoutShell({
 
   return (
     <ImportJobProvider onUnauthorized={onUnauthorized} onJobCompleted={handleJobCompleted}>
-      <Box
-        sx={{
-          background: (theme) => theme.thingport.pageBackground,
-          minHeight: "100vh",
-          display: "flex",
-        }}
-      >
-        <Sidebar isAdmin={isAdmin} onSelectCategory={onSelectCategory} bookmarksVersion={bookmarksVersion} />
-        <Box component="main" sx={{ flex: 1, minWidth: 0, p: 2, pt: 0 }}>
-          {apiUp === false && (
-            <Alert severity="error" sx={{ mb: 1.5 }}>
-              {t("shell.apiUnreachable")}
-            </Alert>
-          )}
-          <TopBar
-            title={pageHeader?.title || routeTitle}
-            subtitle={pageHeader?.subtitle ?? routeSubtitle}
-            onBack={pageHeader?.onBack ?? routeOnBack}
-            actions={pageHeader?.actions}
-            categoryId={categoryId}
-            makerworldCookie={makerworldCookie}
-            onUpdateMakerWorld={onUpdateMakerWorld}
-            onUploaded={onPrintsChanged}
-            onUnauthorized={onUnauthorized}
-            user={user}
-            theme={themeSelection}
-            onThemeChange={onThemeChange}
-            onOpenProfile={onOpenProfile}
-            onLogout={onLogout}
-          />
-          <PageHeaderContext.Provider value={setPageHeader}>{children}</PageHeaderContext.Provider>
+      <AiRunProvider onUnauthorized={onUnauthorized} onRunFinished={handleJobCompleted}>
+        <Box
+          sx={{
+            background: (theme) => theme.thingport.pageBackground,
+            minHeight: "100vh",
+            display: "flex",
+          }}
+        >
+          <Sidebar isAdmin={isAdmin} onSelectCategory={onSelectCategory} bookmarksVersion={bookmarksVersion} />
+          <Box component="main" sx={{ flex: 1, minWidth: 0, p: 2, pt: 0 }}>
+            {apiUp === false && (
+              <Alert severity="error" sx={{ mb: 1.5 }}>
+                {t("shell.apiUnreachable")}
+              </Alert>
+            )}
+            <TopBar
+              title={pageHeader?.title || routeTitle}
+              subtitle={pageHeader?.subtitle ?? routeSubtitle}
+              onBack={pageHeader?.onBack ?? routeOnBack}
+              actions={pageHeader?.actions}
+              categoryId={categoryId}
+              makerworldCookie={makerworldCookie}
+              onUpdateMakerWorld={onUpdateMakerWorld}
+              onUploaded={onPrintsChanged}
+              onUnauthorized={onUnauthorized}
+              user={user}
+              theme={themeSelection}
+              onThemeChange={onThemeChange}
+              onOpenProfile={onOpenProfile}
+              onLogout={onLogout}
+            />
+            <PageHeaderContext.Provider value={setPageHeader}>{children}</PageHeaderContext.Provider>
+          </Box>
         </Box>
-      </Box>
-      <ImportProgressBar />
-      <BackToTopButton />
+        {/* Both can run at once, so they stack here rather than each pinning itself to the bottom. */}
+        <Box sx={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: (theme) => theme.zIndex.snackbar }}>
+          <AiRunProgressBar />
+          <ImportProgressBar />
+        </Box>
+        <BackToTopButton />
+      </AiRunProvider>
     </ImportJobProvider>
   );
 }

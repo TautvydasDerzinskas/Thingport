@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import CheckIcon from "@mui/icons-material/Check";
@@ -7,52 +7,65 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import CircularProgress from "@mui/material/CircularProgress";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import LinearProgress from "@mui/material/LinearProgress";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { UnauthorizedError } from "../../api/client";
-import { aiCategorizationApi, type AiRun, type AiRunCounts, type AiRunScope } from "../../api/aiCategorization";
+import { aiCategorizationApi, type AiRunCounts, type AiRunScope } from "../../api/aiCategorization";
 import type { Print } from "../../api/prints";
 import { useToast } from "../../components/ToastProvider";
 import { ListRowSkeletons } from "../../components/ListSkeleton";
+import HelpTip from "../../components/HelpTip";
+import { useAiRun } from "../../components/Layout/AiRunContext";
 
 type Props = {
   onUnauthorized?: () => void;
   onPrintUpdated?: (print: Print) => void;
-  /** Many models may have changed category: after a run, or a bulk accept or reject. */
+  /** Many models may have changed category after a bulk accept or reject. */
   onLibraryChanged?: () => void;
+  /** Closes the manager once a run starts: its progress shows at the bottom of the app. */
+  onRunStarted?: () => void;
 };
 const initialCounts: AiRunCounts = { uncategorized: 0, ai: 0, rule: 0, legacy: 0, manual: 0, folder: 0 };
-const initialScope: AiRunScope = { include_ai: false, include_rule: false, include_legacy: false };
+// Models without a place, and models parked in folders, are what a run is for; re-checking a category is opt-in.
+const initialScope: AiRunScope = {
+  include_uncategorized: true,
+  include_folders: true,
+  include_ai: false,
+  include_rule: false,
+  include_manual: false,
+};
+const scopeOptions = [
+  { key: "include_uncategorized", label: "uncategorized", count: (counts: AiRunCounts) => counts.uncategorized },
+  { key: "include_folders", label: "folders", count: (counts: AiRunCounts) => counts.folder },
+  { key: "include_ai", label: "ai", count: (counts: AiRunCounts) => counts.ai },
+  { key: "include_rule", label: "rule", count: (counts: AiRunCounts) => counts.rule },
+  { key: "include_manual", label: "manual", count: (counts: AiRunCounts) => counts.manual + counts.legacy },
+] as const;
 
 /** The AI section of the models manager: a library run above the pending suggestions. */
-export default function AiCategorizationPanel({ onUnauthorized, onPrintUpdated, onLibraryChanged }: Props) {
+export default function AiCategorizationPanel({
+  onUnauthorized,
+  onPrintUpdated,
+  onLibraryChanged,
+  onRunStarted,
+}: Props) {
   const { t } = useTranslation(["models", "common"]);
   const showToast = useToast();
-  const [runOpen, setRunOpen] = useState(false);
   const [counts, setCounts] = useState(initialCounts);
-  const [run, setRun] = useState<AiRun | null>(null);
+  const [countsLoaded, setCountsLoaded] = useState(false);
   const [scope, setScope] = useState(initialScope);
   const [items, setItems] = useState<Print[]>([]);
   const [total, setTotal] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [suggestionsLoading, setSuggestionsLoading] = useState(true);
+  const { running, startRun } = useAiRun();
 
-  const loadRun = async () => {
-    const state = await aiCategorizationApi.runState();
-    setCounts(state.counts);
-    setRun(state.run);
-  };
   const loadSuggestions = async (offset = 0, append = false) => {
     const result = await aiCategorizationApi.suggestions(50, offset);
     setItems((current) => (append ? [...current, ...result.items] : result.items));
@@ -60,9 +73,9 @@ export default function AiCategorizationPanel({ onUnauthorized, onPrintUpdated, 
     if (!append) setSelected([]);
   };
 
-  // Reloaded when the run dialog closes, since a run adds suggestions.
+  // Reloaded whenever a run stops, since a run adds suggestions.
   useEffect(() => {
-    if (runOpen) return;
+    if (running) return;
     let active = true;
     setSuggestionsLoading(true);
     void aiCategorizationApi
@@ -83,73 +96,33 @@ export default function AiCategorizationPanel({ onUnauthorized, onPrintUpdated, 
     return () => {
       active = false;
     };
-  }, [runOpen, onUnauthorized, showToast]);
+  }, [running, onUnauthorized, showToast]);
 
+  // Counts on opening, and again after a run, which moves models between the groups.
   useEffect(() => {
-    if (!runOpen) return;
+    if (running) return;
     let active = true;
-    const refresh = async () => {
-      try {
-        const state = await aiCategorizationApi.runState();
-        if (active) {
-          setCounts(state.counts);
-          setRun(state.run);
-        }
-      } catch (err) {
+    void aiCategorizationApi
+      .runState()
+      .then((state) => {
+        if (!active) return;
+        setCounts(state.counts);
+        setCountsLoaded(true);
+      })
+      .catch((err: unknown) => {
         if (err instanceof UnauthorizedError) onUnauthorized?.();
-      }
-    };
-    void refresh();
-    const timer = window.setInterval(() => void refresh(), 2000);
+        else if (active) showToast({ message: err instanceof Error ? err.message : String(err), severity: "error" });
+      });
     return () => {
       active = false;
-      window.clearInterval(timer);
     };
-  }, [runOpen, onUnauthorized]);
-
-  // A run that finishes while the dialog is open has changed the library behind it.
-  const wasRunning = useRef(false);
-  useEffect(() => {
-    if (wasRunning.current && !run?.running) onLibraryChanged?.();
-    wasRunning.current = Boolean(run?.running);
-  }, [run?.running, onLibraryChanged]);
-
-  // Closed mid-run, it shows what the run has done so far.
-  const closeRun = () => {
-    if (run?.running) onLibraryChanged?.();
-    setRunOpen(false);
-  };
-
-  const openRun = async () => {
-    setRunOpen(true);
-    setBusy(true);
-    try {
-      await loadRun();
-    } catch (err) {
-      if (err instanceof UnauthorizedError) onUnauthorized?.();
-      else showToast({ message: err instanceof Error ? err.message : String(err), severity: "error" });
-    } finally {
-      setBusy(false);
-    }
-  };
+  }, [running, onUnauthorized, showToast]);
 
   const start = async () => {
     setBusy(true);
     try {
-      const result = await aiCategorizationApi.startRun(scope);
-      setRun(result.run);
-    } catch (err) {
-      if (err instanceof UnauthorizedError) onUnauthorized?.();
-      else showToast({ message: err instanceof Error ? err.message : String(err), severity: "error" });
-    } finally {
-      setBusy(false);
-    }
-  };
-  const cancel = async () => {
-    setBusy(true);
-    try {
-      const result = await aiCategorizationApi.cancelRun();
-      setRun(result.run);
+      await startRun(scope);
+      onRunStarted?.();
     } catch (err) {
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       else showToast({ message: err instanceof Error ? err.message : String(err), severity: "error" });
@@ -171,6 +144,8 @@ export default function AiCategorizationPanel({ onUnauthorized, onPrintUpdated, 
         onLibraryChanged?.();
       }
       await loadSuggestions();
+      // An accepted model leaves "without category" or its folder.
+      setCounts((await aiCategorizationApi.runState()).counts);
       showToast({ message: t(`models:aiCategorization.${action}Done`, { count: ids.length }) });
     } catch (err) {
       if (err instanceof UnauthorizedError) onUnauthorized?.();
@@ -181,97 +156,61 @@ export default function AiCategorizationPanel({ onUnauthorized, onPrintUpdated, 
   };
 
   const toggleScope = (key: keyof AiRunScope) => setScope((current) => ({ ...current, [key]: !current[key] }));
+  const selectedCount = scopeOptions.reduce((sum, option) => sum + (scope[option.key] ? option.count(counts) : 0), 0);
+  // An empty group has nothing to pick; a hidden one adds nothing to the run either.
+  const visibleOptions = scopeOptions.filter((option) => option.count(counts) > 0);
 
   return (
     <>
-      <Stack spacing={1} alignItems="flex-start" sx={{ mb: 2.5 }}>
-        <Button size="small" variant="outlined" startIcon={<AutoAwesomeIcon />} onClick={() => void openRun()}>
-          {t("models:aiCategorization.runAll")}
-        </Button>
-        <Typography variant="caption" color="text.secondary">
-          {t("models:aiCategorization.runHint")}
+      <Stack spacing={1.5} sx={{ mb: 2.5 }}>
+        <Typography variant="body2" fontWeight={600}>
+          {t("models:aiCategorization.scopeTitle")}
         </Typography>
+        {countsLoaded && !visibleOptions.length && (
+          <Typography variant="body2" color="text.secondary">
+            {t("models:aiCategorization.nothingToCategorize")}
+          </Typography>
+        )}
+        <Stack direction="row" flexWrap="wrap" useFlexGap columnGap={2.5} rowGap={0.5}>
+          {visibleOptions.map((option) => (
+            <FormControlLabel
+              key={option.key}
+              sx={{ mr: 0 }}
+              control={
+                <Checkbox
+                  size="small"
+                  checked={scope[option.key]}
+                  onChange={() => toggleScope(option.key)}
+                  disabled={running}
+                />
+              }
+              label={
+                <>
+                  {t(`models:aiCategorization.scope.${option.label}`, { count: option.count(counts) })}
+                  <HelpTip text={t(`models:aiCategorization.scope.${option.label}Help`)} />
+                </>
+              }
+            />
+          ))}
+        </Stack>
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Button
+            size="small"
+            variant="contained"
+            startIcon={busy ? <CircularProgress size={16} /> : <AutoAwesomeIcon />}
+            onClick={() => void start()}
+            disabled={busy || running || selectedCount === 0}
+          >
+            {t("models:aiCategorization.start")}
+          </Button>
+          {running && (
+            <Typography variant="caption" color="text.secondary">
+              {t("models:aiCategorization.runInProgress")}
+            </Typography>
+          )}
+        </Stack>
       </Stack>
       <Divider sx={{ mb: 2 }} />
-      <Dialog open={runOpen} onClose={closeRun} fullWidth maxWidth="sm">
-        <DialogTitle>{t("models:aiCategorization.runTitle")}</DialogTitle>
-        <DialogContent>
-          <Stack spacing={1.5} sx={{ pt: 1 }}>
-            <Typography variant="body2">
-              {t("models:aiCategorization.countUncategorized", { count: counts.uncategorized })}
-            </Typography>
-            <FormControlLabel
-              control={<Checkbox checked={scope.include_ai} onChange={() => toggleScope("include_ai")} />}
-              label={t("models:aiCategorization.includeAi", { count: counts.ai })}
-            />
-            <FormControlLabel
-              control={<Checkbox checked={scope.include_rule} onChange={() => toggleScope("include_rule")} />}
-              label={t("models:aiCategorization.includeRule", { count: counts.rule })}
-            />
-            <FormControlLabel
-              control={<Checkbox checked={scope.include_legacy} onChange={() => toggleScope("include_legacy")} />}
-              label={t("models:aiCategorization.includeLegacy", { count: counts.legacy })}
-            />
-            <Typography variant="caption" color="text.secondary">
-              {t("models:aiCategorization.skipped", { manual: counts.manual, folder: counts.folder })}
-            </Typography>
-            {run?.running && (
-              <>
-                <Typography variant="body2">
-                  {t("models:aiCategorization.progress", {
-                    done: run.done,
-                    total: run.total,
-                    applied: run.applied,
-                    suggested: run.suggested,
-                    failed: run.failed,
-                  })}
-                </Typography>
-                <LinearProgress
-                  variant={run.total ? "determinate" : "indeterminate"}
-                  value={run.total ? (run.done / run.total) * 100 : 0}
-                />
-              </>
-            )}
-            {run && !run.running && run.finished_at && (
-              <Typography variant="body2">
-                {t("models:aiCategorization.finished", {
-                  applied: run.applied,
-                  suggested: run.suggested,
-                  failed: run.failed,
-                })}
-              </Typography>
-            )}
-            {run?.last_error && (
-              <Typography variant="caption" color="error">
-                {run.last_error}
-              </Typography>
-            )}
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeRun}>{t("common:close")}</Button>
-          {run?.running ? (
-            <Button color="error" onClick={() => void cancel()} disabled={busy}>
-              {t("models:aiCategorization.cancel")}
-            </Button>
-          ) : (
-            <Button
-              variant="contained"
-              onClick={() => void start()}
-              disabled={
-                busy ||
-                counts.uncategorized +
-                  (scope.include_ai ? counts.ai : 0) +
-                  (scope.include_rule ? counts.rule : 0) +
-                  (scope.include_legacy ? counts.legacy : 0) ===
-                  0
-              }
-            >
-              {busy ? <CircularProgress size={18} /> : t("models:aiCategorization.start")}
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
       <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
         {t("models:aiCategorization.suggestionsTitle", { count: total })}
       </Typography>

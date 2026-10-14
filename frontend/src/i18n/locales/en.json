@@ -308,6 +308,12 @@
       "builtInCollection": "Built-in collection",
       "sectionPages": "Pages"
     },
+    "aiRunProgress": {
+      "starting": "Starting AI categorization…",
+      "label": "Categorizing with AI… {{done}} of {{total}}",
+      "stopping": "Stopping after the current model…",
+      "stop": "Stop categorizing"
+    },
     "importProgress": {
       "starting": "Starting import…",
       "label": "Importing… {{processed}} of {{total}}",
@@ -637,6 +643,8 @@
         "threshold": "Auto-apply confidence threshold",
         "onImport": "Categorize new imports",
         "sendImage": "Send the first preview image",
+        "thinking": "Let the model think before answering",
+        "thinkingHint": "Turn off to speed up a reasoning model (such as qwen3) on slow hardware. If the provider doesn't support turning thinking off, the request is sent without it.",
         "save": "Save settings",
         "saved": "AI categorization settings saved.",
         "failed": "Failed to load or save AI categorization settings."
@@ -1657,21 +1665,26 @@
       "uploadedDirectly": "Uploaded directly to Thingport"
     },
     "aiCategorization": {
-      "folderSkipped": "Models in folders are left as they are: folders are your own tree.",
       "section": "AI Categorization",
       "recategorize": "Recategorize with AI",
-      "runAll": "Recategorize all with AI",
-      "runHint": "Sorts uncategorized models, and can re-check ones that already have a category.",
-      "runTitle": "Recategorize models with AI",
-      "countUncategorized": "Uncategorized models are always included: {{count}}",
-      "includeAi": "Include models last categorized by AI: {{count}}",
-      "includeRule": "Include models categorized by source rules: {{count}}",
-      "includeLegacy": "Include older categorized models: {{count}}",
-      "skipped": "{{manual}} manual models and {{folder}} folder models are always skipped.",
-      "progress": "Processed {{done}} of {{total}}, {{applied}} applied, {{suggested}} suggested, {{failed}} failed.",
-      "finished": "Finished: {{applied}} applied, {{suggested}} suggested, {{failed}} failed.",
-      "cancel": "Cancel run",
-      "start": "Start",
+      "categorize": "Categorize with AI",
+      "queued": "Queued for AI categorization. You'll get a notification when it's done.",
+      "scopeTitle": "Categorize models",
+      "runInProgress": "Categorizing with AI. Progress shows at the bottom of the page.",
+      "nothingToCategorize": "No models to categorize.",
+      "scope": {
+        "uncategorized": "Uncategorized ({{count}})",
+        "uncategorizedHelp": "Models that have no category yet, such as your uploads.",
+        "folders": "In folders ({{count}})",
+        "foldersHelp": "Models you filed into a folder. Applying a category moves the model out of its folder.",
+        "ai": "By AI ({{count}})",
+        "aiHelp": "Models whose category came from AI before. Re-checks them, for example after you add categories.",
+        "rule": "On import ({{count}})",
+        "ruleHelp": "Models that got their category automatically on import, from the source site's own category.",
+        "manual": "Manual ({{count}})",
+        "manualHelp": "Models whose category you picked yourself, plus ones categorized before AI categorization existed, since nothing recorded how those were set. In auto mode, AI may replace your choice."
+      },
+      "start": "Categorize",
       "suggestionsTitle": "Pending suggestions ({{count}})",
       "selectAll": "Select all",
       "deselectAll": "Deselect all",
@@ -1689,13 +1702,7 @@
       "accepted": "AI suggestion accepted.",
       "rejected": "AI suggestion rejected.",
       "confirmManual": "{{name}} has a category you chose manually. Replace it with an AI result?",
-      "failed": "AI recategorization failed.",
-      "outcome": {
-        "applied": "AI category applied.",
-        "suggested": "AI suggestion added for review.",
-        "no_match": "AI couldn't find a suitable category.",
-        "unchanged": "The category was left unchanged."
-      }
+      "failed": "AI recategorization failed."
     },
     "detail": {
       "subtitle": "Model",
@@ -2076,7 +2083,7 @@
       }
     },
     "manager": {
-      "title": "Manage categories"
+      "title": "Manage categories & folders"
     }
   }
 }
