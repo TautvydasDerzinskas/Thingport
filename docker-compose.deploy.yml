@@ -26,8 +26,8 @@ services:
       - app-net
 
   backend:
-    # Pin to a specific build instead of :latest, e.g.:
-    #   BACKEND_IMAGE=ghcr.io/tautvydasderzinskas/thingport-backend:sha-a8fef7d
+    # Pin to a release instead of :latest, e.g. :1.2.0, or :1 for every 1.x (or a build, :sha-a8fef7d):
+    #   BACKEND_IMAGE=ghcr.io/tautvydasderzinskas/thingport-backend:1.2.0
     image: ${BACKEND_IMAGE:-ghcr.io/tautvydasderzinskas/thingport-backend:latest}
     restart: unless-stopped
     environment:
@@ -61,8 +61,8 @@ services:
 
   # Frontend: nginx serving the app and proxying /api/* to the backend (see frontend/nginx.conf).
   frontend:
-    # Pin to a specific build instead of :latest, e.g.:
-    #   FRONTEND_IMAGE=ghcr.io/tautvydasderzinskas/thingport-frontend:sha-a8fef7d
+    # Pin to a release instead of :latest, e.g. :1.2.0, or :1 for every 1.x (or a build, :sha-a8fef7d):
+    #   FRONTEND_IMAGE=ghcr.io/tautvydasderzinskas/thingport-frontend:1.2.0
     image: ${FRONTEND_IMAGE:-ghcr.io/tautvydasderzinskas/thingport-frontend:latest}
     restart: unless-stopped
     ports:

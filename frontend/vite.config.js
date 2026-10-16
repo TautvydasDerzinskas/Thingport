@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { defineConfig } from "vite";
 
 function normalizeHostEntry(entry) {
@@ -38,7 +39,13 @@ const resolvedAllowedHosts = parseAllowedHosts(
   process.env.VITE_ALLOWED_HOSTS || process.env.ALLOWED_HOSTS || process.env.CORS_ORIGINS,
 );
 
+// The version semantic-release last gave the frontend, shown in Administration > Update Checker.
+const { version } = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8"));
+
 export default defineConfig({
+  define: {
+    "import.meta.env.VITE_APP_VERSION": JSON.stringify(version),
+  },
   server: {
     host: true,
     allowedHosts: resolvedAllowedHosts,

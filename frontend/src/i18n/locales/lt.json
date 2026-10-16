@@ -493,6 +493,7 @@
       "updateCheck": {
         "heading": "Atnaujinimų tikrinimas",
         "subtitle": "Patikrina, ar yra naujesnė Thingport versija šiam backend ir frontend.",
+        "running": "Veikia serveris {{backend}} · sąsaja {{frontend}}",
         "checking": "Tikrinama, ar yra atnaujinimų…",
         "unknown": "Negalima patikrinti atnaujinimų — ši versija nebuvo paskelbta kaip Docker atvaizdas (pvz., vietinė kūrimo versija).",
         "failed": "Nepavyko patikrinti atnaujinimų. Bandykite vėliau.",

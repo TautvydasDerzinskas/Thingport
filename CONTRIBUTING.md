@@ -24,8 +24,11 @@ Getting the project running locally is covered in [docs/DEVELOPMENT.md](docs/DEV
    feat: show model usage in memory size
    ```
 
-   For the browser extension the type also decides its next version (`feat:` minor, `fix:` patch,
-   `!` major) -- see [extension/CONTRIBUTING.md](extension/CONTRIBUTING.md#versioning-how-the-next-version-is-picked).
+   The type also decides the next version of what you touched (`feat:` minor, `fix:` and `perf:` patch, `!`
+   major; anything else none). The backend, the frontend and the browser extension are each versioned on their
+   own, from the commits under their folder: the backend and frontend when a release is merged into `main`, the
+   extension weekly -- see [extension/CONTRIBUTING.md](extension/CONTRIBUTING.md#versioning-how-the-next-version-is-picked).
+   Each gets a `CHANGELOG.md` and a GitHub release.
 
 4. **Push** to your fork and open a pull request against `develop`.
 

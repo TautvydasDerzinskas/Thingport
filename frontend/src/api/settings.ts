@@ -105,6 +105,8 @@ export type DatabaseCredentialsInput = {
 };
 
 export type VersionCheck = {
+  /** Null from a backend older than versioning. */
+  backend_version?: string | null;
   backend_sha: string | null;
   latest_backend_sha: string | null;
   latest_frontend_sha: string | null;
@@ -112,6 +114,9 @@ export type VersionCheck = {
 
 // Inlined by Vite from the GIT_SHA build arg; null in dev, which the update checker treats as
 // "can't check".
+/** From frontend/package.json, which each release bumps. */
+export const FRONTEND_VERSION: string = import.meta.env.VITE_APP_VERSION as string;
+
 export const FRONTEND_GIT_SHA: string | null = (import.meta.env.VITE_GIT_SHA as string | undefined) || null;
 
 export const settingsApi = {

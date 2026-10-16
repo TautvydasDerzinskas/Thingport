@@ -8,7 +8,7 @@ import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import Box from "@mui/material/Box";
 import { UnauthorizedError } from "../../api/client";
-import { settingsApi, FRONTEND_GIT_SHA } from "../../api/settings";
+import { settingsApi, FRONTEND_GIT_SHA, FRONTEND_VERSION } from "../../api/settings";
 import SectionHeader from "../../components/SectionHeader";
 
 type Props = {
@@ -26,6 +26,7 @@ type Status =
 export default function UpdateCheckSection({ onUnauthorized }: Props) {
   const { t } = useTranslation("app");
   const [status, setStatus] = React.useState<Status>({ kind: "checking" });
+  const [backendVersion, setBackendVersion] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     let active = true;
@@ -33,6 +34,7 @@ export default function UpdateCheckSection({ onUnauthorized }: Props) {
       try {
         const data = await settingsApi.getVersionCheck();
         if (!active) return;
+        setBackendVersion(data.backend_version ?? null);
         if (!data.backend_sha || !FRONTEND_GIT_SHA) {
           setStatus({ kind: "unknown" });
           return;
@@ -62,6 +64,12 @@ export default function UpdateCheckSection({ onUnauthorized }: Props) {
         subtitle={t("adminSettings.updateCheck.subtitle")}
       />
       <Paper variant="outlined" sx={{ p: 2.5 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+          {t("adminSettings.updateCheck.running", {
+            backend: backendVersion ?? "—",
+            frontend: FRONTEND_VERSION,
+          })}
+        </Typography>
         {status.kind === "checking" && (
           <Stack direction="row" alignItems="center" spacing={1}>
             <CircularProgress size={14} />

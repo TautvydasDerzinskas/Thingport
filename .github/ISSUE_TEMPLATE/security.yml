@@ -30,10 +30,31 @@ body:
     attributes:
       label: What would you suggest?
   - type: input
-    id: version
+    id: backend_version
     attributes:
-      label: Version or image tag
-      placeholder: "e.g. 1.4.0, sha-abc1234 or Grab 1.3.0"
+      label: Backend version
+      description: >-
+        Shown in Administration > Update Checker as "Running backend 1.2.0 · frontend 1.1.0". Not an admin? Ask
+        yours. No version shown means a build from before versioning: give the image tag instead.
+      placeholder: "e.g. 1.2.0"
+  - type: input
+    id: frontend_version
+    attributes:
+      label: Frontend version
+      description: On the same line in Administration > Update Checker; the backend and frontend are versioned apart.
+      placeholder: "e.g. 1.1.0"
+  - type: input
+    id: grab_version
+    attributes:
+      label: Thingport Grab version
+      description: If Grab is involved. It's at the bottom of Grab's popup.
+      placeholder: "e.g. v1.5.0"
+  - type: input
+    id: image_tags
+    attributes:
+      label: Docker image tags
+      description: The tags you run, from your docker-compose file or `docker compose images`.
+      placeholder: "e.g. :latest, :1.2.0 or :sha-abc1234"
   - type: checkboxes
     id: public
     attributes:

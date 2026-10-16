@@ -1,0 +1,93 @@
+name: Release project
+
+# Versioning for backend/ and frontend/, called from their image workflows when a release reaches main. semantic-release
+# (<project>/.releaserc.json) reads only that project's commits: a feat or fix since its last version gives it a new
+# one, a CHANGELOG.md entry and a thingport-<project>-vX.Y.Z tag, committed back to main. Anything else (refactor,
+# docs, chore) gives no version, and the image is still published as :latest. The output ref is main after the release
+# commit, so the image is built with the version it says it is.
+on:
+  workflow_call:
+    inputs:
+      project_dir:
+        description: "The project to release, e.g. backend"
+        required: true
+        type: string
+      title:
+        description: "The GitHub release's name before the version, e.g. Thingport backend"
+        required: true
+        type: string
+    outputs:
+      version:
+        description: "The new version; empty when nothing called for one"
+        value: ${{ jobs.release.outputs.version }}
+      ref:
+        description: "The commit to build the image from"
+        value: ${{ jobs.release.outputs.ref }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write # the release commit, the tag and the GitHub release
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      ref: ${{ steps.release.outputs.ref }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0 # semantic-release needs the full history and tags
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22 # semantic-release 25 needs Node 22.14+
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      # The tooling lives at the root, outside the projects, so it stays out of their images.
+      - run: npm ci --no-audit --no-fund
+        env:
+          HUSKY: "0"
+
+      - name: semantic-release
+        id: release
+        working-directory: ${{ inputs.project_dir }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          # The release commit is the bot's; the repo's commit hooks are for people.
+          HUSKY: "0"
+        run: |
+          # The backend and frontend release from their own workflows on the same merge, each pushing a release
+          # commit, so whichever goes second finds main moved: it catches up and tries again. semantic-release also
+          # quietly skips a release when main moves under it, which is retried the same way.
+          for attempt in 1 2 3; do
+            git fetch --quiet --force --tags origin main
+            git reset --quiet --hard origin/main
+            started=$(git rev-parse HEAD)
+            if npx semantic-release; then
+              if grep -q '^version=' "$GITHUB_OUTPUT" || [ "$(git ls-remote origin refs/heads/main | cut -f1)" = "$started" ]; then
+                break
+              fi
+              echo "main moved during the release; trying again."
+            elif [ "$attempt" = 3 ]; then
+              exit 1
+            fi
+            sleep $((attempt * 10))
+          done
+          echo "ref=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      # Not semantic-release's GitHub plugin: it marks releases "latest", a slot Bridge's links rely on.
+      - name: GitHub release
+        if: steps.release.outputs.version != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.release.outputs.tag }}" \
+            --title "${{ inputs.title }} ${{ steps.release.outputs.version }}" \
+            --notes-file "$RUNNER_TEMP/release-notes.md" \
+            --latest=false

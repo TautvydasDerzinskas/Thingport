@@ -1,6 +1,10 @@
+import fs from "node:fs";
+import path from "node:path";
+
 const GITHUB_REPO = "TautvydasDerzinskas/Thingport";
 
 export type VersionCheckResult = {
+  backend_version: string | null;
   backend_sha: string | null;
   latest_backend_sha: string | null;
   latest_frontend_sha: string | null;
@@ -9,6 +13,20 @@ export type VersionCheckResult = {
 // Set by the Dockerfile's GIT_SHA build arg; null in dev, which the UI treats as "can't check".
 export function getBackendGitSha(): string | null {
   return process.env.GIT_SHA && process.env.GIT_SHA !== "unknown" ? process.env.GIT_SHA : null;
+}
+
+// From package.json, which each release bumps; the server runs from its own folder, in Docker and in dev alike.
+let backendVersion: string | null | undefined;
+export function getBackendVersion(): string | null {
+  if (backendVersion === undefined) {
+    try {
+      const { version } = JSON.parse(fs.readFileSync(path.resolve("package.json"), "utf8")) as { version?: string };
+      backendVersion = version ?? null;
+    } catch {
+      backendVersion = null;
+    }
+  }
+  return backendVersion;
 }
 
 // The head_sha of the latest successful image workflow run. A path filter would miss commits that
@@ -33,5 +51,10 @@ export async function checkForUpdates(): Promise<VersionCheckResult> {
     latestPublishedSha("backend-image.yml"),
     latestPublishedSha("frontend-image.yml"),
   ]);
-  return { backend_sha: getBackendGitSha(), latest_backend_sha, latest_frontend_sha };
+  return {
+    backend_version: getBackendVersion(),
+    backend_sha: getBackendGitSha(),
+    latest_backend_sha,
+    latest_frontend_sha,
+  };
 }

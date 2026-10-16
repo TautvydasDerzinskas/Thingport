@@ -30,6 +30,16 @@ on:
         required: false
         type: boolean
         default: true
+      ref:
+        description: "The commit to build; the triggering one when empty"
+        required: false
+        type: string
+        default: ""
+      version:
+        description: "The release's version (release-project.yml), tagged as X.Y.Z, X.Y and X; empty for none"
+        required: false
+        type: string
+        default: ""
 
 jobs:
   build:
@@ -42,6 +52,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -86,8 +98,11 @@ jobs:
           tags: |
             type=ref,event=branch
             type=sha,prefix=sha-,format=short
-            type=semver,pattern={{version}}
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}},value=${{ inputs.version }},enable=${{ inputs.version != '' }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.version }},enable=${{ inputs.version != '' }}
+            type=semver,pattern={{major}},value=${{ inputs.version }},enable=${{ inputs.version != '' }}
+            # main, not "the default branch": that's develop now, and :latest is what's released.
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Build (and push)
         uses: docker/build-push-action@v6

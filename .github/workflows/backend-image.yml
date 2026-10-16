@@ -4,7 +4,6 @@ name: Backend image
 on:
   push:
     branches: [main]
-    tags: ["v*.*.*"]
     paths:
       - "backend/**"
       - ".github/workflows/backend-image.yml"
@@ -18,7 +17,9 @@ on:
 
 concurrency:
   group: backend-image-${{ github.ref }}
-  cancel-in-progress: true
+  # A newer push replaces a pull request's run, but never one on main: cut off mid-release, a version could be
+  # tagged without its GitHub release. Runs on main queue instead; the newest builds everything merged so far.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   # The full backend suite against real Postgres, including end-to-end provider imports. The image
@@ -59,13 +60,29 @@ jobs:
       - run: npx prisma migrate deploy
       - run: npm test
 
-  build:
+  # A merge into main may give the backend a new version (release-project.yml); the image is built from it.
+  release:
     needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/release-project.yml
+    with:
+      project_dir: backend
+      title: Thingport backend
+    secrets: inherit
+
+  build:
+    needs: [test, release]
+    # Also when the release was skipped, as on pull requests; never after a failed one.
+    if: ${{ !cancelled() && needs.test.result == 'success' && needs.release.result != 'failure' }}
     permissions:
       contents: read
       packages: write
     uses: ./.github/workflows/build-image.yml
     with:
+      ref: ${{ needs.release.outputs.ref }}
+      version: ${{ needs.release.outputs.version }}
       project_dir: backend
       image_name: ghcr.io/${{ github.repository_owner }}/thingport-backend
       context: ./backend

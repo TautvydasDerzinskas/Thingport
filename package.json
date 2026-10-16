@@ -3,11 +3,16 @@
   "private": true,
   "license": "AGPL-3.0-only",
   "devDependencies": {
+    "@semantic-release/changelog": "^7.0.0",
+    "@semantic-release/exec": "^7.1.0",
+    "@semantic-release/git": "^11.0.1",
     "husky": "^9.1.7",
     "lint-staged": "^15.2.10",
     "prettier": "^3.9.9",
     "prettier-plugin-astro": "^0.14.1",
-    "prettier-plugin-sh": "^0.20.2"
+    "prettier-plugin-sh": "^0.20.2",
+    "semantic-release": "^25.0.9",
+    "semantic-release-monorepo": "^8.0.2"
   },
   "scripts": {
     "prepare": "husky",

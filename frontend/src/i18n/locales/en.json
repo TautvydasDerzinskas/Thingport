@@ -492,6 +492,7 @@
       "updateCheck": {
         "heading": "Update Checker",
         "subtitle": "Checks whether a newer Thingport version is available for this backend and frontend.",
+        "running": "Running backend {{backend}} · frontend {{frontend}}",
         "checking": "Checking for updates…",
         "unknown": "Can't check for updates — this build wasn't published as a Docker image (e.g. a local dev build).",
         "failed": "Couldn't check for updates. Try again later.",
