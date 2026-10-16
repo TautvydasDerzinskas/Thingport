@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -24,6 +24,7 @@ import { useSlicerPreference } from "../../hooks/useSlicerPreference";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { onConfigurationClosed, openConfiguration } from "../../utils/configurationEvents";
 import ProviderCollectionTile, { ProviderCollectionTileSkeleton } from "./ProviderCollectionTile";
+import { useDisabledProviders } from "../../hooks/useDisabledProviders";
 
 export type BrowsePick = { provider: BrowsableProvider; collection: ProviderCollection };
 
@@ -45,11 +46,17 @@ const PASTE_EXAMPLES: Record<BrowsableProvider, string> = {
   thingiverse: "https://www.thingiverse.com/…/collections/…",
 };
 
-/** The one the user's slicer goes with, unless it isn't connected; then the first that is. */
-function defaultProvider(accounts: ProviderAccounts, slicer: string | null): BrowsableProvider {
-  const preferred = slicer === "bambustudio" ? "makerworld" : slicer === "prusaslicer" ? "printables" : "thingiverse";
+/** The one the user's slicer goes with, unless it isn't connected; then the first that is. Only from `available`,
+ *  the ones an admin hasn't turned off. */
+function defaultProvider(
+  accounts: ProviderAccounts,
+  slicer: string | null,
+  available: readonly BrowsableProvider[],
+): BrowsableProvider {
+  const slicers = slicer === "bambustudio" ? "makerworld" : slicer === "prusaslicer" ? "printables" : "thingiverse";
+  const preferred = available.includes(slicers) ? slicers : (available[0] ?? slicers);
   if (accounts[preferred].connected) return preferred;
-  return BROWSABLE_PROVIDERS.find((provider) => accounts[provider].connected) ?? preferred;
+  return available.find((provider) => accounts[provider].connected) ?? preferred;
 }
 
 function providerOfUrl(url: string): BrowsableProvider | null {
@@ -64,6 +71,9 @@ function providerOfUrl(url: string): BrowsableProvider | null {
 /** Picking the provider collection an unsynced Thingport collection should follow: the user's own
  *  collections on the chosen provider, or any collection by its link. */
 export default function SyncBrowse({ provider, onProviderChange, picked, onPick, onUnauthorized }: Props) {
+  // Turned off by an admin: not offered.
+  const disabled = useDisabledProviders();
+  const available = useMemo(() => BROWSABLE_PROVIDERS.filter((p) => !disabled.has(p)), [disabled]);
   const { t } = useTranslation(["models", "common"]);
   const slicer = useSlicerPreference();
   const confirm = useConfirm();
@@ -103,8 +113,11 @@ export default function SyncBrowse({ provider, onProviderChange, picked, onPick,
 
   // Waits for the slicer too, so the default doesn't flip once it arrives.
   useEffect(() => {
-    if (accounts && !provider) onProviderChange(defaultProvider(accounts, slicer));
-  }, [accounts, provider, slicer, onProviderChange]);
+    // Also when the one shown has just been turned off by an admin.
+    if (accounts && (!provider || (!available.includes(provider) && available.length))) {
+      onProviderChange(defaultProvider(accounts, slicer, available));
+    }
+  }, [accounts, provider, slicer, onProviderChange, available]);
 
   const account = provider && accounts ? accounts[provider] : null;
   const needsAccount = provider !== null && provider !== "makerworld" && account?.connected && !account.account;
@@ -253,7 +266,7 @@ export default function SyncBrowse({ provider, onProviderChange, picked, onPick,
             setEditingAccount(false);
             onProviderChange(next);
           }}
-          options={BROWSABLE_PROVIDERS.map((value) => ({ value, label: importProviderInfo(value)?.label ?? value }))}
+          options={available.map((value) => ({ value, label: importProviderInfo(value)?.label ?? value }))}
         />
       </div>
 

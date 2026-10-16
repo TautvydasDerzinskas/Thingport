@@ -104,6 +104,10 @@ export type DatabaseCredentialsInput = {
   password: string;
 };
 
+export type ImportProvider = "makerworld" | "printables" | "thingiverse";
+/** An admin can turn a provider off for the whole instance; menus hide it then. */
+export type ProviderSetting = { id: ImportProvider; enabled: boolean };
+
 export type VersionCheck = {
   /** Null from a backend older than versioning. */
   backend_version?: string | null;
@@ -219,6 +223,24 @@ export const settingsApi = {
       throw new Error(await readErrorMessage(res, "Failed to update registration settings"));
     }
     return res.json();
+  },
+
+  getProviders: async (): Promise<ProviderSetting[]> => {
+    const res = await fetch(`${apiBase()}/settings/providers`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to load providers"));
+    return ((await res.json()) as { providers: ProviderSetting[] }).providers;
+  },
+
+  setProviderEnabled: async (provider: ImportProvider, enabled: boolean): Promise<ProviderSetting[]> => {
+    const res = await fetch(`${apiBase()}/settings/providers/${provider}`, {
+      method: "PATCH",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ enabled }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update the provider"));
+    return ((await res.json()) as { providers: ProviderSetting[] }).providers;
   },
 
   // Write-only: GET only reports whether a token is configured.

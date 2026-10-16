@@ -55,6 +55,7 @@ const ACTION_COLORS: Record<LogAction, ActionColor> = {
   tag_deleted: "error",
   user_role_changed: "warning",
   user_deleted: "error",
+  provider_toggled: "warning",
 };
 
 function isoDateOnly(d: Date): string {
@@ -146,6 +147,15 @@ export default function LogsPage({ onUnauthorized }: Props) {
         return t(d.role === "ADMIN" ? "adminSettings.logs.userPromoted" : "adminSettings.logs.userDemoted", {
           email: typeof d.email === "string" ? d.email : "",
         });
+      case "provider_toggled": {
+        const names: Record<string, string> = {
+          makerworld: "MakerWorld",
+          printables: "Printables",
+          thingiverse: "Thingiverse",
+        };
+        const provider = typeof d.provider === "string" ? (names[d.provider] ?? d.provider) : "";
+        return t(d.enabled ? "adminSettings.logs.providerOn" : "adminSettings.logs.providerOff", { provider });
+      }
       case "user_deleted":
         return t("adminSettings.logs.userDeleted", {
           email: typeof d.email === "string" ? d.email : "",

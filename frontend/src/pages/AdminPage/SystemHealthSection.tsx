@@ -39,10 +39,10 @@ type Need = "required" | "recommended" | "optional";
 /** How much Thingport needs each one, and where it's set up. Order comes from the server: by importance. */
 const COMPONENTS: Record<HealthComponent, { icon: React.ReactNode; need: Need; settings?: string }> = {
   database: { icon: <StorageIcon />, need: "required", settings: "/admin-connections?tab=database" },
-  storage: { icon: <FolderOutlinedIcon />, need: "required" },
+  storage: { icon: <FolderOutlinedIcon />, need: "required", settings: "/admin-storage" },
   memory: { icon: <MemoryIcon />, need: "required", settings: "/admin-rendering" },
   flaresolverr: { icon: <ShieldOutlinedIcon />, need: "recommended", settings: "/admin-connections?tab=flaresolverr" },
-  thingiverse: { icon: <CloudOutlinedIcon />, need: "recommended", settings: "/admin-settings" },
+  thingiverse: { icon: <CloudOutlinedIcon />, need: "recommended", settings: "/admin-providers" },
   ai: { icon: <AutoAwesomeOutlinedIcon />, need: "optional", settings: "/admin-ai" },
   smtp: { icon: <MailOutlineIcon />, need: "optional", settings: "/admin-connections?tab=smtp" },
 };

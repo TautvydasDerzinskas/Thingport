@@ -9,6 +9,7 @@ import { makerworldCaptchaCooloffActive, MakerworldAuthError, MakerworldCaptchaE
 import { getThingiverseAccessToken } from "./settingsService";
 import { ThingiverseAuthError, ThingiverseRateLimitError } from "./thingiverseApi";
 import type { LookupProblem } from "./authorLinkingService";
+import { getDisabledProviders } from "./providerSettingsService";
 
 // Re-reads every imported model's description for one user from its source, replacing the stored
 // one, e.g. to bring models imported as plain text up to formatted descriptions with images.
@@ -86,8 +87,14 @@ export function startDescriptionRefetch(
 }
 
 export async function runDescriptionRefetch(run: DescriptionRefetchRun): Promise<void> {
+  // A provider an admin turned off is left out of the run, rather than counted as failing.
+  const disabled = await getDisabledProviders();
   const prints = await prisma.print.findMany({
-    where: { userId: run.userId, sourceProvider: { in: [...SOURCE_PROVIDERS] }, sourceExternalId: { not: null } },
+    where: {
+      userId: run.userId,
+      sourceProvider: { in: SOURCE_PROVIDERS.filter((provider) => !disabled.has(provider)) },
+      sourceExternalId: { not: null },
+    },
     orderBy: { createdAt: "asc" },
   });
   run.total = prints.length;

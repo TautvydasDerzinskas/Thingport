@@ -45,6 +45,7 @@ import { syncLikesUsername } from "../dto";
 import { getThingiverseAccessToken } from "./settingsService";
 import { createNotification } from "./notificationService";
 import { createLog } from "./auditLog";
+import { getDisabledProviders, isProviderEnabled, type Provider } from "./providerSettingsService";
 
 // Checks in a row that must find the provider's collection gone before it's unsynced.
 const MISSING_CHECKS_TO_UNSYNC = 2;
@@ -102,6 +103,7 @@ export type SyncOutcome =
   | "resumed" // a job a restart cut off was picked up again
   | "error" // the provider couldn't be read
   | "disconnected" // the provider isn't connected, or turned the login down; not checked till it is
+  | "disabled" // an admin turned the provider off for the instance
   | "gone" // the provider's collection wasn't found, not yet often enough to unsync
   | "unsynced"
   | "unchanged"
@@ -414,7 +416,9 @@ export async function runManualSync(syncId: string, { reserved = false } = {}): 
     let outcome: SyncOutcome;
     try {
       handedOver = true;
-      outcome = await syncCollection(syncId, { reserved });
+      // Turned off since the click was accepted: told, as any other outcome is.
+      outcome = (await isProviderEnabled(before.provider)) ? await syncCollection(syncId, { reserved }) : "disabled";
+      if (outcome === "disabled") releaseSync(syncId);
     } catch (err) {
       console.error(`[sync] manual sync of ${syncId} failed:`, err);
       outcome = "error";
@@ -450,6 +454,10 @@ async function notifyManualOutcome(before: SyncWithCollection, outcome: SyncOutc
       title: `Couldn't sync "${name}"`,
       body: `${after?.lastError ?? `${provider} couldn't be read`}. The sync tries again on its next round.`,
     },
+    disabled: {
+      title: `Couldn't sync "${name}"`,
+      body: `${provider} is turned off on this Thingport, so its collections don't sync. An admin can turn it back on in Administration > Providers.`,
+    },
     gone: {
       title: `Couldn't find "${name}" on ${provider}`,
       body: `${capitalize(sourceDescription(before))} may have been deleted. If it's still missing on the next check, "${name}" is unsynced; its models stay.`,
@@ -477,9 +485,11 @@ export function runSyncRound(): Promise<void> {
       select: { id: true, userId: true, provider: true, lastCheckedAt: true, intervalHours: true },
     });
     const due: string[] = [];
+    // A provider an admin turned off: its syncs wait, quietly, until it's back on.
+    const disabled = await getDisabledProviders();
     // Each user's connection to each provider, looked up once a round.
     const problems = new Map<string, ConnectionProblem | null>();
-    for (const sync of syncs.filter((s) => isSyncDue(s))) {
+    for (const sync of syncs.filter((s) => isSyncDue(s) && !disabled.has(s.provider as Provider))) {
       const key = `${sync.userId} ${sync.provider}`;
       if (problems.has(key)) {
         if (!problems.get(key)) due.push(sync.id);

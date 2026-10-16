@@ -6,10 +6,12 @@ import { requireAuth } from "../auth";
 import { HttpError } from "../utils/fileUtils";
 import { prisma } from "../db";
 import { normalizeImportUrl } from "../utils/urlUtils";
+import { assertUrlProviderEnabled } from "../services/providerSettingsService";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { requireCaptcha } from "../services/captchaService";
 import {
+  assertCanImportUrl,
   checkImportStatus,
   downloadImportToTemp,
   findImportedExternalIds,
@@ -88,6 +90,13 @@ async function withStoredMakerworldCookie<T extends { makerworld_cookie?: string
   return stored ? { ...body, makerworld_cookie: stored } : body;
 }
 
+/** The link, normalized, unless it's from a provider an admin has turned off. */
+async function enabledImportUrl(raw: string): Promise<string> {
+  const url = await normalizeImportUrl(raw);
+  await assertUrlProviderEnabled(url);
+  return url;
+}
+
 async function importAndDescribe(userId: string, url: string, body: z.infer<typeof importRequestSchema>) {
   let result;
   try {
@@ -119,6 +128,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const body = await withStoredMakerworldCookie(req.userId!, parseBody(importRequestSchema, req.body));
     const url = await normalizeImportUrl(body.url);
+    await assertCanImportUrl(req.userId!, url);
     if (req.query.async === "1") {
       const taskId = startImportTask(req.userId!, () => importAndDescribe(req.userId!, url, body));
       res.status(202).json({ task_id: taskId });
@@ -175,7 +185,7 @@ router.post(
   "/import/inspect",
   asyncHandler(async (req, res) => {
     const body = await withStoredMakerworldCookie(req.userId!, parseBody(importRequestSchema, req.body));
-    const url = await normalizeImportUrl(body.url);
+    const url = await enabledImportUrl(body.url);
     const result = await inspectImportLink(url, body);
     res.json(result);
   }),
@@ -210,7 +220,7 @@ router.post(
   "/import/zip/entries",
   asyncHandler(async (req, res) => {
     const body = await withStoredMakerworldCookie(req.userId!, parseBody(importRequestSchema, req.body));
-    const url = await normalizeImportUrl(body.url);
+    const url = await enabledImportUrl(body.url);
     const { tempPath, filename } = await downloadImportToTemp(url, body);
     try {
       if (path.extname(filename).toLowerCase() !== ".zip") throw new HttpError(415, "Imported file is not a zip");
@@ -227,7 +237,7 @@ router.post(
   "/import/collection/entries",
   asyncHandler(async (req, res) => {
     const body = await withStoredMakerworldCookie(req.userId!, parseBody(importRequestSchema, req.body));
-    const url = await normalizeImportUrl(body.url);
+    const url = await enabledImportUrl(body.url);
     const parsed = parseMakerworldCollectionUrl(url);
     if (!parsed) throw new HttpError(400, "Not a MakerWorld collection URL");
     const bearerToken = extractMakerworldBearerToken(resolveMakerworldCookie(body));
@@ -274,7 +284,7 @@ router.post(
   "/import/thingiverse-likes/entries",
   asyncHandler(async (req, res) => {
     const body = parseBody(importRequestSchema, req.body);
-    const url = await normalizeImportUrl(body.url);
+    const url = await enabledImportUrl(body.url);
     const parsed = parseThingiverseLikesUrl(url);
     if (!parsed) throw new HttpError(400, "Not a Thingiverse Likes URL");
     const accessToken = await getThingiverseAccessToken();
@@ -312,7 +322,7 @@ router.post(
   "/import/thingiverse-collection/entries",
   asyncHandler(async (req, res) => {
     const body = parseBody(importRequestSchema, req.body);
-    const url = await normalizeImportUrl(body.url);
+    const url = await enabledImportUrl(body.url);
     const parsed = parseThingiverseCollectionUrl(url);
     if (!parsed) throw new HttpError(400, "Not a Thingiverse Collection URL");
     const accessToken = await getThingiverseAccessToken();
@@ -352,7 +362,7 @@ router.post(
   "/import/printables-collection/entries",
   asyncHandler(async (req, res) => {
     const body = parseBody(importRequestSchema, req.body);
-    const url = await normalizeImportUrl(body.url);
+    const url = await enabledImportUrl(body.url);
     const parsed = parsePrintablesCollectionUrl(url);
     if (!parsed) throw new HttpError(400, "Not a Printables Collection URL");
 
@@ -397,7 +407,7 @@ router.post(
       parseBody(makerworldProfilesImportRequestSchema, req.body),
     );
     await assertNoActiveJob(req.userId!);
-    const url = await normalizeImportUrl(body.url);
+    const url = await enabledImportUrl(body.url);
     if (!parseMakerworldModelUrl(url)) throw new HttpError(400, "Not a MakerWorld model link");
     const job = await createJob(req.userId!, "PROFILES", { sourceUrl: url, provider: "makerworld" });
     void runMakerworldProfilesImportJob(job.id, req.userId!, { ...body, url });
@@ -413,7 +423,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const body = await withStoredMakerworldCookie(req.userId!, parseBody(collectionImportRequestSchema, req.body));
     await assertNoActiveJob(req.userId!);
-    const url = await normalizeImportUrl(body.url);
+    const url = await enabledImportUrl(body.url);
     const job = await createJob(req.userId!, "COLLECTION", {
       sourceUrl: url,
       provider: "makerworld",
@@ -432,7 +442,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const body = parseBody(thingiverseLikesImportRequestSchema, req.body);
     await assertNoActiveJob(req.userId!);
-    const url = await normalizeImportUrl(body.url);
+    const url = await enabledImportUrl(body.url);
     const parsed = parseThingiverseLikesUrl(url);
     if (!parsed) throw new HttpError(400, "Not a Thingiverse Likes URL");
     const job = await createJob(req.userId!, "COLLECTION", {
@@ -451,7 +461,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const body = parseBody(thingiverseLikesImportRequestSchema, req.body);
     await assertNoActiveJob(req.userId!);
-    const url = await normalizeImportUrl(body.url);
+    const url = await enabledImportUrl(body.url);
     const parsed = parseThingiverseCollectionUrl(url);
     if (!parsed) throw new HttpError(400, "Not a Thingiverse Collection URL");
     const job = await createJob(req.userId!, "COLLECTION", {
@@ -476,7 +486,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const body = parseBody(printablesCollectionImportRequestSchema, req.body);
     await assertNoActiveJob(req.userId!);
-    const url = await normalizeImportUrl(body.url);
+    const url = await enabledImportUrl(body.url);
     const parsed = parsePrintablesCollectionUrl(url);
     if (!parsed) throw new HttpError(400, "Not a Printables Collection URL");
     const job = await createJob(req.userId!, "COLLECTION", {
@@ -497,7 +507,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const body = parseBody(zipExtractRequestSchema, req.body);
     await assertNoActiveJob(req.userId!);
-    const url = await normalizeImportUrl(body.url);
+    const url = await enabledImportUrl(body.url);
     const job = await createJob(req.userId!, "ZIP", {
       sourceUrl: url,
       total: body.entries.length,
@@ -540,7 +550,7 @@ router.post(
     await assertNoActiveJob(req.userId!);
     const urls: string[] = [];
     for (const raw of body.urls) {
-      const url = await normalizeImportUrl(raw.trim());
+      const url = await enabledImportUrl(raw.trim());
       if (url && !urls.includes(url)) urls.push(url);
     }
     if (!urls.length) throw new HttpError(400, "No links to import");
@@ -582,7 +592,7 @@ router.post(
   requireCaptcha("import"),
   asyncHandler(async (req, res) => {
     const body = parseBody(queueLinkRequestSchema, req.body);
-    const url = await normalizeImportUrl(body.url.trim());
+    const url = await enabledImportUrl(body.url.trim());
     if (!url) throw new HttpError(400, "No link to queue");
     const result = await queueLink(req.userId!, url, {
       collection_id: body.collection_id ?? null,

@@ -17,6 +17,7 @@ import { SYNC_INTERVAL_HOURS, syncNowAvailableAt, type SyncIntervalHours } from 
 import { toCollectionSyncOut } from "../dto";
 import { enableSyncFromApp } from "../services/providerCollectionsService";
 import { prisma } from "../db";
+import { assertProviderEnabled } from "../services/providerSettingsService";
 
 const router = Router();
 router.use(requireAuth);
@@ -119,6 +120,8 @@ router.post(
     if (!reserveSync(sync.id)) throw new HttpError(409, "This collection is already syncing");
     let started;
     try {
+      // Answered here, so the click gets the reason, rather than a sync that quietly doesn't run.
+      await assertProviderEnabled(sync.provider);
       const availableAt = syncNowAvailableAt(sync.lastCheckedAt);
       if (availableAt && availableAt.getTime() > Date.now()) {
         const minutes = Math.ceil((availableAt.getTime() - Date.now()) / 60_000);

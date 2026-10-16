@@ -22,6 +22,7 @@ import { IMPORT_PROVIDER_INFO } from "../../constants/importProviders";
 import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
 import { useGravatarUrl } from "../../hooks/useGravatarUrl";
 import { settingsApi } from "../../api/settings";
+import { useDisabledProviders } from "../../hooks/useDisabledProviders";
 
 type ServiceChipDef = {
   key: "makerworld" | "thingiverse" | "printables";
@@ -75,8 +76,9 @@ export function UserMenu({ user, onOpenConfiguration, onOpenProfile, onLogout }:
   }, [menuOpen]);
 
   const closeMenu = () => setAnchorEl(null);
+  const disabledProviders = useDisabledProviders();
 
-  const services: ServiceChipDef[] = [
+  const allServices: ServiceChipDef[] = [
     {
       key: "makerworld",
       ...IMPORT_PROVIDER_INFO.makerworld,
@@ -92,6 +94,8 @@ export function UserMenu({ user, onOpenConfiguration, onOpenProfile, onLogout }:
     // Printables' public API needs no configuration.
     { key: "printables", ...IMPORT_PROVIDER_INFO.printables, connected: true },
   ];
+  // Turned off by an admin: no chip, and with none left, no row.
+  const services = allServices.filter((service) => !disabledProviders.has(service.key));
 
   return (
     <>
@@ -171,40 +175,42 @@ export function UserMenu({ user, onOpenConfiguration, onOpenProfile, onLogout }:
           </ListItemIcon>
           <ListItemText>{t("configuration.title")}</ListItemText>
         </MenuItem>
-        <Divider />
-        <Box sx={{ px: 2, py: 1.25, display: "flex", gap: 0.75 }}>
-          {services.map((svc) => (
-            <ButtonBase
-              key={svc.key}
-              onClick={() => {
-                closeMenu();
-                onOpenConfiguration("providers");
-              }}
-              title={
-                svc.connected
-                  ? t("userMenu.serviceConnected", { service: svc.label })
-                  : (svc.disabledReason ?? t("userMenu.serviceNotConnected", { service: svc.label }))
-              }
-              sx={{
-                px: 1,
-                py: 0.375,
-                borderRadius: 1,
-                fontSize: 11,
-                fontWeight: 600,
-                lineHeight: 1.4,
-                whiteSpace: "nowrap",
-                color: "#fff",
-                // Grey rather than dimmed so the two states are unmistakable.
-                bgcolor: svc.connected ? svc.color : "grey.500",
-                opacity: svc.connected ? 1 : 0.5,
-                transition: "filter 150ms",
-                "&:hover": { filter: "brightness(1.1)" },
-              }}
-            >
-              {svc.label}
-            </ButtonBase>
-          ))}
-        </Box>
+        {services.length > 0 && [
+          <Divider key="divider" />,
+          <Box key="services" sx={{ px: 2, py: 1.25, display: "flex", gap: 0.75 }}>
+            {services.map((svc) => (
+              <ButtonBase
+                key={svc.key}
+                onClick={() => {
+                  closeMenu();
+                  onOpenConfiguration("providers");
+                }}
+                title={
+                  svc.connected
+                    ? t("userMenu.serviceConnected", { service: svc.label })
+                    : (svc.disabledReason ?? t("userMenu.serviceNotConnected", { service: svc.label }))
+                }
+                sx={{
+                  px: 1,
+                  py: 0.375,
+                  borderRadius: 1,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  lineHeight: 1.4,
+                  whiteSpace: "nowrap",
+                  color: "#fff",
+                  // Grey rather than dimmed so the two states are unmistakable.
+                  bgcolor: svc.connected ? svc.color : "grey.500",
+                  opacity: svc.connected ? 1 : 0.5,
+                  transition: "filter 150ms",
+                  "&:hover": { filter: "brightness(1.1)" },
+                }}
+              >
+                {svc.label}
+              </ButtonBase>
+            ))}
+          </Box>,
+        ]}
       </Menu>
     </>
   );

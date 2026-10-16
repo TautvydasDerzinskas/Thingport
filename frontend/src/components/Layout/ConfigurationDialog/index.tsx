@@ -9,6 +9,7 @@ import AppearancePanel from "./AppearancePanel";
 import ProvidersPanel from "./ProvidersPanel";
 import SlicerPanel from "./SlicerPanel";
 import SectionedDialog from "../../SectionedDialog";
+import { allProvidersOff, useDisabledProviders } from "../../../hooks/useDisabledProviders";
 
 export type ConfigurationTab = "appearance" | "providers" | "slicer";
 
@@ -49,7 +50,14 @@ export default function ConfigurationDialog({
     if (open) setTab(open);
   }, [open]);
 
-  const sections = TABS.map(({ id, icon }) => ({ id, icon, label: t(`configuration.tabs.${id}`) }));
+  // With every provider turned off there's nothing to connect: no Providers tab, and asking for it opens the first.
+  const noProviders = allProvidersOff(useDisabledProviders());
+  const sections = TABS.filter(({ id }) => !(noProviders && id === "providers")).map(({ id, icon }) => ({
+    id,
+    icon,
+    label: t(`configuration.tabs.${id}`),
+  }));
+  const shown = noProviders && tab === "providers" ? "appearance" : tab;
 
   return (
     <SectionedDialog
@@ -57,13 +65,13 @@ export default function ConfigurationDialog({
       onClose={onClose}
       title={t("configuration.title")}
       sections={sections}
-      section={tab}
+      section={shown}
       onSectionChange={setTab}
     >
-      {tab === "appearance" && (
+      {shown === "appearance" && (
         <AppearancePanel theme={theme} onThemeChange={onThemeChange} onUnauthorized={onUnauthorized} />
       )}
-      {tab === "providers" && (
+      {shown === "providers" && (
         <ProvidersPanel
           isAdmin={isAdmin}
           cookie={makerworldCookie}
@@ -71,7 +79,7 @@ export default function ConfigurationDialog({
           onUnauthorized={onUnauthorized}
         />
       )}
-      {tab === "slicer" && <SlicerPanel onNavigate={onClose} onUnauthorized={onUnauthorized} />}
+      {shown === "slicer" && <SlicerPanel onNavigate={onClose} onUnauthorized={onUnauthorized} />}
     </SectionedDialog>
   );
 }

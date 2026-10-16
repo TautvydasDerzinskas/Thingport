@@ -102,8 +102,14 @@ function useRouteChrome() {
   } else if (path === "/admin") {
     title = t("sidebar.administration");
     onBack = () => navigate("/");
-  } else if (path.startsWith("/admin-settings")) {
-    title = t("adminSettings.pageTitle");
+  } else if (path.startsWith("/admin-providers")) {
+    title = t("adminSettings.providers.heading");
+    onBack = () => navigate("/admin");
+  } else if (path.startsWith("/admin-storage")) {
+    title = t("adminSettings.storageSettings.heading");
+    onBack = () => navigate("/admin");
+  } else if (path.startsWith("/admin-auth")) {
+    title = t("adminSettings.auth.heading");
     onBack = () => navigate("/admin");
   } else if (path.startsWith("/admin-rendering")) {
     title = t("adminSettings.rendering.heading");

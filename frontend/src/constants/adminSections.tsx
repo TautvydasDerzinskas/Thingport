@@ -4,7 +4,9 @@ import CableIcon from "@mui/icons-material/Cable";
 import HistoryIcon from "@mui/icons-material/History";
 import PeopleIcon from "@mui/icons-material/People";
 import QueueIcon from "@mui/icons-material/Queue";
-import SettingsIcon from "@mui/icons-material/Settings";
+import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import PublicIcon from "@mui/icons-material/Public";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import ViewInArIcon from "@mui/icons-material/ViewInAr";
 
@@ -16,7 +18,13 @@ export type AdminSection = {
 
 /** Administration's pages, under its entry in the sidebar; /admin itself is the overview. */
 export const ADMIN_SECTIONS: AdminSection[] = [
-  { path: "/admin-settings", icon: <SettingsIcon fontSize="small" />, labelKey: "common:settings" },
+  { path: "/admin-providers", icon: <PublicIcon fontSize="small" />, labelKey: "adminSettings.providers.heading" },
+  {
+    path: "/admin-storage",
+    icon: <FolderOutlinedIcon fontSize="small" />,
+    labelKey: "adminSettings.storageSettings.heading",
+  },
+  { path: "/admin-auth", icon: <LockOutlinedIcon fontSize="small" />, labelKey: "adminSettings.auth.heading" },
   { path: "/admin-rendering", icon: <ViewInArIcon fontSize="small" />, labelKey: "adminSettings.rendering.heading" },
   { path: "/admin-ai", icon: <AutoAwesomeIcon fontSize="small" />, labelKey: "adminSettings.ai.heading" },
   { path: "/admin-users", icon: <PeopleIcon fontSize="small" />, labelKey: "adminSettings.users.heading" },

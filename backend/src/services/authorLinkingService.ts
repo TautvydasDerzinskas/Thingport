@@ -17,6 +17,7 @@ import {
 import { resolvePrintablesModel } from "./printablesApi";
 import { getThingiverseAccessToken } from "./settingsService";
 import { resolveThingiverseThing, ThingiverseAuthError, ThingiverseRateLimitError } from "./thingiverseApi";
+import { getDisabledProviders } from "./providerSettingsService";
 
 // Links models that only know their author by name: first by name matching, then by looking the
 // rest up on their site once per distinct creator. Only metadata is fetched.
@@ -120,9 +121,12 @@ export async function runAuthorLinking(run: AuthorLinkingRun): Promise<void> {
     skipped.add(provider);
     if (!run.problems.includes(problem)) run.problems.push(problem);
   };
+  // Turned off by an admin: left alone, not reported as a problem.
+  for (const provider of await getDisabledProviders()) skipped.add(provider);
   const thingiverseToken = await getThingiverseAccessToken();
-  if (!thingiverseToken) skip("thingiverse", "thingiverse_no_token");
-  if (makerworldCaptchaCooloffActive()) skip("makerworld", "makerworld_captcha");
+  // Only for providers still on: one turned off isn't missing a token or held by a captcha.
+  if (!skipped.has("thingiverse") && !thingiverseToken) skip("thingiverse", "thingiverse_no_token");
+  if (!skipped.has("makerworld") && makerworldCaptchaCooloffActive()) skip("makerworld", "makerworld_captcha");
 
   for (const candidate of candidates) {
     if (skipped.has(candidate.provider)) {

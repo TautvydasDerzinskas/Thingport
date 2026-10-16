@@ -33,6 +33,7 @@ import { fetchPrintablesCollectionTitle } from "./printablesApi";
 import { createLog } from "./auditLog";
 import { MAKERWORLD_REJECTED_ERROR, markMakerworldCookieRejected } from "./makerworldCookieService";
 import { CLOUDFLARE_BLOCKED_CODE } from "./flaresolverr";
+import { PROVIDER_DISABLED_CODE } from "./providerSettingsService";
 import { HttpError } from "../utils/fileUtils";
 import { prisma } from "../db";
 import type { ImportJob } from "@prisma/client";
@@ -57,18 +58,22 @@ type MakerworldProfilesImportJobBody = ImportRequestBody & { scope: Exclude<Make
 
 // Why a design failed, so a batch reads as one clear cause instead of "N failed". Once a CAPTCHA
 // ("rateLimited"), the daily download limit, an auth failure or a Cloudflare block ("blocked")
-// hits, every remaining item fails the same way.
-type ImportFailureReason = "unavailable" | "rateLimited" | "downloadLimit" | "auth" | "blocked" | "other";
+// hits, every remaining item fails the same way. "disabled": an admin turned the provider off.
+type ImportFailureReason = "unavailable" | "rateLimited" | "downloadLimit" | "auth" | "blocked" | "disabled" | "other";
 type StopReason = "rateLimited" | "downloadLimit" | "auth" | "blocked";
 
 const BLOCKED_RETRY_TEXT =
   "Cloudflare blocked the request and FlareSolverr didn't get past it — check FlareSolverr in Administration → Connections, then retry";
+
+const PROVIDER_OFF_TEXT = (name: string) =>
+  `${name} was turned off on this Thingport; an admin can turn it back on in Administration → Providers`;
 
 function classifyImportFailure(err: unknown): ImportFailureReason {
   if (err instanceof MakerworldAuthError) return "auth";
   if (err instanceof HttpError) {
     if (err.code === MAKERWORLD_AUTH_CODE) return "auth";
     if (err.code === CLOUDFLARE_BLOCKED_CODE) return "blocked";
+    if (err.code === PROVIDER_DISABLED_CODE) return "disabled";
     if (err.status === 403 || err.status === 404) return "unavailable";
     if (err.status === 429) return err.code === MAKERWORLD_DOWNLOAD_LIMIT_CODE ? "downloadLimit" : "rateLimited";
     if (err.status === 401) return "auth";
@@ -238,6 +243,7 @@ export async function runCollectionImportJob(
     let alreadyInLibrary = 0;
     let processed = 0;
     let unavailable = 0;
+    let providerOff = 0;
     let rateLimited = 0;
     let downloadLimited = 0;
     let authFailed = 0;
@@ -272,6 +278,7 @@ export async function runCollectionImportJob(
         else if (reason === "rateLimited") rateLimited++;
         else if (reason === "downloadLimit") downloadLimited++;
         else if (reason === "auth") authFailed++;
+        else if (reason === "disabled") providerOff++;
       } finally {
         processed++;
         // A progress-write failure mustn't fail the whole batch.
@@ -340,8 +347,9 @@ export async function runCollectionImportJob(
     const label = collectionTitle ? `"${collectionTitle}"` : "a MakerWorld collection";
     const bodyParts: string[] = [];
     if (alreadyInLibrary) bodyParts.push(`${alreadyInLibrary} already in your library`);
-    const otherFailed = failed.length - unavailable - rateLimited - downloadLimited - authFailed;
+    const otherFailed = failed.length - unavailable - rateLimited - downloadLimited - authFailed - providerOff;
     if (unavailable) bodyParts.push(`${unavailable} unavailable (private, deleted, or hidden)`);
+    if (providerOff) bodyParts.push(`${providerOff} skipped — ${PROVIDER_OFF_TEXT("MakerWorld")}`);
     if (rateLimited) {
       bodyParts.push(
         `${rateLimited} blocked by a MakerWorld CAPTCHA challenge (too many requests at once) — this usually clears in 1-4 hours, then retry the same collection`,
@@ -392,6 +400,7 @@ async function runThingiverseThingsImportJob(
     let alreadyInLibrary = 0;
     let processed = 0;
     let unavailable = 0;
+    let providerOff = 0;
     let rateLimited = 0;
     let authFailed = 0;
     const failed: string[] = [];
@@ -418,6 +427,7 @@ async function runThingiverseThingsImportJob(
         if (reason === "unavailable") unavailable++;
         else if (reason === "rateLimited") rateLimited++;
         else if (reason === "auth") authFailed++;
+        else if (reason === "disabled") providerOff++;
       } finally {
         processed++;
         await updateJob(jobId, { processed, imported, alreadyInLibrary, failedCount: failed.length }).catch(
@@ -468,8 +478,9 @@ async function runThingiverseThingsImportJob(
 
     const bodyParts: string[] = [];
     if (alreadyInLibrary) bodyParts.push(`${alreadyInLibrary} already in your library`);
-    const otherFailed = failed.length - unavailable - rateLimited - authFailed;
+    const otherFailed = failed.length - unavailable - rateLimited - authFailed - providerOff;
     if (unavailable) bodyParts.push(`${unavailable} unavailable (private, deleted, or hidden)`);
+    if (providerOff) bodyParts.push(`${providerOff} skipped — ${PROVIDER_OFF_TEXT("Thingiverse")}`);
     if (rateLimited) {
       bodyParts.push(
         `${rateLimited} blocked by Thingiverse's rate-limit protection (too many requests at once) — wait a while, then retry`,
@@ -530,6 +541,7 @@ export async function runPrintablesCollectionImportJob(
     let alreadyInLibrary = 0;
     let processed = 0;
     let unavailable = 0;
+    let providerOff = 0;
     let rateLimited = 0;
     const failed: string[] = [];
     const successPrintIds: string[] = [];
@@ -554,6 +566,7 @@ export async function runPrintablesCollectionImportJob(
         log.warn("model import failed", { job: jobId, url: modelUrl, reason, error: err });
         if (reason === "unavailable") unavailable++;
         else if (reason === "rateLimited") rateLimited++;
+        else if (reason === "disabled") providerOff++;
       } finally {
         processed++;
         await updateJob(jobId, { processed, imported, alreadyInLibrary, failedCount: failed.length }).catch(
@@ -607,8 +620,9 @@ export async function runPrintablesCollectionImportJob(
 
     const bodyParts: string[] = [];
     if (alreadyInLibrary) bodyParts.push(`${alreadyInLibrary} already in your library`);
-    const otherFailed = failed.length - unavailable - rateLimited;
+    const otherFailed = failed.length - unavailable - rateLimited - providerOff;
     if (unavailable) bodyParts.push(`${unavailable} unavailable (private, deleted, or removed)`);
+    if (providerOff) bodyParts.push(`${providerOff} skipped — ${PROVIDER_OFF_TEXT("Printables")}`);
     if (rateLimited) bodyParts.push(`${rateLimited} rate-limited by Printables — wait a while, then retry`);
     if (otherFailed) bodyParts.push(`${otherFailed} failed`);
     await createNotification(userId, {
@@ -803,6 +817,8 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
     let stopUrl: string | null = null;
     // A sync's links handed back to it by deferSyncRest.
     let deferred: SyncDeferral | null = null;
+    // A link's provider was turned off; links from other providers carry on.
+    let providerOff = false;
     let processed = (await countJobItems(jobId, "DONE")) + (await countJobItems(jobId, "FAILED"));
     // The models this run brought in new, for a sync's notification.
     const newPrintIds: string[] = [];
@@ -870,6 +886,7 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
         } catch (err) {
           itemError = failureMessage(err);
           stopReason = asStopReason(classifyImportFailure(err)) ?? stopReason;
+          if (classifyImportFailure(err) === "disabled") providerOff = true;
           if (!isTransientImportFailure(err) || attempts >= LINKS_MAX_ATTEMPTS) {
             settled = true;
           } else {
@@ -889,13 +906,19 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
       if (stopReason && !stopUrl) stopUrl = item.url;
       // The connection failed, not the models: the rest go back to unseen, for the next sync to find
       // again once it works. A link that got some of its profiles in is done.
-      if (job.collectionSyncId && (stopReason === "auth" || stopReason === "blocked")) {
+      // A sync's provider turned off: they come in once it's back on.
+      const deferReason = providerOff
+        ? "disabled"
+        : stopReason === "auth" || stopReason === "blocked"
+          ? stopReason
+          : null;
+      if (job.collectionSyncId && deferReason) {
         const nothingIn = itemError !== null && !partlyIn;
         if (!nothingIn) {
           await updateJobItem(item.id, { status: "FAILED", attempts, errorMessage: itemError }).catch(() => undefined);
           processed++;
         }
-        deferred = { count: await deferSyncRest(job, nothingIn ? item.id : null, stopReason), reason: stopReason };
+        deferred = { count: await deferSyncRest(job, nothingIn ? item.id : null, deferReason), reason: deferReason };
         break;
       }
       // A sync can't ask anyone to retry, so a rate limit pauses it instead of failing the rest. A
@@ -1066,7 +1089,7 @@ async function noteMakerworldRejected(userId: string): Promise<void> {
   );
 }
 
-type SyncDeferral = { count: number; reason: "auth" | "blocked" };
+type SyncDeferral = { count: number; reason: "auth" | "blocked" | "disabled" };
 
 /** Takes the sync job's links that haven't run (and `currentItemId`'s, which got nothing in) out of
  *  the job, and out of the sync's seen ids, so its next check queues them again. How many. */
@@ -1093,11 +1116,13 @@ async function deferSyncRest(job: ImportJob, currentItemId: string | null, reaso
           knownIds: sync.knownIds.filter((id) => !unseen.has(id)),
           // For MakerWorld, already held, so holdProvider leaves it out of the notification about the others.
           lastError:
-            reason === "blocked"
-              ? `Cloudflare blocked ${providerName(sync.provider)} and FlareSolverr didn't get past it`
-              : sync.provider === "makerworld"
-                ? MAKERWORLD_REJECTED_ERROR
-                : `${providerName(sync.provider)} turned Thingport's sign-in down`,
+            reason === "disabled"
+              ? `${providerName(sync.provider)} is turned off on this Thingport`
+              : reason === "blocked"
+                ? `Cloudflare blocked ${providerName(sync.provider)} and FlareSolverr didn't get past it`
+                : sync.provider === "makerworld"
+                  ? MAKERWORLD_REJECTED_ERROR
+                  : `${providerName(sync.provider)} turned Thingport's sign-in down`,
         },
       });
     }
@@ -1132,9 +1157,11 @@ async function notifySyncJobDone(
     parts.push(
       deferred.reason === "auth" && sync.provider === "makerworld"
         ? `${more} will come in on the next sync once you connect MakerWorld again in Configuration → Providers: MakerWorld turned your sign-in down, and it may have expired.`
-        : deferred.reason === "auth"
-          ? `${more} will come in on a later sync: ${providerName(sync.provider)} turned Thingport's sign-in down.`
-          : `${more} will come in on a later sync: Cloudflare blocked ${providerName(sync.provider)} and FlareSolverr didn't get past it. An admin can check FlareSolverr in Administration → Connections.`,
+        : deferred.reason === "disabled"
+          ? `${more} will come in on a later sync: ${PROVIDER_OFF_TEXT(providerName(sync.provider))}.`
+          : deferred.reason === "auth"
+            ? `${more} will come in on a later sync: ${providerName(sync.provider)} turned Thingport's sign-in down.`
+            : `${more} will come in on a later sync: Cloudflare blocked ${providerName(sync.provider)} and FlareSolverr didn't get past it. An admin can check FlareSolverr in Administration → Connections.`,
     );
   }
   if (failedCount) {

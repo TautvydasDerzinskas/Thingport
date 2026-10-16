@@ -11,6 +11,7 @@ import { offerNormalizedDownload, unmountNormalizedDownload } from "./makerworld
 import { mountJobOverlay, mountPausedJobOverlay } from "./overlays";
 import { loadPanel } from "./panels";
 import { captureProviderAccount } from "./providerAccount";
+import { providerEnabled } from "./providerSettings";
 import { errorHtml } from "./panels/results";
 import { api } from "./runtime";
 import { closeSetupModal, openSetupModal } from "./setupModal";
@@ -106,6 +107,14 @@ async function init(): Promise<void> {
           },
         }),
     });
+    reportTabIconState(false);
+    return;
+  }
+
+  // An admin turned this provider off for the whole instance: nothing from here would be accepted.
+  const enabled = await providerEnabled(classification.provider);
+  if (isStale()) return;
+  if (!enabled) {
     reportTabIconState(false);
     return;
   }

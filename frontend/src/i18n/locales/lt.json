@@ -482,6 +482,29 @@
       }
     },
     "adminSettings": {
+      "providers": {
+        "heading": "Tiekėjai",
+        "subtitle": "Svetainės, iš kurių Thingport importuoja ir su kuriomis sinchronizuoja. Išjungus tiekėją, iš jo niekam nieko naujo nebus; jau importuoti modeliai lieka.",
+        "descriptions": {
+          "makerworld": "Bambu Lab modelių svetainė: importai su spausdinimo profiliais ir kolekcijų sinchronizavimas.",
+          "printables": "Prusa modelių svetainė: importai bei viešų ir privačių kolekcijų sinchronizavimas.",
+          "thingiverse": "Importai, kolekcijos ir patikę modeliai, naudojant šio Thingport prieigos raktą."
+        },
+        "tokenSet": "Prieigos raktas nustatytas",
+        "tokenMissing": "Nėra prieigos rakto: Thingiverse importai neveiks, kol jo nenustatysite",
+        "tokenSettings": "Thingiverse prieigos raktas",
+        "turnOff": "Išjungti {{name}}",
+        "turnOn": "Įjungti {{name}}",
+        "disableTitle": "Išjungti {{name}}?",
+        "disableMessage": "Niekas negalės importuoti iš {{name}}, kol jis vėl nebus įjungtas: nuorodos, Thingport Grab ir importų eilė bus atmetamos, jo kolekcijų sinchronizacija sustabdyta, o foniniai darbai jį praleis. Jau importuoti modeliai lieka.",
+        "disableConfirm": "Išjungti"
+      },
+      "storageSettings": {
+        "heading": "Saugykla"
+      },
+      "auth": {
+        "heading": "Prisijungimas"
+      },
       "storageUsage": {
         "heading": "Saugykla",
         "subtitle": "Kiek disko vietos užima Thingport failai: modeliai, jų paveikslėliai ir peržiūros.",
@@ -494,7 +517,6 @@
         "link": "Thingport svetainė ir dokumentacija",
         "hint": "Diegimo gidai, šaltinių nustatymas ir Thingport naujienos"
       },
-      "pageTitle": "Administravimo nustatymai",
       "health": {
         "heading": "Sistemos būklė",
         "subtitle": "Viskas, kuo remiasi Thingport, kam to reikia ir ar veikia. Niekas netikrinama, kol nepaprašote.",
@@ -566,6 +588,7 @@
             "name": "Thingiverse",
             "description": "Sistemos Thingiverse prieigos raktas – modeliams importuoti, kolekcijoms ir patiktiems modeliams sinchronizuoti bei autoriams susieti.",
             "problems": {
+              "disabled": "Išjungta skiltyje „Tiekėjai“, todėl netikrinama. Įjunkite Thingiverse ten, kad galėtumėte naudoti.",
               "not_configured": "Prieigos raktas nenurodytas. Thingiverse importai ir sinchronizacijos neveiks, kol jo nepridėsite nustatymuose (sukurkite thingiverse.com/apps/create).",
               "token_rejected": "Thingiverse atmetė prieigos raktą. Sukurkite naują thingiverse.com/apps/create ir išsaugokite nustatymuose.",
               "blocked": "Thingiverse atsakė Cloudflare patikra – tai nieko nesako apie raktą. Įdiekite FlareSolverr arba palaukite: dažniausiai praeina po kurio laiko.",
@@ -733,7 +756,6 @@
       },
       "thingiverse": {
         "heading": "Thingiverse prieigos raktas",
-        "subtitle": "Bendras visos sistemos kredencialas oficialiai Thingiverse Developer API -- naudojamas visų naudotojų Thingiverse importui, tai ne kiekvieno naudotojo nustatymas.",
         "helpText": "Sukurkite programėlę adresu thingiverse.com/apps/create (bet kokio tipo, pvz. „Desktop“) ir įklijuokite ten parodytą prieigos raktą. Tai skiriasi nuo jūsų Thingiverse prisijungimo -- tai nuolatinis raktas, susietas su registruota programėle.",
         "statusConfigured": "Šiuo metu sukonfigūruotas prieigos raktas.",
         "statusNotConfigured": "Prieigos raktas dar nesukonfigūruotas -- Thingiverse importas neveiks, kol jis nebus nustatytas.",
@@ -1071,6 +1093,7 @@
           "descriptions_refetched": "Iš naujo gauti modelių aprašymai",
           "user_role_changed": "Pakeista naudotojo rolė",
           "user_deleted": "Naudotojas ištrintas",
+          "provider_toggled": "Pakeistas tiekėjas",
           "tag_deleted": "Žyma ištrinta",
           "ai_categorization_run": "AI kategorizavimo paleidimas",
           "ai_description_run": "AI aprašymų tobulinimo paleidimas"
@@ -1087,6 +1110,8 @@
         "userDeleted_few": "{{email}} — su {{count}} modeliais",
         "userDeleted_many": "{{email}} — su {{count}} modelio",
         "userDeleted_other": "{{email}} — su {{count}} modelių",
+        "providerOn": "{{provider}} įjungtas",
+        "providerOff": "{{provider}} išjungtas",
         "aiRunSummary": "Patikrinta {{done}} iš {{total}} — pasiūlyta {{suggested}}, pritaikyta {{applied}}, nepavyko {{failed}}",
         "aiRunStopped": "(sustabdyta)"
       },
@@ -2215,6 +2240,8 @@
         "notFound": "Kolekcija nerasta."
       },
       "sync": {
+        "badgeOff": "{{provider}} šiame Thingport išjungtas, todėl niekas nesinchronizuojama, kol administratorius jo vėl neįjungs",
+        "menuProviderOff": "{{provider}} išjungtas",
         "badge": "Sinchronizuojama su {{provider}} kolekcija",
         "menu": "Sinchronizavimo konfigūracija",
         "title": "Sinchronizavimo konfigūracija",

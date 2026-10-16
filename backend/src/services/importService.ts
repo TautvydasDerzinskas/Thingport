@@ -84,6 +84,7 @@ import { prisma } from "../db";
 import { recordActivity } from "./activityService";
 import { Prisma } from "@prisma/client";
 import type { Author, Plate, PreviewImage, Print } from "@prisma/client";
+import { assertUrlProviderEnabled } from "./providerSettingsService";
 
 function isUniqueConstraintError(err: unknown): boolean {
   return err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002";
@@ -971,13 +972,22 @@ export async function importPrintFromUrl(userId: string, url: string, body: Impo
   return result;
 }
 
+/** Refuses a link from a provider an admin turned off, unless it's a model the user already has (MakerWorld adds a
+ *  profile, so fetches). */
+export async function assertCanImportUrl(userId: string, url: string): Promise<void> {
+  const source = identifySourceModel(url);
+  if (source && source.provider !== "makerworld" && (await findExistingImportedPrint(userId, source))) return;
+  await assertUrlProviderEnabled(url);
+}
+
 async function importNewOrExisting(userId: string, url: string, body: ImportRequestBody): Promise<ImportResult> {
   const source = identifySourceModel(url);
-  if (source) {
-    const existing = await findExistingImportedPrint(userId, source);
-    if (existing && source.provider === "makerworld") return addMakerworldProfileToPrint(existing, url, body);
-    if (existing) return { ...existing, alreadyImported: true };
-  }
+  const existing = source ? await findExistingImportedPrint(userId, source) : null;
+  // A model already in the library is still reported as such; anything that fetches from the provider is refused,
+  // also for imports queued, or started by Grab, before it was turned off.
+  if (existing && source?.provider !== "makerworld") return { ...existing, alreadyImported: true };
+  await assertUrlProviderEnabled(url);
+  if (existing) return addMakerworldProfileToPrint(existing, url, body);
 
   if (source?.provider === "thingiverse") {
     return importThingiverseThing(userId, source, body);
@@ -1011,8 +1021,8 @@ async function importNewOrExisting(userId: string, url: string, body: ImportRequ
     } catch (err) {
       // Race guard: a concurrent import of the same source model won.
       if (source && isUniqueConstraintError(err)) {
-        const existing = await findExistingImportedPrint(userId, source);
-        if (existing) return { ...existing, alreadyImported: true };
+        const winner = await findExistingImportedPrint(userId, source);
+        if (winner) return { ...winner, alreadyImported: true };
       }
       throw err;
     }

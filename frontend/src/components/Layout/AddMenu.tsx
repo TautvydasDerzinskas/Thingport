@@ -39,6 +39,7 @@ import {
   type ImportProviderKey,
 } from "../../utils/importLinkDetection";
 import type { MakerworldProfileScope } from "../../api/imports";
+import { allProvidersOff, useDisabledProviders } from "../../hooks/useDisabledProviders";
 
 const IMPORT_PROVIDERS: ImportProviderKey[] = ["makerworld", "thingiverse", "printables"];
 
@@ -64,6 +65,8 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
   ref,
 ) {
   const { t } = useTranslation(["app", "common"]);
+  // Turned off by an admin: not offered.
+  const disabledProviders = useDisabledProviders();
   const showToast = useToast();
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const [importOpen, setImportOpen] = React.useState(false);
@@ -189,19 +192,22 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
           </ListItemIcon>
           <ListItemText>{t("addMenu.uploadFolder")}</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => openImport()}>
-          <ListItemIcon>
-            <LinkIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>{t("common:import")}</ListItemText>
-        </MenuItem>
+        {/* Nothing to import from with every provider turned off. */}
+        {!allProvidersOff(disabledProviders) && (
+          <MenuItem onClick={() => openImport()}>
+            <ListItemIcon>
+              <LinkIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t("common:import")}</ListItemText>
+          </MenuItem>
+        )}
       </Menu>
 
       <Dialog open={importOpen} onClose={closeImport} fullWidth maxWidth="sm">
         <DialogTitle>{t("addMenu.importTitle")}</DialogTitle>
         <DialogContent>
           <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
-            {IMPORT_PROVIDERS.map((key) => {
+            {IMPORT_PROVIDERS.filter((key) => !disabledProviders.has(key)).map((key) => {
               const info = IMPORT_PROVIDER_INFO[key];
               const active = detectedProviders.has(key);
               return (

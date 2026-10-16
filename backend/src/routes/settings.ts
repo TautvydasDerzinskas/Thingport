@@ -81,10 +81,34 @@ import {
   setDefaultAiConnection,
   updateAiConnection,
 } from "../services/aiConnectionService";
+import { getDisabledProviders, PROVIDERS, setProviderEnabled } from "../services/providerSettingsService";
+import { createLog } from "../services/auditLog";
 import { testFlaresolverr } from "../services/flaresolverr";
 
 const router = Router();
 router.use(requireAuth);
+
+// Which providers are on: everyone's menus hide what an admin turned off.
+router.get(
+  "/settings/providers",
+  asyncHandler(async (_req, res) => {
+    const disabled = await getDisabledProviders();
+    res.json({ providers: PROVIDERS.map((id) => ({ id, enabled: !disabled.has(id) })) });
+  }),
+);
+
+router.patch(
+  "/settings/providers/:provider",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const provider = z.enum(PROVIDERS).safeParse(req.params.provider);
+    if (!provider.success) throw new HttpError(404, "No such provider");
+    const { enabled } = parseBody(z.object({ enabled: z.boolean() }), req.body);
+    const disabled = await setProviderEnabled(provider.data, enabled);
+    void createLog({ userId: req.userId!, action: "provider_toggled", details: { provider: provider.data, enabled } });
+    res.json({ providers: PROVIDERS.map((id) => ({ id, enabled: !disabled.has(id) })) });
+  }),
+);
 
 function storageSettingsOut(template: string, moved = 0, skipped = 0) {
   return {

@@ -24,7 +24,9 @@ import ChangeEmailPage from "./pages/ProfilePage/ChangeEmailPage";
 import ChangePasswordPage from "./pages/ProfilePage/ChangePasswordPage";
 import DownloadPage from "./pages/DownloadPage";
 import AdminPage from "./pages/AdminPage";
-import AdminSettingsPage from "./pages/AdminSettingsPage";
+import ProvidersPage from "./pages/AdminSettingsPage/ProvidersPage";
+import StorageSettingsPage from "./pages/AdminSettingsPage/StoragePage";
+import AuthSettingsPage from "./pages/AdminSettingsPage/AuthPage";
 import UsersPage from "./pages/UsersPage";
 import LogsPage from "./pages/LogsPage";
 import NotificationsPage from "./pages/NotificationsPage";
@@ -229,9 +231,19 @@ function AppShell({
           element={isAdmin ? <AdminPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
         />
         <Route
-          path="/admin-settings"
-          element={isAdmin ? <AdminSettingsPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
+          path="/admin-providers"
+          element={isAdmin ? <ProvidersPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
         />
+        <Route
+          path="/admin-storage"
+          element={isAdmin ? <StorageSettingsPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
+        />
+        <Route
+          path="/admin-auth"
+          element={isAdmin ? <AuthSettingsPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
+        />
+        {/* Settings was split into the three above; old links and bookmarks land on the first. */}
+        <Route path="/admin-settings" element={<Navigate to="/admin-providers" replace />} />
         <Route
           path="/admin-rendering"
           element={

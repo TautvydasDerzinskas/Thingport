@@ -10,6 +10,7 @@ import { resolveAiConnection } from "./aiConnectionService";
 import { testFlaresolverr } from "./flaresolverr";
 import { getFlaresolverrUrl, getSmtpSettings, getThingiverseAccessToken } from "./settingsService";
 import { checkThingiverseAccessToken } from "./thingiverseApi";
+import { isProviderEnabled } from "./providerSettingsService";
 
 // Administration's System Health: each component Thingport relies on, tested only when an admin asks. Results are
 // kept, with when each was taken, so the page shows the last ones without testing anything on its own.
@@ -151,6 +152,7 @@ async function checkFlaresolverr(): Promise<Found> {
 }
 
 async function checkThingiverse(): Promise<Found> {
+  if (!(await isProviderEnabled("thingiverse"))) return found("not_configured", "disabled");
   const token = await getThingiverseAccessToken();
   if (!token) return found("not_configured", "not_configured");
   const start = Date.now();

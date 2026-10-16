@@ -33,6 +33,7 @@ import {
   ThingiverseAuthError,
   ThingiverseRateLimitError,
 } from "./thingiverseApi";
+import { assertProviderEnabled } from "./providerSettingsService";
 
 export const BROWSABLE_PROVIDERS = ["makerworld", "printables", "thingiverse"] as const;
 export type BrowsableProvider = (typeof BROWSABLE_PROVIDERS)[number];
@@ -166,6 +167,7 @@ export async function listProviderCollections(
   userId: string,
   provider: BrowsableProvider,
 ): Promise<ProviderCollectionOut[]> {
+  await assertProviderEnabled(provider);
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { makerworldCookie: true, printablesUserId: true, thingiverseUsername: true },
@@ -205,6 +207,7 @@ export async function listProviderCollections(
 export async function lookupProviderCollection(userId: string, url: string): Promise<ProviderCollectionOut> {
   const source = parseSyncSource(url);
   if (!source) throw new HttpError(400, "That isn't a MakerWorld, Printables or Thingiverse collection link");
+  await assertProviderEnabled(source.provider);
   let card: ProviderCollectionCard | null;
   if (source.likesOf && source.provider === "thingiverse") {
     const token = await requireThingiverseToken();
@@ -251,6 +254,7 @@ export async function enableSyncFromApp(
   if (isSystemCollectionId(collectionId)) throw new HttpError(400, "This collection can't be synced");
   const source = parseSyncSource(input.url);
   if (!source) throw new HttpError(400, "That isn't a MakerWorld, Printables or Thingiverse collection link");
+  await assertProviderEnabled(source.provider);
   if (input.profileScope && source.provider !== "makerworld") {
     throw new HttpError(400, "Only MakerWorld models have print profiles to pick");
   }

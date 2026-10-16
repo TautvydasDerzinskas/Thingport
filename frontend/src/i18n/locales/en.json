@@ -482,6 +482,29 @@
       }
     },
     "adminSettings": {
+      "providers": {
+        "heading": "Providers",
+        "subtitle": "The sites Thingport imports from and syncs with. Turn one off and nothing new comes from it for anyone; models already imported stay.",
+        "descriptions": {
+          "makerworld": "Bambu Lab's model site: imports with print profiles, and collections to sync.",
+          "printables": "Prusa's model site: imports, and public and private collections to sync.",
+          "thingiverse": "Imports, collections and liked models, through this Thingport's Access Token."
+        },
+        "tokenSet": "Access Token set",
+        "tokenMissing": "No Access Token: Thingiverse imports won't work until one is set",
+        "tokenSettings": "Thingiverse Access Token",
+        "turnOff": "Turn {{name}} off",
+        "turnOn": "Turn {{name}} on",
+        "disableTitle": "Turn {{name}} off?",
+        "disableMessage": "Nobody can import from {{name}} until it's back on: links, Thingport Grab and the import queue are refused, its collection syncs pause, and background jobs skip it. Models already imported from it stay as they are.",
+        "disableConfirm": "Turn off"
+      },
+      "storageSettings": {
+        "heading": "Storage"
+      },
+      "auth": {
+        "heading": "Auth"
+      },
       "storageUsage": {
         "heading": "Storage",
         "subtitle": "Disk space Thingport's files take: models, their pictures and previews.",
@@ -493,7 +516,6 @@
         "link": "Thingport website & docs",
         "hint": "Install guides, provider setup and news about Thingport"
       },
-      "pageTitle": "Admin Settings",
       "health": {
         "heading": "System Health",
         "subtitle": "Everything Thingport relies on, what each is for, and whether it's working. Nothing is tested until you ask.",
@@ -565,6 +587,7 @@
             "name": "Thingiverse",
             "description": "The instance's Thingiverse Access Token, used to import models, sync collections and liked models, and link authors from Thingiverse.",
             "problems": {
+              "disabled": "Turned off under Providers, so nothing is checked. Turn Thingiverse back on there to use it.",
               "not_configured": "No Access Token set. Thingiverse imports and syncs won't work until one is added in Settings (create one at thingiverse.com/apps/create).",
               "token_rejected": "Thingiverse rejected the Access Token. Generate a new one at thingiverse.com/apps/create and save it in Settings.",
               "blocked": "Thingiverse answered with a Cloudflare challenge, which says nothing about the token. Set up FlareSolverr, or wait: it usually clears after a while.",
@@ -731,7 +754,6 @@
       },
       "thingiverse": {
         "heading": "Thingiverse Access Token",
-        "subtitle": "Instance-wide credential for the official Thingiverse Developer API.",
         "helpText": "Create an app at thingiverse.com/apps/create (any type, e.g. \"Desktop\") and paste the Access Token it shows you.",
         "statusConfigured": "An Access Token is currently configured.",
         "statusNotConfigured": "No Access Token is configured yet -- Thingiverse imports will fail until one is set.",
@@ -1059,6 +1081,7 @@
           "descriptions_refetched": "Refetched model descriptions",
           "user_role_changed": "User role changed",
           "user_deleted": "User deleted",
+          "provider_toggled": "Provider switched",
           "tag_deleted": "Tag deleted",
           "ai_categorization_run": "AI categorization run",
           "ai_description_run": "AI description improvement run"
@@ -1071,6 +1094,8 @@
         "userDemoted": "{{email}} made a member",
         "userDeleted_one": "{{email}} — with {{count}} model",
         "userDeleted_other": "{{email}} — with {{count}} models",
+        "providerOn": "{{provider}} turned on",
+        "providerOff": "{{provider}} turned off",
         "aiRunSummary": "{{done}} of {{total}} checked — {{suggested}} suggested, {{applied}} applied, {{failed}} failed",
         "aiRunStopped": "(stopped)"
       },
@@ -2171,6 +2196,8 @@
         "notFound": "Collection not found."
       },
       "sync": {
+        "badgeOff": "{{provider}} is turned off on this Thingport, so nothing syncs until an admin turns it back on",
+        "menuProviderOff": "{{provider}} is turned off",
         "badge": "Synced with a {{provider}} collection",
         "menu": "Sync configuration",
         "title": "Sync configuration",
