@@ -1,4 +1,16 @@
+import type { Dirent } from "node:fs";
 import fs from "node:fs/promises";
+import path from "node:path";
+import {
+  BUNDLES,
+  DESCRIPTION_IMAGES,
+  MODEL_PREVIEWS,
+  NORMALIZED_3MFS,
+  PREVIEWS,
+  STORAGE,
+  TAG_MOSAICS,
+  THUMBS,
+} from "../config";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { deleteAllPrintFiles } from "./printFileService";
@@ -109,14 +121,65 @@ export async function deleteAllPrintsForUser(userId: string): Promise<number> {
 export type StorageUsage = {
   modelBytes: number;
   modelCount: number;
+  /** All of storage on disk: model files plus everything made from them. */
+  totalBytes: number;
+  /** Thumbnails, gallery and description images, 3D previews, tag mosaics. */
+  pictureBytes: number;
+  /** Slicer-ready 3MF copies and download bundles. */
+  otherGeneratedBytes: number;
 };
+
+/** Bytes under `dir`, following no links; a missing folder counts as empty. */
+async function folderBytes(dir: string): Promise<number> {
+  let entries: Dirent[];
+  try {
+    entries = await fs.readdir(dir, { withFileTypes: true });
+  } catch {
+    return 0;
+  }
+  let total = 0;
+  for (const entry of entries) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) total += await folderBytes(full);
+    else if (entry.isFile())
+      total += await fs.stat(full).then(
+        (stats) => stats.size,
+        () => 0,
+      );
+  }
+  return total;
+}
+
+type DiskUsage = Pick<StorageUsage, "totalBytes" | "pictureBytes" | "otherGeneratedBytes">;
+
+// Walking a large library takes a while, and the overview asks each time it opens: measured at most every few
+// minutes, and one walk shared by requests that overlap it.
+const DISK_USAGE_TTL_MS = 5 * 60 * 1000;
+let diskUsage: { at: number; value: Promise<DiskUsage> } | null = null;
+
+function measureDisk(): Promise<DiskUsage> {
+  if (diskUsage && Date.now() - diskUsage.at < DISK_USAGE_TTL_MS) return diskUsage.value;
+  const sum = async (dirs: string[]) => (await Promise.all(dirs.map(folderBytes))).reduce((a, b) => a + b, 0);
+  const value = Promise.all([
+    folderBytes(STORAGE),
+    sum([THUMBS, PREVIEWS, DESCRIPTION_IMAGES, MODEL_PREVIEWS, TAG_MOSAICS]),
+    sum([NORMALIZED_3MFS, BUNDLES]),
+  ]).then(([totalBytes, pictureBytes, otherGeneratedBytes]) => ({ totalBytes, pictureBytes, otherGeneratedBytes }));
+  diskUsage = { at: Date.now(), value };
+  // A failed walk isn't kept, so the next request tries again.
+  value.catch(() => {
+    if (diskUsage?.value === value) diskUsage = null;
+  });
+  return value;
+}
 
 /** Plates plus supporting and prepared files, from stored sizes (matches dto.ts's total_size). */
 export async function getStorageUsage(): Promise<StorageUsage> {
-  const [plates, files, modelCount] = await Promise.all([
+  const [plates, files, modelCount, disk] = await Promise.all([
     prisma.plate.aggregate({ _sum: { size: true } }),
     prisma.printFile.aggregate({ _sum: { size: true } }),
     prisma.print.count(),
+    measureDisk(),
   ]);
-  return { modelBytes: (plates._sum.size ?? 0) + (files._sum.size ?? 0), modelCount };
+  return { modelBytes: (plates._sum.size ?? 0) + (files._sum.size ?? 0), modelCount, ...disk };
 }

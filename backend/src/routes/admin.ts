@@ -87,7 +87,13 @@ router.get(
   "/storage",
   asyncHandler(async (_req, res) => {
     const usage = await getStorageUsage();
-    res.json({ model_bytes: usage.modelBytes, model_count: usage.modelCount });
+    res.json({
+      model_bytes: usage.modelBytes,
+      model_count: usage.modelCount,
+      total_bytes: usage.totalBytes,
+      picture_bytes: usage.pictureBytes,
+      other_generated_bytes: usage.otherGeneratedBytes,
+    });
   }),
 );
 

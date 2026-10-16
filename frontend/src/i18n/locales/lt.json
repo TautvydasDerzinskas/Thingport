@@ -483,10 +483,12 @@
     },
     "adminSettings": {
       "storageUsage": {
-        "summary_one": "{{size}} užima {{count}} modelis",
-        "summary_few": "{{size}} užima {{count}} modeliai",
-        "summary_other": "{{size}} užima {{count}} modelių",
-        "hint": "Visų naudotojų modelių failų (plokščių, papildomų ir paruoštų failų) užimama vieta diske. Miniatiūros ir galerijos paveikslėliai neįskaičiuoti."
+        "heading": "Saugykla",
+        "subtitle": "Kiek disko vietos užima Thingport failai: modeliai, jų paveikslėliai ir peržiūros.",
+        "summary_one": "Iš viso diske {{total}}: {{models}} užima {{count}} modelis, {{pictures}} – paveikslėliai ir peržiūros",
+        "summary_few": "Iš viso diske {{total}}: {{models}} užima {{count}} modeliai, {{pictures}} – paveikslėliai ir peržiūros",
+        "summary_other": "Iš viso diske {{total}}: {{models}} užima {{count}} modelių, {{pictures}} – paveikslėliai ir peržiūros",
+        "totalHint": "Viskas Thingport saugyklos aplanke: modelių failai ({{models}}), paveikslėliai ir peržiūros (miniatiūros, galerijų ir aprašymų paveikslėliai, 3D peržiūros, žymų paveikslėliai: {{pictures}}) ir kiti sugeneruoti failai (pjaustyklėms paruoštos kopijos ir atsisiuntimų paketai: {{other}}). Matuojama ne dažniau kaip kas kelias minutes."
       },
       "website": {
         "link": "Thingport svetainė ir dokumentacija",

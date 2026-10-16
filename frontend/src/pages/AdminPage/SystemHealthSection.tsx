@@ -96,48 +96,62 @@ function ComponentRow({
   const base = `adminSettings.health.components.${component}`;
   const problem = result && result.status !== "ok";
   return (
-    <Box sx={{ p: 2, "&:not(:last-of-type)": { borderBottom: 1, borderColor: "divider" } }}>
-      <Stack direction="row" spacing={1.5} alignItems="flex-start">
-        <Box sx={{ color: "text.secondary", pt: 0.25, "& svg": { fontSize: 22 } }}>{info.icon}</Box>
-        <Stack spacing={0.75} sx={{ flex: 1, minWidth: 0 }}>
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-            <Typography variant="body1" fontWeight={600}>
-              {t(`${base}.name`)}
+    <Box sx={{ px: 2, py: 1.5, "&:not(:last-of-type)": { borderBottom: 1, borderColor: "divider" } }}>
+      {/* Two columns: what it is and how it's doing, as wide as the actions beside it allow. A phone stacks them. */}
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 1, sm: 2 }} alignItems={{ sm: "flex-start" }}>
+        <Stack direction="row" spacing={1.5} alignItems="flex-start" sx={{ flex: 1, minWidth: 0 }}>
+          <Box sx={{ color: "text.secondary", pt: 0.25, "& svg": { fontSize: 22 } }}>{info.icon}</Box>
+          <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+              <Typography variant="body1" fontWeight={600}>
+                {t(`${base}.name`)}
+              </Typography>
+              <Chip size="small" variant="outlined" label={t(`adminSettings.health.need.${info.need}`)} />
+              <Chip
+                size="small"
+                color={result ? STATUS_COLOR[result.status] : "default"}
+                variant={result && result.status !== "not_configured" ? "filled" : "outlined"}
+                label={t(`adminSettings.health.status.${result?.status ?? "untested"}`)}
+              />
+            </Stack>
+            <Typography variant="body2" color="text.secondary">
+              {t(`${base}.description`)}
             </Typography>
-            <Chip size="small" variant="outlined" label={t(`adminSettings.health.need.${info.need}`)} />
-            <Chip
-              size="small"
-              color={result ? STATUS_COLOR[result.status] : "default"}
-              variant={result && result.status !== "not_configured" ? "filled" : "outlined"}
-              label={t(`adminSettings.health.status.${result?.status ?? "untested"}`)}
-            />
+            {result && result.status !== "not_configured" && factsLine(result, t).length > 0 && (
+              <Typography variant="caption" color="text.secondary">
+                {factsLine(result, t).join(" · ")}
+              </Typography>
+            )}
+            {problem && (
+              <Alert
+                severity={result.status === "error" ? "error" : result.status === "warning" ? "warning" : "info"}
+                sx={{ py: 0.25 }}
+              >
+                {t(`${base}.problems.${result.code}`, { defaultValue: t("adminSettings.health.problems.unknown") })}
+                {result.detail && (
+                  <Typography
+                    component="div"
+                    variant="caption"
+                    sx={{ mt: 0.5, fontFamily: "ui-monospace, Menlo, Consolas, monospace", wordBreak: "break-word" }}
+                  >
+                    {result.detail}
+                  </Typography>
+                )}
+              </Alert>
+            )}
           </Stack>
-          <Typography variant="body2" color="text.secondary">
-            {t(`${base}.description`)}
-          </Typography>
-          {result && result.status !== "not_configured" && factsLine(result, t).length > 0 && (
-            <Typography variant="caption" color="text.secondary">
-              {factsLine(result, t).join(" · ")}
-            </Typography>
-          )}
-          {problem && (
-            <Alert
-              severity={result.status === "error" ? "error" : result.status === "warning" ? "warning" : "info"}
-              sx={{ py: 0.25 }}
-            >
-              {t(`${base}.problems.${result.code}`, { defaultValue: t("adminSettings.health.problems.unknown") })}
-              {result.detail && (
-                <Typography
-                  component="div"
-                  variant="caption"
-                  sx={{ mt: 0.5, fontFamily: "ui-monospace, Menlo, Consolas, monospace", wordBreak: "break-word" }}
-                >
-                  {result.detail}
-                </Typography>
-              )}
-            </Alert>
-          )}
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+        </Stack>
+        <Stack
+          spacing={0.5}
+          alignItems={{ xs: "flex-start", sm: "flex-end" }}
+          sx={{ flexShrink: 0, pl: { xs: 4.75, sm: 0 } }}
+        >
+          <Stack direction="row" spacing={1}>
+            {info.settings && (
+              <Button size="small" component={RouterLink} to={info.settings}>
+                {t("adminSettings.health.settings")}
+              </Button>
+            )}
             <Button
               size="small"
               variant="outlined"
@@ -147,17 +161,12 @@ function ComponentRow({
             >
               {t("adminSettings.health.test")}
             </Button>
-            {info.settings && (
-              <Button size="small" component={RouterLink} to={info.settings}>
-                {t("adminSettings.health.settings")}
-              </Button>
-            )}
-            <Typography variant="caption" color="text.secondary">
-              {result
-                ? t("adminSettings.health.testedAgo", { when: relativeTime(result.checked_at, i18n.language) })
-                : t("adminSettings.health.neverTested")}
-            </Typography>
           </Stack>
+          <Typography variant="caption" color="text.secondary" noWrap>
+            {result
+              ? t("adminSettings.health.testedAgo", { when: relativeTime(result.checked_at, i18n.language) })
+              : t("adminSettings.health.neverTested")}
+          </Typography>
         </Stack>
       </Stack>
     </Box>

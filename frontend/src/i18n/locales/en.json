@@ -483,9 +483,11 @@
     },
     "adminSettings": {
       "storageUsage": {
-        "summary_one": "{{size}} used by {{count}} model",
-        "summary_other": "{{size}} used by {{count}} models",
-        "hint": "Disk space used by every user's model files (plates, supporting and prepared files). Thumbnails and gallery images aren't included."
+        "heading": "Storage",
+        "subtitle": "Disk space Thingport's files take: models, their pictures and previews.",
+        "summary_one": "{{total}} on disk in total, {{models}} used by {{count}} model, {{pictures}} used by pictures and previews",
+        "summary_other": "{{total}} on disk in total, {{models}} used by {{count}} models, {{pictures}} used by pictures and previews",
+        "totalHint": "Everything in Thingport's storage folder: model files ({{models}}), pictures and previews (thumbnails, gallery and description images, 3D previews, tag pictures: {{pictures}}), and other generated files (slicer-ready copies and download bundles: {{other}}). Measured every few minutes at most."
       },
       "website": {
         "link": "Thingport website & docs",

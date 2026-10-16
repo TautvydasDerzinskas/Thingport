@@ -83,6 +83,12 @@ export type LogEntry = {
 export type StorageUsage = {
   model_bytes: number; // every plate + supporting/prepared file, across all users
   model_count: number;
+  /** All of storage on disk; measured every few minutes at most. */
+  total_bytes: number;
+  /** Thumbnails, gallery and description images, 3D previews, tag mosaics. */
+  picture_bytes: number;
+  /** Slicer-ready 3MF copies and download bundles. */
+  other_generated_bytes: number;
 };
 
 export type AuthorLookupProblem =
