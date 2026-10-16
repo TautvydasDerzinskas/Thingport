@@ -73,6 +73,9 @@
       }
     },
     "sidebar": {
+      "collapseAdminMenu": "Suskleisti administravimo meniu",
+      "expandAdminMenu": "Išskleisti administravimo meniu",
+      "adminOverview": "Apžvalga",
       "dashboard": "Valdymo skydas",
       "administration": "Administravimas",
       "expandSidebar": "Išskleisti šoninę juostą",
@@ -490,6 +493,105 @@
         "hint": "Diegimo gidai, šaltinių nustatymas ir Thingport naujienos"
       },
       "pageTitle": "Administravimo nustatymai",
+      "health": {
+        "heading": "Sistemos būklė",
+        "subtitle": "Viskas, kuo remiasi Thingport, kam to reikia ir ar veikia. Niekas netikrinama, kol nepaprašote.",
+        "testAll": "Patikrinti viską",
+        "test": "Patikrinti",
+        "settings": "Nustatymai",
+        "testedAgo": "Patikrinta {{when}}",
+        "neverTested": "Dar netikrinta",
+        "lastFullTest": "Paskutinis pilnas patikrinimas: {{when}} ({{ago}})",
+        "neverFullTest": "Pilnas patikrinimas dar nebuvo atliktas.",
+        "need": {
+          "required": "Būtina",
+          "recommended": "Rekomenduojama",
+          "optional": "Neprivaloma"
+        },
+        "status": {
+          "ok": "Veikia",
+          "warning": "Įspėjimas",
+          "error": "Klaida",
+          "not_configured": "Nesukonfigūruota",
+          "untested": "Netikrinta"
+        },
+        "facts": {
+          "diskFree": "laisva {{free}} iš {{total}}",
+          "memory": "laisva {{available}} iš {{total}}",
+          "memoryContainer": "laisva {{available}} iš konteineriui skirtų {{total}}",
+          "process": "Thingport naudoja {{used}}",
+          "latency": "atsakė per {{ms}} ms"
+        },
+        "problems": {
+          "unknown": "Šis komponentas pranešė apie problemą. Žemiau – jo paties pateikta informacija."
+        },
+        "components": {
+          "database": {
+            "name": "Duomenų bazė",
+            "description": "PostgreSQL saugo visus modelius, kolekcijas, naudotojus ir nustatymus. Be jos Thingport neveikia.",
+            "problems": {
+              "unreachable": "Thingport nepasiekia duomenų bazės. Patikrinkite, ar veikia jos konteineris ir ar DATABASE_URL nurodo į ją, tada paleiskite serverį iš naujo.",
+              "timeout": "Duomenų bazė laiku neatsakė. Ji gali būti perkrauta arba jos serveriui trūksta išteklių.",
+              "failed": "Duomenų bazės patikrinimas netikėtai nepavyko."
+            }
+          },
+          "storage": {
+            "name": "Failų saugykla",
+            "description": "Čia laikomi modelių failai, paveikslėliai ir peržiūros. Įkėlimams, importams ir atsisiuntimams reikia, kad į ją būtų galima rašyti ir joje būtų vietos.",
+            "problems": {
+              "not_writable": "Thingport negali rašyti į saugyklos aplanką. Patikrinkite, ar tomas prijungtas, ar jis ne tik skaitymui ir ar PUID/PGID atitinka aplanko savininką.",
+              "low_space": "Saugykloje mažai vietos. Kai ji užsipildys, įkėlimai ir importai nepavyks: atlaisvinkite vietos arba padidinkite tomą.",
+              "timeout": "Saugyklos patikrinimas užtruko per ilgai. Tinklo diskas gali būti lėtas arba nepasiekiamas."
+            }
+          },
+          "memory": {
+            "name": "Atmintis",
+            "description": "Daugiausia atminties reikia didelių modelių 3D peržiūroms kurti ir supaprastinti. Jos trūkstant peržiūros nepavyksta arba serveris persikrauna.",
+            "problems": {
+              "low_memory": "Atminties mažai. Skirkite konteineriui daugiau atminties arba skiltyje „Atvaizdavimas“ įjunkite peržiūrų supaprastinimą."
+            }
+          },
+          "flaresolverr": {
+            "name": "FlareSolverr",
+            "description": "Įveikia Cloudflare patikras tiekėjuose, kurie jas naudoja – dažniausiai Thingiverse ir Printables. Be jo importai ir sinchronizacijos iš šių svetainių bus blokuojami.",
+            "problems": {
+              "not_configured": "Nesukonfigūruota. Importai veikia, kol tiekėjas neparodo Cloudflare patikros; nurodykite FlareSolverr adresą, kad jie veiktų ir tada.",
+              "unreachable": "FlareSolverr neatsako. Patikrinkite, ar veikia jo konteineris ir ar adresas skiltyje „Ryšiai > FlareSolverr“ teisingas, įskaitant prievadą (dažniausiai 8191).",
+              "timeout": "FlareSolverr laiku neatsakė. Jis gali dar tik pasileisti arba būti užimtas."
+            }
+          },
+          "thingiverse": {
+            "name": "Thingiverse",
+            "description": "Sistemos Thingiverse prieigos raktas – modeliams importuoti, kolekcijoms ir patiktiems modeliams sinchronizuoti bei autoriams susieti.",
+            "problems": {
+              "not_configured": "Prieigos raktas nenurodytas. Thingiverse importai ir sinchronizacijos neveiks, kol jo nepridėsite nustatymuose (sukurkite thingiverse.com/apps/create).",
+              "token_rejected": "Thingiverse atmetė prieigos raktą. Sukurkite naują thingiverse.com/apps/create ir išsaugokite nustatymuose.",
+              "blocked": "Thingiverse atsakė Cloudflare patikra – tai nieko nesako apie raktą. Įdiekite FlareSolverr arba palaukite: dažniausiai praeina po kurio laiko.",
+              "unreachable": "Thingport nepasiekė Thingiverse. Patikrinkite serverio interneto ryšį arba bandykite vėliau.",
+              "timeout": "Thingiverse laiku neatsakė. Bandykite vėliau."
+            }
+          },
+          "ai": {
+            "name": "DI tiekėjas",
+            "description": "Numatytasis DI modelis, naudojamas DI kategorizavimui ir aprašymų tobulinimui. Visa kita veikia ir be jo.",
+            "problems": {
+              "not_configured": "DI modelis nepridėtas. DI funkcijos išjungtos, kol jo nepridėsite skiltyje „DI“.",
+              "unreachable": "DI tiekėjas neatsako. Patikrinkite, ar jis veikia ir ar jo API adresas bei raktas skiltyje „DI“ teisingi.",
+              "model_missing": "Tiekėjas atsakė, bet pasirinkto modelio jo sąraše nėra. Patikrinkite modelio pavadinimą skiltyje „DI“ arba atsisiųskite modelį tiekėjui.",
+              "timeout": "DI tiekėjas laiku neatsakė. Vietinis tiekėjas gali dar įkelti modelį."
+            }
+          },
+          "smtp": {
+            "name": "El. paštas (SMTP)",
+            "description": "Siunčia kvietimus, el. pašto patvirtinimus ir slaptažodžių atkūrimo laiškus. Neprivaloma: be jo kvieskite nuoroda, o slaptažodžius atkurkite kaip administratorius.",
+            "problems": {
+              "not_configured": "Nesukonfigūruota. Thingport nesiunčia laiškų: kvietimų nuorodos rodomos nukopijuoti, o naujoms paskyroms nereikia patvirtinti adreso.",
+              "unreachable": "Thingport nepavyko prisijungti prie pašto serverio. Patikrinkite adresą, prievadą, saugumo nustatymą ir prisijungimo duomenis skiltyje „Ryšiai > SMTP“.",
+              "timeout": "Pašto serveris laiku neatsakė. Patikrinkite adresą ir prievadą bei ar serverio tinklas leidžia siųsti laiškus."
+            }
+          }
+        }
+      },
       "updateCheck": {
         "heading": "Atnaujinimų tikrinimas",
         "subtitle": "Patikrina, ar yra naujesnė Thingport versija šiam backend ir frontend.",

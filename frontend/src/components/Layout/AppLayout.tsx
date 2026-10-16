@@ -6,6 +6,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import Box from "@mui/material/Box";
 import Alert from "@mui/material/Alert";
 import Sidebar from "./Sidebar";
+import AdminSubnav from "./AdminSubnav";
 import TopBar from "./TopBar";
 import ImportProgressBar from "./ImportProgressBar";
 import AiRunProgressBar from "./AiRunProgressBar";
@@ -155,6 +156,7 @@ function AppLayoutShell({
 }: ShellProps) {
   const { t } = useTranslation(["app", "common"]);
   const { title: routeTitle, subtitle: routeSubtitle, onBack: routeOnBack } = useRouteChrome();
+  const { pathname } = useLocation();
   const [pageHeader, setPageHeader] = React.useState<PageHeader>(null);
   const { refresh: refreshNotifications } = useNotifications();
 
@@ -174,6 +176,7 @@ function AppLayoutShell({
           }}
         >
           <Sidebar isAdmin={isAdmin} onSelectCategory={onSelectCategory} bookmarksVersion={bookmarksVersion} />
+          {isAdmin && pathname.startsWith("/admin") && <AdminSubnav />}
           <Box component="main" sx={{ flex: 1, minWidth: 0, p: 2, pt: 0 }}>
             {apiUp === false && (
               <Alert severity="error" sx={{ mb: 1.5 }}>

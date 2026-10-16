@@ -19,6 +19,27 @@ export type AdminUser = {
   created_at: string;
 };
 
+export type HealthComponent = "database" | "storage" | "memory" | "flaresolverr" | "thingiverse" | "ai" | "smtp";
+export type HealthStatus = "ok" | "warning" | "error" | "not_configured";
+
+export type HealthResult = {
+  component: HealthComponent;
+  status: HealthStatus;
+  /** What was found, e.g. "unreachable" or "low_space", for the page to explain. */
+  code: string;
+  /** The component's own error, as it gave it. */
+  detail: string | null;
+  facts: Record<string, string | number | null>;
+  latency_ms: number | null;
+  checked_at: string;
+};
+
+export type HealthReport = {
+  /** By importance; a result is null until that component is first tested. */
+  components: { component: HealthComponent; result: HealthResult | null }[];
+  full_checked_at: string | null;
+};
+
 export type LogAction =
   | "user_logged_in"
   | "user_logged_out"
@@ -138,6 +159,26 @@ export const adminApi = {
       body: JSON.stringify({ email }),
     });
     if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to send the invitation"));
+    return res.json();
+  },
+
+  /** The last results; nothing is tested. */
+  getHealth: async (): Promise<HealthReport> => {
+    const res = await fetch(`${apiBase()}/admin/health`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to load system health"));
+    return res.json();
+  },
+
+  /** One component, or every one when none is given. */
+  testHealth: async (component?: HealthComponent): Promise<HealthReport> => {
+    const res = await fetch(`${apiBase()}/admin/health/test`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(component ? { component } : {}),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to test"));
     return res.json();
   },
 

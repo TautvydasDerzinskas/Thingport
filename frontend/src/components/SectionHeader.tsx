@@ -9,10 +9,12 @@ type Props = {
   subtitle: string;
   onBack?: () => void;
   backLabel?: string;
+  /** Buttons beside the title, e.g. a section-wide action. */
+  actions?: React.ReactNode;
 };
 
 /** `onBack` only when the section was reached from a menu grid. */
-export default function SectionHeader({ title, subtitle, onBack, backLabel }: Props) {
+export default function SectionHeader({ title, subtitle, onBack, backLabel, actions }: Props) {
   return (
     <Stack direction="row" alignItems="flex-start" justifyContent="space-between" gap={2} flexWrap="wrap">
       <Box>
@@ -23,6 +25,7 @@ export default function SectionHeader({ title, subtitle, onBack, backLabel }: Pr
           {subtitle}
         </Typography>
       </Box>
+      {actions}
       {onBack && (
         <Button variant="outlined" size="small" onClick={onBack}>
           {backLabel}

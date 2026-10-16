@@ -153,6 +153,20 @@ export async function verifyThingiverseAccessToken(accessToken: string): Promise
   }
 }
 
+/** Like verifyThingiverseAccessToken, but tells a rejected token from Cloudflare's block and an unreachable API. */
+export async function checkThingiverseAccessToken(
+  accessToken: string,
+): Promise<"ok" | "rejected" | "blocked" | "unreachable"> {
+  try {
+    const { ok, data } = await fetchThingiverseApi("/users/me", accessToken);
+    return ok && isRecord(data) ? "ok" : "unreachable";
+  } catch (err) {
+    if (err instanceof ThingiverseAuthError) return "rejected";
+    if (err instanceof ThingiverseRateLimitError) return "blocked";
+    return "unreachable";
+  }
+}
+
 export type ThingiversePlateFile = { name: string; url: string };
 export type ThingiverseGalleryImage = { name: string; url: string };
 

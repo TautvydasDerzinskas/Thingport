@@ -14,6 +14,8 @@ declare module "@mui/material/styles" {
   interface Theme {
     thingport: {
       pageBackground: string;
+      /** A second-level menu beside the sidebar: unlike both it and the page, so the tiers read apart. */
+      subnavBackground: string;
       modelColor: string;
       modelEmissive: string;
       /** A secondary accent that doesn't compete with the primary green. */
@@ -30,6 +32,7 @@ declare module "@mui/material/styles" {
   interface ThemeOptions {
     thingport: {
       pageBackground: string;
+      subnavBackground: string;
       modelColor: string;
       modelEmissive: string;
       altText: string;
@@ -44,6 +47,7 @@ declare module "@mui/material/styles" {
 type ThemeDef = {
   mode: "light" | "dark";
   pageBackground: string;
+  subnavBackground: string;
   panel: string;
   panelStrong: string;
   border: string;
@@ -69,6 +73,8 @@ const THEME_DEFS: Record<ResolvedTheme, ThemeDef> = {
   light: {
     mode: "light",
     pageBackground: "#f7f7f7",
+    // A shade under the page, faintly green: neither the white sidebar nor the content.
+    subnavBackground: "#ecf1ec",
     panel: "#ffffff",
     panelStrong: "#ffffff",
     border: "#ebebeb",
@@ -92,6 +98,8 @@ const THEME_DEFS: Record<ResolvedTheme, ThemeDef> = {
   dark: {
     mode: "dark",
     pageBackground: "#181f39",
+    // A step above the sidebar, which is a step above the page.
+    subnavBackground: "#26315a",
     panel: "#1e2746",
     panelStrong: "#1e2746",
     border: "#333a54",
@@ -188,6 +196,7 @@ export function buildTheme(id: ResolvedTheme): Theme {
     },
     thingport: {
       pageBackground: d.pageBackground,
+      subnavBackground: d.subnavBackground,
       modelColor: d.modelColor,
       modelEmissive: d.modelEmissive,
       altText: d.altText,

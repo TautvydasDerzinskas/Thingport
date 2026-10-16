@@ -8,6 +8,7 @@ import { parseBody } from "../utils/validate";
 import { deleteAllPrintsForUser, getStorageUsage, listLogs, listUsersWithPrintCounts } from "../services/adminService";
 import { createLog } from "../services/auditLog";
 import { deleteUser, permissionsOver, setUserRole } from "../services/userAdminService";
+import { getHealthReport, HEALTH_COMPONENTS, testHealth } from "../services/systemHealthService";
 import { INVITATION_TTL_DAYS, inviteUser } from "../services/invitationService";
 import { listJobItems } from "../services/importJobService";
 import {
@@ -61,6 +62,24 @@ router.get(
         };
       }),
     );
+  }),
+);
+
+// System Health: the last results, without testing anything; testing is the admin's call.
+router.get(
+  "/health",
+  asyncHandler(async (_req, res) => {
+    res.json(await getHealthReport());
+  }),
+);
+
+const healthTestSchema = z.object({ component: z.enum(HEALTH_COMPONENTS).optional() });
+
+// One component, or all of them when none is named.
+router.post(
+  "/health/test",
+  asyncHandler(async (req, res) => {
+    res.json(await testHealth(parseBody(healthTestSchema, req.body ?? {}).component));
   }),
 );
 

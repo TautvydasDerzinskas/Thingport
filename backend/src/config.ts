@@ -15,7 +15,7 @@ function envInt(name: string, fallback: number): number {
 }
 
 /** cgroup v2, then v1. Unlimited ("max", a near-2^63 sentinel, or >= machine RAM) returns null. */
-function cgroupMemoryLimitBytes(): number | null {
+export function cgroupMemoryLimitBytes(): number | null {
   for (const file of ["/sys/fs/cgroup/memory.max", "/sys/fs/cgroup/memory/memory.limit_in_bytes"]) {
     try {
       const value = Number(fs.readFileSync(file, "utf-8").trim());

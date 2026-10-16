@@ -73,6 +73,9 @@
       }
     },
     "sidebar": {
+      "collapseAdminMenu": "Collapse administration menu",
+      "expandAdminMenu": "Expand administration menu",
+      "adminOverview": "Overview",
       "dashboard": "Dashboard",
       "administration": "Administration",
       "expandSidebar": "Expand sidebar",
@@ -489,6 +492,105 @@
         "hint": "Install guides, provider setup and news about Thingport"
       },
       "pageTitle": "Admin Settings",
+      "health": {
+        "heading": "System Health",
+        "subtitle": "Everything Thingport relies on, what each is for, and whether it's working. Nothing is tested until you ask.",
+        "testAll": "Run full test",
+        "test": "Test",
+        "settings": "Settings",
+        "testedAgo": "Tested {{when}}",
+        "neverTested": "Not tested yet",
+        "lastFullTest": "Last full test: {{when}} ({{ago}})",
+        "neverFullTest": "No full test has been run yet.",
+        "need": {
+          "required": "Required",
+          "recommended": "Recommended",
+          "optional": "Optional"
+        },
+        "status": {
+          "ok": "OK",
+          "warning": "Warning",
+          "error": "Error",
+          "not_configured": "Not configured",
+          "untested": "Not tested"
+        },
+        "facts": {
+          "diskFree": "{{free}} free of {{total}}",
+          "memory": "{{available}} available of {{total}}",
+          "memoryContainer": "{{available}} available of the container's {{total}}",
+          "process": "Thingport uses {{used}}",
+          "latency": "answered in {{ms}} ms"
+        },
+        "problems": {
+          "unknown": "This component reported a problem. The details below come from it directly."
+        },
+        "components": {
+          "database": {
+            "name": "Database",
+            "description": "PostgreSQL holds every model, collection, user and setting. Without it nothing in Thingport works.",
+            "problems": {
+              "unreachable": "Thingport can't reach the database. Check that the database container is running and that DATABASE_URL points at it, then restart the backend.",
+              "timeout": "The database didn't answer in time. It may be overloaded, or the host it runs on may be out of resources.",
+              "failed": "The database check failed unexpectedly."
+            }
+          },
+          "storage": {
+            "name": "File storage",
+            "description": "Where model files, their pictures and 3D previews are kept. Uploads, imports and downloads all need it writable, with room to spare.",
+            "problems": {
+              "not_writable": "Thingport can't write to its storage folder. Check that the volume is mounted, isn't read-only, and that PUID/PGID match the folder's owner.",
+              "low_space": "Storage is running low. New uploads and imports will fail once it's full: free up space or give the volume more.",
+              "timeout": "Checking the storage folder took too long. A network share may be slow or unavailable."
+            }
+          },
+          "memory": {
+            "name": "Memory",
+            "description": "Building 3D previews of large models and simplifying them take the most memory. With too little, previews fail or the server restarts.",
+            "problems": {
+              "low_memory": "Memory is running low. Give the container more memory, or turn on Simplify previews under Rendering so heavy models need less."
+            }
+          },
+          "flaresolverr": {
+            "name": "FlareSolverr",
+            "description": "Gets past Cloudflare's checks for providers that use them, mostly Thingiverse and Printables. Without it, imports and syncs from those sites will be blocked.",
+            "problems": {
+              "not_configured": "Not set up. Imports work until a provider shows a Cloudflare challenge; add a FlareSolverr URL so they keep working when it does.",
+              "unreachable": "FlareSolverr isn't answering. Check that its container is running and that the URL in Connections > FlareSolverr is right, including the port (usually 8191).",
+              "timeout": "FlareSolverr didn't answer in time. It may still be starting, or be busy."
+            }
+          },
+          "thingiverse": {
+            "name": "Thingiverse",
+            "description": "The instance's Thingiverse Access Token, used to import models, sync collections and liked models, and link authors from Thingiverse.",
+            "problems": {
+              "not_configured": "No Access Token set. Thingiverse imports and syncs won't work until one is added in Settings (create one at thingiverse.com/apps/create).",
+              "token_rejected": "Thingiverse rejected the Access Token. Generate a new one at thingiverse.com/apps/create and save it in Settings.",
+              "blocked": "Thingiverse answered with a Cloudflare challenge, which says nothing about the token. Set up FlareSolverr, or wait: it usually clears after a while.",
+              "unreachable": "Thingport couldn't reach Thingiverse. Check the server's internet access, or try again later.",
+              "timeout": "Thingiverse didn't answer in time. Try again later."
+            }
+          },
+          "ai": {
+            "name": "AI provider",
+            "description": "The default AI model, behind AI categorization and improved descriptions. Everything else works without it.",
+            "problems": {
+              "not_configured": "No AI model added. AI features stay off until you add one under AI.",
+              "unreachable": "The AI provider isn't answering. Check that it's running and that its API base URL and key under AI are right.",
+              "model_missing": "The provider answered, but doesn't list the chosen model. Check the model name under AI, or pull the model on the provider.",
+              "timeout": "The AI provider didn't answer in time. A local one may still be loading a model."
+            }
+          },
+          "smtp": {
+            "name": "Email (SMTP)",
+            "description": "Sends invitations, email address confirmations and password resets. Optional: without it, invite people by link and reset passwords as an admin.",
+            "problems": {
+              "not_configured": "Not set up. Thingport sends no email: invitation links are shown to copy instead, and new accounts don't need to confirm their address.",
+              "unreachable": "Thingport couldn't connect or log in to the mail server. Check the host, port, security setting and login under Connections > SMTP.",
+              "timeout": "The mail server didn't answer in time. Check the host and port, and that the server's network allows outgoing mail."
+            }
+          }
+        }
+      },
       "updateCheck": {
         "heading": "Update Checker",
         "subtitle": "Checks whether a newer Thingport version is available for this backend and frontend.",

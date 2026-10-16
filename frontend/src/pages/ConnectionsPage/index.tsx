@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router-dom";
 import Stack from "@mui/material/Stack";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
@@ -11,11 +12,15 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-type TabKey = "smtp" | "database" | "flaresolverr";
+const TABS = ["smtp", "database", "flaresolverr"] as const;
+type TabKey = (typeof TABS)[number];
 
 export default function ConnectionsPage({ onUnauthorized }: Props) {
   const { t } = useTranslation("app");
-  const [tab, setTab] = React.useState<TabKey>("smtp");
+  // ?tab=... opens one directly, as System Health's links do.
+  const [searchParams] = useSearchParams();
+  const asked = searchParams.get("tab");
+  const [tab, setTab] = React.useState<TabKey>(TABS.find((key) => key === asked) ?? "smtp");
 
   return (
     <Stack spacing={3}>

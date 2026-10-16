@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
-import type { Theme } from "@mui/material/styles";
+import { useTheme, type Theme } from "@mui/material/styles";
 import { dividerBorderColor } from "../../../theme";
 import Box from "@mui/material/Box";
 import Link from "@mui/material/Link";
@@ -44,13 +44,14 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import Wordmark from "../../Wordmark";
+import BrandMark from "../../BrandMark";
 import { type BookmarkEntry, bookmarksApi } from "../../../api/bookmarks";
 
 const SIDEBAR_WIDTH = 240;
-const SIDEBAR_COLLAPSED_WIDTH = 72;
+export const SIDEBAR_COLLAPSED_WIDTH = 72;
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "thingport_sidebar_collapsed";
 
-function navRowSx(selected: boolean) {
+export function navRowSx(selected: boolean) {
   const color = (theme: Theme) => (selected ? theme.thingport.selectedNavText : theme.thingport.navInactiveText);
   return {
     color,
@@ -72,7 +73,7 @@ function navRowSx(selected: boolean) {
   };
 }
 
-function CollapsedNavIcon({
+export function CollapsedNavIcon({
   icon,
   label,
   selected,
@@ -156,7 +157,8 @@ export default function Sidebar({ isAdmin, onSelectCategory, bookmarksVersion }:
   const { t } = useTranslation(["app", "common"]);
   const location = useLocation();
   const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(() => {
+  const muiTheme = useTheme();
+  const [collapsedByUser, setCollapsedByUser] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY) === "true";
   });
@@ -228,9 +230,11 @@ export default function Sidebar({ isAdmin, onSelectCategory, bookmarksVersion }:
     (location.pathname.startsWith("/models") && !onCollections && !onTags) || location.pathname.startsWith("/authors");
   const onDownload = location.pathname.startsWith("/downloads");
   const onAdmin = location.pathname.startsWith("/admin");
+  // Administration opens its own menu beside this one, so this one folds to icons there, whatever the user chose.
+  const collapsed = collapsedByUser || onAdmin;
 
   const toggleCollapsed = () => {
-    setCollapsed((prev) => {
+    setCollapsedByUser((prev) => {
       const next = !prev;
       try {
         window.localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, String(next));
@@ -281,11 +285,25 @@ export default function Sidebar({ isAdmin, onSelectCategory, bookmarksVersion }:
             <Wordmark size="lg" seasonal />
           </Link>
         )}
-        <Tooltip title={collapsed ? t("sidebar.expandSidebar") : t("sidebar.collapseSidebar")}>
-          <IconButton size="small" onClick={toggleCollapsed}>
-            {collapsed ? <ChevronRightIcon fontSize="small" /> : <ChevronLeftIcon fontSize="small" />}
-          </IconButton>
-        </Tooltip>
+        {onAdmin ? (
+          // Folded for administration, there's nothing to unfold: the mark leads home instead.
+          <Tooltip title={t("sidebar.dashboard")} placement="right">
+            <Link
+              component={RouterLink}
+              to="/"
+              aria-label={t("sidebar.dashboard")}
+              sx={{ display: "flex", alignItems: "center", lineHeight: 0, p: 0.5 }}
+            >
+              <BrandMark theme={muiTheme.palette.mode} size="md" />
+            </Link>
+          </Tooltip>
+        ) : (
+          <Tooltip title={collapsed ? t("sidebar.expandSidebar") : t("sidebar.collapseSidebar")}>
+            <IconButton size="small" onClick={toggleCollapsed}>
+              {collapsed ? <ChevronRightIcon fontSize="small" /> : <ChevronLeftIcon fontSize="small" />}
+            </IconButton>
+          </Tooltip>
+        )}
       </Stack>
 
       <Box component="nav" sx={{ flex: 1, overflow: "auto", px: collapsed ? 0.5 : 1 }}>
