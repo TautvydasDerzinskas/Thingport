@@ -1,4 +1,6 @@
 import type { AiConnection } from "@prisma/client";
+import { currentStorageMove, startStorageMove, type StorageMoveRun } from "../services/storageMoveService";
+import { assertSavableStorageTemplate, storageTemplateProblems } from "../services/storageTemplateRules";
 import { Router } from "express";
 import { z } from "zod";
 import { requireAdmin, requireAuth } from "../auth";
@@ -35,7 +37,7 @@ import {
   DEFAULT_STORAGE_TEMPLATE,
   STORAGE_TEMPLATE_TOKENS,
   getStorageTemplate,
-  reorganizeManagedPrints,
+  storageOutOfPlace,
   samplePlateStoragePaths,
   setStorageTemplate,
   validateStorageTemplate,
@@ -110,14 +112,31 @@ router.patch(
   }),
 );
 
-function storageSettingsOut(template: string, moved = 0, skipped = 0) {
+function storageMoveOut(run: StorageMoveRun | null) {
+  if (!run) return null;
+  return {
+    running: run.running,
+    started_at: run.startedAt,
+    finished_at: run.finishedAt,
+    total: run.total,
+    done: run.done,
+    moved: run.moved,
+    skipped: run.skipped,
+  };
+}
+
+async function storageSettingsOut(template: string) {
+  const move = currentStorageMove();
   return {
     template,
     default_template: DEFAULT_STORAGE_TEMPLATE,
     allowed_tokens: [...STORAGE_TEMPLATE_TOKENS],
     plate_paths: samplePlateStoragePaths(template),
-    moved,
-    skipped,
+    // A template saved before the rules: it still works, but the page asks for a new one.
+    problems: storageTemplateProblems(template).problems,
+    // Files left in an older structure, for the page to offer moving; not counted while a move is going.
+    out_of_place: move?.running ? null : await storageOutOfPlace(template),
+    move: storageMoveOut(move),
   };
 }
 
@@ -136,21 +155,59 @@ router.get(
   requireAdmin,
   asyncHandler(async (_req, res) => {
     const template = validateStorageTemplate(await getStorageTemplate());
-    res.json(storageSettingsOut(template));
+    res.json(await storageSettingsOut(template));
   }),
 );
 
-// Admin-only: "apply to existing" relocates every user's files.
-const storageSettingsSchema = z.object({ template: z.string(), apply_existing: z.boolean().default(false) });
+// What a template being edited would produce, and what's wrong with it, for the page to show as it's typed.
+router.post(
+  "/settings/storage/preview",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const body = parseBody(z.object({ template: z.string().max(500) }), req.body);
+    const { template, problems } = storageTemplateProblems(body.template);
+    let platePaths: string[] = [];
+    try {
+      platePaths = samplePlateStoragePaths(template);
+    } catch {
+      // Too broken to render; the problems say why.
+    }
+    res.json({ template, problems, plate_paths: platePaths });
+  }),
+);
+
+// What saving a template would move, for the page to confirm first.
+router.post(
+  "/settings/storage/impact",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const body = parseBody(z.object({ template: z.string().max(500) }), req.body);
+    res.json(await storageOutOfPlace(assertSavableStorageTemplate(body.template)));
+  }),
+);
+
+router.get(
+  "/settings/storage/move",
+  requireAdmin,
+  asyncHandler(async (_req, res) => {
+    res.json({ move: storageMoveOut(currentStorageMove()) });
+  }),
+);
+
+// Saving moves every user's files to the structure, in the background, so none are left in an older one. Saving
+// the same one again moves the files that aren't where it puts them.
 router.post(
   "/settings/storage",
   requireAdmin,
   asyncHandler(async (req, res) => {
-    const body = parseBody(storageSettingsSchema, req.body);
-    const template = validateStorageTemplate(body.template);
+    const body = parseBody(z.object({ template: z.string().max(500) }), req.body);
+    const template = assertSavableStorageTemplate(body.template);
+    if (currentStorageMove()?.running) {
+      throw new HttpError(409, "Model files are still being moved; save again once that's done", "storage_moving");
+    }
     await setStorageTemplate(template);
-    const { moved, skipped } = body.apply_existing ? await reorganizeManagedPrints(template) : { moved: 0, skipped: 0 };
-    res.json(storageSettingsOut(template, moved, skipped));
+    startStorageMove(req.userId!, template);
+    res.json(await storageSettingsOut(template));
   }),
 );
 

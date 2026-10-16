@@ -632,19 +632,11 @@
       "storage": {
         "heading": "Storage Structure",
         "subtitle": "Choose how managed model files are organized on disk.",
-        "templateHeading": "Path template",
-        "templateDesc": "The model name is unique inside its Thingport category. Renaming a model also renames its file while preserving the extension.",
+        "templateHeading": "Folder structure",
+        "templateDesc": "The folders each model's files are saved in, and how the files are named. Every user's files sit in a folder of their own first, so a file ends up at e.g. <user>/Props/Workshop/Cable clip/Cable clip.3mf. Two models can have the same name if they're in different categories, so the path must include Model ID, or both Category or folder and Model name; otherwise their files could land in the same folder.",
         "templateLabel": "Template",
-        "templatePlaceholder": "{category-or-folder}/{model}/{filename}",
-        "examplePathsHeading": "Example paths (two plates of one print)",
-        "examplePathsEmpty": "Enter a template to preview its path",
-        "reorganizeLabel": "Reorganize existing managed files now",
-        "reorganizeHint": "Links to models keep working, since they use the model's ID rather than its file path.",
-        "save": "Save storage structure",
+        "save": "Save & move files",
         "saving": "Saving…",
-        "savedApplied": "Saved. Moved {{moved}} file(s){{skippedSuffix}}.",
-        "skippedSuffix": "; skipped {{skipped}}",
-        "savedNoApply": "Storage structure saved for new and updated models.",
         "failed": "Failed to save storage settings.",
         "tokens": {
           "category-or-folder": "The model's category or folder, with parent ones as parent folders",
@@ -652,10 +644,59 @@
           "tags": "The model's tags, joined with \" + \"",
           "creator": "The author shown on the model page; a user's own uploads use their display name",
           "model": "The model's name",
-          "filename": "The file's name (required, in the last folder)",
+          "filename": "The file's name; always last",
           "id": "The model's permanent ID",
           "plate": "The file's position in the model, starting at 1"
-        }
+        },
+        "addFolder": "Add folder",
+        "customFolder": "Folder with your own name",
+        "customFolderHint": "A fixed name like \"Library\". It can also mix in tokens such as {model} ({id}).",
+        "customFolderSlash": "One folder at a time: no \"/\"",
+        "dragToReorder": "Drag to reorder",
+        "fileNameLabel": "File name",
+        "fileNamePlain": "File name (Base.3mf)",
+        "fileNamePlate": "Plate number, then file name (1 - Base.3mf)",
+        "editAsText": "Edit as text",
+        "editAsFolders": "Edit as folders",
+        "useDefault": "Use the default",
+        "savedHasProblems": "The saved structure was set before these rules. It keeps working, and a new file whose path is taken goes in a folder named after its model's ID instead of replacing another. Pick a structure that follows the rules to save a new one.",
+        "tokenNames": {
+          "category-or-folder": "Category or folder",
+          "collection": "Collection",
+          "tags": "Tags",
+          "creator": "Creator",
+          "model": "Model name",
+          "filename": "File name",
+          "id": "Model ID",
+          "plate": "Plate number"
+        },
+        "problems": {
+          "empty": "Add at least the file name.",
+          "unknown_token": "\"{{token}}\" isn't a token Thingport knows.",
+          "stray_brace": "There's a { or } that isn't part of a token.",
+          "empty_folder": "A folder is empty, or named . or ..",
+          "filename_count": "The file name must be in it exactly once.",
+          "filename_not_last": "The file name must come last, so each file keeps its extension.",
+          "duplicate_token": "{{token}} is used more than once.",
+          "plate_in_folder": "The plate number can only be part of the file name; a folder per plate would split a model's files apart.",
+          "category_not_whole_folder": "Category or folder must be a folder of its own, since it can be several folders deep.",
+          "not_unique": "Two models could end up with the same path. Add the model ID, or both the category and the model name.",
+          "unsafe_text": "\"{{segment}}\" can't be a folder name: it can't hold < > : \" | ? * or \\, or start or end with a space or dot.",
+          "too_deep": "Use at most {{max}} folders."
+        },
+        "moveConfirmTitle": "Move model files?",
+        "moveConfirmMessage_one": "Saving moves {{count}} file, of {{models}}, to this structure in the background. Links to models keep working, but backups and shared folders will see the moved file as a new one.",
+        "moveConfirmMessage_other": "Saving moves {{count}} files, of {{models}}, to this structure in the background. Links to models keep working, but backups and shared folders will see the moved files as new ones.",
+        "modelCount_one": "{{count}} model",
+        "modelCount_other": "{{count}} models",
+        "moveConfirm": "Save and move",
+        "savedMoving": "Saved. The files are moving in the background, and a notification says when they're done.",
+        "savedInPlace": "Saved. Every file already follows this structure.",
+        "moving": "Moving model files to this structure: {{done}} of {{total}} models. You can leave this page.",
+        "outOfPlace_one": "{{count}} file, of {{models}}, is still in an earlier structure.",
+        "outOfPlace_other": "{{count}} files, of {{models}}, are still in an earlier structure.",
+        "moveThem": "Move them",
+        "pathLabel": "Path"
       },
       "consume": {
         "heading": "Consume Folder",
@@ -665,14 +706,14 @@
         "activeBody": "Watching {{path}}. Files are imported a few seconds after they stop changing and moved into storage, so the folder empties itself. Folders become folders, and ZIPs are unpacked as if they were folders. Anything that can't be imported is moved to \"{{notImported}}\" in that folder.",
         "userLabel": "Import into the library of",
         "modeLabel": "Import mode",
-        "modeSeparateTitle": "Each model file is a separate model",
         "modeSeparateDesc": "Every STL, 3MF, STEP or OBJ file becomes its own model.",
-        "modeFolderTitle": "Each folder is one model",
         "modeFolderDesc": "A folder containing model files becomes a single model named after the folder. Its model files are added as plates, its images become preview images, and other files are attached.",
         "save": "Save consume settings",
         "saving": "Saving…",
         "saved": "Consume settings saved.",
-        "failed": "Failed to save consume settings."
+        "failed": "Failed to save consume settings.",
+        "modeSeparateShort": "Each file is a model",
+        "modeFolderShort": "Each folder is a model"
       },
       "registrations": {
         "allowLabel": "Allow new registrations",
@@ -1189,6 +1230,25 @@
           "designer": "All designer print profiles",
           "all": "Designer and community print profiles"
         }
+      },
+      "storageBrowser": {
+        "heading": "Browse stored files",
+        "subtitle": "See where model files are on disk now, e.g. after reorganizing them.",
+        "open": "Browse files",
+        "title": "Stored files",
+        "root": "Storage",
+        "empty": "Nothing stored here.",
+        "folderSummary_one": "{{count}} file · {{size}}",
+        "folderSummary_other": "{{count}} files · {{size}}",
+        "ofModel": "model \"{{name}}\"",
+        "location": {
+          "source": "At its source",
+          "missing": "Missing"
+        },
+        "locationHint": {
+          "source": "Kept where it was picked up from, outside the storage folder",
+          "missing": "Neither in storage nor where it was picked up from"
+        }
       }
     },
     "download": {
@@ -1345,6 +1405,10 @@
       "active": "Active",
       "notActive": "Not active",
       "activate": "Activate"
+    },
+    "storageMoveProgress": {
+      "label": "Moving model files · {{done}} of {{total}} models",
+      "starting": "Getting ready to move model files…"
     }
   },
   "common": {

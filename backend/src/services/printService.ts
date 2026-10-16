@@ -48,14 +48,19 @@ export function sanitizePathSegment(value: string | null | undefined, fallback: 
   return cleaned.slice(0, 120);
 }
 
-export function validateStorageTemplate(template: string | null | undefined): string {
-  const normalized = (template || "")
+/** Trimmed, with "/" separators and current token names; not yet checked. */
+export function normalizeStorageTemplate(template: string | null | undefined): string {
+  return (template || "")
     .trim()
     .replace(/\\/g, "/")
     .replace(/^\/+|\/+$/g, "")
     .replace(TOKEN_RE, (match, token: string) =>
       token in LEGACY_TOKEN_ALIASES ? `{${LEGACY_TOKEN_ALIASES[token]}}` : match,
     );
+}
+
+export function validateStorageTemplate(template: string | null | undefined): string {
+  const normalized = normalizeStorageTemplate(template);
   if (!normalized) throw new HttpError(400, "Storage template cannot be empty");
   const tokens = [...normalized.matchAll(TOKEN_RE)].map((m) => m[1]);
   const unknown = tokens.filter((t) => !(STORAGE_TEMPLATE_TOKENS as readonly string[]).includes(t));
@@ -200,7 +205,23 @@ export async function renderPlateStoragePath(
 ): Promise<string> {
   const safeTemplate = validateStorageTemplate(template ?? (await getStorageTemplate()));
   const printValues = await printTemplateValues(print, safeTemplate);
-  return renderPlatePath(print, safeTemplate, printValues, plateFilename, platePosition);
+  return freePlatePath(renderPlatePath(print, safeTemplate, printValues, plateFilename, platePosition), print.id);
+}
+
+async function pathTaken(relative: string, plateId?: string): Promise<boolean> {
+  const holder = await prisma.plate.findUnique({ where: { storagePath: relative }, select: { id: true } });
+  if (holder) return holder.id !== plateId;
+  return fsSync.existsSync(path.join(STORAGE, relative));
+}
+
+/** `relative`, unless another file has it: a template that doesn't tell two models apart (one saved before the
+ *  rules), or names that only differ in characters a path can't hold. The file then goes in a folder named
+ *  after its model's ID, beside where it would have been. */
+async function freePlatePath(relative: string, printId: string, plateId?: string): Promise<string> {
+  if (!(await pathTaken(relative, plateId))) return relative;
+  const fallback = path.join(path.dirname(relative), printId, path.basename(relative));
+  if (await pathTaken(fallback, plateId)) throw new HttpError(409, `Storage path already exists: ${relative}`);
+  return fallback;
 }
 
 export function samplePlateStoragePaths(template: string): [string, string] {
@@ -318,7 +339,12 @@ export async function relocatePrint(print: PrintLike, plates: Plate[], template?
   const printValues = await printTemplateValues(print, safeTemplate);
   for (const plate of plates) {
     const oldPath = managedPlatePath(plate);
-    const newRelative = renderPlatePath(print, safeTemplate, printValues, plate.filename, plate.position);
+    const rendered = renderPlatePath(print, safeTemplate, printValues, plate.filename, plate.position);
+    // Where it already is counts as free, so a plate moved aside by freePlatePath stays put.
+    const newRelative =
+      path.resolve(oldPath) === path.resolve(STORAGE, rendered)
+        ? rendered
+        : await freePlatePath(rendered, print.id, plate.id);
     const newPath = path.join(STORAGE, newRelative);
     if (path.resolve(oldPath) === path.resolve(newPath)) {
       if (plate.storagePath !== newRelative) {
@@ -326,8 +352,6 @@ export async function relocatePrint(print: PrintLike, plates: Plate[], template?
       }
       continue;
     }
-    const collision = await prisma.plate.findFirst({ where: { storagePath: newRelative, id: { not: plate.id } } });
-    if (collision) throw new HttpError(409, `Storage path already exists: ${newRelative}`);
     const oldExists = fsSync.existsSync(oldPath);
     if (oldExists) {
       await fs.mkdir(path.dirname(newPath), { recursive: true });
@@ -363,9 +387,12 @@ export async function relocatePrintsForToken(
 /** Re-lays-out managed print storage. Pass `userId` for a category rename/delete affecting only
  * that user's own prints; omit it for an instance-wide storage-template change (admin-only --
  * see requireAdmin on POST /settings/storage), which needs to touch every user's files. */
+export type ReorganizeProgress = { done: number; total: number; moved: number; skipped: number };
+
 export async function reorganizeManagedPrints(
   template?: string | null,
   userId?: string,
+  onProgress?: (progress: ReorganizeProgress) => void,
 ): Promise<{ moved: number; skipped: number }> {
   let moved = 0;
   let skipped = 0;
@@ -374,7 +401,7 @@ export async function reorganizeManagedPrints(
     include: { plates: true },
     orderBy: { id: "asc" },
   });
-  for (const print of prints) {
+  for (const [index, print] of prints.entries()) {
     try {
       const before = new Map(print.plates.map((p) => [p.id, p.storagePath]));
       await relocatePrint(print, print.plates, template);
@@ -385,8 +412,33 @@ export async function reorganizeManagedPrints(
     } catch {
       skipped += 1;
     }
+    onProgress?.({ done: index + 1, total: prints.length, moved, skipped });
   }
   return { moved, skipped };
+}
+
+/** How many files, of how many models, aren't where `template` puts them: what saving it would move. A file put
+ *  beside its place, in a folder named after its model because another file has that place (freePlatePath), counts
+ *  as in place. */
+export async function storageOutOfPlace(template: string): Promise<{ files: number; models: number }> {
+  const safeTemplate = validateStorageTemplate(template);
+  const prints = await prisma.print.findMany({ include: { plates: true } });
+  const taken = new Set(prints.flatMap((print) => print.plates.map((plate) => plate.storagePath)));
+  let files = 0;
+  let models = 0;
+  for (const print of prints) {
+    if (!print.plates.length) continue;
+    const values = await printTemplateValues(print, safeTemplate);
+    const misplaced = print.plates.filter((plate) => {
+      const target = renderPlatePath(print, safeTemplate, values, plate.filename, plate.position);
+      if (plate.storagePath === target) return false;
+      const aside = path.join(path.dirname(target), print.id, path.basename(target));
+      return !(plate.storagePath === aside && taken.has(target));
+    }).length;
+    files += misplaced;
+    if (misplaced) models += 1;
+  }
+  return { files, models };
 }
 
 // -- Settings (storage template) -----------------------------------------

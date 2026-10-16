@@ -633,19 +633,11 @@
       "storage": {
         "heading": "Saugojimo struktūra",
         "subtitle": "Pasirinkite, kaip valdomi modelių failai tvarkomi diske.",
-        "templateHeading": "Kelio šablonas",
-        "templateDesc": "Modelio pavadinimas yra unikalus jo Thingport kategorijoje. Modelio pervadinimas taip pat pervadina jo failą, išsaugant plėtinį.",
+        "templateHeading": "Aplankų struktūra",
+        "templateDesc": "Aplankai, į kuriuos saugomi kiekvieno modelio failai, ir kaip failai pavadinami. Kiekvieno naudotojo failai pirmiausia būna jo paties aplanke, tad failas atsiduria, pvz., <naudotojas>/Props/Workshop/Cable clip/Cable clip.3mf. Skirtingose kategorijose du modeliai gali turėti tą patį pavadinimą, todėl kelyje turi būti Modelio ID arba ir Kategorija ar aplankas, ir Modelio pavadinimas – kitaip jų failai galėtų patekti į tą patį aplanką.",
         "templateLabel": "Šablonas",
-        "templatePlaceholder": "{category-or-folder}/{model}/{filename}",
-        "examplePathsHeading": "Kelių pavyzdžiai (dvi vieno modelio plokštės)",
-        "examplePathsEmpty": "Įveskite šabloną, kad pamatytumėte kelio pavyzdį",
-        "reorganizeLabel": "Pertvarkyti esamus valdomus failus dabar",
-        "reorganizeHint": "Nuorodos į modelius ir toliau veiks, nes jos naudoja modelio ID, o ne failo kelią.",
-        "save": "Išsaugoti saugojimo struktūrą",
+        "save": "Išsaugoti ir perkelti failus",
         "saving": "Saugoma…",
-        "savedApplied": "Išsaugota. Perkelta {{moved}} failų{{skippedSuffix}}.",
-        "skippedSuffix": "; praleista {{skipped}}",
-        "savedNoApply": "Saugojimo struktūra išsaugota naujiems ir atnaujintiems modeliams.",
         "failed": "Nepavyko išsaugoti saugojimo nustatymų.",
         "tokens": {
           "category-or-folder": "Modelio kategorija arba aplankas; tėviniai tampa tėviniais aplankais",
@@ -653,10 +645,65 @@
           "tags": "Modelio žymos, sujungtos „ + “",
           "creator": "Modelio puslapyje rodomas autorius; naudotojo įkeltiems modeliams naudojamas jo rodomas vardas",
           "model": "Modelio pavadinimas",
-          "filename": "Failo pavadinimas (privalomas, paskutiniame aplanke)",
+          "filename": "Failo pavadinimas; visada paskutinis",
           "id": "Nekintantis modelio ID",
           "plate": "Failo eilės numeris modelyje, pradedant nuo 1"
-        }
+        },
+        "addFolder": "Pridėti aplanką",
+        "customFolder": "Aplankas su savo pavadinimu",
+        "customFolderHint": "Pastovus pavadinimas, pvz. „Biblioteka“. Galima įterpti ir žymeklius, pvz. {model} ({id}).",
+        "customFolderSlash": "Po vieną aplanką: be „/“",
+        "dragToReorder": "Vilkite, kad pakeistumėte tvarką",
+        "fileNameLabel": "Failo pavadinimas",
+        "fileNamePlain": "Failo pavadinimas (Base.3mf)",
+        "fileNamePlate": "Plokštės numeris, tada failo pavadinimas (1 - Base.3mf)",
+        "editAsText": "Redaguoti kaip tekstą",
+        "editAsFolders": "Redaguoti kaip aplankus",
+        "useDefault": "Naudoti numatytąją",
+        "savedHasProblems": "Išsaugota struktūra nustatyta prieš šias taisykles. Ji ir toliau veikia, o naujas failas, kurio kelias užimtas, patenka į aplanką pavadintą modelio ID, užuot pakeitęs kitą. Norėdami išsaugoti naują, pasirinkite taisykles atitinkančią struktūrą.",
+        "tokenNames": {
+          "category-or-folder": "Kategorija arba aplankas",
+          "collection": "Kolekcija",
+          "tags": "Žymos",
+          "creator": "Autorius",
+          "model": "Modelio pavadinimas",
+          "filename": "Failo pavadinimas",
+          "id": "Modelio ID",
+          "plate": "Plokštės numeris"
+        },
+        "problems": {
+          "empty": "Pridėkite bent failo pavadinimą.",
+          "unknown_token": "„{{token}}“ nėra Thingport žinomas žymeklis.",
+          "stray_brace": "Yra { arba }, kuris nėra žymeklio dalis.",
+          "empty_folder": "Aplankas tuščias arba pavadintas . ar ..",
+          "filename_count": "Failo pavadinimas turi būti lygiai vieną kartą.",
+          "filename_not_last": "Failo pavadinimas turi būti paskutinis, kad failas išlaikytų plėtinį.",
+          "duplicate_token": "{{token}} naudojamas daugiau nei kartą.",
+          "plate_in_folder": "Plokštės numeris gali būti tik failo pavadinime; aplankas kiekvienai plokštei išskirstytų modelio failus.",
+          "category_not_whole_folder": "Kategorija arba aplankas turi būti atskiras aplankas, nes ji gali būti kelių aplankų gylio.",
+          "not_unique": "Du modeliai galėtų gauti tą patį kelią. Pridėkite modelio ID arba ir kategoriją, ir modelio pavadinimą.",
+          "unsafe_text": "„{{segment}}“ negali būti aplanko pavadinimas: jame negali būti < > : \" | ? * ar \\, jis negali prasidėti ar baigtis tarpu ar tašku.",
+          "too_deep": "Naudokite ne daugiau kaip {{max}} aplankus."
+        },
+        "moveConfirmTitle": "Perkelti modelių failus?",
+        "moveConfirmMessage_one": "Išsaugojus {{count}} failas iš {{models}} bus fone perkeltas į šią struktūrą. Nuorodos į modelius veiks, bet atsarginės kopijos ir bendrinami aplankai perkeltą failą matys kaip naują.",
+        "moveConfirmMessage_few": "Išsaugojus {{count}} failai iš {{models}} bus fone perkelti į šią struktūrą. Nuorodos į modelius veiks, bet atsarginės kopijos ir bendrinami aplankai perkeltus failus matys kaip naujus.",
+        "moveConfirmMessage_many": "Išsaugojus {{count}} failo iš {{models}} bus fone perkelta į šią struktūrą. Nuorodos į modelius veiks, bet atsarginės kopijos ir bendrinami aplankai perkeltus failus matys kaip naujus.",
+        "moveConfirmMessage_other": "Išsaugojus {{count}} failų iš {{models}} bus fone perkelta į šią struktūrą. Nuorodos į modelius veiks, bet atsarginės kopijos ir bendrinami aplankai perkeltus failus matys kaip naujus.",
+        "modelCount_one": "{{count}} modelio",
+        "modelCount_few": "{{count}} modelių",
+        "modelCount_many": "{{count}} modelio",
+        "modelCount_other": "{{count}} modelių",
+        "moveConfirm": "Išsaugoti ir perkelti",
+        "savedMoving": "Išsaugota. Failai perkeliami fone; pranešimas praneš, kai baigsis.",
+        "savedInPlace": "Išsaugota. Visi failai jau atitinka šią struktūrą.",
+        "moving": "Modelių failai perkeliami į šią struktūrą: {{done}} iš {{total}} modelių. Galite palikti šį puslapį.",
+        "outOfPlace_one": "{{count}} failas iš {{models}} vis dar ankstesnėje struktūroje.",
+        "outOfPlace_few": "{{count}} failai iš {{models}} vis dar ankstesnėje struktūroje.",
+        "outOfPlace_many": "{{count}} failo iš {{models}} vis dar ankstesnėje struktūroje.",
+        "outOfPlace_other": "{{count}} failų iš {{models}} vis dar ankstesnėje struktūroje.",
+        "moveThem": "Perkelti juos",
+        "pathLabel": "Kelias"
       },
       "consume": {
         "heading": "Importavimo aplankas",
@@ -666,14 +713,14 @@
         "activeBody": "Stebimas {{path}}. Failai importuojami praėjus kelioms sekundėms po to, kai nustoja keistis, ir perkeliami į saugyklą, todėl aplankas išsivalo pats. Aplankai tampa aplankais, o ZIP archyvai išpakuojami tarsi aplankai. Tai, ko nepavyksta importuoti, perkeliama į „{{notImported}}“ tame aplanke.",
         "userLabel": "Importuoti į biblioteką naudotojo",
         "modeLabel": "Importavimo būdas",
-        "modeSeparateTitle": "Kiekvienas modelio failas – atskiras modelis",
         "modeSeparateDesc": "Kiekvienas STL, 3MF, STEP ar OBJ failas tampa atskiru modeliu.",
-        "modeFolderTitle": "Kiekvienas aplankas – vienas modelis",
         "modeFolderDesc": "Aplankas su modelio failais tampa vienu modeliu, pavadintu aplanko vardu. Jo modelio failai pridedami kaip plokštės, paveikslėliai tampa peržiūros paveikslėliais, o kiti failai prisegami.",
         "save": "Išsaugoti importavimo nustatymus",
         "saving": "Saugoma…",
         "saved": "Importavimo nustatymai išsaugoti.",
-        "failed": "Nepavyko išsaugoti importavimo nustatymų."
+        "failed": "Nepavyko išsaugoti importavimo nustatymų.",
+        "modeSeparateShort": "Kiekvienas failas – modelis",
+        "modeFolderShort": "Kiekvienas aplankas – modelis"
       },
       "registrations": {
         "allowLabel": "Leisti naujas registracijas",
@@ -1205,6 +1252,27 @@
           "designer": "Visi dizainerio spausdinimo profiliai",
           "all": "Dizainerio ir bendruomenės spausdinimo profiliai"
         }
+      },
+      "storageBrowser": {
+        "heading": "Naršyti saugomus failus",
+        "subtitle": "Pažiūrėkite, kur modelių failai yra diske dabar, pvz. juos pertvarkius.",
+        "open": "Naršyti failus",
+        "title": "Saugomi failai",
+        "root": "Saugykla",
+        "empty": "Čia nieko nėra.",
+        "folderSummary_one": "{{count}} failas · {{size}}",
+        "folderSummary_few": "{{count}} failai · {{size}}",
+        "folderSummary_many": "{{count}} failo · {{size}}",
+        "folderSummary_other": "{{count}} failų · {{size}}",
+        "ofModel": "modelis „{{name}}“",
+        "location": {
+          "source": "Šaltinyje",
+          "missing": "Trūksta"
+        },
+        "locationHint": {
+          "source": "Laikomas ten, iš kur paimtas, už saugyklos aplanko ribų",
+          "missing": "Nėra nei saugykloje, nei ten, iš kur paimtas"
+        }
       }
     },
     "download": {
@@ -1386,6 +1454,10 @@
       "active": "Aktyvi",
       "notActive": "Neaktyvi",
       "activate": "Aktyvuoti"
+    },
+    "storageMoveProgress": {
+      "label": "Perkeliami modelių failai · {{done}} iš {{total}} modelių",
+      "starting": "Ruošiamasi perkelti modelių failus…"
     }
   },
   "common": {

@@ -10,12 +10,12 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
-import Radio from "@mui/material/Radio";
-import RadioGroup from "@mui/material/RadioGroup";
-import FormControlLabel from "@mui/material/FormControlLabel";
 import { UnauthorizedError } from "../../api/client";
 import { settingsApi, type ConsumeMode, type ConsumeSettings } from "../../api/settings";
 import { adminApi, type AdminUser } from "../../api/admin";
+import Segmented from "../../components/controls/Segmented";
+import { AnimatedTile } from "../../components/storageAnimations/parts";
+import ConsumeAnimation from "../../components/storageAnimations/ConsumeAnimation";
 import SectionHeader from "../../components/SectionHeader";
 
 type Props = {
@@ -82,95 +82,94 @@ export default function ConsumeSection({ onUnauthorized }: Props) {
   return (
     <Stack spacing={3}>
       <SectionHeader title={t("adminSettings.consume.heading")} subtitle={t("adminSettings.consume.subtitle")} />
+      {settings &&
+        (settings.available ? (
+          <Alert severity="info">
+            {t("adminSettings.consume.activeBody", {
+              path: settings.path,
+              notImported: settings.not_imported_dir,
+            })}
+          </Alert>
+        ) : (
+          <Alert severity="warning">
+            <AlertTitle>{t("adminSettings.consume.notSetUpTitle")}</AlertTitle>
+            {t("adminSettings.consume.notSetUpBody", { path: settings.path })}
+          </Alert>
+        ))}
       <Paper variant="outlined" sx={{ p: 2.5 }}>
-        <Stack spacing={2}>
-          {settings &&
-            (settings.available ? (
-              <Alert severity="info">
-                {t("adminSettings.consume.activeBody", {
-                  path: settings.path,
-                  notImported: settings.not_imported_dir,
-                })}
-              </Alert>
-            ) : (
-              <Alert severity="warning">
-                <AlertTitle>{t("adminSettings.consume.notSetUpTitle")}</AlertTitle>
-                {t("adminSettings.consume.notSetUpBody", { path: settings.path })}
-              </Alert>
-            ))}
-
-          <TextField
-            select
-            label={t("adminSettings.consume.userLabel")}
-            value={users.some((u) => u.id === userId) ? userId : ""}
-            onChange={(e) => setUserId(e.target.value)}
-            disabled={loading || saving}
-            sx={{ maxWidth: 420 }}
-          >
-            {users.map((user) => (
-              <MenuItem key={user.id} value={user.id}>
-                {user.display_name} ({user.email})
-              </MenuItem>
-            ))}
-          </TextField>
-
-          <Box>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              {t("adminSettings.consume.modeLabel")}
-            </Typography>
-            <RadioGroup value={mode} onChange={(e) => setMode(e.target.value as ConsumeMode)}>
-              <Stack spacing={1.5}>
-                {MODES.map((option) => {
-                  const selected = mode === option;
-                  return (
-                    <FormControlLabel
-                      key={option}
-                      value={option}
-                      control={<Radio />}
-                      disabled={loading || saving}
-                      sx={{
-                        alignItems: "flex-start",
-                        m: 0,
-                        borderRadius: 2,
-                        border: "1px solid",
-                        borderColor: selected ? "primary.main" : "divider",
-                        bgcolor: selected ? "action.selected" : "transparent",
-                        p: 2,
-                      }}
-                      label={
-                        <Box>
-                          <Typography variant="body2" fontWeight={600}>
-                            {t(`adminSettings.consume.mode${MODE_TEXT[option]}Title`)}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {t(`adminSettings.consume.mode${MODE_TEXT[option]}Desc`)}
-                          </Typography>
-                        </Box>
-                      }
-                    />
-                  );
-                })}
+        <Stack direction="row" spacing={2.5} alignItems="flex-start">
+          <AnimatedTile>
+            <ConsumeAnimation size={76} />
+          </AnimatedTile>
+          <Stack spacing={2} sx={{ flex: 1, minWidth: 0 }}>
+            <Box>
+              <Stack
+                direction="row"
+                flexWrap="wrap"
+                useFlexGap
+                alignItems="flex-start"
+                sx={{ columnGap: 3, rowGap: 2 }}
+              >
+                <Box sx={{ flex: "1 1 260px", maxWidth: 420, minWidth: 0 }}>
+                  <Typography variant="caption" color="text.secondary" component="div" sx={{ mb: 0.5 }}>
+                    {t("adminSettings.consume.userLabel")}
+                  </Typography>
+                  <TextField
+                    select
+                    size="small"
+                    slotProps={{ htmlInput: { "aria-label": t("adminSettings.consume.userLabel") } }}
+                    value={users.some((u) => u.id === userId) ? userId : ""}
+                    onChange={(e) => setUserId(e.target.value)}
+                    disabled={loading || saving}
+                    fullWidth
+                  >
+                    {users.map((user) => (
+                      <MenuItem key={user.id} value={user.id}>
+                        {user.display_name} ({user.email})
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" component="div" sx={{ mb: 0.5 }}>
+                    {t("adminSettings.consume.modeLabel")}
+                  </Typography>
+                  <Segmented
+                    label={t("adminSettings.consume.modeLabel")}
+                    value={mode}
+                    onChange={setMode}
+                    disabled={loading || saving}
+                    options={MODES.map((option) => ({
+                      value: option,
+                      label: t(`adminSettings.consume.mode${MODE_TEXT[option]}Short`),
+                    }))}
+                  />
+                  {/* What the chosen mode does. */}
+                  <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 1, maxWidth: 380 }}>
+                    {t(`adminSettings.consume.mode${MODE_TEXT[mode]}Desc`)}
+                  </Typography>
+                </Box>
               </Stack>
-            </RadioGroup>
-          </Box>
+            </Box>
 
-          <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
-            <Button variant="contained" onClick={save} disabled={!isDirty || saving}>
-              {saving ? t("adminSettings.consume.saving") : t("adminSettings.consume.save")}
-            </Button>
-            {saving && <CircularProgress size={14} />}
-            {status && (
-              <Typography variant="caption" color="text.secondary">
-                {status}
-              </Typography>
+            <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
+              <Button variant="contained" onClick={save} disabled={!isDirty || saving}>
+                {saving ? t("adminSettings.consume.saving") : t("adminSettings.consume.save")}
+              </Button>
+              {saving && <CircularProgress size={14} />}
+              {status && (
+                <Typography variant="caption" color="text.secondary">
+                  {status}
+                </Typography>
+              )}
+            </Stack>
+
+            {error && (
+              <Alert severity="error" onClose={() => setError(null)}>
+                {error}
+              </Alert>
             )}
           </Stack>
-
-          {error && (
-            <Alert severity="error" onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          )}
         </Stack>
       </Paper>
     </Stack>

@@ -7,6 +7,7 @@ import { SYNC_JOB_INTERRUPTED } from "./services/importJobRunner";
 import { seedFlaresolverrUrl } from "./services/settingsService";
 import { startNotificationCleanup } from "./services/notificationService";
 import { startSystemNotificationSync } from "./services/systemNotificationService";
+import { resumeStorageMove } from "./services/storageMoveService";
 
 const app = createApp();
 
@@ -31,4 +32,5 @@ app.listen(API_PORT, () => {
   startCollectionSyncScheduler();
   startNotificationCleanup();
   startSystemNotificationSync();
+  resumeStorageMove().catch((err) => console.error("Failed to resume moving model files:", err));
 });

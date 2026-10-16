@@ -92,6 +92,34 @@ export type StorageUsage = {
   other_generated_bytes: number;
 };
 
+export type StorageFolder = {
+  name: string;
+  path: string;
+  /** A user's folder (u-<id>) at the top: their display name. */
+  label: string | null;
+  files: number;
+  bytes: number;
+};
+
+export type StorageFile = {
+  name: string;
+  path: string;
+  plate_id: string;
+  print_id: string;
+  print_name: string;
+  owner_id: string;
+  size: number;
+  /** "source": kept where it was picked up from; "missing": in neither place. */
+  location: "managed" | "source" | "missing";
+};
+
+export type StorageListing = {
+  path: string;
+  crumbs: { name: string; path: string; label: string | null }[];
+  folders: StorageFolder[];
+  files: StorageFile[];
+};
+
 export type AuthorLookupProblem =
   | "thingiverse_no_token"
   | "thingiverse_token_rejected"
@@ -153,6 +181,15 @@ async function queueAction<T>(method: "POST" | "DELETE", path: string, fallback:
 }
 
 export const adminApi = {
+  browseStorage: async (folder: string): Promise<StorageListing> => {
+    const res = await fetch(`${apiBase()}/admin/storage/browse?${new URLSearchParams({ path: folder })}`, {
+      headers: authHeaders(),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to list stored files"));
+    return res.json();
+  },
+
   getStorageUsage: async (): Promise<StorageUsage> => {
     const res = await fetch(`${apiBase()}/admin/storage`, { headers: authHeaders() });
     assertOk(res, "Failed to load storage usage");

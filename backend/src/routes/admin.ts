@@ -7,6 +7,7 @@ import { z } from "zod";
 import { parseBody } from "../utils/validate";
 import { deleteAllPrintsForUser, getStorageUsage, listLogs, listUsersWithPrintCounts } from "../services/adminService";
 import { createLog } from "../services/auditLog";
+import { listStorageFolder } from "../services/storageBrowserService";
 import { deleteUser, permissionsOver, setUserRole } from "../services/userAdminService";
 import { getHealthReport, HEALTH_COMPONENTS, testHealth } from "../services/systemHealthService";
 import { INVITATION_TTL_DAYS, inviteUser } from "../services/invitationService";
@@ -94,6 +95,14 @@ router.get(
       picture_bytes: usage.pictureBytes,
       other_generated_bytes: usage.otherGeneratedBytes,
     });
+  }),
+);
+
+// One folder of the managed model files; no path is the top, with a folder per user.
+router.get(
+  "/storage/browse",
+  asyncHandler(async (req, res) => {
+    res.json(await listStorageFolder(typeof req.query.path === "string" ? req.query.path : ""));
   }),
 );
 

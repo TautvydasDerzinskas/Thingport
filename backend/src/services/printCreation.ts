@@ -51,24 +51,28 @@ export type PrintMetaInput = {
   sourceExternalId?: string | null;
 };
 
+/** Never over another file: a link fails on one that's there, where a rename would replace it. */
 async function placeFile(input: NewPlateInput, destAbsPath: string): Promise<string | null> {
   await fs.mkdir(path.dirname(destAbsPath), { recursive: true });
-  if (input.tempFilePath) {
-    try {
-      await fs.rename(input.tempFilePath, destAbsPath);
-    } catch (err: any) {
-      if (err?.code === "EXDEV") {
-        await fs.copyFile(input.tempFilePath, destAbsPath);
-        await fs.rm(input.tempFilePath, { force: true });
-      } else {
-        throw err;
+  try {
+    if (input.tempFilePath) {
+      try {
+        await fs.link(input.tempFilePath, destAbsPath);
+      } catch (err: any) {
+        if (err?.code === "EEXIST") throw err;
+        // Another disk, or one without hard links.
+        await fs.copyFile(input.tempFilePath, destAbsPath, fsSync.constants.COPYFILE_EXCL);
       }
+      await fs.rm(input.tempFilePath, { force: true });
+      return destAbsPath;
     }
-    return destAbsPath;
-  }
-  if (input.copyFromPath) {
-    await fs.copyFile(input.copyFromPath, destAbsPath);
-    return destAbsPath;
+    if (input.copyFromPath) {
+      await fs.copyFile(input.copyFromPath, destAbsPath, fsSync.constants.COPYFILE_EXCL);
+      return destAbsPath;
+    }
+  } catch (err: any) {
+    if (err?.code === "EEXIST") throw new HttpError(409, "Another file was just saved at the same path; try again");
+    throw err;
   }
   return input.sourcePath ?? null;
 }

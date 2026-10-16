@@ -1,231 +1,267 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import Stack from "@mui/material/Stack";
-import Paper from "@mui/material/Paper";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
-import Checkbox from "@mui/material/Checkbox";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Tooltip from "@mui/material/Tooltip";
+import Link from "@mui/material/Link";
+import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import { UnauthorizedError } from "../../api/client";
-import { settingsApi } from "../../api/settings";
+import {
+  settingsApi,
+  type StorageOutOfPlace,
+  type StorageTemplatePreview,
+  type StorageTemplateProblem,
+} from "../../api/settings";
+import { useConfirm } from "../../components/ConfirmProvider";
+import FileMoveAnimation from "../../components/FileMoveAnimation";
+import { useStorageMove } from "../../components/Layout/StorageMoveContext";
+import { AnimatedTile } from "../../components/storageAnimations/parts";
+import FileTreeAnimation from "../../components/storageAnimations/FileTreeAnimation";
 import SectionHeader from "../../components/SectionHeader";
+import StorageTemplateBuilder from "./StorageTemplateBuilder";
 
 type Props = {
   onUnauthorized?: () => void;
 };
 
-// Two plates of one print, showing that siblings share the {model} directory.
-const PLATE_PREVIEW_VALUES: Record<string, string>[] = [
-  {
-    "category-or-folder": "Props/Workshop",
-    collection: "Tabletop",
-    tags: "Print in place + Useful",
-    creator: "Example creator",
-    model: "Cable clip",
-    filename: "Cable clip.3mf",
-    id: "a1b2c3d4",
-    plate: "1",
-  },
-  {
-    "category-or-folder": "Props/Workshop",
-    collection: "Tabletop",
-    tags: "Print in place + Useful",
-    creator: "Example creator",
-    model: "Cable clip",
-    filename: "Cable clip-2.3mf",
-    id: "a1b2c3d4",
-    plate: "2",
-  },
-];
-
 const DEFAULT_TEMPLATE = "{category-or-folder}/{model}/{filename}";
+const PREVIEW_DELAY_MS = 250;
 
 export default function StorageSection({ onUnauthorized }: Props) {
   const { t } = useTranslation("app");
-  const [storageTemplate, setStorageTemplate] = React.useState(DEFAULT_TEMPLATE);
-  const [storageInitial, setStorageInitial] = React.useState(DEFAULT_TEMPLATE);
-  const [storageTokens, setStorageTokens] = React.useState<string[]>([]);
-  const [storagePlatePaths, setStoragePlatePaths] = React.useState<string[]>([]);
-  const [storageApplyExisting, setStorageApplyExisting] = React.useState(false);
-  const [storageLoading, setStorageLoading] = React.useState(false);
-  const [storageSaving, setStorageSaving] = React.useState(false);
-  const [storageStatus, setStorageStatus] = React.useState<string | null>(null);
+  const [template, setTemplate] = React.useState(DEFAULT_TEMPLATE);
+  const [saved, setSaved] = React.useState<string | null>(null);
+  const [defaultTemplate, setDefaultTemplate] = React.useState(DEFAULT_TEMPLATE);
+  // The server's check of `template`; stale while it's being edited.
+  const [preview, setPreview] = React.useState<StorageTemplatePreview | null>(null);
+  const [asText, setAsText] = React.useState(false);
+  // Files left in an older structure, to offer moving.
+  const [outOfPlace, setOutOfPlace] = React.useState<StorageOutOfPlace | null>(null);
+  const confirm = useConfirm();
+  const { move, running: moving, track, finishedCount } = useStorageMove();
+  const [saving, setSaving] = React.useState(false);
+  const [status, setStatus] = React.useState<{ severity: "success" | "error"; message: string } | null>(null);
+  const loading = saved === null;
 
   React.useEffect(() => {
     let active = true;
-    setStorageLoading(true);
-    setStorageStatus(null);
-    void (async () => {
-      try {
-        const data = await settingsApi.getStorage();
+    settingsApi.getStorage().then(
+      (data) => {
         if (!active) return;
-        setStorageTemplate(data.template);
-        setStorageInitial(data.template);
-        setStorageTokens(data.allowed_tokens || []);
-        setStoragePlatePaths(data.plate_paths || []);
-      } catch (err) {
+        setTemplate(data.template);
+        setSaved(data.template);
+        setDefaultTemplate(data.default_template);
+        setPreview({ template: data.template, problems: data.problems, plate_paths: data.plate_paths });
+        setOutOfPlace(data.out_of_place);
+      },
+      (err: unknown) => {
+        if (!active) return;
         if (err instanceof UnauthorizedError) onUnauthorized?.();
-        else setStorageStatus(t("adminSettings.storage.failed"));
-      } finally {
-        if (active) setStorageLoading(false);
-      }
-    })();
+        else setStatus({ severity: "error", message: t("adminSettings.storage.failed") });
+      },
+    );
     return () => {
       active = false;
     };
   }, [onUnauthorized, t]);
 
-  const saveStorageSettings = async () => {
-    setStorageSaving(true);
-    setStorageStatus(null);
-    try {
-      const data = await settingsApi.updateStorage({
-        template: storageTemplate,
-        apply_existing: storageApplyExisting,
-      });
-      setStorageTemplate(data.template);
-      setStorageInitial(data.template);
-      setStorageTokens(data.allowed_tokens || []);
-      setStoragePlatePaths(data.plate_paths || []);
-      setStorageApplyExisting(false);
-      setStorageStatus(
-        storageApplyExisting
-          ? t("adminSettings.storage.savedApplied", {
-              moved: data.moved,
-              skippedSuffix: data.skipped ? t("adminSettings.storage.skippedSuffix", { skipped: data.skipped }) : "",
-            })
-          : t("adminSettings.storage.savedNoApply"),
+  // A move just ended: what's left out of place now.
+  React.useEffect(() => {
+    if (!finishedCount) return;
+    // "They're moving" no longer holds; the notification says how it went.
+    setStatus(null);
+    let active = true;
+    settingsApi.getStorage().then(
+      (data) => active && setOutOfPlace(data.out_of_place),
+      () => undefined,
+    );
+    return () => {
+      active = false;
+    };
+  }, [finishedCount]);
+
+  React.useEffect(() => {
+    if (loading) return;
+    let active = true;
+    const timer = window.setTimeout(() => {
+      settingsApi.previewStorage(template).then(
+        (result) => active && setPreview({ ...result, template }),
+        (err: unknown) => {
+          if (active && err instanceof UnauthorizedError) onUnauthorized?.();
+        },
       );
-    } catch (err) {
-      if (err instanceof UnauthorizedError) {
-        onUnauthorized?.();
-      } else {
-        setStorageStatus(err instanceof Error ? err.message : t("adminSettings.storage.failed"));
+    }, PREVIEW_DELAY_MS);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [template, loading, onUnauthorized]);
+
+  const checked = preview?.template === template;
+  const problems = checked ? preview.problems : [];
+  const isDirty = template.trim() !== saved;
+  const canSave = !loading && !saving && !moving && checked && !problems.length && isDirty;
+
+  /** Saves `next` and moves every file it doesn't match, after saying how many that is. */
+  const saveAndMove = async (next: string) => {
+    setSaving(true);
+    setStatus(null);
+    try {
+      const impact = await settingsApi.storageImpact(next);
+      if (impact.files > 0) {
+        const ok = await confirm({
+          title: t("adminSettings.storage.moveConfirmTitle"),
+          message: t("adminSettings.storage.moveConfirmMessage", {
+            count: impact.files,
+            models: t("adminSettings.storage.modelCount", { count: impact.models }),
+          }),
+          confirmLabel: t("adminSettings.storage.moveConfirm"),
+        });
+        if (!ok) return;
       }
+      const data = await settingsApi.updateStorage(next);
+      setTemplate(data.template);
+      setSaved(data.template);
+      setPreview({ template: data.template, problems: data.problems, plate_paths: data.plate_paths });
+      setOutOfPlace(data.out_of_place);
+      track(data.move);
+      setStatus({
+        severity: "success",
+        message: t(impact.files > 0 ? "adminSettings.storage.savedMoving" : "adminSettings.storage.savedInPlace"),
+      });
+    } catch (err) {
+      if (err instanceof UnauthorizedError) onUnauthorized?.();
+      else
+        setStatus({
+          severity: "error",
+          message: err instanceof Error ? err.message : t("adminSettings.storage.failed"),
+        });
     } finally {
-      setStorageSaving(false);
+      setSaving(false);
     }
   };
 
-  const isDirty = storageTemplate.trim() !== storageInitial;
-  const templateTrimmed = storageTemplate.trim();
-  const draftSamples = templateTrimmed
-    ? PLATE_PREVIEW_VALUES.map((values) =>
-        Object.entries(values).reduce(
-          (value, [token, replacement]) => value.split(`{${token}}`).join(replacement),
-          templateTrimmed,
-        ),
-      )
-    : [];
-  const examplePaths = draftSamples.length ? draftSamples : storagePlatePaths;
+  const problemText = (problem: StorageTemplateProblem) => {
+    if (problem.code === "duplicate_token") {
+      return t("adminSettings.storage.problems.duplicate_token", {
+        token: t(`adminSettings.storage.tokenNames.${problem.token}`),
+      });
+    }
+    return t(`adminSettings.storage.problems.${problem.code}`, problem);
+  };
 
   return (
     <Stack spacing={3}>
       <SectionHeader title={t("adminSettings.storage.heading")} subtitle={t("adminSettings.storage.subtitle")} />
 
       <Paper variant="outlined" sx={{ p: 2.5 }}>
-        <Stack spacing={2}>
-          <Box>
-            <Typography variant="subtitle1" fontWeight={600}>
-              {t("adminSettings.storage.templateHeading")}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {t("adminSettings.storage.templateDesc")}
-            </Typography>
-          </Box>
-          <TextField
-            size="small"
-            label={t("adminSettings.storage.templateLabel")}
-            value={storageTemplate}
-            onChange={(e) => {
-              setStorageTemplate(e.target.value);
-              setStorageStatus(null);
-            }}
-            placeholder={t("adminSettings.storage.templatePlaceholder") ?? undefined}
-            disabled={storageLoading || storageSaving}
-            InputProps={{ sx: { fontFamily: "monospace" } }}
-          />
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            {storageTokens.map((token) => (
-              <Tooltip key={token} title={t(`adminSettings.storage.tokens.${token}`, { defaultValue: "" })}>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  sx={{ fontFamily: "monospace", textTransform: "none" }}
-                  onClick={() =>
-                    setStorageTemplate((value) => {
-                      const tokenText = `{${token}}`;
-                      if (token === "filename" && value.includes(tokenText)) return value;
-                      const filenameSuffix = "/{filename}";
-                      if (value.endsWith(filenameSuffix)) {
-                        return `${value.slice(0, -filenameSuffix.length)}/${tokenText}${filenameSuffix}`;
-                      }
-                      return `${value}${value.endsWith("/") || !value ? "" : "/"}${tokenText}`;
-                    })
-                  }
-                >
-                  {`{${token}}`}
-                </Button>
-              </Tooltip>
-            ))}
-          </Stack>
-          <Paper variant="outlined" sx={{ p: 1.5, borderStyle: "dashed" }}>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ textTransform: "uppercase", letterSpacing: 0.5 }}
-            >
-              {t("adminSettings.storage.examplePathsHeading")}
-            </Typography>
-            {examplePaths.length ? (
-              <Stack spacing={0.5} sx={{ mt: 0.5 }}>
-                {examplePaths.map((path) => (
-                  <Typography key={path} variant="caption" sx={{ fontFamily: "monospace", wordBreak: "break-all" }}>
-                    {path}
-                  </Typography>
-                ))}
-              </Stack>
-            ) : (
-              <Typography variant="caption" sx={{ fontFamily: "monospace", display: "block", mt: 0.5 }}>
-                {t("adminSettings.storage.examplePathsEmpty")}
+        <Stack direction="row" spacing={2.5} alignItems="flex-start">
+          <AnimatedTile>
+            <FileTreeAnimation size={76} />
+          </AnimatedTile>
+          <Stack spacing={2} sx={{ flex: 1, minWidth: 0 }}>
+            <Box>
+              <Typography variant="subtitle1" fontWeight={600}>
+                {t("adminSettings.storage.templateHeading")}
               </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {t("adminSettings.storage.templateDesc")}
+              </Typography>
+            </Box>
+
+            {!isDirty && problems.length > 0 && (
+              <Alert severity="warning">{t("adminSettings.storage.savedHasProblems")}</Alert>
             )}
-          </Paper>
-          <FormControlLabel
-            sx={{ alignItems: "flex-start", m: 0 }}
-            control={
-              <Checkbox
-                sx={{ mt: -0.5 }}
-                checked={storageApplyExisting}
-                onChange={(e) => setStorageApplyExisting(e.target.checked)}
-                disabled={storageLoading || storageSaving}
+
+            {asText ? (
+              <TextField
+                size="small"
+                label={t("adminSettings.storage.templateLabel")}
+                value={template}
+                onChange={(event) => {
+                  setTemplate(event.target.value);
+                  setStatus(null);
+                }}
+                placeholder={defaultTemplate}
+                disabled={loading || saving}
+                slotProps={{ input: { sx: { fontFamily: "monospace" } } }}
               />
-            }
-            label={
-              <Box>
-                <Typography variant="body2">{t("adminSettings.storage.reorganizeLabel")}</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {t("adminSettings.storage.reorganizeHint")}
-                </Typography>
-              </Box>
-            }
-          />
-          <Stack direction="row" alignItems="center" spacing={1.5} flexWrap="wrap">
-            <Button
-              variant="contained"
-              disabled={storageLoading || storageSaving || (!isDirty && !storageApplyExisting)}
-              onClick={saveStorageSettings}
-            >
-              {storageSaving ? t("adminSettings.storage.saving") : t("adminSettings.storage.save")}
-            </Button>
-            {storageStatus && (
-              <Typography variant="caption" color="text.secondary">
-                {storageStatus}
-              </Typography>
+            ) : (
+              <StorageTemplateBuilder
+                template={template}
+                onChange={(next) => {
+                  setTemplate(next);
+                  setStatus(null);
+                }}
+                disabled={loading || saving}
+              />
             )}
+            <Stack direction="row" spacing={2}>
+              <Link component="button" type="button" variant="caption" onClick={() => setAsText((value) => !value)}>
+                {t(asText ? "adminSettings.storage.editAsFolders" : "adminSettings.storage.editAsText")}
+              </Link>
+              {template !== defaultTemplate && (
+                <Link
+                  component="button"
+                  type="button"
+                  variant="caption"
+                  disabled={loading || saving}
+                  onClick={() => setTemplate(defaultTemplate)}
+                >
+                  {t("adminSettings.storage.useDefault")}
+                </Link>
+              )}
+            </Stack>
+
+            {problems.map((problem) => (
+              <Alert key={problem.code} severity="error">
+                {problemText(problem)}
+              </Alert>
+            ))}
+
+            {moving && move && (
+              <Alert severity="info" icon={<FileMoveAnimation size={28} />}>
+                {move.total > 0
+                  ? t("adminSettings.storage.moving", { done: move.done, total: move.total })
+                  : t("storageMoveProgress.starting")}
+              </Alert>
+            )}
+            {!moving && !isDirty && !problems.length && outOfPlace && outOfPlace.files > 0 && (
+              <Alert severity="info" sx={{ "& .MuiAlert-message": { flex: 1 } }}>
+                {/* Beside the text where there's room, under it on a phone. */}
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  alignItems={{ xs: "flex-start", sm: "center" }}
+                  justifyContent="space-between"
+                  spacing={1}
+                >
+                  <span>
+                    {t("adminSettings.storage.outOfPlace", {
+                      count: outOfPlace.files,
+                      models: t("adminSettings.storage.modelCount", { count: outOfPlace.models }),
+                    })}
+                  </span>
+                  <Button
+                    color="inherit"
+                    size="small"
+                    disabled={saving}
+                    onClick={() => void saveAndMove(saved ?? template)}
+                    sx={{ flexShrink: 0 }}
+                  >
+                    {t("adminSettings.storage.moveThem")}
+                  </Button>
+                </Stack>
+              </Alert>
+            )}
+            <Stack direction="row" alignItems="center" spacing={1.5} flexWrap="wrap">
+              <Button variant="contained" disabled={!canSave} onClick={() => void saveAndMove(template)}>
+                {saving ? t("adminSettings.storage.saving") : t("adminSettings.storage.save")}
+              </Button>
+            </Stack>
+            {status && <Alert severity={status.severity}>{status.message}</Alert>}
           </Stack>
         </Stack>
       </Paper>

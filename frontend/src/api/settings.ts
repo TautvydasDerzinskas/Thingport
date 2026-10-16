@@ -3,13 +3,55 @@ import { apiBase, assertOk, readErrorMessage, UnauthorizedError } from "./client
 import type { ThemeSelection } from "../constants/settingsOptions";
 import { invalidateAiCategorizationStatus } from "./aiCategorization";
 
+export type StorageToken =
+  "category-or-folder" | "collection" | "tags" | "creator" | "model" | "filename" | "id" | "plate";
+
+/** Why a storage template can't be saved; the backend's storageTemplateRules. */
+export type StorageTemplateProblem =
+  | { code: "empty" }
+  | { code: "unknown_token"; token: string }
+  | { code: "stray_brace" }
+  | { code: "empty_folder" }
+  | { code: "filename_count" }
+  | { code: "filename_not_last" }
+  | { code: "duplicate_token"; token: StorageToken }
+  | { code: "plate_in_folder" }
+  | { code: "category_not_whole_folder" }
+  | { code: "not_unique" }
+  | { code: "unsafe_text"; segment: string }
+  | { code: "too_deep"; max: number };
+
 export type StorageSettings = {
   template: string;
   default_template: string;
-  allowed_tokens: string[];
+  allowed_tokens: StorageToken[];
   plate_paths: string[];
+  /** For the saved template: one saved before the rules still works, but can't be saved again. */
+  problems: StorageTemplateProblem[];
+  /** Files left in an older structure; null while a move is going. */
+  out_of_place: StorageOutOfPlace | null;
+  move: StorageMove | null;
+};
+
+export type StorageOutOfPlace = { files: number; models: number };
+
+/** Every user's files moving to the saved structure, in the background; the latest one, finished or not. */
+export type StorageMove = {
+  running: boolean;
+  started_at: string;
+  finished_at: string | null;
+  /** Models; each one's files move together. */
+  total: number;
+  done: number;
+  /** Files moved so far. */
   moved: number;
   skipped: number;
+};
+
+export type StorageTemplatePreview = {
+  template: string;
+  problems: StorageTemplateProblem[];
+  plate_paths: string[];
 };
 
 /** Which tree the models page shows. Kept in sync by hand with the backend's CATEGORIES_VIEWS. */
@@ -155,17 +197,45 @@ export const settingsApi = {
     return res.json();
   },
 
-  updateStorage: async (payload: { template: string; apply_existing: boolean }): Promise<StorageSettings> => {
+  previewStorage: async (template: string): Promise<StorageTemplatePreview> => {
+    const res = await fetch(`${apiBase()}/settings/storage/preview`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ template }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to check the storage structure"));
+    return res.json();
+  },
+
+  /** Saves the structure and starts moving every file that isn't where it puts them. */
+  updateStorage: async (template: string): Promise<StorageSettings> => {
     const res = await fetch(`${apiBase()}/settings/storage`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ template }),
     });
     if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) {
-      throw new Error(await readErrorMessage(res, "Failed to update storage settings"));
-    }
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update storage settings"));
     return res.json();
+  },
+
+  /** What saving `template` would move. */
+  storageImpact: async (template: string): Promise<StorageOutOfPlace> => {
+    const res = await fetch(`${apiBase()}/settings/storage/impact`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ template }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to check the storage structure"));
+    return res.json();
+  },
+
+  getStorageMove: async (): Promise<StorageMove | null> => {
+    const res = await fetch(`${apiBase()}/settings/storage/move`, { headers: authHeaders() });
+    assertOk(res, "Failed to load the file move");
+    return (await res.json()).move;
   },
 
   getPreviews: async (): Promise<{ mode: PreviewMode }> => {

@@ -10,6 +10,8 @@ import ListItemText from "@mui/material/ListItemText";
 import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import type { Theme } from "@mui/material/styles";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
@@ -36,7 +38,10 @@ export default function AdminSubnav() {
   const { t } = useTranslation(["app", "common"]);
   const location = useLocation();
   const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(readCollapsed);
+  const [collapsedByUser, setCollapsed] = useState(readCollapsed);
+  // Too narrow for a second open column beside the page.
+  const narrow = useMediaQuery((theme: Theme) => theme.breakpoints.down("md"));
+  const collapsed = collapsedByUser || narrow;
   const pages = [
     { path: "/admin", icon: <DashboardOutlinedIcon fontSize="small" />, label: t("sidebar.adminOverview") },
     ...ADMIN_SECTIONS.map((section) => ({ path: section.path, icon: section.icon, label: t(section.labelKey) })),
@@ -85,11 +90,13 @@ export default function AdminSubnav() {
             {t("sidebar.administration")}
           </Typography>
         )}
-        <Tooltip title={collapsed ? t("sidebar.expandAdminMenu") : t("sidebar.collapseAdminMenu")}>
-          <IconButton size="small" onClick={toggle} aria-expanded={!collapsed}>
-            {collapsed ? <ChevronRightIcon fontSize="small" /> : <ChevronLeftIcon fontSize="small" />}
-          </IconButton>
-        </Tooltip>
+        {!narrow && (
+          <Tooltip title={collapsed ? t("sidebar.expandAdminMenu") : t("sidebar.collapseAdminMenu")}>
+            <IconButton size="small" onClick={toggle} aria-expanded={!collapsed}>
+              {collapsed ? <ChevronRightIcon fontSize="small" /> : <ChevronLeftIcon fontSize="small" />}
+            </IconButton>
+          </Tooltip>
+        )}
       </Stack>
       <List disablePadding sx={{ px: collapsed ? 0.5 : 1 }}>
         {pages.map((page) => {
