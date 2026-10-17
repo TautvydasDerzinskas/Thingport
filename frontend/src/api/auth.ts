@@ -26,7 +26,8 @@ export type ApiTokenInfo = {
 export type GeneratedApiToken = ApiTokenInfo & { token: string };
 
 export type UpdateProfileInput = {
-  current_password: string;
+  /** Left out by someone without a password, whose recent sign-in stands in for it. */
+  current_password?: string;
   email?: string;
   new_password?: string;
 } & Partial<CaptchaAnswer>;

@@ -50,7 +50,7 @@ export const NORMALIZE_3MF_TIMEOUT_SECONDS = envInt("NORMALIZE_3MF_TIMEOUT_SECON
 export const MODEL_PREVIEW_MAX_MEMORY_MB = envInt("MODEL_PREVIEW_MAX_MEMORY_MB", defaultPreviewMemoryMb());
 export const MODEL_PREVIEW_TIMEOUT_SECONDS = envInt("MODEL_PREVIEW_TIMEOUT_SECONDS", 180);
 
-// For absolute links in emails.
+// Only the first run's value: it's copied into the database, and managed there (Admin > Auth) from then on.
 export const PUBLIC_URL = (process.env.PUBLIC_URL || "").trim().replace(/\/+$/, "");
 
 export const AUTH_SECRET = process.env.AUTH_SECRET || "changeme-secret";

@@ -70,6 +70,13 @@
         "missingToken": "Šioje slaptažodžio atkūrimo nuorodoje trūksta rakto.",
         "failed": "Ši slaptažodžio atkūrimo nuoroda negalioja arba jos galiojimas baigėsi. Paprašykite naujos.",
         "backToSignIn": "Grįžti į prisijungimą"
+      },
+      "sso": {
+        "or": "arba",
+        "continueWith": "Tęsti su {{name}}",
+        "signingIn": "Prijungiame…",
+        "failed": "Bendras prisijungimas nepavyko. Bandykite dar kartą.",
+        "backToSignIn": "Grįžti į prisijungimą"
       }
     },
     "sidebar": {
@@ -208,6 +215,28 @@
         "heading": "Autoriaus peržiūra",
         "help": "Užvedus pelę ant autoriaus vardo, rodoma kortelė su jo viršelio nuotrauka, vardu ir keliais jo modeliais iš jūsų bibliotekos.",
         "failed": "Nepavyko išsaugoti -- bandykite dar kartą."
+      },
+      "signIn": {
+        "noPassword": "Slaptažodžio nėra",
+        "noPasswordHint": "Prisijungiate per bendrą prisijungimą.",
+        "setPasswordLink": "Nustatyti slaptažodį",
+        "setPasswordTitle": "Nustatyti slaptažodį",
+        "setPasswordSubtitle": "Tada galėsite prisijungti ir el. paštu bei slaptažodžiu, ir naudoti Thingport Grab.",
+        "setPassword": "Nustatyti slaptažodį",
+        "passwordSet": "Slaptažodis nustatytas. Dabar galite prisijungti ir el. paštu bei slaptažodžiu.",
+        "confirmBody": "Saugumo sumetimais patvirtinkite, kad tai jūs, prisijungdami dar kartą. Iškart grįšite čia.",
+        "confirmNoProvider": "Saugumo sumetimais atsijunkite ir vėl prisijunkite, tada grįžkite čia.",
+        "confirmWith": "Patvirtinti per {{name}}",
+        "connect": "Prijungti",
+        "disconnect": "Atjungti",
+        "connected": "{{name}} prijungtas. Dabar galite prisijungti per jį.",
+        "connectedAs": "Prijungta kaip {{email}}",
+        "connectedShort": "Prijungta",
+        "notConnected": "Neprijungta. Prijunkite, kad prisijungtumėte vienu paspaudimu.",
+        "lastUsed": "paskutinį kartą naudota {{when}}",
+        "turnedOff": "išjungė administratorius",
+        "disconnectTitle": "Atjungti {{name}}?",
+        "disconnectMessage": "Negalėsite prisijungti per {{name}}, kol vėl jo neprijungsite."
       }
     },
     "addMenu": {
@@ -723,6 +752,8 @@
         "modeFolderShort": "Kiekvienas aplankas – modelis"
       },
       "registrations": {
+        "heading": "Registracija",
+        "subtitle": "Kas gali susikurti paskyrą šiame egzemplioriuje.",
         "allowLabel": "Leisti naujas registracijas",
         "openHelp": "Bet kas, pasiekiantis šį serverį, gali susikurti paskyrą prisijungimo puslapyje.",
         "closedHelp": "Prisijungimo puslapyje nėra registracijos, o naujas paskyras galima sukurti tik gavus kvietimą.",
@@ -1099,7 +1130,12 @@
         "deleted_many": "{{email}} ištrintas su {{count}} modelio",
         "deleted_other": "{{email}} ištrintas su {{count}} modelių",
         "deleteFailed": "Nepavyko ištrinti naudotojo.",
-        "loadFailed": "Nepavyko įkelti naudotojų."
+        "loadFailed": "Nepavyko įkelti naudotojų.",
+        "columnSignIn": "Prisijungimas",
+        "signInPassword": "Slaptažodis",
+        "signInProviderOff": "{{name}} išjungtas, todėl dabar tai neveikia.",
+        "signInNoneHint": "Nėra slaptažodžio ir nė vieno įjungto bendro prisijungimo teikėjo: negali prisijungti.",
+        "signInNone": "Negali prisijungti"
       },
       "logs": {
         "heading": "Žurnalai",
@@ -1143,7 +1179,11 @@
           "provider_toggled": "Pakeistas tiekėjas",
           "tag_deleted": "Žyma ištrinta",
           "ai_categorization_run": "AI kategorizavimo paleidimas",
-          "ai_description_run": "AI aprašymų tobulinimo paleidimas"
+          "ai_description_run": "AI aprašymų tobulinimo paleidimas",
+          "sign_in_connected": "Prijungtas prisijungimo teikėjas",
+          "sign_in_disconnected": "Atjungtas prisijungimo teikėjas",
+          "grab_connected": "Prijungtas Thingport Grab",
+          "grab_disconnected": "Pašalintas Thingport Grab"
         },
         "authorsLinked": "Susieta modelių: {{count}}",
         "descriptionsRefetched": "{{email}} — pakeista aprašymų: {{updated}} iš {{total}}",
@@ -1160,7 +1200,8 @@
         "providerOn": "{{provider}} įjungtas",
         "providerOff": "{{provider}} išjungtas",
         "aiRunSummary": "Patikrinta {{done}} iš {{total}} — pasiūlyta {{suggested}}, pritaikyta {{applied}}, nepavyko {{failed}}",
-        "aiRunStopped": "(sustabdyta)"
+        "aiRunStopped": "(sustabdyta)",
+        "viaProvider": "per {{provider}}"
       },
       "rendering": {
         "heading": "Atvaizdavimas",
@@ -1273,6 +1314,96 @@
           "source": "Laikomas ten, iš kur paimtas, už saugyklos aplanko ribų",
           "missing": "Nėra nei saugykloje, nei ten, iš kur paimtas"
         }
+      },
+      "signIn": {
+        "heading": "Prisijungimo būdai",
+        "subtitle": "Kaip žmonės prisijungia prie Thingport. El. paštas ir slaptažodis veikia visada; kiekvienas bendro prisijungimo (OIDC) teikėjas prideda mygtuką prisijungimo puslapyje.",
+        "password": "El. paštas ir slaptažodis",
+        "passwordDescription": "Prisijungimas ir registracija su el. pašto adresu ir slaptažodžiu.",
+        "alwaysOn": "Visada įjungta",
+        "userCount_one": "{{count}} žmogus prisijungė per jį",
+        "userCount_few": "{{count}} žmonės prisijungė per jį",
+        "userCount_many": "{{count}} žmonių prisijungė per jį",
+        "userCount_other": "{{count}} žmonių prisijungė per jį",
+        "createsAccounts": "kuria paskyras",
+        "add": "Pridėti OIDC teikėją",
+        "test": "Išbandyti prisijungimą",
+        "edit": "Redaguoti",
+        "delete": "Ištrinti",
+        "showOnSignIn": "Rodyti {{name}} prisijungimo puslapyje",
+        "publicUrlMissing": "Bendram prisijungimui reikia viešo adreso – adreso, kuriuo atidaromas Thingport (pvz., https://thingport.example.com), kad teikėjas žinotų, kur grąžinti žmones. Nustatykite jį skiltyje „Viešas adresas“ aukščiau.",
+        "otherAddress": "Naudojate Thingport kitu adresu nei PUBLIC_URL ({{url}}). Bendras prisijungimas grąžina žmones į {{url}}, todėl bandykite ir junkitės iš ten.",
+        "addedOff": "{{name}} pridėtas. Užregistruokite jame peradresavimo URI, išbandykite prisijungimą ir tada įjunkite, kad būtų rodomas prisijungimo puslapyje.",
+        "addedOn": "{{name}} pridėtas ir rodomas prisijungimo puslapyje. Išbandykite prisijungimą, kad įsitikintumėte, jog veikia.",
+        "disableTitle": "Slėpti {{name}} prisijungimo puslapyje?",
+        "disableMessage_one": "{{count}} žmogus prisijungė per {{name}}. Jei nenusistatė slaptažodžio, negalės prisijungti, kol jis vėl bus įjungtas.",
+        "disableMessage_few": "{{count}} žmonės prisijungė per {{name}}. Tie, kurie nenusistatė slaptažodžio, negalės prisijungti, kol jis vėl bus įjungtas.",
+        "disableMessage_many": "{{count}} žmonių prisijungė per {{name}}. Tie, kurie nenusistatė slaptažodžio, negalės prisijungti, kol jis vėl bus įjungtas.",
+        "disableMessage_other": "{{count}} žmonių prisijungė per {{name}}. Tie, kurie nenusistatė slaptažodžio, negalės prisijungti, kol jis vėl bus įjungtas.",
+        "disableConfirm": "Slėpti",
+        "deleteTitle": "Ištrinti {{name}}?",
+        "deleteMessage": "{{name}} nebebus siūlomas prisijungimo puslapyje.",
+        "deleteUsedMessage_one": "{{count}} žmogus prisijungė per {{name}}. Paskyra liks, bet be slaptažodžio prisijungti negalės. Vėl pridėjus teikėją, jie nebus susieti automatiškai.",
+        "deleteUsedMessage_few": "{{count}} žmonės prisijungė per {{name}}. Paskyros liks, bet tie, kurie neturi slaptažodžio, negalės prisijungti. Vėl pridėjus teikėją, jie nebus susieti automatiškai.",
+        "deleteUsedMessage_many": "{{count}} žmonių prisijungė per {{name}}. Paskyros liks, bet tie, kurie neturi slaptažodžio, negalės prisijungti. Vėl pridėjus teikėją, jie nebus susieti automatiškai.",
+        "deleteUsedMessage_other": "{{count}} žmonių prisijungė per {{name}}. Paskyros liks, bet tie, kurie neturi slaptažodžio, negalės prisijungti. Vėl pridėjus teikėją, jie nebus susieti automatiškai.",
+        "testTitle": "Prisijungimo bandymas: {{name}}",
+        "testWaiting": "Prisijunkite per {{name}} atsidariusiame lange. Thingport niekas nepasikeis: tai tik parodys, ką siunčia {{name}}.",
+        "testClosed": "Bandymo langas buvo uždarytas nebaigus prisijungimo. Jei jame buvo klaida, ji ir yra priežastis.",
+        "testFailed": "Prisijungti nepavyko: {{error}}",
+        "matchSignIn": "Veikia. Būtų prisijungta kaip {{name}} ({{email}}).",
+        "matchLink": "Veikia. Būtų susieta su esama paskyra {{name}} ({{email}}) ir prisijungta.",
+        "matchCreate": "Veikia. Būtų sukurta nauja paskyra {{email}}.",
+        "matchRefuse": "Ryšys veikia, bet šis žmogus nebūtų įleistas: „{{reason}}“",
+        "claims": "Ką atsiuntė teikėjas",
+        "dialog": {
+          "addTitle": "Pridėti OIDC teikėją",
+          "editTitle": "Redaguoti {{name}}",
+          "name": "Pavadinimas",
+          "nameHelp": "Rodomas prisijungimo mygtuke: „{{label}}“.",
+          "issuer": "Išdavėjo (issuer) URL",
+          "issuerHelp": "Iš teikėjo programos nustatymų, dar vadinamas OpenID konfigūracijos išdavėju.",
+          "issuerChecking": "Tikrinamas teikėjas…",
+          "issuerOk": "Teikėjas rastas.",
+          "issuerFailed": "Nepavyko nuskaityti teikėjo OpenID konfigūracijos: {{error}}",
+          "clientId": "Kliento ID",
+          "clientSecret": "Kliento slaptažodis",
+          "secretSaved": "Išsaugotas",
+          "secretKeep": "Palikite tuščią, kad liktų išsaugotas slaptažodis.",
+          "redirectHeading": "Peradresavimo URI",
+          "redirectHelp": "Pridėkite jį kaip leidžiamą peradresavimo URI teikėjo programos nustatymuose.",
+          "copy": "Kopijuoti",
+          "copied": "Nukopijuota",
+          "slug": "Pavadinimas adrese",
+          "slugHelp": "Peradresavimo URI dalis. Vėliau jos pakeisti negalima.",
+          "slugInvalid": "Naudokite mažąsias raides, skaitmenis ir brūkšnelius.",
+          "accountsHeading": "Paskyros",
+          "createAccounts": "Kurti paskyras naujiems žmonėms",
+          "createAccountsHelp": "Kiekvienas, kurį įleidžia teikėjas, pirmą kartą prisijungęs gauna Thingport paskyrą. Išjungta: naudotis gali tik tie, kas jau turi paskyrą.",
+          "linkByEmail": "Susieti su esamomis paskyromis pagal el. paštą",
+          "linkByEmailHelp": "Pirmas prisijungimas susiejamas su Thingport paskyra, turinčia tą patį el. paštą, jei teikėjas nurodo, kad el. paštas patvirtintas. Įjunkite tik teikėjui, kurį valdote patys.",
+          "enabled": "Rodyti prisijungimo puslapyje",
+          "enabledHelp": "Palikite išjungtą, kol prisijungimo bandymas pavyks.",
+          "scopes": "Apimtys (scopes)",
+          "scopesHelp": "Ko Thingport prašo iš teikėjo. „openid email profile“ tinka daugumai teikėjų.",
+          "scopesInvalid": "Apimtyse turi būti „openid“.",
+          "add": "Pridėti teikėją",
+          "save": "Išsaugoti",
+          "saving": "Saugoma…",
+          "failed": "Nepavyko išsaugoti teikėjo."
+        }
+      },
+      "publicUrl": {
+        "heading": "Viešas adresas",
+        "subtitle": "Adresas, kuriuo žmonės atidaro Thingport. Jį naudoja nuorodos el. laiškuose ir bendras prisijungimas.",
+        "label": "Viešas adresas",
+        "help": "Įrašykite su http:// arba https:// ir prievadu, jei jis yra. Pirmą kartą paleidus paimamas iš PUBLIC_URL; čia atlikti pakeitimai išsaugomi.",
+        "notSet": "Nenustatyta: nuorodos el. laiškuose gali neveikti, o bendro prisijungimo nustatyti negalima.",
+        "invalid": "Įrašykite visą adresą, pvz., https://thingport.example.com",
+        "save": "Išsaugoti",
+        "saving": "Saugoma…",
+        "saved": "Išsaugota.",
+        "failed": "Nepavyko išsaugoti viešo adreso."
       }
     },
     "download": {
@@ -1458,6 +1589,28 @@
     "storageMoveProgress": {
       "label": "Perkeliami modelių failai · {{done}} iš {{total}} modelių",
       "starting": "Ruošiamasi perkelti modelių failus…"
+    },
+    "grab": {
+      "connect": {
+        "title": "Prijungti Thingport Grab",
+        "approvedTitle": "Thingport Grab prijungtas",
+        "unknownBrowser": "šioje naršyklėje",
+        "body": "Thingport Grab naršyklėje {{browser}} nori prisijungti prie jūsų Thingport paskyros ({{email}}).",
+        "details": "Jis importuos modelius į jūsų biblioteką ir pridės juos į kolekcijas, o jūsų slaptažodis nebus saugomas plėtinyje. Bet kada galite jį pašalinti savo profilyje.",
+        "approve": "Prijungti",
+        "cancel": "Atšaukti",
+        "approvedBody": "Galite uždaryti šį skirtuką ir grįžti prie modelio, kurį žiūrėjote.",
+        "cancelledBody": "Niekas nebuvo prijungta. Galite uždaryti šį skirtuką.",
+        "invalid": "Ši nuoroda atėjo ne iš Thingport Grab arba yra neišsami. Pradėkite iš naujo Thingport Grab lange."
+      },
+      "profile": {
+        "heading": "Thingport Grab naršyklėje {{name}}",
+        "lastUsed": "Prijungta · paskutinį kartą naudota {{when}}",
+        "connectedWhen": "Prijungta {{when}}",
+        "remove": "Pašalinti",
+        "removeTitle": "Pašalinti Thingport Grab naršyklėje {{name}}?",
+        "removeMessage": "Thingport Grab naršyklėje {{name}} bus atjungtas ir negalės importuoti, kol vėl nebus prijungtas."
+      }
     }
   },
   "common": {

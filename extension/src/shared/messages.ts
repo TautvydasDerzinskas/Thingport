@@ -10,11 +10,20 @@ export type ExtensionState = {
   isAdmin: boolean;
   instanceUrl: string;
   email: string;
+  /** Connected by approving Grab in Thingport, not with a saved password. */
+  connectedByApproval: boolean;
 };
 
 /** Whether the saved instance URL, email and password still sign in. */
 export type Connection =
-  { connected: true } | { connected: false; reason: "credentials" | "unreachable"; detail: string };
+  | { connected: true }
+  | {
+      connected: false;
+      reason: "credentials" | "unreachable";
+      detail: string;
+      /** "credentials" then means the connection was removed in Thingport, not a changed password. */
+      byApproval?: boolean;
+    };
 
 /** Providers whose signed-in user the extension tells the instance, for its Browse tab. MakerWorld
  *  needs none: the instance has its session cookie. */
@@ -91,6 +100,8 @@ export type BackgroundMessages = {
   GET_STATE: { payload: void; result: ExtensionState };
   SAVE_CONFIG: { payload: { instanceUrl: string; email: string; password: string }; result: null };
   SET_DISABLED: { payload: { disabled: boolean }; result: null };
+  /** Opens Thingport to approve this browser's Grab; it finishes in the background once approved. */
+  START_PAIRING: { payload: { instanceUrl: string }; result: null };
   GET_RECENT_IMPORTS: { payload: void; result: RecentImport[] };
   CHECK_CONNECTION: { payload: void; result: Connection };
   /** Printables' session token, which the page itself can't read. Null when signed out. */

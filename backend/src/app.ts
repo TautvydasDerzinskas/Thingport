@@ -6,6 +6,8 @@ import { HttpError } from "./utils/fileUtils";
 import healthRoutes from "./routes/health";
 import captchaRoutes from "./routes/captcha";
 import authRoutes from "./routes/auth";
+import oidcRoutes from "./routes/oidc";
+import grabRoutes from "./routes/grab";
 import printsRoutes from "./routes/prints";
 import authorsRoutes from "./routes/authors";
 import platesRoutes from "./routes/plates";
@@ -45,6 +47,8 @@ export function createApp(): Express {
   app.use("/api", healthRoutes);
   app.use("/api", captchaRoutes);
   app.use("/api", authRoutes);
+  app.use("/api", oidcRoutes);
+  app.use("/api", grabRoutes);
   app.use("/api", settingsRoutes);
   app.use("/api", printsRoutes);
   app.use("/api", aiCategorizationRoutes);

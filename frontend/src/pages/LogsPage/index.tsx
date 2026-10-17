@@ -56,6 +56,10 @@ const ACTION_COLORS: Record<LogAction, ActionColor> = {
   user_role_changed: "warning",
   user_deleted: "error",
   provider_toggled: "warning",
+  sign_in_connected: "info",
+  sign_in_disconnected: "default",
+  grab_connected: "info",
+  grab_disconnected: "default",
 };
 
 function isoDateOnly(d: Date): string {
@@ -111,6 +115,11 @@ export default function LogsPage({ onUnauthorized }: Props) {
   const formatDetails = (log: LogEntry): string => {
     const d = log.details;
     switch (log.action) {
+      case "user_logged_in":
+        return typeof d.provider === "string" ? t("adminSettings.logs.viaProvider", { provider: d.provider }) : "";
+      case "sign_in_connected":
+      case "sign_in_disconnected":
+        return typeof d.provider === "string" ? d.provider : "";
       case "model_uploaded":
       case "model_imported":
       case "model_deleted":

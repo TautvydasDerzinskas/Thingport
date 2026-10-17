@@ -9,6 +9,9 @@ import type { AuthUser } from "../../api/auth";
 import { useGravatarUrl } from "../../hooks/useGravatarUrl";
 import ActivitySection from "./activity/ActivitySection";
 import ApiTokenSection from "./ApiTokenSection";
+import GrabConnectionsSection from "./GrabConnectionsSection";
+import SignInMethodsSection from "./SignInMethodsSection";
+import { useSignInMethods } from "./useSignInMethods";
 
 type Props = {
   user: AuthUser | null;
@@ -19,6 +22,9 @@ export default function ProfilePage({ user, onUnauthorized }: Props) {
   const { t } = useTranslation("app");
   const navigate = useNavigate();
   const avatarUrl = useGravatarUrl(user?.email, 128);
+  const { info: signIn, reload: reloadSignIn } = useSignInMethods(onUnauthorized);
+  // Until it's known, as it was: most accounts have one.
+  const hasPassword = signIn?.has_password ?? true;
 
   return (
     // As wide as the activity below it, and centred in the page.
@@ -62,13 +68,25 @@ export default function ProfilePage({ user, onUnauthorized }: Props) {
           </Stack>
 
           <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1}>
-            <Typography variant="body1">••••••••</Typography>
-            <Button variant="text" onClick={() => navigate("/profile/password")}>
-              {t("profile.changePasswordLink")}
+            {hasPassword ? (
+              <Typography variant="body1">••••••••</Typography>
+            ) : (
+              <Box>
+                <Typography variant="body1">{t("profile.signIn.noPassword")}</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {t("profile.signIn.noPasswordHint")}
+                </Typography>
+              </Box>
+            )}
+            <Button variant="text" onClick={() => navigate("/profile/password")} sx={{ flexShrink: 0 }}>
+              {hasPassword ? t("profile.changePasswordLink") : t("profile.signIn.setPasswordLink")}
             </Button>
           </Stack>
 
+          <SignInMethodsSection info={signIn} onChanged={reloadSignIn} onUnauthorized={onUnauthorized} />
+
           <ApiTokenSection onUnauthorized={onUnauthorized} />
+          <GrabConnectionsSection onUnauthorized={onUnauthorized} />
         </Stack>
       </Stack>
       <ActivitySection onUnauthorized={onUnauthorized} />

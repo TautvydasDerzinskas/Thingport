@@ -4,7 +4,7 @@ import { prisma } from "./db"; // also ensures storage directories exist before 
 import { startConsumeWatcher } from "./services/consumeService";
 import { startCollectionSyncScheduler } from "./services/collectionSyncRunner";
 import { SYNC_JOB_INTERRUPTED } from "./services/importJobRunner";
-import { seedFlaresolverrUrl } from "./services/settingsService";
+import { seedFlaresolverrUrl, seedPublicUrl } from "./services/settingsService";
 import { startNotificationCleanup } from "./services/notificationService";
 import { startSystemNotificationSync } from "./services/systemNotificationService";
 import { resumeStorageMove } from "./services/storageMoveService";
@@ -25,6 +25,7 @@ const app = createApp();
 })().catch((err) => console.error("Failed to recover stale import jobs on startup:", err));
 
 seedFlaresolverrUrl().catch((err) => console.error("Failed to seed the FlareSolverr URL setting:", err));
+seedPublicUrl().catch((err) => console.error("Failed to seed the public URL setting:", err));
 
 app.listen(API_PORT, () => {
   console.log(`Thingport API listening on port ${API_PORT}`);

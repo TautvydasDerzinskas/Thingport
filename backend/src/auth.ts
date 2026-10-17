@@ -7,19 +7,33 @@ import { findApiTokenUser, isApiToken } from "./services/apiTokenService";
 import { asyncHandler } from "./utils/asyncHandler";
 import { prisma } from "./db";
 
-export type TokenPayload = { sub: string; role: Role };
+// sat: when the person last actually signed in, in seconds. A refreshed session keeps it, so "signed in a
+// moment ago" can't be had by refreshing.
+export type TokenPayload = { sub: string; role: Role; sat?: number };
 
-function createToken(userId: string, role: Role, ttlSeconds: number): string {
-  return jwt.sign({ sub: userId, role }, AUTH_SECRET, {
+/** How recent a sign-in must be to set a password or change email without the current password. */
+export const RECENT_SIGN_IN_MS = 15 * 60 * 1000;
+
+function createToken(userId: string, role: Role, ttlSeconds: number, signedInAt: Date): string {
+  return jwt.sign({ sub: userId, role, sat: Math.floor(signedInAt.getTime() / 1000) }, AUTH_SECRET, {
     algorithm: AUTH_ALGO,
     expiresIn: ttlSeconds,
   });
 }
 
-/** Uses the admin-configured session length and returns it for `expires_in`. */
-export async function issueToken(userId: string, role: Role): Promise<{ token: string; expiresIn: number }> {
+/** Uses the admin-configured session length and returns it for `expires_in`. `signedInAt` is now for a sign-in. */
+export async function issueToken(
+  userId: string,
+  role: Role,
+  signedInAt: Date = new Date(),
+): Promise<{ token: string; expiresIn: number }> {
   const expiresIn = await getAuthTokenTtl();
-  return { token: createToken(userId, role, expiresIn), expiresIn };
+  return { token: createToken(userId, role, expiresIn, signedInAt), expiresIn };
+}
+
+/** Whether this session's sign-in was recent enough to stand in for the current password. */
+export function signedInRecently(req: Request): boolean {
+  return Boolean(req.signedInAt && Date.now() - req.signedInAt.getTime() < RECENT_SIGN_IN_MS);
 }
 
 export function verifyToken(token: string): TokenPayload | null {
@@ -81,6 +95,8 @@ export const requireAuth = asyncHandler(async (req, res, next) => {
   }
   req.userId = payload.sub;
   req.userRole = user.role;
+  // Sessions from before this was recorded count as long ago.
+  req.signedInAt = typeof payload.sat === "number" ? new Date(payload.sat * 1000) : new Date(0);
   next();
 });
 

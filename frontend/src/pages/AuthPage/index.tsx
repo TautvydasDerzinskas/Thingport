@@ -12,6 +12,8 @@ import Wordmark from "../../components/Wordmark";
 import SignInPanel from "./SignInPanel";
 import RegisterPanel, { type Invite } from "./RegisterPanel";
 import ForgotPasswordPanel from "./ForgotPasswordPanel";
+import SingleSignOnButtons from "./SingleSignOnButtons";
+import type { SignInProvider } from "../../api/oidc";
 
 type Props = {
   onSuccess: (token: string, expires_in: number, user: AuthUser) => void;
@@ -19,9 +21,20 @@ type Props = {
   allowRegistrations: boolean;
   passwordResetEnabled: boolean;
   invite?: Invite | null;
+  /** Offered under the password form; none means the page looks as it always has. */
+  oidcProviders?: SignInProvider[];
 };
 
-export default function AuthPage({ onSuccess, apiUp, allowRegistrations, passwordResetEnabled, invite = null }: Props) {
+const NO_PROVIDERS: SignInProvider[] = [];
+
+export default function AuthPage({
+  onSuccess,
+  apiUp,
+  allowRegistrations,
+  passwordResetEnabled,
+  invite = null,
+  oidcProviders = NO_PROVIDERS,
+}: Props) {
   const { t } = useTranslation("app");
   const [tab, setTab] = React.useState<"signIn" | "register">(invite ? "register" : "signIn");
   // Set while the forgot-password form replaces the tabs; carries over the typed sign-in email.
@@ -71,9 +84,16 @@ export default function AuthPage({ onSuccess, apiUp, allowRegistrations, passwor
       {forgotEmail !== null ? (
         <ForgotPasswordPanel initialEmail={forgotEmail} onBack={() => setForgotEmail(null)} />
       ) : tab === "register" && canRegister ? (
-        <RegisterPanel onSuccess={onSuccess} invite={invite} />
+        <>
+          <RegisterPanel onSuccess={onSuccess} invite={invite} />
+          {/* An invitation can be taken up through a provider too, even one that doesn't create accounts. */}
+          {invite && <SingleSignOnButtons providers={oidcProviders} inviteToken={invite.token} />}
+        </>
       ) : (
-        <SignInPanel onSuccess={onSuccess} onForgotPassword={passwordResetEnabled ? setForgotEmail : undefined} />
+        <>
+          <SignInPanel onSuccess={onSuccess} onForgotPassword={passwordResetEnabled ? setForgotEmail : undefined} />
+          <SingleSignOnButtons providers={oidcProviders} />
+        </>
       )}
     </Paper>
   );

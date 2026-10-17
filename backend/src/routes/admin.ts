@@ -59,6 +59,7 @@ router.get(
           print_count: u.printCount,
           collection_count: u.collectionCount,
           makerworld_connected: u.makerworldConnected,
+          sign_in: { password: u.hasPassword, providers: u.signInProviders },
           created_at: u.createdAt,
         };
       }),

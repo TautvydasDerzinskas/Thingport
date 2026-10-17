@@ -98,6 +98,8 @@ function useRouteChrome() {
   } else if (path === "/notifications") {
     title = t("notifications.label");
     onBack = goBack;
+  } else if (path === "/connect-grab") {
+    title = "Thingport Grab";
   } else if (path === "/downloads") {
     title = t("sidebar.downloads");
     onBack = () => navigate("/");

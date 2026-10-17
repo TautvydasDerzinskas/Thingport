@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { issueToken, requireAuth } from "../auth";
+import { issueToken, requireAuth, signedInRecently } from "../auth";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { parseBody } from "../utils/validate";
@@ -137,7 +137,8 @@ router.post(
     const email = body.email.toLowerCase();
     const user = await prisma.user.findUnique({ where: { email } });
     // Same message for unknown email and wrong password, to prevent enumeration.
-    if (!user || !(await bcrypt.compare(body.password, user.passwordHash))) {
+    // Someone who has only signed in through an OIDC provider has no password to match.
+    if (!user?.passwordHash || !(await bcrypt.compare(body.password, user.passwordHash))) {
       throw new HttpError(401, "Invalid email or password");
     }
 
@@ -307,7 +308,8 @@ router.post(
 
 const updateProfileSchema = z
   .object({
-    current_password: z.string().min(1, "Current password is required"),
+    // Not for someone without a password: a recent sign-in stands in for it.
+    current_password: z.string().optional(),
     email: z.string().trim().email("Enter a valid email address").optional(),
     new_password: z.string().min(8, "Password must be at least 8 characters").optional(),
   })
@@ -326,7 +328,19 @@ router.patch(
     await checkCaptcha(req, captchaPlaces);
     const user = await prisma.user.findUnique({ where: { id: req.userId! } });
     if (!user) throw new HttpError(401, "Invalid or expired token");
-    if (!(await bcrypt.compare(body.current_password, user.passwordHash))) {
+    if (!user.passwordHash) {
+      // Without a password to ask for, a session someone walked up to mustn't be able to add one (or move the
+      // account to their email): only a sign-in from the last few minutes counts.
+      if (!signedInRecently(req)) {
+        throw new HttpError(
+          403,
+          "For your security, sign in again to confirm it's you, then try again.",
+          "REAUTH_REQUIRED",
+        );
+      }
+    } else if (!body.current_password) {
+      throw new HttpError(400, "Current password is required");
+    } else if (!(await bcrypt.compare(body.current_password, user.passwordHash))) {
       // 403, not 401: the frontend treats any 401 as an expired session and logs out.
       throw new HttpError(403, "Current password is incorrect");
     }
@@ -422,7 +436,8 @@ router.post(
   asyncHandler(async (req, res) => {
     const user = await prisma.user.findUnique({ where: { id: req.userId! } });
     if (!user) throw new HttpError(401, "Invalid or expired token");
-    const { token, expiresIn } = await issueToken(user.id, user.role);
+    // Keeps when they signed in, so refreshing never makes the sign-in look recent.
+    const { token, expiresIn } = await issueToken(user.id, user.role, req.signedInAt ?? new Date(0));
     res.json({ token, expires_in: expiresIn });
   }),
 );

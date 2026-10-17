@@ -7,6 +7,8 @@ declare global {
       userRole?: Role;
       /** Signed in with the user's API token rather than a session. */
       viaApiToken?: boolean;
+      /** When the person behind this session last actually signed in (not refreshed). */
+      signedInAt?: Date;
     }
   }
 }

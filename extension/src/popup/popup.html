@@ -63,6 +63,12 @@
         </p>
         <button type="submit" class="btn" id="save-btn">Save</button>
         <button type="button" class="btn btn--secondary" id="cancel-btn" hidden>Cancel</button>
+        <div class="sso" id="sso-block" hidden>
+          <div class="sso__divider">or</div>
+          <button type="button" class="btn btn--secondary" id="sso-btn">Sign in with single sign-on</button>
+          <p class="note">Opens Thingport to approve this browser. No password is saved in the extension.</p>
+        </div>
+        <p class="note" id="sso-pending" hidden>Finish connecting in the Thingport tab that just opened.</p>
         <div class="error" id="error" role="alert"></div>
       </form>
     </main>

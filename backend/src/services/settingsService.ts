@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../db";
-import { FLARESOLVERR_URL } from "../config";
+import { FLARESOLVERR_URL, PUBLIC_URL } from "../config";
 
 async function getBoolSetting(key: string, fallback: boolean): Promise<boolean> {
   const row = await prisma.setting.findUnique({ where: { key } });
@@ -192,6 +192,53 @@ export async function setFlaresolverrUrl(value: string | null): Promise<string |
     where: { key: FLARESOLVERR_URL_KEY },
     create: { key: FLARESOLVERR_URL_KEY, value: url ?? "" },
     update: { value: url ?? "" },
+  });
+  return url;
+}
+
+const PUBLIC_URL_KEY = "public_url";
+
+/** The address people open Thingport at, without a trailing slash; null when it isn't a usable http(s) URL. */
+export function normalizePublicUrl(value: string | null | undefined): string | null {
+  const trimmed = (value ?? "").trim().replace(/\/+$/, "");
+  if (!trimmed) return null;
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    // Links and redirect URIs are built by appending to it, so no query or fragment.
+    if (url.search || url.hash) return null;
+    return trimmed;
+  } catch {
+    return null;
+  }
+}
+
+// Seeded from PUBLIC_URL at startup; after that the row wins, so an admin's change sticks across restarts.
+// "" when there's none: links in emails then can't be absolute, and single sign-on can't work.
+export async function getPublicUrl(): Promise<string> {
+  const row = await prisma.setting.findUnique({ where: { key: PUBLIC_URL_KEY } });
+  if (row) return typeof row.value === "string" ? (normalizePublicUrl(row.value) ?? "") : "";
+  return normalizePublicUrl(PUBLIC_URL) ?? "";
+}
+
+/** Copies the env var into the DB once, at startup, so later env changes don't override what an admin saved. */
+export async function seedPublicUrl(envValue: string = PUBLIC_URL): Promise<void> {
+  const seed = normalizePublicUrl(envValue);
+  if (!seed) return;
+  await prisma.setting.upsert({
+    where: { key: PUBLIC_URL_KEY },
+    create: { key: PUBLIC_URL_KEY, value: seed },
+    update: {},
+  });
+}
+
+// Cleared is stored as "" so the env var doesn't come back on the next read.
+export async function setPublicUrl(value: string | null): Promise<string> {
+  const url = normalizePublicUrl(value) ?? "";
+  await prisma.setting.upsert({
+    where: { key: PUBLIC_URL_KEY },
+    create: { key: PUBLIC_URL_KEY, value: url },
+    update: { value: url },
   });
   return url;
 }

@@ -55,4 +55,8 @@ export type SyncLookup = { supported: boolean; sync: SyncLink | null };
 /** POST /import/queue: the link waits, paused, in the user's queue on the instance. */
 export type QueueImportResult = { job_id: string; item_id: string; duplicate: boolean; waiting: number };
 
-export type LoginResult = { token: string; expires_in: number; user?: { role?: "ADMIN" | "MEMBER" } };
+export type LoginResult = {
+  token: string;
+  expires_in: number;
+  user?: { role?: "ADMIN" | "MEMBER"; email?: string };
+};

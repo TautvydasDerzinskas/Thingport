@@ -1,6 +1,5 @@
 import nodemailer from "nodemailer";
-import { PUBLIC_URL } from "../config";
-import { getSmtpSettings } from "./settingsService";
+import { getPublicUrl, getSmtpSettings } from "./settingsService";
 
 /** Throws without a host rather than silently dropping the email. */
 async function sendMail(message: { to: string; subject: string; text: string; html: string }): Promise<void> {
@@ -24,7 +23,7 @@ function escapeHtml(value: string): string {
 }
 
 export async function sendVerificationEmail(to: string, displayName: string, token: string): Promise<void> {
-  const link = `${PUBLIC_URL}/verify-email?token=${encodeURIComponent(token)}`;
+  const link = `${await getPublicUrl()}/verify-email?token=${encodeURIComponent(token)}`;
   await sendMail({
     to,
     subject: "Confirm your Thingport account",
@@ -34,7 +33,7 @@ export async function sendVerificationEmail(to: string, displayName: string, tok
 }
 
 export async function sendPasswordResetEmail(to: string, displayName: string, token: string): Promise<void> {
-  const link = `${PUBLIC_URL}/reset-password?token=${encodeURIComponent(token)}`;
+  const link = `${await getPublicUrl()}/reset-password?token=${encodeURIComponent(token)}`;
   await sendMail({
     to,
     subject: "Reset your Thingport password",

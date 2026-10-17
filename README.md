@@ -193,7 +193,8 @@ PGID=1000
 WEB_PORT=80
 POSTGRES_USER=thingport
 POSTGRES_DB=thingport
-# e.g. https://thingport.example.com -- needed for links in verification emails
+# e.g. https://thingport.example.com -- needed for links in emails and for single sign-on (OIDC).
+# Read on the first run only; after that it's managed in Admin > Auth.
 PUBLIC_URL=
 # login token lifetime, in seconds
 AUTH_TOKEN_TTL=43200

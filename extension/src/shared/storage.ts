@@ -4,6 +4,11 @@ export const STORAGE_KEYS = {
   instanceUrl: "instanceUrl",
   email: "email",
   password: "password",
+  // Set instead of the password when the user connected by approving Grab in Thingport (single sign-on users
+  // may have no password). Traded for sessions at /grab/session.
+  connectionToken: "connectionToken",
+  // A connection by approval in progress: the secret it proves itself with, and the tab it opened.
+  pendingPairing: "pendingPairing",
   disabled: "disabled",
   // From the last login: admins get "Add to the queue" in the import panel.
   isAdmin: "isAdmin",
@@ -27,6 +32,8 @@ export type StoredConfig = {
   instanceUrl?: string;
   email?: string;
   password?: string;
+  connectionToken?: string;
+  pendingPairing?: PendingPairing;
   disabled?: boolean;
   isAdmin?: boolean;
   token?: string;
@@ -40,10 +47,13 @@ export type StoredConfig = {
   printablesPlanHandedOutAt?: number;
 };
 
+export type PendingPairing = { instanceUrl: string; verifier: string; tabId: number; startedAt: number };
+
 export const CONFIG_CHANGE_KEYS: readonly string[] = [
   STORAGE_KEYS.instanceUrl,
   STORAGE_KEYS.email,
   STORAGE_KEYS.password,
+  STORAGE_KEYS.connectionToken,
   STORAGE_KEYS.disabled,
   STORAGE_KEYS.isAdmin,
 ];

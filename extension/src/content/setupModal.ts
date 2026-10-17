@@ -28,10 +28,13 @@ function setupBodyHtml(): string {
 function disconnectedBodyHtml(problem: Disconnected, instanceUrl: string): string {
   const instance = `<strong>${escapeHtml(instanceUrl.replace(/^https?:\/\//i, ""))}</strong>`;
   const cause =
-    problem.reason === "credentials"
-      ? `${instance} turned down the email and password saved in Thingport Grab. They were probably
+    problem.reason === "credentials" && problem.byApproval
+      ? `${instance} no longer accepts this browser's Thingport Grab. It was probably removed from
+         your profile there -- connect again.`
+      : problem.reason === "credentials"
+        ? `${instance} turned down the email and password saved in Thingport Grab. They were probably
          changed in Thingport since -- sign in again with the current ones.`
-      : `${instance} didn't answer. It may not be running, or not be reachable from this network
+        : `${instance} didn't answer. It may not be running, or not be reachable from this network
          right now. If it moved, update its URL.`;
   return `
       <div class="tg-hint">${cause}</div>

@@ -22,7 +22,8 @@ enum CategorySource {
 model User {
   id                       String            @id @default(cuid())
   email                    String            @unique
-  passwordHash             String
+  // Null for someone who has only ever signed in through an OIDC provider.
+  passwordHash             String?
   displayName              String
   role                     Role              @default(MEMBER)
   // The first admin: may demote and delete other admins, and can be neither demoted nor deleted.
@@ -86,6 +87,8 @@ model User {
   bookmarks                Bookmark[]
   activities               Activity[]
   invitationsSent          Invitation[]
+  identities               UserIdentity[]
+  grabConnections          GrabConnection[]
   createdAt                DateTime          @default(now())
   updatedAt                DateTime          @updatedAt
 }
@@ -541,6 +544,61 @@ model AiConnection {
   position    Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+/// An OpenID Connect identity provider (Authentik, PocketID, ...) people can sign in with.
+model OidcProvider {
+  id             String         @id @default(cuid())
+  /// In the redirect URI, so it can't change once the IdP has been told about it.
+  slug           String         @unique
+  name           String
+  issuerUrl      String
+  clientId       String
+  /// Write-only: the API only ever says whether one is set. Null for a public client.
+  clientSecret   String?
+  scopes         String         @default("openid email profile")
+  enabled        Boolean        @default(true)
+  /// Someone the provider vouches for but Thingport doesn't know gets a new account.
+  createAccounts Boolean        @default(false)
+  /// A first sign-in attaches to the account with the same (provider-verified) email.
+  linkByEmail    Boolean        @default(false)
+  position       Int            @default(0)
+  identities     UserIdentity[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+/// Who a user is at an OIDC provider: its `sub`, which stays put when their email changes.
+model UserIdentity {
+  id         String       @id @default(cuid())
+  userId     String
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  providerId String
+  provider   OidcProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  subject    String
+  /// The email the provider last gave, to show which of their accounts it is.
+  email      String?
+  lastUsedAt DateTime?
+  createdAt  DateTime     @default(now())
+
+  @@unique([providerId, subject])
+  @@index([userId])
+}
+
+/// A browser's Thingport Grab, connected by the user approving it in Thingport rather than by saving their
+/// password in the extension. It trades its token for sessions, until the user removes it.
+model GrabConnection {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// SHA-256 of the token; the token itself only ever reaches the extension.
+  tokenHash  String    @unique
+  /// Which browser it is, e.g. "Chrome on macOS", so the user can tell them apart.
+  name       String
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
 }
 
 /// Admin audit trail. Written fire-and-forget so logging never breaks the action.

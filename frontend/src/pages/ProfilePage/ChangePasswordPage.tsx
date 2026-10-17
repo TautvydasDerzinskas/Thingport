@@ -12,6 +12,8 @@ import { UnauthorizedError } from "../../api/client";
 import type { CaptchaAnswer } from "../../api/captcha";
 import CaptchaField from "../../components/CaptchaField";
 import { useCaptchaSettings } from "../../hooks/useCaptchaSettings";
+import ConfirmIdentity from "./ConfirmIdentity";
+import { useSignInMethods, useSsoResult } from "./useSignInMethods";
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -31,6 +33,11 @@ export default function ChangePasswordPage({ onUnauthorized }: Props) {
   const captchaEnabled = useCaptchaSettings()?.change_password ?? false;
   const [captcha, setCaptcha] = React.useState<CaptchaAnswer | null>(null);
   const [captchaKey, setCaptchaKey] = React.useState(0);
+  const { info, reload } = useSignInMethods(onUnauthorized);
+  const sso = useSsoResult();
+  // Someone who only signs in through a provider sets their first password, without a current one to give.
+  const settingFirst = info?.has_password === false;
+  const mustConfirm = settingFirst && !info.signed_in_recently;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,20 +54,23 @@ export default function ChangePasswordPage({ onUnauthorized }: Props) {
     setLoading(true);
     try {
       await authApi.updateProfile({
-        current_password: currentPassword,
+        ...(settingFirst ? {} : { current_password: currentPassword }),
         new_password: newPassword,
         ...(captchaEnabled && captcha),
       });
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      setStatus(t("profile.passwordUpdated"));
+      setStatus(settingFirst ? t("profile.signIn.passwordSet") : t("profile.passwordUpdated"));
+      reload();
     } catch (err) {
       if (err instanceof UnauthorizedError) {
         onUnauthorized?.();
         return;
       }
       setError(err instanceof Error ? err.message : t("profile.genericError"));
+      // The recent sign-in may have run out while they typed: the page then asks to confirm.
+      if (settingFirst) reload();
     } finally {
       // Every attempt, successful or not, uses the captcha up.
       if (captchaEnabled) setCaptchaKey((k) => k + 1);
@@ -71,8 +81,8 @@ export default function ChangePasswordPage({ onUnauthorized }: Props) {
   return (
     <Stack spacing={3} sx={{ maxWidth: 420 }}>
       <SectionHeader
-        title={t("profile.changePasswordTitle")}
-        subtitle={t("profile.changePasswordSubtitle")}
+        title={settingFirst ? t("profile.signIn.setPasswordTitle") : t("profile.changePasswordTitle")}
+        subtitle={settingFirst ? t("profile.signIn.setPasswordSubtitle") : t("profile.changePasswordSubtitle")}
         onBack={() => navigate("/profile")}
         backLabel={t("profile.backToProfile")}
       />
@@ -82,51 +92,61 @@ export default function ChangePasswordPage({ onUnauthorized }: Props) {
           {status}
         </Alert>
       )}
-      {error && (
+      {(error ?? sso.error) && (
         <Alert severity="error" onClose={() => setError(null)}>
-          {error}
+          {error ?? sso.error}
         </Alert>
       )}
 
-      <Box component="form" onSubmit={handleSubmit}>
-        <Stack spacing={2}>
-          <TextField
-            type="password"
-            label={t("profile.currentPasswordLabel")}
-            value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
-            autoComplete="current-password"
-            required
-            fullWidth
-            size="small"
-          />
-          <TextField
-            type="password"
-            label={t("profile.newPasswordLabel")}
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            autoComplete="new-password"
-            helperText={t("auth.register.passwordHelp")}
-            required
-            fullWidth
-            size="small"
-          />
-          <TextField
-            type="password"
-            label={t("profile.confirmNewPasswordLabel")}
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            autoComplete="new-password"
-            required
-            fullWidth
-            size="small"
-          />
-          {captchaEnabled && <CaptchaField key={captchaKey} onChange={setCaptcha} disabled={loading} />}
-          <Button type="submit" variant="contained" disabled={loading}>
-            {loading ? t("profile.saving") : t("profile.savePassword")}
-          </Button>
-        </Stack>
-      </Box>
+      {mustConfirm ? (
+        <ConfirmIdentity info={info} page="/profile/password" onUnauthorized={onUnauthorized} />
+      ) : (
+        <Box component="form" onSubmit={handleSubmit}>
+          <Stack spacing={2}>
+            {!settingFirst && (
+              <TextField
+                type="password"
+                label={t("profile.currentPasswordLabel")}
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                autoComplete="current-password"
+                required
+                fullWidth
+                size="small"
+              />
+            )}
+            <TextField
+              type="password"
+              label={t("profile.newPasswordLabel")}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              autoComplete="new-password"
+              helperText={t("auth.register.passwordHelp")}
+              required
+              fullWidth
+              size="small"
+            />
+            <TextField
+              type="password"
+              label={t("profile.confirmNewPasswordLabel")}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="new-password"
+              required
+              fullWidth
+              size="small"
+            />
+            {captchaEnabled && <CaptchaField key={captchaKey} onChange={setCaptcha} disabled={loading} />}
+            <Button type="submit" variant="contained" disabled={loading}>
+              {loading
+                ? t("profile.saving")
+                : settingFirst
+                  ? t("profile.signIn.setPassword")
+                  : t("profile.savePassword")}
+            </Button>
+          </Stack>
+        </Box>
+      )}
     </Stack>
   );
 }

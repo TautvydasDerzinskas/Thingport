@@ -16,6 +16,8 @@ export type AdminUser = {
   print_count: number;
   collection_count: number;
   makerworld_connected: boolean;
+  /** How they can sign in: a password, and the single sign-on providers they've connected. */
+  sign_in: { password: boolean; providers: Array<{ name: string; enabled: boolean }> };
   created_at: string;
 };
 
@@ -68,7 +70,11 @@ export type LogAction =
   | "tag_deleted"
   | "user_role_changed"
   | "user_deleted"
-  | "provider_toggled";
+  | "provider_toggled"
+  | "sign_in_connected"
+  | "sign_in_disconnected"
+  | "grab_connected"
+  | "grab_disconnected";
 
 export type LogEntry = {
   id: string;

@@ -4,17 +4,16 @@
 
 import crypto from "node:crypto";
 import type { Invitation } from "@prisma/client";
-import { PUBLIC_URL } from "../config";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { sendInvitationEmail } from "./mailer";
-import { getAllowRegistrations, isSmtpConfigured } from "./settingsService";
+import { getAllowRegistrations, getPublicUrl, isSmtpConfigured } from "./settingsService";
 
 export const INVITATION_TTL_DAYS = 7;
 
-/** `origin` is the fallback for instances without PUBLIC_URL. */
-export function invitationLink(email: string, token: string, origin: string | null): string {
-  const base = PUBLIC_URL || (origin ?? "").replace(/\/+$/, "");
+/** `origin` is the fallback for instances without a public URL. */
+export async function invitationLink(email: string, token: string, origin: string | null): Promise<string> {
+  const base = (await getPublicUrl()) || (origin ?? "").replace(/\/+$/, "");
   return `${base}/register?email=${encodeURIComponent(email)}&invite=${encodeURIComponent(token)}`;
 }
 
@@ -49,7 +48,7 @@ export async function inviteUser(params: {
     await sendInvitationEmail(
       email,
       params.inviterName,
-      invitationLink(email, token, params.origin),
+      await invitationLink(email, token, params.origin),
       INVITATION_TTL_DAYS,
     );
   } catch (err) {

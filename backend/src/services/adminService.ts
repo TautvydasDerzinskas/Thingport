@@ -30,6 +30,9 @@ export type UserWithPrintCount = {
   printCount: number;
   collectionCount: number;
   makerworldConnected: boolean;
+  hasPassword: boolean;
+  /** The single sign-on providers they've connected, by name, and whether each is still on. */
+  signInProviders: Array<{ name: string; enabled: boolean }>;
   createdAt: Date;
 };
 
@@ -44,6 +47,10 @@ export async function listUsersWithPrintCounts(): Promise<UserWithPrintCount[]> 
       isOwner: true,
       createdAt: true,
       makerworldCookie: true,
+      passwordHash: true,
+      identities: {
+        select: { provider: { select: { name: true, enabled: true, position: true } } },
+      },
       _count: { select: { prints: true, collections: true } },
     },
   });
@@ -57,6 +64,11 @@ export async function listUsersWithPrintCounts(): Promise<UserWithPrintCount[]> 
     printCount: u._count.prints,
     collectionCount: u._count.collections,
     makerworldConnected: Boolean(u.makerworldCookie),
+    hasPassword: Boolean(u.passwordHash),
+    signInProviders: u.identities
+      .map((identity) => identity.provider)
+      .toSorted((a, b) => a.position - b.position)
+      .map(({ name, enabled }) => ({ name, enabled })),
   }));
 }
 

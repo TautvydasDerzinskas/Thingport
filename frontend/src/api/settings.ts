@@ -371,6 +371,24 @@ export const settingsApi = {
     return res.json();
   },
 
+  getPublicUrl: async (): Promise<{ public_url: string | null }> => {
+    const res = await fetch(`${apiBase()}/settings/public-url`, { headers: authHeaders() });
+    assertOk(res, "Failed to load the public URL");
+    return res.json();
+  },
+
+  /** It can be changed but not cleared. */
+  updatePublicUrl: async (publicUrl: string): Promise<{ public_url: string | null }> => {
+    const res = await fetch(`${apiBase()}/settings/public-url`, {
+      method: "PATCH",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ public_url: publicUrl }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to save the public URL"));
+    return res.json();
+  },
+
   getFlaresolverr: async (): Promise<{ url: string | null }> => {
     const res = await fetch(`${apiBase()}/settings/flaresolverr`, { headers: authHeaders() });
     assertOk(res, "Failed to load FlareSolverr settings");

@@ -35,3 +35,22 @@
     margin-top: t.$space-2;
   }
 }
+
+// Single sign-on, offered under the password form only by instances that support connecting by approval.
+.sso {
+  &__divider {
+    display: flex;
+    align-items: center;
+    gap: t.$space-2;
+    margin-top: t.$space-3;
+    color: t.c("text-muted");
+    font-size: 12px;
+
+    &::before,
+    &::after {
+      content: "";
+      flex: 1;
+      border-top: 1px solid t.c("border");
+    }
+  }
+}

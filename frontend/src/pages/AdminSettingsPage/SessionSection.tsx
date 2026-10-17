@@ -3,14 +3,16 @@ import { useTranslation } from "react-i18next";
 import Stack from "@mui/material/Stack";
 import Paper from "@mui/material/Paper";
 import Alert from "@mui/material/Alert";
-import AlertTitle from "@mui/material/AlertTitle";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
 import { UnauthorizedError } from "../../api/client";
 import { settingsApi } from "../../api/settings";
+import HelpTip from "../../components/HelpTip";
 import SectionHeader from "../../components/SectionHeader";
+import { AnimatedTile } from "../../components/storageAnimations/parts";
+import HourglassAnimation from "../../components/authAnimations/HourglassAnimation";
 
 type Props = {
   onUnauthorized?: () => void;
@@ -101,49 +103,64 @@ export default function SessionSection({ onUnauthorized }: Props) {
     <Stack spacing={3}>
       <SectionHeader title={t("adminSettings.session.heading")} subtitle={t("adminSettings.session.subtitle")} />
       <Paper variant="outlined" sx={{ p: 2.5 }}>
-        <Stack spacing={2}>
-          <Alert severity="info">
-            <AlertTitle>{t("adminSettings.session.infoTitle")}</AlertTitle>
-            {t("adminSettings.session.infoBody")}
-          </Alert>
+        <Stack direction="row" spacing={2.5} alignItems="flex-start">
+          <AnimatedTile>
+            <HourglassAnimation size={76} />
+          </AnimatedTile>
+          <Stack spacing={2} sx={{ flex: 1, minWidth: 0 }}>
+            <TextField
+              type="number"
+              label={
+                <>
+                  {t("adminSettings.session.tokenTtlLabel")}
+                  <HelpTip
+                    text={t("adminSettings.session.infoBody")}
+                    content={
+                      <>
+                        <Typography variant="subtitle2" component="div" sx={{ mb: 0.5 }}>
+                          {t("adminSettings.session.infoTitle")}
+                        </Typography>
+                        {t("adminSettings.session.infoBody")}
+                      </>
+                    }
+                  />
+                </>
+              }
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              error={draft !== "" && !isValid}
+              helperText={
+                draft !== "" && !isValid
+                  ? t("adminSettings.session.invalid")
+                  : preview
+                    ? t("adminSettings.session.approx", {
+                        value: t(`adminSettings.session.units.${preview.unit}`, { count: preview.value }),
+                      })
+                    : t("adminSettings.session.tokenTtlHelp")
+              }
+              disabled={loading || saving}
+              slotProps={{ htmlInput: { min: MIN_SECONDS, max: MAX_SECONDS } }}
+              sx={{ maxWidth: 320 }}
+            />
 
-          <TextField
-            type="number"
-            label={t("adminSettings.session.tokenTtlLabel")}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            error={draft !== "" && !isValid}
-            helperText={
-              draft !== "" && !isValid
-                ? t("adminSettings.session.invalid")
-                : preview
-                  ? t("adminSettings.session.approx", {
-                      value: t(`adminSettings.session.units.${preview.unit}`, { count: preview.value }),
-                    })
-                  : t("adminSettings.session.tokenTtlHelp")
-            }
-            disabled={loading || saving}
-            slotProps={{ htmlInput: { min: MIN_SECONDS, max: MAX_SECONDS } }}
-            sx={{ maxWidth: 320 }}
-          />
+            <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
+              <Button variant="contained" onClick={save} disabled={loading || saving || !isValid || parsed === seconds}>
+                {saving ? t("adminSettings.session.saving") : t("adminSettings.session.save")}
+              </Button>
+              {saving && <CircularProgress size={14} />}
+              {status && (
+                <Typography variant="caption" color="text.secondary">
+                  {status}
+                </Typography>
+              )}
+            </Stack>
 
-          <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
-            <Button variant="contained" onClick={save} disabled={loading || saving || !isValid || parsed === seconds}>
-              {saving ? t("adminSettings.session.saving") : t("adminSettings.session.save")}
-            </Button>
-            {saving && <CircularProgress size={14} />}
-            {status && (
-              <Typography variant="caption" color="text.secondary">
-                {status}
-              </Typography>
+            {error && (
+              <Alert severity="error" onClose={() => setError(null)}>
+                {error}
+              </Alert>
             )}
           </Stack>
-
-          {error && (
-            <Alert severity="error" onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          )}
         </Stack>
       </Paper>
     </Stack>

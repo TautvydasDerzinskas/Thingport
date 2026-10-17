@@ -10,9 +10,11 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
+import Tooltip from "@mui/material/Tooltip";
+import KeyOutlinedIcon from "@mui/icons-material/KeyOutlined";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { UnauthorizedError } from "../../api/client";
 import { adminApi, type AdminUser } from "../../api/admin";
-import RegistrationsPanel from "./RegistrationsPanel";
 import UserActionsMenu from "./UserActionsMenu";
 import { TableRowSkeletons } from "../../components/ListSkeleton";
 
@@ -20,7 +22,7 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-/** Every account, under the registration switch and invitations; admins promote, demote and delete from each row's menu. */
+/** Every account; admins promote, demote and delete from each row's menu. */
 export default function UsersPage({ onUnauthorized }: Props) {
   const { t, i18n } = useTranslation(["app", "common"]);
   const [users, setUsers] = React.useState<AdminUser[]>([]);
@@ -55,8 +57,6 @@ export default function UsersPage({ onUnauthorized }: Props) {
 
   return (
     <Stack spacing={3}>
-      <RegistrationsPanel onUnauthorized={onUnauthorized} />
-
       {error && (
         <Alert severity="error" onClose={() => setError(null)}>
           {error}
@@ -72,6 +72,7 @@ export default function UsersPage({ onUnauthorized }: Props) {
                 <TableCell>{t("adminSettings.users.columnCreated")}</TableCell>
                 <TableCell>{t("adminSettings.users.columnDisplayName")}</TableCell>
                 <TableCell>{t("adminSettings.users.columnRole")}</TableCell>
+                <TableCell>{t("adminSettings.users.columnSignIn")}</TableCell>
                 <TableCell align="right">{t("adminSettings.users.columnModels")}</TableCell>
                 <TableCell align="right">{t("adminSettings.users.columnCollections")}</TableCell>
                 <TableCell>{t("adminSettings.users.columnMakerworld")}</TableCell>
@@ -80,7 +81,7 @@ export default function UsersPage({ onUnauthorized }: Props) {
             </TableHead>
             <TableBody>
               {loading ? (
-                <TableRowSkeletons rows={5} columns={8} />
+                <TableRowSkeletons rows={5} columns={9} />
               ) : (
                 users.map((u) => (
                   <TableRow key={u.id} hover>
@@ -106,6 +107,9 @@ export default function UsersPage({ onUnauthorized }: Props) {
                         />
                       )}
                     </TableCell>
+                    <TableCell>
+                      <SignInChips signIn={u.sign_in} />
+                    </TableCell>
                     <TableCell align="right">{u.print_count}</TableCell>
                     <TableCell align="right">{u.collection_count}</TableCell>
                     <TableCell>
@@ -130,6 +134,43 @@ export default function UsersPage({ onUnauthorized }: Props) {
           </Table>
         </TableContainer>
       </Paper>
+    </Stack>
+  );
+}
+
+/** How someone signs in: a chip for their password and one per connected provider; a warning when nothing works. */
+function SignInChips({ signIn }: { signIn: AdminUser["sign_in"] }) {
+  const { t } = useTranslation("app");
+  const working = signIn.password || signIn.providers.some((provider) => provider.enabled);
+  return (
+    <Stack direction="row" gap={0.75} flexWrap="wrap">
+      {signIn.password && (
+        <Chip
+          icon={<LockOutlinedIcon />}
+          label={t("adminSettings.users.signInPassword")}
+          size="small"
+          variant="outlined"
+        />
+      )}
+      {signIn.providers.map((provider) => (
+        <Tooltip
+          key={provider.name}
+          title={provider.enabled ? "" : t("adminSettings.users.signInProviderOff", { name: provider.name })}
+        >
+          <Chip
+            icon={<KeyOutlinedIcon />}
+            label={provider.name}
+            size="small"
+            variant="outlined"
+            sx={provider.enabled ? undefined : { opacity: 0.55, textDecoration: "line-through" }}
+          />
+        </Tooltip>
+      ))}
+      {!working && (
+        <Tooltip title={t("adminSettings.users.signInNoneHint")}>
+          <Chip label={t("adminSettings.users.signInNone")} size="small" color="error" variant="outlined" />
+        </Tooltip>
+      )}
     </Stack>
   );
 }

@@ -20,6 +20,9 @@ export const els = {
   passwordInput: byId<HTMLInputElement>("password"),
   saveBtn: byId<HTMLButtonElement>("save-btn"),
   cancelBtn: byId<HTMLButtonElement>("cancel-btn"),
+  ssoBlock: byId("sso-block"),
+  ssoBtn: byId<HTMLButtonElement>("sso-btn"),
+  ssoPending: byId("sso-pending"),
   error: byId("error"),
   version: byId("version"),
 };

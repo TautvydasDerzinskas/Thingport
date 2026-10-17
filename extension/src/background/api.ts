@@ -13,7 +13,7 @@ const TOKEN_REFRESH_MARGIN_MS = 5 * 60 * 1000;
 // The instance never asks the extension for a captcha (see captchaService.ts).
 const CLIENT_HEADERS = { "X-Thingport-Client": "grab" };
 
-type Credentials = Pick<ConfiguredConfig, "instanceUrl" | "email" | "password">;
+type Credentials = Pick<ConfiguredConfig, "instanceUrl" | "email" | "password" | "connectionToken">;
 
 async function errorDetail(res: Response, fallback: string): Promise<string> {
   try {
@@ -43,12 +43,17 @@ function setConnectionBadge(connected: boolean): void {
   if (!connected) void chrome.action.setBadgeBackgroundColor({ color: "#d32f2f" }).catch(() => undefined);
 }
 
-/** Also called once on a 401, so a password change doesn't require reopening the popup. */
+/** Also called once on a 401, so a password change doesn't require reopening the popup. A connection made by
+ *  approval trades its token for a session instead. */
 export async function loginAndStoreToken(credentials: Credentials): Promise<string> {
-  const res = await fetch(apiUrl(credentials.instanceUrl, "/login"), {
+  const res = await fetch(apiUrl(credentials.instanceUrl, credentials.connectionToken ? "/grab/session" : "/login"), {
     method: "POST",
     headers: { ...CLIENT_HEADERS, "Content-Type": "application/json" },
-    body: JSON.stringify({ email: credentials.email, password: credentials.password }),
+    body: JSON.stringify(
+      credentials.connectionToken
+        ? { connection_token: credentials.connectionToken }
+        : { email: credentials.email, password: credentials.password },
+    ),
   });
   if (!res.ok) {
     const detail = await errorDetail(res, `Could not sign in to this Thingport instance (${res.status})`);
@@ -67,6 +72,26 @@ export async function loginAndStoreToken(credentials: Credentials): Promise<stri
   });
   setConnectionBadge(true);
   return data.token;
+}
+
+/** Stores what a connection by approval was given, replacing any saved password. */
+export async function storeApprovedConnection(
+  instanceUrl: string,
+  connectionToken: string,
+  data: LoginResult,
+): Promise<void> {
+  await chrome.storage.local.set({
+    instanceUrl,
+    email: data.user?.email ?? "",
+    connectionToken,
+    token: data.token,
+    tokenExpiresAt: Date.now() + data.expires_in * 1000,
+    loginVerifiedAt: Date.now(),
+    isAdmin: data.user?.role === "ADMIN",
+    disabled: false,
+  });
+  await chrome.storage.local.remove([STORAGE_KEYS.password, STORAGE_KEYS.pendingPairing]);
+  setConnectionBadge(true);
 }
 
 // Shared, so a burst of calls with an expired token signs in once rather than once per call.
@@ -88,8 +113,11 @@ export async function ensureToken(config: ConfiguredConfig, { forceRefresh = fal
       // A silent re-login has no form to show the error next to, so say where to fix it.
       if (err instanceof LoginRejectedError) {
         throw new LoginRejectedError(
-          `Thingport rejected the email or password saved in Thingport Grab (${err.message}). ` +
-            "Open the extension popup, click the instance and sign in again.",
+          config.connectionToken
+            ? `Thingport no longer accepts this browser's Thingport Grab (${err.message}). ` +
+                "Open the extension popup, click the instance and connect again."
+            : `Thingport rejected the email or password saved in Thingport Grab (${err.message}). ` +
+                "Open the extension popup, click the instance and sign in again.",
           err.detail,
         );
       }
@@ -115,7 +143,12 @@ export async function checkConnection(): Promise<Connection> {
     return { connected: true };
   } catch (err) {
     const detail = err instanceof LoginRejectedError ? err.detail : err instanceof Error ? err.message : String(err);
-    return { connected: false, reason: err instanceof LoginRejectedError ? "credentials" : "unreachable", detail };
+    return {
+      connected: false,
+      reason: err instanceof LoginRejectedError ? "credentials" : "unreachable",
+      detail,
+      byApproval: Boolean(config.connectionToken),
+    };
   }
 }
 

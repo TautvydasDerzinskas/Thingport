@@ -3,7 +3,7 @@
 
 import { fillIcons } from "../shared/icon";
 import { send, type Connection, type ExtensionState } from "../shared/messages";
-import { normalizeInstanceUrl } from "../shared/storage";
+import { STORAGE_KEYS, apiUrl, normalizeInstanceUrl } from "../shared/storage";
 import { clearError, els, showError } from "./dom";
 import { loadRecentImports } from "./recentImports";
 import "./styles/popup.scss";
@@ -40,11 +40,40 @@ function showSetupForm(prefillUrl = "", prefillEmail = ""): void {
   els.instanceUrlInput.value = prefillUrl;
   els.emailInput.value = prefillEmail;
   els.passwordInput.value = "";
+  els.ssoPending.hidden = true;
   clearError();
   els.instanceUrlInput.focus();
+  void offerSingleSignOn(prefillUrl);
+}
+
+// Asked of each instance typed in, so single sign-on only shows where it works: instances from before connecting
+// by approval existed, or without a provider set up, don't answer this and the form stays as it always was.
+let ssoProbe = 0;
+let ssoProbeTimer: number | undefined;
+
+async function offerSingleSignOn(rawUrl: string): Promise<void> {
+  const probe = ++ssoProbe;
+  els.ssoBlock.hidden = true;
+  const instanceUrl = normalizeInstanceUrl(rawUrl);
+  if (!/^https?:\/\/[^/]+/i.test(instanceUrl)) return;
+  try {
+    // Health answers any origin, so this works before the instance's permission is granted.
+    const res = await fetch(apiUrl(instanceUrl, "/health"), { signal: AbortSignal.timeout(4000) });
+    const health = (await res.json()) as { grab_pairing?: boolean; oidc_providers?: { name: string }[] };
+    const providers = Array.isArray(health.oidc_providers) ? health.oidc_providers : [];
+    if (probe !== ssoProbe || health.grab_pairing !== true || providers.length === 0) return;
+    els.ssoBtn.textContent =
+      providers.length === 1 ? `Sign in with ${providers[0].name}` : "Sign in with single sign-on";
+    els.ssoBlock.hidden = false;
+  } catch {
+    // Unreachable, or an older Thingport: the password form is all there is.
+  }
 }
 
 function connectionProblem(connection: Extract<Connection, { connected: false }>): string {
+  if (connection.reason === "credentials" && connection.byApproval) {
+    return "Your Thingport instance no longer accepts this browser's Thingport Grab -- it was probably removed from your profile there. Connect again, or sign in with your email and password.";
+  }
   return connection.reason === "credentials"
     ? `Your Thingport instance turned down the saved email and password -- they were probably changed there. Sign in again with the current ones. (${connection.detail})`
     : `Your Thingport instance didn't answer -- it may not be running or reachable right now. Check its URL, or try again later. (${connection.detail})`;
@@ -69,7 +98,10 @@ async function refresh({ checkConnection = true } = {}): Promise<void> {
   if (checkConnection) {
     showSetupForm(res.data.instanceUrl, res.data.email);
     showError(connectionProblem(connection.data));
-    (connection.data.reason === "credentials" ? els.passwordInput : els.instanceUrlInput).focus();
+    // A removed connection has no password to fix: nothing to jump to.
+    if (!connection.data.byApproval) {
+      (connection.data.reason === "credentials" ? els.passwordInput : els.instanceUrlInput).focus();
+    }
   } else {
     showError(connectionProblem(connection.data), els.configuredError);
   }
@@ -81,6 +113,47 @@ els.editInstanceBtn.addEventListener("click", async () => {
 });
 
 els.cancelBtn.addEventListener("click", () => void refresh({ checkConnection: false }));
+
+els.instanceUrlInput.addEventListener("input", () => {
+  window.clearTimeout(ssoProbeTimer);
+  els.ssoBlock.hidden = true;
+  ssoProbeTimer = window.setTimeout(() => void offerSingleSignOn(els.instanceUrlInput.value), 400);
+});
+
+els.ssoBtn.addEventListener("click", async () => {
+  clearError();
+  const instanceUrl = normalizeInstanceUrl(els.instanceUrlInput.value);
+  let origin: string;
+  try {
+    origin = new URL(instanceUrl).origin;
+  } catch {
+    showError("Enter a valid instance URL, e.g. https://thingport.example.com");
+    return;
+  }
+  // First, while this click still counts as the user's: it's what lets Grab read the approval tab.
+  const granted = await chrome.permissions.request({ origins: [`${origin}/*`] });
+  if (!granted) {
+    showError("Thingport Grab needs permission to reach this instance to work.");
+    return;
+  }
+  const res = await send("START_PAIRING", { instanceUrl });
+  if (!res?.ok) {
+    showError(res?.error ?? "Couldn't open Thingport");
+    return;
+  }
+  els.ssoPending.hidden = false;
+});
+
+// Connecting by approval finishes in the background, maybe while this is open as a tab.
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== "local" || !changes[STORAGE_KEYS.connectionToken]?.newValue) return;
+  if (Number.isInteger(returnTabId)) {
+    void chrome.tabs.update(returnTabId, { active: true }).catch(() => undefined);
+    void chrome.tabs.getCurrent().then((self) => (self?.id != null ? chrome.tabs.remove(self.id) : undefined));
+    return;
+  }
+  void refresh();
+});
 
 els.enabledSwitch.addEventListener("change", async () => {
   clearError(els.configuredError);

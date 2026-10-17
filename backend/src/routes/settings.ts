@@ -15,7 +15,10 @@ import {
   getSimplifyPreviews,
   getSmtpSettings,
   getFlaresolverrUrl,
+  getPublicUrl,
   normalizeAiBaseUrl,
+  normalizePublicUrl,
+  setPublicUrl,
   setFlaresolverrUrl,
   getThingiverseAccessToken,
   setAllowRegistrations,
@@ -385,6 +388,28 @@ router.patch(
     if (body.from?.trim()) patch.from = body.from.trim();
     const next = await setSmtpSettings(patch);
     res.json(smtpSettingsOut(next));
+  }),
+);
+
+// Where people open Thingport: links in emails, and where single sign-on providers send people back to.
+router.get(
+  "/settings/public-url",
+  requireAdmin,
+  asyncHandler(async (_req, res) => {
+    res.json({ public_url: (await getPublicUrl()) || null });
+  }),
+);
+
+router.patch(
+  "/settings/public-url",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    // Can't be cleared from here: emails and single sign-on would break.
+    const body = parseBody(z.object({ public_url: z.string().max(500) }).strict(), req.body);
+    if (!normalizePublicUrl(body.public_url)) {
+      throw new HttpError(400, "Enter the full address, like https://thingport.example.com", "invalid_public_url");
+    }
+    res.json({ public_url: (await setPublicUrl(body.public_url)) || null });
   }),
 );
 
