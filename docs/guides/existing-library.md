@@ -43,7 +43,7 @@ Both choices are offered when you upload a folder, and the consume folder has th
 
 ## What happens to my files?
 
-Thingport copies each file into its own storage, in the folder layout chosen under **Administration → Settings**.
+Thingport copies each file into its own storage, in the folder layout chosen under **Administration → Storage**.
 Uploads from the browser leave your originals untouched. The consume folder moves files out of the folder it watches,
 so copy into it rather than moving your only copy there.
 

@@ -54,7 +54,7 @@ services:
     volumes:
       - ./data/storage:/app/storage
       # Optional consume folder: files and folders dropped in it are imported automatically
-      # (Administration -> Settings -> Consume Folder). Uncomment and point it at a host folder.
+      # (Administration -> Storage -> Consume Folder). Uncomment and point it at a host folder.
       # - ./data/consume:/app/consume
     networks:
       - app-net

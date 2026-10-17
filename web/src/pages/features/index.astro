@@ -1,21 +1,24 @@
 ---
-import { Image } from "astro:assets";
-import BaseLayout from "../layouts/BaseLayout.astro";
-import Icon from "../components/Icon.astro";
-import { url } from "../lib/url";
-import models from "../../../frontend/src/assets/screenshots/02_models.png";
-import preview3d from "../../../frontend/src/assets/screenshots/04_model_details_3d_preview.png";
-import tags from "../../../frontend/src/assets/screenshots/06_tags.png";
-import downloads from "../../../frontend/src/assets/screenshots/07_downloads.png";
-import myModels from "../../../frontend/src/assets/screenshots/08_my_models.png";
-import profile from "../../../frontend/src/assets/screenshots/10_profile.png";
-import grabMakerworld from "../../../extension/docs/screenshots/panel-makerworld.jpg";
-import grabCollection from "../../../extension/docs/screenshots/collection-printables.jpg";
-import folderImport from "../../../docs/guides/images/folder-import-mode.png";
-import collectionSync from "../../../docs/assets/collection-sync-light.gif";
-import collectionSyncDark from "../../../docs/assets/collection-sync-dark.gif";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Icon from "../../components/Icon.astro";
+import FeatureJump from "../../components/FeatureJump.astro";
+import FeatureSections, { type FeatureSection } from "../../components/FeatureSections.astro";
+import { url } from "../../lib/url";
+import models from "../../../../frontend/src/assets/screenshots/02_models.png";
+import preview3d from "../../../../frontend/src/assets/screenshots/04_model_details_3d_preview.png";
+import tags from "../../../../frontend/src/assets/screenshots/06_tags.png";
+import downloads from "../../../../frontend/src/assets/screenshots/07_downloads.png";
+import myModels from "../../../../frontend/src/assets/screenshots/08_my_models.png";
+import profile from "../../../../frontend/src/assets/screenshots/10_profile.png";
+import grabMakerworld from "../../../../extension/docs/screenshots/panel-makerworld.jpg";
+import grabCollection from "../../../../extension/docs/screenshots/collection-printables.jpg";
+import folderImport from "../../../../docs/guides/images/folder-import-mode.png";
+import collectionSync from "../../../../docs/assets/collection-sync-light.gif";
+import collectionSyncDark from "../../../../docs/assets/collection-sync-dark.gif";
+import aiSuggestions from "../../../../frontend/src/assets/screenshots/22_ai_suggestions.png";
+import adminOverview from "../../../../frontend/src/assets/screenshots/13_admin_overview.png";
 
-const SECTIONS = [
+const SECTIONS: FeatureSection[] = [
   {
     id: "import",
     short: "Import",
@@ -29,7 +32,7 @@ const SECTIONS = [
       "Sync a collection, and models added to it later are imported on their own.",
       "Bring in a MakerWorld model's print profiles too: the designer's own, or all of them.",
       "Title, description, tags, photos, author and source link come with the files.",
-      "Printables works with no setup. MakerWorld and Thingiverse need a credential from your own account (see provider setup).",
+      "Printables works with no setup. MakerWorld and Thingiverse need a credential (see provider setup), and admins can turn off any provider they don't want used.",
     ],
     link: { label: "Provider setup", href: url("docs/providers/") },
     image: grabMakerworld,
@@ -105,6 +108,7 @@ const SECTIONS = [
       "A photo gallery per model, separate from its printable files.",
       "Admins choose whether model card thumbnails render automatically, on demand or not at all.",
     ],
+    link: { label: "3D previews", href: url("docs/features/3d-previews/") },
     image: preview3d,
     alt: "A model's 3D preview in Thingport",
   },
@@ -122,8 +126,27 @@ const SECTIONS = [
       "Author pages with their cover, details and every model of theirs you've saved, plus a preview card when you hover an author's name.",
       "Link an author to your own account so your own designs show up under My models.",
     ],
+    link: { label: "Organize and search", href: url("docs/features/organize-and-search/") },
     image: tags,
     alt: "Browsing models by tag in Thingport",
+  },
+  {
+    id: "ai",
+    short: "AI",
+    icon: "sparkle",
+    title: "Let AI tidy up your library",
+    intro:
+      "Optional AI features, on a model running on your own hardware or a cloud API of your choice. Off until an admin adds a model.",
+    points: [
+      "AI categorization sorts models into your own categories from their title, description, tags and photo. It never makes up new ones.",
+      "Improved descriptions strips self-promotion and boost requests, translates descriptions into English, fixes spelling and formatting, and writes one where there's none.",
+      "Review each suggestion before it's applied, or let confident ones apply on their own. Original descriptions are kept, so any change can be reverted.",
+      "Runs on every new import, on one model, or over your whole library in the background.",
+      "Works with Ollama, LM Studio, vLLM, OpenAI, OpenRouter, Gemini and other OpenAI-compatible APIs. With a local model, nothing leaves your network.",
+    ],
+    link: { label: "AI categorization and descriptions", href: url("docs/guides/ai/") },
+    image: aiSuggestions,
+    alt: "AI category suggestions waiting to be accepted or rejected",
   },
   {
     id: "activity",
@@ -164,11 +187,12 @@ const SECTIONS = [
     title: "Your files stay yours",
     intro: "Thingport stores models as ordinary files on your own disk, not locked inside a database.",
     points: [
-      "Choose the folder layout, for example category / model / file, and reorganize existing files when you change it.",
+      "Choose the folder layout, for example category / model / file. Change it later and existing files are moved to match in the background.",
       "Renaming a model renames its file too, so the folders stay readable.",
-      "See how much disk space each user's models take.",
+      "See how much disk space models, pictures and previews take, and browse the storage folder from the browser.",
       "Back up the storage folder with whatever tool you already use.",
     ],
+    link: { label: "Plain files on your disk", href: url("docs/features/storage/") },
     image: models,
     alt: "The Thingport model library",
   },
@@ -181,77 +205,46 @@ const SECTIONS = [
     points: [
       "Multiple user accounts. The first person to sign up becomes the admin.",
       "Open sign-up, or invite-only with email invitations. Optional email verification and captcha.",
-      "User management, import logs and an audit trail for admins.",
-      "An update check tells admins when newer Thingport images are available.",
+      "Single sign-on with Authentik, Pocket ID, Keycloak or any other OpenID Connect provider, next to email and password.",
       "Light and dark themes, in English and Lithuanian.",
     ],
+    link: { label: "Single sign-on", href: url("docs/guides/single-sign-on/") },
     image: myModels,
     alt: "A user's own models in Thingport",
   },
-] as const;
+  {
+    id: "admin",
+    short: "Administration",
+    icon: "sliders",
+    title: "Run it your way",
+    intro:
+      "Every instance-wide setting lives in Administration, a page per area, so admins can see and change everything from the browser.",
+    points: [
+      "System Health checks the database, storage, memory, FlareSolverr, Thingiverse, AI and email on demand, and says what to fix.",
+      "Choose which providers this Thingport imports from. Turn one off and nothing new comes from it for anyone.",
+      "Manage users and roles, see how each person signs in, and follow imports and changes in the logs.",
+      "Change the storage folder layout and let Thingport reorganize existing files in the background.",
+      "An update check says when newer Thingport images are out.",
+    ],
+    link: { label: "Tour the administration", href: url("features/administration/") },
+    image: adminOverview,
+    alt: "The Thingport administration overview, with storage use and System Health",
+  },
+];
 ---
 
 <BaseLayout
   title="Features"
-  description="Everything Thingport can do: import from MakerWorld, Printables and Thingiverse, bring in your existing folders and ZIPs, preview STL, 3MF, STEP and OBJ in 3D, organize with categories and tags, and send files to your slicer."
+  description="Everything Thingport can do: import from MakerWorld, Printables and Thingiverse, bring in your existing folders and ZIPs, preview STL, 3MF, STEP and OBJ in 3D, organize with categories, tags and optional AI, and send files to your slicer."
 >
   <div class="container page-head">
     <span class="eyebrow">Features</span>
     <h1>Everything you need to keep your 3D models under control</h1>
     <p>From finding a model to printing it, Thingport covers every step, and it all runs on hardware you own.</p>
-    <nav class="jump" aria-label="On this page">
-      {
-        SECTIONS.map((s) => (
-          <a href={`#${s.id}`}>
-            <Icon name={s.icon} size={16} />
-            {s.short}
-          </a>
-        ))
-      }
-    </nav>
+    <FeatureJump sections={SECTIONS} />
   </div>
 
-  {
-    SECTIONS.map((s, i) => (
-      <section id={s.id} class:list={["section", "feature", { alt: i % 2 === 1 }]}>
-        <div class="container split">
-          <div>
-            <span class="feature-icon">
-              <Icon name={s.icon} size={22} />
-            </span>
-            <h2>{s.title}</h2>
-            <p class="intro">{s.intro}</p>
-            <ul class="checks">
-              {s.points.map((p) => (
-                <li>
-                  <Icon name="check" size={18} class="check" />
-                  <span>{p}</span>
-                </li>
-              ))}
-            </ul>
-            {"link" in s && s.link && (
-              <a class="more" href={s.link.href}>
-                {s.link.label} <Icon name="arrow" size={16} />
-              </a>
-            )}
-          </div>
-          <figure class="shot">
-            {"animated" in s ? (
-              // Animated GIFs, which Image would flatten to stills: the light one and its dark twin.
-              [
-                { img: s.image, theme: "only-light" },
-                { img: s.animated, theme: "only-dark" },
-              ].map(({ img, theme }) => (
-                <img class={theme} src={img.src} alt={s.alt} width={img.width} height={img.height} loading="lazy" />
-              ))
-            ) : (
-              <Image src={s.image} alt={s.alt} widths={[480, 800, 1100]} sizes="(min-width: 48rem) 36rem, 100vw" />
-            )}
-          </figure>
-        </div>
-      </section>
-    ))
-  }
+  <FeatureSections sections={SECTIONS} />
 
   <section class="section">
     <div class="container final">
@@ -263,115 +256,10 @@ const SECTIONS = [
 </BaseLayout>
 
 <style>
-  .jump {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 1.5rem;
-  }
-  .jump a {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.4rem 0.8rem;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: var(--panel);
-    color: var(--heading);
-    font-size: 0.9rem;
-    font-weight: 600;
-    text-decoration: none;
-  }
-  :global(:root[data-theme="dark"]) .jump a {
-    border-radius: 0;
-  }
-  @media (prefers-color-scheme: dark) {
-    :global(:root:not([data-theme="light"])) .jump a {
-      border-radius: 0;
-    }
-  }
-  .jump a:hover {
-    border-color: var(--accent);
-  }
-  .alt {
-    background: var(--panel-alt);
-    border-block: 1px solid var(--border);
-  }
-  .split {
-    display: grid;
-    gap: 2.5rem;
-    align-items: center;
-    grid-template-columns: 1fr 1.15fr;
-  }
-  .alt .split > figure {
-    order: -1;
-  }
-  h2 {
-    font-size: clamp(1.5rem, 3.2vw, 2rem);
-    margin-top: 1rem;
-  }
-  .intro {
-    color: var(--text-muted);
-    font-size: 1.075rem;
-  }
-  .feature-icon {
-    display: inline-grid;
-    place-items: center;
-    width: 2.75rem;
-    height: 2.75rem;
-    border-radius: var(--radius-sm);
-    background: var(--accent-soft);
-    color: var(--link);
-  }
-  .checks {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 1.25rem;
-  }
-  .checks li {
-    display: flex;
-    gap: 0.6rem;
-    align-items: flex-start;
-  }
-  .checks li + li {
-    margin-top: 0.55rem;
-  }
-  .checks :global(.check) {
-    flex: none;
-    margin-top: 0.2rem;
-    color: var(--accent);
-  }
-  .more {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-weight: 600;
-  }
-  .shot {
-    margin: 0;
-    overflow: hidden;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--panel);
-    box-shadow: var(--shadow);
-  }
-  .shot :global(img) {
-    display: block;
-    width: 100%;
-    height: auto;
-  }
   .final {
     text-align: center;
   }
   .final h2 {
     margin-top: 0;
-  }
-  @media (max-width: 48rem) {
-    .split {
-      grid-template-columns: 1fr;
-    }
-    .alt .split > figure {
-      order: 0;
-    }
   }
 </style>

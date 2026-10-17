@@ -1,0 +1,246 @@
+---
+import { Image } from "astro:assets";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Icon from "../../components/Icon.astro";
+import FeatureJump from "../../components/FeatureJump.astro";
+import FeatureSections, { type FeatureSection } from "../../components/FeatureSections.astro";
+import { url } from "../../lib/url";
+import overview from "../../../../frontend/src/assets/screenshots/13_admin_overview.png";
+import providers from "../../../../frontend/src/assets/screenshots/14_admin_providers.png";
+import storage from "../../../../frontend/src/assets/screenshots/15_admin_storage.png";
+import auth from "../../../../frontend/src/assets/screenshots/16_admin_auth.png";
+import ai from "../../../../frontend/src/assets/screenshots/17_admin_ai.png";
+import users from "../../../../frontend/src/assets/screenshots/18_admin_users.png";
+import logs from "../../../../frontend/src/assets/screenshots/19_admin_logs.png";
+import importQueue from "../../../../frontend/src/assets/screenshots/27_admin_import_queue.png";
+import connections from "../../../../frontend/src/assets/screenshots/28_admin_connections.png";
+import rendering from "../../../../frontend/src/assets/screenshots/29_admin_rendering.png";
+import captcha from "../../../../frontend/src/assets/screenshots/30_admin_captcha.png";
+import triggers from "../../../../frontend/src/assets/screenshots/31_admin_triggers.png";
+
+const SECTIONS: FeatureSection[] = [
+  {
+    id: "overview",
+    short: "Overview",
+    icon: "activity",
+    title: "See how the instance is doing",
+    intro:
+      "Administration opens on an overview of the whole Thingport: what it runs, what it stores and what needs attention.",
+    points: [
+      "System Health lists everything Thingport relies on, what each part is for and whether it's required, and tests them all, or one at a time, when you ask. Aim for all green: a Required or Recommended part that isn't means something won't work properly.",
+      "Each problem comes with what to do about it, such as a storage folder that isn't writable, FlareSolverr not answering or an AI model that isn't pulled.",
+      "Disk use at a glance: model files, pictures and previews, and generated files.",
+      "An update check shows the running backend and frontend versions and says when newer images are out.",
+    ],
+    link: { label: "System Health", href: url("docs/guides/system-health/") },
+    image: overview,
+    alt: "The administration overview with storage use, update check and System Health",
+  },
+  {
+    id: "providers",
+    short: "Providers",
+    icon: "globe",
+    title: "Choose where models come from",
+    intro: "MakerWorld, Printables and Thingiverse are all on by default. Turn off any this Thingport shouldn't use.",
+    points: [
+      "A provider that's off is off for everyone: links to it, Thingport Grab and the import queue are refused, and it's hidden from each person's provider settings.",
+      "Its synced collections pause and background jobs skip it. Models already imported from it stay as they are.",
+      "Turn it back on whenever you like, and syncs pick up where they left off.",
+      "Set the Thingiverse Access Token that every user's Thingiverse imports share.",
+    ],
+    link: { label: "Provider setup", href: url("docs/providers/#turning-a-provider-off") },
+    image: providers,
+    alt: "The Providers page with MakerWorld, Printables and Thingiverse switches",
+  },
+  {
+    id: "storage",
+    short: "Storage",
+    icon: "server",
+    title: "Lay out the files on disk",
+    intro: "Models are plain files in a folder layout you design, and you can change it at any time.",
+    points: [
+      "Build the folder structure from blocks such as category, collection, creator and model name, or type it as text.",
+      "Change it and existing files are moved to match in the background, with progress as it goes.",
+      "Browse the storage folder from the browser to see where each model's files are now.",
+      "Set up the consume folder: whose library dropped files go to, and whether each file or each folder becomes a model.",
+    ],
+    link: { label: "Consume folder", href: url("docs/guides/consume-folder/") },
+    image: storage,
+    alt: "The Storage page with the folder structure builder",
+  },
+  {
+    id: "auth",
+    short: "Auth",
+    icon: "key",
+    title: "Decide who gets in, and how",
+    intro: "Sign-in, registration and sessions for the whole instance, on one page.",
+    points: [
+      "Single sign-on with any OpenID Connect provider, such as Authentik, Pocket ID, Keycloak or Authelia. Each adds a button to the sign-in page, next to email and password.",
+      "Test a provider's sign-in before anyone sees it: Thingport shows which account it would use and everything the provider sent.",
+      "Open registration, or invite-only, with invitations sent by email.",
+      "Set how long a sign-in lasts, and the public URL used in emails and by single sign-on.",
+    ],
+    link: { label: "Set up single sign-on", href: url("docs/guides/single-sign-on/") },
+    image: auth,
+    alt: "The Auth page with sign-in methods, including an OIDC provider",
+  },
+  {
+    id: "ai",
+    short: "AI",
+    icon: "sparkle",
+    title: "Connect an AI model",
+    intro: "Add the AI models Thingport may use, then switch on the features you want.",
+    points: [
+      "Any OpenAI-compatible API: Ollama, LM Studio or vLLM on your own hardware, or OpenAI, OpenRouter, Gemini and others.",
+      "Test a connection before saving it, keep several models, and pick which one each feature uses.",
+      "AI categorization and Improved descriptions, each with its own mode, import setting and image sharing.",
+      "A Manage tab per feature to run it over the library and review what it suggested.",
+    ],
+    link: { label: "AI categorization and descriptions", href: url("docs/guides/ai/") },
+    image: ai,
+    alt: "The AI page with configured models and feature tiles",
+  },
+  {
+    id: "users",
+    short: "Users",
+    icon: "users",
+    title: "Manage the people using it",
+    intro: "Everyone with an account on this Thingport, with what they've stored and how they sign in.",
+    points: [
+      "Model and collection counts per person, and whether their MakerWorld account is connected.",
+      "Make members admins. Only the instance owner, the first account, can take that back.",
+      "See how each person signs in, with a warning for anyone left with no way in.",
+      "Delete an account with all its models, after typing its email to confirm.",
+    ],
+    image: users,
+    alt: "The Users page with roles, model counts and sign-in methods",
+  },
+  {
+    id: "logs",
+    short: "Logs",
+    icon: "search",
+    title: "Know what happened",
+    intro: "A log of what each person did, filtered by person and date.",
+    points: [
+      "Sign-ins, imports, uploads, edits and deletions, collection syncs, role changes and provider switches.",
+      "AI runs, with how many models were checked, suggested, applied and failed.",
+    ],
+    image: logs,
+    alt: "The Logs page with recent activity",
+  },
+];
+
+const MORE = [
+  {
+    title: "Import queue",
+    text: "Links sent from Thingport Grab and imports waiting to run, to start, pause, retry or clear.",
+    image: importQueue,
+  },
+  {
+    title: "Connections",
+    text: "FlareSolverr, email (SMTP) and the database, each with a test before it's saved.",
+    image: connections,
+  },
+  {
+    title: "Rendering",
+    text: "Simplify the 3D previews of very detailed models, and choose how card thumbnails are made.",
+    image: rendering,
+  },
+  {
+    title: "Captcha",
+    text: "Ask for a captcha on sign-in, registration, import or account changes. Off everywhere by default.",
+    image: captcha,
+  },
+  {
+    title: "Triggers",
+    text: "One-off maintenance jobs: link missing authors, refetch descriptions, or clear out a user's models.",
+    image: triggers,
+  },
+];
+---
+
+<BaseLayout
+  title="Administration"
+  description="A tour of Thingport's administration: System Health, providers you can turn on and off, storage layout, single sign-on, AI models, users, logs and more."
+>
+  <div class="container page-head">
+    <span class="eyebrow">Features · Administration</span>
+    <h1>Everything an admin needs, in the browser</h1>
+    <p>
+      The first account on a Thingport is its admin. Administration, in the sidebar, has a page for each part of the
+      instance, so there's no config file to edit after the first start.
+    </p>
+    <FeatureJump sections={[...SECTIONS, { id: "more", short: "And more", icon: "sliders" }]} />
+  </div>
+
+  <FeatureSections sections={SECTIONS} />
+
+  <section id="more" class="section alt">
+    <div class="container">
+      <div class="section-head">
+        <h2>And the rest</h2>
+      </div>
+      <ul class="more-grid">
+        {
+          MORE.map((m) => (
+            <li class="card">
+              <figure class="thumb">
+                <Image src={m.image} alt={m.title} widths={[400, 700]} sizes="(min-width: 48rem) 22rem, 100vw" />
+              </figure>
+              <h3>{m.title}</h3>
+              <p>{m.text}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container final">
+      <h2>Ready to give it a try?</h2>
+      <p class="muted">It takes about five minutes on any machine that runs Docker.</p>
+      <a class="btn btn-primary" href={url("docs/install/")}>Install Thingport <Icon name="arrow" /></a>
+      <p><a href={url("features/")}>Or see everything else Thingport does</a></p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .alt {
+    background: var(--panel-alt);
+    border-block: 1px solid var(--border);
+  }
+  .more-grid {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  }
+  .more-grid h3 {
+    margin: 0.9rem 0 0.35rem;
+  }
+  .more-grid p {
+    margin: 0;
+    color: var(--text-muted);
+  }
+  .thumb {
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+  .thumb :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .final {
+    text-align: center;
+  }
+  .final h2 {
+    margin-top: 0;
+  }
+</style>

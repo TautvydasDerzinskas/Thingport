@@ -15,6 +15,10 @@
 //   --headed                        show the browser
 //
 // The account's theme and Categories/Folders choice are switched for the shots and restored afterwards.
+//
+// The administration, AI and single sign-on shots (13 onwards) need an admin account, at least one AI model with
+// both AI features on and some suggestions waiting, and an OIDC provider that's switched on and connected to the
+// account. Email addresses on the page are blurred.
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
@@ -83,6 +87,34 @@ async function openConfiguration(page, displayName, tab) {
   await page.getByRole("menuitem", { name: "Configuration" }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByRole("button", { name: tab, exact: true }).click();
+  return dialog;
+}
+
+// Other people's addresses (Users, Logs) and the account's own shouldn't end up in published screenshots.
+async function blurEmails(page) {
+  await page.evaluate(() => {
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (/[^\s@]+@[^\s@]+\.[^\s@]+/.test(node.textContent ?? "") && node.parentElement) {
+        node.parentElement.style.filter = "blur(5px)";
+      }
+    }
+  });
+}
+
+async function openAdmin(page, path) {
+  await page.goto(path);
+  await settle(page, 0);
+}
+
+/** Opens an AI feature's dialog from its tile on the AI page, on the given tab. */
+async function openAiFeature(page, feature, tab) {
+  await openAdmin(page, "/admin-ai");
+  await page.getByRole("button", { name: `${feature} settings`, exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.waitFor();
+  if (tab) await dialog.getByRole("button", { name: tab, exact: true }).click();
+  await settle(page);
   return dialog;
 }
 
@@ -201,6 +233,122 @@ const SHOTS = [
       await openConfiguration(page, ctx.displayName, "Providers");
     },
   },
+  { name: "13_admin_overview", run: (page) => openAdmin(page, "/admin") },
+  { name: "14_admin_providers", run: (page) => openAdmin(page, "/admin-providers") },
+  { name: "15_admin_storage", run: (page) => openAdmin(page, "/admin-storage") },
+  {
+    name: "16_admin_auth",
+    run: async (page) => {
+      await openAdmin(page, "/admin-auth");
+      // The sign-in methods, with any OIDC providers, at the top rather than just peeking in at the bottom.
+      await page.getByText("Sign-in Methods", { exact: true }).evaluate((el) => el.scrollIntoView({ block: "start" }));
+    },
+  },
+  { name: "17_admin_ai", run: (page) => openAdmin(page, "/admin-ai") },
+  {
+    name: "18_admin_users",
+    run: async (page) => {
+      await openAdmin(page, "/admin-users");
+      await blurEmails(page);
+    },
+  },
+  {
+    name: "19_admin_logs",
+    run: async (page) => {
+      await openAdmin(page, "/admin-logs");
+      await blurEmails(page);
+    },
+  },
+  {
+    name: "20_ai_add_model",
+    run: async (page) => {
+      await openAdmin(page, "/admin-ai");
+      // The default model's own settings, so the form is filled in and its model list loads.
+      await page.getByLabel(/, default AI$/).dblclick();
+      await page.getByRole("dialog").waitFor();
+    },
+  },
+  { name: "21_ai_categorization_settings", run: (page) => openAiFeature(page, "AI Categorization", "Settings") },
+  { name: "22_ai_suggestions", run: (page) => openAiFeature(page, "AI Categorization", "Manage") },
+  {
+    name: "23_ai_description_compare",
+    run: async (page) => {
+      const dialog = await openAiFeature(page, "Improved descriptions", "Manage");
+      await dialog.getByRole("button", { name: "Compare", exact: true }).first().click();
+      // The dialog underneath is hidden from the accessibility tree while this one is open.
+      await page.getByRole("dialog").filter({ hasText: "Original" }).waitFor();
+    },
+  },
+  {
+    name: "24_oidc_provider_dialog",
+    run: async (page) => {
+      await openAdmin(page, "/admin-auth");
+      await page.getByRole("button", { name: "Edit", exact: true }).first().click();
+      await page.getByRole("dialog").waitFor();
+    },
+  },
+  {
+    name: "25_sign_in_sso",
+    run: async (page) => {
+      // Signed out, in a context of its own, so the session used for the other shots stays.
+      const signedOut = await browser.newContext(contextOptions);
+      const other = await signedOut.newPage();
+      try {
+        await other.goto("/");
+        await other
+          .getByRole("link", { name: /^Continue with / })
+          .first()
+          .waitFor();
+        await settle(other);
+        await other.screenshot({ path: path.join(outDir, "25_sign_in_sso.png") });
+      } finally {
+        await signedOut.close();
+      }
+      return { saved: true };
+    },
+  },
+  {
+    name: "26_profile_sign_in",
+    run: async (page) => {
+      await page.goto("/profile");
+      await settle(page, 0);
+      await page
+        .getByText(/^Connected as |^Connected$|Not connected\. Connect it/)
+        .first()
+        .scrollIntoViewIfNeeded();
+      await blurEmails(page);
+    },
+  },
+  { name: "27_admin_import_queue", run: (page) => openAdmin(page, "/admin-queue") },
+  { name: "28_admin_connections", run: (page) => openAdmin(page, "/admin-connections") },
+  { name: "29_admin_rendering", run: (page) => openAdmin(page, "/admin-rendering") },
+  { name: "30_admin_captcha", run: (page) => openAdmin(page, "/admin-captcha") },
+  {
+    name: "32_system_health",
+    run: async (page) => {
+      await openAdmin(page, "/admin");
+      await page.getByRole("button", { name: "Run full test" }).click();
+      // Disabled while the checks run; FlareSolverr and a local AI model can take a while to answer.
+      await page.waitForFunction(
+        () => {
+          const button = [...document.querySelectorAll("button")].find((b) => b.textContent?.includes("Run full test"));
+          return button && !button.disabled;
+        },
+        null,
+        { timeout: 120000 },
+      );
+      // Taller, so every part fits under the heading.
+      await page.setViewportSize({ width: VIEWPORT.width, height: 1500 });
+      await page.getByText("System Health", { exact: true }).evaluate((el) => el.scrollIntoView({ block: "start" }));
+    },
+  },
+  {
+    name: "31_admin_triggers",
+    run: async (page) => {
+      await openAdmin(page, "/admin-triggers");
+      await blurEmails(page);
+    },
+  },
 ];
 
 function wanted(shot) {
@@ -220,7 +368,7 @@ async function api(token, method, url, body) {
 }
 
 const browser = await chromium.launch({ headless: !args.headed });
-const context = await browser.newContext({
+const contextOptions = {
   baseURL: baseUrl,
   viewport: VIEWPORT,
   deviceScaleFactor: 2,
@@ -228,7 +376,8 @@ const context = await browser.newContext({
   colorScheme: "light",
   // Self-hosted instances often run on a self-signed certificate.
   ignoreHTTPSErrors: true,
-});
+};
+const context = await browser.newContext(contextOptions);
 // English UI and an expanded sidebar, whatever this browser profile last had.
 await context.addInitScript(() => {
   localStorage.setItem("thingport_language", "en");
@@ -276,10 +425,15 @@ try {
     process.stdout.write(`${shot.name}... `);
     // 09 switches to dark through the UI, which saves it to the account.
     await api(token, "PATCH", "/settings/theme", { theme: "light" });
-    await shot.run(page, ctx);
-    await settle(page);
-    await page.screenshot({ path: path.join(outDir, `${shot.name}.png`) });
+    await page.setViewportSize(VIEWPORT);
+    const result = await shot.run(page, ctx);
+    if (!result?.saved) {
+      await settle(page);
+      await page.screenshot({ path: path.join(outDir, `${shot.name}.png`) });
+    }
     console.log("done");
+    // Twice: a dialog can open over another one.
+    await page.keyboard.press("Escape").catch(() => undefined);
     await page.keyboard.press("Escape").catch(() => undefined);
   }
   console.log(`Saved to ${outDir}`);

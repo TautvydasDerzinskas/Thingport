@@ -120,3 +120,6 @@ Two optional settings, added to the `backend` service's `environment` in `docker
   `60000`, one minute.
 
 Checks run one collection at a time across all users, since they all reach the providers from the same server.
+
+Turning a provider off under **Administration → Providers** pauses every collection synced from it, for every user.
+They pick up again once it's back on.

@@ -1,0 +1,51 @@
+---
+import Icon from "./Icon.astro";
+import type { FeatureSection } from "./FeatureSections.astro";
+
+type Props = { sections: readonly Pick<FeatureSection, "id" | "short" | "icon">[] };
+const { sections } = Astro.props;
+---
+
+<nav class="jump" aria-label="On this page">
+  {
+    sections.map((s) => (
+      <a href={`#${s.id}`}>
+        <Icon name={s.icon} size={16} />
+        {s.short}
+      </a>
+    ))
+  }
+</nav>
+
+<style>
+  .jump {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+  }
+  .jump a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--panel);
+    color: var(--heading);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  :global(:root[data-theme="dark"]) .jump a {
+    border-radius: 0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme="light"])) .jump a {
+      border-radius: 0;
+    }
+  }
+  .jump a:hover {
+    border-color: var(--accent);
+  }
+</style>

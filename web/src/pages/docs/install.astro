@@ -94,6 +94,15 @@ const headings = [
     > so you can import from MakerWorld and Thingiverse. Printables works right away.
   </p>
 
+  <h2 id="4-check-system-health">4. Check System Health</h2>
+  <p>
+    Open <strong>Administration → Overview → System Health</strong> and click <strong>Run full test</strong>. Ideally
+    everything is green. Anything marked <strong>Required</strong> or <strong>Recommended</strong> that isn't green means
+    Thingport, or part of it, won't work properly until it's fixed, and each problem says how. See <a
+      href={url("docs/guides/system-health/")}>System Health</a
+    >.
+  </p>
+
   <h2 id="updating">Updating</h2>
   <p>
     Pull the latest images and recreate the containers. Your database and files live in Docker volumes and are kept.

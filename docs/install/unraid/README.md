@@ -42,6 +42,10 @@ Once all 4 containers show healthy/running, open `http://<your-unraid-ip>:<WEB_P
 Thingport icon in the Docker tab, via the `net.unraid.docker.*` labels already set in the
 compose file. The first account you register becomes the admin account.
 
+Then open **Administration → Overview → System Health** and click **Run full test**. Everything marked Required or
+Recommended should be green; anything that isn't means part of Thingport won't work until it's fixed. See
+[System Health](../../guides/system-health.md).
+
 ## Notes
 
 - **Do not rename the `backend` service/container.** The frontend's nginx config resolves

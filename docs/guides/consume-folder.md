@@ -32,7 +32,7 @@ it. Use the same IDs that own the folder on the host. On Unraid that's usually `
 
 ## 2. Choose where models go and how
 
-Open **Administration → Settings → Consume Folder**. If the volume is mounted, it says it's watching `/app/consume`.
+Open **Administration → Storage → Consume Folder**. If the volume is mounted, it says it's watching `/app/consume`.
 
 ![Consume folder settings](images/consume-settings.png)
 

@@ -2,13 +2,13 @@
 
 Importing from **Printables** works out of the box (its public API needs no credential). **MakerWorld** and **Thingiverse** each need a credential from your own account before Thingport can import from them.
 
-Connect them under **Configuration → Providers**: open the user menu (your avatar, top right) and choose **Configuration**, or click one of the provider chips at the bottom of that menu. Right-click a provider to connect or disconnect it, or double-click one that isn't connected yet. A green tick means it's connected.
+Connect them under **Configuration → Providers**: open the user menu (your avatar, top right) and choose **Configuration**, or click one of the provider chips at the bottom of that menu. Right-click a provider to connect or disconnect it, or double-click one that isn't connected yet. A green tick means it's connected. A provider your admin has [turned off](#turning-a-provider-off) isn't listed.
 
 ![Configuration, Providers section with MakerWorld, Thingiverse and Printables connected](../frontend/src/assets/screenshots/11_configuration_providers.png)
 
 ## Thingiverse Access Token
 
-Instance-wide, admin-configured (Configuration > Providers > Thingiverse, or Administration > Settings > Thingiverse Access Token) -- one token is shared by every user's Thingiverse imports. Other users see Thingiverse as connected once an admin has set it up.
+Instance-wide, admin-configured (Configuration > Providers > Thingiverse, or Administration > Providers > Thingiverse Access Token) -- one token is shared by every user's Thingiverse imports. Other users see Thingiverse as connected once an admin has set it up.
 
 1. Sign in to your Thingiverse account, then go to [thingiverse.com/apps/create](https://www.thingiverse.com/apps/create).
 2. Register a new app. The name/description don't matter for this; pick whichever Application Type doesn't require a redirect URL (e.g. "Desktop" or "Mobile") -- a "Web App" asks for OAuth details you don't need here.
@@ -36,3 +36,11 @@ The [Thingport Grab](../extension/README.md) browser extension captures this aut
 If there's no cookie named `token` (MakerWorld occasionally renames things), use the **Network** tab instead: reload the page, click any request to `makerworld.com`, open its Request Headers, and copy the whole `cookie:` value. Thingport only pulls the `token=...` part out of it and ignores the rest, so pasting the entire header works too.
 
 This is your own MakerWorld login session -- don't share it, and expect to redo this occasionally, since MakerWorld sessions eventually expire.
+
+## Turning a provider off
+
+Admins choose which providers this Thingport imports from, under **Administration → Providers**. All three are on by
+default. Turn one off and nothing new comes from it for anyone: links to it, Thingport Grab and the import queue are
+refused, its synced collections pause, and background jobs skip it. It also disappears from everyone's
+**Configuration → Providers**. Models already imported from it stay as they are, and turning it back on picks up where
+it left off. The Thingiverse Access Token is set on the same page.

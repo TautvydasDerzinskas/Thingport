@@ -1,0 +1,143 @@
+---
+import type { ImageMetadata } from "astro";
+import { Image } from "astro:assets";
+import Icon from "./Icon.astro";
+
+type IconName = Parameters<typeof Icon>[0]["name"];
+
+export type FeatureSection = {
+  id: string;
+  short: string;
+  icon: IconName;
+  title: string;
+  intro: string;
+  points: readonly string[];
+  link?: { label: string; href: string };
+  image: ImageMetadata;
+  /** The dark twin of an animated GIF in `image`, which Image would flatten to a still. */
+  animated?: ImageMetadata;
+  alt: string;
+};
+
+type Props = { sections: readonly FeatureSection[] };
+const { sections } = Astro.props;
+---
+
+{
+  sections.map((s, i) => (
+    <section id={s.id} class:list={["section", "feature", { alt: i % 2 === 1 }]}>
+      <div class="container split">
+        <div>
+          <span class="feature-icon">
+            <Icon name={s.icon} size={22} />
+          </span>
+          <h2>{s.title}</h2>
+          <p class="intro">{s.intro}</p>
+          <ul class="checks">
+            {s.points.map((p) => (
+              <li>
+                <Icon name="check" size={18} class="check" />
+                <span>{p}</span>
+              </li>
+            ))}
+          </ul>
+          {s.link && (
+            <a class="more" href={s.link.href}>
+              {s.link.label} <Icon name="arrow" size={16} />
+            </a>
+          )}
+        </div>
+        <figure class="shot">
+          {s.animated ? (
+            [
+              { img: s.image, theme: "only-light" },
+              { img: s.animated, theme: "only-dark" },
+            ].map(({ img, theme }) => (
+              <img class={theme} src={img.src} alt={s.alt} width={img.width} height={img.height} loading="lazy" />
+            ))
+          ) : (
+            <Image src={s.image} alt={s.alt} widths={[480, 800, 1100]} sizes="(min-width: 48rem) 36rem, 100vw" />
+          )}
+        </figure>
+      </div>
+    </section>
+  ))
+}
+
+<style>
+  .alt {
+    background: var(--panel-alt);
+    border-block: 1px solid var(--border);
+  }
+  .split {
+    display: grid;
+    gap: 2.5rem;
+    align-items: center;
+    grid-template-columns: 1fr 1.15fr;
+  }
+  .alt .split > figure {
+    order: -1;
+  }
+  h2 {
+    font-size: clamp(1.5rem, 3.2vw, 2rem);
+    margin-top: 1rem;
+  }
+  .intro {
+    color: var(--text-muted);
+    font-size: 1.075rem;
+  }
+  .feature-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    color: var(--link);
+  }
+  .checks {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.25rem;
+  }
+  .checks li {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+  }
+  .checks li + li {
+    margin-top: 0.55rem;
+  }
+  .checks :global(.check) {
+    flex: none;
+    margin-top: 0.2rem;
+    color: var(--accent);
+  }
+  .more {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-weight: 600;
+  }
+  .shot {
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--panel);
+    box-shadow: var(--shadow);
+  }
+  .shot :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  @media (max-width: 48rem) {
+    .split {
+      grid-template-columns: 1fr;
+    }
+    .alt .split > figure {
+      order: 0;
+    }
+  }
+</style>
