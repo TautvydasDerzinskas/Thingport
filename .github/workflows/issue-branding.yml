@@ -15,12 +15,21 @@ jobs:
       - uses: actions/github-script@v7
         with:
           script: |
-            const logo =
-              'https://raw.githubusercontent.com/TautvydasDerzinskas/Thingport/main/frontend/src/assets/logos/thingport-lockup-stacked-color.svg';
+            const base = 'https://raw.githubusercontent.com/TautvydasDerzinskas/Thingport/main/frontend/src/assets/logos';
+            const light = `${base}/thingport-lockup-compact-color.svg`;
+            const dark = `${base}/thingport-lockup-compact-on-dark.svg`;
             const body = context.payload.issue.body ?? '';
-            if (body.includes(logo)) return;
+            // Issues branded before the theme-aware logo carry the stacked one.
+            if (body.includes(light) || body.includes(`${base}/thingport-lockup-stacked-color.svg`)) return;
+            // GitHub picks the source matching the viewer's light or dark theme.
+            const logo = [
+              '<p align="center"><picture>',
+              `<source media="(prefers-color-scheme: dark)" srcset="${dark}">`,
+              `<img src="${light}" alt="Thingport" width="240">`,
+              '</picture></p>',
+            ].join('');
             await github.rest.issues.update({
               ...context.repo,
               issue_number: context.issue.number,
-              body: `<p align="center"><img src="${logo}" alt="Thingport" width="160"></p>\n\n${body}`,
+              body: `${logo}\n\n${body}`,
             });

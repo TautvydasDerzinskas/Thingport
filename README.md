@@ -1,6 +1,9 @@
 <div align="center">
 
-<img src="frontend/src/assets/logos/thingport-lockup-stacked-color.svg" alt="Thingport" width="250">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/logos/thingport-lockup-compact-on-dark.svg">
+  <img src="frontend/src/assets/logos/thingport-lockup-compact-color.svg" alt="Thingport" width="320">
+</picture>
 
 <h3>Your personal 3D model library.</h3>
 
