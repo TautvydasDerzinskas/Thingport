@@ -226,18 +226,19 @@ Windows and Linux binaries cross-compile with `CGO_ENABLED=0`.
 Announcements for every instance, such as a known bug or a new feature, live in
 [`system-notifications.json`](../system-notifications.json) at the repo root. Each backend fetches it
 from `main` at startup and every 6 hours, and sends each entry once to each user it's meant for, as an
-ordinary notification (the System tab). To post one, add an entry and merge it:
+ordinary notification (the System tab). To post one, add an entry to `entries` and merge it:
 
 ```json
 {
-  "notifications": [
+  "entries": [
     {
       "id": "2026-10-imports-fail-on-printables",
       "title": "Printables imports fail since Oct 10",
       "body": "Printables changed its API. A fix is on the way; update when it lands.",
       "url": "https://github.com/TautvydasDerzinskas/Thingport/issues/123",
       "published_at": "2026-10-11T12:00:00Z",
-      "audience": "admins"
+      "audience": "admins",
+      "version": "<1.2.0"
     }
   ]
 }
@@ -245,8 +246,13 @@ ordinary notification (the System tab). To post one, add an entry and merge it:
 
 - `id` must be unique and never reused: it's what stops an entry being sent twice.
 - `body` and `url` are optional; `url` must be `https://`, and the notification shows its domain.
+- `path` is an optional in-app page opened on click, e.g. `/admin`.
 - `published_at` is the date shown; a future date waits until then.
 - `audience` is `admins` (the default) or `all` for every user.
+- `version` limits it to instances on certain versions: `1.2.0` exactly, or `<`, `<=`, `>`, `>=` a
+  version. Leave it out for all versions. An instance that later updates into the range still gets it.
+- Versions before 1.0.0 read only the `notifications` list and ignore `version`, so add there only what
+  every one of them should get; everything else goes in `entries`.
 - Entries older than 90 days aren't sent, so old ones can stay in the file or be removed.
 - `SYSTEM_NOTIFICATIONS_URL` points a backend at another file; an empty value turns fetching off.
 

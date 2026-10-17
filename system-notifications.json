@@ -7,6 +7,26 @@
       "url": "https://github.com/TautvydasDerzinskas/Thingport",
       "published_at": "2026-10-11T12:00:00Z",
       "audience": "all"
+    },
+    {
+      "id": "2026-10-update-to-1.0.0",
+      "title": "Thingport 1.0.0 is out",
+      "body": "The first stable release brings a remade administration panel, single sign-on providers, and many bug fixes and UI improvements. Update to get them.",
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/releases",
+      "published_at": "2026-10-17T12:00:00Z",
+      "audience": "admins",
+      "version": "<1.0.0"
+    }
+  ],
+  "entries": [
+    {
+      "id": "2026-10-welcome-to-1.0.0",
+      "title": "Welcome to Thingport 1.0.0",
+      "body": "Thanks for updating to the first stable release! Run a system health check in Administration to make sure everything is set up right. From now on, releases will come less often but pack more changes.",
+      "path": "/admin",
+      "published_at": "2026-10-17T12:00:00Z",
+      "audience": "admins",
+      "version": "1.0.0"
     }
   ]
 }

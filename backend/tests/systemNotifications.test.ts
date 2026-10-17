@@ -4,6 +4,7 @@ import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import {
   deliverSystemNotifications,
+  matchesVersion,
   parseSystemNotifications,
   type SystemNotificationEntry,
 } from "../src/services/systemNotificationService";
@@ -51,11 +52,19 @@ describe("system notifications", () => {
         { id: "bad-url", title: "x", published_at: "2026-10-01T00:00:00Z", url: "not a url" },
         { id: "plain-http", title: "x", published_at: "2026-10-01T00:00:00Z", url: "http://example.com" },
         { id: "bad-audience", title: "x", published_at: "2026-10-01T00:00:00Z", audience: "everyone" },
+        { id: "bad-version", title: "x", published_at: "2026-10-01T00:00:00Z", version: "~1.0" },
+        { id: "off-site-path", title: "x", published_at: "2026-10-01T00:00:00Z", path: "//evil.example" },
+        { id: "for-old", title: "x", published_at: "2026-10-01T00:00:00Z", version: "<1.0.0" },
       ],
     });
-    expect(parsed.map((e) => e.id)).toEqual(["ok"]);
+    expect(parsed.map((e) => e.id)).toEqual(["ok", "for-old"]);
     expect(parsed[0].audience).toBe("admins");
     expect(parseSystemNotifications({ nope: true })).toEqual([]);
+    const both = parseSystemNotifications({
+      notifications: [{ id: "legacy", title: "x", published_at: "2026-10-01T00:00:00Z" }],
+      entries: [{ id: "new", title: "x", published_at: "2026-10-01T00:00:00Z", version: "1.0.0" }],
+    });
+    expect(both.map((e) => e.id)).toEqual(["legacy", "new"]);
   });
 
   it("sends due entries to admins only, dated when they were posted", async () => {
@@ -78,6 +87,28 @@ describe("system notifications", () => {
     await deliverSystemNotifications([entry("everyone", 1, { audience: "all" })]);
     expect((await systemOf(member.id)).map((n) => n.title)).toEqual(["Title everyone"]);
     expect((await systemOf(admin.id)).some((n) => n.title === "Title everyone")).toBe(true);
+  });
+
+  it("matches version ranges", () => {
+    expect(matchesVersion(undefined, null)).toBe(true);
+    expect(matchesVersion("<1.0.0", "0.9.12")).toBe(true);
+    expect(matchesVersion("<1.0.0", "1.0.0")).toBe(false);
+    expect(matchesVersion("1.0.0", "1.0.0")).toBe(true);
+    expect(matchesVersion("=1.0.0", "1.0.1")).toBe(false);
+    expect(matchesVersion(">1.0.0", "1.10.0")).toBe(true);
+    expect(matchesVersion(">=1.0.0", "1.0.0")).toBe(true);
+    expect(matchesVersion("<=1.0.0", "1.0.1")).toBe(false);
+    expect(matchesVersion("1.0.0", null)).toBe(false);
+  });
+
+  it("sends a version-targeted entry only once the instance is in range", async () => {
+    const targeted = entry("v1", 1, { version: "1.0.0", path: "/admin" });
+    await deliverSystemNotifications([targeted], new Date(), "0.9.0");
+    expect((await systemOf(admin.id)).some((n) => n.title === "Title v1")).toBe(false);
+    await deliverSystemNotifications([targeted], new Date(), "1.0.0");
+    const sent = (await systemOf(admin.id)).filter((n) => n.title === "Title v1");
+    expect(sent).toHaveLength(1);
+    expect(sent[0].internalPath).toBe("/admin");
   });
 
   it("never sends the same entry twice, even after it was deleted", async () => {
