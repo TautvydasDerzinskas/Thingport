@@ -166,8 +166,13 @@ describe("inviting", () => {
     expect(lookup.status).toBe(200);
     expect(lookup.body.email).toBe(invitee.toLowerCase());
 
-    const log = await prisma.log.findFirst({ where: { action: "user_invited" }, orderBy: { createdAt: "desc" } });
-    expect(log?.details).toMatchObject({ email: invitee.toLowerCase() });
+    // The log is written after the response, so wait for it.
+    await vi.waitFor(async () => {
+      const log = await prisma.log.findFirst({
+        where: { action: "user_invited", details: { path: ["email"], equals: invitee.toLowerCase() } },
+      });
+      expect(log).not.toBeNull();
+    });
   });
 
   it("leaves no invitation behind when the email can't be sent", async () => {
