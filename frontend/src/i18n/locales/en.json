@@ -603,6 +603,14 @@
               "low_memory": "Memory is running low. Give the container more memory, or turn on Simplify previews under Rendering so heavy models need less."
             }
           },
+          "internet": {
+            "name": "Internet",
+            "description": "Reaching the outside world from the server. Without it, providers can't be reached: importing models, syncing collections and checking for updates won't work.",
+            "problems": {
+              "offline": "The server can't reach the internet. Check its network, DNS and any proxy or firewall in front of it; Docker containers also need outbound access. Uploading and browsing your library still work.",
+              "timeout": "Nothing answered in time. The connection may be very slow, or something on the network is dropping requests."
+            }
+          },
           "flaresolverr": {
             "name": "FlareSolverr",
             "description": "Gets past Cloudflare's checks for providers that use them, mostly Thingiverse and Printables. Without it, imports and syncs from those sites will be blocked.",

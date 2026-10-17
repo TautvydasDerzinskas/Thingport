@@ -604,6 +604,14 @@
               "low_memory": "Atminties mažai. Skirkite konteineriui daugiau atminties arba skiltyje „Atvaizdavimas“ įjunkite peržiūrų supaprastinimą."
             }
           },
+          "internet": {
+            "name": "Internetas",
+            "description": "Serverio ryšys su išoriniu pasauliu. Be jo tiekėjai nepasiekiami: modelių importavimas, kolekcijų sinchronizavimas ir atnaujinimų tikrinimas neveiks.",
+            "problems": {
+              "offline": "Serveris nepasiekia interneto. Patikrinkite jo tinklą, DNS ir prieš jį esantį tarpinį serverį ar ugniasienę; Docker konteineriams taip pat reikia išeinančio ryšio. Įkėlimas ir bibliotekos naršymas vis tiek veikia.",
+              "timeout": "Niekas laiku neatsakė. Ryšys gali būti labai lėtas arba tinkle kažkas blokuoja užklausas."
+            }
+          },
           "flaresolverr": {
             "name": "FlareSolverr",
             "description": "Įveikia Cloudflare patikras tiekėjuose, kurie jas naudoja – dažniausiai Thingiverse ir Printables. Be jo importai ir sinchronizacijos iš šių svetainių bus blokuojami.",

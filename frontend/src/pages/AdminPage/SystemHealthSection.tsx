@@ -13,6 +13,7 @@ import Typography from "@mui/material/Typography";
 import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import CloudOutlinedIcon from "@mui/icons-material/CloudOutlined";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
+import LanguageIcon from "@mui/icons-material/Language";
 import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import MemoryIcon from "@mui/icons-material/Memory";
 import PlaylistPlayIcon from "@mui/icons-material/PlaylistPlay";
@@ -41,6 +42,8 @@ const COMPONENTS: Record<HealthComponent, { icon: React.ReactNode; need: Need; s
   database: { icon: <StorageIcon />, need: "required", settings: "/admin-connections?tab=database" },
   storage: { icon: <FolderOutlinedIcon />, need: "required", settings: "/admin-storage" },
   memory: { icon: <MemoryIcon />, need: "required", settings: "/admin-rendering" },
+  // Nothing in Thingport to set up: it's the server's network.
+  internet: { icon: <LanguageIcon />, need: "recommended" },
   flaresolverr: { icon: <ShieldOutlinedIcon />, need: "recommended", settings: "/admin-connections?tab=flaresolverr" },
   thingiverse: { icon: <CloudOutlinedIcon />, need: "recommended", settings: "/admin-providers" },
   ai: { icon: <AutoAwesomeOutlinedIcon />, need: "optional", settings: "/admin-ai" },
@@ -62,6 +65,7 @@ function factsLine(result: HealthResult, t: (key: string, options?: Record<strin
   if (typeof facts.version === "string" && facts.version) lines.push(facts.version);
   if (typeof facts.model === "string") lines.push(`${facts.model} @ ${facts.host}`);
   if (typeof facts.host === "string" && result.component === "smtp") lines.push(`${facts.host}:${facts.port}`);
+  if (typeof facts.host === "string" && result.component === "internet") lines.push(facts.host);
   if (bytes("free_bytes")) {
     lines.push(t("adminSettings.health.facts.diskFree", { free: bytes("free_bytes"), total: bytes("total_bytes") }));
   }
@@ -248,7 +252,7 @@ export default function SystemHealthSection({ onUnauthorized }: Props) {
                 onTest={() => void test(component)}
               />
             ))
-          : Array.from({ length: 7 }, (_, index) => (
+          : Array.from({ length: Object.keys(COMPONENTS).length }, (_, index) => (
               <Box key={index} sx={{ p: 2, "&:not(:last-of-type)": { borderBottom: 1, borderColor: "divider" } }}>
                 <Skeleton width="40%" />
                 <Skeleton width="85%" />

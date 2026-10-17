@@ -21,7 +21,8 @@ export type AdminUser = {
   created_at: string;
 };
 
-export type HealthComponent = "database" | "storage" | "memory" | "flaresolverr" | "thingiverse" | "ai" | "smtp";
+export type HealthComponent =
+  "database" | "storage" | "memory" | "internet" | "flaresolverr" | "thingiverse" | "ai" | "smtp";
 export type HealthStatus = "ok" | "warning" | "error" | "not_configured";
 
 export type HealthResult = {

@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
@@ -24,12 +24,16 @@ const as = (token: string) => ({ Authorization: `Bearer ${token}` });
 type Report = {
   components: {
     component: string;
-    result: { status: string; code: string; checked_at: string; facts: object } | null;
+    result: { status: string; code: string; detail: string | null; checked_at: string; facts: object } | null;
   }[];
   full_checked_at: string | null;
 };
 const resultOf = (report: Report, component: string) =>
   report.components.find((c) => c.component === component)!.result;
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe("system health", () => {
   it("lists every component by importance, the database first and SMTP, which is optional, last", async () => {
@@ -39,6 +43,7 @@ describe("system health", () => {
       "database",
       "storage",
       "memory",
+      "internet",
       "flaresolverr",
       "thingiverse",
       "ai",
@@ -87,6 +92,25 @@ describe("system health", () => {
       });
     }
     expect(after.full_checked_at).toBe(before.full_checked_at);
+  });
+
+  it("reports the server offline when nothing outside answers", async () => {
+    vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(
+      Object.assign(new TypeError("fetch failed"), { cause: { code: "ENOTFOUND" } }),
+    );
+    const res = await request(app).post("/api/admin/health/test").set(as(admin)).send({ component: "internet" });
+    expect(resultOf(res.body, "internet")).toMatchObject({
+      status: "error",
+      code: "offline",
+      detail: "ENOTFOUND",
+      facts: { host: expect.any(String) },
+    });
+  });
+
+  it("reports the server online on any answer", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response("[]", { status: 200 }));
+    const res = await request(app).post("/api/admin/health/test").set(as(admin)).send({ component: "internet" });
+    expect(resultOf(res.body, "internet")).toMatchObject({ status: "ok", code: "ok" });
   });
 
   it("is for admins only, and refuses a component it doesn't know", async () => {

@@ -126,10 +126,11 @@ export const FLARESOLVERR_URL = (process.env.FLARESOLVERR_URL || "").trim();
 export const FLARESOLVERR_TIMEOUT_MS = envInt("FLARESOLVERR_TIMEOUT_MS", 60000);
 export const FLARESOLVERR_SESSION_TTL_MS = envInt("FLARESOLVERR_SESSION_TTL_MS", 15 * 60 * 1000);
 
+export const DEFAULT_SYSTEM_NOTIFICATIONS_URL =
+  "https://raw.githubusercontent.com/TautvydasDerzinskas/Thingport/main/system-notifications.json";
 // Announcements for admins, e.g. known bugs. Set to an empty value to stop fetching them.
 export const SYSTEM_NOTIFICATIONS_URL = (
-  process.env.SYSTEM_NOTIFICATIONS_URL ??
-  "https://raw.githubusercontent.com/TautvydasDerzinskas/Thingport/main/system-notifications.json"
+  process.env.SYSTEM_NOTIFICATIONS_URL ?? DEFAULT_SYSTEM_NOTIFICATIONS_URL
 ).trim();
 
 export const API_PORT = envInt("API_PORT", 8000);

@@ -3,7 +3,13 @@ import os from "node:os";
 import path from "node:path";
 import nodemailer from "nodemailer";
 import type { Prisma } from "@prisma/client";
-import { cgroupMemoryLimitBytes, MODEL_PREVIEW_MAX_MEMORY_MB, STORAGE } from "../config";
+import {
+  cgroupMemoryLimitBytes,
+  DEFAULT_SYSTEM_NOTIFICATIONS_URL,
+  MODEL_PREVIEW_MAX_MEMORY_MB,
+  STORAGE,
+  SYSTEM_NOTIFICATIONS_URL,
+} from "../config";
 import { prisma } from "../db";
 import { listAiProviderModels } from "./aiCategorizationService";
 import { resolveAiConnection } from "./aiConnectionService";
@@ -20,6 +26,7 @@ export const HEALTH_COMPONENTS = [
   "database",
   "storage",
   "memory",
+  "internet",
   "flaresolverr",
   "thingiverse",
   "ai",
@@ -142,6 +149,26 @@ async function checkMemory(): Promise<Found> {
     : found("ok", "ok", facts);
 }
 
+// Fetched as system notifications are; still the repo's own when an admin turned those off.
+const INTERNET_PROBE_URL = SYSTEM_NOTIFICATIONS_URL || DEFAULT_SYSTEM_NOTIFICATIONS_URL;
+const INTERNET_TIMEOUT_MS = 10_000;
+
+async function checkInternet(): Promise<Found> {
+  const host = hostOf(INTERNET_PROBE_URL);
+  const start = Date.now();
+  try {
+    const res = await fetch(INTERNET_PROBE_URL, { signal: AbortSignal.timeout(INTERNET_TIMEOUT_MS) });
+    await res.body?.cancel();
+    // Any answer at all means the server is online; whether the file is there is the repo's business.
+    return { ...found("ok", "ok", { host }), latency_ms: Date.now() - start };
+  } catch (err) {
+    if (err instanceof Error && err.name === "TimeoutError") return found("error", "timeout", { host });
+    // fetch says only "fetch failed"; the cause names it: ENOTFOUND, ECONNREFUSED...
+    const cause = err instanceof Error ? (err.cause as { code?: string; message?: string } | undefined) : undefined;
+    return found("error", "offline", { host }, cause?.code ?? cause?.message ?? message(err));
+  }
+}
+
 async function checkFlaresolverr(): Promise<Found> {
   const url = await getFlaresolverrUrl();
   if (!url) return found("not_configured", "not_configured");
@@ -207,6 +234,7 @@ const CHECKS: Record<HealthComponent, () => Promise<Found>> = {
   database: checkDatabase,
   storage: checkStorage,
   memory: checkMemory,
+  internet: checkInternet,
   flaresolverr: checkFlaresolverr,
   thingiverse: checkThingiverse,
   ai: checkAi,
