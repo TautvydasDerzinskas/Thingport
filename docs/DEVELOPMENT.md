@@ -15,7 +15,7 @@ instance, follow the Docker Compose instructions in the [README](../README.md) i
 
 ## Prerequisites
 
-- **Node.js 20 or newer.** `backend/package.json` sets `engines.node >= 20`, and CI builds on 20.
+- **Node.js 24 or newer.** The root `.nvmrc` says 24 (`nvm use` picks it up), and CI and the Docker images run on it.
 - **Docker**, to run Postgres. Everything else runs natively so you get hot reload.
 - **Go 1.21+** -- only if you're changing `bridge/`.
 

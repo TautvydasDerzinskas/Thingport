@@ -45,9 +45,16 @@ export const TAG_MOSAICS = path.join(STORAGE, "tag-mosaics");
 export const NORMALIZED_3MFS = path.join(STORAGE, "normalized-3mf");
 // Large multi-part projects take minutes on a slow CPU; the page waits for it, not the request.
 export const NORMALIZE_3MF_TIMEOUT_SECONDS = envInt("NORMALIZE_3MF_TIMEOUT_SECONDS", 600);
+
+// A worker can't even start below a few MB, and Node 24 then takes the whole process down with it.
+const MIN_PREVIEW_MEMORY_MB = 8;
+
 // Past either limit the render worker is killed and the plate gets no 3D preview. Memory is a
 // watchdog check, so a fast burst can overshoot it briefly.
-export const MODEL_PREVIEW_MAX_MEMORY_MB = envInt("MODEL_PREVIEW_MAX_MEMORY_MB", defaultPreviewMemoryMb());
+export const MODEL_PREVIEW_MAX_MEMORY_MB = Math.max(
+  MIN_PREVIEW_MEMORY_MB,
+  envInt("MODEL_PREVIEW_MAX_MEMORY_MB", defaultPreviewMemoryMb()),
+);
 export const MODEL_PREVIEW_TIMEOUT_SECONDS = envInt("MODEL_PREVIEW_TIMEOUT_SECONDS", 180);
 
 // Only the first run's value: it's copied into the database, and managed there (Admin > Auth) from then on.

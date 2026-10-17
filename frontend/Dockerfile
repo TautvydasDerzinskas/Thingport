@@ -1,7 +1,7 @@
 # Installing and building run on the build machine's own platform: their output, the static dist, is the
 # same for every architecture, and running Node under QEMU for the arm64 image is slow and has crashed
 # npm ci mid-install. Only the nginx stage below is built per platform.
-FROM --platform=$BUILDPLATFORM node:20-alpine AS dependencies
+FROM --platform=$BUILDPLATFORM node:24-alpine AS dependencies
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --no-audit --no-fund

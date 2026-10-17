@@ -1,4 +1,4 @@
-FROM node:20-alpine AS dependencies
+FROM node:24-alpine AS dependencies
 WORKDIR /app
 RUN apk add --no-cache openssl
 COPY package*.json ./
@@ -15,7 +15,7 @@ FROM dependencies AS build
 COPY . .
 RUN npm run build
 
-FROM node:20-alpine AS runtime
+FROM node:24-alpine AS runtime
 # Set by build-image.yml to the commit that triggered this image's build -- exposed via
 # GET /settings/version-check so the admin settings page can tell whether a newer commit
 # touching backend/ has landed on main since this image was published. Left "unknown" for a
@@ -31,7 +31,7 @@ COPY --from=build /app/dist ./dist
 COPY package*.json ./
 COPY prisma ./prisma
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-# node:20-alpine already ships a "node" user/group at uid/gid 1000; remove it first so our own
+# node:24-alpine already ships a "node" user/group at uid/gid 1000; remove it first so our own
 # "appuser"/"appgroup" (which docker-entrypoint.sh re-aligns to PUID/PGID at container start)
 # can claim that uid/gid without colliding.
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh \

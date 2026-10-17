@@ -84,7 +84,7 @@ export function buildUploadEntriesFromZip(
     const parts = path.split("/");
     const filename = parts[parts.length - 1];
     const type = guessMimeType(filename);
-    const file = new File([content], filename, type ? { type } : undefined);
+    const file = new File([content as Uint8Array<ArrayBuffer>], filename, type ? { type } : undefined);
     const relativePath = normalizedBase ? `${normalizedBase}/${path}` : path;
     entries.push({ file, relativePath });
   }

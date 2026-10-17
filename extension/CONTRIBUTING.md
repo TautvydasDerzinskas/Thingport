@@ -8,7 +8,7 @@ workflow shared by the whole repo is in the root **[CONTRIBUTING.md](../CONTRIBU
 ## Getting started
 
 The extension is TypeScript, bundled with [esbuild](https://esbuild.github.io/), with styles in
-SCSS. You need Node.js 20 or newer. Everything below runs from this `extension/` folder:
+SCSS. You need Node.js 24 or newer. Everything below runs from this `extension/` folder:
 
 ```bash
 npm install
@@ -73,20 +73,20 @@ uses the light one.
 
 ### Scripts
 
-| Command                                                 | What it does                                                                 |
-| ------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `npm run dev` / `dev:firefox`                           | Watch build of `dist/chrome` / `dist/firefox`                                |
-| `npm run build`                                         | Builds `dist/chrome`, `dist/firefox` and `dist/edge`                         |
-| `npm run build:chrome` / `build:firefox` / `build:edge` | Builds one browser                                                           |
-| `npm run zip`                                           | Builds everything and packages the store zips (below)                        |
-| `npm run zip:chrome` / `zip:firefox` / `zip:edge`       | Same for one store                                                           |
-| `npm run typecheck`                                     | `tsc --noEmit`                                                               |
-| `npm run lint`                                          | oxlint (also run on commit by the repo's pre-commit hook)                    |
-| `npm run lint:firefox`                                  | Builds for Firefox and runs `web-ext lint` on the result                     |
-| `npm run screenshots`                                   | Regenerates the README screenshots (see below)                               |
-| `npm run store-assets`                                  | Renders the store logo, promotional tiles and PNG screenshots (see below)    |
-| `npm run verify`                                        | Typecheck + lint + build                                                     |
-| `npm run release:dry-run`                               | Shows the next version semantic-release would release, and why (Node 22.14+) |
+| Command                                                 | What it does                                                              |
+| ------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `npm run dev` / `dev:firefox`                           | Watch build of `dist/chrome` / `dist/firefox`                             |
+| `npm run build`                                         | Builds `dist/chrome`, `dist/firefox` and `dist/edge`                      |
+| `npm run build:chrome` / `build:firefox` / `build:edge` | Builds one browser                                                        |
+| `npm run zip`                                           | Builds everything and packages the store zips (below)                     |
+| `npm run zip:chrome` / `zip:firefox` / `zip:edge`       | Same for one store                                                        |
+| `npm run typecheck`                                     | `tsc --noEmit`                                                            |
+| `npm run lint`                                          | oxlint (also run on commit by the repo's pre-commit hook)                 |
+| `npm run lint:firefox`                                  | Builds for Firefox and runs `web-ext lint` on the result                  |
+| `npm run screenshots`                                   | Regenerates the README screenshots (see below)                            |
+| `npm run store-assets`                                  | Renders the store logo, promotional tiles and PNG screenshots (see below) |
+| `npm run verify`                                        | Typecheck + lint + build                                                  |
+| `npm run release:dry-run`                               | Shows the next version semantic-release would release, and why            |
 
 The only difference between the browser builds is `manifest.json` (see `scripts/manifest.ts`):
 Chrome and Edge run the background as a service worker, Firefox as an event page
@@ -225,7 +225,7 @@ follow from this:
 The commit messages also become the changelog and the GitHub release notes, so write them for a
 reader.
 
-To see what the next release would be, without releasing anything (needs Node 22.14+):
+To see what the next release would be, without releasing anything:
 
 ```bash
 npm run release:dry-run

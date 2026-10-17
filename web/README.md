@@ -13,7 +13,7 @@ npm run build # static output in dist/
 npm run check # type-check
 ```
 
-Requires Node 22.12+ (see `.nvmrc`).
+Requires Node 24+ (see the root `.nvmrc`).
 
 ## Where the content lives
 

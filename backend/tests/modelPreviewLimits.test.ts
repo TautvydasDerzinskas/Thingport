@@ -4,8 +4,8 @@ import fsSync from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-// Separate file because limits are read when config.ts loads. 1 MB is below a worker's startup
-// cost, so every render hits a limit.
+// Separate file because limits are read when config.ts loads. 1 MB is raised to the 8 MB floor (any lower and
+// the worker can't start, which crashes the whole process on Node 24); 8 MB is still too little for a render.
 vi.hoisted(() => {
   process.env.MODEL_PREVIEW_MAX_MEMORY_MB = "1";
 });

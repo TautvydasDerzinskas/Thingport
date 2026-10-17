@@ -8,7 +8,8 @@
   },
   "rules": {
     "no-underscore-dangle": ["error", { "allow": ["_max", "_count", "_sum", "_avg", "_min"] }],
-    "no-await-in-loop": "off"
+    "no-await-in-loop": "off",
+    "consistent-function-scoping": "off"
   },
   "env": {
     "builtin": true,

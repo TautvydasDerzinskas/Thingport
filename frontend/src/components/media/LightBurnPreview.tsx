@@ -46,7 +46,9 @@ export default function LightBurnPreview({ url, assetId, filename, imgSx }: Ligh
         if (!payload) {
           throw new Error("Preview not found in LightBurn file");
         }
-        const objectUrl = URL.createObjectURL(new Blob([payload.data], { type: payload.mime }));
+        const objectUrl = URL.createObjectURL(
+          new Blob([payload.data as Uint8Array<ArrayBuffer>], { type: payload.mime }),
+        );
         previewCache.set(cacheKey, objectUrl);
         if (alive) {
           setPreview(objectUrl);

@@ -5,7 +5,7 @@
   "license": "AGPL-3.0-only",
   "type": "module",
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=24"
   },
   "scripts": {
     "dev": "astro dev",
@@ -14,15 +14,18 @@
     "check": "astro check"
   },
   "dependencies": {
-    "@astrojs/markdown-remark": "^7.3.1",
+    "@astrojs/markdown-remark": "^7.3.3",
     "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.7.4",
-    "astro": "^7.3.4",
+    "astro": "^7.4.0",
     "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
-    "sharp": "^0.35.4",
+    "sharp": "^0.35.5",
     "typescript": "^6.0.3"
+  },
+  "allowScripts": {
+    "fsevents": false
   }
 }

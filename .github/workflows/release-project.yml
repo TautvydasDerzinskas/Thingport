@@ -41,7 +41,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22 # semantic-release 25 needs Node 22.14+
+          node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: package-lock.json
 

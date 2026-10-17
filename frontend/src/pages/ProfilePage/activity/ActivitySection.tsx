@@ -67,7 +67,7 @@ export default function ActivitySection({ onUnauthorized }: Props) {
   }, [range, onUnauthorized, t]);
 
   // The year list comes with the first answer; until then, this year.
-  const years = loaded?.data.years ?? [new Date().getFullYear()];
+  const years = loaded?.data.years ?? [thisYear];
 
   return (
     <Box>
