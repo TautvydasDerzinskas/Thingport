@@ -31,15 +31,23 @@ from the places where you discover them.
 
 ## About
 
-If you do 3D printing, you probably discover models across **MakerWorld, Printables, Thingiverse, and other 3D model platforms**.
+To put it simply, if you're into 3D printing, you probably look for models across multiple platforms, with **MakerWorld, Printables, and Thingiverse** being some of the most popular ones. And, if you're anything like me, you've probably built up quite a collection of bookmarked models across these sites.
 
-Over time, those bookmarks, downloads, ZIP files, and random folders become a mess.
+But there's a problem.
 
-**Thingport is your personal, self-hosted 3D model library.**
+Sometimes, authors remove their models, and when you come back looking for something you bookmarked months ago, it's simply gone. Other times, authors update their models, and you discover that you actually preferred the older version.
 
-Bring your models together in one place, keep them organized, and preview them directly in your browser.
+And sometimes... the internet goes down. 🙃
 
-Instead of having your collection scattered across different websites and your filesystem, Thingport gives you a single place to manage the models you actually want to keep.
+Wouldn't it be nice to have your entire collection available locally, even when you're offline?
+
+That's exactly what **Thingport** is here to solve.
+
+**Thingport is a self-hosted 3D model library designed to make importing and syncing models between your own library and external providers as seamless as possible.**
+
+You can sync collections from supported providers directly to your Thingport instance. And with collection syncing enabled, new models you bookmark on external sites can be automatically imported into your personal library.
+
+No more worrying about losing access to your favourite models. Your library stays yours.
 
 ## Screenshots
 
