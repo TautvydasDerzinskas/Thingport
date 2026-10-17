@@ -29,6 +29,17 @@ import DownloadIcon from "@mui/icons-material/Download";
 import PersonIcon from "@mui/icons-material/Person";
 import WebAssetIcon from "@mui/icons-material/WebAsset";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import BoltIcon from "@mui/icons-material/Bolt";
+import CableIcon from "@mui/icons-material/Cable";
+import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
+import HistoryIcon from "@mui/icons-material/History";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import PeopleIcon from "@mui/icons-material/People";
+import PublicIcon from "@mui/icons-material/Public";
+import QueueIcon from "@mui/icons-material/Queue";
+import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import { UnauthorizedError } from "../../../api/client";
 import { type SearchResult, searchApi } from "../../../api/search";
 import { printsApi } from "../../../api/prints";
@@ -43,7 +54,7 @@ import Keys, { chipBg, MOD_KEY, isMac } from "./Keys";
 import { bangArgument, bangText, isBangQuery, matchBang, type Command } from "./commands";
 import { bestScore, minScoreFor } from "./match";
 import { matchSystemCollections } from "./systemCollections";
-import { matchPages, SEARCH_PAGES, type PageId, type SearchPage } from "./pages";
+import { matchPages, pagesFor, SEARCH_PAGES, type PageId, type SearchPage } from "./pages";
 import { addRecent, readRecents, RECENTS_SHOWN, type RecentEntry, type RecentKind } from "./recents";
 import { ListRowSkeletons } from "../../ListSkeleton";
 
@@ -64,6 +75,8 @@ type Props = {
   /** Opens the import dialog, or with a link imports it (see AddMenuHandle). */
   onImport: (link?: string) => void;
   onOpenConfiguration: (tab: ConfigurationTab) => void;
+  /** Also finds Administration's pages. */
+  isAdmin: boolean;
 };
 
 type Item = {
@@ -97,10 +110,23 @@ const PAGE_ICONS: Record<PageId, ReactNode> = {
   downloads: <DownloadIcon />,
   myModels: <ViewInArIcon />,
   profile: <PersonIcon />,
+  // As in Administration's own menu.
+  admin: <AdminPanelSettingsIcon />,
+  adminProviders: <PublicIcon />,
+  adminStorage: <FolderOutlinedIcon />,
+  adminAuth: <LockOutlinedIcon />,
+  adminRendering: <ViewInArIcon />,
+  adminAi: <AutoAwesomeIcon />,
+  adminUsers: <PeopleIcon />,
+  adminQueue: <QueueIcon />,
+  adminLogs: <HistoryIcon />,
+  adminTriggers: <BoltIcon />,
+  adminConnections: <CableIcon />,
+  adminCaptcha: <VerifiedUserIcon />,
 };
 
-function pageFor(entry: RecentEntry): SearchPage | undefined {
-  return entry.kind === "page" ? SEARCH_PAGES.find((page) => page.path === entry.path) : undefined;
+function pageFor(entry: RecentEntry, pages: SearchPage[] = SEARCH_PAGES): SearchPage | undefined {
+  return entry.kind === "page" ? pages.find((page) => page.path === entry.path) : undefined;
 }
 
 // Also matched: "!language lith", "!language lietuvių".
@@ -133,6 +159,7 @@ export default function GlobalSearch({
   onLogout,
   onImport,
   onOpenConfiguration,
+  isAdmin,
 }: Props) {
   const { t, i18n } = useTranslation(["app", "common", "models"]);
   const navigate = useNavigate();
@@ -272,7 +299,10 @@ export default function GlobalSearch({
       key: entry.key,
       // A recent page takes its name afresh, so it follows a language switch.
       title: page ? t(page.labelKey) : entry.title,
-      subtitle: entry.subtitle,
+      // Admin pages say where they are, since "Storage" or "Users" alone could be anywhere.
+      subtitle: page?.adminOnly
+        ? t(page.id === "admin" ? "app:sidebar.adminOverview" : "app:sidebar.administration")
+        : entry.subtitle,
       accessory,
       icon: page ? PAGE_ICONS[page.id] : KIND_ICONS[entry.kind],
       thumbUrl: entry.thumbUrl ? printsApi.fileUrl(entry.thumbUrl) : null,
@@ -401,7 +431,11 @@ export default function GlobalSearch({
       sections.push({
         id: "recent",
         label: t("app:search.sectionRecent"),
-        items: recents.slice(0, RECENTS_SHOWN).map((entry) => entryItem(entry, kindLabel(entry.kind))),
+        items: recents
+          // Kept, not dropped, while the viewer isn't known to be an admin yet.
+          .filter((entry) => entry.kind !== "page" || pageFor(entry, pagesFor(isAdmin)))
+          .slice(0, RECENTS_SHOWN)
+          .map((entry) => entryItem(entry, kindLabel(entry.kind))),
       });
     }
     // Suggests whichever of light and dark isn't picked.
@@ -495,7 +529,7 @@ export default function GlobalSearch({
       PageId,
       string
     >;
-    const pages = matchPages(trimmedQuery, pageLabels).map(pageItem);
+    const pages = matchPages(trimmedQuery, pageLabels, isAdmin).map(pageItem);
     if (pages.length) sections.push({ id: "pages", label: t("app:search.sectionPages"), items: pages });
     const matched = commands
       .map((command) => ({ command, score: bestScore(trimmedQuery, command.label, command.keywords) }))

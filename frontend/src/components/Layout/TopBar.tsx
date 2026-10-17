@@ -119,6 +119,7 @@ export default function TopBar({
           onLogout={onLogout}
           onImport={(link) => addMenuRef.current?.importFromCommand(link)}
           onOpenConfiguration={setConfigTab}
+          isAdmin={user?.role === "ADMIN"}
         />
       </Box>
       <Stack direction="row" alignItems="center" spacing={1} minWidth={0} justifySelf="end">
