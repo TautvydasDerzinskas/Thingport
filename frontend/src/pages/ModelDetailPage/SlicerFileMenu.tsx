@@ -11,8 +11,11 @@ import { fileRowText } from "./fileRowText";
 import type { SlicerTarget } from "./useOpenInSlicer";
 import type { NormalizeState } from "./useNormalizedOpen";
 
+/** An element, or a bare point for a menu opened by right-click. */
+export type MenuAnchor = HTMLElement | { nodeType: 1; getBoundingClientRect: () => DOMRect } | null;
+
 type Props = {
-  anchorEl: HTMLElement | null;
+  anchorEl: MenuAnchor;
   onClose: () => void;
   slicerLabel: string;
   targets: SlicerTarget[];
@@ -39,7 +42,8 @@ export default function SlicerFileMenu({
   matchAnchorWidth = false,
 }: Props) {
   const { t } = useTranslation(["models"]);
-  const paperSx = matchAnchorWidth && anchorEl ? { width: anchorEl.offsetWidth } : { maxWidth: 360 };
+  const paperSx =
+    matchAnchorWidth && anchorEl instanceof HTMLElement ? { width: anchorEl.offsetWidth } : { maxWidth: 360 };
   return (
     <Menu
       anchorEl={anchorEl}

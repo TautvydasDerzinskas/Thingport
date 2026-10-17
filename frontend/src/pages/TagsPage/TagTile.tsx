@@ -13,6 +13,7 @@ import { printsApi } from "../../api/prints";
 import type { TagSummary } from "../../api/tags";
 import { colorForTag } from "../../utils/tagColors";
 import TagActionsMenu from "../TagDetailPage/TagActionsMenu";
+import { useCardContextMenu } from "../../components/Layout/ConfigurationDialog/AppTiles";
 
 /** Grid areas for a mosaic's pictures, from its rows of letters. */
 const areas = (rows: string[]) => rows.map((row) => `"${row.split("").join(" ")}"`).join(" ");
@@ -31,14 +32,17 @@ const overlayButtonSx = {
   "&:hover, &.Mui-focusVisible": { bgcolor: "#ffffff", color: "primary.main" },
 } as const;
 
-/** A square for a tag: a mosaic of its models, its name, count and bookmark along the bottom, and its menu on hover. */
+/** A square for a tag: a mosaic of its models, its bookmark top left, its name and count along the bottom, and its menu
+ * on hover or right-click. */
 function TagTile({ tag, onToggleBookmark, onDeleted, onUnauthorized }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const fallback = colorForTag(tag.name);
+  const contextMenu = useCardContextMenu();
   const bookmarkLabel = tag.bookmarked ? t("models:tags.unbookmarkTag") : t("models:tags.bookmarkTag");
 
   return (
     <Box
+      onContextMenu={contextMenu.onContextMenu}
       sx={{
         position: "relative",
         aspectRatio: "1 / 1",
@@ -80,6 +84,7 @@ function TagTile({ tag, onToggleBookmark, onDeleted, onUnauthorized }: Props) {
                 width: "100%",
                 height: "100%",
                 objectFit: "cover",
+                opacity: 0.4,
                 transition: "transform 300ms",
               }}
             />
@@ -90,7 +95,7 @@ function TagTile({ tag, onToggleBookmark, onDeleted, onUnauthorized }: Props) {
             sx={{ position: "absolute", inset: 0, m: "auto", fontSize: 56, color: fallback.text, opacity: 0.35 }}
           />
         )}
-        {/* Keeps the chip and the bookmark readable over any picture. */}
+        {/* Keeps the chip readable over any picture. */}
         <Box
           aria-hidden
           sx={{
@@ -100,42 +105,44 @@ function TagTile({ tag, onToggleBookmark, onDeleted, onUnauthorized }: Props) {
             pointerEvents: "none",
           }}
         />
-        <Box sx={{ position: "absolute", bottom: 8, left: 8, right: 48, display: "flex" }}>
-          <Box
-            aria-hidden
-            sx={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 0.75,
-              maxWidth: "100%",
-              pl: 1.25,
-              pr: 0.5,
-              py: 0.5,
-              borderRadius: "999px",
-              bgcolor: "rgba(255, 255, 255, 0.92)",
-              backdropFilter: "blur(6px)",
-              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.2)",
-            }}
-          >
-            <Typography variant="body2" fontWeight={600} noWrap sx={{ color: "#1f1f1f", minWidth: 0 }}>
-              {tag.name}
-            </Typography>
+        <Box sx={{ position: "absolute", bottom: 8, left: 8, right: 8, display: "flex" }}>
+          <Tooltip title={tag.name}>
             <Box
-              component="span"
+              aria-hidden
               sx={{
-                flexShrink: 0,
-                px: 0.75,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 0.75,
+                maxWidth: "100%",
+                pl: 1.25,
+                pr: 0.5,
+                py: 0.5,
                 borderRadius: "999px",
-                fontSize: "0.72rem",
-                fontWeight: 700,
-                lineHeight: "18px",
-                color: "#ffffff",
-                bgcolor: "primary.main",
+                bgcolor: "rgba(255, 255, 255, 0.92)",
+                backdropFilter: "blur(6px)",
+                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.2)",
               }}
             >
-              {tag.count}
+              <Typography variant="body2" fontWeight={600} noWrap sx={{ color: "#1f1f1f", minWidth: 0 }}>
+                {tag.name}
+              </Typography>
+              <Box
+                component="span"
+                sx={{
+                  flexShrink: 0,
+                  px: 0.75,
+                  borderRadius: "999px",
+                  fontSize: "0.72rem",
+                  fontWeight: 700,
+                  lineHeight: "18px",
+                  color: "#ffffff",
+                  bgcolor: "primary.main",
+                }}
+              >
+                {tag.count}
+              </Box>
             </Box>
-          </Box>
+          </Tooltip>
         </Box>
       </Box>
       <Box
@@ -155,6 +162,8 @@ function TagTile({ tag, onToggleBookmark, onDeleted, onUnauthorized }: Props) {
           onUnauthorized={onUnauthorized}
           onDeleted={() => onDeleted(tag)}
           iconFontSize={18}
+          contextMenuAt={contextMenu.at}
+          onContextMenuClose={contextMenu.close}
           triggerSx={{ width: 30, height: 30, ...overlayButtonSx }}
         />
       </Box>
@@ -166,8 +175,8 @@ function TagTile({ tag, onToggleBookmark, onDeleted, onUnauthorized }: Props) {
           onClick={() => onToggleBookmark(tag)}
           sx={{
             position: "absolute",
-            bottom: 6,
-            right: 6,
+            top: 6,
+            left: 6,
             ...overlayButtonSx,
             color: tag.bookmarked ? "primary.main" : overlayButtonSx.color,
           }}
@@ -234,7 +243,7 @@ export function TagTileSkeletons({ count }: { count: number }) {
           variant="rounded"
           sx={{ position: "absolute", bottom: 10, left: 10, width: "48%", height: 26, borderRadius: "999px" }}
         />
-        <Skeleton variant="circular" sx={{ position: "absolute", bottom: 8, right: 8, width: 30, height: 30 }} />
+        <Skeleton variant="circular" sx={{ position: "absolute", top: 6, left: 6, width: 30, height: 30 }} />
       </Box>
     );
   });

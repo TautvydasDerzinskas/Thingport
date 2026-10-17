@@ -26,6 +26,7 @@ import CollectionSyncDialog from "./CollectionSyncDialog";
 import { allProvidersOff, useDisabledProviders } from "../../hooks/useDisabledProviders";
 import { importProviderInfo } from "../../constants/importProviders";
 import type { ImportProvider } from "../../api/settings";
+import { reopenContextMenuBelow } from "../../components/Layout/ConfigurationDialog/AppTiles";
 
 type Props = {
   collection: Collection;
@@ -34,6 +35,9 @@ type Props = {
   onDeleted: () => void;
   onBookmarksChanged?: () => void;
   triggerSx?: SxProps<Theme>;
+  /** Opens the menu at this point instead of at the trigger, as on a right-click. */
+  contextMenuAt?: { top: number; left: number } | null;
+  onContextMenuClose?: () => void;
 };
 
 /** Shared by the collection detail header and the Collections grid cards. */
@@ -44,6 +48,8 @@ export default function CollectionActionsMenu({
   onDeleted,
   onBookmarksChanged,
   triggerSx,
+  contextMenuAt,
+  onContextMenuClose,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const confirmDialog = useConfirm();
@@ -59,7 +65,10 @@ export default function CollectionActionsMenu({
     collection.sync && disabledProviders.has(collection.sync.provider as ImportProvider),
   );
 
-  const closeMenu = () => setAnchorEl(null);
+  const closeMenu = () => {
+    setAnchorEl(null);
+    onContextMenuClose?.();
+  };
 
   const handleToggleBookmark = async () => {
     closeMenu();
@@ -151,7 +160,14 @@ export default function CollectionActionsMenu({
       >
         {deleting ? <CircularProgress size={18} /> : <MoreVertIcon fontSize="small" />}
       </IconButton>
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={closeMenu}>
+      <Menu
+        open={Boolean(anchorEl || contextMenuAt)}
+        onClose={closeMenu}
+        onContextMenu={(event) => reopenContextMenuBelow(event, closeMenu)}
+        {...(contextMenuAt
+          ? { anchorReference: "anchorPosition" as const, anchorPosition: contextMenuAt }
+          : { anchorEl })}
+      >
         <MenuItem onClick={handleToggleBookmark}>
           <ListItemIcon>
             {collection.bookmarked ? (

@@ -16,6 +16,7 @@ import { tagsApi } from "../../api/tags";
 import { useConfirm } from "../../components/ConfirmProvider";
 import DownloadZipConfirmDialog from "../../components/DownloadZipConfirmDialog";
 import { useToast } from "../../components/ToastProvider";
+import { reopenContextMenuBelow } from "../../components/Layout/ConfigurationDialog/AppTiles";
 
 type Props = {
   tag: string;
@@ -25,9 +26,20 @@ type Props = {
   /** For a trigger drawn over a picture, as on a tag's tile. */
   triggerSx?: SxProps<Theme>;
   iconFontSize?: number;
+  /** Opens the menu at this point instead of at the trigger, as on a right-click. */
+  contextMenuAt?: { top: number; left: number } | null;
+  onContextMenuClose?: () => void;
 };
 
-export default function TagActionsMenu({ tag, onUnauthorized, onDeleted, triggerSx, iconFontSize }: Props) {
+export default function TagActionsMenu({
+  tag,
+  onUnauthorized,
+  onDeleted,
+  triggerSx,
+  iconFontSize,
+  contextMenuAt,
+  onContextMenuClose,
+}: Props) {
   const { t } = useTranslation(["models", "common"]);
   const confirm = useConfirm();
   const showToast = useToast();
@@ -35,7 +47,10 @@ export default function TagActionsMenu({ tag, onUnauthorized, onDeleted, trigger
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const closeMenu = () => setAnchorEl(null);
+  const closeMenu = () => {
+    setAnchorEl(null);
+    onContextMenuClose?.();
+  };
 
   const deleteTag = async () => {
     const ok = await confirm({
@@ -77,7 +92,14 @@ export default function TagActionsMenu({ tag, onUnauthorized, onDeleted, trigger
           </IconButton>
         </span>
       </Tooltip>
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={closeMenu}>
+      <Menu
+        open={Boolean(anchorEl || contextMenuAt)}
+        onClose={closeMenu}
+        onContextMenu={(event) => reopenContextMenuBelow(event, closeMenu)}
+        {...(contextMenuAt
+          ? { anchorReference: "anchorPosition" as const, anchorPosition: contextMenuAt }
+          : { anchorEl })}
+      >
         <MenuItem
           onClick={() => {
             closeMenu();

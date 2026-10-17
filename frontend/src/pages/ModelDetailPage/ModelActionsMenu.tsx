@@ -32,7 +32,7 @@ import { useConfirm } from "../../components/ConfirmProvider";
 import { importProviderInfo } from "../../constants/importProviders";
 import { useDownloadPrint } from "./useDownloadPrint";
 import { useOpenInSlicer } from "./useOpenInSlicer";
-import SlicerFileMenu from "./SlicerFileMenu";
+import SlicerFileMenu, { type MenuAnchor } from "./SlicerFileMenu";
 import NormalizeInfoIcon from "./NormalizeInfoIcon";
 import { useNormalizedOpen } from "./useNormalizedOpen";
 import DownloadPickerDialog from "./DownloadPickerDialog";
@@ -40,6 +40,7 @@ import AddToCollectionModal from "./AddToCollectionModal";
 import EditModelModal from "./EditModelModal";
 import FillGapsDialog from "./FillGapsDialog";
 import { useAiOutcomeWatch } from "./useAiOutcomeWatch";
+import { reopenContextMenuBelow } from "../../components/Layout/ConfigurationDialog/AppTiles";
 
 type Props = {
   print: Print;
@@ -53,6 +54,9 @@ type Props = {
   /** Glyph size in px; defaults to fontSize="small". */
   iconFontSize?: number;
   viewer?: AuthUser | null;
+  /** Opens the menu at this point instead of at the trigger, as on a right-click. */
+  contextMenuAt?: { top: number; left: number } | null;
+  onContextMenuClose?: () => void;
 };
 
 /** The "..." menu for a model, shared by the detail header and grid cards. */
@@ -66,6 +70,8 @@ export default function ModelActionsMenu({
   triggerSx,
   iconFontSize,
   viewer,
+  contextMenuAt,
+  onContextMenuClose,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const confirmDialog = useConfirm();
@@ -97,8 +103,8 @@ export default function ModelActionsMenu({
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const [slicerMenuAnchor, setSlicerMenuAnchor] = useState<HTMLElement | null>(null);
-  const [normalizedMenuAnchor, setNormalizedMenuAnchor] = useState<HTMLElement | null>(null);
+  const [slicerMenuAnchor, setSlicerMenuAnchor] = useState<MenuAnchor>(null);
+  const [normalizedMenuAnchor, setNormalizedMenuAnchor] = useState<MenuAnchor>(null);
   const [deleting, setDeleting] = useState(false);
   const [removingFromCollection, setRemovingFromCollection] = useState(false);
   const [addToCollectionOpen, setAddToCollectionOpen] = useState(false);
@@ -117,7 +123,17 @@ export default function ModelActionsMenu({
     recordUse,
   } = useDownloadPrint(print, onUnauthorized, onUpdated);
 
-  const closeMenu = () => setAnchorEl(null);
+  // A point rather than anchorPosition, so the slicer pickers this menu hands over to open in the same place.
+  const menuAnchor: MenuAnchor =
+    anchorEl ??
+    (contextMenuAt
+      ? { nodeType: 1, getBoundingClientRect: () => new DOMRect(contextMenuAt.left, contextMenuAt.top, 0, 0) }
+      : null);
+
+  const closeMenu = () => {
+    setAnchorEl(null);
+    onContextMenuClose?.();
+  };
 
   const openEdit = () => {
     closeMenu();
@@ -262,7 +278,12 @@ export default function ModelActionsMenu({
           </IconButton>
         </span>
       </Tooltip>
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={closeMenu}>
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={closeMenu}
+        onContextMenu={(event) => reopenContextMenuBelow(event, closeMenu)}
+      >
         <MenuItem
           onClick={() => {
             closeMenu();
@@ -334,7 +355,7 @@ export default function ModelActionsMenu({
           href={openInSlicerHref}
           onClick={() => {
             if (slicerTargets.length > 1) {
-              setSlicerMenuAnchor(anchorEl);
+              setSlicerMenuAnchor(menuAnchor);
               closeMenu();
               return;
             }
@@ -357,7 +378,7 @@ export default function ModelActionsMenu({
             disabled={normalizedTargets.length === 1 && normalized.stateOf(normalizedTargets[0]) === "preparing"}
             onClick={() => {
               if (normalizedTargets.length > 1) {
-                setNormalizedMenuAnchor(anchorEl);
+                setNormalizedMenuAnchor(menuAnchor);
                 closeMenu();
                 return;
               }

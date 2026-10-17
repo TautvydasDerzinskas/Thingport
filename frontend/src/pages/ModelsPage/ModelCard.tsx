@@ -24,6 +24,7 @@ import RollingNumber from "../../components/RollingNumber";
 import { useFavoriteToggle } from "../../hooks/useFavoriteToggle";
 import ModelActionsMenu from "../ModelDetailPage/ModelActionsMenu";
 import type { AuthUser } from "../../api/auth";
+import { useCardContextMenu } from "../../components/Layout/ConfigurationDialog/AppTiles";
 
 type Props = {
   item: Print;
@@ -87,6 +88,7 @@ export default function ModelCard({
   const providerInfo = printProviderInfo(item.source_provider);
   // Only mounted while hovered, so idle cards don't load images or tick.
   const [hovered, setHovered] = useState(false);
+  const contextMenu = useCardContextMenu();
   const slideshowImages =
     item.preview_images.length > 1 ? item.preview_images.map((img) => printsApi.fileUrl(img.url)) : [];
 
@@ -96,6 +98,7 @@ export default function ModelCard({
       onClick={() => navigate(`/models/${item.id}`)}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onContextMenu={contextMenu.onContextMenu}
       sx={{
         position: "relative",
         cursor: "pointer",
@@ -183,6 +186,8 @@ export default function ModelCard({
           triggerSx={{ color: overlayIconColor, ...overlayButtonSx }}
           iconFontSize={HOVER_ICON_SIZE}
           viewer={viewer}
+          contextMenuAt={contextMenu.at}
+          onContextMenuClose={contextMenu.close}
         />
       </Stack>
       <Box sx={{ px: 1.5, pt: 0.75, pb: 1.5 }}>

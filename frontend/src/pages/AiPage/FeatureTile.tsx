@@ -14,7 +14,11 @@ import Switch from "@mui/material/Switch";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import type { AiConnection } from "../../api/aiConnections";
-import { menuPosition, TileMenuHeader } from "../../components/Layout/ConfigurationDialog/AppTiles";
+import {
+  menuPosition,
+  reopenContextMenuBelow,
+  TileMenuHeader,
+} from "../../components/Layout/ConfigurationDialog/AppTiles";
 import { AiLogo } from "./aiLogos";
 
 /** Where a feature's dialog opens. */
@@ -136,6 +140,7 @@ export default function FeatureTile({
       <Menu
         open={Boolean(menu)}
         onClose={() => setMenu(null)}
+        onContextMenu={(event) => reopenContextMenuBelow(event, () => setMenu(null))}
         anchorReference="anchorPosition"
         anchorPosition={menu ?? undefined}
         slotProps={{ paper: { sx: { minWidth: 240, maxWidth: 300 } } }}

@@ -11,11 +11,13 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
 import KeyOutlinedIcon from "@mui/icons-material/KeyOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { UnauthorizedError } from "../../api/client";
 import { adminApi, type AdminUser } from "../../api/admin";
 import UserActionsMenu from "./UserActionsMenu";
+import RoleIcon, { roleKind, useRoleLabel, type UserRoleKind } from "./RoleIcon";
 import { TableRowSkeletons } from "../../components/ListSkeleton";
 
 type Props = {
@@ -53,6 +55,7 @@ export default function UsersPage({ onUnauthorized }: Props) {
     };
   }, [onUnauthorized, t, reloads]);
 
+  const roleLabel = useRoleLabel();
   const formatDate = (iso: string) => new Date(iso).toLocaleDateString(i18n.language);
 
   return (
@@ -63,77 +66,84 @@ export default function UsersPage({ onUnauthorized }: Props) {
         </Alert>
       )}
 
-      <Paper variant="outlined">
-        <TableContainer>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>{t("adminSettings.users.columnEmail")}</TableCell>
-                <TableCell>{t("adminSettings.users.columnCreated")}</TableCell>
-                <TableCell>{t("adminSettings.users.columnDisplayName")}</TableCell>
-                <TableCell>{t("adminSettings.users.columnRole")}</TableCell>
-                <TableCell>{t("adminSettings.users.columnSignIn")}</TableCell>
-                <TableCell align="right">{t("adminSettings.users.columnModels")}</TableCell>
-                <TableCell align="right">{t("adminSettings.users.columnCollections")}</TableCell>
-                <TableCell>{t("adminSettings.users.columnMakerworld")}</TableCell>
-                <TableCell padding="checkbox" aria-label={t("adminSettings.users.columnActions")} />
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading ? (
-                <TableRowSkeletons rows={5} columns={9} />
-              ) : (
-                users.map((u) => (
-                  <TableRow key={u.id} hover>
-                    <TableCell>{u.email}</TableCell>
-                    <TableCell>{formatDate(u.created_at)}</TableCell>
-                    <TableCell>{u.display_name}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={
-                          u.role === "ADMIN" ? t("adminSettings.users.roleAdmin") : t("adminSettings.users.roleMember")
-                        }
-                        size="small"
-                        color={u.role === "ADMIN" ? "primary" : "default"}
-                        variant={u.role === "ADMIN" ? "filled" : "outlined"}
-                      />
-                      {u.is_owner && (
+      <Stack spacing={1}>
+        <RoleLegend />
+        <Paper variant="outlined">
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>{t("adminSettings.users.columnEmail")}</TableCell>
+                  <TableCell>{t("adminSettings.users.columnCreated")}</TableCell>
+                  <TableCell>{t("adminSettings.users.columnDisplayName")}</TableCell>
+                  <TableCell>{t("adminSettings.users.columnRole")}</TableCell>
+                  <TableCell>{t("adminSettings.users.columnSignIn")}</TableCell>
+                  <TableCell align="right">{t("adminSettings.users.columnModels")}</TableCell>
+                  <TableCell align="right">{t("adminSettings.users.columnCollections")}</TableCell>
+                  <TableCell>{t("adminSettings.users.columnMakerworld")}</TableCell>
+                  <TableCell padding="checkbox" aria-label={t("adminSettings.users.columnActions")} />
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {loading ? (
+                  <TableRowSkeletons rows={5} columns={9} />
+                ) : (
+                  users.map((u) => (
+                    <TableRow key={u.id} hover>
+                      <TableCell>{u.email}</TableCell>
+                      <TableCell>{formatDate(u.created_at)}</TableCell>
+                      <TableCell>{u.display_name}</TableCell>
+                      <TableCell>
+                        <Tooltip title={roleLabel(roleKind(u))}>
+                          <RoleIcon kind={roleKind(u)} aria-label={roleLabel(roleKind(u))} sx={{ display: "block" }} />
+                        </Tooltip>
+                      </TableCell>
+                      <TableCell>
+                        <SignInChips signIn={u.sign_in} />
+                      </TableCell>
+                      <TableCell align="right">{u.print_count}</TableCell>
+                      <TableCell align="right">{u.collection_count}</TableCell>
+                      <TableCell>
                         <Chip
-                          label={t("adminSettings.users.owner")}
+                          label={
+                            u.makerworld_connected
+                              ? t("adminSettings.users.makerworldConnected")
+                              : t("adminSettings.users.makerworldNotConnected")
+                          }
                           size="small"
-                          color="primary"
-                          variant="outlined"
-                          sx={{ ml: 0.75 }}
+                          color={u.makerworld_connected ? "success" : "default"}
+                          variant={u.makerworld_connected ? "filled" : "outlined"}
                         />
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <SignInChips signIn={u.sign_in} />
-                    </TableCell>
-                    <TableCell align="right">{u.print_count}</TableCell>
-                    <TableCell align="right">{u.collection_count}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={
-                          u.makerworld_connected
-                            ? t("adminSettings.users.makerworldConnected")
-                            : t("adminSettings.users.makerworldNotConnected")
-                        }
-                        size="small"
-                        color={u.makerworld_connected ? "success" : "default"}
-                        variant={u.makerworld_connected ? "filled" : "outlined"}
-                      />
-                    </TableCell>
-                    <TableCell padding="checkbox">
-                      <UserActionsMenu user={u} onChanged={reload} onUnauthorized={onUnauthorized} />
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+                      </TableCell>
+                      <TableCell padding="checkbox">
+                        <UserActionsMenu user={u} onChanged={reload} onUnauthorized={onUnauthorized} />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      </Stack>
+    </Stack>
+  );
+}
+
+const ROLE_KINDS: UserRoleKind[] = ["owner", "admin", "member"];
+
+function RoleLegend() {
+  const roleLabel = useRoleLabel();
+  return (
+    <Stack direction="row" spacing={2} justifyContent="flex-end" flexWrap="wrap" useFlexGap>
+      {ROLE_KINDS.map((kind) => (
+        <Stack key={kind} direction="row" spacing={0.5} alignItems="center">
+          <RoleIcon kind={kind} fontSize="small" />
+          <Typography variant="caption" color="text.secondary">
+            {roleLabel(kind)}
+          </Typography>
+        </Stack>
+      ))}
     </Stack>
   );
 }

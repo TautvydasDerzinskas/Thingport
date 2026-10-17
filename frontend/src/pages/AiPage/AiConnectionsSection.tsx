@@ -21,7 +21,13 @@ import { UnauthorizedError } from "../../api/client";
 import { aiConnectionsApi, type AiConnection } from "../../api/aiConnections";
 import { useConfirm } from "../../components/ConfirmProvider";
 import SectionHeader from "../../components/SectionHeader";
-import { AppGrid, AppTile, menuPosition, TileMenuHeader } from "../../components/Layout/ConfigurationDialog/AppTiles";
+import {
+  AppGrid,
+  AppTile,
+  menuPosition,
+  reopenContextMenuBelow,
+  TileMenuHeader,
+} from "../../components/Layout/ConfigurationDialog/AppTiles";
 import AiConnectionDialog from "./AiConnectionDialog";
 import { AiLogo, hostOf } from "./aiLogos";
 
@@ -189,6 +195,7 @@ export default function AiConnectionsSection({ connections, onChanged, onUnautho
       <Menu
         open={Boolean(menu)}
         onClose={() => setMenu(null)}
+        onContextMenu={(event) => reopenContextMenuBelow(event, () => setMenu(null))}
         anchorReference="anchorPosition"
         anchorPosition={menu ? { top: menu.top, left: menu.left } : undefined}
         slotProps={{ paper: { sx: { minWidth: 220 } } }}

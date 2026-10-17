@@ -10,6 +10,8 @@ import Box from "@mui/material/Box";
 import { UnauthorizedError } from "../../api/client";
 import { settingsApi, FRONTEND_GIT_SHA, FRONTEND_VERSION } from "../../api/settings";
 import SectionHeader from "../../components/SectionHeader";
+import { AnimatedTile } from "../../components/storageAnimations/parts";
+import UpdateCheckAnimation, { type UpdateCheckState } from "../../components/adminAnimations/UpdateCheckAnimation";
 
 type Props = {
   onUnauthorized?: () => void;
@@ -21,6 +23,14 @@ type Status =
   | { kind: "error" }
   | { kind: "up-to-date" }
   | { kind: "outdated"; backend: boolean; frontend: boolean };
+
+const ANIMATION_STATE: Record<Status["kind"], UpdateCheckState> = {
+  checking: "checking",
+  unknown: "unknown",
+  error: "unknown",
+  "up-to-date": "current",
+  outdated: "outdated",
+};
 
 // Dev builds have no commit SHAs, so the check reports "unknown" rather than "outdated".
 export default function UpdateCheckSection({ onUnauthorized }: Props) {
@@ -64,53 +74,60 @@ export default function UpdateCheckSection({ onUnauthorized }: Props) {
         subtitle={t("adminSettings.updateCheck.subtitle")}
       />
       <Paper variant="outlined" sx={{ p: 2.5 }}>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-          {t("adminSettings.updateCheck.running", {
-            backend: backendVersion ?? "—",
-            frontend: FRONTEND_VERSION,
-          })}
-        </Typography>
-        {status.kind === "checking" && (
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <CircularProgress size={14} />
-            <Typography variant="body2" color="text.secondary">
-              {t("adminSettings.updateCheck.checking")}
+        <Stack direction="row" spacing={2.5} alignItems="center">
+          <AnimatedTile>
+            <UpdateCheckAnimation size={76} state={ANIMATION_STATE[status.kind]} />
+          </AnimatedTile>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+              {t("adminSettings.updateCheck.running", {
+                backend: backendVersion ?? "—",
+                frontend: FRONTEND_VERSION,
+              })}
             </Typography>
-          </Stack>
-        )}
-        {status.kind === "unknown" && (
-          <Typography variant="body2" color="text.secondary">
-            {t("adminSettings.updateCheck.unknown")}
-          </Typography>
-        )}
-        {status.kind === "error" && (
-          <Typography variant="body2" color="text.secondary">
-            {t("adminSettings.updateCheck.failed")}
-          </Typography>
-        )}
-        {status.kind === "up-to-date" && (
-          <Alert severity="success" variant="outlined">
-            {t("adminSettings.updateCheck.upToDate")}
-          </Alert>
-        )}
-        {status.kind === "outdated" && (
-          <Alert severity="info">
-            <AlertTitle>{t("adminSettings.updateCheck.availableTitle")}</AlertTitle>
-            <Box component="ul" sx={{ mt: 0.5, mb: 1, pl: 2.5 }}>
-              {status.backend && (
-                <li>
-                  <Typography variant="body2">{t("adminSettings.updateCheck.backendOutdated")}</Typography>
-                </li>
-              )}
-              {status.frontend && (
-                <li>
-                  <Typography variant="body2">{t("adminSettings.updateCheck.frontendOutdated")}</Typography>
-                </li>
-              )}
-            </Box>
-            <Typography variant="body2">{t("adminSettings.updateCheck.howTo")}</Typography>
-          </Alert>
-        )}
+            {status.kind === "checking" && (
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <CircularProgress size={14} />
+                <Typography variant="body2" color="text.secondary">
+                  {t("adminSettings.updateCheck.checking")}
+                </Typography>
+              </Stack>
+            )}
+            {status.kind === "unknown" && (
+              <Typography variant="body2" color="text.secondary">
+                {t("adminSettings.updateCheck.unknown")}
+              </Typography>
+            )}
+            {status.kind === "error" && (
+              <Typography variant="body2" color="text.secondary">
+                {t("adminSettings.updateCheck.failed")}
+              </Typography>
+            )}
+            {status.kind === "up-to-date" && (
+              <Alert severity="success" variant="outlined">
+                {t("adminSettings.updateCheck.upToDate")}
+              </Alert>
+            )}
+            {status.kind === "outdated" && (
+              <Alert severity="info">
+                <AlertTitle>{t("adminSettings.updateCheck.availableTitle")}</AlertTitle>
+                <Box component="ul" sx={{ mt: 0.5, mb: 1, pl: 2.5 }}>
+                  {status.backend && (
+                    <li>
+                      <Typography variant="body2">{t("adminSettings.updateCheck.backendOutdated")}</Typography>
+                    </li>
+                  )}
+                  {status.frontend && (
+                    <li>
+                      <Typography variant="body2">{t("adminSettings.updateCheck.frontendOutdated")}</Typography>
+                    </li>
+                  )}
+                </Box>
+                <Typography variant="body2">{t("adminSettings.updateCheck.howTo")}</Typography>
+              </Alert>
+            )}
+          </Box>
+        </Stack>
       </Paper>
     </Stack>
   );

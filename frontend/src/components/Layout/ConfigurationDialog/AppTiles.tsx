@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import Box from "@mui/material/Box";
 import ButtonBase from "@mui/material/ButtonBase";
 import Stack from "@mui/material/Stack";
@@ -178,6 +178,31 @@ export function menuPosition(event: React.MouseEvent<HTMLElement>): { top: numbe
   const rect = event.currentTarget.getBoundingClientRect();
   const fromKeyboard = event.clientX === 0 && event.clientY === 0;
   return { top: fromKeyboard ? rect.bottom : event.clientY, left: fromKeyboard ? rect.left : event.clientX };
+}
+
+/** For an open context menu's onContextMenu. A right-click beside the menu lands on its invisible backdrop; close the
+ * menu and hand the click to what's under it, so another tile (or the same one, elsewhere) opens its own menu. */
+export function reopenContextMenuBelow(event: React.MouseEvent<HTMLElement>, close: () => void) {
+  if ((event.target as Element).closest(".MuiPopover-paper")) return;
+  event.preventDefault();
+  close();
+  const { clientX, clientY } = event;
+  const menuRoot = event.currentTarget;
+  const below = document.elementsFromPoint(clientX, clientY).find((element) => !menuRoot.contains(element));
+  below?.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX, clientY, button: 2 }));
+}
+
+/** A grid card's right-click menu: where it's open, if it is. */
+export function useCardContextMenu() {
+  const [at, setAt] = useState<{ top: number; left: number } | null>(null);
+  return {
+    at,
+    close: () => setAt(null),
+    onContextMenu: (event: React.MouseEvent<HTMLElement>) => {
+      // A card's menu and dialogs are portalled but their events still bubble to it; leave right-clicks there alone.
+      if (event.currentTarget.contains(event.target as Node)) setAt(menuPosition(event));
+    },
+  };
 }
 
 /** The top of a tile's context menu: which app it's for, and its state. */

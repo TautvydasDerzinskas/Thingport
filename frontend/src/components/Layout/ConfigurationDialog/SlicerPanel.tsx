@@ -14,7 +14,7 @@ import { UnauthorizedError } from "../../../api/client";
 import { settingsApi } from "../../../api/settings";
 import { setCachedSlicerPreference } from "../../../hooks/useSlicerPreference";
 import { isBridgedSlicer } from "../../../utils/slicerLaunch";
-import { AppGrid, AppTile, menuPosition, TileMenuHeader } from "./AppTiles";
+import { AppGrid, AppTile, menuPosition, reopenContextMenuBelow, TileMenuHeader } from "./AppTiles";
 import { PanelHeader } from "./parts";
 import { SlicerLogo } from "./slicerLogos";
 
@@ -95,6 +95,7 @@ export default function SlicerPanel({ onNavigate, onUnauthorized }: Props) {
       <Menu
         open={Boolean(menu)}
         onClose={() => setMenu(null)}
+        onContextMenu={(event) => reopenContextMenuBelow(event, () => setMenu(null))}
         anchorReference="anchorPosition"
         anchorPosition={menu ? { top: menu.top, left: menu.left } : undefined}
         slotProps={{ paper: { sx: { minWidth: 220 } } }}

@@ -18,7 +18,7 @@ import { UnauthorizedError } from "../../../api/client";
 import { settingsApi } from "../../../api/settings";
 import type { MakerWorldSettings } from "../../../utils/settings";
 import { useConfirm } from "../../ConfirmProvider";
-import { AppGrid, AppTile, menuPosition, TileMenuHeader } from "./AppTiles";
+import { AppGrid, AppTile, menuPosition, reopenContextMenuBelow, TileMenuHeader } from "./AppTiles";
 import { PanelHeader } from "./parts";
 import { ProviderLogo, type ProviderId } from "./providerLogos";
 import { useDisabledProviders } from "../../../hooks/useDisabledProviders";
@@ -189,6 +189,7 @@ export default function ProvidersPanel({ isAdmin, cookie, onUpdateMakerWorld, on
       <Menu
         open={Boolean(menu)}
         onClose={() => setMenu(null)}
+        onContextMenu={(event) => reopenContextMenuBelow(event, () => setMenu(null))}
         anchorReference="anchorPosition"
         anchorPosition={menu ? { top: menu.top, left: menu.left } : undefined}
         slotProps={{ paper: { sx: { minWidth: 220 } } }}

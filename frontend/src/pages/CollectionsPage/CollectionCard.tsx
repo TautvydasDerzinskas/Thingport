@@ -16,6 +16,7 @@ import { collectionDisplayName } from "../../utils/collectionDisplay";
 import CollectionActionsMenu from "../CollectionDetailPage/CollectionActionsMenu";
 import CollectionSyncBadge from "../../components/CollectionSyncBadge";
 import CollectionSyncDialog from "../CollectionDetailPage/CollectionSyncDialog";
+import { useCardContextMenu } from "../../components/Layout/ConfigurationDialog/AppTiles";
 
 type Props = {
   collection: Collection;
@@ -100,6 +101,7 @@ export default function CollectionCard({
   const soleModelId = collection.item_count === 1 ? coverItems[0]?.id : undefined;
   const openTarget = soleModelId ? `/models/${soleModelId}` : `/models/collections/${collection.id}`;
   const [syncOpen, setSyncOpen] = useState(false);
+  const contextMenu = useCardContextMenu();
 
   return (
     <Box sx={{ position: "relative", pb: `${STACK_DEPTH_PX}px` }}>
@@ -123,6 +125,8 @@ export default function CollectionCard({
       ))}
       <Paper
         variant="outlined"
+        // System collections have no menu, so they keep the browser's.
+        onContextMenu={collection.system_key ? undefined : contextMenu.onContextMenu}
         sx={{
           position: "relative",
           overflow: "hidden",
@@ -195,6 +199,8 @@ export default function CollectionCard({
               onUnauthorized={onUnauthorized}
               onBookmarksChanged={onBookmarksChanged}
               triggerSx={{ color: "#fff" }}
+              contextMenuAt={contextMenu.at}
+              onContextMenuClose={contextMenu.close}
             />
           </Box>
         )}
