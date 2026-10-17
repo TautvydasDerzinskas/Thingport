@@ -22,7 +22,7 @@ export type AdminUser = {
 };
 
 export type HealthComponent =
-  "database" | "storage" | "memory" | "internet" | "flaresolverr" | "thingiverse" | "ai" | "smtp";
+  "database" | "storage" | "memory" | "internet" | "flaresolverr" | "thingiverse" | "grab" | "ai" | "smtp";
 export type HealthStatus = "ok" | "warning" | "error" | "not_configured";
 
 export type HealthResult = {

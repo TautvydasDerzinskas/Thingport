@@ -2,6 +2,7 @@ import express, { type Express, type NextFunction, type Request, type Response }
 import cors from "cors";
 import { resolveCorsOrigins } from "./cors";
 import { HttpError } from "./utils/fileUtils";
+import { trackClients } from "./services/clientActivityService";
 
 import healthRoutes from "./routes/health";
 import captchaRoutes from "./routes/captcha";
@@ -42,6 +43,7 @@ export function createApp(): Express {
   );
 
   app.use(express.json());
+  app.use("/api", trackClients);
 
   // The frontend's nginx proxies /api/* here unmodified.
   app.use("/api", healthRoutes);

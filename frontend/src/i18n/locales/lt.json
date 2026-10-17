@@ -552,6 +552,7 @@
         "testAll": "Patikrinti viską",
         "test": "Patikrinti",
         "settings": "Nustatymai",
+        "download": "Atsisiųsti",
         "testedAgo": "Patikrinta {{when}}",
         "neverTested": "Dar netikrinta",
         "lastFullTest": "Paskutinis pilnas patikrinimas: {{when}} ({{ago}})",
@@ -573,7 +574,8 @@
           "memory": "laisva {{available}} iš {{total}}",
           "memoryContainer": "laisva {{available}} iš konteineriui skirtų {{total}}",
           "process": "Thingport naudoja {{used}}",
-          "latency": "atsakė per {{ms}} ms"
+          "latency": "atsakė per {{ms}} ms",
+          "lastSeen": "paskutinį kartą {{when}}"
         },
         "problems": {
           "unknown": "Šis komponentas pranešė apie problemą. Žemiau – jo paties pateikta informacija."
@@ -631,6 +633,13 @@
               "blocked": "Thingiverse atsakė Cloudflare patikra – tai nieko nesako apie raktą. Įdiekite FlareSolverr arba palaukite: dažniausiai praeina po kurio laiko.",
               "unreachable": "Thingport nepasiekė Thingiverse. Patikrinkite serverio interneto ryšį arba bandykite vėliau.",
               "timeout": "Thingiverse laiku neatsakė. Bandykite vėliau."
+            }
+          },
+          "grab": {
+            "name": "Thingport Grab",
+            "description": "Naršyklės plėtinys, kuriuo modelius iš MakerWorld, Printables ir Thingiverse importuojate tiesiog naršydami, net ištisas kolekcijas, be nuorodų kopijavimo. Jis taip pat perkelia Printables patiktukus, kuriuos matote tik jūs.",
+            "problems": {
+              "not_seen": "Su šiuo serveriu Grab dar nenaudota nė vienoje naršyklėje. Įdiekite jį skiltyje „Atsisiuntimai“ ir prijunkite prie Thingport. Taip importuoti paprasčiausia, o kai kurios svetainės failus duoda tik naršyklei."
             }
           },
           "ai": {

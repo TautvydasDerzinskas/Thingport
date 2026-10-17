@@ -12,6 +12,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import CloudOutlinedIcon from "@mui/icons-material/CloudOutlined";
+import ExtensionOutlinedIcon from "@mui/icons-material/ExtensionOutlined";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import LanguageIcon from "@mui/icons-material/Language";
 import MailOutlineIcon from "@mui/icons-material/MailOutline";
@@ -37,8 +38,11 @@ type Props = {
 
 type Need = "required" | "recommended" | "optional";
 
-/** How much Thingport needs each one, and where it's set up. Order comes from the server: by importance. */
-const COMPONENTS: Record<HealthComponent, { icon: React.ReactNode; need: Need; settings?: string }> = {
+type ComponentInfo = { icon: React.ReactNode; need: Need; settings?: string; download?: string };
+
+/** How much Thingport needs each one, and where it's set up or, for Grab, downloaded. Order comes from the
+ *  server: by importance. */
+const COMPONENTS: Record<HealthComponent, ComponentInfo> = {
   database: { icon: <StorageIcon />, need: "required", settings: "/admin-connections?tab=database" },
   storage: { icon: <FolderOutlinedIcon />, need: "required", settings: "/admin-storage" },
   memory: { icon: <MemoryIcon />, need: "required", settings: "/admin-rendering" },
@@ -46,6 +50,7 @@ const COMPONENTS: Record<HealthComponent, { icon: React.ReactNode; need: Need; s
   internet: { icon: <LanguageIcon />, need: "recommended" },
   flaresolverr: { icon: <ShieldOutlinedIcon />, need: "recommended", settings: "/admin-connections?tab=flaresolverr" },
   thingiverse: { icon: <CloudOutlinedIcon />, need: "recommended", settings: "/admin-providers" },
+  grab: { icon: <ExtensionOutlinedIcon />, need: "recommended", download: "/downloads" },
   ai: { icon: <AutoAwesomeOutlinedIcon />, need: "optional", settings: "/admin-ai" },
   smtp: { icon: <MailOutlineIcon />, need: "optional", settings: "/admin-connections?tab=smtp" },
 };
@@ -58,7 +63,11 @@ const STATUS_COLOR: Record<HealthStatus, "success" | "warning" | "error" | "defa
 };
 
 /** The facts worth a glance, in words; the rest stay out of the way. */
-function factsLine(result: HealthResult, t: (key: string, options?: Record<string, unknown>) => string): string[] {
+function factsLine(
+  result: HealthResult,
+  t: (key: string, options?: Record<string, unknown>) => string,
+  language: string,
+): string[] {
   const { facts } = result;
   const lines: string[] = [];
   const bytes = (key: string) => (typeof facts[key] === "number" ? formatFileSize(facts[key] as number) : null);
@@ -77,6 +86,9 @@ function factsLine(result: HealthResult, t: (key: string, options?: Record<strin
       }),
     );
     lines.push(t("adminSettings.health.facts.process", { used: bytes("process_bytes") }));
+  }
+  if (typeof facts.last_seen_at === "string") {
+    lines.push(t("adminSettings.health.facts.lastSeen", { when: relativeTime(facts.last_seen_at, language) }));
   }
   if (result.latency_ms !== null) lines.push(t("adminSettings.health.facts.latency", { ms: result.latency_ms }));
   return lines;
@@ -121,9 +133,9 @@ function ComponentRow({
             <Typography variant="body2" color="text.secondary">
               {t(`${base}.description`)}
             </Typography>
-            {result && result.status !== "not_configured" && factsLine(result, t).length > 0 && (
+            {result && result.status !== "not_configured" && factsLine(result, t, i18n.language).length > 0 && (
               <Typography variant="caption" color="text.secondary">
-                {factsLine(result, t).join(" · ")}
+                {factsLine(result, t, i18n.language).join(" · ")}
               </Typography>
             )}
             {problem && (
@@ -151,6 +163,11 @@ function ComponentRow({
           sx={{ flexShrink: 0, pl: { xs: 4.75, sm: 0 } }}
         >
           <Stack direction="row" spacing={1}>
+            {info.download && (
+              <Button size="small" component={RouterLink} to={info.download}>
+                {t("adminSettings.health.download")}
+              </Button>
+            )}
             {info.settings && (
               <Button size="small" component={RouterLink} to={info.settings}>
                 {t("adminSettings.health.settings")}

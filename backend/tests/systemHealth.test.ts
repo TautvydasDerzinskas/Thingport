@@ -2,6 +2,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
+import { resetClientTracking } from "../src/services/clientActivityService";
 
 const app = createApp();
 let admin: string;
@@ -36,6 +37,24 @@ afterEach(() => {
 });
 
 describe("system health", () => {
+  it("reports Grab as not seen until it makes a request of its own", async () => {
+    await prisma.setting.deleteMany({ where: { key: "client_seen_grab" } });
+    await prisma.grabConnection.deleteMany();
+    resetClientTracking();
+    const test = async () =>
+      resultOf(
+        (await request(app).post("/api/admin/health/test").set(as(admin)).send({ component: "grab" })).body,
+        "grab",
+      )!;
+    expect(await test()).toMatchObject({ status: "not_configured", code: "not_seen" });
+
+    await request(app).get("/api/health").set("X-Thingport-Client", "grab");
+    // Recorded without holding up the request.
+    await vi.waitFor(async () => {
+      expect(await test()).toMatchObject({ status: "ok", facts: { last_seen_at: expect.any(String) } });
+    });
+  });
+
   it("lists every component by importance, the database first and SMTP, which is optional, last", async () => {
     const res = await request(app).get("/api/admin/health").set(as(admin));
     expect(res.status).toBe(200);
@@ -46,6 +65,7 @@ describe("system health", () => {
       "internet",
       "flaresolverr",
       "thingiverse",
+      "grab",
       "ai",
       "smtp",
     ]);

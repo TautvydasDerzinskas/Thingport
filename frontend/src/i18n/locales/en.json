@@ -551,6 +551,7 @@
         "testAll": "Run full test",
         "test": "Test",
         "settings": "Settings",
+        "download": "Download",
         "testedAgo": "Tested {{when}}",
         "neverTested": "Not tested yet",
         "lastFullTest": "Last full test: {{when}} ({{ago}})",
@@ -572,7 +573,8 @@
           "memory": "{{available}} available of {{total}}",
           "memoryContainer": "{{available}} available of the container's {{total}}",
           "process": "Thingport uses {{used}}",
-          "latency": "answered in {{ms}} ms"
+          "latency": "answered in {{ms}} ms",
+          "lastSeen": "last seen {{when}}"
         },
         "problems": {
           "unknown": "This component reported a problem. The details below come from it directly."
@@ -630,6 +632,13 @@
               "blocked": "Thingiverse answered with a Cloudflare challenge, which says nothing about the token. Set up FlareSolverr, or wait: it usually clears after a while.",
               "unreachable": "Thingport couldn't reach Thingiverse. Check the server's internet access, or try again later.",
               "timeout": "Thingiverse didn't answer in time. Try again later."
+            }
+          },
+          "grab": {
+            "name": "Thingport Grab",
+            "description": "The browser extension for importing models from MakerWorld, Printables and Thingiverse while you browse them, including whole collections, with no links to copy. It also brings over Printables likes, which only you can see.",
+            "problems": {
+              "not_seen": "No browser has used Grab with this instance yet. Install it from Downloads and connect it to Thingport. It's the easiest way to import, and some sites only let a browser get their files."
             }
           },
           "ai": {

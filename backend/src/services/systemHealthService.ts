@@ -11,6 +11,7 @@ import {
   SYSTEM_NOTIFICATIONS_URL,
 } from "../config";
 import { prisma } from "../db";
+import { clientLastSeen } from "./clientActivityService";
 import { listAiProviderModels } from "./aiCategorizationService";
 import { resolveAiConnection } from "./aiConnectionService";
 import { testFlaresolverr } from "./flaresolverr";
@@ -29,6 +30,7 @@ export const HEALTH_COMPONENTS = [
   "internet",
   "flaresolverr",
   "thingiverse",
+  "grab",
   "ai",
   "smtp",
 ] as const;
@@ -230,6 +232,18 @@ async function checkSmtp(): Promise<Found> {
   }
 }
 
+// Seen, not tested: it can't be reached from here, so this is the last time it reached Thingport.
+async function checkGrab(): Promise<Found> {
+  const [seen, connection] = await Promise.all([
+    clientLastSeen("grab"),
+    // Connections made before Grab was tracked still count.
+    prisma.grabConnection.findFirst({ orderBy: { lastUsedAt: { sort: "desc", nulls: "last" } } }),
+  ]);
+  const connected = connection ? (connection.lastUsedAt ?? connection.createdAt) : null;
+  const last = seen && connected ? (seen > connected ? seen : connected) : (seen ?? connected);
+  return last ? found("ok", "ok", { last_seen_at: last.toISOString() }) : found("not_configured", "not_seen");
+}
+
 const CHECKS: Record<HealthComponent, () => Promise<Found>> = {
   database: checkDatabase,
   storage: checkStorage,
@@ -237,6 +251,7 @@ const CHECKS: Record<HealthComponent, () => Promise<Found>> = {
   internet: checkInternet,
   flaresolverr: checkFlaresolverr,
   thingiverse: checkThingiverse,
+  grab: checkGrab,
   ai: checkAi,
   smtp: checkSmtp,
 };
