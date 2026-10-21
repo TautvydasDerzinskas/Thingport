@@ -14,8 +14,9 @@ export type QualityOutcome = "good" | "issues" | null;
 export function useQualityCheck(printId: string, onUnauthorized?: () => void) {
   const { t } = useTranslation("models");
   const showToast = useToast();
-  const [quality, setQuality] = useState<PrintQuality | null>(null);
-  const [outcome, setOutcome] = useState<QualityOutcome>(null);
+  // Tagged with their print, so a newly opened model never shows the last one's result for a render.
+  const [quality, setQuality] = useState<{ printId: string; value: PrintQuality } | null>(null);
+  const [outcome, setOutcome] = useState<{ printId: string; value: QualityOutcome } | null>(null);
   // Kept out of the effect's deps: a new toast function or translation mustn't restart a running check.
   const notify = useRef({ showToast, t, onUnauthorized });
   useEffect(() => {
@@ -23,19 +24,20 @@ export function useQualityCheck(printId: string, onUnauthorized?: () => void) {
   }, [showToast, t, onUnauthorized]);
 
   useEffect(() => {
+    if (!printId) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     setQuality(null);
     setOutcome(null);
 
     const settle = (next: PrintQuality, watched: boolean) => {
-      setQuality(next);
+      setQuality({ printId, value: next });
       if (next.status === "checking") {
         timer = setTimeout(() => void poll(), POLL_MS);
         return;
       }
       if (!watched || (next.status !== "good" && next.status !== "issues")) return;
-      setOutcome(next.status);
+      setOutcome({ printId, value: next.status });
       if (next.status === "issues") {
         // Only minor problems, which slicers usually cope with: a note rather than a warning.
         const minor = worstSeverity(next) === "minor";
@@ -78,5 +80,8 @@ export function useQualityCheck(printId: string, onUnauthorized?: () => void) {
     };
   }, [printId]);
 
-  return { quality, outcome };
+  return {
+    quality: quality?.printId === printId ? quality.value : null,
+    outcome: outcome?.printId === printId ? outcome.value : null,
+  };
 }

@@ -149,6 +149,7 @@ export default function QualityChecksSection({ onUnauthorized }: Props) {
         <QualityChecksDialog
           open={checksOpen}
           checksOff={settings.checks_off}
+          disabled={saving}
           onChange={(checksOff) => void save({ checks_off: checksOff })}
           onClose={() => setChecksOpen(false)}
         />

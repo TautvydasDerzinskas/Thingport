@@ -18,10 +18,12 @@ type Props = {
   checksOff: QualityCheckKey[];
   onChange: (checksOff: QualityCheckKey[]) => void;
   onClose: () => void;
+  /** While a save is in flight, so overlapping saves can't land out of order. */
+  disabled?: boolean;
 };
 
 /** One switch per kind of print problem. Each saves as soon as it's switched. */
-export default function QualityChecksDialog({ open, checksOff, onChange, onClose }: Props) {
+export default function QualityChecksDialog({ open, checksOff, onChange, onClose, disabled }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const toggle = (key: QualityCheckKey, on: boolean) =>
     onChange(on ? checksOff.filter((off) => off !== key) : [...checksOff, key]);
@@ -52,6 +54,7 @@ export default function QualityChecksDialog({ open, checksOff, onChange, onClose
                 </Box>
                 <Switch
                   checked={!checksOff.includes(key)}
+                  disabled={disabled}
                   onChange={(e) => toggle(key, e.target.checked)}
                   slotProps={{ input: { "aria-labelledby": titleId } }}
                 />

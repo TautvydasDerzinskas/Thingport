@@ -112,11 +112,17 @@ export function analyzeMesh(vertices: ArrayLike<number>, triangles?: ArrayLike<n
   const firstVertex = new Uint32Array(vertexCount);
   for (let v = ids.length - 1; v >= 0; v--) firstVertex[ids[v]] = v;
   const position = (id: number, axis: number) => vertices[firstVertex[id] * 3 + axis];
+  // Degenerate faces join no body, so they mustn't make a bounding box of their own either.
+  const skipped = new Uint8Array(triangleCount);
 
   for (let t = 0; t < triangleCount; t++) {
     const a = corner(t * 3);
     const b = corner(t * 3 + 1);
     const c = corner(t * 3 + 2);
+    // An index past the vertex list would make NaN edge keys, which never group and stall the loop below.
+    if (a === undefined || b === undefined || c === undefined) {
+      throw new RangeError("Triangle index outside the vertex list");
+    }
     const ax = position(a, 0);
     const ay = position(a, 1);
     const az = position(a, 2);
@@ -131,6 +137,7 @@ export function analyzeMesh(vertices: ArrayLike<number>, triangles?: ArrayLike<n
     const nz = ux * vy - uy * vx;
     if (a === b || b === c || a === c || nx * nx + ny * ny + nz * nz <= degenerateArea * degenerateArea) {
       degenerate++;
+      skipped[t] = 1;
       continue;
     }
     // The tetrahedron to the origin; the sum over a closed surface is its volume.
@@ -172,6 +179,7 @@ export function analyzeMesh(vertices: ArrayLike<number>, triangles?: ArrayLike<n
   // Each body's bounding box, keyed by its root vertex.
   const boxes = new Map<number, number[]>();
   for (let t = 0; t < triangleCount; t++) {
+    if (skipped[t]) continue;
     for (let k = 0; k < 3; k++) {
       const id = corner(t * 3 + k);
       const root = findRoot(parent, id);

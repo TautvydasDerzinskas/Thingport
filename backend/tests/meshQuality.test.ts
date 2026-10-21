@@ -75,7 +75,11 @@ describe("analyzeMesh", () => {
   it("counts degenerate triangles without treating them as holes", () => {
     const sliver = [0, 0, 0, 5, 0, 0, 10, 0, 0];
     const stats = analyzeMesh(soup([...box(), sliver]));
-    expect(stats).toMatchObject({ degenerateTriangles: 1, openEdges: 0 });
+    expect(stats).toMatchObject({ degenerateTriangles: 1, openEdges: 0, shells: 1, fragments: 0 });
+  });
+
+  it("rejects a triangle index outside the vertex list", () => {
+    expect(() => analyzeMesh([0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 3])).toThrow(RangeError);
   });
 
   it("tells a stray fragment from a second part", () => {
