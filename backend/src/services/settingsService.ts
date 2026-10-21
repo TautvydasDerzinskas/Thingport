@@ -115,6 +115,29 @@ export async function setPreviewMode(value: PreviewMode): Promise<void> {
   });
 }
 
+// What API tokens may do at /api/mcp, instance-wide. "read" also keeps a write tool off for a token
+// whose user ticked it, without forgetting the choice.
+export type McpAccess = "off" | "read" | "write";
+export const MCP_ACCESS_LEVELS: readonly McpAccess[] = ["off", "read", "write"];
+const MCP_ACCESS_KEY = "mcp_access";
+const DEFAULT_MCP_ACCESS: McpAccess = "write";
+
+export async function getMcpAccess(): Promise<McpAccess> {
+  const row = await prisma.setting.findUnique({ where: { key: MCP_ACCESS_KEY } });
+  const value = row?.value;
+  return typeof value === "string" && MCP_ACCESS_LEVELS.includes(value as McpAccess)
+    ? (value as McpAccess)
+    : DEFAULT_MCP_ACCESS;
+}
+
+export async function setMcpAccess(value: McpAccess): Promise<void> {
+  await prisma.setting.upsert({
+    where: { key: MCP_ACCESS_KEY },
+    create: { key: MCP_ACCESS_KEY, value },
+    update: { value },
+  });
+}
+
 const THINGIVERSE_ACCESS_TOKEN_KEY = "thingiverse_access_token";
 
 // Instance-wide: the token belongs to whichever Thingiverse account registered the app.

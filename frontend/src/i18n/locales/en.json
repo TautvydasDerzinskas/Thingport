@@ -189,7 +189,7 @@
       "backToProfile": "Back to Profile",
       "apiToken": {
         "heading": "API token",
-        "description": "Lets other apps and services connect to your Thingport library, with read-only access.",
+        "description": "Lets other apps, services and AI assistants connect to your Thingport library. Over the API it can only read.",
         "created": "created {{date}}",
         "lastUsed": "last used {{when}}",
         "neverUsed": "not used yet",
@@ -197,13 +197,86 @@
         "regenerate": "Regenerate",
         "revoke": "Revoke",
         "regenerateTitle": "Regenerate API token?",
-        "regenerateMessage": "The current token stops working at once. Anything using it will need the new one.",
+        "regenerateMessage": "The current token stops working at once. Anything using it will need the new one, and its MCP tools go back to the ones that only read.",
         "revokeTitle": "Revoke API token?",
         "revokeMessage": "The token stops working at once, and anything using it loses access to your library.",
         "copyNow": "Copy your token now. It won't be shown again.",
         "copy": "Copy",
         "copied": "Copied",
-        "failed": "Something went wrong with your API token. Please try again."
+        "failed": "Something went wrong with your API token. Please try again.",
+        "mcp": {
+          "heading": "MCP",
+          "description": "What an AI assistant connected with this token (over MCP, at /api/mcp) may use. Changes apply straight away, without a new token.",
+          "connect": "To connect an AI assistant, for example Claude Code:",
+          "writes": "Changes your library",
+          "failed": "Couldn't save the token's MCP tools. Please try again.",
+          "tools": {
+            "search_models": {
+              "title": "Search models",
+              "description": "Find models by words in their title, tags, creator or description."
+            },
+            "list_models": {
+              "title": "List models",
+              "description": "List models by tag, category, collection or author."
+            },
+            "get_model": {
+              "title": "Get a model",
+              "description": "Read one model's description, files, tags, author and collections."
+            },
+            "list_collections": {
+              "title": "List collections",
+              "description": "See your collections and how many models each holds."
+            },
+            "get_collection": {
+              "title": "Get a collection",
+              "description": "List the models in one collection."
+            },
+            "list_tags": {
+              "title": "List tags",
+              "description": "See your tags, most used first."
+            },
+            "list_categories": {
+              "title": "List categories",
+              "description": "See your categories and folders."
+            },
+            "get_author": {
+              "title": "Get an author",
+              "description": "Read about a designer and see their models in your library."
+            },
+            "library_stats": {
+              "title": "Library stats",
+              "description": "Your totals, most viewed, most printed and newest models."
+            },
+            "get_import_status": {
+              "title": "Check an import",
+              "description": "Follow an import that's still running."
+            },
+            "import_model": {
+              "title": "Import a model",
+              "description": "Import a model from a link, as + Add > Import does."
+            },
+            "create_collection": {
+              "title": "Create a collection",
+              "description": "Make a new, empty collection."
+            },
+            "add_to_collection": {
+              "title": "Add to a collection",
+              "description": "Put models from your library in one of your collections."
+            }
+          },
+          "writeConfirmTitle": "Let the assistant use “{{tool}}”?",
+          "writeConfirmMessage": "This tool changes your library. An assistant connected with this token will be able to use it without asking you each time. Nothing it does deletes models.",
+          "writeConfirm": "Turn on",
+          "adminOff": "An admin has turned MCP off on this Thingport.",
+          "adminReadOnly": "An admin allows only the tools that read.",
+          "copyCommand": "Copy command",
+          "reads": "Reads your library",
+          "allow": "Allow",
+          "deny": "Deny"
+        },
+        "permissions": {
+          "title": "Token permissions"
+        }
       },
       "language": {
         "heading": "Language",
@@ -1226,6 +1299,7 @@
           "password_reset": "Reset password",
           "api_token_generated": "Generated an API token",
           "api_token_revoked": "Revoked their API token",
+          "api_token_mcp_tools_changed": "Changed their API token's MCP tools",
           "user_invited": "Invited a user",
           "model_uploaded": "Model uploaded",
           "model_imported": "Model imported",
@@ -1253,7 +1327,8 @@
           "grab_connected": "Thingport Grab connected",
           "grab_disconnected": "Thingport Grab removed",
           "collections_merged": "Collections merged",
-          "tags_merged": "Tags merged"
+          "tags_merged": "Tags merged",
+          "mcp_access_changed": "Changed the MCP access"
         },
         "authorsLinked": "{{count}} model(s) linked",
         "descriptionsRefetched": "{{email}} — {{updated}} of {{total}} description(s) changed",
@@ -1521,6 +1596,23 @@
         "saving": "Saving…",
         "saved": "Saved.",
         "failed": "Couldn't save the public URL."
+      },
+      "mcp": {
+        "heading": "AI assistants (MCP)",
+        "subtitle": "What API tokens may do at /api/mcp.",
+        "accessLabel": "MCP access",
+        "help": "Each user still chooses their own token's tools within this. Tools that change the library import without a captcha, as Thingport Grab does.",
+        "failed": "Couldn't save the MCP access. Please try again.",
+        "levels": {
+          "off": "Off",
+          "read": "Read only",
+          "write": "Read and change"
+        },
+        "levelHelp": {
+          "off": "No API token can connect over MCP.",
+          "read": "Tokens can search and read their own library, never change it.",
+          "write": "Tokens can also import models and file them into collections, if their user turns that on."
+        }
       }
     },
     "download": {

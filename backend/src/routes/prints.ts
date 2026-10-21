@@ -27,87 +27,39 @@ import {
   localizeDescriptionImages,
   pruneDescriptionImages,
 } from "../services/descriptionImageService";
-import { deleteAuthorIfOrphaned, getLinkedAuthorIds } from "../services/authorService";
+import { deleteAuthorIfOrphaned } from "../services/authorService";
 import { toPrintOut } from "../dto";
 import { loadFullPrint, printOutById, printOutsByIds } from "../services/printLoader";
 import { deleteAllPrintFiles, saveFileFromTemp } from "../services/printFileService";
 import { RENDERABLE_MODEL_EXTS } from "../config";
 import { estimateDownloadSize, resolvePrintsForDownload, sendPrintsZip } from "../services/downloadZip";
-import { systemCollectionKeyForId } from "../services/collectionService";
 import { createLog } from "../services/auditLog";
 import { recordActivity } from "../services/activityService";
 import { notifyUpload } from "../services/modelNotifications";
 import { fillSourceGaps } from "../services/fillGapsService";
 import { forgetAiDescription } from "../services/aiDescriptionService";
 import { isNormalizable3mf, normalize3mfStatus, normalized3mfFor } from "../services/normalized3mfCache";
-import { rankedPrintIds } from "../services/searchService";
+import { listPrints, listTagsOf, parseSortMode, splitList, type PrintFilters } from "../services/printQuery";
 import type { Prisma } from "@prisma/client";
 import { printQuality, startPrintQualityCheck } from "../services/modelQualityService";
 
 const router = Router();
 router.use(requireAuth);
 
-// `author_id` sentinel for "prints with no real author".
-const SELF_AUTHOR_ID = "self";
-
-// Postgres array containment is case-sensitive, so tags are matched in JS after fetching.
-function parseTagList(req: Request): string[] {
-  const tagsParam = typeof req.query.tags === "string" ? req.query.tags : "";
-  return tagsParam
-    .split(",")
-    .map((t) => t.trim())
-    .filter(Boolean);
-}
-
-function matchesTagList(printTags: string[], tagList: string[]): boolean {
-  if (!tagList.length) return true;
-  const printTagsLower = new Set(printTags.map((t) => t.toLowerCase()));
-  return tagList.every((t) => printTagsLower.has(t.toLowerCase()));
-}
-
 function isRenderableUpload(f: Express.Multer.File): boolean {
   return RENDERABLE_MODEL_EXTS.has(path.extname(f.originalname).toLowerCase());
 }
 
-/** `rankedIds` is set when `q` is: the matches, best first, for orderBy=relevance. */
-async function buildPrintWhere(req: Request): Promise<{ where: Prisma.PrintWhereInput; rankedIds: string[] | null }> {
-  const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
-  const categoryIdParam = typeof req.query.category_id === "string" ? req.query.category_id : "";
-  const categoryIds = categoryIdParam
-    .split(",")
-    .map((id) => id.trim())
-    .filter(Boolean);
-  const collectionId = typeof req.query.collection_id === "string" ? req.query.collection_id.trim() : "";
-  const authorId = typeof req.query.author_id === "string" ? req.query.author_id.trim() : "";
-
-  const where: Prisma.PrintWhereInput = { userId: req.userId };
-  // AND clauses so the self-author and search OR groups don't clobber each other.
-  const andClauses: Prisma.PrintWhereInput[] = [];
-  if (categoryIds.length === 1) where.categoryId = categoryIds[0];
-  else if (categoryIds.length > 1) where.categoryId = { in: categoryIds };
-  if (authorId === SELF_AUTHOR_ID) {
-    // "My models": prints with no author at all, or by an Author the user linked as themselves.
-    const linkedAuthorIds = await getLinkedAuthorIds(req.userId!);
-    andClauses.push({
-      OR: [
-        { authorId: null, creator: null, sourceProvider: null },
-        ...(linkedAuthorIds.length ? [{ authorId: { in: linkedAuthorIds } }] : []),
-      ],
-    });
-  } else if (authorId) {
-    where.authorId = authorId;
-  }
-  if (collectionId) {
-    const systemKey = systemCollectionKeyForId(collectionId);
-    if (systemKey === "favorites") where.favoritedAt = { not: null };
-    else if (systemKey === "history") where.lastViewedAt = { not: null };
-    else where.collectionItems = { some: { collectionId } };
-  }
-  // Matched as the search palette matches, so its "see all results" lists what it found.
-  const rankedIds = q ? await rankedPrintIds(req.userId!, q) : null;
-  if (rankedIds) andClauses.push({ id: { in: rankedIds } });
-  if (andClauses.length) where.AND = andClauses;
-  return { where, rankedIds };
+/** GET /prints' and GET /tags' query string as listing filters. */
+function printFiltersFromQuery(req: Request): PrintFilters {
+  const str = (value: unknown) => (typeof value === "string" ? value : undefined);
+  return {
+    q: str(req.query.q),
+    categoryIds: splitList(req.query.category_id),
+    collectionId: str(req.query.collection_id),
+    authorId: str(req.query.author_id),
+    tags: splitList(req.query.tags),
+  };
 }
 
 router.post(
@@ -232,13 +184,6 @@ router.post(
   }),
 );
 
-type PrintSortMode = "newest" | "popular" | "downloads" | "relevance";
-
-function parseSortMode(raw: unknown): PrintSortMode {
-  if (raw === "popular" || raw === "downloads" || raw === "relevance") return raw;
-  return "newest";
-}
-
 router.get(
   "/prints",
   asyncHandler(async (req, res) => {
@@ -255,67 +200,18 @@ router.get(
       if (!Number.isFinite(offset) || offset < 0) throw new HttpError(400, "Invalid offset");
     }
 
-    const { where, rankedIds } = await buildPrintWhere(req);
-    const tagList = parseTagList(req);
-    const allMatching = await prisma.print.findMany({
-      where,
-      include: {
-        plates: { orderBy: { position: "asc" } },
-        previewImages: { orderBy: { position: "asc" } },
-        author: true,
-        // A card's menu needs to know a folder from a category, as the detail page does.
-        category: true,
-      },
+    const page = await listPrints(req.userId!, printFiltersFromQuery(req), {
+      sort: parseSortMode(req.query.orderBy),
+      limit,
+      offset,
     });
-    const prints = tagList.length ? allMatching.filter((p) => matchesTagList(p.tags, tagList)) : allMatching;
-    const printIds = prints.map((p) => p.id);
-    const files = printIds.length ? await prisma.printFile.findMany({ where: { printId: { in: printIds } } }) : [];
-    const filesByPrint = new Map<string, typeof files>();
-    for (const f of files) {
-      const list = filesByPrint.get(f.printId) ?? [];
-      list.push(f);
-      filesByPrint.set(f.printId, list);
-    }
-
-    // Under "newest", Favourites and Browsing History sort by when they were favorited/viewed.
-    const collectionIdParam = typeof req.query.collection_id === "string" ? req.query.collection_id.trim() : "";
-    const systemKey = systemCollectionKeyForId(collectionIdParam);
-    const recencyField = systemKey === "favorites" ? "favoritedAt" : systemKey === "history" ? "lastViewedAt" : null;
-    const sortMode = parseSortMode(req.query.orderBy);
-
-    // Relevance needs a query to rank by; without one it falls back to newest.
-    const rank = sortMode === "relevance" && rankedIds ? new Map(rankedIds.map((id, i) => [id, i])) : null;
-    const sortValue = (p: (typeof prints)[number]): number => {
-      if (rank) return -(rank.get(p.id) ?? rank.size);
-      if (sortMode === "popular") return p.viewCount;
-      if (sortMode === "downloads") return p.printCount;
-      if (recencyField) return p[recencyField]?.getTime() ?? 0;
-      return p.createdAt.getTime();
-    };
-
-    const sorted = prints.toSorted((a, b) => {
-      const diff = sortValue(b) - sortValue(a);
-      if (diff !== 0) return diff;
-      return a.id.localeCompare(b.id);
-    });
-
-    let paged = sorted;
     if (limit !== undefined) {
-      const start = offset ?? 0;
-      paged = sorted.slice(start, start + limit);
-      const hasMore = sorted.length > start + paged.length;
-      res.setHeader("X-Has-More", hasMore ? "true" : "false");
-      res.setHeader("X-Next-Offset", String(start + paged.length));
+      res.setHeader("X-Has-More", page.hasMore ? "true" : "false");
+      res.setHeader("X-Next-Offset", String(page.nextOffset));
       // Total across all pages, e.g. for a hover card's "N models".
-      res.setHeader("X-Total-Count", String(sorted.length));
+      res.setHeader("X-Total-Count", String(page.total));
     }
-
-    const out = paged.map((p) => {
-      const printFiles = filesByPrint.get(p.id) ?? [];
-      const preparedFile = p.preparedFileId ? (printFiles.find((f) => f.id === p.preparedFileId) ?? null) : null;
-      return toPrintOut(p, p.plates, printFiles, preparedFile, p.author, p.previewImages, p.category);
-    });
-    res.json(out);
+    res.json(page.prints);
   }),
 );
 
@@ -396,18 +292,7 @@ router.post(
 router.get(
   "/tags",
   asyncHandler(async (req, res) => {
-    const { where } = await buildPrintWhere(req);
-    const tagList = parseTagList(req);
-    const allRows = await prisma.print.findMany({ where, select: { tags: true } });
-    const rows = tagList.length ? allRows.filter((r) => matchesTagList(r.tags, tagList)) : allRows;
-    const found = new Set<string>();
-    for (const row of rows) {
-      for (const tag of row.tags) {
-        const cleaned = tag.trim();
-        if (cleaned) found.add(cleaned);
-      }
-    }
-    res.json([...found].toSorted((a, b) => a.toLowerCase().localeCompare(b.toLowerCase())));
+    res.json(await listTagsOf(req.userId!, printFiltersFromQuery(req)));
   }),
 );
 

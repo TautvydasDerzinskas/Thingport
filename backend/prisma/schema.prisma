@@ -52,6 +52,9 @@ model User {
   apiTokenHint             String?
   apiTokenCreatedAt        DateTime?
   apiTokenLastUsedAt       DateTime?
+  // The MCP tools the token may call at /api/mcp (see mcp/tools.ts). Chosen per token, so a tool
+  // that writes is only ever reachable if the user ticked it.
+  apiTokenMcpTools         String[]          @default([])
   // Per-user, unlike the instance-wide Thingiverse token.
   makerworldCookie         String?
   // When MakerWorld last turned the cookie down. Scheduled MakerWorld syncs wait until it changes.

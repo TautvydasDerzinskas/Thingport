@@ -197,13 +197,86 @@
         "regenerate": "Régénérer",
         "revoke": "Révoquer",
         "regenerateTitle": "Régénérer le jeton d’API ?",
-        "regenerateMessage": "Le jeton actuel cessera de fonctionner immédiatement. Toute application qui l’utilise devra utiliser le nouveau.",
+        "regenerateMessage": "Le jeton actuel cesse de fonctionner aussitôt. Tout ce qui l'utilise aura besoin du nouveau, et ses outils MCP reviennent aux seuls outils de lecture.",
         "revokeTitle": "Révoquer le jeton d’API ?",
         "revokeMessage": "Le jeton cessera de fonctionner immédiatement, et toute application qui l’utilise perdra l’accès à votre bibliothèque.",
         "copyNow": "Copiez votre jeton maintenant. Il ne sera plus affiché.",
         "copy": "Copier",
         "copied": "Copié",
-        "failed": "Une erreur s’est produite avec votre jeton d’API. Veuillez réessayer."
+        "failed": "Une erreur s’est produite avec votre jeton d’API. Veuillez réessayer.",
+        "mcp": {
+          "adminOff": "Un administrateur a désactivé MCP sur ce Thingport.",
+          "adminReadOnly": "Un administrateur n'autorise que les outils de lecture.",
+          "copyCommand": "Copier la commande",
+          "heading": "MCP",
+          "description": "Ce qu'un assistant IA connecté avec ce jeton (via MCP, sur /api/mcp) peut utiliser. Les changements s'appliquent aussitôt, sans nouveau jeton.",
+          "connect": "Pour connecter un assistant IA, par exemple Claude Code :",
+          "writes": "Modifie votre bibliothèque",
+          "failed": "Impossible d'enregistrer les outils MCP du jeton. Veuillez réessayer.",
+          "tools": {
+            "search_models": {
+              "title": "Rechercher des modèles",
+              "description": "Trouve des modèles par les mots de leur titre, tags, créateur ou description."
+            },
+            "list_models": {
+              "title": "Lister les modèles",
+              "description": "Liste les modèles par tag, catégorie, collection ou auteur."
+            },
+            "get_model": {
+              "title": "Voir un modèle",
+              "description": "Lit la description, les fichiers, les tags, l'auteur et les collections d'un modèle."
+            },
+            "list_collections": {
+              "title": "Lister les collections",
+              "description": "Voit vos collections et le nombre de modèles de chacune."
+            },
+            "get_collection": {
+              "title": "Voir une collection",
+              "description": "Liste les modèles d'une collection."
+            },
+            "list_tags": {
+              "title": "Lister les tags",
+              "description": "Voit vos tags, les plus utilisés d'abord."
+            },
+            "list_categories": {
+              "title": "Lister les catégories",
+              "description": "Voit vos catégories et dossiers."
+            },
+            "get_author": {
+              "title": "Voir un auteur",
+              "description": "Lit la présentation d'un designer et voit ses modèles dans votre bibliothèque."
+            },
+            "library_stats": {
+              "title": "Statistiques de la bibliothèque",
+              "description": "Vos totaux et vos modèles les plus vus, les plus imprimés et les plus récents."
+            },
+            "get_import_status": {
+              "title": "Suivre un import",
+              "description": "Suit un import encore en cours."
+            },
+            "import_model": {
+              "title": "Importer un modèle",
+              "description": "Importe un modèle depuis un lien, comme + Ajouter > Importer."
+            },
+            "create_collection": {
+              "title": "Créer une collection",
+              "description": "Crée une nouvelle collection vide."
+            },
+            "add_to_collection": {
+              "title": "Ajouter à une collection",
+              "description": "Range des modèles de votre bibliothèque dans une de vos collections."
+            }
+          },
+          "writeConfirmTitle": "Laisser l'assistant utiliser « {{tool}} » ?",
+          "writeConfirmMessage": "Cet outil modifie votre bibliothèque. Un assistant connecté avec ce jeton pourra l'utiliser sans vous demander à chaque fois. Rien de ce qu'il fait ne supprime de modèles.",
+          "writeConfirm": "Activer",
+          "reads": "Lit votre bibliothèque",
+          "allow": "Autoriser",
+          "deny": "Refuser"
+        },
+        "permissions": {
+          "title": "Autorisations du jeton"
+        }
       },
       "language": {
         "heading": "Langue",
@@ -1253,7 +1326,9 @@
           "grab_connected": "Thingport Grab connecté",
           "grab_disconnected": "Thingport Grab retiré",
           "collections_merged": "Collections fusionnées",
-          "tags_merged": "Étiquettes fusionnées"
+          "tags_merged": "Étiquettes fusionnées",
+          "mcp_access_changed": "A modifié l'accès MCP",
+          "api_token_mcp_tools_changed": "A modifié les outils MCP de son jeton d'API"
         },
         "authorsLinked": "{{count}} modèle(s) relié(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} description(s) sur {{total}} modifiée(s)",
@@ -1521,6 +1596,23 @@
         "saving": "Enregistrement…",
         "saved": "Enregistré.",
         "failed": "Impossible d’enregistrer l’URL publique."
+      },
+      "mcp": {
+        "heading": "Assistants IA (MCP)",
+        "subtitle": "Ce que les jetons d'API peuvent faire sur /api/mcp.",
+        "accessLabel": "Accès MCP",
+        "help": "Chaque utilisateur choisit toujours les outils de son propre jeton dans cette limite. Les outils qui modifient la bibliothèque importent sans captcha, comme Thingport Grab.",
+        "failed": "Impossible d'enregistrer l'accès MCP. Veuillez réessayer.",
+        "levels": {
+          "off": "Désactivé",
+          "read": "Lecture seule",
+          "write": "Lire et modifier"
+        },
+        "levelHelp": {
+          "off": "Aucun jeton d'API ne peut se connecter via MCP.",
+          "read": "Les jetons peuvent chercher et lire leur propre bibliothèque, jamais la modifier.",
+          "write": "Les jetons peuvent aussi importer des modèles et les ranger dans des collections, si leur utilisateur l'active."
+        }
       }
     },
     "download": {

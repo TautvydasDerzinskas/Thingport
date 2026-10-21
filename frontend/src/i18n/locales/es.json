@@ -197,13 +197,86 @@
         "regenerate": "Regenerar",
         "revoke": "Revocar",
         "regenerateTitle": "¿Regenerar el token de API?",
-        "regenerateMessage": "El token actual dejará de funcionar de inmediato. Cualquier cosa que lo use necesitará el nuevo.",
+        "regenerateMessage": "El token actual deja de funcionar al instante. Todo lo que lo use necesitará el nuevo, y sus herramientas MCP vuelven a ser solo las de lectura.",
         "revokeTitle": "¿Revocar el token de API?",
         "revokeMessage": "El token dejará de funcionar de inmediato y todo lo que lo use perderá el acceso a tu biblioteca.",
         "copyNow": "Copia tu token ahora. No se volverá a mostrar.",
         "copy": "Copiar",
         "copied": "Copiado",
-        "failed": "Algo ha salido mal con tu token de API. Inténtalo de nuevo."
+        "failed": "Algo ha salido mal con tu token de API. Inténtalo de nuevo.",
+        "mcp": {
+          "adminOff": "Un administrador ha desactivado MCP en este Thingport.",
+          "adminReadOnly": "Un administrador solo permite las herramientas de lectura.",
+          "copyCommand": "Copiar comando",
+          "heading": "MCP",
+          "description": "Lo que puede usar un asistente de IA conectado con este token (por MCP, en /api/mcp). Los cambios se aplican al instante, sin un token nuevo.",
+          "connect": "Para conectar un asistente de IA, por ejemplo Claude Code:",
+          "writes": "Cambia tu biblioteca",
+          "failed": "No se pudieron guardar las herramientas MCP del token. Inténtalo de nuevo.",
+          "tools": {
+            "search_models": {
+              "title": "Buscar modelos",
+              "description": "Encuentra modelos por palabras de su título, etiquetas, creador o descripción."
+            },
+            "list_models": {
+              "title": "Listar modelos",
+              "description": "Lista modelos por etiqueta, categoría, colección o autor."
+            },
+            "get_model": {
+              "title": "Ver un modelo",
+              "description": "Lee la descripción, los archivos, las etiquetas, el autor y las colecciones de un modelo."
+            },
+            "list_collections": {
+              "title": "Listar colecciones",
+              "description": "Ve tus colecciones y cuántos modelos tiene cada una."
+            },
+            "get_collection": {
+              "title": "Ver una colección",
+              "description": "Lista los modelos de una colección."
+            },
+            "list_tags": {
+              "title": "Listar etiquetas",
+              "description": "Ve tus etiquetas, las más usadas primero."
+            },
+            "list_categories": {
+              "title": "Listar categorías",
+              "description": "Ve tus categorías y carpetas."
+            },
+            "get_author": {
+              "title": "Ver un autor",
+              "description": "Lee sobre un diseñador y ve sus modelos en tu biblioteca."
+            },
+            "library_stats": {
+              "title": "Estadísticas de la biblioteca",
+              "description": "Tus totales y los modelos más vistos, más impresos y más recientes."
+            },
+            "get_import_status": {
+              "title": "Seguir una importación",
+              "description": "Sigue una importación que aún está en curso."
+            },
+            "import_model": {
+              "title": "Importar un modelo",
+              "description": "Importa un modelo desde un enlace, como + Añadir > Importar."
+            },
+            "create_collection": {
+              "title": "Crear una colección",
+              "description": "Crea una colección nueva y vacía."
+            },
+            "add_to_collection": {
+              "title": "Añadir a una colección",
+              "description": "Pon modelos de tu biblioteca en una de tus colecciones."
+            }
+          },
+          "writeConfirmTitle": "¿Dejar que el asistente use «{{tool}}»?",
+          "writeConfirmMessage": "Esta herramienta cambia tu biblioteca. Un asistente conectado con este token podrá usarla sin preguntarte cada vez. Nada de lo que haga elimina modelos.",
+          "writeConfirm": "Activar",
+          "reads": "Lee tu biblioteca",
+          "allow": "Permitir",
+          "deny": "Denegar"
+        },
+        "permissions": {
+          "title": "Permisos del token"
+        }
       },
       "language": {
         "heading": "Idioma",
@@ -1253,7 +1326,9 @@
           "grab_connected": "Thingport Grab conectado",
           "grab_disconnected": "Thingport Grab eliminado",
           "collections_merged": "Colecciones fusionadas",
-          "tags_merged": "Etiquetas fusionadas"
+          "tags_merged": "Etiquetas fusionadas",
+          "mcp_access_changed": "Cambió el acceso MCP",
+          "api_token_mcp_tools_changed": "Cambió las herramientas MCP de su token de API"
         },
         "authorsLinked": "{{count}} modelo(s) vinculado(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} de {{total}} descripción(es) modificada(s)",
@@ -1521,6 +1596,23 @@
         "saving": "Guardando…",
         "saved": "Guardado.",
         "failed": "No se pudo guardar la URL pública."
+      },
+      "mcp": {
+        "heading": "Asistentes de IA (MCP)",
+        "subtitle": "Qué pueden hacer los tokens de API en /api/mcp.",
+        "accessLabel": "Acceso MCP",
+        "help": "Cada usuario sigue eligiendo las herramientas de su propio token dentro de este límite. Las herramientas que cambian la biblioteca importan sin captcha, como Thingport Grab.",
+        "failed": "No se pudo guardar el acceso MCP. Inténtalo de nuevo.",
+        "levels": {
+          "off": "Desactivado",
+          "read": "Solo lectura",
+          "write": "Leer y cambiar"
+        },
+        "levelHelp": {
+          "off": "Ningún token de API puede conectarse por MCP.",
+          "read": "Los tokens pueden buscar y leer su propia biblioteca, nunca cambiarla.",
+          "write": "Los tokens también pueden importar modelos y guardarlos en colecciones, si su usuario lo activa."
+        }
       }
     },
     "download": {

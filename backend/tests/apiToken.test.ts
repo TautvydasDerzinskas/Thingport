@@ -28,7 +28,11 @@ describe("API token", () => {
   it("reports no token for a new account", async () => {
     const res = await request(app).get("/api/profile/api-token").set(auth(session));
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ configured: false, hint: null, created_at: null, last_used_at: null });
+    const { available_mcp_tools, mcp_access, ...token } = res.body;
+    expect(token).toEqual({ configured: false, hint: null, created_at: null, last_used_at: null, mcp_tools: [] });
+    expect(mcp_access).toBe("write");
+    // What the profile page offers to tick, token or not.
+    expect(available_mcp_tools.map((tool: { name: string }) => tool.name)).toContain("search_models");
   });
 
   it("generates a token that is shown once and stored only as a hash", async () => {

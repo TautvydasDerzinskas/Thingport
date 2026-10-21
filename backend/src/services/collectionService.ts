@@ -4,6 +4,8 @@ import { printOutsByIds } from "./printLoader";
 import { relocatePrintsForToken } from "./printService";
 import { moveCollectionBookmark } from "./bookmarkService";
 import { toSystemCollectionOut, type CollectionOut, type SystemCollectionKey } from "../dto";
+import { normalizeTags } from "../utils/tagNormalization";
+import { createLog } from "./auditLog";
 import type { Collection, Prisma } from "@prisma/client";
 
 export function normalizeCollectionName(name: string): string {
@@ -60,6 +62,65 @@ export async function addPrintsToCollection(collectionId: string, printIds: stri
     skipDuplicates: true,
   });
   await relocatePrintsForToken("collection", printIds);
+}
+
+/** A new, empty collection. Shared by POST /collections and the MCP create_collection tool. */
+export async function createCollection(
+  userId: string,
+  input: { name: string; description?: string | null; tags?: string[] },
+): Promise<Collection> {
+  await assertCollectionNameAvailable(userId, input.name);
+  const collection = await prisma.collection.create({
+    data: {
+      userId,
+      name: input.name,
+      nameNormalized: normalizeCollectionName(input.name),
+      description: input.description?.trim() || null,
+      tags: normalizeTags(input.tags ?? []),
+    },
+  });
+  void createLog({ userId, action: "collection_created", targetId: collection.id, details: { name: collection.name } });
+  return collection;
+}
+
+/** Files the user's own models into one of their collections. Ids that aren't the user's models are
+ *  left out and reported, as are models already in it. */
+export async function addModelsToCollection(
+  userId: string,
+  collectionId: string,
+  printIds: string[],
+): Promise<{ collection: Collection; added: string[]; alreadyIn: string[]; notFound: string[] }> {
+  if (isSystemCollectionId(collectionId)) throw new HttpError(400, "This collection can't be edited");
+  const collection = await prisma.collection.findFirst({ where: { id: collectionId, userId } });
+  if (!collection) throw new HttpError(404, "Collection not found");
+  const owned = new Set(
+    (await prisma.print.findMany({ where: { id: { in: printIds }, userId }, select: { id: true } })).map((p) => p.id),
+  );
+  const present = new Set(
+    (
+      await prisma.collectionItem.findMany({
+        where: { collectionId, printId: { in: [...owned] } },
+        select: { printId: true },
+      })
+    ).map((item) => item.printId),
+  );
+  const unique = [...new Set(printIds)];
+  const added = unique.filter((id) => owned.has(id) && !present.has(id));
+  await addPrintsToCollection(collection.id, added);
+  if (added.length) {
+    void createLog({
+      userId,
+      action: "collection_item_added",
+      targetId: collection.id,
+      details: { name: collection.name, count: added.length },
+    });
+  }
+  return {
+    collection,
+    added,
+    alreadyIn: unique.filter((id) => present.has(id)),
+    notFound: unique.filter((id) => !owned.has(id)),
+  };
 }
 
 // Favourites and History aren't real rows: they're derived from Print.favoritedAt/lastViewedAt.

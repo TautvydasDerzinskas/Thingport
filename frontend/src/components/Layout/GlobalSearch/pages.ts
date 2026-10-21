@@ -113,6 +113,9 @@ export const SEARCH_PAGES: SearchPage[] = [
     "registrations",
     "session length",
     "public url",
+    "mcp",
+    "ai assistant",
+    "api token",
   ]),
   adminPage("adminRendering", "/admin-rendering", "app:adminSettings.rendering.heading", [
     "rendering",

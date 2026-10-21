@@ -7,7 +7,9 @@ import { normalizeTags } from "../utils/tagNormalization";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import {
+  addModelsToCollection,
   addPrintsToCollection,
+  createCollection,
   assertCollectionNameAvailable,
   deleteCollections,
   isSystemCollectionId,
@@ -96,23 +98,8 @@ router.post(
   "/collections",
   asyncHandler(async (req, res) => {
     const body = parseBody(collectionSchema, req.body);
-    await assertCollectionNameAvailable(req.userId!, body.name);
-    const collection = await prisma.collection.create({
-      data: {
-        userId: req.userId!,
-        name: body.name,
-        nameNormalized: normalizeCollectionName(body.name),
-        description: body.description?.trim() || null,
-        tags: normalizeTags(body.tags),
-      },
-    });
+    const collection = await createCollection(req.userId!, body);
     res.json(toCollectionOut(collection, 0, [], false));
-    void createLog({
-      userId: req.userId!,
-      action: "collection_created",
-      targetId: collection.id,
-      details: { name: collection.name },
-    });
   }),
 );
 
@@ -308,29 +295,9 @@ const addItemsSchema = z.object({ print_ids: z.array(z.string()).max(10_000) });
 router.post(
   "/collection/:id/items",
   asyncHandler(async (req, res) => {
-    if (isSystemCollectionId(req.params.id)) {
-      throw new HttpError(400, "This collection can't be edited");
-    }
     const body = parseBody(addItemsSchema, req.body);
-    const collection = await prisma.collection.findFirst({ where: { id: req.params.id, userId: req.userId } });
-    if (!collection) throw new HttpError(404, "Collection not found");
-    const prints = await prisma.print.findMany({
-      where: { id: { in: body.print_ids }, userId: req.userId },
-      select: { id: true },
-    });
-    await addPrintsToCollection(
-      collection.id,
-      prints.map((p) => p.id),
-    );
+    await addModelsToCollection(req.userId!, req.params.id, body.print_ids);
     res.json({ ok: true });
-    if (prints.length) {
-      void createLog({
-        userId: req.userId!,
-        action: "collection_item_added",
-        targetId: collection.id,
-        details: { name: collection.name, count: prints.length },
-      });
-    }
   }),
 );
 

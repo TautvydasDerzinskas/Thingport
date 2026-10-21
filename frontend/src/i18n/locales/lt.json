@@ -190,7 +190,7 @@
       "backToProfile": "Grįžti į profilį",
       "apiToken": {
         "heading": "API raktas",
-        "description": "Leidžia kitoms programoms ir paslaugoms prisijungti prie jūsų Thingport bibliotekos tik skaitymo teisėmis.",
+        "description": "Leidžia kitoms programoms, paslaugoms ir DI asistentams prisijungti prie jūsų Thingport bibliotekos. Per API jis gali tik skaityti.",
         "created": "sukurtas {{date}}",
         "lastUsed": "paskutinį kartą naudotas {{when}}",
         "neverUsed": "dar nenaudotas",
@@ -198,13 +198,86 @@
         "regenerate": "Generuoti iš naujo",
         "revoke": "Atšaukti",
         "regenerateTitle": "Generuoti API raktą iš naujo?",
-        "regenerateMessage": "Dabartinis raktas iškart nustos veikti. Viskam, kas jį naudoja, reikės naujo rakto.",
+        "regenerateMessage": "Dabartinis raktas iškart nustos veikti. Viskam, kas jį naudoja, reikės naujo, o jo MCP įrankiai vėl bus tik skaitantys.",
         "revokeTitle": "Atšaukti API raktą?",
         "revokeMessage": "Raktas iškart nustos veikti, ir viskas, kas jį naudoja, praras prieigą prie jūsų bibliotekos.",
         "copyNow": "Nukopijuokite raktą dabar. Jis daugiau nebus rodomas.",
         "copy": "Kopijuoti",
         "copied": "Nukopijuota",
-        "failed": "Kažkas nepavyko su jūsų API raktu. Bandykite dar kartą."
+        "failed": "Kažkas nepavyko su jūsų API raktu. Bandykite dar kartą.",
+        "mcp": {
+          "heading": "MCP",
+          "description": "Ką gali naudoti DI asistentas, prijungtas su šiuo raktu (per MCP, adresu /api/mcp). Pakeitimai įsigalioja iš karto, naujo rakto nereikia.",
+          "connect": "Kad prijungtumėte DI asistentą, pavyzdžiui Claude Code:",
+          "writes": "Keičia biblioteką",
+          "failed": "Nepavyko išsaugoti rakto MCP įrankių. Bandykite dar kartą.",
+          "tools": {
+            "search_models": {
+              "title": "Ieškoti modelių",
+              "description": "Rasti modelius pagal žodžius pavadinime, žymėse, autoriuje ar aprašyme."
+            },
+            "list_models": {
+              "title": "Modelių sąrašas",
+              "description": "Išvardyti modelius pagal žymę, kategoriją, kolekciją ar autorių."
+            },
+            "get_model": {
+              "title": "Modelio informacija",
+              "description": "Perskaityti modelio aprašymą, failus, žymes, autorių ir kolekcijas."
+            },
+            "list_collections": {
+              "title": "Kolekcijų sąrašas",
+              "description": "Matyti savo kolekcijas ir kiek modelių kiekvienoje."
+            },
+            "get_collection": {
+              "title": "Kolekcijos turinys",
+              "description": "Išvardyti vienos kolekcijos modelius."
+            },
+            "list_tags": {
+              "title": "Žymių sąrašas",
+              "description": "Matyti savo žymes, dažniausiai naudojamas pirmiau."
+            },
+            "list_categories": {
+              "title": "Kategorijų sąrašas",
+              "description": "Matyti savo kategorijas ir aplankus."
+            },
+            "get_author": {
+              "title": "Autoriaus informacija",
+              "description": "Sužinoti apie dizainerį ir matyti jo modelius jūsų bibliotekoje."
+            },
+            "library_stats": {
+              "title": "Bibliotekos statistika",
+              "description": "Jūsų suvestinė, daugiausiai peržiūrėti, spausdinti ir naujausi modeliai."
+            },
+            "get_import_status": {
+              "title": "Importo būsena",
+              "description": "Sekti importą, kuris dar vyksta."
+            },
+            "import_model": {
+              "title": "Importuoti modelį",
+              "description": "Importuoti modelį iš nuorodos, kaip + Pridėti > Importuoti."
+            },
+            "create_collection": {
+              "title": "Sukurti kolekciją",
+              "description": "Sukurti naują, tuščią kolekciją."
+            },
+            "add_to_collection": {
+              "title": "Įtraukti į kolekciją",
+              "description": "Įdėti bibliotekos modelius į vieną iš jūsų kolekcijų."
+            }
+          },
+          "writeConfirmTitle": "Leisti asistentui naudoti „{{tool}}“?",
+          "writeConfirmMessage": "Šis įrankis keičia jūsų biblioteką. Su šiuo raktu prijungtas asistentas galės jį naudoti kiekvieną kartą jūsų neklausdamas. Jis niekada netrina modelių.",
+          "writeConfirm": "Įjungti",
+          "adminOff": "Administratorius šiame Thingport išjungė MCP.",
+          "adminReadOnly": "Administratorius leidžia tik skaitančius įrankius.",
+          "copyCommand": "Kopijuoti komandą",
+          "reads": "Skaito biblioteką",
+          "allow": "Leisti",
+          "deny": "Drausti"
+        },
+        "permissions": {
+          "title": "Rakto leidimai"
+        }
       },
       "language": {
         "heading": "Kalba",
@@ -1255,6 +1328,7 @@
           "password_reset": "Atkūrė slaptažodį",
           "api_token_generated": "Sugeneravo API raktą",
           "api_token_revoked": "Atšaukė savo API raktą",
+          "api_token_mcp_tools_changed": "Pakeitė savo API rakto MCP įrankius",
           "user_invited": "Pakvietė naudotoją",
           "model_uploaded": "Modelis įkeltas",
           "model_imported": "Modelis importuotas",
@@ -1282,7 +1356,8 @@
           "grab_connected": "Prijungtas Thingport Grab",
           "grab_disconnected": "Pašalintas Thingport Grab",
           "collections_merged": "Kolekcijos sujungtos",
-          "tags_merged": "Žymos sujungtos"
+          "tags_merged": "Žymos sujungtos",
+          "mcp_access_changed": "Pakeitė MCP prieigą"
         },
         "authorsLinked": "Susieta modelių: {{count}}",
         "descriptionsRefetched": "{{email}} — pakeista aprašymų: {{updated}} iš {{total}}",
@@ -1562,6 +1637,23 @@
         "saving": "Saugoma…",
         "saved": "Išsaugota.",
         "failed": "Nepavyko išsaugoti viešo adreso."
+      },
+      "mcp": {
+        "heading": "DI asistentai (MCP)",
+        "subtitle": "Ką API raktai gali daryti per /api/mcp.",
+        "accessLabel": "MCP prieiga",
+        "help": "Kiekvienas naudotojas vis tiek pats pasirenka savo rakto įrankius šiose ribose. Biblioteką keičiantys įrankiai importuoja be captcha, kaip ir Thingport Grab.",
+        "failed": "Nepavyko išsaugoti MCP prieigos. Bandykite dar kartą.",
+        "levels": {
+          "off": "Išjungta",
+          "read": "Tik skaityti",
+          "write": "Skaityti ir keisti"
+        },
+        "levelHelp": {
+          "off": "Joks API raktas negali prisijungti per MCP.",
+          "read": "Raktai gali ieškoti ir skaityti savo biblioteką, bet niekada jos nekeisti.",
+          "write": "Raktai taip pat gali importuoti modelius ir dėti juos į kolekcijas, jei naudotojas tai įjungia."
+        }
       }
     },
     "download": {

@@ -40,6 +40,9 @@ import {
   setAiDescriptionPrefs,
   type AiCategorizationPrefs,
   type AiDescriptionPrefs,
+  getMcpAccess,
+  setMcpAccess,
+  MCP_ACCESS_LEVELS,
 } from "../services/settingsService";
 import { getDatabaseInfo, testAndSwitchDatabase } from "../services/databaseSettingsService";
 import {
@@ -323,6 +326,27 @@ router.patch(
     const body = parseBody(authSettingsSchema, req.body);
     await setAuthTokenTtl(body.token_ttl_seconds);
     res.json({ token_ttl_seconds: body.token_ttl_seconds });
+  }),
+);
+
+// What API tokens may do at /api/mcp. The profile reads it with the token (GET /profile/api-token).
+router.get(
+  "/settings/mcp",
+  requireAdmin,
+  asyncHandler(async (_req, res) => {
+    res.json({ access: await getMcpAccess() });
+  }),
+);
+
+const mcpAccessSchema = z.object({ access: z.enum(MCP_ACCESS_LEVELS as [string, ...string[]]) });
+router.post(
+  "/settings/mcp",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const { access } = parseBody(mcpAccessSchema, req.body) as { access: (typeof MCP_ACCESS_LEVELS)[number] };
+    await setMcpAccess(access);
+    res.json({ access });
+    void createLog({ userId: req.userId!, action: "mcp_access_changed", details: { access } });
   }),
 );
 

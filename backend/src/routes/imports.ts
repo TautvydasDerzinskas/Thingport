@@ -11,7 +11,6 @@ import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { requireCaptcha } from "../services/captchaService";
 import {
-  assertCanImportUrl,
   SNAPMAKER_SESSION_CODE,
   CREALITYCLOUD_SESSION_CODE,
   NEXPRINT_SESSION_CODE,
@@ -20,7 +19,6 @@ import {
   checkImportStatus,
   downloadImportToTemp,
   findImportedExternalIds,
-  importPrintFromUrl,
   inspectImportLink,
 } from "../services/importService";
 import { findLibraryPrints } from "../services/collectionSyncService";
@@ -52,7 +50,6 @@ import {
   MyminifactoryRateLimitError,
   parseMyminifactoryCollectionUrl,
 } from "../services/myminifactoryApi";
-import { getUserMakerworldCookie } from "../services/makerworldCookieService";
 import {
   fetchSnapmakerList,
   parseSnapmakerListUrl,
@@ -166,10 +163,10 @@ import {
   runThingiverseLikesImportJob,
   runZipImportJob,
 } from "../services/importJobRunner";
-import { createLog } from "../services/auditLog";
-import { notifyImportRun, notifySingleImport } from "../services/modelNotifications";
-import { toImportJobItemOut, toImportJobOut, toPrintOut } from "../dto";
+import { notifyImportRun } from "../services/modelNotifications";
+import { toImportJobItemOut, toImportJobOut } from "../dto";
 import type { Prisma } from "@prisma/client";
+import { importAndDescribe, prepareSingleImport, withStoredMakerworldCookie } from "../services/singleImport";
 
 const router = Router();
 router.use(requireAuth);
@@ -197,16 +194,6 @@ const importRequestSchema = z.object({
   notify: z.boolean().optional(),
 });
 
-// Falls back to the cookie saved in Settings when the request doesn't carry one.
-async function withStoredMakerworldCookie<T extends { makerworld_cookie?: string | null }>(
-  userId: string,
-  body: T,
-): Promise<T> {
-  if (body.makerworld_cookie && body.makerworld_cookie.trim()) return body;
-  const stored = await getUserMakerworldCookie(userId);
-  return stored ? { ...body, makerworld_cookie: stored } : body;
-}
-
 /** The link, normalized, unless it's from a provider an admin has turned off. */
 async function enabledImportUrl(raw: string): Promise<string> {
   const url = await normalizeImportUrl(raw);
@@ -214,43 +201,12 @@ async function enabledImportUrl(raw: string): Promise<string> {
   return url;
 }
 
-async function importAndDescribe(
-  userId: string,
-  url: string,
-  body: z.infer<typeof importRequestSchema>,
-  options?: { keepGrabImports?: boolean },
-) {
-  let result;
-  try {
-    result = await importPrintFromUrl(userId, url, body, options);
-  } catch (err) {
-    if (body.notify !== false) {
-      const error = err instanceof HttpError ? err.message : "Something went wrong on the server.";
-      await notifySingleImport(userId, url, { error }).catch((e) => console.error("Import notification failed:", e));
-    }
-    throw err;
-  }
-  const { print, plates, author, previewImages } = result;
-  const importOutcome = result.alreadyImported ? "already_imported" : result.profileAdded ? "profile_added" : "created";
-  void createLog({ userId, action: "model_imported", targetId: print.id, details: { name: print.name, url } });
-  if (body.notify !== false) {
-    await notifySingleImport(userId, url, {
-      printId: print.id,
-      name: print.title || print.name,
-      outcome: importOutcome,
-    }).catch((e) => console.error("Import notification failed:", e));
-  }
-  return { ...toPrintOut(print, plates, [], null, author, previewImages), import_outcome: importOutcome };
-}
-
 // `?async=1` answers 202 with a task id to poll at /import/tasks/:id (see importTaskService.ts).
 router.post(
   "/import",
   requireCaptcha("import"),
   asyncHandler(async (req, res) => {
-    const body = await withStoredMakerworldCookie(req.userId!, parseBody(importRequestSchema, req.body));
-    const url = await normalizeImportUrl(body.url);
-    await assertCanImportUrl(req.userId!, url);
+    const { url, body } = await prepareSingleImport(req.userId!, parseBody(importRequestSchema, req.body));
     if (req.query.async === "1") {
       const taskId = startImportTask(req.userId!, () => importAndDescribe(req.userId!, url, body));
       res.status(202).json({ task_id: taskId });

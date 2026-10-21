@@ -5,6 +5,7 @@ import { HttpError } from "./utils/fileUtils";
 import { trackClients } from "./services/clientActivityService";
 
 import healthRoutes from "./routes/health";
+import mcpRoutes from "./routes/mcp";
 import captchaRoutes from "./routes/captcha";
 import authRoutes from "./routes/auth";
 import oidcRoutes from "./routes/oidc";
@@ -47,6 +48,8 @@ export function createApp(): Express {
 
   // The frontend's nginx proxies /api/* here unmodified.
   app.use("/api", healthRoutes);
+  // Before the routers that apply requireAuth to every path: see routes/mcp.ts.
+  app.use("/api", mcpRoutes);
   app.use("/api", captchaRoutes);
   app.use("/api", authRoutes);
   app.use("/api", oidcRoutes);
