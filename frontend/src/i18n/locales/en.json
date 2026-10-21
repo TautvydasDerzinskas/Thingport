@@ -2197,7 +2197,8 @@
       "zoom": "Enlarge screenshot",
       "highlight": "Highlight",
       "copy": "Copy",
-      "copied": "Copied"
+      "copied": "Copied",
+      "copyFailed": "Couldn't copy here. It's selected: press Ctrl+C or ⌘C."
     }
   },
   "common": {

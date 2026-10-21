@@ -220,24 +220,38 @@ function sortItems<T extends ReleaseNoteItem>(items: T[]): T[] {
 export function notesFromChangelogs(
   backend: ChangelogRelease[],
   frontend: ChangelogRelease[],
-  options: { version: string; since?: string | null; frontendVersion?: string | null },
+  options: {
+    version: string;
+    since?: string | null;
+    frontendVersion?: string | null;
+    /** Only the releases before `version`, for curated notes that already cover it. */
+    earlierOnly?: boolean;
+  },
 ): ReleaseNoteItem[] {
-  const { version, since, frontendVersion } = options;
+  const { version, since, frontendVersion, earlierOnly = false } = options;
+  if (earlierOnly && !since) return [];
   const inRange = (release: ChangelogRelease) =>
-    compareVersions(release.version, version) <= 0 &&
+    compareVersions(release.version, version) < (earlierOnly ? 0 : 1) &&
     (since ? compareVersions(release.version, since) > 0 : release.version === version);
+  const limit = earlierOnly ? MAX_VERSIONS - 1 : MAX_VERSIONS;
   const backendReleases = backend
     .filter(inRange)
     .toSorted((a, b) => compareVersions(b.version, a.version))
-    .slice(0, MAX_VERSIONS);
+    .slice(0, limit);
+  // The frontend that went out with `version` is the curated notes' too.
+  const until = earlierOnly ? (backend.find((r) => r.version === version)?.date ?? null) : null;
   const dates = backendReleases.map((r) => r.date).filter((d): d is string => Boolean(d));
   const from = dates.length ? dates.reduce((a, b) => (a < b ? a : b)) : null;
   const frontendReleases = from
     ? frontend
         .filter(
-          (r) => r.date && r.date >= from && (!frontendVersion || compareVersions(r.version, frontendVersion) <= 0),
+          (r) =>
+            r.date &&
+            r.date >= from &&
+            (!until || r.date < until) &&
+            (!frontendVersion || compareVersions(r.version, frontendVersion) <= 0),
         )
-        .slice(0, MAX_VERSIONS)
+        .slice(0, limit)
     : [];
 
   const seen = new Set<string>();
@@ -291,20 +305,33 @@ export async function getReleaseNotes(
     fetchText(`${baseUrl}/frontend/CHANGELOG.md`),
   ]);
 
-  if (curatedText) {
-    try {
-      const curated = parseCuratedNotes(JSON.parse(curatedText), curatedUrl);
-      if (curated?.version === version) return { ...curated, releases_url };
-    } catch {
-      // not JSON: fall through to the changelog
-    }
+  const since = options.since && SEMVER.test(options.since) ? options.since : null;
+  const frontendVersion =
+    options.frontendVersion && SEMVER.test(options.frontendVersion) ? options.frontendVersion : null;
+  const fromChangelogs = (earlierOnly: boolean) =>
+    backendText
+      ? notesFromChangelogs(parseChangelog(backendText), parseChangelog(frontendText ?? ""), {
+          version,
+          since,
+          frontendVersion,
+          earlierOnly,
+        })
+      : [];
+
+  let curated: ReturnType<typeof parseCuratedNotes> = null;
+  try {
+    curated = curatedText ? parseCuratedNotes(JSON.parse(curatedText), curatedUrl) : null;
+  } catch {
+    // not JSON: the changelog is shown instead
+  }
+  if (curated?.version === version) {
+    // Someone who skipped releases gets theirs from the changelog after the curated ones; commit links aren't
+    // "Learn more" links.
+    const earlier = fromChangelogs(true);
+    for (const item of earlier) item.url = null;
+    return { ...curated, items: [...curated.items, ...earlier], releases_url };
   }
 
   if (!backendText) return empty;
-  const items = notesFromChangelogs(parseChangelog(backendText), parseChangelog(frontendText ?? ""), {
-    version,
-    since: options.since && SEMVER.test(options.since) ? options.since : null,
-    frontendVersion: options.frontendVersion && SEMVER.test(options.frontendVersion) ? options.frontendVersion : null,
-  });
-  return { ...empty, source: "changelog", items };
+  return { ...empty, source: "changelog", items: fromChangelogs(false) };
 }

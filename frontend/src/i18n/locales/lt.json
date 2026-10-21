@@ -2263,7 +2263,8 @@
       "zoom": "Padidinti ekrano vaizdą",
       "highlight": "Svarbiausia",
       "copy": "Kopijuoti",
-      "copied": "Nukopijuota"
+      "copied": "Nukopijuota",
+      "copyFailed": "Čia nepavyko nukopijuoti. Tekstas pažymėtas: spauskite Ctrl+C arba ⌘C."
     }
   },
   "common": {

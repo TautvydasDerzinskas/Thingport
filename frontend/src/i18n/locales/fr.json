@@ -2210,7 +2210,8 @@
       "zoom": "Agrandir la capture",
       "highlight": "À la une",
       "copy": "Copier",
-      "copied": "Copié"
+      "copied": "Copié",
+      "copyFailed": "Copie impossible ici. Le texte est sélectionné : appuyez sur Ctrl+C ou ⌘C."
     }
   },
   "common": {

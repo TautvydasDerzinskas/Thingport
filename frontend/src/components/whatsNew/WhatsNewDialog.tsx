@@ -118,17 +118,30 @@ function Screenshots({
 
 function CodeBlock({ code }: { code: string }) {
   const { t } = useTranslation("app");
-  const [copied, setCopied] = React.useState(false);
+  const box = React.useRef<HTMLPreElement>(null);
+  const [copyState, setCopyState] = React.useState<"idle" | "copied" | "failed">("idle");
   React.useEffect(() => {
-    if (!copied) return;
-    const timer = window.setTimeout(() => setCopied(false), 1500);
+    if (copyState === "idle") return;
+    const timer = window.setTimeout(() => setCopyState("idle"), copyState === "failed" ? 4000 : 1500);
     return () => window.clearTimeout(timer);
-  }, [copied]);
-  const copy = () =>
-    navigator.clipboard
-      ?.writeText(code)
-      .then(() => setCopied(true))
-      .catch(() => undefined);
+  }, [copyState]);
+  // The clipboard API only exists on HTTPS or localhost, and self-hosted instances are often plain HTTP on a LAN
+  // address; there the command is selected, to copy by hand.
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopyState("copied");
+    } catch {
+      if (box.current) window.getSelection()?.selectAllChildren(box.current);
+      setCopyState("failed");
+    }
+  };
+  const copyLabel =
+    copyState === "failed"
+      ? t("whatsNew.copyFailed")
+      : copyState === "copied"
+        ? t("whatsNew.copied")
+        : t("whatsNew.copy");
   return (
     <Box
       sx={{
@@ -142,6 +155,7 @@ function CodeBlock({ code }: { code: string }) {
     >
       <Box
         component="pre"
+        ref={box}
         sx={{
           m: 0,
           p: 1.25,
@@ -155,14 +169,18 @@ function CodeBlock({ code }: { code: string }) {
       >
         {code}
       </Box>
-      <Tooltip title={copied ? t("whatsNew.copied") : t("whatsNew.copy")}>
+      <Tooltip title={copyLabel}>
         <IconButton
           size="small"
           aria-label={t("whatsNew.copy")}
-          onClick={copy}
+          onClick={() => void copy()}
           sx={{ position: "absolute", top: 4, right: 4 }}
         >
-          {copied ? <CheckIcon sx={{ fontSize: 16 }} color="success" /> : <ContentCopyIcon sx={{ fontSize: 16 }} />}
+          {copyState === "copied" ? (
+            <CheckIcon sx={{ fontSize: 16 }} color="success" />
+          ) : (
+            <ContentCopyIcon sx={{ fontSize: 16 }} />
+          )}
         </IconButton>
       </Tooltip>
     </Box>

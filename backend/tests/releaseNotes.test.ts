@@ -1,9 +1,11 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import {
   announceVersionUpdate,
+  clearReleaseNotesCache,
+  getReleaseNotes,
   notesFromChangelogs,
   parseChangelog,
   parseCuratedNotes,
@@ -110,6 +112,49 @@ describe("release notes", () => {
     expect(items.map((i) => i.title)).not.toContain("Pick an accent colour");
   });
 
+  it("takes only the releases before the version, and not its frontend, for curated notes that cover it", () => {
+    const items = notesFromChangelogs(parseChangelog(BACKEND_CHANGELOG), parseChangelog(FRONTEND_CHANGELOG), {
+      version: "1.2.0",
+      since: "1.1.0",
+      frontendVersion: "1.3.0",
+      earlierOnly: true,
+    });
+    expect(items.map((i) => i.title)).toEqual(["Load listings faster"]);
+    expect(notesFromChangelogs(parseChangelog(BACKEND_CHANGELOG), [], { version: "1.2.0", earlierOnly: true })).toEqual(
+      [],
+    );
+  });
+
+  it("adds skipped releases from the changelog after curated notes", async () => {
+    const files: Record<string, string> = {
+      "/release-notes/latest-release-notes.json": JSON.stringify({
+        version: "1.2.0",
+        items: [{ type: "feature", title: "Curated feature" }],
+      }),
+      "/backend/CHANGELOG.md": BACKEND_CHANGELOG,
+      "/frontend/CHANGELOG.md": FRONTEND_CHANGELOG,
+    };
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const body = files[new URL(String(input)).pathname];
+      return new Response(body ?? "", { status: body ? 200 : 404 });
+    });
+    try {
+      clearReleaseNotesCache();
+      const notes = await getReleaseNotes({ version: "1.2.0", since: "1.1.0" }, "https://notes.example");
+      expect(notes?.source).toBe("curated");
+      expect(notes?.items.map((i) => [i.title, i.url])).toEqual([
+        ["Curated feature", null],
+        ["Load listings faster", null],
+      ]);
+
+      const direct = await getReleaseNotes({ version: "1.2.0" }, "https://notes.example");
+      expect(direct?.items.map((i) => i.title)).toEqual(["Curated feature"]);
+    } finally {
+      fetchMock.mockRestore();
+      clearReleaseNotesCache();
+    }
+  });
+
   it("resolves curated screenshots against the file and drops unsafe ones", () => {
     const notes = parseCuratedNotes(
       {
@@ -152,9 +197,15 @@ describe("version update notification", () => {
     user = { id: res.body.user.id as string, token: login.body.token as string };
   });
 
+  // An announcement goes to every user in the shared test database, not only this file's.
+  const clearAnnouncements = () =>
+    prisma.notification.deleteMany({ where: { type: "system", internalPath: { startsWith: "?whats-new=" } } });
+
   beforeEach(async () => {
     await prisma.notification.deleteMany({ where: { userId: user.id } });
   });
+
+  afterEach(clearAnnouncements);
 
   afterAll(async () => {
     await prisma.setting.deleteMany({ where: { key: "last_run_version" } });
