@@ -6,6 +6,7 @@ import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import type { Category, CategoryKind, CategoryMetaInput } from "../../api/categories";
 import type { Print } from "../../api/prints";
 import { aiCategorizationApi } from "../../api/aiCategorization";
+import { categoriesApi, resetIsNoop } from "../../api/categories";
 import { UnauthorizedError } from "../../api/client";
 import SectionedDialog from "../../components/SectionedDialog";
 import CategoryManager from "./CategoryManager";
@@ -25,6 +26,7 @@ type Props = {
   onReorder: (categoryIds: string[]) => Promise<void>;
   onMove: (id: string, parentId: string | null, position: number) => Promise<void>;
   onUpdateMeta: (id: string, meta: CategoryMetaInput) => Promise<void>;
+  onResetCategories: () => Promise<void>;
   onPrintUpdated?: (print: Print) => void;
   onLibraryChanged?: () => void;
   onUnauthorized?: () => void;
@@ -36,6 +38,7 @@ export default function ModelsManagerDialog({
   onClose,
   categories,
   onCreate,
+  onResetCategories,
   onPrintUpdated,
   onLibraryChanged,
   onUnauthorized,
@@ -66,6 +69,29 @@ export default function ModelsManagerDialog({
     };
   }, [open, onUnauthorized]);
 
+  // Null until known; the reset button stays off meanwhile, as a reset at the defaults changes nothing.
+  const [categoriesAtDefaults, setCategoriesAtDefaults] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    void categoriesApi
+      .previewReset()
+      .then((preview) => {
+        if (active) setCategoriesAtDefaults(resetIsNoop(preview));
+      })
+      .catch((err: unknown) => {
+        if (!active) return;
+        // Unknown leaves the reset available.
+        setCategoriesAtDefaults(false);
+        if (err instanceof UnauthorizedError) onUnauthorized?.();
+      });
+    return () => {
+      active = false;
+    };
+    // Rechecked whenever the categories change.
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
+  }, [open, categories, onUnauthorized]);
+
   const byKind = useMemo(
     () => ({
       category: categories.filter((c) => c.kind === "category"),
@@ -94,6 +120,10 @@ export default function ModelsManagerDialog({
       kind={kind}
       categories={byKind[kind]}
       onCreate={(name, parentId) => onCreate(name, parentId, kind)}
+      // Only categories have a starter tree; folders are the user's own.
+      onResetDefaults={kind === "category" ? onResetCategories : undefined}
+      atDefaults={categoriesAtDefaults !== false}
+      onUnauthorized={onUnauthorized}
       {...handlers}
     />
   );

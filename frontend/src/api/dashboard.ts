@@ -6,8 +6,8 @@ export type DashboardModel = {
   id: string;
   name: string;
   thumb_url: string | null;
-  /** The model drawn in one colour, made by the server. Asking for one that isn't ready queues it. */
-  model_image_url: string | null;
+  /** The first plate's render for the browser to tint; asking for one that isn't ready queues it. */
+  render_url: string | null;
   view_count: number;
   print_count: number;
   created_at: string;

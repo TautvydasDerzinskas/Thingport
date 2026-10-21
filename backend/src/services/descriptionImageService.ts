@@ -1,8 +1,17 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
-import { DESCRIPTION_IMAGES, IMPORT_BROWSER_USER_AGENT, IMPORT_TIMEOUT_SECONDS } from "../config";
+import { IMPORT_BROWSER_USER_AGENT, IMPORT_TIMEOUT_SECONDS } from "../config";
 import { prisma } from "../db";
+import {
+  assetPath,
+  assetTarget,
+  descriptionImageFile,
+  printAssetHome,
+  removeAsset,
+  type AssetHome,
+} from "./modelAssets";
+import { ensureAssetHome } from "./printService";
 import { mapWithConcurrency } from "../utils/concurrency";
 import { validateRemoteUrl } from "../utils/urlUtils";
 import { browserFetch, needsBrowserFetch } from "../utils/browserFetch";
@@ -28,8 +37,9 @@ const ALLOWED_FORMATS: Record<string, string> = {
 const REMOTE_IMAGE_RE = /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g;
 const LOCAL_REF_RE = /\/description-image\/([a-z0-9]+)/g;
 
-export function descriptionImagePath(id: string): string {
-  return path.join(DESCRIPTION_IMAGES, id);
+/** `home` is the image's model's Print.assetsPath. */
+export function descriptionImagePath(image: { id: string; mime: string }, home: AssetHome): string {
+  return assetPath(home, descriptionImageFile(image));
 }
 
 /** Relative to the API base; the frontend adds the base and auth token when rendering. */
@@ -88,7 +98,9 @@ async function saveDescriptionImage(printId: string, buffer: Buffer, sourceUrl: 
   if (!mime) return null;
   const row = await prisma.descriptionImage.create({ data: { printId, sourceUrl, mime, size: buffer.length } });
   try {
-    await fs.writeFile(descriptionImagePath(row.id), buffer);
+    const dest = assetTarget(await ensureAssetHome(printId), descriptionImageFile(row));
+    await fs.mkdir(path.dirname(dest), { recursive: true });
+    await fs.writeFile(dest, buffer);
   } catch {
     await prisma.descriptionImage.delete({ where: { id: row.id } }).catch(() => undefined);
     return null;
@@ -136,15 +148,17 @@ export async function localizeDescriptionImages(printId: string): Promise<void> 
 export async function pruneDescriptionImages(printId: string): Promise<void> {
   const print = await prisma.print.findUnique({ where: { id: printId }, select: { notes: true } });
   const referenced = new Set([...(print?.notes ?? "").matchAll(LOCAL_REF_RE)].map((match) => match[1]));
-  const images = await prisma.descriptionImage.findMany({ where: { printId }, select: { id: true } });
+  const images = await prisma.descriptionImage.findMany({ where: { printId }, select: { id: true, mime: true } });
   const unused = images.filter((image) => !referenced.has(image.id));
   if (!unused.length) return;
   await prisma.descriptionImage.deleteMany({ where: { id: { in: unused.map((image) => image.id) } } });
-  for (const image of unused) await fs.rm(descriptionImagePath(image.id), { force: true }).catch(() => undefined);
+  const home = await printAssetHome(printId);
+  for (const image of unused) await removeAsset(home, descriptionImageFile(image));
 }
 
 export async function deleteAllDescriptionImages(printId: string): Promise<void> {
-  const rows = await prisma.descriptionImage.findMany({ where: { printId }, select: { id: true } });
+  const rows = await prisma.descriptionImage.findMany({ where: { printId }, select: { id: true, mime: true } });
   await prisma.descriptionImage.deleteMany({ where: { printId } });
-  for (const row of rows) await fs.rm(descriptionImagePath(row.id), { force: true }).catch(() => undefined);
+  const home = await printAssetHome(printId);
+  for (const row of rows) await removeAsset(home, descriptionImageFile(row));
 }

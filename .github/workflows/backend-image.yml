@@ -2,10 +2,10 @@ name: Backend image
 
 # Runs when backend/ or the build workflow changes. Use "Manual image publish" to force a build.
 # Pull requests into develop only run the checks; the image build (~6 min, arm64 under QEMU) waits for the
-# develop -> main pull request, which still builds it before anything is released.
+# merge, which publishes :dev for testers, and the develop -> main pull request builds it again before a release.
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
     paths:
       - "backend/**"
       - ".github/workflows/backend-image.yml"
@@ -19,9 +19,9 @@ on:
 
 concurrency:
   group: backend-image-${{ github.ref }}
-  # A newer push replaces a pull request's run, but never one on main: cut off mid-release, a version could be
-  # tagged without its GitHub release. Runs on main queue instead; the newest builds everything merged so far.
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  # A newer push replaces an older run, but never one on main: cut off mid-release, a version could be tagged
+  # without its GitHub release. Runs on main queue instead; the newest builds everything merged so far.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   # The full backend suite against real Postgres, including end-to-end provider imports. The image

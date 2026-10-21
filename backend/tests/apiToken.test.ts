@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
+import { API_TOKEN_SCOPE_IDS, scopeForPath } from "../src/services/apiTokenScopes";
 
 const app = createApp();
 let session: string;
@@ -28,7 +29,19 @@ describe("API token", () => {
   it("reports no token for a new account", async () => {
     const res = await request(app).get("/api/profile/api-token").set(auth(session));
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ configured: false, hint: null, created_at: null, last_used_at: null });
+    const { available_mcp_tools, available_rest_scopes, mcp_access, ...token } = res.body;
+    expect(token).toEqual({
+      configured: false,
+      hint: null,
+      created_at: null,
+      last_used_at: null,
+      mcp_tools: [],
+      rest_scopes: [],
+    });
+    expect(available_rest_scopes.map((scope: { id: string }) => scope.id)).toContain("search");
+    expect(mcp_access).toBe("write");
+    // What the profile page offers to tick, token or not.
+    expect(available_mcp_tools.map((tool: { name: string }) => tool.name)).toContain("search_models");
   });
 
   it("generates a token that is shown once and stored only as a hash", async () => {
@@ -104,5 +117,64 @@ describe("API token", () => {
     } finally {
       await prisma.user.update({ where: { id: userId }, data: { role: "MEMBER" } });
     }
+  });
+
+  it("reads every REST scope when new, and only the allowed ones once narrowed", async () => {
+    const { body } = await request(app).post("/api/profile/api-token").set(auth(session));
+    expect(body.rest_scopes).toEqual(API_TOKEN_SCOPE_IDS);
+
+    const narrowed = await request(app)
+      .put("/api/profile/api-token/rest-scopes")
+      .set(auth(session))
+      .send({ rest_scopes: ["search"] });
+    expect(narrowed.status).toBe(200);
+    expect(narrowed.body.rest_scopes).toEqual(["search"]);
+
+    expect((await request(app).get("/api/search").query({ q: "x" }).set(auth(body.token))).status).toBe(200);
+    const summary = await request(app).get("/api/dashboard/summary").set(auth(body.token));
+    expect(summary.status).toBe(403);
+    expect(summary.body.scope).toBe("dashboard");
+    // A path no scope lists needs "everything else".
+    expect((await request(app).get("/api/notifications").set(auth(body.token))).status).toBe(403);
+    // The token's session-signed-in owner is unaffected.
+    expect((await request(app).get("/api/dashboard/summary").set(auth(session))).status).toBe(200);
+  });
+
+  it("refuses an unknown REST scope, and a change made with the token itself", async () => {
+    const { body } = await request(app).post("/api/profile/api-token").set(auth(session));
+    const unknown = await request(app)
+      .put("/api/profile/api-token/rest-scopes")
+      .set(auth(session))
+      .send({ rest_scopes: ["everything"] });
+    expect(unknown.status).toBe(400);
+    const viaToken = await request(app)
+      .put("/api/profile/api-token/rest-scopes")
+      .set(auth(body.token))
+      .send({ rest_scopes: API_TOKEN_SCOPE_IDS });
+    expect(viaToken.status).toBe(403);
+  });
+});
+
+describe("scopeForPath", () => {
+  it("maps the paths integrations read to their scopes", () => {
+    expect(scopeForPath("/search")).toBe("search");
+    expect(scopeForPath("/prints")).toBe("models");
+    expect(scopeForPath("/print/abc")).toBe("models");
+    expect(scopeForPath("/print/abc/collections")).toBe("collections");
+    expect(scopeForPath("/dashboard/featured")).toBe("dashboard");
+    expect(scopeForPath("/activity")).toBe("activity");
+    expect(scopeForPath("/plate/p1/thumb.jpg")).toBe("images");
+    expect(scopeForPath("/preview-image/i1/file.jpg")).toBe("images");
+    expect(scopeForPath("/print/m1/plate/p1/file/Benchy%20v2.stl")).toBe("files");
+    expect(scopeForPath("/plate/p1/preview.glb")).toBe("files");
+    expect(scopeForPath("/tags/summary")).toBe("tags");
+    expect(scopeForPath("/tags/benchy/mosaic.webp")).toBe("images");
+  });
+
+  it("puts anything unlisted under other", () => {
+    expect(scopeForPath("/settings/theme")).toBe("other");
+    expect(scopeForPath("/profile/api-token")).toBe("other");
+    expect(scopeForPath("/searchx")).toBe("other");
+    expect(scopeForPath("/plate/p1/thumbxjpg")).toBe("other");
   });
 });

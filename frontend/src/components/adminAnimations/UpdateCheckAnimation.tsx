@@ -3,7 +3,7 @@ import Box from "@mui/material/Box";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import PriorityHighRoundedIcon from "@mui/icons-material/PriorityHighRounded";
 import QuestionMarkRoundedIcon from "@mui/icons-material/QuestionMarkRounded";
-import markColor from "../../assets/logos/thingport-mark-color.svg";
+import { useBrandMark } from "../../hooks/useBrandLogo";
 import { ModelShape, prefersReducedMotion, type Palette, type ShapeKind } from "../storageAnimations/parts";
 
 export type UpdateCheckState = "checking" | "unknown" | "outdated" | "current";
@@ -75,6 +75,8 @@ const BUBBLES = {
 
 export default function UpdateCheckAnimation({ size, state }: { size: number; state: UpdateCheckState }) {
   const still = prefersReducedMotion();
+  // The light-background mark in either theme.
+  const markSrc = useBrandMark(false);
   const checking = state === "checking";
   const logo = size * (checking ? 0.36 : 0.5);
   const shape = size * 0.12;
@@ -114,7 +116,7 @@ export default function UpdateCheckAnimation({ size, state }: { size: number; st
       >
         <Box
           component="img"
-          src={markColor}
+          src={markSrc}
           alt=""
           sx={{ width: logo, height: logo, display: "block", transition: "width 300ms ease, height 300ms ease" }}
         />

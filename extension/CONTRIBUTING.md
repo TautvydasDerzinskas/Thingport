@@ -66,6 +66,9 @@ Edge switch the extension off for every user until they approve it. Add it to `O
 **Providers** with an **Enable** button that asks for access to that site; once granted, the background registers the
 content script there. Users who had granted all-sites access earlier get it straight away.
 
+Don't add the provider to `scripts/edge-certification-notes.txt`: it covers optional sites as a group, and Edge
+rejects notes of 2,000 characters or more (`npm run check:edge-notes`).
+
 ### Before opening a pull request
 
 - `npm run verify` passes (typecheck, lint, all three builds).

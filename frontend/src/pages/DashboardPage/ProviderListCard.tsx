@@ -1,21 +1,23 @@
 import { useTranslation } from "react-i18next";
 import Paper from "@mui/material/Paper";
 import Box from "@mui/material/Box";
-import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
-import Chip from "@mui/material/Chip";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemAvatar from "@mui/material/ListItemAvatar";
+import ListItemText from "@mui/material/ListItemText";
 import PublicIcon from "@mui/icons-material/Public";
-import { printProviderInfo, providerChipSx } from "../../constants/importProviders";
+import { printProviderInfo } from "../../constants/importProviders";
 import type { DashboardProvider } from "../../api/dashboard";
+import ProviderBadge from "../../components/ProviderBadge";
 import { useProviderAbout } from "../../components/providerAbout/ProviderAboutProvider";
 
 type Props = {
   providers: DashboardProvider[];
 };
 
-/** A small fixed set, so no "see more". A provider's chip opens its About dialog; Thingport's own (uploads) has none. */
+/** A small fixed set, so no "see more". A provider's row opens its About dialog; Thingport's own (uploads) has none. */
 export default function ProviderListCard({ providers }: Props) {
   const { t } = useTranslation("app");
 
@@ -42,45 +44,45 @@ export default function ProviderListCard({ providers }: Props) {
         </Typography>
       ) : (
         <List dense disablePadding>
-          {providers.map((p) => {
-            return (
-              <ListItem key={p.provider} sx={{ px: 1 }}>
-                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ width: "100%" }}>
-                  <ProviderChip provider={p.provider} />
-                  <Typography variant="body2" color="text.secondary" sx={{ flexShrink: 0, pl: 1 }}>
-                    {t("dashboard.topProviders.modelCount", { count: p.model_count })}
-                  </Typography>
-                </Stack>
-              </ListItem>
-            );
-          })}
+          {providers.map((p) => (
+            <ProviderRow
+              key={p.provider ?? ""}
+              provider={p.provider}
+              countLabel={t("dashboard.topProviders.modelCount", { count: p.model_count })}
+            />
+          ))}
         </List>
       )}
     </Paper>
   );
 }
 
-function ProviderChip({ provider }: { provider: string | null }) {
+function ProviderRow({ provider, countLabel }: { provider: string | null; countLabel: string }) {
   const { t } = useTranslation("app");
-  const info = printProviderInfo(provider);
+  const name = printProviderInfo(provider).label;
   const openAbout = useProviderAbout(provider);
-  return (
-    <Chip
-      label={info.label}
-      size="small"
-      onClick={openAbout ?? undefined}
-      aria-label={openAbout ? t("providerAbout.aboutName", { name: info.label }) : undefined}
-      sx={{
-        ...providerChipSx(info),
-        fontWeight: 600,
-        // MUI's clickable chip darkens on hover; keep the brand colour and lift it instead.
-        "&.MuiChip-clickable:hover": { bgcolor: info.color, transform: "translateY(-1px)", boxShadow: 2 },
-        transition: "transform 150ms ease, box-shadow 150ms ease",
-        "@media (prefers-reduced-motion: reduce)": {
-          transition: "none",
-          "&.MuiChip-clickable:hover": { transform: "none" },
-        },
-      }}
-    />
+  const content = (
+    <>
+      <ListItemAvatar sx={{ minWidth: 44 }}>
+        <ProviderBadge provider={provider} size={32} interactive={false} sx={{ boxShadow: "none" }} />
+      </ListItemAvatar>
+      <ListItemText primary={name} primaryTypographyProps={{ noWrap: true, fontWeight: 600 }} />
+      <Typography variant="body2" color="text.secondary" sx={{ flexShrink: 0, pl: 1 }}>
+        {countLabel}
+      </Typography>
+    </>
+  );
+  return openAbout ? (
+    <ListItem disablePadding>
+      <ListItemButton
+        onClick={openAbout}
+        aria-label={`${name}, ${countLabel}. ${t("providerAbout.aboutName", { name })}`}
+        sx={{ borderRadius: 1, px: 1 }}
+      >
+        {content}
+      </ListItemButton>
+    </ListItem>
+  ) : (
+    <ListItem sx={{ px: 1 }}>{content}</ListItem>
   );
 }

@@ -29,6 +29,20 @@ export const NORMALIZE_3MF_SLICER_IDS: ReadonlySet<string> = new Set([
 /** "system" follows prefers-color-scheme; resolve with useResolvedTheme before rendering. */
 export type ThemeSelection = "light" | "dark" | "system";
 export type ResolvedTheme = "light" | "dark";
+/** Kept in sync by hand with the backend's ACCENT_COLORS. Thingport green first, then providers' brands, then a
+ *  near-black graphite. */
+export const ACCENT_COLORS = ["green", "blue", "orange", "amber", "teal", "purple", "graphite"] as const;
+export type AccentColor = (typeof ACCENT_COLORS)[number];
+export const DEFAULT_ACCENT: AccentColor = "green";
+/** Kept in sync by hand with the backend's RENDER_COLORS: the accents, then a light grey that leaves the render's
+ *  own shading all but untinted. */
+export const RENDER_COLORS = [...ACCENT_COLORS, "light"] as const;
+export type RenderColor = (typeof RENDER_COLORS)[number];
+
+/** The `t()` key naming a render colour. */
+export function renderColorLabelKey(color: RenderColor): string {
+  return color === "light" ? "app:appearance.renderColor.light" : `app:appearance.accents.${color}`;
+}
 export type ThemeOption = { id: ThemeSelection; label: string; description: string };
 
 export const THEME_OPTIONS: ThemeOption[] = [

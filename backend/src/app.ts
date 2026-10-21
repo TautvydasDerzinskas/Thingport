@@ -5,6 +5,7 @@ import { HttpError } from "./utils/fileUtils";
 import { trackClients } from "./services/clientActivityService";
 
 import healthRoutes from "./routes/health";
+import mcpRoutes from "./routes/mcp";
 import captchaRoutes from "./routes/captcha";
 import authRoutes from "./routes/auth";
 import oidcRoutes from "./routes/oidc";
@@ -24,6 +25,7 @@ import providerCollectionsRoutes from "./routes/providerCollections";
 import bookmarksRoutes from "./routes/bookmarks";
 import searchRoutes from "./routes/search";
 import notificationsRoutes from "./routes/notifications";
+import releaseNotesRoutes from "./routes/releaseNotes";
 import adminRoutes from "./routes/admin";
 import dashboardRoutes from "./routes/dashboard";
 import activityRoutes from "./routes/activity";
@@ -47,6 +49,8 @@ export function createApp(): Express {
 
   // The frontend's nginx proxies /api/* here unmodified.
   app.use("/api", healthRoutes);
+  // Before the routers that apply requireAuth to every path: see routes/mcp.ts.
+  app.use("/api", mcpRoutes);
   app.use("/api", captchaRoutes);
   app.use("/api", authRoutes);
   app.use("/api", oidcRoutes);
@@ -68,6 +72,7 @@ export function createApp(): Express {
   app.use("/api", bookmarksRoutes);
   app.use("/api", searchRoutes);
   app.use("/api", notificationsRoutes);
+  app.use("/api", releaseNotesRoutes);
   // Own prefix: on bare /api, its requireAdmin would also run for every route mounted after it.
   app.use("/api/admin", adminRoutes);
   app.use("/api", dashboardRoutes);

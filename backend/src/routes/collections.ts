@@ -7,12 +7,17 @@ import { normalizeTags } from "../utils/tagNormalization";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import {
+  addModelsToCollection,
   addPrintsToCollection,
+  createCollection,
   assertCollectionNameAvailable,
+  deleteCollections,
   isSystemCollectionId,
   listSystemCollectionOuts,
   loadSystemCollectionOut,
+  mergeCollections,
   normalizeCollectionName,
+  previewCollectionMerge,
   systemCollectionKeyForId,
 } from "../services/collectionService";
 import {
@@ -93,23 +98,62 @@ router.post(
   "/collections",
   asyncHandler(async (req, res) => {
     const body = parseBody(collectionSchema, req.body);
-    await assertCollectionNameAvailable(req.userId!, body.name);
-    const collection = await prisma.collection.create({
-      data: {
-        userId: req.userId!,
-        name: body.name,
-        nameNormalized: normalizeCollectionName(body.name),
-        description: body.description?.trim() || null,
-        tags: normalizeTags(body.tags),
-      },
-    });
+    const collection = await createCollection(req.userId!, body);
     res.json(toCollectionOut(collection, 0, [], false));
+  }),
+);
+
+const idsSchema = z.object({ ids: z.array(z.string()).min(1).max(1000) });
+const mergeSchema = z.object({ primary_id: z.string(), ids: z.array(z.string()).min(1).max(1000) });
+
+router.post(
+  "/collections/merge/preview",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(idsSchema, req.body);
+    res.json(await previewCollectionMerge(req.userId!, body.ids));
+  }),
+);
+
+// `ids` are merged into `primary_id` and deleted; it may list `primary_id` too.
+router.post(
+  "/collections/merge",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(mergeSchema, req.body);
+    const { primary, merged, added } = await mergeCollections(req.userId!, body.primary_id, body.ids);
+    const [itemCount, covers, bookmarked, sync] = await Promise.all([
+      prisma.collectionItem.count({ where: { collectionId: primary.id } }),
+      coverPrints(req.userId!, primary.id),
+      prisma.bookmark.findFirst({ where: { userId: req.userId, type: "COLLECTION", collectionId: primary.id } }),
+      prisma.collectionSync.findUnique({ where: { collectionId: primary.id } }),
+    ]);
+    res.json({
+      collection: toCollectionOut(primary, itemCount, covers, Boolean(bookmarked), sync),
+      merged_ids: merged.map((c) => c.id),
+      added,
+    });
     void createLog({
       userId: req.userId!,
-      action: "collection_created",
-      targetId: collection.id,
-      details: { name: collection.name },
+      action: "collections_merged",
+      targetId: primary.id,
+      details: { name: primary.name, merged: merged.map((c) => c.name), added },
     });
+  }),
+);
+
+router.post(
+  "/collections/delete",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(idsSchema, req.body);
+    const deleted = await deleteCollections(req.userId!, body.ids);
+    res.json({ deleted: deleted.map((c) => c.id) });
+    for (const collection of deleted) {
+      void createLog({
+        userId: req.userId!,
+        action: "collection_deleted",
+        targetId: collection.id,
+        details: { name: collection.name },
+      });
+    }
   }),
 );
 
@@ -251,29 +295,9 @@ const addItemsSchema = z.object({ print_ids: z.array(z.string()).max(10_000) });
 router.post(
   "/collection/:id/items",
   asyncHandler(async (req, res) => {
-    if (isSystemCollectionId(req.params.id)) {
-      throw new HttpError(400, "This collection can't be edited");
-    }
     const body = parseBody(addItemsSchema, req.body);
-    const collection = await prisma.collection.findFirst({ where: { id: req.params.id, userId: req.userId } });
-    if (!collection) throw new HttpError(404, "Collection not found");
-    const prints = await prisma.print.findMany({
-      where: { id: { in: body.print_ids }, userId: req.userId },
-      select: { id: true },
-    });
-    await addPrintsToCollection(
-      collection.id,
-      prints.map((p) => p.id),
-    );
+    await addModelsToCollection(req.userId!, req.params.id, body.print_ids);
     res.json({ ok: true });
-    if (prints.length) {
-      void createLog({
-        userId: req.userId!,
-        action: "collection_item_added",
-        targetId: collection.id,
-        details: { name: collection.name, count: prints.length },
-      });
-    }
   }),
 );
 

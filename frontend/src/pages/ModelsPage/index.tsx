@@ -223,6 +223,19 @@ export default function ModelsPage({
     }
   };
 
+  // Models in removed categories move, so the list reloads too. Rethrows so the reset dialog stays open to retry.
+  const resetCategories = async () => {
+    try {
+      const next = await categoriesApi.resetDefaults();
+      if (categoryId && !next.some((c) => c.id === categoryId)) onSelectCategory(null);
+      onCategoriesChanged();
+      refreshLibrary();
+    } catch (err) {
+      handleError(err, t("models:errors.resetCategoriesFailed"));
+      throw err;
+    }
+  };
+
   // Refetch even on failure: the manager shows the drop optimistically until fresh categories arrive.
   const reorderCategories = async (categoryIds: string[]) => {
     try {
@@ -289,6 +302,7 @@ export default function ModelsPage({
         onReorder={reorderCategories}
         onMove={moveCategory}
         onUpdateMeta={updateCategoryMeta}
+        onResetCategories={resetCategories}
         onPrintUpdated={(updated) => setItems((prev) => prev.map((item) => (item.id === updated.id ? updated : item)))}
         onLibraryChanged={refreshLibrary}
         onUnauthorized={onUnauthorized}

@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "hoverSlideshowEnabled" BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "renderColor" TEXT;
+ALTER TABLE "User" DROP COLUMN IF EXISTS "dashboardThumbnails";

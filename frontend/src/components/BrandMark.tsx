@@ -1,7 +1,6 @@
 import Box from "@mui/material/Box";
 import type { ResolvedTheme } from "../constants/settingsOptions";
-import markColor from "../assets/logos/thingport-mark-color.svg";
-import markOnDark from "../assets/logos/thingport-mark-on-dark.svg";
+import { useBrandMark } from "../hooks/useBrandLogo";
 
 type Props = {
   theme: ResolvedTheme;
@@ -16,7 +15,7 @@ const HEIGHTS: Record<NonNullable<Props["size"]>, string> = {
 
 /** Icon-only mark, for places where the `theme` prop rather than MUI's theme picks the variant. */
 export default function BrandMark({ theme, size = "md" }: Props) {
-  const src = theme === "dark" ? markOnDark : markColor;
+  const src = useBrandMark(theme === "dark");
   return (
     <Box component="img" src={src} alt="Thingport" sx={{ height: HEIGHTS[size], width: "auto", display: "block" }} />
   );

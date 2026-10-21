@@ -24,7 +24,7 @@ RUN npm run build
 # ─── Production image (nginx) ─────────────────────────────────────────────────
 # The frontend always calls same-origin /api/*; nginx reverse-proxies that to the backend
 # container over the compose network (see nginx.conf). No build-time API URL needed.
-FROM nginx:1.27-alpine AS runtime
+FROM nginx:1.30-alpine AS runtime
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html

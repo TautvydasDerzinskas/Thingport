@@ -11,6 +11,7 @@
 // may fail one that only points at an earlier one. --notes-file fills a template's {{version}},
 // {{changes}} and {{testServer}} from RELEASE_VERSION, RELEASE_TAG and EDGE_REVIEW_TEST_SERVER (a
 // secret: a reviewer account on a test server); see edge-certification-notes.txt.
+// `--check-notes <path>` only checks a template fits (npm run check:edge-notes, run in CI).
 //
 // Run by .github/workflows/extension-store-release.yml for each new version (see
 // extension/CONTRIBUTING.md for setting up the credentials).
@@ -58,22 +59,26 @@ function argValue(flag: string): string | undefined {
   return index >= 0 ? process.argv[index + 1] : undefined;
 }
 
-/** The template with its placeholders filled; refuses notes Edge would reject. */
-async function notesFromTemplate(path: string): Promise<string> {
-  const version = process.env.RELEASE_VERSION?.trim() || "update";
-  const tag = process.env.RELEASE_TAG?.trim();
+/** The template with its placeholders filled and its `#` comment lines dropped; refuses notes Edge would
+ *  reject. --check-notes fills it with a long version and tag, so a template that passes still fits on release. */
+async function notesFromTemplate(path: string, check = false): Promise<string> {
+  const version = check ? "99.99.99" : process.env.RELEASE_VERSION?.trim() || "update";
+  const tag = check ? `thingport-grab-v${version}` : process.env.RELEASE_TAG?.trim();
   const values: Record<string, string> = {
     version,
     changes: tag ? `${REPO_URL}/releases/tag/${tag}` : `${REPO_URL}/blob/main/extension/CHANGELOG.md`,
-    testServer: process.env.EDGE_REVIEW_TEST_SERVER?.trim() || SELF_HOSTED_TEST_SERVER,
+    testServer: (!check && process.env.EDGE_REVIEW_TEST_SERVER?.trim()) || SELF_HOSTED_TEST_SERVER,
   };
   const notes = (await readFile(path, "utf8"))
+    .replace(/^#.*(\r?\n|$)/gm, "")
     .replace(/\{\{(\w+)\}\}/g, (match, key: string) => values[key] ?? match)
     .trim();
   const unfilled = notes.match(/\{\{\w+\}\}/);
   if (unfilled) throw new Error(`${path}: unknown placeholder ${unfilled[0]}`);
   if (notes.length >= NOTES_MAX_CHARS) {
-    throw new Error(`Certification notes are ${notes.length} characters; Edge allows under ${NOTES_MAX_CHARS}.`);
+    throw new Error(
+      `Certification notes are ${notes.length} characters; Edge allows under ${NOTES_MAX_CHARS}. Shorten ${path}.`,
+    );
   }
   return notes;
 }
@@ -118,6 +123,12 @@ async function waitFor(url: string, auth: Record<string, string>, what: string):
 }
 
 async function main(): Promise<void> {
+  const checkPath = argValue("--check-notes");
+  if (checkPath) {
+    const notes = await notesFromTemplate(checkPath, true);
+    console.log(`${checkPath}: ${notes.length} of ${NOTES_MAX_CHARS - 1} characters filled in.`);
+    return;
+  }
   const zipPath = process.argv
     .slice(2)
     .find((arg, i, all) => !arg.startsWith("--") && all[i - 1] !== "--notes" && all[i - 1] !== "--notes-file");

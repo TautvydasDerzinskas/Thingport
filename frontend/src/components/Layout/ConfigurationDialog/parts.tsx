@@ -2,15 +2,26 @@ import React from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 
-export function PanelHeader({ title, subtitle }: { title: string; subtitle: string }) {
+export function PanelHeader({
+  title,
+  subtitle,
+  action,
+}: {
+  title: string;
+  subtitle: string;
+  action?: React.ReactNode;
+}) {
   return (
-    <Box sx={{ mb: 2.5 }}>
-      <Typography variant="body1" fontWeight={600} sx={{ color: (muiTheme) => muiTheme.thingport.headingText }}>
-        {title}
-      </Typography>
-      <Typography variant="caption" color="text.secondary">
-        {subtitle}
-      </Typography>
+    <Box sx={{ mb: 2.5, display: "flex", alignItems: "flex-start", gap: 2 }}>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography variant="body1" fontWeight={600} sx={{ color: (muiTheme) => muiTheme.thingport.headingText }}>
+          {title}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {subtitle}
+        </Typography>
+      </Box>
+      {action && <Box sx={{ flexShrink: 0 }}>{action}</Box>}
     </Box>
   );
 }

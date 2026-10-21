@@ -3,10 +3,27 @@ import fsSync from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
 import { HttpError } from "../utils/fileUtils";
-import { STORAGE, THUMBS } from "../config";
+import { STORAGE } from "../config";
 import { prisma } from "../db";
 import { listZipEntries, readZipEntry } from "../utils/zipReader";
-import type { Category, Plate, Print } from "@prisma/client";
+import {
+  adoptLegacyAsset,
+  ASSET_SUBFOLDERS,
+  ASSETS_FOLDER,
+  assetExists,
+  assetPath,
+  assetTarget,
+  descriptionImageFile,
+  galleryImageFile,
+  ownedAssetFiles,
+  plateAssetHome,
+  plateRenderFile,
+  plateThumbFile,
+  removeAsset,
+  type AssetFile,
+  type AssetHome,
+} from "./modelAssets";
+import type { Category, Plate, Prisma, Print } from "@prisma/client";
 
 export const STORAGE_TEMPLATE_TOKENS = [
   "category-or-folder",
@@ -172,19 +189,36 @@ async function printTemplateValues(print: PrintLike, template: string): Promise<
   };
 }
 
-function renderPlatePath(
+/** {plate} with the separator next to it taken out, for the files that aren't plates: "{model}-{plate}-{filename}"
+ *  gives "{model}-{filename}". A folder per plate ("Plate {plate}/") goes whole, so they sit beside the plates'
+ *  folders. */
+function withoutPlateToken(template: string): string {
+  const segments = template.split("/");
+  return segments
+    .map((segment, index) =>
+      index < segments.length - 1 && segment.includes("{plate}")
+        ? ""
+        : segment.replace(/([ _.-]*)\{plate\}([ _.-]*)/g, (match, before: string, after: string, offset: number) =>
+            offset === 0 || offset + match.length === segment.length ? "" : before || after,
+          ),
+    )
+    .join("/");
+}
+
+/** `plate` is the plate's number, or null for any other file of the model. */
+function renderModelPath(
   print: PrintLike,
   template: string,
   printValues: PrintTemplateValues,
-  plateFilename: string,
-  platePosition: number,
+  filename: string,
+  plate: number | null,
 ): string {
   const values = {
     ...printValues,
-    filename: sanitizePathSegment(plateFilename, "file"),
-    plate: String(platePosition + 1),
+    filename: sanitizePathSegment(filename, "file"),
+    plate: plate === null ? "" : String(plate + 1),
   };
-  const rendered = renderTemplate(template, values).replace(/\\/g, "/");
+  const rendered = renderTemplate(plate === null ? withoutPlateToken(template) : template, values).replace(/\\/g, "/");
   const parts = rendered
     .split("/")
     .filter(Boolean)
@@ -192,6 +226,12 @@ function renderPlatePath(
   if (!parts.length) throw new HttpError(400, "Storage template produced an empty path");
   const userSegment = sanitizePathSegment(`u-${print.userId}`, "user");
   return assertWithinStorage(path.join(userSegment, ...parts));
+}
+
+/** The model's pictures folder: where the template would put a file named "Images", so it sits beside the model's
+ *  files -- "Props/Gadget/Images", or "Props/Gadget - Images" under a template that keeps models side by side. */
+function renderAssetsPath(print: PrintLike, template: string, printValues: PrintTemplateValues): string {
+  return renderModelPath(print, template, printValues, ASSETS_FOLDER, null);
 }
 
 /** Renders the on-disk relative path for one plate of a print using the storage template.
@@ -205,23 +245,76 @@ export async function renderPlateStoragePath(
 ): Promise<string> {
   const safeTemplate = validateStorageTemplate(template ?? (await getStorageTemplate()));
   const printValues = await printTemplateValues(print, safeTemplate);
-  return freePlatePath(renderPlatePath(print, safeTemplate, printValues, plateFilename, platePosition), print.id);
+  return freePlatePath(renderModelPath(print, safeTemplate, printValues, plateFilename, platePosition), print.id);
 }
 
-async function pathTaken(relative: string, plateId?: string): Promise<boolean> {
-  const holder = await prisma.plate.findUnique({ where: { storagePath: relative }, select: { id: true } });
-  if (holder) return holder.id !== plateId;
+/** What already holds a path, so it counts as free for that one: it's where it is. */
+type PathOwner = { plateId?: string; printFileId?: string; assetsOf?: string };
+
+async function pathTaken(relative: string, owner: PathOwner = {}): Promise<boolean> {
+  const plate = await prisma.plate.findUnique({ where: { storagePath: relative }, select: { id: true } });
+  if (plate) return plate.id !== owner.plateId;
+  const file = await prisma.printFile.findUnique({ where: { storagePath: relative }, select: { id: true } });
+  if (file) return file.id !== owner.printFileId;
+  const assets = await prisma.print.findUnique({ where: { assetsPath: relative }, select: { id: true } });
+  if (assets) return assets.id !== owner.assetsOf;
   return fsSync.existsSync(path.join(STORAGE, relative));
 }
 
 /** `relative`, unless another file has it: a template that doesn't tell two models apart (one saved before the
  *  rules), or names that only differ in characters a path can't hold. The file then goes in a folder named
  *  after its model's ID, beside where it would have been. */
-async function freePlatePath(relative: string, printId: string, plateId?: string): Promise<string> {
-  if (!(await pathTaken(relative, plateId))) return relative;
+async function freePlatePath(relative: string, printId: string, owner: PathOwner = {}): Promise<string> {
+  if (!(await pathTaken(relative, owner))) return relative;
   const fallback = path.join(path.dirname(relative), printId, path.basename(relative));
-  if (await pathTaken(fallback, plateId)) throw new HttpError(409, `Storage path already exists: ${relative}`);
+  if (await pathTaken(fallback, owner)) throw new HttpError(409, `Storage path already exists: ${relative}`);
   return fallback;
+}
+
+/** A supporting or prepared file's place: beside the plates, numbered like "Notes (2).pdf" when one of the model's
+ *  files already has its name. */
+async function freePrintFilePath(relative: string, printFileId?: string): Promise<string> {
+  const ext = path.extname(relative);
+  const stem = relative.slice(0, relative.length - ext.length);
+  let candidate = relative;
+  for (let suffix = 2; await pathTaken(candidate, { printFileId }); suffix++) {
+    if (suffix > 1000) throw new HttpError(409, `Storage path already exists: ${relative}`);
+    candidate = `${stem} (${suffix})${ext}`;
+  }
+  return candidate;
+}
+
+/** Where a new supporting or prepared file goes. */
+export async function renderPrintFileStoragePath(print: PrintLike, filename: string): Promise<string> {
+  const template = validateStorageTemplate(await getStorageTemplate());
+  const values = await printTemplateValues(print, template);
+  return freePrintFilePath(renderModelPath(print, template, values, filename, null));
+}
+
+/** The model's pictures folder, chosen now if it has none yet: a model from before gets one the first time a
+ *  picture of it is saved, and its older pictures follow when the storage move reaches it. */
+export async function ensureAssetHome(printId: string): Promise<string> {
+  const print = await prisma.print.findUnique({ where: { id: printId } });
+  if (!print) throw new HttpError(404, "Print not found");
+  if (print.assetsPath) return print.assetsPath;
+  const template = validateStorageTemplate(await getStorageTemplate());
+  const values = await printTemplateValues(print, template);
+  const chosen = await freePlatePath(renderAssetsPath(print, template, values), print.id, { assetsOf: print.id });
+  try {
+    await prisma.print.updateMany({ where: { id: printId, assetsPath: null }, data: { assetsPath: chosen } });
+  } catch {
+    // Another model took it in the meantime; the next picture tries again.
+    throw new HttpError(409, "Couldn't choose a folder for the model's pictures; try again");
+  }
+  // Another picture saved at the same moment may have chosen first.
+  const saved = await prisma.print.findUnique({ where: { id: printId }, select: { assetsPath: true } });
+  return saved?.assetsPath ?? chosen;
+}
+
+async function ensurePlateAssetHome(plateId: string): Promise<string> {
+  const plate = await prisma.plate.findUnique({ where: { id: plateId }, select: { printId: true } });
+  if (!plate) throw new HttpError(404, "Plate not found");
+  return ensureAssetHome(plate.printId);
 }
 
 export function samplePlateStoragePaths(template: string): [string, string] {
@@ -271,13 +364,14 @@ export async function availableModelName(
   requested: string,
   categoryId: string | null,
   excludeId?: string,
+  db: Prisma.TransactionClient = prisma,
 ): Promise<string> {
   const base = sanitizePathSegment(requested, "Model");
   let candidate = base;
   let suffix = 2;
   // Small categories in practice; a loop of sequential existence checks is simple and correct.
   for (;;) {
-    const existing = await prisma.print.findFirst({
+    const existing = await db.print.findFirst({
       where: {
         userId,
         categoryId: categoryId ?? null,
@@ -330,21 +424,133 @@ export async function pruneEmptyStorageDirs(start: string): Promise<void> {
   }
 }
 
+/** Moves one file of a model; `save` records the new place, and the file goes back if that fails. */
+async function moveStored(oldPath: string, newPath: string, save: () => Promise<unknown>): Promise<boolean> {
+  return (await moveAllStored([[oldPath, newPath]], save)) > 0;
+}
+
+/** Moves files that one record finds, as moveStored; returns how many were there to move. */
+async function moveAllStored(moves: [string, string][], save: () => Promise<unknown>): Promise<number> {
+  const present = moves.filter(([oldPath]) => fsSync.existsSync(oldPath));
+  const done: [string, string][] = [];
+  try {
+    for (const [oldPath, newPath] of present) {
+      await fs.mkdir(path.dirname(newPath), { recursive: true });
+      await fs.rename(oldPath, newPath);
+      done.push([oldPath, newPath]);
+    }
+    await save();
+  } catch (err) {
+    // Put them back, so the stored path still finds them.
+    for (const [oldPath, newPath] of done.toReversed()) {
+      await fs.mkdir(path.dirname(oldPath), { recursive: true });
+      await fs.rename(newPath, oldPath);
+      await pruneEmptyStorageDirs(path.dirname(newPath));
+    }
+    throw err;
+  }
+  for (const [oldPath] of present) await pruneEmptyStorageDirs(path.dirname(oldPath));
+  return present.length;
+}
+
+const samePath = (relative: string, other: string) => path.resolve(STORAGE, relative) === path.resolve(STORAGE, other);
+
+/** The model's supporting and prepared files, beside its plates. Those saved before that are under bundles/ and
+ *  come over here too. */
+async function relocatePrintFiles(
+  print: PrintLike,
+  template: string,
+  printValues: PrintTemplateValues,
+): Promise<number> {
+  const files = await prisma.printFile.findMany({ where: { printId: print.id }, orderBy: { id: "asc" } });
+  let moved = 0;
+  for (const file of files) {
+    const rendered = renderModelPath(print, template, printValues, file.filename, null);
+    const newRelative = samePath(file.storagePath, rendered) ? rendered : await freePrintFilePath(rendered, file.id);
+    if (samePath(file.storagePath, newRelative)) continue;
+    const didMove = await moveStored(path.join(STORAGE, file.storagePath), path.join(STORAGE, newRelative), () =>
+      prisma.printFile.update({ where: { id: file.id }, data: { storagePath: newRelative } }),
+    );
+    if (didMove) moved += 1;
+  }
+  return moved;
+}
+
+/** Every picture the model has: its gallery and description images, and each plate's thumbnail and render. */
+async function modelAssetFiles(printId: string, plateIds: string[]): Promise<AssetFile[]> {
+  const [images, descriptions] = await Promise.all([
+    prisma.previewImage.findMany({ where: { printId }, select: { id: true } }),
+    prisma.descriptionImage.findMany({ where: { printId }, select: { id: true, mime: true } }),
+  ]);
+  return [
+    ...images.map((image) => galleryImageFile(image.id)),
+    ...descriptions.map(descriptionImageFile),
+    ...plateIds.flatMap((plateId) => [plateThumbFile(plateId), plateRenderFile(plateId)]),
+  ];
+}
+
+/** The ids a model's pictures are named by: its plates' and its gallery and description images'. */
+export async function assetOwnerIds(printId: string): Promise<string[]> {
+  const [plates, images, descriptions] = await Promise.all([
+    prisma.plate.findMany({ where: { printId }, select: { id: true } }),
+    prisma.previewImage.findMany({ where: { printId }, select: { id: true } }),
+    prisma.descriptionImage.findMany({ where: { printId }, select: { id: true } }),
+  ]);
+  return [...plates, ...images, ...descriptions].map((row) => row.id);
+}
+
+/** The model's pictures moved to where the template now puts its folder, with any still in the old shared folders
+ *  brought in. Only its own files go: another model's can be in there too. */
+async function relocateAssets(
+  print: PrintLike & { assetsPath: string | null },
+  template: string,
+  printValues: PrintTemplateValues,
+  plateIds: string[],
+): Promise<number> {
+  const rendered = renderAssetsPath(print, template, printValues);
+  const current = print.assetsPath;
+  const home =
+    current && samePath(current, rendered) ? rendered : await freePlatePath(rendered, print.id, { assetsOf: print.id });
+  let moved = 0;
+  if (!current) {
+    // Saved before anything moves, so a picture moved below is found even if the move stops part-way.
+    await prisma.print.update({ where: { id: print.id }, data: { assetsPath: home } });
+  } else if (!samePath(current, home)) {
+    const owned = await ownedAssetFiles(current, await assetOwnerIds(print.id));
+    moved += await moveAllStored(
+      owned.map((file) => [path.join(STORAGE, current, file), path.join(STORAGE, home, file)]),
+      () => prisma.print.update({ where: { id: print.id }, data: { assetsPath: home } }),
+    );
+  } else if (current !== home) {
+    await prisma.print.update({ where: { id: print.id }, data: { assetsPath: home } });
+  }
+  print.assetsPath = home;
+  for (const file of await modelAssetFiles(print.id, plateIds)) {
+    if (await adoptLegacyAsset(home, file)) moved += 1;
+  }
+  return moved;
+}
+
 /**
- * Moves every plate of a print after a change to anything its storage path is built from.
- * Supporting and prepared files live at a fixed bundles/ path and aren't touched.
+ * Moves everything of a print -- plates, supporting and prepared files, pictures -- after a change to anything its
+ * storage path is built from. Returns how many files moved.
  */
-export async function relocatePrint(print: PrintLike, plates: Plate[], template?: string | null): Promise<void> {
+export async function relocatePrint(
+  print: PrintLike & { assetsPath?: string | null },
+  plates: Plate[],
+  template?: string | null,
+): Promise<number> {
   const safeTemplate = validateStorageTemplate(template ?? (await getStorageTemplate()));
   const printValues = await printTemplateValues(print, safeTemplate);
+  let moved = 0;
   for (const plate of plates) {
     const oldPath = managedPlatePath(plate);
-    const rendered = renderPlatePath(print, safeTemplate, printValues, plate.filename, plate.position);
+    const rendered = renderModelPath(print, safeTemplate, printValues, plate.filename, plate.position);
     // Where it already is counts as free, so a plate moved aside by freePlatePath stays put.
     const newRelative =
       path.resolve(oldPath) === path.resolve(STORAGE, rendered)
         ? rendered
-        : await freePlatePath(rendered, print.id, plate.id);
+        : await freePlatePath(rendered, print.id, { plateId: plate.id });
     const newPath = path.join(STORAGE, newRelative);
     if (path.resolve(oldPath) === path.resolve(newPath)) {
       if (plate.storagePath !== newRelative) {
@@ -352,24 +558,27 @@ export async function relocatePrint(print: PrintLike, plates: Plate[], template?
       }
       continue;
     }
-    const oldExists = fsSync.existsSync(oldPath);
-    if (oldExists) {
-      await fs.mkdir(path.dirname(newPath), { recursive: true });
-      await fs.rename(oldPath, newPath);
-    }
-    try {
-      await prisma.plate.update({ where: { id: plate.id }, data: { storagePath: newRelative } });
-    } catch (err) {
-      // Put the file back, so the plate's stored path still finds it.
-      if (oldExists) {
-        await fs.mkdir(path.dirname(oldPath), { recursive: true });
-        await fs.rename(newPath, oldPath);
-        await pruneEmptyStorageDirs(path.dirname(newPath));
-      }
-      throw err;
-    }
-    if (oldExists) await pruneEmptyStorageDirs(path.dirname(oldPath));
+    const didMove = await moveStored(oldPath, newPath, () =>
+      prisma.plate.update({ where: { id: plate.id }, data: { storagePath: newRelative } }),
+    );
+    if (didMove) moved += 1;
   }
+  moved += await relocatePrintFiles(print, safeTemplate, printValues);
+  // A caller that only had some of the plates still moves every plate's pictures.
+  const [current, allPlates] = await Promise.all([
+    print.assetsPath === undefined
+      ? prisma.print.findUnique({ where: { id: print.id }, select: { assetsPath: true } })
+      : { assetsPath: print.assetsPath },
+    prisma.plate.findMany({ where: { printId: print.id }, select: { id: true } }),
+  ]);
+  if (!current) return moved;
+  moved += await relocateAssets(
+    { ...print, assetsPath: current.assetsPath },
+    safeTemplate,
+    printValues,
+    allPlates.map((plate) => plate.id),
+  );
+  return moved;
 }
 
 /** Moves the given prints' files after a change that only matters when the storage template
@@ -413,13 +622,9 @@ export async function reorganizeManagedPrints(
   });
   for (const [index, print] of prints.entries()) {
     try {
-      const before = new Map(print.plates.map((p) => [p.id, p.storagePath]));
-      await relocatePrint(print, print.plates, template);
-      const after = await prisma.plate.findMany({ where: { printId: print.id } });
-      for (const plate of after) {
-        if (before.get(plate.id) !== plate.storagePath) moved += 1;
-      }
-    } catch {
+      moved += await relocatePrint(print, print.plates, template);
+    } catch (err) {
+      console.error(`Couldn't move the files of print ${print.id}`, err);
       skipped += 1;
     }
     onProgress?.({ done: index + 1, total: prints.length, moved, skipped });
@@ -429,26 +634,59 @@ export async function reorganizeManagedPrints(
 
 /** How many files, of how many models, aren't where `template` puts them: what saving it would move. A file put
  *  beside its place, in a folder named after its model because another file has that place (freePlatePath), counts
- *  as in place. */
+ *  as in place, as does a supporting file numbered apart from another (freePrintFilePath). Pictures are counted by
+ *  their images, from the database; thumbnails and renders, which have no rows, move along uncounted. */
 export async function storageOutOfPlace(template: string): Promise<{ files: number; models: number }> {
   const safeTemplate = validateStorageTemplate(template);
-  const prints = await prisma.print.findMany({ include: { plates: true } });
-  const taken = new Set(prints.flatMap((print) => print.plates.map((plate) => plate.storagePath)));
+  const prints = await prisma.print.findMany({
+    include: {
+      plates: true,
+      files: { select: { filename: true, storagePath: true } },
+      _count: { select: { previewImages: true, descriptionImages: true } },
+    },
+  });
+  const taken = new Set(
+    prints.flatMap((print) => [
+      ...print.plates.map((plate) => plate.storagePath),
+      ...print.files.map((file) => file.storagePath),
+      ...(print.assetsPath ? [print.assetsPath] : []),
+    ]),
+  );
+  const inPlace = (stored: string, target: string, printId: string) => {
+    if (stored === target) return true;
+    const aside = path.join(path.dirname(target), printId, path.basename(target));
+    return stored === aside && taken.has(target);
+  };
   let files = 0;
   let models = 0;
   for (const print of prints) {
-    if (!print.plates.length) continue;
     const values = await printTemplateValues(print, safeTemplate);
-    const misplaced = print.plates.filter((plate) => {
-      const target = renderPlatePath(print, safeTemplate, values, plate.filename, plate.position);
-      if (plate.storagePath === target) return false;
-      const aside = path.join(path.dirname(target), print.id, path.basename(target));
-      return !(plate.storagePath === aside && taken.has(target));
+    let misplaced = print.plates.filter(
+      (plate) =>
+        !inPlace(
+          plate.storagePath,
+          renderModelPath(print, safeTemplate, values, plate.filename, plate.position),
+          print.id,
+        ),
+    ).length;
+    misplaced += print.files.filter((file) => {
+      const target = renderModelPath(print, safeTemplate, values, file.filename, null);
+      return file.storagePath !== target && withoutNumber(file.storagePath) !== target;
     }).length;
+    const assetsTarget = renderAssetsPath(print, safeTemplate, values);
+    const assetsMisplaced = !print.assetsPath || !inPlace(print.assetsPath, assetsTarget, print.id);
+    if (assetsMisplaced) misplaced += print._count.previewImages + print._count.descriptionImages;
     files += misplaced;
-    if (misplaced) models += 1;
+    // A model with only thumbnails or renders still has a folder to move.
+    if (misplaced || (assetsMisplaced && print.plates.length)) models += 1;
   }
   return { files, models };
+}
+
+/** "Notes (2).pdf" as "Notes.pdf". */
+function withoutNumber(file: string): string {
+  const ext = path.extname(file);
+  return file.slice(0, file.length - ext.length).replace(/ \(\d+\)$/, "") + ext;
 }
 
 // -- Settings (storage template) -----------------------------------------
@@ -469,20 +707,26 @@ export async function setStorageTemplate(value: string): Promise<void> {
 // -- Thumbnails -------------------------------------------------------------
 
 async function saveThumbBuffer(plateId: string, input: Buffer): Promise<boolean> {
-  const dest = path.join(THUMBS, `${plateId}.jpg`);
-  const tmp = `${dest}.${process.pid}.${Date.now()}.tmp`;
+  let tmp: string | null = null;
   try {
+    const file = plateThumbFile(plateId);
+    const home = await ensurePlateAssetHome(plateId);
+    const dest = assetTarget(home, file);
+    tmp = `${dest}.${process.pid}.${Date.now()}.tmp`;
+    await fs.mkdir(path.dirname(dest), { recursive: true });
     await sharp(input)
       .flatten({ background: { r: 248, g: 250, b: 252 } })
       .resize(512, 512, { fit: "inside", withoutEnlargement: true })
       .jpeg({ quality: 88, mozjpeg: true })
       .toFile(tmp);
     await fs.rename(tmp, dest);
+    // The one in the old shared folder is out of date now.
+    await removeAsset(null, file);
     // Any thumb but our own render; the generated-thumbnail route marks those after saving.
     await prisma.plate.updateMany({ where: { id: plateId, thumbGenerated: true }, data: { thumbGenerated: false } });
     return true;
   } catch {
-    await fs.rm(tmp, { force: true });
+    if (tmp) await fs.rm(tmp, { force: true });
     return false;
   }
 }
@@ -531,22 +775,42 @@ export async function extract3mfThumbnail(plateId: string, srcPath: string): Pro
 }
 
 export async function ensurePlateThumbnail(plateId: string, srcPath: string): Promise<boolean> {
-  const existing = path.join(THUMBS, `${plateId}.jpg`);
-  if (fsSync.existsSync(existing)) return true;
+  if (plateThumbExists(plateId, await plateAssetHome(plateId))) return true;
   return extract3mfThumbnail(plateId, srcPath);
 }
 
-export function plateThumbPath(plateId: string): string {
-  return path.join(THUMBS, `${plateId}.jpg`);
+/** `home` is the plate's model's Print.assetsPath. */
+export function plateThumbPath(plateId: string, home: AssetHome): string {
+  return assetPath(home, plateThumbFile(plateId));
 }
 
-export function plateThumbExists(plateId: string): boolean {
-  return fsSync.existsSync(plateThumbPath(plateId));
+export function plateThumbExists(plateId: string, home: AssetHome): boolean {
+  return assetExists(home, plateThumbFile(plateId));
+}
+
+/** A plate's thumbnail and render, once the plate is gone. */
+export async function removePlatePictures(plateId: string, home: AssetHome): Promise<void> {
+  await removeAsset(home, plateThumbFile(plateId));
+  await removeAsset(home, plateRenderFile(plateId));
 }
 
 /** True when the plate has no thumb or only our own 3D render, which an imported image beats. */
 export async function plateThumbReplaceable(plateId: string): Promise<boolean> {
-  if (!plateThumbExists(plateId)) return true;
+  if (!plateThumbExists(plateId, await plateAssetHome(plateId))) return true;
   const plate = await prisma.plate.findUnique({ where: { id: plateId }, select: { thumbGenerated: true } });
   return plate?.thumbGenerated ?? false;
+}
+
+/** What's left of the model's pictures once it's gone, and the folder with them. `ids` are its assetOwnerIds,
+ *  taken before its rows went; only files named by them go, as another model's can be in the folder too. */
+export async function removeAssetHome(home: AssetHome, ids: string[]): Promise<void> {
+  if (!home) return;
+  const abs = path.join(STORAGE, home);
+  for (const file of await ownedAssetFiles(home, ids)) {
+    await fs.rm(path.join(abs, file), { force: true }).catch(() => undefined);
+  }
+  for (const folder of Object.values(ASSET_SUBFOLDERS).filter(Boolean)) {
+    await pruneEmptyStorageDirs(path.join(abs, folder));
+  }
+  await pruneEmptyStorageDirs(abs);
 }

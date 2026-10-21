@@ -21,8 +21,9 @@
     "typecheck": "tsc --noEmit",
     "lint": "oxlint .",
     "lint:firefox": "npm run build:firefox && web-ext lint --source-dir dist/firefox",
-    "verify": "npm run typecheck && npm run lint && npm run build",
-    "release:dry-run": "semantic-release --dry-run --no-ci"
+    "verify": "npm run typecheck && npm run lint && npm run check:edge-notes && npm run build",
+    "release:dry-run": "semantic-release --dry-run --no-ci",
+    "check:edge-notes": "tsx scripts/publish-edge.ts --check-notes scripts/edge-certification-notes.txt"
   },
   "devDependencies": {
     "@semantic-release/changelog": "^7.0.0",

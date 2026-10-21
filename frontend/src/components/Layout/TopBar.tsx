@@ -29,7 +29,7 @@ type Props = {
   onUnauthorized?: () => void;
   user: AuthUser | null;
   theme: ThemeSelection;
-  onThemeChange: (theme: ThemeSelection) => void;
+  onThemeChange: (theme: ThemeSelection) => Promise<boolean>;
   onOpenProfile: () => void;
   onLogout: () => void;
 };

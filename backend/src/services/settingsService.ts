@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { FLARESOLVERR_URL, PUBLIC_URL } from "../config";
+import { QUALITY_CHECK_KEYS, type QualityCheckKey } from "./meshQuality";
 
 async function getBoolSetting(key: string, fallback: boolean): Promise<boolean> {
   const row = await prisma.setting.findUnique({ where: { key } });
@@ -63,6 +64,35 @@ export async function setSimplifyPreviews(value: boolean): Promise<void> {
   await setBoolSetting(SIMPLIFY_PREVIEWS_KEY, value);
 }
 
+const QUALITY_CHECKS_KEY = "quality_checks";
+
+// Instance-wide. On by default: a model is only checked when opened, so the cost comes a model at a time.
+export async function getQualityChecks(): Promise<boolean> {
+  return getBoolSetting(QUALITY_CHECKS_KEY, true);
+}
+
+export async function setQualityChecks(value: boolean): Promise<void> {
+  await setBoolSetting(QUALITY_CHECKS_KEY, value);
+}
+
+const QUALITY_CHECKS_OFF_KEY = "quality_checks_off";
+
+// The checks switched off rather than on, so a check added later starts on.
+export async function getQualityChecksOff(): Promise<QualityCheckKey[]> {
+  const row = await prisma.setting.findUnique({ where: { key: QUALITY_CHECKS_OFF_KEY } });
+  const value = row?.value;
+  return Array.isArray(value) ? QUALITY_CHECK_KEYS.filter((key) => (value as unknown[]).includes(key)) : [];
+}
+
+export async function setQualityChecksOff(keys: QualityCheckKey[]): Promise<void> {
+  const value = QUALITY_CHECK_KEYS.filter((key) => keys.includes(key));
+  await prisma.setting.upsert({
+    where: { key: QUALITY_CHECKS_OFF_KEY },
+    create: { key: QUALITY_CHECKS_OFF_KEY, value },
+    update: { value },
+  });
+}
+
 export type PreviewMode = "automatic" | "on-demand" | "disabled";
 const PREVIEW_MODES = new Set<PreviewMode>(["automatic", "on-demand", "disabled"]);
 const PREVIEW_MODE_KEY = "preview_mode";
@@ -81,6 +111,29 @@ export async function setPreviewMode(value: PreviewMode): Promise<void> {
   await prisma.setting.upsert({
     where: { key: PREVIEW_MODE_KEY },
     create: { key: PREVIEW_MODE_KEY, value },
+    update: { value },
+  });
+}
+
+// What API tokens may do at /api/mcp, instance-wide. "read" also keeps a write tool off for a token
+// whose user ticked it, without forgetting the choice.
+export type McpAccess = "off" | "read" | "write";
+export const MCP_ACCESS_LEVELS: readonly McpAccess[] = ["off", "read", "write"];
+const MCP_ACCESS_KEY = "mcp_access";
+const DEFAULT_MCP_ACCESS: McpAccess = "write";
+
+export async function getMcpAccess(): Promise<McpAccess> {
+  const row = await prisma.setting.findUnique({ where: { key: MCP_ACCESS_KEY } });
+  const value = row?.value;
+  return typeof value === "string" && MCP_ACCESS_LEVELS.includes(value as McpAccess)
+    ? (value as McpAccess)
+    : DEFAULT_MCP_ACCESS;
+}
+
+export async function setMcpAccess(value: McpAccess): Promise<void> {
+  await prisma.setting.upsert({
+    where: { key: MCP_ACCESS_KEY },
+    create: { key: MCP_ACCESS_KEY, value },
     update: { value },
   });
 }

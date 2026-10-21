@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { prisma } from "../db";
+import { HttpError } from "../utils/fileUtils";
 
 // Session JWTs start "eyJ", so the prefix alone says which kind of token a request carries. It also
 // makes a leaked token recognisable to secret scanners.
@@ -12,6 +13,10 @@ export type ApiTokenOut = {
   hint: string | null;
   created_at: Date | null;
   last_used_at: Date | null;
+  /** The MCP tools the token may call; empty without a token. */
+  mcp_tools: string[];
+  /** What the token may read over the REST API (see apiTokenScopes.ts); empty without a token. */
+  rest_scopes: string[];
 };
 
 const hashApiToken = (token: string) => crypto.createHash("sha256").update(token).digest("hex");
@@ -21,18 +26,32 @@ export const isApiToken = (token: string) => token.startsWith(API_TOKEN_PREFIX);
 export async function getApiToken(userId: string): Promise<ApiTokenOut> {
   const user = await prisma.user.findUniqueOrThrow({
     where: { id: userId },
-    select: { apiTokenHash: true, apiTokenHint: true, apiTokenCreatedAt: true, apiTokenLastUsedAt: true },
+    select: {
+      apiTokenHash: true,
+      apiTokenHint: true,
+      apiTokenCreatedAt: true,
+      apiTokenLastUsedAt: true,
+      apiTokenMcpTools: true,
+      apiTokenRestScopes: true,
+    },
   });
   return {
     configured: Boolean(user.apiTokenHash),
     hint: user.apiTokenHint,
     created_at: user.apiTokenCreatedAt,
     last_used_at: user.apiTokenLastUsedAt,
+    mcp_tools: user.apiTokenHash ? user.apiTokenMcpTools : [],
+    rest_scopes: user.apiTokenHash ? user.apiTokenRestScopes : [],
   };
 }
 
-/** Replaces any existing token, which stops working at once. The token is only ever returned here. */
-export async function generateApiToken(userId: string): Promise<ApiTokenOut & { token: string }> {
+/** Replaces any existing token, which stops working at once. The token is only ever returned here.
+ *  `mcpTools` and `restScopes` must already be known names. */
+export async function generateApiToken(
+  userId: string,
+  mcpTools: string[],
+  restScopes: string[],
+): Promise<ApiTokenOut & { token: string }> {
   const token = API_TOKEN_PREFIX + crypto.randomBytes(32).toString("base64url");
   const user = await prisma.user.update({
     where: { id: userId },
@@ -41,6 +60,8 @@ export async function generateApiToken(userId: string): Promise<ApiTokenOut & { 
       apiTokenHint: token.slice(-4),
       apiTokenCreatedAt: new Date(),
       apiTokenLastUsedAt: null,
+      apiTokenMcpTools: mcpTools,
+      apiTokenRestScopes: restScopes,
     },
   });
   return {
@@ -49,13 +70,42 @@ export async function generateApiToken(userId: string): Promise<ApiTokenOut & { 
     hint: user.apiTokenHint,
     created_at: user.apiTokenCreatedAt,
     last_used_at: null,
+    mcp_tools: user.apiTokenMcpTools,
+    rest_scopes: user.apiTokenRestScopes,
   };
+}
+
+/** Changes what the current token may call over MCP, without replacing the token. */
+export async function setApiTokenMcpTools(userId: string, mcpTools: string[]): Promise<ApiTokenOut> {
+  const { count } = await prisma.user.updateMany({
+    where: { id: userId, apiTokenHash: { not: null } },
+    data: { apiTokenMcpTools: mcpTools },
+  });
+  if (!count) throw new HttpError(409, "Generate an API token first");
+  return getApiToken(userId);
+}
+
+/** Changes what the current token may read over the REST API, without replacing the token. */
+export async function setApiTokenRestScopes(userId: string, restScopes: string[]): Promise<ApiTokenOut> {
+  const { count } = await prisma.user.updateMany({
+    where: { id: userId, apiTokenHash: { not: null } },
+    data: { apiTokenRestScopes: restScopes },
+  });
+  if (!count) throw new HttpError(409, "Generate an API token first");
+  return getApiToken(userId);
 }
 
 export async function revokeApiToken(userId: string): Promise<void> {
   await prisma.user.update({
     where: { id: userId },
-    data: { apiTokenHash: null, apiTokenHint: null, apiTokenCreatedAt: null, apiTokenLastUsedAt: null },
+    data: {
+      apiTokenHash: null,
+      apiTokenHint: null,
+      apiTokenCreatedAt: null,
+      apiTokenLastUsedAt: null,
+      apiTokenMcpTools: [],
+      apiTokenRestScopes: [],
+    },
   });
 }
 
@@ -64,7 +114,7 @@ export async function findApiTokenUser(token: string) {
   const apiTokenHash = hashApiToken(token);
   const user = await prisma.user.findUnique({
     where: { apiTokenHash },
-    select: { id: true, role: true, apiTokenLastUsedAt: true },
+    select: { id: true, role: true, apiTokenLastUsedAt: true, apiTokenMcpTools: true, apiTokenRestScopes: true },
   });
   if (!user) return null;
   const now = Date.now();

@@ -1,3 +1,4 @@
+import { useCallback, useState, type ReactNode } from "react";
 import type { TFunction } from "i18next";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -9,6 +10,8 @@ import { extOf } from "../../utils/fileExtensions";
 import ModelViewer from "./ModelViewer";
 import { ModelSnapshot } from "./ModelViewer/ModelSnapshot";
 import LightBurnPreview from "./LightBurnPreview";
+import ModelRender from "./ModelRender";
+import { useCardPreview } from "../../hooks/useCardPreview";
 
 export type PreviewVariant = "card" | "modal";
 
@@ -20,6 +23,49 @@ function PreviewPlaceholder({ text }: { text: string }) {
       </Typography>
     </Box>
   );
+}
+
+/**
+ * A model card's picture, as the user chose: its own pictures first with our tinted render standing in where there are
+ * none, or the render first with the pictures standing in. The render needs a file the server can draw, and
+ * generation not turned off; `fallback` is what the card showed before renders existed.
+ */
+function CardPicture({
+  print,
+  previewMode,
+  fallback,
+}: {
+  print: Print;
+  previewMode: PreviewMode;
+  fallback: ReactNode;
+}) {
+  const [preference] = useCardPreview();
+  const [renderUnavailable, setRenderUnavailable] = useState(false);
+  const onUnavailable = useCallback(() => setRenderUnavailable(true), []);
+  // Hidden until the choice is known, so cards don't flash the wrong picture.
+  if (preference === null) return null;
+  const canRender = Boolean(print.render_url) && previewMode !== "disabled" && !renderUnavailable;
+  const hasOwnImage = Boolean(print.thumb_url) && !print.thumb_generated;
+  if (canRender && (preference === "renders" || !hasOwnImage)) {
+    // The model's own picture holds the place while the render is made; a render to come can't stand in for itself.
+    const placeholder = print.thumb_url ? (
+      <Box
+        component="img"
+        src={printsApi.fileUrl(print.thumb_url)}
+        alt=""
+        sx={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+      />
+    ) : undefined;
+    return (
+      <ModelRender
+        url={print.render_url!}
+        alt={print.title || print.name}
+        onUnavailable={onUnavailable}
+        placeholder={placeholder}
+      />
+    );
+  }
+  return fallback;
 }
 
 // Picks the preview widget for a print's active plate.
@@ -55,22 +101,31 @@ export function renderPreviewContent(
   const isLightBurn = LIGHTBURN_EXTS.has(ext);
 
   if (variant === "card") {
+    let fallback: ReactNode;
     if (thumbUrl) {
-      return <Box component="img" src={thumbUrl} alt={plate.filename} sx={imgSx} />;
+      fallback = <Box component="img" src={thumbUrl} alt={plate.filename} sx={imgSx} />;
+    } else if (ext === "svg") {
+      fallback = <Box component="img" src={plateUrl} alt={plate.filename} sx={imgSx} />;
+    } else if (is3d) {
+      fallback =
+        previewMode === "disabled" ? (
+          <PreviewPlaceholder text={t("library:modelViewer.previewDisabled")} />
+        ) : (
+          <ModelSnapshot url={plateUrl} ext={ext} plateId={plate.id} theme={theme} mode={previewMode} />
+        );
+    } else if (isLightBurn) {
+      fallback = <LightBurnPreview url={plateUrl} assetId={plate.id} filename={plate.filename} imgSx={imgSx} />;
+    } else {
+      fallback = <PreviewPlaceholder text={t("library:modelViewer.noPreview")} />;
     }
-    if (ext === "svg") {
-      return <Box component="img" src={plateUrl} alt={plate.filename} sx={imgSx} />;
-    }
-    if (is3d) {
-      if (previewMode === "disabled") {
-        return <PreviewPlaceholder text={t("library:modelViewer.previewDisabled")} />;
-      }
-      return <ModelSnapshot url={plateUrl} ext={ext} plateId={plate.id} theme={theme} mode={previewMode} />;
-    }
-    if (isLightBurn) {
-      return <LightBurnPreview url={plateUrl} assetId={plate.id} filename={plate.filename} imgSx={imgSx} />;
-    }
-    return <PreviewPlaceholder text={t("library:modelViewer.noPreview")} />;
+    return (
+      <CardPicture
+        key={`${print.id}:${print.render_url ?? ""}`}
+        print={print}
+        previewMode={previewMode}
+        fallback={fallback}
+      />
+    );
   }
 
   if (is3d) {

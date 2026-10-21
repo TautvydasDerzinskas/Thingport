@@ -11,6 +11,17 @@ Read [CONTRIBUTING.md](../CONTRIBUTING.md) for the workflow, commit style and co
   pull request or update one when the user explicitly asks for that, each time -- approval for one push isn't
   approval for the next.
 
+## API token permissions
+
+Third-party apps (dashboards, launchers such as Homarr and holm) read the REST API with a user's API token, and the
+user picks what it may read by scope in `backend/src/services/apiTokenScopes.ts`. A GET path no scope lists falls
+under "Everything else", so when you add or rename a GET endpoint that such an app would plausibly read (models,
+collections, search, dashboard data, images, files), add its path to the fitting scope, or add a scope for it with
+its translations under `profile.apiToken.rest.scopes` in every locale, a picture in `PermissionTile` (reuse the MCP
+tool's when one reads the same thing), and a row in the table in `docs/guides/api-token.md`. Scope ids are stored per
+user: never rename one, and when a new scope takes paths from an existing one, add a migration granting it to tokens
+that hold that one, so apps using them don't lose access. A new MCP tool that reads the same data should match its scope.
+
 ## UI
 
 The UI is what Thingport is judged on, so treat it as a first-class part of every frontend change, not a

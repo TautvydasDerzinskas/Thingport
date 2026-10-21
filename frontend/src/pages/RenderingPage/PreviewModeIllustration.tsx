@@ -4,6 +4,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
+import { alpha, useTheme } from "@mui/material/styles";
 import type { PreviewMode } from "../../api/settings";
 
 const TILE = 104;
@@ -53,15 +54,16 @@ const sweep = keyframes`
 
 /** The Thingport cube, standing in for a rendered thumbnail. */
 function Cube({ animation, waiting }: { animation: string; waiting?: boolean }) {
+  const { light, main, dark } = useTheme().palette.primary;
   return (
     <Box
       component="svg"
       viewBox="0 0 40 40"
       sx={{ position: "absolute", inset: 0, m: "auto", width: 30, height: 30, opacity: waiting ? 0 : 1, animation }}
     >
-      <path d="M20 5 L34 13 L20 21 L6 13 Z" fill="#3fd13f" />
-      <path d="M6 13 L20 21 L20 36 L6 28 Z" fill="#00b800" />
-      <path d="M34 13 L20 21 L20 36 L34 28 Z" fill="#008f00" />
+      <path d="M20 5 L34 13 L20 21 L6 13 Z" fill={light} />
+      <path d="M6 13 L20 21 L20 36 L6 28 Z" fill={main} />
+      <path d="M34 13 L20 21 L20 36 L34 28 Z" fill={dark} />
     </Box>
   );
 }
@@ -202,7 +204,7 @@ export default function PreviewModeIllustration({ value, options, onChange, disa
               border: "2px solid",
               borderColor: chosen ? "primary.main" : "transparent",
               boxShadow: chosen
-                ? "0 0 0 4px rgba(0, 184, 0, 0.18), 0 4px 12px rgba(0, 0, 0, 0.12)"
+                ? (theme) => `0 0 0 4px ${alpha(theme.palette.primary.main, 0.18)}, 0 4px 12px rgba(0, 0, 0, 0.12)`
                 : "inset 0 0 0 1px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04)",
               display: "flex",
               alignItems: "center",

@@ -14,10 +14,16 @@ import type {
   PrintFile,
   User,
 } from "@prisma/client";
-import { plateThumbExists, plateThumbPath } from "./services/printService";
-import { previewImageExists, previewImagePath } from "./services/previewImageService";
+import type { AssetHome } from "./services/modelAssets";
+import { plateThumbPath } from "./services/printService";
+import { previewImagePath } from "./services/previewImageService";
 import { preparedFilename } from "./services/preparedPrint";
-import { modelPreviewGlbExists, modelPreviewGlbPath } from "./services/modelPreviewCache";
+import {
+  canRenderModelImage,
+  modelImagePath,
+  modelPreviewGlbExists,
+  modelPreviewGlbPath,
+} from "./services/modelPreviewCache";
 import { buildImportSourceUrl } from "./services/importService";
 import { openSourceGaps, type SourceGap } from "./services/sourceGaps";
 import { parseQueuedLinkOptions } from "./services/importJobRunner";
@@ -95,8 +101,13 @@ export type PlateOut = {
   size: number;
   url: string;
   thumb_url: string | null;
+  /** The thumb is our own render, not a picture from an import or upload. */
+  thumb_generated: boolean;
   /** Null until generated, and always for non-3MF plates; the viewer then parses the file itself. */
   preview_glb_url: string | null;
+  /** The server's grey render for model cards to tint; unversioned until it exists (asking for it queues it), null for
+   *  files the server can't draw. */
+  render_url: string | null;
 };
 
 export type PrintFileOut = {
@@ -111,6 +122,8 @@ export type PreviewImageOut = {
   id: string;
   position: number;
   url: string;
+  /** Our own render, not a picture from an import or upload. */
+  generated: boolean;
 };
 
 export type PrintOut = {
@@ -148,6 +161,8 @@ export type PrintOut = {
   plates: PlateOut[];
   preview_images: PreviewImageOut[];
   thumb_url: string | null;
+  thumb_generated: boolean;
+  render_url: string | null;
   supporting_file_count: number;
   /** All plates plus supporting and prepared files; gallery images aren't counted. */
   total_size: number;
@@ -187,10 +202,19 @@ export type CategoryOut = {
   cults3d_cat_ids: string;
 };
 
-function plateThumbUrl(plateId: string): string | null {
-  if (!plateThumbExists(plateId)) return null;
-  const mtime = fs.statSync(plateThumbPath(plateId)).mtimeMs;
-  return `/plate/${plateId}/thumb.jpg?v=${mtime}`;
+/** `url` versioned by the file's mtime; null when it isn't there. One stat, as a storage move can take the file
+ *  away between an existence check and a second look. */
+function versionedUrl(file: string, url: string): string | null {
+  try {
+    return `${url}?v=${fs.statSync(file).mtimeMs}`;
+  } catch {
+    return null;
+  }
+}
+
+/** `home`, here and below, is the model's Print.assetsPath. */
+export function plateThumbUrl(plateId: string, home: AssetHome): string | null {
+  return versionedUrl(plateThumbPath(plateId, home), `/plate/${plateId}/thumb.jpg`);
 }
 
 function previewGlbUrl(plate: Plate): string | null {
@@ -202,7 +226,14 @@ function previewGlbUrl(plate: Plate): string | null {
   return `/plate/${plate.id}/preview.glb?v=${mtime}`;
 }
 
-export function toPlateOut(printId: string, plate: Plate): PlateOut {
+/** The plate's grey render for the browser to tint; unversioned until it exists, as asking for it queues it. */
+export function renderUrl(plate: { id: string; filename: string }, home: AssetHome): string | null {
+  if (!canRenderModelImage(plate.filename)) return null;
+  const url = `/plate/${plate.id}/render.png`;
+  return versionedUrl(modelImagePath(plate.id, home, "render"), url) ?? url;
+}
+
+export function toPlateOut(printId: string, plate: Plate, home: AssetHome): PlateOut {
   return {
     id: plate.id,
     print_id: printId,
@@ -211,8 +242,10 @@ export function toPlateOut(printId: string, plate: Plate): PlateOut {
     mime: plate.mime,
     size: plate.size,
     url: `/print/${printId}/plate/${plate.id}/file/${encodeURIComponent(plate.filename)}`,
-    thumb_url: plateThumbUrl(plate.id),
+    thumb_url: plateThumbUrl(plate.id, home),
+    thumb_generated: plate.thumbGenerated,
     preview_glb_url: previewGlbUrl(plate),
+    render_url: renderUrl(plate, home),
   };
 }
 
@@ -221,24 +254,23 @@ export function toPlateOut(printId: string, plate: Plate): PlateOut {
 export function printCover(
   previewImageId: string | null,
   plateId: string | null,
+  home: AssetHome,
 ): { url: string; file: string } | null {
-  const image = previewImageId && previewImageUrl(previewImageId);
-  if (image) return { url: image, file: previewImagePath(previewImageId) };
-  const plate = plateId && plateThumbUrl(plateId);
-  if (plate) return { url: plate, file: plateThumbPath(plateId) };
+  const image = previewImageId && previewImageUrl(previewImageId, home);
+  if (image) return { url: image, file: previewImagePath(previewImageId, home) };
+  const plate = plateId && plateThumbUrl(plateId, home);
+  if (plate) return { url: plate, file: plateThumbPath(plateId, home) };
   return null;
 }
 
-function previewImageUrl(id: string): string | null {
-  if (!previewImageExists(id)) return null;
-  const mtime = fs.statSync(previewImagePath(id)).mtimeMs;
-  return `/preview-image/${id}/file.jpg?v=${mtime}`;
+function previewImageUrl(id: string, home: AssetHome): string | null {
+  return versionedUrl(previewImagePath(id, home), `/preview-image/${id}/file.jpg`);
 }
 
-export function toPreviewImageOut(image: PreviewImage): PreviewImageOut | null {
-  const url = previewImageUrl(image.id);
+export function toPreviewImageOut(image: PreviewImage, home: AssetHome): PreviewImageOut | null {
+  const url = previewImageUrl(image.id, home);
   if (!url) return null;
-  return { id: image.id, position: image.position, url };
+  return { id: image.id, position: image.position, url, generated: image.generated };
 }
 
 export function toPrintFileOut(printFile: PrintFile): PrintFileOut {
@@ -273,12 +305,12 @@ export function toPrintOut(
   aiDescription?: Pick<PrintOut, "ai_description_suggestion" | "ai_description_original">,
 ): PrintOut {
   const sortedPlates = plates.toSorted((a, b) => a.position - b.position);
-  const plateOuts = sortedPlates.map((p) => toPlateOut(print.id, p));
+  const plateOuts = sortedPlates.map((p) => toPlateOut(print.id, p, print.assetsPath));
   const supportingCount = files.filter((f) => f.role === "SUPPORTING").length;
   const totalSize = plates.reduce((sum, p) => sum + p.size, 0) + files.reduce((sum, f) => sum + f.size, 0);
   const previewImageOuts = (previewImages ?? [])
     .toSorted((a, b) => a.position - b.position)
-    .map(toPreviewImageOut)
+    .map((image) => toPreviewImageOut(image, print.assetsPath))
     .filter((img): img is PreviewImageOut => img !== null);
 
   let prepared: PreparedPrintOut | null = null;
@@ -339,6 +371,9 @@ export function toPrintOut(
     plates: plateOuts,
     preview_images: previewImageOuts,
     thumb_url: plateOuts[0]?.thumb_url ?? null,
+    thumb_generated: plateOuts[0]?.thumb_generated ?? false,
+    // The first file the server can draw: a STEP first plate mustn't leave the card without one.
+    render_url: plateOuts.find((plate) => plate.render_url)?.render_url ?? null,
     supporting_file_count: supportingCount,
     total_size: totalSize,
     prepared_print: prepared,

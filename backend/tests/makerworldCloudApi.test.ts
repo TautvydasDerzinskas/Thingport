@@ -48,6 +48,45 @@ describe("resolveMakerworldViaCloudApi", () => {
     expect(makerworldCaptchaCooloffActive()).toBe(false);
   });
 
+  it("downloads the raw files of a model with no print profiles, as one zip", async () => {
+    const fetched: string[] = [];
+    global.fetch = vi.fn<(input: RequestInfo | URL) => Promise<Response>>(async (input) => {
+      const url = String(input);
+      fetched.push(url);
+      if (url.endsWith("/design-service/design/777")) {
+        return jsonResponse(200, { id: 777, title: "Paint holder", modelId: "", instances: [], defaultInstanceId: 0 });
+      }
+      if (url.includes("/design-service/design/777/model?modelType=all&type=download")) {
+        return jsonResponse(200, { name: "", url: "https://makerworld.bblmw.com/model/777/all.zip?key=k" });
+      }
+      return jsonResponse(404, {});
+    }) as unknown as typeof fetch;
+
+    const result = await resolveMakerworldViaCloudApi("777", null, "test-token");
+
+    expect(result?.downloadUrl).toBe("https://makerworld.bblmw.com/model/777/all.zip?key=k");
+    expect(result?.meta.title).toBe("Paint holder");
+    expect(result?.meta.makerworldProfile?.instanceId).toBeNull();
+    expect(fetched.some((url) => url.includes("/iot-service/"))).toBe(false);
+  });
+
+  it("takes the raw files when no profile has an id to download it by", async () => {
+    global.fetch = vi.fn<(input: RequestInfo | URL) => Promise<Response>>(async (input) => {
+      const url = String(input);
+      if (url.endsWith("/design-service/design/778")) {
+        return jsonResponse(200, { id: 778, modelId: "model-778", instances: [{ profileId: "p" }] });
+      }
+      if (url.includes("/design-service/design/778/model?")) {
+        return jsonResponse(200, { url: "https://makerworld.bblmw.com/model/778/all.zip" });
+      }
+      throw new Error(`Unexpected fetch to ${url}`);
+    }) as unknown as typeof fetch;
+
+    const result = await resolveMakerworldViaCloudApi("778", null, "test-token");
+
+    expect(result?.downloadUrl).toBe("https://makerworld.bblmw.com/model/778/all.zip");
+  });
+
   it("throws MakerworldDownloadLimitError on the daily download limit reply", async () => {
     global.fetch = vi.fn<(input: RequestInfo | URL) => Promise<Response>>(async (input) => {
       const url = String(input);

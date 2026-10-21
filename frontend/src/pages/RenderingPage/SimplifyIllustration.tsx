@@ -4,10 +4,10 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import { alpha, useTheme } from "@mui/material/styles";
 
 const TILE = 104;
 const HEIGHT = 58;
-const EDGE = "#00b800";
 
 /** The vase's radius at height t (0 bottom, 1 top): both models are sampled from it, so they're the same shape. */
 const profile = (t: number) => 14 + 12.5 * Math.sin(Math.PI * (0.15 + 0.75 * t)) - 5 * t;
@@ -59,6 +59,7 @@ const DETAILED = faces(16, 6);
 const SIMPLIFIED = faces(6, 3);
 
 function Model({ mesh, caption }: { mesh: Face[]; caption: string }) {
+  const edge = useTheme().palette.primary.main;
   return (
     <Stack alignItems="center" spacing={0.75}>
       <Box
@@ -101,8 +102,8 @@ function Model({ mesh, caption }: { mesh: Face[]; caption: string }) {
                 transform: face.transform,
               }}
             >
-              <polygon points={face.points} fill="rgba(0, 184, 0, 0.1)" stroke={EDGE} strokeWidth={0.8} />
-              <path d={face.diagonal} stroke={EDGE} strokeWidth={0.5} strokeOpacity={0.6} />
+              <polygon points={face.points} fill={alpha(edge, 0.1)} stroke={edge} strokeWidth={0.8} />
+              <path d={face.diagonal} stroke={edge} strokeWidth={0.5} strokeOpacity={0.6} />
             </Box>
           ))}
         </Box>

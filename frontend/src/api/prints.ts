@@ -20,7 +20,9 @@ export type Plate = {
   size: number;
   url: string; // /print/{printId}/plate/{plateId}/file/{filename}
   thumb_url?: string | null; // /plate/{plateId}/thumb.jpg?v=... if a thumb exists
+  thumb_generated?: boolean; // the thumb is our own render, not a picture from an import or upload
   preview_glb_url?: string | null; // /plate/{plateId}/preview.glb?v=... once background pre-render finishes
+  render_url?: string | null; // /plate/{plateId}/render.png[?v=...]: grey shading for cards to tint; null if undrawable
 };
 
 export type PrintFile = {
@@ -35,6 +37,7 @@ export type PreviewImage = {
   id: string;
   position: number; // dense, 0-based, ordered; 0 is the default/main image
   url: string; // /preview-image/{id}/file.jpg?v=...
+  generated?: boolean; // our own render, not a picture from an import or upload
 };
 
 export type Author = {
@@ -85,6 +88,8 @@ export type Print = {
   plates: Plate[]; // ordered by position, length >= 1
   preview_images: PreviewImage[]; // ordered by position; [0] is the default/main gallery image
   thumb_url?: string | null; // denormalized = plates[0].thumb_url
+  thumb_generated?: boolean; // denormalized = plates[0].thumb_generated
+  render_url?: string | null; // the first plate's render_url that isn't null
   supporting_file_count: number;
   // Optional: an older backend (published separately) doesn't send it.
   total_size?: number;
@@ -158,6 +163,37 @@ function bulkChunks(ids: string[]): string[][] {
   return chunks;
 }
 
+export type QualityIssueCode =
+  | "unreadable"
+  | "empty"
+  | "missingParts"
+  | "openEdges"
+  | "nonManifoldEdges"
+  | "flippedFaces"
+  | "insideOut"
+  | "fragments"
+  | "tooSmall"
+  | "tooLarge";
+/** Critical: the print fails or comes out incomplete. Major: likely defects. Minor: slicers usually cope. */
+export type QualitySeverity = "critical" | "major" | "minor";
+export type QualityIssue = { code: QualityIssueCode; severity: QualitySeverity; count?: number };
+export type FileQualityStatus = "unchecked" | "checking" | "good" | "issues" | "skipped";
+export type FileQuality = {
+  plate_id: string;
+  filename: string;
+  status: FileQualityStatus;
+  issues: QualityIssue[];
+  triangles: number | null;
+  shells: number | null;
+  size: [number, number, number] | null;
+};
+export type PrintQuality = {
+  enabled: boolean;
+  /** The most pressing file's state; "none" when the model has no file the check reads. */
+  status: FileQualityStatus | "none";
+  files: FileQuality[];
+};
+
 export const printsApi = {
   fileUrl: (rel: string) => {
     if (!rel) return rel;
@@ -204,6 +240,21 @@ export const printsApi = {
     const res = await fetch(`${apiBase()}/print/${id}`, { headers: authHeaders() });
     if (res.status === 401) throw new UnauthorizedError();
     assertOk(res, "Failed to load model");
+    return res.json();
+  },
+
+  getQuality: async (id: string): Promise<PrintQuality> => {
+    const res = await fetch(`${apiBase()}/print/${id}/quality`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    assertOk(res, "Failed to load the quality check");
+    return res.json();
+  },
+
+  /** Starts checking the files not checked yet; returns at once with them "checking". */
+  startQuality: async (id: string): Promise<PrintQuality> => {
+    const res = await fetch(`${apiBase()}/print/${id}/quality`, { method: "POST", headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    assertOk(res, "Failed to start the quality check");
     return res.json();
   },
 

@@ -6,6 +6,7 @@ import { importPrintFromUrl } from "../src/services/importService";
 import { prisma } from "../src/db";
 import { getSnapmakerConnection, setUserSnapmakerToken } from "../src/services/snapmakerSessionService";
 import { plateThumbPath } from "../src/services/printService";
+import { plateAssetHome } from "../src/services/modelAssets";
 
 // Snapmaker Space import end to end: details and signed downloads in the shapes its site gets, fetch mocked.
 
@@ -36,7 +37,7 @@ const solid = (r: number, g: number, b: number) =>
     .toBuffer();
 /** The thumbnail's average colour, which survives the JPEG re-encode. */
 async function thumbColour(plateId: string): Promise<number[]> {
-  const { channels } = await sharp(plateThumbPath(plateId)).stats();
+  const { channels } = await sharp(plateThumbPath(plateId, await plateAssetHome(plateId))).stats();
   return channels.slice(0, 3).map((c) => Math.round(c.mean));
 }
 

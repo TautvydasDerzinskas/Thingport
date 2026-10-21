@@ -8,10 +8,10 @@ import Stack from "@mui/material/Stack";
 import Avatar from "@mui/material/Avatar";
 import Typography from "@mui/material/Typography";
 import Tooltip from "@mui/material/Tooltip";
-import { alpha, useTheme } from "@mui/material/styles";
+import { useTheme } from "@mui/material/styles";
+import SelectionCheck from "../../components/selection/SelectionCheck";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PrintIcon from "@mui/icons-material/Print";
-import CheckIcon from "@mui/icons-material/Check";
 import { type Print, printsApi } from "../../api/prints";
 import { type PreviewMode } from "../../api/settings";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
@@ -21,6 +21,7 @@ import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
 import { useGravatarUrl } from "../../hooks/useGravatarUrl";
 import StarToggle from "../../components/StarToggle";
 import HoverSlideshow from "../../components/media/HoverSlideshow";
+import { useHoverSlideshowEnabled } from "../../hooks/useHoverSlideshowEnabled";
 import AuthorHoverCard from "../../components/AuthorHoverCard";
 import RollingNumber from "../../components/RollingNumber";
 import { useFavoriteToggle } from "../../hooks/useFavoriteToggle";
@@ -97,6 +98,7 @@ export default function ModelCard({
   const authorAvatarUrl = author?.avatar_url || (showViewerAsAuthor ? viewerAvatarUrl : undefined);
   // Only mounted while hovered, so idle cards don't load images or tick.
   const [hovered, setHovered] = useState(false);
+  const [slideshowEnabled] = useHoverSlideshowEnabled();
   const contextMenu = useCardContextMenu();
   const toggleSelect = (event: React.MouseEvent | React.KeyboardEvent) => onToggleSelect?.(event.shiftKey);
   const slideshowImages =
@@ -165,7 +167,7 @@ export default function ModelCard({
         }}
       >
         {renderPreviewContent(item, "card", theme, t, previewMode)}
-        {hovered && !selectMode && slideshowImages.length > 0 && (
+        {hovered && slideshowEnabled && !selectMode && slideshowImages.length > 0 && (
           <HoverSlideshow images={slideshowImages} alt={item.title || item.name} />
         )}
       </Box>
@@ -176,40 +178,7 @@ export default function ModelCard({
         sx={{ position: "absolute", top: 8, left: 8 }}
       />
 
-      {selectMode && (
-        <Box
-          aria-hidden
-          sx={{
-            position: "absolute",
-            top: 8,
-            right: 8,
-            width: 24,
-            height: 24,
-            borderRadius: "50%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            border: 2,
-            borderColor: selected ? "primary.main" : "background.paper",
-            // A scrim, so the empty circle shows on light and dark previews alike.
-            bgcolor: selected ? "primary.main" : alpha(muiTheme.palette.common.black, 0.25),
-            color: "primary.contrastText",
-            boxShadow: 1,
-            transition: "background-color .15s ease, border-color .15s ease",
-            "@media (prefers-reduced-motion: reduce)": { transition: "none" },
-          }}
-        >
-          <CheckIcon
-            sx={{
-              fontSize: 16,
-              opacity: selected ? 1 : 0,
-              transform: selected ? "scale(1)" : "scale(0.4)",
-              transition: "opacity 150ms ease, transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1)",
-              "@media (prefers-reduced-motion: reduce)": { transition: "none" },
-            }}
-          />
-        </Box>
-      )}
+      {selectMode && <SelectionCheck selected={selected} />}
 
       {!selectMode && (
         <Stack
@@ -276,7 +245,7 @@ export default function ModelCard({
                 minWidth: 0,
                 color: "#858585",
                 ...((author || showViewerAsAuthor) && !selectMode
-                  ? { cursor: "pointer", "&:hover": { color: "#00b800" } }
+                  ? { cursor: "pointer", "&:hover": { color: "primary.main" } }
                   : undefined),
               }}
               onClick={(e) => {

@@ -1,4 +1,3 @@
-import fs from "node:fs/promises";
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../db";
@@ -7,7 +6,7 @@ import { HttpError } from "../utils/fileUtils";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { thumbnailUpload } from "../uploadMiddleware";
-import { addPreviewImage, preferImageOverRenders, previewImagePath } from "../services/previewImageService";
+import { addPreviewImage, preferImageOverRenders, removePreviewImageFile } from "../services/previewImageService";
 import { printOutById } from "../services/printLoader";
 
 const router = Router();
@@ -56,7 +55,7 @@ router.delete(
     await prisma.$transaction(
       remaining.map((img, idx) => prisma.previewImage.update({ where: { id: img.id }, data: { position: idx } })),
     );
-    await fs.rm(previewImagePath(target.id), { force: true }).catch(() => undefined);
+    await removePreviewImageFile(print.id, target.id);
 
     res.json({ print: await printOutById(req.userId!, print.id) });
   }),

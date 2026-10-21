@@ -1,7 +1,8 @@
 # Connect other apps with an API token
 
-An API token lets another app, script or dashboard read your Thingport library as you, without your password. It
-can't change anything: it only reads.
+An API token lets another app, script or dashboard read your Thingport library as you, without your password. Over the
+REST API it can't change anything: it only reads. The only way it can change your library is through the MCP tools you
+turn on for it yourself (see [Connect an AI assistant](#connect-an-ai-assistant)).
 
 Each user has their own token, and it only sees that user's library.
 
@@ -38,11 +39,43 @@ curl -H "Authorization: Bearer tp_your_token_here" "https://thingport.example.co
 The token works only in the header. Putting it in the address as `?token=...` is refused, because addresses end up in
 browser history and proxy logs.
 
+## Choose what the token can read
+
+A new token can read everything you can. To narrow it, click the cog next to the token to open **Token permissions**,
+and under **Permissions** set each kind of data to **Allow** or **Deny**:
+
+| Permission      | What it reads                                                                     |
+| --------------- | --------------------------------------------------------------------------------- |
+| Search          | `/api/search`                                                                     |
+| Models          | `/api/prints` and `/api/print/{id}`                                               |
+| Dashboard       | `/api/dashboard/...`: library totals, most viewed and printed, the featured model |
+| Activity        | `/api/activity` and `/api/activity/feed`                                          |
+| Collections     | `/api/collections`, `/api/collection/{id}` and a model's collections              |
+| Tags            | `/api/tags` and `/api/tags/summary`                                               |
+| Categories      | `/api/categories`                                                                 |
+| Authors         | `/api/author/{id}`                                                                |
+| Images          | Thumbnails, renders and preview pictures                                          |
+| Model files     | Model files and 3D previews (`.glb`)                                              |
+| Imports         | The progress of running imports                                                   |
+| Everything else | Any other read: your settings, notifications, AI suggestions and so on            |
+
+Changes apply straight away, without a new token. A request the token isn't allowed is refused with `403` and a
+`scope` field naming the permission it needs. A search widget, for example, needs only **Search**, plus **Images** if
+it shows thumbnails.
+
+## Connect an AI assistant
+
+The same token connects an AI assistant to your library over MCP, with the tools you allow in **Token permissions** (the cog next to the token). The tools that
+read are on for a new token; the ones that change your library, such as importing a model, stay off until you turn them
+on. See [Connect an AI assistant with MCP](mcp.md).
+
 ## What a token can and can't do
 
 - **Read:** anything you can see in Thingport yourself, such as models, collections, tags, search, the dashboard and
-  your activity.
-- **Not write:** any request that would add, change or delete something is refused with `403 API tokens are read-only`.
+  your activity, less whatever you deny it under [Permissions](#choose-what-the-token-can-read).
+- **Not write over the REST API:** any request that would add, change or delete something is refused with
+  `403 API tokens are read-only`. Only the [MCP tools](mcp.md) you turn on can change your library, and none of them
+  deletes or overwrites anything.
 - **Not manage itself:** a token can't be used to generate a new token, revoke one or sign in, so a leaked token can't
   be turned into anything more.
 - **Not reach administration:** even an admin's token can't open the admin pages or settings, which hold instance
@@ -57,4 +90,4 @@ On your **Profile**:
 
 Do either if a token might have leaked. Generating and revoking tokens are recorded in the admin logs.
 
-Treat the token like a password: anyone who has it can read your whole library.
+Treat the token like a password: anyone who has it can read your whole library, and use any MCP tool you turned on.

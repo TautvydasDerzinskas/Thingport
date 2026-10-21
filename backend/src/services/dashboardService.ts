@@ -1,9 +1,7 @@
-import fs from "node:fs";
 import { createHash } from "node:crypto";
 import { prisma } from "../db";
 import { RENDERABLE_MODEL_EXTS } from "../config";
-import { canRenderModelImage, modelImagePath } from "./modelPreviewCache";
-import { plateThumbExists, plateThumbPath } from "./printService";
+import { plateThumbUrl, renderUrl } from "../dto";
 
 const TOP_MODELS_PREVIEW = 3;
 const TOP_MODELS_LIST_MAX = 50;
@@ -15,8 +13,8 @@ export type DashboardModel = {
   id: string;
   name: string;
   thumbUrl: string | null;
-  /** The model drawn in one colour. Unversioned until it exists: asking for it queues it. */
-  modelImageUrl: string | null;
+  /** The first plate's render for the browser to tint. Unversioned until it exists: asking for it queues it. */
+  renderUrl: string | null;
   viewCount: number;
   printCount: number;
   createdAt: Date;
@@ -53,30 +51,18 @@ type PrintForModelSummary = {
   viewCount: number;
   printCount: number;
   createdAt: Date;
+  assetsPath: string | null;
   plates: { id: string; filename: string }[];
 };
-
-function modelImageUrl(plate: { id: string; filename: string }): string | null {
-  if (!canRenderModelImage(plate.filename)) return null;
-  const file = modelImagePath(plate.id);
-  return fs.existsSync(file)
-    ? `/plate/${plate.id}/model.png?v=${fs.statSync(file).mtimeMs}`
-    : `/plate/${plate.id}/model.png`;
-}
 
 export function toModelSummary(print: PrintForModelSummary): DashboardModel {
   const first = print.plates[0];
   const plateId = first?.id ?? null;
-  let thumbUrl: string | null = null;
-  if (plateId && plateThumbExists(plateId)) {
-    const mtime = fs.statSync(plateThumbPath(plateId)).mtimeMs;
-    thumbUrl = `/plate/${plateId}/thumb.jpg?v=${mtime}`;
-  }
   return {
     id: print.id,
     name: print.name,
-    thumbUrl,
-    modelImageUrl: first ? modelImageUrl(first) : null,
+    thumbUrl: plateId ? plateThumbUrl(plateId, print.assetsPath) : null,
+    renderUrl: first ? renderUrl(first, print.assetsPath) : null,
     viewCount: print.viewCount,
     printCount: print.printCount,
     createdAt: print.createdAt,
@@ -89,6 +75,7 @@ export const MODEL_SUMMARY_SELECT = {
   viewCount: true,
   printCount: true,
   createdAt: true,
+  assetsPath: true,
   plates: { take: 1, orderBy: { position: "asc" as const }, select: { id: true, filename: true } },
 };
 

@@ -1,67 +1,52 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
 import ViewInArIcon from "@mui/icons-material/ViewInAr";
 import type { DashboardModel } from "../../api/dashboard";
 import { printsApi } from "../../api/prints";
-import { useDashboardThumbnails } from "../../hooks/useDashboardThumbnails";
+import ModelRender from "../../components/media/ModelRender";
+import { useCardPreview } from "../../hooks/useCardPreview";
+
+const SIZE = 40;
 
 /**
- * A dashboard list row's picture, as the user chose: none, the model's photo, or the server's
- * one-colour drawing of it. Until a drawing is made (the first request queues it) or for files it
- * can't draw, the photo stands in.
+ * A dashboard list row's picture, led as the model cards are: the model's picture, or its render tinted with the
+ * render colour. Either stands in for the other where it's missing.
  */
-// A drawing that isn't ready yet is asked for again after these waits, then the photo stays.
-const RETRY_DELAYS_MS = [2000, 4000, 8000, 16000];
-
 export default function DashboardModelThumb({ model }: { model: DashboardModel }) {
-  const [thumbnails] = useDashboardThumbnails();
-  // Failed loads so far; past the last retry the photo stays for good.
-  const [attempt, setAttempt] = useState(0);
-  const [waiting, setWaiting] = useState(false);
-  const pictureFailed = attempt > RETRY_DELAYS_MS.length;
+  const [preference] = useCardPreview();
+  // The render that couldn't be shown, so a new one for this row still gets its try.
+  const [failedRender, setFailedRender] = useState<string | null>(null);
+  const onUnavailable = useCallback(() => setFailedRender(model.render_url), [model.render_url]);
 
-  useEffect(() => {
-    if (!waiting) return;
-    const timer = window.setTimeout(() => setWaiting(false), RETRY_DELAYS_MS[attempt - 1]);
-    return () => window.clearTimeout(timer);
-  }, [waiting, attempt]);
-
-  // Hidden until the choice is known, so the lists don't flash photos first.
-  if (thumbnails === null || thumbnails === "none") return null;
-  const url = thumbnails === "monochrome" && !pictureFailed && !waiting ? model.model_image_url : null;
-  // Each retry asks afresh, so a cached "not ready" answer isn't reused.
-  const picture = url
-    ? printsApi.fileUrl(attempt ? `${url}${url.includes("?") ? "&" : "?"}attempt=${attempt}` : url)
-    : null;
+  // Hidden until the choice is known, so the lists don't flash the wrong picture.
+  if (preference === null) return <ListItemAvatar sx={{ minWidth: 48 }} />;
   const photo = model.thumb_url ? printsApi.fileUrl(model.thumb_url) : undefined;
+  const photoAvatar = (
+    <Avatar src={photo} variant="rounded" sx={{ width: SIZE, height: SIZE, color: "text.disabled" }}>
+      <ViewInArIcon fontSize="small" />
+    </Avatar>
+  );
+  const renderUrl =
+    model.render_url && model.render_url !== failedRender && (preference === "renders" || !photo)
+      ? model.render_url
+      : null;
   return (
     <ListItemAvatar sx={{ minWidth: 48 }}>
-      <Avatar
-        src={picture ?? photo}
-        variant="rounded"
-        slotProps={{
-          img: {
-            // Rows scrolled out of a long list don't ask the server to draw anything yet.
-            loading: "lazy",
-            onError: () => {
-              if (!picture) return;
-              setAttempt((count) => count + 1);
-              setWaiting(true);
-            },
-          },
-        }}
-        sx={{
-          width: 40,
-          height: 40,
-          bgcolor: picture ? "transparent" : undefined,
-          color: "text.disabled",
-          // The drawing is dark; on a dark card it's turned light instead.
-          "& img": picture ? { filter: (theme) => (theme.palette.mode === "dark" ? "invert(1)" : "none") } : undefined,
-        }}
-      >
-        <ViewInArIcon fontSize="small" />
-      </Avatar>
+      {renderUrl ? (
+        <Box sx={{ width: SIZE, height: SIZE, borderRadius: 1, overflow: "hidden" }}>
+          <ModelRender
+            key={renderUrl}
+            url={renderUrl}
+            alt={model.name}
+            onUnavailable={onUnavailable}
+            placeholder={photo ? photoAvatar : undefined}
+          />
+        </Box>
+      ) : (
+        photoAvatar
+      )}
     </ListItemAvatar>
   );
 }

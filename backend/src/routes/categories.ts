@@ -6,7 +6,14 @@ import { HttpError } from "../utils/fileUtils";
 import { normalizeTags } from "../utils/tagNormalization";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
-import { CATEGORY_KINDS, kindUnder, setSubtreeKind, validateParentCategory } from "../services/categoryService";
+import {
+  CATEGORY_KINDS,
+  kindUnder,
+  previewCategoryReset,
+  resetDefaultCategories,
+  setSubtreeKind,
+  validateParentCategory,
+} from "../services/categoryService";
 import { availableModelName, reorganizeManagedPrints } from "../services/printService";
 import { toCategoryOut } from "../dto";
 import { sendPrintsZip } from "../services/downloadZip";
@@ -26,6 +33,26 @@ const categorySchema = z.object({
 router.get(
   "/categories",
   asyncHandler(async (req, res) => {
+    const categories = await prisma.category.findMany({
+      where: { userId: req.userId },
+      orderBy: [{ position: "asc" }, { name: "asc" }],
+    });
+    res.json(categories.map(toCategoryOut));
+  }),
+);
+
+// What the reset below would change, for confirming it; all empty when the tree is already the starter one.
+router.get(
+  "/categories/reset-defaults",
+  asyncHandler(async (req, res) => {
+    res.json(await previewCategoryReset(req.userId!));
+  }),
+);
+
+router.post(
+  "/categories/reset-defaults",
+  asyncHandler(async (req, res) => {
+    await resetDefaultCategories(req.userId!);
     const categories = await prisma.category.findMany({
       where: { userId: req.userId },
       orderBy: [{ position: "asc" }, { name: "asc" }],

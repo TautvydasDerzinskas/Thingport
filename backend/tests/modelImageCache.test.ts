@@ -3,12 +3,15 @@ import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { MODEL_PREVIEWS, STORAGE } from "../src/config";
+import { prisma } from "../src/db";
 import { writeZip } from "../src/utils/zipWriter";
+import { plateAssetHome } from "../src/services/modelAssets";
 import {
   generateModelImage,
   generateModelPreviewGlb,
-  modelImagePath,
-  modelImageState,
+  modelImagePath as cachedImagePath,
+  modelImageState as cachedImageState,
   modelPreviewGlbPath,
 } from "../src/services/modelPreviewCache";
 
@@ -63,23 +66,40 @@ const ONE_TRIANGLE_3MF_XML = `<?xml version="1.0" encoding="UTF-8"?>
 `;
 
 let dir: string;
+let userId: string;
 const plateIds: string[] = [];
-const newPlateId = (label: string) => {
-  const id = `test-image-${label}-${Date.now()}-${plateIds.length}`;
-  plateIds.push(id);
-  return id;
-};
+// A render goes in its model's pictures folder, so each plate needs a model.
+async function newPlateId(label: string): Promise<string> {
+  const name = `image-${label}-${Date.now()}-${plateIds.length}`;
+  const print = await prisma.print.create({ data: { userId, name, nameNormalized: name.toLowerCase() } });
+  const plate = await prisma.plate.create({
+    data: {
+      printId: print.id,
+      position: 0,
+      filename: `${label}.stl`,
+      mime: "model/stl",
+      storagePath: `u-${userId}/${name}/${label}.stl`,
+    },
+  });
+  plateIds.push(plate.id);
+  return plate.id;
+}
 async function file(name: string, content: string): Promise<string> {
   const target = path.join(dir, name);
   await fs.writeFile(target, content);
   return target;
 }
-const cacheDir = () => path.dirname(modelImagePath("x"));
+const modelImagePath = async (plateId: string) => cachedImagePath(plateId, await plateAssetHome(plateId));
+const modelImageState = async (plateId: string) => cachedImageState(plateId, await plateAssetHome(plateId));
+const cacheDir = () => MODEL_PREVIEWS;
 
 beforeAll(async () => {
-  // Needs no database, only the cache directory db.ts normally creates.
   await fs.mkdir(cacheDir(), { recursive: true });
   dir = await fs.mkdtemp(path.join(os.tmpdir(), "thingport-image-cache-"));
+  const user = await prisma.user.create({
+    data: { email: `image-cache-${Date.now()}@example.com`, displayName: "Image cache" },
+  });
+  userId = user.id;
 });
 
 afterAll(async () => {
@@ -87,70 +107,76 @@ afterAll(async () => {
   for (const name of names) {
     if (plateIds.some((id) => name.startsWith(id))) await fs.rm(path.join(cacheDir(), name), { force: true });
   }
+  await fs.rm(path.join(STORAGE, `u-${userId}`), { recursive: true, force: true });
+  await prisma.user.delete({ where: { id: userId } });
   await fs.rm(dir, { recursive: true, force: true });
 });
 
 describe("model picture cache", () => {
   it("says generating while queued, then ready, and doesn't redraw an existing picture", async () => {
-    const plateId = newPlateId("box");
+    const plateId = await newPlateId("box");
     const src = await file("box.stl", BOX_STL);
     const run = generateModelImage(plateId, src, "box.stl");
-    expect(modelImageState(plateId)).toBe("generating");
+    expect(await modelImageState(plateId)).toBe("generating");
     await run;
-    expect(modelImageState(plateId)).toBe("ready");
-    const drawnAt = (await fs.stat(modelImagePath(plateId))).mtimeMs;
+    expect(await modelImageState(plateId)).toBe("ready");
+    const drawnAt = (await fs.stat(await modelImagePath(plateId))).mtimeMs;
     await generateModelImage(plateId, src, "box.stl");
-    expect((await fs.stat(modelImagePath(plateId))).mtimeMs).toBe(drawnAt);
+    expect((await fs.stat(await modelImagePath(plateId))).mtimeMs).toBe(drawnAt);
   });
 
   it("asks for one picture only once while it's being drawn", async () => {
-    const plateId = newPlateId("twice");
+    const plateId = await newPlateId("twice");
     const src = await file("twice.stl", BOX_STL);
     await Promise.all([generateModelImage(plateId, src, "twice.stl"), generateModelImage(plateId, src, "twice.stl")]);
-    expect(modelImageState(plateId)).toBe("ready");
+    expect(await modelImageState(plateId)).toBe("ready");
   });
 
   it("calls a 3MF layout it can't read unsupported, and doesn't try it again", async () => {
-    const plateId = newPlateId("elsewhere");
+    const plateId = await newPlateId("elsewhere");
     const modelPath = await file("model.model", ONE_TRIANGLE_3MF_XML);
     const src = path.join(dir, "elsewhere.3mf");
     // Valid 3MF (the path comes from _rels/.rels), but not where the parser looks.
     await writeZip(src, [{ arcname: "3D/model.model", filePath: modelPath }]);
     await generateModelImage(plateId, src, "elsewhere.3mf");
-    expect(modelImageState(plateId)).toBe("unsupported");
-    const marker = path.join(cacheDir(), `${plateId}.image.v2.error`);
+    expect(await modelImageState(plateId)).toBe("unsupported");
+    const marker = path.join(cacheDir(), `${plateId}.render.v2.error`);
     const markedAt = (await fs.stat(marker)).mtimeMs;
     await generateModelImage(plateId, src, "elsewhere.3mf");
     expect((await fs.stat(marker)).mtimeMs).toBe(markedAt);
   });
 
   it("calls a broken file failed rather than drawing nothing", async () => {
-    const plateId = newPlateId("broken");
+    const plateId = await newPlateId("broken");
     await generateModelImage(plateId, await file("broken.stl", "solid empty\nendsolid empty\n"), "broken.stl");
-    expect(modelImageState(plateId)).toBe("failed");
+    expect(await modelImageState(plateId)).toBe("failed");
   });
 
   it("ignores formats it can't draw", async () => {
-    const plateId = newPlateId("step");
+    const plateId = await newPlateId("step");
     await generateModelImage(plateId, await file("part.step", "ISO-10303-21;"), "part.step");
-    expect(fsSync.existsSync(modelImagePath(plateId))).toBe(false);
+    expect(fsSync.existsSync(await modelImagePath(plateId))).toBe(false);
   });
 
   it("lets a 3D preview go ahead of pictures already waiting", async () => {
     const pictures = await Promise.all(
-      [0, 1, 2].map(async (i) => ({ plateId: newPlateId(`queued${i}`), src: await file(`queued${i}.stl`, BOX_STL) })),
+      [0, 1, 2].map(async (i) => ({
+        plateId: await newPlateId(`queued${i}`),
+        src: await file(`queued${i}.stl`, BOX_STL),
+      })),
     );
     const modelPath = await file("3dmodel.model", ONE_TRIANGLE_3MF_XML);
     const fixture = path.join(dir, "one.3mf");
     await writeZip(fixture, [{ arcname: "3D/3dmodel.model", filePath: modelPath }]);
-    const glbPlate = newPlateId("glb");
+    const glbPlate = await newPlateId("glb");
 
     // The first picture starts at once; the GLB, queued after the other two, still runs before them.
     const drawing = pictures.map(({ plateId, src }) => generateModelImage(plateId, src, "box.stl"));
     await generateModelPreviewGlb(glbPlate, fixture);
     expect(fsSync.existsSync(modelPreviewGlbPath(glbPlate))).toBe(true);
-    expect(fsSync.existsSync(modelImagePath(pictures[2].plateId))).toBe(false);
+    expect(fsSync.existsSync(await modelImagePath(pictures[2].plateId))).toBe(false);
     await Promise.all(drawing);
-    expect(pictures.every(({ plateId }) => modelImageState(plateId) === "ready")).toBe(true);
+    const states = await Promise.all(pictures.map(({ plateId }) => modelImageState(plateId)));
+    expect(states.every((state) => state === "ready")).toBe(true);
   });
 });

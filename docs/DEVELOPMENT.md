@@ -256,6 +256,61 @@ ordinary notification (the System tab). To post one, add an entry to `entries` a
 - Entries older than 90 days aren't sent, so old ones can stay in the file or be removed.
 - `SYSTEM_NOTIFICATIONS_URL` points a backend at another file; an empty value turns fetching off.
 
+## Release notes (What's new)
+
+The first time a backend starts on a newer version than it last ran, every user gets a notification that opens
+the What's new dialog (admins can reopen it from Update Checker in Administration). A fresh installation doesn't get this notification. There's no need to add a "Welcome to
+X.Y.Z" entry to `system-notifications.json` for this any more.
+
+The dialog fetches its content from `main`, so it can be written after the release is out:
+
+1. [`release-notes/latest-release-notes.json`](../release-notes/latest-release-notes.json) when its `version` is the
+   instance's backend version.
+2. Otherwise `backend/CHANGELOG.md` for that version, with the `frontend/CHANGELOG.md` release that went out with
+   it. An instance that skipped versions gets every release since the one it ran before, up to five.
+
+To write the notes for a release, replace the file's contents:
+
+```json
+{
+  "version": "1.2.0",
+  "title": "Optional headline",
+  "summary": "Optional sentence or two under it.",
+  "items": [
+    {
+      "type": "feature",
+      "highlight": true,
+      "title": "Pick an accent colour",
+      "description": "Optional detail.",
+      "code": "claude mcp add ...",
+      "images": [{ "src": "screenshots/1.2.0-accent.webp", "caption": "Optional caption" }],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/pull/123"
+    }
+  ]
+}
+```
+
+- `type` is `breaking`, `feature`, `improvement` or `fix`; the dialog groups them in that order.
+- `highlight: true` shows the item as a large card above the grouped list; keep it to the release's headline
+  features.
+- `code` is a command shown in a box with a copy button, e.g. how to connect something.
+- `images` are relative to the file (put them in `release-notes/screenshots/`, named after the version) or full
+  `https://` URLs; up to six per item. Crop them to the control being shown rather than the whole page; WebP keeps them
+  small. Everything but `type` and `title` is optional.
+- A file that doesn't parse, or names another version, falls back to the changelog.
+- `RELEASE_NOTES_URL` points a backend at another copy of the repo files; an empty value turns fetching off.
+
+To update without telling anyone, e.g. a hotfix straight after a release, add its version to
+[`release-notes/quiet-releases.json`](../release-notes/quiet-releases.json) in the same release PR, so it's on `main`
+before instances update:
+
+```json
+{ "versions": ["1.2.1"] }
+```
+
+No notification is sent for it, and the next release's What's new also covers what the quiet one changed. If the file
+can't be read when an instance starts, the update is announced as usual.
+
 ## Related documents
 
 - [CONTRIBUTING.md](../CONTRIBUTING.md) -- branch, commit and pull request workflow

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
@@ -22,6 +22,7 @@ import { extOf } from "../../utils/fileExtensions";
 import ProviderBadge from "../../components/ProviderBadge";
 import { renderPreviewContent } from "../../components/media/renderPreviewContent";
 import { ModelSnapshot } from "../../components/media/ModelViewer/ModelSnapshot";
+import ModelRender from "../../components/media/ModelRender";
 import { usePageHeader } from "../../components/Layout/PageHeaderContext";
 import { useSmartBack } from "../../components/Layout/NavigationHistoryContext";
 import Model3DPreviewModal from "./Model3DPreviewModal";
@@ -31,6 +32,9 @@ import ModelSidePanel from "./ModelSidePanel";
 import MarkdownDescription from "../../components/MarkdownDescription";
 import AiDescriptionReview, { AiDescriptionChip } from "./AiDescriptionReview";
 import Skeleton from "@mui/material/Skeleton";
+import { useQualityCheck } from "./QualityCheck/useQualityCheck";
+import QualityScanOverlay from "./QualityCheck/QualityScanOverlay";
+import QualityBadge from "./QualityCheck/QualityBadge";
 
 type Props = {
   theme: ResolvedTheme;
@@ -47,7 +51,10 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [renderUnavailable, setRenderUnavailable] = useState(false);
+  const onRenderUnavailable = useCallback(() => setRenderUnavailable(true), []);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const { quality, outcome } = useQualityCheck(printId ?? "", onUnauthorized);
 
   // Returns wherever the user came from; useSmartBack skips same-route history entries.
   const goBack = useSmartBack();
@@ -80,6 +87,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
         if (cancelled) return;
         setPrint(data);
         setActiveImageIndex(0);
+        setRenderUnavailable(false);
       } catch (err) {
         if (cancelled) return;
         if (err instanceof UnauthorizedError) {
@@ -143,13 +151,22 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
     );
   }
 
-  const images = print.preview_images.toSorted((a, b) => a.position - b.position);
+  // The tinted render stands in for our own older renders, which are grey whatever the theme and accent.
+  const showRender = Boolean(print.render_url) && !renderUnavailable;
+  const images = print.preview_images
+    .filter((image) => !(showRender && image.generated))
+    .toSorted((a, b) => a.position - b.position);
   const hasImages = images.length > 0;
   const activeImage = images[activeImageIndex] || images[0];
   const firstPlate = print.plates[0];
   const canPreview3d = Boolean(firstPlate) && MODEL_EXTS.has(extOf(firstPlate?.filename || ""));
   // With no preview image yet, show the live 3D view and generate a snapshot in the background.
-  const needsGeneratedPreview = !hasImages && Boolean(firstPlate) && MODEL_EXTS.has(extOf(firstPlate?.filename || ""));
+  // The server's render doesn't need one: it saves its own picture.
+  const needsGeneratedPreview =
+    print.preview_images.length === 0 &&
+    !showRender &&
+    Boolean(firstPlate) &&
+    MODEL_EXTS.has(extOf(firstPlate?.filename || ""));
 
   const goPrevImage = () => setActiveImageIndex((i) => (i - 1 + images.length) % images.length);
   const goNextImage = () => setActiveImageIndex((i) => (i + 1) % images.length);
@@ -216,6 +233,13 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
                   }}
                 />
               </>
+            ) : showRender ? (
+              <ModelRender
+                key={print.id}
+                url={print.render_url!}
+                alt={print.title || print.name}
+                onUnavailable={onRenderUnavailable}
+              />
             ) : (
               firstPlate && renderPreviewContent(print, "modal", theme, t, "automatic", firstPlate)
             )}
@@ -255,24 +279,30 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
               </>
             )}
 
-            {canPreview3d && (
-              <Button
-                variant="contained"
-                size="small"
-                startIcon={<ViewInArIcon fontSize="small" />}
-                onClick={() => setPreviewOpen(true)}
-                sx={{
-                  position: "absolute",
-                  left: 12,
-                  bottom: 12,
-                  bgcolor: "rgba(0, 0, 0, 0.65)",
-                  color: "#fff",
-                  "&:hover": { bgcolor: "rgba(0, 0, 0, 0.8)" },
-                }}
-              >
-                {t("models:detail.preview3d")}
-              </Button>
-            )}
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              sx={{ position: "absolute", left: 12, bottom: 12, zIndex: 2 }}
+            >
+              {canPreview3d && (
+                <Button
+                  variant="contained"
+                  size="small"
+                  startIcon={<ViewInArIcon fontSize="small" />}
+                  onClick={() => setPreviewOpen(true)}
+                  sx={{
+                    bgcolor: "rgba(0, 0, 0, 0.65)",
+                    color: "#fff",
+                    "&:hover": { bgcolor: "rgba(0, 0, 0, 0.8)" },
+                  }}
+                >
+                  {t("models:detail.preview3d")}
+                </Button>
+              )}
+              <QualityBadge quality={quality} isAdmin={viewer?.role === "ADMIN"} />
+            </Stack>
+            <QualityScanOverlay key={print.id} quality={quality} outcome={outcome} />
           </Box>
           <ProviderBadge
             provider={print.source_provider}

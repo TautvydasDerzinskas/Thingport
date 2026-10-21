@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { normalizeTag } from "../utils/tagNormalization";
@@ -49,6 +50,41 @@ export async function addCollectionBookmark(userId: string, collectionId: string
 
 export async function removeCollectionBookmark(userId: string, collectionId: string): Promise<void> {
   await prisma.bookmark.deleteMany({ where: { userId, type: "COLLECTION", collectionId } });
+}
+
+/** For a merge: the first of `fromIds`' bookmarks becomes `toId`'s, keeping its place in the list, unless `toId`
+ *  already has one. The rest go when their collections are deleted. */
+export async function moveCollectionBookmark(
+  userId: string,
+  fromIds: string[],
+  toId: string,
+  db: Prisma.TransactionClient = prisma,
+): Promise<void> {
+  if (await db.bookmark.findFirst({ where: { userId, type: "COLLECTION", collectionId: toId } })) return;
+  const first = await db.bookmark.findFirst({
+    where: { userId, type: "COLLECTION", collectionId: { in: fromIds } },
+    orderBy: { order: "asc" },
+  });
+  if (first) await db.bookmark.update({ where: { id: first.id }, data: { collectionId: toId } });
+}
+
+/** The same for tags, which outlive nothing to cascade from, so the other bookmarks are removed here. */
+export async function moveTagBookmark(
+  userId: string,
+  fromTags: string[],
+  toTag: string,
+  db: Prisma.TransactionClient = prisma,
+): Promise<void> {
+  const from = fromTags.map(normalizeTag);
+  const to = normalizeTag(toTag);
+  if (!(await db.bookmark.findFirst({ where: { userId, type: "TAG", tag: to } }))) {
+    const first = await db.bookmark.findFirst({
+      where: { userId, type: "TAG", tag: { in: from } },
+      orderBy: { order: "asc" },
+    });
+    if (first) await db.bookmark.update({ where: { id: first.id }, data: { tag: to } });
+  }
+  await db.bookmark.deleteMany({ where: { userId, type: "TAG", tag: { in: from } } });
 }
 
 export type BookmarkEntryOut =

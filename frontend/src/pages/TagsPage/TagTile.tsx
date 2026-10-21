@@ -1,4 +1,5 @@
 import { memo } from "react";
+import type React from "react";
 import { useTranslation } from "react-i18next";
 import { Link as RouterLink } from "react-router-dom";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
@@ -9,11 +10,17 @@ import IconButton from "@mui/material/IconButton";
 import Skeleton from "@mui/material/Skeleton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import { alpha } from "@mui/material/styles";
 import { printsApi } from "../../api/prints";
+import TintedRender from "../../components/media/TintedRender";
+import { useRenderColor } from "../../hooks/useAccentColor";
+import { useCardPreview } from "../../hooks/useCardPreview";
+import { renderSwatch } from "../../theme";
 import type { TagSummary } from "../../api/tags";
 import { colorForTag } from "../../utils/tagColors";
 import TagActionsMenu from "../TagDetailPage/TagActionsMenu";
 import { useCardContextMenu } from "../../components/Layout/ConfigurationDialog/AppTiles";
+import SelectionCheck from "../../components/selection/SelectionCheck";
 
 /** Grid areas for a mosaic's pictures, from its rows of letters. */
 const areas = (rows: string[]) => rows.map((row) => `"${row.split("").join(" ")}"`).join(" ");
@@ -23,6 +30,11 @@ type Props = {
   onToggleBookmark: (tag: TagSummary) => void;
   onDeleted: (tag: TagSummary) => void;
   onUnauthorized?: () => void;
+  /** Select mode: a click selects the tile instead of opening the tag. */
+  selectMode?: boolean;
+  selected?: boolean;
+  /** The same function for every tile, so selecting one doesn't redraw the rest. */
+  onToggleSelect?: (tag: TagSummary, range: boolean) => void;
 };
 
 const overlayButtonSx = {
@@ -34,15 +46,43 @@ const overlayButtonSx = {
 
 /** A square for a tag: a mosaic of its models, its bookmark top left, its name and count along the bottom, and its menu
  * on hover or right-click. */
-function TagTile({ tag, onToggleBookmark, onDeleted, onUnauthorized }: Props) {
+function TagTile({
+  tag,
+  onToggleBookmark,
+  onDeleted,
+  onUnauthorized,
+  selectMode = false,
+  selected = false,
+  onToggleSelect,
+}: Props) {
   const { t } = useTranslation(["models", "common"]);
   const fallback = colorForTag(tag.name);
   const contextMenu = useCardContextMenu();
   const bookmarkLabel = tag.bookmarked ? t("models:tags.unbookmarkTag") : t("models:tags.bookmarkTag");
+  const [preference] = useCardPreview();
+  const tint = renderSwatch(useRenderColor()).color;
+  // Led as the model cards are: renders when chosen and some are made, the pictures otherwise.
+  const renderMosaic = preference === "renders" ? tag.render_mosaic_url : null;
+  const toggleSelect = (event: React.MouseEvent | React.KeyboardEvent) => onToggleSelect?.(tag, event.shiftKey);
+  // In select mode the tile is a checkbox rather than a link to the tag.
+  const target = selectMode
+    ? {
+        component: "div" as const,
+        role: "checkbox",
+        "aria-checked": selected,
+        tabIndex: 0,
+        onClick: toggleSelect,
+        onKeyDown: (event: React.KeyboardEvent) => {
+          if (event.key !== " " && event.key !== "Enter") return;
+          event.preventDefault();
+          toggleSelect(event);
+        },
+      }
+    : { component: RouterLink, to: `/models/tags/${encodeURIComponent(tag.name)}` };
 
   return (
     <Box
-      onContextMenu={contextMenu.onContextMenu}
+      onContextMenu={selectMode ? undefined : contextMenu.onContextMenu}
       sx={{
         position: "relative",
         aspectRatio: "1 / 1",
@@ -52,25 +92,39 @@ function TagTile({ tag, onToggleBookmark, onDeleted, onUnauthorized }: Props) {
         borderColor: "divider",
         bgcolor: tag.mosaic_url ? "divider" : fallback.bg,
         transition: "transform 150ms, box-shadow 150ms",
-        "&:hover": { transform: "translateY(-2px)", boxShadow: "0 6px 16px rgba(0, 0, 0, 0.16)" },
-        "&:hover .tag-mosaic img": { transform: "scale(1.04)" },
-        "&:hover .tag-tile-menu, &:focus-within .tag-tile-menu": { opacity: 1 },
+        ...(selectMode
+          ? { userSelect: "none" }
+          : {
+              "&:hover": { transform: "translateY(-2px)", boxShadow: "0 6px 16px rgba(0, 0, 0, 0.16)" },
+              "&:hover .tag-mosaic > *": { transform: "scale(1.04)" },
+              "&:hover .tag-tile-menu, &:focus-within .tag-tile-menu": { opacity: 1 },
+            }),
+        "@media (prefers-reduced-motion: reduce)": { transition: "none" },
       }}
     >
       {/* The menu and bookmark sit beside the link, not in it: a click in the menu's dialogs would otherwise open
           the tag. */}
       <Box
-        component={RouterLink}
-        to={`/models/tags/${encodeURIComponent(tag.name)}`}
+        {...target}
         aria-label={tag.name}
         sx={{
           position: "absolute",
           inset: 0,
           borderRadius: "inherit",
+          cursor: "pointer",
           "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: -3 },
         }}
       >
-        {tag.mosaic_url ? (
+        {renderMosaic ? (
+          <Box className="tag-mosaic" aria-hidden sx={{ position: "absolute", inset: 0, overflow: "hidden" }}>
+            <TintedRender
+              src={printsApi.fileUrl(renderMosaic)}
+              tint={tint}
+              loading="lazy"
+              sx={{ opacity: 0.75, transition: "transform 300ms" }}
+            />
+          </Box>
+        ) : tag.mosaic_url ? (
           // Built on the server from the tag's newest models: one picture per tile, however many models.
           <Box className="tag-mosaic" aria-hidden sx={{ position: "absolute", inset: 0, overflow: "hidden" }}>
             <Box
@@ -145,45 +199,68 @@ function TagTile({ tag, onToggleBookmark, onDeleted, onUnauthorized }: Props) {
           </Tooltip>
         </Box>
       </Box>
-      <Box
-        className="tag-tile-menu"
-        sx={{
-          position: "absolute",
-          top: 6,
-          right: 6,
-          opacity: 0,
-          transition: "opacity 150ms",
-          // No hover on a touch screen, so the menu stays in reach.
-          "@media (hover: none)": { opacity: 1 },
-        }}
-      >
-        <TagActionsMenu
-          tag={tag.name}
-          onUnauthorized={onUnauthorized}
-          onDeleted={() => onDeleted(tag)}
-          iconFontSize={18}
-          contextMenuAt={contextMenu.at}
-          onContextMenuClose={contextMenu.close}
-          triggerSx={{ width: 30, height: 30, ...overlayButtonSx }}
-        />
-      </Box>
-      <Tooltip title={bookmarkLabel}>
-        <IconButton
-          size="small"
-          aria-label={bookmarkLabel}
-          aria-pressed={tag.bookmarked}
-          onClick={() => onToggleBookmark(tag)}
+      {selectMode && (
+        <>
+          {/* An inset ring and a wash of the accent: the mosaic stays readable under both. */}
+          <Box
+            aria-hidden
+            sx={(theme) => ({
+              position: "absolute",
+              inset: 0,
+              borderRadius: "inherit",
+              pointerEvents: "none",
+              boxShadow: selected ? `inset 0 0 0 3px ${theme.palette.primary.main}` : "none",
+              bgcolor: selected ? alpha(theme.palette.primary.main, 0.18) : "transparent",
+              transition: "background-color 150ms, box-shadow 150ms",
+              "@media (prefers-reduced-motion: reduce)": { transition: "none" },
+            })}
+          />
+          <SelectionCheck selected={selected} sx={{ pointerEvents: "none" }} />
+        </>
+      )}
+      {!selectMode && (
+        <Box
+          className="tag-tile-menu"
           sx={{
             position: "absolute",
             top: 6,
-            left: 6,
-            ...overlayButtonSx,
-            color: tag.bookmarked ? "primary.main" : overlayButtonSx.color,
+            right: 6,
+            opacity: 0,
+            transition: "opacity 150ms",
+            // No hover on a touch screen, so the menu stays in reach.
+            "@media (hover: none)": { opacity: 1 },
           }}
         >
-          {tag.bookmarked ? <BookmarkIcon fontSize="small" /> : <BookmarkBorderIcon fontSize="small" />}
-        </IconButton>
-      </Tooltip>
+          <TagActionsMenu
+            tag={tag.name}
+            onUnauthorized={onUnauthorized}
+            onDeleted={() => onDeleted(tag)}
+            iconFontSize={18}
+            contextMenuAt={contextMenu.at}
+            onContextMenuClose={contextMenu.close}
+            triggerSx={{ width: 30, height: 30, ...overlayButtonSx }}
+          />
+        </Box>
+      )}
+      {!selectMode && (
+        <Tooltip title={bookmarkLabel}>
+          <IconButton
+            size="small"
+            aria-label={bookmarkLabel}
+            aria-pressed={tag.bookmarked}
+            onClick={() => onToggleBookmark(tag)}
+            sx={{
+              position: "absolute",
+              top: 6,
+              left: 6,
+              ...overlayButtonSx,
+              color: tag.bookmarked ? "primary.main" : overlayButtonSx.color,
+            }}
+          >
+            {tag.bookmarked ? <BookmarkIcon fontSize="small" /> : <BookmarkBorderIcon fontSize="small" />}
+          </IconButton>
+        </Tooltip>
+      )}
     </Box>
   );
 }

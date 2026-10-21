@@ -64,21 +64,3 @@ export async function setDashboardLayout(userId: string, layout: DashboardLayout
   await prisma.user.update({ where: { id: userId }, data: { dashboardLayout: layout } });
   return layout;
 }
-
-// Kept in sync by hand with the frontend's DashboardThumbnails. "monochrome" is the server's own
-// one-colour picture of the model, "photos" its preview image.
-export const DASHBOARD_THUMBNAILS = ["none", "photos", "monochrome"] as const;
-export type DashboardThumbnails = (typeof DASHBOARD_THUMBNAILS)[number];
-
-export async function getDashboardThumbnails(userId: string): Promise<DashboardThumbnails> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { dashboardThumbnails: true } });
-  return DASHBOARD_THUMBNAILS.find((option) => option === user?.dashboardThumbnails) ?? "photos";
-}
-
-export async function setDashboardThumbnails(
-  userId: string,
-  thumbnails: DashboardThumbnails,
-): Promise<DashboardThumbnails> {
-  await prisma.user.update({ where: { id: userId }, data: { dashboardThumbnails: thumbnails } });
-  return thumbnails;
-}

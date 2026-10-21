@@ -1,27 +1,16 @@
 import { useTranslation } from "react-i18next";
-import ButtonBase from "@mui/material/ButtonBase";
 import Divider from "@mui/material/Divider";
 import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
 import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import ToggleButton from "@mui/material/ToggleButton";
-import Tooltip from "@mui/material/Tooltip";
 import GridOnIcon from "@mui/icons-material/GridOn";
 import ThreeSixtyIcon from "@mui/icons-material/ThreeSixty";
 import type { CameraView, RenderStyle } from "../../components/media/ModelViewer";
-
-export const PREVIEW_COLORS = [
-  { key: "red", value: "#d32f2f" },
-  { key: "orange", value: "#f57c00" },
-  { key: "yellow", value: "#fbc02d" },
-  { key: "green", value: "#00b800" },
-  { key: "blue", value: "#1976d2" },
-  { key: "purple", value: "#7b1fa2" },
-  { key: "grey", value: "#78909c" },
-] as const;
-
-export const DEFAULT_PREVIEW_COLOR = "#00b800";
+import ColorSwatches from "../../components/controls/ColorSwatches";
+import { RENDER_COLORS, renderColorLabelKey, type RenderColor } from "../../constants/settingsOptions";
+import { renderSwatch } from "../../theme";
 
 const CAMERA_VIEWS: CameraView[] = ["topFront", "front", "side", "top", "bottom"];
 const RENDER_STYLES: RenderStyle[] = ["solid", "wire", "xray"];
@@ -31,8 +20,8 @@ type Props = {
   onCameraView: (view: CameraView) => void;
   renderStyle: RenderStyle;
   onRenderStyleChange: (style: RenderStyle) => void;
-  color: string;
-  onColorChange: (color: string) => void;
+  color: RenderColor;
+  onColorChange: (color: RenderColor) => void;
   showGrid: boolean;
   onShowGridChange: (show: boolean) => void;
   spin: boolean;
@@ -56,7 +45,7 @@ export default function PreviewToolbar({
   spin,
   onSpinChange,
 }: Props) {
-  const { t } = useTranslation(["models"]);
+  const { t } = useTranslation(["models", "app"]);
 
   return (
     <Paper
@@ -104,31 +93,17 @@ export default function PreviewToolbar({
 
         {sectionDivider}
 
-        <Stack direction="row" spacing={0.75} sx={{ px: 0.5 }}>
-          {PREVIEW_COLORS.map(({ key, value }) => {
-            const name = t(`models:detail.previewToolbar.colors.${key}`);
-            const selected = value === color;
-            return (
-              <Tooltip key={key} title={name}>
-                <ButtonBase
-                  aria-label={t("models:detail.previewToolbar.colorLabel", { name }) ?? undefined}
-                  aria-pressed={selected}
-                  onClick={() => onColorChange(value)}
-                  sx={{
-                    width: 22,
-                    height: 22,
-                    borderRadius: "50%",
-                    bgcolor: value,
-                    boxShadow: (theme) =>
-                      selected
-                        ? `0 0 0 2px ${theme.palette.background.paper}, 0 0 0 4px ${theme.palette.text.primary}`
-                        : `inset 0 0 0 1px rgba(0, 0, 0, 0.2)`,
-                  }}
-                />
-              </Tooltip>
-            );
+        {/* The render palette, so the model can be seen in any of the app's colours. */}
+        <ColorSwatches
+          bare
+          label={t("models:detail.previewToolbar.color")}
+          value={color}
+          onChange={onColorChange}
+          options={RENDER_COLORS.map((value) => {
+            const { color: swatch, contrast } = renderSwatch(value);
+            return { value, label: t(renderColorLabelKey(value)), color: swatch, contrast };
           })}
-        </Stack>
+        />
 
         {sectionDivider}
 

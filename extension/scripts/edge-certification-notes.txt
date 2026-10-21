@@ -1,20 +1,24 @@
-Thingport Grab {{version}}. Changes in this version: {{changes}}
+# Edge certification notes, sent with every Edge submission by scripts/publish-edge.ts. Lines starting with # are
+# dropped before sending.
+# LIMIT: Edge rejects notes of 2,000 characters or more AFTER the placeholders are filled, and {{testServer}} alone
+# adds about 330. Check with `npm run check:edge-notes` (CI runs it). Keep it short: describe providers as a group
+# ("model sites the user enables") rather than listing each one, so adding a provider doesn't grow the notes.
+Thingport Grab {{version}}. Changes: {{changes}}
 
 WHAT IT DOES
-Imports 3D-printing models from MakerWorld, Printables, Thingiverse and, once turned on, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs and Cults3D into the user's own self-hosted Thingport server (open source: https://github.com/TautvydasDerzinskas/Thingport). It has no servers of its own and sends nothing to the developer or any third party.
+Imports 3D-printing models from model sites (MakerWorld, Printables, Thingiverse, and others the user enables) into the user's own self-hosted Thingport server (open source: https://github.com/TautvydasDerzinskas/Thingport). Data goes only to the user's server, the model sites (including id.snapmaker.com to renew the Snapmaker sign-in) and the browser's own sync storage (recent imports list); never to the developer.
 
 HOW TO TEST
 1. A Thingport server is required. {{testServer}}
-2. Click the toolbar icon, enter the server address, email and password, and connect. Allow the access request for that address.
-3. Open a model page, e.g. https://www.printables.com/model/3161-3d-benchy or https://makerworld.com/en/models/3080401, click the Thingport button at the bottom right of the page and choose Import. The model appears in the Thingport web app and under Recent imports in the toolbar popup.
-4. MakerWorld downloads need a MakerWorld login in the same browser; Printables and Thingiverse work without one.
+2. Click the toolbar icon, enter the server address, email and password, connect, allow access.
+3. Open https://www.printables.com/model/3161-3d-benchy, click the Thingport button (bottom right), choose Import. The model appears in Thingport and in the popup.
 
 PERMISSIONS
-- storage: the server address, sign-in and recent imports.
-- cookies: reads the MakerWorld session cookie, on makerworld.com only, which MakerWorld requires for downloads, and the MyMiniFactory session cookie, on myminifactory.com only, which downloads the user's bought models from their own library, and reads and renews the Snapmaker Space sign-in cookies, on snapmaker.com only, which Snapmaker requires for any download, and the MakerOnline sign-in cookie, on makeronline.com only, which reads the user's likes and private collections, and the Creality Cloud sign-in cookies, on crealitycloud.com only, which Creality Cloud requires for downloads, and the NexPrint sign-in cookie, on nexprint.com only, which NexPrint requires for downloads, and the Thangs sign-in cookies, on thangs.com only, which Thangs requires for downloads, and the Cults3D sign-in and Cloudflare clearance cookies, on cults3d.com only, which Cults3D's download pages require. The MakerWorld and MyMiniFactory cookies and the Snapmaker, MakerOnline, Creality Cloud, NexPrint, Thangs and Cults3D sign-ins are sent only to the user's own server; the Snapmaker refresh token is sent only to Snapmaker's own sign-in service (id.snapmaker.com), to renew the sign-in.
-- downloads: reads the link from a download MakerWorld's page starts, then cancels it.
-- alarms: renews the Snapmaker Space sign-in every few hours, as it lasts a day; only once the user has turned Snapmaker Space on.
-- scripting: registers the content script on MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs and Cults3D, and on model sites added in later versions, once the user allows them. On MakerOnline it also runs a function in the page itself (world: MAIN) that calls the site's own download endpoint, as its Download button does: MakerOnline signs file links only for requests carrying a token from its own in-page security script.
-- host access: the three model sites; the user's own server address (requested at setup); and, optionally, newer model sites (such as MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs and Cults3D), each requested only when the user clicks "Enable" next to it under Providers in the popup, so model sites added in later versions need no new required permission. The content script is only ever registered on supported model sites.
+- storage: server address, sign-in, recent imports.
+- cookies: a model site's sign-in cookies, read on that site only for its downloads, sent only to the user's server.
+- downloads: reads the link of a download MakerWorld starts, then cancels it.
+- alarms: renews the Snapmaker sign-in, if enabled.
+- scripting: registers the content script on optional sites once allowed; on MakerOnline runs a page function (world: MAIN) calling the site's own download endpoint, as its Download button does.
+- host access: MakerWorld, Printables, Thingiverse and the user's server; other sites are optional, requested on Enable.
 
-The code isn't minified or obfuscated. Documentation: https://thingport.net/docs/grab/ Privacy policy: https://github.com/TautvydasDerzinskas/Thingport/blob/main/extension/PRIVACY.md
+Not minified. Docs: https://thingport.net/docs/grab/

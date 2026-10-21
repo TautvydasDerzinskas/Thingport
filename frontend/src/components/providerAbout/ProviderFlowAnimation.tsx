@@ -6,8 +6,7 @@ import Typography from "@mui/material/Typography";
 import { alpha, useTheme } from "@mui/material/styles";
 import ExtensionOutlinedIcon from "@mui/icons-material/ExtensionOutlined";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
-import markColor from "../../assets/logos/thingport-mark-color.svg";
-import markOnDark from "../../assets/logos/thingport-mark-on-dark.svg";
+import { useBrandMark } from "../../hooks/useBrandLogo";
 import { type Need, PROVIDER_FACTS } from "../../constants/providerFacts";
 import { ProviderLogo, type ProviderId } from "../Layout/ConfigurationDialog/providerLogos";
 
@@ -52,6 +51,7 @@ type Props = {
 export default function ProviderFlowAnimation({ id, name, accent, textAccent }: Props) {
   const { t } = useTranslation("app");
   const theme = useTheme();
+  const markSrc = useBrandMark();
   const facts = PROVIDER_FACTS[id];
   const helperIcon = { fontSize: 26, color: "text.secondary" } as const;
   const nodes: Node[] = [
@@ -79,14 +79,7 @@ export default function ProviderFlowAnimation({ id, name, accent, textAccent }: 
     {
       key: "thingport",
       label: "Thingport",
-      icon: (
-        <Box
-          component="img"
-          src={theme.palette.mode === "dark" ? markOnDark : markColor}
-          alt=""
-          sx={{ width: 30, height: 30, display: "block" }}
-        />
-      ),
+      icon: <Box component="img" src={markSrc} alt="" sx={{ width: 30, height: 30, display: "block" }} />,
     },
   ];
 

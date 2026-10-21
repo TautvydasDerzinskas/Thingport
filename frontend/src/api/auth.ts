@@ -1,3 +1,4 @@
+import type { McpAccess } from "./settings";
 import { authHeaders } from "../utils/auth";
 import { apiBase, assertOk, readErrorMessage, EmailNotVerifiedError, UnauthorizedError } from "./client";
 import type { CaptchaAnswer } from "./captcha";
@@ -22,8 +23,34 @@ export type ApiTokenInfo = {
   hint: string | null;
   created_at: string | null;
   last_used_at: string | null;
+  /** The MCP tools the token may call at /api/mcp. Empty without a token. */
+  mcp_tools: string[];
+  /** What the token may read over the REST API, by scope id. Empty without a token. */
+  rest_scopes: string[];
+  /** Every REST scope, to choose from. */
+  available_rest_scopes: RestScopeInfo[];
+  /** Every tool the instance's MCP access offers, to choose from. */
+  available_mcp_tools: McpToolInfo[];
+  /** What an admin lets API tokens do over MCP. */
+  mcp_access: McpAccess;
 };
 export type GeneratedApiToken = ApiTokenInfo & { token: string };
+
+export type RestScopeInfo = {
+  id: string;
+  /** English; the profile page shows its own translation when it has one. */
+  title: string;
+  description: string;
+};
+
+export type McpToolInfo = {
+  name: string;
+  /** English; the profile page shows its own translation when it has one. */
+  title: string;
+  description: string;
+  /** False for a tool that changes the library. */
+  read_only: boolean;
+};
 
 export type UpdateProfileInput = {
   /** Left out by someone without a password, whose recent sign-in stands in for it. */
@@ -120,6 +147,29 @@ export const authApi = {
   generateApiToken: async (): Promise<GeneratedApiToken> => {
     const res = await fetch(`${apiBase()}/profile/api-token`, { method: "POST", headers: authHeaders() });
     assertOk(res, "Failed to generate API token");
+    return res.json();
+  },
+
+  /** Changes what the current token may call over MCP; the token itself stays the same. */
+  setApiTokenMcpTools: async (mcpTools: string[]): Promise<ApiTokenInfo> => {
+    const res = await fetch(`${apiBase()}/profile/api-token/mcp-tools`, {
+      method: "PUT",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ mcp_tools: mcpTools }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update the token's MCP tools"));
+    return res.json();
+  },
+
+  setApiTokenRestScopes: async (restScopes: string[]): Promise<ApiTokenInfo> => {
+    const res = await fetch(`${apiBase()}/profile/api-token/rest-scopes`, {
+      method: "PUT",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ rest_scopes: restScopes }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update the token's permissions"));
     return res.json();
   },
 

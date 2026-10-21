@@ -24,7 +24,7 @@ type Props = {
   open: ConfigurationTab | null;
   onClose: () => void;
   theme: ThemeSelection;
-  onThemeChange: (theme: ThemeSelection) => void;
+  onThemeChange: (theme: ThemeSelection) => Promise<boolean>;
   isAdmin: boolean;
   makerworldCookie: string;
   onUpdateMakerWorld: (patch: Partial<MakerWorldSettings>) => void;

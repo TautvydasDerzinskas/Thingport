@@ -21,6 +21,7 @@ import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import {
   DndContext,
   DragOverlay,
@@ -47,6 +48,7 @@ import type { Category, CategoryKind, CategoryMetaInput } from "../../api/catego
 import { useConfirm } from "../../components/ConfirmProvider";
 import { buildCategoryTree, flattenCategoryTree } from "../../utils/categoryTree";
 import CategoryMetaDialog from "./CategoryMetaDialog";
+import CategoryResetDialog from "./CategoryResetDialog";
 
 // One nesting level. Also how far a row must be dragged sideways to change its level.
 const INDENT_PX = 24;
@@ -62,6 +64,11 @@ type Props = {
   onReorder: (categoryIds: string[]) => Promise<void>;
   onMove: (id: string, parentId: string | null, position: number) => Promise<void>;
   onUpdateMeta: (id: string, meta: CategoryMetaInput) => Promise<void>;
+  /** Shown only when given: puts the tree back to the starter one. */
+  onResetDefaults?: () => Promise<void>;
+  /** Turns the reset off: there's nothing for it to change. */
+  atDefaults?: boolean;
+  onUnauthorized?: () => void;
 };
 
 function hasMeta(category: Category): boolean {
@@ -483,12 +490,16 @@ export default function CategoryManager({
   onReorder,
   onMove,
   onUpdateMeta,
+  onResetDefaults,
+  atDefaults = false,
+  onUnauthorized,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const confirmDialog = useConfirm();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [metaCategory, setMetaCategory] = useState<Category | null>(null);
   const [addingUnderId, setAddingUnderId] = useState<string | null>(null);
+  const [resetOpen, setResetOpen] = useState(false);
 
   // A drop shows right away and stays until `categories` is refetched (which happens on failure too).
   const [optimistic, setOptimistic] = useState<{ base: Category[]; list: Category[] } | null>(null);
@@ -704,19 +715,42 @@ export default function CategoryManager({
 
         <Divider sx={{ my: 1.5 }} />
 
-        <AddRow
-          placeholder={t(`${labels}.addCategory`)}
-          busy={busyId === "new-root"}
-          onAdd={async (name) => {
-            setBusyId("new-root");
-            try {
-              await onCreate(name, null);
-            } finally {
-              setBusyId(null);
-            }
-          }}
-        />
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <AddRow
+              placeholder={t(`${labels}.addCategory`)}
+              busy={busyId === "new-root"}
+              onAdd={async (name) => {
+                setBusyId("new-root");
+                try {
+                  await onCreate(name, null);
+                } finally {
+                  setBusyId(null);
+                }
+              }}
+            />
+          </Box>
+          {onResetDefaults && (
+            <Button
+              size="small"
+              disabled={atDefaults}
+              startIcon={<RestartAltIcon fontSize="small" />}
+              onClick={() => setResetOpen(true)}
+              sx={{ flexShrink: 0 }}
+            >
+              {t("models:categories.manager.reset")}
+            </Button>
+          )}
+        </Stack>
       </Box>
+      {onResetDefaults && (
+        <CategoryResetDialog
+          open={resetOpen}
+          onClose={() => setResetOpen(false)}
+          onConfirm={onResetDefaults}
+          onUnauthorized={onUnauthorized}
+        />
+      )}
       {metaCategory && (
         <CategoryMetaDialog
           category={metaCategory}

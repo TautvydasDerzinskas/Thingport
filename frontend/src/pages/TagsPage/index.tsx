@@ -1,13 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Switch from "@mui/material/Switch";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import BookmarkIcon from "@mui/icons-material/Bookmark";
+import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
+import CallMergeIcon from "@mui/icons-material/CallMerge";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import { UnauthorizedError } from "../../api/client";
+import { printsApi } from "../../api/prints";
 import { type TagSortMode, type TagSummary, tagsApi } from "../../api/tags";
-import TagSortTabs from "./TagSortTabs";
+import SortTabs from "../../components/controls/SortTabs";
+import MergeDialog, { type MergeItem } from "../../components/MergeDialog";
+import SelectionToolbar, { SelectionAction } from "../../components/selection/SelectionToolbar";
+import { useConfirm } from "../../components/ConfirmProvider";
+import { useToast } from "../../components/ToastProvider";
+import { useSelection } from "../../hooks/useSelection";
+import { colorForTag } from "../../utils/tagColors";
 import TagTile, { TagTileSkeletons } from "./TagTile";
 import VirtualTagGrid from "./VirtualTagGrid";
 import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
@@ -25,6 +38,31 @@ function pageSizeForScreen(): number {
   return Math.min(100, Math.max(30, Math.ceil(columns * rows * 1.5)));
 }
 
+const tagKey = (tag: TagSummary) => tag.name;
+
+type Busy = "bookmark" | "delete" | null;
+
+/** The tag's mosaic, or its colour and icon while it has no pictures. */
+function TagThumbnail({ tag }: { tag: TagSummary }) {
+  const fallback = colorForTag(tag.name);
+  return tag.mosaic_url ? (
+    <Box
+      component="img"
+      src={printsApi.fileUrl(tag.mosaic_url)}
+      alt=""
+      sx={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }}
+    />
+  ) : (
+    <Stack
+      alignItems="center"
+      justifyContent="center"
+      sx={{ height: "100%", bgcolor: fallback.bg, color: fallback.text }}
+    >
+      <LocalOfferOutlinedIcon fontSize="small" />
+    </Stack>
+  );
+}
+
 const TILE_GRID = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fill, minmax(min(160px, calc(50% - 6px)), 1fr))",
@@ -35,6 +73,8 @@ const TILE_GRID = {
  *  (under 2 models) are hidden by default. */
 export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) {
   const { t } = useTranslation(["models", "common"]);
+  const confirm = useConfirm();
+  const showToast = useToast();
   const [tags, setTags] = useState<TagSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -46,15 +86,26 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
   const [pageSize] = useState(pageSizeForScreen);
   // Bumped whenever the sort or filter changes, so a page still on its way for the old one is dropped.
   const generation = useRef(0);
+  // Bumped to load the list again from the top, e.g. after a merge changed the counts.
+  const [reloadKey, setReloadKey] = useState(0);
+  const [mergeOpen, setMergeOpen] = useState(false);
+  const [busy, setBusy] = useState<Busy>(null);
+  const selection = useSelection(tags, tagKey);
+  const { selected } = selection;
+  const count = selected.length;
+  const allBookmarked = count > 0 && selected.every((tag) => tag.bookmarked);
+  // A ref, so the callback the tiles get stays the same while the selection changes.
+  const toggleRef = useRef(selection.toggle);
+  toggleRef.current = selection.toggle;
+  const onToggleSelect = useCallback((tag: TagSummary, range: boolean) => toggleRef.current(tag.name, range), []);
 
-  const handleError = (err: unknown, message?: string) => {
+  const handleError = (err: unknown, message: string) => {
     if (err instanceof UnauthorizedError) {
       onUnauthorized?.();
-      return true;
+      return;
     }
     console.error(err);
-    if (message) alert(message);
-    return false;
+    showToast({ message: err instanceof Error && err.message ? err.message : message, severity: "error" });
   };
 
   useEffect(() => {
@@ -75,7 +126,7 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortMode, minCount, pageSize]);
+  }, [sortMode, minCount, pageSize, reloadKey]);
 
   const loadMore = useCallback(async () => {
     const current = generation.current;
@@ -113,7 +164,7 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
         return;
       }
       console.error(err);
-      alert(t("models:tags.bookmarkFailed"));
+      showToast({ message: t("models:tags.bookmarkFailed"), severity: "error" });
     } finally {
       pendingTag.current = null;
     }
@@ -129,9 +180,82 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
   );
   const onToggleBookmark = useCallback((tag: TagSummary) => void toggleBookmark(tag), [toggleBookmark]);
 
+  // One at a time: each new bookmark takes the next place in the list.
+  const toggleBookmarks = async () => {
+    const bookmark = !allBookmarked;
+    setBusy("bookmark");
+    try {
+      for (const tag of selected) {
+        if (tag.bookmarked === bookmark) continue;
+        await (bookmark ? tagsApi.bookmark(tag.name) : tagsApi.unbookmark(tag.name));
+        setTags((prev) => prev.map((other) => (other.name === tag.name ? { ...other, bookmarked: bookmark } : other)));
+      }
+      showToast({
+        message: t(bookmark ? "models:tags.selection.bookmarked" : "models:tags.selection.unbookmarked", { count }),
+      });
+    } catch (err) {
+      handleError(err, t("models:tags.bookmarkFailed"));
+    } finally {
+      onBookmarksChanged?.();
+      setBusy(null);
+    }
+  };
+
+  const removeSelected = async () => {
+    const confirmed = await confirm({
+      title: t("models:tags.selection.deleteTitle", { count }),
+      message: t("models:tags.selection.deleteMessage", { count }),
+      confirmLabel: t("models:tags.selection.deleteConfirm", { count }),
+      destructive: true,
+    });
+    if (!confirmed) return;
+    setBusy("delete");
+    try {
+      const { deleted } = await tagsApi.removeMany(selected.map((tag) => tag.name));
+      setTags((prev) => prev.filter((tag) => !deleted.includes(tag.name)));
+      if (selected.some((tag) => tag.bookmarked)) onBookmarksChanged?.();
+      showToast({ message: t("models:tags.selection.deleted", { count: deleted.length }) });
+    } catch (err) {
+      handleError(err, t("models:tags.deleteFailed"));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const mergeItems: MergeItem[] = selected.map((tag) => ({
+    key: tag.name,
+    name: tag.name,
+    count: tag.count,
+    bookmarked: tag.bookmarked,
+    thumbnail: <TagThumbnail tag={tag} />,
+  }));
+
+  const merge = async (primary: MergeItem, others: MergeItem[]) => {
+    await tagsApi.merge(
+      primary.key,
+      others.map((item) => item.key),
+    );
+    if (others.some((item) => item.bookmarked)) onBookmarksChanged?.();
+    selection.setActive(false);
+    // Counts and pictures changed on the server, so the list comes again rather than being patched here.
+    setReloadKey((key) => key + 1);
+    showToast({
+      message: t("models:tags.selection.merged", { count: others.length, name: primary.name }),
+      severity: "success",
+    });
+  };
+
+  const sortOptions: { value: TagSortMode; label: string }[] = [
+    { value: "popular", label: t("models:sort.popular") },
+    { value: "newest", label: t("models:sort.newest") },
+    { value: "name", label: t("models:tags.sortByName") },
+  ];
+  const disabled = count === 0 || busy !== null;
+  const bookmarkLabel = allBookmarked ? t("models:tags.unbookmarkTag") : t("models:tags.bookmarkTag");
+
   return (
     <Stack spacing={2}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between">
+      <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 2, rowGap: 1 }}>
         <FormControlLabel
           control={
             <Switch size="small" checked={hideRarelyUsed} onChange={(e) => setHideRarelyUsed(e.target.checked)} />
@@ -142,8 +266,69 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
             </Typography>
           }
         />
-        <TagSortTabs value={sortMode} onChange={setSortMode} />
-      </Stack>
+        {anyTags && (
+          <SelectionToolbar
+            selection={selection}
+            total={tags.length}
+            hasMore={hasMore}
+            busy={busy !== null}
+            labels={{
+              enter: t("models:tags.selection.enter"),
+              exit: t("models:selection.exit"),
+              toolbar: t("models:tags.selection.toolbar"),
+              selectAllLoaded: t("models:tags.selection.selectAllLoaded"),
+            }}
+            dialogs={
+              <MergeDialog
+                open={mergeOpen}
+                onClose={() => setMergeOpen(false)}
+                kind="tag"
+                items={mergeItems}
+                loadPreview={() => tagsApi.previewMerge(mergeItems.map((item) => item.key))}
+                onMerge={merge}
+                onUnauthorized={onUnauthorized}
+              />
+            }
+          >
+            <SelectionAction
+              label={t("models:merge.action")}
+              hint={t("models:merge.needTwo")}
+              icon={<CallMergeIcon fontSize="small" />}
+              disabled={count < 2 || busy !== null}
+              onClick={() => setMergeOpen(true)}
+            />
+            <SelectionAction
+              label={bookmarkLabel}
+              icon={
+                busy === "bookmark" ? (
+                  <CircularProgress size={18} />
+                ) : allBookmarked ? (
+                  <BookmarkIcon fontSize="small" color="primary" />
+                ) : (
+                  <BookmarkBorderIcon fontSize="small" />
+                )
+              }
+              disabled={disabled}
+              onClick={() => void toggleBookmarks()}
+            />
+            <SelectionAction
+              label={t("common:delete")}
+              icon={
+                busy === "delete" ? (
+                  <CircularProgress size={18} />
+                ) : (
+                  <DeleteOutlineIcon fontSize="small" color={disabled ? undefined : "error"} />
+                )
+              }
+              disabled={disabled}
+              onClick={() => void removeSelected()}
+            />
+          </SelectionToolbar>
+        )}
+        <Box sx={{ ml: "auto" }}>
+          <SortTabs value={sortMode} options={sortOptions} onChange={setSortMode} />
+        </Box>
+      </Box>
 
       {loading ? (
         <Box sx={TILE_GRID}>
@@ -161,6 +346,9 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
                 onToggleBookmark={onToggleBookmark}
                 onUnauthorized={onUnauthorized}
                 onDeleted={removeTag}
+                selectMode={selection.active}
+                selected={selection.isSelected(tag.name)}
+                onToggleSelect={onToggleSelect}
               />
             )}
           />

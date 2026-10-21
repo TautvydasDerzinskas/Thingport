@@ -4,6 +4,7 @@ import request from "supertest";
 import { createApp } from "../src/app";
 import { importPrintFromUrl } from "../src/services/importService";
 import { descriptionImagePath, localizeDescriptionImages } from "../src/services/descriptionImageService";
+import { printAssetHome } from "../src/services/modelAssets";
 import { prisma } from "../src/db";
 
 // Images embedded in an imported description are stored locally and served from our own API.
@@ -129,13 +130,14 @@ describe("description images", () => {
 
   it("drops the stored images an edit removes from the description", async () => {
     const image = await prisma.descriptionImage.findFirstOrThrow({ where: { printId } });
+    const home = await printAssetHome(printId);
     const res = await request(app)
       .post(`/api/print/${printId}/meta`)
       .set("Authorization", `Bearer ${token}`)
       .send({ notes: "Just text now." });
     expect(res.status).toBe(200);
     expect(await prisma.descriptionImage.count({ where: { printId } })).toBe(0);
-    expect(fs.existsSync(descriptionImagePath(image.id))).toBe(false);
+    expect(fs.existsSync(descriptionImagePath(image, home))).toBe(false);
   });
 
   it("fills an emptied description from the source, formatting and images included", async () => {
@@ -151,13 +153,14 @@ describe("description images", () => {
 
   it("drops all stored images when the description is cleared", async () => {
     const image = await prisma.descriptionImage.findFirstOrThrow({ where: { printId } });
+    const home = await printAssetHome(printId);
     const res = await request(app)
       .post(`/api/print/${printId}/meta`)
       .set("Authorization", `Bearer ${token}`)
       .send({ notes: "" });
     expect(res.status).toBe(200);
     expect(await prisma.descriptionImage.count({ where: { printId } })).toBe(0);
-    expect(fs.existsSync(descriptionImagePath(image.id))).toBe(false);
+    expect(fs.existsSync(descriptionImagePath(image, home))).toBe(false);
 
     // Back again for the next test.
     global.fetch = mockFetch(`<img src="${STEP_IMAGE}">`);
@@ -166,9 +169,10 @@ describe("description images", () => {
 
   it("removes the stored images with the model", async () => {
     const image = await prisma.descriptionImage.findFirstOrThrow({ where: { printId } });
+    const home = await printAssetHome(printId);
     const res = await request(app).delete(`/api/print/${printId}`).set("Authorization", `Bearer ${token}`);
     expect(res.status).toBe(200);
-    expect(fs.existsSync(descriptionImagePath(image.id))).toBe(false);
+    expect(fs.existsSync(descriptionImagePath(image, home))).toBe(false);
   });
 
   describe("downloading untrusted image URLs", () => {

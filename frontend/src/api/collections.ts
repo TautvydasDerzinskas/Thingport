@@ -1,5 +1,5 @@
 import { authHeaders } from "../utils/auth";
-import { apiBase, assertOk, readErrorMessage } from "./client";
+import { apiBase, assertOk, assertOkWithMessage, readErrorMessage } from "./client";
 import type { Print } from "./prints";
 
 export type SystemCollectionKey = "favorites" | "history";
@@ -56,6 +56,21 @@ export type CollectionMembership = {
   in_collection: boolean;
 };
 
+export type CollectionMergeResult = {
+  /** The kept collection, with every model now in it. */
+  collection: Collection;
+  merged_ids: string[];
+  /** Models that weren't in the kept collection before. */
+  added: number;
+};
+
+const postJson = (path: string, body: unknown) =>
+  fetch(`${apiBase()}${path}`, {
+    method: "POST",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(body),
+  });
+
 export const collectionsApi = {
   list: async (): Promise<Collection[]> => {
     const res = await fetch(`${apiBase()}/collections`, { headers: authHeaders() });
@@ -92,6 +107,27 @@ export const collectionsApi = {
   delete: async (id: string): Promise<void> => {
     const res = await fetch(`${apiBase()}/collection/${id}`, { method: "DELETE", headers: authHeaders() });
     assertOk(res, "Delete collection failed");
+  },
+
+  /** How many models a merge of these would hold: the same whichever is kept. */
+  previewMerge: async (ids: string[]): Promise<{ models: number }> => {
+    const res = await postJson("/collections/merge/preview", { ids });
+    await assertOkWithMessage(res, "Failed to preview the merge");
+    return res.json();
+  },
+
+  /** Moves the others' models into `primaryId` and deletes the others. */
+  merge: async (primaryId: string, ids: string[]): Promise<CollectionMergeResult> => {
+    const res = await postJson("/collections/merge", { primary_id: primaryId, ids });
+    await assertOkWithMessage(res, "Merge failed");
+    return res.json();
+  },
+
+  /** Their models are untouched. */
+  deleteMany: async (ids: string[]): Promise<{ deleted: string[] }> => {
+    const res = await postJson("/collections/delete", { ids });
+    await assertOkWithMessage(res, "Delete collections failed");
+    return res.json();
   },
 
   /** The print itself is untouched. */

@@ -72,24 +72,6 @@ describe("dashboard layout preference", () => {
   });
 });
 
-describe("dashboard thumbnails preference", () => {
-  const getThumbnails = async () =>
-    (await request(app).get("/api/settings/dashboard-thumbnails").set(auth())).body.thumbnails;
-  const setThumbnails = (thumbnails: unknown) =>
-    request(app).patch("/api/settings/dashboard-thumbnails").set(auth()).send({ thumbnails });
-
-  it("starts on photos and keeps a chosen option", async () => {
-    expect(await getThumbnails()).toBe("photos");
-    expect((await setThumbnails("monochrome")).body.thumbnails).toBe("monochrome");
-    expect(await getThumbnails()).toBe("monochrome");
-    expect((await setThumbnails("none")).body.thumbnails).toBe("none");
-  });
-
-  it("rejects an unknown option", async () => {
-    expect((await setThumbnails("sepia")).status).toBe(400);
-  });
-});
-
 describe("weather location preference", () => {
   const getLocation = async () => (await request(app).get("/api/settings/weather-location").set(auth())).body.location;
   const setLocation = (location: unknown) =>

@@ -1,23 +1,37 @@
 import fs from "node:fs/promises";
 import sharp from "sharp";
-import { loadThreeMfGroup, type PreviewRefusal } from "./modelPreviewRender";
+import { loadThreeMfGroup, simplifyGroupMeshes, type PreviewRefusal } from "./modelPreviewRender";
 
 // A small picture of a model: one colour, simple light, transparent background. A software
 // rasterizer rather than WebGL, so it runs anywhere Node does, with no GPU or native deps.
 //
 // Runs in a worker thread (modelPreviewWorker.ts); keep it free of config/db imports.
 
-// Past this the picture wouldn't look different, and the render would only take longer.
+// Past this the picture wouldn't look different, and the render would only take longer: a model over it is simplified
+// to SIMPLIFY_TO first, as 3D previews are.
 const MAX_TRIANGLES = 4_000_000;
+const SIMPLIFY_TO = 1_000_000;
 // Drawn this many times larger in each direction, then averaged down for smooth edges.
 const SUPERSAMPLE = 3;
 // Margin around the model, as a fraction of the image.
 const FILL = 0.9;
 // A model lower than this fraction of its width is seen from above as well, not edge-on.
 const FLAT_RATIO = 0.35;
-const AMBIENT = 0.3;
+// The live viewer's opening angle: from the front right and above. A flat model, like a bookmark or a sign, is seen
+// from steeply above instead, or it's a sliver and its relief is lost.
+const THREE_QUARTER_VIEW: [number, number, number] = [0.9, 0.7, 2.1];
+const FLAT_THREE_QUARTER_VIEW: [number, number, number] = [0.45, 1.8, 1];
 
-export type ModelImageOptions = { size: number; color: string };
+export type ModelImageOptions = {
+  size: number;
+  color: string;
+  /** "front" is straight on (from above too for a flat model); "threeQuarter" is the live viewer's angle. */
+  view?: "front" | "threeQuarter";
+  /** Light every face gets, however it's turned. */
+  ambient?: number;
+  /** Light from the camera, so faces turned away from the main light keep some shape. */
+  fill?: number;
+};
 
 type Vec = [number, number, number];
 const sub = (a: Vec, b: Vec): Vec => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
@@ -57,18 +71,39 @@ async function loadTriangles(srcPath: string, ext: string): Promise<Float32Array
   } else {
     return "unsupported";
   }
-  root.updateMatrixWorld(true);
+  // A group around the model, so a lone STL mesh can be simplified the way a 3MF's plates are.
+  const holder = new THREE.Group();
+  holder.add(root);
 
-  const meshes: import("three").Mesh[] = [];
-  let count = 0;
-  root.traverse((node) => {
-    const mesh = node as import("three").Mesh;
-    if (!mesh.isMesh || !mesh.geometry.getAttribute("position")) return;
-    meshes.push(mesh);
-    const index = mesh.geometry.getIndex();
-    count += (index ? index.count : mesh.geometry.getAttribute("position").count) / 3;
-  });
-  if (count > MAX_TRIANGLES) return "too-complex";
+  const countTriangles = () => {
+    const meshes: import("three").Mesh[] = [];
+    let total = 0;
+    holder.traverse((node) => {
+      const mesh = node as import("three").Mesh;
+      if (!mesh.isMesh || !mesh.geometry.getAttribute("position")) return;
+      meshes.push(mesh);
+      const index = mesh.geometry.getIndex();
+      total += (index ? index.count : mesh.geometry.getAttribute("position").count) / 3;
+    });
+    return { meshes, total };
+  };
+  let { meshes, total: count } = countTriangles();
+  if (count > MAX_TRIANGLES) {
+    // STL and OBJ load as loose triangles; the simplifier needs them joined at shared corners. Their per-face normals
+    // would keep corners apart, and shading here comes from the triangles anyway.
+    const { mergeVertices } = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
+    for (const mesh of meshes) {
+      if (mesh.geometry.getIndex()) continue;
+      const loose = mesh.geometry;
+      for (const name of Object.keys(loose.attributes)) if (name !== "position") loose.deleteAttribute(name);
+      mesh.geometry = mergeVertices(loose);
+      loose.dispose();
+    }
+    await simplifyGroupMeshes(holder, SIMPLIFY_TO);
+    ({ meshes, total: count } = countTriangles());
+    if (count > MAX_TRIANGLES) return "too-complex";
+  }
+  holder.updateMatrixWorld(true);
 
   const out = new Float32Array(Math.floor(count) * 9);
   const vertex = new THREE.Vector3();
@@ -101,7 +136,7 @@ export async function renderModelImage(
   srcPath: string,
   destPath: string,
   ext: string,
-  { size, color }: ModelImageOptions,
+  { size, color, view = "front", ambient = 0.3, fill = 0 }: ModelImageOptions,
 ): Promise<"ok" | PreviewRefusal> {
   const triangles = await loadTriangles(srcPath, ext);
   if (typeof triangles === "string") return triangles;
@@ -118,7 +153,9 @@ export async function renderModelImage(
   const center: Vec = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2];
   const flat = max[1] - min[1] < FLAT_RATIO * Math.max(max[0] - min[0], max[2] - min[2]);
   // Towards the camera: straight from the front, or front and above for a flat model.
-  const toCamera = normalize(flat ? [0, 1, 1] : [0, 0, 1]);
+  const toCamera = normalize(
+    view === "threeQuarter" ? (flat ? FLAT_THREE_QUARTER_VIEW : THREE_QUARTER_VIEW) : flat ? [0, 1, 1] : [0, 0, 1],
+  );
   const right = normalize(cross([0, 1, 0], toCamera));
   const up = cross(toCamera, right);
   // From above and to the left of the camera, so faces turned towards it still differ in shade.
@@ -155,7 +192,7 @@ export async function renderModelImage(
     );
     // Lit from the side facing the camera, whatever the file's winding says.
     if (dot(normal, toCamera) < 0) normal = [-normal[0], -normal[1], -normal[2]];
-    const brightness = AMBIENT + (1 - AMBIENT) * Math.max(0, dot(normal, light));
+    const brightness = ambient + (1 - ambient - fill) * Math.max(0, dot(normal, light)) + fill * dot(normal, toCamera);
 
     const x0 = width / 2 + projected[t] * scale,
       y0 = width / 2 - projected[t + 1] * scale,

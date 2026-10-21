@@ -3,8 +3,7 @@ import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
 import Tooltip from "@mui/material/Tooltip";
 import { useTheme, type SxProps, type Theme } from "@mui/material/styles";
-import markColor from "../assets/logos/thingport-mark-color.svg";
-import markOnDark from "../assets/logos/thingport-mark-on-dark.svg";
+import { useBrandMark } from "../hooks/useBrandLogo";
 import { printProviderInfo, providerChipSx } from "../constants/importProviders";
 import { hasProviderLogo, ProviderLogo } from "./Layout/ConfigurationDialog/providerLogos";
 import { useProviderAbout } from "./providerAbout/ProviderAboutProvider";
@@ -34,6 +33,7 @@ type Props = {
 export default function ProviderBadge({ provider, size = 28, interactive = true, sx }: Props) {
   const { t } = useTranslation(["models", "app"]);
   const theme = useTheme();
+  const markSrc = useBrandMark();
   const about = useProviderAbout(provider);
   const openAbout = interactive ? about : undefined;
   const info = printProviderInfo(provider);
@@ -111,7 +111,7 @@ export default function ProviderBadge({ provider, size = 28, interactive = true,
         ) : (
           <Box
             component="img"
-            src={theme.palette.mode === "dark" ? markOnDark : markColor}
+            src={markSrc}
             alt=""
             aria-hidden="true"
             sx={{ width: logoSize, height: logoSize, objectFit: "contain", display: "block" }}

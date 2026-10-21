@@ -16,6 +16,7 @@ import BackToTopButton from "./BackToTopButton";
 import { ConfirmProvider } from "../ConfirmProvider";
 import { ToastProvider } from "../ToastProvider";
 import { ProviderAboutProvider } from "../providerAbout/ProviderAboutProvider";
+import { WhatsNewProvider } from "../whatsNew/WhatsNewProvider";
 import { PageHeaderContext, type PageHeader } from "./PageHeaderContext";
 import { NavigationHistoryProvider, useSmartBack } from "./NavigationHistoryContext";
 import { ImportJobProvider } from "./ImportJobContext";
@@ -41,7 +42,7 @@ type AppLayoutProps = {
   makerworldCookie: string;
   onUpdateMakerWorld: (patch: Partial<MakerWorldSettings>) => void;
   user: AuthUser | null;
-  onThemeChange: (theme: ThemeSelection) => void;
+  onThemeChange: (theme: ThemeSelection) => Promise<boolean>;
   children: React.ReactNode;
 };
 
@@ -238,7 +239,9 @@ export default function AppLayout({ muiTheme, onUnauthorized, ...shellProps }: A
           <ToastProvider>
             <NotificationsProvider onUnauthorized={onUnauthorized}>
               <ProviderAboutProvider>
-                <AppLayoutShell onUnauthorized={onUnauthorized} {...shellProps} />
+                <WhatsNewProvider>
+                  <AppLayoutShell onUnauthorized={onUnauthorized} {...shellProps} />
+                </WhatsNewProvider>
               </ProviderAboutProvider>
             </NotificationsProvider>
           </ToastProvider>

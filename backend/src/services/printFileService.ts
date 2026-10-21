@@ -5,6 +5,7 @@ import { prisma } from "../db";
 import { STORAGE, IMPORT_MAX_BYTES } from "../config";
 import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
 import { isPreparedPrintFilename, inspectPreparedPrint } from "./preparedPrint";
+import { pruneEmptyStorageDirs, renderPrintFileStoragePath } from "./printService";
 import type { Prisma, Print, PrintFile } from "@prisma/client";
 
 export function managedPrintFilePath(printFile: Pick<PrintFile, "storagePath">): string {
@@ -23,22 +24,28 @@ export async function listSupportingFiles(printId: string): Promise<PrintFile[]>
   });
 }
 
-async function pruneBundleDirs(start: string): Promise<void> {
-  const root = path.resolve(STORAGE, "bundles");
-  let current = start;
-  while (fsSync.existsSync(current) && path.resolve(current) !== root && path.resolve(current).startsWith(root)) {
+/** Never over another file: a link fails on one that's there, where a rename would replace it. */
+async function placeUpload(tempPath: string, destination: string): Promise<void> {
+  try {
+    await fs.link(tempPath, destination);
+  } catch (err: any) {
+    if (err?.code === "EEXIST") throw new HttpError(409, "Another file was just saved at the same path; try again");
+    // Another disk, or one without hard links.
     try {
-      await fs.rmdir(current);
-    } catch {
-      break;
+      await fs.copyFile(tempPath, destination, fsSync.constants.COPYFILE_EXCL);
+    } catch (copyErr: any) {
+      if (copyErr?.code === "EEXIST") {
+        throw new HttpError(409, "Another file was just saved at the same path; try again");
+      }
+      throw copyErr;
     }
-    current = path.dirname(current);
   }
+  await fs.rm(tempPath, { force: true });
 }
 
 /**
- * Saves an uploaded file onto a print. The role comes from the filename (a .3mf containing
- * gcode becomes PREPARED); a new PREPARED file replaces the existing one.
+ * Saves an uploaded file onto a print, beside its plates where the storage structure puts them. The role comes
+ * from the filename (a .3mf containing gcode becomes PREPARED); a new PREPARED file replaces the existing one.
  */
 export async function saveFileFromTemp(
   userId: string,
@@ -63,23 +70,17 @@ export async function saveFileFromTemp(
       storagePath: "pending",
     },
   });
-  const storagePath = `bundles/${print.id}/${record.id}/${safeName}`;
-  const destination = path.join(STORAGE, storagePath);
+  let destination: string | null = null;
 
   try {
-    await fs.mkdir(path.dirname(destination), { recursive: true });
     const stat = await fs.stat(tempPath);
     if (stat.size > IMPORT_MAX_BYTES) throw new HttpError(413, "Related file exceeds size limit");
-    try {
-      await fs.rename(tempPath, destination);
-    } catch (err: any) {
-      if (err?.code === "EXDEV") {
-        await fs.copyFile(tempPath, destination);
-        await fs.rm(tempPath, { force: true });
-      } else {
-        throw err;
-      }
-    }
+    // Claimed in the database first, so two uploads of one name can't both pick the same place.
+    const storagePath = await renderPrintFileStoragePath(print, safeName);
+    await prisma.printFile.update({ where: { id: record.id }, data: { storagePath } });
+    destination = path.join(STORAGE, storagePath);
+    await fs.mkdir(path.dirname(destination), { recursive: true });
+    await placeUpload(tempPath, destination);
 
     let metadata: Record<string, unknown> | null = null;
     if (role === "PREPARED" || safeName.toLowerCase().endsWith(".3mf")) {
@@ -95,7 +96,6 @@ export async function saveFileFromTemp(
       await tx.printFile.update({
         where: { id: record.id },
         data: {
-          storagePath,
           size: stat.size,
           role,
           metadata: (metadata as Prisma.InputJsonValue | undefined) ?? undefined,
@@ -119,12 +119,15 @@ export async function saveFileFromTemp(
 
     if (oldPreparedPath) {
       await fs.rm(oldPreparedPath, { force: true }).catch(() => undefined);
-      await pruneBundleDirs(path.dirname(oldPreparedPath));
+      await pruneEmptyStorageDirs(path.dirname(oldPreparedPath));
     }
     return updatedPrint;
   } catch (err) {
-    await fs.rm(destination, { force: true }).catch(() => undefined);
-    await pruneBundleDirs(path.dirname(destination));
+    // Only once it's ours: a 409 above means the file there is another one's.
+    if (destination && !(err instanceof HttpError && err.status === 409)) {
+      await fs.rm(destination, { force: true }).catch(() => undefined);
+      await pruneEmptyStorageDirs(path.dirname(destination));
+    }
     await prisma.printFile.delete({ where: { id: record.id } }).catch(() => undefined);
     throw err;
   }
@@ -140,7 +143,7 @@ export async function deleteSupportingFile(userId: string, printId: string, file
   const filePath = managedPrintFilePath(record);
   await prisma.printFile.delete({ where: { id: fileId } });
   await fs.rm(filePath, { force: true }).catch(() => undefined);
-  await pruneBundleDirs(path.dirname(filePath));
+  await pruneEmptyStorageDirs(path.dirname(filePath));
   return prisma.print.findUniqueOrThrow({ where: { id: printId } });
 }
 
@@ -152,7 +155,7 @@ export async function deleteAllPrintFiles(printId: string): Promise<void> {
   await prisma.printFile.deleteMany({ where: { printId } });
   for (const p of paths) {
     await fs.rm(p, { force: true }).catch(() => undefined);
-    await pruneBundleDirs(path.dirname(p));
+    await pruneEmptyStorageDirs(path.dirname(p));
   }
 }
 
@@ -169,6 +172,6 @@ export async function deletePreparedFile(userId: string, printId: string): Promi
     prisma.printFile.delete({ where: { id: record.id } }),
   ]);
   await fs.rm(filePath, { force: true }).catch(() => undefined);
-  await pruneBundleDirs(path.dirname(filePath));
+  await pruneEmptyStorageDirs(path.dirname(filePath));
   return prisma.print.findUniqueOrThrow({ where: { id: printId } });
 }

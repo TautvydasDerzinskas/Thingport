@@ -9,14 +9,19 @@ import { inspectPreparedPrint } from "./preparedPrint";
 import {
   availableModelName,
   availablePlateFilename,
+  ensureAssetHome,
   ensurePlateThumbnail,
   managedPlatePath,
-  plateThumbPath,
   pruneEmptyStorageDirs,
+  removeAssetHome,
+  assetOwnerIds,
+  removePlatePictures,
   renderPlateStoragePath,
   saveThumbFromFile,
 } from "./printService";
-import { generateModelPreviewGlb, canRenderModelImage, generateModelImage } from "./modelPreviewCache";
+import { generateModelPreviewGlb, canRenderModelImage } from "./modelPreviewCache";
+import { generateCardRender } from "./previewImageService";
+import { printAssetHome } from "./modelAssets";
 import { deleteNormalized3mf } from "./normalized3mfCache";
 import { getPreviewMode } from "./settingsService";
 import { Prisma } from "@prisma/client";
@@ -100,7 +105,7 @@ async function thumbnailAndSniff(plateId: string, filename: string, mime: string
   }
   // Queued behind the GLB, which the model page needs first.
   if (canRenderModelImage(filename) && (await getPreviewMode()) === "automatic") {
-    void generateModelImage(plateId, effectivePath, filename);
+    void generateCardRender(plateId, effectivePath, filename);
   }
 }
 
@@ -166,11 +171,14 @@ async function createPlateAtPosition(
   return { record, effectivePath };
 }
 
+/** `describe: false` leaves the AI description check to the caller: an import's description is rewritten after this,
+ *  when its images are stored locally, and a check started before then would come back to a changed description. */
 export async function createPrint(
   userId: string,
   meta: PrintMetaInput,
   nameHint: string,
   plateInputs: NewPlateInput[],
+  { describe = true } = {},
 ): Promise<{ print: Print; plates: Plate[] }> {
   if (!plateInputs.length) throw new Error("createPrint requires at least one plate");
   // categoryId may come straight from a request body, so verify ownership here.
@@ -197,6 +205,9 @@ export async function createPrint(
       sourceExternalId: meta.sourceExternalId ?? null,
     },
   });
+  // Chosen now, though nothing is in it yet, so a null assetsPath only ever means a model from before (see
+  // storageMoveService). Failing here isn't fatal: the first picture tries again.
+  await ensureAssetHome(print.id).catch((err) => console.error("Couldn't choose a pictures folder", print.id, err));
 
   try {
     const plates: Plate[] = [];
@@ -224,7 +235,7 @@ export async function createPrint(
     // Background classification is intentionally detached: importing a model must not wait for,
     // or fail because of, a third-party AI provider.
     if (!print.categoryId) void enqueueAiCategorization(userId, print.id);
-    enqueueAiDescription(userId, print.id);
+    if (describe) enqueueAiDescription(userId, print.id);
     return { print, plates };
   } catch (err) {
     await discardPrint(print.id);
@@ -236,14 +247,17 @@ export async function createPrint(
 async function discardPrint(printId: string): Promise<void> {
   try {
     const plates = await prisma.plate.findMany({ where: { printId } });
+    const home = await printAssetHome(printId);
+    const assetOwners = await assetOwnerIds(printId);
     await prisma.print.delete({ where: { id: printId } });
     for (const plate of plates) {
-      await fs.rm(plateThumbPath(plate.id), { force: true });
+      await removePlatePictures(plate.id, home);
       if (plate.sourcePath) continue;
       const managed = managedPlatePath(plate);
       await fs.rm(managed, { force: true });
       await pruneEmptyStorageDirs(path.dirname(managed));
     }
+    await removeAssetHome(home, assetOwners);
   } catch (err) {
     console.error("Failed to discard half-created print", printId, err);
   }

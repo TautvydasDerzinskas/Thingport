@@ -59,6 +59,9 @@ export type LogAction =
   | "password_reset"
   | "api_token_generated"
   | "api_token_revoked"
+  | "api_token_mcp_tools_changed"
+  | "api_token_rest_scopes_changed"
+  | "mcp_access_changed"
   | "user_invited"
   | "authors_linked"
   | "descriptions_refetched"
@@ -71,6 +74,7 @@ export type LogAction =
   | "collection_created"
   | "collection_edited"
   | "collection_deleted"
+  | "collections_merged"
   | "collection_item_added"
   | "collection_item_removed"
   | "collection_sync_enabled"
@@ -78,6 +82,7 @@ export type LogAction =
   | "ai_categorization_run"
   | "ai_description_run"
   | "tag_deleted"
+  | "tags_merged"
   | "user_role_changed"
   | "user_deleted"
   | "provider_toggled"
@@ -115,12 +120,18 @@ export type StorageFolder = {
   label: string | null;
   files: number;
   bytes: number;
+  /** A model's pictures folder, beside its files. */
+  pictures: boolean;
 };
+
+/** "plate" is a model file, "file" a supporting or prepared one; the rest are the model's pictures. */
+export type StorageFileKind = "plate" | "file" | "image" | "description" | "thumb" | "render";
 
 export type StorageFile = {
   name: string;
   path: string;
-  plate_id: string;
+  kind: StorageFileKind;
+  plate_id: string | null;
   print_id: string;
   print_name: string;
   owner_id: string;

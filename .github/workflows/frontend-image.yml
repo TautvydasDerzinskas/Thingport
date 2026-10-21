@@ -1,11 +1,11 @@
 name: Frontend image
 
 # Runs when frontend/ or the build workflow changes. Use "Manual image publish" to force a build.
-# Pull requests into develop only run the checks; the image build waits for the develop -> main pull request,
-# which still builds it before anything is released.
+# Pull requests into develop only run the checks; the image build waits for the merge, which publishes :dev for
+# testers, and the develop -> main pull request builds it again before a release.
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
     paths:
       - "frontend/**"
       - ".github/workflows/frontend-image.yml"
@@ -19,9 +19,9 @@ on:
 
 concurrency:
   group: frontend-image-${{ github.ref }}
-  # A newer push replaces a pull request's run, but never one on main: cut off mid-release, a version could be
-  # tagged without its GitHub release. Runs on main queue instead; the newest builds everything merged so far.
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  # A newer push replaces an older run, but never one on main: cut off mid-release, a version could be tagged
+  # without its GitHub release. Runs on main queue instead; the newest builds everything merged so far.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   # Typecheck, lint, tests and a production build, natively. The image build skips the Dockerfile's test

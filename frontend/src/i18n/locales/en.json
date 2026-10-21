@@ -189,7 +189,7 @@
       "backToProfile": "Back to Profile",
       "apiToken": {
         "heading": "API token",
-        "description": "Lets other apps and services connect to your Thingport library, with read-only access.",
+        "description": "Lets other apps, services and AI assistants connect to your Thingport library. Over the API it can only read.",
         "created": "created {{date}}",
         "lastUsed": "last used {{when}}",
         "neverUsed": "not used yet",
@@ -197,13 +197,149 @@
         "regenerate": "Regenerate",
         "revoke": "Revoke",
         "regenerateTitle": "Regenerate API token?",
-        "regenerateMessage": "The current token stops working at once. Anything using it will need the new one.",
+        "regenerateMessage": "The current token stops working at once. Anything using it will need the new one, and its MCP tools go back to the ones that only read.",
         "revokeTitle": "Revoke API token?",
         "revokeMessage": "The token stops working at once, and anything using it loses access to your library.",
         "copyNow": "Copy your token now. It won't be shown again.",
         "copy": "Copy",
         "copied": "Copied",
-        "failed": "Something went wrong with your API token. Please try again."
+        "failed": "Something went wrong with your API token. Please try again.",
+        "mcp": {
+          "heading": "MCP",
+          "subtitle": "Tools an AI assistant may use",
+          "connect": "To connect an AI assistant, for example Claude Code:",
+          "writes": "Changes your library",
+          "failed": "Couldn't save the token's MCP tools. Please try again.",
+          "tools": {
+            "search_models": {
+              "title": "Search models",
+              "description": "Find models by words in their title, tags, creator or description."
+            },
+            "list_models": {
+              "title": "List models",
+              "description": "List models by tag, category, collection or author."
+            },
+            "get_model": {
+              "title": "Get a model",
+              "description": "Read one model's description, files, tags, author and collections."
+            },
+            "list_collections": {
+              "title": "List collections",
+              "description": "See your collections and how many models each holds."
+            },
+            "get_collection": {
+              "title": "Get a collection",
+              "description": "List the models in one collection."
+            },
+            "list_tags": {
+              "title": "List tags",
+              "description": "See your tags, most used first."
+            },
+            "list_categories": {
+              "title": "List categories",
+              "description": "See your categories and folders."
+            },
+            "get_author": {
+              "title": "Get an author",
+              "description": "Read about a designer and see their models in your library."
+            },
+            "library_stats": {
+              "title": "Library stats",
+              "description": "Your totals, most viewed, most printed and newest models."
+            },
+            "get_import_status": {
+              "title": "Check an import",
+              "description": "Follow an import that's still running."
+            },
+            "import_model": {
+              "title": "Import a model",
+              "description": "Import a model from a link, as + Add > Import does."
+            },
+            "create_collection": {
+              "title": "Create a collection",
+              "description": "Make a new, empty collection."
+            },
+            "add_to_collection": {
+              "title": "Add to a collection",
+              "description": "Put models from your library in one of your collections."
+            }
+          },
+          "writeConfirmTitle": "Let the assistant use “{{tool}}”?",
+          "writeConfirmMessage": "This tool changes your library. An assistant connected with this token will be able to use it without asking you each time. Nothing it does deletes models.",
+          "writeConfirm": "Turn on",
+          "adminOff": "An admin has turned MCP off on this Thingport.",
+          "adminReadOnly": "An admin allows only the tools that read.",
+          "copyCommand": "Copy command",
+          "reads": "Reads your library"
+        },
+        "rest": {
+          "heading": "Permissions",
+          "subtitle": "What apps using this token may read",
+          "description": "What other apps using this token, such as dashboards and launchers, may read over the REST API. Changes apply straight away, without a new token. Denying something an app reads stops that part of it working.",
+          "failed": "Couldn't save the token's permissions. Please try again.",
+          "groups": {
+            "library": "Your library",
+            "media": "Images and files",
+            "other": "Other"
+          },
+          "scopes": {
+            "search": {
+              "title": "Search",
+              "description": "Search models, collections and tags."
+            },
+            "models": {
+              "title": "Models",
+              "description": "List models and read their details."
+            },
+            "dashboard": {
+              "title": "Dashboard",
+              "description": "Library totals, most viewed and printed, the featured model and widgets."
+            },
+            "activity": {
+              "title": "Activity",
+              "description": "Your activity heatmap and feed."
+            },
+            "collections": {
+              "title": "Collections",
+              "description": "Your collections and what's in them."
+            },
+            "tags": {
+              "title": "Tags",
+              "description": "Your tags and how many models have each."
+            },
+            "categories": {
+              "title": "Categories",
+              "description": "Your category tree."
+            },
+            "authors": {
+              "title": "Authors",
+              "description": "Authors' profiles."
+            },
+            "images": {
+              "title": "Images",
+              "description": "Thumbnails, renders and preview pictures."
+            },
+            "files": {
+              "title": "Model files",
+              "description": "Download model files and 3D previews."
+            },
+            "imports": {
+              "title": "Imports",
+              "description": "Progress of running imports."
+            },
+            "other": {
+              "title": "Everything else",
+              "description": "Your settings, notifications, AI suggestions and anything not listed above."
+            }
+          }
+        },
+        "permissions": {
+          "title": "Token permissions",
+          "rest": "Permissions",
+          "mcp": "MCP permissions",
+          "allow": "Allow",
+          "deny": "Deny"
+        }
       },
       "language": {
         "heading": "Language",
@@ -512,8 +648,7 @@
         "allHidden": "Every dashboard box is hidden.",
         "sections": {
           "layout": "Layout",
-          "panels": "Panels",
-          "thumbnails": "Thumbnails"
+          "panels": "Panels"
         },
         "layoutSubtitle": "Choose how your dashboard arranges its boxes. The coloured part shows where the counts go.",
         "layouts": {
@@ -523,17 +658,6 @@
           "bottom": "Counts at the bottom, three columns",
           "topTwo": "Counts on top, two columns",
           "puzzle": "Puzzle"
-        },
-        "thumbnailsSubtitle": "The pictures beside models in the dashboard lists.",
-        "thumbnails": {
-          "none": "Hidden",
-          "photos": "Photos",
-          "monochrome": "Monochrome"
-        },
-        "thumbnailsHelp": {
-          "none": "The lists show names only.",
-          "photos": "Each model's preview image.",
-          "monochrome": "Each model drawn in one tone on a transparent background, made by the server the first time it's needed. Files it can't draw show their photo."
         }
       }
     },
@@ -732,7 +856,7 @@
         "heading": "Storage Structure",
         "subtitle": "Choose how managed model files are organized on disk.",
         "templateHeading": "Folder structure",
-        "templateDesc": "The folders each model's files are saved in, and how the files are named. Every user's files sit in a folder of their own first, so a file ends up at e.g. <user>/Props/Workshop/Cable clip/Cable clip.3mf. Two models can have the same name if they're in different categories, so the path must include Model ID, or both Category or folder and Model name; otherwise their files could land in the same folder.",
+        "templateDesc": "The folders each model's files are saved in, and how the files are named. Every user's files sit in a folder of their own first, so a file ends up at e.g. <user>/Props/Workshop/Cable clip/Cable clip.3mf. Two models can have the same name if they're in different categories, so the path must include Model ID, or both Category or folder and Model name; otherwise their files could land in the same folder. A model's supporting files go beside its model files, and its pictures in an Images folder next to them.",
         "templateLabel": "Template",
         "save": "Save & move files",
         "saving": "Saving…",
@@ -1238,6 +1362,8 @@
           "password_reset": "Reset password",
           "api_token_generated": "Generated an API token",
           "api_token_revoked": "Revoked their API token",
+          "api_token_mcp_tools_changed": "Changed their API token's MCP tools",
+          "api_token_rest_scopes_changed": "Changed their API token's permissions",
           "user_invited": "Invited a user",
           "model_uploaded": "Model uploaded",
           "model_imported": "Model imported",
@@ -1263,7 +1389,10 @@
           "sign_in_connected": "Sign-in provider connected",
           "sign_in_disconnected": "Sign-in provider disconnected",
           "grab_connected": "Thingport Grab connected",
-          "grab_disconnected": "Thingport Grab removed"
+          "grab_disconnected": "Thingport Grab removed",
+          "collections_merged": "Collections merged",
+          "tags_merged": "Tags merged",
+          "mcp_access_changed": "Changed the MCP access"
         },
         "authorsLinked": "{{count}} model(s) linked",
         "descriptionsRefetched": "{{email}} — {{updated}} of {{total}} description(s) changed",
@@ -1277,7 +1406,8 @@
         "providerOff": "{{provider}} turned off",
         "aiRunSummary": "{{done}} of {{total}} checked — {{suggested}} suggested, {{applied}} applied, {{failed}} failed",
         "aiRunStopped": "(stopped)",
-        "viaProvider": "via {{provider}}"
+        "viaProvider": "via {{provider}}",
+        "merged": "{{merged}} → {{name}}"
       },
       "rendering": {
         "heading": "Rendering",
@@ -1297,6 +1427,56 @@
           "saveFailed": "Failed to save rendering settings.",
           "illustrationBefore": "Detailed",
           "illustrationAfter": "Simplified"
+        },
+        "quality": {
+          "heading": "Print quality checks",
+          "subtitle": "Look for problems that could spoil a print.",
+          "infoTitle": "How quality checks work",
+          "infoWhen": "A model is checked the first time it is opened, and only then. Models nobody opens are never checked.",
+          "infoChecks": "The check looks for holes, broken or flipped surfaces, loose fragments, missing parts and an unlikely size, such as a model exported in the wrong unit.",
+          "infoCost": "Checking reads the whole model on the server: a few seconds for most models, longer for very detailed ones.",
+          "label": "Check models for print problems",
+          "helpOn": "On: each model is checked the first time it is opened. On by default.",
+          "helpOff": "Off: models are not checked.",
+          "loadFailed": "Failed to load quality check settings.",
+          "saveFailed": "Failed to save quality check settings.",
+          "configure": "Choose what to check",
+          "dialogTitle": "Problems to check for",
+          "dialogHint": "A problem switched off is hidden from every model's results straight away. Models aren't checked again.",
+          "checks": {
+            "damaged": {
+              "title": "Damaged files",
+              "desc": "Files that won't open or contain nothing to print."
+            },
+            "missingParts": {
+              "title": "Missing parts",
+              "desc": "A 3MF that refers to part files it doesn't contain."
+            },
+            "openEdges": {
+              "title": "Holes in the surface",
+              "desc": "Open edges: the surface isn't closed, so the slicer has to guess what is inside."
+            },
+            "nonManifoldEdges": {
+              "title": "Non-manifold edges",
+              "desc": "Edges shared by more than two faces, which slicers can misread."
+            },
+            "flippedFaces": {
+              "title": "Flipped faces",
+              "desc": "Faces turned the opposite way to their neighbours."
+            },
+            "insideOut": {
+              "title": "Inside out",
+              "desc": "A closed surface that faces inwards."
+            },
+            "fragments": {
+              "title": "Loose fragments",
+              "desc": "Tiny separate pieces floating apart from the model."
+            },
+            "scale": {
+              "title": "Unlikely size",
+              "desc": "Under 1 mm or over 2 m across: probably exported in the wrong unit."
+            }
+          }
         }
       },
       "importQueue": {
@@ -1380,6 +1560,14 @@
         "folderSummary_one": "{{count}} file · {{size}}",
         "folderSummary_other": "{{count}} files · {{size}}",
         "ofModel": "model \"{{name}}\"",
+        "kind": {
+          "plate": "Model file",
+          "file": "Supporting file",
+          "image": "Image",
+          "description": "Description image",
+          "thumb": "Thumbnail",
+          "render": "Render"
+        },
         "location": {
           "source": "At its source",
           "missing": "Missing"
@@ -1472,6 +1660,23 @@
         "saving": "Saving…",
         "saved": "Saved.",
         "failed": "Couldn't save the public URL."
+      },
+      "mcp": {
+        "heading": "MCP tools",
+        "subtitle": "Let AI assistants such as Claude search and manage the library with their user's API token.",
+        "accessLabel": "What API tokens may do",
+        "help": "Each user still chooses their own token's tools within this. Tools that change the library import without a captcha, as Thingport Grab does.",
+        "failed": "Couldn't save the MCP access. Please try again.",
+        "levels": {
+          "off": "Off",
+          "read": "Read only",
+          "write": "Read and change"
+        },
+        "levelHelp": {
+          "off": "No API token can connect over MCP.",
+          "read": "Tokens can search and read their own library, never change it.",
+          "write": "Tokens can also import models and file them into collections, if their user turns that on."
+        }
       }
     },
     "download": {
@@ -1568,13 +1773,48 @@
     "appearance": {
       "title": "Appearance",
       "subtitle": "Choose how Thingport looks and behaves.",
+      "reset": {
+        "action": "Reset to defaults",
+        "title": "Reset appearance?",
+        "message": "Theme, colors, model cards, hover slideshow and author preview go back to their defaults. Your language stays as it is."
+      },
       "themes": {
         "light": "Light",
         "dark": "Dark",
         "system": "System"
       },
       "on": "On",
-      "off": "Off"
+      "off": "Off",
+      "accent": "Accent color",
+      "accentFailed": "Couldn't save the accent color.",
+      "themeFailed": "Couldn't save the theme.",
+      "accents": {
+        "green": "Thingport green",
+        "blue": "Thingiverse blue",
+        "orange": "Printables orange",
+        "amber": "Thangs yellow",
+        "teal": "MyMiniFactory teal",
+        "purple": "Cults3D purple",
+        "graphite": "Graphite"
+      },
+      "cardPreview": {
+        "heading": "Model cards",
+        "images": "Images",
+        "renders": "3D renders",
+        "failed": "Couldn't save the model card choice.",
+        "help": "What model cards show first. Images: the pictures a model came with, or a 3D render where it has none. 3D renders: a render of every model in your render color, or its pictures where the file can't be drawn."
+      },
+      "hoverSlideshow": {
+        "heading": "Hover slideshow",
+        "failed": "Couldn't save the hover slideshow choice.",
+        "help": "Model cards cycle through a model's pictures while the pointer rests on them."
+      },
+      "renderColor": {
+        "heading": "Render color",
+        "light": "Light grey (no tint)",
+        "failed": "Couldn't save the render color.",
+        "help": "The color generated 3D renders and the 3D preview are drawn in. Picking an accent sets it to match; pick here to change it separately."
+      }
     },
     "configuration": {
       "title": "Configuration",
@@ -1935,6 +2175,66 @@
           ]
         }
       }
+    },
+    "whatsNew": {
+      "label": "What's new",
+      "versionLabel": "Thingport {{version}}",
+      "kinds": {
+        "breaking": "Breaking changes",
+        "feature": "New features",
+        "improvement": "Improvements",
+        "fix": "Fixes"
+      },
+      "showAll": "Show all {{total}}",
+      "showFewer": "Show fewer",
+      "learnMore": "Learn more",
+      "allReleases": "All releases",
+      "gotIt": "Got it",
+      "unavailable": "Couldn't load the release notes.",
+      "empty": "No release notes for this version yet.",
+      "openGithub": "Open on GitHub",
+      "zoom": "Enlarge screenshot",
+      "highlight": "Highlight"
+    },
+    "codeBlock": {
+      "copy": "Copy",
+      "copied": "Copied",
+      "copyFailed": "Couldn't copy here. It's selected: press Ctrl+C or ⌘C."
+    },
+    "mcpConnect": {
+      "open": "How to connect",
+      "title": "Connect an AI assistant",
+      "intro": "Each person connects with their own API token, made in <strong>Profile → API token</strong>. Put it in place of <code>{{token}}</code>.",
+      "clientLabel": "AI assistant",
+      "clients": {
+        "claudeCode": "Claude Code",
+        "claude": "Claude",
+        "chatgpt": "ChatGPT",
+        "codex": "Codex CLI",
+        "editors": "Cursor & VS Code"
+      },
+      "claudeCode": {
+        "step": "Run this in a terminal:"
+      },
+      "claude": {
+        "step": "In Claude, open <strong>Settings → Connectors</strong>, choose <strong>Add custom connector</strong> and enter this address. Under request headers, add this Authorization header:",
+        "note": "Claude connects from Anthropic's servers, so Thingport must be reachable from the internet over HTTPS. Request headers are in beta and may depend on your plan."
+      },
+      "chatgpt": {
+        "step": "In ChatGPT, turn on <strong>Developer mode</strong> under <strong>Settings → Apps & Connectors</strong>, create a connector with this address, and choose <strong>Token</strong> as its authentication:",
+        "note": "ChatGPT connects from OpenAI's servers, so Thingport must be reachable from the internet over HTTPS. The Token option depends on your plan; without it, use Codex CLI."
+      },
+      "codex": {
+        "step": "Run this in a terminal:",
+        "note": "THINGPORT_TOKEN must be set in the shell that starts Codex."
+      },
+      "editors": {
+        "cursor": "Cursor: add this to <code>~/.cursor/mcp.json</code>.",
+        "vscode": "VS Code: add this to <code>.vscode/mcp.json</code> in your workspace.",
+        "note": "Other clients work the same way if they support Streamable HTTP and let you set a header."
+      },
+      "guide": "MCP guide",
+      "close": "Close"
     }
   },
   "common": {
@@ -2612,16 +2912,7 @@
         "spin": "Spin",
         "zoomIn": "Zoom in",
         "zoomOut": "Zoom out",
-        "colorLabel": "Model color: {{name}}",
-        "colors": {
-          "red": "Red",
-          "orange": "Orange",
-          "yellow": "Yellow",
-          "green": "Green",
-          "blue": "Blue",
-          "purple": "Purple",
-          "grey": "Grey"
-        }
+        "color": "Model color"
       },
       "downloadFailed": "Download failed. Please try again.",
       "deleteFailed": "Failed to delete the model.",
@@ -2679,7 +2970,83 @@
       "sizeHint": "Total size of all this model's files in storage",
       "author": "Author",
       "downloadModelFiles": "Download model files",
-      "imported": "Imported {{date}}"
+      "imported": "Imported {{date}}",
+      "quality": {
+        "scanning": "Checking print quality…",
+        "scanningFiles": "{{done}} of {{total}} files checked",
+        "doneGood": "Looks printable",
+        "doneIssues": "Problems found",
+        "toastIssues": "This model may not print well. See the warning next to 3D Preview.",
+        "badgeGood": "Quality check passed",
+        "badgeIssues": "Print problems found",
+        "dialogTitle": "Print quality",
+        "noIssues": "No problems found",
+        "skipped": "Not checked: the file is too large or in a layout the check can't read.",
+        "notYet": "Not checked yet.",
+        "slicerNote": "Slicers repair many small problems on their own. Look at the sliced preview before printing.",
+        "triangles_one": "{{formatted}} triangle",
+        "triangles_other": "{{formatted}} triangles",
+        "bodies_one": "{{count}} body",
+        "bodies_other": "{{count}} bodies",
+        "size": "{{x}} × {{y}} × {{z}} mm",
+        "issues": {
+          "unreadable": {
+            "title": "File can't be opened",
+            "desc": "The file is damaged or isn't a valid model file."
+          },
+          "empty": {
+            "title": "No geometry",
+            "desc": "The file contains nothing to print."
+          },
+          "missingParts": {
+            "title_one": "{{count}} missing part",
+            "title_other": "{{count}} missing parts",
+            "desc": "The model refers to part files that aren't in it, so pieces will be missing."
+          },
+          "openEdges": {
+            "title": "Holes in the surface",
+            "desc_one": "{{count}} open edge: the surface isn't closed, so the slicer has to guess what is inside.",
+            "desc_other": "{{count}} open edges: the surface isn't closed, so the slicer has to guess what is inside."
+          },
+          "nonManifoldEdges": {
+            "title": "Non-manifold edges",
+            "desc_one": "{{count}} edge is shared by more than two faces, which slicers can misread.",
+            "desc_other": "{{count}} edges are shared by more than two faces, which slicers can misread."
+          },
+          "flippedFaces": {
+            "title": "Flipped faces",
+            "desc_one": "{{count}} edge lies between faces turned opposite ways, so parts may print hollow or go missing.",
+            "desc_other": "{{count}} edges lie between faces turned opposite ways, so parts may print hollow or go missing."
+          },
+          "insideOut": {
+            "title": "Inside out",
+            "desc": "The surface faces inwards. Some slicers treat it as empty."
+          },
+          "fragments": {
+            "title_one": "{{count}} loose fragment",
+            "title_other": "{{count}} loose fragments",
+            "desc": "Tiny separate pieces float apart from the model. They print as blobs or not at all."
+          },
+          "tooSmall": {
+            "title": "Very small",
+            "desc": "Under 1 mm across: probably exported in the wrong unit. Scale it up in the slicer."
+          },
+          "tooLarge": {
+            "title": "Very large",
+            "desc": "Over 2 m across: probably exported in the wrong unit. Scale it down in the slicer."
+          }
+        },
+        "toastMinor": "Minor print problems found in this model. Slicers usually cope with these.",
+        "severity": {
+          "critical": "Critical",
+          "criticalHint": "The print fails or comes out incomplete.",
+          "major": "Major",
+          "majorHint": "The model likely prints with defects.",
+          "minor": "Minor",
+          "minorHint": "Slicers usually cope, or it's a quick fix in one."
+        },
+        "manageSettings": "Manage quality checks"
+      }
     },
     "edit": {
       "title": "Edit model",
@@ -2893,6 +3260,24 @@
             "myminifactory": "Thingport stops listing your MyMiniFactory collections until you give your username again. Syncs already set up keep their models."
           }
         }
+      },
+      "sortByModels": "Most models",
+      "selection": {
+        "enter": "Select collections",
+        "toolbar": "Actions for the selected collections",
+        "builtIn": "Built-in collections can't be merged or deleted",
+        "bookmarked_one": "Bookmarked {{count}} collection",
+        "bookmarked_other": "Bookmarked {{count}} collections",
+        "unbookmarked_one": "Removed {{count}} collection from bookmarks",
+        "unbookmarked_other": "Removed {{count}} collections from bookmarks",
+        "deleteTitle_one": "Delete {{count}} collection?",
+        "deleteTitle_other": "Delete {{count}} collections?",
+        "deleteMessage_one": "The models in it are kept. This can't be undone.",
+        "deleteMessage_other": "The models in them are kept. This can't be undone.",
+        "deleted_one": "Deleted {{count}} collection",
+        "deleted_other": "Deleted {{count}} collections",
+        "merged_one": "Merged {{count}} collection into “{{name}}”",
+        "merged_other": "Merged {{count}} collections into “{{name}}”"
       }
     },
     "tags": {
@@ -2917,6 +3302,25 @@
         "title": "{{name}}",
         "subtitle": "Tag",
         "empty": "No models with this tag yet."
+      },
+      "selection": {
+        "enter": "Select tags",
+        "toolbar": "Actions for the selected tags",
+        "selectAllLoaded": "Select all loaded",
+        "bookmarked_one": "Bookmarked {{count}} tag",
+        "bookmarked_other": "Bookmarked {{count}} tags",
+        "unbookmarked_one": "Removed {{count}} tag from bookmarks",
+        "unbookmarked_other": "Removed {{count}} tags from bookmarks",
+        "deleteTitle_one": "Delete {{count}} tag?",
+        "deleteTitle_other": "Delete {{count}} tags?",
+        "deleteMessage_one": "It's removed from every model that has it. The models themselves are kept.",
+        "deleteMessage_other": "They're removed from every model that has them. The models themselves are kept.",
+        "deleteConfirm_one": "Delete tag",
+        "deleteConfirm_other": "Delete tags",
+        "deleted_one": "Deleted {{count}} tag",
+        "deleted_other": "Deleted {{count}} tags",
+        "merged_one": "Merged {{count}} tag into “{{name}}”",
+        "merged_other": "Merged {{count}} tags into “{{name}}”"
       }
     },
     "downloadZip": {
@@ -2936,6 +3340,7 @@
       "createCategoryFailed": "Failed to create the category. Please try again.",
       "renameCategoryFailed": "Failed to rename the category. Please try again.",
       "deleteCategoryFailed": "Failed to delete the category. Please try again.",
+      "resetCategoriesFailed": "Failed to reset the categories. Please try again.",
       "reorderCategoryFailed": "Failed to reorder categories. Please try again.",
       "moveCategoryFailed": "Failed to move the subcategory. Please try again.",
       "updateCategoryMetaFailed": "Failed to save category details. Please try again.",
@@ -2949,9 +3354,27 @@
       "empty": "No categories yet",
       "noSubcategories": "No subcategories yet",
       "manageTooltip": "Manage categories",
+      "reset": {
+        "title": "Reset categories to defaults?",
+        "added": "Added",
+        "restored": "Restored",
+        "removed": "Deleted",
+        "modelsUncategorized_one": "{{count}} model will lose its category.",
+        "modelsUncategorized_other": "{{count}} models will lose their category.",
+        "modelsMoved_one": "{{count}} model moves to the nearest kept parent category.",
+        "modelsMoved_other": "{{count}} models move to the nearest kept parent category.",
+        "modelsRenamed_one": "{{count}} moved model is renamed to avoid a name clash.",
+        "modelsRenamed_other": "{{count}} moved models are renamed to avoid a name clash.",
+        "modelCount_one": "{{count}} model",
+        "modelCount_other": "{{count}} models",
+        "noop": "Your categories already match the defaults.",
+        "foldersKept": "Folders aren't touched.",
+        "previewFailed": "Couldn't work out what a reset would change."
+      },
       "manager": {
         "title": "Manage Categories",
         "addCategory": "Add category",
+        "reset": "Reset to defaults",
         "addSubcategory": "Add subcategory",
         "noCategories": "No categories yet. Add one to get started.",
         "confirmDeleteCategory": "Delete \"{{name}}\"? Any models in it move to Unassigned.",
@@ -3039,6 +3462,46 @@
       "confirmRemoveFromCollection_other": "Remove {{count}} models from this collection? The models themselves are kept.",
       "removedFromCollection_one": "Removed {{count}} model from the collection",
       "removedFromCollection_other": "Removed {{count}} models from the collection"
+    },
+    "merge": {
+      "action": "Merge",
+      "needTwo": "Select at least 2 to merge",
+      "previewFailed": "Couldn't work out what the merge would do. Please try again.",
+      "failed": "Merge failed. Please try again.",
+      "keep": "Merge into",
+      "kept": "Kept",
+      "after": "After the merge",
+      "modelUnit_one": "model",
+      "modelUnit_other": "models",
+      "new_one": "new",
+      "new_other": "new",
+      "quoted": "“{{name}}”",
+      "andMore_one": "{{count}} more",
+      "andMore_other": "{{count}} more",
+      "syncsWith": "syncs with {{provider}}",
+      "bookmarkMoves": "Its bookmark moves to “{{name}}”.",
+      "cantUndo": "A merge can't be undone.",
+      "mergeInto": "Merge into “{{name}}”",
+      "collections": {
+        "title_one": "Merge {{count}} collection",
+        "title_other": "Merge {{count}} collections",
+        "keepHelp": "Pick the collection to keep. The others' models are added to it, then the others are deleted.",
+        "goes": "Deleted",
+        "othersGo_one": "{{names}} is deleted. Its models aren't: they move into “{{name}}”.",
+        "othersGo_other": "{{names}} are deleted. Their models aren't: they move into “{{name}}”.",
+        "keepsOwn": "“{{name}}” keeps its name, description, tags and sync.",
+        "syncStops_one": "{{names}} syncs with a provider collection, and that sync stops. Keep it instead to carry on syncing.",
+        "syncStops_other": "{{names}} sync with provider collections, and those syncs stop. Keep one of them instead to carry on syncing it."
+      },
+      "tags": {
+        "title_one": "Merge {{count}} tag",
+        "title_other": "Merge {{count}} tags",
+        "keepHelp": "Pick the tag to keep. Every model with one of the others gets it instead, then the others are removed.",
+        "goes": "Removed",
+        "othersGo_one": "{{names}} is removed. Its models are tagged “{{name}}” instead.",
+        "othersGo_other": "{{names}} are removed. Their models are tagged “{{name}}” instead.",
+        "keepsOwn": "Models already tagged “{{name}}” stay as they are."
+      }
     }
   }
 }

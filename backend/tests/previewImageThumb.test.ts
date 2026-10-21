@@ -7,8 +7,9 @@ import sharp from "sharp";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { attachImportedPreviewImages } from "../src/services/importService";
-import { plateThumbPath } from "../src/services/printService";
+import { plateThumbPath, saveThumbFromBytes } from "../src/services/printService";
 import { previewImagePath } from "../src/services/previewImageService";
+import { plateAssetHome, printAssetHome } from "../src/services/modelAssets";
 import { MOSAICS, renderTagMosaic } from "../src/services/tagMosaicService";
 import { TAG_MOSAICS } from "../src/config";
 
@@ -80,8 +81,8 @@ describe("a 3D render saved before uploaded images land", () => {
       [0, false],
       [1, false],
     ]);
-    expect(await redOf(previewImagePath(previews[0].id))).toBeGreaterThan(180);
-    expect(await redOf(plateThumbPath(plate.id))).toBeGreaterThan(180);
+    expect(await redOf(previewImagePath(previews[0].id, await printAssetHome(print.id)))).toBeGreaterThan(180);
+    expect(await redOf(plateThumbPath(plate.id, await plateAssetHome(plate.id)))).toBeGreaterThan(180);
   });
 });
 
@@ -126,8 +127,8 @@ describe("a 3D render made while an import runs", () => {
       [0, false],
       [1, false],
     ]);
-    expect(await redOf(previewImagePath(previews[0].id))).toBeGreaterThan(180);
-    expect(await redOf(plateThumbPath(plate.id))).toBeGreaterThan(180);
+    expect(await redOf(previewImagePath(previews[0].id, await printAssetHome(print.id)))).toBeGreaterThan(180);
+    expect(await redOf(plateThumbPath(plate.id, await plateAssetHome(plate.id)))).toBeGreaterThan(180);
     expect((await prisma.plate.findUnique({ where: { id: plate.id } }))!.thumbGenerated).toBe(false);
 
     // A render that finishes after the cover landed doesn't replace it.
@@ -137,7 +138,7 @@ describe("a 3D render made while an import runs", () => {
       .attach("file", await png(10), "render.png");
     expect(late.status).toBe(200);
     expect(late.body.print.preview_images).toHaveLength(2);
-    expect(await redOf(plateThumbPath(plate.id))).toBeGreaterThan(180);
+    expect(await redOf(plateThumbPath(plate.id, await plateAssetHome(plate.id)))).toBeGreaterThan(180);
   });
 });
 
@@ -156,10 +157,12 @@ describe("tag tiles", () => {
     }
     // The newest has no picture at all; the other eleven have a rendered plate.
     for (const { plateId } of prints.slice(0, 11)) {
-      await fs.mkdir(path.dirname(plateThumbPath(plateId)), { recursive: true });
-      await sharp(await png(200))
-        .jpeg()
-        .toFile(plateThumbPath(plateId));
+      await saveThumbFromBytes(
+        plateId,
+        await sharp(await png(200))
+          .jpeg()
+          .toBuffer(),
+      );
     }
     const tile = async () =>
       (

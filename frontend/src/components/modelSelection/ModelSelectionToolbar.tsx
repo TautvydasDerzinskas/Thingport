@@ -1,19 +1,11 @@
 import { useEffect, useState } from "react";
 import type React from "react";
 import { useTranslation } from "react-i18next";
-import { keyframes } from "@emotion/react";
-import Stack from "@mui/material/Stack";
-import Divider from "@mui/material/Divider";
-import IconButton from "@mui/material/IconButton";
-import ToggleButton from "@mui/material/ToggleButton";
-import Tooltip from "@mui/material/Tooltip";
-import Typography from "@mui/material/Typography";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import CircularProgress from "@mui/material/CircularProgress";
-import HighlightAltIcon from "@mui/icons-material/HighlightAlt";
 import PlaylistAddIcon from "@mui/icons-material/PlaylistAdd";
 import PlaylistRemoveIcon from "@mui/icons-material/PlaylistRemove";
 import StarIcon from "@mui/icons-material/Star";
@@ -22,8 +14,6 @@ import DownloadIcon from "@mui/icons-material/Download";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import AutoFixNormalIcon from "@mui/icons-material/AutoFixNormal";
-import SelectAllIcon from "@mui/icons-material/SelectAll";
-import DeselectIcon from "@mui/icons-material/Deselect";
 import { UnauthorizedError } from "../../api/client";
 import { BULK_LIMIT, type Print, printsApi } from "../../api/prints";
 import { AiCategorizationError, aiCategorizationApi } from "../../api/aiCategorization";
@@ -35,6 +25,7 @@ import { useConfirm } from "../ConfirmProvider";
 import { useToast } from "../ToastProvider";
 import DownloadZipConfirmDialog from "../DownloadZipConfirmDialog";
 import BulkAddToCollectionDialog from "./BulkAddToCollectionDialog";
+import SelectionToolbar, { SelectionAction } from "../selection/SelectionToolbar";
 
 type Props = {
   selection: ModelSelection;
@@ -51,11 +42,6 @@ type Props = {
 };
 
 type Busy = "favorite" | "removeFromCollection" | "delete" | "ai" | null;
-
-const slideIn = keyframes`
-  from { opacity: 0; transform: translateX(-8px); }
-  to   { opacity: 1; transform: none; }
-`;
 
 /** A grid's select-mode toggle and, while it's on, the actions for the selected models. */
 export default function ModelSelectionToolbar({
@@ -82,7 +68,6 @@ export default function ModelSelectionToolbar({
   const { active, selected } = selection;
   const ids = selected.map((item) => item.id);
   const count = ids.length;
-  const allSelected = count > 0 && count === total;
   const allFavorite = count > 0 && selected.every((item) => item.is_favorite);
   const disabled = count === 0 || busy !== null;
   // An AI run is one request, so unlike delete and favourite it can't be split.
@@ -228,14 +213,7 @@ export default function ModelSelectionToolbar({
   };
 
   const action = (label: string, icon: React.ReactNode, onClick: (e: React.MouseEvent<HTMLElement>) => void) => (
-    <Tooltip title={label}>
-      {/* A disabled button fires no events, so the span keeps the tooltip working. */}
-      <span>
-        <IconButton size="small" aria-label={label} disabled={disabled} onClick={onClick}>
-          {icon}
-        </IconButton>
-      </span>
-    </Tooltip>
+    <SelectionAction label={label} icon={icon} disabled={disabled} onClick={onClick} />
   );
 
   const aiHint = (running: boolean) =>
@@ -246,137 +224,95 @@ export default function ModelSelectionToolbar({
         : undefined;
 
   const favoriteLabel = allFavorite ? t("models:detail.removeFromFavorites") : t("models:detail.addToFavorites");
-  const selectAllLabel = allSelected
-    ? t("common:clearSelection")
-    : hasMore
-      ? t("models:selection.selectAllLoaded")
-      : t("common:selectAll");
-  const toggleLabel = active ? t("models:selection.exit") : t("models:selection.enter");
 
   return (
-    <Stack direction="row" alignItems="center" spacing={0.5} sx={{ flexWrap: "wrap", rowGap: 0.5 }}>
-      <Tooltip title={toggleLabel}>
-        <ToggleButton
-          value="select"
-          size="small"
-          selected={active}
-          onChange={() => selection.setActive(!active)}
-          aria-label={toggleLabel}
-          sx={{ px: 1 }}
-        >
-          <HighlightAltIcon fontSize="small" />
-        </ToggleButton>
-      </Tooltip>
-      {active && (
-        <Stack
-          direction="row"
-          alignItems="center"
-          spacing={0.25}
-          role="toolbar"
-          aria-label={t("models:selection.toolbar")}
-          sx={{
-            animation: `${slideIn} 200ms ease-out`,
-            "@media (prefers-reduced-motion: reduce)": { animation: "none" },
-          }}
-        >
-          {action(t("models:detail.addToCollection"), <PlaylistAddIcon fontSize="small" />, () => setAddOpen(true))}
-          {collectionId &&
-            action(
-              t("models:detail.removeFromCollection"),
-              busy === "removeFromCollection" ? (
-                <CircularProgress size={18} />
-              ) : (
-                <PlaylistRemoveIcon fontSize="small" />
-              ),
-              () => void removeFromCollection(),
+    <SelectionToolbar
+      selection={selection}
+      total={total}
+      hasMore={hasMore}
+      busy={busy !== null}
+      labels={{
+        enter: t("models:selection.enter"),
+        exit: t("models:selection.exit"),
+        toolbar: t("models:selection.toolbar"),
+        selectAllLoaded: t("models:selection.selectAllLoaded"),
+      }}
+      dialogs={
+        <>
+          <Menu anchorEl={aiMenuAnchor} open={Boolean(aiMenuAnchor)} onClose={() => setAiMenuAnchor(null)}>
+            {aiEnabled && (
+              <MenuItem onClick={() => void categorize()} disabled={categorization.running || tooManyForAi}>
+                <ListItemIcon>
+                  <AutoAwesomeIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText secondary={aiHint(categorization.running)}>
+                  {t("models:aiCategorization.categorize")}
+                </ListItemText>
+              </MenuItem>
             )}
-          {action(
-            favoriteLabel,
-            busy === "favorite" ? (
-              <CircularProgress size={18} />
-            ) : allFavorite ? (
-              <StarIcon fontSize="small" sx={{ color: "warning.main" }} />
-            ) : (
-              <StarBorderIcon fontSize="small" />
-            ),
-            () => void toggleFavorite(),
-          )}
-          {action(t("common:download"), <DownloadIcon fontSize="small" />, () => setDownloadOpen(true))}
-          {action(
-            t("common:delete"),
-            busy === "delete" ? (
-              <CircularProgress size={18} />
-            ) : (
-              <DeleteOutlineIcon fontSize="small" color={disabled ? undefined : "error"} />
-            ),
-            () => void remove(),
-          )}
-          {(aiEnabled || descriptionsEnabled) &&
-            action(
-              t("models:selection.aiActions"),
-              busy === "ai" ? <CircularProgress size={18} /> : <AutoAwesomeIcon fontSize="small" />,
-              (e) => setAiMenuAnchor(e.currentTarget),
+            {descriptionsEnabled && (
+              <MenuItem onClick={() => void improveDescriptions()} disabled={descriptions.running || tooManyForAi}>
+                <ListItemIcon>
+                  <AutoFixNormalIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText secondary={aiHint(descriptions.running)}>
+                  {t("models:selection.improveDescriptions")}
+                </ListItemText>
+              </MenuItem>
             )}
-          <Divider orientation="vertical" flexItem sx={{ mx: 0.75 }} />
-          <Typography
-            variant="caption"
-            aria-live="polite"
-            sx={{ color: "text.secondary", whiteSpace: "nowrap", minWidth: 64 }}
-          >
-            {t("models:selection.count", { count })}
-          </Typography>
-          <Tooltip title={selectAllLabel}>
-            <span>
-              <IconButton
-                size="small"
-                aria-label={selectAllLabel}
-                disabled={total === 0 || busy !== null}
-                onClick={allSelected ? selection.clear : selection.selectAll}
-              >
-                {allSelected ? <DeselectIcon fontSize="small" /> : <SelectAllIcon fontSize="small" />}
-              </IconButton>
-            </span>
-          </Tooltip>
-        </Stack>
+          </Menu>
+
+          <BulkAddToCollectionDialog
+            open={addOpen}
+            onClose={() => setAddOpen(false)}
+            printIds={ids}
+            onUnauthorized={onUnauthorized}
+          />
+          <DownloadZipConfirmDialog
+            open={downloadOpen}
+            onClose={() => setDownloadOpen(false)}
+            filter={{ print_ids: ids }}
+            filename="thingport.zip"
+            title={t("models:selection.downloadTitle", { count })}
+            onUnauthorized={onUnauthorized}
+          />
+        </>
+      }
+    >
+      {action(t("models:detail.addToCollection"), <PlaylistAddIcon fontSize="small" />, () => setAddOpen(true))}
+      {collectionId &&
+        action(
+          t("models:detail.removeFromCollection"),
+          busy === "removeFromCollection" ? <CircularProgress size={18} /> : <PlaylistRemoveIcon fontSize="small" />,
+          () => void removeFromCollection(),
+        )}
+      {action(
+        favoriteLabel,
+        busy === "favorite" ? (
+          <CircularProgress size={18} />
+        ) : allFavorite ? (
+          <StarIcon fontSize="small" sx={{ color: "warning.main" }} />
+        ) : (
+          <StarBorderIcon fontSize="small" />
+        ),
+        () => void toggleFavorite(),
       )}
-
-      <Menu anchorEl={aiMenuAnchor} open={Boolean(aiMenuAnchor)} onClose={() => setAiMenuAnchor(null)}>
-        {aiEnabled && (
-          <MenuItem onClick={() => void categorize()} disabled={categorization.running || tooManyForAi}>
-            <ListItemIcon>
-              <AutoAwesomeIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText secondary={aiHint(categorization.running)}>
-              {t("models:aiCategorization.categorize")}
-            </ListItemText>
-          </MenuItem>
+      {action(t("common:download"), <DownloadIcon fontSize="small" />, () => setDownloadOpen(true))}
+      {action(
+        t("common:delete"),
+        busy === "delete" ? (
+          <CircularProgress size={18} />
+        ) : (
+          <DeleteOutlineIcon fontSize="small" color={disabled ? undefined : "error"} />
+        ),
+        () => void remove(),
+      )}
+      {(aiEnabled || descriptionsEnabled) &&
+        action(
+          t("models:selection.aiActions"),
+          busy === "ai" ? <CircularProgress size={18} /> : <AutoAwesomeIcon fontSize="small" />,
+          (e) => setAiMenuAnchor(e.currentTarget),
         )}
-        {descriptionsEnabled && (
-          <MenuItem onClick={() => void improveDescriptions()} disabled={descriptions.running || tooManyForAi}>
-            <ListItemIcon>
-              <AutoFixNormalIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText secondary={aiHint(descriptions.running)}>
-              {t("models:selection.improveDescriptions")}
-            </ListItemText>
-          </MenuItem>
-        )}
-      </Menu>
-
-      <BulkAddToCollectionDialog
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-        printIds={ids}
-        onUnauthorized={onUnauthorized}
-      />
-      <DownloadZipConfirmDialog
-        open={downloadOpen}
-        onClose={() => setDownloadOpen(false)}
-        filter={{ print_ids: ids }}
-        filename="thingport.zip"
-        title={t("models:selection.downloadTitle", { count })}
-        onUnauthorized={onUnauthorized}
-      />
-    </Stack>
+    </SelectionToolbar>
   );
 }

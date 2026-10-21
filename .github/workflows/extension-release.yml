@@ -39,6 +39,8 @@ jobs:
         run: npm run typecheck
       - name: Lint
         run: npm run lint
+      - name: Edge certification notes fit
+        run: npm run check:edge-notes
       - name: Build and package
         run: npm run zip:chrome && npm run zip:edge
       - uses: actions/upload-artifact@v4

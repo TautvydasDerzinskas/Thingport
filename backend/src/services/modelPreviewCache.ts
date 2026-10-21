@@ -4,8 +4,21 @@ import path from "node:path";
 import { Worker } from "node:worker_threads";
 import { MODEL_PREVIEWS, MODEL_PREVIEW_MAX_MEMORY_MB, MODEL_PREVIEW_TIMEOUT_SECONDS, STORAGE } from "../config";
 import { prisma } from "../db";
+import type { ModelImageOptions } from "./modelImageRender";
 import type { ModelPreviewWorkerInput, ModelPreviewWorkerResult } from "./modelPreviewWorker";
+import type { QualityReport } from "./meshQuality";
 import { getSimplifyPreviews } from "./settingsService";
+import {
+  assetExists,
+  assetPath,
+  assetTarget,
+  plateAssetHome,
+  plateRenderFile,
+  removeAsset,
+  RENDER_FILE_TAG,
+  type AssetHome,
+} from "./modelAssets";
+import { ensureAssetHome } from "./printService";
 import { workerBootstrap } from "../utils/workerBootstrap";
 
 // Renders run in a worker thread under memory and time limits, so a pathological .3mf can't take
@@ -67,6 +80,7 @@ export const SIMPLIFY_TARGET_TRIANGLES = 1_000_000;
 
 type RenderOutcome =
   | { status: "ok" }
+  | { status: "checked"; report: QualityReport }
   | { status: "too-complex" }
   | { status: "unsupported" }
   | { status: "limit"; reason: string }
@@ -239,6 +253,21 @@ async function runGeneration(plateId: string, srcPath: string): Promise<void> {
   }
 }
 
+export type QualityCheckOutcome = RenderOutcome;
+
+/** The printability check (meshQuality.ts) in the render worker, under the same limits. It waits in the GLB queue
+ * rather than behind pictures: someone has the model open and is watching it run. */
+export function checkPlateQuality(plateId: string, srcPath: string, ext: string): Promise<QualityCheckOutcome> {
+  return new Promise((resolve) => {
+    void scheduleRender("glb", async () => {
+      const outcome = await renderPlateFile(plateId, srcPath, (from) =>
+        renderInWorker({ kind: "quality", srcPath: from, ext }),
+      ).catch((err: unknown): RenderOutcome => ({ status: "error", error: String(err) }));
+      resolve(outcome);
+    });
+  });
+}
+
 /** The plate's file where it is when its render starts: renders wait in a queue, and the file may have been renamed
  *  (and so moved) since, as when a newly imported print profile is named apart from another. */
 async function currentPlatePath(plateId: string, queuedPath: string): Promise<string> {
@@ -264,25 +293,34 @@ async function renderPlateFile<T extends { status: string }>(
   return moved !== srcPath && fsSync.existsSync(moved) ? render(moved) : outcome;
 }
 
-// Pictures of a model for small slots like the dashboard lists: near-black on transparent.
-// They share the GLB queue and memory limit, so the two never render at once, but wait behind GLBs.
+// Pictures of a model, drawn on the server in one colour on transparent: a "render" for model cards, the dashboard
+// lists and tag mosaics. They share the GLB queue and memory limit, so they wait behind GLBs.
 
 /** Server-side picture formats; STEP needs a CAD kernel the server doesn't have. */
 export const MODEL_IMAGE_EXTS = new Set([".stl", ".obj", ".3mf"]);
-// Part of the filename, so changing the look regenerates older pictures on next request.
-const MODEL_IMAGE_VERSION = 2;
-const MODEL_IMAGE_SIZE = 128;
-// Shading scales this down, so it comes out between near-black in shadow and charcoal in the light.
-// The dashboard inverts it for the dark theme.
-const MODEL_IMAGE_COLOR = "#5a5a5a";
-// A thumbnail isn't worth holding up the queue the way a model's own 3D preview is.
-const MODEL_IMAGE_TIMEOUT_SECONDS = 20;
+export type ModelImageKind = "render";
+type ModelImageKindDef = {
+  /** Part of the filename, with a version, so changing a look regenerates older pictures on next request. */
+  file: string;
+  options: ModelImageOptions;
+  timeoutSeconds: number;
+};
+// A card's render is the model's main picture, so a heavy model gets a while.
+const MODEL_IMAGE_KINDS: Record<ModelImageKind, ModelImageKindDef> = {
+  // Grey shading the browser tints with the render colour, so one picture serves every theme and colour.
+  render: {
+    file: RENDER_FILE_TAG,
+    options: { size: 512, color: "#ffffff", view: "threeQuarter", ambient: 0.35, fill: 0.2 },
+    timeoutSeconds: 60,
+  },
+};
 
-export function modelImagePath(plateId: string): string {
-  return path.join(MODEL_PREVIEWS, `${plateId}.image.v${MODEL_IMAGE_VERSION}.png`);
+/** In the model's pictures folder (`home`, its Print.assetsPath); the failure markers stay with the GLB cache. */
+export function modelImagePath(plateId: string, home: AssetHome, kind: ModelImageKind = "render"): string {
+  return assetPath(home, plateRenderFile(plateId, MODEL_IMAGE_KINDS[kind].file));
 }
-function modelImageErrorPath(plateId: string): string {
-  return path.join(MODEL_PREVIEWS, `${plateId}.image.v${MODEL_IMAGE_VERSION}.error`);
+function modelImageErrorPath(plateId: string, kind: ModelImageKind): string {
+  return path.join(MODEL_PREVIEWS, `${plateId}.${MODEL_IMAGE_KINDS[kind].file}.error`);
 }
 
 export function canRenderModelImage(filename: string): boolean {
@@ -291,15 +329,39 @@ export function canRenderModelImage(filename: string): boolean {
 
 const imagesInFlight = new Set<string>();
 
-/** Never throws. Concurrent calls for the same plate no-op; a failure isn't retried for a while. */
-export async function generateModelImage(plateId: string, srcPath: string, filename: string): Promise<void> {
-  const errorPath = modelImageErrorPath(plateId);
-  if (!canRenderModelImage(filename) || fsSync.existsSync(modelImagePath(plateId))) return;
-  if (imagesInFlight.has(plateId) || recentlyFailed(plateId, errorPath)) return;
-  imagesInFlight.add(plateId);
+/** Never throws. Concurrent calls for the same picture no-op; a failure isn't retried for a while. `onReady` runs
+ *  with the finished picture's path. */
+export async function generateModelImage(
+  plateId: string,
+  srcPath: string,
+  filename: string,
+  kind: ModelImageKind = "render",
+  onReady?: (imagePath: string) => Promise<void>,
+): Promise<void> {
+  const errorPath = modelImageErrorPath(plateId, kind);
+  const key = `${kind}:${plateId}`;
+  if (!canRenderModelImage(filename) || imagesInFlight.has(key)) return;
+  // Claimed before looking up where the picture is, so a second call meanwhile doesn't draw it again.
+  imagesInFlight.add(key);
+  const file = plateRenderFile(plateId, MODEL_IMAGE_KINDS[kind].file);
+  const cachedPath = assetPath(await plateAssetHome(plateId).catch(() => null), file);
+  if (fsSync.existsSync(cachedPath) || recentlyFailed(plateId, errorPath)) {
+    imagesInFlight.delete(key);
+    if (!fsSync.existsSync(cachedPath)) return;
+    // Still run onReady, so a step that failed after an earlier render gets another go.
+    try {
+      await onReady?.(cachedPath);
+    } catch (err) {
+      console.error(`Model picture post-processing failed for plate ${plateId}:`, err);
+    }
+    return;
+  }
   await scheduleRender("image", async () => {
-    const dest = modelImagePath(plateId);
-    const tmp = `${dest}.${process.pid}.${Date.now()}.tmp`;
+    // Drawn beside the GLBs, and only then put in the model's folder: the model may move while it waits.
+    const tmp = path.join(
+      MODEL_PREVIEWS,
+      `${plateId}.${MODEL_IMAGE_KINDS[kind].file}.${process.pid}.${Date.now()}.tmp`,
+    );
     try {
       const outcome = await renderPlateFile(plateId, srcPath, (from) =>
         renderInWorker(
@@ -308,14 +370,21 @@ export async function generateModelImage(plateId: string, srcPath: string, filen
             srcPath: from,
             destPath: tmp,
             ext: path.extname(filename).toLowerCase(),
-            image: { size: MODEL_IMAGE_SIZE, color: MODEL_IMAGE_COLOR },
+            image: MODEL_IMAGE_KINDS[kind].options,
           },
-          MODEL_IMAGE_TIMEOUT_SECONDS,
+          MODEL_IMAGE_KINDS[kind].timeoutSeconds,
         ),
       );
       if (outcome.status === "ok") {
+        const plate = await prisma.plate.findUnique({ where: { id: plateId }, select: { printId: true } });
+        // Deleted while it was drawn.
+        if (!plate) return;
+        const dest = assetTarget(await ensureAssetHome(plate.printId), file);
+        await fs.mkdir(path.dirname(dest), { recursive: true });
         await fs.rename(tmp, dest);
+        await removeAsset(null, file);
         await fs.rm(errorPath, { force: true });
+        await onReady?.(dest);
       } else {
         const reason =
           outcome.status === "error" ? outcome.error : outcome.status === "limit" ? outcome.reason : outcome.status;
@@ -328,16 +397,20 @@ export async function generateModelImage(plateId: string, srcPath: string, filen
       await fs.writeFile(errorPath, String(err)).catch(() => undefined);
     } finally {
       await fs.rm(tmp, { force: true }).catch(() => undefined);
-      imagesInFlight.delete(plateId);
+      imagesInFlight.delete(key);
     }
   });
 }
 
 /** "unsupported" is a file the renderer read but couldn't draw, e.g. a 3MF layout it doesn't know. */
-export function modelImageState(plateId: string): "ready" | "generating" | "failed" | "unsupported" {
-  if (fsSync.existsSync(modelImagePath(plateId))) return "ready";
-  if (imagesInFlight.has(plateId)) return "generating";
-  const errorPath = modelImageErrorPath(plateId);
+export function modelImageState(
+  plateId: string,
+  home: AssetHome,
+  kind: ModelImageKind = "render",
+): "ready" | "generating" | "failed" | "unsupported" {
+  if (assetExists(home, plateRenderFile(plateId, MODEL_IMAGE_KINDS[kind].file))) return "ready";
+  if (imagesInFlight.has(`${kind}:${plateId}`)) return "generating";
+  const errorPath = modelImageErrorPath(plateId, kind);
   if (!recentlyFailed(plateId, errorPath)) return "generating";
   try {
     return fsSync.readFileSync(errorPath, "utf-8") === UNSUPPORTED_MARKER ? "unsupported" : "failed";

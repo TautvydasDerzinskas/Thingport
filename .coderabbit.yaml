@@ -66,6 +66,13 @@ reviews:
         instance directly -- they message the background. Review permission changes in the manifest
         closely, and flag anything that would conflict with extension/PRIVACY.md or store policy.
 
+    - path: "extension/scripts/edge-certification-notes.txt"
+      instructions: |
+        Sent to Microsoft with every Edge submission; Edge rejects notes of 2,000 characters or more once the
+        placeholders are filled, and the template is already close to that. Any suggestion must keep the
+        file the same length or shorter (`npm run check:edge-notes` must pass): reword or drop text rather
+        than add it, and keep providers described as a group instead of listing each one.
+
     - path: "bridge/**"
       instructions: |
         Go helper that registers the `thingport://` protocol, downloads a file and launches a slicer on

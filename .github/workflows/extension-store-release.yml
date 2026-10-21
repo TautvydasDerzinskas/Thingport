@@ -201,9 +201,11 @@ jobs:
 
   # The builds for installing by hand, on the fixed "extension-latest" tag rather than GitHub's single
   # repo-wide "latest" release, which Bridge's download links rely on.
+  # Runs after publish-firefox, even if it failed: both sign with the same AMO key, and in parallel they hit
+  # AMO's rate limit.
   publish-latest:
-    needs: release
-    if: needs.release.outputs.version != ''
+    needs: [release, publish-firefox]
+    if: ${{ !cancelled() && needs.release.outputs.version != '' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -233,6 +235,9 @@ jobs:
           unzip -q dist/zips/thingport-grab-firefox.zip -d dist/firefox
           jq --arg run "$RUN_NUMBER" '.version = "\(.version).\($run)"' dist/firefox/manifest.json > manifest.json.tmp
           mv manifest.json.tmp dist/firefox/manifest.json
+      # AMO's throttle window is about a minute; let publish-firefox's requests age out first.
+      - name: Let AMO's rate limit recover
+        run: sleep 90
       - name: Sign (unlisted -- not published to addons.mozilla.org's public listing)
         env:
           WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}

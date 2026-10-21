@@ -34,10 +34,13 @@ function defaultPreviewMemoryMb(): number {
 export const STORAGE = path.resolve(process.env.FILE_STORAGE || "./storage");
 // Watched only while it exists, i.e. when the Docker setup mounts a host folder there.
 export const CONSUME_DIR = path.resolve(process.env.CONSUME_DIR || "/app/consume");
+// Where pictures and supporting files were kept, by id, before they moved in beside the model files
+// (services/modelAssets.ts); still read for models the storage move hasn't reached.
 export const THUMBS = path.join(STORAGE, "thumbs");
 export const BUNDLES = path.join(STORAGE, "bundles");
 export const PREVIEWS = path.join(STORAGE, "previews");
 export const DESCRIPTION_IMAGES = path.join(STORAGE, "description-images");
+// 3D previews, and the failure markers of renders.
 export const MODEL_PREVIEWS = path.join(STORAGE, "model-previews");
 // One picture per tag for the Tags page, built from its models' pictures.
 export const TAG_MOSAICS = path.join(STORAGE, "tag-mosaics");
@@ -140,5 +143,12 @@ export const DEFAULT_SYSTEM_NOTIFICATIONS_URL =
 export const SYSTEM_NOTIFICATIONS_URL = (
   process.env.SYSTEM_NOTIFICATIONS_URL ?? DEFAULT_SYSTEM_NOTIFICATIONS_URL
 ).trim();
+
+export const DEFAULT_RELEASE_NOTES_URL = "https://raw.githubusercontent.com/TautvydasDerzinskas/Thingport/main";
+// The repo files "What's new" reads: the CHANGELOG.md files and release-notes/latest-release-notes.json. Set to an
+// empty value to stop fetching them.
+export const RELEASE_NOTES_URL = (process.env.RELEASE_NOTES_URL ?? DEFAULT_RELEASE_NOTES_URL)
+  .trim()
+  .replace(/\/+$/, "");
 
 export const API_PORT = envInt("API_PORT", 8000);

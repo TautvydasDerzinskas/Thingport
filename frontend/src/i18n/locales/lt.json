@@ -190,7 +190,7 @@
       "backToProfile": "Grįžti į profilį",
       "apiToken": {
         "heading": "API raktas",
-        "description": "Leidžia kitoms programoms ir paslaugoms prisijungti prie jūsų Thingport bibliotekos tik skaitymo teisėmis.",
+        "description": "Leidžia kitoms programoms, paslaugoms ir DI asistentams prisijungti prie jūsų Thingport bibliotekos. Per API jis gali tik skaityti.",
         "created": "sukurtas {{date}}",
         "lastUsed": "paskutinį kartą naudotas {{when}}",
         "neverUsed": "dar nenaudotas",
@@ -198,13 +198,149 @@
         "regenerate": "Generuoti iš naujo",
         "revoke": "Atšaukti",
         "regenerateTitle": "Generuoti API raktą iš naujo?",
-        "regenerateMessage": "Dabartinis raktas iškart nustos veikti. Viskam, kas jį naudoja, reikės naujo rakto.",
+        "regenerateMessage": "Dabartinis raktas iškart nustos veikti. Viskam, kas jį naudoja, reikės naujo, o jo MCP įrankiai vėl bus tik skaitantys.",
         "revokeTitle": "Atšaukti API raktą?",
         "revokeMessage": "Raktas iškart nustos veikti, ir viskas, kas jį naudoja, praras prieigą prie jūsų bibliotekos.",
         "copyNow": "Nukopijuokite raktą dabar. Jis daugiau nebus rodomas.",
         "copy": "Kopijuoti",
         "copied": "Nukopijuota",
-        "failed": "Kažkas nepavyko su jūsų API raktu. Bandykite dar kartą."
+        "failed": "Kažkas nepavyko su jūsų API raktu. Bandykite dar kartą.",
+        "mcp": {
+          "heading": "MCP",
+          "subtitle": "Įrankiai, kuriuos gali naudoti DI asistentas",
+          "connect": "Kad prijungtumėte DI asistentą, pavyzdžiui Claude Code:",
+          "writes": "Keičia biblioteką",
+          "failed": "Nepavyko išsaugoti rakto MCP įrankių. Bandykite dar kartą.",
+          "tools": {
+            "search_models": {
+              "title": "Ieškoti modelių",
+              "description": "Rasti modelius pagal žodžius pavadinime, žymėse, autoriuje ar aprašyme."
+            },
+            "list_models": {
+              "title": "Modelių sąrašas",
+              "description": "Išvardyti modelius pagal žymę, kategoriją, kolekciją ar autorių."
+            },
+            "get_model": {
+              "title": "Modelio informacija",
+              "description": "Perskaityti modelio aprašymą, failus, žymes, autorių ir kolekcijas."
+            },
+            "list_collections": {
+              "title": "Kolekcijų sąrašas",
+              "description": "Matyti savo kolekcijas ir kiek modelių kiekvienoje."
+            },
+            "get_collection": {
+              "title": "Kolekcijos turinys",
+              "description": "Išvardyti vienos kolekcijos modelius."
+            },
+            "list_tags": {
+              "title": "Žymių sąrašas",
+              "description": "Matyti savo žymes, dažniausiai naudojamas pirmiau."
+            },
+            "list_categories": {
+              "title": "Kategorijų sąrašas",
+              "description": "Matyti savo kategorijas ir aplankus."
+            },
+            "get_author": {
+              "title": "Autoriaus informacija",
+              "description": "Sužinoti apie dizainerį ir matyti jo modelius jūsų bibliotekoje."
+            },
+            "library_stats": {
+              "title": "Bibliotekos statistika",
+              "description": "Jūsų suvestinė, daugiausiai peržiūrėti, spausdinti ir naujausi modeliai."
+            },
+            "get_import_status": {
+              "title": "Importo būsena",
+              "description": "Sekti importą, kuris dar vyksta."
+            },
+            "import_model": {
+              "title": "Importuoti modelį",
+              "description": "Importuoti modelį iš nuorodos, kaip + Pridėti > Importuoti."
+            },
+            "create_collection": {
+              "title": "Sukurti kolekciją",
+              "description": "Sukurti naują, tuščią kolekciją."
+            },
+            "add_to_collection": {
+              "title": "Įtraukti į kolekciją",
+              "description": "Įdėti bibliotekos modelius į vieną iš jūsų kolekcijų."
+            }
+          },
+          "writeConfirmTitle": "Leisti asistentui naudoti „{{tool}}“?",
+          "writeConfirmMessage": "Šis įrankis keičia jūsų biblioteką. Su šiuo raktu prijungtas asistentas galės jį naudoti kiekvieną kartą jūsų neklausdamas. Jis niekada netrina modelių.",
+          "writeConfirm": "Įjungti",
+          "adminOff": "Administratorius šiame Thingport išjungė MCP.",
+          "adminReadOnly": "Administratorius leidžia tik skaitančius įrankius.",
+          "copyCommand": "Kopijuoti komandą",
+          "reads": "Skaito biblioteką"
+        },
+        "rest": {
+          "heading": "Leidimai",
+          "subtitle": "Ką gali skaityti šį raktą naudojančios programos",
+          "description": "Ką kitos šį raktą naudojančios programos, pavyzdžiui, valdymo skydai ir paleidikliai, gali skaityti per REST API. Pakeitimai įsigalioja iškart, naujo rakto nereikia. Uždraudus tai, ką programa skaito, ta jos dalis nustos veikti.",
+          "failed": "Nepavyko išsaugoti rakto leidimų. Bandykite dar kartą.",
+          "groups": {
+            "library": "Jūsų biblioteka",
+            "media": "Paveikslėliai ir failai",
+            "other": "Kita"
+          },
+          "scopes": {
+            "search": {
+              "title": "Paieška",
+              "description": "Ieškoti modelių, kolekcijų ir žymų."
+            },
+            "models": {
+              "title": "Modeliai",
+              "description": "Modelių sąrašas ir jų informacija."
+            },
+            "dashboard": {
+              "title": "Valdymo skydas",
+              "description": "Bibliotekos suvestinė, populiariausi ir dažniausiai spausdinti, dienos modelis ir valdikliai."
+            },
+            "activity": {
+              "title": "Veikla",
+              "description": "Jūsų veiklos žemėlapis ir srautas."
+            },
+            "collections": {
+              "title": "Kolekcijos",
+              "description": "Jūsų kolekcijos ir kas jose yra."
+            },
+            "tags": {
+              "title": "Žymos",
+              "description": "Jūsų žymos ir kiek modelių turi kiekvieną."
+            },
+            "categories": {
+              "title": "Kategorijos",
+              "description": "Jūsų kategorijų medis."
+            },
+            "authors": {
+              "title": "Autoriai",
+              "description": "Autorių profiliai."
+            },
+            "images": {
+              "title": "Paveikslėliai",
+              "description": "Miniatiūros, atvaizdai ir peržiūros paveikslėliai."
+            },
+            "files": {
+              "title": "Modelių failai",
+              "description": "Atsisiųsti modelių failus ir 3D peržiūras."
+            },
+            "imports": {
+              "title": "Importai",
+              "description": "Vykdomų importų eiga."
+            },
+            "other": {
+              "title": "Visa kita",
+              "description": "Jūsų nustatymai, pranešimai, DI pasiūlymai ir visa, kas neišvardyta aukščiau."
+            }
+          }
+        },
+        "permissions": {
+          "title": "Rakto leidimai",
+          "rest": "Leidimai",
+          "mcp": "MCP leidimai",
+          "allow": "Leisti",
+          "deny": "Drausti"
+        }
       },
       "language": {
         "heading": "Kalba",
@@ -518,8 +654,7 @@
         "allHidden": "Visi valdymo skydo langeliai paslėpti.",
         "sections": {
           "layout": "Išdėstymas",
-          "panels": "Langeliai",
-          "thumbnails": "Miniatiūros"
+          "panels": "Langeliai"
         },
         "layoutSubtitle": "Pasirinkite, kaip išdėstyti valdymo skydo langelius. Spalvota dalis rodo, kur bus skaičiai.",
         "layouts": {
@@ -529,17 +664,6 @@
           "bottom": "Skaičiai apačioje, trys stulpeliai",
           "topTwo": "Skaičiai viršuje, du stulpeliai",
           "puzzle": "Dėlionė"
-        },
-        "thumbnailsSubtitle": "Paveikslėliai šalia modelių valdymo skydo sąrašuose.",
-        "thumbnails": {
-          "none": "Paslėpti",
-          "photos": "Nuotraukos",
-          "monochrome": "Vienspalvės"
-        },
-        "thumbnailsHelp": {
-          "none": "Sąrašuose rodomi tik pavadinimai.",
-          "photos": "Kiekvieno modelio peržiūros paveikslėlis.",
-          "monochrome": "Kiekvienas modelis nupieštas vienu tonu permatomame fone; serveris jį sukuria, kai prireikia pirmą kartą. Failai, kurių nupiešti negalima, rodo nuotrauką."
         }
       }
     },
@@ -739,7 +863,7 @@
         "heading": "Saugojimo struktūra",
         "subtitle": "Pasirinkite, kaip valdomi modelių failai tvarkomi diske.",
         "templateHeading": "Aplankų struktūra",
-        "templateDesc": "Aplankai, į kuriuos saugomi kiekvieno modelio failai, ir kaip failai pavadinami. Kiekvieno naudotojo failai pirmiausia būna jo paties aplanke, tad failas atsiduria, pvz., <naudotojas>/Props/Workshop/Cable clip/Cable clip.3mf. Skirtingose kategorijose du modeliai gali turėti tą patį pavadinimą, todėl kelyje turi būti Modelio ID arba ir Kategorija ar aplankas, ir Modelio pavadinimas – kitaip jų failai galėtų patekti į tą patį aplanką.",
+        "templateDesc": "Aplankai, į kuriuos saugomi kiekvieno modelio failai, ir kaip failai pavadinami. Kiekvieno naudotojo failai pirmiausia būna jo paties aplanke, tad failas atsiduria, pvz., <naudotojas>/Props/Workshop/Cable clip/Cable clip.3mf. Skirtingose kategorijose du modeliai gali turėti tą patį pavadinimą, todėl kelyje turi būti Modelio ID arba ir Kategorija ar aplankas, ir Modelio pavadinimas – kitaip jų failai galėtų patekti į tą patį aplanką. Papildomi modelio failai saugomi šalia jo failų, o paveikslėliai – greta esančiame aplanke Images.",
         "templateLabel": "Šablonas",
         "save": "Išsaugoti ir perkelti failus",
         "saving": "Saugoma…",
@@ -1267,6 +1391,8 @@
           "password_reset": "Atkūrė slaptažodį",
           "api_token_generated": "Sugeneravo API raktą",
           "api_token_revoked": "Atšaukė savo API raktą",
+          "api_token_mcp_tools_changed": "Pakeitė savo API rakto MCP įrankius",
+          "api_token_rest_scopes_changed": "Pakeitė savo API rakto leidimus",
           "user_invited": "Pakvietė naudotoją",
           "model_uploaded": "Modelis įkeltas",
           "model_imported": "Modelis importuotas",
@@ -1292,7 +1418,10 @@
           "sign_in_connected": "Prijungtas prisijungimo teikėjas",
           "sign_in_disconnected": "Atjungtas prisijungimo teikėjas",
           "grab_connected": "Prijungtas Thingport Grab",
-          "grab_disconnected": "Pašalintas Thingport Grab"
+          "grab_disconnected": "Pašalintas Thingport Grab",
+          "collections_merged": "Kolekcijos sujungtos",
+          "tags_merged": "Žymos sujungtos",
+          "mcp_access_changed": "Pakeitė MCP prieigą"
         },
         "authorsLinked": "Susieta modelių: {{count}}",
         "descriptionsRefetched": "{{email}} — pakeista aprašymų: {{updated}} iš {{total}}",
@@ -1310,7 +1439,8 @@
         "providerOff": "{{provider}} išjungtas",
         "aiRunSummary": "Patikrinta {{done}} iš {{total}} — pasiūlyta {{suggested}}, pritaikyta {{applied}}, nepavyko {{failed}}",
         "aiRunStopped": "(sustabdyta)",
-        "viaProvider": "per {{provider}}"
+        "viaProvider": "per {{provider}}",
+        "merged": "{{merged}} → {{name}}"
       },
       "rendering": {
         "heading": "Atvaizdavimas",
@@ -1330,6 +1460,56 @@
           "saveFailed": "Nepavyko išsaugoti atvaizdavimo nustatymų.",
           "illustrationBefore": "Detalus",
           "illustrationAfter": "Supaprastintas"
+        },
+        "quality": {
+          "heading": "Spausdinimo kokybės patikra",
+          "subtitle": "Ieškoti problemų, kurios gali sugadinti spaudinį.",
+          "infoTitle": "Kaip veikia kokybės patikra",
+          "infoWhen": "Modelis tikrinamas pirmą kartą jį atidarius ir tik tada. Niekada neatidaryti modeliai netikrinami.",
+          "infoChecks": "Patikra ieško skylių, sugadintų ar apverstų paviršių, atskirų nuolaužų, trūkstamų dalių ir neįtikėtino dydžio, pavyzdžiui, kai modelis eksportuotas netinkamais vienetais.",
+          "infoCost": "Patikra serveryje nuskaito visą modelį: daugumai modelių tai užtrunka kelias sekundes, labai detaliems – ilgiau.",
+          "label": "Tikrinti modelius dėl spausdinimo problemų",
+          "helpOn": "Įjungta: kiekvienas modelis patikrinamas pirmą kartą jį atidarius. Įjungta pagal numatytuosius nustatymus.",
+          "helpOff": "Išjungta: modeliai netikrinami.",
+          "loadFailed": "Nepavyko įkelti kokybės patikros nustatymų.",
+          "saveFailed": "Nepavyko išsaugoti kokybės patikros nustatymų.",
+          "configure": "Pasirinkti, ką tikrinti",
+          "dialogTitle": "Tikrinamos problemos",
+          "dialogHint": "Išjungta problema iš karto paslepiama visų modelių rezultatuose. Modeliai iš naujo netikrinami.",
+          "checks": {
+            "damaged": {
+              "title": "Sugadinti failai",
+              "desc": "Failai, kurių nepavyksta atidaryti arba kuriuose nėra nieko, ką būtų galima atspausdinti."
+            },
+            "missingParts": {
+              "title": "Trūkstamos dalys",
+              "desc": "3MF failas, nurodantis dalių failus, kurių jame nėra."
+            },
+            "openEdges": {
+              "title": "Skylės paviršiuje",
+              "desc": "Atviros briaunos: paviršius neuždaras, todėl pjaustyklei tenka spėti, kas yra viduje."
+            },
+            "nonManifoldEdges": {
+              "title": "Nedaugdarės briaunos",
+              "desc": "Briaunos, priklausančios daugiau nei dviem sienelėms, kurias pjaustyklės gali klaidingai interpretuoti."
+            },
+            "flippedFaces": {
+              "title": "Apverstos sienelės",
+              "desc": "Sienelės, atsuktos priešinga kryptimi nei kaimyninės."
+            },
+            "insideOut": {
+              "title": "Išverstas",
+              "desc": "Uždaras paviršius, atsuktas į vidų."
+            },
+            "fragments": {
+              "title": "Atskiros nuolaužos",
+              "desc": "Mažyčiai atskiri gabaliukai, plūduriuojantys atokiai nuo modelio."
+            },
+            "scale": {
+              "title": "Neįtikėtinas dydis",
+              "desc": "Mažiau nei 1 mm arba daugiau nei 2 m: tikriausiai eksportuotas netinkamais vienetais."
+            }
+          }
         }
       },
       "importQueue": {
@@ -1415,6 +1595,14 @@
         "folderSummary_many": "{{count}} failo · {{size}}",
         "folderSummary_other": "{{count}} failų · {{size}}",
         "ofModel": "modelis „{{name}}“",
+        "kind": {
+          "plate": "Modelio failas",
+          "file": "Papildomas failas",
+          "image": "Paveikslėlis",
+          "description": "Aprašymo paveikslėlis",
+          "thumb": "Miniatiūra",
+          "render": "Atvaizdas"
+        },
         "location": {
           "source": "Šaltinyje",
           "missing": "Trūksta"
@@ -1513,6 +1701,23 @@
         "saving": "Saugoma…",
         "saved": "Išsaugota.",
         "failed": "Nepavyko išsaugoti viešo adreso."
+      },
+      "mcp": {
+        "heading": "MCP įrankiai",
+        "subtitle": "Leiskite DI asistentams, pvz., Claude, ieškoti bibliotekoje ir ją tvarkyti naudotojo API raktu.",
+        "accessLabel": "Ką gali API raktai",
+        "help": "Kiekvienas naudotojas vis tiek pats pasirenka savo rakto įrankius šiose ribose. Biblioteką keičiantys įrankiai importuoja be captcha, kaip ir Thingport Grab.",
+        "failed": "Nepavyko išsaugoti MCP prieigos. Bandykite dar kartą.",
+        "levels": {
+          "off": "Išjungta",
+          "read": "Tik skaityti",
+          "write": "Skaityti ir keisti"
+        },
+        "levelHelp": {
+          "off": "Joks API raktas negali prisijungti per MCP.",
+          "read": "Raktai gali ieškoti ir skaityti savo biblioteką, bet niekada jos nekeisti.",
+          "write": "Raktai taip pat gali importuoti modelius ir dėti juos į kolekcijas, jei naudotojas tai įjungia."
+        }
       }
     },
     "download": {
@@ -1634,13 +1839,48 @@
     "appearance": {
       "title": "Išvaizda",
       "subtitle": "Pasirinkite, kaip Thingport atrodo ir veikia.",
+      "reset": {
+        "action": "Atkurti numatytuosius",
+        "title": "Atkurti išvaizdą?",
+        "message": "Tema, spalvos, modelių kortelės, skaidrių peržiūra užvedus ir autoriaus peržiūra grįš į numatytąsias reikšmes. Kalba liks tokia pati."
+      },
       "themes": {
         "light": "Šviesi",
         "dark": "Tamsi",
         "system": "Pagal sistemą"
       },
       "on": "Įjungta",
-      "off": "Išjungta"
+      "off": "Išjungta",
+      "accent": "Akcento spalva",
+      "accentFailed": "Nepavyko išsaugoti akcento spalvos.",
+      "themeFailed": "Nepavyko išsaugoti temos.",
+      "accents": {
+        "green": "Thingport žalia",
+        "blue": "Thingiverse mėlyna",
+        "orange": "Printables oranžinė",
+        "amber": "Thangs geltona",
+        "teal": "MyMiniFactory žydra",
+        "purple": "Cults3D violetinė",
+        "graphite": "Grafitas"
+      },
+      "cardPreview": {
+        "heading": "Modelių kortelės",
+        "images": "Nuotraukos",
+        "renders": "3D vaizdai",
+        "failed": "Nepavyko išsaugoti modelių kortelių pasirinkimo.",
+        "help": "Ką modelių kortelės rodo pirmiausia. Nuotraukos: paveikslėliai, su kuriais modelis atkeliavo, arba 3D vaizdas, jei jų nėra. 3D vaizdai: kiekvieno modelio vaizdas jūsų atvaizdo spalva arba jo nuotraukos, jei failo nupiešti nepavyksta."
+      },
+      "hoverSlideshow": {
+        "heading": "Skaidrės užvedus",
+        "failed": "Nepavyko išsaugoti skaidrių užvedus nustatymo.",
+        "help": "Užvedus žymeklį ant modelio kortelės, joje keičiasi modelio nuotraukos."
+      },
+      "renderColor": {
+        "heading": "Atvaizdo spalva",
+        "light": "Šviesiai pilka (be atspalvio)",
+        "failed": "Nepavyko išsaugoti atvaizdo spalvos.",
+        "help": "Spalva, kuria piešiami sugeneruoti 3D atvaizdai ir 3D peržiūra. Pasirinkus akcento spalvą, ji pasikeičia kartu; čia galite ją pakeisti atskirai."
+      }
     },
     "configuration": {
       "title": "Konfigūracija",
@@ -2001,6 +2241,66 @@
           ]
         }
       }
+    },
+    "whatsNew": {
+      "label": "Kas naujo",
+      "versionLabel": "Thingport {{version}}",
+      "kinds": {
+        "breaking": "Nesuderinami pakeitimai",
+        "feature": "Naujos funkcijos",
+        "improvement": "Patobulinimai",
+        "fix": "Pataisymai"
+      },
+      "showAll": "Rodyti visus ({{total}})",
+      "showFewer": "Rodyti mažiau",
+      "learnMore": "Daugiau",
+      "allReleases": "Visos versijos",
+      "gotIt": "Supratau",
+      "unavailable": "Nepavyko įkelti versijos naujienų.",
+      "empty": "Šiai versijai naujienų dar nėra.",
+      "openGithub": "Atidaryti GitHub",
+      "zoom": "Padidinti ekrano vaizdą",
+      "highlight": "Svarbiausia"
+    },
+    "codeBlock": {
+      "copy": "Kopijuoti",
+      "copied": "Nukopijuota",
+      "copyFailed": "Čia nepavyko nukopijuoti. Tekstas pažymėtas: spauskite Ctrl+C arba ⌘C."
+    },
+    "mcpConnect": {
+      "open": "Kaip prijungti",
+      "title": "Prijunkite DI asistentą",
+      "intro": "Kiekvienas jungiasi savo API raktu, sukurtu <strong>Profilis → API raktas</strong>. Įrašykite jį vietoj <code>{{token}}</code>.",
+      "clientLabel": "DI asistentas",
+      "clients": {
+        "claudeCode": "Claude Code",
+        "claude": "Claude",
+        "chatgpt": "ChatGPT",
+        "codex": "Codex CLI",
+        "editors": "Cursor ir VS Code"
+      },
+      "claudeCode": {
+        "step": "Paleiskite terminale:"
+      },
+      "claude": {
+        "step": "Claude atidarykite <strong>Settings → Connectors</strong>, pasirinkite <strong>Add custom connector</strong> ir įveskite šį adresą. Prie užklausos antraščių pridėkite šią Authorization antraštę:",
+        "note": "Claude jungiasi iš Anthropic serverių, todėl Thingport turi būti pasiekiamas internetu per HTTPS. Užklausos antraštės yra beta versijos ir gali priklausyti nuo plano."
+      },
+      "chatgpt": {
+        "step": "ChatGPT įjunkite <strong>Developer mode</strong> skiltyje <strong>Settings → Apps & Connectors</strong>, sukurkite jungtį su šiuo adresu ir autentifikavimui pasirinkite <strong>Token</strong>:",
+        "note": "ChatGPT jungiasi iš OpenAI serverių, todėl Thingport turi būti pasiekiamas internetu per HTTPS. Token parinktis priklauso nuo plano; jei jos nėra, naudokite Codex CLI."
+      },
+      "codex": {
+        "step": "Paleiskite terminale:",
+        "note": "THINGPORT_TOKEN turi būti nustatytas apvalkale, iš kurio paleidžiamas Codex."
+      },
+      "editors": {
+        "cursor": "Cursor: pridėkite tai į <code>~/.cursor/mcp.json</code>.",
+        "vscode": "VS Code: pridėkite tai į darbo srities <code>.vscode/mcp.json</code>.",
+        "note": "Kiti klientai veikia taip pat, jei palaiko Streamable HTTP ir leidžia nustatyti antraštę."
+      },
+      "guide": "MCP vadovas",
+      "close": "Uždaryti"
     }
   },
   "common": {
@@ -2679,16 +2979,7 @@
         "spin": "Sukimas",
         "zoomIn": "Priartinti",
         "zoomOut": "Nutolinti",
-        "colorLabel": "Modelio spalva: {{name}}",
-        "colors": {
-          "red": "Raudona",
-          "orange": "Oranžinė",
-          "yellow": "Geltona",
-          "green": "Žalia",
-          "blue": "Mėlyna",
-          "purple": "Violetinė",
-          "grey": "Pilka"
-        }
+        "color": "Modelio spalva"
       },
       "downloadFailed": "Nepavyko atsisiųsti. Bandykite dar kartą.",
       "deleteFailed": "Nepavyko ištrinti modelio.",
@@ -2746,7 +3037,90 @@
       "sizeHint": "Bendras visų šio modelio failų dydis saugykloje",
       "author": "Autorius",
       "downloadModelFiles": "Atsisiųsti modelio failus",
-      "imported": "Importuota {{date}}"
+      "imported": "Importuota {{date}}",
+      "quality": {
+        "scanning": "Tikrinama spausdinimo kokybė…",
+        "scanningFiles": "Patikrinta failų: {{done}} iš {{total}}",
+        "doneGood": "Tinka spausdinti",
+        "doneIssues": "Rasta problemų",
+        "toastIssues": "Šis modelis gali būti prastai atspausdintas. Žr. įspėjimą šalia 3D peržiūros.",
+        "badgeGood": "Kokybės patikra sėkminga",
+        "badgeIssues": "Rasta spausdinimo problemų",
+        "dialogTitle": "Spausdinimo kokybė",
+        "noIssues": "Problemų nerasta",
+        "skipped": "Nepatikrinta: failas per didelis arba jo struktūros patikra negali nuskaityti.",
+        "notYet": "Dar nepatikrinta.",
+        "slicerNote": "Pjaustyklės daug smulkių problemų ištaiso pačios. Prieš spausdindami peržiūrėkite supjaustytą modelį.",
+        "triangles_one": "{{formatted}} trikampis",
+        "triangles_few": "{{formatted}} trikampiai",
+        "triangles_other": "{{formatted}} trikampių",
+        "bodies_one": "{{count}} kūnas",
+        "bodies_few": "{{count}} kūnai",
+        "bodies_other": "{{count}} kūnų",
+        "size": "{{x}} × {{y}} × {{z}} mm",
+        "issues": {
+          "unreadable": {
+            "title": "Failo nepavyksta atidaryti",
+            "desc": "Failas sugadintas arba tai nėra tinkamas modelio failas."
+          },
+          "empty": {
+            "title": "Nėra geometrijos",
+            "desc": "Faile nėra nieko, ką būtų galima atspausdinti."
+          },
+          "missingParts": {
+            "title_one": "Trūksta {{count}} dalies",
+            "title_few": "Trūksta {{count}} dalių",
+            "title_other": "Trūksta {{count}} dalių",
+            "desc": "Modelis nurodo dalių failus, kurių jame nėra, todėl dalies detalių trūks."
+          },
+          "openEdges": {
+            "title": "Skylės paviršiuje",
+            "desc_one": "{{count}} atvira briauna: paviršius neuždaras, todėl pjaustyklei tenka spėti, kas yra viduje.",
+            "desc_few": "{{count}} atviros briaunos: paviršius neuždaras, todėl pjaustyklei tenka spėti, kas yra viduje.",
+            "desc_other": "{{count}} atvirų briaunų: paviršius neuždaras, todėl pjaustyklei tenka spėti, kas yra viduje."
+          },
+          "nonManifoldEdges": {
+            "title": "Nedaugdarės briaunos",
+            "desc_one": "{{count}} briauna priklauso daugiau nei dviem sienelėms, todėl pjaustyklės gali ją klaidingai interpretuoti.",
+            "desc_few": "{{count}} briaunos priklauso daugiau nei dviem sienelėms, todėl pjaustyklės gali jas klaidingai interpretuoti.",
+            "desc_other": "{{count}} briaunų priklauso daugiau nei dviem sienelėms, todėl pjaustyklės gali jas klaidingai interpretuoti."
+          },
+          "flippedFaces": {
+            "title": "Apverstos sienelės",
+            "desc_one": "{{count}} briauna skiria priešingomis kryptimis atsuktas sieneles, todėl dalys gali būti tuščiavidurės arba dingti.",
+            "desc_few": "{{count}} briaunos skiria priešingomis kryptimis atsuktas sieneles, todėl dalys gali būti tuščiavidurės arba dingti.",
+            "desc_other": "{{count}} briaunų skiria priešingomis kryptimis atsuktas sieneles, todėl dalys gali būti tuščiavidurės arba dingti."
+          },
+          "insideOut": {
+            "title": "Išverstas",
+            "desc": "Paviršius atsuktas į vidų. Kai kurios pjaustyklės jį laiko tuščiu."
+          },
+          "fragments": {
+            "title_one": "{{count}} atskira nuolauža",
+            "title_few": "{{count}} atskiros nuolaužos",
+            "title_other": "{{count}} atskirų nuolaužų",
+            "desc": "Mažyčiai atskiri gabaliukai plūduriuoja atokiai nuo modelio. Jie atsispausdina kaip gumulėliai arba visai neatsispausdina."
+          },
+          "tooSmall": {
+            "title": "Labai mažas",
+            "desc": "Mažiau nei 1 mm: tikriausiai eksportuotas netinkamais vienetais. Padidinkite jį pjaustyklėje."
+          },
+          "tooLarge": {
+            "title": "Labai didelis",
+            "desc": "Daugiau nei 2 m: tikriausiai eksportuotas netinkamais vienetais. Sumažinkite jį pjaustyklėje."
+          }
+        },
+        "toastMinor": "Šiame modelyje rasta smulkių spausdinimo problemų. Pjaustyklės paprastai su jomis susitvarko.",
+        "severity": {
+          "critical": "Kritinė",
+          "criticalHint": "Spausdinimas nepavyks arba spaudinys bus nepilnas.",
+          "major": "Rimta",
+          "majorHint": "Modelis greičiausiai bus atspausdintas su defektais.",
+          "minor": "Smulki",
+          "minorHint": "Pjaustyklės paprastai susitvarko pačios arba tai greitai pataisoma jose."
+        },
+        "manageSettings": "Tvarkyti kokybės patikrą"
+      }
     },
     "edit": {
       "title": "Redaguoti modelį",
@@ -2977,6 +3351,36 @@
             "myminifactory": "Thingport neberodys jūsų MyMiniFactory kolekcijų, kol vėl nurodysite vartotojo vardą. Jau nustatyti sinchronizavimai išsaugos savo modelius."
           }
         }
+      },
+      "sortByModels": "Daugiausia modelių",
+      "selection": {
+        "enter": "Žymėti kolekcijas",
+        "toolbar": "Veiksmai su pažymėtomis kolekcijomis",
+        "builtIn": "Įtaisytųjų kolekcijų negalima sujungti ar ištrinti",
+        "bookmarked_one": "Įsiminta {{count}} kolekcija",
+        "bookmarked_few": "Įsimintos {{count}} kolekcijos",
+        "bookmarked_many": "Įsiminta {{count}} kolekcijos",
+        "bookmarked_other": "Įsiminta {{count}} kolekcijų",
+        "unbookmarked_one": "Iš įsimintų pašalinta {{count}} kolekcija",
+        "unbookmarked_few": "Iš įsimintų pašalintos {{count}} kolekcijos",
+        "unbookmarked_many": "Iš įsimintų pašalinta {{count}} kolekcijos",
+        "unbookmarked_other": "Iš įsimintų pašalinta {{count}} kolekcijų",
+        "deleteTitle_one": "Ištrinti {{count}} kolekciją?",
+        "deleteTitle_few": "Ištrinti {{count}} kolekcijas?",
+        "deleteTitle_many": "Ištrinti {{count}} kolekcijos?",
+        "deleteTitle_other": "Ištrinti {{count}} kolekcijų?",
+        "deleteMessage_one": "Joje esantys modeliai liks. To atšaukti negalima.",
+        "deleteMessage_few": "Jose esantys modeliai liks. To atšaukti negalima.",
+        "deleteMessage_many": "Jose esantys modeliai liks. To atšaukti negalima.",
+        "deleteMessage_other": "Jose esantys modeliai liks. To atšaukti negalima.",
+        "deleted_one": "Ištrinta {{count}} kolekcija",
+        "deleted_few": "Ištrintos {{count}} kolekcijos",
+        "deleted_many": "Ištrinta {{count}} kolekcijos",
+        "deleted_other": "Ištrinta {{count}} kolekcijų",
+        "merged_one": "{{count}} kolekcija sujungta į „{{name}}“",
+        "merged_few": "{{count}} kolekcijos sujungtos į „{{name}}“",
+        "merged_many": "{{count}} kolekcijos sujungta į „{{name}}“",
+        "merged_other": "{{count}} kolekcijų sujungta į „{{name}}“"
       }
     },
     "tags": {
@@ -3003,6 +3407,39 @@
         "title": "{{name}}",
         "subtitle": "Žyma",
         "empty": "Su šia žyma modelių kol kas nėra."
+      },
+      "selection": {
+        "enter": "Žymėti žymas",
+        "toolbar": "Veiksmai su pažymėtomis žymomis",
+        "selectAllLoaded": "Pažymėti visas įkeltas",
+        "bookmarked_one": "Įsiminta {{count}} žyma",
+        "bookmarked_few": "Įsimintos {{count}} žymos",
+        "bookmarked_many": "Įsiminta {{count}} žymos",
+        "bookmarked_other": "Įsiminta {{count}} žymų",
+        "unbookmarked_one": "Iš įsimintų pašalinta {{count}} žyma",
+        "unbookmarked_few": "Iš įsimintų pašalintos {{count}} žymos",
+        "unbookmarked_many": "Iš įsimintų pašalinta {{count}} žymos",
+        "unbookmarked_other": "Iš įsimintų pašalinta {{count}} žymų",
+        "deleteTitle_one": "Ištrinti {{count}} žymą?",
+        "deleteTitle_few": "Ištrinti {{count}} žymas?",
+        "deleteTitle_many": "Ištrinti {{count}} žymos?",
+        "deleteTitle_other": "Ištrinti {{count}} žymų?",
+        "deleteMessage_one": "Žyma bus pašalinta iš visų ja pažymėtų modelių. Patys modeliai liks.",
+        "deleteMessage_few": "Žymos bus pašalintos iš visų jomis pažymėtų modelių. Patys modeliai liks.",
+        "deleteMessage_many": "Žymos bus pašalintos iš visų jomis pažymėtų modelių. Patys modeliai liks.",
+        "deleteMessage_other": "Žymos bus pašalintos iš visų jomis pažymėtų modelių. Patys modeliai liks.",
+        "deleteConfirm_one": "Ištrinti žymą",
+        "deleteConfirm_few": "Ištrinti žymas",
+        "deleteConfirm_many": "Ištrinti žymas",
+        "deleteConfirm_other": "Ištrinti žymas",
+        "deleted_one": "Ištrinta {{count}} žyma",
+        "deleted_few": "Ištrintos {{count}} žymos",
+        "deleted_many": "Ištrinta {{count}} žymos",
+        "deleted_other": "Ištrinta {{count}} žymų",
+        "merged_one": "{{count}} žyma sujungta į „{{name}}“",
+        "merged_few": "{{count}} žymos sujungtos į „{{name}}“",
+        "merged_many": "{{count}} žymos sujungta į „{{name}}“",
+        "merged_other": "{{count}} žymų sujungta į „{{name}}“"
       }
     },
     "downloadZip": {
@@ -3024,6 +3461,7 @@
       "createCategoryFailed": "Nepavyko sukurti kategorijos. Bandykite dar kartą.",
       "renameCategoryFailed": "Nepavyko pervadinti kategorijos. Bandykite dar kartą.",
       "deleteCategoryFailed": "Nepavyko ištrinti kategorijos. Bandykite dar kartą.",
+      "resetCategoriesFailed": "Nepavyko atkurti kategorijų. Bandykite dar kartą.",
       "reorderCategoryFailed": "Nepavyko pakeisti kategorijų tvarkos. Bandykite dar kartą.",
       "moveCategoryFailed": "Nepavyko perkelti subkategorijos. Bandykite dar kartą.",
       "updateCategoryMetaFailed": "Nepavyko išsaugoti kategorijos informacijos. Bandykite dar kartą.",
@@ -3037,9 +3475,31 @@
       "empty": "Kol kas nėra kategorijų",
       "noSubcategories": "Kol kas nėra subkategorijų",
       "manageTooltip": "Tvarkyti kategorijas",
+      "reset": {
+        "title": "Atkurti numatytąsias kategorijas?",
+        "added": "Pridėta",
+        "restored": "Atkurta",
+        "removed": "Ištrinta",
+        "modelsUncategorized_one": "{{count}} modelis liks be kategorijos.",
+        "modelsUncategorized_few": "{{count}} modeliai liks be kategorijos.",
+        "modelsUncategorized_other": "{{count}} modelių liks be kategorijos.",
+        "modelsMoved_one": "{{count}} modelis bus perkeltas į artimiausią išlikusią tėvinę kategoriją.",
+        "modelsMoved_few": "{{count}} modeliai bus perkelti į artimiausią išlikusią tėvinę kategoriją.",
+        "modelsMoved_other": "{{count}} modelių bus perkelta į artimiausią išlikusią tėvinę kategoriją.",
+        "modelsRenamed_one": "{{count}} perkeltas modelis bus pervadintas, kad nesikartotų pavadinimas.",
+        "modelsRenamed_few": "{{count}} perkelti modeliai bus pervadinti, kad nesikartotų pavadinimai.",
+        "modelsRenamed_other": "{{count}} perkeltų modelių bus pervadinta, kad nesikartotų pavadinimai.",
+        "modelCount_one": "{{count}} modelis",
+        "modelCount_few": "{{count}} modeliai",
+        "modelCount_other": "{{count}} modelių",
+        "noop": "Jūsų kategorijos jau atitinka numatytąsias.",
+        "foldersKept": "Aplankai nekeičiami.",
+        "previewFailed": "Nepavyko nustatyti, ką pakeistų atkūrimas."
+      },
       "manager": {
         "title": "Tvarkyti kategorijas",
         "addCategory": "Pridėti kategoriją",
+        "reset": "Atkurti numatytąsias",
         "addSubcategory": "Pridėti subkategoriją",
         "noCategories": "Kol kas nėra kategorijų. Pridėkite pirmąją.",
         "confirmDeleteCategory": "Ištrinti „{{name}}“? Joje esantys modeliai taps nepriskirti.",
@@ -3139,6 +3599,62 @@
       "removedFromCollection_one": "{{count}} modelis pašalintas iš kolekcijos",
       "removedFromCollection_few": "{{count}} modeliai pašalinti iš kolekcijos",
       "removedFromCollection_other": "{{count}} modelių pašalinta iš kolekcijos"
+    },
+    "merge": {
+      "action": "Sujungti",
+      "needTwo": "Sujungimui pažymėkite bent 2",
+      "previewFailed": "Nepavyko apskaičiuoti, ką pakeis sujungimas. Bandykite dar kartą.",
+      "failed": "Nepavyko sujungti. Bandykite dar kartą.",
+      "keep": "Sujungti į",
+      "kept": "Lieka",
+      "after": "Po sujungimo",
+      "modelUnit_one": "modelis",
+      "modelUnit_few": "modeliai",
+      "modelUnit_many": "modelio",
+      "modelUnit_other": "modelių",
+      "new_one": "naujas",
+      "new_few": "nauji",
+      "new_many": "naujo",
+      "new_other": "naujų",
+      "quoted": "„{{name}}“",
+      "andMore_one": "dar {{count}}",
+      "andMore_few": "dar {{count}}",
+      "andMore_many": "dar {{count}}",
+      "andMore_other": "dar {{count}}",
+      "syncsWith": "sinchronizuojama su {{provider}}",
+      "bookmarkMoves": "Įsiminimas pereina į „{{name}}“.",
+      "cantUndo": "Sujungimo atšaukti negalima.",
+      "mergeInto": "Sujungti į „{{name}}“",
+      "collections": {
+        "title_one": "Sujungti {{count}} kolekciją",
+        "title_few": "Sujungti {{count}} kolekcijas",
+        "title_many": "Sujungti {{count}} kolekcijos",
+        "title_other": "Sujungti {{count}} kolekcijų",
+        "keepHelp": "Pasirinkite, kurią kolekciją palikti. Kitų kolekcijų modeliai bus pridėti prie jos, o kitos kolekcijos ištrintos.",
+        "goes": "Ištrinama",
+        "othersGo_one": "{{names}} bus ištrinta. Jos modeliai liks: jie pereis į „{{name}}“.",
+        "othersGo_few": "{{names}} bus ištrintos. Jų modeliai liks: jie pereis į „{{name}}“.",
+        "othersGo_many": "{{names}} bus ištrintos. Jų modeliai liks: jie pereis į „{{name}}“.",
+        "othersGo_other": "{{names}} bus ištrintos. Jų modeliai liks: jie pereis į „{{name}}“.",
+        "keepsOwn": "„{{name}}“ išlaiko savo pavadinimą, aprašymą, žymas ir sinchronizavimą.",
+        "syncStops_one": "{{names}} sinchronizuojama su tiekėjo kolekcija, ir šis sinchronizavimas sustos. Palikite ją, jei norite toliau sinchronizuoti.",
+        "syncStops_few": "{{names}} sinchronizuojamos su tiekėjų kolekcijomis, ir šie sinchronizavimai sustos. Palikite vieną iš jų, jei norite toliau ją sinchronizuoti.",
+        "syncStops_many": "{{names}} sinchronizuojamos su tiekėjų kolekcijomis, ir šie sinchronizavimai sustos. Palikite vieną iš jų, jei norite toliau ją sinchronizuoti.",
+        "syncStops_other": "{{names}} sinchronizuojamos su tiekėjų kolekcijomis, ir šie sinchronizavimai sustos. Palikite vieną iš jų, jei norite toliau ją sinchronizuoti."
+      },
+      "tags": {
+        "title_one": "Sujungti {{count}} žymą",
+        "title_few": "Sujungti {{count}} žymas",
+        "title_many": "Sujungti {{count}} žymos",
+        "title_other": "Sujungti {{count}} žymų",
+        "keepHelp": "Pasirinkite, kurią žymą palikti. Visi modeliai su kitomis žymomis gaus ją, o kitos žymos bus pašalintos.",
+        "goes": "Pašalinama",
+        "othersGo_one": "{{names}} bus pašalinta. Jos modeliai bus pažymėti „{{name}}“.",
+        "othersGo_few": "{{names}} bus pašalintos. Jų modeliai bus pažymėti „{{name}}“.",
+        "othersGo_many": "{{names}} bus pašalintos. Jų modeliai bus pažymėti „{{name}}“.",
+        "othersGo_other": "{{names}} bus pašalintos. Jų modeliai bus pažymėti „{{name}}“.",
+        "keepsOwn": "Modeliai, jau pažymėti „{{name}}“, nesikeičia."
+      }
     }
   }
 }

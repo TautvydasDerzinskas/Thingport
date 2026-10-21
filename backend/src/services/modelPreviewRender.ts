@@ -517,6 +517,8 @@ type ParsedModel = {
   plateThumbnails: Map<number, string>;
   filamentColors: string[];
   buildVolume: { x: number; y: number };
+  /** Part files the main model points to that aren't in the archive. */
+  missingParts: number;
 };
 
 const MAIN_MODEL_PATH = "3D/3dmodel.model";
@@ -596,12 +598,14 @@ async function parseThreeMfFast(srcPath: string): Promise<ParsedModel | PreviewR
   }
 
   const externalModelCache = new Map<string, string | null>();
+  let missingParts = 0;
   const loadExternalModel = async (rawPath: string): Promise<string | null> => {
     const normalized = rawPath.startsWith("/") ? rawPath.slice(1) : rawPath;
     if (externalModelCache.has(normalized)) return externalModelCache.get(normalized) ?? null;
     const buf = await readZipEntry(srcPath, normalized, MAX_MODEL_ENTRY_BYTES);
     const text = buf ? buf.toString("utf-8") : null;
     externalModelCache.set(normalized, text);
+    if (text === null) missingParts++;
     return text;
   };
 
@@ -625,6 +629,7 @@ async function parseThreeMfFast(srcPath: string): Promise<ParsedModel | PreviewR
     plateThumbnails,
     filamentColors,
     buildVolume: buildVolume ?? { x: 256, y: 256 },
+    missingParts,
   };
 }
 
@@ -727,6 +732,17 @@ export async function loadThreeMfGroup(srcPath: string): Promise<import("three")
   return buildGlbGroup(parsed);
 }
 
+/** Each placed object's meshes once, untransformed, for the printability check (meshQuality.ts). */
+export async function loadThreeMfMeshes(
+  srcPath: string,
+): Promise<{ meshes: { vertices: Float32Array; triangles: Uint32Array }[]; missingParts: number } | PreviewRefusal> {
+  const parsed = await parseThreeMfFast(srcPath);
+  if (typeof parsed === "string") return parsed;
+  const placed = new Set(parsed.buildItems.map((item) => item.objectId));
+  const meshes = [...placed].flatMap((id) => parsed.objects.get(id)?.meshes ?? []);
+  return { meshes, missingParts: parsed.missingParts };
+}
+
 export type SimplifiedSummary = { from: number; to: number };
 
 function meshTriangleCount(mesh: import("three").Mesh): number {
@@ -734,8 +750,11 @@ function meshTriangleCount(mesh: import("three").Mesh): number {
 }
 
 /** Simplifies merged meshes in place when their total exceeds `budget` triangles; null when
- *  already within budget. */
-async function simplifyGroupMeshes(root: import("three").Group, budget: number): Promise<SimplifiedSummary | null> {
+ *  already within budget. Only indexed meshes are simplified. */
+export async function simplifyGroupMeshes(
+  root: import("three").Group,
+  budget: number,
+): Promise<SimplifiedSummary | null> {
   const THREE = await import("three");
   const meshes: InstanceType<typeof THREE.Mesh>[] = [];
   root.traverse((obj) => {

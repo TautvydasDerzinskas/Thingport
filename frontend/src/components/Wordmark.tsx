@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import { keyframes } from "@emotion/react";
 import Box from "@mui/material/Box";
-import { useTheme } from "@mui/material/styles";
-import lockupColor from "../assets/logos/thingport-lockup-compact-color.svg";
-import lockupOnDark from "../assets/logos/thingport-lockup-compact-on-dark.svg";
+import { useBrandLockup, useTintedSvg } from "../hooks/useBrandLogo";
 import { seasonFor } from "../utils/season";
 
 type Props = {
@@ -18,8 +16,12 @@ const HEIGHTS: Record<NonNullable<Props["size"]>, string> = {
   sm: "1.125rem",
 };
 
-// Each season's overlay is named after it, in lower case; only today's is loaded.
-export const SEASONAL_OVERLAYS = import.meta.glob<string>("../assets/logos/seasonal/*.svg", { import: "default" });
+// Each season's overlay is named after it, in lower case; only today's is loaded. As text, so its Thingport green
+// can take the accent too; the colours it dresses the mark in, like Šaltibarščių diena's pink, stay its own.
+export const SEASONAL_OVERLAYS = import.meta.glob<string>("../assets/logos/seasonal/*.svg", {
+  query: "?raw",
+  import: "default",
+});
 
 // Upside down all day, with a wobble now and then as if it noticed.
 const upsideDown = keyframes`
@@ -31,17 +33,17 @@ const upsideDown = keyframes`
 `;
 
 export default function Wordmark({ size = "md", seasonal = false }: Props) {
-  const theme = useTheme();
   const [season] = useState(() => (seasonal ? seasonFor(new Date()) : null));
-  const [overlay, setOverlay] = useState<string | null>(null);
-  const src = theme.palette.mode === "dark" ? lockupOnDark : lockupColor;
+  const [overlaySvg, setOverlaySvg] = useState<string | null>(null);
+  const overlay = useTintedSvg(overlaySvg);
+  const src = useBrandLockup();
   const height = HEIGHTS[size];
 
   useEffect(() => {
     const load = season && SEASONAL_OVERLAYS[`../assets/logos/seasonal/${season.toLowerCase()}.svg`];
     if (!load) return;
     let active = true;
-    void load().then((url) => active && setOverlay(url));
+    void load().then((svg) => active && setOverlaySvg(svg));
     return () => {
       active = false;
     };

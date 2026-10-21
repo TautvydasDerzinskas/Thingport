@@ -19,6 +19,24 @@ Every user's files sit in a folder of their own first, so a file ends up at, for
 `<user>/Props/Workshop/Cable clip/Cable clip.3mf`. The layout can also be typed as text, such as
 `{category-or-folder}/{model}/{filename}`.
 
+Everything else that belongs to a model sits beside its files: supporting files and prepared prints next to the model
+files, and its pictures (gallery and description images, thumbnails and renders) in an `Images` folder next to them:
+
+```
+<user>/Props/Workshop/Cable clip/
+  Cable clip.3mf
+  Assembly.pdf
+  Images/
+    <image>.jpg
+    Description/
+    Thumbnails/
+    Renders/
+```
+
+With a layout that keeps several models in one folder, such as `{category-or-folder}/{model} - {filename}`, the
+pictures folder takes the model's name too: `Cable clip - Images`. Installations from before this layout have their
+pictures and supporting files moved in beside the model files in the background the first time they start.
+
 Change the layout later and existing files are moved to match in the background, with progress shown as they go.
 Renaming a model renames its files too, so the folders stay readable. **Browse files** shows where each model's files
 are now.

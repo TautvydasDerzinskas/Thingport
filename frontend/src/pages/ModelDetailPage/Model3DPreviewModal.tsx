@@ -26,7 +26,10 @@ import ModelViewer, {
   type RenderStyle,
 } from "../../components/media/ModelViewer";
 import type { PlateSummary } from "../../utils/bambuThreeMf";
-import PreviewToolbar, { DEFAULT_PREVIEW_COLOR } from "./PreviewToolbar";
+import PreviewToolbar from "./PreviewToolbar";
+import type { RenderColor } from "../../constants/settingsOptions";
+import { useRenderColor } from "../../hooks/useAccentColor";
+import { renderSwatch } from "../../theme";
 import { fileRowText } from "./fileRowText";
 
 // Light mode keeps a product-shot style grey; dark mode uses the page background so it doesn't glare.
@@ -65,7 +68,10 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
   // Lives here so it survives the viewer remounting per file.
   const viewerRef = useRef<ModelViewerHandle>(null);
   const [renderStyle, setRenderStyle] = useState<RenderStyle>("solid");
-  const [modelColor, setModelColor] = useState<string>(DEFAULT_PREVIEW_COLOR);
+  // Follows the render colour until another is picked for this viewing.
+  const renderColor = useRenderColor();
+  const [pickedColor, setPickedColor] = useState<RenderColor | null>(null);
+  const modelColor = pickedColor ?? renderColor;
   const [cameraView, setCameraView] = useState<CameraView>("topFront");
   const [showGrid, setShowGrid] = useState(true);
   const [spin, setSpin] = useState(true);
@@ -219,7 +225,7 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
               ext={ext}
               initialCameraView={cameraView}
               theme={themeMode}
-              colorOverride={modelColor}
+              colorOverride={renderSwatch(modelColor).color}
               renderStyle={renderStyle}
               showBuildPlate={showGrid}
               buildPlateForMeshes
@@ -262,7 +268,7 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
             renderStyle={renderStyle}
             onRenderStyleChange={setRenderStyle}
             color={modelColor}
-            onColorChange={setModelColor}
+            onColorChange={setPickedColor}
             showGrid={showGrid}
             onShowGridChange={setShowGrid}
             spin={spin}

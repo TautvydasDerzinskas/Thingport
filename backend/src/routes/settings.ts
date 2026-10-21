@@ -13,6 +13,8 @@ import {
   getAuthTokenTtl,
   getPreviewMode,
   getSimplifyPreviews,
+  getQualityChecks,
+  getQualityChecksOff,
   getSmtpSettings,
   getFlaresolverrUrl,
   getPublicUrl,
@@ -25,6 +27,8 @@ import {
   setAuthTokenTtl,
   setPreviewMode,
   setSimplifyPreviews,
+  setQualityChecks,
+  setQualityChecksOff,
   setSmtpSettings,
   setThingiverseAccessToken,
   getMyminifactoryApiKey,
@@ -36,6 +40,9 @@ import {
   setAiDescriptionPrefs,
   type AiCategorizationPrefs,
   type AiDescriptionPrefs,
+  getMcpAccess,
+  setMcpAccess,
+  MCP_ACCESS_LEVELS,
 } from "../services/settingsService";
 import { getDatabaseInfo, testAndSwitchDatabase } from "../services/databaseSettingsService";
 import {
@@ -93,13 +100,10 @@ import { SLICER_IDS, getUserSlicer, setUserSlicer } from "../services/slicerPref
 import { CATEGORIES_VIEWS, getCategoriesView, setCategoriesView } from "../services/categoriesViewService";
 import {
   DASHBOARD_LAYOUTS,
-  DASHBOARD_THUMBNAILS,
   DASHBOARD_WIDGETS,
   getDashboardLayout,
-  getDashboardThumbnails,
   getDashboardWidgets,
   setDashboardLayout,
-  setDashboardThumbnails,
   setDashboardWidgets,
 } from "../services/dashboardWidgetsService";
 import {
@@ -111,8 +115,15 @@ import {
   setConsumeSettings,
 } from "../services/consumeService";
 import { CONSUME_DIR } from "../config";
-import { THEME_SELECTIONS, getUserTheme, setUserTheme } from "../services/themePreferenceService";
+import {
+  ACCENT_COLORS,
+  RENDER_COLORS,
+  THEME_SELECTIONS,
+  getUserThemePreferences,
+  setUserThemePreferences,
+} from "../services/themePreferenceService";
 import { getUserAuthorPreviewEnabled, setUserAuthorPreviewEnabled } from "../services/authorPreviewPreferenceService";
+import { getHoverSlideshowEnabled, setHoverSlideshowEnabled } from "../services/hoverSlideshowService";
 import { checkForUpdates } from "../services/versionService";
 import { getWeatherLocation, setWeatherLocation, weatherLocationSchema } from "../services/weatherLocationService";
 import { dropPreviewsAffectedBySimplification } from "../services/modelPreviewCache";
@@ -128,8 +139,10 @@ import {
   updateAiConnection,
 } from "../services/aiConnectionService";
 import { getDisabledProviders, PROVIDERS, setProviderEnabled } from "../services/providerSettingsService";
+import { CARD_PREVIEWS, getCardPreview, setCardPreview } from "../services/cardPreviewService";
 import { createLog } from "../services/auditLog";
 import { testFlaresolverr } from "../services/flaresolverr";
+import { QUALITY_CHECK_KEYS, type QualityCheckKey } from "../services/meshQuality";
 
 const router = Router();
 router.use(requireAuth);
@@ -316,6 +329,27 @@ router.patch(
   }),
 );
 
+// What API tokens may do at /api/mcp. The profile reads it with the token (GET /profile/api-token).
+router.get(
+  "/settings/mcp",
+  requireAdmin,
+  asyncHandler(async (_req, res) => {
+    res.json({ access: await getMcpAccess() });
+  }),
+);
+
+const mcpAccessSchema = z.object({ access: z.enum(MCP_ACCESS_LEVELS as [string, ...string[]]) });
+router.post(
+  "/settings/mcp",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const { access } = parseBody(mcpAccessSchema, req.body) as { access: (typeof MCP_ACCESS_LEVELS)[number] };
+    await setMcpAccess(access);
+    res.json({ access });
+    void createLog({ userId: req.userId!, action: "mcp_access_changed", details: { access } });
+  }),
+);
+
 router.get(
   "/settings/previews",
   asyncHandler(async (_req, res) => {
@@ -357,6 +391,30 @@ router.patch(
       );
     }
     res.json({ simplify_previews: body.simplify_previews });
+  }),
+);
+
+router.get(
+  "/settings/quality-checks",
+  requireAdmin,
+  asyncHandler(async (_req, res) => {
+    res.json({ enabled: await getQualityChecks(), checks_off: await getQualityChecksOff() });
+  }),
+);
+
+// Switching a check off hides what it found in results already saved; nothing is checked again.
+const qualityChecksSchema = z.object({
+  enabled: z.boolean().optional(),
+  checks_off: z.array(z.enum(QUALITY_CHECK_KEYS as [QualityCheckKey, ...QualityCheckKey[]])).optional(),
+});
+router.patch(
+  "/settings/quality-checks",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const body = parseBody(qualityChecksSchema, req.body);
+    if (body.enabled !== undefined) await setQualityChecks(body.enabled);
+    if (body.checks_off) await setQualityChecksOff(body.checks_off);
+    res.json({ enabled: await getQualityChecks(), checks_off: await getQualityChecksOff() });
   }),
 );
 
@@ -968,17 +1026,20 @@ router.patch(
 router.get(
   "/settings/theme",
   asyncHandler(async (req, res) => {
-    res.json({ theme: await getUserTheme(req.userId!) });
+    res.json(await getUserThemePreferences(req.userId!));
   }),
 );
 
-const themeSettingsSchema = z.object({ theme: z.enum(THEME_SELECTIONS).nullable() });
+const themeSettingsSchema = z.object({
+  theme: z.enum(THEME_SELECTIONS).nullable().optional(),
+  accent: z.enum(ACCENT_COLORS).nullable().optional(),
+  renderColor: z.enum(RENDER_COLORS).nullable().optional(),
+});
 router.patch(
   "/settings/theme",
   asyncHandler(async (req, res) => {
     const body = parseBody(themeSettingsSchema, req.body);
-    const theme = await setUserTheme(req.userId!, body.theme);
-    res.json({ theme });
+    res.json(await setUserThemePreferences(req.userId!, body));
   }),
 );
 
@@ -1061,18 +1122,18 @@ router.patch(
 );
 
 router.get(
-  "/settings/dashboard-thumbnails",
+  "/settings/card-preview",
   asyncHandler(async (req, res) => {
-    res.json({ thumbnails: await getDashboardThumbnails(req.userId!) });
+    res.json({ preview: await getCardPreview(req.userId!) });
   }),
 );
 
-const dashboardThumbnailsSchema = z.object({ thumbnails: z.enum(DASHBOARD_THUMBNAILS) });
+const cardPreviewSchema = z.object({ preview: z.enum(CARD_PREVIEWS) });
 router.patch(
-  "/settings/dashboard-thumbnails",
+  "/settings/card-preview",
   asyncHandler(async (req, res) => {
-    const body = parseBody(dashboardThumbnailsSchema, req.body);
-    res.json({ thumbnails: await setDashboardThumbnails(req.userId!, body.thumbnails) });
+    const body = parseBody(cardPreviewSchema, req.body);
+    res.json({ preview: await setCardPreview(req.userId!, body.preview) });
   }),
 );
 
@@ -1106,6 +1167,22 @@ router.patch(
   asyncHandler(async (req, res) => {
     const body = parseBody(authorPreviewSettingsSchema, req.body);
     res.json({ enabled: await setUserAuthorPreviewEnabled(req.userId!, body.enabled) });
+  }),
+);
+
+router.get(
+  "/settings/hover-slideshow",
+  asyncHandler(async (req, res) => {
+    res.json({ enabled: await getHoverSlideshowEnabled(req.userId!) });
+  }),
+);
+
+const hoverSlideshowSchema = z.object({ enabled: z.boolean() });
+router.patch(
+  "/settings/hover-slideshow",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(hoverSlideshowSchema, req.body);
+    res.json({ enabled: await setHoverSlideshowEnabled(req.userId!, body.enabled) });
   }),
 );
 

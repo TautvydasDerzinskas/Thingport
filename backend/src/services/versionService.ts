@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const GITHUB_REPO = "TautvydasDerzinskas/Thingport";
+export const GITHUB_REPO = "TautvydasDerzinskas/Thingport";
 
 export type VersionCheckResult = {
   backend_version: string | null;
@@ -29,13 +29,18 @@ export function getBackendVersion(): string | null {
   return backendVersion;
 }
 
+// The :dev image (built from develop) is compared with develop's builds, everything else with main's.
+function releaseBranch(): string {
+  return process.env.RELEASE_CHANNEL === "dev" ? "develop" : "main";
+}
+
 // The head_sha of the latest successful image workflow run. A path filter would miss commits that
 // republish the image via the shared build-image.yml without touching the project itself.
 async function latestPublishedSha(workflowFile: string): Promise<string | null> {
   try {
     const res = await fetch(
       `https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/${workflowFile}/runs` +
-        "?branch=main&event=push&status=success&per_page=1",
+        `?branch=${releaseBranch()}&event=push&status=success&per_page=1`,
       { headers: { Accept: "application/vnd.github+json" } },
     );
     if (!res.ok) return null;

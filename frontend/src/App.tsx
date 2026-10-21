@@ -43,10 +43,14 @@ import AiPage from "./pages/AiPage";
 import { healthApi, type HealthInfo } from "./api/health";
 import { authApi, type AuthUser } from "./api/auth";
 import { settingsApi, type PreviewMode } from "./api/settings";
+import { UnauthorizedError } from "./api/client";
 import { clearToken, clearUser, readToken, readUser, storeToken, storeUser } from "./utils/auth";
 import { type AppSettings, type MakerWorldSettings, loadSettings, saveSettings } from "./utils/settings";
 import { useResolvedTheme } from "./hooks/useResolvedTheme";
-import type { ResolvedTheme, ThemeSelection } from "./constants/settingsOptions";
+import { setCachedAccentColor, setCachedRenderColor, useAccentColor } from "./hooks/useAccentColor";
+import { resetCardPreview } from "./hooks/useCardPreview";
+import { resetHoverSlideshowEnabled } from "./hooks/useHoverSlideshowEnabled";
+import { DEFAULT_ACCENT, type ResolvedTheme, type ThemeSelection } from "./constants/settingsOptions";
 import { buildTheme } from "./theme";
 
 const DEFAULT_REFRESH_SECONDS = 6 * 60 * 60; // 6 hours
@@ -60,7 +64,7 @@ type AppShellProps = {
   previewMode: PreviewMode;
   setPreviewMode: (mode: PreviewMode) => void;
   themeSelection: ThemeSelection;
-  onThemeChange: (theme: ThemeSelection) => void;
+  onThemeChange: (theme: ThemeSelection) => Promise<boolean>;
   resolvedTheme: ResolvedTheme;
   muiTheme: ReturnType<typeof buildTheme>;
   onUnauthorized: () => void;
@@ -308,8 +312,10 @@ export default function App() {
   const [previewMode, setPreviewMode] = React.useState<PreviewMode>("automatic");
   // Server-persisted so it follows the account across devices.
   const [themeSelection, setThemeSelection] = React.useState<ThemeSelection>("light");
+  const confirmedTheme = React.useRef<ThemeSelection>("light");
   const resolvedTheme = useResolvedTheme(themeSelection);
-  const muiTheme = React.useMemo(() => buildTheme(resolvedTheme), [resolvedTheme]);
+  const accent = useAccentColor();
+  const muiTheme = React.useMemo(() => buildTheme(resolvedTheme, accent), [resolvedTheme, accent]);
   // index.html's theme-color tags follow the OS; this makes the title bar follow the theme
   // actually shown, which can be a manual light/dark choice.
   React.useEffect(() => {
@@ -330,19 +336,31 @@ export default function App() {
     })();
   }, [token]);
   React.useEffect(() => {
-    if (!token) return;
+    // The accent is the account's, so another account signing in on this tab doesn't inherit it.
+    if (!token) {
+      setCachedAccentColor(DEFAULT_ACCENT);
+      setCachedRenderColor(null);
+      return;
+    }
+    let active = true;
     (async () => {
       try {
-        const { theme } = await settingsApi.getTheme();
-        // Null means never set; keep the current theme.
-        if (theme) setThemeSelection(theme);
+        const saved = await settingsApi.getTheme();
+        // An answer for a token that's since changed belongs to someone else's session.
+        if (!active) return;
+        // Null means never set: the theme stays as it is, the accent is the default.
+        if (saved.theme) {
+          confirmedTheme.current = saved.theme;
+          setThemeSelection(saved.theme);
+        }
+        setCachedAccentColor(saved.accent ?? DEFAULT_ACCENT);
+        setCachedRenderColor(saved.renderColor);
       } catch {}
     })();
+    return () => {
+      active = false;
+    };
   }, [token]);
-  const handleThemeChange = React.useCallback((selected: ThemeSelection) => {
-    setThemeSelection(selected);
-    void settingsApi.updateTheme(selected).catch(() => {});
-  }, []);
   React.useEffect(() => {
     saveSettings(settings);
   }, [settings]);
@@ -350,6 +368,8 @@ export default function App() {
   const authRequired = health?.auth_required ?? true;
 
   const handleLogin = (tok: string, ttl: number, loggedInUser: AuthUser) => {
+    resetCardPreview();
+    resetHoverSlideshowEnabled();
     storeToken(tok);
     storeUser(loggedInUser);
     setToken(tok);
@@ -366,6 +386,31 @@ export default function App() {
     setTokenTtl(null);
     setShowExpiredToast(true);
   }, []);
+
+  // Saves run one at a time so a failure rolls back to the last saved theme, never a pending pick.
+  const themeSaves = React.useRef<Promise<unknown>>(Promise.resolve());
+  const latestThemeSave = React.useRef(0);
+  /** Resolves false when the save failed and the theme went back. */
+  const handleThemeChange = React.useCallback(
+    (selected: ThemeSelection): Promise<boolean> => {
+      const save = ++latestThemeSave.current;
+      setThemeSelection(selected);
+      const result = themeSaves.current.then(async () => {
+        try {
+          await settingsApi.updateTheme({ theme: selected });
+          confirmedTheme.current = selected;
+          return true;
+        } catch (err) {
+          if (save === latestThemeSave.current) setThemeSelection(confirmedTheme.current);
+          if (err instanceof UnauthorizedError) handleUnauthorized();
+          return false;
+        }
+      });
+      themeSaves.current = result;
+      return result;
+    },
+    [handleUnauthorized],
+  );
 
   const handleLogout = () => {
     // Fire-and-forget: local logout proceeds immediately.

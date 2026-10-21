@@ -21,9 +21,12 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
 import FolderIcon from "@mui/icons-material/Folder";
+import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
-import { adminApi, type StorageFile, type StorageListing } from "../../api/admin";
+import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
+import ViewInArOutlinedIcon from "@mui/icons-material/ViewInArOutlined";
+import { adminApi, type StorageFile, type StorageFileKind, type StorageListing } from "../../api/admin";
 import { UnauthorizedError } from "../../api/client";
 import { readUser } from "../../utils/auth";
 import { formatFileSize } from "../../utils/fileSize";
@@ -33,7 +36,17 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-/** The managed model files as they're laid out on disk now: a folder per user, then the storage structure. */
+const KIND_ICONS: Record<StorageFileKind, typeof InsertDriveFileOutlinedIcon> = {
+  plate: ViewInArOutlinedIcon,
+  file: InsertDriveFileOutlinedIcon,
+  image: ImageOutlinedIcon,
+  description: ImageOutlinedIcon,
+  thumb: ImageOutlinedIcon,
+  render: ImageOutlinedIcon,
+};
+
+/** The managed model files, and the pictures and supporting files beside them, as they're laid out on disk now: a
+ *  folder per user, then the storage structure. */
 export default function StorageBrowserDialog({ onClose, onUnauthorized }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const theme = useTheme();
@@ -122,7 +135,13 @@ export default function StorageBrowserDialog({ onClose, onUnauthorized }: Props)
             {listing.folders.map((entry) => (
               <ListItemButton key={entry.path} onClick={() => setFolder(entry.path)}>
                 <ListItemIcon sx={{ minWidth: 36 }}>
-                  {atTop ? <PersonOutlineIcon color="action" /> : <FolderIcon sx={{ color: "warning.light" }} />}
+                  {atTop ? (
+                    <PersonOutlineIcon color="action" />
+                  ) : entry.pictures ? (
+                    <PhotoLibraryIcon sx={{ color: "info.light" }} />
+                  ) : (
+                    <FolderIcon sx={{ color: "warning.light" }} />
+                  )}
                 </ListItemIcon>
                 <ListItemText
                   primary={entry.label ?? entry.name}
@@ -136,7 +155,7 @@ export default function StorageBrowserDialog({ onClose, onUnauthorized }: Props)
             ))}
             {listing.files.map((file) => (
               <FileRow
-                key={file.plate_id}
+                key={file.path}
                 file={file}
                 // Another user's model isn't one an admin can open.
                 onOpen={file.owner_id === me ? () => navigate(`/models/${file.print_id}`) : undefined}
@@ -151,14 +170,19 @@ export default function StorageBrowserDialog({ onClose, onUnauthorized }: Props)
 
 function FileRow({ file, onOpen }: { file: StorageFile; onOpen?: () => void }) {
   const { t } = useTranslation("app");
+  const Icon = KIND_ICONS[file.kind];
   const content = (
     <>
       <ListItemIcon sx={{ minWidth: 36 }}>
-        <InsertDriveFileOutlinedIcon color="action" />
+        <Icon color="action" />
       </ListItemIcon>
       <ListItemText
         primary={file.name}
-        secondary={`${formatFileSize(file.size)} · ${t("adminSettings.storageBrowser.ofModel", { name: file.print_name })}`}
+        secondary={[
+          formatFileSize(file.size),
+          t(`adminSettings.storageBrowser.kind.${file.kind}`),
+          t("adminSettings.storageBrowser.ofModel", { name: file.print_name }),
+        ].join(" · ")}
         primaryTypographyProps={{ sx: { wordBreak: "break-all" } }}
       />
       {file.location !== "managed" && (

@@ -56,3 +56,9 @@ export async function readErrorMessage(res: Response, fallback: string) {
   }
   return trimmed;
 }
+
+/** Like `assertOk`, but a failure carries the server's own message. */
+export async function assertOkWithMessage(res: Response, fallback: string) {
+  if (res.status === 401) throw new UnauthorizedError();
+  if (!res.ok) throw new Error(await readErrorMessage(res, fallback));
+}

@@ -42,6 +42,23 @@ export type CategoryMetaInput = {
   cults3dCatIds: string;
 };
 
+/** Category paths, top level first. */
+export type CategoryResetPreview = {
+  added: string[][];
+  /** Kept categories whose name, details, site ids or place go back to the default's. */
+  restored: string[][];
+  removed: { path: string[]; models: number }[];
+  /** Models in removed categories that move to the nearest kept parent. */
+  models_moved: number;
+  /** Models in removed categories with no kept parent, left without a category. */
+  models_uncategorized: number;
+  /** Moved models renamed for clashing with one already where they land. */
+  models_renamed: number;
+};
+
+/** Whether a reset would change nothing. */
+export const resetIsNoop = (p: CategoryResetPreview) => !p.added.length && !p.restored.length && !p.removed.length;
+
 export const categoriesApi = {
   list: async (): Promise<Category[]> => {
     const res = await fetch(`${apiBase()}/categories`, { headers: authHeaders() });
@@ -123,6 +140,22 @@ export const categoriesApi = {
     });
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) throw new Error(await readErrorMessage(res, "Move category failed"));
+    return res.json();
+  },
+
+  /** What a reset to the starter categories would change; all empty when the tree already is that. */
+  previewReset: async (): Promise<CategoryResetPreview> => {
+    const res = await fetch(`${apiBase()}/categories/reset-defaults`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    assertOk(res, "Failed to preview the category reset");
+    return res.json();
+  },
+
+  /** Puts the category tree (not folders) back to the starter one; returns every category afterwards. */
+  resetDefaults: async (): Promise<Category[]> => {
+    const res = await fetch(`${apiBase()}/categories/reset-defaults`, { method: "POST", headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    assertOk(res, "Reset categories failed");
     return res.json();
   },
 
