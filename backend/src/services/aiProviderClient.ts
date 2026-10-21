@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import sharp from "sharp";
 import { prisma } from "../db";
+import type { ReasoningEffort } from "@prisma/client";
 import type { Logger } from "../logger";
 import { previewImagePath } from "./previewImageService";
 import type { AiProvider } from "./aiConnectionService";
@@ -153,6 +154,16 @@ async function readStream(response: Response, onPiece: () => void): Promise<Chat
 // Connections (base URL and model) that answered 400 to reasoning_effort, so later requests leave it out.
 const reasoningEffortRejected = new Set<string>();
 
+// A reasoning model's thinking comes out of max_tokens too, so each effort gets room for it on top of the answer.
+// No effort sent leaves the model at its own default, which is about medium.
+const THINKING_TOKENS: Record<ReasoningEffort | "unset", number> = {
+  none: 0,
+  low: 2048,
+  medium: 6144,
+  high: 12288,
+  unset: 6144,
+};
+
 /** Throws the given message as the answer's problem, logging what an admin needs to tell why. */
 export type Unusable = (message: string) => Error;
 
@@ -165,7 +176,8 @@ export async function askProvider<T>(options: {
   content: ProviderContent;
   schemaName: string;
   schema: object;
-  maxTokens: number;
+  /** Room for the answer itself; room for thinking is added for the reasoning effort sent. */
+  answerTokens: number;
   attempts?: number;
   log: Logger;
   /** What a missing answer is called in the error, e.g. "no classification". */
@@ -179,7 +191,17 @@ export async function askProvider<T>(options: {
   stream?: { firstChunkMs: number; idleMs: number };
   read: (json: unknown, unusable: Unusable, answer: Record<string, unknown>) => T;
 }): Promise<T> {
-  const { settings, content, schemaName, schema, maxTokens, attempts = 3, log: requestLog, noAnswer, read } = options;
+  const {
+    settings,
+    content,
+    schemaName,
+    schema,
+    answerTokens,
+    attempts = 3,
+    log: requestLog,
+    noAnswer,
+    read,
+  } = options;
   const { stream } = options;
   const connection = `${settings.baseUrl}|${settings.model}`;
   let reasoningEffort = reasoningEffortRejected.has(connection) ? null : settings.reasoningEffort;
@@ -208,8 +230,8 @@ export async function askProvider<T>(options: {
         body: JSON.stringify({
           model: settings.model,
           temperature: 0,
-          // Room for the answer and the JSON around it; reasoning models also spend part of it before answering.
-          max_tokens: maxTokens,
+          // A safety net against a model that loops, not a fit: a normal answer should never reach it.
+          max_tokens: answerTokens + THINKING_TOKENS[reasoningEffort ?? "unset"],
           ...(stream ? { stream: true, stream_options: { include_usage: true } } : {}),
           response_format: { type: "json_schema", json_schema: { name: schemaName, strict: true, schema } },
           // These tasks rarely need much thought, and a reasoning model spends max_tokens on it before answering.
