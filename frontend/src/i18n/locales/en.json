@@ -207,7 +207,6 @@
         "mcp": {
           "heading": "MCP",
           "subtitle": "Tools an AI assistant may use",
-          "description": "What an AI assistant connected with this token (over MCP, at /api/mcp) may use. Changes apply straight away, without a new token.",
           "connect": "To connect an AI assistant, for example Claude Code:",
           "writes": "Changes your library",
           "failed": "Couldn't save the token's MCP tools. Please try again.",
@@ -1663,9 +1662,9 @@
         "failed": "Couldn't save the public URL."
       },
       "mcp": {
-        "heading": "AI assistants (MCP)",
-        "subtitle": "What API tokens may do at /api/mcp.",
-        "accessLabel": "MCP access",
+        "heading": "MCP tools",
+        "subtitle": "Let AI assistants such as Claude search and manage the library with their user's API token.",
+        "accessLabel": "What API tokens may do",
         "help": "Each user still chooses their own token's tools within this. Tools that change the library import without a captcha, as Thingport Grab does.",
         "failed": "Couldn't save the MCP access. Please try again.",
         "levels": {
@@ -2195,10 +2194,47 @@
       "empty": "No release notes for this version yet.",
       "openGithub": "Open on GitHub",
       "zoom": "Enlarge screenshot",
-      "highlight": "Highlight",
+      "highlight": "Highlight"
+    },
+    "codeBlock": {
       "copy": "Copy",
       "copied": "Copied",
       "copyFailed": "Couldn't copy here. It's selected: press Ctrl+C or ⌘C."
+    },
+    "mcpConnect": {
+      "open": "How to connect",
+      "title": "Connect an AI assistant",
+      "intro": "Each person connects with their own API token, made in <strong>Profile → API token</strong>. Put it in place of <code>{{token}}</code>.",
+      "clientLabel": "AI assistant",
+      "clients": {
+        "claudeCode": "Claude Code",
+        "claude": "Claude",
+        "chatgpt": "ChatGPT",
+        "codex": "Codex CLI",
+        "editors": "Cursor & VS Code"
+      },
+      "claudeCode": {
+        "step": "Run this in a terminal:"
+      },
+      "claude": {
+        "step": "In Claude, open <strong>Settings → Connectors</strong>, choose <strong>Add custom connector</strong> and enter this address. Under request headers, add this Authorization header:",
+        "note": "Claude connects from Anthropic's servers, so Thingport must be reachable from the internet over HTTPS. Request headers are in beta and may depend on your plan."
+      },
+      "chatgpt": {
+        "step": "In ChatGPT, turn on <strong>Developer mode</strong> under <strong>Settings → Apps & Connectors</strong>, create a connector with this address, and choose <strong>Token</strong> as its authentication:",
+        "note": "ChatGPT connects from OpenAI's servers, so Thingport must be reachable from the internet over HTTPS. The Token option depends on your plan; without it, use Codex CLI."
+      },
+      "codex": {
+        "step": "Run this in a terminal:",
+        "note": "THINGPORT_TOKEN must be set in the shell that starts Codex."
+      },
+      "editors": {
+        "cursor": "Cursor: add this to <code>~/.cursor/mcp.json</code>.",
+        "vscode": "VS Code: add this to <code>.vscode/mcp.json</code> in your workspace.",
+        "note": "Other clients work the same way if they support Streamable HTTP and let you set a header."
+      },
+      "guide": "MCP guide",
+      "close": "Close"
     }
   },
   "common": {

@@ -210,7 +210,6 @@
           "copyCommand": "Copiar comando",
           "heading": "MCP",
           "subtitle": "Herramientas que puede usar un asistente de IA",
-          "description": "Lo que puede usar un asistente de IA conectado con este token (por MCP, en /api/mcp). Los cambios se aplican al instante, sin un token nuevo.",
           "connect": "Para conectar un asistente de IA, por ejemplo Claude Code:",
           "writes": "Cambia tu biblioteca",
           "failed": "No se pudieron guardar las herramientas MCP del token. Inténtalo de nuevo.",
@@ -1663,9 +1662,9 @@
         "failed": "No se pudo guardar la URL pública."
       },
       "mcp": {
-        "heading": "Asistentes de IA (MCP)",
-        "subtitle": "Qué pueden hacer los tokens de API en /api/mcp.",
-        "accessLabel": "Acceso MCP",
+        "heading": "Herramientas MCP",
+        "subtitle": "Permite que asistentes de IA como Claude busquen en la biblioteca y la gestionen con el token de API de su usuario.",
+        "accessLabel": "Qué pueden hacer los tokens de API",
         "help": "Cada usuario sigue eligiendo las herramientas de su propio token dentro de este límite. Las herramientas que cambian la biblioteca importan sin captcha, como Thingport Grab.",
         "failed": "No se pudo guardar el acceso MCP. Inténtalo de nuevo.",
         "levels": {
@@ -2195,10 +2194,47 @@
       "empty": "Aún no hay notas para esta versión.",
       "openGithub": "Abrir en GitHub",
       "zoom": "Ampliar captura",
-      "highlight": "Destacado",
+      "highlight": "Destacado"
+    },
+    "codeBlock": {
       "copy": "Copiar",
       "copied": "Copiado",
       "copyFailed": "No se pudo copiar aquí. Está seleccionado: pulsa Ctrl+C o ⌘C."
+    },
+    "mcpConnect": {
+      "open": "Cómo conectar",
+      "title": "Conecta un asistente de IA",
+      "intro": "Cada persona se conecta con su propio token de API, creado en <strong>Perfil → Token de API</strong>. Ponlo en lugar de <code>{{token}}</code>.",
+      "clientLabel": "Asistente de IA",
+      "clients": {
+        "claudeCode": "Claude Code",
+        "claude": "Claude",
+        "chatgpt": "ChatGPT",
+        "codex": "Codex CLI",
+        "editors": "Cursor y VS Code"
+      },
+      "claudeCode": {
+        "step": "Ejecuta esto en una terminal:"
+      },
+      "claude": {
+        "step": "En Claude, abre <strong>Settings → Connectors</strong>, elige <strong>Add custom connector</strong> e introduce esta dirección. En los encabezados de la solicitud, añade este encabezado Authorization:",
+        "note": "Claude se conecta desde los servidores de Anthropic, así que Thingport debe ser accesible desde internet por HTTPS. Los encabezados de solicitud están en beta y pueden depender de tu plan."
+      },
+      "chatgpt": {
+        "step": "En ChatGPT, activa el <strong>Developer mode</strong> en <strong>Settings → Apps & Connectors</strong>, crea un conector con esta dirección y elige <strong>Token</strong> como autenticación:",
+        "note": "ChatGPT se conecta desde los servidores de OpenAI, así que Thingport debe ser accesible desde internet por HTTPS. La opción Token depende de tu plan; si no la tienes, usa Codex CLI."
+      },
+      "codex": {
+        "step": "Ejecuta esto en una terminal:",
+        "note": "THINGPORT_TOKEN debe estar definido en la terminal que inicia Codex."
+      },
+      "editors": {
+        "cursor": "Cursor: añade esto a <code>~/.cursor/mcp.json</code>.",
+        "vscode": "VS Code: añade esto a <code>.vscode/mcp.json</code> en tu espacio de trabajo.",
+        "note": "Otros clientes funcionan igual si admiten Streamable HTTP y permiten definir un encabezado."
+      },
+      "guide": "Guía de MCP",
+      "close": "Cerrar"
     }
   },
   "common": {
