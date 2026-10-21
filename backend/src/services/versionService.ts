@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const GITHUB_REPO = "TautvydasDerzinskas/Thingport";
+export const GITHUB_REPO = "TautvydasDerzinskas/Thingport";
 
 export type VersionCheckResult = {
   backend_version: string | null;

@@ -7,11 +7,14 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import NewReleasesOutlinedIcon from "@mui/icons-material/NewReleasesOutlined";
 import { UnauthorizedError } from "../../api/client";
 import { settingsApi, FRONTEND_GIT_SHA, FRONTEND_VERSION } from "../../api/settings";
 import SectionHeader from "../../components/SectionHeader";
 import { AnimatedTile } from "../../components/storageAnimations/parts";
 import UpdateCheckAnimation, { type UpdateCheckState } from "../../components/adminAnimations/UpdateCheckAnimation";
+import { useWhatsNew } from "../../components/whatsNew/WhatsNewProvider";
 
 type Props = {
   onUnauthorized?: () => void;
@@ -37,6 +40,7 @@ export default function UpdateCheckSection({ onUnauthorized }: Props) {
   const { t } = useTranslation("app");
   const [status, setStatus] = React.useState<Status>({ kind: "checking" });
   const [backendVersion, setBackendVersion] = React.useState<string | null>(null);
+  const openWhatsNew = useWhatsNew();
 
   React.useEffect(() => {
     let active = true;
@@ -72,6 +76,11 @@ export default function UpdateCheckSection({ onUnauthorized }: Props) {
       <SectionHeader
         title={t("adminSettings.updateCheck.heading")}
         subtitle={t("adminSettings.updateCheck.subtitle")}
+        actions={
+          <Button variant="outlined" startIcon={<NewReleasesOutlinedIcon />} onClick={() => openWhatsNew()}>
+            {t("whatsNew.label")}
+          </Button>
+        }
       />
       <Paper variant="outlined" sx={{ p: 2.5 }}>
         <Stack direction="row" spacing={2.5} alignItems="center">
