@@ -67,8 +67,8 @@ path-filtered, so only the parts you touched run:
 The [regression pack](docs/DEVELOPMENT.md#regression-pack), which runs end-to-end browser scenarios
 against the full stack, isn't run on pull requests. It runs weekly on `main`.
 
-Nothing is published from a pull request or from `develop` -- images are built to prove they build, but
-only a release, merged into `main`, publishes anything.
+Nothing is published from a pull request. A merge into `develop` publishes the `:dev` images for testers who
+want changes early; only a release, merged into `main`, gets a version and `:latest`.
 
 If you're a brand-new GitHub account, your first PR's workflows wait for a maintainer to approve
 them before running. That's a GitHub setting, not something wrong with your PR.

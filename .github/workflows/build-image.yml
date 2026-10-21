@@ -96,7 +96,9 @@ jobs:
         with:
           images: ${{ inputs.image_name }}
           tags: |
-            type=ref,event=branch
+            # develop's builds go out as :dev instead, the channel for testers who want changes before a release.
+            type=ref,event=branch,enable=${{ github.ref != 'refs/heads/develop' }}
+            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/develop' }}
             type=sha,prefix=sha-,format=short
             type=semver,pattern={{version}},value=${{ inputs.version }},enable=${{ inputs.version != '' }}
             type=semver,pattern={{major}}.{{minor}},value=${{ inputs.version }},enable=${{ inputs.version != '' }}
@@ -115,6 +117,8 @@ jobs:
           push: ${{ inputs.push }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: GIT_SHA=${{ github.sha }}
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            RELEASE_CHANNEL=${{ github.ref == 'refs/heads/develop' && 'dev' || 'stable' }}
           cache-from: type=gha,scope=${{ inputs.cache_scope }}
           cache-to: type=gha,mode=max,scope=${{ inputs.cache_scope }}

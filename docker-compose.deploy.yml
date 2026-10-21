@@ -28,6 +28,7 @@ services:
   backend:
     # Pin to a release instead of :latest, e.g. :1.2.0, or :1 for every 1.x (or a build, :sha-a8fef7d):
     #   BACKEND_IMAGE=ghcr.io/tautvydasderzinskas/thingport-backend:1.2.0
+    # Or :dev for every change as it's merged, before it's released (expect the odd rough edge).
     image: ${BACKEND_IMAGE:-ghcr.io/tautvydasderzinskas/thingport-backend:latest}
     restart: unless-stopped
     environment:
@@ -63,6 +64,7 @@ services:
   frontend:
     # Pin to a release instead of :latest, e.g. :1.2.0, or :1 for every 1.x (or a build, :sha-a8fef7d):
     #   FRONTEND_IMAGE=ghcr.io/tautvydasderzinskas/thingport-frontend:1.2.0
+    # Or :dev for every change as it's merged, before it's released (expect the odd rough edge).
     image: ${FRONTEND_IMAGE:-ghcr.io/tautvydasderzinskas/thingport-frontend:latest}
     restart: unless-stopped
     ports:

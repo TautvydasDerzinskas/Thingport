@@ -23,6 +23,9 @@ FROM node:24-alpine AS runtime
 # "can't check" rather than as outdated.
 ARG GIT_SHA=unknown
 ENV GIT_SHA=$GIT_SHA
+# "dev" for the :dev image built from develop, so the update checker compares against develop instead of main.
+ARG RELEASE_CHANNEL=stable
+ENV RELEASE_CHANNEL=$RELEASE_CHANNEL
 RUN apk add --no-cache openssl su-exec
 WORKDIR /app
 
