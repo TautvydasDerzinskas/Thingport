@@ -300,6 +300,17 @@ To write the notes for a release, replace the file's contents:
 - A file that doesn't parse, or names another version, falls back to the changelog.
 - `RELEASE_NOTES_URL` points a backend at another copy of the repo files; an empty value turns fetching off.
 
+To update without telling anyone, e.g. a hotfix straight after a release, add its version to
+[`release-notes/quiet-releases.json`](../release-notes/quiet-releases.json) in the same release PR, so it's on `main`
+before instances update:
+
+```json
+{ "versions": ["1.2.1"] }
+```
+
+No notification is sent for it, and the next release's What's new also covers what the quiet one changed. If the file
+can't be read when an instance starts, the update is announced as usual.
+
 ## Related documents
 
 - [CONTRIBUTING.md](../CONTRIBUTING.md) -- branch, commit and pull request workflow

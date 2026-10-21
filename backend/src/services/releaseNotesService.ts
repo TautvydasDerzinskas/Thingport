@@ -9,9 +9,12 @@ const CACHE_TTL_MS = 30 * 60 * 1000;
 // Someone skipping many releases gets the most recent ones, not a wall of every fix since.
 const MAX_VERSIONS = 5;
 const LAST_RUN_VERSION_KEY = "last_run_version";
+// Behind the last run after a quiet release, so the next announcement's notes still cover it.
+const LAST_ANNOUNCED_VERSION_KEY = "last_announced_version";
 const SEMVER = /^\d+\.\d+\.\d+$/;
 
 export const CURATED_NOTES_PATH = "release-notes/latest-release-notes.json";
+export const QUIET_RELEASES_PATH = "release-notes/quiet-releases.json";
 
 export type ReleaseNoteKind = "breaking" | "feature" | "improvement" | "fix";
 const KIND_ORDER: ReleaseNoteKind[] = ["breaking", "feature", "improvement", "fix"];
@@ -47,28 +50,61 @@ export function whatsNewPath(version: string, since: string | null): string {
   return `?${params}`;
 }
 
+/** Versions listed in release-notes/quiet-releases.json, e.g. a hotfix straight after a release, update without telling
+ *  anyone. Unreadable means not quiet: an update is announced rather than missed. */
+export async function isQuietRelease(version: string, baseUrl = RELEASE_NOTES_URL): Promise<boolean> {
+  if (!baseUrl) return false;
+  const text = await fetchText(`${baseUrl}/${QUIET_RELEASES_PATH}`);
+  try {
+    const versions = (JSON.parse(text ?? "null") as { versions?: unknown } | null)?.versions;
+    return Array.isArray(versions) && versions.some((v) => typeof v === "string" && v.trim() === version);
+  } catch {
+    return false;
+  }
+}
+
+async function readVersionSetting(key: string): Promise<string | null> {
+  const row = await prisma.setting.findUnique({ where: { key } });
+  return typeof row?.value === "string" && SEMVER.test(row.value) ? row.value : null;
+}
+
+function writeVersionSetting(key: string, value: string) {
+  return prisma.setting.upsert({ where: { key }, create: { key, value }, update: { value } });
+}
+
 /** At startup: when this version is newer than the one that ran last, every user gets a notification that opens
- *  What's new. A fresh install has no users yet, so only an instance that ran before this check is told. */
-export async function announceVersionUpdate(version = getBackendVersion(), now = new Date()): Promise<boolean> {
+ *  What's new, unless it's a quiet release. A fresh install has no users yet, so only an instance that ran before this
+ *  check is told. True when users were notified. */
+export async function announceVersionUpdate(
+  version = getBackendVersion(),
+  now = new Date(),
+  isQuiet: (version: string) => Promise<boolean> = isQuietRelease,
+): Promise<boolean> {
   if (!version || !SEMVER.test(version)) return false;
-  const row = await prisma.setting.findUnique({ where: { key: LAST_RUN_VERSION_KEY } });
-  const previous = typeof row?.value === "string" && SEMVER.test(row.value) ? row.value : null;
+  const previous = await readVersionSetting(LAST_RUN_VERSION_KEY);
   if (previous === version) return false;
   const updated = previous ? compareVersions(version, previous) > 0 : (await prisma.user.count()) > 0;
+  const since = (await readVersionSetting(LAST_ANNOUNCED_VERSION_KEY)) ?? previous;
+
+  if (updated && (await isQuiet(version))) {
+    await prisma.$transaction([
+      writeVersionSetting(LAST_RUN_VERSION_KEY, version),
+      ...(since ? [writeVersionSetting(LAST_ANNOUNCED_VERSION_KEY, since)] : []),
+    ]);
+    return false;
+  }
+
   const users = updated ? await prisma.user.findMany({ select: { id: true } }) : [];
   await prisma.$transaction([
-    prisma.setting.upsert({
-      where: { key: LAST_RUN_VERSION_KEY },
-      create: { key: LAST_RUN_VERSION_KEY, value: version },
-      update: { value: version },
-    }),
+    writeVersionSetting(LAST_RUN_VERSION_KEY, version),
+    writeVersionSetting(LAST_ANNOUNCED_VERSION_KEY, version),
     prisma.notification.createMany({
       data: users.map((user) => ({
         userId: user.id,
         type: "system",
         title: `Thanks for updating to Thingport ${version}`,
         body: "This release brings a lot of new things. Click here to see what's new.",
-        internalPath: whatsNewPath(version, previous),
+        internalPath: whatsNewPath(version, since),
         createdAt: now,
       })),
     }),

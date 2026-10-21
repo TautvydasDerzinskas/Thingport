@@ -6,6 +6,7 @@ import {
   announceVersionUpdate,
   clearReleaseNotesCache,
   getReleaseNotes,
+  isQuietRelease,
   notesFromChangelogs,
   parseChangelog,
   parseCuratedNotes,
@@ -189,6 +190,16 @@ describe("version update notification", () => {
   const run = Date.now();
   let user: { id: string; token: string };
   const updates = () => prisma.notification.findMany({ where: { userId: user.id, type: "system" } });
+  const VERSION_KEYS = ["last_run_version", "last_announced_version"];
+  const ranBefore = (version: string) =>
+    prisma.$transaction(
+      VERSION_KEYS.map((key) =>
+        prisma.setting.upsert({ where: { key }, create: { key, value: version }, update: { value: version } }),
+      ),
+    );
+  // Never reaches the network: the quiet list is given.
+  const announce = (version: string, quiet: string[] = []) =>
+    announceVersionUpdate(version, new Date(), async (v) => quiet.includes(v));
 
   beforeAll(async () => {
     const email = `release-notes-${run}@example.com`;
@@ -203,33 +214,62 @@ describe("version update notification", () => {
 
   beforeEach(async () => {
     await prisma.notification.deleteMany({ where: { userId: user.id } });
+    await prisma.setting.deleteMany({ where: { key: { in: VERSION_KEYS } } });
   });
 
   afterEach(clearAnnouncements);
 
   afterAll(async () => {
-    await prisma.setting.deleteMany({ where: { key: "last_run_version" } });
+    await prisma.setting.deleteMany({ where: { key: { in: VERSION_KEYS } } });
     await prisma.user.deleteMany({ where: { id: user.id } });
   });
 
   it("tells users once when a newer version starts, but not on a restart or a downgrade", async () => {
-    await prisma.setting.upsert({
-      where: { key: "last_run_version" },
-      create: { key: "last_run_version", value: "1.1.0" },
-      update: { value: "1.1.0" },
-    });
-    expect(await announceVersionUpdate("1.2.0")).toBe(true);
+    await ranBefore("1.1.0");
+    expect(await announce("1.2.0")).toBe(true);
     const [notification] = await updates();
     expect(notification.internalPath).toBe("?whats-new=1.2.0&since=1.1.0");
 
-    expect(await announceVersionUpdate("1.2.0")).toBe(false);
-    expect(await announceVersionUpdate("1.1.5")).toBe(false);
+    expect(await announce("1.2.0")).toBe(false);
+    expect(await announce("1.1.5")).toBe(false);
     expect(await updates()).toHaveLength(1);
   });
 
   it("tells existing users when the version that ran before isn't known", async () => {
-    await prisma.setting.deleteMany({ where: { key: "last_run_version" } });
-    expect(await announceVersionUpdate("1.2.0")).toBe(true);
+    expect(await announce("1.2.0")).toBe(true);
     expect((await updates())[0].internalPath).toBe("?whats-new=1.2.0");
+  });
+
+  it("skips a quiet release, and covers it in the next announcement's notes", async () => {
+    await ranBefore("1.2.0");
+    expect(await announce("1.2.1", ["1.2.1"])).toBe(false);
+    // A restart doesn't announce it even when the quiet list can't be read.
+    expect(await announce("1.2.1")).toBe(false);
+    expect(await updates()).toHaveLength(0);
+
+    expect(await announce("1.3.0")).toBe(true);
+    expect((await updates())[0].internalPath).toBe("?whats-new=1.3.0&since=1.2.0");
+  });
+
+  it("reads quiet releases from the repo file, and treats an unreadable one as not quiet", async () => {
+    let body: string | null = JSON.stringify({ versions: ["1.2.1", 7] });
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async () => new Response(body ?? "", { status: body === null ? 404 : 200 }));
+    try {
+      clearReleaseNotesCache();
+      expect(await isQuietRelease("1.2.1", "https://notes.example")).toBe(true);
+      expect(await isQuietRelease("1.3.0", "https://notes.example")).toBe(false);
+      body = "not json";
+      clearReleaseNotesCache();
+      expect(await isQuietRelease("1.2.1", "https://notes.example")).toBe(false);
+      body = null;
+      clearReleaseNotesCache();
+      expect(await isQuietRelease("1.2.1", "https://notes.example")).toBe(false);
+      expect(await isQuietRelease("1.2.1", "")).toBe(false);
+    } finally {
+      fetchMock.mockRestore();
+      clearReleaseNotesCache();
+    }
   });
 });
