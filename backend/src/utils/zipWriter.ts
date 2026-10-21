@@ -4,6 +4,11 @@ import zlib from "node:zlib";
 
 // Minimal streaming ZIP writer on node:zlib; yauzl is read-only.
 
+// Bit 3: the CRC and sizes follow the data, in a descriptor. Bit 11: names are UTF-8. Without it readers
+// decode names as CP437 (yauzl, Python) or Latin-1 (fflate), garbling any non-ASCII model, category or
+// file name.
+const ENTRY_FLAGS = 0x0808;
+
 const CRC_TABLE = (() => {
   const table = new Uint32Array(256);
   for (let n = 0; n < 256; n++) {
@@ -70,7 +75,7 @@ export async function writeZip(destPath: string, entries: ZipEntryDescriptor[]):
       const localHeader = Buffer.alloc(30);
       localHeader.writeUInt32LE(0x04034b50, 0);
       localHeader.writeUInt16LE(20, 4); // version needed
-      localHeader.writeUInt16LE(0x0008, 6); // flags: data descriptor follows
+      localHeader.writeUInt16LE(ENTRY_FLAGS, 6); // flags
       localHeader.writeUInt16LE(8, 8); // method: deflate
       localHeader.writeUInt16LE(time, 10);
       localHeader.writeUInt16LE(date, 12);
@@ -125,7 +130,7 @@ export async function writeZip(destPath: string, entries: ZipEntryDescriptor[]):
       central.writeUInt32LE(0x02014b50, 0);
       central.writeUInt16LE(20, 4); // version made by
       central.writeUInt16LE(20, 6); // version needed
-      central.writeUInt16LE(0x0008, 8); // flags
+      central.writeUInt16LE(ENTRY_FLAGS, 8); // flags
       central.writeUInt16LE(8, 10); // method
       central.writeUInt16LE(rec.time, 12);
       central.writeUInt16LE(rec.date, 14);
