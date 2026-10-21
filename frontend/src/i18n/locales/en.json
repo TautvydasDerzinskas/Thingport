@@ -1288,6 +1288,56 @@
           "saveFailed": "Failed to save rendering settings.",
           "illustrationBefore": "Detailed",
           "illustrationAfter": "Simplified"
+        },
+        "quality": {
+          "heading": "Print quality checks",
+          "subtitle": "Look for problems that could spoil a print.",
+          "infoTitle": "How quality checks work",
+          "infoWhen": "A model is checked the first time it is opened, and only then. Models nobody opens are never checked.",
+          "infoChecks": "The check looks for holes, broken or flipped surfaces, loose fragments, missing parts and an unlikely size, such as a model exported in the wrong unit.",
+          "infoCost": "Checking reads the whole model on the server: a few seconds for most models, longer for very detailed ones.",
+          "label": "Check models for print problems",
+          "helpOn": "On: each model is checked the first time it is opened. On by default.",
+          "helpOff": "Off: models are not checked.",
+          "loadFailed": "Failed to load quality check settings.",
+          "saveFailed": "Failed to save quality check settings.",
+          "configure": "Choose what to check",
+          "dialogTitle": "Problems to check for",
+          "dialogHint": "A problem switched off is hidden from every model's results straight away. Models aren't checked again.",
+          "checks": {
+            "damaged": {
+              "title": "Damaged files",
+              "desc": "Files that won't open or contain nothing to print."
+            },
+            "missingParts": {
+              "title": "Missing parts",
+              "desc": "A 3MF that refers to part files it doesn't contain."
+            },
+            "openEdges": {
+              "title": "Holes in the surface",
+              "desc": "Open edges: the surface isn't closed, so the slicer has to guess what is inside."
+            },
+            "nonManifoldEdges": {
+              "title": "Non-manifold edges",
+              "desc": "Edges shared by more than two faces, which slicers can misread."
+            },
+            "flippedFaces": {
+              "title": "Flipped faces",
+              "desc": "Faces turned the opposite way to their neighbours."
+            },
+            "insideOut": {
+              "title": "Inside out",
+              "desc": "A closed surface that faces inwards."
+            },
+            "fragments": {
+              "title": "Loose fragments",
+              "desc": "Tiny separate pieces floating apart from the model."
+            },
+            "scale": {
+              "title": "Unlikely size",
+              "desc": "Under 1 mm or over 2 m across: probably exported in the wrong unit."
+            }
+          }
         }
       },
       "importQueue": {
@@ -2704,7 +2754,83 @@
       "sizeHint": "Total size of all this model's files in storage",
       "author": "Author",
       "downloadModelFiles": "Download model files",
-      "imported": "Imported {{date}}"
+      "imported": "Imported {{date}}",
+      "quality": {
+        "scanning": "Checking print quality…",
+        "scanningFiles": "{{done}} of {{total}} files checked",
+        "doneGood": "Looks printable",
+        "doneIssues": "Problems found",
+        "toastIssues": "This model may not print well. See the warning next to 3D Preview.",
+        "badgeGood": "Quality check passed",
+        "badgeIssues": "Print problems found",
+        "dialogTitle": "Print quality",
+        "noIssues": "No problems found",
+        "skipped": "Not checked: the file is too large or in a layout the check can't read.",
+        "notYet": "Not checked yet.",
+        "slicerNote": "Slicers repair many small problems on their own. Look at the sliced preview before printing.",
+        "triangles_one": "{{formatted}} triangle",
+        "triangles_other": "{{formatted}} triangles",
+        "bodies_one": "{{count}} body",
+        "bodies_other": "{{count}} bodies",
+        "size": "{{x}} × {{y}} × {{z}} mm",
+        "issues": {
+          "unreadable": {
+            "title": "File can't be opened",
+            "desc": "The file is damaged or isn't a valid model file."
+          },
+          "empty": {
+            "title": "No geometry",
+            "desc": "The file contains nothing to print."
+          },
+          "missingParts": {
+            "title_one": "{{count}} missing part",
+            "title_other": "{{count}} missing parts",
+            "desc": "The model refers to part files that aren't in it, so pieces will be missing."
+          },
+          "openEdges": {
+            "title": "Holes in the surface",
+            "desc_one": "{{count}} open edge: the surface isn't closed, so the slicer has to guess what is inside.",
+            "desc_other": "{{count}} open edges: the surface isn't closed, so the slicer has to guess what is inside."
+          },
+          "nonManifoldEdges": {
+            "title": "Non-manifold edges",
+            "desc_one": "{{count}} edge is shared by more than two faces, which slicers can misread.",
+            "desc_other": "{{count}} edges are shared by more than two faces, which slicers can misread."
+          },
+          "flippedFaces": {
+            "title": "Flipped faces",
+            "desc_one": "{{count}} edge lies between faces turned opposite ways, so parts may print hollow or go missing.",
+            "desc_other": "{{count}} edges lie between faces turned opposite ways, so parts may print hollow or go missing."
+          },
+          "insideOut": {
+            "title": "Inside out",
+            "desc": "The surface faces inwards. Some slicers treat it as empty."
+          },
+          "fragments": {
+            "title_one": "{{count}} loose fragment",
+            "title_other": "{{count}} loose fragments",
+            "desc": "Tiny separate pieces float apart from the model. They print as blobs or not at all."
+          },
+          "tooSmall": {
+            "title": "Very small",
+            "desc": "Under 1 mm across: probably exported in the wrong unit. Scale it up in the slicer."
+          },
+          "tooLarge": {
+            "title": "Very large",
+            "desc": "Over 2 m across: probably exported in the wrong unit. Scale it down in the slicer."
+          }
+        },
+        "toastMinor": "Minor print problems found in this model. Slicers usually cope with these.",
+        "severity": {
+          "critical": "Critical",
+          "criticalHint": "The print fails or comes out incomplete.",
+          "major": "Major",
+          "majorHint": "The model likely prints with defects.",
+          "minor": "Minor",
+          "minorHint": "Slicers usually cope, or it's a quick fix in one."
+        },
+        "manageSettings": "Manage quality checks"
+      }
     },
     "edit": {
       "title": "Edit model",

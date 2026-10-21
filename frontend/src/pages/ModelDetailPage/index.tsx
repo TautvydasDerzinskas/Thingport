@@ -32,6 +32,9 @@ import ModelSidePanel from "./ModelSidePanel";
 import MarkdownDescription from "../../components/MarkdownDescription";
 import AiDescriptionReview, { AiDescriptionChip } from "./AiDescriptionReview";
 import Skeleton from "@mui/material/Skeleton";
+import { useQualityCheck } from "./QualityCheck/useQualityCheck";
+import QualityScanOverlay from "./QualityCheck/QualityScanOverlay";
+import QualityBadge from "./QualityCheck/QualityBadge";
 
 type Props = {
   theme: ResolvedTheme;
@@ -51,6 +54,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
   const [renderUnavailable, setRenderUnavailable] = useState(false);
   const onRenderUnavailable = useCallback(() => setRenderUnavailable(true), []);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const { quality, outcome } = useQualityCheck(printId ?? "", onUnauthorized);
 
   // Returns wherever the user came from; useSmartBack skips same-route history entries.
   const goBack = useSmartBack();
@@ -275,24 +279,30 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
               </>
             )}
 
-            {canPreview3d && (
-              <Button
-                variant="contained"
-                size="small"
-                startIcon={<ViewInArIcon fontSize="small" />}
-                onClick={() => setPreviewOpen(true)}
-                sx={{
-                  position: "absolute",
-                  left: 12,
-                  bottom: 12,
-                  bgcolor: "rgba(0, 0, 0, 0.65)",
-                  color: "#fff",
-                  "&:hover": { bgcolor: "rgba(0, 0, 0, 0.8)" },
-                }}
-              >
-                {t("models:detail.preview3d")}
-              </Button>
-            )}
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              sx={{ position: "absolute", left: 12, bottom: 12, zIndex: 2 }}
+            >
+              {canPreview3d && (
+                <Button
+                  variant="contained"
+                  size="small"
+                  startIcon={<ViewInArIcon fontSize="small" />}
+                  onClick={() => setPreviewOpen(true)}
+                  sx={{
+                    bgcolor: "rgba(0, 0, 0, 0.65)",
+                    color: "#fff",
+                    "&:hover": { bgcolor: "rgba(0, 0, 0, 0.8)" },
+                  }}
+                >
+                  {t("models:detail.preview3d")}
+                </Button>
+              )}
+              <QualityBadge quality={quality} isAdmin={viewer?.role === "ADMIN"} />
+            </Stack>
+            <QualityScanOverlay key={print.id} quality={quality} outcome={outcome} />
           </Box>
           <ProviderBadge
             provider={print.source_provider}

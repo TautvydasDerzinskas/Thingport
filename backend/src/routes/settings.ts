@@ -13,6 +13,8 @@ import {
   getAuthTokenTtl,
   getPreviewMode,
   getSimplifyPreviews,
+  getQualityChecks,
+  getQualityChecksOff,
   getSmtpSettings,
   getFlaresolverrUrl,
   getPublicUrl,
@@ -25,6 +27,8 @@ import {
   setAuthTokenTtl,
   setPreviewMode,
   setSimplifyPreviews,
+  setQualityChecks,
+  setQualityChecksOff,
   setSmtpSettings,
   setThingiverseAccessToken,
   getMyminifactoryApiKey,
@@ -135,6 +139,7 @@ import { getDisabledProviders, PROVIDERS, setProviderEnabled } from "../services
 import { CARD_PREVIEWS, getCardPreview, setCardPreview } from "../services/cardPreviewService";
 import { createLog } from "../services/auditLog";
 import { testFlaresolverr } from "../services/flaresolverr";
+import { QUALITY_CHECK_KEYS, type QualityCheckKey } from "../services/meshQuality";
 
 const router = Router();
 router.use(requireAuth);
@@ -362,6 +367,30 @@ router.patch(
       );
     }
     res.json({ simplify_previews: body.simplify_previews });
+  }),
+);
+
+router.get(
+  "/settings/quality-checks",
+  requireAdmin,
+  asyncHandler(async (_req, res) => {
+    res.json({ enabled: await getQualityChecks(), checks_off: await getQualityChecksOff() });
+  }),
+);
+
+// Switching a check off hides what it found in results already saved; nothing is checked again.
+const qualityChecksSchema = z.object({
+  enabled: z.boolean().optional(),
+  checks_off: z.array(z.enum(QUALITY_CHECK_KEYS as [QualityCheckKey, ...QualityCheckKey[]])).optional(),
+});
+router.patch(
+  "/settings/quality-checks",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const body = parseBody(qualityChecksSchema, req.body);
+    if (body.enabled !== undefined) await setQualityChecks(body.enabled);
+    if (body.checks_off) await setQualityChecksOff(body.checks_off);
+    res.json({ enabled: await getQualityChecks(), checks_off: await getQualityChecksOff() });
   }),
 );
 

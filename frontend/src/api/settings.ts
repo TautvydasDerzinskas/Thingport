@@ -2,6 +2,7 @@ import { authHeaders } from "../utils/auth";
 import { apiBase, assertOk, readErrorMessage, UnauthorizedError } from "./client";
 import type { AccentColor, RenderColor, ThemeSelection } from "../constants/settingsOptions";
 import { invalidateAiCategorizationStatus } from "./aiCategorization";
+import type { QualityIssueCode, QualitySeverity } from "./prints";
 
 export type StorageToken =
   "category-or-folder" | "collection" | "tags" | "creator" | "model" | "filename" | "id" | "plate";
@@ -97,6 +98,46 @@ export type ConsumeSettings = {
 };
 
 export type RenderingSettings = { simplify_previews: boolean };
+
+/** One switch per kind of print problem; related issues share one. */
+export type QualityCheckKey =
+  "damaged" | "missingParts" | "openEdges" | "nonManifoldEdges" | "flippedFaces" | "insideOut" | "fragments" | "scale";
+export const QUALITY_CHECK_KEYS: readonly QualityCheckKey[] = [
+  "damaged",
+  "missingParts",
+  "openEdges",
+  "nonManifoldEdges",
+  "flippedFaces",
+  "insideOut",
+  "fragments",
+  "scale",
+];
+// The backend's QUALITY_CHECK_OF_ISSUE: the switch each issue in a model's report falls under.
+export const QUALITY_CHECK_OF_ISSUE: Record<QualityIssueCode, QualityCheckKey> = {
+  unreadable: "damaged",
+  empty: "damaged",
+  missingParts: "missingParts",
+  openEdges: "openEdges",
+  nonManifoldEdges: "nonManifoldEdges",
+  flippedFaces: "flippedFaces",
+  insideOut: "insideOut",
+  fragments: "fragments",
+  tooSmall: "scale",
+  tooLarge: "scale",
+};
+
+// The backend's QUALITY_SEVERITY (services/meshQuality.ts), which sets each issue's severity in results.
+export const QUALITY_CHECK_SEVERITY: Record<QualityCheckKey, QualitySeverity> = {
+  damaged: "critical",
+  missingParts: "critical",
+  openEdges: "major",
+  flippedFaces: "major",
+  insideOut: "major",
+  nonManifoldEdges: "minor",
+  fragments: "minor",
+  scale: "minor",
+};
+export type QualityCheckSettings = { enabled: boolean; checks_off: QualityCheckKey[] };
 
 export type AuthSettings = {
   token_ttl_seconds: number;
@@ -286,6 +327,24 @@ export const settingsApi = {
     });
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update rendering settings"));
+    return res.json();
+  },
+
+  getQualityChecks: async (): Promise<QualityCheckSettings> => {
+    const res = await fetch(`${apiBase()}/settings/quality-checks`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    assertOk(res, "Failed to load quality check settings");
+    return res.json();
+  },
+
+  updateQualityChecks: async (patch: Partial<QualityCheckSettings>): Promise<QualityCheckSettings> => {
+    const res = await fetch(`${apiBase()}/settings/quality-checks`, {
+      method: "PATCH",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(patch),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update quality check settings"));
     return res.json();
   },
 
