@@ -75,7 +75,7 @@ changes it, that change is kept.
 
 ## What an admin decides
 
-On the admin **Auth** page, **AI assistants (MCP)** sets what every API token on the instance may do over MCP:
+On the admin **Auth** page, **MCP tools** sets what every API token on the instance may do over MCP:
 
 - **Read and change** (the default): each user picks their token's tools, including the ones that change the library.
 - **Read only**: only the tools that read are offered or answered. A tool someone already allowed stays allowed, and works

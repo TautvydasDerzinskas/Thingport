@@ -8,19 +8,17 @@ import Dialog from "@mui/material/Dialog";
 import IconButton from "@mui/material/IconButton";
 import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
-import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { alpha, useTheme, type Theme } from "@mui/material/styles";
 import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
 import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
-import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import NewReleasesOutlinedIcon from "@mui/icons-material/NewReleasesOutlined";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 import { releaseNotesApi, type ReleaseNoteItem, type ReleaseNoteKind, type ReleaseNotes } from "../../api/releaseNotes";
+import CodeBlock from "../CodeBlock";
 import { ListRowSkeletons } from "../ListSkeleton";
 
 export type WhatsNewRequest = {
@@ -112,77 +110,6 @@ function Screenshots({
           )}
         </ButtonBase>
       ))}
-    </Box>
-  );
-}
-
-function CodeBlock({ code }: { code: string }) {
-  const { t } = useTranslation("app");
-  const box = React.useRef<HTMLPreElement>(null);
-  const [copyState, setCopyState] = React.useState<"idle" | "copied" | "failed">("idle");
-  React.useEffect(() => {
-    if (copyState === "idle") return;
-    const timer = window.setTimeout(() => setCopyState("idle"), copyState === "failed" ? 4000 : 1500);
-    return () => window.clearTimeout(timer);
-  }, [copyState]);
-  // The clipboard API only exists on HTTPS or localhost, and self-hosted instances are often plain HTTP on a LAN
-  // address; there the command is selected, to copy by hand.
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopyState("copied");
-    } catch {
-      if (box.current) window.getSelection()?.selectAllChildren(box.current);
-      setCopyState("failed");
-    }
-  };
-  const copyLabel =
-    copyState === "failed"
-      ? t("whatsNew.copyFailed")
-      : copyState === "copied"
-        ? t("whatsNew.copied")
-        : t("whatsNew.copy");
-  return (
-    <Box
-      sx={{
-        position: "relative",
-        mt: 1,
-        borderRadius: 1.5,
-        border: 1,
-        borderColor: "divider",
-        bgcolor: "action.hover",
-      }}
-    >
-      <Box
-        component="pre"
-        ref={box}
-        sx={{
-          m: 0,
-          p: 1.25,
-          pr: 5,
-          fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
-          fontSize: 12,
-          lineHeight: 1.6,
-          whiteSpace: "pre-wrap",
-          overflowWrap: "anywhere",
-        }}
-      >
-        {code}
-      </Box>
-      <Tooltip title={copyLabel}>
-        <IconButton
-          size="small"
-          aria-label={t("whatsNew.copy")}
-          onClick={() => void copy()}
-          sx={{ position: "absolute", top: 4, right: 4 }}
-        >
-          {copyState === "copied" ? (
-            <CheckIcon sx={{ fontSize: 16 }} color="success" />
-          ) : (
-            <ContentCopyIcon sx={{ fontSize: 16 }} />
-          )}
-        </IconButton>
-      </Tooltip>
     </Box>
   );
 }

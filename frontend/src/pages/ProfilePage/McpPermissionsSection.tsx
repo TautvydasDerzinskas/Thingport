@@ -1,12 +1,14 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import TerminalIcon from "@mui/icons-material/Terminal";
 import { authApi, type ApiTokenInfo, type McpToolInfo } from "../../api/auth";
 import { UnauthorizedError } from "../../api/client";
 import { useConfirm } from "../../components/ConfirmProvider";
-import HelpTip from "../../components/HelpTip";
+import McpConnectDialog from "../../components/mcp/McpConnectDialog";
 import { PanelHeader, SectionLabel } from "../../components/Layout/ConfigurationDialog/parts";
 import PermissionRow from "../../components/PermissionRow";
 import { useToast } from "../../components/ToastProvider";
@@ -24,6 +26,7 @@ export default function McpPermissionsSection({ info, onChange, onUnauthorized }
   const confirm = useConfirm();
   const toast = useToast();
   const [saving, setSaving] = React.useState<string | null>(null);
+  const [connectOpen, setConnectOpen] = React.useState(false);
   // Ahead of the server while a save is in flight; back in step with it once the save answers.
   const [selected, setSelected] = React.useState<string[]>(info.mcp_tools);
   React.useEffect(() => setSelected(info.mcp_tools), [info.mcp_tools]);
@@ -73,8 +76,15 @@ export default function McpPermissionsSection({ info, onChange, onUnauthorized }
       <PanelHeader
         title={t("profile.apiToken.mcp.heading")}
         subtitle={t("profile.apiToken.mcp.subtitle")}
-        action={<HelpTip text={t("profile.apiToken.mcp.description")} />}
+        action={
+          info.mcp_access !== "off" && (
+            <Button size="small" startIcon={<TerminalIcon />} onClick={() => setConnectOpen(true)}>
+              {t("mcpConnect.open")}
+            </Button>
+          )
+        }
       />
+      <McpConnectDialog open={connectOpen} onClose={() => setConnectOpen(false)} />
       {info.mcp_access === "off" ? (
         <Typography variant="body2" color="text.secondary">
           {t("profile.apiToken.mcp.adminOff")}

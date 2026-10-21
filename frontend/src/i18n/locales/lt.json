@@ -208,7 +208,6 @@
         "mcp": {
           "heading": "MCP",
           "subtitle": "Įrankiai, kuriuos gali naudoti DI asistentas",
-          "description": "Ką gali naudoti DI asistentas, prijungtas su šiuo raktu (per MCP, adresu /api/mcp). Pakeitimai įsigalioja iš karto, naujo rakto nereikia.",
           "connect": "Kad prijungtumėte DI asistentą, pavyzdžiui Claude Code:",
           "writes": "Keičia biblioteką",
           "failed": "Nepavyko išsaugoti rakto MCP įrankių. Bandykite dar kartą.",
@@ -1704,9 +1703,9 @@
         "failed": "Nepavyko išsaugoti viešo adreso."
       },
       "mcp": {
-        "heading": "DI asistentai (MCP)",
-        "subtitle": "Ką API raktai gali daryti per /api/mcp.",
-        "accessLabel": "MCP prieiga",
+        "heading": "MCP įrankiai",
+        "subtitle": "Leiskite DI asistentams, pvz., Claude, ieškoti bibliotekoje ir ją tvarkyti naudotojo API raktu.",
+        "accessLabel": "Ką gali API raktai",
         "help": "Kiekvienas naudotojas vis tiek pats pasirenka savo rakto įrankius šiose ribose. Biblioteką keičiantys įrankiai importuoja be captcha, kaip ir Thingport Grab.",
         "failed": "Nepavyko išsaugoti MCP prieigos. Bandykite dar kartą.",
         "levels": {
@@ -2261,10 +2260,47 @@
       "empty": "Šiai versijai naujienų dar nėra.",
       "openGithub": "Atidaryti GitHub",
       "zoom": "Padidinti ekrano vaizdą",
-      "highlight": "Svarbiausia",
+      "highlight": "Svarbiausia"
+    },
+    "codeBlock": {
       "copy": "Kopijuoti",
       "copied": "Nukopijuota",
       "copyFailed": "Čia nepavyko nukopijuoti. Tekstas pažymėtas: spauskite Ctrl+C arba ⌘C."
+    },
+    "mcpConnect": {
+      "open": "Kaip prijungti",
+      "title": "Prijunkite DI asistentą",
+      "intro": "Kiekvienas jungiasi savo API raktu, sukurtu <strong>Profilis → API raktas</strong>. Įrašykite jį vietoj <code>{{token}}</code>.",
+      "clientLabel": "DI asistentas",
+      "clients": {
+        "claudeCode": "Claude Code",
+        "claude": "Claude",
+        "chatgpt": "ChatGPT",
+        "codex": "Codex CLI",
+        "editors": "Cursor ir VS Code"
+      },
+      "claudeCode": {
+        "step": "Paleiskite terminale:"
+      },
+      "claude": {
+        "step": "Claude atidarykite <strong>Settings → Connectors</strong>, pasirinkite <strong>Add custom connector</strong> ir įveskite šį adresą. Prie užklausos antraščių pridėkite šią Authorization antraštę:",
+        "note": "Claude jungiasi iš Anthropic serverių, todėl Thingport turi būti pasiekiamas internetu per HTTPS. Užklausos antraštės yra beta versijos ir gali priklausyti nuo plano."
+      },
+      "chatgpt": {
+        "step": "ChatGPT įjunkite <strong>Developer mode</strong> skiltyje <strong>Settings → Apps & Connectors</strong>, sukurkite jungtį su šiuo adresu ir autentifikavimui pasirinkite <strong>Token</strong>:",
+        "note": "ChatGPT jungiasi iš OpenAI serverių, todėl Thingport turi būti pasiekiamas internetu per HTTPS. Token parinktis priklauso nuo plano; jei jos nėra, naudokite Codex CLI."
+      },
+      "codex": {
+        "step": "Paleiskite terminale:",
+        "note": "THINGPORT_TOKEN turi būti nustatytas apvalkale, iš kurio paleidžiamas Codex."
+      },
+      "editors": {
+        "cursor": "Cursor: pridėkite tai į <code>~/.cursor/mcp.json</code>.",
+        "vscode": "VS Code: pridėkite tai į darbo srities <code>.vscode/mcp.json</code>.",
+        "note": "Kiti klientai veikia taip pat, jei palaiko Streamable HTTP ir leidžia nustatyti antraštę."
+      },
+      "guide": "MCP vadovas",
+      "close": "Uždaryti"
     }
   },
   "common": {

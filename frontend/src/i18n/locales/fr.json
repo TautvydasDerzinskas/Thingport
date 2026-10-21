@@ -210,7 +210,6 @@
           "copyCommand": "Copier la commande",
           "heading": "MCP",
           "subtitle": "Les outils qu'un assistant IA peut utiliser",
-          "description": "Ce qu'un assistant IA connecté avec ce jeton (via MCP, sur /api/mcp) peut utiliser. Les changements s'appliquent aussitôt, sans nouveau jeton.",
           "connect": "Pour connecter un assistant IA, par exemple Claude Code :",
           "writes": "Modifie votre bibliothèque",
           "failed": "Impossible d'enregistrer les outils MCP du jeton. Veuillez réessayer.",
@@ -1663,9 +1662,9 @@
         "failed": "Impossible d’enregistrer l’URL publique."
       },
       "mcp": {
-        "heading": "Assistants IA (MCP)",
-        "subtitle": "Ce que les jetons d'API peuvent faire sur /api/mcp.",
-        "accessLabel": "Accès MCP",
+        "heading": "Outils MCP",
+        "subtitle": "Laissez des assistants IA comme Claude chercher dans la bibliothèque et la gérer avec le jeton d’API de leur utilisateur.",
+        "accessLabel": "Ce que les jetons d’API peuvent faire",
         "help": "Chaque utilisateur choisit toujours les outils de son propre jeton dans cette limite. Les outils qui modifient la bibliothèque importent sans captcha, comme Thingport Grab.",
         "failed": "Impossible d'enregistrer l'accès MCP. Veuillez réessayer.",
         "levels": {
@@ -2208,10 +2207,47 @@
       "empty": "Pas encore de notes pour cette version.",
       "openGithub": "Ouvrir sur GitHub",
       "zoom": "Agrandir la capture",
-      "highlight": "À la une",
+      "highlight": "À la une"
+    },
+    "codeBlock": {
       "copy": "Copier",
       "copied": "Copié",
       "copyFailed": "Copie impossible ici. Le texte est sélectionné : appuyez sur Ctrl+C ou ⌘C."
+    },
+    "mcpConnect": {
+      "open": "Comment se connecter",
+      "title": "Connecter un assistant IA",
+      "intro": "Chacun se connecte avec son propre jeton d’API, créé dans <strong>Profil → Jeton d’API</strong>. Mettez-le à la place de <code>{{token}}</code>.",
+      "clientLabel": "Assistant IA",
+      "clients": {
+        "claudeCode": "Claude Code",
+        "claude": "Claude",
+        "chatgpt": "ChatGPT",
+        "codex": "Codex CLI",
+        "editors": "Cursor et VS Code"
+      },
+      "claudeCode": {
+        "step": "Lancez ceci dans un terminal :"
+      },
+      "claude": {
+        "step": "Dans Claude, ouvrez <strong>Settings → Connectors</strong>, choisissez <strong>Add custom connector</strong> et saisissez cette adresse. Dans les en-têtes de requête, ajoutez cet en-tête Authorization :",
+        "note": "Claude se connecte depuis les serveurs d’Anthropic : Thingport doit donc être accessible depuis internet en HTTPS. Les en-têtes de requête sont en bêta et peuvent dépendre de votre offre."
+      },
+      "chatgpt": {
+        "step": "Dans ChatGPT, activez le <strong>Developer mode</strong> dans <strong>Settings → Apps & Connectors</strong>, créez un connecteur avec cette adresse et choisissez <strong>Token</strong> comme authentification :",
+        "note": "ChatGPT se connecte depuis les serveurs d’OpenAI : Thingport doit donc être accessible depuis internet en HTTPS. L’option Token dépend de votre offre ; sans elle, utilisez Codex CLI."
+      },
+      "codex": {
+        "step": "Lancez ceci dans un terminal :",
+        "note": "THINGPORT_TOKEN doit être défini dans le shell qui lance Codex."
+      },
+      "editors": {
+        "cursor": "Cursor : ajoutez ceci à <code>~/.cursor/mcp.json</code>.",
+        "vscode": "VS Code : ajoutez ceci à <code>.vscode/mcp.json</code> dans votre espace de travail.",
+        "note": "Les autres clients fonctionnent de la même façon s’ils prennent en charge Streamable HTTP et permettent de définir un en-tête."
+      },
+      "guide": "Guide MCP",
+      "close": "Fermer"
     }
   },
   "common": {

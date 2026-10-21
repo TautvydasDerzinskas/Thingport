@@ -1,15 +1,20 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import TerminalIcon from "@mui/icons-material/Terminal";
 import { UnauthorizedError } from "../../api/client";
 import { settingsApi, type McpAccess } from "../../api/settings";
 import Segmented from "../../components/controls/Segmented";
 import HelpTip from "../../components/HelpTip";
 import SectionHeader from "../../components/SectionHeader";
 import { useToast } from "../../components/ToastProvider";
+import { AnimatedTile } from "../../components/storageAnimations/parts";
+import McpLinkAnimation from "../../components/authAnimations/McpLinkAnimation";
+import McpConnectDialog from "../../components/mcp/McpConnectDialog";
 
 type Props = {
   onUnauthorized?: () => void;
@@ -24,6 +29,7 @@ export default function McpSection({ onUnauthorized }: Props) {
   const [access, setAccess] = React.useState<McpAccess>("write");
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
+  const [connectOpen, setConnectOpen] = React.useState(false);
 
   React.useEffect(() => {
     let active = true;
@@ -60,28 +66,42 @@ export default function McpSection({ onUnauthorized }: Props) {
 
   return (
     <Stack spacing={3}>
-      <SectionHeader title={t("adminSettings.mcp.heading")} subtitle={t("adminSettings.mcp.subtitle")} />
+      <SectionHeader
+        title={t("adminSettings.mcp.heading")}
+        subtitle={t("adminSettings.mcp.subtitle")}
+        actions={
+          <Button variant="outlined" startIcon={<TerminalIcon />} onClick={() => setConnectOpen(true)}>
+            {t("mcpConnect.open")}
+          </Button>
+        }
+      />
       <Paper variant="outlined" sx={{ p: 2.5 }}>
-        <Stack spacing={0.75} alignItems="flex-start">
-          <Typography variant="body2" fontWeight={600}>
-            {t("adminSettings.mcp.accessLabel")}
-            <HelpTip text={t("adminSettings.mcp.help")} />
-          </Typography>
-          <Stack direction="row" spacing={1.5} alignItems="center">
-            <Segmented
-              label={t("adminSettings.mcp.accessLabel")}
-              value={access}
-              onChange={(next) => void select(next)}
-              disabled={loading || saving}
-              options={LEVELS.map((level) => ({ value: level, label: t(`adminSettings.mcp.levels.${level}`) }))}
-            />
-            {saving && <CircularProgress size={14} />}
+        <Stack direction="row" spacing={2.5} alignItems="center">
+          <AnimatedTile>
+            <McpLinkAnimation size={76} access={access} />
+          </AnimatedTile>
+          <Stack spacing={0.75} alignItems="flex-start" sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="body2" fontWeight={600}>
+              {t("adminSettings.mcp.accessLabel")}
+              <HelpTip text={t("adminSettings.mcp.help")} />
+            </Typography>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Segmented
+                label={t("adminSettings.mcp.accessLabel")}
+                value={access}
+                onChange={(next) => void select(next)}
+                disabled={loading || saving}
+                options={LEVELS.map((level) => ({ value: level, label: t(`adminSettings.mcp.levels.${level}`) }))}
+              />
+              {saving && <CircularProgress size={14} />}
+            </Stack>
+            <Typography variant="caption" color="text.secondary">
+              {t(`adminSettings.mcp.levelHelp.${access}`)}
+            </Typography>
           </Stack>
-          <Typography variant="caption" color="text.secondary">
-            {t(`adminSettings.mcp.levelHelp.${access}`)}
-          </Typography>
         </Stack>
       </Paper>
+      <McpConnectDialog open={connectOpen} onClose={() => setConnectOpen(false)} />
     </Stack>
   );
 }
