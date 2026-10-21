@@ -1,5 +1,48 @@
 # Thingport backend changelog
 
+# [thingport-backend-v1.2.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-backend-v1.1.0...thingport-backend-v1.2.0) (2026-10-21)
+
+
+### Bug Fixes
+
+* address card preview review comments ([678c480](https://github.com/TautvydasDerzinskas/Thingport/commit/678c4802d74c16aee75f3f62ebee51cebd8f7037))
+* announce each version once, and don't flash old notes on reopen ([58eb011](https://github.com/TautvydasDerzinskas/Thingport/commit/58eb01179346dd12d78ae8a23e4c27e3e255e681))
+* check an imported model's description once its import is done ([6555875](https://github.com/TautvydasDerzinskas/Thingport/commit/6555875e29f7cfafc4b1a2db897a7cc59db626ff))
+* count only MakerWorld profiles with an id before taking the raw files ([8affbbb](https://github.com/TautvydasDerzinskas/Thingport/commit/8affbbb6c3de73b9bafb505d4e8877832378c436))
+* count suffixed renames, roll back failed theme saves, keep reset dialog open on error ([1a44b87](https://github.com/TautvydasDerzinskas/Thingport/commit/1a44b87cdc875fa92d23976eff44e48bb5dc727b))
+* guard tag rewrites against concurrent edits, pluralise merge count, fix lt wording ([ef14f54](https://github.com/TautvydasDerzinskas/Thingport/commit/ef14f54221160dc416b8553f36aaab59d2dd7d47))
+* harden mesh check against bad indices and tidy review follow-ups ([8b4653e](https://github.com/TautvydasDerzinskas/Thingport/commit/8b4653e415588b6cda7cae434052e4703f3abf7a))
+* keep non-ASCII names readable in zip downloads ([060be2f](https://github.com/TautvydasDerzinskas/Thingport/commit/060be2f6920140dc005149b60f957accdd6831ac))
+* keep skipped releases with curated notes, and show a failed copy ([60ee06b](https://github.com/TautvydasDerzinskas/Thingport/commit/60ee06ba438e266f545972870fc6c959b29cf05f))
+* leave room for a reasoning model's thinking in the AI token budget ([5dc6ff6](https://github.com/TautvydasDerzinskas/Thingport/commit/5dc6ff67a3166fbe6aec2034c594d7b22262a9c2))
+* list a nested pictures folder's files as its own model's ([67bea14](https://github.com/TautvydasDerzinskas/Thingport/commit/67bea149a92803472d30d5e1e4f64b77427b3071))
+* **mcp:** rank list_tags by use and let it narrow, instead of every tag at once ([04e9719](https://github.com/TautvydasDerzinskas/Thingport/commit/04e97197d7ede73743c6692ad1317e437dfaa69b))
+* retry a dashboard row's render when its url changes ([401cc38](https://github.com/TautvydasDerzinskas/Thingport/commit/401cc38461a9650b430998cf02aea4a11fdc34f7))
+* touch only a model's own pictures, check picture files once, drop plate folders for other files ([ecc551e](https://github.com/TautvydasDerzinskas/Thingport/commit/ecc551ef2771e0d35be57face89547a3a5a54c23))
+
+
+### Features
+
+* add render colour, graphite accent and hover slideshow toggle ([926c5d3](https://github.com/TautvydasDerzinskas/Thingport/commit/926c5d345b9e52479cf083230fa9bc7839b97ca6))
+* admin MCP access, token permissions dialog, and review fixes ([dec1b0d](https://github.com/TautvydasDerzinskas/Thingport/commit/dec1b0dbe3f8566a77bc981017ed29a0bbbc3703))
+* **backend:** MCP endpoint at /api/mcp, with tools chosen per API token ([8567f19](https://github.com/TautvydasDerzinskas/Thingport/commit/8567f195c07254b48710fc7fd9f6679a25b2555f))
+* **backend:** MCP tools that import models and file them into collections ([a36a996](https://github.com/TautvydasDerzinskas/Thingport/commit/a36a99639a1537d098f58e0555bf6af9da167550))
+* check models for print problems when they are opened ([f913710](https://github.com/TautvydasDerzinskas/Thingport/commit/f913710cc4d1ad045b818b7fbff4d0a2cdeab9c3))
+* import MakerWorld models that have only raw files ([437d85b](https://github.com/TautvydasDerzinskas/Thingport/commit/437d85be146d8a8c8fd04f7a626fc46605389a54))
+* keep a model's pictures and supporting files beside its model files ([0d505b7](https://github.com/TautvydasDerzinskas/Thingport/commit/0d505b716a4cc496db0b3e5edcbf138bf5594da7))
+* let a release update without notifying users ([aab83df](https://github.com/TautvydasDerzinskas/Thingport/commit/aab83df8861a1898d41a0c66c31a99069228d5e0))
+* let users choose what their API token can read over the REST API ([88949d9](https://github.com/TautvydasDerzinskas/Thingport/commit/88949d9d8c8ab5ec575429d9bd6a8a4816acfaac))
+* let users pick an accent color ([d26f730](https://github.com/TautvydasDerzinskas/Thingport/commit/d26f730bee0ec65597c68f97c0b05f327e673653))
+* reset categories to the starter tree, previewing what changes ([f8424dc](https://github.com/TautvydasDerzinskas/Thingport/commit/f8424dcb2306c0bf2c3f4c4aa15f596594020ae6))
+* show what's new after an update ([aebc0ac](https://github.com/TautvydasDerzinskas/Thingport/commit/aebc0ac97eddc75dfbb666a22efd6407070f810b))
+* sort, bulk actions and merge for collections and tags ([a0dbba8](https://github.com/TautvydasDerzinskas/Thingport/commit/a0dbba80587d771eb37950c195e61f77b3a83c74))
+* tint generated model renders with the accent ([908ae80](https://github.com/TautvydasDerzinskas/Thingport/commit/908ae80b5b6db48c645ab2be44b6e0a102447e0e))
+
+
+### Performance Improvements
+
+* **backend:** load a listing's files for the returned page only ([0da5db6](https://github.com/TautvydasDerzinskas/Thingport/commit/0da5db6536f11a6af03e8b05923204f47aaab0f9))
+
 # [thingport-backend-v1.1.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-backend-v1.0.2...thingport-backend-v1.1.0) (2026-10-20)
 
 
