@@ -1336,19 +1336,26 @@ async function importPrintablesModel(
 const MYMINIFACTORY_NOT_CONFIGURED =
   "MyMiniFactory import isn't configured for this instance yet -- ask an admin to add an API key in Administration > Providers.";
 
-/** The model files in a downloaded zip, each as its own plate; the zip itself is left for the caller. */
+/** The model files in a downloaded zip, each as its own plate; the zip itself is left for the caller. Plates have no
+ *  folders, so files named alike in different folders are named after their folder too: "2x2 - Top.stl". */
 async function modelFilesFromZip(zipPath: string): Promise<NewPlateInput[]> {
   const inputs: NewPlateInput[] = [];
   try {
-    for (const entry of await listZipEntries(zipPath)) {
-      if (entry.isDirectory) continue;
-      const filename = sanitizeFilename(path.basename(entry.name.replace(/\\/g, "/")));
-      if (!MULTI_FILE_PLATE_EXTS.has(path.extname(filename).toLowerCase())) continue;
+    const entries = (await listZipEntries(zipPath))
+      .filter((entry) => !entry.isDirectory)
+      .map((entry) => ({ entry, parts: entry.name.replace(/\\/g, "/").split("/").filter(Boolean) }))
+      .filter(({ parts }) => parts.length && MULTI_FILE_PLATE_EXTS.has(path.extname(parts.at(-1)!).toLowerCase()));
+    const sameName = new Map<string, number>();
+    for (const { parts } of entries) sameName.set(parts.at(-1)!, (sameName.get(parts.at(-1)!) ?? 0) + 1);
+    for (const { entry, parts } of entries) {
+      const name = parts.at(-1)!;
+      const folder = parts.at(-2);
+      const filename = sanitizeFilename(sameName.get(name)! > 1 && folder ? `${folder} - ${name}` : name);
       const buffer = await readZipEntry(zipPath, entry.name, IMPORT_MAX_BYTES);
       if (!buffer) continue;
       const tempFilePath = path.join(
         os.tmpdir(),
-        `thingport-mmf-${crypto.randomBytes(8).toString("hex")}${path.extname(filename)}`,
+        `thingport-zip-${crypto.randomBytes(8).toString("hex")}${path.extname(filename)}`,
       );
       await fs.writeFile(tempFilePath, buffer);
       inputs.push({ filename, mime: guessMimeFromPath(filename), tempFilePath });
@@ -2311,6 +2318,16 @@ async function importNewOrExisting(userId: string, url: string, body: ImportRequ
   }
 
   const { tempPath, filename, mime, meta } = await downloadImportToTemp(url, body);
+  let plates: NewPlateInput[] = [];
+  try {
+    plates = await makerworldZipPlates(source, tempPath, filename);
+  } catch (err) {
+    await fs.rm(tempPath, { force: true }).catch(() => undefined);
+    throw err;
+  }
+  if (!plates.length) {
+    plates = [{ filename, mime, tempFilePath: tempPath, sourceInstanceId: meta.makerworldProfile?.instanceId ?? null }];
+  }
   const author = await upsertAuthorFromImport(meta.author);
   const categoryId =
     body.category_id ?? (await resolveCategoryIdByCategory(userId, meta.categorySite, meta.siteCategoryIds));
@@ -2329,9 +2346,7 @@ async function importNewOrExisting(userId: string, url: string, body: ImportRequ
   try {
     let result: { print: Print; plates: Plate[] };
     try {
-      result = await createPrint(userId, printMeta, path.parse(filename).name, [
-        { filename, mime, tempFilePath: tempPath, sourceInstanceId: meta.makerworldProfile?.instanceId ?? null },
-      ]);
+      result = await createPrint(userId, printMeta, path.parse(filename).name, plates);
     } catch (err) {
       // Race guard: a concurrent import of the same source model won.
       if (source && isUniqueConstraintError(err)) {
@@ -2355,6 +2370,21 @@ async function importNewOrExisting(userId: string, url: string, body: ImportRequ
     });
     return { ...result, author, previewImages, alreadyImported: false };
   } finally {
-    if (fsSync.existsSync(tempPath)) await fs.rm(tempPath, { force: true }).catch(() => undefined);
+    for (const file of [tempPath, ...plates.map((plate) => plate.tempFilePath)]) {
+      if (file && fsSync.existsSync(file)) await fs.rm(file, { force: true }).catch(() => undefined);
+    }
   }
+}
+
+/** A MakerWorld zip -- the raw files of a model with no print profiles -- as its model files, one plate each, the zip
+ *  itself removed. Empty for anything else, or a zip with no model file in it, which is kept as it came. */
+async function makerworldZipPlates(
+  source: { provider: string } | null,
+  tempPath: string,
+  filename: string,
+): Promise<NewPlateInput[]> {
+  if (source?.provider !== "makerworld" || path.extname(filename).toLowerCase() !== ".zip") return [];
+  const plates = await modelFilesFromZip(tempPath);
+  if (plates.length) await fs.rm(tempPath, { force: true }).catch(() => undefined);
+  return plates;
 }

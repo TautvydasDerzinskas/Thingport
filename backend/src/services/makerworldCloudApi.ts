@@ -318,6 +318,46 @@ export async function fetchMakerworldDesign(
   return result.status === 200 && isRecord(result.data) ? result.data : null;
 }
 
+/** A download request's JSON body, or null; a CAPTCHA, the daily limit and a rejected login are thrown. */
+function downloadReplyBody(result: { status: number; data: unknown } | null): Record<string, unknown> | null {
+  if (!result) return null;
+  if (isCaptchaChallenge(result.data)) {
+    noteCaptchaChallenge();
+    throw new MakerworldCaptchaError();
+  }
+  if (isDownloadLimitReply(result.data)) throw new MakerworldDownloadLimitError();
+  if (result.status === 401 || result.status === 403) throw new MakerworldAuthError();
+  return result.status === 200 && isRecord(result.data) ? result.data : null;
+}
+
+/** A design with no print profiles, only the raw files the page's "Download STL/CAD files" offers: all of them, as
+ *  one zip, which the import unpacks. It belongs to no profile. */
+async function resolveMakerworldRawFiles(
+  designId: string,
+  design: Record<string, unknown>,
+  bearerToken: string,
+  paceMs?: number,
+): Promise<MakerworldCloudResolution | null> {
+  await maybeSleep(paceMs);
+  const body = downloadReplyBody(
+    await fetchCloudJson(`${DESIGN_API_BASE}/design/${designId}/model?modelType=all&type=download`, bearerToken),
+  );
+  const url = body && pickString(body, ["url"]);
+  if (!body || !url) return null;
+  const meta = makerworldMetaFromDesign(design);
+  const author = await completeMakerworldAuthor(meta.author, paceMs);
+  return {
+    downloadUrl: url,
+    meta: {
+      ...meta,
+      creator: author?.name ?? meta.creator,
+      filename: pickString(body, ["name"]),
+      author,
+      makerworldProfile: { instanceId: null },
+    },
+  };
+}
+
 /**
  * Resolves a design to a signed download URL via api.bambulab.com. Null means fall back to page
  * scraping. `paceMs` is awaited before every request so collection imports stay evenly spaced.
@@ -340,11 +380,12 @@ export async function resolveMakerworldViaCloudApi(
   if (designResult.status === 401 || designResult.status === 403) throw new MakerworldAuthError();
   if (designResult.status !== 200 || !isRecord(designResult.data)) return null;
   const design = designResult.data;
+  const instances = Array.isArray(design.instances) ? design.instances.filter(isRecord) : [];
+  if (!instances.length) return resolveMakerworldRawFiles(designId, design, bearerToken, paceMs);
 
   const modelId = typeof design.modelId === "string" && design.modelId.trim() ? design.modelId.trim() : null;
   if (!modelId) return null;
 
-  const instances = Array.isArray(design.instances) ? design.instances.filter(isRecord) : [];
   const defaultInstanceId = design.defaultInstanceId != null ? String(design.defaultInstanceId) : null;
 
   let selected: Record<string, unknown> | null = null;
@@ -363,20 +404,10 @@ export async function resolveMakerworldViaCloudApi(
   if (!profileId) return null;
 
   await maybeSleep(paceMs);
-  const downloadResult = await fetchCloudJson(
-    `${PROFILE_DOWNLOAD_BASE}/${profileId}?model_id=${encodeURIComponent(modelId)}`,
-    bearerToken,
+  const body = downloadReplyBody(
+    await fetchCloudJson(`${PROFILE_DOWNLOAD_BASE}/${profileId}?model_id=${encodeURIComponent(modelId)}`, bearerToken),
   );
-  if (!downloadResult) return null;
-  if (isCaptchaChallenge(downloadResult.data)) {
-    noteCaptchaChallenge();
-    throw new MakerworldCaptchaError();
-  }
-  if (isDownloadLimitReply(downloadResult.data)) throw new MakerworldDownloadLimitError();
-  if (downloadResult.status === 401 || downloadResult.status === 403) throw new MakerworldAuthError();
-  if (downloadResult.status !== 200 || !isRecord(downloadResult.data)) return null;
-  const body = downloadResult.data;
-  if (body.message !== "success" || typeof body.url !== "string" || !body.url.trim()) return null;
+  if (!body || body.message !== "success" || typeof body.url !== "string" || !body.url.trim()) return null;
 
   const meta = makerworldMetaFromDesign(design);
   const author = await completeMakerworldAuthor(meta.author, paceMs);
