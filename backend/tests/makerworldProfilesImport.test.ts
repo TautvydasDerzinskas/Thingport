@@ -1,5 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import fs from "node:fs";
+import http from "node:http";
 import path from "node:path";
 import request from "supertest";
 import sharp from "sharp";
@@ -24,6 +25,8 @@ import { prisma } from "../src/db";
 import { selectMakerworldProfiles } from "../src/services/makerworldCloudApi";
 import { plateThumbPath } from "../src/services/printService";
 import { plateAssetHome } from "../src/services/modelAssets";
+import { createAiConnection } from "../src/services/aiConnectionService";
+import { DEFAULT_AI_DESCRIPTION_PREFS, setAiDescriptionPrefs } from "../src/services/settingsService";
 
 const app = createApp();
 const stamp = Date.now();
@@ -385,5 +388,100 @@ describe("a MakerWorld model with no print profiles", () => {
     }
     expect(job).toMatchObject({ status: "DONE", total: 1, imported: 1, failed_count: 0 });
     expect(await filenamesOf(job.result_print_id)).toEqual(EXPECTED_FILES);
+  });
+});
+
+describe("Improved descriptions on import", () => {
+  let provider: http.Server | null = null;
+  const prompts: string[] = [];
+
+  afterEach(async () => {
+    global.fetch = originalFetch;
+    await setAiDescriptionPrefs({ ...DEFAULT_AI_DESCRIPTION_PREFS });
+    await prisma.aiConnection.deleteMany();
+    provider?.closeAllConnections?.();
+    await new Promise<void>((resolve) => (provider ? provider.close(() => resolve()) : resolve()));
+    provider = null;
+  });
+
+  /** An AI provider that tidies the description, keeping the image it was given. */
+  async function startProvider(): Promise<string> {
+    prompts.length = 0;
+    provider = http.createServer(async (req, res) => {
+      const chunks: Buffer[] = [];
+      for await (const chunk of req) chunks.push(Buffer.from(chunk));
+      const body = JSON.parse(Buffer.concat(chunks).toString("utf8")) as {
+        messages: { content: { type: string; text?: string }[] }[];
+      };
+      const prompt = body.messages[0].content.find((part) => part.type === "text")?.text ?? "";
+      prompts.push(prompt);
+      const image = prompt.match(/\/description-image\/[a-z0-9]+|https:\/\/makerworld\.bblmw\.com\/[^\s)]+/)?.[0];
+      const description = `A tidied phoenix. ![photo](${image})`;
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(
+        JSON.stringify({
+          choices: [{ message: { content: JSON.stringify({ changed: true, description }) }, finish_reason: "stop" }],
+        }),
+      );
+    });
+    await new Promise<void>((resolve) => provider!.listen(0, "127.0.0.1", resolve));
+    const address = provider.address();
+    if (!address || typeof address === "string") throw new Error("Provider did not bind a TCP port");
+    return `http://127.0.0.1:${address.port}/v1`;
+  }
+
+  it("checks the description once the import is done, with its images stored locally", async () => {
+    const baseUrl = await startProvider();
+    await createAiConnection({
+      baseUrl,
+      apiKey: null,
+      model: "local",
+      timeoutMs: 2000,
+      concurrency: 1,
+      reasoningEffort: null,
+    });
+    await setAiDescriptionPrefs({ ...DEFAULT_AI_DESCRIPTION_PREFS, enabled: true, onImport: true, mode: "suggest" });
+
+    const designId = String((stamp % 1_000_000_000) + 200);
+    const photoUrl = "https://makerworld.bblmw.com/phoenix/summary.png";
+    const png = await solid(0, 128, 0);
+    global.fetch = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(async (input, init) => {
+      const url = String(input);
+      if (url.startsWith("http://127.0.0.1:")) return originalFetch(input, init);
+      if (url === `https://api.bambulab.com/v1/design-service/design/${designId}`) {
+        return json({
+          ...design(designId),
+          summary: `<p>A phoenix.</p><p><img src="${photoUrl}"></p>`,
+          instances: [design(designId).instances[0]],
+          defaultInstanceId: 1,
+        });
+      }
+      if (url.startsWith("https://api.bambulab.com/v1/iot-service/api/user/profile/")) {
+        return json({ message: "success", url: "https://s3.example.com/phoenix.stl", filename: "phoenix.stl" });
+      }
+      if (url === "https://s3.example.com/phoenix.stl") {
+        return new Response("solid phoenix\nendsolid\n", { headers: { "content-type": "application/octet-stream" } });
+      }
+      if (url === photoUrl) return new Response(png, { headers: { "content-type": "image/png" } });
+      return new Response("not found", { status: 404 });
+    }) as unknown as typeof fetch;
+
+    const res = await request(app)
+      .post("/api/import")
+      .set(auth())
+      .send({ url: `https://makerworld.com/en/models/${designId}-phoenix`, makerworld_cookie: "token=t" });
+    expect(res.status).toBe(200);
+
+    let suggestion: { notes?: string } | null = null;
+    for (let i = 0; i < 100 && !suggestion; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      const print = await prisma.print.findUniqueOrThrow({ where: { id: res.body.id } });
+      suggestion = print.aiDescriptionSuggestion as { notes?: string } | null;
+    }
+    // Asked once, about the description as imported: its image already the model's own copy.
+    expect(prompts).toHaveLength(1);
+    expect(prompts[0]).toMatch(/\/description-image\//);
+    expect(prompts[0]).not.toContain(photoUrl);
+    expect(suggestion?.notes).toMatch(/^A tidied phoenix\. !\[photo\]\(\/description-image\/[a-z0-9]+\)$/);
   });
 });
