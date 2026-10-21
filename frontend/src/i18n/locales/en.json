@@ -206,6 +206,7 @@
         "failed": "Something went wrong with your API token. Please try again.",
         "mcp": {
           "heading": "MCP",
+          "subtitle": "Tools an AI assistant may use",
           "description": "What an AI assistant connected with this token (over MCP, at /api/mcp) may use. Changes apply straight away, without a new token.",
           "connect": "To connect an AI assistant, for example Claude Code:",
           "writes": "Changes your library",
@@ -270,12 +271,75 @@
           "adminOff": "An admin has turned MCP off on this Thingport.",
           "adminReadOnly": "An admin allows only the tools that read.",
           "copyCommand": "Copy command",
-          "reads": "Reads your library",
-          "allow": "Allow",
-          "deny": "Deny"
+          "reads": "Reads your library"
+        },
+        "rest": {
+          "heading": "Permissions",
+          "subtitle": "What apps using this token may read",
+          "description": "What other apps using this token, such as dashboards and launchers, may read over the REST API. Changes apply straight away, without a new token. Denying something an app reads stops that part of it working.",
+          "failed": "Couldn't save the token's permissions. Please try again.",
+          "groups": {
+            "library": "Your library",
+            "media": "Images and files",
+            "other": "Other"
+          },
+          "scopes": {
+            "search": {
+              "title": "Search",
+              "description": "Search models, collections and tags."
+            },
+            "models": {
+              "title": "Models",
+              "description": "List models and read their details."
+            },
+            "dashboard": {
+              "title": "Dashboard",
+              "description": "Library totals, most viewed and printed, the featured model and widgets."
+            },
+            "activity": {
+              "title": "Activity",
+              "description": "Your activity heatmap and feed."
+            },
+            "collections": {
+              "title": "Collections",
+              "description": "Your collections and what's in them."
+            },
+            "tags": {
+              "title": "Tags",
+              "description": "Your tags and how many models have each."
+            },
+            "categories": {
+              "title": "Categories",
+              "description": "Your category tree."
+            },
+            "authors": {
+              "title": "Authors",
+              "description": "Authors' profiles."
+            },
+            "images": {
+              "title": "Images",
+              "description": "Thumbnails, renders and preview pictures."
+            },
+            "files": {
+              "title": "Model files",
+              "description": "Download model files and 3D previews."
+            },
+            "imports": {
+              "title": "Imports",
+              "description": "Progress of running imports."
+            },
+            "other": {
+              "title": "Everything else",
+              "description": "Your settings, notifications, AI suggestions and anything not listed above."
+            }
+          }
         },
         "permissions": {
-          "title": "Token permissions"
+          "title": "Token permissions",
+          "rest": "Permissions",
+          "mcp": "MCP permissions",
+          "allow": "Allow",
+          "deny": "Deny"
         }
       },
       "language": {
@@ -1300,6 +1364,7 @@
           "api_token_generated": "Generated an API token",
           "api_token_revoked": "Revoked their API token",
           "api_token_mcp_tools_changed": "Changed their API token's MCP tools",
+          "api_token_rest_scopes_changed": "Changed their API token's permissions",
           "user_invited": "Invited a user",
           "model_uploaded": "Model uploaded",
           "model_imported": "Model imported",

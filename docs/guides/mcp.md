@@ -12,7 +12,7 @@ you open Thingport at, and the assistant signs in with your [API token](api-toke
 
 1. Open the user menu (your avatar, top right) and choose **Profile**.
 2. Next to **API token**, click **Generate**, and copy the token straight away: it's shown only once.
-3. Click the cog next to the token to open **Token permissions**, and under **MCP** set each tool to **Allow** or
+3. Click the cog next to the token to open **Token permissions**, and under **MCP permissions** set each tool to **Allow** or
    **Deny**. Changes apply at once, to the token you already have.
 
 A new token gets every tool that only reads. The tools that change your library are marked **Changes your library**,

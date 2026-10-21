@@ -39,6 +39,30 @@ curl -H "Authorization: Bearer tp_your_token_here" "https://thingport.example.co
 The token works only in the header. Putting it in the address as `?token=...` is refused, because addresses end up in
 browser history and proxy logs.
 
+## Choose what the token can read
+
+A new token can read everything you can. To narrow it, click the cog next to the token to open **Token permissions**,
+and under **Permissions** set each kind of data to **Allow** or **Deny**:
+
+| Permission      | What it reads                                                                     |
+| --------------- | --------------------------------------------------------------------------------- |
+| Search          | `/api/search`                                                                     |
+| Models          | `/api/prints` and `/api/print/{id}`                                               |
+| Dashboard       | `/api/dashboard/...`: library totals, most viewed and printed, the featured model |
+| Activity        | `/api/activity` and `/api/activity/feed`                                          |
+| Collections     | `/api/collections`, `/api/collection/{id}` and a model's collections              |
+| Tags            | `/api/tags` and `/api/tags/summary`                                               |
+| Categories      | `/api/categories`                                                                 |
+| Authors         | `/api/author/{id}`                                                                |
+| Images          | Thumbnails, renders and preview pictures                                          |
+| Model files     | Model files and 3D previews (`.glb`)                                              |
+| Imports         | The progress of running imports                                                   |
+| Everything else | Any other read: your settings, notifications, AI suggestions and so on            |
+
+Changes apply straight away, without a new token. A request the token isn't allowed is refused with `403` and a
+`scope` field naming the permission it needs. A search widget, for example, needs only **Search**, plus **Images** if
+it shows thumbnails.
+
 ## Connect an AI assistant
 
 The same token connects an AI assistant to your library over MCP, with the tools you allow in **Token permissions** (the cog next to the token). The tools that
@@ -48,7 +72,7 @@ on. See [Connect an AI assistant with MCP](mcp.md).
 ## What a token can and can't do
 
 - **Read:** anything you can see in Thingport yourself, such as models, collections, tags, search, the dashboard and
-  your activity.
+  your activity, less whatever you deny it under [Permissions](#choose-what-the-token-can-read).
 - **Not write over the REST API:** any request that would add, change or delete something is refused with
   `403 API tokens are read-only`. Only the [MCP tools](mcp.md) you turn on can change your library, and none of them
   deletes or overwrites anything.

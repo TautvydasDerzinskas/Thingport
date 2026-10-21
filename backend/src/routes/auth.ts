@@ -13,7 +13,14 @@ import { findValidInvitation } from "../services/invitationService";
 import { checkCaptcha } from "../services/captchaService";
 import { createLog } from "../services/auditLog";
 import { seedDefaultCategories } from "../services/categoryService";
-import { generateApiToken, getApiToken, revokeApiToken, setApiTokenMcpTools } from "../services/apiTokenService";
+import {
+  generateApiToken,
+  getApiToken,
+  revokeApiToken,
+  setApiTokenMcpTools,
+  setApiTokenRestScopes,
+} from "../services/apiTokenService";
+import { API_TOKEN_SCOPE_IDS, apiTokenScopeCatalog } from "../services/apiTokenScopes";
 import { DEFAULT_MCP_TOOL_NAMES, MCP_TOOL_NAMES, mcpToolCatalog, mcpToolsFor } from "../mcp/tools";
 import { getMcpAccess, type McpAccess } from "../services/settingsService";
 import { toUserOut } from "../dto";
@@ -395,9 +402,14 @@ router.patch(
 
 // The API token itself is only in the response that generates it; this shows which one is in use.
 // Generating and revoking can't be done with the token itself: requireAuth lets it only read.
-/** The token with what the instance's MCP access lets it choose from. */
+/** The token with what it can be allowed: the REST scopes, and what the instance's MCP access offers. */
 function withMcpCatalog<T>(token: T, access: McpAccess) {
-  return { ...token, mcp_access: access, available_mcp_tools: mcpToolCatalog(access) };
+  return {
+    ...token,
+    available_rest_scopes: apiTokenScopeCatalog(),
+    mcp_access: access,
+    available_mcp_tools: mcpToolCatalog(access),
+  };
 }
 
 /** Refuses a tool the instance's MCP access doesn't offer, rather than storing a choice that can't apply. */
@@ -420,8 +432,14 @@ router.get(
 const mcpToolsSchema = z
   .array(z.enum(MCP_TOOL_NAMES as [string, ...string[]]))
   .transform((names) => [...new Set(names)]);
-// No body (older clients) gives the tools that only read.
-const generateApiTokenSchema = z.object({ mcp_tools: mcpToolsSchema.optional() }).default({});
+const restScopesSchema = z
+  .array(z.enum(API_TOKEN_SCOPE_IDS as [string, ...string[]]))
+  .transform((ids) => [...new Set(ids)]);
+// No body (older clients) gives the tools that only read, and every REST scope: a token reads all it
+// can see until its user narrows it.
+const generateApiTokenSchema = z
+  .object({ mcp_tools: mcpToolsSchema.optional(), rest_scopes: restScopesSchema.optional() })
+  .default({});
 
 router.post(
   "/profile/api-token",
@@ -430,9 +448,17 @@ router.post(
     const body = parseBody(generateApiTokenSchema, req.body ?? {});
     const access = await getMcpAccess();
     if (body.mcp_tools) assertMcpToolsOffered(body.mcp_tools, access);
-    const token = await generateApiToken(req.userId!, body.mcp_tools ?? DEFAULT_MCP_TOOL_NAMES);
+    const token = await generateApiToken(
+      req.userId!,
+      body.mcp_tools ?? DEFAULT_MCP_TOOL_NAMES,
+      body.rest_scopes ?? API_TOKEN_SCOPE_IDS,
+    );
     res.json(withMcpCatalog(token, access));
-    void createLog({ userId: req.userId!, action: "api_token_generated", details: { mcp_tools: token.mcp_tools } });
+    void createLog({
+      userId: req.userId!,
+      action: "api_token_generated",
+      details: { mcp_tools: token.mcp_tools, rest_scopes: token.rest_scopes },
+    });
   }),
 );
 
@@ -453,6 +479,21 @@ router.put(
       userId: req.userId!,
       action: "api_token_mcp_tools_changed",
       details: { mcp_tools: token.mcp_tools },
+    });
+  }),
+);
+
+router.put(
+  "/profile/api-token/rest-scopes",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const body = parseBody(z.object({ rest_scopes: restScopesSchema }), req.body);
+    const token = await setApiTokenRestScopes(req.userId!, body.rest_scopes);
+    res.json(withMcpCatalog(token, await getMcpAccess()));
+    void createLog({
+      userId: req.userId!,
+      action: "api_token_rest_scopes_changed",
+      details: { rest_scopes: token.rest_scopes },
     });
   }),
 );

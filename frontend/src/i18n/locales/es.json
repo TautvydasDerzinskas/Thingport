@@ -209,6 +209,7 @@
           "adminReadOnly": "Un administrador solo permite las herramientas de lectura.",
           "copyCommand": "Copiar comando",
           "heading": "MCP",
+          "subtitle": "Herramientas que puede usar un asistente de IA",
           "description": "Lo que puede usar un asistente de IA conectado con este token (por MCP, en /api/mcp). Los cambios se aplican al instante, sin un token nuevo.",
           "connect": "Para conectar un asistente de IA, por ejemplo Claude Code:",
           "writes": "Cambia tu biblioteca",
@@ -270,12 +271,75 @@
           "writeConfirmTitle": "¿Dejar que el asistente use «{{tool}}»?",
           "writeConfirmMessage": "Esta herramienta cambia tu biblioteca. Un asistente conectado con este token podrá usarla sin preguntarte cada vez. Nada de lo que haga elimina modelos.",
           "writeConfirm": "Activar",
-          "reads": "Lee tu biblioteca",
-          "allow": "Permitir",
-          "deny": "Denegar"
+          "reads": "Lee tu biblioteca"
+        },
+        "rest": {
+          "heading": "Permisos",
+          "subtitle": "Lo que pueden leer las apps que usan este token",
+          "description": "Lo que otras apps que usan este token, como paneles y lanzadores, pueden leer a través de la API REST. Los cambios se aplican al instante, sin un token nuevo. Denegar algo que una app lee hace que esa parte deje de funcionar.",
+          "failed": "No se pudieron guardar los permisos del token. Inténtalo de nuevo.",
+          "groups": {
+            "library": "Tu biblioteca",
+            "media": "Imágenes y archivos",
+            "other": "Otros"
+          },
+          "scopes": {
+            "search": {
+              "title": "Búsqueda",
+              "description": "Buscar modelos, colecciones y etiquetas."
+            },
+            "models": {
+              "title": "Modelos",
+              "description": "Listar modelos y leer sus detalles."
+            },
+            "dashboard": {
+              "title": "Panel",
+              "description": "Totales de la biblioteca, los más vistos e impresos, el modelo destacado y los widgets."
+            },
+            "activity": {
+              "title": "Actividad",
+              "description": "Tu mapa de actividad y tu historial."
+            },
+            "collections": {
+              "title": "Colecciones",
+              "description": "Tus colecciones y lo que contienen."
+            },
+            "tags": {
+              "title": "Etiquetas",
+              "description": "Tus etiquetas y cuántos modelos tiene cada una."
+            },
+            "categories": {
+              "title": "Categorías",
+              "description": "Tu árbol de categorías."
+            },
+            "authors": {
+              "title": "Autores",
+              "description": "Perfiles de autores."
+            },
+            "images": {
+              "title": "Imágenes",
+              "description": "Miniaturas, renders e imágenes de vista previa."
+            },
+            "files": {
+              "title": "Archivos de modelos",
+              "description": "Descargar archivos de modelos y vistas previas 3D."
+            },
+            "imports": {
+              "title": "Importaciones",
+              "description": "Progreso de las importaciones en curso."
+            },
+            "other": {
+              "title": "Todo lo demás",
+              "description": "Tus ajustes, notificaciones, sugerencias de IA y todo lo que no aparece arriba."
+            }
+          }
         },
         "permissions": {
-          "title": "Permisos del token"
+          "title": "Permisos del token",
+          "rest": "Permisos",
+          "mcp": "Permisos MCP",
+          "allow": "Permitir",
+          "deny": "Denegar"
         }
       },
       "language": {
@@ -1328,7 +1392,8 @@
           "collections_merged": "Colecciones fusionadas",
           "tags_merged": "Etiquetas fusionadas",
           "mcp_access_changed": "Cambió el acceso MCP",
-          "api_token_mcp_tools_changed": "Cambió las herramientas MCP de su token de API"
+          "api_token_mcp_tools_changed": "Cambió las herramientas MCP de su token de API",
+          "api_token_rest_scopes_changed": "Cambió los permisos de su token de API"
         },
         "authorsLinked": "{{count}} modelo(s) vinculado(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} de {{total}} descripción(es) modificada(s)",

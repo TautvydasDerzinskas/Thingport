@@ -209,6 +209,7 @@
           "adminReadOnly": "Un administrateur n'autorise que les outils de lecture.",
           "copyCommand": "Copier la commande",
           "heading": "MCP",
+          "subtitle": "Les outils qu'un assistant IA peut utiliser",
           "description": "Ce qu'un assistant IA connecté avec ce jeton (via MCP, sur /api/mcp) peut utiliser. Les changements s'appliquent aussitôt, sans nouveau jeton.",
           "connect": "Pour connecter un assistant IA, par exemple Claude Code :",
           "writes": "Modifie votre bibliothèque",
@@ -270,12 +271,75 @@
           "writeConfirmTitle": "Laisser l'assistant utiliser « {{tool}} » ?",
           "writeConfirmMessage": "Cet outil modifie votre bibliothèque. Un assistant connecté avec ce jeton pourra l'utiliser sans vous demander à chaque fois. Rien de ce qu'il fait ne supprime de modèles.",
           "writeConfirm": "Activer",
-          "reads": "Lit votre bibliothèque",
-          "allow": "Autoriser",
-          "deny": "Refuser"
+          "reads": "Lit votre bibliothèque"
+        },
+        "rest": {
+          "heading": "Autorisations",
+          "subtitle": "Ce que les applis utilisant ce jeton peuvent lire",
+          "description": "Ce que les autres applis utilisant ce jeton, comme les tableaux de bord et les lanceurs, peuvent lire via l'API REST. Les changements s'appliquent immédiatement, sans nouveau jeton. Refuser ce qu'une appli lit empêche cette partie de fonctionner.",
+          "failed": "Impossible d'enregistrer les autorisations du jeton. Veuillez réessayer.",
+          "groups": {
+            "library": "Votre bibliothèque",
+            "media": "Images et fichiers",
+            "other": "Autre"
+          },
+          "scopes": {
+            "search": {
+              "title": "Recherche",
+              "description": "Rechercher des modèles, collections et étiquettes."
+            },
+            "models": {
+              "title": "Modèles",
+              "description": "Lister les modèles et lire leurs détails."
+            },
+            "dashboard": {
+              "title": "Tableau de bord",
+              "description": "Totaux de la bibliothèque, les plus vus et imprimés, le modèle à la une et les widgets."
+            },
+            "activity": {
+              "title": "Activité",
+              "description": "Votre carte d'activité et votre fil."
+            },
+            "collections": {
+              "title": "Collections",
+              "description": "Vos collections et leur contenu."
+            },
+            "tags": {
+              "title": "Étiquettes",
+              "description": "Vos étiquettes et le nombre de modèles pour chacune."
+            },
+            "categories": {
+              "title": "Catégories",
+              "description": "Votre arborescence de catégories."
+            },
+            "authors": {
+              "title": "Auteurs",
+              "description": "Profils des auteurs."
+            },
+            "images": {
+              "title": "Images",
+              "description": "Miniatures, rendus et images d'aperçu."
+            },
+            "files": {
+              "title": "Fichiers des modèles",
+              "description": "Télécharger les fichiers des modèles et les aperçus 3D."
+            },
+            "imports": {
+              "title": "Imports",
+              "description": "Progression des imports en cours."
+            },
+            "other": {
+              "title": "Tout le reste",
+              "description": "Vos réglages, notifications, suggestions IA et tout ce qui n'est pas listé ci-dessus."
+            }
+          }
         },
         "permissions": {
-          "title": "Autorisations du jeton"
+          "title": "Autorisations du jeton",
+          "rest": "Autorisations",
+          "mcp": "Autorisations MCP",
+          "allow": "Autoriser",
+          "deny": "Refuser"
         }
       },
       "language": {
@@ -1328,7 +1392,8 @@
           "collections_merged": "Collections fusionnées",
           "tags_merged": "Étiquettes fusionnées",
           "mcp_access_changed": "A modifié l'accès MCP",
-          "api_token_mcp_tools_changed": "A modifié les outils MCP de son jeton d'API"
+          "api_token_mcp_tools_changed": "A modifié les outils MCP de son jeton d'API",
+          "api_token_rest_scopes_changed": "A modifié les autorisations de son jeton d'API"
         },
         "authorsLinked": "{{count}} modèle(s) relié(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} description(s) sur {{total}} modifiée(s)",

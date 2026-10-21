@@ -207,6 +207,7 @@
         "failed": "Kažkas nepavyko su jūsų API raktu. Bandykite dar kartą.",
         "mcp": {
           "heading": "MCP",
+          "subtitle": "Įrankiai, kuriuos gali naudoti DI asistentas",
           "description": "Ką gali naudoti DI asistentas, prijungtas su šiuo raktu (per MCP, adresu /api/mcp). Pakeitimai įsigalioja iš karto, naujo rakto nereikia.",
           "connect": "Kad prijungtumėte DI asistentą, pavyzdžiui Claude Code:",
           "writes": "Keičia biblioteką",
@@ -271,12 +272,75 @@
           "adminOff": "Administratorius šiame Thingport išjungė MCP.",
           "adminReadOnly": "Administratorius leidžia tik skaitančius įrankius.",
           "copyCommand": "Kopijuoti komandą",
-          "reads": "Skaito biblioteką",
-          "allow": "Leisti",
-          "deny": "Drausti"
+          "reads": "Skaito biblioteką"
+        },
+        "rest": {
+          "heading": "Leidimai",
+          "subtitle": "Ką gali skaityti šį raktą naudojančios programos",
+          "description": "Ką kitos šį raktą naudojančios programos, pavyzdžiui, valdymo skydai ir paleidikliai, gali skaityti per REST API. Pakeitimai įsigalioja iškart, naujo rakto nereikia. Uždraudus tai, ką programa skaito, ta jos dalis nustos veikti.",
+          "failed": "Nepavyko išsaugoti rakto leidimų. Bandykite dar kartą.",
+          "groups": {
+            "library": "Jūsų biblioteka",
+            "media": "Paveikslėliai ir failai",
+            "other": "Kita"
+          },
+          "scopes": {
+            "search": {
+              "title": "Paieška",
+              "description": "Ieškoti modelių, kolekcijų ir žymų."
+            },
+            "models": {
+              "title": "Modeliai",
+              "description": "Modelių sąrašas ir jų informacija."
+            },
+            "dashboard": {
+              "title": "Valdymo skydas",
+              "description": "Bibliotekos suvestinė, populiariausi ir dažniausiai spausdinti, dienos modelis ir valdikliai."
+            },
+            "activity": {
+              "title": "Veikla",
+              "description": "Jūsų veiklos žemėlapis ir srautas."
+            },
+            "collections": {
+              "title": "Kolekcijos",
+              "description": "Jūsų kolekcijos ir kas jose yra."
+            },
+            "tags": {
+              "title": "Žymos",
+              "description": "Jūsų žymos ir kiek modelių turi kiekvieną."
+            },
+            "categories": {
+              "title": "Kategorijos",
+              "description": "Jūsų kategorijų medis."
+            },
+            "authors": {
+              "title": "Autoriai",
+              "description": "Autorių profiliai."
+            },
+            "images": {
+              "title": "Paveikslėliai",
+              "description": "Miniatiūros, atvaizdai ir peržiūros paveikslėliai."
+            },
+            "files": {
+              "title": "Modelių failai",
+              "description": "Atsisiųsti modelių failus ir 3D peržiūras."
+            },
+            "imports": {
+              "title": "Importai",
+              "description": "Vykdomų importų eiga."
+            },
+            "other": {
+              "title": "Visa kita",
+              "description": "Jūsų nustatymai, pranešimai, DI pasiūlymai ir visa, kas neišvardyta aukščiau."
+            }
+          }
         },
         "permissions": {
-          "title": "Rakto leidimai"
+          "title": "Rakto leidimai",
+          "rest": "Leidimai",
+          "mcp": "MCP leidimai",
+          "allow": "Leisti",
+          "deny": "Drausti"
         }
       },
       "language": {
@@ -1329,6 +1393,7 @@
           "api_token_generated": "Sugeneravo API raktą",
           "api_token_revoked": "Atšaukė savo API raktą",
           "api_token_mcp_tools_changed": "Pakeitė savo API rakto MCP įrankius",
+          "api_token_rest_scopes_changed": "Pakeitė savo API rakto leidimus",
           "user_invited": "Pakvietė naudotoją",
           "model_uploaded": "Modelis įkeltas",
           "model_imported": "Modelis importuotas",
