@@ -1,5 +1,48 @@
 # Thingport frontend changelog
 
+# [thingport-frontend-v1.2.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-frontend-v1.1.0...thingport-frontend-v1.2.0) (2026-10-21)
+
+
+### Bug Fixes
+
+* address card preview review comments ([678c480](https://github.com/TautvydasDerzinskas/Thingport/commit/678c4802d74c16aee75f3f62ebee51cebd8f7037))
+* announce each version once, and don't flash old notes on reopen ([58eb011](https://github.com/TautvydasDerzinskas/Thingport/commit/58eb01179346dd12d78ae8a23e4c27e3e255e681))
+* count suffixed renames, roll back failed theme saves, keep reset dialog open on error ([1a44b87](https://github.com/TautvydasDerzinskas/Thingport/commit/1a44b87cdc875fa92d23976eff44e48bb5dc727b))
+* guard tag rewrites against concurrent edits, pluralise merge count, fix lt wording ([ef14f54](https://github.com/TautvydasDerzinskas/Thingport/commit/ef14f54221160dc416b8553f36aaab59d2dd7d47))
+* harden mesh check against bad indices and tidy review follow-ups ([8b4653e](https://github.com/TautvydasDerzinskas/Thingport/commit/8b4653e415588b6cda7cae434052e4703f3abf7a))
+* **i18n:** add missing Spanish and French strings ([c1aa6e6](https://github.com/TautvydasDerzinskas/Thingport/commit/c1aa6e623769fcac2c707878b61030257bf3d4b9))
+* **i18n:** format translation files with prettier ([11b2bd7](https://github.com/TautvydasDerzinskas/Thingport/commit/11b2bd7b5bb7ec5ec69b6374ca0acda8f0eaecce))
+* **i18n:** pluralise the selection count and fix French wording ([81bc40a](https://github.com/TautvydasDerzinskas/Thingport/commit/81bc40ab70cfdea5b677ada8b3a98fca0c0ad977))
+* ignore stale card preview saves and render checks ([e76666e](https://github.com/TautvydasDerzinskas/Thingport/commit/e76666e291ec266ae96d1eb1954069e71282a6f7))
+* keep accent per account and readable in light mode ([14126de](https://github.com/TautvydasDerzinskas/Thingport/commit/14126dee8c999919b4981476b7cba1601e771ce0))
+* keep skipped releases with curated notes, and show a failed copy ([60ee06b](https://github.com/TautvydasDerzinskas/Thingport/commit/60ee06ba438e266f545972870fc6c959b29cf05f))
+* **mcp:** rank list_tags by use and let it narrow, instead of every tag at once ([04e9719](https://github.com/TautvydasDerzinskas/Thingport/commit/04e97197d7ede73743c6692ad1317e437dfaa69b))
+* order theme saves, reset hover slideshow per account, address review ([6dac555](https://github.com/TautvydasDerzinskas/Thingport/commit/6dac5555e770beeba5833084558b505c059e2a7d))
+* reset model render state when its url changes ([5dc3086](https://github.com/TautvydasDerzinskas/Thingport/commit/5dc3086e77b59654f3b659ade25f2ebf974c2000))
+* retry a dashboard row's render when its url changes ([401cc38](https://github.com/TautvydasDerzinskas/Thingport/commit/401cc38461a9650b430998cf02aea4a11fdc34f7))
+* roll a failed theme save back to the last saved theme ([d5cd155](https://github.com/TautvydasDerzinskas/Thingport/commit/d5cd155794553f88b6b132fd446a0d6c95d68252))
+
+
+### Features
+
+* add render colour, graphite accent and hover slideshow toggle ([926c5d3](https://github.com/TautvydasDerzinskas/Thingport/commit/926c5d345b9e52479cf083230fa9bc7839b97ca6))
+* admin MCP access, token permissions dialog, and review fixes ([dec1b0d](https://github.com/TautvydasDerzinskas/Thingport/commit/dec1b0dbe3f8566a77bc981017ed29a0bbbc3703))
+* check models for print problems when they are opened ([f913710](https://github.com/TautvydasDerzinskas/Thingport/commit/f913710cc4d1ad045b818b7fbff4d0a2cdeab9c3))
+* **frontend:** choose an API token's MCP tools on the profile ([ccb5883](https://github.com/TautvydasDerzinskas/Thingport/commit/ccb588361eab37692185a9b7cd56cbe2148c1dfe))
+* **frontend:** offer the MCP tools that change the library, with a confirm ([699fa8a](https://github.com/TautvydasDerzinskas/Thingport/commit/699fa8a1c5323ff40bcbe6c45449894889b84cea))
+* **i18n:** add Spanish and French translation files ([205a4cf](https://github.com/TautvydasDerzinskas/Thingport/commit/205a4cf7f1813dc7638d1e970c89dc272adcda1b))
+* keep a model's pictures and supporting files beside its model files ([0d505b7](https://github.com/TautvydasDerzinskas/Thingport/commit/0d505b716a4cc496db0b3e5edcbf138bf5594da7))
+* let users choose what their API token can read over the REST API ([88949d9](https://github.com/TautvydasDerzinskas/Thingport/commit/88949d9d8c8ab5ec575429d9bd6a8a4816acfaac))
+* let users pick an accent color ([d26f730](https://github.com/TautvydasDerzinskas/Thingport/commit/d26f730bee0ec65597c68f97c0b05f327e673653))
+* open What's new from the Update Checker instead of the user menu ([508c224](https://github.com/TautvydasDerzinskas/Thingport/commit/508c224e25b7e8c45ec3d2b756f03bb799688732))
+* reset appearance settings to their defaults ([3c3d19a](https://github.com/TautvydasDerzinskas/Thingport/commit/3c3d19a3b71765596f32940470ae34475fcf693b))
+* reset categories to the starter tree, previewing what changes ([f8424dc](https://github.com/TautvydasDerzinskas/Thingport/commit/f8424dcb2306c0bf2c3f4c4aa15f596594020ae6))
+* show how to connect AI assistants over MCP ([cc5aa03](https://github.com/TautvydasDerzinskas/Thingport/commit/cc5aa030cc4a5f2b4b2a2cc764da2e34492eb46e))
+* show provider logos and names in the dashboard's top providers ([4e3699e](https://github.com/TautvydasDerzinskas/Thingport/commit/4e3699ed45b106101c865ae825bd7f4ad03c67a5))
+* show what's new after an update ([aebc0ac](https://github.com/TautvydasDerzinskas/Thingport/commit/aebc0ac97eddc75dfbb666a22efd6407070f810b))
+* sort, bulk actions and merge for collections and tags ([a0dbba8](https://github.com/TautvydasDerzinskas/Thingport/commit/a0dbba80587d771eb37950c195e61f77b3a83c74))
+* tint generated model renders with the accent ([908ae80](https://github.com/TautvydasDerzinskas/Thingport/commit/908ae80b5b6db48c645ab2be44b6e0a102447e0e))
+
 # [thingport-frontend-v1.1.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-frontend-v1.0.1...thingport-frontend-v1.1.0) (2026-10-20)
 
 
