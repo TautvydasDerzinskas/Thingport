@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../db";
 import { RELEASE_NOTES_URL } from "../config";
@@ -63,13 +64,8 @@ export async function isQuietRelease(version: string, baseUrl = RELEASE_NOTES_UR
   }
 }
 
-async function readVersionSetting(key: string): Promise<string | null> {
-  const row = await prisma.setting.findUnique({ where: { key } });
-  return typeof row?.value === "string" && SEMVER.test(row.value) ? row.value : null;
-}
-
-function writeVersionSetting(key: string, value: string) {
-  return prisma.setting.upsert({ where: { key }, create: { key, value }, update: { value } });
+function asVersion(value: Prisma.JsonValue | undefined): string | null {
+  return typeof value === "string" && SEMVER.test(value) ? value : null;
 }
 
 /** At startup: when this version is newer than the one that ran last, every user gets a notification that opens
@@ -81,24 +77,46 @@ export async function announceVersionUpdate(
   isQuiet: (version: string) => Promise<boolean> = isQuietRelease,
 ): Promise<boolean> {
   if (!version || !SEMVER.test(version)) return false;
-  const previous = await readVersionSetting(LAST_RUN_VERSION_KEY);
-  if (previous === version) return false;
-  const updated = previous ? compareVersions(version, previous) > 0 : (await prisma.user.count()) > 0;
-  const since = (await readVersionSetting(LAST_ANNOUNCED_VERSION_KEY)) ?? previous;
+  const [lastRun, lastAnnounced] = await Promise.all([
+    prisma.setting.findUnique({ where: { key: LAST_RUN_VERSION_KEY } }),
+    prisma.setting.findUnique({ where: { key: LAST_ANNOUNCED_VERSION_KEY } }),
+  ]);
+  const previous = asVersion(lastRun?.value);
+  // Equal is a restart. Lower is a downgrade: the higher version stays recorded, so going back up to it isn't
+  // announced a second time.
+  if (previous && compareVersions(version, previous) <= 0) return false;
+  const updated = previous !== null || (await prisma.user.count()) > 0;
+  const since = asVersion(lastAnnounced?.value) ?? previous;
+  const quiet = updated && (await isQuiet(version));
+  const users = updated && !quiet ? await prisma.user.findMany({ select: { id: true } }) : [];
 
-  if (updated && (await isQuiet(version))) {
-    await prisma.$transaction([
-      writeVersionSetting(LAST_RUN_VERSION_KEY, version),
-      ...(since ? [writeVersionSetting(LAST_ANNOUNCED_VERSION_KEY, since)] : []),
-    ]);
-    return false;
-  }
-
-  const users = updated ? await prisma.user.findMany({ select: { id: true } }) : [];
-  await prisma.$transaction([
-    writeVersionSetting(LAST_RUN_VERSION_KEY, version),
-    writeVersionSetting(LAST_ANNOUNCED_VERSION_KEY, version),
-    prisma.notification.createMany({
+  return prisma.$transaction(async (tx) => {
+    // The version is claimed by moving it on from the one read above, so of two processes starting at once only
+    // one notifies.
+    const claimed = lastRun
+      ? (
+          await tx.setting.updateMany({
+            where: { key: LAST_RUN_VERSION_KEY, value: { equals: lastRun.value as Prisma.InputJsonValue } },
+            data: { value: version },
+          })
+        ).count === 1
+      : (
+          await tx.setting.createMany({
+            data: [{ key: LAST_RUN_VERSION_KEY, value: version }],
+            skipDuplicates: true,
+          })
+        ).count === 1;
+    if (!claimed) return false;
+    // A quiet release leaves the next announcement's notes starting where the last one's ended.
+    const announced = quiet ? since : version;
+    if (announced) {
+      await tx.setting.upsert({
+        where: { key: LAST_ANNOUNCED_VERSION_KEY },
+        create: { key: LAST_ANNOUNCED_VERSION_KEY, value: announced },
+        update: { value: announced },
+      });
+    }
+    await tx.notification.createMany({
       data: users.map((user) => ({
         userId: user.id,
         type: "system",
@@ -107,9 +125,9 @@ export async function announceVersionUpdate(
         internalPath: whatsNewPath(version, since),
         createdAt: now,
       })),
-    }),
-  ]);
-  return updated;
+    });
+    return users.length > 0;
+  });
 }
 
 const curatedSchema = z.object({

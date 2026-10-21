@@ -116,6 +116,6 @@ Pull the new images and restart:
 docker compose pull && docker compose up -d
 ```
 
-The first start after the update moves existing pictures next to their models. On a big library that can take a few
-minutes, and Administration shows how far it has got. Everyone on your instance then gets a notification that opens the
+The first start after the update moves existing pictures next to their models. For a large library, the move can take
+a few minutes, and Administration shows its progress. Everyone on your instance then gets a notification that opens the
 release notes in the app.

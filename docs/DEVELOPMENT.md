@@ -259,7 +259,7 @@ ordinary notification (the System tab). To post one, add an entry to `entries` a
 ## Release notes (What's new)
 
 The first time a backend starts on a newer version than it last ran, every user gets a notification that opens
-the What's new dialog (admins can reopen it from Update Checker in Administration). A fresh install isn't told. There's no need to add a "Welcome to
+the What's new dialog (admins can reopen it from Update Checker in Administration). A fresh installation doesn't get this notification. There's no need to add a "Welcome to
 X.Y.Z" entry to `system-notifications.json` for this any more.
 
 The dialog fetches its content from `main`, so it can be written after the release is out:

@@ -240,6 +240,21 @@ describe("version update notification", () => {
     expect((await updates())[0].internalPath).toBe("?whats-new=1.2.0");
   });
 
+  it("doesn't announce a version again after going down from it and back up", async () => {
+    await ranBefore("1.1.0");
+    expect(await announce("1.2.0")).toBe(true);
+    expect(await announce("1.1.0")).toBe(false);
+    expect(await announce("1.2.0")).toBe(false);
+    expect(await updates()).toHaveLength(1);
+  });
+
+  it("notifies once when two processes start on the new version together", async () => {
+    await ranBefore("1.1.0");
+    const results = await Promise.all([announce("1.2.0"), announce("1.2.0")]);
+    expect(results.filter(Boolean)).toHaveLength(1);
+    expect(await updates()).toHaveLength(1);
+  });
+
   it("skips a quiet release, and covers it in the next announcement's notes", async () => {
     await ranBefore("1.2.0");
     expect(await announce("1.2.1", ["1.2.1"])).toBe(false);

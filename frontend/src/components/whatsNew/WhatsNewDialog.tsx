@@ -397,7 +397,8 @@ export default function WhatsNewDialog({ request, onClose }: Props) {
   const [failed, setFailed] = React.useState(false);
   const [zoomed, setZoomed] = React.useState<ReleaseNoteItem["images"][0] | null>(null);
 
-  React.useEffect(() => {
+  // Before paint, so reopening shows the loading state rather than the last notes for a frame.
+  React.useLayoutEffect(() => {
     if (!request) return;
     let active = true;
     setNotes(null);
