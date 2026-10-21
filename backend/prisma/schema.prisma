@@ -581,6 +581,9 @@ model Plate {
   contentSha256    String?
   // The thumb is our own 3D render, which an imported image replaces.
   thumbGenerated   Boolean  @default(false)
+  // The printability check's result (services/meshQuality.ts QualityReport), or { version, status: "skipped" }
+  // for a file it couldn't check. Null until the model is first opened with checks on.
+  qualityCheck     Json?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

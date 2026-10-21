@@ -6,6 +6,7 @@ import { MODEL_PREVIEWS, MODEL_PREVIEW_MAX_MEMORY_MB, MODEL_PREVIEW_TIMEOUT_SECO
 import { prisma } from "../db";
 import type { ModelImageOptions } from "./modelImageRender";
 import type { ModelPreviewWorkerInput, ModelPreviewWorkerResult } from "./modelPreviewWorker";
+import type { QualityReport } from "./meshQuality";
 import { getSimplifyPreviews } from "./settingsService";
 import {
   assetExists,
@@ -79,6 +80,7 @@ export const SIMPLIFY_TARGET_TRIANGLES = 1_000_000;
 
 type RenderOutcome =
   | { status: "ok" }
+  | { status: "checked"; report: QualityReport }
   | { status: "too-complex" }
   | { status: "unsupported" }
   | { status: "limit"; reason: string }
@@ -249,6 +251,21 @@ async function runGeneration(plateId: string, srcPath: string): Promise<void> {
     await fs.rm(pendingPath, { force: true }).catch(() => undefined);
     inFlight.delete(plateId);
   }
+}
+
+export type QualityCheckOutcome = RenderOutcome;
+
+/** The printability check (meshQuality.ts) in the render worker, under the same limits. It waits in the GLB queue
+ * rather than behind pictures: someone has the model open and is watching it run. */
+export function checkPlateQuality(plateId: string, srcPath: string, ext: string): Promise<QualityCheckOutcome> {
+  return new Promise((resolve) => {
+    void scheduleRender("glb", async () => {
+      const outcome = await renderPlateFile(plateId, srcPath, (from) =>
+        renderInWorker({ kind: "quality", srcPath: from, ext }),
+      ).catch((err: unknown): RenderOutcome => ({ status: "error", error: String(err) }));
+      resolve(outcome);
+    });
+  });
 }
 
 /** The plate's file where it is when its render starts: renders wait in a queue, and the file may have been renamed

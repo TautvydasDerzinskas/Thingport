@@ -1288,6 +1288,56 @@
           "saveFailed": "Échec de l’enregistrement des paramètres de rendu.",
           "illustrationBefore": "Détaillé",
           "illustrationAfter": "Simplifié"
+        },
+        "quality": {
+          "heading": "Contrôle de la qualité d’impression",
+          "subtitle": "Rechercher les problèmes qui pourraient gâcher une impression.",
+          "infoTitle": "Fonctionnement du contrôle de qualité",
+          "infoWhen": "Un modèle est contrôlé la première fois qu’il est ouvert, et seulement à ce moment-là. Les modèles que personne n’ouvre ne sont jamais contrôlés.",
+          "infoChecks": "Le contrôle recherche les trous, les surfaces cassées ou inversées, les fragments isolés, les pièces manquantes et une taille improbable, comme un modèle exporté dans la mauvaise unité.",
+          "infoCost": "Le contrôle lit le modèle entier sur le serveur : quelques secondes pour la plupart des modèles, davantage pour les modèles très détaillés.",
+          "label": "Rechercher les problèmes d’impression dans les modèles",
+          "helpOn": "Activé : chaque modèle est contrôlé la première fois qu’il est ouvert. Activé par défaut.",
+          "helpOff": "Désactivé : les modèles ne sont pas contrôlés.",
+          "loadFailed": "Impossible de charger les paramètres du contrôle de qualité.",
+          "saveFailed": "Échec de l’enregistrement des paramètres du contrôle de qualité.",
+          "configure": "Choisir quoi contrôler",
+          "dialogTitle": "Problèmes à rechercher",
+          "dialogHint": "Un problème désactivé est aussitôt masqué dans les résultats de tous les modèles. Les modèles ne sont pas contrôlés à nouveau.",
+          "checks": {
+            "damaged": {
+              "title": "Fichiers endommagés",
+              "desc": "Fichiers qui ne s’ouvrent pas ou ne contiennent rien à imprimer."
+            },
+            "missingParts": {
+              "title": "Pièces manquantes",
+              "desc": "Un 3MF qui fait référence à des fichiers de pièces qu’il ne contient pas."
+            },
+            "openEdges": {
+              "title": "Trous dans la surface",
+              "desc": "Arêtes ouvertes : la surface n’est pas fermée, le slicer doit donc deviner ce qui se trouve à l’intérieur."
+            },
+            "nonManifoldEdges": {
+              "title": "Arêtes non manifold",
+              "desc": "Arêtes partagées par plus de deux faces, que les slicers peuvent mal interpréter."
+            },
+            "flippedFaces": {
+              "title": "Faces inversées",
+              "desc": "Faces orientées à l’inverse de leurs voisines."
+            },
+            "insideOut": {
+              "title": "À l’envers",
+              "desc": "Une surface fermée tournée vers l’intérieur."
+            },
+            "fragments": {
+              "title": "Fragments isolés",
+              "desc": "De minuscules morceaux qui flottent à l’écart du modèle."
+            },
+            "scale": {
+              "title": "Taille improbable",
+              "desc": "Moins de 1 mm ou plus de 2 m : probablement exporté dans la mauvaise unité."
+            }
+          }
         }
       },
       "importQueue": {
@@ -2717,7 +2767,83 @@
       "sizeHint": "Taille totale de tous les fichiers de ce modèle dans le stockage",
       "author": "Auteur",
       "downloadModelFiles": "Télécharger les fichiers du modèle",
-      "imported": "Importé le {{date}}"
+      "imported": "Importé le {{date}}",
+      "quality": {
+        "scanning": "Contrôle de la qualité d’impression…",
+        "scanningFiles": "{{done}} fichiers contrôlés sur {{total}}",
+        "doneGood": "Imprimable",
+        "doneIssues": "Problèmes détectés",
+        "toastIssues": "Ce modèle risque de mal s’imprimer. Voir l’avertissement à côté d’Aperçu 3D.",
+        "badgeGood": "Contrôle de qualité réussi",
+        "badgeIssues": "Problèmes d’impression détectés",
+        "dialogTitle": "Qualité d’impression",
+        "noIssues": "Aucun problème détecté",
+        "skipped": "Non contrôlé : le fichier est trop volumineux ou sa structure ne peut pas être lue par le contrôle.",
+        "notYet": "Pas encore contrôlé.",
+        "slicerNote": "Les slicers corrigent seuls de nombreux petits problèmes. Vérifiez l’aperçu tranché avant d’imprimer.",
+        "triangles_one": "{{formatted}} triangle",
+        "triangles_other": "{{formatted}} triangles",
+        "bodies_one": "{{count}} corps",
+        "bodies_other": "{{count}} corps",
+        "size": "{{x}} × {{y}} × {{z}} mm",
+        "issues": {
+          "unreadable": {
+            "title": "Impossible d’ouvrir le fichier",
+            "desc": "Le fichier est endommagé ou n’est pas un fichier de modèle valide."
+          },
+          "empty": {
+            "title": "Aucune géométrie",
+            "desc": "Le fichier ne contient rien à imprimer."
+          },
+          "missingParts": {
+            "title_one": "{{count}} pièce manquante",
+            "title_other": "{{count}} pièces manquantes",
+            "desc": "Le modèle fait référence à des fichiers de pièces absents : des parties manqueront."
+          },
+          "openEdges": {
+            "title": "Trous dans la surface",
+            "desc_one": "{{count}} arête ouverte : la surface n’est pas fermée, le slicer doit donc deviner ce qui se trouve à l’intérieur.",
+            "desc_other": "{{count}} arêtes ouvertes : la surface n’est pas fermée, le slicer doit donc deviner ce qui se trouve à l’intérieur."
+          },
+          "nonManifoldEdges": {
+            "title": "Arêtes non manifold",
+            "desc_one": "{{count}} arête est partagée par plus de deux faces, ce que les slicers peuvent mal interpréter.",
+            "desc_other": "{{count}} arêtes sont partagées par plus de deux faces, ce que les slicers peuvent mal interpréter."
+          },
+          "flippedFaces": {
+            "title": "Faces inversées",
+            "desc_one": "{{count}} arête sépare des faces orientées en sens opposés : certaines parties peuvent être creuses ou manquer.",
+            "desc_other": "{{count}} arêtes séparent des faces orientées en sens opposés : certaines parties peuvent être creuses ou manquer."
+          },
+          "insideOut": {
+            "title": "À l’envers",
+            "desc": "La surface est tournée vers l’intérieur. Certains slicers la considèrent comme vide."
+          },
+          "fragments": {
+            "title_one": "{{count}} fragment isolé",
+            "title_other": "{{count}} fragments isolés",
+            "desc": "De minuscules morceaux flottent à l’écart du modèle. Ils s’impriment en amas ou pas du tout."
+          },
+          "tooSmall": {
+            "title": "Très petit",
+            "desc": "Moins de 1 mm : probablement exporté dans la mauvaise unité. Agrandissez-le dans le slicer."
+          },
+          "tooLarge": {
+            "title": "Très grand",
+            "desc": "Plus de 2 m : probablement exporté dans la mauvaise unité. Réduisez-le dans le slicer."
+          }
+        },
+        "toastMinor": "Problèmes d’impression mineurs détectés dans ce modèle. Les slicers s’en accommodent généralement.",
+        "severity": {
+          "critical": "Critique",
+          "criticalHint": "L’impression échoue ou sort incomplète.",
+          "major": "Majeur",
+          "majorHint": "Le modèle s’imprimera probablement avec des défauts.",
+          "minor": "Mineur",
+          "minorHint": "Les slicers s’en accommodent généralement, ou cela se corrige vite dans l’un d’eux."
+        },
+        "manageSettings": "Gérer le contrôle de qualité"
+      }
     },
     "edit": {
       "title": "Modifier le modèle",

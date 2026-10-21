@@ -1321,6 +1321,56 @@
           "saveFailed": "Nepavyko išsaugoti atvaizdavimo nustatymų.",
           "illustrationBefore": "Detalus",
           "illustrationAfter": "Supaprastintas"
+        },
+        "quality": {
+          "heading": "Spausdinimo kokybės patikra",
+          "subtitle": "Ieškoti problemų, kurios gali sugadinti spaudinį.",
+          "infoTitle": "Kaip veikia kokybės patikra",
+          "infoWhen": "Modelis tikrinamas pirmą kartą jį atidarius ir tik tada. Niekada neatidaryti modeliai netikrinami.",
+          "infoChecks": "Patikra ieško skylių, sugadintų ar apverstų paviršių, atskirų nuolaužų, trūkstamų dalių ir neįtikėtino dydžio, pavyzdžiui, kai modelis eksportuotas netinkamais vienetais.",
+          "infoCost": "Patikra serveryje nuskaito visą modelį: daugumai modelių tai užtrunka kelias sekundes, labai detaliems – ilgiau.",
+          "label": "Tikrinti modelius dėl spausdinimo problemų",
+          "helpOn": "Įjungta: kiekvienas modelis patikrinamas pirmą kartą jį atidarius. Įjungta pagal numatytuosius nustatymus.",
+          "helpOff": "Išjungta: modeliai netikrinami.",
+          "loadFailed": "Nepavyko įkelti kokybės patikros nustatymų.",
+          "saveFailed": "Nepavyko išsaugoti kokybės patikros nustatymų.",
+          "configure": "Pasirinkti, ką tikrinti",
+          "dialogTitle": "Tikrinamos problemos",
+          "dialogHint": "Išjungta problema iš karto paslepiama visų modelių rezultatuose. Modeliai iš naujo netikrinami.",
+          "checks": {
+            "damaged": {
+              "title": "Sugadinti failai",
+              "desc": "Failai, kurių nepavyksta atidaryti arba kuriuose nėra nieko, ką būtų galima atspausdinti."
+            },
+            "missingParts": {
+              "title": "Trūkstamos dalys",
+              "desc": "3MF failas, nurodantis dalių failus, kurių jame nėra."
+            },
+            "openEdges": {
+              "title": "Skylės paviršiuje",
+              "desc": "Atviros briaunos: paviršius neuždaras, todėl pjaustyklei tenka spėti, kas yra viduje."
+            },
+            "nonManifoldEdges": {
+              "title": "Nedaugdarės briaunos",
+              "desc": "Briaunos, priklausančios daugiau nei dviem sienelėms, kurias pjaustyklės gali klaidingai interpretuoti."
+            },
+            "flippedFaces": {
+              "title": "Apverstos sienelės",
+              "desc": "Sienelės, atsuktos priešinga kryptimi nei kaimyninės."
+            },
+            "insideOut": {
+              "title": "Išverstas",
+              "desc": "Uždaras paviršius, atsuktas į vidų."
+            },
+            "fragments": {
+              "title": "Atskiros nuolaužos",
+              "desc": "Mažyčiai atskiri gabaliukai, plūduriuojantys atokiai nuo modelio."
+            },
+            "scale": {
+              "title": "Neįtikėtinas dydis",
+              "desc": "Mažiau nei 1 mm arba daugiau nei 2 m: tikriausiai eksportuotas netinkamais vienetais."
+            }
+          }
         }
       },
       "importQueue": {
@@ -2771,7 +2821,90 @@
       "sizeHint": "Bendras visų šio modelio failų dydis saugykloje",
       "author": "Autorius",
       "downloadModelFiles": "Atsisiųsti modelio failus",
-      "imported": "Importuota {{date}}"
+      "imported": "Importuota {{date}}",
+      "quality": {
+        "scanning": "Tikrinama spausdinimo kokybė…",
+        "scanningFiles": "Patikrinta failų: {{done}} iš {{total}}",
+        "doneGood": "Tinka spausdinti",
+        "doneIssues": "Rasta problemų",
+        "toastIssues": "Šis modelis gali būti prastai atspausdintas. Žr. įspėjimą šalia 3D peržiūros.",
+        "badgeGood": "Kokybės patikra sėkminga",
+        "badgeIssues": "Rasta spausdinimo problemų",
+        "dialogTitle": "Spausdinimo kokybė",
+        "noIssues": "Problemų nerasta",
+        "skipped": "Nepatikrinta: failas per didelis arba jo struktūros patikra negali nuskaityti.",
+        "notYet": "Dar nepatikrinta.",
+        "slicerNote": "Pjaustyklės daug smulkių problemų ištaiso pačios. Prieš spausdindami peržiūrėkite supjaustytą modelį.",
+        "triangles_one": "{{formatted}} trikampis",
+        "triangles_few": "{{formatted}} trikampiai",
+        "triangles_other": "{{formatted}} trikampių",
+        "bodies_one": "{{count}} kūnas",
+        "bodies_few": "{{count}} kūnai",
+        "bodies_other": "{{count}} kūnų",
+        "size": "{{x}} × {{y}} × {{z}} mm",
+        "issues": {
+          "unreadable": {
+            "title": "Failo nepavyksta atidaryti",
+            "desc": "Failas sugadintas arba tai nėra tinkamas modelio failas."
+          },
+          "empty": {
+            "title": "Nėra geometrijos",
+            "desc": "Faile nėra nieko, ką būtų galima atspausdinti."
+          },
+          "missingParts": {
+            "title_one": "Trūksta {{count}} dalies",
+            "title_few": "Trūksta {{count}} dalių",
+            "title_other": "Trūksta {{count}} dalių",
+            "desc": "Modelis nurodo dalių failus, kurių jame nėra, todėl dalies detalių trūks."
+          },
+          "openEdges": {
+            "title": "Skylės paviršiuje",
+            "desc_one": "{{count}} atvira briauna: paviršius neuždaras, todėl pjaustyklei tenka spėti, kas yra viduje.",
+            "desc_few": "{{count}} atviros briaunos: paviršius neuždaras, todėl pjaustyklei tenka spėti, kas yra viduje.",
+            "desc_other": "{{count}} atvirų briaunų: paviršius neuždaras, todėl pjaustyklei tenka spėti, kas yra viduje."
+          },
+          "nonManifoldEdges": {
+            "title": "Nedaugdarės briaunos",
+            "desc_one": "{{count}} briauna priklauso daugiau nei dviem sienelėms, todėl pjaustyklės gali ją klaidingai interpretuoti.",
+            "desc_few": "{{count}} briaunos priklauso daugiau nei dviem sienelėms, todėl pjaustyklės gali jas klaidingai interpretuoti.",
+            "desc_other": "{{count}} briaunų priklauso daugiau nei dviem sienelėms, todėl pjaustyklės gali jas klaidingai interpretuoti."
+          },
+          "flippedFaces": {
+            "title": "Apverstos sienelės",
+            "desc_one": "{{count}} briauna skiria priešingomis kryptimis atsuktas sieneles, todėl dalys gali būti tuščiavidurės arba dingti.",
+            "desc_few": "{{count}} briaunos skiria priešingomis kryptimis atsuktas sieneles, todėl dalys gali būti tuščiavidurės arba dingti.",
+            "desc_other": "{{count}} briaunų skiria priešingomis kryptimis atsuktas sieneles, todėl dalys gali būti tuščiavidurės arba dingti."
+          },
+          "insideOut": {
+            "title": "Išverstas",
+            "desc": "Paviršius atsuktas į vidų. Kai kurios pjaustyklės jį laiko tuščiu."
+          },
+          "fragments": {
+            "title_one": "{{count}} atskira nuolauža",
+            "title_few": "{{count}} atskiros nuolaužos",
+            "title_other": "{{count}} atskirų nuolaužų",
+            "desc": "Mažyčiai atskiri gabaliukai plūduriuoja atokiai nuo modelio. Jie atsispausdina kaip gumulėliai arba visai neatsispausdina."
+          },
+          "tooSmall": {
+            "title": "Labai mažas",
+            "desc": "Mažiau nei 1 mm: tikriausiai eksportuotas netinkamais vienetais. Padidinkite jį pjaustyklėje."
+          },
+          "tooLarge": {
+            "title": "Labai didelis",
+            "desc": "Daugiau nei 2 m: tikriausiai eksportuotas netinkamais vienetais. Sumažinkite jį pjaustyklėje."
+          }
+        },
+        "toastMinor": "Šiame modelyje rasta smulkių spausdinimo problemų. Pjaustyklės paprastai su jomis susitvarko.",
+        "severity": {
+          "critical": "Kritinė",
+          "criticalHint": "Spausdinimas nepavyks arba spaudinys bus nepilnas.",
+          "major": "Rimta",
+          "majorHint": "Modelis greičiausiai bus atspausdintas su defektais.",
+          "minor": "Smulki",
+          "minorHint": "Pjaustyklės paprastai susitvarko pačios arba tai greitai pataisoma jose."
+        },
+        "manageSettings": "Tvarkyti kokybės patikrą"
+      }
     },
     "edit": {
       "title": "Redaguoti modelį",

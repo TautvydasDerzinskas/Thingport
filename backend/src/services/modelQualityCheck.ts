@@ -1,0 +1,42 @@
+import fs from "node:fs/promises";
+import { analyzeMesh, summarizeQuality, type MeshStats, type QualityReport } from "./meshQuality";
+import { loadThreeMfMeshes, type PreviewRefusal } from "./modelPreviewRender";
+
+// Loads a model file and runs the printability check on each mesh in it.
+//
+// Runs in a worker thread (modelPreviewWorker.ts); keep it free of config/db imports.
+
+export async function checkModelQuality(srcPath: string, ext: string): Promise<QualityReport | PreviewRefusal> {
+  let meshes: MeshStats[];
+  let missingParts = 0;
+  try {
+    if (ext === ".3mf") {
+      const loaded = await loadThreeMfMeshes(srcPath);
+      if (typeof loaded === "string") return loaded;
+      meshes = loaded.meshes.map((mesh) => analyzeMesh(mesh.vertices, mesh.triangles));
+      missingParts = loaded.missingParts;
+    } else if (ext === ".stl") {
+      const { STLLoader } = await import("three/examples/jsm/loaders/STLLoader.js");
+      const buffer = await fs.readFile(srcPath);
+      const geometry = new STLLoader().parse(
+        buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength),
+      );
+      meshes = [analyzeMesh(geometry.getAttribute("position").array)];
+    } else if (ext === ".obj") {
+      const { OBJLoader } = await import("three/examples/jsm/loaders/OBJLoader.js");
+      const root = new OBJLoader().parse(await fs.readFile(srcPath, "utf8"));
+      meshes = [];
+      root.traverse((node) => {
+        const mesh = node as import("three").Mesh;
+        const position = mesh.isMesh ? mesh.geometry.getAttribute("position") : null;
+        if (position) meshes.push(analyzeMesh(position.array, mesh.geometry.getIndex()?.array));
+      });
+    } else {
+      return "unsupported";
+    }
+  } catch {
+    // The loaders throw on truncated or garbled files: that's the verdict, not a failure to check.
+    return { ...summarizeQuality([]), issues: [{ code: "unreadable" }] };
+  }
+  return summarizeQuality(meshes, missingParts);
+}

@@ -42,6 +42,7 @@ import { forgetAiDescription } from "../services/aiDescriptionService";
 import { isNormalizable3mf, normalize3mfStatus, normalized3mfFor } from "../services/normalized3mfCache";
 import { rankedPrintIds } from "../services/searchService";
 import type { Prisma } from "@prisma/client";
+import { printQuality, startPrintQualityCheck } from "../services/modelQualityService";
 
 const router = Router();
 router.use(requireAuth);
@@ -327,6 +328,25 @@ router.get(
       data: { viewCount: { increment: 1 }, lastViewedAt: new Date() },
     });
     res.json(await printOutById(req.userId!, req.params.id));
+  }),
+);
+
+// Printability checks: the model page reads the state, starts a check for files not yet checked, and polls.
+router.get(
+  "/print/:id/quality",
+  asyncHandler(async (req, res) => {
+    const quality = await printQuality(req.userId!, req.params.id);
+    if (!quality) throw new HttpError(404, "Print not found");
+    res.json(quality);
+  }),
+);
+
+router.post(
+  "/print/:id/quality",
+  asyncHandler(async (req, res) => {
+    const quality = await startPrintQualityCheck(req.userId!, req.params.id);
+    if (!quality) throw new HttpError(404, "Print not found");
+    res.json(quality);
   }),
 );
 
