@@ -212,6 +212,21 @@ async function importProfileUrlsSequentially(
   return totals;
 }
 
+/** A link per wanted print profile. A model with none has only its raw files, which the model's own link imports. */
+function makerworldProfileUrls(
+  designId: string,
+  design: Record<string, unknown>,
+  scope: MakerworldProfileScope,
+  requestedInstanceId: string | null,
+): { urls: string[]; rawFiles: boolean } {
+  const profileIds = selectMakerworldProfiles(design, scope, requestedInstanceId);
+  if (!profileIds.length) return { urls: [`https://makerworld.com/en/models/${designId}`], rawFiles: true };
+  return {
+    urls: profileIds.map((profileId) => `https://makerworld.com/en/models/${designId}#profileId-${profileId}`),
+    rawFiles: false,
+  };
+}
+
 /** Imports several print profiles of one MakerWorld model as one model with a file per profile. */
 export async function runMakerworldProfilesImportJob(
   jobId: string,
@@ -227,16 +242,20 @@ export async function runMakerworldProfilesImportJob(
       IMPORT_MAKERWORLD_CALL_DELAY_MS,
     );
     if (!design) throw new HttpError(400, "Couldn't read this model's print profiles from MakerWorld");
-    const profileIds = selectMakerworldProfiles(design, body.scope, parsed.requestedInstanceId);
-    if (!profileIds.length) throw new HttpError(400, "This model has no print profiles to import");
+    const { urls: profileUrls, rawFiles } = makerworldProfileUrls(
+      parsed.designId,
+      design,
+      body.scope,
+      parsed.requestedInstanceId,
+    );
     const title =
       typeof design.title === "string" && design.title.trim() ? decodeHtmlEntities(design.title.trim()) : null;
-    await updateJob(jobId, { total: profileIds.length, sourceLabel: title });
-    log.info("makerworld profiles job started", { job: jobId, url: body.url, profiles: profileIds.length });
+    await updateJob(jobId, { total: profileUrls.length, sourceLabel: title });
+    log.info("makerworld profiles job started", { job: jobId, url: body.url, profiles: profileUrls.length });
 
     const totals = await importProfileUrlsSequentially(
       userId,
-      profileIds.map((profileId) => `https://makerworld.com/en/models/${parsed.designId}#profileId-${profileId}`),
+      profileUrls,
       body,
       (t) =>
         void updateJob(jobId, {
@@ -292,7 +311,10 @@ export async function runMakerworldProfilesImportJob(
     const label = title ? `"${title}"` : "a MakerWorld model";
     await createNotification(userId, {
       type: "import",
-      title: `Imported ${imported} of ${profileIds.length} print profiles from MakerWorld`,
+      // A model with no print profiles comes in as its raw files, all at once.
+      title: rawFiles
+        ? `Imported ${imported} of 1 model from MakerWorld`
+        : `Imported ${imported} of ${profileUrls.length} print profiles from MakerWorld`,
       body: bodyParts.length ? `Of ${label} — ${bodyParts.join(", ")}.` : `Of ${label}.`,
       externalUrl: body.url,
       internalPath: printId ? `/models/${printId}` : null,
@@ -1222,11 +1244,9 @@ async function importOneLink(
       IMPORT_MAKERWORLD_CALL_DELAY_MS,
     );
     if (!design) throw new HttpError(400, "Couldn't read this model's print profiles from MakerWorld");
-    const profileIds = selectMakerworldProfiles(design, body.scope, parsed.requestedInstanceId);
-    if (!profileIds.length) throw new HttpError(400, "This model has no print profiles to import");
     const totals = await importProfileUrlsSequentially(
       userId,
-      profileIds.map((profileId) => `https://makerworld.com/en/models/${parsed.designId}#profileId-${profileId}`),
+      makerworldProfileUrls(parsed.designId, design, body.scope, parsed.requestedInstanceId).urls,
       { ...body, url },
     );
     return { ...totals, profiles: true };

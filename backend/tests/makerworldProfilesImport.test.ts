@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import request from "supertest";
 import sharp from "sharp";
+import JSZip from "jszip";
 
 // No pacing or DNS here. config.ts reads the pace on load, so it's hoisted.
 vi.hoisted(() => {
@@ -282,5 +283,107 @@ describe("adding a profile the extension already resolved", () => {
     expect(second.status).toBe(200);
     expect(second.body.import_outcome).toBe("profile_added");
     expect(fetched.filter((u) => u.startsWith("https://makerworld.com/en/models/")).length).toBe(pageFetchesAfterFirst);
+  });
+});
+
+describe("a MakerWorld model with no print profiles", () => {
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  /** Its raw files, as MakerWorld zips them: in the designer's folders, two of them holding a file named alike. */
+  async function rawFilesZip(): Promise<Buffer> {
+    const zip = new JSZip();
+    zip.file("Holder_Top.stl", "solid top\nendsolid\n");
+    zip.file("2x2 Version/Holder_Bottom.stl", "solid bottom 2x2\nendsolid\n");
+    zip.file("3x2 Version/Holder_Bottom.stl", "solid bottom 3x2\nendsolid\n");
+    zip.file("readme.txt", "not a model");
+    return zip.generateAsync({ type: "nodebuffer" });
+  }
+
+  function mockRawFiles(designId: string) {
+    const zipUrl = `https://makerworld.bblmw.com/makerworld/model/${designId}/mszipfile/all.zip`;
+    global.fetch = vi.fn<(input: RequestInfo | URL) => Promise<Response>>(async (input) => {
+      const url = String(input);
+      if (url === `https://api.bambulab.com/v1/design-service/design/${designId}`) {
+        return json({
+          ...design(designId),
+          title: "Paint Bottle Holder",
+          modelId: "",
+          defaultInstanceId: 0,
+          instances: [],
+        });
+      }
+      if (url.startsWith(`https://api.bambulab.com/v1/design-service/design/${designId}/model?`)) {
+        return json({ name: "", url: zipUrl, highCompression: "" });
+      }
+      if (url === zipUrl) {
+        return new Response(await rawFilesZip(), {
+          headers: {
+            "content-type": "application/zip",
+            "content-disposition": "attachment;filename=Paint+Bottle+Holder.zip",
+          },
+        });
+      }
+      return new Response("not found", { status: 404 });
+    }) as unknown as typeof fetch;
+    return zipUrl;
+  }
+
+  const EXPECTED_FILES = ["Holder_Top.stl", "2x2 Version - Holder_Bottom.stl", "3x2 Version - Holder_Bottom.stl"];
+
+  async function filenamesOf(printId: string): Promise<string[]> {
+    const plates = await prisma.plate.findMany({ where: { printId }, orderBy: { position: "asc" } });
+    expect(plates.every((p) => p.sourceInstanceId === null)).toBe(true);
+    return plates.map((p) => p.filename);
+  }
+
+  it("imports its raw files, unpacked, one file each", async () => {
+    const designId = String((stamp % 1_000_000_000) + 100);
+    mockRawFiles(designId);
+    const res = await request(app)
+      .post("/api/import")
+      .set(auth())
+      .send({ url: `https://makerworld.com/en/models/${designId}-paint-holder`, makerworld_cookie: "token=t" });
+    expect(res.status).toBe(200);
+    expect(res.body.name).toBe("Paint Bottle Holder");
+    expect(await filenamesOf(res.body.id)).toEqual(EXPECTED_FILES);
+  });
+
+  it("unpacks the zip Grab resolved from the page's own download button too", async () => {
+    const designId = String((stamp % 1_000_000_000) + 101);
+    const zipUrl = mockRawFiles(designId);
+    const res = await request(app)
+      .post("/api/import")
+      .set({ ...auth(), "X-Thingport-Client": "grab" })
+      .send({
+        url: `https://makerworld.com/en/models/${designId}-paint-holder`,
+        resolved_download_url: zipUrl,
+        resolved_instance_id: null,
+        makerworld_design: { ...design(designId), title: "Paint Bottle Holder", instances: [] },
+      });
+    expect(res.status).toBe(200);
+    expect(await filenamesOf(res.body.id)).toEqual(EXPECTED_FILES);
+  });
+
+  it("imports its raw files from an every-profile import instead of failing", async () => {
+    const designId = String((stamp % 1_000_000_000) + 102);
+    mockRawFiles(designId);
+    const start = await request(app)
+      .post("/api/import/makerworld-profiles")
+      .set(auth())
+      .send({
+        url: `https://makerworld.com/en/models/${designId}-paint-holder`,
+        scope: "all",
+        makerworld_cookie: "token=t",
+      });
+    expect(start.status).toBe(202);
+    let job = (await request(app).get(`/api/import/jobs/${start.body.job_id}`).set(auth())).body;
+    for (let i = 0; i < 100 && job.status === "RUNNING"; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      job = (await request(app).get(`/api/import/jobs/${start.body.job_id}`).set(auth())).body;
+    }
+    expect(job).toMatchObject({ status: "DONE", total: 1, imported: 1, failed_count: 0 });
+    expect(await filenamesOf(job.result_print_id)).toEqual(EXPECTED_FILES);
   });
 });
