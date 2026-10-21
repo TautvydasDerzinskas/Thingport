@@ -171,11 +171,14 @@ async function createPlateAtPosition(
   return { record, effectivePath };
 }
 
+/** `describe: false` leaves the AI description check to the caller: an import's description is rewritten after this,
+ *  when its images are stored locally, and a check started before then would come back to a changed description. */
 export async function createPrint(
   userId: string,
   meta: PrintMetaInput,
   nameHint: string,
   plateInputs: NewPlateInput[],
+  { describe = true } = {},
 ): Promise<{ print: Print; plates: Plate[] }> {
   if (!plateInputs.length) throw new Error("createPrint requires at least one plate");
   // categoryId may come straight from a request body, so verify ownership here.
@@ -232,7 +235,7 @@ export async function createPrint(
     // Background classification is intentionally detached: importing a model must not wait for,
     // or fail because of, a third-party AI provider.
     if (!print.categoryId) void enqueueAiCategorization(userId, print.id);
-    enqueueAiDescription(userId, print.id);
+    if (describe) enqueueAiDescription(userId, print.id);
     return { print, plates };
   } catch (err) {
     await discardPrint(print.id);

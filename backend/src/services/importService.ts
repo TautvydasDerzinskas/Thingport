@@ -184,6 +184,7 @@ export const MAKERONLINE_GRAB_CODE = "makeronline_grab";
 export const MAKERONLINE_NEEDS_GRAB =
   "MakerOnline only gives its files to its own pages: import it with Thingport Grab on makeronline.com.";
 import { listZipEntries, readZipEntry } from "../utils/zipReader";
+import { enqueueAiDescription } from "./aiDescriptionService";
 import { getMyminifactoryApiKey, getThingiverseAccessToken } from "./settingsService";
 import { upsertAuthorFromImport } from "./authorService";
 import {
@@ -202,6 +203,9 @@ import { recordActivity } from "./activityService";
 import { Prisma } from "@prisma/client";
 import type { Author, Plate, PreviewImage, Print } from "@prisma/client";
 import { assertUrlProviderEnabled } from "./providerSettingsService";
+
+/** createPrint's options for an import, which checks the description itself once it's complete: importPrintFromUrl. */
+const IMPORTED = { describe: false };
 
 function isUniqueConstraintError(err: unknown): boolean {
   return err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002";
@@ -1213,7 +1217,7 @@ async function importThingiverseThing(
   try {
     let result: { print: Print; plates: Plate[] };
     try {
-      result = await createPrint(userId, printMeta, meta.title || `thing-${source.externalId}`, downloaded);
+      result = await createPrint(userId, printMeta, meta.title || `thing-${source.externalId}`, downloaded, IMPORTED);
     } catch (err) {
       // Race guard: a concurrent import of the same source model won.
       if (isUniqueConstraintError(err)) {
@@ -1307,7 +1311,13 @@ async function importPrintablesModel(
   try {
     let result: { print: Print; plates: Plate[] };
     try {
-      result = await createPrint(userId, printMeta, meta.title || `printables-${source.externalId}`, downloaded);
+      result = await createPrint(
+        userId,
+        printMeta,
+        meta.title || `printables-${source.externalId}`,
+        downloaded,
+        IMPORTED,
+      );
     } catch (err) {
       // Race guard: a concurrent import of the same source model won.
       if (isUniqueConstraintError(err)) {
@@ -1507,7 +1517,13 @@ async function importMyminifactoryObject(
     };
     let created: { print: Print; plates: Plate[] };
     try {
-      created = await createPrint(userId, printMeta, meta.title || `myminifactory-${source.externalId}`, downloaded);
+      created = await createPrint(
+        userId,
+        printMeta,
+        meta.title || `myminifactory-${source.externalId}`,
+        downloaded,
+        IMPORTED,
+      );
     } catch (err) {
       // Race guard: a concurrent import of the same source model won.
       if (isUniqueConstraintError(err)) {
@@ -1689,6 +1705,7 @@ async function createSourcedPrint(
         printMeta,
         meta.title || nameHint,
         nameInputsApart(downloaded, profiles.titles),
+        IMPORTED,
       );
     } catch (err) {
       // Race guard: a concurrent import of the same source model won.
@@ -2260,8 +2277,11 @@ export async function importPrintFromUrl(
   if (!keepGrabImports && result.print.sourceProvider === "makeronline" && result.print.sourceExternalId) {
     await clearGrabImports(userId, result.print.sourceExternalId).catch(() => undefined);
   }
-  if (!result.alreadyImported && !result.profileAdded)
+  if (!result.alreadyImported && !result.profileAdded) {
     void recordActivity(userId, "import", result.print.id, result.print.name);
+    // Only now: the pictures it may write from are attached, and its description's images stored locally.
+    enqueueAiDescription(userId, result.print.id);
+  }
   return result;
 }
 
@@ -2346,7 +2366,7 @@ async function importNewOrExisting(userId: string, url: string, body: ImportRequ
   try {
     let result: { print: Print; plates: Plate[] };
     try {
-      result = await createPrint(userId, printMeta, path.parse(filename).name, plates);
+      result = await createPrint(userId, printMeta, path.parse(filename).name, plates, IMPORTED);
     } catch (err) {
       // Race guard: a concurrent import of the same source model won.
       if (source && isUniqueConstraintError(err)) {
