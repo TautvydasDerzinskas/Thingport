@@ -7,8 +7,8 @@ import { authApi, type ApiTokenInfo, type McpToolInfo } from "../../api/auth";
 import { UnauthorizedError } from "../../api/client";
 import { useConfirm } from "../../components/ConfirmProvider";
 import HelpTip from "../../components/HelpTip";
-import Segmented from "../../components/controls/Segmented";
-import McpToolTile from "../../components/permissionAnimations/McpToolTile";
+import { PanelHeader, SectionLabel } from "../../components/Layout/ConfigurationDialog/parts";
+import PermissionRow from "../../components/PermissionRow";
 import { useToast } from "../../components/ToastProvider";
 
 type Props = {
@@ -17,7 +17,7 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-/** Token permissions' MCP section: which tools the token may call at /api/mcp. Each choice saves on its own, so there's no
+/** Token permissions' MCP panel: which tools the token may call at /api/mcp. Each choice saves on its own, so there's no
  *  unsaved state to lose; a refused save puts it back. */
 export default function McpPermissionsSection({ info, onChange, onUnauthorized }: Props) {
   const { t, i18n } = useTranslation(["app", "common"]);
@@ -69,59 +69,35 @@ export default function McpPermissionsSection({ info, onChange, onUnauthorized }
   ].filter((group) => group.tools.length);
 
   return (
-    <Stack component="section" aria-labelledby="token-permissions-mcp" spacing={1}>
-      <Typography id="token-permissions-mcp" variant="subtitle1" component="h3" fontWeight={600}>
-        {t("profile.apiToken.mcp.heading")}
-        <HelpTip text={t("profile.apiToken.mcp.description")} />
-      </Typography>
+    <>
+      <PanelHeader
+        title={t("profile.apiToken.mcp.heading")}
+        subtitle={t("profile.apiToken.mcp.subtitle")}
+        action={<HelpTip text={t("profile.apiToken.mcp.description")} />}
+      />
       {info.mcp_access === "off" ? (
         <Typography variant="body2" color="text.secondary">
           {t("profile.apiToken.mcp.adminOff")}
         </Typography>
       ) : (
-        <Stack spacing={2}>
+        <Stack spacing={2.5}>
           {groups.map((group) => (
-            <Stack key={group.key}>
-              <Typography variant="overline" color="text.secondary" sx={{ lineHeight: 2 }}>
+            <Box key={group.key}>
+              <SectionLabel>
                 {group.key === "reads" ? t("profile.apiToken.mcp.reads") : t("profile.apiToken.mcp.writes")}
-              </Typography>
-              {group.tools.map((tool) => {
-                const value = enabled.has(tool.name) ? "allow" : "deny";
-                return (
-                  <Box
-                    key={tool.name}
-                    className="permission-row"
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1.5,
-                      py: 0.75,
-                      "& + &": { borderTop: 1, borderColor: "divider" },
-                    }}
-                  >
-                    <McpToolTile tool={tool.name} allowed={value === "allow"} />
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography variant="body2">{label(tool, "title")}</Typography>
-                      <Typography variant="caption" color="text.secondary" component="div">
-                        {label(tool, "description")}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ flexShrink: 0 }}>
-                      <Segmented
-                        label={label(tool, "title")}
-                        value={value}
-                        disabled={saving !== null}
-                        onChange={(next) => next !== value && void toggle(tool, next === "allow")}
-                        options={[
-                          { value: "deny", label: t("profile.apiToken.mcp.deny") },
-                          { value: "allow", label: t("profile.apiToken.mcp.allow") },
-                        ]}
-                      />
-                    </Box>
-                  </Box>
-                );
-              })}
-            </Stack>
+              </SectionLabel>
+              {group.tools.map((tool) => (
+                <PermissionRow
+                  key={tool.name}
+                  name={tool.name}
+                  title={label(tool, "title")}
+                  description={label(tool, "description")}
+                  allowed={enabled.has(tool.name)}
+                  disabled={saving !== null}
+                  onChange={(on) => void toggle(tool, on)}
+                />
+              ))}
+            </Box>
           ))}
           {info.mcp_access === "read" && (
             <Typography variant="caption" color="text.secondary">
@@ -130,6 +106,6 @@ export default function McpPermissionsSection({ info, onChange, onUnauthorized }
           )}
         </Stack>
       )}
-    </Stack>
+    </>
   );
 }

@@ -3,7 +3,7 @@ import { keyframes } from "@emotion/react";
 import Box from "@mui/material/Box";
 import type { SxProps, Theme } from "@mui/material/styles";
 
-// A small picture of what each MCP tool does, sized to a permission row. Still until its row is hovered
+// A small picture of what each API token permission (an MCP tool or a REST scope) gives, sized to a permission row. Still until its row is hovered
 // or focused (a `.permission-row` ancestor), so a list of them doesn't all move at once; every
 // animation's 0% is its resting pose.
 
@@ -64,6 +64,20 @@ const drop = keyframes`
 const pulse = keyframes`
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.3); }
+`;
+const sweep = keyframes`
+  0%, 100% { opacity: 0.25; }
+  40% { opacity: 1; }
+`;
+const sunrise = keyframes`
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+`;
+const download = keyframes`
+  0% { transform: translateY(-3px); opacity: 0; }
+  30% { opacity: 1; }
+  70% { transform: translateY(3px); opacity: 1; }
+  100% { transform: translateY(5px); opacity: 0; }
 `;
 const fileIn = keyframes`
   0% { transform: translateY(0); opacity: 1; }
@@ -276,9 +290,87 @@ const pictures: Record<string, () => React.ReactNode> = {
       <Card sx={{ ...at(14, 3, 12, 13), animation: run(fileIn, 2) }} />
     </Folder>
   ),
+  activity: () => (
+    <>
+      {Array.from({ length: 12 }, (_, i) => (
+        <Box
+          key={i}
+          sx={{
+            ...at(9 + (i % 4) * 6, 11 + Math.floor(i / 4) * 6, 4, 4),
+            borderRadius: "1px",
+            bgcolor: "primary.main",
+            opacity: [0.25, 0.6, 1, 0.4][(i * 7) % 4],
+            animation: run(sweep, 2.4, `${(i % 4) * 0.2 + Math.floor(i / 4) * 0.1}s`),
+          }}
+        />
+      ))}
+    </>
+  ),
+  images: () => (
+    <Box
+      sx={{ ...at(8, 10, 24, 20), borderRadius: "3px", border: 1.5, borderColor: "text.disabled", overflow: "hidden" }}
+    >
+      <Box sx={{ ...at(14, 3, 5, 5), borderRadius: "50%", bgcolor: "warning.main", animation: run(sunrise, 2.2) }} />
+      <Box sx={{ ...at(-2, 7, 18, 12), bgcolor: "primary.main", clipPath: "polygon(50% 0, 100% 100%, 0 100%)" }} />
+      <Box
+        sx={{
+          ...at(9, 10, 14, 9),
+          bgcolor: "primary.dark",
+          opacity: 0.8,
+          clipPath: "polygon(50% 0, 100% 100%, 0 100%)",
+        }}
+      />
+    </Box>
+  ),
+  files: () => (
+    <>
+      <Box
+        sx={{
+          ...at(11, 7, 18, 24),
+          bgcolor: "background.paper",
+          border: 1.5,
+          borderColor: "text.disabled",
+          borderRadius: "2px",
+          clipPath: "polygon(0 0, 65% 0, 100% 27%, 100% 100%, 0 100%)",
+        }}
+      />
+      <Box sx={{ ...at(22, 7, 7, 7), bgcolor: "text.disabled", clipPath: "polygon(0 0, 100% 100%, 0 100%)" }} />
+      <Box sx={{ ...at(14, 14, 12, 12), animation: run(download, 1.6) }}>
+        <Box sx={{ ...at(4.5, 0, 3, 6), bgcolor: "primary.main" }} />
+        <Box sx={{ ...at(1, 5, 10, 6), bgcolor: "primary.main", clipPath: "polygon(0 0, 100% 0, 50% 100%)" }} />
+      </Box>
+    </>
+  ),
+  other: () => (
+    <>
+      {[0, 1, 2].map((i) => (
+        <Box
+          key={i}
+          sx={{
+            ...at(10 + i * 8, 17, 5, 5),
+            borderRadius: "50%",
+            bgcolor: "primary.main",
+            animation: run(bob, 1.2, `${i * 0.15}s`),
+          }}
+        />
+      ))}
+    </>
+  ),
 };
 
-/** A plug, for a tool the frontend doesn't have a picture of yet. */
+// REST scopes that read the same thing as an MCP tool share its picture.
+const aliases: Record<string, string> = {
+  search: "search_models",
+  models: "list_models",
+  collections: "list_collections",
+  tags: "list_tags",
+  categories: "list_categories",
+  authors: "get_author",
+  dashboard: "library_stats",
+  imports: "get_import_status",
+};
+
+/** A plug, for a permission the frontend doesn't have a picture of yet. */
 function Fallback() {
   return (
     <>
@@ -291,13 +383,14 @@ function Fallback() {
 }
 
 type Props = {
-  tool: string;
-  /** Off: greyed out, as the tool can't be called. */
+  /** An MCP tool's name or a REST scope's id. */
+  name: string;
+  /** Off: greyed out, as the token can't use it. */
   allowed: boolean;
 };
 
-export default function McpToolTile({ tool, allowed }: Props) {
-  const picture = pictures[tool];
+export default function PermissionTile({ name, allowed }: Props) {
+  const picture = pictures[aliases[name] ?? name];
   return (
     <Box
       aria-hidden

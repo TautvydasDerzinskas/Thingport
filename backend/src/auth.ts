@@ -4,6 +4,7 @@ import type { Role } from "@prisma/client";
 import { AUTH_ALGO, AUTH_SECRET } from "./config";
 import { getAuthTokenTtl } from "./services/settingsService";
 import { findApiTokenUser, isApiToken } from "./services/apiTokenService";
+import { scopeForPath } from "./services/apiTokenScopes";
 import { asyncHandler } from "./utils/asyncHandler";
 import { prisma } from "./db";
 
@@ -72,6 +73,11 @@ export const requireAuth = asyncHandler(async (req, res, next) => {
     }
     if (!API_TOKEN_METHODS.has(req.method)) {
       res.status(403).json({ detail: "API tokens are read-only" });
+      return;
+    }
+    const scope = scopeForPath(req.originalUrl.split("?")[0].replace(/^\/api(?=\/)/, ""));
+    if (!user.apiTokenRestScopes.includes(scope)) {
+      res.status(403).json({ detail: `This API token isn't allowed to read ${scope}`, scope });
       return;
     }
     req.userId = user.id;
