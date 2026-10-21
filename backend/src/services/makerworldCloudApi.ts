@@ -380,7 +380,10 @@ export async function resolveMakerworldViaCloudApi(
   if (designResult.status === 401 || designResult.status === 403) throw new MakerworldAuthError();
   if (designResult.status !== 200 || !isRecord(designResult.data)) return null;
   const design = designResult.data;
-  const instances = Array.isArray(design.instances) ? design.instances.filter(isRecord) : [];
+  // The profiles selectMakerworldProfiles counts, so a job that found none gets the raw files here too.
+  const instances = Array.isArray(design.instances)
+    ? design.instances.filter(isRecord).filter((inst) => inst.id != null)
+    : [];
   if (!instances.length) return resolveMakerworldRawFiles(designId, design, bearerToken, paceMs);
 
   const modelId = typeof design.modelId === "string" && design.modelId.trim() ? design.modelId.trim() : null;
