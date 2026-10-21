@@ -96,9 +96,10 @@ jobs:
         with:
           images: ${{ inputs.image_name }}
           tags: |
-            # develop's builds go out as :dev instead, the channel for testers who want changes before a release.
+            # develop's builds go out as :dev instead, the channel for testers who want changes before a release. Not a
+            # manual rebuild of a release dispatched from develop, which would put the release's code under :dev.
             type=ref,event=branch,enable=${{ github.ref != 'refs/heads/develop' }}
-            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/develop' }}
+            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/develop' && inputs.version == '' }}
             type=sha,prefix=sha-,format=short
             type=semver,pattern={{version}},value=${{ inputs.version }},enable=${{ inputs.version != '' }}
             type=semver,pattern={{major}}.{{minor}},value=${{ inputs.version }},enable=${{ inputs.version != '' }}
@@ -119,6 +120,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             GIT_SHA=${{ github.sha }}
-            RELEASE_CHANNEL=${{ github.ref == 'refs/heads/develop' && 'dev' || 'stable' }}
+            RELEASE_CHANNEL=${{ github.ref == 'refs/heads/develop' && inputs.version == '' && 'dev' || 'stable' }}
           cache-from: type=gha,scope=${{ inputs.cache_scope }}
           cache-to: type=gha,mode=max,scope=${{ inputs.cache_scope }}
