@@ -65,7 +65,7 @@
     {
       "type": "feature",
       "title": "What's new after every update",
-      "description": "You're reading it. Open it again any time from your user menu."
+      "description": "You're reading it. Admins can open it again any time from Update Checker in Administration."
     },
     {
       "type": "improvement",
