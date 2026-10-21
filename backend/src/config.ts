@@ -144,4 +144,11 @@ export const SYSTEM_NOTIFICATIONS_URL = (
   process.env.SYSTEM_NOTIFICATIONS_URL ?? DEFAULT_SYSTEM_NOTIFICATIONS_URL
 ).trim();
 
+export const DEFAULT_RELEASE_NOTES_URL = "https://raw.githubusercontent.com/TautvydasDerzinskas/Thingport/main";
+// The repo files "What's new" reads: the CHANGELOG.md files and release-notes/latest-release-notes.json. Set to an
+// empty value to stop fetching them.
+export const RELEASE_NOTES_URL = (process.env.RELEASE_NOTES_URL ?? DEFAULT_RELEASE_NOTES_URL)
+  .trim()
+  .replace(/\/+$/, "");
+
 export const API_PORT = envInt("API_PORT", 8000);

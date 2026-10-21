@@ -25,6 +25,7 @@ import providerCollectionsRoutes from "./routes/providerCollections";
 import bookmarksRoutes from "./routes/bookmarks";
 import searchRoutes from "./routes/search";
 import notificationsRoutes from "./routes/notifications";
+import releaseNotesRoutes from "./routes/releaseNotes";
 import adminRoutes from "./routes/admin";
 import dashboardRoutes from "./routes/dashboard";
 import activityRoutes from "./routes/activity";
@@ -71,6 +72,7 @@ export function createApp(): Express {
   app.use("/api", bookmarksRoutes);
   app.use("/api", searchRoutes);
   app.use("/api", notificationsRoutes);
+  app.use("/api", releaseNotesRoutes);
   // Own prefix: on bare /api, its requireAdmin would also run for every route mounted after it.
   app.use("/api/admin", adminRoutes);
   app.use("/api", dashboardRoutes);

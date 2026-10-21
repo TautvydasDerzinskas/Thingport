@@ -39,7 +39,7 @@ const entrySchema = z.object({
 });
 export type SystemNotificationEntry = z.infer<typeof entrySchema>;
 
-function compareVersions(a: string, b: string): number {
+export function compareVersions(a: string, b: string): number {
   const pa = a.split(".").map(Number);
   const pb = b.split(".").map(Number);
   for (let i = 0; i < 3; i++) if (pa[i] !== pb[i]) return pa[i] - pb[i];

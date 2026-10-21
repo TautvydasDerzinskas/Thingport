@@ -2242,6 +2242,28 @@
           ]
         }
       }
+    },
+    "whatsNew": {
+      "label": "Kas naujo",
+      "versionLabel": "Thingport {{version}}",
+      "kinds": {
+        "breaking": "Nesuderinami pakeitimai",
+        "feature": "Naujos funkcijos",
+        "improvement": "Patobulinimai",
+        "fix": "Pataisymai"
+      },
+      "showAll": "Rodyti visus ({{total}})",
+      "showFewer": "Rodyti mažiau",
+      "learnMore": "Daugiau",
+      "allReleases": "Visos versijos",
+      "gotIt": "Supratau",
+      "unavailable": "Nepavyko įkelti versijos naujienų.",
+      "empty": "Šiai versijai naujienų dar nėra.",
+      "openGithub": "Atidaryti GitHub",
+      "zoom": "Padidinti ekrano vaizdą",
+      "highlight": "Svarbiausia",
+      "copy": "Kopijuoti",
+      "copied": "Nukopijuota"
     }
   },
   "common": {

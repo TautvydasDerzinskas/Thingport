@@ -7,6 +7,7 @@ import { SYNC_JOB_INTERRUPTED } from "./services/importJobRunner";
 import { seedFlaresolverrUrl, seedPublicUrl } from "./services/settingsService";
 import { startNotificationCleanup } from "./services/notificationService";
 import { startSystemNotificationSync } from "./services/systemNotificationService";
+import { announceVersionUpdate } from "./services/releaseNotesService";
 import { resumeStorageMove } from "./services/storageMoveService";
 
 const app = createApp();
@@ -33,5 +34,6 @@ app.listen(API_PORT, () => {
   startCollectionSyncScheduler();
   startNotificationCleanup();
   startSystemNotificationSync();
+  announceVersionUpdate().catch((err) => console.error("Failed to announce the version update:", err));
   resumeStorageMove().catch((err) => console.error("Failed to resume moving model files:", err));
 });

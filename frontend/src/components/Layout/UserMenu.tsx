@@ -15,6 +15,7 @@ import PersonIcon from "@mui/icons-material/Person";
 import ViewInArIcon from "@mui/icons-material/ViewInAr";
 import SettingsIcon from "@mui/icons-material/Settings";
 import LogoutIcon from "@mui/icons-material/Logout";
+import NewReleasesOutlinedIcon from "@mui/icons-material/NewReleasesOutlined";
 import type { AuthUser } from "../../api/auth";
 import type { ConfigurationTab } from "./ConfigurationDialog";
 import { IMPORT_PROVIDER_INFO } from "../../constants/importProviders";
@@ -24,6 +25,7 @@ import { useGravatarUrl } from "../../hooks/useGravatarUrl";
 import { settingsApi, type Cults3dSettings } from "../../api/settings";
 import { cults3dReady, cults3dStatus } from "./ConfigurationDialog/cults3dStatus";
 import { useDisabledProviders } from "../../hooks/useDisabledProviders";
+import { useWhatsNew } from "../whatsNew/WhatsNewProvider";
 
 type ServiceChipDef = {
   key:
@@ -55,6 +57,7 @@ type Props = {
 export function UserMenu({ user, onOpenConfiguration, onOpenProfile, onLogout }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const navigate = useNavigate();
+  const openWhatsNew = useWhatsNew();
   const avatarUrl = useGravatarUrl(user?.email, 128);
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const [makerworldConfigured, setMakerworldConfigured] = React.useState(false);
@@ -308,6 +311,17 @@ export function UserMenu({ user, onOpenConfiguration, onOpenProfile, onLogout }:
             <SettingsIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText>{t("configuration.title")}</ListItemText>
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            closeMenu();
+            openWhatsNew();
+          }}
+        >
+          <ListItemIcon>
+            <NewReleasesOutlinedIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>{t("whatsNew.label")}</ListItemText>
         </MenuItem>
         <Divider />
         <Box sx={{ px: 1.5, py: 1, display: "flex", flexWrap: "wrap", gap: 0.5, maxWidth: 260 }}>

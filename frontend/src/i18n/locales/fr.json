@@ -2189,6 +2189,28 @@
           ]
         }
       }
+    },
+    "whatsNew": {
+      "label": "Nouveautés",
+      "versionLabel": "Thingport {{version}}",
+      "kinds": {
+        "breaking": "Changements incompatibles",
+        "feature": "Nouvelles fonctionnalités",
+        "improvement": "Améliorations",
+        "fix": "Corrections"
+      },
+      "showAll": "Tout afficher ({{total}})",
+      "showFewer": "Afficher moins",
+      "learnMore": "En savoir plus",
+      "allReleases": "Toutes les versions",
+      "gotIt": "Compris",
+      "unavailable": "Impossible de charger les notes de version.",
+      "empty": "Pas encore de notes pour cette version.",
+      "openGithub": "Ouvrir sur GitHub",
+      "zoom": "Agrandir la capture",
+      "highlight": "À la une",
+      "copy": "Copier",
+      "copied": "Copié"
     }
   },
   "common": {
