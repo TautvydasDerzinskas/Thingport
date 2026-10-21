@@ -177,7 +177,7 @@ async function requestProvider(
     schemaName: "categorization",
     schema,
     // A 300-character reason plus the JSON around it needs room; 300 tokens cut answers off before the closing brace.
-    maxTokens: 1024,
+    answerTokens: 1024,
     attempts,
     log: log.child({ print: print.id, model: settings.model }),
     noAnswer: "no classification",

@@ -144,8 +144,9 @@ async function requestRewrite(print: Print, settings: AiDescriptionSettings, att
     content,
     schemaName: "description",
     schema,
-    // The whole description comes back, so the budget grows with it; about 3 characters make a token.
-    maxTokens: Math.min(8192, Math.ceil(notes.length / 2.5) + 768),
+    // The whole description comes back, so the budget grows with it. 2 characters a token, not the usual 3 or
+    // 4: image URLs and HTML escaped into JSON take more.
+    answerTokens: Math.min(32768, Math.ceil(notes.length / 2) + 1024),
     attempts,
     log: log.child({ print: print.id, model: settings.model }),
     noAnswer: "no description",
