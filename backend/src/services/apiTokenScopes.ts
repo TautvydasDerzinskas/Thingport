@@ -37,6 +37,7 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
       "/dashboard/top-viewed",
       "/dashboard/top-printed",
       "/dashboard/top-authors",
+      "/dashboard/recently-added",
       "/dashboard/featured",
       "/dashboard/weather",
       "/dashboard/weather/places",

@@ -110,6 +110,15 @@ function configSchema<W extends z.ZodTypeAny>(widgetId: W) {
             .max(DASHBOARD_WIDGETS.length),
           // Only the breakpoints the user has arranged; the frontend derives the rest from the widest one.
           layouts: z.object({ lg: gridItems, md: gridItems, sm: gridItems }),
+          // Each widget's own options, e.g. the clock's 12/24-hour format, as only what differs from its defaults.
+          // The frontend knows each widget's options and drops values it doesn't recognise.
+          settings: z
+            .record(
+              z.string().max(40),
+              z.record(z.string().max(40), z.union([z.string().max(40), z.number(), z.boolean()])),
+            )
+            .refine((value) => Object.keys(value).length <= DASHBOARD_WIDGETS.length * 2)
+            .optional(),
         }),
       )
       .min(1)
@@ -140,7 +149,10 @@ function cleanConfig(config: z.infer<typeof storedConfigSchema>): DashboardConfi
       const items = template.layouts[breakpoint];
       if (items) layouts[breakpoint] = items.filter((item) => panelIds.has(item.i));
     }
-    return { ...template, panels, layouts };
+    const settings = template.settings
+      ? Object.fromEntries(Object.entries(template.settings).filter(([id]) => KNOWN.has(id)))
+      : undefined;
+    return { ...template, panels, layouts, ...(settings && { settings }) };
   });
   const active = templates.some((template) => template.id === config.active) ? config.active : templates[0].id;
   return { active, templates, ...(config.offered && { offered: config.offered }) };

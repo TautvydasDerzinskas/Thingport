@@ -5,10 +5,11 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { parseBody } from "../utils/validate";
 import { HttpError } from "../utils/fileUtils";
 import { printOutById } from "../services/printLoader";
-import { getForecast, getPlaceName, searchPlaces } from "../services/weatherService";
+import { TEMPERATURE_UNITS, getForecast, getPlaceName, searchPlaces } from "../services/weatherService";
 import {
   getDashboardSummary,
   getFeaturedModelId,
+  getRecentlyAddedList,
   getTopAuthorsList,
   getTopPrintedList,
   getTopViewedList,
@@ -18,6 +19,9 @@ import {
 } from "../services/dashboardService";
 
 const router = Router();
+
+// The most a dashboard list panel can be set to show; kept in sync by hand with the frontend's LIST_COUNTS.
+const DASHBOARD_LIST_MAX = 10;
 router.use(requireAuth);
 
 function modelOut(m: DashboardModel) {
@@ -50,7 +54,11 @@ function providerOut(p: DashboardProvider) {
 router.get(
   "/dashboard/summary",
   asyncHandler(async (req, res) => {
-    const summary = await getDashboardSummary(req.userId!);
+    const summary = await getDashboardSummary(req.userId!, {
+      models: DASHBOARD_LIST_MAX,
+      authors: DASHBOARD_LIST_MAX,
+      recent: DASHBOARD_LIST_MAX,
+    });
     res.json({
       collection_count: summary.collectionCount,
       model_count: summary.modelCount,
@@ -93,6 +101,13 @@ const featuredQuerySchema = z.object({
     .optional(),
 });
 router.get(
+  "/dashboard/recently-added",
+  asyncHandler(async (req, res) => {
+    res.json((await getRecentlyAddedList(req.userId!)).map(modelOut));
+  }),
+);
+
+router.get(
   "/dashboard/featured",
   asyncHandler(async (req, res) => {
     const { date } = parseBody(featuredQuerySchema, req.query);
@@ -122,8 +137,11 @@ async function fromWeatherService<T>(call: () => Promise<T>): Promise<T> {
 router.get(
   "/dashboard/weather",
   asyncHandler(async (req, res) => {
-    const { lat, lon } = parseBody(z.object(coordinates), req.query);
-    res.json(await fromWeatherService(() => getForecast(lat, lon)));
+    const { lat, lon, unit } = parseBody(
+      z.object({ ...coordinates, unit: z.enum(TEMPERATURE_UNITS).default("celsius") }),
+      req.query,
+    );
+    res.json(await fromWeatherService(() => getForecast(lat, lon, unit)));
   }),
 );
 

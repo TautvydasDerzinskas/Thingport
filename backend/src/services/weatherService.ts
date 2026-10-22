@@ -51,6 +51,7 @@ class TtlCache<T> {
   }
 }
 
+// Kept in Celsius and unrounded, so either unit is converted from the exact reading.
 const forecasts = new TtlCache<Forecast>(FORECAST_TTL_MS);
 const searches = new TtlCache<Place[]>(SEARCH_TTL_MS);
 // A town doesn't move, so names are kept as long as the cache has room.
@@ -68,7 +69,22 @@ async function getJson(url: string, headers: Record<string, string> = {}): Promi
 // About 1 km apart: close enough to share a forecast, and it keeps exact coordinates out of the cache.
 const round = (value: number, places: number) => Number(value.toFixed(places));
 
-export async function getForecast(lat: number, lon: number): Promise<Forecast> {
+export const TEMPERATURE_UNITS = ["celsius", "fahrenheit"] as const;
+export type TemperatureUnit = (typeof TEMPERATURE_UNITS)[number];
+
+export async function getForecast(lat: number, lon: number, unit: TemperatureUnit = "celsius"): Promise<Forecast> {
+  const raw = await getRawForecast(lat, lon);
+  const degrees = (celsius: number) => Math.round(unit === "fahrenheit" ? (celsius * 9) / 5 + 32 : celsius);
+  return {
+    ...raw,
+    temperature: degrees(raw.temperature),
+    high: degrees(raw.high),
+    low: degrees(raw.low),
+    later: { ...raw.later, temperature: degrees(raw.later.temperature) },
+  };
+}
+
+async function getRawForecast(lat: number, lon: number): Promise<Forecast> {
   const key = `${round(lat, 2)},${round(lon, 2)}`;
   const cached = forecasts.get(key);
   if (cached) return cached;
@@ -88,13 +104,13 @@ export async function getForecast(lat: number, lon: number): Promise<Forecast> {
     daily: { temperature_2m_max: number[]; temperature_2m_min: number[] };
   };
   const forecast: Forecast = {
-    temperature: Math.round(data.current.temperature_2m),
+    temperature: data.current.temperature_2m,
     code: data.current.weather_code,
-    high: Math.round(data.daily.temperature_2m_max[0]),
-    low: Math.round(data.daily.temperature_2m_min[0]),
+    high: data.daily.temperature_2m_max[0],
+    low: data.daily.temperature_2m_min[0],
     later: {
       hours: LATER_HOURS,
-      temperature: Math.round(data.hourly.temperature_2m[LATER_HOURS]),
+      temperature: data.hourly.temperature_2m[LATER_HOURS],
       code: data.hourly.weather_code[LATER_HOURS],
     },
   };
