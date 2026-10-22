@@ -744,7 +744,10 @@ export const settingsApi = {
   getSlicer: async (): Promise<SlicerSettings> => {
     const res = await fetch(`${apiBase()}/settings/slicer`, { headers: authHeaders() });
     assertOk(res, "Failed to load slicer setting");
-    return res.json();
+    const body: Partial<SlicerSettings> = await res.json();
+    const slicer = body.slicer ?? null;
+    // A backend older than the installed-slicers list sends only `slicer`: treat it as the one installed.
+    return { slicer, slicers: body.slicers ?? (slicer ? [slicer] : []) };
   },
 
   /** A field left out keeps its value. */

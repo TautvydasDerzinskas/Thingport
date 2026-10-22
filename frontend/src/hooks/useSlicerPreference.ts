@@ -14,7 +14,7 @@ function load(): Promise<SlicerSettings> {
     inFlight = settingsApi
       .getSlicer()
       .then((res) => {
-        cached = { slicer: res.slicer ?? null, slicers: res.slicers ?? [] };
+        cached = res;
         return cached;
       })
       .catch(() => EMPTY)

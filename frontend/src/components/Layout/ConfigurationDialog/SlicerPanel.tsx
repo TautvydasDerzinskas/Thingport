@@ -41,7 +41,7 @@ export default function SlicerPanel({ onNavigate, onUnauthorized }: Props) {
     settingsApi
       .getSlicer()
       .then((res) => {
-        if (active) setValue({ slicer: res.slicer ?? null, slicers: res.slicers ?? [] });
+        if (active) setValue(res);
       })
       .catch((err) => {
         if (active && err instanceof UnauthorizedError) onUnauthorized?.();

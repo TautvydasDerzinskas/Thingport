@@ -266,7 +266,8 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
             }}
             downloading={downloading}
             onDownload={() => void downloadFile(selectedFile)}
-            zipCount={files.length}
+            // The zip holds the plates and supporting files, not the prepared print.
+            zipCount={files.filter((file) => file.plate).length}
             onDownloadZip={() => void downloadAllZip()}
           />
         )}
