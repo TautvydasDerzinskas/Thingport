@@ -4,6 +4,7 @@ import {
   DASHBOARD_PRESETS,
   addWidget,
   detachWidget,
+  duplicateTemplate,
   firstFit,
   instanceCount,
   removeWidget,
@@ -230,6 +231,13 @@ describe("setWidgetSettings", () => {
     // Back to the defaults leaves nothing stored.
     template = setWidgetSettings(template, "clock", { hourCycle: "24", showDate: true, showGreeting: true });
     expect(template.settings).toEqual({});
+  });
+
+  it("go along with a copy of the template, apart from the original's", () => {
+    const template = setWidgetSettings(preset("minimal"), "clock", { hourCycle: "12" });
+    const copy = duplicateTemplate(template, "Copy");
+    expect(copy.settings).toEqual(template.settings);
+    expect(copy.settings).not.toBe(template.settings);
   });
 
   it("falls back to the default for a value no longer offered", () => {

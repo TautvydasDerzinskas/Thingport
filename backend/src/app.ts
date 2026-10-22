@@ -47,6 +47,8 @@ export function createApp(): Express {
   );
 
   app.use(pathToken);
+  // A widget's script, HTML and fetch body are larger than the default 100 kB; their own validation sets the limits.
+  app.use(["/api/widgets", "/api/mcp"], express.json({ limit: "8mb" }));
   app.use(express.json());
   app.use("/api", trackClients);
 
@@ -90,6 +92,12 @@ export function createApp(): Express {
   app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
     if (err instanceof HttpError) {
       res.status(err.status).json({ detail: err.message, ...(err.code ? { code: err.code } : {}) });
+      return;
+    }
+    // The body parser's own errors: too large, malformed JSON.
+    const status = (err as { status?: unknown; expose?: unknown }).status;
+    if (typeof status === "number" && status >= 400 && status < 500 && (err as { expose?: unknown }).expose) {
+      res.status(status).json({ detail: (err as Error).message });
       return;
     }
     console.error(err);

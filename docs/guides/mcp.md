@@ -61,7 +61,7 @@ These change your library, and are off until you turn them on:
 | `import_model`      | Imports a model from its page on a supported site, as **+ Add > Import** does, optionally into a collection. |
 | `create_collection` | Creates a new, empty collection.                                                                             |
 | `add_to_collection` | Adds models from your library to one of your collections.                                                    |
-| `save_widget`       | Creates one of your own [dashboard widgets](custom-widgets.md), or changes one it or you made.               |
+| `save_widget`       | Creates one of your own [dashboard widgets](custom-widgets.md), or replaces one it or you saved earlier.     |
 
 None of them deletes anything, and only `save_widget` changes something that's already there: one of your own widgets. An import runs the same checks as **+ Add > Import** (a provider an admin
 turned off stays off, and a model already in your library isn't imported twice) and shows up in your notifications and
@@ -90,9 +90,10 @@ Since an MCP import doesn't ask for a captcha, an admin who requires one for imp
 ## A word on what the assistant reads
 
 Model descriptions come from the sites they were imported from, and the assistant reads them. A description written to
-look like instructions could talk it into calling another tool you gave it. The worst it can do is import models or
-file them into collections, since no tool deletes anything, but keep the tools that change the library off unless you
-use them.
+look like instructions could talk it into calling another tool you gave it. Most tools can only import models or file
+them into collections, since none deletes anything. `save_widget` is the exception: it writes code that runs in your
+dashboard with your session, so a widget it saves can do in Thingport whatever you can, and it can replace a widget of
+yours with the same name. Keep the tools that change the library off unless you use them, and `save_widget` above all.
 
 ## Turn it off
 

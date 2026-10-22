@@ -632,10 +632,10 @@ export default function GlobalSearch({
   return (
     <>
       {spotlight && !open && (
-        <Tooltip title={t("app:search.open")}>
+        <Tooltip title={t("app:search.openSearch")}>
           <ButtonBase
             onClick={() => setOpen(true)}
-            aria-label={t("app:search.open") ?? undefined}
+            aria-label={t("app:search.openSearch") ?? undefined}
             sx={(muiTheme) => ({
               position: "fixed",
               right: 20,

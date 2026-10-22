@@ -471,7 +471,8 @@
       "modelCount_other": "{{count}} models",
       "sectionRecent": "Recent",
       "sectionCommands": "Commands",
-      "open": "Search",
+      "open": "Open",
+      "openSearch": "Search",
       "runCommand": "Run command",
       "toMove": "to move",
       "kind": {

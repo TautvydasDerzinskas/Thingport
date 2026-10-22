@@ -471,7 +471,8 @@
       "modelCount_other": "{{count}} modelos",
       "sectionRecent": "Recientes",
       "sectionCommands": "Comandos",
-      "open": "Buscar",
+      "open": "Abrir",
+      "openSearch": "Buscar",
       "runCommand": "Ejecutar comando",
       "toMove": "para moverte",
       "kind": {

@@ -58,7 +58,7 @@ export default function TemplatesSection({ config, onChange }: Props) {
 
   // A new template shows straight away, so the dashboard behind the dialog follows.
   const add = (template: DashboardTemplate) =>
-    onChange((current) => ({ active: template.id, templates: [...current.templates, template] }));
+    onChange((current) => ({ ...current, active: template.id, templates: [...current.templates, template] }));
   const replace = (template: DashboardTemplate) =>
     onChange((current) => ({
       ...current,
@@ -75,7 +75,7 @@ export default function TemplatesSection({ config, onChange }: Props) {
     if (!ok) return;
     onChange((current) => {
       const templates = current.templates.filter((t2) => t2.id !== template.id);
-      return { active: current.active === template.id ? templates[0].id : current.active, templates };
+      return { ...current, active: current.active === template.id ? templates[0].id : current.active, templates };
     });
   };
 

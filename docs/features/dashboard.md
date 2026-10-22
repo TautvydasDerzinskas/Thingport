@@ -44,9 +44,9 @@ The dashboard is a grid of panels you arrange yourself. **Edit** (the pencil abo
 It comes with a few to start from -- Classic, Overview, Compact tabs, Puzzle and Minimal -- and **Manage templates**
 makes new ones (empty, a copy of the current one or a built-in), renames, copies, resets or deletes them.
 
-**Homepage** (the house beside the pencil) opens the dashboard on its own in a new tab: just the panels, without the
-side menu or the top bar, and kept to the template it was opened from. Set that page as your browser's homepage or new
-tab page to start every session there. **⌘S** (Ctrl+S on Windows and Linux), or the search button in its corner,
+**Homepage** (the house beside Templates, top right) opens the dashboard on its own in a new tab: just the panels,
+without the side menu or the top bar, and kept to the template it was opened from. Set that page as your browser's
+homepage or new tab page to start every session there. **⌘S** (Ctrl+S on Windows and Linux), or the search button in its corner,
 opens Thingport's search over it, the same search as in the top bar.
 
 **Custom widgets** are panels you write yourself, or install from the community: a little JavaScript that draws into

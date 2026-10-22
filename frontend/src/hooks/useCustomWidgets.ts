@@ -7,6 +7,8 @@ type State = { enabled: boolean; widgets: CustomWidget[] };
 // Shared by every user of the hook, so there's one request, and a widget saved or installed shows everywhere at once.
 let cached: State | undefined;
 let inFlight: Promise<State> | null = null;
+// Bumped on sign-in and sign-out, so an answer still on its way for the previous account is dropped.
+let account = 0;
 const listeners = new Set<(state: State) => void>();
 
 function publish(state: State) {
@@ -18,18 +20,29 @@ function publish(state: State) {
 
 function load(): Promise<State> {
   if (cached) return Promise.resolve(cached);
-  inFlight ??= widgetsApi
+  if (inFlight) return inFlight;
+  const forAccount = account;
+  const request = widgetsApi
     .list()
     .then((state) => {
-      publish(state);
+      if (forAccount === account) publish(state);
       return state;
     })
     // A failed load leaves custom widgets out rather than breaking the dashboard.
     .catch((): State => cached ?? { enabled: true, widgets: [] })
     .finally(() => {
-      inFlight = null;
+      if (inFlight === request) inFlight = null;
     });
-  return inFlight;
+  inFlight = request;
+  return request;
+}
+
+/** Forgets the previous account's widgets, scripts included; call on sign-in and sign-out. */
+export function resetCustomWidgets() {
+  account++;
+  cached = undefined;
+  inFlight = null;
+  registerCustomWidgets([]);
 }
 
 /** The user's custom widgets, their own and installed ones. Null until loaded, so their panels don't flash "gone". */

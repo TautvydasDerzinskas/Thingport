@@ -2,7 +2,12 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
-import { hostAllowed, parseManifest, setCustomWidgetsFetchForTest } from "../src/services/customWidgetsService";
+import {
+  hostAllowed,
+  metadataHost,
+  parseManifest,
+  setCustomWidgetsFetchForTest,
+} from "../src/services/customWidgetsService";
 import { setCustomWidgetsEnabled } from "../src/services/settingsService";
 import { MCP_TOOLS } from "../src/mcp/tools";
 
@@ -62,6 +67,22 @@ describe("metadata", () => {
     expect(hostAllowed(new URL("http://printer.local:8080/"), hosts)).toBe(true);
     expect(hostAllowed(new URL("http://printer.local:9090/"), hosts)).toBe(false);
     expect(hostAllowed(new URL("https://evil.com/?api.example.com"), hosts)).toBe(false);
+  });
+
+  it("matches a wildcard host's port when it declares one", () => {
+    const hosts = ["*.lan.example:8080"];
+    expect(hostAllowed(new URL("http://nas.lan.example:8080/"), hosts)).toBe(true);
+    expect(hostAllowed(new URL("http://nas.lan.example:9090/"), hosts)).toBe(false);
+    expect(hostAllowed(new URL("http://nas.lan.example/"), hosts)).toBe(false);
+  });
+
+  it("tells cloud metadata addresses from the LAN", async () => {
+    expect(await metadataHost("169.254.169.254")).toBe(true);
+    expect(await metadataHost("[fd00:ec2::254]")).toBe(true);
+    expect(await metadataHost("[::ffff:169.254.169.254]")).toBe(true);
+    expect(await metadataHost("metadata.google.internal")).toBe(true);
+    expect(await metadataHost("192.168.1.20")).toBe(false);
+    expect(await metadataHost("127.0.0.1")).toBe(false);
   });
 });
 
@@ -149,6 +170,37 @@ describe("fetch through the server", () => {
       .set(auth())
       .send({ url: "http://169.254.169.254/latest/meta-data" });
     expect(refused.status).toBe(403);
+  });
+
+  it("refuses a cloud metadata address even when declared", async () => {
+    const saved = await request(app)
+      .put("/api/widgets")
+      .set(auth())
+      .send({
+        slug: "metadata",
+        metadata: JSON.stringify({ name: "Meta", hosts: ["169.254.169.254"] }),
+        script: SCRIPT,
+      });
+    let called = false;
+    setCustomWidgetsFetchForTest(async () => {
+      called = true;
+      return new Response("secret");
+    });
+    const refused = await request(app)
+      .post(`/api/widgets/${saved.body.id}/fetch`)
+      .set(auth())
+      .send({ url: "http://169.254.169.254/latest/meta-data" });
+    expect(refused.body.code).toBe("WIDGET_HOST_BLOCKED");
+    expect(called).toBe(false);
+  });
+
+  it("takes a widget larger than the default body limit", async () => {
+    const script = `${SCRIPT}\n// ${"x".repeat(300_000)}`;
+    const saved = await request(app)
+      .put("/api/widgets")
+      .set(auth())
+      .send({ slug: "large", metadata: METADATA, script });
+    expect(saved.status).toBe(200);
   });
 });
 

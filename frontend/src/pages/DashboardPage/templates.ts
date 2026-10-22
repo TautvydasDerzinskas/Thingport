@@ -532,6 +532,8 @@ export function duplicateTemplate(template: DashboardTemplate, name: string): Da
     preset: template.preset,
     panels: template.panels.map((panel) => ({ ...panel, id: ids.get(panel.id)! })),
     layouts: mapItems(template, (item) => [{ ...item, i: ids.get(item.i)! }]),
+    // Instance ids stay the same, so each widget keeps its options.
+    ...(template.settings && { settings: structuredClone(template.settings) }),
   };
 }
 

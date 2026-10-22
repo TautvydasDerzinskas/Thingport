@@ -132,7 +132,8 @@ function configSchema<W extends z.ZodTypeAny>(instance: W) {
           // defaults. The frontend knows each widget's options and drops values it doesn't recognise.
           settings: z
             .record(
-              z.string().max(40),
+              // An instance id, as long as a panel allows: a custom widget's copy runs past 40.
+              z.string().max(64),
               z.record(
                 z.string().max(40),
                 z.union([

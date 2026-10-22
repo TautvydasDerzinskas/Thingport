@@ -476,7 +476,8 @@
       "modelCount_other": "{{count}} modelių",
       "sectionRecent": "Neseniai",
       "sectionCommands": "Komandos",
-      "open": "Ieškoti",
+      "open": "Atidaryti",
+      "openSearch": "Ieškoti",
       "runCommand": "Vykdyti komandą",
       "toMove": "judėti",
       "kind": {
@@ -901,7 +902,7 @@
         "saved": "„{{name}}“ išsaugotas",
         "installTitle": "Įdiegti „{{name}}“?",
         "updateTitle": "Atnaujinti „{{name}}“?",
-        "installTrust": "Jo skriptas veikia jūsų suvestinėje su jūsų prieiga prie Thingport. Diekite tik tais valdiklius, kuriais pasitikite.",
+        "installTrust": "Jo skriptas veikia jūsų suvestinėje su jūsų prieiga prie Thingport. Diekite tik tuos valdiklius, kuriais pasitikite.",
         "installHosts": "Jis gali pasiekti: {{hosts}}",
         "install": "Įdiegti",
         "update": "Atnaujinti",

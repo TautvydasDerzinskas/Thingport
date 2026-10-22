@@ -135,7 +135,7 @@ export const dashboardApi = {
     return res.json();
   },
 
-  /** Today's model, by the browser's own date so it changes at the user's midnight. */
+  /** The longer recently-added list, for the panel's "See more". */
   getRecentlyAdded: async (): Promise<DashboardModel[]> => {
     const res = await fetch(`${apiBase()}/dashboard/recently-added`, { headers: authHeaders() });
     assertOk(res, "Failed to load models");

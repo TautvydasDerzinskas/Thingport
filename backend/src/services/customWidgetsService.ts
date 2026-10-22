@@ -4,6 +4,8 @@
 // widgets off for the instance.
 
 import { createHash } from "node:crypto";
+import { lookup } from "node:dns/promises";
+import { BlockList, isIP } from "node:net";
 import { z } from "zod";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
@@ -209,16 +211,45 @@ export function hostAllowed(url: URL, hosts: string[]): boolean {
   const host = url.port ? `${url.hostname}:${url.port}` : url.hostname;
   return hosts.some((declared) => {
     if (!declared.startsWith("*.")) return declared === host || declared === url.hostname;
-    const suffix = declared.slice(1);
+    const [pattern, port] = declared.split(":");
+    if (port && port !== url.port) return false;
+    const suffix = pattern.slice(1);
     return url.hostname.endsWith(suffix) && url.hostname.length > suffix.length;
   });
+}
+
+// Link-local addresses, where clouds serve instance metadata and credentials (169.254.169.254, fd00:ec2::254). The LAN
+// stays reachable; these never hold a printer or a NAS a widget would want.
+const BLOCKED_ADDRESSES = new BlockList();
+BLOCKED_ADDRESSES.addSubnet("169.254.0.0", 16, "ipv4");
+BLOCKED_ADDRESSES.addSubnet("fe80::", 10, "ipv6");
+BLOCKED_ADDRESSES.addAddress("fd00:ec2::254", "ipv6");
+
+function blockedAddress(address: string): boolean {
+  const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(address)?.[1];
+  if (mapped) return BLOCKED_ADDRESSES.check(mapped, "ipv4");
+  const family = isIP(address);
+  return family !== 0 && BLOCKED_ADDRESSES.check(address, family === 4 ? "ipv4" : "ipv6");
+}
+
+/** Whether the host is, or resolves to, a metadata address. One that doesn't resolve is left for the fetch to fail. */
+export async function metadataHost(hostname: string): Promise<boolean> {
+  const bare = hostname.replace(/^\[|\]$/g, "");
+  if (isIP(bare)) return blockedAddress(bare);
+  if (bare.toLowerCase() === "metadata.google.internal") return true;
+  try {
+    return (await lookup(bare, { all: true })).some(({ address }) => blockedAddress(address));
+  } catch {
+    return false;
+  }
 }
 
 // Headers the server sets or that would leak the browser's own session; a widget can't send them.
 const DROPPED_HEADERS = new Set(["host", "cookie", "content-length", "connection", "transfer-encoding"]);
 
 /** A widget's request to one of its declared hosts, made by the server so CORS and the LAN aren't in the way. Like
- *  the RSS panel, it may reach the local network; what's limited is the scheme, the hosts, the time and the size. */
+ *  the RSS panel, it may reach the local network; what's limited is the scheme, the hosts (never a cloud metadata
+ *  address), the time and the size. */
 export async function widgetFetch(
   userId: string,
   widgetId: string,
@@ -229,6 +260,8 @@ export async function widgetFetch(
   if (url.protocol !== "http:" && url.protocol !== "https:") throw new HttpError(400, "Only http and https addresses");
   if (!hostAllowed(url, widget.manifest.hosts))
     throw new HttpError(403, `"${url.host}" isn't among the hosts this widget declares`, "WIDGET_HOST_NOT_DECLARED");
+  if (await metadataHost(url.hostname))
+    throw new HttpError(403, `"${url.host}" is a cloud metadata address`, "WIDGET_HOST_BLOCKED");
   const headers = Object.fromEntries(
     Object.entries(request.headers).filter(([name]) => !DROPPED_HEADERS.has(name.toLowerCase())),
   );

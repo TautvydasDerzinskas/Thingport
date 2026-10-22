@@ -82,6 +82,11 @@ describe("dashboard templates", () => {
     expect(saved.templates[0].settings["rss:k3j2h9"]).toEqual({ feeds: ["https://b.example/feed"] });
   });
 
+  it("keeps the options of a custom widget's copy", async () => {
+    const copy = `custom-${"c".repeat(25)}:${"k".repeat(12)}`;
+    expect((await put(template([[copy]], { [copy]: { tz: "Europe/Vilnius" } }))).status).toBe(200);
+  });
+
   it("rejects an unknown widget or a malformed copy", async () => {
     expect((await put(template([["horoscope"]]))).status).toBe(400);
     expect((await put(template([["rss:NOT OK"]]))).status).toBe(400);

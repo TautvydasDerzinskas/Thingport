@@ -60,6 +60,7 @@ import { useResolvedTheme } from "./hooks/useResolvedTheme";
 import { setCachedAccentColor, setCachedRenderColor, useAccentColor } from "./hooks/useAccentColor";
 import { resetCardPreview } from "./hooks/useCardPreview";
 import { resetHoverSlideshowEnabled } from "./hooks/useHoverSlideshowEnabled";
+import { resetCustomWidgets } from "./hooks/useCustomWidgets";
 import { DEFAULT_ACCENT, type ResolvedTheme, type ThemeSelection } from "./constants/settingsOptions";
 import { buildTheme } from "./theme";
 
@@ -422,6 +423,7 @@ export default function App() {
   const handleLogin = (tok: string, _expiresIn: number, loggedInUser: AuthUser) => {
     resetCardPreview();
     resetHoverSlideshowEnabled();
+    resetCustomWidgets();
     storeToken(tok);
     storeUser(loggedInUser);
     setToken(tok);
@@ -450,6 +452,7 @@ export default function App() {
   }, []);
 
   const expireSession = React.useCallback(() => {
+    resetCustomWidgets();
     clearToken();
     setToken(null);
     setShowExpiredToast(true);
@@ -525,6 +528,7 @@ export default function App() {
   // Rejects, leaving the user signed in, when the server didn't confirm the session ended.
   const handleLogout = async () => {
     await authApi.logout();
+    resetCustomWidgets();
     clearToken();
     clearUser();
     setToken(null);
