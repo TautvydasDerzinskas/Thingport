@@ -28,11 +28,16 @@ function decodeLatin1AsUtf8(value: string): string {
   return Buffer.from(decoded, "utf8").equals(bytes) ? decoded : value;
 }
 
+// RFC 8187 allows "%" only before two hex digits. decodeExtended rejects a stray one for UTF-8 but keeps it for
+// ISO-8859-1, which would let `bad%GG.stl` win over a valid `filename`.
+const MALFORMED_PERCENT_RE = /%(?![0-9a-f]{2})/i;
+
 export function parseContentDisposition(cd: string | null | undefined): string | null {
   if (!cd) return null;
   const { parameters } = parseDisposition(cd, { extended: false });
   // RFC 6266: `filename*` (RFC 8187, names its own charset) wins; one that can't be decoded falls back to `filename`.
-  const extended = parameters["filename*"] === undefined ? undefined : decodeExtended(parameters["filename*"]);
+  const raw = parameters["filename*"];
+  const extended = raw === undefined || MALFORMED_PERCENT_RE.test(raw) ? undefined : decodeExtended(raw);
   if (extended) return extended;
   if (parameters.filename) return decodeLatin1AsUtf8(parameters.filename);
   return matchLooseFilename(cd);

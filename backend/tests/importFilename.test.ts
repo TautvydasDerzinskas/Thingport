@@ -47,6 +47,11 @@ describe("parseContentDisposition", () => {
     expect(parseContentDisposition("attachment; filename=\"cafe.stl\"; filename*=windows-1252''caf%E9.stl")).toBe(
       "cafe.stl",
     );
+    // A "%" without two hex digits after it is invalid in any charset, though ISO-8859-1 decodes around it.
+    expect(parseContentDisposition("attachment; filename=\"good.3mf\"; filename*=ISO-8859-1''bad%GG.stl")).toBe(
+      "good.3mf",
+    );
+    expect(parseContentDisposition("attachment; filename*=ISO-8859-1''100%25.stl")).toBe("100%.stl");
   });
 
   it("still reads a filename from headers missing the disposition type or a closing quote", () => {
