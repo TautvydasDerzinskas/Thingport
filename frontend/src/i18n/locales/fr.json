@@ -1970,10 +1970,12 @@
       "comingSoon": "Bientôt disponible"
     },
     "slicer": {
-      "subtitle": "Le slicer dans lequel s’ouvrent les modèles avec « Ouvrir dans le slicer ». Faites un clic droit sur l’un d’eux et choisissez Activer, ou double-cliquez dessus.",
+      "subtitle": "Les slicers installés sur cet ordinateur. Un modèle s’ouvre dans le dernier utilisé ; les autres sont dans son menu « Ouvrir dans ». Double-cliquez sur l’un d’eux, ou faites un clic droit, pour l’activer ou le désactiver.",
       "active": "Actif",
       "notActive": "Inactif",
-      "activate": "Activer"
+      "activate": "Activer",
+      "lastUsed": "Dernier utilisé",
+      "deactivate": "Désactiver"
     },
     "storageMoveProgress": {
       "label": "{{phrase}} {{done}} sur {{total}} modèles",
@@ -2982,7 +2984,6 @@
       "size": "Taille",
       "sizeHint": "Taille totale de tous les fichiers de ce modèle dans le stockage",
       "author": "Auteur",
-      "downloadModelFiles": "Télécharger les fichiers du modèle",
       "imported": "Importé le {{date}}",
       "quality": {
         "scanning": "Contrôle de la qualité d’impression…",
@@ -3059,7 +3060,13 @@
           "minorHint": "Les slicers s’en accommodent généralement, ou cela se corrige vite dans l’un d’eux."
         },
         "manageSettings": "Gérer le contrôle de qualité"
-      }
+      },
+      "fileSelectLabel": "Fichiers ({{count}})",
+      "fileSelectAria": "Fichier : {{file}}. En choisir un autre",
+      "downloadFile": "Télécharger le fichier",
+      "moreOpenOptions": "Autres slicers et téléchargements",
+      "openActions": "Ouvrir ou télécharger",
+      "openInHeading": "Ouvrir dans"
     },
     "edit": {
       "title": "Modifier le modèle",

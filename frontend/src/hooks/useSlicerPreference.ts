@@ -1,21 +1,23 @@
 import { useEffect, useState } from "react";
-import { settingsApi } from "../api/settings";
+import { settingsApi, type SlicerSettings } from "../api/settings";
+
+const EMPTY: SlicerSettings = { slicer: null, slicers: [] };
 
 // Shared by every mounted instance so there's one request, and saves propagate to all of them.
-let cached: string | null | undefined; // undefined = not loaded yet
-let inFlight: Promise<string | null> | null = null;
-const listeners = new Set<(value: string | null) => void>();
+let cached: SlicerSettings | undefined; // undefined = not loaded yet
+let inFlight: Promise<SlicerSettings> | null = null;
+const listeners = new Set<(value: SlicerSettings) => void>();
 
-function load(): Promise<string | null> {
+function load(): Promise<SlicerSettings> {
   if (cached !== undefined) return Promise.resolve(cached);
   if (!inFlight) {
     inFlight = settingsApi
       .getSlicer()
       .then((res) => {
-        cached = res.slicer ?? null;
+        cached = { slicer: res.slicer ?? null, slicers: res.slicers ?? [] };
         return cached;
       })
-      .catch(() => null)
+      .catch(() => EMPTY)
       .finally(() => {
         inFlight = null;
       });
@@ -23,13 +25,25 @@ function load(): Promise<string | null> {
   return inFlight;
 }
 
-export function setCachedSlicerPreference(value: string | null) {
+export function setCachedSlicerSettings(value: SlicerSettings) {
   cached = value;
   listeners.forEach((listener) => listener(value));
 }
 
-export function useSlicerPreference(): string | null {
-  const [value, setValue] = useState<string | null>(cached ?? null);
+/** Makes `slicer` the one models open in, shown straight away and put back if the save fails. */
+export async function switchSlicer(slicer: string): Promise<void> {
+  const previous = cached ?? EMPTY;
+  if (previous.slicer === slicer) return;
+  setCachedSlicerSettings({ ...previous, slicer });
+  try {
+    setCachedSlicerSettings(await settingsApi.updateSlicer({ slicer }));
+  } catch {
+    setCachedSlicerSettings(previous);
+  }
+}
+
+export function useSlicerSettings(): SlicerSettings {
+  const [value, setValue] = useState<SlicerSettings>(cached ?? EMPTY);
 
   useEffect(() => {
     let cancelled = false;
@@ -44,4 +58,9 @@ export function useSlicerPreference(): string | null {
   }, []);
 
   return value;
+}
+
+/** The slicer a model's main "Open in" button opens: the last one used. */
+export function useSlicerPreference(): string | null {
+  return useSlicerSettings().slicer;
 }

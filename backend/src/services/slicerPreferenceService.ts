@@ -15,18 +15,39 @@ export const SLICER_IDS = [
 ] as const;
 export type SlicerId = (typeof SLICER_IDS)[number];
 
+/** `slicer` is the one a model's main button opens (the last one used), `slicers` the ones installed. */
+export type SlicerSettings = { slicer: SlicerId | null; slicers: SlicerId[] };
+
 function isSlicerId(value: string): value is SlicerId {
   return (SLICER_IDS as readonly string[]).includes(value);
 }
 
-export async function getUserSlicer(userId: string): Promise<SlicerId | null> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { slicer: true } });
-  const value = user?.slicer;
-  return value && isSlicerId(value) ? value : null;
+/** Keeps `slicer` one of `slicers`: a new current slicer joins the list, and dropping the current one moves to
+ *  the first left. Ordered as SLICER_IDS, so the menu doesn't reshuffle. */
+function normalize(slicer: string | null, slicers: string[]): SlicerSettings {
+  const current = slicer && isSlicerId(slicer) ? slicer : null;
+  const installed = new Set(slicers.filter(isSlicerId));
+  if (current) installed.add(current);
+  const list = SLICER_IDS.filter((id) => installed.has(id));
+  return { slicer: current ?? list[0] ?? null, slicers: list };
 }
 
-export async function setUserSlicer(userId: string, slicer: string | null): Promise<SlicerId | null> {
-  const next = slicer && isSlicerId(slicer) ? slicer : null;
-  await prisma.user.update({ where: { id: userId }, data: { slicer: next } });
+export async function getUserSlicerSettings(userId: string): Promise<SlicerSettings> {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { slicer: true, slicers: true } });
+  return normalize(user?.slicer ?? null, user?.slicers ?? []);
+}
+
+/** A field left undefined keeps its value. A `slicers` list without the current slicer moves it to the first
+ *  one left, unless the same call names a new current one. */
+export async function setUserSlicerSettings(
+  userId: string,
+  patch: { slicer?: string | null; slicers?: string[] },
+): Promise<SlicerSettings> {
+  const existing = await getUserSlicerSettings(userId);
+  const slicers = patch.slicers ?? existing.slicers;
+  let slicer = patch.slicer !== undefined ? patch.slicer : existing.slicer;
+  if (patch.slicer === undefined && slicer && !slicers.includes(slicer as SlicerId)) slicer = null;
+  const next = normalize(slicer, slicers);
+  await prisma.user.update({ where: { id: userId }, data: next });
   return next;
 }

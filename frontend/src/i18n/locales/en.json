@@ -1957,10 +1957,12 @@
       "comingSoon": "Coming soon"
     },
     "slicer": {
-      "subtitle": "The slicer a model's \"Open in Slicer\" opens it in. Right-click one and Activate it, or double-click it.",
+      "subtitle": "The slicers installed on this computer. A model opens in the last one you used; the others are in its “Open in” menu. Double-click one, or right-click it, to switch it on or off.",
       "active": "Active",
       "notActive": "Not active",
-      "activate": "Activate"
+      "activate": "Activate",
+      "lastUsed": "Last used",
+      "deactivate": "Deactivate"
     },
     "storageMoveProgress": {
       "label": "{{phrase}} {{done}} of {{total}} models",
@@ -2969,7 +2971,6 @@
       "size": "Size",
       "sizeHint": "Total size of all this model's files in storage",
       "author": "Author",
-      "downloadModelFiles": "Download model files",
       "imported": "Imported {{date}}",
       "quality": {
         "scanning": "Checking print quality…",
@@ -3046,7 +3047,13 @@
           "minorHint": "Slicers usually cope, or it's a quick fix in one."
         },
         "manageSettings": "Manage quality checks"
-      }
+      },
+      "fileSelectLabel": "Files ({{count}})",
+      "fileSelectAria": "File: {{file}}. Choose another",
+      "downloadFile": "Download file",
+      "moreOpenOptions": "Other slicers and downloads",
+      "openActions": "Open or download",
+      "openInHeading": "Open in"
     },
     "edit": {
       "title": "Edit model",

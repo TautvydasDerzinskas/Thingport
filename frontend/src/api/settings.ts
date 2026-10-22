@@ -7,6 +7,9 @@ import type { QualityIssueCode, QualitySeverity } from "./prints";
 /** What API tokens may do at /api/mcp, instance-wide. */
 export type McpAccess = "off" | "read" | "write";
 
+/** `slicer` is the one a model's main button opens (the last one used), `slicers` the ones installed. */
+export type SlicerSettings = { slicer: string | null; slicers: string[] };
+
 export type StorageToken =
   "category-or-folder" | "collection" | "tags" | "creator" | "model" | "filename" | "id" | "plate";
 
@@ -738,17 +741,18 @@ export const settingsApi = {
     return res.json();
   },
 
-  getSlicer: async (): Promise<{ slicer: string | null }> => {
+  getSlicer: async (): Promise<SlicerSettings> => {
     const res = await fetch(`${apiBase()}/settings/slicer`, { headers: authHeaders() });
     assertOk(res, "Failed to load slicer setting");
     return res.json();
   },
 
-  updateSlicer: async (slicer: string | null): Promise<{ slicer: string | null }> => {
+  /** A field left out keeps its value. */
+  updateSlicer: async (patch: Partial<SlicerSettings>): Promise<SlicerSettings> => {
     const res = await fetch(`${apiBase()}/settings/slicer`, {
       method: "PATCH",
       headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ slicer }),
+      body: JSON.stringify(patch),
     });
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) {

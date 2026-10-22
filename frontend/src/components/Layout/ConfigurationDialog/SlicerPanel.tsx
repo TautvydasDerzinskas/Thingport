@@ -9,10 +9,11 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Typography from "@mui/material/Typography";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import { SLICER_OPTIONS } from "../../../constants/settingsOptions";
 import { UnauthorizedError } from "../../../api/client";
-import { settingsApi } from "../../../api/settings";
-import { setCachedSlicerPreference } from "../../../hooks/useSlicerPreference";
+import { settingsApi, type SlicerSettings } from "../../../api/settings";
+import { setCachedSlicerSettings } from "../../../hooks/useSlicerPreference";
 import { isBridgedSlicer } from "../../../utils/slicerLaunch";
 import { AppGrid, AppTile, menuPosition, reopenContextMenuBelow, TileMenuHeader } from "./AppTiles";
 import { PanelHeader } from "./parts";
@@ -26,10 +27,11 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-/** The slicer models open in, as app icons: right-click one and Activate it, or double-click it. */
+/** The slicers installed on this computer, as app icons: double-click one, or right-click it, to switch it on or
+ *  off. A model's "Open in" menu offers the ones on; its button opens the last one used. */
 export default function SlicerPanel({ onNavigate, onUnauthorized }: Props) {
   const { t } = useTranslation(["app", "common"]);
-  const [value, setValue] = React.useState<string | null>(null);
+  const [value, setValue] = React.useState<SlicerSettings>({ slicer: null, slicers: [] });
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [menu, setMenu] = React.useState<{ id: string; top: number; left: number } | null>(null);
@@ -39,7 +41,7 @@ export default function SlicerPanel({ onNavigate, onUnauthorized }: Props) {
     settingsApi
       .getSlicer()
       .then((res) => {
-        if (active) setValue(res.slicer ?? null);
+        if (active) setValue({ slicer: res.slicer ?? null, slicers: res.slicers ?? [] });
       })
       .catch((err) => {
         if (active && err instanceof UnauthorizedError) onUnauthorized?.();
@@ -52,16 +54,19 @@ export default function SlicerPanel({ onNavigate, onUnauthorized }: Props) {
     };
   }, [onUnauthorized]);
 
-  const activate = async (next: string) => {
-    if (loading || next === value) return;
+  const toggle = async (id: string) => {
+    if (loading) return;
     const previous = value;
+    const slicers = previous.slicers.includes(id)
+      ? previous.slicers.filter((other) => other !== id)
+      : [...previous.slicers, id];
     // Shown straight away; put back if the save fails.
-    setValue(next);
+    setValue({ ...previous, slicers });
     setError(null);
     try {
-      const res = await settingsApi.updateSlicer(next);
-      setValue(res.slicer ?? null);
-      setCachedSlicerPreference(res.slicer ?? null);
+      const res = await settingsApi.updateSlicer({ slicers });
+      setValue(res);
+      setCachedSlicerSettings(res);
     } catch (err) {
       setValue(previous);
       if (err instanceof UnauthorizedError) onUnauthorized?.();
@@ -69,8 +74,10 @@ export default function SlicerPanel({ onNavigate, onUnauthorized }: Props) {
     }
   };
 
-  const statusOf = (id: string) => (id === value ? t("slicer.active") : t("slicer.notActive"));
+  const isOn = (id: string) => value.slicers.includes(id);
+  const statusOf = (id: string) => (isOn(id) ? t("slicer.active") : t("slicer.notActive"));
   const menuId = menu?.id;
+  const bridged = value.slicers.filter(isBridgedSlicer).map(labelOf);
 
   return (
     <>
@@ -80,14 +87,15 @@ export default function SlicerPanel({ onNavigate, onUnauthorized }: Props) {
           <AppTile
             key={id}
             name={label}
+            subtitle={id === value.slicer && value.slicers.length > 1 ? t("slicer.lastUsed") : undefined}
             logo={<SlicerLogo id={id} size={26} />}
-            on={id === value}
-            badge={id === value ? true : undefined}
+            on={isOn(id)}
+            badge={isOn(id) ? true : undefined}
             highlighted={menuId === id}
             tooltip={loading ? undefined : `${label}: ${statusOf(id)}`}
             ariaLabel={`${label}: ${statusOf(id)}`}
             onContextMenu={(event) => setMenu({ id, ...menuPosition(event) })}
-            onActivate={() => void activate(id)}
+            onActivate={() => void toggle(id)}
           />
         ))}
       </AppGrid>
@@ -109,23 +117,27 @@ export default function SlicerPanel({ onNavigate, onUnauthorized }: Props) {
         )}
         {menuId && (
           <MenuItem
-            disabled={menuId === value || loading}
+            disabled={loading}
             onClick={() => {
               setMenu(null);
-              void activate(menuId);
+              void toggle(menuId);
             }}
           >
             <ListItemIcon>
-              <CheckCircleOutlineIcon fontSize="small" />
+              {isOn(menuId) ? (
+                <RemoveCircleOutlineIcon fontSize="small" />
+              ) : (
+                <CheckCircleOutlineIcon fontSize="small" />
+              )}
             </ListItemIcon>
-            <ListItemText>{t("slicer.activate")}</ListItemText>
+            <ListItemText>{isOn(menuId) ? t("slicer.deactivate") : t("slicer.activate")}</ListItemText>
           </MenuItem>
         )}
       </Menu>
 
-      {value && isBridgedSlicer(value) && (
+      {bridged.length > 0 && (
         <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 2 }}>
-          {t("profile.slicer.bridgeRequiredPrefix", { slicer: labelOf(value) })}{" "}
+          {t("profile.slicer.bridgeRequiredPrefix", { slicer: bridged.join(", ") })}{" "}
           <Link component={RouterLink} to="/downloads" onClick={onNavigate}>
             {t("profile.slicer.bridgeRequiredLink")}
           </Link>
