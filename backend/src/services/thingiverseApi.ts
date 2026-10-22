@@ -11,6 +11,7 @@ import {
   shouldProxyHost,
 } from "./flaresolverr";
 import { getFlaresolverrUrl } from "./settingsService";
+import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "./trendingModel";
 
 // The official API needs an App Token (not a session cookie). It's still behind Cloudflare
 // and returns a sticky 429 challenge after a few rapid requests, hence ThingiverseRateLimitError
@@ -461,4 +462,25 @@ export async function fetchThingiverseCollectionCard(
   if (status === 404) return null;
   if (!ok) throw new Error(`Couldn't read the Thingiverse collection (HTTP ${status})`);
   return thingiverseCollectionCard(data);
+}
+
+/** Thingiverse's popular things. Needs the instance's App Token, as every Thingiverse call does. */
+export async function fetchThingiversePopular(limit: number, accessToken: string): Promise<TrendingModel[]> {
+  const data = await fetchThingiverseApiJson(`/popular?per_page=${limit}`, accessToken);
+  if (data === null) throw new Error("Thingiverse didn't answer");
+  return recordsOf(data).flatMap((thing) => {
+    const id = asText(thing.id);
+    if (!id) return [];
+    return [
+      {
+        id,
+        title: asText(thing.name) ?? id,
+        url: asText(thing.public_url) ?? `https://www.thingiverse.com/thing:${id}`,
+        image: webImage(thing.preview_image) ?? webImage(thing.thumbnail),
+        likes: asCount(thing.like_count),
+        author: asText(asRecord(thing.creator)?.name),
+        paid: false,
+      },
+    ];
+  });
 }

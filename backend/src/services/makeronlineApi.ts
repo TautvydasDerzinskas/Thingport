@@ -2,6 +2,7 @@ import { IMPORT_TIMEOUT_SECONDS } from "../config";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "./importResolvers";
 import { htmlToMarkdown } from "./descriptionMarkdown";
 import type { ProviderCollectionCard } from "./providerCollectionCard";
+import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "./trendingModel";
 
 // MakerOnline (Anycubic) has no public API, so this is the one its own pages call. Answers come with a `code` of their
 // own, 0 for success. Details, public collections and categories need no sign-in; likes and the user's own collections
@@ -418,4 +419,32 @@ export async function listMakeronlineCollections(token: string, userId: string):
     if (!items.length || page >= (typeof pageInfo.last_page === "number" ? pageInfo.last_page : page)) break;
   }
   return cards;
+}
+
+/** MakerOnline's trending models, from its homepage's "Trending" list, leaving out adult ones. Public; no sign-in. */
+export async function fetchMakeronlineTrending(limit: number): Promise<TrendingModel[]> {
+  const res = await fetch(`${API_BASE}/index/recommend-trending/v2.5`, {
+    method: "POST",
+    headers: { Accept: "application/json", "Content-Type": "application/json", lang: "en" },
+    // A fixed seed, so the list is the same for everyone until it's fetched again.
+    body: JSON.stringify({ is_first: 1, page: 1, page_size: limit, seed: "1", print_type: 0, exclude_ids: [] }),
+    signal: AbortSignal.timeout(API_TIMEOUT_MS),
+  });
+  if (!res.ok) throw new Error(`MakerOnline returned HTTP ${res.status}`);
+  const body = asRecord(await res.json());
+  return recordsOf(body?.data).flatMap((item) => {
+    const modelId = asText(item.mold_id);
+    if (!modelId || asCount(item.is_adult_nsfw)) return [];
+    return [
+      {
+        id: modelId,
+        title: asText(item.title) ?? modelId,
+        url: makeronlineModelUrl(modelId),
+        image: webImage(item.mold_image),
+        likes: asCount(item.like_num),
+        author: asText(item.user_display_name) ?? asText(item.user_name),
+        paid: false,
+      },
+    ];
+  });
 }

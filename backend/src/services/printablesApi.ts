@@ -3,6 +3,7 @@ import { HttpError } from "../utils/fileUtils";
 import { type ImportedAuthorInfo, type ImportedPageMetadata } from "./importResolvers";
 import { htmlToMarkdown } from "./descriptionMarkdown";
 import type { ProviderCollectionCard } from "./providerCollectionCard";
+import { asCount, asRecord, asText, recordsOf, type TrendingModel } from "./trendingModel";
 
 // Unlike Cloudflare-gated www.printables.com, the GraphQL API answers unauthenticated requests.
 const PRINTABLES_GRAPHQL_URL = "https://api.printables.com/graphql/";
@@ -419,4 +420,36 @@ export async function listPrintablesUserCollections(userId: string): Promise<Pro
 export async function fetchPrintablesCollectionCard(collectionId: string): Promise<ProviderCollectionCard | null> {
   const data = await fetchPrintablesGraphql(COLLECTION_CARD_QUERY, { id: collectionId });
   return collectionCard(isRecord(data) && isRecord(data.data) ? data.data.collection : null);
+}
+
+/** Printables' trending models, as its own "Trending" sort lists them. Public; no sign-in. */
+export async function fetchPrintablesTrending(limit: number): Promise<TrendingModel[]> {
+  // The whole response; the list is under `data`.
+  const body = asRecord(
+    await fetchPrintablesGraphql(
+      `query ($limit: Int!) {
+        morePrints(limit: $limit, ordering: "trending") {
+          items { id name slug likesCount image { filePath } user { publicUsername } }
+        }
+      }`,
+      { limit },
+    ),
+  );
+  if (!body) throw new Error("Printables didn't answer");
+  return recordsOf(asRecord(asRecord(body.data)?.morePrints)?.items).flatMap((item) => {
+    const id = asText(item.id);
+    if (!id) return [];
+    const slug = asText(item.slug);
+    return [
+      {
+        id,
+        title: asText(item.name) ?? id,
+        url: `https://www.printables.com/model/${id}${slug ? `-${slug}` : ""}`,
+        image: mediaUrl(asRecord(item.image)?.filePath),
+        likes: asCount(item.likesCount),
+        author: asText(asRecord(item.user)?.publicUsername),
+        paid: false,
+      },
+    ];
+  });
 }

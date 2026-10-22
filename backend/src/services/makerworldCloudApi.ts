@@ -24,6 +24,7 @@ import {
   MakerworldDownloadLimitError,
   noteCaptchaChallenge,
 } from "./makerworldCaptcha";
+import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "./trendingModel";
 
 export {
   MAKERWORLD_CAPTCHA_MESSAGE,
@@ -429,4 +430,32 @@ export async function resolveMakerworldViaCloudApi(
       },
     },
   };
+}
+
+/** MakerWorld's trending models, from the same list its "Trending" tab shows. Public; no sign-in. */
+export async function fetchMakerworldTrending(limit: number): Promise<TrendingModel[]> {
+  const res = await fetch(
+    `https://api.bambulab.com/v1/search-service/select/design/nav?navKey=Trending&offset=0&limit=${limit}`,
+    {
+      headers: { Accept: "application/json", "User-Agent": IMPORT_BROWSER_USER_AGENT },
+      signal: AbortSignal.timeout(CLOUD_API_TIMEOUT_MS),
+    },
+  );
+  if (!res.ok) throw new Error(`MakerWorld returned HTTP ${res.status}`);
+  const data = asRecord(await res.json());
+  return recordsOf(data?.hits).flatMap((hit) => {
+    const id = asText(hit.id);
+    if (!id || hit.nsfw === true) return [];
+    return [
+      {
+        id,
+        title: asText(hit.title) ?? id,
+        url: `https://makerworld.com/en/models/${id}`,
+        image: webImage(hit.cover),
+        likes: asCount(hit.likeCount),
+        author: asText(asRecord(hit.designCreator)?.name),
+        paid: false,
+      },
+    ];
+  });
 }

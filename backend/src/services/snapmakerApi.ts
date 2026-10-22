@@ -2,6 +2,7 @@ import { IMPORT_TIMEOUT_SECONDS } from "../config";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "./importResolvers";
 import { htmlToMarkdown } from "./descriptionMarkdown";
 import type { ProviderCollectionCard } from "./providerCollectionCard";
+import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "./trendingModel";
 
 // Snapmaker Space has no public API, so this is the one its own pages call. Every answer is HTTP 200 with a `code` of
 // its own. Details are public, but their file links come signed for whoever asked, so files only download with the
@@ -332,4 +333,24 @@ export async function listSnapmakerCollections(token: string, userId: string): P
     });
   }
   return cards;
+}
+
+/** Snapmaker Space's featured models, as its homepage shows them; it has no trending list. Public; no sign-in. */
+export async function fetchSnapmakerFeatured(limit: number): Promise<TrendingModel[]> {
+  const { data } = await fetchApi(`/model/home-featured?page=1&pageSize=${limit}`, null);
+  return recordsOf(asRecord(data)?.list).flatMap((item) => {
+    const modelId = asText(item.id);
+    if (!modelId || item.is_nsfw === true) return [];
+    return [
+      {
+        id: modelId,
+        title: asText(item.translatedTitle) ?? asText(item.title) ?? modelId,
+        url: snapmakerModelUrl(modelId),
+        image: webImage(item.cover_url),
+        likes: asCount(item.like_count),
+        author: asText(item.creator_name),
+        paid: false,
+      },
+    ];
+  });
 }

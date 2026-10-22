@@ -2,6 +2,7 @@ import { IMPORT_TIMEOUT_SECONDS } from "../config";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "./importResolvers";
 import { htmlToMarkdown } from "./descriptionMarkdown";
 import type { ProviderCollectionCard } from "./providerCollectionCard";
+import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "./trendingModel";
 
 // NexPrint (Elegoo's model site) has no public API, so this is the one its own pages call, under /gateway: answers are
 // `{code, msg, data}`, code 0 when it went well and 401 for a missing or refused sign-in. Details, categories and
@@ -474,4 +475,32 @@ export async function listNexprintCollections(token: string): Promise<ProviderCo
     });
   }
   return cards;
+}
+
+/** NexPrint's recommended models, as its homepage shows them; it has no trending list. Public; no sign-in. */
+export async function fetchNexprintRecommended(limit: number): Promise<TrendingModel[]> {
+  const { data } = await fetchApi(
+    "/model-library-server/model-base-info/recommend/web",
+    // A fixed seed, so the list is the same for everyone until it's fetched again.
+    { query: { pageSize: limit, pageNo: 1, seed: 1, loadGeneratorInfo: "true" } },
+    null,
+  );
+  return recordsOf(asRecord(data)?.list).flatMap((entry) => {
+    const model = asRecord(entry.model);
+    const modelId = asText(model?.modelId);
+    if (!model || !modelId || model.nsfw === true) return [];
+    const names = asRecord(model.modelNameTranslateMap);
+    return [
+      {
+        id: modelId,
+        title: asText(names?.en) ?? asText(model.modelName) ?? modelId,
+        url: nexprintModelUrl(modelId),
+        image: webImage(model.coverImgUrl),
+        // NexPrint counts likes as "stars"; the odd casing is its own.
+        likes: asCount(asRecord(model.statistics)?.staticsModelStarPeoPleCount),
+        author: asText(model.authorName),
+        paid: false,
+      },
+    ];
+  });
 }

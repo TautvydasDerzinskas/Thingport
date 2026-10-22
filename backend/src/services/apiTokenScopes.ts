@@ -45,6 +45,7 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
       "/dashboard/feeds",
       "/dashboard/monitors",
       "/dashboard/system",
+      "/dashboard/trending",
     ],
   },
   {

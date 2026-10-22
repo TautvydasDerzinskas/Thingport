@@ -20,6 +20,7 @@ export const DASHBOARD_WIDGETS = [
   "cpu",
   "uptime",
   "launcher",
+  "trending",
 ] as const;
 export type DashboardWidgetId = (typeof DASHBOARD_WIDGETS)[number];
 export type DashboardWidgets = Partial<Record<DashboardWidgetId, boolean>>;

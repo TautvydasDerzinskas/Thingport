@@ -8,6 +8,7 @@ import { printOutById } from "../services/printLoader";
 import { TEMPERATURE_UNITS, getForecast, getPlaceName, searchPlaces } from "../services/weatherService";
 import { checkUrls, getFeeds, isWebUrl } from "../services/dashboardFeedsService";
 import { getSystemStats } from "../services/systemStatsService";
+import { TRENDING_PROVIDERS, getTrending } from "../services/providerTrendingService";
 import {
   getDashboardSummary,
   getFeaturedModelId,
@@ -192,6 +193,19 @@ router.get(
   requireAdmin,
   asyncHandler(async (_req, res) => {
     res.json(await getSystemStats());
+  }),
+);
+
+// A provider's trending models; the panel asks for one provider at a time, as the user picks it.
+router.get(
+  "/dashboard/trending",
+  asyncHandler(async (req, res) => {
+    const { provider } = parseBody(z.object({ provider: z.enum(TRENDING_PROVIDERS) }), req.query);
+    try {
+      res.json(await getTrending(provider, req.userId!));
+    } catch {
+      throw new HttpError(502, "The provider didn't answer", "PROVIDER_UNAVAILABLE");
+    }
   }),
 );
 

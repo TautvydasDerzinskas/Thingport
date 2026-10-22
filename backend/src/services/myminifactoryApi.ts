@@ -10,6 +10,7 @@ import {
   looksLikeCloudflareBlock,
 } from "./flaresolverr";
 import { getFlaresolverrUrl } from "./settingsService";
+import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "./trendingModel";
 
 // The official API takes an API key as `?key=`. Its file download links are for OAuth users only,
 // so files come from the site's own /download/{id} instead, which free objects allow anonymously.
@@ -565,4 +566,27 @@ export async function resolveMyminifactoryUser(input: string, apiKey: string): P
   if (status === 404) return null;
   if (!ok || !isRecord(data)) throw new Error(`Couldn't read the MyMiniFactory user (HTTP ${status})`);
   return { username: str(data.username) ?? value };
+}
+
+/** MyMiniFactory's most popular objects. Needs the instance's API key, as every MyMiniFactory API call does. */
+export async function fetchMyminifactoryPopular(limit: number, apiKey: string): Promise<TrendingModel[]> {
+  const { ok, status, data } = await fetchApi(`/search?q=&sort=popularity&per_page=${limit}`, apiKey);
+  if (!ok) throw new Error(`MyMiniFactory returned HTTP ${status}`);
+  return recordsOf(asRecord(data)?.items).flatMap((item) => {
+    const id = asText(item.id);
+    if (!id) return [];
+    const images = recordsOf(item.images);
+    const cover = images.find((image) => image.is_primary === true) ?? images[0];
+    return [
+      {
+        id,
+        title: asText(item.name) ?? id,
+        url: asText(item.url) ?? myminifactoryObjectUrl(id),
+        image: webImage(asRecord(cover?.thumbnail)?.url),
+        likes: asCount(item.likes),
+        author: asText(asRecord(item.designer)?.username) ?? asText(asRecord(item.designer)?.name),
+        paid: Boolean(asCount(item.price)),
+      },
+    ];
+  });
 }
