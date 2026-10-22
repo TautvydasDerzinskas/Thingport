@@ -15,7 +15,7 @@ import {
 } from "@dnd-kit/core";
 import { alpha } from "@mui/material/styles";
 import Box from "@mui/material/Box";
-import type { DashboardTemplate, DashboardWidgetId } from "../../api/settings";
+import type { DashboardTemplate, WidgetInstanceId } from "../../api/settings";
 import { widgetById } from "./widgets";
 import { CARD_BODY_CLASS } from "./DashboardCard";
 import DashboardPanel, { DRAG_HANDLE, NO_DRAG, WidgetChipFace, type ChipDragData } from "./DashboardPanel";
@@ -63,7 +63,7 @@ type Props = {
   /** A panel to size to its content, once it has rendered; `at` makes asking again for the same panel a new ask. */
   fitRequest: { panelId: string; at: number } | null;
   onRequestFit: (panelId: string) => void;
-  renderWidget: (id: DashboardWidgetId) => React.ReactNode;
+  renderWidget: (id: WidgetInstanceId) => React.ReactNode;
   keysHintId: string;
 };
 

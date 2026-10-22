@@ -160,27 +160,37 @@ type Props = {
   unit: TemperatureUnit;
   /** The line with the forecast a few hours on. */
   showLater: boolean;
+  /** This panel's own place; null uses the account's, as the one weather panel always did. */
+  place: WeatherLocation | null;
+  onPlace: (place: WeatherLocation | null) => void;
 };
 
-export default function WeatherCard({ unit, showLater }: Props) {
+/** One place's weather. Several weather panels can each show their own place. */
+export default function WeatherCard({ unit, showLater, place, onPlace }: Props) {
   const { t } = useTranslation("app");
-  const [location, setLocation] = useWeatherLocation();
+  const [account, setAccount] = useWeatherLocation();
+  const location = place ?? account;
+  // Chosen here, a place is this panel's own. Forgetting it falls back to the account's place; forgetting that clears it.
+  const setLocation = (picked: WeatherLocation | null) => (picked || place ? onPlace(picked) : setAccount(null));
+  const lat = location?.lat;
+  const lon = location?.lon;
   const [weather, setWeather] = useState<Weather | null>(null);
   const [failed, setFailed] = useState(false);
   const [editing, setEditing] = useState(false);
 
+  // By its coordinates: the place object is rebuilt with every render.
   useEffect(() => {
     setWeather(null);
     setFailed(false);
-    if (!location) return;
+    if (lat === undefined || lon === undefined) return;
     let active = true;
-    fetchWeather(location.lat, location.lon, unit)
+    fetchWeather(lat, lon, unit)
       .then((result) => active && setWeather(result))
       .catch(() => active && setFailed(true));
     return () => {
       active = false;
     };
-  }, [location, unit]);
+  }, [lat, lon, unit]);
 
   const condition = weather ? conditionOf(weather.code) : null;
   const Icon = condition ? ICONS[condition] : null;

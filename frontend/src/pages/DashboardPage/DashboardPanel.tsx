@@ -21,7 +21,7 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import CallSplitIcon from "@mui/icons-material/CallSplit";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import TabIcon from "@mui/icons-material/TabOutlined";
-import type { DashboardPanel as Panel, DashboardWidgetId } from "../../api/settings";
+import type { DashboardPanel as Panel, WidgetInstanceId } from "../../api/settings";
 import SelectionCheck from "../../components/selection/SelectionCheck";
 import { TabbedCardContext, cardBorder } from "./DashboardCard";
 import { widgetById } from "./widgets";
@@ -40,7 +40,7 @@ const tabIn = keyframes`
 `;
 
 /** What a widget chip carries while dragged. */
-export type ChipDragData = { widgetId: DashboardWidgetId; panelId: string };
+export type ChipDragData = { widgetId: WidgetInstanceId; panelId: string };
 
 export type NudgeKey = { dx: number; dy: number; resize: boolean };
 
@@ -53,7 +53,7 @@ const ARROWS: Record<string, [number, number]> = {
 
 type Props = {
   panel: Panel;
-  renderWidget: (id: DashboardWidgetId) => React.ReactNode;
+  renderWidget: (id: WidgetInstanceId) => React.ReactNode;
   onTabChange: (tab: number) => void;
   editing: boolean;
   selected: boolean;
@@ -384,7 +384,7 @@ function WidgetChip({
   tabbed,
   hidden,
 }: {
-  widgetId: DashboardWidgetId;
+  widgetId: WidgetInstanceId;
   panelId: string;
   tabbed: boolean;
   hidden: boolean;
@@ -409,7 +409,7 @@ function WidgetChip({
 }
 
 /** The chip's look, shared with the copy that follows the pointer while it's dragged. */
-export function WidgetChipFace({ widgetId, lifted = false }: { widgetId: DashboardWidgetId; lifted?: boolean }) {
+export function WidgetChipFace({ widgetId, lifted = false }: { widgetId: WidgetInstanceId; lifted?: boolean }) {
   const { t } = useTranslation("app");
   const widget = widgetById(widgetId);
   return (

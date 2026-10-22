@@ -103,8 +103,13 @@ export type DashboardWidgetChoices = Partial<Record<DashboardWidgetId, boolean>>
 export type DashboardBreakpoint = "lg" | "md" | "sm";
 /** A panel's cell on the grid, in columns and rows; `i` is the panel's id. */
 export type DashboardGridItem = { i: string; x: number; y: number; w: number; h: number };
+/**
+ * A placed widget: its id, or for a further copy of one that may repeat, its id and a suffix ("rss:k3j2h9"). The first
+ * copy keeps the bare id, so settings saved before copies existed still match. Kept in sync by hand with the backend.
+ */
+export type WidgetInstanceId = string;
 /** One box on the dashboard. More than one widget makes it a tabbed panel, showing the one at `tab`. */
-export type DashboardPanel = { id: string; widgets: DashboardWidgetId[]; tab?: number };
+export type DashboardPanel = { id: string; widgets: WidgetInstanceId[]; tab?: number };
 export type DashboardTemplate = {
   id: string;
   /** Null shows the preset's translated name. */
@@ -114,10 +119,13 @@ export type DashboardTemplate = {
   panels: DashboardPanel[];
   /** Only the breakpoints the user has arranged; the rest are derived from the widest one. */
   layouts: Partial<Record<DashboardBreakpoint, DashboardGridItem[]>>;
-  /** Each widget's options that differ from its defaults. */
-  settings?: Partial<Record<DashboardWidgetId, WidgetSettingValues>>;
+  /** Each widget instance's options that differ from its defaults. */
+  settings?: Record<WidgetInstanceId, WidgetSettingValues>;
 };
-export type WidgetSettingValues = Record<string, string | number | boolean | string[] | Record<string, string>[]>;
+export type WidgetSettingValues = Record<
+  string,
+  string | number | boolean | null | string[] | Record<string, string>[] | Record<string, string | number | null>
+>;
 export type DashboardConfig = {
   active: string;
   templates: DashboardTemplate[];

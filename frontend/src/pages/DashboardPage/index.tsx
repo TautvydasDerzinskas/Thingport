@@ -23,7 +23,7 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import TabIcon from "@mui/icons-material/TabOutlined";
 import { UnauthorizedError } from "../../api/client";
 import { dashboardApi, type DashboardSummary } from "../../api/dashboard";
-import type { DashboardPanel, DashboardWidgetId } from "../../api/settings";
+import type { DashboardPanel, DashboardWidgetId, WidgetInstanceId } from "../../api/settings";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { useToast } from "../../components/ToastProvider";
 import HelpTip from "../../components/HelpTip";
@@ -43,7 +43,7 @@ import {
   templateName,
   templateWidgets,
 } from "./templates";
-import { DASHBOARD_WIDGETS, allowed, resolveSettings, widgetById } from "./widgets";
+import { DASHBOARD_WIDGETS, allowed, resolveSettings, widgetById, type ResolvedSettings } from "./widgets";
 import PanelSettingsDialog from "./PanelSettingsDialog";
 
 const panelKey = (panel: DashboardPanel) => panel.id;
@@ -85,7 +85,8 @@ export default function DashboardPage({ onUnauthorized, isAdmin = false }: Props
   const selectedIds = new Set(selection.selected.map(panelKey));
   const missing = dashboard
     ? DASHBOARD_WIDGETS.filter(
-        (widget) => allowed(widget, isAdmin) && !templateWidgets(dashboard.template).has(widget.id),
+        (widget) =>
+          allowed(widget, isAdmin) && (widget.multiple || !templateWidgets(dashboard.template).has(widget.id)),
       )
     : [];
 
@@ -137,18 +138,35 @@ export default function DashboardPage({ onUnauthorized, isAdmin = false }: Props
 
   const widgetSettings = dashboard?.template.settings;
   // Until the summary arrives, widgets that need it show their placeholder; the rest render already.
+  const updateTemplate = dashboard?.updateTemplate;
   const renderWidget = React.useCallback(
-    (id: DashboardWidgetId) => {
-      const widget = widgetById(id);
+    (instance: WidgetInstanceId) => {
+      const widget = widgetById(instance);
       if (!widget) return null;
-      const settings = resolveSettings(widget, widgetSettings?.[id]);
+      const settings = resolveSettings(widget, widgetSettings?.[instance]);
+      // For an option the widget sets itself, like a weather panel's place, chosen on the panel.
+      const setSettings = (patch: ResolvedSettings) =>
+        updateTemplate?.((template) =>
+          setWidgetSettings(template, instance, {
+            ...resolveSettings(widget, template.settings?.[instance]),
+            ...patch,
+          }),
+        );
       return !summary && widget.skeleton ? (
         <DashboardCardSkeleton skeleton={widget.skeleton(settings)} />
       ) : (
-        widget.render({ summary: summary as DashboardSummary, settings, isAdmin, t, navigate, onUnauthorized })
+        widget.render({
+          summary: summary as DashboardSummary,
+          settings,
+          setSettings,
+          isAdmin,
+          t,
+          navigate,
+          onUnauthorized,
+        })
       );
     },
-    [summary, widgetSettings, isAdmin, t, navigate, onUnauthorized],
+    [summary, widgetSettings, updateTemplate, isAdmin, t, navigate, onUnauthorized],
   );
 
   const toolbar = dashboard ? (

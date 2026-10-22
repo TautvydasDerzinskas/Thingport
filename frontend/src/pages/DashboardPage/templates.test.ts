@@ -5,6 +5,8 @@ import {
   addWidget,
   detachWidget,
   firstFit,
+  instanceCount,
+  removeWidget,
   initialConfig,
   mergePanels,
   offerNewPresets,
@@ -305,5 +307,56 @@ describe("launcher links", () => {
     expect(template.settings).toEqual({});
     template = setWidgetSettings(template, "launcher", { ...launcher, items: [] });
     expect(template.settings).toEqual({ launcher: { items: [] } });
+  });
+});
+
+describe("widgets added more than once", () => {
+  const instancesOf = (template: DashboardTemplate, widget: string) =>
+    template.panels.flatMap((panel) => panel.widgets).filter((id) => id.split(":")[0] === widget);
+
+  it("gives each copy of a widget that may repeat its own id and options", () => {
+    let template = addWidget(addWidget(preset("minimal"), "rss"), "rss");
+    const [first, second] = instancesOf(template, "rss");
+    // The first keeps the bare id, so options saved before copies existed still belong to it.
+    expect(first).toBe("rss");
+    expect(second).toMatch(/^rss:[a-z0-9]+$/);
+    expect(instanceCount(template, "rss")).toBe(2);
+    template = setWidgetSettings(template, second, { feeds: ["https://b.example/feed"], count: "5", showDates: true });
+    expect(template.settings).toEqual({ [second]: { feeds: ["https://b.example/feed"] } });
+    expect(resolveSettings(widgetById(first)!, template.settings?.[first]).feeds).toEqual([]);
+    expectNoOverlap(resolveLayout(template, "lg"));
+  });
+
+  it("still shows a widget that may not repeat only once", () => {
+    const template = preset("minimal");
+    expect(addWidget(template, "clock")).toBe(template);
+  });
+
+  it("drops a removed copy's options, but keeps a single widget's for when it's back", () => {
+    let template = addWidget(addWidget(preset("minimal"), "launcher"), "launcher");
+    const [, second] = instancesOf(template, "launcher");
+    template = setWidgetSettings(template, second, {
+      items: [],
+      iconStyle: "mono",
+      limit: "12",
+      search: false,
+    });
+    template = setWidgetSettings(template, "clock", { hourCycle: "12", showDate: true, showGreeting: true });
+    const panel = template.panels.find((p) => p.widgets.includes(second))!;
+    template = removePanels(template, new Set([panel.id]));
+    expect(template.settings?.[second]).toBeUndefined();
+    template = removeWidget(template, "clock");
+    expect(template.settings?.clock).toEqual({ hourCycle: "12" });
+  });
+
+  it("keeps a copy's id and options when its tab is taken out into a panel of its own", () => {
+    let template = addWidget(addWidget(preset("minimal"), "rss"), "rss");
+    const [first, second] = instancesOf(template, "rss");
+    template = setWidgetSettings(template, second, { feeds: ["https://b.example/feed"], count: "5", showDates: true });
+    template = moveWidgetToPanel(template, second, panelOf(template, first).id);
+    expect(panelOf(template, first).widgets).toEqual([first, second]);
+    template = detachWidget(template, second);
+    expect(template.panels.find((p) => p.widgets.includes(second))!.widgets).toEqual([second]);
+    expect(template.settings?.[second]).toEqual({ feeds: ["https://b.example/feed"] });
   });
 });

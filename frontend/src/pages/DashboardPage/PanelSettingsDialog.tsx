@@ -34,7 +34,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { DashboardTemplate, DashboardWidgetId } from "../../api/settings";
+import type { DashboardTemplate, WeatherLocation, WidgetInstanceId } from "../../api/settings";
 import Segmented from "../../components/controls/Segmented";
 import {
   allowed,
@@ -49,23 +49,26 @@ import { LauncherIcon, type LauncherIconStyle } from "./LauncherCard";
 
 type Props = {
   /** The panel's widgets that have options; null while closed. */
-  widgets: DashboardWidgetId[] | null;
+  widgets: WidgetInstanceId[] | null;
   template: DashboardTemplate;
   /** Admin-only options are left out for everyone else. */
   isAdmin: boolean;
-  onChange: (id: DashboardWidgetId, values: ResolvedSettings) => void;
+  onChange: (id: WidgetInstanceId, values: ResolvedSettings) => void;
   onClose: () => void;
 };
 
 /** A panel's options. Each applies straight away, so the panel behind updates as the user goes. */
 export default function PanelSettingsDialog({ widgets, template, isAdmin, onChange, onClose }: Props) {
   const { t } = useTranslation("app");
-  const shown = (widgets ?? []).flatMap((id) => widgetById(id) ?? []);
-  const resolved = (id: DashboardWidgetId) => resolveSettings(widgetById(id)!, template.settings?.[id]);
-  const changed = shown.some((widget) => template.settings?.[widget.id]);
+  // Each copy of a widget has its own options, so they're kept by instance.
+  const shown = (widgets ?? []).flatMap((instance) => {
+    const widget = widgetById(instance);
+    return widget ? [{ instance, widget }] : [];
+  });
+  const changed = shown.some(({ instance }) => template.settings?.[instance]);
   const title =
     shown.length === 1
-      ? t("dashboard.settings.title", { name: t(shown[0].labelKey) })
+      ? t("dashboard.settings.title", { name: t(shown[0].widget.labelKey) })
       : t("dashboard.settings.titlePanel");
 
   return (
@@ -73,12 +76,12 @@ export default function PanelSettingsDialog({ widgets, template, isAdmin, onChan
       <DialogTitle>{title}</DialogTitle>
       <DialogContent>
         <Stack spacing={2.5}>
-          {shown.map((widget) => {
-            const values = resolved(widget.id);
-            const set = (key: string, value: string | boolean | string[] | LauncherLink[]) =>
-              onChange(widget.id, { ...values, [key]: value });
+          {shown.map(({ instance, widget }) => {
+            const values = resolveSettings(widget, template.settings?.[instance]);
+            const set = (key: string, value: ResolvedSettings[string]) =>
+              onChange(instance, { ...values, [key]: value });
             return (
-              <Stack key={widget.id} spacing={1.5}>
+              <Stack key={instance} spacing={1.5}>
                 {shown.length > 1 && (
                   <Stack direction="row" alignItems="center" spacing={1} sx={{ color: "primary.main" }}>
                     {widget.icon}
@@ -119,7 +122,7 @@ export default function PanelSettingsDialog({ widgets, template, isAdmin, onChan
                           minHeight: 38,
                         }}
                       >
-                        <Typography variant="body2" id={`${widget.id}-${setting.key}`}>
+                        <Typography variant="body2" id={`${instance}-${setting.key}`}>
                           {t(setting.labelKey)}
                         </Typography>
                         {setting.kind === "choice" ? (
@@ -132,11 +135,16 @@ export default function PanelSettingsDialog({ widgets, template, isAdmin, onChan
                             }))}
                             onChange={(value) => set(setting.key, value)}
                           />
+                        ) : setting.kind === "place" ? (
+                          <PlaceValue
+                            place={values[setting.key] as WeatherLocation | null}
+                            onClear={() => set(setting.key, null)}
+                          />
                         ) : (
                           <Switch
                             checked={values[setting.key] === true}
                             onChange={(event) => set(setting.key, event.target.checked)}
-                            slotProps={{ input: { "aria-labelledby": `${widget.id}-${setting.key}` } }}
+                            slotProps={{ input: { "aria-labelledby": `${instance}-${setting.key}` } }}
                           />
                         )}
                       </Box>
@@ -151,7 +159,9 @@ export default function PanelSettingsDialog({ widgets, template, isAdmin, onChan
         <Button
           color="inherit"
           disabled={!changed}
-          onClick={() => shown.forEach((widget) => onChange(widget.id, resolveSettings(widget, undefined)))}
+          onClick={() =>
+            shown.forEach(({ instance, widget }) => onChange(instance, resolveSettings(widget, undefined)))
+          }
         >
           {t("dashboard.settings.reset")}
         </Button>
@@ -462,5 +472,22 @@ function SortableLink({
         </IconButton>
       </Tooltip>
     </ListItem>
+  );
+}
+
+/** A panel's own place, chosen on the panel; clearing it goes back to the account's place. */
+function PlaceValue({ place, onClear }: { place: WeatherLocation | null; onClear: () => void }) {
+  const { t } = useTranslation("app");
+  return (
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+      <Typography variant="body2" color={place ? "text.primary" : "text.secondary"} noWrap>
+        {place ? place.name || t("dashboard.weather.yourArea") : t("dashboard.settings.placeAccount")}
+      </Typography>
+      {place && (
+        <Button size="small" onClick={onClear} sx={{ flexShrink: 0 }}>
+          {t("dashboard.settings.placeReset")}
+        </Button>
+      )}
+    </Box>
   );
 }

@@ -649,7 +649,9 @@
           "templates": "Modèles",
           "panels": "Panneaux"
         },
-        "panelsOf": "Panneaux de {{name}}"
+        "panelsOf": "Panneaux de {{name}}",
+        "addAnother": "Cliquez pour en ajouter un autre",
+        "copies": "{{name}} · {{count}}"
       },
       "edit": {
         "enter": "Modifier le tableau de bord",
@@ -762,7 +764,10 @@
         "cancelEdit": "Annuler",
         "editLink": "Modifier",
         "reorderLink": "Déplacer {{name}}",
-        "linksFull": "Jusqu'à {{max}} liens"
+        "linksFull": "Jusqu'à {{max}} liens",
+        "place": "Lieu",
+        "placeAccount": "Le lieu de votre compte",
+        "placeReset": "Utiliser celui du compte"
       },
       "rss": {
         "title": "Flux RSS",

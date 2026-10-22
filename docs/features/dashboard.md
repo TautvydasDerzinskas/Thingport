@@ -27,7 +27,8 @@ The dashboard is a grid of panels you arrange yourself. **Edit** (the pencil abo
   the arrow keys to move it, or Shift and the arrow keys to resize it.
 - **Tabs:** drag a panel's name onto another panel to show the two as tabs in one, or select several panels and choose
   **Merge into tabs**. Drag a tab onto empty space, or choose **Split into panels**, to give it a panel of its own again.
-- **Add panel** puts back any panel that isn't showing; **Remove** takes the selected ones off.
+- **Add panel** puts back any panel that isn't showing; **Remove** takes the selected ones off. RSS feeds, Launcher
+  and Weather can be added more than once, each copy with its own feeds, links or place.
 - **Settings** (the cog on a panel) changes what it shows: a 12- or 24-hour clock with or without the date and
   greeting, the weather in °C or °F with or without the later forecast, how many items a list shows (3, 5, 7 or 10)
   and whether it links to the full list, the feeds an RSS panel reads, the addresses an Uptime panel checks and a

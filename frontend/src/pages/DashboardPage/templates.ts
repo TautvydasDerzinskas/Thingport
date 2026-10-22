@@ -9,8 +9,9 @@ import type {
   DashboardTemplate,
   DashboardWidgetChoices,
   DashboardWidgetId,
+  WidgetInstanceId,
 } from "../../api/settings";
-import { DASHBOARD_WIDGETS, widgetById, type ResolvedSettings } from "./widgets";
+import { DASHBOARD_WIDGETS, widgetById, widgetOf, type ResolvedSettings } from "./widgets";
 
 /** Widest first; a breakpoint applies from its width up. Phones get one column, so panels simply stack. */
 export const BREAKPOINTS: { id: DashboardBreakpoint; minWidth: number; cols: number }[] = [
@@ -149,18 +150,31 @@ export function nudgeLayout(
   return compact(moveElement(items, item, x, Math.max(0, y), true, false, "vertical", cols), cols);
 }
 
-/** Every widget the template shows, in any panel. */
+/** Every widget the template shows, in any panel, however many copies of it. */
 export function templateWidgets(template: DashboardTemplate): Set<DashboardWidgetId> {
-  return new Set(template.panels.flatMap((panel) => panel.widgets));
+  return new Set(template.panels.flatMap((panel) => panel.widgets.map(widgetOf)));
 }
 
-/** Keeps only the panels that still exist in every saved layout. */
+/** How many copies of a widget the template shows. */
+export function instanceCount(template: DashboardTemplate, id: DashboardWidgetId): number {
+  return template.panels.reduce((sum, panel) => sum + panel.widgets.filter((w) => widgetOf(w) === id).length, 0);
+}
+
+/**
+ * Keeps only the panels that still exist in every saved layout, and drops the options of a removed copy of a widget
+ * that may repeat, so a copy added later starts fresh. A widget shown once keeps its options for when it's back.
+ */
 function pruneLayouts(template: DashboardTemplate): DashboardTemplate {
   const ids = new Set(template.panels.map((panel) => panel.id));
   const layouts: DashboardTemplate["layouts"] = {};
   for (const [breakpoint, items] of Object.entries(template.layouts) as [DashboardBreakpoint, DashboardGridItem[]][])
     layouts[breakpoint] = items.filter((item) => ids.has(item.i));
-  return { ...template, layouts };
+  if (!template.settings) return { ...template, layouts };
+  const placed = new Set(template.panels.flatMap((panel) => panel.widgets));
+  const settings = Object.fromEntries(
+    Object.entries(template.settings).filter(([instance]) => placed.has(instance) || !widgetById(instance)?.multiple),
+  );
+  return { ...template, layouts, settings };
 }
 
 /** Applies `change` to the panel's cell in each saved layout. */
@@ -193,14 +207,26 @@ export function firstFit(items: DashboardGridItem[], w: number, h: number, cols:
       if (items.every((p) => x >= p.x + p.w || p.x >= x + width || y >= p.y + p.h || p.y >= y + h)) return { x, y };
 }
 
-/** A widget in a panel of its own, in the first free spot it fits in each layout: a gap if there's one, else below. */
+/**
+ * A widget in a panel of its own, in the first free spot it fits in each layout: a gap if there's one, else below. A
+ * widget already shown is added again only if it may repeat, as a new copy with its own options.
+ */
 export function addWidget(
   template: DashboardTemplate,
   id: DashboardWidgetId,
   panelId: string = newId(),
 ): DashboardTemplate {
-  if (templateWidgets(template).has(id)) return template;
-  const panel: DashboardPanel = { id: panelId, widgets: [id] };
+  const shown = templateWidgets(template).has(id);
+  if (shown && !widgetById(id)?.multiple) return template;
+  // The first copy keeps the widget's own id; while that one's placed, a further copy gets a suffix.
+  const placed = new Set(template.panels.flatMap((panel) => panel.widgets));
+  const instance: WidgetInstanceId = placed.has(id) ? `${id}:${newId()}` : id;
+  return placeInstance(template, instance, panelId);
+}
+
+/** An instance in a new panel of its own, in the first free spot of each saved layout. */
+function placeInstance(template: DashboardTemplate, instance: WidgetInstanceId, panelId: string): DashboardTemplate {
+  const panel: DashboardPanel = { id: panelId, widgets: [instance] };
   const layouts: DashboardTemplate["layouts"] = {};
   for (const [breakpoint, items] of Object.entries(template.layouts) as [DashboardBreakpoint, DashboardGridItem[]][]) {
     const cols = colsOf(breakpoint);
@@ -215,11 +241,18 @@ export function removePanels(template: DashboardTemplate, ids: ReadonlySet<strin
   return pruneLayouts({ ...template, panels: template.panels.filter((panel) => !ids.has(panel.id)) });
 }
 
-/** Takes a widget off the dashboard, and its panel with it once it holds nothing else. */
+/** Takes a widget off the dashboard, every copy of it, and a panel with it once the panel holds nothing else. */
 export function removeWidget(template: DashboardTemplate, id: DashboardWidgetId): DashboardTemplate {
+  return withoutInstances(template, (instance) => widgetOf(instance) === id);
+}
+
+function withoutInstances(
+  template: DashboardTemplate,
+  drop: (instance: WidgetInstanceId) => boolean,
+): DashboardTemplate {
   const panels = template.panels.flatMap((panel) => {
-    if (!panel.widgets.includes(id)) return [panel];
-    const widgets = panel.widgets.filter((widget) => widget !== id);
+    if (!panel.widgets.some(drop)) return [panel];
+    const widgets = panel.widgets.filter((instance) => !drop(instance));
     return widgets.length ? [{ ...panel, widgets, tab: 0 }] : [];
   });
   return pruneLayouts({ ...template, panels });
@@ -266,7 +299,7 @@ export function mergePanels(template: DashboardTemplate, ids: ReadonlySet<string
  */
 export function moveWidgetToPanel(
   template: DashboardTemplate,
-  id: DashboardWidgetId,
+  id: WidgetInstanceId,
   targetId: string,
 ): DashboardTemplate {
   const source = template.panels.find((panel) => panel.widgets.includes(id));
@@ -289,11 +322,14 @@ export function moveWidgetToPanel(
   return pruneLayouts({ ...template, panels, layouts });
 }
 
-/** Takes a widget out of a tabbed panel into a panel of its own, at the bottom. */
-export function detachWidget(template: DashboardTemplate, id: DashboardWidgetId): DashboardTemplate {
+/** Takes a widget out of a tabbed panel into a panel of its own, in the first gap it fits; it keeps its options. */
+export function detachWidget(template: DashboardTemplate, id: WidgetInstanceId): DashboardTemplate {
   const source = template.panels.find((panel) => panel.widgets.includes(id));
   if (!source || source.widgets.length < 2) return template;
-  return addWidget(removeWidget(template, id), id);
+  const panels = template.panels.map((panel) =>
+    panel.id === source.id ? { ...panel, widgets: panel.widgets.filter((instance) => instance !== id), tab: 0 } : panel,
+  );
+  return placeInstance({ ...template, panels }, id, newId());
 }
 
 /** Every tab of a tabbed panel becomes a panel of its own; the first stays where the panel was. */
@@ -309,7 +345,7 @@ export function splitPanel(template: DashboardTemplate, panelId: string): Dashbo
  */
 export function setWidgetSettings(
   template: DashboardTemplate,
-  id: DashboardWidgetId,
+  id: WidgetInstanceId,
   values: ResolvedSettings,
 ): DashboardTemplate {
   const widget = widgetById(id);

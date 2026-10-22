@@ -649,7 +649,9 @@
           "templates": "Templates",
           "panels": "Panels"
         },
-        "panelsOf": "Panels in {{name}}"
+        "panelsOf": "Panels in {{name}}",
+        "addAnother": "Click to add another",
+        "copies": "{{name}} · {{count}}"
       },
       "edit": {
         "enter": "Edit dashboard",
@@ -759,7 +761,10 @@
         "cancelEdit": "Cancel",
         "editLink": "Edit",
         "reorderLink": "Move {{name}}",
-        "linksFull": "Up to {{max}} links"
+        "linksFull": "Up to {{max}} links",
+        "place": "Place",
+        "placeAccount": "Your account's place",
+        "placeReset": "Use the account's"
       },
       "rss": {
         "title": "RSS feeds",

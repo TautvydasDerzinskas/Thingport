@@ -649,7 +649,9 @@
           "templates": "Plantillas",
           "panels": "Paneles"
         },
-        "panelsOf": "Paneles de {{name}}"
+        "panelsOf": "Paneles de {{name}}",
+        "addAnother": "Haz clic para añadir otro",
+        "copies": "{{name}} · {{count}}"
       },
       "edit": {
         "enter": "Editar panel",
@@ -762,7 +764,10 @@
         "cancelEdit": "Cancelar",
         "editLink": "Editar",
         "reorderLink": "Mover {{name}}",
-        "linksFull": "Hasta {{max}} enlaces"
+        "linksFull": "Hasta {{max}} enlaces",
+        "place": "Lugar",
+        "placeAccount": "El lugar de tu cuenta",
+        "placeReset": "Usar el de la cuenta"
       },
       "rss": {
         "title": "Fuentes RSS",

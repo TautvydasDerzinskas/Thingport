@@ -19,7 +19,7 @@ import MemoryIcon from "@mui/icons-material/Memory";
 import MonitorHeartOutlinedIcon from "@mui/icons-material/MonitorHeartOutlined";
 import AppsIcon from "@mui/icons-material/Apps";
 import { dashboardApi, type DashboardSummary } from "../../api/dashboard";
-import type { DashboardWidgetId, WidgetSettingValues } from "../../api/settings";
+import type { DashboardWidgetId, WeatherLocation, WidgetInstanceId, WidgetSettingValues } from "../../api/settings";
 import CountCard from "./CountCard";
 import ModelListCard from "./ModelListCard";
 import AuthorListCard from "./AuthorListCard";
@@ -59,13 +59,15 @@ export type WidgetSetting = (
       default: string[];
     }
   | { key: string; kind: "links"; labelKey: string; max: number; default: LauncherLink[] }
+  /** A place, chosen on the panel itself; the settings dialog shows it and can clear it. */
+  | { key: string; kind: "place"; labelKey: string; default: null }
 ) & {
   /** Offered to admins only. */
   adminOnly?: boolean;
 };
 
 /** Every option of a widget, the user's choice or the default. */
-export type ResolvedSettings = Record<string, string | boolean | string[] | LauncherLink[]>;
+export type ResolvedSettings = Record<string, string | boolean | string[] | LauncherLink[] | WeatherLocation | null>;
 
 /** A launcher item. `icon` is an image address or a path on Thingport itself; empty tries the site's own icon. */
 export type LauncherLink = { name: string; url: string; icon: string };
@@ -73,6 +75,8 @@ export type LauncherLink = { name: string; url: string; icon: string };
 type WidgetContext = {
   summary: DashboardSummary;
   settings: ResolvedSettings;
+  /** Saves options the widget sets itself, from the panel rather than its settings dialog. */
+  setSettings: (patch: ResolvedSettings) => void;
   isAdmin: boolean;
   t: TFunction;
   navigate: NavigateFunction;
@@ -96,6 +100,8 @@ export type DashboardWidget = {
   settings?: WidgetSetting[];
   /** Offered to admins only, e.g. one showing the server's own stats. */
   adminOnly?: boolean;
+  /** Can be added more than once, each copy with its own options, like several feeds or launchers. */
+  multiple?: boolean;
   render: (ctx: WidgetContext) => React.ReactNode;
 };
 
@@ -291,6 +297,7 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
   },
   {
     id: "weather",
+    multiple: true,
     labelKey: "dashboard.weather.label",
     icon: <WbSunnyIcon fontSize="small" />,
     size: { w: 4, h: 2, minW: 3, minH: 2 },
@@ -307,11 +314,14 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
         default: "celsius",
       },
       { key: "showLater", kind: "toggle", labelKey: "dashboard.settings.showLater", default: true },
+      { key: "place", kind: "place", labelKey: "dashboard.settings.place", default: null },
     ],
-    render: ({ settings }) => (
+    render: ({ settings, setSettings }) => (
       <WeatherCard
         unit={settings.unit === "fahrenheit" ? "fahrenheit" : "celsius"}
         showLater={settings.showLater === true}
+        place={settings.place as WeatherLocation | null}
+        onPlace={(place) => setSettings({ place })}
       />
     ),
   },
@@ -349,6 +359,7 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
   },
   {
     id: "rss",
+    multiple: true,
     labelKey: "dashboard.rss.title",
     icon: <RssFeedIcon fontSize="small" />,
     size: { w: 4, h: 5, minW: 3, minH: 3 },
@@ -422,6 +433,7 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
   },
   {
     id: "launcher",
+    multiple: true,
     labelKey: "dashboard.launcher.title",
     icon: <AppsIcon fontSize="small" />,
     size: { w: 4, h: 2, minW: 2, minH: 2 },
@@ -477,10 +489,16 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
   },
 ];
 
-const BY_ID = new Map(DASHBOARD_WIDGETS.map((widget) => [widget.id, widget]));
+const BY_ID = new Map<string, DashboardWidget>(DASHBOARD_WIDGETS.map((widget) => [widget.id, widget]));
 
-export function widgetById(id: DashboardWidgetId): DashboardWidget | undefined {
-  return BY_ID.get(id);
+/** The widget an instance is a copy of: "rss:k3j2h9" and "rss" are both the RSS widget. */
+export function widgetOf(instance: WidgetInstanceId): DashboardWidgetId {
+  return instance.split(":")[0] as DashboardWidgetId;
+}
+
+/** A widget by its id or by one of its instances' ids. */
+export function widgetById(id: WidgetInstanceId): DashboardWidget | undefined {
+  return BY_ID.get(widgetOf(id));
 }
 
 /** The widget's options as stored, with anything missing or no longer offered replaced by its default. */
@@ -489,6 +507,7 @@ export function resolveSettings(widget: DashboardWidget, stored: WidgetSettingVa
   for (const setting of widget.settings ?? []) {
     const value = stored?.[setting.key];
     if (setting.kind === "toggle") resolved[setting.key] = typeof value === "boolean" ? value : setting.default;
+    else if (setting.kind === "place") resolved[setting.key] = cleanPlace(value);
     else if (setting.kind === "links")
       resolved[setting.key] = Array.isArray(value)
         ? value.flatMap((entry) => (typeof entry === "object" ? (cleanLink(entry) ?? []) : [])).slice(0, setting.max)
@@ -506,6 +525,19 @@ export function resolveSettings(widget: DashboardWidget, stored: WidgetSettingVa
         : setting.default;
   }
   return resolved;
+}
+
+/** A stored place, or null when it isn't one. */
+function cleanPlace(value: unknown): WeatherLocation | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const { lat, lon, name, source } = value as Record<string, unknown>;
+  if (typeof lat !== "number" || typeof lon !== "number" || Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+  return {
+    lat,
+    lon,
+    name: typeof name === "string" ? name : null,
+    source: source === "device" ? "device" : "manual",
+  };
 }
 
 /** A stored launcher item, or null when it isn't one: no web address, or a name and icon that won't do. */

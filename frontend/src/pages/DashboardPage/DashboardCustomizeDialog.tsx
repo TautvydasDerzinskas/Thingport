@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import DashboardCustomizeOutlinedIcon from "@mui/icons-material/DashboardCustomizeOutlined";
 import ToggleOnOutlinedIcon from "@mui/icons-material/ToggleOnOutlined";
@@ -11,7 +12,7 @@ import SelectableTile from "../../components/controls/SelectableTile";
 import HelpTip from "../../components/HelpTip";
 import PanelSketch from "./PanelSketch";
 import TemplatesSection from "./TemplatesSection";
-import { addWidget, removeWidget, templateName, templateWidgets } from "./templates";
+import { addWidget, instanceCount, removeWidget, templateName, templateWidgets } from "./templates";
 import { DASHBOARD_WIDGETS, allowed } from "./widgets";
 
 export type CustomizeSection = "templates" | "panels";
@@ -85,6 +86,29 @@ export default function DashboardCustomizeDialog({
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)" }, gap: 1.5 }}>
             {DASHBOARD_WIDGETS.filter((widget) => allowed(widget, isAdmin)).map((widget) => {
               const enabled = shown.has(widget.id);
+              if (widget.multiple) {
+                // One that may repeat adds a copy with each click; copies come off in edit mode.
+                const count = instanceCount(template, widget.id);
+                return (
+                  <Tooltip key={widget.id} title={t("dashboard.widgets.addAnother")}>
+                    {/* A plain element for the tooltip to hold on to; the tile fills it. */}
+                    <Box component="span" sx={{ display: "flex", "& > *": { flex: 1 } }}>
+                      <SelectableTile
+                        selected={count > 0}
+                        dimWhenOff
+                        label={
+                          count > 1
+                            ? t("dashboard.widgets.copies", { name: t(widget.labelKey), count })
+                            : t(widget.labelKey)
+                        }
+                        onClick={() => updateTemplate((current) => addWidget(current, widget.id))}
+                      >
+                        <PanelSketch kind={widget.sketch} />
+                      </SelectableTile>
+                    </Box>
+                  </Tooltip>
+                );
+              }
               return (
                 <SelectableTile
                   key={widget.id}

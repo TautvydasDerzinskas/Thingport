@@ -655,7 +655,9 @@
           "templates": "Šablonai",
           "panels": "Skydeliai"
         },
-        "panelsOf": "Skydeliai šablone „{{name}}“"
+        "panelsOf": "Skydeliai šablone „{{name}}“",
+        "addAnother": "Spustelėkite, kad pridėtumėte dar vieną",
+        "copies": "{{name}} · {{count}}"
       },
       "edit": {
         "enter": "Redaguoti suvestinę",
@@ -768,7 +770,10 @@
         "cancelEdit": "Atšaukti",
         "editLink": "Redaguoti",
         "reorderLink": "Perkelti „{{name}}“",
-        "linksFull": "Iki {{max}} nuorodų"
+        "linksFull": "Iki {{max}} nuorodų",
+        "place": "Vieta",
+        "placeAccount": "Jūsų paskyros vieta",
+        "placeReset": "Naudoti paskyros"
       },
       "rss": {
         "title": "RSS sklaidos kanalai",
