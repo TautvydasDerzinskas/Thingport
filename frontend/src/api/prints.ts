@@ -544,14 +544,17 @@ export const printsApi = {
     return prints;
   },
 
-  /** Adds the tags to every model that doesn't have them yet; answers the models and how many changed. */
-  bulkAddTags: async (ids: string[], tags: string[]): Promise<{ prints: Print[]; changed: number }> => {
+  /** Adds `add` to and takes `remove` off every model; answers the models and how many changed. */
+  bulkEditTags: async (
+    ids: string[],
+    tags: { add: string[]; remove: string[] },
+  ): Promise<{ prints: Print[]; changed: number }> => {
     const result = { prints: [] as Print[], changed: 0 };
     for (const chunk of bulkChunks(ids)) {
       const res = await fetch(`${apiBase()}/prints/tags`, {
         method: "POST",
         headers: authHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ print_ids: chunk, tags }),
+        body: JSON.stringify({ print_ids: chunk, ...tags }),
       });
       if (res.status === 401) throw new UnauthorizedError();
       if (!res.ok) throw new Error(await readErrorMessage(res, "Tag update failed"));

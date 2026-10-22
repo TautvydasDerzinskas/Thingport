@@ -26,7 +26,7 @@ import { useConfirm } from "../ConfirmProvider";
 import { useToast } from "../ToastProvider";
 import DownloadZipConfirmDialog from "../DownloadZipConfirmDialog";
 import BulkAddToCollectionDialog from "./BulkAddToCollectionDialog";
-import BulkAddTagsDialog from "./BulkAddTagsDialog";
+import BulkEditTagsDialog from "./BulkEditTagsDialog";
 import SelectionToolbar, { SelectionAction } from "../selection/SelectionToolbar";
 
 type Props = {
@@ -271,10 +271,10 @@ export default function ModelSelectionToolbar({
             printIds={ids}
             onUnauthorized={onUnauthorized}
           />
-          <BulkAddTagsDialog
+          <BulkEditTagsDialog
             open={tagsOpen}
             onClose={() => setTagsOpen(false)}
-            printIds={ids}
+            prints={selected}
             onUpdated={onUpdated}
             onUnauthorized={onUnauthorized}
           />
@@ -296,7 +296,7 @@ export default function ModelSelectionToolbar({
           busy === "removeFromCollection" ? <CircularProgress size={18} /> : <PlaylistRemoveIcon fontSize="small" />,
           () => void removeFromCollection(),
         )}
-      {action(t("models:selection.addTags"), <LocalOfferIcon fontSize="small" />, () => setTagsOpen(true))}
+      {action(t("models:selection.editTags"), <LocalOfferIcon fontSize="small" />, () => setTagsOpen(true))}
       {action(
         favoriteLabel,
         busy === "favorite" ? (
