@@ -1,4 +1,4 @@
-import { appendTokenToUrl, authHeaders } from "../utils/auth";
+import { appendTokenToUrl, authHeaders, readToken } from "../utils/auth";
 import { apiBase, assertOk, readErrorMessage, LastPlateError, UnauthorizedError } from "./client";
 
 export type PreparedPrint = {
@@ -198,6 +198,14 @@ export const printsApi = {
   fileUrl: (rel: string) => {
     if (!rel) return rel;
     return appendTokenToUrl(`${apiBase()}${rel}`);
+  },
+
+  /** An absolute file URL for a slicer to download, with the session in the path rather than `?token=`: OrcaSlicer
+   *  and its forks name the file after everything past the last slash, query string included. */
+  slicerFileUrl: (rel: string) => {
+    const token = readToken();
+    const path = token ? `${apiBase()}/t/${encodeURIComponent(token)}${rel}` : `${apiBase()}${rel}`;
+    return new URL(path, window.location.origin).toString();
   },
 
   list: async (

@@ -53,7 +53,27 @@ function headerToken(req: Request): string | undefined {
 /** `?token=` is for <img>/direct file links that can't set headers. */
 export function extractToken(req: Request): string | undefined {
   const queryToken = typeof req.query.token === "string" ? req.query.token : undefined;
-  return headerToken(req) || queryToken;
+  return headerToken(req) || queryToken || req.pathToken;
+}
+
+const PATH_TOKEN = /^\/api\/t\/([^/?]+)(\/[^?]*(?:\?.*)?)$/;
+
+/** `/api/t/<token>/...` is `/api/...?token=<token>` for links handed to a slicer. OrcaSlicer and its forks name the
+ *  downloaded file after everything past the URL's last slash, query string included, so a token there ends up in
+ *  the filename -- long enough to fail with "File name too long". Reads only, like any token in a URL. */
+export function pathToken(req: Request, _res: Response, next: NextFunction) {
+  const match = req.method === "GET" || req.method === "HEAD" ? PATH_TOKEN.exec(req.url) : null;
+  if (match) {
+    try {
+      req.pathToken = decodeURIComponent(match[1]);
+      req.url = `/api${match[2]}`;
+      // requireAuth picks an API token's scope from originalUrl, so it must name the route actually reached.
+      req.originalUrl = req.url;
+    } catch {
+      // A malformed escape: left as is, the request 404s.
+    }
+  }
+  next();
 }
 
 // An API token may only read. That also keeps it from minting a session (POST /refresh) or
