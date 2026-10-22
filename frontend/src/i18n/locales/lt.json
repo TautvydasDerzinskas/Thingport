@@ -854,6 +854,9 @@
         "openProviders": "Atverti tiekėjų nustatymus",
         "askAdmin": "Paprašykite administratoriaus jį pridėti.",
         "connect": "Prijungti {{name}}"
+      },
+      "homepage": {
+        "open": "Atverti kaip pradžios puslapį: tik skydeliai, naujame skirtuke"
       }
     },
     "adminSettings": {

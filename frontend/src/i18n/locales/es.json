@@ -848,6 +848,9 @@
         "openProviders": "Abrir ajustes de proveedores",
         "askAdmin": "Pide a un administrador que la añada.",
         "connect": "Conectar {{name}}"
+      },
+      "homepage": {
+        "open": "Abrir como página de inicio: solo los paneles, en una pestaña nueva"
       }
     },
     "adminSettings": {

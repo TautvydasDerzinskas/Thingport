@@ -848,6 +848,9 @@
         "openProviders": "Ouvrir les paramètres des fournisseurs",
         "askAdmin": "Demandez à un administrateur de l'ajouter.",
         "connect": "Connecter {{name}}"
+      },
+      "homepage": {
+        "open": "Ouvrir comme page d'accueil : seulement les panneaux, dans un nouvel onglet"
       }
     },
     "adminSettings": {

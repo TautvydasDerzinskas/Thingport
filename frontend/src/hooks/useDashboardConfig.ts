@@ -53,7 +53,7 @@ function publish(value: DashboardConfig) {
 
 export type DashboardConfigApi = {
   config: DashboardConfig;
-  /** The template showing. */
+  /** The template showing: the one asked for, else the active one. */
   template: DashboardTemplate;
   /** Changes the template showing. */
   updateTemplate: (change: (template: DashboardTemplate) => DashboardTemplate) => void;
@@ -61,8 +61,11 @@ export type DashboardConfigApi = {
   update: (change: (config: DashboardConfig) => DashboardConfig) => void;
 };
 
-/** Null until the saved templates are known, so the dashboard doesn't flash the wrong one. */
-export function useDashboardConfig(): DashboardConfigApi | null {
+/**
+ * Null until the saved templates are known, so the dashboard doesn't flash the wrong one. `templateId` shows that
+ * template rather than the active one, as the homepage view does, and edits go to it; one since deleted falls back.
+ */
+export function useDashboardConfig(templateId?: string | null): DashboardConfigApi | null {
   const [value, setValue] = useState<DashboardConfig | null>(cached ?? null);
 
   useEffect(() => {
@@ -82,14 +85,20 @@ export function useDashboardConfig(): DashboardConfigApi | null {
   }, []);
   const updateTemplate = useCallback(
     (change: (template: DashboardTemplate) => DashboardTemplate) =>
-      update((config) => ({
-        ...config,
-        templates: config.templates.map((template) => (template.id === config.active ? change(template) : template)),
-      })),
-    [update],
+      update((config) => {
+        const target = config.templates.some((t) => t.id === templateId) ? templateId : config.active;
+        return {
+          ...config,
+          templates: config.templates.map((template) => (template.id === target ? change(template) : template)),
+        };
+      }),
+    [update, templateId],
   );
 
   if (!value) return null;
-  const template = value.templates.find((t) => t.id === value.active) ?? value.templates[0];
+  const template =
+    value.templates.find((t) => t.id === templateId) ??
+    value.templates.find((t) => t.id === value.active) ??
+    value.templates[0];
   return { config: value, template, update, updateTemplate };
 }

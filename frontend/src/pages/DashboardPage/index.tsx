@@ -5,6 +5,7 @@ import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
@@ -19,6 +20,7 @@ import CheckIcon from "@mui/icons-material/Check";
 import DashboardCustomizeOutlinedIcon from "@mui/icons-material/DashboardCustomizeOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import TabIcon from "@mui/icons-material/TabOutlined";
@@ -49,6 +51,8 @@ import { DASHBOARD_WIDGETS, allowed, resolveSettings, widgetById, type ResolvedS
 import PanelSettingsDialog from "./PanelSettingsDialog";
 
 const panelKey = (panel: DashboardPanel) => panel.id;
+/** The dashboard on its own, without the app around it, for a browser's homepage. */
+export const HOMEPAGE_PATH = "/home";
 const NO_PANELS: DashboardPanel[] = [];
 const KEYS_HINT_ID = "dashboard-panel-keys";
 // For screen readers only.
@@ -63,18 +67,22 @@ const visuallyHidden = {
 
 type Props = {
   onUnauthorized?: () => void;
+  /** The homepage view: only the panels, with no editing, in a tab of its own. */
+  standalone?: boolean;
+  /** Shows this template rather than the active one, for a homepage kept to one template. */
+  templateId?: string | null;
   /** Admins also get the panels about the server itself. */
   isAdmin?: boolean;
 };
 
-export default function DashboardPage({ onUnauthorized, isAdmin = false }: Props) {
+export default function DashboardPage({ onUnauthorized, isAdmin = false, standalone = false, templateId }: Props) {
   const { t } = useTranslation("app");
   const navigate = useNavigate();
   const confirm = useConfirm();
   const showToast = useToast();
   const [summary, setSummary] = React.useState<DashboardSummary | null>(null);
   const [error, setError] = React.useState<string | null>(null);
-  const dashboard = useDashboardConfig();
+  const dashboard = useDashboardConfig(templateId);
   const [customize, setCustomize] = React.useState<CustomizeSection | null>(null);
   const [templatesMenu, setTemplatesMenu] = React.useState<HTMLElement | null>(null);
   const [addMenu, setAddMenu] = React.useState<HTMLElement | null>(null);
@@ -234,6 +242,19 @@ export default function DashboardPage({ onUnauthorized, isAdmin = false }: Props
         />
         <HelpTip text={t("dashboard.edit.help")} />
       </SelectionToolbar>
+      <Tooltip title={t("dashboard.homepage.open")}>
+        <IconButton
+          size="small"
+          component="a"
+          // Kept to this template, so switching templates here later doesn't change the homepage.
+          href={`${HOMEPAGE_PATH}?template=${encodeURIComponent(dashboard.template.id)}`}
+          target="_blank"
+          rel="noopener"
+          aria-label={t("dashboard.homepage.open")}
+        >
+          <HomeOutlinedIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
       <Tooltip title={t("dashboard.templates.open")}>
         <Button
           size="small"
@@ -346,7 +367,7 @@ export default function DashboardPage({ onUnauthorized, isAdmin = false }: Props
 
   return (
     <Box sx={{ p: { xs: 0, md: 1 } }}>
-      {!error && toolbar}
+      {!error && !standalone && toolbar}
       {content}
       <Box id={KEYS_HINT_ID} sx={visuallyHidden}>
         {t("dashboard.edit.keys")}

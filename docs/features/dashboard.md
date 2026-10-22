@@ -44,5 +44,9 @@ The dashboard is a grid of panels you arrange yourself. **Edit** (the pencil abo
 It comes with a few to start from -- Classic, Overview, Compact tabs, Puzzle and Minimal -- and **Manage templates**
 makes new ones (empty, a copy of the current one or a built-in), renames, copies, resets or deletes them.
 
+**Homepage** (the house beside the pencil) opens the dashboard on its own in a new tab: just the panels, without the
+side menu or the top bar, and kept to the template it was opened from. Set that page as your browser's homepage or new
+tab page to start every session there.
+
 Wide, medium and phone-sized screens each keep their own arrangement: until you arrange one yourself, it follows the
 wide one. Everything is saved to your account, so it follows you to other devices.

@@ -842,6 +842,9 @@
         "openProviders": "Open provider settings",
         "askAdmin": "Ask an admin to add it.",
         "connect": "Connect {{name}}"
+      },
+      "homepage": {
+        "open": "Open as a homepage: just the panels, in a new tab"
       }
     },
     "adminSettings": {

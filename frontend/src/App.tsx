@@ -3,11 +3,12 @@ import { useTranslation } from "react-i18next";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import Box from "@mui/material/Box";
-import { BrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import AppLayout from "./components/Layout/AppLayout";
-import DashboardPage from "./pages/DashboardPage";
+import DashboardPage, { HOMEPAGE_PATH } from "./pages/DashboardPage";
+import HomepageView from "./pages/DashboardPage/HomepageView";
 import ModelsPage from "./pages/ModelsPage";
 import ModelDetailPage from "./pages/ModelDetailPage";
 import CollectionsPage from "./pages/CollectionsPage";
@@ -117,6 +118,7 @@ function AppShell({
   onUserUpdated,
 }: AppShellProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   // Seeded from the URL so a direct load of /models?category=<id> doesn't flash "All" first.
   const [categoryId, setCategoryId] = React.useState<string | null>(() => {
     if (typeof window === "undefined" || !window.location.pathname.startsWith("/models")) return null;
@@ -143,6 +145,10 @@ function AppShell({
       setSettings((prev) => ({ ...prev, makerworld: { ...prev.makerworld, ...patch } })),
     [setSettings],
   );
+
+  // The homepage view: the dashboard alone, without the app's side menu and top bar.
+  if (location.pathname === HOMEPAGE_PATH)
+    return <HomepageView muiTheme={muiTheme} isAdmin={isAdmin} onUnauthorized={onUnauthorized} />;
 
   return (
     <AppLayout
