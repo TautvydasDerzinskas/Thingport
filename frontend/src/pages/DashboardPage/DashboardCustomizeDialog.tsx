@@ -12,7 +12,7 @@ import HelpTip from "../../components/HelpTip";
 import PanelSketch from "./PanelSketch";
 import TemplatesSection from "./TemplatesSection";
 import { addWidget, removeWidget, templateName, templateWidgets } from "./templates";
-import { DASHBOARD_WIDGETS } from "./widgets";
+import { DASHBOARD_WIDGETS, allowed } from "./widgets";
 
 export type CustomizeSection = "templates" | "panels";
 
@@ -21,11 +21,18 @@ type Props = {
   /** The section it opens on. */
   initialSection?: CustomizeSection;
   dashboard: DashboardConfigApi;
+  isAdmin: boolean;
   onClose: () => void;
 };
 
 /** Every choice applies straight away, so the dashboard behind updates as the user goes. */
-export default function DashboardCustomizeDialog({ open, initialSection = "templates", dashboard, onClose }: Props) {
+export default function DashboardCustomizeDialog({
+  open,
+  initialSection = "templates",
+  dashboard,
+  isAdmin,
+  onClose,
+}: Props) {
   const { t } = useTranslation("app");
   const [section, setSection] = useState<CustomizeSection>(initialSection);
   const { config, template, update, updateTemplate } = dashboard;
@@ -76,7 +83,7 @@ export default function DashboardCustomizeDialog({ open, initialSection = "templ
             <HelpTip text={t("dashboard.widgets.subtitle")} />
           </Stack>
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)" }, gap: 1.5 }}>
-            {DASHBOARD_WIDGETS.map((widget) => {
+            {DASHBOARD_WIDGETS.filter((widget) => allowed(widget, isAdmin)).map((widget) => {
               const enabled = shown.has(widget.id);
               return (
                 <SelectableTile

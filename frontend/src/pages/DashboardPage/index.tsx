@@ -34,8 +34,16 @@ import DashboardCustomizeDialog, { type CustomizeSection } from "./DashboardCust
 import DashboardGrid from "./DashboardGrid";
 import TemplateSketch from "./TemplateSketch";
 import DashboardCardSkeleton from "./DashboardCardSkeleton";
-import { addWidget, mergePanels, removePanels, setWidgetSettings, templateName, templateWidgets } from "./templates";
-import { DASHBOARD_WIDGETS, resolveSettings, widgetById } from "./widgets";
+import {
+  addWidget,
+  mergePanels,
+  newId,
+  removePanels,
+  setWidgetSettings,
+  templateName,
+  templateWidgets,
+} from "./templates";
+import { DASHBOARD_WIDGETS, allowed, resolveSettings, widgetById } from "./widgets";
 import PanelSettingsDialog from "./PanelSettingsDialog";
 
 const panelKey = (panel: DashboardPanel) => panel.id;
@@ -53,9 +61,11 @@ const visuallyHidden = {
 
 type Props = {
   onUnauthorized?: () => void;
+  /** Admins also get the panels about the server itself. */
+  isAdmin?: boolean;
 };
 
-export default function DashboardPage({ onUnauthorized }: Props) {
+export default function DashboardPage({ onUnauthorized, isAdmin = false }: Props) {
   const { t } = useTranslation("app");
   const navigate = useNavigate();
   const confirm = useConfirm();
@@ -74,7 +84,9 @@ export default function DashboardPage({ onUnauthorized }: Props) {
   const editing = selection.active;
   const selectedIds = new Set(selection.selected.map(panelKey));
   const missing = dashboard
-    ? DASHBOARD_WIDGETS.filter((widget) => !templateWidgets(dashboard.template).has(widget.id))
+    ? DASHBOARD_WIDGETS.filter(
+        (widget) => allowed(widget, isAdmin) && !templateWidgets(dashboard.template).has(widget.id),
+      )
     : [];
 
   const removeSelected = async (ids: Set<string>) => {
@@ -98,9 +110,12 @@ export default function DashboardPage({ onUnauthorized }: Props) {
     showToast({ message: t("dashboard.edit.merged", { count: selectedIds.size }), severity: "success" });
   };
 
+  // A new panel starts at its widget's usual size, then fits what it shows.
   const addPanel = (id: DashboardWidgetId) => {
     setAddMenu(null);
-    dashboard?.updateTemplate((template) => addWidget(template, id));
+    const panelId = newId();
+    dashboard?.updateTemplate((template) => addWidget(template, id, panelId));
+    requestFit(panelId);
   };
 
   React.useEffect(() => {
@@ -130,10 +145,10 @@ export default function DashboardPage({ onUnauthorized }: Props) {
       return !summary && widget.skeleton ? (
         <DashboardCardSkeleton skeleton={widget.skeleton(settings)} />
       ) : (
-        widget.render({ summary: summary as DashboardSummary, settings, t, navigate, onUnauthorized })
+        widget.render({ summary: summary as DashboardSummary, settings, isAdmin, t, navigate, onUnauthorized })
       );
     },
-    [summary, widgetSettings, t, navigate, onUnauthorized],
+    [summary, widgetSettings, isAdmin, t, navigate, onUnauthorized],
   );
 
   const toolbar = dashboard ? (
@@ -309,6 +324,7 @@ export default function DashboardPage({ onUnauthorized }: Props) {
               : null
           }
           template={dashboard.template}
+          isAdmin={isAdmin}
           onChange={(id, values) => {
             dashboard.updateTemplate((template) => setWidgetSettings(template, id, values));
             // A list showing more or fewer rows, or losing its "See more", grows or shrinks to fit.
@@ -322,6 +338,7 @@ export default function DashboardPage({ onUnauthorized }: Props) {
           open={customize !== null}
           initialSection={customize ?? "templates"}
           dashboard={dashboard}
+          isAdmin={isAdmin}
           onClose={() => setCustomize(null)}
         />
       )}

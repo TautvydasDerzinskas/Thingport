@@ -185,16 +185,28 @@ export function setLayout(
   };
 }
 
-/** A widget in a panel of its own, at the bottom of every layout. */
-export function addWidget(template: DashboardTemplate, id: DashboardWidgetId): DashboardTemplate {
+/** The highest spot, then the leftmost, where a w × h panel fits without overlapping any other. */
+export function firstFit(items: DashboardGridItem[], w: number, h: number, cols: number): { x: number; y: number } {
+  const width = Math.min(w, cols);
+  for (let y = 0; ; y++)
+    for (let x = 0; x + width <= cols; x++)
+      if (items.every((p) => x >= p.x + p.w || p.x >= x + width || y >= p.y + p.h || p.y >= y + h)) return { x, y };
+}
+
+/** A widget in a panel of its own, in the first free spot it fits in each layout: a gap if there's one, else below. */
+export function addWidget(
+  template: DashboardTemplate,
+  id: DashboardWidgetId,
+  panelId: string = newId(),
+): DashboardTemplate {
   if (templateWidgets(template).has(id)) return template;
-  const panel: DashboardPanel = { id: newId(), widgets: [id] };
+  const panel: DashboardPanel = { id: panelId, widgets: [id] };
   const layouts: DashboardTemplate["layouts"] = {};
   for (const [breakpoint, items] of Object.entries(template.layouts) as [DashboardBreakpoint, DashboardGridItem[]][]) {
     const cols = colsOf(breakpoint);
     const wide = defaultItem(panel, 0);
     const item = cols === 12 ? wide : fitLayout([wide], cols)[0];
-    layouts[breakpoint] = [...items, { ...item, y: bottomOf(items) }];
+    layouts[breakpoint] = [...items, { ...item, ...firstFit(items, item.w, item.h, cols) }];
   }
   return { ...template, panels: [...template.panels, panel], layouts };
 }
@@ -303,7 +315,10 @@ export function setWidgetSettings(
   const widget = widgetById(id);
   const changed = Object.fromEntries(
     (widget?.settings ?? [])
-      .filter((setting) => values[setting.key] !== undefined && values[setting.key] !== setting.default)
+      .filter(
+        (setting) =>
+          values[setting.key] !== undefined && JSON.stringify(values[setting.key]) !== JSON.stringify(setting.default),
+      )
       .map((setting) => [setting.key, values[setting.key]]),
   );
   const { [id]: _previous, ...others } = template.settings ?? {};

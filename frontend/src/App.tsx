@@ -163,7 +163,7 @@ function AppShell({
       onThemeChange={onThemeChange}
     >
       <Routes>
-        <Route path="/" element={<DashboardPage onUnauthorized={onUnauthorized} />} />
+        <Route path="/" element={<DashboardPage onUnauthorized={onUnauthorized} isAdmin={isAdmin} />} />
         <Route
           path="/models"
           element={

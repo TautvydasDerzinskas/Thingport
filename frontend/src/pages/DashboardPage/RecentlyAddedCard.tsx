@@ -19,7 +19,7 @@ type Props = {
   showMore: boolean;
 };
 
-function relativeTime(iso: string, t: (key: string, opts?: Record<string, unknown>) => string): string {
+export function relativeTime(iso: string, t: (key: string, opts?: Record<string, unknown>) => string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
   const minutes = Math.round(diffMs / 60_000);
   if (minutes < 1) return t("notifications.justNow");

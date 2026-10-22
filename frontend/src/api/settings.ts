@@ -85,7 +85,11 @@ export type DashboardWidgetId =
   | "clock"
   | "weather"
   | "featuredModel"
-  | "activityHeatmap";
+  | "activityHeatmap"
+  | "rss"
+  | "cpu"
+  | "uptime"
+  | "launcher";
 /** Where the dashboard's weather is for; "device" came from the browser, "manual" from a search. */
 export type WeatherLocation = { lat: number; lon: number; name: string | null; source: "device" | "manual" };
 // Kept in sync by hand with the backend's DASHBOARD_LAYOUTS.
@@ -113,7 +117,7 @@ export type DashboardTemplate = {
   /** Each widget's options that differ from its defaults. */
   settings?: Partial<Record<DashboardWidgetId, WidgetSettingValues>>;
 };
-export type WidgetSettingValues = Record<string, string | number | boolean>;
+export type WidgetSettingValues = Record<string, string | number | boolean | string[] | Record<string, string>[]>;
 export type DashboardConfig = {
   active: string;
   templates: DashboardTemplate[];

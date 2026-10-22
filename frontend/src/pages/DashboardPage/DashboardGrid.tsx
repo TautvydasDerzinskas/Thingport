@@ -41,6 +41,9 @@ const fadeIn = keyframes`
 // Empty rows drawn below the panels while editing, so there's somewhere to drag one to.
 const SPARE_ROWS = 3;
 const GRID_DROP_ID = "grid";
+// How long a fit keeps following content that loads after it, and how often it looks.
+const FIT_FOLLOW_MS = 4000;
+const FIT_FOLLOW_STEP_MS = 300;
 
 // A chip over a panel merges into it; anywhere else on the grid it means "give it a panel of its own".
 const panelFirst: CollisionDetection = (args) => {
@@ -115,23 +118,34 @@ export default function DashboardGrid({
     markArranged();
     onChange((current) => setLayout(current, breakpoint.id, items));
   };
-  // Sizes a panel to its content a frame after the change that asked, once it has rendered. Each ask is handled
-  // once, however often the layout changes meanwhile.
-  const fitted = React.useRef<typeof fitRequest>(null);
+  // Sizes a panel to its content once the change that asked has rendered, and keeps at it a few seconds: content that
+  // loads afterwards, like a feed or a status check, changes the height again. Reads the newest layout through a
+  // ref, so a resize it makes doesn't restart it.
+  const latest = React.useRef({ layout, cols, scaledMin, onChange, breakpoint: breakpoint.id });
   React.useEffect(() => {
-    if (!fitRequest || fitted.current === fitRequest) return;
-    const frame = window.requestAnimationFrame(() => {
-      fitted.current = fitRequest;
+    latest.current = { layout, cols, scaledMin, onChange, breakpoint: breakpoint.id };
+  });
+  React.useEffect(() => {
+    if (!fitRequest) return;
+    const fit = () => {
+      const { layout: current, cols: columns, scaledMin: minOf, onChange: change, breakpoint: at } = latest.current;
       const element = containerRef.current?.querySelector<HTMLElement>(`[data-panel="${fitRequest.panelId}"]`);
-      const item = layout.find((cell) => cell.i === fitRequest.panelId);
+      const item = current.find((cell) => cell.i === fitRequest.panelId);
       if (!element || !item) return;
       const needed = rowsFor(naturalHeight(element));
       if (needed === item.h) return;
-      const items = nudgeLayout(layout, item.i, 0, needed - item.h, true, cols, scaledMin(item.i));
-      onChange((current) => setLayout(current, breakpoint.id, items));
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [fitRequest, layout, cols, scaledMin, onChange, breakpoint.id, containerRef]);
+      const items = nudgeLayout(current, item.i, 0, needed - item.h, true, columns, minOf(item.i));
+      change((saved) => setLayout(saved, at, items));
+    };
+    const frame = window.requestAnimationFrame(fit);
+    const timer = window.setInterval(fit, FIT_FOLLOW_STEP_MS);
+    const stop = window.setTimeout(() => window.clearInterval(timer), FIT_FOLLOW_MS);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearInterval(timer);
+      window.clearTimeout(stop);
+    };
+  }, [fitRequest, containerRef]);
 
   const onArranged = (items: Layout, from: LayoutItem | null, to: LayoutItem | null) => {
     markArranged();

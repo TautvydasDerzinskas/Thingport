@@ -14,6 +14,10 @@ import StarIcon from "@mui/icons-material/Star";
 import PublicIcon from "@mui/icons-material/Public";
 import ThreeDRotationIcon from "@mui/icons-material/ThreeDRotation";
 import InsightsIcon from "@mui/icons-material/Insights";
+import RssFeedIcon from "@mui/icons-material/RssFeed";
+import MemoryIcon from "@mui/icons-material/Memory";
+import MonitorHeartOutlinedIcon from "@mui/icons-material/MonitorHeartOutlined";
+import AppsIcon from "@mui/icons-material/Apps";
 import { dashboardApi, type DashboardSummary } from "../../api/dashboard";
 import type { DashboardWidgetId, WidgetSettingValues } from "../../api/settings";
 import CountCard from "./CountCard";
@@ -25,13 +29,17 @@ import ClockCard from "./ClockCard";
 import WeatherCard from "./WeatherCard";
 import FeaturedModelCard from "./FeaturedModelCard";
 import ActivityHeatmapCard from "./ActivityHeatmapCard";
+import RssCard from "./RssCard";
+import CpuCard from "./CpuCard";
+import UptimeCard from "./UptimeCard";
+import LauncherCard, { type LauncherIconStyle } from "./LauncherCard";
 import type { DashboardSkeleton } from "./DashboardCardSkeleton";
 import type { PanelSketchKind } from "./PanelSketch";
 
 export type WidgetSize = { w: number; h: number; minW: number; minH: number };
 
 /** One of a widget's options, in its settings dialog. Values are kept as strings or booleans, so they store as-is. */
-export type WidgetSetting =
+export type WidgetSetting = (
   | {
       key: string;
       kind: "choice";
@@ -40,14 +48,32 @@ export type WidgetSetting =
       options: { value: string; label?: string; labelKey?: string }[];
       default: string;
     }
-  | { key: string; kind: "toggle"; labelKey: string; default: boolean };
+  | { key: string; kind: "toggle"; labelKey: string; default: boolean }
+  | {
+      key: string;
+      kind: "urls";
+      labelKey: string;
+      /** Shown in the empty field, e.g. an example feed address. */
+      placeholderKey: string;
+      max: number;
+      default: string[];
+    }
+  | { key: string; kind: "links"; labelKey: string; max: number; default: LauncherLink[] }
+) & {
+  /** Offered to admins only. */
+  adminOnly?: boolean;
+};
 
 /** Every option of a widget, the user's choice or the default. */
-export type ResolvedSettings = Record<string, string | boolean>;
+export type ResolvedSettings = Record<string, string | boolean | string[] | LauncherLink[]>;
+
+/** A launcher item. `icon` is an image address or a path on Thingport itself; empty tries the site's own icon. */
+export type LauncherLink = { name: string; url: string; icon: string };
 
 type WidgetContext = {
   summary: DashboardSummary;
   settings: ResolvedSettings;
+  isAdmin: boolean;
   t: TFunction;
   navigate: NavigateFunction;
   onUnauthorized?: () => void;
@@ -68,6 +94,8 @@ export type DashboardWidget = {
   skeleton?: (settings: ResolvedSettings) => DashboardSkeleton;
   /** What the user can change about it, from the cog on its panel while editing. */
   settings?: WidgetSetting[];
+  /** Offered to admins only, e.g. one showing the server's own stats. */
+  adminOnly?: boolean;
   render: (ctx: WidgetContext) => React.ReactNode;
 };
 
@@ -319,6 +347,134 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
       />
     ),
   },
+  {
+    id: "rss",
+    labelKey: "dashboard.rss.title",
+    icon: <RssFeedIcon fontSize="small" />,
+    size: { w: 4, h: 5, minW: 3, minH: 3 },
+    sketch: "rss",
+    settings: [
+      {
+        key: "feeds",
+        kind: "urls",
+        labelKey: "dashboard.settings.feeds",
+        placeholderKey: "dashboard.settings.feedPlaceholder",
+        max: 10,
+        default: [],
+      },
+      LIST_SETTINGS[0],
+      { key: "showDates", kind: "toggle", labelKey: "dashboard.settings.showDates", default: true },
+    ],
+    render: ({ settings, onUnauthorized }) => (
+      <RssCard
+        onUnauthorized={onUnauthorized}
+        feeds={settings.feeds as string[]}
+        count={Number(settings.count)}
+        showDates={settings.showDates === true}
+      />
+    ),
+  },
+  {
+    id: "cpu",
+    labelKey: "dashboard.cpu.title",
+    icon: <MemoryIcon fontSize="small" />,
+    size: { w: 4, h: 4, minW: 3, minH: 3 },
+    sketch: "cpu",
+    // It describes the machine Thingport runs on.
+    adminOnly: true,
+    settings: [
+      { key: "showLoad", kind: "toggle", labelKey: "dashboard.settings.showLoad", default: true },
+      { key: "showMemory", kind: "toggle", labelKey: "dashboard.settings.showMemory", default: true },
+    ],
+    render: ({ settings, onUnauthorized }) => (
+      <CpuCard
+        showLoad={settings.showLoad === true}
+        showMemory={settings.showMemory === true}
+        onUnauthorized={onUnauthorized}
+      />
+    ),
+  },
+  {
+    id: "uptime",
+    labelKey: "dashboard.uptime.title",
+    icon: <MonitorHeartOutlinedIcon fontSize="small" />,
+    size: { w: 4, h: 4, minW: 3, minH: 2 },
+    sketch: "uptime",
+    settings: [
+      {
+        key: "urls",
+        kind: "urls",
+        labelKey: "dashboard.settings.monitors",
+        placeholderKey: "dashboard.settings.monitorPlaceholder",
+        max: 20,
+        default: [],
+      },
+      // How long the server has been up describes the host, so only admins get it.
+      { key: "showServer", kind: "toggle", labelKey: "dashboard.settings.showServer", default: true, adminOnly: true },
+    ],
+    render: ({ settings, isAdmin, onUnauthorized }) => (
+      <UptimeCard
+        urls={settings.urls as string[]}
+        showServer={isAdmin && settings.showServer === true}
+        onUnauthorized={onUnauthorized}
+      />
+    ),
+  },
+  {
+    id: "launcher",
+    labelKey: "dashboard.launcher.title",
+    icon: <AppsIcon fontSize="small" />,
+    size: { w: 4, h: 2, minW: 2, minH: 2 },
+    sketch: "launcher",
+    settings: [
+      {
+        key: "items",
+        kind: "links",
+        labelKey: "dashboard.settings.links",
+        max: 100,
+        default: [
+          { name: "Thingport", url: "https://thingport.net", icon: "/icon-192.png" },
+          {
+            name: "GitHub",
+            url: "https://github.com/TautvydasDerzinskas/Thingport",
+            icon: "https://github.com/favicon.ico",
+          },
+        ],
+      },
+      {
+        key: "iconStyle",
+        kind: "choice",
+        labelKey: "dashboard.settings.iconStyle",
+        options: [
+          { value: "colored", labelKey: "dashboard.settings.iconColored" },
+          { value: "mono", labelKey: "dashboard.settings.iconMono" },
+          { value: "grayed", labelKey: "dashboard.settings.iconGrayed" },
+        ],
+        default: "colored",
+      },
+      {
+        key: "limit",
+        kind: "choice",
+        labelKey: "dashboard.settings.limit",
+        options: [
+          { value: "8", label: "8" },
+          { value: "12", label: "12" },
+          { value: "24", label: "24" },
+          { value: "all", labelKey: "dashboard.settings.limitAll" },
+        ],
+        default: "12",
+      },
+      { key: "search", kind: "toggle", labelKey: "dashboard.settings.search", default: false },
+    ],
+    render: ({ settings }) => (
+      <LauncherCard
+        items={settings.items as LauncherLink[]}
+        iconStyle={settings.iconStyle as LauncherIconStyle}
+        limit={settings.limit === "all" ? null : Number(settings.limit)}
+        search={settings.search === true}
+      />
+    ),
+  },
 ];
 
 const BY_ID = new Map(DASHBOARD_WIDGETS.map((widget) => [widget.id, widget]));
@@ -332,14 +488,50 @@ export function resolveSettings(widget: DashboardWidget, stored: WidgetSettingVa
   const resolved: ResolvedSettings = {};
   for (const setting of widget.settings ?? []) {
     const value = stored?.[setting.key];
-    resolved[setting.key] =
-      setting.kind === "toggle"
-        ? typeof value === "boolean"
-          ? value
-          : setting.default
-        : setting.options.some((option) => option.value === value)
-          ? (value as string)
-          : setting.default;
+    if (setting.kind === "toggle") resolved[setting.key] = typeof value === "boolean" ? value : setting.default;
+    else if (setting.kind === "links")
+      resolved[setting.key] = Array.isArray(value)
+        ? value.flatMap((entry) => (typeof entry === "object" ? (cleanLink(entry) ?? []) : [])).slice(0, setting.max)
+        : setting.default;
+    else if (setting.kind === "urls")
+      resolved[setting.key] = Array.isArray(value)
+        ? [...new Set(value.filter((entry): entry is string => typeof entry === "string" && isWebUrl(entry)))].slice(
+            0,
+            setting.max,
+          )
+        : setting.default;
+    else
+      resolved[setting.key] = setting.options.some((option) => option.value === value)
+        ? (value as string)
+        : setting.default;
   }
   return resolved;
+}
+
+/** A stored launcher item, or null when it isn't one: no web address, or a name and icon that won't do. */
+export function cleanLink(entry: Record<string, string>): LauncherLink | null {
+  const url = typeof entry.url === "string" ? entry.url.trim() : "";
+  if (!isWebUrl(url)) return null;
+  const icon = typeof entry.icon === "string" ? entry.icon.trim() : "";
+  return {
+    name: (typeof entry.name === "string" && entry.name.trim()) || new URL(url).host,
+    url,
+    // An image on the web, or one Thingport serves itself; never a script or another scheme.
+    icon: isWebUrl(icon) || /^\/(?!\/)/.test(icon) ? icon : "",
+  };
+}
+
+/** Only http(s) addresses: what the server will fetch for a feed or a monitor. */
+export function isWebUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+/** Whether the user may use a widget, or one of its options. */
+export function allowed(item: { adminOnly?: boolean }, isAdmin: boolean): boolean {
+  return !item.adminOnly || isAdmin;
 }

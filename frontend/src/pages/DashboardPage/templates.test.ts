@@ -4,6 +4,7 @@ import {
   DASHBOARD_PRESETS,
   addWidget,
   detachWidget,
+  firstFit,
   initialConfig,
   mergePanels,
   offerNewPresets,
@@ -75,7 +76,8 @@ describe("resolveLayout", () => {
     let template = preset("minimal");
     const md = resolveLayout(template, "md");
     template = setLayout(template, "md", md);
-    template = addWidget(template, "weather");
+    // In the template but in no saved layout, as a panel added on another device's breakpoint would be.
+    template = { ...template, panels: [...template.panels, { id: "weather-panel", widgets: ["weather"] }] };
     const resolved = resolveLayout(template, "md");
     const weather = resolved.find((item) => item.i === panelOf(template, "weather").id)!;
     expect(weather.y).toBeGreaterThanOrEqual(Math.max(...md.map((item) => item.y + item.h)));
@@ -233,5 +235,75 @@ describe("setWidgetSettings", () => {
       count: "5",
       showMore: true,
     });
+  });
+});
+
+describe("list settings", () => {
+  it("keeps only web addresses, once each, up to the most a panel takes", () => {
+    const rss = widgetById("rss")!;
+    const resolved = resolveSettings(rss, {
+      feeds: ["https://a.example/feed", "javascript:alert(1)", "https://a.example/feed", "http://192.168.1.5/rss"],
+    });
+    expect(resolved.feeds).toEqual(["https://a.example/feed", "http://192.168.1.5/rss"]);
+    expect(resolveSettings(rss, { feeds: "not a list" }).feeds).toEqual([]);
+  });
+
+  it("stores a list only when it isn't the empty default", () => {
+    let template = preset("minimal");
+    template = setWidgetSettings(template, "uptime", { urls: [], showServer: true });
+    expect(template.settings).toEqual({});
+    template = setWidgetSettings(template, "uptime", { urls: ["http://nas.local"], showServer: true });
+    expect(template.settings).toEqual({ uptime: { urls: ["http://nas.local"] } });
+  });
+});
+
+describe("firstFit", () => {
+  it("fills the highest gap a panel fits, and goes below when none does", () => {
+    const items: DashboardGridItem[] = [
+      { i: "a", x: 0, y: 0, w: 4, h: 4 },
+      { i: "b", x: 8, y: 0, w: 4, h: 2 },
+    ];
+    expect(firstFit(items, 4, 3, 12)).toEqual({ x: 4, y: 0 });
+    expect(firstFit(items, 4, 2, 12)).toEqual({ x: 4, y: 0 });
+    expect(firstFit(items, 12, 2, 12)).toEqual({ x: 0, y: 4 });
+  });
+
+  it("puts a panel added to a preset in its first gap rather than at the bottom", () => {
+    const template = addWidget(preset("minimal"), "rss");
+    const lg = resolveLayout(template, "lg");
+    const rss = lg.find((cell) => cell.i === panelOf(template, "rss").id)!;
+    // Minimal ends at row 7; nothing above has room for a 4-by-5 panel, so it starts there, on the left.
+    expect(rss).toMatchObject({ x: 0, y: 7 });
+    expectNoOverlap(lg);
+  });
+});
+
+describe("launcher links", () => {
+  it("starts with Thingport and its repository, and keeps only web links with safe icons", () => {
+    const launcher = widgetById("launcher")!;
+    expect((resolveSettings(launcher, undefined).items as { name: string }[]).map((item) => item.name)).toEqual([
+      "Thingport",
+      "GitHub",
+    ]);
+    const items = resolveSettings(launcher, {
+      items: [
+        { name: "", url: "http://nas.local:5000", icon: "javascript:alert(1)" },
+        { name: "Bad", url: "javascript:alert(1)", icon: "" },
+        { name: "Printer", url: "http://192.168.1.30", icon: "/icon-192.png" },
+      ],
+    }).items;
+    expect(items).toEqual([
+      { name: "nas.local:5000", url: "http://nas.local:5000", icon: "" },
+      { name: "Printer", url: "http://192.168.1.30", icon: "/icon-192.png" },
+    ]);
+  });
+
+  it("stores the list once the user changes it, even to empty", () => {
+    let template = preset("minimal");
+    const launcher = resolveSettings(widgetById("launcher")!, undefined);
+    template = setWidgetSettings(template, "launcher", launcher);
+    expect(template.settings).toEqual({});
+    template = setWidgetSettings(template, "launcher", { ...launcher, items: [] });
+    expect(template.settings).toEqual({ launcher: { items: [] } });
   });
 });

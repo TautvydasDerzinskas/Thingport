@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -7,21 +8,57 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
+import IconButton from "@mui/material/IconButton";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import CloseIcon from "@mui/icons-material/Close";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { DashboardTemplate, DashboardWidgetId } from "../../api/settings";
 import Segmented from "../../components/controls/Segmented";
-import { resolveSettings, widgetById, type ResolvedSettings } from "./widgets";
+import {
+  allowed,
+  cleanLink,
+  isWebUrl,
+  resolveSettings,
+  widgetById,
+  type LauncherLink,
+  type ResolvedSettings,
+} from "./widgets";
+import { LauncherIcon, type LauncherIconStyle } from "./LauncherCard";
 
 type Props = {
   /** The panel's widgets that have options; null while closed. */
   widgets: DashboardWidgetId[] | null;
   template: DashboardTemplate;
+  /** Admin-only options are left out for everyone else. */
+  isAdmin: boolean;
   onChange: (id: DashboardWidgetId, values: ResolvedSettings) => void;
   onClose: () => void;
 };
 
 /** A panel's options. Each applies straight away, so the panel behind updates as the user goes. */
-export default function PanelSettingsDialog({ widgets, template, onChange, onClose }: Props) {
+export default function PanelSettingsDialog({ widgets, template, isAdmin, onChange, onClose }: Props) {
   const { t } = useTranslation("app");
   const shown = (widgets ?? []).flatMap((id) => widgetById(id) ?? []);
   const resolved = (id: DashboardWidgetId) => resolveSettings(widgetById(id)!, template.settings?.[id]);
@@ -38,7 +75,8 @@ export default function PanelSettingsDialog({ widgets, template, onChange, onClo
         <Stack spacing={2.5}>
           {shown.map((widget) => {
             const values = resolved(widget.id);
-            const set = (key: string, value: string | boolean) => onChange(widget.id, { ...values, [key]: value });
+            const set = (key: string, value: string | boolean | string[] | LauncherLink[]) =>
+              onChange(widget.id, { ...values, [key]: value });
             return (
               <Stack key={widget.id} spacing={1.5}>
                 {shown.length > 1 && (
@@ -49,39 +87,61 @@ export default function PanelSettingsDialog({ widgets, template, onChange, onClo
                     </Typography>
                   </Stack>
                 )}
-                {widget.settings!.map((setting) => (
-                  <Box
-                    key={setting.key}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: 2,
-                      minHeight: 38,
-                    }}
-                  >
-                    <Typography variant="body2" id={`${widget.id}-${setting.key}`}>
-                      {t(setting.labelKey)}
-                    </Typography>
-                    {setting.kind === "choice" ? (
-                      <Segmented
+                {widget
+                  .settings!.filter((setting) => allowed(setting, isAdmin))
+                  .map((setting) =>
+                    setting.kind === "links" ? (
+                      <LinksEditor
+                        key={setting.key}
                         label={t(setting.labelKey)}
-                        value={values[setting.key] as string}
-                        options={setting.options.map((option) => ({
-                          value: option.value,
-                          label: option.label ?? t(option.labelKey ?? ""),
-                        }))}
-                        onChange={(value) => set(setting.key, value)}
+                        max={setting.max}
+                        links={values[setting.key] as LauncherLink[]}
+                        iconStyle={(values.iconStyle as LauncherIconStyle) ?? "colored"}
+                        onChange={(links) => set(setting.key, links)}
+                      />
+                    ) : setting.kind === "urls" ? (
+                      <UrlListEditor
+                        key={setting.key}
+                        label={t(setting.labelKey)}
+                        placeholder={t(setting.placeholderKey)}
+                        max={setting.max}
+                        urls={values[setting.key] as string[]}
+                        onChange={(urls) => set(setting.key, urls)}
                       />
                     ) : (
-                      <Switch
-                        checked={values[setting.key] === true}
-                        onChange={(event) => set(setting.key, event.target.checked)}
-                        slotProps={{ input: { "aria-labelledby": `${widget.id}-${setting.key}` } }}
-                      />
-                    )}
-                  </Box>
-                ))}
+                      <Box
+                        key={setting.key}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 2,
+                          minHeight: 38,
+                        }}
+                      >
+                        <Typography variant="body2" id={`${widget.id}-${setting.key}`}>
+                          {t(setting.labelKey)}
+                        </Typography>
+                        {setting.kind === "choice" ? (
+                          <Segmented
+                            label={t(setting.labelKey)}
+                            value={values[setting.key] as string}
+                            options={setting.options.map((option) => ({
+                              value: option.value,
+                              label: option.label ?? t(option.labelKey ?? ""),
+                            }))}
+                            onChange={(value) => set(setting.key, value)}
+                          />
+                        ) : (
+                          <Switch
+                            checked={values[setting.key] === true}
+                            onChange={(event) => set(setting.key, event.target.checked)}
+                            slotProps={{ input: { "aria-labelledby": `${widget.id}-${setting.key}` } }}
+                          />
+                        )}
+                      </Box>
+                    ),
+                  )}
               </Stack>
             );
           })}
@@ -100,5 +160,307 @@ export default function PanelSettingsDialog({ widgets, template, onChange, onClo
         </Button>
       </DialogActions>
     </Dialog>
+  );
+}
+
+/** A list of addresses, e.g. feeds or services to watch: each removable, and a field to add another. */
+function UrlListEditor({
+  label,
+  placeholder,
+  max,
+  urls,
+  onChange,
+}: {
+  label: string;
+  placeholder: string;
+  max: number;
+  urls: string[];
+  onChange: (urls: string[]) => void;
+}) {
+  const { t } = useTranslation("app");
+  const [draft, setDraft] = useState("");
+  const value = draft.trim();
+  // An address without a scheme gets https, as a browser's address bar would.
+  const candidate = value && !/^[a-z][a-z\d+.-]*:/i.test(value) ? `https://${value}` : value;
+  const invalid = value !== "" && !isWebUrl(candidate);
+  const duplicate = urls.includes(candidate);
+  const full = urls.length >= max;
+
+  const add = () => {
+    if (!value || invalid || duplicate || full) return;
+    onChange([...urls, candidate]);
+    setDraft("");
+  };
+
+  return (
+    <Box>
+      <Typography variant="body2" sx={{ mb: 1 }}>
+        {label}
+      </Typography>
+      {urls.length > 0 && (
+        <List dense disablePadding sx={{ mb: 1, border: 1, borderColor: "divider", borderRadius: 1 }}>
+          {urls.map((url) => (
+            <ListItem
+              key={url}
+              sx={{ pr: 6 }}
+              secondaryAction={
+                <Tooltip title={t("dashboard.settings.removeUrl")}>
+                  <IconButton
+                    edge="end"
+                    size="small"
+                    aria-label={`${t("dashboard.settings.removeUrl")}: ${url}`}
+                    onClick={() => onChange(urls.filter((other) => other !== url))}
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              }
+            >
+              <Typography variant="body2" noWrap title={url}>
+                {url}
+              </Typography>
+            </ListItem>
+          ))}
+        </List>
+      )}
+      <Box
+        component="form"
+        onSubmit={(event: React.FormEvent) => {
+          event.preventDefault();
+          add();
+        }}
+        sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}
+      >
+        <TextField
+          size="small"
+          fullWidth
+          value={draft}
+          disabled={full}
+          placeholder={full ? t("dashboard.settings.urlsFull", { max }) : placeholder}
+          onChange={(event) => setDraft(event.target.value)}
+          error={invalid || duplicate}
+          helperText={
+            invalid ? t("dashboard.settings.urlInvalid") : duplicate ? t("dashboard.settings.urlDuplicate") : undefined
+          }
+          slotProps={{ htmlInput: { "aria-label": label, inputMode: "url" } }}
+        />
+        <Button
+          type="submit"
+          variant="outlined"
+          disabled={!value || invalid || duplicate || full}
+          sx={{ flexShrink: 0 }}
+        >
+          {t("dashboard.settings.addUrl")}
+        </Button>
+      </Box>
+    </Box>
+  );
+}
+
+/** Adds `https://` to an address typed without a scheme, as a browser's address bar would. */
+const withScheme = (value: string) => (value && !/^[a-z][a-z\d+.-]*:/i.test(value) ? `https://${value}` : value);
+
+/** The launcher's items: dragged into order, edited or removed in the list, and added with the form below it. */
+function LinksEditor({
+  label,
+  max,
+  links,
+  iconStyle,
+  onChange,
+}: {
+  label: string;
+  max: number;
+  links: LauncherLink[];
+  iconStyle: LauncherIconStyle;
+  onChange: (links: LauncherLink[]) => void;
+}) {
+  const { t } = useTranslation("app");
+  const [editing, setEditing] = useState<number | null>(null);
+  const [name, setName] = useState("");
+  const [url, setUrl] = useState("");
+  const [icon, setIcon] = useState("");
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const ids = links.map((_, index) => String(index));
+  const fullUrl = withScheme(url.trim());
+  const urlInvalid = url.trim() !== "" && !isWebUrl(fullUrl);
+  const iconValue = icon.trim();
+  const iconInvalid = iconValue !== "" && !isWebUrl(withScheme(iconValue)) && !/^\/(?!\/)/.test(iconValue);
+  const full = links.length >= max && editing === null;
+  const draft = cleanLink({
+    name,
+    url: fullUrl,
+    icon: iconValue.startsWith("/") ? iconValue : withScheme(iconValue),
+  });
+
+  const reset = () => {
+    setEditing(null);
+    setName("");
+    setUrl("");
+    setIcon("");
+  };
+  const save = () => {
+    if (!draft || urlInvalid || iconInvalid || full) return;
+    onChange(editing === null ? [...links, draft] : links.map((link, index) => (index === editing ? draft : link)));
+    reset();
+  };
+  const onDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+    onChange(arrayMove(links, Number(active.id), Number(over.id)));
+    reset();
+  };
+
+  return (
+    <Box>
+      <Typography variant="body2" sx={{ mb: 1 }}>
+        {label}
+      </Typography>
+      {links.length > 0 && (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+          <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+            <List dense disablePadding sx={{ mb: 1.5, border: 1, borderColor: "divider", borderRadius: 1 }}>
+              {links.map((link, index) => (
+                <SortableLink
+                  key={ids[index]}
+                  id={ids[index]}
+                  link={link}
+                  iconStyle={iconStyle}
+                  editing={editing === index}
+                  onEdit={() => {
+                    setEditing(index);
+                    setName(link.name);
+                    setUrl(link.url);
+                    setIcon(link.icon);
+                  }}
+                  onRemove={() => {
+                    onChange(links.filter((_, other) => other !== index));
+                    reset();
+                  }}
+                />
+              ))}
+            </List>
+          </SortableContext>
+        </DndContext>
+      )}
+      <Box
+        component="form"
+        onSubmit={(event: React.FormEvent) => {
+          event.preventDefault();
+          save();
+        }}
+        sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1 }}
+      >
+        <TextField
+          size="small"
+          label={t("dashboard.settings.linkName")}
+          value={name}
+          disabled={full}
+          onChange={(event) => setName(event.target.value)}
+          slotProps={{ htmlInput: { maxLength: 60 } }}
+        />
+        <TextField
+          size="small"
+          label={t("dashboard.settings.linkUrl")}
+          placeholder="https://"
+          value={url}
+          disabled={full}
+          onChange={(event) => setUrl(event.target.value)}
+          error={urlInvalid}
+          helperText={urlInvalid ? t("dashboard.settings.urlInvalid") : undefined}
+          slotProps={{ htmlInput: { inputMode: "url" } }}
+        />
+        <TextField
+          size="small"
+          label={t("dashboard.settings.linkIcon")}
+          placeholder={t("dashboard.settings.linkIconPlaceholder")}
+          value={icon}
+          disabled={full}
+          onChange={(event) => setIcon(event.target.value)}
+          error={iconInvalid}
+          helperText={iconInvalid ? t("dashboard.settings.urlInvalid") : undefined}
+          sx={{ gridColumn: { sm: "1 / -1" } }}
+          slotProps={{ htmlInput: { inputMode: "url" } }}
+        />
+        <Box sx={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: 1 }}>
+          {draft && !urlInvalid && !iconInvalid && (
+            <LauncherIcon key={`${draft.url} ${draft.icon}`} item={draft} iconStyle={iconStyle} size={32} />
+          )}
+          <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>
+            {full ? t("dashboard.settings.linksFull", { max }) : draft ? draft.name : ""}
+          </Typography>
+          {editing !== null && <Button onClick={reset}>{t("dashboard.settings.cancelEdit")}</Button>}
+          <Button type="submit" variant="outlined" disabled={!draft || urlInvalid || iconInvalid || full}>
+            {editing === null ? t("dashboard.settings.addUrl") : t("dashboard.settings.saveLink")}
+          </Button>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+function SortableLink({
+  id,
+  link,
+  iconStyle,
+  editing,
+  onEdit,
+  onRemove,
+}: {
+  id: string;
+  link: LauncherLink;
+  iconStyle: LauncherIconStyle;
+  editing: boolean;
+  onEdit: () => void;
+  onRemove: () => void;
+}) {
+  const { t } = useTranslation("app");
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+  });
+  return (
+    <ListItem
+      ref={setNodeRef}
+      sx={{
+        gap: 1,
+        pl: 0.5,
+        transform: CSS.Transform.toString(transform),
+        transition,
+        position: "relative",
+        zIndex: isDragging ? 1 : "auto",
+        bgcolor: isDragging || editing ? "action.selected" : "background.paper",
+      }}
+    >
+      <IconButton
+        ref={setActivatorNodeRef}
+        size="small"
+        aria-label={t("dashboard.settings.reorderLink", { name: link.name })}
+        sx={{ cursor: "grab", touchAction: "none" }}
+        {...attributes}
+        {...listeners}
+      >
+        <DragIndicatorIcon fontSize="small" />
+      </IconButton>
+      <LauncherIcon key={`${link.url} ${link.icon}`} item={link} iconStyle={iconStyle} size={28} />
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography variant="body2" noWrap>
+          {link.name}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" noWrap component="div" title={link.url}>
+          {link.url}
+        </Typography>
+      </Box>
+      <Tooltip title={t("dashboard.settings.editLink")}>
+        <IconButton size="small" aria-label={`${t("dashboard.settings.editLink")}: ${link.name}`} onClick={onEdit}>
+          <EditOutlinedIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+      <Tooltip title={t("dashboard.settings.removeUrl")}>
+        <IconButton size="small" aria-label={`${t("dashboard.settings.removeUrl")}: ${link.name}`} onClick={onRemove}>
+          <CloseIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+    </ListItem>
   );
 }
