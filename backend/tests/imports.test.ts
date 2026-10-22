@@ -3,11 +3,13 @@ import request from "supertest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import JSZip from "jszip";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { checkImportStatus, identifySourceModel, importPrintFromUrl } from "../src/services/importService";
 import { createJob, getActiveJob, updateJob } from "../src/services/importJobService";
 import { createNotification, listNotifications, markAllRead } from "../src/services/notificationService";
+import { extractZipEntriesToPrints, listZipEntries } from "../src/services/zipService";
 
 const app = createApp();
 let token: string;
@@ -338,6 +340,28 @@ describe("import job lock", () => {
 
     await updateJob(job.id, { status: "DONE" });
     expect(await getActiveJob(userId)).toBeNull();
+  });
+});
+
+describe("zip import", () => {
+  it("imports the entries it lists from a zip whose paths start with ./, as macOS tar -a writes them", async () => {
+    const zip = new JSZip();
+    zip.file("./Dotted/hull.stl", "solid hull endsolid");
+    zip.file("./Dotted/Parts/mast.stl", "solid mast endsolid");
+    const zipPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "thingport-test-")), "dotted.zip");
+    fs.writeFileSync(zipPath, await zip.generateAsync({ type: "nodebuffer" }));
+
+    const entries = (await listZipEntries(zipPath)).map((entry) => entry.path);
+    expect(entries).toEqual(["Dotted/Parts/mast.stl", "Dotted/hull.stl"]);
+
+    const { prints, failed } = await extractZipEntriesToPrints(userId, zipPath, entries, {});
+    expect(failed).toEqual([]);
+    const categories = await prisma.category.findMany({ where: { id: { in: prints.map((p) => p.categoryId!) } } });
+    const categoryName = (id: string | null) => categories.find((c) => c.id === id)?.name;
+    expect(prints.map((p) => [p.name, categoryName(p.categoryId)])).toEqual([
+      ["mast", "Parts"],
+      ["hull", "Dotted"],
+    ]);
   });
 });
 
