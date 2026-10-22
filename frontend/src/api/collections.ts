@@ -1,6 +1,6 @@
 import { authHeaders } from "../utils/auth";
 import { apiBase, assertOk, assertOkWithMessage, readErrorMessage } from "./client";
-import type { Print } from "./prints";
+import { BULK_LIMIT, type Print } from "./prints";
 
 export type SystemCollectionKey = "favorites" | "history";
 
@@ -54,6 +54,12 @@ export type CollectionMembership = {
   id: string;
   name: string;
   in_collection: boolean;
+};
+
+export type CollectionCount = {
+  id: string;
+  name: string;
+  count: number;
 };
 
 export type CollectionMergeResult = {
@@ -170,6 +176,25 @@ export const collectionsApi = {
     const res = await fetch(`${apiBase()}/print/${printId}/collections`, { headers: authHeaders() });
     assertOk(res, "Failed to list collections");
     return res.json();
+  },
+
+  /** Every real collection, with how many of `printIds` it holds. */
+  listForPrints: async (printIds: string[]): Promise<CollectionCount[]> => {
+    const byId = new Map<string, CollectionCount>();
+    for (let i = 0; i < printIds.length; i += BULK_LIMIT) {
+      const res = await fetch(`${apiBase()}/prints/collections`, {
+        method: "POST",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ print_ids: printIds.slice(i, i + BULK_LIMIT) }),
+      });
+      assertOk(res, "Failed to list collections");
+      for (const row of (await res.json()) as CollectionCount[]) {
+        const seen = byId.get(row.id);
+        if (seen) seen.count += row.count;
+        else byId.set(row.id, row);
+      }
+    }
+    return [...byId.values()];
   },
 
   bookmark: async (id: string): Promise<void> => {
