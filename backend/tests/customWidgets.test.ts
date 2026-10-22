@@ -2,7 +2,10 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
+import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
 import {
+  blockingLookup,
   hostAllowed,
   metadataHost,
   parseManifest,
@@ -76,13 +79,23 @@ describe("metadata", () => {
     expect(hostAllowed(new URL("http://nas.lan.example/"), hosts)).toBe(false);
   });
 
-  it("tells cloud metadata addresses from the LAN", async () => {
-    expect(await metadataHost("169.254.169.254")).toBe(true);
-    expect(await metadataHost("[fd00:ec2::254]")).toBe(true);
-    expect(await metadataHost("[::ffff:169.254.169.254]")).toBe(true);
-    expect(await metadataHost("metadata.google.internal")).toBe(true);
-    expect(await metadataHost("192.168.1.20")).toBe(false);
-    expect(await metadataHost("127.0.0.1")).toBe(false);
+  it("tells cloud metadata addresses from the LAN", () => {
+    expect(metadataHost("169.254.169.254")).toBe(true);
+    expect(metadataHost("[fd00:ec2::254]")).toBe(true);
+    expect(metadataHost("[::ffff:169.254.169.254]")).toBe(true);
+    expect(metadataHost("metadata.google.internal")).toBe(true);
+    expect(metadataHost("192.168.1.20")).toBe(false);
+    expect(metadataHost("127.0.0.1")).toBe(false);
+  });
+
+  it("refuses a name that resolves to a metadata address when connecting", async () => {
+    const resolvingTo = (address: string) =>
+      blockingLookup(((_host: string, _options: unknown, callback: (...args: unknown[]) => void) =>
+        callback(null, address, 4)) as never);
+    const run = (lookup: ReturnType<typeof blockingLookup>) =>
+      new Promise<NodeJS.ErrnoException | null>((resolve) => lookup("rebind.example", {}, (err) => resolve(err)));
+    expect((await run(resolvingTo("169.254.169.254")))?.code).toBe("WIDGET_HOST_BLOCKED");
+    expect(await run(resolvingTo("192.168.1.20"))).toBeNull();
   });
 });
 
@@ -192,6 +205,25 @@ describe("fetch through the server", () => {
       .send({ url: "http://169.254.169.254/latest/meta-data" });
     expect(refused.body.code).toBe("WIDGET_HOST_BLOCKED");
     expect(called).toBe(false);
+  });
+
+  it("connects to a declared host by name", async () => {
+    const server = createServer((_req, res) => res.end("up"));
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const host = `localhost:${(server.address() as AddressInfo).port}`;
+    try {
+      const saved = await request(app)
+        .put("/api/widgets")
+        .set(auth())
+        .send({ slug: "local", metadata: JSON.stringify({ name: "Local", hosts: [host] }), script: SCRIPT });
+      const res = await request(app)
+        .post(`/api/widgets/${saved.body.id}/fetch`)
+        .set(auth())
+        .send({ url: `http://${host}/` });
+      expect(res.body).toMatchObject({ status: 200, body: "up" });
+    } finally {
+      server.close();
+    }
   });
 
   it("takes a widget larger than the default body limit", async () => {

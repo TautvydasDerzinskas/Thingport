@@ -4,8 +4,9 @@
 // widgets off for the instance.
 
 import { createHash } from "node:crypto";
-import { lookup } from "node:dns/promises";
-import { BlockList, isIP } from "node:net";
+import { lookup as dnsLookup } from "node:dns";
+import { BlockList, isIP, type LookupFunction } from "node:net";
+import { Agent } from "undici";
 import { z } from "zod";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
@@ -232,17 +233,31 @@ function blockedAddress(address: string): boolean {
   return family !== 0 && BLOCKED_ADDRESSES.check(address, family === 4 ? "ipv4" : "ipv6");
 }
 
-/** Whether the host is, or resolves to, a metadata address. One that doesn't resolve is left for the fetch to fail. */
-export async function metadataHost(hostname: string): Promise<boolean> {
+/** Whether the host is a metadata address written out, or the name one goes by. Names resolving to one are refused
+ *  when connecting, by `blockingLookup`. */
+export function metadataHost(hostname: string): boolean {
   const bare = hostname.replace(/^\[|\]$/g, "");
-  if (isIP(bare)) return blockedAddress(bare);
-  if (bare.toLowerCase() === "metadata.google.internal") return true;
-  try {
-    return (await lookup(bare, { all: true })).some(({ address }) => blockedAddress(address));
-  } catch {
-    return false;
-  }
+  return isIP(bare) ? blockedAddress(bare) : bare.toLowerCase() === "metadata.google.internal";
 }
+
+const BLOCKED = "WIDGET_HOST_BLOCKED";
+
+/** A DNS lookup that fails on a metadata address. Used for the connection itself, so the address checked is the one
+ *  connected to, and a host can't resolve to something harmless for a check and to a metadata address after it. */
+export function blockingLookup(resolve: typeof dnsLookup = dnsLookup): LookupFunction {
+  return (hostname, options, callback) =>
+    resolve(hostname, options, (err, address, family) => {
+      const addresses = Array.isArray(address) ? address.map((entry) => entry.address) : [address];
+      if (!err && addresses.some(blockedAddress))
+        err = Object.assign(new Error(`${hostname} resolves to a cloud metadata address`), { code: BLOCKED });
+      callback(err, address as string, family as number);
+    });
+}
+
+const widgetDispatcher = new Agent({ connect: { lookup: blockingLookup() } });
+
+const blockedByLookup = (err: unknown): boolean =>
+  err instanceof Error && ((err as { code?: unknown }).code === BLOCKED || blockedByLookup(err.cause));
 
 // Headers the server sets or that would leak the browser's own session; a widget can't send them.
 const DROPPED_HEADERS = new Set(["host", "cookie", "content-length", "connection", "transfer-encoding"]);
@@ -260,8 +275,7 @@ export async function widgetFetch(
   if (url.protocol !== "http:" && url.protocol !== "https:") throw new HttpError(400, "Only http and https addresses");
   if (!hostAllowed(url, widget.manifest.hosts))
     throw new HttpError(403, `"${url.host}" isn't among the hosts this widget declares`, "WIDGET_HOST_NOT_DECLARED");
-  if (await metadataHost(url.hostname))
-    throw new HttpError(403, `"${url.host}" is a cloud metadata address`, "WIDGET_HOST_BLOCKED");
+  if (metadataHost(url.hostname)) throw new HttpError(403, `"${url.host}" is a cloud metadata address`, BLOCKED);
   const headers = Object.fromEntries(
     Object.entries(request.headers).filter(([name]) => !DROPPED_HEADERS.has(name.toLowerCase())),
   );
@@ -273,8 +287,10 @@ export async function widgetFetch(
       body: request.method === "GET" ? undefined : request.body,
       redirect: "manual",
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-    });
-  } catch {
+      dispatcher: widgetDispatcher,
+    } as RequestInit);
+  } catch (err) {
+    if (blockedByLookup(err)) throw new HttpError(403, `"${url.host}" is a cloud metadata address`, BLOCKED);
     throw new HttpError(502, `${url.host} didn't answer`, "WIDGET_HOST_UNREACHABLE");
   }
   const { buffer } = await readCapped(res, FETCH_MAX_BYTES);
