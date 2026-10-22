@@ -30,8 +30,20 @@ function loadModule(widget: CustomWidget): Promise<{ default?: Mount }> {
   return loaded;
 }
 
-/** A custom widget's icon: an image address, or an emoji or a few letters as text. */
-export function WidgetIcon({ icon, size = 20 }: { icon?: string; size?: number }) {
+/** A custom widget's icon: its image address, else `icon` as an image address, an emoji or a few letters. An image
+ *  that doesn't load falls back to the next. */
+export function WidgetIcon({ icon, iconUrl, size = 20 }: { icon?: string; iconUrl?: string; size?: number }) {
+  const [broken, setBroken] = useState<string | null>(null);
+  if (iconUrl && broken !== iconUrl)
+    return (
+      <Box
+        component="img"
+        src={iconUrl}
+        alt=""
+        onError={() => setBroken(iconUrl)}
+        sx={{ width: size, height: size, objectFit: "contain" }}
+      />
+    );
   if (!icon) return <ExtensionOutlinedIcon sx={{ fontSize: size }} />;
   if (/^(https:|data:image\/)/i.test(icon))
     return <Box component="img" src={icon} alt="" sx={{ width: size, height: size, objectFit: "contain" }} />;
@@ -80,7 +92,9 @@ export default function CustomWidgetCard({ widget, instanceId, settings }: Props
     let cleanup: (() => void) | null = null;
     const listeners = new Set<(size: Size) => void>();
     const measure = (): Size => {
-      const { width, height } = root.getBoundingClientRect();
+      // Its layout size, not its drawn one, which the editor's preview scales down.
+      const width = root.offsetWidth;
+      const height = root.offsetHeight;
       const colWidth = parseFloat(getComputedStyle(root).getPropertyValue("--tp-col-width")) || ROW_HEIGHT;
       return {
         width: Math.round(width),

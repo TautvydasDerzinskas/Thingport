@@ -1,5 +1,5 @@
 // Checks community-widgets/ the way Thingport reads it when installing: every slug in index.json has a folder with
-// valid metadata, a script with a default export and a README, and every folder is listed.
+// valid metadata naming its author, a script with a default export and a README, and every folder is listed.
 // Run with: npx tsx scripts/validateCommunityWidgets.ts [path to community-widgets]
 
 import fs from "node:fs";
@@ -30,7 +30,7 @@ for (const slug of slugs) {
   const script = read(path.join(dir, "widget.js"));
   try {
     if (metadata === null) throw new Error("it has no widget.json or widget.yml");
-    parseManifest(metadata);
+    if (!parseManifest(metadata).author) throw new Error("its metadata has no `author`");
     if (script === null) throw new Error("it has no widget.js");
     validateCode(script, read(path.join(dir, "widget.html")));
     if (read(path.join(dir, "README.md")) === null) throw new Error("it has no README.md");

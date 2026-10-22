@@ -13,6 +13,12 @@ const SCRIPT_MAX = 500_000;
 const HTML_MAX = 200_000;
 
 const label = z.string().trim().min(1).max(60);
+const webAddress = z
+  .string()
+  .trim()
+  .max(2048)
+  .url()
+  .refine((url) => /^https?:\/\//i.test(url), "Not an http or https address");
 const settingSchema = z.discriminatedUnion("type", [
   z.object({
     key: z.string().regex(KEY),
@@ -58,8 +64,13 @@ export const manifestSchema = z.object({
     .max(100_000)
     .refine((icon) => !/^(javascript|vbscript):/i.test(icon.trim()), "Not an image")
     .optional(),
+  /** An image address for the icon, shown instead of `icon`; an SVG stays sharp at every size. */
+  iconUrl: webAddress.optional(),
   version: z.string().trim().max(20).default("1.0.0"),
+  /** The author's full name; saving fills in the user's own when it's missing. */
   author: z.string().trim().max(60).optional(),
+  /** The author's page, e.g. their GitHub profile. */
+  authorUrl: webAddress.optional(),
   size: sizeSchema.default({ w: 4, h: 4 }),
   settings: z
     .array(settingSchema)

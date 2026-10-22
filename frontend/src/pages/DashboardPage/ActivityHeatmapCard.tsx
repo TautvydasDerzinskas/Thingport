@@ -77,7 +77,9 @@ export default function ActivityHeatmapCard({ onUnauthorized }: Props) {
   );
 
   return (
-    <DashboardCard sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 1 }}>
+    // It narrows to the weeks that fit, never taller, so there's nothing to scroll; the tighter padding fits it at its
+    // minimum height.
+    <DashboardCard scroll={false} sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1 }}>
       <DashboardCardTitle icon={<InsightsIcon />} title={t("dashboard.activityHeatmap.title")}>
         {total !== null && (
           <Typography variant="body2" color="text.secondary" sx={{ flexShrink: 0 }}>

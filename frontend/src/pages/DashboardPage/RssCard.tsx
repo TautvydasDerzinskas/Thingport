@@ -17,6 +17,8 @@ import { usePolling } from "./usePolling";
 const REFRESH_MS = 10 * 60 * 1000;
 
 type Props = {
+  /** The user's own name for the panel; empty shows the default. */
+  title: string;
   feeds: string[];
   count: number;
   showDates: boolean;
@@ -24,7 +26,7 @@ type Props = {
 };
 
 /** The newest items of every feed the user listed, together. An item opens in a new tab. */
-export default function RssCard({ feeds, count, showDates, onUnauthorized }: Props) {
+export default function RssCard({ title, feeds, count, showDates, onUnauthorized }: Props) {
   const { t } = useTranslation("app");
   const [result, setResult] = useState<{ items: FeedItem[]; failed: string[] } | null>(null);
   const [error, setError] = useState(false);
@@ -100,7 +102,11 @@ export default function RssCard({ feeds, count, showDates, onUnauthorized }: Pro
 
   return (
     <DashboardCard scroll={false} sx={{ p: 2.5, display: "flex", flexDirection: "column" }}>
-      <DashboardCardTitle icon={<RssFeedIcon />} title={t("dashboard.rss.title")} sx={{ mb: 1, flexShrink: 0 }}>
+      <DashboardCardTitle
+        icon={<RssFeedIcon />}
+        title={title || t("dashboard.rss.title")}
+        sx={{ mb: 1, flexShrink: 0 }}
+      >
         {result && result.failed.length > 0 && (
           <Tooltip title={result.failed.join("\n")}>
             <Typography variant="caption" color="warning.main" sx={{ flexShrink: 0, cursor: "help" }}>

@@ -121,6 +121,36 @@ describe("own widgets", () => {
     expect((await request(app).delete(`/api/widgets/${saved.body.id}`).set(auth())).status).toBe(204);
   });
 
+  it("credits the user when the metadata names no author, and keeps an author it names", async () => {
+    const save = (metadata: object) =>
+      request(app)
+        .put("/api/widgets")
+        .set(auth())
+        .send({ slug: "credited", metadata: JSON.stringify(metadata), script: SCRIPT });
+    expect((await save({ name: "Credited" })).body.manifest.author).toBe("Widgets");
+    const named = await save({
+      name: "Credited",
+      author: "Jane Doe",
+      authorUrl: "https://github.com/jane",
+      iconUrl: "https://example.com/icon.svg",
+    });
+    expect(named.body.manifest).toMatchObject({
+      author: "Jane Doe",
+      authorUrl: "https://github.com/jane",
+      iconUrl: "https://example.com/icon.svg",
+    });
+  });
+
+  it("takes only http and https addresses for the icon and the author's page", async () => {
+    const save = (metadata: object) =>
+      request(app)
+        .put("/api/widgets")
+        .set(auth())
+        .send({ slug: "addresses", metadata: JSON.stringify({ name: "Addresses", ...metadata }), script: SCRIPT });
+    expect((await save({ iconUrl: "javascript:alert(1)" })).status).toBe(400);
+    expect((await save({ authorUrl: "ftp://example.com" })).status).toBe(400);
+  });
+
   it("refuses a script without a default export, and a bad slug", async () => {
     const noExport = await request(app)
       .put("/api/widgets")

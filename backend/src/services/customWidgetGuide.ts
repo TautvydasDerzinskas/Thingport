@@ -18,8 +18,10 @@ Save it with the \`save_widget\` tool. The user then adds it from **Add panel** 
   "name": "Print farm status",
   "description": "Shows each OctoPrint printer's state and progress.",
   "icon": "🖨️",
+  "iconUrl": "https://example.com/octoprint.svg",
   "version": "1.0.0",
-  "author": "Your name",
+  "author": "Jane Doe",
+  "authorUrl": "https://github.com/janedoe",
   "size": { "w": 4, "h": 4, "minW": 3, "minH": 2 },
   "settings": [
     { "key": "baseUrl", "type": "text", "label": "OctoPrint address", "placeholder": "http://octopi.local" },
@@ -34,7 +36,11 @@ Save it with the \`save_widget\` tool. The user then adds it from **Add panel** 
 \`\`\`
 
 - **name**: up to 40 characters. **description**: up to 300.
-- **icon**: optional. An emoji, an https image address, or an SVG \`data:\` address.
+- **iconUrl**: optional, and the best icon: an http(s) address of an image, shown in place of \`icon\`. Prefer an
+  SVG, which stays sharp from the 16 px tab icon up, and one with a transparent background.
+- **icon**: optional, shown when there's no \`iconUrl\`: an emoji, or an SVG \`data:\` address.
+- **author**: the author's full name. Leave it out and saving puts in the user's name from their profile.
+  **authorUrl**: optional, a page of theirs, such as a GitHub profile.
 - **size**: the panel's size when added, in grid cells. The wide grid is 12 columns; a row is 64 px tall, with 16 px
   between cells. \`minW\`/\`minH\` are the smallest the user can resize it to.
 - **settings**: what the user can change from the panel's cog. Each has a \`key\` (letters, digits, \`_\`) and a

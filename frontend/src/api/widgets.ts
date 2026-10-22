@@ -12,8 +12,12 @@ export type WidgetManifest = {
   name: string;
   description: string;
   icon?: string;
+  /** An image address for the icon, shown instead of `icon`. */
+  iconUrl?: string;
   version: string;
+  /** The author's full name. */
   author?: string;
+  authorUrl?: string;
   size: { w: number; h: number; minW?: number; minH?: number };
   settings: WidgetSettingSpec[];
   /** The hosts its `thingport.fetch` may reach. */

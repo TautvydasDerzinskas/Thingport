@@ -153,7 +153,10 @@ export default function PanelSettingsDialog({ widgets, template, isAdmin, onChan
                           <TextSetting
                             label={labelOf(t, setting)}
                             value={values[setting.key] as string}
-                            placeholder={setting.placeholder}
+                            placeholder={
+                              setting.placeholder ?? (setting.placeholderKey ? t(setting.placeholderKey) : undefined)
+                            }
+                            maxLength={setting.maxLength}
                             secret={setting.secret}
                             numeric={setting.numeric}
                             onCommit={(value) => set(setting.key, value)}
@@ -643,6 +646,7 @@ function TextSetting({
   label,
   value,
   placeholder,
+  maxLength,
   secret,
   numeric,
   onCommit,
@@ -650,6 +654,7 @@ function TextSetting({
   label: string;
   value: string;
   placeholder?: string;
+  maxLength?: number;
   secret?: boolean;
   numeric?: boolean;
   onCommit: (value: string) => void;
@@ -676,6 +681,7 @@ function TextSetting({
       slotProps={{
         htmlInput: {
           "aria-label": label,
+          maxLength,
           inputMode: numeric ? "decimal" : undefined,
           autoComplete: secret ? "off" : undefined,
           spellCheck: false,

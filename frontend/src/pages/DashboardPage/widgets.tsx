@@ -60,6 +60,9 @@ export type WidgetSetting = (
       labelKey: string;
       default: string;
       placeholder?: string;
+      /** A translated placeholder, e.g. the name the panel shows when it's left empty. */
+      placeholderKey?: string;
+      maxLength?: number;
       secret?: boolean;
       numeric?: boolean;
     }
@@ -390,6 +393,14 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
     sketch: "rss",
     settings: [
       {
+        key: "title",
+        kind: "text",
+        labelKey: "dashboard.settings.panelTitle",
+        placeholderKey: "dashboard.rss.title",
+        maxLength: 60,
+        default: "",
+      },
+      {
         key: "feeds",
         kind: "urls",
         labelKey: "dashboard.settings.feeds",
@@ -403,6 +414,7 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
     render: ({ settings, onUnauthorized }) => (
       <RssCard
         onUnauthorized={onUnauthorized}
+        title={(settings.title as string).trim()}
         feeds={settings.feeds as string[]}
         count={Number(settings.count)}
         showDates={settings.showDates === true}
@@ -609,6 +621,11 @@ function settingsOf(specs: WidgetSettingSpec[]): WidgetSetting[] {
   });
 }
 
+/** A custom widget's settings at their defaults, as a new panel of it gets them. */
+export function customDefaults(specs: WidgetSettingSpec[]): ResolvedSettings {
+  return resolveSettings({ settings: settingsOf(specs) } as DashboardWidget, undefined);
+}
+
 /** Makes the user's custom widgets available to the dashboard, replacing what was there. */
 export function registerCustomWidgets(widgets: CustomWidget[]): void {
   CUSTOM.clear();
@@ -620,7 +637,7 @@ export function registerCustomWidgets(widgets: CustomWidget[]): void {
       multiple: true,
       labelKey: "",
       label: manifest.name,
-      icon: <WidgetIcon icon={manifest.icon} />,
+      icon: <WidgetIcon icon={manifest.icon} iconUrl={manifest.iconUrl} />,
       size: { w: manifest.size.w, h: manifest.size.h, minW: manifest.size.minW ?? 1, minH: manifest.size.minH ?? 1 },
       sketch: "custom",
       settings: settingsOf(manifest.settings),

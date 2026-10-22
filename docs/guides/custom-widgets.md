@@ -40,8 +40,10 @@ JSON or YAML:
 name: Print farm status
 description: Shows each OctoPrint printer's state and progress.
 icon: 🖨️
+iconUrl: https://example.com/octoprint.svg
 version: 1.0.0
-author: Your name
+author: Jane Doe
+authorUrl: https://github.com/janedoe
 size: { w: 4, h: 4, minW: 3, minH: 2 }
 settings:
   - { key: baseUrl, type: text, label: OctoPrint address, placeholder: "http://octopi.local" }
@@ -59,7 +61,10 @@ hosts: [octopi.local]
 | ------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `name`        | Up to 40 characters.                                                                                             |
 | `description` | Up to 300 characters, shown in the list of widgets.                                                              |
-| `icon`        | Optional: an emoji, an `https:` image address or an SVG `data:` address.                                         |
+| `iconUrl`     | Optional: an `http(s)` address of the icon's image, shown in place of `icon`. Prefer an SVG: it stays sharp.     |
+| `icon`        | Optional, shown without `iconUrl`: an emoji or an SVG `data:` address.                                           |
+| `author`      | Your full name. Left out, saving fills in the name from your profile; community widgets need one.                |
+| `authorUrl`   | Optional: a page of yours, such as your GitHub profile, linked from your name.                                   |
 | `size`        | Its size when added, in grid cells (12 columns wide; rows 64 px tall). `minW`/`minH` limit how small it resizes. |
 | `settings`    | What its cog lets you change: `text` (`secret: true` for tokens), `number`, `toggle` or `choice` (2 to 8).       |
 | `hosts`       | The hosts `thingport.fetch` may call: `host`, `host:port` or `*.domain`. Local network addresses are fine.       |

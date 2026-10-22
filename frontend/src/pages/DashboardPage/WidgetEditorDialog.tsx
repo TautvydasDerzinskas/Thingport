@@ -1,32 +1,43 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
-import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
+import IconButton from "@mui/material/IconButton";
+import Skeleton from "@mui/material/Skeleton";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import CloseIcon from "@mui/icons-material/Close";
+import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import { UnauthorizedError } from "../../api/client";
-import { widgetsApi, type CustomWidget } from "../../api/widgets";
+import { widgetsApi, type CustomWidget, type WidgetManifest } from "../../api/widgets";
 import Segmented from "../../components/controls/Segmented";
+import { readUser } from "../../utils/auth";
+import { WidgetIcon } from "./CustomWidgetCard";
+import DetailsForm from "./widgetEditor/DetailsForm";
+import SettingsEditor from "./widgetEditor/SettingsEditor";
+import WidgetPreview from "./widgetEditor/WidgetPreview";
+import { fromManifest, problems, toManifest, type Draft } from "./widgetEditor/draft";
 
-type Part = "metadata" | "script" | "html";
+// Loaded with the editor only, so the dashboard doesn't carry CodeMirror.
+const CodeEditor = lazy(() => import("../../components/CodeEditor"));
+
+type Part = "details" | "settings" | "script" | "html";
 
 // A working starting point: a clock showing the time in a place the user picks.
-const STARTER_METADATA = `{
-  "name": "World clock",
-  "description": "The time in another city.",
-  "icon": "🕒",
-  "size": { "w": 3, "h": 2, "minW": 2, "minH": 2 },
-  "settings": [
-    { "key": "zone", "type": "text", "label": "Time zone", "default": "America/New_York" },
-    { "key": "label", "type": "text", "label": "Label", "default": "New York" }
-  ]
-}
-`;
+const STARTER: WidgetManifest = {
+  name: "World clock",
+  description: "The time in another city.",
+  icon: "🕒",
+  version: "1.0.0",
+  size: { w: 3, h: 2, minW: 2, minH: 2 },
+  settings: [
+    { key: "zone", type: "text", label: "Time zone", default: "America/New_York" },
+    { key: "label", type: "text", label: "Label", default: "New York" },
+  ],
+  hosts: [],
+};
 
 const STARTER_SCRIPT = `export default function mount(thingport) {
   const { root, settings, theme } = thingport;
@@ -54,32 +65,70 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-/** Writes one of the user's own widgets: its metadata (JSON or YAML), script and optional HTML. */
-export default function WidgetEditorDialog({ open, widget, onClose, onSaved, onUnauthorized }: Props) {
+/** Makes or edits one of the user's own widgets: its details and settings from a form, its script and HTML in a code
+ *  editor, and the widget running beside them at its minimum size. */
+export default function WidgetEditorDialog({ open, widget, onClose, ...rest }: Props) {
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth={false}
+      slotProps={{
+        paper: {
+          sx: {
+            width: 1240,
+            maxWidth: "calc(100% - 32px)",
+            height: { xs: "calc(100% - 32px)", md: 780 },
+            maxHeight: "calc(100% - 32px)",
+            m: 2,
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+          },
+        },
+      }}
+    >
+      {/* Remounted per opening, so it starts from the widget it was opened for. */}
+      {open && <Editor key={widget?.id ?? "new"} widget={widget} onClose={onClose} {...rest} />}
+    </Dialog>
+  );
+}
+
+function Editor({ widget, onClose, onSaved, onUnauthorized }: Omit<Props, "open">) {
   const { t } = useTranslation("app");
-  const [part, setPart] = useState<Part>("metadata");
-  const [slug, setSlug] = useState("");
-  const [metadata, setMetadata] = useState("");
-  const [script, setScript] = useState("");
-  const [html, setHtml] = useState("");
+  const own = widget?.source === "own";
+  const [part, setPart] = useState<Part>("details");
+  const [draft, setDraft] = useState<Draft>(() => {
+    if (!widget) {
+      const starter = fromManifest({ ...STARTER, author: readUser()?.display_name }, "world-clock");
+      return { ...starter, slugEdited: false };
+    }
+    // A community widget is copied to the user's own, under a name of its own.
+    return fromManifest(widget.manifest, own ? widget.slug : `${widget.slug}-copy`.slice(0, 40));
+  });
+  const [script, setScript] = useState(widget?.script ?? STARTER_SCRIPT);
+  const [html, setHtml] = useState(widget?.html ?? "");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (!open) return;
-    setPart("metadata");
-    setError(null);
-    setSlug(widget?.source === "own" ? widget.slug : widget ? `${widget.slug}-copy` : "world-clock");
-    setMetadata(widget ? JSON.stringify(widget.manifest, null, 2) : STARTER_METADATA);
-    setScript(widget?.script ?? STARTER_SCRIPT);
-    setHtml(widget?.html ?? "");
-  }, [open, widget]);
+  const errors = useMemo(() => problems(draft), [draft]);
+  const manifest = useMemo(() => toManifest(draft), [draft]);
+  const settingErrors = Object.keys(errors).some((field) => field.startsWith("settings."));
+  const detailErrors = Object.keys(errors).some((field) => !field.startsWith("settings."));
+  const invalid = Object.keys(errors).length > 0 || !script.trim();
 
   const save = async () => {
     setSaving(true);
     setError(null);
     try {
-      onSaved(await widgetsApi.save({ slug: slug.trim(), metadata, script, html: html.trim() ? html : null }));
+      onSaved(
+        await widgetsApi.save({
+          slug: draft.slug.trim(),
+          metadata: JSON.stringify(manifest),
+          script,
+          html: html.trim() ? html : null,
+        }),
+      );
     } catch (err) {
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       else setError(err instanceof Error ? err.message : String(err));
@@ -88,69 +137,165 @@ export default function WidgetEditorDialog({ open, widget, onClose, onSaved, onU
     }
   };
 
-  const code = { fontFamily: "monospace", fontSize: 13 };
-  const editors: Record<Part, { value: string; set: (value: string) => void; rows: number; label: string }> = {
-    metadata: { value: metadata, set: setMetadata, rows: 16, label: t("dashboard.custom.editor.metadata") },
-    script: { value: script, set: setScript, rows: 18, label: t("dashboard.custom.editor.script") },
-    html: { value: html, set: setHtml, rows: 12, label: t("dashboard.custom.editor.html") },
-  };
-  const editor = editors[part];
+  // A dot on a tab that has something to fix.
+  const flagged = (label: string, flag: boolean) => (flag ? `${label} •` : label);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        {widget?.source === "own" ? t("dashboard.custom.editor.editTitle") : t("dashboard.custom.editor.newTitle")}
-      </DialogTitle>
-      <DialogContent>
-        <Stack spacing={2} sx={{ pt: 0.5 }}>
-          <Alert severity="warning" variant="outlined">
-            {t("dashboard.custom.editor.trust")}
-          </Alert>
-          <TextField
-            size="small"
-            label={t("dashboard.custom.editor.slug")}
-            helperText={t("dashboard.custom.editor.slugHelp")}
-            value={slug}
-            onChange={(event) => setSlug(event.target.value.toLowerCase())}
-            disabled={widget?.source === "own"}
-            slotProps={{ htmlInput: { maxLength: 40, spellCheck: false } }}
-          />
-          <Box>
+    <>
+      <Box
+        sx={{
+          flexShrink: 0,
+          display: "flex",
+          alignItems: "center",
+          gap: 1.25,
+          px: 2,
+          py: 1.25,
+          borderBottom: 1,
+          borderColor: "divider",
+        }}
+      >
+        <Box sx={{ display: "flex", color: "primary.main" }}>
+          <WidgetIcon icon={manifest.icon} iconUrl={manifest.iconUrl} size={20} />
+        </Box>
+        <Typography
+          variant="body2"
+          fontWeight={600}
+          component="h2"
+          noWrap
+          sx={{ flex: 1, color: (muiTheme) => muiTheme.thingport.headingText }}
+        >
+          {own ? t("dashboard.custom.editor.editTitle") : t("dashboard.custom.editor.newTitle")}
+          {manifest.name && (
+            <Box component="span" sx={{ color: "text.secondary", fontWeight: 400 }}>
+              {` · ${manifest.name}`}
+            </Box>
+          )}
+        </Typography>
+        <IconButton size="small" onClick={onClose} aria-label={t("dashboard.custom.editor.cancel")}>
+          <CloseIcon fontSize="small" />
+        </IconButton>
+      </Box>
+
+      <Box sx={{ flex: 1, minHeight: 0, display: "flex", flexDirection: { xs: "column-reverse", md: "row" } }}>
+        <Box sx={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column" }}>
+          <Box sx={{ px: 2.5, pt: 1.75, pb: 1.25, flexShrink: 0 }}>
             <Segmented
               label={t("dashboard.custom.editor.part")}
               value={part}
               onChange={setPart}
               options={[
-                { value: "metadata", label: t("dashboard.custom.editor.metadata") },
+                { value: "details", label: flagged(t("dashboard.custom.editor.details"), detailErrors) },
+                {
+                  value: "settings",
+                  label: flagged(
+                    t("dashboard.custom.editor.settingsCount", { count: draft.settings.length }),
+                    settingErrors,
+                  ),
+                },
                 { value: "script", label: t("dashboard.custom.editor.script") },
                 { value: "html", label: t("dashboard.custom.editor.html") },
               ]}
             />
           </Box>
-          <TextField
-            key={part}
-            multiline
-            fullWidth
-            minRows={editor.rows}
-            maxRows={editor.rows + 10}
-            value={editor.value}
-            onChange={(event) => editor.set(event.target.value)}
-            placeholder={part === "html" ? t("dashboard.custom.editor.htmlPlaceholder") : undefined}
-            slotProps={{ htmlInput: { "aria-label": editor.label, spellCheck: false, style: code } }}
-          />
-          {error && (
-            <Alert severity="error" sx={{ whiteSpace: "pre-wrap" }}>
-              {error}
-            </Alert>
+          {part === "details" || part === "settings" ? (
+            <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", px: 2.5, pt: 1, pb: 2.5 }}>
+              {part === "details" ? (
+                <DetailsForm
+                  draft={draft}
+                  errors={errors}
+                  slugLocked={own}
+                  onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
+                />
+              ) : (
+                <SettingsEditor
+                  settings={draft.settings}
+                  errors={errors}
+                  onChange={(settings) => setDraft((current) => ({ ...current, settings }))}
+                />
+              )}
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                flex: 1,
+                minHeight: 0,
+                mx: 2.5,
+                mb: 2,
+                border: 1,
+                borderColor: "divider",
+                borderRadius: "10px",
+                overflow: "hidden",
+              }}
+            >
+              <Suspense fallback={<Skeleton variant="rectangular" sx={{ height: "100%" }} />}>
+                {part === "script" ? (
+                  <CodeEditor
+                    key="script"
+                    language="javascript"
+                    label={t("dashboard.custom.editor.script")}
+                    value={script}
+                    onChange={setScript}
+                  />
+                ) : (
+                  <CodeEditor
+                    key="html"
+                    language="html"
+                    label={t("dashboard.custom.editor.html")}
+                    placeholder={t("dashboard.custom.editor.htmlPlaceholder")}
+                    value={html}
+                    onChange={setHtml}
+                  />
+                )}
+              </Suspense>
+            </Box>
           )}
-        </Stack>
-      </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2 }}>
+        </Box>
+
+        <Box
+          sx={{
+            width: { xs: "100%", md: 460 },
+            height: { xs: 260, md: "auto" },
+            flexShrink: 0,
+            borderStyle: "solid",
+            borderColor: "divider",
+            borderWidth: { xs: "0 0 1px 0", md: "0 0 0 1px" },
+            bgcolor: (muiTheme) => muiTheme.thingport.pageBackground,
+          }}
+        >
+          <WidgetPreview manifest={manifest} script={script} html={html} widgetId={own ? widget!.id : null} />
+        </Box>
+      </Box>
+
+      {error && (
+        <Alert severity="error" onClose={() => setError(null)} sx={{ mx: 2, mt: 1.5, whiteSpace: "pre-wrap" }}>
+          {error}
+        </Alert>
+      )}
+      <Box
+        sx={{
+          flexShrink: 0,
+          display: "flex",
+          alignItems: "center",
+          gap: 1,
+          px: 2,
+          py: 1.25,
+          borderTop: 1,
+          borderColor: "divider",
+        }}
+      >
+        <ShieldOutlinedIcon fontSize="small" sx={{ color: "warning.main" }} />
+        <Typography variant="caption" color="text.secondary" sx={{ flex: 1, minWidth: 0 }}>
+          {t("dashboard.custom.editor.trust")}
+        </Typography>
         <Button onClick={onClose}>{t("dashboard.custom.editor.cancel")}</Button>
-        <Button variant="contained" onClick={() => void save()} disabled={saving || !slug.trim() || !script.trim()}>
-          {t("dashboard.custom.editor.save")}
-        </Button>
-      </DialogActions>
-    </Dialog>
+        <Tooltip title={invalid ? t("dashboard.custom.editor.fixFirst") : ""}>
+          <span>
+            <Button variant="contained" onClick={() => void save()} disabled={saving || invalid}>
+              {t("dashboard.custom.editor.save")}
+            </Button>
+          </span>
+        </Tooltip>
+      </Box>
+    </>
   );
 }

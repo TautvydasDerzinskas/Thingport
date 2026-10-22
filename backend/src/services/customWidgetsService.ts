@@ -91,8 +91,15 @@ export async function saveOwnWidget(
     throw new HttpError(400, "The slug is 2-40 lowercase letters, digits and dashes, starting with a letter or digit");
   const html = input.html?.trim() ? input.html : null;
   validateCode(input.script, html);
-  const sha = shaOf(input.manifest, input.script, html);
-  const data = { manifest: input.manifest, script: input.script, html, sha };
+  // Credited when downloaded to share, so it goes out with a name on it.
+  const manifest = input.manifest.author
+    ? input.manifest
+    : {
+        ...input.manifest,
+        author: (await prisma.user.findUnique({ where: { id: userId } }))?.displayName.slice(0, 60),
+      };
+  const sha = shaOf(manifest, input.script, html);
+  const data = { manifest, script: input.script, html, sha };
   const row = await prisma.customWidget.upsert({
     where: { userId_source_slug: { userId, source: "own", slug: input.slug } },
     create: { userId, source: "own", slug: input.slug, ...data },

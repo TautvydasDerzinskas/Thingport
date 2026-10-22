@@ -33,6 +33,7 @@ import { useConfirm } from "../../components/ConfirmProvider";
 import { useToast } from "../../components/ToastProvider";
 import McpConnectDialog from "../../components/mcp/McpConnectDialog";
 import { useCustomWidgets } from "../../hooks/useCustomWidgets";
+import { readUser } from "../../utils/auth";
 import { WidgetIcon } from "./CustomWidgetCard";
 import WidgetEditorDialog from "./WidgetEditorDialog";
 
@@ -45,9 +46,14 @@ const REPO_FOLDER_URL = "https://github.com/TautvydasDerzinskas/Thingport/tree/m
 async function downloadForPublishing(widget: CustomWidget) {
   const { strToU8, zipSync } = await import("fflate");
   const folder = widget.slug;
-  const readme = `# ${widget.manifest.name}\n\n${widget.manifest.description || "What it shows, and what to set."}\n`;
+  // Shared widgets are credited; one saved before names were filled in gets the user's own.
+  const manifest = { ...widget.manifest, author: widget.manifest.author || readUser()?.display_name || undefined };
+  const credit = manifest.author
+    ? `\nBy ${manifest.authorUrl ? `[${manifest.author}](${manifest.authorUrl})` : manifest.author}.\n`
+    : "";
+  const readme = `# ${manifest.name}\n\n${manifest.description || "What it shows, and what to set."}\n${credit}`;
   const files: Record<string, Uint8Array> = {
-    [`${folder}/widget.json`]: strToU8(`${JSON.stringify(widget.manifest, null, 2)}\n`),
+    [`${folder}/widget.json`]: strToU8(`${JSON.stringify(manifest, null, 2)}\n`),
     [`${folder}/widget.js`]: strToU8(widget.script),
     [`${folder}/README.md`]: strToU8(readme),
   };
@@ -126,7 +132,7 @@ function WidgetRow({
           color: "primary.main",
         }}
       >
-        <WidgetIcon icon={manifest.icon} size={28} />
+        <WidgetIcon icon={manifest.icon} iconUrl={manifest.iconUrl} size={28} />
       </Box>
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
@@ -134,7 +140,16 @@ function WidgetRow({
             {manifest.name}
           </Typography>
           <Typography variant="caption" color="text.secondary" noWrap>
-            {[manifest.version && `v${manifest.version}`, manifest.author].filter(Boolean).join(" · ")}
+            {manifest.version && `v${manifest.version}`}
+            {manifest.author && " · "}
+            {manifest.author &&
+              (manifest.authorUrl ? (
+                <Link href={manifest.authorUrl} target="_blank" rel="noopener noreferrer" color="inherit">
+                  {manifest.author}
+                </Link>
+              ) : (
+                manifest.author
+              ))}
           </Typography>
           {extra}
         </Stack>
