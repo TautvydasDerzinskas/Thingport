@@ -16,6 +16,10 @@ export const DASHBOARD_WIDGETS = [
   "weather",
   "featuredModel",
   "activityHeatmap",
+  "rss",
+  "cpu",
+  "uptime",
+  "launcher",
 ] as const;
 export type DashboardWidgetId = (typeof DASHBOARD_WIDGETS)[number];
 export type DashboardWidgets = Partial<Record<DashboardWidgetId, boolean>>;
@@ -115,7 +119,18 @@ function configSchema<W extends z.ZodTypeAny>(widgetId: W) {
           settings: z
             .record(
               z.string().max(40),
-              z.record(z.string().max(40), z.union([z.string().max(40), z.number(), z.boolean()])),
+              z.record(
+                z.string().max(40),
+                z.union([
+                  z.string().max(40),
+                  z.number(),
+                  z.boolean(),
+                  // A list, e.g. the RSS panel's feed addresses.
+                  z.array(z.string().max(2048)).max(20),
+                  // A list of records, e.g. the launcher's links: { name, url, icon }.
+                  z.array(z.record(z.string().max(20), z.string().max(2048))).max(100),
+                ]),
+              ),
             )
             .refine((value) => Object.keys(value).length <= DASHBOARD_WIDGETS.length * 2)
             .optional(),

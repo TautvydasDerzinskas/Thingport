@@ -1,11 +1,13 @@
 import { Router } from "express";
 import { z } from "zod";
-import { requireAuth } from "../auth";
+import { requireAdmin, requireAuth } from "../auth";
 import { asyncHandler } from "../utils/asyncHandler";
 import { parseBody } from "../utils/validate";
 import { HttpError } from "../utils/fileUtils";
 import { printOutById } from "../services/printLoader";
 import { TEMPERATURE_UNITS, getForecast, getPlaceName, searchPlaces } from "../services/weatherService";
+import { checkUrls, getFeeds, isWebUrl } from "../services/dashboardFeedsService";
+import { getSystemStats } from "../services/systemStatsService";
 import {
   getDashboardSummary,
   getFeaturedModelId,
@@ -158,6 +160,38 @@ router.get(
   asyncHandler(async (req, res) => {
     const { lat, lon, lang } = parseBody(z.object({ ...coordinates, lang: language }), req.query);
     res.json({ name: await getPlaceName(lat, lon, lang) });
+  }),
+);
+
+// `?url=a&url=b`: the panel's URLs, each http(s).
+const urlList = (max: number) =>
+  z.preprocess(
+    (value) => (Array.isArray(value) ? value : value === undefined ? [] : [value]),
+    z.array(z.string().max(2048).refine(isWebUrl, "Only http and https addresses")).min(1).max(max),
+  );
+
+router.get(
+  "/dashboard/feeds",
+  asyncHandler(async (req, res) => {
+    const { url } = parseBody(z.object({ url: urlList(10) }), req.query);
+    res.json(await getFeeds(url));
+  }),
+);
+
+router.get(
+  "/dashboard/monitors",
+  asyncHandler(async (req, res) => {
+    const { url } = parseBody(z.object({ url: urlList(20) }), req.query);
+    res.json({ results: await checkUrls(url) });
+  }),
+);
+
+// The machine Thingport runs on: only admins see it.
+router.get(
+  "/dashboard/system",
+  requireAdmin,
+  asyncHandler(async (_req, res) => {
+    res.json(await getSystemStats());
   }),
 );
 

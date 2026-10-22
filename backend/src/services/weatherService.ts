@@ -2,6 +2,8 @@
 // cache, rate-limit and identify ourselves. Open-Meteo gives the forecast and place search,
 // OpenStreetMap's Nominatim names a detected location.
 
+import { TtlCache } from "../utils/ttlCache";
+
 export type Forecast = {
   temperature: number;
   code: number;
@@ -17,8 +19,6 @@ const LATER_HOURS = 6;
 const REQUEST_TIMEOUT_MS = 10_000;
 const FORECAST_TTL_MS = 30 * 60 * 1000;
 const SEARCH_TTL_MS = 24 * 60 * 60 * 1000;
-// Plenty for one household's devices and searches; the oldest entries go first.
-const CACHE_LIMIT = 500;
 // Nominatim's usage policy: at most one request a second, with an identifying User-Agent.
 const NOMINATIM_INTERVAL_MS = 1100;
 const USER_AGENT = "Thingport/1.0 (self-hosted; +https://github.com/TautvydasDerzinskas/Thingport)";
@@ -31,24 +31,6 @@ export function setWeatherFetchForTest(impl?: typeof fetch): void {
   forecasts.clear();
   searches.clear();
   placeNames.clear();
-}
-
-class TtlCache<T> {
-  private entries = new Map<string, { at: number; value: T }>();
-  constructor(private ttlMs: number) {}
-  get(key: string): T | undefined {
-    const entry = this.entries.get(key);
-    if (!entry || Date.now() - entry.at > this.ttlMs) return undefined;
-    return entry.value;
-  }
-  set(key: string, value: T): void {
-    this.entries.delete(key);
-    this.entries.set(key, { at: Date.now(), value });
-    if (this.entries.size > CACHE_LIMIT) this.entries.delete(this.entries.keys().next().value!);
-  }
-  clear(): void {
-    this.entries.clear();
-  }
 }
 
 // Kept in Celsius and unrounded, so either unit is converted from the exact reading.
