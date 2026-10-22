@@ -9,10 +9,11 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Typography from "@mui/material/Typography";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import { SLICER_OPTIONS } from "../../../constants/settingsOptions";
 import { UnauthorizedError } from "../../../api/client";
-import { settingsApi } from "../../../api/settings";
-import { setCachedSlicerPreference } from "../../../hooks/useSlicerPreference";
+import { settingsApi, type SlicerSettings } from "../../../api/settings";
+import { setCachedSlicerSettings } from "../../../hooks/useSlicerPreference";
 import { isBridgedSlicer } from "../../../utils/slicerLaunch";
 import { AppGrid, AppTile, menuPosition, reopenContextMenuBelow, TileMenuHeader } from "./AppTiles";
 import { PanelHeader } from "./parts";
@@ -26,20 +27,29 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-/** The slicer models open in, as app icons: right-click one and Activate it, or double-click it. */
+/** The slicers installed on this computer, as app icons: double-click one, or right-click it, to switch it on or
+ *  off. A model's "Open in" menu offers the ones on; its button opens the last one used. */
 export default function SlicerPanel({ onNavigate, onUnauthorized }: Props) {
   const { t } = useTranslation(["app", "common"]);
-  const [value, setValue] = React.useState<string | null>(null);
+  const [value, setValue] = React.useState<SlicerSettings>({ slicer: null, slicers: [] });
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [menu, setMenu] = React.useState<{ id: string; top: number; left: number } | null>(null);
+
+  // Saves go one at a time, so their answers arrive in order. The panel keeps showing its own toggles until the last
+  // save is back, then the server's answer to it, which also puts back any that failed.
+  const saves = React.useRef<Promise<void>>(Promise.resolve());
+  const pendingSaves = React.useRef(0);
+  const saved = React.useRef<SlicerSettings>({ slicer: null, slicers: [] });
 
   React.useEffect(() => {
     let active = true;
     settingsApi
       .getSlicer()
       .then((res) => {
-        if (active) setValue(res.slicer ?? null);
+        if (!active) return;
+        saved.current = res;
+        setValue(res);
       })
       .catch((err) => {
         if (active && err instanceof UnauthorizedError) onUnauthorized?.();
@@ -52,25 +62,35 @@ export default function SlicerPanel({ onNavigate, onUnauthorized }: Props) {
     };
   }, [onUnauthorized]);
 
-  const activate = async (next: string) => {
-    if (loading || next === value) return;
-    const previous = value;
-    // Shown straight away; put back if the save fails.
-    setValue(next);
+  const toggle = (id: string) => {
+    if (loading) return;
+    const on = value.slicers.includes(id);
+    setValue((shown) => ({
+      ...shown,
+      slicers: on ? shown.slicers.filter((other) => other !== id) : [...shown.slicers, id],
+    }));
     setError(null);
-    try {
-      const res = await settingsApi.updateSlicer(next);
-      setValue(res.slicer ?? null);
-      setCachedSlicerPreference(res.slicer ?? null);
-    } catch (err) {
-      setValue(previous);
-      if (err instanceof UnauthorizedError) onUnauthorized?.();
-      else setError(err instanceof Error ? err.message : t("profile.slicer.failed"));
-    }
+    pendingSaves.current += 1;
+    saves.current = saves.current.then(async () => {
+      try {
+        // Just this slicer, so a toggle made on another device in the meantime stays.
+        const res = await settingsApi.updateSlicer(on ? { disable: id } : { enable: id });
+        saved.current = res;
+        setCachedSlicerSettings(res);
+      } catch (err) {
+        if (err instanceof UnauthorizedError) onUnauthorized?.();
+        else setError(err instanceof Error ? err.message : t("profile.slicer.failed"));
+      } finally {
+        pendingSaves.current -= 1;
+        if (pendingSaves.current === 0) setValue(saved.current);
+      }
+    });
   };
 
-  const statusOf = (id: string) => (id === value ? t("slicer.active") : t("slicer.notActive"));
+  const isOn = (id: string) => value.slicers.includes(id);
+  const statusOf = (id: string) => (isOn(id) ? t("slicer.active") : t("slicer.notActive"));
   const menuId = menu?.id;
+  const bridged = value.slicers.filter(isBridgedSlicer).map(labelOf);
 
   return (
     <>
@@ -80,14 +100,15 @@ export default function SlicerPanel({ onNavigate, onUnauthorized }: Props) {
           <AppTile
             key={id}
             name={label}
+            subtitle={id === value.slicer && value.slicers.length > 1 ? t("slicer.lastUsed") : undefined}
             logo={<SlicerLogo id={id} size={26} />}
-            on={id === value}
-            badge={id === value ? true : undefined}
+            on={isOn(id)}
+            badge={isOn(id) ? true : undefined}
             highlighted={menuId === id}
             tooltip={loading ? undefined : `${label}: ${statusOf(id)}`}
             ariaLabel={`${label}: ${statusOf(id)}`}
             onContextMenu={(event) => setMenu({ id, ...menuPosition(event) })}
-            onActivate={() => void activate(id)}
+            onActivate={() => toggle(id)}
           />
         ))}
       </AppGrid>
@@ -109,23 +130,27 @@ export default function SlicerPanel({ onNavigate, onUnauthorized }: Props) {
         )}
         {menuId && (
           <MenuItem
-            disabled={menuId === value || loading}
+            disabled={loading}
             onClick={() => {
               setMenu(null);
-              void activate(menuId);
+              toggle(menuId);
             }}
           >
             <ListItemIcon>
-              <CheckCircleOutlineIcon fontSize="small" />
+              {isOn(menuId) ? (
+                <RemoveCircleOutlineIcon fontSize="small" />
+              ) : (
+                <CheckCircleOutlineIcon fontSize="small" />
+              )}
             </ListItemIcon>
-            <ListItemText>{t("slicer.activate")}</ListItemText>
+            <ListItemText>{isOn(menuId) ? t("slicer.deactivate") : t("slicer.activate")}</ListItemText>
           </MenuItem>
         )}
       </Menu>
 
-      {value && isBridgedSlicer(value) && (
+      {bridged.length > 0 && (
         <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 2 }}>
-          {t("profile.slicer.bridgeRequiredPrefix", { slicer: labelOf(value) })}{" "}
+          {t("profile.slicer.bridgeRequiredPrefix", { slicer: bridged.join(", ") })}{" "}
           <Link component={RouterLink} to="/downloads" onClick={onNavigate}>
             {t("profile.slicer.bridgeRequiredLink")}
           </Link>

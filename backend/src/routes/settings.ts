@@ -96,7 +96,7 @@ import {
   setUserCults3dBrowser,
   setUserCults3dCredentials,
 } from "../services/cults3dSessionService";
-import { SLICER_IDS, getUserSlicer, setUserSlicer } from "../services/slicerPreferenceService";
+import { SLICER_IDS, getUserSlicerSettings, setUserSlicerSettings } from "../services/slicerPreferenceService";
 import { CATEGORIES_VIEWS, getCategoriesView, setCategoriesView } from "../services/categoriesViewService";
 import {
   DASHBOARD_LAYOUTS,
@@ -1008,17 +1008,22 @@ router.patch(
 router.get(
   "/settings/slicer",
   asyncHandler(async (req, res) => {
-    res.json({ slicer: await getUserSlicer(req.userId!) });
+    res.json(await getUserSlicerSettings(req.userId!));
   }),
 );
 
-const slicerSettingsSchema = z.object({ slicer: z.enum(SLICER_IDS).nullable() });
+// `slicer` alone, as older frontends send it, also adds it to `slicers`.
+const slicerSettingsSchema = z.object({
+  slicer: z.enum(SLICER_IDS).nullable().optional(),
+  slicers: z.array(z.enum(SLICER_IDS)).max(SLICER_IDS.length).optional(),
+  enable: z.enum(SLICER_IDS).optional(),
+  disable: z.enum(SLICER_IDS).optional(),
+});
 router.patch(
   "/settings/slicer",
   asyncHandler(async (req, res) => {
     const body = parseBody(slicerSettingsSchema, req.body);
-    const slicer = await setUserSlicer(req.userId!, body.slicer);
-    res.json({ slicer });
+    res.json(await setUserSlicerSettings(req.userId!, body));
   }),
 );
 

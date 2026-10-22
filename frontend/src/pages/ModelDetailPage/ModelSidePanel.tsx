@@ -11,9 +11,6 @@ import Chip from "@mui/material/Chip";
 import ButtonBase from "@mui/material/ButtonBase";
 import FolderIcon from "@mui/icons-material/Folder";
 import StorageIcon from "@mui/icons-material/Storage";
-import LaunchIcon from "@mui/icons-material/Launch";
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import DownloadIcon from "@mui/icons-material/Download";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PrintIcon from "@mui/icons-material/Print";
 import type { Print } from "../../api/prints";
@@ -22,17 +19,18 @@ import { UnauthorizedError } from "../../api/client";
 import { useToast } from "../../components/ToastProvider";
 import type { AuthUser } from "../../api/auth";
 import { useGravatarUrl } from "../../hooks/useGravatarUrl";
+import { switchSlicer } from "../../hooks/useSlicerPreference";
 import { dividerBorderColor } from "../../theme";
 import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
 import { useDownloadPrint } from "./useDownloadPrint";
 import { useOpenInSlicer } from "./useOpenInSlicer";
-import SlicerFileMenu from "./SlicerFileMenu";
 import NormalizedOpenButton from "./NormalizedOpenButton";
+import ModelFileSelect from "./ModelFileSelect";
+import OpenInSlicerButton from "./OpenInSlicerButton";
 import { useNormalizedOpen } from "./useNormalizedOpen";
 import RollingNumber from "../../components/RollingNumber";
 import { formatFileSize } from "../../utils/fileSize";
 import AuthorHoverCard from "../../components/AuthorHoverCard";
-import DownloadPickerDialog from "./DownloadPickerDialog";
 
 type Props = {
   print: Print;
@@ -50,20 +48,13 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
   const showToast = useToast();
   const [suggestionBusy, setSuggestionBusy] = useState(false);
   const viewerAvatarUrl = useGravatarUrl(viewer?.email, 56);
-  const {
-    pickerOpen,
-    setPickerOpen,
-    downloading,
-    handleDownload,
-    downloadPlate,
-    downloadAllZip,
-    sortedPlates,
-    recordUse,
-  } = useDownloadPrint(print, onUnauthorized, onUpdated);
+  const { downloading, downloadFile, downloadAllZip, recordUse } = useDownloadPrint(print, onUnauthorized, onUpdated);
 
-  const { slicerOption, targets: slicerTargets, normalizedTargets } = useOpenInSlicer(print);
-  const [slicerMenuAnchor, setSlicerMenuAnchor] = useState<HTMLElement | null>(null);
-  const [normalizedMenuAnchor, setNormalizedMenuAnchor] = useState<HTMLElement | null>(null);
+  const { slicerOption, slicerOptions, files, canOpen, normalizedTargetFor } = useOpenInSlicer(print);
+  // Every action below applies to this file; the first until one is picked.
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const selectedFile = files.find((file) => file.key === selectedKey) ?? files[0] ?? null;
+  const normalizedTarget = normalizedTargetFor(selectedFile);
   const normalized = useNormalizedOpen(print.id, recordUse, onUnauthorized);
 
   const goToCategory = () => {
@@ -260,72 +251,35 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
           </Box>
         )}
 
-        {slicerOption && slicerTargets.length > 0 && (
-          <Button
-            {...(slicerTargets.length === 1
-              ? { component: "a" as const, href: slicerTargets[0].href, onClick: recordUse }
-              : {
-                  onClick: (e: React.MouseEvent<HTMLElement>) => setSlicerMenuAnchor(e.currentTarget),
-                  endIcon: <ArrowDropDownIcon />,
-                })}
-            startIcon={<LaunchIcon fontSize="small" />}
-            fullWidth
-            sx={{
-              bgcolor: "background.paper",
-              color: "primary.main",
-              border: "1.5px solid",
-              borderColor: "primary.main",
-              "&:hover": { bgcolor: "action.hover", borderColor: "primary.dark" },
-            }}
-          >
-            {t("models:detail.openInSlicer", { slicer: slicerOption.label })}
-          </Button>
+        {selectedFile && files.length > 1 && (
+          <ModelFileSelect files={files} selected={selectedFile} onSelect={(file) => setSelectedKey(file.key)} />
         )}
-        {slicerOption && slicerTargets.length > 1 && (
-          <SlicerFileMenu
-            anchorEl={slicerMenuAnchor}
-            onClose={() => setSlicerMenuAnchor(null)}
-            slicerLabel={slicerOption.label}
-            targets={slicerTargets}
-            onOpen={recordUse}
-            matchAnchorWidth
+        {selectedFile && (
+          <OpenInSlicerButton
+            file={selectedFile}
+            canOpen={canOpen}
+            slicerOption={slicerOption}
+            slicerOptions={slicerOptions}
+            onOpened={(slicerId) => {
+              recordUse();
+              void switchSlicer(slicerId);
+            }}
+            downloading={downloading}
+            onDownload={() => void downloadFile(selectedFile)}
+            // The zip holds the plates and supporting files, not the prepared print.
+            zipCount={files.filter((file) => file.plate).length}
+            onDownloadZip={() => void downloadAllZip()}
           />
         )}
-        {slicerOption && normalizedTargets.length > 0 && (
+        {slicerOption && normalizedTarget && (
           <NormalizedOpenButton
-            targets={normalizedTargets}
+            targets={[normalizedTarget]}
             slicerLabel={slicerOption.label}
             stateOf={normalized.stateOf}
             open={normalized.open}
-            onPick={setNormalizedMenuAnchor}
+            onPick={() => {}}
           />
         )}
-        {slicerOption && normalizedTargets.length > 1 && (
-          <SlicerFileMenu
-            anchorEl={normalizedMenuAnchor}
-            onClose={() => setNormalizedMenuAnchor(null)}
-            slicerLabel={slicerOption.label}
-            title={t("models:detail.openNormalizedInSlicer", { slicer: slicerOption.label })}
-            targets={normalizedTargets}
-            onOpen={recordUse}
-            normalized={normalized}
-            matchAnchorWidth
-          />
-        )}
-
-        <Button
-          onClick={handleDownload}
-          disabled={downloading}
-          startIcon={<DownloadIcon fontSize="small" />}
-          fullWidth
-          sx={{
-            bgcolor: "primary.main",
-            color: "primary.contrastText",
-            "&:hover": { bgcolor: "primary.dark" },
-          }}
-        >
-          {t("models:detail.downloadModelFiles")}
-        </Button>
 
         <Stack direction="row" spacing={1.5}>
           <Stack
@@ -360,15 +314,6 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
           </Typography>
         )}
       </Stack>
-
-      <DownloadPickerDialog
-        open={pickerOpen}
-        onClose={() => setPickerOpen(false)}
-        downloading={downloading}
-        sortedPlates={sortedPlates}
-        downloadAllZip={downloadAllZip}
-        downloadPlate={downloadPlate}
-      />
     </Paper>
   );
 }
