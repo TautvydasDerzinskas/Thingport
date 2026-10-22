@@ -224,14 +224,21 @@ export function addWidget(
   return placeInstance(template, instance, panelId);
 }
 
-/** An instance in a new panel of its own, in the first free spot of each saved layout. */
-function placeInstance(template: DashboardTemplate, instance: WidgetInstanceId, panelId: string): DashboardTemplate {
+/** An instance in a new panel of its own, in the first free spot of each saved layout. It's the widget's usual size,
+ *  or with `sizeOf`, the size that panel is in each layout, as a tab taken out of a tabbed panel keeps. */
+function placeInstance(
+  template: DashboardTemplate,
+  instance: WidgetInstanceId,
+  panelId: string,
+  sizeOf?: string,
+): DashboardTemplate {
   const panel: DashboardPanel = { id: panelId, widgets: [instance] };
   const layouts: DashboardTemplate["layouts"] = {};
   for (const [breakpoint, items] of Object.entries(template.layouts) as [DashboardBreakpoint, DashboardGridItem[]][]) {
     const cols = colsOf(breakpoint);
     const wide = defaultItem(panel, 0);
-    const item = cols === 12 ? wide : fitLayout([wide], cols)[0];
+    const parent = sizeOf ? items.find((cell) => cell.i === sizeOf) : undefined;
+    const item = parent ? { ...wide, w: parent.w, h: parent.h } : cols === 12 ? wide : fitLayout([wide], cols)[0];
     layouts[breakpoint] = [...items, { ...item, ...firstFit(items, item.w, item.h, cols) }];
   }
   return { ...template, panels: [...template.panels, panel], layouts };
@@ -322,14 +329,15 @@ export function moveWidgetToPanel(
   return pruneLayouts({ ...template, panels, layouts });
 }
 
-/** Takes a widget out of a tabbed panel into a panel of its own, in the first gap it fits; it keeps its options. */
+/** Takes a widget out of a tabbed panel into a panel of its own, the size the tabbed panel is, in the first gap it
+ *  fits; it keeps its options. */
 export function detachWidget(template: DashboardTemplate, id: WidgetInstanceId): DashboardTemplate {
   const source = template.panels.find((panel) => panel.widgets.includes(id));
   if (!source || source.widgets.length < 2) return template;
   const panels = template.panels.map((panel) =>
     panel.id === source.id ? { ...panel, widgets: panel.widgets.filter((instance) => instance !== id), tab: 0 } : panel,
   );
-  return placeInstance({ ...template, panels }, id, newId());
+  return placeInstance({ ...template, panels }, id, newId(), source.id);
 }
 
 /**

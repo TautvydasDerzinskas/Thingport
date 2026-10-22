@@ -9,7 +9,6 @@ import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import TextField from "@mui/material/TextField";
-import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import CloseIcon from "@mui/icons-material/Close";
 import SearchIcon from "@mui/icons-material/Search";
@@ -126,52 +125,44 @@ export function LauncherIcon({
 }
 
 function LauncherTile({ item, iconStyle }: { item: LauncherLink; iconStyle: LauncherIconStyle }) {
-  let host = item.url;
-  try {
-    host = new URL(item.url).host;
-  } catch {
-    // Already checked when saved; the address itself is the fallback.
-  }
   return (
-    <Tooltip title={host} placement="bottom">
-      <ButtonBase
-        component="a"
-        href={item.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={item.name}
+    <ButtonBase
+      component="a"
+      href={item.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={item.name}
+      sx={{
+        flexDirection: "column",
+        justifyContent: "flex-start",
+        gap: 0.75,
+        px: 0.5,
+        py: 1,
+        borderRadius: "10px",
+        transition: "background-color 150ms ease, transform 150ms ease",
+        "&:hover": { bgcolor: hoverBg, transform: "translateY(-1px)" },
+        "&.Mui-focusVisible": { outline: 2, outlineColor: "primary.main", outlineOffset: -2 },
+        "@media (prefers-reduced-motion: reduce)": { transition: "none", "&:hover": { transform: "none" } },
+      }}
+    >
+      <LauncherIcon item={item} iconStyle={iconStyle} />
+      <Typography
+        variant="caption"
         sx={{
-          flexDirection: "column",
-          justifyContent: "flex-start",
-          gap: 0.75,
-          px: 0.5,
-          py: 1,
-          borderRadius: "10px",
-          transition: "background-color 150ms ease, transform 150ms ease",
-          "&:hover": { bgcolor: hoverBg, transform: "translateY(-1px)" },
-          "&.Mui-focusVisible": { outline: 2, outlineColor: "primary.main", outlineOffset: -2 },
-          "@media (prefers-reduced-motion: reduce)": { transition: "none", "&:hover": { transform: "none" } },
+          fontSize: "0.7rem",
+          lineHeight: 1.25,
+          maxWidth: "100%",
+          textAlign: "center",
+          display: "-webkit-box",
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+          color: "text.primary",
         }}
       >
-        <LauncherIcon item={item} iconStyle={iconStyle} />
-        <Typography
-          variant="caption"
-          sx={{
-            fontSize: "0.7rem",
-            lineHeight: 1.25,
-            maxWidth: "100%",
-            textAlign: "center",
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-            color: "text.primary",
-          }}
-        >
-          {item.name}
-        </Typography>
-      </ButtonBase>
-    </Tooltip>
+        {item.name}
+      </Typography>
+    </ButtonBase>
   );
 }
 

@@ -390,4 +390,17 @@ describe("splitPanel", () => {
     expect(at("modelCount")).toMatchObject({ x: 6, y: 0 });
     expectNoOverlap(lg);
   });
+
+  it("gives a tab dragged out on its own the size of the panel it came from", () => {
+    const template: DashboardTemplate = {
+      id: "t",
+      name: null,
+      preset: null,
+      panels: [{ id: "tabs", widgets: ["topViewed", "clock"] }],
+      layouts: { lg: [{ i: "tabs", x: 0, y: 0, w: 3, h: 3 }] },
+    };
+    const detached = detachWidget(template, "clock");
+    const cell = detached.layouts.lg!.find((item) => item.i === panelOf(detached, "clock").id)!;
+    expect(cell).toMatchObject({ w: 3, h: 3 });
+  });
 });
