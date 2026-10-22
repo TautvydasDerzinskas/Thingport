@@ -251,6 +251,8 @@ export default function DashboardPage({ onUnauthorized, isAdmin = false, standal
           target="_blank"
           rel="noopener"
           aria-label={t("dashboard.homepage.open")}
+          // Pushes it and the template button to the right, side by side.
+          sx={{ ml: "auto !important" }}
         >
           <HomeOutlinedIcon fontSize="small" />
         </IconButton>
@@ -264,7 +266,7 @@ export default function DashboardPage({ onUnauthorized, isAdmin = false, standal
           startIcon={<DashboardCustomizeOutlinedIcon fontSize="small" />}
           endIcon={<ExpandMoreIcon fontSize="small" />}
           onClick={(event) => setTemplatesMenu(event.currentTarget)}
-          sx={{ ml: "auto !important", color: "text.secondary", textTransform: "none", fontWeight: 600, minWidth: 0 }}
+          sx={{ color: "text.secondary", textTransform: "none", fontWeight: 600, minWidth: 0 }}
         >
           <Box
             component="span"
