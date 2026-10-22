@@ -36,12 +36,20 @@ export default function SlicerPanel({ onNavigate, onUnauthorized }: Props) {
   const [error, setError] = React.useState<string | null>(null);
   const [menu, setMenu] = React.useState<{ id: string; top: number; left: number } | null>(null);
 
+  // Saves go one at a time, so their answers arrive in order. The panel keeps showing its own toggles until the last
+  // save is back, then the server's answer to it, which also puts back any that failed.
+  const saves = React.useRef<Promise<void>>(Promise.resolve());
+  const pendingSaves = React.useRef(0);
+  const saved = React.useRef<SlicerSettings>({ slicer: null, slicers: [] });
+
   React.useEffect(() => {
     let active = true;
     settingsApi
       .getSlicer()
       .then((res) => {
-        if (active) setValue(res);
+        if (!active) return;
+        saved.current = res;
+        setValue(res);
       })
       .catch((err) => {
         if (active && err instanceof UnauthorizedError) onUnauthorized?.();
@@ -54,26 +62,29 @@ export default function SlicerPanel({ onNavigate, onUnauthorized }: Props) {
     };
   }, [onUnauthorized]);
 
-  const toggle = async (id: string) => {
+  const toggle = (id: string) => {
     if (loading) return;
-    const previous = value;
-    const on = previous.slicers.includes(id);
-    // Shown straight away; put back if the save fails.
-    setValue({
-      ...previous,
-      slicers: on ? previous.slicers.filter((other) => other !== id) : [...previous.slicers, id],
-    });
+    const on = value.slicers.includes(id);
+    setValue((shown) => ({
+      ...shown,
+      slicers: on ? shown.slicers.filter((other) => other !== id) : [...shown.slicers, id],
+    }));
     setError(null);
-    try {
-      // Just this slicer, so a toggle made on another device in the meantime stays.
-      const res = await settingsApi.updateSlicer(on ? { disable: id } : { enable: id });
-      setValue(res);
-      setCachedSlicerSettings(res);
-    } catch (err) {
-      setValue(previous);
-      if (err instanceof UnauthorizedError) onUnauthorized?.();
-      else setError(err instanceof Error ? err.message : t("profile.slicer.failed"));
-    }
+    pendingSaves.current += 1;
+    saves.current = saves.current.then(async () => {
+      try {
+        // Just this slicer, so a toggle made on another device in the meantime stays.
+        const res = await settingsApi.updateSlicer(on ? { disable: id } : { enable: id });
+        saved.current = res;
+        setCachedSlicerSettings(res);
+      } catch (err) {
+        if (err instanceof UnauthorizedError) onUnauthorized?.();
+        else setError(err instanceof Error ? err.message : t("profile.slicer.failed"));
+      } finally {
+        pendingSaves.current -= 1;
+        if (pendingSaves.current === 0) setValue(saved.current);
+      }
+    });
   };
 
   const isOn = (id: string) => value.slicers.includes(id);
@@ -97,7 +108,7 @@ export default function SlicerPanel({ onNavigate, onUnauthorized }: Props) {
             tooltip={loading ? undefined : `${label}: ${statusOf(id)}`}
             ariaLabel={`${label}: ${statusOf(id)}`}
             onContextMenu={(event) => setMenu({ id, ...menuPosition(event) })}
-            onActivate={() => void toggle(id)}
+            onActivate={() => toggle(id)}
           />
         ))}
       </AppGrid>
@@ -122,7 +133,7 @@ export default function SlicerPanel({ onNavigate, onUnauthorized }: Props) {
             disabled={loading}
             onClick={() => {
               setMenu(null);
-              void toggle(menuId);
+              toggle(menuId);
             }}
           >
             <ListItemIcon>
