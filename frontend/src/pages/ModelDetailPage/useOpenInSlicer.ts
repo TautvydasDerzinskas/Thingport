@@ -39,7 +39,7 @@ export function modelFiles(print: Print): ModelFile[] {
 }
 
 export function slicerHref(slicerId: string, file: ModelFile): string {
-  return slicerLaunchUrl(slicerId, printsApi.fileUrl(file.url), file.launchFilename);
+  return slicerLaunchUrl(slicerId, printsApi.slicerFileUrl(file.url), file.launchFilename);
 }
 
 /** `slicerOptions` are the installed slicers that can be launched, `slicerOption` the one the main button opens
@@ -77,7 +77,7 @@ export function useOpenInSlicer(print: Print) {
         launchFilename,
         index,
         plate,
-        href: slicerLaunchUrl(slicerOption.id, printsApi.fileUrl(`${url}?normalize=1`), filename),
+        href: slicerLaunchUrl(slicerOption.id, printsApi.slicerFileUrl(`${url}?normalize=1`), filename),
       }));
   }, [files, print.source_provider, print.prepared_print, slicerOption]);
 

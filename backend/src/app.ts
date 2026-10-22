@@ -3,6 +3,7 @@ import cors from "cors";
 import { resolveCorsOrigins } from "./cors";
 import { HttpError } from "./utils/fileUtils";
 import { trackClients } from "./services/clientActivityService";
+import { pathToken } from "./auth";
 
 import healthRoutes from "./routes/health";
 import mcpRoutes from "./routes/mcp";
@@ -44,6 +45,7 @@ export function createApp(): Express {
     }),
   );
 
+  app.use(pathToken);
   app.use(express.json());
   app.use("/api", trackClients);
 
