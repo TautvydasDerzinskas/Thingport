@@ -684,7 +684,11 @@
         "dragTab": "Faites glisser sur un autre panneau, ou vers un espace vide pour un panneau à part",
         "mergeHere": "Ajouter en onglet",
         "empty": "Ce modèle n'a pas encore de panneaux.",
-        "fit": "Ajuster au contenu"
+        "fit": "Ajuster au contenu",
+        "splitHint": "Sélectionnez des panneaux à onglets pour les séparer",
+        "splitDone_one": "{{count}} panneau séparé en ses onglets",
+        "splitDone_many": "{{count}} panneaux séparés en leurs onglets",
+        "splitDone_other": "{{count}} panneaux séparés en leurs onglets"
       },
       "templates": {
         "open": "Modèles",

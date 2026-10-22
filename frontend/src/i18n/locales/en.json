@@ -681,7 +681,10 @@
         "dragTab": "Drag onto another panel, or onto empty space for a panel of its own",
         "mergeHere": "Add as a tab",
         "empty": "This template has no panels yet.",
-        "fit": "Fit to content"
+        "fit": "Fit to content",
+        "splitHint": "Select tabbed panels to split them",
+        "splitDone_one": "Split {{count}} panel into its tabs",
+        "splitDone_other": "Split {{count}} panels into their tabs"
       },
       "templates": {
         "open": "Templates",

@@ -14,6 +14,7 @@ import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import AddIcon from "@mui/icons-material/Add";
+import CallSplitIcon from "@mui/icons-material/CallSplit";
 import CheckIcon from "@mui/icons-material/Check";
 import DashboardCustomizeOutlinedIcon from "@mui/icons-material/DashboardCustomizeOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
@@ -40,6 +41,7 @@ import {
   newId,
   removePanels,
   setWidgetSettings,
+  splitPanel,
   templateName,
   templateWidgets,
 } from "./templates";
@@ -112,6 +114,16 @@ export default function DashboardPage({ onUnauthorized, isAdmin = false }: Props
   };
 
   // A new panel starts at its widget's usual size, then fits what it shows.
+  // Only when every selected panel has tabs to split.
+  const canSplit = selection.selected.length > 0 && selection.selected.every((panel) => panel.widgets.length > 1);
+  const splitSelected = () => {
+    if (!dashboard || !canSplit) return;
+    const ids = selection.selected.map(panelKey);
+    dashboard.updateTemplate((template) => ids.reduce(splitPanel, template));
+    selection.clear();
+    showToast({ message: t("dashboard.edit.splitDone", { count: ids.length }), severity: "success" });
+  };
+
   const addPanel = (id: DashboardWidgetId) => {
     setAddMenu(null);
     const panelId = newId();
@@ -205,6 +217,13 @@ export default function DashboardPage({ onUnauthorized, isAdmin = false }: Props
           icon={<TabIcon fontSize="small" />}
           disabled={selectedIds.size < 2}
           onClick={mergeSelected}
+        />
+        <SelectionAction
+          label={t("dashboard.edit.split")}
+          hint={t("dashboard.edit.splitHint")}
+          icon={<CallSplitIcon fontSize="small" />}
+          disabled={!canSplit}
+          onClick={splitSelected}
         />
         <SelectionAction
           label={t("dashboard.edit.remove")}

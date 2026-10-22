@@ -684,7 +684,11 @@
         "dragTab": "Arrastra sobre otro panel, o a un espacio vacío para darle su propio panel",
         "mergeHere": "Añadir como pestaña",
         "empty": "Esta plantilla aún no tiene paneles.",
-        "fit": "Ajustar al contenido"
+        "fit": "Ajustar al contenido",
+        "splitHint": "Selecciona paneles con pestañas para separarlos",
+        "splitDone_one": "Se separó {{count}} panel en sus pestañas",
+        "splitDone_many": "Se separaron {{count}} paneles en sus pestañas",
+        "splitDone_other": "Se separaron {{count}} paneles en sus pestañas"
       },
       "templates": {
         "open": "Plantillas",

@@ -690,7 +690,11 @@
         "dragTab": "Nuvilkite ant kito skydelio arba į tuščią vietą, kad taptų atskiru skydeliu",
         "mergeHere": "Pridėti kaip kortelę",
         "empty": "Šiame šablone dar nėra skydelių.",
-        "fit": "Pritaikyti prie turinio"
+        "fit": "Pritaikyti prie turinio",
+        "splitHint": "Pasirinkite skydelius su kortelėmis, kad juos išskaidytumėte",
+        "splitDone_one": "{{count}} skydelis išskaidytas į korteles",
+        "splitDone_few": "{{count}} skydeliai išskaidyti į korteles",
+        "splitDone_other": "{{count}} skydelių išskaidyta į korteles"
       },
       "templates": {
         "open": "Šablonai",

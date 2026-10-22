@@ -332,11 +332,34 @@ export function detachWidget(template: DashboardTemplate, id: WidgetInstanceId):
   return placeInstance({ ...template, panels }, id, newId());
 }
 
-/** Every tab of a tabbed panel becomes a panel of its own; the first stays where the panel was. */
+/**
+ * Every tab of a tabbed panel becomes a panel of its own, the size the panel was: the first where it was, the others
+ * one under another below it, in tab order. What was below moves down to make room.
+ */
 export function splitPanel(template: DashboardTemplate, panelId: string): DashboardTemplate {
   const panel = template.panels.find((p) => p.id === panelId);
   if (!panel || panel.widgets.length < 2) return template;
-  return panel.widgets.slice(1).reduce(detachWidget, template);
+  const [first, ...rest] = panel.widgets;
+  const pieces: DashboardPanel[] = rest.map((instance) => ({ id: newId(), widgets: [instance] }));
+  const panels = template.panels.flatMap((p) =>
+    p.id === panelId ? [{ ...p, widgets: [first], tab: 0 }, ...pieces] : [p],
+  );
+  const layouts: DashboardTemplate["layouts"] = {};
+  for (const [breakpoint, items] of Object.entries(template.layouts) as [DashboardBreakpoint, DashboardGridItem[]][]) {
+    const at = items.find((item) => item.i === panelId);
+    // Not placed in this layout yet: the pieces go where unplaced panels go, at the bottom.
+    if (!at) {
+      layouts[breakpoint] = items;
+      continue;
+    }
+    const below = at.y + at.h;
+    const room = at.h * pieces.length;
+    // Moved down first, so the pieces take the space right under the panel rather than queueing behind them.
+    const moved = items.map((item) => (item.y >= below ? { ...item, y: item.y + room } : item));
+    const placed = pieces.map((piece, index) => ({ i: piece.id, x: at.x, y: below + at.h * index, w: at.w, h: at.h }));
+    layouts[breakpoint] = compact([...moved, ...placed], colsOf(breakpoint));
+  }
+  return { ...template, panels, layouts };
 }
 
 /**

@@ -360,3 +360,34 @@ describe("widgets added more than once", () => {
     expect(template.settings?.[second]).toEqual({ feeds: ["https://b.example/feed"] });
   });
 });
+
+describe("splitPanel", () => {
+  it("puts the tabs one under another where the panel was, moving what was below down", () => {
+    const template: DashboardTemplate = {
+      id: "t",
+      name: null,
+      preset: null,
+      panels: [
+        { id: "tabs", widgets: ["topViewed", "topPrinted", "recentlyAdded"] },
+        { id: "below", widgets: ["clock"] },
+        { id: "beside", widgets: ["modelCount"] },
+      ],
+      layouts: {
+        lg: [
+          { i: "tabs", x: 0, y: 0, w: 6, h: 5 },
+          { i: "below", x: 0, y: 5, w: 6, h: 2 },
+          { i: "beside", x: 6, y: 0, w: 3, h: 2 },
+        ],
+      },
+    };
+    const split = splitPanel(template, "tabs");
+    const lg = resolveLayout(split, "lg");
+    const at = (widget: string) => lg.find((item) => item.i === panelOf(split, widget).id)!;
+    expect(at("topViewed")).toMatchObject({ x: 0, y: 0, w: 6, h: 5 });
+    expect(at("topPrinted")).toMatchObject({ x: 0, y: 5, w: 6, h: 5 });
+    expect(at("recentlyAdded")).toMatchObject({ x: 0, y: 10, w: 6, h: 5 });
+    expect(at("clock")).toMatchObject({ x: 0, y: 15 });
+    expect(at("modelCount")).toMatchObject({ x: 6, y: 0 });
+    expectNoOverlap(lg);
+  });
+});
