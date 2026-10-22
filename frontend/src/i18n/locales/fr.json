@@ -3497,7 +3497,9 @@
       "summaryRemoveFrom": "Retirer de {{count}}",
       "collectionsUpdated_one": "{{count}} collection mise à jour",
       "collectionsUpdated_other": "{{count}} collections mises à jour",
-      "collectionsFailed": "Impossible de mettre à jour les collections. Veuillez réessayer."
+      "collectionsFailed": "Impossible de mettre à jour les collections. Veuillez réessayer.",
+      "tagsPartlyUpdated_one": "Étiquettes de {{count}} modèle mises à jour, mais les autres ont échoué. Veuillez réessayer.",
+      "tagsPartlyUpdated_other": "Étiquettes de {{count}} modèles mises à jour, mais les autres ont échoué. Veuillez réessayer."
     },
     "merge": {
       "action": "Fusionner",

@@ -30,16 +30,20 @@ type Props = {
 
 type Row = { tag: string; has: number; state: MixedState };
 
-const tagKey = (tag: string) => tag.trim().replace(/\s+/g, " ").toLowerCase();
+// Like the backend: trimmed and case-blind, but spacing inside is part of the tag.
+const tagKey = (tag: string) => tag.trim().toLowerCase();
 
 function initialRows(prints: Print[]): Row[] {
   const counts = new Map<string, Row>();
   for (const print of prints) {
-    for (const tag of new Set(print.tags.map(tagKey))) {
-      if (!tag) continue;
-      const row = counts.get(tag);
+    const seen = new Set<string>();
+    for (const tag of print.tags) {
+      const key = tagKey(tag);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      const row = counts.get(key);
       if (row) row.has++;
-      else counts.set(tag, { tag: print.tags.find((own) => tagKey(own) === tag)!, has: 1, state: "all" });
+      else counts.set(key, { tag: tag.trim(), has: 1, state: "all" });
     }
   }
   return [...counts.values()]
@@ -110,7 +114,11 @@ export default function BulkEditTagsDialog({ open, onClose, prints, onUpdated, o
         { add, remove },
       );
       onUpdated(result.prints);
-      showToast({ message: t("models:selection.tagsUpdated", { count: result.changed }) });
+      showToast(
+        result.partial
+          ? { message: t("models:selection.tagsPartlyUpdated", { count: result.changed }), severity: "error" }
+          : { message: t("models:selection.tagsUpdated", { count: result.changed }) },
+      );
       onClose();
     } catch (err) {
       if (err instanceof UnauthorizedError) {
@@ -118,7 +126,7 @@ export default function BulkEditTagsDialog({ open, onClose, prints, onUpdated, o
         return;
       }
       console.error(err);
-      setError(err instanceof Error ? err.message : t("models:selection.tagsFailed"));
+      setError(t("models:selection.tagsFailed"));
     } finally {
       setSaving(false);
     }
@@ -141,6 +149,7 @@ export default function BulkEditTagsDialog({ open, onClose, prints, onUpdated, o
         <TextField
           size="small"
           fullWidth
+          disabled={saving}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={onDraftKeyDown}
@@ -169,6 +178,7 @@ export default function BulkEditTagsDialog({ open, onClose, prints, onUpdated, o
                   total={total}
                   state={row.state}
                   fresh={row.has === 0}
+                  disabled={saving}
                   onClick={() => cycle(key)}
                   someLabel={t("models:selection.onSome", { name: row.tag, count: row.has, total })}
                 />
@@ -197,6 +207,7 @@ export default function BulkEditTagsDialog({ open, onClose, prints, onUpdated, o
                   variant="outlined"
                   icon={<AddIcon fontSize="small" />}
                   label={tag}
+                  disabled={saving}
                   onClick={() => putOnAll(tag)}
                 />
               ))}

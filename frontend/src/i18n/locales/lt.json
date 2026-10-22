@@ -3623,7 +3623,10 @@
       "collectionsUpdated_one": "Atnaujinta {{count}} kolekcija",
       "collectionsUpdated_few": "Atnaujintos {{count}} kolekcijos",
       "collectionsUpdated_other": "Atnaujinta {{count}} kolekcijų",
-      "collectionsFailed": "Nepavyko atnaujinti kolekcijų. Bandykite dar kartą."
+      "collectionsFailed": "Nepavyko atnaujinti kolekcijų. Bandykite dar kartą.",
+      "tagsPartlyUpdated_one": "Atnaujintos {{count}} modelio žymės, bet likusių nepavyko. Bandykite dar kartą.",
+      "tagsPartlyUpdated_few": "Atnaujintos {{count}} modelių žymės, bet likusių nepavyko. Bandykite dar kartą.",
+      "tagsPartlyUpdated_other": "Atnaujintos {{count}} modelių žymės, bet likusių nepavyko. Bandykite dar kartą."
     },
     "merge": {
       "action": "Sujungti",

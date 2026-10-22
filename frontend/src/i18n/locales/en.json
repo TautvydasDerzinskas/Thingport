@@ -3483,7 +3483,9 @@
       "summaryRemoveFrom": "Remove from {{count}}",
       "collectionsUpdated_one": "Updated {{count}} collection",
       "collectionsUpdated_other": "Updated {{count}} collections",
-      "collectionsFailed": "Failed to update the collections. Please try again."
+      "collectionsFailed": "Failed to update the collections. Please try again.",
+      "tagsPartlyUpdated_one": "Updated the tags of {{count}} model, but the rest failed. Please try again.",
+      "tagsPartlyUpdated_other": "Updated the tags of {{count}} models, but the rest failed. Please try again."
     },
     "merge": {
       "action": "Merge",

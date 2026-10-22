@@ -544,23 +544,30 @@ export const printsApi = {
     return prints;
   },
 
-  /** Adds `add` to and takes `remove` off every model; answers the models and how many changed. */
+  /** Adds `add` to and takes `remove` off every model; answers the models and how many changed. A batch failing
+   *  after an earlier one went through answers what did, with `partial` set, so the grid isn't left stale. */
   bulkEditTags: async (
     ids: string[],
     tags: { add: string[]; remove: string[] },
-  ): Promise<{ prints: Print[]; changed: number }> => {
-    const result = { prints: [] as Print[], changed: 0 };
+  ): Promise<{ prints: Print[]; changed: number; partial: boolean }> => {
+    const result = { prints: [] as Print[], changed: 0, partial: false };
     for (const chunk of bulkChunks(ids)) {
-      const res = await fetch(`${apiBase()}/prints/tags`, {
-        method: "POST",
-        headers: authHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ print_ids: chunk, ...tags }),
-      });
-      if (res.status === 401) throw new UnauthorizedError();
-      if (!res.ok) throw new Error(await readErrorMessage(res, "Tag update failed"));
-      const part = (await res.json()) as { prints: Print[]; changed: number };
-      result.prints.push(...part.prints);
-      result.changed += part.changed;
+      try {
+        const res = await fetch(`${apiBase()}/prints/tags`, {
+          method: "POST",
+          headers: authHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ print_ids: chunk, ...tags }),
+        });
+        if (res.status === 401) throw new UnauthorizedError();
+        if (!res.ok) throw new Error(await readErrorMessage(res, "Tag update failed"));
+        const part = (await res.json()) as { prints: Print[]; changed: number };
+        result.prints.push(...part.prints);
+        result.changed += part.changed;
+      } catch (err) {
+        if (!result.prints.length || err instanceof UnauthorizedError) throw err;
+        console.error(err);
+        return { ...result, partial: true };
+      }
     }
     return result;
   },

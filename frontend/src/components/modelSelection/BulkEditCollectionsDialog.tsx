@@ -50,7 +50,7 @@ export default function BulkEditCollectionsDialog({
       return;
     }
     console.error(err);
-    setError(err instanceof Error ? err.message : fallback);
+    setError(fallback);
   };
 
   const load = () =>

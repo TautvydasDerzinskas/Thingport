@@ -3484,7 +3484,9 @@
       "summaryRemoveFrom": "Quitar de {{count}}",
       "collectionsUpdated_one": "Se actualizó {{count}} colección",
       "collectionsUpdated_other": "Se actualizaron {{count}} colecciones",
-      "collectionsFailed": "No se pudieron actualizar las colecciones. Inténtalo de nuevo."
+      "collectionsFailed": "No se pudieron actualizar las colecciones. Inténtalo de nuevo.",
+      "tagsPartlyUpdated_one": "Se actualizaron las etiquetas de {{count}} modelo, pero el resto falló. Inténtalo de nuevo.",
+      "tagsPartlyUpdated_other": "Se actualizaron las etiquetas de {{count}} modelos, pero el resto falló. Inténtalo de nuevo."
     },
     "merge": {
       "action": "Fusionar",
