@@ -544,6 +544,24 @@ export const printsApi = {
     return prints;
   },
 
+  /** Adds the tags to every model that doesn't have them yet; answers the models and how many changed. */
+  bulkAddTags: async (ids: string[], tags: string[]): Promise<{ prints: Print[]; changed: number }> => {
+    const result = { prints: [] as Print[], changed: 0 };
+    for (const chunk of bulkChunks(ids)) {
+      const res = await fetch(`${apiBase()}/prints/tags`, {
+        method: "POST",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ print_ids: chunk, tags }),
+      });
+      if (res.status === 401) throw new UnauthorizedError();
+      if (!res.ok) throw new Error(await readErrorMessage(res, "Tag update failed"));
+      const part = (await res.json()) as { prints: Print[]; changed: number };
+      result.prints.push(...part.prints);
+      result.changed += part.changed;
+    }
+    return result;
+  },
+
   updateCategory: async (id: string, category_id: string | null) => {
     const res = await fetch(`${apiBase()}/print/${id}/category`, {
       method: "POST",

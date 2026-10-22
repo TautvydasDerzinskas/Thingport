@@ -3461,7 +3461,15 @@
       "confirmRemoveFromCollection_one": "Remove {{count}} model from this collection? The model itself is kept.",
       "confirmRemoveFromCollection_other": "Remove {{count}} models from this collection? The models themselves are kept.",
       "removedFromCollection_one": "Removed {{count}} model from the collection",
-      "removedFromCollection_other": "Removed {{count}} models from the collection"
+      "removedFromCollection_other": "Removed {{count}} models from the collection",
+      "addTags": "Add tags",
+      "addTagsTitle_one": "Add tags to {{count}} model",
+      "addTagsTitle_other": "Add tags to {{count}} models",
+      "addTagsPlaceholder": "Type a tag, press Enter",
+      "existingTags": "Your tags",
+      "tagsAdded_one": "Tagged {{count}} model",
+      "tagsAdded_other": "Tagged {{count}} models",
+      "addTagsFailed": "Failed to add the tags. Please try again."
     },
     "merge": {
       "action": "Merge",

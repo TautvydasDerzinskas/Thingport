@@ -3475,7 +3475,15 @@
       "confirmRemoveFromCollection_one": "Retirer {{count}} modèle de cette collection ? Le modèle lui-même est conservé.",
       "confirmRemoveFromCollection_other": "Retirer {{count}} modèles de cette collection ? Les modèles eux-mêmes sont conservés.",
       "removedFromCollection_one": "{{count}} modèle retiré de la collection",
-      "removedFromCollection_other": "{{count}} modèles retirés de la collection"
+      "removedFromCollection_other": "{{count}} modèles retirés de la collection",
+      "addTags": "Ajouter des étiquettes",
+      "addTagsTitle_one": "Ajouter des étiquettes à {{count}} modèle",
+      "addTagsTitle_other": "Ajouter des étiquettes à {{count}} modèles",
+      "addTagsPlaceholder": "Saisissez une étiquette, puis Entrée",
+      "existingTags": "Vos étiquettes",
+      "tagsAdded_one": "{{count}} modèle étiqueté",
+      "tagsAdded_other": "{{count}} modèles étiquetés",
+      "addTagsFailed": "Impossible d’ajouter les étiquettes. Veuillez réessayer."
     },
     "merge": {
       "action": "Fusionner",

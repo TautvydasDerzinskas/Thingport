@@ -629,6 +629,42 @@ router.post(
   }),
 );
 
+const bulkTagsSchema = bulkPrintIdsSchema.extend({ tags: z.array(z.string()).min(1).max(50) });
+router.post(
+  "/prints/tags",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(bulkTagsSchema, req.body);
+    const added = normalizeTags(body.tags);
+    if (!added.length) throw new HttpError(400, "Tag is required");
+    const prints = await prisma.print.findMany({
+      where: { id: { in: body.print_ids }, userId: req.userId },
+      select: { id: true, name: true, tags: true },
+    });
+    // Appended after the model's own, and only to the ones missing one, so the rest aren't touched.
+    const changed = prints.flatMap((print) => {
+      const tags = normalizeTags([...print.tags, ...added]);
+      return tags.length === normalizeTags(print.tags).length ? [] : [{ ...print, tags }];
+    });
+    for (const print of changed) {
+      await prisma.print.update({ where: { id: print.id }, data: { tags: print.tags } });
+    }
+    await relocatePrintsForToken(
+      "tags",
+      changed.map((print) => print.id),
+    );
+    const out = await printOutsByIds(req.userId!, body.print_ids);
+    res.json({ prints: body.print_ids.flatMap((id) => out.get(id) ?? []), changed: changed.length });
+    for (const print of changed) {
+      void createLog({
+        userId: req.userId!,
+        action: "model_edited",
+        targetId: print.id,
+        details: { field: "tags", name: print.name },
+      });
+    }
+  }),
+);
+
 /** Fills the model's empty details and images from its source; never overwrites, never adds files. */
 async function fillGaps(req: Request, res: Response): Promise<void> {
   const result = await fillSourceGaps(req.userId!, req.params.id);

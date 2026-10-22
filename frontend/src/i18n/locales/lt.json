@@ -3598,7 +3598,17 @@
       "confirmRemoveFromCollection_other": "Pašalinti {{count}} modelių iš šios kolekcijos? Patys modeliai liks.",
       "removedFromCollection_one": "{{count}} modelis pašalintas iš kolekcijos",
       "removedFromCollection_few": "{{count}} modeliai pašalinti iš kolekcijos",
-      "removedFromCollection_other": "{{count}} modelių pašalinta iš kolekcijos"
+      "removedFromCollection_other": "{{count}} modelių pašalinta iš kolekcijos",
+      "addTags": "Pridėti žymes",
+      "addTagsTitle_one": "Pridėti žymes {{count}} modeliui",
+      "addTagsTitle_few": "Pridėti žymes {{count}} modeliams",
+      "addTagsTitle_other": "Pridėti žymes {{count}} modelių",
+      "addTagsPlaceholder": "Įveskite žymę ir spauskite Enter",
+      "existingTags": "Jūsų žymės",
+      "tagsAdded_one": "Pažymėtas {{count}} modelis",
+      "tagsAdded_few": "Pažymėti {{count}} modeliai",
+      "tagsAdded_other": "Pažymėta {{count}} modelių",
+      "addTagsFailed": "Nepavyko pridėti žymių. Bandykite dar kartą."
     },
     "merge": {
       "action": "Sujungti",

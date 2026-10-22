@@ -3462,7 +3462,15 @@
       "confirmRemoveFromCollection_one": "¿Quitar {{count}} modelo de esta colección? El modelo en sí se conserva.",
       "confirmRemoveFromCollection_other": "¿Quitar {{count}} modelos de esta colección? Los modelos en sí se conservan.",
       "removedFromCollection_one": "Se quitó {{count}} modelo de la colección",
-      "removedFromCollection_other": "Se quitaron {{count}} modelos de la colección"
+      "removedFromCollection_other": "Se quitaron {{count}} modelos de la colección",
+      "addTags": "Añadir etiquetas",
+      "addTagsTitle_one": "Añadir etiquetas a {{count}} modelo",
+      "addTagsTitle_other": "Añadir etiquetas a {{count}} modelos",
+      "addTagsPlaceholder": "Escribe una etiqueta y pulsa Intro",
+      "existingTags": "Tus etiquetas",
+      "tagsAdded_one": "Se etiquetó {{count}} modelo",
+      "tagsAdded_other": "Se etiquetaron {{count}} modelos",
+      "addTagsFailed": "No se pudieron añadir las etiquetas. Inténtalo de nuevo."
     },
     "merge": {
       "action": "Fusionar",
