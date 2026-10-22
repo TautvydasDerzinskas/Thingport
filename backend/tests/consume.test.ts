@@ -110,6 +110,20 @@ describe("consume folder", () => {
     expect(fs.readdirSync(dir)).toEqual([]);
   });
 
+  it("unpacks a zip whose paths start with ./, as macOS tar -a writes them", async () => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), "consume-"));
+    await setConsumeSettings({ mode: "separate" });
+    const zip = new JSZip();
+    zip.file("./Dotted/hull.stl", STL);
+    zip.file("./Dotted/Parts/mast.stl", STL);
+    put("dotted.zip", await zip.generateAsync({ type: "nodebuffer" }));
+
+    expect(await consumeFolder(dir)).toMatchObject({ models: 2, files: 2, failed: [] });
+    expect((await printsNamed("hull"))[0].category?.name).toBe("Dotted");
+    expect((await printsNamed("mast"))[0].category?.name).toBe("Parts");
+    expect(fs.readdirSync(dir)).toEqual([]);
+  });
+
   it("picks up files dropped into a watched folder once they stop changing", async () => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), "consume-"));
     await setConsumeSettings({ mode: "separate" });
