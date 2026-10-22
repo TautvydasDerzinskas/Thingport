@@ -64,4 +64,27 @@ describe("token in the path", () => {
     ).body.token;
     expect((await request(app).get(`/api/t/${apiToken}/settings/slicer`)).status).toBe(401);
   });
+
+  it("checks an API token's scope against the path it reaches", async () => {
+    const upload = await request(app)
+      .post("/api/upload")
+      .set({ Authorization: `Bearer ${session}` })
+      .attach("files", Buffer.from(STL), "scoped.stl");
+    const print = (
+      await request(app)
+        .get(`/api/print/${upload.body.prints[0].id}`)
+        .set({ Authorization: `Bearer ${session}` })
+    ).body;
+    const apiToken = (
+      await request(app)
+        .post("/api/profile/api-token")
+        .set({ Authorization: `Bearer ${session}` })
+        .send({ rest_scopes: ["other"] })
+    ).body.token;
+    const res = await request(app)
+      .get(`/api/t/x${print.plates[0].url}`)
+      .set({ Authorization: `Bearer ${apiToken}` });
+    expect(res.status).toBe(403);
+    expect(res.body.scope).toBe("files");
+  });
 });

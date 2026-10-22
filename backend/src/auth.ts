@@ -67,6 +67,8 @@ export function pathToken(req: Request, _res: Response, next: NextFunction) {
     try {
       req.pathToken = decodeURIComponent(match[1]);
       req.url = `/api${match[2]}`;
+      // requireAuth picks an API token's scope from originalUrl, so it must name the route actually reached.
+      req.originalUrl = req.url;
     } catch {
       // A malformed escape: left as is, the request 404s.
     }
