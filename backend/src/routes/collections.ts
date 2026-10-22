@@ -373,4 +373,27 @@ router.get(
   }),
 );
 
+// The same for a grid's multi-select: how many of the models each real collection holds.
+const membershipSchema = z.object({ print_ids: z.array(z.string()).min(1).max(500) });
+router.post(
+  "/prints/collections",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(membershipSchema, req.body);
+    const [collections, items] = await Promise.all([
+      prisma.collection.findMany({
+        where: { userId: req.userId },
+        orderBy: { createdAt: "desc" },
+        select: { id: true, name: true },
+      }),
+      prisma.collectionItem.findMany({
+        where: { printId: { in: body.print_ids }, print: { userId: req.userId } },
+        select: { collectionId: true },
+      }),
+    ]);
+    const countOf = new Map<string, number>();
+    for (const item of items) countOf.set(item.collectionId, (countOf.get(item.collectionId) ?? 0) + 1);
+    res.json(collections.map((c) => ({ id: c.id, name: c.name, count: countOf.get(c.id) ?? 0 })));
+  }),
+);
+
 export default router;

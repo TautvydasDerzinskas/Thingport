@@ -25,7 +25,7 @@ import { useAiDescriptionRun, useAiRun } from "../Layout/AiRunContext";
 import { useConfirm } from "../ConfirmProvider";
 import { useToast } from "../ToastProvider";
 import DownloadZipConfirmDialog from "../DownloadZipConfirmDialog";
-import BulkAddToCollectionDialog from "./BulkAddToCollectionDialog";
+import BulkEditCollectionsDialog from "./BulkEditCollectionsDialog";
 import BulkEditTagsDialog from "./BulkEditTagsDialog";
 import SelectionToolbar, { SelectionAction } from "../selection/SelectionToolbar";
 
@@ -265,10 +265,12 @@ export default function ModelSelectionToolbar({
             )}
           </Menu>
 
-          <BulkAddToCollectionDialog
+          <BulkEditCollectionsDialog
             open={addOpen}
             onClose={() => setAddOpen(false)}
             printIds={ids}
+            collectionId={collectionId}
+            onRemovedFromCollection={onRemovedFromCollection}
             onUnauthorized={onUnauthorized}
           />
           <BulkEditTagsDialog
@@ -289,7 +291,7 @@ export default function ModelSelectionToolbar({
         </>
       }
     >
-      {action(t("models:detail.addToCollection"), <PlaylistAddIcon fontSize="small" />, () => setAddOpen(true))}
+      {action(t("models:selection.editCollections"), <PlaylistAddIcon fontSize="small" />, () => setAddOpen(true))}
       {collectionId &&
         action(
           t("models:detail.removeFromCollection"),

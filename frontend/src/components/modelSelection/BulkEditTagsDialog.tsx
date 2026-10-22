@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
 import type React from "react";
 import { useTranslation } from "react-i18next";
-import { keyframes } from "@mui/material/styles";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
-import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import Chip from "@mui/material/Chip";
@@ -16,12 +14,11 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import Typography from "@mui/material/Typography";
 import AddIcon from "@mui/icons-material/Add";
-import CheckIcon from "@mui/icons-material/Check";
-import RemoveIcon from "@mui/icons-material/Remove";
 import { UnauthorizedError } from "../../api/client";
 import { type Print, printsApi } from "../../api/prints";
 import { useToast } from "../ToastProvider";
 import HelpTip from "../HelpTip";
+import MixedStateChip, { type MixedState, nextMixedState, startMixedState } from "../controls/MixedStateChip";
 
 type Props = {
   open: boolean;
@@ -31,17 +28,9 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-/** Whether a tag ends up on all of the models, none of them, or stays on just the ones that have it. */
-type TagState = "all" | "some" | "none";
-
-type Row = { tag: string; has: number; state: TagState };
+type Row = { tag: string; has: number; state: MixedState };
 
 const tagKey = (tag: string) => tag.trim().replace(/\s+/g, " ").toLowerCase();
-
-const appear = keyframes`
-  from { opacity: 0; transform: scale(0.85); }
-  to { opacity: 1; transform: scale(1); }
-`;
 
 function initialRows(prints: Print[]): Row[] {
   const counts = new Map<string, Row>();
@@ -54,19 +43,9 @@ function initialRows(prints: Print[]): Row[] {
     }
   }
   return [...counts.values()]
-    .map((row) => ({ ...row, state: row.has === prints.length ? ("all" as const) : ("some" as const) }))
+    .map((row) => ({ ...row, state: startMixedState(row.has, prints.length) }))
     .toSorted((a, b) => b.has - a.has || a.tag.localeCompare(b.tag));
 }
-
-/** A tag only some have can go back to "some"; any other only flips between all and none. */
-function nextState(row: Row, total: number): TagState {
-  const mixed = row.has > 0 && row.has < total;
-  if (row.state === "all") return "none";
-  if (row.state === "none") return mixed ? "some" : "all";
-  return "all";
-}
-
-const startState = (row: Row, total: number): TagState => (row.has === total ? "all" : row.has ? "some" : "none");
 
 /** Tags of the selected models, each put on all of them, taken off all of them, or left as it is. */
 export default function BulkEditTagsDialog({ open, onClose, prints, onUpdated, onUnauthorized }: Props) {
@@ -110,7 +89,9 @@ export default function BulkEditTagsDialog({ open, onClose, prints, onUpdated, o
   };
 
   const cycle = (key: string) =>
-    setRows((prev) => prev.map((row) => (tagKey(row.tag) === key ? { ...row, state: nextState(row, total) } : row)));
+    setRows((prev) =>
+      prev.map((row) => (tagKey(row.tag) === key ? { ...row, state: nextMixedState(row.state, row.has, total) } : row)),
+    );
 
   const onDraftKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" || e.key === ",") {
@@ -180,49 +161,16 @@ export default function BulkEditTagsDialog({ open, onClose, prints, onUpdated, o
           <Stack direction="row" flexWrap="wrap" gap={0.75}>
             {rows.map((row) => {
               const key = tagKey(row.tag);
-              const removing = row.state === "none" && row.has > 0;
               return (
-                <Chip
+                <MixedStateChip
                   key={key}
-                  size="small"
-                  clickable
+                  label={row.tag}
+                  has={row.has}
+                  total={total}
+                  state={row.state}
+                  fresh={row.has === 0}
                   onClick={() => cycle(key)}
-                  aria-pressed={row.state === "all" ? "true" : row.state === "some" ? "mixed" : "false"}
-                  aria-label={
-                    row.state === "some"
-                      ? t("models:selection.tagOnSome", { tag: row.tag, count: row.has, total })
-                      : undefined
-                  }
-                  color={row.state === "all" ? "primary" : "default"}
-                  variant={row.state === "all" ? "filled" : "outlined"}
-                  icon={
-                    row.state === "all" ? (
-                      <CheckIcon fontSize="small" />
-                    ) : row.state === "some" ? (
-                      <RemoveIcon fontSize="small" />
-                    ) : undefined
-                  }
-                  label={
-                    row.state === "some" ? (
-                      <>
-                        {row.tag}
-                        <Box component="span" sx={{ ml: 0.75, color: "text.secondary", fontSize: "0.7rem" }}>
-                          {row.has}/{total}
-                        </Box>
-                      </>
-                    ) : (
-                      row.tag
-                    )
-                  }
-                  sx={{
-                    // A tag changed from where it started stands out from the ones left alone.
-                    fontWeight: row.state !== startState(row, total) ? 600 : undefined,
-                    ...(removing && { textDecoration: "line-through", color: "text.disabled" }),
-                    ...(row.has === 0 && {
-                      animation: `${appear} 180ms ease-out`,
-                      "@media (prefers-reduced-motion: reduce)": { animation: "none" },
-                    }),
-                  }}
+                  someLabel={t("models:selection.onSome", { name: row.tag, count: row.has, total })}
                 />
               );
             })}
@@ -266,7 +214,7 @@ export default function BulkEditTagsDialog({ open, onClose, prints, onUpdated, o
           disabled={saving || !dirty}
           startIcon={saving ? <CircularProgress size={16} color="inherit" /> : undefined}
         >
-          {dirty ? summary.join(" · ") : t("models:selection.applyTags")}
+          {dirty ? summary.join(" · ") : t("models:selection.apply")}
         </Button>
       </DialogActions>
     </Dialog>
