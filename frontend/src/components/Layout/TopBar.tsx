@@ -9,7 +9,11 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import type { AuthUser } from "../../api/auth";
 import type { ThemeSelection } from "../../constants/settingsOptions";
 import type { MakerWorldSettings } from "../../utils/settings";
-import { notifyConfigurationClosed, onOpenConfiguration } from "../../utils/configurationEvents";
+import {
+  notifyConfigurationClosed,
+  onOpenConfiguration,
+  takeConfigurationParam,
+} from "../../utils/configurationEvents";
 import AddMenu, { type AddMenuHandle } from "./AddMenu";
 import ConfigurationDialog, { type ConfigurationTab } from "./ConfigurationDialog";
 import NotificationBell from "./NotificationBell";
@@ -57,6 +61,11 @@ export default function TopBar({
   const [configTab, setConfigTab] = useState<ConfigurationTab | null>(null);
 
   useEffect(() => onOpenConfiguration(setConfigTab), []);
+  // Arriving with `?configuration=<tab>`, as from the homepage view's search.
+  useEffect(() => {
+    const tab = takeConfigurationParam();
+    if (tab) setConfigTab(tab);
+  }, []);
 
   // Publishes the bar's real height (it can wrap) as a CSS var for sticky elements below it.
   useLayoutEffect(() => {

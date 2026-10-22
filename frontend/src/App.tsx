@@ -148,7 +148,16 @@ function AppShell({
 
   // The homepage view: the dashboard alone, without the app's side menu and top bar.
   if (location.pathname === HOMEPAGE_PATH)
-    return <HomepageView muiTheme={muiTheme} isAdmin={isAdmin} onUnauthorized={onUnauthorized} />;
+    return (
+      <HomepageView
+        muiTheme={muiTheme}
+        isAdmin={isAdmin}
+        onUnauthorized={onUnauthorized}
+        themeSelection={themeSelection}
+        onThemeChange={onThemeChange}
+        onLogout={onLogout}
+      />
+    );
 
   return (
     <AppLayout

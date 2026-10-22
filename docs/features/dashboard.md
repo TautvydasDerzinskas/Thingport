@@ -46,7 +46,8 @@ makes new ones (empty, a copy of the current one or a built-in), renames, copies
 
 **Homepage** (the house beside the pencil) opens the dashboard on its own in a new tab: just the panels, without the
 side menu or the top bar, and kept to the template it was opened from. Set that page as your browser's homepage or new
-tab page to start every session there.
+tab page to start every session there. **⌘S** (Ctrl+S on Windows and Linux), or the search button in its corner,
+opens Thingport's search over it, the same search as in the top bar.
 
 Wide, medium and phone-sized screens each keep their own arrangement: until you arrange one yourself, it follows the
 wide one. Everything is saved to your account, so it follows you to other devices.
