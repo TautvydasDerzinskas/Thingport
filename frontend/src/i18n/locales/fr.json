@@ -927,6 +927,7 @@
         "modeLabel": "Stockage des fichiers identiques",
         "help": "Thingport compare chaque nouveau fichier de modèle à ceux déjà stockés. La copie sur écriture clone un fichier identique sur btrfs, XFS ou ZFS 2.2 et plus récent, et le stocke normalement ailleurs ; les copies restent indépendantes. Un lien physique partage le fichier sur n'importe quel système de fichiers unique, mais le modifier directement sur le disque le change pour tous les utilisateurs, et les sauvegardes doivent conserver les liens physiques (rsync -H).",
         "failed": "Impossible d'enregistrer le stockage des fichiers identiques. Veuillez réessayer.",
+        "loadFailed": "Impossible de charger le stockage des fichiers identiques.",
         "modes": {
           "off": "Séparément",
           "reflink": "Copie sur écriture",

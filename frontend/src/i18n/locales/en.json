@@ -927,6 +927,7 @@
         "modeLabel": "Store identical files",
         "help": "Thingport compares each new model file with the ones already stored. Copy-on-write clones a match on btrfs, XFS or ZFS 2.2 and later, and stores the file as usual elsewhere; the copies stay independent. A hard link shares the file on any single filesystem, but editing it directly on disk changes it for every user, and backups need to keep hard links (rsync -H).",
         "failed": "Couldn't save how identical files are stored. Please try again.",
+        "loadFailed": "Couldn't load how identical files are stored.",
         "modes": {
           "off": "Separately",
           "reflink": "Copy-on-write",

@@ -157,13 +157,14 @@ async function folderBytes(dir: string, seen = new Set<string>()): Promise<numbe
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) total += await folderBytes(full, seen);
     else if (entry.isFile())
-      total += await fs.stat(full).then(
+      // BigInt: an inode number can be past what a double holds exactly, and two files would then look the same.
+      total += await fs.stat(full, { bigint: true }).then(
         (stats) => {
-          if (stats.nlink < 2) return stats.size;
+          if (stats.nlink < 2n) return Number(stats.size);
           const inode = `${stats.dev}:${stats.ino}`;
           if (seen.has(inode)) return 0;
           seen.add(inode);
-          return stats.size;
+          return Number(stats.size);
         },
         () => 0,
       );

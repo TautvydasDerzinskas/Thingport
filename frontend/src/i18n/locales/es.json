@@ -927,6 +927,7 @@
         "modeLabel": "Cómo guardar archivos idénticos",
         "help": "Thingport compara cada archivo de modelo nuevo con los ya guardados. La copia en escritura clona un archivo igual en btrfs, XFS o ZFS 2.2 y posteriores, y en otros sistemas lo guarda como siempre; las copias siguen siendo independientes. Un enlace duro comparte el archivo en cualquier sistema de archivos único, pero editarlo directamente en el disco lo cambia para todos los usuarios, y las copias de seguridad deben conservar los enlaces duros (rsync -H).",
         "failed": "No se pudo guardar cómo se guardan los archivos idénticos. Inténtalo de nuevo.",
+        "loadFailed": "No se pudo cargar cómo se guardan los archivos idénticos.",
         "modes": {
           "off": "Por separado",
           "reflink": "Copia en escritura",

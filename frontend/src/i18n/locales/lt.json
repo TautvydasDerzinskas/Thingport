@@ -940,6 +940,7 @@
         "modeLabel": "Kaip saugoti vienodus failus",
         "help": "Thingport palygina kiekvieną naują modelio failą su jau saugomais. Kopijavimas rašant (copy-on-write) sutampantį failą klonuoja btrfs, XFS arba ZFS 2.2 ir naujesnėse sistemose, o kitur failą išsaugo įprastai; kopijos lieka nepriklausomos. Kietoji nuoroda dalijasi failu bet kurioje vienoje failų sistemoje, tačiau jį redaguojant tiesiai diske jis pasikeičia visiems naudotojams, o atsarginės kopijos turi išsaugoti kietąsias nuorodas (rsync -H).",
         "failed": "Nepavyko išsaugoti, kaip saugomi vienodi failai. Bandykite dar kartą.",
+        "loadFailed": "Nepavyko įkelti, kaip saugomi vienodi failai.",
         "modes": {
           "off": "Atskirai",
           "reflink": "Kopijavimas rašant",

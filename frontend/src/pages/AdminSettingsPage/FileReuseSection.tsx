@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
@@ -23,9 +24,10 @@ const MODES: PlateFileReuse[] = ["off", "reflink", "hardlink"];
 export default function FileReuseSection({ onUnauthorized }: Props) {
   const { t } = useTranslation("app");
   const toast = useToast();
-  const [mode, setMode] = React.useState<PlateFileReuse>("reflink");
-  const [loading, setLoading] = React.useState(true);
+  // Null until loaded, so a mode that never loaded isn't shown, or saved over, as the current one.
+  const [mode, setMode] = React.useState<PlateFileReuse | null>(null);
   const [saving, setSaving] = React.useState(false);
+  const [loadFailed, setLoadFailed] = React.useState(false);
 
   React.useEffect(() => {
     let active = true;
@@ -35,8 +37,7 @@ export default function FileReuseSection({ onUnauthorized }: Props) {
         if (active) setMode(data.mode);
       } catch (err) {
         if (err instanceof UnauthorizedError) onUnauthorized?.();
-      } finally {
-        if (active) setLoading(false);
+        else if (active) setLoadFailed(true);
       }
     })();
     return () => {
@@ -45,7 +46,7 @@ export default function FileReuseSection({ onUnauthorized }: Props) {
   }, [onUnauthorized]);
 
   const select = async (next: PlateFileReuse) => {
-    if (next === mode || saving) return;
+    if (mode === null || next === mode || saving) return;
     const previous = mode;
     setMode(next);
     setSaving(true);
@@ -66,7 +67,7 @@ export default function FileReuseSection({ onUnauthorized }: Props) {
       <Paper variant="outlined" sx={{ p: 2.5 }}>
         <Stack direction="row" spacing={2.5} alignItems="center">
           <AnimatedTile>
-            <FileReuseAnimation size={76} mode={mode} />
+            <FileReuseAnimation size={76} mode={mode ?? "off"} />
           </AnimatedTile>
           <Stack spacing={0.75} alignItems="flex-start" sx={{ flex: 1, minWidth: 0 }}>
             <Typography variant="body2" fontWeight={600}>
@@ -76,16 +77,19 @@ export default function FileReuseSection({ onUnauthorized }: Props) {
             <Stack direction="row" spacing={1.5} alignItems="center">
               <Segmented
                 label={t("adminSettings.fileReuse.modeLabel")}
-                value={mode}
+                value={mode ?? "reflink"}
                 onChange={(next) => void select(next)}
-                disabled={loading || saving}
+                disabled={mode === null || saving}
                 options={MODES.map((value) => ({ value, label: t(`adminSettings.fileReuse.modes.${value}`) }))}
               />
               {saving && <CircularProgress size={14} />}
             </Stack>
-            <Typography variant="caption" color="text.secondary">
-              {t(`adminSettings.fileReuse.modeHelp.${mode}`)}
-            </Typography>
+            {mode !== null && (
+              <Typography variant="caption" color="text.secondary">
+                {t(`adminSettings.fileReuse.modeHelp.${mode}`)}
+              </Typography>
+            )}
+            {loadFailed && <Alert severity="error">{t("adminSettings.fileReuse.loadFailed")}</Alert>}
           </Stack>
         </Stack>
       </Paper>
