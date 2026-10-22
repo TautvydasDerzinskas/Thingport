@@ -12,6 +12,11 @@ The dashboard is the first page you see after signing in: an overview of your li
 - **Uptime:** whether each address you list answers, and how quickly. Admins can also show how long Thingport and
   the machine it runs on have been up.
 - **CPU** (admins only): the server's CPU load with a short history, its load average and memory.
+- **Explore trending:** what's trending on the providers you pick, one at a time: click a provider's icon to see its
+  list, as a list or as cards. A model opens on the provider's site, and **More** opens its trending page there. Snapmaker
+  Space, NexPrint and Creality Cloud have no trending list, so their featured or recommended one shows instead.
+  Thingiverse and MyMiniFactory need the instance's token or key, which an admin adds in the provider settings, and
+  Cults3D needs your own Cults3D API key.
 - **Launcher:** your bookmarks as app icons, each opening in a new tab. Give an item an icon by its image address, or
   leave it empty for the site's own icon. Icons can show in their own colours, mono or grayed; a search box and a limit
   with **Show all** are optional. It starts with Thingport's website and repository, which you can remove.
@@ -27,8 +32,8 @@ The dashboard is a grid of panels you arrange yourself. **Edit** (the pencil abo
   the arrow keys to move it, or Shift and the arrow keys to resize it.
 - **Tabs:** drag a panel's name onto another panel to show the two as tabs in one, or select several panels and choose
   **Merge into tabs**. Drag a tab onto empty space, or choose **Split into panels**, to give it a panel of its own again.
-- **Add panel** puts back any panel that isn't showing; **Remove** takes the selected ones off. RSS feeds, Launcher
-  and Weather can be added more than once, each copy with its own feeds, links or place.
+- **Add panel** puts back any panel that isn't showing; **Remove** takes the selected ones off. RSS feeds, Launcher,
+  Weather and Explore trending can be added more than once, each copy with its own feeds, links, place or providers.
 - **Settings** (the cog on a panel) changes what it shows: a 12- or 24-hour clock with or without the date and
   greeting, the weather in °C or °F with or without the later forecast, how many items a list shows (3, 5, 7 or 10)
   and whether it links to the full list, the feeds an RSS panel reads, the addresses an Uptime panel checks and a

@@ -771,7 +771,14 @@
         "linksFull": "Hasta {{max}} enlaces",
         "place": "Lugar",
         "placeAccount": "El lugar de tu cuenta",
-        "placeReset": "Usar el de la cuenta"
+        "placeReset": "Usar el de la cuenta",
+        "providers": "Proveedores",
+        "view": "Vista",
+        "viewList": "Lista",
+        "viewCards": "Tarjetas",
+        "showProvider": "Mostrar {{name}}",
+        "opensFirst": "Se abre primero",
+        "keepOne": "Debe quedar al menos un proveedor"
       },
       "rss": {
         "title": "Fuentes RSS",
@@ -817,6 +824,30 @@
         "showAll": "Ver todos",
         "allTitle": "Todos los enlaces · {{count}}",
         "close": "Cerrar"
+      },
+      "trending": {
+        "title": "Explorar tendencias",
+        "none": "Elige proveedores en los ajustes de este panel.",
+        "loadError": "No se pudieron cargar los modelos de {{name}}.",
+        "retry": "Reintentar",
+        "empty": "{{name}} no tiene nada que mostrar ahora.",
+        "kind": {
+          "trending": "Tendencia en {{name}}",
+          "popular": "Popular en {{name}}",
+          "featured": "Destacado en {{name}}",
+          "recommended": "Recomendado en {{name}}"
+        },
+        "more": "Más en {{name}}",
+        "paid": "De pago",
+        "setupTitle": "{{name}} necesita configuración",
+        "setup": {
+          "thingiverseToken": "Su lista necesita el App Token de Thingiverse de la instancia, que un administrador añade en los ajustes de proveedores.",
+          "myminifactoryKey": "Su lista necesita la clave API de MyMiniFactory de la instancia, que un administrador añade en los ajustes de proveedores.",
+          "cults3dKey": "Su lista necesita tu apodo y clave API de Cults3D, que se añaden en Proveedores de la Configuración."
+        },
+        "openProviders": "Abrir ajustes de proveedores",
+        "askAdmin": "Pide a un administrador que la añada.",
+        "connect": "Conectar {{name}}"
       }
     },
     "adminSettings": {

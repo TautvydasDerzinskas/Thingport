@@ -38,6 +38,43 @@ export type SystemStats = {
   uptime: { thingport: number; host: number };
 };
 
+// Kept in sync by hand with the backend's TRENDING_PROVIDERS.
+export const TRENDING_PROVIDERS = [
+  "printables",
+  "makerworld",
+  "thangs",
+  "makeronline",
+  "thingiverse",
+  "myminifactory",
+  "cults3d",
+  "crealitycloud",
+  "nexprint",
+  "snapmaker",
+] as const;
+export type TrendingProvider = (typeof TRENDING_PROVIDERS)[number];
+
+export type TrendingModel = {
+  id: string;
+  title: string;
+  /** The model's page on the provider's site. */
+  url: string;
+  image: string | null;
+  likes: number | null;
+  author: string | null;
+  paid: boolean;
+};
+
+/** A provider's list, or what has to be set up before it can be read. Some providers have no trending list, so their
+ *  popular, featured or recommended one stands in, as `kind` says. */
+export type TrendingResult =
+  | {
+      status: "ok";
+      kind: "trending" | "popular" | "featured" | "recommended";
+      moreUrl: string;
+      models: TrendingModel[];
+    }
+  | { status: "needsSetup"; setup: "thingiverseToken" | "myminifactoryKey" | "cults3dKey"; moreUrl: string };
+
 export type DashboardSummary = {
   collection_count: number;
   model_count: number;
@@ -89,6 +126,12 @@ export const dashboardApi = {
     const res = await fetch(`${apiBase()}/dashboard/system`, { headers: authHeaders() });
     if (res.status === 403) throw new ForbiddenError();
     assertOk(res, "Failed to load the server's stats");
+    return res.json();
+  },
+
+  getTrending: async (provider: TrendingProvider): Promise<TrendingResult> => {
+    const res = await fetch(`${apiBase()}/dashboard/trending?provider=${provider}`, { headers: authHeaders() });
+    assertOk(res, "Failed to load the trending models");
     return res.json();
   },
 

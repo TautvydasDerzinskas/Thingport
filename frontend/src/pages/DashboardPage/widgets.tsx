@@ -18,7 +18,8 @@ import RssFeedIcon from "@mui/icons-material/RssFeed";
 import MemoryIcon from "@mui/icons-material/Memory";
 import MonitorHeartOutlinedIcon from "@mui/icons-material/MonitorHeartOutlined";
 import AppsIcon from "@mui/icons-material/Apps";
-import { dashboardApi, type DashboardSummary } from "../../api/dashboard";
+import WhatshotOutlinedIcon from "@mui/icons-material/WhatshotOutlined";
+import { TRENDING_PROVIDERS, dashboardApi, type DashboardSummary, type TrendingProvider } from "../../api/dashboard";
 import type { DashboardWidgetId, WeatherLocation, WidgetInstanceId, WidgetSettingValues } from "../../api/settings";
 import CountCard from "./CountCard";
 import ModelListCard from "./ModelListCard";
@@ -33,6 +34,7 @@ import RssCard from "./RssCard";
 import CpuCard from "./CpuCard";
 import UptimeCard from "./UptimeCard";
 import LauncherCard, { type LauncherIconStyle } from "./LauncherCard";
+import TrendingCard from "./TrendingCard";
 import type { DashboardSkeleton } from "./DashboardCardSkeleton";
 import type { PanelSketchKind } from "./PanelSketch";
 
@@ -59,6 +61,8 @@ export type WidgetSetting = (
       default: string[];
     }
   | { key: string; kind: "links"; labelKey: string; max: number; default: LauncherLink[] }
+  /** Some of a fixed set, in an order the user drags them into, like a trending panel's providers. */
+  | { key: string; kind: "pick"; labelKey: string; options: readonly string[]; default: string[] }
   /** A place, chosen on the panel itself; the settings dialog shows it and can clear it. */
   | { key: string; kind: "place"; labelKey: string; default: null }
 ) & {
@@ -487,6 +491,45 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
       />
     ),
   },
+  {
+    id: "trending",
+    multiple: true,
+    labelKey: "dashboard.trending.title",
+    icon: <WhatshotOutlinedIcon fontSize="small" />,
+    size: { w: 4, h: 7, minW: 3, minH: 4 },
+    sketch: "trending",
+    settings: [
+      {
+        key: "providers",
+        kind: "pick",
+        labelKey: "dashboard.settings.providers",
+        options: TRENDING_PROVIDERS,
+        default: ["printables", "makerworld", "thangs"],
+      },
+      LIST_SETTINGS[0],
+      LIST_SETTINGS[1],
+      {
+        key: "view",
+        kind: "choice",
+        labelKey: "dashboard.settings.view",
+        options: [
+          { value: "list", labelKey: "dashboard.settings.viewList" },
+          { value: "cards", labelKey: "dashboard.settings.viewCards" },
+        ],
+        default: "list",
+      },
+    ],
+    render: ({ settings, isAdmin, onUnauthorized }) => (
+      <TrendingCard
+        providers={settings.providers as TrendingProvider[]}
+        count={Number(settings.count)}
+        showMore={settings.showMore === true}
+        view={settings.view === "cards" ? "cards" : "list"}
+        isAdmin={isAdmin}
+        onUnauthorized={onUnauthorized}
+      />
+    ),
+  },
 ];
 
 const BY_ID = new Map<string, DashboardWidget>(DASHBOARD_WIDGETS.map((widget) => [widget.id, widget]));
@@ -508,7 +551,13 @@ export function resolveSettings(widget: DashboardWidget, stored: WidgetSettingVa
     const value = stored?.[setting.key];
     if (setting.kind === "toggle") resolved[setting.key] = typeof value === "boolean" ? value : setting.default;
     else if (setting.kind === "place") resolved[setting.key] = cleanPlace(value);
-    else if (setting.kind === "links")
+    else if (setting.kind === "pick") {
+      const picked = Array.isArray(value)
+        ? [...new Set(value.filter((v): v is string => typeof v === "string" && setting.options.includes(v)))]
+        : [];
+      // Never none: a panel with nothing to show is better reset to its defaults.
+      resolved[setting.key] = picked.length ? picked : setting.default;
+    } else if (setting.kind === "links")
       resolved[setting.key] = Array.isArray(value)
         ? value.flatMap((entry) => (typeof entry === "object" ? (cleanLink(entry) ?? []) : [])).slice(0, setting.max)
         : setting.default;

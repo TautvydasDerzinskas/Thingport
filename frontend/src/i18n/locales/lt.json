@@ -777,7 +777,14 @@
         "linksFull": "Iki {{max}} nuorodų",
         "place": "Vieta",
         "placeAccount": "Jūsų paskyros vieta",
-        "placeReset": "Naudoti paskyros"
+        "placeReset": "Naudoti paskyros",
+        "providers": "Tiekėjai",
+        "view": "Rodinys",
+        "viewList": "Sąrašas",
+        "viewCards": "Kortelės",
+        "showProvider": "Rodyti {{name}}",
+        "opensFirst": "Atsidaro pirmas",
+        "keepOne": "Turi likti bent vienas tiekėjas"
       },
       "rss": {
         "title": "RSS sklaidos kanalai",
@@ -823,6 +830,30 @@
         "showAll": "Rodyti visas",
         "allTitle": "Visos nuorodos · {{count}}",
         "close": "Uždaryti"
+      },
+      "trending": {
+        "title": "Naršyti populiarius",
+        "none": "Pasirinkite tiekėjus šio skydelio nustatymuose.",
+        "loadError": "Nepavyko įkelti {{name}} modelių.",
+        "retry": "Bandyti dar kartą",
+        "empty": "{{name}} šiuo metu neturi ką parodyti.",
+        "kind": {
+          "trending": "Populiaru {{name}}",
+          "popular": "Mėgstamiausi {{name}}",
+          "featured": "Išskirti {{name}}",
+          "recommended": "Rekomenduojama {{name}}"
+        },
+        "more": "Daugiau {{name}}",
+        "paid": "Mokamas",
+        "setupTitle": "{{name}} reikia nustatyti",
+        "setup": {
+          "thingiverseToken": "Sąrašui reikia šios sistemos Thingiverse App Token, kurį administratorius prideda tiekėjų nustatymuose.",
+          "myminifactoryKey": "Sąrašui reikia šios sistemos MyMiniFactory API rakto, kurį administratorius prideda tiekėjų nustatymuose.",
+          "cults3dKey": "Sąrašui reikia jūsų Cults3D slapyvardžio ir API rakto, pridedamų Konfigūracijos skiltyje „Tiekėjai“."
+        },
+        "openProviders": "Atverti tiekėjų nustatymus",
+        "askAdmin": "Paprašykite administratoriaus jį pridėti.",
+        "connect": "Prijungti {{name}}"
       }
     },
     "adminSettings": {

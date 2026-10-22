@@ -46,6 +46,9 @@ import {
   type ResolvedSettings,
 } from "./widgets";
 import { LauncherIcon, type LauncherIconStyle } from "./LauncherCard";
+import Checkbox from "@mui/material/Checkbox";
+import ProviderBadge from "../../components/ProviderBadge";
+import { printProviderInfo } from "../../constants/importProviders";
 
 type Props = {
   /** The panel's widgets that have options; null while closed. */
@@ -93,7 +96,15 @@ export default function PanelSettingsDialog({ widgets, template, isAdmin, onChan
                 {widget
                   .settings!.filter((setting) => allowed(setting, isAdmin))
                   .map((setting) =>
-                    setting.kind === "links" ? (
+                    setting.kind === "pick" ? (
+                      <ProviderPicker
+                        key={setting.key}
+                        label={t(setting.labelKey)}
+                        options={setting.options}
+                        picked={values[setting.key] as string[]}
+                        onChange={(picked) => set(setting.key, picked)}
+                      />
+                    ) : setting.kind === "links" ? (
                       <LinksEditor
                         key={setting.key}
                         label={t(setting.labelKey)}
@@ -489,5 +500,125 @@ function PlaceValue({ place, onClear }: { place: WeatherLocation | null; onClear
         </Button>
       )}
     </Box>
+  );
+}
+
+/**
+ * Providers to show, in order: the picked ones first, dragged into the order the panel shows them (the first opens
+ * with it), then the rest, ticked to add one at the end. At least one stays picked.
+ */
+function ProviderPicker({
+  label,
+  options,
+  picked,
+  onChange,
+}: {
+  label: string;
+  options: readonly string[];
+  picked: string[];
+  onChange: (picked: string[]) => void;
+}) {
+  const { t } = useTranslation("app");
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const rest = options.filter((option) => !picked.includes(option));
+  const onDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+    onChange(arrayMove(picked, picked.indexOf(String(active.id)), picked.indexOf(String(over.id))));
+  };
+  return (
+    <Box>
+      <Typography variant="body2" sx={{ mb: 1 }}>
+        {label}
+      </Typography>
+      <List dense disablePadding sx={{ border: 1, borderColor: "divider", borderRadius: 1 }}>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+          <SortableContext items={picked} strategy={verticalListSortingStrategy}>
+            {picked.map((option, index) => (
+              <SortableProvider
+                key={option}
+                id={option}
+                first={index === 0}
+                // The last one can't go: a panel needs something to show.
+                onRemove={picked.length > 1 ? () => onChange(picked.filter((other) => other !== option)) : undefined}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
+        {rest.map((option) => (
+          <ListItem key={option} sx={{ gap: 1, pl: 5.5, opacity: 0.7 }}>
+            <ProviderBadge provider={option} size={24} interactive={false} sx={{ boxShadow: "none" }} />
+            <Typography variant="body2" sx={{ flex: 1 }}>
+              {printProviderInfo(option).label}
+            </Typography>
+            <Checkbox
+              size="small"
+              checked={false}
+              onChange={() => onChange([...picked, option])}
+              slotProps={{
+                input: {
+                  "aria-label": t("dashboard.settings.showProvider", { name: printProviderInfo(option).label }),
+                },
+              }}
+            />
+          </ListItem>
+        ))}
+      </List>
+    </Box>
+  );
+}
+
+function SortableProvider({ id, first, onRemove }: { id: string; first: boolean; onRemove?: () => void }) {
+  const { t } = useTranslation("app");
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+  });
+  const name = printProviderInfo(id).label;
+  return (
+    <ListItem
+      ref={setNodeRef}
+      sx={{
+        gap: 1,
+        pl: 0.5,
+        transform: CSS.Transform.toString(transform),
+        transition,
+        position: "relative",
+        zIndex: isDragging ? 1 : "auto",
+        bgcolor: isDragging ? "action.selected" : "background.paper",
+      }}
+    >
+      <IconButton
+        ref={setActivatorNodeRef}
+        size="small"
+        aria-label={t("dashboard.settings.reorderLink", { name })}
+        sx={{ cursor: "grab", touchAction: "none" }}
+        {...attributes}
+        {...listeners}
+      >
+        <DragIndicatorIcon fontSize="small" />
+      </IconButton>
+      <ProviderBadge provider={id} size={24} interactive={false} sx={{ boxShadow: "none" }} />
+      <Typography variant="body2" sx={{ flex: 1 }}>
+        {name}
+      </Typography>
+      {first && (
+        <Typography variant="caption" color="text.secondary">
+          {t("dashboard.settings.opensFirst")}
+        </Typography>
+      )}
+      <Tooltip title={onRemove ? "" : t("dashboard.settings.keepOne")}>
+        <span>
+          <Checkbox
+            size="small"
+            checked
+            disabled={!onRemove}
+            onChange={() => onRemove?.()}
+            slotProps={{ input: { "aria-label": t("dashboard.settings.showProvider", { name }) } }}
+          />
+        </span>
+      </Tooltip>
+    </ListItem>
   );
 }

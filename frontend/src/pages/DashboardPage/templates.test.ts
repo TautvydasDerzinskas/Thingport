@@ -404,3 +404,20 @@ describe("splitPanel", () => {
     expect(cell).toMatchObject({ w: 3, h: 3 });
   });
 });
+
+describe("trending providers", () => {
+  it("keeps the providers picked, in their order, and never none", () => {
+    const trending = widgetById("trending")!;
+    expect(resolveSettings(trending, undefined).providers).toEqual(["printables", "makerworld", "thangs"]);
+    expect(resolveSettings(trending, { providers: ["thangs", "nope", "printables", "thangs"] }).providers).toEqual([
+      "thangs",
+      "printables",
+    ]);
+    expect(resolveSettings(trending, { providers: [] }).providers).toEqual(["printables", "makerworld", "thangs"]);
+  });
+
+  it("can be added more than once", () => {
+    const template = addWidget(addWidget(preset("minimal"), "trending"), "trending");
+    expect(instanceCount(template, "trending")).toBe(2);
+  });
+});

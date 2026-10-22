@@ -89,7 +89,8 @@ export type DashboardWidgetId =
   | "rss"
   | "cpu"
   | "uptime"
-  | "launcher";
+  | "launcher"
+  | "trending";
 /** Where the dashboard's weather is for; "device" came from the browser, "manual" from a search. */
 export type WeatherLocation = { lat: number; lon: number; name: string | null; source: "device" | "manual" };
 // Kept in sync by hand with the backend's DASHBOARD_LAYOUTS.

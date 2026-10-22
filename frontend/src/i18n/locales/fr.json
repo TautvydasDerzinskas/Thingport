@@ -771,7 +771,14 @@
         "linksFull": "Jusqu'à {{max}} liens",
         "place": "Lieu",
         "placeAccount": "Le lieu de votre compte",
-        "placeReset": "Utiliser celui du compte"
+        "placeReset": "Utiliser celui du compte",
+        "providers": "Fournisseurs",
+        "view": "Affichage",
+        "viewList": "Liste",
+        "viewCards": "Cartes",
+        "showProvider": "Afficher {{name}}",
+        "opensFirst": "S'ouvre en premier",
+        "keepOne": "Il doit rester au moins un fournisseur"
       },
       "rss": {
         "title": "Flux RSS",
@@ -817,6 +824,30 @@
         "showAll": "Tout afficher",
         "allTitle": "Tous les liens · {{count}}",
         "close": "Fermer"
+      },
+      "trending": {
+        "title": "Explorer les tendances",
+        "none": "Choisissez des fournisseurs dans les paramètres de ce panneau.",
+        "loadError": "Impossible de charger les modèles de {{name}}.",
+        "retry": "Réessayer",
+        "empty": "{{name}} n'a rien à montrer pour l'instant.",
+        "kind": {
+          "trending": "Tendance sur {{name}}",
+          "popular": "Populaire sur {{name}}",
+          "featured": "À la une sur {{name}}",
+          "recommended": "Recommandé sur {{name}}"
+        },
+        "more": "Plus sur {{name}}",
+        "paid": "Payant",
+        "setupTitle": "{{name}} doit être configuré",
+        "setup": {
+          "thingiverseToken": "Sa liste a besoin du App Token Thingiverse de l'instance, qu'un administrateur ajoute dans les paramètres des fournisseurs.",
+          "myminifactoryKey": "Sa liste a besoin de la clé API MyMiniFactory de l'instance, qu'un administrateur ajoute dans les paramètres des fournisseurs.",
+          "cults3dKey": "Sa liste a besoin de votre pseudo et de votre clé API Cults3D, à ajouter dans Fournisseurs de la Configuration."
+        },
+        "openProviders": "Ouvrir les paramètres des fournisseurs",
+        "askAdmin": "Demandez à un administrateur de l'ajouter.",
+        "connect": "Connecter {{name}}"
       }
     },
     "adminSettings": {

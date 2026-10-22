@@ -767,7 +767,14 @@
         "linksFull": "Up to {{max}} links",
         "place": "Place",
         "placeAccount": "Your account's place",
-        "placeReset": "Use the account's"
+        "placeReset": "Use the account's",
+        "providers": "Providers",
+        "view": "View",
+        "viewList": "List",
+        "viewCards": "Cards",
+        "showProvider": "Show {{name}}",
+        "opensFirst": "Opens first",
+        "keepOne": "At least one provider stays"
       },
       "rss": {
         "title": "RSS feeds",
@@ -811,6 +818,30 @@
         "showAll": "Show all",
         "allTitle": "All links · {{count}}",
         "close": "Close"
+      },
+      "trending": {
+        "title": "Explore trending",
+        "none": "Pick providers in this panel's settings.",
+        "loadError": "Couldn't load {{name}}'s models.",
+        "retry": "Try again",
+        "empty": "{{name}} has nothing to show right now.",
+        "kind": {
+          "trending": "Trending on {{name}}",
+          "popular": "Popular on {{name}}",
+          "featured": "Featured on {{name}}",
+          "recommended": "Recommended on {{name}}"
+        },
+        "more": "More on {{name}}",
+        "paid": "Paid",
+        "setupTitle": "{{name}} needs setting up",
+        "setup": {
+          "thingiverseToken": "Its list needs the instance's Thingiverse App Token, which an admin adds in the provider settings.",
+          "myminifactoryKey": "Its list needs the instance's MyMiniFactory API key, which an admin adds in the provider settings.",
+          "cults3dKey": "Its list needs your Cults3D nickname and API key, added under Providers in Configuration."
+        },
+        "openProviders": "Open provider settings",
+        "askAdmin": "Ask an admin to add it.",
+        "connect": "Connect {{name}}"
       }
     },
     "adminSettings": {

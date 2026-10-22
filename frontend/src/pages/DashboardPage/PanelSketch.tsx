@@ -16,7 +16,8 @@ export type PanelSketchKind =
   | "rss"
   | "cpu"
   | "uptime"
-  | "launcher";
+  | "launcher"
+  | "trending";
 
 const accent = (theme: Theme) => alpha(theme.palette.primary.main, 0.55);
 const ink = (theme: Theme) => alpha(theme.palette.text.primary, 0.16);
@@ -238,6 +239,27 @@ function sketchBody(kind: PanelSketchKind) {
               </Box>
             ))}
           </Box>
+        </>
+      );
+    case "trending":
+      return (
+        <>
+          <Box sx={{ display: "flex", gap: "4px", mb: "5px" }}>
+            {[0, 1, 2].map((index) => (
+              <Box
+                key={index}
+                sx={(theme) => ({
+                  width: 9,
+                  height: 9,
+                  borderRadius: "50%",
+                  bgcolor: index === 0 ? accent(theme) : ink(theme),
+                  outline: index === 0 ? `1px solid ${theme.palette.primary.main}` : "none",
+                  outlineOffset: "1px",
+                })}
+              />
+            ))}
+          </Box>
+          <Rows count={3} lead="thumb" />
         </>
       );
     case "launcher":
