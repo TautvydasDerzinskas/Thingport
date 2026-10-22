@@ -141,11 +141,14 @@ model User {
   renderColor              String?
   // Which tree the models page shows: "categories" | "folders"; null means categories.
   categoriesView           String?
-  // The dashboard widgets the user has switched on or off, as { [widgetId]: boolean }. A widget
-  // missing from it shows or hides by its own default, so new widgets need no migration.
+  // The dashboard widgets the user had switched on or off, as { [widgetId]: boolean }. Superseded by
+  // dashboardTemplates; read only to carry the user's choices into their first template.
   dashboardWidgets         Json?
-  // How the dashboard arranges its boxes, one of DASHBOARD_LAYOUTS; null means "left".
+  // How the dashboard arranged its boxes, one of DASHBOARD_LAYOUTS; null means "left". Superseded like the above.
   dashboardLayout          String?
+  // The dashboard's templates and which one shows: { active, templates: [{ id, name, preset, panels, layouts }] }.
+  // Null until the user's first visit after it arrived, when the frontend builds it from the two above.
+  dashboardTemplates       Json?
   // What model cards lead with, one of CARD_PREVIEWS; null means "images".
   cardPreview              String?
   // Where the dashboard's weather is for: { lat, lon, name, source }. Null until the user sets one.

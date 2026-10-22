@@ -106,8 +106,11 @@ import { CATEGORIES_VIEWS, getCategoriesView, setCategoriesView } from "../servi
 import {
   DASHBOARD_LAYOUTS,
   DASHBOARD_WIDGETS,
+  dashboardConfigSchema,
+  getDashboardConfig,
   getDashboardLayout,
   getDashboardWidgets,
+  setDashboardConfig,
   setDashboardLayout,
   setDashboardWidgets,
 } from "../services/dashboardWidgetsService";
@@ -1161,6 +1164,21 @@ router.patch(
   asyncHandler(async (req, res) => {
     const body = parseBody(dashboardLayoutSchema, req.body);
     res.json({ layout: await setDashboardLayout(req.userId!, body.layout) });
+  }),
+);
+
+router.get(
+  "/settings/dashboard",
+  asyncHandler(async (req, res) => {
+    res.json({ config: await getDashboardConfig(req.userId!) });
+  }),
+);
+
+router.put(
+  "/settings/dashboard",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(z.object({ config: dashboardConfigSchema }), req.body);
+    res.json({ config: await setDashboardConfig(req.userId!, body.config) });
   }),
 );
 
