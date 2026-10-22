@@ -53,6 +53,18 @@ describe("slicer settings", () => {
     expect((await patch({ slicers: [] })).body).toEqual({ slicer: null, slicers: [] });
   });
 
+  it("takes changes that arrive at once one after the other", async () => {
+    const results = await Promise.all([
+      patch({ slicers: ["bambustudio", "orcaslicer"] }),
+      patch({ slicer: "cura" }),
+      patch({ slicers: ["prusaslicer"] }),
+      patch({ slicer: "orcaslicer" }),
+    ]);
+    expect(results.map((res) => res.status)).toEqual([200, 200, 200, 200]);
+    const final = await get();
+    expect(final.slicers).toContain(final.slicer);
+  });
+
   it("rejects an unknown slicer", async () => {
     expect((await patch({ slicers: ["notepad"] })).status).toBe(400);
     expect((await patch({ slicer: "notepad" })).status).toBe(400);

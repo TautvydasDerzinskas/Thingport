@@ -10,6 +10,12 @@ export type McpAccess = "off" | "read" | "write";
 /** `slicer` is the one a model's main button opens (the last one used), `slicers` the ones installed. */
 export type SlicerSettings = { slicer: string | null; slicers: string[] };
 
+/** A backend older than the installed-slicers list answers with `slicer` alone: that one is the one installed. */
+function toSlicerSettings(body: Partial<SlicerSettings>): SlicerSettings {
+  const slicer = body.slicer ?? null;
+  return { slicer, slicers: body.slicers ?? (slicer ? [slicer] : []) };
+}
+
 export type StorageToken =
   "category-or-folder" | "collection" | "tags" | "creator" | "model" | "filename" | "id" | "plate";
 
@@ -744,10 +750,7 @@ export const settingsApi = {
   getSlicer: async (): Promise<SlicerSettings> => {
     const res = await fetch(`${apiBase()}/settings/slicer`, { headers: authHeaders() });
     assertOk(res, "Failed to load slicer setting");
-    const body: Partial<SlicerSettings> = await res.json();
-    const slicer = body.slicer ?? null;
-    // A backend older than the installed-slicers list sends only `slicer`: treat it as the one installed.
-    return { slicer, slicers: body.slicers ?? (slicer ? [slicer] : []) };
+    return toSlicerSettings(await res.json());
   },
 
   /** A field left out keeps its value. */
@@ -761,7 +764,7 @@ export const settingsApi = {
     if (!res.ok) {
       throw new Error(await readErrorMessage(res, "Failed to update slicer setting"));
     }
-    return res.json();
+    return toSlicerSettings(await res.json());
   },
 
   // Null means never set.

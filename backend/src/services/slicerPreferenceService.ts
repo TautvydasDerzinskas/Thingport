@@ -43,11 +43,16 @@ export async function setUserSlicerSettings(
   userId: string,
   patch: { slicer?: string | null; slicers?: string[] },
 ): Promise<SlicerSettings> {
-  const existing = await getUserSlicerSettings(userId);
-  const slicers = patch.slicers ?? existing.slicers;
-  let slicer = patch.slicer !== undefined ? patch.slicer : existing.slicer;
-  if (patch.slicer === undefined && slicer && !slicers.includes(slicer as SlicerId)) slicer = null;
-  const next = normalize(slicer, slicers);
-  await prisma.user.update({ where: { id: userId }, data: next });
-  return next;
+  // Locks the user's row, so two changes at once (two tabs, two devices) can't each undo the other's.
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId} FOR UPDATE`;
+    const user = await tx.user.findUnique({ where: { id: userId }, select: { slicer: true, slicers: true } });
+    const existing = normalize(user?.slicer ?? null, user?.slicers ?? []);
+    const slicers = patch.slicers ?? existing.slicers;
+    let slicer = patch.slicer !== undefined ? patch.slicer : existing.slicer;
+    if (patch.slicer === undefined && slicer && !slicers.includes(slicer as SlicerId)) slicer = null;
+    const next = normalize(slicer, slicers);
+    await tx.user.update({ where: { id: userId }, data: next });
+    return next;
+  });
 }
