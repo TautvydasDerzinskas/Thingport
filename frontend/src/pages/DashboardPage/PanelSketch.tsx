@@ -17,7 +17,8 @@ export type PanelSketchKind =
   | "cpu"
   | "uptime"
   | "launcher"
-  | "trending";
+  | "trending"
+  | "custom";
 
 const accent = (theme: Theme) => alpha(theme.palette.primary.main, 0.55);
 const ink = (theme: Theme) => alpha(theme.palette.text.primary, 0.16);
@@ -240,6 +241,31 @@ function sketchBody(kind: PanelSketchKind) {
             ))}
           </Box>
         </>
+      );
+    case "custom":
+      return (
+        <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {/* A jigsaw piece: something the user or the community made. */}
+          <Box
+            sx={{
+              width: 22,
+              height: 22,
+              borderRadius: "4px",
+              bgcolor: accent,
+              position: "relative",
+              "&::before, &::after": {
+                content: '""',
+                position: "absolute",
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                bgcolor: accent,
+              },
+              "&::before": { top: -4, left: 7 },
+              "&::after": { right: -4, top: 7 },
+            }}
+          />
+        </Box>
       );
     case "trending":
       return (

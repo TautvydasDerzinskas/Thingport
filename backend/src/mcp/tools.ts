@@ -16,6 +16,14 @@ import { listPrints, PRINT_SORT_MODES, SELF_AUTHOR_ID, type PrintListPage } from
 import { search } from "../services/searchService";
 import { getImportTask, startImportTask, type ImportTaskState } from "../services/importTaskService";
 import { importAndDescribe, prepareSingleImport } from "../services/singleImport";
+import {
+  assertCustomWidgetsEnabled,
+  listCustomWidgets,
+  parseManifest,
+  saveOwnWidget,
+  validateManifest,
+} from "../services/customWidgetsService";
+import { CUSTOM_WIDGET_GUIDE } from "../services/customWidgetGuide";
 
 // The tools /api/mcp offers. Each runs as the token's user, through the same services as the REST
 // API, so it sees exactly that user's library. Outputs are trimmed to what an assistant can use:
@@ -523,6 +531,85 @@ const addToCollection: McpToolDefinition = {
   },
 };
 
+const widgetGuide: McpToolDefinition = {
+  name: "widget_guide",
+  title: "How to write a dashboard widget",
+  description:
+    "Read this before writing a custom dashboard widget: its metadata, the script's `thingport` argument, the rules, " +
+    "and how to share it. Then save it with save_widget.",
+  readOnly: true,
+  idempotent: true,
+  inputSchema: {},
+  async run() {
+    return { guide: CUSTOM_WIDGET_GUIDE };
+  },
+};
+
+const listWidgets: McpToolDefinition = {
+  name: "list_widgets",
+  title: "List my dashboard widgets",
+  description:
+    "The user's custom dashboard widgets: their own and those installed from the community, with each one's " +
+    "metadata, and with `include_code` its script and HTML too, e.g. to change one.",
+  readOnly: true,
+  idempotent: true,
+  inputSchema: {
+    include_code: z.boolean().optional().describe("Also return each widget's script and HTML."),
+  },
+  async run(ctx, args) {
+    await assertCustomWidgetsEnabled();
+    const widgets = await listCustomWidgets(ctx.userId);
+    return {
+      widgets: widgets.map((widget) => ({
+        id: widget.id,
+        slug: widget.slug,
+        source: widget.source,
+        metadata: widget.manifest,
+        script: args.include_code ? widget.script : undefined,
+        html: args.include_code ? widget.html : undefined,
+      })),
+    };
+  },
+};
+
+const saveWidget: McpToolDefinition = {
+  name: "save_widget",
+  title: "Save a dashboard widget",
+  description:
+    "Create one of the user's own dashboard widgets, or replace the one with the same slug. Read widget_guide first. " +
+    "Its script runs in the user's dashboard with their access, so write only what the user asked for. The user " +
+    "then adds it from Add panel while editing their dashboard.",
+  readOnly: false,
+  idempotent: true,
+  inputSchema: {
+    slug: z
+      .string()
+      .describe("The widget's folder name: 2-40 lowercase letters, digits and dashes, e.g. print-farm-status."),
+    metadata: z
+      .union([z.record(z.string(), z.unknown()), z.string()])
+      .describe("The metadata, as an object, or as JSON or YAML text."),
+    script: z.string().describe("The ES module; its `export default` function draws the widget."),
+    html: z.string().optional().describe("Markup put into the panel before the script runs, e.g. a <style>."),
+  },
+  async run(ctx, args) {
+    await assertCustomWidgetsEnabled();
+    const metadata = args.metadata;
+    const manifest = typeof metadata === "string" ? parseManifest(metadata) : validateManifest(metadata);
+    const widget = await saveOwnWidget(ctx.userId, {
+      slug: args.slug as string,
+      manifest,
+      script: args.script as string,
+      html: (args.html as string | undefined) ?? null,
+    });
+    return {
+      id: widget.id,
+      slug: widget.slug,
+      name: widget.manifest.name,
+      next: "Ask the user to open their dashboard, choose Edit, then Add panel, and pick the widget.",
+    };
+  },
+};
+
 export const MCP_TOOLS: readonly McpToolDefinition[] = [
   searchModels,
   listModels,
@@ -537,6 +624,9 @@ export const MCP_TOOLS: readonly McpToolDefinition[] = [
   importModel,
   createCollectionTool,
   addToCollection,
+  widgetGuide,
+  listWidgets,
+  saveWidget,
 ];
 
 export const MCP_TOOL_NAMES = MCP_TOOLS.map((tool) => tool.name);

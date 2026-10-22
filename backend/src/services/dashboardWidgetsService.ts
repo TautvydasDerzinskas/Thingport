@@ -77,13 +77,15 @@ export const MAX_DASHBOARD_TEMPLATES = 30;
 
 // A placed widget: its id, or for a further copy of one that may repeat (RSS, launcher, weather), its id and a
 // suffix, "rss:k3j2h9". The first copy keeps the bare id, so templates saved before copies existed still read.
-const INSTANCE = /^([a-zA-Z]+)(?::[a-z0-9]{1,24})?$/;
+// A custom widget's id is "custom-" and its database id.
+const INSTANCE = /^([a-zA-Z]+|custom-[a-z0-9]{1,40})(?::[a-z0-9]{1,24})?$/;
 // Enough for any dashboard someone would arrange by hand.
 const MAX_PANELS = 100;
 
 function knownInstance(instance: string): boolean {
   const widget = INSTANCE.exec(instance)?.[1];
-  return widget !== undefined && KNOWN.has(widget);
+  // A custom widget since deleted still reads; its panel says it's gone rather than vanishing.
+  return widget !== undefined && (KNOWN.has(widget) || widget.startsWith("custom-"));
 }
 
 const gridItems = z
@@ -134,7 +136,8 @@ function configSchema<W extends z.ZodTypeAny>(instance: W) {
               z.record(
                 z.string().max(40),
                 z.union([
-                  z.string().max(40),
+                  // Up to an API token or an address, as a custom widget's text settings hold.
+                  z.string().max(2048),
                   z.number(),
                   z.boolean(),
                   // A list, e.g. the RSS panel's feed addresses.

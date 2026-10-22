@@ -1,0 +1,32 @@
+name: Community widgets
+
+# Checks a pull request's community widgets the way Thingport reads them when installing one.
+on:
+  pull_request:
+    paths:
+      - community-widgets/**
+      - backend/src/services/customWidgetFormat.ts
+      - backend/scripts/validateCommunityWidgets.ts
+  push:
+    branches: [main]
+    paths:
+      - community-widgets/**
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx tsx scripts/validateCommunityWidgets.ts

@@ -162,6 +162,7 @@ model User {
   categories               Category[]
   prints                   Print[]
   collections              Collection[]
+  customWidgets            CustomWidget[]
   collectionSyncs          CollectionSync[]
   providerListings         ProviderListing[]
   importJobs               ImportJob[]
@@ -656,6 +657,29 @@ model PrintFile {
   preparedFor Print?        @relation("PreparedFile")
 
   @@index([printId, role])
+}
+
+/// A dashboard widget the user made, or installed from the community repository. Its script runs in the user's own
+/// dashboard page; a community one runs as installed, until the user takes an update.
+model CustomWidget {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// "own" or "community".
+  source    String
+  /// The folder name: unique among a user's own widgets, and the community repository's for an installed one.
+  slug      String
+  /// The validated metadata: name, description, icon, size, settings, hosts.
+  manifest  Json
+  script    String
+  html      String?
+  /// Of the installed files, to tell when the community repository's copy has changed.
+  sha       String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, source, slug])
+  @@index([userId])
 }
 
 model Setting {

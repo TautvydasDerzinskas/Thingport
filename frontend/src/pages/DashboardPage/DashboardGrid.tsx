@@ -177,6 +177,8 @@ export default function DashboardGrid({
             sx={(theme) => ({
               position: "relative",
               minHeight: rows * (ROW_HEIGHT + GRID_GAP) - GRID_GAP,
+              // A column's width, so a custom widget can tell its size in cells.
+              "--tp-col-width": `${(width - GRID_GAP * (cols - 1)) / cols}px`,
               // The grid's look while editing, in the theme's colours: the placeholder where a panel will land and
               // the corner it resizes from.
               "& .react-grid-item": {

@@ -49,5 +49,9 @@ side menu or the top bar, and kept to the template it was opened from. Set that 
 tab page to start every session there. **⌘S** (Ctrl+S on Windows and Linux), or the search button in its corner,
 opens Thingport's search over it, the same search as in the top bar.
 
+**Custom widgets** are panels you write yourself, or install from the community: a little JavaScript that draws into
+the panel, with settings of its own. **Add panel → Manage custom widgets** opens them. See
+[Custom dashboard widgets](../guides/custom-widgets.md).
+
 Wide, medium and phone-sized screens each keep their own arrangement: until you arrange one yourself, it follows the
 wide one. Everything is saved to your account, so it follows you to other devices.

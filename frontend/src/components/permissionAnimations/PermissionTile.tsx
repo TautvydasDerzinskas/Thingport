@@ -290,6 +290,44 @@ const pictures: Record<string, () => React.ReactNode> = {
       <Card sx={{ ...at(14, 3, 12, 13), animation: run(fileIn, 2) }} />
     </Folder>
   ),
+  // A dashboard widget's panel, drawn by the tool: its guide, the list of them, and saving one.
+  widget_guide: () => (
+    <>
+      <Box sx={{ ...at(9, 8, 22, 26), borderRadius: "3px", border: 2, borderColor: "text.disabled" }} />
+      {[0, 1, 2].map((i) => (
+        <Box key={i} sx={{ ...at(13, 13 + i * 6, 14 - i * 3, 2), borderRadius: 1, bgcolor: "text.disabled" }} />
+      ))}
+    </>
+  ),
+  list_widgets: () => (
+    <>
+      {[0, 1, 2, 3].map((i) => (
+        <Box
+          key={i}
+          sx={{
+            ...at(9 + (i % 2) * 12, 9 + Math.floor(i / 2) * 12, 10, 10),
+            borderRadius: "3px",
+            bgcolor: i === 0 ? "primary.main" : "text.disabled",
+            opacity: i === 0 ? 0.6 : 1,
+          }}
+        />
+      ))}
+    </>
+  ),
+  save_widget: () => (
+    <>
+      <Box
+        sx={{
+          ...at(9, 9, 22, 22),
+          borderRadius: "3px",
+          border: 2,
+          borderStyle: "dashed",
+          borderColor: "text.disabled",
+        }}
+      />
+      <Box sx={{ ...at(15, 15, 10, 10), borderRadius: "3px", bgcolor: "primary.main", animation: run(pulse, 1.6) }} />
+    </>
+  ),
   activity: () => (
     <>
       {Array.from({ length: 12 }, (_, i) => (

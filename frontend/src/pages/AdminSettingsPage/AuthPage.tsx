@@ -2,6 +2,7 @@ import React from "react";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import McpSection from "./McpSection";
+import CustomWidgetsSection from "./CustomWidgetsSection";
 import PublicUrlSection from "./PublicUrlSection";
 import RegistrationsSection from "./RegistrationsSection";
 import SessionSection from "./SessionSection";
@@ -12,7 +13,7 @@ type Props = {
 };
 
 /** Where Thingport lives, who can join, how people sign in, how long they stay signed in, and what API tokens may do
- *  over MCP. */
+ *  over MCP, and whether custom dashboard widgets may run. */
 export default function AuthPage({ onUnauthorized }: Props) {
   // Sign-in methods depend on the public URL (redirect URIs, whether a provider can be added): reloaded with it.
   const [publicUrlVersion, setPublicUrlVersion] = React.useState(0);
@@ -23,6 +24,7 @@ export default function AuthPage({ onUnauthorized }: Props) {
       <SignInMethodsSection key={publicUrlVersion} onUnauthorized={onUnauthorized} />
       <SessionSection onUnauthorized={onUnauthorized} />
       <McpSection onUnauthorized={onUnauthorized} />
+      <CustomWidgetsSection onUnauthorized={onUnauthorized} />
     </Stack>
   );
 }

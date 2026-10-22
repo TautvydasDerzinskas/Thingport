@@ -51,6 +51,8 @@ These read your library, and are on for a new token:
 | `get_author`        | A designer, where to find them, and their models in your library.                                       |
 | `library_stats`     | Your totals, and your most viewed, most printed and newest models.                                      |
 | `get_import_status` | How an import that `import_model` left running is getting on.                                           |
+| `widget_guide`      | How to write a [custom dashboard widget](custom-widgets.md), read before saving one.                    |
+| `list_widgets`      | Your custom dashboard widgets, optionally with their code.                                              |
 
 These change your library, and are off until you turn them on:
 
@@ -59,8 +61,9 @@ These change your library, and are off until you turn them on:
 | `import_model`      | Imports a model from its page on a supported site, as **+ Add > Import** does, optionally into a collection. |
 | `create_collection` | Creates a new, empty collection.                                                                             |
 | `add_to_collection` | Adds models from your library to one of your collections.                                                    |
+| `save_widget`       | Creates one of your own [dashboard widgets](custom-widgets.md), or changes one it or you made.               |
 
-None of them deletes or overwrites anything. An import runs the same checks as **+ Add > Import** (a provider an admin
+None of them deletes anything, and only `save_widget` changes something that's already there: one of your own widgets. An import runs the same checks as **+ Add > Import** (a provider an admin
 turned off stays off, and a model already in your library isn't imported twice) and shows up in your notifications and
 the admin logs the same way. It doesn't ask for a captcha, even when imports do in the app: like Thingport Grab, an
 assistant has nowhere to show one. Most imports finish within the call; a long one carries on in the background, and the

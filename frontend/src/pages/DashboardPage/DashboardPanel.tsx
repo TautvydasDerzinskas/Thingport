@@ -24,7 +24,7 @@ import TabIcon from "@mui/icons-material/TabOutlined";
 import type { DashboardPanel as Panel, WidgetInstanceId } from "../../api/settings";
 import SelectionCheck from "../../components/selection/SelectionCheck";
 import { TabbedCardContext, cardBorder } from "./DashboardCard";
-import { widgetById } from "./widgets";
+import { widgetById, labelOf } from "./widgets";
 
 /** RGL's drag handle and the elements inside it that mustn't start a move. */
 export const DRAG_HANDLE = "dashboard-drag-handle";
@@ -99,7 +99,7 @@ export default function DashboardPanel({
   });
   const tabbed = panel.widgets.length > 1;
   const tab = Math.min(panel.tab ?? 0, panel.widgets.length - 1);
-  const name = panel.widgets.map((id) => t(widgetById(id)?.labelKey ?? "")).join(", ");
+  const name = panel.widgets.map((id) => labelOf(t, widgetById(id))).join(", ");
   // A chip from another panel hovering here: dropping it adds a tab.
   const mergeTarget = isOver && dragging !== null && dragging.panelId !== panel.id;
 
@@ -148,7 +148,7 @@ export default function DashboardPanel({
               aria-controls={`${panel.id}-tabpanel`}
               icon={widget?.icon as React.ReactElement}
               iconPosition="start"
-              label={t(widget?.labelKey ?? "")}
+              label={labelOf(t, widget)}
               sx={{ minHeight: 44, minWidth: 0, px: 1.5, py: 0, gap: 0.75, textTransform: "none", fontWeight: 600 }}
             />
           );
@@ -399,7 +399,7 @@ function WidgetChip({
         className={NO_DRAG}
         {...attributes}
         {...listeners}
-        aria-label={`${t(widgetById(widgetId)?.labelKey ?? "")}. ${t(tabbed ? "dashboard.edit.dragTab" : "dashboard.edit.dragToMerge")}`}
+        aria-label={`${labelOf(t, widgetById(widgetId))}. ${t(tabbed ? "dashboard.edit.dragTab" : "dashboard.edit.dragToMerge")}`}
         sx={{ opacity: hidden ? 0.35 : 1, transition: "opacity 150ms ease", maxWidth: "100%" }}
       >
         <WidgetChipFace widgetId={widgetId} />
@@ -435,7 +435,7 @@ export function WidgetChipFace({ widgetId, lifted = false }: { widgetId: WidgetI
     >
       {widget?.icon}
       <Typography variant="caption" fontWeight={600} noWrap>
-        {t(widget?.labelKey ?? "")}
+        {labelOf(t, widget)}
       </Typography>
     </Box>
   );

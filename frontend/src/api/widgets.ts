@@ -1,0 +1,138 @@
+import { authHeaders } from "../utils/auth";
+import { apiBase, assertOk, readErrorMessage, UnauthorizedError } from "./client";
+
+export type WidgetSettingSpec =
+  | { key: string; type: "text"; label: string; default?: string; placeholder?: string; secret?: boolean }
+  | { key: string; type: "number"; label: string; default?: number }
+  | { key: string; type: "toggle"; label: string; default?: boolean }
+  | { key: string; type: "choice"; label: string; options: { value: string; label: string }[]; default?: string };
+
+/** A widget's metadata, as its widget.json (or .yml) holds it, checked by the server. */
+export type WidgetManifest = {
+  name: string;
+  description: string;
+  icon?: string;
+  version: string;
+  author?: string;
+  size: { w: number; h: number; minW?: number; minH?: number };
+  settings: WidgetSettingSpec[];
+  /** The hosts its `thingport.fetch` may reach. */
+  hosts: string[];
+};
+
+export type CustomWidget = {
+  id: string;
+  /** "own" for one the user made; "community" for one installed from the repository. */
+  source: "own" | "community";
+  slug: string;
+  manifest: WidgetManifest;
+  script: string;
+  html: string | null;
+  sha: string;
+  updatedAt: string;
+};
+
+export type CommunityWidget = {
+  slug: string;
+  manifest: WidgetManifest;
+  sha: string;
+  installed: { id: string; updateAvailable: boolean } | null;
+};
+
+/** Any form of headers as a plain record, as JSON carries them. */
+export function headerRecord(headers?: HeadersInit): Record<string, string> {
+  const record: Record<string, string> = {};
+  new Headers(headers).forEach((value, name) => {
+    record[name] = value;
+  });
+  return record;
+}
+
+async function failed(res: Response, fallback: string): Promise<never> {
+  if (res.status === 401) throw new UnauthorizedError();
+  throw new Error(await readErrorMessage(res, fallback));
+}
+
+export const widgetsApi = {
+  /** With custom widgets off, `enabled` is false and the list empty. */
+  list: async (): Promise<{ enabled: boolean; widgets: CustomWidget[] }> => {
+    const res = await fetch(`${apiBase()}/widgets`, { headers: authHeaders() });
+    assertOk(res, "Failed to load your widgets");
+    return res.json();
+  },
+
+  /** Creates or replaces one of the user's own widgets, by its slug. The metadata is JSON or YAML text. */
+  save: async (widget: {
+    slug: string;
+    metadata: string;
+    script: string;
+    html: string | null;
+  }): Promise<CustomWidget> => {
+    const res = await fetch(`${apiBase()}/widgets`, {
+      method: "PUT",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(widget),
+    });
+    if (!res.ok) return failed(res, "Failed to save the widget");
+    return res.json();
+  },
+
+  remove: async (id: string): Promise<void> => {
+    const res = await fetch(`${apiBase()}/widgets/${id}`, { method: "DELETE", headers: authHeaders() });
+    if (!res.ok) return failed(res, "Failed to remove the widget");
+  },
+
+  community: async (): Promise<CommunityWidget[]> => {
+    const res = await fetch(`${apiBase()}/widgets/community`, { headers: authHeaders() });
+    if (!res.ok) return failed(res, "Failed to load the community widgets");
+    return (await res.json()).widgets;
+  },
+
+  /** Installs a community widget, or takes its update. */
+  install: async (slug: string): Promise<CustomWidget> => {
+    const res = await fetch(`${apiBase()}/widgets/community/${encodeURIComponent(slug)}/install`, {
+      method: "POST",
+      headers: authHeaders(),
+    });
+    if (!res.ok) return failed(res, "Failed to install the widget");
+    return res.json();
+  },
+
+  /** A widget's request to a host it declares, made by the server; as a Response, as `fetch` gives. */
+  fetchVia: async (id: string, url: string, init: RequestInit = {}): Promise<Response> => {
+    const res = await fetch(`${apiBase()}/widgets/${id}/fetch`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({
+        url,
+        method: (init.method ?? "GET").toUpperCase(),
+        headers: headerRecord(init.headers),
+        body: typeof init.body === "string" ? init.body : undefined,
+      }),
+    });
+    if (!res.ok) return failed(res, "The request through Thingport failed");
+    const answer: { status: number; contentType: string | null; body: string } = await res.json();
+    // Statuses that can't carry a body, as the Response constructor insists.
+    const empty = [101, 204, 205, 304].includes(answer.status);
+    return new Response(empty ? null : answer.body, {
+      status: answer.status < 200 || answer.status > 599 ? 502 : answer.status,
+      headers: answer.contentType ? { "content-type": answer.contentType } : {},
+    });
+  },
+
+  getEnabled: async (): Promise<boolean> => {
+    const res = await fetch(`${apiBase()}/settings/custom-widgets`, { headers: authHeaders() });
+    assertOk(res, "Failed to load the custom widgets setting");
+    return (await res.json()).enabled;
+  },
+
+  setEnabled: async (enabled: boolean): Promise<boolean> => {
+    const res = await fetch(`${apiBase()}/settings/custom-widgets`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ enabled }),
+    });
+    if (!res.ok) return failed(res, "Failed to change the custom widgets setting");
+    return (await res.json()).enabled;
+  },
+};

@@ -21,6 +21,7 @@ import AppsIcon from "@mui/icons-material/Apps";
 import WhatshotOutlinedIcon from "@mui/icons-material/WhatshotOutlined";
 import { TRENDING_PROVIDERS, dashboardApi, type DashboardSummary, type TrendingProvider } from "../../api/dashboard";
 import type { DashboardWidgetId, WeatherLocation, WidgetInstanceId, WidgetSettingValues } from "../../api/settings";
+import type { CustomWidget, WidgetSettingSpec } from "../../api/widgets";
 import CountCard from "./CountCard";
 import ModelListCard from "./ModelListCard";
 import AuthorListCard from "./AuthorListCard";
@@ -35,6 +36,7 @@ import CpuCard from "./CpuCard";
 import UptimeCard from "./UptimeCard";
 import LauncherCard, { type LauncherIconStyle } from "./LauncherCard";
 import TrendingCard from "./TrendingCard";
+import CustomWidgetCard, { WidgetIcon } from "./CustomWidgetCard";
 import type { DashboardSkeleton } from "./DashboardCardSkeleton";
 import type { PanelSketchKind } from "./PanelSketch";
 
@@ -51,6 +53,16 @@ export type WidgetSetting = (
       default: string;
     }
   | { key: string; kind: "toggle"; labelKey: string; default: boolean }
+  /** Free text, e.g. a custom widget's address or token; `secret` hides it as a password field. */
+  | {
+      key: string;
+      kind: "text";
+      labelKey: string;
+      default: string;
+      placeholder?: string;
+      secret?: boolean;
+      numeric?: boolean;
+    }
   | {
       key: string;
       kind: "urls";
@@ -68,6 +80,8 @@ export type WidgetSetting = (
 ) & {
   /** Offered to admins only. */
   adminOnly?: boolean;
+  /** Shown as is, untranslated: a custom widget's own wording. */
+  label?: string;
 };
 
 /** Every option of a widget, the user's choice or the default. */
@@ -77,6 +91,8 @@ export type ResolvedSettings = Record<string, string | boolean | string[] | Laun
 export type LauncherLink = { name: string; url: string; icon: string };
 
 type WidgetContext = {
+  /** The panel's instance of the widget. */
+  instance: string;
   summary: DashboardSummary;
   settings: ResolvedSettings;
   /** Saves options the widget sets itself, from the panel rather than its settings dialog. */
@@ -106,6 +122,10 @@ export type DashboardWidget = {
   adminOnly?: boolean;
   /** Can be added more than once, each copy with its own options, like several feeds or launchers. */
   multiple?: boolean;
+  /** Shown as is, untranslated: a custom widget's own name. */
+  label?: string;
+  /** For a custom widget: what it's made of. */
+  custom?: CustomWidget;
   render: (ctx: WidgetContext) => React.ReactNode;
 };
 
@@ -539,9 +559,82 @@ export function widgetOf(instance: WidgetInstanceId): DashboardWidgetId {
   return instance.split(":")[0] as DashboardWidgetId;
 }
 
-/** A widget by its id or by one of its instances' ids. */
+/** A widget by its id or by one of its instances' ids, built in or custom. */
 export function widgetById(id: WidgetInstanceId): DashboardWidget | undefined {
-  return BY_ID.get(widgetOf(id));
+  const widget = widgetOf(id);
+  return BY_ID.get(widget) ?? CUSTOM.get(widget);
+}
+
+/** A widget's or a setting's name: its own wording when it has one, else its translation. */
+export function labelOf(t: TFunction, item: { label?: string; labelKey: string } | undefined): string {
+  return item ? (item.label ?? t(item.labelKey)) : "";
+}
+
+// --- Custom widgets ----------------------------------------------------------------------------------------------------
+
+/** Custom widgets are widget types of their own, "custom-" and their id, so they place, size, copy and tab as the
+ *  built-in ones do. Filled from the user's widgets once they've loaded. */
+const CUSTOM = new Map<string, DashboardWidget>();
+
+export const CUSTOM_PREFIX = "custom-";
+
+export function isCustomInstance(instance: WidgetInstanceId): boolean {
+  return widgetOf(instance).startsWith(CUSTOM_PREFIX);
+}
+
+/** A custom widget's settings, as the dashboard's own kinds of setting. */
+function settingsOf(specs: WidgetSettingSpec[]): WidgetSetting[] {
+  return specs.map((spec): WidgetSetting => {
+    if (spec.type === "toggle")
+      return { key: spec.key, kind: "toggle", labelKey: "", label: spec.label, default: spec.default ?? false };
+    if (spec.type === "choice")
+      return {
+        key: spec.key,
+        kind: "choice",
+        labelKey: "",
+        label: spec.label,
+        options: spec.options,
+        default: spec.default ?? spec.options[0].value,
+      };
+    return {
+      key: spec.key,
+      kind: "text",
+      labelKey: "",
+      label: spec.label,
+      default: spec.default === undefined ? "" : String(spec.default),
+      placeholder: spec.type === "text" ? spec.placeholder : undefined,
+      secret: spec.type === "text" ? spec.secret : undefined,
+      numeric: spec.type === "number",
+    };
+  });
+}
+
+/** Makes the user's custom widgets available to the dashboard, replacing what was there. */
+export function registerCustomWidgets(widgets: CustomWidget[]): void {
+  CUSTOM.clear();
+  for (const custom of widgets) {
+    const { manifest } = custom;
+    const id = `${CUSTOM_PREFIX}${custom.id}` as DashboardWidgetId;
+    CUSTOM.set(id, {
+      id,
+      multiple: true,
+      labelKey: "",
+      label: manifest.name,
+      icon: <WidgetIcon icon={manifest.icon} />,
+      size: { w: manifest.size.w, h: manifest.size.h, minW: manifest.size.minW ?? 1, minH: manifest.size.minH ?? 1 },
+      sketch: "custom",
+      settings: settingsOf(manifest.settings),
+      custom,
+      render: ({ settings, instance }) => (
+        <CustomWidgetCard widget={custom} instanceId={instance} settings={settings} />
+      ),
+    });
+  }
+}
+
+/** Every widget the user can add: the built-in ones, then their custom ones. */
+export function allWidgets(): DashboardWidget[] {
+  return [...DASHBOARD_WIDGETS, ...CUSTOM.values()];
 }
 
 /** The widget's options as stored, with anything missing or no longer offered replaced by its default. */
@@ -551,6 +644,9 @@ export function resolveSettings(widget: DashboardWidget, stored: WidgetSettingVa
     const value = stored?.[setting.key];
     if (setting.kind === "toggle") resolved[setting.key] = typeof value === "boolean" ? value : setting.default;
     else if (setting.kind === "place") resolved[setting.key] = cleanPlace(value);
+    else if (setting.kind === "text")
+      resolved[setting.key] =
+        typeof value === "string" ? value : typeof value === "number" ? String(value) : setting.default;
     else if (setting.kind === "pick") {
       const picked = Array.isArray(value)
         ? [...new Set(value.filter((v): v is string => typeof v === "string" && setting.options.includes(v)))]

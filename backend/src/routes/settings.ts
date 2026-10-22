@@ -42,7 +42,9 @@ import {
   setAiDescriptionPrefs,
   type AiCategorizationPrefs,
   type AiDescriptionPrefs,
+  getCustomWidgetsEnabled,
   getMcpAccess,
+  setCustomWidgetsEnabled,
   setMcpAccess,
   MCP_ACCESS_LEVELS,
   getFileReuse,
@@ -371,6 +373,26 @@ router.patch(
 );
 
 // What API tokens may do at /api/mcp. The profile reads it with the token (GET /profile/api-token).
+// Whether users may add custom widgets: their scripts run in the users' own dashboards with their access.
+router.get(
+  "/settings/custom-widgets",
+  requireAdmin,
+  asyncHandler(async (_req, res) => {
+    res.json({ enabled: await getCustomWidgetsEnabled() });
+  }),
+);
+
+router.post(
+  "/settings/custom-widgets",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const { enabled } = parseBody(z.object({ enabled: z.boolean() }), req.body);
+    await setCustomWidgetsEnabled(enabled);
+    res.json({ enabled });
+    void createLog({ userId: req.userId!, action: "custom_widgets_changed", details: { enabled } });
+  }),
+);
+
 router.get(
   "/settings/mcp",
   requireAdmin,

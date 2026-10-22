@@ -6,6 +6,9 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import DashboardCustomizeOutlinedIcon from "@mui/icons-material/DashboardCustomizeOutlined";
 import ToggleOnOutlinedIcon from "@mui/icons-material/ToggleOnOutlined";
+import ExtensionOutlinedIcon from "@mui/icons-material/ExtensionOutlined";
+import type { DashboardWidgetId } from "../../api/settings";
+import CustomWidgetsSection from "./CustomWidgetsSection";
 import type { DashboardConfigApi } from "../../hooks/useDashboardConfig";
 import SectionedDialog from "../../components/SectionedDialog";
 import SelectableTile from "../../components/controls/SelectableTile";
@@ -13,9 +16,9 @@ import HelpTip from "../../components/HelpTip";
 import PanelSketch from "./PanelSketch";
 import TemplatesSection from "./TemplatesSection";
 import { addWidget, instanceCount, removeWidget, templateName, templateWidgets } from "./templates";
-import { DASHBOARD_WIDGETS, allowed } from "./widgets";
+import { CUSTOM_PREFIX, allWidgets, allowed, labelOf } from "./widgets";
 
-export type CustomizeSection = "templates" | "panels";
+export type CustomizeSection = "templates" | "panels" | "widgets";
 
 type Props = {
   open: boolean;
@@ -24,6 +27,7 @@ type Props = {
   dashboard: DashboardConfigApi;
   isAdmin: boolean;
   onClose: () => void;
+  onUnauthorized?: () => void;
 };
 
 /** Every choice applies straight away, so the dashboard behind updates as the user goes. */
@@ -33,6 +37,7 @@ export default function DashboardCustomizeDialog({
   dashboard,
   isAdmin,
   onClose,
+  onUnauthorized,
 }: Props) {
   const { t } = useTranslation("app");
   const [section, setSection] = useState<CustomizeSection>(initialSection);
@@ -54,6 +59,11 @@ export default function DashboardCustomizeDialog({
       id: "panels" as const,
       label: t("dashboard.widgets.sections.panels"),
       icon: <ToggleOnOutlinedIcon fontSize="small" />,
+    },
+    {
+      id: "widgets" as const,
+      label: t("dashboard.widgets.sections.widgets"),
+      icon: <ExtensionOutlinedIcon fontSize="small" />,
     },
   ];
 
@@ -84,49 +94,59 @@ export default function DashboardCustomizeDialog({
             <HelpTip text={t("dashboard.widgets.subtitle")} />
           </Stack>
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)" }, gap: 1.5 }}>
-            {DASHBOARD_WIDGETS.filter((widget) => allowed(widget, isAdmin)).map((widget) => {
-              const enabled = shown.has(widget.id);
-              if (widget.multiple) {
-                // One that may repeat adds a copy with each click; copies come off in edit mode.
-                const count = instanceCount(template, widget.id);
+            {allWidgets()
+              .filter((widget) => allowed(widget, isAdmin))
+              .map((widget) => {
+                const enabled = shown.has(widget.id);
+                if (widget.multiple) {
+                  // One that may repeat adds a copy with each click; copies come off in edit mode.
+                  const count = instanceCount(template, widget.id);
+                  return (
+                    <Tooltip key={widget.id} title={t("dashboard.widgets.addAnother")}>
+                      {/* A plain element for the tooltip to hold on to; the tile fills it. */}
+                      <Box component="span" sx={{ display: "flex", "& > *": { flex: 1 } }}>
+                        <SelectableTile
+                          selected={count > 0}
+                          dimWhenOff
+                          label={
+                            count > 1
+                              ? t("dashboard.widgets.copies", { name: labelOf(t, widget), count })
+                              : labelOf(t, widget)
+                          }
+                          onClick={() => updateTemplate((current) => addWidget(current, widget.id))}
+                        >
+                          <PanelSketch kind={widget.sketch} />
+                        </SelectableTile>
+                      </Box>
+                    </Tooltip>
+                  );
+                }
                 return (
-                  <Tooltip key={widget.id} title={t("dashboard.widgets.addAnother")}>
-                    {/* A plain element for the tooltip to hold on to; the tile fills it. */}
-                    <Box component="span" sx={{ display: "flex", "& > *": { flex: 1 } }}>
-                      <SelectableTile
-                        selected={count > 0}
-                        dimWhenOff
-                        label={
-                          count > 1
-                            ? t("dashboard.widgets.copies", { name: t(widget.labelKey), count })
-                            : t(widget.labelKey)
-                        }
-                        onClick={() => updateTemplate((current) => addWidget(current, widget.id))}
-                      >
-                        <PanelSketch kind={widget.sketch} />
-                      </SelectableTile>
-                    </Box>
-                  </Tooltip>
+                  <SelectableTile
+                    key={widget.id}
+                    selected={enabled}
+                    dimWhenOff
+                    label={labelOf(t, widget)}
+                    onClick={() =>
+                      updateTemplate((current) =>
+                        enabled ? removeWidget(current, widget.id) : addWidget(current, widget.id),
+                      )
+                    }
+                  >
+                    <PanelSketch kind={widget.sketch} />
+                  </SelectableTile>
                 );
-              }
-              return (
-                <SelectableTile
-                  key={widget.id}
-                  selected={enabled}
-                  dimWhenOff
-                  label={t(widget.labelKey)}
-                  onClick={() =>
-                    updateTemplate((current) =>
-                      enabled ? removeWidget(current, widget.id) : addWidget(current, widget.id),
-                    )
-                  }
-                >
-                  <PanelSketch kind={widget.sketch} />
-                </SelectableTile>
-              );
-            })}
+              })}
           </Box>
         </Stack>
+      )}
+      {section === "widgets" && (
+        <CustomWidgetsSection
+          onAdd={(widget) =>
+            updateTemplate((current) => addWidget(current, `${CUSTOM_PREFIX}${widget.id}` as DashboardWidgetId))
+          }
+          onUnauthorized={onUnauthorized}
+        />
       )}
     </SectionedDialog>
   );

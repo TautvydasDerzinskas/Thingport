@@ -44,6 +44,17 @@ export async function setCaptchaSettings(patch: Partial<CaptchaSettings>): Promi
   return getCaptchaSettings();
 }
 
+// Custom widgets' scripts run in their users' dashboard pages with their access; an admin can turn them off.
+const CUSTOM_WIDGETS_KEY = "custom_widgets_enabled";
+
+export async function getCustomWidgetsEnabled(): Promise<boolean> {
+  return getBoolSetting(CUSTOM_WIDGETS_KEY, true);
+}
+
+export async function setCustomWidgetsEnabled(value: boolean): Promise<void> {
+  await setBoolSetting(CUSTOM_WIDGETS_KEY, value);
+}
+
 const ALLOW_REGISTRATIONS_KEY = "allow_registrations";
 
 export async function getAllowRegistrations(fallback: boolean): Promise<boolean> {

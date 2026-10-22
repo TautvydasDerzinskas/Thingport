@@ -262,6 +262,18 @@
             "add_to_collection": {
               "title": "Add to a collection",
               "description": "Put models from your library in one of your collections."
+            },
+            "widget_guide": {
+              "title": "Widget guide",
+              "description": "Read how to write a custom dashboard widget."
+            },
+            "list_widgets": {
+              "title": "List widgets",
+              "description": "See your custom dashboard widgets."
+            },
+            "save_widget": {
+              "title": "Save a dashboard widget",
+              "description": "Create or change your own dashboard widgets. Their scripts run in your dashboard."
             }
           },
           "writeConfirmTitle": "Let the assistant use “{{tool}}”?",
@@ -647,7 +659,8 @@
         "subtitle": "Switch panels on or off for this template. Edit the dashboard to move, resize or merge them.",
         "sections": {
           "templates": "Templates",
-          "panels": "Panels"
+          "panels": "Panels",
+          "widgets": "Custom widgets"
         },
         "panelsOf": "Panels in {{name}}",
         "addAnother": "Click to add another",
@@ -774,7 +787,9 @@
         "viewCards": "Cards",
         "showProvider": "Show {{name}}",
         "opensFirst": "Opens first",
-        "keepOne": "At least one provider stays"
+        "keepOne": "At least one provider stays",
+        "showSecret": "Show",
+        "hideSecret": "Hide"
       },
       "rss": {
         "title": "RSS feeds",
@@ -845,6 +860,74 @@
       },
       "homepage": {
         "open": "Open as a homepage: just the panels, in a new tab"
+      },
+      "custom": {
+        "heading": "Custom widgets",
+        "manage": "Manage custom widgets…",
+        "noExport": "The script has no export default function.",
+        "failed": "{{name}} stopped with an error",
+        "removed": "This widget was removed.",
+        "off": "Custom widgets are turned off on this Thingport.",
+        "title": "Custom widgets",
+        "tabs": {
+          "mine": "Mine",
+          "community": "Community",
+          "share": "Build & share"
+        },
+        "new": "New widget",
+        "none": "You haven't made or installed any widgets yet.",
+        "browse": "Browse the community's",
+        "fromCommunity": "Community",
+        "add": "Add to dashboard",
+        "actions": "Widget actions",
+        "edit": "Edit",
+        "copyToMine": "Copy to my widgets",
+        "download": "Download for publishing",
+        "remove": "Remove",
+        "removeTitle": "Remove {{name}}?",
+        "removeMessage": "Its panels will say it was removed. This can’t be undone.",
+        "saved": "Saved {{name}}",
+        "installTitle": "Install {{name}}?",
+        "updateTitle": "Update {{name}}?",
+        "installTrust": "Its script runs in your dashboard with your access to Thingport. Only install widgets you trust.",
+        "installHosts": "It can reach: {{hosts}}",
+        "install": "Install",
+        "update": "Update",
+        "installed": "Installed {{name}}",
+        "isInstalled": "Installed",
+        "retry": "Try again",
+        "communityError": "Couldn't load the community widgets. Check that this Thingport can reach GitHub.",
+        "communityEmpty": "No community widgets yet. Be the first: see Build & share.",
+        "reaches_one": "Reaches {{count}} host",
+        "reaches_other": "Reaches {{count}} hosts",
+        "editor": {
+          "newTitle": "New widget",
+          "editTitle": "Edit widget",
+          "trust": "Its script runs in your dashboard with your access to Thingport. Only use code you trust.",
+          "slug": "Slug",
+          "slugHelp": "Its folder name: lowercase letters, digits and dashes",
+          "part": "Part",
+          "metadata": "Metadata",
+          "script": "Script",
+          "html": "HTML",
+          "htmlPlaceholder": "Markup and a <style> put into the panel before the script runs (optional)",
+          "cancel": "Cancel",
+          "save": "Save"
+        },
+        "share": {
+          "aiTitle": "Build one with AI",
+          "ai1": "Connect your AI assistant to Thingport over MCP, with an API token.",
+          "ai2": "On your profile, give the token the <strong>Save a dashboard widget</strong> tool.",
+          "ai3": "Ask it, for example: “Make me a Thingport widget that shows my OctoPrint printer’s progress.” It reads the widget guide, then saves the widget.",
+          "ai4": "Add it from Add panel while editing your dashboard.",
+          "connect": "Connect an AI",
+          "publishTitle": "Publish to the community",
+          "publish1": "Download your widget from Mine (⋮, then Download for publishing).",
+          "publish2": "Fork the Thingport repository and unzip it into the <folder>community-widgets</folder> folder.",
+          "publish3": "Add its folder name to community-widgets/index.json, and say what it does in its README.md.",
+          "publish4": "Open a pull request. Once it’s merged, every Thingport can install it.",
+          "guide": "Read the full guide"
+        }
       }
     },
     "adminSettings": {
@@ -1594,7 +1677,8 @@
           "collections_merged": "Collections merged",
           "tags_merged": "Tags merged",
           "mcp_access_changed": "Changed the MCP access",
-          "file_reuse_changed": "Changed how identical files are stored"
+          "file_reuse_changed": "Changed how identical files are stored",
+          "custom_widgets_changed": "Changed whether custom widgets are allowed"
         },
         "authorsLinked": "{{count}} model(s) linked",
         "descriptionsRefetched": "{{email}} — {{updated}} of {{total}} description(s) changed",
@@ -1879,6 +1963,15 @@
           "read": "Tokens can search and read their own library, never change it.",
           "write": "Tokens can also import models and file them into collections, if their user turns that on."
         }
+      },
+      "customWidgets": {
+        "heading": "Custom widgets",
+        "subtitle": "Dashboard widgets users make, or install from the community.",
+        "label": "Allow custom widgets",
+        "help": "A custom widget's script runs in its user's dashboard with their access to Thingport. Turn this off on an instance shared with people you don't fully trust.",
+        "on": "Users can make and install widgets.",
+        "off": "Custom widgets are off; their panels say so.",
+        "failed": "Couldn't change the setting."
       }
     },
     "download": {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -15,6 +15,8 @@ import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import CloseIcon from "@mui/icons-material/Close";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import {
@@ -44,6 +46,7 @@ import {
   widgetById,
   type LauncherLink,
   type ResolvedSettings,
+  labelOf,
 } from "./widgets";
 import { LauncherIcon, type LauncherIconStyle } from "./LauncherCard";
 import Checkbox from "@mui/material/Checkbox";
@@ -71,7 +74,7 @@ export default function PanelSettingsDialog({ widgets, template, isAdmin, onChan
   const changed = shown.some(({ instance }) => template.settings?.[instance]);
   const title =
     shown.length === 1
-      ? t("dashboard.settings.title", { name: t(shown[0].widget.labelKey) })
+      ? t("dashboard.settings.title", { name: labelOf(t, shown[0].widget) })
       : t("dashboard.settings.titlePanel");
 
   return (
@@ -89,7 +92,7 @@ export default function PanelSettingsDialog({ widgets, template, isAdmin, onChan
                   <Stack direction="row" alignItems="center" spacing={1} sx={{ color: "primary.main" }}>
                     {widget.icon}
                     <Typography variant="subtitle2" color="text.primary">
-                      {t(widget.labelKey)}
+                      {labelOf(t, widget)}
                     </Typography>
                   </Stack>
                 )}
@@ -99,7 +102,7 @@ export default function PanelSettingsDialog({ widgets, template, isAdmin, onChan
                     setting.kind === "pick" ? (
                       <ProviderPicker
                         key={setting.key}
-                        label={t(setting.labelKey)}
+                        label={labelOf(t, setting)}
                         options={setting.options}
                         picked={values[setting.key] as string[]}
                         onChange={(picked) => set(setting.key, picked)}
@@ -107,7 +110,7 @@ export default function PanelSettingsDialog({ widgets, template, isAdmin, onChan
                     ) : setting.kind === "links" ? (
                       <LinksEditor
                         key={setting.key}
-                        label={t(setting.labelKey)}
+                        label={labelOf(t, setting)}
                         max={setting.max}
                         links={values[setting.key] as LauncherLink[]}
                         iconStyle={(values.iconStyle as LauncherIconStyle) ?? "colored"}
@@ -116,7 +119,7 @@ export default function PanelSettingsDialog({ widgets, template, isAdmin, onChan
                     ) : setting.kind === "urls" ? (
                       <UrlListEditor
                         key={setting.key}
-                        label={t(setting.labelKey)}
+                        label={labelOf(t, setting)}
                         placeholder={t(setting.placeholderKey)}
                         max={setting.max}
                         urls={values[setting.key] as string[]}
@@ -134,17 +137,26 @@ export default function PanelSettingsDialog({ widgets, template, isAdmin, onChan
                         }}
                       >
                         <Typography variant="body2" id={`${instance}-${setting.key}`}>
-                          {t(setting.labelKey)}
+                          {labelOf(t, setting)}
                         </Typography>
                         {setting.kind === "choice" ? (
                           <Segmented
-                            label={t(setting.labelKey)}
+                            label={labelOf(t, setting)}
                             value={values[setting.key] as string}
                             options={setting.options.map((option) => ({
                               value: option.value,
                               label: option.label ?? t(option.labelKey ?? ""),
                             }))}
                             onChange={(value) => set(setting.key, value)}
+                          />
+                        ) : setting.kind === "text" ? (
+                          <TextSetting
+                            label={labelOf(t, setting)}
+                            value={values[setting.key] as string}
+                            placeholder={setting.placeholder}
+                            secret={setting.secret}
+                            numeric={setting.numeric}
+                            onCommit={(value) => set(setting.key, value)}
                           />
                         ) : setting.kind === "place" ? (
                           <PlaceValue
@@ -620,5 +632,69 @@ function SortableProvider({ id, first, onRemove }: { id: string; first: boolean;
         </span>
       </Tooltip>
     </ListItem>
+  );
+}
+
+/**
+ * A text option, e.g. a custom widget's address or token. Saved when the field is left or Enter is pressed rather than
+ * on every keystroke, as a custom widget redraws whenever its settings change.
+ */
+function TextSetting({
+  label,
+  value,
+  placeholder,
+  secret,
+  numeric,
+  onCommit,
+}: {
+  label: string;
+  value: string;
+  placeholder?: string;
+  secret?: boolean;
+  numeric?: boolean;
+  onCommit: (value: string) => void;
+}) {
+  const { t } = useTranslation("app");
+  const [draft, setDraft] = useState(value);
+  const [shown, setShown] = useState(false);
+  useEffect(() => setDraft(value), [value]);
+  const commit = () => {
+    if (draft !== value) onCommit(draft);
+  };
+  return (
+    <TextField
+      size="small"
+      value={draft}
+      placeholder={placeholder}
+      type={secret && !shown ? "password" : "text"}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") commit();
+      }}
+      sx={{ width: 240, maxWidth: "60%" }}
+      slotProps={{
+        htmlInput: {
+          "aria-label": label,
+          inputMode: numeric ? "decimal" : undefined,
+          autoComplete: secret ? "off" : undefined,
+          spellCheck: false,
+        },
+        input: secret
+          ? {
+              endAdornment: (
+                <IconButton
+                  size="small"
+                  edge="end"
+                  aria-label={t(shown ? "dashboard.settings.hideSecret" : "dashboard.settings.showSecret")}
+                  onClick={() => setShown((s) => !s)}
+                >
+                  {shown ? <VisibilityOffOutlinedIcon fontSize="small" /> : <VisibilityOutlinedIcon fontSize="small" />}
+                </IconButton>
+              ),
+            }
+          : undefined,
+      }}
+    />
   );
 }

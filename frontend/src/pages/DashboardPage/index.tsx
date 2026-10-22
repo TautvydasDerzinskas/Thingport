@@ -8,6 +8,7 @@ import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
+import ListSubheader from "@mui/material/ListSubheader";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Skeleton from "@mui/material/Skeleton";
@@ -20,6 +21,7 @@ import CheckIcon from "@mui/icons-material/Check";
 import DashboardCustomizeOutlinedIcon from "@mui/icons-material/DashboardCustomizeOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import ExtensionOutlinedIcon from "@mui/icons-material/ExtensionOutlined";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
@@ -33,6 +35,8 @@ import HelpTip from "../../components/HelpTip";
 import SelectionToolbar, { SelectionAction } from "../../components/selection/SelectionToolbar";
 import { useSelection } from "../../hooks/useSelection";
 import { useDashboardConfig } from "../../hooks/useDashboardConfig";
+import { useCustomWidgets } from "../../hooks/useCustomWidgets";
+import { MissingCustomWidget } from "./CustomWidgetCard";
 import DashboardCustomizeDialog, { type CustomizeSection } from "./DashboardCustomizeDialog";
 import DashboardGrid from "./DashboardGrid";
 import TemplateSketch from "./TemplateSketch";
@@ -47,7 +51,15 @@ import {
   templateName,
   templateWidgets,
 } from "./templates";
-import { DASHBOARD_WIDGETS, allowed, resolveSettings, widgetById, type ResolvedSettings } from "./widgets";
+import {
+  allWidgets,
+  allowed,
+  isCustomInstance,
+  labelOf,
+  resolveSettings,
+  widgetById,
+  type ResolvedSettings,
+} from "./widgets";
 import PanelSettingsDialog from "./PanelSettingsDialog";
 
 const panelKey = (panel: DashboardPanel) => panel.id;
@@ -93,8 +105,10 @@ export default function DashboardPage({ onUnauthorized, isAdmin = false, standal
   const selection = useSelection(panels, panelKey);
   const editing = selection.active;
   const selectedIds = new Set(selection.selected.map(panelKey));
+  // Loaded here so panels redraw once the user's custom widgets are known.
+  const customWidgets = useCustomWidgets();
   const missing = dashboard
-    ? DASHBOARD_WIDGETS.filter(
+    ? allWidgets().filter(
         (widget) =>
           allowed(widget, isAdmin) && (widget.multiple || !templateWidgets(dashboard.template).has(widget.id)),
       )
@@ -162,7 +176,10 @@ export default function DashboardPage({ onUnauthorized, isAdmin = false, standal
   const renderWidget = React.useCallback(
     (instance: WidgetInstanceId) => {
       const widget = widgetById(instance);
-      if (!widget) return null;
+      if (!widget)
+        return isCustomInstance(instance) ? (
+          <MissingCustomWidget state={!customWidgets ? "loading" : customWidgets.enabled ? "removed" : "off"} />
+        ) : null;
       const settings = resolveSettings(widget, widgetSettings?.[instance]);
       // For an option the widget sets itself, like a weather panel's place, chosen on the panel.
       const setSettings = (patch: ResolvedSettings) =>
@@ -176,6 +193,7 @@ export default function DashboardPage({ onUnauthorized, isAdmin = false, standal
         <DashboardCardSkeleton skeleton={widget.skeleton(settings)} />
       ) : (
         widget.render({
+          instance,
           summary: summary as DashboardSummary,
           settings,
           setSettings,
@@ -186,7 +204,7 @@ export default function DashboardPage({ onUnauthorized, isAdmin = false, standal
         })
       );
     },
-    [summary, widgetSettings, updateTemplate, isAdmin, t, navigate, onUnauthorized],
+    [summary, widgetSettings, updateTemplate, isAdmin, t, navigate, onUnauthorized, customWidgets],
   );
 
   const toolbar = dashboard ? (
@@ -203,12 +221,40 @@ export default function DashboardPage({ onUnauthorized, isAdmin = false, standal
         }}
         dialogs={
           <Menu anchorEl={addMenu} open={addMenu !== null} onClose={() => setAddMenu(null)}>
-            {missing.map((widget) => (
-              <MenuItem key={widget.id} onClick={() => addPanel(widget.id)}>
-                <ListItemIcon sx={{ color: "primary.main" }}>{widget.icon}</ListItemIcon>
-                <ListItemText>{t(widget.labelKey)}</ListItemText>
-              </MenuItem>
-            ))}
+            {missing
+              .filter((widget) => !widget.custom)
+              .map((widget) => (
+                <MenuItem key={widget.id} onClick={() => addPanel(widget.id)}>
+                  <ListItemIcon sx={{ color: "primary.main" }}>{widget.icon}</ListItemIcon>
+                  <ListItemText>{labelOf(t, widget)}</ListItemText>
+                </MenuItem>
+              ))}
+            {customWidgets?.enabled && [
+              <Divider key="custom-divider" />,
+              <ListSubheader key="custom-heading" sx={{ lineHeight: "32px", bgcolor: "transparent" }}>
+                {t("dashboard.custom.heading")}
+              </ListSubheader>,
+              ...missing
+                .filter((widget) => widget.custom)
+                .map((widget) => (
+                  <MenuItem key={widget.id} onClick={() => addPanel(widget.id)}>
+                    <ListItemIcon sx={{ color: "primary.main" }}>{widget.icon}</ListItemIcon>
+                    <ListItemText>{labelOf(t, widget)}</ListItemText>
+                  </MenuItem>
+                )),
+              <MenuItem
+                key="custom-manage"
+                onClick={() => {
+                  setAddMenu(null);
+                  setCustomize("widgets");
+                }}
+              >
+                <ListItemIcon>
+                  <ExtensionOutlinedIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>{t("dashboard.custom.manage")}</ListItemText>
+              </MenuItem>,
+            ]}
           </Menu>
         }
       >
@@ -400,6 +446,7 @@ export default function DashboardPage({ onUnauthorized, isAdmin = false, standal
           dashboard={dashboard}
           isAdmin={isAdmin}
           onClose={() => setCustomize(null)}
+          onUnauthorized={onUnauthorized}
         />
       )}
     </Box>

@@ -40,6 +40,7 @@
     "three": "^0.186.1",
     "turndown": "^7.2.4",
     "turndown-plugin-gfm": "^1.0.2",
+    "yaml": "2.9.1",
     "yauzl": "^3.4.0",
     "zod": "^3.25.76"
   },

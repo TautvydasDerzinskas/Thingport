@@ -265,6 +265,18 @@
             "add_to_collection": {
               "title": "Ajouter à une collection",
               "description": "Range des modèles de votre bibliothèque dans une de vos collections."
+            },
+            "widget_guide": {
+              "title": "Guide des widgets",
+              "description": "Lire comment écrire un widget personnalisé du tableau de bord."
+            },
+            "list_widgets": {
+              "title": "Lister les widgets",
+              "description": "Voir vos widgets personnalisés du tableau de bord."
+            },
+            "save_widget": {
+              "title": "Enregistrer un widget du tableau de bord",
+              "description": "Créer ou modifier vos propres widgets du tableau de bord. Leurs scripts s’exécutent dans votre tableau de bord."
             }
           },
           "writeConfirmTitle": "Laisser l'assistant utiliser « {{tool}} » ?",
@@ -647,7 +659,8 @@
         "subtitle": "Activez ou désactivez les panneaux de ce modèle. Modifiez le tableau de bord pour les déplacer, les redimensionner ou les fusionner.",
         "sections": {
           "templates": "Modèles",
-          "panels": "Panneaux"
+          "panels": "Panneaux",
+          "widgets": "Widgets personnalisés"
         },
         "panelsOf": "Panneaux de {{name}}",
         "addAnother": "Cliquez pour en ajouter un autre",
@@ -778,7 +791,9 @@
         "viewCards": "Cartes",
         "showProvider": "Afficher {{name}}",
         "opensFirst": "S'ouvre en premier",
-        "keepOne": "Il doit rester au moins un fournisseur"
+        "keepOne": "Il doit rester au moins un fournisseur",
+        "showSecret": "Afficher",
+        "hideSecret": "Masquer"
       },
       "rss": {
         "title": "Flux RSS",
@@ -851,6 +866,75 @@
       },
       "homepage": {
         "open": "Ouvrir comme page d'accueil : seulement les panneaux, dans un nouvel onglet"
+      },
+      "custom": {
+        "heading": "Widgets personnalisés",
+        "manage": "Gérer les widgets personnalisés…",
+        "noExport": "Le script n'a pas de fonction export default.",
+        "failed": "{{name}} s'est arrêté sur une erreur",
+        "removed": "Ce widget a été retiré.",
+        "off": "Les widgets personnalisés sont désactivés sur ce Thingport.",
+        "title": "Widgets personnalisés",
+        "tabs": {
+          "mine": "Les miens",
+          "community": "Communauté",
+          "share": "Créer et partager"
+        },
+        "new": "Nouveau widget",
+        "none": "Vous n'avez encore créé ni installé aucun widget.",
+        "browse": "Voir ceux de la communauté",
+        "fromCommunity": "Communauté",
+        "add": "Ajouter au tableau de bord",
+        "actions": "Actions du widget",
+        "edit": "Modifier",
+        "copyToMine": "Copier dans mes widgets",
+        "download": "Télécharger pour publier",
+        "remove": "Retirer",
+        "removeTitle": "Retirer {{name}} ?",
+        "removeMessage": "Ses panneaux indiqueront qu’il a été retiré. Cette action est irréversible.",
+        "saved": "{{name}} enregistré",
+        "installTitle": "Installer {{name}} ?",
+        "updateTitle": "Mettre à jour {{name}} ?",
+        "installTrust": "Son script s’exécute dans votre tableau de bord avec votre accès à Thingport. N’installez que des widgets de confiance.",
+        "installHosts": "Il peut joindre : {{hosts}}",
+        "install": "Installer",
+        "update": "Mettre à jour",
+        "installed": "{{name}} installé",
+        "isInstalled": "Installé",
+        "retry": "Réessayer",
+        "communityError": "Impossible de charger les widgets de la communauté. Vérifiez que ce Thingport peut joindre GitHub.",
+        "communityEmpty": "Pas encore de widgets de la communauté. Soyez le premier : voir Créer et partager.",
+        "reaches_one": "Joint {{count}} hôte",
+        "reaches_other": "Joint {{count}} hôtes",
+        "reaches_many": "Joint {{count}} hôtes",
+        "editor": {
+          "newTitle": "Nouveau widget",
+          "editTitle": "Modifier le widget",
+          "trust": "Son script s’exécute dans votre tableau de bord avec votre accès à Thingport. N’utilisez que du code de confiance.",
+          "slug": "Identifiant",
+          "slugHelp": "Le nom de son dossier : minuscules, chiffres et tirets",
+          "part": "Partie",
+          "metadata": "Métadonnées",
+          "script": "Script",
+          "html": "HTML",
+          "htmlPlaceholder": "Balisage et <style> placés dans le panneau avant le script (facultatif)",
+          "cancel": "Annuler",
+          "save": "Enregistrer"
+        },
+        "share": {
+          "aiTitle": "Le créer avec une IA",
+          "ai1": "Connectez votre assistant IA à Thingport par MCP, avec un jeton d’API.",
+          "ai2": "Dans votre profil, donnez au jeton l’outil <strong>Enregistrer un widget du tableau de bord</strong>.",
+          "ai3": "Demandez-lui par exemple : « Crée-moi un widget Thingport qui montre l’avancement de mon imprimante OctoPrint. » Il lit le guide des widgets, puis enregistre le widget.",
+          "ai4": "Ajoutez-le depuis Ajouter un panneau en modifiant votre tableau de bord.",
+          "connect": "Connecter une IA",
+          "publishTitle": "Publier pour la communauté",
+          "publish1": "Téléchargez votre widget depuis Les miens (⋮, puis Télécharger pour publier).",
+          "publish2": "Forkez le dépôt Thingport et décompressez-le dans le dossier <folder>community-widgets</folder>.",
+          "publish3": "Ajoutez le nom de son dossier à community-widgets/index.json et décrivez-le dans son README.md.",
+          "publish4": "Ouvrez une pull request. Une fois fusionnée, tout Thingport pourra l’installer.",
+          "guide": "Lire le guide complet"
+        }
       }
     },
     "adminSettings": {
@@ -1600,7 +1684,8 @@
           "mcp_access_changed": "A modifié l'accès MCP",
           "api_token_mcp_tools_changed": "A modifié les outils MCP de son jeton d'API",
           "api_token_rest_scopes_changed": "A modifié les autorisations de son jeton d'API",
-          "file_reuse_changed": "A modifié le stockage des fichiers identiques"
+          "file_reuse_changed": "A modifié le stockage des fichiers identiques",
+          "custom_widgets_changed": "A modifié l’autorisation des widgets personnalisés"
         },
         "authorsLinked": "{{count}} modèle(s) relié(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} description(s) sur {{total}} modifiée(s)",
@@ -1885,6 +1970,15 @@
           "read": "Les jetons peuvent chercher et lire leur propre bibliothèque, jamais la modifier.",
           "write": "Les jetons peuvent aussi importer des modèles et les ranger dans des collections, si leur utilisateur l'active."
         }
+      },
+      "customWidgets": {
+        "heading": "Widgets personnalisés",
+        "subtitle": "Les widgets du tableau de bord que les utilisateurs créent ou installent depuis la communauté.",
+        "label": "Autoriser les widgets personnalisés",
+        "help": "Le script d’un widget personnalisé s’exécute dans le tableau de bord de son utilisateur avec son accès à Thingport. Désactivez-le sur une instance partagée avec des personnes en qui vous n’avez pas toute confiance.",
+        "on": "Les utilisateurs peuvent créer et installer des widgets.",
+        "off": "Les widgets personnalisés sont désactivés ; leurs panneaux l’indiquent.",
+        "failed": "Impossible de modifier le réglage."
       }
     },
     "download": {

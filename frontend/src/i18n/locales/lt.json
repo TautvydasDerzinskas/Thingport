@@ -263,6 +263,18 @@
             "add_to_collection": {
               "title": "Įtraukti į kolekciją",
               "description": "Įdėti bibliotekos modelius į vieną iš jūsų kolekcijų."
+            },
+            "widget_guide": {
+              "title": "Valdiklių vadovas",
+              "description": "Perskaityti, kaip sukurti pasirinktinį suvestinės valdiklį."
+            },
+            "list_widgets": {
+              "title": "Valdiklių sąrašas",
+              "description": "Matyti jūsų pasirinktinius suvestinės valdiklius."
+            },
+            "save_widget": {
+              "title": "Išsaugoti suvestinės valdiklį",
+              "description": "Kurti ar keisti savo suvestinės valdiklius. Jų skriptai veikia jūsų suvestinėje."
             }
           },
           "writeConfirmTitle": "Leisti asistentui naudoti „{{tool}}“?",
@@ -653,7 +665,8 @@
         "subtitle": "Įjunkite arba išjunkite šio šablono skydelius. Norėdami juos perkelti, keisti dydį ar sujungti, redaguokite suvestinę.",
         "sections": {
           "templates": "Šablonai",
-          "panels": "Skydeliai"
+          "panels": "Skydeliai",
+          "widgets": "Pasirinktiniai valdikliai"
         },
         "panelsOf": "Skydeliai šablone „{{name}}“",
         "addAnother": "Spustelėkite, kad pridėtumėte dar vieną",
@@ -784,7 +797,9 @@
         "viewCards": "Kortelės",
         "showProvider": "Rodyti {{name}}",
         "opensFirst": "Atsidaro pirmas",
-        "keepOne": "Turi likti bent vienas tiekėjas"
+        "keepOne": "Turi likti bent vienas tiekėjas",
+        "showSecret": "Rodyti",
+        "hideSecret": "Slėpti"
       },
       "rss": {
         "title": "RSS sklaidos kanalai",
@@ -857,6 +872,75 @@
       },
       "homepage": {
         "open": "Atverti kaip pradžios puslapį: tik skydeliai, naujame skirtuke"
+      },
+      "custom": {
+        "heading": "Pasirinktiniai valdikliai",
+        "manage": "Tvarkyti pasirinktinius valdiklius…",
+        "noExport": "Skripte nėra export default funkcijos.",
+        "failed": "{{name}} sustojo dėl klaidos",
+        "removed": "Šis valdiklis pašalintas.",
+        "off": "Šiame Thingport pasirinktiniai valdikliai išjungti.",
+        "title": "Pasirinktiniai valdikliai",
+        "tabs": {
+          "mine": "Mano",
+          "community": "Bendruomenės",
+          "share": "Kurti ir dalintis"
+        },
+        "new": "Naujas valdiklis",
+        "none": "Dar nesukūrėte ir neįdiegėte jokių valdiklių.",
+        "browse": "Peržiūrėti bendruomenės",
+        "fromCommunity": "Bendruomenės",
+        "add": "Pridėti į suvestinę",
+        "actions": "Valdiklio veiksmai",
+        "edit": "Redaguoti",
+        "copyToMine": "Kopijuoti į mano",
+        "download": "Atsisiųsti publikavimui",
+        "remove": "Pašalinti",
+        "removeTitle": "Pašalinti „{{name}}“?",
+        "removeMessage": "Jo skydeliai parodys, kad jis pašalintas. To nebus galima atšaukti.",
+        "saved": "„{{name}}“ išsaugotas",
+        "installTitle": "Įdiegti „{{name}}“?",
+        "updateTitle": "Atnaujinti „{{name}}“?",
+        "installTrust": "Jo skriptas veikia jūsų suvestinėje su jūsų prieiga prie Thingport. Diekite tik tais valdiklius, kuriais pasitikite.",
+        "installHosts": "Jis gali pasiekti: {{hosts}}",
+        "install": "Įdiegti",
+        "update": "Atnaujinti",
+        "installed": "„{{name}}“ įdiegtas",
+        "isInstalled": "Įdiegtas",
+        "retry": "Bandyti dar kartą",
+        "communityError": "Nepavyko įkelti bendruomenės valdiklių. Patikrinkite, ar šis Thingport pasiekia GitHub.",
+        "communityEmpty": "Bendruomenės valdiklių dar nėra. Būkite pirmas: žr. „Kurti ir dalintis“.",
+        "reaches_one": "Pasiekia {{count}} serverį",
+        "reaches_other": "Pasiekia {{count}} serverių",
+        "reaches_few": "Pasiekia {{count}} serverius",
+        "editor": {
+          "newTitle": "Naujas valdiklis",
+          "editTitle": "Redaguoti valdiklį",
+          "trust": "Jo skriptas veikia jūsų suvestinėje su jūsų prieiga prie Thingport. Naudokite tik kodą, kuriuo pasitikite.",
+          "slug": "Trumpasis vardas",
+          "slugHelp": "Aplanko pavadinimas: mažosios raidės, skaitmenys ir brūkšneliai",
+          "part": "Dalis",
+          "metadata": "Metaduomenys",
+          "script": "Skriptas",
+          "html": "HTML",
+          "htmlPlaceholder": "Žymėjimas ir <style>, įdedami į skydelį prieš paleidžiant skriptą (nebūtina)",
+          "cancel": "Atšaukti",
+          "save": "Išsaugoti"
+        },
+        "share": {
+          "aiTitle": "Sukurkite su DI",
+          "ai1": "Prijunkite savo DI asistentą prie Thingport per MCP, naudodami API raktą.",
+          "ai2": "Savo profilyje suteikite raktui įrankį <strong>Išsaugoti suvestinės valdiklį</strong>.",
+          "ai3": "Paprašykite, pvz.: „Sukurk Thingport valdiklį, rodantį mano OctoPrint spausdintuvo eigą.“ Jis perskaitys valdiklių vadovą ir išsaugos valdiklį.",
+          "ai4": "Pridėkite jį per „Pridėti skydelį“ redaguodami suvestinę.",
+          "connect": "Prijungti DI",
+          "publishTitle": "Paskelbti bendruomenei",
+          "publish1": "Atsisiųskite valdiklį skiltyje „Mano“ (⋮, tada „Atsisiųsti publikavimui“).",
+          "publish2": "Sukurkite Thingport saugyklos kopiją (fork) ir išskleiskite jį į aplanką <folder>community-widgets</folder>.",
+          "publish3": "Įrašykite aplanko pavadinimą į community-widgets/index.json ir aprašykite valdiklį README.md faile.",
+          "publish4": "Atidarykite pull request. Kai jis bus priimtas, kiekvienas Thingport galės jį įdiegti.",
+          "guide": "Skaityti visą vadovą"
+        }
       }
     },
     "adminSettings": {
@@ -1629,7 +1713,8 @@
           "collections_merged": "Kolekcijos sujungtos",
           "tags_merged": "Žymos sujungtos",
           "mcp_access_changed": "Pakeitė MCP prieigą",
-          "file_reuse_changed": "Pakeitė, kaip saugomi vienodi failai"
+          "file_reuse_changed": "Pakeitė, kaip saugomi vienodi failai",
+          "custom_widgets_changed": "Pakeistas pasirinktinių valdiklių leidimas"
         },
         "authorsLinked": "Susieta modelių: {{count}}",
         "descriptionsRefetched": "{{email}} — pakeista aprašymų: {{updated}} iš {{total}}",
@@ -1926,6 +2011,15 @@
           "read": "Raktai gali ieškoti ir skaityti savo biblioteką, bet niekada jos nekeisti.",
           "write": "Raktai taip pat gali importuoti modelius ir dėti juos į kolekcijas, jei naudotojas tai įjungia."
         }
+      },
+      "customWidgets": {
+        "heading": "Pasirinktiniai valdikliai",
+        "subtitle": "Suvestinės valdikliai, kuriuos naudotojai kuria arba įdiegia iš bendruomenės.",
+        "label": "Leisti pasirinktinius valdiklius",
+        "help": "Pasirinktinio valdiklio skriptas veikia naudotojo suvestinėje su jo prieiga prie Thingport. Išjunkite tai sistemoje, kuria dalijatės su žmonėmis, kuriais visiškai nepasitikite.",
+        "on": "Naudotojai gali kurti ir diegti valdiklius.",
+        "off": "Pasirinktiniai valdikliai išjungti; jų skydeliai tai nurodo.",
+        "failed": "Nepavyko pakeisti nustatymo."
       }
     },
     "download": {
