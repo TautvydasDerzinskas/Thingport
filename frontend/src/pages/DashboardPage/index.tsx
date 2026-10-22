@@ -34,8 +34,9 @@ import DashboardCustomizeDialog, { type CustomizeSection } from "./DashboardCust
 import DashboardGrid from "./DashboardGrid";
 import TemplateSketch from "./TemplateSketch";
 import DashboardCardSkeleton from "./DashboardCardSkeleton";
-import { addWidget, mergePanels, removePanels, templateName, templateWidgets } from "./templates";
-import { DASHBOARD_WIDGETS, widgetById } from "./widgets";
+import { addWidget, mergePanels, removePanels, setWidgetSettings, templateName, templateWidgets } from "./templates";
+import { DASHBOARD_WIDGETS, resolveSettings, widgetById } from "./widgets";
+import PanelSettingsDialog from "./PanelSettingsDialog";
 
 const panelKey = (panel: DashboardPanel) => panel.id;
 const NO_PANELS: DashboardPanel[] = [];
@@ -65,6 +66,9 @@ export default function DashboardPage({ onUnauthorized }: Props) {
   const [customize, setCustomize] = React.useState<CustomizeSection | null>(null);
   const [templatesMenu, setTemplatesMenu] = React.useState<HTMLElement | null>(null);
   const [addMenu, setAddMenu] = React.useState<HTMLElement | null>(null);
+  const [settingsPanel, setSettingsPanel] = React.useState<string | null>(null);
+  const [fitRequest, setFitRequest] = React.useState<{ panelId: string; at: number } | null>(null);
+  const requestFit = React.useCallback((panelId: string) => setFitRequest({ panelId, at: Date.now() }), []);
   const panels = dashboard?.template.panels ?? NO_PANELS;
   const selection = useSelection(panels, panelKey);
   const editing = selection.active;
@@ -116,18 +120,20 @@ export default function DashboardPage({ onUnauthorized }: Props) {
     };
   }, [onUnauthorized, t]);
 
+  const widgetSettings = dashboard?.template.settings;
   // Until the summary arrives, widgets that need it show their placeholder; the rest render already.
   const renderWidget = React.useCallback(
     (id: DashboardWidgetId) => {
       const widget = widgetById(id);
       if (!widget) return null;
+      const settings = resolveSettings(widget, widgetSettings?.[id]);
       return !summary && widget.skeleton ? (
-        <DashboardCardSkeleton skeleton={widget.skeleton} />
+        <DashboardCardSkeleton skeleton={widget.skeleton(settings)} />
       ) : (
-        widget.render({ summary: summary as DashboardSummary, t, navigate, onUnauthorized })
+        widget.render({ summary: summary as DashboardSummary, settings, t, navigate, onUnauthorized })
       );
     },
-    [summary, t, navigate, onUnauthorized],
+    [summary, widgetSettings, t, navigate, onUnauthorized],
   );
 
   const toolbar = dashboard ? (
@@ -277,6 +283,9 @@ export default function DashboardPage({ onUnauthorized }: Props) {
         onToggleSelected={selection.toggle}
         onChange={dashboard.updateTemplate}
         onRemove={(id) => void removeSelected(new Set([id]))}
+        onOpenSettings={setSettingsPanel}
+        fitRequest={fitRequest}
+        onRequestFit={requestFit}
         renderWidget={renderWidget}
         keysHintId={KEYS_HINT_ID}
       />
@@ -290,6 +299,24 @@ export default function DashboardPage({ onUnauthorized }: Props) {
       <Box id={KEYS_HINT_ID} sx={visuallyHidden}>
         {t("dashboard.edit.keys")}
       </Box>
+      {dashboard && (
+        <PanelSettingsDialog
+          widgets={
+            settingsPanel
+              ? (panels
+                  .find((panel) => panel.id === settingsPanel)
+                  ?.widgets.filter((id) => widgetById(id)?.settings?.length) ?? null)
+              : null
+          }
+          template={dashboard.template}
+          onChange={(id, values) => {
+            dashboard.updateTemplate((template) => setWidgetSettings(template, id, values));
+            // A list showing more or fewer rows, or losing its "See more", grows or shrinks to fit.
+            if (settingsPanel) requestFit(settingsPanel);
+          }}
+          onClose={() => setSettingsPanel(null)}
+        />
+      )}
       {dashboard && (
         <DashboardCustomizeDialog
           open={customize !== null}

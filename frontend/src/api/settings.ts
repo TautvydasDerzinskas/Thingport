@@ -110,7 +110,10 @@ export type DashboardTemplate = {
   panels: DashboardPanel[];
   /** Only the breakpoints the user has arranged; the rest are derived from the widest one. */
   layouts: Partial<Record<DashboardBreakpoint, DashboardGridItem[]>>;
+  /** Each widget's options that differ from its defaults. */
+  settings?: Partial<Record<DashboardWidgetId, WidgetSettingValues>>;
 };
+export type WidgetSettingValues = Record<string, string | number | boolean>;
 export type DashboardConfig = {
   active: string;
   templates: DashboardTemplate[];

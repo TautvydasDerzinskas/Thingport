@@ -1,4 +1,6 @@
+import React from "react";
 import { useTranslation } from "react-i18next";
+import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
@@ -10,35 +12,64 @@ import { printProviderInfo } from "../../constants/importProviders";
 import type { DashboardProvider } from "../../api/dashboard";
 import ProviderBadge from "../../components/ProviderBadge";
 import { useProviderAbout } from "../../components/providerAbout/ProviderAboutProvider";
-import DashboardCard, { DashboardCardTitle } from "./DashboardCard";
+import DashboardCard, { DashboardCardBody, DashboardCardTitle, hasMore } from "./DashboardCard";
+import SeeMoreDialog from "./SeeMoreDialog";
 
 type Props = {
+  /** Every provider, most models first. */
   providers: DashboardProvider[];
+  count: number;
+  showMore: boolean;
 };
 
-/** A small fixed set, so no "see more". A provider's row opens its About dialog; Thingport's own (uploads) has none. */
-export default function ProviderListCard({ providers }: Props) {
+/** A provider's row opens its About dialog; Thingport's own (uploads) has none. */
+export default function ProviderListCard({ providers, count, showMore }: Props) {
   const { t } = useTranslation("app");
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const row = (p: DashboardProvider) => (
+    <ProviderRow
+      key={p.provider ?? ""}
+      provider={p.provider}
+      countLabel={t("dashboard.topProviders.modelCount", { count: p.model_count })}
+    />
+  );
 
   return (
-    <DashboardCard sx={{ p: 2.5, display: "flex", flexDirection: "column" }}>
-      <DashboardCardTitle icon={<PublicIcon />} title={t("dashboard.topProviders.title")} sx={{ mb: 1 }} />
+    <DashboardCard scroll={false} sx={{ p: 2.5, display: "flex", flexDirection: "column" }}>
+      <DashboardCardTitle
+        icon={<PublicIcon />}
+        title={t("dashboard.topProviders.title")}
+        sx={{ mb: 1, flexShrink: 0 }}
+      />
 
-      {providers.length === 0 ? (
-        <Typography color="text.secondary" sx={{ py: 2 }}>
-          {t("dashboard.topProviders.empty")}
-        </Typography>
-      ) : (
-        <List dense disablePadding>
-          {providers.map((p) => (
-            <ProviderRow
-              key={p.provider ?? ""}
-              provider={p.provider}
-              countLabel={t("dashboard.topProviders.modelCount", { count: p.model_count })}
-            />
-          ))}
-        </List>
+      <DashboardCardBody>
+        {providers.length === 0 ? (
+          <Typography color="text.secondary" sx={{ py: 2 }}>
+            {t("dashboard.topProviders.empty")}
+          </Typography>
+        ) : (
+          <List dense disablePadding>
+            {providers.slice(0, count).map(row)}
+          </List>
+        )}
+      </DashboardCardBody>
+
+      {showMore && hasMore(providers.length, count, true) && (
+        <Button onClick={() => setDialogOpen(true)} sx={{ alignSelf: "flex-start", mt: 1, flexShrink: 0 }}>
+          {t("dashboard.seeMore")}
+        </Button>
       )}
+
+      <SeeMoreDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        title={t("dashboard.topProviders.title")}
+        emptyText={t("dashboard.topProviders.empty")}
+        // The summary already holds every provider.
+        fetcher={() => Promise.resolve(providers)}
+        getKey={(p) => p.provider ?? ""}
+        renderItem={(p) => row(p)}
+      />
     </DashboardCard>
   );
 }

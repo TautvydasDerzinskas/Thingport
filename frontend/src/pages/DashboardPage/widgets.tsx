@@ -15,7 +15,7 @@ import PublicIcon from "@mui/icons-material/Public";
 import ThreeDRotationIcon from "@mui/icons-material/ThreeDRotation";
 import InsightsIcon from "@mui/icons-material/Insights";
 import { dashboardApi, type DashboardSummary } from "../../api/dashboard";
-import type { DashboardWidgetId } from "../../api/settings";
+import type { DashboardWidgetId, WidgetSettingValues } from "../../api/settings";
 import CountCard from "./CountCard";
 import ModelListCard from "./ModelListCard";
 import AuthorListCard from "./AuthorListCard";
@@ -30,8 +30,24 @@ import type { PanelSketchKind } from "./PanelSketch";
 
 export type WidgetSize = { w: number; h: number; minW: number; minH: number };
 
+/** One of a widget's options, in its settings dialog. Values are kept as strings or booleans, so they store as-is. */
+export type WidgetSetting =
+  | {
+      key: string;
+      kind: "choice";
+      labelKey: string;
+      /** Shown as a segmented control; `label` for a value that needs no translation, like a number. */
+      options: { value: string; label?: string; labelKey?: string }[];
+      default: string;
+    }
+  | { key: string; kind: "toggle"; labelKey: string; default: boolean };
+
+/** Every option of a widget, the user's choice or the default. */
+export type ResolvedSettings = Record<string, string | boolean>;
+
 type WidgetContext = {
   summary: DashboardSummary;
+  settings: ResolvedSettings;
   t: TFunction;
   navigate: NavigateFunction;
   onUnauthorized?: () => void;
@@ -49,9 +65,29 @@ export type DashboardWidget = {
   sketch: PanelSketchKind;
   /** Its placeholder while the summary loads. A widget without one fetches its own data, renders
    *  straight away, and mustn't read `summary`. */
-  skeleton?: DashboardSkeleton;
+  skeleton?: (settings: ResolvedSettings) => DashboardSkeleton;
+  /** What the user can change about it, from the cog on its panel while editing. */
+  settings?: WidgetSetting[];
   render: (ctx: WidgetContext) => React.ReactNode;
 };
+
+/** How many rows a list panel can show; the backend's summary holds the most of these. */
+export const LIST_COUNTS = ["3", "5", "7", "10"];
+const LIST_SETTINGS: WidgetSetting[] = [
+  {
+    key: "count",
+    kind: "choice",
+    labelKey: "dashboard.settings.count",
+    options: LIST_COUNTS.map((value) => ({ value, label: value })),
+    default: "5",
+  },
+  { key: "showMore", kind: "toggle", labelKey: "dashboard.settings.showMore", default: true },
+];
+const listSkeleton = (settings: ResolvedSettings): DashboardSkeleton => ({
+  kind: "list",
+  rows: Number(settings.count),
+  footer: settings.showMore === true,
+});
 
 /** In menu order. A new widget is one entry here, plus its id in DashboardWidgetId and the backend, and a place in
  *  whichever preset templates should show it. */
@@ -62,7 +98,7 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
     icon: <CollectionsIcon fontSize="small" />,
     size: { w: 3, h: 2, minW: 2, minH: 2 },
     sketch: "count",
-    skeleton: { kind: "count" },
+    skeleton: () => ({ kind: "count" }),
     render: ({ summary, t, navigate }) => (
       <CountCard
         icon={<CollectionsIcon sx={{ fontSize: 32 }} />}
@@ -78,7 +114,7 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
     icon: <ViewInArIcon fontSize="small" />,
     size: { w: 3, h: 2, minW: 2, minH: 2 },
     sketch: "count",
-    skeleton: { kind: "count" },
+    skeleton: () => ({ kind: "count" }),
     render: ({ summary, t, navigate }) => (
       <CountCard
         icon={<ViewInArIcon sx={{ fontSize: 32 }} />}
@@ -94,7 +130,7 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
     icon: <PersonIcon fontSize="small" />,
     size: { w: 3, h: 2, minW: 2, minH: 2 },
     sketch: "count",
-    skeleton: { kind: "count" },
+    skeleton: () => ({ kind: "count" }),
     render: ({ summary, t }) => (
       <CountCard
         icon={<PersonIcon sx={{ fontSize: 32 }} />}
@@ -109,7 +145,7 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
     icon: <FolderIcon fontSize="small" />,
     size: { w: 3, h: 2, minW: 2, minH: 2 },
     sketch: "count",
-    skeleton: { kind: "count" },
+    skeleton: () => ({ kind: "count" }),
     render: ({ summary, t, navigate }) => (
       <CountCard
         icon={<FolderIcon sx={{ fontSize: 32 }} />}
@@ -139,11 +175,14 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
     id: "topViewed",
     labelKey: "dashboard.topViewed.title",
     icon: <VisibilityIcon fontSize="small" />,
-    size: { w: 5, h: 4, minW: 3, minH: 3 },
+    size: { w: 5, h: 5, minW: 3, minH: 3 },
     sketch: "models",
-    skeleton: { kind: "list", rows: 3, footer: true },
-    render: ({ summary, t }) => (
+    skeleton: listSkeleton,
+    settings: LIST_SETTINGS,
+    render: ({ summary, t, settings }) => (
       <ModelListCard
+        count={Number(settings.count)}
+        showMore={settings.showMore === true}
         icon={<VisibilityIcon />}
         title={t("dashboard.topViewed.title")}
         models={summary.top_viewed}
@@ -159,11 +198,14 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
     id: "topPrinted",
     labelKey: "dashboard.topPrinted.title",
     icon: <PrintIcon fontSize="small" />,
-    size: { w: 5, h: 4, minW: 3, minH: 3 },
+    size: { w: 5, h: 5, minW: 3, minH: 3 },
     sketch: "models",
-    skeleton: { kind: "list", rows: 3, footer: true },
-    render: ({ summary, t }) => (
+    skeleton: listSkeleton,
+    settings: LIST_SETTINGS,
+    render: ({ summary, t, settings }) => (
       <ModelListCard
+        count={Number(settings.count)}
+        showMore={settings.showMore === true}
         icon={<PrintIcon />}
         title={t("dashboard.topPrinted.title")}
         models={summary.top_printed}
@@ -179,10 +221,17 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
     id: "recentlyAdded",
     labelKey: "dashboard.recentlyAdded.title",
     icon: <NewReleasesIcon fontSize="small" />,
-    size: { w: 5, h: 4, minW: 3, minH: 3 },
+    size: { w: 5, h: 5, minW: 3, minH: 3 },
     sketch: "models",
-    skeleton: { kind: "list", rows: 3 },
-    render: ({ summary }) => <RecentlyAddedCard models={summary.recently_added} />,
+    skeleton: listSkeleton,
+    settings: LIST_SETTINGS,
+    render: ({ summary, settings }) => (
+      <RecentlyAddedCard
+        models={summary.recently_added}
+        count={Number(settings.count)}
+        showMore={settings.showMore === true}
+      />
+    ),
   },
   {
     id: "clock",
@@ -190,7 +239,27 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
     icon: <ScheduleIcon fontSize="small" />,
     size: { w: 4, h: 2, minW: 2, minH: 2 },
     sketch: "clock",
-    render: () => <ClockCard />,
+    settings: [
+      {
+        key: "hourCycle",
+        kind: "choice",
+        labelKey: "dashboard.settings.hourCycle",
+        options: [
+          { value: "24", labelKey: "dashboard.settings.hour24" },
+          { value: "12", labelKey: "dashboard.settings.hour12" },
+        ],
+        default: "24",
+      },
+      { key: "showDate", kind: "toggle", labelKey: "dashboard.settings.showDate", default: true },
+      { key: "showGreeting", kind: "toggle", labelKey: "dashboard.settings.showGreeting", default: true },
+    ],
+    render: ({ settings }) => (
+      <ClockCard
+        hourCycle={settings.hourCycle === "12" ? "12" : "24"}
+        showDate={settings.showDate === true}
+        showGreeting={settings.showGreeting === true}
+      />
+    ),
   },
   {
     id: "weather",
@@ -198,16 +267,41 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
     icon: <WbSunnyIcon fontSize="small" />,
     size: { w: 4, h: 2, minW: 3, minH: 2 },
     sketch: "weather",
-    render: () => <WeatherCard />,
+    settings: [
+      {
+        key: "unit",
+        kind: "choice",
+        labelKey: "dashboard.settings.unit",
+        options: [
+          { value: "celsius", label: "°C" },
+          { value: "fahrenheit", label: "°F" },
+        ],
+        default: "celsius",
+      },
+      { key: "showLater", kind: "toggle", labelKey: "dashboard.settings.showLater", default: true },
+    ],
+    render: ({ settings }) => (
+      <WeatherCard
+        unit={settings.unit === "fahrenheit" ? "fahrenheit" : "celsius"}
+        showLater={settings.showLater === true}
+      />
+    ),
   },
   {
     id: "topAuthors",
     labelKey: "dashboard.topAuthors.title",
     icon: <StarIcon fontSize="small" />,
-    size: { w: 4, h: 6, minW: 3, minH: 3 },
+    size: { w: 4, h: 5, minW: 3, minH: 3 },
     sketch: "authors",
-    skeleton: { kind: "list", rows: 5, footer: true },
-    render: ({ summary }) => <AuthorListCard authors={summary.top_authors} />,
+    skeleton: listSkeleton,
+    settings: LIST_SETTINGS,
+    render: ({ summary, settings }) => (
+      <AuthorListCard
+        authors={summary.top_authors}
+        count={Number(settings.count)}
+        showMore={settings.showMore === true}
+      />
+    ),
   },
   {
     id: "topProviders",
@@ -215,8 +309,15 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
     icon: <PublicIcon fontSize="small" />,
     size: { w: 4, h: 4, minW: 3, minH: 3 },
     sketch: "providers",
-    skeleton: { kind: "list", rows: 4, avatar: false },
-    render: ({ summary }) => <ProviderListCard providers={summary.top_providers} />,
+    skeleton: (settings) => ({ ...listSkeleton(settings), avatar: false }),
+    settings: LIST_SETTINGS,
+    render: ({ summary, settings }) => (
+      <ProviderListCard
+        providers={summary.top_providers}
+        count={Number(settings.count)}
+        showMore={settings.showMore === true}
+      />
+    ),
   },
 ];
 
@@ -224,4 +325,21 @@ const BY_ID = new Map(DASHBOARD_WIDGETS.map((widget) => [widget.id, widget]));
 
 export function widgetById(id: DashboardWidgetId): DashboardWidget | undefined {
   return BY_ID.get(id);
+}
+
+/** The widget's options as stored, with anything missing or no longer offered replaced by its default. */
+export function resolveSettings(widget: DashboardWidget, stored: WidgetSettingValues | undefined): ResolvedSettings {
+  const resolved: ResolvedSettings = {};
+  for (const setting of widget.settings ?? []) {
+    const value = stored?.[setting.key];
+    resolved[setting.key] =
+      setting.kind === "toggle"
+        ? typeof value === "boolean"
+          ? value
+          : setting.default
+        : setting.options.some((option) => option.value === value)
+          ? (value as string)
+          : setting.default;
+  }
+  return resolved;
 }

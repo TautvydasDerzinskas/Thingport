@@ -8,7 +8,7 @@ import ListItemText from "@mui/material/ListItemText";
 import type { DashboardModel } from "../../api/dashboard";
 import SeeMoreDialog from "./SeeMoreDialog";
 import DashboardModelThumb from "./DashboardModelThumb";
-import DashboardCard, { DashboardCardTitle } from "./DashboardCard";
+import DashboardCard, { DashboardCardBody, DashboardCardTitle, hasMore } from "./DashboardCard";
 
 type Props = {
   icon: React.ReactNode;
@@ -19,6 +19,9 @@ type Props = {
   emptyText: string;
   seeMoreLabel: string;
   fetchMore: () => Promise<DashboardModel[]>;
+  /** How many rows show; the summary holds more. */
+  count: number;
+  showMore: boolean;
 };
 
 function ModelRow({
@@ -55,36 +58,42 @@ export default function ModelListCard({
   emptyText,
   seeMoreLabel,
   fetchMore,
+  count,
+  showMore,
 }: Props) {
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
   return (
-    <DashboardCard sx={{ p: 2.5, display: "flex", flexDirection: "column" }}>
-      <DashboardCardTitle icon={icon} title={title} sx={{ mb: 1 }} />
+    <DashboardCard scroll={false} sx={{ p: 2.5, display: "flex", flexDirection: "column" }}>
+      <DashboardCardTitle icon={icon} title={title} sx={{ mb: 1, flexShrink: 0 }} />
 
-      {models.length === 0 ? (
-        <Typography color="text.secondary" sx={{ py: 2 }}>
-          {emptyText}
-        </Typography>
-      ) : (
-        <List dense disablePadding>
-          {models.map((model, idx) => (
-            <ModelRow
-              key={model.id}
-              model={model}
-              rank={idx + 1}
-              valueOf={valueOf}
-              valueLabel={valueLabel}
-              onClick={() => navigate(`/models/${model.id}`)}
-            />
-          ))}
-        </List>
+      <DashboardCardBody>
+        {models.length === 0 ? (
+          <Typography color="text.secondary" sx={{ py: 2 }}>
+            {emptyText}
+          </Typography>
+        ) : (
+          <List dense disablePadding>
+            {models.slice(0, count).map((model, idx) => (
+              <ModelRow
+                key={model.id}
+                model={model}
+                rank={idx + 1}
+                valueOf={valueOf}
+                valueLabel={valueLabel}
+                onClick={() => navigate(`/models/${model.id}`)}
+              />
+            ))}
+          </List>
+        )}
+      </DashboardCardBody>
+
+      {showMore && hasMore(models.length, count) && (
+        <Button onClick={() => setDialogOpen(true)} sx={{ alignSelf: "flex-start", mt: 1, flexShrink: 0 }}>
+          {seeMoreLabel}
+        </Button>
       )}
-
-      <Button onClick={() => setDialogOpen(true)} sx={{ alignSelf: "flex-start", mt: 1 }}>
-        {seeMoreLabel}
-      </Button>
 
       <SeeMoreDialog
         open={dialogOpen}

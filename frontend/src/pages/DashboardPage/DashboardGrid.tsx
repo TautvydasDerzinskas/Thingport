@@ -16,6 +16,8 @@ import {
 import { alpha } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import type { DashboardTemplate, DashboardWidgetId } from "../../api/settings";
+import { widgetById } from "./widgets";
+import { CARD_BODY_CLASS } from "./DashboardCard";
 import DashboardPanel, { DRAG_HANDLE, NO_DRAG, WidgetChipFace, type ChipDragData } from "./DashboardPanel";
 import {
   GRID_GAP,
@@ -54,6 +56,10 @@ type Props = {
   onToggleSelected: (panelId: string, range: boolean) => void;
   onChange: (change: (template: DashboardTemplate) => DashboardTemplate) => void;
   onRemove: (panelId: string) => void;
+  onOpenSettings: (panelId: string) => void;
+  /** A panel to size to its content, once it has rendered; `at` makes asking again for the same panel a new ask. */
+  fitRequest: { panelId: string; at: number } | null;
+  onRequestFit: (panelId: string) => void;
   renderWidget: (id: DashboardWidgetId) => React.ReactNode;
   keysHintId: string;
 };
@@ -65,6 +71,9 @@ export default function DashboardGrid({
   onToggleSelected,
   onChange,
   onRemove,
+  onOpenSettings,
+  fitRequest,
+  onRequestFit,
   renderWidget,
   keysHintId,
 }: Props) {
@@ -106,6 +115,24 @@ export default function DashboardGrid({
     markArranged();
     onChange((current) => setLayout(current, breakpoint.id, items));
   };
+  // Sizes a panel to its content a frame after the change that asked, once it has rendered. Each ask is handled
+  // once, however often the layout changes meanwhile.
+  const fitted = React.useRef<typeof fitRequest>(null);
+  React.useEffect(() => {
+    if (!fitRequest || fitted.current === fitRequest) return;
+    const frame = window.requestAnimationFrame(() => {
+      fitted.current = fitRequest;
+      const element = containerRef.current?.querySelector<HTMLElement>(`[data-panel="${fitRequest.panelId}"]`);
+      const item = layout.find((cell) => cell.i === fitRequest.panelId);
+      if (!element || !item) return;
+      const needed = rowsFor(naturalHeight(element));
+      if (needed === item.h) return;
+      const items = nudgeLayout(layout, item.i, 0, needed - item.h, true, cols, scaledMin(item.i));
+      onChange((current) => setLayout(current, breakpoint.id, items));
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [fitRequest, layout, cols, scaledMin, onChange, breakpoint.id, containerRef]);
+
   const onArranged = (items: Layout, from: LayoutItem | null, to: LayoutItem | null) => {
     markArranged();
     if (from && to && (from.x !== to.x || from.y !== to.y || from.w !== to.w || from.h !== to.h)) save(items);
@@ -185,7 +212,7 @@ export default function DashboardGrid({
               onResizeStop={onArranged}
             >
               {template.panels.map((panel) => (
-                <div key={panel.id}>
+                <div key={panel.id} data-panel={panel.id}>
                   <DashboardPanel
                     panel={panel}
                     renderWidget={renderWidget}
@@ -198,6 +225,12 @@ export default function DashboardGrid({
                     }
                     onSplit={() => onChange((current) => splitPanel(current, panel.id))}
                     onRemove={() => onRemove(panel.id)}
+                    onFit={() => onRequestFit(panel.id)}
+                    onOpenSettings={
+                      panel.widgets.some((id) => widgetById(id)?.settings?.length)
+                        ? () => onOpenSettings(panel.id)
+                        : undefined
+                    }
                     justArranged={() => justArranged.current}
                     dragging={dragging}
                     keysHintId={keysHintId}
@@ -241,4 +274,38 @@ function GridCells({ cols, rows }: { cols: number; rows: number }) {
       ))}
     </Box>
   );
+}
+
+/** The fewest rows that hold `px` pixels: a panel of h rows is h rows plus the gaps between them. */
+function rowsFor(px: number): number {
+  return Math.max(1, Math.ceil((px + GRID_GAP) / (ROW_HEIGHT + GRID_GAP)));
+}
+
+/**
+ * How tall a panel would be with nothing scrolled or stretched. A list card stacks from its top, so it's the card down
+ * to the end of its last block, plus whatever its body has scrolled out of sight; anything around the card, like a
+ * tab strip, adds on. Another card is measured by what it would scroll.
+ */
+function naturalHeight(panel: HTMLElement): number {
+  const body = panel.querySelector<HTMLElement>(`.${CARD_BODY_CLASS}`);
+  const card = body?.parentElement;
+  if (body && card) {
+    const style = getComputedStyle(card);
+    const top = card.getBoundingClientRect().top;
+    const end = Array.from(card.children).reduce((max, child) => {
+      const box = child.getBoundingClientRect();
+      return box.height ? Math.max(max, box.bottom + parseFloat(getComputedStyle(child).marginBottom)) : max;
+    }, top);
+    const content =
+      end -
+      top +
+      parseFloat(style.paddingBottom) +
+      parseFloat(style.borderBottomWidth) +
+      body.scrollHeight -
+      body.clientHeight;
+    return panel.clientHeight - card.offsetHeight + content;
+  }
+  const cards = panel.querySelectorAll<HTMLElement>(".MuiPaper-root");
+  const inner = cards[cards.length - 1];
+  return inner ? panel.clientHeight - inner.clientHeight + inner.scrollHeight : panel.clientHeight;
 }

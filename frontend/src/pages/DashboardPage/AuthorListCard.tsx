@@ -13,10 +13,13 @@ import PersonIcon from "@mui/icons-material/Person";
 import { dashboardApi, type DashboardAuthor } from "../../api/dashboard";
 import SeeMoreDialog from "./SeeMoreDialog";
 import AuthorHoverCard from "../../components/AuthorHoverCard";
-import DashboardCard, { DashboardCardTitle } from "./DashboardCard";
+import DashboardCard, { DashboardCardBody, DashboardCardTitle, hasMore } from "./DashboardCard";
 
 type Props = {
   authors: DashboardAuthor[];
+  /** How many rows show; the summary holds more. */
+  count: number;
+  showMore: boolean;
 };
 
 function AuthorRow({
@@ -48,38 +51,42 @@ function AuthorRow({
   );
 }
 
-export default function AuthorListCard({ authors }: Props) {
+export default function AuthorListCard({ authors, count, showMore }: Props) {
   const { t } = useTranslation("app");
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
-  const modelCountLabel = (count: number) => t("dashboard.topAuthors.modelCount", { count });
+  const modelCountLabel = (models: number) => t("dashboard.topAuthors.modelCount", { count: models });
 
   return (
-    <DashboardCard sx={{ p: 2.5, display: "flex", flexDirection: "column" }}>
-      <DashboardCardTitle icon={<StarIcon />} title={t("dashboard.topAuthors.title")} sx={{ mb: 1 }} />
+    <DashboardCard scroll={false} sx={{ p: 2.5, display: "flex", flexDirection: "column" }}>
+      <DashboardCardTitle icon={<StarIcon />} title={t("dashboard.topAuthors.title")} sx={{ mb: 1, flexShrink: 0 }} />
 
-      {authors.length === 0 ? (
-        <Typography color="text.secondary" sx={{ py: 2 }}>
-          {t("dashboard.topAuthors.empty")}
-        </Typography>
-      ) : (
-        <List dense disablePadding>
-          {authors.map((author, idx) => (
-            <AuthorRow
-              key={author.id}
-              author={author}
-              rank={idx + 1}
-              modelCountLabel={modelCountLabel}
-              onClick={() => navigate(`/authors/${author.id}`)}
-            />
-          ))}
-        </List>
+      <DashboardCardBody>
+        {authors.length === 0 ? (
+          <Typography color="text.secondary" sx={{ py: 2 }}>
+            {t("dashboard.topAuthors.empty")}
+          </Typography>
+        ) : (
+          <List dense disablePadding>
+            {authors.slice(0, count).map((author, idx) => (
+              <AuthorRow
+                key={author.id}
+                author={author}
+                rank={idx + 1}
+                modelCountLabel={modelCountLabel}
+                onClick={() => navigate(`/authors/${author.id}`)}
+              />
+            ))}
+          </List>
+        )}
+      </DashboardCardBody>
+
+      {showMore && hasMore(authors.length, count) && (
+        <Button onClick={() => setDialogOpen(true)} sx={{ alignSelf: "flex-start", mt: 1, flexShrink: 0 }}>
+          {t("dashboard.seeMore")}
+        </Button>
       )}
-
-      <Button onClick={() => setDialogOpen(true)} sx={{ alignSelf: "flex-start", mt: 1 }}>
-        {t("dashboard.seeMore")}
-      </Button>
 
       <SeeMoreDialog
         open={dialogOpen}

@@ -30,6 +30,7 @@ import {
   searchPlaces,
   type Condition,
   type Place,
+  type TemperatureUnit,
   type Weather,
 } from "../../utils/weather";
 import { MONO_FONT } from "./ClockCard";
@@ -155,7 +156,13 @@ function LocationPicker({ onPick, onCancel }: { onPick: (location: WeatherLocati
   );
 }
 
-export default function WeatherCard() {
+type Props = {
+  unit: TemperatureUnit;
+  /** The line with the forecast a few hours on. */
+  showLater: boolean;
+};
+
+export default function WeatherCard({ unit, showLater }: Props) {
   const { t } = useTranslation("app");
   const [location, setLocation] = useWeatherLocation();
   const [weather, setWeather] = useState<Weather | null>(null);
@@ -167,13 +174,13 @@ export default function WeatherCard() {
     setFailed(false);
     if (!location) return;
     let active = true;
-    fetchWeather(location.lat, location.lon)
+    fetchWeather(location.lat, location.lon, unit)
       .then((result) => active && setWeather(result))
       .catch(() => active && setFailed(true));
     return () => {
       active = false;
     };
-  }, [location]);
+  }, [location, unit]);
 
   const condition = weather ? conditionOf(weather.code) : null;
   const Icon = condition ? ICONS[condition] : null;
@@ -221,6 +228,9 @@ export default function WeatherCard() {
             }}
           >
             {`${weather.temperature}°`}
+            <Box component="span" sx={{ fontSize: "0.4em", fontWeight: 500, ml: 0.25, color: "text.secondary" }}>
+              {unit === "fahrenheit" ? "F" : "C"}
+            </Box>
           </Typography>
         </Stack>
         <Typography
@@ -234,13 +244,15 @@ export default function WeatherCard() {
         >
           {`${t(`dashboard.weather.conditions.${condition}`)} · ${t("dashboard.weather.highLow", { high: weather.high, low: weather.low })}`}
         </Typography>
-        <Typography sx={{ fontFamily: "inherit", fontSize: "0.75rem", color: "text.disabled" }}>
-          {t("dashboard.weather.later", {
-            hours: weather.later.hours,
-            temperature: weather.later.temperature,
-            condition: t(`dashboard.weather.conditions.${later}`).toLowerCase(),
-          })}
-        </Typography>
+        {showLater && (
+          <Typography sx={{ fontFamily: "inherit", fontSize: "0.75rem", color: "text.disabled" }}>
+            {t("dashboard.weather.later", {
+              hours: weather.later.hours,
+              temperature: weather.later.temperature,
+              condition: t(`dashboard.weather.conditions.${later}`).toLowerCase(),
+            })}
+          </Typography>
+        )}
       </Stack>
     );
 

@@ -681,7 +681,8 @@
         "dragToMerge": "Arrastra sobre otro panel para mostrarlos como pestañas",
         "dragTab": "Arrastra sobre otro panel, o a un espacio vacío para darle su propio panel",
         "mergeHere": "Añadir como pestaña",
-        "empty": "Esta plantilla aún no tiene paneles."
+        "empty": "Esta plantilla aún no tiene paneles.",
+        "fit": "Ajustar al contenido"
       },
       "templates": {
         "open": "Plantillas",
@@ -715,6 +716,23 @@
         "deleteMessage": "Esto no se puede deshacer.",
         "deleteConfirm": "Eliminar",
         "limit": "Puedes tener hasta {{max}} plantillas"
+      },
+      "settings": {
+        "open": "Ajustes",
+        "openFor": "Ajustes de {{name}}",
+        "title": "Ajustes de {{name}}",
+        "titlePanel": "Ajustes del panel",
+        "reset": "Restablecer valores predeterminados",
+        "done": "Listo",
+        "count": "Elementos mostrados",
+        "showMore": "Enlace «Ver más»",
+        "hourCycle": "Formato de hora",
+        "hour24": "24 horas",
+        "hour12": "12 horas",
+        "showDate": "Fecha",
+        "showGreeting": "Saludo",
+        "unit": "Temperatura",
+        "showLater": "Previsión para más tarde"
       }
     },
     "adminSettings": {

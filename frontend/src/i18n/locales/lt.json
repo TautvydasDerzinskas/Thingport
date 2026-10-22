@@ -687,7 +687,8 @@
         "dragToMerge": "Nuvilkite ant kito skydelio, kad jie būtų rodomi kortelėmis",
         "dragTab": "Nuvilkite ant kito skydelio arba į tuščią vietą, kad taptų atskiru skydeliu",
         "mergeHere": "Pridėti kaip kortelę",
-        "empty": "Šiame šablone dar nėra skydelių."
+        "empty": "Šiame šablone dar nėra skydelių.",
+        "fit": "Pritaikyti prie turinio"
       },
       "templates": {
         "open": "Šablonai",
@@ -721,6 +722,23 @@
         "deleteMessage": "To nebus galima atšaukti.",
         "deleteConfirm": "Ištrinti",
         "limit": "Galite turėti iki {{max}} šablonų"
+      },
+      "settings": {
+        "open": "Nustatymai",
+        "openFor": "„{{name}}“ nustatymai",
+        "title": "„{{name}}“ nustatymai",
+        "titlePanel": "Skydelio nustatymai",
+        "reset": "Atkurti numatytuosius",
+        "done": "Atlikta",
+        "count": "Rodomų įrašų",
+        "showMore": "Nuoroda „Daugiau“",
+        "hourCycle": "Laiko formatas",
+        "hour24": "24 val.",
+        "hour12": "12 val.",
+        "showDate": "Data",
+        "showGreeting": "Pasisveikinimas",
+        "unit": "Temperatūra",
+        "showLater": "Vėlesnė prognozė"
       }
     },
     "adminSettings": {

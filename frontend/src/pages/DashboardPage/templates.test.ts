@@ -12,10 +12,12 @@ import {
   removePanels,
   resolveLayout,
   setLayout,
+  setWidgetSettings,
   splitPanel,
   templateFromPreset,
   templateWidgets,
 } from "./templates";
+import { resolveSettings, widgetById } from "./widgets";
 
 const overlaps = (a: DashboardGridItem, b: DashboardGridItem) =>
   a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
@@ -52,17 +54,16 @@ describe("presets", () => {
 
 describe("resolveLayout", () => {
   it("keeps each panel to its half on the medium grid and stacks them on a phone", () => {
-    const template = preset("showcase");
+    const template = preset("puzzle");
     const md = resolveLayout(template, "md");
     expectNoOverlap(md);
     const at = (id: string) => md.find((item) => item.i === panelOf(template, id).id)!;
-    // The clock and weather stay stacked on the left, beside the featured model on the right.
+    // The clock and weather stay side by side, and the full-width heatmap spans both halves below them.
     expect(at("clock")).toMatchObject({ x: 0, y: 0, w: 3 });
-    expect(at("weather")).toMatchObject({ x: 0, y: 2, w: 3 });
-    expect(at("featuredModel")).toMatchObject({ x: 3, y: 0, w: 3 });
-    // The counts pair up, and the full-width heatmap spans both halves.
-    expect([at("collectionCount").x, at("authorCount").x]).toEqual([0, 3]);
-    expect(at("activityHeatmap")).toMatchObject({ x: 0, w: 6 });
+    expect(at("weather")).toMatchObject({ x: 3, y: 0, w: 3 });
+    expect(at("activityHeatmap")).toMatchObject({ x: 0, y: 3, w: 6 });
+    // Each box keeps to its side: the top viewed list left, the collections count right.
+    expect([at("topViewed").x, at("collectionCount").x]).toEqual([0, 3]);
 
     const sm = resolveLayout(template, "sm");
     expect(sm.every((item) => item.x === 0 && item.w === 1)).toBe(true);
@@ -94,7 +95,7 @@ describe("panel edits", () => {
     expect(panel.id).toBe(viewed.id);
     expect(panel.widgets).toEqual(["topViewed", "topAuthors"]);
     const item = merged.layouts.lg!.find((cell) => cell.i === panel.id)!;
-    expect(item).toMatchObject({ x: 3, y: 0, w: 5, h: 6 });
+    expect(item).toMatchObject({ x: 3, y: 0, w: 5, h: 5 });
     expectNoOverlap(resolveLayout(merged, "lg"));
   });
 
@@ -204,10 +205,33 @@ describe("offerNewPresets", () => {
       templates: config.templates.filter((t) => t.preset !== "puzzle" && t.preset !== "minimal"),
     };
     const updated = offerNewPresets(old);
-    expect(updated.templates.map((t) => t.preset)).toEqual(["classic", "overview", "compact", "showcase", "puzzle"]);
+    expect(updated.templates.map((t) => t.preset)).toEqual(["classic", "overview", "compact", "puzzle"]);
     expect(updated.active).toBe(config.active);
     // Now tracked, so deleting the puzzle sticks, and there's nothing more to add.
     const deleted = { ...updated, templates: updated.templates.filter((t) => t.preset !== "puzzle") };
     expect(offerNewPresets(deleted)).toBe(deleted);
+  });
+});
+
+describe("setWidgetSettings", () => {
+  it("keeps only what differs from the defaults, and resolves the rest", () => {
+    let template = preset("minimal");
+    template = setWidgetSettings(template, "clock", { hourCycle: "12", showDate: true, showGreeting: false });
+    expect(template.settings).toEqual({ clock: { hourCycle: "12", showGreeting: false } });
+    expect(resolveSettings(widgetById("clock")!, template.settings?.clock)).toEqual({
+      hourCycle: "12",
+      showDate: true,
+      showGreeting: false,
+    });
+    // Back to the defaults leaves nothing stored.
+    template = setWidgetSettings(template, "clock", { hourCycle: "24", showDate: true, showGreeting: true });
+    expect(template.settings).toEqual({});
+  });
+
+  it("falls back to the default for a value no longer offered", () => {
+    expect(resolveSettings(widgetById("topViewed")!, { count: "42", showMore: "yes" })).toEqual({
+      count: "5",
+      showMore: true,
+    });
   });
 });

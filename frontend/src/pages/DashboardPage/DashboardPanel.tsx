@@ -16,6 +16,8 @@ import Tabs from "@mui/material/Tabs";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import HeightIcon from "@mui/icons-material/Height";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import CallSplitIcon from "@mui/icons-material/CallSplit";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import TabIcon from "@mui/icons-material/TabOutlined";
@@ -59,6 +61,10 @@ type Props = {
   onNudge: (key: NudgeKey) => void;
   onSplit: () => void;
   onRemove: () => void;
+  /** Sizes the panel to fit its content. */
+  onFit: () => void;
+  /** Opens the panel's options; missing when none of its widgets has any. */
+  onOpenSettings?: () => void;
   /** True right after a move or resize ended, when the click that ends it shouldn't also select. */
   justArranged: () => boolean;
   /** The widget chip being dragged, from any panel. */
@@ -77,6 +83,8 @@ export default function DashboardPanel({
   onNudge,
   onSplit,
   onRemove,
+  onFit,
+  onOpenSettings,
   justArranged,
   dragging,
   keysHintId,
@@ -246,6 +254,22 @@ export default function DashboardPanel({
                 />
               ))}
             </Box>
+            {onOpenSettings && (
+              <Tooltip title={t("dashboard.settings.open")}>
+                <IconButton
+                  className={NO_DRAG}
+                  size="small"
+                  aria-label={t("dashboard.settings.openFor", { name })}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onOpenSettings();
+                  }}
+                  sx={{ bgcolor: "background.paper", boxShadow: 1, "&:hover": { bgcolor: "background.paper" } }}
+                >
+                  <SettingsOutlinedIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
             <Tooltip title={t("dashboard.edit.panelActions")}>
               <IconButton
                 className={NO_DRAG}
@@ -297,6 +321,31 @@ export default function DashboardPanel({
         // Keeps a click on the menu from reaching the panel underneath and selecting it.
         onClick={(event) => event.stopPropagation()}
       >
+        {onOpenSettings && (
+          <MenuItem
+            onClick={() => {
+              setMenu(null);
+              onOpenSettings();
+            }}
+          >
+            <ListItemIcon>
+              <SettingsOutlinedIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t("dashboard.settings.open")}</ListItemText>
+          </MenuItem>
+        )}
+        <MenuItem
+          onClick={() => {
+            setMenu(null);
+            onFit();
+          }}
+        >
+          <ListItemIcon>
+            <HeightIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>{t("dashboard.edit.fit")}</ListItemText>
+        </MenuItem>
+        <Divider />
         {tabbed && (
           <MenuItem
             onClick={() => {

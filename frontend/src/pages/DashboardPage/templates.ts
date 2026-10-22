@@ -10,7 +10,7 @@ import type {
   DashboardWidgetChoices,
   DashboardWidgetId,
 } from "../../api/settings";
-import { DASHBOARD_WIDGETS, widgetById } from "./widgets";
+import { DASHBOARD_WIDGETS, widgetById, type ResolvedSettings } from "./widgets";
 
 /** Widest first; a breakpoint applies from its width up. Phones get one column, so panels simply stack. */
 export const BREAKPOINTS: { id: DashboardBreakpoint; minWidth: number; cols: number }[] = [
@@ -291,6 +291,26 @@ export function splitPanel(template: DashboardTemplate, panelId: string): Dashbo
   return panel.widgets.slice(1).reduce(detachWidget, template);
 }
 
+/**
+ * Saves a widget's options. Only what differs from its defaults is kept, so a default changed in a later release
+ * reaches everyone who never picked otherwise.
+ */
+export function setWidgetSettings(
+  template: DashboardTemplate,
+  id: DashboardWidgetId,
+  values: ResolvedSettings,
+): DashboardTemplate {
+  const widget = widgetById(id);
+  const changed = Object.fromEntries(
+    (widget?.settings ?? [])
+      .filter((setting) => values[setting.key] !== undefined && values[setting.key] !== setting.default)
+      .map((setting) => [setting.key, values[setting.key]]),
+  );
+  const { [id]: _previous, ...others } = template.settings ?? {};
+  const settings = Object.keys(changed).length ? { ...others, [id]: changed } : others;
+  return { ...template, settings };
+}
+
 export function setTab(template: DashboardTemplate, panelId: string, tab: number): DashboardTemplate {
   return {
     ...template,
@@ -320,22 +340,22 @@ export const DASHBOARD_PRESETS: DashboardPreset[] = [
     id: "classic",
     panels: [
       ...COUNTS.map((id, index) => one(id, 0, index * 2, 3, 2)),
-      one("topViewed", 3, 0, 5, 4),
-      one("topPrinted", 3, 4, 5, 4),
-      one("recentlyAdded", 3, 8, 5, 4),
-      one("topAuthors", 8, 0, 4, 6),
-      one("topProviders", 8, 6, 4, 4),
+      one("topViewed", 3, 0, 5, 5),
+      one("topPrinted", 3, 5, 5, 5),
+      one("recentlyAdded", 3, 10, 5, 5),
+      one("topAuthors", 8, 0, 4, 5),
+      one("topProviders", 8, 5, 4, 4),
     ],
   },
   {
     id: "overview",
     panels: [
       ...countsRow(0),
-      one("topViewed", 0, 2, 4, 4),
-      one("topPrinted", 4, 2, 4, 4),
-      one("recentlyAdded", 8, 2, 4, 4),
-      one("topAuthors", 0, 6, 6, 6),
-      one("topProviders", 6, 6, 6, 4),
+      one("topViewed", 0, 2, 4, 5),
+      one("topPrinted", 4, 2, 4, 5),
+      one("recentlyAdded", 8, 2, 4, 5),
+      one("topAuthors", 0, 7, 6, 5),
+      one("topProviders", 6, 7, 6, 4),
     ],
   },
   {
@@ -343,20 +363,8 @@ export const DASHBOARD_PRESETS: DashboardPreset[] = [
     id: "compact",
     panels: [
       ...countsRow(0),
-      { widgets: ["recentlyAdded", "topViewed", "topPrinted"], x: 0, y: 2, w: 6, h: 6 },
-      { widgets: ["topAuthors", "topProviders"], x: 6, y: 2, w: 6, h: 6 },
-    ],
-  },
-  {
-    id: "showcase",
-    panels: [
-      one("clock", 0, 0, 4, 2),
-      one("weather", 0, 2, 4, 3),
-      one("featuredModel", 4, 0, 8, 5),
-      ...countsRow(5),
-      one("activityHeatmap", 0, 7, 12, 3),
-      one("recentlyAdded", 0, 10, 6, 4),
-      one("topViewed", 6, 10, 6, 4),
+      { widgets: ["recentlyAdded", "topViewed", "topPrinted"], x: 0, y: 2, w: 6, h: 5 },
+      { widgets: ["topAuthors", "topProviders"], x: 6, y: 2, w: 6, h: 5 },
     ],
   },
   {
@@ -367,15 +375,15 @@ export const DASHBOARD_PRESETS: DashboardPreset[] = [
       one("clock", 0, 0, 6, 3),
       one("weather", 6, 0, 6, 3),
       one("activityHeatmap", 0, 3, 12, 3),
-      one("topViewed", 0, 6, 6, 4),
+      one("topViewed", 0, 6, 6, 5),
       one("collectionCount", 6, 6, 4, 2),
       one("modelCount", 10, 6, 2, 2),
-      one("recentlyAdded", 6, 8, 6, 4),
-      one("authorCount", 0, 10, 2, 2),
-      one("categoryCount", 2, 10, 4, 2),
-      one("topPrinted", 0, 12, 4, 4),
-      one("topAuthors", 4, 12, 4, 4),
-      one("topProviders", 8, 12, 4, 4),
+      one("recentlyAdded", 6, 8, 6, 5),
+      one("authorCount", 0, 11, 2, 2),
+      one("categoryCount", 2, 11, 4, 2),
+      one("topPrinted", 0, 13, 4, 5),
+      one("topAuthors", 4, 13, 4, 5),
+      one("topProviders", 8, 13, 4, 5),
     ],
   },
   {
@@ -384,8 +392,8 @@ export const DASHBOARD_PRESETS: DashboardPreset[] = [
       one("clock", 0, 0, 4, 2),
       one("modelCount", 4, 0, 4, 2),
       one("collectionCount", 8, 0, 4, 2),
-      one("recentlyAdded", 0, 2, 6, 4),
-      one("topViewed", 6, 2, 6, 4),
+      one("recentlyAdded", 0, 2, 6, 5),
+      one("topViewed", 6, 2, 6, 5),
     ],
   },
 ];
@@ -397,8 +405,9 @@ export function presetById(id: string | null): DashboardPreset | undefined {
 /** A built-in template's name follows the user's language until they rename it. */
 export function templateName(t: TFunction, template: DashboardTemplate): string {
   if (template.name) return template.name;
-  return presetById(template.preset)
-    ? t(`dashboard.templates.presets.${template.preset}`)
+  // Also a template made from a built-in since retired, like Showcase, whose name is still translated.
+  return template.preset
+    ? t(`dashboard.templates.presets.${template.preset}`, { defaultValue: t("dashboard.templates.untitled") })
     : t("dashboard.templates.untitled");
 }
 

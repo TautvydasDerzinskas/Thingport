@@ -18,9 +18,13 @@ The dashboard is a grid of panels you arrange yourself. **Edit** (the pencil abo
 - **Tabs:** drag a panel's name onto another panel to show the two as tabs in one, or select several panels and choose
   **Merge into tabs**. Drag a tab onto empty space, or choose **Split into panels**, to give it a panel of its own again.
 - **Add panel** puts back any panel that isn't showing; **Remove** takes the selected ones off.
+- **Settings** (the cog on a panel) changes what it shows: a 12- or 24-hour clock with or without the date and
+  greeting, the weather in °C or °F with or without the later forecast, and how many items a list shows (3, 5, 7 or 10)
+  and whether it links to the full list. The panel resizes to fit; **Fit to content** in a panel's menu does the same
+  after resizing by hand. A list too long for its panel scrolls under its title, which stays in place.
 
 **Templates** (top right of the dashboard) switches between whole dashboards, each with its own panels and arrangement.
-It comes with a few to start from -- Classic, Overview, Compact tabs, Showcase, Puzzle and Minimal -- and **Manage templates**
+It comes with a few to start from -- Classic, Overview, Compact tabs, Puzzle and Minimal -- and **Manage templates**
 makes new ones (empty, a copy of the current one or a built-in), renames, copies, resets or deletes them.
 
 Wide, medium and phone-sized screens each keep their own arrangement: until you arrange one yourself, it follows the

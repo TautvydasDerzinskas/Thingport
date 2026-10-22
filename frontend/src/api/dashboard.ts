@@ -58,6 +58,13 @@ export const dashboardApi = {
   },
 
   /** Today's model, by the browser's own date so it changes at the user's midnight. */
+  getRecentlyAdded: async (): Promise<DashboardModel[]> => {
+    const res = await fetch(`${apiBase()}/dashboard/recently-added`, { headers: authHeaders() });
+    assertOk(res, "Failed to load models");
+    return res.json();
+  },
+
+  /** Today's model, by the browser's own date so it changes at the user's midnight. */
   getFeatured: async (date: string): Promise<{ print: Print | null }> => {
     const res = await fetch(`${apiBase()}/dashboard/featured?date=${encodeURIComponent(date)}`, {
       headers: authHeaders(),

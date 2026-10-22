@@ -678,7 +678,8 @@
         "dragToMerge": "Drag onto another panel to show them as tabs",
         "dragTab": "Drag onto another panel, or onto empty space for a panel of its own",
         "mergeHere": "Add as a tab",
-        "empty": "This template has no panels yet."
+        "empty": "This template has no panels yet.",
+        "fit": "Fit to content"
       },
       "templates": {
         "open": "Templates",
@@ -712,6 +713,23 @@
         "deleteMessage": "This can't be undone.",
         "deleteConfirm": "Delete",
         "limit": "You can keep up to {{max}} templates"
+      },
+      "settings": {
+        "open": "Settings",
+        "openFor": "{{name}} settings",
+        "title": "{{name}} settings",
+        "titlePanel": "Panel settings",
+        "reset": "Reset to defaults",
+        "done": "Done",
+        "count": "Items shown",
+        "showMore": "“See more” link",
+        "hourCycle": "Time format",
+        "hour24": "24-hour",
+        "hour12": "12-hour",
+        "showDate": "Date",
+        "showGreeting": "Greeting",
+        "unit": "Temperature",
+        "showLater": "Forecast for later"
       }
     },
     "adminSettings": {

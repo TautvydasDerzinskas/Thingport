@@ -681,7 +681,8 @@
         "dragToMerge": "Faites glisser sur un autre panneau pour les afficher en onglets",
         "dragTab": "Faites glisser sur un autre panneau, ou vers un espace vide pour un panneau à part",
         "mergeHere": "Ajouter en onglet",
-        "empty": "Ce modèle n'a pas encore de panneaux."
+        "empty": "Ce modèle n'a pas encore de panneaux.",
+        "fit": "Ajuster au contenu"
       },
       "templates": {
         "open": "Modèles",
@@ -715,6 +716,23 @@
         "deleteMessage": "Cette action est irréversible.",
         "deleteConfirm": "Supprimer",
         "limit": "Vous pouvez garder jusqu’à {{max}} modèles"
+      },
+      "settings": {
+        "open": "Paramètres",
+        "openFor": "Paramètres de {{name}}",
+        "title": "Paramètres de {{name}}",
+        "titlePanel": "Paramètres du panneau",
+        "reset": "Rétablir les valeurs par défaut",
+        "done": "Terminé",
+        "count": "Éléments affichés",
+        "showMore": "Lien « Voir plus »",
+        "hourCycle": "Format de l'heure",
+        "hour24": "24 h",
+        "hour12": "12 h",
+        "showDate": "Date",
+        "showGreeting": "Salutation",
+        "unit": "Température",
+        "showLater": "Prévision pour plus tard"
       }
     },
     "adminSettings": {

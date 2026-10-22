@@ -34,6 +34,33 @@ export default function DashboardCard({ scroll = true, sx, children, ...props }:
   );
 }
 
+/** The most of each list the dashboard summary holds; kept in sync by hand with the backend's DASHBOARD_LIST_MAX. */
+const SUMMARY_LIST_MAX = 10;
+
+/**
+ * Whether a list has more than it shows, for its "See more". A summary list short of the most it can hold is complete;
+ * one at that cap may go on. `complete` is for a list the summary always holds whole.
+ */
+export function hasMore(length: number, shown: number, complete = false): boolean {
+  return length > shown || (!complete && length >= SUMMARY_LIST_MAX);
+}
+
+/** Marks the part of a card that scrolls, for measuring how tall the card would be with nothing scrolled. */
+export const CARD_BODY_CLASS = "dashboard-card-body";
+
+/**
+ * The part of a card between its title and its footer (a "See more" link). When the panel is too short for it, only
+ * this scrolls, so the title and the footer stay in sight.
+ */
+export function DashboardCardBody({ children }: { children: React.ReactNode }) {
+  return (
+    // Shrinks to scroll but never stretches, so the footer follows the last row and spare room goes below it.
+    <Box className={CARD_BODY_CLASS} sx={{ flex: "0 1 auto", minHeight: 0, overflow: "auto" }}>
+      {children}
+    </Box>
+  );
+}
+
 type TitleProps = {
   icon: React.ReactNode;
   title: string;
