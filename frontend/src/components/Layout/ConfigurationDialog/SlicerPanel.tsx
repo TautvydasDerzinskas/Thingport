@@ -57,14 +57,16 @@ export default function SlicerPanel({ onNavigate, onUnauthorized }: Props) {
   const toggle = async (id: string) => {
     if (loading) return;
     const previous = value;
-    const slicers = previous.slicers.includes(id)
-      ? previous.slicers.filter((other) => other !== id)
-      : [...previous.slicers, id];
+    const on = previous.slicers.includes(id);
     // Shown straight away; put back if the save fails.
-    setValue({ ...previous, slicers });
+    setValue({
+      ...previous,
+      slicers: on ? previous.slicers.filter((other) => other !== id) : [...previous.slicers, id],
+    });
     setError(null);
     try {
-      const res = await settingsApi.updateSlicer({ slicers });
+      // Just this slicer, so a toggle made on another device in the meantime stays.
+      const res = await settingsApi.updateSlicer(on ? { disable: id } : { enable: id });
       setValue(res);
       setCachedSlicerSettings(res);
     } catch (err) {

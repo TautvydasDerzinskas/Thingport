@@ -53,20 +53,28 @@ describe("slicer settings", () => {
     expect((await patch({ slicers: [] })).body).toEqual({ slicer: null, slicers: [] });
   });
 
-  it("takes changes that arrive at once one after the other", async () => {
-    const results = await Promise.all([
-      patch({ slicers: ["bambustudio", "orcaslicer"] }),
-      patch({ slicer: "cura" }),
-      patch({ slicers: ["prusaslicer"] }),
-      patch({ slicer: "orcaslicer" }),
-    ]);
+  it("keeps every slicer picked by changes that arrive at once", async () => {
+    const results = await Promise.all(
+      ["bambustudio", "orcaslicer", "prusaslicer", "cura"].map((slicer) => patch({ slicer })),
+    );
     expect(results.map((res) => res.status)).toEqual([200, 200, 200, 200]);
-    const final = await get();
-    expect(final.slicers).toContain(final.slicer);
+    expect((await get()).slicers).toEqual(["bambustudio", "orcaslicer", "prusaslicer", "cura"]);
+  });
+
+  it("switches one slicer on or off without touching the others", async () => {
+    await patch({ slicers: ["orcaslicer"] });
+    // As two devices that loaded the same list would send them.
+    await Promise.all([patch({ enable: "cura" }), patch({ enable: "prusaslicer" })]);
+    expect((await get()).slicers).toEqual(["orcaslicer", "prusaslicer", "cura"]);
+    expect((await patch({ disable: "orcaslicer" })).body).toEqual({
+      slicer: "prusaslicer",
+      slicers: ["prusaslicer", "cura"],
+    });
   });
 
   it("rejects an unknown slicer", async () => {
     expect((await patch({ slicers: ["notepad"] })).status).toBe(400);
     expect((await patch({ slicer: "notepad" })).status).toBe(400);
+    expect((await patch({ enable: "notepad" })).status).toBe(400);
   });
 });

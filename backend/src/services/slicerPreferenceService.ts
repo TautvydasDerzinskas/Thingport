@@ -37,20 +37,23 @@ export async function getUserSlicerSettings(userId: string): Promise<SlicerSetti
   return normalize(user?.slicer ?? null, user?.slicers ?? []);
 }
 
-/** A field left undefined keeps its value. A `slicers` list without the current slicer moves it to the first
- *  one left, unless the same call names a new current one. */
+/** A field left undefined keeps its value. `enable` and `disable` switch one slicer on or off in the list as it is
+ *  now, so two devices switching different slicers both count; `slicers` replaces the whole list. A list without the
+ *  current slicer moves it to the first one left, unless the same call names a new current one. */
 export async function setUserSlicerSettings(
   userId: string,
-  patch: { slicer?: string | null; slicers?: string[] },
+  patch: { slicer?: string | null; slicers?: string[]; enable?: string; disable?: string },
 ): Promise<SlicerSettings> {
-  // Locks the user's row, so two changes at once (two tabs, two devices) can't each undo the other's.
+  // The row lock makes changes that arrive at once apply one after the other, each to the other's result.
   return prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId} FOR UPDATE`;
     const user = await tx.user.findUnique({ where: { id: userId }, select: { slicer: true, slicers: true } });
     const existing = normalize(user?.slicer ?? null, user?.slicers ?? []);
-    const slicers = patch.slicers ?? existing.slicers;
+    let slicers: string[] = patch.slicers ?? existing.slicers;
+    if (patch.enable) slicers = [...slicers, patch.enable];
+    if (patch.disable) slicers = slicers.filter((id) => id !== patch.disable);
     let slicer = patch.slicer !== undefined ? patch.slicer : existing.slicer;
-    if (patch.slicer === undefined && slicer && !slicers.includes(slicer as SlicerId)) slicer = null;
+    if (patch.slicer === undefined && slicer && !slicers.includes(slicer)) slicer = null;
     const next = normalize(slicer, slicers);
     await tx.user.update({ where: { id: userId }, data: next });
     return next;

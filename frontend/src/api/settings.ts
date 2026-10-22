@@ -753,8 +753,10 @@ export const settingsApi = {
     return toSlicerSettings(await res.json());
   },
 
-  /** A field left out keeps its value. */
-  updateSlicer: async (patch: Partial<SlicerSettings>): Promise<SlicerSettings> => {
+  /** A field left out keeps its value. `enable`/`disable` switch one slicer in the list as the server has it. */
+  updateSlicer: async (
+    patch: Partial<SlicerSettings> & { enable?: string; disable?: string },
+  ): Promise<SlicerSettings> => {
     const res = await fetch(`${apiBase()}/settings/slicer`, {
       method: "PATCH",
       headers: authHeaders({ "Content-Type": "application/json" }),

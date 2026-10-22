@@ -1016,6 +1016,8 @@ router.get(
 const slicerSettingsSchema = z.object({
   slicer: z.enum(SLICER_IDS).nullable().optional(),
   slicers: z.array(z.enum(SLICER_IDS)).max(SLICER_IDS.length).optional(),
+  enable: z.enum(SLICER_IDS).optional(),
+  disable: z.enum(SLICER_IDS).optional(),
 });
 router.patch(
   "/settings/slicer",
