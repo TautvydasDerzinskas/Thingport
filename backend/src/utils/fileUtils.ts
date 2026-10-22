@@ -1,4 +1,5 @@
 import path from "node:path";
+import { decodeExtended, parse as parseDisposition } from "content-disposition";
 import mimeTypes from "mime-types";
 import { IMPORT_ALLOWED_EXTS } from "../config";
 
@@ -29,8 +30,24 @@ function decodeLatin1AsUtf8(value: string): string {
 
 export function parseContentDisposition(cd: string | null | undefined): string | null {
   if (!cd) return null;
+  const { parameters } = parseDisposition(cd, { extended: false });
+  // RFC 6266: `filename*` (RFC 8187, names its own charset) wins; one that can't be decoded falls back to `filename`.
+  const extended = parameters["filename*"] === undefined ? undefined : decodeExtended(parameters["filename*"]);
+  if (extended) return extended;
+  if (parameters.filename) return decodeLatin1AsUtf8(parameters.filename);
+  return matchLooseFilename(cd);
+}
+
+/** For headers the parser finds no filename in, such as `filename=x.stl` with no disposition type. */
+function matchLooseFilename(cd: string): string | null {
   const starMatch = cd.match(/filename\*=([^']*)''([^;]+)/i);
-  if (starMatch) return decodeURIComponent(starMatch[2]);
+  if (starMatch) {
+    try {
+      return decodeURIComponent(starMatch[2]);
+    } catch {
+      // Not UTF-8 percent-encoding; try the plain parameter.
+    }
+  }
   const plainMatch = cd.match(/filename="?([^";]+)"?/i);
   return plainMatch ? decodeLatin1AsUtf8(plainMatch[1]) : null;
 }
