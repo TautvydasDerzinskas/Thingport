@@ -51,6 +51,56 @@ describe("dashboard widget preferences", () => {
   });
 });
 
+describe("dashboard templates", () => {
+  const put = (config: unknown) => request(app).put("/api/settings/dashboard").set(auth()).send({ config });
+  const template = (widgets: string[][], settings?: Record<string, unknown>) => ({
+    active: "t1",
+    templates: [
+      {
+        id: "t1",
+        name: "Mine",
+        preset: null,
+        panels: widgets.map((ids, index) => ({ id: `p${index}`, widgets: ids })),
+        layouts: { lg: widgets.map((_, index) => ({ i: `p${index}`, x: 0, y: index * 4, w: 4, h: 4 })) },
+        ...(settings && { settings }),
+      },
+    ],
+  });
+
+  it("keeps copies of a widget, each with its own options", async () => {
+    const config = template([["rss"], ["rss:k3j2h9", "weather"]], {
+      rss: { feeds: ["https://a.example/feed"] },
+      "rss:k3j2h9": { feeds: ["https://b.example/feed"] },
+      weather: { place: { lat: 54.69, lon: 25.28, name: "Vilnius", source: "manual" } },
+    });
+    expect((await put(config)).status).toBe(200);
+    const saved = (await request(app).get("/api/settings/dashboard").set(auth())).body.config;
+    expect(saved.templates[0].panels.map((panel: { widgets: string[] }) => panel.widgets)).toEqual([
+      ["rss"],
+      ["rss:k3j2h9", "weather"],
+    ]);
+    expect(saved.templates[0].settings["rss:k3j2h9"]).toEqual({ feeds: ["https://b.example/feed"] });
+  });
+
+  it("rejects an unknown widget or a malformed copy", async () => {
+    expect((await put(template([["horoscope"]]))).status).toBe(400);
+    expect((await put(template([["rss:NOT OK"]]))).status).toBe(400);
+  });
+
+  it("drops a widget since removed rather than the whole dashboard", async () => {
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        dashboardTemplates: template([["horoscope:abc123", "clock"], ["horoscope"]], { horoscope: { sign: "leo" } }),
+      },
+    });
+    const saved = (await request(app).get("/api/settings/dashboard").set(auth())).body.config;
+    expect(saved.templates[0].panels).toEqual([{ id: "p0", widgets: ["clock"] }]);
+    expect(saved.templates[0].layouts.lg.map((item: { i: string }) => item.i)).toEqual(["p0"]);
+    expect(saved.templates[0].settings).toEqual({});
+  });
+});
+
 describe("dashboard layout preference", () => {
   const getLayout = async () => (await request(app).get("/api/settings/dashboard-layout").set(auth())).body.layout;
   const setLayout = (layout: unknown) =>

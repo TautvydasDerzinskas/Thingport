@@ -74,6 +74,17 @@ export async function setDashboardLayout(userId: string, layout: DashboardLayout
 export const DASHBOARD_BREAKPOINTS = ["lg", "md", "sm"] as const;
 export const MAX_DASHBOARD_TEMPLATES = 30;
 
+// A placed widget: its id, or for a further copy of one that may repeat (RSS, launcher, weather), its id and a
+// suffix, "rss:k3j2h9". The first copy keeps the bare id, so templates saved before copies existed still read.
+const INSTANCE = /^([a-zA-Z]+)(?::[a-z0-9]{1,24})?$/;
+// Enough for any dashboard someone would arrange by hand.
+const MAX_PANELS = 100;
+
+function knownInstance(instance: string): boolean {
+  const widget = INSTANCE.exec(instance)?.[1];
+  return widget !== undefined && KNOWN.has(widget);
+}
+
 const gridItems = z
   .array(
     z.object({
@@ -84,12 +95,12 @@ const gridItems = z
       h: z.number().int().min(1).max(40),
     }),
   )
-  .max(DASHBOARD_WIDGETS.length)
+  .max(MAX_PANELS)
   .optional();
 
-/** Saving takes only current widget ids; reading takes any, and `cleanTemplate` drops the ones since removed, so
- *  removing a widget doesn't throw away the user's whole dashboard. */
-function configSchema<W extends z.ZodTypeAny>(widgetId: W) {
+/** Saving takes only instances of current widgets; reading takes any, and `cleanConfig` drops the ones since removed,
+ *  so removing a widget doesn't throw away the user's whole dashboard. */
+function configSchema<W extends z.ZodTypeAny>(instance: W) {
   return z.object({
     active: z.string().min(1).max(64),
     // The built-in templates the user has been given, so one added in a later release is offered once, and one they
@@ -106,16 +117,16 @@ function configSchema<W extends z.ZodTypeAny>(widgetId: W) {
             .array(
               z.object({
                 id: z.string().min(1).max(64),
-                // More than one makes a tabbed panel; `tab` is the one it shows.
-                widgets: z.array(widgetId).min(1).max(DASHBOARD_WIDGETS.length),
-                tab: z.number().int().min(0).max(DASHBOARD_WIDGETS.length).optional(),
+                // Widget instances; more than one makes a tabbed panel, and `tab` is the one it shows.
+                widgets: z.array(instance).min(1).max(MAX_PANELS),
+                tab: z.number().int().min(0).max(MAX_PANELS).optional(),
               }),
             )
-            .max(DASHBOARD_WIDGETS.length),
+            .max(MAX_PANELS),
           // Only the breakpoints the user has arranged; the frontend derives the rest from the widest one.
           layouts: z.object({ lg: gridItems, md: gridItems, sm: gridItems }),
-          // Each widget's own options, e.g. the clock's 12/24-hour format, as only what differs from its defaults.
-          // The frontend knows each widget's options and drops values it doesn't recognise.
+          // Each widget instance's own options, e.g. the clock's 12/24-hour format, as only what differs from its
+          // defaults. The frontend knows each widget's options and drops values it doesn't recognise.
           settings: z
             .record(
               z.string().max(40),
@@ -129,10 +140,13 @@ function configSchema<W extends z.ZodTypeAny>(widgetId: W) {
                   z.array(z.string().max(2048)).max(20),
                   // A list of records, e.g. the launcher's links: { name, url, icon }.
                   z.array(z.record(z.string().max(20), z.string().max(2048))).max(100),
+                  // A record, e.g. a weather panel's own place: { lat, lon, name, source }.
+                  z.record(z.string().max(20), z.union([z.string().max(200), z.number(), z.boolean(), z.null()])),
+                  z.null(),
                 ]),
               ),
             )
-            .refine((value) => Object.keys(value).length <= DASHBOARD_WIDGETS.length * 2)
+            .refine((value) => Object.keys(value).length <= MAX_PANELS * 2)
             .optional(),
         }),
       )
@@ -141,7 +155,7 @@ function configSchema<W extends z.ZodTypeAny>(widgetId: W) {
   });
 }
 
-export const dashboardConfigSchema = configSchema(z.enum(DASHBOARD_WIDGETS));
+export const dashboardConfigSchema = configSchema(z.string().max(64).refine(knownInstance, "Not a dashboard widget"));
 const storedConfigSchema = configSchema(z.string());
 export type DashboardConfig = z.infer<typeof dashboardConfigSchema>;
 type StoredTemplate = z.infer<typeof storedConfigSchema>["templates"][number];
@@ -152,10 +166,8 @@ function cleanConfig(config: z.infer<typeof storedConfigSchema>): DashboardConfi
   const templates = config.templates.map((template: StoredTemplate) => {
     const seen = new Set<string>();
     const panels = template.panels.flatMap((panel) => {
-      // A widget shows at most once per template.
-      const widgets = panel.widgets.filter(
-        (id): id is DashboardWidgetId => KNOWN.has(id) && !seen.has(id) && !!seen.add(id),
-      );
+      // An instance sits in one panel only.
+      const widgets = panel.widgets.filter((id) => knownInstance(id) && !seen.has(id) && !!seen.add(id));
       return widgets.length ? [{ ...panel, widgets }] : [];
     });
     const panelIds = new Set(panels.map((panel) => panel.id));
@@ -165,7 +177,7 @@ function cleanConfig(config: z.infer<typeof storedConfigSchema>): DashboardConfi
       if (items) layouts[breakpoint] = items.filter((item) => panelIds.has(item.i));
     }
     const settings = template.settings
-      ? Object.fromEntries(Object.entries(template.settings).filter(([id]) => KNOWN.has(id)))
+      ? Object.fromEntries(Object.entries(template.settings).filter(([id]) => knownInstance(id)))
       : undefined;
     return { ...template, panels, layouts, ...(settings && { settings }) };
   });
