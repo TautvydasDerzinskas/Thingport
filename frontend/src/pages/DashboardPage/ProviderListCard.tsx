@@ -1,6 +1,4 @@
 import { useTranslation } from "react-i18next";
-import Paper from "@mui/material/Paper";
-import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
@@ -12,6 +10,7 @@ import { printProviderInfo } from "../../constants/importProviders";
 import type { DashboardProvider } from "../../api/dashboard";
 import ProviderBadge from "../../components/ProviderBadge";
 import { useProviderAbout } from "../../components/providerAbout/ProviderAboutProvider";
+import DashboardCard, { DashboardCardTitle } from "./DashboardCard";
 
 type Props = {
   providers: DashboardProvider[];
@@ -22,21 +21,8 @@ export default function ProviderListCard({ providers }: Props) {
   const { t } = useTranslation("app");
 
   return (
-    <Paper
-      variant="outlined"
-      sx={{
-        p: 2.5,
-        display: "flex",
-        flexDirection: "column",
-        borderColor: (theme) => (theme.palette.mode === "dark" ? "transparent" : "divider"),
-      }}
-    >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1, color: "primary.main" }}>
-        <PublicIcon />
-        <Typography variant="h6" fontWeight={700} sx={{ color: (theme) => theme.thingport.headingText }}>
-          {t("dashboard.topProviders.title")}
-        </Typography>
-      </Box>
+    <DashboardCard sx={{ p: 2.5, display: "flex", flexDirection: "column" }}>
+      <DashboardCardTitle icon={<PublicIcon />} title={t("dashboard.topProviders.title")} sx={{ mb: 1 }} />
 
       {providers.length === 0 ? (
         <Typography color="text.secondary" sx={{ py: 2 }}>
@@ -53,7 +39,7 @@ export default function ProviderListCard({ providers }: Props) {
           ))}
         </List>
       )}
-    </Paper>
+    </DashboardCard>
   );
 }
 

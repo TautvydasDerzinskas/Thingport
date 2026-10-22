@@ -1,7 +1,5 @@
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import Paper from "@mui/material/Paper";
-import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
@@ -9,6 +7,7 @@ import ListItemText from "@mui/material/ListItemText";
 import NewReleasesIcon from "@mui/icons-material/NewReleases";
 import type { DashboardModel } from "../../api/dashboard";
 import DashboardModelThumb from "./DashboardModelThumb";
+import DashboardCard, { DashboardCardTitle } from "./DashboardCard";
 
 type Props = {
   models: DashboardModel[];
@@ -30,21 +29,8 @@ export default function RecentlyAddedCard({ models }: Props) {
   const navigate = useNavigate();
 
   return (
-    <Paper
-      variant="outlined"
-      sx={{
-        p: 2.5,
-        display: "flex",
-        flexDirection: "column",
-        borderColor: (theme) => (theme.palette.mode === "dark" ? "transparent" : "divider"),
-      }}
-    >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1, color: "primary.main" }}>
-        <NewReleasesIcon />
-        <Typography variant="h6" fontWeight={700} sx={{ color: (theme) => theme.thingport.headingText }}>
-          {t("dashboard.recentlyAdded.title")}
-        </Typography>
-      </Box>
+    <DashboardCard sx={{ p: 2.5, display: "flex", flexDirection: "column" }}>
+      <DashboardCardTitle icon={<NewReleasesIcon />} title={t("dashboard.recentlyAdded.title")} sx={{ mb: 1 }} />
 
       {models.length === 0 ? (
         <Typography color="text.secondary" sx={{ py: 2 }}>
@@ -67,6 +53,6 @@ export default function RecentlyAddedCard({ models }: Props) {
           ))}
         </List>
       )}
-    </Paper>
+    </DashboardCard>
   );
 }

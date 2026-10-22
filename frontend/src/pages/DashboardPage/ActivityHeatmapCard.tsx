@@ -2,13 +2,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import InsightsIcon from "@mui/icons-material/Insights";
 import { activityApi, type ActivityDay } from "../../api/activity";
 import { UnauthorizedError } from "../../api/client";
 import Heatmap from "../ProfilePage/activity/Heatmap";
 import { addDays, localToday, weekday, weekStartFor, type DateRange } from "../ProfilePage/activity/calendar";
+import DashboardCard, { DashboardCardTitle } from "./DashboardCard";
 
 // The heatmap's cell and gap, and room for its weekday labels.
 const WEEK_WIDTH = 14;
@@ -77,27 +77,14 @@ export default function ActivityHeatmapCard({ onUnauthorized }: Props) {
   );
 
   return (
-    <Paper
-      variant="outlined"
-      sx={{
-        p: 2.5,
-        display: "flex",
-        flexDirection: "column",
-        gap: 1,
-        borderColor: (theme) => (theme.palette.mode === "dark" ? "transparent" : "divider"),
-      }}
-    >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: "primary.main", minWidth: 0 }}>
-        <InsightsIcon />
-        <Typography variant="h6" fontWeight={700} sx={{ color: (theme) => theme.thingport.headingText, flex: 1 }}>
-          {t("dashboard.activityHeatmap.title")}
-        </Typography>
+    <DashboardCard sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 1 }}>
+      <DashboardCardTitle icon={<InsightsIcon />} title={t("dashboard.activityHeatmap.title")}>
         {total !== null && (
           <Typography variant="body2" color="text.secondary" sx={{ flexShrink: 0 }}>
             {t("dashboard.activityHeatmap.total", { count: total })}
           </Typography>
         )}
-      </Box>
+      </DashboardCardTitle>
       <Box ref={measureRef} sx={{ minWidth: 0 }}>
         {failed ? (
           <Typography color="text.secondary">{t("activity.loadError")}</Typography>
@@ -114,6 +101,6 @@ export default function ActivityHeatmapCard({ onUnauthorized }: Props) {
           )
         )}
       </Box>
-    </Paper>
+    </DashboardCard>
   );
 }

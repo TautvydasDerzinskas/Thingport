@@ -7,8 +7,15 @@ import PersonIcon from "@mui/icons-material/Person";
 import FolderIcon from "@mui/icons-material/Folder";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PrintIcon from "@mui/icons-material/Print";
+import NewReleasesIcon from "@mui/icons-material/NewReleases";
+import ScheduleIcon from "@mui/icons-material/Schedule";
+import WbSunnyIcon from "@mui/icons-material/WbSunny";
+import StarIcon from "@mui/icons-material/Star";
+import PublicIcon from "@mui/icons-material/Public";
+import ThreeDRotationIcon from "@mui/icons-material/ThreeDRotation";
+import InsightsIcon from "@mui/icons-material/Insights";
 import { dashboardApi, type DashboardSummary } from "../../api/dashboard";
-import type { DashboardWidgetChoices, DashboardWidgetId } from "../../api/settings";
+import type { DashboardWidgetId } from "../../api/settings";
 import CountCard from "./CountCard";
 import ModelListCard from "./ModelListCard";
 import AuthorListCard from "./AuthorListCard";
@@ -21,6 +28,8 @@ import ActivityHeatmapCard from "./ActivityHeatmapCard";
 import type { DashboardSkeleton } from "./DashboardCardSkeleton";
 import type { PanelSketchKind } from "./PanelSketch";
 
+export type WidgetSize = { w: number; h: number; minW: number; minH: number };
+
 type WidgetContext = {
   summary: DashboardSummary;
   t: TFunction;
@@ -32,10 +41,10 @@ export type DashboardWidget = {
   id: DashboardWidgetId;
   /** The widget's name in the settings dialog. */
   labelKey: string;
-  /** Which of the three columns it sits in on a wide screen. */
-  column: 0 | 1 | 2;
-  /** Shown until the user switches it off. An optional widget can start hidden instead. */
-  defaultEnabled: boolean;
+  /** Its tab and menu icon. */
+  icon: React.ReactNode;
+  /** Its size when added, in the wide grid's columns and rows, and the smallest it can be made. */
+  size: WidgetSize;
   /** Its drawing in the settings dialog's Panels picker. */
   sketch: PanelSketchKind;
   /** Its placeholder while the summary loads. A widget without one fetches its own data, renders
@@ -44,13 +53,14 @@ export type DashboardWidget = {
   render: (ctx: WidgetContext) => React.ReactNode;
 };
 
-/** In page order. A new widget is one entry here, plus its id in DashboardWidgetId and the backend. */
+/** In menu order. A new widget is one entry here, plus its id in DashboardWidgetId and the backend, and a place in
+ *  whichever preset templates should show it. */
 export const DASHBOARD_WIDGETS: DashboardWidget[] = [
   {
     id: "collectionCount",
     labelKey: "dashboard.collectionCount.label",
-    column: 0,
-    defaultEnabled: true,
+    icon: <CollectionsIcon fontSize="small" />,
+    size: { w: 3, h: 2, minW: 2, minH: 2 },
     sketch: "count",
     skeleton: { kind: "count" },
     render: ({ summary, t, navigate }) => (
@@ -65,8 +75,8 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
   {
     id: "modelCount",
     labelKey: "dashboard.modelCount.label",
-    column: 0,
-    defaultEnabled: true,
+    icon: <ViewInArIcon fontSize="small" />,
+    size: { w: 3, h: 2, minW: 2, minH: 2 },
     sketch: "count",
     skeleton: { kind: "count" },
     render: ({ summary, t, navigate }) => (
@@ -81,8 +91,8 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
   {
     id: "authorCount",
     labelKey: "dashboard.authorCount.label",
-    column: 0,
-    defaultEnabled: true,
+    icon: <PersonIcon fontSize="small" />,
+    size: { w: 3, h: 2, minW: 2, minH: 2 },
     sketch: "count",
     skeleton: { kind: "count" },
     render: ({ summary, t }) => (
@@ -96,8 +106,8 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
   {
     id: "categoryCount",
     labelKey: "dashboard.categoryCount.label",
-    column: 0,
-    defaultEnabled: true,
+    icon: <FolderIcon fontSize="small" />,
+    size: { w: 3, h: 2, minW: 2, minH: 2 },
     sketch: "count",
     skeleton: { kind: "count" },
     render: ({ summary, t, navigate }) => (
@@ -112,24 +122,24 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
   {
     id: "featuredModel",
     labelKey: "dashboard.featuredModel.title",
-    column: 1,
-    defaultEnabled: false,
+    icon: <ThreeDRotationIcon fontSize="small" />,
+    size: { w: 5, h: 5, minW: 3, minH: 4 },
     sketch: "featured",
     render: ({ onUnauthorized }) => <FeaturedModelCard onUnauthorized={onUnauthorized} />,
   },
   {
     id: "activityHeatmap",
     labelKey: "dashboard.activityHeatmap.title",
-    column: 1,
-    defaultEnabled: false,
+    icon: <InsightsIcon fontSize="small" />,
+    size: { w: 12, h: 3, minW: 4, minH: 3 },
     sketch: "heatmap",
     render: ({ onUnauthorized }) => <ActivityHeatmapCard onUnauthorized={onUnauthorized} />,
   },
   {
     id: "topViewed",
     labelKey: "dashboard.topViewed.title",
-    column: 1,
-    defaultEnabled: true,
+    icon: <VisibilityIcon fontSize="small" />,
+    size: { w: 5, h: 4, minW: 3, minH: 3 },
     sketch: "models",
     skeleton: { kind: "list", rows: 3, footer: true },
     render: ({ summary, t }) => (
@@ -148,8 +158,8 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
   {
     id: "topPrinted",
     labelKey: "dashboard.topPrinted.title",
-    column: 1,
-    defaultEnabled: true,
+    icon: <PrintIcon fontSize="small" />,
+    size: { w: 5, h: 4, minW: 3, minH: 3 },
     sketch: "models",
     skeleton: { kind: "list", rows: 3, footer: true },
     render: ({ summary, t }) => (
@@ -168,35 +178,33 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
   {
     id: "recentlyAdded",
     labelKey: "dashboard.recentlyAdded.title",
-    column: 1,
-    defaultEnabled: true,
+    icon: <NewReleasesIcon fontSize="small" />,
+    size: { w: 5, h: 4, minW: 3, minH: 3 },
     sketch: "models",
     skeleton: { kind: "list", rows: 3 },
     render: ({ summary }) => <RecentlyAddedCard models={summary.recently_added} />,
   },
-  // The clock, weather, featured model and activity heatmap are optional extras, off until the user switches them on.
-  // Clock and weather sit together at the top of the right column, as panels rather than count boxes.
   {
     id: "clock",
     labelKey: "dashboard.clock.label",
-    column: 2,
-    defaultEnabled: false,
+    icon: <ScheduleIcon fontSize="small" />,
+    size: { w: 4, h: 2, minW: 2, minH: 2 },
     sketch: "clock",
     render: () => <ClockCard />,
   },
   {
     id: "weather",
     labelKey: "dashboard.weather.label",
-    column: 2,
-    defaultEnabled: false,
+    icon: <WbSunnyIcon fontSize="small" />,
+    size: { w: 4, h: 2, minW: 3, minH: 2 },
     sketch: "weather",
     render: () => <WeatherCard />,
   },
   {
     id: "topAuthors",
     labelKey: "dashboard.topAuthors.title",
-    column: 2,
-    defaultEnabled: true,
+    icon: <StarIcon fontSize="small" />,
+    size: { w: 4, h: 6, minW: 3, minH: 3 },
     sketch: "authors",
     skeleton: { kind: "list", rows: 5, footer: true },
     render: ({ summary }) => <AuthorListCard authors={summary.top_authors} />,
@@ -204,14 +212,16 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
   {
     id: "topProviders",
     labelKey: "dashboard.topProviders.title",
-    column: 2,
-    defaultEnabled: true,
+    icon: <PublicIcon fontSize="small" />,
+    size: { w: 4, h: 4, minW: 3, minH: 3 },
     sketch: "providers",
     skeleton: { kind: "list", rows: 4, avatar: false },
     render: ({ summary }) => <ProviderListCard providers={summary.top_providers} />,
   },
 ];
 
-export function isWidgetEnabled(widget: DashboardWidget, choices: DashboardWidgetChoices): boolean {
-  return choices[widget.id] ?? widget.defaultEnabled;
+const BY_ID = new Map(DASHBOARD_WIDGETS.map((widget) => [widget.id, widget]));
+
+export function widgetById(id: DashboardWidgetId): DashboardWidget | undefined {
+  return BY_ID.get(id);
 }

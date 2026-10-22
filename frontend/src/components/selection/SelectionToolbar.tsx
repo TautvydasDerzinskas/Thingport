@@ -17,6 +17,8 @@ const slideIn = keyframes`
   to   { opacity: 1; transform: none; }
 `;
 
+const SELECT_ICON = <HighlightAltIcon fontSize="small" />;
+
 type Props = {
   selection: Selection<unknown>;
   /** Items "select all" can take: the loaded, selectable ones. */
@@ -26,6 +28,8 @@ type Props = {
   /** An action is running: the toolbar holds still until it's done. */
   busy?: boolean;
   labels: { enter: string; exit: string; toolbar: string; selectAllLoaded: string };
+  /** The mode toggle's icon, for a mode that's more than selecting (the dashboard's edit mode). */
+  icon?: React.ReactNode;
   /** The actions, as `SelectionAction`s. */
   children: React.ReactNode;
   /** Menus and dialogs the actions open, mounted outside the toolbar. */
@@ -39,6 +43,7 @@ export default function SelectionToolbar({
   hasMore = false,
   busy = false,
   labels,
+  icon = SELECT_ICON,
   children,
   dialogs,
 }: Props) {
@@ -64,7 +69,7 @@ export default function SelectionToolbar({
           aria-label={toggleLabel}
           sx={{ px: 1 }}
         >
-          <HighlightAltIcon fontSize="small" />
+          {icon}
         </ToggleButton>
       </Tooltip>
       {active && (

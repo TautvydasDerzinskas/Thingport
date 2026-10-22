@@ -7,7 +7,6 @@ import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
-import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
@@ -34,6 +33,7 @@ import {
   type Weather,
 } from "../../utils/weather";
 import { MONO_FONT } from "./ClockCard";
+import DashboardCard from "./DashboardCard";
 
 const ICONS: Record<Condition, typeof WbSunnyIcon> = {
   clear: WbSunnyIcon,
@@ -245,17 +245,14 @@ export default function WeatherCard() {
     );
 
   return (
-    <Paper
-      variant="outlined"
+    <DashboardCard
       sx={{
         p: 3,
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
         gap: 1,
-        minHeight: 140,
         position: "relative",
-        borderColor: (theme) => (theme.palette.mode === "dark" ? "transparent" : "divider"),
       }}
     >
       {location && !editing && (
@@ -281,6 +278,6 @@ export default function WeatherCard() {
         </Box>
       )}
       {body}
-    </Paper>
+    </DashboardCard>
   );
 }

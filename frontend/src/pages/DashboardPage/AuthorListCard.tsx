@@ -1,8 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import Paper from "@mui/material/Paper";
-import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import List from "@mui/material/List";
@@ -15,6 +13,7 @@ import PersonIcon from "@mui/icons-material/Person";
 import { dashboardApi, type DashboardAuthor } from "../../api/dashboard";
 import SeeMoreDialog from "./SeeMoreDialog";
 import AuthorHoverCard from "../../components/AuthorHoverCard";
+import DashboardCard, { DashboardCardTitle } from "./DashboardCard";
 
 type Props = {
   authors: DashboardAuthor[];
@@ -57,21 +56,8 @@ export default function AuthorListCard({ authors }: Props) {
   const modelCountLabel = (count: number) => t("dashboard.topAuthors.modelCount", { count });
 
   return (
-    <Paper
-      variant="outlined"
-      sx={{
-        p: 2.5,
-        display: "flex",
-        flexDirection: "column",
-        borderColor: (theme) => (theme.palette.mode === "dark" ? "transparent" : "divider"),
-      }}
-    >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1, color: "primary.main" }}>
-        <StarIcon />
-        <Typography variant="h6" fontWeight={700} sx={{ color: (theme) => theme.thingport.headingText }}>
-          {t("dashboard.topAuthors.title")}
-        </Typography>
-      </Box>
+    <DashboardCard sx={{ p: 2.5, display: "flex", flexDirection: "column" }}>
+      <DashboardCardTitle icon={<StarIcon />} title={t("dashboard.topAuthors.title")} sx={{ mb: 1 }} />
 
       {authors.length === 0 ? (
         <Typography color="text.secondary" sx={{ py: 2 }}>
@@ -114,6 +100,6 @@ export default function AuthorListCard({ authors }: Props) {
           />
         )}
       />
-    </Paper>
+    </DashboardCard>
   );
 }

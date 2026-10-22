@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
+import DashboardCard from "./DashboardCard";
 
 // A status-bar look: monospace, the time as the anchor, the date small and spaced out.
 export const MONO_FONT = '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
@@ -44,17 +44,15 @@ export default function ClockCard() {
   const day = new Intl.DateTimeFormat(i18n.language, { month: "short", day: "numeric" }).format(now);
 
   return (
-    <Paper
-      variant="outlined"
+    <DashboardCard
+      scroll={false}
       sx={{
         p: 3,
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
         gap: 0.75,
-        minHeight: 140,
         fontFamily: MONO_FONT,
-        borderColor: (theme) => (theme.palette.mode === "dark" ? "transparent" : "divider"),
       }}
     >
       <Typography
@@ -86,6 +84,6 @@ export default function ClockCard() {
       <Typography sx={{ fontFamily: "inherit", fontSize: "0.75rem", color: "text.disabled" }}>
         {t(`dashboard.clock.greeting.${greetingKey(now.getHours())}`)}
       </Typography>
-    </Paper>
+    </DashboardCard>
   );
 }

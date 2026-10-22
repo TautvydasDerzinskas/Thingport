@@ -643,23 +643,75 @@
         "total_other": "{{count}} activities"
       },
       "widgets": {
-        "open": "Customize dashboard",
         "title": "Customize dashboard",
-        "subtitle": "Choose which boxes your dashboard shows.",
-        "allHidden": "Every dashboard box is hidden.",
+        "subtitle": "Switch panels on or off for this template. Edit the dashboard to move, resize or merge them.",
         "sections": {
-          "layout": "Layout",
+          "templates": "Templates",
           "panels": "Panels"
         },
-        "layoutSubtitle": "Choose how your dashboard arranges its boxes. The coloured part shows where the counts go.",
-        "layouts": {
-          "left": "Counts on the left",
-          "top": "Counts on top, three columns",
-          "right": "Counts on the right",
-          "bottom": "Counts at the bottom, three columns",
-          "topTwo": "Counts on top, two columns",
-          "puzzle": "Puzzle"
-        }
+        "panelsOf": "Panels in {{name}}"
+      },
+      "edit": {
+        "enter": "Edit dashboard",
+        "exit": "Done editing",
+        "toolbar": "Dashboard editing actions",
+        "add": "Add panel",
+        "addNone": "Every panel is already on the dashboard",
+        "merge": "Merge into tabs",
+        "mergeHint": "Select two or more panels to merge them into tabs",
+        "remove": "Remove panels",
+        "removeHint": "Select the panels to remove",
+        "removeTitle_one": "Remove {{count}} panel?",
+        "removeTitle_other": "Remove {{count}} panels?",
+        "removeMessage": "You can add them back with Add panel, but their size and place are forgotten.",
+        "removeConfirm": "Remove",
+        "removed_one": "Removed {{count}} panel",
+        "removed_other": "Removed {{count}} panels",
+        "merged_one": "Merged {{count}} panel into tabs",
+        "merged_other": "Merged {{count}} panels into tabs",
+        "help": "Drag a panel to move it, or its corner to resize it. Drag a panel's name onto another panel to show them as tabs, or a tab onto empty space to give it a panel of its own.",
+        "keys": "Space selects the panel. Arrow keys move it; Shift with the arrow keys resizes it.",
+        "panelLabel": "{{name}} panel",
+        "panelActions": "Panel actions",
+        "split": "Split into panels",
+        "removePanel": "Remove panel",
+        "dragToMerge": "Drag onto another panel to show them as tabs",
+        "dragTab": "Drag onto another panel, or onto empty space for a panel of its own",
+        "mergeHere": "Add as a tab",
+        "empty": "This template has no panels yet."
+      },
+      "templates": {
+        "open": "Templates",
+        "manage": "Manage templates…",
+        "heading": "Your templates",
+        "help": "Each template keeps its own panels and arrangement. Pick one to show it, then edit the dashboard to change it.",
+        "presets": {
+          "classic": "Classic",
+          "overview": "Overview",
+          "compact": "Compact tabs",
+          "showcase": "Showcase",
+          "puzzle": "Puzzle",
+          "minimal": "Minimal"
+        },
+        "untitled": "Untitled",
+        "new": "New template",
+        "newCopy": "Copy of {{name}}",
+        "newEmpty": "Empty template",
+        "emptyName": "My template",
+        "fromPreset": "Start from a built-in",
+        "actions": "Template actions",
+        "rename": "Rename",
+        "renameTitle": "Rename template",
+        "duplicate": "Duplicate",
+        "reset": "Reset to built-in",
+        "resetTitle": "Reset {{name}}?",
+        "resetMessage": "Its panels and arrangement go back to how the built-in template comes.",
+        "resetConfirm": "Reset",
+        "delete": "Delete",
+        "deleteTitle": "Delete {{name}}?",
+        "deleteMessage": "This can't be undone.",
+        "deleteConfirm": "Delete",
+        "limit": "You can keep up to {{max}} templates"
       }
     },
     "adminSettings": {

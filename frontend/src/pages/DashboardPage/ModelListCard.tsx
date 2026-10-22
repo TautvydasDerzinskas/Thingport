@@ -1,7 +1,5 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import Paper from "@mui/material/Paper";
-import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import List from "@mui/material/List";
@@ -10,6 +8,7 @@ import ListItemText from "@mui/material/ListItemText";
 import type { DashboardModel } from "../../api/dashboard";
 import SeeMoreDialog from "./SeeMoreDialog";
 import DashboardModelThumb from "./DashboardModelThumb";
+import DashboardCard, { DashboardCardTitle } from "./DashboardCard";
 
 type Props = {
   icon: React.ReactNode;
@@ -61,21 +60,8 @@ export default function ModelListCard({
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
   return (
-    <Paper
-      variant="outlined"
-      sx={{
-        p: 2.5,
-        display: "flex",
-        flexDirection: "column",
-        borderColor: (theme) => (theme.palette.mode === "dark" ? "transparent" : "divider"),
-      }}
-    >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1, color: "primary.main" }}>
-        {icon}
-        <Typography variant="h6" fontWeight={700} sx={{ color: (theme) => theme.thingport.headingText }}>
-          {title}
-        </Typography>
-      </Box>
+    <DashboardCard sx={{ p: 2.5, display: "flex", flexDirection: "column" }}>
+      <DashboardCardTitle icon={icon} title={title} sx={{ mb: 1 }} />
 
       {models.length === 0 ? (
         <Typography color="text.secondary" sx={{ py: 2 }}>
@@ -120,6 +106,6 @@ export default function ModelListCard({
           />
         )}
       />
-    </Paper>
+    </DashboardCard>
   );
 }

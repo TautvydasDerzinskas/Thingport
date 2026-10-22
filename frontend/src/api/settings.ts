@@ -95,6 +95,28 @@ export type DashboardLayout = "left" | "top" | "right" | "bottom" | "topTwo" | "
 export type CardPreview = "images" | "renders";
 /** Only the widgets the user has switched; the rest follow their default. */
 export type DashboardWidgetChoices = Partial<Record<DashboardWidgetId, boolean>>;
+// Kept in sync by hand with the backend's DASHBOARD_BREAKPOINTS.
+export type DashboardBreakpoint = "lg" | "md" | "sm";
+/** A panel's cell on the grid, in columns and rows; `i` is the panel's id. */
+export type DashboardGridItem = { i: string; x: number; y: number; w: number; h: number };
+/** One box on the dashboard. More than one widget makes it a tabbed panel, showing the one at `tab`. */
+export type DashboardPanel = { id: string; widgets: DashboardWidgetId[]; tab?: number };
+export type DashboardTemplate = {
+  id: string;
+  /** Null shows the preset's translated name. */
+  name: string | null;
+  /** The built-in template it started from, if any. */
+  preset: string | null;
+  panels: DashboardPanel[];
+  /** Only the breakpoints the user has arranged; the rest are derived from the widest one. */
+  layouts: Partial<Record<DashboardBreakpoint, DashboardGridItem[]>>;
+};
+export type DashboardConfig = {
+  active: string;
+  templates: DashboardTemplate[];
+  /** The built-in templates the user has been given; missing on configs saved before it was tracked. */
+  offered?: string[];
+};
 
 export type PreviewMode = "automatic" | "on-demand" | "disabled";
 
@@ -879,6 +901,24 @@ export const settingsApi = {
     });
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update the model card preview setting"));
+    return res.json();
+  },
+
+  /** Null until the user's templates have been saved once. */
+  getDashboard: async (): Promise<{ config: DashboardConfig | null }> => {
+    const res = await fetch(`${apiBase()}/settings/dashboard`, { headers: authHeaders() });
+    assertOk(res, "Failed to load the dashboard settings");
+    return res.json();
+  },
+
+  updateDashboard: async (config: DashboardConfig): Promise<{ config: DashboardConfig }> => {
+    const res = await fetch(`${apiBase()}/settings/dashboard`, {
+      method: "PUT",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ config }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to save the dashboard settings"));
     return res.json();
   },
 

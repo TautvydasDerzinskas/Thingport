@@ -649,23 +649,78 @@
         "total_other": "{{count}} veiksmų"
       },
       "widgets": {
-        "open": "Tvarkyti valdymo skydą",
-        "title": "Tvarkyti valdymo skydą",
-        "subtitle": "Pasirinkite, kuriuos langelius rodo jūsų valdymo skydas.",
-        "allHidden": "Visi valdymo skydo langeliai paslėpti.",
+        "title": "Tvarkyti suvestinę",
+        "subtitle": "Įjunkite arba išjunkite šio šablono skydelius. Norėdami juos perkelti, keisti dydį ar sujungti, redaguokite suvestinę.",
         "sections": {
-          "layout": "Išdėstymas",
-          "panels": "Langeliai"
+          "templates": "Šablonai",
+          "panels": "Skydeliai"
         },
-        "layoutSubtitle": "Pasirinkite, kaip išdėstyti valdymo skydo langelius. Spalvota dalis rodo, kur bus skaičiai.",
-        "layouts": {
-          "left": "Skaičiai kairėje",
-          "top": "Skaičiai viršuje, trys stulpeliai",
-          "right": "Skaičiai dešinėje",
-          "bottom": "Skaičiai apačioje, trys stulpeliai",
-          "topTwo": "Skaičiai viršuje, du stulpeliai",
-          "puzzle": "Dėlionė"
-        }
+        "panelsOf": "Skydeliai šablone „{{name}}“"
+      },
+      "edit": {
+        "enter": "Redaguoti suvestinę",
+        "exit": "Baigti redaguoti",
+        "toolbar": "Suvestinės redagavimo veiksmai",
+        "add": "Pridėti skydelį",
+        "addNone": "Visi skydeliai jau yra suvestinėje",
+        "merge": "Sujungti į korteles",
+        "mergeHint": "Pasirinkite du ar daugiau skydelių, kad sujungtumėte juos į korteles",
+        "remove": "Pašalinti skydelius",
+        "removeHint": "Pasirinkite skydelius, kuriuos norite pašalinti",
+        "removeTitle_one": "Pašalinti {{count}} skydelį?",
+        "removeTitle_few": "Pašalinti {{count}} skydelius?",
+        "removeTitle_other": "Pašalinti {{count}} skydelių?",
+        "removeMessage": "Juos galėsite vėl pridėti mygtuku „Pridėti skydelį“, bet jų dydis ir vieta bus pamiršti.",
+        "removeConfirm": "Pašalinti",
+        "removed_one": "Pašalintas {{count}} skydelis",
+        "removed_few": "Pašalinti {{count}} skydeliai",
+        "removed_other": "Pašalinta {{count}} skydelių",
+        "merged_one": "{{count}} skydelis sujungtas į korteles",
+        "merged_few": "{{count}} skydeliai sujungti į korteles",
+        "merged_other": "{{count}} skydelių sujungta į korteles",
+        "help": "Vilkite skydelį, kad jį perkeltumėte, arba jo kampą, kad pakeistumėte dydį. Nuvilkite skydelio pavadinimą ant kito skydelio, kad jie būtų rodomi kortelėmis, arba kortelę į tuščią vietą, kad ji taptų atskiru skydeliu.",
+        "keys": "Tarpas pasirenka skydelį. Rodyklių klavišai jį perkelia, o Shift su rodyklėmis keičia jo dydį.",
+        "panelLabel": "Skydelis „{{name}}“",
+        "panelActions": "Skydelio veiksmai",
+        "split": "Išskaidyti į skydelius",
+        "removePanel": "Pašalinti skydelį",
+        "dragToMerge": "Nuvilkite ant kito skydelio, kad jie būtų rodomi kortelėmis",
+        "dragTab": "Nuvilkite ant kito skydelio arba į tuščią vietą, kad taptų atskiru skydeliu",
+        "mergeHere": "Pridėti kaip kortelę",
+        "empty": "Šiame šablone dar nėra skydelių."
+      },
+      "templates": {
+        "open": "Šablonai",
+        "manage": "Tvarkyti šablonus…",
+        "heading": "Jūsų šablonai",
+        "help": "Kiekvienas šablonas turi savo skydelius ir išdėstymą. Pasirinkite šabloną, kad jį parodytumėte, tada redaguokite suvestinę, kad jį pakeistumėte.",
+        "presets": {
+          "classic": "Klasikinis",
+          "overview": "Apžvalga",
+          "compact": "Kompaktiškos kortelės",
+          "showcase": "Vitrina",
+          "puzzle": "Dėlionė",
+          "minimal": "Minimalus"
+        },
+        "untitled": "Be pavadinimo",
+        "new": "Naujas šablonas",
+        "newCopy": "„{{name}}“ kopija",
+        "newEmpty": "Tuščias šablonas",
+        "emptyName": "Mano šablonas",
+        "fromPreset": "Pradėti nuo įtaisytojo",
+        "actions": "Šablono veiksmai",
+        "rename": "Pervadinti",
+        "renameTitle": "Pervadinti šabloną",
+        "duplicate": "Kopijuoti",
+        "reset": "Atkurti įtaisytąjį",
+        "resetTitle": "Atkurti „{{name}}“?",
+        "resetMessage": "Jo skydeliai ir išdėstymas grįš į tokius, kokie yra įtaisytajame šablone.",
+        "resetConfirm": "Atkurti",
+        "delete": "Ištrinti",
+        "deleteTitle": "Ištrinti „{{name}}“?",
+        "deleteMessage": "To nebus galima atšaukti.",
+        "deleteConfirm": "Ištrinti",
+        "limit": "Galite turėti iki {{max}} šablonų"
       }
     },
     "adminSettings": {

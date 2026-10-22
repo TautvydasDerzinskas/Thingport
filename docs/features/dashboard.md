@@ -11,6 +11,17 @@ The dashboard is the first page you see after signing in: an overview of your li
 
 ## Make it your own
 
-**Customize dashboard** chooses which boxes are shown, how they're laid out (counts on the left, right, top or bottom,
-in two or three columns, or a puzzle layout), and whether the lists show photos, monochrome pictures or names only.
-The choice is saved to your account, so it follows you to other devices.
+The dashboard is a grid of panels you arrange yourself. **Edit** (the pencil above the panels) shows the grid's cells:
+
+- **Move** a panel by dragging it, and **resize** it from its bottom-right corner. Without a mouse, focus a panel and use
+  the arrow keys to move it, or Shift and the arrow keys to resize it.
+- **Tabs:** drag a panel's name onto another panel to show the two as tabs in one, or select several panels and choose
+  **Merge into tabs**. Drag a tab onto empty space, or choose **Split into panels**, to give it a panel of its own again.
+- **Add panel** puts back any panel that isn't showing; **Remove** takes the selected ones off.
+
+**Templates** (top right of the dashboard) switches between whole dashboards, each with its own panels and arrangement.
+It comes with a few to start from -- Classic, Overview, Compact tabs, Showcase, Puzzle and Minimal -- and **Manage templates**
+makes new ones (empty, a copy of the current one or a built-in), renames, copies, resets or deletes them.
+
+Wide, medium and phone-sized screens each keep their own arrangement: until you arrange one yourself, it follows the
+wide one. Everything is saved to your account, so it follows you to other devices.
