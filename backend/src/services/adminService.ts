@@ -143,8 +143,9 @@ export type StorageUsage = {
   otherGeneratedBytes: number;
 };
 
-/** Bytes under `dir`, following no links; a missing folder counts as empty. */
-async function folderBytes(dir: string): Promise<number> {
+/** Bytes under `dir`, following no links; a missing folder counts as empty. A hard-linked file (a model file shared
+ *  between users, see getPlateFileReuse) counts once, as it takes its space once. */
+async function folderBytes(dir: string, seen = new Set<string>()): Promise<number> {
   let entries: Dirent[];
   try {
     entries = await fs.readdir(dir, { withFileTypes: true });
@@ -154,10 +155,16 @@ async function folderBytes(dir: string): Promise<number> {
   let total = 0;
   for (const entry of entries) {
     const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) total += await folderBytes(full);
+    if (entry.isDirectory()) total += await folderBytes(full, seen);
     else if (entry.isFile())
       total += await fs.stat(full).then(
-        (stats) => stats.size,
+        (stats) => {
+          if (stats.nlink < 2) return stats.size;
+          const inode = `${stats.dev}:${stats.ino}`;
+          if (seen.has(inode)) return 0;
+          seen.add(inode);
+          return stats.size;
+        },
         () => 0,
       );
   }
@@ -173,7 +180,8 @@ let diskUsage: { at: number; value: Promise<DiskUsage> } | null = null;
 
 function measureDisk(): Promise<DiskUsage> {
   if (diskUsage && Date.now() - diskUsage.at < DISK_USAGE_TTL_MS) return diskUsage.value;
-  const sum = async (dirs: string[]) => (await Promise.all(dirs.map(folderBytes))).reduce((a, b) => a + b, 0);
+  const sum = async (dirs: string[]) =>
+    (await Promise.all(dirs.map((dir) => folderBytes(dir)))).reduce((a, b) => a + b, 0);
   // Each model's pictures folder, beside its files, and the shared folders older ones may still be in.
   const pictureFolders = prisma.print
     .findMany({ where: { assetsPath: { not: null } }, select: { assetsPath: true } })

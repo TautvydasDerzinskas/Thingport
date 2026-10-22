@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import path from "node:path";
@@ -23,7 +24,7 @@ import { generateModelPreviewGlb, canRenderModelImage } from "./modelPreviewCach
 import { generateCardRender } from "./previewImageService";
 import { printAssetHome } from "./modelAssets";
 import { deleteNormalized3mf } from "./normalized3mfCache";
-import { getPreviewMode } from "./settingsService";
+import { getPlateFileReuse, getPreviewMode, type PlateFileReuse } from "./settingsService";
 import { Prisma } from "@prisma/client";
 import type { CategorySource, Plate, Print } from "@prisma/client";
 import { enqueueAiCategorization } from "./aiCategorizationService";
@@ -80,6 +81,73 @@ async function placeFile(input: NewPlateInput, destAbsPath: string): Promise<str
     throw err;
   }
   return input.sourcePath ?? null;
+}
+
+export async function sha256OfFile(filePath: string): Promise<string> {
+  const hash = crypto.createHash("sha256");
+  for await (const chunk of fsSync.createReadStream(filePath)) hash.update(chunk as Buffer);
+  return hash.digest("hex");
+}
+
+// Errors a clone or link gives where the filesystem can't, or the stored copy is gone: store the file as usual.
+const UNSHAREABLE_CODES = new Set(["ENOENT", "EXDEV", "ENOTSUP", "EOPNOTSUPP", "EINVAL", "EPERM", "EMLINK", "ENOSYS"]);
+
+/** Saves a new plate file as a copy-on-write clone of, or a hard link to, a stored plate file with the same content,
+ *  so the same model imported by several users takes its space once. False when there's none, or the filesystem
+ *  can't share it, and the caller stores the file as usual. Never over another file, as placeFile. */
+async function placeSharedCopy(
+  mode: Exclude<PlateFileReuse, "off">,
+  contentSha256: string,
+  size: number,
+  destAbsPath: string,
+): Promise<boolean> {
+  // Only files in managed storage: one left where it was found (sourcePath) may change under us.
+  const stored = await prisma.plate.findMany({
+    where: { contentSha256, size, sourcePath: null },
+    select: { storagePath: true },
+    take: 3,
+  });
+  for (const plate of stored) {
+    const storedPath = managedPlatePath(plate);
+    await fs.mkdir(path.dirname(destAbsPath), { recursive: true });
+    try {
+      if (mode === "hardlink") await fs.link(storedPath, destAbsPath);
+      // FORCE: without a clone it would copy the stored file, which saves nothing over the one we have.
+      else
+        await fs.copyFile(
+          storedPath,
+          destAbsPath,
+          fsSync.constants.COPYFILE_EXCL | fsSync.constants.COPYFILE_FICLONE_FORCE,
+        );
+      return true;
+    } catch (err: any) {
+      if (err?.code === "EEXIST") throw new HttpError(409, "Another file was just saved at the same path; try again");
+      if (!UNSHAREABLE_CODES.has(err?.code)) throw err;
+      // EXCL made the destination ours, so a half-made one can go.
+      await fs.rm(destAbsPath, { force: true }).catch(() => undefined);
+      // A filesystem that can't share one stored file can't share the others either.
+      if (err.code !== "ENOENT") return false;
+    }
+  }
+  return false;
+}
+
+/** Stores the file, sharing a stored copy of it when the admin setting allows. Returns where it is and, when it was
+ *  hashed for that, its SHA-256 -- recorded either way so a later identical file finds it. */
+async function placePlateFile(
+  input: NewPlateInput,
+  destAbsPath: string,
+): Promise<{ effectivePath: string | null; contentSha256: string | null }> {
+  const fromPath = input.tempFilePath ?? input.copyFromPath;
+  const mode = fromPath ? await getPlateFileReuse() : "off";
+  if (!fromPath || mode === "off") return { effectivePath: await placeFile(input, destAbsPath), contentSha256: null };
+
+  const [contentSha256, stat] = await Promise.all([sha256OfFile(fromPath), fs.stat(fromPath)]);
+  if (await placeSharedCopy(mode, contentSha256, stat.size, destAbsPath)) {
+    if (input.tempFilePath) await fs.rm(input.tempFilePath, { force: true });
+    return { effectivePath: destAbsPath, contentSha256 };
+  }
+  return { effectivePath: await placeFile(input, destAbsPath), contentSha256 };
 }
 
 async function resolveSize(input: NewPlateInput, effectivePath: string | null): Promise<number> {
@@ -143,7 +211,7 @@ async function createPlateAtPosition(
   const desiredFilename = await availablePlateFilename(print.id, sanitized);
   const storagePath = await renderPlateStoragePath(print, desiredFilename, position);
   const destAbsPath = path.join(STORAGE, storagePath);
-  const effectivePath = await placeFile(input, destAbsPath);
+  const { effectivePath, contentSha256 } = await placePlateFile(input, destAbsPath);
   const size = await resolveSize(input, effectivePath);
   const mime = input.mime || guessMimeFromPath(desiredFilename) || "application/octet-stream";
 
@@ -159,6 +227,7 @@ async function createPlateAtPosition(
         storagePath,
         sourcePath: input.sourcePath ?? null,
         sourceInstanceId: input.sourceInstanceId ?? null,
+        contentSha256,
       },
     });
   } catch (err) {

@@ -192,6 +192,7 @@ import {
   createPrint,
   refreshAutoPreparedMetadata,
   resolvePlateFilePath,
+  sha256OfFile,
   type NewPlateInput,
   type PrintMetaInput,
 } from "./printCreation";
@@ -985,12 +986,6 @@ async function findExistingImportedPrint(
 }
 
 type ExistingImportedPrint = NonNullable<Awaited<ReturnType<typeof findExistingImportedPrint>>>;
-
-export async function sha256OfFile(filePath: string): Promise<string> {
-  const hash = crypto.createHash("sha256");
-  for await (const chunk of fsSync.createReadStream(filePath)) hash.update(chunk as Buffer);
-  return hash.digest("hex");
-}
 
 export async function plateContentSha256(plate: Plate): Promise<string | null> {
   if (plate.contentSha256) return plate.contentSha256;

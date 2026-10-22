@@ -41,6 +41,28 @@ Change the layout later and existing files are moved to match in the background,
 Renaming a model renames its files too, so the folders stay readable. **Browse files** shows where each model's files
 are now.
 
+## The same model for several users
+
+When several users import the same model, each gets a copy of its files in their own folder. Under **Administration →
+Storage → Identical files**, admins choose how a file that's already stored is saved again:
+
+- **Copy-on-write** (the default) clones the stored file on btrfs, XFS and ZFS 2.2 or later. The copy takes no extra
+  space until one of them changes, and each user's file stays their own. On other filesystems the file is stored as
+  usual.
+- **Hard link** shares the stored file on any filesystem with hard links, such as ext4. Thingport never rewrites a
+  model file in place, so this is safe inside Thingport, but:
+  - the whole storage folder has to be on one filesystem;
+  - editing such a file directly on disk changes it for every user who has it;
+  - backups need to keep hard links, or they store each copy in full (`rsync -H`, for example).
+- **Separately** stores every file on its own.
+
+The disk space under **Administration → Overview** counts a hard-linked file once, but a copy-on-write clone in full,
+as the filesystem doesn't say which parts are shared.
+
+Thingport recognises a file by its content, so this applies to uploads, consume-folder imports and imports from any
+site alike. It still downloads the file first; only the space on disk is saved. Files stored before this version are
+only matched once Thingport has read their content, so the saving applies mostly to files added from now on.
+
 ## How much space it takes
 
 **Administration → Overview** shows the disk space Thingport uses, split into model files, pictures and previews, and

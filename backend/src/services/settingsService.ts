@@ -115,6 +115,32 @@ export async function setPreviewMode(value: PreviewMode): Promise<void> {
   });
 }
 
+// How a plate file identical to one already stored (by SHA-256) is saved, instance-wide since the copies may
+// belong to different users. "reflink" clones it copy-on-write where the filesystem can (btrfs, XFS, ZFS >= 2.2),
+// so the copies stay independent and only take space once they differ; elsewhere it's stored as usual. "hardlink"
+// shares the file itself on any filesystem that has hard links, which only works because Thingport never rewrites
+// a plate file in place.
+export type PlateFileReuse = "off" | "reflink" | "hardlink";
+export const PLATE_FILE_REUSE_MODES: readonly PlateFileReuse[] = ["off", "reflink", "hardlink"];
+const PLATE_FILE_REUSE_KEY = "plate_file_reuse";
+const DEFAULT_PLATE_FILE_REUSE: PlateFileReuse = "reflink";
+
+export async function getPlateFileReuse(): Promise<PlateFileReuse> {
+  const row = await prisma.setting.findUnique({ where: { key: PLATE_FILE_REUSE_KEY } });
+  const value = row?.value;
+  return typeof value === "string" && PLATE_FILE_REUSE_MODES.includes(value as PlateFileReuse)
+    ? (value as PlateFileReuse)
+    : DEFAULT_PLATE_FILE_REUSE;
+}
+
+export async function setPlateFileReuse(value: PlateFileReuse): Promise<void> {
+  await prisma.setting.upsert({
+    where: { key: PLATE_FILE_REUSE_KEY },
+    create: { key: PLATE_FILE_REUSE_KEY, value },
+    update: { value },
+  });
+}
+
 // What API tokens may do at /api/mcp, instance-wide. "read" also keeps a write tool off for a token
 // whose user ticked it, without forgetting the choice.
 export type McpAccess = "off" | "read" | "write";

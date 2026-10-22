@@ -38,6 +38,7 @@ const ACTION_COLORS: Record<LogAction, ActionColor> = {
   api_token_mcp_tools_changed: "warning",
   api_token_rest_scopes_changed: "warning",
   mcp_access_changed: "warning",
+  file_reuse_changed: "info",
   user_invited: "info",
   authors_linked: "success",
   descriptions_refetched: "warning",

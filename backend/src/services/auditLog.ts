@@ -11,6 +11,7 @@ export type LogAction =
   | "api_token_mcp_tools_changed"
   | "api_token_rest_scopes_changed"
   | "mcp_access_changed"
+  | "file_reuse_changed"
   | "user_invited"
   | "authors_linked"
   | "descriptions_refetched"

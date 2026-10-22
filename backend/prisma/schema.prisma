@@ -595,6 +595,8 @@ model Plate {
   @@unique([printId, position])
   @@unique([printId, sourceInstanceId])
   @@index([printId])
+  // Finds a stored copy of a new plate's file to share (services/printCreation.ts).
+  @@index([contentSha256])
 }
 
 /// A photo of the finished model, stored as a normalized JPEG keyed by id. Position 0 is the

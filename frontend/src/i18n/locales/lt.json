@@ -934,6 +934,23 @@
         "moveThem": "Perkelti juos",
         "pathLabel": "Kelias"
       },
+      "fileReuse": {
+        "heading": "Vienodi failai",
+        "subtitle": "Taupykite vietą, kai keli naudotojai importuoja tą patį modelį.",
+        "modeLabel": "Kaip saugoti vienodus failus",
+        "help": "Thingport palygina kiekvieną naują modelio failą su jau saugomais. Kopijavimas rašant (copy-on-write) sutampantį failą klonuoja btrfs, XFS arba ZFS 2.2 ir naujesnėse sistemose, o kitur failą išsaugo įprastai; kopijos lieka nepriklausomos. Kietoji nuoroda dalijasi failu bet kurioje vienoje failų sistemoje, tačiau jį redaguojant tiesiai diske jis pasikeičia visiems naudotojams, o atsarginės kopijos turi išsaugoti kietąsias nuorodas (rsync -H).",
+        "failed": "Nepavyko išsaugoti, kaip saugomi vienodi failai. Bandykite dar kartą.",
+        "modes": {
+          "off": "Atskirai",
+          "reflink": "Kopijavimas rašant",
+          "hardlink": "Kietoji nuoroda"
+        },
+        "modeHelp": {
+          "off": "Kiekvienas modelio failas užima savo vietą.",
+          "reflink": "Jau saugomas failas klonuojamas, kur leidžia failų sistema, ir neužima papildomos vietos, kol kuri nors kopija nepasikeičia.",
+          "hardlink": "Jau saugomas failas diske dalijamas kaip vienas failas bet kurioje failų sistemoje su kietosiomis nuorodomis."
+        }
+      },
       "consume": {
         "heading": "Importavimo aplankas",
         "subtitle": "Importuokite viską, kas įdedama į stebimą aplanką: failus, aplankų struktūras ir ZIP archyvus.",
@@ -1421,7 +1438,8 @@
           "grab_disconnected": "Pašalintas Thingport Grab",
           "collections_merged": "Kolekcijos sujungtos",
           "tags_merged": "Žymos sujungtos",
-          "mcp_access_changed": "Pakeitė MCP prieigą"
+          "mcp_access_changed": "Pakeitė MCP prieigą",
+          "file_reuse_changed": "Pakeitė, kaip saugomi vienodi failai"
         },
         "authorsLinked": "Susieta modelių: {{count}}",
         "descriptionsRefetched": "{{email}} — pakeista aprašymų: {{updated}} iš {{total}}",
