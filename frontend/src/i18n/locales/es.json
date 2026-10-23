@@ -1283,11 +1283,11 @@
         "heading": "Archivos idénticos",
         "subtitle": "Ahorra espacio cuando varios usuarios importan el mismo modelo.",
         "modeLabel": "Clonar archivos idénticos (copia en escritura)",
-        "help": "Thingport compara cada archivo de modelo nuevo con los ya guardados. La copia en escritura clona un archivo igual en btrfs, XFS o ZFS 2.2 y posteriores, y en otros sistemas lo guarda como siempre. Cada clon es un archivo independiente, así que editar uno en el disco nunca cambia el de otro usuario.",
+        "help": "Thingport compara cada archivo de modelo, archivo de apoyo, imagen de galería e imagen de descripción nuevos con los ya guardados, sea del tipo que sea. Las miniaturas y los renders no se comparten. La copia en escritura clona un archivo igual en btrfs, XFS o ZFS 2.2 y posteriores, y en otros sistemas lo guarda como siempre. Cada clon es un archivo independiente, así que editar uno en el disco nunca cambia el de otro usuario. No se repasan los archivos guardados antes de activarlo.",
         "failed": "No se pudo guardar cómo se guardan los archivos idénticos. Inténtalo de nuevo.",
         "loadFailed": "No se pudo cargar cómo se guardan los archivos idénticos.",
         "modeHelp": {
-          "off": "Cada archivo de modelo ocupa su propio espacio.",
+          "off": "Cada archivo ocupa su propio espacio.",
           "reflink": "Un archivo ya guardado se clona donde el sistema de archivos lo permite, sin ocupar espacio extra hasta que una copia cambie."
         }
       },

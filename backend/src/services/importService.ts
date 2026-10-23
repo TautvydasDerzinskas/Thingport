@@ -199,6 +199,7 @@ import { availablePlateFilename, relocatePrint, saveThumbFromBytes } from "./pri
 import { addPreviewImage, preferImageOverRenders } from "./previewImageService";
 import { localizeDescriptionImages } from "./descriptionImageService";
 import { sha256OfFile } from "./fileReuse";
+import { DROP } from "./storedContent";
 import { prisma } from "../db";
 import { recordActivity } from "./activityService";
 import { Prisma } from "@prisma/client";
@@ -1013,7 +1014,7 @@ export async function plateContentSha256(plate: Plate): Promise<string | null> {
   if (sha !== plate.contentSha256)
     await prisma.plate.updateMany({
       where: { id: plate.id, contentSha256: plate.contentSha256 },
-      data: { contentSha256: sha },
+      data: { ...DROP, contentSha256: sha },
     });
   return sha;
 }

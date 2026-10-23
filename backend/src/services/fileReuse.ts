@@ -8,7 +8,7 @@ import { getFileReuse } from "./settingsService";
 // Saves a new file as a copy-on-write clone of a stored file with the same content, so the same model imported by
 // several users takes its space once (see getFileReuse). The clone is a file of its own, so an edit made to either
 // on disk never reaches the other. Knows nothing of what the file belongs to: the caller finds the stored copies of
-// its own kind of file by content and records the hash on the new one.
+// its own kind of file by content (services/storedContent.ts, across kinds) and records the hash on the new one.
 
 export async function sha256OfFile(filePath: string): Promise<string> {
   const hash = crypto.createHash("sha256");
@@ -32,6 +32,11 @@ const conflict = () => new HttpError(409, "Another file was just saved at the sa
 // Plate.size is a Postgres Int, so a larger file can't be looked up by size (Prisma rejects the query).
 const MAX_LOOKUP_SIZE = 2_147_483_647;
 
+// Below a filesystem block (4 KiB) a clone saves nothing -- the file takes one block either way -- and tiny files
+// (an empty one, a thumbnail-sized icon) are far likelier to match by chance than by being the same model. They're
+// still hashed and recorded, so the record is the same whatever the size, just never shared.
+export const MIN_SHARE_BYTES = 4096;
+
 /** Only bookkeeping, so a failure is swallowed: a hash that can't be dropped now is checked against the file again the
  *  next time it's offered anyway. */
 async function forget(copy: StoredCopy): Promise<void> {
@@ -49,7 +54,9 @@ async function forget(copy: StoredCopy): Promise<void> {
 const OPEN_FLAGS = fsSync.constants.O_RDONLY | fsSync.constants.O_NOFOLLOW | fsSync.constants.O_NONBLOCK;
 
 /** Null when what's at `filePath` isn't a regular file; open errors are thrown. The caller closes the handle. */
-async function openRegularFile(filePath: string): Promise<{ handle: fs.FileHandle; stat: fsSync.Stats } | null> {
+export async function openRegularFile(
+  filePath: string,
+): Promise<{ handle: fs.FileHandle; stat: fsSync.Stats } | null> {
   const handle = await fs.open(filePath, OPEN_FLAGS);
   try {
     const stat = await handle.stat();
@@ -62,25 +69,41 @@ async function openRegularFile(filePath: string): Promise<{ handle: fs.FileHandl
   return null;
 }
 
+/** Clones the file an open handle holds to `dest`, never over a file there. From the handle, not a path, which may be
+ *  something else by now: /proc/self/fd reopens that very file (where it doesn't exist, macOS on a dev machine, this
+ *  fails like any other clone that can't be made). FORCE: without a clone it would copy the file, which saves nothing. */
+const cloneFromHandle = (handle: fs.FileHandle, dest: string): Promise<void> =>
+  fs.copyFile(
+    `/proc/self/fd/${handle.fd}`,
+    dest,
+    fsSync.constants.COPYFILE_EXCL | fsSync.constants.COPYFILE_FICLONE_FORCE,
+  );
+
+/** Hashes what the open handle holds from its start, whatever the path it was opened at is now. */
+async function sha256OfHandle(handle: fs.FileHandle): Promise<string> {
+  const hash = crypto.createHash("sha256");
+  const buffer = Buffer.allocUnsafe(1 << 16);
+  // Positional, from 0: the handle's own position may have been moved by an earlier read.
+  for (let position = 0; ;) {
+    const { bytesRead } = await handle.read(buffer, 0, buffer.length, position);
+    if (!bytesRead) return hash.digest("hex");
+    hash.update(buffer.subarray(0, bytesRead));
+    position += bytesRead;
+  }
+}
+
 /** sha256OfFile for a file we just wrote, which may have been swapped since for something else (see OPEN_FLAGS). */
 async function sha256OfRegularFile(filePath: string): Promise<string> {
   const opened = await openRegularFile(filePath);
   if (!opened) throw new Error(`Not a regular file: ${filePath}`);
   try {
-    const hash = crypto.createHash("sha256");
-    const buffer = Buffer.allocUnsafe(1 << 16);
-    for (;;) {
-      const { bytesRead } = await opened.handle.read(buffer, 0, buffer.length, null);
-      if (!bytesRead) return hash.digest("hex");
-      hash.update(buffer.subarray(0, bytesRead));
-    }
+    return await sha256OfHandle(opened.handle);
   } finally {
     await opened.handle.close();
   }
 }
 
-/** Removes a clone we made and aren't keeping. A failure is thrown as it is: left there, the plain store would refuse
- *  to write over it, or worse store beside a file that isn't it, and it's no conflict with anyone else's file. */
+/** Removes a clone we made and aren't keeping; a failure is thrown, as a leftover would block the plain store. */
 async function discardClone(destAbsPath: string): Promise<void> {
   // Ours to remove: the EXCL clone made it, so nothing else could have saved there.
   await fs.rm(destAbsPath, { force: true });
@@ -92,7 +115,7 @@ type CloneOutcome = "kept" | "next" | "stop";
 async function cloneFrom(
   copy: StoredCopy,
   content: FileContent,
-  mode: number,
+  mode: number | undefined,
   destAbsPath: string,
 ): Promise<CloneOutcome> {
   let opened;
@@ -120,15 +143,7 @@ async function cloneFrom(
       return "stop";
     }
     try {
-      // From the handle checked above, not the path, which may be something else by now. /proc/self/fd reopens that
-      // very file; where it doesn't exist (macOS, on a dev machine) this fails like any other clone that can't be
-      // made, and the file is stored as usual. FORCE: without a clone it would copy the stored file, which saves
-      // nothing over the one we have. EXCL: never over a file already there.
-      await fs.copyFile(
-        `/proc/self/fd/${handle.fd}`,
-        destAbsPath,
-        fsSync.constants.COPYFILE_EXCL | fsSync.constants.COPYFILE_FICLONE_FORCE,
-      );
+      await cloneFromHandle(handle, destAbsPath);
     } catch (err: any) {
       if (err?.code === "EEXIST") throw conflict();
       // ENOENT may as well be the destination's side -- its folder pruned just now -- so the stored copy is only
@@ -160,6 +175,9 @@ async function cloneFrom(
     await forget(copy);
     return "next";
   }
+  // No mode when the caller has no file whose permissions the new one should take (bytes in memory, which a plain store
+  // writes with the default ones): the clone keeps the stored file's.
+  if (mode === undefined) return "kept";
   try {
     // A clone takes the stored file's permissions (libuv copies them over); a plain store gives it those of the
     // incoming file, so the clone is made to match.
@@ -174,7 +192,7 @@ async function cloneFrom(
 /** Never over another file, as a plain store isn't either. False when none of them could be shared. */
 async function placeClone(
   content: FileContent,
-  mode: number,
+  mode: number | undefined,
   stored: StoredCopy[],
   destAbsPath: string,
 ): Promise<boolean> {
@@ -184,6 +202,21 @@ async function placeClone(
     if (outcome === "stop") return false;
   }
   return false;
+}
+
+/** Looks the content up and clones a stored copy of it to `destAbsPath`. A failed lookup only means nothing to share:
+ *  the file is stored as usual, its hash still recorded. */
+async function shareContent(
+  content: FileContent,
+  mode: number | undefined,
+  destAbsPath: string,
+  findStored: StoredCopyFinder,
+): Promise<boolean> {
+  // Hashed by the caller, so the record is the same whatever the size; one too small saves nothing by sharing (see
+  // MIN_SHARE_BYTES) and one past MAX_LOOKUP_SIZE can't be looked up.
+  if (content.size < MIN_SHARE_BYTES || content.size > MAX_LOOKUP_SIZE) return false;
+  const stored = await findStored(content).catch(() => []);
+  return placeClone(content, mode, stored, destAbsPath);
 }
 
 /** Puts a stored copy of `fromPath` at `destAbsPath` when the admin setting allows and one with the same content is
@@ -197,11 +230,24 @@ export async function shareStoredCopy(
 ): Promise<{ contentSha256: string | null; shared: boolean }> {
   if ((await getFileReuse()) !== "reflink") return { contentSha256: null, shared: false };
   const [contentSha256, stat] = await Promise.all([sha256OfFile(fromPath), fs.stat(fromPath)]);
-  // Still hashed, so the record is the same whatever the size: an empty file saves nothing by sharing, and one past
-  // MAX_LOOKUP_SIZE can't be looked up.
-  if (stat.size === 0 || stat.size > MAX_LOOKUP_SIZE) return { contentSha256, shared: false };
-  const content = { contentSha256, size: stat.size };
-  // A failed lookup only means nothing to share: the file is stored as usual, its hash still recorded.
-  const stored = await findStored(content).catch(() => []);
-  return { contentSha256, shared: await placeClone(content, stat.mode & 0o7777, stored, destAbsPath) };
+  const shared = await shareContent({ contentSha256, size: stat.size }, stat.mode & 0o7777, destAbsPath, findStored);
+  return { contentSha256, shared };
+}
+
+/** The permissions a plain write gets (0o644: the usual 022 umask, as in the Docker image). A clone takes its donor's
+ *  instead, so a caller that may clone a new file passes this as its mode, to match a plain write. */
+export const plainWriteMode = (): number => 0o644;
+
+/** shareStoredCopy for bytes in memory (a re-encoded or downloaded image), which have no file or permissions of their
+ *  own. The caller writes them to `destAbsPath` itself when `shared` is false. */
+export async function shareStoredBytes(
+  bytes: Buffer,
+  destAbsPath: string,
+  findStored: StoredCopyFinder,
+  mode?: number,
+): Promise<{ contentSha256: string | null; shared: boolean }> {
+  if ((await getFileReuse()) !== "reflink") return { contentSha256: null, shared: false };
+  const contentSha256 = crypto.createHash("sha256").update(bytes).digest("hex");
+  const shared = await shareContent({ contentSha256, size: bytes.length }, mode, destAbsPath, findStored);
+  return { contentSha256, shared };
 }

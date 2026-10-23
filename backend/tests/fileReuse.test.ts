@@ -5,16 +5,26 @@ import fs from "node:fs";
 import fsp from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { sha256OfFile, shareStoredCopy, type StoredCopy, type StoredCopyFinder } from "../src/services/fileReuse";
+import {
+  MIN_SHARE_BYTES,
+  sha256OfFile,
+  shareStoredBytes,
+  shareStoredCopy,
+  type StoredCopy,
+  type StoredCopyFinder,
+} from "../src/services/fileReuse";
 import { setFileReuse } from "../src/services/settingsService";
 import { prisma } from "../src/db";
 
 let dir: string;
 let canClone: boolean;
 
-function file(name: string, contents: string): string {
+// Smaller files are never shared (MIN_SHARE_BYTES), so every file here carries this after its distinguishing text.
+const PAD = ".".repeat(MIN_SHARE_BYTES);
+
+function file(name: string, contents: string, pad = true): string {
   const abs = path.join(dir, name);
-  fs.writeFileSync(abs, contents);
+  fs.writeFileSync(abs, pad ? contents + PAD : contents);
   return abs;
 }
 
@@ -124,7 +134,7 @@ describe("shareStoredCopy", () => {
 
     const result = await shareStoredCopy(from, target, find);
     const contentSha256 = await sha256OfFile(from);
-    expect(find).toHaveBeenCalledWith({ contentSha256, size: 4 });
+    expect(find).toHaveBeenCalledWith({ contentSha256, size: 4 + MIN_SHARE_BYTES });
     expect(result).toEqual({ contentSha256, shared: true });
     expect(copyFile).toHaveBeenCalledWith(
       expect.stringMatching(/^\/proc\/self\/fd\/\d+$/),
@@ -132,10 +142,10 @@ describe("shareStoredCopy", () => {
       COPYFILE_EXCL | COPYFILE_FICLONE_FORCE,
     );
     expect(copyFile.sources).toEqual([stored]);
-    expect(fs.readFileSync(target, "utf8")).toBe("same");
+    expect(fs.readFileSync(target, "utf8")).toBe("same" + PAD);
     expect(fs.statSync(target).ino).not.toBe(fs.statSync(stored).ino);
-    expect(fs.readFileSync(from, "utf8")).toBe("same");
-    expect(fs.readFileSync(stored, "utf8")).toBe("same");
+    expect(fs.readFileSync(from, "utf8")).toBe("same" + PAD);
+    expect(fs.readFileSync(stored, "utf8")).toBe("same" + PAD);
   });
 
   it("forgets a stored copy that's gone, and clones the next one", async () => {
@@ -147,7 +157,7 @@ describe("shareStoredCopy", () => {
     expect((await shareStoredCopy(file("next.stl", "next"), target, async () => [gone, there])).shared).toBe(true);
     expect(gone.changed).toHaveBeenCalledOnce();
     expect(there.changed).not.toHaveBeenCalled();
-    expect(fs.readFileSync(target, "utf8")).toBe("next");
+    expect(fs.readFileSync(target, "utf8")).toBe("next" + PAD);
   });
 
   it("reports the hash but no share when there's no stored copy", async () => {
@@ -161,15 +171,39 @@ describe("shareStoredCopy", () => {
     expect(fs.existsSync(target)).toBe(false);
   });
 
-  it("doesn't look an empty file up, but still reports its hash", async () => {
+  it.each([
+    ["an empty", ""],
+    ["a tiny", "tiny"],
+    ["a just-under-a-block", "x".repeat(MIN_SHARE_BYTES - 1)],
+  ])("doesn't look %s file up, but still reports its hash", async (_label, contents) => {
     await setFileReuse("reflink");
-    const from = file("empty.stl", "");
+    const from = file("small.stl", contents, false);
     const find = vi.fn<StoredCopyFinder>(async () => []);
     expect(await shareStoredCopy(from, dest(), find)).toEqual({
       contentSha256: await sha256OfFile(from),
       shared: false,
     });
     expect(find).not.toHaveBeenCalled();
+  });
+
+  it("looks a file of exactly one block up", async () => {
+    await setFileReuse("reflink");
+    const find = vi.fn<StoredCopyFinder>(async () => []);
+    await shareStoredCopy(file("block.stl", "x".repeat(MIN_SHARE_BYTES), false), dest(), find);
+    expect(find).toHaveBeenCalledOnce();
+  });
+
+  it("doesn't change the permissions of a clone when none is given", async () => {
+    await setFileReuse("reflink");
+    simulateReflinks();
+    const stored = file("mode-source.jpg", "mode");
+    fs.chmodSync(stored, 0o600);
+    const chmod = vi.spyOn(fsp, "chmod");
+    const target = dest();
+    expect((await shareStoredBytes(Buffer.from("mode" + PAD), target, async () => [copyAt(stored)])).shared).toBe(true);
+    expect(chmod).not.toHaveBeenCalled();
+    // The clone keeps the stored file's permissions (simulated by copyFile, as libuv does).
+    expect(fs.statSync(target).mode & 0o777).toBe(0o600);
   });
 
   it("clones a copy where the filesystem can, and leaves nothing behind where it can't", async () => {
@@ -180,7 +214,7 @@ describe("shareStoredCopy", () => {
     const { shared } = await shareStoredCopy(file("clone.stl", "clone"), target, async () => [copyAt(stored)]);
     expect(shared).toBe(canClone);
     const placed = fs.existsSync(target) ? fs.readFileSync(target, "utf8") : null;
-    expect(placed).toBe(shared ? "clone" : null);
+    expect(placed).toBe(shared ? "clone" + PAD : null);
   });
 
   it("doesn't keep a clone of a copy whose content changed since it was hashed, and reports it", async () => {
@@ -193,13 +227,13 @@ describe("shareStoredCopy", () => {
     expect(copyFile).toHaveBeenCalledOnce();
     expect(fs.existsSync(target)).toBe(false);
     expect(stale.changed).toHaveBeenCalledOnce();
-    expect(fs.readFileSync(stale.path, "utf8")).toBe("SAME");
+    expect(fs.readFileSync(stale.path, "utf8")).toBe("SAME" + PAD);
   });
 
   it("doesn't keep a clone of a copy edited while it was being cloned", async () => {
     await setFileReuse("reflink");
     const racing = copyAt(file("racing.stl", "same"));
-    simulateReflinks((src) => fs.writeFileSync(src, "EDIT"));
+    simulateReflinks((src) => fs.writeFileSync(src, "EDIT" + PAD));
     const target = dest();
     expect((await shareStoredCopy(file("calm.stl", "same"), target, async () => [racing])).shared).toBe(false);
     expect(fs.existsSync(target)).toBe(false);
@@ -313,7 +347,7 @@ describe("shareStoredCopy", () => {
     expect((await shareStoredCopy(file("pruned.stl", "healthy"), target, async () => [healthy])).shared).toBe(false);
     expect(copyFile).toHaveBeenCalledOnce();
     expect(healthy.changed).not.toHaveBeenCalled();
-    expect(fs.readFileSync(healthy.path, "utf8")).toBe("healthy");
+    expect(fs.readFileSync(healthy.path, "utf8")).toBe("healthy" + PAD);
   });
 
   it("forgets a copy deleted while it was being cloned", async () => {
@@ -410,7 +444,7 @@ describe("shareStoredCopy", () => {
     expect((await shareStoredCopy(file("ok.stl", "fine"), target, async () => [rejects, throws, good])).shared).toBe(
       true,
     );
-    expect(fs.readFileSync(target, "utf8")).toBe("fine");
+    expect(fs.readFileSync(target, "utf8")).toBe("fine" + PAD);
   });
 
   it("stores as usual, rather than reporting a conflict, when the destination folder can't be made", async () => {
@@ -421,7 +455,7 @@ describe("shareStoredCopy", () => {
     const target = path.join(file("blocker", "not a folder"), "out.stl");
     expect((await shareStoredCopy(file("folder.stl", "folder"), target, async () => [stored])).shared).toBe(false);
     expect(copyFile).not.toHaveBeenCalled();
-    expect(fs.readFileSync(path.dirname(target), "utf8")).toBe("not a folder");
+    expect(fs.readFileSync(path.dirname(target), "utf8")).toBe("not a folder" + PAD);
   });
 
   it("never replaces a file already at the destination", async () => {
@@ -437,5 +471,59 @@ describe("shareStoredCopy", () => {
       status: 409,
     });
     expect(fs.readFileSync(target, "utf8")).toBe("someone else's");
+  });
+});
+
+describe("shareStoredBytes", () => {
+  const bytes = (text: string) => Buffer.from(text + PAD);
+
+  it("neither hashes nor looks for copies when turned off", async () => {
+    await setFileReuse("off");
+    const find = vi.fn<StoredCopyFinder>(async () => []);
+    expect(await shareStoredBytes(bytes("off"), dest(), find)).toEqual({ contentSha256: null, shared: false });
+    expect(find).not.toHaveBeenCalled();
+  });
+
+  it("looks copies up by the bytes' hash and size, and clones one", async () => {
+    await setFileReuse("reflink");
+    const copyFile = simulateReflinks();
+    const stored = file("bytes-stored.jpg", "same");
+    const find = vi.fn<StoredCopyFinder>(async () => [copyAt(stored)]);
+    const target = dest();
+    const contentSha256 = crypto.createHash("sha256").update(bytes("same")).digest("hex");
+
+    expect(await shareStoredBytes(bytes("same"), target, find)).toEqual({ contentSha256, shared: true });
+    expect(find).toHaveBeenCalledWith({ contentSha256, size: 4 + MIN_SHARE_BYTES });
+    expect(copyFile.sources).toEqual([stored]);
+    expect(fs.readFileSync(target, "utf8")).toBe("same" + PAD);
+    expect(fs.statSync(target).ino).not.toBe(fs.statSync(stored).ino);
+  });
+
+  it("reports the hash but doesn't write anything when there's nothing to share, leaving the write to the caller", async () => {
+    await setFileReuse("reflink");
+    const target = dest();
+    const result = await shareStoredBytes(bytes("alone"), target, async () => []);
+    expect(result.shared).toBe(false);
+    expect(result.contentSha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(fs.existsSync(target)).toBe(false);
+  });
+
+  it("doesn't keep a clone of a copy whose content changed since it was hashed", async () => {
+    await setFileReuse("reflink");
+    simulateReflinks();
+    const stale = copyAt(file("bytes-stale.jpg", "SAME"));
+    const target = dest();
+    expect((await shareStoredBytes(bytes("same"), target, async () => [stale])).shared).toBe(false);
+    expect(fs.existsSync(target)).toBe(false);
+    expect(stale.changed).toHaveBeenCalledOnce();
+  });
+
+  it("doesn't look bytes under a block up, but still reports their hash", async () => {
+    await setFileReuse("reflink");
+    const find = vi.fn<StoredCopyFinder>(async () => []);
+    const result = await shareStoredBytes(Buffer.from("tiny"), dest(), find);
+    expect(result.shared).toBe(false);
+    expect(result.contentSha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(find).not.toHaveBeenCalled();
   });
 });
