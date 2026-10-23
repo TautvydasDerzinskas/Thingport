@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
-import sharp from "sharp";
 import { loadThreeMfGroup, simplifyGroupMeshes, type PreviewRefusal } from "./modelPreviewRender";
+import { writeRgbaPng } from "./imageProcessing";
 
 // A small picture of a model: one colour, simple light, transparent background. A software
 // rasterizer rather than WebGL, so it runs anywhere Node does, with no GPU or native deps.
@@ -251,8 +251,6 @@ export async function renderModelImage(
       pixels[out + 3] = Math.round((covered / samples) * 255);
     }
   }
-  await sharp(pixels, { raw: { width: size, height: size, channels: 4 } })
-    .png()
-    .toFile(destPath);
+  await writeRgbaPng(pixels, size, destPath);
   return "ok";
 }

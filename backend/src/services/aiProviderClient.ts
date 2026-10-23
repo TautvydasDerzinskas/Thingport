@@ -1,9 +1,9 @@
 import fs from "node:fs/promises";
-import sharp from "sharp";
 import { prisma } from "../db";
 import type { ReasoningEffort } from "@prisma/client";
 import type { Logger } from "../logger";
 import { previewImagePath } from "./previewImageService";
+import { aiPreviewJpeg } from "./imageProcessing";
 import type { AiProvider } from "./aiConnectionService";
 
 /** What one request to a provider needs, saved or only typed into the settings form. */
@@ -73,10 +73,7 @@ export async function previewPart(
   });
   if (!image) return null;
   try {
-    const data = await sharp(await fs.readFile(previewImagePath(image.id, image.print.assetsPath)))
-      .resize(512, 512, { fit: "inside" })
-      .jpeg()
-      .toBuffer();
+    const data = await aiPreviewJpeg(await fs.readFile(previewImagePath(image.id, image.print.assetsPath)));
     return { type: "image_url", image_url: { url: `data:image/jpeg;base64,${data.toString("base64")}` } };
   } catch {
     return null;

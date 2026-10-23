@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import sharp from "sharp";
 import { prisma } from "../db";
 import { generateModelImage } from "./modelPreviewCache";
+import { renderThumbShade, writePhotoJpeg } from "./imageProcessing";
 import {
   assetExists,
   assetPath,
@@ -25,18 +25,14 @@ export function previewImageExists(id: string, home: AssetHome): boolean {
   return assetExists(home, galleryImageFile(id));
 }
 
-async function saveBuffer(printId: string, id: string, input: Buffer): Promise<boolean> {
+async function saveBuffer(printId: string, id: string, input: Buffer, keepExif: boolean): Promise<boolean> {
   let tmp: string | null = null;
   try {
     const dest = assetTarget(await ensureAssetHome(printId), galleryImageFile(id));
     tmp = `${dest}.${process.pid}.${Date.now()}.tmp`;
     await fs.mkdir(path.dirname(dest), { recursive: true });
     // Hero-sized: this is the detail page's main image.
-    await sharp(input)
-      .flatten({ background: { r: 248, g: 250, b: 252 } })
-      .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
-      .jpeg({ quality: 90, mozjpeg: true })
-      .toFile(tmp);
+    await writePhotoJpeg(input, tmp, 1600, 90, keepExif);
     await fs.rename(tmp, dest);
     return true;
   } catch {
@@ -49,12 +45,12 @@ async function saveBuffer(printId: string, id: string, input: Buffer): Promise<b
 export async function addPreviewImage(
   printId: string,
   buffer: Buffer,
-  generated = false,
+  { generated = false, keepExif = false }: { generated?: boolean; keepExif?: boolean } = {},
 ): Promise<PreviewImage | null> {
   const last = await prisma.previewImage.findFirst({ where: { printId }, orderBy: { position: "desc" } });
   const position = last ? last.position + 1 : 0;
   const row = await prisma.previewImage.create({ data: { printId, position, generated } });
-  const ok = await saveBuffer(printId, row.id, buffer);
+  const ok = await saveBuffer(printId, row.id, buffer, keepExif);
   if (!ok) {
     await prisma.previewImage.delete({ where: { id: row.id } }).catch(() => undefined);
     return null;
@@ -66,7 +62,7 @@ export async function addPreviewImage(
 export async function addGeneratedPreviewImageIfNone(printId: string, buffer: Buffer): Promise<void> {
   const count = await prisma.previewImage.count({ where: { printId } });
   if (count > 0) return;
-  await addPreviewImage(printId, buffer, true);
+  await addPreviewImage(printId, buffer, { generated: true });
 }
 
 /** Drops our own renders, so the images that replace them start at position 0. */
@@ -92,9 +88,10 @@ export async function preferImageOverRenders(
   printId: string,
   plateId: string | null | undefined,
   buffer: Buffer,
+  keepExif = false,
 ): Promise<void> {
   await removeGeneratedPreviewImages(printId);
-  if (plateId && (await plateThumbReplaceable(plateId))) await saveThumbFromBytes(plateId, buffer);
+  if (plateId && (await plateThumbReplaceable(plateId))) await saveThumbFromBytes(plateId, buffer, keepExif);
 }
 
 export async function deleteAllPreviewImages(printId: string): Promise<void> {
@@ -119,7 +116,7 @@ async function adoptRenderAsThumb(plateId: string, renderPath: string): Promise<
   if (plateThumbExists(plateId, await plateAssetHome(plateId))) return;
   const plate = await prisma.plate.findUnique({ where: { id: plateId }, select: { printId: true } });
   if (!plate) return;
-  const buffer = await sharp(renderPath).linear(RENDER_THUMB_SHADE, [0, 0, 0, 0]).png().toBuffer();
+  const buffer = await renderThumbShade(renderPath, RENDER_THUMB_SHADE);
   if (!(await saveThumbFromBytes(plateId, buffer))) return;
   await prisma.plate.update({ where: { id: plateId }, data: { thumbGenerated: true } });
   await addGeneratedPreviewImageIfNone(plate.printId, buffer);

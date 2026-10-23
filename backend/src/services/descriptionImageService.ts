@@ -1,6 +1,5 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import sharp from "sharp";
 import { IMPORT_BROWSER_USER_AGENT, IMPORT_TIMEOUT_SECONDS } from "../config";
 import { prisma } from "../db";
 import {
@@ -16,6 +15,7 @@ import { mapWithConcurrency } from "../utils/concurrency";
 import { validateRemoteUrl } from "../utils/urlUtils";
 import { browserFetch, needsBrowserFetch } from "../utils/browserFetch";
 import { readCapped } from "../utils/readCapped";
+import { imageFormat } from "./imageProcessing";
 
 const IMAGE_MAX_BYTES = 16 * 1024 * 1024;
 // Step-by-step assembly guides run long; this still bounds a hostile description.
@@ -85,7 +85,7 @@ async function fetchImage(url: string, deadline: number): Promise<Buffer | null>
 
 async function imageMime(buffer: Buffer): Promise<string | null> {
   try {
-    const { format } = await sharp(buffer, { animated: true }).metadata();
+    const format = await imageFormat(buffer);
     return (format && ALLOWED_FORMATS[format]) || null;
   } catch {
     return null;

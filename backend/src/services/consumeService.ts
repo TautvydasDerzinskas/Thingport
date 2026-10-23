@@ -278,10 +278,10 @@ export async function consumeFolder(dir = CONSUME_DIR): Promise<ConsumeSummary |
       try {
         if (PREVIEW_IMAGE_EXTS.has(extOf(item.rel)) && item.size <= PREVIEW_IMAGE_MAX_BYTES) {
           const buffer = await fs.readFile(item.path);
-          if (await addPreviewImage(printId, buffer)) {
+          if (await addPreviewImage(printId, buffer, { keepExif: true })) {
             if (!preferred) {
               preferred = true;
-              await preferImageOverRenders(printId, firstPlateId, buffer);
+              await preferImageOverRenders(printId, firstPlateId, buffer, true);
             }
             await fs.rm(item.path, { force: true });
             summary.files += 1;

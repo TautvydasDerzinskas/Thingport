@@ -1,10 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
-import sharp from "sharp";
 import { prisma } from "../db";
 import { ICONS } from "../config";
 import { HttpError } from "../utils/fileUtils";
+import { rasterIconPng } from "./imageProcessing";
 
 export const ICON_MAX_BYTES = 1024 * 1024;
 const MAX_ICONS = 200;
@@ -48,10 +48,7 @@ export async function saveIcon(userId: string, file: { buffer: Buffer; originaln
     data = file.buffer;
   } else {
     try {
-      data = await sharp(file.buffer, { animated: false })
-        .resize(RASTER_SIZE, RASTER_SIZE, { fit: "inside", withoutEnlargement: true })
-        .png()
-        .toBuffer();
+      data = await rasterIconPng(file.buffer, RASTER_SIZE);
     } catch {
       throw new HttpError(400, "Not an image");
     }
