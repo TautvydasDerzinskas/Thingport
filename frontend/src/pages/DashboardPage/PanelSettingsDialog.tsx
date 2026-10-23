@@ -411,7 +411,6 @@ function LinksEditor({
             onChange={setIcon}
             preview={
               <LauncherIcon
-                key={`${fullUrl} ${icon}`}
                 item={{ name, url: isWebUrl(fullUrl) ? fullUrl : "", icon }}
                 iconStyle={iconStyle}
                 size={32}
@@ -475,7 +474,7 @@ function SortableLink({
       >
         <DragIndicatorIcon fontSize="small" />
       </IconButton>
-      <LauncherIcon key={`${link.url} ${link.icon}`} item={link} iconStyle={iconStyle} size={28} />
+      <LauncherIcon item={link} iconStyle={iconStyle} size={28} />
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography variant="body2" noWrap>
           {link.name}

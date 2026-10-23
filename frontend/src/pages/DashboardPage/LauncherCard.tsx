@@ -54,6 +54,13 @@ export function LauncherIcon({
   const sources = [useIconSrc(item.icon), faviconOf(item.url)].filter((src): src is string => Boolean(src));
   const [failed, setFailed] = useState(0);
   const [loaded, setLoaded] = useState<string | null>(null);
+  // A changed icon starts over from its first source; a failure counted against the old ones would skip it.
+  const sourcesKey = sources.join(" ");
+  const [triedKey, setTriedKey] = useState(sourcesKey);
+  if (triedKey !== sourcesKey) {
+    setTriedKey(sourcesKey);
+    setFailed(0);
+  }
   const src = sources[failed];
   const colored = iconStyle === "colored";
   const glyph = Math.round(size * (ICON / TILE));
