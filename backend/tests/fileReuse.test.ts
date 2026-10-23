@@ -6,6 +6,7 @@ import fsp from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import {
+  copyStoredFile,
   MIN_SHARE_BYTES,
   sha256OfFile,
   shareStoredBytes,
@@ -525,5 +526,104 @@ describe("shareStoredBytes", () => {
     expect(result.shared).toBe(false);
     expect(result.contentSha256).toMatch(/^[0-9a-f]{64}$/);
     expect(find).not.toHaveBeenCalled();
+  });
+});
+
+describe("copyStoredFile", () => {
+  const bytes = () => Buffer.from(`known-${crypto.randomBytes(6).toString("hex")}` + PAD);
+  const known = () => {
+    const data = bytes();
+    const abs = path.join(dir, `known-${crypto.randomBytes(6).toString("hex")}`);
+    fs.writeFileSync(abs, data);
+    return { data, abs, copy: copyAt(abs), content: { contentSha256: sha256Of(data), size: data.length } };
+  };
+  const sha256Of = (data: Buffer | string) => crypto.createHash("sha256").update(data).digest("hex");
+
+  it("clones it when sharing is on, as a file of its own with the mode asked for", async () => {
+    await setFileReuse("reflink");
+    const { data, abs, copy, content } = known();
+    const spy = simulateReflinks();
+    const to = dest();
+    expect(await copyStoredFile(copy, content, to, 0o640)).toBe("cloned");
+    expect(spy.sources).toEqual([abs]);
+    expect(fs.readFileSync(to).equals(data)).toBe(true);
+    expect(fs.statSync(to).ino).not.toBe(fs.statSync(abs).ino);
+    expect(fs.statSync(to).mode & 0o777).toBe(0o640);
+    expect(copy.changed).not.toHaveBeenCalled();
+  });
+
+  it("makes a plain verified copy when sharing is off", async () => {
+    await setFileReuse("off");
+    const { data, copy, content } = known();
+    const spy = vi.spyOn(fsp, "copyFile");
+    const to = dest();
+    expect(await copyStoredFile(copy, content, to)).toBe("copied");
+    expect(fs.readFileSync(to).equals(data)).toBe(true);
+    expect(spy.mock.calls.map(([, , flags]) => flags)).toEqual([COPYFILE_EXCL]);
+  });
+
+  it("makes a plain copy when the clone can't be made", async () => {
+    await setFileReuse("reflink");
+    const { data, copy, content } = known();
+    failClones("ENOTSUP");
+    const to = dest();
+    expect(await copyStoredFile(copy, content, to)).toBe("copied");
+    expect(fs.readFileSync(to).equals(data)).toBe(true);
+  });
+
+  it("returns null, leaving nothing, when the source changed, and forgets it only if its own bytes differ", async () => {
+    await setFileReuse("off");
+    // Same size, other bytes: the file itself shows it.
+    const same = known();
+    fs.writeFileSync(same.abs, Buffer.alloc(same.data.length, 1));
+    const a = dest();
+    expect(await copyStoredFile(same.copy, same.content, a)).toBeNull();
+    expect(fs.existsSync(a)).toBe(false);
+    expect(same.copy.changed).toHaveBeenCalledTimes(1);
+
+    // A different size than the caller was told: which of them is stale isn't known, so it's not forgotten.
+    const sized = known();
+    const b = dest();
+    expect(await copyStoredFile(sized.copy, { ...sized.content, size: sized.content.size + 1 }, b)).toBeNull();
+    expect(fs.existsSync(b)).toBe(false);
+    expect(sized.copy.changed).not.toHaveBeenCalled();
+  });
+
+  it("is a 409 when something is already at the destination, which is left alone", async () => {
+    for (const mode of ["reflink", "off"] as const) {
+      await setFileReuse(mode);
+      const { copy, content } = known();
+      simulateReflinks();
+      const to = dest();
+      fs.mkdirSync(path.dirname(to), { recursive: true });
+      fs.writeFileSync(to, "mine");
+      await expect(copyStoredFile(copy, content, to)).rejects.toMatchObject({ status: 409 });
+      expect(fs.readFileSync(to, "utf8")).toBe("mine");
+      vi.restoreAllMocks();
+    }
+  });
+
+  it("never uses a link as the source", async () => {
+    await setFileReuse("off");
+    const { abs, content } = known();
+    const link = path.join(dir, `link-${crypto.randomBytes(4).toString("hex")}`);
+    fs.symlinkSync(abs, link);
+    const viaLink = dest();
+    expect(await copyStoredFile(copyAt(link), content, viaLink)).toBeNull();
+    expect(fs.existsSync(viaLink)).toBe(false);
+  });
+
+  it.skipIf(!hasMkfifo)("never uses a FIFO as the source", async () => {
+    await setFileReuse("off");
+    const { content } = known();
+    const fifo = path.join(dir, `fifo-${crypto.randomBytes(4).toString("hex")}`);
+    execFileSync("mkfifo", [fifo]);
+    const viaFifo = dest();
+    try {
+      expect(await copyStoredFile(copyAt(fifo), content, viaFifo)).toBeNull();
+    } finally {
+      unblockFifo(fifo);
+    }
+    expect(fs.existsSync(viaFifo)).toBe(false);
   });
 });

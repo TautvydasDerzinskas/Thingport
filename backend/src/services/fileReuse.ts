@@ -189,6 +189,76 @@ async function cloneFrom(
   return "kept";
 }
 
+/** Puts a copy of one stored file whose location is already known -- not found by content -- at `destAbsPath`: the entry
+ *  point for copying a model's files from another user's instead of downloading them again. The source is opened
+ *  safely (never through a link, regular files only) and copied from that handle: cloned when the switch (getFileReuse)
+ *  is "reflink" and the filesystem can, else copied plain, never over a file. What landed is read back and kept only if
+ *  it's byte for byte `content`. `content` must be the hash and size taken from the same source file: a size from a DB
+ *  column that may be 0 or null would make a good source look changed. Returns how it was made, or null when the source
+ *  couldn't be used (gone, not a regular file, a different size or content than `content`), leaving nothing at
+ *  `destAbsPath`; a 409 when something is already there. `source.changed` is called only for what the file itself shows:
+ *  it's gone, or its own bytes don't hash to `content`. `mode` is applied as the store paths do. */
+export async function copyStoredFile(
+  source: StoredCopy,
+  content: FileContent,
+  destAbsPath: string,
+  mode?: number,
+): Promise<"cloned" | "copied" | null> {
+  let opened;
+  try {
+    opened = await openRegularFile(source.path);
+  } catch (err: any) {
+    if (err?.code === "ENOENT") await forget(source);
+    return null;
+  }
+  if (!opened) return null;
+  const { handle, stat } = opened;
+  try {
+    // From the file's own size: if it differs, `content` isn't of this file, which doesn't say which of them is stale.
+    if (stat.size !== content.size) return null;
+    try {
+      await fs.mkdir(path.dirname(destAbsPath), { recursive: true });
+    } catch {
+      return null;
+    }
+    let how: "cloned" | "copied" = "cloned";
+    try {
+      if ((await getFileReuse()) !== "reflink") throw new Error("sharing is off");
+      await cloneFromHandle(handle, destAbsPath);
+    } catch (err: any) {
+      if (err?.code === "EEXIST") throw conflict();
+      how = "copied";
+      try {
+        await fs.copyFile(`/proc/self/fd/${handle.fd}`, destAbsPath, fsSync.constants.COPYFILE_EXCL);
+      } catch (copyErr: any) {
+        if (copyErr?.code === "EEXIST") throw conflict();
+        return null;
+      }
+    }
+    const sha = await sha256OfRegularFile(destAbsPath).catch(() => null);
+    if (sha !== content.contentSha256) {
+      await discardClone(destAbsPath);
+      // Only when the source itself is shown not to hash to `content`; a bad copy says nothing about it.
+      if (sha && (await sha256OfHandle(handle).catch(() => content.contentSha256)) !== content.contentSha256) {
+        await forget(source);
+      }
+      return null;
+    }
+    // A clone or copy takes the stored file's permissions; the store paths give the new file their own.
+    if (mode !== undefined) {
+      try {
+        await fs.chmod(destAbsPath, mode);
+      } catch {
+        await discardClone(destAbsPath);
+        return null;
+      }
+    }
+    return how;
+  } finally {
+    await handle.close();
+  }
+}
+
 /** Never over another file, as a plain store isn't either. False when none of them could be shared. */
 async function placeClone(
   content: FileContent,
