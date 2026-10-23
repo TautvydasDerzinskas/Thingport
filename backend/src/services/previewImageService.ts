@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import sharp from "sharp";
 import { prisma } from "../db";
 import { generateModelImage } from "./modelPreviewCache";
+import { renderThumbShade, writePhotoJpeg } from "./imageProcessing";
 import {
   assetExists,
   assetPath,
@@ -32,11 +32,7 @@ async function saveBuffer(printId: string, id: string, input: Buffer): Promise<b
     tmp = `${dest}.${process.pid}.${Date.now()}.tmp`;
     await fs.mkdir(path.dirname(dest), { recursive: true });
     // Hero-sized: this is the detail page's main image.
-    await sharp(input)
-      .flatten({ background: { r: 248, g: 250, b: 252 } })
-      .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
-      .jpeg({ quality: 90, mozjpeg: true })
-      .toFile(tmp);
+    await writePhotoJpeg(input, tmp, 1600, 90);
     await fs.rename(tmp, dest);
     return true;
   } catch {
@@ -119,7 +115,7 @@ async function adoptRenderAsThumb(plateId: string, renderPath: string): Promise<
   if (plateThumbExists(plateId, await plateAssetHome(plateId))) return;
   const plate = await prisma.plate.findUnique({ where: { id: plateId }, select: { printId: true } });
   if (!plate) return;
-  const buffer = await sharp(renderPath).linear(RENDER_THUMB_SHADE, [0, 0, 0, 0]).png().toBuffer();
+  const buffer = await renderThumbShade(renderPath, RENDER_THUMB_SHADE);
   if (!(await saveThumbFromBytes(plateId, buffer))) return;
   await prisma.plate.update({ where: { id: plateId }, data: { thumbGenerated: true } });
   await addGeneratedPreviewImageIfNone(plate.printId, buffer);

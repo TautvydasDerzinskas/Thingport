@@ -1,11 +1,11 @@
 import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import path from "node:path";
-import sharp from "sharp";
 import { HttpError } from "../utils/fileUtils";
 import { STORAGE } from "../config";
 import { prisma } from "../db";
 import { listZipEntries, readZipEntry } from "../utils/zipReader";
+import { writePhotoJpeg } from "./imageProcessing";
 import {
   adoptLegacyAsset,
   ASSET_SUBFOLDERS,
@@ -714,11 +714,7 @@ async function saveThumbBuffer(plateId: string, input: Buffer): Promise<boolean>
     const dest = assetTarget(home, file);
     tmp = `${dest}.${process.pid}.${Date.now()}.tmp`;
     await fs.mkdir(path.dirname(dest), { recursive: true });
-    await sharp(input)
-      .flatten({ background: { r: 248, g: 250, b: 252 } })
-      .resize(512, 512, { fit: "inside", withoutEnlargement: true })
-      .jpeg({ quality: 88, mozjpeg: true })
-      .toFile(tmp);
+    await writePhotoJpeg(input, tmp, 512, 88);
     await fs.rename(tmp, dest);
     // The one in the old shared folder is out of date now.
     await removeAsset(null, file);
