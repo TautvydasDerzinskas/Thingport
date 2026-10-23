@@ -530,7 +530,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                     sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1, px: 1, py: 0.5 }}
                   >
                     <InsertDriveFileIcon fontSize="small" color="action" />
-                    <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                    <Typography variant="body2" noWrap title={filename} sx={{ flex: 1, minWidth: 0 }}>
                       {filename}
                     </Typography>
                     {p.kind === "new" && <Chip label={t("models:edit.newBadge")} size="small" />}
