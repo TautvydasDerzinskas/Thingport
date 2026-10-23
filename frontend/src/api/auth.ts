@@ -179,19 +179,22 @@ export const authApi = {
     return res.json();
   },
 
-  refresh: async (): Promise<{ token: string; expires_in: number }> => {
+  /** From the current token, or once that has run out, from the session's cookie. */
+  refresh: async (): Promise<AuthResult> => {
     const res = await fetch(`${apiBase()}/refresh`, {
       method: "POST",
       headers: authHeaders(),
     });
+    // 403 is a token that may never refresh (an API token): as signed out as a 401.
+    if (res.status === 403) throw new UnauthorizedError();
     assertOk(res, "Token refresh failed");
     return res.json();
   },
 
-  // Best-effort: a failure must never block logout.
+  // Only the server can end the session's cookie, so this throws unless it confirms: a cookie left behind would sign
+  // the browser straight back in.
   logout: async (): Promise<void> => {
-    try {
-      await fetch(`${apiBase()}/logout`, { method: "POST", headers: authHeaders() });
-    } catch {}
+    const res = await fetch(`${apiBase()}/logout`, { method: "POST", headers: authHeaders() });
+    assertOk(res, "Sign-out failed");
   },
 };

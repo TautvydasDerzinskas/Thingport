@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { issueToken, requireAuth, signedInRecently } from "../auth";
+import { headerToken, requireAuth, signedInRecently } from "../auth";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { parseBody } from "../utils/validate";
@@ -15,6 +15,7 @@ import { createLog } from "../services/auditLog";
 import { seedDefaultCategories } from "../services/categoryService";
 import {
   generateApiToken,
+  isApiToken,
   getApiToken,
   revokeApiToken,
   setApiTokenMcpTools,
@@ -24,6 +25,7 @@ import { API_TOKEN_SCOPE_IDS, apiTokenScopeCatalog } from "../services/apiTokenS
 import { DEFAULT_MCP_TOOL_NAMES, MCP_TOOL_NAMES, mcpToolCatalog, mcpToolsFor } from "../mcp/tools";
 import { getMcpAccess, type McpAccess } from "../services/settingsService";
 import { toUserOut } from "../dto";
+import { endOtherSessions, endSession, refreshSession, startSession } from "../services/sessionService";
 import type { Prisma, Role } from "@prisma/client";
 
 // Any number, as long as only the first sign-up takes it.
@@ -132,7 +134,7 @@ router.post(
       return;
     }
 
-    const { token, expiresIn } = await issueToken(user.id, user.role);
+    const { token, expiresIn } = await startSession(req, res, user);
     res.json({ token, expires_in: expiresIn, user: toUserOut(user) });
   }),
 );
@@ -155,7 +157,7 @@ router.post(
       throw new HttpError(403, "Please verify your email before signing in.", "EMAIL_NOT_VERIFIED");
     }
 
-    const { token, expiresIn } = await issueToken(user.id, user.role);
+    const { token, expiresIn } = await startSession(req, res, user);
     res.json({ token, expires_in: expiresIn, user: toUserOut(user) });
     void createLog({ userId: user.id, action: "user_logged_in", details: { email: user.email } });
   }),
@@ -205,7 +207,7 @@ router.post(
       });
     }
     // Verifying doubles as signing in.
-    const { token, expiresIn } = await issueToken(verified.id, verified.role);
+    const { token, expiresIn } = await startSession(req, res, verified);
     res.json({ token, expires_in: expiresIn, user: toUserOut(verified) });
     void createLog({ userId: verified.id, action: "user_logged_in", details: { email: verified.email } });
   }),
@@ -307,8 +309,9 @@ router.post(
         emailVerified: true,
       },
     });
-    // Resetting doubles as signing in.
-    const { token, expiresIn } = await issueToken(updated.id, updated.role);
+    // Whoever knew the old password may be signed in somewhere. Resetting doubles as signing in.
+    await endOtherSessions(updated.id);
+    const { token, expiresIn } = await startSession(req, res, updated);
     res.json({ token, expires_in: expiresIn, user: toUserOut(updated) });
     void createLog({ userId: updated.id, action: "password_reset", details: { email: updated.email } });
     void createLog({ userId: updated.id, action: "user_logged_in", details: { email: updated.email } });
@@ -396,6 +399,8 @@ router.patch(
     }
 
     const updated = await prisma.user.update({ where: { id: user.id }, data });
+    // Signs out every other browser, which may be whoever the password was changed to keep out.
+    if (data.passwordHash) await endOtherSessions(user.id, req.sessionId);
     res.json({ user: toUserOut(updated) });
   }),
 );
@@ -508,25 +513,25 @@ router.delete(
   }),
 );
 
-// JWTs are stateless; this only records the audit-log entry.
+// Not behind requireAuth: a browser whose access token has run out still signs out its session.
 router.post(
   "/logout",
-  requireAuth,
   asyncHandler(async (req, res) => {
+    const userId = await endSession(req, res);
     res.json({ ok: true });
-    void createLog({ userId: req.userId!, action: "user_logged_out" });
+    if (userId) void createLog({ userId, action: "user_logged_out" });
   }),
 );
 
+// Not behind requireAuth either: once the access token has run out, the session's cookie is what signs this in.
 router.post(
   "/refresh",
-  requireAuth,
   asyncHandler(async (req, res) => {
-    const user = await prisma.user.findUnique({ where: { id: req.userId! } });
-    if (!user) throw new HttpError(401, "Invalid or expired token");
-    // Keeps when they signed in, so refreshing never makes the sign-in look recent.
-    const { token, expiresIn } = await issueToken(user.id, user.role, req.signedInAt ?? new Date(0));
-    res.json({ token, expires_in: expiresIn });
+    // A leaked API token mustn't be turned into a session.
+    const bearer = headerToken(req);
+    if (bearer && isApiToken(bearer)) throw new HttpError(403, "API tokens are read-only");
+    const { token, expiresIn, user } = await refreshSession(req, res);
+    res.json({ token, expires_in: expiresIn, user: toUserOut(user) });
   }),
 );
 

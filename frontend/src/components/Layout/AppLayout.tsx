@@ -14,7 +14,7 @@ import StorageMoveProgressBar from "./StorageMoveProgressBar";
 import { StorageMoveProvider } from "./StorageMoveContext";
 import BackToTopButton from "./BackToTopButton";
 import { ConfirmProvider } from "../ConfirmProvider";
-import { ToastProvider } from "../ToastProvider";
+import { ToastProvider, useToast } from "../ToastProvider";
 import { ProviderAboutProvider } from "../providerAbout/ProviderAboutProvider";
 import { WhatsNewProvider } from "../whatsNew/WhatsNewProvider";
 import { PageHeaderContext, type PageHeader } from "./PageHeaderContext";
@@ -38,7 +38,7 @@ type AppLayoutProps = {
   onUnauthorized: () => void;
   isAdmin: boolean;
   onOpenProfile: () => void;
-  onLogout: () => void;
+  onLogout: () => Promise<void>;
   makerworldCookie: string;
   onUpdateMakerWorld: (patch: Partial<MakerWorldSettings>) => void;
   user: AuthUser | null;
@@ -171,6 +171,10 @@ function AppLayoutShell({
   const { pathname } = useLocation();
   const [pageHeader, setPageHeader] = React.useState<PageHeader>(null);
   const { refresh: refreshNotifications } = useNotifications();
+  const showToast = useToast();
+
+  const handleLogout = () =>
+    void onLogout().catch(() => showToast({ message: t("userMenu.logOutFailed"), severity: "error" }));
 
   const handleJobCompleted = React.useCallback(() => {
     onPrintsChanged();
@@ -210,7 +214,7 @@ function AppLayoutShell({
                 theme={themeSelection}
                 onThemeChange={onThemeChange}
                 onOpenProfile={onOpenProfile}
-                onLogout={onLogout}
+                onLogout={handleLogout}
               />
               <PageHeaderContext.Provider value={setPageHeader}>{children}</PageHeaderContext.Provider>
             </Box>

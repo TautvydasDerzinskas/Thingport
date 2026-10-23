@@ -511,3 +511,22 @@ export async function setAuthTokenTtl(seconds: number): Promise<void> {
     update: { value: seconds },
   });
 }
+
+const REMEMBER_SESSION_TTL_KEY = "remember_session_ttl_seconds";
+const DEFAULT_REMEMBER_SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;
+
+/** How long a browser stays signed in without being used. 0 is off: it signs in again when its access token runs out. */
+export async function getRememberSessionTtl(): Promise<number> {
+  const row = await prisma.setting.findUnique({ where: { key: REMEMBER_SESSION_TTL_KEY } });
+  const value = row?.value;
+  if (typeof value === "number" && Number.isFinite(value) && value >= 0) return Math.trunc(value);
+  return Math.max(0, envInt("REMEMBER_SESSION_TTL", DEFAULT_REMEMBER_SESSION_TTL_SECONDS));
+}
+
+export async function setRememberSessionTtl(seconds: number): Promise<void> {
+  await prisma.setting.upsert({
+    where: { key: REMEMBER_SESSION_TTL_KEY },
+    create: { key: REMEMBER_SESSION_TTL_KEY, value: seconds },
+    update: { value: seconds },
+  });
+}

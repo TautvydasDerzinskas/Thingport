@@ -44,7 +44,16 @@ import { healthApi, type HealthInfo } from "./api/health";
 import { authApi, type AuthUser } from "./api/auth";
 import { settingsApi, type PreviewMode } from "./api/settings";
 import { UnauthorizedError } from "./api/client";
-import { clearToken, clearUser, readToken, readUser, storeToken, storeUser } from "./utils/auth";
+import {
+  clearToken,
+  clearUser,
+  onStoredSessionChange,
+  readToken,
+  readUser,
+  storeToken,
+  storeUser,
+  tokenLifetime,
+} from "./utils/auth";
 import { type AppSettings, type MakerWorldSettings, loadSettings, saveSettings } from "./utils/settings";
 import { useResolvedTheme } from "./hooks/useResolvedTheme";
 import { setCachedAccentColor, setCachedRenderColor, useAccentColor } from "./hooks/useAccentColor";
@@ -53,7 +62,25 @@ import { resetHoverSlideshowEnabled } from "./hooks/useHoverSlideshowEnabled";
 import { DEFAULT_ACCENT, type ResolvedTheme, type ThemeSelection } from "./constants/settingsOptions";
 import { buildTheme } from "./theme";
 
-const DEFAULT_REFRESH_SECONDS = 6 * 60 * 60; // 6 hours
+// Renewed this far into its life, or this long before it runs out, whichever is sooner.
+const REFRESH_AT_FRACTION = 0.8;
+const REFRESH_LEAD_MS = 5 * 60 * 1000;
+// A renewal that failed for want of a network is tried again this often.
+const REFRESH_RETRY_MS = 60 * 1000;
+// setTimeout fires at once past ~24.8 days, so a long session's wait is taken a day at a time.
+const MAX_TIMER_MS = 24 * 60 * 60 * 1000;
+// A request refused right after a silent renewal isn't about the token: that one signs out.
+const RECOVERY_GRACE_MS = 60 * 1000;
+
+/** When a token is due for renewal. Unreadable ones are renewed now. */
+function refreshDueAt(token: string): number {
+  const life = tokenLifetime(token);
+  if (!life) return 0;
+  const span = life.expiresAt - life.issuedAt;
+  return Math.min(life.issuedAt + span * REFRESH_AT_FRACTION, life.expiresAt - Math.min(REFRESH_LEAD_MS, span / 2));
+}
+
+type RenewOutcome = "renewed" | "signed-out" | "unreachable";
 
 type AppShellProps = {
   isAdmin: boolean;
@@ -68,7 +95,7 @@ type AppShellProps = {
   resolvedTheme: ResolvedTheme;
   muiTheme: ReturnType<typeof buildTheme>;
   onUnauthorized: () => void;
-  onLogout: () => void;
+  onLogout: () => Promise<void>;
   onUserUpdated: (user: AuthUser) => void;
 };
 
@@ -303,8 +330,17 @@ export default function App() {
   const { t } = useTranslation("app");
   const [token, setToken] = React.useState<string | null>(() => readToken());
   const [user, setUser] = React.useState<AuthUser | null>(() => readUser());
+  // A token that's missing or has run out may still have a session behind it (a cookie only the server reads):
+  // that's asked first, so a browser's homepage doesn't flash the sign-in form while it signs back in.
+  // Not on the single sign-on callback, which is signing in afresh.
+  const [restoring, setRestoring] = React.useState(() => {
+    if (window.location.pathname === "/oidc-callback") return false;
+    const stored = readToken();
+    return !stored || (tokenLifetime(stored)?.expiresAt ?? 0) <= Date.now();
+  });
+  // Bumped when a refused request was rescued by renewing the token, so the pages load again with it.
+  const [sessionKey, setSessionKey] = React.useState(0);
   const [health, setHealth] = React.useState<HealthInfo | null>(null);
-  const [tokenTtl, setTokenTtl] = React.useState<number | null>(null);
   const [showExpiredToast, setShowExpiredToast] = React.useState(false);
   // A ref so concurrent 401s see the guard synchronously and only one alert shows.
   const sessionExpiredRef = React.useRef(false);
@@ -367,25 +403,84 @@ export default function App() {
   const apiUp = health?.ok ?? null;
   const authRequired = health?.auth_required ?? true;
 
-  const handleLogin = (tok: string, ttl: number, loggedInUser: AuthUser) => {
+  // The token's lifetime is read from the token itself.
+  const handleLogin = (tok: string, _expiresIn: number, loggedInUser: AuthUser) => {
     resetCardPreview();
     resetHoverSlideshowEnabled();
     storeToken(tok);
     storeUser(loggedInUser);
     setToken(tok);
     setUser(loggedInUser);
-    setTokenTtl(ttl);
     sessionExpiredRef.current = false;
   };
 
+  // One renewal at a time, however many timers, tabs' wake-ups and refused requests ask for it at once.
+  const renewing = React.useRef<Promise<RenewOutcome> | null>(null);
+  const renew = React.useCallback((): Promise<RenewOutcome> => {
+    renewing.current ??= (async (): Promise<RenewOutcome> => {
+      try {
+        const res = await authApi.refresh();
+        storeToken(res.token);
+        storeUser(res.user);
+        setToken(res.token);
+        setUser(res.user);
+        return "renewed";
+      } catch (err) {
+        return err instanceof UnauthorizedError ? "signed-out" : "unreachable";
+      } finally {
+        renewing.current = null;
+      }
+    })();
+    return renewing.current;
+  }, []);
+
+  const expireSession = React.useCallback(() => {
+    clearToken();
+    setToken(null);
+    setShowExpiredToast(true);
+  }, []);
+
+  const lastRecovery = React.useRef(0);
+  // A request came back 401: usually a token that ran out while the computer slept, which the session renews.
   const handleUnauthorized = React.useCallback(() => {
     if (sessionExpiredRef.current) return;
     sessionExpiredRef.current = true;
-    clearToken();
-    setToken(null);
-    setTokenTtl(null);
-    setShowExpiredToast(true);
-  }, []);
+    void renew().then((outcome) => {
+      if (outcome === "renewed" && Date.now() - lastRecovery.current > RECOVERY_GRACE_MS) {
+        lastRecovery.current = Date.now();
+        sessionExpiredRef.current = false;
+        setSessionKey((key) => key + 1);
+      } else if (outcome === "unreachable") {
+        // The server answered the request but not the renewal: nothing to say the session is over.
+        sessionExpiredRef.current = false;
+      } else {
+        expireSession();
+      }
+    });
+  }, [renew, expireSession]);
+
+  React.useEffect(() => {
+    if (!restoring) return;
+    const started = readToken();
+    void renew().then((outcome) => {
+      // Unless another tab signed in meanwhile.
+      if (outcome === "signed-out" && readToken() === started) {
+        clearToken();
+        setToken(null);
+      }
+      setRestoring(false);
+    });
+  }, [restoring, renew]);
+
+  // Another tab's sign-in, renewal or sign-out is this tab's too: they share the stored token.
+  React.useEffect(
+    () =>
+      onStoredSessionChange(() => {
+        setToken(readToken());
+        setUser(readUser());
+      }),
+    [],
+  );
 
   // Saves run one at a time so a failure rolls back to the last saved theme, never a pending pick.
   const themeSaves = React.useRef<Promise<unknown>>(Promise.resolve());
@@ -412,14 +507,13 @@ export default function App() {
     [handleUnauthorized],
   );
 
-  const handleLogout = () => {
-    // Fire-and-forget: local logout proceeds immediately.
-    void authApi.logout();
+  // Rejects, leaving the user signed in, when the server didn't confirm the session ended.
+  const handleLogout = async () => {
+    await authApi.logout();
     clearToken();
     clearUser();
     setToken(null);
     setUser(null);
-    setTokenTtl(null);
   };
 
   // PATCH /profile doesn't reissue a token, so only the local user object changes.
@@ -428,22 +522,41 @@ export default function App() {
     setUser(updatedUser);
   };
 
+  // Renewed on time from the token's own expiry, and checked again whenever the page comes back: timers don't run
+  // while a computer sleeps, and a homepage tab is opened fresh each time rather than left running.
   React.useEffect(() => {
-    if (!token) return;
-    const ttl = tokenTtl ?? DEFAULT_REFRESH_SECONDS;
-    const refreshMs = Math.max(5 * 60 * 1000, Math.min(ttl * 0.8 * 1000, ttl * 1000 - 5 * 60 * 1000));
-    const timer = window.setTimeout(async () => {
-      try {
-        const res = await authApi.refresh();
-        storeToken(res.token);
-        setToken(res.token);
-        setTokenTtl(res.expires_in);
-      } catch {
-        handleUnauthorized();
+    if (!token || restoring) return;
+    const dueAt = refreshDueAt(token);
+    let timer: number | undefined;
+    let active = true;
+    const check = async () => {
+      window.clearTimeout(timer);
+      const wait = dueAt - Date.now();
+      if (wait > 0) {
+        timer = window.setTimeout(check, Math.min(wait, MAX_TIMER_MS));
+        return;
       }
-    }, refreshMs);
-    return () => window.clearTimeout(timer);
-  }, [token, tokenTtl, handleUnauthorized]);
+      const outcome = await renew();
+      if (!active) return;
+      window.clearTimeout(timer);
+      if (outcome === "unreachable") timer = window.setTimeout(check, REFRESH_RETRY_MS);
+      else if (outcome === "signed-out") expireSession();
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void check();
+    };
+    void check();
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    window.addEventListener("online", onVisible);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+      window.removeEventListener("online", onVisible);
+    };
+  }, [token, restoring, renew, expireSession]);
 
   // Shared by both branches so the toast survives the swap to AuthPage.
   const sessionExpiredToast = (
@@ -461,6 +574,14 @@ export default function App() {
 
   // Finishes a single sign-on even with a session already here, e.g. from another tab.
   const isOidcCallbackPath = typeof window !== "undefined" && window.location.pathname === "/oidc-callback";
+  if (restoring) {
+    return (
+      <ThemeProvider theme={muiTheme}>
+        <CssBaseline />
+        <Box sx={{ background: (theme) => theme.thingport.pageBackground, minHeight: "100vh" }} />
+      </ThemeProvider>
+    );
+  }
   if ((authRequired && !token) || isOidcCallbackPath) {
     // Outside the router, so these pre-login links are matched against window.location.
     const isVerifyEmailPath = typeof window !== "undefined" && window.location.pathname === "/verify-email";
@@ -513,6 +634,7 @@ export default function App() {
     <>
       <BrowserRouter>
         <AppShell
+          key={sessionKey}
           isAdmin={isAdmin}
           user={user}
           apiUp={apiUp}
