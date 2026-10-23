@@ -329,6 +329,22 @@ export function moveWidgetToPanel(
   return pruneLayouts({ ...template, panels, layouts });
 }
 
+/** Moves a tab to `to` in its panel's tab order; the tab that was showing stays showing. */
+export function moveTab(template: DashboardTemplate, id: WidgetInstanceId, to: number): DashboardTemplate {
+  const source = template.panels.find((panel) => panel.widgets.includes(id));
+  if (!source) return template;
+  const from = source.widgets.indexOf(id);
+  const at = Math.max(0, Math.min(to, source.widgets.length - 1));
+  if (at === from) return template;
+  const shown = source.widgets[Math.min(source.tab ?? 0, source.widgets.length - 1)];
+  const widgets = source.widgets.filter((widget) => widget !== id);
+  widgets.splice(at, 0, id);
+  const panels = template.panels.map((panel) =>
+    panel.id === source.id ? { ...panel, widgets, tab: widgets.indexOf(shown) } : panel,
+  );
+  return { ...template, panels };
+}
+
 /** Takes a widget out of a tabbed panel into a panel of its own, the size the tabbed panel is, in the first gap it
  *  fits; it keeps its options. */
 export function detachWidget(template: DashboardTemplate, id: WidgetInstanceId): DashboardTemplate {

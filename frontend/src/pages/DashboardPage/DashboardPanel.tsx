@@ -1,7 +1,9 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { keyframes } from "@emotion/react";
-import { useDraggable, useDroppable } from "@dnd-kit/core";
+import { useDroppable } from "@dnd-kit/core";
+import { SortableContext, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { alpha } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
@@ -55,6 +57,8 @@ type Props = {
   panel: Panel;
   renderWidget: (id: WidgetInstanceId) => React.ReactNode;
   onTabChange: (tab: number) => void;
+  /** Moves a tab to another place in the panel's tab order. */
+  onMoveTab: (widgetId: WidgetInstanceId, to: number) => void;
   editing: boolean;
   selected: boolean;
   onToggleSelected: (range: boolean) => void;
@@ -77,6 +81,7 @@ export default function DashboardPanel({
   panel,
   renderWidget,
   onTabChange,
+  onMoveTab,
   editing,
   selected,
   onToggleSelected,
@@ -244,15 +249,18 @@ export default function DashboardPanel({
           <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.75, minWidth: 0 }}>
             <SelectionCheck selected={selected} sx={{ position: "static", flexShrink: 0 }} />
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, flex: 1, minWidth: 0 }}>
-              {panel.widgets.map((id) => (
-                <WidgetChip
-                  key={id}
-                  widgetId={id}
-                  panelId={panel.id}
-                  tabbed={tabbed}
-                  hidden={dragging?.widgetId === id}
-                />
-              ))}
+              <SortableContext items={panel.widgets.map((id) => `widget:${id}`)} strategy={rectSortingStrategy}>
+                {panel.widgets.map((id, index) => (
+                  <WidgetChip
+                    key={id}
+                    widgetId={id}
+                    panelId={panel.id}
+                    tabbed={tabbed}
+                    hidden={dragging?.widgetId === id}
+                    onMove={(by) => onMoveTab(id, index + by)}
+                  />
+                ))}
+              </SortableContext>
             </Box>
             {onOpenSettings && (
               <Tooltip title={t("dashboard.settings.open")}>
@@ -377,30 +385,46 @@ export default function DashboardPanel({
   );
 }
 
-/** A widget's name on a panel being edited. Dragging it onto another panel adds it there as a tab. */
+/**
+ * A widget's name on a panel being edited. Dragging it along its panel's chips reorders the tabs, as do the left and
+ * right arrows; dragging it onto another panel adds it there as a tab.
+ */
 function WidgetChip({
   widgetId,
   panelId,
   tabbed,
   hidden,
+  onMove,
 }: {
   widgetId: WidgetInstanceId;
   panelId: string;
   tabbed: boolean;
   hidden: boolean;
+  onMove: (by: number) => void;
 }) {
   const { t } = useTranslation("app");
   const data: ChipDragData = { widgetId, panelId };
-  const { setNodeRef, attributes, listeners } = useDraggable({ id: `widget:${widgetId}`, data });
+  const { setNodeRef, attributes, listeners, transform, transition } = useSortable({ id: `widget:${widgetId}`, data });
+  const hint = t(tabbed ? "dashboard.edit.dragTab" : "dashboard.edit.dragToMerge");
   return (
-    <Tooltip title={t(tabbed ? "dashboard.edit.dragTab" : "dashboard.edit.dragToMerge")}>
+    <Tooltip title={hint}>
       <Box
         ref={setNodeRef}
         className={NO_DRAG}
         {...attributes}
         {...listeners}
-        aria-label={`${labelOf(t, widgetById(widgetId))}. ${t(tabbed ? "dashboard.edit.dragTab" : "dashboard.edit.dragToMerge")}`}
-        sx={{ opacity: hidden ? 0.35 : 1, transition: "opacity 150ms ease", maxWidth: "100%" }}
+        onKeyDown={(event: React.KeyboardEvent) => {
+          if (!tabbed || (event.key !== "ArrowLeft" && event.key !== "ArrowRight")) return;
+          event.preventDefault();
+          onMove(event.key === "ArrowLeft" ? -1 : 1);
+        }}
+        aria-label={`${labelOf(t, widgetById(widgetId))}. ${hint}`}
+        style={{ transform: CSS.Translate.toString(transform), transition }}
+        sx={{
+          opacity: hidden ? 0.35 : 1,
+          maxWidth: "100%",
+          "@media (prefers-reduced-motion: reduce)": { transition: "none !important" },
+        }}
       >
         <WidgetChipFace widgetId={widgetId} />
       </Box>

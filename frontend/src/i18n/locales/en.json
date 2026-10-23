@@ -692,7 +692,7 @@
         "split": "Split into panels",
         "removePanel": "Remove panel",
         "dragToMerge": "Drag onto another panel to show them as tabs",
-        "dragTab": "Drag onto another panel, or onto empty space for a panel of its own",
+        "dragTab": "Drag to reorder tabs (or use ← →), onto another panel, or onto empty space for a panel of its own",
         "mergeHere": "Add as a tab",
         "empty": "This template has no panels yet.",
         "fit": "Fit to content",

@@ -701,7 +701,7 @@
         "split": "Išskaidyti į skydelius",
         "removePanel": "Pašalinti skydelį",
         "dragToMerge": "Nuvilkite ant kito skydelio, kad jie būtų rodomi kortelėmis",
-        "dragTab": "Nuvilkite ant kito skydelio arba į tuščią vietą, kad taptų atskiru skydeliu",
+        "dragTab": "Vilkite, kad pakeistumėte kortelių tvarką (arba ← →), ant kito skydelio arba į tuščią vietą, kad taptų atskiru skydeliu",
         "mergeHere": "Pridėti kaip kortelę",
         "empty": "Šiame šablone dar nėra skydelių.",
         "fit": "Pritaikyti prie turinio",

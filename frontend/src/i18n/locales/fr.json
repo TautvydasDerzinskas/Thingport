@@ -695,7 +695,7 @@
         "split": "Séparer en panneaux",
         "removePanel": "Retirer le panneau",
         "dragToMerge": "Faites glisser sur un autre panneau pour les afficher en onglets",
-        "dragTab": "Faites glisser sur un autre panneau, ou vers un espace vide pour un panneau à part",
+        "dragTab": "Faites glisser pour réordonner les onglets (ou ← →), sur un autre panneau, ou vers un espace vide pour un panneau à part",
         "mergeHere": "Ajouter en onglet",
         "empty": "Ce modèle n'a pas encore de panneaux.",
         "fit": "Ajuster au contenu",

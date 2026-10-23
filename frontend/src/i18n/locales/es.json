@@ -695,7 +695,7 @@
         "split": "Separar en paneles",
         "removePanel": "Quitar panel",
         "dragToMerge": "Arrastra sobre otro panel para mostrarlos como pestañas",
-        "dragTab": "Arrastra sobre otro panel, o a un espacio vacío para darle su propio panel",
+        "dragTab": "Arrastra para reordenar las pestañas (o usa ← →), sobre otro panel, o a un espacio vacío para darle su propio panel",
         "mergeHere": "Añadir como pestaña",
         "empty": "Esta plantilla aún no tiene paneles.",
         "fit": "Ajustar al contenido",

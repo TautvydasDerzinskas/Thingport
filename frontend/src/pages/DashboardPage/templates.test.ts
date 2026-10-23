@@ -12,10 +12,12 @@ import {
   mergePanels,
   offerNewPresets,
   nudgeLayout,
+  moveTab,
   moveWidgetToPanel,
   removePanels,
   resolveLayout,
   setLayout,
+  setTab,
   setWidgetSettings,
   splitPanel,
   templateFromPreset,
@@ -125,6 +127,17 @@ describe("panel edits", () => {
     expect(split.panels).toHaveLength(template.panels.length + 2);
     expect(panelOf(split, "recentlyAdded").id).toBe(lists.id);
     expectNoOverlap(resolveLayout(split, "lg"));
+  });
+
+  it("reorders tabs and keeps the shown tab showing", () => {
+    const compact = preset("compact");
+    const template = setTab(compact, panelOf(compact, "topPrinted").id, 2);
+    const moved = moveTab(template, "topPrinted", 0);
+    expect(panelOf(moved, "topPrinted")).toMatchObject({
+      widgets: ["topPrinted", "recentlyAdded", "topViewed"],
+      tab: 0,
+    });
+    expect(moveTab(moved, "topViewed", 9).panels).toEqual(moved.panels);
   });
 
   it("removing panels takes their widgets off and their cells out of every layout", () => {

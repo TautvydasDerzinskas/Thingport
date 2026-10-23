@@ -5,6 +5,7 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
+  closestCenter,
   pointerWithin,
   useDroppable,
   useSensor,
@@ -24,6 +25,7 @@ import {
   ROW_HEIGHT,
   breakpointFor,
   detachWidget,
+  moveTab,
   moveWidgetToPanel,
   nudgeLayout,
   panelMinSize,
@@ -45,11 +47,21 @@ const GRID_DROP_ID = "grid";
 const FIT_FOLLOW_MS = 4000;
 const FIT_FOLLOW_STEP_MS = 300;
 
-// A chip over a panel merges into it; anywhere else on the grid it means "give it a panel of its own".
+// A chip over its own panel sorts among its tabs; over another panel it merges into it; anywhere else on the grid it
+// means "give it a panel of its own".
 const panelFirst: CollisionDetection = (args) => {
   const hits = pointerWithin(args);
   const panel = hits.find((hit) => String(hit.id).startsWith("panel:"));
-  return panel ? [panel] : hits;
+  const from = (args.active.data.current as ChipDragData).panelId;
+  if (panel?.id === `panel:${from}`) {
+    const tabs = args.droppableContainers.filter(
+      (container) =>
+        String(container.id).startsWith("widget:") &&
+        (container.data.current as ChipDragData | undefined)?.panelId === from,
+    );
+    return closestCenter({ ...args, droppableContainers: tabs });
+  }
+  return panel ? [panel] : hits.filter((hit) => !String(hit.id).startsWith("widget:"));
 };
 
 type Props = {
@@ -157,8 +169,11 @@ export default function DashboardGrid({
     setDragging(null);
     markArranged();
     const chip = event.active.data.current as ChipDragData;
-    const over = event.over?.data.current as { panelId?: string } | undefined;
-    if (over?.panelId) onChange((current) => moveWidgetToPanel(current, chip.widgetId, over.panelId!));
+    const over = event.over?.data.current as (Partial<ChipDragData> & { sortable?: { index: number } }) | undefined;
+    if (over?.widgetId && over.panelId === chip.panelId) {
+      const to = over.sortable!.index;
+      onChange((current) => moveTab(current, chip.widgetId, to));
+    } else if (over?.panelId) onChange((current) => moveWidgetToPanel(current, chip.widgetId, over.panelId!));
     else if (event.over?.id === GRID_DROP_ID) onChange((current) => detachWidget(current, chip.widgetId));
   };
 
@@ -233,6 +248,7 @@ export default function DashboardGrid({
                     panel={panel}
                     renderWidget={renderWidget}
                     onTabChange={(tab) => onChange((current) => setTab(current, panel.id, tab))}
+                    onMoveTab={(widgetId, to) => onChange((current) => moveTab(current, widgetId, to))}
                     editing={editing}
                     selected={isSelected(panel.id)}
                     onToggleSelected={(range) => onToggleSelected(panel.id, range)}
