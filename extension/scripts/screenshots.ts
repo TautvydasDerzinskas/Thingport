@@ -36,10 +36,17 @@ const MAKERWORLD_COLLECTION = "https://makerworld.com/en/collections/15756490-li
 const MYMINIFACTORY_COLLECTION =
   "https://www.myminifactory.com/users/Scan%20The%20World/collection/egyptian-collection";
 
-type ProviderName = "makerworld" | "thingiverse" | "printables" | "myminifactory";
+type ProviderName = "makerworld" | "thingiverse" | "printables" | "myminifactory" | "crealitycloud";
 // `fixed`: always this model, unless one's given. MyMiniFactory's front page is mostly paid miniatures, some not
-// safe for work.
-const PROVIDERS: { name: ProviderName; label: string; home: string; modelLink: RegExp; fixed?: string }[] = [
+// safe for work. `lightOnly`: the site has no dark theme to shoot.
+const PROVIDERS: {
+  name: ProviderName;
+  label: string;
+  home: string;
+  modelLink: RegExp;
+  fixed?: string;
+  lightOnly?: boolean;
+}[] = [
   {
     name: "makerworld",
     label: "MakerWorld",
@@ -51,6 +58,7 @@ const PROVIDERS: { name: ProviderName; label: string; home: string; modelLink: R
     label: "Thingiverse",
     home: "https://www.thingiverse.com/",
     modelLink: /^https:\/\/www\.thingiverse\.com\/thing:\d+$/,
+    lightOnly: true,
   },
   {
     name: "printables",
@@ -64,6 +72,12 @@ const PROVIDERS: { name: ProviderName; label: string; home: string; modelLink: R
     home: "https://www.myminifactory.com/",
     modelLink: /^https:\/\/www\.myminifactory\.com\/object\/3d-print-[^/?#]+-\d+$/,
     fixed: "https://www.myminifactory.com/object/3d-print-funny-pen-holder-or-vase-skull-100000",
+  },
+  {
+    name: "crealitycloud",
+    label: "Creality Cloud",
+    home: "https://www.crealitycloud.com/",
+    modelLink: /^https:\/\/www\.crealitycloud\.com\/model-detail\/[^/?#]+$/,
   },
 ];
 
@@ -312,10 +326,11 @@ async function main(): Promise<void> {
 
   try {
     await screenshotPopup(context, extensionId, "popup-setup.png", "light");
+    await screenshotPopup(context, extensionId, "popup-setup-dark.png", "dark");
 
     const modelShots =
       wanted("setup-dialog-makerworld", "popup-connected", "popup-connected-dark") ||
-      PROVIDERS.some((p) => wanted(`panel-${p.name}`, `imported-${p.name}`));
+      PROVIDERS.some((p) => wanted(`panel-${p.name}`, `panel-${p.name}-dark`, `imported-${p.name}`));
     const models = new Map<ProviderName, ModelInfo>();
     const recentModels: ModelInfo[] = [];
     for (const provider of modelShots ? PROVIDERS : []) {
@@ -354,61 +369,71 @@ async function main(): Promise<void> {
     await screenshotPopup(context, extensionId, "popup-connected.png", "light");
     await screenshotPopup(context, extensionId, "popup-connected-dark.png", "dark");
 
-    for (const provider of PROVIDERS.filter((p) => models.has(p.name))) {
-      if (!wanted(`panel-${provider.name}`, `imported-${provider.name}`)) continue;
-      const model = models.get(provider.name)!;
-      mockState.inspectTitle = model.title;
-      await openPage(page, model.url);
-      await page.locator(".tg-fab:not(.tg-fab--inactive)").click();
-      await page.locator('.tg-panel [data-action="import"]').waitFor({ timeout: 20000 });
-      if (provider.name === "thingiverse") {
-        await page.locator("#tg-collection").selectOption("__new__");
-        await page.locator("#tg-new-collection").fill(NEW_COLLECTION_NAME);
+    // Each shot again over the site's dark scheme, for the READMEs' <picture>. Grab's panel stays light either way.
+    // Printables and Creality Cloud ignore the emulated scheme and follow the OS one, so take their shots of each
+    // scheme with the OS set to match (--only=panel-printables,collection-printables,panel-crealitycloud, then the
+    // -dark ones).
+    for (const scheme of ["light", "dark"] as const) {
+      const suffix = scheme === "dark" ? "-dark" : "";
+      await page.emulateMedia({ colorScheme: scheme });
+
+      for (const provider of PROVIDERS.filter((p) => models.has(p.name) && !(scheme === "dark" && p.lightOnly))) {
+        const imported = scheme === "light" && wanted(`imported-${provider.name}`);
+        if (!wanted(`panel-${provider.name}${suffix}`) && !imported) continue;
+        const model = models.get(provider.name)!;
+        mockState.inspectTitle = model.title;
+        await openPage(page, model.url);
+        await page.locator(".tg-fab:not(.tg-fab--inactive)").click();
+        await page.locator('.tg-panel [data-action="import"]').waitFor({ timeout: 20000 });
+        if (provider.name === "thingiverse") {
+          await page.locator("#tg-collection").selectOption("__new__");
+          await page.locator("#tg-new-collection").fill(NEW_COLLECTION_NAME);
+        }
+        await screenshotViewport(page, `panel-${provider.name}${suffix}.jpg`);
+
+        // Not MakerWorld: its import clicks the page's real Download button.
+        if (provider.name === "printables" && imported) {
+          await page.locator('.tg-panel [data-action="import"]').click();
+          await page.getByRole("link", { name: "Open in Thingport" }).waitFor({ timeout: 20000 });
+          await screenshotViewport(page, `imported-${provider.name}.jpg`);
+        }
       }
-      await screenshotViewport(page, `panel-${provider.name}.jpg`);
 
-      // Not MakerWorld: its import clicks the page's real Download button.
-      if (provider.name === "printables") {
-        await page.locator('.tg-panel [data-action="import"]').click();
-        await page.getByRole("link", { name: "Open in Thingport" }).waitFor({ timeout: 20000 });
-        await screenshotViewport(page, `imported-${provider.name}.jpg`);
+      // The sync box is shown ticked, so the shots show what it's for.
+      if (wanted(`collection-printables${suffix}`)) {
+        const printablesCollection = argValue("printables-collection") ?? PRINTABLES_COLLECTION;
+        await openPage(page, printablesCollection);
+        mockState.batch = await readPrintablesCollection(page);
+        console.log(`Printables collection: ${printablesCollection} -- ${mockState.batch.entries.length} models`);
+        await page.locator(".tg-fab:not(.tg-fab--inactive)").click();
+        await page.locator('.tg-panel [data-action="import"]').waitFor({ timeout: 20000 });
+        await page.locator("#tg-sync").check();
+        await screenshotViewport(page, `collection-printables${suffix}.jpg`);
       }
-    }
 
-    // The sync box is shown ticked, so the shots show what it's for.
-    if (wanted("collection-printables")) {
-      const printablesCollection = argValue("printables-collection") ?? PRINTABLES_COLLECTION;
-      await openPage(page, printablesCollection);
-      mockState.batch = await readPrintablesCollection(page);
-      console.log(`Printables collection: ${printablesCollection} -- ${mockState.batch.entries.length} models`);
-      await page.locator(".tg-fab:not(.tg-fab--inactive)").click();
-      await page.locator('.tg-panel [data-action="import"]').waitFor({ timeout: 20000 });
-      await page.locator("#tg-sync").check();
-      await screenshotViewport(page, "collection-printables.jpg");
-    }
+      // The panel comes up once the whole collection has been scrolled through.
+      if (wanted(`collection-makerworld${suffix}`)) {
+        const makerworldCollection = argValue("makerworld-collection") ?? MAKERWORLD_COLLECTION;
+        await openPage(page, makerworldCollection);
+        console.log(`MakerWorld collection: ${makerworldCollection}`);
+        await page.locator(".tg-fab:not(.tg-fab--inactive)").click();
+        await page.locator('.tg-panel [data-action="start"]').waitFor({ timeout: 180000 });
+        await page.locator("#tg-step-delay").selectOption("30000");
+        await page.locator("#tg-sync").check();
+        await page.evaluate(() => window.scrollTo(0, 0));
+        await screenshotViewport(page, `collection-makerworld${suffix}.jpg`);
+      }
 
-    // The panel comes up once the whole collection has been scrolled through.
-    if (wanted("collection-makerworld")) {
-      const makerworldCollection = argValue("makerworld-collection") ?? MAKERWORLD_COLLECTION;
-      await openPage(page, makerworldCollection);
-      console.log(`MakerWorld collection: ${makerworldCollection}`);
-      await page.locator(".tg-fab:not(.tg-fab--inactive)").click();
-      await page.locator('.tg-panel [data-action="start"]').waitFor({ timeout: 180000 });
-      await page.locator("#tg-step-delay").selectOption("30000");
-      await page.locator("#tg-sync").check();
-      await page.evaluate(() => window.scrollTo(0, 0));
-      await screenshotViewport(page, "collection-makerworld.jpg");
-    }
-
-    if (wanted("collection-myminifactory")) {
-      const myminifactoryCollection = argValue("myminifactory-collection") ?? MYMINIFACTORY_COLLECTION;
-      await openPage(page, myminifactoryCollection);
-      mockState.batch = await readMyminifactoryCollection(page);
-      console.log(`MyMiniFactory collection: ${myminifactoryCollection} -- ${mockState.batch.entries.length} models`);
-      await page.locator(".tg-fab:not(.tg-fab--inactive)").click();
-      await page.locator('.tg-panel [data-action="import"]').waitFor({ timeout: 20000 });
-      await page.locator("#tg-sync").check();
-      await screenshotViewport(page, "collection-myminifactory.jpg");
+      if (scheme === "light" && wanted("collection-myminifactory")) {
+        const myminifactoryCollection = argValue("myminifactory-collection") ?? MYMINIFACTORY_COLLECTION;
+        await openPage(page, myminifactoryCollection);
+        mockState.batch = await readMyminifactoryCollection(page);
+        console.log(`MyMiniFactory collection: ${myminifactoryCollection} -- ${mockState.batch.entries.length} models`);
+        await page.locator(".tg-fab:not(.tg-fab--inactive)").click();
+        await page.locator('.tg-panel [data-action="import"]').waitFor({ timeout: 20000 });
+        await page.locator("#tg-sync").check();
+        await screenshotViewport(page, "collection-myminifactory.jpg");
+      }
     }
 
     console.log(`Screenshots written to ${path.relative(process.cwd(), OUT_DIR)}/`);

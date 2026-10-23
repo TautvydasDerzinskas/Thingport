@@ -1,11 +1,11 @@
 import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import path from "node:path";
-import sharp from "sharp";
 import { HttpError } from "../utils/fileUtils";
 import { STORAGE } from "../config";
 import { prisma } from "../db";
 import { listZipEntries, readZipEntry } from "../utils/zipReader";
+import { writePhotoJpeg } from "./imageProcessing";
 import {
   adoptLegacyAsset,
   ASSET_SUBFOLDERS,
@@ -706,7 +706,7 @@ export async function setStorageTemplate(value: string): Promise<void> {
 
 // -- Thumbnails -------------------------------------------------------------
 
-async function saveThumbBuffer(plateId: string, input: Buffer): Promise<boolean> {
+async function saveThumbBuffer(plateId: string, input: Buffer, keepExif = false): Promise<boolean> {
   let tmp: string | null = null;
   try {
     const file = plateThumbFile(plateId);
@@ -714,11 +714,7 @@ async function saveThumbBuffer(plateId: string, input: Buffer): Promise<boolean>
     const dest = assetTarget(home, file);
     tmp = `${dest}.${process.pid}.${Date.now()}.tmp`;
     await fs.mkdir(path.dirname(dest), { recursive: true });
-    await sharp(input)
-      .flatten({ background: { r: 248, g: 250, b: 252 } })
-      .resize(512, 512, { fit: "inside", withoutEnlargement: true })
-      .jpeg({ quality: 88, mozjpeg: true })
-      .toFile(tmp);
+    await writePhotoJpeg(input, tmp, 512, 88, keepExif);
     await fs.rename(tmp, dest);
     // The one in the old shared folder is out of date now.
     await removeAsset(null, file);
@@ -740,8 +736,8 @@ export async function saveThumbFromFile(plateId: string, srcPath: string): Promi
   }
 }
 
-export async function saveThumbFromBytes(plateId: string, data: Buffer): Promise<boolean> {
-  return saveThumbBuffer(plateId, data);
+export async function saveThumbFromBytes(plateId: string, data: Buffer, keepExif = false): Promise<boolean> {
+  return saveThumbBuffer(plateId, data, keepExif);
 }
 
 const THUMBNAIL_ENTRY_PRIORITY: Record<string, number> = {

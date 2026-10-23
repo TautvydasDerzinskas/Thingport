@@ -14,6 +14,7 @@ imports a model with its print profiles, imports collections, and keeps them in 
 
 - Every file of the model, and its print profiles: the one the link points to, all of the designer's, or the
   community's too. Each profile becomes its own 3MF file on the model, tagged with the profile.
+- Models with no print profiles, only the files behind **Download STL/CAD files**, import with those files.
 - Collections, private ones included, through your cookie. MakerWorld rate-limits bulk imports quickly, so collections
   are imported with Thingport Grab, which waits between models, and a synced collection brings in only models added
   from then on.

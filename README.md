@@ -51,46 +51,60 @@ No more worrying about losing access to your favourite models. Your library stay
 
 ## Screenshots
 
+Have in mind that these screenshots follow your GitHub theme (matches it). Thingport has a light and a dark theme, or follows your system's.
+
 <table>
   <tr>
-    <td width="33%"><a href="frontend/src/assets/screenshots/01_dashboard.png" target="_blank"><img src="frontend/src/assets/screenshots/01_dashboard.png" width="100%" alt="Dashboard"></a><br><sub><b>Dashboard</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/02_models.png" target="_blank"><img src="frontend/src/assets/screenshots/02_models.png" width="100%" alt="Models"></a><br><sub><b>Models</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/03_model_details.png" target="_blank"><img src="frontend/src/assets/screenshots/03_model_details.png" width="100%" alt="Model details"></a><br><sub><b>Model Details</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/01_dashboard.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/01_dashboard.png"><img src="frontend/src/assets/screenshots/light/01_dashboard.png" width="100%" alt="Dashboard"></picture></a><br><sub><b>Dashboard</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/02_dashboard_customize.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/02_dashboard_customize.png"><img src="frontend/src/assets/screenshots/light/02_dashboard_customize.png" width="100%" alt="Dashboard in edit mode, Customize dashboard dialog on Panels"></picture></a><br><sub><b>Customize Dashboard</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/03_dashboard_configuration.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/03_dashboard_configuration.png"><img src="frontend/src/assets/screenshots/light/03_dashboard_configuration.png" width="100%" alt="Configuration dialog, Providers section"></picture></a><br><sub><b>Configuration — Providers</b></sub></td>
   </tr>
   <tr>
-    <td width="33%"><a href="frontend/src/assets/screenshots/04_model_details_3d_preview.png" target="_blank"><img src="frontend/src/assets/screenshots/04_model_details_3d_preview.png" width="100%" alt="3D preview"></a><br><sub><b>3D Preview</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/05_collections.png" target="_blank"><img src="frontend/src/assets/screenshots/05_collections.png" width="100%" alt="Collections"></a><br><sub><b>Collections</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/12_collection_sync.png" target="_blank"><img src="frontend/src/assets/screenshots/12_collection_sync.png" width="100%" alt="A synced collection's sync configuration"></a><br><sub><b>Synced Collection</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/04_models.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/04_models.png"><img src="frontend/src/assets/screenshots/light/04_models.png" width="100%" alt="Models"></picture></a><br><sub><b>Models</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/05_models_download.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/05_models_download.png"><img src="frontend/src/assets/screenshots/light/05_models_download.png" width="100%" alt="Three selected models and the download dialog"></picture></a><br><sub><b>Download Models</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/06_model_details.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/06_model_details.png"><img src="frontend/src/assets/screenshots/light/06_model_details.png" width="100%" alt="Model details"></picture></a><br><sub><b>Model Details</b></sub></td>
   </tr>
   <tr>
-    <td width="33%"><a href="frontend/src/assets/screenshots/06_tags.png" target="_blank"><img src="frontend/src/assets/screenshots/06_tags.png" width="100%" alt="Tags"></a><br><sub><b>Tags</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/07_downloads.png" target="_blank"><img src="frontend/src/assets/screenshots/07_downloads.png" width="100%" alt="Downloads"></a><br><sub><b>Downloads</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/08_my_models.png" target="_blank"><img src="frontend/src/assets/screenshots/08_my_models.png" width="100%" alt="My models"></a><br><sub><b>My Models</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/07_model_3d_preview.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/07_model_3d_preview.png"><img src="frontend/src/assets/screenshots/light/07_model_3d_preview.png" width="100%" alt="3D preview of a model's plates"></picture></a><br><sub><b>3D Preview</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/08_model_print_quality.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/08_model_print_quality.png"><img src="frontend/src/assets/screenshots/light/08_model_print_quality.png" width="100%" alt="Print quality dialog listing a model's problems"></picture></a><br><sub><b>Print Quality Checks</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/09_collections.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/09_collections.png"><img src="frontend/src/assets/screenshots/light/09_collections.png" width="100%" alt="Collections"></picture></a><br><sub><b>Collections</b></sub></td>
   </tr>
   <tr>
-    <td width="33%"><a href="frontend/src/assets/screenshots/09_dark_theme.png" target="_blank"><img src="frontend/src/assets/screenshots/09_dark_theme.png" width="100%" alt="Dark theme"></a><br><sub><b>Dark Theme</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/10_profile.png" target="_blank"><img src="frontend/src/assets/screenshots/10_profile.png" width="100%" alt="Profile with activity heatmap"></a><br><sub><b>Profile &amp; Activity</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/11_configuration_providers.png" target="_blank"><img src="frontend/src/assets/screenshots/11_configuration_providers.png" width="100%" alt="Configuration, Providers section"></a><br><sub><b>Configuration — Providers</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/10_collections_merge.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/10_collections_merge.png"><img src="frontend/src/assets/screenshots/light/10_collections_merge.png" width="100%" alt="Merge dialog for three selected collections"></picture></a><br><sub><b>Merge Collections</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/11_tags.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/11_tags.png"><img src="frontend/src/assets/screenshots/light/11_tags.png" width="100%" alt="Tags"></picture></a><br><sub><b>Tags</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/12_tags_select.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/12_tags_select.png"><img src="frontend/src/assets/screenshots/light/12_tags_select.png" width="100%" alt="Tags in selection mode"></picture></a><br><sub><b>Select Tags</b></sub></td>
   </tr>
   <tr>
-    <td width="33%"><a href="frontend/src/assets/screenshots/22_ai_suggestions.png" target="_blank"><img src="frontend/src/assets/screenshots/22_ai_suggestions.png" width="100%" alt="AI category suggestions to accept or reject"></a><br><sub><b>AI Categorization</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/23_ai_description_compare.png" target="_blank"><img src="frontend/src/assets/screenshots/23_ai_description_compare.png" width="100%" alt="An AI-improved description next to the original"></a><br><sub><b>Improved Descriptions</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/25_sign_in_sso.png" target="_blank"><img src="frontend/src/assets/screenshots/25_sign_in_sso.png" width="100%" alt="Sign-in page with a single sign-on button"></a><br><sub><b>Single Sign-On</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/13_downloads.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/13_downloads.png"><img src="frontend/src/assets/screenshots/light/13_downloads.png" width="100%" alt="Downloads"></picture></a><br><sub><b>Downloads</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/14_profile.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/14_profile.png"><img src="frontend/src/assets/screenshots/light/14_profile.png" width="100%" alt="Profile with activity heatmap"></picture></a><br><sub><b>Profile &amp; Activity</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/15_profile_configuration.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/15_profile_configuration.png"><img src="frontend/src/assets/screenshots/light/15_profile_configuration.png" width="100%" alt="Configuration dialog, Appearance section"></picture></a><br><sub><b>Configuration</b></sub></td>
   </tr>
   <tr>
-    <td width="33%"><a href="frontend/src/assets/screenshots/13_admin_overview.png" target="_blank"><img src="frontend/src/assets/screenshots/13_admin_overview.png" width="100%" alt="Administration overview with System Health"></a><br><sub><b>Administration</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/14_admin_providers.png" target="_blank"><img src="frontend/src/assets/screenshots/14_admin_providers.png" width="100%" alt="Administration, Providers page with on/off switches"></a><br><sub><b>Administration — Providers</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/17_admin_ai.png" target="_blank"><img src="frontend/src/assets/screenshots/17_admin_ai.png" width="100%" alt="Administration, AI page with models and features"></a><br><sub><b>Administration — AI</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/16_admin_overview.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/16_admin_overview.png"><img src="frontend/src/assets/screenshots/light/16_admin_overview.png" width="100%" alt="Administration overview with System Health"></picture></a><br><sub><b>Administration</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/17_admin_providers.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/17_admin_providers.png"><img src="frontend/src/assets/screenshots/light/17_admin_providers.png" width="100%" alt="Administration, Providers page with on/off switches"></picture></a><br><sub><b>Administration — Providers</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/18_admin_storage.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/18_admin_storage.png"><img src="frontend/src/assets/screenshots/light/18_admin_storage.png" width="100%" alt="Administration, Storage page"></picture></a><br><sub><b>Administration — Storage</b></sub></td>
   </tr>
   <tr>
-    <td width="33%"><a href="extension/docs/screenshots/collection-printables.jpg" target="_blank"><img src="extension/docs/screenshots/collection-printables.jpg" width="100%" alt="Thingport Grab importing a Printables collection"></a><br><sub><b>Thingport Grab — Collections</b></sub></td>
-    <td width="33%"><a href="extension/docs/screenshots/panel-printables.jpg" target="_blank"><img src="extension/docs/screenshots/panel-printables.jpg" width="100%" alt="Thingport Grab on Printables"></a><br><sub><b>Thingport Grab — Printables</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/19_admin_dashboard.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/19_admin_dashboard.png"><img src="frontend/src/assets/screenshots/light/19_admin_dashboard.png" width="100%" alt="Administration, Dashboard page with custom widget switches"></picture></a><br><sub><b>Administration — Dashboard</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/20_admin_ai.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/20_admin_ai.png"><img src="frontend/src/assets/screenshots/light/20_admin_ai.png" width="100%" alt="Administration, AI page with models and features"></picture></a><br><sub><b>Administration — AI</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/dark/21_admin_captcha_search.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/light/21_admin_captcha_search.png"><img src="frontend/src/assets/screenshots/dark/21_admin_captcha_search.png" width="100%" alt="Search opened over the Captcha administration page"></picture></a><br><sub><b>Search</b> — in the other theme</sub></td>
+  </tr>
+  <tr>
+    <td width="33%"><a href="extension/docs/screenshots/collection-printables.jpg" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="extension/docs/screenshots/collection-printables-dark.jpg"><img src="extension/docs/screenshots/collection-printables.jpg" width="100%" alt="Thingport Grab importing a Printables collection"></picture></a><br><sub><b>Thingport Grab — Collections</b></sub></td>
+    <td width="33%"><a href="extension/docs/screenshots/panel-printables.jpg" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="extension/docs/screenshots/panel-printables-dark.jpg"><img src="extension/docs/screenshots/panel-printables.jpg" width="100%" alt="Thingport Grab on Printables"></picture></a><br><sub><b>Thingport Grab — Printables</b></sub></td>
     <td width="33%"><a href="extension/docs/screenshots/panel-thingiverse.jpg" target="_blank"><img src="extension/docs/screenshots/panel-thingiverse.jpg" width="100%" alt="Thingport Grab on Thingiverse"></a><br><sub><b>Thingport Grab — Thingiverse</b></sub></td>
   </tr>
   <tr>
-    <td width="33%"><a href="extension/docs/screenshots/panel-makerworld.jpg" target="_blank"><img src="extension/docs/screenshots/panel-makerworld.jpg" width="100%" alt="Thingport Grab on MakerWorld"></a><br><sub><b>Thingport Grab — MakerWorld</b></sub></td>
-    <td width="33%"><a href="extension/docs/screenshots/collection-makerworld.jpg" target="_blank"><img src="extension/docs/screenshots/collection-makerworld.jpg" width="100%" alt="Thingport Grab syncing a MakerWorld collection"></a><br><sub><b>Thingport Grab — Sync a Collection</b></sub></td>
-    <td width="33%"><a href="extension/docs/screenshots/panel-myminifactory.jpg" target="_blank"><img src="extension/docs/screenshots/panel-myminifactory.jpg" width="100%" alt="Thingport Grab on MyMiniFactory"></a><br><sub><b>Thingport Grab — MyMiniFactory</b></sub></td>
+    <td width="33%"><a href="extension/docs/screenshots/panel-makerworld.jpg" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="extension/docs/screenshots/panel-makerworld-dark.jpg"><img src="extension/docs/screenshots/panel-makerworld.jpg" width="100%" alt="Thingport Grab on MakerWorld"></picture></a><br><sub><b>Thingport Grab — MakerWorld</b></sub></td>
+    <td width="33%"><a href="extension/docs/screenshots/collection-makerworld.jpg" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="extension/docs/screenshots/collection-makerworld-dark.jpg"><img src="extension/docs/screenshots/collection-makerworld.jpg" width="100%" alt="Thingport Grab syncing a MakerWorld collection"></picture></a><br><sub><b>Thingport Grab — Sync a Collection</b></sub></td>
+    <td width="33%"><a href="extension/docs/screenshots/panel-crealitycloud.jpg" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="extension/docs/screenshots/panel-crealitycloud-dark.jpg"><img src="extension/docs/screenshots/panel-crealitycloud.jpg" width="100%" alt="Thingport Grab on Creality Cloud"></picture></a><br><sub><b>Thingport Grab — Creality Cloud</b></sub></td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="extension/docs/screenshots/popup-setup-dark.png"><img src="extension/docs/screenshots/popup-setup.png" width="260" alt="Thingport Grab popup before an instance is added"></picture><br><sub><b>Thingport Grab — Setup</b></sub></td>
+    <td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="extension/docs/screenshots/popup-connected-dark.png"><img src="extension/docs/screenshots/popup-connected.png" width="260" alt="Thingport Grab popup with an instance added, its recent imports and providers"></picture><br><sub><b>Thingport Grab — Connected</b></sub></td>
   </tr>
 </table>
 
@@ -286,8 +300,9 @@ To have Thingport import whatever you drop into a folder on the server, uncommen
 - **[Bring your existing library](docs/guides/existing-library.md)**
 - **[Consume folder](docs/guides/consume-folder.md)**
 - **[3D previews](docs/features/3d-previews.md)**
+- **[Print quality checks](docs/features/print-quality.md)**
 - **[AI categorization and descriptions](docs/guides/ai.md)**
-- **[Organize and search](docs/features/organize-and-search.md)**
+- **[Organize, search and bulk-edit](docs/features/organize-and-search.md)**
 - **[Dashboard](docs/features/dashboard.md)**
 - **[Profile and activity](docs/features/profile-and-activity.md)**
 - **[Author pages](docs/features/authors.md)**
@@ -303,7 +318,7 @@ To have Thingport import whatever you drop into a folder on the server, uncommen
 - **[API token](docs/guides/api-token.md)**
 - **[Connect an AI assistant (MCP)](docs/guides/mcp.md)**
 - **[Custom dashboard widgets](docs/guides/custom-widgets.md)**
-- **[Light and dark themes, in English and Lithuanian](docs/features/appearance.md)**
+- **[Light and dark themes, accent colours, in English, Spanish, French and Lithuanian](docs/features/appearance.md)**
 - **[Self-hosted](#installation)**
 
 ## Companion Apps

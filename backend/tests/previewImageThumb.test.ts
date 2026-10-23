@@ -59,6 +59,31 @@ describe("preview images", () => {
     expect(res.body.print.preview_images).toHaveLength(2);
     expect(res.body.print.thumb_url).not.toBeNull();
   });
+
+  it("keeps photo EXIF while orienting gallery images and thumbnails", async () => {
+    const print = await uploadStl();
+    const photo = await sharp({ create: { width: 80, height: 40, channels: 3, background: "#cc0000" } })
+      .jpeg()
+      .withMetadata({ orientation: 6 })
+      .withExifMerge({ IFD0: { Artist: "Thingport test" } })
+      .toBuffer();
+    const res = await request(app)
+      .post(`/api/print/${print.id}/preview-images`)
+      .set(auth())
+      .attach("files", photo, "photo.jpg");
+    expect(res.status).toBe(200);
+
+    const image = (await prisma.previewImage.findFirstOrThrow({ where: { printId: print.id } })).id;
+    const plate = (await prisma.plate.findFirstOrThrow({ where: { printId: print.id } })).id;
+    for (const file of [
+      previewImagePath(image, await printAssetHome(print.id)),
+      plateThumbPath(plate, await plateAssetHome(plate)),
+    ]) {
+      const metadata = await sharp(file).metadata();
+      expect(metadata).toMatchObject({ width: 40, height: 80, orientation: 1 });
+      expect(metadata.exif?.toString("latin1")).toContain("Thingport test");
+    }
+  });
 });
 
 describe("a 3D render saved before uploaded images land", () => {
@@ -90,6 +115,29 @@ describe("a 3D render made while an import runs", () => {
   const originalFetch = global.fetch;
   afterEach(() => {
     global.fetch = originalFetch;
+  });
+
+  it("strips remote photo EXIF while orienting the gallery image and thumbnail", async () => {
+    const print = await uploadStl();
+    const plate = await prisma.plate.findFirstOrThrow({ where: { printId: print.id } });
+    const photo = await sharp({ create: { width: 80, height: 40, channels: 3, background: "#cc0000" } })
+      .jpeg()
+      .withMetadata({ orientation: 6 })
+      .withExifMerge({ IFD0: { Artist: "Remote photographer" } })
+      .toBuffer();
+    global.fetch = (async () => new Response(photo, { headers: { "content-type": "image/jpeg" } })) as typeof fetch;
+    await attachImportedPreviewImages(print.id, plate.id, "https://img.example.com/photo.jpg", [], 0);
+
+    const image = await prisma.previewImage.findFirstOrThrow({ where: { printId: print.id } });
+    for (const file of [
+      previewImagePath(image.id, await printAssetHome(print.id)),
+      plateThumbPath(plate.id, await plateAssetHome(plate.id)),
+    ]) {
+      const metadata = await sharp(file).metadata();
+      expect(metadata).toMatchObject({ width: 40, height: 80 });
+      expect(metadata.orientation).toBeUndefined();
+      expect(metadata.exif).toBeUndefined();
+    }
   });
 
   it("gives way to the imported cover, as thumbnail and first preview image", async () => {

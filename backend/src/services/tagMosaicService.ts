@@ -2,11 +2,11 @@ import { createHash } from "node:crypto";
 import fsSync from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import sharp from "sharp";
 import { TAG_MOSAICS } from "../config";
 import { prisma } from "../db";
 import { printCover } from "../dto";
 import { modelImagePath } from "./modelPreviewCache";
+import { mosaicPiece, mosaicWebp } from "./imageProcessing";
 import { normalizeTag } from "../utils/tagNormalization";
 
 // A tag's tile shows one picture built here from its newest models' pictures, rather than ten pictures
@@ -186,22 +186,12 @@ export async function renderTagMosaic(pictures: { file: string }[], kind: Mosaic
       const [x, y] = [Math.round(left * step), Math.round(top * step)];
       const w = Math.round((left + width) * step - GAP) - x;
       const h = Math.round((top + height) * step - GAP) - y;
-      const input = await sharp(pictures[index].file)
-        .rotate()
-        .resize(
-          w,
-          h,
-          kind === "renders" ? { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } } : { fit: "cover" },
-        )
-        .toBuffer();
+      const input = await mosaicPiece(pictures[index].file, w, h, kind === "renders");
       return { input, left: x, top: y };
     }),
   );
   // The gaps stay transparent, so the tile's own colour shows through in light and dark themes alike.
-  return sharp({ create: { width: SIZE, height: SIZE, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
-    .composite(pieces)
-    .webp({ quality: 80 })
-    .toBuffer();
+  return mosaicWebp(pieces, SIZE);
 }
 
 /** The tag's mosaic file, made now if its pictures have changed since it was last made; null with no pictures. */

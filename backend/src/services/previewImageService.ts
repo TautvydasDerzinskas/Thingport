@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import sharp from "sharp";
 import { prisma } from "../db";
 import { generateModelImage } from "./modelPreviewCache";
+import { photoJpeg, renderThumbShade } from "./imageProcessing";
 import {
   assetExists,
   assetPath,
@@ -34,6 +34,7 @@ async function saveBuffer(
   printId: string,
   id: string,
   input: Buffer,
+  keepExif: boolean,
 ): Promise<{ dest: string; size: number; contentSha256: string | null } | null> {
   let tmp: string | null = null;
   try {
@@ -43,11 +44,7 @@ async function saveBuffer(
     // Hero-sized: this is the detail page's main image. Kept in memory rather than written by sharp: what's shared is
     // the re-encoded JPEG, not the download (the same picture fetched twice is rarely the same bytes, but encoded the
     // same way it is), so it's hashed before it's written.
-    const out = await sharp(input)
-      .flatten({ background: { r: 248, g: 250, b: 252 } })
-      .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
-      .jpeg({ quality: 90, mozjpeg: true })
-      .toBuffer();
+    const out = await photoJpeg(input, 1600, 90, keepExif);
     // Cloned (or written) at the temp name, then renamed into place as before, so a half-written picture is never
     // served. A clone that can't be made is no reason to fail: the bytes are written as usual.
     const { contentSha256, shared } = await shareStoredBytes(out, tmp, findStoredCopies, plainWriteMode());
@@ -64,12 +61,12 @@ async function saveBuffer(
 export async function addPreviewImage(
   printId: string,
   buffer: Buffer,
-  generated = false,
+  { generated = false, keepExif = false }: { generated?: boolean; keepExif?: boolean } = {},
 ): Promise<PreviewImage | null> {
   const last = await prisma.previewImage.findFirst({ where: { printId }, orderBy: { position: "desc" } });
   const position = last ? last.position + 1 : 0;
   const row = await prisma.previewImage.create({ data: { printId, position, generated } });
-  const saved = await saveBuffer(printId, row.id, buffer);
+  const saved = await saveBuffer(printId, row.id, buffer, keepExif);
   if (!saved) {
     await prisma.previewImage.delete({ where: { id: row.id } }).catch(() => undefined);
     return null;
@@ -97,7 +94,7 @@ export async function addPreviewImage(
 export async function addGeneratedPreviewImageIfNone(printId: string, buffer: Buffer): Promise<void> {
   const count = await prisma.previewImage.count({ where: { printId } });
   if (count > 0) return;
-  await addPreviewImage(printId, buffer, true);
+  await addPreviewImage(printId, buffer, { generated: true });
 }
 
 /** Drops our own renders, so the images that replace them start at position 0. */
@@ -123,9 +120,10 @@ export async function preferImageOverRenders(
   printId: string,
   plateId: string | null | undefined,
   buffer: Buffer,
+  keepExif = false,
 ): Promise<void> {
   await removeGeneratedPreviewImages(printId);
-  if (plateId && (await plateThumbReplaceable(plateId))) await saveThumbFromBytes(plateId, buffer);
+  if (plateId && (await plateThumbReplaceable(plateId))) await saveThumbFromBytes(plateId, buffer, keepExif);
 }
 
 export async function deleteAllPreviewImages(printId: string): Promise<void> {
@@ -150,7 +148,7 @@ async function adoptRenderAsThumb(plateId: string, renderPath: string): Promise<
   if (plateThumbExists(plateId, await plateAssetHome(plateId))) return;
   const plate = await prisma.plate.findUnique({ where: { id: plateId }, select: { printId: true } });
   if (!plate) return;
-  const buffer = await sharp(renderPath).linear(RENDER_THUMB_SHADE, [0, 0, 0, 0]).png().toBuffer();
+  const buffer = await renderThumbShade(renderPath, RENDER_THUMB_SHADE);
   if (!(await saveThumbFromBytes(plateId, buffer))) return;
   await prisma.plate.update({ where: { id: plateId }, data: { thumbGenerated: true } });
   await addGeneratedPreviewImageIfNone(plate.printId, buffer);

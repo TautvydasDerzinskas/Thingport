@@ -25,10 +25,10 @@ router.post(
     let preferred = false;
     // Undecodable files are skipped rather than failing the batch.
     for (const file of files) {
-      const added = await addPreviewImage(print.id, file.buffer);
+      const added = await addPreviewImage(print.id, file.buffer, { keepExif: true });
       if (added && !preferred) {
         preferred = true;
-        await preferImageOverRenders(print.id, firstPlate?.id, file.buffer);
+        await preferImageOverRenders(print.id, firstPlate?.id, file.buffer, true);
       }
     }
     res.json({ print: await printOutById(req.userId!, print.id) });
