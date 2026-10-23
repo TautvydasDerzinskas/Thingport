@@ -419,8 +419,9 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
         {/* alignSelf: stretch overrides the grid's own alignItems: "start" just for this column,
             so this box is as tall as the (taller) left column -- giving the sticky panel inside
             it room to travel as the page scrolls instead of being stuck the moment its own
-            (short) content ends. */}
-        <Box sx={{ alignSelf: "stretch" }}>
+            (short) content ends. minWidth: 0, as on the left: a long file name with no spaces would
+            otherwise widen this column past its "1fr". */}
+        <Box sx={{ alignSelf: "stretch", minWidth: 0 }}>
           <ModelSidePanel
             print={print}
             onSelectCategory={onSelectCategory}
