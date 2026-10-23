@@ -1,0 +1,167 @@
+{
+  "name": "Weather scene",
+  "description": "Current weather from Open-Meteo, drawn as an animated sky that follows the weather, the time of day and the season.",
+  "iconUrl": "builtin:thingport/weather",
+  "version": "1.0.0",
+  "author": "Dante D.",
+  "size": {
+    "w": 4,
+    "h": 3,
+    "minW": 2,
+    "minH": 2
+  },
+  "settings": [
+    {
+      "key": "location",
+      "type": "text",
+      "label": "Location",
+      "default": "Vilnius",
+      "placeholder": "City, or lat,lon"
+    },
+    {
+      "key": "label",
+      "type": "text",
+      "label": "Name shown",
+      "placeholder": "The location's name"
+    },
+    {
+      "key": "units",
+      "type": "choice",
+      "label": "Units",
+      "default": "metric",
+      "options": [
+        {
+          "value": "metric",
+          "label": "°C, km/h"
+        },
+        {
+          "value": "imperial",
+          "label": "°F, mph"
+        }
+      ]
+    },
+    {
+      "key": "refresh",
+      "type": "choice",
+      "label": "Refresh",
+      "default": "30",
+      "options": [
+        {
+          "value": "15",
+          "label": "15 min"
+        },
+        {
+          "value": "30",
+          "label": "30 min"
+        },
+        {
+          "value": "60",
+          "label": "1 h"
+        }
+      ]
+    },
+    {
+      "key": "details",
+      "type": "toggle",
+      "label": "Show wind and humidity",
+      "default": true
+    },
+    {
+      "key": "scene",
+      "type": "choice",
+      "label": "Weather shown",
+      "default": "live",
+      "options": [
+        {
+          "value": "live",
+          "label": "Live"
+        },
+        {
+          "value": "clear",
+          "label": "Clear"
+        },
+        {
+          "value": "partly",
+          "label": "Partly cloudy"
+        },
+        {
+          "value": "overcast",
+          "label": "Overcast"
+        },
+        {
+          "value": "rain",
+          "label": "Rain"
+        },
+        {
+          "value": "snow",
+          "label": "Snow"
+        },
+        {
+          "value": "storm",
+          "label": "Storm"
+        },
+        {
+          "value": "fog",
+          "label": "Fog"
+        }
+      ]
+    },
+    {
+      "key": "time",
+      "type": "choice",
+      "label": "Time shown",
+      "default": "auto",
+      "options": [
+        {
+          "value": "auto",
+          "label": "Live"
+        },
+        {
+          "value": "dawn",
+          "label": "Dawn"
+        },
+        {
+          "value": "day",
+          "label": "Day"
+        },
+        {
+          "value": "dusk",
+          "label": "Dusk"
+        },
+        {
+          "value": "night",
+          "label": "Night"
+        }
+      ]
+    },
+    {
+      "key": "season",
+      "type": "choice",
+      "label": "Season shown",
+      "default": "auto",
+      "options": [
+        {
+          "value": "auto",
+          "label": "Live"
+        },
+        {
+          "value": "spring",
+          "label": "Spring"
+        },
+        {
+          "value": "summer",
+          "label": "Summer"
+        },
+        {
+          "value": "autumn",
+          "label": "Autumn"
+        },
+        {
+          "value": "winter",
+          "label": "Winter"
+        }
+      ]
+    }
+  ],
+  "hosts": ["api.open-meteo.com", "geocoding-api.open-meteo.com"]
+}

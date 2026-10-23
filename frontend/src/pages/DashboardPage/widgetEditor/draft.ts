@@ -60,7 +60,7 @@ export function keyFromLabel(label: string): string {
   return /^[a-zA-Z]/.test(key) ? key.slice(0, 40) : "";
 }
 
-/** A folder name from the widget's name: "World clock" becomes "world-clock". */
+/** A folder name from the widget's name: "Print farm" becomes "print-farm". */
 export function slugFromName(name: string): string {
   return name
     .normalize("NFKD")

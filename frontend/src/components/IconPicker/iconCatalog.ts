@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import markColor from "../../assets/logos/thingport-mark-color.svg?raw";
 import iconColor from "../../assets/logos/thingport-icon-color.svg?raw";
 import hourglass from "../../assets/icons/hourglass.svg?raw";
+import weather from "../../assets/icons/weather.svg";
 import markDark from "../../assets/logos/thingport-mark-dark.svg";
 import iconDark from "../../assets/logos/thingport-icon-dark.svg";
 import chrome from "../../assets/logos/browsers/chrome.svg";
@@ -59,6 +60,13 @@ const titleCase = (name: string) => name[0].toUpperCase() + name.slice(1);
 const STATIC: CatalogIcon[] = [
   { value: "builtin:thingport/mark-dark", name: "Thingport", group: "thingport", src: markDark },
   { value: "builtin:thingport/icon-dark", name: "Thingport", group: "thingport", src: iconDark },
+  {
+    value: "builtin:thingport/weather",
+    name: "Weather",
+    group: "thingport",
+    src: weather,
+    keywords: "sun cloud forecast",
+  },
   ...PROVIDER_LOGO_IDS.map((id): CatalogIcon => ({
     value: `builtin:providers/${id}`,
     name: IMPORT_PROVIDER_INFO[id]?.label ?? titleCase(id),

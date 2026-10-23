@@ -1,0 +1,496 @@
+<style>
+  .wx {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: inherit;
+    isolation: isolate;
+    --u: 2px;
+    color: #fff;
+    user-select: none;
+  }
+  .wx-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .wx-sky {
+    transition: opacity 300ms;
+  }
+
+  .wx-stars {
+    transition: opacity 600ms;
+  }
+  .wx-star {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: #fff;
+    animation: wx-twinkle 3s ease-in-out infinite alternate;
+  }
+
+  .wx-body {
+    position: absolute;
+    width: calc(var(--u) * 16);
+    height: calc(var(--u) * 16);
+    transform: translate(-50%, -50%);
+    transition: opacity 600ms;
+    pointer-events: none;
+  }
+  .wx-sun {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #fff8c8, #ffd54f 60%, #ffb020);
+    box-shadow: 0 0 calc(var(--u) * 6) calc(var(--u) * 2) rgba(255, 210, 80, 0.55);
+  }
+  .wx-rays {
+    position: absolute;
+    inset: -70%;
+    border-radius: 50%;
+    background: repeating-conic-gradient(rgba(255, 232, 150, 0.4) 0 7deg, transparent 7deg 22deg);
+    -webkit-mask: radial-gradient(circle, #000 25%, transparent 68%);
+    mask: radial-gradient(circle, #000 25%, transparent 68%);
+    animation: wx-spin 60s linear infinite;
+  }
+  .wx-body.low .wx-sun {
+    background: radial-gradient(circle at 40% 40%, #ffe3b8, #ff9a4d 60%, #ef5f3a);
+    box-shadow: 0 0 calc(var(--u) * 8) calc(var(--u) * 3) rgba(255, 130, 70, 0.5);
+  }
+  .wx-body.low .wx-rays {
+    background: repeating-conic-gradient(rgba(255, 170, 110, 0.35) 0 7deg, transparent 7deg 22deg);
+  }
+  .wx-moonbase {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.07);
+  }
+  .wx-moonglow {
+    position: absolute;
+    inset: 0;
+    filter: drop-shadow(0 0 calc(var(--u) * 3) rgba(215, 225, 255, 0.6));
+  }
+  .wx-moon {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #fdfbf0, #d6d9e0 70%);
+  }
+
+  .wx-blanket {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 55%;
+    background: linear-gradient(var(--cc), transparent);
+    opacity: 0.8;
+  }
+  .wx-track {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 0;
+    animation: wx-drift linear infinite;
+  }
+  .wx-cloud {
+    position: absolute;
+    right: 100%;
+    top: 0;
+    width: var(--w);
+    height: calc(var(--w) * 0.34);
+    border-radius: 999px;
+    background: var(--cc);
+  }
+  .wx-cloud::before,
+  .wx-cloud::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    background: inherit;
+  }
+  .wx-cloud::before {
+    left: 14%;
+    bottom: 30%;
+    width: 52%;
+    height: 150%;
+  }
+  .wx-cloud::after {
+    left: 50%;
+    bottom: 35%;
+    width: 36%;
+    height: 115%;
+  }
+
+  .wx-ground {
+    filter: brightness(var(--gb, 1)) saturate(var(--gs, 1));
+    transition: filter 600ms;
+  }
+  .wx-hill {
+    position: absolute;
+    border-radius: 50%;
+  }
+  .wx-hill.far {
+    left: -25%;
+    width: 95%;
+    height: 42%;
+    bottom: -22%;
+    background: var(--g1);
+  }
+  .wx-hill.near {
+    right: -30%;
+    width: 110%;
+    height: 40%;
+    bottom: -24%;
+    background: var(--g2);
+  }
+  .wx-flower {
+    position: absolute;
+    width: calc(var(--u) * 1.6);
+    height: calc(var(--u) * 1.6);
+    border-radius: 50%;
+  }
+  .wx-tree {
+    position: absolute;
+    right: 16%;
+    bottom: 9%;
+    width: calc(var(--u) * 14);
+    height: calc(var(--u) * 22);
+    transform-origin: 50% 100%;
+    animation: wx-sway 5s ease-in-out infinite alternate;
+  }
+  .wx-trunk,
+  .wx-branch {
+    position: absolute;
+    background: #5b3b25;
+    border-radius: 2px;
+  }
+  .wx-trunk {
+    left: 45%;
+    bottom: 0;
+    width: 10%;
+    height: 45%;
+  }
+  .wx-crown {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 70%;
+    border-radius: 50% 50% 45% 45%;
+    background: var(--crown);
+  }
+  .wx-crown::before,
+  .wx-crown::after {
+    content: "";
+    position: absolute;
+    top: 30%;
+    width: 55%;
+    height: 55%;
+    border-radius: 50%;
+    background: inherit;
+  }
+  .wx-crown::before {
+    left: -14%;
+  }
+  .wx-crown::after {
+    right: -14%;
+  }
+  .wx-crown.blossom {
+    background:
+      radial-gradient(circle, #f7b7cc 22%, transparent 26%) 0 0 / calc(var(--u) * 3.4) calc(var(--u) * 3.4),
+      var(--crown);
+  }
+  .wx-crown.snowy {
+    box-shadow: inset 0 calc(var(--u) * 2.4) 0 rgba(255, 255, 255, 0.85);
+  }
+  .wx-tree.bare .wx-trunk {
+    height: 85%;
+  }
+  .wx-branch {
+    left: 47%;
+    width: 6%;
+    height: 36%;
+    transform-origin: 50% 100%;
+  }
+  .wx-branch.b1 {
+    bottom: 40%;
+    transform: rotate(-38deg);
+  }
+  .wx-branch.b2 {
+    bottom: 52%;
+    transform: rotate(34deg);
+  }
+  .wx-branch.b3 {
+    bottom: 65%;
+    height: 24%;
+    transform: rotate(-22deg);
+  }
+
+  .wx-precip {
+    inset: -12%;
+    transform: rotate(var(--tilt, 0deg));
+  }
+  .wx-fall {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    animation: wx-fall linear infinite;
+  }
+  .wx-fall > b {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: block;
+  }
+  .wx-drop > b {
+    width: 1.5px;
+    height: calc(var(--u) * 7);
+    border-radius: 1px;
+    background: linear-gradient(transparent, rgba(215, 232, 255, 0.85));
+  }
+  .wx-flake > b {
+    width: var(--s);
+    height: var(--s);
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 3px rgba(255, 255, 255, 0.8);
+    animation: wx-sway-x 3s ease-in-out infinite alternate;
+  }
+  .wx-leaf > b {
+    width: var(--s);
+    height: var(--s);
+    border-radius: 0 100% 0 100%;
+    background: var(--c);
+    animation: wx-tumble 4s ease-in-out infinite;
+  }
+  .wx-fly {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: #eaff8f;
+    box-shadow: 0 0 6px 2px rgba(220, 255, 120, 0.7);
+    animation:
+      wx-glow 2.6s ease-in-out infinite,
+      wx-wander 7s ease-in-out infinite alternate;
+  }
+
+  .wx-fogband {
+    position: absolute;
+    left: -50%;
+    width: 200%;
+    height: 34%;
+    background: radial-gradient(ellipse at center, rgba(228, 233, 238, 0.6), transparent 70%);
+    animation: wx-fog 26s ease-in-out infinite alternate;
+  }
+  .wx-flash {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    opacity: 0;
+    animation: wx-flash 8s infinite;
+  }
+  .wx-bolt {
+    position: absolute;
+    left: 30%;
+    top: 16%;
+    width: calc(var(--u) * 9);
+    opacity: 0;
+    filter: drop-shadow(0 0 6px #fff);
+    animation: wx-bolt 8s infinite;
+  }
+
+  .wx-info {
+    position: absolute;
+    left: calc(var(--u) * 4 + 8px);
+    top: calc(var(--u) * 3 + 6px);
+    line-height: 1.15;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    animation: wx-in 250ms ease-out;
+  }
+  .wx-temp {
+    font-size: clamp(22px, calc(var(--u) * 15), 56px);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .wx-desc {
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .wx-place {
+    font-size: 12px;
+    opacity: 0.85;
+    margin-top: 2px;
+  }
+  .wx-extra {
+    position: absolute;
+    right: 12px;
+    top: 10px;
+    text-align: right;
+    font-size: 12px;
+    line-height: 1.4;
+    opacity: 0.9;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  }
+  .wx.small .wx-place,
+  .wx.small .wx-extra {
+    display: none;
+  }
+
+  @keyframes wx-twinkle {
+    from {
+      opacity: 0.15;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes wx-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes wx-drift {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(calc(100% + var(--w)));
+    }
+  }
+  @keyframes wx-sway {
+    from {
+      transform: rotate(calc(var(--sw, 1deg) * -1));
+    }
+    to {
+      transform: rotate(var(--sw, 1deg));
+    }
+  }
+  @keyframes wx-fall {
+    from {
+      transform: translateY(-15%);
+    }
+    to {
+      transform: translateY(100%);
+    }
+  }
+  @keyframes wx-sway-x {
+    from {
+      transform: translateX(calc(var(--u) * -3));
+    }
+    to {
+      transform: translateX(calc(var(--u) * 3));
+    }
+  }
+  @keyframes wx-tumble {
+    0% {
+      transform: translateX(0) rotate(0deg);
+    }
+    50% {
+      transform: translateX(calc(var(--u) * 8)) rotate(200deg);
+    }
+    100% {
+      transform: translateX(0) rotate(360deg);
+    }
+  }
+  @keyframes wx-glow {
+    0%,
+    100% {
+      opacity: 0.1;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+  @keyframes wx-wander {
+    from {
+      transform: translate(0, 0);
+    }
+    to {
+      transform: translate(calc(var(--u) * 6), calc(var(--u) * -5));
+    }
+  }
+  @keyframes wx-fog {
+    from {
+      transform: translateX(-12%);
+    }
+    to {
+      transform: translateX(12%);
+    }
+  }
+  @keyframes wx-flash {
+    0%,
+    89%,
+    100% {
+      opacity: 0;
+    }
+    90% {
+      opacity: 0.65;
+    }
+    91% {
+      opacity: 0.1;
+    }
+    92.5% {
+      opacity: 0.5;
+    }
+    95% {
+      opacity: 0;
+    }
+  }
+  @keyframes wx-bolt {
+    0%,
+    89%,
+    95%,
+    100% {
+      opacity: 0;
+    }
+    90%,
+    93% {
+      opacity: 1;
+    }
+  }
+  @keyframes wx-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* Paused rather than removed, so drops and clouds stay spread out where their offsets put them. */
+  @media (prefers-reduced-motion: reduce) {
+    .wx *,
+    .wx *::before,
+    .wx *::after {
+      animation-play-state: paused !important;
+    }
+    .wx-flash,
+    .wx-bolt {
+      display: none;
+    }
+  }
+</style>
+<div class="wx">
+  <div class="wx-layer wx-sky"></div>
+  <div class="wx-layer wx-stars"></div>
+  <div class="wx-body"></div>
+  <div class="wx-layer wx-clouds"></div>
+  <div class="wx-layer wx-ground"></div>
+  <div class="wx-layer wx-shade"></div>
+  <div class="wx-layer wx-precip"></div>
+  <div class="wx-layer wx-fog"></div>
+  <div class="wx-layer wx-storm"></div>
+  <div class="wx-info">
+    <div class="wx-temp">–</div>
+    <div class="wx-desc">Loading…</div>
+    <div class="wx-place"></div>
+  </div>
+  <div class="wx-extra"></div>
+</div>

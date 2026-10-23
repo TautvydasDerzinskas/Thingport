@@ -25,33 +25,19 @@ const CodeEditor = lazy(() => import("../../components/CodeEditor"));
 
 type Part = "details" | "settings" | "script" | "html";
 
-// A working starting point: a clock showing the time in a place the user picks.
+// The smallest widget that runs: a name and a script that draws into its panel.
 const STARTER: WidgetManifest = {
-  name: "World clock",
-  description: "The time in another city.",
+  name: "My widget",
+  description: "",
   version: "1.0.0",
   size: { w: 3, h: 2, minW: 2, minH: 2 },
-  settings: [
-    { key: "zone", type: "text", label: "Time zone", default: "America/New_York" },
-    { key: "label", type: "text", label: "Label", default: "New York" },
-  ],
+  settings: [],
   hosts: [],
 };
 
 const STARTER_SCRIPT = `export default function mount(thingport) {
-  const { root, settings, theme } = thingport;
-  root.innerHTML = \`
-    <div style="height:100%;display:flex;flex-direction:column;justify-content:center;padding:16px;font-family:\${theme.fontFamily}">
-      <div class="time" style="font-size:36px;font-weight:600;color:\${theme.text}"></div>
-      <div style="color:\${theme.textSecondary}">\${settings.label}</div>
-    </div>\`;
-  const time = root.querySelector(".time");
-  const tick = () => {
-    time.textContent = new Date().toLocaleTimeString([], { timeZone: settings.zone, hour: "2-digit", minute: "2-digit" });
-  };
-  tick();
-  const timer = setInterval(tick, 10_000);
-  return () => clearInterval(timer);
+  const { root, theme } = thingport;
+  root.innerHTML = \`<div style="padding:16px;color:\${theme.text};font-family:\${theme.fontFamily}">Hello</div>\`;
 }
 `;
 
@@ -99,7 +85,7 @@ function Editor({ widget, onClose, onSaved, onUnauthorized }: Omit<Props, "open"
   const [part, setPart] = useState<Part>("details");
   const [draft, setDraft] = useState<Draft>(() => {
     if (!widget) {
-      const starter = fromManifest({ ...STARTER, author: readUser()?.display_name }, "world-clock");
+      const starter = fromManifest({ ...STARTER, author: readUser()?.display_name }, "my-widget");
       return { ...starter, slugEdited: false };
     }
     // A community widget is copied to the user's own, under a name of its own.

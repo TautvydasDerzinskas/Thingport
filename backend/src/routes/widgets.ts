@@ -4,7 +4,6 @@ import { requireAuth } from "../auth";
 import { asyncHandler } from "../utils/asyncHandler";
 import { parseBody } from "../utils/validate";
 import {
-  addSampleWidgets,
   assertWidgetSourceEnabled,
   deleteCustomWidget,
   enabledWidgetSources,
@@ -27,7 +26,6 @@ router.get(
   "/widgets",
   asyncHandler(async (req, res) => {
     const [sources, enabled] = await Promise.all([getWidgetSources(), enabledWidgetSources()]);
-    if (sources.community) await addSampleWidgets(req.userId!);
     res.json({ sources, widgets: await listCustomWidgets(req.userId!, enabled) });
   }),
 );

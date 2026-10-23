@@ -44,7 +44,7 @@ describe("widget editor draft", () => {
   it("derives keys and folder names", () => {
     expect(keyFromLabel("API key")).toBe("apiKey");
     expect(keyFromLabel("2nd printer")).toBe("");
-    expect(slugFromName("World clock!")).toBe("world-clock");
+    expect(slugFromName("Print farm!")).toBe("print-farm");
   });
 
   it("names what needs fixing", () => {

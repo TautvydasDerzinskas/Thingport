@@ -4,9 +4,6 @@
 -- AlterTable
 ALTER TABLE "User" ADD COLUMN     "dashboardTemplates" JSONB;
 
--- Set once the sample custom widgets were installed for the user.
-ALTER TABLE "User" ADD COLUMN     "sampleWidgetsAdded" BOOLEAN NOT NULL DEFAULT false;
-
 -- Dashboard widgets users make or install from the community repository.
 -- CreateTable
 CREATE TABLE "CustomWidget" (

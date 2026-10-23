@@ -149,8 +149,6 @@ model User {
   // The dashboard's templates and which one shows: { active, templates: [{ id, name, preset, panels, layouts }] }.
   // Null until the user's first visit after it arrived, when the frontend builds it from the two above.
   dashboardTemplates       Json?
-  // Set once the sample custom widgets were installed for the user, so one they remove stays removed.
-  sampleWidgetsAdded       Boolean           @default(false)
   // What model cards lead with, one of CARD_PREVIEWS; null means "images".
   cardPreview              String?
   // Where the dashboard's weather is for: { lat, lon, name, source }. Null until the user sets one.

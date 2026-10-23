@@ -26,6 +26,12 @@
     "group": "thingport"
   },
   {
+    "value": "builtin:thingport/weather",
+    "name": "Weather",
+    "group": "thingport",
+    "keywords": "sun cloud forecast"
+  },
+  {
     "value": "builtin:providers/makerworld",
     "name": "MakerWorld",
     "group": "providers"
