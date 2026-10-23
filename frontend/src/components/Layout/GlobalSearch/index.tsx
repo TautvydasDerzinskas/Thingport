@@ -199,6 +199,11 @@ export default function GlobalSearch({
   const userMovedRef = useRef(false);
   // Where focus was before the search took it; Escape hands it back, as a dialog does.
   const returnFocusRef = useRef<HTMLElement | null>(null);
+  // Called before opening: the input is hidden while closed, so its onFocus can't see where focus came from.
+  const rememberFocus = () => {
+    const from = document.activeElement;
+    if (from instanceof HTMLElement && !containerRef.current?.contains(from)) returnFocusRef.current = from;
+  };
   const debouncedQuery = useDebouncedValue(query.trim(), DEBOUNCE_MS);
   const trimmedQuery = query.trim();
 
@@ -252,6 +257,7 @@ export default function GlobalSearch({
       const mod = isMac ? e.metaKey : e.ctrlKey;
       if (!mod || e.shiftKey || e.altKey || e.key.toLowerCase() !== "s") return;
       e.preventDefault();
+      rememberFocus();
       setOpen(true);
     };
     document.addEventListener("keydown", onKeyDown);
@@ -604,9 +610,15 @@ export default function GlobalSearch({
         key: "copyLink",
         label: t("app:search.copyLink"),
         keys: `${MOD_KEY} ${SHIFT_KEY} C`,
-        run: () => {
-          void navigator.clipboard.writeText(new URL(path, window.location.origin).href).then(() => setCopied(true));
+        // The clipboard API only exists on HTTPS or localhost; elsewhere this quietly does nothing.
+        run: async () => {
           setActionsOpen(false);
+          try {
+            await navigator.clipboard.writeText(new URL(path, window.location.origin).href);
+            setCopied(true);
+          } catch {
+            // Nothing to fall back to: the link isn't on the page to select.
+          }
         },
       },
     ];
@@ -748,7 +760,10 @@ export default function GlobalSearch({
       {(trigger === "button" || !open) && (
         <Tooltip title={t("app:search.openSearch")}>
           <ButtonBase
-            onClick={() => setOpen(true)}
+            onClick={() => {
+              rememberFocus();
+              setOpen(true);
+            }}
             aria-label={t("app:search.openSearch") ?? undefined}
             aria-keyshortcuts={isMac ? "Meta+S" : "Control+S"}
             sx={(muiTheme) => ({
@@ -851,12 +866,7 @@ export default function GlobalSearch({
                 setQuery(e.target.value);
                 setOpen(true);
               }}
-              onFocus={(e) => {
-                const from = e.relatedTarget as HTMLElement | null;
-                // Only on opening, so refocusing after an extension's blur keeps the original.
-                if (!open && !containerRef.current?.contains(from)) returnFocusRef.current = from;
-                setOpen(true);
-              }}
+              onFocus={() => setOpen(true)}
               onKeyDown={handleKeyDown}
               inputProps={{
                 role: "combobox",
