@@ -1,9 +1,17 @@
-import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import { keyframes } from "@emotion/react";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
+import Portal from "@mui/material/Portal";
 import ButtonBase from "@mui/material/ButtonBase";
 import InputBase from "@mui/material/InputBase";
 import Tooltip from "@mui/material/Tooltip";
@@ -13,6 +21,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import type { Theme } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/Search";
 import CloseIcon from "@mui/icons-material/Close";
+import CheckIcon from "@mui/icons-material/Check";
 import ViewInArIcon from "@mui/icons-material/ViewInAr";
 import CollectionsIcon from "@mui/icons-material/Collections";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
@@ -52,7 +61,7 @@ import type { ThemeSelection } from "../../../constants/settingsOptions";
 import { useDebouncedValue } from "../../../hooks/useDebouncedValue";
 import { veilColor, VEIL_BLUR } from "../../../theme";
 import type { ConfigurationTab } from "../ConfigurationDialog";
-import Keys, { chipBg, MOD_KEY, isMac } from "./Keys";
+import Keys, { chipBg, MOD_KEY, SHIFT_KEY, isMac } from "./Keys";
 import { bangArgument, bangText, isBangQuery, matchBang, type Command } from "./commands";
 import { bestScore, minScoreFor } from "./match";
 import { matchSystemCollections } from "./systemCollections";
@@ -66,6 +75,11 @@ const MAX_MATCHED_COMMANDS = 3;
 const LIST_ID = "global-search-list";
 const BAR_RADIUS = 18;
 const PANEL_RADIUS = 14;
+const SHORTCUT = `${MOD_KEY} S`;
+const ACTIONS_ID = "global-search-actions";
+// Clear of the footer, and of the panel's top edge when the list is short.
+const ACTIONS_GAP = 6;
+const COPIED_MS = 1500;
 /** Where "see all results" leads; it reads `?q=` itself. */
 const RESULTS_PATH = "/search-results";
 
@@ -79,9 +93,9 @@ type Props = {
   onOpenConfiguration: (tab: ConfigurationTab) => void;
   /** Also finds Administration's pages. */
   isAdmin: boolean;
-  /** "bar" sits in the top bar; "spotlight" is hidden until ⌘S (or its corner button) opens it, larger, in the middle
-   *  of the screen, for a page without the top bar, like the dashboard's homepage view. Both search alike. */
-  variant?: "bar" | "spotlight";
+  /** What opens it besides ⌘S: a button in place, as in the top bar, or one in the page's corner, for a page without
+   *  the top bar, like the dashboard's homepage view. */
+  trigger?: "button" | "corner";
 };
 
 type Item = {
@@ -93,7 +107,11 @@ type Item = {
   thumbUrl?: string | null;
   actionLabel: string;
   run: () => void;
+  /** Where it leads, for the actions that open it in a new tab or copy its link. */
+  path?: string;
 };
+
+type ItemAction = { key: string; label: string; keys?: string; run: () => void };
 
 type Section = { id: string; label: string; items: Item[] };
 
@@ -149,8 +167,8 @@ const selectedRowBg = (theme: Theme) =>
   theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)";
 
 /**
- * Command palette: focusing it dims the page and lists recents and commands; typing searches
- * models, collections and tags (ranked server-side, searchService.ts), pages and commands.
+ * Command palette, opened over the middle of the screen: it dims the page and lists recents and commands; typing
+ * searches models, collections and tags (ranked server-side, searchService.ts), pages and commands.
  */
 export default function GlobalSearch({
   onUnauthorized,
@@ -160,9 +178,8 @@ export default function GlobalSearch({
   onImport,
   onOpenConfiguration,
   isAdmin,
-  variant = "bar",
+  trigger = "button",
 }: Props) {
-  const spotlight = variant === "spotlight";
   const { t, i18n } = useTranslation(["app", "common", "models"]);
   const navigate = useNavigate();
   const location = useLocation();
@@ -235,20 +252,22 @@ export default function GlobalSearch({
       const mod = isMac ? e.metaKey : e.ctrlKey;
       if (!mod || e.shiftKey || e.altKey || e.key.toLowerCase() !== "s") return;
       e.preventDefault();
-      inputRef.current?.focus();
-      inputRef.current?.select();
       setOpen(true);
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  // The spotlight's box isn't on screen until it opens, so it can't take focus before: it does once it shows.
+  // The box isn't on screen until it opens, so it can't take focus before: it does once it shows. However it closes
+  // (a click outside, Tab-out), it opens empty next time.
   useEffect(() => {
-    if (!spotlight || !open) return;
+    if (!open) {
+      setQuery("");
+      return;
+    }
     inputRef.current?.focus();
     inputRef.current?.select();
-  }, [spotlight, open]);
+  }, [open]);
 
   useEffect(() => {
     if (debouncedQuery.length < MIN_QUERY_LENGTH || isBangQuery(debouncedQuery)) {
@@ -317,6 +336,7 @@ export default function GlobalSearch({
       thumbUrl: entry.thumbUrl ? printsApi.fileUrl(entry.thumbUrl) : null,
       actionLabel: t("app:search.open"),
       run: () => openEntry(entry),
+      path: entry.path,
     };
   };
 
@@ -515,6 +535,7 @@ export default function GlobalSearch({
       );
       // Kept out of recents: it's the query, not a place.
       if (result.has_more_models) {
+        const path = `${RESULTS_PATH}?${new URLSearchParams({ q: trimmedQuery })}`;
         models.push({
           key: "more:models",
           title: t("app:search.seeAllModels", { query: trimmedQuery }),
@@ -523,8 +544,9 @@ export default function GlobalSearch({
           actionLabel: t("app:search.open"),
           run: () => {
             finish();
-            navigate(`${RESULTS_PATH}?${new URLSearchParams({ q: trimmedQuery })}`);
+            navigate(path);
           },
+          path,
         });
       }
       if (models.length) sections.push({ id: "models", label: t("app:search.sectionModels"), items: models });
@@ -555,6 +577,71 @@ export default function GlobalSearch({
   const selectedIndex = flatItems.findIndex((item) => item.key === selectedKey);
   const selected = selectedIndex >= 0 ? flatItems[selectedIndex] : null;
 
+  // ⌘K: what else the selected row can do, in a panel over the list's corner.
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const [actionIndex, setActionIndex] = useState(0);
+  const [copied, setCopied] = useState(false);
+  const actionsRef = useRef<HTMLDivElement | null>(null);
+  const footerRef = useRef<HTMLDivElement | null>(null);
+  const [actionsRoom, setActionsRoom] = useState<{ bottom: number; minHeight: number } | null>(null);
+
+  const itemActions = (item: Item): ItemAction[] => {
+    const { path } = item;
+    const first = { key: "run", label: item.actionLabel, keys: "↵", run: item.run };
+    if (!path) return [first];
+    return [
+      first,
+      {
+        key: "newTab",
+        label: t("app:search.openInNewTab"),
+        keys: `${MOD_KEY} ↵`,
+        run: () => {
+          window.open(path, "_blank", "noopener");
+          finish();
+        },
+      },
+      {
+        key: "copyLink",
+        label: t("app:search.copyLink"),
+        keys: `${MOD_KEY} ${SHIFT_KEY} C`,
+        run: () => {
+          void navigator.clipboard.writeText(new URL(path, window.location.origin).href).then(() => setCopied(true));
+          setActionsOpen(false);
+        },
+      },
+    ];
+  };
+  const selectedActions = selected ? itemActions(selected) : [];
+
+  // A different row, query or closing puts the panel away.
+  useEffect(() => setActionsOpen(false), [selectedKey, query, open]);
+  useEffect(() => {
+    if (actionsOpen) setActionIndex(0);
+  }, [actionsOpen]);
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), COPIED_MS);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
+  // The panel floats over the list, so a short list (one result) would cut it off at the top: the results grow to
+  // fit it while it's open.
+  useLayoutEffect(() => {
+    const actions = actionsRef.current;
+    const footer = footerRef.current;
+    if (!actionsOpen || !actions || !footer) {
+      setActionsRoom(null);
+      return;
+    }
+    const bottom = footer.offsetHeight + ACTIONS_GAP;
+    setActionsRoom({ bottom, minHeight: bottom + actions.offsetHeight + ACTIONS_GAP * 2 });
+  }, [actionsOpen, selectedKey]);
+
+  const runAction = (action: ItemAction | undefined) => {
+    setActionsOpen(false);
+    action?.run();
+  };
+
   useEffect(() => {
     userMovedRef.current = false;
   }, [query]);
@@ -567,8 +654,11 @@ export default function GlobalSearch({
   }, [keysSignature, query]);
 
   useEffect(() => {
-    if (selectedIndex >= 0)
-      document.getElementById(`${LIST_ID}-${selectedIndex}`)?.scrollIntoView({ block: "nearest" });
+    const row = selectedIndex >= 0 ? document.getElementById(`${LIST_ID}-${selectedIndex}`) : null;
+    row?.scrollIntoView({ block: "nearest" });
+    // A section's first row brings its heading too, which would otherwise stay scrolled off above it.
+    const above = row?.previousElementSibling;
+    if (above && above.getAttribute("role") !== "option") above.scrollIntoView({ block: "nearest" });
   }, [selectedIndex]);
 
   const moveSelection = (delta: number) => {
@@ -579,6 +669,26 @@ export default function GlobalSearch({
   };
 
   const handleKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
+    const mod = isMac ? e.metaKey : e.ctrlKey;
+    const key = e.key.toLowerCase();
+    if (mod && !e.shiftKey && key === "k") {
+      e.preventDefault();
+      if (selectedActions.length > 1) setActionsOpen((current) => !current);
+      return;
+    }
+    if (mod && e.shiftKey && key === "c") {
+      const copy = selectedActions.find((action) => action.key === "copyLink");
+      if (!copy) return;
+      e.preventDefault();
+      runAction(copy);
+      return;
+    }
+    if (actionsOpen && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+      e.preventDefault();
+      const count = selectedActions.length;
+      setActionIndex((index) => (index + (e.key === "ArrowDown" ? 1 : -1) + count) % count);
+      return;
+    }
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
       setOpen(true);
@@ -586,7 +696,10 @@ export default function GlobalSearch({
     } else if (e.key === "Enter") {
       if (!selected) return;
       e.preventDefault();
-      selected.run();
+      if (actionsOpen) runAction(selectedActions[actionIndex]);
+      // ⌘↵ opens it in a new tab, as a ⌘-click on a link does.
+      else if (mod) runAction(selectedActions.find((action) => action.key === "newTab") ?? selectedActions[0]);
+      else selected.run();
     }
   };
 
@@ -594,11 +707,12 @@ export default function GlobalSearch({
   // blur text fields on Escape, which would leave the next Escape unheard.
   const escapeRef = useRef<() => void>(() => {});
   escapeRef.current = () => {
-    if (!query) {
+    if (!actionsOpen && !query) {
       dismiss();
       return;
     }
-    setQuery("");
+    if (actionsOpen) setActionsOpen(false);
+    else setQuery("");
     // After this event, so after any extension's blur.
     setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 0);
   };
@@ -631,277 +745,392 @@ export default function GlobalSearch({
 
   return (
     <>
-      {spotlight && !open && (
+      {(trigger === "button" || !open) && (
         <Tooltip title={t("app:search.openSearch")}>
           <ButtonBase
             onClick={() => setOpen(true)}
             aria-label={t("app:search.openSearch") ?? undefined}
+            aria-keyshortcuts={isMac ? "Meta+S" : "Control+S"}
             sx={(muiTheme) => ({
-              position: "fixed",
-              right: 20,
-              bottom: 20,
-              zIndex: muiTheme.zIndex.speedDial,
               display: "inline-flex",
               alignItems: "center",
               gap: 1,
-              px: 1.5,
-              py: 0.75,
+              px: 1.25,
+              py: 0.5,
               borderRadius: 999,
               border: 1,
               borderColor: "divider",
-              bgcolor: "background.paper",
               color: "text.secondary",
-              boxShadow: 2,
-              opacity: 0.75,
-              transition: "opacity 150ms ease",
-              "&:hover, &.Mui-focusVisible": { opacity: 1 },
+              transition: "background-color 150ms ease, color 150ms ease, opacity 150ms ease",
+              "&:hover": { bgcolor: chipBg(muiTheme), color: "text.primary" },
               "&.Mui-focusVisible": { outline: 2, outlineColor: "primary.main", outlineOffset: 2 },
+              ...(trigger === "corner" && {
+                position: "fixed",
+                right: 20,
+                bottom: 20,
+                zIndex: muiTheme.zIndex.speedDial,
+                px: 1.5,
+                py: 0.75,
+                bgcolor: "background.paper",
+                boxShadow: 2,
+                opacity: 0.75,
+                // Stays opaque over the page.
+                "&:hover": { color: "text.primary" },
+                "&:hover, &.Mui-focusVisible": { opacity: 1 },
+              }),
             })}
           >
             <SearchIcon fontSize="small" />
-            <Keys keys={`${MOD_KEY} S`} />
+            <Box
+              component="span"
+              sx={{ display: trigger === "button" ? { xs: "none", sm: "inline-flex" } : "inline-flex" }}
+            >
+              <Keys keys={SHORTCUT} />
+            </Box>
           </ButtonBase>
         </Tooltip>
       )}
-      {open && (
-        // In the top bar's stacking context: covers the page and the bar, under the search box.
+      {/* In a portal, so no stacking context of where the trigger sits (the sticky top bar) keeps it under the page. */}
+      <Portal>
+        {open && (
+          <Box
+            aria-hidden
+            onMouseDown={() => setOpen(false)}
+            sx={{
+              position: "fixed",
+              inset: 0,
+              zIndex: (muiTheme) => muiTheme.zIndex.modal - 1,
+              bgcolor: (muiTheme) => veilColor(muiTheme.palette.mode),
+              backdropFilter: VEIL_BLUR,
+              animation: `${dimIn} 180ms ease-out`,
+            }}
+          />
+        )}
         <Box
-          aria-hidden
-          onMouseDown={() => setOpen(false)}
-          sx={{
-            position: "fixed",
-            inset: 0,
-            // The bar's veil sits in the top bar's stacking context; the spotlight's over the whole page.
-            zIndex: (muiTheme) => (spotlight ? muiTheme.zIndex.modal - 1 : 1),
-            bgcolor: (muiTheme) => veilColor(muiTheme.palette.mode),
-            backdropFilter: VEIL_BLUR,
-            animation: `${dimIn} 180ms ease-out`,
+          ref={containerRef}
+          // Closes when keyboard focus leaves the palette (Tab-out). A click outside lands on the dim.
+          onBlur={(e) => {
+            if (e.relatedTarget && !containerRef.current?.contains(e.relatedTarget as Node)) setOpen(false);
           }}
-        />
-      )}
-      <Box
-        ref={containerRef}
-        // Closes when keyboard focus leaves the palette (Tab-out). A click outside lands on the dim.
-        onBlur={(e) => {
-          if (e.relatedTarget && !containerRef.current?.contains(e.relatedTarget as Node)) setOpen(false);
-        }}
-        sx={
-          spotlight
-            ? {
-                display: open ? "block" : "none",
-                position: "fixed",
-                top: "14vh",
-                left: 0,
-                right: 0,
-                mx: "auto",
-                width: "min(760px, calc(100vw - 32px))",
-                zIndex: (muiTheme) => muiTheme.zIndex.modal,
-                animation: `${spotlightIn} 180ms ease-out`,
-                "@media (prefers-reduced-motion: reduce)": { animation: "none" },
-              }
-            : { position: "relative", zIndex: open ? 2 : "auto", width: "100%" }
-        }
-      >
-        <Paper
-          variant="outlined"
           sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: spotlight ? 1.25 : 0.5,
-            px: spotlight ? 2.25 : 1.25,
-            py: spotlight ? 1.25 : 0.25,
-            borderRadius: panelOpen ? `${BAR_RADIUS}px ${BAR_RADIUS}px 0 0` : 999,
-            ...(spotlight && { boxShadow: 12 }),
-            // No line where it joins the panel; transparent, not removed, so the bar doesn't shift.
-            borderBottomColor: panelOpen ? "transparent" : undefined,
-            bgcolor: (muiTheme) => (open ? "background.paper" : muiTheme.thingport.pageBackground),
+            display: open ? "block" : "none",
+            position: "fixed",
+            top: "14vh",
+            left: 0,
+            right: 0,
+            mx: "auto",
+            width: "min(760px, calc(100vw - 32px))",
+            zIndex: (muiTheme) => muiTheme.zIndex.modal,
+            // One shadow round the box and the panel under it, so neither shades the other and they read as one.
+            borderRadius: panelOpen ? `${BAR_RADIUS}px ${BAR_RADIUS}px ${PANEL_RADIUS}px ${PANEL_RADIUS}px` : 999,
+            boxShadow: 12,
+            animation: `${spotlightIn} 180ms ease-out`,
+            "@media (prefers-reduced-motion: reduce)": { animation: "none" },
           }}
         >
-          <SearchIcon fontSize={spotlight ? "medium" : "small"} sx={{ color: "text.disabled" }} />
-          <InputBase
-            fullWidth
-            size="small"
-            inputRef={inputRef}
-            placeholder={t("app:search.placeholder") ?? undefined}
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setOpen(true);
-            }}
-            onFocus={(e) => {
-              const from = e.relatedTarget as HTMLElement | null;
-              // Only on opening, so refocusing after an extension's blur keeps the original.
-              if (!open && !containerRef.current?.contains(from)) returnFocusRef.current = from;
-              setOpen(true);
-            }}
-            onKeyDown={handleKeyDown}
-            inputProps={{
-              role: "combobox",
-              "aria-expanded": panelOpen,
-              "aria-controls": LIST_ID,
-              "aria-autocomplete": "list",
-              "aria-activedescendant": panelOpen && selectedIndex >= 0 ? `${LIST_ID}-${selectedIndex}` : undefined,
-              autoComplete: "off",
-              spellCheck: false,
-            }}
-            sx={{ fontSize: spotlight ? 20 : 14 }}
-          />
-          {loading && trimmedQuery && <CircularProgress size={14} sx={{ flexShrink: 0 }} />}
-          {query ? (
-            <IconButton
-              size="small"
-              onClick={() => {
-                setQuery("");
-                inputRef.current?.focus();
-              }}
-              aria-label={t("app:search.clear") ?? undefined}
-              // Taller than the keycaps it replaces; keeps the bar from jumping on the first keystroke.
-              sx={{ my: -0.5 }}
-            >
-              <CloseIcon fontSize="inherit" />
-            </IconButton>
-          ) : (
-            <Box sx={{ display: { xs: "none", md: "inline-flex" }, pr: 0.25 }}>
-              <Keys keys={`${MOD_KEY} S`} />
-            </Box>
-          )}
-        </Paper>
-
-        {panelOpen && (
-          <Box
-            // Keeps focus in the input when a row or the footer is clicked.
-            onMouseDown={(e) => e.preventDefault()}
+          <Paper
+            variant="outlined"
             sx={{
-              position: "absolute",
-              left: 0,
-              right: 0,
-              top: "100%",
               display: "flex",
-              flexDirection: "column",
-              maxHeight: spotlight
-                ? "min(560px, calc(86vh - 96px))"
-                : "min(520px, calc(100vh - var(--topbar-height, 64px) - 24px))",
-              ...(spotlight && { boxShadow: 12 }),
+              alignItems: "center",
+              gap: 1.25,
+              px: 2.25,
+              py: 1.25,
+              borderRadius: panelOpen ? `${BAR_RADIUS}px ${BAR_RADIUS}px 0 0` : 999,
               bgcolor: "background.paper",
-              border: 1,
-              borderTop: 0,
-              borderColor: "divider",
-              borderRadius: `0 0 ${PANEL_RADIUS}px ${PANEL_RADIUS}px`,
-              overflow: "hidden",
-              animation: `${panelIn} 140ms ease-out`,
             }}
           >
+            <SearchIcon sx={{ color: "text.disabled" }} />
+            <InputBase
+              fullWidth
+              size="small"
+              inputRef={inputRef}
+              placeholder={t("app:search.placeholder") ?? undefined}
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setOpen(true);
+              }}
+              onFocus={(e) => {
+                const from = e.relatedTarget as HTMLElement | null;
+                // Only on opening, so refocusing after an extension's blur keeps the original.
+                if (!open && !containerRef.current?.contains(from)) returnFocusRef.current = from;
+                setOpen(true);
+              }}
+              onKeyDown={handleKeyDown}
+              inputProps={{
+                role: "combobox",
+                "aria-expanded": panelOpen,
+                "aria-controls": LIST_ID,
+                "aria-autocomplete": "list",
+                "aria-activedescendant": actionsOpen
+                  ? `${ACTIONS_ID}-${actionIndex}`
+                  : panelOpen && selectedIndex >= 0
+                    ? `${LIST_ID}-${selectedIndex}`
+                    : undefined,
+                autoComplete: "off",
+                spellCheck: false,
+              }}
+              sx={{ fontSize: 20 }}
+            />
+            {loading && trimmedQuery && <CircularProgress size={14} sx={{ flexShrink: 0 }} />}
+            {query ? (
+              <IconButton
+                size="small"
+                onClick={() => {
+                  setQuery("");
+                  inputRef.current?.focus();
+                }}
+                aria-label={t("app:search.clear") ?? undefined}
+                // Taller than the keycaps it replaces; keeps the bar from jumping on the first keystroke.
+                sx={{ my: -0.5 }}
+              >
+                <CloseIcon fontSize="inherit" />
+              </IconButton>
+            ) : (
+              <Box sx={{ display: { xs: "none", md: "inline-flex" }, pr: 0.25 }}>
+                <Keys keys={SHORTCUT} />
+              </Box>
+            )}
+          </Paper>
+
+          {panelOpen && (
             <Box
-              id={LIST_ID}
-              // No native element fits a combobox popup of rich rows.
-              // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
-              role="listbox"
+              // Keeps focus in the input when a row or the footer is clicked.
+              onMouseDown={(e) => e.preventDefault()}
               sx={{
-                flex: "1 1 auto",
-                minHeight: 0,
-                overflowY: "auto",
-                overscrollBehavior: "contain",
-                px: 0.75,
-                pb: 0.75,
+                position: "relative",
+                display: "flex",
+                flexDirection: "column",
+                maxHeight: "min(560px, calc(86vh - 96px))",
+                minHeight: actionsRoom?.minHeight,
+                bgcolor: "background.paper",
+                border: 1,
+                borderTop: 0,
+                borderColor: "divider",
+                borderRadius: `0 0 ${PANEL_RADIUS}px ${PANEL_RADIUS}px`,
+                overflow: "hidden",
+                animation: `${panelIn} 140ms ease-out`,
               }}
             >
-              {sections.map((section) => (
-                <Box key={section.id}>
+              <Box
+                id={LIST_ID}
+                // No native element fits a combobox popup of rich rows.
+                // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
+                role="listbox"
+                sx={{
+                  flex: "1 1 auto",
+                  minHeight: 0,
+                  overflowY: "auto",
+                  overscrollBehavior: "contain",
+                  px: 0.75,
+                  pb: 0.75,
+                }}
+              >
+                {sections.map((section) => (
+                  <Box key={section.id}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        display: "block",
+                        px: 1.25,
+                        pt: 1.25,
+                        pb: 0.5,
+                        fontSize: "0.65rem",
+                        fontWeight: 600,
+                        letterSpacing: "0.14em",
+                        textTransform: "uppercase",
+                        color: "text.secondary",
+                      }}
+                    >
+                      {section.label}
+                    </Typography>
+                    {section.items.map((item) => {
+                      const index = flatItems.indexOf(item);
+                      return (
+                        <SearchRow
+                          key={item.key}
+                          id={`${LIST_ID}-${index}`}
+                          item={item}
+                          selected={index === selectedIndex}
+                          onHover={() => {
+                            if (index === selectedIndex) return;
+                            setSelectedKey(item.key);
+                            userMovedRef.current = true;
+                          }}
+                        />
+                      );
+                    })}
+                  </Box>
+                ))}
+                {searching && (
+                  <Box
+                    component="output"
+                    sx={{ display: "block", py: 1 }}
+                    aria-label={t("app:search.searching") ?? undefined}
+                  >
+                    <ListRowSkeletons count={3} lead="rounded" leadSize={20} />
+                  </Box>
+                )}
+                {emptyText && (
+                  <Typography
+                    variant="body2"
+                    color={!bang && error ? "error" : "text.secondary"}
+                    sx={{ px: 1.25, py: 1.5 }}
+                  >
+                    {emptyText}
+                  </Typography>
+                )}
+              </Box>
+              <Box
+                ref={footerRef}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1.25,
+                  px: 1.5,
+                  py: 0.75,
+                  mt: "auto",
+                  borderTop: 1,
+                  borderColor: "divider",
+                  color: "text.secondary",
+                  fontSize: 12,
+                }}
+              >
+                <Box component="output" sx={{ display: "inline-flex", alignItems: "center", gap: 0.75, mr: "auto" }}>
+                  {copied ? (
+                    <>
+                      <CheckIcon sx={{ fontSize: 14, color: "success.main" }} /> {t("app:search.linkCopied")}
+                    </>
+                  ) : (
+                    <>
+                      <Keys keys="↑ ↓" /> {t("app:search.toMove")}
+                    </>
+                  )}
+                </Box>
+                {selected && (
+                  <FooterButton onClick={() => runAction(selectedActions[0])}>
+                    {selected.actionLabel} <Keys keys="↵" />
+                  </FooterButton>
+                )}
+                {selectedActions.length > 1 && (
+                  <>
+                    <Box component="span" sx={{ width: "1px", height: 14, bgcolor: "divider" }} />
+                    <FooterButton aria-expanded={actionsOpen} onClick={() => setActionsOpen((current) => !current)}>
+                      {t("app:search.actions")} <Keys keys={`${MOD_KEY} K`} />
+                    </FooterButton>
+                  </>
+                )}
+              </Box>
+              {actionsOpen && selected && (
+                <Box
+                  ref={actionsRef}
+                  id={ACTIONS_ID}
+                  role="menu"
+                  aria-label={t("app:search.actionsFor", { title: selected.title }) ?? undefined}
+                  sx={(muiTheme) => ({
+                    position: "absolute",
+                    right: 8,
+                    bottom: actionsRoom?.bottom ?? 40,
+                    zIndex: 1,
+                    width: "min(280px, calc(100% - 16px))",
+                    p: 0.75,
+                    borderRadius: "12px",
+                    border: 1,
+                    borderColor: "divider",
+                    bgcolor: "background.paper",
+                    boxShadow: muiTheme.shadows[8],
+                    animation: `${panelIn} 120ms ease-out`,
+                    "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+                  })}
+                >
                   <Typography
                     variant="caption"
+                    noWrap
                     sx={{
                       display: "block",
-                      px: 1.25,
-                      pt: 1.25,
-                      pb: 0.5,
+                      px: 1,
+                      py: 0.75,
                       fontSize: "0.65rem",
                       fontWeight: 600,
-                      letterSpacing: "0.14em",
+                      letterSpacing: "0.12em",
                       textTransform: "uppercase",
                       color: "text.secondary",
                     }}
                   >
-                    {section.label}
+                    {selected.title}
                   </Typography>
-                  {section.items.map((item) => {
-                    const index = flatItems.indexOf(item);
-                    return (
-                      <SearchRow
-                        key={item.key}
-                        id={`${LIST_ID}-${index}`}
-                        item={item}
-                        selected={index === selectedIndex}
-                        onHover={() => {
-                          if (index === selectedIndex) return;
-                          setSelectedKey(item.key);
-                          userMovedRef.current = true;
-                        }}
-                      />
-                    );
-                  })}
-                </Box>
-              ))}
-              {searching && (
-                <Box
-                  component="output"
-                  sx={{ display: "block", py: 1 }}
-                  aria-label={t("app:search.searching") ?? undefined}
-                >
-                  <ListRowSkeletons count={3} lead="rounded" leadSize={20} />
-                </Box>
-              )}
-              {emptyText && (
-                <Typography
-                  variant="body2"
-                  color={!bang && error ? "error" : "text.secondary"}
-                  sx={{ px: 1.25, py: 1.5 }}
-                >
-                  {emptyText}
-                </Typography>
-              )}
-            </Box>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 1,
-                px: 1.5,
-                py: 0.75,
-                borderTop: 1,
-                borderColor: "divider",
-                color: "text.secondary",
-                fontSize: 12,
-              }}
-            >
-              <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.75 }}>
-                <Keys keys="↑ ↓" /> {t("app:search.toMove")}
-              </Box>
-              {selected && (
-                <Box
-                  component="button"
-                  type="button"
-                  onClick={selected.run}
-                  sx={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 0.75,
-                    border: 0,
-                    p: 0,
-                    bgcolor: "transparent",
-                    color: "inherit",
-                    font: "inherit",
-                    cursor: "pointer",
-                  }}
-                >
-                  {selected.actionLabel} <Keys keys="↵" />
+                  {selectedActions.map((action, index) => (
+                    <Box
+                      key={action.key}
+                      id={`${ACTIONS_ID}-${index}`}
+                      component="button"
+                      type="button"
+                      role="menuitem"
+                      onPointerMove={() => setActionIndex(index)}
+                      onClick={() => runAction(action)}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 1,
+                        width: "100%",
+                        minHeight: 34,
+                        px: 1,
+                        py: 0.75,
+                        border: 0,
+                        borderRadius: "8px",
+                        bgcolor: index === actionIndex ? selectedRowBg : "transparent",
+                        color: (muiTheme) => muiTheme.thingport.headingText,
+                        font: "inherit",
+                        fontSize: 13,
+                        textAlign: "left",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <span>{action.label}</span>
+                      {action.keys && <Keys keys={action.keys} />}
+                    </Box>
+                  ))}
                 </Box>
               )}
             </Box>
-          </Box>
-        )}
-      </Box>
+          )}
+        </Box>
+      </Portal>
     </>
+  );
+}
+
+function FooterButton({
+  children,
+  onClick,
+  ...aria
+}: {
+  children: ReactNode;
+  onClick: () => void;
+  "aria-expanded"?: boolean;
+}) {
+  return (
+    <Box
+      component="button"
+      type="button"
+      onClick={onClick}
+      {...aria}
+      sx={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 0.75,
+        border: 0,
+        p: 0,
+        bgcolor: "transparent",
+        color: "inherit",
+        font: "inherit",
+        cursor: "pointer",
+      }}
+    >
+      {children}
+    </Box>
   );
 }
 

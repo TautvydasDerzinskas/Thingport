@@ -482,6 +482,11 @@
       "open": "Abrir",
       "openSearch": "Buscar",
       "runCommand": "Ejecutar comando",
+      "actions": "Acciones",
+      "actionsFor": "Acciones para {{title}}",
+      "openInNewTab": "Abrir en una pestaña nueva",
+      "copyLink": "Copiar enlace",
+      "linkCopied": "Enlace copiado",
       "toMove": "para moverte",
       "kind": {
         "model": "Modelo",
