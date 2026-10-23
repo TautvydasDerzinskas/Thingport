@@ -97,9 +97,10 @@ describe("consume folder", () => {
     const [walker] = await printsNamed("Walker");
     expect(walker.plates.map((p) => p.filename).toSorted()).toEqual(["body.stl", "leg.stl"]);
     expect(walker.previewImages).toHaveLength(1);
+    const firstPlate = walker.plates.find((plate) => plate.filename === "body.stl")!;
     for (const file of [
       previewImagePath(walker.previewImages[0].id, await printAssetHome(walker.id)),
-      plateThumbPath(walker.plates[0].id, await plateAssetHome(walker.plates[0].id)),
+      plateThumbPath(firstPlate.id, await plateAssetHome(firstPlate.id)),
     ]) {
       const metadata = await sharp(file).metadata();
       expect(metadata).toMatchObject({ width: 40, height: 80, orientation: 1 });
