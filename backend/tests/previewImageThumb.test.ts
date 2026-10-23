@@ -117,6 +117,29 @@ describe("a 3D render made while an import runs", () => {
     global.fetch = originalFetch;
   });
 
+  it("strips remote photo EXIF while orienting the gallery image and thumbnail", async () => {
+    const print = await uploadStl();
+    const plate = await prisma.plate.findFirstOrThrow({ where: { printId: print.id } });
+    const photo = await sharp({ create: { width: 80, height: 40, channels: 3, background: "#cc0000" } })
+      .jpeg()
+      .withMetadata({ orientation: 6 })
+      .withExifMerge({ IFD0: { Artist: "Remote photographer" } })
+      .toBuffer();
+    global.fetch = (async () => new Response(photo, { headers: { "content-type": "image/jpeg" } })) as typeof fetch;
+    await attachImportedPreviewImages(print.id, plate.id, "https://img.example.com/photo.jpg", [], 0);
+
+    const image = await prisma.previewImage.findFirstOrThrow({ where: { printId: print.id } });
+    for (const file of [
+      previewImagePath(image.id, await printAssetHome(print.id)),
+      plateThumbPath(plate.id, await plateAssetHome(plate.id)),
+    ]) {
+      const metadata = await sharp(file).metadata();
+      expect(metadata).toMatchObject({ width: 40, height: 80 });
+      expect(metadata.orientation).toBeUndefined();
+      expect(metadata.exif).toBeUndefined();
+    }
+  });
+
   it("gives way to the imported cover, as thumbnail and first preview image", async () => {
     const print = await uploadStl();
     const plate = (await prisma.plate.findFirst({ where: { printId: print.id } }))!;

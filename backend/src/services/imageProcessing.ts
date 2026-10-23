@@ -2,16 +2,17 @@ import sharp from "sharp";
 
 const PHOTO_BACKGROUND = { r: 248, g: 250, b: 252 };
 
-/** Apply camera orientation to the pixels, then keep the remaining EXIF in the stored JPEG. */
+/** Orient pixels and strip camera metadata unless an owner-provided photo explicitly opts in. */
 export async function writePhotoJpeg(
   input: Buffer,
   destination: string,
   maxSize: number,
   quality: number,
+  keepExif = false,
 ): Promise<void> {
-  await sharp(input)
-    .autoOrient()
-    .keepExif()
+  const image = sharp(input).autoOrient();
+  if (keepExif) image.keepExif();
+  await image
     .flatten({ background: PHOTO_BACKGROUND })
     .resize(maxSize, maxSize, { fit: "inside", withoutEnlargement: true })
     .jpeg({ quality, mozjpeg: true })

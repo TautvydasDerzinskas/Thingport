@@ -706,7 +706,7 @@ export async function setStorageTemplate(value: string): Promise<void> {
 
 // -- Thumbnails -------------------------------------------------------------
 
-async function saveThumbBuffer(plateId: string, input: Buffer): Promise<boolean> {
+async function saveThumbBuffer(plateId: string, input: Buffer, keepExif = false): Promise<boolean> {
   let tmp: string | null = null;
   try {
     const file = plateThumbFile(plateId);
@@ -714,7 +714,7 @@ async function saveThumbBuffer(plateId: string, input: Buffer): Promise<boolean>
     const dest = assetTarget(home, file);
     tmp = `${dest}.${process.pid}.${Date.now()}.tmp`;
     await fs.mkdir(path.dirname(dest), { recursive: true });
-    await writePhotoJpeg(input, tmp, 512, 88);
+    await writePhotoJpeg(input, tmp, 512, 88, keepExif);
     await fs.rename(tmp, dest);
     // The one in the old shared folder is out of date now.
     await removeAsset(null, file);
@@ -736,8 +736,8 @@ export async function saveThumbFromFile(plateId: string, srcPath: string): Promi
   }
 }
 
-export async function saveThumbFromBytes(plateId: string, data: Buffer): Promise<boolean> {
-  return saveThumbBuffer(plateId, data);
+export async function saveThumbFromBytes(plateId: string, data: Buffer, keepExif = false): Promise<boolean> {
+  return saveThumbBuffer(plateId, data, keepExif);
 }
 
 const THUMBNAIL_ENTRY_PRIORITY: Record<string, number> = {
