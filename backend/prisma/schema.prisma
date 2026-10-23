@@ -163,6 +163,7 @@ model User {
   prints                   Print[]
   collections              Collection[]
   customWidgets            CustomWidget[]
+  icons                    UserIcon[]
   collectionSyncs          CollectionSync[]
   providerListings         ProviderListing[]
   importJobs               ImportJob[]
@@ -679,6 +680,21 @@ model CustomWidget {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, source, slug])
+  @@index([userId])
+}
+
+/// An image the user uploaded to pick as an icon, for a launcher link or a custom widget.
+model UserIcon {
+  /// Random, as it's also the public file name: /api/icons/<id>.<ext>.
+  id        String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// The uploaded file's name, without its extension.
+  name      String
+  /// "png" or "svg".
+  ext       String
+  createdAt DateTime @default(now())
+
   @@index([userId])
 }
 

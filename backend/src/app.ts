@@ -7,6 +7,7 @@ import { pathToken } from "./auth";
 
 import healthRoutes from "./routes/health";
 import mcpRoutes from "./routes/mcp";
+import iconRoutes from "./routes/icons";
 import captchaRoutes from "./routes/captcha";
 import authRoutes from "./routes/auth";
 import oidcRoutes from "./routes/oidc";
@@ -56,6 +57,8 @@ export function createApp(): Express {
   app.use("/api", healthRoutes);
   // Before the routers that apply requireAuth to every path: see routes/mcp.ts.
   app.use("/api", mcpRoutes);
+  // Also before them: an icon's file is public.
+  app.use("/api", iconRoutes);
   app.use("/api", captchaRoutes);
   app.use("/api", authRoutes);
   app.use("/api", oidcRoutes);

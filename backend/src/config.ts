@@ -44,6 +44,8 @@ export const DESCRIPTION_IMAGES = path.join(STORAGE, "description-images");
 export const MODEL_PREVIEWS = path.join(STORAGE, "model-previews");
 // One picture per tag for the Tags page, built from its models' pictures.
 export const TAG_MOSAICS = path.join(STORAGE, "tag-mosaics");
+// Icons users uploaded, by id; see services/iconService.ts.
+export const ICONS = path.join(STORAGE, "icons");
 // Slicer-compatible copies of MakerWorld 3MFs, rebuilt when the source plate changes.
 export const NORMALIZED_3MFS = path.join(STORAGE, "normalized-3mf");
 // Large multi-part projects take minutes on a slow CPU; the page waits for it, not the request.

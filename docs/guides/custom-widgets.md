@@ -57,17 +57,17 @@ settings:
 hosts: [octopi.local]
 ```
 
-| Field         | What it is                                                                                                       |
-| ------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `name`        | Up to 40 characters.                                                                                             |
-| `description` | Up to 300 characters, shown in the list of widgets.                                                              |
-| `iconUrl`     | Optional: an `http(s)` address of the icon's image, shown in place of `icon`. Prefer an SVG: it stays sharp.     |
-| `icon`        | Optional, shown without `iconUrl`: an emoji or an SVG `data:` address.                                           |
-| `author`      | Your full name. Left out, saving fills in the name from your profile; community widgets need one.                |
-| `authorUrl`   | Optional: a page of yours, such as your GitHub profile, linked from your name.                                   |
-| `size`        | Its size when added, in grid cells (12 columns wide; rows 64 px tall). `minW`/`minH` limit how small it resizes. |
-| `settings`    | What its cog lets you change: `text` (`secret: true` for tokens), `number`, `toggle` or `choice` (2 to 8).       |
-| `hosts`       | The hosts `thingport.fetch` may call: `host`, `host:port` or `*.domain`. Local network addresses are fine.       |
+| Field         | What it is                                                                                                                                                                                                                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`        | Up to 40 characters.                                                                                                                                                                                                                                                                        |
+| `description` | Up to 300 characters, shown in the list of widgets.                                                                                                                                                                                                                                         |
+| `iconUrl`     | Optional: an `http(s)` address of the icon's image, shown in place of `icon`. Prefer an SVG: it stays sharp. The editor's icon browser also sets one of Thingport's own icons, such as `builtin:providers/printables`, or one you uploaded (`/api/icons/…`, which only your Thingport has). |
+| `icon`        | Optional, shown without `iconUrl`: an emoji or an SVG `data:` address.                                                                                                                                                                                                                      |
+| `author`      | Your full name. Left out, saving fills in the name from your profile; community widgets need one.                                                                                                                                                                                           |
+| `authorUrl`   | Optional: a page of yours, such as your GitHub profile, linked from your name.                                                                                                                                                                                                              |
+| `size`        | Its size when added, in grid cells (12 columns wide; rows 64 px tall). `minW`/`minH` limit how small it resizes.                                                                                                                                                                            |
+| `settings`    | What its cog lets you change: `text` (`secret: true` for tokens), `number`, `toggle` or `choice` (2 to 8).                                                                                                                                                                                  |
+| `hosts`       | The hosts `thingport.fetch` may call: `host`, `host:port` or `*.domain`. Local network addresses are fine.                                                                                                                                                                                  |
 
 ### Script
 

@@ -97,6 +97,19 @@ export function hasProviderLogo(id: string | null | undefined): id is ProviderId
   return !!id && Object.hasOwn(LOGOS, id);
 }
 
+/** A provider's logo as SVG markup, to show as an image; its black-and-white marks are drawn in black. */
+export function providerLogoSvg(id: ProviderId): string {
+  const { viewBox = "0 0 24 24", color, path, fillRule, layers } = LOGOS[id];
+  const fill = (value: string) => (value === "currentColor" ? "#000" : value);
+  const paths = [
+    `<path d="${path}" fill="${fill(color)}"${fillRule ? ` fill-rule="${fillRule}"` : ""}/>`,
+    ...(layers ?? []).map((layer) => `<path d="${layer.d}" fill="${fill(layer.color)}"/>`),
+  ];
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}">${paths.join("")}</svg>`;
+}
+
+export const PROVIDER_LOGO_IDS = Object.keys(LOGOS) as ProviderId[];
+
 export function ProviderLogo({ id, size }: { id: ProviderId; size: number }) {
   const { viewBox = "0 0 24 24", color, path, fillRule, layers } = LOGOS[id];
   return (

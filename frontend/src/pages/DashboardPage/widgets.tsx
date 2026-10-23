@@ -34,6 +34,7 @@ import ActivityHeatmapCard from "./ActivityHeatmapCard";
 import RssCard from "./RssCard";
 import CpuCard from "./CpuCard";
 import UptimeCard from "./UptimeCard";
+import { isIconRef } from "../../components/IconPicker/iconRef";
 import LauncherCard, { type LauncherIconStyle } from "./LauncherCard";
 import TrendingCard from "./TrendingCard";
 import CustomWidgetCard, { WidgetIcon } from "./CustomWidgetCard";
@@ -90,7 +91,8 @@ export type WidgetSetting = (
 /** Every option of a widget, the user's choice or the default. */
 export type ResolvedSettings = Record<string, string | boolean | string[] | LauncherLink[] | WeatherLocation | null>;
 
-/** A launcher item. `icon` is an image address or a path on Thingport itself; empty tries the site's own icon. */
+/** A launcher item. `icon` is an image address, a path on Thingport itself or one of its own icons (see
+ *  components/IconPicker/iconCatalog.ts); empty tries the site's own icon. */
 export type LauncherLink = { name: string; url: string; icon: string };
 
 type WidgetContext = {
@@ -710,8 +712,8 @@ export function cleanLink(entry: Record<string, string>): LauncherLink | null {
   return {
     name: (typeof entry.name === "string" && entry.name.trim()) || new URL(url).host,
     url,
-    // An image on the web, or one Thingport serves itself; never a script or another scheme.
-    icon: isWebUrl(icon) || /^\/(?!\/)/.test(icon) ? icon : "",
+    // An image on the web, one Thingport serves itself or one of its own; never a script or another scheme.
+    icon: isWebUrl(icon) || /^\/(?!\/)/.test(icon) || isIconRef(icon) ? icon : "",
   };
 }
 

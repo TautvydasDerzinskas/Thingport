@@ -8,6 +8,7 @@ import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import { apiBase } from "../../api/client";
 import { headerRecord, widgetsApi, type CustomWidget } from "../../api/widgets";
 import { authHeaders } from "../../utils/auth";
+import { useIconSrc } from "../../components/IconPicker/iconCatalog";
 import { GRID_GAP, ROW_HEIGHT } from "./templates";
 import DashboardCard from "./DashboardCard";
 import type { ResolvedSettings } from "./widgets";
@@ -30,10 +31,11 @@ function loadModule(widget: CustomWidget): Promise<{ default?: Mount }> {
   return loaded;
 }
 
-/** A custom widget's icon: its image address, else `icon` as an image address, an emoji or a few letters. An image
- *  that doesn't load falls back to the next. */
-export function WidgetIcon({ icon, iconUrl, size = 20 }: { icon?: string; iconUrl?: string; size?: number }) {
+/** A custom widget's icon: its image address or picked icon, else `icon` as an image address, an emoji or a few
+ *  letters. An image that doesn't load falls back to the next. */
+export function WidgetIcon({ icon, iconUrl: picked, size = 20 }: { icon?: string; iconUrl?: string; size?: number }) {
   const [broken, setBroken] = useState<string | null>(null);
+  const iconUrl = useIconSrc(picked);
   if (iconUrl && broken !== iconUrl)
     return (
       <Box

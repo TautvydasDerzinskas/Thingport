@@ -87,6 +87,7 @@ const LOGOS = {
   zhipu,
 };
 export type AiLogoName = keyof typeof LOGOS;
+export { LOGOS as AI_LOGOS };
 
 // Logos from LobeHub Icons (MIT, see assets/ai-logos/LICENSE). Checked in order: a model's family says more than
 // where it runs, so "qwen/qwen3-8b" on OpenRouter shows Qwen. Ids may carry an owner prefix, hence no anchors.

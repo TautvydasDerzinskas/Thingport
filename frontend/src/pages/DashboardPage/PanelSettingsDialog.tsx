@@ -49,6 +49,7 @@ import {
   labelOf,
 } from "./widgets";
 import { LauncherIcon, type LauncherIconStyle } from "./LauncherCard";
+import IconPicker from "../../components/IconPicker/IconPicker";
 import Checkbox from "@mui/material/Checkbox";
 import ProviderBadge from "../../components/ProviderBadge";
 import { printProviderInfo } from "../../constants/importProviders";
@@ -322,14 +323,8 @@ function LinksEditor({
   const ids = links.map((_, index) => String(index));
   const fullUrl = withScheme(url.trim());
   const urlInvalid = url.trim() !== "" && !isWebUrl(fullUrl);
-  const iconValue = icon.trim();
-  const iconInvalid = iconValue !== "" && !isWebUrl(withScheme(iconValue)) && !/^\/(?!\/)/.test(iconValue);
   const full = links.length >= max && editing === null;
-  const draft = cleanLink({
-    name,
-    url: fullUrl,
-    icon: iconValue.startsWith("/") ? iconValue : withScheme(iconValue),
-  });
+  const draft = cleanLink({ name, url: fullUrl, icon });
 
   const reset = () => {
     setEditing(null);
@@ -338,7 +333,7 @@ function LinksEditor({
     setIcon("");
   };
   const save = () => {
-    if (!draft || urlInvalid || iconInvalid || full) return;
+    if (!draft || urlInvalid || full) return;
     onChange(editing === null ? [...links, draft] : links.map((link, index) => (index === editing ? draft : link)));
     reset();
   };
@@ -407,27 +402,29 @@ function LinksEditor({
           helperText={urlInvalid ? t("dashboard.settings.urlInvalid") : undefined}
           slotProps={{ htmlInput: { inputMode: "url" } }}
         />
-        <TextField
-          size="small"
-          label={t("dashboard.settings.linkIcon")}
-          placeholder={t("dashboard.settings.linkIconPlaceholder")}
-          value={icon}
-          disabled={full}
-          onChange={(event) => setIcon(event.target.value)}
-          error={iconInvalid}
-          helperText={iconInvalid ? t("dashboard.settings.urlInvalid") : undefined}
-          sx={{ gridColumn: { sm: "1 / -1" } }}
-          slotProps={{ htmlInput: { inputMode: "url" } }}
-        />
+        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+          <IconPicker
+            label={t("dashboard.settings.linkIcon")}
+            emptyLabel={t("dashboard.settings.linkIconSite")}
+            value={icon}
+            disabled={full}
+            onChange={setIcon}
+            preview={
+              <LauncherIcon
+                key={`${fullUrl} ${icon}`}
+                item={{ name, url: isWebUrl(fullUrl) ? fullUrl : "", icon }}
+                iconStyle={iconStyle}
+                size={32}
+              />
+            }
+          />
+        </Box>
         <Box sx={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: 1 }}>
-          {draft && !urlInvalid && !iconInvalid && (
-            <LauncherIcon key={`${draft.url} ${draft.icon}`} item={draft} iconStyle={iconStyle} size={32} />
-          )}
           <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>
             {full ? t("dashboard.settings.linksFull", { max }) : draft ? draft.name : ""}
           </Typography>
           {editing !== null && <Button onClick={reset}>{t("dashboard.settings.cancelEdit")}</Button>}
-          <Button type="submit" variant="outlined" disabled={!draft || urlInvalid || iconInvalid || full}>
+          <Button type="submit" variant="outlined" disabled={!draft || urlInvalid || full}>
             {editing === null ? t("dashboard.settings.addUrl") : t("dashboard.settings.saveLink")}
           </Button>
         </Box>

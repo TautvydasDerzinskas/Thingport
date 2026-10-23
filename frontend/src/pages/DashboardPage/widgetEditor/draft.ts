@@ -1,4 +1,5 @@
 import type { WidgetManifest, WidgetSettingSpec } from "../../../api/widgets";
+import { isIconRef } from "../../../components/IconPicker/iconRef";
 
 // The editor's form of a widget's metadata. Kept loose while typing, so a half-filled field is fine; `toManifest`
 // makes the metadata the server checks again on saving.
@@ -184,7 +185,8 @@ export function problems(draft: Draft): Record<string, string> {
   const found: Record<string, string> = {};
   if (!SLUG.test(draft.slug)) found.slug = "slug";
   if (!draft.name.trim()) found.name = "name";
-  if (draft.iconUrl.trim() && !WEB.test(draft.iconUrl.trim())) found.iconUrl = "url";
+  const iconUrl = draft.iconUrl.trim();
+  if (iconUrl && !WEB.test(iconUrl) && !isIconRef(iconUrl)) found.iconUrl = "url";
   if (draft.authorUrl.trim() && !WEB.test(draft.authorUrl.trim())) found.authorUrl = "url";
   if (draft.size.minW > draft.size.w) found.minW = "minSize";
   if (draft.size.minH > draft.size.h) found.minH = "minSize";

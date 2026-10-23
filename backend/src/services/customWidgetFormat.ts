@@ -19,6 +19,9 @@ const webAddress = z
   .max(2048)
   .url()
   .refine((url) => /^https?:\/\//i.test(url), "Not an http or https address");
+// One of Thingport's own icons, or one the user uploaded (services/iconService.ts).
+const ICON_REF = /^(builtin:[a-z]+\/[a-z0-9-]+|\/api\/icons\/[a-f0-9]{32}\.(png|svg))$/;
+const iconAddress = z.union([z.string().trim().regex(ICON_REF), webAddress]);
 const settingSchema = z.discriminatedUnion("type", [
   z.object({
     key: z.string().regex(KEY),
@@ -64,8 +67,9 @@ export const manifestSchema = z.object({
     .max(100_000)
     .refine((icon) => !/^(javascript|vbscript):/i.test(icon.trim()), "Not an image")
     .optional(),
-  /** An image address for the icon, shown instead of `icon`; an SVG stays sharp at every size. */
-  iconUrl: webAddress.optional(),
+  /** An image address for the icon, shown instead of `icon`; an SVG stays sharp at every size. Also one of
+   *  Thingport's own icons, `builtin:<group>/<name>`, or one the user uploaded, `/api/icons/<file>`. */
+  iconUrl: iconAddress.optional(),
   version: z.string().trim().max(20).default("1.0.0"),
   /** The author's full name; saving fills in the user's own when it's missing. */
   author: z.string().trim().max(60).optional(),

@@ -5,6 +5,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import HelpTip from "../../../components/HelpTip";
+import IconPicker from "../../../components/IconPicker/IconPicker";
 import TagInput from "../../../components/TagInput";
 import { WidgetIcon } from "../CustomWidgetCard";
 import { GRID_COLS, MAX_ROWS, slugFromName, type Draft } from "./draft";
@@ -143,17 +144,16 @@ export default function DetailsForm({ draft, onChange, errors, slugLocked }: Pro
       <Stack spacing={1.5}>
         <Heading help={t("dashboard.custom.editor.iconHelp")}>{t("dashboard.custom.editor.icon")}</Heading>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-          <TextField
-            size="small"
-            fullWidth
-            label={t("dashboard.custom.editor.iconUrl")}
-            placeholder="https://example.com/icon.svg"
-            value={draft.iconUrl}
-            error={!!error("iconUrl")}
-            helperText={error("iconUrl")}
-            onChange={(event) => onChange({ iconUrl: event.target.value })}
-            slotProps={{ htmlInput: { maxLength: 2048, spellCheck: false, inputMode: "url" } }}
-          />
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <IconPicker
+              label={t("dashboard.custom.editor.iconUrl")}
+              emptyLabel={t("dashboard.custom.editor.iconNone")}
+              value={draft.iconUrl}
+              onChange={(iconUrl) => onChange({ iconUrl })}
+              error={error("iconUrl")}
+              preview={<WidgetIcon iconUrl={draft.iconUrl.trim() || undefined} size={28} />}
+            />
+          </Box>
           <TextField
             size="small"
             label={t("dashboard.custom.editor.emoji")}

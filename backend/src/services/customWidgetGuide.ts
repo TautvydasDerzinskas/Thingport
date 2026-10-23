@@ -37,7 +37,9 @@ Save it with the \`save_widget\` tool. The user then adds it from **Add panel** 
 
 - **name**: up to 40 characters. **description**: up to 300.
 - **iconUrl**: optional, and the best icon: an http(s) address of an image, shown in place of \`icon\`. Prefer an
-  SVG, which stays sharp from the 16 px tab icon up, and one with a transparent background.
+  SVG, which stays sharp from the 16 px tab icon up, and one with a transparent background. It may also be one of
+  Thingport's own icons, \`builtin:<group>/<name>\`, such as \`builtin:providers/printables\` or
+  \`builtin:thingport/mark\`, or an icon the user uploaded, \`/api/icons/<file>\`; keep one the user already set.
 - **icon**: optional, shown when there's no \`iconUrl\`: an emoji, or an SVG \`data:\` address.
 - **author**: the author's full name. Leave it out and saving puts in the user's name from their profile.
   **authorUrl**: optional, a page of theirs, such as a GitHub profile.

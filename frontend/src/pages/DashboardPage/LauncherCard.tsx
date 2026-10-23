@@ -13,6 +13,7 @@ import Typography from "@mui/material/Typography";
 import CloseIcon from "@mui/icons-material/Close";
 import SearchIcon from "@mui/icons-material/Search";
 import DashboardCard, { DashboardCardBody } from "./DashboardCard";
+import { useIconSrc } from "../../components/IconPicker/iconCatalog";
 import type { LauncherLink } from "./widgets";
 
 /** As holm draws app icons: in their own colours, or as one-colour glyphs that follow the theme, or those dimmed. */
@@ -50,7 +51,7 @@ export function LauncherIcon({
   iconStyle: LauncherIconStyle;
   size?: number;
 }) {
-  const sources = [item.icon, faviconOf(item.url)].filter((src): src is string => Boolean(src));
+  const sources = [useIconSrc(item.icon), faviconOf(item.url)].filter((src): src is string => Boolean(src));
   const [failed, setFailed] = useState(0);
   const [loaded, setLoaded] = useState<string | null>(null);
   const src = sources[failed];
