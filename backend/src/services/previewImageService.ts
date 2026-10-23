@@ -27,13 +27,14 @@ export function previewImageExists(id: string, home: AssetHome): boolean {
   return assetExists(home, galleryImageFile(id));
 }
 
-/** The stored JPEG's size, and its SHA-256 when it was hashed for sharing (file reuse on). Null when it couldn't be
- *  saved. */
+/** Where the JPEG was stored, its size, and its SHA-256 when it was hashed for sharing (file reuse on). Null when it
+ *  couldn't be saved. The path is returned so a caller that has to undo the save removes exactly this file, without
+ *  looking the folder up again through a print that may be gone. */
 async function saveBuffer(
   printId: string,
   id: string,
   input: Buffer,
-): Promise<{ size: number; contentSha256: string | null } | null> {
+): Promise<{ dest: string; size: number; contentSha256: string | null } | null> {
   let tmp: string | null = null;
   try {
     const dest = assetTarget(await ensureAssetHome(printId), galleryImageFile(id));
@@ -52,7 +53,7 @@ async function saveBuffer(
     const { contentSha256, shared } = await shareStoredBytes(out, tmp, findStoredCopies, plainWriteMode());
     if (!shared) await fs.writeFile(tmp, out, { flag: "wx" });
     await fs.rename(tmp, dest);
-    return { size: out.length, contentSha256 };
+    return { dest, size: out.length, contentSha256 };
   } catch {
     if (tmp) await fs.rm(tmp, { force: true });
     return null;
@@ -75,12 +76,21 @@ export async function addPreviewImage(
   }
   // Recorded after the file is in place, so a stored copy is only ever offered once it's there. The row may have been
   // deleted meanwhile (its print removed while the picture was being saved): then the file has no row, so it goes too.
-  const { count } = await prisma.previewImage.updateMany({ where: { id: row.id }, data: saved });
-  if (count === 0) {
-    await removePreviewImageFile(printId, row.id);
+  // It's removed by the path it was written to: with the print gone there's no folder left to look up.
+  const { dest, ...stored } = saved;
+  try {
+    const { count } = await prisma.previewImage.updateMany({ where: { id: row.id }, data: stored });
+    if (count === 0) {
+      await fs.rm(dest, { force: true });
+      return null;
+    }
+    return await prisma.previewImage.findUnique({ where: { id: row.id } });
+  } catch (err) {
+    console.error(`Failed to record preview image ${row.id}:`, err);
+    await fs.rm(dest, { force: true }).catch(() => undefined);
+    await prisma.previewImage.deleteMany({ where: { id: row.id } }).catch(() => undefined);
     return null;
   }
-  return prisma.previewImage.findUnique({ where: { id: row.id } });
 }
 
 /** An existing image (e.g. an import's cover) always wins. */

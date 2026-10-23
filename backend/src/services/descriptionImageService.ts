@@ -100,6 +100,8 @@ export async function saveDescriptionImage(printId: string, buffer: Buffer, sour
   const mime = await imageMime(buffer);
   if (!mime) return null;
   const row = await prisma.descriptionImage.create({ data: { printId, sourceUrl, mime, size: buffer.length } });
+  // Set once this call has put the file there (written exclusively, or cloned with EXCL), so it's ours to remove again.
+  let placed: string | null = null;
   try {
     const dest = assetTarget(await ensureAssetHome(printId), descriptionImageFile(row));
     await fs.mkdir(path.dirname(dest), { recursive: true });
@@ -113,9 +115,11 @@ export async function saveDescriptionImage(printId: string, buffer: Buffer, sour
       if (err instanceof HttpError && err.status === 409) throw err;
     }
     if (!shared) await fs.writeFile(dest, buffer, { flag: "wx" });
+    placed = dest;
     // After the file is in place, so a stored copy is only ever offered once it's there.
     if (contentSha256) await prisma.descriptionImage.update({ where: { id: row.id }, data: { contentSha256 } });
   } catch {
+    if (placed) await fs.rm(placed, { force: true }).catch(() => undefined);
     await prisma.descriptionImage.delete({ where: { id: row.id } }).catch(() => undefined);
     return null;
   }

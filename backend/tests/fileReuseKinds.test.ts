@@ -300,6 +300,37 @@ describe("gallery images", () => {
     expect(fs.existsSync(previewImagePath(savedId!, home))).toBe(false);
     expect(await prisma.previewImage.count({ where: { printId: print.print.id } })).toBe(0);
   });
+
+  it("removes the file from the model's own folder when the whole print is deleted meanwhile", async () => {
+    await setFileReuse("off");
+    const print = await makePrint(dir, firstUserId, "Kinds");
+    const home = (await prisma.print.findUnique({ where: { id: print.print.id } }))!.assetsPath;
+    const realUpdateMany = prisma.previewImage.updateMany.bind(prisma.previewImage);
+    let savedId: string | null = null;
+    vi.spyOn(prisma.previewImage, "updateMany").mockImplementationOnce(async (args) => {
+      // The print goes (its rows with it) while the picture is being saved; its folder is left on disk.
+      savedId = String(args.where?.id);
+      await prisma.print.delete({ where: { id: print.print.id } });
+      return realUpdateMany(args);
+    });
+    expect(await addPreviewImage(print.print.id, await uniqueImage())).toBeNull();
+    expect(fs.existsSync(previewImagePath(savedId!, home))).toBe(false);
+  });
+
+  it("returns null, and leaves no file or row, when recording the file fails", async () => {
+    await setFileReuse("off");
+    const print = await makePrint(dir, firstUserId, "Kinds");
+    const home = (await prisma.print.findUnique({ where: { id: print.print.id } }))!.assetsPath;
+    let savedId: string | null = null;
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.spyOn(prisma.previewImage, "updateMany").mockImplementationOnce(async (args) => {
+      savedId = String(args.where?.id);
+      throw new Error("db down");
+    });
+    expect(await addPreviewImage(print.print.id, await uniqueImage())).toBeNull();
+    expect(fs.existsSync(previewImagePath(savedId!, home))).toBe(false);
+    expect(await prisma.previewImage.count({ where: { printId: print.print.id } })).toBe(0);
+  });
 });
 
 describe("description images", () => {
@@ -331,6 +362,20 @@ describe("description images", () => {
     expect(await prisma.descriptionImage.findUnique({ where: { id: first.id } })).toBeNull();
     expect(fs.readFileSync(secondPath).equals(download)).toBe(true);
     expect(await prisma.descriptionImage.findUnique({ where: { id: second.id } })).not.toBeNull();
+  });
+
+  it("removes the file as well as the row when recording its hash fails", async () => {
+    await setFileReuse("reflink");
+    const print = await makePrint(dir, firstUserId, "Kinds");
+    const home = (await prisma.print.findUnique({ where: { id: print.print.id } }))!.assetsPath;
+    let image: { id: string; mime: string } | null = null;
+    vi.spyOn(prisma.descriptionImage, "update").mockImplementationOnce((async (args: { where: { id: string } }) => {
+      image = (await prisma.descriptionImage.findUnique({ where: { id: args.where.id } }))!;
+      throw new Error("db down");
+    }) as never);
+    expect(await saveDescriptionImage(print.print.id, await uniqueImage("png"), null)).toBeNull();
+    expect(fs.existsSync(descriptionImagePath(image!, home))).toBe(false);
+    expect(await prisma.descriptionImage.count({ where: { printId: print.print.id } })).toBe(0);
   });
 
   it("records no hash and clones nothing while the switch is off", async () => {
