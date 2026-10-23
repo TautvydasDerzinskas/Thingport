@@ -129,7 +129,10 @@ model User {
   cults3dUserAgent         String?
   // When Cults3D last answered the session with its sign-in page.
   cults3dSessionRejectedAt DateTime?
+  // The slicer a model's "Open in" button opens: the last one used. Always one of `slicers`.
   slicer                   String?
+  // The slicers the user has installed, offered in a model's "Open in" menu.
+  slicers                  String[]          @default([])
   // "light" | "dark" | "system"; null means never set.
   themePreference          String?
   // One of ACCENT_COLORS; null means Thingport green.

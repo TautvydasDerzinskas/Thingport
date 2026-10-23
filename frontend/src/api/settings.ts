@@ -9,6 +9,15 @@ export type McpAccess = "off" | "read" | "write";
 
 export type FileReuse = "off" | "reflink" | "hardlink";
 
+/** `slicer` is the one a model's main button opens (the last one used), `slicers` the ones installed. */
+export type SlicerSettings = { slicer: string | null; slicers: string[] };
+
+/** A backend older than the installed-slicers list answers with `slicer` alone: that one is the one installed. */
+function toSlicerSettings(body: Partial<SlicerSettings>): SlicerSettings {
+  const slicer = body.slicer ?? null;
+  return { slicer, slicers: body.slicers ?? (slicer ? [slicer] : []) };
+}
+
 export type StorageToken =
   "category-or-folder" | "collection" | "tags" | "creator" | "model" | "filename" | "id" | "plate";
 
@@ -758,23 +767,26 @@ export const settingsApi = {
     return res.json();
   },
 
-  getSlicer: async (): Promise<{ slicer: string | null }> => {
+  getSlicer: async (): Promise<SlicerSettings> => {
     const res = await fetch(`${apiBase()}/settings/slicer`, { headers: authHeaders() });
     assertOk(res, "Failed to load slicer setting");
-    return res.json();
+    return toSlicerSettings(await res.json());
   },
 
-  updateSlicer: async (slicer: string | null): Promise<{ slicer: string | null }> => {
+  /** A field left out keeps its value. `enable`/`disable` switch one slicer in the list as the server has it. */
+  updateSlicer: async (
+    patch: Partial<SlicerSettings> & { enable?: string; disable?: string },
+  ): Promise<SlicerSettings> => {
     const res = await fetch(`${apiBase()}/settings/slicer`, {
       method: "PATCH",
       headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ slicer }),
+      body: JSON.stringify(patch),
     });
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) {
       throw new Error(await readErrorMessage(res, "Failed to update slicer setting"));
     }
-    return res.json();
+    return toSlicerSettings(await res.json());
   },
 
   // Null means never set.

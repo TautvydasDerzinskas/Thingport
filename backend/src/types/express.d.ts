@@ -9,6 +9,8 @@ declare global {
       viaApiToken?: boolean;
       /** When the person behind this session last actually signed in (not refreshed). */
       signedInAt?: Date;
+      /** A session token from an `/api/t/<token>/...` link, which `pathToken` strips from the URL. */
+      pathToken?: string;
     }
   }
 }

@@ -2042,10 +2042,12 @@
       "comingSoon": "Jau netrukus"
     },
     "slicer": {
-      "subtitle": "Pjaustyklė, kurioje modelį atveria „Atverti pjaustyklėje“. Spustelėkite dešiniuoju pelės mygtuku ir pasirinkite „Aktyvuoti“ arba spustelėkite dukart.",
+      "subtitle": "Šiame kompiuteryje įdiegtos pjaustyklės. Modelis atveriamas paskutine naudota; kitos yra jo meniu „Atverti su“. Spustelėkite dukart arba dešiniuoju pelės mygtuku, kad įjungtumėte ar išjungtumėte.",
       "active": "Aktyvi",
       "notActive": "Neaktyvi",
-      "activate": "Aktyvuoti"
+      "activate": "Aktyvuoti",
+      "lastUsed": "Paskutinė naudota",
+      "deactivate": "Išjungti"
     },
     "storageMoveProgress": {
       "label": "{{phrase}} {{done}} iš {{total}} modelių",
@@ -3055,7 +3057,6 @@
       "size": "Dydis",
       "sizeHint": "Bendras visų šio modelio failų dydis saugykloje",
       "author": "Autorius",
-      "downloadModelFiles": "Atsisiųsti modelio failus",
       "imported": "Importuota {{date}}",
       "quality": {
         "scanning": "Tikrinama spausdinimo kokybė…",
@@ -3139,7 +3140,13 @@
           "minorHint": "Pjaustyklės paprastai susitvarko pačios arba tai greitai pataisoma jose."
         },
         "manageSettings": "Tvarkyti kokybės patikrą"
-      }
+      },
+      "fileSelectLabel": "Failai ({{count}})",
+      "fileSelectAria": "Failas: {{file}}. Pasirinkti kitą",
+      "downloadFile": "Atsisiųsti failą",
+      "moreOpenOptions": "Kitos pjaustyklės ir atsisiuntimai",
+      "openActions": "Atverti arba atsisiųsti",
+      "openInHeading": "Atverti su"
     },
     "edit": {
       "title": "Redaguoti modelį",

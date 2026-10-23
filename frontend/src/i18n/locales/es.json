@@ -1976,10 +1976,12 @@
       "comingSoon": "Próximamente"
     },
     "slicer": {
-      "subtitle": "El slicer en el que se abre un modelo con «Abrir en slicer». Haz clic derecho en uno y pulsa Activar, o haz doble clic en él.",
+      "subtitle": "Los slicers instalados en este ordenador. Un modelo se abre en el último que usaste; los demás están en su menú «Abrir en». Haz doble clic en uno, o clic derecho, para activarlo o desactivarlo.",
       "active": "Activo",
       "notActive": "No activo",
-      "activate": "Activar"
+      "activate": "Activar",
+      "lastUsed": "Último usado",
+      "deactivate": "Desactivar"
     },
     "storageMoveProgress": {
       "label": "{{phrase}} {{done}} de {{total}} modelos",
@@ -2988,7 +2990,6 @@
       "size": "Tamaño",
       "sizeHint": "Tamaño total de todos los archivos de este modelo en el almacenamiento",
       "author": "Autor",
-      "downloadModelFiles": "Descargar archivos del modelo",
       "imported": "Importado el {{date}}",
       "quality": {
         "scanning": "Comprobando la calidad de impresión…",
@@ -3065,7 +3066,13 @@
           "minorHint": "Los slicers suelen resolverlo, o se corrige rápido en uno."
         },
         "manageSettings": "Gestionar la comprobación de calidad"
-      }
+      },
+      "fileSelectLabel": "Archivos ({{count}})",
+      "fileSelectAria": "Archivo: {{file}}. Elegir otro",
+      "downloadFile": "Descargar archivo",
+      "moreOpenOptions": "Otros slicers y descargas",
+      "openActions": "Abrir o descargar",
+      "openInHeading": "Abrir en"
     },
     "edit": {
       "title": "Editar modelo",
