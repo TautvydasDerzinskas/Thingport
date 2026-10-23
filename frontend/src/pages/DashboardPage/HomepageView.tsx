@@ -50,10 +50,10 @@ export default function HomepageView({
                 isAdmin={isAdmin}
                 onUnauthorized={onUnauthorized}
               />
-              {/* The top bar's search, opened with ⌘S over the page. What it opens that lives in the app's layout,
+              {/* The top bar's search, opened with ⌘S or its corner button. What it opens that lives in the app's layout,
                   importing and Configuration, takes the user into the app for it. */}
               <GlobalSearch
-                variant="spotlight"
+                trigger="corner"
                 onUnauthorized={onUnauthorized}
                 theme={themeSelection}
                 onThemeChange={onThemeChange}

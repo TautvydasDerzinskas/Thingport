@@ -5,6 +5,7 @@ import KeyboardCommandKeyIcon from "@mui/icons-material/KeyboardCommandKey";
 import KeyboardReturnIcon from "@mui/icons-material/KeyboardReturn";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import KeyboardCapslockIcon from "@mui/icons-material/KeyboardCapslock";
 
 export const isMac =
   typeof navigator !== "undefined" && /mac|iphone|ipad/i.test(navigator.platform || navigator.userAgent);
@@ -15,13 +16,16 @@ export const chipBg = (theme: Theme) =>
 
 /** The search shortcut's modifier: ⌘ on a Mac, Ctrl everywhere else. */
 export const MOD_KEY = isMac ? "⌘" : "Ctrl";
+export const SHIFT_KEY = isMac ? "⇧" : "Shift";
 
-// Drawn as icons: the UI font has no ⌘ or ↵, and system fallbacks vary.
+// Drawn as icons: the UI font has no ⌘, ↵ or ⇧, and system fallbacks vary.
 const GLYPHS: Record<string, ReactNode> = {
   "⌘": <KeyboardCommandKeyIcon sx={{ fontSize: 11 }} />,
   "↵": <KeyboardReturnIcon sx={{ fontSize: 11 }} />,
   "↑": <ArrowUpwardIcon sx={{ fontSize: 11 }} />,
   "↓": <ArrowDownwardIcon sx={{ fontSize: 11 }} />,
+  // Shift's outlined arrow, the nearest Material has.
+  "⇧": <KeyboardCapslockIcon sx={{ fontSize: 11 }} />,
 };
 
 /** A shortcut like "⌘ S" as a row of keycaps. */

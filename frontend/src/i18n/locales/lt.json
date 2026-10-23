@@ -487,6 +487,11 @@
       "open": "Atidaryti",
       "openSearch": "Ieškoti",
       "runCommand": "Vykdyti komandą",
+      "actions": "Veiksmai",
+      "actionsFor": "Veiksmai: {{title}}",
+      "openInNewTab": "Atidaryti naujame skirtuke",
+      "copyLink": "Kopijuoti nuorodą",
+      "linkCopied": "Nuoroda nukopijuota",
       "toMove": "judėti",
       "kind": {
         "model": "Modelis",
