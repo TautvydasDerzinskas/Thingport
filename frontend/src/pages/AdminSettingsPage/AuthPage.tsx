@@ -2,7 +2,6 @@ import React from "react";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import McpSection from "./McpSection";
-import CustomWidgetsSection from "./CustomWidgetsSection";
 import PublicUrlSection from "./PublicUrlSection";
 import RegistrationsSection from "./RegistrationsSection";
 import SessionSection from "./SessionSection";
@@ -24,7 +23,6 @@ export default function AuthPage({ onUnauthorized }: Props) {
       <SignInMethodsSection key={publicUrlVersion} onUnauthorized={onUnauthorized} />
       <SessionSection onUnauthorized={onUnauthorized} />
       <McpSection onUnauthorized={onUnauthorized} />
-      <CustomWidgetsSection onUnauthorized={onUnauthorized} />
     </Stack>
   );
 }

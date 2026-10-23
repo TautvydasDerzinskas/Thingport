@@ -1785,7 +1785,7 @@
           "tags_merged": "Žymos sujungtos",
           "mcp_access_changed": "Pakeitė MCP prieigą",
           "file_reuse_changed": "Pakeitė, kaip saugomi vienodi failai",
-          "custom_widgets_changed": "Pakeistas pasirinktinių valdiklių leidimas"
+          "custom_widgets_changed": "Pakeista, kurie pasirinktiniai valdikliai leidžiami"
         },
         "authorsLinked": "Susieta modelių: {{count}}",
         "descriptionsRefetched": "{{email}} — pakeista aprašymų: {{updated}} iš {{total}}",
@@ -2083,14 +2083,63 @@
           "write": "Raktai taip pat gali importuoti modelius ir dėti juos į kolekcijas, jei naudotojas tai įjungia."
         }
       },
-      "customWidgets": {
-        "heading": "Pasirinktiniai valdikliai",
-        "subtitle": "Suvestinės valdikliai, kuriuos naudotojai kuria arba įdiegia iš bendruomenės.",
-        "label": "Leisti pasirinktinius valdiklius",
-        "help": "Pasirinktinio valdiklio skriptas veikia naudotojo suvestinėje su jo prieiga prie Thingport. Išjunkite tai sistemoje, kuria dalijatės su žmonėmis, kuriais visiškai nepasitikite.",
-        "on": "Naudotojai gali kurti ir diegti valdiklius.",
-        "off": "Pasirinktiniai valdikliai išjungti; jų skydeliai tai nurodo.",
-        "failed": "Nepavyko pakeisti nustatymo."
+      "dashboard": {
+        "heading": "Suvestinė",
+        "subtitle": "Kokius pasirinktinius valdiklius naudotojai gali pridėti ir kuriuos naudoja.",
+        "sources": {
+          "heading": "Pasirinktiniai valdikliai",
+          "help": "Pasirinktinio valdiklio skriptas veikia naudotojo suvestinėje su jo prieiga prie Thingport. Išjunkite rūšį sistemoje, kuria dalijatės su žmonėmis, kuriais visiškai nepasitikite: jos valdikliai nustos krautis, o jų skydeliai tai nurodys.",
+          "own": {
+            "label": "Naudotojų valdikliai",
+            "on": "Naudotojai gali kurti ir redaguoti savo valdiklius.",
+            "off": "Išjungta: naudotojų valdikliai nekraunami."
+          },
+          "community": {
+            "label": "Bendruomenės valdikliai",
+            "on": "Naudotojai gali įdiegti valdiklius iš bendruomenės saugyklos.",
+            "off": "Išjungta: bendruomenės valdikliai nekraunami."
+          },
+          "failed": "Nepavyko pakeisti nustatymo."
+        },
+        "stats": {
+          "widgets": "Naudojami valdikliai",
+          "users": "Naudotojai su valdikliais",
+          "placed": "Suvestinėse",
+          "installs": "Bendruomenės įdiegimai"
+        },
+        "tabs": {
+          "inUse": "Naudojami",
+          "community": "Bendruomenė"
+        },
+        "inUse": {
+          "own": "Savas",
+          "community": "Bendruomenės",
+          "placed_one": "{{count}} suvestinėje",
+          "placed_few": "{{count}} suvestinėse",
+          "placed_many": "{{count}} suvestinės",
+          "placed_other": "{{count}} suvestinių",
+          "open": "Kas naudoja {{name}}",
+          "empty": "Dar niekas neturi pasirinktinio valdiklio. Naudotojai juos prideda savo suvestinėje: Redaguoti, tada Pridėti skydelį.",
+          "failed": "Nepavyko įkelti naudojamų valdiklių."
+        },
+        "community": {
+          "installs_one": "{{count}} įdiegimas",
+          "installs_few": "{{count}} įdiegimai",
+          "installs_many": "{{count}} įdiegimo",
+          "installs_other": "{{count}} įdiegimų",
+          "outdated_one": "{{count}} senesnės versijos",
+          "outdated_few": "{{count}} senesnės versijos",
+          "outdated_many": "{{count}} senesnės versijos",
+          "outdated_other": "{{count}} senesnės versijos",
+          "source": "Žiūrėti kodą",
+          "off": "Bendruomenės valdikliai išjungti: naudotojai negali jų įdiegti, o įdiegti nekraunami.",
+          "empty": "Bendruomenės saugykloje dar nėra valdiklių.",
+          "error": "Nepavyko pasiekti bendruomenės saugyklos."
+        },
+        "users": {
+          "placed": "Suvestinėje",
+          "installed": "Tik įdiegtas"
+        }
       }
     },
     "download": {

@@ -32,6 +32,7 @@ import AdminPage from "./pages/AdminPage";
 import ProvidersPage from "./pages/AdminSettingsPage/ProvidersPage";
 import StorageSettingsPage from "./pages/AdminSettingsPage/StoragePage";
 import AuthSettingsPage from "./pages/AdminSettingsPage/AuthPage";
+import DashboardAdminPage from "./pages/DashboardAdminPage";
 import UsersPage from "./pages/UsersPage";
 import LogsPage from "./pages/LogsPage";
 import NotificationsPage from "./pages/NotificationsPage";
@@ -307,6 +308,10 @@ function AppShell({
               <Navigate to="/" replace />
             )
           }
+        />
+        <Route
+          path="/admin-dashboard"
+          element={isAdmin ? <DashboardAdminPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
         />
         <Route
           path="/admin-ai"

@@ -13,11 +13,19 @@ import { HttpError } from "../utils/fileUtils";
 import { readCapped } from "../utils/readCapped";
 import { TtlCache } from "../utils/ttlCache";
 import { SLUG, manifestSchema, parseManifest, validateCode, type WidgetManifest } from "./customWidgetFormat";
-import { getCustomWidgetsEnabled } from "./settingsService";
+import { getWidgetSources, WIDGET_SOURCES, type WidgetSource } from "./settingsService";
 
-export async function assertCustomWidgetsEnabled(): Promise<void> {
-  if (!(await getCustomWidgetsEnabled()))
-    throw new HttpError(403, "Custom widgets are turned off on this Thingport", "CUSTOM_WIDGETS_OFF");
+export async function assertWidgetSourceEnabled(source: WidgetSource): Promise<void> {
+  if ((await getWidgetSources())[source]) return;
+  if (source === "own")
+    throw new HttpError(403, "Users' own widgets are turned off on this Thingport", "USER_WIDGETS_OFF");
+  throw new HttpError(403, "Community widgets are turned off on this Thingport", "COMMUNITY_WIDGETS_OFF");
+}
+
+/** The sources an admin hasn't turned off. */
+export async function enabledWidgetSources(): Promise<WidgetSource[]> {
+  const sources = await getWidgetSources();
+  return WIDGET_SOURCES.filter((source) => sources[source]);
 }
 
 export { SLUG, manifestSchema, parseManifest, validateManifest, type WidgetManifest } from "./customWidgetFormat";
@@ -70,8 +78,15 @@ function out(row: Row): CustomWidgetOut | null {
 
 // --- The user's widgets ---------------------------------------------------------------------------------------------
 
-export async function listCustomWidgets(userId: string): Promise<CustomWidgetOut[]> {
-  const rows = await prisma.customWidget.findMany({ where: { userId }, orderBy: { createdAt: "asc" } });
+/** The user's widgets from the given sources, by default all of them. */
+export async function listCustomWidgets(
+  userId: string,
+  sources: readonly WidgetSource[] = WIDGET_SOURCES,
+): Promise<CustomWidgetOut[]> {
+  const rows = await prisma.customWidget.findMany({
+    where: { userId, source: { in: [...sources] } },
+    orderBy: { createdAt: "asc" },
+  });
   return rows.flatMap((row) => out(row) ?? []);
 }
 
@@ -161,8 +176,8 @@ export type CommunityWidget = {
   installed: { id: string; updateAvailable: boolean } | null;
 };
 
-/** The repository's widgets, from its `index.json`, each with whether the user has it and whether it has changed. */
-export async function listCommunityWidgets(userId: string): Promise<CommunityWidget[]> {
+/** The repository's widgets, from its `index.json`. */
+async function communityCatalog(): Promise<{ slug: string; manifest: WidgetManifest; sha: string }[]> {
   const indexText = await fetchText("index.json");
   if (!indexText) return [];
   let slugs: string[] = [];
@@ -174,17 +189,27 @@ export async function listCommunityWidgets(userId: string): Promise<CommunityWid
   } catch {
     throw new HttpError(502, "The community repository's index.json isn't valid JSON");
   }
-  const installed = await prisma.customWidget.findMany({
-    where: { userId, source: "community" },
-    select: { id: true, slug: true, sha: true },
-  });
   const results = await Promise.allSettled(slugs.map(fetchCommunityWidget));
-  return results.flatMap((result) => {
-    // One broken widget in the repository doesn't hide the rest.
-    if (result.status !== "fulfilled") return [];
-    const { slug, manifest, sha } = result.value;
+  // One broken widget in the repository doesn't hide the rest.
+  return results.flatMap((result) =>
+    result.status === "fulfilled"
+      ? [{ slug: result.value.slug, manifest: result.value.manifest, sha: result.value.sha }]
+      : [],
+  );
+}
+
+/** The repository's widgets, each with whether the user has it and whether it has changed. */
+export async function listCommunityWidgets(userId: string): Promise<CommunityWidget[]> {
+  const [catalog, installed] = await Promise.all([
+    communityCatalog(),
+    prisma.customWidget.findMany({
+      where: { userId, source: "community" },
+      select: { id: true, slug: true, sha: true },
+    }),
+  ]);
+  return catalog.map(({ slug, manifest, sha }) => {
     const mine = installed.find((row) => row.slug === slug);
-    return [{ slug, manifest, sha, installed: mine ? { id: mine.id, updateAvailable: mine.sha !== sha } : null }];
+    return { slug, manifest, sha, installed: mine ? { id: mine.id, updateAvailable: mine.sha !== sha } : null };
   });
 }
 
@@ -199,6 +224,68 @@ export async function installCommunityWidget(userId: string, slug: string): Prom
     update: data,
   });
   return out(row)!;
+}
+
+// --- Across the instance, for admins ------------------------------------------------------------------------------
+
+export type WidgetUser = { id: string; displayName: string; email: string; placed: boolean };
+export type WidgetInUse = {
+  /** The widget's id for an own one; the slug for a community one, which all its installs share. */
+  key: string;
+  source: WidgetSource;
+  slug: string;
+  manifest: WidgetManifest;
+  users: WidgetUser[];
+};
+
+/** Every custom widget someone has: a community widget once, with everyone who installed it; an own widget once
+ *  per owner. `placed` when it's on one of the user's dashboards rather than only installed. */
+export async function widgetsInUse(): Promise<WidgetInUse[]> {
+  const rows = await prisma.customWidget.findMany({
+    select: {
+      id: true,
+      source: true,
+      slug: true,
+      manifest: true,
+      user: { select: { id: true, displayName: true, email: true, dashboardTemplates: true } },
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+  const byKey = new Map<string, WidgetInUse>();
+  for (const row of rows) {
+    const manifest = manifestSchema.safeParse(row.manifest);
+    if (!manifest.success) continue;
+    const source: WidgetSource = row.source === "community" ? "community" : "own";
+    const key = source === "community" ? row.slug : row.id;
+    // Panels name the widget "custom-<id>", with ":<copy>" after a copy's.
+    const placed = JSON.stringify(row.user.dashboardTemplates ?? null).includes(`"custom-${row.id}`);
+    const user = { id: row.user.id, displayName: row.user.displayName, email: row.user.email, placed };
+    const entry = byKey.get(key);
+    if (entry) entry.users.push(user);
+    // The most recently updated copy's metadata stands for the widget.
+    else byKey.set(key, { key, source, slug: row.slug, manifest: manifest.data, users: [user] });
+  }
+  return [...byKey.values()].toSorted((a, b) => b.users.length - a.users.length);
+}
+
+export type CommunityWidgetUsage = {
+  slug: string;
+  manifest: WidgetManifest;
+  installs: number;
+  /** Installs still on an earlier version of the repository's files. */
+  outdated: number;
+};
+
+/** The repository's widgets with how many users installed each. */
+export async function communityWidgetUsage(): Promise<CommunityWidgetUsage[]> {
+  const [catalog, installed] = await Promise.all([
+    communityCatalog(),
+    prisma.customWidget.findMany({ where: { source: "community" }, select: { slug: true, sha: true } }),
+  ]);
+  return catalog.map(({ slug, manifest, sha }) => {
+    const copies = installed.filter((row) => row.slug === slug);
+    return { slug, manifest, installs: copies.length, outdated: copies.filter((row) => row.sha !== sha).length };
+  });
 }
 
 // --- Reaching declared hosts ----------------------------------------------------------------------------------------
@@ -278,6 +365,7 @@ export async function widgetFetch(
   request: z.infer<typeof widgetFetchSchema>,
 ): Promise<{ status: number; contentType: string | null; body: string }> {
   const widget = await getCustomWidget(userId, widgetId);
+  await assertWidgetSourceEnabled(widget.source);
   const url = new URL(request.url);
   if (url.protocol !== "http:" && url.protocol !== "https:") throw new HttpError(400, "Only http and https addresses");
   if (!hostAllowed(url, widget.manifest.hosts))

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { parseBody } from "../utils/validate";
 import { deleteAllPrintsForUser, getStorageUsage, listLogs, listUsersWithPrintCounts } from "../services/adminService";
 import { createLog } from "../services/auditLog";
+import { communityWidgetUsage, widgetsInUse } from "../services/customWidgetsService";
 import { listStorageFolder } from "../services/storageBrowserService";
 import { deleteUser, permissionsOver, setUserRole } from "../services/userAdminService";
 import { getHealthReport, HEALTH_COMPONENTS, testHealth } from "../services/systemHealthService";
@@ -304,6 +305,21 @@ router.post(
   "/import-queue/clear-finished",
   asyncHandler(async (_req, res) => {
     res.json({ deleted: await clearFinishedJobs() });
+  }),
+);
+
+// The custom widgets users have, and the community repository's with how many installed each.
+router.get(
+  "/widgets",
+  asyncHandler(async (_req, res) => {
+    res.json({ widgets: await widgetsInUse() });
+  }),
+);
+
+router.get(
+  "/widgets/community",
+  asyncHandler(async (_req, res) => {
+    res.json({ widgets: await communityWidgetUsage() });
   }),
 );
 

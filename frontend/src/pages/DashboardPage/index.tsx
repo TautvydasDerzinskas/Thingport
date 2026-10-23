@@ -178,7 +178,15 @@ export default function DashboardPage({ onUnauthorized, isAdmin = false, standal
       const widget = widgetById(instance);
       if (!widget)
         return isCustomInstance(instance) ? (
-          <MissingCustomWidget state={!customWidgets ? "loading" : customWidgets.enabled ? "removed" : "off"} />
+          <MissingCustomWidget
+            state={
+              !customWidgets
+                ? "loading"
+                : customWidgets.sources.own && customWidgets.sources.community
+                  ? "removed"
+                  : "off"
+            }
+          />
         ) : null;
       const settings = resolveSettings(widget, widgetSettings?.[instance]);
       // For an option the widget sets itself, like a weather panel's place, chosen on the panel.
@@ -229,7 +237,7 @@ export default function DashboardPage({ onUnauthorized, isAdmin = false, standal
                   <ListItemText>{labelOf(t, widget)}</ListItemText>
                 </MenuItem>
               ))}
-            {customWidgets?.enabled && [
+            {(customWidgets?.sources.own || customWidgets?.sources.community) && [
               <Divider key="custom-divider" />,
               <ListSubheader key="custom-heading" sx={{ lineHeight: "32px", bgcolor: "transparent" }}>
                 {t("dashboard.custom.heading")}

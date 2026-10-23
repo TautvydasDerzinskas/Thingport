@@ -15,8 +15,9 @@ A widget is yours alone: other users on the same Thingport don't see it unless t
 > [!WARNING]
 > A widget's script runs in your dashboard with your access to Thingport, like code you paste into the browser console.
 > Only write or install widgets you trust. An installed community widget stays exactly as you installed it: an update
-> is offered when its author changes it, and you approve it again before it runs. An admin can turn custom widgets off
-> for the whole instance under **Administration → Auth → Custom widgets**.
+> is offered when its author changes it, and you approve it again before it runs. An admin can turn users' own widgets and
+> community widgets off separately for the whole instance under **Administration → Dashboard**, which also lists the
+> widgets in use.
 
 ## Have an AI write one
 

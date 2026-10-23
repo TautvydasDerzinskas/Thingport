@@ -1754,7 +1754,7 @@
           "api_token_mcp_tools_changed": "Cambió las herramientas MCP de su token de API",
           "api_token_rest_scopes_changed": "Cambió los permisos de su token de API",
           "file_reuse_changed": "Cambió cómo se guardan los archivos idénticos",
-          "custom_widgets_changed": "Cambió si se permiten widgets personalizados"
+          "custom_widgets_changed": "Cambió qué widgets personalizados se permiten"
         },
         "authorsLinked": "{{count}} modelo(s) vinculado(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} de {{total}} descripción(es) modificada(s)",
@@ -2040,14 +2040,60 @@
           "write": "Los tokens también pueden importar modelos y guardarlos en colecciones, si su usuario lo activa."
         }
       },
-      "customWidgets": {
-        "heading": "Widgets personalizados",
-        "subtitle": "Widgets del panel que crean los usuarios o instalan de la comunidad.",
-        "label": "Permitir widgets personalizados",
-        "help": "El script de un widget personalizado se ejecuta en el panel de su usuario con su acceso a Thingport. Desactívalo en una instancia compartida con personas en las que no confíes plenamente.",
-        "on": "Los usuarios pueden crear e instalar widgets.",
-        "off": "Los widgets personalizados están desactivados; sus paneles lo indican.",
-        "failed": "No se pudo cambiar el ajuste."
+      "dashboard": {
+        "heading": "Panel",
+        "subtitle": "Qué widgets personalizados pueden añadir los usuarios, y cuáles usan.",
+        "sources": {
+          "heading": "Widgets personalizados",
+          "help": "El script de un widget personalizado se ejecuta en el panel de su usuario con su acceso a Thingport. Desactiva un tipo en una instancia compartida con personas de las que no te fías del todo: sus widgets dejan de cargarse y sus paneles lo indican.",
+          "own": {
+            "label": "Widgets propios de los usuarios",
+            "on": "Los usuarios pueden crear y editar los suyos.",
+            "off": "Desactivado: los widgets propios no se cargan."
+          },
+          "community": {
+            "label": "Widgets de la comunidad",
+            "on": "Los usuarios pueden instalar widgets del repositorio de la comunidad.",
+            "off": "Desactivado: los widgets de la comunidad no se cargan."
+          },
+          "failed": "No se pudo cambiar el ajuste."
+        },
+        "stats": {
+          "widgets": "Widgets en uso",
+          "users": "Usuarios con widgets",
+          "placed": "En paneles",
+          "installs": "Instalaciones de la comunidad"
+        },
+        "tabs": {
+          "inUse": "En uso",
+          "community": "Comunidad"
+        },
+        "inUse": {
+          "own": "Propio",
+          "community": "Comunidad",
+          "placed_one": "En {{count}} panel",
+          "placed_many": "En {{count}} paneles",
+          "placed_other": "En {{count}} paneles",
+          "open": "Quién usa {{name}}",
+          "empty": "Nadie tiene aún un widget personalizado. Los usuarios los añaden desde su panel: Editar y luego Añadir panel.",
+          "failed": "No se pudieron cargar los widgets en uso."
+        },
+        "community": {
+          "installs_one": "{{count}} instalación",
+          "installs_many": "{{count}} instalaciones",
+          "installs_other": "{{count}} instalaciones",
+          "outdated_one": "{{count}} en una versión anterior",
+          "outdated_many": "{{count}} en una versión anterior",
+          "outdated_other": "{{count}} en una versión anterior",
+          "source": "Ver código",
+          "off": "Los widgets de la comunidad están desactivados: los usuarios no pueden instalarlos y los instalados no se cargan.",
+          "empty": "El repositorio de la comunidad aún no tiene widgets.",
+          "error": "No se pudo acceder al repositorio de la comunidad."
+        },
+        "users": {
+          "placed": "En el panel",
+          "installed": "Solo instalado"
+        }
       }
     },
     "download": {

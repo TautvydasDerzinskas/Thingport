@@ -36,6 +36,22 @@ export type CustomWidget = {
   updatedAt: string;
 };
 
+/** Which kinds of custom widget an admin allows: users' own, and the community repository's. */
+export type WidgetSources = { own: boolean; community: boolean };
+
+/** A custom widget someone on the instance has: a community one once with all who installed it, an own one per owner. */
+export type WidgetInUse = {
+  key: string;
+  source: "own" | "community";
+  slug: string;
+  manifest: WidgetManifest;
+  /** `placed` when it's on one of their dashboards, not only installed. */
+  users: { id: string; displayName: string; email: string; placed: boolean }[];
+};
+
+/** A community repository widget with how many users installed it, and how many of those copies are behind. */
+export type CommunityWidgetUsage = { slug: string; manifest: WidgetManifest; installs: number; outdated: number };
+
 export type CommunityWidget = {
   slug: string;
   manifest: WidgetManifest;
@@ -58,8 +74,8 @@ async function failed(res: Response, fallback: string): Promise<never> {
 }
 
 export const widgetsApi = {
-  /** With custom widgets off, `enabled` is false and the list empty. */
-  list: async (): Promise<{ enabled: boolean; widgets: CustomWidget[] }> => {
+  /** Only widgets from the sources an admin allows. */
+  list: async (): Promise<{ sources: WidgetSources; widgets: CustomWidget[] }> => {
     const res = await fetch(`${apiBase()}/widgets`, { headers: authHeaders() });
     assertOk(res, "Failed to load your widgets");
     return res.json();
@@ -124,19 +140,34 @@ export const widgetsApi = {
     });
   },
 
-  getEnabled: async (): Promise<boolean> => {
+  getSources: async (): Promise<WidgetSources> => {
     const res = await fetch(`${apiBase()}/settings/custom-widgets`, { headers: authHeaders() });
-    assertOk(res, "Failed to load the custom widgets setting");
-    return (await res.json()).enabled;
+    if (!res.ok) return failed(res, "Failed to load the custom widgets setting");
+    return res.json();
   },
 
-  setEnabled: async (enabled: boolean): Promise<boolean> => {
+  /** Changes only the sources given. */
+  setSources: async (patch: Partial<WidgetSources>): Promise<WidgetSources> => {
     const res = await fetch(`${apiBase()}/settings/custom-widgets`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ enabled }),
+      body: JSON.stringify(patch),
     });
     if (!res.ok) return failed(res, "Failed to change the custom widgets setting");
-    return (await res.json()).enabled;
+    return res.json();
+  },
+
+  /** For admins: every custom widget users have. */
+  inUse: async (): Promise<WidgetInUse[]> => {
+    const res = await fetch(`${apiBase()}/admin/widgets`, { headers: authHeaders() });
+    if (!res.ok) return failed(res, "Failed to load the widgets in use");
+    return (await res.json()).widgets;
+  },
+
+  /** For admins: the community repository's widgets with their installs. */
+  communityUsage: async (): Promise<CommunityWidgetUsage[]> => {
+    const res = await fetch(`${apiBase()}/admin/widgets/community`, { headers: authHeaders() });
+    if (!res.ok) return failed(res, "Failed to load the community widgets");
+    return (await res.json()).widgets;
   },
 };

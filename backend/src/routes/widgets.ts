@@ -4,8 +4,9 @@ import { requireAuth } from "../auth";
 import { asyncHandler } from "../utils/asyncHandler";
 import { parseBody } from "../utils/validate";
 import {
-  assertCustomWidgetsEnabled,
+  assertWidgetSourceEnabled,
   deleteCustomWidget,
+  enabledWidgetSources,
   installCommunityWidget,
   listCommunityWidgets,
   listCustomWidgets,
@@ -14,18 +15,18 @@ import {
   widgetFetch,
   widgetFetchSchema,
 } from "../services/customWidgetsService";
-import { getCustomWidgetsEnabled } from "../services/settingsService";
+import { getWidgetSources } from "../services/settingsService";
 
 // The user's custom dashboard widgets: their own, and the ones installed from the community repository.
 const router = Router();
 router.use(requireAuth);
 
-// Whether they're on, so a dashboard can say so; with them off, the list is empty and everything else refuses.
+// Which sources are on, so a dashboard can say so; a source turned off is left out of the list, and refused.
 router.get(
   "/widgets",
   asyncHandler(async (req, res) => {
-    const enabled = await getCustomWidgetsEnabled();
-    res.json({ enabled, widgets: enabled ? await listCustomWidgets(req.userId!) : [] });
+    const [sources, enabled] = await Promise.all([getWidgetSources(), enabledWidgetSources()]);
+    res.json({ sources, widgets: await listCustomWidgets(req.userId!, enabled) });
   }),
 );
 
@@ -39,7 +40,7 @@ const saveSchema = z.object({
 router.put(
   "/widgets",
   asyncHandler(async (req, res) => {
-    await assertCustomWidgetsEnabled();
+    await assertWidgetSourceEnabled("own");
     const body = parseBody(saveSchema, req.body);
     res.json(
       await saveOwnWidget(req.userId!, {
@@ -63,7 +64,7 @@ router.delete(
 router.get(
   "/widgets/community",
   asyncHandler(async (req, res) => {
-    await assertCustomWidgetsEnabled();
+    await assertWidgetSourceEnabled("community");
     res.json({ widgets: await listCommunityWidgets(req.userId!) });
   }),
 );
@@ -72,16 +73,15 @@ router.get(
 router.post(
   "/widgets/community/:slug/install",
   asyncHandler(async (req, res) => {
-    await assertCustomWidgetsEnabled();
+    await assertWidgetSourceEnabled("community");
     res.json(await installCommunityWidget(req.userId!, String(req.params.slug)));
   }),
 );
 
-// A widget's request to one of the hosts its metadata declares, made by the server.
+// A widget's request to one of the hosts its metadata declares, made by the server; refused if its source is off.
 router.post(
   "/widgets/:id/fetch",
   asyncHandler(async (req, res) => {
-    await assertCustomWidgetsEnabled();
     res.json(await widgetFetch(req.userId!, String(req.params.id), parseBody(widgetFetchSchema, req.body)));
   }),
 );

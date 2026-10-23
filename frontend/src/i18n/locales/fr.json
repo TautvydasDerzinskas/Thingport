@@ -1754,7 +1754,7 @@
           "api_token_mcp_tools_changed": "A modifié les outils MCP de son jeton d'API",
           "api_token_rest_scopes_changed": "A modifié les autorisations de son jeton d'API",
           "file_reuse_changed": "A modifié le stockage des fichiers identiques",
-          "custom_widgets_changed": "A modifié l’autorisation des widgets personnalisés"
+          "custom_widgets_changed": "A modifié les widgets personnalisés autorisés"
         },
         "authorsLinked": "{{count}} modèle(s) relié(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} description(s) sur {{total}} modifiée(s)",
@@ -2040,14 +2040,60 @@
           "write": "Les jetons peuvent aussi importer des modèles et les ranger dans des collections, si leur utilisateur l'active."
         }
       },
-      "customWidgets": {
-        "heading": "Widgets personnalisés",
-        "subtitle": "Les widgets du tableau de bord que les utilisateurs créent ou installent depuis la communauté.",
-        "label": "Autoriser les widgets personnalisés",
-        "help": "Le script d’un widget personnalisé s’exécute dans le tableau de bord de son utilisateur avec son accès à Thingport. Désactivez-le sur une instance partagée avec des personnes en qui vous n’avez pas toute confiance.",
-        "on": "Les utilisateurs peuvent créer et installer des widgets.",
-        "off": "Les widgets personnalisés sont désactivés ; leurs panneaux l’indiquent.",
-        "failed": "Impossible de modifier le réglage."
+      "dashboard": {
+        "heading": "Tableau de bord",
+        "subtitle": "Les widgets personnalisés que les utilisateurs peuvent ajouter, et ceux qu’ils utilisent.",
+        "sources": {
+          "heading": "Widgets personnalisés",
+          "help": "Le script d’un widget personnalisé s’exécute dans le tableau de bord de son utilisateur avec son accès à Thingport. Désactivez un type sur une instance partagée avec des personnes en qui vous n’avez pas toute confiance : ses widgets ne se chargent plus et leurs panneaux l’indiquent.",
+          "own": {
+            "label": "Widgets des utilisateurs",
+            "on": "Les utilisateurs peuvent créer et modifier les leurs.",
+            "off": "Désactivé : les widgets des utilisateurs ne se chargent pas."
+          },
+          "community": {
+            "label": "Widgets de la communauté",
+            "on": "Les utilisateurs peuvent installer des widgets du dépôt de la communauté.",
+            "off": "Désactivé : les widgets de la communauté ne se chargent pas."
+          },
+          "failed": "Impossible de modifier le réglage."
+        },
+        "stats": {
+          "widgets": "Widgets utilisés",
+          "users": "Utilisateurs avec widgets",
+          "placed": "Sur des tableaux de bord",
+          "installs": "Installations communautaires"
+        },
+        "tabs": {
+          "inUse": "Utilisés",
+          "community": "Communauté"
+        },
+        "inUse": {
+          "own": "Personnel",
+          "community": "Communauté",
+          "placed_one": "Sur {{count}} tableau de bord",
+          "placed_many": "Sur {{count}} tableaux de bord",
+          "placed_other": "Sur {{count}} tableaux de bord",
+          "open": "Qui utilise {{name}}",
+          "empty": "Personne n’a encore de widget personnalisé. Les utilisateurs les ajoutent depuis leur tableau de bord : Modifier, puis Ajouter un panneau.",
+          "failed": "Impossible de charger les widgets utilisés."
+        },
+        "community": {
+          "installs_one": "{{count}} installation",
+          "installs_many": "{{count}} installations",
+          "installs_other": "{{count}} installations",
+          "outdated_one": "{{count}} sur une version antérieure",
+          "outdated_many": "{{count}} sur une version antérieure",
+          "outdated_other": "{{count}} sur une version antérieure",
+          "source": "Voir le code",
+          "off": "Les widgets de la communauté sont désactivés : les utilisateurs ne peuvent pas les installer et ceux installés ne se chargent pas.",
+          "empty": "Le dépôt de la communauté n’a pas encore de widgets.",
+          "error": "Impossible de joindre le dépôt de la communauté."
+        },
+        "users": {
+          "placed": "Sur le tableau de bord",
+          "installed": "Installé seulement"
+        }
       }
     },
     "download": {

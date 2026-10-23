@@ -1747,7 +1747,7 @@
           "tags_merged": "Tags merged",
           "mcp_access_changed": "Changed the MCP access",
           "file_reuse_changed": "Changed how identical files are stored",
-          "custom_widgets_changed": "Changed whether custom widgets are allowed"
+          "custom_widgets_changed": "Changed which custom widgets are allowed"
         },
         "authorsLinked": "{{count}} model(s) linked",
         "descriptionsRefetched": "{{email}} — {{updated}} of {{total}} description(s) changed",
@@ -2033,14 +2033,57 @@
           "write": "Tokens can also import models and file them into collections, if their user turns that on."
         }
       },
-      "customWidgets": {
-        "heading": "Custom widgets",
-        "subtitle": "Dashboard widgets users make, or install from the community.",
-        "label": "Allow custom widgets",
-        "help": "A custom widget's script runs in its user's dashboard with their access to Thingport. Turn this off on an instance shared with people you don't fully trust.",
-        "on": "Users can make and install widgets.",
-        "off": "Custom widgets are off; their panels say so.",
-        "failed": "Couldn't change the setting."
+      "dashboard": {
+        "heading": "Dashboard",
+        "subtitle": "Which custom widgets users may add, and the ones they use.",
+        "sources": {
+          "heading": "Custom widgets",
+          "help": "A custom widget's script runs in its user's dashboard with their access to Thingport. Turn a kind off on an instance shared with people you don't fully trust: its widgets stop loading, and their panels say so.",
+          "own": {
+            "label": "Users' own widgets",
+            "on": "Users can make and edit their own.",
+            "off": "Off: users' own widgets don't load."
+          },
+          "community": {
+            "label": "Community widgets",
+            "on": "Users can install widgets from the community repository.",
+            "off": "Off: community widgets don't load."
+          },
+          "failed": "Couldn't change the setting."
+        },
+        "stats": {
+          "widgets": "Widgets in use",
+          "users": "Users with widgets",
+          "placed": "On dashboards",
+          "installs": "Community installs"
+        },
+        "tabs": {
+          "inUse": "In use",
+          "community": "Community"
+        },
+        "inUse": {
+          "own": "Own",
+          "community": "Community",
+          "placed_one": "On {{count}} dashboard",
+          "placed_other": "On {{count}} dashboards",
+          "open": "Who uses {{name}}",
+          "empty": "No one has a custom widget yet. Users add them from their dashboard: Edit, then Add panel.",
+          "failed": "Couldn't load the widgets in use."
+        },
+        "community": {
+          "installs_one": "{{count}} install",
+          "installs_other": "{{count}} installs",
+          "outdated_one": "{{count}} on an older version",
+          "outdated_other": "{{count}} on an older version",
+          "source": "View source",
+          "off": "Community widgets are off: users can't install these, and installed ones don't load.",
+          "empty": "The community repository has no widgets yet.",
+          "error": "Couldn't reach the community repository."
+        },
+        "users": {
+          "placed": "On dashboard",
+          "installed": "Installed only"
+        }
       }
     },
     "download": {

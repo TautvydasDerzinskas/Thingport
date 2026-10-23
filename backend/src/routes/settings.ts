@@ -42,9 +42,9 @@ import {
   setAiDescriptionPrefs,
   type AiCategorizationPrefs,
   type AiDescriptionPrefs,
-  getCustomWidgetsEnabled,
+  getWidgetSources,
   getMcpAccess,
-  setCustomWidgetsEnabled,
+  setWidgetSources,
   setMcpAccess,
   MCP_ACCESS_LEVELS,
   getFileReuse,
@@ -373,12 +373,13 @@ router.patch(
 );
 
 // What API tokens may do at /api/mcp. The profile reads it with the token (GET /profile/api-token).
-// Whether users may add custom widgets: their scripts run in the users' own dashboards with their access.
+// Whether users may make their own widgets, and install the community's: their scripts run in the users' own
+// dashboards with their access.
 router.get(
   "/settings/custom-widgets",
   requireAdmin,
   asyncHandler(async (_req, res) => {
-    res.json({ enabled: await getCustomWidgetsEnabled() });
+    res.json(await getWidgetSources());
   }),
 );
 
@@ -386,10 +387,9 @@ router.post(
   "/settings/custom-widgets",
   requireAdmin,
   asyncHandler(async (req, res) => {
-    const { enabled } = parseBody(z.object({ enabled: z.boolean() }), req.body);
-    await setCustomWidgetsEnabled(enabled);
-    res.json({ enabled });
-    void createLog({ userId: req.userId!, action: "custom_widgets_changed", details: { enabled } });
+    const patch = parseBody(z.object({ own: z.boolean().optional(), community: z.boolean().optional() }), req.body);
+    res.json(await setWidgetSources(patch));
+    void createLog({ userId: req.userId!, action: "custom_widgets_changed", details: patch });
   }),
 );
 

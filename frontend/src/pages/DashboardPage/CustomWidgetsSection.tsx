@@ -78,8 +78,10 @@ export default function CustomWidgetsSection({ onAdd, onUnauthorized }: Props) {
   const { t } = useTranslation("app");
   const [tab, setTab] = useState<Tab>("mine");
   const custom = useCustomWidgets();
+  const own = custom?.sources.own ?? true;
+  const community = custom?.sources.community ?? true;
 
-  if (custom && !custom.enabled) return <Alert severity="info">{t("dashboard.custom.off")}</Alert>;
+  if (!own && !community) return <Alert severity="info">{t("dashboard.custom.off")}</Alert>;
 
   return (
     <Stack spacing={2}>
@@ -89,9 +91,9 @@ export default function CustomWidgetsSection({ onAdd, onUnauthorized }: Props) {
           value={tab}
           onChange={setTab}
           options={[
-            { value: "mine", label: t("dashboard.custom.tabs.mine") },
-            { value: "community", label: t("dashboard.custom.tabs.community") },
-            { value: "share", label: t("dashboard.custom.tabs.share") },
+            { value: "mine" as const, label: t("dashboard.custom.tabs.mine") },
+            ...(community ? [{ value: "community" as const, label: t("dashboard.custom.tabs.community") }] : []),
+            ...(own ? [{ value: "share" as const, label: t("dashboard.custom.tabs.share") }] : []),
           ]}
         />
       </Box>
@@ -99,8 +101,9 @@ export default function CustomWidgetsSection({ onAdd, onUnauthorized }: Props) {
         <MyWidgets
           widgets={custom?.widgets ?? null}
           reload={custom?.reload}
+          canCreate={own}
           onAdd={onAdd}
-          onBrowse={() => setTab("community")}
+          onBrowse={community ? () => setTab("community") : undefined}
           onUnauthorized={onUnauthorized}
         />
       )}
@@ -172,14 +175,18 @@ function WidgetRow({
 function MyWidgets({
   widgets,
   reload,
+  canCreate,
   onAdd,
   onBrowse,
   onUnauthorized,
 }: {
   widgets: CustomWidget[] | null;
   reload?: () => Promise<void>;
+  /** False while an admin has users' own widgets off. */
+  canCreate: boolean;
   onAdd: (widget: CustomWidget) => void;
-  onBrowse: () => void;
+  /** Absent while community widgets are off. */
+  onBrowse?: () => void;
   onUnauthorized?: () => void;
 }) {
   const { t } = useTranslation("app");
@@ -207,19 +214,23 @@ function MyWidgets({
 
   return (
     <Stack spacing={1}>
-      <Box>
-        <Button variant="outlined" size="small" startIcon={<AddIcon />} onClick={() => setEditing({ widget: null })}>
-          {t("dashboard.custom.new")}
-        </Button>
-      </Box>
+      {canCreate && (
+        <Box>
+          <Button variant="outlined" size="small" startIcon={<AddIcon />} onClick={() => setEditing({ widget: null })}>
+            {t("dashboard.custom.new")}
+          </Button>
+        </Box>
+      )}
       {widgets === null ? (
         [0, 1].map((index) => <Skeleton key={index} variant="rounded" height={62} />)
       ) : widgets.length === 0 ? (
         <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
           {t("dashboard.custom.none")}{" "}
-          <Link component="button" type="button" onClick={onBrowse}>
-            {t("dashboard.custom.browse")}
-          </Link>
+          {onBrowse && (
+            <Link component="button" type="button" onClick={onBrowse}>
+              {t("dashboard.custom.browse")}
+            </Link>
+          )}
         </Typography>
       ) : (
         widgets.map((widget) => (
@@ -259,24 +270,27 @@ function MyWidgets({
       )}
       <Menu anchorEl={menu?.anchor} open={menu !== null} onClose={() => setMenu(null)}>
         {menu && [
-          <MenuItem
-            key="edit"
-            onClick={() => {
-              setEditing({ widget: menu.widget });
-              setMenu(null);
-            }}
-          >
-            <ListItemIcon>
-              {menu.widget.source === "own" ? (
-                <EditOutlinedIcon fontSize="small" />
-              ) : (
-                <ContentCopyIcon fontSize="small" />
-              )}
-            </ListItemIcon>
-            <ListItemText>
-              {menu.widget.source === "own" ? t("dashboard.custom.edit") : t("dashboard.custom.copyToMine")}
-            </ListItemText>
-          </MenuItem>,
+          // Saving makes an own widget, which an admin may have turned off.
+          canCreate && (
+            <MenuItem
+              key="edit"
+              onClick={() => {
+                setEditing({ widget: menu.widget });
+                setMenu(null);
+              }}
+            >
+              <ListItemIcon>
+                {menu.widget.source === "own" ? (
+                  <EditOutlinedIcon fontSize="small" />
+                ) : (
+                  <ContentCopyIcon fontSize="small" />
+                )}
+              </ListItemIcon>
+              <ListItemText>
+                {menu.widget.source === "own" ? t("dashboard.custom.edit") : t("dashboard.custom.copyToMine")}
+              </ListItemText>
+            </MenuItem>
+          ),
           <MenuItem
             key="download"
             onClick={() => {

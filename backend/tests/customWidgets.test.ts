@@ -10,8 +10,9 @@ import {
   metadataHost,
   parseManifest,
   setCustomWidgetsFetchForTest,
+  widgetsInUse,
 } from "../src/services/customWidgetsService";
-import { setCustomWidgetsEnabled } from "../src/services/settingsService";
+import { setWidgetSources } from "../src/services/settingsService";
 import { MCP_TOOLS } from "../src/mcp/tools";
 
 const app = createApp();
@@ -40,7 +41,7 @@ beforeAll(async () => {
 
 afterEach(async () => {
   setCustomWidgetsFetchForTest();
-  await setCustomWidgetsEnabled(true);
+  await setWidgetSources({ own: true, community: true });
 });
 
 afterAll(async () => {
@@ -115,7 +116,7 @@ describe("own widgets", () => {
     expect(again.body.id).toBe(saved.body.id);
 
     const list = await request(app).get("/api/widgets").set(auth());
-    expect(list.body.enabled).toBe(true);
+    expect(list.body.sources).toEqual({ own: true, community: true });
     expect(list.body.widgets.map((w: { manifest: { name: string } }) => w.manifest.name)).toContain("Hi");
 
     expect((await request(app).delete(`/api/widgets/${saved.body.id}`).set(auth())).status).toBe(204);
@@ -189,6 +190,21 @@ describe("community widgets", () => {
     await request(app).post("/api/widgets/community/countdown/install").set(auth());
     const updated = await request(app).get("/api/widgets/community").set(auth());
     expect(updated.body.widgets[0].installed).toMatchObject({ updateAvailable: false });
+  });
+
+  it("lists who installed a community widget, and who has it on a dashboard", async () => {
+    repo["index.json"] = JSON.stringify({ widgets: ["countdown"] });
+    repo["countdown/widget.json"] = JSON.stringify({ name: "Countdown" });
+    repo["countdown/widget.js"] = SCRIPT;
+    setCustomWidgetsFetchForTest(async (input) => respond(repo[String(input).split("/community-widgets/")[1]]));
+    const installed = await request(app).post("/api/widgets/community/countdown/install").set(auth());
+    await prisma.user.update({
+      where: { id: userId },
+      data: { dashboardTemplates: { panels: [`custom-${installed.body.id}:a1`] } },
+    });
+
+    const countdown = (await widgetsInUse()).find((w) => w.source === "community" && w.slug === "countdown");
+    expect(countdown?.users).toContainEqual(expect.objectContaining({ id: userId, placed: true }));
   });
 });
 
@@ -266,15 +282,27 @@ describe("fetch through the server", () => {
   });
 });
 
-describe("admin switch", () => {
-  it("empties the list and refuses saving while custom widgets are off", async () => {
-    await setCustomWidgetsEnabled(false);
-    expect((await request(app).get("/api/widgets").set(auth())).body).toEqual({ enabled: false, widgets: [] });
+describe("admin switches", () => {
+  it("leaves users' own widgets out and refuses saving while they're off", async () => {
+    await request(app).put("/api/widgets").set(auth()).send({ slug: "kept", metadata: METADATA, script: SCRIPT });
+    await setWidgetSources({ own: false });
+    const list = await request(app).get("/api/widgets").set(auth());
+    expect(list.body.sources).toEqual({ own: false, community: true });
+    expect(list.body.widgets.some((w: { source: string }) => w.source === "own")).toBe(false);
     const save = await request(app)
       .put("/api/widgets")
       .set(auth())
       .send({ slug: "x1", metadata: METADATA, script: SCRIPT });
     expect(save.status).toBe(403);
+    expect(save.body.code).toBe("USER_WIDGETS_OFF");
+  });
+
+  it("refuses browsing and installing community widgets while they're off", async () => {
+    await setWidgetSources({ community: false });
+    const browse = await request(app).get("/api/widgets/community").set(auth());
+    expect(browse.status).toBe(403);
+    expect(browse.body.code).toBe("COMMUNITY_WIDGETS_OFF");
+    expect((await request(app).post("/api/widgets/community/countdown/install").set(auth())).status).toBe(403);
   });
 });
 

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { widgetsApi, type CustomWidget } from "../api/widgets";
+import { widgetsApi, type CustomWidget, type WidgetSources } from "../api/widgets";
 import { registerCustomWidgets } from "../pages/DashboardPage/widgets";
 
-type State = { enabled: boolean; widgets: CustomWidget[] };
+type State = { sources: WidgetSources; widgets: CustomWidget[] };
 
 // Shared by every user of the hook, so there's one request, and a widget saved or installed shows everywhere at once.
 let cached: State | undefined;
@@ -14,7 +14,7 @@ const listeners = new Set<(state: State) => void>();
 function publish(state: State) {
   cached = state;
   // Registered before anyone renders with it, so a panel showing the widget finds it.
-  registerCustomWidgets(state.enabled ? state.widgets : []);
+  registerCustomWidgets(state.widgets);
   listeners.forEach((listener) => listener(state));
 }
 
@@ -29,7 +29,7 @@ function load(): Promise<State> {
       return state;
     })
     // A failed load leaves custom widgets out rather than breaking the dashboard.
-    .catch((): State => cached ?? { enabled: true, widgets: [] })
+    .catch((): State => cached ?? { sources: { own: true, community: true }, widgets: [] })
     .finally(() => {
       if (inFlight === request) inFlight = null;
     });

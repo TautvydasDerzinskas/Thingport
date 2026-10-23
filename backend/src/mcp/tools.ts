@@ -17,7 +17,8 @@ import { search } from "../services/searchService";
 import { getImportTask, startImportTask, type ImportTaskState } from "../services/importTaskService";
 import { importAndDescribe, prepareSingleImport } from "../services/singleImport";
 import {
-  assertCustomWidgetsEnabled,
+  assertWidgetSourceEnabled,
+  enabledWidgetSources,
   listCustomWidgets,
   parseManifest,
   saveOwnWidget,
@@ -557,8 +558,7 @@ const listWidgets: McpToolDefinition = {
     include_code: z.boolean().optional().describe("Also return each widget's script and HTML."),
   },
   async run(ctx, args) {
-    await assertCustomWidgetsEnabled();
-    const widgets = await listCustomWidgets(ctx.userId);
+    const widgets = await listCustomWidgets(ctx.userId, await enabledWidgetSources());
     return {
       widgets: widgets.map((widget) => ({
         id: widget.id,
@@ -592,7 +592,7 @@ const saveWidget: McpToolDefinition = {
     html: z.string().optional().describe("Markup put into the panel before the script runs, e.g. a <style>."),
   },
   async run(ctx, args) {
-    await assertCustomWidgetsEnabled();
+    await assertWidgetSourceEnabled("own");
     const metadata = args.metadata;
     const manifest = typeof metadata === "string" ? parseManifest(metadata) : validateManifest(metadata);
     const widget = await saveOwnWidget(ctx.userId, {
