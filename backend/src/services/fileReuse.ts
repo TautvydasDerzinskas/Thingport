@@ -46,8 +46,8 @@ async function placeSharedCopy(
     } catch (err: any) {
       if (err?.code === "EEXIST") throw new HttpError(409, "Another file was just saved at the same path; try again");
       if (!UNSHAREABLE_CODES.has(err?.code)) throw err;
-      // EXCL made the destination ours, so a half-made one can go.
-      await fs.rm(destAbsPath, { force: true }).catch(() => undefined);
+      // Nothing to clean up: a failed link creates nothing, and a failed clone removes the destination it created
+      // itself. Removing it here could delete a file a concurrent import just saved at the same path.
       // A filesystem that can't share one stored file can't share the others either.
       if (err.code !== "ENOENT") return false;
     }
