@@ -151,7 +151,23 @@ export function describeProviderContract(spec: ProviderContractSpec): ContractCo
   let stub: FetchStub | null = null;
 
   const auth = () => ({ Authorization: `Bearer ${token}` });
-  const post = (path: string, body: Record<string, unknown>) => request(app).post(path).set(auth()).send(body);
+  // An import leaves work behind that outlives its response (previews, descriptions, activity, authors). Whatever of it
+  // fetches would otherwise land in the next stub, and break an exact "asked nothing" or call-list assertion in a test
+  // that follows, only when the machine is slow. So a request is over for a test once the stub has been quiet a moment.
+  const settle = async () => {
+    const watched = stub;
+    if (!watched) return;
+    for (let round = 0; round < 40; round++) {
+      const seen = watched.calls.length;
+      await new Promise((resolve) => setTimeout(resolve, 25));
+      if (watched.calls.length === seen) return;
+    }
+  };
+  const post = async (path: string, body: Record<string, unknown>) => {
+    const res = await request(app).post(path).set(auth()).send(body);
+    await settle();
+    return res;
+  };
   const ctx: ContractContext = {
     get userId() {
       return userId;
@@ -189,6 +205,7 @@ export function describeProviderContract(spec: ProviderContractSpec): ContractCo
   });
 
   afterEach(async () => {
+    await settle();
     stub?.restore();
     stub = null;
     await setProviderEnabled(spec.id as never, true);
