@@ -922,6 +922,18 @@
         "moveThem": "Moverlos",
         "pathLabel": "Ruta"
       },
+      "fileReuse": {
+        "heading": "Archivos idénticos",
+        "subtitle": "Ahorra espacio cuando varios usuarios importan el mismo modelo.",
+        "modeLabel": "Clonar archivos idénticos (copia en escritura)",
+        "help": "Thingport compara cada archivo de modelo nuevo con los ya guardados. La copia en escritura clona un archivo igual en btrfs, XFS o ZFS 2.2 y posteriores, y en otros sistemas lo guarda como siempre. Cada clon es un archivo independiente, así que editar uno en el disco nunca cambia el de otro usuario.",
+        "failed": "No se pudo guardar cómo se guardan los archivos idénticos. Inténtalo de nuevo.",
+        "loadFailed": "No se pudo cargar cómo se guardan los archivos idénticos.",
+        "modeHelp": {
+          "off": "Cada archivo de modelo ocupa su propio espacio.",
+          "reflink": "Un archivo ya guardado se clona donde el sistema de archivos lo permite, sin ocupar espacio extra hasta que una copia cambie."
+        }
+      },
       "consume": {
         "heading": "Carpeta de importación automática",
         "subtitle": "Importa todo lo que se coloque en una carpeta vigilada: archivos, estructuras de carpetas y ZIP.",
@@ -1396,7 +1408,8 @@
           "tags_merged": "Etiquetas fusionadas",
           "mcp_access_changed": "Cambió el acceso MCP",
           "api_token_mcp_tools_changed": "Cambió las herramientas MCP de su token de API",
-          "api_token_rest_scopes_changed": "Cambió los permisos de su token de API"
+          "api_token_rest_scopes_changed": "Cambió los permisos de su token de API",
+          "file_reuse_changed": "Cambió cómo se guardan los archivos idénticos"
         },
         "authorsLinked": "{{count}} modelo(s) vinculado(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} de {{total}} descripción(es) modificada(s)",

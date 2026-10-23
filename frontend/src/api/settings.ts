@@ -7,6 +7,8 @@ import type { QualityIssueCode, QualitySeverity } from "./prints";
 /** What API tokens may do at /api/mcp, instance-wide. */
 export type McpAccess = "off" | "read" | "write";
 
+export type FileReuse = "off" | "reflink";
+
 /** `slicer` is the one a model's main button opens (the last one used), `slicers` the ones installed. */
 export type SlicerSettings = { slicer: string | null; slicers: string[] };
 
@@ -336,6 +338,24 @@ export const settingsApi = {
     });
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update MCP settings"));
+    return res.json();
+  },
+
+  getFileReuse: async (): Promise<{ mode: FileReuse }> => {
+    const res = await fetch(`${apiBase()}/settings/file-reuse`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    assertOk(res, "Failed to load file reuse settings");
+    return res.json();
+  },
+
+  updateFileReuse: async (mode: FileReuse): Promise<{ mode: FileReuse }> => {
+    const res = await fetch(`${apiBase()}/settings/file-reuse`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ mode }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update file reuse settings"));
     return res.json();
   },
 

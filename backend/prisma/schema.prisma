@@ -586,7 +586,8 @@ model Plate {
   // The MakerWorld profile ("instance") this file came from. Each profile's 3MF has its own print
   // settings, so each gets its own Plate.
   sourceInstanceId String?
-  // Computed lazily; plate files are never rewritten in place.
+  // SHA-256 of the file, recorded when it's stored (with file reuse on) or when first needed. The file may be edited
+  // outside Thingport, so this is checked against the file before it's relied on.
   contentSha256    String?
   // The thumb is our own 3D render, which an imported image replaces.
   thumbGenerated   Boolean  @default(false)
@@ -599,6 +600,8 @@ model Plate {
   @@unique([printId, position])
   @@unique([printId, sourceInstanceId])
   @@index([printId])
+  // Finds a stored copy of a new plate's file to share (services/printCreation.ts).
+  @@index([contentSha256])
 }
 
 /// A photo of the finished model, stored as a normalized JPEG keyed by id. Position 0 is the

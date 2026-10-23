@@ -41,6 +41,31 @@ Change the layout later and existing files are moved to match in the background,
 Renaming a model renames its files too, so the folders stay readable. **Browse files** shows where each model's files
 are now.
 
+## The same model for several users
+
+When several users import the same model, each gets a copy of its files in their own folder. Admins can have
+Thingport save the space of those copies with the **Clone identical files (copy-on-write)** switch under
+**Administration → Storage → Identical files**. It's off by default, and every file is then stored on its own. Turned
+on, a file that's already stored is cloned copy-on-write on btrfs, XFS and ZFS 2.2 or later: the copy takes no extra
+space until one of them changes, and each user's file stays their own. On other filesystems the file is stored as
+usual.
+
+The disk space under **Administration → Overview** counts a copy-on-write clone in full, as the filesystem doesn't
+say which parts are shared.
+
+Thingport recognises a file by its content, so this applies to uploads, consume-folder imports and imports from any
+site alike. It still downloads the file first; only the space on disk is saved. Only files stored while the switch is
+on are recorded and can be reused: files stored while it was off aren't matched, and turning it on doesn't go back
+over the files already there. Turning it off leaves existing clones as the ordinary, independent files they are.
+
+Each copy-on-write copy is an independent file, so editing one on disk never changes another user's. Before a stored
+file is reused, the copy is read back and checked against the new import, and a stored file that changed since it was
+recorded isn't reused.
+
+Copying or backing up the storage folder with a tool that doesn't keep reflinks, such as plain `rsync` or `cp`, writes
+every copy out in full at the destination. Reflink-aware tools, such as `cp --reflink` or `btrfs send`, keep the
+saving.
+
 ## How much space it takes
 
 **Administration → Overview** shows the disk space Thingport uses, split into model files, pictures and previews, and

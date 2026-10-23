@@ -922,6 +922,18 @@
         "moveThem": "Move them",
         "pathLabel": "Path"
       },
+      "fileReuse": {
+        "heading": "Identical files",
+        "subtitle": "Save space when several users import the same model.",
+        "modeLabel": "Clone identical files (copy-on-write)",
+        "help": "Thingport compares each new model file with the ones already stored. Copy-on-write clones a match on btrfs, XFS or ZFS 2.2 and later, and stores the file as usual elsewhere. Each clone is a file of its own, so editing one on disk never changes another user's.",
+        "failed": "Couldn't save how identical files are stored. Please try again.",
+        "loadFailed": "Couldn't load how identical files are stored.",
+        "modeHelp": {
+          "off": "Every model file takes its own space.",
+          "reflink": "A file already stored is cloned where the filesystem can, taking no extra space until one copy changes."
+        }
+      },
       "consume": {
         "heading": "Consume Folder",
         "subtitle": "Import anything dropped into a watched folder: files, folder structures and ZIPs.",
@@ -1396,7 +1408,8 @@
           "grab_disconnected": "Thingport Grab removed",
           "collections_merged": "Collections merged",
           "tags_merged": "Tags merged",
-          "mcp_access_changed": "Changed the MCP access"
+          "mcp_access_changed": "Changed the MCP access",
+          "file_reuse_changed": "Changed how identical files are stored"
         },
         "authorsLinked": "{{count}} model(s) linked",
         "descriptionsRefetched": "{{email}} — {{updated}} of {{total}} description(s) changed",

@@ -115,6 +115,33 @@ export async function setPreviewMode(value: PreviewMode): Promise<void> {
   });
 }
 
+// How a model file identical to one already stored (by SHA-256) is saved (services/fileReuse.ts), instance-wide
+// since the copies may belong to different users. "reflink" clones it copy-on-write where the filesystem can (btrfs,
+// XFS, ZFS >= 2.2), so the copies stay independent files and only take space once they differ; elsewhere it's stored
+// as usual. There's deliberately no hard-link mode: a hard link is one file, so editing one user's copy on disk would
+// silently change every other user's too. Off unless an admin chooses, since the storage folder may be mounted and
+// its files edited outside Thingport; an unknown stored value (such as an old "hardlink") reads as off.
+export type FileReuse = "off" | "reflink";
+export const FILE_REUSE_MODES: readonly FileReuse[] = ["off", "reflink"];
+const FILE_REUSE_KEY = "file_reuse";
+const DEFAULT_FILE_REUSE: FileReuse = "off";
+
+export async function getFileReuse(): Promise<FileReuse> {
+  const row = await prisma.setting.findUnique({ where: { key: FILE_REUSE_KEY } });
+  const value = row?.value;
+  return typeof value === "string" && FILE_REUSE_MODES.includes(value as FileReuse)
+    ? (value as FileReuse)
+    : DEFAULT_FILE_REUSE;
+}
+
+export async function setFileReuse(value: FileReuse): Promise<void> {
+  await prisma.setting.upsert({
+    where: { key: FILE_REUSE_KEY },
+    create: { key: FILE_REUSE_KEY, value },
+    update: { value },
+  });
+}
+
 // What API tokens may do at /api/mcp, instance-wide. "read" also keeps a write tool off for a token
 // whose user ticked it, without forgetting the choice.
 export type McpAccess = "off" | "read" | "write";

@@ -24,6 +24,7 @@ import { generateCardRender } from "./previewImageService";
 import { printAssetHome } from "./modelAssets";
 import { deleteNormalized3mf } from "./normalized3mfCache";
 import { getPreviewMode } from "./settingsService";
+import { shareStoredCopy, type FileContent, type StoredCopy } from "./fileReuse";
 import { Prisma } from "@prisma/client";
 import type { CategorySource, Plate, Print } from "@prisma/client";
 import { enqueueAiCategorization } from "./aiCategorizationService";
@@ -80,6 +81,41 @@ async function placeFile(input: NewPlateInput, destAbsPath: string): Promise<str
     throw err;
   }
   return input.sourcePath ?? null;
+}
+
+/** Stored plate files with this content, for shareStoredCopy. */
+async function storedPlateCopies({ contentSha256, size }: FileContent): Promise<StoredCopy[]> {
+  // Only files in managed storage: one left where it was found (sourcePath) isn't ours to share.
+  const plates = await prisma.plate.findMany({
+    where: { contentSha256, size, sourcePath: null },
+    select: { id: true, storagePath: true },
+    // Newest first: the most recently stored copy is the likeliest to still be as it was hashed.
+    orderBy: { createdAt: "desc" },
+    take: 3,
+  });
+  return plates.map((plate) => ({
+    path: managedPlatePath(plate),
+    // Edited on disk since it was hashed: dropped, so it isn't offered again; plateContentSha256 hashes it anew when
+    // it's needed.
+    changed: async () => {
+      await prisma.plate.updateMany({ where: { id: plate.id, contentSha256 }, data: { contentSha256: null } });
+    },
+  }));
+}
+
+/** Stores the file, sharing a stored copy of it when the admin setting allows. Returns where it is and, when it was
+ *  hashed for that, its SHA-256 -- recorded either way so a later identical file finds it. */
+async function placePlateFile(
+  input: NewPlateInput,
+  destAbsPath: string,
+): Promise<{ effectivePath: string | null; contentSha256: string | null }> {
+  const fromPath = input.tempFilePath ?? input.copyFromPath;
+  if (!fromPath) return { effectivePath: await placeFile(input, destAbsPath), contentSha256: null };
+  const { contentSha256, shared } = await shareStoredCopy(fromPath, destAbsPath, storedPlateCopies);
+  if (!shared) return { effectivePath: await placeFile(input, destAbsPath), contentSha256 };
+  // The clone is in place: a temp file left behind is only clutter, not a reason to fail the import.
+  if (input.tempFilePath) await fs.rm(input.tempFilePath, { force: true }).catch(() => undefined);
+  return { effectivePath: destAbsPath, contentSha256 };
 }
 
 async function resolveSize(input: NewPlateInput, effectivePath: string | null): Promise<number> {
@@ -143,7 +179,7 @@ async function createPlateAtPosition(
   const desiredFilename = await availablePlateFilename(print.id, sanitized);
   const storagePath = await renderPlateStoragePath(print, desiredFilename, position);
   const destAbsPath = path.join(STORAGE, storagePath);
-  const effectivePath = await placeFile(input, destAbsPath);
+  const { effectivePath, contentSha256 } = await placePlateFile(input, destAbsPath);
   const size = await resolveSize(input, effectivePath);
   const mime = input.mime || guessMimeFromPath(desiredFilename) || "application/octet-stream";
 
@@ -159,6 +195,7 @@ async function createPlateAtPosition(
         storagePath,
         sourcePath: input.sourcePath ?? null,
         sourceInstanceId: input.sourceInstanceId ?? null,
+        contentSha256,
       },
     });
   } catch (err) {
