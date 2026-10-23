@@ -312,6 +312,7 @@ async function main(): Promise<void> {
 
   try {
     await screenshotPopup(context, extensionId, "popup-setup.png", "light");
+    await screenshotPopup(context, extensionId, "popup-setup-dark.png", "dark");
 
     const modelShots =
       wanted("setup-dialog-makerworld", "popup-connected", "popup-connected-dark") ||
