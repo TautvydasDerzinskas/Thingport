@@ -13,6 +13,10 @@ import { setMcpAccess } from "../src/services/settingsService";
 
 const app = createApp();
 
+// The write tools a new token gets without asking; every other default only reads.
+const DEFAULT_ON_WRITES = ["save_widget", "upload_icon"];
+const READ_TOOL_NAMES = MCP_TOOLS.filter((tool) => tool.readOnly).map((tool) => tool.name);
+
 type Account = { session: string; userId: string; token: string };
 
 function auth(token: string) {
@@ -164,10 +168,12 @@ describe("/api/mcp authentication", () => {
 });
 
 describe("choosing a token's tools", () => {
-  it("gives a new token every read-only tool, all marked read-only", async () => {
+  it("gives a new token every read-only tool, and the write tools that are on by default", async () => {
     expect(await toolNames(alice.token)).toEqual([...DEFAULT_MCP_TOOL_NAMES].toSorted());
     const res = await mcp(alice.token, "tools/list");
-    for (const tool of res.body.result.tools) expect(tool.annotations.readOnlyHint).toBe(true);
+    for (const tool of res.body.result.tools) {
+      expect(tool.annotations.readOnlyHint).toBe(!DEFAULT_ON_WRITES.includes(tool.name));
+    }
   });
 
   it("offers only the tools the token was given, and refuses a call to any other", async () => {
@@ -240,9 +246,10 @@ describe("choosing a token's tools", () => {
   });
 
   it("only ever ships tools that say whether they write", () => {
-    // A write tool must not slip into the default set.
+    // A write tool must not slip into the default set unless it's marked defaultOn.
     for (const tool of MCP_TOOLS) expect(typeof tool.readOnly).toBe("boolean");
-    expect(DEFAULT_MCP_TOOL_NAMES.every((name) => MCP_TOOLS.find((t) => t.name === name)?.readOnly)).toBe(true);
+    const writes = DEFAULT_MCP_TOOL_NAMES.filter((name) => !MCP_TOOLS.find((t) => t.name === name)?.readOnly);
+    expect(writes.toSorted()).toEqual([...DEFAULT_ON_WRITES].toSorted());
   });
 });
 
@@ -596,7 +603,7 @@ describe("the instance's MCP access", () => {
 
   it("read only, hides the write tools without forgetting them", async () => {
     await setMcpAccess("read");
-    expect(await toolNames(writer.token)).toEqual([...DEFAULT_MCP_TOOL_NAMES].toSorted());
+    expect(await toolNames(writer.token)).toEqual([...READ_TOOL_NAMES].toSorted());
     const call = await mcp(writer.token, "tools/call", { name: "create_collection", arguments: { name: "Nope" } });
     expect(call.body.error ?? (call.body.result?.isError ? call.body.result : null)).toBeTruthy();
 
@@ -613,7 +620,7 @@ describe("the instance's MCP access", () => {
     const kept = await request(app)
       .put("/api/profile/api-token/mcp-tools")
       .set(auth(writer.session))
-      .send({ mcp_tools: DEFAULT_MCP_TOOL_NAMES.filter((name) => name !== "library_stats") });
+      .send({ mcp_tools: READ_TOOL_NAMES.filter((name) => name !== "library_stats") });
     expect(kept.status).toBe(200);
     expect(kept.body.mcp_tools).toEqual(expect.arrayContaining(WRITE_TOOLS));
 

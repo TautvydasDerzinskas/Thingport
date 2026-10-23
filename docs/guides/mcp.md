@@ -15,10 +15,10 @@ you open Thingport at, and the assistant signs in with your [API token](api-toke
 3. Click the cog next to the token to open **Token permissions**, and under **MCP permissions** set each tool to **Allow** or
    **Deny**. Changes apply at once, to the token you already have.
 
-A new token gets every tool that only reads. The tools that change your library are marked **Changes your library**,
-stay off until you turn them on, and ask you to confirm when you do. The token still can't change anything over the
-REST API, and an MCP tool is only reachable if it's allowed here. Regenerating the token sets its tools back to the ones
-that only read.
+A new token gets every tool that only reads, plus `save_widget` and `upload_icon`, so an assistant can make you a
+dashboard widget straight away. The other tools that change your library are marked **Changes your library**, stay off
+until you turn them on, and ask you to confirm when you do. The token still can't change anything over the REST API,
+and an MCP tool is only reachable if it's allowed here. Regenerating the token sets its tools back to these defaults.
 
 ## 2. Add Thingport to your assistant
 
@@ -55,7 +55,7 @@ These read your library, and are on for a new token:
 | `list_widgets`      | Your custom dashboard widgets, optionally with their code.                                              |
 | `list_icons`        | Thingport's own icons and the ones you uploaded, searched by name, e.g. for a widget's icon.            |
 
-These change your library, and are off until you turn them on:
+These change your library. `save_widget` and `upload_icon` are on for a new token; the rest are off until you turn them on:
 
 | Tool                | What it does                                                                                                 |
 | ------------------- | ------------------------------------------------------------------------------------------------------------ |
@@ -95,7 +95,8 @@ Model descriptions come from the sites they were imported from, and the assistan
 look like instructions could talk it into calling another tool you gave it. Most tools can only import models or file
 them into collections, since none deletes anything. `save_widget` is the exception: it writes code that runs in your
 dashboard with your session, so a widget it saves can do in Thingport whatever you can, and it can replace a widget of
-yours with the same name. Keep the tools that change the library off unless you use them, and `save_widget` above all.
+yours with the same name. It's on for a new token: deny it in **Token permissions** if you don't have your assistant
+write widgets, and keep the other tools that change the library off unless you use them.
 
 ## Turn it off
 

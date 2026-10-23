@@ -33,7 +33,7 @@ import BUILTIN_ICONS from "./builtinIcons.json";
 // no image or file URLs, which need a session to open anyway.
 //
 // A token reaches only the tools its user ticked (see routes/mcp.ts). A tool that writes must say so with
-// `readOnly: false`: it's then off for every token until its user turns it on.
+// `readOnly: false`: it's then off for a new token until its user turns it on, unless it's `defaultOn`.
 
 export type McpToolContext = {
   userId: string;
@@ -46,6 +46,8 @@ export type McpToolDefinition = {
   title: string;
   description: string;
   readOnly: boolean;
+  /** A write tool a new token gets anyway, for writes that stay in the user's own space. */
+  defaultOn?: boolean;
   /** Calling it again with the same arguments changes nothing more. */
   idempotent?: boolean;
   /** Reaches outside this Thingport, e.g. a provider's site. */
@@ -582,6 +584,7 @@ const saveWidget: McpToolDefinition = {
     "Its script runs in the user's dashboard with their access, so write only what the user asked for. The user " +
     "then adds it from Add panel while editing their dashboard.",
   readOnly: false,
+  defaultOn: true,
   idempotent: true,
   inputSchema: {
     slug: z
@@ -656,6 +659,7 @@ const uploadIcon: McpToolDefinition = {
     `WebP as base64, up to ${ICON_MAX_BYTES / 1024 / 1024} MB. Returns its \`value\`, to use as a widget's ` +
     "`iconUrl`. Look with list_icons first, and upload only when nothing there fits.",
   readOnly: false,
+  defaultOn: true,
   inputSchema: {
     name: z.string().min(1).max(80).describe("What the icon shows, e.g. `print farm`."),
     svg: z.string().optional().describe("The SVG's markup. Prefer this: it stays sharp at every size."),
@@ -710,5 +714,7 @@ export function mcpToolCatalog(access: McpAccess) {
   }));
 }
 
-/** What a new token gets when its user doesn't choose: every tool that only reads. */
-export const DEFAULT_MCP_TOOL_NAMES = MCP_TOOLS.filter((tool) => tool.readOnly).map((tool) => tool.name);
+/** What a new token gets when its user doesn't choose: every tool that only reads, and the `defaultOn` ones. */
+export const DEFAULT_MCP_TOOL_NAMES = MCP_TOOLS.filter((tool) => tool.readOnly || tool.defaultOn).map(
+  (tool) => tool.name,
+);

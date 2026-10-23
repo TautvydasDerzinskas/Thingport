@@ -24,9 +24,8 @@ A widget is yours alone: other users on the same Thingport don't see it unless t
 The quickest way to make a widget is to describe it to an AI assistant connected to Thingport.
 
 1. [Connect your assistant over MCP](mcp.md) with your API token.
-2. In the token's permissions, allow **Save a dashboard widget** (`save_widget`). It's off until you turn it on.
-   For its icon, the assistant searches Thingport's icons with `list_icons`; to let it upload one of its own when
-   none fits, also allow **Upload an icon** (`upload_icon`).
+2. A new token already allows **Save a dashboard widget** (`save_widget`) and **Upload an icon** (`upload_icon`). For
+   its icon, the assistant searches Thingport's icons with `list_icons`, and uploads one of its own when none fits.
 3. Ask for what you want, e.g. _"Make me a Thingport widget showing my OctoPrint printer's progress. It's at
    http://octopi.local."_ The assistant reads the `widget_guide` tool first, which teaches it the format below, then
    saves the widget.

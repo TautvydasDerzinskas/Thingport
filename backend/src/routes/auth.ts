@@ -440,7 +440,7 @@ const mcpToolsSchema = z
 const restScopesSchema = z
   .array(z.enum(API_TOKEN_SCOPE_IDS as [string, ...string[]]))
   .transform((ids) => [...new Set(ids)]);
-// No body (older clients) gives the tools that only read, and every REST scope: a token reads all it
+// No body (older clients) gives the default tools (see DEFAULT_MCP_TOOL_NAMES), and every REST scope: a token reads all it
 // can see until its user narrows it.
 const generateApiTokenSchema = z
   .object({ mcp_tools: mcpToolsSchema.optional(), rest_scopes: restScopesSchema.optional() })
