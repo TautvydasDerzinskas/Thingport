@@ -400,6 +400,7 @@
       "batchCollectionsBlocked": "Kolekcijų nuorodas (patikimai, kolekcijas) galima importuoti tik po vieną. Įklijuokite modelių nuorodas arba importuokite kolekciją atskirai."
     },
     "userMenu": {
+      "logOutFailed": "Nepavyko atsijungti. Patikrinkite ryšį ir bandykite dar kartą.",
       "theme": "Tema",
       "light": "Šviesi",
       "dark": "Tamsi",
@@ -1203,11 +1204,11 @@
         "empty": "Aprašymo nėra."
       },
       "session": {
-        "heading": "Sesijos trukmė",
-        "subtitle": "Valdykite, kiek laiko galioja prisijungimo sesija visai sistemai.",
+        "heading": "Sesijos",
+        "subtitle": "Kiek laiko galioja prisijungimai visame serveryje.",
         "infoTitle": "Ką tai valdo",
-        "infoBody": "Kiek laiko galioja naujai išduotas prisijungimo žetonas, kol naudotojo bus paprašyta prisijungti iš naujo. Taikoma visai sistemai -- kiekvienam naujam prisijungimui, registracijai ir el. pašto patvirtinimui. Pakeitimas paveikia tik nuo šiol išduodamus žetonus -- jau prisijungę naudotojai išlaiko tą trukmę, kuri galiojo jiems prisijungiant.",
-        "tokenTtlLabel": "Sesijos trukmė (sekundėmis)",
+        "infoBody": "Kiek laiko galioja prieigos raktas, kol naršyklė jį atnaujina. Ilgiau nebuvusi naršyklė vėl prisijungia per įsimintą sesiją, nustatomą žemiau; jei ji išjungta, prašoma prisijungti iš naujo. Taikoma tik nuo šiol išduotiems raktams.",
+        "tokenTtlLabel": "Rakto trukmė (sekundėmis)",
         "tokenTtlHelp": "Nuo 5 minučių iki 1 metų.",
         "invalid": "Įveskite skaičių nuo 300 (5 minutės) iki 31536000 (1 metai) sekundžių.",
         "approx": "≈ {{value}}",
@@ -1231,7 +1232,10 @@
         "save": "Išsaugoti",
         "saving": "Saugoma…",
         "saved": "Išsaugota.",
-        "failed": "Nepavyko išsaugoti sesijos nustatymų."
+        "failed": "Nepavyko išsaugoti sesijos nustatymų.",
+        "rememberLabel": "Išlaikyti naršykles prisijungusias",
+        "rememberHelp": "Kiek laiko nenaudojama naršyklė lieka prisijungusi, kad pradžios puslapiu nustatytas skydelis niekada nerodytų prisijungimo formos. Kiekvienas apsilankymas laiką pradeda skaičiuoti iš naujo. Atsijungus ar pakeitus slaptažodį sesija baigiasi.",
+        "rememberOff": "Išjungta"
       },
       "connections": {
         "heading": "Ryšiai"

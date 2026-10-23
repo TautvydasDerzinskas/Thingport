@@ -399,6 +399,7 @@
       "batchCollectionsBlocked": "Les liens de collections (« J’aime », collections) ne peuvent être importés qu’un par un. Collez plutôt ici des liens de modèles, ou importez une collection séparément."
     },
     "userMenu": {
+      "logOutFailed": "Impossible de se déconnecter. Vérifiez votre connexion et réessayez.",
       "theme": "Thème",
       "light": "Clair",
       "dark": "Sombre",
@@ -1183,11 +1184,11 @@
         "empty": "Aucune description."
       },
       "session": {
-        "heading": "Durée de la session",
-        "subtitle": "Contrôle la durée de validité d’une session ouverte pour l’ensemble de l’instance.",
+        "heading": "Sessions",
+        "subtitle": "Durée des connexions pour toute l'instance.",
         "infoTitle": "Ce que cela contrôle",
-        "infoBody": "Durée de validité d’un jeton de connexion nouvellement émis avant que l’utilisateur ne soit invité à se reconnecter. S’applique à l’ensemble de l’instance, à chaque nouvelle connexion, inscription et vérification d’adresse e-mail. Ce réglage ne concerne que les jetons émis à partir de maintenant : les personnes déjà connectées conservent la durée en vigueur au moment de leur connexion.",
-        "tokenTtlLabel": "Durée de la session (secondes)",
+        "infoBody": "Durée de validité d'un jeton d'accès avant que le navigateur le renouvelle. Un navigateur absent plus longtemps se reconnecte grâce à sa session mémorisée, réglée ci-dessous ; si elle est désactivée, il doit se reconnecter. Ne s'applique qu'aux jetons émis à partir de maintenant.",
+        "tokenTtlLabel": "Durée du jeton (secondes)",
         "tokenTtlHelp": "Entre 5 minutes et 1 an.",
         "invalid": "Saisissez un nombre de secondes compris entre 300 (5 minutes) et 31536000 (1 an).",
         "approx": "≈ {{value}}",
@@ -1206,7 +1207,10 @@
         "save": "Enregistrer",
         "saving": "Enregistrement…",
         "saved": "Enregistré.",
-        "failed": "Échec de l’enregistrement des paramètres de session."
+        "failed": "Échec de l’enregistrement des paramètres de session.",
+        "rememberLabel": "Garder les navigateurs connectés",
+        "rememberHelp": "Combien de temps un navigateur reste connecté sans être utilisé, pour qu'un tableau de bord défini comme page d'accueil n'affiche jamais le formulaire de connexion. Chaque visite relance le décompte. Se déconnecter ou changer le mot de passe y met fin.",
+        "rememberOff": "Désactivé"
       },
       "connections": {
         "heading": "Connexions"

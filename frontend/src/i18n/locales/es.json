@@ -399,6 +399,7 @@
       "batchCollectionsBlocked": "Los enlaces de colecciones (me gusta, colecciones) solo se pueden importar uno a uno. Pega aquí enlaces de modelos o importa una colección por separado."
     },
     "userMenu": {
+      "logOutFailed": "No se pudo cerrar la sesión. Comprueba la conexión e inténtalo de nuevo.",
       "theme": "Tema",
       "light": "Claro",
       "dark": "Oscuro",
@@ -1183,11 +1184,11 @@
         "empty": "Sin descripción."
       },
       "session": {
-        "heading": "Duración de la sesión",
-        "subtitle": "Controla durante cuánto tiempo sigue siendo válida una sesión iniciada en toda la instancia.",
+        "heading": "Sesiones",
+        "subtitle": "Cuánto duran los inicios de sesión en toda la instancia.",
         "infoTitle": "Qué controla",
-        "infoBody": "Durante cuánto tiempo sigue siendo válido un token de inicio de sesión recién emitido antes de pedir al usuario que vuelva a iniciar sesión. Se aplica a toda la instancia en cada nuevo inicio de sesión, registro y verificación de correo electrónico. Cambiarlo solo afecta a los tokens emitidos a partir de ahora: quien ya tenga la sesión iniciada conserva la duración que estaba activa cuando inició sesión.",
-        "tokenTtlLabel": "Duración de la sesión (segundos)",
+        "infoBody": "Cuánto dura un token de acceso antes de que el navegador lo renueve. Un navegador que lleva más tiempo sin usarse vuelve a entrar con su sesión recordada, configurada abajo; si está desactivada, se le pide iniciar sesión de nuevo. Solo afecta a los tokens emitidos a partir de ahora.",
+        "tokenTtlLabel": "Duración del token (segundos)",
         "tokenTtlHelp": "Entre 5 minutos y 1 año.",
         "invalid": "Introduce un número de segundos entre 300 (5 minutos) y 31536000 (1 año).",
         "approx": "≈ {{value}}",
@@ -1206,7 +1207,10 @@
         "save": "Guardar",
         "saving": "Guardando…",
         "saved": "Guardado.",
-        "failed": "No se pudieron guardar los ajustes de sesión."
+        "failed": "No se pudieron guardar los ajustes de sesión.",
+        "rememberLabel": "Mantener los navegadores conectados",
+        "rememberHelp": "Cuánto tiempo sigue conectado un navegador sin usarse, para que un panel configurado como página de inicio nunca muestre el formulario de inicio de sesión. Cada visita reinicia la cuenta. Cerrar sesión o cambiar la contraseña la termina.",
+        "rememberOff": "Desactivado"
       },
       "connections": {
         "heading": "Conexiones"

@@ -14,7 +14,8 @@ collections, categories, tags and settings.
 - **Captcha**, optionally, on sign-in, registration, import, and password and email changes.
 - **Single sign-on**: sign in with Authentik, Pocket ID, Keycloak or another OpenID Connect provider, next to email and
   password. See [single sign-on](../guides/single-sign-on.md).
-- **Session length** for the whole instance, from 5 minutes to a year.
+- **Sessions**: how long a browser stays signed in without being used (a month by default, or off), so a dashboard
+  set as a browser's homepage doesn't land on the sign-in form. Signing out or changing the password ends it.
 
 All of these are under **Administration → Auth** and **Administration → Captcha**.
 

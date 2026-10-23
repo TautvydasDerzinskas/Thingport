@@ -152,7 +152,10 @@ export const QUALITY_CHECK_SEVERITY: Record<QualityCheckKey, QualitySeverity> = 
 export type QualityCheckSettings = { enabled: boolean; checks_off: QualityCheckKey[] };
 
 export type AuthSettings = {
+  /** How long an access token lasts before the browser renews it. */
   token_ttl_seconds: number;
+  /** How long a browser stays signed in without being used. 0 is off. */
+  remember_session_ttl_seconds: number;
 };
 
 /** How categorization behaves; the AIs themselves are in api/aiConnections.ts. */
@@ -624,11 +627,11 @@ export const settingsApi = {
     return res.json();
   },
 
-  updateAuth: async (tokenTtlSeconds: number): Promise<AuthSettings> => {
+  updateAuth: async (patch: Partial<AuthSettings>): Promise<AuthSettings> => {
     const res = await fetch(`${apiBase()}/settings/auth`, {
       method: "PATCH",
       headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ token_ttl_seconds: tokenTtlSeconds }),
+      body: JSON.stringify(patch),
     });
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) {

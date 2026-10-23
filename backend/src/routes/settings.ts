@@ -11,6 +11,7 @@ import {
   getAllowRegistrations,
   setCaptchaSettings,
   getAuthTokenTtl,
+  getRememberSessionTtl,
   getPreviewMode,
   getSimplifyPreviews,
   getQualityChecks,
@@ -25,6 +26,7 @@ import {
   getThingiverseAccessToken,
   setAllowRegistrations,
   setAuthTokenTtl,
+  setRememberSessionTtl,
   setPreviewMode,
   setSimplifyPreviews,
   setQualityChecks,
@@ -309,23 +311,36 @@ router.get(
   "/settings/auth",
   requireAdmin,
   asyncHandler(async (_req, res) => {
-    res.json({ token_ttl_seconds: await getAuthTokenTtl() });
+    res.json(await authSettingsOut());
   }),
 );
 
 // Bounds catch typos. Only affects tokens issued after saving.
 const MIN_AUTH_TOKEN_TTL_SECONDS = 5 * 60;
 const MAX_AUTH_TOKEN_TTL_SECONDS = 365 * 24 * 60 * 60;
+// 0 turns remembering browsers off.
 const authSettingsSchema = z.object({
-  token_ttl_seconds: z.number().int().min(MIN_AUTH_TOKEN_TTL_SECONDS).max(MAX_AUTH_TOKEN_TTL_SECONDS),
+  token_ttl_seconds: z.number().int().min(MIN_AUTH_TOKEN_TTL_SECONDS).max(MAX_AUTH_TOKEN_TTL_SECONDS).optional(),
+  remember_session_ttl_seconds: z.number().int().min(0).max(MAX_AUTH_TOKEN_TTL_SECONDS).optional(),
 });
+
+async function authSettingsOut() {
+  return {
+    token_ttl_seconds: await getAuthTokenTtl(),
+    remember_session_ttl_seconds: await getRememberSessionTtl(),
+  };
+}
+
 router.patch(
   "/settings/auth",
   requireAdmin,
   asyncHandler(async (req, res) => {
     const body = parseBody(authSettingsSchema, req.body);
-    await setAuthTokenTtl(body.token_ttl_seconds);
-    res.json({ token_ttl_seconds: body.token_ttl_seconds });
+    if (body.token_ttl_seconds !== undefined) await setAuthTokenTtl(body.token_ttl_seconds);
+    if (body.remember_session_ttl_seconds !== undefined) {
+      await setRememberSessionTtl(body.remember_session_ttl_seconds);
+    }
+    res.json(await authSettingsOut());
   }),
 );
 

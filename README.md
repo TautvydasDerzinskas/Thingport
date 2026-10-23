@@ -217,8 +217,10 @@ POSTGRES_DB=thingport
 # e.g. https://thingport.example.com -- needed for links in emails and for single sign-on (OIDC).
 # Read on the first run only; after that it's managed in Administration -> Auth.
 PUBLIC_URL=
-# login token lifetime, in seconds
+# access token lifetime, in seconds; the browser renews it
 AUTH_TOKEN_TTL=43200
+# how long a browser stays signed in without being used, in seconds (0 = off); until set in Administration -> Auth
+# REMEMBER_SESSION_TTL=2592000
 SMTP_HOST=
 SMTP_PORT=587
 SMTP_SECURE=false
