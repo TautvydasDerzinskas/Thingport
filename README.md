@@ -300,8 +300,9 @@ To have Thingport import whatever you drop into a folder on the server, uncommen
 - **[Bring your existing library](docs/guides/existing-library.md)**
 - **[Consume folder](docs/guides/consume-folder.md)**
 - **[3D previews](docs/features/3d-previews.md)**
+- **[Print quality checks](docs/features/print-quality.md)**
 - **[AI categorization and descriptions](docs/guides/ai.md)**
-- **[Organize and search](docs/features/organize-and-search.md)**
+- **[Organize, search and bulk-edit](docs/features/organize-and-search.md)**
 - **[Dashboard](docs/features/dashboard.md)**
 - **[Profile and activity](docs/features/profile-and-activity.md)**
 - **[Author pages](docs/features/authors.md)**
@@ -317,7 +318,7 @@ To have Thingport import whatever you drop into a folder on the server, uncommen
 - **[API token](docs/guides/api-token.md)**
 - **[Connect an AI assistant (MCP)](docs/guides/mcp.md)**
 - **[Custom dashboard widgets](docs/guides/custom-widgets.md)**
-- **[Light and dark themes, in English and Lithuanian](docs/features/appearance.md)**
+- **[Light and dark themes, accent colours, in English, Spanish, French and Lithuanian](docs/features/appearance.md)**
 - **[Self-hosted](#installation)**
 
 ## Companion Apps

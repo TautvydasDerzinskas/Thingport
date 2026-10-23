@@ -7,6 +7,8 @@ browser, so there's nothing to install.
 - **Multi-plate 3MF projects** show a thumbnail for every plate, with how many objects each one holds.
 - **Model colour:** pick the colour the preview is shown in.
 - **Photos** sit in their own gallery, separate from the printable files.
+- **Print quality:** a tick or a warning next to **3D Preview** says whether the files have problems that could spoil
+  a print. See [print quality checks](print-quality.md).
 
 ## Card thumbnails
 

@@ -15,6 +15,8 @@ top of the Models page.
   keeps its structure as folders.
 
 Manage both from **Manage categories & folders** on the Models page. Deleting one never deletes its models.
+**Reset to defaults** in the category manager puts the starter category tree back. It first shows exactly what changes:
+the categories added, restored and deleted, and how many models move or lose their category. Folders aren't touched.
 
 ## Collections and tags
 
@@ -25,6 +27,24 @@ Manage both from **Manage categories & folders** on the Models page. Deleting on
   hide tags used only once, or delete a tag from every model at once.
 - **Favourites** and your **Browsing history** are kept as collections of their own.
 - **Bookmark** the collections and tags you use most to pin them to the sidebar, and drag them into order.
+
+Collections sort by newest, name or most models, and tags by popularity, newest or name.
+
+## Work on several at once
+
+The select button at the top of Models, Collections and Tags turns on selection mode: tick items, or select them
+all at once, and act on them together.
+
+- **Models:** add them to collections, edit their tags, add them to favourites, [download them](downloads.md) as one
+  ZIP, delete them, or run the [AI features](../guides/ai.md) on them.
+- **Collections and tags:** bookmark, delete or merge them.
+
+![Merging three collections: the kept one, the ones deleted, and what the merged collection will hold](../../frontend/src/assets/screenshots/light/10_collections_merge.png)
+
+A **merge** moves every model into one collection or tag you pick, and deletes the others. Nothing is merged until
+you've seen what changes: which one is kept (with its name, description, tags and sync), which are deleted, how many
+models it ends up with, and which synced collections stop syncing. Keep a synced collection to carry on syncing it.
+A merge can't be undone, but no model is ever deleted by one.
 
 ## Search
 
