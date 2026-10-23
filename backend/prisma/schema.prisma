@@ -594,6 +594,11 @@ model Plate {
   // SHA-256 of the file, recorded when it's stored (with file reuse on) or when first needed. The file may be edited
   // outside Thingport, so this is checked against the file before it's relied on.
   contentSha256    String?
+  // What the file was when the file reuse backfill last made it share its bytes with an identical one (its inode and
+  // ctime, in nanoseconds): a file that still matches is left alone on the next run. Any change to the file, or a new
+  // file at its path, makes it differ.
+  reuseIno         BigInt?
+  reuseCtimeNs     BigInt?
   // The thumb is our own 3D render, which an imported image replaces.
   thumbGenerated   Boolean  @default(false)
   // The printability check's result (services/meshQuality.ts QualityReport), or { version, status: "skipped" }
@@ -622,6 +627,9 @@ model PreviewImage {
   // The file may be edited outside Thingport, so these are checked against it before they're relied on.
   size          Int?
   contentSha256 String?
+  // See Plate.reuseIno.
+  reuseIno      BigInt?
+  reuseCtimeNs  BigInt?
   createdAt     DateTime @default(now())
 
   @@unique([printId, position])
@@ -647,6 +655,9 @@ model DescriptionImage {
   size          Int
   // See Plate.contentSha256.
   contentSha256 String?
+  // See Plate.reuseIno.
+  reuseIno      BigInt?
+  reuseCtimeNs  BigInt?
   createdAt     DateTime @default(now())
 
   @@index([printId])
@@ -666,6 +677,9 @@ model PrintFile {
   metadata      Json?
   // See Plate.contentSha256.
   contentSha256 String?
+  // See Plate.reuseIno.
+  reuseIno      BigInt?
+  reuseCtimeNs  BigInt?
   createdAt     DateTime      @default(now())
   preparedFor   Print?        @relation("PreparedFile")
 

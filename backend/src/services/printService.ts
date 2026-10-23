@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import { withStorageLock } from "../utils/storageLock";
 import fsSync from "node:fs";
 import path from "node:path";
 import { HttpError } from "../utils/fileUtils";
@@ -431,26 +432,29 @@ async function moveStored(oldPath: string, newPath: string, save: () => Promise<
 
 /** Moves files that one record finds, as moveStored; returns how many were there to move. */
 async function moveAllStored(moves: [string, string][], save: () => Promise<unknown>): Promise<number> {
-  const present = moves.filter(([oldPath]) => fsSync.existsSync(oldPath));
-  const done: [string, string][] = [];
-  try {
-    for (const [oldPath, newPath] of present) {
-      await fs.mkdir(path.dirname(newPath), { recursive: true });
-      await fs.rename(oldPath, newPath);
-      done.push([oldPath, newPath]);
+  // Under the storage lock, so the file reuse backfill never swaps one of these files for a clone in the middle of it.
+  return withStorageLock(async () => {
+    const present = moves.filter(([oldPath]) => fsSync.existsSync(oldPath));
+    const done: [string, string][] = [];
+    try {
+      for (const [oldPath, newPath] of present) {
+        await fs.mkdir(path.dirname(newPath), { recursive: true });
+        await fs.rename(oldPath, newPath);
+        done.push([oldPath, newPath]);
+      }
+      await save();
+    } catch (err) {
+      // Put them back, so the stored path still finds them.
+      for (const [oldPath, newPath] of done.toReversed()) {
+        await fs.mkdir(path.dirname(oldPath), { recursive: true });
+        await fs.rename(newPath, oldPath);
+        await pruneEmptyStorageDirs(path.dirname(newPath));
+      }
+      throw err;
     }
-    await save();
-  } catch (err) {
-    // Put them back, so the stored path still finds them.
-    for (const [oldPath, newPath] of done.toReversed()) {
-      await fs.mkdir(path.dirname(oldPath), { recursive: true });
-      await fs.rename(newPath, oldPath);
-      await pruneEmptyStorageDirs(path.dirname(newPath));
-    }
-    throw err;
-  }
-  for (const [oldPath] of present) await pruneEmptyStorageDirs(path.dirname(oldPath));
-  return present.length;
+    for (const [oldPath] of present) await pruneEmptyStorageDirs(path.dirname(oldPath));
+    return present.length;
+  });
 }
 
 const samePath = (relative: string, other: string) => path.resolve(STORAGE, relative) === path.resolve(STORAGE, other);

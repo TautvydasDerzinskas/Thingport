@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import path from "node:path";
 import { HttpError } from "../utils/fileUtils";
+import { withStorageLock } from "../utils/storageLock";
 import { getFileReuse } from "./settingsService";
 
 // Saves a new file as a copy-on-write clone of a stored file with the same content, so the same model imported by
@@ -51,13 +52,22 @@ async function forget(copy: StoredCopy): Promise<void> {
 // place outside Thingport: NOFOLLOW so a link (to another user's file, or anywhere else) is never followed, and
 // NONBLOCK so a FIFO or device returns at once rather than blocking a libuv thread for good. The handle is then
 // fstat'ed, and only a regular file used.
-const OPEN_FLAGS = fsSync.constants.O_RDONLY | fsSync.constants.O_NOFOLLOW | fsSync.constants.O_NONBLOCK;
+export const OPEN_FLAGS = fsSync.constants.O_RDONLY | fsSync.constants.O_NOFOLLOW | fsSync.constants.O_NONBLOCK;
 
-/** Null when what's at `filePath` isn't a regular file; open errors are thrown. The caller closes the handle. */
-export async function openRegularFile(filePath: string): Promise<{ handle: fs.FileHandle; stat: fsSync.Stats } | null> {
+/** Null when what's at `filePath` isn't a regular file; open errors are thrown. The caller closes the handle. `bigint`
+ *  gives 64-bit stats, so inode numbers and nanosecond times are exact. */
+export async function openRegularFile(filePath: string): Promise<{ handle: fs.FileHandle; stat: fsSync.Stats } | null>;
+export async function openRegularFile(
+  filePath: string,
+  bigint: true,
+): Promise<{ handle: fs.FileHandle; stat: fsSync.BigIntStats } | null>;
+export async function openRegularFile(
+  filePath: string,
+  bigint?: true,
+): Promise<{ handle: fs.FileHandle; stat: any } | null> {
   const handle = await fs.open(filePath, OPEN_FLAGS);
   try {
-    const stat = await handle.stat();
+    const stat = await handle.stat({ bigint } as { bigint: true });
     if (stat.isFile()) return { handle, stat };
   } catch (err) {
     await handle.close();
@@ -70,7 +80,7 @@ export async function openRegularFile(filePath: string): Promise<{ handle: fs.Fi
 /** Clones the file an open handle holds to `dest`, never over a file there. From the handle, not a path, which may be
  *  something else by now: /proc/self/fd reopens that very file (where it doesn't exist, macOS on a dev machine, this
  *  fails like any other clone that can't be made). FORCE: without a clone it would copy the file, which saves nothing. */
-const cloneFromHandle = (handle: fs.FileHandle, dest: string): Promise<void> =>
+export const cloneFromHandle = (handle: fs.FileHandle, dest: string): Promise<void> =>
   fs.copyFile(
     `/proc/self/fd/${handle.fd}`,
     dest,
@@ -78,7 +88,7 @@ const cloneFromHandle = (handle: fs.FileHandle, dest: string): Promise<void> =>
   );
 
 /** Hashes what the open handle holds from its start, whatever the path it was opened at is now. */
-async function sha256OfHandle(handle: fs.FileHandle): Promise<string> {
+export async function sha256OfHandle(handle: fs.FileHandle): Promise<string> {
   const hash = crypto.createHash("sha256");
   const buffer = Buffer.allocUnsafe(1 << 16);
   // Positional, from 0: the handle's own position may have been moved by an earlier read.
@@ -141,7 +151,9 @@ async function cloneFrom(
       return "stop";
     }
     try {
-      await cloneFromHandle(handle, destAbsPath);
+      // Placed under the storage lock, so the file reuse backfill's swap (which renames over a path it has just
+      // checked) never lands after a file saved at a path its row just freed.
+      await withStorageLock(() => cloneFromHandle(handle, destAbsPath));
     } catch (err: any) {
       if (err?.code === "EEXIST") throw conflict();
       // ENOENT may as well be the destination's side -- its folder pruned just now -- so the stored copy is only
@@ -222,12 +234,14 @@ export async function copyStoredFile(
     let how: "cloned" | "copied" = "cloned";
     try {
       if ((await getFileReuse()) !== "reflink") throw new Error("sharing is off");
-      await cloneFromHandle(handle, destAbsPath);
+      await withStorageLock(() => cloneFromHandle(handle, destAbsPath));
     } catch (err: any) {
       if (err?.code === "EEXIST") throw conflict();
       how = "copied";
       try {
-        await fs.copyFile(`/proc/self/fd/${handle.fd}`, destAbsPath, fsSync.constants.COPYFILE_EXCL);
+        await withStorageLock(() =>
+          fs.copyFile(`/proc/self/fd/${handle.fd}`, destAbsPath, fsSync.constants.COPYFILE_EXCL),
+        );
       } catch (copyErr: any) {
         if (copyErr?.code === "EEXIST") throw conflict();
         return null;

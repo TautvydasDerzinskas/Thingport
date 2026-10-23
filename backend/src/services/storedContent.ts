@@ -15,20 +15,21 @@ import type { FileContent, StoredCopy } from "./fileReuse";
 type Candidate = { createdAt: Date; copy: StoredCopy };
 
 /** The legacy shared folder of print files, which isn't ours to share from. */
-const LEGACY_BUNDLES = "bundles/";
+export const LEGACY_BUNDLES = "bundles/";
 
-type StoredKind = "plate" | "printFile" | "previewImage" | "descriptionImage";
+export type StoredKind = "plate" | "printFile" | "previewImage" | "descriptionImage";
 
-// Where each kind of stored file lives, in one place: the lookup below goes through these. Null when the file isn't
-// Thingport's to share or move: left where it was found (a plate's sourcePath), outside storage, or a picture of a
-// model with no folder of its own (an old shared folder).
-type StoredRow =
+// Where each kind of stored file lives, in one place: the lookup below, the backfill and anything that copies a whole
+// model's files (it resolves each row's source here) all go through these. Null when the file isn't Thingport's to
+// share or move: left where it was found (a plate's sourcePath), outside storage, or a picture of a model with no
+// folder of its own (an old shared folder).
+export type StoredRow =
   | { kind: "plate"; storagePath: string; sourcePath: string | null }
   | { kind: "printFile"; storagePath: string }
   | { kind: "previewImage"; id: string; assetsPath: string | null }
   | { kind: "descriptionImage"; id: string; mime: string; assetsPath: string | null };
 
-function managedPathOf(row: StoredRow): string | null {
+export function managedPathOf(row: StoredRow): string | null {
   switch (row.kind) {
     case "plate":
     case "printFile": {
@@ -56,19 +57,21 @@ function inStorage(candidate: string): string | null {
 }
 
 type Delegate = {
+  count(args: object): Promise<number>;
   findMany(args: object): Promise<any[]>;
+  findUnique(args: object): Promise<any>;
   updateMany(args: object): Promise<unknown>;
 };
-const delegate = (kind: StoredKind) => prisma[kind] as unknown as Delegate;
+export const delegate = (kind: StoredKind) => prisma[kind] as unknown as Delegate;
 
 /** What a row's hash and sharing record are reset to when its file no longer matches. */
-export const DROP = { contentSha256: null };
+export const DROP = { contentSha256: null, reuseIno: null, reuseCtimeNs: null };
 
 const WITH_HOME = { print: { select: { assetsPath: true } } };
 
 /** What each kind is looked up and turned into a StoredRow by: `managed` is only what managedPathOf would accept
  *  anyway (so queries and counts don't include what can't be done), `select` what toRow needs. */
-const STORED: Record<StoredKind, { managed: object; select: object; toRow: (row: any) => StoredRow }> = {
+export const STORED: Record<StoredKind, { managed: object; select: object; toRow: (row: any) => StoredRow }> = {
   plate: {
     managed: { sourcePath: null },
     select: { id: true, storagePath: true, sourcePath: true },

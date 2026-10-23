@@ -1276,12 +1276,32 @@
         "heading": "Identical files",
         "subtitle": "Save space when several users import the same model.",
         "modeLabel": "Clone identical files (copy-on-write)",
-        "help": "Thingport compares each new model file, supporting file, gallery image and description image with the ones already stored, whichever kind they are. Copy-on-write clones a match on btrfs, XFS or ZFS 2.2 and later, and stores the file as usual elsewhere. Thumbnails and renders aren't shared. Each clone is a file of its own, so editing one on disk never changes another user's. Files stored before it was turned on aren't gone over.",
+        "help": "Thingport compares each new model file, supporting file, gallery image and description image with the ones already stored, whichever kind they are. Copy-on-write clones a match on btrfs, XFS or ZFS 2.2 and later, and stores the file as usual elsewhere. Thumbnails and renders aren't shared. Each clone is a file of its own, so editing one on disk never changes another user's. Files stored before it was turned on are checked too, see Existing files.",
         "failed": "Couldn't save how identical files are stored. Please try again.",
         "loadFailed": "Couldn't load how identical files are stored.",
         "modeHelp": {
           "off": "Every file takes its own space.",
           "reflink": "A file already stored is cloned where the filesystem can, taking no extra space until one copy changes."
+        },
+        "backfill": {
+          "label": "Existing files",
+          "help": "Turning on cloning goes over the files already stored: each one's hash is recorded, then files with the same content are replaced by clones of the oldest one, keeping their own name, place and owner. Only files in Thingport's storage folder are touched, and a file that changes meanwhile is left as it is. Run it again after turning cloning on for a while off, or for files that couldn't be checked. Snapshots of the storage can keep the old copies, so the space freed is an upper bound.",
+          "idle": "Not checked since the server started",
+          "starting": "Starting...",
+          "hashing": "Recording hashes: {{done}} of {{total}}",
+          "cloning": "Cloning identical files: {{done}} of {{total}}, {{cloned}} cloned",
+          "result_one": "{{count}} file cloned, up to {{size}} freed",
+          "result_other": "{{count}} files cloned, up to {{size}} freed",
+          "nothing": "Nothing to clone",
+          "unsupported": "This filesystem can't clone files; hashes were recorded",
+          "stopped": "Stopped: cloning was turned off",
+          "failedRun": "Stopped early because of an error; see the server log",
+          "skippedNote": "{{count}} not checked",
+          "checkAgain": "Check again",
+          "confirmTitle": "Check existing files?",
+          "confirmMessage": "Thingport will go over every stored file and replace identical ones by clones. It runs in the background and can take a while on a large library.",
+          "confirmAction": "Check",
+          "failed": "Couldn't start the check. Please try again."
         }
       },
       "consume": {
@@ -1760,6 +1780,7 @@
           "tags_merged": "Tags merged",
           "mcp_access_changed": "Changed the MCP access",
           "file_reuse_changed": "Changed how identical files are stored",
+          "file_reuse_backfill_started": "Started checking stored files for identical content",
           "custom_widgets_changed": "Changed which custom widgets are allowed"
         },
         "authorsLinked": "{{count}} model(s) linked",

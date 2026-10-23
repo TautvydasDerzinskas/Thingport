@@ -60,9 +60,51 @@ The disk space under **Administration → Overview** counts a copy-on-write clon
 say which parts are shared.
 
 Thingport recognises a file by its content, so this applies to uploads, consume-folder imports and imports from any
-site alike. It still downloads the file first; only the space on disk is saved. Only files stored while the switch is
-on are recorded and can be reused: files stored while it was off aren't matched, and turning it on doesn't go back
-over the files already there. Turning it off leaves existing clones as the ordinary, independent files they are.
+site alike. It still downloads the file first; only the space on disk is saved. Turning it off leaves existing clones
+as the ordinary, independent files they are.
+
+### Files stored before
+
+Turning the switch on also goes over the files already stored, in the background, with its progress under **Existing
+files** in the same card. It first records a hash for every stored file, then replaces files with the same content by
+clones of the oldest one; each keeps its own name, place and owner, only the bytes on disk are shared. **Check
+again** (the refresh button) goes over them once more, for files stored while the switch was off or ones that couldn't
+be checked before: files a run already made share are recognised and left alone, so checking again costs little. The
+saving it reports is an upper bound, on a re-run too: a file that was moved or had its permissions changed since is
+cloned again and counted again, though it may already have shared its space. Where the filesystem can't clone, only the hashes are recorded. Turning the switch
+off stops a run. If a run hits an error it ends early and the card says so; the server log has the details and **Check
+again** carries on. It waits for a move of files to finish, and a move can't be started while it runs.
+
+Each replacement is made beside the original, read back and compared byte for byte, and only put in place after
+checking again that the original is still the same file and still where its model keeps it; otherwise it's left as it
+is. Until the replacement is in place and the original is known to be unchanged, the original keeps a second name
+beside it, which takes no space: if something wrote to it in that instant, it's renamed back over the replacement (a
+rename needs no free space), and if Thingport stops in the middle, the next start settles it from what's on disk,
+keeping the original's bytes whenever it can't tell. Only files in Thingport's storage folder are touched, and never
+a file with another hard link, on another filesystem, in a folder that links out of storage, or that a model left where
+it was found. The legacy shared folders (`bundles/`, from before the storage layout was added) are neither cloned,
+replaced nor offered as copies to share.
+
+Things to know:
+
+- Don't edit or move files in the storage folder from outside Thingport while it runs. A program that holds a file
+  open and writes to it in the instant it's replaced can lose that write, as the operating system offers no way to
+  swap two files in one step from here.
+- Deleting a model at the very moment its file is replaced can, rarely, leave a clone behind that no model owns. It takes
+  space only. Browse files doesn't list it: model and supporting files are listed from their records, and only the
+  pictures folders are read from disk, so a clone left in one of those folders shows there. (A run notices most
+  deletes of that kind and removes the clone again.)
+- The lock that keeps a move of files and a replacement apart works inside one Thingport process, which is how it
+  runs; two instances on the same storage aren't supported.
+- Extended attributes and access control lists aren't copied to a replacement (permissions and owner are, and times
+  to the microsecond, as Node sets nothing finer).
+- Snapshots of the storage keep the old copies, so the space freed is an upper bound. A file is recognised as already
+  shared by its inode and change time; moving it to another folder or changing its permissions changes the latter, and
+  the next check then replaces it by a clone once more, which saves nothing but is counted.
+- Rarely, if a crash and a write to the same file both happen in the instant of a replacement, and the file and its
+  original both differ from what was checked, both are kept and the log names them; the original sits beside the file
+  as a hidden `.reuse.tmp` file until you've looked at it.
+- A newer Thingport that re-encodes gallery images differently only means fewer of them match.
 
 Each copy-on-write copy is an independent file, so editing one on disk never changes another user's. Before a stored
 file is reused, the copy is read back and checked against the new import, and a stored file that changed since it was

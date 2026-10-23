@@ -3,6 +3,7 @@ import fsSync from "node:fs";
 import path from "node:path";
 import { prisma } from "../db";
 import { STORAGE } from "../config";
+import { withStorageLock } from "../utils/storageLock";
 import { HttpError, sanitizeFilename, guessMimeFromPath, mimeFromContentType } from "../utils/fileUtils";
 import { normalizeTags } from "../utils/tagNormalization";
 import { inspectPreparedPrint } from "./preparedPrint";
@@ -58,23 +59,29 @@ export type PrintMetaInput = {
   sourceExternalId?: string | null;
 };
 
-/** Never over another file: a link fails on one that's there, where a rename would replace it. */
+/** Never over another file: a link fails on one that's there, where a rename would replace it. Only the placing is
+ *  under the storage lock (the file reuse backfill's swap renames over a path it has just checked, and mustn't land
+ *  after a file saved at a path its row just freed); removing the temp file is not. */
 async function placeFile(input: NewPlateInput, destAbsPath: string): Promise<string | null> {
   await fs.mkdir(path.dirname(destAbsPath), { recursive: true });
   try {
     if (input.tempFilePath) {
-      try {
-        await fs.link(input.tempFilePath, destAbsPath);
-      } catch (err: any) {
-        if (err?.code === "EEXIST") throw err;
-        // Another disk, or one without hard links.
-        await fs.copyFile(input.tempFilePath, destAbsPath, fsSync.constants.COPYFILE_EXCL);
-      }
-      await fs.rm(input.tempFilePath, { force: true });
+      const tempFilePath = input.tempFilePath;
+      await withStorageLock(async () => {
+        try {
+          await fs.link(tempFilePath, destAbsPath);
+        } catch (err: any) {
+          if (err?.code === "EEXIST") throw err;
+          // Another disk, or one without hard links.
+          await fs.copyFile(tempFilePath, destAbsPath, fsSync.constants.COPYFILE_EXCL);
+        }
+      });
+      await fs.rm(tempFilePath, { force: true });
       return destAbsPath;
     }
     if (input.copyFromPath) {
-      await fs.copyFile(input.copyFromPath, destAbsPath, fsSync.constants.COPYFILE_EXCL);
+      const copyFromPath = input.copyFromPath;
+      await withStorageLock(() => fs.copyFile(copyFromPath, destAbsPath, fsSync.constants.COPYFILE_EXCL));
       return destAbsPath;
     }
   } catch (err: any) {

@@ -1,5 +1,10 @@
 import type { AiConnection, ReasoningEffort } from "@prisma/client";
 import { currentStorageMove, startStorageMove, type StorageMoveRun } from "../services/storageMoveService";
+import {
+  currentFileReuseBackfill,
+  startFileReuseBackfill,
+  type FileReuseBackfillRun,
+} from "../services/fileReuseBackfill";
 import { assertSavableStorageTemplate, storageTemplateProblems } from "../services/storageTemplateRules";
 import { Router } from "express";
 import { z } from "zod";
@@ -272,17 +277,39 @@ router.post(
     if (currentStorageMove()?.running) {
       throw new HttpError(409, "Model files are still being moved; save again once that's done", "storage_moving");
     }
+    if (currentFileReuseBackfill()?.running) {
+      throw new HttpError(409, "Identical files are being checked; save again once that's done", "file_reuse_running");
+    }
     await setStorageTemplate(template);
     startStorageMove(req.userId!, template);
     res.json(await storageSettingsOut(template));
   }),
 );
 
+function fileReuseBackfillOut(run: FileReuseBackfillRun | null) {
+  if (!run) return null;
+  return {
+    running: run.running,
+    started_at: run.startedAt,
+    finished_at: run.finishedAt,
+    phase: run.phase,
+    total: run.total,
+    done: run.done,
+    hashed: run.hashed,
+    cloned: run.cloned,
+    reclaimed_bytes: run.reclaimedBytes,
+    skipped: run.skipped,
+    unsupported: run.unsupported,
+    stopped: run.stopped,
+    failed: run.failed,
+  };
+}
+
 router.get(
   "/settings/file-reuse",
   requireAdmin,
   asyncHandler(async (_req, res) => {
-    res.json({ mode: await getFileReuse() });
+    res.json({ mode: await getFileReuse(), backfill: fileReuseBackfillOut(currentFileReuseBackfill()) });
   }),
 );
 
@@ -292,9 +319,33 @@ router.post(
   requireAdmin,
   asyncHandler(async (req, res) => {
     const { mode } = parseBody(fileReuseSchema, req.body) as { mode: (typeof FILE_REUSE_MODES)[number] };
+    const previous = await getFileReuse();
     await setFileReuse(mode);
-    res.json({ mode });
+    // Turned on: files stored while it was off, or before it covered them, are brought in line too.
+    const started = previous !== "reflink" && mode === "reflink" ? startFileReuseBackfill(req.userId!) : null;
+    res.json({ mode, backfill: fileReuseBackfillOut(currentFileReuseBackfill()) });
     void createLog({ userId: req.userId!, action: "file_reuse_changed", details: { mode } });
+    if (started)
+      void createLog({ userId: req.userId!, action: "file_reuse_backfill_started", details: { by: "switch" } });
+  }),
+);
+
+// Goes over the stored files again, as turning the switch on does: for files stored while it was off, or one that
+// couldn't be checked before.
+router.post(
+  "/settings/file-reuse/backfill",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    if ((await getFileReuse()) !== "reflink") {
+      throw new HttpError(409, "Turn on sharing identical files first", "file_reuse_off");
+    }
+    if (currentStorageMove()?.running) {
+      throw new HttpError(409, "Model files are being moved; check again once that's done", "storage_moving");
+    }
+    const started = startFileReuseBackfill(req.userId!);
+    if (started)
+      void createLog({ userId: req.userId!, action: "file_reuse_backfill_started", details: { by: "admin" } });
+    res.json({ backfill: fileReuseBackfillOut(currentFileReuseBackfill()) });
   }),
 );
 
