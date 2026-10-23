@@ -42,8 +42,9 @@ all at once, and act on them together.
 ![Merging three collections: the kept one, the ones deleted, and what the merged collection will hold](../../frontend/src/assets/screenshots/light/10_collections_merge.png)
 
 A **merge** moves every model into one collection or tag you pick, and deletes the others. Nothing is merged until
-you've seen what changes: which one is kept (with its name, description, tags and sync), which are deleted, how many
-models it ends up with, and which synced collections stop syncing. Keep a synced collection to carry on syncing it.
+you've seen what changes: which one is kept, which are deleted, how many models it ends up with, and which synced
+collections stop syncing. A kept collection keeps its name, description, tags and sync; keep a synced one to carry on
+syncing it.
 A merge can't be undone, but no model is ever deleted by one.
 
 ## Search

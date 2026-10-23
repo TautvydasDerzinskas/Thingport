@@ -377,7 +377,7 @@ try {
     await api(token, "PATCH", "/settings/theme", { theme });
     await page.emulateMedia({ colorScheme: theme });
     fs.mkdirSync(path.join(outDir, theme), { recursive: true });
-    for (const shot of shots.filter((s) => !s.guide || theme === themes[0])) {
+    for (const shot of shots.filter((s) => !s.guide || theme === "light")) {
       process.stdout.write(`${theme}/${shot.name}... `);
       await page.setViewportSize(VIEWPORT);
       const result = await shot.run(page, ctx);

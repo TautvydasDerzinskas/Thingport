@@ -200,7 +200,7 @@ export const DOCS = [
     title: "Print quality checks",
     nav: "Print quality",
     description:
-      "Every STL, OBJ and 3MF is checked for holes, non-manifold edges, flipped faces, loose fragments and the wrong size before you slice it.",
+      "STL, OBJ and 3MF files are checked for holes, non-manifold edges, flipped faces, loose fragments and the wrong size when a model is first opened.",
   },
   {
     slug: "features/organize-and-search",
