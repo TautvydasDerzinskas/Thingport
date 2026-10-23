@@ -399,6 +399,7 @@
       "batchCollectionsBlocked": "Les liens de collections (« J’aime », collections) ne peuvent être importés qu’un par un. Collez plutôt ici des liens de modèles, ou importez une collection séparément."
     },
     "userMenu": {
+      "logOutFailed": "Impossible de se déconnecter. Vérifiez votre connexion et réessayez.",
       "theme": "Thème",
       "light": "Clair",
       "dark": "Sombre",

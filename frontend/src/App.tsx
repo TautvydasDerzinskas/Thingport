@@ -95,7 +95,7 @@ type AppShellProps = {
   resolvedTheme: ResolvedTheme;
   muiTheme: ReturnType<typeof buildTheme>;
   onUnauthorized: () => void;
-  onLogout: () => void;
+  onLogout: () => Promise<void>;
   onUserUpdated: (user: AuthUser) => void;
 };
 
@@ -507,9 +507,9 @@ export default function App() {
     [handleUnauthorized],
   );
 
-  const handleLogout = () => {
-    // Fire-and-forget: local logout proceeds immediately.
-    void authApi.logout();
+  // Rejects, leaving the user signed in, when the server didn't confirm the session ended.
+  const handleLogout = async () => {
+    await authApi.logout();
     clearToken();
     clearUser();
     setToken(null);

@@ -399,6 +399,7 @@
       "batchCollectionsBlocked": "Collection links (likes, collections) can only be imported one at a time. Paste model links here instead, or import a collection on its own."
     },
     "userMenu": {
+      "logOutFailed": "Couldn't sign out. Check your connection and try again.",
       "theme": "Theme",
       "light": "Light",
       "dark": "Dark",

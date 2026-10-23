@@ -399,6 +399,7 @@
       "batchCollectionsBlocked": "Los enlaces de colecciones (me gusta, colecciones) solo se pueden importar uno a uno. Pega aquí enlaces de modelos o importa una colección por separado."
     },
     "userMenu": {
+      "logOutFailed": "No se pudo cerrar la sesión. Comprueba la conexión e inténtalo de nuevo.",
       "theme": "Tema",
       "light": "Claro",
       "dark": "Oscuro",

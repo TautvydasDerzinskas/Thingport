@@ -400,6 +400,7 @@
       "batchCollectionsBlocked": "Kolekcijų nuorodas (patikimai, kolekcijas) galima importuoti tik po vieną. Įklijuokite modelių nuorodas arba importuokite kolekciją atskirai."
     },
     "userMenu": {
+      "logOutFailed": "Nepavyko atsijungti. Patikrinkite ryšį ir bandykite dar kartą.",
       "theme": "Tema",
       "light": "Šviesi",
       "dark": "Tamsi",

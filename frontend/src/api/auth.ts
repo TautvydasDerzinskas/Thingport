@@ -191,10 +191,10 @@ export const authApi = {
     return res.json();
   },
 
-  // Best-effort: a failure must never block logout. It also ends the session's cookie, which only the server can.
+  // Only the server can end the session's cookie, so this throws unless it confirms: a cookie left behind would sign
+  // the browser straight back in.
   logout: async (): Promise<void> => {
-    try {
-      await fetch(`${apiBase()}/logout`, { method: "POST", headers: authHeaders() });
-    } catch {}
+    const res = await fetch(`${apiBase()}/logout`, { method: "POST", headers: authHeaders() });
+    assertOk(res, "Sign-out failed");
   },
 };
