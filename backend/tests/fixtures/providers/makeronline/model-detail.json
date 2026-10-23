@@ -1,0 +1,72 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "id": 281521,
+    "title": "Ergonomic Super Scraper",
+    "desc": "<p>A <strong>scraper</strong> for the Kobra.</p>",
+    "tags": ["scraper", "kobra", "scraper"],
+    "categories": [
+      {
+        "id": 33,
+        "name": "3D Printer",
+        "level": 1
+      },
+      {
+        "id": 35,
+        "name": "3D Printer Parts & Upgrades",
+        "level": 2
+      }
+    ],
+    "images": [
+      {
+        "url": "https://cdn-acop.makeronline.com/asop/a.png",
+        "is_main": 0
+      },
+      {
+        "url": "https://cdn-acop.makeronline.com/asop/main.png",
+        "is_main": 1
+      }
+    ],
+    "files": [
+      {
+        "key": "839eef",
+        "file_name": "Left Hand Version.stl"
+      },
+      {
+        "key": "9f02de",
+        "file_name": "Right Hand Version.stl"
+      }
+    ],
+    "print_profiles": [
+      {
+        "id": 176077,
+        "title": "Kobra X profile",
+        "user_id": "designer-uuid",
+        "main_image": "https://cdn-acop.makeronline.com/asop/profile.png",
+        "files": [
+          {
+            "key": "13d314",
+            "file_name": "scraper.3mf",
+            "print_profile_id": 176077
+          }
+        ]
+      },
+      {
+        "id": 215390,
+        "title": "Remix",
+        "user_id": "someone-else",
+        "files": [
+          {
+            "key": "d1aee5",
+            "file_name": "remix.3mf"
+          }
+        ]
+      }
+    ],
+    "user_id": "designer-uuid",
+    "user_display_name": "3DPrintOfficial",
+    "show_user_name": "@3DPrintOfficial_1",
+    "user_avatar": "https://cdn-acop.makeronline.com/asop/avatar.png"
+  }
+}

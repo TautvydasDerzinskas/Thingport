@@ -1,0 +1,13 @@
+{
+  "code": 0,
+  "msg": "",
+  "traceId": "contract-fixture",
+  "data": {
+    "id": "2112058171795062784",
+    "collectOutId": "G10199482",
+    "collectionName": "Test collection",
+    "collectionOpenStatus": false,
+    "countNum": 2,
+    "author": { "userId": "U0092359913", "nickname": "Tautvydas" }
+  }
+}

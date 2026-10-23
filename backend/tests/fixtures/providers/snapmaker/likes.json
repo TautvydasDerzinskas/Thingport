@@ -1,0 +1,24 @@
+{
+  "code": 200,
+  "msg": "success",
+  "data": {
+    "total": 3,
+    "list": [
+      {
+        "id": 9990033,
+        "title": "Test Princess",
+        "cover_url": "https://cdn-model.snapmaker.com/c1.png"
+      },
+      {
+        "id": 9990034,
+        "title": "Other",
+        "cover_url": "https://cdn-model.snapmaker.com/c2.png"
+      },
+      {
+        "id": 9990035,
+        "title": "Deleted",
+        "is_deleted": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "code": 0,
+  "msg": "",
+  "traceId": "contract-fixture",
+  "data": {
+    "total": 3,
+    "list": [
+      { "modelId": "G1215164", "modelName": "Dog", "coverImgUrl": "https://np.nexprint.com/images/1/cover.png" },
+      { "modelId": "G6213245", "modelName": "CC2 profiles", "coverImgUrl": "https://np.nexprint.com/images/c.png" },
+      { "modelId": "G1111111", "modelName": "Gone", "isInvalid": true }
+    ]
+  }
+}
