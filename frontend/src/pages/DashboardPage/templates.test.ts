@@ -247,6 +247,7 @@ describe("initialConfig", () => {
     const active = config.templates.find((template) => template.id === config.active)!;
     expect(active.preset).toBe("homepage");
     expect(templateWidgets(active).has("clock")).toBe(true);
+    expect(instanceCount(active, "weather")).toBe(1);
   });
 
   it("mirrors the classic preset for counts on the right", () => {
