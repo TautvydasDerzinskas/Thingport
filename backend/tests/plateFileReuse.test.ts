@@ -7,10 +7,11 @@ import path from "node:path";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { STORAGE } from "../src/config";
+import { register } from "./helpers/fileReuse";
 import { createPrint } from "../src/services/printCreation";
 import { managedPlatePath } from "../src/services/printService";
 import { plateContentSha256 } from "../src/services/importService";
-import { sha256OfFile } from "../src/services/fileReuse";
+import { MIN_SHARE_BYTES, sha256OfFile } from "../src/services/fileReuse";
 import { setFileReuse, type FileReuse } from "../src/services/settingsService";
 import { prisma } from "../src/db";
 
@@ -48,6 +49,9 @@ function watchClones(beforeClone?: (target: string) => void) {
   const attempts: string[] = [];
   vi.spyOn(fsp, "copyFile").mockImplementation(async (src, target, mode) => {
     if (mode === undefined || !(mode & COPYFILE_FICLONE_FORCE)) return realCopyFile(src, target, mode);
+    // Not the model's own render, which is saved in the background (as a gallery image, through a temp file) and shared
+    // like any picture when two models render alike: it's no plate file.
+    if (String(target).endsWith(".tmp")) return realCopyFile(src, target, reflinks ? mode : COPYFILE_EXCL);
     attempts.push(String(target));
     beforeClone?.(String(target));
     await realCopyFile(src, target, reflinks ? mode : COPYFILE_EXCL);
@@ -56,19 +60,15 @@ function watchClones(beforeClone?: (target: string) => void) {
   return { clones, attempts };
 }
 
-async function register(name: string) {
-  const email = `reuse-${name}-${Date.now()}@example.com`;
-  const res = await request(app).post("/api/register").send({ displayName: name, email, password: "password123" });
-  return { id: res.body.user.id as string, token: res.body.token as string, email };
-}
-
 /** An STL no other test has stored, so only the copies made here can match it. */
 function uniqueStl(): string {
   const file = path.join(dir, `${crypto.randomBytes(6).toString("hex")}.stl`);
   const nonce = crypto.randomBytes(16).toString("hex");
+  // A comment block takes it past MIN_SHARE_BYTES: a smaller file is never shared.
+  const padding = `; ${"padding ".repeat(MIN_SHARE_BYTES / 8)}\n`;
   fs.writeFileSync(
     file,
-    `solid ${nonce}\nfacet normal 0 0 1\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 0 1 0\nendloop\nendfacet\nendsolid ${nonce}\n`,
+    `solid ${nonce}\nfacet normal 0 0 1\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 0 1 0\nendloop\nendfacet\nendsolid ${nonce}\n${padding}`,
   );
   return file;
 }
@@ -97,13 +97,13 @@ const stored = (id: string) => prisma.plate.findUnique({ where: { id } });
 
 beforeAll(async () => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "plate-reuse-"));
-  const first = await register("first");
+  const first = await register(app, "reuse", "first");
   firstUserId = first.id;
   firstToken = first.token;
-  const second = await register("second");
+  const second = await register(app, "reuse", "second");
   secondUserId = second.id;
   userToken = second.token;
-  const admin = await register("admin");
+  const admin = await register(app, "reuse", "admin");
   await prisma.user.update({ where: { id: admin.id }, data: { role: "ADMIN" } });
   // Tokens carry the role from when they were issued.
   adminToken = (await request(app).post("/api/login").send({ email: admin.email, password: "password123" })).body.token;

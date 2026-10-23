@@ -1,8 +1,20 @@
+import fs from "node:fs/promises";
 import sharp from "sharp";
 
 const PHOTO_BACKGROUND = { r: 248, g: 250, b: 252 };
 
 /** Orient pixels and strip camera metadata unless an owner-provided photo explicitly opts in. */
+export async function photoJpeg(input: Buffer, maxSize: number, quality: number, keepExif = false): Promise<Buffer> {
+  const image = sharp(input).autoOrient();
+  if (keepExif) image.keepExif();
+  return image
+    .flatten({ background: PHOTO_BACKGROUND })
+    .resize(maxSize, maxSize, { fit: "inside", withoutEnlargement: true })
+    .jpeg({ quality, mozjpeg: true })
+    .toBuffer();
+}
+
+/** photoJpeg, written to `destination`. */
 export async function writePhotoJpeg(
   input: Buffer,
   destination: string,
@@ -10,13 +22,7 @@ export async function writePhotoJpeg(
   quality: number,
   keepExif = false,
 ): Promise<void> {
-  const image = sharp(input).autoOrient();
-  if (keepExif) image.keepExif();
-  await image
-    .flatten({ background: PHOTO_BACKGROUND })
-    .resize(maxSize, maxSize, { fit: "inside", withoutEnlargement: true })
-    .jpeg({ quality, mozjpeg: true })
-    .toFile(destination);
+  await fs.writeFile(destination, await photoJpeg(input, maxSize, quality, keepExif));
 }
 
 export async function rasterIconPng(input: Buffer, size: number): Promise<Buffer> {

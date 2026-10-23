@@ -1283,11 +1283,11 @@
         "heading": "Fichiers identiques",
         "subtitle": "Économisez de l'espace quand plusieurs utilisateurs importent le même modèle.",
         "modeLabel": "Cloner les fichiers identiques (copie sur écriture)",
-        "help": "Thingport compare chaque nouveau fichier de modèle à ceux déjà stockés. La copie sur écriture clone un fichier identique sur btrfs, XFS ou ZFS 2.2 et plus récent, et le stocke normalement ailleurs. Chaque clone est un fichier à part entière : en modifier un sur le disque ne change jamais celui d'un autre utilisateur.",
+        "help": "Thingport compare chaque nouveau fichier de modèle, fichier complémentaire, image de galerie et image de description à ceux déjà stockés, quel que soit leur type. Les miniatures et les rendus ne sont pas partagés. La copie sur écriture clone un fichier identique sur btrfs, XFS ou ZFS 2.2 et plus récent, et le stocke normalement ailleurs. Chaque clone est un fichier à part entière : en modifier un sur le disque ne change jamais celui d'un autre utilisateur. Les fichiers stockés avant son activation ne sont pas parcourus.",
         "failed": "Impossible d'enregistrer le stockage des fichiers identiques. Veuillez réessayer.",
         "loadFailed": "Impossible de charger le stockage des fichiers identiques.",
         "modeHelp": {
-          "off": "Chaque fichier de modèle occupe son propre espace.",
+          "off": "Chaque fichier occupe son propre espace.",
           "reflink": "Un fichier déjà stocké est cloné quand le système de fichiers le permet, sans espace supplémentaire tant qu'aucune copie ne change."
         }
       },

@@ -50,6 +50,12 @@ on, a file that's already stored is cloned copy-on-write on btrfs, XFS and ZFS 2
 space until one of them changes, and each user's file stays their own. On other filesystems the file is stored as
 usual.
 
+This covers a model's own files, its supporting files and prepared print files, its gallery images and the images in
+its description, and a file is matched against all of those: the same bytes may be one user's model file and another's
+supporting file. Plate thumbnails, 3D preview files, profile pictures and files a model keeps in a folder outside its
+own (models from before the storage layout was added, or plates left where they were found) aren't shared. Gallery
+images are compared as Thingport stores them, after resizing and re-encoding, not as downloaded.
+
 The disk space under **Administration → Overview** counts a copy-on-write clone in full, as the filesystem doesn't
 say which parts are shared.
 

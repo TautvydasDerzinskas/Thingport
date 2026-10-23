@@ -24,7 +24,8 @@ import { generateCardRender } from "./previewImageService";
 import { printAssetHome } from "./modelAssets";
 import { deleteNormalized3mf } from "./normalized3mfCache";
 import { getPreviewMode } from "./settingsService";
-import { shareStoredCopy, type FileContent, type StoredCopy } from "./fileReuse";
+import { shareStoredCopy } from "./fileReuse";
+import { findStoredCopies } from "./storedContent";
 import { Prisma } from "@prisma/client";
 import type { CategorySource, Plate, Print } from "@prisma/client";
 import { enqueueAiCategorization } from "./aiCategorizationService";
@@ -83,26 +84,6 @@ async function placeFile(input: NewPlateInput, destAbsPath: string): Promise<str
   return input.sourcePath ?? null;
 }
 
-/** Stored plate files with this content, for shareStoredCopy. */
-async function storedPlateCopies({ contentSha256, size }: FileContent): Promise<StoredCopy[]> {
-  // Only files in managed storage: one left where it was found (sourcePath) isn't ours to share.
-  const plates = await prisma.plate.findMany({
-    where: { contentSha256, size, sourcePath: null },
-    select: { id: true, storagePath: true },
-    // Newest first: the most recently stored copy is the likeliest to still be as it was hashed.
-    orderBy: { createdAt: "desc" },
-    take: 3,
-  });
-  return plates.map((plate) => ({
-    path: managedPlatePath(plate),
-    // Edited on disk since it was hashed: dropped, so it isn't offered again; plateContentSha256 hashes it anew when
-    // it's needed.
-    changed: async () => {
-      await prisma.plate.updateMany({ where: { id: plate.id, contentSha256 }, data: { contentSha256: null } });
-    },
-  }));
-}
-
 /** Stores the file, sharing a stored copy of it when the admin setting allows. Returns where it is and, when it was
  *  hashed for that, its SHA-256 -- recorded either way so a later identical file finds it. */
 async function placePlateFile(
@@ -111,7 +92,7 @@ async function placePlateFile(
 ): Promise<{ effectivePath: string | null; contentSha256: string | null }> {
   const fromPath = input.tempFilePath ?? input.copyFromPath;
   if (!fromPath) return { effectivePath: await placeFile(input, destAbsPath), contentSha256: null };
-  const { contentSha256, shared } = await shareStoredCopy(fromPath, destAbsPath, storedPlateCopies);
+  const { contentSha256, shared } = await shareStoredCopy(fromPath, destAbsPath, findStoredCopies);
   if (!shared) return { effectivePath: await placeFile(input, destAbsPath), contentSha256 };
   // The clone is in place: a temp file left behind is only clutter, not a reason to fail the import.
   if (input.tempFilePath) await fs.rm(input.tempFilePath, { force: true }).catch(() => undefined);

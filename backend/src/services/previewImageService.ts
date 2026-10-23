@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { prisma } from "../db";
 import { generateModelImage } from "./modelPreviewCache";
-import { renderThumbShade, writePhotoJpeg } from "./imageProcessing";
+import { photoJpeg, renderThumbShade } from "./imageProcessing";
 import {
   assetExists,
   assetPath,
@@ -13,6 +13,8 @@ import {
   removeAsset,
   type AssetHome,
 } from "./modelAssets";
+import { plainWriteMode, shareStoredBytes } from "./fileReuse";
+import { findStoredCopies } from "./storedContent";
 import { ensureAssetHome, plateThumbExists, plateThumbReplaceable, saveThumbFromBytes } from "./printService";
 import type { PreviewImage } from "@prisma/client";
 
@@ -25,19 +27,33 @@ export function previewImageExists(id: string, home: AssetHome): boolean {
   return assetExists(home, galleryImageFile(id));
 }
 
-async function saveBuffer(printId: string, id: string, input: Buffer, keepExif: boolean): Promise<boolean> {
+/** Where the JPEG was stored, its size, and its SHA-256 when it was hashed for sharing (file reuse on). Null when it
+ *  couldn't be saved. The path is returned so a caller that has to undo the save removes exactly this file, without
+ *  looking the folder up again through a print that may be gone. */
+async function saveBuffer(
+  printId: string,
+  id: string,
+  input: Buffer,
+  keepExif: boolean,
+): Promise<{ dest: string; size: number; contentSha256: string | null } | null> {
   let tmp: string | null = null;
   try {
     const dest = assetTarget(await ensureAssetHome(printId), galleryImageFile(id));
     tmp = `${dest}.${process.pid}.${Date.now()}.tmp`;
     await fs.mkdir(path.dirname(dest), { recursive: true });
-    // Hero-sized: this is the detail page's main image.
-    await writePhotoJpeg(input, tmp, 1600, 90, keepExif);
+    // Hero-sized: this is the detail page's main image. Kept in memory rather than written by sharp: what's shared is
+    // the re-encoded JPEG, not the download (the same picture fetched twice is rarely the same bytes, but encoded the
+    // same way it is), so it's hashed before it's written.
+    const out = await photoJpeg(input, 1600, 90, keepExif);
+    // Cloned (or written) at the temp name, then renamed into place as before, so a half-written picture is never
+    // served. A clone that can't be made is no reason to fail: the bytes are written as usual.
+    const { contentSha256, shared } = await shareStoredBytes(out, tmp, findStoredCopies, plainWriteMode());
+    if (!shared) await fs.writeFile(tmp, out, { flag: "wx" });
     await fs.rename(tmp, dest);
-    return true;
+    return { dest, size: out.length, contentSha256 };
   } catch {
     if (tmp) await fs.rm(tmp, { force: true });
-    return false;
+    return null;
   }
 }
 
@@ -50,12 +66,28 @@ export async function addPreviewImage(
   const last = await prisma.previewImage.findFirst({ where: { printId }, orderBy: { position: "desc" } });
   const position = last ? last.position + 1 : 0;
   const row = await prisma.previewImage.create({ data: { printId, position, generated } });
-  const ok = await saveBuffer(printId, row.id, buffer, keepExif);
-  if (!ok) {
+  const saved = await saveBuffer(printId, row.id, buffer, keepExif);
+  if (!saved) {
     await prisma.previewImage.delete({ where: { id: row.id } }).catch(() => undefined);
     return null;
   }
-  return row;
+  // Recorded after the file is in place, so a stored copy is only ever offered once it's there. The row may have been
+  // deleted meanwhile (its print removed while the picture was being saved): then the file has no row, so it goes too.
+  // It's removed by the path it was written to: with the print gone there's no folder left to look up.
+  const { dest, ...stored } = saved;
+  try {
+    const { count } = await prisma.previewImage.updateMany({ where: { id: row.id }, data: stored });
+    if (count === 0) {
+      await fs.rm(dest, { force: true });
+      return null;
+    }
+    return await prisma.previewImage.findUnique({ where: { id: row.id } });
+  } catch (err) {
+    console.error(`Failed to record preview image ${row.id}:`, err);
+    await fs.rm(dest, { force: true }).catch(() => undefined);
+    await prisma.previewImage.deleteMany({ where: { id: row.id } }).catch(() => undefined);
+    return null;
+  }
 }
 
 /** An existing image (e.g. an import's cover) always wins. */

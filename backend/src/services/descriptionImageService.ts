@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { IMPORT_BROWSER_USER_AGENT, IMPORT_TIMEOUT_SECONDS } from "../config";
 import { prisma } from "../db";
+import { HttpError } from "../utils/fileUtils";
 import {
   assetPath,
   assetTarget,
@@ -11,6 +12,8 @@ import {
   type AssetHome,
 } from "./modelAssets";
 import { ensureAssetHome } from "./printService";
+import { plainWriteMode, shareStoredBytes } from "./fileReuse";
+import { findStoredCopies } from "./storedContent";
 import { mapWithConcurrency } from "../utils/concurrency";
 import { validateRemoteUrl } from "../utils/urlUtils";
 import { browserFetch, needsBrowserFetch } from "../utils/browserFetch";
@@ -93,15 +96,30 @@ async function imageMime(buffer: Buffer): Promise<string | null> {
 }
 
 /** Null when the bytes aren't an allowed image. */
-async function saveDescriptionImage(printId: string, buffer: Buffer, sourceUrl: string | null) {
+export async function saveDescriptionImage(printId: string, buffer: Buffer, sourceUrl: string | null) {
   const mime = await imageMime(buffer);
   if (!mime) return null;
   const row = await prisma.descriptionImage.create({ data: { printId, sourceUrl, mime, size: buffer.length } });
+  // Set once this call has put the file there (written exclusively, or cloned with EXCL), so it's ours to remove again.
+  let placed: string | null = null;
   try {
     const dest = assetTarget(await ensureAssetHome(printId), descriptionImageFile(row));
     await fs.mkdir(path.dirname(dest), { recursive: true });
-    await fs.writeFile(dest, buffer);
+    // Kept byte-for-byte, so the download itself is what's hashed and, when a stored copy of it exists, cloned.
+    let shared = false;
+    let contentSha256: string | null = null;
+    try {
+      ({ contentSha256, shared } = await shareStoredBytes(buffer, dest, findStoredCopies, plainWriteMode()));
+    } catch (err) {
+      // Sharing only saves space: stored as usual. Another file at the path is not ours to write over, though.
+      if (err instanceof HttpError && err.status === 409) throw err;
+    }
+    if (!shared) await fs.writeFile(dest, buffer, { flag: "wx" });
+    placed = dest;
+    // After the file is in place, so a stored copy is only ever offered once it's there.
+    if (contentSha256) await prisma.descriptionImage.update({ where: { id: row.id }, data: { contentSha256 } });
   } catch {
+    if (placed) await fs.rm(placed, { force: true }).catch(() => undefined);
     await prisma.descriptionImage.delete({ where: { id: row.id } }).catch(() => undefined);
     return null;
   }
