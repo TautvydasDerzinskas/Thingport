@@ -51,7 +51,7 @@ No more worrying about losing access to your favourite models. Your library stay
 
 ## Screenshots
 
-The screenshots follow your GitHub theme. Thingport has a light and a dark theme, or follows your system's, so the last one is shown in the other theme.
+Have in mind that these screenshots follow your GitHub theme (matches it). Thingport has a light and a dark theme, or follows your system's.
 
 <table>
   <tr>
