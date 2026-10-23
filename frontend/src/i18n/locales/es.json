@@ -277,6 +277,14 @@
             "save_widget": {
               "title": "Guardar un widget del panel",
               "description": "Crear o cambiar tus propios widgets del panel. Sus scripts se ejecutan en tu panel."
+            },
+            "list_icons": {
+              "title": "Buscar un icono",
+              "description": "Buscar entre los iconos de Thingport y los que has subido, p. ej. para un widget."
+            },
+            "upload_icon": {
+              "title": "Subir un icono",
+              "description": "Añadir una imagen a tus iconos, como hace Subir en el explorador de iconos."
             }
           },
           "writeConfirmTitle": "¿Dejar que el asistente use «{{tool}}»?",
@@ -936,10 +944,9 @@
           "version": "Versión",
           "description": "Descripción",
           "icon": "Icono",
-          "iconHelp": "Elige un icono de Thingport, sube el tuyo o indica la dirección de una imagen; un SVG se ve nítido a cualquier tamaño. Sin él, se muestra el emoji.",
+          "iconHelp": "Elige un icono de Thingport, sube el tuyo o indica la dirección de una imagen; un SVG se ve nítido a cualquier tamaño. Sin él, se muestra una pieza de puzle.",
           "iconUrl": "Icono",
-          "iconNone": "Ninguno, el emoji",
-          "emoji": "Emoji",
+          "iconNone": "Ninguno",
           "author": "Autor",
           "authorHelp": "Aparece cuando se comparte el widget. Si lo dejas vacío, se rellena con el nombre de tu perfil.",
           "authorName": "Nombre completo",

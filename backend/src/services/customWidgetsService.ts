@@ -9,6 +9,7 @@ import { BlockList, isIP, type LookupFunction } from "node:net";
 import { Agent } from "undici";
 import { z } from "zod";
 import { prisma } from "../db";
+import { createLogger } from "../logger";
 import { HttpError } from "../utils/fileUtils";
 import { readCapped } from "../utils/readCapped";
 import { TtlCache } from "../utils/ttlCache";
@@ -224,6 +225,36 @@ export async function installCommunityWidget(userId: string, slug: string): Prom
     update: data,
   });
   return out(row)!;
+}
+
+// --- Samples ------------------------------------------------------------------------------------------------------
+
+const log = createLogger("custom-widgets");
+
+/** Community widgets every user starts with, installed as from the repository, to show what a widget can be. */
+const SAMPLE_WIDGETS = ["countdown"];
+
+/** Installs the sample widgets for the user, once: one they remove stays removed. If the repository can't be
+ *  reached, it's tried again on their next visit. */
+export async function addSampleWidgets(userId: string): Promise<void> {
+  const { count } = await prisma.user.updateMany({
+    where: { id: userId, sampleWidgetsAdded: false },
+    data: { sampleWidgetsAdded: true },
+  });
+  if (!count) return;
+  try {
+    for (const slug of SAMPLE_WIDGETS) {
+      const { manifest, script, html, sha } = await fetchCommunityWidget(slug);
+      await prisma.customWidget.upsert({
+        where: { userId_source_slug: { userId, source: "community", slug } },
+        create: { userId, source: "community", slug, manifest, script, html, sha },
+        update: {},
+      });
+    }
+  } catch (err) {
+    log.warn("installing the sample widgets failed; trying again next visit", { error: err });
+    await prisma.user.update({ where: { id: userId }, data: { sampleWidgetsAdded: false } });
+  }
 }
 
 // --- Across the instance, for admins ------------------------------------------------------------------------------

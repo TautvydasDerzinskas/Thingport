@@ -104,7 +104,7 @@ export default function DetailsForm({ draft, onChange, errors, slugLocked }: Pro
               color: "primary.main",
             }}
           >
-            <WidgetIcon icon={draft.icon.trim() || undefined} iconUrl={draft.iconUrl.trim() || undefined} size={24} />
+            <WidgetIcon iconUrl={draft.iconUrl.trim() || undefined} size={24} />
           </Box>
           <TextField
             size="small"
@@ -143,27 +143,14 @@ export default function DetailsForm({ draft, onChange, errors, slugLocked }: Pro
 
       <Stack spacing={1.5}>
         <Heading help={t("dashboard.custom.editor.iconHelp")}>{t("dashboard.custom.editor.icon")}</Heading>
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <IconPicker
-              label={t("dashboard.custom.editor.iconUrl")}
-              emptyLabel={t("dashboard.custom.editor.iconNone")}
-              value={draft.iconUrl}
-              onChange={(iconUrl) => onChange({ iconUrl })}
-              error={error("iconUrl")}
-              preview={<WidgetIcon iconUrl={draft.iconUrl.trim() || undefined} size={28} />}
-            />
-          </Box>
-          <TextField
-            size="small"
-            label={t("dashboard.custom.editor.emoji")}
-            value={draft.icon.length > 16 ? "" : draft.icon}
-            placeholder="🕒"
-            onChange={(event) => onChange({ icon: event.target.value })}
-            slotProps={{ htmlInput: { maxLength: 16 } }}
-            sx={{ width: { xs: "100%", sm: 130 }, flexShrink: 0 }}
-          />
-        </Stack>
+        <IconPicker
+          label={t("dashboard.custom.editor.iconUrl")}
+          emptyLabel={t("dashboard.custom.editor.iconNone")}
+          value={draft.iconUrl}
+          onChange={(iconUrl) => onChange({ iconUrl })}
+          error={error("iconUrl")}
+          preview={<WidgetIcon iconUrl={draft.iconUrl.trim() || undefined} size={28} />}
+        />
       </Stack>
 
       <Stack spacing={1.5}>

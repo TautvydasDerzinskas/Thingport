@@ -134,7 +134,7 @@ function WidgetHead({ manifest, badge }: { manifest: WidgetManifest; badge?: Rea
           bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
         }}
       >
-        <WidgetIcon icon={manifest.icon} iconUrl={manifest.iconUrl} size={24} />
+        <WidgetIcon iconUrl={manifest.iconUrl} size={24} />
       </Box>
       <Box sx={{ flex: 1, minWidth: 0, textAlign: "left" }}>
         <Typography variant="body2" fontWeight={600} noWrap>

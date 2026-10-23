@@ -274,6 +274,14 @@
             "save_widget": {
               "title": "Save a dashboard widget",
               "description": "Create or change your own dashboard widgets. Their scripts run in your dashboard."
+            },
+            "list_icons": {
+              "title": "Find an icon",
+              "description": "Search Thingport's icons and the ones you uploaded, e.g. for a widget."
+            },
+            "upload_icon": {
+              "title": "Upload an icon",
+              "description": "Add an image to your icons, as the icon browser's Upload does."
             }
           },
           "writeConfirmTitle": "Let the assistant use “{{tool}}”?",
@@ -929,10 +937,9 @@
           "version": "Version",
           "description": "Description",
           "icon": "Icon",
-          "iconHelp": "Pick one of Thingport's icons, upload your own or give an image address; an SVG stays sharp at every size. Without one, the emoji is shown.",
+          "iconHelp": "Pick one of Thingport's icons, upload your own or give an image address; an SVG stays sharp at every size. Without one, a jigsaw piece is shown.",
           "iconUrl": "Icon",
-          "iconNone": "None, the emoji below",
-          "emoji": "Emoji",
+          "iconNone": "None",
           "author": "Author",
           "authorHelp": "Credited when the widget is shared. Your profile name is filled in when it's left empty.",
           "authorName": "Full name",

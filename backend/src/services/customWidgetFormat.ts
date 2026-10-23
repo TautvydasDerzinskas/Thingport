@@ -61,14 +61,8 @@ const sizeSchema = z
 export const manifestSchema = z.object({
   name: z.string().trim().min(1).max(40),
   description: z.string().trim().max(300).default(""),
-  /** An emoji, an https image address, or an SVG as a data: address. */
-  icon: z
-    .string()
-    .max(100_000)
-    .refine((icon) => !/^(javascript|vbscript):/i.test(icon.trim()), "Not an image")
-    .optional(),
-  /** An image address for the icon, shown instead of `icon`; an SVG stays sharp at every size. Also one of
-   *  Thingport's own icons, `builtin:<group>/<name>`, or one the user uploaded, `/api/icons/<file>`. */
+  /** The widget's icon: an image address, where an SVG stays sharp at every size, or, as the icon browser picks,
+   *  one of Thingport's own icons, `builtin:<group>/<name>`, or one the user uploaded, `/api/icons/<file>`. */
   iconUrl: iconAddress.optional(),
   version: z.string().trim().max(20).default("1.0.0"),
   /** The author's full name; saving fills in the user's own when it's missing. */

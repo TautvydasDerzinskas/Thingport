@@ -639,7 +639,7 @@ export function registerCustomWidgets(widgets: CustomWidget[]): void {
       multiple: true,
       labelKey: "",
       label: manifest.name,
-      icon: <WidgetIcon icon={manifest.icon} iconUrl={manifest.iconUrl} />,
+      icon: <WidgetIcon iconUrl={manifest.iconUrl} />,
       size: { w: manifest.size.w, h: manifest.size.h, minW: manifest.size.minW ?? 1, minH: manifest.size.minH ?? 1 },
       sketch: "custom",
       settings: settingsOf(manifest.settings),

@@ -275,6 +275,14 @@
             "save_widget": {
               "title": "Išsaugoti suvestinės valdiklį",
               "description": "Kurti ar keisti savo suvestinės valdiklius. Jų skriptai veikia jūsų suvestinėje."
+            },
+            "list_icons": {
+              "title": "Rasti piktogramą",
+              "description": "Ieškoti Thingport piktogramų ir jūsų įkeltų, pvz., valdikliui."
+            },
+            "upload_icon": {
+              "title": "Įkelti piktogramą",
+              "description": "Pridėti paveikslėlį prie jūsų piktogramų, kaip tai daro piktogramų naršyklės įkėlimas."
             }
           },
           "writeConfirmTitle": "Leisti asistentui naudoti „{{tool}}“?",
@@ -944,10 +952,9 @@
           "version": "Versija",
           "description": "Aprašymas",
           "icon": "Piktograma",
-          "iconHelp": "Pasirinkite Thingport piktogramą, įkelkite savo arba nurodykite paveikslėlio adresą; SVG ryškus bet kokio dydžio. Be jos rodomas jaustukas.",
+          "iconHelp": "Pasirinkite Thingport piktogramą, įkelkite savo arba nurodykite paveikslėlio adresą; SVG ryškus bet kokio dydžio. Be jos rodoma dėlionės detalė.",
           "iconUrl": "Piktograma",
-          "iconNone": "Nėra, rodomas jaustukas",
-          "emoji": "Jaustukas",
+          "iconNone": "Nėra",
           "author": "Autorius",
           "authorHelp": "Nurodomas, kai valdikliu dalijamasi. Palikus tuščią, įrašomas jūsų profilio vardas.",
           "authorName": "Vardas ir pavardė",

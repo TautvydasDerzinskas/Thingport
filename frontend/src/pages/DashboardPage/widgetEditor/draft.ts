@@ -28,7 +28,6 @@ export type Draft = {
   slugEdited: boolean;
   name: string;
   description: string;
-  icon: string;
   iconUrl: string;
   version: string;
   author: string;
@@ -97,10 +96,7 @@ export function fromManifest(manifest: WidgetManifest, slug: string): Draft {
     slugEdited: true,
     name: manifest.name,
     description: manifest.description ?? "",
-    // An image address in `icon`, from before `iconUrl`, moves to where it's now edited.
-    ...(manifest.icon && /^https?:/i.test(manifest.icon) && !manifest.iconUrl
-      ? { icon: "", iconUrl: manifest.icon }
-      : { icon: manifest.icon ?? "", iconUrl: manifest.iconUrl ?? "" }),
+    iconUrl: manifest.iconUrl ?? "",
     version: manifest.version ?? "1.0.0",
     author: manifest.author ?? "",
     authorUrl: manifest.authorUrl ?? "",
@@ -168,7 +164,6 @@ export function toManifest(draft: Draft): WidgetManifest {
   return {
     name: draft.name.trim(),
     description: draft.description.trim(),
-    icon: optional(draft.icon),
     iconUrl: optional(draft.iconUrl),
     version: draft.version.trim() || "1.0.0",
     author: optional(draft.author),

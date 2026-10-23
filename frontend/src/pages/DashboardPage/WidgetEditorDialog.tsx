@@ -29,7 +29,6 @@ type Part = "details" | "settings" | "script" | "html";
 const STARTER: WidgetManifest = {
   name: "World clock",
   description: "The time in another city.",
-  icon: "🕒",
   version: "1.0.0",
   size: { w: 3, h: 2, minW: 2, minH: 2 },
   settings: [
@@ -155,7 +154,7 @@ function Editor({ widget, onClose, onSaved, onUnauthorized }: Omit<Props, "open"
         }}
       >
         <Box sx={{ display: "flex", color: "primary.main" }}>
-          <WidgetIcon icon={manifest.icon} iconUrl={manifest.iconUrl} size={20} />
+          <WidgetIcon iconUrl={manifest.iconUrl} size={20} />
         </Box>
         <Typography
           variant="body2"

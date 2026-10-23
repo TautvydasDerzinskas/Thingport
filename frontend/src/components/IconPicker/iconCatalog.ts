@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import markColor from "../../assets/logos/thingport-mark-color.svg?raw";
 import iconColor from "../../assets/logos/thingport-icon-color.svg?raw";
+import hourglass from "../../assets/icons/hourglass.svg?raw";
 import markDark from "../../assets/logos/thingport-mark-dark.svg";
 import iconDark from "../../assets/logos/thingport-icon-dark.svg";
 import chrome from "../../assets/logos/browsers/chrome.svg";
@@ -82,17 +83,42 @@ const STATIC: CatalogIcon[] = [
   { value: "builtin:browsers/firefox", name: "Firefox", group: "browsers", src: firefox },
 ];
 
+// Drawn in Thingport green, so they take the theme's accent.
+const TINTED = [
+  { value: "builtin:thingport/mark", name: "Thingport", group: "thingport", svg: markColor },
+  { value: "builtin:thingport/icon", name: "Thingport", group: "thingport", svg: iconColor },
+  {
+    value: "builtin:thingport/hourglass",
+    name: "Hourglass",
+    group: "thingport",
+    svg: hourglass,
+    keywords: "countdown timer time",
+  },
+] as const;
+
+/** Every built-in icon by its stored value and name, without the images: what the MCP `list_icons` tool offers. */
+export const BUILTIN_ICONS: Omit<CatalogIcon, "src">[] = [...TINTED, ...STATIC].map(
+  ({ value, name, group, ...rest }) => ({
+    value,
+    name,
+    group,
+    ...("keywords" in rest && rest.keywords && { keywords: rest.keywords }),
+  }),
+);
+
 /** Thingport's own icons, the logo and app icon in the theme's accent first. */
 export function useIconCatalog(): CatalogIcon[] {
-  const mark = useTintedSvg(markColor)!;
-  const icon = useTintedSvg(iconColor)!;
+  const mark = useTintedSvg(TINTED[0].svg)!;
+  const icon = useTintedSvg(TINTED[1].svg)!;
+  const glass = useTintedSvg(TINTED[2].svg)!;
   return useMemo(
     () => [
-      { value: "builtin:thingport/mark", name: "Thingport", group: "thingport", src: mark },
-      { value: "builtin:thingport/icon", name: "Thingport", group: "thingport", src: icon },
+      { value: TINTED[0].value, name: TINTED[0].name, group: "thingport", src: mark },
+      { value: TINTED[1].value, name: TINTED[1].name, group: "thingport", src: icon },
+      { value: TINTED[2].value, name: TINTED[2].name, group: "thingport", src: glass, keywords: TINTED[2].keywords },
       ...STATIC,
     ],
-    [mark, icon],
+    [mark, icon, glass],
   );
 }
 

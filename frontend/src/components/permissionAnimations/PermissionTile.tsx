@@ -328,6 +328,31 @@ const pictures: Record<string, () => React.ReactNode> = {
       <Box sx={{ ...at(15, 15, 10, 10), borderRadius: "3px", bgcolor: "primary.main", animation: run(pulse, 1.6) }} />
     </>
   ),
+  // Icons: a grid of them with the one found lighting up in turn, and one carried up into it.
+  list_icons: () => (
+    <>
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <Box
+          key={i}
+          sx={{
+            ...at(7 + (i % 3) * 9.5, 11 + Math.floor(i / 3) * 10, 7, 7),
+            borderRadius: i % 2 ? "50%" : "2px",
+            bgcolor: "primary.main",
+            opacity: 0.25,
+            animation: run(sweep, 2.4, `${i * 0.4}s`),
+          }}
+        />
+      ))}
+    </>
+  ),
+  upload_icon: () => (
+    <>
+      <Box sx={{ ...at(10, 22, 20, 10), borderRadius: "3px", border: 2, borderColor: "text.disabled" }} />
+      <Box sx={{ ...at(15, 8, 10, 10), animation: run(rise, 1.8) }}>
+        <Box sx={{ ...at(0, 0, 10, 10), borderRadius: "50%", bgcolor: "primary.main" }} />
+      </Box>
+    </>
+  ),
   activity: () => (
     <>
       {Array.from({ length: 12 }, (_, i) => (

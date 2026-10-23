@@ -53,6 +53,7 @@ These read your library, and are on for a new token:
 | `get_import_status` | How an import that `import_model` left running is getting on.                                           |
 | `widget_guide`      | How to write a [custom dashboard widget](custom-widgets.md), read before saving one.                    |
 | `list_widgets`      | Your custom dashboard widgets, optionally with their code.                                              |
+| `list_icons`        | Thingport's own icons and the ones you uploaded, searched by name, e.g. for a widget's icon.            |
 
 These change your library, and are off until you turn them on:
 
@@ -62,6 +63,7 @@ These change your library, and are off until you turn them on:
 | `create_collection` | Creates a new, empty collection.                                                                             |
 | `add_to_collection` | Adds models from your library to one of your collections.                                                    |
 | `save_widget`       | Creates one of your own [dashboard widgets](custom-widgets.md), or replaces one it or you saved earlier.     |
+| `upload_icon`       | Adds an image (an SVG, or a PNG, JPEG or WebP) to your icons, as the icon browser's **Upload** does.         |
 
 None of them deletes anything, and only `save_widget` changes something that's already there: one of your own widgets. An import runs the same checks as **+ Add > Import** (a provider an admin
 turned off stays off, and a model already in your library isn't imported twice) and shows up in your notifications and

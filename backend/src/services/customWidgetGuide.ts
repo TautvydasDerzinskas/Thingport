@@ -17,8 +17,7 @@ Save it with the \`save_widget\` tool. The user then adds it from **Add panel** 
 {
   "name": "Print farm status",
   "description": "Shows each OctoPrint printer's state and progress.",
-  "icon": "🖨️",
-  "iconUrl": "https://example.com/octoprint.svg",
+  "iconUrl": "builtin:services/octoprint",
   "version": "1.0.0",
   "author": "Jane Doe",
   "authorUrl": "https://github.com/janedoe",
@@ -36,11 +35,11 @@ Save it with the \`save_widget\` tool. The user then adds it from **Add panel** 
 \`\`\`
 
 - **name**: up to 40 characters. **description**: up to 300.
-- **iconUrl**: optional, and the best icon: an http(s) address of an image, shown in place of \`icon\`. Prefer an
-  SVG, which stays sharp from the 16 px tab icon up, and one with a transparent background. It may also be one of
-  Thingport's own icons, \`builtin:<group>/<name>\`, such as \`builtin:providers/printables\` or
-  \`builtin:thingport/mark\`, or an icon the user uploaded, \`/api/icons/<file>\`; keep one the user already set.
-- **icon**: optional, shown when there's no \`iconUrl\`: an emoji, or an SVG \`data:\` address.
+- **iconUrl**: the widget's icon. Best is one of Thingport's own icons, \`builtin:<group>/<name>\`, such as
+  \`builtin:services/octoprint\` or \`builtin:thingport/hourglass\`: find one with the \`list_icons\` tool. When none
+  fits, upload an SVG with \`upload_icon\` and use the address it returns, \`/api/icons/<file>\`; an http(s) image
+  address works too. Prefer an SVG with a transparent background, which stays sharp from the 16 px tab icon up. Keep
+  an icon the user already set. There's no emoji icon.
 - **author**: the author's full name. Leave it out and saving puts in the user's name from their profile.
   **authorUrl**: optional, a page of theirs, such as a GitHub profile.
 - **size**: the panel's size when added, in grid cells. The wide grid is 12 columns; a row is 64 px tall, with 16 px

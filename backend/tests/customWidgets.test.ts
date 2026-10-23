@@ -37,6 +37,8 @@ beforeAll(async () => {
   ).body;
   token = registered.token;
   userId = registered.user.id;
+  // Installed as if already done, so listing doesn't reach for GitHub; the samples' own test turns it back.
+  await prisma.user.update({ where: { id: userId }, data: { sampleWidgetsAdded: true } });
 });
 
 afterEach(async () => {
@@ -205,6 +207,40 @@ describe("community widgets", () => {
 
     const countdown = (await widgetsInUse()).find((w) => w.source === "community" && w.slug === "countdown");
     expect(countdown?.users).toContainEqual(expect.objectContaining({ id: userId, placed: true }));
+  });
+});
+
+describe("sample widgets", () => {
+  const listed = async () =>
+    (
+      (await request(app).get("/api/widgets").set(auth())).body.widgets as {
+        id: string;
+        source: string;
+        slug: string;
+      }[]
+    ).filter((w) => w.source === "community" && w.slug === "countdown");
+
+  it("installs the countdown once, and leaves it removed once the user removes it", async () => {
+    repo["index.json"] = JSON.stringify({ widgets: ["countdown"] });
+    repo["countdown/widget.json"] = JSON.stringify({ name: "Countdown", iconUrl: "builtin:thingport/hourglass" });
+    repo["countdown/widget.js"] = SCRIPT;
+    setCustomWidgetsFetchForTest(async (input) => respond(repo[String(input).split("/community-widgets/")[1]]));
+    await prisma.customWidget.deleteMany({ where: { userId, source: "community", slug: "countdown" } });
+    await prisma.user.update({ where: { id: userId }, data: { sampleWidgetsAdded: false } });
+
+    const [sample] = await listed();
+    expect(sample).toMatchObject({ manifest: { iconUrl: "builtin:thingport/hourglass" } });
+    expect((await request(app).delete(`/api/widgets/${sample.id}`).set(auth())).status).toBe(204);
+    expect(await listed()).toEqual([]);
+  });
+
+  it("tries again next time when the repository can't be reached", async () => {
+    setCustomWidgetsFetchForTest(async () => respond(undefined));
+    await prisma.user.update({ where: { id: userId }, data: { sampleWidgetsAdded: false } });
+    expect((await request(app).get("/api/widgets").set(auth())).status).toBe(200);
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { sampleWidgetsAdded: true } });
+    expect(user?.sampleWidgetsAdded).toBe(false);
+    await prisma.user.update({ where: { id: userId }, data: { sampleWidgetsAdded: true } });
   });
 });
 

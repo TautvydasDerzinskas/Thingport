@@ -4,6 +4,7 @@ import sharp from "sharp";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { parseManifest } from "../src/services/customWidgetsService";
+import { MCP_TOOLS } from "../src/mcp/tools";
 
 const app = createApp();
 const stamp = Date.now();
@@ -86,5 +87,39 @@ describe("a custom widget's icon", () => {
     expect(parseManifest(manifest(`/api/icons/${"a".repeat(32)}.svg`)).iconUrl).toMatch(/^\/api\/icons\//);
     expect(() => parseManifest(manifest("/etc/passwd"))).toThrow(/iconUrl/);
     expect(() => parseManifest(manifest("javascript:alert(1)"))).toThrow(/iconUrl/);
+  });
+});
+
+describe("icons over MCP", () => {
+  const tool = (name: string) => MCP_TOOLS.find((t) => t.name === name)!;
+  const ctx = () => ({ userId, publicUrl: "" });
+
+  it("finds Thingport's own icons by name or keyword", async () => {
+    expect(tool("list_icons").readOnly).toBe(true);
+    const { icons } = (await tool("list_icons").run(ctx(), { query: "countdown" })) as { icons: { value: string }[] };
+    expect(icons.map((icon) => icon.value)).toContain("builtin:thingport/hourglass");
+  });
+
+  it("uploads an SVG, which list_icons then finds among the user's", async () => {
+    expect(tool("upload_icon").readOnly).toBe(false);
+    const uploaded = (await tool("upload_icon").run(ctx(), { name: "print farm", svg: SVG })) as { value: string };
+    expect(uploaded.value).toMatch(/^\/api\/icons\/[a-f0-9]{32}\.svg$/);
+    expect(parseManifest(JSON.stringify({ name: "W", iconUrl: uploaded.value })).iconUrl).toBe(uploaded.value);
+    const { icons } = (await tool("list_icons").run(ctx(), { query: "farm" })) as {
+      icons: { value: string; group: string }[];
+    };
+    expect(icons).toContainEqual(expect.objectContaining({ value: uploaded.value, group: "uploaded" }));
+  });
+
+  it("takes a picture as base64, and refuses both forms at once or neither", async () => {
+    const png = await sharp({ create: { width: 8, height: 8, channels: 4, background: "#00b800" } })
+      .png()
+      .toBuffer();
+    const uploaded = (await tool("upload_icon").run(ctx(), { name: "dot", base64: png.toString("base64") })) as {
+      value: string;
+    };
+    expect(uploaded.value).toMatch(/\.png$/);
+    await expect(tool("upload_icon").run(ctx(), { name: "x" })).rejects.toThrow(/svg|base64/);
+    await expect(tool("upload_icon").run(ctx(), { name: "x", svg: SVG, base64: "AA==" })).rejects.toThrow(/svg|base64/);
   });
 });

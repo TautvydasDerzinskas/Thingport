@@ -11,8 +11,7 @@ export type WidgetSettingSpec =
 export type WidgetManifest = {
   name: string;
   description: string;
-  icon?: string;
-  /** An image address for the icon, shown instead of `icon`. */
+  /** The icon: one of Thingport's own (`builtin:…`), an uploaded one (`/api/icons/…`) or an image address. */
   iconUrl?: string;
   version: string;
   /** The author's full name. */

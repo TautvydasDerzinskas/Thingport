@@ -31,9 +31,8 @@ function loadModule(widget: CustomWidget): Promise<{ default?: Mount }> {
   return loaded;
 }
 
-/** A custom widget's icon: its image address or picked icon, else `icon` as an image address, an emoji or a few
- *  letters. An image that doesn't load falls back to the next. */
-export function WidgetIcon({ icon, iconUrl: picked, size = 20 }: { icon?: string; iconUrl?: string; size?: number }) {
+/** A custom widget's icon: its picked icon or image address, else, or when it doesn't load, a jigsaw piece. */
+export function WidgetIcon({ iconUrl: picked, size = 20 }: { iconUrl?: string; size?: number }) {
   const [broken, setBroken] = useState<string | null>(null);
   const iconUrl = useIconSrc(picked);
   if (iconUrl && broken !== iconUrl)
@@ -46,14 +45,7 @@ export function WidgetIcon({ icon, iconUrl: picked, size = 20 }: { icon?: string
         sx={{ width: size, height: size, objectFit: "contain" }}
       />
     );
-  if (!icon) return <ExtensionOutlinedIcon sx={{ fontSize: size }} />;
-  if (/^(https:|data:image\/)/i.test(icon))
-    return <Box component="img" src={icon} alt="" sx={{ width: size, height: size, objectFit: "contain" }} />;
-  return (
-    <Box component="span" aria-hidden sx={{ fontSize: size * 0.9, lineHeight: 1, width: size, textAlign: "center" }}>
-      {icon}
-    </Box>
-  );
+  return <ExtensionOutlinedIcon sx={{ fontSize: size }} />;
 }
 
 type Props = {

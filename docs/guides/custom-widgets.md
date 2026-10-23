@@ -25,6 +25,8 @@ The quickest way to make a widget is to describe it to an AI assistant connected
 
 1. [Connect your assistant over MCP](mcp.md) with your API token.
 2. In the token's permissions, allow **Save a dashboard widget** (`save_widget`). It's off until you turn it on.
+   For its icon, the assistant searches Thingport's icons with `list_icons`; to let it upload one of its own when
+   none fits, also allow **Upload an icon** (`upload_icon`).
 3. Ask for what you want, e.g. _"Make me a Thingport widget showing my OctoPrint printer's progress. It's at
    http://octopi.local."_ The assistant reads the `widget_guide` tool first, which teaches it the format below, then
    saves the widget.
@@ -40,8 +42,7 @@ JSON or YAML:
 ```yaml
 name: Print farm status
 description: Shows each OctoPrint printer's state and progress.
-icon: 🖨️
-iconUrl: https://example.com/octoprint.svg
+iconUrl: builtin:services/octoprint
 version: 1.0.0
 author: Jane Doe
 authorUrl: https://github.com/janedoe
@@ -58,17 +59,16 @@ settings:
 hosts: [octopi.local]
 ```
 
-| Field         | What it is                                                                                                                                                                                                                                                                                  |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`        | Up to 40 characters.                                                                                                                                                                                                                                                                        |
-| `description` | Up to 300 characters, shown in the list of widgets.                                                                                                                                                                                                                                         |
-| `iconUrl`     | Optional: an `http(s)` address of the icon's image, shown in place of `icon`. Prefer an SVG: it stays sharp. The editor's icon browser also sets one of Thingport's own icons, such as `builtin:providers/printables`, or one you uploaded (`/api/icons/…`, which only your Thingport has). |
-| `icon`        | Optional, shown without `iconUrl`: an emoji or an SVG `data:` address.                                                                                                                                                                                                                      |
-| `author`      | Your full name. Left out, saving fills in the name from your profile; community widgets need one.                                                                                                                                                                                           |
-| `authorUrl`   | Optional: a page of yours, such as your GitHub profile, linked from your name.                                                                                                                                                                                                              |
-| `size`        | Its size when added, in grid cells (12 columns wide; rows 64 px tall). `minW`/`minH` limit how small it resizes.                                                                                                                                                                            |
-| `settings`    | What its cog lets you change: `text` (`secret: true` for tokens), `number`, `toggle` or `choice` (2 to 8).                                                                                                                                                                                  |
-| `hosts`       | The hosts `thingport.fetch` may call: `host`, `host:port` or `*.domain`. Local network addresses are fine.                                                                                                                                                                                  |
+| Field         | What it is                                                                                                                                                                                                                                                                                                                 |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`        | Up to 40 characters.                                                                                                                                                                                                                                                                                                       |
+| `description` | Up to 300 characters, shown in the list of widgets.                                                                                                                                                                                                                                                                        |
+| `iconUrl`     | Optional: its icon, picked in the editor's icon browser: one of Thingport's own, such as `builtin:thingport/hourglass` or `builtin:services/octoprint`, one you uploaded (`/api/icons/…`, which only your Thingport has), or an `http(s)` image address. Prefer an SVG: it stays sharp. Without one, a jigsaw piece shows. |
+| `author`      | Your full name. Left out, saving fills in the name from your profile; community widgets need one.                                                                                                                                                                                                                          |
+| `authorUrl`   | Optional: a page of yours, such as your GitHub profile, linked from your name.                                                                                                                                                                                                                                             |
+| `size`        | Its size when added, in grid cells (12 columns wide; rows 64 px tall). `minW`/`minH` limit how small it resizes.                                                                                                                                                                                                           |
+| `settings`    | What its cog lets you change: `text` (`secret: true` for tokens), `number`, `toggle` or `choice` (2 to 8).                                                                                                                                                                                                                 |
+| `hosts`       | The hosts `thingport.fetch` may call: `host`, `host:port` or `*.domain`. Local network addresses are fine.                                                                                                                                                                                                                 |
 
 ### Script
 

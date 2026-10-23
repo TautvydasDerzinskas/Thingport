@@ -277,6 +277,14 @@
             "save_widget": {
               "title": "Enregistrer un widget du tableau de bord",
               "description": "Créer ou modifier vos propres widgets du tableau de bord. Leurs scripts s’exécutent dans votre tableau de bord."
+            },
+            "list_icons": {
+              "title": "Trouver une icône",
+              "description": "Chercher parmi les icônes de Thingport et celles que vous avez importées, p. ex. pour un widget."
+            },
+            "upload_icon": {
+              "title": "Importer une icône",
+              "description": "Ajouter une image à vos icônes, comme le fait Importer dans l’explorateur d’icônes."
             }
           },
           "writeConfirmTitle": "Laisser l'assistant utiliser « {{tool}} » ?",
@@ -936,10 +944,9 @@
           "version": "Version",
           "description": "Description",
           "icon": "Icône",
-          "iconHelp": "Choisissez une icône de Thingport, importez la vôtre ou donnez l’adresse d’une image ; un SVG reste net à toutes les tailles. Sans elle, l’emoji s’affiche.",
+          "iconHelp": "Choisissez une icône de Thingport, importez la vôtre ou donnez l’adresse d’une image ; un SVG reste net à toutes les tailles. Sans elle, une pièce de puzzle s’affiche.",
           "iconUrl": "Icône",
-          "iconNone": "Aucune, l’emoji ci-contre",
-          "emoji": "Emoji",
+          "iconNone": "Aucune",
           "author": "Auteur",
           "authorHelp": "Crédité quand le widget est partagé. Laissé vide, le nom de votre profil est utilisé.",
           "authorName": "Nom complet",

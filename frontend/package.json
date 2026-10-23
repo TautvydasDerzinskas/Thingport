@@ -13,6 +13,7 @@
     "test:run": "vitest run --passWithNoTests",
     "lint": "oxlint .",
     "i18n:check": "node scripts/i18n-check.mjs",
+    "icons:sync": "VITE_UPDATE_BUILTIN_ICONS=1 vitest run src/components/IconPicker/iconCatalog.test.ts",
     "verify": "npm run typecheck && npm run lint && npm run test:run && npm run build"
   },
   "dependencies": {

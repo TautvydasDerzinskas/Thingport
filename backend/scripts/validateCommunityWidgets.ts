@@ -31,6 +31,8 @@ for (const slug of slugs) {
   try {
     if (metadata === null) throw new Error("it has no widget.json or widget.yml");
     if (!parseManifest(metadata).author) throw new Error("its metadata has no `author`");
+    // Saving drops it silently, so say so here: the icon is `iconUrl`, picked in the icon browser.
+    if (/^\s*"?icon"?\s*:/m.test(metadata)) throw new Error("its metadata has an `icon`; use `iconUrl` instead");
     if (script === null) throw new Error("it has no widget.js");
     validateCode(script, read(path.join(dir, "widget.html")));
     if (read(path.join(dir, "README.md")) === null) throw new Error("it has no README.md");

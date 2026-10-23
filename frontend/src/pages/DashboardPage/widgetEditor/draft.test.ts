@@ -5,7 +5,6 @@ import { fromManifest, keyFromLabel, newSetting, problems, slugFromName, toManif
 const manifest: WidgetManifest = {
   name: "Print farm",
   description: "Printers",
-  icon: "🖨️",
   iconUrl: "https://example.com/icon.svg",
   version: "1.2.0",
   author: "Jane Doe",
@@ -36,16 +35,10 @@ describe("widget editor draft", () => {
   });
 
   it("leaves out optional fields left empty", () => {
-    const draft = fromManifest({ ...manifest, icon: undefined, iconUrl: undefined, authorUrl: undefined }, "x1");
+    const draft = fromManifest({ ...manifest, iconUrl: undefined, authorUrl: undefined }, "x1");
     const saved = toManifest({ ...draft, description: "  " });
-    expect(saved).not.toHaveProperty("icon", expect.anything());
     expect(saved.iconUrl).toBeUndefined();
     expect(saved.description).toBe("");
-  });
-
-  it("moves an image address in the old icon field to the image field", () => {
-    const draft = fromManifest({ ...manifest, icon: "https://example.com/a.png", iconUrl: undefined }, "x1");
-    expect([draft.icon, draft.iconUrl]).toEqual(["", "https://example.com/a.png"]);
   });
 
   it("derives keys and folder names", () => {
