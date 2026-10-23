@@ -172,6 +172,7 @@ model User {
   invitationsSent          Invitation[]
   identities               UserIdentity[]
   grabConnections          GrabConnection[]
+  sessions                 Session[]
   createdAt                DateTime          @default(now())
   updatedAt                DateTime          @updatedAt
 }
@@ -725,6 +726,25 @@ model GrabConnection {
   name       String
   lastUsedAt DateTime?
   createdAt  DateTime  @default(now())
+
+  @@index([userId])
+}
+
+/// A browser's sign-in. Its secret lives in an httpOnly cookie, so the browser can get a new access token after
+/// that one runs out -- a dashboard left as a browser's homepage stays signed in. Signing out deletes it, and the
+/// access tokens it issued (which name it) stop working with it.
+model Session {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// SHA-256 of the cookie's secret.
+  tokenHash  String   @unique
+  /// When the person actually signed in, carried into every token the session issues.
+  signedInAt DateTime
+  lastUsedAt DateTime @default(now())
+  /// Moves forward each time it's used.
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
 
   @@index([userId])
 }

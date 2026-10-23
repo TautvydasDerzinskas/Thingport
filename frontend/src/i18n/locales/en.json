@@ -1183,11 +1183,11 @@
         "empty": "No description."
       },
       "session": {
-        "heading": "Session Length",
-        "subtitle": "Control how long a signed-in session stays valid for the whole instance.",
+        "heading": "Sessions",
+        "subtitle": "How long sign-ins last across the whole instance.",
         "infoTitle": "What this controls",
-        "infoBody": "How long a freshly issued sign-in token stays valid before that user is asked to log in again. Applies instance-wide to every new login, registration, and email verification. Changing this only affects tokens issued from now on -- anyone already signed in keeps whatever length was active when they logged in.",
-        "tokenTtlLabel": "Session length (seconds)",
+        "infoBody": "How long an access token lasts before the browser renews it. A browser away for longer signs back in from its remembered session, set below; with that off, it's asked to sign in again. Only affects tokens issued from now on.",
+        "tokenTtlLabel": "Token length (seconds)",
         "tokenTtlHelp": "Between 5 minutes and 1 year.",
         "invalid": "Enter a number between 300 (5 minutes) and 31536000 (1 year) seconds.",
         "approx": "≈ {{value}}",
@@ -1206,7 +1206,10 @@
         "save": "Save",
         "saving": "Saving…",
         "saved": "Saved.",
-        "failed": "Failed to save session settings."
+        "failed": "Failed to save session settings.",
+        "rememberLabel": "Keep browsers signed in",
+        "rememberHelp": "How long a browser stays signed in without being used, so a dashboard set as its homepage never lands on the sign-in form. Every visit starts the count again. Signing out, or changing the password, ends it.",
+        "rememberOff": "Off"
       },
       "connections": {
         "heading": "Connections"

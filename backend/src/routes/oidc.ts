@@ -1,7 +1,8 @@
 import type { OidcProvider } from "@prisma/client";
 import { type Response, Router } from "express";
 import { z } from "zod";
-import { issueToken, requireAdmin, requireAuth, signedInRecently } from "../auth";
+import { requireAdmin, requireAuth, signedInRecently } from "../auth";
+import { startSession } from "../services/sessionService";
 import { prisma } from "../db";
 import { toUserOut } from "../dto";
 import { createLog } from "../services/auditLog";
@@ -211,7 +212,7 @@ router.post(
     const userId = redeemLoginCode(body.code);
     const user = userId ? await prisma.user.findUnique({ where: { id: userId } }) : null;
     if (!user) throw new HttpError(400, "This sign-in link has expired. Please sign in again.");
-    const { token, expiresIn } = await issueToken(user.id, user.role);
+    const { token, expiresIn } = await startSession(req, res, user);
     res.json({ token, expires_in: expiresIn, user: toUserOut(user) });
   }),
 );
