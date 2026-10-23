@@ -82,7 +82,9 @@ export default function CodeEditor({ value, onChange, language, label, placehold
   const viewRef = useRef<EditorView | null>(null);
   const themeSlot = useRef(new Compartment());
   const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   useEffect(() => {
     const view = new EditorView({
