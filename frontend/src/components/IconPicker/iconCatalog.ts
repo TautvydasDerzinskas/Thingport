@@ -10,13 +10,25 @@ import { useTintedSvg } from "../../hooks/useBrandLogo";
 import { IMPORT_PROVIDER_INFO } from "../../constants/importProviders";
 import { PROVIDER_LOGO_IDS, providerLogoSvg } from "../Layout/ConfigurationDialog/providerLogos";
 import { AI_LOGOS, type AiLogoName } from "../../pages/AiPage/aiLogos";
+import { SERVICE_ICONS, type ServiceGroup } from "./serviceIcons";
 
 // Thingport's own icons are kept as `builtin:<group>/<name>` (see iconRef.ts) rather than their file's address, which
-// changes with each build; they're looked up here when drawn, so they also keep up with the logos.
+// changes with each build; they're looked up here when drawn, so they also keep up with the logos. Every service
+// icon is `builtin:services/<name>`, whichever group it's shown in, so moving one between groups keeps it.
 
-export type IconGroup = "thingport" | "providers" | "ai" | "browsers";
-export const ICON_GROUPS: IconGroup[] = ["thingport", "providers", "ai", "browsers"];
-export type CatalogIcon = { value: string; name: string; group: IconGroup; src: string };
+export type IconGroup = "thingport" | "providers" | ServiceGroup | "ai" | "browsers";
+export const ICON_GROUPS: IconGroup[] = [
+  "thingport",
+  "providers",
+  "printing",
+  "selfhosted",
+  "media",
+  "popular",
+  "ai",
+  "browsers",
+];
+/** `keywords`: other names to find it by, such as "pihole" for Pi-hole. */
+export type CatalogIcon = { value: string; name: string; group: IconGroup; src: string; keywords?: string };
 
 const svgUrl = (svg: string) => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 
@@ -57,6 +69,13 @@ const STATIC: CatalogIcon[] = [
     name: AI_NAMES[id] ?? titleCase(id),
     group: "ai",
     src,
+  })),
+  ...SERVICE_ICONS.map(({ slug, name, group, keywords, src }): CatalogIcon => ({
+    value: `builtin:services/${slug}`,
+    name,
+    group,
+    src,
+    keywords,
   })),
   { value: "builtin:browsers/chrome", name: "Chrome", group: "browsers", src: chrome },
   { value: "builtin:browsers/edge", name: "Edge", group: "browsers", src: edge },

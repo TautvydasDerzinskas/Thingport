@@ -117,7 +117,11 @@ export default function IconBrowserDialog({ open, value, onClose, onPick }: Prop
   const shownUploads = (uploads ?? []).filter((icon) => matches(icon.name));
   const groups = ICON_GROUPS.map((group) => ({
     group,
-    icons: catalog.filter((icon) => icon.group === group && (matches(icon.name) || matches(group))),
+    icons: catalog.filter(
+      (icon) =>
+        icon.group === group &&
+        (matches(icon.name) || matches(icon.keywords ?? "") || matches(t(`iconPicker.groups.${group}`))),
+    ),
   })).filter(({ icons }) => icons.length);
   const addressValid = /^https?:\/\/\S+$/i.test(address.trim());
 

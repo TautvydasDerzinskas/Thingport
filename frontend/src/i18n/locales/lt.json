@@ -2699,6 +2699,10 @@
         "uploaded": "Jūsų piktogramos",
         "thingport": "Thingport",
         "providers": "Modelių svetainės",
+        "printing": "3D spausdinimas",
+        "selfhosted": "Savo serveryje",
+        "media": "Medija",
+        "popular": "Populiarios svetainės",
         "ai": "DI",
         "browsers": "Naršyklės"
       }

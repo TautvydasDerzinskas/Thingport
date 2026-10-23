@@ -2631,6 +2631,10 @@
         "uploaded": "Tus iconos",
         "thingport": "Thingport",
         "providers": "Sitios de modelos",
+        "printing": "Impresión 3D",
+        "selfhosted": "Autoalojado",
+        "media": "Multimedia",
+        "popular": "Sitios populares",
         "ai": "IA",
         "browsers": "Navegadores"
       }

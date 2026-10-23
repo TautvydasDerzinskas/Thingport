@@ -2644,6 +2644,10 @@
         "uploaded": "Vos icônes",
         "thingport": "Thingport",
         "providers": "Sites de modèles",
+        "printing": "Impression 3D",
+        "selfhosted": "Auto-hébergé",
+        "media": "Médias",
+        "popular": "Sites populaires",
         "ai": "IA",
         "browsers": "Navigateurs"
       }
