@@ -938,7 +938,8 @@ export const settingsApi = {
     return res.json();
   },
 
-  getDashboardLayout: async (): Promise<{ layout: DashboardLayout }> => {
+  /** Null when the user never chose one of the old fixed layouts. */
+  getDashboardLayout: async (): Promise<{ layout: DashboardLayout | null }> => {
     const res = await fetch(`${apiBase()}/settings/dashboard-layout`, { headers: authHeaders() });
     assertOk(res, "Failed to load the dashboard layout setting");
     return res.json();

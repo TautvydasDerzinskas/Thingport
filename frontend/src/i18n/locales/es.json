@@ -710,6 +710,7 @@
         "heading": "Tus plantillas",
         "help": "Cada plantilla guarda sus propios paneles y su disposición. Elige una para mostrarla y luego edita el panel para cambiarla.",
         "presets": {
+          "homepage": "Inicio",
           "classic": "Clásica",
           "overview": "Resumen",
           "compact": "Pestañas compactas",

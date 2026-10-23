@@ -710,6 +710,7 @@
         "heading": "Vos modèles",
         "help": "Chaque modèle garde ses propres panneaux et sa disposition. Choisissez-en un pour l’afficher, puis modifiez le tableau de bord pour le changer.",
         "presets": {
+          "homepage": "Accueil",
           "classic": "Classique",
           "overview": "Vue d’ensemble",
           "compact": "Onglets compacts",

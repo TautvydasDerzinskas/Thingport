@@ -29,6 +29,7 @@ import type { DashboardConfig, DashboardTemplate } from "../../api/settings";
 import SelectableTile from "../../components/controls/SelectableTile";
 import { useConfirm } from "../../components/ConfirmProvider";
 import TemplateSketch from "./TemplateSketch";
+import { readUser } from "../../utils/auth";
 import {
   DASHBOARD_PRESETS,
   MAX_TEMPLATES,
@@ -86,7 +87,7 @@ export default function TemplatesSection({ config, onChange }: Props) {
       confirmLabel: t("dashboard.templates.resetConfirm"),
       destructive: true,
     });
-    if (ok) replace(resetTemplate(template));
+    if (ok) replace(resetTemplate(template, readUser()?.role === "ADMIN"));
   };
 
   const closeMenu = () => setMenu(null);
@@ -187,7 +188,7 @@ export default function TemplatesSection({ config, onChange }: Props) {
               setNewMenu(null);
               const base = t(`dashboard.templates.presets.${preset.id}`);
               const name = uniqueTemplateName(t, config.templates, base);
-              add({ ...templateFromPreset(preset), name: name === base ? null : name });
+              add({ ...templateFromPreset(preset, readUser()?.role === "ADMIN"), name: name === base ? null : name });
             }}
           >
             <ListItemIcon>

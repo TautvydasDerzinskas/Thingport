@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { settingsApi, type DashboardConfig, type DashboardTemplate } from "../api/settings";
 import { initialConfig, offerNewPresets } from "../pages/DashboardPage/templates";
+import { readUser } from "../utils/auth";
 
 // Saved on the account so every device shows the same dashboard. Shared by every user of the hook so there's one
 // request, and a change shows everywhere at once.
@@ -16,16 +17,17 @@ let saveTimer: number | undefined;
  *  choices, saved straight away so that happens once. */
 async function fetchConfig(): Promise<DashboardConfig> {
   const { config } = await settingsApi.getDashboard();
+  const isAdmin = readUser()?.role === "ADMIN";
   if (config) {
-    const updated = offerNewPresets(config);
+    const updated = offerNewPresets(config, isAdmin);
     if (updated !== config) settingsApi.updateDashboard(updated).catch(() => {});
     return updated;
   }
   const [layout, widgets] = await Promise.all([
     settingsApi.getDashboardLayout().then((res) => res.layout),
     settingsApi.getDashboardWidgets().then((res) => res.widgets),
-  ]).catch(() => ["left", {}] as const);
-  const built = initialConfig({ layout, widgets });
+  ]).catch(() => [null, {}] as const);
+  const built = initialConfig({ layout, widgets }, isAdmin);
   settingsApi.updateDashboard(built).catch(() => {});
   return built;
 }
@@ -36,7 +38,7 @@ function load(): Promise<DashboardConfig> {
   inFlight ??= fetchConfig()
     .then((config) => (cached ??= config))
     // A failed load shows the default templates rather than nothing; they're only saved once the user changes them.
-    .catch(() => (cached ??= initialConfig()))
+    .catch(() => (cached ??= initialConfig(undefined, readUser()?.role === "ADMIN")))
     .finally(() => {
       inFlight = null;
     });

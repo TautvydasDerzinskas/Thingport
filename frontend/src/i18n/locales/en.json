@@ -706,6 +706,7 @@
         "heading": "Your templates",
         "help": "Each template keeps its own panels and arrangement. Pick one to show it, then edit the dashboard to change it.",
         "presets": {
+          "homepage": "Homepage",
           "classic": "Classic",
           "overview": "Overview",
           "compact": "Compact tabs",

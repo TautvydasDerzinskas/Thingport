@@ -60,10 +60,12 @@ export async function setDashboardWidgets(userId: string, changes: DashboardWidg
 export const DASHBOARD_LAYOUTS = ["left", "top", "right", "bottom", "topTwo", "puzzle"] as const;
 export type DashboardLayout = (typeof DASHBOARD_LAYOUTS)[number];
 
-/** A layout since removed falls back to the default rather than breaking the page. */
-export async function getDashboardLayout(userId: string): Promise<DashboardLayout> {
+/** Null when never chosen, so a new user's first dashboard starts on the default template. A layout since removed
+ *  falls back to the old default rather than breaking the page. */
+export async function getDashboardLayout(userId: string): Promise<DashboardLayout | null> {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { dashboardLayout: true } });
-  return DASHBOARD_LAYOUTS.find((layout) => layout === user?.dashboardLayout) ?? "left";
+  if (!user?.dashboardLayout) return null;
+  return DASHBOARD_LAYOUTS.find((layout) => layout === user.dashboardLayout) ?? "left";
 }
 
 export async function setDashboardLayout(userId: string, layout: DashboardLayout): Promise<DashboardLayout> {

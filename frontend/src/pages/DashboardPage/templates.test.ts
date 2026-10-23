@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { DashboardGridItem, DashboardTemplate } from "../../api/settings";
+import type { DashboardGridItem, DashboardTemplate, DashboardWidgetId } from "../../api/settings";
 import {
   DASHBOARD_PRESETS,
+  type DashboardPreset,
   addWidget,
   detachWidget,
   duplicateTemplate,
@@ -35,13 +36,65 @@ function expectNoOverlap(items: DashboardGridItem[]) {
   expect(clashes).toEqual([]);
 }
 
-const preset = (id: string) => templateFromPreset(DASHBOARD_PRESETS.find((p) => p.id === id)!);
+const one = (id: DashboardWidgetId, x: number, y: number, w: number, h: number) => ({ widgets: [id], x, y, w, h });
+const COUNTS: DashboardWidgetId[] = ["collectionCount", "modelCount", "authorCount", "categoryCount"];
+
+// Fixed shapes for the edits below, apart from the shipped presets, which change as the product does.
+const FIXTURES: DashboardPreset[] = [
+  {
+    id: "classic",
+    panels: [
+      ...COUNTS.map((id, index) => one(id, 0, index * 2, 3, 2)),
+      one("topViewed", 3, 0, 5, 5),
+      one("topPrinted", 3, 5, 5, 5),
+      one("recentlyAdded", 3, 10, 5, 5),
+      one("topAuthors", 8, 0, 4, 5),
+      one("topProviders", 8, 5, 4, 4),
+    ],
+  },
+  {
+    // Boxes of every size fitted together, under full-width bands.
+    id: "puzzle",
+    panels: [
+      one("clock", 0, 0, 6, 3),
+      one("weather", 6, 0, 6, 3),
+      one("activityHeatmap", 0, 3, 12, 3),
+      one("topViewed", 0, 6, 6, 5),
+      one("collectionCount", 6, 6, 4, 2),
+      one("modelCount", 10, 6, 2, 2),
+      one("recentlyAdded", 6, 8, 6, 5),
+      one("authorCount", 0, 11, 2, 2),
+      one("categoryCount", 2, 11, 4, 2),
+      one("topPrinted", 0, 13, 4, 5),
+      one("topAuthors", 4, 13, 4, 5),
+      one("topProviders", 8, 13, 4, 5),
+    ],
+  },
+  {
+    id: "minimal",
+    panels: [
+      one("clock", 0, 0, 4, 2),
+      one("modelCount", 4, 0, 4, 2),
+      one("collectionCount", 8, 0, 4, 2),
+      one("recentlyAdded", 0, 2, 6, 5),
+      one("topViewed", 6, 2, 6, 5),
+    ],
+  },
+];
+
+const preset = (id: string) =>
+  templateFromPreset((FIXTURES.find((p) => p.id === id) ?? DASHBOARD_PRESETS.find((p) => p.id === id))!, true);
+const shipped = (id: string, isAdmin = true) =>
+  templateFromPreset(
+    DASHBOARD_PRESETS.find((p) => p.id === id)!,
+    isAdmin,
+  );
 const panelOf = (template: DashboardTemplate, widget: string) =>
   template.panels.find((panel) => panel.widgets.includes(widget as never))!;
 
 describe("presets", () => {
   it.each(DASHBOARD_PRESETS.map((p) => p.id))("%s fits the wide grid with nothing overlapping", (id) => {
-    const template = preset(id);
+    const template = shipped(id);
     const lg = resolveLayout(template, "lg");
     expectNoOverlap(lg);
     for (const item of lg) expect(item.x + item.w).toBeLessThanOrEqual(12);
@@ -50,11 +103,33 @@ describe("presets", () => {
     expect(lg.toSorted(byId)).toEqual(template.layouts.lg!.toSorted(byId));
   });
 
-  it("show each widget at most once", () => {
+  it("show each widget at most once, with options only for widgets they show", () => {
     for (const p of DASHBOARD_PRESETS) {
       const widgets = p.panels.flatMap((panel) => panel.widgets);
       expect(new Set(widgets).size).toBe(widgets.length);
+      for (const id of Object.keys(p.settings ?? {})) expect(widgets).toContain(id);
     }
+  });
+
+  it("come with their widgets' options, each template its own copy", () => {
+    const homepage = shipped("homepage");
+    expect(homepage.settings?.recentlyAdded).toEqual({ count: "3" });
+    const minimal = shipped("minimal");
+    expect(minimal.settings?.launcher).toEqual(homepage.settings?.launcher);
+    expect(minimal.settings?.launcher).not.toBe(homepage.settings?.launcher);
+  });
+
+  it("show everyone else a stand-in for an admin-only widget, in its place", () => {
+    const admin = shipped("homepage");
+    const homepage = shipped("homepage", false);
+    expect(templateWidgets(homepage).has("cpu")).toBe(false);
+    const cell = (template: DashboardTemplate, widget: string) =>
+      template.layouts.lg!.find((item) => item.i === panelOf(template, widget).id)!;
+    expect(cell(homepage, "featuredModel")).toMatchObject({
+      ...cell(admin, "cpu"),
+      i: panelOf(homepage, "featuredModel").id,
+    });
+    expect(homepage.panels).toHaveLength(admin.panels.length);
   });
 });
 
@@ -152,7 +227,7 @@ describe("panel edits", () => {
 
 describe("initialConfig", () => {
   it("starts on the preset nearest the old layout, with the user's widget choices", () => {
-    const config = initialConfig({ layout: "top", widgets: { clock: true, topProviders: false } });
+    const config = initialConfig({ layout: "top", widgets: { clock: true, topProviders: false } }, true);
     const active = config.templates.find((template) => template.id === config.active)!;
     expect(active.preset).toBe("overview");
     expect(templateWidgets(active).has("clock")).toBe(true);
@@ -161,19 +236,21 @@ describe("initialConfig", () => {
     expect(templateWidgets(config.templates.find((t) => t.preset === "classic")!).has("topProviders")).toBe(true);
   });
 
-  it("brings back the puzzle without the extras the user had off, packed as before", () => {
-    const config = initialConfig({ layout: "puzzle", widgets: {} });
+  it("starts someone who never arranged the old dashboard on the homepage", () => {
+    const config = initialConfig(undefined, true);
+    expect(config.templates.find((template) => template.id === config.active)!.preset).toBe("homepage");
+    expect(config.templates.map((template) => template.preset)).toEqual(DASHBOARD_PRESETS.map((p) => p.id));
+  });
+
+  it("puts the old puzzle layout on the homepage, which took its place", () => {
+    const config = initialConfig({ layout: "puzzle", widgets: { clock: true, weather: true } }, true);
     const active = config.templates.find((template) => template.id === config.active)!;
-    expect(active.preset).toBe("puzzle");
-    // The clock, weather, featured model and heatmap were off by default, so the boxes start at the top.
-    expect(templateWidgets(active).has("clock")).toBe(false);
-    const lg = resolveLayout(active, "lg");
-    expect(lg.find((cell) => cell.i === panelOf(active, "topViewed").id)).toMatchObject({ x: 0, y: 0 });
-    expectNoOverlap(lg);
+    expect(active.preset).toBe("homepage");
+    expect(templateWidgets(active).has("clock")).toBe(true);
   });
 
   it("mirrors the classic preset for counts on the right", () => {
-    const config = initialConfig({ layout: "right", widgets: {} });
+    const config = initialConfig({ layout: "right", widgets: {} }, true);
     const active = config.templates.find((template) => template.id === config.active)!;
     const counts = active.layouts.lg!.find((cell) => cell.i === panelOf(active, "modelCount").id)!;
     expect(counts.x).toBe(9);
@@ -216,18 +293,19 @@ describe("nudgeLayout", () => {
 
 describe("offerNewPresets", () => {
   it("adds a built-in added since, once, and leaves deleted ones deleted", () => {
-    const config = initialConfig();
-    // Saved before the puzzle existed and before `offered` was tracked, with the minimal one deleted.
+    const config = initialConfig({ layout: "left", widgets: {} }, true);
+    // Saved before the homepage existed, with the minimal one deleted.
     const old = {
       active: config.active,
-      templates: config.templates.filter((t) => t.preset !== "puzzle" && t.preset !== "minimal"),
+      templates: config.templates.filter((t) => t.preset !== "homepage" && t.preset !== "minimal"),
+      offered: ["classic", "overview", "compact", "showcase", "minimal", "puzzle"],
     };
-    const updated = offerNewPresets(old);
-    expect(updated.templates.map((t) => t.preset)).toEqual(["classic", "overview", "compact", "puzzle"]);
+    const updated = offerNewPresets(old, true);
+    expect(updated.templates.map((t) => t.preset)).toEqual(["classic", "overview", "compact", "homepage"]);
+    // Offered, not switched to: the user stays on the template they had.
     expect(updated.active).toBe(config.active);
-    // Now tracked, so deleting the puzzle sticks, and there's nothing more to add.
-    const deleted = { ...updated, templates: updated.templates.filter((t) => t.preset !== "puzzle") };
-    expect(offerNewPresets(deleted)).toBe(deleted);
+    const deleted = { ...updated, templates: updated.templates.filter((t) => t.preset !== "homepage") };
+    expect(offerNewPresets(deleted, true)).toBe(deleted);
   });
 });
 

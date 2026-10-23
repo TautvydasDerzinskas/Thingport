@@ -10,8 +10,9 @@ import type {
   DashboardWidgetChoices,
   DashboardWidgetId,
   WidgetInstanceId,
+  WidgetSettingValues,
 } from "../../api/settings";
-import { DASHBOARD_WIDGETS, widgetById, widgetOf, type ResolvedSettings } from "./widgets";
+import { allowed, DASHBOARD_WIDGETS, widgetById, widgetOf, type ResolvedSettings } from "./widgets";
 
 /** Widest first; a breakpoint applies from its width up. Phones get one column, so panels simply stack. */
 export const BREAKPOINTS: { id: DashboardBreakpoint; minWidth: number; cols: number }[] = [
@@ -418,8 +419,21 @@ export function setTab(template: DashboardTemplate, panelId: string, tab: number
 
 // --- Presets -------------------------------------------------------------------------------------------------------
 
-type PresetPanel = { widgets: DashboardWidgetId[]; x: number; y: number; w: number; h: number };
-export type DashboardPreset = { id: string; panels: PresetPanel[] };
+/** `otherwise` stands in for the panel's widgets when none are allowed, e.g. admin-only ones for everyone else. */
+type PresetPanel = {
+  widgets: DashboardWidgetId[];
+  otherwise?: DashboardWidgetId;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+};
+/** `settings` are the widgets' options, by widget id: a preset holds one of each. */
+export type DashboardPreset = {
+  id: string;
+  panels: PresetPanel[];
+  settings?: Partial<Record<DashboardWidgetId, WidgetSettingValues>>;
+};
 
 const one = (id: DashboardWidgetId, x: number, y: number, w: number, h: number): PresetPanel => ({
   widgets: [id],
@@ -428,61 +442,117 @@ const one = (id: DashboardWidgetId, x: number, y: number, w: number, h: number):
   w,
   h,
 });
-const COUNTS: DashboardWidgetId[] = ["collectionCount", "modelCount", "authorCount", "categoryCount"];
-const countsRow = (y: number) => COUNTS.map((id, index) => one(id, index * 3, y, 3, 2));
+
+const BLOG = { feeds: ["https://www.thingport.net/rss.xml"], title: "Thingport Blog" };
+const LAUNCHER = {
+  items: [
+    { url: "https://thingport.net", icon: "/icon-192.png", name: "Thingport" },
+    { url: "https://github.com/TautvydasDerzinskas/Thingport", icon: "https://github.com/favicon.ico", name: "GitHub" },
+    { url: "https://makerworld.com", icon: "builtin:providers/makerworld", name: "MakerWorld" },
+    { url: "https://www.thingiverse.com", icon: "builtin:providers/thingiverse", name: "Thingiverse" },
+    { url: "https://www.printables.com", icon: "builtin:providers/printables", name: "Printables" },
+    { url: "https://www.crealitycloud.com", icon: "builtin:providers/crealitycloud", name: "Creality Cloud" },
+    { url: "https://space.snapmaker.com", icon: "builtin:providers/snapmaker", name: "Snapmaker Space" },
+    { url: "https://www.makeronline.com", icon: "builtin:providers/makeronline", name: "MakerOnline" },
+    { url: "https://www.nexprint.com/en/models", icon: "builtin:providers/nexprint", name: "NexPrint" },
+  ],
+};
 
 /** In the order the template picker shows them. Laid out on the wide 12-column grid. */
 export const DASHBOARD_PRESETS: DashboardPreset[] = [
   {
+    // The default: the time and the server up top, the user's sites, their library, and what's trending elsewhere.
+    id: "homepage",
+    panels: [
+      one("clock", 0, 0, 3, 2),
+      one("weather", 3, 0, 3, 2),
+      one("uptime", 6, 0, 3, 2),
+      { ...one("cpu", 9, 0, 3, 4), otherwise: "featuredModel" },
+      one("launcher", 0, 2, 9, 2),
+      { widgets: ["recentlyAdded", "topPrinted", "topViewed"], x: 0, y: 4, w: 6, h: 4 },
+      one("rss", 6, 4, 6, 4),
+      one("authorCount", 0, 8, 2, 2),
+      one("categoryCount", 2, 8, 2, 2),
+      one("collectionCount", 4, 8, 2, 2),
+      one("modelCount", 6, 8, 2, 2),
+      { widgets: ["topProviders", "topAuthors"], x: 8, y: 8, w: 4, h: 7 },
+      one("trending", 0, 10, 8, 5),
+    ],
+    settings: {
+      rss: { ...BLOG, title: "Thingport blog" },
+      launcher: LAUNCHER,
+      trending: {
+        view: "cards",
+        providers: [
+          "printables",
+          "makerworld",
+          "thingiverse",
+          "thangs",
+          "makeronline",
+          "myminifactory",
+          "cults3d",
+          "crealitycloud",
+          "nexprint",
+          "snapmaker",
+        ],
+      },
+      recentlyAdded: { count: "3" },
+      topPrinted: { count: "3" },
+      topViewed: { count: "3" },
+      topProviders: { count: "10" },
+      topAuthors: { count: "10" },
+    },
+  },
+  {
     // The dashboard as it first was: the counts down the left, two columns of lists beside them.
     id: "classic",
     panels: [
-      ...COUNTS.map((id, index) => one(id, 0, index * 2, 3, 2)),
-      one("topViewed", 3, 0, 5, 5),
-      one("topPrinted", 3, 5, 5, 5),
-      one("recentlyAdded", 3, 10, 5, 5),
-      one("topAuthors", 8, 0, 4, 5),
-      one("topProviders", 8, 5, 4, 4),
+      one("collectionCount", 0, 0, 3, 2),
+      one("recentlyAdded", 3, 0, 5, 4),
+      one("topAuthors", 8, 0, 4, 4),
+      one("modelCount", 0, 2, 3, 2),
+      one("authorCount", 0, 4, 3, 2),
+      one("topViewed", 3, 4, 5, 4),
+      one("topProviders", 8, 4, 4, 4),
+      one("categoryCount", 0, 6, 3, 2),
+      one("featuredModel", 0, 8, 3, 4),
+      one("topPrinted", 3, 8, 5, 4),
+      one("rss", 8, 8, 4, 4),
     ],
+    settings: { rss: BLOG },
   },
   {
     id: "overview",
     panels: [
-      ...countsRow(0),
-      one("topViewed", 0, 2, 4, 5),
-      one("topPrinted", 4, 2, 4, 5),
-      one("recentlyAdded", 8, 2, 4, 5),
-      one("topAuthors", 0, 7, 6, 5),
-      one("topProviders", 6, 7, 6, 4),
+      one("collectionCount", 0, 0, 3, 2),
+      one("modelCount", 3, 0, 3, 2),
+      one("authorCount", 6, 0, 3, 2),
+      one("categoryCount", 9, 0, 3, 2),
+      one("topViewed", 0, 2, 4, 4),
+      one("topPrinted", 4, 2, 4, 4),
+      one("recentlyAdded", 8, 2, 4, 4),
+      one("topAuthors", 0, 6, 6, 4),
+      one("topProviders", 6, 6, 6, 4),
     ],
   },
   {
     // The lists gathered into two tabbed panels, so everything fits on one screen.
     id: "compact",
     panels: [
-      ...countsRow(0),
-      { widgets: ["recentlyAdded", "topViewed", "topPrinted"], x: 0, y: 2, w: 6, h: 5 },
-      { widgets: ["topAuthors", "topProviders"], x: 6, y: 2, w: 6, h: 5 },
+      one("collectionCount", 0, 0, 3, 2),
+      one("modelCount", 3, 0, 3, 2),
+      one("authorCount", 6, 0, 3, 2),
+      one("categoryCount", 9, 0, 3, 2),
+      { widgets: ["recentlyAdded", "topViewed", "topPrinted"], x: 0, y: 2, w: 6, h: 7 },
+      { widgets: ["topAuthors", "topProviders"], x: 6, y: 2, w: 6, h: 7 },
     ],
-  },
-  {
-    // The old fixed "Puzzle" layout: boxes of every size fitted together with no gaps. The clock, weather and heatmap
-    // lead in full-width bands, so the rest packs the same without them.
-    id: "puzzle",
-    panels: [
-      one("clock", 0, 0, 6, 3),
-      one("weather", 6, 0, 6, 3),
-      one("activityHeatmap", 0, 3, 12, 3),
-      one("topViewed", 0, 6, 6, 5),
-      one("collectionCount", 6, 6, 4, 2),
-      one("modelCount", 10, 6, 2, 2),
-      one("recentlyAdded", 6, 8, 6, 5),
-      one("authorCount", 0, 11, 2, 2),
-      one("categoryCount", 2, 11, 4, 2),
-      one("topPrinted", 0, 13, 4, 5),
-      one("topAuthors", 4, 13, 4, 5),
-      one("topProviders", 8, 13, 4, 5),
-    ],
+    settings: {
+      recentlyAdded: { count: "10" },
+      topViewed: { count: "10" },
+      topPrinted: { count: "10" },
+      topAuthors: { count: "10" },
+      topProviders: { count: "10" },
+    },
   },
   {
     id: "minimal",
@@ -490,9 +560,17 @@ export const DASHBOARD_PRESETS: DashboardPreset[] = [
       one("clock", 0, 0, 4, 2),
       one("modelCount", 4, 0, 4, 2),
       one("collectionCount", 8, 0, 4, 2),
-      one("recentlyAdded", 0, 2, 6, 5),
-      one("topViewed", 6, 2, 6, 5),
+      one("recentlyAdded", 0, 2, 6, 4),
+      one("rss", 6, 2, 6, 4),
+      one("trending", 0, 6, 6, 4),
+      one("launcher", 6, 6, 3, 4),
+      one("featuredModel", 9, 6, 3, 4),
     ],
+    settings: {
+      rss: BLOG,
+      trending: { providers: ["printables", "makerworld", "thingiverse"] },
+      launcher: LAUNCHER,
+    },
   },
 ];
 
@@ -518,21 +596,29 @@ export function uniqueTemplateName(t: TFunction, templates: DashboardTemplate[],
   return `${base} ${n}`;
 }
 
-export function templateFromPreset(preset: DashboardPreset): DashboardTemplate {
-  const panels = preset.panels.map((p) => ({ panel: { id: newId(), widgets: p.widgets } as DashboardPanel, p }));
+/** A preset as a new template; one who isn't an admin gets it without the admin-only widgets, or their stand-ins. */
+export function templateFromPreset(preset: DashboardPreset, isAdmin: boolean): DashboardTemplate {
+  const panels = preset.panels.flatMap((p) => {
+    const shown = p.widgets.filter((id) => allowed(widgetById(id) ?? {}, isAdmin));
+    const widgets = shown.length || !p.otherwise ? shown : [p.otherwise];
+    return widgets.length ? [{ panel: { id: newId(), widgets } as DashboardPanel, p }] : [];
+  });
+  const kept = new Set(panels.flatMap(({ panel }) => panel.widgets));
+  const settings = Object.entries(preset.settings ?? {}).filter(([id]) => kept.has(id as DashboardWidgetId));
   return {
     id: newId(),
     name: null,
     preset: preset.id,
     panels: panels.map(({ panel }) => panel),
     layouts: { lg: panels.map(({ panel, p }) => ({ i: panel.id, x: p.x, y: p.y, w: p.w, h: p.h })) },
+    ...(settings.length && { settings: structuredClone(Object.fromEntries(settings)) }),
   };
 }
 
 /** Back to the preset it started from, keeping its id and name. */
-export function resetTemplate(template: DashboardTemplate): DashboardTemplate {
+export function resetTemplate(template: DashboardTemplate, isAdmin: boolean): DashboardTemplate {
   const preset = presetById(template.preset);
-  return preset ? { ...templateFromPreset(preset), id: template.id, name: template.name } : template;
+  return preset ? { ...templateFromPreset(preset, isAdmin), id: template.id, name: template.name } : template;
 }
 
 export function emptyTemplate(name: string): DashboardTemplate {
@@ -556,25 +642,33 @@ export function duplicateTemplate(template: DashboardTemplate, name: string): Da
 // The old dashboard only saved the widgets the user switched; these were off until switched on.
 const LEGACY_OFF_BY_DEFAULT = new Set<DashboardWidgetId>(["clock", "weather", "featuredModel", "activityHeatmap"]);
 
-// Which preset stands in for each of the old fixed layouts.
+// Which preset stands in for each of the old fixed layouts; the puzzle's place went to the homepage.
 const LEGACY_PRESETS: Record<DashboardLayout, string> = {
   left: "classic",
   right: "classic",
   top: "overview",
   topTwo: "overview",
   bottom: "overview",
-  puzzle: "puzzle",
+  puzzle: "homepage",
 };
 
+const DEFAULT_PRESET = "homepage";
+
 /**
- * The first templates: every preset, with the one closest to the user's old layout showing. That one also takes the
- * widgets the user had switched on or off, so their dashboard looks as it did.
+ * The first templates: every preset, showing the default one. Someone who had arranged the old dashboard sees the one
+ * closest to their layout instead, with the widgets they had switched on or off, so it looks as it did.
  */
 export function initialConfig(
-  legacy: { layout: DashboardLayout; widgets: DashboardWidgetChoices } = { layout: "left", widgets: {} },
+  legacy: { layout: DashboardLayout | null; widgets: DashboardWidgetChoices } = { layout: null, widgets: {} },
+  isAdmin = false,
 ): DashboardConfig {
-  const templates = DASHBOARD_PRESETS.map(templateFromPreset);
-  const index = templates.findIndex((template) => template.preset === LEGACY_PRESETS[legacy.layout]);
+  const templates = DASHBOARD_PRESETS.map((preset) => templateFromPreset(preset, isAdmin));
+  const arranged = legacy.layout !== null || Object.keys(legacy.widgets).length > 0;
+  if (!arranged) {
+    const active = templates.find((template) => template.preset === DEFAULT_PRESET)!;
+    return { active: active.id, templates, offered: DASHBOARD_PRESETS.map((preset) => preset.id) };
+  }
+  const index = templates.findIndex((template) => template.preset === LEGACY_PRESETS[legacy.layout ?? "left"]);
   let chosen = templates[index];
   if (legacy.layout === "right")
     chosen = { ...chosen, layouts: { lg: chosen.layouts.lg!.map((item) => ({ ...item, x: 12 - item.x - item.w })) } };
@@ -594,11 +688,11 @@ export function initialConfig(
 // Configs saved before `offered` was tracked were all made when exactly these existed.
 const UNTRACKED_OFFERED = ["classic", "overview", "compact", "showcase", "minimal"];
 
-export function offerNewPresets(config: DashboardConfig): DashboardConfig {
+export function offerNewPresets(config: DashboardConfig, isAdmin: boolean): DashboardConfig {
   const offered = new Set(config.offered ?? UNTRACKED_OFFERED);
   const added = DASHBOARD_PRESETS.filter((preset) => !offered.has(preset.id))
     .slice(0, Math.max(0, MAX_TEMPLATES - config.templates.length))
-    .map(templateFromPreset);
+    .map((preset) => templateFromPreset(preset, isAdmin));
   if (!added.length && config.offered) return config;
   return {
     ...config,

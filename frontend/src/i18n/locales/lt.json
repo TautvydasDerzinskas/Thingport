@@ -716,6 +716,7 @@
         "heading": "Jūsų šablonai",
         "help": "Kiekvienas šablonas turi savo skydelius ir išdėstymą. Pasirinkite šabloną, kad jį parodytumėte, tada redaguokite suvestinę, kad jį pakeistumėte.",
         "presets": {
+          "homepage": "Pradžia",
           "classic": "Klasikinis",
           "overview": "Apžvalga",
           "compact": "Kompaktiškos kortelės",

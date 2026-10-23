@@ -111,8 +111,8 @@ describe("dashboard layout preference", () => {
   const setLayout = (layout: unknown) =>
     request(app).patch("/api/settings/dashboard-layout").set(auth()).send({ layout });
 
-  it("starts on the default layout and keeps a chosen one", async () => {
-    expect(await getLayout()).toBe("left");
+  it("starts with none chosen and keeps a chosen one", async () => {
+    expect(await getLayout()).toBeNull();
     expect((await setLayout("top")).body.layout).toBe("top");
     expect(await getLayout()).toBe("top");
   });
