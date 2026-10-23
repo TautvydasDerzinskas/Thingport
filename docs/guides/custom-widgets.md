@@ -123,5 +123,5 @@ Once merged, it shows up under **Community** on every Thingport. Raise its `vers
 who installed it are offered the update.
 
 To try the folder before opening the pull request, run `npx tsx scripts/validateCommunityWidgets.ts` from `backend/`.
-A Thingport reads the community widgets from GitHub's `main` branch; set `COMMUNITY_WIDGETS_URL` to read them from
-somewhere else, such as your fork.
+A Thingport reads the community widgets from GitHub's `main` branch, or `develop` on the `:dev` image; set
+`COMMUNITY_WIDGETS_URL` to read them from somewhere else, such as your fork.

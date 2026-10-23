@@ -14,6 +14,7 @@ import { readCapped } from "../utils/readCapped";
 import { TtlCache } from "../utils/ttlCache";
 import { SLUG, manifestSchema, parseManifest, validateCode, type WidgetManifest } from "./customWidgetFormat";
 import { getWidgetSources, WIDGET_SOURCES, type WidgetSource } from "./settingsService";
+import { GITHUB_REPO, releaseBranch } from "./versionService";
 
 export async function assertWidgetSourceEnabled(source: WidgetSource): Promise<void> {
   if ((await getWidgetSources())[source]) return;
@@ -130,10 +131,11 @@ export async function deleteCustomWidget(userId: string, id: string): Promise<vo
 
 // --- The community repository ---------------------------------------------------------------------------------------
 
-// The repository's community-widgets folder, as GitHub serves its files. A fork can point its instances at its own.
+// The repository's community-widgets folder, as GitHub serves its files, on develop for the :dev image. A fork can
+// point its instances at its own.
 const COMMUNITY_BASE =
   process.env.COMMUNITY_WIDGETS_URL?.replace(/\/+$/, "") ??
-  "https://raw.githubusercontent.com/TautvydasDerzinskas/Thingport/main/community-widgets";
+  `https://raw.githubusercontent.com/${GITHUB_REPO}/${releaseBranch()}/community-widgets`;
 const COMMUNITY_TTL_MS = 60 * 60 * 1000;
 const FILE_MAX_BYTES = 1024 * 1024;
 

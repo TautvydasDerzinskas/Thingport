@@ -674,7 +674,8 @@ export function initialConfig(
     chosen = { ...chosen, layouts: { lg: chosen.layouts.lg!.map((item) => ({ ...item, x: 12 - item.x - item.w })) } };
   for (const widget of DASHBOARD_WIDGETS) {
     const enabled = legacy.widgets[widget.id] ?? (LEGACY_OFF_BY_DEFAULT.has(widget.id) ? false : undefined);
-    if (enabled === true) chosen = addWidget(chosen, widget.id);
+    // Only when the preset lacks it: a widget that allows several copies would otherwise show twice.
+    if (enabled === true && !templateWidgets(chosen).has(widget.id)) chosen = addWidget(chosen, widget.id);
     else if (enabled === false) chosen = removeWidget(chosen, widget.id);
   }
   templates[index] = chosen;

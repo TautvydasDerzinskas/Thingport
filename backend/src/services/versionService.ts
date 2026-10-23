@@ -30,7 +30,7 @@ export function getBackendVersion(): string | null {
 }
 
 // The :dev image (built from develop) is compared with develop's builds, everything else with main's.
-function releaseBranch(): string {
+export function releaseBranch(): string {
   return process.env.RELEASE_CHANNEL === "dev" ? "develop" : "main";
 }
 
