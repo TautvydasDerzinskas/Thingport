@@ -199,8 +199,12 @@ export default function GlobalSearch({
   const userMovedRef = useRef(false);
   // Where focus was before the search took it; Escape hands it back, as a dialog does.
   const returnFocusRef = useRef<HTMLElement | null>(null);
+  // The corner button is gone while open, so a click on it may not have left focus anywhere worth returning to.
+  const fromCornerRef = useRef(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   // Called before opening: the input is hidden while closed, so its onFocus can't see where focus came from.
-  const rememberFocus = () => {
+  const rememberFocus = (fromCorner = false) => {
+    fromCornerRef.current = fromCorner;
     const from = document.activeElement;
     if (from instanceof HTMLElement && !containerRef.current?.contains(from)) returnFocusRef.current = from;
   };
@@ -230,6 +234,7 @@ export default function GlobalSearch({
     );
     if (!linked.trim()) return;
     returnFocusRef.current = null;
+    fromCornerRef.current = false;
     setQuery(linked);
     userMovedRef.current = false;
     setOpen(true);
@@ -317,8 +322,12 @@ export default function GlobalSearch({
   const dismiss = () => {
     const target = returnFocusRef.current;
     returnFocusRef.current = null;
+    const toTrigger = fromCornerRef.current;
+    fromCornerRef.current = false;
     finish();
-    if (target?.isConnected && target !== document.body) target.focus({ preventScroll: true });
+    // The corner button mounts again once closed.
+    if (toTrigger) setTimeout(() => triggerRef.current?.focus({ preventScroll: true }), 0);
+    else if (target?.isConnected && target !== document.body) target.focus({ preventScroll: true });
   };
 
   const openEntry = (entry: RecentEntry) => {
@@ -760,8 +769,9 @@ export default function GlobalSearch({
       {(trigger === "button" || !open) && (
         <Tooltip title={t("app:search.openSearch")}>
           <ButtonBase
+            ref={triggerRef}
             onClick={() => {
-              rememberFocus();
+              rememberFocus(trigger === "corner");
               setOpen(true);
             }}
             aria-label={t("app:search.openSearch") ?? undefined}
