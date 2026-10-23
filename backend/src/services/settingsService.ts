@@ -118,12 +118,13 @@ export async function setPreviewMode(value: PreviewMode): Promise<void> {
 // How a model file identical to one already stored (by SHA-256) is saved (services/fileReuse.ts), instance-wide
 // since the copies may belong to different users. "reflink" clones it copy-on-write where the filesystem can (btrfs,
 // XFS, ZFS >= 2.2), so the copies stay independent and only take space once they differ; elsewhere it's stored as
-// usual. "hardlink" shares the file itself on any filesystem that has hard links, which only works because Thingport
-// never rewrites a stored model file in place.
+// usual. "hardlink" shares the file itself on any filesystem that has hard links: Thingport never rewrites a stored
+// model file in place, but an edit made to one outside Thingport changes it for everyone who has it. Off unless an
+// admin chooses, since the storage folder may be mounted and its files edited.
 export type FileReuse = "off" | "reflink" | "hardlink";
 export const FILE_REUSE_MODES: readonly FileReuse[] = ["off", "reflink", "hardlink"];
 const FILE_REUSE_KEY = "file_reuse";
-const DEFAULT_FILE_REUSE: FileReuse = "reflink";
+const DEFAULT_FILE_REUSE: FileReuse = "off";
 
 export async function getFileReuse(): Promise<FileReuse> {
   const row = await prisma.setting.findUnique({ where: { key: FILE_REUSE_KEY } });

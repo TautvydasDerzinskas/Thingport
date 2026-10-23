@@ -77,7 +77,7 @@ export default function FileReuseSection({ onUnauthorized }: Props) {
             <Stack direction="row" spacing={1.5} alignItems="center">
               <Segmented
                 label={t("adminSettings.fileReuse.modeLabel")}
-                value={mode ?? "reflink"}
+                value={mode ?? "off"}
                 onChange={(next) => void select(next)}
                 disabled={mode === null || saving}
                 options={MODES.map((value) => ({ value, label: t(`adminSettings.fileReuse.modes.${value}`) }))}

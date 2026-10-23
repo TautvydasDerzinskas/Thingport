@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { sha256OfFile, shareStoredCopy, type StoredCopyFinder } from "../src/services/fileReuse";
+import { sha256OfFile, shareStoredCopy, type StoredCopy, type StoredCopyFinder } from "../src/services/fileReuse";
 import { setFileReuse } from "../src/services/settingsService";
 import { prisma } from "../src/db";
 
@@ -14,6 +14,12 @@ function file(name: string, contents: string): string {
   fs.writeFileSync(abs, contents);
   return abs;
 }
+
+/** A stored copy at `abs`, with its `changed` call recorded. */
+const copyAt = (abs: string): StoredCopy & { changed: ReturnType<typeof vi.fn<() => Promise<void>>> } => ({
+  path: abs,
+  changed: vi.fn<() => Promise<void>>(async () => undefined),
+});
 
 const dest = () => path.join(dir, "out", `${crypto.randomBytes(6).toString("hex")}.stl`);
 
@@ -38,7 +44,8 @@ describe("shareStoredCopy", () => {
     await setFileReuse("hardlink");
     const stored = file("stored.stl", "same");
     const from = file("from.stl", "same");
-    const find = vi.fn<StoredCopyFinder>(async () => [path.join(dir, "gone.stl"), stored]);
+    const gone = copyAt(path.join(dir, "gone.stl"));
+    const find = vi.fn<StoredCopyFinder>(async () => [gone, copyAt(stored)]);
     const target = dest();
 
     const result = await shareStoredCopy(from, target, find);
@@ -64,9 +71,33 @@ describe("shareStoredCopy", () => {
     await setFileReuse("reflink");
     const stored = file("clone-source.stl", "clone");
     const target = dest();
-    const { shared } = await shareStoredCopy(file("clone.stl", "clone"), target, async () => [stored]);
+    const { shared } = await shareStoredCopy(file("clone.stl", "clone"), target, async () => [copyAt(stored)]);
     const placed = fs.existsSync(target) ? fs.readFileSync(target, "utf8") : null;
     expect(placed).toBe(shared ? "clone" : null);
+  });
+
+  it("doesn't keep a copy whose content changed since it was hashed, and reports it", async () => {
+    await setFileReuse("hardlink");
+    const stale = copyAt(file("stale.stl", "SAME"));
+    const target = dest();
+    expect((await shareStoredCopy(file("fresh.stl", "same"), target, async () => [stale])).shared).toBe(false);
+    expect(fs.existsSync(target)).toBe(false);
+    expect(stale.changed).toHaveBeenCalledOnce();
+  });
+
+  it("skips a copy whose size changed without reading it", async () => {
+    await setFileReuse("hardlink");
+    const grown = copyAt(file("grown.stl", "same, and more"));
+    const target = dest();
+    expect((await shareStoredCopy(file("small.stl", "same"), target, async () => [grown])).shared).toBe(false);
+    expect(fs.existsSync(target)).toBe(false);
+    expect(grown.changed).toHaveBeenCalledOnce();
+  });
+
+  it("stores as usual on any error it can't share past, not just known ones", async () => {
+    await setFileReuse("hardlink");
+    const notADir = copyAt(path.join(file("plain.stl", "same"), "inside.stl"));
+    expect((await shareStoredCopy(file("err.stl", "same"), dest(), async () => [notADir])).shared).toBe(false);
   });
 
   it("never replaces a file already at the destination", async () => {
@@ -75,7 +106,9 @@ describe("shareStoredCopy", () => {
     const target = dest();
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.writeFileSync(target, "someone else's");
-    await expect(shareStoredCopy(file("taken.stl", "taken"), target, async () => [stored])).rejects.toMatchObject({
+    await expect(
+      shareStoredCopy(file("taken.stl", "taken"), target, async () => [copyAt(stored)]),
+    ).rejects.toMatchObject({
       status: 409,
     });
     expect(fs.readFileSync(target, "utf8")).toBe("someone else's");

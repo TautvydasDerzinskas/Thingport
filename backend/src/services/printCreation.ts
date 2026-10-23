@@ -24,7 +24,7 @@ import { generateCardRender } from "./previewImageService";
 import { printAssetHome } from "./modelAssets";
 import { deleteNormalized3mf } from "./normalized3mfCache";
 import { getPreviewMode } from "./settingsService";
-import { shareStoredCopy, type FileContent } from "./fileReuse";
+import { shareStoredCopy, type FileContent, type StoredCopy } from "./fileReuse";
 import { Prisma } from "@prisma/client";
 import type { CategorySource, Plate, Print } from "@prisma/client";
 import { enqueueAiCategorization } from "./aiCategorizationService";
@@ -84,14 +84,21 @@ async function placeFile(input: NewPlateInput, destAbsPath: string): Promise<str
 }
 
 /** Stored plate files with this content, for shareStoredCopy. */
-async function storedPlateCopies({ contentSha256, size }: FileContent): Promise<string[]> {
-  // Only files in managed storage: one left where it was found (sourcePath) may change under us.
+async function storedPlateCopies({ contentSha256, size }: FileContent): Promise<StoredCopy[]> {
+  // Only files in managed storage: one left where it was found (sourcePath) isn't ours to share.
   const plates = await prisma.plate.findMany({
     where: { contentSha256, size, sourcePath: null },
-    select: { storagePath: true },
+    select: { id: true, storagePath: true },
     take: 3,
   });
-  return plates.map((plate) => managedPlatePath(plate));
+  return plates.map((plate) => ({
+    path: managedPlatePath(plate),
+    // Edited on disk since it was hashed: dropped, so it isn't offered again; plateContentSha256 hashes it anew when
+    // it's needed.
+    changed: async () => {
+      await prisma.plate.updateMany({ where: { id: plate.id, contentSha256 }, data: { contentSha256: null } });
+    },
+  }));
 }
 
 /** Stores the file, sharing a stored copy of it when the admin setting allows. Returns where it is and, when it was

@@ -106,6 +106,29 @@ describe("reusing identical plate files", () => {
     expect(fs.readFileSync(second.file, "utf8")).toBe(fs.readFileSync(source, "utf8"));
   });
 
+  it("doesn't share a stored copy edited on disk since it was hashed, and stops offering it", async () => {
+    const source = uniqueStl();
+    await setFileReuse("hardlink");
+    const temp = path.join(dir, "edited.stl");
+    fs.copyFileSync(source, temp);
+    const { plates } = await createPrint(firstUserId, { title: "Edited" }, "Edited", [
+      { filename: "edited.stl", tempFilePath: temp },
+    ]);
+    // Edited in place outside Thingport, keeping its size, so only its content tells.
+    const edited = managedPlatePath(plates[0]);
+    fs.writeFileSync(edited, fs.readFileSync(edited, "utf8").replace("solid", "SOLID"));
+
+    const again = path.join(dir, "again.stl");
+    fs.copyFileSync(source, again);
+    const { plates: second } = await createPrint(secondUserId, { title: "Again" }, "Again", [
+      { filename: "again.stl", tempFilePath: again },
+    ]);
+    const secondFile = managedPlatePath(second[0]);
+    expect(fs.readFileSync(secondFile, "utf8")).toBe(fs.readFileSync(source, "utf8"));
+    expect(fs.statSync(secondFile).ino).not.toBe(fs.statSync(edited).ino);
+    expect((await prisma.plate.findUnique({ where: { id: plates[0].id } }))?.contentSha256).toBeNull();
+  });
+
   it("stores each copy on its own, unhashed, when turned off", async () => {
     const [first, second] = await importForBoth("off", uniqueStl());
     expect(fs.statSync(second.file).ino).not.toBe(fs.statSync(first.file).ino);
@@ -139,7 +162,7 @@ describe("file reuse setting", () => {
   it("reports and saves the mode", async () => {
     const admin = { Authorization: `Bearer ${adminToken}` };
     await prisma.setting.deleteMany({ where: { key: "file_reuse" } });
-    expect((await request(app).get("/api/settings/file-reuse").set(admin)).body.mode).toBe("reflink");
+    expect((await request(app).get("/api/settings/file-reuse").set(admin)).body.mode).toBe("off");
     const res = await request(app).post("/api/settings/file-reuse").set(admin).send({ mode: "hardlink" });
     expect(res.status).toBe(200);
     expect((await request(app).get("/api/settings/file-reuse").set(admin)).body.mode).toBe("hardlink");
