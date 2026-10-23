@@ -54,9 +54,7 @@ async function forget(copy: StoredCopy): Promise<void> {
 const OPEN_FLAGS = fsSync.constants.O_RDONLY | fsSync.constants.O_NOFOLLOW | fsSync.constants.O_NONBLOCK;
 
 /** Null when what's at `filePath` isn't a regular file; open errors are thrown. The caller closes the handle. */
-export async function openRegularFile(
-  filePath: string,
-): Promise<{ handle: fs.FileHandle; stat: fsSync.Stats } | null> {
+export async function openRegularFile(filePath: string): Promise<{ handle: fs.FileHandle; stat: fsSync.Stats } | null> {
   const handle = await fs.open(filePath, OPEN_FLAGS);
   try {
     const stat = await handle.stat();
