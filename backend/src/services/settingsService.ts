@@ -115,28 +115,28 @@ export async function setPreviewMode(value: PreviewMode): Promise<void> {
   });
 }
 
-// How a plate file identical to one already stored (by SHA-256) is saved, instance-wide since the copies may
-// belong to different users. "reflink" clones it copy-on-write where the filesystem can (btrfs, XFS, ZFS >= 2.2),
-// so the copies stay independent and only take space once they differ; elsewhere it's stored as usual. "hardlink"
-// shares the file itself on any filesystem that has hard links, which only works because Thingport never rewrites
-// a plate file in place.
-export type PlateFileReuse = "off" | "reflink" | "hardlink";
-export const PLATE_FILE_REUSE_MODES: readonly PlateFileReuse[] = ["off", "reflink", "hardlink"];
-const PLATE_FILE_REUSE_KEY = "plate_file_reuse";
-const DEFAULT_PLATE_FILE_REUSE: PlateFileReuse = "reflink";
+// How a model file identical to one already stored (by SHA-256) is saved (services/fileReuse.ts), instance-wide
+// since the copies may belong to different users. "reflink" clones it copy-on-write where the filesystem can (btrfs,
+// XFS, ZFS >= 2.2), so the copies stay independent and only take space once they differ; elsewhere it's stored as
+// usual. "hardlink" shares the file itself on any filesystem that has hard links, which only works because Thingport
+// never rewrites a stored model file in place.
+export type FileReuse = "off" | "reflink" | "hardlink";
+export const FILE_REUSE_MODES: readonly FileReuse[] = ["off", "reflink", "hardlink"];
+const FILE_REUSE_KEY = "file_reuse";
+const DEFAULT_FILE_REUSE: FileReuse = "reflink";
 
-export async function getPlateFileReuse(): Promise<PlateFileReuse> {
-  const row = await prisma.setting.findUnique({ where: { key: PLATE_FILE_REUSE_KEY } });
+export async function getFileReuse(): Promise<FileReuse> {
+  const row = await prisma.setting.findUnique({ where: { key: FILE_REUSE_KEY } });
   const value = row?.value;
-  return typeof value === "string" && PLATE_FILE_REUSE_MODES.includes(value as PlateFileReuse)
-    ? (value as PlateFileReuse)
-    : DEFAULT_PLATE_FILE_REUSE;
+  return typeof value === "string" && FILE_REUSE_MODES.includes(value as FileReuse)
+    ? (value as FileReuse)
+    : DEFAULT_FILE_REUSE;
 }
 
-export async function setPlateFileReuse(value: PlateFileReuse): Promise<void> {
+export async function setFileReuse(value: FileReuse): Promise<void> {
   await prisma.setting.upsert({
-    where: { key: PLATE_FILE_REUSE_KEY },
-    create: { key: PLATE_FILE_REUSE_KEY, value },
+    where: { key: FILE_REUSE_KEY },
+    create: { key: FILE_REUSE_KEY, value },
     update: { value },
   });
 }

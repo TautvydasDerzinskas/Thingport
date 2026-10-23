@@ -6,7 +6,7 @@ import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { UnauthorizedError } from "../../api/client";
-import { settingsApi, type PlateFileReuse } from "../../api/settings";
+import { settingsApi, type FileReuse } from "../../api/settings";
 import Segmented from "../../components/controls/Segmented";
 import HelpTip from "../../components/HelpTip";
 import SectionHeader from "../../components/SectionHeader";
@@ -18,14 +18,14 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-const MODES: PlateFileReuse[] = ["off", "reflink", "hardlink"];
+const MODES: FileReuse[] = ["off", "reflink", "hardlink"];
 
 /** How a model file identical to one already stored, say the same model imported by two users, is saved. */
 export default function FileReuseSection({ onUnauthorized }: Props) {
   const { t } = useTranslation("app");
   const toast = useToast();
   // Null until loaded, so a mode that never loaded isn't shown, or saved over, as the current one.
-  const [mode, setMode] = React.useState<PlateFileReuse | null>(null);
+  const [mode, setMode] = React.useState<FileReuse | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [loadFailed, setLoadFailed] = React.useState(false);
 
@@ -45,7 +45,7 @@ export default function FileReuseSection({ onUnauthorized }: Props) {
     };
   }, [onUnauthorized]);
 
-  const select = async (next: PlateFileReuse) => {
+  const select = async (next: FileReuse) => {
     if (mode === null || next === mode || saving) return;
     const previous = mode;
     setMode(next);

@@ -1,6 +1,6 @@
 import { keyframes } from "@emotion/react";
 import Box from "@mui/material/Box";
-import type { PlateFileReuse } from "../../api/settings";
+import type { FileReuse } from "../../api/settings";
 import { Folder, LINE, ModelShape, prefersReducedMotion } from "./parts";
 
 // Two users' folders with the same model in each. Off: two copies, one in each. Copy-on-write: the second
@@ -20,7 +20,7 @@ const pulse = keyframes`
   50% { opacity: 1; }
 `;
 
-export default function FileReuseAnimation({ size, mode }: { size: number; mode: PlateFileReuse }) {
+export default function FileReuseAnimation({ size, mode }: { size: number; mode: FileReuse }) {
   const still = prefersReducedMotion();
   const u = size / 76;
   const folder = { top: 46 * u, width: 26 * u, height: 18 * u };

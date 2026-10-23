@@ -7,7 +7,7 @@ import type { QualityIssueCode, QualitySeverity } from "./prints";
 /** What API tokens may do at /api/mcp, instance-wide. */
 export type McpAccess = "off" | "read" | "write";
 
-export type PlateFileReuse = "off" | "reflink" | "hardlink";
+export type FileReuse = "off" | "reflink" | "hardlink";
 
 export type StorageToken =
   "category-or-folder" | "collection" | "tags" | "creator" | "model" | "filename" | "id" | "plate";
@@ -329,14 +329,14 @@ export const settingsApi = {
     return res.json();
   },
 
-  getFileReuse: async (): Promise<{ mode: PlateFileReuse }> => {
+  getFileReuse: async (): Promise<{ mode: FileReuse }> => {
     const res = await fetch(`${apiBase()}/settings/file-reuse`, { headers: authHeaders() });
     if (res.status === 401) throw new UnauthorizedError();
     assertOk(res, "Failed to load file reuse settings");
     return res.json();
   },
 
-  updateFileReuse: async (mode: PlateFileReuse): Promise<{ mode: PlateFileReuse }> => {
+  updateFileReuse: async (mode: FileReuse): Promise<{ mode: FileReuse }> => {
     const res = await fetch(`${apiBase()}/settings/file-reuse`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),

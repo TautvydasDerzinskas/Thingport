@@ -192,13 +192,13 @@ import {
   createPrint,
   refreshAutoPreparedMetadata,
   resolvePlateFilePath,
-  sha256OfFile,
   type NewPlateInput,
   type PrintMetaInput,
 } from "./printCreation";
 import { availablePlateFilename, relocatePrint, saveThumbFromBytes } from "./printService";
 import { addPreviewImage, preferImageOverRenders } from "./previewImageService";
 import { localizeDescriptionImages } from "./descriptionImageService";
+import { sha256OfFile } from "./fileReuse";
 import { prisma } from "../db";
 import { recordActivity } from "./activityService";
 import { Prisma } from "@prisma/client";

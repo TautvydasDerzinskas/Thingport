@@ -7,7 +7,7 @@ import request from "supertest";
 import { createApp } from "../src/app";
 import { createPrint } from "../src/services/printCreation";
 import { managedPlatePath } from "../src/services/printService";
-import { setPlateFileReuse, type PlateFileReuse } from "../src/services/settingsService";
+import { setFileReuse, type FileReuse } from "../src/services/settingsService";
 import { prisma } from "../src/db";
 
 const app = createApp();
@@ -35,8 +35,8 @@ function uniqueStl(): string {
 }
 
 /** The same file, imported by each user in turn, as a downloaded (temp) file is. */
-async function importForBoth(mode: PlateFileReuse, source: string) {
-  await setPlateFileReuse(mode);
+async function importForBoth(mode: FileReuse, source: string) {
+  await setFileReuse(mode);
   const plates = [];
   for (const userId of [firstUserId, secondUserId]) {
     const temp = path.join(dir, `temp-${crypto.randomBytes(6).toString("hex")}.stl`);
@@ -63,7 +63,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await prisma.setting.deleteMany({ where: { key: "plate_file_reuse" } });
+  await prisma.setting.deleteMany({ where: { key: "file_reuse" } });
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
@@ -94,7 +94,7 @@ describe("reusing identical plate files", () => {
 
   it("falls back to its own copy when the stored one is gone", async () => {
     const source = uniqueStl();
-    await setPlateFileReuse("hardlink");
+    await setFileReuse("hardlink");
     const temp = path.join(dir, "gone.stl");
     fs.copyFileSync(source, temp);
     const { plates } = await createPrint(firstUserId, { title: "Gone" }, "Gone", [
@@ -113,7 +113,7 @@ describe("reusing identical plate files", () => {
   });
 
   it("doesn't share files that only have the same size", async () => {
-    await setPlateFileReuse("hardlink");
+    await setFileReuse("hardlink");
     const a = uniqueStl();
     const b = uniqueStl();
     expect(fs.statSync(a).size).toBe(fs.statSync(b).size);
@@ -138,7 +138,7 @@ describe("file reuse setting", () => {
 
   it("reports and saves the mode", async () => {
     const admin = { Authorization: `Bearer ${adminToken}` };
-    await prisma.setting.deleteMany({ where: { key: "plate_file_reuse" } });
+    await prisma.setting.deleteMany({ where: { key: "file_reuse" } });
     expect((await request(app).get("/api/settings/file-reuse").set(admin)).body.mode).toBe("reflink");
     const res = await request(app).post("/api/settings/file-reuse").set(admin).send({ mode: "hardlink" });
     expect(res.status).toBe(200);

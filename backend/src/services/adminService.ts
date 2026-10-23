@@ -144,7 +144,7 @@ export type StorageUsage = {
 };
 
 /** Bytes under `dir`, following no links; a missing folder counts as empty. A hard-linked file (a model file shared
- *  between users, see getPlateFileReuse) counts once, as it takes its space once. */
+ *  between users, see getFileReuse) counts once, as it takes its space once. */
 async function folderBytes(dir: string, seen = new Set<string>()): Promise<number> {
   let entries: Dirent[];
   try {

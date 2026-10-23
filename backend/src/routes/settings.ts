@@ -43,9 +43,9 @@ import {
   getMcpAccess,
   setMcpAccess,
   MCP_ACCESS_LEVELS,
-  getPlateFileReuse,
-  setPlateFileReuse,
-  PLATE_FILE_REUSE_MODES,
+  getFileReuse,
+  setFileReuse,
+  FILE_REUSE_MODES,
 } from "../services/settingsService";
 import { getDatabaseInfo, testAndSwitchDatabase } from "../services/databaseSettingsService";
 import {
@@ -275,17 +275,17 @@ router.get(
   "/settings/file-reuse",
   requireAdmin,
   asyncHandler(async (_req, res) => {
-    res.json({ mode: await getPlateFileReuse() });
+    res.json({ mode: await getFileReuse() });
   }),
 );
 
-const fileReuseSchema = z.object({ mode: z.enum(PLATE_FILE_REUSE_MODES as [string, ...string[]]) });
+const fileReuseSchema = z.object({ mode: z.enum(FILE_REUSE_MODES as [string, ...string[]]) });
 router.post(
   "/settings/file-reuse",
   requireAdmin,
   asyncHandler(async (req, res) => {
-    const { mode } = parseBody(fileReuseSchema, req.body) as { mode: (typeof PLATE_FILE_REUSE_MODES)[number] };
-    await setPlateFileReuse(mode);
+    const { mode } = parseBody(fileReuseSchema, req.body) as { mode: (typeof FILE_REUSE_MODES)[number] };
+    await setFileReuse(mode);
     res.json({ mode });
     void createLog({ userId: req.userId!, action: "file_reuse_changed", details: { mode } });
   }),
