@@ -194,13 +194,22 @@ export const DOCS = [
       "Preview STL, 3MF, OBJ and STEP files in the browser, with plate thumbnails and simplified previews of very detailed models.",
   },
   {
+    slug: "features/print-quality",
+    source: "docs/features/print-quality.md",
+    group: "Features",
+    title: "Print quality checks",
+    nav: "Print quality",
+    description:
+      "STL, OBJ and 3MF files are checked for holes, non-manifold edges, flipped faces, loose fragments and the wrong size when a model is first opened.",
+  },
+  {
     slug: "features/organize-and-search",
     source: "docs/features/organize-and-search.md",
     group: "Features",
     title: "Organize and search",
     nav: "Organize and search",
     description:
-      "Categories, folders, collections, tags, favourites and bookmarks, plus search across your whole library.",
+      "Categories, folders, collections, tags, favourites and bookmarks, bulk actions and merges, plus search across your whole library.",
   },
   {
     slug: "features/dashboard",
@@ -289,9 +298,10 @@ export const DOCS = [
     slug: "features/appearance",
     source: "docs/features/appearance.md",
     group: "Features",
-    title: "Themes and languages",
+    title: "Themes, colours and languages",
     nav: "Themes and languages",
-    description: "Light, dark or system theme, in any language Thingport is translated into.",
+    description:
+      "Light, dark or system theme, an accent colour of your own, 3D renders on model cards, in English, Spanish, French or Lithuanian.",
   },
   {
     slug: "guides/system-health",
@@ -376,7 +386,25 @@ export const DOCS = [
     group: "Integrations",
     title: "Connect other apps with an API token",
     nav: "API token",
-    description: "Generate a read-only token that lets other apps, scripts and dashboards read your Thingport library.",
+    description:
+      "Generate a token that lets other apps, scripts and dashboards read your Thingport library, limited to what you allow.",
+  },
+  {
+    slug: "guides/mcp",
+    source: "docs/guides/mcp.md",
+    group: "Integrations",
+    title: "Connect an AI assistant with MCP",
+    nav: "AI assistant (MCP)",
+    description:
+      "Let Claude and other AI assistants search and read your library, and import models if you allow it, over the Model Context Protocol.",
+  },
+  {
+    slug: "guides/custom-widgets",
+    source: "docs/guides/custom-widgets.md",
+    group: "Integrations",
+    title: "Custom dashboard widgets",
+    nav: "Custom widgets",
+    description: "Write your own dashboard panels in JavaScript, or install ones the community has shared.",
   },
   {
     slug: "contributing",
