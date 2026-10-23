@@ -924,19 +924,13 @@
       "fileReuse": {
         "heading": "Archivos idénticos",
         "subtitle": "Ahorra espacio cuando varios usuarios importan el mismo modelo.",
-        "modeLabel": "Cómo guardar archivos idénticos",
-        "help": "Thingport compara cada archivo de modelo nuevo con los ya guardados. La copia en escritura clona un archivo igual en btrfs, XFS o ZFS 2.2 y posteriores, y en otros sistemas lo guarda como siempre; las copias siguen siendo independientes. Un enlace duro comparte el archivo en cualquier sistema de archivos único, pero editarlo directamente en el disco lo cambia para todos los usuarios, y las copias de seguridad deben conservar los enlaces duros (rsync -H).",
+        "modeLabel": "Clonar archivos idénticos (copia en escritura)",
+        "help": "Thingport compara cada archivo de modelo nuevo con los ya guardados. La copia en escritura clona un archivo igual en btrfs, XFS o ZFS 2.2 y posteriores, y en otros sistemas lo guarda como siempre. Cada clon es un archivo independiente, así que editar uno en el disco nunca cambia el de otro usuario.",
         "failed": "No se pudo guardar cómo se guardan los archivos idénticos. Inténtalo de nuevo.",
         "loadFailed": "No se pudo cargar cómo se guardan los archivos idénticos.",
-        "modes": {
-          "off": "Por separado",
-          "reflink": "Copia en escritura",
-          "hardlink": "Enlace duro"
-        },
         "modeHelp": {
           "off": "Cada archivo de modelo ocupa su propio espacio.",
-          "reflink": "Un archivo ya guardado se clona donde el sistema de archivos lo permite, sin ocupar espacio extra hasta que una copia cambie.",
-          "hardlink": "Un archivo ya guardado se comparte como un solo archivo en disco, en cualquier sistema de archivos con enlaces duros."
+          "reflink": "Un archivo ya guardado se clona donde el sistema de archivos lo permite, sin ocupar espacio extra hasta que una copia cambie."
         }
       },
       "consume": {

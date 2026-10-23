@@ -1,21 +1,60 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import crypto from "node:crypto";
 import fs from "node:fs";
+import fsp from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import request from "supertest";
 import { createApp } from "../src/app";
+import { STORAGE } from "../src/config";
 import { createPrint } from "../src/services/printCreation";
 import { managedPlatePath } from "../src/services/printService";
+import { plateContentSha256 } from "../src/services/importService";
+import { sha256OfFile } from "../src/services/fileReuse";
 import { setFileReuse, type FileReuse } from "../src/services/settingsService";
 import { prisma } from "../src/db";
 
 const app = createApp();
 let firstUserId: string;
+let firstToken: string;
 let secondUserId: string;
 let userToken: string;
 let adminToken: string;
 let dir: string;
+const { COPYFILE_EXCL, COPYFILE_FICLONE_FORCE } = fs.constants;
+const realCopyFile = fsp.copyFile;
+
+/** Whether the storage folder's filesystem can clone (btrfs, XFS, ...); tmpfs and ext4 can't. Probed as the file
+ *  loads rather than in beforeAll, as it.runIf is decided then. */
+const reflinks = (() => {
+  fs.mkdirSync(STORAGE, { recursive: true });
+  const probe = fs.mkdtempSync(path.join(STORAGE, ".reflink-probe-"));
+  try {
+    fs.writeFileSync(path.join(probe, "a"), "probe");
+    fs.copyFileSync(path.join(probe, "a"), path.join(probe, "b"), COPYFILE_FICLONE_FORCE);
+    return true;
+  } catch {
+    return false;
+  } finally {
+    fs.rmSync(probe, { recursive: true, force: true });
+  }
+})();
+
+/** Clones that succeeded, counted, and every clone tried, in `attempts`; where the storage folder can't clone, one is
+ *  simulated with a plain exclusive copy, as a reflink-capable filesystem would make it, so the checks around it still
+ *  run. `beforeClone` runs first, with the destination. */
+function watchClones(beforeClone?: (target: string) => void) {
+  const clones: string[] = [];
+  const attempts: string[] = [];
+  vi.spyOn(fsp, "copyFile").mockImplementation(async (src, target, mode) => {
+    if (mode === undefined || !(mode & COPYFILE_FICLONE_FORCE)) return realCopyFile(src, target, mode);
+    attempts.push(String(target));
+    beforeClone?.(String(target));
+    await realCopyFile(src, target, reflinks ? mode : COPYFILE_EXCL);
+    clones.push(String(target));
+  });
+  return { clones, attempts };
+}
 
 async function register(name: string) {
   const email = `reuse-${name}-${Date.now()}@example.com`;
@@ -34,25 +73,33 @@ function uniqueStl(): string {
   return file;
 }
 
-/** The same file, imported by each user in turn, as a downloaded (temp) file is. */
+/** `source` imported by `userId` as a downloaded (temp) file is. */
+async function importAs(userId: string, source: string, title: string) {
+  const temp = path.join(dir, `temp-${crypto.randomBytes(6).toString("hex")}.stl`);
+  fs.copyFileSync(source, temp);
+  const { print, plates } = await createPrint(userId, { title }, title, [
+    { filename: "shared.stl", tempFilePath: temp },
+  ]);
+  expect(fs.existsSync(temp)).toBe(false);
+  return { print, plate: plates[0], file: managedPlatePath(plates[0]) };
+}
+
+/** The same file, imported by each user in turn. */
 async function importForBoth(mode: FileReuse, source: string) {
   await setFileReuse(mode);
-  const plates = [];
-  for (const userId of [firstUserId, secondUserId]) {
-    const temp = path.join(dir, `temp-${crypto.randomBytes(6).toString("hex")}.stl`);
-    fs.copyFileSync(source, temp);
-    const { plates: created } = await createPrint(userId, { title: `Shared ${mode}` }, "Shared", [
-      { filename: "shared.stl", tempFilePath: temp },
-    ]);
-    expect(fs.existsSync(temp)).toBe(false);
-    plates.push(created[0]);
-  }
-  return plates.map((plate) => ({ plate, file: managedPlatePath(plate) }));
+  return [
+    await importAs(firstUserId, source, `Shared ${mode}`),
+    await importAs(secondUserId, source, `Shared ${mode}`),
+  ];
 }
+
+const stored = (id: string) => prisma.plate.findUnique({ where: { id } });
 
 beforeAll(async () => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "plate-reuse-"));
-  firstUserId = (await register("first")).id;
+  const first = await register("first");
+  firstUserId = first.id;
+  firstToken = first.token;
   const second = await register("second");
   secondUserId = second.id;
   userToken = second.token;
@@ -62,96 +109,185 @@ beforeAll(async () => {
   adminToken = (await request(app).post("/api/login").send({ email: admin.email, password: "password123" })).body.token;
 });
 
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 afterAll(async () => {
   await prisma.setting.deleteMany({ where: { key: "file_reuse" } });
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
 describe("reusing identical plate files", () => {
-  it("hard-links a file another user already stored", async () => {
-    const source = uniqueStl();
-    const [first, second] = await importForBoth("hardlink", source);
-    expect(second.file).not.toBe(first.file);
-    expect(fs.statSync(second.file).ino).toBe(fs.statSync(first.file).ino);
-    expect(second.plate.contentSha256).toBe(first.plate.contentSha256);
-    expect(second.plate.size).toBe(fs.statSync(source).size);
-
-    // Deleting one user's copy leaves the other's.
-    fs.rmSync(first.file);
-    expect(fs.readFileSync(second.file, "utf8")).toBe(fs.readFileSync(source, "utf8"));
-  });
-
-  it("clones it as an independent copy, or stores it as usual where the filesystem can't", async () => {
+  it("gives the second user the right file, hashed, whether or not the filesystem can clone", async () => {
     const source = uniqueStl();
     const [first, second] = await importForBoth("reflink", source);
+    expect(second.file).not.toBe(first.file);
     expect(fs.statSync(second.file).ino).not.toBe(fs.statSync(first.file).ino);
+    expect(first.plate.contentSha256).toBe(await sha256OfFile(source));
     expect(second.plate.contentSha256).toBe(first.plate.contentSha256);
+    expect(second.plate.size).toBe(fs.statSync(source).size);
     expect(fs.readFileSync(second.file, "utf8")).toBe(fs.readFileSync(source, "utf8"));
 
+    // Edited on disk outside Thingport: the other user's file stays as it was.
     fs.appendFileSync(first.file, "changed\n");
     expect(fs.readFileSync(second.file, "utf8")).toBe(fs.readFileSync(source, "utf8"));
   });
 
-  it("falls back to its own copy when the stored one is gone", async () => {
-    const source = uniqueStl();
-    await setFileReuse("hardlink");
-    const temp = path.join(dir, "gone.stl");
-    fs.copyFileSync(source, temp);
-    const { plates } = await createPrint(firstUserId, { title: "Gone" }, "Gone", [
-      { filename: "gone.stl", tempFilePath: temp },
-    ]);
-    fs.rmSync(managedPlatePath(plates[0]));
+  it.runIf(reflinks)(
+    "really clones it where the storage folder can, and a deleted model takes only its own copy",
+    async () => {
+      const { clones } = watchClones();
+      const source = uniqueStl();
+      const [first, second] = await importForBoth("reflink", source);
+      expect(clones).toEqual([second.file]);
+      expect(fs.readFileSync(second.file, "utf8")).toBe(fs.readFileSync(source, "utf8"));
 
-    const [, second] = await importForBoth("hardlink", source);
+      fs.appendFileSync(second.file, "changed\n");
+      expect(fs.readFileSync(first.file, "utf8")).toBe(fs.readFileSync(source, "utf8"));
+      fs.writeFileSync(second.file, fs.readFileSync(source));
+
+      const res = await request(app)
+        .delete(`/api/print/${first.print.id}`)
+        .set({ Authorization: `Bearer ${firstToken}` });
+      expect(res.status).toBe(200);
+      expect(fs.existsSync(first.file)).toBe(false);
+      expect(fs.readFileSync(second.file, "utf8")).toBe(fs.readFileSync(source, "utf8"));
+    },
+  );
+
+  it("leaves the second user's file when the first user deletes the model", async () => {
+    const source = uniqueStl();
+    const [first, second] = await importForBoth("reflink", source);
+    const res = await request(app)
+      .delete(`/api/print/${first.print.id}`)
+      .set({ Authorization: `Bearer ${firstToken}` });
+    expect(res.status).toBe(200);
+    expect(fs.existsSync(first.file)).toBe(false);
     expect(fs.readFileSync(second.file, "utf8")).toBe(fs.readFileSync(source, "utf8"));
+    expect((await stored(second.plate.id))?.contentSha256).toBe(await sha256OfFile(source));
   });
 
-  it("doesn't share a stored copy edited on disk since it was hashed, and stops offering it", async () => {
+  it("falls back to its own copy when the stored one is gone", async () => {
     const source = uniqueStl();
-    await setFileReuse("hardlink");
-    const temp = path.join(dir, "edited.stl");
-    fs.copyFileSync(source, temp);
-    const { plates } = await createPrint(firstUserId, { title: "Edited" }, "Edited", [
-      { filename: "edited.stl", tempFilePath: temp },
-    ]);
-    // Edited in place outside Thingport, keeping its size, so only its content tells.
-    const edited = managedPlatePath(plates[0]);
-    fs.writeFileSync(edited, fs.readFileSync(edited, "utf8").replace("solid", "SOLID"));
+    await setFileReuse("reflink");
+    const gone = await importAs(firstUserId, source, "Gone");
+    fs.rmSync(gone.file);
 
-    const again = path.join(dir, "again.stl");
-    fs.copyFileSync(source, again);
-    const { plates: second } = await createPrint(secondUserId, { title: "Again" }, "Again", [
-      { filename: "again.stl", tempFilePath: again },
-    ]);
-    const secondFile = managedPlatePath(second[0]);
-    expect(fs.readFileSync(secondFile, "utf8")).toBe(fs.readFileSync(source, "utf8"));
-    expect(fs.statSync(secondFile).ino).not.toBe(fs.statSync(edited).ino);
-    expect((await prisma.plate.findUnique({ where: { id: plates[0].id } }))?.contentSha256).toBeNull();
+    const second = await importAs(secondUserId, source, "Gone again");
+    expect(fs.readFileSync(second.file, "utf8")).toBe(fs.readFileSync(source, "utf8"));
+    expect((await stored(gone.plate.id))?.contentSha256).toBeNull();
+  });
+
+  it("doesn't reuse a stored copy edited on disk since it was hashed, and stops offering it", async () => {
+    const { clones } = watchClones();
+    const source = uniqueStl();
+    await setFileReuse("reflink");
+    const first = await importAs(firstUserId, source, "Edited");
+    // Edited in place outside Thingport, keeping its size, so only its content tells.
+    fs.writeFileSync(first.file, fs.readFileSync(first.file, "utf8").replace("solid", "SOLID"));
+
+    const second = await importAs(secondUserId, source, "Again");
+    // It was cloned, read back, found to differ and dropped; the file was then stored as usual.
+    expect(clones).toEqual([second.file]);
+    expect(fs.readFileSync(second.file, "utf8")).toBe(fs.readFileSync(source, "utf8"));
+    expect((await stored(first.plate.id))?.contentSha256).toBeNull();
+    expect(fs.readFileSync(first.file, "utf8")).toContain("SOLID");
   });
 
   it("stores each copy on its own, unhashed, when turned off", async () => {
     const [first, second] = await importForBoth("off", uniqueStl());
     expect(fs.statSync(second.file).ino).not.toBe(fs.statSync(first.file).ino);
+    expect(first.plate.contentSha256).toBeNull();
     expect(second.plate.contentSha256).toBeNull();
   });
 
   it("doesn't share files that only have the same size", async () => {
-    await setFileReuse("hardlink");
+    const { attempts } = watchClones();
+    await setFileReuse("reflink");
     const a = uniqueStl();
     const b = uniqueStl();
     expect(fs.statSync(a).size).toBe(fs.statSync(b).size);
-    const { plates: one } = await createPrint(firstUserId, { title: "A" }, "A", [
-      { filename: "a.stl", copyFromPath: a },
-    ]);
+    await createPrint(firstUserId, { title: "A" }, "A", [{ filename: "a.stl", copyFromPath: a }]);
     const { plates: two } = await createPrint(secondUserId, { title: "B" }, "B", [
       { filename: "b.stl", copyFromPath: b },
     ]);
-    expect(fs.statSync(managedPlatePath(two[0])).ino).not.toBe(fs.statSync(managedPlatePath(one[0])).ino);
+    expect(fs.readFileSync(managedPlatePath(two[0]), "utf8")).toBe(fs.readFileSync(b, "utf8"));
     expect(fs.existsSync(b)).toBe(true);
+    expect(attempts).toEqual([]);
+  });
+
+  it("leaves a file saved at the destination meanwhile untouched, reporting a conflict", async () => {
+    const source = uniqueStl();
+    await setFileReuse("reflink");
+    await importAs(firstUserId, source, "Taken");
+    let taken: string | undefined;
+    watchClones((target) => {
+      // Someone else's file, there before the clone.
+      taken = target;
+      fs.writeFileSync(target, "someone else's");
+    });
+    const temp = path.join(dir, `temp-${crypto.randomBytes(6).toString("hex")}.stl`);
+    fs.copyFileSync(source, temp);
+    await expect(
+      createPrint(secondUserId, { title: "Taken again" }, "Taken again", [
+        { filename: "shared.stl", tempFilePath: temp },
+      ]),
+    ).rejects.toMatchObject({ status: 409 });
+    expect(taken).toBeDefined();
+    expect(fs.readFileSync(taken!, "utf8")).toBe("someone else's");
+    fs.rmSync(taken!);
+  });
+
+  it("stores as usual, hash recorded, when the stored copies can't be looked up", async () => {
+    const { attempts } = watchClones();
+    const source = uniqueStl();
+    await setFileReuse("reflink");
+    await importAs(firstUserId, source, "Lookup");
+    const realFindMany = prisma.plate.findMany.bind(prisma.plate);
+    // Only the lookup by content fails.
+    vi.spyOn(prisma.plate, "findMany").mockImplementation(((args: any) =>
+      args?.where?.contentSha256 ? Promise.reject(new Error("db")) : realFindMany(args)) as any);
+    const second = await importAs(secondUserId, source, "Lookup again");
+    expect(attempts).toEqual([]);
+    expect(fs.readFileSync(second.file, "utf8")).toBe(fs.readFileSync(source, "utf8"));
+    expect((await stored(second.plate.id))?.contentSha256).toBe(await sha256OfFile(source));
+  });
+});
+
+describe("plateContentSha256", () => {
+  it("hashes the file as it is now, not as it was recorded, and updates the record", async () => {
+    const source = uniqueStl();
+    await setFileReuse("reflink");
+    const { plate, file } = await importAs(firstUserId, source, "Rehash");
+    expect(plate.contentSha256).toBe(await sha256OfFile(source));
+
+    fs.writeFileSync(file, "edited outside Thingport");
+    const now = await sha256OfFile(file);
+    expect(await plateContentSha256(plate)).toBe(now);
+    expect((await stored(plate.id))?.contentSha256).toBe(now);
+
+    fs.rmSync(file);
+    expect(await plateContentSha256(plate)).toBeNull();
+  });
+
+  it("doesn't overwrite a hash recorded by someone else meanwhile", async () => {
+    const source = uniqueStl();
+    await setFileReuse("reflink");
+    const { plate, file } = await importAs(firstUserId, source, "Meanwhile");
+    fs.writeFileSync(file, "edited again outside Thingport");
+    const meanwhile = "f".repeat(64);
+    await prisma.plate.update({ where: { id: plate.id }, data: { contentSha256: meanwhile } });
+
+    // `plate` still has the hash from before.
+    expect(await plateContentSha256(plate)).toBe(await sha256OfFile(file));
+    expect((await stored(plate.id))?.contentSha256).toBe(meanwhile);
   });
 });
 
 describe("file reuse setting", () => {
+  const admin = () => ({ Authorization: `Bearer ${adminToken}` });
+
   it("is admin-only", async () => {
     const res = await request(app)
       .get("/api/settings/file-reuse")
@@ -159,17 +295,27 @@ describe("file reuse setting", () => {
     expect(res.status).toBe(403);
   });
 
-  it("reports and saves the mode", async () => {
-    const admin = { Authorization: `Bearer ${adminToken}` };
+  it("is off by default, and reports and saves each mode", async () => {
     await prisma.setting.deleteMany({ where: { key: "file_reuse" } });
-    expect((await request(app).get("/api/settings/file-reuse").set(admin)).body.mode).toBe("off");
-    const res = await request(app).post("/api/settings/file-reuse").set(admin).send({ mode: "hardlink" });
-    expect(res.status).toBe(200);
-    expect((await request(app).get("/api/settings/file-reuse").set(admin)).body.mode).toBe("hardlink");
+    expect((await request(app).get("/api/settings/file-reuse").set(admin())).body.mode).toBe("off");
+    for (const mode of ["reflink", "off"]) {
+      const res = await request(app).post("/api/settings/file-reuse").set(admin()).send({ mode });
+      expect(res.status).toBe(200);
+      expect((await request(app).get("/api/settings/file-reuse").set(admin())).body.mode).toBe(mode);
+    }
   });
 
-  it("rejects an unknown mode", async () => {
-    const admin = { Authorization: `Bearer ${adminToken}` };
-    expect((await request(app).post("/api/settings/file-reuse").set(admin).send({ mode: "symlink" })).status).toBe(400);
+  it("rejects an unknown mode, hard links included", async () => {
+    for (const mode of ["symlink", "hardlink"])
+      expect((await request(app).post("/api/settings/file-reuse").set(admin()).send({ mode })).status).toBe(400);
+  });
+
+  it("reads a stored hard-link mode, from before it was removed, as off", async () => {
+    await prisma.setting.upsert({
+      where: { key: "file_reuse" },
+      create: { key: "file_reuse", value: "hardlink" },
+      update: { value: "hardlink" },
+    });
+    expect((await request(app).get("/api/settings/file-reuse").set(admin())).body.mode).toBe("off");
   });
 });

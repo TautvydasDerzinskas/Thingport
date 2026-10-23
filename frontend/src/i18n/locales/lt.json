@@ -937,19 +937,13 @@
       "fileReuse": {
         "heading": "Vienodi failai",
         "subtitle": "Taupykite vietą, kai keli naudotojai importuoja tą patį modelį.",
-        "modeLabel": "Kaip saugoti vienodus failus",
-        "help": "Thingport palygina kiekvieną naują modelio failą su jau saugomais. Kopijavimas rašant (copy-on-write) sutampantį failą klonuoja btrfs, XFS arba ZFS 2.2 ir naujesnėse sistemose, o kitur failą išsaugo įprastai; kopijos lieka nepriklausomos. Kietoji nuoroda dalijasi failu bet kurioje vienoje failų sistemoje, tačiau jį redaguojant tiesiai diske jis pasikeičia visiems naudotojams, o atsarginės kopijos turi išsaugoti kietąsias nuorodas (rsync -H).",
+        "modeLabel": "Klonuoti vienodus failus (kopijavimas rašant)",
+        "help": "Thingport palygina kiekvieną naują modelio failą su jau saugomais. Kopijavimas rašant (copy-on-write) sutampantį failą klonuoja btrfs, XFS arba ZFS 2.2 ir naujesnėse sistemose, o kitur failą išsaugo įprastai. Kiekvienas klonas yra atskiras failas, todėl redaguojant vieną diske kito naudotojo failas nepasikeičia.",
         "failed": "Nepavyko išsaugoti, kaip saugomi vienodi failai. Bandykite dar kartą.",
         "loadFailed": "Nepavyko įkelti, kaip saugomi vienodi failai.",
-        "modes": {
-          "off": "Atskirai",
-          "reflink": "Kopijavimas rašant",
-          "hardlink": "Kietoji nuoroda"
-        },
         "modeHelp": {
           "off": "Kiekvienas modelio failas užima savo vietą.",
-          "reflink": "Jau saugomas failas klonuojamas, kur leidžia failų sistema, ir neužima papildomos vietos, kol kuri nors kopija nepasikeičia.",
-          "hardlink": "Jau saugomas failas diske dalijamas kaip vienas failas bet kurioje failų sistemoje su kietosiomis nuorodomis."
+          "reflink": "Jau saugomas failas klonuojamas, kur leidžia failų sistema, ir neužima papildomos vietos, kol kuri nors kopija nepasikeičia."
         }
       },
       "consume": {

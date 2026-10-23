@@ -307,6 +307,18 @@ describe("MakerWorld print profiles", () => {
     expect(matched.plates.map((plate) => plate.sourceInstanceId)).toEqual(["200", "100"]);
     expect(matched.plates[0].contentSha256).toMatch(/^[0-9a-f]{64}$/);
   });
+
+  it("doesn't read an untagged plate whose file is another size than the downloaded profile", async () => {
+    const printId = await createLegacyPrint(`${profileFileContents("200")} and more`);
+
+    mockMakerworldFetch();
+    const added = await importProfile(`${pageUrl}#profileId-200`, "200");
+    expect(added.print.id).toBe(printId);
+    expect(added.profileAdded).toBe(true);
+    expect(added.plates.map((plate) => plate.sourceInstanceId)).toEqual([null, "200"]);
+    // Hashing it would have recorded its hash.
+    expect(added.plates[0].contentSha256).toBeNull();
+  });
 });
 
 describe("import job lock", () => {

@@ -89,6 +89,8 @@ async function storedPlateCopies({ contentSha256, size }: FileContent): Promise<
   const plates = await prisma.plate.findMany({
     where: { contentSha256, size, sourcePath: null },
     select: { id: true, storagePath: true },
+    // Newest first: the most recently stored copy is the likeliest to still be as it was hashed.
+    orderBy: { createdAt: "desc" },
     take: 3,
   });
   return plates.map((plate) => ({
@@ -111,7 +113,8 @@ async function placePlateFile(
   if (!fromPath) return { effectivePath: await placeFile(input, destAbsPath), contentSha256: null };
   const { contentSha256, shared } = await shareStoredCopy(fromPath, destAbsPath, storedPlateCopies);
   if (!shared) return { effectivePath: await placeFile(input, destAbsPath), contentSha256 };
-  if (input.tempFilePath) await fs.rm(input.tempFilePath, { force: true });
+  // The clone is in place: a temp file left behind is only clutter, not a reason to fail the import.
+  if (input.tempFilePath) await fs.rm(input.tempFilePath, { force: true }).catch(() => undefined);
   return { effectivePath: destAbsPath, contentSha256 };
 }
 

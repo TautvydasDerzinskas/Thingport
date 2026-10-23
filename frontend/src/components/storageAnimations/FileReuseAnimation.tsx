@@ -1,10 +1,10 @@
 import { keyframes } from "@emotion/react";
 import Box from "@mui/material/Box";
 import type { FileReuse } from "../../api/settings";
-import { Folder, LINE, ModelShape, prefersReducedMotion } from "./parts";
+import { Folder, ModelShape, prefersReducedMotion } from "./parts";
 
 // Two users' folders with the same model in each. Off: two copies, one in each. Copy-on-write: the second
-// is a faded clone of the first, filling in as it's read. Hard link: one model above both, linked into each.
+// is a faded clone of the first, filling in as it's read.
 const CYCLE_S = 2.4;
 
 const bob = keyframes`
@@ -14,10 +14,6 @@ const bob = keyframes`
 const clone = keyframes`
   0%, 100% { opacity: 0.35; }
   50% { opacity: 0.9; }
-`;
-const pulse = keyframes`
-  0%, 100% { opacity: 0.45; }
-  50% { opacity: 1; }
 `;
 
 export default function FileReuseAnimation({ size, mode }: { size: number; mode: FileReuse }) {
@@ -30,7 +26,6 @@ export default function FileReuseAnimation({ size, mode }: { size: number; mode:
   const fade = { transition: "opacity 220ms ease-out, transform 220ms ease-out" };
   const animate = (frames: ReturnType<typeof keyframes>, delay = 0) =>
     still ? "none" : `${frames} ${CYCLE_S}s ease-in-out ${delay}s infinite`;
-  const linked = mode === "hardlink";
 
   const modelAt = (x: number, y: number, extra: object) => (
     <Box sx={{ position: "absolute", left: x, top: y, ...fade, ...extra }}>
@@ -43,35 +38,11 @@ export default function FileReuseAnimation({ size, mode }: { size: number; mode:
       <Folder left={left} {...folder} />
       <Folder left={right} {...folder} />
       {/* A copy in each folder; the right one is the clone, faded when it shares the left one's blocks. */}
-      {modelAt(left + 5 * u, 30 * u, { opacity: linked ? 0 : 1, animation: linked ? "none" : animate(bob) })}
+      {modelAt(left + 5 * u, 30 * u, { animation: animate(bob) })}
       {modelAt(right + 5 * u, 30 * u, {
-        opacity: linked ? 0 : 1,
-        animation: linked ? "none" : mode === "reflink" ? animate(clone) : animate(bob, CYCLE_S / 3),
-      })}
-      {/* One file, linked into both folders. */}
-      {[39, -39].map((angle) => (
-        <Box
-          key={angle}
-          sx={{
-            position: "absolute",
-            left: 37 * u,
-            top: 26 * u,
-            width: 2 * u,
-            // From under the model to each folder's middle, 16 across and 20 down.
-            height: 25.6 * u,
-            bgcolor: LINE,
-            borderRadius: u,
-            transformOrigin: "top",
-            transform: `rotate(${angle}deg) scaleY(${linked ? 1 : 0})`,
-            animation: linked ? animate(pulse) : "none",
-            ...fade,
-          }}
-        />
-      ))}
-      {modelAt(30 * u, 12 * u, {
-        opacity: linked ? 1 : 0,
-        transform: linked ? "none" : `translateY(${8 * u}px)`,
-        animation: linked ? animate(bob) : "none",
+        // Under the animation's own opacity; what's left with reduced motion, so the two states still differ.
+        opacity: mode === "reflink" ? 0.5 : 1,
+        animation: mode === "reflink" ? animate(clone) : animate(bob, CYCLE_S / 3),
       })}
     </Box>
   );

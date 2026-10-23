@@ -7,7 +7,7 @@ import type { QualityIssueCode, QualitySeverity } from "./prints";
 /** What API tokens may do at /api/mcp, instance-wide. */
 export type McpAccess = "off" | "read" | "write";
 
-export type FileReuse = "off" | "reflink" | "hardlink";
+export type FileReuse = "off" | "reflink";
 
 /** `slicer` is the one a model's main button opens (the last one used), `slicers` the ones installed. */
 export type SlicerSettings = { slicer: string | null; slicers: string[] };

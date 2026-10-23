@@ -924,19 +924,13 @@
       "fileReuse": {
         "heading": "Fichiers identiques",
         "subtitle": "Économisez de l'espace quand plusieurs utilisateurs importent le même modèle.",
-        "modeLabel": "Stockage des fichiers identiques",
-        "help": "Thingport compare chaque nouveau fichier de modèle à ceux déjà stockés. La copie sur écriture clone un fichier identique sur btrfs, XFS ou ZFS 2.2 et plus récent, et le stocke normalement ailleurs ; les copies restent indépendantes. Un lien physique partage le fichier sur n'importe quel système de fichiers unique, mais le modifier directement sur le disque le change pour tous les utilisateurs, et les sauvegardes doivent conserver les liens physiques (rsync -H).",
+        "modeLabel": "Cloner les fichiers identiques (copie sur écriture)",
+        "help": "Thingport compare chaque nouveau fichier de modèle à ceux déjà stockés. La copie sur écriture clone un fichier identique sur btrfs, XFS ou ZFS 2.2 et plus récent, et le stocke normalement ailleurs. Chaque clone est un fichier à part entière : en modifier un sur le disque ne change jamais celui d'un autre utilisateur.",
         "failed": "Impossible d'enregistrer le stockage des fichiers identiques. Veuillez réessayer.",
         "loadFailed": "Impossible de charger le stockage des fichiers identiques.",
-        "modes": {
-          "off": "Séparément",
-          "reflink": "Copie sur écriture",
-          "hardlink": "Lien physique"
-        },
         "modeHelp": {
           "off": "Chaque fichier de modèle occupe son propre espace.",
-          "reflink": "Un fichier déjà stocké est cloné quand le système de fichiers le permet, sans espace supplémentaire tant qu'aucune copie ne change.",
-          "hardlink": "Un fichier déjà stocké est partagé comme un seul fichier sur le disque, sur tout système de fichiers avec liens physiques."
+          "reflink": "Un fichier déjà stocké est cloné quand le système de fichiers le permet, sans espace supplémentaire tant qu'aucune copie ne change."
         }
       },
       "consume": {

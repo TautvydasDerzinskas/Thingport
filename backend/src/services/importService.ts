@@ -987,12 +987,34 @@ async function findExistingImportedPrint(
 
 type ExistingImportedPrint = NonNullable<Awaited<ReturnType<typeof findExistingImportedPrint>>>;
 
-export async function plateContentSha256(plate: Plate): Promise<string | null> {
-  if (plate.contentSha256) return plate.contentSha256;
+/** Size of the plate's file on disk now, or null when it can't be found. */
+async function plateFileSize(plate: Plate): Promise<number | null> {
   const filePath = resolvePlateFilePath(plate);
-  if (!filePath || !fsSync.existsSync(filePath)) return null;
-  const sha = await sha256OfFile(filePath);
-  await prisma.plate.update({ where: { id: plate.id }, data: { contentSha256: sha } });
+  if (!filePath) return null;
+  return fs.stat(filePath).then(
+    (stat) => stat.size,
+    () => null,
+  );
+}
+
+/** SHA-256 of the plate's file as it is on disk now, or null when the file is missing. Always read, never taken from
+ *  the hash on record: the storage folder may be mounted and the file edited outside Thingport since it was hashed.
+ *  The record is brought up to date when it differs, unless something else changed it meanwhile. */
+export async function plateContentSha256(plate: Plate): Promise<string | null> {
+  const filePath = resolvePlateFilePath(plate);
+  if (!filePath) return null;
+  let sha: string;
+  try {
+    sha = await sha256OfFile(filePath);
+  } catch (err: any) {
+    if (err?.code === "ENOENT") return null;
+    throw err;
+  }
+  if (sha !== plate.contentSha256)
+    await prisma.plate.updateMany({
+      where: { id: plate.id, contentSha256: plate.contentSha256 },
+      data: { contentSha256: sha },
+    });
   return sha;
 }
 
@@ -1048,7 +1070,10 @@ async function addProfilePlate(
     const untagged = existing.plates.filter((plate) => plate.sourceInstanceId == null);
     if (untagged.length) {
       const downloadedSha = await sha256OfFile(tempPath);
+      const downloadedSize = (await fs.stat(tempPath)).size;
       for (const plate of untagged) {
+        // Cheap first: a file of another size can't match, so it isn't read (and hashed on record) for nothing.
+        if ((await plateFileSize(plate)) !== downloadedSize) continue;
         if ((await plateContentSha256(plate)) !== downloadedSha) continue;
         try {
           await prisma.plate.update({ where: { id: plate.id }, data: { sourceInstanceId: instanceId } });

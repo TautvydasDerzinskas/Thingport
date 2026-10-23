@@ -43,28 +43,28 @@ are now.
 
 ## The same model for several users
 
-When several users import the same model, each gets a copy of its files in their own folder. Under **Administration →
-Storage → Identical files**, admins choose how a file that's already stored is saved again:
+When several users import the same model, each gets a copy of its files in their own folder. Admins can have
+Thingport save the space of those copies with the **Clone identical files (copy-on-write)** switch under
+**Administration → Storage → Identical files**. It's off by default, and every file is then stored on its own. Turned
+on, a file that's already stored is cloned copy-on-write on btrfs, XFS and ZFS 2.2 or later: the copy takes no extra
+space until one of them changes, and each user's file stays their own. On other filesystems the file is stored as
+usual.
 
-- **Separately** (the default) stores every file on its own.
-- **Copy-on-write** clones the stored file on btrfs, XFS and ZFS 2.2 or later. The copy takes no extra space until
-  one of them changes, and each user's file stays their own. On other filesystems the file is stored as usual.
-- **Hard link** shares the stored file on any filesystem with hard links, such as ext4. Thingport never rewrites a
-  model file in place, so this is safe inside Thingport, but:
-  - the whole storage folder has to be on one filesystem;
-  - editing such a file directly on disk changes it for every user who has it;
-  - backups need to keep hard links, or they store each copy in full (`rsync -H`, for example).
-
-The disk space under **Administration → Overview** counts a hard-linked file once, but a copy-on-write clone in full,
-as the filesystem doesn't say which parts are shared.
+The disk space under **Administration → Overview** counts a copy-on-write clone in full, as the filesystem doesn't
+say which parts are shared.
 
 Thingport recognises a file by its content, so this applies to uploads, consume-folder imports and imports from any
-site alike. It still downloads the file first; only the space on disk is saved. Files stored before this version are
-only matched once Thingport has read their content, so the saving applies mostly to files added from now on.
+site alike. It still downloads the file first; only the space on disk is saved. Only files stored while the switch is
+on are recorded and can be reused: files stored while it was off aren't matched, and turning it on doesn't go back
+over the files already there. Turning it off leaves existing clones as the ordinary, independent files they are.
 
-Files edited on disk outside Thingport are handled too: before a copy is kept, Thingport reads it back and checks it
-is exactly the file that was just imported. A stored file that changed since it was recorded isn't shared, and isn't
-offered again.
+Each copy-on-write copy is an independent file, so editing one on disk never changes another user's. Before a stored
+file is reused, the copy is read back and checked against the new import, and a stored file that changed since it was
+recorded isn't reused.
+
+Copying or backing up the storage folder with a tool that doesn't keep reflinks, such as plain `rsync` or `cp`, writes
+every copy out in full at the destination. Reflink-aware tools, such as `cp --reflink` or `btrfs send`, keep the
+saving.
 
 ## How much space it takes
 

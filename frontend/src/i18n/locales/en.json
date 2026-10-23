@@ -924,19 +924,13 @@
       "fileReuse": {
         "heading": "Identical files",
         "subtitle": "Save space when several users import the same model.",
-        "modeLabel": "Store identical files",
-        "help": "Thingport compares each new model file with the ones already stored. Copy-on-write clones a match on btrfs, XFS or ZFS 2.2 and later, and stores the file as usual elsewhere; the copies stay independent. A hard link shares the file on any single filesystem, but editing it directly on disk changes it for every user, and backups need to keep hard links (rsync -H).",
+        "modeLabel": "Clone identical files (copy-on-write)",
+        "help": "Thingport compares each new model file with the ones already stored. Copy-on-write clones a match on btrfs, XFS or ZFS 2.2 and later, and stores the file as usual elsewhere. Each clone is a file of its own, so editing one on disk never changes another user's.",
         "failed": "Couldn't save how identical files are stored. Please try again.",
         "loadFailed": "Couldn't load how identical files are stored.",
-        "modes": {
-          "off": "Separately",
-          "reflink": "Copy-on-write",
-          "hardlink": "Hard link"
-        },
         "modeHelp": {
           "off": "Every model file takes its own space.",
-          "reflink": "A file already stored is cloned where the filesystem can, taking no extra space until one copy changes.",
-          "hardlink": "A file already stored is shared as one file on disk, on any filesystem with hard links."
+          "reflink": "A file already stored is cloned where the filesystem can, taking no extra space until one copy changes."
         }
       },
       "consume": {

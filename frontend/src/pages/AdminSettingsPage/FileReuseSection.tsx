@@ -1,13 +1,15 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
+import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
 import { UnauthorizedError } from "../../api/client";
 import { settingsApi, type FileReuse } from "../../api/settings";
-import Segmented from "../../components/controls/Segmented";
 import HelpTip from "../../components/HelpTip";
 import SectionHeader from "../../components/SectionHeader";
 import { useToast } from "../../components/ToastProvider";
@@ -17,8 +19,6 @@ import FileReuseAnimation from "../../components/storageAnimations/FileReuseAnim
 type Props = {
   onUnauthorized?: () => void;
 };
-
-const MODES: FileReuse[] = ["off", "reflink", "hardlink"];
 
 /** How a model file identical to one already stored, say the same model imported by two users, is saved. */
 export default function FileReuseSection({ onUnauthorized }: Props) {
@@ -69,26 +69,33 @@ export default function FileReuseSection({ onUnauthorized }: Props) {
           <AnimatedTile>
             <FileReuseAnimation size={76} mode={mode ?? "off"} />
           </AnimatedTile>
-          <Stack spacing={0.75} alignItems="flex-start" sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="body2" fontWeight={600}>
-              {t("adminSettings.fileReuse.modeLabel")}
-              <HelpTip text={t("adminSettings.fileReuse.help")} />
-            </Typography>
+          <Stack spacing={1} alignItems="flex-start" sx={{ flex: 1, minWidth: 0 }}>
             <Stack direction="row" spacing={1.5} alignItems="center">
-              <Segmented
-                label={t("adminSettings.fileReuse.modeLabel")}
-                value={mode ?? "off"}
-                onChange={(next) => void select(next)}
-                disabled={mode === null || saving}
-                options={MODES.map((value) => ({ value, label: t(`adminSettings.fileReuse.modes.${value}`) }))}
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={mode === "reflink"}
+                    disabled={mode === null || saving}
+                    onChange={(e) => void select(e.target.checked ? "reflink" : "off")}
+                  />
+                }
+                label={
+                  <Box>
+                    <Typography variant="body2" fontWeight={600}>
+                      {t("adminSettings.fileReuse.modeLabel")}
+                      <HelpTip text={t("adminSettings.fileReuse.help")} />
+                    </Typography>
+                    {mode !== null && (
+                      <Typography variant="caption" color="text.secondary">
+                        {t(`adminSettings.fileReuse.modeHelp.${mode}`)}
+                      </Typography>
+                    )}
+                  </Box>
+                }
+                sx={{ alignItems: "flex-start", m: 0, "& .MuiSwitch-root": { mt: -0.5 } }}
               />
-              {saving && <CircularProgress size={14} />}
+              {saving && <CircularProgress size={16} />}
             </Stack>
-            {mode !== null && (
-              <Typography variant="caption" color="text.secondary">
-                {t(`adminSettings.fileReuse.modeHelp.${mode}`)}
-              </Typography>
-            )}
             {loadFailed && <Alert severity="error">{t("adminSettings.fileReuse.loadFailed")}</Alert>}
           </Stack>
         </Stack>

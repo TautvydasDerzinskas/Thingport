@@ -117,12 +117,12 @@ export async function setPreviewMode(value: PreviewMode): Promise<void> {
 
 // How a model file identical to one already stored (by SHA-256) is saved (services/fileReuse.ts), instance-wide
 // since the copies may belong to different users. "reflink" clones it copy-on-write where the filesystem can (btrfs,
-// XFS, ZFS >= 2.2), so the copies stay independent and only take space once they differ; elsewhere it's stored as
-// usual. "hardlink" shares the file itself on any filesystem that has hard links: Thingport never rewrites a stored
-// model file in place, but an edit made to one outside Thingport changes it for everyone who has it. Off unless an
-// admin chooses, since the storage folder may be mounted and its files edited.
-export type FileReuse = "off" | "reflink" | "hardlink";
-export const FILE_REUSE_MODES: readonly FileReuse[] = ["off", "reflink", "hardlink"];
+// XFS, ZFS >= 2.2), so the copies stay independent files and only take space once they differ; elsewhere it's stored
+// as usual. There's deliberately no hard-link mode: a hard link is one file, so editing one user's copy on disk would
+// silently change every other user's too. Off unless an admin chooses, since the storage folder may be mounted and
+// its files edited outside Thingport; an unknown stored value (such as an old "hardlink") reads as off.
+export type FileReuse = "off" | "reflink";
+export const FILE_REUSE_MODES: readonly FileReuse[] = ["off", "reflink"];
 const FILE_REUSE_KEY = "file_reuse";
 const DEFAULT_FILE_REUSE: FileReuse = "off";
 
