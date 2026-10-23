@@ -7,6 +7,7 @@ import { pathToken } from "./auth";
 
 import healthRoutes from "./routes/health";
 import mcpRoutes from "./routes/mcp";
+import iconRoutes from "./routes/icons";
 import captchaRoutes from "./routes/captcha";
 import authRoutes from "./routes/auth";
 import oidcRoutes from "./routes/oidc";
@@ -29,6 +30,7 @@ import notificationsRoutes from "./routes/notifications";
 import releaseNotesRoutes from "./routes/releaseNotes";
 import adminRoutes from "./routes/admin";
 import dashboardRoutes from "./routes/dashboard";
+import widgetRoutes from "./routes/widgets";
 import activityRoutes from "./routes/activity";
 import aiCategorizationRoutes from "./routes/aiCategorization";
 import aiDescriptionRoutes from "./routes/aiDescriptions";
@@ -46,6 +48,8 @@ export function createApp(): Express {
   );
 
   app.use(pathToken);
+  // A widget's script, HTML and fetch body are larger than the default 100 kB; their own validation sets the limits.
+  app.use(["/api/widgets", "/api/mcp"], express.json({ limit: "8mb" }));
   app.use(express.json());
   app.use("/api", trackClients);
 
@@ -53,6 +57,8 @@ export function createApp(): Express {
   app.use("/api", healthRoutes);
   // Before the routers that apply requireAuth to every path: see routes/mcp.ts.
   app.use("/api", mcpRoutes);
+  // Also before them: an icon's file is public.
+  app.use("/api", iconRoutes);
   app.use("/api", captchaRoutes);
   app.use("/api", authRoutes);
   app.use("/api", oidcRoutes);
@@ -78,6 +84,7 @@ export function createApp(): Express {
   // Own prefix: on bare /api, its requireAdmin would also run for every route mounted after it.
   app.use("/api/admin", adminRoutes);
   app.use("/api", dashboardRoutes);
+  app.use("/api", widgetRoutes);
   app.use("/api", activityRoutes);
 
   app.use((_req: Request, res: Response) => {
@@ -88,6 +95,12 @@ export function createApp(): Express {
   app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
     if (err instanceof HttpError) {
       res.status(err.status).json({ detail: err.message, ...(err.code ? { code: err.code } : {}) });
+      return;
+    }
+    // The body parser's own errors: too large, malformed JSON.
+    const status = (err as { status?: unknown; expose?: unknown }).status;
+    if (typeof status === "number" && status >= 400 && status < 500 && (err as { expose?: unknown }).expose) {
+      res.status(status).json({ detail: (err as Error).message });
       return;
     }
     console.error(err);

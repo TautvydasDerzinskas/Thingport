@@ -141,11 +141,14 @@ model User {
   renderColor              String?
   // Which tree the models page shows: "categories" | "folders"; null means categories.
   categoriesView           String?
-  // The dashboard widgets the user has switched on or off, as { [widgetId]: boolean }. A widget
-  // missing from it shows or hides by its own default, so new widgets need no migration.
+  // The dashboard widgets the user had switched on or off, as { [widgetId]: boolean }. Superseded by
+  // dashboardTemplates; read only to carry the user's choices into their first template.
   dashboardWidgets         Json?
-  // How the dashboard arranges its boxes, one of DASHBOARD_LAYOUTS; null means "left".
+  // How the dashboard arranged its boxes, one of DASHBOARD_LAYOUTS; null when never chosen. Superseded like the above.
   dashboardLayout          String?
+  // The dashboard's templates and which one shows: { active, templates: [{ id, name, preset, panels, layouts }] }.
+  // Null until the user's first visit after it arrived, when the frontend builds it from the two above.
+  dashboardTemplates       Json?
   // What model cards lead with, one of CARD_PREVIEWS; null means "images".
   cardPreview              String?
   // Where the dashboard's weather is for: { lat, lon, name, source }. Null until the user sets one.
@@ -159,6 +162,8 @@ model User {
   categories               Category[]
   prints                   Print[]
   collections              Collection[]
+  customWidgets            CustomWidget[]
+  icons                    UserIcon[]
   collectionSyncs          CollectionSync[]
   providerListings         ProviderListing[]
   importJobs               ImportJob[]
@@ -653,6 +658,44 @@ model PrintFile {
   preparedFor Print?        @relation("PreparedFile")
 
   @@index([printId, role])
+}
+
+/// A dashboard widget the user made, or installed from the community repository. Its script runs in the user's own
+/// dashboard page; a community one runs as installed, until the user takes an update.
+model CustomWidget {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// "own" or "community".
+  source    String
+  /// The folder name: unique among a user's own widgets, and the community repository's for an installed one.
+  slug      String
+  /// The validated metadata: name, description, icon, size, settings, hosts.
+  manifest  Json
+  script    String
+  html      String?
+  /// Of the installed files, to tell when the community repository's copy has changed.
+  sha       String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, source, slug])
+  @@index([userId])
+}
+
+/// An image the user uploaded to pick as an icon, for a launcher link or a custom widget.
+model UserIcon {
+  /// Random, as it's also the public file name: /api/icons/<id>.<ext>.
+  id        String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// The uploaded file's name, without its extension.
+  name      String
+  /// "png" or "svg".
+  ext       String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Setting {

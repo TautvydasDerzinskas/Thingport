@@ -1,5 +1,5 @@
-import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
+import DashboardCard from "./DashboardCard";
 
 type Props = {
   icon: React.ReactNode;
@@ -11,18 +11,18 @@ type Props = {
 /** With `onClick`, the whole card is a link. */
 export default function CountCard({ icon, count, label, onClick }: Props) {
   return (
-    <Paper
-      variant="outlined"
+    <DashboardCard
       onClick={onClick}
+      scroll={false}
+      // Fits the smallest panel it can be, two rows: padding, icon, count and label add up to 140px.
       sx={{
-        p: 3,
+        px: 3,
+        py: 2,
         display: "flex",
         flexDirection: "column",
         alignItems: "flex-start",
         justifyContent: "center",
-        gap: 1,
-        minHeight: 140,
-        borderColor: (theme) => (theme.palette.mode === "dark" ? "transparent" : "divider"),
+        gap: 0.5,
         ...(onClick && {
           cursor: "pointer",
           transition: (theme) =>
@@ -34,12 +34,12 @@ export default function CountCard({ icon, count, label, onClick }: Props) {
       <Typography component="div" sx={{ color: "primary.main", display: "flex" }}>
         {icon}
       </Typography>
-      <Typography variant="h3" fontWeight={700} sx={{ color: (theme) => theme.thingport.headingText }}>
+      <Typography variant="h3" fontWeight={700} sx={{ lineHeight: 1, color: (theme) => theme.thingport.headingText }}>
         {count}
       </Typography>
       <Typography variant="body2" color="text.secondary">
         {label}
       </Typography>
-    </Paper>
+    </DashboardCard>
   );
 }

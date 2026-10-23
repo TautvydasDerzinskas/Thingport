@@ -16,13 +16,24 @@ import { listPrints, PRINT_SORT_MODES, SELF_AUTHOR_ID, type PrintListPage } from
 import { search } from "../services/searchService";
 import { getImportTask, startImportTask, type ImportTaskState } from "../services/importTaskService";
 import { importAndDescribe, prepareSingleImport } from "../services/singleImport";
+import {
+  assertWidgetSourceEnabled,
+  enabledWidgetSources,
+  listCustomWidgets,
+  parseManifest,
+  saveOwnWidget,
+  validateManifest,
+} from "../services/customWidgetsService";
+import { CUSTOM_WIDGET_GUIDE } from "../services/customWidgetGuide";
+import { ICON_MAX_BYTES, listIcons as listUserIcons, saveIcon } from "../services/iconService";
+import BUILTIN_ICONS from "./builtinIcons.json";
 
 // The tools /api/mcp offers. Each runs as the token's user, through the same services as the REST
 // API, so it sees exactly that user's library. Outputs are trimmed to what an assistant can use:
 // no image or file URLs, which need a session to open anyway.
 //
 // A token reaches only the tools its user ticked (see routes/mcp.ts). A tool that writes must say so with
-// `readOnly: false`: it's then off for every token until its user turns it on.
+// `readOnly: false`: it's then off for a new token until its user turns it on, unless it's `defaultOn`.
 
 export type McpToolContext = {
   userId: string;
@@ -35,6 +46,8 @@ export type McpToolDefinition = {
   title: string;
   description: string;
   readOnly: boolean;
+  /** A write tool a new token gets anyway, for writes that stay in the user's own space. */
+  defaultOn?: boolean;
   /** Calling it again with the same arguments changes nothing more. */
   idempotent?: boolean;
   /** Reaches outside this Thingport, e.g. a provider's site. */
@@ -523,6 +536,145 @@ const addToCollection: McpToolDefinition = {
   },
 };
 
+const widgetGuide: McpToolDefinition = {
+  name: "widget_guide",
+  title: "How to write a dashboard widget",
+  description:
+    "Read this before writing a custom dashboard widget: its metadata, the script's `thingport` argument, the rules, " +
+    "and how to share it. Then save it with save_widget.",
+  readOnly: true,
+  idempotent: true,
+  inputSchema: {},
+  async run() {
+    return { guide: CUSTOM_WIDGET_GUIDE };
+  },
+};
+
+const listWidgets: McpToolDefinition = {
+  name: "list_widgets",
+  title: "List my dashboard widgets",
+  description:
+    "The user's custom dashboard widgets: their own and those installed from the community, with each one's " +
+    "metadata, and with `include_code` its script and HTML too, e.g. to change one.",
+  readOnly: true,
+  idempotent: true,
+  inputSchema: {
+    include_code: z.boolean().optional().describe("Also return each widget's script and HTML."),
+  },
+  async run(ctx, args) {
+    const widgets = await listCustomWidgets(ctx.userId, await enabledWidgetSources());
+    return {
+      widgets: widgets.map((widget) => ({
+        id: widget.id,
+        slug: widget.slug,
+        source: widget.source,
+        metadata: widget.manifest,
+        script: args.include_code ? widget.script : undefined,
+        html: args.include_code ? widget.html : undefined,
+      })),
+    };
+  },
+};
+
+const saveWidget: McpToolDefinition = {
+  name: "save_widget",
+  title: "Save a dashboard widget",
+  description:
+    "Create one of the user's own dashboard widgets, or replace the one with the same slug. Read widget_guide first. " +
+    "Its script runs in the user's dashboard with their access, so write only what the user asked for. The user " +
+    "then adds it from Add panel while editing their dashboard.",
+  readOnly: false,
+  defaultOn: true,
+  idempotent: true,
+  inputSchema: {
+    slug: z
+      .string()
+      .describe("The widget's folder name: 2-40 lowercase letters, digits and dashes, e.g. print-farm-status."),
+    metadata: z
+      .union([z.record(z.string(), z.unknown()), z.string()])
+      .describe("The metadata, as an object, or as JSON or YAML text."),
+    script: z.string().describe("The ES module; its `export default` function draws the widget."),
+    html: z.string().optional().describe("Markup put into the panel before the script runs, e.g. a <style>."),
+  },
+  async run(ctx, args) {
+    await assertWidgetSourceEnabled("own");
+    const metadata = args.metadata;
+    const manifest = typeof metadata === "string" ? parseManifest(metadata) : validateManifest(metadata);
+    const widget = await saveOwnWidget(ctx.userId, {
+      slug: args.slug as string,
+      manifest,
+      script: args.script as string,
+      html: (args.html as string | undefined) ?? null,
+    });
+    return {
+      id: widget.id,
+      slug: widget.slug,
+      name: widget.manifest.name,
+      next: "Ask the user to open their dashboard, choose Edit, then Add panel, and pick the widget.",
+    };
+  },
+};
+
+// Generated from the frontend's icon browser: `npm run icons:sync` in frontend/.
+type BuiltinIcon = { value: string; name: string; group: string; keywords?: string };
+const builtinIcons: BuiltinIcon[] = BUILTIN_ICONS;
+
+const listIconsTool: McpToolDefinition = {
+  name: "list_icons",
+  title: "Find an icon",
+  description:
+    "Thingport's own icons and those the user uploaded, as the icon browser shows them: e.g. for a widget's " +
+    "`iconUrl`. Search by name, such as `octoprint` or `timer`; each comes with the `value` to use.",
+  readOnly: true,
+  idempotent: true,
+  inputSchema: {
+    query: z.string().max(100).optional().describe("Words in the icon's name, e.g. `jellyfin` or `calendar`."),
+    limit: pageArgs.limit,
+  },
+  async run(ctx, args) {
+    const words = String(args.query ?? "")
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(Boolean);
+    const matches = (...texts: (string | undefined)[]) => {
+      const haystack = texts.join(" ").toLowerCase();
+      return words.every((word) => haystack.includes(word));
+    };
+    const uploaded = (await listUserIcons(ctx.userId))
+      .filter((icon) => matches(icon.name))
+      .map((icon) => ({ value: icon.url, name: icon.name, group: "uploaded" }));
+    const builtin = builtinIcons
+      .filter((icon) => matches(icon.name, icon.value, icon.keywords))
+      .map(({ value, name, group }) => ({ value, name, group }));
+    const all = [...uploaded, ...builtin];
+    return { icons: all.slice(0, (args.limit as number | undefined) ?? MAX_PAGE), total: all.length };
+  },
+};
+
+const uploadIcon: McpToolDefinition = {
+  name: "upload_icon",
+  title: "Upload an icon",
+  description:
+    "Keep an image as one of the user's icons, as the icon browser's Upload does: an SVG as text, or a PNG, JPEG or " +
+    `WebP as base64, up to ${ICON_MAX_BYTES / 1024 / 1024} MB. Returns its \`value\`, to use as a widget's ` +
+    "`iconUrl`. Look with list_icons first, and upload only when nothing there fits.",
+  readOnly: false,
+  defaultOn: true,
+  inputSchema: {
+    name: z.string().min(1).max(80).describe("What the icon shows, e.g. `print farm`."),
+    svg: z.string().optional().describe("The SVG's markup. Prefer this: it stays sharp at every size."),
+    base64: z.string().optional().describe("A PNG, JPEG or WebP, base64-encoded, when it isn't an SVG."),
+  },
+  async run(ctx, args) {
+    const svg = args.svg as string | undefined;
+    const base64 = args.base64 as string | undefined;
+    if (!svg === !base64) throw new HttpError(400, "Give the icon as `svg` or as `base64`, one of them");
+    const buffer = svg ? Buffer.from(svg, "utf8") : Buffer.from(base64!, "base64");
+    const icon = await saveIcon(ctx.userId, { buffer, originalname: args.name as string });
+    return { value: icon.url, name: icon.name };
+  },
+};
+
 export const MCP_TOOLS: readonly McpToolDefinition[] = [
   searchModels,
   listModels,
@@ -537,6 +689,11 @@ export const MCP_TOOLS: readonly McpToolDefinition[] = [
   importModel,
   createCollectionTool,
   addToCollection,
+  widgetGuide,
+  listWidgets,
+  saveWidget,
+  listIconsTool,
+  uploadIcon,
 ];
 
 export const MCP_TOOL_NAMES = MCP_TOOLS.map((tool) => tool.name);
@@ -557,5 +714,7 @@ export function mcpToolCatalog(access: McpAccess) {
   }));
 }
 
-/** What a new token gets when its user doesn't choose: every tool that only reads. */
-export const DEFAULT_MCP_TOOL_NAMES = MCP_TOOLS.filter((tool) => tool.readOnly).map((tool) => tool.name);
+/** What a new token gets when its user doesn't choose: every tool that only reads, and the `defaultOn` ones. */
+export const DEFAULT_MCP_TOOL_NAMES = MCP_TOOLS.filter((tool) => tool.readOnly || tool.defaultOn).map(
+  (tool) => tool.name,
+);

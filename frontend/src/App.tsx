@@ -3,11 +3,12 @@ import { useTranslation } from "react-i18next";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import Box from "@mui/material/Box";
-import { BrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import AppLayout from "./components/Layout/AppLayout";
-import DashboardPage from "./pages/DashboardPage";
+import DashboardPage, { HOMEPAGE_PATH } from "./pages/DashboardPage";
+import HomepageView from "./pages/DashboardPage/HomepageView";
 import ModelsPage from "./pages/ModelsPage";
 import ModelDetailPage from "./pages/ModelDetailPage";
 import CollectionsPage from "./pages/CollectionsPage";
@@ -31,6 +32,7 @@ import AdminPage from "./pages/AdminPage";
 import ProvidersPage from "./pages/AdminSettingsPage/ProvidersPage";
 import StorageSettingsPage from "./pages/AdminSettingsPage/StoragePage";
 import AuthSettingsPage from "./pages/AdminSettingsPage/AuthPage";
+import DashboardAdminPage from "./pages/DashboardAdminPage";
 import UsersPage from "./pages/UsersPage";
 import LogsPage from "./pages/LogsPage";
 import NotificationsPage from "./pages/NotificationsPage";
@@ -59,6 +61,7 @@ import { useResolvedTheme } from "./hooks/useResolvedTheme";
 import { setCachedAccentColor, setCachedRenderColor, useAccentColor } from "./hooks/useAccentColor";
 import { resetCardPreview } from "./hooks/useCardPreview";
 import { resetHoverSlideshowEnabled } from "./hooks/useHoverSlideshowEnabled";
+import { resetCustomWidgets } from "./hooks/useCustomWidgets";
 import { DEFAULT_ACCENT, type ResolvedTheme, type ThemeSelection } from "./constants/settingsOptions";
 import { buildTheme } from "./theme";
 
@@ -117,6 +120,7 @@ function AppShell({
   onUserUpdated,
 }: AppShellProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   // Seeded from the URL so a direct load of /models?category=<id> doesn't flash "All" first.
   const [categoryId, setCategoryId] = React.useState<string | null>(() => {
     if (typeof window === "undefined" || !window.location.pathname.startsWith("/models")) return null;
@@ -144,6 +148,19 @@ function AppShell({
     [setSettings],
   );
 
+  // The homepage view: the dashboard alone, without the app's side menu and top bar.
+  if (location.pathname === HOMEPAGE_PATH)
+    return (
+      <HomepageView
+        muiTheme={muiTheme}
+        isAdmin={isAdmin}
+        onUnauthorized={onUnauthorized}
+        themeSelection={themeSelection}
+        onThemeChange={onThemeChange}
+        onLogout={onLogout}
+      />
+    );
+
   return (
     <AppLayout
       muiTheme={muiTheme}
@@ -163,7 +180,7 @@ function AppShell({
       onThemeChange={onThemeChange}
     >
       <Routes>
-        <Route path="/" element={<DashboardPage onUnauthorized={onUnauthorized} />} />
+        <Route path="/" element={<DashboardPage onUnauthorized={onUnauthorized} isAdmin={isAdmin} />} />
         <Route
           path="/models"
           element={
@@ -293,6 +310,10 @@ function AppShell({
           }
         />
         <Route
+          path="/admin-dashboard"
+          element={isAdmin ? <DashboardAdminPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
+        />
+        <Route
           path="/admin-ai"
           element={isAdmin ? <AiPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
         />
@@ -407,6 +428,7 @@ export default function App() {
   const handleLogin = (tok: string, _expiresIn: number, loggedInUser: AuthUser) => {
     resetCardPreview();
     resetHoverSlideshowEnabled();
+    resetCustomWidgets();
     storeToken(tok);
     storeUser(loggedInUser);
     setToken(tok);
@@ -435,6 +457,7 @@ export default function App() {
   }, []);
 
   const expireSession = React.useCallback(() => {
+    resetCustomWidgets();
     clearToken();
     setToken(null);
     setShowExpiredToast(true);
@@ -510,6 +533,7 @@ export default function App() {
   // Rejects, leaving the user signed in, when the server didn't confirm the session ended.
   const handleLogout = async () => {
     await authApi.logout();
+    resetCustomWidgets();
     clearToken();
     clearUser();
     setToken(null);

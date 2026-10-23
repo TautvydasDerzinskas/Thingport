@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import Paper from "@mui/material/Paper";
+import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import DashboardCard from "./DashboardCard";
 
 // A status-bar look: monospace, the time as the anchor, the date small and spaced out.
 export const MONO_FONT = '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
@@ -34,27 +35,40 @@ function useMinute(): Date {
   return now;
 }
 
-export default function ClockCard() {
+type Props = {
+  /** 12-hour shows AM/PM, smaller, after the time. */
+  hourCycle: "12" | "24";
+  showDate: boolean;
+  showGreeting: boolean;
+};
+
+export default function ClockCard({ hourCycle, showDate, showGreeting }: Props) {
   const { t, i18n } = useTranslation("app");
   const now = useMinute();
-  const time = new Intl.DateTimeFormat(i18n.language, { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(
-    now,
-  );
+  const parts = new Intl.DateTimeFormat(i18n.language, {
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: hourCycle === "12" ? "h12" : "h23",
+  }).formatToParts(now);
+  const time = parts
+    .filter((part) => part.type !== "dayPeriod")
+    .map((part) => part.value)
+    .join("")
+    .trim();
+  const dayPeriod = parts.find((part) => part.type === "dayPeriod")?.value;
   const weekday = new Intl.DateTimeFormat(i18n.language, { weekday: "short" }).format(now);
   const day = new Intl.DateTimeFormat(i18n.language, { month: "short", day: "numeric" }).format(now);
 
   return (
-    <Paper
-      variant="outlined"
+    <DashboardCard
+      scroll={false}
       sx={{
         p: 3,
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
         gap: 0.75,
-        minHeight: 140,
         fontFamily: MONO_FONT,
-        borderColor: (theme) => (theme.palette.mode === "dark" ? "transparent" : "divider"),
       }}
     >
       <Typography
@@ -71,21 +85,30 @@ export default function ClockCard() {
         }}
       >
         {time}
+        {dayPeriod && (
+          <Box component="span" sx={{ fontSize: "0.4em", fontWeight: 500, letterSpacing: "0.04em", ml: 0.75 }}>
+            {dayPeriod}
+          </Box>
+        )}
       </Typography>
-      <Typography
-        sx={{
-          fontFamily: "inherit",
-          fontSize: "0.8rem",
-          letterSpacing: "0.12em",
-          textTransform: "uppercase",
-          color: "text.secondary",
-        }}
-      >
-        {`${weekday} · ${day}`}
-      </Typography>
-      <Typography sx={{ fontFamily: "inherit", fontSize: "0.75rem", color: "text.disabled" }}>
-        {t(`dashboard.clock.greeting.${greetingKey(now.getHours())}`)}
-      </Typography>
-    </Paper>
+      {showDate && (
+        <Typography
+          sx={{
+            fontFamily: "inherit",
+            fontSize: "0.8rem",
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: "text.secondary",
+          }}
+        >
+          {`${weekday} · ${day}`}
+        </Typography>
+      )}
+      {showGreeting && (
+        <Typography sx={{ fontFamily: "inherit", fontSize: "0.75rem", color: "text.disabled" }}>
+          {t(`dashboard.clock.greeting.${greetingKey(now.getHours())}`)}
+        </Typography>
+      )}
+    </DashboardCard>
   );
 }

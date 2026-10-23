@@ -3,6 +3,7 @@ import { IMPORT_TIMEOUT_SECONDS } from "../config";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "./importResolvers";
 import { htmlToMarkdown } from "./descriptionMarkdown";
 import type { ProviderCollectionCard } from "./providerCollectionCard";
+import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "./trendingModel";
 
 // Creality Cloud has no public API, so this is the one its own pages call: every call a POST with a JSON body, and
 // every answer `{code, msg, result}` with a code of its own. It refuses ("Invalid Parameter") any call without the
@@ -535,4 +536,26 @@ export async function listCrealitycloudCollections(auth: CrealitycloudAuth): Pro
     });
   }
   return cards;
+}
+
+/** Creality Cloud's recommended models, as its homepage shows them; it has no trending list. Public; no sign-in. */
+export async function fetchCrealitycloudRecommended(limit: number): Promise<TrendingModel[]> {
+  const { result } = await fetchApi("/v3/model/recommendv4", { cursor: "", limit }, null);
+  return recordsOf(asRecord(result)?.list).flatMap((entry) => {
+    const model = asRecord(entry.model);
+    const modelId = asText(model?.id);
+    // Only models it rates for everyone.
+    if (!model || !modelId || (asText(model.maturityRating) ?? "general") !== "general") return [];
+    return [
+      {
+        id: modelId,
+        title: asText(model.groupName) ?? modelId,
+        url: crealitycloudModelUrl(modelId),
+        image: webImage(recordsOf(model.covers)[0]?.url),
+        likes: asCount(model.likeCount),
+        author: asText(asRecord(model.userInfo)?.nickName),
+        paid: model.isPay === true,
+      },
+    ];
+  });
 }

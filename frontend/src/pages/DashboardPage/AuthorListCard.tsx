@@ -1,8 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import Paper from "@mui/material/Paper";
-import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import List from "@mui/material/List";
@@ -15,9 +13,13 @@ import PersonIcon from "@mui/icons-material/Person";
 import { dashboardApi, type DashboardAuthor } from "../../api/dashboard";
 import SeeMoreDialog from "./SeeMoreDialog";
 import AuthorHoverCard from "../../components/AuthorHoverCard";
+import DashboardCard, { DashboardCardBody, DashboardCardTitle, hasMore } from "./DashboardCard";
 
 type Props = {
   authors: DashboardAuthor[];
+  /** How many rows show; the summary holds more. */
+  count: number;
+  showMore: boolean;
 };
 
 function AuthorRow({
@@ -49,51 +51,42 @@ function AuthorRow({
   );
 }
 
-export default function AuthorListCard({ authors }: Props) {
+export default function AuthorListCard({ authors, count, showMore }: Props) {
   const { t } = useTranslation("app");
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
-  const modelCountLabel = (count: number) => t("dashboard.topAuthors.modelCount", { count });
+  const modelCountLabel = (models: number) => t("dashboard.topAuthors.modelCount", { count: models });
 
   return (
-    <Paper
-      variant="outlined"
-      sx={{
-        p: 2.5,
-        display: "flex",
-        flexDirection: "column",
-        borderColor: (theme) => (theme.palette.mode === "dark" ? "transparent" : "divider"),
-      }}
-    >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1, color: "primary.main" }}>
-        <StarIcon />
-        <Typography variant="h6" fontWeight={700} sx={{ color: (theme) => theme.thingport.headingText }}>
-          {t("dashboard.topAuthors.title")}
-        </Typography>
-      </Box>
+    <DashboardCard scroll={false} sx={{ p: 2.5, display: "flex", flexDirection: "column" }}>
+      <DashboardCardTitle icon={<StarIcon />} title={t("dashboard.topAuthors.title")} sx={{ mb: 1, flexShrink: 0 }} />
 
-      {authors.length === 0 ? (
-        <Typography color="text.secondary" sx={{ py: 2 }}>
-          {t("dashboard.topAuthors.empty")}
-        </Typography>
-      ) : (
-        <List dense disablePadding>
-          {authors.map((author, idx) => (
-            <AuthorRow
-              key={author.id}
-              author={author}
-              rank={idx + 1}
-              modelCountLabel={modelCountLabel}
-              onClick={() => navigate(`/authors/${author.id}`)}
-            />
-          ))}
-        </List>
+      <DashboardCardBody>
+        {authors.length === 0 ? (
+          <Typography color="text.secondary" sx={{ py: 2 }}>
+            {t("dashboard.topAuthors.empty")}
+          </Typography>
+        ) : (
+          <List dense disablePadding>
+            {authors.slice(0, count).map((author, idx) => (
+              <AuthorRow
+                key={author.id}
+                author={author}
+                rank={idx + 1}
+                modelCountLabel={modelCountLabel}
+                onClick={() => navigate(`/authors/${author.id}`)}
+              />
+            ))}
+          </List>
+        )}
+      </DashboardCardBody>
+
+      {showMore && hasMore(authors.length, count) && (
+        <Button onClick={() => setDialogOpen(true)} sx={{ alignSelf: "flex-start", mt: 1, flexShrink: 0 }}>
+          {t("dashboard.seeMore")}
+        </Button>
       )}
-
-      <Button onClick={() => setDialogOpen(true)} sx={{ alignSelf: "flex-start", mt: 1 }}>
-        {t("dashboard.seeMore")}
-      </Button>
 
       <SeeMoreDialog
         open={dialogOpen}
@@ -114,6 +107,6 @@ export default function AuthorListCard({ authors }: Props) {
           />
         )}
       />
-    </Paper>
+    </DashboardCard>
   );
 }

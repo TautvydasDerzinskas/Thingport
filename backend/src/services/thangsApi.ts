@@ -5,6 +5,7 @@ import type { ImportedAuthorInfo, ImportedPageMetadata } from "./importResolvers
 import type { ProviderCollectionCard } from "./providerCollectionCard";
 import { extractJsonFromBrowserBody, fetchViaFlaresolverr, isCloudflareChallenge } from "./flaresolverr";
 import { getFlaresolverrUrl } from "./settingsService";
+import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "./trendingModel";
 
 // Thangs has no public API, so this is the one its own pages call. Details, the likes of any user and public
 // collections need no sign-in; downloads, private collections and purchases need the user's access token, a 7-day JWT
@@ -544,4 +545,27 @@ export async function listThangsCollections(
     if (items.length < PAGE_SIZE) break;
   }
   return cards;
+}
+
+/** Thangs' trending models today, as its "Trending" page lists them. Public; no sign-in. Some are for sale. */
+export async function fetchThangsTrending(limit: number): Promise<TrendingModel[]> {
+  const { status, data } = await fetchApi(
+    `/landing/models/v8/root?page=0&pageSize=${limit}&category=&tags=&sortBy=trending&range=today&sortDir=desc&costType=all`,
+  );
+  if (status !== 200) throw new Error(`Thangs returned HTTP ${status}`);
+  return recordsOf(asRecord(data)?.items).flatMap((item) => {
+    const modelId = asText(item.id);
+    if (!modelId) return [];
+    return [
+      {
+        id: modelId,
+        title: asText(item.name) ?? modelId,
+        url: thangsModelUrl(modelId),
+        image: webImage(item.image),
+        likes: asCount(item.likesCount),
+        author: asText(asRecord(item.owner)?.username),
+        paid: item.isPaid === true,
+      },
+    ];
+  });
 }

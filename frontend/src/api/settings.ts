@@ -85,7 +85,12 @@ export type DashboardWidgetId =
   | "clock"
   | "weather"
   | "featuredModel"
-  | "activityHeatmap";
+  | "activityHeatmap"
+  | "rss"
+  | "cpu"
+  | "uptime"
+  | "launcher"
+  | "trending";
 /** Where the dashboard's weather is for; "device" came from the browser, "manual" from a search. */
 export type WeatherLocation = { lat: number; lon: number; name: string | null; source: "device" | "manual" };
 // Kept in sync by hand with the backend's DASHBOARD_LAYOUTS.
@@ -95,6 +100,39 @@ export type DashboardLayout = "left" | "top" | "right" | "bottom" | "topTwo" | "
 export type CardPreview = "images" | "renders";
 /** Only the widgets the user has switched; the rest follow their default. */
 export type DashboardWidgetChoices = Partial<Record<DashboardWidgetId, boolean>>;
+// Kept in sync by hand with the backend's DASHBOARD_BREAKPOINTS.
+export type DashboardBreakpoint = "lg" | "md" | "sm";
+/** A panel's cell on the grid, in columns and rows; `i` is the panel's id. */
+export type DashboardGridItem = { i: string; x: number; y: number; w: number; h: number };
+/**
+ * A placed widget: its id, or for a further copy of one that may repeat, its id and a suffix ("rss:k3j2h9"). The first
+ * copy keeps the bare id, so settings saved before copies existed still match. Kept in sync by hand with the backend.
+ */
+export type WidgetInstanceId = string;
+/** One box on the dashboard. More than one widget makes it a tabbed panel, showing the one at `tab`. */
+export type DashboardPanel = { id: string; widgets: WidgetInstanceId[]; tab?: number };
+export type DashboardTemplate = {
+  id: string;
+  /** Null shows the preset's translated name. */
+  name: string | null;
+  /** The built-in template it started from, if any. */
+  preset: string | null;
+  panels: DashboardPanel[];
+  /** Only the breakpoints the user has arranged; the rest are derived from the widest one. */
+  layouts: Partial<Record<DashboardBreakpoint, DashboardGridItem[]>>;
+  /** Each widget instance's options that differ from its defaults. */
+  settings?: Record<WidgetInstanceId, WidgetSettingValues>;
+};
+export type WidgetSettingValues = Record<
+  string,
+  string | number | boolean | null | string[] | Record<string, string>[] | Record<string, string | number | null>
+>;
+export type DashboardConfig = {
+  active: string;
+  templates: DashboardTemplate[];
+  /** The built-in templates the user has been given; missing on configs saved before it was tracked. */
+  offered?: string[];
+};
 
 export type PreviewMode = "automatic" | "on-demand" | "disabled";
 
@@ -882,7 +920,26 @@ export const settingsApi = {
     return res.json();
   },
 
-  getDashboardLayout: async (): Promise<{ layout: DashboardLayout }> => {
+  /** Null until the user's templates have been saved once. */
+  getDashboard: async (): Promise<{ config: DashboardConfig | null }> => {
+    const res = await fetch(`${apiBase()}/settings/dashboard`, { headers: authHeaders() });
+    assertOk(res, "Failed to load the dashboard settings");
+    return res.json();
+  },
+
+  updateDashboard: async (config: DashboardConfig): Promise<{ config: DashboardConfig }> => {
+    const res = await fetch(`${apiBase()}/settings/dashboard`, {
+      method: "PUT",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ config }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to save the dashboard settings"));
+    return res.json();
+  },
+
+  /** Null when the user never chose one of the old fixed layouts. */
+  getDashboardLayout: async (): Promise<{ layout: DashboardLayout | null }> => {
     const res = await fetch(`${apiBase()}/settings/dashboard-layout`, { headers: authHeaders() });
     assertOk(res, "Failed to load the dashboard layout setting");
     return res.json();

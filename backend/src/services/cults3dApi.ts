@@ -3,6 +3,7 @@ import { sleep } from "../utils/concurrency";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "./importResolvers";
 import type { ProviderCollectionCard } from "./providerCollectionCard";
 import { isCloudflareChallenge } from "./flaresolverr";
+import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "./trendingModel";
 
 // Cults3D has two doors. Its GraphQL API, with the user's nickname and an API key they make on the site, reads models,
 // likes, their own printlists and their orders, and isn't behind Cloudflare. It never hands out files, though: those
@@ -778,4 +779,45 @@ export async function listCults3dCollections(
     });
   }
   return cards;
+}
+
+/** Cults3D's most downloaded models of late. Its API needs the user's own nickname and API key. */
+export async function fetchCults3dPopular(limit: number, credentials: Cults3dCredentials): Promise<TrendingModel[]> {
+  const data = await graphql(
+    credentials,
+    `
+      query ($limit: Int!) {
+        creationsBatch(limit: $limit, sort: BY_DOWNLOADS, direction: DESC) {
+          results {
+            slug
+            name
+            illustrationImageUrl
+            likesCount
+            creator {
+              nick
+            }
+            price(currency: EUR) {
+              cents
+            }
+          }
+        }
+      }
+    `,
+    { limit },
+  );
+  return recordsOf(asRecord(data.creationsBatch)?.results).flatMap((creation) => {
+    const slug = asText(creation.slug);
+    if (!slug) return [];
+    return [
+      {
+        id: slug,
+        title: asText(creation.name) ?? slug,
+        url: cults3dModelUrl(slug),
+        image: webImage(creation.illustrationImageUrl),
+        likes: asCount(creation.likesCount),
+        author: asText(asRecord(creation.creator)?.nick),
+        paid: Boolean(asCount(asRecord(creation.price)?.cents)),
+      },
+    ];
+  });
 }

@@ -290,6 +290,69 @@ const pictures: Record<string, () => React.ReactNode> = {
       <Card sx={{ ...at(14, 3, 12, 13), animation: run(fileIn, 2) }} />
     </Folder>
   ),
+  // A dashboard widget's panel, drawn by the tool: its guide, the list of them, and saving one.
+  widget_guide: () => (
+    <>
+      <Box sx={{ ...at(9, 8, 22, 26), borderRadius: "3px", border: 2, borderColor: "text.disabled" }} />
+      {[0, 1, 2].map((i) => (
+        <Box key={i} sx={{ ...at(13, 13 + i * 6, 14 - i * 3, 2), borderRadius: 1, bgcolor: "text.disabled" }} />
+      ))}
+    </>
+  ),
+  list_widgets: () => (
+    <>
+      {[0, 1, 2, 3].map((i) => (
+        <Box
+          key={i}
+          sx={{
+            ...at(9 + (i % 2) * 12, 9 + Math.floor(i / 2) * 12, 10, 10),
+            borderRadius: "3px",
+            bgcolor: i === 0 ? "primary.main" : "text.disabled",
+            opacity: i === 0 ? 0.6 : 1,
+          }}
+        />
+      ))}
+    </>
+  ),
+  save_widget: () => (
+    <>
+      <Box
+        sx={{
+          ...at(9, 9, 22, 22),
+          borderRadius: "3px",
+          border: 2,
+          borderStyle: "dashed",
+          borderColor: "text.disabled",
+        }}
+      />
+      <Box sx={{ ...at(15, 15, 10, 10), borderRadius: "3px", bgcolor: "primary.main", animation: run(pulse, 1.6) }} />
+    </>
+  ),
+  // Icons: a grid of them with the one found lighting up in turn, and one carried up into it.
+  list_icons: () => (
+    <>
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <Box
+          key={i}
+          sx={{
+            ...at(7 + (i % 3) * 9.5, 11 + Math.floor(i / 3) * 10, 7, 7),
+            borderRadius: i % 2 ? "50%" : "2px",
+            bgcolor: "primary.main",
+            opacity: 0.25,
+            animation: run(sweep, 2.4, `${i * 0.4}s`),
+          }}
+        />
+      ))}
+    </>
+  ),
+  upload_icon: () => (
+    <>
+      <Box sx={{ ...at(10, 22, 20, 10), borderRadius: "3px", border: 2, borderColor: "text.disabled" }} />
+      <Box sx={{ ...at(15, 8, 10, 10), animation: run(rise, 1.8) }}>
+        <Box sx={{ ...at(0, 0, 10, 10), borderRadius: "50%", bgcolor: "primary.main" }} />
+      </Box>
+    </>
+  ),
   activity: () => (
     <>
       {Array.from({ length: 12 }, (_, i) => (

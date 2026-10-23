@@ -1,0 +1,1304 @@
+[
+  {
+    "value": "builtin:thingport/mark",
+    "name": "Thingport",
+    "group": "thingport"
+  },
+  {
+    "value": "builtin:thingport/icon",
+    "name": "Thingport",
+    "group": "thingport"
+  },
+  {
+    "value": "builtin:thingport/hourglass",
+    "name": "Hourglass",
+    "group": "thingport",
+    "keywords": "countdown timer time"
+  },
+  {
+    "value": "builtin:thingport/mark-dark",
+    "name": "Thingport",
+    "group": "thingport"
+  },
+  {
+    "value": "builtin:thingport/icon-dark",
+    "name": "Thingport",
+    "group": "thingport"
+  },
+  {
+    "value": "builtin:thingport/weather",
+    "name": "Weather",
+    "group": "thingport",
+    "keywords": "sun cloud forecast"
+  },
+  {
+    "value": "builtin:providers/makerworld",
+    "name": "MakerWorld",
+    "group": "providers"
+  },
+  {
+    "value": "builtin:providers/thingiverse",
+    "name": "Thingiverse",
+    "group": "providers"
+  },
+  {
+    "value": "builtin:providers/thangs",
+    "name": "Thangs",
+    "group": "providers"
+  },
+  {
+    "value": "builtin:providers/printables",
+    "name": "Printables",
+    "group": "providers"
+  },
+  {
+    "value": "builtin:providers/myminifactory",
+    "name": "MyMiniFactory",
+    "group": "providers"
+  },
+  {
+    "value": "builtin:providers/cults3d",
+    "name": "Cults3D",
+    "group": "providers"
+  },
+  {
+    "value": "builtin:providers/makeronline",
+    "name": "MakerOnline",
+    "group": "providers"
+  },
+  {
+    "value": "builtin:providers/crealitycloud",
+    "name": "Creality Cloud",
+    "group": "providers"
+  },
+  {
+    "value": "builtin:providers/nexprint",
+    "name": "NexPrint",
+    "group": "providers"
+  },
+  {
+    "value": "builtin:providers/snapmaker",
+    "name": "Snapmaker Space",
+    "group": "providers"
+  },
+  {
+    "value": "builtin:ai/ai21",
+    "name": "AI21",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/anthropic",
+    "name": "Anthropic",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/baichuan",
+    "name": "Baichuan",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/baidu",
+    "name": "Baidu",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/claude",
+    "name": "Claude",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/cohere",
+    "name": "Cohere",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/deepseek",
+    "name": "DeepSeek",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/doubao",
+    "name": "Doubao",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/fireworks",
+    "name": "Fireworks",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/gemini",
+    "name": "Gemini",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/gemma",
+    "name": "Gemma",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/grok",
+    "name": "Grok",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/groq",
+    "name": "Groq",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/huggingface",
+    "name": "Hugging Face",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/hunyuan",
+    "name": "Hunyuan",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/ibm",
+    "name": "IBM",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/internlm",
+    "name": "InternLM",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/kimi",
+    "name": "Kimi",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/lg",
+    "name": "LG",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/liquid",
+    "name": "Liquid",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/llava",
+    "name": "LLaVA",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/lmstudio",
+    "name": "LM Studio",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/meta",
+    "name": "Meta",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/microsoft",
+    "name": "Microsoft",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/minimax",
+    "name": "MiniMax",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/mistral",
+    "name": "Mistral",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/nousresearch",
+    "name": "Nous Research",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/nvidia",
+    "name": "NVIDIA",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/ollama",
+    "name": "Ollama",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/openai",
+    "name": "OpenAI",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/openrouter",
+    "name": "OpenRouter",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/perplexity",
+    "name": "Perplexity",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/qwen",
+    "name": "Qwen",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/stepfun",
+    "name": "StepFun",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/tii",
+    "name": "TII",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/together",
+    "name": "Together",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/upstage",
+    "name": "Upstage",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/vllm",
+    "name": "vLLM",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/xai",
+    "name": "xAI",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/xiaomimimo",
+    "name": "Xiaomi MiMo",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/yi",
+    "name": "Yi",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:ai/zhipu",
+    "name": "Zhipu",
+    "group": "ai"
+  },
+  {
+    "value": "builtin:services/jellyfin",
+    "name": "Jellyfin",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/plex",
+    "name": "Plex",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/emby",
+    "name": "Emby",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/kodi",
+    "name": "Kodi",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/jellyseerr",
+    "name": "Jellyseerr",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/overseerr",
+    "name": "Overseerr",
+    "group": "media",
+    "keywords": "Media Request"
+  },
+  {
+    "value": "builtin:services/ombi",
+    "name": "Ombi",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/tautulli",
+    "name": "Tautulli",
+    "group": "media",
+    "keywords": "Plex Stats"
+  },
+  {
+    "value": "builtin:services/sonarr",
+    "name": "Sonarr",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/radarr",
+    "name": "Radarr",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/lidarr",
+    "name": "Lidarr",
+    "group": "media",
+    "keywords": "music-library-manager audio-downloader"
+  },
+  {
+    "value": "builtin:services/readarr",
+    "name": "Readarr",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/prowlarr",
+    "name": "Prowlarr",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/bazarr",
+    "name": "Bazarr",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/whisparr",
+    "name": "Whisparr",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/mylar",
+    "name": "Mylar",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/sabnzbd",
+    "name": "SABnzbd",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/nzbget",
+    "name": "NZBGet",
+    "group": "media",
+    "keywords": "usenet-client nzb-downloader"
+  },
+  {
+    "value": "builtin:services/qbittorrent",
+    "name": "qBittorrent",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/transmission",
+    "name": "Transmission",
+    "group": "media",
+    "keywords": "Torrent Client"
+  },
+  {
+    "value": "builtin:services/deluge",
+    "name": "Deluge",
+    "group": "media",
+    "keywords": "bittorrent-client torrenting-app"
+  },
+  {
+    "value": "builtin:services/rutorrent",
+    "name": "ruTorrent",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/jackett",
+    "name": "Jackett",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/flaresolverr",
+    "name": "FlareSolverr",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/unmanic",
+    "name": "Unmanic",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/tdarr",
+    "name": "Tdarr",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/navidrome",
+    "name": "Navidrome",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/audiobookshelf",
+    "name": "Audiobookshelf",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/kavita",
+    "name": "Kavita",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/komga",
+    "name": "Komga",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/calibre-web",
+    "name": "Calibre-Web",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/immich",
+    "name": "Immich",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/photoprism",
+    "name": "PhotoPrism",
+    "group": "media",
+    "keywords": "Photo Management"
+  },
+  {
+    "value": "builtin:services/stash",
+    "name": "Stash",
+    "group": "media",
+    "keywords": "Media Manager"
+  },
+  {
+    "value": "builtin:services/requestrr",
+    "name": "Requestrr",
+    "group": "media",
+    "keywords": "plex-requests jellyfin-requests"
+  },
+  {
+    "value": "builtin:services/huntarr",
+    "name": "Huntarr",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/recyclarr",
+    "name": "Recyclarr",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/autobrr",
+    "name": "autobrr",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/jellystat",
+    "name": "Jellystat",
+    "group": "media"
+  },
+  {
+    "value": "builtin:services/wizarr",
+    "name": "Wizarr",
+    "group": "media",
+    "keywords": "Setup Wizard"
+  },
+  {
+    "value": "builtin:services/home-assistant",
+    "name": "Home Assistant",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/nextcloud",
+    "name": "Nextcloud",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/proxmox",
+    "name": "Proxmox",
+    "group": "selfhosted",
+    "keywords": "Virtualization Platform"
+  },
+  {
+    "value": "builtin:services/truenas",
+    "name": "TrueNAS",
+    "group": "selfhosted",
+    "keywords": "NAS OS"
+  },
+  {
+    "value": "builtin:services/unraid",
+    "name": "Unraid",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/portainer",
+    "name": "Portainer",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/docker",
+    "name": "Docker",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/pi-hole",
+    "name": "Pi-hole",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/adguard-home",
+    "name": "AdGuard Home",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/traefik",
+    "name": "Traefik",
+    "group": "selfhosted",
+    "keywords": "Reverse Proxy"
+  },
+  {
+    "value": "builtin:services/nginx-proxy-manager",
+    "name": "Nginx Proxy Manager",
+    "group": "selfhosted",
+    "keywords": "Reverse Proxy UI"
+  },
+  {
+    "value": "builtin:services/caddy",
+    "name": "Caddy",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/vaultwarden",
+    "name": "Vaultwarden",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/bitwarden",
+    "name": "Bitwarden",
+    "group": "selfhosted",
+    "keywords": "Password Manager"
+  },
+  {
+    "value": "builtin:services/authentik",
+    "name": "Authentik",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/authelia",
+    "name": "Authelia",
+    "group": "selfhosted",
+    "keywords": "reverse-proxy-auth identity-provider"
+  },
+  {
+    "value": "builtin:services/keycloak",
+    "name": "Keycloak",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/uptime-kuma",
+    "name": "Uptime Kuma",
+    "group": "selfhosted",
+    "keywords": "status-page website-monitor"
+  },
+  {
+    "value": "builtin:services/grafana",
+    "name": "Grafana",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/prometheus",
+    "name": "Prometheus",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/influxdb",
+    "name": "InfluxDB",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/node-red",
+    "name": "Node-RED",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/esphome",
+    "name": "ESPHome",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/zigbee2mqtt",
+    "name": "Zigbee2MQTT",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/mosquitto",
+    "name": "Mosquitto",
+    "group": "selfhosted",
+    "keywords": "mqtt-server iot-broker"
+  },
+  {
+    "value": "builtin:services/frigate",
+    "name": "Frigate",
+    "group": "selfhosted",
+    "keywords": "NVR"
+  },
+  {
+    "value": "builtin:services/syncthing",
+    "name": "Syncthing",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/paperless-ngx",
+    "name": "Paperless-ngx",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/mealie",
+    "name": "Mealie",
+    "group": "selfhosted",
+    "keywords": "Recipe Manager"
+  },
+  {
+    "value": "builtin:services/tandoor-recipes",
+    "name": "Tandoor Recipes",
+    "group": "selfhosted",
+    "keywords": "Recipe Manager"
+  },
+  {
+    "value": "builtin:services/gitea",
+    "name": "Gitea",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/forgejo",
+    "name": "Forgejo",
+    "group": "selfhosted",
+    "keywords": "gitea-fork code-repository"
+  },
+  {
+    "value": "builtin:services/gitlab",
+    "name": "GitLab",
+    "group": "selfhosted",
+    "keywords": "Code Hosting"
+  },
+  {
+    "value": "builtin:services/code-server",
+    "name": "code-server",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/homarr",
+    "name": "Homarr",
+    "group": "selfhosted",
+    "keywords": "best-dashboard homer dashy homepage"
+  },
+  {
+    "value": "builtin:services/homepage",
+    "name": "Homepage",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/dashy",
+    "name": "Dashy",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/heimdall",
+    "name": "Heimdall",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/organizr",
+    "name": "Organizr",
+    "group": "selfhosted",
+    "keywords": "Dashboard"
+  },
+  {
+    "value": "builtin:services/glances",
+    "name": "Glances",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/netdata",
+    "name": "Netdata",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/wireguard",
+    "name": "WireGuard",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/tailscale",
+    "name": "Tailscale",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/cloudflare",
+    "name": "Cloudflare",
+    "group": "selfhosted",
+    "keywords": "content-delivery-network ddos-protection"
+  },
+  {
+    "value": "builtin:services/openwrt",
+    "name": "OpenWrt",
+    "group": "selfhosted",
+    "keywords": "custom-router-firmware linux-based-router"
+  },
+  {
+    "value": "builtin:services/pfsense",
+    "name": "pfSense",
+    "group": "selfhosted",
+    "keywords": "Firewall Router OS"
+  },
+  {
+    "value": "builtin:services/opnsense",
+    "name": "OPNsense",
+    "group": "selfhosted",
+    "keywords": "Firewall Router OS"
+  },
+  {
+    "value": "builtin:services/unifi",
+    "name": "UniFi",
+    "group": "selfhosted",
+    "keywords": "Network Devices"
+  },
+  {
+    "value": "builtin:services/synology",
+    "name": "Synology",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/qnap",
+    "name": "QNAP",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/duplicati",
+    "name": "Duplicati",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/kopia",
+    "name": "Kopia",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/restic",
+    "name": "Restic",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/nginx",
+    "name": "Nginx",
+    "group": "selfhosted",
+    "keywords": "Web Server"
+  },
+  {
+    "value": "builtin:services/apache",
+    "name": "Apache",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/vikunja",
+    "name": "Vikunja",
+    "group": "selfhosted",
+    "keywords": "Task Management"
+  },
+  {
+    "value": "builtin:services/actual-budget",
+    "name": "Actual Budget",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/firefly-iii",
+    "name": "Firefly III",
+    "group": "selfhosted",
+    "keywords": "Finance Manager"
+  },
+  {
+    "value": "builtin:services/freshrss",
+    "name": "FreshRSS",
+    "group": "selfhosted",
+    "keywords": "RSS Reader Feed Reader"
+  },
+  {
+    "value": "builtin:services/miniflux",
+    "name": "Miniflux",
+    "group": "selfhosted",
+    "keywords": "minimalist-rss-reader feed-aggregator"
+  },
+  {
+    "value": "builtin:services/linkding",
+    "name": "Linkding",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/linkwarden",
+    "name": "Linkwarden",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/wallabag",
+    "name": "Wallabag",
+    "group": "selfhosted",
+    "keywords": "bookmarking-tool offline-reader"
+  },
+  {
+    "value": "builtin:services/bookstack",
+    "name": "BookStack",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/wikijs",
+    "name": "Wiki.js",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/outline",
+    "name": "Outline",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/joplin",
+    "name": "Joplin",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/trilium",
+    "name": "Trilium",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/memos",
+    "name": "Memos",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/n8n",
+    "name": "n8n",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/changedetection",
+    "name": "changedetection.io",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/speedtest-tracker",
+    "name": "Speedtest Tracker",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/searxng",
+    "name": "SearXNG",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/ollama",
+    "name": "Ollama",
+    "group": "selfhosted",
+    "keywords": "LLM Server"
+  },
+  {
+    "value": "builtin:services/open-webui",
+    "name": "Open WebUI",
+    "group": "selfhosted",
+    "keywords": "llama-ui ollama-webui"
+  },
+  {
+    "value": "builtin:services/stirling-pdf",
+    "name": "Stirling-PDF",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/it-tools",
+    "name": "IT Tools",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/excalidraw",
+    "name": "Excalidraw",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/rustdesk",
+    "name": "RustDesk",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/guacamole",
+    "name": "Guacamole",
+    "group": "selfhosted",
+    "keywords": "rdp-gateway vnc-gateway"
+  },
+  {
+    "value": "builtin:services/cockpit",
+    "name": "Cockpit",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/webmin",
+    "name": "Webmin",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/watchtower",
+    "name": "Watchtower",
+    "group": "selfhosted",
+    "keywords": "Container Updater"
+  },
+  {
+    "value": "builtin:services/dozzle",
+    "name": "Dozzle",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/minio",
+    "name": "MinIO",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/seafile",
+    "name": "Seafile",
+    "group": "selfhosted",
+    "keywords": "Cloud Storage File Sync"
+  },
+  {
+    "value": "builtin:services/filebrowser",
+    "name": "File Browser",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/owncloud",
+    "name": "ownCloud",
+    "group": "selfhosted",
+    "keywords": "Cloud Storage"
+  },
+  {
+    "value": "builtin:services/jitsi-meet",
+    "name": "Jitsi Meet",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/matrix",
+    "name": "Matrix",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/element",
+    "name": "Element",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/mastodon",
+    "name": "Mastodon",
+    "group": "selfhosted"
+  },
+  {
+    "value": "builtin:services/octoprint",
+    "name": "OctoPrint",
+    "group": "printing",
+    "keywords": "3d-printer-server printer-interface"
+  },
+  {
+    "value": "builtin:services/klipper",
+    "name": "Klipper",
+    "group": "printing"
+  },
+  {
+    "value": "builtin:services/mainsail",
+    "name": "Mainsail",
+    "group": "printing"
+  },
+  {
+    "value": "builtin:services/fluidd",
+    "name": "Fluidd",
+    "group": "printing"
+  },
+  {
+    "value": "builtin:services/obico",
+    "name": "Obico",
+    "group": "printing",
+    "keywords": "3D Printing Monitor"
+  },
+  {
+    "value": "builtin:services/spoolman",
+    "name": "Spoolman",
+    "group": "printing",
+    "keywords": "printer-server cups-alternative"
+  },
+  {
+    "value": "builtin:services/prusa-research",
+    "name": "Prusa Research",
+    "group": "printing"
+  },
+  {
+    "value": "builtin:services/cura",
+    "name": "Cura",
+    "group": "printing"
+  },
+  {
+    "value": "builtin:services/orcaslicer",
+    "name": "OrcaSlicer",
+    "group": "printing"
+  },
+  {
+    "value": "builtin:services/voron",
+    "name": "Voron",
+    "group": "printing"
+  },
+  {
+    "value": "builtin:services/manyfold",
+    "name": "Manyfold",
+    "group": "printing"
+  },
+  {
+    "value": "builtin:services/printer",
+    "name": "Printer",
+    "group": "printing"
+  },
+  {
+    "value": "builtin:services/google",
+    "name": "Google",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/google-drive",
+    "name": "Google Drive",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/gmail",
+    "name": "Gmail",
+    "group": "popular",
+    "keywords": "google-mail webmail-service"
+  },
+  {
+    "value": "builtin:services/youtube",
+    "name": "YouTube",
+    "group": "popular",
+    "keywords": "video-sharing-site google-video"
+  },
+  {
+    "value": "builtin:services/netflix",
+    "name": "Netflix",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/spotify",
+    "name": "Spotify",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/github",
+    "name": "GitHub",
+    "group": "popular",
+    "keywords": "git-hosting code-repository"
+  },
+  {
+    "value": "builtin:services/amazon",
+    "name": "Amazon",
+    "group": "popular",
+    "keywords": "online-marketplace shopping-website"
+  },
+  {
+    "value": "builtin:services/apple",
+    "name": "Apple",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/microsoft",
+    "name": "Microsoft",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/microsoft-outlook",
+    "name": "Outlook",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/office-365",
+    "name": "Microsoft 365",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/microsoft-onedrive",
+    "name": "OneDrive",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/dropbox",
+    "name": "Dropbox",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/discord",
+    "name": "Discord",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/slack",
+    "name": "Slack",
+    "group": "popular",
+    "keywords": "Team Communication"
+  },
+  {
+    "value": "builtin:services/telegram",
+    "name": "Telegram",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/whatsapp",
+    "name": "WhatsApp",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/signal",
+    "name": "Signal",
+    "group": "popular",
+    "keywords": "Messaging App"
+  },
+  {
+    "value": "builtin:services/reddit",
+    "name": "Reddit",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/x",
+    "name": "X",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/facebook",
+    "name": "Facebook",
+    "group": "popular",
+    "keywords": "social-network meta-platform"
+  },
+  {
+    "value": "builtin:services/instagram",
+    "name": "Instagram",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/twitch",
+    "name": "Twitch",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/steam",
+    "name": "Steam",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/epic-games",
+    "name": "Epic Games",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/openai",
+    "name": "OpenAI",
+    "group": "popular",
+    "keywords": "gpt-api artificial-intelligence-api"
+  },
+  {
+    "value": "builtin:services/chatgpt",
+    "name": "ChatGPT",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/notion",
+    "name": "Notion",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/figma",
+    "name": "Figma",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/atlassian-trello",
+    "name": "Trello",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/jira",
+    "name": "Jira",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/confluence",
+    "name": "Confluence",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/linkedin",
+    "name": "LinkedIn",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/paypal",
+    "name": "PayPal",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/wikipedia",
+    "name": "Wikipedia",
+    "group": "popular",
+    "keywords": "Online Encyclopedia"
+  },
+  {
+    "value": "builtin:services/duckduckgo",
+    "name": "DuckDuckGo",
+    "group": "popular",
+    "keywords": "privacy-search-engine private-search"
+  },
+  {
+    "value": "builtin:services/proton-mail",
+    "name": "Proton Mail",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/icloud",
+    "name": "iCloud",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/google-photos",
+    "name": "Google Photos",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/google-calendar",
+    "name": "Google Calendar",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/disney-plus",
+    "name": "Disney+",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/prime-video",
+    "name": "Prime Video",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:services/hbo",
+    "name": "HBO",
+    "group": "popular"
+  },
+  {
+    "value": "builtin:browsers/chrome",
+    "name": "Chrome",
+    "group": "browsers"
+  },
+  {
+    "value": "builtin:browsers/edge",
+    "name": "Edge",
+    "group": "browsers"
+  },
+  {
+    "value": "builtin:browsers/firefox",
+    "name": "Firefox",
+    "group": "browsers"
+  }
+]

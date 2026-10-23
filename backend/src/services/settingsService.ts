@@ -44,6 +44,28 @@ export async function setCaptchaSettings(patch: Partial<CaptchaSettings>): Promi
   return getCaptchaSettings();
 }
 
+// Custom widgets' scripts run in their users' dashboard pages with their access; an admin can turn off users' own
+// widgets and the community's separately.
+export const WIDGET_SOURCES = ["own", "community"] as const;
+export type WidgetSource = (typeof WIDGET_SOURCES)[number];
+export type WidgetSources = Record<WidgetSource, boolean>;
+
+const widgetSourceKey = (source: WidgetSource) => `${source === "own" ? "user" : source}_widgets_enabled`;
+
+export async function getWidgetSources(): Promise<WidgetSources> {
+  const [own, community] = await Promise.all(
+    WIDGET_SOURCES.map((source) => getBoolSetting(widgetSourceKey(source), true)),
+  );
+  return { own, community };
+}
+
+export async function setWidgetSources(patch: Partial<WidgetSources>): Promise<WidgetSources> {
+  for (const source of WIDGET_SOURCES) {
+    if (patch[source] !== undefined) await setBoolSetting(widgetSourceKey(source), patch[source]);
+  }
+  return getWidgetSources();
+}
+
 const ALLOW_REGISTRATIONS_KEY = "allow_registrations";
 
 export async function getAllowRegistrations(fallback: boolean): Promise<boolean> {

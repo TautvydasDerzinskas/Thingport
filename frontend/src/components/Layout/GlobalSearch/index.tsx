@@ -4,7 +4,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { keyframes } from "@emotion/react";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
+import ButtonBase from "@mui/material/ButtonBase";
 import InputBase from "@mui/material/InputBase";
+import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -77,6 +79,9 @@ type Props = {
   onOpenConfiguration: (tab: ConfigurationTab) => void;
   /** Also finds Administration's pages. */
   isAdmin: boolean;
+  /** "bar" sits in the top bar; "spotlight" is hidden until ⌘S (or its corner button) opens it, larger, in the middle
+   *  of the screen, for a page without the top bar, like the dashboard's homepage view. Both search alike. */
+  variant?: "bar" | "spotlight";
 };
 
 type Item = {
@@ -138,6 +143,7 @@ const THEMES: { theme: ThemeSelection; alias?: string; keywords: string[]; icon:
 
 const dimIn = keyframes`from { opacity: 0; }`;
 const panelIn = keyframes`from { opacity: 0; transform: translateY(-4px); }`;
+const spotlightIn = keyframes`from { opacity: 0; transform: translateY(-8px) scale(0.98); }`;
 
 const selectedRowBg = (theme: Theme) =>
   theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)";
@@ -154,7 +160,9 @@ export default function GlobalSearch({
   onImport,
   onOpenConfiguration,
   isAdmin,
+  variant = "bar",
 }: Props) {
+  const spotlight = variant === "spotlight";
   const { t, i18n } = useTranslation(["app", "common", "models"]);
   const navigate = useNavigate();
   const location = useLocation();
@@ -234,6 +242,13 @@ export default function GlobalSearch({
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
+
+  // The spotlight's box isn't on screen until it opens, so it can't take focus before: it does once it shows.
+  useEffect(() => {
+    if (!spotlight || !open) return;
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }, [spotlight, open]);
 
   useEffect(() => {
     if (debouncedQuery.length < MIN_QUERY_LENGTH || isBangQuery(debouncedQuery)) {
@@ -616,6 +631,38 @@ export default function GlobalSearch({
 
   return (
     <>
+      {spotlight && !open && (
+        <Tooltip title={t("app:search.openSearch")}>
+          <ButtonBase
+            onClick={() => setOpen(true)}
+            aria-label={t("app:search.openSearch") ?? undefined}
+            sx={(muiTheme) => ({
+              position: "fixed",
+              right: 20,
+              bottom: 20,
+              zIndex: muiTheme.zIndex.speedDial,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 1,
+              px: 1.5,
+              py: 0.75,
+              borderRadius: 999,
+              border: 1,
+              borderColor: "divider",
+              bgcolor: "background.paper",
+              color: "text.secondary",
+              boxShadow: 2,
+              opacity: 0.75,
+              transition: "opacity 150ms ease",
+              "&:hover, &.Mui-focusVisible": { opacity: 1 },
+              "&.Mui-focusVisible": { outline: 2, outlineColor: "primary.main", outlineOffset: 2 },
+            })}
+          >
+            <SearchIcon fontSize="small" />
+            <Keys keys={`${MOD_KEY} S`} />
+          </ButtonBase>
+        </Tooltip>
+      )}
       {open && (
         // In the top bar's stacking context: covers the page and the bar, under the search box.
         <Box
@@ -624,7 +671,8 @@ export default function GlobalSearch({
           sx={{
             position: "fixed",
             inset: 0,
-            zIndex: 1,
+            // The bar's veil sits in the top bar's stacking context; the spotlight's over the whole page.
+            zIndex: (muiTheme) => (spotlight ? muiTheme.zIndex.modal - 1 : 1),
             bgcolor: (muiTheme) => veilColor(muiTheme.palette.mode),
             backdropFilter: VEIL_BLUR,
             animation: `${dimIn} 180ms ease-out`,
@@ -637,23 +685,39 @@ export default function GlobalSearch({
         onBlur={(e) => {
           if (e.relatedTarget && !containerRef.current?.contains(e.relatedTarget as Node)) setOpen(false);
         }}
-        sx={{ position: "relative", zIndex: open ? 2 : "auto", width: "100%" }}
+        sx={
+          spotlight
+            ? {
+                display: open ? "block" : "none",
+                position: "fixed",
+                top: "14vh",
+                left: 0,
+                right: 0,
+                mx: "auto",
+                width: "min(760px, calc(100vw - 32px))",
+                zIndex: (muiTheme) => muiTheme.zIndex.modal,
+                animation: `${spotlightIn} 180ms ease-out`,
+                "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+              }
+            : { position: "relative", zIndex: open ? 2 : "auto", width: "100%" }
+        }
       >
         <Paper
           variant="outlined"
           sx={{
             display: "flex",
             alignItems: "center",
-            gap: 0.5,
-            px: 1.25,
-            py: 0.25,
+            gap: spotlight ? 1.25 : 0.5,
+            px: spotlight ? 2.25 : 1.25,
+            py: spotlight ? 1.25 : 0.25,
             borderRadius: panelOpen ? `${BAR_RADIUS}px ${BAR_RADIUS}px 0 0` : 999,
+            ...(spotlight && { boxShadow: 12 }),
             // No line where it joins the panel; transparent, not removed, so the bar doesn't shift.
             borderBottomColor: panelOpen ? "transparent" : undefined,
             bgcolor: (muiTheme) => (open ? "background.paper" : muiTheme.thingport.pageBackground),
           }}
         >
-          <SearchIcon fontSize="small" sx={{ color: "text.disabled" }} />
+          <SearchIcon fontSize={spotlight ? "medium" : "small"} sx={{ color: "text.disabled" }} />
           <InputBase
             fullWidth
             size="small"
@@ -680,7 +744,7 @@ export default function GlobalSearch({
               autoComplete: "off",
               spellCheck: false,
             }}
-            sx={{ fontSize: 14 }}
+            sx={{ fontSize: spotlight ? 20 : 14 }}
           />
           {loading && trimmedQuery && <CircularProgress size={14} sx={{ flexShrink: 0 }} />}
           {query ? (
@@ -714,7 +778,10 @@ export default function GlobalSearch({
               top: "100%",
               display: "flex",
               flexDirection: "column",
-              maxHeight: "min(520px, calc(100vh - var(--topbar-height, 64px) - 24px))",
+              maxHeight: spotlight
+                ? "min(560px, calc(86vh - 96px))"
+                : "min(520px, calc(100vh - var(--topbar-height, 64px) - 24px))",
+              ...(spotlight && { boxShadow: 12 }),
               bgcolor: "background.paper",
               border: 1,
               borderTop: 0,
