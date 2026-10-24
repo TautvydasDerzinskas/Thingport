@@ -72,12 +72,20 @@ import type {
   ProviderTrending,
   SourcedImport,
   InstanceHealth,
+  ListImportBody,
   StopTexts,
 } from "./types";
 import type { ProfilesImportJobBody } from "../services/importJobRunner";
 import type { ImportRequestBody } from "../services/importService";
 import { listMakerworldProfileUrls } from "./makerworld/profiles";
-import { markMakerworldCookieRejected, MAKERWORLD_REJECTED_ERROR } from "./makerworld/session";
+import {
+  markMakerworldCookieRejected,
+  MAKERWORLD_REJECTED_ERROR,
+  withStoredMakerworldCookie,
+} from "./makerworld/session";
+import { liftCaptchaCooloffByHand } from "./makerworld/captcha";
+import type { GrabImportOptions } from "./makeronline/grabImports";
+import type { ImportCookies } from "../services/importResolvers";
 
 export type ProviderBackend = {
   /** Each credential its manifest lists under `auth`, by slot. */
@@ -113,12 +121,48 @@ export type ProviderBackend = {
   stopTexts?: StopTexts;
   /** The id an import keeps a model under, where its link may name it by another (Creality Cloud's alias). */
   keptId?(externalId: string): Promise<string>;
+  /** For a provider whose files only Thingport Grab can fetch, on its own pages: where imports that start anywhere
+   *  else wait for its next visit there. */
+  grabQueue?: GrabQueue;
+  /** The import body with the user's stored sign-in where the request brought none, for the provider a link import
+   *  of no provider's goes through (LINK_PROVIDER). */
+  withStoredAuth?<T extends ImportCookies>(userId: string, body: T): Promise<T>;
+  /** Ends a pause it took after a block (MakerWorld's CAPTCHA), when the user retries by hand. */
+  liftHolds?(): void;
   /** Tests the instance's own credential, for a provider with one (an admin's App Token or API key). */
   instanceHealth?(): Promise<InstanceHealth>;
 };
 
+/** Imports waiting for Thingport Grab, as GrabQueue's provider keeps them. */
+export type GrabQueue = {
+  queue(userId: string, url: string, options?: GrabImportOptions): Promise<void>;
+  /** The picked models of a list, filed once imported into a collection named `title`. */
+  queueList(userId: string, title: string, body: ListImportBody): Promise<{ queued: number; collectionId: string }>;
+  /** One heads-up for a batch just parked, so the user knows to open the site. */
+  notifyQueued(
+    userId: string,
+    count: number,
+    opts?: { label?: string | null; externalUrl?: string | null; internalPath?: string | null },
+  ): Promise<void>;
+  /** Imported, however it came in: nothing waits for the model any more. */
+  clear(userId: string, modelId: string): Promise<void>;
+};
+
 /** The provider whose session a page link of no provider's is imported with. */
 export const LINK_PROVIDER: ProviderId = "makerworld";
+
+/** A link import's body with LINK_PROVIDER's stored sign-in, where the request brought none. */
+export function withLinkAuth<T extends ImportCookies>(userId: string, body: T): Promise<T> {
+  return PROVIDERS[LINK_PROVIDER].withStoredAuth?.(userId, body) ?? Promise.resolve(body);
+}
+
+/** A retry the user asked for: every provider's pause after a block ends. */
+export function liftProviderHolds(): void {
+  for (const id of PROVIDER_IDS) PROVIDERS[id].liftHolds?.();
+}
+
+// Loaded when used: its waiting imports reach the services that read this registry.
+const grabImports = () => import("./makeronline/grabImports");
 
 type Manifests = typeof MANIFESTS;
 /** What a provider with collections or likes has for them. */
@@ -148,6 +192,8 @@ export const PROVIDERS = {
     // Loaded when it runs: the import runner it shares reaches this registry.
     profilesJob: async (jobId, userId, body) =>
       (await import("./makerworld/jobs")).runMakerworldProfilesJob(jobId, userId, body),
+    withStoredAuth: withStoredMakerworldCookie,
+    liftHolds: liftCaptchaCooloffByHand,
     // Its models import by the shared link import, which doesn't know whose cookie it was.
     markRejected: (userId) => markMakerworldCookieRejected(userId),
     stopTexts: {
@@ -208,6 +254,12 @@ export const PROVIDERS = {
     connection: { default: makeronlineConnection },
     authStopText: grabSignInStop("makeronline"),
     customImport: makeronlineImport,
+    grabQueue: {
+      queue: async (userId, url, options) => (await grabImports()).queueGrabImport(userId, url, options),
+      queueList: async (userId, title, body) => (await grabImports()).queueGrabList(userId, title, body),
+      notifyQueued: async (userId, count, opts) => (await grabImports()).notifyGrabImportsQueued(userId, count, opts),
+      clear: async (userId, modelId) => (await grabImports()).clearGrabImports(userId, modelId),
+    },
     lists: makeronlineLists,
     sync: makeronlineSync,
     browse: makeronlineBrowse,

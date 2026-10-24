@@ -18,8 +18,6 @@ import { modelIdFromUrl, providerName, syncedCollectionFor } from "./collectionS
 import { siteHost } from "../providers/names";
 import { MakerworldAuthError } from "../providers/makerworld/api";
 import { downloadImportToTemp, importPrintFromUrl, type ImportRequestBody } from "./importService";
-import { parseMakeronlineModelUrl } from "../providers/makeronline/api";
-import { queueGrabImport } from "../providers/makeronline/grabImports";
 import { upsertAuthorFromImport } from "./authorService";
 import { extractZipEntriesToPrints } from "./zipService";
 import { createLog } from "./auditLog";
@@ -559,8 +557,10 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
       }
       const options = parseQueuedLinkOptions(item.payload);
       const itemBody: LinksImportJobBody = options.scope ? { ...body, scope: options.scope } : body;
-      if (parseMakeronlineModelUrl(item.url)) {
-        await queueGrabImport(userId, item.url, {
+      const itemProvider = detectProvider(item.url);
+      const grabQueue = itemProvider ? PROVIDERS[itemProvider].grabQueue : undefined;
+      if (grabQueue && URLS[itemProvider!].parseModel(item.url)) {
+        await grabQueue.queue(userId, item.url, {
           scope: itemBody.scope,
           collectionId: options.collection_id,
           categoryId: body.category_id,

@@ -4,7 +4,7 @@ import { HttpError } from "../utils/fileUtils";
 import { normalizeImportUrl } from "../utils/urlUtils";
 import { createLog } from "./auditLog";
 import { assertCanImportUrl, importPrintFromUrl, type ImportRequestBody } from "./importService";
-import { withStoredMakerworldCookie } from "../providers/makerworld/session";
+import { withLinkAuth } from "../providers/registry";
 import { notifySingleImport } from "./modelNotifications";
 
 // One link imported into one model, with the activity log and notification that go with it. Shared
@@ -21,7 +21,7 @@ export async function prepareSingleImport<T extends SingleImportBody>(
   userId: string,
   body: T,
 ): Promise<{ url: string; body: T }> {
-  const withCookie = await withStoredMakerworldCookie(userId, body);
+  const withCookie = await withLinkAuth(userId, body);
   const url = await normalizeImportUrl(withCookie.url);
   await assertCanImportUrl(userId, url);
   if (withCookie.category_id) {

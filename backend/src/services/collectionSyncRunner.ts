@@ -18,12 +18,10 @@ import { sleep } from "../utils/concurrency";
 import { addPrintsToCollection } from "./collectionService";
 import { findLibraryPrints, hasProfiles, modelUrlFor, providerName, sourceDescription } from "./collectionSyncService";
 import { getActiveJob } from "./importJobService";
-import { runLinksImportJob, SYNC_JOB_INTERRUPTED } from "./importJobRunner";
+import { type LinksImportJobBody, runLinksImportJob, SYNC_JOB_INTERRUPTED } from "./importJobRunner";
 import { startLinksJob } from "./importQueueService";
-import { getUserMakerworldCookie } from "../providers/makerworld/session";
-import { notifyGrabImportsQueued, queueGrabImport } from "../providers/makeronline/grabImports";
 import { isProviderId } from "../providers/_generated";
-import { PROVIDERS } from "../providers/registry";
+import { PROVIDERS, withLinkAuth } from "../providers/registry";
 import { SyncHeldError, type SyncProblem } from "../providers/syncProblem";
 import type { ProviderSync, SyncedList } from "../providers/types";
 import { syncLikesUsername } from "../providers/names";
@@ -241,17 +239,18 @@ async function runSync(syncId: string): Promise<SyncOutcome> {
     title: null,
   };
 
-  if (toImport.length && isProviderId(sync.provider) && PROVIDERS[sync.provider].lists?.waitsForGrab) {
+  const grabQueue = isProviderId(sync.provider) ? PROVIDERS[sync.provider].grabQueue : undefined;
+  if (toImport.length && grabQueue) {
     // Its files only come through Thingport Grab: the new models wait for its next visit there.
     for (const id of toImport) {
-      await queueGrabImport(userId, modelUrlFor(sync.provider, id), {
+      await grabQueue.queue(userId, modelUrlFor(sync.provider, id), {
         scope: sync.profileScope === "designer" || sync.profileScope === "all" ? sync.profileScope : "url",
         collectionId: sync.collectionId,
       });
     }
     await addPrintsToCollection(sync.collectionId, [...inLibrary.values()]);
     await markChecked();
-    await notifyGrabImportsQueued(userId, toImport.length, {
+    await grabQueue.notifyQueued(userId, toImport.length, {
       label: sync.collection.name,
       externalUrl: sync.sourceUrl,
       internalPath: `/models/collections/${sync.collectionId}`,
@@ -307,17 +306,19 @@ async function runSync(syncId: string): Promise<SyncOutcome> {
     });
     await addPrintsToCollection(sync.collectionId, [...inLibrary.values()]);
     await markChecked();
-    // As every LINKS job runs, for any MakerWorld link in it (see importQueueService.ts).
-    const cookie = await getUserMakerworldCookie(userId);
-    await runLinksImportJob(job.id, userId, {
-      url: sync.sourceUrl,
-      notes: null,
-      tags: [],
-      category_id: null,
-      scope: "url",
-      makerworld_cookie: cookie ?? undefined,
-      itemDelayMs: COLLECTION_SYNC_ITEM_DELAY_MS,
-    });
+    // As every LINKS job runs, with LINK_PROVIDER's stored sign-in (see importQueueService.ts).
+    await runLinksImportJob(
+      job.id,
+      userId,
+      await withLinkAuth<LinksImportJobBody>(userId, {
+        url: sync.sourceUrl,
+        notes: null,
+        tags: [],
+        category_id: null,
+        scope: "url",
+        itemDelayMs: COLLECTION_SYNC_ITEM_DELAY_MS,
+      }),
+    );
     return "queued";
   }
 

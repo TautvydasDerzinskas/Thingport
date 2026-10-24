@@ -16,7 +16,6 @@ import {
   inspectImportLink,
 } from "../services/importService";
 import { findLibraryPrints } from "../services/collectionSyncService";
-import { queueGrabList } from "../providers/makeronline/grabImports";
 import { listZipEntries } from "../services/zipService";
 import { createJob, createJobItems, getActiveJob, getJob, listJobItems } from "../services/importJobService";
 import { queueLink, startLinksJob } from "../services/importQueueService";
@@ -26,7 +25,6 @@ import { notifyImportRun } from "../services/modelNotifications";
 import { toImportJobItemOut, toImportJobOut } from "../dto";
 import type { Prisma } from "@prisma/client";
 import { importAndDescribe, prepareSingleImport } from "../services/singleImport";
-import { withStoredMakerworldCookie } from "../providers/makerworld/session";
 import {
   isProviderId,
   type LegacyIdsField,
@@ -38,7 +36,7 @@ import {
   type ProviderId,
   type ProviderManifest,
 } from "../providers/_generated";
-import { PROVIDERS } from "../providers/registry";
+import { PROVIDERS, withLinkAuth } from "../providers/registry";
 import type { ProviderLists } from "../providers/types";
 
 const router = Router();
@@ -105,7 +103,7 @@ router.get(
 router.post(
   "/import/inspect",
   asyncHandler(async (req, res) => {
-    const body = await withStoredMakerworldCookie(req.userId!, parseBody(importRequestSchema, req.body));
+    const body = await withLinkAuth(req.userId!, parseBody(importRequestSchema, req.body));
     const url = await enabledImportUrl(body.url);
     const result = await inspectImportLink(url, body);
     res.json(result);
@@ -141,7 +139,7 @@ router.post(
 router.post(
   "/import/zip/entries",
   asyncHandler(async (req, res) => {
-    const body = await withStoredMakerworldCookie(req.userId!, parseBody(importRequestSchema, req.body));
+    const body = await withLinkAuth(req.userId!, parseBody(importRequestSchema, req.body));
     const url = await enabledImportUrl(body.url);
     const { tempPath, filename } = await downloadImportToTemp(url, body);
     try {
@@ -235,7 +233,9 @@ async function importList(
   const url = await listUrlOf(provider, body.url, kinds);
   const start = await lists.start(userId, url, { ...body, url });
   if ("waitForGrab" in start) {
-    const { queued, collectionId } = await queueGrabList(userId, start.waitForGrab.title, { ...body, url });
+    const grabQueue = PROVIDERS[provider].grabQueue;
+    if (!grabQueue) throw new Error(`${provider} waits for Grab without a queue for it`);
+    const { queued, collectionId } = await grabQueue.queueList(userId, start.waitForGrab.title, { ...body, url });
     res.status(202).json({ queued, collection_id: collectionId });
     return;
   }
@@ -350,7 +350,7 @@ router.post(
   "/import/links",
   requireCaptcha("import"),
   asyncHandler(async (req, res) => {
-    const body = await withStoredMakerworldCookie(req.userId!, parseBody(linksImportRequestSchema, req.body));
+    const body = await withLinkAuth(req.userId!, parseBody(linksImportRequestSchema, req.body));
     await assertNoActiveJob(req.userId!);
     const urls: string[] = [];
     for (const raw of body.urls) {

@@ -15,23 +15,20 @@ import {
   type LinksImportJobBody,
   type QueuedLinkOptions,
 } from "./importJobRunner";
-import { getUserMakerworldCookie } from "../providers/makerworld/session";
-import { liftCaptchaCooloffByHand } from "../providers/makerworld/captcha";
+import { liftProviderHolds, withLinkAuth } from "../providers/registry";
 
-/** The shared body a LINKS job reruns with: its stored payload plus the owner's saved MakerWorld
- *  cookie. The cookie is never stored on the job. */
+/** The shared body a LINKS job reruns with: its stored payload plus the owner's saved sign-in for LINK_PROVIDER. The
+ *  sign-in is never stored on the job. */
 async function linksJobBody(job: ImportJob): Promise<LinksImportJobBody> {
   const payload = (job.payload ?? {}) as Record<string, unknown>;
-  const cookie = await getUserMakerworldCookie(job.userId);
-  return {
+  return withLinkAuth<LinksImportJobBody>(job.userId, {
     url: job.sourceUrl,
     notes: (payload.notes as string | null) ?? null,
     tags: Array.isArray(payload.tags) ? (payload.tags as string[]) : [],
     category_id: (payload.category_id as string | null) ?? null,
     scope: payload.scope === "designer" || payload.scope === "all" ? payload.scope : "url",
-    makerworld_cookie: cookie ?? undefined,
     itemDelayMs: typeof payload.item_delay_ms === "number" ? payload.item_delay_ms : undefined,
-  };
+  });
 }
 
 /** Starts a LINKS job's PENDING links, or with `retryFailed` puts its FAILED links back first.
@@ -84,7 +81,7 @@ export async function startLinksJob(
     },
   });
   if (!count) throw new HttpError(409, "This import changed while it was being started, reload and try again");
-  if (opts.manual) liftCaptchaCooloffByHand();
+  if (opts.manual) liftProviderHolds();
   const body = await linksJobBody(job);
   return { run: runLinksImportJob(job.id, job.userId, body) };
 }
@@ -298,10 +295,10 @@ async function drainBulkQueue(): Promise<void> {
   }
 }
 
-/** Bulk runs are started by hand, so they lift the CAPTCHA cooloff once (see startLinksJob). Not
- *  per job: after a CAPTCHA, the jobs behind it should fail fast, not each probe MakerWorld again. */
+/** Bulk runs are started by hand, so they lift providers' pauses once (see startLinksJob). Not per job: after a
+ *  CAPTCHA, the jobs behind it should fail fast, not each probe the site again. */
 function enqueueBulk(entries: BulkEntry[]): number {
-  if (entries.length) liftCaptchaCooloffByHand();
+  if (entries.length) liftProviderHolds();
   const known = new Set([bulkCurrent, ...bulkQueue.map((e) => e.jobId)]);
   const fresh = entries.filter((e) => !known.has(e.jobId));
   bulkQueue.push(...fresh);

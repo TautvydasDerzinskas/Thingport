@@ -56,7 +56,6 @@ import {
   completeMakerworldAuthor,
 } from "../providers/makerworld/api";
 import { openSourceGaps, type SourceGap } from "./sourceGaps";
-import { clearGrabImports } from "../providers/makeronline/grabImports";
 
 /** An import refused because the user's MyMiniFactory session has expired. */
 export const MYMINIFACTORY_SESSION_CODE = MANIFESTS.myminifactory.errorCodes.session;
@@ -1161,9 +1160,9 @@ export async function importPrintFromUrl(
   const result = await importNewOrExisting(userId, url, body);
   // However it came in, nothing need wait for Grab to bring it.
   const provider = result.print.sourceProvider;
-  const waitsForGrab = isProviderId(provider) && PROVIDERS[provider].lists?.waitsForGrab;
-  if (!keepGrabImports && waitsForGrab && result.print.sourceExternalId) {
-    await clearGrabImports(userId, result.print.sourceExternalId).catch(() => undefined);
+  const grabQueue = isProviderId(provider) ? PROVIDERS[provider].grabQueue : undefined;
+  if (!keepGrabImports && grabQueue && result.print.sourceExternalId) {
+    await grabQueue.clear(userId, result.print.sourceExternalId).catch(() => undefined);
   }
   if (!result.alreadyImported && !result.profileAdded) {
     void recordActivity(userId, "import", result.print.id, result.print.name);
