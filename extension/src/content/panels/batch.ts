@@ -12,7 +12,7 @@ import { errorHtml, statusHtml, successHtml } from "./results";
 import { loadingModelsPhrases, renderFunStatus } from "./funStatus";
 import { applySyncToggle, loadSyncState, readSyncToggle, syncChangeNote, syncToggleHtml } from "./syncToggle";
 import { printablesToken, readCollectionForPanel } from "../../providers/printables/content";
-import { pushPrintablesNow } from "../providerAccount";
+import { pushPrintablesNow } from "../../providers/printables/content";
 
 const SNAPMAKER_LISTS: { list: SnapmakerList; label: string }[] = [
   { list: "likes", label: "Likes" },

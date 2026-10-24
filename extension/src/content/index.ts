@@ -12,7 +12,7 @@ import { mountJobOverlay, mountPausedJobOverlay } from "./overlays";
 import { loadPanel } from "./panels";
 import { captureProviderAccount } from "./providerAccount";
 import { providerEnabled } from "./providerSettings";
-import { CONTENT_MODULES } from "./providers";
+import { CONTENT_MODULES } from "../providers/content";
 import { trackViewedModel } from "./recentlyViewed";
 import { errorHtml } from "./panels/results";
 import { api } from "./runtime";

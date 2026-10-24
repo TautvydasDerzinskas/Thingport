@@ -4,13 +4,13 @@
 import type { ListKind, ProviderId } from "../shared/providers/_generated";
 import { parseCrealitycloudLikesUrl } from "../shared/providers/_generated/crealitycloud/urls";
 import { parseSnapmakerListUrl, snapmakerListUrl } from "../shared/urls";
-import { crealitycloudUserId, loadCrealitycloudProfiles } from "../providers/crealitycloud/content";
-import { isUnboughtCults3dModel } from "../providers/cults3d/content";
-import { loadMakeronlineProfiles } from "../providers/makeronline/content";
-import { loadMakerworldDesignForPage, makerworldProfileIds } from "../providers/makerworld/pageData";
-import { loadNexprintProfiles } from "../providers/nexprint/content";
-import { loadSnapmakerProfiles, snapmakerUserId } from "../providers/snapmaker/content";
-import { thangsDownloadBlock } from "../providers/thangs/content";
+import { crealitycloudUserId, loadCrealitycloudProfiles } from "./crealitycloud/content";
+import { isUnboughtCults3dModel } from "./cults3d/content";
+import { loadMakeronlineProfiles } from "./makeronline/content";
+import { loadMakerworldDesignForPage, makerworldProfileIds } from "./makerworld/pageData";
+import { loadNexprintProfiles } from "./nexprint/content";
+import { loadSnapmakerProfiles, snapmakerUserId } from "./snapmaker/content";
+import { thangsDownloadBlock } from "./thangs/content";
 
 export type ProfileScope = "url" | "designer" | "all";
 

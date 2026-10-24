@@ -187,3 +187,42 @@ export async function readPrintables(token: string, me: Me, plan: PrintablesPush
   }
   return { user: me, collections, likes, listings };
 }
+
+// The token lasts minutes; the site renews an expired one only after it loads, so it's asked for again.
+const TOKEN_WAIT_MS = 30_000;
+const TOKEN_POLL_MS = 2_000;
+
+/** Reads and sends what only the user sees on Printables, when it's time (or `now`). */
+async function pushPrintables(
+  token: string,
+  me: { id: string; handle: string },
+  { now = false, listings = {} }: { now?: boolean; listings?: Record<string, string[]> } = {},
+): Promise<void> {
+  try {
+    const plan = await request("PRINTABLES_PUSH_DUE", { now });
+    if (!plan) return;
+    const push = await readPrintables(token, me, plan);
+    await request("PUSH_PRINTABLES", { ...push, listings: { ...push.listings, ...listings } });
+  } catch {}
+}
+
+/** Right away, with the models of a collection whose sync was just turned on on its page: the
+ *  instance can't have asked for them yet, and would otherwise wait for the next visit to read it. */
+export async function pushPrintablesNow(collectionId: string, modelIds: string[]): Promise<void> {
+  const token = await printablesToken();
+  const me = token ? await readMe(token).catch(() => null) : null;
+  if (token && me) await pushPrintables(token, me, { now: true, listings: { [collectionId]: modelIds } });
+}
+
+/** At most hourly, what only the signed-in user sees on Printables: private collections and likes,
+ *  for syncing them (above). The push names the account too: reported on its own, it
+ *  would link an account the user forgot in the app again. */
+export async function syncPrintables(): Promise<void> {
+  // The token lasts minutes; the site renews an expired one only after it loads, so keep asking.
+  for (let waited = 0; waited < TOKEN_WAIT_MS; waited += TOKEN_POLL_MS) {
+    const token = await printablesToken();
+    const me = token ? await readMe(token).catch(() => null) : null;
+    if (token && me) return pushPrintables(token, me);
+    await sleep(TOKEN_POLL_MS);
+  }
+}

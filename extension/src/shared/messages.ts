@@ -221,6 +221,12 @@ type Handler<M extends AnyMessages, K extends keyof M> = (
 ) => Promise<M[K]["result"]> | M[K]["result"];
 export type Handlers<M extends AnyMessages> = { [K in keyof M]: Handler<M, K> };
 
+/** The tab a message came from, for an action only a page can ask for. */
+export function senderTabId(sender: chrome.runtime.MessageSender): number {
+  if (!sender.tab?.id) throw new Error("This action is only available from a page");
+  return sender.tab.id;
+}
+
 /** Message types not in `handlers` are left for other listeners. */
 export function listen<M extends AnyMessages>(handlers: Partial<Handlers<M>>): void {
   chrome.runtime.onMessage.addListener((message: { type?: string; payload?: unknown }, sender, sendResponse) => {

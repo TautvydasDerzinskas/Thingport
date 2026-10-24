@@ -1,16 +1,10 @@
 // Sends the instance a provider's sign-in as this browser holds it, at the endpoint its manifest names, whenever it
-// changed since it was last sent. Each provider's own module says how its cookies read (see SESSION_SOURCES).
+// changed since it was last sent. Each provider's own module says how its cookies read (providers/sessions.ts).
 
 import { MANIFESTS, type AuthSlot, type ProviderId } from "../shared/providers/_generated";
 import { STORAGE_KEYS, type StoredConfig } from "../shared/storage";
 import { apiCall, requireConfig } from "./api";
-import { crealitycloudSession } from "../providers/crealitycloud/session";
-import { cults3dSession } from "../providers/cults3d/session";
-import { makeronlineSession } from "../providers/makeronline/background";
-import { myminifactorySession } from "../providers/myminifactory/session";
-import { nexprintSession } from "../providers/nexprint/session";
-import { snapmakerSession } from "../providers/snapmaker/session";
-import { thangsSession } from "../providers/thangs/session";
+import { SESSION_SOURCES } from "../providers/sessions";
 
 /** `value` tells it from the one sent last; `body` is what its endpoint takes. `userId`: who's signed in there. */
 export type BrowserSession = { value: string; body: Record<string, unknown>; userId?: string | null };
@@ -22,16 +16,6 @@ export type SessionSource = {
   signedOut?: Record<string, unknown>;
   /** The credential it is, when not the provider's default one. */
   slot?: AuthSlot["slot"];
-};
-
-const SESSION_SOURCES: Partial<Record<ProviderId, SessionSource>> = {
-  myminifactory: myminifactorySession,
-  snapmaker: snapmakerSession,
-  makeronline: makeronlineSession,
-  crealitycloud: crealitycloudSession,
-  nexprint: nexprintSession,
-  thangs: thangsSession,
-  cults3d: cults3dSession,
 };
 
 /** The endpoint every backend has, older ones included. */

@@ -10,6 +10,7 @@ import { importSingle } from "../../background/importJobs";
 import { recordRecentImport } from "../../background/recentImports";
 import type { SessionSource } from "../../background/sessionSync";
 import { MANIFESTS } from "../../shared/providers/_generated";
+import { type BackgroundMessages, type Handlers, senderTabId } from "../../shared/messages";
 
 const SITE = MANIFESTS.makeronline.site;
 const ACCESS_COOKIE = MANIFESTS.makeronline.sessionCookies.token;
@@ -262,3 +263,8 @@ export async function importMakeronlineModel(
   const files = await resolveMakeronlineFiles(tabId, payload.url, payload.scope);
   return importSingle({ url: payload.url, collectionId: payload.collectionId, title: payload.title, files });
 }
+
+export const makeronlineHandlers: Partial<Handlers<BackgroundMessages>> = {
+  IMPORT_MAKERONLINE_MODEL: (payload, sender) => importMakeronlineModel(senderTabId(sender), payload),
+  RUN_MAKERONLINE_WAITING: (_payload, sender) => runWaitingImports(senderTabId(sender)),
+};

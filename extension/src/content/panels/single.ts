@@ -10,7 +10,7 @@ import {
   resolveMakerworldProfileDownload,
 } from "../../providers/makerworld/downloadResolver";
 import { currentMakerworldProfileTitle } from "../../providers/makerworld/pageData";
-import { CONTENT_MODULES, type ProfileScope } from "../providers";
+import { CONTENT_MODULES, type ProfileScope } from "../../providers/content";
 import { api, escapeHtml } from "../runtime";
 import { onPanelAction, panelQuery, panelQueryAll, renderPanel } from "../shell";
 import { collectionIdFor, collectionPickerHtml, readCollectionChoice, wireCollectionPicker } from "./collectionPicker";

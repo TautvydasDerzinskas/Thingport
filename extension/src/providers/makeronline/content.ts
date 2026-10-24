@@ -1,5 +1,8 @@
 // MakerOnline's own model data, as its pages read it: which print profiles a model has, and whose they are.
 
+import { providerEnabled } from "../../content/providerSettings";
+import { request, send } from "../../shared/messages";
+import { MANIFESTS } from "../../shared/providers/_generated";
 import { parseMakeronlineModelUrl } from "../../shared/providers/_generated/makeronline/urls";
 
 export type MakeronlineProfileScope = "url" | "designer" | "all";
@@ -48,4 +51,13 @@ export async function loadMakeronlineProfiles(
   const model = parsed ? await loadModel(parsed.modelId) : null;
   if (!parsed || !model) return null;
   return (scope) => profileIds(model, scope, parsed.requestedProfileId);
+}
+
+/** Sends the MakerOnline sign-in on, then imports what waits for Grab: this page can sign its files. */
+export async function syncMakeronline(): Promise<void> {
+  if (!(await providerEnabled(MANIFESTS.makeronline.id))) return;
+  const { userId } = await request("SYNC_PROVIDER_SESSION", { provider: MANIFESTS.makeronline.id }).catch(() => ({
+    userId: null,
+  }));
+  if (userId) await send("RUN_MAKERONLINE_WAITING");
 }

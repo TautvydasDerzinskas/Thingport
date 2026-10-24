@@ -11,6 +11,7 @@ import type { MakerworldJob, MakerworldJobError } from "../../shared/messages";
 import { sendToTab } from "../../shared/messages";
 import { apiCall } from "../../background/api";
 import { importSingle } from "../../background/importJobs";
+import { type BackgroundMessages, type Handlers, senderTabId } from "../../shared/messages";
 
 const JOB_STORAGE_KEY = "makerworldCollectionJob";
 const JOB_ERROR_STORAGE_KEY = "makerworldJobError";
@@ -221,3 +222,16 @@ export async function dropJobIfForTab(tabId: number): Promise<void> {
   await setJob(null);
   await sendRunSummary(job, "the MakerWorld tab was closed.");
 }
+
+export const makerworldHandlers: Partial<Handlers<BackgroundMessages>> = {
+  START_MAKERWORLD_COLLECTION_JOB: (payload, sender) => startJob(senderTabId(sender), payload),
+  ABORT_MAKERWORLD_COLLECTION_JOB: (_payload, sender) => abortJob(senderTabId(sender)),
+  FORCE_ADVANCE_MAKERWORLD_JOB: (_payload, sender) => forceAdvanceJob(senderTabId(sender)),
+  RESUME_MAKERWORLD_JOB: (_payload, sender) => resumeJob(senderTabId(sender)),
+  // Not awaited: the step runs for as long as the import takes.
+  MAKERWORLD_JOB_STEP_DUE: (_payload, sender) => {
+    void advanceJob(senderTabId(sender));
+    return null;
+  },
+  GET_MAKERWORLD_JOB: (_payload, sender) => getJobForTab(sender.tab?.id),
+};
