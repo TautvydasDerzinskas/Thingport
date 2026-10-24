@@ -7,7 +7,7 @@
 import type { ResolvedDownload } from "../../shared/messages";
 import { send } from "../../shared/messages";
 import { parseMakerworldModelUrl } from "../../shared/providers/_generated/makerworld/urls";
-import { sleep } from "../runtime";
+import { sleep } from "../../content/runtime";
 import { DOWNLOAD_3MF, DOWNLOAD_ALL, DOWNLOAD_OTHER, DOWNLOAD_STL, OPEN_IN_APP } from "./labels";
 import {
   loadMakerworldDesignForPage,

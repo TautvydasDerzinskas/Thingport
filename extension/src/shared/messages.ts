@@ -71,7 +71,7 @@ export type ViewedModel = {
   viewedAt: number;
 };
 
-/** See content/makerworld/downloadResolver.ts. */
+/** See providers/makerworld/downloadResolver.ts. */
 /** `design` is absent when the page data couldn't be trusted to be this model's. */
 export type ResolvedDownload = {
   downloadUrl: string;
@@ -88,7 +88,7 @@ export type ImportSinglePayload = {
   entries?: string[];
   collectionId?: string | null;
   resolved?: ResolvedDownload | null;
-  /** MakerOnline's files, signed by its own page (see background/makeronline.ts). */
+  /** MakerOnline's files, signed by its own page (see providers/makeronline/background.ts). */
   files?: MakeronlineSignedFile[] | null;
   title?: string | null;
 };

@@ -6,15 +6,21 @@
 import type { ImportStatus, SyncLookup } from "../../shared/api";
 import { request } from "../../shared/messages";
 import { makerworldModelUrl } from "../../shared/providers/_generated/makerworld/urls";
-import { ctx } from "../context";
-import { findOrCreateCollection } from "./collectionPicker";
-import { NO_MORE_DATA } from "../makerworld/labels";
-import { loadMakerworldCollectionTotal } from "../makerworld/pageData";
-import { mountScanOverlay } from "../overlays";
-import { api, escapeHtml, sleep } from "../runtime";
-import { getShadowRoot, onPanelAction, panelQuery, renderPanel } from "../shell";
-import { errorHtml, statusHtml, successHtml } from "./results";
-import { applySyncToggle, loadSyncState, readSyncToggle, syncChangeNote, syncToggleHtml } from "./syncToggle";
+import { ctx } from "../../content/context";
+import { findOrCreateCollection } from "../../content/panels/collectionPicker";
+import { NO_MORE_DATA } from "./labels";
+import { loadMakerworldCollectionTotal } from "./pageData";
+import { mountScanOverlay } from "../../content/overlays";
+import { api, escapeHtml, sleep } from "../../content/runtime";
+import { getShadowRoot, onPanelAction, panelQuery, renderPanel } from "../../content/shell";
+import { errorHtml, statusHtml, successHtml } from "../../content/panels/results";
+import {
+  applySyncToggle,
+  loadSyncState,
+  readSyncToggle,
+  syncChangeNote,
+  syncToggleHtml,
+} from "../../content/panels/syncToggle";
 import { MANIFESTS } from "../../shared/providers/_generated";
 
 // The page may still be hydrating; checking too early sees zero cards and looks like the end.

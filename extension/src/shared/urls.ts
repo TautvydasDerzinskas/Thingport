@@ -26,7 +26,7 @@ export function classifyUrl(url: string): Classification | null {
   const snapmakerList = parseSnapmakerListUrl(url);
   if (snapmakerList) return { kind: "batch", provider: MANIFESTS.snapmaker.id, type: snapmakerList.list };
   const list = parseListUrl(url);
-  // Printables likes are their owner's alone, read as the user and pushed (see content/printables.ts), not imported here.
+  // Printables likes are their owner's alone, read as the user and pushed (see providers/printables/content.ts), not imported here.
   if (list && !(list.provider === MANIFESTS.printables.id && list.kind === "likes")) {
     return { kind: "batch", provider: list.provider, type: list.kind };
   }

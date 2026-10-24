@@ -1,6 +1,6 @@
-import type { ConfiguredConfig } from "./config";
-import { apiCall } from "./api";
-import { MANIFESTS } from "../shared/providers/_generated";
+import type { ConfiguredConfig } from "../../background/config";
+import { apiCall } from "../../background/api";
+import { MANIFESTS } from "../../shared/providers/_generated";
 
 const { makerworld } = MANIFESTS;
 

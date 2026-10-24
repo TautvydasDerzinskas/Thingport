@@ -1,8 +1,8 @@
 // Creality Cloud's own model data, as its pages read it: which print profiles a model has, and whose they are.
 
-import { request } from "../shared/messages";
-import { parseCrealitycloudModelUrl } from "../shared/providers/_generated/crealitycloud/urls";
-import { MANIFESTS } from "../shared/providers/_generated";
+import { request } from "../../shared/messages";
+import { parseCrealitycloudModelUrl } from "../../shared/providers/_generated/crealitycloud/urls";
+import { MANIFESTS } from "../../shared/providers/_generated";
 
 export type CrealitycloudProfileScope = "url" | "designer" | "all";
 

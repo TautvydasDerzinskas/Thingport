@@ -4,10 +4,10 @@
 
 import { request, send } from "../shared/messages";
 import { MANIFESTS, PROVIDER_IDS, type ProviderId, URLS } from "../shared/providers/_generated";
-import { printablesToken, readMe, readPrintables } from "./printables";
+import { printablesToken, readMe, readPrintables } from "../providers/printables/content";
 import { providerEnabled } from "./providerSettings";
 import { sleep } from "./runtime";
-import { cults3dSignedIn } from "./cults3d";
+import { cults3dSignedIn } from "../providers/cults3d/content";
 
 // The header is drawn after load; give up quietly if it never shows (e.g. signed out).
 const HEADER_WAIT_MS = 15_000;

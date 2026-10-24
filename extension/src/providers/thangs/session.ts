@@ -2,8 +2,8 @@
 // token) and the refreshToken cookie that renews it. Thingport renews the access token itself, so Grab only sends them
 // on when the browser's change: a sign-in, or the site renewing its own.
 
-import type { SessionSource } from "./sessionSync";
-import { MANIFESTS } from "../shared/providers/_generated";
+import type { SessionSource } from "../../background/sessionSync";
+import { MANIFESTS } from "../../shared/providers/_generated";
 
 const { thangs } = MANIFESTS;
 

@@ -3,13 +3,13 @@
 // page sign each one, the same way its own Download button does, and hands the signed links to the instance. Imports
 // started anywhere else wait on the instance until Grab sees a makeronline.com page (runWaitingImports).
 
-import type { Print } from "../shared/api";
-import type { MakeronlineSignedFile } from "../shared/messages";
-import { apiCall } from "./api";
-import { importSingle } from "./importJobs";
-import { recordRecentImport } from "./recentImports";
-import type { SessionSource } from "./sessionSync";
-import { MANIFESTS } from "../shared/providers/_generated";
+import type { Print } from "../../shared/api";
+import type { MakeronlineSignedFile } from "../../shared/messages";
+import { apiCall } from "../../background/api";
+import { importSingle } from "../../background/importJobs";
+import { recordRecentImport } from "../../background/recentImports";
+import type { SessionSource } from "../../background/sessionSync";
+import { MANIFESTS } from "../../shared/providers/_generated";
 
 const SITE = MANIFESTS.makeronline.site;
 const ACCESS_COOKIE = MANIFESTS.makeronline.sessionCookies.token;

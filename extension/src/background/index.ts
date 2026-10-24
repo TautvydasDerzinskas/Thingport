@@ -15,14 +15,14 @@ import {
   getJobForTab,
   resumeJob,
   startJob,
-} from "./makerworldJob";
+} from "../providers/makerworld/job";
 import { getPrintablesToken, printablesPushDue, pushPrintables, reportProviderAccount } from "./providerAccounts";
 import { getRecentImports } from "./recentImports";
 import { seasonalIcon } from "../shared/seasonalIcon";
 import { clearRecentlyViewed, getRecentlyViewed, recordViewedModel } from "./recentlyViewed";
-import { scheduleSnapmakerRenewal, SNAPMAKER_ALARM } from "./snapmakerSession";
+import { scheduleSnapmakerRenewal, SNAPMAKER_ALARM } from "../providers/snapmaker/session";
 import { syncSession } from "./sessionSync";
-import { importMakeronlineModel, runWaitingImports } from "./makeronline";
+import { importMakeronlineModel, runWaitingImports } from "../providers/makeronline/background";
 import { onPairingTabClosed, onPairingTabUrl, startPairing } from "./pairing";
 import { openSetup } from "./setup";
 import { setTabIconState } from "./tabIcon";

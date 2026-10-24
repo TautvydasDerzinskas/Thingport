@@ -2,8 +2,8 @@
 // HttpOnly, so only the background can read it; it's sent to the instance from each signed-in MyMiniFactory page, so
 // imports, the web app's included, pick up the renewed one on the next page opened.
 
-import type { SessionSource } from "./sessionSync";
-import { MANIFESTS } from "../shared/providers/_generated";
+import type { SessionSource } from "../../background/sessionSync";
+import { MANIFESTS } from "../../shared/providers/_generated";
 
 const { myminifactory } = MANIFESTS;
 

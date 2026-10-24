@@ -2,8 +2,8 @@
 // it for a week and sets it again whenever it refreshes the token, so Grab sends each new one on, with the cookie's
 // expiry for the app to show.
 
-import type { SessionSource } from "./sessionSync";
-import { MANIFESTS } from "../shared/providers/_generated";
+import type { SessionSource } from "../../background/sessionSync";
+import { MANIFESTS } from "../../shared/providers/_generated";
 
 const { nexprint } = MANIFESTS;
 

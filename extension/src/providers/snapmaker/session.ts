@@ -3,9 +3,9 @@
 // it. So Grab is the only one that renews, for the browser and Thingport both: it writes the new tokens back into the
 // browser's cookies, where the site picks them up, and sends the access token on. Thingport never renews it itself.
 
-import { OPTIONAL_SITES, siteEnabled } from "../shared/optionalSites";
-import type { SessionSource } from "./sessionSync";
-import { MANIFESTS } from "../shared/providers/_generated";
+import { OPTIONAL_SITES, siteEnabled } from "../../shared/optionalSites";
+import type { SessionSource } from "../../background/sessionSync";
+import { MANIFESTS } from "../../shared/providers/_generated";
 
 const { snapmaker } = MANIFESTS;
 const SITE = snapmaker.site;

@@ -6,11 +6,11 @@
 // same reason the wait between models is counted down by the next model's page (see overlays.ts),
 // not slept here: the background is killed after 30s idle.
 
-import type { ImportStatus } from "../shared/api";
-import type { MakerworldJob, MakerworldJobError } from "../shared/messages";
-import { sendToTab } from "../shared/messages";
-import { apiCall } from "./api";
-import { importSingle } from "./importJobs";
+import type { ImportStatus } from "../../shared/api";
+import type { MakerworldJob, MakerworldJobError } from "../../shared/messages";
+import { sendToTab } from "../../shared/messages";
+import { apiCall } from "../../background/api";
+import { importSingle } from "../../background/importJobs";
 
 const JOB_STORAGE_KEY = "makerworldCollectionJob";
 const JOB_ERROR_STORAGE_KEY = "makerworldJobError";

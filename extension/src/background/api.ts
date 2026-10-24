@@ -6,7 +6,7 @@ import type { Connection } from "../shared/messages";
 import { STORAGE_KEYS, apiUrl } from "../shared/storage";
 import { isMakerworldUrl } from "../shared/urls";
 import { getStoredConfig, isConfigured, type ConfiguredConfig } from "./config";
-import { getLiveMakerworldCookie, maybeSyncMakerworldCookie } from "./makerworldCookie";
+import { getLiveMakerworldCookie, maybeSyncMakerworldCookie } from "../providers/makerworld/cookie";
 
 const TOKEN_REFRESH_MARGIN_MS = 5 * 60 * 1000;
 

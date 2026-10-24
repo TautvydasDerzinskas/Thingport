@@ -11,7 +11,7 @@ import { isPanelMounted, onPanelAction, panelQueryAll, renderPanel } from "../sh
 import { errorHtml, statusHtml, successHtml } from "./results";
 import { loadingModelsPhrases, renderFunStatus } from "./funStatus";
 import { applySyncToggle, loadSyncState, readSyncToggle, syncChangeNote, syncToggleHtml } from "./syncToggle";
-import { printablesToken, readCollectionForPanel } from "../printables";
+import { printablesToken, readCollectionForPanel } from "../../providers/printables/content";
 import { pushPrintablesNow } from "../providerAccount";
 
 const SNAPMAKER_LISTS: { list: SnapmakerList; label: string }[] = [

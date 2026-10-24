@@ -1,8 +1,8 @@
 // Snapmaker Space's own model data, as its pages read it: which print profiles a model has, and whose they are.
 
-import { request } from "../shared/messages";
-import { parseSnapmakerModelUrl } from "../shared/providers/_generated/snapmaker/urls";
-import { MANIFESTS } from "../shared/providers/_generated";
+import { request } from "../../shared/messages";
+import { parseSnapmakerModelUrl } from "../../shared/providers/_generated/snapmaker/urls";
+import { MANIFESTS } from "../../shared/providers/_generated";
 
 export type SnapmakerProfileScope = "url" | "designer" | "all";
 

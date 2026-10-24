@@ -1,7 +1,7 @@
 // Thingiverse's Offline features: dark mode and hidden ads. Runs at document_start, apart from the main content
 // script, so the page is restyled before it first paints rather than flashing white or showing the ads first.
 
-import { STORAGE_KEYS, offlineFeatureOn, type OfflineFeature, type StoredConfig } from "../shared/storage";
+import { STORAGE_KEYS, offlineFeatureOn, type OfflineFeature, type StoredConfig } from "../../shared/storage";
 import adsCss from "./ads.scss?inline";
 import darkCss from "./dark.scss?inline";
 

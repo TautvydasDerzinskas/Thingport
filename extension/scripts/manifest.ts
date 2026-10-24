@@ -35,7 +35,7 @@ export function buildManifest(target: Target, pkg: { version: string; descriptio
     },
     background: target === "firefox" ? { scripts: ["background.js"] } : { service_worker: "background.js" },
     // scripting: the content script for sites the user turns on later (src/shared/optionalSites.ts). alarms: renewing
-    // the Snapmaker sign-in on a timer (src/background/snapmakerSession.ts). Neither carries an install warning, so
+    // the Snapmaker sign-in on a timer (src/providers/snapmaker/session.ts). Neither carries an install warning, so
     // adding them didn't need everyone to approve the update.
     permissions: ["storage", "cookies", "downloads", "scripting", "alarms"],
     // chrome.cookies needs these as host permissions; content script matches don't count. Their
@@ -45,7 +45,7 @@ export function buildManifest(target: Target, pkg: { version: string; descriptio
     optional_host_permissions: ["*://*/*"],
     content_scripts: [
       { matches: PROVIDER_MATCHES, js: ["content.js"], run_at: "document_idle" },
-      // Thingiverse's restyles, before the page paints so it doesn't flash white or show ads first (src/thingiverse/).
+      // Thingiverse's restyles, before the page paints so it doesn't flash white or show ads first (src/providers/thingiverse/).
       { matches: ["*://*.thingiverse.com/*"], js: ["thingiverse.js"], run_at: "document_start" },
     ],
   };

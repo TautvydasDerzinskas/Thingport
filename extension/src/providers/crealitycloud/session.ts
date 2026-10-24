@@ -2,8 +2,8 @@
 // model_user_id cookies, which its API takes together. The site sets them once at sign-in for a week and never renews
 // them, so Grab only sends each new pair on, with the cookie's expiry for the app to show.
 
-import type { SessionSource } from "./sessionSync";
-import { MANIFESTS } from "../shared/providers/_generated";
+import type { SessionSource } from "../../background/sessionSync";
+import { MANIFESTS } from "../../shared/providers/_generated";
 
 const { site: SITE, sessionCookies: COOKIES } = MANIFESTS.crealitycloud;
 

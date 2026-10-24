@@ -4,13 +4,13 @@
 import { MANIFESTS, type AuthSlot, type ProviderId } from "../shared/providers/_generated";
 import { STORAGE_KEYS, type StoredConfig } from "../shared/storage";
 import { apiCall, requireConfig } from "./api";
-import { crealitycloudSession } from "./crealitycloudSession";
-import { cults3dSession } from "./cults3dSession";
-import { makeronlineSession } from "./makeronline";
-import { myminifactorySession } from "./myminifactorySession";
-import { nexprintSession } from "./nexprintSession";
-import { snapmakerSession } from "./snapmakerSession";
-import { thangsSession } from "./thangsSession";
+import { crealitycloudSession } from "../providers/crealitycloud/session";
+import { cults3dSession } from "../providers/cults3d/session";
+import { makeronlineSession } from "../providers/makeronline/background";
+import { myminifactorySession } from "../providers/myminifactory/session";
+import { nexprintSession } from "../providers/nexprint/session";
+import { snapmakerSession } from "../providers/snapmaker/session";
+import { thangsSession } from "../providers/thangs/session";
 
 /** `value` tells it from the one sent last; `body` is what its endpoint takes. `userId`: who's signed in there. */
 export type BrowserSession = { value: string; body: Record<string, unknown>; userId?: string | null };

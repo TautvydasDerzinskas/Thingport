@@ -4,9 +4,9 @@
 
 import { createIcon } from "../../shared/icon";
 import { NORMALIZE_3MF_SLICERS } from "../../shared/slicers";
-import { api } from "../runtime";
-import css from "../styles/normalized.scss?inline";
-import { gettingFilePhrases, normalizingPhrases, rotatePhrases } from "../panels/funStatus";
+import { api } from "../../content/runtime";
+import css from "../../content/styles/normalized.scss?inline";
+import { gettingFilePhrases, normalizingPhrases, rotatePhrases } from "../../content/panels/funStatus";
 import { resolveMakerworldDownloadUrl } from "./downloadResolver";
 import { DOWNLOAD_3MF, DOWNLOAD_OTHER, DOWNLOAD_STL, OPEN_IN_APP } from "./labels";
 import { normalizeBambu3mf } from "./normalize";

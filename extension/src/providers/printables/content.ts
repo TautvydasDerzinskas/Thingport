@@ -3,10 +3,10 @@
 // what Printables shows its owner only: private collections and likes (see background/
 // providerAccounts.ts for where it goes).
 
-import type { PrintablesPush, PrintablesPushPlan } from "../shared/messages";
-import { request } from "../shared/messages";
-import { sleep } from "./runtime";
-import { MANIFESTS } from "../shared/providers/_generated";
+import type { PrintablesPush, PrintablesPushPlan } from "../../shared/messages";
+import { request } from "../../shared/messages";
+import { sleep } from "../../content/runtime";
+import { MANIFESTS } from "../../shared/providers/_generated";
 
 const { graphql: GRAPHQL_URL, media: MEDIA_BASE } = MANIFESTS.printables.endpoints;
 const PAGE_SIZE = 30;

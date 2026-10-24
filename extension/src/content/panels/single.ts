@@ -1,5 +1,5 @@
 // Every provider's model pages import directly but MakerWorld's, which go through /import/inspect first, like the web
-// app's useUploadImport.tsx. MakerOnline's files are signed on its own page first (see background/makeronline.ts).
+// app's useUploadImport.tsx. MakerOnline's files are signed on its own page first (see providers/makeronline/background.ts).
 
 import type { FillGapsResult, InspectResult, SourceGap, ZipEntriesResult } from "../../shared/api";
 import { request } from "../../shared/messages";
@@ -8,8 +8,8 @@ import {
   isMakerworldBlockingError,
   resolveMakerworldDownloadUrl,
   resolveMakerworldProfileDownload,
-} from "../makerworld/downloadResolver";
-import { currentMakerworldProfileTitle } from "../makerworld/pageData";
+} from "../../providers/makerworld/downloadResolver";
+import { currentMakerworldProfileTitle } from "../../providers/makerworld/pageData";
 import { CONTENT_MODULES, type ProfileScope } from "../providers";
 import { api, escapeHtml } from "../runtime";
 import { onPanelAction, panelQuery, panelQueryAll, renderPanel } from "../shell";

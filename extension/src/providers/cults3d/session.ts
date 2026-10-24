@@ -2,8 +2,8 @@
 // cf_clearance cookie Cloudflare gave this browser, with the User-Agent it gave it to. Thingport's server sends them
 // as this browser would; the clearance only holds from this browser's IP address. Sent on when they change.
 
-import type { SessionSource } from "./sessionSync";
-import { MANIFESTS } from "../shared/providers/_generated";
+import type { SessionSource } from "../../background/sessionSync";
+import { MANIFESTS } from "../../shared/providers/_generated";
 
 const { cults3d } = MANIFESTS;
 const SITE = cults3d.site;
@@ -32,7 +32,7 @@ export const cults3dSession: SessionSource = {
       cookieValue(cults3d.sessionCookies.clearance),
     ]);
     if (!session) return null;
-    // Only asked for from a signed-in page (see content/cults3d.ts): visitors get a session cookie too.
+    // Only asked for from a signed-in page (see providers/cults3d/content.ts): visitors get a session cookie too.
     const cookie = `${cults3d.sessionCookies.session}=${session}${clearance ? `; ${cults3d.sessionCookies.clearance}=${clearance}` : ""}`;
     return { value: `${cookie} ${navigator.userAgent}`, body: { session: cookie, user_agent: navigator.userAgent } };
   },
