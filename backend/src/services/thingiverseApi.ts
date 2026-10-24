@@ -12,6 +12,12 @@ import {
 } from "./flaresolverr";
 import { getFlaresolverrUrl } from "./settingsService";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "./trendingModel";
+import {
+  parseThingiverseCollectionUrl,
+  parseThingiverseLikesUrl,
+  parseThingiverseThingUrl,
+} from "../providers/_generated/thingiverse/urls";
+export { parseThingiverseCollectionUrl, parseThingiverseLikesUrl, parseThingiverseThingUrl };
 
 // The official API needs an App Token (not a session cookie). It's still behind Cloudflare
 // and returns a sticky 429 challenge after a few rapid requests, hence ThingiverseRateLimitError
@@ -51,34 +57,6 @@ export class ThingiverseRateLimitError extends Error {
     );
     this.name = "ThingiverseRateLimitError";
   }
-}
-
-export function parseThingiverseThingUrl(url: string): { thingId: string } | null {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return null;
-  }
-  const host = parsed.hostname.toLowerCase();
-  if (host !== "thingiverse.com" && host !== "www.thingiverse.com") return null;
-  const m1 = parsed.pathname.match(/thing:(\d+)/i);
-  if (m1) return { thingId: m1[1] };
-  const m2 = parsed.pathname.match(/\/things\/(\d+)/i);
-  return m2 ? { thingId: m2[1] } : null;
-}
-
-export function parseThingiverseLikesUrl(url: string): { username: string } | null {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return null;
-  }
-  const host = parsed.hostname.toLowerCase();
-  if (host !== "thingiverse.com" && host !== "www.thingiverse.com") return null;
-  const m = parsed.pathname.match(/^\/([^/]+)\/likes\/?$/i);
-  return m ? { username: m[1] } : null;
 }
 
 async function rawApiFetch(url: string): Promise<Response> {
@@ -355,20 +333,6 @@ export async function checkThingiverseCollection(
  * so an outage is never taken for a deleted account. */
 export async function checkThingiverseUser(username: string, accessToken: string): Promise<boolean> {
   return (await fetchThingiverseUser(username, accessToken)) !== null;
-}
-
-/** The username in the URL is cosmetic; only the collection id is needed. */
-export function parseThingiverseCollectionUrl(url: string): { collectionId: string } | null {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return null;
-  }
-  const host = parsed.hostname.toLowerCase();
-  if (host !== "thingiverse.com" && host !== "www.thingiverse.com") return null;
-  const m = parsed.pathname.match(/\/collections\/(\d+)/i);
-  return m ? { collectionId: m[1] } : null;
 }
 
 /** A user's profile as the API gives it; null when there's no such user. */

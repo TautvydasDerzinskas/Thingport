@@ -20,6 +20,8 @@ const TARGETS = [
 ];
 // Grab's manifest.json lists these sites; any change makes browsers disable it until each user approves the update.
 const BUILTIN_SITES = ["makerworld", "printables", "thingiverse"];
+// What each provider's folder holds, copied as they are.
+const PROVIDER_FILES = ["manifest.ts", "urls.ts"];
 
 const header = (from) =>
   `// GENERATED from ${from} by scripts/sync-providers.mjs. Don't edit it here:\n` +
@@ -31,8 +33,10 @@ async function loadManifests() {
     .map((entry) => entry.name);
   const manifests = [];
   for (const id of ids) {
+    for (const required of PROVIDER_FILES) {
+      if (!existsSync(path.join(SOURCE, id, required))) throw new Error(`providers/${id} has no ${required}`);
+    }
     const file = path.join(SOURCE, id, "manifest.ts");
-    if (!existsSync(file)) throw new Error(`providers/${id} has no manifest.ts`);
     const manifest = (await import(pathToFileURL(file).href)).default;
     if (manifest.id !== id) throw new Error(`providers/${id}/manifest.ts says its id is "${manifest.id}"`);
     manifests.push(manifest);
@@ -49,19 +53,22 @@ async function loadManifests() {
 
 function index(manifests) {
   const ids = manifests.map((manifest) => manifest.id);
-  const name = (id) => (/^[a-z_$][\w$]*$/i.test(id) ? id : JSON.stringify(id));
-  return `${header("providers/*/manifest.ts")}
+  return `${header("providers/*/")}
 import { hostIs } from "./_lib/hosts";
-${ids.map((id) => `import ${name(id)} from "./${id}/manifest";`).join("\n")}
+import type { ListLink, ModelLink, ProviderUrls } from "./_lib/types";
+${ids.map((id) => `import ${id} from "./${id}/manifest";\nimport { urls as ${id}Urls } from "./${id}/urls";`).join("\n")}
 
-export type { Chip, Logo, Need, ProviderManifest, SignIn } from "./_lib/types";
+export type { Chip, ListKind, ListLink, Logo, ModelLink, Need, ProviderManifest, ProviderUrls, SignIn } from "./_lib/types";
 export { hostIs } from "./_lib/hosts";
+export { LIKES_ID_PREFIX } from "./_lib/lists";
 
 /** Every provider, in the order lists show them. */
 export const PROVIDER_IDS = [${ids.map((id) => JSON.stringify(id)).join(", ")}] as const;
 export type ProviderId = (typeof PROVIDER_IDS)[number];
 
-export const MANIFESTS = { ${ids.map(name).join(", ")} } as const;
+export const MANIFESTS = { ${ids.join(", ")} } as const;
+
+export const URLS: { readonly [K in ProviderId]: ProviderUrls } = { ${ids.map((id) => `${id}: ${id}Urls`).join(", ")} };
 
 export function isProviderId(value: unknown): value is ProviderId {
   return typeof value === "string" && Object.hasOwn(MANIFESTS, value);
@@ -70,6 +77,37 @@ export function isProviderId(value: unknown): value is ProviderId {
 /** The provider whose site \`hostname\` is, subdomains included; null for any other site. */
 export function providerOfHost(hostname: string): ProviderId | null {
   return PROVIDER_IDS.find((id) => MANIFESTS[id].hosts.some((domain) => hostIs(hostname, domain))) ?? null;
+}
+
+/** The provider whose links a URL's host is, as its parsers read them (narrower than providerOfHost: Snapmaker's
+ *  are on space.snapmaker.com only); null for any other site or no URL. */
+export function detectProvider(url: string): ProviderId | null {
+  let hostname: string;
+  try {
+    hostname = new URL(url).hostname;
+  } catch {
+    return null;
+  }
+  return PROVIDER_IDS.find((id) => URLS[id].isHost(hostname)) ?? null;
+}
+
+/** The model a link is the page of, on whichever provider. */
+export function parseModelUrl(url: string): (ModelLink & { provider: ProviderId }) | null {
+  const provider = detectProvider(url);
+  const model = provider && URLS[provider].parseModel(url);
+  return model ? { provider: provider!, ...model } : null;
+}
+
+/** The list (collection, likes, bookmarks) a link is the page of, on whichever provider. */
+export function parseListUrl(url: string): (ListLink & { provider: ProviderId }) | null {
+  const provider = detectProvider(url);
+  const list = provider && URLS[provider].parseList(url);
+  return list ? { provider: provider!, ...list } : null;
+}
+
+/** A model's page; null for a provider there's no manifest for. */
+export function modelUrl(provider: string, externalId: string): string | null {
+  return isProviderId(provider) ? URLS[provider].modelUrl(externalId) : null;
 }
 `;
 }
@@ -81,8 +119,10 @@ async function outputs(manifests) {
     files.set(`_lib/${file}`, header(`providers/_lib/${file}`) + readFileSync(path.join(SOURCE, "_lib", file), "utf8"));
   }
   for (const { id } of manifests) {
-    const from = `providers/${id}/manifest.ts`;
-    files.set(`${id}/manifest.ts`, header(from) + readFileSync(path.join(ROOT, from), "utf8"));
+    for (const file of PROVIDER_FILES) {
+      const from = `providers/${id}/${file}`;
+      files.set(`${id}/${file}`, header(from) + readFileSync(path.join(ROOT, from), "utf8"));
+    }
   }
   files.set("index.ts", index(manifests));
   const config = await prettier.resolveConfig(path.join(ROOT, "package.json"));

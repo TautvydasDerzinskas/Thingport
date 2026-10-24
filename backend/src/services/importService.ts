@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import { modelUrl, parseModelUrl } from "../providers/_generated";
 import fsSync from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -62,25 +63,18 @@ import {
 } from "./makerworldCloudApi";
 import { openSourceGaps, type SourceGap } from "./sourceGaps";
 import {
-  parseThingiverseThingUrl,
   resolveThingiverseThing,
   ThingiverseAuthError,
   ThingiverseRateLimitError,
   type ThingiversePlateFile,
 } from "./thingiverseApi";
-import {
-  parsePrintablesModelUrl,
-  resolvePrintablesDownloadLinks,
-  resolvePrintablesModel,
-  type PrintablesPlateFile,
-} from "./printablesApi";
+import { resolvePrintablesDownloadLinks, resolvePrintablesModel, type PrintablesPlateFile } from "./printablesApi";
 import {
   isMyminifactoryFileHost,
   listMyminifactoryLibraryFiles,
   MyminifactoryAuthError,
   MyminifactoryRateLimitError,
   MyminifactorySessionExpiredError,
-  parseMyminifactoryObjectUrl,
   resolveMyminifactoryDownload,
   resolveMyminifactoryLibraryDownload,
   resolveMyminifactoryObject,
@@ -96,7 +90,7 @@ import {
   type SnapmakerFile,
 } from "./snapmakerApi";
 import { getUserSnapmakerToken, markSnapmakerTokenRejected, SNAPMAKER_CONNECT } from "./snapmakerSessionService";
-import { isMakeronlineFileHost, parseMakeronlineModelUrl, resolveMakeronlineModel } from "./makeronlineApi";
+import { isMakeronlineFileHost, resolveMakeronlineModel } from "./makeronlineApi";
 import { clearGrabImports } from "./grabImportService";
 import {
   CrealitycloudAuthError,
@@ -131,25 +125,21 @@ import { getUserNexprintToken, markNexprintSessionRejected, NEXPRINT_CONNECT } f
 import {
   fetchThangsDownload,
   isThangsFileHost,
-  parseThangsModelUrl,
   resolveThangsModel,
   ThangsAuthError,
   ThangsBlockedError,
   ThangsDownloadLimitError,
-  thangsModelUrl,
   type ThangsModelResolution,
 } from "./thangsApi";
 import { getUserThangsToken, markThangsSessionRejected, THANGS_CONNECT, withThangsToken } from "./thangsSessionService";
 import {
   Cults3dAuthError,
   Cults3dBlockedError,
-  cults3dModelUrl,
   Cults3dNoFreeDownloadError,
   Cults3dRateLimitError,
   Cults3dSessionError,
   fetchCults3dOrders,
   isCults3dFileHost,
-  parseCults3dModelUrl,
   placeCults3dFreeOrder,
   resolveCults3dDownload,
   resolveCults3dModel,
@@ -895,37 +885,14 @@ export async function resolveCategoryIdByCategory(
 
 /** Provider + stable external id for a model URL, used to dedupe imports. Null if unknown. */
 export function identifySourceModel(url: string): { provider: string; externalId: string } | null {
-  const makerworld = parseMakerworldModelUrl(url);
-  if (makerworld) return { provider: "makerworld", externalId: makerworld.designId };
-  const thingiverse = parseThingiverseThingUrl(url);
-  if (thingiverse) return { provider: "thingiverse", externalId: thingiverse.thingId };
-  const printables = parsePrintablesModelUrl(url);
-  if (printables) return { provider: "printables", externalId: printables.modelId };
-  const myminifactory = parseMyminifactoryObjectUrl(url);
-  if (myminifactory) return { provider: "myminifactory", externalId: myminifactory.objectId };
-  const snapmaker = parseSnapmakerModelUrl(url);
-  if (snapmaker) return { provider: "snapmaker", externalId: snapmaker.modelId };
-  const makeronline = parseMakeronlineModelUrl(url);
-  if (makeronline) return { provider: "makeronline", externalId: makeronline.modelId };
-  const crealitycloud = parseCrealitycloudModelUrl(url);
-  if (crealitycloud) return { provider: "crealitycloud", externalId: crealitycloud.modelId };
-  const nexprint = parseNexprintModelUrl(url);
-  if (nexprint) return { provider: "nexprint", externalId: nexprint.modelId };
-  const thangs = parseThangsModelUrl(url);
-  if (thangs) return { provider: "thangs", externalId: thangs.modelId };
-  const cults3d = parseCults3dModelUrl(url);
-  if (cults3d) return { provider: "cults3d", externalId: cults3d.slug };
-  return null;
+  const model = parseModelUrl(url);
+  return model && { provider: model.provider, externalId: model.externalId };
 }
 
 /** The print profile a MakerWorld, Snapmaker, MakerOnline, Creality Cloud or NexPrint link names, if any. */
 function requestedProfileOf(provider: string, url: string): string | null {
-  if (provider === "makerworld") return parseMakerworldModelUrl(url)?.requestedInstanceId ?? null;
-  if (provider === "snapmaker") return parseSnapmakerModelUrl(url)?.requestedProfileId ?? null;
-  if (provider === "makeronline") return parseMakeronlineModelUrl(url)?.requestedProfileId ?? null;
-  if (provider === "crealitycloud") return parseCrealitycloudModelUrl(url)?.requestedProfileId ?? null;
-  if (provider === "nexprint") return parseNexprintModelUrl(url)?.requestedProfileId ?? null;
-  return null;
+  const model = parseModelUrl(url);
+  return model?.provider === provider ? model.requestedProfileId : null;
 }
 
 /** `state` refines already_imported for a MakerWorld URL naming a profile: "profile_missing"
@@ -994,19 +961,7 @@ export async function checkImportStatus(userId: string, url: string): Promise<Im
 
 /** Inverse of identifySourceModel, for the "Open in {Provider}" link. */
 export function buildImportSourceUrl(provider: string | null, externalId: string | null): string | null {
-  if (!provider || !externalId) return null;
-  if (provider === "makerworld") return `https://makerworld.com/en/models/${externalId}`;
-  if (provider === "thingiverse") return `https://www.thingiverse.com/thing:${externalId}`;
-  if (provider === "printables") return `https://www.printables.com/model/${externalId}`;
-  // MyMiniFactory redirects an object id with any slug, or none, to its page.
-  if (provider === "myminifactory") return `https://www.myminifactory.com/object/3d-print-${externalId}`;
-  if (provider === "snapmaker") return `https://space.snapmaker.com/en/model/${externalId}`;
-  if (provider === "makeronline") return `https://www.makeronline.com/en/model/${externalId}`;
-  if (provider === "crealitycloud") return `https://www.crealitycloud.com/model-detail/${externalId}`;
-  if (provider === "nexprint") return `https://www.nexprint.com/en/models/${externalId}`;
-  if (provider === "thangs") return thangsModelUrl(externalId);
-  if (provider === "cults3d") return cults3dModelUrl(externalId);
-  return null;
+  return provider && externalId ? modelUrl(provider, externalId) : null;
 }
 
 async function findExistingImportedPrint(

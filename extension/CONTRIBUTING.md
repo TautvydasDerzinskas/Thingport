@@ -87,8 +87,9 @@ rejects notes of 2,000 characters or more (`npm run check:edge-notes`).
   event page in Firefox, so keep top-level background code free of anything only one supports.
 - If it changes anything visible, run `npm run screenshots` and commit the updated images.
 - If it adds a runtime message, add it to `src/shared/messages.ts` so both ends stay typed.
-- Provider URL patterns in `src/shared/urls.ts` are duplicated from the web app and backend (see
-  the comment there) -- change them in all three places.
+- Provider URL patterns live in `providers/<id>/urls.ts` at the repo root, shared with the web app
+  and backend: change them there, run `npm run providers:sync` at the root, and add a case to
+  `providers/<id>/urls.fixtures.json`.
 
 ### Scripts
 

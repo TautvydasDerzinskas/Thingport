@@ -6,7 +6,6 @@ import {
   looksLikeCloudflareBlock,
 } from "./flaresolverr";
 import { maybeSleep } from "../utils/concurrency";
-import { hostIs } from "../utils/urlUtils";
 import type { ProviderCollectionCard } from "./providerCollectionCard";
 import {
   isCaptchaChallenge,
@@ -15,6 +14,8 @@ import {
   MakerworldCaptchaError,
   noteCaptchaChallenge,
 } from "./makerworldCaptcha";
+import { parseMakerworldCollectionUrl } from "../providers/_generated/makerworld/urls";
+export { parseMakerworldCollectionUrl };
 
 // Not behind Cloudflare. Private collections return 403 without the bearer token, so it's sent
 // whenever available.
@@ -126,18 +127,6 @@ async function fetchCollectionJson(
   } finally {
     clearTimeout(timeout);
   }
-}
-
-export function parseMakerworldCollectionUrl(url: string): { collectionId: string } | null {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return null;
-  }
-  if (!hostIs(parsed.hostname, "makerworld.com")) return null;
-  const match = parsed.pathname.match(/\/collections\/(\d+)/i);
-  return match ? { collectionId: match[1] } : null;
 }
 
 export async function fetchMakerworldCollectionTitle(

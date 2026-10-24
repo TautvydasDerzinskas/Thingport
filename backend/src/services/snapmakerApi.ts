@@ -3,6 +3,22 @@ import type { ImportedAuthorInfo, ImportedPageMetadata } from "./importResolvers
 import { htmlToMarkdown } from "./descriptionMarkdown";
 import type { ProviderCollectionCard } from "./providerCollectionCard";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "./trendingModel";
+import {
+  parseSnapmakerListUrl,
+  parseSnapmakerModelUrl,
+  snapmakerListKey,
+  snapmakerListUrl,
+  snapmakerModelUrl,
+  type SnapmakerList,
+} from "../providers/_generated/snapmaker/urls";
+export {
+  parseSnapmakerListUrl,
+  parseSnapmakerModelUrl,
+  snapmakerListKey,
+  snapmakerListUrl,
+  snapmakerModelUrl,
+  type SnapmakerList,
+};
 
 // Snapmaker Space has no public API, so this is the one its own pages call. Every answer is HTTP 200 with a `code` of
 // its own. Details are public, but their file links come signed for whoever asked, so files only download with the
@@ -36,48 +52,6 @@ export class SnapmakerAuthError extends Error {
     );
     this.name = "SnapmakerAuthError";
   }
-}
-
-function parseUrl(url: string): URL | null {
-  try {
-    const parsed = new URL(url);
-    return parsed.hostname.toLowerCase() === "space.snapmaker.com" ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
-/** `/en/model/<id>-<slug>`, the slug and language prefix optional; `#profileId-<id>` picks a print profile. */
-export function parseSnapmakerModelUrl(url: string): { modelId: string; requestedProfileId: string | null } | null {
-  const parsed = parseUrl(url);
-  const m = parsed?.pathname.match(/^\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?model\/(\d+)(?:-[^/]*)?\/?$/i);
-  if (!m) return null;
-  return { modelId: m[1], requestedProfileId: parsed!.hash.match(/profileId-(\d+)/i)?.[1] ?? null };
-}
-
-export function snapmakerModelUrl(modelId: string, profileId?: string | null): string {
-  return `${SITE_ORIGIN}/en/model/${modelId}${profileId ? `#profileId-${profileId}` : ""}`;
-}
-
-export type SnapmakerList = "likes" | "bookmarks";
-
-/** The user's likes and bookmarks share one page, `/creator/<id>?tab=interactions`, whose address doesn't change
- *  between the two; `list` tells them apart in the addresses Thingport keeps. */
-export function parseSnapmakerListUrl(url: string): { userId: string; list: SnapmakerList | null } | null {
-  const parsed = parseUrl(url);
-  const m = parsed?.pathname.match(/^\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?creator\/(\d+)\/?$/i);
-  if (!m || parsed!.searchParams.get("tab") !== "interactions") return null;
-  const list = parsed!.searchParams.get("list");
-  return { userId: m[1], list: list === "likes" || list === "bookmarks" ? list : null };
-}
-
-export function snapmakerListUrl(userId: string, list: SnapmakerList): string {
-  return `${SITE_ORIGIN}/en/creator/${userId}?tab=interactions&list=${list}`;
-}
-
-/** The id a sync keeps for the user's likes or bookmarks. */
-export function snapmakerListKey(userId: string, list: SnapmakerList): string {
-  return `${list}-${userId}`;
 }
 
 export function snapmakerListName(list: SnapmakerList): string {

@@ -1,5 +1,6 @@
-// What a provider declares about itself. Pure data: the generator (scripts/sync-providers.mjs) copies this folder into
-// the backend, frontend and extension, so it may import nothing but other files in providers/, and only types.
+// What a provider declares about itself. The generator (scripts/sync-providers.mjs) copies providers/ into the backend,
+// frontend and extension, so nothing here may import from outside it. Manifests are pure data and import only types;
+// a provider's urls.ts may use _lib/ too.
 
 /** How much a provider leans on a helper: Thingport Grab or FlareSolverr. */
 export type Need = "required" | "recommended" | "optional" | "none";
@@ -48,4 +49,23 @@ export type ProviderManifest = {
     site: "builtin" | "optional";
     origins: readonly string[];
   };
+};
+
+export type ListKind = "collection" | "likes" | "bookmarks";
+
+/** A model page, by the id Thingport keeps for it and the print profile the link names, if any. */
+export type ModelLink = { externalId: string; requestedProfileId: string | null };
+
+/** A list a sync can follow: `externalId` is what it's kept by, `url` its canonical page. `likesOf` names whose likes
+ *  they are, where the page belongs to a user other than the signed-in one can be. */
+export type ListLink = { kind: ListKind; externalId: string; url: string; likesOf?: string };
+
+/** How a provider's links are read and written, the same in the backend, the app and Grab. */
+export type ProviderUrls = {
+  /** Whether a host is the site's, as its links are read. */
+  isHost(hostname: string): boolean;
+  parseModel(url: string): ModelLink | null;
+  parseList(url: string): ListLink | null;
+  /** The page of a model by its id. */
+  modelUrl(externalId: string): string;
 };

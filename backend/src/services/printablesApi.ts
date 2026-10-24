@@ -4,6 +4,11 @@ import { type ImportedAuthorInfo, type ImportedPageMetadata } from "./importReso
 import { htmlToMarkdown } from "./descriptionMarkdown";
 import type { ProviderCollectionCard } from "./providerCollectionCard";
 import { asCount, asRecord, asText, recordsOf, type TrendingModel } from "./trendingModel";
+export {
+  parsePrintablesCollectionUrl,
+  parsePrintablesLikesUrl,
+  parsePrintablesModelUrl,
+} from "../providers/_generated/printables/urls";
 
 // Unlike Cloudflare-gated www.printables.com, the GraphQL API answers unauthenticated requests.
 const PRINTABLES_GRAPHQL_URL = "https://api.printables.com/graphql/";
@@ -17,19 +22,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function mediaUrl(filePath: unknown): string | null {
   return typeof filePath === "string" && filePath.trim() ? `${PRINTABLES_MEDIA_BASE}${filePath.trim()}` : null;
-}
-
-export function parsePrintablesModelUrl(url: string): { modelId: string } | null {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return null;
-  }
-  const host = parsed.hostname.toLowerCase();
-  if (host !== "printables.com" && host !== "www.printables.com") return null;
-  const m = parsed.pathname.match(/\/model\/(\d+)/i);
-  return m ? { modelId: m[1] } : null;
 }
 
 async function fetchPrintablesGraphql(query: string, variables: Record<string, unknown>): Promise<unknown | null> {
@@ -217,34 +209,6 @@ export async function resolvePrintablesDownloadLinks(modelId: string, fileIds: s
     }
   }
   return links;
-}
-
-/** A user's liked models, which Printables shows to that user only. */
-export function parsePrintablesLikesUrl(url: string): { handle: string } | null {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return null;
-  }
-  const host = parsed.hostname.toLowerCase();
-  if (host !== "printables.com" && host !== "www.printables.com") return null;
-  const m = parsed.pathname.match(/^\/(?:[a-z]{2}\/)?@([^/]+)\/collections\/liked\/?$/i);
-  return m ? { handle: decodeURIComponent(m[1]) } : null;
-}
-
-/** The `@handle` segment is cosmetic; only the id is used. */
-export function parsePrintablesCollectionUrl(url: string): { collectionId: string } | null {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return null;
-  }
-  const host = parsed.hostname.toLowerCase();
-  if (host !== "printables.com" && host !== "www.printables.com") return null;
-  const m = parsed.pathname.match(/\/collections\/(\d+)/i);
-  return m ? { collectionId: m[1] } : null;
 }
 
 export type PrintablesCollectionEntry = { modelId: string; title: string; cover: string | null };
