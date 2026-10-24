@@ -1,5 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { detectImportProvider, hostIs, isMakerworldCollectionUrl, isMakerworldModelUrl } from "./importLinkDetection";
+import {
+  detectImportProvider,
+  hostIs,
+  isCults3dListUrl,
+  isCults3dModelUrl,
+  isCrealitycloudListUrl,
+  isCrealitycloudModelUrl,
+  isMakeronlineListUrl,
+  isMakeronlineModelUrl,
+  isMakerworldCollectionUrl,
+  isMakerworldModelUrl,
+  isMyminifactoryCollectionUrl,
+  isMyminifactoryObjectUrl,
+  isNexprintCollectionUrl,
+  isNexprintModelUrl,
+  isPrintablesCollectionUrl,
+  isPrintablesModelUrl,
+  isSnapmakerListUrl,
+  isSnapmakerModelUrl,
+  isThangsListUrl,
+  isThangsModelUrl,
+  isThingiverseCollectionUrl,
+  isThingiverseLikesUrl,
+  isThingiverseThingUrl,
+} from "./importLinkDetection";
 
 describe("hostIs", () => {
   it("matches the domain and its subdomains, in any case", () => {
@@ -30,4 +54,96 @@ describe("MakerWorld link detection", () => {
       expect(isMakerworldCollectionUrl(`https://${host}/collections/1`)).toBe(false);
     }
   });
+});
+
+type Kind = "model" | "list" | null;
+type FixtureExpectation = {
+  provider: string | null;
+  kind: Kind;
+  externalId?: string;
+  requestedProfileId?: string | null;
+  listKind?: string;
+};
+type UrlFixture = {
+  url: string;
+  expect: FixtureExpectation;
+  divergent?: { frontend?: Partial<FixtureExpectation> | null };
+};
+
+const providerParsers = {
+  makerworld: { model: isMakerworldModelUrl, list: isMakerworldCollectionUrl },
+  thingiverse: {
+    model: isThingiverseThingUrl,
+    list: (url: string) => isThingiverseCollectionUrl(url) || isThingiverseLikesUrl(url),
+  },
+  printables: { model: isPrintablesModelUrl, list: isPrintablesCollectionUrl },
+  myminifactory: { model: isMyminifactoryObjectUrl, list: isMyminifactoryCollectionUrl },
+  snapmaker: { model: isSnapmakerModelUrl, list: isSnapmakerListUrl },
+  makeronline: { model: isMakeronlineModelUrl, list: isMakeronlineListUrl },
+  crealitycloud: { model: isCrealitycloudModelUrl, list: isCrealitycloudListUrl },
+  nexprint: { model: isNexprintModelUrl, list: isNexprintCollectionUrl },
+  thangs: { model: isThangsModelUrl, list: isThangsListUrl },
+  cults3d: { model: isCults3dModelUrl, list: isCults3dListUrl },
+} satisfies Record<string, { model: (url: string) => boolean; list: (url: string) => boolean }>;
+
+function classifyFrontend(url: string): Pick<FixtureExpectation, "provider" | "kind" | "listKind"> {
+  const provider = detectImportProvider(url);
+  if (!provider) return { provider: null, kind: null };
+  const parsers = providerParsers[provider];
+  if (parsers.model(url)) return { provider, kind: "model" };
+  if (parsers.list(url)) {
+    const parsed = new URL(url.includes("://") ? url : `https://${url}`);
+    let listKind = "collection";
+    if (provider === "snapmaker") listKind = parsed.searchParams.get("list") ?? "collection";
+    else if (provider === "thingiverse" && isThingiverseLikesUrl(url)) listKind = "likes";
+    else if (provider === "makeronline" && /\/likes\/models/i.test(parsed.pathname)) listKind = "likes";
+    else if (provider === "crealitycloud" && /\/user\/\d+\/likes/i.test(parsed.pathname)) listKind = "likes";
+    else if (provider === "thangs" && /\/mythangs\/liked-models/i.test(parsed.pathname)) listKind = "likes";
+    else if (provider === "cults3d" && /\/likes\/?$/i.test(decodeURIComponent(parsed.pathname))) listKind = "likes";
+    return { provider, kind: "list", listKind };
+  }
+  return { provider: null, kind: null };
+}
+
+const fixtureModules = import.meta.glob("../../../providers/*/urls.fixtures.json", {
+  eager: true,
+  import: "default",
+}) as Record<string, UrlFixture[]>;
+const fixtures = Object.entries(fixtureModules).flatMap(([path, providerFixtures]) => {
+  const provider = path.split("/").at(-2) ?? "unknown";
+  return providerFixtures.map((fixture) => ({ provider, ...fixture }));
+});
+
+// Known difference: Printables likes are missed; the fixture records it as an override.
+describe("provider URL fixtures", () => {
+  it("loads provider fixtures", () => {
+    expect(fixtures.length).toBeGreaterThan(0);
+  });
+
+  it.each(fixtures.map((fixture) => [fixture.provider, fixture.url, fixture] as const))(
+    "%s: %s",
+    (_provider, _url, fixture) => {
+      const actual = classifyFrontend(fixture.url);
+      const frontendOverride = fixture.divergent?.frontend;
+      const expected =
+        frontendOverride === null
+          ? { provider: null, kind: null }
+          : {
+              provider:
+                frontendOverride && "provider" in frontendOverride
+                  ? frontendOverride.provider
+                  : fixture.expect.provider,
+              kind: frontendOverride && "kind" in frontendOverride ? frontendOverride.kind : fixture.expect.kind,
+              ...(frontendOverride?.listKind !== undefined || fixture.expect.listKind !== undefined
+                ? {
+                    listKind:
+                      frontendOverride && "listKind" in frontendOverride
+                        ? frontendOverride.listKind
+                        : fixture.expect.listKind,
+                  }
+                : {}),
+            };
+      expect(actual).toEqual(expected);
+    },
+  );
 });

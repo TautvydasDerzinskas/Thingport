@@ -11,6 +11,19 @@ import {
 } from "./flaresolverr";
 import { getFlaresolverrUrl } from "./settingsService";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "./trendingModel";
+import {
+  myminifactoryCollectionKey,
+  myminifactoryCollectionUrl,
+  parseMyminifactoryCollectionUrl,
+  parseMyminifactoryObjectUrl,
+  urls,
+} from "../providers/_generated/myminifactory/urls";
+export {
+  myminifactoryCollectionKey,
+  myminifactoryCollectionUrl,
+  parseMyminifactoryCollectionUrl,
+  parseMyminifactoryObjectUrl,
+};
 
 // The official API takes an API key as `?key=`. Its file download links are for OAuth users only,
 // so files come from the site's own /download/{id} instead, which free objects allow anonymously.
@@ -51,51 +64,6 @@ export class MyminifactoryRateLimitError extends Error {
     );
     this.name = "MyminifactoryRateLimitError";
   }
-}
-
-function parseUrl(url: string): URL | null {
-  try {
-    const parsed = new URL(url);
-    const host = parsed.hostname.toLowerCase();
-    return host === "myminifactory.com" || host === "www.myminifactory.com" ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
-/** Null for malformed percent-encoding (`%zz`), which decodeURIComponent throws on. */
-function safeDecode(value: string): string | null {
-  try {
-    return decodeURIComponent(value);
-  } catch {
-    return null;
-  }
-}
-
-/** `/object/3d-print-<slug>-<id>`, optionally behind a language prefix (`/it/object/...`). */
-export function parseMyminifactoryObjectUrl(url: string): { objectId: string } | null {
-  const parsed = parseUrl(url);
-  const m = parsed?.pathname.match(/^\/(?:[a-z]{2}\/)?object\/(?:[^/]*-)?(\d+)\/?$/i);
-  return m ? { objectId: m[1] } : null;
-}
-
-/** `/users/<username>/collection/<slug>`. A collection is only addressable by its owner and slug. */
-export function parseMyminifactoryCollectionUrl(url: string): { username: string; slug: string } | null {
-  const parsed = parseUrl(url);
-  const m = parsed?.pathname.match(/^\/(?:[a-z]{2}\/)?users\/([^/]+)\/collection\/([^/]+)\/?$/i);
-  if (!m) return null;
-  const username = safeDecode(m[1]);
-  const slug = safeDecode(m[2]);
-  return username && slug ? { username, slug: slug.toLowerCase() } : null;
-}
-
-/** The id a sync keeps for a collection: usernames aren't case-sensitive, so one collection syncs once. */
-export function myminifactoryCollectionKey(username: string, slug: string): string {
-  return `${username.toLowerCase()}/${slug.toLowerCase()}`;
-}
-
-export function myminifactoryCollectionUrl(username: string, slug: string): string {
-  return `${MYMINIFACTORY_ORIGIN}/users/${encodeURIComponent(username)}/collection/${encodeURIComponent(slug)}`;
 }
 
 export function myminifactoryObjectUrl(objectId: string): string {
@@ -551,6 +519,24 @@ export async function listMyminifactoryUserCollections(
     if (items.length < PAGE_SIZE) break;
   }
   return cards;
+}
+
+function parseUrl(url: string): URL | null {
+  try {
+    const parsed = new URL(url);
+    return urls.isHost(parsed.hostname) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Null for malformed percent-encoding (`%zz`), which decodeURIComponent throws on. */
+function safeDecode(value: string): string | null {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return null;
+  }
 }
 
 /** A profile link or a username. Null when MyMiniFactory knows no such user. */

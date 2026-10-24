@@ -56,19 +56,9 @@ import {
 import type { MakerworldProfileScope } from "../../api/imports";
 import { allProvidersOff, useDisabledProviders } from "../../hooks/useDisabledProviders";
 import { readImportLink } from "../../utils/bookmarklet";
+import { PROVIDER_IDS } from "../../providers/_generated";
 
-const IMPORT_PROVIDERS: ImportProviderKey[] = [
-  "makerworld",
-  "thingiverse",
-  "printables",
-  "myminifactory",
-  "snapmaker",
-  "makeronline",
-  "crealitycloud",
-  "nexprint",
-  "thangs",
-  "cults3d",
-];
+const IMPORT_PROVIDERS: readonly ImportProviderKey[] = PROVIDER_IDS;
 
 /** What the search palette's !import command calls. */
 export type AddMenuHandle = {

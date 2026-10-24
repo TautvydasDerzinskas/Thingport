@@ -1,51 +1,14 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
+import { MANIFESTS, PROVIDER_IDS, providerOfHost, type ProviderId } from "../providers/_generated";
 
 // An admin can turn a provider off for the whole instance: nothing new comes from it (imports by link, Thingport
 // Grab, the queue, collection imports), its collection syncs pause, and background jobs leave it alone. Models
 // already imported from it stay as they are.
 
-export const PROVIDERS = [
-  "makerworld",
-  "printables",
-  "thingiverse",
-  "myminifactory",
-  "snapmaker",
-  "makeronline",
-  "crealitycloud",
-  "nexprint",
-  "thangs",
-  "cults3d",
-] as const;
-export type Provider = (typeof PROVIDERS)[number];
-
-const PROVIDER_NAMES: Record<Provider, string> = {
-  makerworld: "MakerWorld",
-  printables: "Printables",
-  thingiverse: "Thingiverse",
-  myminifactory: "MyMiniFactory",
-  snapmaker: "Snapmaker Space",
-  makeronline: "MakerOnline",
-  crealitycloud: "Creality Cloud",
-  nexprint: "NexPrint",
-  thangs: "Thangs",
-  cults3d: "Cults3D",
-};
-
-// Each provider's site; its subdomains count too.
-const PROVIDER_HOSTS: Record<Provider, string> = {
-  makerworld: "makerworld.com",
-  printables: "printables.com",
-  thingiverse: "thingiverse.com",
-  myminifactory: "myminifactory.com",
-  snapmaker: "snapmaker.com",
-  makeronline: "makeronline.com",
-  crealitycloud: "crealitycloud.com",
-  nexprint: "nexprint.com",
-  thangs: "thangs.com",
-  cults3d: "cults3d.com",
-};
+export const PROVIDERS = PROVIDER_IDS;
+export type Provider = ProviderId;
 
 const SETTING_KEY = "disabled_providers";
 export const PROVIDER_DISABLED_CODE = "provider_disabled";
@@ -71,17 +34,11 @@ export async function isProviderEnabled(provider: string): Promise<boolean> {
 
 /** The provider a link belongs to, by its host; null for any other site. */
 export function providerOfUrl(url: string): Provider | null {
-  let host: string;
   try {
-    host = new URL(url).hostname.toLowerCase();
+    return providerOfHost(new URL(url).hostname);
   } catch {
     return null;
   }
-  for (const provider of PROVIDERS) {
-    const site = PROVIDER_HOSTS[provider];
-    if (host === site || host.endsWith(`.${site}`)) return provider;
-  }
-  return null;
 }
 
 /** Throws when an admin has turned the provider off; any other value passes. */
@@ -90,7 +47,7 @@ export async function assertProviderEnabled(provider: string | null | undefined)
   if (await isProviderEnabled(provider)) return;
   throw new HttpError(
     403,
-    `${PROVIDER_NAMES[provider as Provider]} is turned off on this Thingport. An admin can turn it back on in Administration > Providers.`,
+    `${MANIFESTS[provider as Provider].name} is turned off on this Thingport. An admin can turn it back on in Administration > Providers.`,
     PROVIDER_DISABLED_CODE,
   );
 }

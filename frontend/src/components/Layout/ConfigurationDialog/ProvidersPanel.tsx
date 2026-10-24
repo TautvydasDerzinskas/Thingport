@@ -26,20 +26,12 @@ import { AppGrid, AppTile, menuPosition, reopenContextMenuBelow, TileMenuHeader 
 import { PanelHeader } from "./parts";
 import { COMING_SOON_PROVIDERS, ProviderLogo, type ProviderId } from "./providerLogos";
 import { useDisabledProviders } from "../../../hooks/useDisabledProviders";
+import { MANIFESTS, PROVIDER_IDS } from "../../../providers/_generated";
 import { useProviderAbout } from "../../providerAbout/ProviderAboutProvider";
 import type { ImportProvider } from "../../../api/settings";
 
 const PROVIDERS: { id: ProviderId; name: string }[] = [
-  { id: "makerworld", name: "MakerWorld" },
-  { id: "thingiverse", name: "Thingiverse" },
-  { id: "printables", name: "Printables" },
-  { id: "myminifactory", name: "MyMiniFactory" },
-  { id: "snapmaker", name: "Snapmaker Space" },
-  { id: "makeronline", name: "MakerOnline" },
-  { id: "crealitycloud", name: "Creality Cloud" },
-  { id: "nexprint", name: "NexPrint" },
-  { id: "thangs", name: "Thangs" },
-  { id: "cults3d", name: "Cults3D" },
+  ...PROVIDER_IDS.map((id) => ({ id, name: MANIFESTS[id].name })),
   ...COMING_SOON_PROVIDERS,
 ];
 const isComingSoon = (id: ProviderId) => COMING_SOON_PROVIDERS.some((provider) => provider.id === id);

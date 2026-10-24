@@ -1,0 +1,51 @@
+[
+  {
+    "url": "https://www.makeronline.com/en/model/Example-Model/123456.html",
+    "expect": {
+      "provider": "makeronline",
+      "kind": "model",
+      "externalId": "123456"
+    }
+  },
+  {
+    "url": "https://makeronline.com/de-de/model/42/#profileId-98",
+    "expect": {
+      "provider": "makeronline",
+      "kind": "model",
+      "externalId": "42",
+      "requestedProfileId": "98"
+    }
+  },
+  {
+    "url": "https://www.makeronline.com/en/user/collectionDetail/owner/123456.html",
+    "expect": {
+      "provider": "makeronline",
+      "kind": "list",
+      "externalId": "123456",
+      "listKind": "collection"
+    }
+  },
+  {
+    "url": "https://makeronline.com/en/user/likes/models.html",
+    "expect": {
+      "provider": "makeronline",
+      "kind": "list",
+      "externalId": "likes",
+      "listKind": "likes"
+    }
+  },
+  {
+    "url": "https://makeronline.com/en/user/profile/123",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  },
+  {
+    "url": "https://fake-makeronline.com/en/model/42",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  }
+]

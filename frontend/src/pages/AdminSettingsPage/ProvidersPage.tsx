@@ -24,22 +24,10 @@ import SectionHeader from "../../components/SectionHeader";
 import { publishProviders } from "../../hooks/useDisabledProviders";
 import { useProviderAbout } from "../../components/providerAbout/ProviderAboutProvider";
 import ProviderKeySection, { type KeyedProvider } from "./ProviderKeySection";
+import { MANIFESTS, PROVIDER_IDS } from "../../providers/_generated";
 
 type Props = {
   onUnauthorized?: () => void;
-};
-
-const NAMES: Record<ImportProvider, string> = {
-  makerworld: "MakerWorld",
-  printables: "Printables",
-  thingiverse: "Thingiverse",
-  myminifactory: "MyMiniFactory",
-  snapmaker: "Snapmaker Space",
-  makeronline: "MakerOnline",
-  crealitycloud: "Creality Cloud",
-  nexprint: "NexPrint",
-  thangs: "Thangs",
-  cults3d: "Cults3D",
 };
 
 const KEYED = new Set<ImportProvider>(["thingiverse", "myminifactory"]);
@@ -90,8 +78,8 @@ export default function ProvidersPage({ onUnauthorized }: Props) {
   const toggle = async (provider: ImportProvider, enabled: boolean) => {
     if (!enabled) {
       const ok = await confirm({
-        title: t("adminSettings.providers.disableTitle", { name: NAMES[provider] }),
-        message: t("adminSettings.providers.disableMessage", { name: NAMES[provider] }),
+        title: t("adminSettings.providers.disableTitle", { name: MANIFESTS[provider].name }),
+        message: t("adminSettings.providers.disableMessage", { name: MANIFESTS[provider].name }),
         confirmLabel: t("adminSettings.providers.disableConfirm"),
         destructive: true,
       });
@@ -120,26 +108,7 @@ export default function ProvidersPage({ onUnauthorized }: Props) {
         </Alert>
       )}
       <Paper variant="outlined" sx={{ borderRadius: "12px", overflow: "hidden" }}>
-        {(
-          providers ??
-          (
-            [
-              "makerworld",
-              "printables",
-              "thingiverse",
-              "myminifactory",
-              "snapmaker",
-              "makeronline",
-              "crealitycloud",
-              "nexprint",
-              "thangs",
-              "cults3d",
-            ] as const
-          ).map((id) => ({
-            id,
-            enabled: true,
-          }))
-        ).map(({ id, enabled }) => {
+        {(providers ?? PROVIDER_IDS.map((id) => ({ id, enabled: true }))).map(({ id, enabled }) => {
           const keySetHere = isKeyed(id) ? keySet[id] : undefined;
           return (
             <Stack
@@ -149,15 +118,15 @@ export default function ProvidersPage({ onUnauthorized }: Props) {
               alignItems="center"
               sx={{ px: 2, py: 1.5, "&:not(:last-of-type)": { borderBottom: 1, borderColor: "divider" } }}
             >
-              <AboutButton id={id} name={NAMES[id]}>
+              <AboutButton id={id} name={MANIFESTS[id].name}>
                 <Box sx={{ flexShrink: 0, lineHeight: 0, opacity: enabled ? 1 : 0.45 }}>
                   <ProviderLogo id={id} size={32} />
                 </Box>
               </AboutButton>
               <Box sx={{ flex: 1, minWidth: 0 }}>
-                <AboutButton id={id} name={NAMES[id]} tabIndex={-1}>
+                <AboutButton id={id} name={MANIFESTS[id].name} tabIndex={-1}>
                   <Typography variant="body1" fontWeight={600}>
-                    {NAMES[id]}
+                    {MANIFESTS[id].name}
                   </Typography>
                 </AboutButton>
                 <Typography variant="body2" color="text.secondary">
@@ -184,7 +153,7 @@ export default function ProvidersPage({ onUnauthorized }: Props) {
                   slotProps={{
                     input: {
                       "aria-label": t(enabled ? "adminSettings.providers.turnOff" : "adminSettings.providers.turnOn", {
-                        name: NAMES[id],
+                        name: MANIFESTS[id].name,
                       }),
                     },
                   }}

@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { LIKES_ID_PREFIX } from "./providers/_generated";
 import { nextSyncAt, syncNowAvailableAt } from "./services/collectionSyncSchedule";
 import type {
   CollectionSync,
@@ -426,7 +427,7 @@ export type CollectionSyncOut = {
 };
 
 // A Likes sync's externalId; collection ids are numeric, so the two never collide.
-export const LIKES_ID_PREFIX = "likes:";
+export { LIKES_ID_PREFIX };
 
 /** The user whose likes a sync follows (on Thingiverse, Printables or Cults3D), as written in its page
  *  address, or null for a collection sync. */

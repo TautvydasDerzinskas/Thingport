@@ -1,0 +1,47 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "id": 281521,
+    "title": "Ergonomic Super Scraper",
+    "desc": "<p>A <strong>scraper</strong> for the Kobra.</p>",
+    "tags": ["scraper", "kobra", "scraper"],
+    "categories": [
+      {
+        "id": 33,
+        "name": "3D Printer",
+        "level": 1
+      },
+      {
+        "id": 35,
+        "name": "3D Printer Parts & Upgrades",
+        "level": 2
+      }
+    ],
+    "images": [
+      {
+        "url": "https://cdn-acop.makeronline.com/asop/a.png",
+        "is_main": 0
+      },
+      {
+        "url": "https://cdn-acop.makeronline.com/asop/main.png",
+        "is_main": 1
+      }
+    ],
+    "files": [
+      {
+        "key": "839eef",
+        "file_name": "Left Hand Version.stl"
+      },
+      {
+        "key": "9f02de",
+        "file_name": "Right Hand Version.stl"
+      }
+    ],
+    "print_profiles": [],
+    "user_id": "designer-uuid",
+    "user_display_name": "3DPrintOfficial",
+    "show_user_name": "@3DPrintOfficial_1",
+    "user_avatar": "https://cdn-acop.makeronline.com/asop/avatar.png"
+  }
+}

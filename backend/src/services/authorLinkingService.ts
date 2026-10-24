@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../db";
+import { PROVIDER_IDS, type ProviderId } from "../providers/_generated";
 import { IMPORT_COLLECTION_DELAY_MS, IMPORT_MAKERWORLD_CALL_DELAY_MS } from "../config";
 import { maybeSleep } from "../utils/concurrency";
 import { LINKABLE_PRINTS, linkUnattributedPrints, upsertAuthorFromImport } from "./authorService";
@@ -30,19 +31,8 @@ import { getDisabledProviders } from "./providerSettingsService";
 // Links models that only know their author by name: first by name matching, then by looking the
 // rest up on their site once per distinct creator. Only metadata is fetched.
 
-const LOOKUP_PROVIDERS = [
-  "makerworld",
-  "thingiverse",
-  "printables",
-  "myminifactory",
-  "snapmaker",
-  "makeronline",
-  "crealitycloud",
-  "nexprint",
-  "thangs",
-  "cults3d",
-] as const;
-type LookupProvider = (typeof LOOKUP_PROVIDERS)[number];
+export const LOOKUP_PROVIDERS = PROVIDER_IDS;
+type LookupProvider = ProviderId;
 
 export type LookupProblem =
   | "thingiverse_no_token"

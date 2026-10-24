@@ -11,24 +11,12 @@ import thingportIcon from "../../assets/logos/thingport-icon-color.svg";
 import type { Collection } from "../../api/collections";
 import { printsApi, type Print } from "../../api/prints";
 import { importProviderInfo } from "../../constants/importProviders";
-import { ProviderLogo, type ProviderId } from "../../components/Layout/ConfigurationDialog/providerLogos";
+import { hasProviderLogo, ProviderLogo } from "../../components/Layout/ConfigurationDialog/providerLogos";
 import { collectionDisplayName } from "../../utils/collectionDisplay";
 
 // One trip of the pulse: provider to Thingport in the first half, Thingport to the collection in
 // the second, each node lighting up as it arrives.
 const CYCLE = "2.8s";
-const LOGOS = new Set<string>([
-  "makerworld",
-  "thingiverse",
-  "printables",
-  "myminifactory",
-  "snapmaker",
-  "makeronline",
-  "crealitycloud",
-  "nexprint",
-  "thangs",
-  "cults3d",
-]);
 
 // The pulse is 40% of its segment wide, so 250% starts it past the right end and -100% ends it
 // past the left one.
@@ -320,7 +308,7 @@ export default function SyncChain({
           ...reducedMotion,
         }}
       >
-        {LOGOS.has(provider) && <ProviderLogo id={provider as ProviderId} size={30} />}
+        {hasProviderLogo(provider) && <ProviderLogo id={provider} size={30} />}
         <NodeLabel>{providerLabel}</NodeLabel>
       </Box>
     </Box>

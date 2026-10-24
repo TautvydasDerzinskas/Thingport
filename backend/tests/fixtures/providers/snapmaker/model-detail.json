@@ -1,0 +1,47 @@
+{
+  "code": 200,
+  "msg": "success",
+  "data": {
+    "id": "9990033",
+    "title": "Test Princess",
+    "description": "<p>A <strong>princess</strong>.</p>",
+    "coverUrl": "https://cdn-model.snapmaker.com/snapmaker/model/test/cover.png",
+    "images": [
+      "https://cdn-model.snapmaker.com/snapmaker/model/test/cover.png",
+      "https://cdn-model.snapmaker.com/snapmaker/model/test/side.png"
+    ],
+    "tags": ["princess"],
+    "categoryId": 159,
+    "categoryTree": {
+      "id": 1,
+      "parentId": null,
+      "children": [
+        {
+          "id": 110,
+          "parentId": 1,
+          "children": [
+            {
+              "id": 159,
+              "parentId": 110,
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    "creatorId": "777",
+    "creatorName": "Test Designer",
+    "printProfiles": [
+      {
+        "id": "501",
+        "title": "Designer's",
+        "creatorId": "777"
+      },
+      {
+        "id": "502",
+        "title": "Community remix",
+        "creatorId": "888"
+      }
+    ]
+  }
+}

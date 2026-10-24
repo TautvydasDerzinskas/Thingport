@@ -3,6 +3,24 @@ import type { ImportedAuthorInfo, ImportedPageMetadata } from "./importResolvers
 import { htmlToMarkdown } from "./descriptionMarkdown";
 import type { ProviderCollectionCard } from "./providerCollectionCard";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "./trendingModel";
+import {
+  isMakeronlineLikesUrl,
+  MAKERONLINE_LIKES_KEY,
+  MAKERONLINE_LIKES_URL,
+  makeronlineCollectionUrl,
+  makeronlineModelUrl,
+  parseMakeronlineCollectionUrl,
+  parseMakeronlineModelUrl,
+} from "../providers/_generated/makeronline/urls";
+export {
+  isMakeronlineLikesUrl,
+  MAKERONLINE_LIKES_KEY,
+  MAKERONLINE_LIKES_URL,
+  makeronlineCollectionUrl,
+  makeronlineModelUrl,
+  parseMakeronlineCollectionUrl,
+  parseMakeronlineModelUrl,
+};
 
 // MakerOnline (Anycubic) has no public API, so this is the one its own pages call. Answers come with a `code` of their
 // own, 0 for success. Details, public collections and categories need no sign-in; likes and the user's own collections
@@ -39,53 +57,7 @@ export class MakeronlineAuthError extends Error {
   }
 }
 
-function parseUrl(url: string): URL | null {
-  try {
-    const parsed = new URL(url);
-    return /^(www\.)?makeronline\.com$/i.test(parsed.hostname) ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
-const LANG = String.raw`(?:[a-z]{2}(?:[-_][a-z]{2})?/)?`;
-const MODEL_PATH = new RegExp(String.raw`^/${LANG}model/(?:[^/]+/)?(\d+)(?:\.html)?/?$`, "i");
-const COLLECTION_PATH = new RegExp(String.raw`^/${LANG}user/collectionDetail/(?:([\w-]+)/)?(\d+)(?:\.html)?/?$`, "i");
-const LIKES_PATH = new RegExp(String.raw`^/${LANG}user/likes/models(?:\.html)?/?$`, "i");
-
-/** `/en/model/<title>/<id>.html`, the title and language optional. MakerOnline keeps no print profile in its links;
- *  Thingport's own `#profileId-<id>` names one, as for MakerWorld. */
-export function parseMakeronlineModelUrl(url: string): { modelId: string; requestedProfileId: string | null } | null {
-  const parsed = parseUrl(url);
-  const m = parsed?.pathname.match(MODEL_PATH);
-  if (!m) return null;
-  return { modelId: m[1], requestedProfileId: parsed!.hash.match(/profileId-(\d+)/i)?.[1] ?? null };
-}
-
-export function makeronlineModelUrl(modelId: string, profileId?: string | null): string {
-  return `${SITE_ORIGIN}/en/model/${modelId}${profileId ? `#profileId-${profileId}` : ""}`;
-}
-
-/** `/en/user/collectionDetail/<owner id>/<collection id>.html`; older links leave the owner out. */
-export function parseMakeronlineCollectionUrl(url: string): { collectionId: string; ownerId: string | null } | null {
-  const m = parseUrl(url)?.pathname.match(COLLECTION_PATH);
-  return m ? { collectionId: m[2], ownerId: m[1] ?? null } : null;
-}
-
-export function makeronlineCollectionUrl(ownerId: string | null, collectionId: string): string {
-  return `${SITE_ORIGIN}/en/user/collectionDetail/${ownerId ? `${ownerId}/` : ""}${collectionId}.html`;
-}
-
-/** The signed-in user's likes, `/en/user/likes/models.html`; the page names no user, so it's always the viewer's. */
-export function isMakeronlineLikesUrl(url: string): boolean {
-  return LIKES_PATH.test(parseUrl(url)?.pathname ?? "");
-}
-
-export const MAKERONLINE_LIKES_URL = `${SITE_ORIGIN}/en/user/likes/models.html`;
 export const MAKERONLINE_LIKES_NAME = "MakerOnline likes";
-/** The id a sync keeps for the user's likes; the likes page names no user, so there's one per Thingport user. */
-export const MAKERONLINE_LIKES_KEY = "likes";
-
 async function fetchApi(
   path: string,
   token: string | null,

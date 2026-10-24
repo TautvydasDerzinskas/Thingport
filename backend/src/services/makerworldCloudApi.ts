@@ -15,7 +15,6 @@ import {
 } from "./importResolvers";
 import { maybeSleep, sleep } from "../utils/concurrency";
 import { HttpError } from "../utils/fileUtils";
-import { hostIs } from "../utils/urlUtils";
 import {
   isCaptchaChallenge,
   isDownloadLimitReply,
@@ -26,6 +25,8 @@ import {
   noteCaptchaChallenge,
 } from "./makerworldCaptcha";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "./trendingModel";
+import { parseMakerworldModelUrl } from "../providers/_generated/makerworld/urls";
+export { parseMakerworldModelUrl };
 
 export {
   MAKERWORLD_CAPTCHA_MESSAGE,
@@ -152,20 +153,6 @@ export async function verifyMakerworldCookie(rawCookieOrToken: string): Promise<
   } finally {
     clearTimeout(timeout);
   }
-}
-
-export function parseMakerworldModelUrl(url: string): { designId: string; requestedInstanceId: string | null } | null {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return null;
-  }
-  if (!hostIs(parsed.hostname, "makerworld.com")) return null;
-  const designMatch = parsed.pathname.match(/\/models?\/(\d+)/i);
-  if (!designMatch) return null;
-  const hashMatch = parsed.hash.match(/profileid-(\d+)/i);
-  return { designId: designMatch[1], requestedInstanceId: hashMatch ? hashMatch[1] : null };
 }
 
 export type MakerworldCloudResolution = {

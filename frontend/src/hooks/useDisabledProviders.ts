@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { type ImportProvider, type ProviderSetting, settingsApi } from "../api/settings";
+import { PROVIDER_IDS } from "../providers/_generated";
 
 // Asked once and shared, as every Add menu and sync dialog needs it; turning one on or off refreshes everyone's.
 let cached: Promise<ProviderSetting[]> | null = null;
@@ -20,22 +21,10 @@ export function publishProviders(providers: ProviderSetting[]): void {
 }
 
 const NONE: ReadonlySet<ImportProvider> = new Set();
-const ALL: readonly ImportProvider[] = [
-  "makerworld",
-  "printables",
-  "thingiverse",
-  "myminifactory",
-  "snapmaker",
-  "makeronline",
-  "crealitycloud",
-  "nexprint",
-  "thangs",
-  "cults3d",
-];
 
 /** With every provider off there's nothing to import from or connect to, so those parts of the app hide. */
 export function allProvidersOff(disabled: ReadonlySet<ImportProvider>): boolean {
-  return ALL.every((provider) => disabled.has(provider));
+  return PROVIDER_IDS.every((provider) => disabled.has(provider));
 }
 
 /** The providers an admin turned off; the same set until that changes. Until it's known, or if it can't be, none

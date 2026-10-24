@@ -1,0 +1,53 @@
+{
+  "code": 0,
+  "msg": "",
+  "traceId": "contract-fixture",
+  "data": {
+    "id": "2109988470143172608",
+    "modelId": "G1215164",
+    "modelName": "Dog",
+    "modelDetail": "<p>A <strong>crochet</strong> dog.</p>",
+    "coverImgUrl": "https://np.nexprint.com/images/1/cover.png",
+    "modelPicList": [
+      { "fileUrl": "https://np.nexprint.com/images/1/cover.png" },
+      { "fileUrl": "https://np.nexprint.com/images/1/side.jpg" }
+    ],
+    "modelTagList": ["dog", "amigurumi", "dog"],
+    "classificationId": 1422473859022858,
+    "classificationInfos": [
+      { "id": 1422473859022863, "classificationName": "3D Printer", "level": 1, "pid": null },
+      { "id": 1422473859022858, "classificationName": "3D Printer Accessories", "level": 2, "pid": 1422473859022863 }
+    ],
+    "authorId": "2109966715818881024",
+    "author": {
+      "userId": "U0030208991",
+      "nickname": "Cute Animals",
+      "avatarUrl": "https://np.nexprint.com/images/a.png"
+    },
+    "modelFileList": [
+      { "fileId": "2109986422412034048", "fileName": "Dog.3mf", "fileExt": "3mf" },
+      { "fileId": "2109986422412034999", "fileName": "Dog.stl", "fileExt": "stl" }
+    ],
+    "settingInfoList": [
+      {
+        "id": "2109988470411608064",
+        "settingOutId": "G6354239",
+        "settingName": "0.2mm layer, 2 walls, 15% infill",
+        "settingCoverImgUrl": "https://np.nexprint.com/images/1/profile.png",
+        "userId": "2109966715818881024",
+        "isCreator": true,
+        "open": true,
+        "settingFile": { "fileId": "2109986422412034048", "fileName": "Dog.3mf" }
+      },
+      {
+        "id": "2109988470411608999",
+        "settingOutId": "G6354240",
+        "settingName": "0.12mm fine",
+        "userId": "1",
+        "isCreator": false,
+        "open": true,
+        "settingFile": { "fileId": "2109986422412035000", "fileName": "Dog fine.3mf" }
+      }
+    ]
+  }
+}

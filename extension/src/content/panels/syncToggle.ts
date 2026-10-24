@@ -6,19 +6,7 @@ import type { SyncLink, SyncLookup } from "../../shared/api";
 import { ctx } from "../context";
 import { api, escapeHtml } from "../runtime";
 import { panelQuery } from "../shell";
-
-const PROVIDER_NAMES: Record<string, string> = {
-  makerworld: "MakerWorld",
-  printables: "Printables",
-  thingiverse: "Thingiverse",
-  myminifactory: "MyMiniFactory",
-  snapmaker: "Snapmaker Space",
-  makeronline: "MakerOnline",
-  crealitycloud: "Creality Cloud",
-  nexprint: "NexPrint",
-  thangs: "Thangs",
-  cults3d: "Cults3D",
-};
+import { SITE_NAMES } from "./funStatus";
 
 /** A Thingiverse user's Likes page, which a sync follows like a collection. */
 function isLikes(): boolean {
@@ -38,7 +26,7 @@ export async function loadSyncState(): Promise<SyncLookup | null> {
 /** Off by default; on when this collection is already synced. */
 export function syncToggleHtml(state: SyncLookup | null): string {
   if (!state) return "";
-  const provider = PROVIDER_NAMES[ctx().classification.provider] ?? "the site";
+  const provider = SITE_NAMES[ctx().classification.provider] ?? "the site";
   const added = isLikes() ? "Models liked later" : `Models added to it on ${provider} later`;
   const hint = state.sync
     ? `Synced with "${escapeHtml(state.sync.collection_name)}" in Thingport. Untick to stop.`

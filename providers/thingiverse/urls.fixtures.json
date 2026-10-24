@@ -1,0 +1,50 @@
+[
+  {
+    "url": "https://www.thingiverse.com/thing:763622",
+    "expect": {
+      "provider": "thingiverse",
+      "kind": "model",
+      "externalId": "763622"
+    }
+  },
+  {
+    "url": "https://thingiverse.com/things/12345/?x=1",
+    "expect": {
+      "provider": "thingiverse",
+      "kind": "model",
+      "externalId": "12345"
+    }
+  },
+  {
+    "url": "https://www.thingiverse.com/Derzinskas/collections/42/things",
+    "expect": {
+      "provider": "thingiverse",
+      "kind": "list",
+      "externalId": "42",
+      "listKind": "collection"
+    }
+  },
+  {
+    "url": "https://thingiverse.com/Derzinskas/likes/",
+    "expect": {
+      "provider": "thingiverse",
+      "kind": "list",
+      "externalId": "likes:derzinskas",
+      "listKind": "likes"
+    }
+  },
+  {
+    "url": "https://thingiverse.com/Derzinskas",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  },
+  {
+    "url": "https://notthingiverse.com/thing:123",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  }
+]

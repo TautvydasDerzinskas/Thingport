@@ -6,6 +6,24 @@ import type { ProviderCollectionCard } from "./providerCollectionCard";
 import { extractJsonFromBrowserBody, fetchViaFlaresolverr, isCloudflareChallenge } from "./flaresolverr";
 import { getFlaresolverrUrl } from "./settingsService";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "./trendingModel";
+import {
+  isThangsLikesUrl,
+  parseThangsCollectionUrl,
+  parseThangsModelUrl,
+  THANGS_LIKES_KEY,
+  THANGS_LIKES_URL,
+  thangsCollectionUrl,
+  thangsModelUrl,
+} from "../providers/_generated/thangs/urls";
+export {
+  isThangsLikesUrl,
+  parseThangsCollectionUrl,
+  parseThangsModelUrl,
+  THANGS_LIKES_KEY,
+  THANGS_LIKES_URL,
+  thangsCollectionUrl,
+  thangsModelUrl,
+};
 
 // Thangs has no public API, so this is the one its own pages call. Details, the likes of any user and public
 // collections need no sign-in; downloads, private collections and purchases need the user's access token, a 7-day JWT
@@ -80,56 +98,7 @@ export class ThangsPrivateCollectionError extends Error {
   }
 }
 
-function parseUrl(url: string): URL | null {
-  try {
-    const parsed = new URL(url);
-    return /^(www\.)?thangs\.com$/i.test(parsed.hostname) ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
-// `/designer/<user>/3d-model/<name>-<id>`, also under `/prints` (print-only models) and with a subpage after it
-// (`/3d-print/<sku>`, `/image/<id>`, ...); the name may be left out. `/m/<id>` is the site's own short link.
-const MODEL_PATH = /^\/(?:prints\/)?designer\/[^/]+\/3d-model\/(?:[^/]*-)?(\d+)(?:\/.*)?$/i;
-const SHORT_MODEL_PATH = /^\/m\/(\d+)\/?$/i;
-const COLLECTION_PATH = /^(\/designer\/[^/]+\/collection\/(?:[^/]*-)?(\d+))(?:\/.*)?$/i;
-const OWN_COLLECTION_PATH = /^(\/(?:mythangs\/collections|c)\/(\d+))\/?$/i;
-
-export const THANGS_LIKES_KEY = "likes";
-export const THANGS_LIKES_URL = `${SITE_ORIGIN}/mythangs/liked-models`;
 export const THANGS_LIKES_NAME = "Thangs likes";
-
-export function parseThangsModelUrl(url: string): { modelId: string } | null {
-  const parsed = parseUrl(url);
-  const m = parsed?.pathname.match(MODEL_PATH) ?? parsed?.pathname.match(SHORT_MODEL_PATH);
-  return m ? { modelId: m[1] } : null;
-}
-
-/** Thangs redirects its short link to the model's page, whatever its name and designer. */
-export function thangsModelUrl(modelId: string): string {
-  return `${SITE_ORIGIN}/m/${modelId}`;
-}
-
-/** A collection: `/designer/<user>/collection/<name>-<id>`, or the owner's own `/mythangs/collections/<id>`. `url` is
- *  the same page without a sort, scope or query. */
-export function parseThangsCollectionUrl(url: string): { collectionId: string; url: string } | null {
-  const parsed = parseUrl(url);
-  const m = parsed?.pathname.match(COLLECTION_PATH) ?? parsed?.pathname.match(OWN_COLLECTION_PATH);
-  return m ? { collectionId: m[2], url: `${SITE_ORIGIN}${m[1]}` } : null;
-}
-
-/** The page the site itself links a collection at: its owner's, named after it. */
-export function thangsCollectionUrl(collectionId: string, owner: string | null, name: string | null): string {
-  if (!owner) return `${SITE_ORIGIN}/mythangs/collections/${collectionId}`;
-  const slug = name ? `${encodeURIComponent(name)}-` : "";
-  return `${SITE_ORIGIN}/designer/${encodeURIComponent(owner)}/collection/${slug}${collectionId}`;
-}
-
-/** The user's own liked models; the page names no user, as it's always the signed-in one's. */
-export function isThangsLikesUrl(url: string): boolean {
-  return /^\/mythangs\/liked-models\/?$/i.test(parseUrl(url)?.pathname ?? "");
-}
 
 type ApiResult = { status: number; data: unknown };
 
