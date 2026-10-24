@@ -169,7 +169,7 @@ reach that one origin and validates the login before storing anything. After tha
 turns from the dark/inactive icon to the color/active one, and the floating icon becomes the normal
 import button. Reopen the popup any time to change the instance (the pencil next to its address), disconnect from it
 (the button beside the pencil, after a confirmation; offline features and recently viewed models stay), or flip
-**Extension enabled** off to pause it without losing the saved setup. Disconnecting signs Grab out on the instance and,
+**Extension enabled** off, after a confirmation too, to pause it everywhere without losing the saved setup. Disconnecting signs Grab out on the instance and,
 for a connection approved in Thingport, removes it from your Thingport profile too.
 
 Once connected, the popup's tabs are **Providers** (the sites Grab runs on), **Extra features** (the

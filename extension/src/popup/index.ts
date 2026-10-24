@@ -7,6 +7,7 @@ import { seasonalIcon } from "../shared/seasonalIcon";
 import { dressMark } from "../shared/seasonalMark";
 import { send, type Connection, type ExtensionState } from "../shared/messages";
 import { STORAGE_KEYS, apiUrl, normalizeInstanceUrl, type OfflineFeature } from "../shared/storage";
+import { confirmAction } from "./confirm";
 import { clearError, els, showError } from "./dom";
 import { loadRecentImports } from "./recentImports";
 import { loadRecentlyViewed } from "./recentlyViewed";
@@ -185,31 +186,10 @@ els.editInstanceBtn.addEventListener("click", async () => {
   showSetupForm(res?.ok ? res.data.instanceUrl : "", res?.ok ? res.data.email : "");
 });
 
-els.disconnectBtn.addEventListener("click", async () => {
-  const res = await send("GET_STATE");
-  const host = res?.ok ? displayInstanceUrl(res.data.instanceUrl) : "your Thingport instance";
-  els.disconnectText.textContent =
-    `Thingport Grab forgets ${host} and its sign-in in this browser. ` +
-    "Offline features and recently viewed models stay.";
-  els.disconnectConfirm.disabled = false;
-  els.disconnectConfirm.textContent = "Disconnect";
-  els.disconnectDialog.showModal();
-});
-
-els.disconnectCancel.addEventListener("click", () => els.disconnectDialog.close());
-
-// A click on the backdrop lands on the dialog itself, outside its box.
-els.disconnectDialog.addEventListener("click", (event) => {
-  if (event.target === els.disconnectDialog && !els.disconnectConfirm.disabled) els.disconnectDialog.close();
-});
-
-els.disconnectConfirm.addEventListener("click", async () => {
-  els.disconnectConfirm.disabled = true;
-  els.disconnectConfirm.textContent = "Disconnecting…";
+async function disconnect(): Promise<void> {
   const state = await send("GET_STATE");
   const res = await send("DISCONNECT");
   if (!res?.ok) {
-    els.disconnectDialog.close();
     showError(res?.error ?? "Couldn't disconnect", els.configuredError);
     return;
   }
@@ -221,7 +201,6 @@ els.disconnectConfirm.addEventListener("click", async () => {
       // Granted as part of wider access, which stays.
     }
   }
-  els.disconnectDialog.close();
   await refresh();
   if (res.data.approvalKept) {
     els.disconnectedNote.textContent =
@@ -229,6 +208,18 @@ els.disconnectConfirm.addEventListener("click", async () => {
       "profile in Thingport to revoke its access there.";
     els.disconnectedNote.hidden = false;
   }
+}
+
+els.disconnectBtn.addEventListener("click", async () => {
+  const res = await send("GET_STATE");
+  const host = res?.ok ? displayInstanceUrl(res.data.instanceUrl) : "your Thingport instance";
+  confirmAction({
+    title: "Disconnect from Thingport?",
+    text: `Thingport Grab forgets ${host} and its sign-in in this browser. Offline features and recently viewed models stay.`,
+    confirmLabel: "Disconnect",
+    busyLabel: "Disconnecting…",
+    action: disconnect,
+  });
 });
 
 els.cancelBtn.addEventListener("click", () => void refresh({ checkConnection: false }));
@@ -274,15 +265,31 @@ chrome.storage.onChanged.addListener((changes, area) => {
   void refresh();
 });
 
-els.enabledSwitch.addEventListener("change", async () => {
+async function setEnabled(enabled: boolean): Promise<void> {
   clearError(els.configuredError);
   els.enabledSwitch.disabled = true;
-  const res = await send("SET_DISABLED", { disabled: !els.enabledSwitch.checked });
+  const res = await send("SET_DISABLED", { disabled: !enabled });
   els.enabledSwitch.disabled = false;
-  if (!res?.ok) {
-    showError(res?.error ?? "Couldn't save", els.configuredError);
-    els.enabledSwitch.checked = !els.enabledSwitch.checked;
+  if (res?.ok) els.enabledSwitch.checked = enabled;
+  else showError(res?.error ?? "Couldn't save", els.configuredError);
+}
+
+// Turning it back on is one click; turning it off asks first, and the switch stays on until it's confirmed.
+els.enabledSwitch.addEventListener("change", () => {
+  if (els.enabledSwitch.checked) {
+    void setEnabled(true);
+    return;
   }
+  els.enabledSwitch.checked = true;
+  confirmAction({
+    title: "Turn Thingport Grab off?",
+    text:
+      "It stops on every site until you turn it back on: no import button, no Download normalized, and Thingiverse " +
+      "looks as it does without Grab. Your connection and settings stay.",
+    confirmLabel: "Turn off",
+    busyLabel: "Turning off…",
+    action: () => setEnabled(false),
+  });
 });
 
 for (const [feature, input] of Object.entries(FEATURE_SWITCHES) as [OfflineFeature, HTMLInputElement][]) {
