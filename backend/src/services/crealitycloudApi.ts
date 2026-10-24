@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { IMPORT_TIMEOUT_SECONDS } from "../config";
+import { credentialRequest } from "../providers/credentialRequest";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "./importResolvers";
 import { htmlToMarkdown } from "./descriptionMarkdown";
 import type { ProviderCollectionCard } from "./providerCollectionCard";
@@ -144,7 +145,7 @@ async function fetchApi(
   const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
   let json: unknown;
   try {
-    const res = await fetch(`${API_BASE}${path}`, {
+    const res = await credentialRequest("crealitycloud-api", `${API_BASE}${path}`, {
       method: "POST",
       headers: headers(auth),
       body: JSON.stringify(body),

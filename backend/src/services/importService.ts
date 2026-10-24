@@ -21,6 +21,11 @@ import {
   sanitizeFilename,
 } from "../utils/fileUtils";
 import { hostIs, validateRemoteUrl } from "../utils/urlUtils";
+import {
+  assertCredentialDestination,
+  browserCredentialRequest,
+  credentialRequest,
+} from "../providers/credentialRequest";
 import { readCapped } from "../utils/readCapped";
 import { browserFetch, needsBrowserFetch } from "../utils/browserFetch";
 import { mapWithConcurrency, maybeSleep, sleep } from "../utils/concurrency";
@@ -242,11 +247,17 @@ function parseCharset(contentType: string | null): string {
 }
 
 async function rawFetch(url: string, headers: Record<string, string>): Promise<Response> {
-  if (needsBrowserFetch(url)) return browserFetch(url, { headers, timeoutMs: IMPORT_TIMEOUT_SECONDS * 1000 });
+  if (headers.Cookie) assertCredentialDestination("makerworld-page", url);
+  if (needsBrowserFetch(url)) {
+    return headers.Cookie
+      ? browserCredentialRequest("makerworld-page", url, { headers, timeoutMs: IMPORT_TIMEOUT_SECONDS * 1000 })
+      : browserFetch(url, { headers, timeoutMs: IMPORT_TIMEOUT_SECONDS * 1000 });
+  }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), IMPORT_TIMEOUT_SECONDS * 1000);
   try {
-    return await fetch(url, { headers, redirect: "follow", signal: controller.signal });
+    const init: RequestInit = { headers, signal: controller.signal };
+    return await (headers.Cookie ? credentialRequest("makerworld-page", url, init) : fetch(url, init));
   } finally {
     clearTimeout(timeout);
   }
@@ -254,6 +265,7 @@ async function rawFetch(url: string, headers: Record<string, string>): Promise<R
 
 /** Loads `url` through FlareSolverr and wraps the rendered body as an HTML Response. */
 async function proxiedResponse(url: string, cookieHeader?: string | null): Promise<Response | null> {
+  if (cookieHeader) assertCredentialDestination("makerworld-page", url);
   const solved = await fetchViaFlaresolverr(url, cookieHeader);
   if (!solved) return null;
   return new Response(solved.body, {

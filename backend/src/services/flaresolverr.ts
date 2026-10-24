@@ -91,7 +91,9 @@ export async function fetchViaFlaresolverr(
   if (!endpoint) return null;
   let hostname: string;
   try {
-    hostname = new URL(url).hostname.toLowerCase();
+    const parsed = new URL(url);
+    if (cookieHeader && parsed.protocol !== "https:") return null;
+    hostname = parsed.hostname.toLowerCase();
   } catch {
     return null;
   }
@@ -100,7 +102,12 @@ export async function fetchViaFlaresolverr(
   const timeout = setTimeout(() => controller.abort(), FLARESOLVERR_TIMEOUT_MS);
   try {
     const seedCookies = parseCookieHeader(cookieHeader);
-    const cookieList = Object.entries(seedCookies).map(([name, value]) => ({ name, value, domain: hostname }));
+    const cookieList = Object.entries(seedCookies).map(([name, value]) => ({
+      name,
+      value,
+      domain: hostname,
+      secure: true,
+    }));
     const body: Record<string, unknown> = {
       cmd: "request.get",
       url,
@@ -110,6 +117,7 @@ export async function fetchViaFlaresolverr(
 
     const res = await fetch(endpoint, {
       method: "POST",
+      redirect: "error",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
       signal: controller.signal,

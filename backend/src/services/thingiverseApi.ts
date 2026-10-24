@@ -1,5 +1,5 @@
 import { IMPORT_TIMEOUT_SECONDS } from "../config";
-import { browserFetch } from "../utils/browserFetch";
+import { assertCredentialDestination, browserCredentialRequest } from "../providers/credentialRequest";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "./importResolvers";
 import { cleanThingiverseMarkdown } from "./descriptionMarkdown";
 import type { ProviderCollectionCard } from "./providerCollectionCard";
@@ -82,7 +82,10 @@ export function parseThingiverseLikesUrl(url: string): { username: string } | nu
 }
 
 async function rawApiFetch(url: string): Promise<Response> {
-  return browserFetch(url, { headers: { Accept: "application/json" }, timeoutMs: API_TIMEOUT_MS });
+  return browserCredentialRequest("thingiverse-api", url, {
+    headers: { Accept: "application/json" },
+    timeoutMs: API_TIMEOUT_MS,
+  });
 }
 
 /** Once a challenge is seen, calls go straight through FlareSolverr for a while. JSON API calls
@@ -97,6 +100,7 @@ async function fetchThingiverseApi(
   accessToken: string,
 ): Promise<{ ok: boolean; status: number; data: unknown }> {
   const url = `${THINGIVERSE_API_BASE}${path}${path.includes("?") ? "&" : "?"}access_token=${encodeURIComponent(accessToken)}`;
+  assertCredentialDestination("thingiverse-api", url);
 
   let res: Response;
   let viaBrowser = false;

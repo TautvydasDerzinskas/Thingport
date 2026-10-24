@@ -1,4 +1,5 @@
 import { IMPORT_BROWSER_USER_AGENT, IMPORT_TIMEOUT_SECONDS } from "../config";
+import { credentialRequest } from "../providers/credentialRequest";
 import {
   extractJsonFromBrowserBody,
   fetchViaFlaresolverr,
@@ -70,7 +71,7 @@ async function fetchCloudJson(url: string, bearerToken: string): Promise<{ statu
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), CLOUD_API_TIMEOUT_MS);
     try {
-      const res = await fetch(url, {
+      const res = await credentialRequest("makerworld-cloud", url, {
         headers: cloudApiHeaders(bearerToken),
         redirect: "follow",
         signal: controller.signal,
@@ -128,7 +129,7 @@ export async function verifyMakerworldCookie(rawCookieOrToken: string): Promise<
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), CLOUD_API_TIMEOUT_MS);
   try {
-    const res = await fetch(SELF_PREFERENCE_URL, {
+    const res = await credentialRequest("makerworld-page", SELF_PREFERENCE_URL, {
       headers: {
         "User-Agent": IMPORT_BROWSER_USER_AGENT,
         Accept: "application/json",

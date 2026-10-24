@@ -4,6 +4,7 @@
 // browser's cookies, where the site picks them up, and sends the access token on. Thingport never renews it itself.
 
 import { STORAGE_KEYS } from "../shared/storage";
+import { providerCredentialRequest } from "../shared/providerCredentialRequest";
 import { OPTIONAL_SITES, siteEnabled } from "../shared/optionalSites";
 import { apiCall, requireConfig } from "./api";
 
@@ -63,7 +64,7 @@ async function renew(): Promise<string | null> {
   // Read right before it's spent: a tab of the site may have just renewed it.
   const refresh = await readCookie(REFRESH_COOKIE);
   if (!refresh) return null;
-  const res = await fetch(TOKEN_URL, {
+  const res = await providerCredentialRequest("snapmaker-id", TOKEN_URL, {
     method: "POST",
     headers: {
       Authorization: CLIENT_AUTH,
