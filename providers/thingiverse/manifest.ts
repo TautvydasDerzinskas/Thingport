@@ -28,6 +28,7 @@ export default {
   modelNoun: "things",
   helpers: { grab: "optional", flaresolverr: "recommended" },
   browserFetch: true,
+  slicers: ["cura"],
   capabilities: {
     collections: true,
     likes: true,

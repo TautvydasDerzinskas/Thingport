@@ -31,6 +31,7 @@ export default {
   ],
   modelNoun: "models",
   helpers: { grab: "recommended", flaresolverr: "none" },
+  slicers: ["elegooslicer"],
   capabilities: {
     collections: true,
     likes: false,

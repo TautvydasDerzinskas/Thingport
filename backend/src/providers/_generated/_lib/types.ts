@@ -83,7 +83,8 @@ export type ProviderManifest = {
     /** Its 3MFs are Bambu Studio projects, which other slicers mis-import, so Grab and the app offer them normalized. */
     bambuProjects?: true;
   };
-  /** The slicers whose users the sync dialog shows this site to first. */
+  /** The slicers whose users the sync dialog shows this site to first: its printer maker's own, by the ids in the
+   *  app's slicer setting (frontend/src/constants/settingsOptions.ts). */
   slicers?: readonly string[];
   /** The codes of the errors the API answers with, which clients act on: never change them. `session` when the
    *  sign-in is missing or turned down, `downloadLimit` when the account's daily downloads are used up, `needsGrab`

@@ -31,6 +31,7 @@ export default {
   ],
   modelNoun: "models",
   helpers: { grab: "required", flaresolverr: "none" },
+  slicers: ["anycubicslicernext"],
   capabilities: {
     collections: true,
     likes: true,

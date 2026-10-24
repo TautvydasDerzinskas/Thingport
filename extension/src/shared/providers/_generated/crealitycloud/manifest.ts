@@ -45,6 +45,7 @@ export default {
   ],
   modelNoun: "models",
   helpers: { grab: "recommended", flaresolverr: "none" },
+  slicers: ["crealityprintlink"],
   capabilities: {
     collections: true,
     likes: true,

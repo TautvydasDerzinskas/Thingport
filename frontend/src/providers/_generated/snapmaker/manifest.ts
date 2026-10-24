@@ -34,6 +34,7 @@ export default {
   ],
   modelNoun: "models",
   helpers: { grab: "recommended", flaresolverr: "none" },
+  slicers: ["snapmaker-orca"],
   capabilities: {
     collections: true,
     likes: true,

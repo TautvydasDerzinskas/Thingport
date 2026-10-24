@@ -31,7 +31,7 @@ export default {
   ],
   modelNoun: "models",
   helpers: { grab: "recommended", flaresolverr: "optional" },
-  slicers: ["bambustudio"],
+  slicers: ["bambustudio", "orcaslicer"],
   capabilities: {
     collections: true,
     likes: false,
