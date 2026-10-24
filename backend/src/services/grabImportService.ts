@@ -12,6 +12,7 @@ import {
   type MakeronlineProfileScope,
 } from "../providers/makeronline/api";
 import { HttpError } from "../utils/fileUtils";
+import { MANIFESTS } from "../providers/_generated";
 
 // Imports waiting for Thingport Grab. MakerOnline hands out download links only to a page its anti-bot script runs on,
 // so an import that starts anywhere else (the app, the import queue, a sync) is parked here. Grab, on the next
@@ -19,6 +20,9 @@ import { HttpError } from "../utils/fileUtils";
 // keeps failing is dropped with a notification, so it isn't retried on every visit.
 
 export const GRAB_IMPORT_MAX_ATTEMPTS = 3;
+
+const { name: NAME, site } = MANIFESTS.makeronline;
+const SITE_HOST = new URL(site).hostname.replace(/^www\./, "");
 
 export type GrabImportOptions = {
   scope?: MakeronlineProfileScope;
@@ -30,7 +34,7 @@ export type GrabImportOptions = {
 
 /** Parks a MakerOnline model for Grab. The same link again keeps one entry, with the newest options. */
 export async function queueGrabImport(userId: string, url: string, options: GrabImportOptions = {}): Promise<void> {
-  if (!parseMakeronlineModelUrl(url)) throw new HttpError(400, "Not a MakerOnline model link");
+  if (!parseMakeronlineModelUrl(url)) throw new HttpError(400, `Not a ${NAME} model link`);
   const data = {
     scope: options.scope ?? "url",
     collectionId: options.collectionId ?? null,
@@ -75,13 +79,13 @@ export async function notifyGrabImportsQueued(
   opts: { label?: string | null; externalUrl?: string | null; internalPath?: string | null } = {},
 ): Promise<void> {
   if (!count) return;
-  const models = count === 1 ? "1 MakerOnline model waits" : `${count} MakerOnline models wait`;
+  const models = count === 1 ? `1 ${NAME} model waits` : `${count} ${NAME} models wait`;
   await createNotification(userId, {
     type: "import",
     title: `${models} for Thingport Grab${opts.label ? ` (${opts.label})` : ""}`,
     body:
-      "MakerOnline only gives its files to its own pages. Open makeronline.com in a browser with Thingport Grab and " +
-      "it imports them there.",
+      `${NAME} only gives its files to its own pages. Open ${SITE_HOST} in a browser with Thingport Grab and it ` +
+      "imports them there.",
     externalUrl: opts.externalUrl ?? null,
     internalPath: opts.internalPath ?? null,
   });
@@ -134,7 +138,7 @@ export async function recordGrabImportFailure(row: GrabImport, error: string): P
   await prisma.grabImport.delete({ where: { id: row.id } }).catch(() => undefined);
   await createNotification(row.userId, {
     type: "import",
-    title: "Couldn't import a MakerOnline model",
+    title: `Couldn't import a ${NAME} model`,
     body: `Thingport Grab tried ${attempts} times: ${error}`,
     externalUrl: row.url,
     internalPath: null,
@@ -147,10 +151,10 @@ export async function planMakeronlineDownloads(
   scope: MakeronlineProfileScope,
 ): Promise<{ title: string | null; requests: MakeronlineDownloadRequest[] }> {
   const parsed = parseMakeronlineModelUrl(url);
-  if (!parsed) throw new HttpError(400, "Not a MakerOnline model link");
+  if (!parsed) throw new HttpError(400, `Not a ${NAME} model link`);
   const resolved = await resolveMakeronlineModel(parsed.modelId);
-  if (!resolved) throw new HttpError(404, "This MakerOnline model could not be found, or isn't public.");
+  if (!resolved) throw new HttpError(404, `This ${NAME} model could not be found, or isn't public.`);
   const requests = makeronlineDownloadPlan(parsed.modelId, resolved, scope, parsed.requestedProfileId);
-  if (!requests.length) throw new HttpError(400, "This MakerOnline model has no files Thingport can import.");
+  if (!requests.length) throw new HttpError(400, `This ${NAME} model has no files Thingport can import.`);
   return { title: resolved.meta.title ?? null, requests };
 }

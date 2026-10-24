@@ -1,6 +1,6 @@
 import { prisma } from "../../db";
 import { HttpError } from "../../utils/fileUtils";
-import { deletePrintablesListings, pushedLikes, pushedPrintablesCards } from "../../services/providerListingsService";
+import { deletePrintablesListings, pushedLikes, pushedPrintablesCards } from "./listings";
 import type { ProviderBrowse } from "../types";
 import { fetchPrintablesCollectionCard, listPrintablesUserCollections, resolvePrintablesUser } from "./api";
 

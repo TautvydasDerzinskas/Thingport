@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MANIFESTS } from "../providers/_generated";
+import { providerNames } from "../providers/names";
 import { prisma } from "../db";
 import { toAuthorOut, type PrintOut } from "../dto";
 import { HttpError } from "../utils/fileUtils";
@@ -427,8 +428,8 @@ const importModel: McpToolDefinition = {
   name: "import_model",
   title: "Import a model",
   description:
-    "Import a model into the library from its page on a supported site (MakerWorld, Printables, Thingiverse and " +
-    "the others Thingport supports), as + Add > Import does. A model already in the library isn't imported twice. " +
+    `Import a model into the library from its page on a supported site (${providerNames(() => true)}), as + Add > ` +
+    "Import does. A model already in the library isn't imported twice. " +
     "Usually finishes in the call; a long import returns a task_id to check with get_import_status.",
   readOnly: false,
   idempotent: true,

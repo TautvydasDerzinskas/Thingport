@@ -362,7 +362,7 @@ router.post(
       req.body,
     );
     const url = await enabledImportUrl(body.url);
-    if (!parseMakeronlineModelUrl(url)) throw new HttpError(400, "Not a MakerOnline model link");
+    if (!parseMakeronlineModelUrl(url)) throw new HttpError(400, `Not a ${MANIFESTS.makeronline.name} model link`);
     await queueGrabImport(req.userId!, url, {
       scope: body.scope,
       collectionId: body.collection_id ?? null,

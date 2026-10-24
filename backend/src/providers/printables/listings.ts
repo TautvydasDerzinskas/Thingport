@@ -3,12 +3,13 @@
 // syncing them works from these lists, as fresh as the user's last visit to Printables.
 
 import type { Prisma } from "@prisma/client";
-import { prisma } from "../db";
-import { HttpError } from "../utils/fileUtils";
-import { LIKES_ID_PREFIX } from "../providers/_generated";
-import type { ProviderCollectionCard } from "./providerCollectionCard";
+import { prisma } from "../../db";
+import { HttpError } from "../../utils/fileUtils";
+import { LIKES_ID_PREFIX } from "../_generated";
+import manifest from "../_generated/printables/manifest";
+import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
 
-const PROVIDER = "printables";
+const PROVIDER = manifest.id;
 export const COLLECTIONS_KEY = "collections";
 export const LIKES_KEY = "likes";
 

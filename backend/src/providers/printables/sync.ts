@@ -5,7 +5,7 @@ import {
   printablesPushIsOff,
   pushedPrintablesModels,
   WAITING_FOR_GRAB,
-} from "../../services/providerListingsService";
+} from "./listings";
 import type { ProviderSync } from "../types";
 import { checkPrintablesCollection, fetchPrintablesCollectionEntries } from "./api";
 

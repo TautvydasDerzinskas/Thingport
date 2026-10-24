@@ -84,10 +84,16 @@ type Entry<K extends ProviderId> = ProviderBackend & {
   (Capabilities<K>["likes"] extends true ? Listed : unknown) &
   (Capabilities<K>["trending"] extends false ? unknown : { trending: ProviderTrending });
 
+const name = (id: ProviderId): string => MANIFESTS[id].name;
+/** The site's address as people type it, without the www. */
+const siteHost = (id: ProviderId): string => new URL(MANIFESTS[id].site).hostname.replace(/^www\./, "");
+const grabSignInStop = (id: ProviderId): string =>
+  `${name(id)} turned your sign-in down — visit ${siteHost(id)} signed in with Thingport Grab, then retry`;
+
 export const PROVIDERS = {
   makerworld: {
     connection: { default: makerworldConnection },
-    authStopText: "the MakerWorld session expired — update the cookie in Settings, then retry",
+    authStopText: `the ${name("makerworld")} session expired — update the cookie in Settings, then retry`,
     lists: makerworldLists,
     sync: makerworldSync,
     browse: makerworldBrowse,
@@ -96,7 +102,7 @@ export const PROVIDERS = {
   printables: {
     connection: {},
     // Printables has no sign-in; its imports never stop for one.
-    authStopText: "Printables turned the request down — wait a while, then retry",
+    authStopText: `${name("printables")} turned the request down — wait a while, then retry`,
     sourcedImport: printablesImport,
     lists: printablesLists,
     sync: printablesSync,
@@ -105,8 +111,7 @@ export const PROVIDERS = {
   },
   thingiverse: {
     connection: { default: thingiverseConnection },
-    authStopText:
-      "Thingiverse turned the instance's App Token down — an admin can check it in Administration, then retry",
+    authStopText: `${name("thingiverse")} turned the instance's App Token down — an admin can check it in Administration, then retry`,
     sourcedImport: thingiverseImport,
     lists: thingiverseLists,
     sync: thingiverseSync,
@@ -115,8 +120,7 @@ export const PROVIDERS = {
   },
   myminifactory: {
     connection: { default: myminifactorySessionConnection, instance: myminifactoryKeyConnection },
-    authStopText:
-      "MyMiniFactory turned your sign-in down — visit myminifactory.com signed in with Thingport Grab, then retry",
+    authStopText: grabSignInStop("myminifactory"),
     sourcedImport: myminifactoryImport,
     lists: myminifactoryLists,
     sync: myminifactorySync,
@@ -125,7 +129,7 @@ export const PROVIDERS = {
   },
   snapmaker: {
     connection: { default: snapmakerConnection },
-    authStopText: "your Snapmaker sign-in ran out — visit space.snapmaker.com with Thingport Grab, then retry",
+    authStopText: `your ${name("snapmaker")} sign-in ran out — visit ${siteHost("snapmaker")} with Thingport Grab, then retry`,
     sourcedImport: snapmakerImport,
     lists: snapmakerLists,
     sync: snapmakerSync,
@@ -134,8 +138,7 @@ export const PROVIDERS = {
   },
   makeronline: {
     connection: { default: makeronlineConnection },
-    authStopText:
-      "MakerOnline turned your sign-in down — visit makeronline.com signed in with Thingport Grab, then retry",
+    authStopText: grabSignInStop("makeronline"),
     customImport: makeronlineImport,
     lists: makeronlineLists,
     sync: makeronlineSync,
@@ -144,8 +147,7 @@ export const PROVIDERS = {
   },
   crealitycloud: {
     connection: { default: crealitycloudConnection },
-    authStopText:
-      "Creality Cloud turned your sign-in down — visit crealitycloud.com signed in with Thingport Grab, then retry",
+    authStopText: grabSignInStop("crealitycloud"),
     sourcedImport: crealitycloudImport,
     lists: crealitycloudLists,
     sync: crealitycloudSync,
@@ -154,7 +156,7 @@ export const PROVIDERS = {
   },
   nexprint: {
     connection: { default: nexprintConnection },
-    authStopText: "NexPrint turned your sign-in down — visit nexprint.com signed in with Thingport Grab, then retry",
+    authStopText: grabSignInStop("nexprint"),
     sourcedImport: nexprintImport,
     lists: nexprintLists,
     sync: nexprintSync,
@@ -163,7 +165,7 @@ export const PROVIDERS = {
   },
   thangs: {
     connection: { default: thangsConnection },
-    authStopText: "Thangs turned your sign-in down — visit thangs.com signed in with Thingport Grab, then retry",
+    authStopText: grabSignInStop("thangs"),
     sourcedImport: thangsImport,
     lists: thangsLists,
     sync: thangsSync,
@@ -173,7 +175,7 @@ export const PROVIDERS = {
   cults3d: {
     connection: { default: cults3dApiConnection, browser: cults3dBrowserConnection },
     authStopText:
-      "Cults3D turned your API key or sign-in down — check the key in Configuration → Providers, or visit cults3d.com " +
+      `${name("cults3d")} turned your API key or sign-in down — check the key in Configuration → Providers, or visit ${siteHost("cults3d")} ` +
       "signed in with Thingport Grab, then retry",
     sourcedImport: cults3dImport,
     lists: cults3dLists,

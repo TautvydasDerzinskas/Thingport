@@ -1,14 +1,26 @@
 // What the backend calls a provider and the things it files, kept apart from the services so provider modules can use
 // them without reaching the registry they're part of.
 
-import { isProviderId, LIKES_ID_PREFIX, MANIFESTS } from "./_generated";
+import { isProviderId, LIKES_ID_PREFIX, MANIFESTS, PROVIDER_IDS, type ProviderId } from "./_generated";
 
 export function providerName(provider: string): string {
   return isProviderId(provider) ? MANIFESTS[provider].name : provider;
 }
 
+/** The providers whose manifest says so, named in a sentence: "A, B and C". */
+export function providerNames(
+  has: (capabilities: (typeof MANIFESTS)[ProviderId]["capabilities"]) => boolean,
+  conjunction: "and" | "or" = "and",
+): string {
+  const names = PROVIDER_IDS.filter((id) => has(MANIFESTS[id].capabilities)).map((id) => MANIFESTS[id].name);
+  return names.length > 1 ? `${names.slice(0, -1).join(", ")} ${conjunction} ${names.at(-1)}` : (names[0] ?? "");
+}
+
+/** The 400 for print profiles asked of a provider whose models have none. */
+export const NO_PROFILES_TEXT = `Only ${providerNames((c) => c.profiles)} models have print profiles to pick`;
+
 /** The collection a user's likes are filed into, by import and sync alike. */
-export function likesCollectionName(username: string, provider: string = "thingiverse"): string {
+export function likesCollectionName(username: string, provider: string): string {
   return `${providerName(provider)} likes (@${username})`;
 }
 

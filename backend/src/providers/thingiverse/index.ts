@@ -17,6 +17,7 @@ import {
   type ThingiverseThingResolution,
   fetchThingiversePopular,
 } from "./api";
+import manifest from "../_generated/thingiverse/manifest";
 
 const DOWNLOAD_CONCURRENCY = 2;
 
@@ -116,7 +117,7 @@ export const thingiverseLists: ProviderLists = {
       return {
         batch: {
           ready: async () => void (await requireToken()),
-          title: async () => likesCollectionName(likes.username),
+          title: async () => likesCollectionName(likes.username, manifest.id),
           label: () => `@${likes.username}'s Likes`,
         },
       };

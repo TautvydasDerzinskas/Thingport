@@ -9,13 +9,15 @@ import {
   getProviderAccounts,
   listProviderCollections,
   lookupProviderCollection,
-  savePrintablesPush,
   setProviderAccount,
   type BrowsableProvider,
 } from "../services/providerCollectionsService";
-import { assertPrintablesPushOn, wantedPrintablesListings } from "../services/providerListingsService";
+import { assertPrintablesPushOn, wantedPrintablesListings } from "../providers/printables/listings";
+import { savePrintablesPush } from "../providers/printables/push";
 import { assertProviderEnabled } from "../services/providerSettingsService";
-import { isProviderId } from "../providers/_generated";
+import { isProviderId, MANIFESTS } from "../providers/_generated";
+
+const { printables } = MANIFESTS;
 
 const router = Router();
 router.use(requireAuth);
@@ -60,10 +62,10 @@ router.get(
 
 // Thingport Grab, on a visit to Printables: which lists to read in full this time.
 router.get(
-  "/provider-collections/printables/wanted",
+  `/provider-collections/${printables.id}/wanted`,
   asyncHandler(async (req, res) => {
     // Refused while turned off, so Grab doesn't read anything only to have it refused.
-    await assertProviderEnabled("printables");
+    await assertProviderEnabled(printables.id);
     await assertPrintablesPushOn(req.userId!);
     res.json({ keys: await wantedPrintablesListings(req.userId!) });
   }),
@@ -99,9 +101,9 @@ const pushSchema = z.object({
 
 // Thingport Grab, on a visit to Printables: what it read there with the user's own login.
 router.put(
-  "/provider-collections/printables/push",
+  `/provider-collections/${printables.id}/push`,
   asyncHandler(async (req, res) => {
-    await assertProviderEnabled("printables");
+    await assertProviderEnabled(printables.id);
     await savePrintablesPush(req.userId!, parseBody(pushSchema, req.body));
     res.json({ ok: true });
   }),

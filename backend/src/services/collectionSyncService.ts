@@ -8,7 +8,13 @@ import { HttpError } from "../utils/fileUtils";
 import { isProviderId, modelUrl, parseListUrl, type ProviderId, URLS } from "../providers/_generated";
 import { PROFILE_PROVIDERS, PROVIDERS } from "../providers/registry";
 import type { SyncSource } from "../providers/types";
-import { likesCollectionName, providerName, syncLikesUsername } from "../providers/names";
+import {
+  likesCollectionName,
+  NO_PROFILES_TEXT,
+  providerName,
+  providerNames,
+  syncLikesUsername,
+} from "../providers/names";
 
 export { providerName };
 import { addPrintsToCollection, findOrCreateCollectionByName, isSystemCollectionId } from "./collectionService";
@@ -118,11 +124,12 @@ export type EnableSyncInput = {
  *  library are filed into the collection now, so it starts out mirroring the provider's. */
 export async function enableSync(userId: string, input: EnableSyncInput): Promise<SyncLinkOut> {
   const source = parseSyncSource(input.url);
-  if (!source)
+  if (!source) {
     throw new HttpError(
       400,
-      "Only MakerWorld, Printables, Thingiverse, MyMiniFactory, MakerOnline, Creality Cloud, NexPrint and Thangs collections, your own Cults3D printlists, Thingiverse or Cults3D likes, your own Printables, MakerOnline, Creality Cloud and Thangs likes, and your own Snapmaker Space likes and bookmarks, can be synced",
+      `Only collections, likes and bookmarks on ${providerNames((c) => c.collections || c.likes)} can be synced`,
     );
+  }
   const provider = PROVIDERS[source.provider].sync;
   await provider?.assertCanSync?.(userId, source);
   const knownIds = [...new Set(input.knownIds.map((id) => id.trim()).filter(Boolean))];
@@ -302,8 +309,7 @@ export async function disableSync(userId: string, collectionId: string): Promise
 }
 
 /** Applies to checks and models found from now on; models already waiting in the import queue
- *  keep the profile scope they were queued with. Only MakerWorld, Snapmaker, MakerOnline, Creality Cloud and NexPrint
- *  models have print profiles. */
+ *  keep the profile scope they were queued with. */
 export async function updateSyncSettings(
   userId: string,
   collectionId: string,
@@ -311,10 +317,7 @@ export async function updateSyncSettings(
 ): Promise<CollectionSyncOut> {
   const sync = await ownedSync(userId, collectionId);
   if (settings.profileScope && !hasProfiles(sync.provider)) {
-    throw new HttpError(
-      400,
-      "Only MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud and NexPrint models have print profiles to pick",
-    );
+    throw new HttpError(400, NO_PROFILES_TEXT);
   }
   const updated = await prisma.collectionSync.update({
     where: { id: sync.id },
