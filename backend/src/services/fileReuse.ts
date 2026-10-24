@@ -126,15 +126,16 @@ export async function openRegularFile(
   return null;
 }
 
+/** A path that reopens the very file an open handle holds, whatever its own path is now: /proc/self/fd on Linux,
+ *  /dev/fd elsewhere (macOS on a dev machine). */
+export const handlePath = (handle: fs.FileHandle): string =>
+  process.platform === "linux" ? `/proc/self/fd/${handle.fd}` : `/dev/fd/${handle.fd}`;
+
 /** Clones the file an open handle holds to `dest`, never over a file there. From the handle, not a path, which may be
- *  something else by now: /proc/self/fd reopens that very file (where it doesn't exist, macOS on a dev machine, this
- *  fails like any other clone that can't be made). FORCE: without a clone it would copy the file, which saves nothing. */
+ *  something else by now. FORCE: without a clone it would copy the file, which saves nothing. macOS can't force one,
+ *  so there it fails like any other clone that can't be made. */
 export const cloneFromHandle = (handle: fs.FileHandle, dest: string): Promise<void> =>
-  fs.copyFile(
-    `/proc/self/fd/${handle.fd}`,
-    dest,
-    fsSync.constants.COPYFILE_EXCL | fsSync.constants.COPYFILE_FICLONE_FORCE,
-  );
+  fs.copyFile(handlePath(handle), dest, fsSync.constants.COPYFILE_EXCL | fsSync.constants.COPYFILE_FICLONE_FORCE);
 
 /** Hashes what the open handle holds from its start, whatever the path it was opened at is now. */
 export async function sha256OfHandle(handle: fs.FileHandle): Promise<string> {
@@ -289,9 +290,7 @@ export async function copyStoredFile(
       if (err?.code === "EEXIST") throw conflict();
       how = "copied";
       try {
-        await withStorageLock(() =>
-          fs.copyFile(`/proc/self/fd/${handle.fd}`, destAbsPath, fsSync.constants.COPYFILE_EXCL),
-        );
+        await withStorageLock(() => fs.copyFile(handlePath(handle), destAbsPath, fsSync.constants.COPYFILE_EXCL));
       } catch (copyErr: any) {
         if (copyErr?.code === "EEXIST") throw conflict();
         return null;

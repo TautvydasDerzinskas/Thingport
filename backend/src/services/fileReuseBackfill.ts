@@ -805,7 +805,7 @@ async function removeLeftoverTemp(tmp: string): Promise<void> {
 }
 
 /** Whether the storage folder's filesystem clones files: tried once on two small files, through the same call as every
- *  other clone -- from the open file's /proc/self/fd entry, so a container without /proc reports it can't. */
+ *  other clone -- from the open file's handlePath, so a container without /proc reports it can't. */
 async function probeClones(): Promise<boolean> {
   const dir = path.join(STORAGE, `.reflink-probe-${crypto.randomBytes(6).toString("hex")}`);
   try {

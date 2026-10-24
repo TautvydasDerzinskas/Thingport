@@ -6,7 +6,17 @@ import os from "node:os";
 import path from "node:path";
 import request from "supertest";
 import { createApp } from "../src/app";
-import { makePrint, nonce, register, sha, tempFile, uniqueBytes, uniqueImage, upload } from "./helpers/fileReuse";
+import {
+  makePrint,
+  nonce,
+  openedPath,
+  register,
+  sha,
+  tempFile,
+  uniqueBytes,
+  uniqueImage,
+  upload,
+} from "./helpers/fileReuse";
 import { STORAGE } from "../src/config";
 import { managedPlatePath, relocatePrint } from "../src/services/printService";
 import { managedPrintFilePath } from "../src/services/printFileService";
@@ -47,7 +57,7 @@ function mockClones(options: CloneOptions = {}) {
     await realCopyFile(src, target, COPYFILE_EXCL);
     // The probe's own files aren't a file's clone.
     if (!path.basename(String(target)).endsWith(".reuse.tmp")) return;
-    clones.push({ from: fs.readlinkSync(String(src)), to: String(target) });
+    clones.push({ from: openedPath(src), to: String(target) });
     await options.afterClone?.(String(target));
   });
   return clones;
@@ -1019,7 +1029,7 @@ describe("failures and what's left out", () => {
     fs.rmSync(legacy);
   });
 
-  it("probes for clones the way every clone is made, from the open file's /proc entry", async () => {
+  it("probes for clones the way every clone is made, from the open file's handle path", async () => {
     const sources: string[] = [];
     vi.spyOn(fsp, "copyFile").mockImplementation(async (src, _to, mode) => {
       if ((mode ?? 0) & COPYFILE_FICLONE_FORCE) sources.push(String(src));
@@ -1028,7 +1038,7 @@ describe("failures and what's left out", () => {
     const state = await backfill();
     expect(state.unsupported).toBe(true);
     expect(sources.length).toBeGreaterThan(0);
-    expect(sources.every((src) => /^\/proc\/self\/fd\/\d+$/.test(src))).toBe(true);
+    expect(sources.every((src) => /^\/(proc\/self|dev)\/fd\/\d+$/.test(src))).toBe(true);
   });
 });
 

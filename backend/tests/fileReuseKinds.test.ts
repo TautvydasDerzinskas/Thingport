@@ -4,7 +4,17 @@ import fsp from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { createApp } from "../src/app";
-import { makePrint, nonce, register, sha, tempFile, uniqueBytes, uniqueImage, upload } from "./helpers/fileReuse";
+import {
+  makePrint,
+  nonce,
+  openedPath,
+  register,
+  sha,
+  tempFile,
+  uniqueBytes,
+  uniqueImage,
+  upload,
+} from "./helpers/fileReuse";
 import { createPrint } from "../src/services/printCreation";
 import { managedPlatePath } from "../src/services/printService";
 import { deleteSupportingFile, managedPrintFilePath } from "../src/services/printFileService";
@@ -30,14 +40,14 @@ let dir: string;
 const { COPYFILE_EXCL, COPYFILE_FICLONE_FORCE } = fs.constants;
 const realCopyFile = fsp.copyFile;
 
-/** Every clone made, as {from, to}: `from` is the stored file it was cloned from, read off the /proc/self/fd link the
+/** Every clone made, as {from, to}: `from` is the stored file it was cloned from, read off the open handle the
  *  clone is made through. The temp folder can't clone, so each is simulated with a plain exclusive copy, as a
  *  reflink-capable filesystem would make it. */
 function watchClones() {
   const clones: { from: string; to: string }[] = [];
   vi.spyOn(fsp, "copyFile").mockImplementation(async (src, target, mode) => {
     if (mode === undefined || !(mode & COPYFILE_FICLONE_FORCE)) return realCopyFile(src, target, mode);
-    const from = fs.readlinkSync(String(src));
+    const from = openedPath(src);
     await realCopyFile(src, target, COPYFILE_EXCL);
     clones.push({ from, to: String(target) });
   });
