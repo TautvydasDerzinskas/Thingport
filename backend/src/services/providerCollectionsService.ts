@@ -17,7 +17,7 @@ import {
 } from "./collectionSyncService";
 import type { ProviderCollectionCard } from "./providerCollectionCard";
 import { assertProviderEnabled } from "./providerSettingsService";
-import { PROVIDER_IDS, type ProviderId } from "../providers/_generated";
+import { manifestOf, PROVIDER_IDS, type ProviderId } from "../providers/_generated";
 import { NO_PROFILES_TEXT, providerName, providerNames } from "../providers/names";
 import { PROVIDERS } from "../providers/registry";
 import type { ProviderAccount, ProviderBrowse } from "../providers/types";
@@ -149,9 +149,10 @@ export async function enableSyncFromApp(
     throw new HttpError(400, NO_PROFILES_TEXT);
   }
   const provider = PROVIDERS[source.provider].sync;
+  const newOnly = manifestOf(source.provider).capabilities.syncsNewOnly;
 
   let knownIds: string[] = [];
-  if (provider?.followsNewOnly) {
+  if (newOnly) {
     const listing = await providerCall(source.provider, () =>
       fetchListing({ userId, provider: source.provider, externalId: source.externalId, sourceUrl: source.url }),
     );
@@ -172,7 +173,7 @@ export async function enableSyncFromApp(
     };
   }
 
-  const importing = !provider?.followsNewOnly;
+  const importing = !newOnly;
   if (importing) {
     const created = await prisma.collectionSync.findUniqueOrThrow({ where: { collectionId } });
     // Never checked yet, so a check that finds the user busy importing is retried on the

@@ -28,7 +28,7 @@ const MAKERWORLD_CLIENT_HEADERS = {
   "X-BBL-Client-Name": "MakerWorld",
   "X-BBL-Client-Type": "web",
   "X-BBL-Client-Version": "00.00.00.01",
-  "X-BBL-App-Source": "makerworld",
+  "X-BBL-App-Source": MANIFESTS.makerworld.id,
 };
 
 /** {url|downloadUrl|download_url}, optionally nested under `data`. */

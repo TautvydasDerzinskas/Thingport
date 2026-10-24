@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
 import ButtonBase from "@mui/material/ButtonBase";
@@ -20,6 +21,8 @@ type Props = {
   onSelect: () => void;
 };
 
+type TileProps = { provider: BrowsableProvider; collection: ProviderCollection };
+
 const sunken = (theme: Theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.06)" : "#f4f4f4");
 
 /** A model image, or an empty slot when the collection has fewer. */
@@ -38,7 +41,7 @@ function ModelCount({ count, provider }: { count: number; provider: BrowsablePro
 }
 
 /** MakerWorld: a 2x2 mosaic, "+N" over the last tile, the deck edges below. */
-function MakerWorldTile({ collection }: { collection: ProviderCollection }) {
+function MakerWorldTile({ provider, collection }: TileProps) {
   const more = collection.model_count - 4;
   return (
     <Box
@@ -99,7 +102,7 @@ function MakerWorldTile({ collection }: { collection: ProviderCollection }) {
           }}
         >
           <ViewInArOutlinedIcon sx={{ fontSize: 14 }} />
-          <ModelCount count={collection.model_count} provider="makerworld" />
+          <ModelCount count={collection.model_count} provider={provider} />
           {collection.private && <LockOutlinedIcon sx={{ fontSize: 14, ml: "auto" }} />}
         </Box>
       </Box>
@@ -108,14 +111,14 @@ function MakerWorldTile({ collection }: { collection: ProviderCollection }) {
 }
 
 /** Printables: its list row, boxed, with the three square thumbnails along the top. */
-function PrintablesTile({ collection }: { collection: ProviderCollection }) {
+function PrintablesTile({ provider, collection }: TileProps) {
   return (
     <Box
       sx={{
         borderRadius: "4px",
         border: 1,
         borderColor: "divider",
-        borderTop: `3px solid ${accent("printables")}`,
+        borderTop: `3px solid ${accent(provider)}`,
         bgcolor: "background.paper",
         p: 1.25,
       }}
@@ -129,7 +132,7 @@ function PrintablesTile({ collection }: { collection: ProviderCollection }) {
         {collection.name}
       </Typography>
       <Box sx={{ display: "flex", alignItems: "center", fontSize: "0.8rem", color: "text.secondary" }}>
-        <ModelCount count={collection.model_count} provider="printables" />
+        <ModelCount count={collection.model_count} provider={provider} />
         {collection.private && <LockOutlinedIcon sx={{ fontSize: 14, ml: "auto" }} />}
       </Box>
     </Box>
@@ -144,7 +147,7 @@ const RINGS = [
   { size: 80, color: "#EAEEFF" },
 ];
 
-function ThingiverseTile({ collection }: { collection: ProviderCollection }) {
+function ThingiverseTile({ provider, collection }: TileProps) {
   const stack = collection.thumbnails.slice(0, 3);
   return (
     <Box
@@ -152,7 +155,7 @@ function ThingiverseTile({ collection }: { collection: ProviderCollection }) {
         position: "relative",
         overflow: "hidden",
         borderRadius: "8px",
-        bgcolor: accent("thingiverse"),
+        bgcolor: accent(provider),
         aspectRatio: "4 / 3",
         color: "#fff",
         textAlign: "center",
@@ -178,7 +181,7 @@ function ThingiverseTile({ collection }: { collection: ProviderCollection }) {
           {collection.name}
         </Typography>
         <Typography sx={{ fontSize: "0.8rem", color: "#fff" }}>
-          <ModelCount count={collection.model_count} provider="thingiverse" />
+          <ModelCount count={collection.model_count} provider={provider} />
         </Typography>
       </Box>
       {stack.map((src, i) => (
@@ -206,7 +209,7 @@ function ThingiverseTile({ collection }: { collection: ProviderCollection }) {
 }
 
 // MyMiniFactory's card: name and count, then the cover model large, then a row of three more.
-function MyMiniFactoryTile({ collection }: { collection: ProviderCollection }) {
+function MyMiniFactoryTile({ provider, collection }: TileProps) {
   const [cover, ...rest] = collection.thumbnails;
   return (
     <Box
@@ -214,7 +217,7 @@ function MyMiniFactoryTile({ collection }: { collection: ProviderCollection }) {
         borderRadius: "4px",
         border: 1,
         borderColor: "divider",
-        borderBottom: `3px solid ${accent("myminifactory")}`,
+        borderBottom: `3px solid ${accent(provider)}`,
         bgcolor: "background.paper",
         p: 1.25,
       }}
@@ -223,7 +226,7 @@ function MyMiniFactoryTile({ collection }: { collection: ProviderCollection }) {
         {collection.name}
       </Typography>
       <Box sx={{ display: "flex", alignItems: "center", fontSize: "0.8rem", color: "text.secondary" }}>
-        <ModelCount count={collection.model_count} provider="myminifactory" />
+        <ModelCount count={collection.model_count} provider={provider} />
         {collection.private && <LockOutlinedIcon sx={{ fontSize: 14, ml: "auto" }} />}
       </Box>
       <Thumb src={cover} sx={{ aspectRatio: "16 / 9", mt: 1, borderRadius: "2px" }} />
@@ -237,7 +240,7 @@ function MyMiniFactoryTile({ collection }: { collection: ProviderCollection }) {
 }
 
 // Snapmaker Space's model card: the newest model large, a row of three more, then name and count.
-function SnapmakerTile({ collection }: { collection: ProviderCollection }) {
+function SnapmakerTile({ provider, collection }: TileProps) {
   const [cover, ...rest] = collection.thumbnails;
   return (
     <Box
@@ -260,7 +263,7 @@ function SnapmakerTile({ collection }: { collection: ProviderCollection }) {
           {collection.name}
         </Typography>
         <Box sx={{ display: "flex", alignItems: "center", fontSize: "0.8rem", color: "text.secondary" }}>
-          <ModelCount count={collection.model_count} provider="snapmaker" />
+          <ModelCount count={collection.model_count} provider={provider} />
           {collection.private && <LockOutlinedIcon sx={{ fontSize: 14, ml: "auto" }} />}
         </Box>
       </Box>
@@ -269,7 +272,7 @@ function SnapmakerTile({ collection }: { collection: ProviderCollection }) {
 }
 
 // MakerOnline's collection card: four covers in a square grid, then name and count.
-function MakeronlineTile({ collection }: { collection: ProviderCollection }) {
+function MakeronlineTile({ provider, collection }: TileProps) {
   return (
     <Box
       sx={{
@@ -290,7 +293,7 @@ function MakeronlineTile({ collection }: { collection: ProviderCollection }) {
           {collection.name}
         </Typography>
         <Box sx={{ display: "flex", alignItems: "center", fontSize: "0.8rem", color: "text.secondary" }}>
-          <ModelCount count={collection.model_count} provider="makeronline" />
+          <ModelCount count={collection.model_count} provider={provider} />
           {collection.private && <LockOutlinedIcon sx={{ fontSize: 14, ml: "auto" }} />}
         </Box>
       </Box>
@@ -299,14 +302,14 @@ function MakeronlineTile({ collection }: { collection: ProviderCollection }) {
 }
 
 // Creality Cloud's collection card: one large cover beside two stacked ones, under its green.
-function CrealitycloudTile({ collection }: { collection: ProviderCollection }) {
+function CrealitycloudTile({ provider, collection }: TileProps) {
   return (
     <Box
       sx={{
         borderRadius: "12px",
         border: 1,
         borderColor: "divider",
-        borderTop: `3px solid ${accent("crealitycloud")}`,
+        borderTop: `3px solid ${accent(provider)}`,
         bgcolor: "background.paper",
         overflow: "hidden",
       }}
@@ -321,7 +324,7 @@ function CrealitycloudTile({ collection }: { collection: ProviderCollection }) {
           {collection.name}
         </Typography>
         <Box sx={{ display: "flex", alignItems: "center", fontSize: "0.8rem", color: "text.secondary" }}>
-          <ModelCount count={collection.model_count} provider="crealitycloud" />
+          <ModelCount count={collection.model_count} provider={provider} />
           {collection.private && <LockOutlinedIcon sx={{ fontSize: 14, ml: "auto" }} />}
         </Box>
       </Box>
@@ -333,14 +336,14 @@ function CrealitycloudTile({ collection }: { collection: ProviderCollection }) {
 const NEXPRINT_SCRIM = "linear-gradient(to top, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0) 70%)";
 
 /** NexPrint: one cover, its first model's, with the name over it, edged in its purple. */
-function NexprintTile({ collection }: { collection: ProviderCollection }) {
+function NexprintTile({ provider, collection }: TileProps) {
   return (
     <Box
       sx={{
         position: "relative",
         borderRadius: "10px",
         overflow: "hidden",
-        borderLeft: `3px solid ${accent("nexprint")}`,
+        borderLeft: `3px solid ${accent(provider)}`,
         bgcolor: "background.paper",
       }}
     >
@@ -362,7 +365,7 @@ function NexprintTile({ collection }: { collection: ProviderCollection }) {
           {collection.name}
         </Typography>
         <Box sx={{ display: "flex", alignItems: "center", fontSize: "0.75rem", opacity: 0.85 }}>
-          <ModelCount count={collection.model_count} provider="nexprint" />
+          <ModelCount count={collection.model_count} provider={provider} />
           {collection.private && <LockOutlinedIcon sx={{ fontSize: 14, ml: "auto" }} />}
         </Box>
       </Box>
@@ -371,7 +374,7 @@ function NexprintTile({ collection }: { collection: ProviderCollection }) {
 }
 
 /** Thangs: its one cover, the count in a pill of its yellow over the corner, the name below. */
-function ThangsTile({ collection }: { collection: ProviderCollection }) {
+function ThangsTile({ provider, collection }: TileProps) {
   return (
     <Box
       sx={{
@@ -392,14 +395,14 @@ function ThangsTile({ collection }: { collection: ProviderCollection }) {
             px: 1,
             py: 0.25,
             borderRadius: "999px",
-            bgcolor: accent("thangs"),
+            bgcolor: accent(provider),
             // Its yellow is light in both themes.
             color: "common.black",
             fontSize: "0.7rem",
             fontWeight: 700,
           }}
         >
-          <ModelCount count={collection.model_count} provider="thangs" />
+          <ModelCount count={collection.model_count} provider={provider} />
         </Box>
       </Box>
       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 1.25, py: 1 }}>
@@ -413,7 +416,7 @@ function ThangsTile({ collection }: { collection: ProviderCollection }) {
 }
 
 /** Cults3D: a big cover beside two small ones, the name and a count in its purple below. */
-function Cults3dTile({ collection }: { collection: ProviderCollection }) {
+function Cults3dTile({ provider, collection }: TileProps) {
   return (
     <Box
       sx={{
@@ -455,10 +458,10 @@ function Cults3dTile({ collection }: { collection: ProviderCollection }) {
             fontSize: "0.75rem",
             fontWeight: 600,
             // Its purple is too dark to read on the dark theme's paper; a lighter shade of it there.
-            color: (theme) => (theme.palette.mode === "dark" ? "#B48CFA" : accent("cults3d")),
+            color: (theme) => (theme.palette.mode === "dark" ? "#B48CFA" : accent(provider)),
           }}
         >
-          <ModelCount count={collection.model_count} provider="cults3d" />
+          <ModelCount count={collection.model_count} provider={provider} />
           {collection.private && <LockOutlinedIcon sx={{ fontSize: 14, ml: "auto", color: "text.secondary" }} />}
         </Box>
       </Box>
@@ -494,7 +497,7 @@ function GenericTile({ provider, collection }: { provider: BrowsableProvider; co
 }
 
 // Drawn in each site's own manner, where one is worth it.
-const TILES: Partial<Record<BrowsableProvider, (props: { collection: ProviderCollection }) => JSX.Element>> = {
+const TILES: Partial<Record<BrowsableProvider, (props: TileProps) => JSX.Element>> = {
   makerworld: MakerWorldTile,
   printables: PrintablesTile,
   thingiverse: ThingiverseTile,
@@ -542,7 +545,11 @@ export default function ProviderCollectionTile({ provider, collection: given, se
           "&:focus-visible": { outline: `2px solid ${accent(provider)}` },
         }}
       >
-        {Tile ? <Tile collection={collection} /> : <GenericTile provider={provider} collection={collection} />}
+        {Tile ? (
+          <Tile provider={provider} collection={collection} />
+        ) : (
+          <GenericTile provider={provider} collection={collection} />
+        )}
         {selected && (
           <Box
             sx={{
@@ -573,6 +580,142 @@ export default function ProviderCollectionTile({ provider, collection: given, se
   );
 }
 
+// Each site's tile, while it loads.
+const SKELETONS: Partial<Record<BrowsableProvider, (lines: ReactNode, provider: BrowsableProvider) => JSX.Element>> = {
+  cults3d: (lines) => (
+    <Box aria-hidden sx={{ borderRadius: "10px", border: 1, borderColor: "divider", overflow: "hidden" }}>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: "2fr 1fr",
+          gridTemplateRows: "1fr 1fr",
+          gap: "2px",
+          aspectRatio: "4 / 3",
+        }}
+      >
+        <Skeleton variant="rectangular" sx={{ gridRow: "1 / 3", width: "100%", height: "100%" }} />
+        <Skeleton variant="rectangular" sx={{ width: "100%", height: "100%" }} />
+        <Skeleton variant="rectangular" sx={{ width: "100%", height: "100%" }} />
+      </Box>
+      <Box sx={{ px: 1.25, py: 1 }}>{lines}</Box>
+    </Box>
+  ),
+  makerworld: (lines) => (
+    <Box aria-hidden sx={{ borderRadius: "12px", border: 1, borderColor: "divider", overflow: "hidden", mb: "11px" }}>
+      <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2px", aspectRatio: "4 / 3" }}>
+        {[0, 1, 2, 3].map((i) => (
+          <Skeleton key={i} variant="rectangular" sx={{ width: "100%", height: "100%" }} />
+        ))}
+      </Box>
+      <Box sx={{ px: 1.5, py: 1.25 }}>{lines}</Box>
+    </Box>
+  ),
+  printables: (lines, provider) => (
+    <Box
+      aria-hidden
+      sx={{
+        borderRadius: "4px",
+        border: 1,
+        borderColor: "divider",
+        borderTop: `3px solid ${accent(provider)}`,
+        p: 1.25,
+      }}
+    >
+      <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "4px", mb: 1 }}>
+        {[0, 1, 2].map((i) => (
+          <Skeleton key={i} variant="rectangular" sx={{ width: "100%", height: "auto", aspectRatio: "1 / 1" }} />
+        ))}
+      </Box>
+      {lines}
+    </Box>
+  ),
+  makeronline: (lines) => (
+    <Box aria-hidden sx={{ borderRadius: "12px", border: 1, borderColor: "divider", overflow: "hidden" }}>
+      <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2px" }}>
+        {[0, 1, 2, 3].map((i) => (
+          <Skeleton key={i} variant="rectangular" sx={{ width: "100%", height: "auto", aspectRatio: "1 / 1" }} />
+        ))}
+      </Box>
+      <Box sx={{ px: 1.25, py: 1 }}>{lines}</Box>
+    </Box>
+  ),
+  thangs: () => (
+    <Box aria-hidden sx={{ borderRadius: "8px", border: 1, borderColor: "divider", overflow: "hidden" }}>
+      <Skeleton variant="rectangular" sx={{ width: "100%", height: "auto", aspectRatio: "4 / 3" }} />
+      <Box sx={{ px: 1.25, py: 1 }}>
+        <Skeleton variant="text" sx={{ fontSize: "0.875rem", width: "70%" }} />
+      </Box>
+    </Box>
+  ),
+  nexprint: () => (
+    <Box aria-hidden sx={{ borderRadius: "10px", overflow: "hidden" }}>
+      <Skeleton variant="rectangular" sx={{ width: "100%", height: "auto", aspectRatio: "4 / 3" }} />
+    </Box>
+  ),
+  crealitycloud: (lines) => (
+    <Box aria-hidden sx={{ borderRadius: "12px", border: 1, borderColor: "divider", overflow: "hidden" }}>
+      <Box sx={{ display: "grid", gridTemplateColumns: "2fr 1fr", gridTemplateRows: "1fr 1fr", gap: "2px" }}>
+        <Skeleton
+          variant="rectangular"
+          sx={{ gridRow: "span 2", width: "100%", height: "100%", aspectRatio: "1 / 1" }}
+        />
+        <Skeleton variant="rectangular" sx={{ width: "100%", height: "100%" }} />
+        <Skeleton variant="rectangular" sx={{ width: "100%", height: "100%" }} />
+      </Box>
+      <Box sx={{ px: 1.25, py: 1 }}>{lines}</Box>
+    </Box>
+  ),
+  snapmaker: (lines) => (
+    <Box aria-hidden sx={{ borderRadius: "12px", border: 1, borderColor: "divider", overflow: "hidden" }}>
+      <Skeleton variant="rectangular" sx={{ width: "100%", height: "auto", aspectRatio: "4 / 3" }} />
+      <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "2px", mt: "2px" }}>
+        {[0, 1, 2].map((i) => (
+          <Skeleton key={i} variant="rectangular" sx={{ width: "100%", height: "auto", aspectRatio: "1 / 1" }} />
+        ))}
+      </Box>
+      <Box sx={{ px: 1.25, py: 1 }}>{lines}</Box>
+    </Box>
+  ),
+  myminifactory: (lines, provider) => (
+    <Box
+      aria-hidden
+      sx={{
+        borderRadius: "4px",
+        border: 1,
+        borderColor: "divider",
+        borderBottom: `3px solid ${accent(provider)}`,
+        p: 1.25,
+      }}
+    >
+      {lines}
+      <Skeleton variant="rectangular" sx={{ width: "100%", height: "auto", aspectRatio: "16 / 9", mt: 1 }} />
+      <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "4px", mt: "4px" }}>
+        {[0, 1, 2].map((i) => (
+          <Skeleton key={i} variant="rectangular" sx={{ width: "100%", height: "auto", aspectRatio: "1 / 1" }} />
+        ))}
+      </Box>
+    </Box>
+  ),
+  thingiverse: (_lines, provider) => (
+    <Box
+      aria-hidden
+      sx={{
+        borderRadius: "8px",
+        aspectRatio: "4 / 3",
+        bgcolor: accent(provider),
+        opacity: 0.35,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        pt: 1.5,
+      }}
+    >
+      <Skeleton variant="text" sx={{ fontSize: "1rem", width: "60%", bgcolor: "rgba(255, 255, 255, 0.5)" }} />
+      <Skeleton variant="text" sx={{ fontSize: "0.8rem", width: "30%", bgcolor: "rgba(255, 255, 255, 0.5)" }} />
+    </Box>
+  ),
+};
+
 /** A tile's shape while the provider's collections load, in that provider's manner. */
 export function ProviderCollectionTileSkeleton({ provider }: { provider: BrowsableProvider }) {
   const lines = (
@@ -581,158 +724,8 @@ export function ProviderCollectionTileSkeleton({ provider }: { provider: Browsab
       <Skeleton variant="text" sx={{ fontSize: "0.75rem", width: "40%" }} />
     </>
   );
-  if (provider === "cults3d") {
-    return (
-      <Box aria-hidden sx={{ borderRadius: "10px", border: 1, borderColor: "divider", overflow: "hidden" }}>
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "2fr 1fr",
-            gridTemplateRows: "1fr 1fr",
-            gap: "2px",
-            aspectRatio: "4 / 3",
-          }}
-        >
-          <Skeleton variant="rectangular" sx={{ gridRow: "1 / 3", width: "100%", height: "100%" }} />
-          <Skeleton variant="rectangular" sx={{ width: "100%", height: "100%" }} />
-          <Skeleton variant="rectangular" sx={{ width: "100%", height: "100%" }} />
-        </Box>
-        <Box sx={{ px: 1.25, py: 1 }}>{lines}</Box>
-      </Box>
-    );
-  }
-  if (provider === "makerworld") {
-    return (
-      <Box aria-hidden sx={{ borderRadius: "12px", border: 1, borderColor: "divider", overflow: "hidden", mb: "11px" }}>
-        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2px", aspectRatio: "4 / 3" }}>
-          {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} variant="rectangular" sx={{ width: "100%", height: "100%" }} />
-          ))}
-        </Box>
-        <Box sx={{ px: 1.5, py: 1.25 }}>{lines}</Box>
-      </Box>
-    );
-  }
-  if (provider === "printables") {
-    return (
-      <Box
-        aria-hidden
-        sx={{
-          borderRadius: "4px",
-          border: 1,
-          borderColor: "divider",
-          borderTop: `3px solid ${accent("printables")}`,
-          p: 1.25,
-        }}
-      >
-        <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "4px", mb: 1 }}>
-          {[0, 1, 2].map((i) => (
-            <Skeleton key={i} variant="rectangular" sx={{ width: "100%", height: "auto", aspectRatio: "1 / 1" }} />
-          ))}
-        </Box>
-        {lines}
-      </Box>
-    );
-  }
-  if (provider === "makeronline") {
-    return (
-      <Box aria-hidden sx={{ borderRadius: "12px", border: 1, borderColor: "divider", overflow: "hidden" }}>
-        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2px" }}>
-          {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} variant="rectangular" sx={{ width: "100%", height: "auto", aspectRatio: "1 / 1" }} />
-          ))}
-        </Box>
-        <Box sx={{ px: 1.25, py: 1 }}>{lines}</Box>
-      </Box>
-    );
-  }
-  if (provider === "thangs") {
-    return (
-      <Box aria-hidden sx={{ borderRadius: "8px", border: 1, borderColor: "divider", overflow: "hidden" }}>
-        <Skeleton variant="rectangular" sx={{ width: "100%", height: "auto", aspectRatio: "4 / 3" }} />
-        <Box sx={{ px: 1.25, py: 1 }}>
-          <Skeleton variant="text" sx={{ fontSize: "0.875rem", width: "70%" }} />
-        </Box>
-      </Box>
-    );
-  }
-  if (provider === "nexprint") {
-    return (
-      <Box aria-hidden sx={{ borderRadius: "10px", overflow: "hidden" }}>
-        <Skeleton variant="rectangular" sx={{ width: "100%", height: "auto", aspectRatio: "4 / 3" }} />
-      </Box>
-    );
-  }
-  if (provider === "crealitycloud") {
-    return (
-      <Box aria-hidden sx={{ borderRadius: "12px", border: 1, borderColor: "divider", overflow: "hidden" }}>
-        <Box sx={{ display: "grid", gridTemplateColumns: "2fr 1fr", gridTemplateRows: "1fr 1fr", gap: "2px" }}>
-          <Skeleton
-            variant="rectangular"
-            sx={{ gridRow: "span 2", width: "100%", height: "100%", aspectRatio: "1 / 1" }}
-          />
-          <Skeleton variant="rectangular" sx={{ width: "100%", height: "100%" }} />
-          <Skeleton variant="rectangular" sx={{ width: "100%", height: "100%" }} />
-        </Box>
-        <Box sx={{ px: 1.25, py: 1 }}>{lines}</Box>
-      </Box>
-    );
-  }
-  if (provider === "snapmaker") {
-    return (
-      <Box aria-hidden sx={{ borderRadius: "12px", border: 1, borderColor: "divider", overflow: "hidden" }}>
-        <Skeleton variant="rectangular" sx={{ width: "100%", height: "auto", aspectRatio: "4 / 3" }} />
-        <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "2px", mt: "2px" }}>
-          {[0, 1, 2].map((i) => (
-            <Skeleton key={i} variant="rectangular" sx={{ width: "100%", height: "auto", aspectRatio: "1 / 1" }} />
-          ))}
-        </Box>
-        <Box sx={{ px: 1.25, py: 1 }}>{lines}</Box>
-      </Box>
-    );
-  }
-  if (provider === "myminifactory") {
-    return (
-      <Box
-        aria-hidden
-        sx={{
-          borderRadius: "4px",
-          border: 1,
-          borderColor: "divider",
-          borderBottom: `3px solid ${accent("myminifactory")}`,
-          p: 1.25,
-        }}
-      >
-        {lines}
-        <Skeleton variant="rectangular" sx={{ width: "100%", height: "auto", aspectRatio: "16 / 9", mt: 1 }} />
-        <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "4px", mt: "4px" }}>
-          {[0, 1, 2].map((i) => (
-            <Skeleton key={i} variant="rectangular" sx={{ width: "100%", height: "auto", aspectRatio: "1 / 1" }} />
-          ))}
-        </Box>
-      </Box>
-    );
-  }
-  if (provider === "thingiverse") {
-    return (
-      <Box
-        aria-hidden
-        sx={{
-          borderRadius: "8px",
-          aspectRatio: "4 / 3",
-          bgcolor: accent("thingiverse"),
-          opacity: 0.35,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          pt: 1.5,
-        }}
-      >
-        <Skeleton variant="text" sx={{ fontSize: "1rem", width: "60%", bgcolor: "rgba(255, 255, 255, 0.5)" }} />
-        <Skeleton variant="text" sx={{ fontSize: "0.8rem", width: "30%", bgcolor: "rgba(255, 255, 255, 0.5)" }} />
-      </Box>
-    );
-  }
+  const own = SKELETONS[provider];
+  if (own) return own(lines, provider);
   return (
     <Box aria-hidden sx={{ borderRadius: "12px", border: 1, borderColor: "divider", overflow: "hidden" }}>
       <Skeleton variant="rectangular" sx={{ width: "100%", height: "auto", aspectRatio: "4 / 3" }} />

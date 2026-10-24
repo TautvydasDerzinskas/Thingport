@@ -99,7 +99,7 @@ let inFlight: Promise<string | null> | null = null;
 
 export const snapmakerSession: SessionSource = {
   async read() {
-    const site = OPTIONAL_SITES.find((s) => s.id === "snapmaker");
+    const site = OPTIONAL_SITES.find((s) => s.id === snapmaker.id);
     if (!site || !(await siteEnabled(site).catch(() => false))) return undefined;
     inFlight ??= freshToken().finally(() => {
       inFlight = null;
@@ -111,7 +111,7 @@ export const snapmakerSession: SessionSource = {
 
 /** Keeps the sign-in fresh while the browser runs, Snapmaker visited or not. */
 export async function scheduleSnapmakerRenewal(): Promise<void> {
-  const site = OPTIONAL_SITES.find((s) => s.id === "snapmaker");
+  const site = OPTIONAL_SITES.find((s) => s.id === snapmaker.id);
   const enabled = site ? await siteEnabled(site).catch(() => false) : false;
   const existing = await chrome.alarms.get(SNAPMAKER_ALARM);
   if (enabled && !existing) {

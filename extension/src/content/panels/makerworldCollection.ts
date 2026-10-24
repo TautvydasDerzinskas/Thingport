@@ -15,6 +15,7 @@ import { api, escapeHtml, sleep } from "../runtime";
 import { getShadowRoot, onPanelAction, panelQuery, renderPanel } from "../shell";
 import { errorHtml, statusHtml, successHtml } from "./results";
 import { applySyncToggle, loadSyncState, readSyncToggle, syncChangeNote, syncToggleHtml } from "./syncToggle";
+import { MANIFESTS } from "../../shared/providers/_generated";
 
 // The page may still be hydrating; checking too early sees zero cards and looks like the end.
 const SCAN_START_DELAY_MS = 1500;
@@ -117,7 +118,7 @@ async function checkLibrary(ids: string[]): Promise<ModelStatus[]> {
   let printIds: Record<string, string>;
   try {
     ({ print_ids: printIds } = await api<{ print_ids: Record<string, string> }>("POST", "/import/status/batch", {
-      provider: "makerworld",
+      provider: MANIFESTS.makerworld.id,
       external_ids: ids,
     }));
   } catch {

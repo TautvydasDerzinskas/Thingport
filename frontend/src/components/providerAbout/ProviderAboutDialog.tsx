@@ -31,6 +31,7 @@ import Segmented from "../controls/Segmented";
 import HelpTip from "../HelpTip";
 import { ProviderLogo, type ProviderId } from "../Layout/ConfigurationDialog/providerLogos";
 import ProviderFlowAnimation from "./ProviderFlowAnimation";
+import { PROVIDER_IDS } from "../../providers/_generated";
 
 type View = "about" | "compare";
 
@@ -55,7 +56,7 @@ type Props = {
 export default function ProviderAboutDialog({ provider, onClose }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const theme = useTheme();
-  const [id, setId] = React.useState<ProviderId>(provider ?? "makerworld");
+  const [id, setId] = React.useState<ProviderId>(provider ?? PROVIDER_IDS[0]);
   const [view, setView] = React.useState<View>("about");
 
   // Kept while closing, so the dialog doesn't change during the fade.

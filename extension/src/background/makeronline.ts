@@ -121,7 +121,10 @@ export async function resolveMakeronlineFiles(
 ): Promise<MakeronlineSignedFile[]> {
   let plan: { requests: DownloadRequest[] };
   try {
-    plan = await apiCall<{ requests: DownloadRequest[] }>("POST", "/import/makeronline/plan", { url, scope });
+    plan = await apiCall<{ requests: DownloadRequest[] }>("POST", `/import/${MANIFESTS.makeronline.id}/plan`, {
+      url,
+      scope,
+    });
   } catch (err) {
     // fetch rejects with a TypeError when the instance can't be reached; an answer it gave is about the model.
     if (err instanceof TypeError)
@@ -206,7 +209,7 @@ export function runWaitingImports(tabId: number): Promise<number> {
 }
 
 async function runWaiting(tabId: number): Promise<number> {
-  const waiting = await apiCall<WaitingImport[]>("GET", "/import/makeronline/waiting").catch(() => []);
+  const waiting = await apiCall<WaitingImport[]>("GET", `/import/${MANIFESTS.makeronline.id}/waiting`).catch(() => []);
   if (!waiting.length) return 0;
   const printIds: string[] = [];
   for (const item of waiting) {
@@ -218,7 +221,9 @@ async function runWaiting(tabId: number): Promise<number> {
       // Not the model's fault: it waits for the next run as it is.
       if (err instanceof RunStoppedError) break;
       const error = err instanceof Error ? err.message : "Couldn't get the files signed";
-      await apiCall("POST", `/import/makeronline/waiting/${item.id}/failed`, { error }).catch(() => undefined);
+      await apiCall("POST", `/import/${MANIFESTS.makeronline.id}/waiting/${item.id}/failed`, { error }).catch(
+        () => undefined,
+      );
       // A captcha or a lost sign-in fails every later one too.
       if (/captcha|sign in/i.test(error)) break;
       continue;
@@ -226,7 +231,7 @@ async function runWaiting(tabId: number): Promise<number> {
     try {
       const started = await apiCall<Print | { task_id: string }>(
         "POST",
-        `/import/makeronline/waiting/${item.id}?async=1`,
+        `/import/${MANIFESTS.makeronline.id}/waiting/${item.id}?async=1`,
         { files },
       );
       const print = "task_id" in started ? await pollTask(started.task_id) : started;

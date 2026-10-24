@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import { isProviderId, MANIFESTS, modelUrl, parseModelUrl, URLS } from "../providers/_generated";
+import { isProviderId, MANIFESTS, manifestOf, modelUrl, parseModelUrl, URLS } from "../providers/_generated";
 import { catIdsField, PROFILE_PROVIDERS, PROVIDERS } from "../providers/registry";
 import type { PipelineKit, ResolvedModel, SourcedImport } from "../providers/types";
 import fsSync from "node:fs";
@@ -1270,7 +1270,7 @@ async function rawFilesZipPlates(
   tempPath: string,
   filename: string,
 ): Promise<NewPlateInput[]> {
-  const zipOfFiles = source && isProviderId(source.provider) && PROVIDERS[source.provider].zipOfFiles;
+  const zipOfFiles = source && isProviderId(source.provider) && manifestOf(source.provider).capabilities.rawFilesZip;
   if (!zipOfFiles || path.extname(filename).toLowerCase() !== ".zip") return [];
   const plates = await modelFilesFromZip(tempPath);
   if (plates.length) await fs.rm(tempPath, { force: true }).catch(() => undefined);

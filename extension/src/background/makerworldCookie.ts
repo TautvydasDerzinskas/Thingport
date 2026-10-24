@@ -22,7 +22,7 @@ export async function getLiveMakerworldCookie(): Promise<string | null> {
 export async function maybeSyncMakerworldCookie(config: ConfiguredConfig, cookieValue: string): Promise<void> {
   if (config.lastSyncedMakerworldCookie === cookieValue) return;
   try {
-    await apiCall("PATCH", "/settings/makerworld", { cookie: cookieValue });
+    await apiCall("PATCH", `/settings/${makerworld.auth[0].legacyEndpoint.path}`, { cookie: cookieValue });
     await chrome.storage.local.set({ lastSyncedMakerworldCookie: cookieValue });
   } catch {}
 }

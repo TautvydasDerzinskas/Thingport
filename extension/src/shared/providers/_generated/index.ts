@@ -2,7 +2,7 @@
 // change providers/ and run npm run providers:sync.
 
 import { hostIs } from "./_lib/hosts";
-import type { ListLink, ModelLink, ProviderUrls } from "./_lib/types";
+import type { ListLink, ModelLink, ProviderManifest, ProviderUrls } from "./_lib/types";
 import makerworld from "./makerworld/manifest";
 import { urls as makerworldUrls } from "./makerworld/urls";
 import printables from "./printables/manifest";
@@ -99,6 +99,11 @@ export const URLS: { readonly [K in ProviderId]: ProviderUrls } = {
 
 export function isProviderId(value: unknown): value is ProviderId {
   return typeof value === "string" && Object.hasOwn(MANIFESTS, value);
+}
+
+/** A provider's manifest as the type says any can be, for the fields only some have. */
+export function manifestOf(id: ProviderId): ProviderManifest {
+  return MANIFESTS[id];
 }
 
 /** The provider whose site `hostname` is, subdomains included; null for any other site. */

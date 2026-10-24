@@ -104,13 +104,13 @@ const CAPTURE: Partial<Record<ProviderId, (id: ProviderId) => void>> = {
   myminifactory: (id) => {
     const value = readMyminifactoryUsername();
     if (!value) return;
-    void send("REPORT_PROVIDER_ACCOUNT", { provider: "myminifactory", value });
+    void send("REPORT_PROVIDER_ACCOUNT", { provider: MANIFESTS.myminifactory.id, value });
     // Signed in: its session downloads the paid and login-only models in the user's library.
     syncSession(id);
   },
   thingiverse: () =>
     void readThingiverseUsername().then((value) => {
-      if (value) void send("REPORT_PROVIDER_ACCOUNT", { provider: "thingiverse", value });
+      if (value) void send("REPORT_PROVIDER_ACCOUNT", { provider: MANIFESTS.thingiverse.id, value });
     }),
 };
 

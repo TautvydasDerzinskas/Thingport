@@ -100,7 +100,7 @@ export default function ProvidersPanel({ isAdmin, onUpdateMakerWorld, onUnauthor
       await providersApi.saveConnection(id, auth.slot, forget(auth));
     }
     // Its imports read the cookie from the saved settings too.
-    if (id === "makerworld") onUpdateMakerWorld({ cookie: values?.cookie ?? "" });
+    if (id === MANIFESTS.makerworld.id) onUpdateMakerWorld({ cookie: values?.cookie ?? "" });
     await refreshProviders();
   };
 

@@ -1,5 +1,5 @@
 import { Impit } from "impit";
-import { hostIs, MANIFESTS, PROVIDER_IDS, type ProviderManifest } from "../providers/_generated";
+import { hostIs, manifestOf, PROVIDER_IDS } from "../providers/_generated";
 
 // Some providers' Cloudflare challenges clients by their TLS handshake, whatever the headers or cookies, and Node's
 // fetch is on its list. impit sends Chrome's handshake and headers.
@@ -7,7 +7,7 @@ const following = new Impit({ browser: "chrome", timeout: null });
 const manual = new Impit({ browser: "chrome", timeout: null, followRedirects: false });
 
 const BROWSER_FETCH_HOSTS = PROVIDER_IDS.flatMap((id) => {
-  const manifest: ProviderManifest = MANIFESTS[id];
+  const manifest = manifestOf(id);
   return manifest.browserFetch ? manifest.hosts : [];
 });
 

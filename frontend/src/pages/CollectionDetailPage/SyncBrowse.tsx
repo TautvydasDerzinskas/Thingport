@@ -18,7 +18,7 @@ import {
 } from "../../api/providerCollections";
 import { importProviderInfo } from "../../constants/importProviders";
 import { detectImportProvider } from "../../utils/importLinkDetection";
-import { MANIFESTS } from "../../providers/_generated";
+import { MANIFESTS, manifestOf } from "../../providers/_generated";
 import HelpTip from "../../components/HelpTip";
 import Segmented from "../../components/controls/Segmented";
 import { SectionLabel } from "../../components/Layout/ConfigurationDialog/parts";
@@ -50,8 +50,8 @@ function defaultProvider(
   slicer: string | null,
   available: readonly BrowsableProvider[],
 ): BrowsableProvider {
-  const slicers = slicer === "bambustudio" ? "makerworld" : slicer === "prusaslicer" ? "printables" : "thingiverse";
-  const preferred = available.includes(slicers) ? slicers : (available[0] ?? slicers);
+  const forSlicer = available.find((provider) => slicer && manifestOf(provider).slicers?.includes(slicer));
+  const preferred = forSlicer ?? available[0];
   if (accounts[preferred].connected) return preferred;
   return available.find((provider) => accounts[provider].connected) ?? preferred;
 }

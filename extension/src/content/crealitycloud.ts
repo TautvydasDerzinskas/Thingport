@@ -2,6 +2,7 @@
 
 import { request } from "../shared/messages";
 import { parseCrealitycloudModelUrl } from "../shared/providers/_generated/crealitycloud/urls";
+import { MANIFESTS } from "../shared/providers/_generated";
 
 export type CrealitycloudProfileScope = "url" | "designer" | "all";
 
@@ -77,6 +78,6 @@ export async function loadCrealitycloudProfiles(
 
 /** Who's signed in on Creality Cloud, so likes are only offered on their own page. */
 export async function crealitycloudUserId(): Promise<string | null> {
-  const res = await request("SYNC_PROVIDER_SESSION", { provider: "crealitycloud" }).catch(() => null);
+  const res = await request("SYNC_PROVIDER_SESSION", { provider: MANIFESTS.crealitycloud.id }).catch(() => null);
   return res?.userId ?? null;
 }

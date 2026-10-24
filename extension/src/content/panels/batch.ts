@@ -3,7 +3,7 @@
 
 import type { BatchEntriesResult, ImportJob, SyncLookup } from "../../shared/api";
 import { ctx, setContext } from "../context";
-import { MANIFESTS, type ProviderManifest } from "../../shared/providers/_generated";
+import { MANIFESTS, manifestOf } from "../../shared/providers/_generated";
 import { parseSnapmakerListUrl, snapmakerListUrl, type SnapmakerList } from "../../shared/urls";
 import { request } from "../../shared/messages";
 import { api, escapeHtml, sleep } from "../runtime";
@@ -22,7 +22,7 @@ const SNAPMAKER_LISTS: { list: SnapmakerList; label: string }[] = [
 /** Snapmaker shows likes and bookmarks on one page without changing its address, so the panel picks which. */
 function snapmakerListSwitchHtml(): string {
   const { classification } = ctx();
-  if (classification.provider !== "snapmaker" || classification.kind !== "batch") return "";
+  if (classification.provider !== MANIFESTS.snapmaker.id || classification.kind !== "batch") return "";
   const options = SNAPMAKER_LISTS.map(
     ({ list, label }) =>
       `<button class="tg-segmented__option" type="button" data-action="list-${list}" aria-pressed="${classification.type === list}">${label}</button>`,
@@ -39,7 +39,7 @@ function wireSnapmakerListSwitch(): void {
       setContext({
         ...current,
         url: snapmakerListUrl(userId, list),
-        classification: { kind: "batch", provider: "snapmaker", type: list },
+        classification: { kind: "batch", provider: MANIFESTS.snapmaker.id, type: list },
       });
       void loadBatchEntries();
     });
@@ -57,7 +57,7 @@ function pageList() {
  *  for a provider added since. */
 function endpoints(): { entries: string; start: string; idField: string } {
   const { provider, type } = pageList();
-  const manifest: ProviderManifest = MANIFESTS[provider];
+  const manifest = manifestOf(provider);
   const legacy = manifest.legacy?.lists.find((list) => !list.kinds || list.kinds.includes(type));
   const path = legacy?.path ?? `${provider}/list`;
   return { entries: `/import/${path}/entries`, start: `/import/${path}`, idField: legacy?.idsField ?? "model_ids" };
@@ -65,7 +65,7 @@ function endpoints(): { entries: string; start: string; idField: string } {
 
 function isPrintablesCollection(): boolean {
   const { provider, type } = pageList();
-  return provider === "printables" && type === "collection";
+  return provider === MANIFESTS.printables.id && type === "collection";
 }
 
 function printablesCollectionId(): string | null {
@@ -82,7 +82,7 @@ async function signedInPrintablesEntries(): Promise<BatchEntriesResult | null> {
   try {
     const { title, entries, truncated } = await readCollectionForPanel(token, collectionId);
     const { print_ids: inLibrary } = await api<{ print_ids: Record<string, string> }>("POST", "/import/status/batch", {
-      provider: "printables",
+      provider: MANIFESTS.printables.id,
       external_ids: entries.map((entry) => entry.id),
     });
     return {
@@ -189,7 +189,7 @@ async function runBatchImport(result: PanelEntries, sync: SyncLookup | null): Pr
       renderPanel(successHtml(collectionLink, note ?? "Nothing new to import.", note ? "Saved" : "Nothing to import"));
       return;
     }
-    if (ctx().classification.provider === "makeronline") {
+    if (manifestOf(ctx().classification.provider).helpers.grab === "required") {
       // Parked on the instance, then brought in from this page, which can sign their files.
       const { collection_id } = await api<{ queued: number; collection_id: string }>("POST", start, {
         url,

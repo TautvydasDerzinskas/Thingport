@@ -221,17 +221,18 @@ export const importsApi = {
     return res.json();
   },
 
-  /** MakerOnline gives its files only to its own pages: the link waits for Thingport Grab's next visit there. */
-  queueMakeronline: async (
+  /** A provider that gives its files only to its own pages: the link waits for Thingport Grab's next visit there. */
+  queueForGrab: async (
+    provider: ProviderId,
     payload: ImportLinkPayload & { scope: MakerworldProfileScope },
   ): Promise<{ queued: number }> => {
-    const res = await fetch(`${apiBase()}/import/${MANIFESTS.makeronline.id}/queue`, {
+    const res = await fetch(`${apiBase()}/import/${provider}/queue`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
     });
     if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, `${MANIFESTS.makeronline.name} import failed`));
+    if (!res.ok) throw new Error(await readErrorMessage(res, `${MANIFESTS[provider].name} import failed`));
     return res.json();
   },
 

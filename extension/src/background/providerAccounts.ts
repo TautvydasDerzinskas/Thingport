@@ -55,7 +55,7 @@ export async function printablesPushDue({ now = false } = {}): Promise<Printable
   const last = config.lastPrintablesPushAt;
   if (!now && last && Date.now() - last < PRINTABLES_PUSH_INTERVAL_MS) return null;
   try {
-    const { keys } = await apiCall<{ keys: string[] }>("GET", "/provider-collections/printables/wanted");
+    const { keys } = await apiCall<{ keys: string[] }>("GET", `/provider-collections/${printables.id}/wanted`);
     const likesRead = config.lastPrintablesLikesAt;
     const likes = keys.includes(LIKES_KEY) || !likesRead || Date.now() - likesRead >= UNSYNCED_LIKES_INTERVAL_MS;
     await chrome.storage.local.set({ [STORAGE_KEYS.printablesPlanHandedOutAt]: Date.now() });
@@ -68,7 +68,7 @@ export async function printablesPushDue({ now = false } = {}): Promise<Printable
 export async function pushPrintables(push: PrintablesPush): Promise<null> {
   await chrome.storage.local.remove(STORAGE_KEYS.printablesPlanHandedOutAt);
   try {
-    await apiCall("PUT", "/provider-collections/printables/push", push);
+    await apiCall("PUT", `/provider-collections/${printables.id}/push`, push);
     const now = Date.now();
     await chrome.storage.local.set({
       [STORAGE_KEYS.lastPrintablesPushAt]: now,

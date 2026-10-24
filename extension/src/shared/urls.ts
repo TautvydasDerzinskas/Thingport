@@ -1,7 +1,7 @@
 // Which provider page a URL is, for the content script and the popup. The parsing is the providers' own
 // (providers/<id>/urls.ts), the same the backend and the web app use.
 
-import { type ListKind, parseListUrl, parseModelUrl, type ProviderId } from "./providers/_generated";
+import { type ListKind, parseListUrl, parseModelUrl, type ProviderId, MANIFESTS } from "./providers/_generated";
 import { parseSnapmakerListUrl as parseSnapmakerListLink } from "./providers/_generated/snapmaker/urls";
 
 export type Provider = ProviderId;
@@ -24,10 +24,10 @@ export function parseSnapmakerListUrl(url: string): { userId: string; list: Snap
 /** Null keeps the icon hidden. "single" pages get a dedup check; "batch" pages always show it. */
 export function classifyUrl(url: string): Classification | null {
   const snapmakerList = parseSnapmakerListUrl(url);
-  if (snapmakerList) return { kind: "batch", provider: "snapmaker", type: snapmakerList.list };
+  if (snapmakerList) return { kind: "batch", provider: MANIFESTS.snapmaker.id, type: snapmakerList.list };
   const list = parseListUrl(url);
   // Printables likes are their owner's alone, read as the user and pushed (see content/printables.ts), not imported here.
-  if (list && !(list.provider === "printables" && list.kind === "likes")) {
+  if (list && !(list.provider === MANIFESTS.printables.id && list.kind === "likes")) {
     return { kind: "batch", provider: list.provider, type: list.kind };
   }
   const model = parseModelUrl(url);
@@ -41,5 +41,5 @@ export function modelKey(url: string): string | null {
 }
 
 export function isMakerworldUrl(url: string | undefined | null): boolean {
-  return Boolean(url) && classifyUrl(url!)?.provider === "makerworld";
+  return Boolean(url) && classifyUrl(url!)?.provider === MANIFESTS.makerworld.id;
 }

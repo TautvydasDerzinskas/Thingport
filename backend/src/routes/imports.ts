@@ -52,6 +52,8 @@ import {
 import { PROVIDERS } from "../providers/registry";
 import type { ProviderLists } from "../providers/types";
 
+const MAKERONLINE = MANIFESTS.makeronline.id;
+
 const router = Router();
 router.use(requireAuth);
 
@@ -344,7 +346,7 @@ for (const provider of PROVIDER_IDS) {
 const makeronlineScopeSchema = z.enum(["url", "designer", "all"]).default("url");
 
 router.post(
-  "/import/makeronline/plan",
+  `/import/${MAKERONLINE}/plan`,
   asyncHandler(async (req, res) => {
     const body = parseBody(z.object({ url: z.string(), scope: makeronlineScopeSchema }), req.body);
     const url = await enabledImportUrl(body.url);
@@ -354,7 +356,7 @@ router.post(
 
 /** A link pasted in the app: it waits for Grab's next visit to makeronline.com. */
 router.post(
-  "/import/makeronline/queue",
+  `/import/${MAKERONLINE}/queue`,
   requireCaptcha("import"),
   asyncHandler(async (req, res) => {
     const body = parseBody(
@@ -375,7 +377,7 @@ router.post(
 );
 
 router.get(
-  "/import/makeronline/waiting",
+  `/import/${MAKERONLINE}/waiting`,
   asyncHandler(async (req, res) => {
     res.json(await listGrabImports(req.userId!));
   }),
@@ -391,7 +393,7 @@ const grabFilesSchema = z.object({
 /** Grab signed a waiting model's files: imported like any link, then filed where it was meant to go. Asynchronous
  *  with `?async=1`, as /import is, since a model of many files outlasts an extension worker's fetch. */
 router.post(
-  "/import/makeronline/waiting/:id",
+  `/import/${MAKERONLINE}/waiting/:id`,
   asyncHandler(async (req, res) => {
     const userId = req.userId!;
     const body = parseBody(grabFilesSchema, req.body);
@@ -434,7 +436,7 @@ router.post(
 
 /** Grab couldn't get a waiting model's files signed, e.g. MakerOnline asked for a captcha. */
 router.post(
-  "/import/makeronline/waiting/:id/failed",
+  `/import/${MAKERONLINE}/waiting/:id/failed`,
   asyncHandler(async (req, res) => {
     const body = parseBody(z.object({ error: z.string().max(1000) }), req.body);
     await recordGrabImportFailure(await getGrabImport(req.userId!, req.params.id), body.error);

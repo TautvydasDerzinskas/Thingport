@@ -30,6 +30,7 @@ import SyncBrowse, { type BrowsePick } from "./SyncBrowse";
 import HelpTip from "../../components/HelpTip";
 import Segmented from "../../components/controls/Segmented";
 import { SectionLabel } from "../../components/Layout/ConfigurationDialog/parts";
+import { isProviderId, manifestOf } from "../../providers/_generated";
 
 const SCOPES: SyncProfileScope[] = ["url", "designer", "all"];
 
@@ -96,7 +97,9 @@ export default function CollectionSyncDialog({ collection, onClose, onUpdated, o
   }, []);
   const providerId = sync?.provider ?? picked?.provider ?? browseProvider;
   const provider = importProviderInfo(providerId)?.label ?? providerId ?? "";
-  const hasProfiles = providerId === "makerworld";
+  const capabilities = providerId && isProviderId(providerId) ? manifestOf(providerId).capabilities : null;
+  const hasProfiles = !!capabilities?.profiles;
+  const newOnly = !!capabilities?.syncsNewOnly;
   const [scope, setScope] = useState<SyncProfileScope>(sync?.profile_scope ?? NEW_SYNC_SCOPE);
   const [intervalHours, setIntervalHours] = useState<SyncIntervalHours>(sync?.interval_hours ?? NEW_SYNC_INTERVAL);
   const [busy, setBusy] = useState(false);
@@ -190,7 +193,7 @@ export default function CollectionSyncDialog({ collection, onClose, onUpdated, o
       const result = await collectionsApi.enableSync(collection.id, {
         url: picked.collection.url,
         interval_hours: intervalHours,
-        ...(picked.provider === "makerworld" ? { profile_scope: scope } : {}),
+        ...(hasProfiles ? { profile_scope: scope } : {}),
       });
       onUpdated({ ...collection, sync: result.sync });
       showToast({
@@ -214,7 +217,7 @@ export default function CollectionSyncDialog({ collection, onClose, onUpdated, o
 
   const footerText = !picked
     ? t("models:collections.sync.browse.pickPrompt")
-    : picked.provider === "makerworld"
+    : newOnly
       ? t("models:collections.sync.browse.confirmMakerworld")
       : t("models:collections.sync.browse.confirmImport", { count: picked.collection.model_count });
 
@@ -297,7 +300,7 @@ export default function CollectionSyncDialog({ collection, onClose, onUpdated, o
               </Button>
               <Typography variant="body2" color={picked ? "text.primary" : "text.secondary"} sx={{ minWidth: 0 }}>
                 {footerText}
-                {picked?.provider === "makerworld" && (
+                {picked && newOnly && (
                   <HelpTip text={t("models:collections.sync.browse.makerworldHelp", { name: collection.name })} />
                 )}
               </Typography>

@@ -197,8 +197,6 @@ export type ProviderSync = {
   /** The 400 for a list the user can't sync: someone else's that only its owner sees, or one read with a sign-in
    *  they haven't given. */
   assertCanSync?(userId: string, source: SyncSource): Promise<void>;
-  /** Turned on from the app, only models added from now on come in, not what the list holds already. */
-  followsNewOnly?: true;
   /** Whether the list's models wait for Thingport Grab to read them (a private Printables collection, until the
    *  user's next visit there). */
   waitingForGrab?(userId: string, externalId: string): Promise<boolean>;

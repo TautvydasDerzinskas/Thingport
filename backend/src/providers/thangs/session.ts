@@ -1,12 +1,13 @@
 import { prisma } from "../../db";
 import { createLogger } from "../../logger";
+import manifest from "../_generated/thangs/manifest";
 import { decodeThangsJwt, refreshThangsToken, ThangsAuthError } from "./api";
 
 // Per-user: the Thangs sign-in, its accessToken cookie (a 7-day JWT, sent as a Bearer token) and the refreshToken
 // cookie that renews it. The refresh token lasts about a year and Thangs keeps it as it is on use, so Thingport renews
 // the access token itself as it runs out; Thingport Grab sends both whenever the browser's change.
 
-const log = createLogger("thangs");
+const log = createLogger(manifest.id);
 
 // Renewed a little before it runs out, so a long import never starts with a token about to.
 const RENEW_BEFORE_MS = 10 * 60 * 1000;

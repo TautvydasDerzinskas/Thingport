@@ -31,6 +31,7 @@ export default {
   ],
   modelNoun: "models",
   helpers: { grab: "recommended", flaresolverr: "optional" },
+  slicers: ["bambustudio"],
   capabilities: {
     collections: true,
     likes: false,
@@ -39,6 +40,10 @@ export default {
     ownLists: "signIn",
     categoryIds: "int",
     trending: { kind: "trending", moreUrl: "https://makerworld.com/en", rank: 2 },
+    listImport: "grab",
+    syncsNewOnly: true,
+    rawFilesZip: true,
+    bambuProjects: true,
   },
   examples: {
     model: "https://makerworld.com/en/models/123456-example-model",

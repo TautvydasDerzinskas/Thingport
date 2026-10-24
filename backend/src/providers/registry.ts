@@ -113,8 +113,6 @@ export type ProviderBackend = {
   stopTexts?: StopTexts;
   /** The id an import keeps a model under, where its link may name it by another (Creality Cloud's alias). */
   keptId?(externalId: string): Promise<string>;
-  /** Its link imports download a model with no print profiles as a zip of its raw files, unpacked into plates. */
-  zipOfFiles?: true;
   /** Tests the instance's own credential, for a provider with one (an admin's App Token or API key). */
   instanceHealth?(): Promise<InstanceHealth>;
 };
@@ -147,7 +145,6 @@ export const PROVIDERS = {
     trending: makerworldTrending,
     details: makerworldDetails,
     profileUrls: listMakerworldProfileUrls,
-    zipOfFiles: true,
     // Loaded when it runs: the import runner it shares reaches this registry.
     profilesJob: async (jobId, userId, body) =>
       (await import("./makerworld/jobs")).runMakerworldProfilesJob(jobId, userId, body),

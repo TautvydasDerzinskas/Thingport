@@ -20,7 +20,14 @@ import { useImportModePrompt, type ImportMode } from "./ImportModeModal";
 import { useImportJob } from "../Layout/ImportJobContext";
 import { UPLOAD_EXTS } from "../../constants/fileTypes";
 import { useToast } from "../ToastProvider";
-import { hasPrintProfiles, isMakerworldCollectionUrl, listLinkOf, modelLinkOf } from "../../utils/importLinkDetection";
+import {
+  filesNeedGrab,
+  hasPrintProfiles,
+  isGrabOnlyList,
+  listLinkOf,
+  mayBeRawFilesZip,
+  modelLinkOf,
+} from "../../utils/importLinkDetection";
 
 // A folder pick always prefixes relativePath with the folder name.
 function isFlatFileSet(entries: { file: File; relativePath: string }[]) {
@@ -252,23 +259,23 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
         ...captcha,
       };
 
-      if (isMakerworldCollectionUrl(url)) {
-        // MakerWorld collections can only be imported via the extension.
-        alert(t("addMenu.makerworldCollectionBlocked"));
+      if (isGrabOnlyList(url)) {
+        // Its lists import only through Thingport Grab, on their own pages.
+        showToast({ message: t("addMenu.makerworldCollectionBlocked"), severity: "warning" });
         return;
       }
 
       const model = modelLinkOf(url);
       const list = model ? null : listLinkOf(url);
 
-      if (profileScope !== "url" && model && model.provider !== "makeronline" && hasPrintProfiles(url)) {
+      if (profileScope !== "url" && model && !filesNeedGrab(model.provider) && hasPrintProfiles(url)) {
         await startProfilesImport(model.provider, { ...payload, scope: profileScope });
         return;
       }
 
-      if (model?.provider === "makeronline") {
-        // Its files come only through Thingport Grab, on makeronline.com.
-        await importsApi.queueMakeronline({ ...payload, scope: profileScope });
+      if (model && filesNeedGrab(model.provider)) {
+        // Its files come only through Thingport Grab, on the provider's own pages.
+        await importsApi.queueForGrab(model.provider, { ...payload, scope: profileScope });
         showToast({ message: t("uploadBar.makeronlineWaiting") });
         return;
       }
@@ -302,8 +309,9 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
         return;
       }
 
-      // MakerWorld's model pages import as any other link does; the backend splits the rest into plates itself.
-      if (model && model.provider !== "makerworld") {
+      // A model whose link may be a zip of its raw files imports as any other link does, asking what to do with a zip;
+      // the backend splits the rest into plates itself.
+      if (model && !mayBeRawFilesZip(model.provider)) {
         const imported = await importsApi.fromLink(payload);
         showImportedToast(imported);
         onUploaded();

@@ -41,5 +41,4 @@ export const makerworldSync: ProviderSync = {
   },
   problems: [DISCONNECTED, EXPIRED],
   // It rate-limits bulk imports hard.
-  followsNewOnly: true,
 };

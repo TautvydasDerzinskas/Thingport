@@ -35,14 +35,14 @@ import { COMING_SOON_PROVIDERS, ProviderLogo } from "./ConfigurationDialog/provi
 import {
   detectImportProvider,
   hasPrintProfiles,
-  isMakerworldCollectionUrl,
+  isGrabOnlyList,
   listLinkOf,
   type ImportProviderKey,
 } from "../../utils/importLinkDetection";
 import type { MakerworldProfileScope } from "../../api/imports";
 import { allProvidersOff, useDisabledProviders } from "../../hooks/useProviders";
 import { readImportLink } from "../../utils/bookmarklet";
-import { MANIFESTS, PROVIDER_IDS } from "../../providers/_generated";
+import { MANIFESTS, manifestOf, PROVIDER_IDS } from "../../providers/_generated";
 
 const IMPORT_PROVIDERS: readonly ImportProviderKey[] = PROVIDER_IDS;
 
@@ -61,8 +61,7 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-/** The top bar's "+ Add" button. MakerWorld collection links are blocked here; they can only be
- *  imported via the browser extension. */
+/** The top bar's "+ Add" button. Lists of a provider that imports them through Thingport Grab only are blocked here. */
 const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
   { categoryId, makerworldCookie, onUploaded, onUnauthorized },
   ref,
@@ -102,7 +101,7 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
     }
     return found;
   }, [links]);
-  const isBlockedCollection = isBatch ? links.some((link) => !!listLinkOf(link)) : isMakerworldCollectionUrl(linkValue);
+  const isBlockedCollection = isBatch ? links.some((link) => !!listLinkOf(link)) : isGrabOnlyList(linkValue);
   // Models with print profiles to pick between.
   const hasProfiles = links.some(hasPrintProfiles);
 
@@ -134,8 +133,7 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
         return;
       }
       const url = link?.trim() ?? "";
-      const direct =
-        url && !/\s/.test(url) && detectImportProvider(url) && !isMakerworldCollectionUrl(url) && !needsCaptcha;
+      const direct = url && !/\s/.test(url) && detectImportProvider(url) && !isGrabOnlyList(url) && !needsCaptcha;
       if (direct) void upload.submitImport(url);
       else openImport(url);
     },
@@ -278,7 +276,8 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
               </Typography>
               <Typography variant="caption" component="div" sx={{ wordBreak: "break-all" }}>
                 {t("addMenu.exampleCollection")}: {MANIFESTS[exampleProvider].examples.list}
-                {exampleProvider === "makerworld" && ` (${t("addMenu.makerworldCollectionExtensionOnly")})`}
+                {manifestOf(exampleProvider).capabilities.listImport === "grab" &&
+                  ` (${t("addMenu.makerworldCollectionExtensionOnly")})`}
               </Typography>
             </Alert>
           )}

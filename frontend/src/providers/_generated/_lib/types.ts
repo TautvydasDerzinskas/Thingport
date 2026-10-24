@@ -73,7 +73,18 @@ export type ProviderManifest = {
      *  standing in where it has none, and that list's page on the site. `rank` is its place among the panel's
      *  providers. False for a provider with no such list. */
     trending: false | { kind: "trending" | "popular" | "featured" | "recommended"; moreUrl: string; rank: number };
+    /** Its lists import only through Thingport Grab, on their own pages, which paces itself against the site's
+     *  limits; the import box turns them away. */
+    listImport?: "grab";
+    /** Turned on from the app, a sync brings only models added from then on, not what the list holds already. */
+    syncsNewOnly?: true;
+    /** A model with no print profiles downloads by its link as a zip of its raw files, which an import unpacks. */
+    rawFilesZip?: true;
+    /** Its 3MFs are Bambu Studio projects, which other slicers mis-import, so Grab and the app offer them normalized. */
+    bambuProjects?: true;
   };
+  /** The slicers whose users the sync dialog shows this site to first. */
+  slicers?: readonly string[];
   /** The codes of the errors the API answers with, which clients act on: never change them. `session` when the
    *  sign-in is missing or turned down, `downloadLimit` when the account's daily downloads are used up, `needsGrab`
    *  when only Grab can fetch the files. */

@@ -18,6 +18,7 @@ import { errorHtml } from "./panels/results";
 import { api } from "./runtime";
 import { closeSetupModal, openSetupModal } from "./setupModal";
 import { mountFab, mountHost, mountPanel, renderPanel, setPanelOpen, unmountHost } from "./shell";
+import { manifestOf } from "../shared/providers/_generated";
 
 declare global {
   interface Window {
@@ -73,8 +74,8 @@ async function init(): Promise<void> {
   if (classification.kind === "single") void trackViewedModel(url, isStale);
 
   if (
-    classification.provider === "makerworld" &&
     classification.kind === "single" &&
+    manifestOf(classification.provider).capabilities.bambuProjects &&
     stateRes.data.offlineFeatures.normalizeMakerworld
   ) {
     void offerNormalizedDownload(url, stateRes.data.configured, isStale);

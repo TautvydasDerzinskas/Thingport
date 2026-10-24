@@ -27,6 +27,7 @@ import { onPairingTabClosed, onPairingTabUrl, startPairing } from "./pairing";
 import { openSetup } from "./setup";
 import { setTabIconState } from "./tabIcon";
 import { injectIntoOpenTabs, OPTIONAL_SITES, siteEnabled, syncSiteScripts } from "../shared/optionalSites";
+import { MANIFESTS } from "../shared/providers/_generated";
 
 function senderTabId(sender: chrome.runtime.MessageSender): number {
   if (!sender.tab?.id) throw new Error("This action is only available from a page");
@@ -108,7 +109,7 @@ chrome.permissions.onRemoved.addListener(() => {
 // Snapmaker's sign-in lasts a day: renewed on a timer too, so syncs keep working on days Snapmaker isn't visited.
 void scheduleSnapmakerRenewal();
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === SNAPMAKER_ALARM) void syncSession("snapmaker");
+  if (alarm.name === SNAPMAKER_ALARM) void syncSession(MANIFESTS.snapmaker.id);
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => {

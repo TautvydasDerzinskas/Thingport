@@ -23,6 +23,7 @@ import {
   SITE_NAMES,
   zipFilesPhrases,
 } from "./funStatus";
+import { MANIFESTS, manifestOf } from "../../shared/providers/_generated";
 
 /** Model name for pages that skip /import/inspect. The <h1> first: Thingiverse's og:title goes
  *  stale on SPA navigation and Printables' has a suffix. */
@@ -75,10 +76,10 @@ function importHeading(): string {
   return title ? `Import "${escapeHtml(title)}"` : "Import this model";
 }
 
-/** Admins only: the same import, but waiting paused in the instance's import queue. Not on MakerOnline: the queue
- *  can't get its files, so it would only hand the link back to Grab. */
+/** Admins only: the same import, but waiting paused in the instance's import queue. Not where only Grab gets the files:
+ *  the queue would only hand the link back to it. */
 function queueButtonHtml(): string {
-  return ctx().canQueue && ctx().classification.provider !== "makeronline"
+  return ctx().canQueue && manifestOf(ctx().classification.provider).helpers.grab !== "required"
     ? `<button class="tg-btn tg-btn--secondary" type="button" data-action="queue">Add to the queue</button>`
     : "";
 }
@@ -119,8 +120,8 @@ export async function loadSingleItem(): Promise<void> {
     `);
     return;
   }
-  // MakerWorld's links may be a file to unpack; every other site's is a model page the instance reads itself.
-  const skipInspect = provider !== "makerworld";
+  // A link that may be a zip of raw files is looked at first; every other site's is a model page the instance reads.
+  const skipInspect = !manifestOf(provider).capabilities.rawFilesZip;
 
   let zipFilename: string | null = null;
   if (skipInspect) {
@@ -281,7 +282,7 @@ async function runDirectImport(opts?: { entries?: string[] }): Promise<void> {
   const choice = readCollectionChoice();
   if (choice === "missing-name") return;
   const scope = selectedProfileScope();
-  if (ctx().classification.provider === "makeronline") {
+  if (ctx().classification.provider === MANIFESTS.makeronline.id) {
     await runMakeronlineImport(scope, await collectionIdFor(choice));
     return;
   }
@@ -294,7 +295,7 @@ async function runDirectImport(opts?: { entries?: string[] }): Promise<void> {
   const collectionId = await collectionIdFor(choice);
   try {
     const resolved =
-      classification.provider === "makerworld" && classification.kind === "single"
+      classification.provider === MANIFESTS.makerworld.id && classification.kind === "single"
         ? await resolveMakerworldDownloadUrl(url).catch(nullUnlessBlocking)
         : null;
     // One message so import and collection filing finish even if the page is gone.
@@ -322,7 +323,7 @@ async function runDirectImport(opts?: { entries?: string[] }): Promise<void> {
  *  of them. */
 async function runMakeronlineImport(scope: ProfileScope, collectionId: string | null): Promise<void> {
   const { url, instanceUrl, title } = ctx();
-  renderFunStatus(importingPhrases("makeronline"));
+  renderFunStatus(importingPhrases(MANIFESTS.makeronline.id));
   try {
     const print = await request("IMPORT_MAKERONLINE_MODEL", { url, scope, collectionId, title: title ?? null });
     const link = print ? `${instanceUrl}/models/${print.id}` : `${instanceUrl}/models`;
@@ -364,7 +365,7 @@ function nullUnlessBlocking(err: unknown): null {
  *  CAPTCHA or the daily download limit, which would fail every later one. */
 async function runProfilesImport(scope: ProfileScope, collectionId: string | null): Promise<void> {
   const { url, instanceUrl, title, classification } = ctx();
-  const makerworld = classification.provider === "makerworld";
+  const makerworld = classification.provider === MANIFESTS.makerworld.id;
   const ids = (await profileIdsFor())?.(scope) ?? [];
   if (!ids.length) {
     renderPanel(errorHtml(new Error("Couldn't read this model's print profiles. Reload the page and try again.")));

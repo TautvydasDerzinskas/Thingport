@@ -65,7 +65,7 @@ function index(manifests) {
     .map((manifest) => manifest.id);
   return `${header("providers/*/")}
 import { hostIs } from "./_lib/hosts";
-import type { ListLink, ModelLink, ProviderUrls } from "./_lib/types";
+import type { ListLink, ModelLink, ProviderManifest, ProviderUrls } from "./_lib/types";
 ${ids.map((id) => `import ${id} from "./${id}/manifest";\nimport { urls as ${id}Urls } from "./${id}/urls";`).join("\n")}
 
 export type {
@@ -99,6 +99,11 @@ export const URLS: { readonly [K in ProviderId]: ProviderUrls } = { ${ids.map((i
 
 export function isProviderId(value: unknown): value is ProviderId {
   return typeof value === "string" && Object.hasOwn(MANIFESTS, value);
+}
+
+/** A provider's manifest as the type says any can be, for the fields only some have. */
+export function manifestOf(id: ProviderId): ProviderManifest {
+  return MANIFESTS[id];
 }
 
 /** The provider whose site \`hostname\` is, subdomains included; null for any other site. */

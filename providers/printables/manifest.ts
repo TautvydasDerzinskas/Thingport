@@ -18,6 +18,7 @@ export default {
   auth: [],
   modelNoun: "models",
   helpers: { grab: "optional", flaresolverr: "recommended" },
+  slicers: ["prusaslicer"],
   capabilities: {
     collections: true,
     likes: true,

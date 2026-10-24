@@ -1,14 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { mapWithConcurrency, sleep } from "../utils/concurrency";
-import {
-  detectProvider,
-  isProviderId,
-  MANIFESTS,
-  type ProviderId,
-  type ProviderManifest,
-  URLS,
-} from "../providers/_generated";
+import { detectProvider, isProviderId, MANIFESTS, manifestOf, type ProviderId, URLS } from "../providers/_generated";
 import {
   DOWNLOAD_LIMIT_CODES,
   LINK_PROVIDER,
@@ -468,7 +461,7 @@ function rateLimitText(url: string | null): string {
 /** Whose daily download limit a link met, of the providers that have one; LINK_PROVIDER's when the link says nothing. */
 function downloadLimitSite(url: string | null): string {
   const provider = url ? detectProvider(url) : null;
-  const limited = provider && (MANIFESTS[provider].errorCodes as ProviderManifest["errorCodes"]).downloadLimit;
+  const limited = provider && manifestOf(provider).errorCodes.downloadLimit;
   return MANIFESTS[limited ? provider : LINK_PROVIDER].name;
 }
 

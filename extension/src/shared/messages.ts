@@ -5,6 +5,7 @@ import type { Print, QueueImportResult } from "./api";
 import type { SeasonalIcon } from "./seasonalMark";
 import type { OfflineFeature } from "./storage";
 import type { Provider } from "./urls";
+import type { MANIFESTS, ProviderId } from "./providers/_generated";
 
 export type ExtensionState = {
   configured: boolean;
@@ -30,9 +31,11 @@ export type Connection =
       byApproval?: boolean;
     };
 
-/** Providers whose signed-in user the extension tells the instance, for its Browse tab. MakerWorld
- *  needs none: the instance has its session cookie. */
-export type AccountProvider = "printables" | "thingiverse" | "myminifactory";
+/** Providers whose signed-in user the extension tells the instance, for its Browse tab: those whose lists it finds by
+ *  a username rather than a sign-in it holds. */
+export type AccountProvider = {
+  [K in ProviderId]: (typeof MANIFESTS)[K]["capabilities"]["ownLists"] extends "username" ? K : never;
+}[ProviderId];
 
 /** `wanted`: the private collections whose models the instance asked for. `likes`: whether to read
  *  every page of the user's likes this time. */
