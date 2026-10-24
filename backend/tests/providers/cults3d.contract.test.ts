@@ -4,7 +4,7 @@ import {
   getCults3dConnection,
   setUserCults3dBrowser,
   setUserCults3dCredentials,
-} from "../../src/services/cults3dSessionService";
+} from "../../src/providers/cults3d/session";
 import { describeProviderContract, type ProviderContractSpec } from "./contract";
 import {
   binary,

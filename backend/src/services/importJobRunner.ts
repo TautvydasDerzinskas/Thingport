@@ -39,10 +39,10 @@ import { crealitycloudModelUrl, parseCrealitycloudModelUrl } from "../providers/
 import { CREALITYCLOUD_CONNECT, getUserCrealitycloudAuth } from "../providers/crealitycloud/session";
 import { nexprintModelUrl, parseNexprintModelUrl } from "../providers/nexprint/api";
 import { getUserNexprintToken, NEXPRINT_CONNECT } from "../providers/nexprint/session";
-import { thangsModelUrl } from "./thangsApi";
-import { getUserThangsToken, THANGS_CONNECT } from "./thangsSessionService";
-import { cults3dModelUrl, parseCults3dModelUrl } from "./cults3dApi";
-import { CULTS3D_CONNECT, getUserCults3dCredentials } from "./cults3dSessionService";
+import { thangsModelUrl } from "../providers/thangs/api";
+import { getUserThangsToken, THANGS_CONNECT } from "../providers/thangs/session";
+import { cults3dModelUrl, parseCults3dModelUrl } from "../providers/cults3d/api";
+import { CULTS3D_CONNECT, getUserCults3dCredentials } from "../providers/cults3d/session";
 import { queueGrabImport } from "./grabImportService";
 import { upsertAuthorFromImport } from "./authorService";
 import { extractZipEntriesToPrints } from "./zipService";

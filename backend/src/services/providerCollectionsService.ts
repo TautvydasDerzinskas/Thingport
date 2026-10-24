@@ -48,14 +48,14 @@ import {
   ThangsBlockedError,
   thangsCollectionUrl,
   ThangsPrivateCollectionError,
-} from "./thangsApi";
+} from "../providers/thangs/api";
 import {
   getThangsConnection,
   getUserThangsId,
   getUserThangsToken,
   markThangsSessionRejected,
   withThangsToken,
-} from "./thangsSessionService";
+} from "../providers/thangs/session";
 import {
   Cults3dAuthError,
   cults3dLikesKey,
@@ -66,8 +66,8 @@ import {
   fetchCults3dOrders,
   listCults3dCollections,
   type Cults3dCredentials,
-} from "./cults3dApi";
-import { getCults3dConnection, getUserCults3dCredentials, markCults3dApiRejected } from "./cults3dSessionService";
+} from "../providers/cults3d/api";
+import { getCults3dConnection, getUserCults3dCredentials, markCults3dApiRejected } from "../providers/cults3d/session";
 import { syncLikesUsername } from "../dto";
 import { MakerworldAuthError, MakerworldCaptchaError, extractMakerworldBearerToken } from "./makerworldCloudApi";
 import { fetchMakerworldCollectionCard, listMakerworldOwnCollections } from "./makerworldCollections";

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { prisma } from "../../src/db";
-import { getThangsConnection, setUserThangsSession } from "../../src/services/thangsSessionService";
+import { getThangsConnection, setUserThangsSession } from "../../src/providers/thangs/session";
 import { describeProviderContract, type ProviderContractSpec } from "./contract";
 import {
   binary,

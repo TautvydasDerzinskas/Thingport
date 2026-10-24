@@ -68,7 +68,7 @@ export const crealitycloudImport: SourcedImport<CrealitycloudAuth, Crealitycloud
   },
   missingMessage: MISSING,
   noFilesMessage: "This Creality Cloud model has no files Thingport can import.",
-  async downloadModel(_alias, resolved, auth, requested, kit) {
+  async downloadModel(_target, resolved, auth, requested, kit) {
     const downloaded: NewPlateInput[] = [];
     try {
       const [profileId] = selectCrealitycloudProfiles(resolved, "url", requested);
@@ -88,7 +88,7 @@ export const crealitycloudImport: SourcedImport<CrealitycloudAuth, Crealitycloud
     return downloaded;
   },
   profiles: {
-    download: (_alias, resolved, profileId, auth, kit) => downloadProfile(resolved!, profileId, auth, kit),
+    download: (_target, resolved, profileId, auth, kit) => downloadProfile(resolved!, profileId, auth, kit),
     missingMessage: "This Creality Cloud model has no such print profile.",
     // Its profile files are named after their profiles already.
     namedAlike: false,

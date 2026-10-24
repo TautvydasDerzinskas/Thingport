@@ -1,6 +1,6 @@
-import { prisma } from "../db";
-import { createLogger } from "../logger";
-import { decodeThangsJwt, refreshThangsToken, ThangsAuthError } from "./thangsApi";
+import { prisma } from "../../db";
+import { createLogger } from "../../logger";
+import { decodeThangsJwt, refreshThangsToken, ThangsAuthError } from "./api";
 
 // Per-user: the Thangs sign-in, its accessToken cookie (a 7-day JWT, sent as a Bearer token) and the refreshToken
 // cookie that renews it. The refresh token lasts about a year and Thangs keeps it as it is on use, so Thingport renews

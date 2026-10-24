@@ -14,10 +14,10 @@ import { MAKERONLINE_LIKES_KEY, MAKERONLINE_LIKES_NAME } from "./makeronlineApi"
 import { getUserMakeronlineToken } from "./makeronlineSessionService";
 import { CREALITYCLOUD_LIKES_NAME, parseCrealitycloudLikesUrl } from "../providers/crealitycloud/api";
 import { getUserCrealitycloudId } from "../providers/crealitycloud/session";
-import { THANGS_LIKES_KEY, THANGS_LIKES_NAME } from "./thangsApi";
-import { getThangsConnection } from "./thangsSessionService";
-import { parseCults3dModelUrl } from "./cults3dApi";
-import { getCults3dConnection } from "./cults3dSessionService";
+import { THANGS_LIKES_KEY, THANGS_LIKES_NAME } from "../providers/thangs/api";
+import { getThangsConnection } from "../providers/thangs/session";
+import { parseCults3dModelUrl } from "../providers/cults3d/api";
+import { getCults3dConnection } from "../providers/cults3d/session";
 import { createLog } from "./auditLog";
 import { pushedLikes } from "./providerListingsService";
 import { createNotification } from "./notificationService";

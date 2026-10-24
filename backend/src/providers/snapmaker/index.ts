@@ -66,7 +66,7 @@ export const snapmakerImport: SourcedImport<string, SnapmakerModelResolution> = 
   },
   missingMessage: MISSING,
   noFilesMessage: "This Snapmaker model has no files Thingport can import.",
-  async downloadModel(modelId, resolved, token, requested, kit) {
+  async downloadModel({ externalId: modelId }, resolved, token, requested, kit) {
     const downloaded: NewPlateInput[] = [];
     try {
       const [profileId] = selectSnapmakerProfiles(resolved, "url", requested);
@@ -86,7 +86,7 @@ export const snapmakerImport: SourcedImport<string, SnapmakerModelResolution> = 
     return downloaded;
   },
   profiles: {
-    download: (modelId, _resolved, profileId, token, kit) => downloadProfile(modelId, profileId, token, kit),
+    download: ({ externalId }, _resolved, profileId, token, kit) => downloadProfile(externalId, profileId, token, kit),
     // Its public details name and picture the profiles; without them the file still comes in.
     downloadsWithoutModel: true,
     missingMessage: "This Snapmaker model has no such print profile.",

@@ -18,14 +18,14 @@ vi.mock("../src/services/printablesApi", () => ({
 vi.mock("../src/services/thingiverseApi", () => ({
   fetchThingiversePopular: vi.fn<() => Promise<Model[]>>(async () => [model("t1")]),
 }));
-vi.mock("../src/services/cults3dApi", () => ({
+vi.mock("../src/providers/cults3d/api", () => ({
   fetchCults3dPopular: vi.fn<() => Promise<Model[]>>(async () => [model("c1")]),
 }));
 vi.mock("../src/services/settingsService", () => ({
   getThingiverseAccessToken: vi.fn<() => Promise<string | null>>(async () => null),
   getMyminifactoryApiKey: vi.fn<() => Promise<string | null>>(async () => null),
 }));
-vi.mock("../src/services/cults3dSessionService", () => ({
+vi.mock("../src/providers/cults3d/session", () => ({
   getUserCults3dCredentials: vi.fn<(userId: string) => Promise<{ nick: string; apiKey: string } | null>>(
     async (userId) => (userId === "with-key" ? { nick: "n", apiKey: "k" } : null),
   ),
@@ -35,7 +35,7 @@ const { getTrending } = await import("../src/services/providerTrendingService");
 const printables = await import("../src/services/printablesApi");
 const thingiverse = await import("../src/services/thingiverseApi");
 const settings = await import("../src/services/settingsService");
-const cults3d = await import("../src/services/cults3dApi");
+const cults3d = await import("../src/providers/cults3d/api");
 
 beforeEach(() => vi.clearAllMocks());
 

@@ -3,8 +3,8 @@
 
 import { TtlCache } from "../utils/ttlCache";
 import { fetchCrealitycloudRecommended } from "../providers/crealitycloud/api";
-import { fetchCults3dPopular } from "./cults3dApi";
-import { getUserCults3dCredentials } from "./cults3dSessionService";
+import { fetchCults3dPopular } from "../providers/cults3d/api";
+import { getUserCults3dCredentials } from "../providers/cults3d/session";
 import { fetchMakeronlineTrending } from "./makeronlineApi";
 import { fetchMakerworldTrending } from "./makerworldCloudApi";
 import { fetchMyminifactoryPopular } from "./myminifactoryApi";
@@ -12,7 +12,7 @@ import { fetchNexprintRecommended } from "../providers/nexprint/api";
 import { fetchPrintablesTrending } from "./printablesApi";
 import { getMyminifactoryApiKey, getThingiverseAccessToken } from "./settingsService";
 import { fetchSnapmakerFeatured } from "../providers/snapmaker/api";
-import { fetchThangsTrending } from "./thangsApi";
+import { fetchThangsTrending } from "../providers/thangs/api";
 import { fetchThingiversePopular } from "./thingiverseApi";
 import type { TrendingModel } from "./trendingModel";
 

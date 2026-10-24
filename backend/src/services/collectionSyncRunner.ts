@@ -65,16 +65,21 @@ import {
   fetchThangsPurchases,
   THANGS_LIKES_KEY,
   ThangsAuthError,
-} from "./thangsApi";
+} from "../providers/thangs/api";
 import {
   getThangsConnection,
   getUserThangsId,
   getUserThangsToken,
   markThangsSessionRejected,
   withThangsToken,
-} from "./thangsSessionService";
-import { Cults3dAuthError, fetchCults3dLikes, fetchCults3dOrders, fetchCults3dPrintlist } from "./cults3dApi";
-import { getCults3dConnection, getUserCults3dCredentials, markCults3dApiRejected } from "./cults3dSessionService";
+} from "../providers/thangs/session";
+import {
+  Cults3dAuthError,
+  fetchCults3dLikes,
+  fetchCults3dOrders,
+  fetchCults3dPrintlist,
+} from "../providers/cults3d/api";
+import { getCults3dConnection, getUserCults3dCredentials, markCults3dApiRejected } from "../providers/cults3d/session";
 import { notifyGrabImportsQueued, queueGrabImport } from "./grabImportService";
 import {
   getSnapmakerConnection,

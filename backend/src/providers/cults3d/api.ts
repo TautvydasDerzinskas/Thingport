@@ -1,9 +1,9 @@
-import { IMPORT_TIMEOUT_SECONDS } from "../config";
-import { sleep } from "../utils/concurrency";
-import type { ImportedAuthorInfo, ImportedPageMetadata } from "./importResolvers";
-import type { ProviderCollectionCard } from "./providerCollectionCard";
-import { isCloudflareChallenge } from "./flaresolverr";
-import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "./trendingModel";
+import { IMPORT_TIMEOUT_SECONDS } from "../../config";
+import { sleep } from "../../utils/concurrency";
+import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
+import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
+import { isCloudflareChallenge } from "../../services/flaresolverr";
+import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
 import {
   cults3dLikesKey,
   cults3dLikesUrl,
@@ -13,7 +13,7 @@ import {
   parseCults3dModelUrl,
   parseCults3dPrintlistUrl,
   urls,
-} from "../providers/_generated/cults3d/urls";
+} from "../_generated/cults3d/urls";
 export {
   cults3dLikesKey,
   cults3dLikesUrl,

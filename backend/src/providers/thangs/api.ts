@@ -1,11 +1,11 @@
-import { IMPORT_DOWNLOAD_RETRY_DELAY_MS, IMPORT_TIMEOUT_SECONDS } from "../config";
-import { browserFetch } from "../utils/browserFetch";
-import { sleep } from "../utils/concurrency";
-import type { ImportedAuthorInfo, ImportedPageMetadata } from "./importResolvers";
-import type { ProviderCollectionCard } from "./providerCollectionCard";
-import { extractJsonFromBrowserBody, fetchViaFlaresolverr, isCloudflareChallenge } from "./flaresolverr";
-import { getFlaresolverrUrl } from "./settingsService";
-import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "./trendingModel";
+import { IMPORT_DOWNLOAD_RETRY_DELAY_MS, IMPORT_TIMEOUT_SECONDS } from "../../config";
+import { browserFetch } from "../../utils/browserFetch";
+import { sleep } from "../../utils/concurrency";
+import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
+import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
+import { extractJsonFromBrowserBody, fetchViaFlaresolverr, isCloudflareChallenge } from "../../services/flaresolverr";
+import { getFlaresolverrUrl } from "../../services/settingsService";
+import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
 import {
   isThangsLikesUrl,
   parseThangsCollectionUrl,
@@ -14,7 +14,7 @@ import {
   THANGS_LIKES_URL,
   thangsCollectionUrl,
   thangsModelUrl,
-} from "../providers/_generated/thangs/urls";
+} from "../_generated/thangs/urls";
 export {
   isThangsLikesUrl,
   parseThangsCollectionUrl,

@@ -116,14 +116,14 @@ import {
   type ThangsListing,
   THANGS_LIKES_NAME,
   ThangsPrivateCollectionError,
-} from "../services/thangsApi";
+} from "../providers/thangs/api";
 import {
   getUserThangsId,
   getUserThangsToken,
   markThangsSessionRejected,
   THANGS_CONNECT,
   withThangsToken,
-} from "../services/thangsSessionService";
+} from "../providers/thangs/session";
 import {
   Cults3dAuthError,
   cults3dLikesName,
@@ -134,8 +134,8 @@ import {
   fetchCults3dPrintlist,
   parseCults3dLikesUrl,
   parseCults3dPrintlistUrl,
-} from "../services/cults3dApi";
-import { CULTS3D_CONNECT, getUserCults3dCredentials, markCults3dApiRejected } from "../services/cults3dSessionService";
+} from "../providers/cults3d/api";
+import { CULTS3D_CONNECT, getUserCults3dCredentials, markCults3dApiRejected } from "../providers/cults3d/session";
 import { addPrintsToCollection, findOrCreateCollectionByName } from "../services/collectionService";
 import { listZipEntries } from "../services/zipService";
 import { createJob, createJobItems, getActiveJob, getJob, listJobItems } from "../services/importJobService";

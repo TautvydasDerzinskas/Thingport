@@ -23,9 +23,14 @@ import { resolveSnapmakerModel } from "../providers/snapmaker/api";
 import { resolveMakeronlineModel } from "./makeronlineApi";
 import { resolveCrealitycloudModel } from "../providers/crealitycloud/api";
 import { resolveNexprintModel } from "../providers/nexprint/api";
-import { resolveThangsModel } from "./thangsApi";
-import { Cults3dAuthError, type Cults3dCredentials, Cults3dRateLimitError, resolveCults3dModel } from "./cults3dApi";
-import { getUserCults3dCredentials, markCults3dApiRejected } from "./cults3dSessionService";
+import { resolveThangsModel } from "../providers/thangs/api";
+import {
+  Cults3dAuthError,
+  type Cults3dCredentials,
+  Cults3dRateLimitError,
+  resolveCults3dModel,
+} from "../providers/cults3d/api";
+import { getUserCults3dCredentials, markCults3dApiRejected } from "../providers/cults3d/session";
 import { getDisabledProviders } from "./providerSettingsService";
 
 // Links models that only know their author by name: first by name matching, then by looking the

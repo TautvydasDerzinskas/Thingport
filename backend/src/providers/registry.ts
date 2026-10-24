@@ -4,8 +4,10 @@
 import type { Category } from "@prisma/client";
 import { MANIFESTS, PROVIDER_IDS, type ProviderId, type ProviderManifest } from "./_generated";
 import { crealitycloudImport } from "./crealitycloud";
+import { cults3dImport } from "./cults3d";
 import { nexprintImport } from "./nexprint";
 import { snapmakerImport } from "./snapmaker";
+import { thangsImport } from "./thangs";
 import type { SourcedImport } from "./types";
 
 export type ProviderBackend = {
@@ -51,11 +53,13 @@ export const PROVIDERS = {
   },
   thangs: {
     authStopText: "Thangs turned your sign-in down — visit thangs.com signed in with Thingport Grab, then retry",
+    sourcedImport: thangsImport,
   },
   cults3d: {
     authStopText:
       "Cults3D turned your API key or sign-in down — check the key in Configuration → Providers, or visit cults3d.com " +
       "signed in with Thingport Grab, then retry",
+    sourcedImport: cults3dImport,
   },
 } satisfies { [K in ProviderId]: ProviderBackend } as { readonly [K in ProviderId]: ProviderBackend };
 

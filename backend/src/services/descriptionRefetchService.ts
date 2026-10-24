@@ -12,8 +12,8 @@ import { MyminifactoryAuthError, MyminifactoryRateLimitError } from "./myminifac
 import { ThingiverseAuthError, ThingiverseRateLimitError } from "./thingiverseApi";
 import type { LookupProblem } from "./authorLinkingService";
 import { getDisabledProviders } from "./providerSettingsService";
-import { Cults3dAuthError, Cults3dRateLimitError } from "./cults3dApi";
-import { getUserCults3dCredentials } from "./cults3dSessionService";
+import { Cults3dAuthError, Cults3dRateLimitError } from "../providers/cults3d/api";
+import { getUserCults3dCredentials } from "../providers/cults3d/session";
 
 // Re-reads every imported model's description for one user from its source, replacing the stored
 // one, e.g. to bring models imported as plain text up to formatted descriptions with images.

@@ -18,9 +18,9 @@ import {
   placeCults3dFreeOrder,
   resolveCults3dDownload,
   resolveCults3dModel,
-} from "../src/services/cults3dApi";
+} from "../src/providers/cults3d/api";
 import { modelIdFromUrl, modelUrlFor, parseSyncSource } from "../src/services/collectionSyncService";
-import { normalizeCults3dBrowser } from "../src/services/cults3dSessionService";
+import { normalizeCults3dBrowser } from "../src/providers/cults3d/session";
 import { buildImportSourceUrl, identifySourceModel } from "../src/services/importService";
 import { syncLikesUsername } from "../src/dto";
 

@@ -91,15 +91,15 @@ import {
 } from "../providers/crealitycloud/session";
 import { checkNexprintAuth } from "../providers/nexprint/api";
 import { getNexprintConnection, normalizeNexprintSession, setUserNexprintSession } from "../providers/nexprint/session";
-import { checkThangsAuth, refreshThangsToken, ThangsAuthError } from "../services/thangsApi";
-import { getThangsConnection, normalizeThangsSession, setUserThangsSession } from "../services/thangsSessionService";
-import { checkCults3dCredentials } from "../services/cults3dApi";
+import { checkThangsAuth, refreshThangsToken, ThangsAuthError } from "../providers/thangs/api";
+import { getThangsConnection, normalizeThangsSession, setUserThangsSession } from "../providers/thangs/session";
+import { checkCults3dCredentials } from "../providers/cults3d/api";
 import {
   getCults3dConnection,
   normalizeCults3dBrowser,
   setUserCults3dBrowser,
   setUserCults3dCredentials,
-} from "../services/cults3dSessionService";
+} from "../providers/cults3d/session";
 import { SLICER_IDS, getUserSlicerSettings, setUserSlicerSettings } from "../services/slicerPreferenceService";
 import { CATEGORIES_VIEWS, getCategoriesView, setCategoriesView } from "../services/categoriesViewService";
 import {

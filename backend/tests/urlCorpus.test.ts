@@ -10,8 +10,8 @@ import { parseCrealitycloudModelUrl, parseCrealitycloudLikesUrl } from "../src/p
 import { parseNexprintModelUrl } from "../src/providers/nexprint/api";
 import { parseThingiverseLikesUrl } from "../src/services/thingiverseApi";
 import { parsePrintablesLikesUrl } from "../src/services/printablesApi";
-import { isThangsLikesUrl } from "../src/services/thangsApi";
-import { parseCults3dLikesUrl } from "../src/services/cults3dApi";
+import { isThangsLikesUrl } from "../src/providers/thangs/api";
+import { parseCults3dLikesUrl } from "../src/providers/cults3d/api";
 import { parseSnapmakerListUrl } from "../src/providers/snapmaker/api";
 
 type Expected = {

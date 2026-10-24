@@ -85,39 +85,6 @@ import { getUserMyminifactoryCookie, markMyminifactoryCookieRejected } from "./m
 import { isMakeronlineFileHost, resolveMakeronlineModel } from "./makeronlineApi";
 import { clearGrabImports } from "./grabImportService";
 import { isCrealitycloudModelId, resolveCrealitycloudModel } from "../providers/crealitycloud/api";
-import {
-  fetchThangsDownload,
-  isThangsFileHost,
-  resolveThangsModel,
-  ThangsAuthError,
-  ThangsBlockedError,
-  ThangsDownloadLimitError,
-  type ThangsModelResolution,
-} from "./thangsApi";
-import { getUserThangsToken, markThangsSessionRejected, THANGS_CONNECT, withThangsToken } from "./thangsSessionService";
-import {
-  Cults3dAuthError,
-  Cults3dBlockedError,
-  Cults3dNoFreeDownloadError,
-  Cults3dRateLimitError,
-  Cults3dSessionError,
-  fetchCults3dOrders,
-  isCults3dFileHost,
-  placeCults3dFreeOrder,
-  resolveCults3dDownload,
-  resolveCults3dModel,
-  type Cults3dCredentials,
-  type Cults3dModelResolution,
-} from "./cults3dApi";
-import {
-  CULTS3D_CONNECT,
-  CULTS3D_NO_CLEARANCE,
-  CULTS3D_SIGN_IN,
-  getUserCults3dBrowser,
-  getUserCults3dCredentials,
-  markCults3dApiRejected,
-  markCults3dSessionRejected,
-} from "./cults3dSessionService";
 
 /** An import refused because the user's MyMiniFactory session has expired. */
 export const MYMINIFACTORY_SESSION_CODE = MANIFESTS.myminifactory.errorCodes.session;
@@ -1640,7 +1607,13 @@ async function importSourced(
   const requested = body.resolved_instance_id ?? requestedProfileOf(source.provider, url);
   let downloaded: NewPlateInput[];
   try {
-    downloaded = await impl.downloadModel(source.externalId, resolved, auth, requested, IMPORT_KIT);
+    downloaded = await impl.downloadModel(
+      { userId, externalId: source.externalId },
+      resolved,
+      auth,
+      requested,
+      IMPORT_KIT,
+    );
   } catch (err) {
     throw await impl.mapError(userId, err);
   }
@@ -1680,7 +1653,7 @@ async function addSourcedProfile(
       model ??= await impl.resolveModel(externalId, auth);
       if (!model) throw new HttpError(404, impl.missingMessage);
     }
-    profile = await profiles.download(externalId, model, wanted, auth, IMPORT_KIT);
+    profile = await profiles.download({ userId, externalId }, model, wanted, auth, IMPORT_KIT);
   } catch (err) {
     throw await impl.mapError(userId, err);
   }
@@ -1689,166 +1662,6 @@ async function addSourcedProfile(
   model ??= await impl.resolveModel(externalId, auth).catch(() => null);
   const details = model ? profileDetailsOf(model.profiles ?? [], { names: profiles.namedAlike }) : {};
   return addProfilePlateWithDetails(existing, profile, wanted, details);
-}
-
-const THANGS_BLOCKED =
-  "Thangs blocked the file download (rate limit). This usually clears after a while -- wait, then retry the same import.";
-const THANGS_MISSING = "This Thangs model could not be found, or isn't public.";
-
-/** The user's access token, renewed when it's out, or the HttpError that says to connect Thangs. */
-async function requireThangsToken(userId: string): Promise<string> {
-  let token: string | null;
-  try {
-    token = await getUserThangsToken(userId);
-  } catch (err) {
-    throw await thangsFailure(userId, err);
-  }
-  if (!token) throw new HttpError(400, THANGS_CONNECT, THANGS_SESSION_CODE);
-  return token;
-}
-
-/** Thangs' errors as the HttpErrors an import reports; a rejected sign-in is remembered, so the app can say so. */
-async function thangsFailure(userId: string, err: unknown): Promise<unknown> {
-  if (err instanceof ThangsAuthError) {
-    await markThangsSessionRejected(userId);
-    // 400, not 401: see tryMakerworldCloudApi.
-    return new HttpError(400, err.message, THANGS_SESSION_CODE);
-  }
-  if (err instanceof ThangsDownloadLimitError) return new HttpError(429, err.message, THANGS_DOWNLOAD_LIMIT_CODE);
-  if (err instanceof ThangsBlockedError) return new HttpError(429, err.message);
-  return err;
-}
-
-/** Why Thangs won't hand over a model's files, by what kind of model it is. */
-function thangsUnavailable(resolved: ThangsModelResolution): HttpError {
-  if (resolved.access === "printOnly") {
-    return new HttpError(403, "This Thangs model is sold only as a print: its designer doesn't offer its files.");
-  }
-  if (resolved.access === "paid") {
-    const price = resolved.price !== null ? ` ($${resolved.price})` : "";
-    return new HttpError(
-      403,
-      `This is a paid Thangs model${price}, so it downloads only for an account that bought it, or a member of a ` +
-        "designer membership that includes it. Get it on Thangs with the account connected to Thingport, then import it again.",
-    );
-  }
-  if (resolved.access === "membership") {
-    return new HttpError(
-      403,
-      "This Thangs model is for members of its designer's membership only: join it on Thangs with the account " +
-        "connected to Thingport, then import it again.",
-    );
-  }
-  return new HttpError(403, "Thangs doesn't let your account download this model.");
-}
-
-/** Like MyMiniFactory: metadata from the public API, then the files as the user, in one download -- the model file, or
- *  a zip whose model files each become a plate. Every download counts towards the account's daily ones, so a model
- *  that can't be had (print-only) is refused before asking. */
-async function importThangsModel(
-  userId: string,
-  source: { provider: string; externalId: string },
-  body: ImportRequestBody,
-): Promise<ImportResult> {
-  let resolved: ThangsModelResolution | null;
-  try {
-    resolved = await resolveThangsModel(source.externalId);
-  } catch (err) {
-    throw await thangsFailure(userId, err);
-  }
-  if (!resolved) throw new HttpError(404, THANGS_MISSING);
-  if (resolved.access === "printOnly") throw thangsUnavailable(resolved);
-  const token = await requireThangsToken(userId);
-  const downloaded: NewPlateInput[] = [];
-  try {
-    const file = await withThangsToken(userId, token, (fresh) => fetchThangsDownload(source.externalId, fresh));
-    if (!file) throw thangsUnavailable(resolved);
-    downloaded.push(...((await downloadSignedFile(file, isThangsFileHost, THANGS_BLOCKED)) ?? []));
-  } catch (err) {
-    await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
-    throw await thangsFailure(userId, err);
-  }
-  if (!downloaded.length) throw new HttpError(400, "This Thangs model has no files Thingport can import.");
-
-  return createSourcedPrint(userId, source, body, resolved, downloaded, `thangs-${source.externalId}`);
-}
-
-const CULTS3D_MISSING = "This Cults3D model could not be found, or isn't public.";
-
-/** The user's API credentials, or the HttpError that says to give them. */
-async function requireCults3dCredentials(userId: string): Promise<Cults3dCredentials> {
-  const credentials = await getUserCults3dCredentials(userId);
-  if (!credentials) throw new HttpError(400, CULTS3D_CONNECT, CULTS3D_SESSION_CODE);
-  return credentials;
-}
-
-/** Cults3D's errors as the HttpErrors an import reports; a rejected key or sign-in is remembered, so the app can say
- *  so. */
-async function cults3dFailure(userId: string, err: unknown): Promise<unknown> {
-  if (err instanceof Cults3dAuthError) {
-    await markCults3dApiRejected(userId);
-    // 400, not 401: see tryMakerworldCloudApi.
-    return new HttpError(400, err.message, CULTS3D_SESSION_CODE);
-  }
-  if (err instanceof Cults3dSessionError) {
-    await markCults3dSessionRejected(userId);
-    return new HttpError(400, err.message, CULTS3D_SESSION_CODE);
-  }
-  // Its own code, so a sync waits for the next visit with Grab rather than failing the model.
-  if (err instanceof Cults3dBlockedError) return new HttpError(403, err.message, CLOUDFLARE_BLOCKED_CODE);
-  if (err instanceof Cults3dRateLimitError) return new HttpError(429, err.message);
-  if (err instanceof Cults3dNoFreeDownloadError) return new HttpError(403, err.message);
-  return err;
-}
-
-function cults3dPaid(resolved: Cults3dModelResolution): HttpError {
-  return new HttpError(
-    403,
-    `This is a paid Cults3D model (${resolved.priceText}), so it downloads only once bought. Buy it on Cults3D with ` +
-      "the account connected to Thingport, then import it again.",
-  );
-}
-
-/** Metadata from the API; the files from the user's Cults3D library, where every model they ordered, bought or free,
- *  stays. A free model not in it yet is ordered first, as its Download button does; a paid one is refused. The order
- *  and download pages need the browser's sign-in and clearance, which Thingport Grab sends. */
-async function importCults3dModel(
-  userId: string,
-  source: { provider: string; externalId: string },
-  body: ImportRequestBody,
-): Promise<ImportResult> {
-  const credentials = await requireCults3dCredentials(userId);
-  const downloaded: NewPlateInput[] = [];
-  let resolved: Cults3dModelResolution | null;
-  try {
-    resolved = await resolveCults3dModel(source.externalId, credentials);
-    if (!resolved) throw new HttpError(404, CULTS3D_MISSING);
-    let downloadUrl = (await fetchCults3dOrders(credentials)).get(resolved.slug) ?? null;
-    if (!downloadUrl && resolved.priceCents > 0) throw cults3dPaid(resolved);
-    const browser = await getUserCults3dBrowser(userId);
-    if (!browser) throw new HttpError(400, CULTS3D_SIGN_IN, CULTS3D_SESSION_CODE);
-    // Without it every site page is a Cloudflare challenge.
-    if (!browser.clearance) throw new HttpError(400, CULTS3D_NO_CLEARANCE, CULTS3D_SESSION_CODE);
-    if (!downloadUrl) {
-      await placeCults3dFreeOrder(resolved.slug, browser);
-      downloadUrl = (await fetchCults3dOrders(credentials)).get(resolved.slug) ?? null;
-      if (!downloadUrl) throw new HttpError(502, "Cults3D took the free order, but it isn't in your downloads yet.");
-    }
-    const file = await resolveCults3dDownload(downloadUrl, browser);
-    downloaded.push(
-      ...((await downloadSignedFile(
-        file,
-        isCults3dFileHost,
-        "Cults3D blocked the file download (rate limit). This usually clears after a while -- wait, then retry.",
-      )) ?? []),
-    );
-  } catch (err) {
-    await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
-    throw await cults3dFailure(userId, err);
-  }
-  if (!downloaded.length) throw new HttpError(400, "This Cults3D model has no files Thingport can import.");
-
-  return createSourcedPrint(userId, source, body, resolved, downloaded, `cults3d-${source.externalId}`);
 }
 
 const MAKERONLINE_BLOCKED =
@@ -2005,12 +1818,6 @@ async function importNewOrExisting(userId: string, url: string, body: ImportRequ
   }
   if (source?.provider === "makeronline") {
     return importMakeronlineModel(userId, source, body);
-  }
-  if (source?.provider === "thangs") {
-    return importThangsModel(userId, source, body);
-  }
-  if (source?.provider === "cults3d") {
-    return importCults3dModel(userId, source, body);
   }
 
   const { tempPath, filename, mime, meta } = await downloadImportToTemp(url, body);

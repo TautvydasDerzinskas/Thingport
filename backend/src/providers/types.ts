@@ -24,6 +24,9 @@ export type ImportKit = {
   ): Promise<NewPlateInput[] | null>;
 };
 
+/** Whose import it is, and of which model, by the id it's kept under. */
+export type ImportTarget = { userId: string; externalId: string };
+
 /** A provider whose model files the server downloads, as the user it holds credentials for. */
 export type SourcedImport<Auth = unknown, Model extends ResolvedModel = ResolvedModel> = {
   /** The user's credentials, or the HttpError (400 with the manifest's session code) that says to connect. */
@@ -40,7 +43,7 @@ export type SourcedImport<Auth = unknown, Model extends ResolvedModel = Resolved
   /** The files of a new print: the profile `requestedProfileId` names, or its own pick. Empty when there are none;
    *  removes what it downloaded when it throws. */
   downloadModel(
-    externalId: string,
+    target: ImportTarget,
     model: Model,
     auth: Auth,
     requestedProfileId: string | null,
@@ -51,7 +54,7 @@ export type SourcedImport<Auth = unknown, Model extends ResolvedModel = Resolved
     /** One profile's file, tagged with it, for an existing print; null when the model has no such profile. `model`
      *  is null when `downloadsWithoutModel`. */
     download(
-      externalId: string,
+      target: ImportTarget,
       model: Model | null,
       profileId: string,
       auth: Auth,
