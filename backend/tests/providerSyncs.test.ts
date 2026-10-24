@@ -88,7 +88,7 @@ import {
   setProviderAccount,
 } from "../src/services/providerCollectionsService";
 import { findOrCreateCollectionByName } from "../src/services/collectionService";
-import { setMyminifactoryApiKey } from "../src/services/settingsService";
+import { setMyminifactoryApiKey } from "../src/providers/myminifactory/apiKey";
 import { PROVIDER_IDS } from "../src/providers/_generated";
 import { SnapmakerAuthError } from "../src/providers/snapmaker/api";
 import { MakeronlineAuthError } from "../src/providers/makeronline/api";

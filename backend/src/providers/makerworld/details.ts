@@ -1,5 +1,5 @@
 import { IMPORT_MAKERWORLD_CALL_DELAY_MS } from "../../config";
-import { makerworldMetaFromDesign, resolveMakerworldCookie } from "../../services/importResolvers";
+import { makerworldMetaFromDesign, resolveMakerworldCookie } from "./pageData";
 import { HttpError } from "../../utils/fileUtils";
 import manifest from "../_generated/makerworld/manifest";
 import type { ProviderDetails } from "../types";

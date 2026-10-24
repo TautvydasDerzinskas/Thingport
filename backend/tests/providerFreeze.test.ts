@@ -227,7 +227,10 @@ describe("provider-module freeze", () => {
             : null;
         if (!prefix) throw new Error(`Unknown Express mount: ${mount.regexp}`);
         const wholeRouter = [importsRoutes, settingsRoutes, providerCollectionsRoutes].includes(mount.handle as never);
-        return mount.handle.stack.flatMap((layer) => {
+        // Providers' own routers are mounted inside one router of theirs (providers/routes.ts).
+        const layers = (router: { stack?: Layer[] }): Layer[] =>
+          (router.stack ?? []).flatMap((layer) => (layer.route ? [layer] : layers(layer.handle)));
+        return layers(mount.handle).flatMap((layer) => {
           if (!layer.route) return [];
           const path = `${prefix}${layer.route.path}`;
           if (

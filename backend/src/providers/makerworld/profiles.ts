@@ -1,5 +1,5 @@
 import { IMPORT_MAKERWORLD_CALL_DELAY_MS } from "../../config";
-import { resolveMakerworldCookie } from "../../services/importResolvers";
+import { resolveMakerworldCookie } from "./pageData";
 import type { ImportRequestBody } from "../../services/importService";
 import { HttpError } from "../../utils/fileUtils";
 import { decodeHtmlEntities } from "../../utils/htmlEntities";

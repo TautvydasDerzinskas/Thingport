@@ -1,8 +1,8 @@
 import type { GrabImport } from "@prisma/client";
-import { prisma } from "../db";
-import { createNotification } from "./notificationService";
-import { findOrCreateCollectionByName } from "./collectionService";
-import type { ListImportBody } from "../providers/types";
+import { prisma } from "../../db";
+import { createNotification } from "../../services/notificationService";
+import { findOrCreateCollectionByName } from "../../services/collectionService";
+import type { ListImportBody } from "../types";
 import {
   makeronlineDownloadPlan,
   makeronlineModelUrl,
@@ -10,10 +10,10 @@ import {
   resolveMakeronlineModel,
   type MakeronlineDownloadRequest,
   type MakeronlineProfileScope,
-} from "../providers/makeronline/api";
-import { HttpError } from "../utils/fileUtils";
-import { MANIFESTS } from "../providers/_generated";
-import { siteHost } from "../providers/names";
+} from "./api";
+import { HttpError } from "../../utils/fileUtils";
+import { MANIFESTS } from "../_generated";
+import { siteHost } from "../names";
 
 // Imports waiting for Thingport Grab. MakerOnline hands out download links only to a page its anti-bot script runs on,
 // so an import that starts anywhere else (the app, the import queue, a sync) is parked here. Grab, on the next

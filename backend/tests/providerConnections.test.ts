@@ -3,7 +3,7 @@ import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { MANIFESTS, PROVIDER_IDS } from "../src/providers/_generated";
-import { setThingiverseAccessToken } from "../src/services/settingsService";
+import { setThingiverseAccessToken } from "../src/providers/thingiverse/token";
 
 const app = createApp();
 

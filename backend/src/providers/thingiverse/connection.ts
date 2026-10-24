@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getThingiverseAccessToken, setThingiverseAccessToken } from "../../services/settingsService";
+import { getThingiverseAccessToken, setThingiverseAccessToken } from "./token";
 import { HttpError } from "../../utils/fileUtils";
 import { parseBody } from "../../utils/validate";
 import type { ConnectionSlot } from "../types";

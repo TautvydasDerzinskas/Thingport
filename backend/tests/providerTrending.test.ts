@@ -21,8 +21,10 @@ vi.mock("../src/providers/thingiverse/api", () => ({
 vi.mock("../src/providers/cults3d/api", () => ({
   fetchCults3dPopular: vi.fn<() => Promise<Model[]>>(async () => [model("c1")]),
 }));
-vi.mock("../src/services/settingsService", () => ({
+vi.mock("../src/providers/thingiverse/token", () => ({
   getThingiverseAccessToken: vi.fn<() => Promise<string | null>>(async () => null),
+}));
+vi.mock("../src/providers/myminifactory/apiKey", () => ({
   getMyminifactoryApiKey: vi.fn<() => Promise<string | null>>(async () => null),
 }));
 vi.mock("../src/providers/cults3d/session", () => ({
@@ -34,7 +36,7 @@ vi.mock("../src/providers/cults3d/session", () => ({
 const { getTrending } = await import("../src/services/providerTrendingService");
 const printables = await import("../src/providers/printables/api");
 const thingiverse = await import("../src/providers/thingiverse/api");
-const settings = await import("../src/services/settingsService");
+const settings = await import("../src/providers/thingiverse/token");
 const cults3d = await import("../src/providers/cults3d/api");
 
 beforeEach(() => vi.clearAllMocks());

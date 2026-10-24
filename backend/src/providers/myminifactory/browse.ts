@@ -1,5 +1,5 @@
 import { prisma } from "../../db";
-import { getMyminifactoryApiKey } from "../../services/settingsService";
+import { getMyminifactoryApiKey } from "./apiKey";
 import { HttpError } from "../../utils/fileUtils";
 import type { ProviderBrowse } from "../types";
 import {

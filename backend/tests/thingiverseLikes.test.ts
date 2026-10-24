@@ -2,7 +2,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { fetchThingiverseUserLikes, parseThingiverseLikesUrl } from "../src/providers/thingiverse/api";
-import { setThingiverseAccessToken } from "../src/services/settingsService";
+import { setThingiverseAccessToken } from "../src/providers/thingiverse/token";
 import { prisma } from "../src/db";
 
 const ACCESS_TOKEN = "test-access-token";

@@ -21,7 +21,7 @@ import { getActiveJob } from "./importJobService";
 import { runLinksImportJob, SYNC_JOB_INTERRUPTED } from "./importJobRunner";
 import { startLinksJob } from "./importQueueService";
 import { getUserMakerworldCookie } from "../providers/makerworld/session";
-import { notifyGrabImportsQueued, queueGrabImport } from "./grabImportService";
+import { notifyGrabImportsQueued, queueGrabImport } from "../providers/makeronline/grabImports";
 import { isProviderId } from "../providers/_generated";
 import { PROVIDERS } from "../providers/registry";
 import { SyncHeldError, type SyncProblem } from "../providers/syncProblem";

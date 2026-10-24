@@ -9,17 +9,17 @@ import {
   PROVIDERS,
   SESSION_CODES,
 } from "../providers/registry";
-import type { ListBatch, ListImportBody, SourcedImport, StopTexts } from "../providers/types";
+import type { ListBatch, ListImportBody, ProfileScope, SourcedImport, StopTexts } from "../providers/types";
 import { IMPORT_COLLECTION_DELAY_MS, IMPORT_MAKERWORLD_CALL_DELAY_MS } from "../config";
 import { countJobItems, getJob, getJobStatus, listJobItems, updateJob, updateJobItem } from "./importJobService";
 import { createNotification } from "./notificationService";
 import { addPrintsToCollection, findOrCreateCollectionByName } from "./collectionService";
 import { modelIdFromUrl, providerName, syncedCollectionFor } from "./collectionSyncService";
 import { siteHost } from "../providers/names";
-import { type MakerworldProfileScope, MakerworldAuthError } from "../providers/makerworld/api";
+import { MakerworldAuthError } from "../providers/makerworld/api";
 import { downloadImportToTemp, importPrintFromUrl, type ImportRequestBody } from "./importService";
 import { parseMakeronlineModelUrl } from "../providers/makeronline/api";
-import { queueGrabImport } from "./grabImportService";
+import { queueGrabImport } from "../providers/makeronline/grabImports";
 import { upsertAuthorFromImport } from "./authorService";
 import { extractZipEntriesToPrints } from "./zipService";
 import { createLog } from "./auditLog";
@@ -34,7 +34,7 @@ const log = createLogger("import");
 const syncLog = createLogger("sync");
 
 type ZipImportJobBody = ImportRequestBody & { entries: string[] };
-export type ProfilesImportJobBody = ImportRequestBody & { scope: Exclude<MakerworldProfileScope, "url"> };
+export type ProfilesImportJobBody = ImportRequestBody & { scope: Exclude<ProfileScope, "url"> };
 
 // Why a design failed, so a batch reads as one clear cause instead of "N failed". Once a CAPTCHA
 // ("rateLimited"), the daily download limit, an auth failure or a Cloudflare block ("blocked")
@@ -410,13 +410,13 @@ export async function runZipImportJob(jobId: string, userId: string, body: ZipIm
 }
 
 /** `itemDelayMs` waits between links; a collection sync's queue is paced that way. */
-export type LinksImportJobBody = ImportRequestBody & { scope?: MakerworldProfileScope; itemDelayMs?: number };
+export type LinksImportJobBody = ImportRequestBody & { scope?: ProfileScope; itemDelayMs?: number };
 
 /** What a link sent from the extension's "Add to the queue" carries on its own item, over the job's
  *  shared body: the panel's collection and profile scope, and the page title for the queue page. */
 export type QueuedLinkOptions = {
   collection_id?: string | null;
-  scope?: MakerworldProfileScope;
+  scope?: ProfileScope;
   title?: string | null;
 };
 

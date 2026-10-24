@@ -3,7 +3,7 @@ import request from "supertest";
 import JSZip from "jszip";
 import { createApp } from "../src/app";
 import { importPrintFromUrl } from "../src/services/importService";
-import { setMyminifactoryApiKey } from "../src/services/settingsService";
+import { setMyminifactoryApiKey } from "../src/providers/myminifactory/apiKey";
 import { prisma } from "../src/db";
 import { getMyminifactoryConnection, setUserMyminifactoryCookie } from "../src/providers/myminifactory/session";
 

@@ -9,7 +9,7 @@ import type {
   ProviderDetails,
   InstanceHealth,
 } from "../types";
-import { getThingiverseAccessToken } from "../../services/settingsService";
+import { getThingiverseAccessToken } from "./token";
 import { likesCollectionName } from "../names";
 import {
   fetchThingiverseCollectionThings,

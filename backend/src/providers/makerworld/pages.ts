@@ -6,13 +6,9 @@ import { HttpError, isHtmlContentType } from "../../utils/fileUtils";
 import { readCapped } from "../../utils/readCapped";
 import { CLOUDFLARE_BLOCKED_CODE } from "../../services/flaresolverr";
 import { fetchWithGuard } from "../../services/guardedFetch";
-import {
-  extractNextDataJson,
-  extractPageMetadata,
-  makerworldHtmlHeaders,
-  type ImportedAuthorInfo,
-} from "../../services/importResolvers";
-import manifest from "../_generated/makerworld/manifest";
+import { extractNextDataJson, type ImportedAuthorInfo } from "../../services/importResolvers";
+import { makerworldHtmlHeaders } from "./pageData";
+import { makerworldPageMetadata } from "./pageData";
 import { makerworldModelUrl } from "../_generated/makerworld/urls";
 import {
   completeMakerworldAuthor,
@@ -80,5 +76,5 @@ export async function fetchMakerworldPageAuthor(
   }
   if (!isHtmlContentType(res.headers.get("content-type") || "")) return null;
   const { buffer } = await readCapped(res, IMPORT_HTML_MAX_BYTES);
-  return completeMakerworldAuthor(extractPageMetadata(buffer.toString("utf-8"), manifest.hosts[0]).author, paceMs);
+  return completeMakerworldAuthor(makerworldPageMetadata(buffer.toString("utf-8")).author, paceMs);
 }

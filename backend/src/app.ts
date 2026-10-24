@@ -21,6 +21,7 @@ import printFilesRoutes from "./routes/printFiles";
 import tagsRoutes from "./routes/tags";
 import settingsRoutes from "./routes/settings";
 import importsRoutes from "./routes/imports";
+import providerRoutes from "./providers/routes";
 import collectionsRoutes from "./routes/collections";
 import collectionSyncsRoutes from "./routes/collectionSyncs";
 import providerCollectionsRoutes from "./routes/providerCollections";
@@ -73,6 +74,7 @@ export function createApp(): Express {
   app.use("/api", categoriesRoutes);
   app.use("/api", printFilesRoutes);
   app.use("/api", tagsRoutes);
+  app.use("/api", providerRoutes);
   app.use("/api", importsRoutes);
   app.use("/api", collectionsRoutes);
   app.use("/api", collectionSyncsRoutes);

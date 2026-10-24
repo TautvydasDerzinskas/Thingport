@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getMyminifactoryApiKey, setMyminifactoryApiKey } from "../../services/settingsService";
+import { getMyminifactoryApiKey, setMyminifactoryApiKey } from "./apiKey";
 import { HttpError } from "../../utils/fileUtils";
 import { parseBody } from "../../utils/validate";
 import type { ConnectionSlot } from "../types";

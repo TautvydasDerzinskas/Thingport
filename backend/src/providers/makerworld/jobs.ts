@@ -14,7 +14,7 @@ import {
   PROVIDER_OFF_TEXT,
   type ProfilesImportJobBody,
 } from "../../services/importJobRunner";
-import { resolveMakerworldCookie } from "../../services/importResolvers";
+import { resolveMakerworldCookie } from "./pageData";
 import { importPrintFromUrl, type ImportRequestBody } from "../../services/importService";
 import { createNotification } from "../../services/notificationService";
 import { mapWithConcurrency } from "../../utils/concurrency";

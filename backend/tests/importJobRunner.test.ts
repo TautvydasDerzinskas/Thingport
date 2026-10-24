@@ -27,7 +27,7 @@ import { runListImportJob } from "../src/services/importJobRunner";
 import { runCollectionImportJob } from "../src/providers/makerworld/jobs";
 import { PROVIDERS } from "../src/providers/registry";
 import { fetchThingiverseCollectionTitle } from "../src/providers/thingiverse/api";
-import { setThingiverseAccessToken } from "../src/services/settingsService";
+import { setThingiverseAccessToken } from "../src/providers/thingiverse/token";
 import { prisma } from "../src/db";
 
 const app = createApp();

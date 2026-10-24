@@ -1,7 +1,7 @@
 import { IMPORT_TIMEOUT_SECONDS } from "../../config";
 import { browserFetch } from "../../utils/browserFetch";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
-import { cleanThingiverseMarkdown } from "../../services/descriptionMarkdown";
+import { cleanThingiverseMarkdown } from "./markdown";
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
 import {
   extractJsonFromBrowserBody,

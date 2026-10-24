@@ -12,7 +12,7 @@ import { prisma } from "../src/db";
 import { setUserMakerworldCookie } from "../src/providers/makerworld/session";
 import { PRINTABLES_FORGOTTEN, pushedPrintablesModels, WAITING_FOR_GRAB } from "../src/providers/printables/listings";
 import { syncCollection } from "../src/services/collectionSyncRunner";
-import { getThingiverseAccessToken, setThingiverseAccessToken } from "../src/services/settingsService";
+import { getThingiverseAccessToken, setThingiverseAccessToken } from "../src/providers/thingiverse/token";
 
 const app = createApp();
 const stamp = Date.now();

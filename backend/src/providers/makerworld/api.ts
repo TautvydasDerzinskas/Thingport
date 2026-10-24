@@ -5,14 +5,13 @@ import {
   isFlaresolverrEnabled,
   looksLikeCloudflareBlock,
 } from "../../services/flaresolverr";
+import { type ImportedAuthorInfo, type ImportedPageMetadata } from "../../services/importResolvers";
 import {
   makerworldAuthorFromDesignCreator,
   makerworldInstanceCover,
   makerworldInstanceTitles,
   makerworldMetaFromDesign,
-  type ImportedAuthorInfo,
-  type ImportedPageMetadata,
-} from "../../services/importResolvers";
+} from "./pageData";
 import { maybeSleep, sleep } from "../../utils/concurrency";
 import { HttpError } from "../../utils/fileUtils";
 import {

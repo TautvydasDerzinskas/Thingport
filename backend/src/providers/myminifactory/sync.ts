@@ -1,4 +1,4 @@
-import { getMyminifactoryApiKey } from "../../services/settingsService";
+import { getMyminifactoryApiKey } from "./apiKey";
 import type { SyncProblem } from "../syncProblem";
 import type { ProviderSync } from "../types";
 import { checkMyminifactoryCollection, fetchMyminifactoryCollectionObjects } from "./api";

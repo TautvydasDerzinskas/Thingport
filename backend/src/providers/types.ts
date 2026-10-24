@@ -291,3 +291,6 @@ export type StopTexts = {
 
 /** How the instance's own credential for a provider is, for Administration → System health. */
 export type InstanceHealth = "ok" | "not_configured" | "rejected" | "blocked" | "unreachable";
+
+/** Which of a model's print profiles an import brings: the one its link names, the designer's, or all. */
+export type ProfileScope = "url" | "designer" | "all";

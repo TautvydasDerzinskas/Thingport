@@ -31,16 +31,19 @@ import {
   emptyImportedPageMetadata,
   extractPageMetadata,
   findDownloadUrl,
+  type ImportCookies,
+  type ImportedPageMetadata,
+} from "./importResolvers";
+import {
   makerworldHtmlHeaders,
   makerworldInstanceCover,
   makerworldInstanceTitles,
   makerworldMetaFromDesign,
+  makerworldPageMetadata,
   resolveMakerworldCookie,
   resolveMakerworldDownloadUrl,
-  type ImportCookies,
-  type ImportedPageMetadata,
   type MakerworldProfileRef,
-} from "./importResolvers";
+} from "../providers/makerworld/pageData";
 import {
   extractMakerworldBearerToken,
   MAKERWORLD_AUTH_CODE,
@@ -53,7 +56,7 @@ import {
   completeMakerworldAuthor,
 } from "../providers/makerworld/api";
 import { openSourceGaps, type SourceGap } from "./sourceGaps";
-import { clearGrabImports } from "./grabImportService";
+import { clearGrabImports } from "../providers/makeronline/grabImports";
 
 /** An import refused because the user's MyMiniFactory session has expired. */
 export const MYMINIFACTORY_SESSION_CODE = MANIFESTS.myminifactory.errorCodes.session;
@@ -421,7 +424,8 @@ export async function openImportResponse(
     } catch {
       pageHost = "";
     }
-    const extracted = extractPageMetadata(html, pageHost);
+    // A link of no provider's goes the way MakerWorld's do (LINK_PROVIDER), but only its pages carry a design.
+    const extracted = URLS.makerworld.isHost(pageHost) ? makerworldPageMetadata(html) : extractPageMetadata(html);
     const resolvedMeta: ImportedPageMetadata = {
       title: extracted.title ?? inheritedMeta.title,
       tags: extracted.tags.length ? extracted.tags : inheritedMeta.tags,

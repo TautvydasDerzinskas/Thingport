@@ -21,7 +21,7 @@ import { prisma } from "../src/db";
 import { releaseSync, reserveSync, runManualSync, syncCollection } from "../src/services/collectionSyncRunner";
 import { SYNC_JOB_INTERRUPTED } from "../src/services/importJobRunner";
 import { isSyncDue, markSchedulerStarted, nextSyncAt } from "../src/services/collectionSyncSchedule";
-import { setThingiverseAccessToken } from "../src/services/settingsService";
+import { setThingiverseAccessToken } from "../src/providers/thingiverse/token";
 import { checkPrintablesCollection } from "../src/providers/printables/api";
 import { findOrCreateCollectionByName } from "../src/services/collectionService";
 

@@ -3,7 +3,7 @@ import path from "node:path";
 import { HttpError } from "../../utils/fileUtils";
 import { maybeSleep } from "../../utils/concurrency";
 import type { NewPlateInput } from "../../services/printCreation";
-import { getMyminifactoryApiKey } from "../../services/settingsService";
+import { getMyminifactoryApiKey } from "./apiKey";
 import type {
   ImportKit,
   ProviderLists,

@@ -1,7 +1,7 @@
 import { prisma } from "../../db";
 import { LIKES_ID_PREFIX } from "../_generated";
 import { thingiverseLikesUrl } from "../_generated/thingiverse/urls";
-import { getThingiverseAccessToken } from "../../services/settingsService";
+import { getThingiverseAccessToken } from "./token";
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
 import { HttpError } from "../../utils/fileUtils";
 import type { ProviderBrowse } from "../types";

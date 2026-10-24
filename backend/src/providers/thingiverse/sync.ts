@@ -1,4 +1,4 @@
-import { getThingiverseAccessToken } from "../../services/settingsService";
+import { getThingiverseAccessToken } from "./token";
 import { syncLikesUsername } from "../names";
 import type { SyncProblem } from "../syncProblem";
 import type { ProviderSync } from "../types";

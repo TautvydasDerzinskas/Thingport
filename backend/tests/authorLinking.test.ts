@@ -11,7 +11,7 @@ import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { linkUnattributedPrints, upsertAuthorFromImport } from "../src/services/authorService";
 import { runAuthorLinking, type AuthorLinkingRun } from "../src/services/authorLinkingService";
-import { getThingiverseAccessToken, setThingiverseAccessToken } from "../src/services/settingsService";
+import { getThingiverseAccessToken, setThingiverseAccessToken } from "../src/providers/thingiverse/token";
 import type { ImportedAuthorInfo } from "../src/services/importResolvers";
 
 // Name-only models link to an author record, but only when the match is unambiguous.
