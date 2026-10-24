@@ -20,7 +20,7 @@ import { getMyminifactoryApiKey, getThingiverseAccessToken } from "./settingsSer
 import { MyminifactoryAuthError, MyminifactoryRateLimitError, resolveMyminifactoryObject } from "./myminifactoryApi";
 import { resolveThingiverseThing, ThingiverseAuthError, ThingiverseRateLimitError } from "./thingiverseApi";
 import { resolveSnapmakerModel } from "../providers/snapmaker/api";
-import { resolveMakeronlineModel } from "./makeronlineApi";
+import { resolveMakeronlineModel } from "../providers/makeronline/api";
 import { resolveCrealitycloudModel } from "../providers/crealitycloud/api";
 import { resolveNexprintModel } from "../providers/nexprint/api";
 import { resolveThangsModel } from "../providers/thangs/api";

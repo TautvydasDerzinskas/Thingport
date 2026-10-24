@@ -68,12 +68,12 @@ import {
   parseMakeronlineCollectionUrl,
   parseMakeronlineModelUrl,
   type MakeronlineListing,
-} from "../services/makeronlineApi";
+} from "../providers/makeronline/api";
 import {
   getUserMakeronlineToken,
   MAKERONLINE_CONNECT,
   markMakeronlineTokenRejected,
-} from "../services/makeronlineSessionService";
+} from "../providers/makeronline/session";
 import {
   clearGrabImport,
   getGrabImport,

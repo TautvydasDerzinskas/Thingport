@@ -41,12 +41,12 @@ import {
   fetchMakeronlineLikes,
   MAKERONLINE_LIKES_KEY,
   MakeronlineAuthError,
-} from "./makeronlineApi";
+} from "../providers/makeronline/api";
 import {
   getMakeronlineConnection,
   getUserMakeronlineToken,
   markMakeronlineTokenRejected,
-} from "./makeronlineSessionService";
+} from "../providers/makeronline/session";
 import {
   CrealitycloudAuthError,
   crealitycloudLikesKey,

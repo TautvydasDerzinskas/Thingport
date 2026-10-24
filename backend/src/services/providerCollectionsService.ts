@@ -23,8 +23,12 @@ import {
   MakeronlineAuthError,
   makeronlineCollectionUrl,
   MAKERONLINE_LIKES_KEY,
-} from "./makeronlineApi";
-import { getMakeronlineConnection, getUserMakeronlineId, getUserMakeronlineToken } from "./makeronlineSessionService";
+} from "../providers/makeronline/api";
+import {
+  getMakeronlineConnection,
+  getUserMakeronlineId,
+  getUserMakeronlineToken,
+} from "../providers/makeronline/session";
 import {
   CrealitycloudAuthError,
   crealitycloudCollectionUrl,

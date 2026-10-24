@@ -3,6 +3,7 @@
 // author, category and gallery, and the temp files.
 
 import type { ImportedPageMetadata } from "../services/importResolvers";
+import type { ExistingImportedPrint, ImportRequestBody, ImportResult, ProfileDetails } from "../services/importService";
 import type { NewPlateInput } from "../services/printCreation";
 
 /** A model as its provider describes it. */
@@ -71,4 +72,36 @@ export type SourcedImport<Auth = unknown, Model extends ResolvedModel = Resolved
      *  imports them onto one print. */
     listUrls(url: string, scope: "designer" | "all"): Promise<{ title: string | null; urls: string[] }>;
   };
+};
+
+/** What the pipeline lends a provider that imports its own way, past its downloads. */
+export type PipelineKit = ImportKit & {
+  /** A new print of the downloaded files; removes them either way. */
+  createPrint(
+    userId: string,
+    source: { provider: string; externalId: string },
+    body: ImportRequestBody,
+    resolved: ResolvedModel,
+    downloaded: NewPlateInput[],
+    details: ProfileDetails,
+  ): Promise<ImportResult>;
+  /** Each profile's file, tagged with it, onto an existing print, told apart by name and picture; removes them
+   *  either way. Already imported when none was new. */
+  addProfiles(existing: ExistingImportedPrint, inputs: NewPlateInput[], details: ProfileDetails): Promise<ImportResult>;
+  profileDetails(
+    profiles: { id: string; title: string; coverUrl?: string | null }[],
+    options?: { names?: boolean },
+  ): ProfileDetails;
+};
+
+/** The escape hatch for a provider whose imports don't go the shared way (MakerOnline's files come from Grab). */
+export type CustomImport = {
+  importModel(
+    userId: string,
+    source: { provider: string; externalId: string },
+    body: ImportRequestBody,
+    kit: PipelineKit,
+  ): Promise<ImportResult>;
+  /** A re-import of a model already in the library. */
+  addToExisting(existing: ExistingImportedPrint, body: ImportRequestBody, kit: PipelineKit): Promise<ImportResult>;
 };

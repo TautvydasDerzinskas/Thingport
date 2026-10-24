@@ -21,7 +21,7 @@ import { parsePrintablesModelUrl, resolvePrintablesModel } from "./printablesApi
 import { getMyminifactoryApiKey, getThingiverseAccessToken } from "./settingsService";
 import { MyminifactoryAuthError, MyminifactoryRateLimitError, resolveMyminifactoryObject } from "./myminifactoryApi";
 import { resolveSnapmakerModel } from "../providers/snapmaker/api";
-import { resolveMakeronlineModel } from "./makeronlineApi";
+import { resolveMakeronlineModel } from "../providers/makeronline/api";
 import { resolveCrealitycloudModel } from "../providers/crealitycloud/api";
 import { resolveNexprintModel } from "../providers/nexprint/api";
 import { resolveThangsModel, ThangsBlockedError } from "../providers/thangs/api";

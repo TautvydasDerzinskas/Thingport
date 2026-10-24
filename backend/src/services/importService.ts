@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import { isProviderId, MANIFESTS, modelUrl, parseModelUrl } from "../providers/_generated";
 import { catIdsField, PROFILE_PROVIDERS, PROVIDERS } from "../providers/registry";
-import type { ImportKit, ResolvedModel, SourcedImport } from "../providers/types";
+import type { PipelineKit, ResolvedModel, SourcedImport } from "../providers/types";
 import fsSync from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -82,7 +82,6 @@ import {
   resolveMyminifactoryObject,
 } from "./myminifactoryApi";
 import { getUserMyminifactoryCookie, markMyminifactoryCookieRejected } from "./myminifactorySessionService";
-import { isMakeronlineFileHost, resolveMakeronlineModel } from "./makeronlineApi";
 import { clearGrabImports } from "./grabImportService";
 import { isCrealitycloudModelId, resolveCrealitycloudModel } from "../providers/crealitycloud/api";
 
@@ -101,10 +100,6 @@ export const THANGS_DOWNLOAD_LIMIT_CODE = MANIFESTS.thangs.errorCodes.downloadLi
 /** A Cults3D import refused for want of the user's API key, or of the browser's sign-in, or because one was turned
  *  down. */
 export const CULTS3D_SESSION_CODE = MANIFESTS.cults3d.errorCodes.session;
-/** A MakerOnline import that came without the signed file links only Thingport Grab can get. */
-export const MAKERONLINE_GRAB_CODE = MANIFESTS.makeronline.errorCodes.needsGrab;
-export const MAKERONLINE_NEEDS_GRAB =
-  "MakerOnline only gives its files to its own pages: import it with Thingport Grab on makeronline.com.";
 import { listZipEntries, readZipEntry } from "../utils/zipReader";
 import { enqueueAiDescription } from "./aiDescriptionService";
 import { getMyminifactoryApiKey, getThingiverseAccessToken } from "./settingsService";
@@ -331,7 +326,7 @@ function extensionProfile(url: string, body: ImportRequestBody): MakerworldProfi
 
 /** What tells a model's print profiles apart, by profile id: their names, for files that come named alike, and their
  *  own pictures, for their files' thumbnails. */
-type ProfileDetails = { titles?: Record<string, string>; covers?: Record<string, string> };
+export type ProfileDetails = { titles?: Record<string, string>; covers?: Record<string, string> };
 
 /** `names: false` for a provider whose profile files are already named after their profiles. */
 function profileDetailsOf(
@@ -894,7 +889,7 @@ async function findExistingImportedPrint(
   return { print, plates, author: print.author, previewImages };
 }
 
-type ExistingImportedPrint = NonNullable<Awaited<ReturnType<typeof findExistingImportedPrint>>>;
+export type ExistingImportedPrint = NonNullable<Awaited<ReturnType<typeof findExistingImportedPrint>>>;
 
 /** Size of the plate's file on disk now, or null when it can't be found. */
 async function plateFileSize(plate: Plate): Promise<number | null> {
@@ -1579,7 +1574,30 @@ async function createSourcedPrint(
   }
 }
 
-const IMPORT_KIT: ImportKit = { downloadSignedFile };
+const IMPORT_KIT: PipelineKit = {
+  downloadSignedFile,
+  createPrint: (userId, source, body, resolved, downloaded, details) =>
+    createSourcedPrint(userId, source, body, resolved, downloaded, `${source.provider}-${source.externalId}`, details),
+  async addProfiles(existing, inputs, details) {
+    let current: ExistingImportedPrint = existing;
+    let profileAdded = false;
+    try {
+      for (const input of inputs) {
+        const result = await addProfilePlateWithDetails(current, input, input.sourceInstanceId!, details);
+        profileAdded ||= Boolean(result.profileAdded);
+        current = result;
+      }
+    } finally {
+      for (const input of inputs) {
+        if (input.tempFilePath && fsSync.existsSync(input.tempFilePath)) {
+          await fs.rm(input.tempFilePath, { force: true }).catch(() => undefined);
+        }
+      }
+    }
+    return profileAdded ? { ...current, alreadyImported: false, profileAdded } : { ...current, alreadyImported: true };
+  },
+  profileDetails: profileDetailsOf,
+};
 
 /** A new print from a provider on the shared pipeline: its sign-in, the model, the profile the link names (or the
  *  provider's pick) or else the model's files, then the print. A model kept under another id than its link's goes
@@ -1664,96 +1682,7 @@ async function addSourcedProfile(
   return addProfilePlateWithDetails(existing, profile, wanted, details);
 }
 
-const MAKERONLINE_BLOCKED =
-  "MakerOnline blocked the file download (rate limit). This usually clears after a while -- wait, then try again.";
-
-/** MakerOnline's files as Grab signed them: a profile's 3MF tagged with the profile, a model's own files untagged.
- *  Throws once nothing came down, since the signed links run out quickly. */
-async function downloadMakeronlineFiles(
-  files: NonNullable<ImportRequestBody["resolved_files"]>,
-): Promise<NewPlateInput[]> {
-  const downloaded: NewPlateInput[] = [];
-  try {
-    for (const file of files) {
-      const inputs = (await downloadSignedFile(file, isMakeronlineFileHost, MAKERONLINE_BLOCKED)) ?? [];
-      if (!file.profile_id) {
-        downloaded.push(...inputs);
-        continue;
-      }
-      // A profile is one 3MF; anything else it unpacked to is dropped.
-      await Promise.all(
-        inputs.slice(1).map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)),
-      );
-      if (inputs[0]) downloaded.push({ ...inputs[0], sourceInstanceId: file.profile_id });
-    }
-  } catch (err) {
-    await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
-    throw err;
-  }
-  if (!downloaded.length) {
-    throw new HttpError(
-      400,
-      "Couldn't download this model's files from MakerOnline: the signed links may have run out. Try again from its page.",
-    );
-  }
-  return downloaded;
-}
-
-/** Like Snapmaker: a model is one print, each print profile its 3MF on a plate of its own, tagged with the profile,
- *  and a model without profiles brings its model files. The details come from MakerOnline's public API; the files
- *  only with links Grab signed (see grabImportService.ts). */
-async function importMakeronlineModel(
-  userId: string,
-  source: { provider: string; externalId: string },
-  body: ImportRequestBody,
-): Promise<ImportResult> {
-  if (!body.resolved_files?.length) throw new HttpError(409, MAKERONLINE_NEEDS_GRAB, MAKERONLINE_GRAB_CODE);
-  const resolved = await resolveMakeronlineModel(source.externalId);
-  if (!resolved) throw new HttpError(404, "This MakerOnline model could not be found, or isn't public.");
-  const downloaded = await downloadMakeronlineFiles(body.resolved_files);
-  return createSourcedPrint(
-    userId,
-    source,
-    body,
-    resolved,
-    downloaded,
-    `makeronline-${source.externalId}`,
-    profileDetailsOf(resolved.profiles),
-  );
-}
-
-/** Re-import of a MakerOnline model with print profiles it doesn't have yet: each becomes another plate. Anything
- *  else is already in the library, and needs no download. */
-async function addMakeronlineProfilesToPrint(
-  existing: ExistingImportedPrint,
-  body: ImportRequestBody,
-): Promise<ImportResult> {
-  const have = new Set(existing.plates.map((plate) => plate.sourceInstanceId));
-  const wanted = (body.resolved_files ?? []).filter((file) => file.profile_id && !have.has(file.profile_id));
-  if (!wanted.length) return { ...existing, alreadyImported: true };
-  const inputs = await downloadMakeronlineFiles(wanted);
-  // Its public details name and picture the profiles; without them the files still come in.
-  const model = await resolveMakeronlineModel(existing.print.sourceExternalId!).catch(() => null);
-  const details = model ? profileDetailsOf(model.profiles) : {};
-  let current: ExistingImportedPrint = existing;
-  let profileAdded = false;
-  try {
-    for (const input of inputs) {
-      const result = await addProfilePlateWithDetails(current, input, input.sourceInstanceId!, details);
-      profileAdded ||= Boolean(result.profileAdded);
-      current = result;
-    }
-  } finally {
-    for (const input of inputs) {
-      if (input.tempFilePath && fsSync.existsSync(input.tempFilePath)) {
-        await fs.rm(input.tempFilePath, { force: true }).catch(() => undefined);
-      }
-    }
-  }
-  return profileAdded ? { ...current, alreadyImported: false, profileAdded } : { ...current, alreadyImported: true };
-}
-
-type ImportResult = {
+export type ImportResult = {
   print: Print;
   plates: Plate[];
   author: Author | null;
@@ -1804,7 +1733,9 @@ async function importNewOrExisting(userId: string, url: string, body: ImportRequ
   const sourced = source && isProviderId(source.provider) ? PROVIDERS[source.provider].sourcedImport : undefined;
   if (existing && sourced) return addSourcedProfile(existing, url, body, sourced);
   if (sourced) return importSourced(userId, source!, url, body, sourced);
-  if (existing && source?.provider === "makeronline") return addMakeronlineProfilesToPrint(existing, body);
+  const custom = source && isProviderId(source.provider) ? PROVIDERS[source.provider].customImport : undefined;
+  if (existing && custom) return custom.addToExisting(existing, body, IMPORT_KIT);
+  if (custom) return custom.importModel(userId, source!, body, IMPORT_KIT);
   if (existing) return addMakerworldProfileToPrint(existing, url, body);
 
   if (source?.provider === "thingiverse") {
@@ -1815,9 +1746,6 @@ async function importNewOrExisting(userId: string, url: string, body: ImportRequ
   }
   if (source?.provider === "myminifactory") {
     return importMyminifactoryObject(userId, source, body);
-  }
-  if (source?.provider === "makeronline") {
-    return importMakeronlineModel(userId, source, body);
   }
 
   const { tempPath, filename, mime, meta } = await downloadImportToTemp(url, body);

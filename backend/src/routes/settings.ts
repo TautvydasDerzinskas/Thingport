@@ -77,12 +77,12 @@ import {
 } from "../services/myminifactorySessionService";
 import { checkSnapmakerToken } from "../providers/snapmaker/api";
 import { getSnapmakerConnection, normalizeSnapmakerToken, setUserSnapmakerToken } from "../providers/snapmaker/session";
-import { checkMakeronlineToken } from "../services/makeronlineApi";
+import { checkMakeronlineToken } from "../providers/makeronline/api";
 import {
   getMakeronlineConnection,
   normalizeMakeronlineToken,
   setUserMakeronlineToken,
-} from "../services/makeronlineSessionService";
+} from "../providers/makeronline/session";
 import { checkCrealitycloudAuth } from "../providers/crealitycloud/api";
 import {
   getCrealitycloudConnection,

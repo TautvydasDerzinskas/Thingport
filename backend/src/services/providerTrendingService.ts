@@ -5,7 +5,7 @@ import { TtlCache } from "../utils/ttlCache";
 import { fetchCrealitycloudRecommended } from "../providers/crealitycloud/api";
 import { fetchCults3dPopular } from "../providers/cults3d/api";
 import { getUserCults3dCredentials } from "../providers/cults3d/session";
-import { fetchMakeronlineTrending } from "./makeronlineApi";
+import { fetchMakeronlineTrending } from "../providers/makeronline/api";
 import { fetchMakerworldTrending } from "./makerworldCloudApi";
 import { fetchMyminifactoryPopular } from "./myminifactoryApi";
 import { fetchNexprintRecommended } from "../providers/nexprint/api";

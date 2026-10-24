@@ -5,10 +5,11 @@ import type { Category } from "@prisma/client";
 import { MANIFESTS, PROVIDER_IDS, type ProviderId, type ProviderManifest } from "./_generated";
 import { crealitycloudImport } from "./crealitycloud";
 import { cults3dImport } from "./cults3d";
+import { makeronlineImport } from "./makeronline";
 import { nexprintImport } from "./nexprint";
 import { snapmakerImport } from "./snapmaker";
 import { thangsImport } from "./thangs";
-import type { SourcedImport } from "./types";
+import type { CustomImport, SourcedImport } from "./types";
 
 export type ProviderBackend = {
   /** Why a batch import stopped when the provider turned the user's sign-in down, read after "failed because". */
@@ -16,6 +17,8 @@ export type ProviderBackend = {
   /** How its models import, for a provider moved onto the shared pipeline; the others still have their own path in
    *  importService.ts until they move too (docs/rfc/provider-modules.md, Phase 3). */
   sourcedImport?: SourcedImport<any, any>;
+  /** How its models import, for a provider that doesn't go the shared way. */
+  customImport?: CustomImport;
 };
 
 export const PROVIDERS = {
@@ -41,6 +44,7 @@ export const PROVIDERS = {
   makeronline: {
     authStopText:
       "MakerOnline turned your sign-in down — visit makeronline.com signed in with Thingport Grab, then retry",
+    customImport: makeronlineImport,
   },
   crealitycloud: {
     authStopText:

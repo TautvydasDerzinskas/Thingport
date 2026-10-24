@@ -1,8 +1,8 @@
-import { IMPORT_TIMEOUT_SECONDS } from "../config";
-import type { ImportedAuthorInfo, ImportedPageMetadata } from "./importResolvers";
-import { htmlToMarkdown } from "./descriptionMarkdown";
-import type { ProviderCollectionCard } from "./providerCollectionCard";
-import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "./trendingModel";
+import { IMPORT_TIMEOUT_SECONDS } from "../../config";
+import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
+import { htmlToMarkdown } from "../../services/descriptionMarkdown";
+import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
+import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
 import {
   isMakeronlineLikesUrl,
   MAKERONLINE_LIKES_KEY,
@@ -11,7 +11,7 @@ import {
   makeronlineModelUrl,
   parseMakeronlineCollectionUrl,
   parseMakeronlineModelUrl,
-} from "../providers/_generated/makeronline/urls";
+} from "../_generated/makeronline/urls";
 export {
   isMakeronlineLikesUrl,
   MAKERONLINE_LIKES_KEY,

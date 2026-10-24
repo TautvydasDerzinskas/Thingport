@@ -34,7 +34,7 @@ import {
   type SnapmakerList,
 } from "../providers/snapmaker/api";
 import { getUserSnapmakerToken, SNAPMAKER_CONNECT } from "../providers/snapmaker/session";
-import { parseMakeronlineModelUrl } from "./makeronlineApi";
+import { parseMakeronlineModelUrl } from "../providers/makeronline/api";
 import { crealitycloudModelUrl, parseCrealitycloudModelUrl } from "../providers/crealitycloud/api";
 import { CREALITYCLOUD_CONNECT, getUserCrealitycloudAuth } from "../providers/crealitycloud/session";
 import { nexprintModelUrl, parseNexprintModelUrl } from "../providers/nexprint/api";

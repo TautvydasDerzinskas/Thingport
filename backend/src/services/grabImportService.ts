@@ -7,7 +7,7 @@ import {
   resolveMakeronlineModel,
   type MakeronlineDownloadRequest,
   type MakeronlineProfileScope,
-} from "./makeronlineApi";
+} from "../providers/makeronline/api";
 import { HttpError } from "../utils/fileUtils";
 
 // Imports waiting for Thingport Grab. MakerOnline hands out download links only to a page its anti-bot script runs on,

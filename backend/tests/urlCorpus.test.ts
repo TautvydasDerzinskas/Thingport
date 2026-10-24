@@ -5,7 +5,7 @@ import { identifySourceModel } from "../src/services/importService";
 import { parseSyncSource } from "../src/services/collectionSyncService";
 import { parseMakerworldModelUrl } from "../src/services/makerworldCloudApi";
 import { parseSnapmakerModelUrl } from "../src/providers/snapmaker/api";
-import { parseMakeronlineModelUrl, isMakeronlineLikesUrl } from "../src/services/makeronlineApi";
+import { parseMakeronlineModelUrl, isMakeronlineLikesUrl } from "../src/providers/makeronline/api";
 import { parseCrealitycloudModelUrl, parseCrealitycloudLikesUrl } from "../src/providers/crealitycloud/api";
 import { parseNexprintModelUrl } from "../src/providers/nexprint/api";
 import { parseThingiverseLikesUrl } from "../src/services/thingiverseApi";

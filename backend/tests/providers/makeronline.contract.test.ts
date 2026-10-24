@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { prisma } from "../../src/db";
 import { fetchListing } from "../../src/services/collectionSyncRunner";
-import { setUserMakeronlineToken } from "../../src/services/makeronlineSessionService";
+import { setUserMakeronlineToken } from "../../src/providers/makeronline/session";
 import { describeProviderContract, type ProviderContractSpec } from "./contract";
 import { binary, json, loadFixture, stl, threeMf, type FetchHandler, expectStatus } from "./support";
 

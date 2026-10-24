@@ -1,4 +1,4 @@
-import { prisma } from "../db";
+import { prisma } from "../../db";
 
 // Per-user: the MakerOnline access token, the JWT in its mo_access_token cookie, sent bare in Authorization. It lasts
 // about 90 days and Thingport never renews it; Thingport Grab sends a new one whenever the browser's changes.
