@@ -77,11 +77,6 @@ const spec: ProviderContractSpec = {
   credentials: {
     sessionCode: "snapmaker_session",
     connection: getSnapmakerConnection,
-    // KNOWN INCONSISTENCY, kept as it is for the refactor and to be fixed in a separate commit: getUserSnapmakerToken
-    // (snapmakerSessionService.ts) doesn't look at the rejection it records, unlike NexPrint, Creality Cloud, Thangs,
-    // MakerOnline and Cults3D's, so a token Snapmaker turned down is used again on the next import, until it expires or
-    // the user reconnects. The app shows "expired" meanwhile.
-    staysRejected: false,
   },
   reimport: {
     profile: {

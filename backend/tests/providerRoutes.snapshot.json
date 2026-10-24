@@ -130,6 +130,7 @@
   "POST /api/settings/custom-widgets",
   "POST /api/settings/database",
   "POST /api/settings/file-reuse",
+  "POST /api/settings/file-reuse/backfill",
   "POST /api/settings/flaresolverr/test",
   "POST /api/settings/mcp",
   "POST /api/settings/myminifactory",

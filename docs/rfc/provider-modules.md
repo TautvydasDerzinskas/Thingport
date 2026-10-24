@@ -95,8 +95,9 @@ Abbreviations:
 
 ### Inconsistencies to keep during the port and fix in separate `fix:` commits
 
-- `classifyImportFailure` (`importJobRunner.ts:127-151`) does not treat `myminifactory_session` as "auth".
-- `providerOfUrl` derives the host from the provider id.
+- Fixed in #152: `classifyImportFailure` not treating `myminifactory_session` as "auth", `providerOfUrl` deriving the
+  host from the provider id, and the quirks the contract tests pinned (Snapmaker reusing a rejected token, Cults3D's
+  bare 500 and fill gaps without a session code, fill gaps' tag casing, Creality Cloud's import status by id).
 - Snapmaker's error says 400 in places where others use 404.
 
 ### Escape hatches the design must allow

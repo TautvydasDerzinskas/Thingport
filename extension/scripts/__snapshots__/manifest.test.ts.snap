@@ -26,6 +26,15 @@ exports[`browser manifests > chrome manifest 1`] = `
       ],
       "run_at": "document_idle",
     },
+    {
+      "js": [
+        "thingiverse.js",
+      ],
+      "matches": [
+        "*://*.thingiverse.com/*",
+      ],
+      "run_at": "document_start",
+    },
   ],
   "description": "Import MakerWorld, Thingiverse, Printables and MyMiniFactory models into Thingport, and convert MakerWorld 3MFs for other slicers.",
   "host_permissions": [
@@ -79,6 +88,15 @@ exports[`browser manifests > edge manifest 1`] = `
         "*://*.printables.com/*",
       ],
       "run_at": "document_idle",
+    },
+    {
+      "js": [
+        "thingiverse.js",
+      ],
+      "matches": [
+        "*://*.thingiverse.com/*",
+      ],
+      "run_at": "document_start",
     },
   ],
   "description": "Import MakerWorld, Thingiverse, Printables and MyMiniFactory models into Thingport, and convert MakerWorld 3MFs for other slicers.",
@@ -146,6 +164,15 @@ exports[`browser manifests > firefox manifest 1`] = `
         "*://*.printables.com/*",
       ],
       "run_at": "document_idle",
+    },
+    {
+      "js": [
+        "thingiverse.js",
+      ],
+      "matches": [
+        "*://*.thingiverse.com/*",
+      ],
+      "run_at": "document_start",
     },
   ],
   "description": "Import MakerWorld, Thingiverse, Printables and MyMiniFactory models into Thingport, and convert MakerWorld 3MFs for other slicers.",

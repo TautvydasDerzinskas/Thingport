@@ -175,18 +175,14 @@ describe("Creality Cloud specifics", () => {
       expect(none.calls).toHaveLength(0);
     });
 
-    // KNOWN INCONSISTENCY, kept as it is for the refactor and to be fixed in a separate commit: the status check the
-    // extension runs on every page view (checkImportStatus) looks a link up by the id it carries, without the
-    // resolution the import does (importService.ts checkImportStatus, ~936). A model kept under its alias isn't found by
-    // its 24-hex link: the page shows "not imported" for a model that is in the library.
-    it("quirk: the import status of the id link doesn't find the print kept under the alias", async () => {
+    it("finds the print kept under the alias by the import status of its id link", async () => {
       await spec.connect(ctx.userId);
       ctx.stub("ok");
       await ctx.importUrl(`https://www.crealitycloud.com/model-detail/${HEX_ID}`);
       const byAlias = await checkImportStatus(ctx.userId, MODEL_URL);
       expect(byAlias).toMatchObject({ recognized: true, already_imported: true });
       const byId = await checkImportStatus(ctx.userId, `https://www.crealitycloud.com/model-detail/${HEX_ID}`);
-      expect(byId).toMatchObject({ recognized: true, already_imported: false, state: "not_imported" });
+      expect(byId).toMatchObject({ recognized: true, already_imported: true });
     });
   });
 

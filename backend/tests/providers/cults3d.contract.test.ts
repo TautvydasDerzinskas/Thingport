@@ -199,15 +199,12 @@ describe("Cults3D specifics", () => {
       expect(res.body.detail).toMatch(/isn't in your downloads yet/);
     });
 
-    // KNOWN INCONSISTENCY, kept as it is for the refactor: a page without the Download form throws a plain Error in
-    // placeCults3dFreeOrder (cults3dApi.ts, "has no free download"), which cults3dFailure passes through, so an
-    // expected, user-explainable failure reaches the user as a bare 500 "Internal server error".
-    it("quirk: a model page without a Download form is a bare 500", async () => {
+    it("answers a model page without a Download form with 403 and a message", async () => {
       await spec.connect(ctx.userId);
       ctx.stub("no-form");
       const res = await ctx.importUrl();
-      expect(res.status).toBe(500);
-      expect(res.body.detail).toBe("Internal server error");
+      expectStatus(res, 403);
+      expect(res.body.detail).toMatch(/no free Download button/);
     });
   });
 
@@ -335,17 +332,14 @@ describe("Cults3D specifics", () => {
         },
       });
 
-    // KNOWN INCONSISTENCY, kept as it is for the refactor: unlike an import, fill-gaps answers a missing API key with a
-    // 400 that carries no `cults3d_session` code (fillGapsService.ts, `new HttpError(400, CULTS3D_CONNECT)`), so a
-    // client can't tell it from any other 400.
-    it("quirk: without the API key it answers 400 with no session code", async () => {
+    it("answers 400 with the session code without the API key, as an import does", async () => {
       await spec.disconnect(ctx.userId);
       const print = await barePrint();
       ctx.stub("ok");
       const res = await ctx.post(`/api/print/${print.id}/fill-gaps`, {});
       expect(res.status).toBe(400);
       expect(res.body.detail).toMatch(/your own API key/);
-      expect(res.body.code).toBeUndefined();
+      expect(res.body.code).toBe("cults3d_session");
     });
 
     it("marks the API key rejected when the API turns it down, answering 400", async () => {

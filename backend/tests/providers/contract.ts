@@ -88,9 +88,6 @@ export type ProviderContractSpec = {
     sessionCode: string;
     /** "connected", "disconnected" or "expired", as the provider's session service reports it. */
     connection(userId: string): Promise<string>;
-    /** Whether a rejected sign-in is refused on the next import without asking the provider (default true). False
-     *  where the session service still hands the rejected token out: the next import is tried with it again. */
-    staysRejected?: boolean;
   };
   reimport: {
     /** A link (and body) naming a profile the first import didn't bring: providers with profiles only. */
@@ -336,12 +333,8 @@ export function describeProviderContract(spec: ProviderContractSpec): ContractCo
         // Rejected stays rejected until the user connects again.
         ctx.stub("ok");
         const again = await ctx.importUrl();
-        if (spec.credentials!.staysRejected === false) {
-          expectStatus(again, 200);
-        } else {
-          expect(again.status).toBe(400);
-          expect(again.body.code).toBe(spec.credentials!.sessionCode);
-        }
+        expect(again.status).toBe(400);
+        expect(again.body.code).toBe(spec.credentials!.sessionCode);
       },
     );
 
@@ -455,10 +448,7 @@ export function describeProviderContract(spec: ProviderContractSpec): ContractCo
         const filled = await prisma.print.findUniqueOrThrow({ where: { id: print.id }, include: { author: true } });
         expect(filled.title).toBe(spec.expected.title);
         expect(filled.notes).toContain(spec.expected.notesIncludes);
-        // KNOWN INCONSISTENCY, kept as it is for the refactor and to be fixed in a separate commit: an import files tags
-        // with their casing normalized ("dragon" is "Dragon"), but fill-gaps writes them as the provider has them
-        // (fillGapsService.ts fillEmptyMetadata, `updates.tags = meta.tags`). The fixtures' tags are lower case.
-        expect(filled.tags.toSorted()).toEqual(spec.expected.tags.map((tag) => tag.toLowerCase()));
+        expect(filled.tags.toSorted()).toEqual(spec.expected.tags);
         expect(filled.creator).toBe(spec.expected.author);
         expect(filled.author?.name).toBe(spec.expected.author);
         expect(filled.categoryId).toBe(category.id);
