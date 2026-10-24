@@ -1,7 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { mapWithConcurrency, sleep } from "../utils/concurrency";
-import { MANIFESTS } from "../providers/_generated";
+import { detectProvider, MANIFESTS, type ProviderManifest } from "../providers/_generated";
+import { DOWNLOAD_LIMIT_CODES, PROVIDERS, SESSION_CODES } from "../providers/registry";
 import { IMPORT_COLLECTION_DELAY_MS, IMPORT_MAKERWORLD_CALL_DELAY_MS } from "../config";
 import { countJobItems, getJob, getJobStatus, listJobItems, updateJob, updateJobItem } from "./importJobService";
 import { createNotification } from "./notificationService";
@@ -14,7 +15,6 @@ import {
   parseMakerworldModelUrl,
   selectMakerworldProfiles,
   type MakerworldProfileScope,
-  MAKERWORLD_AUTH_CODE,
   MakerworldAuthError,
   MAKERWORLD_DOWNLOAD_LIMIT_CODE,
   MAKERWORLD_DOWNLOAD_LIMIT_MESSAGE,
@@ -24,13 +24,6 @@ import {
   downloadImportToTemp,
   fetchMakerworldDesignForImport,
   importPrintFromUrl,
-  MYMINIFACTORY_SESSION_CODE,
-  SNAPMAKER_SESSION_CODE,
-  CREALITYCLOUD_SESSION_CODE,
-  NEXPRINT_SESSION_CODE,
-  THANGS_SESSION_CODE,
-  THANGS_DOWNLOAD_LIMIT_CODE,
-  CULTS3D_SESSION_CODE,
   type ImportRequestBody,
 } from "./importService";
 import {
@@ -52,7 +45,7 @@ import {
 import { CREALITYCLOUD_CONNECT, getUserCrealitycloudAuth } from "./crealitycloudSessionService";
 import { nexprintModelUrl, parseNexprintModelUrl, resolveNexprintModel, selectNexprintProfiles } from "./nexprintApi";
 import { getUserNexprintToken, NEXPRINT_CONNECT } from "./nexprintSessionService";
-import { parseThangsModelUrl, thangsModelUrl } from "./thangsApi";
+import { thangsModelUrl } from "./thangsApi";
 import { getUserThangsToken, THANGS_CONNECT } from "./thangsSessionService";
 import { cults3dModelUrl, parseCults3dModelUrl } from "./cults3dApi";
 import { CULTS3D_CONNECT, getUserCults3dCredentials } from "./cults3dSessionService";
@@ -129,24 +122,12 @@ const PROVIDER_OFF_TEXT = (name: string) =>
 function classifyImportFailure(err: unknown): ImportFailureReason {
   if (err instanceof MakerworldAuthError) return "auth";
   if (err instanceof HttpError) {
-    if (
-      err.code === MAKERWORLD_AUTH_CODE ||
-      err.code === MYMINIFACTORY_SESSION_CODE ||
-      err.code === SNAPMAKER_SESSION_CODE ||
-      err.code === CREALITYCLOUD_SESSION_CODE ||
-      err.code === NEXPRINT_SESSION_CODE ||
-      err.code === THANGS_SESSION_CODE ||
-      err.code === CULTS3D_SESSION_CODE
-    ) {
-      return "auth";
-    }
+    if (err.code && SESSION_CODES.has(err.code)) return "auth";
     if (err.code === CLOUDFLARE_BLOCKED_CODE) return "blocked";
     if (err.code === PROVIDER_DISABLED_CODE) return "disabled";
     if (err.status === 403 || err.status === 404) return "unavailable";
     if (err.status === 429) {
-      return err.code === MAKERWORLD_DOWNLOAD_LIMIT_CODE || err.code === THANGS_DOWNLOAD_LIMIT_CODE
-        ? "downloadLimit"
-        : "rateLimited";
+      return err.code && DOWNLOAD_LIMIT_CODES.has(err.code) ? "downloadLimit" : "rateLimited";
     }
     if (err.status === 401) return "auth";
   }
@@ -378,16 +359,11 @@ async function nexprintProfileUrls(
   };
 }
 
-const SNAPMAKER_AUTH_TEXT =
-  "your Snapmaker sign-in ran out — visit space.snapmaker.com with Thingport Grab, then retry";
-const CREALITYCLOUD_AUTH_TEXT =
-  "Creality Cloud turned your sign-in down — visit crealitycloud.com signed in with Thingport Grab, then retry";
-const NEXPRINT_AUTH_TEXT =
-  "NexPrint turned your sign-in down — visit nexprint.com signed in with Thingport Grab, then retry";
-const THANGS_AUTH_TEXT = "Thangs turned your sign-in down — visit thangs.com signed in with Thingport Grab, then retry";
-const CULTS3D_AUTH_TEXT =
-  "Cults3D turned your API key or sign-in down — check the key in Configuration → Providers, or visit cults3d.com " +
-  "signed in with Thingport Grab, then retry";
+const SNAPMAKER_AUTH_TEXT = PROVIDERS.snapmaker.authStopText;
+const CREALITYCLOUD_AUTH_TEXT = PROVIDERS.crealitycloud.authStopText;
+const NEXPRINT_AUTH_TEXT = PROVIDERS.nexprint.authStopText;
+const THANGS_AUTH_TEXT = PROVIDERS.thangs.authStopText;
+const CULTS3D_AUTH_TEXT = PROVIDERS.cults3d.authStopText;
 
 /** A provider whose print profiles import by link, each as a plate of one model. */
 type ProfilesProvider = {
@@ -1208,18 +1184,17 @@ const LINKS_MAX_ATTEMPTS = 3;
 const LINKS_RETRY_DELAY_MS = 2000;
 
 /** Why a link's sign-in failed, by its provider. */
+/** The sign-in a link's provider turned down; MakerWorld's for a link of no provider's, as a page link imports
+ *  through MakerWorld's session. */
 function authStopText(url: string): string {
-  if (parseSnapmakerModelUrl(url)) return SNAPMAKER_AUTH_TEXT;
-  if (parseCrealitycloudModelUrl(url)) return CREALITYCLOUD_AUTH_TEXT;
-  if (parseNexprintModelUrl(url)) return NEXPRINT_AUTH_TEXT;
-  if (parseThangsModelUrl(url)) return THANGS_AUTH_TEXT;
-  if (parseCults3dModelUrl(url)) return CULTS3D_AUTH_TEXT;
-  return "the MakerWorld session expired — update the cookie in Settings, then retry";
+  return PROVIDERS[detectProvider(url) ?? "makerworld"].authStopText;
 }
 
-/** Whose daily download limit a link met: Thangs' or MakerWorld's, the only ones with one. */
+/** Whose daily download limit a link met, of the providers that have one; MakerWorld's when the link says nothing. */
 function downloadLimitSite(url: string | null): string {
-  return url && parseThangsModelUrl(url) ? "Thangs" : "MakerWorld";
+  const provider = url ? detectProvider(url) : null;
+  const limited = provider && (MANIFESTS[provider].errorCodes as ProviderManifest["errorCodes"]).downloadLimit;
+  return MANIFESTS[limited ? provider : "makerworld"].name;
 }
 
 function isTransientImportFailure(err: unknown): boolean {

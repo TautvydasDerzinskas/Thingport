@@ -42,7 +42,19 @@ export type ProviderManifest = {
   brand: { logo: Logo; chip: Chip };
   signIn: SignIn;
   helpers: { grab: Need; flaresolverr: Need };
-  capabilities: { collections: boolean; likes: boolean; profiles: boolean; paidModels: boolean };
+  capabilities: {
+    collections: boolean;
+    likes: boolean;
+    profiles: boolean;
+    paidModels: boolean;
+    /** How a category keeps this site's category ids: numbers, or text where they don't fit one (NexPrint's are
+     *  past Int, Thangs' are paths). */
+    categoryIds: "int" | "text";
+  };
+  /** The codes of the errors the API answers with, which clients act on: never change them. `session` when the
+   *  sign-in is missing or turned down, `downloadLimit` when the account's daily downloads are used up, `needsGrab`
+   *  when only Grab can fetch the files. */
+  errorCodes: { session?: string; downloadLimit?: string; needsGrab?: string };
   extension: {
     /** "builtin" sites are in Grab's manifest.json, "optional" ones are asked for when the user turns them on. New
      *  providers are always optional: changing the built-in set makes browsers disable Grab until it's approved. */

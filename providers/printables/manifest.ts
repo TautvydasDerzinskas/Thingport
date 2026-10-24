@@ -13,6 +13,7 @@ export default {
   },
   signIn: "none",
   helpers: { grab: "optional", flaresolverr: "recommended" },
-  capabilities: { collections: true, likes: true, profiles: false, paidModels: false },
+  capabilities: { collections: true, likes: true, profiles: false, paidModels: false, categoryIds: "int" },
+  errorCodes: {},
   extension: { site: "builtin", origins: ["*://*.printables.com/*"] },
 } as const satisfies ProviderManifest;

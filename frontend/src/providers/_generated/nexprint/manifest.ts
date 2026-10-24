@@ -20,6 +20,7 @@ export default {
   },
   signIn: "user",
   helpers: { grab: "recommended", flaresolverr: "none" },
-  capabilities: { collections: true, likes: false, profiles: true, paidModels: false },
+  capabilities: { collections: true, likes: false, profiles: true, paidModels: false, categoryIds: "text" },
+  errorCodes: { session: "nexprint_session" },
   extension: { site: "optional", origins: ["*://*.nexprint.com/*"] },
 } as const satisfies ProviderManifest;

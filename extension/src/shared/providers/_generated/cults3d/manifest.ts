@@ -19,6 +19,7 @@ export default {
   },
   signIn: "user",
   helpers: { grab: "recommended", flaresolverr: "none" },
-  capabilities: { collections: true, likes: true, profiles: false, paidModels: true },
+  capabilities: { collections: true, likes: true, profiles: false, paidModels: true, categoryIds: "int" },
+  errorCodes: { session: "cults3d_session" },
   extension: { site: "optional", origins: ["*://cults3d.com/*", "*://*.cults3d.com/*"] },
 } as const satisfies ProviderManifest;

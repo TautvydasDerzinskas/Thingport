@@ -6,6 +6,7 @@ import type { Collection, CollectionSync } from "@prisma/client";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { isProviderId, MANIFESTS, modelUrl, parseListUrl, type ProviderId } from "../providers/_generated";
+import { PROFILE_PROVIDERS } from "../providers/registry";
 import { addPrintsToCollection, findOrCreateCollectionByName, isSystemCollectionId } from "./collectionService";
 import { parseSnapmakerListUrl, snapmakerListName } from "./snapmakerApi";
 import { getUserSnapmakerId } from "./snapmakerSessionService";
@@ -31,13 +32,7 @@ export type SyncSource = { provider: SyncProvider; externalId: string; url: stri
 
 /** Providers whose models come with print profiles a sync can pick between. */
 export function hasProfiles(provider: string): boolean {
-  return (
-    provider === "makerworld" ||
-    provider === "snapmaker" ||
-    provider === "makeronline" ||
-    provider === "crealitycloud" ||
-    provider === "nexprint"
-  );
+  return PROFILE_PROVIDERS.has(provider);
 }
 
 export function providerName(provider: string): string {

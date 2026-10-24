@@ -21,6 +21,7 @@ export default {
   },
   signIn: "userOptional",
   helpers: { grab: "required", flaresolverr: "none" },
-  capabilities: { collections: true, likes: true, profiles: true, paidModels: false },
+  capabilities: { collections: true, likes: true, profiles: true, paidModels: false, categoryIds: "int" },
+  errorCodes: { needsGrab: "makeronline_grab" },
   extension: { site: "optional", origins: ["*://*.makeronline.com/*"] },
 } as const satisfies ProviderManifest;

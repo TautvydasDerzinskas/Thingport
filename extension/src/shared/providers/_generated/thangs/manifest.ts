@@ -19,6 +19,7 @@ export default {
   },
   signIn: "user",
   helpers: { grab: "recommended", flaresolverr: "optional" },
-  capabilities: { collections: true, likes: true, profiles: false, paidModels: true },
+  capabilities: { collections: true, likes: true, profiles: false, paidModels: true, categoryIds: "text" },
+  errorCodes: { session: "thangs_session", downloadLimit: "THANGS_DOWNLOAD_LIMIT" },
   extension: { site: "optional", origins: ["*://thangs.com/*", "*://*.thangs.com/*"] },
 } as const satisfies ProviderManifest;

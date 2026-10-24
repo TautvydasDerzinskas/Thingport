@@ -20,6 +20,7 @@ export default {
   },
   signIn: "adminUser",
   helpers: { grab: "optional", flaresolverr: "recommended" },
-  capabilities: { collections: true, likes: false, profiles: false, paidModels: true },
+  capabilities: { collections: true, likes: false, profiles: false, paidModels: true, categoryIds: "int" },
+  errorCodes: { session: "myminifactory_session" },
   extension: { site: "optional", origins: ["*://*.myminifactory.com/*"] },
 } as const satisfies ProviderManifest;

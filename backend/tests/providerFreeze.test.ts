@@ -14,7 +14,8 @@ import settingsRoutes from "../src/routes/settings";
 import providerCollectionsRoutes from "../src/routes/providerCollections";
 import { identifySourceModel } from "../src/services/importService";
 import { LOOKUP_PROVIDERS } from "../src/services/authorLinkingService";
-import { PROVIDER_IDS } from "../src/providers/_generated";
+import { MANIFESTS, PROVIDER_IDS } from "../src/providers/_generated";
+import { PROFILE_PROVIDERS } from "../src/providers/registry";
 
 const app = createApp();
 const source = (file: string) => readFileSync(new URL(`../src/services/${file}`, import.meta.url), "utf8");
@@ -130,20 +131,17 @@ describe("provider-module freeze", () => {
   });
 
   it("pins profile provider IDs", () => {
-    expect(quotedList("importService.ts", /const PROFILE_PROVIDERS = new Set\(\[([\s\S]*?)\]\)/)).toEqual([
-      "makerworld",
-      "snapmaker",
-      "makeronline",
-      "crealitycloud",
-      "nexprint",
-    ]);
+    expect([...PROFILE_PROVIDERS]).toEqual(["makerworld", "snapmaker", "makeronline", "crealitycloud", "nexprint"]);
   });
 
   it("pins client-facing provider error codes", () => {
     const files = ["importService.ts", "makerworldCaptcha.ts", "flaresolverr.ts", "providerSettingsService.ts"];
-    const codes = files.flatMap((file) =>
-      [...source(file).matchAll(/export const [A-Z0-9_]+_CODE = "([^"]+)"/g)].map((part) => part[1]),
-    );
+    const codes = [
+      ...files.flatMap((file) =>
+        [...source(file).matchAll(/export const [A-Z0-9_]+_CODE = "([^"]+)"/g)].map((part) => part[1]),
+      ),
+      ...Object.values(MANIFESTS).flatMap((manifest) => Object.values(manifest.errorCodes)),
+    ];
     expect(codes.toSorted()).toEqual(
       [
         "CLOUDFLARE_BLOCKED",

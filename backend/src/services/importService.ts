@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
-import { modelUrl, parseModelUrl } from "../providers/_generated";
+import { MANIFESTS, modelUrl, parseModelUrl } from "../providers/_generated";
+import { catIdsField, PROFILE_PROVIDERS } from "../providers/registry";
 import fsSync from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -157,22 +158,22 @@ import {
 } from "./cults3dSessionService";
 
 /** An import refused because the user's MyMiniFactory session has expired. */
-export const MYMINIFACTORY_SESSION_CODE = "myminifactory_session";
+export const MYMINIFACTORY_SESSION_CODE = MANIFESTS.myminifactory.errorCodes.session;
 /** An import refused because the user hasn't connected Snapmaker, or their sign-in has run out. */
-export const SNAPMAKER_SESSION_CODE = "snapmaker_session";
+export const SNAPMAKER_SESSION_CODE = MANIFESTS.snapmaker.errorCodes.session;
 /** An import refused because the user hasn't connected Creality Cloud, or it turned their sign-in down. */
-export const CREALITYCLOUD_SESSION_CODE = "crealitycloud_session";
+export const CREALITYCLOUD_SESSION_CODE = MANIFESTS.crealitycloud.errorCodes.session;
 /** An import refused because the user hasn't connected NexPrint, or it turned their sign-in down. */
-export const NEXPRINT_SESSION_CODE = "nexprint_session";
+export const NEXPRINT_SESSION_CODE = MANIFESTS.nexprint.errorCodes.session;
 /** An import refused because the user hasn't connected Thangs, or it turned their sign-in down. */
-export const THANGS_SESSION_CODE = "thangs_session";
+export const THANGS_SESSION_CODE = MANIFESTS.thangs.errorCodes.session;
 /** A Thangs import refused because the account's daily downloads are used up. */
-export const THANGS_DOWNLOAD_LIMIT_CODE = "THANGS_DOWNLOAD_LIMIT";
+export const THANGS_DOWNLOAD_LIMIT_CODE = MANIFESTS.thangs.errorCodes.downloadLimit;
 /** A Cults3D import refused for want of the user's API key, or of the browser's sign-in, or because one was turned
  *  down. */
-export const CULTS3D_SESSION_CODE = "cults3d_session";
+export const CULTS3D_SESSION_CODE = MANIFESTS.cults3d.errorCodes.session;
 /** A MakerOnline import that came without the signed file links only Thingport Grab can get. */
-export const MAKERONLINE_GRAB_CODE = "makeronline_grab";
+export const MAKERONLINE_GRAB_CODE = MANIFESTS.makeronline.errorCodes.needsGrab;
 export const MAKERONLINE_NEEDS_GRAB =
   "MakerOnline only gives its files to its own pages: import it with Thingport Grab on makeronline.com.";
 import { listZipEntries, readZipEntry } from "../utils/zipReader";
@@ -834,22 +835,6 @@ export async function attachImportedPreviewImages(
   }
 }
 
-const CATEGORY_SITE_CAT_IDS_FIELD = {
-  makerworld: "makerworldCatIds",
-  thingiverse: "thingiverseCatIds",
-  printables: "printablesCatIds",
-  myminifactory: "myminifactoryCatIds",
-  snapmaker: "snapmakerCatIds",
-  makeronline: "makeronlineCatIds",
-  crealitycloud: "crealitycloudCatIds",
-  nexprint: "nexprintCatIds",
-  thangs: "thangsCatIds",
-  cults3d: "cults3dCatIds",
-} as const;
-
-// Columns of text: NexPrint's ids are past Int, and Thangs' are category paths.
-const TEXT_CAT_IDS_FIELDS = new Set<string>(["nexprintCatIds", "thangsCatIds"]);
-
 /** Auto-categorizes an import when a category's `*CatIds` for this site overlap the model's own
  * category ids. Those come most specific first (a model's own category, then its parent), and the
  * category matching the earliest one wins, so a subcategory beats the category its parent maps to.
@@ -860,17 +845,17 @@ export async function resolveCategoryIdByCategory(
   siteCategoryIds: (number | string)[],
 ): Promise<string | null> {
   if (!categorySite || !siteCategoryIds.length) return null;
-  const field = CATEGORY_SITE_CAT_IDS_FIELD[categorySite];
+  const { field, text } = catIdsField(categorySite);
   // Compared as text, so one path serves the text columns and the Int ones alike.
   const wanted = siteCategoryIds.map(String);
   const numeric = siteCategoryIds.map(Number).filter((n) => Number.isSafeInteger(n));
-  if (!TEXT_CAT_IDS_FIELDS.has(field) && !numeric.length) return null;
+  if (!text && !numeric.length) return null;
   const candidates = await prisma.category.findMany({
     // Folders are the user's own tree; only categories take imports by site category id.
     where: {
       userId,
       kind: "category",
-      [field]: { hasSome: TEXT_CAT_IDS_FIELDS.has(field) ? wanted : numeric },
+      [field]: { hasSome: text ? wanted : numeric },
     },
     orderBy: { position: "asc" },
   });
@@ -2300,9 +2285,6 @@ export async function importPrintFromUrl(
   }
   return result;
 }
-
-/** Providers whose re-import of a model may add a print profile, so fetches. */
-const PROFILE_PROVIDERS = new Set(["makerworld", "snapmaker", "makeronline", "crealitycloud", "nexprint"]);
 
 /** Refuses a link from a provider an admin turned off, unless it's a model the user already has (MakerWorld, Snapmaker,
  *  MakerOnline, Creality Cloud and NexPrint add a profile, so fetch). */

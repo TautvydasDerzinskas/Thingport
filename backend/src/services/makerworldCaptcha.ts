@@ -1,3 +1,5 @@
+import { MANIFESTS } from "../providers/_generated";
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
@@ -77,9 +79,9 @@ export const MAKERWORLD_DOWNLOAD_LIMIT_MESSAGE =
   "MakerWorld daily download limit reached for this account. Try again tomorrow.";
 
 // The HttpError code, so batch runners can tell it from a CAPTCHA (both are 429).
-export const MAKERWORLD_DOWNLOAD_LIMIT_CODE = "MAKERWORLD_DOWNLOAD_LIMIT";
+export const MAKERWORLD_DOWNLOAD_LIMIT_CODE = MANIFESTS.makerworld.errorCodes.downloadLimit;
 // On the 400 a MakerworldAuthError becomes, so a queued import can tell it from a bad link.
-export const MAKERWORLD_AUTH_CODE = "MAKERWORLD_AUTH";
+export const MAKERWORLD_AUTH_CODE = MANIFESTS.makerworld.errorCodes.session;
 
 export class MakerworldDownloadLimitError extends Error {
   constructor() {
