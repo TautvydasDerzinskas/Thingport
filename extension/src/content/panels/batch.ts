@@ -1,11 +1,9 @@
-// Batch flow for Thingiverse Likes/Collections, Printables and MyMiniFactory Collections, Snapmaker Space likes and
-// bookmarks, MakerOnline collections and likes, Creality Cloud collections and likes, NexPrint collections, Thangs
-// collections and likes, and Cults3D printlists and likes.
-// MakerWorld collections use the guided flow in
+// Batch flow for every provider's collections, likes and bookmarks. MakerWorld collections use the guided flow in
 // makerworldCollection.ts.
 
 import type { BatchEntriesResult, ImportJob, SyncLookup } from "../../shared/api";
 import { ctx, setContext } from "../context";
+import { MANIFESTS, type ProviderManifest } from "../../shared/providers/_generated";
 import { parseSnapmakerListUrl, snapmakerListUrl, type SnapmakerList } from "../../shared/urls";
 import { request } from "../../shared/messages";
 import { api, escapeHtml, sleep } from "../runtime";
@@ -15,83 +13,6 @@ import { loadingModelsPhrases, renderFunStatus } from "./funStatus";
 import { applySyncToggle, loadSyncState, readSyncToggle, syncChangeNote, syncToggleHtml } from "./syncToggle";
 import { printablesToken, readCollectionForPanel } from "../printables";
 import { pushPrintablesNow } from "../providerAccount";
-
-type BatchKey =
-  | "thingiverse:likes"
-  | "thingiverse:collection"
-  | "printables:collection"
-  | "myminifactory:collection"
-  | "snapmaker:likes"
-  | "snapmaker:bookmarks"
-  | "makeronline:collection"
-  | "makeronline:likes"
-  | "crealitycloud:collection"
-  | "crealitycloud:likes"
-  | "nexprint:collection"
-  | "thangs:collection"
-  | "thangs:likes"
-  | "cults3d:collection"
-  | "cults3d:likes";
-
-const THANGS_LIST = { entries: "/import/thangs-list/entries", start: "/import/thangs-list", idField: "model_ids" };
-const CULTS3D_LIST = { entries: "/import/cults3d-list/entries", start: "/import/cults3d-list", idField: "model_ids" };
-
-const SNAPMAKER_LIST = {
-  entries: "/import/snapmaker-list/entries",
-  start: "/import/snapmaker-list",
-  idField: "model_ids",
-};
-
-// The picked models wait on the instance for Grab, which imports them from this very page right after.
-const MAKERONLINE_LIST = {
-  entries: "/import/makeronline-list/entries",
-  start: "/import/makeronline-list",
-  idField: "model_ids",
-};
-
-const CREALITYCLOUD_LIST = {
-  entries: "/import/crealitycloud-list/entries",
-  start: "/import/crealitycloud-list",
-  idField: "model_ids",
-};
-
-const BATCH_ENDPOINTS: Record<BatchKey, { entries: string; start: string; idField: string }> = {
-  "thingiverse:likes": {
-    entries: "/import/thingiverse-likes/entries",
-    start: "/import/thingiverse-likes",
-    idField: "thing_ids",
-  },
-  "thingiverse:collection": {
-    entries: "/import/thingiverse-collection/entries",
-    start: "/import/thingiverse-collection",
-    idField: "thing_ids",
-  },
-  "printables:collection": {
-    entries: "/import/printables-collection/entries",
-    start: "/import/printables-collection",
-    idField: "model_ids",
-  },
-  "myminifactory:collection": {
-    entries: "/import/myminifactory-collection/entries",
-    start: "/import/myminifactory-collection",
-    idField: "object_ids",
-  },
-  "snapmaker:likes": SNAPMAKER_LIST,
-  "snapmaker:bookmarks": SNAPMAKER_LIST,
-  "makeronline:collection": MAKERONLINE_LIST,
-  "makeronline:likes": MAKERONLINE_LIST,
-  "crealitycloud:collection": CREALITYCLOUD_LIST,
-  "crealitycloud:likes": CREALITYCLOUD_LIST,
-  "nexprint:collection": {
-    entries: "/import/nexprint-collection/entries",
-    start: "/import/nexprint-collection",
-    idField: "model_ids",
-  },
-  "thangs:collection": THANGS_LIST,
-  "thangs:likes": THANGS_LIST,
-  "cults3d:collection": CULTS3D_LIST,
-  "cults3d:likes": CULTS3D_LIST,
-};
 
 const SNAPMAKER_LISTS: { list: SnapmakerList; label: string }[] = [
   { list: "likes", label: "Likes" },
@@ -132,11 +53,14 @@ function pageList() {
   return classification;
 }
 
-function endpoints() {
+/** The provider's own endpoints for this kind of list, which every backend has, older ones too; the generic ones
+ *  for a provider added since. */
+function endpoints(): { entries: string; start: string; idField: string } {
   const { provider, type } = pageList();
-  const config = BATCH_ENDPOINTS[`${provider}:${type}` as BatchKey];
-  if (!config) throw new Error(`Batch import isn't supported for ${provider} ${type}`);
-  return config;
+  const manifest: ProviderManifest = MANIFESTS[provider];
+  const legacy = manifest.legacy?.lists.find((list) => !list.kinds || list.kinds.includes(type));
+  const path = legacy?.path ?? `${provider}/list`;
+  return { entries: `/import/${path}/entries`, start: `/import/${path}`, idField: legacy?.idsField ?? "model_ids" };
 }
 
 function isPrintablesCollection(): boolean {
