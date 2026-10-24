@@ -3,7 +3,13 @@
 // author, category and gallery, and the temp files.
 
 import type { ImportedPageMetadata } from "../services/importResolvers";
-import type { ExistingImportedPrint, ImportRequestBody, ImportResult, ProfileDetails } from "../services/importService";
+import type {
+  ExistingImportedPrint,
+  ImportRequestBody,
+  ImportResult,
+  PlainDownloadResult,
+  ProfileDetails,
+} from "../services/importService";
 import type { NewPlateInput } from "../services/printCreation";
 
 /** A model as its provider describes it. */
@@ -23,6 +29,10 @@ export type ImportKit = {
     isFileHost: (hostname: string) => boolean,
     blockedMessage: string,
   ): Promise<NewPlateInput[] | null>;
+  /** A plain file link, downloaded as it is; a block is retried once, then reported. Null when it didn't download. */
+  downloadFile(url: string, name: string): Promise<PlainDownloadResult>;
+  /** Whether a file is one a plate takes (a zip is unpacked instead). */
+  isModelFile(name: string): boolean;
 };
 
 /** Whose import it is, and of which model, by the id it's kept under. */
@@ -41,6 +51,8 @@ export type SourcedImport<Auth = unknown, Model extends ResolvedModel = Resolved
   missingMessage: string;
   /** The 400 for a model with nothing to import. */
   noFilesMessage: string;
+  /** What a print is named when the model has no title; `<provider>-<id>` when left out. */
+  nameHint?(externalId: string): string;
   /** The files of a new print: the profile `requestedProfileId` names, or its own pick. Empty when there are none;
    *  removes what it downloaded when it throws. */
   downloadModel(

@@ -7,13 +7,13 @@ import { fetchCults3dPopular } from "../providers/cults3d/api";
 import { getUserCults3dCredentials } from "../providers/cults3d/session";
 import { fetchMakeronlineTrending } from "../providers/makeronline/api";
 import { fetchMakerworldTrending } from "./makerworldCloudApi";
-import { fetchMyminifactoryPopular } from "./myminifactoryApi";
+import { fetchMyminifactoryPopular } from "../providers/myminifactory/api";
 import { fetchNexprintRecommended } from "../providers/nexprint/api";
-import { fetchPrintablesTrending } from "./printablesApi";
+import { fetchPrintablesTrending } from "../providers/printables/api";
 import { getMyminifactoryApiKey, getThingiverseAccessToken } from "./settingsService";
 import { fetchSnapmakerFeatured } from "../providers/snapmaker/api";
 import { fetchThangsTrending } from "../providers/thangs/api";
-import { fetchThingiversePopular } from "./thingiverseApi";
+import { fetchThingiversePopular } from "../providers/thingiverse/api";
 import type { TrendingModel } from "./trendingModel";
 
 // Kept in sync by hand with the frontend's TRENDING_PROVIDERS.

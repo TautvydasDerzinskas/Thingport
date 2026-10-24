@@ -16,10 +16,14 @@ import {
   resolveMakerworldCookie,
   type ImportedPageMetadata,
 } from "./importResolvers";
-import { resolveThingiverseThing, ThingiverseAuthError, ThingiverseRateLimitError } from "./thingiverseApi";
-import { parsePrintablesModelUrl, resolvePrintablesModel } from "./printablesApi";
+import { resolveThingiverseThing, ThingiverseAuthError, ThingiverseRateLimitError } from "../providers/thingiverse/api";
+import { parsePrintablesModelUrl, resolvePrintablesModel } from "../providers/printables/api";
 import { getMyminifactoryApiKey, getThingiverseAccessToken } from "./settingsService";
-import { MyminifactoryAuthError, MyminifactoryRateLimitError, resolveMyminifactoryObject } from "./myminifactoryApi";
+import {
+  MyminifactoryAuthError,
+  MyminifactoryRateLimitError,
+  resolveMyminifactoryObject,
+} from "../providers/myminifactory/api";
 import { resolveSnapmakerModel } from "../providers/snapmaker/api";
 import { resolveMakeronlineModel } from "../providers/makeronline/api";
 import { resolveCrealitycloudModel } from "../providers/crealitycloud/api";

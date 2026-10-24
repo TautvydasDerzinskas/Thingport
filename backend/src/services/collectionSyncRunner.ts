@@ -34,7 +34,7 @@ import {
   MAKERWORLD_REJECTED_ERROR,
   markMakerworldCookieRejected,
 } from "./makerworldCookieService";
-import { checkPrintablesCollection, fetchPrintablesCollectionEntries } from "./printablesApi";
+import { checkPrintablesCollection, fetchPrintablesCollectionEntries } from "../providers/printables/api";
 import { fetchSnapmakerList, SnapmakerAuthError } from "../providers/snapmaker/api";
 import {
   fetchMakeronlineCollection,
@@ -91,8 +91,8 @@ import {
   checkThingiverseUser,
   fetchThingiverseCollectionThings,
   fetchThingiverseUserLikes,
-} from "./thingiverseApi";
-import { checkMyminifactoryCollection, fetchMyminifactoryCollectionObjects } from "./myminifactoryApi";
+} from "../providers/thingiverse/api";
+import { checkMyminifactoryCollection, fetchMyminifactoryCollectionObjects } from "../providers/myminifactory/api";
 import { syncLikesUsername } from "../dto";
 import { getMyminifactoryApiKey, getThingiverseAccessToken } from "./settingsService";
 import { createNotification } from "./notificationService";

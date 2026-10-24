@@ -17,8 +17,8 @@ vi.mock("../src/config", async (importOriginal) => {
   return { ...actual, IMPORT_COLLECTION_DELAY_MS: 0 };
 });
 
-vi.mock("../src/services/thingiverseApi", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../src/services/thingiverseApi")>();
+vi.mock("../src/providers/thingiverse/api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/providers/thingiverse/api")>();
   return { ...actual, fetchThingiverseCollectionTitle: vi.fn<typeof actual.fetchThingiverseCollectionTitle>() };
 });
 
@@ -28,7 +28,7 @@ import {
   runThingiverseCollectionImportJob,
   runThingiverseLikesImportJob,
 } from "../src/services/importJobRunner";
-import { fetchThingiverseCollectionTitle } from "../src/services/thingiverseApi";
+import { fetchThingiverseCollectionTitle } from "../src/providers/thingiverse/api";
 import { setThingiverseAccessToken } from "../src/services/settingsService";
 import { prisma } from "../src/db";
 

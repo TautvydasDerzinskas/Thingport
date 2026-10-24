@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
-import { fetchThingiverseUserLikes, parseThingiverseLikesUrl } from "../src/services/thingiverseApi";
+import { fetchThingiverseUserLikes, parseThingiverseLikesUrl } from "../src/providers/thingiverse/api";
 import { setThingiverseAccessToken } from "../src/services/settingsService";
 import { prisma } from "../src/db";
 

@@ -1,22 +1,22 @@
-import { IMPORT_TIMEOUT_SECONDS } from "../config";
-import { browserFetch } from "../utils/browserFetch";
-import type { ImportedAuthorInfo, ImportedPageMetadata } from "./importResolvers";
-import { cleanThingiverseMarkdown } from "./descriptionMarkdown";
-import type { ProviderCollectionCard } from "./providerCollectionCard";
+import { IMPORT_TIMEOUT_SECONDS } from "../../config";
+import { browserFetch } from "../../utils/browserFetch";
+import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
+import { cleanThingiverseMarkdown } from "../../services/descriptionMarkdown";
+import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
 import {
   extractJsonFromBrowserBody,
   fetchViaFlaresolverr,
   isCloudflareChallenge,
   looksLikeCloudflareBlock,
   shouldProxyHost,
-} from "./flaresolverr";
-import { getFlaresolverrUrl } from "./settingsService";
-import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "./trendingModel";
+} from "../../services/flaresolverr";
+import { getFlaresolverrUrl } from "../../services/settingsService";
+import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
 import {
   parseThingiverseCollectionUrl,
   parseThingiverseLikesUrl,
   parseThingiverseThingUrl,
-} from "../providers/_generated/thingiverse/urls";
+} from "../_generated/thingiverse/urls";
 export { parseThingiverseCollectionUrl, parseThingiverseLikesUrl, parseThingiverseThingUrl };
 
 // The official API needs an App Token (not a session cookie). It's still behind Cloudflare

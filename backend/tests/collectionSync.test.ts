@@ -22,7 +22,7 @@ import { releaseSync, reserveSync, runManualSync, syncCollection } from "../src/
 import { SYNC_JOB_INTERRUPTED } from "../src/services/importJobRunner";
 import { isSyncDue, markSchedulerStarted, nextSyncAt } from "../src/services/collectionSyncSchedule";
 import { setThingiverseAccessToken } from "../src/services/settingsService";
-import { checkPrintablesCollection } from "../src/services/printablesApi";
+import { checkPrintablesCollection } from "../src/providers/printables/api";
 import { findOrCreateCollectionByName } from "../src/services/collectionService";
 
 const app = createApp();

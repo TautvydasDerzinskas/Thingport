@@ -12,10 +12,10 @@ const model = (id: string) => ({
 
 type Model = ReturnType<typeof model>;
 
-vi.mock("../src/services/printablesApi", () => ({
+vi.mock("../src/providers/printables/api", () => ({
   fetchPrintablesTrending: vi.fn<() => Promise<Model[]>>(async () => [model("p1")]),
 }));
-vi.mock("../src/services/thingiverseApi", () => ({
+vi.mock("../src/providers/thingiverse/api", () => ({
   fetchThingiversePopular: vi.fn<() => Promise<Model[]>>(async () => [model("t1")]),
 }));
 vi.mock("../src/providers/cults3d/api", () => ({
@@ -32,8 +32,8 @@ vi.mock("../src/providers/cults3d/session", () => ({
 }));
 
 const { getTrending } = await import("../src/services/providerTrendingService");
-const printables = await import("../src/services/printablesApi");
-const thingiverse = await import("../src/services/thingiverseApi");
+const printables = await import("../src/providers/printables/api");
+const thingiverse = await import("../src/providers/thingiverse/api");
 const settings = await import("../src/services/settingsService");
 const cults3d = await import("../src/providers/cults3d/api");
 

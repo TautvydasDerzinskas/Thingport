@@ -21,8 +21,8 @@ import {
   getSmtpSettings,
   getThingiverseAccessToken,
 } from "./settingsService";
-import { checkThingiverseAccessToken } from "./thingiverseApi";
-import { checkMyminifactoryApiKey } from "./myminifactoryApi";
+import { checkThingiverseAccessToken } from "../providers/thingiverse/api";
+import { checkMyminifactoryApiKey } from "../providers/myminifactory/api";
 import { isProviderEnabled } from "./providerSettingsService";
 
 // Administration's System Health: each component Thingport relies on, tested only when an admin asks. Results are

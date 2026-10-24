@@ -76,7 +76,11 @@ import { syncLikesUsername } from "../dto";
 import { MakerworldAuthError, MakerworldCaptchaError, extractMakerworldBearerToken } from "./makerworldCloudApi";
 import { fetchMakerworldCollectionCard, listMakerworldOwnCollections } from "./makerworldCollections";
 import { getUserMakerworldCookie } from "./makerworldCookieService";
-import { fetchPrintablesCollectionCard, listPrintablesUserCollections, resolvePrintablesUser } from "./printablesApi";
+import {
+  fetchPrintablesCollectionCard,
+  listPrintablesUserCollections,
+  resolvePrintablesUser,
+} from "../providers/printables/api";
 import type { ProviderCollectionCard } from "./providerCollectionCard";
 import {
   COLLECTIONS_KEY,
@@ -96,7 +100,7 @@ import {
   MyminifactoryAuthError,
   MyminifactoryRateLimitError,
   resolveMyminifactoryUser,
-} from "./myminifactoryApi";
+} from "../providers/myminifactory/api";
 import {
   fetchThingiverseCollectionCard,
   fetchThingiverseLikesSummary,
@@ -104,7 +108,7 @@ import {
   resolveThingiverseUser,
   ThingiverseAuthError,
   ThingiverseRateLimitError,
-} from "./thingiverseApi";
+} from "../providers/thingiverse/api";
 import { assertProviderEnabled } from "./providerSettingsService";
 import { PROVIDER_IDS, type ProviderId } from "../providers/_generated";
 

@@ -1,14 +1,14 @@
-import { IMPORT_BROWSER_USER_AGENT, IMPORT_HTML_MAX_BYTES, IMPORT_TIMEOUT_SECONDS } from "../config";
-import { HttpError } from "../utils/fileUtils";
-import { type ImportedAuthorInfo, type ImportedPageMetadata } from "./importResolvers";
-import { htmlToMarkdown } from "./descriptionMarkdown";
-import type { ProviderCollectionCard } from "./providerCollectionCard";
-import { asCount, asRecord, asText, recordsOf, type TrendingModel } from "./trendingModel";
+import { IMPORT_BROWSER_USER_AGENT, IMPORT_HTML_MAX_BYTES, IMPORT_TIMEOUT_SECONDS } from "../../config";
+import { HttpError } from "../../utils/fileUtils";
+import { type ImportedAuthorInfo, type ImportedPageMetadata } from "../../services/importResolvers";
+import { htmlToMarkdown } from "../../services/descriptionMarkdown";
+import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
+import { asCount, asRecord, asText, recordsOf, type TrendingModel } from "../../services/trendingModel";
 export {
   parsePrintablesCollectionUrl,
   parsePrintablesLikesUrl,
   parsePrintablesModelUrl,
-} from "../providers/_generated/printables/urls";
+} from "../_generated/printables/urls";
 
 // Unlike Cloudflare-gated www.printables.com, the GraphQL API answers unauthenticated requests.
 const PRINTABLES_GRAPHQL_URL = "https://api.printables.com/graphql/";

@@ -41,15 +41,15 @@ import {
   fetchThingiverseUserLikes,
   parseThingiverseCollectionUrl,
   parseThingiverseLikesUrl,
-} from "../services/thingiverseApi";
-import { fetchPrintablesCollectionEntries, parsePrintablesCollectionUrl } from "../services/printablesApi";
+} from "../providers/thingiverse/api";
+import { fetchPrintablesCollectionEntries, parsePrintablesCollectionUrl } from "../providers/printables/api";
 import { getMyminifactoryApiKey, getThingiverseAccessToken } from "../services/settingsService";
 import {
   fetchMyminifactoryCollectionObjects,
   MyminifactoryAuthError,
   MyminifactoryRateLimitError,
   parseMyminifactoryCollectionUrl,
-} from "../services/myminifactoryApi";
+} from "../providers/myminifactory/api";
 import {
   fetchSnapmakerList,
   parseSnapmakerListUrl,

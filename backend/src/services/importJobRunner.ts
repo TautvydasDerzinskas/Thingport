@@ -46,10 +46,10 @@ import { CULTS3D_CONNECT, getUserCults3dCredentials } from "../providers/cults3d
 import { queueGrabImport } from "./grabImportService";
 import { upsertAuthorFromImport } from "./authorService";
 import { extractZipEntriesToPrints } from "./zipService";
-import { fetchThingiverseCollectionTitle } from "./thingiverseApi";
+import { fetchThingiverseCollectionTitle } from "../providers/thingiverse/api";
 import { getMyminifactoryApiKey, getThingiverseAccessToken } from "./settingsService";
-import { fetchMyminifactoryCollectionObjects } from "./myminifactoryApi";
-import { fetchPrintablesCollectionTitle } from "./printablesApi";
+import { fetchMyminifactoryCollectionObjects } from "../providers/myminifactory/api";
+import { fetchPrintablesCollectionTitle } from "../providers/printables/api";
 import { createLog } from "./auditLog";
 import { MAKERWORLD_REJECTED_ERROR, markMakerworldCookieRejected } from "./makerworldCookieService";
 import { CLOUDFLARE_BLOCKED_CODE } from "./flaresolverr";

@@ -1,23 +1,23 @@
-import { IMPORT_TIMEOUT_SECONDS } from "../config";
-import { browserFetch } from "../utils/browserFetch";
-import type { ImportedAuthorInfo, ImportedPageMetadata } from "./importResolvers";
-import { htmlToMarkdown } from "./descriptionMarkdown";
-import type { ProviderCollectionCard } from "./providerCollectionCard";
+import { IMPORT_TIMEOUT_SECONDS } from "../../config";
+import { browserFetch } from "../../utils/browserFetch";
+import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
+import { htmlToMarkdown } from "../../services/descriptionMarkdown";
+import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
 import {
   extractJsonFromBrowserBody,
   fetchViaFlaresolverr,
   isCloudflareChallenge,
   looksLikeCloudflareBlock,
-} from "./flaresolverr";
-import { getFlaresolverrUrl } from "./settingsService";
-import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "./trendingModel";
+} from "../../services/flaresolverr";
+import { getFlaresolverrUrl } from "../../services/settingsService";
+import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
 import {
   myminifactoryCollectionKey,
   myminifactoryCollectionUrl,
   parseMyminifactoryCollectionUrl,
   parseMyminifactoryObjectUrl,
   urls,
-} from "../providers/_generated/myminifactory/urls";
+} from "../_generated/myminifactory/urls";
 export {
   myminifactoryCollectionKey,
   myminifactoryCollectionUrl,

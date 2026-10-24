@@ -6,16 +6,19 @@ import { MANIFESTS, PROVIDER_IDS, type ProviderId, type ProviderManifest } from 
 import { crealitycloudImport } from "./crealitycloud";
 import { cults3dImport } from "./cults3d";
 import { makeronlineImport } from "./makeronline";
+import { myminifactoryImport } from "./myminifactory";
 import { nexprintImport } from "./nexprint";
+import { printablesImport } from "./printables";
 import { snapmakerImport } from "./snapmaker";
 import { thangsImport } from "./thangs";
+import { thingiverseImport } from "./thingiverse";
 import type { CustomImport, SourcedImport } from "./types";
 
 export type ProviderBackend = {
   /** Why a batch import stopped when the provider turned the user's sign-in down, read after "failed because". */
   authStopText: string;
-  /** How its models import, for a provider moved onto the shared pipeline; the others still have their own path in
-   *  importService.ts until they move too (docs/rfc/provider-modules.md, Phase 3). */
+  /** How its models import on the shared pipeline. MakerWorld, with neither, still has its own path in
+   *  importService.ts (docs/rfc/provider-modules.md, Phase 3.5). */
   sourcedImport?: SourcedImport<any, any>;
   /** How its models import, for a provider that doesn't go the shared way. */
   customImport?: CustomImport;
@@ -28,14 +31,17 @@ export const PROVIDERS = {
   printables: {
     // Printables has no sign-in; its imports never stop for one.
     authStopText: "Printables turned the request down — wait a while, then retry",
+    sourcedImport: printablesImport,
   },
   thingiverse: {
     authStopText:
       "Thingiverse turned the instance's App Token down — an admin can check it in Administration, then retry",
+    sourcedImport: thingiverseImport,
   },
   myminifactory: {
     authStopText:
       "MyMiniFactory turned your sign-in down — visit myminifactory.com signed in with Thingport Grab, then retry",
+    sourcedImport: myminifactoryImport,
   },
   snapmaker: {
     authStopText: "your Snapmaker sign-in ran out — visit space.snapmaker.com with Thingport Grab, then retry",

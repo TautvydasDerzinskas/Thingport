@@ -26,7 +26,7 @@ import {
 import { hostIs, validateRemoteUrl } from "../utils/urlUtils";
 import { readCapped } from "../utils/readCapped";
 import { browserFetch, needsBrowserFetch } from "../utils/browserFetch";
-import { mapWithConcurrency, maybeSleep, sleep } from "../utils/concurrency";
+import { maybeSleep, sleep } from "../utils/concurrency";
 import {
   CLOUDFLARE_BLOCKED_CODE,
   fetchViaFlaresolverr,
@@ -64,24 +64,6 @@ import {
   fetchMakerworldDesign,
 } from "./makerworldCloudApi";
 import { openSourceGaps, type SourceGap } from "./sourceGaps";
-import {
-  resolveThingiverseThing,
-  ThingiverseAuthError,
-  ThingiverseRateLimitError,
-  type ThingiversePlateFile,
-} from "./thingiverseApi";
-import { resolvePrintablesDownloadLinks, resolvePrintablesModel, type PrintablesPlateFile } from "./printablesApi";
-import {
-  isMyminifactoryFileHost,
-  listMyminifactoryLibraryFiles,
-  MyminifactoryAuthError,
-  MyminifactoryRateLimitError,
-  MyminifactorySessionExpiredError,
-  resolveMyminifactoryDownload,
-  resolveMyminifactoryLibraryDownload,
-  resolveMyminifactoryObject,
-} from "./myminifactoryApi";
-import { getUserMyminifactoryCookie, markMyminifactoryCookieRejected } from "./myminifactorySessionService";
 import { clearGrabImports } from "./grabImportService";
 import { isCrealitycloudModelId, resolveCrealitycloudModel } from "../providers/crealitycloud/api";
 
@@ -102,7 +84,6 @@ export const THANGS_DOWNLOAD_LIMIT_CODE = MANIFESTS.thangs.errorCodes.downloadLi
 export const CULTS3D_SESSION_CODE = MANIFESTS.cults3d.errorCodes.session;
 import { listZipEntries, readZipEntry } from "../utils/zipReader";
 import { enqueueAiDescription } from "./aiDescriptionService";
-import { getMyminifactoryApiKey, getThingiverseAccessToken } from "./settingsService";
 import { upsertAuthorFromImport } from "./authorService";
 import {
   addPlatesToPrint,
@@ -1024,9 +1005,6 @@ export const MULTI_FILE_PLATE_EXTS = new Set([...IMPORT_ALLOWED_EXTS].filter((ex
 
 export type PlainDownloadResult = { input: NewPlateInput } | { rateLimited: true } | null;
 
-// Thingiverse's CDN challenges request bursts; parallel downloads trip it more often.
-const THINGIVERSE_DOWNLOAD_CONCURRENCY = 2;
-
 /** A 429, or a 403 Cloudflare challenge (which FlareSolverr can't solve for a binary download). */
 function isDownloadBlocked(res: Response): boolean {
   return res.status === 429 || (res.status === 403 && isCloudflareChallenge(res.headers));
@@ -1063,213 +1041,6 @@ export async function downloadPlainFileToTemp(url: string, suggestedName: string
   }
 }
 
-/** Every model file bundled with the Thing becomes its own Plate on one Print. */
-async function importThingiverseThing(
-  userId: string,
-  source: { provider: string; externalId: string },
-  body: ImportRequestBody,
-): Promise<{
-  print: Print;
-  plates: Plate[];
-  author: Author | null;
-  previewImages: PreviewImage[];
-  alreadyImported: boolean;
-}> {
-  const accessToken = await getThingiverseAccessToken();
-  if (!accessToken) {
-    throw new HttpError(
-      503,
-      "Thingiverse import isn't configured for this instance yet -- ask an admin to add an App Token in Administration > Providers.",
-    );
-  }
-
-  let resolved;
-  try {
-    resolved = await resolveThingiverseThing(source.externalId, accessToken);
-  } catch (err) {
-    if (err instanceof ThingiverseRateLimitError) throw new HttpError(429, err.message);
-    // 400, not 401: see tryMakerworldCloudApi.
-    if (err instanceof ThingiverseAuthError) throw new HttpError(400, err.message);
-    throw err;
-  }
-  if (!resolved) {
-    throw new HttpError(
-      404,
-      "This Thingiverse Thing could not be found, or isn't accessible with the configured App Token.",
-    );
-  }
-  const { meta, plateFiles, galleryImages } = resolved;
-
-  const author = await upsertAuthorFromImport(meta.author ?? null);
-  const categoryId =
-    body.category_id ??
-    (await resolveCategoryIdByCategory(userId, meta.categorySite ?? null, meta.siteCategoryIds ?? []));
-  const printMeta: PrintMetaInput = {
-    title: body.title ?? meta.title ?? null,
-    notes: body.notes ?? meta.description ?? null,
-    tags: body.tags && body.tags.length ? body.tags : (meta.tags ?? []),
-    categoryId,
-    categorySource: body.category_id ? "MANUAL" : categoryId ? "RULE" : null,
-    creator: meta.creator ?? null,
-    authorId: author?.id ?? null,
-    sourceProvider: source.provider,
-    sourceExternalId: source.externalId,
-  };
-
-  const modelFiles = plateFiles.filter((f: ThingiversePlateFile) =>
-    MULTI_FILE_PLATE_EXTS.has(path.extname(f.name).toLowerCase()),
-  );
-  const downloadResults = await mapWithConcurrency(
-    modelFiles,
-    THINGIVERSE_DOWNLOAD_CONCURRENCY,
-    (f: ThingiversePlateFile) => downloadPlainFileToTemp(f.url, f.name),
-  );
-  const downloaded = downloadResults
-    .filter((result): result is { input: NewPlateInput } => result !== null && "input" in result)
-    .map((result) => result.input);
-  if (!downloaded.length) {
-    const wasRateLimited = downloadResults.some((result) => result !== null && "rateLimited" in result);
-    if (wasRateLimited) {
-      throw new HttpError(
-        429,
-        "Thingiverse blocked a file download with a rate-limit challenge (Cloudflare). This usually clears after a while -- wait, then retry the same import.",
-      );
-    }
-    throw new HttpError(400, "None of this Thing's files could be downloaded.");
-  }
-
-  try {
-    let result: { print: Print; plates: Plate[] };
-    try {
-      result = await createPrint(userId, printMeta, meta.title || `thing-${source.externalId}`, downloaded, IMPORTED);
-    } catch (err) {
-      // Race guard: a concurrent import of the same source model won.
-      if (isUniqueConstraintError(err)) {
-        const existing = await findExistingImportedPrint(userId, source);
-        if (existing) return { ...existing, alreadyImported: true };
-      }
-      throw err;
-    }
-    const gallery = galleryImages.map((img) => ({ url: img.url, filename: img.name }));
-    await attachImportedPreviewImages(result.print.id, result.plates[0]?.id, meta.previewImageUrl ?? null, gallery);
-    await localizeDescriptionImages(result.print.id);
-    const previewImages = await prisma.previewImage.findMany({
-      where: { printId: result.print.id },
-      orderBy: { position: "asc" },
-    });
-    return { ...result, author, previewImages, alreadyImported: false };
-  } finally {
-    for (const input of downloaded) {
-      if (input.tempFilePath && fsSync.existsSync(input.tempFilePath)) {
-        await fs.rm(input.tempFilePath, { force: true }).catch(() => undefined);
-      }
-    }
-  }
-}
-
-async function importPrintablesModel(
-  userId: string,
-  source: { provider: string; externalId: string },
-  body: ImportRequestBody,
-): Promise<{
-  print: Print;
-  plates: Plate[];
-  author: Author | null;
-  previewImages: PreviewImage[];
-  alreadyImported: boolean;
-}> {
-  const resolved = await resolvePrintablesModel(source.externalId);
-  if (!resolved) {
-    throw new HttpError(404, "This Printables model could not be found, or isn't public.");
-  }
-  const { meta, plateFiles, galleryImages } = resolved;
-
-  const modelFiles = plateFiles.filter((f: PrintablesPlateFile) =>
-    MULTI_FILE_PLATE_EXTS.has(path.extname(f.name).toLowerCase()),
-  );
-  if (!modelFiles.length) {
-    throw new HttpError(
-      400,
-      "This Printables model has no downloadable model files (only sliced/print-ready files, if any).",
-    );
-  }
-  const downloadLinks = await resolvePrintablesDownloadLinks(
-    source.externalId,
-    modelFiles.map((f) => f.id),
-  );
-  const downloadResults = await Promise.all(
-    modelFiles
-      .map((f) => ({ file: f, link: downloadLinks.get(f.id) }))
-      .filter((entry): entry is { file: PrintablesPlateFile; link: string } => Boolean(entry.link))
-      .map((entry) => downloadPlainFileToTemp(entry.link, entry.file.name)),
-  );
-  const downloaded = downloadResults
-    .filter((result): result is { input: NewPlateInput } => result !== null && "input" in result)
-    .map((result) => result.input);
-  if (!downloaded.length) {
-    if (downloadResults.some((result) => result !== null && "rateLimited" in result)) {
-      throw new HttpError(
-        429,
-        "Printables blocked a file download (rate limit or Cloudflare challenge). This usually clears after a while -- wait, then retry the same import.",
-      );
-    }
-    throw new HttpError(400, "None of this model's files could be downloaded.");
-  }
-
-  const author = await upsertAuthorFromImport(meta.author ?? null);
-  const categoryId =
-    body.category_id ??
-    (await resolveCategoryIdByCategory(userId, meta.categorySite ?? null, meta.siteCategoryIds ?? []));
-  const printMeta: PrintMetaInput = {
-    title: body.title ?? meta.title ?? null,
-    notes: body.notes ?? meta.description ?? null,
-    tags: body.tags && body.tags.length ? body.tags : (meta.tags ?? []),
-    categoryId,
-    categorySource: body.category_id ? "MANUAL" : categoryId ? "RULE" : null,
-    creator: meta.creator ?? null,
-    authorId: author?.id ?? null,
-    sourceProvider: source.provider,
-    sourceExternalId: source.externalId,
-  };
-
-  try {
-    let result: { print: Print; plates: Plate[] };
-    try {
-      result = await createPrint(
-        userId,
-        printMeta,
-        meta.title || `printables-${source.externalId}`,
-        downloaded,
-        IMPORTED,
-      );
-    } catch (err) {
-      // Race guard: a concurrent import of the same source model won.
-      if (isUniqueConstraintError(err)) {
-        const existing = await findExistingImportedPrint(userId, source);
-        if (existing) return { ...existing, alreadyImported: true };
-      }
-      throw err;
-    }
-    const gallery = galleryImages.map((img) => ({ url: img.url, filename: img.name }));
-    await attachImportedPreviewImages(result.print.id, result.plates[0]?.id, meta.previewImageUrl ?? null, gallery);
-    await localizeDescriptionImages(result.print.id);
-    const previewImages = await prisma.previewImage.findMany({
-      where: { printId: result.print.id },
-      orderBy: { position: "asc" },
-    });
-    return { ...result, author, previewImages, alreadyImported: false };
-  } finally {
-    for (const input of downloaded) {
-      if (input.tempFilePath && fsSync.existsSync(input.tempFilePath)) {
-        await fs.rm(input.tempFilePath, { force: true }).catch(() => undefined);
-      }
-    }
-  }
-}
-
-const MYMINIFACTORY_NOT_CONFIGURED =
-  "MyMiniFactory import isn't configured for this instance yet -- ask an admin to add an API key in Administration > Providers.";
-
 /** The model files in a downloaded zip, each as its own plate; the zip itself is left for the caller. Plates have no
  *  folders, so files named alike in different folders are named after their folder too: "2x2 - Top.stl". */
 async function modelFilesFromZip(zipPath: string): Promise<NewPlateInput[]> {
@@ -1299,182 +1070,6 @@ async function modelFilesFromZip(zipPath: string): Promise<NewPlateInput[]> {
     throw err;
   }
   return inputs;
-}
-
-const MYMINIFACTORY_BLOCKED =
-  "MyMiniFactory blocked the file download (rate limit or Cloudflare challenge). This usually clears after a while -- wait, then retry the same import.";
-
-/** One signed MyMiniFactory download, unpacked into model files when it's a zip. */
-async function downloadMyminifactoryFile(url: string, suggestedName?: string): Promise<NewPlateInput[]> {
-  const fileUrl = new URL(url);
-  if (!isMyminifactoryFileHost(fileUrl.hostname)) return [];
-  const name = suggestedName ?? decodeURIComponent(fileUrl.pathname.split("/").pop() || "myminifactory-file");
-  const result = await downloadPlainFileToTemp(url, name);
-  if (result && "rateLimited" in result) throw new HttpError(429, MYMINIFACTORY_BLOCKED);
-  if (!result) return [];
-  const ext = path.extname(result.input.filename).toLowerCase();
-  if (ext === ".zip") {
-    try {
-      return await modelFilesFromZip(result.input.tempFilePath!);
-    } finally {
-      await fs.rm(result.input.tempFilePath!, { force: true }).catch(() => undefined);
-    }
-  }
-  if (MULTI_FILE_PLATE_EXTS.has(ext)) return [result.input];
-  await fs.rm(result.input.tempFilePath!, { force: true }).catch(() => undefined);
-  return [];
-}
-
-const MYMINIFACTORY_CONNECT =
-  "Connect your MyMiniFactory account in Configuration > Providers (or visit myminifactory.com with Thingport Grab), then import it again.";
-
-/** As the user, from their MyMiniFactory library: what Thingport can't download anonymously. */
-async function downloadMyminifactoryFromLibrary(
-  userId: string,
-  objectId: string,
-  paid: boolean,
-): Promise<NewPlateInput[]> {
-  const cookie = await getUserMyminifactoryCookie(userId);
-  if (!cookie) {
-    throw new HttpError(
-      403,
-      paid
-        ? `This is a paid MyMiniFactory model, so it downloads only from the account that bought it. ${MYMINIFACTORY_CONNECT}`
-        : `This MyMiniFactory model downloads only when signed in. ${MYMINIFACTORY_CONNECT}`,
-    );
-  }
-  const isModel = (name: string) =>
-    MULTI_FILE_PLATE_EXTS.has(path.extname(name).toLowerCase()) || path.extname(name).toLowerCase() === ".zip";
-  const downloaded: NewPlateInput[] = [];
-  try {
-    const files = await listMyminifactoryLibraryFiles(objectId, cookie, isModel);
-    if (!files) {
-      throw new HttpError(
-        403,
-        paid
-          ? "This paid MyMiniFactory model isn't in your library: buy it on MyMiniFactory first, with the account connected to Thingport."
-          : "MyMiniFactory doesn't let your account download this model.",
-      );
-    }
-    for (const file of files) {
-      await maybeSleep(MYMINIFACTORY_FILE_DELAY_MS);
-      const url = await resolveMyminifactoryLibraryDownload(file.path, cookie);
-      if (url) downloaded.push(...(await downloadMyminifactoryFile(url, file.name)));
-    }
-    if (!downloaded.length && files.length) {
-      throw new HttpError(
-        400,
-        files.every((file) => !isModel(file.name))
-          ? "This model's files are in an archive Thingport can't open (such as RAR), and MyMiniFactory hasn't unpacked it."
-          : "Couldn't download this model's files from your MyMiniFactory library. Try again later.",
-      );
-    }
-    return downloaded;
-  } catch (err) {
-    await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
-    if (err instanceof MyminifactorySessionExpiredError) {
-      await markMyminifactoryCookieRejected(userId);
-      throw new HttpError(400, err.message, MYMINIFACTORY_SESSION_CODE);
-    }
-    throw err;
-  }
-}
-
-/** Every model file is its own request; spaced out a little, as the site's own pages would be. */
-const MYMINIFACTORY_FILE_DELAY_MS = 500;
-
-/** Metadata from the API (the instance's key). Files from /download when anyone may have them: one file, or a zip
- *  whose model files each become a plate; else, paid and login-only ones, from the user's own library. */
-async function importMyminifactoryObject(
-  userId: string,
-  source: { provider: string; externalId: string },
-  body: ImportRequestBody,
-): Promise<{
-  print: Print;
-  plates: Plate[];
-  author: Author | null;
-  previewImages: PreviewImage[];
-  alreadyImported: boolean;
-}> {
-  const apiKey = await getMyminifactoryApiKey();
-  if (!apiKey) throw new HttpError(503, MYMINIFACTORY_NOT_CONFIGURED);
-
-  let resolved;
-  let downloaded: NewPlateInput[];
-  try {
-    resolved = await resolveMyminifactoryObject(source.externalId, apiKey);
-    if (!resolved) throw new HttpError(404, "This MyMiniFactory object could not be found, or isn't public.");
-    // Paid models, and free ones whose files are archives, only download as the user, from their library.
-    const anonymous = resolved.paid || resolved.archives ? null : await resolveMyminifactoryDownload(source.externalId);
-    if (anonymous?.kind === "missing") {
-      throw new HttpError(404, "This MyMiniFactory object could not be found, or isn't public.");
-    }
-    downloaded =
-      anonymous?.kind === "file"
-        ? await downloadMyminifactoryFile(anonymous.url)
-        : await downloadMyminifactoryFromLibrary(userId, source.externalId, resolved.paid);
-  } catch (err) {
-    if (err instanceof MyminifactoryRateLimitError) throw new HttpError(429, err.message);
-    // 400, not 401: see tryMakerworldCloudApi.
-    if (err instanceof MyminifactoryAuthError) throw new HttpError(400, err.message);
-    throw err;
-  }
-  const { meta, galleryImages } = resolved;
-  if (!downloaded.length)
-    throw new HttpError(400, "This MyMiniFactory object has no model files Thingport can import.");
-
-  try {
-    const author = await upsertAuthorFromImport(meta.author ?? null);
-    const categoryId =
-      body.category_id ??
-      (await resolveCategoryIdByCategory(userId, meta.categorySite ?? null, meta.siteCategoryIds ?? []));
-    const printMeta: PrintMetaInput = {
-      title: body.title ?? meta.title ?? null,
-      notes: body.notes ?? meta.description ?? null,
-      tags: body.tags && body.tags.length ? body.tags : (meta.tags ?? []),
-      categoryId,
-      categorySource: body.category_id ? "MANUAL" : categoryId ? "RULE" : null,
-      creator: meta.creator ?? null,
-      authorId: author?.id ?? null,
-      sourceProvider: source.provider,
-      sourceExternalId: source.externalId,
-    };
-    let created: { print: Print; plates: Plate[] };
-    try {
-      created = await createPrint(
-        userId,
-        printMeta,
-        meta.title || `myminifactory-${source.externalId}`,
-        downloaded,
-        IMPORTED,
-      );
-    } catch (err) {
-      // Race guard: a concurrent import of the same source model won.
-      if (isUniqueConstraintError(err)) {
-        const existing = await findExistingImportedPrint(userId, source);
-        if (existing) return { ...existing, alreadyImported: true };
-      }
-      throw err;
-    }
-    await attachImportedPreviewImages(
-      created.print.id,
-      created.plates[0]?.id,
-      meta.previewImageUrl ?? null,
-      galleryImages,
-    );
-    await localizeDescriptionImages(created.print.id);
-    const previewImages = await prisma.previewImage.findMany({
-      where: { printId: created.print.id },
-      orderBy: { position: "asc" },
-    });
-    return { ...created, author, previewImages, alreadyImported: false };
-  } finally {
-    for (const input of downloaded) {
-      if (input.tempFilePath && fsSync.existsSync(input.tempFilePath)) {
-        await fs.rm(input.tempFilePath, { force: true }).catch(() => undefined);
-      }
-    }
-  }
 }
 
 /** A provider's signed file link, on one of its own hosts; a zip is unpacked into its model files. Null when it
@@ -1576,6 +1171,8 @@ async function createSourcedPrint(
 
 const IMPORT_KIT: PipelineKit = {
   downloadSignedFile,
+  downloadFile: downloadPlainFileToTemp,
+  isModelFile: (name) => MULTI_FILE_PLATE_EXTS.has(path.extname(name).toLowerCase()),
   createPrint: (userId, source, body, resolved, downloaded, details) =>
     createSourcedPrint(userId, source, body, resolved, downloaded, `${source.provider}-${source.externalId}`, details),
   async addProfiles(existing, inputs, details) {
@@ -1642,7 +1239,7 @@ async function importSourced(
     body,
     resolved,
     downloaded,
-    `${source.provider}-${source.externalId}`,
+    impl.nameHint?.(source.externalId) ?? `${source.provider}-${source.externalId}`,
     profileDetailsOf(resolved.profiles ?? [], { names: impl.profiles?.namedAlike ?? true }),
   );
 }
@@ -1737,16 +1334,6 @@ async function importNewOrExisting(userId: string, url: string, body: ImportRequ
   if (existing && custom) return custom.addToExisting(existing, body, IMPORT_KIT);
   if (custom) return custom.importModel(userId, source!, body, IMPORT_KIT);
   if (existing) return addMakerworldProfileToPrint(existing, url, body);
-
-  if (source?.provider === "thingiverse") {
-    return importThingiverseThing(userId, source, body);
-  }
-  if (source?.provider === "printables") {
-    return importPrintablesModel(userId, source, body);
-  }
-  if (source?.provider === "myminifactory") {
-    return importMyminifactoryObject(userId, source, body);
-  }
 
   const { tempPath, filename, mime, meta } = await downloadImportToTemp(url, body);
   let plates: NewPlateInput[] = [];

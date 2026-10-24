@@ -5,7 +5,7 @@ import {
   fetchThingiverseCollectionThings,
   fetchThingiverseCollectionTitle,
   parseThingiverseCollectionUrl,
-} from "../src/services/thingiverseApi";
+} from "../src/providers/thingiverse/api";
 import { setThingiverseAccessToken } from "../src/services/settingsService";
 import { prisma } from "../src/db";
 

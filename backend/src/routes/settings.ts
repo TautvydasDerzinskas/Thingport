@@ -68,13 +68,13 @@ import {
 } from "../services/printService";
 import { getMakerworldConnection, setUserMakerworldCookie } from "../services/makerworldCookieService";
 import { type MakerworldCookieCheck, verifyMakerworldCookie } from "../services/makerworldCloudApi";
-import { verifyThingiverseAccessToken } from "../services/thingiverseApi";
-import { checkMyminifactoryApiKey, checkMyminifactorySession } from "../services/myminifactoryApi";
+import { verifyThingiverseAccessToken } from "../providers/thingiverse/api";
+import { checkMyminifactoryApiKey, checkMyminifactorySession } from "../providers/myminifactory/api";
 import {
   getMyminifactoryConnection,
   normalizeMyminifactoryCookie,
   setUserMyminifactoryCookie,
-} from "../services/myminifactorySessionService";
+} from "../providers/myminifactory/session";
 import { checkSnapmakerToken } from "../providers/snapmaker/api";
 import { getSnapmakerConnection, normalizeSnapmakerToken, setUserSnapmakerToken } from "../providers/snapmaker/session";
 import { checkMakeronlineToken } from "../providers/makeronline/api";

@@ -1,4 +1,4 @@
-import { prisma } from "../db";
+import { prisma } from "../../db";
 
 // Per-user, beside the instance-wide API key: the user's MyMiniFactory session downloads the paid and login-only
 // models in their library, which the API key can't.
