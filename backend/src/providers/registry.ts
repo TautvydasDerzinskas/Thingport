@@ -32,10 +32,21 @@ import { crealitycloudSync } from "./crealitycloud/sync";
 import { nexprintSync } from "./nexprint/sync";
 import { thangsSync } from "./thangs/sync";
 import { cults3dSync } from "./cults3d/sync";
+import { makerworldBrowse } from "./makerworld/browse";
+import { printablesBrowse } from "./printables/browse";
+import { thingiverseBrowse } from "./thingiverse/browse";
+import { myminifactoryBrowse } from "./myminifactory/browse";
+import { snapmakerBrowse } from "./snapmaker/browse";
+import { makeronlineBrowse } from "./makeronline/browse";
+import { crealitycloudBrowse } from "./crealitycloud/browse";
+import { nexprintBrowse } from "./nexprint/browse";
+import { thangsBrowse } from "./thangs/browse";
+import { cults3dBrowse } from "./cults3d/browse";
 import type { AuthSlot } from "./_generated";
 import type {
   ConnectionSlot,
   CustomImport,
+  ProviderBrowse,
   ProviderLists,
   ProviderSync,
   ProviderTrending,
@@ -56,17 +67,21 @@ export type ProviderBackend = {
   lists?: ProviderLists;
   /** How they're checked once synced. */
   sync?: ProviderSync;
+  /** How the sync dialog's Browse tab finds them. */
+  browse?: ProviderBrowse;
   /** Its list for the dashboard's trending panel, where its manifest says it has one. */
   trending?: ProviderTrending;
 };
 
 type Manifests = typeof MANIFESTS;
+/** What a provider with collections or likes has for them. */
+type Listed = { lists: ProviderLists; sync: ProviderSync; browse: ProviderBrowse };
 type Capabilities<K extends ProviderId> = Manifests[K]["capabilities"];
 /** A provider's entry: its connections, lists and trending list are required where its manifest declares them. */
 type Entry<K extends ProviderId> = ProviderBackend & {
   connection: { [S in Manifests[K]["auth"][number]["slot"]]: ConnectionSlot };
-} & (Capabilities<K>["collections"] extends true ? { lists: ProviderLists; sync: ProviderSync } : unknown) &
-  (Capabilities<K>["likes"] extends true ? { lists: ProviderLists; sync: ProviderSync } : unknown) &
+} & (Capabilities<K>["collections"] extends true ? Listed : unknown) &
+  (Capabilities<K>["likes"] extends true ? Listed : unknown) &
   (Capabilities<K>["trending"] extends false ? unknown : { trending: ProviderTrending });
 
 export const PROVIDERS = {
@@ -75,6 +90,7 @@ export const PROVIDERS = {
     authStopText: "the MakerWorld session expired — update the cookie in Settings, then retry",
     lists: makerworldLists,
     sync: makerworldSync,
+    browse: makerworldBrowse,
     trending: makerworldTrending,
   },
   printables: {
@@ -84,6 +100,7 @@ export const PROVIDERS = {
     sourcedImport: printablesImport,
     lists: printablesLists,
     sync: printablesSync,
+    browse: printablesBrowse,
     trending: printablesTrending,
   },
   thingiverse: {
@@ -93,6 +110,7 @@ export const PROVIDERS = {
     sourcedImport: thingiverseImport,
     lists: thingiverseLists,
     sync: thingiverseSync,
+    browse: thingiverseBrowse,
     trending: thingiverseTrending,
   },
   myminifactory: {
@@ -102,6 +120,7 @@ export const PROVIDERS = {
     sourcedImport: myminifactoryImport,
     lists: myminifactoryLists,
     sync: myminifactorySync,
+    browse: myminifactoryBrowse,
     trending: myminifactoryTrending,
   },
   snapmaker: {
@@ -110,6 +129,7 @@ export const PROVIDERS = {
     sourcedImport: snapmakerImport,
     lists: snapmakerLists,
     sync: snapmakerSync,
+    browse: snapmakerBrowse,
     trending: snapmakerTrending,
   },
   makeronline: {
@@ -119,6 +139,7 @@ export const PROVIDERS = {
     customImport: makeronlineImport,
     lists: makeronlineLists,
     sync: makeronlineSync,
+    browse: makeronlineBrowse,
     trending: makeronlineTrending,
   },
   crealitycloud: {
@@ -128,6 +149,7 @@ export const PROVIDERS = {
     sourcedImport: crealitycloudImport,
     lists: crealitycloudLists,
     sync: crealitycloudSync,
+    browse: crealitycloudBrowse,
     trending: crealitycloudTrending,
   },
   nexprint: {
@@ -136,6 +158,7 @@ export const PROVIDERS = {
     sourcedImport: nexprintImport,
     lists: nexprintLists,
     sync: nexprintSync,
+    browse: nexprintBrowse,
     trending: nexprintTrending,
   },
   thangs: {
@@ -144,6 +167,7 @@ export const PROVIDERS = {
     sourcedImport: thangsImport,
     lists: thangsLists,
     sync: thangsSync,
+    browse: thangsBrowse,
     trending: thangsTrending,
   },
   cults3d: {
@@ -154,6 +178,7 @@ export const PROVIDERS = {
     sourcedImport: cults3dImport,
     lists: cults3dLists,
     sync: cults3dSync,
+    browse: cults3dBrowse,
     trending: cults3dTrending,
   },
 } satisfies { [K in ProviderId]: Entry<K> } as { readonly [K in ProviderId]: ProviderBackend };

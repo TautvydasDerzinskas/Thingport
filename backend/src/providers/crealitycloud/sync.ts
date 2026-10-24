@@ -56,7 +56,7 @@ export const crealitycloudSync: ProviderSync = {
   // Only the likes are read with the sign-in, so only they wait for a new one.
   rejected: {
     is: (err) => err instanceof CrealitycloudAuthError,
-    mark: markCrealitycloudSessionRejected,
+    mark: (userId) => markCrealitycloudSessionRejected(userId),
     problem: EXPIRED,
     onlyThis: true,
   },

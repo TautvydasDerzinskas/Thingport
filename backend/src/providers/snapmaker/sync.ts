@@ -32,7 +32,11 @@ export const snapmakerSync: ProviderSync = {
     const connection = await getSnapmakerConnection(sync.userId);
     return connection === "disconnected" ? DISCONNECTED : connection === "expired" ? EXPIRED : null;
   },
-  rejected: { is: (err) => err instanceof SnapmakerAuthError, mark: markSnapmakerTokenRejected, problem: EXPIRED },
+  rejected: {
+    is: (err) => err instanceof SnapmakerAuthError,
+    mark: (userId) => markSnapmakerTokenRejected(userId),
+    problem: EXPIRED,
+  },
   problems: [DISCONNECTED, EXPIRED],
   // Snapmaker shows likes and bookmarks to their owner only, and a sync reads them with the user's own sign-in: one
   // of someone else's would be fed the user's own under the other's name.

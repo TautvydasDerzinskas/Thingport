@@ -34,6 +34,12 @@ export const makerworldSync: ProviderSync = {
     const connection = await getMakerworldConnection(sync.userId);
     return connection === "disconnected" ? DISCONNECTED : connection === "expired" ? EXPIRED : null;
   },
-  rejected: { is: (err) => err instanceof MakerworldAuthError, mark: markMakerworldCookieRejected, problem: EXPIRED },
+  rejected: {
+    is: (err) => err instanceof MakerworldAuthError,
+    mark: (userId) => markMakerworldCookieRejected(userId),
+    problem: EXPIRED,
+  },
   problems: [DISCONNECTED, EXPIRED],
+  // It rate-limits bulk imports hard.
+  followsNewOnly: true,
 };

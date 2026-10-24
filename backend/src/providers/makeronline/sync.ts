@@ -41,7 +41,11 @@ export const makeronlineSync: ProviderSync = {
     return connection === "disconnected" ? LIKES_DISCONNECTED : connection === "expired" ? EXPIRED : null;
   },
   signInOnly,
-  rejected: { is: (err) => err instanceof MakeronlineAuthError, mark: markMakeronlineTokenRejected, problem: EXPIRED },
+  rejected: {
+    is: (err) => err instanceof MakeronlineAuthError,
+    mark: (userId) => markMakeronlineTokenRejected(userId),
+    problem: EXPIRED,
+  },
   problems: [LIKES_DISCONNECTED, EXPIRED],
   // Its likes page names no user, so a sync reads whoever's token Thingport has: there has to be one.
   async assertCanSync(userId, source) {

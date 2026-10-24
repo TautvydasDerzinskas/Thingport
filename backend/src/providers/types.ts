@@ -14,7 +14,9 @@ import type {
 } from "../services/importService";
 import type { NewPlateInput } from "../services/printCreation";
 import type { TrendingSetup } from "../services/providerTrendingService";
+import type { ProviderCollectionCard } from "../services/providerCollectionCard";
 import type { TrendingModel } from "../services/trendingModel";
+import type { HttpError } from "../utils/fileUtils";
 import type { ProviderId } from "./_generated";
 import type { SyncProblem } from "./syncProblem";
 
@@ -195,9 +197,34 @@ export type ProviderSync = {
   /** The 400 for a list the user can't sync: someone else's that only its owner sees, or one read with a sign-in
    *  they haven't given. */
   assertCanSync?(userId: string, source: SyncSource): Promise<void>;
+  /** Turned on from the app, only models added from now on come in, not what the list holds already. */
+  followsNewOnly?: true;
+  /** Whether the list's models wait for Thingport Grab to read them (a private Printables collection, until the
+   *  user's next visit there). */
+  waitingForGrab?(userId: string, externalId: string): Promise<boolean>;
   /** The name of the collection a list is synced into, where the list's own says nothing (the user's likes or
    *  bookmarks); null for one named by its title. Someone's likes are named after them without it. */
   listName?(source: SyncSource): string | null;
+};
+
+/** Who the user is on the provider, for the sync dialog's Browse tab. `connected`: the instance can reach it for
+ *  them at all. `account`: who they are there, where they said so rather than its sign-in. */
+export type ProviderAccount = { connected: boolean; account: string | null };
+
+/** The sync dialog's Browse tab (services/providerCollectionsService.ts). Errors the user can act on are mapped to
+ *  HTTP ones by `httpError`. */
+export type ProviderBrowse = {
+  account(userId: string): Promise<ProviderAccount>;
+  /** Saves who the user is there, from a username, handle or profile link; null forgets it. */
+  setAccount?(userId: string, value: string | null): Promise<void>;
+  /** What says who the user is instead, for a provider without `setAccount`. */
+  linkedThrough?: "sign-in" | "API key" | "cookie";
+  /** The user's lists, to sync with. Throws the 409 that says what to connect or give first. */
+  cards(userId: string): Promise<ProviderCollectionCard[]>;
+  /** A pasted list link, as the same card; null when it can't be found. */
+  card(userId: string, source: SyncSource): Promise<ProviderCollectionCard | null>;
+  /** One of its errors the user can act on, as the HTTP error to answer with; undefined for any other. */
+  httpError?(err: unknown): HttpError | undefined;
 };
 
 /** The list for the dashboard's trending panel (the manifest's capabilities.trending says which it is). */

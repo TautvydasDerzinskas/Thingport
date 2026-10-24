@@ -47,7 +47,11 @@ export const cults3dSync: ProviderSync = {
     if (site === "expired") return SITE_EXPIRED;
     return null;
   },
-  rejected: { is: (err) => err instanceof Cults3dAuthError, mark: markCults3dApiRejected, problem: API_EXPIRED },
+  rejected: {
+    is: (err) => err instanceof Cults3dAuthError,
+    mark: (userId) => markCults3dApiRejected(userId),
+    problem: API_EXPIRED,
+  },
   problems: [API_DISCONNECTED, API_EXPIRED, SITE_DISCONNECTED, SITE_EXPIRED],
   // Its listings are read with the user's API key, which shows no one's printlists but their own.
   async assertCanSync(userId, source) {

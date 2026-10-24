@@ -48,7 +48,11 @@ export const thangsSync: ProviderSync = {
     const connection = await getThangsConnection(sync.userId);
     return connection === "disconnected" ? DISCONNECTED : connection === "expired" ? EXPIRED : null;
   },
-  rejected: { is: (err) => err instanceof ThangsAuthError, mark: markThangsSessionRejected, problem: EXPIRED },
+  rejected: {
+    is: (err) => err instanceof ThangsAuthError,
+    mark: (userId) => markThangsSessionRejected(userId),
+    problem: EXPIRED,
+  },
   problems: [DISCONNECTED, EXPIRED],
   // Every download is the user's, and its likes page names no user: a sync needs their sign-in either way.
   async assertCanSync(userId) {

@@ -25,6 +25,7 @@ export const printablesSync: ProviderSync = {
     return entries.map((e) => e.modelId);
   },
   problems: [],
+  waitingForGrab: async (userId, externalId) => (await pushedPrintablesModels(userId, externalId)) === "waiting",
   // Printables shows likes to their owner only, and Grab reads them as that user: a sync of someone else's would be
   // fed the user's own likes under the other's name. The likes Grab pushed prove whose they are; the account saved on
   // the user can be typed into the app, so it proves nothing.
