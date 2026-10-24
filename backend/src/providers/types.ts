@@ -2,9 +2,9 @@
 // which does the rest the same way for every provider: refusing a turned-off one, deduplicating, the print, its
 // author, category and gallery, and the temp files.
 
-import type { CollectionSync } from "@prisma/client";
+import type { CollectionSync, Prisma } from "@prisma/client";
 import type { z } from "zod";
-import type { ImportedPageMetadata } from "../services/importResolvers";
+import type { ImportedAuthorInfo, ImportedPageMetadata } from "../services/importResolvers";
 import type {
   ExistingImportedPrint,
   ImportRequestBody,
@@ -247,4 +247,35 @@ export type ConnectionSlot = {
   save(userId: string, body: unknown): Promise<Record<string, unknown>>;
   /** What the legacy endpoint's GET answered, where that was more than `configured` and `expired`. */
   legacyStatus?(userId: string): Promise<Record<string, unknown>>;
+};
+
+/** Why a run over many models stops reading a provider's (services/authorLinkingService.ts,
+ *  descriptionRefetchService.ts): a code the app words, kept in the audit log, so never change one. */
+export type LookupProblem = `${ProviderId}_${string}`;
+
+/** A model's details read without its files: for filling a print's gaps (services/fillGapsService.ts), and for the
+ *  runs that re-read descriptions and look up authors. */
+export type ProviderDetails = {
+  /** The model's details, as the user; null when the provider doesn't know it or doesn't show it. Throws the
+   *  HttpError that says what to connect first, and the provider's own errors as they are, for `problemOf`. */
+  read(userId: string, externalId: string): Promise<ImportedPageMetadata | null>;
+  /** Only its author, where that's cheaper than all of `read`. */
+  author?(userId: string, externalId: string): Promise<ImportedAuthorInfo | null>;
+  /** The 404 for a model `read` found nothing for. */
+  missingMessage: string;
+  /** One of its errors as the HttpError a single read answers with; any other as it is. */
+  mapError?(userId: string, err: unknown): Promise<unknown>;
+  /** Why a run can't read any of its models, checked before the first: once per run, or with `perUser` for each user
+   *  whose models they are, read with their own key. */
+  unavailable?:
+    | { perUser?: false; check(): Promise<LookupProblem | null> }
+    | { perUser: true; check(userId: string): Promise<LookupProblem | null> };
+  /** For a provider read with each user's own key: the condition on `u` (their User row) that they have one it takes,
+   *  so author lookups pick a model of theirs. */
+  readableBy?: Prisma.Sql;
+  /** One of its errors as the reason a run stops reading its models: all of them, or with `perUser` only those of
+   *  the user whose sign-in it turned down. Null for any other. */
+  problemOf?(err: unknown): { problem: LookupProblem; perUser?: true } | null;
+  /** Its reads are paced by themselves, so a run doesn't wait between them too. */
+  pacesItself?: true;
 };

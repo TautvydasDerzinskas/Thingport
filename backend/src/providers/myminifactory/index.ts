@@ -4,7 +4,14 @@ import { HttpError } from "../../utils/fileUtils";
 import { maybeSleep } from "../../utils/concurrency";
 import type { NewPlateInput } from "../../services/printCreation";
 import { getMyminifactoryApiKey } from "../../services/settingsService";
-import type { ImportKit, ProviderLists, ResolvedModel, SourcedImport, ProviderTrending } from "../types";
+import type {
+  ImportKit,
+  ProviderLists,
+  ResolvedModel,
+  SourcedImport,
+  ProviderTrending,
+  ProviderDetails,
+} from "../types";
 import { MANIFESTS } from "../_generated";
 import {
   fetchMyminifactoryCollectionObjects,
@@ -20,6 +27,7 @@ import {
   fetchMyminifactoryPopular,
 } from "./api";
 import { getUserMyminifactoryCookie, markMyminifactoryCookieRejected } from "./session";
+import { detailsOf } from "../details";
 
 const SESSION_CODE = MANIFESTS.myminifactory.errorCodes.session;
 const BLOCKED =
@@ -179,4 +187,17 @@ export const myminifactoryLists: ProviderLists = {
   },
   rateLimitText: "blocked by MyMiniFactory's rate-limit protection — wait a while, then retry",
   authText: "failed because the configured API key was rejected",
+};
+
+/** Read with the instance's API key, as its imports are. */
+export const myminifactoryDetails: ProviderDetails = {
+  read: async (_userId, objectId) => detailsOf(await resolveMyminifactoryObject(objectId, await requireApiKey())),
+  missingMessage: MISSING,
+  mapError: myminifactoryImport.mapError,
+  unavailable: { check: async () => ((await getMyminifactoryApiKey()) ? null : "myminifactory_no_key") },
+  problemOf(err) {
+    if (err instanceof MyminifactoryAuthError) return { problem: "myminifactory_key_rejected" };
+    if (err instanceof MyminifactoryRateLimitError) return { problem: "myminifactory_rate_limited" };
+    return null;
+  },
 };

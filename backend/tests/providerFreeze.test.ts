@@ -20,12 +20,6 @@ import { PROFILE_PROVIDERS } from "../src/providers/registry";
 const app = createApp();
 const source = (file: string) => readFileSync(new URL(`../src/services/${file}`, import.meta.url), "utf8");
 
-function quotedList(file: string, start: RegExp): string[] {
-  const match = source(file).match(start);
-  if (!match) throw new Error(`Cannot find provider list in ${file}`);
-  return [...match[1].matchAll(/["']([a-z0-9_]+)["']/g)].map((part) => part[1]);
-}
-
 describe("provider-module freeze", () => {
   it("pins every sourceProvider value produced for a model URL", () => {
     expect(
@@ -168,19 +162,34 @@ describe("provider-module freeze", () => {
   });
 
   it("pins provider-specific author lookup problem codes sent in job results", () => {
-    expect(quotedList("authorLinkingService.ts", /export type LookupProblem =([\s\S]*?);/)).toEqual([
-      "thingiverse_no_token",
-      "thingiverse_token_rejected",
-      "thingiverse_rate_limited",
-      "myminifactory_no_key",
-      "myminifactory_key_rejected",
-      "myminifactory_rate_limited",
-      "makerworld_captcha",
-      "makerworld_login_rejected",
-      "cults3d_no_key",
-      "cults3d_key_rejected",
-      "cults3d_rate_limited",
-    ]);
+    // Each provider's own, in its details (providers/<id>/index.ts, MakerWorld's details.ts).
+    const codes = PROVIDER_IDS.flatMap((id) =>
+      [`../src/providers/${id}/index.ts`, `../src/providers/${id}/details.ts`].flatMap((file) => {
+        let text: string;
+        try {
+          text = readFileSync(new URL(file, import.meta.url), "utf8");
+        } catch {
+          return [];
+        }
+        const details = text.match(/Details: ProviderDetails = \{([\s\S]*?)\n\};/)?.[1] ?? "";
+        return [...details.matchAll(new RegExp(`"(${id}_[a-z_]+)"`, "g"))].map((part) => part[1]);
+      }),
+    );
+    expect([...new Set(codes)].toSorted()).toEqual(
+      [
+        "thingiverse_no_token",
+        "thingiverse_token_rejected",
+        "thingiverse_rate_limited",
+        "myminifactory_no_key",
+        "myminifactory_key_rejected",
+        "myminifactory_rate_limited",
+        "makerworld_captcha",
+        "makerworld_login_rejected",
+        "cults3d_no_key",
+        "cults3d_key_rejected",
+        "cults3d_rate_limited",
+      ].toSorted(),
+    );
   });
 
   it("pins provider paths in API-token scopes", () => {

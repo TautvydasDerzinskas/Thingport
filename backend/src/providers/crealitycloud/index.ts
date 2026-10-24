@@ -2,7 +2,14 @@ import fs from "node:fs/promises";
 import { z } from "zod";
 import { HttpError } from "../../utils/fileUtils";
 import type { NewPlateInput } from "../../services/printCreation";
-import type { ImportKit, SourcedImport, ProviderTrending, ProviderList, ProviderLists } from "../types";
+import type {
+  ImportKit,
+  SourcedImport,
+  ProviderTrending,
+  ProviderList,
+  ProviderLists,
+  ProviderDetails,
+} from "../types";
 import { MANIFESTS } from "../_generated";
 import {
   CrealitycloudAuthError,
@@ -24,6 +31,7 @@ import {
   parseCrealitycloudLikesUrl,
 } from "./api";
 import { CREALITYCLOUD_CONNECT, getUserCrealitycloudAuth, markCrealitycloudSessionRejected } from "./session";
+import { detailsOf } from "../details";
 
 const SESSION_CODE = MANIFESTS.crealitycloud.errorCodes.session;
 const BLOCKED =
@@ -183,4 +191,10 @@ export const crealitycloudLists: ProviderLists = {
       },
     };
   },
+};
+
+/** Its models' details read without a sign-in, which only their files need. */
+export const crealitycloudDetails: ProviderDetails = {
+  read: async (_userId, modelId) => detailsOf(await resolveCrealitycloudModel(modelId)),
+  missingMessage: MISSING,
 };

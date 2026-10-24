@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import { HttpError } from "../../utils/fileUtils";
 import type { ImportRequestBody } from "../../services/importService";
 import type { NewPlateInput } from "../../services/printCreation";
-import type { CustomImport, ImportKit, ProviderTrending, ProviderList, ProviderLists } from "../types";
+import type { CustomImport, ImportKit, ProviderTrending, ProviderList, ProviderLists, ProviderDetails } from "../types";
 import { MANIFESTS } from "../_generated";
 import {
   isMakeronlineFileHost,
@@ -18,6 +18,7 @@ import {
 } from "./api";
 import { z } from "zod";
 import { getUserMakeronlineToken, MAKERONLINE_CONNECT, markMakeronlineTokenRejected } from "./session";
+import { detailsOf } from "../details";
 
 /** A MakerOnline import that came without the signed file links only Thingport Grab can get. */
 const NEEDS_GRAB_CODE = MANIFESTS.makeronline.errorCodes.needsGrab;
@@ -135,4 +136,10 @@ export const makeronlineLists: ProviderLists = {
     return { waitForGrab: { title: (await listOf(userId, url)).title } };
   },
   waitsForGrab: true,
+};
+
+/** Its models' details read without a sign-in, which only their files need. */
+export const makeronlineDetails: ProviderDetails = {
+  read: async (_userId, modelId) => detailsOf(await resolveMakeronlineModel(modelId)),
+  missingMessage: `This ${MANIFESTS.makeronline.name} model could not be found, or isn't public.`,
 };

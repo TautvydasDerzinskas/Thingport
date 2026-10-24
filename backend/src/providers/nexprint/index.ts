@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import { HttpError } from "../../utils/fileUtils";
 import type { NewPlateInput } from "../../services/printCreation";
-import type { ImportKit, SourcedImport, ProviderTrending, ProviderLists } from "../types";
+import type { ImportKit, SourcedImport, ProviderTrending, ProviderLists, ProviderDetails } from "../types";
 import { MANIFESTS } from "../_generated";
 import {
   fetchNexprintModelFiles,
@@ -20,6 +20,7 @@ import {
 } from "./api";
 import { getUserNexprintToken, markNexprintSessionRejected, NEXPRINT_CONNECT } from "./session";
 import { z } from "zod";
+import { detailsOf } from "../details";
 
 const SESSION_CODE = MANIFESTS.nexprint.errorCodes.session;
 const BLOCKED =
@@ -158,4 +159,10 @@ export const nexprintLists: ProviderLists = {
       },
     };
   },
+};
+
+/** Its models' details read without a sign-in, which only their files need. */
+export const nexprintDetails: ProviderDetails = {
+  read: async (_userId, modelId) => detailsOf(await resolveNexprintModel(modelId)),
+  missingMessage: nexprintImport.missingMessage,
 };

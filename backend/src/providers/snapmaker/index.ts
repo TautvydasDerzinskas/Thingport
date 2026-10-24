@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import { HttpError } from "../../utils/fileUtils";
 import type { NewPlateInput } from "../../services/printCreation";
-import type { ImportKit, SourcedImport, ProviderTrending, ProviderLists } from "../types";
+import type { ImportKit, SourcedImport, ProviderTrending, ProviderLists, ProviderDetails } from "../types";
 import { MANIFESTS } from "../_generated";
 import {
   fetchSnapmakerDownloads,
@@ -19,6 +19,7 @@ import {
   snapmakerListName,
 } from "./api";
 import { getUserSnapmakerToken, markSnapmakerTokenRejected, SNAPMAKER_CONNECT } from "./session";
+import { detailsOf } from "../details";
 
 const SESSION_CODE = MANIFESTS.snapmaker.errorCodes.session;
 const BLOCKED =
@@ -156,4 +157,10 @@ export const snapmakerLists: ProviderLists = {
       },
     };
   },
+};
+
+/** Its models' details read without a sign-in, which only their files need. */
+export const snapmakerDetails: ProviderDetails = {
+  read: async (_userId, modelId) => detailsOf(await resolveSnapmakerModel(modelId)),
+  missingMessage: MISSING,
 };

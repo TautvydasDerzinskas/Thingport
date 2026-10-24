@@ -22,12 +22,7 @@ import {
   MAKERWORLD_DOWNLOAD_LIMIT_MESSAGE,
 } from "../providers/makerworld/api";
 import { fetchMakerworldCollectionTitle, parseMakerworldCollectionUrl } from "../providers/makerworld/collections";
-import {
-  downloadImportToTemp,
-  fetchMakerworldDesignForImport,
-  importPrintFromUrl,
-  type ImportRequestBody,
-} from "./importService";
+import { downloadImportToTemp, importPrintFromUrl, type ImportRequestBody } from "./importService";
 import { parseMakeronlineModelUrl } from "../providers/makeronline/api";
 import { parseCults3dModelUrl } from "../providers/cults3d/api";
 import { queueGrabImport } from "./grabImportService";
@@ -45,6 +40,7 @@ import { HttpError } from "../utils/fileUtils";
 import { prisma } from "../db";
 import type { ImportJob } from "@prisma/client";
 import { createLogger } from "../logger";
+import { fetchMakerworldDesignForImport } from "../providers/makerworld/pages";
 
 const log = createLogger("import");
 const syncLog = createLogger("sync");

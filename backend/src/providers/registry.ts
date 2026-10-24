@@ -3,16 +3,16 @@
 
 import type { Category } from "@prisma/client";
 import { MANIFESTS, PROVIDER_IDS, type ProviderId, type ProviderManifest } from "./_generated";
-import { crealitycloudImport, crealitycloudTrending, crealitycloudLists } from "./crealitycloud";
-import { cults3dImport, cults3dTrending, cults3dLists } from "./cults3d";
-import { makeronlineImport, makeronlineTrending, makeronlineLists } from "./makeronline";
-import { makerworldTrending, makerworldLists } from "./makerworld";
-import { myminifactoryImport, myminifactoryTrending, myminifactoryLists } from "./myminifactory";
-import { nexprintImport, nexprintTrending, nexprintLists } from "./nexprint";
-import { printablesImport, printablesTrending, printablesLists } from "./printables";
-import { snapmakerImport, snapmakerTrending, snapmakerLists } from "./snapmaker";
-import { thangsImport, thangsTrending, thangsLists } from "./thangs";
-import { thingiverseImport, thingiverseTrending, thingiverseLists } from "./thingiverse";
+import { crealitycloudImport, crealitycloudTrending, crealitycloudLists, crealitycloudDetails } from "./crealitycloud";
+import { cults3dImport, cults3dTrending, cults3dLists, cults3dDetails } from "./cults3d";
+import { makeronlineImport, makeronlineTrending, makeronlineLists, makeronlineDetails } from "./makeronline";
+import { makerworldTrending, makerworldLists, makerworldDetails } from "./makerworld";
+import { myminifactoryImport, myminifactoryTrending, myminifactoryLists, myminifactoryDetails } from "./myminifactory";
+import { nexprintImport, nexprintTrending, nexprintLists, nexprintDetails } from "./nexprint";
+import { printablesImport, printablesTrending, printablesLists, printablesDetails } from "./printables";
+import { snapmakerImport, snapmakerTrending, snapmakerLists, snapmakerDetails } from "./snapmaker";
+import { thangsImport, thangsTrending, thangsLists, thangsDetails } from "./thangs";
+import { thingiverseImport, thingiverseTrending, thingiverseLists, thingiverseDetails } from "./thingiverse";
 import { crealitycloudConnection } from "./crealitycloud/connection";
 import { cults3dApiConnection, cults3dBrowserConnection } from "./cults3d/connection";
 import { makeronlineConnection } from "./makeronline/connection";
@@ -47,6 +47,7 @@ import type {
   ConnectionSlot,
   CustomImport,
   ProviderBrowse,
+  ProviderDetails,
   ProviderLists,
   ProviderSync,
   ProviderTrending,
@@ -71,6 +72,8 @@ export type ProviderBackend = {
   browse?: ProviderBrowse;
   /** Its list for the dashboard's trending panel, where its manifest says it has one. */
   trending?: ProviderTrending;
+  /** How a model's details are read without its files. */
+  details: ProviderDetails;
 };
 
 type Manifests = typeof MANIFESTS;
@@ -98,6 +101,7 @@ export const PROVIDERS = {
     sync: makerworldSync,
     browse: makerworldBrowse,
     trending: makerworldTrending,
+    details: makerworldDetails,
   },
   printables: {
     connection: {},
@@ -108,6 +112,7 @@ export const PROVIDERS = {
     sync: printablesSync,
     browse: printablesBrowse,
     trending: printablesTrending,
+    details: printablesDetails,
   },
   thingiverse: {
     connection: { default: thingiverseConnection },
@@ -117,6 +122,7 @@ export const PROVIDERS = {
     sync: thingiverseSync,
     browse: thingiverseBrowse,
     trending: thingiverseTrending,
+    details: thingiverseDetails,
   },
   myminifactory: {
     connection: { default: myminifactorySessionConnection, instance: myminifactoryKeyConnection },
@@ -126,6 +132,7 @@ export const PROVIDERS = {
     sync: myminifactorySync,
     browse: myminifactoryBrowse,
     trending: myminifactoryTrending,
+    details: myminifactoryDetails,
   },
   snapmaker: {
     connection: { default: snapmakerConnection },
@@ -135,6 +142,7 @@ export const PROVIDERS = {
     sync: snapmakerSync,
     browse: snapmakerBrowse,
     trending: snapmakerTrending,
+    details: snapmakerDetails,
   },
   makeronline: {
     connection: { default: makeronlineConnection },
@@ -144,6 +152,7 @@ export const PROVIDERS = {
     sync: makeronlineSync,
     browse: makeronlineBrowse,
     trending: makeronlineTrending,
+    details: makeronlineDetails,
   },
   crealitycloud: {
     connection: { default: crealitycloudConnection },
@@ -153,6 +162,7 @@ export const PROVIDERS = {
     sync: crealitycloudSync,
     browse: crealitycloudBrowse,
     trending: crealitycloudTrending,
+    details: crealitycloudDetails,
   },
   nexprint: {
     connection: { default: nexprintConnection },
@@ -162,6 +172,7 @@ export const PROVIDERS = {
     sync: nexprintSync,
     browse: nexprintBrowse,
     trending: nexprintTrending,
+    details: nexprintDetails,
   },
   thangs: {
     connection: { default: thangsConnection },
@@ -171,6 +182,7 @@ export const PROVIDERS = {
     sync: thangsSync,
     browse: thangsBrowse,
     trending: thangsTrending,
+    details: thangsDetails,
   },
   cults3d: {
     connection: { default: cults3dApiConnection, browser: cults3dBrowserConnection },
@@ -182,6 +194,7 @@ export const PROVIDERS = {
     sync: cults3dSync,
     browse: cults3dBrowse,
     trending: cults3dTrending,
+    details: cults3dDetails,
   },
 } satisfies { [K in ProviderId]: Entry<K> } as { readonly [K in ProviderId]: ProviderBackend };
 

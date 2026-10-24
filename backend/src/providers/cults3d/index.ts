@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import { HttpError } from "../../utils/fileUtils";
 import type { NewPlateInput } from "../../services/printCreation";
 import { CLOUDFLARE_BLOCKED_CODE } from "../../services/flaresolverr";
-import type { SourcedImport, ProviderTrending, ProviderList, ProviderLists } from "../types";
+import type { SourcedImport, ProviderTrending, ProviderList, ProviderLists, ProviderDetails } from "../types";
 import { MANIFESTS } from "../_generated";
 import {
   Cults3dAuthError,
@@ -34,6 +34,8 @@ import {
   markCults3dSessionRejected,
 } from "./session";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
+import { detailsOf } from "../details";
 
 const SESSION_CODE = MANIFESTS.cults3d.errorCodes.session;
 
@@ -185,5 +187,31 @@ export const cults3dLists: ProviderLists = {
         title: async () => title,
       },
     };
+  },
+};
+
+/** Read only with the user's own API key: one turned down stops only their models. */
+export const cults3dDetails: ProviderDetails = {
+  async read(userId, slug) {
+    const credentials = await cults3dImport.requireAuth(userId);
+    try {
+      return detailsOf(await resolveCults3dModel(slug, credentials));
+    } catch (err) {
+      // Remembered, so the rest of this user's models don't ask with it again.
+      if (err instanceof Cults3dAuthError) await markCults3dApiRejected(userId);
+      throw err;
+    }
+  },
+  missingMessage: cults3dImport.missingMessage,
+  mapError: cults3dImport.mapError,
+  unavailable: {
+    perUser: true,
+    check: async (userId) => ((await getUserCults3dCredentials(userId)) ? null : "cults3d_no_key"),
+  },
+  readableBy: Prisma.sql`u."cults3dNick" IS NOT NULL AND u."cults3dApiKey" IS NOT NULL AND u."cults3dApiRejectedAt" IS NULL`,
+  problemOf(err) {
+    if (err instanceof Cults3dAuthError) return { problem: "cults3d_key_rejected", perUser: true };
+    if (err instanceof Cults3dRateLimitError) return { problem: "cults3d_rate_limited" };
+    return null;
   },
 };

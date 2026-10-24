@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import { HttpError } from "../../utils/fileUtils";
 import type { NewPlateInput } from "../../services/printCreation";
-import type { SourcedImport, ProviderTrending, ProviderList, ProviderLists } from "../types";
+import type { SourcedImport, ProviderTrending, ProviderList, ProviderLists, ProviderDetails } from "../types";
 import { MANIFESTS } from "../_generated";
 import {
   fetchThangsDownload,
@@ -28,6 +28,7 @@ import {
   getUserThangsId,
 } from "./session";
 import { z } from "zod";
+import { detailsOf } from "../details";
 
 const { session: SESSION_CODE, downloadLimit: DOWNLOAD_LIMIT_CODE } = MANIFESTS.thangs.errorCodes;
 const BLOCKED =
@@ -167,4 +168,11 @@ export const thangsLists: ProviderLists = {
       },
     };
   },
+};
+
+/** Its models' details read without a sign-in, which only their files need. */
+export const thangsDetails: ProviderDetails = {
+  read: async (_userId, modelId) => detailsOf(await resolveThangsModel(modelId)),
+  missingMessage: thangsImport.missingMessage,
+  mapError: thangsFailure,
 };

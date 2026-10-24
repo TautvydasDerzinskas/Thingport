@@ -1,7 +1,7 @@
 import { HttpError } from "../../utils/fileUtils";
 import { mapWithConcurrency } from "../../utils/concurrency";
 import type { NewPlateInput } from "../../services/printCreation";
-import type { ProviderLists, ResolvedModel, SourcedImport, ProviderTrending } from "../types";
+import type { ProviderLists, ResolvedModel, SourcedImport, ProviderTrending, ProviderDetails } from "../types";
 import { getThingiverseAccessToken } from "../../services/settingsService";
 import { likesCollectionName } from "../names";
 import {
@@ -18,6 +18,7 @@ import {
   fetchThingiversePopular,
 } from "./api";
 import manifest from "../_generated/thingiverse/manifest";
+import { detailsOf } from "../details";
 
 const DOWNLOAD_CONCURRENCY = 2;
 
@@ -137,4 +138,18 @@ export const thingiverseLists: ProviderLists = {
   rateLimitText:
     "blocked by Thingiverse's rate-limit protection (too many requests at once) — wait a while, then retry",
   authText: "failed because the configured App Token was rejected",
+};
+
+/** Read with the instance's App Token, as its imports are. */
+export const thingiverseDetails: ProviderDetails = {
+  read: async (_userId, thingId) => detailsOf(await thingiverseImport.resolveModel(thingId, await requireToken())),
+  missingMessage: thingiverseImport.missingMessage,
+  mapError: thingiverseImport.mapError,
+  unavailable: { check: async () => ((await getThingiverseAccessToken()) ? null : "thingiverse_no_token") },
+  problemOf(err) {
+    if (err instanceof ThingiverseAuthError) return { problem: "thingiverse_token_rejected" };
+    // Cloudflare's 429 is sticky, so every further request would fail the same way.
+    if (err instanceof ThingiverseRateLimitError) return { problem: "thingiverse_rate_limited" };
+    return null;
+  },
 };

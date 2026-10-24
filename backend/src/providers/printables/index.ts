@@ -1,6 +1,6 @@
 import { HttpError } from "../../utils/fileUtils";
 import type { NewPlateInput } from "../../services/printCreation";
-import type { ProviderLists, ResolvedModel, SourcedImport, ProviderTrending } from "../types";
+import type { ProviderLists, ResolvedModel, SourcedImport, ProviderTrending, ProviderDetails } from "../types";
 import {
   fetchPrintablesCollectionEntries,
   fetchPrintablesCollectionTitle,
@@ -10,6 +10,7 @@ import {
   type PrintablesPlateFile,
   fetchPrintablesTrending,
 } from "./api";
+import { detailsOf } from "../details";
 
 type Model = ResolvedModel & { plateFiles: PrintablesPlateFile[] };
 
@@ -95,4 +96,9 @@ export const printablesLists: ProviderLists = {
   },
   rateLimitText: "rate-limited by Printables — wait a while, then retry",
   unavailableText: "unavailable (private, deleted, or removed)",
+};
+
+export const printablesDetails: ProviderDetails = {
+  read: async (_userId, modelId) => detailsOf(await printablesImport.resolveModel(modelId, null)),
+  missingMessage: printablesImport.missingMessage,
 };

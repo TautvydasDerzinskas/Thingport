@@ -1,6 +1,5 @@
 import fs from "node:fs/promises";
 import { isProviderId, MANIFESTS, modelUrl, parseModelUrl, URLS } from "../providers/_generated";
-import { makerworldModelUrl } from "../providers/_generated/makerworld/urls";
 import { catIdsField, PROFILE_PROVIDERS, PROVIDERS } from "../providers/registry";
 import type { PipelineKit, ResolvedModel, SourcedImport } from "../providers/types";
 import fsSync from "node:fs";
@@ -14,7 +13,6 @@ import {
   IMPORT_HTML_MAX_BYTES,
   IMPORT_MAX_BYTES,
   IMPORT_PREVIEW_IMAGE_DELAY_MS,
-  IMPORT_TIMEOUT_SECONDS,
 } from "../config";
 import {
   HttpError,
@@ -26,18 +24,11 @@ import {
 } from "../utils/fileUtils";
 import { validateRemoteUrl } from "../utils/urlUtils";
 import { readCapped } from "../utils/readCapped";
-import { browserFetch, needsBrowserFetch } from "../utils/browserFetch";
+import { fetchWithGuard, rawFetch } from "./guardedFetch";
 import { maybeSleep, sleep } from "../utils/concurrency";
-import {
-  CLOUDFLARE_BLOCKED_CODE,
-  fetchViaFlaresolverr,
-  isCloudflareChallenge,
-  looksLikeCloudflareBlock,
-  shouldProxyHost,
-} from "./flaresolverr";
+import { isCloudflareChallenge } from "./flaresolverr";
 import {
   emptyImportedPageMetadata,
-  extractNextDataJson,
   extractPageMetadata,
   findDownloadUrl,
   makerworldHtmlHeaders,
@@ -47,7 +38,6 @@ import {
   resolveMakerworldCookie,
   resolveMakerworldDownloadUrl,
   type ImportCookies,
-  type ImportedAuthorInfo,
   type ImportedPageMetadata,
   type MakerworldProfileRef,
 } from "./importResolvers";
@@ -56,13 +46,11 @@ import {
   MAKERWORLD_AUTH_CODE,
   MakerworldAuthError,
   MakerworldCaptchaError,
-  makerworldCaptchaCooloffActive,
   MAKERWORLD_DOWNLOAD_LIMIT_CODE,
   MakerworldDownloadLimitError,
   parseMakerworldModelUrl,
   resolveMakerworldViaCloudApi,
   completeMakerworldAuthor,
-  fetchMakerworldDesign,
 } from "../providers/makerworld/api";
 import { openSourceGaps, type SourceGap } from "./sourceGaps";
 import { clearGrabImports } from "./grabImportService";
@@ -140,127 +128,7 @@ function parseCharset(contentType: string | null): string {
   return match ? match[1].trim().replace(/["']/g, "") : "utf-8";
 }
 
-async function rawFetch(url: string, headers: Record<string, string>): Promise<Response> {
-  if (needsBrowserFetch(url)) return browserFetch(url, { headers, timeoutMs: IMPORT_TIMEOUT_SECONDS * 1000 });
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), IMPORT_TIMEOUT_SECONDS * 1000);
-  try {
-    return await fetch(url, { headers, redirect: "follow", signal: controller.signal });
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-/** Loads `url` through FlareSolverr and wraps the rendered body as an HTML Response. */
-async function proxiedResponse(url: string, cookieHeader?: string | null): Promise<Response | null> {
-  const solved = await fetchViaFlaresolverr(url, cookieHeader);
-  if (!solved) return null;
-  return new Response(solved.body, {
-    status: solved.status,
-    headers: { "content-type": "text/html; charset=utf-8" },
-  });
-}
-
-async function fetchWithGuard(url: string, headers: Record<string, string>): Promise<Response> {
-  try {
-    let hostname = "";
-    try {
-      hostname = new URL(url).hostname;
-    } catch {}
-
-    let res: Response;
-    if (shouldProxyHost(hostname)) {
-      res = (await proxiedResponse(url, headers.Cookie)) || (await rawFetch(url, headers));
-    } else {
-      res = await rawFetch(url, headers);
-      if (res.status === 403 && looksLikeCloudflareBlock(res.headers)) {
-        const proxied = await proxiedResponse(url, headers.Cookie);
-        if (proxied) res = proxied;
-      }
-    }
-
-    if (res.status === 403 && looksLikeCloudflareBlock(res.headers)) {
-      throw new HttpError(
-        403,
-        "Cloudflare blocked the request and FlareSolverr didn't get past it",
-        CLOUDFLARE_BLOCKED_CODE,
-      );
-    }
-    if (!res.ok) {
-      throw new HttpError(res.status || 400, `Failed to fetch URL: ${res.statusText || res.status}`);
-    }
-    return res;
-  } catch (err) {
-    if (err instanceof HttpError) throw err;
-    throw new HttpError(400, "Failed to reach the provided URL", undefined, true);
-  }
-}
-
 export type OpenImportResult = { response: Response; finalUrl: string; meta: ImportedPageMetadata };
-
-/** Fallback for fetchMakerworldDesign when there's no MakerWorld login. */
-async function fetchMakerworldPageDesign(
-  designId: string,
-  cookie: string | null,
-  paceMs?: number,
-): Promise<Record<string, unknown> | null> {
-  if (makerworldCaptchaCooloffActive()) throw new MakerworldCaptchaError();
-  const url = makerworldModelUrl(designId);
-  await maybeSleep(paceMs);
-  let res: Response;
-  try {
-    res = await fetchWithGuard(url, {
-      "User-Agent": IMPORT_BROWSER_USER_AGENT,
-      Accept: "*/*",
-      ...makerworldHtmlHeaders(url, cookie),
-    });
-  } catch (err) {
-    // Kept apart from "couldn't read the model", so a sync hands the model back for later.
-    if (err instanceof HttpError && err.code === CLOUDFLARE_BLOCKED_CODE) throw err;
-    return null;
-  }
-  if (!isHtmlContentType(res.headers.get("content-type") || "")) return null;
-  const { buffer } = await readCapped(res, IMPORT_HTML_MAX_BYTES);
-  const nextData = extractNextDataJson(buffer.toString("utf-8"));
-  const design = (nextData as { props?: { pageProps?: { design?: unknown } } } | null)?.props?.pageProps?.design;
-  return design && typeof design === "object" && !Array.isArray(design) ? (design as Record<string, unknown>) : null;
-}
-
-export async function fetchMakerworldDesignForImport(
-  designId: string,
-  cookie: string | null,
-  paceMs?: number,
-): Promise<Record<string, unknown> | null> {
-  const bearer = extractMakerworldBearerToken(cookie);
-  return bearer ? fetchMakerworldDesign(designId, bearer, paceMs) : fetchMakerworldPageDesign(designId, cookie, paceMs);
-}
-
-/** Fallback for fetchMakerworldDesignAuthor when there's no MakerWorld login. */
-export async function fetchMakerworldPageAuthor(
-  designId: string,
-  cookie: string | null,
-  paceMs?: number,
-): Promise<ImportedAuthorInfo | null> {
-  if (makerworldCaptchaCooloffActive()) throw new MakerworldCaptchaError();
-  const url = makerworldModelUrl(designId);
-  await maybeSleep(paceMs);
-  let res: Response;
-  try {
-    res = await fetchWithGuard(url, {
-      "User-Agent": IMPORT_BROWSER_USER_AGENT,
-      Accept: "*/*",
-      ...makerworldHtmlHeaders(url, cookie),
-    });
-  } catch {
-    return null;
-  }
-  if (!isHtmlContentType(res.headers.get("content-type") || "")) return null;
-  const { buffer } = await readCapped(res, IMPORT_HTML_MAX_BYTES);
-  return completeMakerworldAuthor(
-    extractPageMetadata(buffer.toString("utf-8"), MANIFESTS.makerworld.hosts[0]).author,
-    paceMs,
-  );
-}
 
 function isMakerworldCdnUrl(url: string | null | undefined): url is string {
   if (!url) return false;
