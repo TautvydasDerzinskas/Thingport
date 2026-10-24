@@ -16,6 +16,7 @@ import {
 } from "../src/services/fileReuse";
 import { setFileReuse } from "../src/services/settingsService";
 import { prisma } from "../src/db";
+import { openedPath } from "./helpers/fileReuse";
 
 let dir: string;
 let canClone: boolean;
@@ -40,8 +41,8 @@ const dest = () => path.join(dir, "out", `${crypto.randomBytes(6).toString("hex"
 const { COPYFILE_EXCL, COPYFILE_FICLONE_FORCE } = fs.constants;
 const realCopyFile = fsp.copyFile;
 
-/** The file a clone was made from: it's cloned from the open handle, via /proc/self/fd, not by its path. */
-const cloneSource = (src: unknown) => fs.readlinkSync(String(src));
+/** The file a clone was made from: it's cloned from the open handle, not by its path. */
+const cloneSource = openedPath;
 
 /** The temp folder is tmpfs here, which can't clone, so a clone is simulated with a plain exclusive copy, as a
  *  reflink-capable filesystem would make it. `beforeClone` runs first, for a test to change the stored file. The
@@ -138,7 +139,7 @@ describe("shareStoredCopy", () => {
     expect(find).toHaveBeenCalledWith({ contentSha256, size: 4 + MIN_SHARE_BYTES });
     expect(result).toEqual({ contentSha256, shared: true });
     expect(copyFile).toHaveBeenCalledWith(
-      expect.stringMatching(/^\/proc\/self\/fd\/\d+$/),
+      expect.stringMatching(/^\/(proc\/self|dev)\/fd\/\d+$/),
       target,
       COPYFILE_EXCL | COPYFILE_FICLONE_FORCE,
     );
