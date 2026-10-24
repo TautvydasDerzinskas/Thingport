@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import { HttpError } from "../../utils/fileUtils";
 import type { NewPlateInput } from "../../services/printCreation";
-import type { SourcedImport } from "../types";
+import type { SourcedImport, ProviderTrending, ProviderList, ProviderLists } from "../types";
 import { MANIFESTS } from "../_generated";
 import {
   fetchThangsDownload,
@@ -11,10 +11,23 @@ import {
   ThangsBlockedError,
   ThangsDownloadLimitError,
   type ThangsModelResolution,
+  fetchThangsTrending,
+  fetchThangsCollection,
+  fetchThangsLikes,
+  fetchThangsPurchases,
+  isThangsLikesUrl,
+  parseThangsCollectionUrl,
+  THANGS_LIKES_NAME,
+  ThangsPrivateCollectionError,
 } from "./api";
-import { getUserThangsToken, markThangsSessionRejected, THANGS_CONNECT, withThangsToken } from "./session";
-import type { ProviderTrending } from "../types";
-import { fetchThangsTrending } from "./api";
+import {
+  getUserThangsToken,
+  markThangsSessionRejected,
+  THANGS_CONNECT,
+  withThangsToken,
+  getUserThangsId,
+} from "./session";
+import { z } from "zod";
 
 const { session: SESSION_CODE, downloadLimit: DOWNLOAD_LIMIT_CODE } = MANIFESTS.thangs.errorCodes;
 const BLOCKED =
@@ -94,3 +107,64 @@ export const thangsImport: SourcedImport<null, ThangsModelResolution> = {
 };
 
 export const thangsTrending: ProviderTrending = { fetch: (_userId, limit) => fetchThangsTrending(limit) };
+
+/** The user's likes, or a collection, from a Thangs link, read with their sign-in: every file needs it anyway, and it
+ *  says which paid models they own, which the listing keeps. */
+async function listOf(userId: string, url: string): Promise<ProviderList & { title: string }> {
+  const likes = isThangsLikesUrl(url);
+  const collection = likes ? null : parseThangsCollectionUrl(url);
+  if (!likes && !collection) throw new HttpError(400, "Not a link to a Thangs collection or your likes");
+  try {
+    const [token, thangsId] = await Promise.all([getUserThangsToken(userId), getUserThangsId(userId)]);
+    if (!token || !thangsId) throw new HttpError(400, THANGS_CONNECT, SESSION_CODE);
+    const owned = await withThangsToken(userId, token, fetchThangsPurchases);
+    let title: string;
+    let listing: Awaited<ReturnType<typeof fetchThangsLikes>>;
+    if (likes) {
+      title = THANGS_LIKES_NAME;
+      listing = await fetchThangsLikes(thangsId, owned);
+    } else {
+      const found = await withThangsToken(userId, token, (fresh) =>
+        fetchThangsCollection(collection!.collectionId, fresh, owned),
+      );
+      if (!found) throw new HttpError(404, "That collection can't be found. It may have been deleted.");
+      title = found.info.name;
+      listing = found;
+    }
+    return {
+      title,
+      total: listing.total,
+      truncated: listing.truncated,
+      entries: listing.entries.map((e) => ({ externalId: e.modelId, title: e.title, cover: e.cover })),
+    };
+  } catch (err) {
+    if (err instanceof ThangsAuthError) {
+      await markThangsSessionRejected(userId);
+      // 400, not 401: the frontend treats any 401 as an expired Thingport session.
+      throw new HttpError(400, err.message, SESSION_CODE);
+    }
+    if (err instanceof ThangsPrivateCollectionError) throw new HttpError(403, err.message);
+    if (err instanceof ThangsBlockedError) throw new HttpError(429, err.message);
+    throw err;
+  }
+}
+
+export const thangsLists: ProviderLists = {
+  async read(userId, url) {
+    const list = await listOf(userId, url);
+    if (!list.entries.length) throw new HttpError(400, `"${list.title}" has no models Thingport can import`);
+    return list;
+  },
+  modelIds: z.array(z.string().regex(/^\d+$/).max(20)).min(1).max(1000),
+  async start(userId, url) {
+    const { title } = await listOf(userId, url);
+    return {
+      batch: {
+        async ready() {
+          if (!(await getUserThangsToken(userId))) throw new HttpError(503, THANGS_CONNECT);
+        },
+        title: async () => title,
+      },
+    };
+  },
+};

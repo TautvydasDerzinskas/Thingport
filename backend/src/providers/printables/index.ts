@@ -1,9 +1,15 @@
 import { HttpError } from "../../utils/fileUtils";
 import type { NewPlateInput } from "../../services/printCreation";
-import type { ResolvedModel, SourcedImport } from "../types";
-import { resolvePrintablesDownloadLinks, resolvePrintablesModel, type PrintablesPlateFile } from "./api";
-import type { ProviderTrending } from "../types";
-import { fetchPrintablesTrending } from "./api";
+import type { ProviderLists, ResolvedModel, SourcedImport, ProviderTrending } from "../types";
+import {
+  fetchPrintablesCollectionEntries,
+  fetchPrintablesCollectionTitle,
+  parsePrintablesCollectionUrl,
+  resolvePrintablesDownloadLinks,
+  resolvePrintablesModel,
+  type PrintablesPlateFile,
+  fetchPrintablesTrending,
+} from "./api";
 
 type Model = ResolvedModel & { plateFiles: PrintablesPlateFile[] };
 
@@ -56,3 +62,37 @@ export const printablesImport: SourcedImport<null, Model> = {
 };
 
 export const printablesTrending: ProviderTrending = { fetch: (_userId, limit) => fetchPrintablesTrending(limit) };
+
+function collectionIdOf(url: string): string {
+  const parsed = parsePrintablesCollectionUrl(url);
+  if (!parsed) throw new HttpError(400, "Not a Printables Collection URL");
+  return parsed.collectionId;
+}
+
+/** Public collections, read from Printables' API. Private ones and likes only Thingport Grab can read, as their owner
+ *  (services/providerListingsService.ts), for a sync to follow. */
+export const printablesLists: ProviderLists = {
+  async read(_userId, url) {
+    const listing = await fetchPrintablesCollectionEntries(collectionIdOf(url));
+    if (!listing.entries.length) throw new HttpError(400, "Could not load this collection's models");
+    return {
+      title: listing.title,
+      total: listing.total,
+      truncated: listing.truncated,
+      entries: listing.entries.map((e) => ({ externalId: e.modelId, title: e.title, cover: e.cover })),
+    };
+  },
+  async start(_userId, url, body) {
+    const collectionId = collectionIdOf(url);
+    return {
+      batch: {
+        title: async () =>
+          body.collection_title?.trim() ||
+          (await fetchPrintablesCollectionTitle(collectionId)) ||
+          `Printables Collection ${collectionId}`,
+      },
+    };
+  },
+  rateLimitText: "rate-limited by Printables — wait a while, then retry",
+  unavailableText: "unavailable (private, deleted, or removed)",
+};

@@ -2,11 +2,22 @@ import fs from "node:fs/promises";
 import { HttpError } from "../../utils/fileUtils";
 import type { ImportRequestBody } from "../../services/importService";
 import type { NewPlateInput } from "../../services/printCreation";
-import type { CustomImport, ImportKit } from "../types";
+import type { CustomImport, ImportKit, ProviderTrending, ProviderList, ProviderLists } from "../types";
 import { MANIFESTS } from "../_generated";
-import { isMakeronlineFileHost, resolveMakeronlineModel } from "./api";
-import type { ProviderTrending } from "../types";
-import { fetchMakeronlineTrending } from "./api";
+import {
+  isMakeronlineFileHost,
+  resolveMakeronlineModel,
+  fetchMakeronlineTrending,
+  fetchMakeronlineCollection,
+  fetchMakeronlineCollectionInfo,
+  fetchMakeronlineLikes,
+  isMakeronlineLikesUrl,
+  MakeronlineAuthError,
+  MAKERONLINE_LIKES_NAME,
+  parseMakeronlineCollectionUrl,
+} from "./api";
+import { z } from "zod";
+import { getUserMakeronlineToken, MAKERONLINE_CONNECT, markMakeronlineTokenRejected } from "./session";
 
 /** A MakerOnline import that came without the signed file links only Thingport Grab can get. */
 const NEEDS_GRAB_CODE = MANIFESTS.makeronline.errorCodes.needsGrab;
@@ -73,3 +84,55 @@ export const makeronlineImport: CustomImport = {
 };
 
 export const makeronlineTrending: ProviderTrending = { fetch: (_userId, limit) => fetchMakeronlineTrending(limit) };
+
+/** The user's likes, or any collection they can see, from a MakerOnline link. */
+async function listOf(userId: string, url: string): Promise<ProviderList & { title: string }> {
+  const token = await getUserMakeronlineToken(userId);
+  try {
+    let title: string;
+    let listing: Awaited<ReturnType<typeof fetchMakeronlineLikes>>;
+    if (isMakeronlineLikesUrl(url)) {
+      if (!token) throw new HttpError(400, MAKERONLINE_CONNECT);
+      title = MAKERONLINE_LIKES_NAME;
+      listing = await fetchMakeronlineLikes(token);
+    } else {
+      const parsed = parseMakeronlineCollectionUrl(url);
+      if (!parsed) throw new HttpError(400, "Not a link to a MakerOnline collection or your likes");
+      const [info, found] = await Promise.all([
+        fetchMakeronlineCollectionInfo(parsed.collectionId, token),
+        fetchMakeronlineCollection(parsed.collectionId, token),
+      ]);
+      if (!info || !found) throw new HttpError(404, "That collection can't be found. It may be private or deleted.");
+      title = info.name;
+      listing = found;
+    }
+    return {
+      title,
+      total: listing.total,
+      truncated: listing.truncated,
+      entries: listing.entries.map((e) => ({ externalId: e.modelId, title: e.title, cover: e.cover })),
+    };
+  } catch (err) {
+    if (err instanceof MakeronlineAuthError) {
+      await markMakeronlineTokenRejected(userId);
+      // 400, not 401: the frontend treats any 401 as an expired Thingport session.
+      throw new HttpError(400, err.message);
+    }
+    throw err;
+  }
+}
+
+/** The picked models of a list wait for Grab (services/grabImportService.ts), filed into a collection named after
+ *  the list. */
+export const makeronlineLists: ProviderLists = {
+  async read(userId, url) {
+    const list = await listOf(userId, url);
+    if (!list.entries.length) throw new HttpError(400, `"${list.title}" is empty`);
+    return list;
+  },
+  modelIds: z.array(z.string().regex(/^\d+$/)).min(1).max(1000),
+  async start(userId, url) {
+    return { waitForGrab: { title: (await listOf(userId, url)).title } };
+  },
+  waitsForGrab: true,
+};

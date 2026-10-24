@@ -4,7 +4,7 @@ import { HttpError } from "../utils/fileUtils";
 import { normalizeImportUrl } from "../utils/urlUtils";
 import { createLog } from "./auditLog";
 import { assertCanImportUrl, importPrintFromUrl, type ImportRequestBody } from "./importService";
-import { getUserMakerworldCookie } from "../providers/makerworld/session";
+import { withStoredMakerworldCookie } from "../providers/makerworld/session";
 import { notifySingleImport } from "./modelNotifications";
 
 // One link imported into one model, with the activity log and notification that go with it. Shared
@@ -14,16 +14,6 @@ export type SingleImportBody = ImportRequestBody & {
   /** False for each model of a run the client drives itself; the run sends one summary at the end. */
   notify?: boolean;
 };
-
-// Falls back to the cookie saved in Settings when the request doesn't carry one.
-export async function withStoredMakerworldCookie<T extends { makerworld_cookie?: string | null }>(
-  userId: string,
-  body: T,
-): Promise<T> {
-  if (body.makerworld_cookie && body.makerworld_cookie.trim()) return body;
-  const stored = await getUserMakerworldCookie(userId);
-  return stored ? { ...body, makerworld_cookie: stored } : body;
-}
 
 /** The checks before an import starts: the stored MakerWorld cookie, a normalized public URL (never an
  *  internal address), a provider an admin hasn't turned off, and a category of the user's own. */

@@ -28,5 +28,6 @@ export default {
     trending: { kind: "popular", moreUrl: "https://cults3d.com/en/creations/popular", rank: 7 },
   },
   errorCodes: { session: "cults3d_session" },
+  legacy: { lists: [{ path: "cults3d-list", idsField: "model_ids" }] },
   extension: { site: "optional", origins: ["*://cults3d.com/*", "*://*.cults3d.com/*"] },
 } as const satisfies ProviderManifest;

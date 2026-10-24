@@ -43,5 +43,6 @@ export default {
     trending: { kind: "recommended", moreUrl: "https://www.crealitycloud.com/", rank: 8 },
   },
   errorCodes: { session: "crealitycloud_session" },
+  legacy: { lists: [{ path: "crealitycloud-list", idsField: "model_ids" }], profiles: "crealitycloud-profiles" },
   extension: { site: "optional", origins: ["*://*.crealitycloud.com/*"] },
 } as const satisfies ProviderManifest;

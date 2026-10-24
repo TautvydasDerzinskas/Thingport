@@ -59,6 +59,15 @@ export type ProviderManifest = {
    *  sign-in is missing or turned down, `downloadLimit` when the account's daily downloads are used up, `needsGrab`
    *  when only Grab can fetch the files. */
   errorCodes: { session?: string; downloadLimit?: string; needsGrab?: string };
+  /** The endpoints it had before the generic /import/<id>/list and /profiles ones, kept as aliases of them for
+   *  clients that still call them: never change them. Providers added since have none. */
+  legacy?: {
+    /** `/import/<path>/entries` and `/import/<path>`, for the kinds of list given (any when left out), the picked
+     *  models' ids in `idsField`. */
+    lists: readonly { path: string; kinds?: readonly ListKind[]; idsField: LegacyIdsField }[];
+    /** `/import/<profiles>`. */
+    profiles?: string;
+  };
   extension: {
     /** "builtin" sites are in Grab's manifest.json, "optional" ones are asked for when the user turns them on. New
      *  providers are always optional: changing the built-in set makes browsers disable Grab until it's approved. */
@@ -68,6 +77,8 @@ export type ProviderManifest = {
 };
 
 export type ListKind = "collection" | "likes" | "bookmarks";
+
+export type LegacyIdsField = "design_ids" | "thing_ids" | "object_ids" | "model_ids";
 
 /** A model page, by the id Thingport keeps for it and the print profile the link names, if any. */
 export type ModelLink = { externalId: string; requestedProfileId: string | null };

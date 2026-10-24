@@ -27,5 +27,6 @@ export default {
     trending: { kind: "popular", moreUrl: "https://www.myminifactory.com/search/?sortBy=popularity", rank: 6 },
   },
   errorCodes: { session: "myminifactory_session" },
+  legacy: { lists: [{ path: "myminifactory-collection", idsField: "object_ids" }] },
   extension: { site: "optional", origins: ["*://*.myminifactory.com/*"] },
 } as const satisfies ProviderManifest;

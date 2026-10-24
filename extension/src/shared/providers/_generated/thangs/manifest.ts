@@ -28,5 +28,6 @@ export default {
     trending: { kind: "trending", moreUrl: "https://thangs.com/browse/trending", rank: 3 },
   },
   errorCodes: { session: "thangs_session", downloadLimit: "THANGS_DOWNLOAD_LIMIT" },
+  legacy: { lists: [{ path: "thangs-list", idsField: "model_ids" }] },
   extension: { site: "optional", origins: ["*://thangs.com/*", "*://*.thangs.com/*"] },
 } as const satisfies ProviderManifest;

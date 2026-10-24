@@ -66,7 +66,18 @@ import { hostIs } from "./_lib/hosts";
 import type { ListLink, ModelLink, ProviderUrls } from "./_lib/types";
 ${ids.map((id) => `import ${id} from "./${id}/manifest";\nimport { urls as ${id}Urls } from "./${id}/urls";`).join("\n")}
 
-export type { Chip, ListKind, ListLink, Logo, ModelLink, Need, ProviderManifest, ProviderUrls, SignIn } from "./_lib/types";
+export type {
+  Chip,
+  LegacyIdsField,
+  ListKind,
+  ListLink,
+  Logo,
+  ModelLink,
+  Need,
+  ProviderManifest,
+  ProviderUrls,
+  SignIn,
+} from "./_lib/types";
 export { hostIs } from "./_lib/hosts";
 export { LIKES_ID_PREFIX } from "./_lib/lists";
 

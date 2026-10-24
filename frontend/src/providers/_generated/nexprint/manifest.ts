@@ -29,5 +29,6 @@ export default {
     trending: { kind: "recommended", moreUrl: "https://www.nexprint.com/", rank: 9 },
   },
   errorCodes: { session: "nexprint_session" },
+  legacy: { lists: [{ path: "nexprint-collection", idsField: "model_ids" }], profiles: "nexprint-profiles" },
   extension: { site: "optional", origins: ["*://*.nexprint.com/*"] },
 } as const satisfies ProviderManifest;

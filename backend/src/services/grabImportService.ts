@@ -1,8 +1,11 @@
 import type { GrabImport } from "@prisma/client";
 import { prisma } from "../db";
 import { createNotification } from "./notificationService";
+import { findOrCreateCollectionByName } from "./collectionService";
+import type { ListImportBody } from "../providers/types";
 import {
   makeronlineDownloadPlan,
+  makeronlineModelUrl,
   parseMakeronlineModelUrl,
   resolveMakeronlineModel,
   type MakeronlineDownloadRequest,
@@ -40,6 +43,29 @@ export async function queueGrabImport(userId: string, url: string, options: Grab
     create: { userId, url, ...data },
     update: { ...data, attempts: 0, lastError: null },
   });
+}
+
+/** The picked models of a list, parked for Grab and filed, once imported, into a collection named after the list. */
+export async function queueGrabList(
+  userId: string,
+  title: string,
+  body: ListImportBody,
+): Promise<{ queued: number; collectionId: string }> {
+  const collection = await findOrCreateCollectionByName(userId, title);
+  for (const modelId of body.model_ids) {
+    await queueGrabImport(userId, makeronlineModelUrl(modelId), {
+      collectionId: collection.id,
+      categoryId: body.category_id ?? null,
+      tags: body.tags ?? [],
+      notes: body.notes ?? null,
+    });
+  }
+  await notifyGrabImportsQueued(userId, body.model_ids.length, {
+    label: title,
+    externalUrl: body.url,
+    internalPath: `/models/collections/${collection.id}`,
+  });
+  return { queued: body.model_ids.length, collectionId: collection.id };
 }
 
 /** One heads-up for a batch just parked, so the user knows to open MakerOnline. */

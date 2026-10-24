@@ -1,14 +1,14 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { mapWithConcurrency, sleep } from "../utils/concurrency";
-import { detectProvider, MANIFESTS, type ProviderManifest } from "../providers/_generated";
+import { detectProvider, MANIFESTS, type ProviderId, type ProviderManifest, URLS } from "../providers/_generated";
 import { DOWNLOAD_LIMIT_CODES, PROVIDERS, SESSION_CODES } from "../providers/registry";
-import type { SourcedImport } from "../providers/types";
+import type { ListBatch, ListImportBody, SourcedImport } from "../providers/types";
 import { IMPORT_COLLECTION_DELAY_MS, IMPORT_MAKERWORLD_CALL_DELAY_MS } from "../config";
 import { countJobItems, getJob, getJobStatus, listJobItems, updateJob, updateJobItem } from "./importJobService";
 import { createNotification } from "./notificationService";
 import { addPrintsToCollection, findOrCreateCollectionByName } from "./collectionService";
-import { likesCollectionName, modelIdFromUrl, providerName, syncedCollectionFor } from "./collectionSyncService";
+import { modelIdFromUrl, providerName, syncedCollectionFor } from "./collectionSyncService";
 import { resolveMakerworldCookie } from "./importResolvers";
 import { decodeHtmlEntities } from "../utils/htmlEntities";
 import {
@@ -27,31 +27,17 @@ import {
   importPrintFromUrl,
   type ImportRequestBody,
 } from "./importService";
-import {
-  parseSnapmakerModelUrl,
-  snapmakerListName,
-  snapmakerModelUrl,
-  type SnapmakerList,
-} from "../providers/snapmaker/api";
-import { getUserSnapmakerToken, SNAPMAKER_CONNECT } from "../providers/snapmaker/session";
 import { parseMakeronlineModelUrl } from "../providers/makeronline/api";
-import { crealitycloudModelUrl, parseCrealitycloudModelUrl } from "../providers/crealitycloud/api";
-import { CREALITYCLOUD_CONNECT, getUserCrealitycloudAuth } from "../providers/crealitycloud/session";
-import { nexprintModelUrl, parseNexprintModelUrl } from "../providers/nexprint/api";
-import { getUserNexprintToken, NEXPRINT_CONNECT } from "../providers/nexprint/session";
-import { thangsModelUrl } from "../providers/thangs/api";
-import { getUserThangsToken, THANGS_CONNECT } from "../providers/thangs/session";
-import { cults3dModelUrl, parseCults3dModelUrl } from "../providers/cults3d/api";
-import { CULTS3D_CONNECT, getUserCults3dCredentials } from "../providers/cults3d/session";
+import { parseCults3dModelUrl } from "../providers/cults3d/api";
 import { queueGrabImport } from "./grabImportService";
 import { upsertAuthorFromImport } from "./authorService";
 import { extractZipEntriesToPrints } from "./zipService";
-import { fetchThingiverseCollectionTitle } from "../providers/thingiverse/api";
-import { getMyminifactoryApiKey, getThingiverseAccessToken } from "./settingsService";
-import { fetchMyminifactoryCollectionObjects } from "../providers/myminifactory/api";
-import { fetchPrintablesCollectionTitle } from "../providers/printables/api";
 import { createLog } from "./auditLog";
-import { MAKERWORLD_REJECTED_ERROR, markMakerworldCookieRejected } from "../providers/makerworld/session";
+import {
+  MAKERWORLD_REJECTED_ERROR,
+  markMakerworldCookieRejected,
+  withStoredMakerworldCookie,
+} from "../providers/makerworld/session";
 import { CLOUDFLARE_BLOCKED_CODE } from "./flaresolverr";
 import { PROVIDER_DISABLED_CODE } from "./providerSettingsService";
 import { HttpError } from "../utils/fileUtils";
@@ -67,24 +53,7 @@ const COLLECTION_IMPORT_CONCURRENCY = 1;
 
 type CollectionImportJobBody = ImportRequestBody & { design_ids: string[] };
 type ZipImportJobBody = ImportRequestBody & { entries: string[] };
-type ThingiverseLikesImportJobBody = ImportRequestBody & { thing_ids: string[]; username: string };
-type ThingiverseCollectionImportJobBody = ImportRequestBody & { thing_ids: string[]; collectionId: string };
-type MyminifactoryCollectionImportJobBody = ImportRequestBody & {
-  object_ids: string[];
-  username: string;
-  slug: string;
-};
-type PrintablesCollectionImportJobBody = ImportRequestBody & {
-  model_ids: string[];
-  collectionId: string;
-  collection_title?: string | null;
-};
-type MakerworldProfilesImportJobBody = ImportRequestBody & { scope: Exclude<MakerworldProfileScope, "url"> };
-type SnapmakerListImportJobBody = ImportRequestBody & { model_ids: string[]; list: SnapmakerList };
-type CrealitycloudListImportJobBody = ImportRequestBody & { model_ids: string[]; title: string };
-type NexprintCollectionImportJobBody = ImportRequestBody & { model_ids: string[]; title: string };
-type ThangsListImportJobBody = ImportRequestBody & { model_ids: string[]; title: string };
-type Cults3dListImportJobBody = ImportRequestBody & { model_ids: string[]; title: string };
+type ProfilesImportJobBody = ImportRequestBody & { scope: Exclude<MakerworldProfileScope, "url"> };
 
 // Why a design failed, so a batch reads as one clear cause instead of "N failed". Once a CAPTCHA
 // ("rateLimited"), the daily download limit, an auth failure or a Cloudflare block ("blocked")
@@ -209,7 +178,7 @@ function makerworldProfileUrls(
 export async function runMakerworldProfilesImportJob(
   jobId: string,
   userId: string,
-  body: MakerworldProfilesImportJobBody,
+  body: ProfilesImportJobBody,
 ): Promise<void> {
   try {
     const parsed = parseMakerworldModelUrl(body.url);
@@ -302,52 +271,19 @@ export async function runMakerworldProfilesImportJob(
   }
 }
 
-const SNAPMAKER_AUTH_TEXT = PROVIDERS.snapmaker.authStopText;
-const CREALITYCLOUD_AUTH_TEXT = PROVIDERS.crealitycloud.authStopText;
-const NEXPRINT_AUTH_TEXT = PROVIDERS.nexprint.authStopText;
-const THANGS_AUTH_TEXT = PROVIDERS.thangs.authStopText;
-const CULTS3D_AUTH_TEXT = PROVIDERS.cults3d.authStopText;
-
-/** A provider whose print profiles import by link, each as a plate of one model. */
-type ProfilesProvider = {
-  provider: "snapmaker" | "crealitycloud" | "nexprint";
-  name: string;
-  profileUrls: NonNullable<SourcedImport["profiles"]>["listUrls"];
-  authText: string;
-};
-
-const SNAPMAKER_PROFILES: ProfilesProvider = {
-  provider: "snapmaker",
-  name: MANIFESTS.snapmaker.name,
-  profileUrls: PROVIDERS.snapmaker.sourcedImport!.profiles!.listUrls,
-  authText: SNAPMAKER_AUTH_TEXT,
-};
-
-const CREALITYCLOUD_PROFILES: ProfilesProvider = {
-  provider: "crealitycloud",
-  name: MANIFESTS.crealitycloud.name,
-  profileUrls: PROVIDERS.crealitycloud.sourcedImport!.profiles!.listUrls,
-  authText: CREALITYCLOUD_AUTH_TEXT,
-};
-
-const NEXPRINT_PROFILES: ProfilesProvider = {
-  provider: "nexprint",
-  name: MANIFESTS.nexprint.name,
-  profileUrls: PROVIDERS.nexprint.sourcedImport!.profiles!.listUrls,
-  authText: NEXPRINT_AUTH_TEXT,
-};
-
 /** Imports several print profiles of one model as one model with a file per profile. */
 async function runProfilesImportJob(
   jobId: string,
   userId: string,
-  source: ProfilesProvider,
-  body: MakerworldProfilesImportJobBody,
+  provider: ProviderId,
+  profileUrls: NonNullable<SourcedImport["profiles"]>["listUrls"],
+  body: ProfilesImportJobBody,
 ): Promise<void> {
+  const name = MANIFESTS[provider].name;
   try {
-    const { title, urls } = await source.profileUrls(body.url, body.scope);
+    const { title, urls } = await profileUrls(body.url, body.scope);
     await updateJob(jobId, { total: urls.length, sourceLabel: title });
-    log.info(`${source.provider} profiles job started`, { job: jobId, url: body.url, profiles: urls.length });
+    log.info(`${provider} profiles job started`, { job: jobId, url: body.url, profiles: urls.length });
     const totals = await importProfileUrlsSequentially(
       userId,
       urls,
@@ -373,16 +309,16 @@ async function runProfilesImportJob(
       userId,
       action: "import_completed",
       targetId: printId,
-      details: { provider: source.provider, sourceLabel: title, imported, alreadyInLibrary, failed },
+      details: { provider: provider, sourceLabel: title, imported, alreadyInLibrary, failed },
     });
     const bodyParts: string[] = [];
     if (alreadyInLibrary) bodyParts.push(`${alreadyInLibrary} already on the model`);
-    if (stopReason === "auth") bodyParts.push(`the rest failed because ${source.authText}`);
+    if (stopReason === "auth") bodyParts.push(`the rest failed because ${PROVIDERS[provider].authStopText}`);
     else if (failed) bodyParts.push(`${failed} failed`);
-    const label = title ? `"${title}"` : `a ${source.name} model`;
+    const label = title ? `"${title}"` : `a ${name} model`;
     await createNotification(userId, {
       type: "import",
-      title: `Imported ${imported} of ${urls.length} print profiles from ${source.name}`,
+      title: `Imported ${imported} of ${urls.length} print profiles from ${name}`,
       body: bodyParts.length ? `Of ${label} — ${bodyParts.join(", ")}.` : `Of ${label}.`,
       externalUrl: body.url,
       internalPath: printId ? `/models/${printId}` : null,
@@ -392,28 +328,24 @@ async function runProfilesImportJob(
   }
 }
 
-export function runSnapmakerProfilesImportJob(
-  jobId: string,
-  userId: string,
-  body: MakerworldProfilesImportJobBody,
-): Promise<void> {
-  return runProfilesImportJob(jobId, userId, SNAPMAKER_PROFILES, body);
-}
-
-export function runCrealitycloudProfilesImportJob(
-  jobId: string,
-  userId: string,
-  body: MakerworldProfilesImportJobBody,
-): Promise<void> {
-  return runProfilesImportJob(jobId, userId, CREALITYCLOUD_PROFILES, body);
-}
-
-export function runNexprintProfilesImportJob(
-  jobId: string,
-  userId: string,
-  body: MakerworldProfilesImportJobBody,
-): Promise<void> {
-  return runProfilesImportJob(jobId, userId, NEXPRINT_PROFILES, body);
+/** How a model's print profiles import as one model, in a job; null for a provider whose profiles don't. MakerWorld's
+ *  is its own, its models importing by link (see providers/registry.ts). */
+export function profilesImportJob(
+  provider: ProviderId,
+): ((jobId: string, userId: string, body: ProfilesImportJobBody) => Promise<void>) | null {
+  if (provider === "makerworld") {
+    return async (jobId, userId, body) => {
+      let withCookie: ProfilesImportJobBody;
+      try {
+        withCookie = await withStoredMakerworldCookie(userId, body);
+      } catch (err) {
+        return markJobFailed(jobId, err);
+      }
+      return runMakerworldProfilesImportJob(jobId, userId, withCookie);
+    };
+  }
+  const listUrls = PROVIDERS[provider].sourcedImport?.profiles?.listUrls;
+  return listUrls ? (jobId, userId, body) => runProfilesImportJob(jobId, userId, provider, listUrls, body) : null;
 }
 
 export async function runCollectionImportJob(
@@ -560,113 +492,21 @@ export async function runCollectionImportJob(
   }
 }
 
-/** A provider whose models import one by one with a token: Thingiverse's and MyMiniFactory's instance-wide one, or
- *  the user's own Snapmaker, Creality Cloud, NexPrint or Thangs sign-in. */
-type TokenBatchProvider = {
-  provider: "thingiverse" | "myminifactory" | "snapmaker" | "crealitycloud" | "nexprint" | "thangs" | "cults3d";
-  getToken: () => Promise<string | null>;
-  notConfigured: string;
-  modelUrl: (id: string) => string;
-  rateLimitText: string;
-  authText: string;
-};
-
-const THINGIVERSE_BATCH: TokenBatchProvider = {
-  provider: "thingiverse",
-  getToken: getThingiverseAccessToken,
-  notConfigured:
-    "Thingiverse import isn't configured for this instance yet -- ask an admin to add an App Token in Administration > Providers.",
-  modelUrl: (id) => `https://www.thingiverse.com/thing:${id}`,
-  rateLimitText:
-    "blocked by Thingiverse's rate-limit protection (too many requests at once) — wait a while, then retry",
-  authText: "failed because the configured App Token was rejected",
-};
-
-const MYMINIFACTORY_BATCH: TokenBatchProvider = {
-  provider: "myminifactory",
-  getToken: getMyminifactoryApiKey,
-  notConfigured:
-    "MyMiniFactory import isn't configured for this instance yet -- ask an admin to add an API key in Administration > Providers.",
-  modelUrl: (id) => `https://www.myminifactory.com/object/3d-print-${id}`,
-  rateLimitText: "blocked by MyMiniFactory's rate-limit protection — wait a while, then retry",
-  authText: "failed because the configured API key was rejected",
-};
-
-function snapmakerBatch(userId: string): TokenBatchProvider {
-  return {
-    provider: "snapmaker",
-    getToken: () => getUserSnapmakerToken(userId),
-    notConfigured: SNAPMAKER_CONNECT,
-    modelUrl: (id) => snapmakerModelUrl(id),
-    rateLimitText: "blocked by Snapmaker's rate limit — wait a while, then retry",
-    authText: `failed because ${SNAPMAKER_AUTH_TEXT}`,
-  };
-}
-
-function crealitycloudBatch(userId: string): TokenBatchProvider {
-  return {
-    provider: "crealitycloud",
-    getToken: async () => (await getUserCrealitycloudAuth(userId))?.token ?? null,
-    notConfigured: CREALITYCLOUD_CONNECT,
-    modelUrl: (id) => crealitycloudModelUrl(id),
-    rateLimitText: "blocked by Creality Cloud's rate limit — wait a while, then retry",
-    authText: `failed because ${CREALITYCLOUD_AUTH_TEXT}`,
-  };
-}
-
-function nexprintBatch(userId: string): TokenBatchProvider {
-  return {
-    provider: "nexprint",
-    getToken: () => getUserNexprintToken(userId),
-    notConfigured: NEXPRINT_CONNECT,
-    modelUrl: (id) => nexprintModelUrl(id),
-    rateLimitText: "blocked by NexPrint's rate limit — wait a while, then retry",
-    authText: `failed because ${NEXPRINT_AUTH_TEXT}`,
-  };
-}
-
-function thangsBatch(userId: string): TokenBatchProvider {
-  return {
-    provider: "thangs",
-    getToken: () => getUserThangsToken(userId),
-    notConfigured: THANGS_CONNECT,
-    modelUrl: (id) => thangsModelUrl(id),
-    rateLimitText: "blocked by Thangs' rate limit — wait a while, then retry",
-    authText: `failed because ${THANGS_AUTH_TEXT}`,
-  };
-}
-
-function cults3dBatch(userId: string): TokenBatchProvider {
-  return {
-    provider: "cults3d",
-    // The batch only asks whether there's one; each model's import reads the credentials itself.
-    getToken: async () => (await getUserCults3dCredentials(userId))?.nick ?? null,
-    notConfigured: CULTS3D_CONNECT,
-    modelUrl: (slug) => cults3dModelUrl(slug),
-    rateLimitText: "blocked by Cults3D's rate limit — wait a while, then retry",
-    authText: `failed because ${CULTS3D_AUTH_TEXT}`,
-  };
-}
-
-/** Shared by the Thingiverse Likes and Collection imports, MyMiniFactory's collections, Snapmaker's likes and
- *  bookmarks, Creality Cloud's likes and collections, NexPrint's collections, Thangs' likes and collections, and
- *  Cults3D's likes and printlists.
- * Once the provider's daily download limit is reached, the rest aren't asked for.
- * Successful imports are filed into the collection named by `resolveCollectionTitle`, which runs
- * afterwards so it costs no API call when nothing was imported. */
-async function runTokenBatchImportJob(
+/** The picked models of a list, imported one by one into a collection named after it, for every provider but
+ * MakerWorld, whose collections import by a job of their own. Once the provider's daily download limit is reached, the
+ * rest aren't asked for. */
+export async function runListImportJob(
   jobId: string,
   userId: string,
-  source: TokenBatchProvider,
-  body: ImportRequestBody,
-  ids: string[],
-  resolveCollectionTitle: (accessToken: string) => Promise<string>,
-  sourceLabel: (collectionTitle: string) => string,
+  provider: ProviderId,
+  batch: ListBatch,
+  body: ListImportBody,
 ): Promise<void> {
-  const name = providerName(source.provider);
+  const name = MANIFESTS[provider].name;
+  const lists = PROVIDERS[provider].lists;
+  const ids = body.model_ids;
   try {
-    const accessToken = await source.getToken();
-    if (!accessToken) throw new HttpError(503, source.notConfigured);
+    await batch.ready?.();
 
     let imported = 0;
     let alreadyInLibrary = 0;
@@ -678,267 +518,18 @@ async function runTokenBatchImportJob(
     let downloadLimited = 0;
     const failed: string[] = [];
     const successPrintIds: string[] = [];
-    log.info(`${source.provider} job started`, { job: jobId, url: body.url, models: ids.length });
+    log.info(`${provider} job started`, { job: jobId, url: body.url, models: ids.length });
 
-    await mapWithConcurrency(ids, COLLECTION_IMPORT_CONCURRENCY, async (thingId, index) => {
-      const thingUrl = source.modelUrl(thingId);
+    await mapWithConcurrency(ids, COLLECTION_IMPORT_CONCURRENCY, async (modelId, index) => {
+      const modelUrl = URLS[provider].modelUrl(modelId);
       if (downloadLimited) {
         // The limit is the account's for the day: every other download would meet it too.
-        failed.push(thingId);
+        failed.push(modelId);
         downloadLimited++;
         processed++;
         await updateJob(jobId, { processed, failedCount: failed.length }).catch(() => undefined);
         return;
       }
-      const itemBody: ImportRequestBody = {
-        url: thingUrl,
-        notes: body.notes ?? null,
-        tags: body.tags ?? [],
-        category_id: body.category_id ?? null,
-      };
-      try {
-        const { print, alreadyImported } = await importPrintFromUrl(userId, thingUrl, itemBody);
-        successPrintIds.push(print.id);
-        if (alreadyImported) alreadyInLibrary++;
-        else imported++;
-      } catch (err) {
-        failed.push(thingId);
-        const reason = classifyImportFailure(err);
-        log.warn("model import failed", { job: jobId, url: thingUrl, reason, error: err });
-        if (reason === "unavailable") unavailable++;
-        else if (reason === "rateLimited") rateLimited++;
-        else if (reason === "auth") authFailed++;
-        else if (reason === "disabled") providerOff++;
-        else if (reason === "downloadLimit") downloadLimited++;
-      } finally {
-        processed++;
-        await updateJob(jobId, { processed, imported, alreadyInLibrary, failedCount: failed.length }).catch(
-          () => undefined,
-        );
-      }
-      if (index < ids.length - 1 && !downloadLimited) await sleep(IMPORT_COLLECTION_DELAY_MS);
-    });
-
-    let resultCollectionId: string | null = null;
-    const collectionTitle = await resolveCollectionTitle(accessToken);
-    if (successPrintIds.length) {
-      const collection =
-        (await syncedCollectionFor(userId, body.url)) ?? (await findOrCreateCollectionByName(userId, collectionTitle));
-      await addPrintsToCollection(collection.id, successPrintIds);
-      resultCollectionId = collection.id;
-    }
-
-    log.info("collection job done", {
-      job: jobId,
-      collection: collectionTitle,
-      imported,
-      already_in_library: alreadyInLibrary,
-      failed: failed.length,
-    });
-    await updateJob(jobId, {
-      status: "DONE",
-      sourceLabel: collectionTitle,
-      resultCollectionId,
-      resultPrintId: successPrintIds.length === 1 ? successPrintIds[0] : null,
-      processed,
-      imported,
-      alreadyInLibrary,
-      failedCount: failed.length,
-    });
-    void createLog({
-      userId,
-      action: "import_completed",
-      targetId: resultCollectionId,
-      details: {
-        provider: source.provider,
-        sourceLabel: collectionTitle,
-        imported,
-        alreadyInLibrary,
-        failed: failed.length,
-      },
-    });
-
-    const bodyParts: string[] = [];
-    if (alreadyInLibrary) bodyParts.push(`${alreadyInLibrary} already in your library`);
-    const otherFailed = failed.length - unavailable - rateLimited - authFailed - providerOff - downloadLimited;
-    if (unavailable) bodyParts.push(`${unavailable} unavailable (private, deleted, paid, or hidden)`);
-    if (providerOff) bodyParts.push(`${providerOff} skipped — ${PROVIDER_OFF_TEXT(name)}`);
-    if (rateLimited) bodyParts.push(`${rateLimited} ${source.rateLimitText}`);
-    if (authFailed) bodyParts.push(`${authFailed} ${source.authText}`);
-    if (downloadLimited) {
-      bodyParts.push(
-        `${downloadLimited} not downloaded — ${name}'s daily download limit was reached, retry the same collection tomorrow`,
-      );
-    }
-    if (otherFailed) bodyParts.push(`${otherFailed} failed`);
-    const label = sourceLabel(collectionTitle);
-    await createNotification(userId, {
-      type: "import",
-      title: `Imported ${imported} of ${ids.length} models from ${name}`,
-      body: bodyParts.length ? `From ${label} — ${bodyParts.join(", ")}.` : `From ${label}.`,
-      externalUrl: body.url,
-      internalPath: resultCollectionId ? `/models/collections/${resultCollectionId}` : null,
-    });
-  } catch (err) {
-    await markJobFailed(jobId, err);
-  }
-}
-
-export async function runThingiverseLikesImportJob(
-  jobId: string,
-  userId: string,
-  body: ThingiverseLikesImportJobBody,
-): Promise<void> {
-  await runTokenBatchImportJob(
-    jobId,
-    userId,
-    THINGIVERSE_BATCH,
-    body,
-    body.thing_ids,
-    async () => likesCollectionName(body.username),
-    () => `@${body.username}'s Likes`,
-  );
-}
-
-export async function runThingiverseCollectionImportJob(
-  jobId: string,
-  userId: string,
-  body: ThingiverseCollectionImportJobBody,
-): Promise<void> {
-  await runTokenBatchImportJob(
-    jobId,
-    userId,
-    THINGIVERSE_BATCH,
-    body,
-    body.thing_ids,
-    async (accessToken) =>
-      (await fetchThingiverseCollectionTitle(body.collectionId, accessToken)) ??
-      `Thingiverse Collection ${body.collectionId}`,
-    (collectionTitle) => `"${collectionTitle}"`,
-  );
-}
-
-export async function runMyminifactoryCollectionImportJob(
-  jobId: string,
-  userId: string,
-  body: MyminifactoryCollectionImportJobBody,
-): Promise<void> {
-  await runTokenBatchImportJob(
-    jobId,
-    userId,
-    MYMINIFACTORY_BATCH,
-    body,
-    body.object_ids,
-    async (apiKey) =>
-      (await fetchMyminifactoryCollectionObjects(body.username, body.slug, apiKey, 1).catch(() => null))?.title ??
-      `MyMiniFactory Collection ${body.slug}`,
-    (collectionTitle) => `"${collectionTitle}"`,
-  );
-}
-
-export async function runSnapmakerListImportJob(
-  jobId: string,
-  userId: string,
-  body: SnapmakerListImportJobBody,
-): Promise<void> {
-  const name = snapmakerListName(body.list);
-  await runTokenBatchImportJob(
-    jobId,
-    userId,
-    snapmakerBatch(userId),
-    body,
-    body.model_ids,
-    async () => name,
-    () => `your ${name}`,
-  );
-}
-
-/** The user's Creality Cloud likes, or a collection, filed into a collection named after it. */
-export async function runCrealitycloudListImportJob(
-  jobId: string,
-  userId: string,
-  body: CrealitycloudListImportJobBody,
-): Promise<void> {
-  await runTokenBatchImportJob(
-    jobId,
-    userId,
-    crealitycloudBatch(userId),
-    body,
-    body.model_ids,
-    async () => body.title,
-    (collectionTitle) => `"${collectionTitle}"`,
-  );
-}
-
-/** A NexPrint collection, filed into a collection named after it. */
-export async function runNexprintCollectionImportJob(
-  jobId: string,
-  userId: string,
-  body: NexprintCollectionImportJobBody,
-): Promise<void> {
-  await runTokenBatchImportJob(
-    jobId,
-    userId,
-    nexprintBatch(userId),
-    body,
-    body.model_ids,
-    async () => body.title,
-    (collectionTitle) => `"${collectionTitle}"`,
-  );
-}
-
-/** The user's Thangs likes, or a collection, filed into a collection named after it. */
-export async function runThangsListImportJob(
-  jobId: string,
-  userId: string,
-  body: ThangsListImportJobBody,
-): Promise<void> {
-  await runTokenBatchImportJob(
-    jobId,
-    userId,
-    thangsBatch(userId),
-    body,
-    body.model_ids,
-    async () => body.title,
-    (collectionTitle) => `"${collectionTitle}"`,
-  );
-}
-
-/** A Cults3D user's likes, or one of the user's printlists, filed into a collection named after it. */
-export async function runCults3dListImportJob(
-  jobId: string,
-  userId: string,
-  body: Cults3dListImportJobBody,
-): Promise<void> {
-  await runTokenBatchImportJob(
-    jobId,
-    userId,
-    cults3dBatch(userId),
-    body,
-    body.model_ids,
-    async () => body.title,
-    (collectionTitle) => `"${collectionTitle}"`,
-  );
-}
-
-export async function runPrintablesCollectionImportJob(
-  jobId: string,
-  userId: string,
-  body: PrintablesCollectionImportJobBody,
-): Promise<void> {
-  try {
-    let imported = 0;
-    let alreadyInLibrary = 0;
-    let processed = 0;
-    let unavailable = 0;
-    let providerOff = 0;
-    let rateLimited = 0;
-    const failed: string[] = [];
-    const successPrintIds: string[] = [];
-    log.info("printables collection job started", { job: jobId, url: body.url, models: body.model_ids.length });
-
-    await mapWithConcurrency(body.model_ids, COLLECTION_IMPORT_CONCURRENCY, async (modelId, index) => {
-      const modelUrl = `https://www.printables.com/model/${modelId}`;
       const itemBody: ImportRequestBody = {
         url: modelUrl,
         notes: body.notes ?? null,
@@ -956,21 +547,20 @@ export async function runPrintablesCollectionImportJob(
         log.warn("model import failed", { job: jobId, url: modelUrl, reason, error: err });
         if (reason === "unavailable") unavailable++;
         else if (reason === "rateLimited") rateLimited++;
+        else if (reason === "auth") authFailed++;
         else if (reason === "disabled") providerOff++;
+        else if (reason === "downloadLimit") downloadLimited++;
       } finally {
         processed++;
         await updateJob(jobId, { processed, imported, alreadyInLibrary, failedCount: failed.length }).catch(
           () => undefined,
         );
       }
-      if (index < body.model_ids.length - 1) await sleep(IMPORT_COLLECTION_DELAY_MS);
+      if (index < ids.length - 1 && !downloadLimited) await sleep(IMPORT_COLLECTION_DELAY_MS);
     });
 
     let resultCollectionId: string | null = null;
-    const collectionTitle =
-      body.collection_title?.trim() ||
-      (await fetchPrintablesCollectionTitle(body.collectionId)) ||
-      `Printables Collection ${body.collectionId}`;
+    const collectionTitle = await batch.title();
     if (successPrintIds.length) {
       const collection =
         (await syncedCollectionFor(userId, body.url)) ?? (await findOrCreateCollectionByName(userId, collectionTitle));
@@ -999,26 +589,35 @@ export async function runPrintablesCollectionImportJob(
       userId,
       action: "import_completed",
       targetId: resultCollectionId,
-      details: {
-        provider: "printables",
-        sourceLabel: collectionTitle,
-        imported,
-        alreadyInLibrary,
-        failed: failed.length,
-      },
+      details: { provider, sourceLabel: collectionTitle, imported, alreadyInLibrary, failed: failed.length },
     });
 
     const bodyParts: string[] = [];
     if (alreadyInLibrary) bodyParts.push(`${alreadyInLibrary} already in your library`);
-    const otherFailed = failed.length - unavailable - rateLimited - providerOff;
-    if (unavailable) bodyParts.push(`${unavailable} unavailable (private, deleted, or removed)`);
-    if (providerOff) bodyParts.push(`${providerOff} skipped — ${PROVIDER_OFF_TEXT("Printables")}`);
-    if (rateLimited) bodyParts.push(`${rateLimited} rate-limited by Printables — wait a while, then retry`);
+    const otherFailed = failed.length - unavailable - rateLimited - authFailed - providerOff - downloadLimited;
+    if (unavailable)
+      bodyParts.push(`${unavailable} ${lists?.unavailableText ?? "unavailable (private, deleted, paid, or hidden)"}`);
+    if (providerOff) bodyParts.push(`${providerOff} skipped — ${PROVIDER_OFF_TEXT(name)}`);
+    if (rateLimited) {
+      const possessive = name.endsWith("s") ? `${name}'` : `${name}'s`;
+      bodyParts.push(
+        `${rateLimited} ${lists?.rateLimitText ?? `blocked by ${possessive} rate limit — wait a while, then retry`}`,
+      );
+    }
+    if (authFailed) {
+      bodyParts.push(`${authFailed} ${lists?.authText ?? `failed because ${PROVIDERS[provider].authStopText}`}`);
+    }
+    if (downloadLimited) {
+      bodyParts.push(
+        `${downloadLimited} not downloaded — ${name}'s daily download limit was reached, retry the same collection tomorrow`,
+      );
+    }
     if (otherFailed) bodyParts.push(`${otherFailed} failed`);
+    const label = batch.label?.(collectionTitle) ?? `"${collectionTitle}"`;
     await createNotification(userId, {
       type: "import",
-      title: `Imported ${imported} of ${body.model_ids.length} models from Printables`,
-      body: bodyParts.length ? `From "${collectionTitle}" — ${bodyParts.join(", ")}.` : `From "${collectionTitle}".`,
+      title: `Imported ${imported} of ${ids.length} models from ${name}`,
+      body: bodyParts.length ? `From ${label} — ${bodyParts.join(", ")}.` : `From ${label}.`,
       externalUrl: body.url,
       internalPath: resultCollectionId ? `/models/collections/${resultCollectionId}` : null,
     });
@@ -1172,16 +771,10 @@ async function importOneLink(
     );
     return { ...totals, profiles: true };
   }
-  if (parseSnapmakerModelUrl(url) && body.scope && body.scope !== "url") {
-    const { urls } = await SNAPMAKER_PROFILES.profileUrls(url, body.scope);
-    return { ...(await importProfileUrlsSequentially(userId, urls, { ...body, url })), profiles: true };
-  }
-  if (parseCrealitycloudModelUrl(url) && body.scope && body.scope !== "url") {
-    const { urls } = await CREALITYCLOUD_PROFILES.profileUrls(url, body.scope);
-    return { ...(await importProfileUrlsSequentially(userId, urls, { ...body, url })), profiles: true };
-  }
-  if (parseNexprintModelUrl(url) && body.scope && body.scope !== "url") {
-    const { urls } = await NEXPRINT_PROFILES.profileUrls(url, body.scope);
+  const provider = detectProvider(url);
+  const profileUrls = provider && PROVIDERS[provider].sourcedImport?.profiles?.listUrls;
+  if (profileUrls && URLS[provider!].parseModel(url) && body.scope && body.scope !== "url") {
+    const { urls } = await profileUrls(url, body.scope);
     return { ...(await importProfileUrlsSequentially(userId, urls, { ...body, url })), profiles: true };
   }
   const result = await importPrintFromUrl(userId, url, { ...body, url });

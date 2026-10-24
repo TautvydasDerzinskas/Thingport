@@ -25,5 +25,11 @@ export default {
     trending: { kind: "popular", moreUrl: "https://www.thingiverse.com/search?sort=popular&type=things", rank: 5 },
   },
   errorCodes: {},
+  legacy: {
+    lists: [
+      { path: "thingiverse-likes", kinds: ["likes"], idsField: "thing_ids" },
+      { path: "thingiverse-collection", kinds: ["collection"], idsField: "thing_ids" },
+    ],
+  },
   extension: { site: "builtin", origins: ["*://*.thingiverse.com/*"] },
 } as const satisfies ProviderManifest;

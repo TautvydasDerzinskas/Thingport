@@ -5,8 +5,11 @@
 import type { Collection, CollectionSync } from "@prisma/client";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
-import { isProviderId, MANIFESTS, modelUrl, parseListUrl, type ProviderId } from "../providers/_generated";
+import { modelUrl, parseListUrl, type ProviderId } from "../providers/_generated";
 import { PROFILE_PROVIDERS } from "../providers/registry";
+import { likesCollectionName, providerName } from "../providers/names";
+
+export { providerName };
 import { addPrintsToCollection, findOrCreateCollectionByName, isSystemCollectionId } from "./collectionService";
 import { parseSnapmakerListUrl, snapmakerListName } from "../providers/snapmaker/api";
 import { getUserSnapmakerId } from "../providers/snapmaker/session";
@@ -33,15 +36,6 @@ export type SyncSource = { provider: SyncProvider; externalId: string; url: stri
 /** Providers whose models come with print profiles a sync can pick between. */
 export function hasProfiles(provider: string): boolean {
   return PROFILE_PROVIDERS.has(provider);
-}
-
-export function providerName(provider: string): string {
-  return isProviderId(provider) ? MANIFESTS[provider].name : provider;
-}
-
-/** The collection a user's likes are filed into, by import and sync alike. */
-export function likesCollectionName(username: string, provider: string = "thingiverse"): string {
-  return `${providerName(provider)} likes (@${username})`;
 }
 
 /** What a sync follows, for notifications: "its MakerWorld collection", "@alice's Thingiverse likes". */

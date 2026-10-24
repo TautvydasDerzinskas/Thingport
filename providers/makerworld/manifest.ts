@@ -26,5 +26,6 @@ export default {
     trending: { kind: "trending", moreUrl: "https://makerworld.com/en", rank: 2 },
   },
   errorCodes: { session: "MAKERWORLD_AUTH", downloadLimit: "MAKERWORLD_DOWNLOAD_LIMIT" },
+  legacy: { lists: [{ path: "collection", idsField: "design_ids" }], profiles: "makerworld-profiles" },
   extension: { site: "builtin", origins: ["*://*.makerworld.com/*"] },
 } as const satisfies ProviderManifest;

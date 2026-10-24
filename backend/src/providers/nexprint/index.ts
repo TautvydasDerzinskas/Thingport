@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import { HttpError } from "../../utils/fileUtils";
 import type { NewPlateInput } from "../../services/printCreation";
-import type { ImportKit, SourcedImport } from "../types";
+import type { ImportKit, SourcedImport, ProviderTrending, ProviderLists } from "../types";
 import { MANIFESTS } from "../_generated";
 import {
   fetchNexprintModelFiles,
@@ -14,10 +14,12 @@ import {
   parseNexprintModelUrl,
   resolveNexprintModel,
   selectNexprintProfiles,
+  fetchNexprintRecommended,
+  fetchNexprintCollection,
+  parseNexprintCollectionUrl,
 } from "./api";
 import { getUserNexprintToken, markNexprintSessionRejected, NEXPRINT_CONNECT } from "./session";
-import type { ProviderTrending } from "../types";
-import { fetchNexprintRecommended } from "./api";
+import { z } from "zod";
 
 const SESSION_CODE = MANIFESTS.nexprint.errorCodes.session;
 const BLOCKED =
@@ -104,3 +106,56 @@ export const nexprintImport: SourcedImport<string, NexprintModelResolution> = {
 };
 
 export const nexprintTrending: ProviderTrending = { fetch: (_userId, limit) => fetchNexprintRecommended(limit) };
+
+/** A NexPrint collection from its link; even private ones read without a sign-in. */
+async function collectionOf(userId: string, url: string) {
+  const parsed = parseNexprintCollectionUrl(url);
+  if (!parsed) throw new HttpError(400, "Not a link to a NexPrint collection");
+  try {
+    const collection = await fetchNexprintCollection(parsed.collectionId);
+    if (!collection) throw new HttpError(404, "That collection can't be found. It may have been deleted.");
+    return collection;
+  } catch (err) {
+    if (err instanceof NexprintAuthError) {
+      await markNexprintSessionRejected(userId);
+      // 400, not 401: the frontend treats any 401 as an expired Thingport session.
+      throw new HttpError(400, err.message, SESSION_CODE);
+    }
+    throw err;
+  }
+}
+
+export const nexprintLists: ProviderLists = {
+  async read(userId, url) {
+    const collection = await collectionOf(userId, url);
+    const title = collection.info.name;
+    if (!collection.entries.length) throw new HttpError(400, `"${title}" is empty`);
+    return {
+      title,
+      total: collection.total,
+      truncated: collection.truncated,
+      entries: collection.entries.map((e) => ({ externalId: e.modelId, title: e.title, cover: e.cover })),
+    };
+  },
+  modelIds: z
+    .array(
+      z
+        .string()
+        .regex(/^G\d+$/i)
+        .max(32)
+        .transform((id) => id.toUpperCase()),
+    )
+    .min(1)
+    .max(1000),
+  async start(userId, url) {
+    const { info } = await collectionOf(userId, url);
+    return {
+      batch: {
+        async ready() {
+          if (!(await getUserNexprintToken(userId))) throw new HttpError(503, NEXPRINT_CONNECT);
+        },
+        title: async () => info.name,
+      },
+    };
+  },
+};

@@ -29,5 +29,6 @@ export default {
     trending: { kind: "featured", moreUrl: "https://space.snapmaker.com/", rank: 10 },
   },
   errorCodes: { session: "snapmaker_session" },
+  legacy: { lists: [{ path: "snapmaker-list", idsField: "model_ids" }], profiles: "snapmaker-profiles" },
   extension: { site: "optional", origins: ["*://space.snapmaker.com/*", "*://id.snapmaker.com/*"] },
 } as const satisfies ProviderManifest;

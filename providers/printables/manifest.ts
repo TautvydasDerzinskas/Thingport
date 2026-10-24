@@ -22,5 +22,6 @@ export default {
     trending: { kind: "trending", moreUrl: "https://www.printables.com/model?ordering=trending", rank: 1 },
   },
   errorCodes: {},
+  legacy: { lists: [{ path: "printables-collection", kinds: ["collection"], idsField: "model_ids" }] },
   extension: { site: "builtin", origins: ["*://*.printables.com/*"] },
 } as const satisfies ProviderManifest;

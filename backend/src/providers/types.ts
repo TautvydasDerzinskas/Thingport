@@ -2,6 +2,7 @@
 // which does the rest the same way for every provider: refusing a turned-off one, deduplicating, the print, its
 // author, category and gallery, and the temp files.
 
+import type { z } from "zod";
 import type { ImportedPageMetadata } from "../services/importResolvers";
 import type {
   ExistingImportedPrint,
@@ -118,6 +119,51 @@ export type CustomImport = {
   ): Promise<ImportResult>;
   /** A re-import of a model already in the library. */
   addToExisting(existing: ExistingImportedPrint, body: ImportRequestBody, kit: PipelineKit): Promise<ImportResult>;
+};
+
+/** One model of a list, to pick from. */
+export type ListEntry = { externalId: string; title: string; cover: string | null };
+
+/** A list as its provider reads it for the import dialog: up to the first few hundred of its models. */
+export type ProviderList = { title: string | null; total: number; truncated: boolean; entries: ListEntry[] };
+
+/** A list import: the models picked from it, and what to file them with. */
+export type ListImportBody = ImportRequestBody & {
+  model_ids: string[];
+  /** The list's name as Thingport Grab read it, where the server can't (a private Printables collection). */
+  collection_title?: string | null;
+};
+
+/** The picked models of a list, imported one by one into a collection named after it. */
+export type ListBatch = {
+  /** Throws the error that fails the job before any import, when the provider can't import yet. */
+  ready?(): Promise<void>;
+  /** The collection's name, asked for once the imports are done. */
+  title(): Promise<string>;
+  /** How the notification names the list: the title in quotes when left out. */
+  label?(title: string): string;
+};
+
+/** How a list import goes: as a batch job, a job of the provider's own (MakerWorld), or waiting for Grab to import
+ *  each model on the provider's own pages (MakerOnline), filed into a collection called `title`. */
+export type ListImportStart =
+  { batch: ListBatch } | { run(jobId: string): Promise<void> } | { waitForGrab: { title: string } };
+
+/** A provider whose collections, likes or bookmarks import. The route has checked the link is one of its lists. */
+export type ProviderLists = {
+  /** The list a link is of, as the user; a 400 when it has no models. */
+  read(userId: string, url: string, body: ImportRequestBody): Promise<ProviderList>;
+  /** What the picked models' ids must look like; any non-empty list of strings when left out. */
+  modelIds?: z.ZodType<string[], z.ZodTypeDef, unknown>;
+  start(userId: string, url: string, body: ListImportBody): Promise<ListImportStart>;
+  /** Whether a list import waits for Grab rather than run as a job, so it doesn't wait for a running one. */
+  waitsForGrab?: boolean;
+  /** The notification's words for models a rate limit or a rejected sign-in stopped, after their count; the latter
+   *  `failed because` the provider's authStopText when left out. */
+  rateLimitText?: string;
+  authText?: string;
+  /** Its words for models that couldn't be found, after their count. */
+  unavailableText?: string;
 };
 
 /** The list for the dashboard's trending panel (the manifest's capabilities.trending says which it is). */

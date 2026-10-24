@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import { HttpError } from "../../utils/fileUtils";
 import type { NewPlateInput } from "../../services/printCreation";
 import { CLOUDFLARE_BLOCKED_CODE } from "../../services/flaresolverr";
-import type { SourcedImport } from "../types";
+import type { SourcedImport, ProviderTrending, ProviderList, ProviderLists } from "../types";
 import { MANIFESTS } from "../_generated";
 import {
   Cults3dAuthError,
@@ -17,6 +17,12 @@ import {
   placeCults3dFreeOrder,
   resolveCults3dDownload,
   resolveCults3dModel,
+  fetchCults3dPopular,
+  cults3dLikesName,
+  fetchCults3dLikes,
+  fetchCults3dPrintlist,
+  parseCults3dLikesUrl,
+  parseCults3dPrintlistUrl,
 } from "./api";
 import {
   CULTS3D_CONNECT,
@@ -27,8 +33,7 @@ import {
   markCults3dApiRejected,
   markCults3dSessionRejected,
 } from "./session";
-import type { ProviderTrending } from "../types";
-import { fetchCults3dPopular } from "./api";
+import { z } from "zod";
 
 const SESSION_CODE = MANIFESTS.cults3d.errorCodes.session;
 
@@ -106,4 +111,79 @@ export const cults3dTrending: ProviderTrending = {
     return credentials ? fetchCults3dPopular(limit, credentials) : "cults3dKey";
   },
   perUser: true,
+};
+
+/** A user's likes, or one of the user's own printlists, from a Cults3D link, read with their API key. Their orders say
+ *  which paid models they own, which the listing keeps. */
+async function listOf(userId: string, url: string): Promise<ProviderList & { title: string }> {
+  const likes = parseCults3dLikesUrl(url);
+  const printlist = likes ? null : parseCults3dPrintlistUrl(url);
+  if (!likes && !printlist) throw new HttpError(400, "Not a link to Cults3D likes or one of your printlists");
+  const credentials = await getUserCults3dCredentials(userId);
+  if (!credentials) throw new HttpError(400, CULTS3D_CONNECT, SESSION_CODE);
+  try {
+    const owned = new Set((await fetchCults3dOrders(credentials)).keys());
+    let title: string;
+    let listing: NonNullable<Awaited<ReturnType<typeof fetchCults3dLikes>>>;
+    if (likes) {
+      const found = await fetchCults3dLikes(credentials, likes.nick, owned);
+      if (!found) throw new HttpError(404, `There's no Cults3D user called "${likes.nick}".`);
+      title = cults3dLikesName(likes.nick);
+      listing = found;
+    } else {
+      if (printlist!.nick.toLowerCase() !== credentials.nick.toLowerCase()) {
+        throw new HttpError(
+          403,
+          "Only your own Cults3D printlists can be imported: Cults3D's API shows no one else's.",
+        );
+      }
+      const found = await fetchCults3dPrintlist(credentials, printlist!.key, owned);
+      if (!found) throw new HttpError(404, "That printlist can't be found. It may have been deleted.");
+      title = found.info.name;
+      listing = found;
+    }
+    return {
+      title,
+      total: listing.total,
+      truncated: listing.truncated,
+      entries: listing.entries.map((e) => ({ externalId: e.slug, title: e.title, cover: e.cover })),
+    };
+  } catch (err) {
+    if (err instanceof Cults3dAuthError) {
+      await markCults3dApiRejected(userId);
+      // 400, not 401: the frontend treats any 401 as an expired Thingport session.
+      throw new HttpError(400, err.message, SESSION_CODE);
+    }
+    if (err instanceof Cults3dRateLimitError) throw new HttpError(429, err.message);
+    throw err;
+  }
+}
+
+export const cults3dLists: ProviderLists = {
+  async read(userId, url) {
+    const list = await listOf(userId, url);
+    if (!list.entries.length) throw new HttpError(400, `"${list.title}" has no models Thingport can import`);
+    return list;
+  },
+  modelIds: z
+    .array(
+      z
+        .string()
+        .regex(/^[a-z0-9][a-z0-9_-]*$/i)
+        .max(200),
+    )
+    .min(1)
+    .max(1000),
+  async start(userId, url) {
+    const { title } = await listOf(userId, url);
+    return {
+      batch: {
+        // Each model's import reads the credentials itself.
+        async ready() {
+          if (!(await getUserCults3dCredentials(userId))) throw new HttpError(503, CULTS3D_CONNECT);
+        },
+        title: async () => title,
+      },
+    };
+  },
 };

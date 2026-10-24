@@ -1,7 +1,8 @@
 import fs from "node:fs/promises";
+import { z } from "zod";
 import { HttpError } from "../../utils/fileUtils";
 import type { NewPlateInput } from "../../services/printCreation";
-import type { ImportKit, SourcedImport } from "../types";
+import type { ImportKit, SourcedImport, ProviderTrending, ProviderList, ProviderLists } from "../types";
 import { MANIFESTS } from "../_generated";
 import {
   CrealitycloudAuthError,
@@ -15,10 +16,14 @@ import {
   parseCrealitycloudModelUrl,
   resolveCrealitycloudModel,
   selectCrealitycloudProfiles,
+  fetchCrealitycloudRecommended,
+  CREALITYCLOUD_LIKES_NAME,
+  fetchCrealitycloudCollection,
+  fetchCrealitycloudLikes,
+  parseCrealitycloudCollectionUrl,
+  parseCrealitycloudLikesUrl,
 } from "./api";
 import { CREALITYCLOUD_CONNECT, getUserCrealitycloudAuth, markCrealitycloudSessionRejected } from "./session";
-import type { ProviderTrending } from "../types";
-import { fetchCrealitycloudRecommended } from "./api";
 
 const SESSION_CODE = MANIFESTS.crealitycloud.errorCodes.session;
 const BLOCKED =
@@ -111,4 +116,71 @@ export const crealitycloudImport: SourcedImport<CrealitycloudAuth, Crealitycloud
 
 export const crealitycloudTrending: ProviderTrending = {
   fetch: (_userId, limit) => fetchCrealitycloudRecommended(limit),
+};
+
+/** The user's likes, or a collection, from a Creality Cloud link. Likes are their owner's only; collections are read
+ *  without a sign-in. */
+async function listOf(userId: string, url: string): Promise<ProviderList & { title: string }> {
+  try {
+    const likes = parseCrealitycloudLikesUrl(url);
+    let title: string;
+    let listing: Awaited<ReturnType<typeof fetchCrealitycloudLikes>>;
+    if (likes) {
+      const auth = await getUserCrealitycloudAuth(userId);
+      if (!auth) throw new HttpError(400, CREALITYCLOUD_CONNECT, SESSION_CODE);
+      if (auth.userId !== likes.userId) {
+        throw new HttpError(400, "Creality Cloud shows likes to their owner only, so only your own can be imported");
+      }
+      title = CREALITYCLOUD_LIKES_NAME;
+      listing = await fetchCrealitycloudLikes(auth);
+    } else {
+      const parsed = parseCrealitycloudCollectionUrl(url);
+      if (!parsed) throw new HttpError(400, "Not a link to a Creality Cloud collection or your likes");
+      const collection = await fetchCrealitycloudCollection(parsed.collectionId);
+      if (!collection) throw new HttpError(404, "That collection can't be found. It may have been deleted.");
+      title = collection.info.name;
+      listing = collection;
+    }
+    return {
+      title,
+      total: listing.total,
+      truncated: listing.truncated,
+      entries: listing.entries.map((e) => ({ externalId: e.modelId, title: e.title, cover: e.cover })),
+    };
+  } catch (err) {
+    if (err instanceof CrealitycloudAuthError) {
+      await markCrealitycloudSessionRejected(userId);
+      // 400, not 401: the frontend treats any 401 as an expired Thingport session.
+      throw new HttpError(400, err.message, SESSION_CODE);
+    }
+    throw err;
+  }
+}
+
+export const crealitycloudLists: ProviderLists = {
+  async read(userId, url) {
+    const list = await listOf(userId, url);
+    if (!list.entries.length) throw new HttpError(400, `"${list.title}" is empty`);
+    return list;
+  },
+  modelIds: z
+    .array(
+      z
+        .string()
+        .regex(/^[\w-]+$/)
+        .max(200),
+    )
+    .min(1)
+    .max(1000),
+  async start(userId, url) {
+    const { title } = await listOf(userId, url);
+    return {
+      batch: {
+        async ready() {
+          if (!(await getUserCrealitycloudAuth(userId))) throw new HttpError(503, CREALITYCLOUD_CONNECT);
+        },
+        title: async () => title,
+      },
+    };
+  },
 };

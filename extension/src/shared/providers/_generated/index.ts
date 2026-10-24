@@ -26,6 +26,7 @@ import { urls as cults3dUrls } from "./cults3d/urls";
 
 export type {
   Chip,
+  LegacyIdsField,
   ListKind,
   ListLink,
   Logo,

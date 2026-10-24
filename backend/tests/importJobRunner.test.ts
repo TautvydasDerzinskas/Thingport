@@ -23,17 +23,22 @@ vi.mock("../src/providers/thingiverse/api", async (importOriginal) => {
 });
 
 import { importPrintFromUrl } from "../src/services/importService";
-import {
-  runCollectionImportJob,
-  runThingiverseCollectionImportJob,
-  runThingiverseLikesImportJob,
-} from "../src/services/importJobRunner";
+import { runCollectionImportJob, runListImportJob } from "../src/services/importJobRunner";
+import { PROVIDERS } from "../src/providers/registry";
 import { fetchThingiverseCollectionTitle } from "../src/providers/thingiverse/api";
 import { setThingiverseAccessToken } from "../src/services/settingsService";
 import { prisma } from "../src/db";
 
 const app = createApp();
 let userId: string;
+
+/** A Thingiverse list's import, as POST /import/thingiverse/list starts it. */
+async function runThingiverseList(jobId: string, url: string, modelIds: string[]): Promise<void> {
+  const body = { url, model_ids: modelIds, tags: [] };
+  const start = await PROVIDERS.thingiverse.lists!.start(userId, url, body);
+  if (!("batch" in start)) throw new Error("Thingiverse lists import as a batch");
+  await runListImportJob(jobId, userId, "thingiverse", start.batch, body);
+}
 
 beforeAll(async () => {
   const email = `import-job-runner-test-${Date.now()}@example.com`;
@@ -269,7 +274,7 @@ describe("runCollectionImportJob", () => {
   });
 });
 
-describe("runThingiverseLikesImportJob", () => {
+describe("runListImportJob, of Thingiverse Likes", () => {
   afterEach(async () => {
     await setThingiverseAccessToken(null);
   });
@@ -281,12 +286,7 @@ describe("runThingiverseLikesImportJob", () => {
       total: 1,
     });
 
-    await runThingiverseLikesImportJob(job.id, userId, {
-      url: "https://www.thingiverse.com/someuser/likes",
-      username: "someuser",
-      thing_ids: ["1"],
-      tags: [],
-    });
+    await runThingiverseList(job.id, "https://www.thingiverse.com/someuser/likes", ["1"]);
 
     const finished = await getJob(job.id, userId);
     expect(finished?.status).toBe("ERROR");
@@ -322,12 +322,7 @@ describe("runThingiverseLikesImportJob", () => {
       total: 3,
     });
 
-    await runThingiverseLikesImportJob(job.id, userId, {
-      url: "https://www.thingiverse.com/someuser/likes",
-      username: "someuser",
-      thing_ids: ["101", "102", "103"],
-      tags: [],
-    });
+    await runThingiverseList(job.id, "https://www.thingiverse.com/someuser/likes", ["101", "102", "103"]);
 
     expect(maxActive).toBe(1);
     const finished = await getJob(job.id, userId);
@@ -362,7 +357,7 @@ describe("runThingiverseLikesImportJob", () => {
     const importLikes = async (username: string, thingId: string) => {
       const url = `https://www.thingiverse.com/${username}/likes`;
       const job = await createJob(userId, "COLLECTION", { sourceUrl: url, provider: "thingiverse", total: 1 });
-      await runThingiverseLikesImportJob(job.id, userId, { url, username, thing_ids: [thingId], tags: [] });
+      await runThingiverseList(job.id, url, [thingId]);
       return (await getJob(job.id, userId))?.resultCollectionId;
     };
 
@@ -379,7 +374,7 @@ describe("runThingiverseLikesImportJob", () => {
   });
 });
 
-describe("runThingiverseCollectionImportJob", () => {
+describe("runListImportJob, of a Thingiverse collection", () => {
   afterEach(async () => {
     await setThingiverseAccessToken(null);
     vi.mocked(fetchThingiverseCollectionTitle).mockReset();
@@ -405,12 +400,10 @@ describe("runThingiverseCollectionImportJob", () => {
       total: 2,
     });
 
-    await runThingiverseCollectionImportJob(job.id, userId, {
-      url: "https://www.thingiverse.com/Derzinskas/collections/40781574/things",
-      collectionId: "40781574",
-      thing_ids: ["301", "302"],
-      tags: [],
-    });
+    await runThingiverseList(job.id, "https://www.thingiverse.com/Derzinskas/collections/40781574/things", [
+      "301",
+      "302",
+    ]);
 
     const finished = await getJob(job.id, userId);
     expect(finished?.status).toBe("DONE");
@@ -446,12 +439,7 @@ describe("runThingiverseCollectionImportJob", () => {
       total: 1,
     });
 
-    await runThingiverseCollectionImportJob(job.id, userId, {
-      url: "https://www.thingiverse.com/someone/collections/40781575/things",
-      collectionId: "40781575",
-      thing_ids: ["401"],
-      tags: [],
-    });
+    await runThingiverseList(job.id, "https://www.thingiverse.com/someone/collections/40781575/things", ["401"]);
 
     const finished = await getJob(job.id, userId);
     expect(finished?.status).toBe("DONE");
@@ -465,12 +453,7 @@ describe("runThingiverseCollectionImportJob", () => {
       total: 1,
     });
 
-    await runThingiverseCollectionImportJob(job.id, userId, {
-      url: "https://www.thingiverse.com/someone/collections/1/things",
-      collectionId: "1",
-      thing_ids: ["1"],
-      tags: [],
-    });
+    await runThingiverseList(job.id, "https://www.thingiverse.com/someone/collections/1/things", ["1"]);
 
     const finished = await getJob(job.id, userId);
     expect(finished?.status).toBe("ERROR");

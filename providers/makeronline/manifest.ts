@@ -28,5 +28,6 @@ export default {
     trending: { kind: "trending", moreUrl: "https://www.makeronline.com/", rank: 4 },
   },
   errorCodes: { needsGrab: "makeronline_grab" },
+  legacy: { lists: [{ path: "makeronline-list", idsField: "model_ids" }] },
   extension: { site: "optional", origins: ["*://*.makeronline.com/*"] },
 } as const satisfies ProviderManifest;

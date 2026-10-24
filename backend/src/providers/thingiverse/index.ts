@@ -1,35 +1,42 @@
 import { HttpError } from "../../utils/fileUtils";
 import { mapWithConcurrency } from "../../utils/concurrency";
 import type { NewPlateInput } from "../../services/printCreation";
-import type { ResolvedModel, SourcedImport } from "../types";
+import type { ProviderLists, ResolvedModel, SourcedImport, ProviderTrending } from "../types";
 import { getThingiverseAccessToken } from "../../services/settingsService";
+import { likesCollectionName } from "../names";
 import {
+  fetchThingiverseCollectionThings,
+  fetchThingiverseCollectionTitle,
+  fetchThingiverseUserLikes,
+  parseThingiverseCollectionUrl,
+  parseThingiverseLikesUrl,
   resolveThingiverseThing,
   ThingiverseAuthError,
   ThingiverseRateLimitError,
   type ThingiversePlateFile,
   type ThingiverseThingResolution,
+  fetchThingiversePopular,
 } from "./api";
-import type { ProviderTrending } from "../types";
-import { fetchThingiversePopular } from "./api";
 
 const DOWNLOAD_CONCURRENCY = 2;
 
 type Thing = ResolvedModel & { plateFiles: ThingiversePlateFile[] };
 
+async function requireToken(): Promise<string> {
+  const accessToken = await getThingiverseAccessToken();
+  if (!accessToken) {
+    throw new HttpError(
+      503,
+      "Thingiverse import isn't configured for this instance yet -- ask an admin to add an App Token in Administration > Providers.",
+    );
+  }
+  return accessToken;
+}
+
 /** Every model file bundled with the Thing becomes its own plate on one print. Read and downloaded with the
  *  instance's App Token, which an admin sets. */
 export const thingiverseImport: SourcedImport<string, Thing> = {
-  async requireAuth() {
-    const accessToken = await getThingiverseAccessToken();
-    if (!accessToken) {
-      throw new HttpError(
-        503,
-        "Thingiverse import isn't configured for this instance yet -- ask an admin to add an App Token in Administration > Providers.",
-      );
-    }
-    return accessToken;
-  },
+  requireAuth: () => requireToken(),
   async resolveModel(thingId, accessToken) {
     const resolved: ThingiverseThingResolution | null = await resolveThingiverseThing(thingId, accessToken);
     return (
@@ -73,4 +80,60 @@ export const thingiverseTrending: ProviderTrending = {
     const token = await getThingiverseAccessToken();
     return token ? fetchThingiversePopular(limit, token) : "thingiverseToken";
   },
+};
+
+/** Anyone's Likes, or a collection, read with the instance's App Token. */
+export const thingiverseLists: ProviderLists = {
+  async read(_userId, url) {
+    const likes = parseThingiverseLikesUrl(url);
+    const collection = likes ? null : parseThingiverseCollectionUrl(url);
+    if (!likes && !collection) throw new HttpError(400, "Not a Thingiverse Likes or Collection URL");
+    const accessToken = await requireToken();
+    const [title, listing] = likes
+      ? [`${likes.username}'s Thingiverse Likes`, await fetchThingiverseUserLikes(likes.username, accessToken)]
+      : await Promise.all([
+          fetchThingiverseCollectionTitle(collection!.collectionId, accessToken),
+          fetchThingiverseCollectionThings(collection!.collectionId, accessToken),
+        ]);
+    if (!listing.entries.length) {
+      throw new HttpError(
+        400,
+        likes
+          ? "Could not load this user's likes -- check the username and try again"
+          : "Could not load this collection's models",
+      );
+    }
+    return {
+      title,
+      total: listing.entries.length,
+      truncated: listing.truncated,
+      entries: listing.entries.map((e) => ({ externalId: e.thingId, title: e.title, cover: e.cover })),
+    };
+  },
+  async start(_userId, url) {
+    const likes = parseThingiverseLikesUrl(url);
+    if (likes) {
+      return {
+        batch: {
+          ready: async () => void (await requireToken()),
+          title: async () => likesCollectionName(likes.username),
+          label: () => `@${likes.username}'s Likes`,
+        },
+      };
+    }
+    const collection = parseThingiverseCollectionUrl(url);
+    if (!collection) throw new HttpError(400, "Not a Thingiverse Likes or Collection URL");
+    const { collectionId } = collection;
+    return {
+      batch: {
+        ready: async () => void (await requireToken()),
+        title: async () =>
+          (await fetchThingiverseCollectionTitle(collectionId, await requireToken())) ??
+          `Thingiverse Collection ${collectionId}`,
+      },
+    };
+  },
+  rateLimitText:
+    "blocked by Thingiverse's rate-limit protection (too many requests at once) — wait a while, then retry",
+  authText: "failed because the configured App Token was rejected",
 };

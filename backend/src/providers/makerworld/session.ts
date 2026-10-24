@@ -7,6 +7,16 @@ export async function getUserMakerworldCookie(userId: string): Promise<string | 
   return user?.makerworldCookie ?? null;
 }
 
+// Falls back to the cookie saved in Settings when the request doesn't carry one.
+export async function withStoredMakerworldCookie<T extends { makerworld_cookie?: string | null }>(
+  userId: string,
+  body: T,
+): Promise<T> {
+  if (body.makerworld_cookie && body.makerworld_cookie.trim()) return body;
+  const stored = await getUserMakerworldCookie(userId);
+  return stored ? { ...body, makerworld_cookie: stored } : body;
+}
+
 /** `verified`: MakerWorld just accepted it, so an earlier rejection no longer stands even if it's
  *  the same cookie. A different cookie clears it too. */
 export async function setUserMakerworldCookie(

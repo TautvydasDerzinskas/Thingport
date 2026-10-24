@@ -4,21 +4,22 @@ import { HttpError } from "../../utils/fileUtils";
 import { maybeSleep } from "../../utils/concurrency";
 import type { NewPlateInput } from "../../services/printCreation";
 import { getMyminifactoryApiKey } from "../../services/settingsService";
-import type { ImportKit, ResolvedModel, SourcedImport } from "../types";
+import type { ImportKit, ProviderLists, ResolvedModel, SourcedImport, ProviderTrending } from "../types";
 import { MANIFESTS } from "../_generated";
 import {
+  fetchMyminifactoryCollectionObjects,
   isMyminifactoryFileHost,
   listMyminifactoryLibraryFiles,
   MyminifactoryAuthError,
   MyminifactoryRateLimitError,
   MyminifactorySessionExpiredError,
+  parseMyminifactoryCollectionUrl,
   resolveMyminifactoryDownload,
   resolveMyminifactoryLibraryDownload,
   resolveMyminifactoryObject,
+  fetchMyminifactoryPopular,
 } from "./api";
 import { getUserMyminifactoryCookie, markMyminifactoryCookieRejected } from "./session";
-import type { ProviderTrending } from "../types";
-import { fetchMyminifactoryPopular } from "./api";
 
 const SESSION_CODE = MANIFESTS.myminifactory.errorCodes.session;
 const BLOCKED =
@@ -91,17 +92,19 @@ async function downloadFromLibrary(
 
 /** Metadata from the API (the instance's key). Files from /download when anyone may have them: one file, or a zip
  *  whose model files each become a plate; else, paid and login-only ones, from the user's own library. */
+async function requireApiKey(): Promise<string> {
+  const apiKey = await getMyminifactoryApiKey();
+  if (!apiKey) {
+    throw new HttpError(
+      503,
+      "MyMiniFactory import isn't configured for this instance yet -- ask an admin to add an API key in Administration > Providers.",
+    );
+  }
+  return apiKey;
+}
+
 export const myminifactoryImport: SourcedImport<string, MyminifactoryObject> = {
-  async requireAuth() {
-    const apiKey = await getMyminifactoryApiKey();
-    if (!apiKey) {
-      throw new HttpError(
-        503,
-        "MyMiniFactory import isn't configured for this instance yet -- ask an admin to add an API key in Administration > Providers.",
-      );
-    }
-    return apiKey;
-  },
+  requireAuth: () => requireApiKey(),
   resolveModel: (objectId, apiKey) => resolveMyminifactoryObject(objectId, apiKey),
   async mapError(_userId, err) {
     if (err instanceof MyminifactoryRateLimitError) return new HttpError(429, err.message);
@@ -127,4 +130,53 @@ export const myminifactoryTrending: ProviderTrending = {
     const key = await getMyminifactoryApiKey();
     return key ? fetchMyminifactoryPopular(limit, key) : "myminifactoryKey";
   },
+};
+
+function collectionOf(url: string): { username: string; slug: string } {
+  const parsed = parseMyminifactoryCollectionUrl(url);
+  if (!parsed) throw new HttpError(400, "Not a MyMiniFactory collection URL");
+  return parsed;
+}
+
+/** Collections, read with the instance's API key; their paid models are left out. */
+export const myminifactoryLists: ProviderLists = {
+  async read(_userId, url) {
+    const { username, slug } = collectionOf(url);
+    const apiKey = await requireApiKey();
+    let listing: Awaited<ReturnType<typeof fetchMyminifactoryCollectionObjects>>;
+    try {
+      listing = await fetchMyminifactoryCollectionObjects(username, slug, apiKey);
+    } catch (err) {
+      if (err instanceof MyminifactoryRateLimitError) throw new HttpError(429, err.message);
+      // 400, not 401: the frontend treats any 401 as an expired Thingport session.
+      if (err instanceof MyminifactoryAuthError) throw new HttpError(400, err.message);
+      throw err;
+    }
+    if (listing && !listing.entries.length && listing.paid) {
+      throw new HttpError(
+        400,
+        "Every model in this collection is paid, and Thingport can import MyMiniFactory's free models only.",
+      );
+    }
+    if (!listing?.entries.length) throw new HttpError(400, "Could not load this collection's models");
+    return {
+      title: listing.title,
+      total: listing.entries.length,
+      truncated: listing.truncated,
+      entries: listing.entries.map((e) => ({ externalId: e.objectId, title: e.title, cover: e.cover })),
+    };
+  },
+  async start(_userId, url) {
+    const { username, slug } = collectionOf(url);
+    return {
+      batch: {
+        ready: async () => void (await requireApiKey()),
+        title: async () =>
+          (await fetchMyminifactoryCollectionObjects(username, slug, await requireApiKey(), 1).catch(() => null))
+            ?.title ?? `MyMiniFactory Collection ${slug}`,
+      },
+    };
+  },
+  rateLimitText: "blocked by MyMiniFactory's rate-limit protection — wait a while, then retry",
+  authText: "failed because the configured API key was rejected",
 };

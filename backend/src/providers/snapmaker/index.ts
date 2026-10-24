@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import { HttpError } from "../../utils/fileUtils";
 import type { NewPlateInput } from "../../services/printCreation";
-import type { ImportKit, SourcedImport } from "../types";
+import type { ImportKit, SourcedImport, ProviderTrending, ProviderLists } from "../types";
 import { MANIFESTS } from "../_generated";
 import {
   fetchSnapmakerDownloads,
@@ -13,10 +13,12 @@ import {
   type SnapmakerFile,
   type SnapmakerModelResolution,
   snapmakerModelUrl,
+  fetchSnapmakerFeatured,
+  fetchSnapmakerList,
+  parseSnapmakerListUrl,
+  snapmakerListName,
 } from "./api";
 import { getUserSnapmakerToken, markSnapmakerTokenRejected, SNAPMAKER_CONNECT } from "./session";
-import type { ProviderTrending } from "../types";
-import { fetchSnapmakerFeatured } from "./api";
 
 const SESSION_CODE = MANIFESTS.snapmaker.errorCodes.session;
 const BLOCKED =
@@ -109,3 +111,49 @@ export const snapmakerImport: SourcedImport<string, SnapmakerModelResolution> = 
 };
 
 export const snapmakerTrending: ProviderTrending = { fetch: (_userId, limit) => fetchSnapmakerFeatured(limit) };
+
+/** The user's likes or bookmarks, from a link Thingport Grab or the app made (`?tab=interactions&list=...`). */
+function listOf(url: string) {
+  const parsed = parseSnapmakerListUrl(url);
+  if (!parsed?.list) throw new HttpError(400, "Not a link to your Snapmaker Space likes or bookmarks");
+  return parsed.list;
+}
+
+/** The user's own likes and bookmarks, read as them: Snapmaker shows them to their owner only. */
+export const snapmakerLists: ProviderLists = {
+  async read(userId, url) {
+    const list = listOf(url);
+    const token = await getUserSnapmakerToken(userId);
+    if (!token) throw new HttpError(400, SNAPMAKER_CONNECT, SESSION_CODE);
+    let listing: Awaited<ReturnType<typeof fetchSnapmakerList>>;
+    try {
+      listing = await fetchSnapmakerList(list, token);
+    } catch (err) {
+      if (err instanceof SnapmakerAuthError) {
+        await markSnapmakerTokenRejected(userId);
+        // 400, not 401: the frontend treats any 401 as an expired Thingport session.
+        throw new HttpError(400, err.message, SESSION_CODE);
+      }
+      throw err;
+    }
+    if (!listing.entries.length) throw new HttpError(400, `Your ${snapmakerListName(list)} are empty`);
+    return {
+      title: snapmakerListName(list),
+      total: listing.total,
+      truncated: listing.truncated,
+      entries: listing.entries.map((e) => ({ externalId: e.modelId, title: e.title, cover: e.cover })),
+    };
+  },
+  async start(userId, url) {
+    const name = snapmakerListName(listOf(url));
+    return {
+      batch: {
+        async ready() {
+          if (!(await getUserSnapmakerToken(userId))) throw new HttpError(503, SNAPMAKER_CONNECT);
+        },
+        title: async () => name,
+        label: () => `your ${name}`,
+      },
+    };
+  },
+};
