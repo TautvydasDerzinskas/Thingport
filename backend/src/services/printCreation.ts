@@ -25,7 +25,7 @@ import { generateCardRender } from "./previewImageService";
 import { printAssetHome } from "./modelAssets";
 import { deleteNormalized3mf } from "./normalized3mfCache";
 import { getPreviewMode } from "./settingsService";
-import { shareStoredCopy } from "./fileReuse";
+import { reuseMarker, shareStoredCopy, type ReuseMarker } from "./fileReuse";
 import { findStoredCopies } from "./storedContent";
 import { Prisma } from "@prisma/client";
 import type { CategorySource, Plate, Print } from "@prisma/client";
@@ -96,14 +96,14 @@ async function placeFile(input: NewPlateInput, destAbsPath: string): Promise<str
 async function placePlateFile(
   input: NewPlateInput,
   destAbsPath: string,
-): Promise<{ effectivePath: string | null; contentSha256: string | null }> {
+): Promise<{ effectivePath: string | null; contentSha256: string | null; marker: ReuseMarker }> {
   const fromPath = input.tempFilePath ?? input.copyFromPath;
-  if (!fromPath) return { effectivePath: await placeFile(input, destAbsPath), contentSha256: null };
+  if (!fromPath) return { effectivePath: await placeFile(input, destAbsPath), contentSha256: null, marker: {} };
   const { contentSha256, shared } = await shareStoredCopy(fromPath, destAbsPath, findStoredCopies);
-  if (!shared) return { effectivePath: await placeFile(input, destAbsPath), contentSha256 };
+  if (!shared) return { effectivePath: await placeFile(input, destAbsPath), contentSha256, marker: {} };
   // The clone is in place: a temp file left behind is only clutter, not a reason to fail the import.
   if (input.tempFilePath) await fs.rm(input.tempFilePath, { force: true }).catch(() => undefined);
-  return { effectivePath: destAbsPath, contentSha256 };
+  return { effectivePath: destAbsPath, contentSha256, marker: await reuseMarker(destAbsPath, true, contentSha256) };
 }
 
 async function resolveSize(input: NewPlateInput, effectivePath: string | null): Promise<number> {
@@ -167,7 +167,7 @@ async function createPlateAtPosition(
   const desiredFilename = await availablePlateFilename(print.id, sanitized);
   const storagePath = await renderPlateStoragePath(print, desiredFilename, position);
   const destAbsPath = path.join(STORAGE, storagePath);
-  const { effectivePath, contentSha256 } = await placePlateFile(input, destAbsPath);
+  const { effectivePath, contentSha256, marker } = await placePlateFile(input, destAbsPath);
   const size = await resolveSize(input, effectivePath);
   const mime = input.mime || guessMimeFromPath(desiredFilename) || "application/octet-stream";
 
@@ -184,6 +184,7 @@ async function createPlateAtPosition(
         sourcePath: input.sourcePath ?? null,
         sourceInstanceId: input.sourceInstanceId ?? null,
         contentSha256,
+        ...marker,
       },
     });
   } catch (err) {

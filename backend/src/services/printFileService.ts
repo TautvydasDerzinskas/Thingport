@@ -7,7 +7,7 @@ import { withStorageLock } from "../utils/storageLock";
 import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
 import { isPreparedPrintFilename, inspectPreparedPrint } from "./preparedPrint";
 import { pruneEmptyStorageDirs, renderPrintFileStoragePath } from "./printService";
-import { shareStoredCopy } from "./fileReuse";
+import { reuseMarker, shareStoredCopy } from "./fileReuse";
 import { findStoredCopies } from "./storedContent";
 import type { Prisma, Print, PrintFile } from "@prisma/client";
 
@@ -101,6 +101,7 @@ export async function saveFileFromTemp(
     }
     if (shared) await fs.rm(tempPath, { force: true }).catch(() => undefined);
     else await placeUpload(tempPath, destination);
+    const marker = await reuseMarker(destination, shared, contentSha256);
 
     let metadata: Record<string, unknown> | null = null;
     if (role === "PREPARED" || safeName.toLowerCase().endsWith(".3mf")) {
@@ -118,6 +119,7 @@ export async function saveFileFromTemp(
         data: {
           size: stat.size,
           contentSha256,
+          ...marker,
           role,
           metadata: (metadata as Prisma.InputJsonValue | undefined) ?? undefined,
         },

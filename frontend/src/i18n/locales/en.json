@@ -1288,6 +1288,7 @@
           "help": "Turning on cloning goes over the files already stored: each one's hash is recorded, then files with the same content are replaced by clones of the oldest one, keeping their own name, place and owner. Only files in Thingport's storage folder are touched, and a file that changes meanwhile is left as it is. Run it again after turning cloning on for a while off, or for files that couldn't be checked. Snapshots of the storage can keep the old copies, so the space freed is an upper bound.",
           "idle": "Not checked since the server started",
           "starting": "Starting...",
+          "restarting": "Stopping, then starting again...",
           "hashing": "Recording hashes: {{done}} of {{total}}",
           "cloning": "Cloning identical files: {{done}} of {{total}}, {{cloned}} cloned",
           "result_one": "{{count}} file cloned, up to {{size}} freed",

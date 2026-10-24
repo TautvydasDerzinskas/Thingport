@@ -1310,6 +1310,7 @@
           "help": "Įjungus klonavimą peržiūrimi jau išsaugoti failai: užregistruojama kiekvieno maišos reikšmė, o vienodo turinio failai pakeičiami seniausio failo klonais, išlaikant jų pavadinimą, vietą ir savininką. Liečiami tik Thingport saugyklos aplanko failai, o per tą laiką pasikeitęs failas paliekamas kaip yra. Paleiskite dar kartą, kai klonavimas kurį laiką buvo išjungtas arba kai failų nepavyko patikrinti. Saugyklos momentinės kopijos gali išlaikyti senas kopijas, todėl atlaisvinta vieta yra viršutinė riba.",
           "idle": "Nepatikrinta nuo serverio paleidimo",
           "starting": "Pradedama...",
+          "restarting": "Stabdoma, paskui bus paleista iš naujo...",
           "hashing": "Registruojamos maišos reikšmės: {{done}} iš {{total}}",
           "cloning": "Klonuojami vienodi failai: {{done}} iš {{total}}, sukloniuota {{cloned}}",
           "result_one": "Sukloniuotas {{count}} failas, atlaisvinta iki {{size}}",

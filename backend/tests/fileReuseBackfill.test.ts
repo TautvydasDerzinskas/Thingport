@@ -10,6 +10,7 @@ import { makePrint, nonce, register, sha, tempFile, uniqueBytes, uniqueImage, up
 import { STORAGE } from "../src/config";
 import { managedPlatePath, relocatePrint } from "../src/services/printService";
 import { managedPrintFilePath } from "../src/services/printFileService";
+import { createPrint } from "../src/services/printCreation";
 import { addPreviewImage, previewImagePath } from "../src/services/previewImageService";
 import { saveDescriptionImage, descriptionImagePath } from "../src/services/descriptionImageService";
 import {
@@ -548,6 +549,143 @@ describe("running again", () => {
   });
 });
 
+describe("what an import already cloned", () => {
+  it.each(["edited", "replaced"])("does not mark a clone %s after verification", async (change) => {
+    await setFileReuse("reflink");
+    mockClones();
+    const bytes = uniqueBytes();
+    const changed = Buffer.alloc(bytes.length, 0x79);
+    const plateOf = async (userId: string) => {
+      const { plates } = await createPrint(userId, { title: `Imported ${nonce()}` }, "Imported", [
+        { filename: "shared.stl", tempFilePath: tempFile(dir, bytes) },
+      ]);
+      return plates[0];
+    };
+    await plateOf(firstUserId);
+    const realChmod = fsp.chmod;
+    // cloneFrom verifies the bytes before applying permissions. An external writer changes the
+    // destination afterwards, before the import samples its reuse marker.
+    const chmod = vi.spyOn(fsp, "chmod").mockImplementation(async (file, mode) => {
+      await realChmod(file, mode);
+      if (change === "replaced") await fsp.rename(tempFile(dir, changed), file);
+      else await fsp.writeFile(file, changed);
+    });
+    const copy = await plateOf(secondUserId);
+    chmod.mockRestore();
+    expect(copy.reuseIno).toBeNull();
+    expect(copy.reuseCtimeNs).toBeNull();
+    expect(fs.readFileSync(managedPlatePath(copy))).toEqual(changed);
+    await backfill();
+    expect((await prisma.plate.findUniqueOrThrow({ where: { id: copy.id } })).contentSha256).toBe(sha(changed));
+    expect(fs.readFileSync(managedPlatePath(copy))).toEqual(changed);
+  });
+
+  it("leaves a plate cloned at import alone, counting nothing for it", async () => {
+    await setFileReuse("reflink");
+    mockClones();
+    const bytes = uniqueBytes();
+    const plateOf = async (userId: string) => {
+      const { plates } = await createPrint(userId, { title: `Imported ${nonce()}` }, "Imported", [
+        { filename: "shared.stl", tempFilePath: tempFile(dir, bytes) },
+      ]);
+      return plates[0];
+    };
+    const donor = await plateOf(firstUserId);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const copy = await plateOf(secondUserId);
+    // Only a file that was kept as a clone has the marker; the plain store before it has none.
+    expect(donor.reuseIno).toBeNull();
+    expect(copy.reuseIno).not.toBeNull();
+    const file = managedPlatePath(copy);
+    const ino = fs.statSync(file).ino;
+    expect(copy.reuseIno).toBe(BigInt(ino));
+
+    const clones = mockClones();
+    const state = await backfill();
+    expect(state).toMatchObject({ cloned: 0, reclaimedBytes: 0, skipped: 0, failed: false });
+    expect(clones).toEqual([]);
+    expect(fs.statSync(file).ino).toBe(ino);
+    // The donor that was never marked is now, so the next run is a plain look.
+    expect((await prisma.plate.findUniqueOrThrow({ where: { id: donor.id } })).reuseIno).toBe(
+      BigInt(fs.statSync(managedPlatePath(donor)).ino),
+    );
+  });
+
+  it("leaves a gallery picture cloned at import alone, marked after its rename into place", async () => {
+    await setFileReuse("reflink");
+    mockClones();
+    const image = await uniqueImage("jpeg");
+    const first = await makePrint(dir, firstUserId, "Gallery");
+    const second = await makePrint(dir, secondUserId, "Gallery");
+    const donor = (await addPreviewImage(first.print.id, image))!;
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const copy = (await addPreviewImage(second.print.id, image))!;
+    expect(donor.reuseIno).toBeNull();
+    const home = (await prisma.print.findUniqueOrThrow({ where: { id: second.print.id } })).assetsPath;
+    const file = previewImagePath(copy.id, home);
+    const stat = fs.statSync(file, { bigint: true });
+    // Taken of the final file: the rename changed its ctime.
+    expect(copy).toMatchObject({ reuseIno: stat.ino, reuseCtimeNs: stat.ctimeNs });
+
+    const clones = mockClones();
+    const state = await backfill();
+    expect(state).toMatchObject({ cloned: 0, reclaimedBytes: 0, skipped: 0, failed: false });
+    expect(clones).toEqual([]);
+    expect(fs.statSync(file, { bigint: true }).ino).toBe(stat.ino);
+  });
+
+  it("leaves a supporting file and a description image cloned at import alone", async () => {
+    await setFileReuse("reflink");
+    mockClones();
+    const bytes = uniqueBytes();
+    const image = await uniqueImage("png");
+    const first = await makePrint(dir, firstUserId, "Both");
+    const second = await makePrint(dir, secondUserId, "Both");
+    await upload(dir, firstUserId, first.print.id, "dup.pdf", bytes);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const file = await upload(dir, secondUserId, second.print.id, "dup.pdf", bytes);
+    await saveDescriptionImage(first.print.id, image, null);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const picture = (await saveDescriptionImage(second.print.id, image, null))!;
+    const pictureRow = await prisma.descriptionImage.findUniqueOrThrow({ where: { id: picture.id } });
+    expect(file.reuseIno).not.toBeNull();
+    expect(pictureRow.reuseIno).not.toBeNull();
+    const home = (await prisma.print.findUniqueOrThrow({ where: { id: second.print.id } })).assetsPath;
+    const files = () => [managedPrintFilePath(file), descriptionImagePath(pictureRow, home)];
+    const inos = files().map((f) => fs.statSync(f).ino);
+
+    const clones = mockClones();
+    const state = await backfill();
+    expect(state).toMatchObject({ cloned: 0, reclaimedBytes: 0, skipped: 0, failed: false });
+    expect(clones).toEqual([]);
+    expect(files().map((f) => fs.statSync(f).ino)).toEqual(inos);
+  });
+});
+
+describe("hashing progress on resume", () => {
+  it("counts only the rows still to visit, so it ends at the total", async () => {
+    await setFileReuse("off");
+    // Plates (an earlier kind) and some of the supporting files sit before the cursor, and are never visited again.
+    const made = await Promise.all([1, 2, 3].map(() => makePrint(dir, firstUserId, "Resume")));
+    const rows = [];
+    for (const m of made) rows.push(await upload(dir, firstUserId, m.print.id, "resume.pdf", uniqueBytes()));
+    const ids = rows.map((row) => row.id).toSorted();
+    await prisma.setting.upsert({
+      where: { key: "file_reuse_backfill_pending" },
+      create: { key: "file_reuse_backfill_pending", value: { userId: null, phase: "hashing", cursor: `1:${ids[0]}` } },
+      update: { value: { userId: null, phase: "hashing", cursor: `1:${ids[0]}` } },
+    });
+    await setFileReuse("reflink");
+    // No cloning, so the total stays the hashing phase's.
+    mockClones({ unsupported: true });
+    await resumeFileReuseBackfill();
+    const state = currentFileReuseBackfill()!;
+    await until(() => !state.running);
+    expect(state).toMatchObject({ phase: "hashing", total: 2, done: 2, hashed: 2, failed: false });
+    expect((await printFileRow(ids[0])).contentSha256).toBeNull();
+  });
+});
+
 describe("what the original keeps through a swap", () => {
   const folderOf = (file: string) => fs.realpathSync(path.dirname(file));
 
@@ -941,5 +1079,66 @@ describe("the admin routes", () => {
     release();
     await held;
     await until(() => !running?.running);
+  });
+  it("starts a new run once a stopped one has ended, when turned on again meanwhile", async () => {
+    const { files } = await stored(3);
+    let first = true;
+    mockClones({
+      afterClone: async () => {
+        // Once: the switch is turned off mid-run, and the run is left winding down.
+        if (first) await setFileReuse("off");
+        first = false;
+      },
+    });
+    // Held where the run clears its journal on the way out, after it has noticed the switch is off.
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const realDelete = prisma.setting.deleteMany.bind(prisma.setting);
+    let old: ReturnType<typeof startFileReuseBackfill> = null;
+    vi.spyOn(prisma.setting, "deleteMany").mockImplementation(((args: any) =>
+      (async () => {
+        if (old?.stopped) await gate;
+        return realDelete(args);
+      })()) as any);
+    await setFileReuse("reflink");
+    old = startFileReuseBackfill(null)!;
+    await until(() => old!.stopped);
+    expect(old!.running).toBe(true);
+
+    // Turned on again while the old run is still ending: remembered, and shown as such.
+    const res = await request(app).post("/api/settings/file-reuse").set(admin()).send({ mode: "reflink" });
+    expect(res.status).toBe(200);
+    expect(res.body.backfill).toMatchObject({ running: true, stopped: true, restart_queued: true });
+    expect(startFileReuseBackfill(null)).toBeNull();
+
+    release();
+    await until(() => !old!.running && !!currentFileReuseBackfill() && currentFileReuseBackfill() !== old);
+    const next = currentFileReuseBackfill()!;
+    await until(() => !next.running);
+    expect(next).toMatchObject({ stopped: false, failed: false, cloned: 2 });
+    expect(files.every((f) => fs.readFileSync(f.file).length > 0)).toBe(true);
+  });
+
+  it("drops a queued start when the switch is off again by the time the old run ends", async () => {
+    await stored(3);
+    mockClones({ afterClone: async () => void (await setFileReuse("off")) });
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const realDelete = prisma.setting.deleteMany.bind(prisma.setting);
+    let old: ReturnType<typeof startFileReuseBackfill> = null;
+    vi.spyOn(prisma.setting, "deleteMany").mockImplementation(((args: any) =>
+      (async () => {
+        if (old?.stopped) await gate;
+        return realDelete(args);
+      })()) as any);
+    await setFileReuse("reflink");
+    old = startFileReuseBackfill(null)!;
+    await until(() => old!.stopped);
+    expect(old!.running).toBe(true);
+    startFileReuseBackfill(null);
+    release();
+    await until(() => !old!.running && !old!.restartQueued);
+    expect(currentFileReuseBackfill()).toBe(old);
+    expect(old.restartQueued).toBe(false);
   });
 });

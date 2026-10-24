@@ -29,7 +29,8 @@ const POLL_INTERVAL_MS = 2000;
 const backfillStatus = (run: FileReuseBackfill | null, t: TFunction): string => {
   const key = "adminSettings.fileReuse.backfill";
   if (!run) return t(`${key}.idle`);
-  if (run.running) {
+  if (run.running || run.restart_queued) {
+    if (run.restart_queued) return t(`${key}.restarting`);
     if (!run.total) return t(`${key}.starting`);
     return run.phase === "hashing"
       ? t(`${key}.hashing`, { done: run.done, total: run.total })
@@ -81,7 +82,8 @@ export default function FileReuseSection({ onUnauthorized }: Props) {
     };
   }, [onUnauthorized]);
 
-  const running = backfill?.running ?? false;
+  // A queued restart briefly exposes the ended run while the server checks whether sharing is still enabled.
+  const running = !!(backfill?.running || backfill?.restart_queued);
   // Followed while it runs, like the move of files, so a run turned on by the switch or one a restart carried on with
   // shows up too.
   React.useEffect(() => {

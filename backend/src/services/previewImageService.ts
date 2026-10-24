@@ -13,7 +13,7 @@ import {
   removeAsset,
   type AssetHome,
 } from "./modelAssets";
-import { plainWriteMode, shareStoredBytes } from "./fileReuse";
+import { plainWriteMode, reuseMarker, shareStoredBytes, type ReuseMarker } from "./fileReuse";
 import { findStoredCopies } from "./storedContent";
 import { ensureAssetHome, plateThumbExists, plateThumbReplaceable, saveThumbFromBytes } from "./printService";
 import type { PreviewImage } from "@prisma/client";
@@ -27,7 +27,8 @@ export function previewImageExists(id: string, home: AssetHome): boolean {
   return assetExists(home, galleryImageFile(id));
 }
 
-/** Where the JPEG was stored, its size, and its SHA-256 when it was hashed for sharing (file reuse on). Null when it
+/** Where the JPEG was stored, its size, and its SHA-256 when it was hashed for sharing (file reuse on),
+ *  and the marker of a clone that was kept. Null when it
  *  couldn't be saved. The path is returned so a caller that has to undo the save removes exactly this file, without
  *  looking the folder up again through a print that may be gone. */
 async function saveBuffer(
@@ -35,7 +36,7 @@ async function saveBuffer(
   id: string,
   input: Buffer,
   keepExif: boolean,
-): Promise<{ dest: string; size: number; contentSha256: string | null } | null> {
+): Promise<({ dest: string; size: number; contentSha256: string | null } & ReuseMarker) | null> {
   let tmp: string | null = null;
   try {
     const dest = assetTarget(await ensureAssetHome(printId), galleryImageFile(id));
@@ -50,7 +51,8 @@ async function saveBuffer(
     const { contentSha256, shared } = await shareStoredBytes(out, tmp, findStoredCopies, plainWriteMode());
     if (!shared) await fs.writeFile(tmp, out, { flag: "wx" });
     await fs.rename(tmp, dest);
-    return { dest, size: out.length, contentSha256 };
+    // After the rename, which changes the file's ctime.
+    return { dest, size: out.length, contentSha256, ...(await reuseMarker(dest, shared, contentSha256)) };
   } catch {
     if (tmp) await fs.rm(tmp, { force: true });
     return null;

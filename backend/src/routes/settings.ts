@@ -302,6 +302,7 @@ function fileReuseBackfillOut(run: FileReuseBackfillRun | null) {
     unsupported: run.unsupported,
     stopped: run.stopped,
     failed: run.failed,
+    restart_queued: run.restartQueued,
   };
 }
 

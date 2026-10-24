@@ -1295,6 +1295,7 @@
           "help": "Al activar la clonación se repasan los archivos ya guardados: se registra el hash de cada uno y los archivos con el mismo contenido se sustituyen por clones del más antiguo, conservando su nombre, lugar y propietario. Solo se tocan archivos de la carpeta de almacenamiento de Thingport, y un archivo que cambie mientras tanto se deja como está. Vuelve a ejecutarlo tras tener la clonación desactivada un tiempo, o para archivos que no se pudieron comprobar. Las instantáneas del almacenamiento pueden conservar las copias antiguas, así que el espacio liberado es un máximo.",
           "idle": "Sin comprobar desde que arrancó el servidor",
           "starting": "Iniciando...",
+          "restarting": "Deteniendo; después se iniciará de nuevo...",
           "hashing": "Registrando hashes: {{done}} de {{total}}",
           "cloning": "Clonando archivos idénticos: {{done}} de {{total}}, {{cloned}} clonados",
           "result_one": "{{count}} archivo clonado, hasta {{size}} liberados",

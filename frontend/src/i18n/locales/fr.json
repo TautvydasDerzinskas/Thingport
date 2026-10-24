@@ -1295,6 +1295,7 @@
           "help": "Activer le clonage parcourt les fichiers déjà stockés : l'empreinte de chacun est enregistrée, puis les fichiers de même contenu sont remplacés par des clones du plus ancien, en gardant leur nom, leur emplacement et leur propriétaire. Seuls les fichiers du dossier de stockage de Thingport sont touchés, et un fichier modifié entre-temps est laissé tel quel. Relancez-le après une période sans clonage, ou pour des fichiers qui n'ont pas pu être vérifiés. Les instantanés du stockage peuvent garder les anciennes copies : l'espace libéré est donc un maximum.",
           "idle": "Pas de vérification depuis le démarrage du serveur",
           "starting": "Démarrage...",
+          "restarting": "Arrêt en cours, puis nouveau démarrage...",
           "hashing": "Enregistrement des empreintes : {{done}} sur {{total}}",
           "cloning": "Clonage des fichiers identiques : {{done}} sur {{total}}, {{cloned}} clonés",
           "result_one": "{{count}} fichier cloné, jusqu'à {{size}} libérés",

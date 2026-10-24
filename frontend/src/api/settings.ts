@@ -30,6 +30,8 @@ export type FileReuseBackfill = {
   stopped: boolean;
   /** It hit an error and ended early; the server log says what. */
   failed: boolean;
+  /** Turned on again while it was stopping: a new run starts as soon as it has ended. */
+  restart_queued: boolean;
 };
 
 /** Null when none has run since the server started. */

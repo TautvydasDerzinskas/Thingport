@@ -55,6 +55,8 @@ export type FileReuseBackfillRun = {
   stopped: boolean;
   /** The run hit an error and ended early; the server log says what. */
   failed: boolean;
+  /** A start was asked for while this run was winding down after being stopped; a new run starts when it has ended. */
+  restartQueued: boolean;
 };
 
 /** Where a restart carries on. `cursor` is the last row done: "<kind index>:<id>" hashing, a hash cloning. No `userId`
@@ -62,17 +64,27 @@ export type FileReuseBackfillRun = {
 type Pending = { userId: string | null; phase: "hashing" | "cloning"; cursor: string };
 
 let current: FileReuseBackfillRun | null = null;
+/** Who asked for the start that's waiting for the current run to end (null for nobody), if one is. */
+let queuedStart: { userId: string | null } | null = null;
 
 export function currentFileReuseBackfill(): FileReuseBackfillRun | null {
   return current;
 }
 
-/** Starts the backfill; null while one is already going. */
+/** Starts the backfill; null while one is already going. A start asked for while a run is still winding down after the
+ *  switch was turned off is remembered instead, and made once that run has ended: the switch turned off and on again
+ *  quickly would otherwise start nothing, and leave "Stopped" until someone checks again. */
 export function startFileReuseBackfill(
   userId: string | null,
   from: { phase: Pending["phase"]; cursor: string } = { phase: "hashing", cursor: "" },
 ): FileReuseBackfillRun | null {
-  if (current?.running) return null;
+  if (current?.running) {
+    if (current.stopped) {
+      queuedStart = { userId };
+      current.restartQueued = true;
+    }
+    return null;
+  }
   current = {
     running: true,
     startedAt: new Date().toISOString(),
@@ -87,6 +99,7 @@ export function startFileReuseBackfill(
     unsupported: false,
     stopped: false,
     failed: false,
+    restartQueued: false,
   };
   void run(current, { userId, ...from });
   return current;
@@ -159,6 +172,21 @@ async function run(state: FileReuseBackfillRun, pending: Pending): Promise<void>
     await dropSetting(PENDING_KEY);
     state.running = false;
     state.finishedAt = new Date().toISOString();
+    await startQueued(state);
+  }
+}
+
+/** Starts the run asked for while `ended` was winding down, if the switch is on again by now. */
+async function startQueued(ended: FileReuseBackfillRun): Promise<void> {
+  const queued = queuedStart;
+  queuedStart = null;
+  if (!queued) return;
+  try {
+    if (await enabled()) startFileReuseBackfill(queued.userId);
+    else ended.restartQueued = false;
+  } catch (err) {
+    ended.restartQueued = false;
+    log.error("couldn't start the queued run", { error: err });
   }
 }
 
@@ -225,8 +253,13 @@ async function hashPhase(state: FileReuseBackfillRun, pending: Pending): Promise
   const [startKind, startAfter] = parseHashCursor(pending.cursor);
   state.phase = "hashing";
   state.total = 0;
-  for (const kind of KINDS.slice(startKind)) {
-    state.total += await delegate(kind).count({ where: { contentSha256: null, ...STORED[kind].managed } });
+  for (const [index, kind] of KINDS.entries()) {
+    if (index < startKind) continue;
+    // Only what's still to be visited: the rows of the resumed kind up to the cursor aren't.
+    const after = index === startKind ? startAfter : "";
+    state.total += await delegate(kind).count({
+      where: { contentSha256: null, id: { gt: after }, ...STORED[kind].managed },
+    });
   }
   let sinceSave = 0;
   for (const [index, kind] of KINDS.entries()) {

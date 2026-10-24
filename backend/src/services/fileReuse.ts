@@ -17,6 +17,39 @@ export async function sha256OfFile(filePath: string): Promise<string> {
   return hash.digest("hex");
 }
 
+/** What a row records of a file that was made to share its bytes, as the backfill does (see fileReuseBackfill's
+ *  alreadyShared): the file's inode and ctime. A run that finds both unchanged leaves the file alone. */
+export type ReuseMarker = { reuseIno?: bigint; reuseCtimeNs?: bigint };
+
+/** Records only a stable, verified final file. An external writer may have edited or replaced the clone
+ *  since sharing checked it, so a path's current inode/ctime alone must not bless its bytes as shared. */
+export async function reuseMarker(
+  filePath: string,
+  shared: boolean,
+  contentSha256: string | null,
+): Promise<ReuseMarker> {
+  if (!shared || !contentSha256) return {};
+  try {
+    const opened = await openRegularFile(filePath, true);
+    if (!opened) return {};
+    try {
+      const hash = await sha256OfHandle(opened.handle);
+      const after = await opened.handle.stat({ bigint: true });
+      const before = opened.stat;
+      if (
+        hash !== contentSha256 || before.dev !== after.dev || before.ino !== after.ino ||
+        before.size !== after.size || before.mtimeNs !== after.mtimeNs || before.ctimeNs !== after.ctimeNs
+      ) return {};
+      return { reuseIno: after.ino, reuseCtimeNs: after.ctimeNs };
+    } finally {
+      await opened.handle.close();
+    }
+  } catch {
+    // Only bookkeeping: without it the next run looks at the file once more.
+    return {};
+  }
+}
+
 /** What stored copies of a file are looked up by. */
 export type FileContent = { contentSha256: string; size: number };
 
@@ -206,7 +239,8 @@ async function cloneFrom(
  *  it's byte for byte `content`. `content` must be the hash and size taken from the same source file: a size from a DB
  *  column that may be 0 or null would make a good source look changed. Returns how it was made, or null when the source
  *  couldn't be used (gone, not a regular file, a different size or content than `content`), leaving nothing at
- *  `destAbsPath`; a 409 when something is already there. `source.changed` is called only for what the file itself shows:
+ *  `destAbsPath`; a 409 when something is already there. A caller that keeps a "cloned" result records it like the
+ *  other store paths do, with reuseMarker of the final file. `source.changed` is called only for what the file itself shows:
  *  it's gone, or its own bytes don't hash to `content`. `mode` is applied as the store paths do. */
 export async function copyStoredFile(
   source: StoredCopy,
