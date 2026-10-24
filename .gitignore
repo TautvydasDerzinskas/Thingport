@@ -15,6 +15,11 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Bridge builds: a plain `go build` in bridge/ writes the binary there. Releases come from bridge-release.yml
+# (into bridge/dist/, ignored above).
+bridge/thingport-bridge
+bridge/thingport-bridge.exe
+
 # Prisma
 backend/prisma/dev.db*
 
