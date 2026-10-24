@@ -23,6 +23,7 @@ import {
   downloadImportToTemp,
   fetchMakerworldDesignForImport,
   importPrintFromUrl,
+  MYMINIFACTORY_SESSION_CODE,
   SNAPMAKER_SESSION_CODE,
   CREALITYCLOUD_SESSION_CODE,
   NEXPRINT_SESSION_CODE,
@@ -129,6 +130,7 @@ function classifyImportFailure(err: unknown): ImportFailureReason {
   if (err instanceof HttpError) {
     if (
       err.code === MAKERWORLD_AUTH_CODE ||
+      err.code === MYMINIFACTORY_SESSION_CODE ||
       err.code === SNAPMAKER_SESSION_CODE ||
       err.code === CREALITYCLOUD_SESSION_CODE ||
       err.code === NEXPRINT_SESSION_CODE ||

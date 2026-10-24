@@ -5,6 +5,7 @@ import { IMPORT_MAKERWORLD_CALL_DELAY_MS } from "../config";
 import {
   attachImportedPreviewImages,
   buildImportSourceUrl,
+  CULTS3D_SESSION_CODE,
   fetchMakerworldDesignForImport,
   resolveCategoryIdByCategory,
 } from "./importService";
@@ -30,6 +31,7 @@ import { getUserMakerworldCookie } from "./makerworldCookieService";
 import { upsertAuthorFromImport } from "./authorService";
 import { emptyGaps, openSourceGaps, type SourceGap } from "./sourceGaps";
 import { localizeDescriptionImages } from "./descriptionImageService";
+import { normalizeTags } from "../utils/tagNormalization";
 
 export type FillGapsResult = {
   source_url: string;
@@ -135,7 +137,7 @@ export async function fetchSourceMeta(userId: string, print: Print, sourceUrl: s
 
   if (provider === "cults3d") {
     const credentials = await getUserCults3dCredentials(userId);
-    if (!credentials) throw new HttpError(400, CULTS3D_CONNECT);
+    if (!credentials) throw new HttpError(400, CULTS3D_CONNECT, CULTS3D_SESSION_CODE);
     let resolved;
     try {
       resolved = await resolveCults3dModel(externalId, credentials);
@@ -160,7 +162,10 @@ async function fillEmptyMetadata(
   const updates: Prisma.PrintUpdateInput = {};
   if (gaps.has("title") && meta.title) updates.title = meta.title;
   if (gaps.has("description") && meta.description) updates.notes = meta.description;
-  if (gaps.has("tags") && meta.tags.length) updates.tags = meta.tags;
+  if (gaps.has("tags")) {
+    const tags = normalizeTags(meta.tags);
+    if (tags.length) updates.tags = tags;
+  }
   if (gaps.has("creator") && meta.creator) updates.creator = meta.creator;
   if (gaps.has("author") && meta.author) {
     const linked = await upsertAuthorFromImport(meta.author);
@@ -203,7 +208,7 @@ export async function fillSourceGaps(userId: string, printId: string): Promise<F
     if (err instanceof MyminifactoryAuthError) throw new HttpError(400, err.message);
     if (err instanceof ThangsBlockedError) throw new HttpError(429, err.message);
     if (err instanceof Cults3dRateLimitError) throw new HttpError(429, err.message);
-    if (err instanceof Cults3dAuthError) throw new HttpError(400, err.message);
+    if (err instanceof Cults3dAuthError) throw new HttpError(400, err.message, CULTS3D_SESSION_CODE);
     throw err;
   }
   const wanted = new Set(gaps);

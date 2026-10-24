@@ -3,6 +3,7 @@ import {
   Cults3dAuthError,
   Cults3dBlockedError,
   cults3dFreeOrderForm,
+  Cults3dNoFreeDownloadError,
   cults3dMetaFromCreation,
   cults3dModelUrl,
   cults3dNumericId,
@@ -319,6 +320,11 @@ describe("Cults3D downloads", () => {
     expect(calls[2].url.toString()).toBe("https://cults3d.com/en/free_orders?creation_slug=ghostship-benchy&x=1");
     expect(new URLSearchParams(calls[2].body!).get("authenticity_token")).toBe("tok+en/==");
     expect(calls[2].headers.Referer).toBe("https://cults3d.com/en/3d-model/art/ghostship-benchy");
+  });
+
+  it("says so when the page has no free Download form", async () => {
+    stubFetch(() => new Response("<html></html>", { status: 200 }));
+    await expect(placeCults3dFreeOrder("ghostship-benchy", BROWSER)).rejects.toBeInstanceOf(Cults3dNoFreeDownloadError);
   });
 
   it("tells an ended sign-in from a Cloudflare challenge", async () => {

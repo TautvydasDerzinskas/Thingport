@@ -85,6 +85,17 @@ export class Cults3dBlockedError extends Error {
   }
 }
 
+/** A model page without the free Download form, so Thingport can't order it as the button would. */
+export class Cults3dNoFreeDownloadError extends Error {
+  constructor() {
+    super(
+      "Cults3D's page for this model has no free Download button, so Thingport can't order it. Download it once on " +
+        "cults3d.com, then import it again.",
+    );
+    this.name = "Cults3dNoFreeDownloadError";
+  }
+}
+
 // ---- Links ----
 
 function parseUrl(url: string): URL | null {
@@ -575,7 +586,7 @@ export function cults3dFreeOrderForm(html: string): { action: string; token: str
 export async function placeCults3dFreeOrder(slug: string, browser: Cults3dBrowser): Promise<void> {
   const page = await fetchSitePage(cults3dModelUrl(slug), browser);
   const form = cults3dFreeOrderForm(page.html);
-  if (!form) throw new Error("Cults3D's page for this model has no free download");
+  if (!form) throw new Cults3dNoFreeDownloadError();
   const res = await fetchSite(`${SITE_ORIGIN}${form.action}`, browser, {
     method: "POST",
     body: new URLSearchParams({ authenticity_token: form.token }).toString(),

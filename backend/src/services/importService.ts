@@ -105,6 +105,7 @@ import {
   fetchCrealitycloudModelFiles,
   fetchCrealitycloudProfileFile,
   isCrealitycloudFileHost,
+  isCrealitycloudModelId,
   parseCrealitycloudModelUrl,
   resolveCrealitycloudModel,
   selectCrealitycloudProfiles,
@@ -143,6 +144,7 @@ import {
   Cults3dAuthError,
   Cults3dBlockedError,
   cults3dModelUrl,
+  Cults3dNoFreeDownloadError,
   Cults3dRateLimitError,
   Cults3dSessionError,
   fetchCults3dOrders,
@@ -940,13 +942,44 @@ export type ImportStatus = {
 
 /** Never fetches the provider's page, so it's cheap enough for the extension to call on every
  * page load. */
+// Creality Cloud model id -> the alias its print is kept under, so a status check asks the site once per model.
+const crealitycloudAliases = new Map<string, string>();
+const CREALITYCLOUD_ALIAS_CACHE_SIZE = 500;
+
+/** The alias an import keeps a Creality Cloud model under; the id itself when the site can't tell. */
+async function crealitycloudAliasOf(modelId: string): Promise<string> {
+  const cached = crealitycloudAliases.get(modelId);
+  if (cached) return cached;
+  const alias = (await resolveCrealitycloudModel(modelId).catch(() => null))?.alias;
+  if (!alias) return modelId;
+  if (crealitycloudAliases.size >= CREALITYCLOUD_ALIAS_CACHE_SIZE) {
+    crealitycloudAliases.delete(crealitycloudAliases.keys().next().value!);
+  }
+  crealitycloudAliases.set(modelId, alias);
+  return alias;
+}
+
 export async function checkImportStatus(userId: string, url: string): Promise<ImportStatus> {
   const source = identifySourceModel(url);
   if (!source) return { recognized: false, already_imported: false, print_id: null, state: "not_imported", gaps: [] };
-  const print = await prisma.print.findFirst({
+  const include = {
+    plates: { select: { sourceInstanceId: true } },
+    previewImages: { select: { generated: true } },
+  } as const;
+  let print = await prisma.print.findFirst({
     where: { userId, sourceProvider: source.provider, sourceExternalId: source.externalId },
-    include: { plates: { select: { sourceInstanceId: true } }, previewImages: { select: { generated: true } } },
+    include,
   });
+  // An import keeps a Creality Cloud model linked by id under its alias.
+  if (!print && source.provider === "crealitycloud" && isCrealitycloudModelId(source.externalId)) {
+    const alias = await crealitycloudAliasOf(source.externalId);
+    if (alias !== source.externalId) {
+      print = await prisma.print.findFirst({
+        where: { userId, sourceProvider: source.provider, sourceExternalId: alias },
+        include,
+      });
+    }
+  }
   if (!print) return { recognized: true, already_imported: false, print_id: null, state: "not_imported", gaps: [] };
   const gaps = openSourceGaps(print, print.previewImages);
   // Without a profile in the URL, any imported profile counts; asking MakerWorld on every page
@@ -2137,6 +2170,7 @@ async function cults3dFailure(userId: string, err: unknown): Promise<unknown> {
   // Its own code, so a sync waits for the next visit with Grab rather than failing the model.
   if (err instanceof Cults3dBlockedError) return new HttpError(403, err.message, CLOUDFLARE_BLOCKED_CODE);
   if (err instanceof Cults3dRateLimitError) return new HttpError(429, err.message);
+  if (err instanceof Cults3dNoFreeDownloadError) return new HttpError(403, err.message);
   return err;
 }
 
