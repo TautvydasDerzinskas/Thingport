@@ -96,8 +96,9 @@ async function migrateLegacy(config: ConfiguredConfig): Promise<SyncedRecentImpo
   return merged;
 }
 
-/** Every account's entries, newest first. A single-item list, from before or a browser still on an older version,
- *  is split into items here, its entries behind the newer ones. */
+/** Every account's entries, newest first. A single-item list is split into items here: from before, its entries go
+ *  behind any timed one. Once that's done, a browser still on an older version writes it afresh with only what it
+ *  imported since, which is newer than everything stored, a model imported again there included. */
 async function readSynced(): Promise<SyncedRecentImport[]> {
   const stored = await chrome.storage.sync.get(null);
   const items = Object.entries(stored)
@@ -105,12 +106,15 @@ async function readSynced(): Promise<SyncedRecentImport[]> {
     .map(([, value]) => value as SyncedRecentImport);
   const old = stored[RECENT_IMPORTS_STORAGE_KEY] as SyncedRecentImport[] | undefined;
   if (Array.isArray(old)) {
-    const known = new Set(items.map(thumbKey));
-    const added = old.filter((e) => !known.has(thumbKey(e)));
-    for (const [i, e] of added.entries()) e.importedAt = added.length - i;
-    await chrome.storage.sync.set(Object.fromEntries(added.map((e) => [itemKey(e), e])));
+    const newest = items.reduce((max, e) => Math.max(max, e.importedAt ?? 0), 0);
+    const start = items.length ? Math.max(Date.now(), newest + old.length) : old.length;
+    for (const [i, e] of old.entries()) e.importedAt = start - i;
+    await chrome.storage.sync.set(Object.fromEntries(old.map((e) => [itemKey(e), e])));
     await chrome.storage.sync.remove(RECENT_IMPORTS_STORAGE_KEY);
-    items.push(...added);
+    const replaced = new Set(old.map(thumbKey));
+    return [...items.filter((e) => !replaced.has(thumbKey(e))), ...old].toSorted(
+      (a, b) => (b.importedAt ?? 0) - (a.importedAt ?? 0),
+    );
   }
   return items.toSorted((a, b) => (b.importedAt ?? 0) - (a.importedAt ?? 0));
 }
