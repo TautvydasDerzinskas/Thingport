@@ -58,13 +58,14 @@ const PROFILE_GAP_MS = 2000;
  *  MakerOnline's, Creality Cloud's and NexPrint's from their APIs. Null on other sites, or when they can't be read. */
 async function profileIdsFor(): Promise<((scope: MakerworldProfileScope) => string[]) | null> {
   const { url, classification } = ctx();
-  if (classification.provider === "snapmaker" && classification.type === "model") return loadSnapmakerProfiles(url);
-  if (classification.provider === "makeronline" && classification.type === "model") return loadMakeronlineProfiles(url);
-  if (classification.provider === "crealitycloud" && classification.type === "model") {
+  if (classification.provider === "snapmaker" && classification.kind === "single") return loadSnapmakerProfiles(url);
+  if (classification.provider === "makeronline" && classification.kind === "single")
+    return loadMakeronlineProfiles(url);
+  if (classification.provider === "crealitycloud" && classification.kind === "single") {
     return loadCrealitycloudProfiles(url);
   }
-  if (classification.provider === "nexprint" && classification.type === "model") return loadNexprintProfiles(url);
-  if (classification.provider !== "makerworld" || classification.type !== "model") return null;
+  if (classification.provider === "nexprint" && classification.kind === "single") return loadNexprintProfiles(url);
+  if (classification.provider !== "makerworld" || classification.kind !== "single") return null;
   const page = await loadMakerworldDesignForPage(url);
   return page ? (scope) => makerworldProfileIds(page.design, scope, page.requestedInstanceId) : null;
 }
@@ -140,7 +141,7 @@ export async function loadSingleItem(): Promise<void> {
     onPanelAction("fill-gaps", () => void runFillGaps());
     return;
   }
-  const { provider, type } = ctx().classification;
+  const { provider } = ctx().classification;
   if (isPaidMyminifactoryObject()) {
     renderPanel(`
       <div class="tg-title">Paid model</div>
@@ -165,16 +166,8 @@ export async function loadSingleItem(): Promise<void> {
     `);
     return;
   }
-  const skipInspect =
-    (provider === "thingiverse" && type === "thing") ||
-    (provider === "printables" && type === "model") ||
-    (provider === "myminifactory" && type === "object") ||
-    (provider === "snapmaker" && type === "model") ||
-    (provider === "makeronline" && type === "model") ||
-    (provider === "crealitycloud" && type === "model") ||
-    (provider === "nexprint" && type === "model") ||
-    (provider === "thangs" && type === "model") ||
-    (provider === "cults3d" && type === "model");
+  // MakerWorld's links may be a file to unpack; every other site's is a model page the instance reads itself.
+  const skipInspect = provider !== "makerworld";
 
   let zipFilename: string | null = null;
   if (skipInspect) {
@@ -348,7 +341,7 @@ async function runDirectImport(opts?: { entries?: string[] }): Promise<void> {
   const collectionId = await collectionIdFor(choice);
   try {
     const resolved =
-      classification.provider === "makerworld" && classification.type === "model"
+      classification.provider === "makerworld" && classification.kind === "single"
         ? await resolveMakerworldDownloadUrl(url).catch(nullUnlessBlocking)
         : null;
     // One message so import and collection filing finish even if the page is gone.

@@ -4,7 +4,8 @@
 import type { ImportStatus } from "../shared/api";
 import { listen, send, type ContentMessages } from "../shared/messages";
 import { CONFIG_CHANGE_KEYS } from "../shared/storage";
-import { classifyUrl, parseCrealitycloudLikesUrl, parseSnapmakerListUrl, snapmakerListUrl } from "../shared/urls";
+import { parseCrealitycloudLikesUrl } from "../shared/providers/_generated/crealitycloud/urls";
+import { classifyUrl, parseSnapmakerListUrl, snapmakerListUrl } from "../shared/urls";
 import { setContext, type LibraryState } from "./context";
 import { isMakerworldBlockingError, resolveMakerworldDownloadUrl } from "./makerworld/downloadResolver";
 import { offerNormalizedDownload, unmountNormalizedDownload } from "./makerworld/normalizedDownload";
@@ -134,14 +135,19 @@ async function init(): Promise<void> {
   if (classification.provider === "snapmaker" && classification.kind === "batch") {
     const own = await snapmakerUserId();
     if (isStale()) return;
-    if (!own || own !== parseSnapmakerListUrl(url)?.userId) {
+    const list = parseSnapmakerListUrl(url);
+    if (!own || !list || own !== list.userId) {
       reportTabIconState(false);
       return;
     }
-    pageUrl = snapmakerListUrl(own, classification.type);
+    pageUrl = snapmakerListUrl(own, list.list);
   }
   // Creality Cloud's likes too: anyone can open the address, but only the owner sees them.
-  if (classification.provider === "crealitycloud" && classification.type === "likes") {
+  if (
+    classification.provider === "crealitycloud" &&
+    classification.kind === "batch" &&
+    classification.type === "likes"
+  ) {
     const own = await crealitycloudUserId();
     if (isStale()) return;
     if (!own || own !== parseCrealitycloudLikesUrl(url)?.userId) {

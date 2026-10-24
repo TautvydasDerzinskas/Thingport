@@ -1,6 +1,6 @@
 // MakerOnline's own model data, as its pages read it: which print profiles a model has, and whose they are.
 
-import { parseMakeronlineModelUrl } from "../shared/urls";
+import { parseMakeronlineModelUrl } from "../shared/providers/_generated/makeronline/urls";
 
 export type MakeronlineProfileScope = "url" | "designer" | "all";
 

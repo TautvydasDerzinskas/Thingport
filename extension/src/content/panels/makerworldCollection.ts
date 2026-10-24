@@ -5,7 +5,7 @@
 
 import type { ImportStatus, SyncLookup } from "../../shared/api";
 import { request } from "../../shared/messages";
-import { makerworldModelUrl } from "../../shared/urls";
+import { makerworldModelUrl } from "../../shared/providers/_generated/makerworld/urls";
 import { ctx } from "../context";
 import { findOrCreateCollection } from "./collectionPicker";
 import { NO_MORE_DATA } from "../makerworld/labels";

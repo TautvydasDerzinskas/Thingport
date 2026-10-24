@@ -125,15 +125,22 @@ function wireSnapmakerListSwitch(): void {
   }
 }
 
+/** The page's list: the batch panel only opens on one. */
+function pageList() {
+  const { classification } = ctx();
+  if (classification.kind !== "batch") throw new Error("This page isn't a list");
+  return classification;
+}
+
 function endpoints() {
-  const { provider, type } = ctx().classification;
+  const { provider, type } = pageList();
   const config = BATCH_ENDPOINTS[`${provider}:${type}` as BatchKey];
   if (!config) throw new Error(`Batch import isn't supported for ${provider} ${type}`);
   return config;
 }
 
 function isPrintablesCollection(): boolean {
-  const { provider, type } = ctx().classification;
+  const { provider, type } = pageList();
   return provider === "printables" && type === "collection";
 }
 

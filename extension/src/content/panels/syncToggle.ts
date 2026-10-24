@@ -10,7 +10,8 @@ import { SITE_NAMES } from "./funStatus";
 
 /** A Thingiverse user's Likes page, which a sync follows like a collection. */
 function isLikes(): boolean {
-  return ctx().classification.type === "likes";
+  const { classification } = ctx();
+  return classification.kind === "batch" && classification.type === "likes";
 }
 
 /** Null when the page can't be synced, or the instance predates synced collections. */
