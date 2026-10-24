@@ -625,7 +625,13 @@ export async function openImportResponse(
   let makerworldCookie: string | null = null;
   if (hostIs(host, "makerworld.com")) {
     makerworldCookie = resolveMakerworldCookie(body);
-    Object.assign(headers, makerworldHtmlHeaders(referer || validatedUrl, makerworldCookie));
+    Object.assign(
+      headers,
+      makerworldHtmlHeaders(
+        referer || validatedUrl,
+        new URL(validatedUrl).protocol === "https:" ? makerworldCookie : null,
+      ),
+    );
   }
   if (referer) headers.Referer = referer;
 

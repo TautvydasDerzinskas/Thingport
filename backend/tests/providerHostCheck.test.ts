@@ -124,4 +124,19 @@ describe("importing with a stored MakerWorld cookie", () => {
       vi.unstubAllGlobals();
     }
   });
+
+  it("doesn't send the cookie to MakerWorld over HTTP", async () => {
+    for (const host of ["makerworld.com", "www.makerworld.com"]) {
+      const calls = stubFetch();
+      await request(app)
+        .post("/api/import")
+        .set({ Authorization: `Bearer ${token}` })
+        .send({ url: `http://${host}/en/models/${(stamp % 1_000_000) + host.length + 100}` });
+
+      const page = calls.find((call) => call.url.startsWith(`http://${host}/`));
+      expect(page).toBeDefined();
+      expect(JSON.stringify(page?.headers)).not.toContain(SECRET);
+      vi.unstubAllGlobals();
+    }
+  });
 });
