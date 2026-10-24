@@ -427,15 +427,6 @@
       "system": "Pagal sistemą",
       "serviceConnected": "{{service}}: prijungta",
       "serviceNotConnected": "{{service}}: neprijungta",
-      "makerworldDisabledReason": "MakerWorld: neprijungta",
-      "thingiverseDisabledReason": "Thingiverse: administratorius dar nesukonfigūravo API rakto",
-      "myminifactoryDisabledReason": "MyMiniFactory: administratorius dar nesukonfigūravo API rakto",
-      "snapmakerDisabledReason": "Snapmaker Space: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai",
-      "makeronlineDisabledReason": "MakerOnline: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai",
-      "crealitycloudDisabledReason": "Creality Cloud: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai",
-      "nexprintDisabledReason": "NexPrint: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai",
-      "thangsDisabledReason": "Thangs: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai",
-      "cults3dDisabledReason": "Cults3D: įveskite slapyvardį ir API raktą skiltyje Konfigūracija → Šaltiniai",
       "myModels": "Mano modeliai"
     },
     "notifications": {
@@ -1031,28 +1022,6 @@
       "providers": {
         "heading": "Tiekėjai",
         "subtitle": "Svetainės, iš kurių Thingport importuoja ir su kuriomis sinchronizuoja. Išjungus tiekėją, iš jo niekam nieko naujo nebus; jau importuoti modeliai lieka.",
-        "descriptions": {
-          "makerworld": "Bambu Lab modelių svetainė: importai su spausdinimo profiliais ir kolekcijų sinchronizavimas.",
-          "printables": "Prusa modelių svetainė: importai bei viešų ir privačių kolekcijų sinchronizavimas.",
-          "thingiverse": "Importai, kolekcijos ir patikę modeliai, naudojant šio Thingport programėlės raktą.",
-          "myminifactory": "Modeliai ir viešos kolekcijos, naudojant šio Thingport API raktą; nusipirkti modeliai – per kiekvieno naudotojo MyMiniFactory paskyrą.",
-          "snapmaker": "Modeliai su spausdinimo profiliais bei kiekvieno naudotojo pamėgti ir pažymėti modeliai, per kiekvieno naudotojo Snapmaker paskyrą.",
-          "makeronline": "Modeliai su spausdinimo profiliais, kolekcijos ir kiekvieno naudotojo pamėgti modeliai. Failai atkeliauja per Thingport Grab: MakerOnline juos duoda tik savo puslapiams.",
-          "crealitycloud": "Modeliai su spausdinimo profiliais, kolekcijos ir kiekvieno naudotojo pamėgti modeliai, per kiekvieno naudotojo Creality Cloud paskyrą.",
-          "nexprint": "Modeliai su spausdinimo profiliais ir kolekcijos, per kiekvieno naudotojo NexPrint paskyrą.",
-          "thangs": "Nemokami ir įsigyti modeliai, patikę modeliai ir kolekcijos, per kiekvieno naudotojo Thangs paskyrą.",
-          "cults3d": "Nemokami ir įsigyti modeliai, patikę modeliai ir spausdinimo sąrašai, per kiekvieno naudotojo Cults3D API raktą. Failai gaunami su naršyklės prisijungimu, kurį perduoda Thingport Grab."
-        },
-        "keyStatus": {
-          "thingiverse": {
-            "set": "Programėlės raktas nustatytas",
-            "missing": "Nėra programėlės rakto: Thingiverse importai neveiks, kol jo nenustatysite"
-          },
-          "myminifactory": {
-            "set": "API raktas nustatytas",
-            "missing": "Nėra API rakto: MyMiniFactory importai neveiks, kol jo nenustatysite"
-          }
-        },
         "turnOff": "Išjungti {{name}}",
         "turnOn": "Įjungti {{name}}",
         "disableTitle": "Išjungti {{name}}?",
@@ -1430,36 +1399,6 @@
         "refetchProgress": "Gaunami {{email}} aprašymai: {{done}} iš {{total}} — atnaujinta: {{updated}}.",
         "refetchDone": "{{email}} aprašymai gauti iš naujo: pakeista {{updated}} iš {{total}}.",
         "refetchFailedCount": "Nepavyko nuskaityti iš šaltinio: {{count}}; jie palikti nepakeisti."
-      },
-      "thingiverse": {
-        "heading": "Thingiverse programėlės raktas (App Token)",
-        "helpText": "Sukurkite programėlę adresu thingiverse.com/apps/create (bet kokio tipo, pvz. „Desktop“) ir įklijuokite ten parodytą programėlės raktą (App Token). Tai skiriasi nuo jūsų Thingiverse prisijungimo -- tai nuolatinis raktas, susietas su registruota programėle.",
-        "statusConfigured": "Šiuo metu sukonfigūruotas programėlės raktas.",
-        "statusNotConfigured": "Programėlės raktas dar nesukonfigūruotas -- Thingiverse importas neveiks, kol jis nebus nustatytas.",
-        "tokenLabel": "Programėlės raktas",
-        "tokenPlaceholder": "Įklijuokite naują raktą, kad pakeistumėte dabartinį",
-        "tokenHelperConfigured": "Saugumo sumetimais dabartinis raktas daugiau nerodomas -- palikite tuščią, kad jį išsaugotumėte, arba įklijuokite naują, kad jį pakeistumėte.",
-        "save": "Išsaugoti",
-        "saving": "Saugoma…",
-        "clear": "Pašalinti raktą",
-        "saved": "Išsaugota.",
-        "cleared": "Programėlės raktas pašalintas.",
-        "failed": "Nepavyko išsaugoti Thingiverse nustatymų."
-      },
-      "myminifactory": {
-        "heading": "MyMiniFactory API raktas",
-        "helpText": "Sukurkite programėlę adresu myminifactory.com/settings/developer/application ir įklijuokite ten parodytą API raktą. Nemokami modeliai atsisiunčiami ir be jo, bet jis reikalingas jų informacijai ir jūsų kolekcijoms nuskaityti.",
-        "statusConfigured": "Šiuo metu sukonfigūruotas API raktas.",
-        "statusNotConfigured": "API raktas dar nesukonfigūruotas -- MyMiniFactory importas neveiks, kol jis nebus nustatytas.",
-        "tokenLabel": "API raktas",
-        "tokenPlaceholder": "Įklijuokite naują raktą, kad pakeistumėte dabartinį",
-        "tokenHelperConfigured": "Saugumo sumetimais dabartinis raktas daugiau nerodomas -- palikite tuščią, kad jį išsaugotumėte, arba įklijuokite naują, kad jį pakeistumėte.",
-        "save": "Išsaugoti",
-        "saving": "Saugoma…",
-        "clear": "Pašalinti raktą",
-        "saved": "Išsaugota.",
-        "cleared": "API raktas pašalintas.",
-        "failed": "Nepavyko išsaugoti MyMiniFactory nustatymų."
       },
       "ai": {
         "heading": "DI",
@@ -2360,123 +2299,6 @@
       "disconnectMessage": "Jūsų {{name}} raktas bus pašalintas, o importavimas iš {{name}} neveiks, kol vėl prijungsite.",
       "disconnectMessageShared": "{{name}} raktas bus pašalintas visiems šio Thingport naudotojams, o importavimas iš {{name}} neveiks, kol jis vėl bus prijungtas.",
       "failed": "Nepavyko išsaugoti -- bandykite dar kartą.",
-      "makerworld": {
-        "expiredStatus": "Prisijungimas nebegalioja",
-        "expired": "Prisijungimo galiojimas baigėsi. Vėl prijunkite MakerWorld su nauju slapuku skiltyje Konfigūracija → Šaltiniai.",
-        "placeholder": "pavyzdys: mw_session=...; mw_token=...;",
-        "steps": [
-          "Naršyklėje prisijunkite prie makerworld.com.",
-          "Atverkite kūrėjo įrankius (F12 arba ⌥⌘I) ir eikite į skirtuką „Network“.",
-          "Perkraukite puslapį ir pasirinkite bet kurią užklausą į makerworld.com.",
-          "Skiltyje „Request Headers“ nukopijuokite visą Cookie antraštės reikšmę ir įklijuokite ją žemiau."
-        ]
-      },
-      "thingiverse": {
-        "placeholder": "Įklijuokite App Token",
-        "steps": [
-          "Prisijunkite prie thingiverse.com ir atverkite thingiverse.com/apps/create.",
-          "Sukurkite bet kokio tipo programą, pvz. „Desktop app“.",
-          "Nukopijuokite rodomą App Token ir įklijuokite jį žemiau."
-        ],
-        "shared": "Šis raktas bendras visiems šio Thingport naudotojams.",
-        "adminOnly": "Tai nustatyti gali tik šio Thingport administratorius."
-      },
-      "myminifactory": {
-        "placeholder": "PHPSESSID reikšmė arba visa Cookie antraštė",
-        "steps": [
-          "Paprasčiausia: su Thingport Grab tiesiog atverkite myminifactory.com prisijungę, ir jis prijungs jūsų paskyrą pats.",
-          "Arba rankiniu būdu: prisijunkite prie myminifactory.com ir atverkite naršyklės kūrėjo įrankius (F12).",
-          "Skiltyje Application (Chrome, Edge) arba Storage (Firefox) → Cookies → www.myminifactory.com nukopijuokite PHPSESSID reikšmę ir įklijuokite ją žemiau."
-        ],
-        "notConnected": "Nemokami modeliai importuojami ir be jos. Prijunkite paskyrą, kad galėtumėte importuoti nusipirktus modelius ir nemokamus, kuriems reikia prisijungti.",
-        "expired": "Prisijungimo galiojimas baigėsi. Atverkite myminifactory.com su Thingport Grab arba vėl prijunkite MyMiniFactory skiltyje Konfigūracija → Šaltiniai.",
-        "expiredStatus": "Prisijungimas nebegalioja"
-      },
-      "snapmaker": {
-        "placeholder": "login_access_token reikšmė arba visa Cookie antraštė",
-        "steps": [
-          "Paprasčiausia: su Thingport Grab tiesiog atverkite space.snapmaker.com prisijungę. Jis prijungs jūsų paskyrą ir palaikys prisijungimą galiojantį, nes Snapmaker prisijungimas galioja tik parą.",
-          "Arba rankiniu būdu: prisijunkite prie space.snapmaker.com ir atverkite naršyklės kūrėjo įrankius (F12).",
-          "Skiltyje Application (Chrome, Edge) arba Storage (Firefox) → Cookies → space.snapmaker.com nukopijuokite login_access_token reikšmę ir įklijuokite ją žemiau. Įklijuotas rankiniu būdu, jis galioja parą."
-        ],
-        "notConnected": "Snapmaker failus duoda tik prisijungusiems naudotojams. Prijunkite paskyrą, kad galėtumėte importuoti jo modelius bei savo pamėgtus ir pažymėtus modelius.",
-        "expired": "Prisijungimo galiojimas baigėsi. Atverkite space.snapmaker.com su Thingport Grab arba vėl prijunkite Snapmaker Space skiltyje Konfigūracija → Šaltiniai.",
-        "expiredStatus": "Prisijungimas nebegalioja"
-      },
-      "makeronline": {
-        "placeholder": "mo_access_token reikšmė arba visa Cookie antraštė",
-        "steps": [
-          "Paprasčiausia: su Thingport Grab tiesiog atverkite makeronline.com prisijungę. Jis prijungs jūsų paskyrą ir atsiųs jo laukiančius MakerOnline modelius, nes MakerOnline failus duoda tik savo puslapiams.",
-          "Arba rankiniu būdu: prisijunkite prie makeronline.com ir atverkite naršyklės kūrėjo įrankius (F12).",
-          "Skiltyje Application (Chrome, Edge) arba Storage (Firefox) → Cookies → www.makeronline.com nukopijuokite mo_access_token reikšmę ir įklijuokite ją žemiau. Ji galioja apie tris mėnesius."
-        ],
-        "notConnected": "Prijunkite paskyrą, kad Thingport matytų jūsų pamėgtus MakerOnline modelius ir privačias kolekcijas. Failai visada atkeliauja per Thingport Grab.",
-        "expired": "Prisijungimo galiojimas baigėsi. Atverkite makeronline.com su Thingport Grab arba vėl prijunkite MakerOnline skiltyje Konfigūracija → Šaltiniai.",
-        "expiredStatus": "Prisijungimas nebegalioja"
-      },
-      "crealitycloud": {
-        "placeholder": "Cookie antraštė su model_token ir model_user_id",
-        "steps": [
-          "Paprasčiausia: su Thingport Grab tiesiog atverkite crealitycloud.com prisijungę. Jis prijungs jūsų paskyrą, ir vėl – kaskart ten prisijungus.",
-          "Arba rankiniu būdu: prisijunkite prie crealitycloud.com, atverkite naršyklės kūrėjo įrankius (F12) ir perkraukite puslapį.",
-          "Skiltyje Network pasirinkite bet kurią užklausą į crealitycloud.com/api, nukopijuokite jos Cookie antraštę ir įklijuokite ją žemiau. Ji galioja savaitę nuo prisijungimo."
-        ],
-        "notConnected": "Creality Cloud failus duoda tik prisijungusiems naudotojams. Prijunkite paskyrą, kad galėtumėte importuoti jo modelius ir savo pamėgtus modelius.",
-        "expired": "Prisijungimo galiojimas baigėsi. Prisijunkite crealitycloud.com su Thingport Grab arba vėl prijunkite Creality Cloud skiltyje Konfigūracija → Šaltiniai.",
-        "expiredStatus": "Prisijungimas nebegalioja"
-      },
-      "nexprint": {
-        "placeholder": "Slapukas auth_token arba Authorization antraštė",
-        "steps": [
-          "Paprasčiausia: su Thingport Grab tiesiog atverkite nexprint.com prisijungę. Jis prijungs jūsų paskyrą ir palaikys ją prijungtą, kol lankotės ten.",
-          "Arba rankiniu būdu: prisijunkite prie nexprint.com, atverkite naršyklės kūrėjo įrankius (F12) ir perkraukite puslapį.",
-          "Skiltyje Network pasirinkite bet kurią užklausą į nexprint.com/gateway, nukopijuokite jos Authorization antraštę (arba slapuką auth_token) ir įklijuokite ją žemiau."
-        ],
-        "notConnected": "NexPrint failus duoda tik prisijungusiems naudotojams. Prijunkite paskyrą, kad galėtumėte importuoti jo modelius.",
-        "expired": "Prisijungimo galiojimas baigėsi. Prisijunkite nexprint.com su Thingport Grab arba vėl prijunkite NexPrint skiltyje Konfigūracija → Šaltiniai.",
-        "expiredStatus": "Prisijungimas nebegalioja"
-      },
-      "thangs": {
-        "placeholder": "Slapukas accessToken arba refreshToken, arba visa Cookie antraštė",
-        "steps": [
-          "Paprasčiausia: su Thingport Grab tiesiog atverkite thangs.com prisijungę. Jis prijungs jūsų paskyrą, o Thingport palaikys ją prijungtą maždaug metus.",
-          "Arba rankiniu būdu: prisijunkite prie thangs.com, atverkite naršyklės kūrėjo įrankius (F12) ir perkraukite puslapį.",
-          "Skiltyje Network pasirinkite bet kurią užklausą į thangs.com/api, nukopijuokite jos Cookie antraštę (joje yra abu raktai) ir įklijuokite žemiau."
-        ],
-        "notConnected": "Thangs failus duoda tik prisijungusiems naudotojams. Prijunkite paskyrą, kad galėtumėte importuoti jo modelius.",
-        "expired": "Prisijungimo galiojimas baigėsi. Prisijunkite thangs.com su Thingport Grab arba vėl prijunkite Thangs skiltyje Konfigūracija → Šaltiniai.",
-        "expiredStatus": "Prisijungimas nebegalioja"
-      },
-      "cults3d": {
-        "nickLabel": "Cults3D slapyvardis",
-        "apiKeyLabel": "API raktas",
-        "placeholder": "Jūsų slapyvardis, kaip parašyta profilyje",
-        "steps": [
-          "Prisijunkite prie cults3d.com ir atverkite cults3d.com/en/api/keys. Sukurkite raktą ir nukopijuokite jo slaptą reikšmę.",
-          "Žemiau įveskite slapyvardį tiksliai taip, kaip jis parašytas profilyje (didžiosios raidės svarbios), ir raktą. Juo Thingport skaito modelius, patikusius modelius, spausdinimo sąrašus ir jūsų atsisiuntimus.",
-          "Tada vieną kartą atverkite cults3d.com su Thingport Grab, prisijungę: Cults3D failus duoda tik savo puslapiams su prisijungusiu naudotoju, o Grab tą prisijungimą perduoda."
-        ],
-        "notConnected": "Thingport skaito Cults3D jūsų paties API raktu. Prijunkite jį su slapyvardžiu ir cults3d.com sukurtu raktu.",
-        "expired": "Cults3D atmetė API raktą. Sukurkite naują cults3d.com ir vėl prijunkite skiltyje Konfigūracija → Šaltiniai.",
-        "expiredStatus": "API raktas atmestas",
-        "siteMissing": "Prijungta, bet atsisiuntimams reikia naršyklės prisijungimo: atverkite cults3d.com prisijungę su Thingport Grab arba įklijuokite jį iš plytelės meniu.",
-        "siteExpired": "Naršyklės prisijungimas nebegalioja: atverkite cults3d.com prisijungę su Thingport Grab arba vėl įklijuokite jį iš plytelės meniu.",
-        "siteMissingStatus": "Dar nėra naršyklės prisijungimo",
-        "browser": {
-          "title": "Įklijuokite Cults3D prisijungimą",
-          "paste": "Įklijuoti naršyklės prisijungimą",
-          "save": "Išsaugoti",
-          "placeholder": "Prisijungusio cults3d.com puslapio užklausos antraštės",
-          "steps": [
-            "Paprasčiausia: su Thingport Grab tiesiog atverkite cults3d.com prisijungę. Jis pats perduoda prisijungimą.",
-            "Arba rankiniu būdu: prisijungusiame cults3d.com puslapyje atverkite naršyklės kūrėjo įrankius (F12) ir perkraukite jį.",
-            "Skiltyje Network pasirinkite paties puslapio užklausą, nukopijuokite jos antraštes (su Cookie ir User-Agent) ir įklijuokite žemiau. Tai veikia tik tada, kai Thingport jungiasi prie interneto tuo pačiu adresu kaip ta naršyklė."
-          ]
-        }
-      },
-      "printables": {
-        "alwaysConnected": "Printables prijungta iš karto: nereikia paskyros ar rakto."
-      },
       "comingSoon": "Jau netrukus"
     },
     "slicer": {
@@ -2599,107 +2421,7 @@
       "compareLabel": "Ko reikia kiekvienam šaltiniui ir ką jis importuoja",
       "off": "Išjungtas",
       "yes": "Taip",
-      "no": "Ne",
-      "providers": {
-        "makerworld": {
-          "summary": "Bambu Lab platforma 3D spausdinimo modeliams dalytis, daugelis jų – su suderintais spausdinimo profiliais. Tinka bet kuriam spausdintuvui, o MakerLab įrankiais modelius galima pritaikyti.",
-          "signIn": "Jūsų MakerWorld sesijos slapukas.",
-          "grab": "Pats nuskaito slapuką ir importuoja ištisas kolekcijas, neperžengdamas MakerWorld užklausų ribų.",
-          "setup": [
-            "Įdiekite Thingport Grab ir vieną kartą importuokite iš MakerWorld puslapio prisijungę: jis pats prijungs MakerWorld.",
-            "Arba rankiniu būdu: nukopijuokite token slapuką iš naršyklės kūrėjo įrankių (Application → Cookies → makerworld.com).",
-            "Spustelėkite MakerWorld dešiniuoju mygtuku skiltyje Konfigūracija → Šaltiniai, pasirinkite Prijungti ir įklijuokite."
-          ]
-        },
-        "printables": {
-          "summary": "Nemokama Prusa Research modelių saugykla, anksčiau vadinta PrusaPrinters, su konkursais ir Prusameters apdovanojimais. Jos failai tinka bet kuriam spausdintuvui.",
-          "signIn": "Nieko jungti nereikia.",
-          "grab": "Reikia tik jūsų privačioms kolekcijoms ir pamėgtiems modeliams, kuriuos Printables rodo tik jums.",
-          "setup": [
-            "Nieko nustatyti nereikia: įklijuokite Printables nuorodą arba importuokite iš jos puslapio su Thingport Grab.",
-            "Privačioms kolekcijoms ir pamėgtiems modeliams atverkite Printables prisijungę, su Thingport Grab."
-          ]
-        },
-        "thingiverse": {
-          "summary": "Viena seniausių ir didžiausių naudotojų sukurtų 3D spausdinimo dizainų bibliotekų; dauguma jų nemokami ir atvirai licencijuoti.",
-          "signIn": "Vienas programėlės raktas visiems, jį nustato administratorius.",
-          "grab": "Patogu importuoti iš Thingiverse puslapių, bet nebūtina.",
-          "setup": [
-            "Prisijunkite prie thingiverse.com ir atverkite thingiverse.com/apps/create.",
-            "Sukurkite programėlę, kuriai nereikia peradresavimo adreso, pvz., Desktop app, ir nukopijuokite jos App Token.",
-            "Administratorius jį įklijuoja skiltyje Konfigūracija → Šaltiniai → Thingiverse arba Administravimas → Šaltiniai."
-          ]
-        },
-        "myminifactory": {
-          "summary": "Atrinktų nemokamų ir mokamų 3D spausdinimo failų parduotuvė, labiausiai žinoma stalo žaidimų miniatiūromis. Modeliai patikrinami prieš juos paskelbiant.",
-          "signIn": "API raktas, kurį nustato administratorius; jūsų prisijungimas prideda nusipirktus modelius.",
-          "grab": "Prijungia jūsų paskyrą, kai tiesiog atveriate myminifactory.com.",
-          "setup": [
-            "Administratorius sukuria programėlę myminifactory.com/settings/developer ir išsaugo jos API raktą skiltyje Administravimas → Šaltiniai.",
-            "Nusipirktiems modeliams atverkite myminifactory.com prisijungę su Thingport Grab arba įklijuokite PHPSESSID slapuką skiltyje Konfigūracija → Šaltiniai."
-          ]
-        },
-        "snapmaker": {
-          "summary": "Snapmaker modelių platforma, sukurta jos U1 spausdintuvui. Rekomenduojami modeliai išbandomi spausdinant, profiliai suderinti spalvotam spausdinimui.",
-          "signIn": "Jūsų prisijungimas. Jis galioja parą.",
-          "grab": "Tik jis atnaujina prisijungimą. Be jo naują tektų įklijuoti kasdien.",
-          "setup": [
-            "Įdiekite Thingport Grab, įjunkite jį Snapmaker Space ir atverkite space.snapmaker.com prisijungę.",
-            "Tada Grab palaiko prisijungimą galiojantį, kol naršyklė atverta.",
-            "Rankiniu būdu: įklijuokite login_access_token slapuką skiltyje Konfigūracija → Šaltiniai. Jis galioja parą."
-          ]
-        },
-        "makeronline": {
-          "summary": "Anycubic modelių platforma: nemokami ir mokami modeliai, dizainerių konkursai ir DI įrankis 3D modeliams iš teksto kurti.",
-          "signIn": "Importuoti nereikia; prisijungimas prideda jūsų pamėgtus modelius ir privačias kolekcijas.",
-          "grab": "Kiekvieną MakerOnline failą atsisiunčia Grab, makeronline.com puslapyje. Kitur pradėti importai jo laukia.",
-          "setup": [
-            "Įdiekite Thingport Grab ir įjunkite jį MakerOnline.",
-            "Importuokite iš modelio puslapio arba atverkite bet kurį makeronline.com puslapį, kad atkeliautų Grab laukiantys modeliai.",
-            "Jei ten prisijungę, Grab prijungia ir jūsų paskyrą pamėgtiems modeliams ir privačioms kolekcijoms."
-          ]
-        },
-        "crealitycloud": {
-          "summary": "Creality 3D spausdinimo platforma: didelė nemokamų ir aukščiausios kokybės modelių biblioteka, pjaustymas debesyje ir nuotolinis spausdinimas.",
-          "signIn": "Jūsų prisijungimas. Jis galioja savaitę ir nėra atnaujinamas.",
-          "grab": "Perduoda kiekvieną naują prisijungimą, kai prisijungiate crealitycloud.com.",
-          "setup": [
-            "Įdiekite Thingport Grab, įjunkite jį Creality Cloud ir atverkite crealitycloud.com prisijungę.",
-            "Rankiniu būdu: nukopijuokite crealitycloud.com/api užklausos Cookie antraštę ir įklijuokite skiltyje Konfigūracija → Šaltiniai.",
-            "Po savaitės prisijunkite ten vėl, kad prijungtumėte iš naujo."
-          ]
-        },
-        "nexprint": {
-          "summary": "Atvira Elegoo modelių platforma, pradėta 2025 m. Joje Elegoo biblioteka sujungta su bendruomenės dizainais, ji veikia su Elegoo Slicer ir OrcaSlicer.",
-          "signIn": "Jūsų prisijungimas, kurį svetainė atnaujina, kol ja naudojatės.",
-          "grab": "Perduoda atnaujintą prisijungimą, kai lankotės nexprint.com.",
-          "setup": [
-            "Įdiekite Thingport Grab, įjunkite jį NexPrint ir atverkite nexprint.com prisijungę.",
-            "Rankiniu būdu: nukopijuokite nexprint.com/gateway užklausos Authorization antraštę ir įklijuokite skiltyje Konfigūracija → Šaltiniai."
-          ]
-        },
-        "thangs": {
-          "summary": "Physna sukurta 3D modelių paieškos sistema, randanti modelius ne tik pagal pavadinimą, bet ir pagal formą, su parduotuve ir dizainerių narystėmis.",
-          "signIn": "Jūsų prisijungimas; Thingport jį atnaujina maždaug metus.",
-          "grab": "Prijungia jūsų paskyrą vienu apsilankymu thangs.com.",
-          "setup": [
-            "Įdiekite Thingport Grab, įjunkite jį Thangs ir atverkite thangs.com prisijungę.",
-            "Rankiniu būdu: nukopijuokite thangs.com/api užklausos Cookie antraštę ir įklijuokite skiltyje Konfigūracija → Šaltiniai.",
-            "Nemokamos paskyros per dieną gali atsisiųsti ribotą modelių skaičių."
-          ]
-        },
-        "cults3d": {
-          "summary": "Prancūziška nemokamų ir mokamų 3D spausdinimo dizainų parduotuvė, įkurta 2014 m., kartu ir socialinis tinklas kūrėjams.",
-          "signIn": "Jūsų API raktas ir naršyklės prisijungimas failams.",
-          "grab": "Perduoda naršyklės prisijungimą ir Cloudflare leidimą. Thingport turi jungtis į internetą iš tos naršyklės IP adreso.",
-          "flaresolverr": "Nepadeda: jo naršyklė negali perduoti atsisiuntimo nuorodos.",
-          "setup": [
-            "Sukurkite API raktą cults3d.com/en/api/keys.",
-            "Spustelėkite Cults3D dešiniuoju mygtuku skiltyje Konfigūracija → Šaltiniai, pasirinkite Prijungti ir įveskite slapyvardį bei raktą.",
-            "Atverkite cults3d.com prisijungę su Thingport Grab, kad failus būtų galima atsisiųsti."
-          ]
-        }
-      }
+      "no": "Ne"
     },
     "whatsNew": {
       "label": "Kas naujo",
@@ -3790,34 +3512,7 @@
           "notALink": "Įklijuokite MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs arba Cults3D kolekcijos nuorodą.",
           "usernameFailed": "Nepavyko išsaugoti vartotojo vardo.",
           "openProviders": "Atidaryti tiekėjus",
-          "notConnected": {
-            "makerworld": "Prijunkite MakerWorld per Konfigūracija > Šaltiniai, kad čia matytumėte savo kolekcijas. Pagal slapuką Thingport žino, kas jūs ten esate.",
-            "printables": "Printables šiuo metu nepasiekiamas.",
-            "thingiverse": "Thingiverse šiame Thingport dar neprijungtas. Administratorius gali jį prijungti per Konfigūracija > Tiekėjai.",
-            "myminifactory": "MyMiniFactory šiame Thingport dar neprijungtas. Administratorius gali jį prijungti per Konfigūracija > Tiekėjai.",
-            "snapmaker": "Prijunkite Snapmaker Space per Konfigūracija > Šaltiniai arba atverkite jį su Thingport Grab, kad čia matytumėte savo pamėgtus ir pažymėtus modelius.",
-            "makeronline": "Prijunkite MakerOnline per Konfigūracija > Šaltiniai arba atverkite jį su Thingport Grab, kad čia matytumėte savo pamėgtus modelius ir kolekcijas.",
-            "crealitycloud": "Prijunkite Creality Cloud per Konfigūracija > Šaltiniai arba atverkite jį su Thingport Grab, kad čia matytumėte savo pamėgtus modelius ir kolekcijas.",
-            "nexprint": "Prijunkite NexPrint per Konfigūracija > Šaltiniai arba atverkite jį su Thingport Grab, kad čia matytumėte savo kolekcijas.",
-            "thangs": "Prijunkite Thangs per Konfigūracija > Šaltiniai arba atverkite jį su Thingport Grab, kad čia matytumėte savo patikusius modelius ir kolekcijas.",
-            "cults3d": "Įveskite Cults3D slapyvardį ir API raktą per Konfigūracija > Šaltiniai, kad čia matytumėte patikusius modelius ir spausdinimo sąrašus."
-          },
           "usernameLabel": "Jūsų {{provider}} vartotojo vardas",
-          "usernameHint": {
-            "printables": "Thingport parodys jūsų viešas Printables kolekcijas. Paklausiama tik kartą.",
-            "thingiverse": "Thingport parodys jūsų viešas Thingiverse kolekcijas. Paklausiama tik kartą.",
-            "myminifactory": "Thingport parodys jūsų viešas MyMiniFactory kolekcijas. Paklausiama tik kartą."
-          },
-          "usernamePlaceholder": {
-            "printables": "@vardas arba profilio nuoroda",
-            "thingiverse": "Vartotojo vardas arba profilio nuoroda",
-            "myminifactory": "Vartotojo vardas arba profilio nuoroda"
-          },
-          "showing": {
-            "printables": "Rodomos @{{user}} kolekcijos.",
-            "thingiverse": "Rodomos viešos @{{user}} kolekcijos.",
-            "myminifactory": "Rodomos viešos @{{user}} kolekcijos."
-          },
           "change": "Keisti",
           "empty": "{{provider}} kolekcijų dar nėra.",
           "pasteLabel": "Kito žmogaus kolekcija",
@@ -3835,17 +3530,9 @@
           "startedWaiting": "„{{name}}“ dabar sinchronizuojama su „{{source}}“. Jos modeliai pateks, kai kitą kartą atidarysite {{provider}} su Thingport Grab.",
           "pickPrompt": "Pasirinkite kolekciją aukščiau arba įklijuokite nuorodą.",
           "startNothing": "Sinchronizuoti",
-          "showingHelp": {
-            "printables": "Privačios kolekcijos ir pamėgti modeliai pridedami, kai Thingport Grab pamato jus prisijungusį Printables svetainėje, nes Printables jas rodo tik jums."
-          },
           "makerworldHelp": "MakerWorld greitai riboja masinius importus, todėl dabar joje esantys modeliai neimportuojami. Jau jūsų bibliotekoje esantys bus pridėti į „{{name}}“.",
           "forget": "Pamiršti",
-          "forgetTitle": "Pamiršti jūsų {{provider}} paskyrą?",
-          "forgetMessage": {
-            "printables": "Thingport neberodys jūsų Printables kolekcijų, o Thingport Grab nebesiųs jūsų privačių kolekcijų ir pamėgtų modelių, kol vėl nurodysite vartotojo vardą. Jau nustatyti sinchronizavimai išsaugos savo modelius; privačių kolekcijų ir pamėgtų modelių sinchronizavimas iki tol sustos.",
-            "thingiverse": "Thingport neberodys jūsų Thingiverse kolekcijų, kol vėl nurodysite vartotojo vardą. Jau nustatyti sinchronizavimai išsaugos savo modelius.",
-            "myminifactory": "Thingport neberodys jūsų MyMiniFactory kolekcijų, kol vėl nurodysite vartotojo vardą. Jau nustatyti sinchronizavimai išsaugos savo modelius."
-          }
+          "forgetTitle": "Pamiršti jūsų {{provider}} paskyrą?"
         }
       },
       "sortByModels": "Daugiausia modelių",
@@ -4178,6 +3865,381 @@
         "othersGo_many": "{{names}} bus pašalintos. Jų modeliai bus pažymėti „{{name}}“.",
         "othersGo_other": "{{names}} bus pašalintos. Jų modeliai bus pažymėti „{{name}}“.",
         "keepsOwn": "Modeliai, jau pažymėti „{{name}}“, nesikeičia."
+      }
+    }
+  },
+  "providers": {
+    "makerworld": {
+      "connect": {
+        "steps": [
+          "Naršyklėje prisijunkite prie makerworld.com.",
+          "Atverkite kūrėjo įrankius (F12 arba ⌥⌘I) ir eikite į skirtuką „Network“.",
+          "Perkraukite puslapį ir pasirinkite bet kurią užklausą į makerworld.com.",
+          "Skiltyje „Request Headers“ nukopijuokite visą Cookie antraštės reikšmę ir įklijuokite ją žemiau."
+        ],
+        "placeholder": "pavyzdys: mw_session=...; mw_token=...;"
+      },
+      "status": {
+        "expired": "Prisijungimo galiojimas baigėsi. Vėl prijunkite MakerWorld su nauju slapuku skiltyje Konfigūracija → Šaltiniai.",
+        "expiredStatus": "Prisijungimas nebegalioja",
+        "disabledReason": "MakerWorld: neprijungta"
+      },
+      "about": {
+        "summary": "Bambu Lab platforma 3D spausdinimo modeliams dalytis, daugelis jų – su suderintais spausdinimo profiliais. Tinka bet kuriam spausdintuvui, o MakerLab įrankiais modelius galima pritaikyti.",
+        "signIn": "Jūsų MakerWorld sesijos slapukas.",
+        "grab": "Pats nuskaito slapuką ir importuoja ištisas kolekcijas, neperžengdamas MakerWorld užklausų ribų.",
+        "setup": [
+          "Įdiekite Thingport Grab ir vieną kartą importuokite iš MakerWorld puslapio prisijungę: jis pats prijungs MakerWorld.",
+          "Arba rankiniu būdu: nukopijuokite token slapuką iš naršyklės kūrėjo įrankių (Application → Cookies → makerworld.com).",
+          "Spustelėkite MakerWorld dešiniuoju mygtuku skiltyje Konfigūracija → Šaltiniai, pasirinkite Prijungti ir įklijuokite."
+        ]
+      },
+      "admin": {
+        "description": "Bambu Lab modelių svetainė: importai su spausdinimo profiliais ir kolekcijų sinchronizavimas."
+      },
+      "sync": {
+        "notConnected": "Prijunkite MakerWorld per Konfigūracija > Šaltiniai, kad čia matytumėte savo kolekcijas. Pagal slapuką Thingport žino, kas jūs ten esate."
+      }
+    },
+    "printables": {
+      "status": {
+        "alwaysConnected": "Printables prijungta iš karto: nereikia paskyros ar rakto."
+      },
+      "about": {
+        "summary": "Nemokama Prusa Research modelių saugykla, anksčiau vadinta PrusaPrinters, su konkursais ir Prusameters apdovanojimais. Jos failai tinka bet kuriam spausdintuvui.",
+        "signIn": "Nieko jungti nereikia.",
+        "grab": "Reikia tik jūsų privačioms kolekcijoms ir pamėgtiems modeliams, kuriuos Printables rodo tik jums.",
+        "setup": [
+          "Nieko nustatyti nereikia: įklijuokite Printables nuorodą arba importuokite iš jos puslapio su Thingport Grab.",
+          "Privačioms kolekcijoms ir pamėgtiems modeliams atverkite Printables prisijungę, su Thingport Grab."
+        ]
+      },
+      "admin": {
+        "description": "Prusa modelių svetainė: importai bei viešų ir privačių kolekcijų sinchronizavimas."
+      },
+      "sync": {
+        "notConnected": "Printables šiuo metu nepasiekiamas.",
+        "usernameHint": "Thingport parodys jūsų viešas Printables kolekcijas. Paklausiama tik kartą.",
+        "usernamePlaceholder": "@vardas arba profilio nuoroda",
+        "showing": "Rodomos @{{user}} kolekcijos.",
+        "forgetMessage": "Thingport neberodys jūsų Printables kolekcijų, o Thingport Grab nebesiųs jūsų privačių kolekcijų ir pamėgtų modelių, kol vėl nurodysite vartotojo vardą. Jau nustatyti sinchronizavimai išsaugos savo modelius; privačių kolekcijų ir pamėgtų modelių sinchronizavimas iki tol sustos.",
+        "showingHelp": "Privačios kolekcijos ir pamėgti modeliai pridedami, kai Thingport Grab pamato jus prisijungusį Printables svetainėje, nes Printables jas rodo tik jums."
+      }
+    },
+    "thingiverse": {
+      "connect": {
+        "steps": [
+          "Prisijunkite prie thingiverse.com ir atverkite thingiverse.com/apps/create.",
+          "Sukurkite bet kokio tipo programą, pvz. „Desktop app“.",
+          "Nukopijuokite rodomą App Token ir įklijuokite jį žemiau."
+        ],
+        "placeholder": "Įklijuokite App Token",
+        "shared": "Šis raktas bendras visiems šio Thingport naudotojams."
+      },
+      "status": {
+        "adminOnly": "Tai nustatyti gali tik šio Thingport administratorius.",
+        "disabledReason": "Thingiverse: administratorius dar nesukonfigūravo API rakto"
+      },
+      "about": {
+        "summary": "Viena seniausių ir didžiausių naudotojų sukurtų 3D spausdinimo dizainų bibliotekų; dauguma jų nemokami ir atvirai licencijuoti.",
+        "signIn": "Vienas programėlės raktas visiems, jį nustato administratorius.",
+        "grab": "Patogu importuoti iš Thingiverse puslapių, bet nebūtina.",
+        "setup": [
+          "Prisijunkite prie thingiverse.com ir atverkite thingiverse.com/apps/create.",
+          "Sukurkite programėlę, kuriai nereikia peradresavimo adreso, pvz., Desktop app, ir nukopijuokite jos App Token.",
+          "Administratorius jį įklijuoja skiltyje Konfigūracija → Šaltiniai → Thingiverse arba Administravimas → Šaltiniai."
+        ]
+      },
+      "admin": {
+        "description": "Importai, kolekcijos ir patikę modeliai, naudojant šio Thingport programėlės raktą.",
+        "keyStatus": {
+          "set": "Programėlės raktas nustatytas",
+          "missing": "Nėra programėlės rakto: Thingiverse importai neveiks, kol jo nenustatysite"
+        },
+        "key": {
+          "heading": "Thingiverse programėlės raktas (App Token)",
+          "helpText": "Sukurkite programėlę adresu thingiverse.com/apps/create (bet kokio tipo, pvz. „Desktop“) ir įklijuokite ten parodytą programėlės raktą (App Token). Tai skiriasi nuo jūsų Thingiverse prisijungimo -- tai nuolatinis raktas, susietas su registruota programėle.",
+          "statusConfigured": "Šiuo metu sukonfigūruotas programėlės raktas.",
+          "statusNotConfigured": "Programėlės raktas dar nesukonfigūruotas -- Thingiverse importas neveiks, kol jis nebus nustatytas.",
+          "tokenLabel": "Programėlės raktas",
+          "tokenPlaceholder": "Įklijuokite naują raktą, kad pakeistumėte dabartinį",
+          "tokenHelperConfigured": "Saugumo sumetimais dabartinis raktas daugiau nerodomas -- palikite tuščią, kad jį išsaugotumėte, arba įklijuokite naują, kad jį pakeistumėte.",
+          "save": "Išsaugoti",
+          "saving": "Saugoma…",
+          "clear": "Pašalinti raktą",
+          "saved": "Išsaugota.",
+          "cleared": "Programėlės raktas pašalintas.",
+          "failed": "Nepavyko išsaugoti Thingiverse nustatymų."
+        }
+      },
+      "sync": {
+        "notConnected": "Thingiverse šiame Thingport dar neprijungtas. Administratorius gali jį prijungti per Konfigūracija > Tiekėjai.",
+        "usernameHint": "Thingport parodys jūsų viešas Thingiverse kolekcijas. Paklausiama tik kartą.",
+        "usernamePlaceholder": "Vartotojo vardas arba profilio nuoroda",
+        "showing": "Rodomos viešos @{{user}} kolekcijos.",
+        "forgetMessage": "Thingport neberodys jūsų Thingiverse kolekcijų, kol vėl nurodysite vartotojo vardą. Jau nustatyti sinchronizavimai išsaugos savo modelius."
+      }
+    },
+    "myminifactory": {
+      "connect": {
+        "steps": [
+          "Paprasčiausia: su Thingport Grab tiesiog atverkite myminifactory.com prisijungę, ir jis prijungs jūsų paskyrą pats.",
+          "Arba rankiniu būdu: prisijunkite prie myminifactory.com ir atverkite naršyklės kūrėjo įrankius (F12).",
+          "Skiltyje Application (Chrome, Edge) arba Storage (Firefox) → Cookies → www.myminifactory.com nukopijuokite PHPSESSID reikšmę ir įklijuokite ją žemiau."
+        ],
+        "placeholder": "PHPSESSID reikšmė arba visa Cookie antraštė"
+      },
+      "status": {
+        "notConnected": "Nemokami modeliai importuojami ir be jos. Prijunkite paskyrą, kad galėtumėte importuoti nusipirktus modelius ir nemokamus, kuriems reikia prisijungti.",
+        "expired": "Prisijungimo galiojimas baigėsi. Atverkite myminifactory.com su Thingport Grab arba vėl prijunkite MyMiniFactory skiltyje Konfigūracija → Šaltiniai.",
+        "expiredStatus": "Prisijungimas nebegalioja",
+        "disabledReason": "MyMiniFactory: administratorius dar nesukonfigūravo API rakto"
+      },
+      "about": {
+        "summary": "Atrinktų nemokamų ir mokamų 3D spausdinimo failų parduotuvė, labiausiai žinoma stalo žaidimų miniatiūromis. Modeliai patikrinami prieš juos paskelbiant.",
+        "signIn": "API raktas, kurį nustato administratorius; jūsų prisijungimas prideda nusipirktus modelius.",
+        "grab": "Prijungia jūsų paskyrą, kai tiesiog atveriate myminifactory.com.",
+        "setup": [
+          "Administratorius sukuria programėlę myminifactory.com/settings/developer ir išsaugo jos API raktą skiltyje Administravimas → Šaltiniai.",
+          "Nusipirktiems modeliams atverkite myminifactory.com prisijungę su Thingport Grab arba įklijuokite PHPSESSID slapuką skiltyje Konfigūracija → Šaltiniai."
+        ]
+      },
+      "admin": {
+        "description": "Modeliai ir viešos kolekcijos, naudojant šio Thingport API raktą; nusipirkti modeliai – per kiekvieno naudotojo MyMiniFactory paskyrą.",
+        "keyStatus": {
+          "set": "API raktas nustatytas",
+          "missing": "Nėra API rakto: MyMiniFactory importai neveiks, kol jo nenustatysite"
+        },
+        "key": {
+          "heading": "MyMiniFactory API raktas",
+          "helpText": "Sukurkite programėlę adresu myminifactory.com/settings/developer/application ir įklijuokite ten parodytą API raktą. Nemokami modeliai atsisiunčiami ir be jo, bet jis reikalingas jų informacijai ir jūsų kolekcijoms nuskaityti.",
+          "statusConfigured": "Šiuo metu sukonfigūruotas API raktas.",
+          "statusNotConfigured": "API raktas dar nesukonfigūruotas -- MyMiniFactory importas neveiks, kol jis nebus nustatytas.",
+          "tokenLabel": "API raktas",
+          "tokenPlaceholder": "Įklijuokite naują raktą, kad pakeistumėte dabartinį",
+          "tokenHelperConfigured": "Saugumo sumetimais dabartinis raktas daugiau nerodomas -- palikite tuščią, kad jį išsaugotumėte, arba įklijuokite naują, kad jį pakeistumėte.",
+          "save": "Išsaugoti",
+          "saving": "Saugoma…",
+          "clear": "Pašalinti raktą",
+          "saved": "Išsaugota.",
+          "cleared": "API raktas pašalintas.",
+          "failed": "Nepavyko išsaugoti MyMiniFactory nustatymų."
+        }
+      },
+      "sync": {
+        "notConnected": "MyMiniFactory šiame Thingport dar neprijungtas. Administratorius gali jį prijungti per Konfigūracija > Tiekėjai.",
+        "usernameHint": "Thingport parodys jūsų viešas MyMiniFactory kolekcijas. Paklausiama tik kartą.",
+        "usernamePlaceholder": "Vartotojo vardas arba profilio nuoroda",
+        "showing": "Rodomos viešos @{{user}} kolekcijos.",
+        "forgetMessage": "Thingport neberodys jūsų MyMiniFactory kolekcijų, kol vėl nurodysite vartotojo vardą. Jau nustatyti sinchronizavimai išsaugos savo modelius."
+      }
+    },
+    "snapmaker": {
+      "connect": {
+        "steps": [
+          "Paprasčiausia: su Thingport Grab tiesiog atverkite space.snapmaker.com prisijungę. Jis prijungs jūsų paskyrą ir palaikys prisijungimą galiojantį, nes Snapmaker prisijungimas galioja tik parą.",
+          "Arba rankiniu būdu: prisijunkite prie space.snapmaker.com ir atverkite naršyklės kūrėjo įrankius (F12).",
+          "Skiltyje Application (Chrome, Edge) arba Storage (Firefox) → Cookies → space.snapmaker.com nukopijuokite login_access_token reikšmę ir įklijuokite ją žemiau. Įklijuotas rankiniu būdu, jis galioja parą."
+        ],
+        "placeholder": "login_access_token reikšmė arba visa Cookie antraštė"
+      },
+      "status": {
+        "notConnected": "Snapmaker failus duoda tik prisijungusiems naudotojams. Prijunkite paskyrą, kad galėtumėte importuoti jo modelius bei savo pamėgtus ir pažymėtus modelius.",
+        "expired": "Prisijungimo galiojimas baigėsi. Atverkite space.snapmaker.com su Thingport Grab arba vėl prijunkite Snapmaker Space skiltyje Konfigūracija → Šaltiniai.",
+        "expiredStatus": "Prisijungimas nebegalioja",
+        "disabledReason": "Snapmaker Space: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai"
+      },
+      "about": {
+        "summary": "Snapmaker modelių platforma, sukurta jos U1 spausdintuvui. Rekomenduojami modeliai išbandomi spausdinant, profiliai suderinti spalvotam spausdinimui.",
+        "signIn": "Jūsų prisijungimas. Jis galioja parą.",
+        "grab": "Tik jis atnaujina prisijungimą. Be jo naują tektų įklijuoti kasdien.",
+        "setup": [
+          "Įdiekite Thingport Grab, įjunkite jį Snapmaker Space ir atverkite space.snapmaker.com prisijungę.",
+          "Tada Grab palaiko prisijungimą galiojantį, kol naršyklė atverta.",
+          "Rankiniu būdu: įklijuokite login_access_token slapuką skiltyje Konfigūracija → Šaltiniai. Jis galioja parą."
+        ]
+      },
+      "admin": {
+        "description": "Modeliai su spausdinimo profiliais bei kiekvieno naudotojo pamėgti ir pažymėti modeliai, per kiekvieno naudotojo Snapmaker paskyrą."
+      },
+      "sync": {
+        "notConnected": "Prijunkite Snapmaker Space per Konfigūracija > Šaltiniai arba atverkite jį su Thingport Grab, kad čia matytumėte savo pamėgtus ir pažymėtus modelius."
+      }
+    },
+    "makeronline": {
+      "connect": {
+        "steps": [
+          "Paprasčiausia: su Thingport Grab tiesiog atverkite makeronline.com prisijungę. Jis prijungs jūsų paskyrą ir atsiųs jo laukiančius MakerOnline modelius, nes MakerOnline failus duoda tik savo puslapiams.",
+          "Arba rankiniu būdu: prisijunkite prie makeronline.com ir atverkite naršyklės kūrėjo įrankius (F12).",
+          "Skiltyje Application (Chrome, Edge) arba Storage (Firefox) → Cookies → www.makeronline.com nukopijuokite mo_access_token reikšmę ir įklijuokite ją žemiau. Ji galioja apie tris mėnesius."
+        ],
+        "placeholder": "mo_access_token reikšmė arba visa Cookie antraštė"
+      },
+      "status": {
+        "notConnected": "Prijunkite paskyrą, kad Thingport matytų jūsų pamėgtus MakerOnline modelius ir privačias kolekcijas. Failai visada atkeliauja per Thingport Grab.",
+        "expired": "Prisijungimo galiojimas baigėsi. Atverkite makeronline.com su Thingport Grab arba vėl prijunkite MakerOnline skiltyje Konfigūracija → Šaltiniai.",
+        "expiredStatus": "Prisijungimas nebegalioja",
+        "disabledReason": "MakerOnline: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai"
+      },
+      "about": {
+        "summary": "Anycubic modelių platforma: nemokami ir mokami modeliai, dizainerių konkursai ir DI įrankis 3D modeliams iš teksto kurti.",
+        "signIn": "Importuoti nereikia; prisijungimas prideda jūsų pamėgtus modelius ir privačias kolekcijas.",
+        "grab": "Kiekvieną MakerOnline failą atsisiunčia Grab, makeronline.com puslapyje. Kitur pradėti importai jo laukia.",
+        "setup": [
+          "Įdiekite Thingport Grab ir įjunkite jį MakerOnline.",
+          "Importuokite iš modelio puslapio arba atverkite bet kurį makeronline.com puslapį, kad atkeliautų Grab laukiantys modeliai.",
+          "Jei ten prisijungę, Grab prijungia ir jūsų paskyrą pamėgtiems modeliams ir privačioms kolekcijoms."
+        ]
+      },
+      "admin": {
+        "description": "Modeliai su spausdinimo profiliais, kolekcijos ir kiekvieno naudotojo pamėgti modeliai. Failai atkeliauja per Thingport Grab: MakerOnline juos duoda tik savo puslapiams."
+      },
+      "sync": {
+        "notConnected": "Prijunkite MakerOnline per Konfigūracija > Šaltiniai arba atverkite jį su Thingport Grab, kad čia matytumėte savo pamėgtus modelius ir kolekcijas."
+      }
+    },
+    "crealitycloud": {
+      "connect": {
+        "steps": [
+          "Paprasčiausia: su Thingport Grab tiesiog atverkite crealitycloud.com prisijungę. Jis prijungs jūsų paskyrą, ir vėl – kaskart ten prisijungus.",
+          "Arba rankiniu būdu: prisijunkite prie crealitycloud.com, atverkite naršyklės kūrėjo įrankius (F12) ir perkraukite puslapį.",
+          "Skiltyje Network pasirinkite bet kurią užklausą į crealitycloud.com/api, nukopijuokite jos Cookie antraštę ir įklijuokite ją žemiau. Ji galioja savaitę nuo prisijungimo."
+        ],
+        "placeholder": "Cookie antraštė su model_token ir model_user_id"
+      },
+      "status": {
+        "notConnected": "Creality Cloud failus duoda tik prisijungusiems naudotojams. Prijunkite paskyrą, kad galėtumėte importuoti jo modelius ir savo pamėgtus modelius.",
+        "expired": "Prisijungimo galiojimas baigėsi. Prisijunkite crealitycloud.com su Thingport Grab arba vėl prijunkite Creality Cloud skiltyje Konfigūracija → Šaltiniai.",
+        "expiredStatus": "Prisijungimas nebegalioja",
+        "disabledReason": "Creality Cloud: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai"
+      },
+      "about": {
+        "summary": "Creality 3D spausdinimo platforma: didelė nemokamų ir aukščiausios kokybės modelių biblioteka, pjaustymas debesyje ir nuotolinis spausdinimas.",
+        "signIn": "Jūsų prisijungimas. Jis galioja savaitę ir nėra atnaujinamas.",
+        "grab": "Perduoda kiekvieną naują prisijungimą, kai prisijungiate crealitycloud.com.",
+        "setup": [
+          "Įdiekite Thingport Grab, įjunkite jį Creality Cloud ir atverkite crealitycloud.com prisijungę.",
+          "Rankiniu būdu: nukopijuokite crealitycloud.com/api užklausos Cookie antraštę ir įklijuokite skiltyje Konfigūracija → Šaltiniai.",
+          "Po savaitės prisijunkite ten vėl, kad prijungtumėte iš naujo."
+        ]
+      },
+      "admin": {
+        "description": "Modeliai su spausdinimo profiliais, kolekcijos ir kiekvieno naudotojo pamėgti modeliai, per kiekvieno naudotojo Creality Cloud paskyrą."
+      },
+      "sync": {
+        "notConnected": "Prijunkite Creality Cloud per Konfigūracija > Šaltiniai arba atverkite jį su Thingport Grab, kad čia matytumėte savo pamėgtus modelius ir kolekcijas."
+      }
+    },
+    "nexprint": {
+      "connect": {
+        "steps": [
+          "Paprasčiausia: su Thingport Grab tiesiog atverkite nexprint.com prisijungę. Jis prijungs jūsų paskyrą ir palaikys ją prijungtą, kol lankotės ten.",
+          "Arba rankiniu būdu: prisijunkite prie nexprint.com, atverkite naršyklės kūrėjo įrankius (F12) ir perkraukite puslapį.",
+          "Skiltyje Network pasirinkite bet kurią užklausą į nexprint.com/gateway, nukopijuokite jos Authorization antraštę (arba slapuką auth_token) ir įklijuokite ją žemiau."
+        ],
+        "placeholder": "Slapukas auth_token arba Authorization antraštė"
+      },
+      "status": {
+        "notConnected": "NexPrint failus duoda tik prisijungusiems naudotojams. Prijunkite paskyrą, kad galėtumėte importuoti jo modelius.",
+        "expired": "Prisijungimo galiojimas baigėsi. Prisijunkite nexprint.com su Thingport Grab arba vėl prijunkite NexPrint skiltyje Konfigūracija → Šaltiniai.",
+        "expiredStatus": "Prisijungimas nebegalioja",
+        "disabledReason": "NexPrint: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai"
+      },
+      "about": {
+        "summary": "Atvira Elegoo modelių platforma, pradėta 2025 m. Joje Elegoo biblioteka sujungta su bendruomenės dizainais, ji veikia su Elegoo Slicer ir OrcaSlicer.",
+        "signIn": "Jūsų prisijungimas, kurį svetainė atnaujina, kol ja naudojatės.",
+        "grab": "Perduoda atnaujintą prisijungimą, kai lankotės nexprint.com.",
+        "setup": [
+          "Įdiekite Thingport Grab, įjunkite jį NexPrint ir atverkite nexprint.com prisijungę.",
+          "Rankiniu būdu: nukopijuokite nexprint.com/gateway užklausos Authorization antraštę ir įklijuokite skiltyje Konfigūracija → Šaltiniai."
+        ]
+      },
+      "admin": {
+        "description": "Modeliai su spausdinimo profiliais ir kolekcijos, per kiekvieno naudotojo NexPrint paskyrą."
+      },
+      "sync": {
+        "notConnected": "Prijunkite NexPrint per Konfigūracija > Šaltiniai arba atverkite jį su Thingport Grab, kad čia matytumėte savo kolekcijas."
+      }
+    },
+    "thangs": {
+      "connect": {
+        "steps": [
+          "Paprasčiausia: su Thingport Grab tiesiog atverkite thangs.com prisijungę. Jis prijungs jūsų paskyrą, o Thingport palaikys ją prijungtą maždaug metus.",
+          "Arba rankiniu būdu: prisijunkite prie thangs.com, atverkite naršyklės kūrėjo įrankius (F12) ir perkraukite puslapį.",
+          "Skiltyje Network pasirinkite bet kurią užklausą į thangs.com/api, nukopijuokite jos Cookie antraštę (joje yra abu raktai) ir įklijuokite žemiau."
+        ],
+        "placeholder": "Slapukas accessToken arba refreshToken, arba visa Cookie antraštė"
+      },
+      "status": {
+        "notConnected": "Thangs failus duoda tik prisijungusiems naudotojams. Prijunkite paskyrą, kad galėtumėte importuoti jo modelius.",
+        "expired": "Prisijungimo galiojimas baigėsi. Prisijunkite thangs.com su Thingport Grab arba vėl prijunkite Thangs skiltyje Konfigūracija → Šaltiniai.",
+        "expiredStatus": "Prisijungimas nebegalioja",
+        "disabledReason": "Thangs: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai"
+      },
+      "about": {
+        "summary": "Physna sukurta 3D modelių paieškos sistema, randanti modelius ne tik pagal pavadinimą, bet ir pagal formą, su parduotuve ir dizainerių narystėmis.",
+        "signIn": "Jūsų prisijungimas; Thingport jį atnaujina maždaug metus.",
+        "grab": "Prijungia jūsų paskyrą vienu apsilankymu thangs.com.",
+        "setup": [
+          "Įdiekite Thingport Grab, įjunkite jį Thangs ir atverkite thangs.com prisijungę.",
+          "Rankiniu būdu: nukopijuokite thangs.com/api užklausos Cookie antraštę ir įklijuokite skiltyje Konfigūracija → Šaltiniai.",
+          "Nemokamos paskyros per dieną gali atsisiųsti ribotą modelių skaičių."
+        ]
+      },
+      "admin": {
+        "description": "Nemokami ir įsigyti modeliai, patikę modeliai ir kolekcijos, per kiekvieno naudotojo Thangs paskyrą."
+      },
+      "sync": {
+        "notConnected": "Prijunkite Thangs per Konfigūracija > Šaltiniai arba atverkite jį su Thingport Grab, kad čia matytumėte savo patikusius modelius ir kolekcijas."
+      }
+    },
+    "cults3d": {
+      "connect": {
+        "steps": [
+          "Prisijunkite prie cults3d.com ir atverkite cults3d.com/en/api/keys. Sukurkite raktą ir nukopijuokite jo slaptą reikšmę.",
+          "Žemiau įveskite slapyvardį tiksliai taip, kaip jis parašytas profilyje (didžiosios raidės svarbios), ir raktą. Juo Thingport skaito modelius, patikusius modelius, spausdinimo sąrašus ir jūsų atsisiuntimus.",
+          "Tada vieną kartą atverkite cults3d.com su Thingport Grab, prisijungę: Cults3D failus duoda tik savo puslapiams su prisijungusiu naudotoju, o Grab tą prisijungimą perduoda."
+        ],
+        "placeholder": "Jūsų slapyvardis, kaip parašyta profilyje",
+        "nickLabel": "Cults3D slapyvardis",
+        "apiKeyLabel": "API raktas",
+        "browser": {
+          "title": "Įklijuokite Cults3D prisijungimą",
+          "paste": "Įklijuoti naršyklės prisijungimą",
+          "save": "Išsaugoti",
+          "placeholder": "Prisijungusio cults3d.com puslapio užklausos antraštės",
+          "steps": [
+            "Paprasčiausia: su Thingport Grab tiesiog atverkite cults3d.com prisijungę. Jis pats perduoda prisijungimą.",
+            "Arba rankiniu būdu: prisijungusiame cults3d.com puslapyje atverkite naršyklės kūrėjo įrankius (F12) ir perkraukite jį.",
+            "Skiltyje Network pasirinkite paties puslapio užklausą, nukopijuokite jos antraštes (su Cookie ir User-Agent) ir įklijuokite žemiau. Tai veikia tik tada, kai Thingport jungiasi prie interneto tuo pačiu adresu kaip ta naršyklė."
+          ]
+        }
+      },
+      "status": {
+        "notConnected": "Thingport skaito Cults3D jūsų paties API raktu. Prijunkite jį su slapyvardžiu ir cults3d.com sukurtu raktu.",
+        "expired": "Cults3D atmetė API raktą. Sukurkite naują cults3d.com ir vėl prijunkite skiltyje Konfigūracija → Šaltiniai.",
+        "expiredStatus": "API raktas atmestas",
+        "siteMissing": "Prijungta, bet atsisiuntimams reikia naršyklės prisijungimo: atverkite cults3d.com prisijungę su Thingport Grab arba įklijuokite jį iš plytelės meniu.",
+        "siteExpired": "Naršyklės prisijungimas nebegalioja: atverkite cults3d.com prisijungę su Thingport Grab arba vėl įklijuokite jį iš plytelės meniu.",
+        "siteMissingStatus": "Dar nėra naršyklės prisijungimo",
+        "disabledReason": "Cults3D: įveskite slapyvardį ir API raktą skiltyje Konfigūracija → Šaltiniai"
+      },
+      "about": {
+        "summary": "Prancūziška nemokamų ir mokamų 3D spausdinimo dizainų parduotuvė, įkurta 2014 m., kartu ir socialinis tinklas kūrėjams.",
+        "signIn": "Jūsų API raktas ir naršyklės prisijungimas failams.",
+        "grab": "Perduoda naršyklės prisijungimą ir Cloudflare leidimą. Thingport turi jungtis į internetą iš tos naršyklės IP adreso.",
+        "flaresolverr": "Nepadeda: jo naršyklė negali perduoti atsisiuntimo nuorodos.",
+        "setup": [
+          "Sukurkite API raktą cults3d.com/en/api/keys.",
+          "Spustelėkite Cults3D dešiniuoju mygtuku skiltyje Konfigūracija → Šaltiniai, pasirinkite Prijungti ir įveskite slapyvardį bei raktą.",
+          "Atverkite cults3d.com prisijungę su Thingport Grab, kad failus būtų galima atsisiųsti."
+        ]
+      },
+      "admin": {
+        "description": "Nemokami ir įsigyti modeliai, patikę modeliai ir spausdinimo sąrašai, per kiekvieno naudotojo Cults3D API raktą. Failai gaunami su naršyklės prisijungimu, kurį perduoda Thingport Grab."
+      },
+      "sync": {
+        "notConnected": "Įveskite Cults3D slapyvardį ir API raktą per Konfigūracija > Šaltiniai, kad čia matytumėte patikusius modelius ir spausdinimo sąrašus."
       }
     }
   }

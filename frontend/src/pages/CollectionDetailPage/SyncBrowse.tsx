@@ -187,7 +187,7 @@ export default function SyncBrowse({ provider, onProviderChange, picked, onPick,
     if (!provider) return;
     const ok = await confirm({
       title: t("models:collections.sync.browse.forgetTitle", { provider: importProviderInfo(provider)?.label }),
-      message: t(`models:collections.sync.browse.forgetMessage.${provider}`),
+      message: t(`providers:${provider}.sync.forgetMessage`),
       confirmLabel: t("models:collections.sync.browse.forget"),
       destructive: true,
     });
@@ -307,7 +307,7 @@ export default function SyncBrowse({ provider, onProviderChange, picked, onPick,
             </Button>
           }
         >
-          {t(`models:collections.sync.browse.notConnected.${provider}`)}
+          {t(`providers:${provider}.sync.notConnected`)}
         </Alert>
       )}
 
@@ -315,7 +315,7 @@ export default function SyncBrowse({ provider, onProviderChange, picked, onPick,
         <Box>
           <SectionLabel>{t("models:collections.sync.browse.usernameLabel", { provider: name })}</SectionLabel>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            {t(`models:collections.sync.browse.usernameHint.${provider}`)}
+            {t(`providers:${provider}.sync.usernameHint`)}
           </Typography>
           <Stack direction="row" spacing={1}>
             <TextField
@@ -326,7 +326,7 @@ export default function SyncBrowse({ provider, onProviderChange, picked, onPick,
               onKeyDown={(e) => {
                 if (e.key === "Enter") void saveUsername();
               }}
-              placeholder={t(`models:collections.sync.browse.usernamePlaceholder.${provider}`)}
+              placeholder={t(`providers:${provider}.sync.usernamePlaceholder`)}
               disabled={savingUsername}
             />
             <Button
@@ -345,9 +345,9 @@ export default function SyncBrowse({ provider, onProviderChange, picked, onPick,
           <SectionLabel>{t("models:collections.sync.browse.yoursLabel", { provider: name })}</SectionLabel>
           {!signedIn && account?.account && (
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-              {t(`models:collections.sync.browse.showing.${provider}`, { user: account.account })}
-              {i18n.exists(`models:collections.sync.browse.showingHelp.${provider}`) && (
-                <HelpTip text={t(`models:collections.sync.browse.showingHelp.${provider}`)} />
+              {t(`providers:${provider}.sync.showing`, { user: account.account })}
+              {i18n.exists(`providers:${provider}.sync.showingHelp`) && (
+                <HelpTip text={t(`providers:${provider}.sync.showingHelp`)} />
               )}{" "}
               <Link component="button" variant="body2" onClick={() => setEditingAccount(true)}>
                 {t("models:collections.sync.browse.change")}

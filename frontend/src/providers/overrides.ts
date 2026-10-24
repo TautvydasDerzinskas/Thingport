@@ -20,8 +20,10 @@ export const PROVIDER_UI: Partial<Record<ProviderId, ProviderUi>> = {
     missing(state, t) {
       const browser = state.slots.browser?.status;
       if (browser === "connected") return undefined;
-      const tooltip = t(browser === "expired" ? "providers.cults3d.siteExpired" : "providers.cults3d.siteMissing");
-      return { tooltip, status: t("providers.cults3d.siteMissingStatus") };
+      const tooltip = t(
+        browser === "expired" ? "providers:cults3d.status.siteExpired" : "providers:cults3d.status.siteMissing",
+      );
+      return { tooltip, status: t("providers:cults3d.status.siteMissingStatus") };
     },
   },
   // Imports need only the instance's API key; the user's own sign-in adds paid and login-only models.

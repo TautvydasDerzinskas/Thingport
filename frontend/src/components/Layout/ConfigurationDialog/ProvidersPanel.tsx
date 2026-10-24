@@ -83,8 +83,8 @@ export default function ProvidersPanel({ isAdmin, onUpdateMakerWorld, onUnauthor
   // Why this user can't connect or disconnect it, if they can't.
   const lockedReason = (id: ProviderId) => {
     if (isComingSoon(id)) return t("providers.comingSoon");
-    if (!defaultAuth(id)) return t(`providers.${id}.alwaysConnected`);
-    if (isShared(id) && !isAdmin) return t(`providers.${id}.adminOnly`);
+    if (!defaultAuth(id)) return t(`providers:${id}.status.alwaysConnected`);
+    if (isShared(id) && !isAdmin) return t(`providers:${id}.status.adminOnly`);
     return null;
   };
 
@@ -174,12 +174,12 @@ export default function ProvidersPanel({ isAdmin, onUpdateMakerWorld, onUnauthor
             : missing
               ? missing.tooltip
               : tileExpired
-                ? t(`providers.${id}.expired`)
+                ? t(`providers:${id}.status.expired`)
                 : isShared(id) && locked && !connected
                   ? locked
                   : connected
                     ? t("providers.connected")
-                    : t(`providers.${id}.notConnected`, { defaultValue: t("providers.notConnected") });
+                    : t(`providers:${id}.status.notConnected`, { defaultValue: t("providers.notConnected") });
           return (
             <AppTile
               key={id}
@@ -189,7 +189,7 @@ export default function ProvidersPanel({ isAdmin, onUpdateMakerWorld, onUnauthor
               badge={status === null || isComingSoon(id) ? undefined : status}
               highlighted={connecting?.id === id || menuId === id}
               tooltip={status === null ? undefined : tooltip}
-              ariaLabel={`${name}: ${tileExpired ? t(`providers.${id}.expired`) : connected ? t("providers.connected") : t("providers.notConnected")}`}
+              ariaLabel={`${name}: ${tileExpired ? t(`providers:${id}.status.expired`) : connected ? t("providers.connected") : t("providers.notConnected")}`}
               onContextMenu={(event) => openMenu(id, event)}
               onActivate={() => activate(id)}
             />
@@ -213,7 +213,7 @@ export default function ProvidersPanel({ isAdmin, onUpdateMakerWorld, onUnauthor
               isComingSoon(menuId)
                 ? t("providers.comingSoon")
                 : menuExpired
-                  ? t(`providers.${menuId}.expiredStatus`)
+                  ? t(`providers:${menuId}.status.expiredStatus`)
                   : menuMissing
                     ? menuMissing.status
                     : menuConnected
@@ -251,7 +251,7 @@ export default function ProvidersPanel({ isAdmin, onUpdateMakerWorld, onUnauthor
               <ListItemIcon>
                 <ContentPasteIcon fontSize="small" />
               </ListItemIcon>
-              <ListItemText>{t(`providers.${menuId}.${auth.slot}.paste`)}</ListItemText>
+              <ListItemText>{t(`providers:${menuId}.connect.${auth.slot}.paste`)}</ListItemText>
             </MenuItem>
           ))}
         {menuId && (
@@ -349,7 +349,7 @@ function ConnectBox({ id, auth, name, onCancel, onConnect, onUnauthorized }: Con
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const extra = auth.slot !== "default";
-  const keyPrefix = extra ? `providers.${id}.${auth.slot}` : `providers.${id}`;
+  const keyPrefix = extra ? `providers:${id}.connect.${auth.slot}` : `providers:${id}.connect`;
   const steps = t(`${keyPrefix}.steps`, { returnObjects: true }) as string[];
   // Where there are several, each says what it is.
   const labelled = auth.fields.length > 1;
@@ -399,7 +399,7 @@ function ConnectBox({ id, auth, name, onCancel, onConnect, onUnauthorized }: Con
       </Box>
       {auth.scope === "instance" && (
         <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5 }}>
-          {t(`providers.${id}.shared`)}
+          {t(`providers:${id}.connect.shared`)}
         </Typography>
       )}
       {auth.fields.map((field, i) => (

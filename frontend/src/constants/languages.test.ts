@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LOCALES, matchLanguage, SUPPORTED_LANGUAGES } from "./languages";
+import { LOCALES, matchLanguage, NAMESPACES, SUPPORTED_LANGUAGES } from "./languages";
 
 describe("languages", () => {
   it("offers every locale file, English first, each named in itself", () => {
@@ -21,7 +21,7 @@ describe("languages", () => {
   it("keeps every locale to the known namespaces", () => {
     const unknown = Object.entries(LOCALES).flatMap(([code, locale]) =>
       Object.keys(locale)
-        .filter((ns) => !["common", "app", "library", "models"].includes(ns))
+        .filter((ns) => !NAMESPACES.includes(ns))
         .map((ns) => `${code}.${ns}`),
     );
     expect(unknown).toEqual([]);

@@ -206,7 +206,7 @@ function NeedPill({ need, accent }: { need: Need; accent: string }) {
 function AboutView({ id, accent, onClose }: { id: ProviderId; accent: string; onClose: () => void }) {
   const { t } = useTranslation("app");
   const facts = PROVIDER_FACTS[id];
-  const key = `providerAbout.providers.${id}`;
+  const key = `providers:${id}.about`;
   const setup = t(`${key}.setup`, { returnObjects: true }) as string[];
   const flareNote = t(`${key}.flaresolverr`, { defaultValue: t(`providerAbout.flareNote.${facts.flaresolverr}`) });
   const rows: { label: string; help?: string; pill: React.ReactNode; note: string }[] = [

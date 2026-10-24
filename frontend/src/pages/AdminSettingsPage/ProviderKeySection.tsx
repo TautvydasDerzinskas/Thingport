@@ -23,7 +23,7 @@ type Props = {
  *  is set. */
 export default function ProviderKeySection({ provider, auth, configured, onUnauthorized }: Props) {
   const { t } = useTranslation("app");
-  const k = (key: string) => t(`adminSettings.${provider}.${key}`);
+  const k = (key: string) => t(`providers:${provider}.admin.key.${key}`);
   const [draft, setDraft] = React.useState("");
   const [saving, setSaving] = React.useState(false);
   const [status, setStatus] = React.useState<string | null>(null);

@@ -111,17 +111,17 @@ export default function ProvidersPage({ onUnauthorized }: Props) {
                   </Typography>
                 </AboutButton>
                 <Typography variant="body2" color="text.secondary">
-                  {t(`adminSettings.providers.descriptions.${id}`)}
+                  {t(`providers:${id}.admin.description`)}
                 </Typography>
                 {keySetHere !== undefined && (
                   <Typography variant="caption" color={keySetHere ? "success.main" : "warning.main"}>
-                    {t(`adminSettings.providers.keyStatus.${id}.${keySetHere ? "set" : "missing"}`)}
+                    {t(`providers:${id}.admin.keyStatus.${keySetHere ? "set" : "missing"}`)}
                   </Typography>
                 )}
               </Box>
               {key && (
-                <Tooltip title={t(`adminSettings.${id}.heading`)}>
-                  <IconButton aria-label={t(`adminSettings.${id}.heading`)} onClick={() => setKeyOpen(id)}>
+                <Tooltip title={t(`providers:${id}.admin.key.heading`)}>
+                  <IconButton aria-label={t(`providers:${id}.admin.key.heading`)} onClick={() => setKeyOpen(id)}>
                     <SettingsOutlinedIcon />
                   </IconButton>
                 </Tooltip>
@@ -167,7 +167,7 @@ export default function ProvidersPage({ onUnauthorized }: Props) {
 
       <Dialog open={Boolean(keyOpen)} onClose={() => setKeyOpen(null)} fullWidth maxWidth="sm">
         <DialogTitle sx={{ pr: 6 }}>
-          {keyOpen && t(`adminSettings.${keyOpen}.heading`)}
+          {keyOpen && t(`providers:${keyOpen}.admin.key.heading`)}
           <IconButton
             aria-label={t("common:close")}
             onClick={() => setKeyOpen(null)}

@@ -52,12 +52,12 @@ export function UserMenu({ user, onOpenConfiguration, onOpenProfile, onLogout }:
   /** Why its imports don't work yet. */
   const notReadyReason = (state: ProviderState) => {
     const status = state.slots.default?.status;
-    if (status === "expired") return t(`providers.${state.id}.expired`);
+    if (status === "expired") return t(`providers:${state.id}.status.expired`);
     if (status === "connected") {
       const missing = PROVIDER_UI[state.id]?.missing?.(state, t);
       if (missing) return missing.tooltip;
     }
-    return t(`userMenu.${state.id}DisabledReason`);
+    return t(`providers:${state.id}.status.disabledReason`);
   };
 
   // Turned off by an admin: no icon. Coming-soon sites follow the live ones.
