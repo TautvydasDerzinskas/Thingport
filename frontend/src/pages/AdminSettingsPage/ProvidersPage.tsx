@@ -17,36 +17,32 @@ import Typography from "@mui/material/Typography";
 import CloseIcon from "@mui/icons-material/Close";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import { UnauthorizedError } from "../../api/client";
-import { type ImportProvider, type ProviderSetting, settingsApi } from "../../api/settings";
+import { type ImportProvider, settingsApi } from "../../api/settings";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { COMING_SOON_PROVIDERS, ProviderLogo } from "../../components/Layout/ConfigurationDialog/providerLogos";
 import SectionHeader from "../../components/SectionHeader";
-import { publishProviders } from "../../hooks/useProviders";
+import { publishProviders, refreshProviders, useProviders } from "../../hooks/useProviders";
 import { useProviderAbout } from "../../components/providerAbout/ProviderAboutProvider";
-import ProviderKeySection, { type KeyedProvider } from "./ProviderKeySection";
-import { MANIFESTS, PROVIDER_IDS } from "../../providers/_generated";
+import ProviderKeySection from "./ProviderKeySection";
+import { type AuthSlot, MANIFESTS, PROVIDER_IDS } from "../../providers/_generated";
 
 type Props = {
   onUnauthorized?: () => void;
 };
 
-const KEYED = new Set<ImportProvider>(["thingiverse", "myminifactory"]);
-const isKeyed = (provider: ImportProvider): provider is KeyedProvider => KEYED.has(provider);
+/** The key for the whole instance a provider needs, which an admin sets here; none for most. */
+const instanceAuth = (provider: ImportProvider) =>
+  (MANIFESTS[provider].auth as readonly AuthSlot[]).find((auth) => auth.scope === "instance");
 
 /** The sites Thingport imports from and syncs with: each can be turned off for everyone, and the instance keys of
  *  the ones that need one set. */
 export default function ProvidersPage({ onUnauthorized }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const confirm = useConfirm();
-  const [providers, setProviders] = React.useState<ProviderSetting[] | null>(null);
+  const providers = useProviders();
   const [saving, setSaving] = React.useState<ImportProvider | null>(null);
   const [error, setError] = React.useState<string | null>(null);
-  const [keyOpen, setKeyOpen] = React.useState<KeyedProvider | null>(null);
-  const [keySet, setKeySet] = React.useState<Partial<Record<KeyedProvider, boolean>>>({});
-  const onKeyConfigured = React.useCallback(
-    (configured: boolean) => keyOpen && setKeySet((current) => ({ ...current, [keyOpen]: configured })),
-    [keyOpen],
-  );
+  const [keyOpen, setKeyOpen] = React.useState<ImportProvider | null>(null);
 
   const fail = React.useCallback(
     (err: unknown) => {
@@ -57,22 +53,7 @@ export default function ProvidersPage({ onUnauthorized }: Props) {
   );
 
   React.useEffect(() => {
-    let active = true;
-    settingsApi.getProviders().then(
-      (loaded) => active && setProviders(loaded),
-      (err: unknown) => active && fail(err),
-    );
-    settingsApi.getThingiverse().then(
-      (data) => active && setKeySet((current) => ({ ...current, thingiverse: data.configured })),
-      () => undefined,
-    );
-    settingsApi.getMyminifactory().then(
-      (data) => active && setKeySet((current) => ({ ...current, myminifactory: data.configured })),
-      () => undefined,
-    );
-    return () => {
-      active = false;
-    };
+    refreshProviders().catch(fail);
   }, [fail]);
 
   const toggle = async (provider: ImportProvider, enabled: boolean) => {
@@ -88,10 +69,8 @@ export default function ProvidersPage({ onUnauthorized }: Props) {
     setSaving(provider);
     setError(null);
     try {
-      const updated = await settingsApi.setProviderEnabled(provider, enabled);
-      setProviders(updated);
       // Menus open elsewhere in the app hide or show it at once.
-      publishProviders(updated);
+      publishProviders(await settingsApi.setProviderEnabled(provider, enabled));
     } catch (err) {
       fail(err);
     } finally {
@@ -109,7 +88,9 @@ export default function ProvidersPage({ onUnauthorized }: Props) {
       )}
       <Paper variant="outlined" sx={{ borderRadius: "12px", overflow: "hidden" }}>
         {(providers ?? PROVIDER_IDS.map((id) => ({ id, enabled: true }))).map(({ id, enabled }) => {
-          const keySetHere = isKeyed(id) ? keySet[id] : undefined;
+          const key = instanceAuth(id);
+          const keySetHere =
+            key && providers ? providers.find((p) => p.id === id)?.slots[key.slot]?.status === "connected" : undefined;
           return (
             <Stack
               key={id}
@@ -132,13 +113,13 @@ export default function ProvidersPage({ onUnauthorized }: Props) {
                 <Typography variant="body2" color="text.secondary">
                   {t(`adminSettings.providers.descriptions.${id}`)}
                 </Typography>
-                {isKeyed(id) && keySetHere !== undefined && (
+                {keySetHere !== undefined && (
                   <Typography variant="caption" color={keySetHere ? "success.main" : "warning.main"}>
                     {t(`adminSettings.providers.keyStatus.${id}.${keySetHere ? "set" : "missing"}`)}
                   </Typography>
                 )}
               </Box>
-              {isKeyed(id) && (
+              {key && (
                 <Tooltip title={t(`adminSettings.${id}.heading`)}>
                   <IconButton aria-label={t(`adminSettings.${id}.heading`)} onClick={() => setKeyOpen(id)}>
                     <SettingsOutlinedIcon />
@@ -196,12 +177,15 @@ export default function ProvidersPage({ onUnauthorized }: Props) {
           </IconButton>
         </DialogTitle>
         <DialogContent>
-          {keyOpen && (
+          {keyOpen && instanceAuth(keyOpen) && (
             <ProviderKeySection
               key={keyOpen}
               provider={keyOpen}
+              auth={instanceAuth(keyOpen)!}
+              configured={
+                providers?.find((p) => p.id === keyOpen)?.slots[instanceAuth(keyOpen)!.slot]?.status === "connected"
+              }
               onUnauthorized={onUnauthorized}
-              onConfiguredChange={onKeyConfigured}
             />
           )}
         </DialogContent>

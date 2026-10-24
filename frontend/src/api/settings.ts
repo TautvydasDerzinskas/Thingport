@@ -512,46 +512,6 @@ export const settingsApi = {
     return ((await res.json()) as { providers: ProviderSetting[] }).providers;
   },
 
-  // Write-only: GET only reports whether a token is configured.
-  getThingiverse: async (): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/thingiverse`, { headers: authHeaders() });
-    assertOk(res, "Failed to load Thingiverse settings");
-    return res.json();
-  },
-
-  updateThingiverse: async (accessToken: string | null): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/thingiverse`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ access_token: accessToken }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) {
-      throw new Error(await readErrorMessage(res, "Failed to update Thingiverse settings"));
-    }
-    return res.json();
-  },
-
-  // Write-only, like Thingiverse's token: GET only reports whether a key is configured.
-  getMyminifactory: async (): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/myminifactory`, { headers: authHeaders() });
-    assertOk(res, "Failed to load MyMiniFactory settings");
-    return res.json();
-  },
-
-  updateMyminifactory: async (apiKey: string | null): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/myminifactory`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ api_key: apiKey }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) {
-      throw new Error(await readErrorMessage(res, "Failed to update MyMiniFactory settings"));
-    }
-    return res.json();
-  },
-
   getAuth: async (): Promise<AuthSettings> => {
     const res = await fetch(`${apiBase()}/settings/auth`, { headers: authHeaders() });
     assertOk(res, "Failed to load session settings");

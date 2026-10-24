@@ -3739,7 +3739,9 @@
           "startedWaiting": "«{{name}}» se sincroniza ahora con «{{source}}». Sus modelos llegarán la próxima vez que abras {{provider}} con Thingport Grab.",
           "pickPrompt": "Elige una colección arriba o pega un enlace.",
           "startNothing": "Sincronizar",
-          "printablesPrivateHelp": "Las colecciones privadas y los me gusta se añaden cuando Thingport Grab detecta que has iniciado sesión en Printables, ya que Printables solo te los muestra a ti.",
+          "showingHelp": {
+            "printables": "Las colecciones privadas y los me gusta se añaden cuando Thingport Grab detecta que has iniciado sesión en Printables, ya que Printables solo te los muestra a ti."
+          },
           "makerworldHelp": "MakerWorld limita rápidamente las importaciones masivas, así que los modelos de esta colección no se importan ahora. Los que ya estén en tu biblioteca se añaden a «{{name}}».",
           "forget": "Olvidar",
           "forgetTitle": "¿Olvidar tu cuenta de {{provider}}?",

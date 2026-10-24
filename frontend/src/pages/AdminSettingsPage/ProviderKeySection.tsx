@@ -7,60 +7,32 @@ import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
 import { UnauthorizedError } from "../../api/client";
-import { settingsApi } from "../../api/settings";
-
-/** The providers whose access is one key for the whole instance. */
-export type KeyedProvider = "thingiverse" | "myminifactory";
-
-const KEY_API: Record<
-  KeyedProvider,
-  { get: () => Promise<{ configured: boolean }>; update: (key: string | null) => Promise<{ configured: boolean }> }
-> = {
-  thingiverse: { get: settingsApi.getThingiverse, update: settingsApi.updateThingiverse },
-  myminifactory: { get: settingsApi.getMyminifactory, update: settingsApi.updateMyminifactory },
-};
+import { providersApi } from "../../api/providers";
+import { refreshProviders } from "../../hooks/useProviders";
+import type { AuthSlot, ProviderId } from "../../providers/_generated";
 
 type Props = {
-  provider: KeyedProvider;
+  provider: ProviderId;
+  /** The instance's key: Thingiverse's App Token, MyMiniFactory's API key. */
+  auth: AuthSlot;
+  configured: boolean;
   onUnauthorized?: () => void;
-  /** Whether a key is set, whenever that's learned or changes. */
-  onConfiguredChange?: (configured: boolean) => void;
 };
 
-/** A provider's instance key form (Thingiverse's App Token, MyMiniFactory's API key), in the Providers page's dialog.
- *  Write-only: the server only reports whether a key is set. */
-export default function ProviderKeySection({ provider, onUnauthorized, onConfiguredChange }: Props) {
+/** A provider's instance key form, in the Providers page's dialog. Write-only: the server only reports whether a key
+ *  is set. */
+export default function ProviderKeySection({ provider, auth, configured, onUnauthorized }: Props) {
   const { t } = useTranslation("app");
-  const api = KEY_API[provider];
   const k = (key: string) => t(`adminSettings.${provider}.${key}`);
-  const [configured, setConfigured] = React.useState(false);
-  const [loading, setLoading] = React.useState(false);
   const [draft, setDraft] = React.useState("");
   const [saving, setSaving] = React.useState(false);
   const [status, setStatus] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
-  React.useEffect(() => {
-    let active = true;
-    setLoading(true);
-    void (async () => {
-      try {
-        const data = await api.get();
-        if (active) setConfigured(data.configured);
-      } catch (err) {
-        if (err instanceof UnauthorizedError) onUnauthorized?.();
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [api, onUnauthorized]);
-
-  React.useEffect(() => {
-    if (!loading) onConfiguredChange?.(configured);
-  }, [configured, loading, onConfiguredChange]);
+  const update = async (key: string | null) => {
+    await providersApi.saveConnection(provider, auth.slot, { [auth.fields[0].name]: key });
+    await refreshProviders();
+  };
 
   const save = async () => {
     const trimmed = draft.trim();
@@ -69,8 +41,7 @@ export default function ProviderKeySection({ provider, onUnauthorized, onConfigu
     setStatus(null);
     setError(null);
     try {
-      const data = await api.update(trimmed);
-      setConfigured(data.configured);
+      await update(trimmed);
       setDraft("");
       setStatus(k("saved"));
     } catch (err) {
@@ -89,8 +60,7 @@ export default function ProviderKeySection({ provider, onUnauthorized, onConfigu
     setStatus(null);
     setError(null);
     try {
-      const data = await api.update(null);
-      setConfigured(data.configured);
+      await update(null);
       setDraft("");
       setStatus(k("cleared"));
     } catch (err) {
@@ -120,17 +90,17 @@ export default function ProviderKeySection({ provider, onUnauthorized, onConfigu
         onChange={(e) => setDraft(e.target.value)}
         placeholder={k("tokenPlaceholder") ?? undefined}
         helperText={configured ? k("tokenHelperConfigured") : undefined}
-        disabled={loading || saving}
+        disabled={saving}
         fullWidth
         autoComplete="off"
       />
 
       <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
-        <Button variant="contained" onClick={save} disabled={loading || saving || !draft.trim()}>
+        <Button variant="contained" onClick={save} disabled={saving || !draft.trim()}>
           {saving ? k("saving") : k("save")}
         </Button>
         {configured && (
-          <Button variant="outlined" color="error" onClick={clear} disabled={loading || saving}>
+          <Button variant="outlined" color="error" onClick={clear} disabled={saving}>
             {k("clear")}
           </Button>
         )}

@@ -35,7 +35,6 @@ import { COMING_SOON_PROVIDERS, ProviderLogo } from "./ConfigurationDialog/provi
 import {
   detectImportProvider,
   hasPrintProfiles,
-  IMPORT_LINK_EXAMPLES,
   isMakerworldCollectionUrl,
   listLinkOf,
   type ImportProviderKey,
@@ -43,7 +42,7 @@ import {
 import type { MakerworldProfileScope } from "../../api/imports";
 import { allProvidersOff, useDisabledProviders } from "../../hooks/useProviders";
 import { readImportLink } from "../../utils/bookmarklet";
-import { PROVIDER_IDS } from "../../providers/_generated";
+import { MANIFESTS, PROVIDER_IDS } from "../../providers/_generated";
 
 const IMPORT_PROVIDERS: readonly ImportProviderKey[] = PROVIDER_IDS;
 
@@ -275,10 +274,10 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
                 {t("addMenu.exampleLinksFor", { provider: IMPORT_PROVIDER_INFO[exampleProvider].label })}
               </Typography>
               <Typography variant="caption" component="div" sx={{ wordBreak: "break-all" }}>
-                {t("addMenu.exampleModel")}: {IMPORT_LINK_EXAMPLES[exampleProvider].model}
+                {t("addMenu.exampleModel")}: {MANIFESTS[exampleProvider].examples.model}
               </Typography>
               <Typography variant="caption" component="div" sx={{ wordBreak: "break-all" }}>
-                {t("addMenu.exampleCollection")}: {IMPORT_LINK_EXAMPLES[exampleProvider].collection}
+                {t("addMenu.exampleCollection")}: {MANIFESTS[exampleProvider].examples.list}
                 {exampleProvider === "makerworld" && ` (${t("addMenu.makerworldCollectionExtensionOnly")})`}
               </Typography>
             </Alert>

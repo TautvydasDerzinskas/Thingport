@@ -8,21 +8,10 @@ import CheckIcon from "@mui/icons-material/Check";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import ViewInArOutlinedIcon from "@mui/icons-material/ViewInArOutlined";
 import type { BrowsableProvider, ProviderCollection } from "../../api/providerCollections";
+import { MANIFESTS, parseListUrl } from "../../providers/_generated";
 
 // Each provider's own accent, so a tile reads as theirs.
-export const PROVIDER_ACCENTS: Record<BrowsableProvider, string> = {
-  makerworld: "#00AE42",
-  printables: "#FA6831",
-  thingiverse: "#5575FE",
-  myminifactory: "#00C4A6",
-  snapmaker: "#0C63E2",
-  // Anycubic's blue, for the same reason: MakerOnline's own mark is black and white.
-  makeronline: "#1F7AE0",
-  crealitycloud: "#1AC686",
-  nexprint: "#7A55E3",
-  thangs: "#FFBC00",
-  cults3d: "#822EF5",
-};
+const accent = (provider: BrowsableProvider) => MANIFESTS[provider].brand.accent;
 
 type Props = {
   provider: BrowsableProvider;
@@ -45,9 +34,7 @@ function Thumb({ src, sx }: { src: string | undefined; sx?: object }) {
 
 function ModelCount({ count, provider }: { count: number; provider: BrowsableProvider }) {
   const { t } = useTranslation("models");
-  // Each site's own word for what it holds.
-  const noun = provider === "thingiverse" ? "things" : provider === "myminifactory" ? "objects" : "models";
-  return <>{t(`collections.sync.browse.${noun}`, { count })}</>;
+  return <>{t(`collections.sync.browse.${MANIFESTS[provider].modelNoun}`, { count })}</>;
 }
 
 /** MakerWorld: a 2x2 mosaic, "+N" over the last tile, the deck edges below. */
@@ -128,7 +115,7 @@ function PrintablesTile({ collection }: { collection: ProviderCollection }) {
         borderRadius: "4px",
         border: 1,
         borderColor: "divider",
-        borderTop: `3px solid ${PROVIDER_ACCENTS.printables}`,
+        borderTop: `3px solid ${accent("printables")}`,
         bgcolor: "background.paper",
         p: 1.25,
       }}
@@ -165,7 +152,7 @@ function ThingiverseTile({ collection }: { collection: ProviderCollection }) {
         position: "relative",
         overflow: "hidden",
         borderRadius: "8px",
-        bgcolor: PROVIDER_ACCENTS.thingiverse,
+        bgcolor: accent("thingiverse"),
         aspectRatio: "4 / 3",
         color: "#fff",
         textAlign: "center",
@@ -227,7 +214,7 @@ function MyMiniFactoryTile({ collection }: { collection: ProviderCollection }) {
         borderRadius: "4px",
         border: 1,
         borderColor: "divider",
-        borderBottom: `3px solid ${PROVIDER_ACCENTS.myminifactory}`,
+        borderBottom: `3px solid ${accent("myminifactory")}`,
         bgcolor: "background.paper",
         p: 1.25,
       }}
@@ -319,7 +306,7 @@ function CrealitycloudTile({ collection }: { collection: ProviderCollection }) {
         borderRadius: "12px",
         border: 1,
         borderColor: "divider",
-        borderTop: `3px solid ${PROVIDER_ACCENTS.crealitycloud}`,
+        borderTop: `3px solid ${accent("crealitycloud")}`,
         bgcolor: "background.paper",
         overflow: "hidden",
       }}
@@ -353,7 +340,7 @@ function NexprintTile({ collection }: { collection: ProviderCollection }) {
         position: "relative",
         borderRadius: "10px",
         overflow: "hidden",
-        borderLeft: `3px solid ${PROVIDER_ACCENTS.nexprint}`,
+        borderLeft: `3px solid ${accent("nexprint")}`,
         bgcolor: "background.paper",
       }}
     >
@@ -405,7 +392,7 @@ function ThangsTile({ collection }: { collection: ProviderCollection }) {
             px: 1,
             py: 0.25,
             borderRadius: "999px",
-            bgcolor: PROVIDER_ACCENTS.thangs,
+            bgcolor: accent("thangs"),
             // Its yellow is light in both themes.
             color: "common.black",
             fontSize: "0.7rem",
@@ -468,7 +455,7 @@ function Cults3dTile({ collection }: { collection: ProviderCollection }) {
             fontSize: "0.75rem",
             fontWeight: 600,
             // Its purple is too dark to read on the dark theme's paper; a lighter shade of it there.
-            color: (theme) => (theme.palette.mode === "dark" ? "#B48CFA" : PROVIDER_ACCENTS.cults3d),
+            color: (theme) => (theme.palette.mode === "dark" ? "#B48CFA" : accent("cults3d")),
           }}
         >
           <ModelCount count={collection.model_count} provider="cults3d" />
@@ -479,7 +466,35 @@ function Cults3dTile({ collection }: { collection: ProviderCollection }) {
   );
 }
 
-const TILES: Record<BrowsableProvider, (props: { collection: ProviderCollection }) => JSX.Element> = {
+/** Any other provider's: a cover with a strip in its accent, the name and a count below. */
+function GenericTile({ provider, collection }: { provider: BrowsableProvider; collection: ProviderCollection }) {
+  return (
+    <Box
+      sx={{
+        borderRadius: "12px",
+        border: 1,
+        borderColor: "divider",
+        bgcolor: "background.paper",
+        overflow: "hidden",
+      }}
+    >
+      <Thumb src={collection.thumbnails[0]} sx={{ aspectRatio: "4 / 3" }} />
+      <Box sx={{ height: 3, bgcolor: accent(provider) }} />
+      <Box sx={{ px: 1.25, py: 1 }}>
+        <Typography noWrap sx={{ fontWeight: 700, fontSize: "0.875rem" }}>
+          {collection.name}
+        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", fontSize: "0.75rem", color: "text.secondary" }}>
+          <ModelCount count={collection.model_count} provider={provider} />
+          {collection.private && <LockOutlinedIcon sx={{ fontSize: 14, ml: "auto" }} />}
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+// Drawn in each site's own manner, where one is worth it.
+const TILES: Partial<Record<BrowsableProvider, (props: { collection: ProviderCollection }) => JSX.Element>> = {
   makerworld: MakerWorldTile,
   printables: PrintablesTile,
   thingiverse: ThingiverseTile,
@@ -492,15 +507,11 @@ const TILES: Record<BrowsableProvider, (props: { collection: ProviderCollection 
   cults3d: Cults3dTile,
 };
 
-/** The name to show: a user's likes, and Snapmaker's likes and bookmarks, come named in English by the instance, as
- *  do MakerOnline's, Creality Cloud's and Thangs' likes. */
-function displayName(provider: BrowsableProvider, collection: ProviderCollection, t: (key: string) => string): string {
-  if (collection.likes) return t("collections.sync.browse.likes");
-  if (provider === "snapmaker" && collection.id.startsWith("likes-")) return t("collections.sync.browse.likes");
-  if (provider === "snapmaker" && collection.id.startsWith("bookmarks-")) return t("collections.sync.browse.bookmarks");
-  if (provider === "makeronline" && collection.id === "likes") return t("collections.sync.browse.likes");
-  if (provider === "crealitycloud" && collection.id.startsWith("likes-")) return t("collections.sync.browse.likes");
-  if (provider === "thangs" && collection.id === "likes") return t("collections.sync.browse.likes");
+/** The name to show: likes and bookmarks come named in English by the instance. */
+function displayName(collection: ProviderCollection, t: (key: string) => string): string {
+  const kind = collection.likes ? "likes" : parseListUrl(collection.url)?.kind;
+  if (kind === "likes") return t("collections.sync.browse.likes");
+  if (kind === "bookmarks") return t("collections.sync.browse.bookmarks");
   return collection.name;
 }
 
@@ -509,7 +520,7 @@ function displayName(provider: BrowsableProvider, collection: ProviderCollection
 export default function ProviderCollectionTile({ provider, collection: given, selected, onSelect }: Props) {
   const { t } = useTranslation("models");
   const Tile = TILES[provider];
-  const collection = { ...given, name: displayName(provider, given, t) };
+  const collection = { ...given, name: displayName(given, t) };
   const taken = collection.synced !== null;
   return (
     <Box>
@@ -524,14 +535,14 @@ export default function ProviderCollectionTile({ provider, collection: given, se
           textAlign: "left",
           borderRadius: "12px",
           opacity: taken ? 0.5 : 1,
-          outline: selected ? `2px solid ${PROVIDER_ACCENTS[provider]}` : "2px solid transparent",
+          outline: selected ? `2px solid ${accent(provider)}` : "2px solid transparent",
           outlineOffset: 3,
           transition: "outline-color 150ms, transform 150ms",
           "&:hover": taken ? undefined : { transform: "translateY(-2px)" },
-          "&:focus-visible": { outline: `2px solid ${PROVIDER_ACCENTS[provider]}` },
+          "&:focus-visible": { outline: `2px solid ${accent(provider)}` },
         }}
       >
-        <Tile collection={collection} />
+        {Tile ? <Tile collection={collection} /> : <GenericTile provider={provider} collection={collection} />}
         {selected && (
           <Box
             sx={{
@@ -544,7 +555,7 @@ export default function ProviderCollectionTile({ provider, collection: given, se
               borderRadius: "50%",
               display: "grid",
               placeItems: "center",
-              bgcolor: PROVIDER_ACCENTS[provider],
+              bgcolor: accent(provider),
               color: "#fff",
               boxShadow: 1,
             }}
@@ -610,7 +621,7 @@ export function ProviderCollectionTileSkeleton({ provider }: { provider: Browsab
           borderRadius: "4px",
           border: 1,
           borderColor: "divider",
-          borderTop: `3px solid ${PROVIDER_ACCENTS.printables}`,
+          borderTop: `3px solid ${accent("printables")}`,
           p: 1.25,
         }}
       >
@@ -688,7 +699,7 @@ export function ProviderCollectionTileSkeleton({ provider }: { provider: Browsab
           borderRadius: "4px",
           border: 1,
           borderColor: "divider",
-          borderBottom: `3px solid ${PROVIDER_ACCENTS.myminifactory}`,
+          borderBottom: `3px solid ${accent("myminifactory")}`,
           p: 1.25,
         }}
       >
@@ -702,22 +713,30 @@ export function ProviderCollectionTileSkeleton({ provider }: { provider: Browsab
       </Box>
     );
   }
+  if (provider === "thingiverse") {
+    return (
+      <Box
+        aria-hidden
+        sx={{
+          borderRadius: "8px",
+          aspectRatio: "4 / 3",
+          bgcolor: accent("thingiverse"),
+          opacity: 0.35,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          pt: 1.5,
+        }}
+      >
+        <Skeleton variant="text" sx={{ fontSize: "1rem", width: "60%", bgcolor: "rgba(255, 255, 255, 0.5)" }} />
+        <Skeleton variant="text" sx={{ fontSize: "0.8rem", width: "30%", bgcolor: "rgba(255, 255, 255, 0.5)" }} />
+      </Box>
+    );
+  }
   return (
-    <Box
-      aria-hidden
-      sx={{
-        borderRadius: "8px",
-        aspectRatio: "4 / 3",
-        bgcolor: PROVIDER_ACCENTS.thingiverse,
-        opacity: 0.35,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        pt: 1.5,
-      }}
-    >
-      <Skeleton variant="text" sx={{ fontSize: "1rem", width: "60%", bgcolor: "rgba(255, 255, 255, 0.5)" }} />
-      <Skeleton variant="text" sx={{ fontSize: "0.8rem", width: "30%", bgcolor: "rgba(255, 255, 255, 0.5)" }} />
+    <Box aria-hidden sx={{ borderRadius: "12px", border: 1, borderColor: "divider", overflow: "hidden" }}>
+      <Skeleton variant="rectangular" sx={{ width: "100%", height: "auto", aspectRatio: "4 / 3" }} />
+      <Box sx={{ px: 1.25, py: 1 }}>{lines}</Box>
     </Box>
   );
 }

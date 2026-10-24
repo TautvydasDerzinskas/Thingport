@@ -39,7 +39,12 @@ export type ProviderManifest = {
   docsSlug: string;
   /** The provider's domains; their subdomains count too. */
   hosts: readonly string[];
-  brand: { logo: Logo; chip: Chip };
+  /** `accent`: its own colour for what's drawn in its manner, such as its collections' tiles in the sync dialog. */
+  brand: { logo: Logo; chip: Chip; accent: `#${string}` };
+  /** The site's own word for what it holds, as the sync dialog counts it. */
+  modelNoun: "models" | "things" | "objects";
+  /** Links to show as examples: a model's, a list's, and the pattern of a list the sync dialog can follow. */
+  examples: { model: string; list: string; browse: string };
   signIn: SignIn;
   /** The credentials Thingport keeps for it, connected in Configuration → Providers; none for Printables. */
   auth: readonly AuthSlot[];
@@ -49,6 +54,8 @@ export type ProviderManifest = {
     likes: boolean;
     profiles: boolean;
     paidModels: boolean;
+    /** How the sync dialog finds the user's own lists: their sign-in says who they are, or they give a username. */
+    ownLists: "signIn" | "username";
     /** How a category keeps this site's category ids: numbers, or text where they don't fit one (NexPrint's are
      *  past Int, Thangs' are paths). */
     categoryIds: "int" | "text";

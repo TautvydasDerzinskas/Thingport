@@ -17,7 +17,8 @@ import {
   providerCollectionsApi,
 } from "../../api/providerCollections";
 import { importProviderInfo } from "../../constants/importProviders";
-import { hostIs } from "../../utils/importLinkDetection";
+import { detectImportProvider } from "../../utils/importLinkDetection";
+import { MANIFESTS } from "../../providers/_generated";
 import HelpTip from "../../components/HelpTip";
 import Segmented from "../../components/controls/Segmented";
 import { SectionLabel } from "../../components/Layout/ConfigurationDialog/parts";
@@ -42,31 +43,6 @@ const PASTE_DEBOUNCE_MS = 400;
 // Two rows' worth at the dialog's width.
 const LOADING_TILES = 6;
 
-const PASTE_EXAMPLES: Record<BrowsableProvider, string> = {
-  makerworld: "https://makerworld.com/en/collections/…",
-  printables: "https://www.printables.com/@…/collections/…",
-  thingiverse: "https://www.thingiverse.com/…/collections/…",
-  myminifactory: "https://www.myminifactory.com/users/…/collection/…",
-  snapmaker: "https://space.snapmaker.com/en/creator/…?tab=interactions&list=likes",
-  makeronline: "https://www.makeronline.com/en/user/collectionDetail/…/….html",
-  crealitycloud: "https://www.crealitycloud.com/collection/…",
-  nexprint: "https://www.nexprint.com/en/…/home?component=UserCollect&subComp=UserCollectDetail&collectionId=G…",
-  thangs: "https://thangs.com/designer/…/collection/…",
-  // Cults3D's API shows no one's printlists but the user's own, so someone else's means their likes.
-  cults3d: "https://cults3d.com/en/users/…/likes",
-};
-
-// Listed with the user's own sign-in, which already says who they are, so no username is asked for.
-const SIGNED_IN = new Set<BrowsableProvider>([
-  "makerworld",
-  "snapmaker",
-  "makeronline",
-  "crealitycloud",
-  "nexprint",
-  "thangs",
-  "cults3d",
-]);
-
 /** The one the user's slicer goes with, unless it isn't connected; then the first that is. Only from `available`,
  *  the ones an admin hasn't turned off. */
 function defaultProvider(
@@ -80,22 +56,13 @@ function defaultProvider(
   return available.find((provider) => accounts[provider].connected) ?? preferred;
 }
 
-function providerOfUrl(url: string): BrowsableProvider | null {
-  try {
-    const host = new URL(url).hostname.toLowerCase();
-    return BROWSABLE_PROVIDERS.find((provider) => hostIs(host, `${provider}.com`)) ?? null;
-  } catch {
-    return null;
-  }
-}
-
 /** Picking the provider collection an unsynced Thingport collection should follow: the user's own
  *  collections on the chosen provider, or any collection by its link. */
 export default function SyncBrowse({ provider, onProviderChange, picked, onPick, onUnauthorized }: Props) {
   // Turned off by an admin: not offered.
   const disabled = useDisabledProviders();
   const available = useMemo(() => BROWSABLE_PROVIDERS.filter((p) => !disabled.has(p)), [disabled]);
-  const { t } = useTranslation(["models", "common"]);
+  const { t, i18n } = useTranslation(["models", "common"]);
   const slicer = useSlicerPreference();
   const confirm = useConfirm();
   const [accounts, setAccounts] = useState<ProviderAccounts | null>(null);
@@ -141,7 +108,8 @@ export default function SyncBrowse({ provider, onProviderChange, picked, onPick,
   }, [accounts, provider, slicer, onProviderChange, available]);
 
   const account = provider && accounts ? accounts[provider] : null;
-  const signedIn = provider !== null && SIGNED_IN.has(provider);
+  // Listed with the user's own sign-in, which already says who they are, so no username is asked for.
+  const signedIn = provider !== null && MANIFESTS[provider].capabilities.ownLists === "signIn";
   const needsAccount = provider !== null && !signedIn && account?.connected && !account.account;
   const canList = Boolean(account?.connected && (signedIn || account.account));
 
@@ -167,7 +135,7 @@ export default function SyncBrowse({ provider, onProviderChange, picked, onPick,
       setPastedResult(null);
       return;
     }
-    const linkProvider = providerOfUrl(url);
+    const linkProvider = detectImportProvider(url);
     if (!linkProvider) {
       setPastedResult({ error: t("models:collections.sync.browse.notALink") });
       return;
@@ -304,10 +272,10 @@ export default function SyncBrowse({ provider, onProviderChange, picked, onPick,
           fullWidth
           value={pasted}
           onChange={(e) => setPasted(e.target.value)}
-          placeholder={PASTE_EXAMPLES[provider]}
+          placeholder={MANIFESTS[provider].examples.browse}
         />
         {pastedResult === "loading" && (
-          <Box sx={{ mt: 1.5, maxWidth: 220 }}>{skeletons(providerOfUrl(pasted.trim()) ?? provider, 1)}</Box>
+          <Box sx={{ mt: 1.5, maxWidth: 220 }}>{skeletons(detectImportProvider(pasted.trim()) ?? provider, 1)}</Box>
         )}
         {pastedResult && pastedResult !== "loading" && "error" in pastedResult && (
           <Alert severity="warning" sx={{ mt: 1.5 }}>
@@ -378,8 +346,8 @@ export default function SyncBrowse({ provider, onProviderChange, picked, onPick,
           {!signedIn && account?.account && (
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
               {t(`models:collections.sync.browse.showing.${provider}`, { user: account.account })}
-              {provider === "printables" && (
-                <HelpTip text={t("models:collections.sync.browse.printablesPrivateHelp")} />
+              {i18n.exists(`models:collections.sync.browse.showingHelp.${provider}`) && (
+                <HelpTip text={t(`models:collections.sync.browse.showingHelp.${provider}`)} />
               )}{" "}
               <Link component="button" variant="body2" onClick={() => setEditingAccount(true)}>
                 {t("models:collections.sync.browse.change")}

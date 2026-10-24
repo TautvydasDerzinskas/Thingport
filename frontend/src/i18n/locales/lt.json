@@ -3835,7 +3835,9 @@
           "startedWaiting": "„{{name}}“ dabar sinchronizuojama su „{{source}}“. Jos modeliai pateks, kai kitą kartą atidarysite {{provider}} su Thingport Grab.",
           "pickPrompt": "Pasirinkite kolekciją aukščiau arba įklijuokite nuorodą.",
           "startNothing": "Sinchronizuoti",
-          "printablesPrivateHelp": "Privačios kolekcijos ir pamėgti modeliai pridedami, kai Thingport Grab pamato jus prisijungusį Printables svetainėje, nes Printables jas rodo tik jums.",
+          "showingHelp": {
+            "printables": "Privačios kolekcijos ir pamėgti modeliai pridedami, kai Thingport Grab pamato jus prisijungusį Printables svetainėje, nes Printables jas rodo tik jums."
+          },
           "makerworldHelp": "MakerWorld greitai riboja masinius importus, todėl dabar joje esantys modeliai neimportuojami. Jau jūsų bibliotekoje esantys bus pridėti į „{{name}}“.",
           "forget": "Pamiršti",
           "forgetTitle": "Pamiršti jūsų {{provider}} paskyrą?",

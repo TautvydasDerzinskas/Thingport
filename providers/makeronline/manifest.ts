@@ -16,6 +16,8 @@ export default {
       fillRule: "evenodd",
     },
     chip: { bg: "text", fg: "inverse" },
+    // Anycubic's blue: MakerOnline's own mark is black and white.
+    accent: "#1F7AE0",
   },
   signIn: "userOptional",
   auth: [
@@ -26,14 +28,21 @@ export default {
       legacyEndpoint: { path: "makeronline-session", method: "PATCH" },
     },
   ],
+  modelNoun: "models",
   helpers: { grab: "required", flaresolverr: "none" },
   capabilities: {
     collections: true,
     likes: true,
     profiles: true,
     paidModels: false,
+    ownLists: "signIn",
     categoryIds: "int",
     trending: { kind: "trending", moreUrl: "https://www.makeronline.com/", rank: 4 },
+  },
+  examples: {
+    model: "https://www.makeronline.com/en/model/Example-Model/123456.html",
+    list: "https://www.makeronline.com/en/user/collectionDetail/…/123456.html",
+    browse: "https://www.makeronline.com/en/user/collectionDetail/…/….html",
   },
   errorCodes: { needsGrab: "makeronline_grab" },
   legacy: { lists: [{ path: "makeronline-list", idsField: "model_ids" }] },

@@ -3729,7 +3729,9 @@
           "startedWaiting": "\"{{name}}\" now syncs with \"{{source}}\". Its models come in the next time you open {{provider}} with Thingport Grab.",
           "pickPrompt": "Pick a collection above, or paste a link.",
           "startNothing": "Sync",
-          "printablesPrivateHelp": "Private collections and likes are added once Thingport Grab sees you signed in on Printables, since Printables shows them to you alone.",
+          "showingHelp": {
+            "printables": "Private collections and likes are added once Thingport Grab sees you signed in on Printables, since Printables shows them to you alone."
+          },
           "makerworldHelp": "MakerWorld quickly rate-limits bulk imports, so the models in it now aren't imported. Any already in your library are added to \"{{name}}\".",
           "forget": "Forget",
           "forgetTitle": "Forget your {{provider}} account?",
