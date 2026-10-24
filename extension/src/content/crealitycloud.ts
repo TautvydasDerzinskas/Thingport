@@ -77,6 +77,6 @@ export async function loadCrealitycloudProfiles(
 
 /** Who's signed in on Creality Cloud, so likes are only offered on their own page. */
 export async function crealitycloudUserId(): Promise<string | null> {
-  const res = await request("SYNC_CREALITYCLOUD_SESSION").catch(() => null);
+  const res = await request("SYNC_PROVIDER_SESSION", { provider: "crealitycloud" }).catch(() => null);
   return res?.userId ?? null;
 }

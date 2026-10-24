@@ -2,48 +2,26 @@
 // model_user_id cookies, which its API takes together. The site sets them once at sign-in for a week and never renews
 // them, so Grab only sends each new pair on, with the cookie's expiry for the app to show.
 
-import { STORAGE_KEYS } from "../shared/storage";
-import { apiCall, requireConfig } from "./api";
+import type { SessionSource } from "./sessionSync";
 
 const SITE = "https://www.crealitycloud.com";
 
-/** Sends the instance the browser's Creality Cloud sign-in when it changed. Best-effort: never throws. Says who's
- *  signed in there. */
-export async function syncCrealitycloudSession(): Promise<{ userId: string | null }> {
-  const config = await requireConfig().catch(() => null);
-  if (!config) return { userId: null };
-  let token: chrome.cookies.Cookie | null;
-  let user: chrome.cookies.Cookie | null;
-  try {
-    [token, user] = await Promise.all([
+export const crealitycloudSession: SessionSource = {
+  async read() {
+    const [token, user] = await Promise.all([
       chrome.cookies.get({ url: SITE, name: "model_token" }),
       chrome.cookies.get({ url: SITE, name: "model_user_id" }),
     ]);
-  } catch {
-    return { userId: null };
-  }
-  // Per Thingport account, so switching the extension to another one sends it there too.
-  const account = `${config.instanceUrl} ${config.email}`;
-  const last = config.lastSyncedCrealitycloudSession;
-  if (!token?.value || !user?.value) {
-    // Signed out there: clear the sign-in Grab sent, but not one pasted in Thingport.
-    if (last?.account === account) {
-      try {
-        await apiCall("PATCH", "/settings/crealitycloud-session", { token: null });
-        await chrome.storage.local.remove(STORAGE_KEYS.lastSyncedCrealitycloudSession);
-      } catch {}
-    }
-    return { userId: null };
-  }
-  const value = `model_token=${token.value}; model_user_id=${user.value}`;
-  if (last?.account !== account || last.value !== value) {
-    try {
-      await apiCall("PATCH", "/settings/crealitycloud-session", {
+    if (!token?.value || !user?.value) return null;
+    const value = `model_token=${token.value}; model_user_id=${user.value}`;
+    return {
+      value,
+      body: {
         token: value,
         expires_at: token.expirationDate ? new Date(token.expirationDate * 1000).toISOString() : null,
-      });
-      await chrome.storage.local.set({ [STORAGE_KEYS.lastSyncedCrealitycloudSession]: { account, value } });
-    } catch {}
-  }
-  return { userId: decodeURIComponent(user.value) };
-}
+      },
+      userId: decodeURIComponent(user.value),
+    };
+  },
+  signedOut: { token: null },
+};

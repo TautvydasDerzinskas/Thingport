@@ -141,20 +141,8 @@ export type BackgroundMessages = {
   GET_PRINTABLES_TOKEN: { payload: void; result: string | null };
   /** Who the user is signed in as on a provider, read from its pages. */
   REPORT_PROVIDER_ACCOUNT: { payload: { provider: AccountProvider; value: string }; result: null };
-  /** On a MyMiniFactory page while signed in: send the session on, if it changed. */
-  SYNC_MYMINIFACTORY_SESSION: { payload: void; result: null };
-  /** On a Snapmaker Space page: keep the sign-in fresh and send it on. Says who's signed in there. */
-  SYNC_SNAPMAKER_SESSION: { payload: void; result: { userId: string | null } };
-  /** On a MakerOnline page: send the sign-in on, if it changed. Says who's signed in there. */
-  SYNC_MAKERONLINE_SESSION: { payload: void; result: { userId: string | null } };
-  /** On a Creality Cloud page: send the sign-in on, if it changed. Says who's signed in there. */
-  SYNC_CREALITYCLOUD_SESSION: { payload: void; result: { userId: string | null } };
-  /** On a NexPrint page: send the sign-in on, if it changed. */
-  SYNC_NEXPRINT_SESSION: { payload: void; result: void };
-  /** On a Thangs page: send the sign-in on, if it changed. */
-  SYNC_THANGS_SESSION: { payload: void; result: void };
-  /** On a Cults3D page: send the sign-in and Cloudflare clearance on, if they changed. */
-  SYNC_CULTS3D_SESSION: { payload: void; result: void };
+  /** On a provider's page: send its sign-in on, if it changed. Says who's signed in there, where its cookies tell. */
+  SYNC_PROVIDER_SESSION: { payload: { provider: Provider }; result: { userId: string | null } };
   /** On a MakerOnline model page: get its files signed there, then import it. */
   IMPORT_MAKERONLINE_MODEL: {
     payload: { url: string; scope: "url" | "designer" | "all"; collectionId: string | null; title: string | null };

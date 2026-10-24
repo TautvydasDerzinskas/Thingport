@@ -78,7 +78,9 @@ async function syncPrintables(): Promise<void> {
 /** Sends the MakerOnline sign-in on, then imports what waits for Grab: this page can sign its files. */
 async function syncMakeronline(): Promise<void> {
   if (!(await providerEnabled("makeronline"))) return;
-  const { userId } = await request("SYNC_MAKERONLINE_SESSION").catch(() => ({ userId: null }));
+  const { userId } = await request("SYNC_PROVIDER_SESSION", { provider: "makeronline" }).catch(() => ({
+    userId: null,
+  }));
   if (userId) await send("RUN_MAKERONLINE_WAITING");
 }
 
@@ -92,32 +94,32 @@ export function captureProviderAccount(hostname: string): void {
   if (/(^|\.)crealitycloud\.com$/i.test(hostname)) {
     captured = true;
     // Its sign-in downloads the files and reads the likes; a new one comes with each sign-in there.
-    void send("SYNC_CREALITYCLOUD_SESSION");
+    void send("SYNC_PROVIDER_SESSION", { provider: "crealitycloud" });
     return;
   }
   if (/(^|\.)nexprint\.com$/i.test(hostname)) {
     captured = true;
     // Its sign-in downloads the files; the site renews it as it refreshes the token, and each new one is sent on.
-    void send("SYNC_NEXPRINT_SESSION");
+    void send("SYNC_PROVIDER_SESSION", { provider: "nexprint" });
     return;
   }
   if (/(^|\.)cults3d\.com$/i.test(hostname)) {
     captured = true;
     // Its sign-in and Cloudflare clearance open the order and download pages; sent once they change, and only from a
     // signed-in page.
-    if (cults3dSignedIn()) void send("SYNC_CULTS3D_SESSION");
+    if (cults3dSignedIn()) void send("SYNC_PROVIDER_SESSION", { provider: "cults3d" });
     return;
   }
   if (/(^|\.)thangs\.com$/i.test(hostname)) {
     captured = true;
     // Its sign-in downloads the files; Thingport renews it from the refresh token, so it's sent once it changes.
-    void send("SYNC_THANGS_SESSION");
+    void send("SYNC_PROVIDER_SESSION", { provider: "thangs" });
     return;
   }
   if (hostname === "space.snapmaker.com") {
     captured = true;
     // Its sign-in downloads the files, and lasts a day: kept fresh by the background, and sent on.
-    void send("SYNC_SNAPMAKER_SESSION");
+    void send("SYNC_PROVIDER_SESSION", { provider: "snapmaker" });
     return;
   }
   const provider = hostIs(hostname, "printables.com")
@@ -138,7 +140,7 @@ export function captureProviderAccount(hostname: string): void {
     if (!value) return;
     void send("REPORT_PROVIDER_ACCOUNT", { provider, value });
     // Signed in: its session downloads the paid and login-only models in the user's library.
-    void send("SYNC_MYMINIFACTORY_SESSION");
+    void send("SYNC_PROVIDER_SESSION", { provider: "myminifactory" });
     return;
   }
   void readThingiverseUsername().then((value) => {

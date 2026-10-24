@@ -5,10 +5,10 @@
 
 import type { Print } from "../shared/api";
 import type { MakeronlineSignedFile } from "../shared/messages";
-import { STORAGE_KEYS } from "../shared/storage";
-import { apiCall, requireConfig } from "./api";
+import { apiCall } from "./api";
 import { importSingle } from "./importJobs";
 import { recordRecentImport } from "./recentImports";
+import type { SessionSource } from "./sessionSync";
 
 const SITE = "https://www.makeronline.com";
 const ACCESS_COOKIE = "mo_access_token";
@@ -26,30 +26,13 @@ function tokenUserId(token: string): string | null {
   }
 }
 
-/** Sends the instance the browser's MakerOnline sign-in when it changed. Best-effort: never throws. Says who's signed
- *  in there. */
-export async function syncMakeronlineSession(): Promise<{ userId: string | null }> {
-  const config = await requireConfig().catch(() => null);
-  if (!config) return { userId: null };
-  let token: string | null;
-  try {
+export const makeronlineSession: SessionSource = {
+  async read() {
     const cookie = await chrome.cookies.get({ url: SITE, name: ACCESS_COOKIE });
-    token = cookie?.value ? decodeURIComponent(cookie.value) : null;
-  } catch {
-    return { userId: null };
-  }
-  if (!token) return { userId: null };
-  // Per Thingport account, so switching the extension to another one sends it there too.
-  const account = `${config.instanceUrl} ${config.email}`;
-  const last = config.lastSyncedMakeronlineToken;
-  if (last?.account !== account || last.value !== token) {
-    try {
-      await apiCall("PATCH", "/settings/makeronline-session", { token });
-      await chrome.storage.local.set({ [STORAGE_KEYS.lastSyncedMakeronlineToken]: { account, value: token } });
-    } catch {}
-  }
-  return { userId: tokenUserId(token) };
-}
+    const token = cookie?.value ? decodeURIComponent(cookie.value) : null;
+    return token ? { value: token, body: { token }, userId: tokenUserId(token) } : undefined;
+  },
+};
 
 type DownloadRequest = { payload: Record<string, unknown>; name: string; profile_id: string | null };
 type SignAnswer = { code: number | null; message: string | null; data: unknown };

@@ -50,6 +50,6 @@ export async function loadSnapmakerProfiles(url: string): Promise<((scope: Snapm
 
 /** Who's signed in on Snapmaker, so likes and bookmarks are only offered on their own page. */
 export async function snapmakerUserId(): Promise<string | null> {
-  const res = await request("SYNC_SNAPMAKER_SESSION").catch(() => null);
+  const res = await request("SYNC_PROVIDER_SESSION", { provider: "snapmaker" }).catch(() => null);
   return res?.userId ?? null;
 }

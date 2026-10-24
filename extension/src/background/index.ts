@@ -2,6 +2,7 @@
 // and every request to the Thingport instance.
 
 import { listen, type BackgroundMessages } from "../shared/messages";
+import { LEGACY_SESSION_KEYS } from "../shared/storage";
 import { apiCall, checkConnection, disconnect } from "./api";
 import { getState, saveConfig, setDisabled, setOfflineFeature } from "./config";
 import { armDownloadCapture, awaitDownloadCapture, disarmDownloadCapture } from "./downloadCapture";
@@ -19,13 +20,9 @@ import { getPrintablesToken, printablesPushDue, pushPrintables, reportProviderAc
 import { getRecentImports } from "./recentImports";
 import { seasonalIcon } from "../shared/seasonalIcon";
 import { clearRecentlyViewed, getRecentlyViewed, recordViewedModel } from "./recentlyViewed";
-import { syncMyminifactorySession } from "./myminifactorySession";
-import { scheduleSnapmakerRenewal, SNAPMAKER_ALARM, syncSnapmakerSession } from "./snapmakerSession";
-import { importMakeronlineModel, runWaitingImports, syncMakeronlineSession } from "./makeronline";
-import { syncCrealitycloudSession } from "./crealitycloudSession";
-import { syncNexprintSession } from "./nexprintSession";
-import { syncThangsSession } from "./thangsSession";
-import { syncCults3dSession } from "./cults3dSession";
+import { scheduleSnapmakerRenewal, SNAPMAKER_ALARM } from "./snapmakerSession";
+import { syncSession } from "./sessionSync";
+import { importMakeronlineModel, runWaitingImports } from "./makeronline";
 import { onPairingTabClosed, onPairingTabUrl, startPairing } from "./pairing";
 import { openSetup } from "./setup";
 import { setTabIconState } from "./tabIcon";
@@ -51,13 +48,7 @@ listen<BackgroundMessages>({
   CHECK_CONNECTION: () => checkConnection(),
   GET_PRINTABLES_TOKEN: () => getPrintablesToken(),
   REPORT_PROVIDER_ACCOUNT: ({ provider, value }) => reportProviderAccount(provider, value),
-  SYNC_MYMINIFACTORY_SESSION: () => syncMyminifactorySession(),
-  SYNC_SNAPMAKER_SESSION: () => syncSnapmakerSession(),
-  SYNC_MAKERONLINE_SESSION: () => syncMakeronlineSession(),
-  SYNC_CREALITYCLOUD_SESSION: () => syncCrealitycloudSession(),
-  SYNC_NEXPRINT_SESSION: () => syncNexprintSession(),
-  SYNC_THANGS_SESSION: () => syncThangsSession(),
-  SYNC_CULTS3D_SESSION: () => syncCults3dSession(),
+  SYNC_PROVIDER_SESSION: ({ provider }) => syncSession(provider),
   IMPORT_MAKERONLINE_MODEL: (payload, sender) => importMakeronlineModel(senderTabId(sender), payload),
   RUN_MAKERONLINE_WAITING: (_payload, sender) => runWaitingImports(senderTabId(sender)),
   PRINTABLES_PUSH_DUE: ({ now }) => printablesPushDue({ now }),
@@ -94,7 +85,10 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 
 // Before the user reaches a provider page, so the toolbar badge already shows a broken connection.
 chrome.runtime.onStartup.addListener(() => void checkConnection());
-chrome.runtime.onInstalled.addListener(() => void checkConnection());
+chrome.runtime.onInstalled.addListener(() => {
+  void checkConnection();
+  void chrome.storage.local.remove(LEGACY_SESSION_KEYS);
+});
 
 // Optional sites: on every wake (a Firefox event page loses its registrations with the browser session), and
 // whenever access is granted or taken back, from the popup or the browser's own settings. Tabs already open on a
@@ -114,7 +108,7 @@ chrome.permissions.onRemoved.addListener(() => {
 // Snapmaker's sign-in lasts a day: renewed on a timer too, so syncs keep working on days Snapmaker isn't visited.
 void scheduleSnapmakerRenewal();
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === SNAPMAKER_ALARM) void syncSnapmakerSession();
+  if (alarm.name === SNAPMAKER_ALARM) void syncSession("snapmaker");
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => {

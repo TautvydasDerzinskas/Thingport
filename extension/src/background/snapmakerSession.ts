@@ -3,9 +3,8 @@
 // it. So Grab is the only one that renews, for the browser and Thingport both: it writes the new tokens back into the
 // browser's cookies, where the site picks them up, and sends the access token on. Thingport never renews it itself.
 
-import { STORAGE_KEYS } from "../shared/storage";
 import { OPTIONAL_SITES, siteEnabled } from "../shared/optionalSites";
-import { apiCall, requireConfig } from "./api";
+import type { SessionSource } from "./sessionSync";
 
 const SITE = "https://space.snapmaker.com";
 const ACCESS_COOKIE = "login_access_token";
@@ -83,43 +82,30 @@ async function renew(): Promise<string | null> {
   return access;
 }
 
+/** The browser's token, renewed first when it, or the one Thingport has, is running out. Null when there's none. */
+async function freshToken(): Promise<string | null> {
+  let token = await readCookie(ACCESS_COOKIE);
+  // The site drops its cookie after 8 hours, well before the token itself runs out; Thingport only ever has a
+  // token Grab sent, so renewing the browser's when it's near its end keeps Thingport's fresh too.
+  const exp = token ? tokenPayload(token).exp : null;
+  if (!token || !exp || exp < Date.now() + RENEW_BEFORE_MS) token = (await renew().catch(() => null)) ?? token;
+  return token;
+}
+
 // Shared by concurrent callers, so two of them can't both spend the same single-use refresh token.
-let inFlight: Promise<{ userId: string | null }> | null = null;
+let inFlight: Promise<string | null> | null = null;
 
-/** Sends Thingport a token that lasts, renewing the browser's when it, or the one Thingport has, is running out.
- *  Best-effort: never throws. Returns the signed-in Snapmaker user's id, or null when there's none. */
-export function syncSnapmakerSession(): Promise<{ userId: string | null }> {
-  inFlight ??= syncOnce().finally(() => {
-    inFlight = null;
-  });
-  return inFlight;
-}
-
-async function syncOnce(): Promise<{ userId: string | null }> {
-  const site = OPTIONAL_SITES.find((s) => s.id === "snapmaker");
-  if (!site || !(await siteEnabled(site).catch(() => false))) return { userId: null };
-  try {
-    // Not connected to a Thingport: nothing to keep fresh for.
-    const config = await requireConfig().catch(() => null);
-    if (!config) return { userId: null };
-    let token = await readCookie(ACCESS_COOKIE);
-    // The site drops its cookie after 8 hours, well before the token itself runs out; Thingport only ever has a
-    // token Grab sent, so renewing the browser's when it's near its end keeps Thingport's fresh too.
-    const exp = token ? tokenPayload(token).exp : null;
-    if (!token || !exp || exp < Date.now() + RENEW_BEFORE_MS) token = (await renew().catch(() => null)) ?? token;
-    if (!token) return { userId: null };
-    // Per Thingport account, so switching the extension to another one sends it there too.
-    const account = `${config.instanceUrl} ${config.email}`;
-    const last = config.lastSyncedSnapmakerToken;
-    if (last?.account !== account || last.value !== token) {
-      await apiCall("PATCH", "/settings/snapmaker-session", { token });
-      await chrome.storage.local.set({ [STORAGE_KEYS.lastSyncedSnapmakerToken]: { account, value: token } });
-    }
-    return { userId: tokenPayload(token).userId };
-  } catch {
-    return { userId: null };
-  }
-}
+export const snapmakerSession: SessionSource = {
+  async read() {
+    const site = OPTIONAL_SITES.find((s) => s.id === "snapmaker");
+    if (!site || !(await siteEnabled(site).catch(() => false))) return undefined;
+    inFlight ??= freshToken().finally(() => {
+      inFlight = null;
+    });
+    const token = await inFlight;
+    return token ? { value: token, body: { token }, userId: tokenPayload(token).userId } : undefined;
+  },
+};
 
 /** Keeps the sign-in fresh while the browser runs, Snapmaker visited or not. */
 export async function scheduleSnapmakerRenewal(): Promise<void> {
