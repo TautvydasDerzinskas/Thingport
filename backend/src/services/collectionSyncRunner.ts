@@ -93,7 +93,7 @@ import {
   fetchThingiverseUserLikes,
 } from "../providers/thingiverse/api";
 import { checkMyminifactoryCollection, fetchMyminifactoryCollectionObjects } from "../providers/myminifactory/api";
-import { syncLikesUsername } from "../dto";
+import { syncLikesUsername } from "../providers/names";
 import { getMyminifactoryApiKey, getThingiverseAccessToken } from "./settingsService";
 import { createNotification } from "./notificationService";
 import { createLog } from "./auditLog";

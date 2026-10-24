@@ -5,7 +5,7 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
-import { LIKES_ID_PREFIX } from "../dto";
+import { LIKES_ID_PREFIX } from "../providers/_generated";
 import type { ProviderCollectionCard } from "./providerCollectionCard";
 
 const PROVIDER = "printables";

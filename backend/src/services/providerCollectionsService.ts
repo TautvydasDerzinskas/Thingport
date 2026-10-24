@@ -72,7 +72,7 @@ import {
   type Cults3dCredentials,
 } from "../providers/cults3d/api";
 import { getCults3dConnection, getUserCults3dCredentials, markCults3dApiRejected } from "../providers/cults3d/session";
-import { syncLikesUsername } from "../dto";
+import { syncLikesUsername } from "../providers/names";
 import { MakerworldAuthError, MakerworldCaptchaError, extractMakerworldBearerToken } from "../providers/makerworld/api";
 import { fetchMakerworldCollectionCard, listMakerworldOwnCollections } from "../providers/makerworld/collections";
 import { getUserMakerworldCookie } from "../providers/makerworld/session";

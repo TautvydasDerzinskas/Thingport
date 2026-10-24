@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import { LIKES_ID_PREFIX } from "./providers/_generated";
+import { syncLikesUsername } from "./providers/names";
 import { nextSyncAt, syncNowAvailableAt } from "./services/collectionSyncSchedule";
 import type {
   CollectionSync,
@@ -427,17 +428,7 @@ export type CollectionSyncOut = {
 };
 
 // A Likes sync's externalId; collection ids are numeric, so the two never collide.
-export { LIKES_ID_PREFIX };
-
-/** The user whose likes a sync follows (on Thingiverse, Printables or Cults3D), as written in its page
- *  address, or null for a collection sync. */
-export function syncLikesUsername(sync: { externalId: string; sourceUrl: string }): string | null {
-  if (!sync.externalId.startsWith(LIKES_ID_PREFIX)) return null;
-  const parts = new URL(sync.sourceUrl).pathname.split("/").filter(Boolean);
-  // Printables writes its profile paths as "/@handle"; Cults3D's are "/en/users/<nick>/likes".
-  const fromUrl = (/^[a-z]{2}$/.test(parts[0] ?? "") && parts.length === 4 ? parts[2] : parts[0])?.replace(/^@/, "");
-  return fromUrl ? decodeURIComponent(fromUrl) : sync.externalId.slice(LIKES_ID_PREFIX.length);
-}
+export { LIKES_ID_PREFIX, syncLikesUsername };
 
 export function toCollectionSyncOut(sync: CollectionSync): CollectionSyncOut {
   const syncNowAt = syncNowAvailableAt(sync.lastCheckedAt);

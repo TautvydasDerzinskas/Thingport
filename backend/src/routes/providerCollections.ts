@@ -15,14 +15,13 @@ import {
 } from "../services/providerCollectionsService";
 import { assertPrintablesPushOn, wantedPrintablesListings } from "../services/providerListingsService";
 import { assertProviderEnabled } from "../services/providerSettingsService";
+import { isProviderId } from "../providers/_generated";
 
 const router = Router();
 router.use(requireAuth);
 
 function parseProvider(raw: unknown): BrowsableProvider {
-  if (typeof raw === "string" && (BROWSABLE_PROVIDERS as readonly string[]).includes(raw)) {
-    return raw as BrowsableProvider;
-  }
+  if (isProviderId(raw)) return raw;
   throw new HttpError(400, `Pick one of ${BROWSABLE_PROVIDERS.join(", ")}`);
 }
 

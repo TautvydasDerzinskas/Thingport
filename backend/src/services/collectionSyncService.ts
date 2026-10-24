@@ -5,9 +5,9 @@
 import type { Collection, CollectionSync } from "@prisma/client";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
-import { modelUrl, parseListUrl, type ProviderId } from "../providers/_generated";
+import { isProviderId, modelUrl, parseListUrl, type ProviderId, URLS } from "../providers/_generated";
 import { PROFILE_PROVIDERS } from "../providers/registry";
-import { likesCollectionName, providerName } from "../providers/names";
+import { likesCollectionName, providerName, syncLikesUsername } from "../providers/names";
 
 export { providerName };
 import { addPrintsToCollection, findOrCreateCollectionByName, isSystemCollectionId } from "./collectionService";
@@ -19,13 +19,12 @@ import { CREALITYCLOUD_LIKES_NAME, parseCrealitycloudLikesUrl } from "../provide
 import { getUserCrealitycloudId } from "../providers/crealitycloud/session";
 import { THANGS_LIKES_KEY, THANGS_LIKES_NAME } from "../providers/thangs/api";
 import { getThangsConnection } from "../providers/thangs/session";
-import { parseCults3dModelUrl } from "../providers/cults3d/api";
 import { getCults3dConnection } from "../providers/cults3d/session";
 import { createLog } from "./auditLog";
 import { pushedLikes } from "./providerListingsService";
 import { createNotification } from "./notificationService";
 import type { SyncIntervalHours } from "./collectionSyncSchedule";
-import { syncLikesUsername, toCollectionSyncOut, type CollectionSyncOut, type SyncProfileScope } from "../dto";
+import { toCollectionSyncOut, type CollectionSyncOut, type SyncProfileScope } from "../dto";
 
 export type SyncProvider = ProviderId;
 
@@ -61,20 +60,7 @@ export function modelUrlFor(provider: string, externalId: string): string {
 
 /** The model id in a link modelUrlFor made. */
 export function modelIdFromUrl(provider: string, url: string): string | null {
-  const patterns: Record<string, RegExp> = {
-    makerworld: /\/models\/(\d+)/,
-    printables: /\/model\/(\d+)/,
-    myminifactory: /\/object\/(?:[^/]*-)?(\d+)/,
-    snapmaker: /\/model\/(\d+)/,
-    makeronline: /\/model\/(?:[^/#]+\/)?(\d+)/,
-    crealitycloud: /\/model-detail\/([\w-]+)/,
-    nexprint: /\/models\/(G\d+)/i,
-    thangs: /\/m\/(\d+)/,
-  };
-  // Cults3D's links name a model by its slug, in any of its languages.
-  if (provider === "cults3d") return parseCults3dModelUrl(url)?.slug ?? null;
-  const pattern = patterns[provider] ?? /thing:(\d+)/;
-  return url.match(pattern)?.[1] ?? null;
+  return isProviderId(provider) ? (URLS[provider].parseModel(url)?.externalId ?? null) : null;
 }
 
 /** What Thingport Grab reads on a provider's collection page. */
