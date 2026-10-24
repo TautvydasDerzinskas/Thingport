@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MANIFESTS } from "../providers/_generated";
 import { prisma } from "../db";
 import { toAuthorOut, type PrintOut } from "../dto";
 import { HttpError } from "../utils/fileUtils";
@@ -433,7 +434,7 @@ const importModel: McpToolDefinition = {
   idempotent: true,
   openWorld: true,
   inputSchema: {
-    url: z.string().min(1).describe("The model's page, e.g. https://www.printables.com/model/3161-3d-benchy"),
+    url: z.string().min(1).describe(`The model's page, e.g. ${MANIFESTS.printables.examples.model}`),
     title: z.string().max(500).optional().describe("A title to use instead of the site's."),
     tags: z.array(z.string()).optional().describe("Tags to use instead of the site's."),
     category_id: z.string().optional().describe("A category to file it in (an id from list_categories)."),

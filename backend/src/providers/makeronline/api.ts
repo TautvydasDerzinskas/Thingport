@@ -12,6 +12,7 @@ import {
   parseMakeronlineCollectionUrl,
   parseMakeronlineModelUrl,
 } from "../_generated/makeronline/urls";
+import manifest from "../_generated/makeronline/manifest";
 export {
   isMakeronlineLikesUrl,
   MAKERONLINE_LIKES_KEY,
@@ -27,10 +28,10 @@ export {
 // need their token, sent bare in Authorization. Files can't be fetched from here at all: the download call wants a
 // Risk-Token that only MakerOnline's anti-bot script, running in a real page, makes. So Thingport plans which files a
 // model needs, and Thingport Grab gets their links signed on a makeronline.com page (see grabImportService.ts).
-const SITE_ORIGIN = "https://www.makeronline.com";
+const SITE_ORIGIN = manifest.site;
 const API_BASE = `${SITE_ORIGIN}/api`;
 const API_TIMEOUT_MS = IMPORT_TIMEOUT_SECONDS * 1000;
-const PROVIDER = "makeronline";
+const PROVIDER = manifest.id;
 
 const CODE_OK = 0;
 const CODE_UNAUTHORIZED = -1;

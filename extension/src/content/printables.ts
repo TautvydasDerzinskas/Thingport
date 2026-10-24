@@ -6,9 +6,9 @@
 import type { PrintablesPush, PrintablesPushPlan } from "../shared/messages";
 import { request } from "../shared/messages";
 import { sleep } from "./runtime";
+import { MANIFESTS } from "../shared/providers/_generated";
 
-const GRAPHQL_URL = "https://api.printables.com/graphql/";
-const MEDIA_BASE = "https://media.printables.com/";
+const { graphql: GRAPHQL_URL, media: MEDIA_BASE } = MANIFESTS.printables.endpoints;
 const PAGE_SIZE = 30;
 // Safety caps against a cursor that never ends, and a pause between pages for Printables' throttling.
 const MAX_PAGES = 20;

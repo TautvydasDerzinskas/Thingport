@@ -39,6 +39,8 @@ export type ProviderManifest = {
   docsSlug: string;
   /** The provider's domains; their subdomains count too. */
   hosts: readonly string[];
+  /** Its APIs and file hosts, by what they serve, for every package that calls them. */
+  endpoints?: Readonly<Record<string, `https://${string}`>>;
   /** `accent`: its own colour for what's drawn in its manner, such as its collections' tiles in the sync dialog. */
   brand: { logo: Logo; chip: Chip; accent: `#${string}` };
   /** The site's own word for what it holds, as the sync dialog counts it. */
@@ -46,9 +48,15 @@ export type ProviderManifest = {
   /** Links to show as examples: a model's, a list's, and the pattern of a list the sync dialog can follow. */
   examples: { model: string; list: string; browse: string };
   signIn: SignIn;
+  /** The site's cookies a sign-in is kept in, by what they hold: Grab reads them, the backend picks them out of a
+   *  pasted Cookie header. */
+  sessionCookies?: Readonly<Record<string, string>>;
   /** The credentials Thingport keeps for it, connected in Configuration → Providers; none for Printables. */
   auth: readonly AuthSlot[];
   helpers: { grab: Need; flaresolverr: Need };
+  /** Its Cloudflare tells Node's fetch apart by its TLS handshake, so the backend sends every request to its hosts
+   *  with a browser's (backend/src/utils/browserFetch.ts). */
+  browserFetch?: true;
   capabilities: {
     collections: boolean;
     likes: boolean;
@@ -122,4 +130,7 @@ export type ProviderUrls = {
   parseList(url: string): ListLink | null;
   /** The page of a model by its id. */
   modelUrl(externalId: string): string;
+  /** A creator's page by the id Thingport keeps for them, where the links their profile gives can't stand in for it
+   *  (MakerWorld's are their bio's). */
+  authorUrl?(externalId: string): string;
 };

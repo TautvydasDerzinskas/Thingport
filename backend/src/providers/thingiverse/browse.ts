@@ -1,5 +1,6 @@
 import { prisma } from "../../db";
 import { LIKES_ID_PREFIX } from "../_generated";
+import { thingiverseLikesUrl } from "../_generated/thingiverse/urls";
 import { getThingiverseAccessToken } from "../../services/settingsService";
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
 import { HttpError } from "../../utils/fileUtils";
@@ -26,7 +27,7 @@ async function likesCard(username: string, token: string): Promise<ProviderColle
   return {
     id: `${LIKES_ID_PREFIX}${likes.username.toLowerCase()}`,
     name: "Liked models",
-    url: `https://www.thingiverse.com/${encodeURIComponent(likes.username)}/likes`,
+    url: thingiverseLikesUrl(likes.username),
     modelCount: likes.count,
     thumbnails: likes.thumbnails,
     private: false,

@@ -4,6 +4,8 @@ import { type ImportedAuthorInfo, type ImportedPageMetadata } from "../../servic
 import { htmlToMarkdown } from "../../services/descriptionMarkdown";
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
 import { asCount, asRecord, asText, recordsOf, type TrendingModel } from "../../services/trendingModel";
+import manifest from "../_generated/printables/manifest";
+import { printablesCollectionUrl, printablesModelUrl, printablesUserUrl, urls } from "../_generated/printables/urls";
 export {
   parsePrintablesCollectionUrl,
   parsePrintablesLikesUrl,
@@ -11,10 +13,10 @@ export {
 } from "../_generated/printables/urls";
 
 // Unlike Cloudflare-gated www.printables.com, the GraphQL API answers unauthenticated requests.
-const PRINTABLES_GRAPHQL_URL = "https://api.printables.com/graphql/";
-const PRINTABLES_MEDIA_BASE = "https://media.printables.com/";
+const PRINTABLES_GRAPHQL_URL = manifest.endpoints.graphql;
+const PRINTABLES_MEDIA_BASE = manifest.endpoints.media;
 const API_TIMEOUT_MS = IMPORT_TIMEOUT_SECONDS * 1000;
-const PRINTABLES_PROVIDER = "printables";
+const PRINTABLES_PROVIDER = manifest.id;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
@@ -35,7 +37,7 @@ async function fetchPrintablesGraphql(query: string, variables: Record<string, u
         "User-Agent": IMPORT_BROWSER_USER_AGENT,
         Accept: "application/json",
         "Content-Type": "application/json",
-        Origin: "https://www.printables.com",
+        Origin: manifest.site,
       },
       body: JSON.stringify({ query, variables }),
       signal: controller.signal,
@@ -109,7 +111,7 @@ function extractAuthor(user: Record<string, unknown>): ImportedAuthorInfo | null
     handle,
     bio: null,
     bioTranslated: null,
-    links: handle ? [`https://www.printables.com/@${handle}`] : [],
+    links: handle ? [printablesUserUrl(handle)] : [],
     avatarUrl: mediaUrl(user.avatarFilePath),
     backgroundUrl: null,
   };
@@ -330,8 +332,7 @@ export async function resolvePrintablesUser(input: string): Promise<PrintablesUs
   let value = input.trim();
   try {
     const url = new URL(value);
-    const host = url.hostname.toLowerCase();
-    if (host !== "printables.com" && host !== "www.printables.com") return null;
+    if (!urls.isHost(url.hostname)) return null;
     value = url.pathname.match(/^\/(?:[a-z]{2}\/)?@([^/]+)/i)?.[1] ?? "";
   } catch {
     // Not a link.
@@ -360,9 +361,7 @@ function collectionCard(value: unknown): ProviderCollectionCard | null {
   return {
     id,
     name: typeof value.name === "string" && value.name.trim() ? value.name.trim() : `Collection ${id}`,
-    url: owner
-      ? `https://www.printables.com/@${encodeURIComponent(owner)}/collections/${id}`
-      : `https://www.printables.com/collections/${id}`,
+    url: printablesCollectionUrl(id, owner),
     modelCount: typeof value.printsCount === "number" ? value.printsCount : 0,
     thumbnails,
     private: value.private === true,
@@ -403,12 +402,11 @@ export async function fetchPrintablesTrending(limit: number): Promise<TrendingMo
   return recordsOf(asRecord(asRecord(body.data)?.morePrints)?.items).flatMap((item) => {
     const id = asText(item.id);
     if (!id) return [];
-    const slug = asText(item.slug);
     return [
       {
         id,
         title: asText(item.name) ?? id,
-        url: `https://www.printables.com/model/${id}${slug ? `-${slug}` : ""}`,
+        url: printablesModelUrl(id),
         image: mediaUrl(asRecord(item.image)?.filePath),
         likes: asCount(item.likesCount),
         author: asText(asRecord(item.user)?.publicUsername),

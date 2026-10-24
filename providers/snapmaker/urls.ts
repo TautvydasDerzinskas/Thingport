@@ -1,11 +1,14 @@
 import type { ListLink, ModelLink, ProviderUrls } from "../_lib/types";
+import manifest from "./manifest";
 
-const SITE_ORIGIN = "https://space.snapmaker.com";
+const SITE_ORIGIN = manifest.site;
+// Only Snapmaker Space: its other subdomains are the shop, the forum and the sign-in.
+const SITE_HOST = new URL(SITE_ORIGIN).hostname;
 
 export type SnapmakerList = "likes" | "bookmarks";
 
 function isHost(hostname: string): boolean {
-  return hostname.toLowerCase() === "space.snapmaker.com";
+  return hostname.toLowerCase() === SITE_HOST;
 }
 
 function parseUrl(url: string): URL | null {

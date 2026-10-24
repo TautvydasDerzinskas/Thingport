@@ -11,6 +11,7 @@ export default {
   site: "https://space.snapmaker.com",
   docsSlug: "snapmaker-space",
   hosts: ["snapmaker.com"],
+  endpoints: { api: "https://api-models.snapmaker.com/api", token: "https://id.snapmaker.com/api/oauth2/token" },
   brand: {
     logo: {
       viewBox: "0 0 36 36",
@@ -22,6 +23,7 @@ export default {
     accent: "#0C63E2",
   },
   signIn: "user",
+  sessionCookies: { token: "login_access_token", refresh: "login_refresh_token" },
   auth: [
     {
       slot: "default",

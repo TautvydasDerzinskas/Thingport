@@ -14,14 +14,15 @@ import {
   MakerworldCaptchaError,
   noteCaptchaChallenge,
 } from "./captcha";
-import { parseMakerworldCollectionUrl } from "../_generated/makerworld/urls";
+import manifest from "../_generated/makerworld/manifest";
+import { makerworldCollectionUrl, parseMakerworldCollectionUrl } from "../_generated/makerworld/urls";
 export { parseMakerworldCollectionUrl };
 
 // Not behind Cloudflare. Private collections return 403 without the bearer token, so it's sent
 // whenever available.
-const COLLECTION_API_BASE = "https://makerworld.com/api/v1/design-service/favorites";
+const COLLECTION_API_BASE = `${manifest.endpoints.api}/design-service/favorites`;
 // The same service without Cloudflare in front, for what the Browse tab of the sync dialog shows.
-const BAMBU_DESIGN_API_BASE = "https://api.bambulab.com/v1/design-service";
+const BAMBU_DESIGN_API_BASE = `${manifest.endpoints.cloudApi}/design-service`;
 const COLLECTION_PAGE_SIZE = 20;
 const COLLECTION_MAX_ENTRIES = 300;
 
@@ -39,7 +40,7 @@ function collectionHeaders(bearerToken: string | null): Record<string, string> {
   const headers: Record<string, string> = {
     "User-Agent": IMPORT_BROWSER_USER_AGENT,
     Accept: "application/json",
-    Referer: "https://makerworld.com/",
+    Referer: `${manifest.site}/`,
   };
   if (bearerToken) headers.Authorization = `Bearer ${bearerToken}`;
   return headers;
@@ -89,7 +90,10 @@ async function fetchCollectionJson(
     // Cloudflare's 403 isn't MakerWorld turning the login down, which would pause the user's syncs.
     if (res.status === 403 && looksLikeCloudflareBlock(res.headers)) {
       if (!(await isFlaresolverrEnabled())) throw new MakerworldCollectionFetchError("blocked by Cloudflare");
-      const solved = await fetchViaFlaresolverr(url, bearerToken ? `token=${bearerToken}` : null);
+      const solved = await fetchViaFlaresolverr(
+        url,
+        bearerToken ? `${manifest.sessionCookies.token}=${bearerToken}` : null,
+      );
       if (!solved) return fail("blocked by Cloudflare");
       const data = extractJsonFromBrowserBody(solved.body);
       if (data === null) return fail("unreadable answer");
@@ -197,7 +201,7 @@ function collectionCard(value: unknown): ProviderCollectionCard | null {
   return {
     id,
     name: typeof value.title === "string" && value.title.trim() ? value.title.trim() : `Collection ${id}`,
-    url: `https://makerworld.com/en/collections/${id}`,
+    url: makerworldCollectionUrl(id),
     modelCount: typeof value.designCnt === "number" ? value.designCnt : 0,
     thumbnails: covers.filter((url): url is string => typeof url === "string" && url.trim() !== "").slice(0, 4),
     private: value.status === PRIVATE_STATUS,

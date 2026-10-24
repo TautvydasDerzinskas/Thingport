@@ -9,6 +9,7 @@ export default {
   site: "https://www.thingiverse.com",
   docsSlug: "thingiverse",
   hosts: ["thingiverse.com"],
+  endpoints: { api: "https://api.thingiverse.com" },
   brand: {
     logo: {
       color: "#248BFB",
@@ -28,6 +29,7 @@ export default {
   ],
   modelNoun: "things",
   helpers: { grab: "optional", flaresolverr: "recommended" },
+  browserFetch: true,
   capabilities: {
     collections: true,
     likes: true,

@@ -18,6 +18,7 @@ export default {
     accent: "#7A55E3",
   },
   signIn: "user",
+  sessionCookies: { token: "auth_token" },
   auth: [
     {
       slot: "default",

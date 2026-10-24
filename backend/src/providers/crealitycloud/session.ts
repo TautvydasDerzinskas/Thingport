@@ -1,13 +1,14 @@
 import { prisma } from "../../db";
 import type { CrealitycloudAuth } from "./api";
+import manifest from "../_generated/crealitycloud/manifest";
 
 // Per-user: the Creality Cloud sign-in, its model_token and model_user_id cookies, which the API takes together. The
 // site sets them once at sign-in for 7 days and never renews them, and Thingport doesn't either: Thingport Grab sends
 // each new pair. The cookie's expiry is kept only to show; the token is used until Creality Cloud turns it down, as it
 // may outlive the cookie.
 
-const TOKEN_COOKIE = "model_token";
-const USER_COOKIE = "model_user_id";
+const TOKEN_COOKIE = manifest.sessionCookies.token;
+const USER_COOKIE = manifest.sessionCookies.user;
 
 export type CrealitycloudSession = CrealitycloudAuth & { expiresAt: Date | null };
 

@@ -1,9 +1,9 @@
-// Reads who the user is signed in as on Printables, Thingiverse and MyMiniFactory, once per tab, and tells the
-// background (see background/providerAccounts.ts). Only the signed-in account: these pages link to
+// Reads who the user is signed in as on the provider's site, once per tab, and tells the background (see
+// background/providerAccounts.ts). Only the signed-in account: these pages link to
 // plenty of other people's profiles too.
 
 import { request, send } from "../shared/messages";
-import { hostIs } from "../shared/urls";
+import { MANIFESTS, PROVIDER_IDS, type ProviderId, URLS } from "../shared/providers/_generated";
 import { printablesToken, readMe, readPrintables } from "./printables";
 import { providerEnabled } from "./providerSettings";
 import { sleep } from "./runtime";
@@ -77,73 +77,52 @@ async function syncPrintables(): Promise<void> {
 
 /** Sends the MakerOnline sign-in on, then imports what waits for Grab: this page can sign its files. */
 async function syncMakeronline(): Promise<void> {
-  if (!(await providerEnabled("makeronline"))) return;
-  const { userId } = await request("SYNC_PROVIDER_SESSION", { provider: "makeronline" }).catch(() => ({
+  if (!(await providerEnabled(MANIFESTS.makeronline.id))) return;
+  const { userId } = await request("SYNC_PROVIDER_SESSION", { provider: MANIFESTS.makeronline.id }).catch(() => ({
     userId: null,
   }));
   if (userId) await send("RUN_MAKERONLINE_WAITING");
 }
 
-export function captureProviderAccount(hostname: string): void {
-  if (captured) return;
-  if (/(^|\.)makeronline\.com$/i.test(hostname)) {
-    captured = true;
-    void syncMakeronline();
-    return;
-  }
-  if (/(^|\.)crealitycloud\.com$/i.test(hostname)) {
-    captured = true;
-    // Its sign-in downloads the files and reads the likes; a new one comes with each sign-in there.
-    void send("SYNC_PROVIDER_SESSION", { provider: "crealitycloud" });
-    return;
-  }
-  if (/(^|\.)nexprint\.com$/i.test(hostname)) {
-    captured = true;
-    // Its sign-in downloads the files; the site renews it as it refreshes the token, and each new one is sent on.
-    void send("SYNC_PROVIDER_SESSION", { provider: "nexprint" });
-    return;
-  }
-  if (/(^|\.)cults3d\.com$/i.test(hostname)) {
-    captured = true;
-    // Its sign-in and Cloudflare clearance open the order and download pages; sent once they change, and only from a
-    // signed-in page.
-    if (cults3dSignedIn()) void send("SYNC_PROVIDER_SESSION", { provider: "cults3d" });
-    return;
-  }
-  if (/(^|\.)thangs\.com$/i.test(hostname)) {
-    captured = true;
-    // Its sign-in downloads the files; Thingport renews it from the refresh token, so it's sent once it changes.
-    void send("SYNC_PROVIDER_SESSION", { provider: "thangs" });
-    return;
-  }
-  if (hostname === "space.snapmaker.com") {
-    captured = true;
-    // Its sign-in downloads the files, and lasts a day: kept fresh by the background, and sent on.
-    void send("SYNC_PROVIDER_SESSION", { provider: "snapmaker" });
-    return;
-  }
-  const provider = hostIs(hostname, "printables.com")
-    ? "printables"
-    : hostIs(hostname, "thingiverse.com")
-      ? "thingiverse"
-      : hostIs(hostname, "myminifactory.com")
-        ? "myminifactory"
-        : null;
-  if (!provider) return;
-  captured = true;
-  if (provider === "printables") {
-    void syncPrintables();
-    return;
-  }
-  if (provider === "myminifactory") {
+/** What a page of each provider's sends on, once per tab. */
+const CAPTURE: Partial<Record<ProviderId, (id: ProviderId) => void>> = {
+  makeronline: () => void syncMakeronline(),
+  // Its sign-in downloads the files and reads the likes; a new one comes with each sign-in there.
+  crealitycloud: syncSession,
+  // Its sign-in downloads the files; the site renews it as it refreshes the token, and each new one is sent on.
+  nexprint: syncSession,
+  // Its sign-in and Cloudflare clearance open the order and download pages; sent once they change, and only from a
+  // signed-in page.
+  cults3d: (id) => {
+    if (cults3dSignedIn()) syncSession(id);
+  },
+  // Its sign-in downloads the files; Thingport renews it from the refresh token, so it's sent once it changes.
+  thangs: syncSession,
+  // Its sign-in downloads the files, and lasts a day: kept fresh by the background, and sent on.
+  snapmaker: syncSession,
+  printables: () => void syncPrintables(),
+  myminifactory: (id) => {
     const value = readMyminifactoryUsername();
     if (!value) return;
-    void send("REPORT_PROVIDER_ACCOUNT", { provider, value });
+    void send("REPORT_PROVIDER_ACCOUNT", { provider: "myminifactory", value });
     // Signed in: its session downloads the paid and login-only models in the user's library.
-    void send("SYNC_PROVIDER_SESSION", { provider: "myminifactory" });
-    return;
-  }
-  void readThingiverseUsername().then((value) => {
-    if (value) void send("REPORT_PROVIDER_ACCOUNT", { provider, value });
-  });
+    syncSession(id);
+  },
+  thingiverse: () =>
+    void readThingiverseUsername().then((value) => {
+      if (value) void send("REPORT_PROVIDER_ACCOUNT", { provider: "thingiverse", value });
+    }),
+};
+
+function syncSession(provider: ProviderId): void {
+  void send("SYNC_PROVIDER_SESSION", { provider });
+}
+
+export function captureProviderAccount(hostname: string): void {
+  if (captured) return;
+  const provider = PROVIDER_IDS.find((id) => URLS[id].isHost(hostname));
+  const capture = provider && CAPTURE[provider];
+  if (!capture) return;
+  captured = true;
+  capture(provider);
 }

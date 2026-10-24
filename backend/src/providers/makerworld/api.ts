@@ -25,7 +25,8 @@ import {
   noteCaptchaChallenge,
 } from "./captcha";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
-import { parseMakerworldModelUrl } from "../_generated/makerworld/urls";
+import manifest from "../_generated/makerworld/manifest";
+import { makerworldModelUrl, parseMakerworldModelUrl } from "../_generated/makerworld/urls";
 export { parseMakerworldModelUrl };
 
 export {
@@ -41,13 +42,16 @@ export {
 
 // makerworld.com puts Cloudflare and a Geetest CAPTCHA in front of download resolution;
 // api.bambulab.com is the same Bambu Cloud backend (same bearer token) without either.
-const DESIGN_API_BASE = "https://api.bambulab.com/v1/design-service";
-const PROFILE_DOWNLOAD_BASE = "https://api.bambulab.com/v1/iot-service/api/user/profile";
-const AUTHOR_PROFILE_BASE = "https://makerworld.com/api/v1/design-user-service/user/profile";
+const DESIGN_API_BASE = `${manifest.endpoints.cloudApi}/design-service`;
+const PROFILE_DOWNLOAD_BASE = `${manifest.endpoints.cloudApi}/iot-service/api/user/profile`;
+const AUTHOR_PROFILE_BASE = `${manifest.endpoints.api}/design-user-service/user/profile`;
 // Only succeeds for a logged-in session, so it doubles as the cookie check.
-const SELF_PREFERENCE_URL = "https://makerworld.com/api/v1/design-user-service/my/preference";
+const SELF_PREFERENCE_URL = `${manifest.endpoints.api}/design-user-service/my/preference`;
 const CLOUD_API_TIMEOUT_MS = IMPORT_TIMEOUT_SECONDS * 1000;
-const MAKERWORLD_PROVIDER = "makerworld";
+const MAKERWORLD_PROVIDER = manifest.id;
+const REFERER = `${manifest.site}/`;
+const TOKEN_COOKIE = manifest.sessionCookies.token;
+const TOKEN_PAIR = new RegExp(String.raw`(?:^|;\s*)${TOKEN_COOKIE}=([^;]+)`);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
@@ -58,7 +62,7 @@ function cloudApiHeaders(bearerToken: string): Record<string, string> {
     "User-Agent": IMPORT_BROWSER_USER_AGENT,
     Accept: "application/json,text/plain,*/*",
     Authorization: `Bearer ${bearerToken}`,
-    Referer: "https://makerworld.com/",
+    Referer: REFERER,
   };
 }
 
@@ -106,7 +110,7 @@ async function fetchCloudJson(url: string, bearerToken: string): Promise<{ statu
 export function extractMakerworldBearerToken(rawCookieOrToken: string | null | undefined): string | null {
   const raw = (rawCookieOrToken || "").trim();
   if (!raw) return null;
-  const match = raw.match(/(?:^|;\s*)token=([^;]+)/);
+  const match = raw.match(TOKEN_PAIR);
   if (match) {
     const value = match[1].trim();
     if (value) return value;
@@ -134,7 +138,7 @@ export async function verifyMakerworldCookie(rawCookieOrToken: string): Promise<
         "User-Agent": IMPORT_BROWSER_USER_AGENT,
         Accept: "application/json",
         Authorization: `Bearer ${bearerToken}`,
-        Referer: "https://makerworld.com/",
+        Referer: REFERER,
       },
       redirect: "follow",
       signal: controller.signal,
@@ -142,7 +146,7 @@ export async function verifyMakerworldCookie(rawCookieOrToken: string): Promise<
     if (res.status === 403 && looksLikeCloudflareBlock(res.headers)) {
       if (!(await isFlaresolverrEnabled())) return { result: "unverifiable", reason: "cloudflare_no_flaresolverr" };
       // Through FlareSolverr this answers 200 even when logged out; only a real session has a `uid`.
-      const solved = await fetchViaFlaresolverr(SELF_PREFERENCE_URL, `token=${bearerToken}`);
+      const solved = await fetchViaFlaresolverr(SELF_PREFERENCE_URL, `${TOKEN_COOKIE}=${bearerToken}`);
       if (!solved) return { result: "unverifiable", reason: "flaresolverr_failed" };
       const data = extractJsonFromBrowserBody(solved.body);
       return isRecord(data) && data.uid != null ? { result: "valid" } : { result: "invalid" };
@@ -174,7 +178,7 @@ async function fetchAuthorProfileJson(uid: string, paceMs?: number): Promise<unk
   const headers: Record<string, string> = {
     "User-Agent": IMPORT_BROWSER_USER_AGENT,
     Accept: "application/json",
-    Referer: "https://makerworld.com/",
+    Referer: REFERER,
   };
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), CLOUD_API_TIMEOUT_MS);
@@ -423,7 +427,7 @@ export async function resolveMakerworldViaCloudApi(
 /** MakerWorld's trending models, from the same list its "Trending" tab shows. Public; no sign-in. */
 export async function fetchMakerworldTrending(limit: number): Promise<TrendingModel[]> {
   const res = await fetch(
-    `https://api.bambulab.com/v1/search-service/select/design/nav?navKey=Trending&offset=0&limit=${limit}`,
+    `${manifest.endpoints.cloudApi}/search-service/select/design/nav?navKey=Trending&offset=0&limit=${limit}`,
     {
       headers: { Accept: "application/json", "User-Agent": IMPORT_BROWSER_USER_AGENT },
       signal: AbortSignal.timeout(CLOUD_API_TIMEOUT_MS),
@@ -438,7 +442,7 @@ export async function fetchMakerworldTrending(limit: number): Promise<TrendingMo
       {
         id,
         title: asText(hit.title) ?? id,
-        url: `https://makerworld.com/en/models/${id}`,
+        url: makerworldModelUrl(id),
         image: webImage(hit.cover),
         likes: asCount(hit.likeCount),
         author: asText(asRecord(hit.designCreator)?.name),

@@ -1,9 +1,11 @@
+import { hostIsSite } from "../_lib/hosts";
 import type { ListLink, ModelLink, ProviderUrls } from "../_lib/types";
+import manifest from "./manifest";
 
-const SITE_ORIGIN = "https://thangs.com";
+const SITE_ORIGIN = manifest.site;
 
 function isHost(hostname: string): boolean {
-  return /^(www\.)?thangs\.com$/i.test(hostname);
+  return hostIsSite(hostname, manifest.hosts[0]);
 }
 
 function parseUrl(url: string): URL | null {

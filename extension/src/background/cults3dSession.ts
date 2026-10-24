@@ -3,8 +3,10 @@
 // as this browser would; the clearance only holds from this browser's IP address. Sent on when they change.
 
 import type { SessionSource } from "./sessionSync";
+import { MANIFESTS } from "../shared/providers/_generated";
 
-const SITE = "https://cults3d.com";
+const { cults3d } = MANIFESTS;
+const SITE = cults3d.site;
 
 async function cookieValue(name: string): Promise<string> {
   try {
@@ -12,7 +14,7 @@ async function cookieValue(name: string): Promise<string> {
     if (plain) return plain;
     // Cloudflare sets cf_clearance partitioned (CHIPS), keyed to the site itself; a plain lookup doesn't see those, and
     // an exact partition key would have to match its cross-site flag too. An empty one lists every partition's.
-    const partitioned = await chrome.cookies.getAll({ domain: "cults3d.com", name, partitionKey: {} });
+    const partitioned = await chrome.cookies.getAll({ domain: cults3d.hosts[0], name, partitionKey: {} });
     const own = partitioned.find((cookie) =>
       /^https:\/\/(www\.)?cults3d\.com$/i.test(cookie.partitionKey?.topLevelSite ?? ""),
     );
@@ -25,10 +27,13 @@ async function cookieValue(name: string): Promise<string> {
 export const cults3dSession: SessionSource = {
   slot: "browser",
   async read() {
-    const [session, clearance] = await Promise.all([cookieValue("_session_id"), cookieValue("cf_clearance")]);
+    const [session, clearance] = await Promise.all([
+      cookieValue(cults3d.sessionCookies.session),
+      cookieValue(cults3d.sessionCookies.clearance),
+    ]);
     if (!session) return null;
     // Only asked for from a signed-in page (see content/cults3d.ts): visitors get a session cookie too.
-    const cookie = `_session_id=${session}${clearance ? `; cf_clearance=${clearance}` : ""}`;
+    const cookie = `${cults3d.sessionCookies.session}=${session}${clearance ? `; ${cults3d.sessionCookies.clearance}=${clearance}` : ""}`;
     return { value: `${cookie} ${navigator.userAgent}`, body: { session: cookie, user_agent: navigator.userAgent } };
   },
   signedOut: { session: null },

@@ -9,9 +9,10 @@ import { apiCall } from "./api";
 import { importSingle } from "./importJobs";
 import { recordRecentImport } from "./recentImports";
 import type { SessionSource } from "./sessionSync";
+import { MANIFESTS } from "../shared/providers/_generated";
 
-const SITE = "https://www.makeronline.com";
-const ACCESS_COOKIE = "mo_access_token";
+const SITE = MANIFESTS.makeronline.site;
+const ACCESS_COOKIE = MANIFESTS.makeronline.sessionCookies.token;
 const TASK_POLL_INTERVAL_MS = 1000;
 // A burst of downloads looks automated to MakerOnline too.
 const SIGN_GAP_MS = 1500;
@@ -40,7 +41,7 @@ type SignAnswer = { code: number | null; message: string | null; data: unknown }
 /** Runs in the page itself (world: "MAIN"), where MakerOnline's script is, so it must stand on its own. Asks the
  *  site's download call for each file, as its Download button does: the sign-in from its cookie, a fresh Risk-Token
  *  from its anti-bot script. */
-async function signInPage(requests: DownloadRequest[], gapMs: number): Promise<SignAnswer[]> {
+async function signInPage(requests: DownloadRequest[], gapMs: number, cookieName: string): Promise<SignAnswer[]> {
   type Neg = { getToken: () => Promise<{ token?: string } | null> };
   const nuxt = (window as unknown as { $nuxt?: { $ensureNeg?: () => Promise<Neg> } }).$nuxt;
   let neg: Neg | null = null;
@@ -49,7 +50,11 @@ async function signInPage(requests: DownloadRequest[], gapMs: number): Promise<S
   } catch {
     neg = null;
   }
-  const cookie = document.cookie.match(/(?:^|;\s*)mo_access_token=([^;]+)/)?.[1];
+  const cookie = document.cookie
+    .split(";")
+    .map((pair) => pair.trim())
+    .find((pair) => pair.startsWith(`${cookieName}=`))
+    ?.slice(cookieName.length + 1);
   const auth = cookie ? decodeURIComponent(cookie) : "";
   const answers: SignAnswer[] = [];
   for (const [index, request] of requests.entries()) {
@@ -133,7 +138,7 @@ async function signRequests(tabId: number, requests: DownloadRequest[]): Promise
       target: { tabId },
       world: "MAIN",
       func: signInPage,
-      args: [requests, SIGN_GAP_MS],
+      args: [requests, SIGN_GAP_MS, ACCESS_COOKIE],
     });
     answers = (result?.result as SignAnswer[] | undefined) ?? [];
   } catch (err) {
@@ -236,7 +241,7 @@ async function runWaiting(tabId: number): Promise<number> {
   }
   if (printIds.length) {
     await apiCall("POST", "/import/summary", {
-      source_url: "https://www.makeronline.com/",
+      source_url: `${SITE}/`,
       total: waiting.length,
       print_ids: printIds,
     }).catch(() => undefined);

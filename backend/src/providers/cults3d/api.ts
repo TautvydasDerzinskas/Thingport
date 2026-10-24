@@ -14,6 +14,7 @@ import {
   parseCults3dPrintlistUrl,
   urls,
 } from "../_generated/cults3d/urls";
+import manifest from "../_generated/cults3d/manifest";
 export {
   cults3dLikesKey,
   cults3dLikesUrl,
@@ -30,10 +31,11 @@ export {
 // browser's own cf_clearance cookie, sent with the User-Agent it was issued to, from the browser's IP address; Thingport
 // Grab sends it along with the _session_id sign-in. With them, a free model is "ordered" for nothing, as its Download
 // button does, and an order line's download page redirects to a signed CloudFront link that needs nothing at all.
-const SITE_ORIGIN = "https://cults3d.com";
+const SITE_ORIGIN = manifest.site;
+const DOWNLOAD_HOST = new URL(manifest.endpoints.downloads).hostname;
 const GRAPHQL_URL = `${SITE_ORIGIN}/graphql`;
 const API_TIMEOUT_MS = IMPORT_TIMEOUT_SECONDS * 1000;
-const PROVIDER = "cults3d";
+const PROVIDER = manifest.id;
 // The API allows 1 to 100 per page.
 const PAGE_SIZE = 100;
 // The API's rate limit is per minute; a wait past that means something else is wrong.
@@ -139,13 +141,13 @@ const SCALEWAY_BUCKET = "/cults-stl-prod/";
 /** The hosts of the signed links the site's download pages redirect to: its CloudFront one, and Scaleway's. */
 export function isCults3dFileHost(hostname: string): boolean {
   const host = hostname.toLowerCase();
-  return host === "download.cults3d.com" || host === SCALEWAY_HOST;
+  return host === DOWNLOAD_HOST || host === SCALEWAY_HOST;
 }
 
 /** A signed link to the model's files: on CloudFront, or in Cults3D's own bucket on Scaleway. */
 export function isCults3dFileUrl(url: URL): boolean {
   const host = url.hostname.toLowerCase();
-  if (host === "download.cults3d.com") return true;
+  if (host === DOWNLOAD_HOST) return true;
   return host === SCALEWAY_HOST && url.pathname.startsWith(SCALEWAY_BUCKET);
 }
 
@@ -413,7 +415,8 @@ async function fetchSite(
   browser: Cults3dBrowser,
   { method = "GET", body, referer }: { method?: "GET" | "POST"; body?: string; referer?: string } = {},
 ): Promise<Response> {
-  const cookie = [`_session_id=${browser.session}`, browser.clearance ? `cf_clearance=${browser.clearance}` : null]
+  const { session, clearance } = manifest.sessionCookies;
+  const cookie = [`${session}=${browser.session}`, browser.clearance ? `${clearance}=${browser.clearance}` : null]
     .filter(Boolean)
     .join("; ");
   const res = await fetch(url, {

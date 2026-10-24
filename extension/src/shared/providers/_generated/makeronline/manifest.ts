@@ -22,6 +22,7 @@ export default {
     accent: "#1F7AE0",
   },
   signIn: "userOptional",
+  sessionCookies: { token: "mo_access_token" },
   auth: [
     {
       slot: "default",

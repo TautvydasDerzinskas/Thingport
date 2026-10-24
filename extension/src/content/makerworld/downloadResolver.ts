@@ -16,6 +16,9 @@ import {
   readMakerworldDesignForPage,
   type MakerworldDesign,
 } from "./pageData";
+import { MANIFESTS } from "../../shared/providers/_generated";
+
+const MAKERWORLD_API = MANIFESTS.makerworld.endpoints.api;
 
 // fetch() has no timeout, and some endpoints hold an interactive challenge open indefinitely.
 const MAKERWORLD_API_FETCH_TIMEOUT_MS = 8000;
@@ -249,7 +252,7 @@ function instanceDevModelName(design: MakerworldDesign, instanceId: string): str
 /** Sent exactly as MakerWorld's own "Download 3MF" sends it. */
 async function fetchInstanceDownloadUrl(design: MakerworldDesign, instanceId: string): Promise<string | null> {
   const devModelName = encodeURIComponent(instanceDevModelName(design, instanceId));
-  const apiUrl = `https://makerworld.com/api/v1/design-service/instance/${instanceId}/f3mf?type=download&fileType=&devModelName=${devModelName}`;
+  const apiUrl = `${MAKERWORLD_API}/design-service/instance/${instanceId}/f3mf?type=download&fileType=&devModelName=${devModelName}`;
   return extractDownloadUrl(await fetchMakerworldApiJson(apiUrl, null));
 }
 
@@ -265,7 +268,7 @@ async function resolveFromPageApi(pageUrl: string): Promise<ResolvedDownload | n
     if (downloadUrl) return { downloadUrl, instanceId, design: makerworldDesignForImport(design) };
   }
   // Model-level, i.e. the default profile's file.
-  const apiUrl = `https://makerworld.com/api/v1/models/${String(design.id)}/download`;
+  const apiUrl = `${MAKERWORLD_API}/models/${String(design.id)}/download`;
   const downloadUrl = extractDownloadUrl(await fetchMakerworldApiJson(apiUrl, nonce));
   return downloadUrl
     ? { downloadUrl, instanceId: pickMakerworldInstanceId(design, null), design: makerworldDesignForImport(design) }

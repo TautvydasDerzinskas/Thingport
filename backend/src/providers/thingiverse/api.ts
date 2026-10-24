@@ -16,16 +16,20 @@ import {
   parseThingiverseCollectionUrl,
   parseThingiverseLikesUrl,
   parseThingiverseThingUrl,
+  thingiverseCollectionUrl,
+  thingiverseThingUrl,
+  urls,
 } from "../_generated/thingiverse/urls";
+import manifest from "../_generated/thingiverse/manifest";
 export { parseThingiverseCollectionUrl, parseThingiverseLikesUrl, parseThingiverseThingUrl };
 
 // The official API needs an App Token (not a session cookie). It's still behind Cloudflare
 // and returns a sticky 429 challenge after a few rapid requests, hence ThingiverseRateLimitError
 // and the FlareSolverr fallback.
-const THINGIVERSE_API_BASE = "https://api.thingiverse.com";
+const THINGIVERSE_API_BASE = manifest.endpoints.api;
 const THINGIVERSE_API_HOSTNAME = new URL(THINGIVERSE_API_BASE).hostname;
 const API_TIMEOUT_MS = IMPORT_TIMEOUT_SECONDS * 1000;
-const THINGIVERSE_PROVIDER = "thingiverse";
+const THINGIVERSE_PROVIDER = manifest.id;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
@@ -367,8 +371,7 @@ export async function resolveThingiverseUser(input: string, accessToken: string)
   let value = input.trim();
   try {
     const url = new URL(value);
-    const host = url.hostname.toLowerCase();
-    if (host !== "thingiverse.com" && host !== "www.thingiverse.com") return null;
+    if (!urls.isHost(url.hostname)) return null;
     value = url.pathname.split("/").find(Boolean) ?? "";
   } catch {
     // Not a link.
@@ -392,7 +395,7 @@ function thingiverseCollectionCard(value: unknown): ProviderCollectionCard | nul
   return {
     id,
     name: typeof value.name === "string" && value.name.trim() ? value.name.trim() : `Collection ${id}`,
-    url: `https://www.thingiverse.com/${owner ? `${encodeURIComponent(owner)}/` : ""}collections/${id}`,
+    url: thingiverseCollectionUrl(id, owner),
     modelCount: typeof value.count === "number" ? value.count : Number(value.count) || 0,
     thumbnails: [...new Set(thumbnails)],
     private: value.is_private === true || value.is_private === 1,
@@ -439,7 +442,7 @@ export async function fetchThingiversePopular(limit: number, accessToken: string
       {
         id,
         title: asText(thing.name) ?? id,
-        url: asText(thing.public_url) ?? `https://www.thingiverse.com/thing:${id}`,
+        url: asText(thing.public_url) ?? thingiverseThingUrl(id),
         image: webImage(thing.preview_image) ?? webImage(thing.thumbnail),
         likes: asCount(thing.like_count),
         author: asText(asRecord(thing.creator)?.name),

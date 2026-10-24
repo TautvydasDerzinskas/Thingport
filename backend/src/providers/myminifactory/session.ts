@@ -1,9 +1,10 @@
 import { prisma } from "../../db";
+import manifest from "../_generated/myminifactory/manifest";
 
 // Per-user, beside the instance-wide API key: the user's MyMiniFactory session downloads the paid and login-only
 // models in their library, which the API key can't.
 
-const SESSION_COOKIE = "PHPSESSID";
+const SESSION_COOKIE = manifest.sessionCookies.session;
 
 /** "PHPSESSID=<value>" from a whole Cookie header, a "PHPSESSID=..." pair or a bare value; null when there's none.
  *  The other cookies a browser sends are Cloudflare's and tied to that browser, so only this one is kept. */

@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { mapWithConcurrency, sleep } from "../utils/concurrency";
 import { detectProvider, MANIFESTS, type ProviderId, type ProviderManifest, URLS } from "../providers/_generated";
+import { makerworldModelUrl } from "../providers/_generated/makerworld/urls";
 import { DOWNLOAD_LIMIT_CODES, PROVIDERS, SESSION_CODES } from "../providers/registry";
 import type { ListBatch, ListImportBody, SourcedImport } from "../providers/types";
 import { IMPORT_COLLECTION_DELAY_MS, IMPORT_MAKERWORLD_CALL_DELAY_MS } from "../config";
@@ -167,9 +168,9 @@ function makerworldProfileUrls(
   requestedInstanceId: string | null,
 ): { urls: string[]; rawFiles: boolean } {
   const profileIds = selectMakerworldProfiles(design, scope, requestedInstanceId);
-  if (!profileIds.length) return { urls: [`https://makerworld.com/en/models/${designId}`], rawFiles: true };
+  if (!profileIds.length) return { urls: [makerworldModelUrl(designId)], rawFiles: true };
   return {
-    urls: profileIds.map((profileId) => `https://makerworld.com/en/models/${designId}#profileId-${profileId}`),
+    urls: profileIds.map((profileId) => makerworldModelUrl(designId, profileId)),
     rawFiles: false,
   };
 }
@@ -367,7 +368,7 @@ export async function runCollectionImportJob(
     log.info("makerworld collection job started", { job: jobId, url: body.url, models: body.design_ids.length });
 
     await mapWithConcurrency(body.design_ids, COLLECTION_IMPORT_CONCURRENCY, async (designId) => {
-      const modelUrl = `https://makerworld.com/en/models/${designId}`;
+      const modelUrl = makerworldModelUrl(designId);
       const itemBody: ImportRequestBody = {
         url: modelUrl,
         notes: body.notes ?? null,

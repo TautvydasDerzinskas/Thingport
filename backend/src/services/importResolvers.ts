@@ -9,8 +9,7 @@ import {
   IMPORT_TIMEOUT_SECONDS,
 } from "../config";
 import { isJsonContentType } from "../utils/fileUtils";
-import type { ProviderId } from "../providers/_generated";
-import { hostIs } from "../utils/urlUtils";
+import { MANIFESTS, type ProviderId, URLS } from "../providers/_generated";
 import { htmlToMarkdown } from "./descriptionMarkdown";
 import { decodeHtmlEntities } from "../utils/htmlEntities";
 import {
@@ -25,6 +24,8 @@ import {
   looksLikeCloudflareBlock,
   shouldProxyHost,
 } from "./flaresolverr";
+
+const MAKERWORLD_API = MANIFESTS.makerworld.endpoints.api;
 
 export type ImportCookies = {
   makerworld_cookie?: string | null;
@@ -84,8 +85,8 @@ function makerworldApiHeaders(
     "Accept-Language": "en-US,en;q=0.9",
     "X-BBL-Client-Type": "web",
     "X-BBL-Client-Version": "00.00.00.01",
-    "X-BBL-App-Source": "makerworld",
-    "X-BBL-Client-Name": "MakerWorld",
+    "X-BBL-App-Source": MANIFESTS.makerworld.id,
+    "X-BBL-Client-Name": MANIFESTS.makerworld.name,
   };
   if (referer) headers.Referer = referer;
   if (nonce) headers["X-Nonce"] = nonce;
@@ -568,7 +569,7 @@ export function emptyImportedPageMetadata(): ImportedPageMetadata {
 /** Best-effort metadata for a landing page. Only MakerWorld has more than a title. */
 export function extractPageMetadata(html: string, pageHost: string): ImportedPageMetadata {
   const meta = emptyImportedPageMetadata();
-  if (hostIs(pageHost, "makerworld.com")) {
+  if (URLS.makerworld.isHost(pageHost)) {
     const fromDesign = makerworldMetaFromDesign(getPath(extractNextDataJson(html), "props", "pageProps", "design"));
     if (!fromDesign.title) fromDesign.title = genericTitleFromHtml(html);
     return fromDesign;
@@ -633,7 +634,7 @@ async function fetchMakerworldInstanceDownloadUrl(
   pageUrl: string,
   cookie: string | null,
 ): Promise<string | null> {
-  const apiUrl = `https://makerworld.com/api/v1/design-service/instance/${instanceId}/f3mf?type=download&fileType=3mfstl`;
+  const apiUrl = `${MAKERWORLD_API}/design-service/instance/${instanceId}/f3mf?type=download&fileType=3mfstl`;
   const data = await fetchJsonFromUrl(apiUrl, pageUrl, makerworldApiHeaders(pageUrl, null, cookie));
   return makerworldDownloadUrlOrCaptcha(data, apiUrl);
 }
@@ -644,7 +645,7 @@ async function fetchMakerworldModelDownloadUrl(
   nonce: string | null,
   cookie: string | null,
 ): Promise<string | null> {
-  const apiUrl = `https://makerworld.com/api/v1/models/${modelId}/download`;
+  const apiUrl = `${MAKERWORLD_API}/models/${modelId}/download`;
   const data = await fetchJsonFromUrl(apiUrl, pageUrl, makerworldApiHeaders(pageUrl, nonce, cookie));
   return makerworldDownloadUrlOrCaptcha(data, apiUrl);
 }
@@ -698,10 +699,10 @@ export async function resolveMakerworldDownloadUrl(
   if (url) return asDefault(url);
 
   const apiCandidates = [
-    `https://makerworld.com/api/v1/models/${modelId}`,
-    `https://makerworld.com/api/v1/models/${modelId}/files`,
-    `https://makerworld.com/api/v1/model/${modelId}`,
-    `https://makerworld.com/api/v1/model/${modelId}/files`,
+    `${MAKERWORLD_API}/models/${modelId}`,
+    `${MAKERWORLD_API}/models/${modelId}/files`,
+    `${MAKERWORLD_API}/model/${modelId}`,
+    `${MAKERWORLD_API}/model/${modelId}/files`,
   ];
   for (const apiUrl of apiCandidates) {
     const data = await fetchJsonFromUrl(apiUrl, pageUrl);

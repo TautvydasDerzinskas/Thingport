@@ -7,6 +7,7 @@ export default {
   site: "https://cults3d.com",
   docsSlug: "cults3d",
   hosts: ["cults3d.com"],
+  endpoints: { downloads: "https://download.cults3d.com" },
   brand: {
     logo: {
       viewBox: "0 0 260 260",
@@ -17,6 +18,7 @@ export default {
     accent: "#822EF5",
   },
   signIn: "user",
+  sessionCookies: { session: "_session_id", clearance: "cf_clearance" },
   auth: [
     {
       slot: "default",

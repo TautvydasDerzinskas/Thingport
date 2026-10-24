@@ -13,6 +13,7 @@ import {
   parseCrealitycloudLikesUrl,
   parseCrealitycloudModelUrl,
 } from "../_generated/crealitycloud/urls";
+import manifest from "../_generated/crealitycloud/manifest";
 export {
   crealitycloudCollectionUrl,
   crealitycloudLikesKey,
@@ -27,10 +28,10 @@ export {
 // every answer `{code, msg, result}` with a code of its own. It refuses ("Invalid Parameter") any call without the
 // whole set of `__cxy_*` headers its site sends. Details, file lists, print profiles and collections need no sign-in;
 // downloads and likes need the user's token and user id.
-const SITE_ORIGIN = "https://www.crealitycloud.com";
+const SITE_ORIGIN = manifest.site;
 const API_BASE = `${SITE_ORIGIN}/api/cxy`;
 const API_TIMEOUT_MS = IMPORT_TIMEOUT_SECONDS * 1000;
-const PROVIDER = "crealitycloud";
+const PROVIDER = manifest.id;
 // Cloudflare turns away a request without a browser's User-Agent.
 const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36";

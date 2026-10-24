@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
-import { isProviderId, MANIFESTS, modelUrl, parseModelUrl } from "../providers/_generated";
+import { isProviderId, MANIFESTS, modelUrl, parseModelUrl, URLS } from "../providers/_generated";
+import { makerworldModelUrl } from "../providers/_generated/makerworld/urls";
 import { catIdsField, PROFILE_PROVIDERS, PROVIDERS } from "../providers/registry";
 import type { PipelineKit, ResolvedModel, SourcedImport } from "../providers/types";
 import fsSync from "node:fs";
@@ -23,7 +24,7 @@ import {
   mimeFromContentType,
   sanitizeFilename,
 } from "../utils/fileUtils";
-import { hostIs, validateRemoteUrl } from "../utils/urlUtils";
+import { validateRemoteUrl } from "../utils/urlUtils";
 import { readCapped } from "../utils/readCapped";
 import { browserFetch, needsBrowserFetch } from "../utils/browserFetch";
 import { maybeSleep, sleep } from "../utils/concurrency";
@@ -204,7 +205,7 @@ async function fetchMakerworldPageDesign(
   paceMs?: number,
 ): Promise<Record<string, unknown> | null> {
   if (makerworldCaptchaCooloffActive()) throw new MakerworldCaptchaError();
-  const url = `https://makerworld.com/en/models/${designId}`;
+  const url = makerworldModelUrl(designId);
   await maybeSleep(paceMs);
   let res: Response;
   try {
@@ -241,7 +242,7 @@ export async function fetchMakerworldPageAuthor(
   paceMs?: number,
 ): Promise<ImportedAuthorInfo | null> {
   if (makerworldCaptchaCooloffActive()) throw new MakerworldCaptchaError();
-  const url = `https://makerworld.com/en/models/${designId}`;
+  const url = makerworldModelUrl(designId);
   await maybeSleep(paceMs);
   let res: Response;
   try {
@@ -255,7 +256,10 @@ export async function fetchMakerworldPageAuthor(
   }
   if (!isHtmlContentType(res.headers.get("content-type") || "")) return null;
   const { buffer } = await readCapped(res, IMPORT_HTML_MAX_BYTES);
-  return completeMakerworldAuthor(extractPageMetadata(buffer.toString("utf-8"), "makerworld.com").author, paceMs);
+  return completeMakerworldAuthor(
+    extractPageMetadata(buffer.toString("utf-8"), MANIFESTS.makerworld.hosts[0]).author,
+    paceMs,
+  );
 }
 
 function isMakerworldCdnUrl(url: string | null | undefined): url is string {
@@ -506,13 +510,13 @@ export async function openImportResponse(
   }
 
   // Only at depth 0, so a resolved download URL isn't treated as a model page on recursion.
-  if (depth === 0 && hostIs(host, "makerworld.com") && !body.resolved_download_url) {
+  if (depth === 0 && URLS.makerworld.isHost(host) && !body.resolved_download_url) {
     const cloudResolved = await tryMakerworldCloudApi(validatedUrl, body);
     if (cloudResolved) {
       return openImportResponse(cloudResolved.downloadUrl, body, validatedUrl, depth + 1, cloudResolved.meta);
     }
   }
-  if (depth === 0 && hostIs(host, "makerworld.com") && body.resolved_download_url) {
+  if (depth === 0 && URLS.makerworld.isHost(host) && body.resolved_download_url) {
     const fromExtension = await makerworldMetaFromExtension(validatedUrl, body);
     if (fromExtension) {
       return openImportResponse(body.resolved_download_url, body, validatedUrl, depth + 1, fromExtension);
@@ -521,7 +525,7 @@ export async function openImportResponse(
 
   const headers: Record<string, string> = { "User-Agent": IMPORT_BROWSER_USER_AGENT, Accept: "*/*" };
   let makerworldCookie: string | null = null;
-  if (hostIs(host, "makerworld.com")) {
+  if (URLS.makerworld.isHost(host)) {
     makerworldCookie = resolveMakerworldCookie(body);
     Object.assign(
       headers,
@@ -564,10 +568,10 @@ export async function openImportResponse(
       categorySite: extracted.categorySite ?? inheritedMeta.categorySite,
       makerworldProfile: inheritedMeta.makerworldProfile,
     };
-    if (hostIs(pageHost, "makerworld.com") && extracted.author) {
+    if (URLS.makerworld.isHost(pageHost) && extracted.author) {
       resolvedMeta.author = await completeMakerworldAuthor(extracted.author, body.makerworldPaceMs);
     }
-    if (hostIs(pageHost, "makerworld.com")) {
+    if (URLS.makerworld.isHost(pageHost)) {
       // Skipped for an extension-resolved URL: these calls can trip the CAPTCHA cooloff.
       if (body.resolved_download_url) {
         downloadUrl = body.resolved_download_url;

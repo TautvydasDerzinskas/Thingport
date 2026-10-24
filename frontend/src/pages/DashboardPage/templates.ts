@@ -14,6 +14,7 @@ import type {
 } from "../../api/settings";
 import { allowed, DASHBOARD_WIDGETS, widgetById, widgetOf, type ResolvedSettings } from "./widgets";
 import type { TrendingProvider } from "../../api/dashboard";
+import { MANIFESTS, PROVIDER_IDS } from "../../providers/_generated";
 
 /** Widest first; a breakpoint applies from its width up. Phones get one column, so panels simply stack. */
 export const BREAKPOINTS: { id: DashboardBreakpoint; minWidth: number; cols: number }[] = [
@@ -449,13 +450,11 @@ const LAUNCHER = {
   items: [
     { url: "https://thingport.net", icon: "/icon-192.png", name: "Thingport" },
     { url: "https://github.com/TautvydasDerzinskas/Thingport", icon: "https://github.com/favicon.ico", name: "GitHub" },
-    { url: "https://makerworld.com", icon: "builtin:providers/makerworld", name: "MakerWorld" },
-    { url: "https://www.thingiverse.com", icon: "builtin:providers/thingiverse", name: "Thingiverse" },
-    { url: "https://www.printables.com", icon: "builtin:providers/printables", name: "Printables" },
-    { url: "https://www.crealitycloud.com", icon: "builtin:providers/crealitycloud", name: "Creality Cloud" },
-    { url: "https://space.snapmaker.com", icon: "builtin:providers/snapmaker", name: "Snapmaker Space" },
-    { url: "https://www.makeronline.com", icon: "builtin:providers/makeronline", name: "MakerOnline" },
-    { url: "https://www.nexprint.com/en/models", icon: "builtin:providers/nexprint", name: "NexPrint" },
+    ...PROVIDER_IDS.map((id) => ({
+      url: MANIFESTS[id].site,
+      icon: `builtin:providers/${id}`,
+      name: MANIFESTS[id].name,
+    })),
   ],
 };
 

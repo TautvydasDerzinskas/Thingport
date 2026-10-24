@@ -5,11 +5,13 @@
 
 import { OPTIONAL_SITES, siteEnabled } from "../shared/optionalSites";
 import type { SessionSource } from "./sessionSync";
+import { MANIFESTS } from "../shared/providers/_generated";
 
-const SITE = "https://space.snapmaker.com";
-const ACCESS_COOKIE = "login_access_token";
-const REFRESH_COOKIE = "login_refresh_token";
-const TOKEN_URL = "https://id.snapmaker.com/api/oauth2/token";
+const { snapmaker } = MANIFESTS;
+const SITE = snapmaker.site;
+const ACCESS_COOKIE = snapmaker.sessionCookies.token;
+const REFRESH_COOKIE = snapmaker.sessionCookies.refresh;
+const TOKEN_URL = snapmaker.endpoints.token;
 // The site's own public client, as its pages send it ("mall-app"); it isn't a secret.
 const CLIENT_AUTH = "Basic bWFsbC1hcHA6MTIzNDU2";
 // As the site sets them: the access token's cookie for 8 hours, the refresh token's for 30 days.
@@ -48,7 +50,7 @@ async function writeCookie(name: string, value: string, lifetimeMs: number): Pro
     url: SITE,
     name,
     value: encodeURIComponent(value),
-    domain: ".snapmaker.com",
+    domain: `.${snapmaker.hosts[0]}`,
     path: "/",
     secure: true,
     sameSite: "no_restriction",

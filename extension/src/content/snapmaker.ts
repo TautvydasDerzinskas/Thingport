@@ -2,13 +2,14 @@
 
 import { request } from "../shared/messages";
 import { parseSnapmakerModelUrl } from "../shared/providers/_generated/snapmaker/urls";
+import { MANIFESTS } from "../shared/providers/_generated";
 
 export type SnapmakerProfileScope = "url" | "designer" | "all";
 
 type Profile = { id: string; creatorId: string | null };
 type Model = { creatorId: string | null; profiles: Profile[] };
 
-const API = "https://api-models.snapmaker.com/api";
+const API = MANIFESTS.snapmaker.endpoints.api;
 
 const asId = (value: unknown) => (value == null ? null : String(value));
 

@@ -9,16 +9,17 @@ import {
   parseNexprintCollectionUrl,
   parseNexprintModelUrl,
 } from "../_generated/nexprint/urls";
+import manifest from "../_generated/nexprint/manifest";
 export { nexprintCollectionUrl, nexprintModelUrl, parseNexprintCollectionUrl, parseNexprintModelUrl };
 
 // NexPrint (Elegoo's model site) has no public API, so this is the one its own pages call, under /gateway: answers are
 // `{code, msg, data}`, code 0 when it went well and 401 for a missing or refused sign-in. Details, categories and
 // collections, private ones included, need no sign-in; file downloads and the user's own collection list need their
 // token, sent as a Bearer token.
-const SITE_ORIGIN = "https://www.nexprint.com";
+const SITE_ORIGIN = manifest.site;
 const API_BASE = `${SITE_ORIGIN}/gateway/api/v1`;
 const API_TIMEOUT_MS = IMPORT_TIMEOUT_SECONDS * 1000;
-const PROVIDER = "nexprint";
+const PROVIDER = manifest.id;
 const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36";
 

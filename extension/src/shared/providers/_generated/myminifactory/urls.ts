@@ -1,12 +1,13 @@
 // GENERATED from providers/myminifactory/urls.ts by scripts/sync-providers.mjs. Don't edit it here:
 // change providers/ and run npm run providers:sync.
+import { hostIsSite } from "../_lib/hosts";
 import type { ListLink, ModelLink, ProviderUrls } from "../_lib/types";
+import manifest from "./manifest";
 
-const SITE_ORIGIN = "https://www.myminifactory.com";
+const SITE_ORIGIN = manifest.site;
 
 function isHost(hostname: string): boolean {
-  const host = hostname.toLowerCase();
-  return host === "myminifactory.com" || host === "www.myminifactory.com";
+  return hostIsSite(hostname, manifest.hosts[0]);
 }
 
 function parseUrl(url: string): URL | null {

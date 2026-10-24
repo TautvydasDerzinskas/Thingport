@@ -18,6 +18,7 @@ import {
   parseMyminifactoryObjectUrl,
   urls,
 } from "../_generated/myminifactory/urls";
+import manifest from "../_generated/myminifactory/manifest";
 export {
   myminifactoryCollectionKey,
   myminifactoryCollectionUrl,
@@ -28,10 +29,10 @@ export {
 // The official API takes an API key as `?key=`. Its file download links are for OAuth users only,
 // so files come from the site's own /download/{id} instead, which free objects allow anonymously.
 // Like Thingiverse, it's behind a Cloudflare that checks the TLS handshake, hence browserFetch.
-const MYMINIFACTORY_ORIGIN = "https://www.myminifactory.com";
+const MYMINIFACTORY_ORIGIN = manifest.site;
 const API_BASE = `${MYMINIFACTORY_ORIGIN}/api/v2`;
 const API_TIMEOUT_MS = IMPORT_TIMEOUT_SECONDS * 1000;
-const PROVIDER = "myminifactory";
+const PROVIDER = manifest.id;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);

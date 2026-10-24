@@ -5,11 +5,14 @@
 import type { AccountProvider, PrintablesPush, PrintablesPushPlan } from "../shared/messages";
 import { STORAGE_KEYS } from "../shared/storage";
 import { apiCall, requireConfig } from "./api";
+import { MANIFESTS } from "../shared/providers/_generated";
+
+const { printables } = MANIFESTS;
 
 /** HttpOnly, so the page can't read it but chrome.cookies can. Null (never throws) when signed out. */
 export async function getPrintablesToken(): Promise<string | null> {
   try {
-    const cookie = await chrome.cookies.get({ url: "https://www.printables.com", name: "auth.access_token" });
+    const cookie = await chrome.cookies.get({ url: printables.site, name: printables.sessionCookies.token });
     return cookie?.value || null;
   } catch {
     return null;

@@ -1,9 +1,12 @@
+import { hostIsSite } from "../_lib/hosts";
 import { LIKES_ID_PREFIX } from "../_lib/lists";
 import type { ListLink, ModelLink, ProviderUrls } from "../_lib/types";
+import manifest from "./manifest";
+
+const SITE_ORIGIN = manifest.site;
 
 function isHost(hostname: string): boolean {
-  const host = hostname.toLowerCase();
-  return host === "printables.com" || host === "www.printables.com";
+  return hostIsSite(hostname, manifest.hosts[0]);
 }
 
 function parseUrl(url: string): URL | null {
@@ -32,6 +35,25 @@ export function parsePrintablesCollectionUrl(url: string): { collectionId: strin
   return m ? { collectionId: m[1] } : null;
 }
 
+export function printablesModelUrl(modelId: string): string {
+  return `${SITE_ORIGIN}/model/${modelId}`;
+}
+
+/** Under its owner's handle where it's known, as the site links it; the handle is cosmetic. */
+export function printablesCollectionUrl(collectionId: string, owner?: string | null): string {
+  return owner
+    ? `${printablesUserUrl(owner)}/collections/${collectionId}`
+    : `${SITE_ORIGIN}/collections/${collectionId}`;
+}
+
+export function printablesLikesUrl(handle: string): string {
+  return `${printablesUserUrl(handle)}/collections/liked`;
+}
+
+export function printablesUserUrl(handle: string): string {
+  return `${SITE_ORIGIN}/@${encodeURIComponent(handle)}`;
+}
+
 export const urls: ProviderUrls = {
   isHost,
   parseModel(url): ModelLink | null {
@@ -42,7 +64,7 @@ export const urls: ProviderUrls = {
     const collection = parsePrintablesCollectionUrl(url);
     if (collection) {
       const id = collection.collectionId;
-      return { kind: "collection", externalId: id, url: `https://www.printables.com/collections/${id}` };
+      return { kind: "collection", externalId: id, url: printablesCollectionUrl(id) };
     }
     const likes = parsePrintablesLikesUrl(url);
     if (!likes) return null;
@@ -50,9 +72,9 @@ export const urls: ProviderUrls = {
     return {
       kind: "likes",
       externalId: `${LIKES_ID_PREFIX}${likes.handle.toLowerCase()}`,
-      url: `https://www.printables.com/@${encodeURIComponent(likes.handle)}/collections/liked`,
+      url: printablesLikesUrl(likes.handle),
       likesOf: likes.handle,
     };
   },
-  modelUrl: (modelId) => `https://www.printables.com/model/${modelId}`,
+  modelUrl: printablesModelUrl,
 };

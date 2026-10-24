@@ -44,7 +44,10 @@ export function parseSyncSource(url: string): SyncSource | null {
 
 /** Which model page a provider's id stands for, as the import queue takes it. */
 export function modelUrlFor(provider: string, externalId: string): string {
-  return modelUrl(provider, externalId) ?? `https://www.thingiverse.com/thing:${externalId}`;
+  const url = modelUrl(provider, externalId);
+  // A sync's provider is one parseSyncSource read off its link.
+  if (!url) throw new Error(`A sync of an unknown provider: ${provider}`);
+  return url;
 }
 
 /** The model id in a link modelUrlFor made. */

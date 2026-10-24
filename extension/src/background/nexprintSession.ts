@@ -3,10 +3,13 @@
 // expiry for the app to show.
 
 import type { SessionSource } from "./sessionSync";
+import { MANIFESTS } from "../shared/providers/_generated";
+
+const { nexprint } = MANIFESTS;
 
 export const nexprintSession: SessionSource = {
   async read() {
-    const cookie = await chrome.cookies.get({ url: "https://www.nexprint.com", name: "auth_token" });
+    const cookie = await chrome.cookies.get({ url: nexprint.site, name: nexprint.sessionCookies.token });
     let token = "";
     try {
       token = cookie?.value ? decodeURIComponent(cookie.value) : "";

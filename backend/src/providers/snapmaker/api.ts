@@ -11,6 +11,7 @@ import {
   snapmakerModelUrl,
   type SnapmakerList,
 } from "../_generated/snapmaker/urls";
+import manifest from "../_generated/snapmaker/manifest";
 export {
   parseSnapmakerListUrl,
   parseSnapmakerModelUrl,
@@ -23,10 +24,10 @@ export {
 // Snapmaker Space has no public API, so this is the one its own pages call. Every answer is HTTP 200 with a `code` of
 // its own. Details are public, but their file links come signed for whoever asked, so files only download with the
 // user's access token.
-const SITE_ORIGIN = "https://space.snapmaker.com";
-const API_BASE = "https://api-models.snapmaker.com/api";
+const SITE_ORIGIN = manifest.site;
+const API_BASE = manifest.endpoints.api;
 const API_TIMEOUT_MS = IMPORT_TIMEOUT_SECONDS * 1000;
-const PROVIDER = "snapmaker";
+const PROVIDER = manifest.id;
 
 const CODE_OK = 200;
 const CODE_UNAUTHORIZED = 110002;

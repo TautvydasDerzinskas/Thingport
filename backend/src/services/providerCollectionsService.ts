@@ -16,6 +16,7 @@ import {
   updateSyncSettings,
 } from "./collectionSyncService";
 import { resolvePrintablesUser } from "../providers/printables/api";
+import { printablesCollectionUrl, printablesLikesUrl } from "../providers/_generated/printables/urls";
 import type { ProviderCollectionCard } from "./providerCollectionCard";
 import {
   COLLECTIONS_KEY,
@@ -228,7 +229,7 @@ export async function savePrintablesPush(userId: string, push: PrintablesPush): 
     const cards: ProviderCollectionCard[] = push.collections.map((c) => ({
       id: c.id,
       name: c.name,
-      url: `https://www.printables.com/@${encodeURIComponent(handle)}/collections/${c.id}`,
+      url: printablesCollectionUrl(c.id, handle),
       modelCount: c.model_count,
       thumbnails: c.thumbnails,
       private: c.private,
@@ -248,7 +249,7 @@ export async function savePrintablesPush(userId: string, push: PrintablesPush): 
     const card: ProviderCollectionCard = {
       id: `${LIKES_ID_PREFIX}${handle.toLowerCase()}`,
       name: "Liked models",
-      url: `https://www.printables.com/@${encodeURIComponent(handle)}/collections/liked`,
+      url: printablesLikesUrl(handle),
       modelCount: push.likes.model_count,
       thumbnails: push.likes.thumbnails,
       private: true,

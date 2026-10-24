@@ -3,13 +3,16 @@
 // imports, the web app's included, pick up the renewed one on the next page opened.
 
 import type { SessionSource } from "./sessionSync";
+import { MANIFESTS } from "../shared/providers/_generated";
+
+const { myminifactory } = MANIFESTS;
 
 export const myminifactorySession: SessionSource = {
   async read() {
-    const session = await chrome.cookies.get({ url: "https://www.myminifactory.com", name: "PHPSESSID" });
+    const session = await chrome.cookies.get({ url: myminifactory.site, name: myminifactory.sessionCookies.session });
     // Only asked for from a signed-in page (see content/providerAccount.ts), and never cleared: a visitor has one too.
     if (!session?.value) return undefined;
-    const value = `PHPSESSID=${session.value}`;
+    const value = `${myminifactory.sessionCookies.session}=${session.value}`;
     return { value, body: { cookie: value } };
   },
 };

@@ -19,6 +19,7 @@ export default {
     accent: "#FFBC00",
   },
   signIn: "user",
+  sessionCookies: { token: "accessToken", refresh: "refreshToken" },
   auth: [
     {
       slot: "default",
@@ -29,6 +30,7 @@ export default {
   ],
   modelNoun: "models",
   helpers: { grab: "recommended", flaresolverr: "optional" },
+  browserFetch: true,
   capabilities: {
     collections: true,
     likes: true,

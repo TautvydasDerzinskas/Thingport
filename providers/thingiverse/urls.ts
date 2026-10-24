@@ -1,9 +1,12 @@
+import { hostIsSite } from "../_lib/hosts";
 import { LIKES_ID_PREFIX } from "../_lib/lists";
 import type { ListLink, ModelLink, ProviderUrls } from "../_lib/types";
+import manifest from "./manifest";
+
+const SITE_ORIGIN = manifest.site;
 
 function isHost(hostname: string): boolean {
-  const host = hostname.toLowerCase();
-  return host === "thingiverse.com" || host === "www.thingiverse.com";
+  return hostIsSite(hostname, manifest.hosts[0]);
 }
 
 function parseUrl(url: string): URL | null {
@@ -35,6 +38,19 @@ export function parseThingiverseCollectionUrl(url: string): { collectionId: stri
   return m ? { collectionId: m[1] } : null;
 }
 
+export function thingiverseThingUrl(thingId: string): string {
+  return `${SITE_ORIGIN}/thing:${thingId}`;
+}
+
+/** Under its owner's name where it's known, as the site links it; the name is cosmetic. */
+export function thingiverseCollectionUrl(collectionId: string, owner?: string | null): string {
+  return `${SITE_ORIGIN}/${owner ? `${encodeURIComponent(owner)}/` : ""}collections/${collectionId}`;
+}
+
+export function thingiverseLikesUrl(username: string): string {
+  return `${SITE_ORIGIN}/${encodeURIComponent(username)}/likes`;
+}
+
 export const urls: ProviderUrls = {
   isHost,
   parseModel(url): ModelLink | null {
@@ -45,7 +61,7 @@ export const urls: ProviderUrls = {
     const collection = parseThingiverseCollectionUrl(url);
     if (collection) {
       const id = collection.collectionId;
-      return { kind: "collection", externalId: id, url: `https://www.thingiverse.com/collections/${id}` };
+      return { kind: "collection", externalId: id, url: thingiverseCollectionUrl(id) };
     }
     const likes = parseThingiverseLikesUrl(url);
     if (!likes) return null;
@@ -53,9 +69,9 @@ export const urls: ProviderUrls = {
     return {
       kind: "likes",
       externalId: `${LIKES_ID_PREFIX}${likes.username.toLowerCase()}`,
-      url: `https://www.thingiverse.com/${encodeURIComponent(likes.username)}/likes`,
+      url: thingiverseLikesUrl(likes.username),
       likesOf: likes.username,
     };
   },
-  modelUrl: (thingId) => `https://www.thingiverse.com/thing:${thingId}`,
+  modelUrl: thingiverseThingUrl,
 };

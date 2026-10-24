@@ -20,6 +20,7 @@ export default {
     accent: "#00C4A6",
   },
   signIn: "adminUser",
+  sessionCookies: { session: "PHPSESSID" },
   auth: [
     {
       slot: "default",
@@ -36,6 +37,7 @@ export default {
   ],
   modelNoun: "objects",
   helpers: { grab: "optional", flaresolverr: "recommended" },
+  browserFetch: true,
   capabilities: {
     collections: true,
     likes: false,

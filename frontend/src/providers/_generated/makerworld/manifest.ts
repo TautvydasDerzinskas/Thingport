@@ -10,6 +10,7 @@ export default {
   site: "https://makerworld.com",
   docsSlug: "makerworld",
   hosts: ["makerworld.com"],
+  endpoints: { api: "https://makerworld.com/api/v1", cloudApi: "https://api.bambulab.com/v1" },
   brand: {
     logo: {
       color: "#00AE42",
@@ -19,6 +20,7 @@ export default {
     accent: "#00AE42",
   },
   signIn: "user",
+  sessionCookies: { token: "token" },
   auth: [
     {
       slot: "default",

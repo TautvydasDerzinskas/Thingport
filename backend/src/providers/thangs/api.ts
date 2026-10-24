@@ -15,6 +15,7 @@ import {
   thangsCollectionUrl,
   thangsModelUrl,
 } from "../_generated/thangs/urls";
+import manifest from "../_generated/thangs/manifest";
 export {
   isThangsLikesUrl,
   parseThangsCollectionUrl,
@@ -29,10 +30,10 @@ export {
 // collections need no sign-in; downloads, private collections and purchases need the user's access token, a 7-day JWT
 // sent as a Bearer token, which the refresh token renews. Free accounts have a daily download cap. Like Thingiverse,
 // it's behind a Cloudflare that checks the TLS handshake, hence browserFetch.
-const SITE_ORIGIN = "https://thangs.com";
+const SITE_ORIGIN = manifest.site;
 const API_BASE = `${SITE_ORIGIN}/api`;
 const API_TIMEOUT_MS = IMPORT_TIMEOUT_SECONDS * 1000;
-const PROVIDER = "thangs";
+const PROVIDER = manifest.id;
 const CHALLENGE_RETRIES = 2;
 
 function isRecord(value: unknown): value is Record<string, unknown> {

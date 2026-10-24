@@ -1,5 +1,6 @@
 import { prisma } from "../../db";
 import type { Cults3dBrowser, Cults3dCredentials } from "./api";
+import manifest from "../_generated/cults3d/manifest";
 
 // Per-user, two things. The API credentials -- the user's Cults3D nickname and an API key they make on the site --
 // read models, likes, printlists and orders. The browser's sign-in -- its _session_id cookie, and the cf_clearance
@@ -7,8 +8,9 @@ import type { Cults3dBrowser, Cults3dCredentials } from "./api";
 // whenever the browser's changes, and pasting a signed-in request's headers works too. The session lasts 20 days from
 // its last use, and Thingport's own use renews it.
 
-const SESSION = /(?:^|[;\s])_session_id=([0-9a-f]{16,128})(?=;|\s|$)/i;
-const CLEARANCE = /(?:^|[;\s])cf_clearance=([\w.~-]{20,4000})(?=;|\s|$)/i;
+const { session: SESSION_COOKIE, clearance: CLEARANCE_COOKIE } = manifest.sessionCookies;
+const SESSION = new RegExp(String.raw`(?:^|[;\s])${SESSION_COOKIE}=([0-9a-f]{16,128})(?=;|\s|$)`, "i");
+const CLEARANCE = new RegExp(String.raw`(?:^|[;\s])${CLEARANCE_COOKIE}=([\w.~-]{20,4000})(?=;|\s|$)`, "i");
 // "User-Agent: ..." from copied headers, or Chrome's DevTools, which puts the name and the value on lines of their own.
 const USER_AGENT = /(?:^|\n)\s*user-agent\s*(?::\s*|\n\s*)(Mozilla\/[^\n]+)/i;
 

@@ -3,3 +3,9 @@ export function hostIs(hostname: string, domain: string): boolean {
   const host = hostname.toLowerCase();
   return host === domain || host.endsWith(`.${domain}`);
 }
+
+/** Whether `hostname` is `domain` or its www, the hosts a site's pages are on. */
+export function hostIsSite(hostname: string, domain: string): boolean {
+  const host = hostname.toLowerCase();
+  return host === domain || host === `www.${domain}`;
+}
