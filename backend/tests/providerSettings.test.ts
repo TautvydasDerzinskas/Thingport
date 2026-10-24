@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
@@ -211,4 +211,32 @@ describe("turning providers off", () => {
     expect(res.status).toBe(403);
     expect(res.body).toMatchObject({ code: "provider_disabled" });
   });
+});
+
+it("verifies and saves a MakerWorld cookie through Bambu Cloud when the website is blocked", async () => {
+  const transport = vi.fn<typeof fetch>().mockImplementation(async (input) => {
+    if (String(input) === "https://api.bambulab.com/v1/design-user-service/my/preference") {
+      return new Response(JSON.stringify({ uid: 123 }), { status: 200 });
+    }
+    return new Response("Cloudflare challenge", { status: 403, headers: { "cf-mitigated": "challenge" } });
+  });
+  vi.stubGlobal("fetch", transport);
+  try {
+    const res = await request(app)
+      .patch("/api/settings/makerworld")
+      .set(as(member))
+      .send({ cookie: "token=test-token", verify: true });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ configured: true });
+    const saved = await request(app).get("/api/settings/makerworld").set(as(member));
+    expect(saved.body).toEqual({ configured: true, expired: false });
+    expect(transport).toHaveBeenCalledTimes(1);
+    expect(transport).toHaveBeenCalledWith(
+      "https://api.bambulab.com/v1/design-user-service/my/preference",
+      expect.objectContaining({ headers: expect.objectContaining({ Authorization: "Bearer test-token" }) }),
+    );
+  } finally {
+    vi.unstubAllGlobals();
+    await request(app).patch("/api/settings/makerworld").set(as(member)).send({ cookie: null });
+  }
 });
