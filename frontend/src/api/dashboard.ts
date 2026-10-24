@@ -1,7 +1,7 @@
 import { authHeaders } from "../utils/auth";
 import { ForbiddenError, apiBase, assertOk } from "./client";
 import type { Print } from "./prints";
-import { TRENDING_PROVIDER_IDS, type TrendingProviderId } from "../providers/_generated";
+import { type ProviderId, TRENDING_PROVIDER_IDS, type TrendingProviderId } from "../providers/_generated";
 
 export type DashboardModel = {
   id: string;
@@ -63,7 +63,7 @@ export type TrendingResult =
       moreUrl: string;
       models: TrendingModel[];
     }
-  | { status: "needsSetup"; setup: "thingiverseToken" | "myminifactoryKey" | "cults3dKey"; moreUrl: string };
+  | { status: "needsSetup"; setup: `${ProviderId}${string}`; moreUrl: string };
 
 export type DashboardSummary = {
   collection_count: number;

@@ -2,7 +2,7 @@
 // read through the server and kept a while, as every user of the instance sees the same lists.
 
 import { TtlCache } from "../utils/ttlCache";
-import { MANIFESTS, TRENDING_PROVIDER_IDS, type TrendingProviderId } from "../providers/_generated";
+import { MANIFESTS, type ProviderId, TRENDING_PROVIDER_IDS, type TrendingProviderId } from "../providers/_generated";
 import { PROVIDERS } from "../providers/registry";
 import type { TrendingModel } from "./trendingModel";
 
@@ -13,8 +13,9 @@ export type TrendingProvider = TrendingProviderId;
 /** What the list is: some providers have no trending list, so their featured or recommended one stands in. */
 export type TrendingKind = "trending" | "popular" | "featured" | "recommended";
 
-/** A provider that can't be read until someone sets it up: an admin's instance token or key, or the user's own. */
-export type TrendingSetup = "thingiverseToken" | "myminifactoryKey" | "cults3dKey";
+/** A provider that can't be read until someone sets it up: an admin's instance token or key, or the user's own. Its
+ *  provider's own code, worded under dashboard.trending.setup in the app. */
+export type TrendingSetup = `${ProviderId}${string}`;
 
 export type TrendingResult =
   | { status: "ok"; kind: TrendingKind; moreUrl: string; models: TrendingModel[] }
