@@ -34,23 +34,10 @@ import { IMPORT_PROVIDER_INFO } from "../../constants/importProviders";
 import { COMING_SOON_PROVIDERS, ProviderLogo } from "./ConfigurationDialog/providerLogos";
 import {
   detectImportProvider,
+  hasPrintProfiles,
   IMPORT_LINK_EXAMPLES,
   isMakerworldCollectionUrl,
-  isMakerworldModelUrl,
-  isMyminifactoryCollectionUrl,
-  isPrintablesCollectionUrl,
-  isSnapmakerListUrl,
-  isSnapmakerModelUrl,
-  isMakeronlineListUrl,
-  isMakeronlineModelUrl,
-  isCrealitycloudListUrl,
-  isCrealitycloudModelUrl,
-  isNexprintCollectionUrl,
-  isNexprintModelUrl,
-  isThangsListUrl,
-  isCults3dListUrl,
-  isThingiverseCollectionUrl,
-  isThingiverseLikesUrl,
+  listLinkOf,
   type ImportProviderKey,
 } from "../../utils/importLinkDetection";
 import type { MakerworldProfileScope } from "../../api/imports";
@@ -116,31 +103,9 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
     }
     return found;
   }, [links]);
-  const isBlockedCollection = isBatch
-    ? links.some(
-        (link) =>
-          isMakerworldCollectionUrl(link) ||
-          isThingiverseLikesUrl(link) ||
-          isThingiverseCollectionUrl(link) ||
-          isPrintablesCollectionUrl(link) ||
-          isMyminifactoryCollectionUrl(link) ||
-          isSnapmakerListUrl(link) ||
-          isMakeronlineListUrl(link) ||
-          isCrealitycloudListUrl(link) ||
-          isNexprintCollectionUrl(link) ||
-          isThangsListUrl(link) ||
-          isCults3dListUrl(link),
-      )
-    : isMakerworldCollectionUrl(linkValue);
+  const isBlockedCollection = isBatch ? links.some((link) => !!listLinkOf(link)) : isMakerworldCollectionUrl(linkValue);
   // Models with print profiles to pick between.
-  const hasProfiles = links.some(
-    (link) =>
-      isMakerworldModelUrl(link) ||
-      isSnapmakerModelUrl(link) ||
-      isMakeronlineModelUrl(link) ||
-      isCrealitycloudModelUrl(link) ||
-      isNexprintModelUrl(link),
-  );
+  const hasProfiles = links.some(hasPrintProfiles);
 
   const closeMenu = () => setAnchorEl(null);
 

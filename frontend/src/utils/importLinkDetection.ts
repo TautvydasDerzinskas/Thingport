@@ -2,36 +2,7 @@
  *  providers' own (providers/<id>/urls.ts), the same the backend and Grab use; this only adds what the import box
  *  needs, such as taking a link pasted without its scheme. */
 
-import { detectProvider, type ProviderId } from "../providers/_generated";
-import {
-  parseCrealitycloudCollectionUrl,
-  parseCrealitycloudLikesUrl,
-  parseCrealitycloudModelUrl,
-} from "../providers/_generated/crealitycloud/urls";
-import {
-  parseCults3dLikesUrl,
-  parseCults3dModelUrl,
-  parseCults3dPrintlistUrl,
-} from "../providers/_generated/cults3d/urls";
-import {
-  isMakeronlineLikesUrl,
-  parseMakeronlineCollectionUrl,
-  parseMakeronlineModelUrl,
-} from "../providers/_generated/makeronline/urls";
-import { parseMakerworldCollectionUrl, parseMakerworldModelUrl } from "../providers/_generated/makerworld/urls";
-import {
-  parseMyminifactoryCollectionUrl,
-  parseMyminifactoryObjectUrl,
-} from "../providers/_generated/myminifactory/urls";
-import { parseNexprintCollectionUrl, parseNexprintModelUrl } from "../providers/_generated/nexprint/urls";
-import { parsePrintablesCollectionUrl, parsePrintablesModelUrl } from "../providers/_generated/printables/urls";
-import { parseSnapmakerListUrl, parseSnapmakerModelUrl } from "../providers/_generated/snapmaker/urls";
-import { isThangsLikesUrl, parseThangsCollectionUrl, parseThangsModelUrl } from "../providers/_generated/thangs/urls";
-import {
-  parseThingiverseCollectionUrl,
-  parseThingiverseLikesUrl,
-  parseThingiverseThingUrl,
-} from "../providers/_generated/thingiverse/urls";
+import { detectProvider, MANIFESTS, parseListUrl, parseModelUrl, type ProviderId } from "../providers/_generated";
 
 export { hostIs } from "../providers/_generated";
 
@@ -44,49 +15,20 @@ export function detectImportProvider(url: string): ImportProviderKey | null {
   return detectProvider(withScheme(url));
 }
 
-/** Collection pages go to the collection picker instead of the single-link flow. */
-export const isMakerworldCollectionUrl = (url: string) => !!parseMakerworldCollectionUrl(withScheme(url));
-export const isMakerworldModelUrl = (url: string) => !!parseMakerworldModelUrl(withScheme(url));
+/** The model page a link is, on whichever provider. */
+export const modelLinkOf = (url: string) => parseModelUrl(withScheme(url));
 
-/** Thingiverse and Printables have their own backend import paths, so skip the generic inspect/zip
- * flow for them. */
-export const isThingiverseThingUrl = (url: string) => !!parseThingiverseThingUrl(withScheme(url));
-export const isThingiverseLikesUrl = (url: string) => !!parseThingiverseLikesUrl(withScheme(url));
-export const isThingiverseCollectionUrl = (url: string) => !!parseThingiverseCollectionUrl(withScheme(url));
+/** The collection, likes or bookmarks a link is, which go to the list picker instead of the single-link flow. */
+export const listLinkOf = (url: string) => parseListUrl(withScheme(url));
 
-/** A numbered collection only: a user's liked models only Grab can read, as their owner. */
-export const isPrintablesCollectionUrl = (url: string) => !!parsePrintablesCollectionUrl(withScheme(url));
-export const isPrintablesModelUrl = (url: string) => !!parsePrintablesModelUrl(withScheme(url));
+/** MakerWorld collections import through Thingport Grab only, not the import box. */
+export const isMakerworldCollectionUrl = (url: string) => listLinkOf(url)?.provider === "makerworld";
 
-export const isMyminifactoryObjectUrl = (url: string) => !!parseMyminifactoryObjectUrl(withScheme(url));
-export const isMyminifactoryCollectionUrl = (url: string) => !!parseMyminifactoryCollectionUrl(withScheme(url));
-
-export const isSnapmakerModelUrl = (url: string) => !!parseSnapmakerModelUrl(withScheme(url));
-/** The user's own likes or bookmarks: one page, `/creator/<id>?tab=interactions`, with `list` saying which. */
-export const isSnapmakerListUrl = (url: string) => !!parseSnapmakerListUrl(withScheme(url))?.list;
-
-export const isMakeronlineModelUrl = (url: string) => !!parseMakeronlineModelUrl(withScheme(url));
-/** A MakerOnline collection, or the signed-in user's likes. */
-export const isMakeronlineListUrl = (url: string) =>
-  !!parseMakeronlineCollectionUrl(withScheme(url)) || isMakeronlineLikesUrl(withScheme(url));
-
-export const isCrealitycloudModelUrl = (url: string) => !!parseCrealitycloudModelUrl(withScheme(url));
-/** A Creality Cloud collection, or the user's likes. */
-export const isCrealitycloudListUrl = (url: string) =>
-  !!parseCrealitycloudCollectionUrl(withScheme(url)) || !!parseCrealitycloudLikesUrl(withScheme(url));
-
-export const isNexprintModelUrl = (url: string) => !!parseNexprintModelUrl(withScheme(url));
-export const isNexprintCollectionUrl = (url: string) => !!parseNexprintCollectionUrl(withScheme(url));
-
-export const isThangsModelUrl = (url: string) => !!parseThangsModelUrl(withScheme(url));
-/** A Thangs collection, or the user's own likes. */
-export const isThangsListUrl = (url: string) =>
-  !!parseThangsCollectionUrl(withScheme(url)) || isThangsLikesUrl(withScheme(url));
-
-export const isCults3dModelUrl = (url: string) => !!parseCults3dModelUrl(withScheme(url));
-/** A user's likes or a printlist. */
-export const isCults3dListUrl = (url: string) =>
-  !!parseCults3dLikesUrl(withScheme(url)) || !!parseCults3dPrintlistUrl(withScheme(url));
+/** Whether a link is a model with print profiles to pick between. */
+export function hasPrintProfiles(url: string): boolean {
+  const model = modelLinkOf(url);
+  return !!model && MANIFESTS[model.provider].capabilities.profiles;
+}
 
 export const IMPORT_LINK_EXAMPLES: Record<ImportProviderKey, { model: string; collection: string }> = {
   makerworld: {

@@ -20,29 +20,7 @@ import { useImportModePrompt, type ImportMode } from "./ImportModeModal";
 import { useImportJob } from "../Layout/ImportJobContext";
 import { UPLOAD_EXTS } from "../../constants/fileTypes";
 import { useToast } from "../ToastProvider";
-import {
-  isMakerworldModelUrl,
-  isMakerworldCollectionUrl,
-  isMyminifactoryCollectionUrl,
-  isMyminifactoryObjectUrl,
-  isPrintablesCollectionUrl,
-  isPrintablesModelUrl,
-  isSnapmakerListUrl,
-  isSnapmakerModelUrl,
-  isMakeronlineListUrl,
-  isMakeronlineModelUrl,
-  isCrealitycloudListUrl,
-  isCrealitycloudModelUrl,
-  isNexprintCollectionUrl,
-  isNexprintModelUrl,
-  isThangsListUrl,
-  isThangsModelUrl,
-  isCults3dListUrl,
-  isCults3dModelUrl,
-  isThingiverseCollectionUrl,
-  isThingiverseLikesUrl,
-  isThingiverseThingUrl,
-} from "../../utils/importLinkDetection";
+import { hasPrintProfiles, isMakerworldCollectionUrl, listLinkOf, modelLinkOf } from "../../utils/importLinkDetection";
 
 // A folder pick always prefixes relativePath with the folder name.
 function isFlatFileSet(entries: { file: File; relativePath: string }[]) {
@@ -69,23 +47,7 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
   const zipPrompt = useZipImportPrompt();
   const collectionPrompt = useCollectionImportPrompt();
   const importModePrompt = useImportModePrompt();
-  const {
-    startZipImport,
-    startThingiverseLikesImport,
-    startThingiverseCollectionImport,
-    startPrintablesCollectionImport,
-    startMyminifactoryCollectionImport,
-    startMakerworldProfilesImport,
-    startSnapmakerProfilesImport,
-    startSnapmakerListImport,
-    startCrealitycloudProfilesImport,
-    startCrealitycloudListImport,
-    startNexprintProfilesImport,
-    startNexprintCollectionImport,
-    startThangsListImport,
-    startCults3dListImport,
-    startLinksImport,
-  } = useImportJob();
+  const { startZipImport, startListImport, startProfilesImport, startLinksImport } = useImportJob();
   const isBusy = uploading || importing || zipPrompt.isOpen || collectionPrompt.isOpen || importModePrompt.isOpen;
 
   // A plain upload has no metadata yet, so open it straight in edit mode.
@@ -271,8 +233,8 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
     showToast({ message: t(key, { name }) });
   };
 
-  /** `profileScope`: which MakerWorld, Snapmaker, MakerOnline, Creality Cloud or NexPrint print profiles to import;
-   *  more than the link's runs as a job, and MakerOnline's wait for Thingport Grab. */
+  /** `profileScope`: which print profiles to import, for a provider with them; more than the link's runs as a job,
+   *  and MakerOnline's wait for Thingport Grab. */
   const submitImport = async (
     rawUrl: string,
     captcha?: CaptchaAnswer | null,
@@ -296,40 +258,29 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
         return;
       }
 
-      if (profileScope !== "url" && isMakerworldModelUrl(url)) {
-        await startMakerworldProfilesImport({ ...payload, scope: profileScope });
+      const model = modelLinkOf(url);
+      const list = model ? null : listLinkOf(url);
+
+      if (profileScope !== "url" && model && model.provider !== "makeronline" && hasPrintProfiles(url)) {
+        await startProfilesImport(model.provider, { ...payload, scope: profileScope });
         return;
       }
 
-      if (profileScope !== "url" && isSnapmakerModelUrl(url)) {
-        await startSnapmakerProfilesImport({ ...payload, scope: profileScope });
-        return;
-      }
-
-      if (profileScope !== "url" && isCrealitycloudModelUrl(url)) {
-        await startCrealitycloudProfilesImport({ ...payload, scope: profileScope });
-        return;
-      }
-
-      if (profileScope !== "url" && isNexprintModelUrl(url)) {
-        await startNexprintProfilesImport({ ...payload, scope: profileScope });
-        return;
-      }
-
-      if (isMakeronlineModelUrl(url)) {
+      if (model?.provider === "makeronline") {
         // Its files come only through Thingport Grab, on makeronline.com.
         await importsApi.queueMakeronline({ ...payload, scope: profileScope });
         showToast({ message: t("uploadBar.makeronlineWaiting") });
         return;
       }
 
-      if (isMakeronlineListUrl(url)) {
+      if (list) {
+        const { provider } = list;
         setImporting(false);
         await collectionPrompt.prompt({
           label: url,
           loadEntries: async () => {
             try {
-              return await importsApi.listMakeronlineListEntries(payload);
+              return await importsApi.listEntries(provider, payload);
             } catch (err) {
               if (err instanceof UnauthorizedError) onUnauthorized?.();
               throw err;
@@ -337,8 +288,8 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
           },
           onImportSelected: async (modelIds: string[]) => {
             try {
-              const { queued } = await importsApi.queueMakeronlineList({ ...payload, model_ids: modelIds });
-              showToast({ message: t("uploadBar.makeronlineListWaiting", { count: queued }) });
+              const queued = await startListImport(provider, { ...payload, model_ids: modelIds });
+              if (queued) showToast({ message: t("uploadBar.makeronlineListWaiting", { count: queued.queued }) });
             } catch (err) {
               if (err instanceof UnauthorizedError) {
                 onUnauthorized?.();
@@ -351,260 +302,8 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
         return;
       }
 
-      if (isThingiverseLikesUrl(url)) {
-        setImporting(false);
-        await collectionPrompt.prompt({
-          label: url,
-          loadEntries: async () => {
-            try {
-              return await importsApi.listThingiverseLikesEntries(payload);
-            } catch (err) {
-              if (err instanceof UnauthorizedError) onUnauthorized?.();
-              throw err;
-            }
-          },
-          onImportSelected: async (thingIds: string[]) => {
-            try {
-              await startThingiverseLikesImport({ ...payload, thing_ids: thingIds });
-            } catch (err) {
-              if (err instanceof UnauthorizedError) {
-                onUnauthorized?.();
-                return;
-              }
-              throw err;
-            }
-          },
-        });
-        return;
-      }
-
-      if (isThingiverseCollectionUrl(url)) {
-        setImporting(false);
-        await collectionPrompt.prompt({
-          label: url,
-          loadEntries: async () => {
-            try {
-              return await importsApi.listThingiverseCollectionEntries(payload);
-            } catch (err) {
-              if (err instanceof UnauthorizedError) onUnauthorized?.();
-              throw err;
-            }
-          },
-          onImportSelected: async (thingIds: string[]) => {
-            try {
-              await startThingiverseCollectionImport({ ...payload, thing_ids: thingIds });
-            } catch (err) {
-              if (err instanceof UnauthorizedError) {
-                onUnauthorized?.();
-                return;
-              }
-              throw err;
-            }
-          },
-        });
-        return;
-      }
-
-      if (isPrintablesCollectionUrl(url)) {
-        setImporting(false);
-        await collectionPrompt.prompt({
-          label: url,
-          loadEntries: async () => {
-            try {
-              return await importsApi.listPrintablesCollectionEntries(payload);
-            } catch (err) {
-              if (err instanceof UnauthorizedError) onUnauthorized?.();
-              throw err;
-            }
-          },
-          onImportSelected: async (modelIds: string[]) => {
-            try {
-              await startPrintablesCollectionImport({ ...payload, model_ids: modelIds });
-            } catch (err) {
-              if (err instanceof UnauthorizedError) {
-                onUnauthorized?.();
-                return;
-              }
-              throw err;
-            }
-          },
-        });
-        return;
-      }
-
-      if (isMyminifactoryCollectionUrl(url)) {
-        setImporting(false);
-        await collectionPrompt.prompt({
-          label: url,
-          loadEntries: async () => {
-            try {
-              return await importsApi.listMyminifactoryCollectionEntries(payload);
-            } catch (err) {
-              if (err instanceof UnauthorizedError) onUnauthorized?.();
-              throw err;
-            }
-          },
-          onImportSelected: async (objectIds: string[]) => {
-            try {
-              await startMyminifactoryCollectionImport({ ...payload, object_ids: objectIds });
-            } catch (err) {
-              if (err instanceof UnauthorizedError) {
-                onUnauthorized?.();
-                return;
-              }
-              throw err;
-            }
-          },
-        });
-        return;
-      }
-
-      if (isThangsListUrl(url)) {
-        setImporting(false);
-        await collectionPrompt.prompt({
-          label: url,
-          loadEntries: async () => {
-            try {
-              return await importsApi.listThangsListEntries(payload);
-            } catch (err) {
-              if (err instanceof UnauthorizedError) onUnauthorized?.();
-              throw err;
-            }
-          },
-          onImportSelected: async (modelIds: string[]) => {
-            try {
-              await startThangsListImport({ ...payload, model_ids: modelIds });
-            } catch (err) {
-              if (err instanceof UnauthorizedError) {
-                onUnauthorized?.();
-                return;
-              }
-              throw err;
-            }
-          },
-        });
-        return;
-      }
-
-      if (isCults3dListUrl(url)) {
-        setImporting(false);
-        await collectionPrompt.prompt({
-          label: url,
-          loadEntries: async () => {
-            try {
-              return await importsApi.listCults3dListEntries(payload);
-            } catch (err) {
-              if (err instanceof UnauthorizedError) onUnauthorized?.();
-              throw err;
-            }
-          },
-          onImportSelected: async (modelIds: string[]) => {
-            try {
-              await startCults3dListImport({ ...payload, model_ids: modelIds });
-            } catch (err) {
-              if (err instanceof UnauthorizedError) {
-                onUnauthorized?.();
-                return;
-              }
-              throw err;
-            }
-          },
-        });
-        return;
-      }
-
-      if (isCrealitycloudListUrl(url)) {
-        setImporting(false);
-        await collectionPrompt.prompt({
-          label: url,
-          loadEntries: async () => {
-            try {
-              return await importsApi.listCrealitycloudListEntries(payload);
-            } catch (err) {
-              if (err instanceof UnauthorizedError) onUnauthorized?.();
-              throw err;
-            }
-          },
-          onImportSelected: async (modelIds: string[]) => {
-            try {
-              await startCrealitycloudListImport({ ...payload, model_ids: modelIds });
-            } catch (err) {
-              if (err instanceof UnauthorizedError) {
-                onUnauthorized?.();
-                return;
-              }
-              throw err;
-            }
-          },
-        });
-        return;
-      }
-
-      if (isNexprintCollectionUrl(url)) {
-        setImporting(false);
-        await collectionPrompt.prompt({
-          label: url,
-          loadEntries: async () => {
-            try {
-              return await importsApi.listNexprintCollectionEntries(payload);
-            } catch (err) {
-              if (err instanceof UnauthorizedError) onUnauthorized?.();
-              throw err;
-            }
-          },
-          onImportSelected: async (modelIds: string[]) => {
-            try {
-              await startNexprintCollectionImport({ ...payload, model_ids: modelIds });
-            } catch (err) {
-              if (err instanceof UnauthorizedError) {
-                onUnauthorized?.();
-                return;
-              }
-              throw err;
-            }
-          },
-        });
-        return;
-      }
-
-      if (isSnapmakerListUrl(url)) {
-        setImporting(false);
-        await collectionPrompt.prompt({
-          label: url,
-          loadEntries: async () => {
-            try {
-              return await importsApi.listSnapmakerListEntries(payload);
-            } catch (err) {
-              if (err instanceof UnauthorizedError) onUnauthorized?.();
-              throw err;
-            }
-          },
-          onImportSelected: async (modelIds: string[]) => {
-            try {
-              await startSnapmakerListImport({ ...payload, model_ids: modelIds });
-            } catch (err) {
-              if (err instanceof UnauthorizedError) {
-                onUnauthorized?.();
-                return;
-              }
-              throw err;
-            }
-          },
-        });
-        return;
-      }
-
-      if (
-        isThingiverseThingUrl(url) ||
-        isPrintablesModelUrl(url) ||
-        isMyminifactoryObjectUrl(url) ||
-        isSnapmakerModelUrl(url) ||
-        isCrealitycloudModelUrl(url) ||
-        isNexprintModelUrl(url) ||
-        isThangsModelUrl(url) ||
-        isCults3dModelUrl(url)
-      ) {
-        // The backend splits these into plates itself.
+      // MakerWorld's model pages import as any other link does; the backend splits the rest into plates itself.
+      if (model && model.provider !== "makerworld") {
         const imported = await importsApi.fromLink(payload);
         showImportedToast(imported);
         onUploaded();
