@@ -28,12 +28,12 @@ import {
   MakerworldAuthError,
   MakerworldCaptchaError,
   parseMakerworldModelUrl,
-} from "../services/makerworldCloudApi";
+} from "../providers/makerworld/api";
 import {
   fetchMakerworldCollectionEntries,
   fetchMakerworldCollectionTitle,
   parseMakerworldCollectionUrl,
-} from "../services/makerworldCollections";
+} from "../providers/makerworld/collections";
 import { IMPORT_MAKERWORLD_CALL_DELAY_MS } from "../config";
 import {
   fetchThingiverseCollectionThings,

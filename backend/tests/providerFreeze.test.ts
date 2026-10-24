@@ -135,7 +135,7 @@ describe("provider-module freeze", () => {
   });
 
   it("pins client-facing provider error codes", () => {
-    const files = ["importService.ts", "makerworldCaptcha.ts", "flaresolverr.ts", "providerSettingsService.ts"];
+    const files = ["importService.ts", "flaresolverr.ts", "providerSettingsService.ts"];
     const codes = [
       ...files.flatMap((file) =>
         [...source(file).matchAll(/export const [A-Z0-9_]+_CODE = "([^"]+)"/g)].map((part) => part[1]),

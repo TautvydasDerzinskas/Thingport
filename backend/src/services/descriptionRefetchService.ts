@@ -6,7 +6,11 @@ import { createLog } from "./auditLog";
 import { localizeDescriptionImages } from "./descriptionImageService";
 import { fetchSourceMeta } from "./fillGapsService";
 import { buildImportSourceUrl } from "./importService";
-import { makerworldCaptchaCooloffActive, MakerworldAuthError, MakerworldCaptchaError } from "./makerworldCloudApi";
+import {
+  makerworldCaptchaCooloffActive,
+  MakerworldAuthError,
+  MakerworldCaptchaError,
+} from "../providers/makerworld/api";
 import { getMyminifactoryApiKey, getThingiverseAccessToken } from "./settingsService";
 import { MyminifactoryAuthError, MyminifactoryRateLimitError } from "../providers/myminifactory/api";
 import { ThingiverseAuthError, ThingiverseRateLimitError } from "../providers/thingiverse/api";

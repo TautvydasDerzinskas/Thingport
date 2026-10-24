@@ -62,7 +62,7 @@ import {
   resolveMakerworldViaCloudApi,
   completeMakerworldAuthor,
   fetchMakerworldDesign,
-} from "./makerworldCloudApi";
+} from "../providers/makerworld/api";
 import { openSourceGaps, type SourceGap } from "./sourceGaps";
 import { clearGrabImports } from "./grabImportService";
 import { isCrealitycloudModelId, resolveCrealitycloudModel } from "../providers/crealitycloud/api";
@@ -1333,8 +1333,19 @@ async function importNewOrExisting(userId: string, url: string, body: ImportRequ
   const custom = source && isProviderId(source.provider) ? PROVIDERS[source.provider].customImport : undefined;
   if (existing && custom) return custom.addToExisting(existing, body, IMPORT_KIT);
   if (custom) return custom.importModel(userId, source!, body, IMPORT_KIT);
+  // MakerWorld still imports here: its pages are what the link import below reads.
   if (existing) return addMakerworldProfileToPrint(existing, url, body);
+  return importLinkedFile(userId, url, source, body);
+}
 
+/** A link to a page or a file, imported as what it downloads to: a MakerWorld model page (its 3MF, or a zip of its
+ *  model files), or any other site's file. */
+async function importLinkedFile(
+  userId: string,
+  url: string,
+  source: { provider: string; externalId: string } | null,
+  body: ImportRequestBody,
+): Promise<ImportResult> {
   const { tempPath, filename, mime, meta } = await downloadImportToTemp(url, body);
   let plates: NewPlateInput[] = [];
   try {

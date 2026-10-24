@@ -6,7 +6,7 @@ import { fetchCrealitycloudRecommended } from "../providers/crealitycloud/api";
 import { fetchCults3dPopular } from "../providers/cults3d/api";
 import { getUserCults3dCredentials } from "../providers/cults3d/session";
 import { fetchMakeronlineTrending } from "../providers/makeronline/api";
-import { fetchMakerworldTrending } from "./makerworldCloudApi";
+import { fetchMakerworldTrending } from "../providers/makerworld/api";
 import { fetchMyminifactoryPopular } from "../providers/myminifactory/api";
 import { fetchNexprintRecommended } from "../providers/nexprint/api";
 import { fetchPrintablesTrending } from "../providers/printables/api";

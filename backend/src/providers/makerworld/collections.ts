@@ -1,20 +1,20 @@
-import { IMPORT_BROWSER_USER_AGENT, IMPORT_TIMEOUT_SECONDS } from "../config";
+import { IMPORT_BROWSER_USER_AGENT, IMPORT_TIMEOUT_SECONDS } from "../../config";
 import {
   extractJsonFromBrowserBody,
   fetchViaFlaresolverr,
   isFlaresolverrEnabled,
   looksLikeCloudflareBlock,
-} from "./flaresolverr";
-import { maybeSleep } from "../utils/concurrency";
-import type { ProviderCollectionCard } from "./providerCollectionCard";
+} from "../../services/flaresolverr";
+import { maybeSleep } from "../../utils/concurrency";
+import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
 import {
   isCaptchaChallenge,
   makerworldCaptchaCooloffActive,
   MakerworldAuthError,
   MakerworldCaptchaError,
   noteCaptchaChallenge,
-} from "./makerworldCaptcha";
-import { parseMakerworldCollectionUrl } from "../providers/_generated/makerworld/urls";
+} from "./captcha";
+import { parseMakerworldCollectionUrl } from "../_generated/makerworld/urls";
 export { parseMakerworldCollectionUrl };
 
 // Not behind Cloudflare. Private collections return 403 without the bearer token, so it's sent
@@ -56,7 +56,7 @@ class MakerworldCollectionFetchError extends Error {
 }
 
 /** Retries once through FlareSolverr if Cloudflare ever appears. Shares the CAPTCHA cooldown and
- * `paceMs` convention with makerworldCloudApi.ts, since a large collection's pagination is its
+ * `paceMs` convention with api.ts, since a large collection's pagination is its
  * own burst. A `strict` fetch answers NOT_FOUND only for a 404 or 410 and throws on any other
  * failure, so a sync never takes an outage for a deleted collection. */
 async function fetchCollectionJson(url: string, bearerToken: string | null, paceMs?: number): Promise<unknown | null>;

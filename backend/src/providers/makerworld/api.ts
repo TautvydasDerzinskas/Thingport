@@ -1,10 +1,10 @@
-import { IMPORT_BROWSER_USER_AGENT, IMPORT_TIMEOUT_SECONDS } from "../config";
+import { IMPORT_BROWSER_USER_AGENT, IMPORT_TIMEOUT_SECONDS } from "../../config";
 import {
   extractJsonFromBrowserBody,
   fetchViaFlaresolverr,
   isFlaresolverrEnabled,
   looksLikeCloudflareBlock,
-} from "./flaresolverr";
+} from "../../services/flaresolverr";
 import {
   makerworldAuthorFromDesignCreator,
   makerworldInstanceCover,
@@ -12,9 +12,9 @@ import {
   makerworldMetaFromDesign,
   type ImportedAuthorInfo,
   type ImportedPageMetadata,
-} from "./importResolvers";
-import { maybeSleep, sleep } from "../utils/concurrency";
-import { HttpError } from "../utils/fileUtils";
+} from "../../services/importResolvers";
+import { maybeSleep, sleep } from "../../utils/concurrency";
+import { HttpError } from "../../utils/fileUtils";
 import {
   isCaptchaChallenge,
   isDownloadLimitReply,
@@ -23,9 +23,9 @@ import {
   MakerworldCaptchaError,
   MakerworldDownloadLimitError,
   noteCaptchaChallenge,
-} from "./makerworldCaptcha";
-import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "./trendingModel";
-import { parseMakerworldModelUrl } from "../providers/_generated/makerworld/urls";
+} from "./captcha";
+import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
+import { parseMakerworldModelUrl } from "../_generated/makerworld/urls";
 export { parseMakerworldModelUrl };
 
 export {
@@ -37,7 +37,7 @@ export {
   MAKERWORLD_DOWNLOAD_LIMIT_CODE,
   MAKERWORLD_DOWNLOAD_LIMIT_MESSAGE,
   MakerworldDownloadLimitError,
-} from "./makerworldCaptcha";
+} from "./captcha";
 
 // makerworld.com puts Cloudflare and a Geetest CAPTCHA in front of download resolution;
 // api.bambulab.com is the same Bambu Cloud backend (same bearer token) without either.

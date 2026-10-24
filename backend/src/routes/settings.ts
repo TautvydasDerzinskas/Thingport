@@ -66,8 +66,8 @@ import {
   setStorageTemplate,
   validateStorageTemplate,
 } from "../services/printService";
-import { getMakerworldConnection, setUserMakerworldCookie } from "../services/makerworldCookieService";
-import { type MakerworldCookieCheck, verifyMakerworldCookie } from "../services/makerworldCloudApi";
+import { getMakerworldConnection, setUserMakerworldCookie } from "../providers/makerworld/session";
+import { type MakerworldCookieCheck, verifyMakerworldCookie } from "../providers/makerworld/api";
 import { verifyThingiverseAccessToken } from "../providers/thingiverse/api";
 import { checkMyminifactoryApiKey, checkMyminifactorySession } from "../providers/myminifactory/api";
 import {

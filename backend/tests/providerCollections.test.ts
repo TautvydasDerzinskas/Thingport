@@ -9,7 +9,7 @@ vi.hoisted(() => {
 
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
-import { setUserMakerworldCookie } from "../src/services/makerworldCookieService";
+import { setUserMakerworldCookie } from "../src/providers/makerworld/session";
 import {
   PRINTABLES_FORGOTTEN,
   pushedPrintablesModels,

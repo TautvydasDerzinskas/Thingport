@@ -4,7 +4,7 @@ import { HttpError } from "../utils/fileUtils";
 import { normalizeImportUrl } from "../utils/urlUtils";
 import { createLog } from "./auditLog";
 import { assertCanImportUrl, importPrintFromUrl, type ImportRequestBody } from "./importService";
-import { getUserMakerworldCookie } from "./makerworldCookieService";
+import { getUserMakerworldCookie } from "../providers/makerworld/session";
 import { notifySingleImport } from "./modelNotifications";
 
 // One link imported into one model, with the activity log and notification that go with it. Shared

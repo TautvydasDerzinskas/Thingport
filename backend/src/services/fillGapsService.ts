@@ -9,7 +9,7 @@ import {
   fetchMakerworldDesignForImport,
   resolveCategoryIdByCategory,
 } from "./importService";
-import { parseMakerworldModelUrl } from "./makerworldCloudApi";
+import { parseMakerworldModelUrl } from "../providers/makerworld/api";
 import {
   emptyImportedPageMetadata,
   makerworldMetaFromDesign,
@@ -31,7 +31,7 @@ import { resolveNexprintModel } from "../providers/nexprint/api";
 import { resolveThangsModel, ThangsBlockedError } from "../providers/thangs/api";
 import { Cults3dAuthError, Cults3dRateLimitError, resolveCults3dModel } from "../providers/cults3d/api";
 import { CULTS3D_CONNECT, getUserCults3dCredentials, markCults3dApiRejected } from "../providers/cults3d/session";
-import { getUserMakerworldCookie } from "./makerworldCookieService";
+import { getUserMakerworldCookie } from "../providers/makerworld/session";
 import { upsertAuthorFromImport } from "./authorService";
 import { emptyGaps, openSourceGaps, type SourceGap } from "./sourceGaps";
 import { localizeDescriptionImages } from "./descriptionImageService";

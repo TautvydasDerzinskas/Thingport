@@ -17,8 +17,8 @@ import type { CustomImport, SourcedImport } from "./types";
 export type ProviderBackend = {
   /** Why a batch import stopped when the provider turned the user's sign-in down, read after "failed because". */
   authStopText: string;
-  /** How its models import on the shared pipeline. MakerWorld, with neither, still has its own path in
-   *  importService.ts (docs/rfc/provider-modules.md, Phase 3.5). */
+  /** How its models import on the shared pipeline. MakerWorld, with neither, imports through importService.ts's
+   *  link import, its model pages being what that reads, with its captcha, cookie and cloud API in its folder. */
   sourcedImport?: SourcedImport<any, any>;
   /** How its models import, for a provider that doesn't go the shared way. */
   customImport?: CustomImport;

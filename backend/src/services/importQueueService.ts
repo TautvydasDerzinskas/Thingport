@@ -15,8 +15,8 @@ import {
   type LinksImportJobBody,
   type QueuedLinkOptions,
 } from "./importJobRunner";
-import { getUserMakerworldCookie } from "./makerworldCookieService";
-import { liftCaptchaCooloffByHand } from "./makerworldCaptcha";
+import { getUserMakerworldCookie } from "../providers/makerworld/session";
+import { liftCaptchaCooloffByHand } from "../providers/makerworld/captcha";
 
 /** The shared body a LINKS job reruns with: its stored payload plus the owner's saved MakerWorld
  *  cookie. The cookie is never stored on the job. */

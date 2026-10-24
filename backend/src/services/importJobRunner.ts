@@ -19,8 +19,8 @@ import {
   MakerworldAuthError,
   MAKERWORLD_DOWNLOAD_LIMIT_CODE,
   MAKERWORLD_DOWNLOAD_LIMIT_MESSAGE,
-} from "./makerworldCloudApi";
-import { fetchMakerworldCollectionTitle, parseMakerworldCollectionUrl } from "./makerworldCollections";
+} from "../providers/makerworld/api";
+import { fetchMakerworldCollectionTitle, parseMakerworldCollectionUrl } from "../providers/makerworld/collections";
 import {
   downloadImportToTemp,
   fetchMakerworldDesignForImport,
@@ -51,7 +51,7 @@ import { getMyminifactoryApiKey, getThingiverseAccessToken } from "./settingsSer
 import { fetchMyminifactoryCollectionObjects } from "../providers/myminifactory/api";
 import { fetchPrintablesCollectionTitle } from "../providers/printables/api";
 import { createLog } from "./auditLog";
-import { MAKERWORLD_REJECTED_ERROR, markMakerworldCookieRejected } from "./makerworldCookieService";
+import { MAKERWORLD_REJECTED_ERROR, markMakerworldCookieRejected } from "../providers/makerworld/session";
 import { CLOUDFLARE_BLOCKED_CODE } from "./flaresolverr";
 import { PROVIDER_DISABLED_CODE } from "./providerSettingsService";
 import { HttpError } from "../utils/fileUtils";

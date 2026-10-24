@@ -16,9 +16,9 @@ vi.mock("node:dns/promises", () => ({
 const { createApp } = await import("../src/app");
 const { prisma } = await import("../src/db");
 const { hostIs } = await import("../src/utils/urlUtils");
-const { parseMakerworldModelUrl } = await import("../src/services/makerworldCloudApi");
-const { parseMakerworldCollectionUrl } = await import("../src/services/makerworldCollections");
-const { setUserMakerworldCookie } = await import("../src/services/makerworldCookieService");
+const { parseMakerworldModelUrl } = await import("../src/providers/makerworld/api");
+const { parseMakerworldCollectionUrl } = await import("../src/providers/makerworld/collections");
+const { setUserMakerworldCookie } = await import("../src/providers/makerworld/session");
 
 const LOOK_ALIKES = ["fake-makerworld.com", "evilmakerworld.com", "makerworld.com.evil.example"];
 

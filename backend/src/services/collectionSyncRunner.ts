@@ -26,14 +26,14 @@ import {
 import { getActiveJob } from "./importJobService";
 import { runLinksImportJob, SYNC_JOB_INTERRUPTED } from "./importJobRunner";
 import { startLinksJob } from "./importQueueService";
-import { extractMakerworldBearerToken, MakerworldAuthError } from "./makerworldCloudApi";
-import { checkMakerworldCollection, fetchMakerworldCollectionEntries } from "./makerworldCollections";
+import { extractMakerworldBearerToken, MakerworldAuthError } from "../providers/makerworld/api";
+import { checkMakerworldCollection, fetchMakerworldCollectionEntries } from "../providers/makerworld/collections";
 import {
   getMakerworldConnection,
   getUserMakerworldCookie,
   MAKERWORLD_REJECTED_ERROR,
   markMakerworldCookieRejected,
-} from "./makerworldCookieService";
+} from "../providers/makerworld/session";
 import { checkPrintablesCollection, fetchPrintablesCollectionEntries } from "../providers/printables/api";
 import { fetchSnapmakerList, SnapmakerAuthError } from "../providers/snapmaker/api";
 import {

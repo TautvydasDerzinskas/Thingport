@@ -18,7 +18,7 @@ import {
   isDownloadLimitReply,
   MakerworldCaptchaError,
   MakerworldDownloadLimitError,
-} from "./makerworldCaptcha";
+} from "../providers/makerworld/captcha";
 import {
   extractJsonFromBrowserBody,
   fetchViaFlaresolverr,

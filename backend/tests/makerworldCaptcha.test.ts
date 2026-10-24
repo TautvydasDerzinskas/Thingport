@@ -5,7 +5,7 @@ import {
   makerworldCaptchaCooloffActive,
   noteCaptchaChallenge,
   resetCaptchaCooloffForTest,
-} from "../src/services/makerworldCaptcha";
+} from "../src/providers/makerworld/captcha";
 
 describe("isCaptchaChallenge", () => {
   it("spots the real challenge shapes", () => {

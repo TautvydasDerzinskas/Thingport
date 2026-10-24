@@ -7,14 +7,14 @@ import { LINKABLE_PRINTS, linkUnattributedPrints, upsertAuthorFromImport } from 
 import { createLog } from "./auditLog";
 import { fetchMakerworldPageAuthor } from "./importService";
 import type { ImportedAuthorInfo } from "./importResolvers";
-import { getUserMakerworldCookie } from "./makerworldCookieService";
+import { getUserMakerworldCookie } from "../providers/makerworld/session";
 import {
   extractMakerworldBearerToken,
   fetchMakerworldDesignAuthor,
   makerworldCaptchaCooloffActive,
   MakerworldAuthError,
   MakerworldCaptchaError,
-} from "./makerworldCloudApi";
+} from "../providers/makerworld/api";
 import { resolvePrintablesModel } from "../providers/printables/api";
 import { getMyminifactoryApiKey, getThingiverseAccessToken } from "./settingsService";
 import {

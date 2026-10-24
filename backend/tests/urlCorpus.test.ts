@@ -3,7 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { identifySourceModel } from "../src/services/importService";
 import { parseSyncSource } from "../src/services/collectionSyncService";
-import { parseMakerworldModelUrl } from "../src/services/makerworldCloudApi";
+import { parseMakerworldModelUrl } from "../src/providers/makerworld/api";
 import { parseSnapmakerModelUrl } from "../src/providers/snapmaker/api";
 import { parseMakeronlineModelUrl, isMakeronlineLikesUrl } from "../src/providers/makeronline/api";
 import { parseCrealitycloudModelUrl, parseCrealitycloudLikesUrl } from "../src/providers/crealitycloud/api";

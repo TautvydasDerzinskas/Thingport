@@ -1,4 +1,4 @@
-import { prisma } from "../db";
+import { prisma } from "../../db";
 
 /** Per-user, unlike the instance-wide Thingiverse token: MakerWorld imports run as the user's own
  * login. */
