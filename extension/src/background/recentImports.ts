@@ -108,7 +108,14 @@ async function readSynced(): Promise<SyncedRecentImport[]> {
   if (Array.isArray(old)) {
     const newest = items.reduce((max, e) => Math.max(max, e.importedAt ?? 0), 0);
     const start = items.length ? Math.max(Date.now(), newest + old.length) : old.length;
-    for (const [i, e] of old.entries()) e.importedAt = start - i;
+    const byKey = new Map(items.map((e) => [thumbKey(e), e]));
+    for (const [i, e] of old.entries()) {
+      e.importedAt = start - i;
+      // An older version doesn't note where a model came from, or its picture: what was known of it stays.
+      const known = byKey.get(thumbKey(e));
+      e.sourceUrl ??= known?.sourceUrl;
+      e.providerImage ??= known?.providerImage;
+    }
     await chrome.storage.sync.set(Object.fromEntries(old.map((e) => [itemKey(e), e])));
     await chrome.storage.sync.remove(RECENT_IMPORTS_STORAGE_KEY);
     const replaced = new Set(old.map(thumbKey));
