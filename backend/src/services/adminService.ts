@@ -29,6 +29,8 @@ export type UserWithPrintCount = {
   isOwner: boolean;
   printCount: number;
   collectionCount: number;
+  /** Shown in the admin's users list, from before Configuration → Providers showed every provider's connection. Its
+   *  column is the User row's until Phase 7 moves sign-ins into a table of their own. */
   makerworldConnected: boolean;
   hasPassword: boolean;
   /** The single sign-on providers they've connected, by name, and whether each is still on. */

@@ -1,3 +1,21 @@
+// MakerOnline's bundle: this folder, providers/makeronline/ at the repository's root (its manifest and links, which
+// all three packages share), the app's frontend/src/providers/makeronline/ and Grab's
+// extension/src/providers/makeronline/. Wired in by providers/registry.ts and providers/routes.ts here,
+// frontend/src/providers/collectionTiles.ts in the app, and the tables in extension/src/providers/ in Grab.
+//
+// Outside them, and why:
+// - prisma/schema.prisma: its User columns (makeronlineToken, makeronlineTokenExpires, makeronlineUserId,
+//   makeronlineRejectedAt, and its GrabImport rows) and Category's makeronlineCatIds, a column apiece until Phase 7 of
+//   docs/rfc/provider-modules.md moves them into tables of their own. dto.ts, routes/categories.ts,
+//   services/categoryService.ts and seedData/defaultCategories.ts name its category ids for the same reason.
+// - routes/importRequest.ts: resolved_files, its files as Grab signed them, on the import body every import route
+//   takes.
+// - services/apiTokenScopes.ts: its waiting imports' path, as every scope is listed there for apps that read with a
+//   token.
+// - services/importJobRunner.ts: the links job's notification names it for models parked for Grab.
+// - Grab: content/panels/single.ts imports its models through its own message within every provider's panel flow.
+// - The app's text for it, under its id in frontend/src/i18n/locales/*.json, where all of the app's text is kept.
+
 import fs from "node:fs/promises";
 import { HttpError } from "../../utils/fileUtils";
 import type { ImportRequestBody } from "../../services/importService";

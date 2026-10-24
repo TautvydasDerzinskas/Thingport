@@ -68,6 +68,7 @@ function defaultCategoryData(node: DefaultCategoryNode) {
     tags: node.tags ?? [],
     metaTitle: node.metaTitle ?? null,
     metaDescription: node.metaDescription ?? null,
+    // A column per provider until Phase 7 of docs/rfc/provider-modules.md.
     makerworldCatIds: node.makerworldCatIds ?? [],
     thingiverseCatIds: node.thingiverseCatIds ?? [],
     printablesCatIds: node.printablesCatIds ?? [],

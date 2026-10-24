@@ -23,6 +23,7 @@ export const STORAGE_KEYS = {
   // Last successful sign-in; the connection check signs in again once it's a few minutes old.
   loginVerifiedAt: "loginVerifiedAt",
   // Lets the cookie sync skip a redundant PATCH.
+  // Providers' own keys are listed here with the others: storage is one namespace, and the popup clears it whole.
   lastSyncedMakerworldCookie: "lastSyncedMakerworldCookie",
   // Each provider's sign-in last sent, and to which Thingport account (see background/sessionSync.ts).
   lastSyncedSessions: "lastSyncedSessions",

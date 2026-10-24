@@ -1,3 +1,15 @@
+// Creality Cloud's bundle: this folder, providers/crealitycloud/ at the repository's root (its manifest and links,
+// which all three packages share), the app's frontend/src/providers/crealitycloud/ and Grab's
+// extension/src/providers/crealitycloud/. Wired in by providers/registry.ts and providers/routes.ts here,
+// frontend/src/providers/collectionTiles.ts in the app, and the tables in extension/src/providers/ in Grab.
+//
+// Outside them, and why:
+// - prisma/schema.prisma: its User columns (crealitycloudToken, crealitycloudUserId, crealitycloudExpiresAt,
+//   crealitycloudRejectedAt) and Category's crealitycloudCatIds, a column apiece until Phase 7 of docs/rfc/provider-
+//   modules.md moves them into tables of their own. dto.ts, routes/categories.ts, services/categoryService.ts and
+//   seedData/defaultCategories.ts name its category ids for the same reason.
+// - The app's text for it, under its id in frontend/src/i18n/locales/*.json, where all of the app's text is kept.
+
 import fs from "node:fs/promises";
 import { z } from "zod";
 import { HttpError } from "../../utils/fileUtils";

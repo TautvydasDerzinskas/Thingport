@@ -123,6 +123,8 @@ export type MakerworldJobError = { message: string; imported: number; total: num
 
 export type ApiCallPayload = { method: string; path: string; body?: unknown };
 
+/** Every message the background answers, providers' own among them (providers/background.ts): one type, so a page's
+ *  `request` checks its payload whichever module handles it. */
 export type BackgroundMessages = {
   GET_STATE: { payload: void; result: ExtensionState };
   SAVE_CONFIG: { payload: { instanceUrl: string; email: string; password: string }; result: null };

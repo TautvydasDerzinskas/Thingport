@@ -14,6 +14,15 @@ copies this folder into each of them, under `providers/_generated/` (`src/shared
 extension), with an index listing every provider. The copies are committed; the pre-commit hook refreshes them and CI
 fails when they're out of date (`npm run providers:check`). Never edit them by hand.
 
+## A provider's bundle
+
+Everything a provider does of its own lives in its folders: this one, `backend/src/providers/<id>/`,
+`frontend/src/providers/<id>/` and `extension/src/providers/<id>/`. Shared code reaches it only through the tables
+that wire providers in: `backend/src/providers/registry.ts` and `routes.ts`, `frontend/src/providers/collectionTiles.ts`
+and `overrides.ts`, and `extension/src/providers/{content,sessions,accounts,background}.ts`. Where shared code still
+has to name a provider, it says why in a comment, and `backend/src/providers/<id>/index.ts` lists every such place,
+in all three packages, at its top. Keep that list current when adding or removing one.
+
 ## URL corpus
 
 `<id>/urls.fixtures.json` is an array of URL cases. `expect` describes the backend's current interpretation:

@@ -165,6 +165,9 @@ export async function apiCall<T = unknown>(method: string, path: string, body?: 
   const config = await requireConfig();
 
   let finalBody = body as Record<string, unknown> | undefined;
+  // The browser's own MakerWorld cookie, on any import of a MakerWorld link: the backend imports MakerWorld's models by
+  // the shared link import (its LINK_PROVIDER), which reads the cookie from the request. Here, as every call to the
+  // instance passes through, rather than in providers/makerworld/.
   if (
     path.startsWith("/import") &&
     finalBody &&

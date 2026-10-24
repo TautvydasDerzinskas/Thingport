@@ -1,3 +1,18 @@
+// Snapmaker Space's bundle: this folder, providers/snapmaker/ at the repository's root (its manifest and links, which
+// all three packages share), the app's frontend/src/providers/snapmaker/ and Grab's
+// extension/src/providers/snapmaker/. Wired in by providers/registry.ts and providers/routes.ts here,
+// frontend/src/providers/collectionTiles.ts in the app, and the tables in extension/src/providers/ in Grab.
+//
+// Outside them, and why:
+// - prisma/schema.prisma: its User columns (snapmakerToken, snapmakerTokenExpiresAt, snapmakerUserId,
+//   snapmakerRejectedAt) and Category's snapmakerCatIds, a column apiece until Phase 7 of docs/rfc/provider-modules.md
+//   moves them into tables of their own. dto.ts, routes/categories.ts, services/categoryService.ts and
+//   seedData/defaultCategories.ts name its category ids for the same reason.
+// - Grab: content/panels/batch.ts switches between its likes and bookmarks, which share one page, within every
+//   provider's batch panel (shared/urls.ts reads which); scripts/manifest.ts asks for the alarms permission its sign-
+//   in's renewal needs.
+// - The app's text for it, under its id in frontend/src/i18n/locales/*.json, where all of the app's text is kept.
+
 import fs from "node:fs/promises";
 import { HttpError } from "../../utils/fileUtils";
 import type { NewPlateInput } from "../../services/printCreation";

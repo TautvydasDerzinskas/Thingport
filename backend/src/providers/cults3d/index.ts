@@ -1,3 +1,15 @@
+// Cults3D's bundle: this folder, providers/cults3d/ at the repository's root (its manifest and links, which all three
+// packages share), the app's frontend/src/providers/cults3d/ and Grab's extension/src/providers/cults3d/. Wired in by
+// providers/registry.ts and providers/routes.ts here, frontend/src/providers/collectionTiles.ts in the app, and the
+// tables in extension/src/providers/ in Grab.
+//
+// Outside them, and why:
+// - prisma/schema.prisma: its User columns (cults3dNick, cults3dApiKey, cults3dApiRejectedAt, cults3dSession,
+//   cults3dClearance, cults3dUserAgent, cults3dSessionRejectedAt) and Category's cults3dCatIds, a column apiece until
+//   Phase 7 of docs/rfc/provider-modules.md moves them into tables of their own. dto.ts, routes/categories.ts,
+//   services/categoryService.ts and seedData/defaultCategories.ts name its category ids for the same reason.
+// - The app's text for it, under its id in frontend/src/i18n/locales/*.json, where all of the app's text is kept.
+
 import fs from "node:fs/promises";
 import { HttpError } from "../../utils/fileUtils";
 import type { NewPlateInput } from "../../services/printCreation";

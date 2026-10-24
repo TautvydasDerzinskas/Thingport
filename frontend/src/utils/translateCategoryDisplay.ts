@@ -10,6 +10,8 @@ export type CategoryDisplayText = {
 
 type DefaultCategoryText = { name: string; metaTitle: string; metaDescription: string };
 
+/** The starter categories are MakerWorld's tree (backend/src/seedData/defaultCategories.ts), so its first id names
+ *  their translations. */
 function firstMakerworldCatId(category: Category): number | null {
   const first = category.makerworld_cat_ids.split(";")[0]?.trim();
   if (!first) return null;

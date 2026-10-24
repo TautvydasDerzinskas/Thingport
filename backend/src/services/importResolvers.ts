@@ -10,6 +10,7 @@ import {
 } from "../config";
 import { isJsonContentType } from "../utils/fileUtils";
 import { type ProviderId } from "../providers/_generated";
+// The metadata a link import carries holds MakerWorld's print profile, as its link import is the shared one.
 import type { MakerworldProfileRef } from "../providers/makerworld/pageData";
 import { decodeHtmlEntities } from "../utils/htmlEntities";
 import {
@@ -19,6 +20,7 @@ import {
   shouldProxyHost,
 } from "./flaresolverr";
 
+/** A link import's sign-in: MakerWorld's cookie, as its models import by the shared link import (LINK_PROVIDER). */
 export type ImportCookies = {
   makerworld_cookie?: string | null;
 };

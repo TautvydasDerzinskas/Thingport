@@ -191,7 +191,8 @@ export type CategoryOut = {
   position: number;
   meta_title: string | null;
   meta_description: string | null;
-  // Semicolon-separated, e.g. "800;71;1001"; empty when none.
+  // Each provider's category ids, semicolon-separated, e.g. "800;71;1001"; empty when none. A field per provider, as
+  // the Category row has a column per provider until Phase 7 of docs/rfc/provider-modules.md keeps them in a table of their own.
   makerworld_cat_ids: string;
   thingiverse_cat_ids: string;
   printables_cat_ids: string;

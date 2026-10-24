@@ -1,5 +1,7 @@
 // Batch flow for every provider's collections, likes and bookmarks. MakerWorld collections use the guided flow in
-// makerworldCollection.ts.
+// providers/makerworld/collectionPanel.ts. Two providers' lists differ within it, so they're handled here: a private
+// Printables collection is read as its owner (providers/printables/content.ts), and Snapmaker's likes and bookmarks
+// share one page, which the panel switches between.
 
 import type { BatchEntriesResult, ImportJob, SyncLookup } from "../../shared/api";
 import { ctx, setContext } from "../context";

@@ -16,6 +16,7 @@ import { createNotification } from "./notificationService";
 import { addPrintsToCollection, findOrCreateCollectionByName } from "./collectionService";
 import { modelIdFromUrl, providerName, syncedCollectionFor } from "./collectionSyncService";
 import { siteHost } from "../providers/names";
+// MakerWorld's link import (importService.ts) throws its own sign-in error rather than an HttpError with a session code.
 import { MakerworldAuthError } from "../providers/makerworld/api";
 import { downloadImportToTemp, importPrintFromUrl, type ImportRequestBody } from "./importService";
 import { upsertAuthorFromImport } from "./authorService";

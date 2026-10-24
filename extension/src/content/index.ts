@@ -1,5 +1,7 @@
 // Content script entry point (MakerWorld, Thingiverse, Printables, and the optional sites in optionalSites.ts once
-// turned on). Network calls go through the background (see runtime.ts).
+// turned on). Network calls go through the background (see runtime.ts). MakerWorld's normalized download and its
+// download resolution for the import button are wired in here, as the page's offline features and the button are
+// every provider's.
 
 import type { ImportStatus } from "../shared/api";
 import { listen, send, type ContentMessages } from "../shared/messages";

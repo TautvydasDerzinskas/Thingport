@@ -44,7 +44,8 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { Category, CategoryKind, CategoryMetaInput } from "../../api/categories";
+import { catIdsKey, type Category, type CategoryKind, type CategoryMetaInput } from "../../api/categories";
+import { PROVIDER_IDS } from "../../providers/_generated";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { buildCategoryTree, flattenCategoryTree } from "../../utils/categoryTree";
 import CategoryMetaDialog from "./CategoryMetaDialog";
@@ -73,18 +74,7 @@ type Props = {
 
 function hasMeta(category: Category): boolean {
   return Boolean(
-    category.meta_title ||
-    category.meta_description ||
-    category.makerworld_cat_ids ||
-    category.thingiverse_cat_ids ||
-    category.printables_cat_ids ||
-    category.myminifactory_cat_ids ||
-    category.snapmaker_cat_ids ||
-    category.makeronline_cat_ids ||
-    category.crealitycloud_cat_ids ||
-    category.nexprint_cat_ids ||
-    category.thangs_cat_ids ||
-    category.cults3d_cat_ids,
+    category.meta_title || category.meta_description || PROVIDER_IDS.some((provider) => category[catIdsKey(provider)]),
   );
 }
 

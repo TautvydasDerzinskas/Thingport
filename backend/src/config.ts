@@ -124,6 +124,7 @@ export const IMPORT_COLLECTION_DELAY_MS = envInt("IMPORT_COLLECTION_DELAY_MS", 1
 export const IMPORT_DOWNLOAD_RETRY_DELAY_MS = envInt("IMPORT_DOWNLOAD_RETRY_DELAY_MS", 2000);
 // MakerWorld's CAPTCHA trips on bursts, so in collection imports this delay precedes every
 // MakerWorld request (listing pages, each resolution step, each image), not just each model.
+// MakerWorld's pacing against its CAPTCHA, here with the other settings an admin can set by environment variable.
 export const IMPORT_MAKERWORLD_CALL_DELAY_MS = envInt("IMPORT_MAKERWORLD_CALL_DELAY_MS", 5000);
 // Synced collections are checked on each one's own interval; "false" turns the scheduled sync off
 // ("Sync now" still works).

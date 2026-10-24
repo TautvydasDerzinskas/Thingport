@@ -251,6 +251,7 @@ function catIdsUpdate(raw: string | null | undefined): number[] | undefined {
 const categoryMetaSchema = z.object({
   meta_title: z.string().trim().max(200).nullable().optional(),
   meta_description: z.string().trim().max(2000).nullable().optional(),
+  // A field per provider, as the Category row has a column per provider until Phase 7 of docs/rfc/provider-modules.md.
   makerworld_cat_ids: catIdsField,
   thingiverse_cat_ids: catIdsField,
   printables_cat_ids: catIdsField,

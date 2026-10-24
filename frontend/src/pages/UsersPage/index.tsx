@@ -80,6 +80,8 @@ export default function UsersPage({ onUnauthorized }: Props) {
                   <TableCell>{t("adminSettings.users.columnSignIn")}</TableCell>
                   <TableCell align="right">{t("adminSettings.users.columnModels")}</TableCell>
                   <TableCell align="right">{t("adminSettings.users.columnCollections")}</TableCell>
+                  {/* From before Configuration → Providers showed every provider's connection; the backend's
+                      makerworldConnected says why it's MakerWorld's alone. */}
                   <TableCell>{t("adminSettings.users.columnMakerworld")}</TableCell>
                   <TableCell padding="checkbox" aria-label={t("adminSettings.users.columnActions")} />
                 </TableRow>

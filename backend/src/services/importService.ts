@@ -44,6 +44,10 @@ import {
   resolveMakerworldDownloadUrl,
   type MakerworldProfileRef,
 } from "../providers/makerworld/pageData";
+// MakerWorld's models import through this shared link import, which reads their pages, resolves their downloads
+// through its cloud API or what Grab resolved, and adds their print profiles. It stays here rather than in
+// providers/makerworld/: it is the link import every page link of no provider's goes through too (LINK_PROVIDER),
+// woven into the download, plate and print steps below.
 import {
   extractMakerworldBearerToken,
   MAKERWORLD_AUTH_CODE,

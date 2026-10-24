@@ -58,6 +58,8 @@ model User {
   // What the token may read over the REST API, by scope (see services/apiTokenScopes.ts).
   apiTokenRestScopes       String[]          @default([])
   // Per-user, unlike the instance-wide Thingiverse token.
+  // Each provider's sign-in and account, a column apiece until Phase 7 of docs/rfc/provider-modules.md keeps them
+  // in a table of their own.
   makerworldCookie         String?
   // When MakerWorld last turned the cookie down. Scheduled MakerWorld syncs wait until it changes.
   makerworldRejectedAt     DateTime?
@@ -212,6 +214,7 @@ model Category {
   metaDescription     String?
   // Imports whose site category id matches any of these land in this category. Each site has its
   // own id namespace.
+  // Each provider's category ids, a column apiece until Phase 7 of docs/rfc/provider-modules.md.
   makerworldCatIds    Int[]      @default([])
   thingiverseCatIds   Int[]      @default([])
   printablesCatIds    Int[]      @default([])
