@@ -21,6 +21,9 @@ export async function sha256OfFile(filePath: string): Promise<string> {
  *  alreadyShared): the file's inode and ctime. A run that finds both unchanged leaves the file alone. */
 export type ReuseMarker = { reuseIno?: bigint; reuseCtimeNs?: bigint };
 
+const MAX_REUSE_MARKER = (1n << 63n) - 1n;
+const MIN_REUSE_MARKER = -(1n << 63n);
+
 /** Records only a stable, verified final file. An external writer may have edited or replaced the clone
  *  since sharing checked it, so a path's current inode/ctime alone must not bless its bytes as shared. */
 export async function reuseMarker(
@@ -36,10 +39,23 @@ export async function reuseMarker(
       const hash = await sha256OfHandle(opened.handle);
       const after = await opened.handle.stat({ bigint: true });
       const before = opened.stat;
+      // Filesystem stats can exceed PostgreSQL's signed BIGINT; optional bookkeeping must not fail an import.
       if (
-        hash !== contentSha256 || before.dev !== after.dev || before.ino !== after.ino ||
-        before.size !== after.size || before.mtimeNs !== after.mtimeNs || before.ctimeNs !== after.ctimeNs
-      ) return {};
+        after.ino < MIN_REUSE_MARKER ||
+        after.ino > MAX_REUSE_MARKER ||
+        after.ctimeNs < MIN_REUSE_MARKER ||
+        after.ctimeNs > MAX_REUSE_MARKER
+      )
+        return {};
+      if (
+        hash !== contentSha256 ||
+        before.dev !== after.dev ||
+        before.ino !== after.ino ||
+        before.size !== after.size ||
+        before.mtimeNs !== after.mtimeNs ||
+        before.ctimeNs !== after.ctimeNs
+      )
+        return {};
       return { reuseIno: after.ino, reuseCtimeNs: after.ctimeNs };
     } finally {
       await opened.handle.close();
