@@ -9,6 +9,7 @@ import { startNotificationCleanup } from "./services/notificationService";
 import { startSystemNotificationSync } from "./services/systemNotificationService";
 import { announceVersionUpdate } from "./services/releaseNotesService";
 import { resumeStorageMove } from "./services/storageMoveService";
+import { resumeFileReuseBackfill } from "./services/fileReuseBackfill";
 
 const app = createApp();
 
@@ -35,5 +36,9 @@ app.listen(API_PORT, () => {
   startNotificationCleanup();
   startSystemNotificationSync();
   announceVersionUpdate().catch((err) => console.error("Failed to announce the version update:", err));
-  resumeStorageMove().catch((err) => console.error("Failed to resume moving model files:", err));
+  resumeStorageMove()
+    .catch((err) => console.error("Failed to resume moving model files:", err))
+    // After, so it sees a move that's carrying on and waits for it.
+    .then(() => resumeFileReuseBackfill())
+    .catch((err) => console.error("Failed to resume checking identical files:", err));
 });

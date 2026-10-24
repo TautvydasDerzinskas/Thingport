@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import path from "node:path";
 import { HttpError } from "../utils/fileUtils";
+import { withStorageLock } from "../utils/storageLock";
 import { getFileReuse } from "./settingsService";
 
 // Saves a new file as a copy-on-write clone of a stored file with the same content, so the same model imported by
@@ -14,6 +15,55 @@ export async function sha256OfFile(filePath: string): Promise<string> {
   const hash = crypto.createHash("sha256");
   for await (const chunk of fsSync.createReadStream(filePath)) hash.update(chunk as Buffer);
   return hash.digest("hex");
+}
+
+/** What a row records of a file that was made to share its bytes, as the backfill does (see fileReuseBackfill's
+ *  alreadyShared): the file's inode and ctime. A run that finds both unchanged leaves the file alone. */
+export type ReuseMarker = { reuseIno?: bigint; reuseCtimeNs?: bigint };
+
+const MAX_REUSE_MARKER = (1n << 63n) - 1n;
+const MIN_REUSE_MARKER = -(1n << 63n);
+
+/** Records only a stable, verified final file. An external writer may have edited or replaced the clone
+ *  since sharing checked it, so a path's current inode/ctime alone must not bless its bytes as shared. */
+export async function reuseMarker(
+  filePath: string,
+  shared: boolean,
+  contentSha256: string | null,
+): Promise<ReuseMarker> {
+  if (!shared || !contentSha256) return {};
+  try {
+    const opened = await openRegularFile(filePath, true);
+    if (!opened) return {};
+    try {
+      const hash = await sha256OfHandle(opened.handle);
+      const after = await opened.handle.stat({ bigint: true });
+      const before = opened.stat;
+      // Filesystem stats can exceed PostgreSQL's signed BIGINT; optional bookkeeping must not fail an import.
+      if (
+        after.ino < MIN_REUSE_MARKER ||
+        after.ino > MAX_REUSE_MARKER ||
+        after.ctimeNs < MIN_REUSE_MARKER ||
+        after.ctimeNs > MAX_REUSE_MARKER
+      )
+        return {};
+      if (
+        hash !== contentSha256 ||
+        before.dev !== after.dev ||
+        before.ino !== after.ino ||
+        before.size !== after.size ||
+        before.mtimeNs !== after.mtimeNs ||
+        before.ctimeNs !== after.ctimeNs
+      )
+        return {};
+      return { reuseIno: after.ino, reuseCtimeNs: after.ctimeNs };
+    } finally {
+      await opened.handle.close();
+    }
+  } catch {
+    // Only bookkeeping: without it the next run looks at the file once more.
+    return {};
+  }
 }
 
 /** What stored copies of a file are looked up by. */
@@ -51,13 +101,22 @@ async function forget(copy: StoredCopy): Promise<void> {
 // place outside Thingport: NOFOLLOW so a link (to another user's file, or anywhere else) is never followed, and
 // NONBLOCK so a FIFO or device returns at once rather than blocking a libuv thread for good. The handle is then
 // fstat'ed, and only a regular file used.
-const OPEN_FLAGS = fsSync.constants.O_RDONLY | fsSync.constants.O_NOFOLLOW | fsSync.constants.O_NONBLOCK;
+export const OPEN_FLAGS = fsSync.constants.O_RDONLY | fsSync.constants.O_NOFOLLOW | fsSync.constants.O_NONBLOCK;
 
-/** Null when what's at `filePath` isn't a regular file; open errors are thrown. The caller closes the handle. */
-export async function openRegularFile(filePath: string): Promise<{ handle: fs.FileHandle; stat: fsSync.Stats } | null> {
+/** Null when what's at `filePath` isn't a regular file; open errors are thrown. The caller closes the handle. `bigint`
+ *  gives 64-bit stats, so inode numbers and nanosecond times are exact. */
+export async function openRegularFile(filePath: string): Promise<{ handle: fs.FileHandle; stat: fsSync.Stats } | null>;
+export async function openRegularFile(
+  filePath: string,
+  bigint: true,
+): Promise<{ handle: fs.FileHandle; stat: fsSync.BigIntStats } | null>;
+export async function openRegularFile(
+  filePath: string,
+  bigint?: true,
+): Promise<{ handle: fs.FileHandle; stat: any } | null> {
   const handle = await fs.open(filePath, OPEN_FLAGS);
   try {
-    const stat = await handle.stat();
+    const stat = await handle.stat({ bigint } as { bigint: true });
     if (stat.isFile()) return { handle, stat };
   } catch (err) {
     await handle.close();
@@ -70,7 +129,7 @@ export async function openRegularFile(filePath: string): Promise<{ handle: fs.Fi
 /** Clones the file an open handle holds to `dest`, never over a file there. From the handle, not a path, which may be
  *  something else by now: /proc/self/fd reopens that very file (where it doesn't exist, macOS on a dev machine, this
  *  fails like any other clone that can't be made). FORCE: without a clone it would copy the file, which saves nothing. */
-const cloneFromHandle = (handle: fs.FileHandle, dest: string): Promise<void> =>
+export const cloneFromHandle = (handle: fs.FileHandle, dest: string): Promise<void> =>
   fs.copyFile(
     `/proc/self/fd/${handle.fd}`,
     dest,
@@ -78,7 +137,7 @@ const cloneFromHandle = (handle: fs.FileHandle, dest: string): Promise<void> =>
   );
 
 /** Hashes what the open handle holds from its start, whatever the path it was opened at is now. */
-async function sha256OfHandle(handle: fs.FileHandle): Promise<string> {
+export async function sha256OfHandle(handle: fs.FileHandle): Promise<string> {
   const hash = crypto.createHash("sha256");
   const buffer = Buffer.allocUnsafe(1 << 16);
   // Positional, from 0: the handle's own position may have been moved by an earlier read.
@@ -141,7 +200,9 @@ async function cloneFrom(
       return "stop";
     }
     try {
-      await cloneFromHandle(handle, destAbsPath);
+      // Placed under the storage lock, so the file reuse backfill's swap (which renames over a path it has just
+      // checked) never lands after a file saved at a path its row just freed.
+      await withStorageLock(() => cloneFromHandle(handle, destAbsPath));
     } catch (err: any) {
       if (err?.code === "EEXIST") throw conflict();
       // ENOENT may as well be the destination's side -- its folder pruned just now -- so the stored copy is only
@@ -194,7 +255,8 @@ async function cloneFrom(
  *  it's byte for byte `content`. `content` must be the hash and size taken from the same source file: a size from a DB
  *  column that may be 0 or null would make a good source look changed. Returns how it was made, or null when the source
  *  couldn't be used (gone, not a regular file, a different size or content than `content`), leaving nothing at
- *  `destAbsPath`; a 409 when something is already there. `source.changed` is called only for what the file itself shows:
+ *  `destAbsPath`; a 409 when something is already there. A caller that keeps a "cloned" result records it like the
+ *  other store paths do, with reuseMarker of the final file. `source.changed` is called only for what the file itself shows:
  *  it's gone, or its own bytes don't hash to `content`. `mode` is applied as the store paths do. */
 export async function copyStoredFile(
   source: StoredCopy,
@@ -222,12 +284,14 @@ export async function copyStoredFile(
     let how: "cloned" | "copied" = "cloned";
     try {
       if ((await getFileReuse()) !== "reflink") throw new Error("sharing is off");
-      await cloneFromHandle(handle, destAbsPath);
+      await withStorageLock(() => cloneFromHandle(handle, destAbsPath));
     } catch (err: any) {
       if (err?.code === "EEXIST") throw conflict();
       how = "copied";
       try {
-        await fs.copyFile(`/proc/self/fd/${handle.fd}`, destAbsPath, fsSync.constants.COPYFILE_EXCL);
+        await withStorageLock(() =>
+          fs.copyFile(`/proc/self/fd/${handle.fd}`, destAbsPath, fsSync.constants.COPYFILE_EXCL),
+        );
       } catch (copyErr: any) {
         if (copyErr?.code === "EEXIST") throw conflict();
         return null;

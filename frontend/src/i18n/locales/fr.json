@@ -1283,12 +1283,33 @@
         "heading": "Fichiers identiques",
         "subtitle": "Économisez de l'espace quand plusieurs utilisateurs importent le même modèle.",
         "modeLabel": "Cloner les fichiers identiques (copie sur écriture)",
-        "help": "Thingport compare chaque nouveau fichier de modèle, fichier complémentaire, image de galerie et image de description à ceux déjà stockés, quel que soit leur type. Les miniatures et les rendus ne sont pas partagés. La copie sur écriture clone un fichier identique sur btrfs, XFS ou ZFS 2.2 et plus récent, et le stocke normalement ailleurs. Chaque clone est un fichier à part entière : en modifier un sur le disque ne change jamais celui d'un autre utilisateur. Les fichiers stockés avant son activation ne sont pas parcourus.",
+        "help": "Thingport compare chaque nouveau fichier de modèle, fichier complémentaire, image de galerie et image de description à ceux déjà stockés, quel que soit leur type. Les miniatures et les rendus ne sont pas partagés. La copie sur écriture clone un fichier identique sur btrfs, XFS ou ZFS 2.2 et plus récent, et le stocke normalement ailleurs. Chaque clone est un fichier à part entière : en modifier un sur le disque ne change jamais celui d'un autre utilisateur. Les fichiers stockés avant son activation sont aussi vérifiés, voir Fichiers existants.",
         "failed": "Impossible d'enregistrer le stockage des fichiers identiques. Veuillez réessayer.",
         "loadFailed": "Impossible de charger le stockage des fichiers identiques.",
         "modeHelp": {
           "off": "Chaque fichier occupe son propre espace.",
           "reflink": "Un fichier déjà stocké est cloné quand le système de fichiers le permet, sans espace supplémentaire tant qu'aucune copie ne change."
+        },
+        "backfill": {
+          "label": "Fichiers existants",
+          "help": "Activer le clonage parcourt les fichiers déjà stockés : l'empreinte de chacun est enregistrée, puis les fichiers de même contenu sont remplacés par des clones du plus ancien, en gardant leur nom, leur emplacement et leur propriétaire. Seuls les fichiers du dossier de stockage de Thingport sont touchés, et un fichier modifié entre-temps est laissé tel quel. Relancez-le après une période sans clonage, ou pour des fichiers qui n'ont pas pu être vérifiés. Les instantanés du stockage peuvent garder les anciennes copies : l'espace libéré est donc un maximum.",
+          "idle": "Pas de vérification depuis le démarrage du serveur",
+          "starting": "Démarrage...",
+          "restarting": "Arrêt en cours, puis nouveau démarrage...",
+          "hashing": "Enregistrement des empreintes : {{done}} sur {{total}}",
+          "cloning": "Clonage des fichiers identiques : {{done}} sur {{total}}, {{cloned}} clonés",
+          "result_one": "{{count}} fichier cloné, jusqu'à {{size}} libérés",
+          "result_other": "{{count}} fichiers clonés, jusqu'à {{size}} libérés",
+          "nothing": "Rien à cloner",
+          "unsupported": "Ce système de fichiers ne sait pas cloner ; les empreintes ont été enregistrées",
+          "stopped": "Arrêté : le clonage a été désactivé",
+          "failedRun": "Arrêté plus tôt à cause d'une erreur ; voir le journal du serveur",
+          "skippedNote": "{{count}} non vérifiés",
+          "checkAgain": "Revérifier",
+          "confirmTitle": "Vérifier les fichiers existants ?",
+          "confirmMessage": "Thingport va parcourir tous les fichiers stockés et remplacer les fichiers identiques par des clones. Cela s'exécute en arrière-plan et peut prendre du temps sur une grande bibliothèque.",
+          "confirmAction": "Vérifier",
+          "failed": "Impossible de lancer la vérification. Veuillez réessayer."
         }
       },
       "consume": {
@@ -1767,6 +1788,7 @@
           "api_token_mcp_tools_changed": "A modifié les outils MCP de son jeton d'API",
           "api_token_rest_scopes_changed": "A modifié les autorisations de son jeton d'API",
           "file_reuse_changed": "A modifié le stockage des fichiers identiques",
+          "file_reuse_backfill_started": "A commencé à vérifier les fichiers stockés au contenu identique",
           "custom_widgets_changed": "A modifié les widgets personnalisés autorisés"
         },
         "authorsLinked": "{{count}} modèle(s) relié(s)",

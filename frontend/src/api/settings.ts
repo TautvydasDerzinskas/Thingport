@@ -9,6 +9,34 @@ export type McpAccess = "off" | "read" | "write";
 
 export type FileReuse = "off" | "reflink";
 
+/** Going over the stored files for identical ones, after file reuse is turned on or when asked to. */
+export type FileReuseBackfill = {
+  running: boolean;
+  started_at: string;
+  finished_at: string | null;
+  phase: "hashing" | "cloning";
+  /** Files to go through in the current phase. */
+  total: number;
+  done: number;
+  hashed: number;
+  cloned: number;
+  /** An upper bound: snapshots may keep the old copies. */
+  reclaimed_bytes: number;
+  /** Files left as they were: gone, not a regular file, hard-linked, changed meanwhile... */
+  skipped: number;
+  /** The filesystem can't clone: hashes were recorded and nothing replaced. */
+  unsupported: boolean;
+  /** Cloning was turned off while it ran. */
+  stopped: boolean;
+  /** It hit an error and ended early; the server log says what. */
+  failed: boolean;
+  /** Turned on again while it was stopping: a new run starts as soon as it has ended. */
+  restart_queued: boolean;
+};
+
+/** Null when none has run since the server started. */
+export type FileReuseSettings = { mode: FileReuse; backfill: FileReuseBackfill | null };
+
 /** `slicer` is the one a model's main button opens (the last one used), `slicers` the ones installed. */
 export type SlicerSettings = { slicer: string | null; slicers: string[] };
 
@@ -379,14 +407,14 @@ export const settingsApi = {
     return res.json();
   },
 
-  getFileReuse: async (): Promise<{ mode: FileReuse }> => {
+  getFileReuse: async (): Promise<FileReuseSettings> => {
     const res = await fetch(`${apiBase()}/settings/file-reuse`, { headers: authHeaders() });
     if (res.status === 401) throw new UnauthorizedError();
     assertOk(res, "Failed to load file reuse settings");
     return res.json();
   },
 
-  updateFileReuse: async (mode: FileReuse): Promise<{ mode: FileReuse }> => {
+  updateFileReuse: async (mode: FileReuse): Promise<FileReuseSettings> => {
     const res = await fetch(`${apiBase()}/settings/file-reuse`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),
@@ -395,6 +423,17 @@ export const settingsApi = {
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update file reuse settings"));
     return res.json();
+  },
+
+  /** Goes over the stored files again; refused with the server's message while the switch is off or files are moving. */
+  startFileReuseBackfill: async (): Promise<FileReuseBackfill | null> => {
+    const res = await fetch(`${apiBase()}/settings/file-reuse/backfill`, {
+      method: "POST",
+      headers: authHeaders(),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to check the stored files"));
+    return (await res.json()).backfill;
   },
 
   getPreviews: async (): Promise<{ mode: PreviewMode }> => {

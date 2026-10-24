@@ -1298,12 +1298,33 @@
         "heading": "Vienodi failai",
         "subtitle": "Taupykite vietą, kai keli naudotojai importuoja tą patį modelį.",
         "modeLabel": "Klonuoti vienodus failus (kopijavimas rašant)",
-        "help": "Thingport palygina kiekvieną naują modelio failą, papildomą failą, galerijos paveikslėlį ir aprašymo paveikslėlį su jau saugomais, nesvarbu, kokio jie tipo. Miniatiūros ir atvaizdai nebendrinami. Kopijavimas rašant (copy-on-write) sutampantį failą klonuoja btrfs, XFS arba ZFS 2.2 ir naujesnėse sistemose, o kitur failą išsaugo įprastai. Kiekvienas klonas yra atskiras failas, todėl redaguojant vieną diske kito naudotojo failas nepasikeičia. Prieš įjungiant išsaugoti failai neperžiūrimi.",
+        "help": "Thingport palygina kiekvieną naują modelio failą, papildomą failą, galerijos paveikslėlį ir aprašymo paveikslėlį su jau saugomais, nesvarbu, kokio jie tipo. Miniatiūros ir atvaizdai nebendrinami. Kopijavimas rašant (copy-on-write) sutampantį failą klonuoja btrfs, XFS arba ZFS 2.2 ir naujesnėse sistemose, o kitur failą išsaugo įprastai. Kiekvienas klonas yra atskiras failas, todėl redaguojant vieną diske kito naudotojo failas nepasikeičia. Prieš įjungiant išsaugoti failai taip pat tikrinami, žr. Esami failai.",
         "failed": "Nepavyko išsaugoti, kaip saugomi vienodi failai. Bandykite dar kartą.",
         "loadFailed": "Nepavyko įkelti, kaip saugomi vienodi failai.",
         "modeHelp": {
           "off": "Kiekvienas failas užima savo vietą.",
           "reflink": "Jau saugomas failas klonuojamas, kur leidžia failų sistema, ir neužima papildomos vietos, kol kuri nors kopija nepasikeičia."
+        },
+        "backfill": {
+          "label": "Esami failai",
+          "help": "Įjungus klonavimą peržiūrimi jau išsaugoti failai: užregistruojama kiekvieno maišos reikšmė, o vienodo turinio failai pakeičiami seniausio failo klonais, išlaikant jų pavadinimą, vietą ir savininką. Liečiami tik Thingport saugyklos aplanko failai, o per tą laiką pasikeitęs failas paliekamas kaip yra. Paleiskite dar kartą, kai klonavimas kurį laiką buvo išjungtas arba kai failų nepavyko patikrinti. Saugyklos momentinės kopijos gali išlaikyti senas kopijas, todėl atlaisvinta vieta yra viršutinė riba.",
+          "idle": "Nepatikrinta nuo serverio paleidimo",
+          "starting": "Pradedama...",
+          "restarting": "Stabdoma, paskui bus paleista iš naujo...",
+          "hashing": "Registruojamos maišos reikšmės: {{done}} iš {{total}}",
+          "cloning": "Klonuojami vienodi failai: {{done}} iš {{total}}, sukloniuota {{cloned}}",
+          "result_one": "Sukloniuotas {{count}} failas, atlaisvinta iki {{size}}",
+          "result_other": "Sukloniuota failų: {{count}}, atlaisvinta iki {{size}}",
+          "nothing": "Nėra ką klonuoti",
+          "unsupported": "Ši failų sistema negali klonuoti; maišos reikšmės užregistruotos",
+          "stopped": "Sustabdyta: klonavimas buvo išjungtas",
+          "failedRun": "Sustabdyta anksčiau dėl klaidos; žr. serverio žurnalą",
+          "skippedNote": "Nepatikrinta: {{count}}",
+          "checkAgain": "Tikrinti dar kartą",
+          "confirmTitle": "Tikrinti esamus failus?",
+          "confirmMessage": "Thingport peržiūrės visus išsaugotus failus ir vienodus pakeis klonais. Veikia fone, o didelėje bibliotekoje gali užtrukti.",
+          "confirmAction": "Tikrinti",
+          "failed": "Nepavyko pradėti tikrinimo. Bandykite dar kartą."
         }
       },
       "consume": {
@@ -1798,6 +1819,7 @@
           "tags_merged": "Žymos sujungtos",
           "mcp_access_changed": "Pakeitė MCP prieigą",
           "file_reuse_changed": "Pakeitė, kaip saugomi vienodi failai",
+          "file_reuse_backfill_started": "Pradėjo tikrinti išsaugotus failus dėl vienodo turinio",
           "custom_widgets_changed": "Pakeista, kurie pasirinktiniai valdikliai leidžiami"
         },
         "authorsLinked": "Susieta modelių: {{count}}",
