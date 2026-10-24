@@ -1,0 +1,73 @@
+@use "../../styles/tokens" as t;
+@use "../../styles/mixins" as m;
+
+// A confirmation over the popup (a native <dialog>, so focus stays in it and Esc closes it).
+.dialog {
+  @include m.card(t.$radius-lg);
+  width: calc(100% - #{2 * t.$space-4});
+  max-width: 288px;
+  margin: auto;
+  padding: t.$space-4;
+  border: 1px solid t.c("border");
+  color: t.c("text");
+
+  &[open] {
+    animation: dialog-in 0.18s ease-out;
+  }
+
+  &::backdrop {
+    background: t.c("backdrop");
+    animation: dialog-fade 0.18s ease-out;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  &__text {
+    margin: t.$space-2 0 0;
+    font-size: t.$font-size-sm;
+    line-height: 1.45;
+    color: t.c("text-muted");
+  }
+
+  &__actions {
+    display: flex;
+    gap: t.$space-2;
+    margin-top: t.$space-4;
+
+    .btn {
+      flex: 1;
+      margin-top: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &[open],
+    &::backdrop {
+      animation: none;
+    }
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes dialog-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

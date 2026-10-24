@@ -9,6 +9,7 @@ collection), then imports it the same way Thingport's own "+ Add > Import" does.
 It's useful without Thingport too: on MakerWorld model pages it adds a **Download normalized**
 button that turns the Bambu Studio project into a 3MF that PrusaSlicer, Cura and other slicers open
 with its colors and print settings intact. See [Download normalized](#download-normalized-no-thingport-needed).
+It can also give Thingiverse a [dark theme and hide its ads](#thingiverse-dark-mode-and-hidden-ads-no-thingport-needed).
 
 **Get it from the [Chrome Web Store](https://chromewebstore.google.com/detail/nmblahmglpbplmfcggghdgohohlaeiee),
 [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/thingport-grab/) or
@@ -134,12 +135,29 @@ Hover the bulb on the button for the same summary.
 
 - **Who sees it:** everyone who hasn't connected the extension to a Thingport instance, and people
   who have, when the slicer chosen in Thingport's Configuration > Slicer is one of those above (with Bambu Studio or
-  OrcaSlicer picked, the original file is the right one, so the button stays hidden).
+  OrcaSlicer picked, the original file is the right one, so the button stays hidden). To hide it
+  altogether, turn off **Normalize MakerWorld 3MFs** under **Offline features** (**Extra features** once connected) in
+  the toolbar popup.
 - **Where it runs:** entirely in your browser, the same conversion Thingport's "Open normalized"
   does on the server. The file goes nowhere but your downloads folder.
 - **Limits:** you need to be signed in to MakerWorld, as for its own Download button, and files over
   50 MB are too big to convert in the browser -- the button says so. MakerWorld's button is found by
   its label, so it only appears while MakerWorld is in English.
+
+## Thingiverse dark mode and hidden ads (no Thingport needed)
+
+Thingiverse has no dark theme, so the extension gives it one: **Thingiverse dark mode** under
+**Offline features** in the toolbar popup. It's on from the start and follows your system theme: Thingiverse turns
+dark when your browser or OS does, and stays as it is in light mode. Switching it off (or on again) applies to open
+Thingiverse tabs straight away. It recolors Thingiverse's own pages (browsing, search, models with their files, comments, makes and
+remixes, profiles and collections, sign-in, challenges); ads and embedded videos come from other sites and keep their
+own colors.
+
+**Hide Thingiverse ads**, also under **Offline features** and also on from the start, hides the ad banners, the ad
+cards in model grids, the ads injected into pages, the sticky bar along the bottom, the video ads, and the ad in the
+download dialog. It only hides them on the page: the ads still load, nothing about your Thingiverse account or
+membership is touched, and the download dialog keeps its countdown. If you'd like to support Thingiverse, its own
+supporter membership removes ads for real.
 
 ## Setup
 
@@ -149,8 +167,15 @@ it explains what's needed and opens that same setup form (the toolbar popup, or 
 tab where the browser won't let the extension open its popup itself). Saving requests permission to
 reach that one origin and validates the login before storing anything. After that, the toolbar icon
 turns from the dark/inactive icon to the color/active one, and the floating icon becomes the normal
-import button. Reopen the popup any time to change the instance (the pencil next to its address) or
-flip **Extension enabled** off to pause it without losing the saved setup.
+import button. Reopen the popup any time to change the instance (the pencil next to its address), disconnect from it
+(the button beside the pencil, after a confirmation; offline features and recently viewed models stay), or flip
+**Extension enabled** off, after a confirmation too, to pause it everywhere without losing the saved setup. Disconnecting signs Grab out on the instance and,
+for a connection approved in Thingport, removes it from your Thingport profile too.
+
+Once connected, the popup's tabs are **Providers** (the sites Grab runs on), **Extra features** (the
+[ones that need no Thingport](#download-normalized-no-thingport-needed)) and **History**: your last imports, and the
+last 10 models you opened on any of those sites, each with its site's logo. Recently viewed models are listed before
+you connect too, and they stay in this browser.
 
 The extension re-authenticates automatically as its session token nears expiry -- there's nothing
 to keep re-entering day to day. If your password changes or a session gets revoked server-side, the
@@ -173,7 +198,7 @@ from the extension.
 ### MyMiniFactory and newer sites: allow them once
 
 Sites added after MakerWorld, Printables and Thingiverse, starting with MyMiniFactory, need one click first. The
-popup lists every site Grab supports under **Providers**: a green tick means it already runs there, and **Enable** next to a
+popup lists every site Grab supports on its **Providers** tab: a green tick means it already runs there, and **Enable** next to a
 newer site asks your browser for access to that site alone. (An update that added each site to the extension itself
 would have the browser switch the extension off for everyone until they approved it, every time.) The button comes
 back only if you take the access back in your browser's extension settings.

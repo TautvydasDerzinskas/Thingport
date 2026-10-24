@@ -1,0 +1,147 @@
+// A dark Thingiverse (see index.ts), in navies built around its own blue. Thingiverse's own CSS names its colors as --tv-*
+// tokens, so most of this is giving them dark values; the rest is the few places it hard-codes white.
+// `html[data-thingport-dark]` outranks the `:root` the tokens are set on, wherever either style sits. Only while the
+// browser/OS prefers dark: with a light system theme Thingiverse keeps its own look.
+
+$page: #0f1320;
+$layer: #171c2e;
+$layer-raised: #1e2539;
+$layer-hover: #262e47;
+$border: #2c3450;
+$border-faint: #222a40;
+$text: #e6e9f2;
+$text-muted: #9aa1b8;
+$text-disabled: #5f6680;
+$accent-text: #9dafff;
+
+@media (prefers-color-scheme: dark) {
+  html[data-thingport-dark] {
+    color-scheme: dark;
+
+    // The palette itself, for the places that use it directly (hover and pressed states, borders, the footer's text)
+    // rather than through the tokens below: the pale shades become dark ones, the darkest ink becomes text.
+    --tv-neutral-faint: #{$layer};
+    --tv-neutral-subtle: #{$layer-hover};
+    --tv-neutral-muted: #3d4766;
+    --tv-brand-ink: #{$text};
+    --tv-brand-faint: rgba(43, 82, 254, 0.1);
+    --tv-brand-subtle: rgba(43, 82, 254, 0.2);
+    --tv-highlight-faint: rgba(98, 0, 238, 0.14);
+    --tv-highlight-subtle: rgba(98, 0, 238, 0.22);
+    --tv-positive-faint: rgba(1, 180, 159, 0.1);
+    --tv-positive-subtle: rgba(1, 180, 159, 0.18);
+    --tv-negative-faint: rgba(255, 56, 92, 0.1);
+    --tv-negative-subtle: rgba(255, 56, 92, 0.18);
+    --tv-warning-faint: rgba(255, 196, 2, 0.08);
+    --tv-warning-subtle: rgba(255, 196, 2, 0.16);
+
+    --tv-bg-main: #{$page};
+    --tv-bg-hover: #{$layer-hover};
+    --tv-bg-selected: rgba(43, 82, 254, 0.22);
+    --tv-bg-disabled: #3a4262;
+    --tv-bg-layer-01: #{$layer};
+    --tv-bg-layer-hover-01: #{$layer-hover};
+    --tv-bg-layer-selected-01: rgba(43, 82, 254, 0.22);
+    --tv-bg-layer-02: #{$page};
+    --tv-bg-layer-hover-02: #{$layer-hover};
+    --tv-bg-layer-selected-02: rgba(43, 82, 254, 0.22);
+    --tv-bg-layer-03: #{$layer-raised};
+    --tv-bg-layer-hover-03: #{$layer-hover};
+    --tv-bg-layer-selected-03: rgba(43, 82, 254, 0.22);
+    --tv-bg-inverse-primary: #{$text};
+    --tv-bg-inverse-secondary: #{$text-muted};
+    --tv-bg-accent-light: rgba(43, 82, 254, 0.18);
+    --tv-bg-accent-light-hover: rgba(43, 82, 254, 0.3);
+    --tv-bg-accent-medium: rgba(43, 82, 254, 0.3);
+    --tv-bg-positive-light: rgba(1, 180, 159, 0.16);
+    --tv-bg-positive-light-hover: rgba(1, 180, 159, 0.26);
+    --tv-bg-warning-light: rgba(255, 196, 2, 0.14);
+    --tv-bg-warning-light-hover: rgba(255, 196, 2, 0.24);
+    --tv-bg-negative-light: rgba(255, 56, 92, 0.14);
+    --tv-bg-negative-light-hover: rgba(255, 56, 92, 0.24);
+    --tv-bg-highlight-light: rgba(98, 0, 238, 0.2);
+    --tv-bg-highlight-light-hover: rgba(98, 0, 238, 0.3);
+
+    --tv-content-primary: #{$text};
+    --tv-content-secondary: #{$text-muted};
+    --tv-content-disabled: #{$text-disabled};
+    --tv-content-accent: #{$accent-text};
+    --tv-content-accent-dark: #{$accent-text};
+    --tv-content-accent-light: #{$accent-text};
+    --tv-content-positive-dark: #5fd8c8;
+    --tv-content-warning-dark: #ffd54f;
+    --tv-content-negative-dark: #ff8fa3;
+    --tv-content-highlight-dark: #c3a2ff;
+
+    --tv-border-faint: #{$border-faint};
+    --tv-border-subtle: #{$border};
+    --tv-border-disabled: #3a4262;
+    --tv-border-inverse: #{$layer};
+    --tv-border-on-primary: #{$text};
+    --tv-border-on-secondary: #{$text-muted};
+
+    --tv-box-shadow-subtle: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --tv-box-shadow-base: 0 1px 3px 0 rgba(0, 0, 0, 0.45), 0 0 1px 0 rgba(0, 0, 0, 0.3);
+    --tv-box-shadow-large: 0 2px 20px 0 rgba(0, 0, 0, 0.5);
+
+    background: $page;
+
+    body {
+      background: $page;
+      color: $text;
+    }
+
+    .bg-white {
+      background-color: $layer;
+    }
+
+    // Hard-coded colors. Class names end in a per-build hash, so they're matched by their stable start.
+    [class*="HomePageTagline__brand--"],
+    [class*="EntryView__header--"],
+    [class*="EntryView__introTitle--"] {
+      color: $text;
+    }
+
+    // Behind images while they load, and around ones that don't fill the gallery.
+    [class*="HeroCard__heroCard--"],
+    .mediaItem--image {
+      background-color: $layer-raised;
+    }
+
+    // The stacked circles behind a collection's cover, pale blues on white: the same steps of the blue on dark.
+    [class*="CollectionCard__circle1--"] {
+      background-color: rgba(43, 82, 254, 0.4);
+    }
+    [class*="CollectionCard__circle2--"] {
+      background-color: rgba(43, 82, 254, 0.28);
+    }
+    [class*="CollectionCard__circle3--"] {
+      background-color: rgba(43, 82, 254, 0.18);
+    }
+    [class*="CollectionCard__circle4--"] {
+      background-color: rgba(43, 82, 254, 0.1);
+    }
+
+    // The sticky ad bar along the bottom, when ads aren't hidden (the ad inside is a frame it can't reach).
+    .adthrive-footer {
+      background-color: rgba(15, 19, 32, 0.85) !important;
+    }
+
+    // The challenges pages are the older site, with its own stylesheet.
+    .basic-page {
+      color: $text-muted;
+
+      h1,
+      h2,
+      strong {
+        color: $text;
+      }
+    }
+
+    .content-box,
+    .challenge-card {
+      background-color: $layer;
+      border-color: $border;
+    }
+  }
+}

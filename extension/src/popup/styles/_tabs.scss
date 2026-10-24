@@ -1,0 +1,123 @@
+@use "../../styles/tokens" as t;
+@use "../../styles/mixins" as m;
+
+// Equal tabs under the header, with an underline that slides to the selected one.
+.tabs {
+  position: relative;
+  display: grid;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+  margin: 0 (-(t.$space-4)) t.$space-3;
+  border-bottom: 1px solid t.c("border");
+
+  &__tab {
+    padding: t.$space-2 t.$space-1;
+    border: 0;
+    background: transparent;
+    font: 600 t.$font-size-sm t.$font-stack;
+    color: t.c("text-muted");
+    cursor: pointer;
+    transition: color 0.15s ease;
+    @include m.focus-ring;
+
+    &:focus-visible {
+      outline-offset: -2px;
+    }
+
+    &:hover,
+    &[aria-selected="true"] {
+      color: t.c("text");
+    }
+  }
+
+  &__indicator {
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: calc(100% / 3);
+    height: 2px;
+    background: t.c("accent");
+    transition: transform 0.2s ease;
+  }
+
+  &[data-active="offline"] &__indicator {
+    transform: translateX(100%);
+  }
+
+  &[data-active="history"] &__indicator {
+    transform: translateX(200%);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__indicator {
+      transition: none;
+    }
+  }
+}
+
+.tab-panel {
+  animation: tab-panel-in 0.15s ease-out;
+
+  > .note:first-child {
+    margin-top: 0;
+  }
+
+  // The tabs' border already separates the first section from the header.
+  .section:first-child,
+  .section[hidden] + .section {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@keyframes tab-panel-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.features {
+  margin: t.$space-3 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feature {
+  display: flex;
+  align-items: flex-start;
+  gap: t.$space-3;
+  padding: 10px t.$space-3;
+  border: 1px solid t.c("border");
+  border-radius: t.$radius-md;
+  background: t.c("surface-sunken");
+
+  & + & {
+    margin-top: t.$space-2;
+  }
+
+  &__text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__name {
+    display: block;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  &__desc {
+    margin: 2px 0 0;
+    font-size: t.$font-size-xs;
+    line-height: 1.4;
+    color: t.c("text-muted");
+  }
+}

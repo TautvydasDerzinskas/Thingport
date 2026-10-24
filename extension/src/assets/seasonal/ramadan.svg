@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -45 530 175" fill="none">
+  <title>Ramadan and Eid al-Fitr</title>
+  <style>
+    .twinkle { transform-origin: 0 0; animation: twinkle 1.8s ease-in-out infinite; }
+    @keyframes twinkle { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.5); opacity: 0.4; } }
+    .sway { transform-origin: 0 0; animation: sway 3.6s ease-in-out infinite; }
+    @keyframes sway { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } .fall { display: none; } }
+  </style>
+  <defs><mask id="crescent"><rect x="400" y="0" width="100" height="90" fill="#fff"/><circle cx="463" cy="31" r="19" fill="#000"/></mask></defs>
+  <circle cx="452" cy="40" r="23" fill="#ffc94d" stroke="#e0a800" stroke-width="1.6" mask="url(#crescent)"/>
+  <g transform="translate(478 58)"><path class="twinkle" style="animation-delay:0s" d="M0 -6 Q1.1 -1.1 6 0 Q1.1 1.1 0 6 Q-1.1 1.1 -6 0 Q-1.1 -1.1 0 -6 Z" fill="#ffc94d"/></g>
+  <g transform="translate(484 22)"><path class="twinkle" style="animation-delay:-0.6s" d="M0 -4.5 Q0.8 -0.8 4.5 0 Q0.8 0.8 0 4.5 Q-0.8 0.8 -4.5 0 Q-0.8 -0.8 0 -4.5 Z" fill="#ffc94d"/></g>
+  <g transform="translate(422 12)"><path class="twinkle" style="animation-delay:-1.2s" d="M0 -4 Q0.7 -0.7 4 0 Q0.7 0.7 0 4 Q-0.7 0.7 -4 0 Q-0.7 -0.7 0 -4 Z" fill="#ffc94d"/></g>
+  <g transform="translate(120 -26)"><path class="twinkle" style="animation-delay:-0.3s" d="M0 -4.5 Q0.8 -0.8 4.5 0 Q0.8 0.8 0 4.5 Q-0.8 0.8 -4.5 0 Q-0.8 -0.8 0 -4.5 Z" fill="#ffc94d"/></g>
+  <g transform="translate(215 -36)"><path class="twinkle" style="animation-delay:-1.0s" d="M0 -3.5 Q0.6 -0.6 3.5 0 Q0.6 0.6 0 3.5 Q-0.6 0.6 -3.5 0 Q-0.6 -0.6 0 -3.5 Z" fill="#ffc94d"/></g>
+  <g transform="translate(372 -30)"><path class="twinkle" style="animation-delay:-1.5s" d="M0 -4 Q0.7 -0.7 4 0 Q0.7 0.7 0 4 Q-0.7 0.7 -4 0 Q-0.7 -0.7 0 -4 Z" fill="#ffc94d"/></g>
+  <g transform="translate(-12 20)"><path class="twinkle" style="animation-delay:-0.8s" d="M0 -4 Q0.7 -0.7 4 0 Q0.7 0.7 0 4 Q-0.7 0.7 -4 0 Q-0.7 -0.7 0 -4 Z" fill="#ffc94d"/></g>
+  <g transform="translate(300 -45)"><g class="sway">
+    <line x1="0" y1="0" x2="0" y2="14" stroke="#c9a227" stroke-width="1.4"/>
+    <path d="M-7 20 L0 13 L7 20 Z" fill="#e0a800"/>
+    <path d="M-8 20 L8 20 L6 36 L-6 36 Z" fill="#ffe08a" stroke="#c9a227" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M0 20 L0 36 M-4 20 L-3 36 M4 20 L3 36" stroke="#c9a227" stroke-width="1"/>
+    <path d="M-7 36 L7 36 L0 42 Z" fill="#e0a800"/>
+  </g></g>
+</svg>

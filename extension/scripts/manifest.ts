@@ -38,7 +38,11 @@ export function buildManifest(target: Target, pkg: { version: string; descriptio
     host_permissions: COOKIE_HOSTS,
     // The user's instance origin, requested at setup, and the optional sites, requested when turned on.
     optional_host_permissions: ["*://*/*"],
-    content_scripts: [{ matches: PROVIDER_MATCHES, js: ["content.js"], run_at: "document_idle" }],
+    content_scripts: [
+      { matches: PROVIDER_MATCHES, js: ["content.js"], run_at: "document_idle" },
+      // Thingiverse's restyles, before the page paints so it doesn't flash white or show ads first (src/thingiverse/).
+      { matches: ["*://*.thingiverse.com/*"], js: ["thingiverse.js"], run_at: "document_start" },
+    ],
   };
 
   if (target === "firefox") {

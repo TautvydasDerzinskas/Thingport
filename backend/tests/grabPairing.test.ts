@@ -74,6 +74,23 @@ describe("connecting Thingport Grab by approval", () => {
     expect(refused.status).toBe(401);
   });
 
+  it("lets the extension disconnect itself with its token", async () => {
+    const { verifier, challenge } = verifierAndChallenge();
+    const code = await approve(challenge, "Firefox on Linux");
+    const claimed = await request(app).post("/api/grab/pairings/claim").send({ code, verifier });
+    const token = claimed.body.connection_token;
+
+    expect((await request(app).post("/api/grab/disconnect").send({ connection_token: token })).status).toBe(204);
+    expect((await request(app).post("/api/grab/session").send({ connection_token: token })).status).toBe(401);
+    const listed = await request(app)
+      .get("/api/profile/grab-connections")
+      .set({ Authorization: `Bearer ${session}` });
+    expect(listed.body.some((c: { name: string }) => c.name === "Firefox on Linux")).toBe(false);
+    // Again, or with a token that never was one: nothing to remove, and no error.
+    expect((await request(app).post("/api/grab/disconnect").send({ connection_token: token })).status).toBe(204);
+    expect((await request(app).post("/api/grab/disconnect").send({ connection_token: "tpg_nope" })).status).toBe(204);
+  });
+
   it("refuses a code without its verifier, and burns it", async () => {
     const { verifier, challenge } = verifierAndChallenge();
     const code = await approve(challenge);

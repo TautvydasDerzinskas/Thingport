@@ -37,6 +37,7 @@ src/
                 Download normalized button (makerworld/)
     styles/     its SCSS, compiled into the bundle and injected into its shadow root
   normalizer/   the Bambu 3MF normalizer and the worker that runs it
+  thingiverse/  Thingiverse's dark mode and hidden ads, a second content script that runs at document_start
   popup/        toolbar popup (popup.html, its script and styles/)
   styles/       SCSS design tokens and mixins shared by the popup and the content UI
   assets/       the Thingport icon SVG (inlined into the bundles)
@@ -48,6 +49,13 @@ The content script and the popup never call the Thingport instance themselves: t
 message to the background script, which owns the credentials and the instance's host permission.
 Every message and its reply is typed in `src/shared/messages.ts`.
 
+On the web app's special days, Grab's icon in the popup and on pages wears the sidebar logo's seasonal overlay
+(`src/shared/seasonalMark.ts`). `src/shared/season.ts` and `src/assets/seasonal/` are copies of
+`frontend/src/utils/season.ts` and `frontend/src/assets/logos/seasonal/`, for the same reason as the normalizer below:
+change them together. Each overlay's main prop is brought in as a badge from where it sits past the end of the logo's
+name; `PROPS` in `seasonalMark.ts` moves that box for the seasons whose prop sits elsewhere. `npm run
+preview:seasonal -- out.html` renders every edition, in the popup and on a page, light and dark, to check them.
+
 `src/normalizer/threeMfNormalizer.ts` is a copy of the backend's
 `backend/src/services/threeMfNormalizer.ts` (the Mozilla source zip can only hold this folder), and
 `src/shared/slicers.ts` mirrors the web app's list of slicers that need it. Change them together.
@@ -55,8 +63,8 @@ The normalizer runs in a worker, bundled into the content script as a string thr
 `?worker` imports; where a page's CSP blocks that worker, it runs on the page's main thread instead.
 
 Colors, spacing and type live in `src/styles/_tokens.scss`. Colors are CSS custom properties with a
-light and a dark palette: the popup follows the browser's color scheme, while the in-page UI always
-uses the light one.
+light and a dark palette (the dark one is Thingport's navy): the popup and the in-page UI both follow
+the browser's color scheme.
 
 ### Adding a provider site
 

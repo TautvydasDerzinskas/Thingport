@@ -244,7 +244,8 @@ async function runWaiting(tabId: number): Promise<number> {
       const print = "task_id" in started ? await pollTask(started.task_id) : started;
       if (print?.id) {
         printIds.push(print.id);
-        if (print.import_outcome !== "already_imported") await recordRecentImport(print, null).catch(() => undefined);
+        if (print.import_outcome !== "already_imported")
+          await recordRecentImport(print, null, item.url).catch(() => undefined);
       }
     } catch {
       // The instance recorded why.

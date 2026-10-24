@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -45 530 175" fill="none">
+  <title>Valentine's Day</title>
+  <style>
+    .rise { animation: rise ease-out infinite; }
+    @keyframes rise { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(-230px); opacity: 0; } }
+    .beat { transform-origin: 0 0; animation: beat 1.3s ease-in-out infinite; }
+    @keyframes beat { 0%, 40%, 100% { transform: scale(1); } 15% { transform: scale(1.18); } 28% { transform: scale(1.06); } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } .fall, .rise { display: none; } }
+  </style>
+  <g transform="translate(30 92) scale(0.6)"><path class="rise" d="M0 8 C-14 -2 -9 -14 0 -6 C9 -14 14 -2 0 8 Z" fill="#ff4d6d" style="animation-duration:4.2s;animation-delay:0s"/></g>
+  <g transform="translate(62 92) scale(0.45)"><path class="rise" d="M0 8 C-14 -2 -9 -14 0 -6 C9 -14 14 -2 0 8 Z" fill="#ff8fab" style="animation-duration:3.6s;animation-delay:-1.4s"/></g>
+  <g transform="translate(140 92) scale(0.55)"><path class="rise" d="M0 8 C-14 -2 -9 -14 0 -6 C9 -14 14 -2 0 8 Z" fill="#ff4d6d" style="animation-duration:4.6s;animation-delay:-2.8s"/></g>
+  <g transform="translate(205 92) scale(0.4)"><path class="rise" d="M0 8 C-14 -2 -9 -14 0 -6 C9 -14 14 -2 0 8 Z" fill="#ffb3c6" style="animation-duration:3.9s;animation-delay:-0.7s"/></g>
+  <g transform="translate(260 92) scale(0.6)"><path class="rise" d="M0 8 C-14 -2 -9 -14 0 -6 C9 -14 14 -2 0 8 Z" fill="#e5383b" style="animation-duration:4.4s;animation-delay:-3.3s"/></g>
+  <g transform="translate(320 92) scale(0.45)"><path class="rise" d="M0 8 C-14 -2 -9 -14 0 -6 C9 -14 14 -2 0 8 Z" fill="#ff8fab" style="animation-duration:3.7s;animation-delay:-2.0s"/></g>
+  <g transform="translate(380 92) scale(0.55)"><path class="rise" d="M0 8 C-14 -2 -9 -14 0 -6 C9 -14 14 -2 0 8 Z" fill="#ff4d6d" style="animation-duration:4.1s;animation-delay:-0.2s"/></g>
+  <line x1="424" y1="66" x2="488" y2="16" stroke="#8d5a2b" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M424 66 l-3 -9 m3 9 l9 -3 M428 63 l-3 -9 m3 9 l9 -3" stroke="#e5383b" stroke-width="2" stroke-linecap="round"/>
+  <g transform="translate(456 40) scale(2.3)"><path class="beat" d="M0 8 C-14 -2 -9 -14 0 -6 C9 -14 14 -2 0 8 Z" fill="#e5383b" stroke="#b5171d" stroke-width="0.8"/></g>
+  <path d="M478 23 L490 14 L486 26 Z" fill="#9aa4ae"/>
+</svg>

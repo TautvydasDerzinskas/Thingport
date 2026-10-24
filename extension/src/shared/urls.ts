@@ -383,3 +383,20 @@ export function classifyUrl(url: string): Classification | null {
   if (parseCults3dModelUrl(url)) return { kind: "single", provider: "cults3d", type: "model" };
   return null;
 }
+
+/** `provider:id` for a model page, the same for every tab and print profile of one model. Null for anything else. */
+export function modelKey(url: string): string | null {
+  const id =
+    parseMakerworldModelUrl(url)?.designId ??
+    parseThingiverseThingUrl(url)?.thingId ??
+    parsePrintablesModelUrl(url)?.modelId ??
+    parseMyminifactoryObjectUrl(url)?.objectId ??
+    parseSnapmakerModelUrl(url)?.modelId ??
+    parseMakeronlineModelUrl(url)?.modelId ??
+    parseCrealitycloudModelUrl(url)?.modelId ??
+    parseNexprintModelUrl(url)?.modelId ??
+    parseThangsModelUrl(url)?.modelId ??
+    parseCults3dModelUrl(url)?.slug;
+  const classification = classifyUrl(url);
+  return id && classification?.kind === "single" ? `${classification.provider}:${id}` : null;
+}

@@ -1,11 +1,16 @@
-// Toolbar popup (or a tab, when the browser won't open the popup): the setup form until configured,
-// then the enable switch and recent imports.
+// Toolbar popup (or a tab, when the browser won't open the popup). Connect: the setup form, which becomes Providers
+// once connected. Offline features (Extra features once connected): what works without an instance. History: recent
+// imports when connected, and recently viewed models either way.
 
 import { fillIcons } from "../shared/icon";
+import { seasonalIcon } from "../shared/seasonalIcon";
+import { dressMark } from "../shared/seasonalMark";
 import { send, type Connection, type ExtensionState } from "../shared/messages";
-import { STORAGE_KEYS, apiUrl, normalizeInstanceUrl } from "../shared/storage";
+import { STORAGE_KEYS, apiUrl, normalizeInstanceUrl, type OfflineFeature } from "../shared/storage";
+import { confirmAction } from "./confirm";
 import { clearError, els, showError } from "./dom";
 import { loadRecentImports } from "./recentImports";
+import { loadRecentlyViewed } from "./recentlyViewed";
 import { loadSites } from "./sites";
 import "./styles/popup.scss";
 
@@ -13,14 +18,72 @@ import "./styles/popup.scss";
 const returnTabId = Number.parseInt(new URLSearchParams(location.search).get("returnTab") ?? "", 10);
 
 fillIcons(document);
+dressMark(els.headerIcon, seasonalIcon(), "header__season");
+// Room above for a hat.
+if (els.headerIcon.dataset.season) els.headerIcon.closest(".header")?.classList.add("header--seasonal");
 // Bumped by semantic-release in package.json, which the build copies into the manifest.
 els.version.textContent = `v${chrome.runtime.getManifest().version}`;
+
+const FEATURE_SWITCHES: Record<OfflineFeature, HTMLInputElement> = {
+  normalizeMakerworld: els.normalizeSwitch,
+  thingiverseDark: els.thingiverseDarkSwitch,
+  thingiverseHideAds: els.thingiverseAdsSwitch,
+};
+
+type Tab = "connect" | "offline" | "history";
+
+const TABS: Record<Tab, { tab: HTMLButtonElement; panel: HTMLElement }> = {
+  connect: { tab: els.connectTab, panel: els.connectPanel },
+  offline: { tab: els.offlineTab, panel: els.offlinePanel },
+  history: { tab: els.historyTab, panel: els.historyPanel },
+};
+
+/** The first two tabs' names: what they hold changes once connected. */
+function labelTabs(connected: boolean): void {
+  els.connectTab.textContent = connected ? "Providers" : "Connect";
+  els.offlineTab.textContent = connected ? "Extra features" : "Offline features";
+  els.offlineNote.hidden = connected;
+}
+
+function selectTab(selected: Tab, { focus = false } = {}): void {
+  els.tabs.dataset.active = selected;
+  for (const [name, { tab, panel }] of Object.entries(TABS)) {
+    const active = name === selected;
+    tab.setAttribute("aria-selected", String(active));
+    tab.tabIndex = active ? 0 : -1;
+    panel.hidden = !active;
+  }
+  if (focus) TABS[selected].tab.focus();
+}
+
+for (const [name, { tab }] of Object.entries(TABS) as [Tab, (typeof TABS)[Tab]][]) {
+  tab.addEventListener("click", () => selectTab(name));
+}
+
+// Arrow keys move between tabs, as in any tab list.
+els.tabs.addEventListener("keydown", (event) => {
+  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+  event.preventDefault();
+  const names = Object.keys(TABS) as Tab[];
+  const current = names.indexOf(els.tabs.dataset.active as Tab);
+  const next =
+    event.key === "Home"
+      ? 0
+      : event.key === "End"
+        ? names.length - 1
+        : (current + (event.key === "ArrowRight" ? 1 : -1) + names.length) % names.length;
+  selectTab(names[next], { focus: true });
+});
+
+// Always opens on the first tab.
+selectTab("connect");
 
 function displayInstanceUrl(instanceUrl: string): string {
   return instanceUrl.replace(/^https?:\/\//i, "");
 }
 
 function showConfiguredView(state: ExtensionState): void {
+  labelTabs(true);
   els.configuredView.hidden = false;
   els.setupForm.hidden = true;
   els.instanceRow.hidden = false;
@@ -34,6 +97,8 @@ function showConfiguredView(state: ExtensionState): void {
 }
 
 function showSetupForm(prefillUrl = "", prefillEmail = ""): void {
+  labelTabs(false);
+  els.recentSection.hidden = true;
   els.configuredView.hidden = true;
   els.instanceRow.hidden = true;
   els.enabledToggle.hidden = true;
@@ -43,6 +108,7 @@ function showSetupForm(prefillUrl = "", prefillEmail = ""): void {
   els.emailInput.value = prefillEmail;
   els.passwordInput.value = "";
   els.ssoPending.hidden = true;
+  els.disconnectedNote.hidden = true;
   clearError();
   els.instanceUrlInput.focus();
   void offerSingleSignOn(prefillUrl);
@@ -89,6 +155,9 @@ async function refresh({ checkConnection = true } = {}): Promise<void> {
     showError(res?.error ?? "The extension background isn't responding");
     return;
   }
+  for (const [feature, input] of Object.entries(FEATURE_SWITCHES) as [OfflineFeature, HTMLInputElement][]) {
+    input.checked = res.data.offlineFeatures[feature];
+  }
   if (!res.data.configured) {
     showSetupForm();
     return;
@@ -98,6 +167,8 @@ async function refresh({ checkConnection = true } = {}): Promise<void> {
   const connection = await send("CHECK_CONNECTION");
   if (!connection?.ok || connection.data.connected) return;
   if (checkConnection) {
+    // A connection that stopped working is worth seeing whichever tab was open last.
+    selectTab("connect");
     showSetupForm(res.data.instanceUrl, res.data.email);
     showError(connectionProblem(connection.data));
     // A removed connection has no password to fix: nothing to jump to.
@@ -111,7 +182,44 @@ async function refresh({ checkConnection = true } = {}): Promise<void> {
 
 els.editInstanceBtn.addEventListener("click", async () => {
   const res = await send("GET_STATE");
+  selectTab("connect");
   showSetupForm(res?.ok ? res.data.instanceUrl : "", res?.ok ? res.data.email : "");
+});
+
+async function disconnect(): Promise<void> {
+  const state = await send("GET_STATE");
+  const res = await send("DISCONNECT");
+  if (!res?.ok) {
+    showError(res?.error ?? "Couldn't disconnect", els.configuredError);
+    return;
+  }
+  // The instance's address was granted for this connection alone.
+  if (state?.ok && state.data.instanceUrl) {
+    try {
+      await chrome.permissions.remove({ origins: [`${new URL(state.data.instanceUrl).origin}/*`] });
+    } catch {
+      // Granted as part of wider access, which stays.
+    }
+  }
+  await refresh();
+  if (res.data.approvalKept) {
+    els.disconnectedNote.textContent =
+      "Disconnected. Your Thingport instance didn't remove this browser's connection: remove it from your " +
+      "profile in Thingport to revoke its access there.";
+    els.disconnectedNote.hidden = false;
+  }
+}
+
+els.disconnectBtn.addEventListener("click", async () => {
+  const res = await send("GET_STATE");
+  const host = res?.ok ? displayInstanceUrl(res.data.instanceUrl) : "your Thingport instance";
+  confirmAction({
+    title: "Disconnect from Thingport?",
+    text: `Thingport Grab forgets ${host} and its sign-in in this browser. Offline features and recently viewed models stay.`,
+    confirmLabel: "Disconnect",
+    busyLabel: "Disconnecting…",
+    action: disconnect,
+  });
 });
 
 els.cancelBtn.addEventListener("click", () => void refresh({ checkConnection: false }));
@@ -157,16 +265,45 @@ chrome.storage.onChanged.addListener((changes, area) => {
   void refresh();
 });
 
-els.enabledSwitch.addEventListener("change", async () => {
+async function setEnabled(enabled: boolean): Promise<void> {
   clearError(els.configuredError);
   els.enabledSwitch.disabled = true;
-  const res = await send("SET_DISABLED", { disabled: !els.enabledSwitch.checked });
+  const res = await send("SET_DISABLED", { disabled: !enabled });
   els.enabledSwitch.disabled = false;
-  if (!res?.ok) {
-    showError(res?.error ?? "Couldn't save", els.configuredError);
-    els.enabledSwitch.checked = !els.enabledSwitch.checked;
+  if (res?.ok) els.enabledSwitch.checked = enabled;
+  else showError(res?.error ?? "Couldn't save", els.configuredError);
+}
+
+// Turning it back on is one click; turning it off asks first, and the switch stays on until it's confirmed.
+els.enabledSwitch.addEventListener("change", () => {
+  if (els.enabledSwitch.checked) {
+    void setEnabled(true);
+    return;
   }
+  els.enabledSwitch.checked = true;
+  confirmAction({
+    title: "Turn Thingport Grab off?",
+    text:
+      "It stops on every site until you turn it back on: no import button, no Download normalized, and Thingiverse " +
+      "looks as it does without Grab. Your connection and settings stay.",
+    confirmLabel: "Turn off",
+    busyLabel: "Turning off…",
+    action: () => setEnabled(false),
+  });
 });
+
+for (const [feature, input] of Object.entries(FEATURE_SWITCHES) as [OfflineFeature, HTMLInputElement][]) {
+  input.addEventListener("change", async () => {
+    clearError(els.offlineError);
+    input.disabled = true;
+    const res = await send("SET_OFFLINE_FEATURE", { feature, enabled: input.checked });
+    input.disabled = false;
+    if (!res?.ok) {
+      showError(res?.error ?? "Couldn't save", els.offlineError);
+      input.checked = !input.checked;
+    }
+  });
+}
 
 els.setupForm.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -212,4 +349,10 @@ els.setupForm.addEventListener("submit", async (event) => {
   }
 });
 
+// A page open in another window can note a model while this is open.
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && "recentlyViewed" in changes) void loadRecentlyViewed();
+});
+
 void refresh();
+void loadRecentlyViewed();

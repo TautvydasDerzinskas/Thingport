@@ -202,3 +202,56 @@ export async function apiFetchBlob(config: ConfiguredConfig, path: string): Prom
   });
   return res.ok ? res.blob() : null;
 }
+
+// Everything tied to the connection or the account it signs in as. Offline features and recently viewed models stay; recent imports are kept per account, so they come back on reconnecting.
+const CONNECTION_KEYS = [
+  STORAGE_KEYS.instanceUrl,
+  STORAGE_KEYS.email,
+  STORAGE_KEYS.password,
+  STORAGE_KEYS.connectionToken,
+  STORAGE_KEYS.pendingPairing,
+  STORAGE_KEYS.disabled,
+  STORAGE_KEYS.isAdmin,
+  STORAGE_KEYS.token,
+  STORAGE_KEYS.tokenExpiresAt,
+  STORAGE_KEYS.loginVerifiedAt,
+  STORAGE_KEYS.lastSyncedMakerworldCookie,
+  STORAGE_KEYS.lastSyncedMyminifactorySession,
+  STORAGE_KEYS.lastSyncedSnapmakerToken,
+  STORAGE_KEYS.lastSyncedMakeronlineToken,
+  STORAGE_KEYS.lastSyncedCrealitycloudSession,
+  STORAGE_KEYS.lastSyncedNexprintSession,
+  STORAGE_KEYS.lastSyncedThangsSession,
+  STORAGE_KEYS.lastSyncedCults3dSession,
+  STORAGE_KEYS.lastSentProviderAccounts,
+  STORAGE_KEYS.lastPrintablesPushAt,
+  STORAGE_KEYS.lastPrintablesLikesAt,
+  STORAGE_KEYS.printablesPlanHandedOutAt,
+];
+
+/** Tells the instance, as far as it answers, then forgets the connection here. `approvalKept`: a connection made by
+ *  approval the instance didn't remove (it's older, or didn't answer), still listed in the user's Thingport profile. */
+export async function disconnect(): Promise<{ approvalKept: boolean }> {
+  const config = await getStoredConfig();
+  let approvalKept = false;
+  if (config.instanceUrl) {
+    const post = (path: string, init: RequestInit = {}) =>
+      fetch(apiUrl(config.instanceUrl!, path), {
+        method: "POST",
+        ...init,
+        headers: { ...CLIENT_HEADERS, "Content-Type": "application/json", ...init.headers },
+        signal: AbortSignal.timeout(5000),
+      });
+    if (config.connectionToken) {
+      const res = await post("/grab/disconnect", {
+        body: JSON.stringify({ connection_token: config.connectionToken }),
+      }).catch(() => null);
+      approvalKept = !res?.ok;
+    }
+    // Ends this session on the instance; it would run out by itself anyway.
+    if (config.token) await post("/logout", { headers: { Authorization: `Bearer ${config.token}` } }).catch(() => null);
+  }
+  await chrome.storage.local.remove(CONNECTION_KEYS);
+  setConnectionBadge(true);
+  return { approvalKept };
+}

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -45 530 175" fill="none">
+  <title>International Programmers' Day</title>
+  <style>
+    .fall { font: bold 13px ui-monospace, Menlo, Consolas, monospace; fill: #00b800; animation: fall linear infinite; }
+    @keyframes fall { 0% { transform: translateY(0); opacity: 0; } 10%, 80% { opacity: 0.9; } 100% { transform: translateY(160px); opacity: 0; } }
+    .tag { font: bold 30px ui-monospace, Menlo, Consolas, monospace; fill: #00b800; }
+    .cursor { animation: blink 1s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } .fall, .rise { display: none; } }
+  </style>
+  <text class="fall" x="-15" y="-34" style="animation-duration:5.5s;animation-delay:-1s">1</text>
+  <text class="fall" x="30" y="-34" style="animation-duration:6.2s;animation-delay:-3.2s">0</text>
+  <text class="fall" x="75" y="-34" style="animation-duration:5.1s;animation-delay:-0.4s">1</text>
+  <text class="fall" x="120" y="-34" style="animation-duration:6.8s;animation-delay:-4.6s">1</text>
+  <text class="fall" x="165" y="-34" style="animation-duration:5.7s;animation-delay:-2.2s">0</text>
+  <text class="fall" x="210" y="-34" style="animation-duration:6.4s;animation-delay:-5.0s">0</text>
+  <text class="fall" x="255" y="-34" style="animation-duration:5.3s;animation-delay:-1.6s">1</text>
+  <text class="fall" x="300" y="-34" style="animation-duration:6.0s;animation-delay:-3.8s">0</text>
+  <text class="fall" x="345" y="-34" style="animation-duration:5.8s;animation-delay:-2.8s">1</text>
+  <text class="fall" x="390" y="-34" style="animation-duration:6.6s;animation-delay:-0.9s">1</text>
+  <text class="fall" x="430" y="-34" style="animation-duration:5.4s;animation-delay:-4.1s">0</text>
+  <text class="fall" x="475" y="-34" style="animation-duration:6.1s;animation-delay:-2.5s">1</text>
+  <text class="tag" x="414" y="60">&lt;/&gt;</text>
+  <rect class="cursor" x="472" y="55" width="13" height="4.5" fill="#00b800"/>
+</svg>
