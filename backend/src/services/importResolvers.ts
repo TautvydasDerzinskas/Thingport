@@ -1,3 +1,4 @@
+import { remoteRequest } from "../utils/remoteRequest";
 import path from "node:path";
 import * as cheerio from "cheerio";
 import {
@@ -107,7 +108,9 @@ async function rawFetchBuffer(
       body: init?.body,
       signal: controller.signal,
     };
-    const res = await (headers.Cookie ? credentialRequest("makerworld-page", url, request) : fetch(url, request));
+    const res = await (headers.Cookie
+      ? credentialRequest("makerworld-page", url, request)
+      : remoteRequest(url, request));
     const arrayBuf = await res.arrayBuffer();
     const buffer = Buffer.from(arrayBuf);
     return { status: res.status, headers: res.headers, buffer, url: res.url || url };

@@ -27,7 +27,8 @@ import {
   credentialRequest,
 } from "../providers/credentialRequest";
 import { readCapped } from "../utils/readCapped";
-import { browserFetch, needsBrowserFetch } from "../utils/browserFetch";
+import { needsBrowserFetch } from "../utils/browserFetch";
+import { remoteRequest } from "../utils/remoteRequest";
 import { mapWithConcurrency, maybeSleep, sleep } from "../utils/concurrency";
 import {
   CLOUDFLARE_BLOCKED_CODE,
@@ -248,16 +249,15 @@ function parseCharset(contentType: string | null): string {
 
 async function rawFetch(url: string, headers: Record<string, string>): Promise<Response> {
   if (headers.Cookie) assertCredentialDestination("makerworld-page", url);
-  if (needsBrowserFetch(url)) {
-    return headers.Cookie
-      ? browserCredentialRequest("makerworld-page", url, { headers, timeoutMs: IMPORT_TIMEOUT_SECONDS * 1000 })
-      : browserFetch(url, { headers, timeoutMs: IMPORT_TIMEOUT_SECONDS * 1000 });
-  }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), IMPORT_TIMEOUT_SECONDS * 1000);
   try {
     const init: RequestInit = { headers, signal: controller.signal };
-    return await (headers.Cookie ? credentialRequest("makerworld-page", url, init) : fetch(url, init));
+    return await (headers.Cookie
+      ? needsBrowserFetch(url)
+        ? browserCredentialRequest("makerworld-page", url, { headers, signal: controller.signal })
+        : credentialRequest("makerworld-page", url, init)
+      : remoteRequest(url, init, needsBrowserFetch(url)));
   } finally {
     clearTimeout(timeout);
   }

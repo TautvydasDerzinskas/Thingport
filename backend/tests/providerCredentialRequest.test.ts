@@ -29,6 +29,22 @@ describe("provider credential destinations", () => {
     expect(() => assertCredentialDestination("cults3d-session", url)).toThrow("Refusing to send");
   });
 
+  it.each(["attacker.makerworld.com", "nested.www.makerworld.com"])(
+    "rejects saved MakerWorld cookies to %s before network access",
+    async (host) => {
+      const transport = vi.fn<(url: string, init: RequestInit) => Promise<Response>>();
+      await expect(
+        credentialRequest(
+          "makerworld-page",
+          `https://${host}/en/models/1`,
+          { headers: { Cookie: "token=saved-makerworld-secret" } },
+          transport,
+        ),
+      ).rejects.toThrow("Refusing to send");
+      expect(transport).not.toHaveBeenCalled();
+    },
+  );
+
   it("blocks cross-origin redirects before the token reaches the next hop", async () => {
     const requests: string[] = [];
     let cancelled = false;
