@@ -1,7 +1,13 @@
 import type { SyncProblem } from "../syncProblem";
 import type { ProviderSync } from "../types";
-import { fetchSnapmakerList, SnapmakerAuthError } from "./api";
-import { getSnapmakerConnection, getUserSnapmakerToken, markSnapmakerTokenRejected } from "./session";
+import { HttpError } from "../../utils/fileUtils";
+import { fetchSnapmakerList, parseSnapmakerListUrl, SnapmakerAuthError, snapmakerListName } from "./api";
+import {
+  getSnapmakerConnection,
+  getUserSnapmakerId,
+  getUserSnapmakerToken,
+  markSnapmakerTokenRejected,
+} from "./session";
 
 const DISCONNECTED: SyncProblem = {
   error: "Snapmaker Space isn't connected",
@@ -28,4 +34,19 @@ export const snapmakerSync: ProviderSync = {
   },
   rejected: { is: (err) => err instanceof SnapmakerAuthError, mark: markSnapmakerTokenRejected, problem: EXPIRED },
   problems: [DISCONNECTED, EXPIRED],
+  // Snapmaker shows likes and bookmarks to their owner only, and a sync reads them with the user's own sign-in: one
+  // of someone else's would be fed the user's own under the other's name.
+  async assertCanSync(userId, source) {
+    const own = await getUserSnapmakerId(userId);
+    if (!own || own !== parseSnapmakerListUrl(source.url)?.userId) {
+      throw new HttpError(
+        400,
+        "Snapmaker Space shows likes and bookmarks to their owner only, so only your own can be synced, once Snapmaker is connected",
+      );
+    }
+  },
+  listName(source) {
+    const list = parseSnapmakerListUrl(source.url)?.list;
+    return list ? snapmakerListName(list) : null;
+  },
 };

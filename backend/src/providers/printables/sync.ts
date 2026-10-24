@@ -1,5 +1,7 @@
+import { HttpError } from "../../utils/fileUtils";
 import {
   PRINTABLES_FORGOTTEN,
+  pushedLikes,
   printablesPushIsOff,
   pushedPrintablesModels,
   WAITING_FOR_GRAB,
@@ -23,4 +25,17 @@ export const printablesSync: ProviderSync = {
     return entries.map((e) => e.modelId);
   },
   problems: [],
+  // Printables shows likes to their owner only, and Grab reads them as that user: a sync of someone else's would be
+  // fed the user's own likes under the other's name. The likes Grab pushed prove whose they are; the account saved on
+  // the user can be typed into the app, so it proves nothing.
+  async assertCanSync(userId, source) {
+    if (!source.likesOf) return;
+    const likes = await pushedLikes(userId);
+    if (likes?.card.owner?.toLowerCase() !== source.likesOf.toLowerCase()) {
+      throw new HttpError(
+        400,
+        "Printables shows likes to their owner only, so only your own can be synced, once Thingport Grab has seen them",
+      );
+    }
+  },
 };

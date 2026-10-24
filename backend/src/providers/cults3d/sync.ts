@@ -1,3 +1,4 @@
+import { HttpError } from "../../utils/fileUtils";
 import { syncLikesUsername } from "../names";
 import type { SyncProblem } from "../syncProblem";
 import type { ProviderSync } from "../types";
@@ -48,4 +49,14 @@ export const cults3dSync: ProviderSync = {
   },
   rejected: { is: (err) => err instanceof Cults3dAuthError, mark: markCults3dApiRejected, problem: API_EXPIRED },
   problems: [API_DISCONNECTED, API_EXPIRED, SITE_DISCONNECTED, SITE_EXPIRED],
+  // Its listings are read with the user's API key, which shows no one's printlists but their own.
+  async assertCanSync(userId, source) {
+    const connection = await getCults3dConnection(userId);
+    if (connection.api !== "connected") {
+      throw new HttpError(400, "Cults3D is read with your own API key: enter it in Configuration > Providers first");
+    }
+    if (!source.likesOf && !source.externalId.startsWith(`${connection.nick?.toLowerCase()}/`)) {
+      throw new HttpError(400, "Only your own Cults3D printlists can be synced: Cults3D's API shows no one else's");
+    }
+  },
 };

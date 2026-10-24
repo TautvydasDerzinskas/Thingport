@@ -15,6 +15,7 @@ import type {
 import type { NewPlateInput } from "../services/printCreation";
 import type { TrendingSetup } from "../services/providerTrendingService";
 import type { TrendingModel } from "../services/trendingModel";
+import type { ProviderId } from "./_generated";
 import type { SyncProblem } from "./syncProblem";
 
 /** A model as its provider describes it. */
@@ -168,6 +169,10 @@ export type ProviderLists = {
   unavailableText?: string;
 };
 
+/** A list a sync can follow, by its link. `likesOf` is set for a user's likes (on Thingiverse or Cults3D, or the
+ *  user's own on Printables), which a sync follows like a collection. */
+export type SyncSource = { provider: ProviderId; externalId: string; url: string; likesOf?: string };
+
 /** A synced collection, likes or bookmarks, as a check of it reads them. */
 export type SyncedList = Pick<CollectionSync, "userId" | "externalId" | "sourceUrl">;
 
@@ -187,6 +192,12 @@ export type ProviderSync = {
   rejected?: { is(err: unknown): boolean; mark(userId: string): Promise<void>; problem: SyncProblem; onlyThis?: true };
   /** Every problem it holds a sync for, so "Sync now" on a held one says it again. */
   problems: readonly SyncProblem[];
+  /** The 400 for a list the user can't sync: someone else's that only its owner sees, or one read with a sign-in
+   *  they haven't given. */
+  assertCanSync?(userId: string, source: SyncSource): Promise<void>;
+  /** The name of the collection a list is synced into, where the list's own says nothing (the user's likes or
+   *  bookmarks); null for one named by its title. Someone's likes are named after them without it. */
+  listName?(source: SyncSource): string | null;
 };
 
 /** The list for the dashboard's trending panel (the manifest's capabilities.trending says which it is). */

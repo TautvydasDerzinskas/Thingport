@@ -6,31 +6,20 @@ import type { Collection, CollectionSync } from "@prisma/client";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { isProviderId, modelUrl, parseListUrl, type ProviderId, URLS } from "../providers/_generated";
-import { PROFILE_PROVIDERS } from "../providers/registry";
+import { PROFILE_PROVIDERS, PROVIDERS } from "../providers/registry";
+import type { SyncSource } from "../providers/types";
 import { likesCollectionName, providerName, syncLikesUsername } from "../providers/names";
 
 export { providerName };
 import { addPrintsToCollection, findOrCreateCollectionByName, isSystemCollectionId } from "./collectionService";
-import { parseSnapmakerListUrl, snapmakerListName } from "../providers/snapmaker/api";
-import { getUserSnapmakerId } from "../providers/snapmaker/session";
-import { MAKERONLINE_LIKES_KEY, MAKERONLINE_LIKES_NAME } from "../providers/makeronline/api";
-import { getUserMakeronlineToken } from "../providers/makeronline/session";
-import { CREALITYCLOUD_LIKES_NAME, parseCrealitycloudLikesUrl } from "../providers/crealitycloud/api";
-import { getUserCrealitycloudId } from "../providers/crealitycloud/session";
-import { THANGS_LIKES_KEY, THANGS_LIKES_NAME } from "../providers/thangs/api";
-import { getThangsConnection } from "../providers/thangs/session";
-import { getCults3dConnection } from "../providers/cults3d/session";
 import { createLog } from "./auditLog";
-import { pushedLikes } from "./providerListingsService";
 import { createNotification } from "./notificationService";
 import type { SyncIntervalHours } from "./collectionSyncSchedule";
 import { toCollectionSyncOut, type CollectionSyncOut, type SyncProfileScope } from "../dto";
 
 export type SyncProvider = ProviderId;
 
-/** `likesOf` is set for a user's likes (on Thingiverse or Cults3D, or the user's own on Printables), which a
- *  sync follows like a collection. */
-export type SyncSource = { provider: SyncProvider; externalId: string; url: string; likesOf?: string };
+export type { SyncSource };
 
 /** Providers whose models come with print profiles a sync can pick between. */
 export function hasProfiles(provider: string): boolean {
@@ -131,15 +120,8 @@ export async function enableSync(userId: string, input: EnableSyncInput): Promis
       400,
       "Only MakerWorld, Printables, Thingiverse, MyMiniFactory, MakerOnline, Creality Cloud, NexPrint and Thangs collections, your own Cults3D printlists, Thingiverse or Cults3D likes, your own Printables, MakerOnline, Creality Cloud and Thangs likes, and your own Snapmaker Space likes and bookmarks, can be synced",
     );
-  if (source.provider === "printables" && source.likesOf) await assertOwnPrintablesLikes(userId, source.likesOf);
-  if (source.provider === "snapmaker") await assertOwnSnapmakerList(userId, source.url);
-  if (source.provider === "makeronline" && source.externalId === MAKERONLINE_LIKES_KEY) {
-    await assertMakeronlineConnected(userId);
-  }
-  if (source.provider === "thangs") await assertThangsConnected(userId);
-  if (source.provider === "cults3d") await assertCults3dSource(userId, source);
-  const crealitycloudLikes = source.provider === "crealitycloud" ? parseCrealitycloudLikesUrl(source.url) : null;
-  if (crealitycloudLikes) await assertOwnCrealitycloudLikes(userId, crealitycloudLikes.userId);
+  const provider = PROVIDERS[source.provider].sync;
+  await provider?.assertCanSync?.(userId, source);
   const knownIds = [...new Set(input.knownIds.map((id) => id.trim()).filter(Boolean))];
 
   const existing = await findSyncForSource(userId, source);
@@ -173,18 +155,10 @@ export async function enableSync(userId: string, input: EnableSyncInput): Promis
     if ("link" in result) return result.link;
     created = result.created;
   } else {
-    const snapmakerList = source.provider === "snapmaker" ? parseSnapmakerListUrl(source.url)?.list : null;
     const title = source.likesOf
       ? likesCollectionName(source.likesOf, source.provider)
-      : snapmakerList
-        ? snapmakerListName(snapmakerList)
-        : source.provider === "makeronline" && source.externalId === MAKERONLINE_LIKES_KEY
-          ? MAKERONLINE_LIKES_NAME
-          : crealitycloudLikes
-            ? CREALITYCLOUD_LIKES_NAME
-            : source.provider === "thangs" && source.externalId === THANGS_LIKES_KEY
-              ? THANGS_LIKES_NAME
-              : input.title?.trim() || `${providerName(source.provider)} Collection ${source.externalId}`;
+      : (provider?.listName?.(source) ??
+        (input.title?.trim() || `${providerName(source.provider)} Collection ${source.externalId}`));
     let found: (CollectionSync & { collection: Collection }) | null = null;
     for (const name of collectionNamesFor(title, source.provider)) {
       const collection = await findOrCreateCollectionByName(userId, name);
@@ -235,73 +209,6 @@ async function notifySyncEnabled(sync: CollectionSync & { collection: Collection
     externalUrl: sync.sourceUrl,
     internalPath: `/models/collections/${sync.collectionId}`,
   });
-}
-
-/** Printables shows likes to their owner only, and Grab reads them as that user: a sync of someone
- *  else's would be fed the user's own likes under the other's name. The likes Grab pushed prove whose
- *  they are; the account saved on the user can be typed into the app, so it proves nothing. */
-async function assertOwnPrintablesLikes(userId: string, handle: string): Promise<void> {
-  const likes = await pushedLikes(userId);
-  if (likes?.card.owner?.toLowerCase() !== handle.toLowerCase()) {
-    throw new HttpError(
-      400,
-      "Printables shows likes to their owner only, so only your own can be synced, once Thingport Grab has seen them",
-    );
-  }
-}
-
-/** Snapmaker shows likes and bookmarks to their owner only, and a sync reads them with the user's own sign-in: one
- *  of someone else's would be fed the user's own under the other's name. */
-async function assertOwnSnapmakerList(userId: string, url: string): Promise<void> {
-  const own = await getUserSnapmakerId(userId);
-  if (!own || own !== parseSnapmakerListUrl(url)?.userId) {
-    throw new HttpError(
-      400,
-      "Snapmaker Space shows likes and bookmarks to their owner only, so only your own can be synced, once Snapmaker is connected",
-    );
-  }
-}
-
-/** MakerOnline's likes page names no user, so a sync reads whoever's token Thingport has: there has to be one. */
-async function assertMakeronlineConnected(userId: string): Promise<void> {
-  if (!(await getUserMakeronlineToken(userId))) {
-    throw new HttpError(
-      400,
-      "MakerOnline shows likes to their owner only: connect MakerOnline first, or visit it with Thingport Grab",
-    );
-  }
-}
-
-/** Every Thangs download is the user's, and its likes page names no user: a sync needs their sign-in either way. */
-async function assertThangsConnected(userId: string): Promise<void> {
-  if ((await getThangsConnection(userId)) !== "connected") {
-    throw new HttpError(
-      400,
-      "Thangs gives its files to a signed-in user only: connect Thangs first, or visit it with Thingport Grab",
-    );
-  }
-}
-
-/** Cults3D's listings are read with the user's API key, which shows no one's printlists but their own. */
-async function assertCults3dSource(userId: string, source: SyncSource): Promise<void> {
-  const connection = await getCults3dConnection(userId);
-  if (connection.api !== "connected") {
-    throw new HttpError(400, "Cults3D is read with your own API key: enter it in Configuration > Providers first");
-  }
-  if (!source.likesOf && !source.externalId.startsWith(`${connection.nick?.toLowerCase()}/`)) {
-    throw new HttpError(400, "Only your own Cults3D printlists can be synced: Cults3D's API shows no one else's");
-  }
-}
-
-/** Creality Cloud shows likes to their owner only, and a sync reads them with the user's own sign-in, as for
- *  Snapmaker. */
-async function assertOwnCrealitycloudLikes(userId: string, likesOf: string): Promise<void> {
-  if ((await getUserCrealitycloudId(userId)) !== likesOf) {
-    throw new HttpError(
-      400,
-      "Creality Cloud shows likes to their owner only, so only your own can be synced, once Creality Cloud is connected",
-    );
-  }
 }
 
 // How many "Things (MakerWorld 2)"-style names to try before giving up.

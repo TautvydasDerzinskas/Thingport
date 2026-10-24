@@ -1,12 +1,20 @@
 import { type SyncProblem, SyncHeldError } from "../syncProblem";
 import type { ProviderSync } from "../types";
+import { HttpError } from "../../utils/fileUtils";
 import {
+  CREALITYCLOUD_LIKES_NAME,
   CrealitycloudAuthError,
+  parseCrealitycloudLikesUrl,
   crealitycloudLikesKey,
   fetchCrealitycloudCollection,
   fetchCrealitycloudLikes,
 } from "./api";
-import { getCrealitycloudConnection, getUserCrealitycloudAuth, markCrealitycloudSessionRejected } from "./session";
+import {
+  getCrealitycloudConnection,
+  getUserCrealitycloudAuth,
+  getUserCrealitycloudId,
+  markCrealitycloudSessionRejected,
+} from "./session";
 
 const LIKES_DISCONNECTED: SyncProblem = {
   error: "Creality Cloud isn't connected",
@@ -53,4 +61,15 @@ export const crealitycloudSync: ProviderSync = {
     onlyThis: true,
   },
   problems: [LIKES_DISCONNECTED, LIKES_OTHER_ACCOUNT, EXPIRED],
+  // Likes are their owner's only, read with the user's own sign-in, as for Snapmaker.
+  async assertCanSync(userId, source) {
+    const likes = parseCrealitycloudLikesUrl(source.url);
+    if (likes && (await getUserCrealitycloudId(userId)) !== likes.userId) {
+      throw new HttpError(
+        400,
+        "Creality Cloud shows likes to their owner only, so only your own can be synced, once Creality Cloud is connected",
+      );
+    }
+  },
+  listName: (source) => (parseCrealitycloudLikesUrl(source.url) ? CREALITYCLOUD_LIKES_NAME : null),
 };

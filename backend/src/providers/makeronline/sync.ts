@@ -1,6 +1,13 @@
 import { type SyncProblem, SyncHeldError } from "../syncProblem";
 import type { ProviderSync } from "../types";
-import { fetchMakeronlineCollection, fetchMakeronlineLikes, MAKERONLINE_LIKES_KEY, MakeronlineAuthError } from "./api";
+import { HttpError } from "../../utils/fileUtils";
+import {
+  fetchMakeronlineCollection,
+  fetchMakeronlineLikes,
+  MAKERONLINE_LIKES_KEY,
+  MAKERONLINE_LIKES_NAME,
+  MakeronlineAuthError,
+} from "./api";
 import { getMakeronlineConnection, getUserMakeronlineToken, markMakeronlineTokenRejected } from "./session";
 
 const LIKES_DISCONNECTED: SyncProblem = {
@@ -36,4 +43,14 @@ export const makeronlineSync: ProviderSync = {
   signInOnly,
   rejected: { is: (err) => err instanceof MakeronlineAuthError, mark: markMakeronlineTokenRejected, problem: EXPIRED },
   problems: [LIKES_DISCONNECTED, EXPIRED],
+  // Its likes page names no user, so a sync reads whoever's token Thingport has: there has to be one.
+  async assertCanSync(userId, source) {
+    if (signInOnly(source.externalId) && !(await getUserMakeronlineToken(userId))) {
+      throw new HttpError(
+        400,
+        "MakerOnline shows likes to their owner only: connect MakerOnline first, or visit it with Thingport Grab",
+      );
+    }
+  },
+  listName: (source) => (signInOnly(source.externalId) ? MAKERONLINE_LIKES_NAME : null),
 };

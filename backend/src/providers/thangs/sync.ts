@@ -1,3 +1,4 @@
+import { HttpError } from "../../utils/fileUtils";
 import type { SyncProblem } from "../syncProblem";
 import type { ProviderSync } from "../types";
 import {
@@ -5,6 +6,7 @@ import {
   fetchThangsLikes,
   fetchThangsPurchases,
   THANGS_LIKES_KEY,
+  THANGS_LIKES_NAME,
   ThangsAuthError,
 } from "./api";
 import {
@@ -48,4 +50,14 @@ export const thangsSync: ProviderSync = {
   },
   rejected: { is: (err) => err instanceof ThangsAuthError, mark: markThangsSessionRejected, problem: EXPIRED },
   problems: [DISCONNECTED, EXPIRED],
+  // Every download is the user's, and its likes page names no user: a sync needs their sign-in either way.
+  async assertCanSync(userId) {
+    if ((await getThangsConnection(userId)) !== "connected") {
+      throw new HttpError(
+        400,
+        "Thangs gives its files to a signed-in user only: connect Thangs first, or visit it with Thingport Grab",
+      );
+    }
+  },
+  listName: (source) => (source.externalId === THANGS_LIKES_KEY ? THANGS_LIKES_NAME : null),
 };
