@@ -2,6 +2,7 @@
 // which does the rest the same way for every provider: refusing a turned-off one, deduplicating, the print, its
 // author, category and gallery, and the temp files.
 
+import type { CollectionSync } from "@prisma/client";
 import type { z } from "zod";
 import type { ImportedPageMetadata } from "../services/importResolvers";
 import type {
@@ -14,6 +15,7 @@ import type {
 import type { NewPlateInput } from "../services/printCreation";
 import type { TrendingSetup } from "../services/providerTrendingService";
 import type { TrendingModel } from "../services/trendingModel";
+import type { SyncProblem } from "./syncProblem";
 
 /** A model as its provider describes it. */
 export type ResolvedModel = {
@@ -164,6 +166,27 @@ export type ProviderLists = {
   authText?: string;
   /** Its words for models that couldn't be found, after their count. */
   unavailableText?: string;
+};
+
+/** A synced collection, likes or bookmarks, as a check of it reads them. */
+export type SyncedList = Pick<CollectionSync, "userId" | "externalId" | "sourceUrl">;
+
+/** How the provider's synced lists are checked (services/collectionSyncRunner.ts). */
+export type ProviderSync = {
+  /** The list's model ids, or null when the provider says it no longer exists. Throws when there's no clear answer,
+   *  so an outage never unsyncs anything; a SyncHeldError holds this sync alone. */
+  fetchListing(sync: SyncedList): Promise<string[] | null>;
+  /** Why the provider can't be reached for this sync now, or null when it can. Checked before any call, so a sync
+   *  with nothing to sign in with waits instead of failing every round. */
+  connectionProblem?(sync: SyncedList): Promise<SyncProblem | null>;
+  /** Whether only this list of its lists needs the sign-in, so only it waits for one (likes, where its collections
+   *  read without). */
+  signInOnly?(externalId: string): boolean;
+  /** The provider turning the sign-in down mid-check: remembered, and its syncs held, or only this one's with
+   *  `onlyThis`. */
+  rejected?: { is(err: unknown): boolean; mark(userId: string): Promise<void>; problem: SyncProblem; onlyThis?: true };
+  /** Every problem it holds a sync for, so "Sync now" on a held one says it again. */
+  problems: readonly SyncProblem[];
 };
 
 /** The list for the dashboard's trending panel (the manifest's capabilities.trending says which it is). */

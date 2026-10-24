@@ -22,8 +22,25 @@ import { nexprintConnection } from "./nexprint/connection";
 import { snapmakerConnection } from "./snapmaker/connection";
 import { thangsConnection } from "./thangs/connection";
 import { thingiverseConnection } from "./thingiverse/connection";
+import { makerworldSync } from "./makerworld/sync";
+import { printablesSync } from "./printables/sync";
+import { thingiverseSync } from "./thingiverse/sync";
+import { myminifactorySync } from "./myminifactory/sync";
+import { snapmakerSync } from "./snapmaker/sync";
+import { makeronlineSync } from "./makeronline/sync";
+import { crealitycloudSync } from "./crealitycloud/sync";
+import { nexprintSync } from "./nexprint/sync";
+import { thangsSync } from "./thangs/sync";
+import { cults3dSync } from "./cults3d/sync";
 import type { AuthSlot } from "./_generated";
-import type { ConnectionSlot, CustomImport, ProviderLists, ProviderTrending, SourcedImport } from "./types";
+import type {
+  ConnectionSlot,
+  CustomImport,
+  ProviderLists,
+  ProviderSync,
+  ProviderTrending,
+  SourcedImport,
+} from "./types";
 
 export type ProviderBackend = {
   /** Each credential its manifest lists under `auth`, by slot. */
@@ -37,6 +54,8 @@ export type ProviderBackend = {
   customImport?: CustomImport;
   /** How its collections, likes or bookmarks import, where its manifest says it has any. */
   lists?: ProviderLists;
+  /** How they're checked once synced. */
+  sync?: ProviderSync;
   /** Its list for the dashboard's trending panel, where its manifest says it has one. */
   trending?: ProviderTrending;
 };
@@ -46,8 +65,8 @@ type Capabilities<K extends ProviderId> = Manifests[K]["capabilities"];
 /** A provider's entry: its connections, lists and trending list are required where its manifest declares them. */
 type Entry<K extends ProviderId> = ProviderBackend & {
   connection: { [S in Manifests[K]["auth"][number]["slot"]]: ConnectionSlot };
-} & (Capabilities<K>["collections"] extends true ? { lists: ProviderLists } : unknown) &
-  (Capabilities<K>["likes"] extends true ? { lists: ProviderLists } : unknown) &
+} & (Capabilities<K>["collections"] extends true ? { lists: ProviderLists; sync: ProviderSync } : unknown) &
+  (Capabilities<K>["likes"] extends true ? { lists: ProviderLists; sync: ProviderSync } : unknown) &
   (Capabilities<K>["trending"] extends false ? unknown : { trending: ProviderTrending });
 
 export const PROVIDERS = {
@@ -55,6 +74,7 @@ export const PROVIDERS = {
     connection: { default: makerworldConnection },
     authStopText: "the MakerWorld session expired — update the cookie in Settings, then retry",
     lists: makerworldLists,
+    sync: makerworldSync,
     trending: makerworldTrending,
   },
   printables: {
@@ -63,6 +83,7 @@ export const PROVIDERS = {
     authStopText: "Printables turned the request down — wait a while, then retry",
     sourcedImport: printablesImport,
     lists: printablesLists,
+    sync: printablesSync,
     trending: printablesTrending,
   },
   thingiverse: {
@@ -71,6 +92,7 @@ export const PROVIDERS = {
       "Thingiverse turned the instance's App Token down — an admin can check it in Administration, then retry",
     sourcedImport: thingiverseImport,
     lists: thingiverseLists,
+    sync: thingiverseSync,
     trending: thingiverseTrending,
   },
   myminifactory: {
@@ -79,6 +101,7 @@ export const PROVIDERS = {
       "MyMiniFactory turned your sign-in down — visit myminifactory.com signed in with Thingport Grab, then retry",
     sourcedImport: myminifactoryImport,
     lists: myminifactoryLists,
+    sync: myminifactorySync,
     trending: myminifactoryTrending,
   },
   snapmaker: {
@@ -86,6 +109,7 @@ export const PROVIDERS = {
     authStopText: "your Snapmaker sign-in ran out — visit space.snapmaker.com with Thingport Grab, then retry",
     sourcedImport: snapmakerImport,
     lists: snapmakerLists,
+    sync: snapmakerSync,
     trending: snapmakerTrending,
   },
   makeronline: {
@@ -94,6 +118,7 @@ export const PROVIDERS = {
       "MakerOnline turned your sign-in down — visit makeronline.com signed in with Thingport Grab, then retry",
     customImport: makeronlineImport,
     lists: makeronlineLists,
+    sync: makeronlineSync,
     trending: makeronlineTrending,
   },
   crealitycloud: {
@@ -102,6 +127,7 @@ export const PROVIDERS = {
       "Creality Cloud turned your sign-in down — visit crealitycloud.com signed in with Thingport Grab, then retry",
     sourcedImport: crealitycloudImport,
     lists: crealitycloudLists,
+    sync: crealitycloudSync,
     trending: crealitycloudTrending,
   },
   nexprint: {
@@ -109,6 +135,7 @@ export const PROVIDERS = {
     authStopText: "NexPrint turned your sign-in down — visit nexprint.com signed in with Thingport Grab, then retry",
     sourcedImport: nexprintImport,
     lists: nexprintLists,
+    sync: nexprintSync,
     trending: nexprintTrending,
   },
   thangs: {
@@ -116,6 +143,7 @@ export const PROVIDERS = {
     authStopText: "Thangs turned your sign-in down — visit thangs.com signed in with Thingport Grab, then retry",
     sourcedImport: thangsImport,
     lists: thangsLists,
+    sync: thangsSync,
     trending: thangsTrending,
   },
   cults3d: {
@@ -125,6 +153,7 @@ export const PROVIDERS = {
       "signed in with Thingport Grab, then retry",
     sourcedImport: cults3dImport,
     lists: cults3dLists,
+    sync: cults3dSync,
     trending: cults3dTrending,
   },
 } satisfies { [K in ProviderId]: Entry<K> } as { readonly [K in ProviderId]: ProviderBackend };
