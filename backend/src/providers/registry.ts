@@ -3,16 +3,35 @@
 
 import type { Category } from "@prisma/client";
 import { MANIFESTS, PROVIDER_IDS, type ProviderId, type ProviderManifest } from "./_generated";
-import { crealitycloudImport, crealitycloudTrending, crealitycloudLists, crealitycloudDetails } from "./crealitycloud";
+import { siteHost } from "./names";
+import {
+  crealitycloudImport,
+  crealitycloudTrending,
+  crealitycloudLists,
+  crealitycloudDetails,
+  crealitycloudKeptId,
+} from "./crealitycloud";
 import { cults3dImport, cults3dTrending, cults3dLists, cults3dDetails } from "./cults3d";
 import { makeronlineImport, makeronlineTrending, makeronlineLists, makeronlineDetails } from "./makeronline";
 import { makerworldTrending, makerworldLists, makerworldDetails } from "./makerworld";
-import { myminifactoryImport, myminifactoryTrending, myminifactoryLists, myminifactoryDetails } from "./myminifactory";
+import {
+  myminifactoryImport,
+  myminifactoryTrending,
+  myminifactoryLists,
+  myminifactoryDetails,
+  myminifactoryInstanceHealth,
+} from "./myminifactory";
 import { nexprintImport, nexprintTrending, nexprintLists, nexprintDetails } from "./nexprint";
 import { printablesImport, printablesTrending, printablesLists, printablesDetails } from "./printables";
 import { snapmakerImport, snapmakerTrending, snapmakerLists, snapmakerDetails } from "./snapmaker";
 import { thangsImport, thangsTrending, thangsLists, thangsDetails } from "./thangs";
-import { thingiverseImport, thingiverseTrending, thingiverseLists, thingiverseDetails } from "./thingiverse";
+import {
+  thingiverseImport,
+  thingiverseTrending,
+  thingiverseLists,
+  thingiverseDetails,
+  thingiverseInstanceHealth,
+} from "./thingiverse";
 import { crealitycloudConnection } from "./crealitycloud/connection";
 import { cults3dApiConnection, cults3dBrowserConnection } from "./cults3d/connection";
 import { makeronlineConnection } from "./makeronline/connection";
@@ -52,7 +71,13 @@ import type {
   ProviderSync,
   ProviderTrending,
   SourcedImport,
+  InstanceHealth,
+  StopTexts,
 } from "./types";
+import type { ProfilesImportJobBody } from "../services/importJobRunner";
+import type { ImportRequestBody } from "../services/importService";
+import { listMakerworldProfileUrls } from "./makerworld/profiles";
+import { markMakerworldCookieRejected, MAKERWORLD_REJECTED_ERROR } from "./makerworld/session";
 
 export type ProviderBackend = {
   /** Each credential its manifest lists under `auth`, by slot. */
@@ -74,7 +99,28 @@ export type ProviderBackend = {
   trending?: ProviderTrending;
   /** How a model's details are read without its files. */
   details: ProviderDetails;
+  /** The links of the print profiles a scope picks from the model a link is of, for a provider whose models import by
+   *  the shared link import, with the request's credentials. `sourcedImport.profiles.listUrls` for the others. */
+  profileUrls?(
+    url: string,
+    scope: ProfilesImportJobBody["scope"],
+    body: ImportRequestBody,
+  ): Promise<{ title: string | null; urls: string[] }>;
+  /** A job of its own that imports a model's print profiles as one model, where they don't import the shared way. */
+  profilesJob?(jobId: string, userId: string, body: ProfilesImportJobBody): Promise<void>;
+  /** Remembers its sign-in turned down, for a provider whose imports don't themselves. */
+  markRejected?(userId: string): Promise<void>;
+  stopTexts?: StopTexts;
+  /** The id an import keeps a model under, where its link may name it by another (Creality Cloud's alias). */
+  keptId?(externalId: string): Promise<string>;
+  /** Its link imports download a model with no print profiles as a zip of its raw files, unpacked into plates. */
+  zipOfFiles?: true;
+  /** Tests the instance's own credential, for a provider with one (an admin's App Token or API key). */
+  instanceHealth?(): Promise<InstanceHealth>;
 };
+
+/** The provider whose session a page link of no provider's is imported with. */
+export const LINK_PROVIDER: ProviderId = "makerworld";
 
 type Manifests = typeof MANIFESTS;
 /** What a provider with collections or likes has for them. */
@@ -88,8 +134,6 @@ type Entry<K extends ProviderId> = ProviderBackend & {
   (Capabilities<K>["trending"] extends false ? unknown : { trending: ProviderTrending });
 
 const name = (id: ProviderId): string => MANIFESTS[id].name;
-/** The site's address as people type it, without the www. */
-const siteHost = (id: ProviderId): string => new URL(MANIFESTS[id].site).hostname.replace(/^www\./, "");
 const grabSignInStop = (id: ProviderId): string =>
   `${name(id)} turned your sign-in down — visit ${siteHost(id)} signed in with Thingport Grab, then retry`;
 
@@ -102,6 +146,23 @@ export const PROVIDERS = {
     browse: makerworldBrowse,
     trending: makerworldTrending,
     details: makerworldDetails,
+    profileUrls: listMakerworldProfileUrls,
+    zipOfFiles: true,
+    // Loaded when it runs: the import runner it shares reaches this registry.
+    profilesJob: async (jobId, userId, body) =>
+      (await import("./makerworld/jobs")).runMakerworldProfilesJob(jobId, userId, body),
+    // Its models import by the shared link import, which doesn't know whose cookie it was.
+    markRejected: (userId) => markMakerworldCookieRejected(userId),
+    stopTexts: {
+      auth: {
+        paused: `your ${name("makerworld")} session expired, so connect ${name("makerworld")} again in Configuration > Providers`,
+        handedBack: MAKERWORLD_REJECTED_ERROR,
+        deferred:
+          `will come in on the next sync once you connect ${name("makerworld")} again in Configuration → Providers: ` +
+          `${name("makerworld")} turned your sign-in down, and it may have expired.`,
+      },
+      rateLimited: `${name("makerworld")} asked for a CAPTCHA (too many requests)`,
+    },
   },
   printables: {
     connection: {},
@@ -123,6 +184,7 @@ export const PROVIDERS = {
     browse: thingiverseBrowse,
     trending: thingiverseTrending,
     details: thingiverseDetails,
+    instanceHealth: thingiverseInstanceHealth,
   },
   myminifactory: {
     connection: { default: myminifactorySessionConnection, instance: myminifactoryKeyConnection },
@@ -133,6 +195,7 @@ export const PROVIDERS = {
     browse: myminifactoryBrowse,
     trending: myminifactoryTrending,
     details: myminifactoryDetails,
+    instanceHealth: myminifactoryInstanceHealth,
   },
   snapmaker: {
     connection: { default: snapmakerConnection },
@@ -163,6 +226,7 @@ export const PROVIDERS = {
     browse: crealitycloudBrowse,
     trending: crealitycloudTrending,
     details: crealitycloudDetails,
+    keptId: crealitycloudKeptId,
   },
   nexprint: {
     connection: { default: nexprintConnection },
@@ -195,6 +259,10 @@ export const PROVIDERS = {
     browse: cults3dBrowse,
     trending: cults3dTrending,
     details: cults3dDetails,
+    // Its pages take the browser's own Cloudflare clearance, which Grab sends; FlareSolverr's is no use there.
+    stopTexts: {
+      blocked: `${name("cults3d")}'s Cloudflare turned Thingport away — visit ${siteHost("cults3d")} with Thingport Grab to renew its clearance`,
+    },
   },
 } satisfies { [K in ProviderId]: Entry<K> } as { readonly [K in ProviderId]: ProviderBackend };
 

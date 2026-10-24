@@ -11,6 +11,7 @@ import type {
   SourcedImport,
   ProviderTrending,
   ProviderDetails,
+  InstanceHealth,
 } from "../types";
 import { MANIFESTS } from "../_generated";
 import {
@@ -25,6 +26,7 @@ import {
   resolveMyminifactoryLibraryDownload,
   resolveMyminifactoryObject,
   fetchMyminifactoryPopular,
+  checkMyminifactoryApiKey,
 } from "./api";
 import { getUserMyminifactoryCookie, markMyminifactoryCookieRejected } from "./session";
 import { detailsOf } from "../details";
@@ -201,3 +203,9 @@ export const myminifactoryDetails: ProviderDetails = {
     return null;
   },
 };
+
+/** The instance's API key, tested against the API. */
+export async function myminifactoryInstanceHealth(): Promise<InstanceHealth> {
+  const apiKey = await getMyminifactoryApiKey();
+  return apiKey ? checkMyminifactoryApiKey(apiKey) : "not_configured";
+}

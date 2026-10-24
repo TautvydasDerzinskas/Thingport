@@ -23,7 +23,8 @@ vi.mock("../src/providers/thingiverse/api", async (importOriginal) => {
 });
 
 import { importPrintFromUrl } from "../src/services/importService";
-import { runCollectionImportJob, runListImportJob } from "../src/services/importJobRunner";
+import { runListImportJob } from "../src/services/importJobRunner";
+import { runCollectionImportJob } from "../src/providers/makerworld/jobs";
 import { PROVIDERS } from "../src/providers/registry";
 import { fetchThingiverseCollectionTitle } from "../src/providers/thingiverse/api";
 import { setThingiverseAccessToken } from "../src/services/settingsService";

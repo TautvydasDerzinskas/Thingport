@@ -46,8 +46,8 @@ export const makerworldLists: ProviderLists = {
     const withCookie = await withStoredMakerworldCookie(userId, body);
     return {
       async run(jobId) {
-        // Loaded when it runs: importJobRunner reaches the registry this module is part of.
-        const { runCollectionImportJob } = await import("../../services/importJobRunner");
+        // Loaded when it runs: the import runner it shares reaches the registry this module is part of.
+        const { runCollectionImportJob } = await import("./jobs");
         await runCollectionImportJob(jobId, userId, { ...withCookie, url, design_ids: body.model_ids });
       },
     };

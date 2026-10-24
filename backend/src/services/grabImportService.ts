@@ -13,6 +13,7 @@ import {
 } from "../providers/makeronline/api";
 import { HttpError } from "../utils/fileUtils";
 import { MANIFESTS } from "../providers/_generated";
+import { siteHost } from "../providers/names";
 
 // Imports waiting for Thingport Grab. MakerOnline hands out download links only to a page its anti-bot script runs on,
 // so an import that starts anywhere else (the app, the import queue, a sync) is parked here. Grab, on the next
@@ -21,8 +22,8 @@ import { MANIFESTS } from "../providers/_generated";
 
 export const GRAB_IMPORT_MAX_ATTEMPTS = 3;
 
-const { name: NAME, site } = MANIFESTS.makeronline;
-const SITE_HOST = new URL(site).hostname.replace(/^www\./, "");
+const NAME = MANIFESTS.makeronline.name;
+const SITE_HOST = siteHost(MANIFESTS.makeronline.id);
 
 export type GrabImportOptions = {
   scope?: MakeronlineProfileScope;

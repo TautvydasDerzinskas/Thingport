@@ -1,7 +1,14 @@
 import { HttpError } from "../../utils/fileUtils";
 import { mapWithConcurrency } from "../../utils/concurrency";
 import type { NewPlateInput } from "../../services/printCreation";
-import type { ProviderLists, ResolvedModel, SourcedImport, ProviderTrending, ProviderDetails } from "../types";
+import type {
+  ProviderLists,
+  ResolvedModel,
+  SourcedImport,
+  ProviderTrending,
+  ProviderDetails,
+  InstanceHealth,
+} from "../types";
 import { getThingiverseAccessToken } from "../../services/settingsService";
 import { likesCollectionName } from "../names";
 import {
@@ -16,6 +23,7 @@ import {
   type ThingiversePlateFile,
   type ThingiverseThingResolution,
   fetchThingiversePopular,
+  checkThingiverseAccessToken,
 } from "./api";
 import manifest from "../_generated/thingiverse/manifest";
 import { detailsOf } from "../details";
@@ -153,3 +161,9 @@ export const thingiverseDetails: ProviderDetails = {
     return null;
   },
 };
+
+/** The instance's App Token, tested against the API. */
+export async function thingiverseInstanceHealth(): Promise<InstanceHealth> {
+  const token = await getThingiverseAccessToken();
+  return token ? checkThingiverseAccessToken(token) : "not_configured";
+}

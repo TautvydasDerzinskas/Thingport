@@ -279,3 +279,17 @@ export type ProviderDetails = {
   /** Its reads are paced by themselves, so a run doesn't wait between them too. */
   pacesItself?: true;
 };
+
+/** A provider's own words where a held sync or a stopped import would give the general ones. */
+export type StopTexts = {
+  /** Its sign-in turned down: why a sync's job paused, what a sync it handed models back to keeps, and the
+   *  notification's words for the models left for later. */
+  auth?: { paused: string; handedBack: string; deferred: string };
+  /** Too many requests: why a sync's job paused. */
+  rateLimited?: string;
+  /** Cloudflare's block, where FlareSolverr is no way past it. */
+  blocked?: string;
+};
+
+/** How the instance's own credential for a provider is, for Administration → System health. */
+export type InstanceHealth = "ok" | "not_configured" | "rejected" | "blocked" | "unreachable";

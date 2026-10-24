@@ -54,7 +54,6 @@ import {
 } from "../providers/makerworld/api";
 import { openSourceGaps, type SourceGap } from "./sourceGaps";
 import { clearGrabImports } from "./grabImportService";
-import { isCrealitycloudModelId, resolveCrealitycloudModel } from "../providers/crealitycloud/api";
 
 /** An import refused because the user's MyMiniFactory session has expired. */
 export const MYMINIFACTORY_SESSION_CODE = MANIFESTS.myminifactory.errorCodes.session;
@@ -671,23 +670,6 @@ export type ImportStatus = {
 
 /** Never fetches the provider's page, so it's cheap enough for the extension to call on every
  * page load. */
-// Creality Cloud model id -> the alias its print is kept under, so a status check asks the site once per model.
-const crealitycloudAliases = new Map<string, string>();
-const CREALITYCLOUD_ALIAS_CACHE_SIZE = 500;
-
-/** The alias an import keeps a Creality Cloud model under; the id itself when the site can't tell. */
-async function crealitycloudAliasOf(modelId: string): Promise<string> {
-  const cached = crealitycloudAliases.get(modelId);
-  if (cached) return cached;
-  const alias = (await resolveCrealitycloudModel(modelId).catch(() => null))?.alias;
-  if (!alias) return modelId;
-  if (crealitycloudAliases.size >= CREALITYCLOUD_ALIAS_CACHE_SIZE) {
-    crealitycloudAliases.delete(crealitycloudAliases.keys().next().value!);
-  }
-  crealitycloudAliases.set(modelId, alias);
-  return alias;
-}
-
 export async function checkImportStatus(userId: string, url: string): Promise<ImportStatus> {
   const source = identifySourceModel(url);
   if (!source) return { recognized: false, already_imported: false, print_id: null, state: "not_imported", gaps: [] };
@@ -699,9 +681,10 @@ export async function checkImportStatus(userId: string, url: string): Promise<Im
     where: { userId, sourceProvider: source.provider, sourceExternalId: source.externalId },
     include,
   });
-  // An import keeps a Creality Cloud model linked by id under its alias.
-  if (!print && source.provider === "crealitycloud" && isCrealitycloudModelId(source.externalId)) {
-    const alias = await crealitycloudAliasOf(source.externalId);
+  // An import may keep a model under another id than its link names it by.
+  const keptId = isProviderId(source.provider) ? PROVIDERS[source.provider].keptId : undefined;
+  if (!print && keptId) {
+    const alias = await keptId(source.externalId);
     if (alias !== source.externalId) {
       print = await prisma.print.findFirst({
         where: { userId, sourceProvider: source.provider, sourceExternalId: alias },
@@ -1173,7 +1156,9 @@ export async function importPrintFromUrl(
 ): Promise<ImportResult> {
   const result = await importNewOrExisting(userId, url, body);
   // However it came in, nothing need wait for Grab to bring it.
-  if (!keepGrabImports && result.print.sourceProvider === "makeronline" && result.print.sourceExternalId) {
+  const provider = result.print.sourceProvider;
+  const waitsForGrab = isProviderId(provider) && PROVIDERS[provider].lists?.waitsForGrab;
+  if (!keepGrabImports && waitsForGrab && result.print.sourceExternalId) {
     await clearGrabImports(userId, result.print.sourceExternalId).catch(() => undefined);
   }
   if (!result.alreadyImported && !result.profileAdded) {
@@ -1221,7 +1206,7 @@ async function importLinkedFile(
   const { tempPath, filename, mime, meta } = await downloadImportToTemp(url, body);
   let plates: NewPlateInput[] = [];
   try {
-    plates = await makerworldZipPlates(source, tempPath, filename);
+    plates = await rawFilesZipPlates(source, tempPath, filename);
   } catch (err) {
     await fs.rm(tempPath, { force: true }).catch(() => undefined);
     throw err;
@@ -1277,14 +1262,16 @@ async function importLinkedFile(
   }
 }
 
-/** A MakerWorld zip -- the raw files of a model with no print profiles -- as its model files, one plate each, the zip
- *  itself removed. Empty for anything else, or a zip with no model file in it, which is kept as it came. */
-async function makerworldZipPlates(
+/** A zip of a model's raw files, from a provider whose links download them so (MakerWorld's, for a model with no print
+ *  profiles), as its model files, one plate each, the zip itself removed. Empty for anything else, or a zip with no
+ *  model file in it, which is kept as it came. */
+async function rawFilesZipPlates(
   source: { provider: string } | null,
   tempPath: string,
   filename: string,
 ): Promise<NewPlateInput[]> {
-  if (source?.provider !== "makerworld" || path.extname(filename).toLowerCase() !== ".zip") return [];
+  const zipOfFiles = source && isProviderId(source.provider) && PROVIDERS[source.provider].zipOfFiles;
+  if (!zipOfFiles || path.extname(filename).toLowerCase() !== ".zip") return [];
   const plates = await modelFilesFromZip(tempPath);
   if (plates.length) await fs.rm(tempPath, { force: true }).catch(() => undefined);
   return plates;

@@ -22,6 +22,7 @@ import {
   isCrealitycloudFileHost,
   parseCrealitycloudModelUrl,
   resolveCrealitycloudModel,
+  isCrealitycloudModelId,
   selectCrealitycloudProfiles,
   fetchCrealitycloudRecommended,
   CREALITYCLOUD_LIKES_NAME,
@@ -198,3 +199,25 @@ export const crealitycloudDetails: ProviderDetails = {
   read: async (_userId, modelId) => detailsOf(await resolveCrealitycloudModel(modelId)),
   missingMessage: MISSING,
 };
+
+// Creality Cloud model id -> the alias its print is kept under, so a status check asks the site once per model.
+const crealitycloudAliases = new Map<string, string>();
+const CREALITYCLOUD_ALIAS_CACHE_SIZE = 500;
+
+/** The alias an import keeps a Creality Cloud model under; the id itself when the site can't tell. */
+async function crealitycloudAliasOf(modelId: string): Promise<string> {
+  const cached = crealitycloudAliases.get(modelId);
+  if (cached) return cached;
+  const alias = (await resolveCrealitycloudModel(modelId).catch(() => null))?.alias;
+  if (!alias) return modelId;
+  if (crealitycloudAliases.size >= CREALITYCLOUD_ALIAS_CACHE_SIZE) {
+    crealitycloudAliases.delete(crealitycloudAliases.keys().next().value!);
+  }
+  crealitycloudAliases.set(modelId, alias);
+  return alias;
+}
+
+/** The id an import keeps a model under: its alias, for a link by id. */
+export async function crealitycloudKeptId(externalId: string): Promise<string> {
+  return isCrealitycloudModelId(externalId) ? crealitycloudAliasOf(externalId) : externalId;
+}

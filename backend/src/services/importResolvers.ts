@@ -439,7 +439,7 @@ export function makerworldMetaFromDesign(design: unknown): ImportedPageMetadata 
   meta.previewImageUrl = pickDesignString(design, ["coverUrl", "coverPortrait", "coverLandscape"]);
   meta.galleryImages = makerworldGalleryImages(design);
   meta.siteCategoryIds = makerworldCategoryIds(design);
-  meta.categorySite = meta.siteCategoryIds.length ? "makerworld" : null;
+  meta.categorySite = meta.siteCategoryIds.length ? MANIFESTS.makerworld.id : null;
   return meta;
 }
 
@@ -457,7 +457,7 @@ export function makerworldAuthorFromDesignCreator(creator: unknown): ImportedAut
     return null;
   };
   return {
-    provider: "makerworld",
+    provider: MANIFESTS.makerworld.id,
     externalId: String(record.uid).trim(),
     name: pick(["name", "nickName"]),
     handle: pick(["handle"]),

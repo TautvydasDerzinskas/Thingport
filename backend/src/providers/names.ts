@@ -7,6 +7,11 @@ export function providerName(provider: string): string {
   return isProviderId(provider) ? MANIFESTS[provider].name : provider;
 }
 
+/** The site's address as people type it, without the www. */
+export function siteHost(id: ProviderId): string {
+  return new URL(MANIFESTS[id].site).hostname.replace(/^www\./, "");
+}
+
 /** The providers whose manifest says so, named in a sentence: "A, B and C". */
 export function providerNames(
   has: (capabilities: (typeof MANIFESTS)[ProviderId]["capabilities"]) => boolean,
