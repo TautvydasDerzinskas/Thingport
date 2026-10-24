@@ -17,6 +17,7 @@ import {
   providerCollectionsApi,
 } from "../../api/providerCollections";
 import { importProviderInfo } from "../../constants/importProviders";
+import { hostIs } from "../../utils/importLinkDetection";
 import HelpTip from "../../components/HelpTip";
 import Segmented from "../../components/controls/Segmented";
 import { SectionLabel } from "../../components/Layout/ConfigurationDialog/parts";
@@ -82,7 +83,7 @@ function defaultProvider(
 function providerOfUrl(url: string): BrowsableProvider | null {
   try {
     const host = new URL(url).hostname.toLowerCase();
-    return BROWSABLE_PROVIDERS.find((provider) => host.endsWith(`${provider}.com`)) ?? null;
+    return BROWSABLE_PROVIDERS.find((provider) => hostIs(host, `${provider}.com`)) ?? null;
   } catch {
     return null;
   }

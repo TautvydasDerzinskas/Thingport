@@ -72,3 +72,11 @@ export async function normalizeImportUrl(raw: string | null | undefined): Promis
   if (!value.includes("://")) value = `https://${value}`;
   return validateRemoteUrl(value);
 }
+
+/** True for `domain` itself and any subdomain of it (`www.makerworld.com`), never for a look-alike that merely ends
+ *  in the same letters (`fake-makerworld.com`). A bare `endsWith(domain)` would let such a host pass for the
+ *  provider, and be sent the user's cookie or token for it. */
+export function hostIs(hostname: string, domain: string): boolean {
+  const host = hostname.toLowerCase();
+  return host === domain || host.endsWith(`.${domain}`);
+}

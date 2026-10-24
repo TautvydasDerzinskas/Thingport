@@ -12,6 +12,13 @@ export type ImportProviderKey =
   | "thangs"
   | "cults3d";
 
+/** True for `domain` itself and its subdomains, never for a look-alike that only ends in the same letters
+ *  (`fake-makerworld.com`), which a bare `endsWith(domain)` would take for the provider. */
+export function hostIs(hostname: string, domain: string): boolean {
+  const host = hostname.toLowerCase();
+  return host === domain || host.endsWith(`.${domain}`);
+}
+
 function parseUrl(url: string): URL | null {
   try {
     return new URL(url.includes("://") ? url : `https://${url}`);
@@ -24,7 +31,7 @@ export function detectImportProvider(url: string): ImportProviderKey | null {
   const parsed = parseUrl(url);
   if (!parsed) return null;
   const host = parsed.hostname.toLowerCase();
-  if (host.endsWith("makerworld.com")) return "makerworld";
+  if (hostIs(host, "makerworld.com")) return "makerworld";
   if (host === "thingiverse.com" || host === "www.thingiverse.com") return "thingiverse";
   if (host === "printables.com" || host === "www.printables.com") return "printables";
   if (host === "myminifactory.com" || host === "www.myminifactory.com") return "myminifactory";
@@ -40,16 +47,12 @@ export function detectImportProvider(url: string): ImportProviderKey | null {
 /** Collection pages go to the collection picker instead of the single-link flow. */
 export function isMakerworldCollectionUrl(url: string): boolean {
   const parsed = parseUrl(url);
-  return Boolean(
-    parsed && parsed.hostname.toLowerCase().endsWith("makerworld.com") && /\/collections\/\d+/i.test(parsed.pathname),
-  );
+  return Boolean(parsed && hostIs(parsed.hostname, "makerworld.com") && /\/collections\/\d+/i.test(parsed.pathname));
 }
 
 export function isMakerworldModelUrl(url: string): boolean {
   const parsed = parseUrl(url);
-  return Boolean(
-    parsed && parsed.hostname.toLowerCase().endsWith("makerworld.com") && /\/models?\/\d+/i.test(parsed.pathname),
-  );
+  return Boolean(parsed && hostIs(parsed.hostname, "makerworld.com") && /\/models?\/\d+/i.test(parsed.pathname));
 }
 
 /** Thingiverse and Printables have their own backend import paths, so skip the generic inspect/zip

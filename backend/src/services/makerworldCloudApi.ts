@@ -15,6 +15,7 @@ import {
 } from "./importResolvers";
 import { maybeSleep, sleep } from "../utils/concurrency";
 import { HttpError } from "../utils/fileUtils";
+import { hostIs } from "../utils/urlUtils";
 import {
   isCaptchaChallenge,
   isDownloadLimitReply,
@@ -160,7 +161,7 @@ export function parseMakerworldModelUrl(url: string): { designId: string; reques
   } catch {
     return null;
   }
-  if (!parsed.hostname.toLowerCase().endsWith("makerworld.com")) return null;
+  if (!hostIs(parsed.hostname, "makerworld.com")) return null;
   const designMatch = parsed.pathname.match(/\/models?\/(\d+)/i);
   if (!designMatch) return null;
   const hashMatch = parsed.hash.match(/profileid-(\d+)/i);

@@ -20,7 +20,7 @@ import {
   mimeFromContentType,
   sanitizeFilename,
 } from "../utils/fileUtils";
-import { validateRemoteUrl } from "../utils/urlUtils";
+import { hostIs, validateRemoteUrl } from "../utils/urlUtils";
 import { readCapped } from "../utils/readCapped";
 import { browserFetch, needsBrowserFetch } from "../utils/browserFetch";
 import { mapWithConcurrency, maybeSleep, sleep } from "../utils/concurrency";
@@ -608,13 +608,13 @@ export async function openImportResponse(
   }
 
   // Only at depth 0, so a resolved download URL isn't treated as a model page on recursion.
-  if (depth === 0 && host.endsWith("makerworld.com") && !body.resolved_download_url) {
+  if (depth === 0 && hostIs(host, "makerworld.com") && !body.resolved_download_url) {
     const cloudResolved = await tryMakerworldCloudApi(validatedUrl, body);
     if (cloudResolved) {
       return openImportResponse(cloudResolved.downloadUrl, body, validatedUrl, depth + 1, cloudResolved.meta);
     }
   }
-  if (depth === 0 && host.endsWith("makerworld.com") && body.resolved_download_url) {
+  if (depth === 0 && hostIs(host, "makerworld.com") && body.resolved_download_url) {
     const fromExtension = await makerworldMetaFromExtension(validatedUrl, body);
     if (fromExtension) {
       return openImportResponse(body.resolved_download_url, body, validatedUrl, depth + 1, fromExtension);
@@ -623,7 +623,7 @@ export async function openImportResponse(
 
   const headers: Record<string, string> = { "User-Agent": IMPORT_BROWSER_USER_AGENT, Accept: "*/*" };
   let makerworldCookie: string | null = null;
-  if (host.endsWith("makerworld.com")) {
+  if (hostIs(host, "makerworld.com")) {
     makerworldCookie = resolveMakerworldCookie(body);
     Object.assign(headers, makerworldHtmlHeaders(referer || validatedUrl, makerworldCookie));
   }
@@ -660,10 +660,10 @@ export async function openImportResponse(
       categorySite: extracted.categorySite ?? inheritedMeta.categorySite,
       makerworldProfile: inheritedMeta.makerworldProfile,
     };
-    if (pageHost.endsWith("makerworld.com") && extracted.author) {
+    if (hostIs(pageHost, "makerworld.com") && extracted.author) {
       resolvedMeta.author = await completeMakerworldAuthor(extracted.author, body.makerworldPaceMs);
     }
-    if (pageHost.endsWith("makerworld.com")) {
+    if (hostIs(pageHost, "makerworld.com")) {
       // Skipped for an extension-resolved URL: these calls can trip the CAPTCHA cooloff.
       if (body.resolved_download_url) {
         downloadUrl = body.resolved_download_url;

@@ -44,6 +44,13 @@ function parse(url: string): URL | null {
   }
 }
 
+/** True for `domain` itself and its subdomains, never for a look-alike that only ends in the same letters
+ *  (`fake-makerworld.com`), which a bare `endsWith(domain)` would take for the provider -- and attach its cookie to. */
+export function hostIs(hostname: string, domain: string): boolean {
+  const host = hostname.toLowerCase();
+  return host === domain || host.endsWith(`.${domain}`);
+}
+
 function isHost(parsed: URL, domain: string): boolean {
   const host = parsed.hostname.toLowerCase();
   return host === domain || host === `www.${domain}`;
@@ -51,7 +58,7 @@ function isHost(parsed: URL, domain: string): boolean {
 
 export function parseMakerworldModelUrl(url: string): { designId: string; requestedInstanceId: string | null } | null {
   const parsed = parse(url);
-  if (!parsed || !parsed.hostname.toLowerCase().endsWith("makerworld.com")) return null;
+  if (!parsed || !hostIs(parsed.hostname, "makerworld.com")) return null;
   const m = parsed.pathname.match(/\/models?\/(\d+)/i);
   if (!m) return null;
   const hashMatch = parsed.hash.match(/profileid-(\d+)/i);
@@ -65,9 +72,7 @@ export function makerworldModelUrl(designId: string): string {
 
 export function isMakerworldCollectionUrl(url: string): boolean {
   const parsed = parse(url);
-  return Boolean(
-    parsed && parsed.hostname.toLowerCase().endsWith("makerworld.com") && /\/collections\/\d+/i.test(parsed.pathname),
-  );
+  return Boolean(parsed && hostIs(parsed.hostname, "makerworld.com") && /\/collections\/\d+/i.test(parsed.pathname));
 }
 
 export function isMakerworldUrl(url: string | undefined | null): boolean {
