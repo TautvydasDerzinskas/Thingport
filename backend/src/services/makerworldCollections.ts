@@ -6,6 +6,7 @@ import {
   looksLikeCloudflareBlock,
 } from "./flaresolverr";
 import { maybeSleep } from "../utils/concurrency";
+import { hostIs } from "../utils/urlUtils";
 import type { ProviderCollectionCard } from "./providerCollectionCard";
 import {
   isCaptchaChallenge,
@@ -134,7 +135,7 @@ export function parseMakerworldCollectionUrl(url: string): { collectionId: strin
   } catch {
     return null;
   }
-  if (!parsed.hostname.toLowerCase().endsWith("makerworld.com")) return null;
+  if (!hostIs(parsed.hostname, "makerworld.com")) return null;
   const match = parsed.pathname.match(/\/collections\/(\d+)/i);
   return match ? { collectionId: match[1] } : null;
 }

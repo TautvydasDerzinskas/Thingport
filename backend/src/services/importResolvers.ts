@@ -9,6 +9,7 @@ import {
   IMPORT_TIMEOUT_SECONDS,
 } from "../config";
 import { isJsonContentType } from "../utils/fileUtils";
+import { hostIs } from "../utils/urlUtils";
 import { htmlToMarkdown } from "./descriptionMarkdown";
 import { decodeHtmlEntities } from "../utils/htmlEntities";
 import {
@@ -577,7 +578,7 @@ export function emptyImportedPageMetadata(): ImportedPageMetadata {
 /** Best-effort metadata for a landing page. Only MakerWorld has more than a title. */
 export function extractPageMetadata(html: string, pageHost: string): ImportedPageMetadata {
   const meta = emptyImportedPageMetadata();
-  if (pageHost.endsWith("makerworld.com")) {
+  if (hostIs(pageHost, "makerworld.com")) {
     const fromDesign = makerworldMetaFromDesign(getPath(extractNextDataJson(html), "props", "pageProps", "design"));
     if (!fromDesign.title) fromDesign.title = genericTitleFromHtml(html);
     return fromDesign;

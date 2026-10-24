@@ -3,6 +3,7 @@
 // plenty of other people's profiles too.
 
 import { request, send } from "../shared/messages";
+import { hostIs } from "../shared/urls";
 import { printablesToken, readMe, readPrintables } from "./printables";
 import { providerEnabled } from "./providerSettings";
 import { sleep } from "./runtime";
@@ -119,11 +120,11 @@ export function captureProviderAccount(hostname: string): void {
     void send("SYNC_SNAPMAKER_SESSION");
     return;
   }
-  const provider = hostname.endsWith("printables.com")
+  const provider = hostIs(hostname, "printables.com")
     ? "printables"
-    : hostname.endsWith("thingiverse.com")
+    : hostIs(hostname, "thingiverse.com")
       ? "thingiverse"
-      : hostname.endsWith("myminifactory.com")
+      : hostIs(hostname, "myminifactory.com")
         ? "myminifactory"
         : null;
   if (!provider) return;
