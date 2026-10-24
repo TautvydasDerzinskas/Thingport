@@ -3,10 +3,15 @@
 
 import type { Category } from "@prisma/client";
 import { MANIFESTS, PROVIDER_IDS, type ProviderId, type ProviderManifest } from "./_generated";
+import { nexprintImport } from "./nexprint";
+import type { SourcedImport } from "./types";
 
 export type ProviderBackend = {
   /** Why a batch import stopped when the provider turned the user's sign-in down, read after "failed because". */
   authStopText: string;
+  /** How its models import, for a provider moved onto the shared pipeline; the others still have their own path in
+   *  importService.ts until they move too (docs/rfc/provider-modules.md, Phase 3). */
+  sourcedImport?: SourcedImport<any, any>;
 };
 
 export const PROVIDERS = {
@@ -38,6 +43,7 @@ export const PROVIDERS = {
   },
   nexprint: {
     authStopText: "NexPrint turned your sign-in down — visit nexprint.com signed in with Thingport Grab, then retry",
+    sourcedImport: nexprintImport,
   },
   thangs: {
     authStopText: "Thangs turned your sign-in down — visit thangs.com signed in with Thingport Grab, then retry",
@@ -47,7 +53,7 @@ export const PROVIDERS = {
       "Cults3D turned your API key or sign-in down — check the key in Configuration → Providers, or visit cults3d.com " +
       "signed in with Thingport Grab, then retry",
   },
-} satisfies { [K in ProviderId]: ProviderBackend };
+} satisfies { [K in ProviderId]: ProviderBackend } as { readonly [K in ProviderId]: ProviderBackend };
 
 const errorCodes = (id: ProviderId): ProviderManifest["errorCodes"] => MANIFESTS[id].errorCodes;
 

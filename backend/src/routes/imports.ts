@@ -107,8 +107,8 @@ import {
   NexprintAuthError,
   parseNexprintCollectionUrl,
   parseNexprintModelUrl,
-} from "../services/nexprintApi";
-import { markNexprintSessionRejected } from "../services/nexprintSessionService";
+} from "../providers/nexprint/api";
+import { markNexprintSessionRejected } from "../providers/nexprint/session";
 import {
   fetchThangsCollection,
   fetchThangsLikes,

@@ -1,4 +1,4 @@
-import { prisma } from "../db";
+import { prisma } from "../../db";
 
 // Per-user: the NexPrint token, its auth_token cookie, sent as a Bearer token. The site keeps the cookie for a week and
 // sets it again whenever it refreshes the token, so Thingport Grab sends each new one on. The cookie's expiry is kept

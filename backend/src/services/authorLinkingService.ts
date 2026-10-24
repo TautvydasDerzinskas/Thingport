@@ -22,7 +22,7 @@ import { resolveThingiverseThing, ThingiverseAuthError, ThingiverseRateLimitErro
 import { resolveSnapmakerModel } from "./snapmakerApi";
 import { resolveMakeronlineModel } from "./makeronlineApi";
 import { resolveCrealitycloudModel } from "./crealitycloudApi";
-import { resolveNexprintModel } from "./nexprintApi";
+import { resolveNexprintModel } from "../providers/nexprint/api";
 import { resolveThangsModel } from "./thangsApi";
 import { Cults3dAuthError, type Cults3dCredentials, Cults3dRateLimitError, resolveCults3dModel } from "./cults3dApi";
 import { getUserCults3dCredentials, markCults3dApiRejected } from "./cults3dSessionService";

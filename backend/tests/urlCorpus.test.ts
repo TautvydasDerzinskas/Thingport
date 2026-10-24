@@ -7,7 +7,7 @@ import { parseMakerworldModelUrl } from "../src/services/makerworldCloudApi";
 import { parseSnapmakerModelUrl } from "../src/services/snapmakerApi";
 import { parseMakeronlineModelUrl, isMakeronlineLikesUrl } from "../src/services/makeronlineApi";
 import { parseCrealitycloudModelUrl, parseCrealitycloudLikesUrl } from "../src/services/crealitycloudApi";
-import { parseNexprintModelUrl } from "../src/services/nexprintApi";
+import { parseNexprintModelUrl } from "../src/providers/nexprint/api";
 import { parseThingiverseLikesUrl } from "../src/services/thingiverseApi";
 import { parsePrintablesLikesUrl } from "../src/services/printablesApi";
 import { isThangsLikesUrl } from "../src/services/thangsApi";

@@ -1,14 +1,14 @@
-import { IMPORT_TIMEOUT_SECONDS } from "../config";
-import type { ImportedAuthorInfo, ImportedPageMetadata } from "./importResolvers";
-import { htmlToMarkdown } from "./descriptionMarkdown";
-import type { ProviderCollectionCard } from "./providerCollectionCard";
-import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "./trendingModel";
+import { IMPORT_TIMEOUT_SECONDS } from "../../config";
+import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
+import { htmlToMarkdown } from "../../services/descriptionMarkdown";
+import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
+import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
 import {
   nexprintCollectionUrl,
   nexprintModelUrl,
   parseNexprintCollectionUrl,
   parseNexprintModelUrl,
-} from "../providers/_generated/nexprint/urls";
+} from "../_generated/nexprint/urls";
 export { nexprintCollectionUrl, nexprintModelUrl, parseNexprintCollectionUrl, parseNexprintModelUrl };
 
 // NexPrint (Elegoo's model site) has no public API, so this is the one its own pages call, under /gateway: answers are

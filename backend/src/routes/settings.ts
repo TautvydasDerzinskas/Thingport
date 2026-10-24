@@ -93,12 +93,8 @@ import {
   normalizeCrealitycloudSession,
   setUserCrealitycloudSession,
 } from "../services/crealitycloudSessionService";
-import { checkNexprintAuth } from "../services/nexprintApi";
-import {
-  getNexprintConnection,
-  normalizeNexprintSession,
-  setUserNexprintSession,
-} from "../services/nexprintSessionService";
+import { checkNexprintAuth } from "../providers/nexprint/api";
+import { getNexprintConnection, normalizeNexprintSession, setUserNexprintSession } from "../providers/nexprint/session";
 import { checkThangsAuth, refreshThangsToken, ThangsAuthError } from "../services/thangsApi";
 import { getThangsConnection, normalizeThangsSession, setUserThangsSession } from "../services/thangsSessionService";
 import { checkCults3dCredentials } from "../services/cults3dApi";

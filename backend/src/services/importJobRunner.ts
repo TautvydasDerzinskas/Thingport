@@ -43,8 +43,8 @@ import {
   selectCrealitycloudProfiles,
 } from "./crealitycloudApi";
 import { CREALITYCLOUD_CONNECT, getUserCrealitycloudAuth } from "./crealitycloudSessionService";
-import { nexprintModelUrl, parseNexprintModelUrl, resolveNexprintModel, selectNexprintProfiles } from "./nexprintApi";
-import { getUserNexprintToken, NEXPRINT_CONNECT } from "./nexprintSessionService";
+import { nexprintModelUrl, parseNexprintModelUrl } from "../providers/nexprint/api";
+import { getUserNexprintToken, NEXPRINT_CONNECT } from "../providers/nexprint/session";
 import { thangsModelUrl } from "./thangsApi";
 import { getUserThangsToken, THANGS_CONNECT } from "./thangsSessionService";
 import { cults3dModelUrl, parseCults3dModelUrl } from "./cults3dApi";
@@ -342,23 +342,6 @@ async function crealitycloudProfileUrls(
   };
 }
 
-/** The print profiles a scope picks from a NexPrint model, as links that each name one. */
-async function nexprintProfileUrls(
-  url: string,
-  scope: Exclude<MakerworldProfileScope, "url">,
-): Promise<{ title: string | null; urls: string[] }> {
-  const parsed = parseNexprintModelUrl(url);
-  if (!parsed) throw new HttpError(400, "Not a NexPrint model link");
-  const resolved = await resolveNexprintModel(parsed.modelId);
-  if (!resolved) throw new HttpError(404, "This NexPrint model could not be found, or isn't public.");
-  const profileIds = selectNexprintProfiles(resolved, scope, parsed.requestedProfileId);
-  if (!profileIds.length) throw new HttpError(400, "This model has no print profiles to import");
-  return {
-    title: resolved.meta.title ?? null,
-    urls: profileIds.map((profileId) => nexprintModelUrl(resolved.modelId, profileId)),
-  };
-}
-
 const SNAPMAKER_AUTH_TEXT = PROVIDERS.snapmaker.authStopText;
 const CREALITYCLOUD_AUTH_TEXT = PROVIDERS.crealitycloud.authStopText;
 const NEXPRINT_AUTH_TEXT = PROVIDERS.nexprint.authStopText;
@@ -390,7 +373,7 @@ const CREALITYCLOUD_PROFILES: ProfilesProvider = {
 const NEXPRINT_PROFILES: ProfilesProvider = {
   provider: "nexprint",
   name: MANIFESTS.nexprint.name,
-  profileUrls: nexprintProfileUrls,
+  profileUrls: PROVIDERS.nexprint.sourcedImport!.profiles!.listUrls,
   authText: NEXPRINT_AUTH_TEXT,
 };
 
@@ -1238,7 +1221,7 @@ async function importOneLink(
     return { ...(await importProfileUrlsSequentially(userId, urls, { ...body, url })), profiles: true };
   }
   if (parseNexprintModelUrl(url) && body.scope && body.scope !== "url") {
-    const { urls } = await nexprintProfileUrls(url, body.scope);
+    const { urls } = await NEXPRINT_PROFILES.profileUrls(url, body.scope);
     return { ...(await importProfileUrlsSequentially(userId, urls, { ...body, url })), profiles: true };
   }
   const result = await importPrintFromUrl(userId, url, { ...body, url });

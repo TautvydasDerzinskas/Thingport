@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
-import { MANIFESTS, modelUrl, parseModelUrl } from "../providers/_generated";
-import { catIdsField, PROFILE_PROVIDERS } from "../providers/registry";
+import { isProviderId, MANIFESTS, modelUrl, parseModelUrl } from "../providers/_generated";
+import { catIdsField, PROFILE_PROVIDERS, PROVIDERS } from "../providers/registry";
+import type { ImportKit, ResolvedModel, SourcedImport } from "../providers/types";
 import fsSync from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -111,18 +112,6 @@ import {
   getUserCrealitycloudAuth,
   markCrealitycloudSessionRejected,
 } from "./crealitycloudSessionService";
-import {
-  fetchNexprintModelFiles,
-  fetchNexprintProfileFile,
-  isNexprintFileHost,
-  NexprintAuthError,
-  type NexprintFile,
-  type NexprintModelResolution,
-  parseNexprintModelUrl,
-  resolveNexprintModel,
-  selectNexprintProfiles,
-} from "./nexprintApi";
-import { getUserNexprintToken, markNexprintSessionRejected, NEXPRINT_CONNECT } from "./nexprintSessionService";
 import {
   fetchThangsDownload,
   isThangsFileHost,
@@ -1737,6 +1726,77 @@ async function createSourcedPrint(
   }
 }
 
+const IMPORT_KIT: ImportKit = { downloadSignedFile };
+
+/** A new print from a provider on the shared pipeline: its sign-in, the model, the profile the link names (or the
+ *  provider's pick) or else the model's files, then the print. */
+async function importSourced(
+  userId: string,
+  source: { provider: string; externalId: string },
+  url: string,
+  body: ImportRequestBody,
+  impl: SourcedImport,
+): Promise<ImportResult> {
+  const auth = await impl.requireAuth(userId);
+  let resolved: ResolvedModel | null;
+  try {
+    resolved = await impl.resolveModel(source.externalId, auth);
+  } catch (err) {
+    throw await impl.mapError(userId, err);
+  }
+  if (!resolved) throw new HttpError(404, impl.missingMessage);
+  const requested = body.resolved_instance_id ?? requestedProfileOf(source.provider, url);
+  let downloaded: NewPlateInput[];
+  try {
+    downloaded = await impl.downloadModel(resolved, auth, requested, IMPORT_KIT);
+  } catch (err) {
+    throw await impl.mapError(userId, err);
+  }
+  if (!downloaded.length) throw new HttpError(400, impl.noFilesMessage);
+  return createSourcedPrint(
+    userId,
+    source,
+    body,
+    resolved,
+    downloaded,
+    `${source.provider}-${source.externalId}`,
+    profileDetailsOf(resolved.profiles ?? [], { names: impl.profiles?.namedAlike ?? true }),
+  );
+}
+
+/** Re-import of a model naming a profile it doesn't have yet: that profile's file becomes another plate. A link
+ *  without a profile, or with one already there, or from a provider without profiles, needs no download. */
+async function addSourcedProfile(
+  existing: ExistingImportedPrint,
+  url: string,
+  body: ImportRequestBody,
+  impl: SourcedImport,
+): Promise<ImportResult> {
+  const wanted = body.resolved_instance_id ?? requestedProfileOf(existing.print.sourceProvider!, url);
+  const profiles = impl.profiles;
+  if (!profiles || !wanted || existing.plates.some((plate) => plate.sourceInstanceId === wanted)) {
+    return { ...existing, alreadyImported: true };
+  }
+  const userId = existing.print.userId;
+  const auth = await impl.requireAuth(userId);
+  let profile: NewPlateInput | null;
+  let model: ResolvedModel | null;
+  try {
+    model = await impl.resolveModel(existing.print.sourceExternalId!, auth);
+    if (!model) throw new HttpError(404, impl.missingMessage);
+    profile = await profiles.download(model, wanted, auth, IMPORT_KIT);
+  } catch (err) {
+    throw await impl.mapError(userId, err);
+  }
+  if (!profile) throw new HttpError(404, profiles.missingMessage);
+  return addProfilePlateWithDetails(
+    existing,
+    profile,
+    wanted,
+    profileDetailsOf(model.profiles ?? [], { names: profiles.namedAlike }),
+  );
+}
+
 /** Re-import of a Snapmaker model naming a profile it doesn't have yet: that profile's 3MF becomes another plate. A
  *  link without a profile, or with one already there, needs no request at all. */
 async function addSnapmakerProfileToPrint(
@@ -1884,122 +1944,6 @@ async function addCrealitycloudProfileToPrint(
     throw await crealitycloudFailure(userId, err);
   }
   if (!profile) throw new HttpError(404, "This Creality Cloud model has no such print profile.");
-  // Its profile files are named after their profiles already.
-  return addProfilePlateWithDetails(existing, profile, wanted, profileDetailsOf(model.profiles, { names: false }));
-}
-
-const NEXPRINT_BLOCKED =
-  "NexPrint blocked the file download (rate limit). This usually clears after a while -- wait, then retry the same import.";
-const NEXPRINT_MISSING = "This NexPrint model could not be found, or isn't public.";
-
-function downloadNexprintFile(file: NexprintFile): Promise<NewPlateInput[] | null> {
-  return downloadSignedFile(file, isNexprintFileHost, NEXPRINT_BLOCKED);
-}
-
-/** The user's token, or the HttpError that says to connect NexPrint. */
-async function requireNexprintToken(userId: string): Promise<string> {
-  const token = await getUserNexprintToken(userId);
-  if (!token) throw new HttpError(400, NEXPRINT_CONNECT, NEXPRINT_SESSION_CODE);
-  return token;
-}
-
-/** NexPrint's errors as the HttpErrors an import reports; a rejected sign-in is remembered, so the app can say so. */
-async function nexprintFailure(userId: string, err: unknown): Promise<unknown> {
-  if (err instanceof NexprintAuthError) {
-    await markNexprintSessionRejected(userId);
-    // 400, not 401: see tryMakerworldCloudApi.
-    return new HttpError(400, err.message, NEXPRINT_SESSION_CODE);
-  }
-  return err;
-}
-
-/** Downloads one print profile's 3MF, tagged with the profile; null when the model has no such profile. */
-async function downloadNexprintProfile(
-  resolved: NexprintModelResolution,
-  profileId: string,
-  token: string,
-): Promise<NewPlateInput | null> {
-  const profile = resolved.profiles.find((p) => p.id === profileId);
-  const file = profile ? await fetchNexprintProfileFile(profile, token) : null;
-  if (!file) return null;
-  const inputs = await downloadNexprintFile(file);
-  if (!inputs?.length) throw new HttpError(400, "Couldn't download this print profile from NexPrint. Try again later.");
-  // A profile is one 3MF; anything else it unpacked to is dropped.
-  await Promise.all(inputs.slice(1).map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
-  return { ...inputs[0], sourceInstanceId: profileId };
-}
-
-/** Like Creality Cloud: a model is one print, and each print profile its 3MF on a plate of its own, tagged with the
- *  profile. An import brings the profile the link names, else the designer's first; a model without profiles brings
- *  its model files instead. Files only download as the user, so everything needs their NexPrint sign-in. */
-async function importNexprintModel(
-  userId: string,
-  source: { provider: string; externalId: string },
-  url: string,
-  body: ImportRequestBody,
-): Promise<ImportResult> {
-  const token = await requireNexprintToken(userId);
-  let resolved: NexprintModelResolution | null;
-  try {
-    resolved = await resolveNexprintModel(source.externalId);
-  } catch (err) {
-    throw await nexprintFailure(userId, err);
-  }
-  if (!resolved) throw new HttpError(404, NEXPRINT_MISSING);
-  const downloaded: NewPlateInput[] = [];
-  try {
-    const requested = body.resolved_instance_id ?? parseNexprintModelUrl(url)?.requestedProfileId ?? null;
-    const [profileId] = selectNexprintProfiles(resolved, "url", requested);
-    if (profileId) {
-      const profile = await downloadNexprintProfile(resolved, profileId, token);
-      if (profile) downloaded.push(profile);
-    }
-    if (!downloaded.length) {
-      for (const file of await fetchNexprintModelFiles(resolved, token)) {
-        downloaded.push(...((await downloadNexprintFile(file)) ?? []));
-      }
-    }
-  } catch (err) {
-    await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
-    throw await nexprintFailure(userId, err);
-  }
-  if (!downloaded.length) throw new HttpError(400, "This NexPrint model has no files Thingport can import.");
-
-  // Its profile files are named after their profiles already.
-  return createSourcedPrint(
-    userId,
-    source,
-    body,
-    resolved,
-    downloaded,
-    `nexprint-${source.externalId}`,
-    profileDetailsOf(resolved.profiles, { names: false }),
-  );
-}
-
-/** Re-import of a NexPrint model naming a profile it doesn't have yet: that profile's 3MF becomes another plate. A
- *  link without a profile, or with one already there, needs no download. */
-async function addNexprintProfileToPrint(
-  existing: ExistingImportedPrint,
-  url: string,
-  body: ImportRequestBody,
-): Promise<ImportResult> {
-  const wanted = body.resolved_instance_id ?? parseNexprintModelUrl(url)?.requestedProfileId ?? null;
-  if (!wanted || existing.plates.some((plate) => plate.sourceInstanceId === wanted)) {
-    return { ...existing, alreadyImported: true };
-  }
-  const userId = existing.print.userId;
-  const token = await requireNexprintToken(userId);
-  let profile: NewPlateInput | null;
-  let model: NexprintModelResolution | null;
-  try {
-    model = await resolveNexprintModel(existing.print.sourceExternalId!);
-    if (!model) throw new HttpError(404, NEXPRINT_MISSING);
-    profile = await downloadNexprintProfile(model, wanted, token);
-  } catch (err) {
-    throw await nexprintFailure(userId, err);
-  }
-  if (!profile) throw new HttpError(404, "This NexPrint model has no such print profile.");
   // Its profile files are named after their profiles already.
   return addProfilePlateWithDetails(existing, profile, wanted, profileDetailsOf(model.profiles, { names: false }));
 }
@@ -2301,10 +2245,12 @@ async function importNewOrExisting(userId: string, url: string, body: ImportRequ
   // also for imports queued, or started by Grab, before it was turned off.
   if (existing && !PROFILE_PROVIDERS.has(source!.provider)) return { ...existing, alreadyImported: true };
   await assertUrlProviderEnabled(url);
+  const sourced = source && isProviderId(source.provider) ? PROVIDERS[source.provider].sourcedImport : undefined;
+  if (existing && sourced) return addSourcedProfile(existing, url, body, sourced);
+  if (sourced) return importSourced(userId, source!, url, body, sourced);
   if (existing && source?.provider === "snapmaker") return addSnapmakerProfileToPrint(existing, url, body);
   if (existing && source?.provider === "makeronline") return addMakeronlineProfilesToPrint(existing, body);
   if (existing && source?.provider === "crealitycloud") return addCrealitycloudProfileToPrint(existing, url, body);
-  if (existing && source?.provider === "nexprint") return addNexprintProfileToPrint(existing, url, body);
   if (existing) return addMakerworldProfileToPrint(existing, url, body);
 
   if (source?.provider === "thingiverse") {
@@ -2324,9 +2270,6 @@ async function importNewOrExisting(userId: string, url: string, body: ImportRequ
   }
   if (source?.provider === "crealitycloud") {
     return importCrealitycloudModel(userId, source, url, body);
-  }
-  if (source?.provider === "nexprint") {
-    return importNexprintModel(userId, source, url, body);
   }
   if (source?.provider === "thangs") {
     return importThangsModel(userId, source, body);

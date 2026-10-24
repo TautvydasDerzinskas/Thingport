@@ -8,7 +8,7 @@ import { getUserCults3dCredentials } from "./cults3dSessionService";
 import { fetchMakeronlineTrending } from "./makeronlineApi";
 import { fetchMakerworldTrending } from "./makerworldCloudApi";
 import { fetchMyminifactoryPopular } from "./myminifactoryApi";
-import { fetchNexprintRecommended } from "./nexprintApi";
+import { fetchNexprintRecommended } from "../providers/nexprint/api";
 import { fetchPrintablesTrending } from "./printablesApi";
 import { getMyminifactoryApiKey, getThingiverseAccessToken } from "./settingsService";
 import { fetchSnapmakerFeatured } from "./snapmakerApi";

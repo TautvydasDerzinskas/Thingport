@@ -23,7 +23,7 @@ import { MyminifactoryAuthError, MyminifactoryRateLimitError, resolveMyminifacto
 import { resolveSnapmakerModel } from "./snapmakerApi";
 import { resolveMakeronlineModel } from "./makeronlineApi";
 import { resolveCrealitycloudModel } from "./crealitycloudApi";
-import { resolveNexprintModel } from "./nexprintApi";
+import { resolveNexprintModel } from "../providers/nexprint/api";
 import { resolveThangsModel, ThangsBlockedError } from "./thangsApi";
 import { Cults3dAuthError, Cults3dRateLimitError, resolveCults3dModel } from "./cults3dApi";
 import { CULTS3D_CONNECT, getUserCults3dCredentials, markCults3dApiRejected } from "./cults3dSessionService";

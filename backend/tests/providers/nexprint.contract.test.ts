@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { prisma } from "../../src/db";
-import { getNexprintConnection, setUserNexprintSession } from "../../src/services/nexprintSessionService";
+import { getNexprintConnection, setUserNexprintSession } from "../../src/providers/nexprint/session";
 import { describeProviderContract, type ProviderContractSpec } from "./contract";
 import { binary, json, loadFixture, stl, threeMf, type FetchHandler, expectStatus, assertThat } from "./support";
 

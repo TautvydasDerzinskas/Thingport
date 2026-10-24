@@ -58,7 +58,7 @@ import {
   getUserCrealitycloudAuth,
   markCrealitycloudSessionRejected,
 } from "./crealitycloudSessionService";
-import { fetchNexprintCollection } from "./nexprintApi";
+import { fetchNexprintCollection } from "../providers/nexprint/api";
 import {
   fetchThangsCollection,
   fetchThangsLikes,

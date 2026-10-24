@@ -37,8 +37,8 @@ import {
   listNexprintCollections,
   NexprintAuthError,
   nexprintCollectionUrl,
-} from "./nexprintApi";
-import { getNexprintConnection, getUserNexprintToken } from "./nexprintSessionService";
+} from "../providers/nexprint/api";
+import { getNexprintConnection, getUserNexprintToken } from "../providers/nexprint/session";
 import {
   fetchThangsCollection,
   fetchThangsPurchases,
