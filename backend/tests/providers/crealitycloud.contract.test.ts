@@ -1,9 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { prisma } from "../../src/db";
-import {
-  getCrealitycloudConnection,
-  setUserCrealitycloudSession,
-} from "../../src/services/crealitycloudSessionService";
+import { getCrealitycloudConnection, setUserCrealitycloudSession } from "../../src/providers/crealitycloud/session";
 import { fetchListing } from "../../src/services/collectionSyncRunner";
 import { checkImportStatus } from "../../src/services/importService";
 import { describeProviderContract, type ProviderContractSpec } from "./contract";

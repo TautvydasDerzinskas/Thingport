@@ -1,4 +1,4 @@
-import { prisma } from "../db";
+import { prisma } from "../../db";
 
 // Per-user: the Snapmaker access token that downloads files and reads the user's likes and bookmarks. It lasts a
 // day. Snapmaker's refresh tokens work once, and using one signs out whoever held it before, so Thingport never

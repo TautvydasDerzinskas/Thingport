@@ -3,6 +3,7 @@ import path from "node:path";
 import { mapWithConcurrency, sleep } from "../utils/concurrency";
 import { detectProvider, MANIFESTS, type ProviderManifest } from "../providers/_generated";
 import { DOWNLOAD_LIMIT_CODES, PROVIDERS, SESSION_CODES } from "../providers/registry";
+import type { SourcedImport } from "../providers/types";
 import { IMPORT_COLLECTION_DELAY_MS, IMPORT_MAKERWORLD_CALL_DELAY_MS } from "../config";
 import { countJobItems, getJob, getJobStatus, listJobItems, updateJob, updateJobItem } from "./importJobService";
 import { createNotification } from "./notificationService";
@@ -28,21 +29,14 @@ import {
 } from "./importService";
 import {
   parseSnapmakerModelUrl,
-  resolveSnapmakerModel,
-  selectSnapmakerProfiles,
   snapmakerListName,
   snapmakerModelUrl,
   type SnapmakerList,
-} from "./snapmakerApi";
-import { getUserSnapmakerToken, SNAPMAKER_CONNECT } from "./snapmakerSessionService";
+} from "../providers/snapmaker/api";
+import { getUserSnapmakerToken, SNAPMAKER_CONNECT } from "../providers/snapmaker/session";
 import { parseMakeronlineModelUrl } from "./makeronlineApi";
-import {
-  crealitycloudModelUrl,
-  parseCrealitycloudModelUrl,
-  resolveCrealitycloudModel,
-  selectCrealitycloudProfiles,
-} from "./crealitycloudApi";
-import { CREALITYCLOUD_CONNECT, getUserCrealitycloudAuth } from "./crealitycloudSessionService";
+import { crealitycloudModelUrl, parseCrealitycloudModelUrl } from "../providers/crealitycloud/api";
+import { CREALITYCLOUD_CONNECT, getUserCrealitycloudAuth } from "../providers/crealitycloud/session";
 import { nexprintModelUrl, parseNexprintModelUrl } from "../providers/nexprint/api";
 import { getUserNexprintToken, NEXPRINT_CONNECT } from "../providers/nexprint/session";
 import { thangsModelUrl } from "./thangsApi";
@@ -308,40 +302,6 @@ export async function runMakerworldProfilesImportJob(
   }
 }
 
-/** The print profiles a scope picks from a Snapmaker model, as links that each name one. */
-async function snapmakerProfileUrls(
-  url: string,
-  scope: Exclude<MakerworldProfileScope, "url">,
-): Promise<{ title: string | null; urls: string[] }> {
-  const parsed = parseSnapmakerModelUrl(url);
-  if (!parsed) throw new HttpError(400, "Not a Snapmaker model link");
-  const resolved = await resolveSnapmakerModel(parsed.modelId);
-  if (!resolved) throw new HttpError(404, "This Snapmaker model could not be found, or isn't public.");
-  const profileIds = selectSnapmakerProfiles(resolved, scope, parsed.requestedProfileId);
-  if (!profileIds.length) throw new HttpError(400, "This model has no print profiles to import");
-  return {
-    title: resolved.meta.title ?? null,
-    urls: profileIds.map((profileId) => snapmakerModelUrl(parsed.modelId, profileId)),
-  };
-}
-
-/** The print profiles a scope picks from a Creality Cloud model, as links that each name one. */
-async function crealitycloudProfileUrls(
-  url: string,
-  scope: Exclude<MakerworldProfileScope, "url">,
-): Promise<{ title: string | null; urls: string[] }> {
-  const parsed = parseCrealitycloudModelUrl(url);
-  if (!parsed) throw new HttpError(400, "Not a Creality Cloud model link");
-  const resolved = await resolveCrealitycloudModel(parsed.modelId);
-  if (!resolved) throw new HttpError(404, "This Creality Cloud model could not be found, or isn't public.");
-  const profileIds = selectCrealitycloudProfiles(resolved, scope, parsed.requestedProfileId);
-  if (!profileIds.length) throw new HttpError(400, "This model has no print profiles to import");
-  return {
-    title: resolved.meta.title ?? null,
-    urls: profileIds.map((profileId) => crealitycloudModelUrl(resolved.alias, profileId)),
-  };
-}
-
 const SNAPMAKER_AUTH_TEXT = PROVIDERS.snapmaker.authStopText;
 const CREALITYCLOUD_AUTH_TEXT = PROVIDERS.crealitycloud.authStopText;
 const NEXPRINT_AUTH_TEXT = PROVIDERS.nexprint.authStopText;
@@ -352,21 +312,21 @@ const CULTS3D_AUTH_TEXT = PROVIDERS.cults3d.authStopText;
 type ProfilesProvider = {
   provider: "snapmaker" | "crealitycloud" | "nexprint";
   name: string;
-  profileUrls: typeof snapmakerProfileUrls;
+  profileUrls: NonNullable<SourcedImport["profiles"]>["listUrls"];
   authText: string;
 };
 
 const SNAPMAKER_PROFILES: ProfilesProvider = {
   provider: "snapmaker",
   name: MANIFESTS.snapmaker.name,
-  profileUrls: snapmakerProfileUrls,
+  profileUrls: PROVIDERS.snapmaker.sourcedImport!.profiles!.listUrls,
   authText: SNAPMAKER_AUTH_TEXT,
 };
 
 const CREALITYCLOUD_PROFILES: ProfilesProvider = {
   provider: "crealitycloud",
   name: MANIFESTS.crealitycloud.name,
-  profileUrls: crealitycloudProfileUrls,
+  profileUrls: PROVIDERS.crealitycloud.sourcedImport!.profiles!.listUrls,
   authText: CREALITYCLOUD_AUTH_TEXT,
 };
 
@@ -1213,11 +1173,11 @@ async function importOneLink(
     return { ...totals, profiles: true };
   }
   if (parseSnapmakerModelUrl(url) && body.scope && body.scope !== "url") {
-    const { urls } = await snapmakerProfileUrls(url, body.scope);
+    const { urls } = await SNAPMAKER_PROFILES.profileUrls(url, body.scope);
     return { ...(await importProfileUrlsSequentially(userId, urls, { ...body, url })), profiles: true };
   }
   if (parseCrealitycloudModelUrl(url) && body.scope && body.scope !== "url") {
-    const { urls } = await crealitycloudProfileUrls(url, body.scope);
+    const { urls } = await CREALITYCLOUD_PROFILES.profileUrls(url, body.scope);
     return { ...(await importProfileUrlsSequentially(userId, urls, { ...body, url })), profiles: true };
   }
   if (parseNexprintModelUrl(url) && body.scope && body.scope !== "url") {

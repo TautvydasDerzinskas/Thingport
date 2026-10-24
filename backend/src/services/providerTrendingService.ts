@@ -2,7 +2,7 @@
 // read through the server and kept a while, as every user of the instance sees the same lists.
 
 import { TtlCache } from "../utils/ttlCache";
-import { fetchCrealitycloudRecommended } from "./crealitycloudApi";
+import { fetchCrealitycloudRecommended } from "../providers/crealitycloud/api";
 import { fetchCults3dPopular } from "./cults3dApi";
 import { getUserCults3dCredentials } from "./cults3dSessionService";
 import { fetchMakeronlineTrending } from "./makeronlineApi";
@@ -11,7 +11,7 @@ import { fetchMyminifactoryPopular } from "./myminifactoryApi";
 import { fetchNexprintRecommended } from "../providers/nexprint/api";
 import { fetchPrintablesTrending } from "./printablesApi";
 import { getMyminifactoryApiKey, getThingiverseAccessToken } from "./settingsService";
-import { fetchSnapmakerFeatured } from "./snapmakerApi";
+import { fetchSnapmakerFeatured } from "../providers/snapmaker/api";
 import { fetchThangsTrending } from "./thangsApi";
 import { fetchThingiversePopular } from "./thingiverseApi";
 import type { TrendingModel } from "./trendingModel";

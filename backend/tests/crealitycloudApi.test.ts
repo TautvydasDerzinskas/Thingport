@@ -12,9 +12,9 @@ import {
   parseCrealitycloudModelUrl,
   resolveCrealitycloudModel,
   selectCrealitycloudProfiles,
-} from "../src/services/crealitycloudApi";
+} from "../src/providers/crealitycloud/api";
 import { modelIdFromUrl, modelUrlFor, parseSyncSource } from "../src/services/collectionSyncService";
-import { normalizeCrealitycloudSession } from "../src/services/crealitycloudSessionService";
+import { normalizeCrealitycloudSession } from "../src/providers/crealitycloud/session";
 import { buildImportSourceUrl, identifySourceModel } from "../src/services/importService";
 
 // The Creality Cloud client against the shapes its own site gets back, with fetch mocked. No database.

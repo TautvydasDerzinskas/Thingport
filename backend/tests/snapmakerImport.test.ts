@@ -8,7 +8,7 @@ import {
   getSnapmakerConnection,
   getUserSnapmakerToken,
   setUserSnapmakerToken,
-} from "../src/services/snapmakerSessionService";
+} from "../src/providers/snapmaker/session";
 import { plateThumbPath } from "../src/services/printService";
 import { plateAssetHome } from "../src/services/modelAssets";
 

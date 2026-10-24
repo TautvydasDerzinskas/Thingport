@@ -3,7 +3,9 @@
 
 import type { Category } from "@prisma/client";
 import { MANIFESTS, PROVIDER_IDS, type ProviderId, type ProviderManifest } from "./_generated";
+import { crealitycloudImport } from "./crealitycloud";
 import { nexprintImport } from "./nexprint";
+import { snapmakerImport } from "./snapmaker";
 import type { SourcedImport } from "./types";
 
 export type ProviderBackend = {
@@ -32,6 +34,7 @@ export const PROVIDERS = {
   },
   snapmaker: {
     authStopText: "your Snapmaker sign-in ran out — visit space.snapmaker.com with Thingport Grab, then retry",
+    sourcedImport: snapmakerImport,
   },
   makeronline: {
     authStopText:
@@ -40,6 +43,7 @@ export const PROVIDERS = {
   crealitycloud: {
     authStopText:
       "Creality Cloud turned your sign-in down — visit crealitycloud.com signed in with Thingport Grab, then retry",
+    sourcedImport: crealitycloudImport,
   },
   nexprint: {
     authStopText: "NexPrint turned your sign-in down — visit nexprint.com signed in with Thingport Grab, then retry",

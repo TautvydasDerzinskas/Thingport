@@ -62,7 +62,7 @@ export const nexprintImport: SourcedImport<string, NexprintModelResolution> = {
   },
   missingMessage: "This NexPrint model could not be found, or isn't public.",
   noFilesMessage: "This NexPrint model has no files Thingport can import.",
-  async downloadModel(resolved, token, requested, kit) {
+  async downloadModel(_modelId, resolved, token, requested, kit) {
     const downloaded: NewPlateInput[] = [];
     try {
       const [profileId] = selectNexprintProfiles(resolved, "url", requested);
@@ -82,7 +82,7 @@ export const nexprintImport: SourcedImport<string, NexprintModelResolution> = {
     return downloaded;
   },
   profiles: {
-    download: downloadProfile,
+    download: (_modelId, resolved, profileId, token, kit) => downloadProfile(resolved!, profileId, token, kit),
     missingMessage: "This NexPrint model has no such print profile.",
     // Its profile files are named after their profiles already.
     namedAlike: false,

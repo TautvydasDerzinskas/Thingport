@@ -35,7 +35,7 @@ import {
   markMakerworldCookieRejected,
 } from "./makerworldCookieService";
 import { checkPrintablesCollection, fetchPrintablesCollectionEntries } from "./printablesApi";
-import { fetchSnapmakerList, SnapmakerAuthError } from "./snapmakerApi";
+import { fetchSnapmakerList, SnapmakerAuthError } from "../providers/snapmaker/api";
 import {
   fetchMakeronlineCollection,
   fetchMakeronlineLikes,
@@ -52,12 +52,12 @@ import {
   crealitycloudLikesKey,
   fetchCrealitycloudCollection,
   fetchCrealitycloudLikes,
-} from "./crealitycloudApi";
+} from "../providers/crealitycloud/api";
 import {
   getCrealitycloudConnection,
   getUserCrealitycloudAuth,
   markCrealitycloudSessionRejected,
-} from "./crealitycloudSessionService";
+} from "../providers/crealitycloud/session";
 import { fetchNexprintCollection } from "../providers/nexprint/api";
 import {
   fetchThangsCollection,
@@ -76,7 +76,11 @@ import {
 import { Cults3dAuthError, fetchCults3dLikes, fetchCults3dOrders, fetchCults3dPrintlist } from "./cults3dApi";
 import { getCults3dConnection, getUserCults3dCredentials, markCults3dApiRejected } from "./cults3dSessionService";
 import { notifyGrabImportsQueued, queueGrabImport } from "./grabImportService";
-import { getSnapmakerConnection, getUserSnapmakerToken, markSnapmakerTokenRejected } from "./snapmakerSessionService";
+import {
+  getSnapmakerConnection,
+  getUserSnapmakerToken,
+  markSnapmakerTokenRejected,
+} from "../providers/snapmaker/session";
 import {
   checkThingiverseCollection,
   checkThingiverseUser,

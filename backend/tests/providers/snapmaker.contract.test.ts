@@ -1,5 +1,5 @@
 import { vi } from "vitest";
-import { getSnapmakerConnection, setUserSnapmakerToken } from "../../src/services/snapmakerSessionService";
+import { getSnapmakerConnection, setUserSnapmakerToken } from "../../src/providers/snapmaker/session";
 import { describeProviderContract, type ProviderContractSpec } from "./contract";
 import { binary, json, loadFixture, threeMf, stl, type FetchHandler } from "./support";
 

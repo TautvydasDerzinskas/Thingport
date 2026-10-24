@@ -20,9 +20,9 @@ import { resolveThingiverseThing, ThingiverseAuthError, ThingiverseRateLimitErro
 import { parsePrintablesModelUrl, resolvePrintablesModel } from "./printablesApi";
 import { getMyminifactoryApiKey, getThingiverseAccessToken } from "./settingsService";
 import { MyminifactoryAuthError, MyminifactoryRateLimitError, resolveMyminifactoryObject } from "./myminifactoryApi";
-import { resolveSnapmakerModel } from "./snapmakerApi";
+import { resolveSnapmakerModel } from "../providers/snapmaker/api";
 import { resolveMakeronlineModel } from "./makeronlineApi";
-import { resolveCrealitycloudModel } from "./crealitycloudApi";
+import { resolveCrealitycloudModel } from "../providers/crealitycloud/api";
 import { resolveNexprintModel } from "../providers/nexprint/api";
 import { resolveThangsModel, ThangsBlockedError } from "./thangsApi";
 import { Cults3dAuthError, Cults3dRateLimitError, resolveCults3dModel } from "./cults3dApi";

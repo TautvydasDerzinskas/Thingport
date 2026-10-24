@@ -14,8 +14,8 @@ import {
   type SyncProvider,
   updateSyncSettings,
 } from "./collectionSyncService";
-import { listSnapmakerCollections, SnapmakerAuthError } from "./snapmakerApi";
-import { getSnapmakerConnection, getUserSnapmakerId, getUserSnapmakerToken } from "./snapmakerSessionService";
+import { listSnapmakerCollections, SnapmakerAuthError } from "../providers/snapmaker/api";
+import { getSnapmakerConnection, getUserSnapmakerId, getUserSnapmakerToken } from "../providers/snapmaker/session";
 import {
   fetchMakeronlineCollection,
   fetchMakeronlineCollectionInfo,
@@ -30,8 +30,8 @@ import {
   crealitycloudCollectionUrl,
   fetchCrealitycloudCollection,
   listCrealitycloudCollections,
-} from "./crealitycloudApi";
-import { getCrealitycloudConnection, getUserCrealitycloudAuth } from "./crealitycloudSessionService";
+} from "../providers/crealitycloud/api";
+import { getCrealitycloudConnection, getUserCrealitycloudAuth } from "../providers/crealitycloud/session";
 import {
   fetchNexprintCollection,
   listNexprintCollections,

@@ -4,15 +4,15 @@ import { describe, expect, it } from "vitest";
 import { identifySourceModel } from "../src/services/importService";
 import { parseSyncSource } from "../src/services/collectionSyncService";
 import { parseMakerworldModelUrl } from "../src/services/makerworldCloudApi";
-import { parseSnapmakerModelUrl } from "../src/services/snapmakerApi";
+import { parseSnapmakerModelUrl } from "../src/providers/snapmaker/api";
 import { parseMakeronlineModelUrl, isMakeronlineLikesUrl } from "../src/services/makeronlineApi";
-import { parseCrealitycloudModelUrl, parseCrealitycloudLikesUrl } from "../src/services/crealitycloudApi";
+import { parseCrealitycloudModelUrl, parseCrealitycloudLikesUrl } from "../src/providers/crealitycloud/api";
 import { parseNexprintModelUrl } from "../src/providers/nexprint/api";
 import { parseThingiverseLikesUrl } from "../src/services/thingiverseApi";
 import { parsePrintablesLikesUrl } from "../src/services/printablesApi";
 import { isThangsLikesUrl } from "../src/services/thangsApi";
 import { parseCults3dLikesUrl } from "../src/services/cults3dApi";
-import { parseSnapmakerListUrl } from "../src/services/snapmakerApi";
+import { parseSnapmakerListUrl } from "../src/providers/snapmaker/api";
 
 type Expected = {
   provider: string | null;

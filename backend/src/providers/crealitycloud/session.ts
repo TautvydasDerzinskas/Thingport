@@ -1,5 +1,5 @@
-import { prisma } from "../db";
-import type { CrealitycloudAuth } from "./crealitycloudApi";
+import { prisma } from "../../db";
+import type { CrealitycloudAuth } from "./api";
 
 // Per-user: the Creality Cloud sign-in, its model_token and model_user_id cookies, which the API takes together. The
 // site sets them once at sign-in for 7 days and never renews them, and Thingport doesn't either: Thingport Grab sends

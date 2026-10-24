@@ -56,12 +56,8 @@ import {
   parseSnapmakerModelUrl,
   SnapmakerAuthError,
   snapmakerListName,
-} from "../services/snapmakerApi";
-import {
-  getUserSnapmakerToken,
-  markSnapmakerTokenRejected,
-  SNAPMAKER_CONNECT,
-} from "../services/snapmakerSessionService";
+} from "../providers/snapmaker/api";
+import { getUserSnapmakerToken, markSnapmakerTokenRejected, SNAPMAKER_CONNECT } from "../providers/snapmaker/session";
 import {
   fetchMakeronlineCollection,
   fetchMakeronlineCollectionInfo,
@@ -96,12 +92,12 @@ import {
   parseCrealitycloudCollectionUrl,
   parseCrealitycloudLikesUrl,
   parseCrealitycloudModelUrl,
-} from "../services/crealitycloudApi";
+} from "../providers/crealitycloud/api";
 import {
   CREALITYCLOUD_CONNECT,
   getUserCrealitycloudAuth,
   markCrealitycloudSessionRejected,
-} from "../services/crealitycloudSessionService";
+} from "../providers/crealitycloud/session";
 import {
   fetchNexprintCollection,
   NexprintAuthError,

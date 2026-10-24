@@ -75,24 +75,20 @@ import {
   normalizeMyminifactoryCookie,
   setUserMyminifactoryCookie,
 } from "../services/myminifactorySessionService";
-import { checkSnapmakerToken } from "../services/snapmakerApi";
-import {
-  getSnapmakerConnection,
-  normalizeSnapmakerToken,
-  setUserSnapmakerToken,
-} from "../services/snapmakerSessionService";
+import { checkSnapmakerToken } from "../providers/snapmaker/api";
+import { getSnapmakerConnection, normalizeSnapmakerToken, setUserSnapmakerToken } from "../providers/snapmaker/session";
 import { checkMakeronlineToken } from "../services/makeronlineApi";
 import {
   getMakeronlineConnection,
   normalizeMakeronlineToken,
   setUserMakeronlineToken,
 } from "../services/makeronlineSessionService";
-import { checkCrealitycloudAuth } from "../services/crealitycloudApi";
+import { checkCrealitycloudAuth } from "../providers/crealitycloud/api";
 import {
   getCrealitycloudConnection,
   normalizeCrealitycloudSession,
   setUserCrealitycloudSession,
-} from "../services/crealitycloudSessionService";
+} from "../providers/crealitycloud/session";
 import { checkNexprintAuth } from "../providers/nexprint/api";
 import { getNexprintConnection, normalizeNexprintSession, setUserNexprintSession } from "../providers/nexprint/session";
 import { checkThangsAuth, refreshThangsToken, ThangsAuthError } from "../services/thangsApi";

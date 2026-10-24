@@ -29,18 +29,37 @@ export type SourcedImport<Auth = unknown, Model extends ResolvedModel = Resolved
   /** The user's credentials, or the HttpError (400 with the manifest's session code) that says to connect. */
   requireAuth(userId: string): Promise<Auth>;
   resolveModel(externalId: string, auth: Auth): Promise<Model | null>;
+  /** The id a model is kept under, where it isn't the one its link has (Creality Cloud's alias, for a link by id). */
+  canonicalId?(model: Model): string;
   /** The provider's errors as the HttpErrors an import reports, remembering a rejected sign-in; others as they are. */
   mapError(userId: string, err: unknown): Promise<unknown>;
   /** The 404 for a model it doesn't know, or doesn't show. */
   missingMessage: string;
   /** The 400 for a model with nothing to import. */
   noFilesMessage: string;
-  /** The files of a new print: the profile `requestedProfileId` names, or its own pick. Empty when there are none. */
-  downloadModel(model: Model, auth: Auth, requestedProfileId: string | null, kit: ImportKit): Promise<NewPlateInput[]>;
-  /** For a provider with print profiles: one profile's file, tagged with it, for an existing print. Null when the
-   *  model has no such profile. */
+  /** The files of a new print: the profile `requestedProfileId` names, or its own pick. Empty when there are none;
+   *  removes what it downloaded when it throws. */
+  downloadModel(
+    externalId: string,
+    model: Model,
+    auth: Auth,
+    requestedProfileId: string | null,
+    kit: ImportKit,
+  ): Promise<NewPlateInput[]>;
+  /** For a provider with print profiles. */
   profiles?: {
-    download(model: Model, profileId: string, auth: Auth, kit: ImportKit): Promise<NewPlateInput | null>;
+    /** One profile's file, tagged with it, for an existing print; null when the model has no such profile. `model`
+     *  is null when `downloadsWithoutModel`. */
+    download(
+      externalId: string,
+      model: Model | null,
+      profileId: string,
+      auth: Auth,
+      kit: ImportKit,
+    ): Promise<NewPlateInput | null>;
+    /** Whether a profile downloads without the model's details, which then only name and picture it: a re-import
+     *  still brings the profile when they can't be read. */
+    downloadsWithoutModel?: boolean;
     /** The 404 for a profile the model hasn't got. */
     missingMessage: string;
     /** Whether its profile files come named alike, so they're named after their profiles. */
