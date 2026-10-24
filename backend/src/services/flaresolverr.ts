@@ -74,6 +74,40 @@ export type FlaresolverrResult = {
 // Only known provider read endpoints may enter it; a forged Cloudflare response is not trust.
 // Deployment must still isolate the solver from private networks: trusted pages can redirect
 // or load third-party resources, and this allowlist cannot constrain browser subrequests.
+const SOLVER_ROUTES = new Map<string, { path: RegExp; query: string[] }>([
+  [
+    "makerworld.com",
+    {
+      path: /^(?:\/[a-z]{2}\/models\/\d+(?:-[\w%-]+)?\/?|\/api\/v1\/models?\/\d+(?:\/files|\/download)?|\/api\/v1\/design-service\/instance\/\d+\/f3mf|\/api\/v1\/design-service\/favorites\/\d+(?:\/designs)?|\/api\/v1\/design-user-service\/user\/profile\/[\w%-]+)$/,
+      query: ["type", "fileType", "seed", "collectionId", "limit", "offset"],
+    },
+  ],
+  [
+    "api.thingiverse.com",
+    {
+      path: /^\/(?:things\/\d+(?:\/categories)?|users\/[\w%-]+(?:\/likes|\/collections)?|collections\/\d+(?:\/things)?|popular)$/,
+      query: ["page", "per_page"],
+    },
+  ],
+  ["www.thingiverse.com", { path: /^\/thing:\d+\/?$/, query: [] }],
+  ["www.printables.com", { path: /^(?:\/[a-z]{2})?\/model\/\d+(?:-[\w%-]+)?\/?$/, query: [] }],
+  [
+    "www.myminifactory.com",
+    {
+      path: /^\/(?:object\/3d-print-[\w%-]+|api\/v2\/(?:objects\/\d+|users\/[\w%-]+(?:\/collections(?:\/[\w%-]+)?)?|search))$/,
+      query: ["q", "sort", "page", "per_page"],
+    },
+  ],
+  [
+    "thangs.com",
+    {
+      path: /^\/(?:m\/\d+|designer\/[\w%-]+\/3d-model\/[\w%-]+|api\/(?:models\/v2\/\d+|users\/v4\/[\w%-]+\/likes|collections\/\d+|landing\/models\/v8\/root))$/,
+      query: ["likes", "page", "pageSize", "sortBy", "costType", "showContent", "category", "tags", "range", "sortDir"],
+    },
+  ],
+  ["cults3d.com", { path: /^\/[a-z]{2}\/3d-model\/[\w%-]+\/[\w%-]+\/?$/, query: [] }],
+]);
+
 function solverDestination(url: string): URL | null {
   let parsed: URL;
   try {
@@ -82,28 +116,7 @@ function solverDestination(url: string): URL | null {
     return null;
   }
   if (parsed.protocol !== "https:" || parsed.port || parsed.username || parsed.password) return null;
-  const routes: Record<string, { path: RegExp; query: string[] }> = {
-    "makerworld.com": {
-      path: /^(?:\/[a-z]{2}\/models\/\d+(?:-[\w%-]+)?\/?|\/api\/v1\/models?\/\d+(?:\/files|\/download)?|\/api\/v1\/design-service\/instance\/\d+\/f3mf|\/api\/v1\/design-service\/favorites\/\d+(?:\/designs)?|\/api\/v1\/design-user-service\/user\/profile\/[\w%-]+)$/,
-      query: ["type", "fileType", "seed", "collectionId", "limit", "offset"],
-    },
-    "api.thingiverse.com": {
-      path: /^\/(?:things\/\d+(?:\/categories)?|users\/[\w%-]+(?:\/likes|\/collections)?|collections\/\d+(?:\/things)?|popular)$/,
-      query: ["page", "per_page"],
-    },
-    "www.thingiverse.com": { path: /^\/thing:\d+\/?$/, query: [] },
-    "www.printables.com": { path: /^(?:\/[a-z]{2})?\/model\/\d+(?:-[\w%-]+)?\/?$/, query: [] },
-    "www.myminifactory.com": {
-      path: /^\/(?:object\/3d-print-[\w%-]+|api\/v2\/(?:objects\/\d+|users\/[\w%-]+(?:\/collections(?:\/[\w%-]+)?)?|search))$/,
-      query: ["q", "sort", "page", "per_page"],
-    },
-    "thangs.com": {
-      path: /^\/(?:m\/\d+|designer\/[\w%-]+\/3d-model\/[\w%-]+|api\/(?:models\/v2\/\d+|users\/v4\/[\w%-]+\/likes|collections\/\d+|landing\/models\/v8\/root))$/,
-      query: ["likes", "page", "pageSize", "sortBy", "costType", "showContent", "category", "tags", "range", "sortDir"],
-    },
-    "cults3d.com": { path: /^\/[a-z]{2}\/3d-model\/[\w%-]+\/[\w%-]+\/?$/, query: [] },
-  };
-  const rule = routes[parsed.hostname];
+  const rule = SOLVER_ROUTES.get(parsed.hostname);
   if (!rule || !rule.path.test(parsed.pathname)) return null;
   // Only UTF-8 bytes for non-ASCII slug characters may be percent-encoded.
   // Encoded ASCII delimiters and double-encoding could change the server-side route.

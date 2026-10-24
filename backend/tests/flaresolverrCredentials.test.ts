@@ -28,6 +28,8 @@ describe("FlareSolverr credential boundary", () => {
 
   it.each([
     "https://attacker.example/model",
+    "https://constructor/en/models/1",
+    "https://__proto__/en/models/1",
     "https://evil.makerworld.com/en/models/1",
     "http://makerworld.com/en/models/1",
     "https://makerworld.com:8443/en/models/1",
