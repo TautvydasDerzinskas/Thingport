@@ -20,6 +20,14 @@ export default {
     chip: { bg: "text", fg: "inverse" },
   },
   signIn: "userOptional",
+  auth: [
+    {
+      slot: "default",
+      scope: "user",
+      fields: [{ name: "token" }],
+      legacyEndpoint: { path: "makeronline-session", method: "PATCH" },
+    },
+  ],
   helpers: { grab: "required", flaresolverr: "none" },
   capabilities: {
     collections: true,

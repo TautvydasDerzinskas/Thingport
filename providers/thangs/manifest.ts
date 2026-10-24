@@ -16,6 +16,14 @@ export default {
     chip: { bg: "#FFBC00", fg: "black" },
   },
   signIn: "user",
+  auth: [
+    {
+      slot: "default",
+      scope: "user",
+      fields: [{ name: "token", multiline: true }],
+      legacyEndpoint: { path: "thangs-session", method: "PATCH" },
+    },
+  ],
   helpers: { grab: "recommended", flaresolverr: "optional" },
   capabilities: {
     collections: true,

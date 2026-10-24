@@ -19,6 +19,14 @@ export default {
     chip: { bg: "#7A55E3" },
   },
   signIn: "user",
+  auth: [
+    {
+      slot: "default",
+      scope: "user",
+      fields: [{ name: "token" }],
+      legacyEndpoint: { path: "nexprint-session", method: "PATCH" },
+    },
+  ],
   helpers: { grab: "recommended", flaresolverr: "none" },
   capabilities: {
     collections: true,

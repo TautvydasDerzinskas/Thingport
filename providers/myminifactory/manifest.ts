@@ -17,6 +17,20 @@ export default {
     chip: { bg: "#00866F" },
   },
   signIn: "adminUser",
+  auth: [
+    {
+      slot: "default",
+      scope: "user",
+      fields: [{ name: "cookie" }],
+      legacyEndpoint: { path: "myminifactory-session", method: "PATCH" },
+    },
+    {
+      slot: "instance",
+      scope: "instance",
+      fields: [{ name: "api_key", secret: true }],
+      legacyEndpoint: { path: "myminifactory", method: "POST" },
+    },
+  ],
   helpers: { grab: "optional", flaresolverr: "recommended" },
   capabilities: {
     collections: true,

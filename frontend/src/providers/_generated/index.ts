@@ -25,6 +25,8 @@ import cults3d from "./cults3d/manifest";
 import { urls as cults3dUrls } from "./cults3d/urls";
 
 export type {
+  AuthField,
+  AuthSlot,
   Chip,
   LegacyIdsField,
   ListKind,

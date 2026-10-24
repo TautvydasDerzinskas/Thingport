@@ -15,6 +15,14 @@ export default {
     chip: { bg: "#2B78FE" },
   },
   signIn: "admin",
+  auth: [
+    {
+      slot: "default",
+      scope: "instance",
+      fields: [{ name: "access_token" }],
+      legacyEndpoint: { path: "thingiverse", method: "POST" },
+    },
+  ],
   helpers: { grab: "optional", flaresolverr: "recommended" },
   capabilities: {
     collections: true,

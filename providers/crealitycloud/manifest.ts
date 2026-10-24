@@ -31,6 +31,14 @@ export default {
     chip: { bg: "#1AC686" },
   },
   signIn: "user",
+  auth: [
+    {
+      slot: "default",
+      scope: "user",
+      fields: [{ name: "token", multiline: true }],
+      legacyEndpoint: { path: "crealitycloud-session", method: "PATCH" },
+    },
+  ],
   helpers: { grab: "recommended", flaresolverr: "none" },
   capabilities: {
     collections: true,

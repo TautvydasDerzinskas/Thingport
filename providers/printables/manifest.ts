@@ -12,6 +12,7 @@ export default {
     chip: { bg: "#FA6831" },
   },
   signIn: "none",
+  auth: [],
   helpers: { grab: "optional", flaresolverr: "recommended" },
   capabilities: {
     collections: true,

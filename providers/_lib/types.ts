@@ -41,6 +41,8 @@ export type ProviderManifest = {
   hosts: readonly string[];
   brand: { logo: Logo; chip: Chip };
   signIn: SignIn;
+  /** The credentials Thingport keeps for it, connected in Configuration → Providers; none for Printables. */
+  auth: readonly AuthSlot[];
   helpers: { grab: Need; flaresolverr: Need };
   capabilities: {
     collections: boolean;
@@ -74,6 +76,21 @@ export type ProviderManifest = {
     site: "builtin" | "optional";
     origins: readonly string[];
   };
+};
+
+/** One field of a credential's connect form, by the name the API takes it under. */
+export type AuthField = { name: string; secret?: boolean; multiline?: boolean };
+
+export type AuthSlot = {
+  /** "default" is the one its tile connects. Others: Cults3D's "browser" sign-in its downloads need besides its API
+   *  key, MyMiniFactory's "instance" API key beside each user's sign-in. */
+  slot: "default" | "browser" | "instance";
+  /** One credential for the whole instance, which only an admin sets, or each user's own. */
+  scope: "instance" | "user";
+  fields: readonly AuthField[];
+  /** `/settings/<path>`, which it had before /providers/<id>/connection, kept as an alias: never change it. `noGet`
+   *  where it had no GET, its state coming with the default slot's. */
+  legacyEndpoint?: { path: string; method: "POST" | "PATCH"; noGet?: true };
 };
 
 export type ListKind = "collection" | "likes" | "bookmarks";

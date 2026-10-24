@@ -173,3 +173,17 @@ export type ProviderTrending = {
   /** Read with each user's own key, so one user's list isn't kept for the others. */
   perUser?: boolean;
 };
+
+export type ConnectionStatus = "connected" | "expired" | "disconnected";
+
+/** One of the credentials the manifest lists under `auth`, as Configuration → Providers shows and changes it. */
+export type ConnectionSlot = {
+  /** Expired: the provider has since turned it down. `account` names whose it is, where that's known. */
+  status(userId: string): Promise<{ status: ConnectionStatus; account?: string | null }>;
+  /** Saves the credential the body holds, checked with the provider when it says `verify`; an empty one forgets it.
+   *  Answers what the legacy endpoint did. A 422 for one that isn't a sign-in or is turned down, a 503 when it can't
+   *  be checked. */
+  save(userId: string, body: unknown): Promise<Record<string, unknown>>;
+  /** What the legacy endpoint's GET answered, where that was more than `configured` and `expired`. */
+  legacyStatus?(userId: string): Promise<Record<string, unknown>>;
+};

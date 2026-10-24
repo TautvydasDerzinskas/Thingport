@@ -67,6 +67,8 @@ import type { ListLink, ModelLink, ProviderUrls } from "./_lib/types";
 ${ids.map((id) => `import ${id} from "./${id}/manifest";\nimport { urls as ${id}Urls } from "./${id}/urls";`).join("\n")}
 
 export type {
+  AuthField,
+  AuthSlot,
   Chip,
   LegacyIdsField,
   ListKind,

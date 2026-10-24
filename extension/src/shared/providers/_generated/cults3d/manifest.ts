@@ -18,6 +18,20 @@ export default {
     chip: { bg: "#822EF5" },
   },
   signIn: "user",
+  auth: [
+    {
+      slot: "default",
+      scope: "user",
+      fields: [{ name: "nick" }, { name: "api_key", secret: true }],
+      legacyEndpoint: { path: "cults3d", method: "PATCH" },
+    },
+    {
+      slot: "browser",
+      scope: "user",
+      fields: [{ name: "session", multiline: true }],
+      legacyEndpoint: { path: "cults3d-session", method: "PATCH", noGet: true },
+    },
+  ],
   helpers: { grab: "recommended", flaresolverr: "none" },
   capabilities: {
     collections: true,

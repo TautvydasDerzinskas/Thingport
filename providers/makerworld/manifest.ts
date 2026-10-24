@@ -16,6 +16,14 @@ export default {
     chip: { bg: "#00B800" },
   },
   signIn: "user",
+  auth: [
+    {
+      slot: "default",
+      scope: "user",
+      fields: [{ name: "cookie", multiline: true }],
+      legacyEndpoint: { path: "makerworld", method: "PATCH" },
+    },
+  ],
   helpers: { grab: "recommended", flaresolverr: "optional" },
   capabilities: {
     collections: true,
