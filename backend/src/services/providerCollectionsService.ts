@@ -102,20 +102,10 @@ import {
   ThingiverseRateLimitError,
 } from "./thingiverseApi";
 import { assertProviderEnabled } from "./providerSettingsService";
+import { PROVIDER_IDS, type ProviderId } from "../providers/_generated";
 
-export const BROWSABLE_PROVIDERS = [
-  "makerworld",
-  "printables",
-  "thingiverse",
-  "myminifactory",
-  "snapmaker",
-  "makeronline",
-  "crealitycloud",
-  "nexprint",
-  "thangs",
-  "cults3d",
-] as const;
-export type BrowsableProvider = (typeof BROWSABLE_PROVIDERS)[number];
+export const BROWSABLE_PROVIDERS = PROVIDER_IDS;
+export type BrowsableProvider = ProviderId;
 
 /** `connected`: the instance can reach it for this user at all. `account`: who they are there, for
  *  the providers without a per-user login (MakerWorld's cookie already says). */

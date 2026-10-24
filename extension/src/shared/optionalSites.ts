@@ -1,24 +1,21 @@
 // Sites Grab works on only once the user allows it. A new provider every week, each added to the manifest, would
 // have the browser disable Grab for everyone after every update until they approved it again. So access to each is
 // asked for at runtime, when the user enables it in the popup (within the manifest's optional_host_permissions), and
-// the background registers the content script there. It only ever runs on the sites listed here.
+// the background registers the content script there. It only ever runs on the sites listed here: the providers whose
+// manifest (providers/) says their site is optional.
 
-export type OptionalSite = {
-  id: "myminifactory" | "snapmaker" | "makeronline" | "crealitycloud" | "nexprint" | "thangs" | "cults3d";
-  name: string;
-  origins: string[];
-};
+import { MANIFESTS, PROVIDER_IDS } from "./providers/_generated";
 
-export const OPTIONAL_SITES: readonly OptionalSite[] = [
-  { id: "myminifactory", name: "MyMiniFactory", origins: ["*://*.myminifactory.com/*"] },
-  // id.snapmaker.com renews the sign-in (see snapmakerSession.ts); Grab's panel only ever shows on Snapmaker Space.
-  { id: "snapmaker", name: "Snapmaker Space", origins: ["*://space.snapmaker.com/*", "*://id.snapmaker.com/*"] },
-  { id: "makeronline", name: "MakerOnline", origins: ["*://*.makeronline.com/*"] },
-  { id: "crealitycloud", name: "Creality Cloud", origins: ["*://*.crealitycloud.com/*"] },
-  { id: "nexprint", name: "NexPrint", origins: ["*://*.nexprint.com/*"] },
-  { id: "thangs", name: "Thangs", origins: ["*://thangs.com/*", "*://*.thangs.com/*"] },
-  { id: "cults3d", name: "Cults3D", origins: ["*://cults3d.com/*", "*://*.cults3d.com/*"] },
-];
+type Manifests = typeof MANIFESTS;
+type OptionalId = {
+  [K in keyof Manifests]: Manifests[K]["extension"]["site"] extends "optional" ? K : never;
+}[keyof Manifests];
+
+export type OptionalSite = { id: OptionalId; name: string; origins: string[] };
+
+export const OPTIONAL_SITES: readonly OptionalSite[] = PROVIDER_IDS.filter(
+  (id): id is OptionalId => MANIFESTS[id].extension.site === "optional",
+).map((id) => ({ id, name: MANIFESTS[id].name, origins: [...MANIFESTS[id].extension.origins] }));
 
 const scriptId = (site: OptionalSite) => `site-${site.id}`;
 

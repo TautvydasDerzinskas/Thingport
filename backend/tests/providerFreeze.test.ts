@@ -13,6 +13,8 @@ import importsRoutes from "../src/routes/imports";
 import settingsRoutes from "../src/routes/settings";
 import providerCollectionsRoutes from "../src/routes/providerCollections";
 import { identifySourceModel } from "../src/services/importService";
+import { LOOKUP_PROVIDERS } from "../src/services/authorLinkingService";
+import { PROVIDER_IDS } from "../src/providers/_generated";
 
 const app = createApp();
 const source = (file: string) => readFileSync(new URL(`../src/services/${file}`, import.meta.url), "utf8");
@@ -82,8 +84,8 @@ describe("provider-module freeze", () => {
     ]);
   });
 
-  it("pins collection sync provider IDs", () => {
-    expect(quotedList("collectionSyncService.ts", /export type SyncProvider =([\s\S]*?);/)).toEqual([
+  it("pins the provider IDs from the manifests, which collection sync and description refetch take", () => {
+    expect([...PROVIDER_IDS]).toEqual([
       "makerworld",
       "printables",
       "thingiverse",
@@ -113,10 +115,10 @@ describe("provider-module freeze", () => {
   });
 
   it("pins author lookup provider IDs", () => {
-    expect(quotedList("authorLinkingService.ts", /const LOOKUP_PROVIDERS = \[([\s\S]*?)\] as const/)).toEqual([
+    expect([...LOOKUP_PROVIDERS]).toEqual([
       "makerworld",
-      "thingiverse",
       "printables",
+      "thingiverse",
       "myminifactory",
       "snapmaker",
       "makeronline",

@@ -1,6 +1,7 @@
 import { authHeaders } from "../utils/auth";
 import { apiBase, assertOk, readErrorMessage, UnauthorizedError } from "./client";
 import type { AccentColor, RenderColor, ThemeSelection } from "../constants/settingsOptions";
+import type { ProviderId } from "../providers/_generated";
 import { invalidateAiCategorizationStatus } from "./aiCategorization";
 import type { QualityIssueCode, QualitySeverity } from "./prints";
 
@@ -272,17 +273,7 @@ export type DatabaseCredentialsInput = {
   password: string;
 };
 
-export type ImportProvider =
-  | "makerworld"
-  | "printables"
-  | "thingiverse"
-  | "myminifactory"
-  | "snapmaker"
-  | "makeronline"
-  | "crealitycloud"
-  | "nexprint"
-  | "thangs"
-  | "cults3d";
+export type ImportProvider = ProviderId;
 export type Cults3dSettings = {
   configured: boolean;
   expired: boolean;

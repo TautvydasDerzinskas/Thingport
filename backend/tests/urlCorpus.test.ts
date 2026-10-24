@@ -27,7 +27,7 @@ const root = path.resolve(__dirname, "../../providers");
 const cases = fs
   .readdirSync(root, { withFileTypes: true })
   .flatMap((entry) =>
-    entry.isDirectory()
+    entry.isDirectory() && !entry.name.startsWith("_")
       ? (JSON.parse(fs.readFileSync(path.join(root, entry.name, "urls.fixtures.json"), "utf8")) as Case[])
       : [],
   );

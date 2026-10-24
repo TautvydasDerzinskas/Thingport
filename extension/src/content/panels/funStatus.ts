@@ -4,21 +4,14 @@
 
 import type { Provider } from "../../shared/urls";
 import { panelQuery, renderPanel } from "../shell";
+import { MANIFESTS, PROVIDER_IDS } from "../../shared/providers/_generated";
 
 const ROTATE_MS = 2500;
 
-export const SITE_NAMES: Record<Provider, string> = {
-  makerworld: "MakerWorld",
-  printables: "Printables",
-  thingiverse: "Thingiverse",
-  myminifactory: "MyMiniFactory",
-  snapmaker: "Snapmaker Space",
-  makeronline: "MakerOnline",
-  crealitycloud: "Creality Cloud",
-  nexprint: "NexPrint",
-  thangs: "Thangs",
-  cults3d: "Cults3D",
-};
+export const SITE_NAMES = Object.fromEntries(PROVIDER_IDS.map((id) => [id, MANIFESTS[id].name])) as Record<
+  Provider,
+  string
+>;
 
 /** The instance inspects the link: finds the file, reads its title, checks whether it's a zip. */
 export function checkingLinkPhrases(provider: Provider): string[] {

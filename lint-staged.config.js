@@ -2,6 +2,11 @@
 // which avoids mapping staged paths into each project's cwd.
 module.exports = {
   "*": "prettier --write --ignore-unknown",
+  // The packages' copies of providers/ (scripts/sync-providers.mjs) are committed with it.
+  "providers/**": () => [
+    "npm run providers:sync",
+    "git add backend/src/providers/_generated frontend/src/providers/_generated extension/src/shared/providers/_generated",
+  ],
   "bridge/**/*.go": "gofmt -w",
   "backend/prisma/schema.prisma": () =>
     "npm --prefix backend exec -- prisma format --schema backend/prisma/schema.prisma",

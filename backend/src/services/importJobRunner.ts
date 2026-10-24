@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { mapWithConcurrency, sleep } from "../utils/concurrency";
+import { MANIFESTS } from "../providers/_generated";
 import { IMPORT_COLLECTION_DELAY_MS, IMPORT_MAKERWORLD_CALL_DELAY_MS } from "../config";
 import { countJobItems, getJob, getJobStatus, listJobItems, updateJob, updateJobItem } from "./importJobService";
 import { createNotification } from "./notificationService";
@@ -398,21 +399,21 @@ type ProfilesProvider = {
 
 const SNAPMAKER_PROFILES: ProfilesProvider = {
   provider: "snapmaker",
-  name: "Snapmaker Space",
+  name: MANIFESTS.snapmaker.name,
   profileUrls: snapmakerProfileUrls,
   authText: SNAPMAKER_AUTH_TEXT,
 };
 
 const CREALITYCLOUD_PROFILES: ProfilesProvider = {
   provider: "crealitycloud",
-  name: "Creality Cloud",
+  name: MANIFESTS.crealitycloud.name,
   profileUrls: crealitycloudProfileUrls,
   authText: CREALITYCLOUD_AUTH_TEXT,
 };
 
 const NEXPRINT_PROFILES: ProfilesProvider = {
   provider: "nexprint",
-  name: "NexPrint",
+  name: MANIFESTS.nexprint.name,
   profileUrls: nexprintProfileUrls,
   authText: NEXPRINT_AUTH_TEXT,
 };

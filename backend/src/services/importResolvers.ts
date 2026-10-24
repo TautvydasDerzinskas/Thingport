@@ -9,6 +9,7 @@ import {
   IMPORT_TIMEOUT_SECONDS,
 } from "../config";
 import { isJsonContentType } from "../utils/fileUtils";
+import type { ProviderId } from "../providers/_generated";
 import { hostIs } from "../utils/urlUtils";
 import { htmlToMarkdown } from "./descriptionMarkdown";
 import { decodeHtmlEntities } from "../utils/htmlEntities";
@@ -491,18 +492,7 @@ export type ImportedPageMetadata = {
   author: ImportedAuthorInfo | null;
   /** The site's own category ids; each site has its own id namespace. Thangs', which has no ids, are category paths. */
   siteCategoryIds: (number | string)[];
-  categorySite:
-    | "makerworld"
-    | "thingiverse"
-    | "printables"
-    | "myminifactory"
-    | "snapmaker"
-    | "makeronline"
-    | "crealitycloud"
-    | "nexprint"
-    | "thangs"
-    | "cults3d"
-    | null;
+  categorySite: ProviderId | null;
   /** Lets a second profile of an imported design be added as its own plate. MakerWorld only. */
   makerworldProfile?: MakerworldProfileRef;
 };

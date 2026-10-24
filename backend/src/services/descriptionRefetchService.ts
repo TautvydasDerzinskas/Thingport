@@ -1,4 +1,5 @@
 import { prisma } from "../db";
+import { PROVIDER_IDS, type ProviderId } from "../providers/_generated";
 import { IMPORT_COLLECTION_DELAY_MS } from "../config";
 import { maybeSleep } from "../utils/concurrency";
 import { createLog } from "./auditLog";
@@ -17,19 +18,8 @@ import { getUserCults3dCredentials } from "./cults3dSessionService";
 // Re-reads every imported model's description for one user from its source, replacing the stored
 // one, e.g. to bring models imported as plain text up to formatted descriptions with images.
 
-const SOURCE_PROVIDERS = [
-  "makerworld",
-  "thingiverse",
-  "printables",
-  "myminifactory",
-  "snapmaker",
-  "makeronline",
-  "crealitycloud",
-  "nexprint",
-  "thangs",
-  "cults3d",
-] as const;
-type SourceProvider = (typeof SOURCE_PROVIDERS)[number];
+const SOURCE_PROVIDERS = PROVIDER_IDS;
+type SourceProvider = ProviderId;
 
 export type DescriptionRefetchRun = {
   running: boolean;

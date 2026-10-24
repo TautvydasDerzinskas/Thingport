@@ -1,16 +1,8 @@
 // Provider URL recognition, duplicated from the frontend and backend parsers. Keep in sync by hand.
 
-export type Provider =
-  | "makerworld"
-  | "thingiverse"
-  | "printables"
-  | "myminifactory"
-  | "snapmaker"
-  | "makeronline"
-  | "crealitycloud"
-  | "nexprint"
-  | "thangs"
-  | "cults3d";
+import type { ProviderId } from "./providers/_generated";
+
+export type Provider = ProviderId;
 
 export type Classification =
   | { kind: "single"; provider: "makerworld"; type: "model" }

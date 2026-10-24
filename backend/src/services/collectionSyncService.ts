@@ -5,6 +5,7 @@
 import type { Collection, CollectionSync } from "@prisma/client";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
+import { isProviderId, MANIFESTS, type ProviderId } from "../providers/_generated";
 import { addPrintsToCollection, findOrCreateCollectionByName, isSystemCollectionId } from "./collectionService";
 import { parseMakerworldCollectionUrl } from "./makerworldCollections";
 import { parsePrintablesCollectionUrl, parsePrintablesLikesUrl } from "./printablesApi";
@@ -73,34 +74,11 @@ import {
   type SyncProfileScope,
 } from "../dto";
 
-export type SyncProvider =
-  | "makerworld"
-  | "printables"
-  | "thingiverse"
-  | "myminifactory"
-  | "snapmaker"
-  | "makeronline"
-  | "crealitycloud"
-  | "nexprint"
-  | "thangs"
-  | "cults3d";
+export type SyncProvider = ProviderId;
 
 /** `likesOf` is set for a user's likes (on Thingiverse or Cults3D, or the user's own on Printables), which a
  *  sync follows like a collection. */
 export type SyncSource = { provider: SyncProvider; externalId: string; url: string; likesOf?: string };
-
-const PROVIDER_NAMES: Record<SyncProvider, string> = {
-  makerworld: "MakerWorld",
-  printables: "Printables",
-  thingiverse: "Thingiverse",
-  myminifactory: "MyMiniFactory",
-  snapmaker: "Snapmaker Space",
-  makeronline: "MakerOnline",
-  crealitycloud: "Creality Cloud",
-  nexprint: "NexPrint",
-  thangs: "Thangs",
-  cults3d: "Cults3D",
-};
 
 /** Providers whose models come with print profiles a sync can pick between. */
 export function hasProfiles(provider: string): boolean {
@@ -114,7 +92,7 @@ export function hasProfiles(provider: string): boolean {
 }
 
 export function providerName(provider: string): string {
-  return PROVIDER_NAMES[provider as SyncProvider] ?? provider;
+  return isProviderId(provider) ? MANIFESTS[provider].name : provider;
 }
 
 /** The collection a user's likes are filed into, by import and sync alike. */

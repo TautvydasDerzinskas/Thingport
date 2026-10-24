@@ -11,22 +11,12 @@ import { useDisabledProviders } from "../../hooks/useDisabledProviders";
 import type { ImportProvider } from "../../api/settings";
 import { ProviderLogo } from "../Layout/ConfigurationDialog/providerLogos";
 import ProviderCategoryPicker from "./ProviderCategoryPicker";
+import { PROVIDER_IDS } from "../../providers/_generated";
 import { indexCatalog, joinCatIds, loadProviderCatalog, splitCatIds, type CatalogCategory } from "./providerCatalog";
 
 /** The providers a category can take imports from, in the order the rows show them. */
-export const MAPPED_PROVIDERS = [
-  "makerworld",
-  "printables",
-  "thingiverse",
-  "myminifactory",
-  "snapmaker",
-  "makeronline",
-  "crealitycloud",
-  "nexprint",
-  "thangs",
-  "cults3d",
-] as const satisfies readonly ImportProvider[];
-export type MappedProvider = (typeof MAPPED_PROVIDERS)[number];
+export const MAPPED_PROVIDERS: readonly ImportProvider[] = PROVIDER_IDS;
+export type MappedProvider = ImportProvider;
 
 type Props = {
   /** Each provider's stored ids, ";"-separated. */

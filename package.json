@@ -17,6 +17,8 @@
   "scripts": {
     "prepare": "husky",
     "format": "prettier --write . && gofmt -w bridge && npm --prefix backend exec -- prisma format --schema backend/prisma/schema.prisma",
-    "format:check": "prettier --check . && test -z \"$(gofmt -l bridge)\""
+    "format:check": "prettier --check . && test -z \"$(gofmt -l bridge)\"",
+    "providers:sync": "node scripts/sync-providers.mjs",
+    "providers:check": "node scripts/sync-providers.mjs --check"
   }
 }

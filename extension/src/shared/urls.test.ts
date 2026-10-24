@@ -18,7 +18,7 @@ type UrlFixture = {
 
 const providersDir = resolve(fileURLToPath(new URL("../../../providers", import.meta.url)));
 const providers = (await readdir(providersDir, { withFileTypes: true }))
-  .filter((entry) => entry.isDirectory())
+  .filter((entry) => entry.isDirectory() && !entry.name.startsWith("_"))
   .map((entry) => entry.name)
   .toSorted();
 const fixtureSets = await Promise.all(
