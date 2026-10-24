@@ -33,6 +33,20 @@ const PROVIDER_NAMES: Record<Provider, string> = {
   cults3d: "Cults3D",
 };
 
+// Each provider's site; its subdomains count too.
+const PROVIDER_HOSTS: Record<Provider, string> = {
+  makerworld: "makerworld.com",
+  printables: "printables.com",
+  thingiverse: "thingiverse.com",
+  myminifactory: "myminifactory.com",
+  snapmaker: "snapmaker.com",
+  makeronline: "makeronline.com",
+  crealitycloud: "crealitycloud.com",
+  nexprint: "nexprint.com",
+  thangs: "thangs.com",
+  cults3d: "cults3d.com",
+};
+
 const SETTING_KEY = "disabled_providers";
 export const PROVIDER_DISABLED_CODE = "provider_disabled";
 
@@ -64,7 +78,8 @@ export function providerOfUrl(url: string): Provider | null {
     return null;
   }
   for (const provider of PROVIDERS) {
-    if (host === `${provider}.com` || host.endsWith(`.${provider}.com`)) return provider;
+    const site = PROVIDER_HOSTS[provider];
+    if (host === site || host.endsWith(`.${site}`)) return provider;
   }
   return null;
 }

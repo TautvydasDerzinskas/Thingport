@@ -48,13 +48,14 @@ export function normalizeSnapmakerToken(raw: string | null | undefined): Snapmak
   return { token: text, expiresAt: exp, userId };
 }
 
-/** The user's token while it's still valid; null once it has expired, so nothing asks Snapmaker with it in vain. */
+/** The user's token while it's still valid; null once it has expired or Snapmaker turned it down, so nothing asks
+ *  Snapmaker with it in vain. */
 export async function getUserSnapmakerToken(userId: string): Promise<string | null> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { snapmakerToken: true, snapmakerTokenExpiresAt: true },
+    select: { snapmakerToken: true, snapmakerTokenExpiresAt: true, snapmakerRejectedAt: true },
   });
-  if (!user?.snapmakerToken) return null;
+  if (!user?.snapmakerToken || user.snapmakerRejectedAt) return null;
   if (user.snapmakerTokenExpiresAt && user.snapmakerTokenExpiresAt.getTime() <= Date.now()) return null;
   return user.snapmakerToken;
 }
