@@ -2391,7 +2391,7 @@
       },
       "cults3d": {
         "nickLabel": "Pseudo Cults3D",
-        "keyLabel": "Clé d’API",
+        "apiKeyLabel": "Clé d’API",
         "placeholder": "Votre pseudo, tel qu’il est écrit sur votre profil",
         "steps": [
           "Connectez-vous à cults3d.com et ouvrez cults3d.com/en/api/keys. Créez-y une clé et copiez son secret.",
@@ -2404,7 +2404,7 @@
         "siteMissing": "Connecté, mais les téléchargements nécessitent la connexion du navigateur : ouvrez cults3d.com en étant connecté avec Thingport Grab, ou collez-la depuis le menu de la vignette.",
         "siteExpired": "La connexion du navigateur a expiré : ouvrez cults3d.com en étant connecté avec Thingport Grab, ou collez-la de nouveau depuis le menu de la vignette.",
         "siteMissingStatus": "Pas encore de connexion du navigateur",
-        "session": {
+        "browser": {
           "title": "Coller la connexion Cults3D",
           "paste": "Coller la connexion du navigateur",
           "save": "Enregistrer",

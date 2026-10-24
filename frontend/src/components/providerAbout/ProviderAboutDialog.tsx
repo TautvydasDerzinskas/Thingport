@@ -25,7 +25,7 @@ import {
   providerAccentText,
   providerDocsUrl,
 } from "../../constants/providerFacts";
-import { useDisabledProviders } from "../../hooks/useDisabledProviders";
+import { useDisabledProviders } from "../../hooks/useProviders";
 import type { ImportProvider } from "../../api/settings";
 import Segmented from "../controls/Segmented";
 import HelpTip from "../HelpTip";

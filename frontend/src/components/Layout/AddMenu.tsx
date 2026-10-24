@@ -41,7 +41,7 @@ import {
   type ImportProviderKey,
 } from "../../utils/importLinkDetection";
 import type { MakerworldProfileScope } from "../../api/imports";
-import { allProvidersOff, useDisabledProviders } from "../../hooks/useDisabledProviders";
+import { allProvidersOff, useDisabledProviders } from "../../hooks/useProviders";
 import { readImportLink } from "../../utils/bookmarklet";
 import { PROVIDER_IDS } from "../../providers/_generated";
 

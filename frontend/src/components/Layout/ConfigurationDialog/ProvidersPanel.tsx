@@ -18,235 +18,97 @@ import LinkOffIcon from "@mui/icons-material/LinkOff";
 import ContentPasteIcon from "@mui/icons-material/ContentPaste";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { UnauthorizedError } from "../../../api/client";
-import { settingsApi, type Cults3dSettings } from "../../../api/settings";
-import { cults3dReady, cults3dStatus } from "./cults3dStatus";
+import { providersApi, type ProviderState } from "../../../api/providers";
 import type { MakerWorldSettings } from "../../../utils/settings";
 import { useConfirm } from "../../ConfirmProvider";
 import { AppGrid, AppTile, menuPosition, reopenContextMenuBelow, TileMenuHeader } from "./AppTiles";
 import { PanelHeader } from "./parts";
 import { COMING_SOON_PROVIDERS, ProviderLogo, type ProviderId } from "./providerLogos";
-import { useDisabledProviders } from "../../../hooks/useDisabledProviders";
-import { MANIFESTS, PROVIDER_IDS } from "../../../providers/_generated";
+import { refreshProviders, useProviders } from "../../../hooks/useProviders";
+import { type AuthSlot, MANIFESTS, PROVIDER_IDS } from "../../../providers/_generated";
+import { PROVIDER_UI } from "../../../providers/overrides";
 import { useProviderAbout } from "../../providerAbout/ProviderAboutProvider";
-import type { ImportProvider } from "../../../api/settings";
 
 const PROVIDERS: { id: ProviderId; name: string }[] = [
   ...PROVIDER_IDS.map((id) => ({ id, name: MANIFESTS[id].name })),
   ...COMING_SOON_PROVIDERS,
 ];
 const isComingSoon = (id: ProviderId) => COMING_SOON_PROVIDERS.some((provider) => provider.id === id);
-// Connected with one key for the whole instance, which only an admin sets.
-const SHARED = new Set<ProviderId>(["thingiverse"]);
-// Connected with the user's own sign-in, which the site can turn down once it expires. MyMiniFactory's also has
-// the instance's API key, set in Administration; the user's sign-in adds paid and login-only models. Snapmaker's
-// lasts a day; Thingport Grab keeps renewing it. MakerOnline's reads the user's likes and private collections; its
-// files only ever come through Thingport Grab. Creality Cloud's lasts a week from signing in there; NexPrint's is
-// renewed by the site as the user visits it. Thangs' renews itself on the server, for about a year. Cults3D's is the
-// user's API key; its files also need the browser's sign-in, which Grab sends (see cults3dStatus.ts).
-type SessionProvider =
-  "makerworld" | "myminifactory" | "snapmaker" | "makeronline" | "crealitycloud" | "nexprint" | "thangs" | "cults3d";
-const SESSION_PROVIDERS = new Set<ProviderId>([
-  "makerworld",
-  "myminifactory",
-  "snapmaker",
-  "makeronline",
-  "crealitycloud",
-  "nexprint",
-  "thangs",
-  "cults3d",
-]);
-const isSessionProvider = (id: ProviderId): id is SessionProvider => SESSION_PROVIDERS.has(id);
+const authOf = (id: ProviderId) => MANIFESTS[id].auth as readonly AuthSlot[];
+/** The credential its tile connects; none for a provider that needs none (Printables). */
+const defaultAuth = (id: ProviderId) => authOf(id).find((auth) => auth.slot === "default");
+/** One credential for the whole instance, which only an admin sets. */
+const isShared = (id: ProviderId) => defaultAuth(id)?.scope === "instance";
+/** The user's other credentials, besides the one the tile connects (Cults3D's browser sign-in). */
+const extraAuths = (id: ProviderId) => authOf(id).filter((auth) => auth.slot !== "default" && auth.scope === "user");
+const forget = (auth: AuthSlot) => Object.fromEntries(auth.fields.map((field) => [field.name, null]));
 
 type Props = {
   isAdmin: boolean;
-  cookie: string;
   onUpdateMakerWorld: (patch: Partial<MakerWorldSettings>) => void;
   onUnauthorized?: () => void;
 };
 
 /** The import sites as app icons: right-click one to connect or disconnect it, or double-click a
  *  disconnected one to connect it. Stored credentials are never shown, only whether one is set. */
-export default function ProvidersPanel({ isAdmin, cookie, onUpdateMakerWorld, onUnauthorized }: Props) {
-  // Turned off by an admin: not shown to connect.
-  const disabledProviders = useDisabledProviders();
+export default function ProvidersPanel({ isAdmin, onUpdateMakerWorld, onUnauthorized }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const confirm = useConfirm();
-  // The shared ones are unknown until loaded, so a non-admin doesn't briefly see them locked.
-  const [connected, setConnected] = React.useState<Record<ProviderId, boolean | null>>({
-    makerworld: Boolean(cookie.trim()),
-    thingiverse: null,
-    printables: true,
-    myminifactory: null,
-    thangs: null,
-    cults3d: null,
-    makeronline: null,
-    crealitycloud: null,
-    nexprint: null,
-    snapmaker: null,
-  });
+  const providers = useProviders();
   const [menu, setMenu] = React.useState<{ id: ProviderId; top: number; left: number } | null>(null);
-  const [expired, setExpired] = React.useState<Record<SessionProvider, boolean>>({
-    makerworld: false,
-    myminifactory: false,
-    snapmaker: false,
-    makeronline: false,
-    crealitycloud: false,
-    nexprint: false,
-    thangs: false,
-    cults3d: false,
-  });
-  // Its browser sign-in, besides the API key the tile's connection is.
-  const [cults3d, setCults3d] = React.useState<Cults3dSettings | null>(null);
-  const isExpired = (id: ProviderId) => isSessionProvider(id) && Boolean(connected[id]) && expired[id];
-  const [connecting, setConnecting] = React.useState<ProviderId | null>(null);
-  const [pastingCults3dSignIn, setPastingCults3dSignIn] = React.useState(false);
+  const [connecting, setConnecting] = React.useState<{ id: ProviderId; auth: AuthSlot } | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [notice, setNotice] = React.useState<string | null>(null);
 
+  // Thingport Grab may have sent a sign-in since it was last asked.
   React.useEffect(() => {
-    let active = true;
-    settingsApi
-      .getMakerworld()
-      .then((res) => {
-        if (!active) return;
-        setConnected((current) => ({ ...current, makerworld: res.configured }));
-        setExpired((current) => ({ ...current, makerworld: res.expired }));
-      })
-      .catch(() => undefined);
-    settingsApi
-      .getThingiverse()
-      .then((res) => active && setConnected((current) => ({ ...current, thingiverse: res.configured })))
-      .catch(() => undefined);
-    settingsApi
-      .getMyminifactorySession()
-      .then((res) => {
-        if (!active) return;
-        setConnected((current) => ({ ...current, myminifactory: res.configured }));
-        setExpired((current) => ({ ...current, myminifactory: res.expired }));
-      })
-      .catch(() => undefined);
-    settingsApi
-      .getSnapmakerSession()
-      .then((res) => {
-        if (!active) return;
-        setConnected((current) => ({ ...current, snapmaker: res.configured }));
-        setExpired((current) => ({ ...current, snapmaker: res.expired }));
-      })
-      .catch(() => undefined);
-    settingsApi
-      .getMakeronlineSession()
-      .then((res) => {
-        if (!active) return;
-        setConnected((current) => ({ ...current, makeronline: res.configured }));
-        setExpired((current) => ({ ...current, makeronline: res.expired }));
-      })
-      .catch(() => undefined);
-    settingsApi
-      .getCrealitycloudSession()
-      .then((res) => {
-        if (!active) return;
-        setConnected((current) => ({ ...current, crealitycloud: res.configured }));
-        setExpired((current) => ({ ...current, crealitycloud: res.expired }));
-      })
-      .catch(() => undefined);
-    settingsApi
-      .getNexprintSession()
-      .then((res) => {
-        if (!active) return;
-        setConnected((current) => ({ ...current, nexprint: res.configured }));
-        setExpired((current) => ({ ...current, nexprint: res.expired }));
-      })
-      .catch(() => undefined);
-    settingsApi
-      .getThangsSession()
-      .then((res) => {
-        if (!active) return;
-        setConnected((current) => ({ ...current, thangs: res.configured }));
-        setExpired((current) => ({ ...current, thangs: res.expired }));
-      })
-      .catch(() => undefined);
-    settingsApi
-      .getCults3d()
-      .then((res) => {
-        if (!active) return;
-        setCults3d(res);
-        setConnected((current) => ({ ...current, cults3d: res.configured }));
-        setExpired((current) => ({ ...current, cults3d: res.expired }));
-      })
-      .catch(() => undefined);
-    return () => {
-      active = false;
-    };
+    void refreshProviders().catch(() => undefined);
   }, []);
 
+  const stateOf = (id: ProviderId): ProviderState | undefined => providers?.find((p) => p.id === id);
+  /** Null until known, so a non-admin doesn't briefly see a shared one locked. */
+  const isConnected = (id: ProviderId): boolean | null => {
+    if (isComingSoon(id)) return false;
+    if (!defaultAuth(id)) return true;
+    const status = stateOf(id)?.slots.default?.status;
+    return status ? status !== "disconnected" : null;
+  };
+  const isExpired = (id: ProviderId) => stateOf(id)?.slots.default?.status === "expired";
+  /** Connected, but not all its imports need: half connected. */
+  const missingOf = (id: ProviderId) => {
+    const state = stateOf(id);
+    return state && isConnected(id) && !isExpired(id) ? PROVIDER_UI[id]?.missing?.(state, t) : undefined;
+  };
   const nameOf = (id: ProviderId) => PROVIDERS.find((provider) => provider.id === id)?.name ?? id;
   // Why this user can't connect or disconnect it, if they can't.
   const lockedReason = (id: ProviderId) => {
     if (isComingSoon(id)) return t("providers.comingSoon");
-    if (id === "printables") return t("providers.printables.alwaysConnected");
-    if (SHARED.has(id) && !isAdmin) return t(`providers.${id}.adminOnly`);
+    if (!defaultAuth(id)) return t(`providers.${id}.alwaysConnected`);
+    if (isShared(id) && !isAdmin) return t(`providers.${id}.adminOnly`);
     return null;
   };
 
-  /** Saves a credential, or removes it with null. Cults3D's takes its API key as `secondary`, its nickname as `value`. */
-  const save = async (id: ProviderId, value: string | null, secondary?: string) => {
-    if (id === "makerworld") {
-      const result = await settingsApi.updateMakerworld(value);
-      onUpdateMakerWorld({ cookie: value ?? "" });
-      setConnected((current) => ({ ...current, makerworld: result.configured }));
-      setExpired((current) => ({ ...current, makerworld: false }));
-    } else if (id === "thingiverse") {
-      const result = await settingsApi.updateThingiverse(value);
-      setConnected((current) => ({ ...current, thingiverse: result.configured }));
-    } else if (id === "myminifactory") {
-      const result = await settingsApi.updateMyminifactorySession(value);
-      setConnected((current) => ({ ...current, myminifactory: result.configured }));
-      setExpired((current) => ({ ...current, myminifactory: false }));
-    } else if (id === "snapmaker") {
-      const result = await settingsApi.updateSnapmakerSession(value);
-      setConnected((current) => ({ ...current, snapmaker: result.configured }));
-      setExpired((current) => ({ ...current, snapmaker: false }));
-    } else if (id === "makeronline") {
-      const result = await settingsApi.updateMakeronlineSession(value);
-      setConnected((current) => ({ ...current, makeronline: result.configured }));
-      setExpired((current) => ({ ...current, makeronline: false }));
-    } else if (id === "crealitycloud") {
-      const result = await settingsApi.updateCrealitycloudSession(value);
-      setConnected((current) => ({ ...current, crealitycloud: result.configured }));
-      setExpired((current) => ({ ...current, crealitycloud: false }));
-    } else if (id === "nexprint") {
-      const result = await settingsApi.updateNexprintSession(value);
-      setConnected((current) => ({ ...current, nexprint: result.configured }));
-      setExpired((current) => ({ ...current, nexprint: false }));
-    } else if (id === "thangs") {
-      const result = await settingsApi.updateThangsSession(value);
-      setConnected((current) => ({ ...current, thangs: result.configured }));
-      setExpired((current) => ({ ...current, thangs: false }));
-    } else if (id === "cults3d") {
-      if (value === null) {
-        // Forgets the browser's sign-in too: disconnecting means Thingport has nothing of the account left.
-        await settingsApi.updateCults3dSession(null);
-        await settingsApi.updateCults3d(null);
-      } else {
-        await settingsApi.updateCults3d({ nick: value, apiKey: secondary ?? "" });
+  /** Saves a credential, or forgets it with null: the tile's credential takes the user's others with it, so
+   *  disconnecting leaves Thingport nothing of the account. */
+  const save = async (id: ProviderId, auth: AuthSlot, values: Record<string, string> | null) => {
+    if (values) {
+      await providersApi.saveConnection(id, auth.slot, values);
+    } else {
+      if (auth.slot === "default") {
+        for (const extra of extraAuths(id)) await providersApi.saveConnection(id, extra.slot, forget(extra));
       }
-      const res = await settingsApi.getCults3d();
-      setCults3d(res);
-      setConnected((current) => ({ ...current, cults3d: res.configured }));
-      setExpired((current) => ({ ...current, cults3d: res.expired }));
+      await providersApi.saveConnection(id, auth.slot, forget(auth));
     }
+    // Its imports read the cookie from the saved settings too.
+    if (id === "makerworld") onUpdateMakerWorld({ cookie: values?.cookie ?? "" });
+    await refreshProviders();
   };
 
-  const saveCults3dSignIn = async (value: string) => {
-    await settingsApi.updateCults3dSession(value);
-    setCults3d(await settingsApi.getCults3d());
-  };
-
-  const startConnect = (id: ProviderId) => {
+  const startConnect = (id: ProviderId, auth = defaultAuth(id)) => {
+    if (!auth) return;
     setError(null);
     setNotice(null);
-    setPastingCults3dSignIn(false);
-    setConnecting(id);
+    setConnecting({ id, auth });
   };
 
   // Double-click or Enter: connects a disconnected site, or says why this one can't be.
@@ -256,16 +118,18 @@ export default function ProvidersPanel({ isAdmin, cookie, onUpdateMakerWorld, on
     if (locked) {
       setConnecting(null);
       setNotice(locked);
-    } else if (connected[id] === false || isExpired(id)) {
+    } else if (isConnected(id) === false || isExpired(id)) {
       startConnect(id);
     }
   };
 
   const disconnect = async (id: ProviderId) => {
+    const auth = defaultAuth(id);
+    if (!auth) return;
     const name = nameOf(id);
     const ok = await confirm({
       title: t("providers.disconnectTitle", { name }),
-      message: SHARED.has(id)
+      message: isShared(id)
         ? t("providers.disconnectMessageShared", { name })
         : t("providers.disconnectMessage", { name }),
       confirmLabel: t("providers.disconnect"),
@@ -274,8 +138,8 @@ export default function ProvidersPanel({ isAdmin, cookie, onUpdateMakerWorld, on
     if (!ok) return;
     setError(null);
     try {
-      await save(id, null);
-      if (connecting === id) setConnecting(null);
+      await save(id, auth, null);
+      if (connecting?.id === id) setConnecting(null);
     } catch (err) {
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       else setError(err instanceof Error ? err.message : t("providers.failed"));
@@ -288,46 +152,44 @@ export default function ProvidersPanel({ isAdmin, cookie, onUpdateMakerWorld, on
   };
 
   const menuId = menu?.id;
-  const menuConnected = menuId ? Boolean(connected[menuId]) : false;
+  const menuConnected = menuId ? Boolean(isConnected(menuId)) : false;
   // Still connected, so it can be disconnected, but offered a fresh connect first.
   const menuExpired = menuId ? isExpired(menuId) : false;
   const menuLocked = menuId ? lockedReason(menuId) : null;
+  const menuMissing = menuId ? missingOf(menuId) : undefined;
 
   return (
     <>
       <PanelHeader title={t("providers.title")} subtitle={t("providers.subtitle")} />
       <AppGrid>
-        {PROVIDERS.filter(({ id }) => !disabledProviders.has(id as ImportProvider)).map(({ id, name }) => {
-          const isConnected = Boolean(connected[id]);
+        {/* Turned off by an admin: not shown to connect. */}
+        {PROVIDERS.filter(({ id }) => stateOf(id)?.enabled !== false).map(({ id, name }) => {
+          const connected = isConnected(id);
           const locked = lockedReason(id);
           const tileExpired = isExpired(id);
-          // Cults3D's files also need the browser's sign-in: connected without it is half connected.
-          const cults3dMissing =
-            id === "cults3d" && isConnected && !tileExpired ? cults3dStatus(cults3d, t) : undefined;
-          const status = connected[id] === null ? null : isConnected && !tileExpired && !cults3dMissing;
+          const missing = missingOf(id);
+          const status = connected === null ? null : connected && !tileExpired && !missing;
           const tooltip = isComingSoon(id)
             ? t("providers.comingSoon")
-            : cults3dMissing
-              ? cults3dMissing
+            : missing
+              ? missing.tooltip
               : tileExpired
                 ? t(`providers.${id}.expired`)
-                : SHARED.has(id) && locked && !isConnected
+                : isShared(id) && locked && !connected
                   ? locked
-                  : isConnected
+                  : connected
                     ? t("providers.connected")
-                    : isSessionProvider(id) && id !== "makerworld"
-                      ? t(`providers.${id}.notConnected`)
-                      : t("providers.notConnected");
+                    : t(`providers.${id}.notConnected`, { defaultValue: t("providers.notConnected") });
           return (
             <AppTile
               key={id}
               name={name}
               logo={<ProviderLogo id={id} size={26} />}
-              on={isConnected}
+              on={Boolean(connected)}
               badge={status === null || isComingSoon(id) ? undefined : status}
-              highlighted={connecting === id || menuId === id}
+              highlighted={connecting?.id === id || menuId === id}
               tooltip={status === null ? undefined : tooltip}
-              ariaLabel={`${name}: ${tileExpired ? t(`providers.${id}.expired`) : isConnected ? t("providers.connected") : t("providers.notConnected")}`}
+              ariaLabel={`${name}: ${tileExpired ? t(`providers.${id}.expired`) : connected ? t("providers.connected") : t("providers.notConnected")}`}
               onContextMenu={(event) => openMenu(id, event)}
               onActivate={() => activate(id)}
             />
@@ -352,8 +214,8 @@ export default function ProvidersPanel({ isAdmin, cookie, onUpdateMakerWorld, on
                 ? t("providers.comingSoon")
                 : menuExpired
                   ? t(`providers.${menuId}.expiredStatus`)
-                  : menuId === "cults3d" && menuConnected && !cults3dReady(cults3d)
-                    ? t("providers.cults3d.siteMissingStatus")
+                  : menuMissing
+                    ? menuMissing.status
                     : menuConnected
                       ? t("providers.connected")
                       : t("providers.notConnected")
@@ -375,22 +237,23 @@ export default function ProvidersPanel({ isAdmin, cookie, onUpdateMakerWorld, on
             <ListItemText>{t("providers.connect")}</ListItemText>
           </MenuItem>
         )}
-        {menuId === "cults3d" && menuConnected && !menuExpired && (
-          <MenuItem
-            onClick={() => {
-              setMenu(null);
-              setError(null);
-              setNotice(null);
-              setConnecting(null);
-              setPastingCults3dSignIn(true);
-            }}
-          >
-            <ListItemIcon>
-              <ContentPasteIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>{t("providers.cults3d.session.paste")}</ListItemText>
-          </MenuItem>
-        )}
+        {menuId &&
+          menuConnected &&
+          !menuExpired &&
+          extraAuths(menuId).map((auth) => (
+            <MenuItem
+              key={auth.slot}
+              onClick={() => {
+                setMenu(null);
+                startConnect(menuId, auth);
+              }}
+            >
+              <ListItemIcon>
+                <ContentPasteIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>{t(`providers.${menuId}.${auth.slot}.paste`)}</ListItemText>
+            </MenuItem>
+          ))}
         {menuId && (
           <MenuItem
             disabled={Boolean(menuLocked)}
@@ -431,28 +294,15 @@ export default function ProvidersPanel({ isAdmin, cookie, onUpdateMakerWorld, on
 
       {connecting && (
         <ConnectBox
-          // Starts afresh for each site.
-          key={connecting}
-          id={connecting}
-          name={nameOf(connecting)}
+          // Starts afresh for each site and credential.
+          key={`${connecting.id}-${connecting.auth.slot}`}
+          id={connecting.id}
+          auth={connecting.auth}
+          name={nameOf(connecting.id)}
           onCancel={() => setConnecting(null)}
-          onConnect={async (value, secondary) => {
-            await save(connecting, value, secondary);
+          onConnect={async (values) => {
+            await save(connecting.id, connecting.auth, values);
             setConnecting(null);
-          }}
-          onUnauthorized={onUnauthorized}
-        />
-      )}
-      {pastingCults3dSignIn && !connecting && (
-        <ConnectBox
-          key="cults3d-session"
-          id="cults3d"
-          mode="session"
-          name={nameOf("cults3d")}
-          onCancel={() => setPastingCults3dSignIn(false)}
-          onConnect={async (value) => {
-            await saveCults3dSignIn(value);
-            setPastingCults3dSignIn(false);
           }}
           onUnauthorized={onUnauthorized}
         />
@@ -482,30 +332,28 @@ function AboutMenuItem({ id, onClick }: { id: ProviderId; onClick: () => void })
 
 type ConnectBoxProps = {
   id: ProviderId;
-  /** "session": Cults3D's browser sign-in, pasted, rather than its API key. */
-  mode?: "account" | "session";
+  /** The credential to connect: the tile's, or another of the user's (Cults3D's browser sign-in). */
+  auth: AuthSlot;
   name: string;
   onCancel: () => void;
-  /** `secondary` is the second field's, where there is one: Cults3D's API key. */
-  onConnect: (value: string, secondary?: string) => Promise<void>;
+  /** Each field's value, by the name the API takes it under. */
+  onConnect: (values: Record<string, string>) => Promise<void>;
   onUnauthorized?: () => void;
 };
 
-function ConnectBox({ id, mode = "account", name, onCancel, onConnect, onUnauthorized }: ConnectBoxProps) {
+const camelCase = (name: string) => name.replace(/_(\w)/g, (_, c: string) => c.toUpperCase());
+
+function ConnectBox({ id, auth, name, onCancel, onConnect, onUnauthorized }: ConnectBoxProps) {
   const { t } = useTranslation(["app", "common"]);
-  const [draft, setDraft] = React.useState("");
-  const [secondary, setSecondary] = React.useState("");
+  const [drafts, setDrafts] = React.useState<string[]>(() => auth.fields.map(() => ""));
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const session = mode === "session";
-  // Cults3D's API wants two things: the user's nickname and an API key.
-  const twoFields = id === "cults3d" && !session;
-  const keyPrefix = session ? `providers.${id}.session` : `providers.${id}`;
+  const extra = auth.slot !== "default";
+  const keyPrefix = extra ? `providers.${id}.${auth.slot}` : `providers.${id}`;
   const steps = t(`${keyPrefix}.steps`, { returnObjects: true }) as string[];
-  // MakerWorld's cookie is long; Creality Cloud's sign-in may be pasted as two copied request headers, Thangs' as a
-  // whole Cookie header, Cults3D's browser sign-in as a request's copied headers.
-  const multiline = id === "makerworld" || id === "crealitycloud" || id === "thangs" || session;
-  const ready = Boolean(draft.trim()) && (!twoFields || Boolean(secondary.trim()));
+  // Where there are several, each says what it is.
+  const labelled = auth.fields.length > 1;
+  const ready = drafts.every((draft) => Boolean(draft.trim()));
   const rootRef = React.useRef<HTMLDivElement | null>(null);
 
   // It opens below the icons, often past the bottom of the panel.
@@ -514,12 +362,11 @@ function ConnectBox({ id, mode = "account", name, onCancel, onConnect, onUnautho
   }, []);
 
   const submit = async () => {
-    const value = draft.trim();
     if (!ready) return;
     setSaving(true);
     setError(null);
     try {
-      await onConnect(value, twoFields ? secondary.trim() : undefined);
+      await onConnect(Object.fromEntries(auth.fields.map((field, i) => [field.name, drafts[i].trim()])));
     } catch (err) {
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       else setError(err instanceof Error ? err.message : t("providers.failed"));
@@ -536,7 +383,7 @@ function ConnectBox({ id, mode = "account", name, onCancel, onConnect, onUnautho
           fontWeight={600}
           sx={{ flex: 1, color: (muiTheme) => muiTheme.thingport.headingText }}
         >
-          {session ? t("providers.cults3d.session.title") : t("providers.connectTitle", { name })}
+          {extra ? t(`${keyPrefix}.title`) : t("providers.connectTitle", { name })}
         </Typography>
         <IconButton size="small" onClick={onCancel} aria-label={t("common:close") ?? undefined}>
           <CloseIcon fontSize="small" />
@@ -550,44 +397,33 @@ function ConnectBox({ id, mode = "account", name, onCancel, onConnect, onUnautho
           <li key={step}>{step}</li>
         ))}
       </Box>
-      {SHARED.has(id) && (
+      {auth.scope === "instance" && (
         <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5 }}>
           {t(`providers.${id}.shared`)}
         </Typography>
       )}
-      <TextField
-        fullWidth
-        multiline={multiline}
-        minRows={multiline ? 3 : undefined}
-        size="small"
-        label={twoFields ? t("providers.cults3d.nickLabel") : undefined}
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onKeyDown={(e) => {
-          if (!multiline && e.key === "Enter") void submit();
-        }}
-        placeholder={t(`${keyPrefix}.placeholder`)}
-        disabled={saving}
-        autoComplete="off"
-        // oxlint-disable-next-line jsx-a11y/no-autofocus
-        autoFocus
-      />
-      {twoFields && (
+      {auth.fields.map((field, i) => (
         <TextField
+          key={field.name}
           fullWidth
+          multiline={field.multiline}
+          minRows={field.multiline ? 3 : undefined}
           size="small"
-          type="password"
-          label={t("providers.cults3d.keyLabel")}
-          value={secondary}
-          onChange={(e) => setSecondary(e.target.value)}
+          type={field.secret ? "password" : undefined}
+          label={labelled ? t(`${keyPrefix}.${camelCase(field.name)}Label`) : undefined}
+          value={drafts[i]}
+          onChange={(e) => setDrafts((current) => current.map((draft, j) => (j === i ? e.target.value : draft)))}
           onKeyDown={(e) => {
-            if (e.key === "Enter") void submit();
+            if (!field.multiline && e.key === "Enter") void submit();
           }}
+          placeholder={i === 0 ? t(`${keyPrefix}.placeholder`) : undefined}
           disabled={saving}
           autoComplete="off"
-          sx={{ mt: 1.5 }}
+          // oxlint-disable-next-line jsx-a11y/no-autofocus
+          autoFocus={i === 0}
+          sx={i > 0 ? { mt: 1.5 } : undefined}
         />
-      )}
+      ))}
       {error && (
         <Alert severity="error" sx={{ mt: 1.5 }} onClose={() => setError(null)}>
           {error}
@@ -595,7 +431,7 @@ function ConnectBox({ id, mode = "account", name, onCancel, onConnect, onUnautho
       )}
       <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
         <Button size="small" variant="contained" onClick={() => void submit()} disabled={saving || !ready}>
-          {saving ? t("providers.connecting") : session ? t("providers.cults3d.session.save") : t("providers.connect")}
+          {saving ? t("providers.connecting") : extra ? t(`${keyPrefix}.save`) : t("providers.connect")}
         </Button>
         <Button size="small" onClick={onCancel} disabled={saving}>
           {t("common:cancel")}

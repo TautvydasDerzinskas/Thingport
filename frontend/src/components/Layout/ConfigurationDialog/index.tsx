@@ -9,7 +9,7 @@ import AppearancePanel from "./AppearancePanel";
 import ProvidersPanel from "./ProvidersPanel";
 import SlicerPanel from "./SlicerPanel";
 import SectionedDialog from "../../SectionedDialog";
-import { allProvidersOff, useDisabledProviders } from "../../../hooks/useDisabledProviders";
+import { allProvidersOff, useDisabledProviders } from "../../../hooks/useProviders";
 
 export type ConfigurationTab = "appearance" | "providers" | "slicer";
 
@@ -26,7 +26,6 @@ type Props = {
   theme: ThemeSelection;
   onThemeChange: (theme: ThemeSelection) => Promise<boolean>;
   isAdmin: boolean;
-  makerworldCookie: string;
   onUpdateMakerWorld: (patch: Partial<MakerWorldSettings>) => void;
   onUnauthorized?: () => void;
 };
@@ -38,7 +37,6 @@ export default function ConfigurationDialog({
   theme,
   onThemeChange,
   isAdmin,
-  makerworldCookie,
   onUpdateMakerWorld,
   onUnauthorized,
 }: Props) {
@@ -72,12 +70,7 @@ export default function ConfigurationDialog({
         <AppearancePanel theme={theme} onThemeChange={onThemeChange} onUnauthorized={onUnauthorized} />
       )}
       {shown === "providers" && (
-        <ProvidersPanel
-          isAdmin={isAdmin}
-          cookie={makerworldCookie}
-          onUpdateMakerWorld={onUpdateMakerWorld}
-          onUnauthorized={onUnauthorized}
-        />
+        <ProvidersPanel isAdmin={isAdmin} onUpdateMakerWorld={onUpdateMakerWorld} onUnauthorized={onUnauthorized} />
       )}
       {shown === "slicer" && <SlicerPanel onNavigate={onClose} onUnauthorized={onUnauthorized} />}
     </SectionedDialog>

@@ -21,7 +21,7 @@ import { type ImportProvider, type ProviderSetting, settingsApi } from "../../ap
 import { useConfirm } from "../../components/ConfirmProvider";
 import { COMING_SOON_PROVIDERS, ProviderLogo } from "../../components/Layout/ConfigurationDialog/providerLogos";
 import SectionHeader from "../../components/SectionHeader";
-import { publishProviders } from "../../hooks/useDisabledProviders";
+import { publishProviders } from "../../hooks/useProviders";
 import { useProviderAbout } from "../../components/providerAbout/ProviderAboutProvider";
 import ProviderKeySection, { type KeyedProvider } from "./ProviderKeySection";
 import { MANIFESTS, PROVIDER_IDS } from "../../providers/_generated";

@@ -2449,7 +2449,7 @@
       },
       "cults3d": {
         "nickLabel": "Cults3D slapyvardis",
-        "keyLabel": "API raktas",
+        "apiKeyLabel": "API raktas",
         "placeholder": "Jūsų slapyvardis, kaip parašyta profilyje",
         "steps": [
           "Prisijunkite prie cults3d.com ir atverkite cults3d.com/en/api/keys. Sukurkite raktą ir nukopijuokite jo slaptą reikšmę.",
@@ -2462,7 +2462,7 @@
         "siteMissing": "Prijungta, bet atsisiuntimams reikia naršyklės prisijungimo: atverkite cults3d.com prisijungę su Thingport Grab arba įklijuokite jį iš plytelės meniu.",
         "siteExpired": "Naršyklės prisijungimas nebegalioja: atverkite cults3d.com prisijungę su Thingport Grab arba vėl įklijuokite jį iš plytelės meniu.",
         "siteMissingStatus": "Dar nėra naršyklės prisijungimo",
-        "session": {
+        "browser": {
           "title": "Įklijuokite Cults3D prisijungimą",
           "paste": "Įklijuoti naršyklės prisijungimą",
           "save": "Išsaugoti",

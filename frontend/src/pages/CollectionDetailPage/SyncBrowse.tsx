@@ -26,7 +26,7 @@ import { useSlicerPreference } from "../../hooks/useSlicerPreference";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { onConfigurationClosed, openConfiguration } from "../../utils/configurationEvents";
 import ProviderCollectionTile, { ProviderCollectionTileSkeleton } from "./ProviderCollectionTile";
-import { useDisabledProviders } from "../../hooks/useDisabledProviders";
+import { useDisabledProviders } from "../../hooks/useProviders";
 
 export type BrowsePick = { provider: BrowsableProvider; collection: ProviderCollection };
 

@@ -7,7 +7,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import TuneIcon from "@mui/icons-material/Tune";
 import { IMPORT_PROVIDER_INFO } from "../../constants/importProviders";
-import { useDisabledProviders } from "../../hooks/useDisabledProviders";
+import { useDisabledProviders } from "../../hooks/useProviders";
 import type { ImportProvider } from "../../api/settings";
 import { ProviderLogo } from "../Layout/ConfigurationDialog/providerLogos";
 import ProviderCategoryPicker from "./ProviderCategoryPicker";

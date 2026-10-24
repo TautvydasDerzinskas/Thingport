@@ -2378,7 +2378,7 @@
       },
       "cults3d": {
         "nickLabel": "Nombre de usuario de Cults3D",
-        "keyLabel": "Clave de API",
+        "apiKeyLabel": "Clave de API",
         "placeholder": "Tu nombre de usuario, tal como aparece en tu perfil",
         "steps": [
           "Inicia sesión en cults3d.com y abre cults3d.com/en/api/keys. Crea allí una clave y copia su secreto.",
@@ -2391,7 +2391,7 @@
         "siteMissing": "Conectado, pero las descargas necesitan el inicio de sesión del navegador: abre cults3d.com con la sesión iniciada y Thingport Grab, o pégalo desde el menú del mosaico.",
         "siteExpired": "El inicio de sesión del navegador ha caducado: abre cults3d.com con la sesión iniciada y Thingport Grab, o vuelve a pegarlo desde el menú del mosaico.",
         "siteMissingStatus": "Aún sin inicio de sesión del navegador",
-        "session": {
+        "browser": {
           "title": "Pegar el inicio de sesión de Cults3D",
           "paste": "Pegar inicio de sesión del navegador",
           "save": "Guardar",

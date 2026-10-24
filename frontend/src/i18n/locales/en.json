@@ -2368,7 +2368,7 @@
       },
       "cults3d": {
         "nickLabel": "Cults3D nickname",
-        "keyLabel": "API key",
+        "apiKeyLabel": "API key",
         "placeholder": "Your nickname, as written on your profile",
         "steps": [
           "Sign in at cults3d.com and open cults3d.com/en/api/keys. Make a key there and copy its secret.",
@@ -2381,7 +2381,7 @@
         "siteMissing": "Connected, but downloads need the browser's sign-in: open cults3d.com signed in with Thingport Grab, or paste it from the tile's menu.",
         "siteExpired": "The browser's sign-in ran out: open cults3d.com signed in with Thingport Grab, or paste it again from the tile's menu.",
         "siteMissingStatus": "No browser sign-in yet",
-        "session": {
+        "browser": {
           "title": "Paste the Cults3D sign-in",
           "paste": "Paste browser sign-in",
           "save": "Save",

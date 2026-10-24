@@ -7,7 +7,7 @@ import CheckIcon from "@mui/icons-material/Check";
 import type { CollectionSync } from "../api/collections";
 import { importProviderInfo } from "../constants/importProviders";
 import { hasProviderLogo, ProviderLogo, type ProviderId } from "./Layout/ConfigurationDialog/providerLogos";
-import { useDisabledProviders } from "../hooks/useDisabledProviders";
+import { useDisabledProviders } from "../hooks/useProviders";
 import type { ImportProvider } from "../api/settings";
 
 type Props = {
