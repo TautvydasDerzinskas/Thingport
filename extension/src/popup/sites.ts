@@ -3,6 +3,7 @@
 // permission event.
 
 import { OPTIONAL_SITES, siteEnabled, type OptionalSite } from "../shared/optionalSites";
+import type { Provider } from "../shared/urls";
 import { clearError, els, showError } from "./dom";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -88,10 +89,27 @@ const LOGOS: Record<
 
 type Site = { name: string; logo: Logo; optional?: OptionalSite; comingSoon?: boolean };
 
+const NAMES: Record<Provider, string> = {
+  makerworld: "MakerWorld",
+  printables: "Printables",
+  thingiverse: "Thingiverse",
+  ...(Object.fromEntries(OPTIONAL_SITES.map((site) => [site.id, site.name])) as Record<OptionalSite["id"], string>),
+};
+
+export function providerName(provider: Provider): string {
+  return NAMES[provider] ?? provider;
+}
+
+/** The provider's logo in its own colours, as listed under Providers. */
+export function providerLogo(provider: Provider): SVGSVGElement {
+  const { path, color, viewBox, fillRule, layers } = LOGOS[provider];
+  return svg(path, { fill: color, ...(fillRule ? { "fill-rule": fillRule } : {}) }, viewBox, layers);
+}
+
 const SITES: Site[] = [
-  { name: "MakerWorld", logo: LOGOS.makerworld },
-  { name: "Printables", logo: LOGOS.printables },
-  { name: "Thingiverse", logo: LOGOS.thingiverse },
+  { name: NAMES.makerworld, logo: LOGOS.makerworld },
+  { name: NAMES.printables, logo: LOGOS.printables },
+  { name: NAMES.thingiverse, logo: LOGOS.thingiverse },
   ...OPTIONAL_SITES.map((site) => ({ name: site.name, logo: LOGOS[site.id], optional: site })),
   ...COMING_SOON.map((site) => ({ name: site.name, logo: LOGOS[site.id], comingSoon: true })),
 ];

@@ -41,4 +41,46 @@
     height: 100%;
     object-fit: cover;
   }
+
+  // The provider's logo over a corner of the picture.
+  &__badge {
+    position: absolute;
+    right: 3px;
+    bottom: 3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: t.c("surface");
+    box-shadow: 0 1px 3px t.c("shadow");
+    // Black-and-white logos take the text colour.
+    color: t.c("text");
+
+    svg {
+      width: 11px;
+      height: 11px;
+    }
+  }
+}
+
+// Fills in as the list loads, rather than all at once.
+.recent-grid .recent-item {
+  animation: recent-item-in 0.2s ease-out backwards;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@keyframes recent-item-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -45 530 175" fill="none">
+  <title>First day of summer</title>
+  <style>
+    .spin { transform-origin: 0 0; animation: spin 14s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .glint { animation: glint 3.5s ease-in-out infinite; }
+    @keyframes glint { 0%, 70%, 100% { opacity: 0; } 80% { opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } .fall { display: none; } }
+  </style>
+  <g transform="translate(455 38)">
+    <g class="spin" fill="#ffb703"><path d="M-3 -19 L0 -27 L3 -19 Z" transform="rotate(0)"/><path d="M-3 -19 L0 -27 L3 -19 Z" transform="rotate(30)"/><path d="M-3 -19 L0 -27 L3 -19 Z" transform="rotate(60)"/><path d="M-3 -19 L0 -27 L3 -19 Z" transform="rotate(90)"/><path d="M-3 -19 L0 -27 L3 -19 Z" transform="rotate(120)"/><path d="M-3 -19 L0 -27 L3 -19 Z" transform="rotate(150)"/><path d="M-3 -19 L0 -27 L3 -19 Z" transform="rotate(180)"/><path d="M-3 -19 L0 -27 L3 -19 Z" transform="rotate(210)"/><path d="M-3 -19 L0 -27 L3 -19 Z" transform="rotate(240)"/><path d="M-3 -19 L0 -27 L3 -19 Z" transform="rotate(270)"/><path d="M-3 -19 L0 -27 L3 -19 Z" transform="rotate(300)"/><path d="M-3 -19 L0 -27 L3 -19 Z" transform="rotate(330)"/></g>
+    <circle r="15" fill="#ffd23f" stroke="#f0a500" stroke-width="1.6"/>
+    <path d="M-6 3 Q0 9 6 3" stroke="#c77700" stroke-width="1.8" stroke-linecap="round"/>
+    <circle cx="-5" cy="-3" r="1.6" fill="#c77700"/><circle cx="5" cy="-3" r="1.6" fill="#c77700"/>
+  </g>
+  <g transform="translate(50 47)">
+    <path d="M-20 -4 L20 -4" stroke="#1f1f1f" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M-19 -4 L-3 -4 L-4 2 Q-5 7 -11 7 Q-17 7 -18 2 Z M3 -4 L19 -4 L18 2 Q17 7 11 7 Q5 7 4 2 Z" fill="#1f1f1f"/>
+    <path class="glint" d="M-15 -2 L-11 -2 L-14 3 Z M7 -2 L11 -2 L8 3 Z" fill="#ffffff"/>
+  </g>
+</svg>

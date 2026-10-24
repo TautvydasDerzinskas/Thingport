@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -45 530 175" fill="none">
+  <title>International Women's Day</title>
+  <style>
+    .fall { animation: fall linear infinite; transform-box: fill-box; transform-origin: center; }
+    @keyframes fall { 0% { transform: translateY(0) rotate(0); opacity: 0; } 10%, 85% { opacity: 1; } 100% { transform: translateY(160px) rotate(540deg); opacity: 0; } }
+
+    .sway { transform-origin: 0 0; animation: sway 3.4s ease-in-out infinite; }
+    @keyframes sway { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+    .nod { transform-origin: 0 0; animation: nod 2.2s ease-in-out infinite; }
+    @keyframes nod { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } .fall, .rise { display: none; } }
+  </style>
+  <g transform="translate(455 82)"><g class="sway">
+    <path d="M0 0 C-14 -10 -20 -24 -16 -34 C-8 -22 -4 -12 0 0 Z M0 0 C14 -10 20 -24 16 -34 C8 -22 4 -12 0 0 Z" fill="#5cb85c" stroke="#3f9a3f" stroke-width="1.2"/>
+    <path d="M0 0 Q-6.4 -24.0 -16 -48" stroke="#3f9a3f" stroke-width="2.4" stroke-linecap="round"/>
+    <g transform="translate(-16 -48)"><path class="nod" style="animation-delay:0s" d="M-7 0 C-9 -8 -7 -14 -5 -16 L-2.5 -11 L0 -17 L2.5 -11 L5 -16 C7 -14 9 -8 7 0 Q0 4 -7 0 Z" fill="#ff6fa5" stroke="#d94a85" stroke-width="1.2" stroke-linejoin="round"/></g>
+    <path d="M0 0 Q0.0 -30.0 0 -60" stroke="#3f9a3f" stroke-width="2.4" stroke-linecap="round"/>
+    <g transform="translate(0 -60)"><path class="nod" style="animation-delay:-0.7s" d="M-7 0 C-9 -8 -7 -14 -5 -16 L-2.5 -11 L0 -17 L2.5 -11 L5 -16 C7 -14 9 -8 7 0 Q0 4 -7 0 Z" fill="#e63946" stroke="#b5171d" stroke-width="1.2" stroke-linejoin="round"/></g>
+    <path d="M0 0 Q6.4 -23.0 16 -46" stroke="#3f9a3f" stroke-width="2.4" stroke-linecap="round"/>
+    <g transform="translate(16 -46)"><path class="nod" style="animation-delay:-1.4s" d="M-7 0 C-9 -8 -7 -14 -5 -16 L-2.5 -11 L0 -17 L2.5 -11 L5 -16 C7 -14 9 -8 7 0 Q0 4 -7 0 Z" fill="#ffc300" stroke="#d9a400" stroke-width="1.2" stroke-linejoin="round"/></g>
+    <path d="M-7 -14 L-16 -20 L-14 -9 Z M7 -14 L16 -20 L14 -9 Z" fill="#9b5de5" stroke="#7b3fc5" stroke-width="1"/>
+    <circle cx="0" cy="-14" r="4" fill="#9b5de5" stroke="#7b3fc5" stroke-width="1"/>
+  </g></g>
+  <ellipse class="fall" cx="-15" cy="-40" rx="3.2" ry="2" fill="#ff6fa5" style="animation-duration:5.5s;animation-delay:-1s"/>
+  <ellipse class="fall" cx="30" cy="-40" rx="3.2" ry="2" fill="#ffc300" style="animation-duration:6.2s;animation-delay:-3.2s"/>
+  <ellipse class="fall" cx="75" cy="-40" rx="3.2" ry="2" fill="#e63946" style="animation-duration:5.1s;animation-delay:-0.4s"/>
+  <ellipse class="fall" cx="120" cy="-40" rx="3.2" ry="2" fill="#ff6fa5" style="animation-duration:6.8s;animation-delay:-4.6s"/>
+  <ellipse class="fall" cx="165" cy="-40" rx="3.2" ry="2" fill="#ffc300" style="animation-duration:5.7s;animation-delay:-2.2s"/>
+  <ellipse class="fall" cx="210" cy="-40" rx="3.2" ry="2" fill="#e63946" style="animation-duration:6.4s;animation-delay:-5.0s"/>
+  <ellipse class="fall" cx="255" cy="-40" rx="3.2" ry="2" fill="#ff6fa5" style="animation-duration:5.3s;animation-delay:-1.6s"/>
+  <ellipse class="fall" cx="300" cy="-40" rx="3.2" ry="2" fill="#ffc300" style="animation-duration:6.0s;animation-delay:-3.8s"/>
+  <ellipse class="fall" cx="345" cy="-40" rx="3.2" ry="2" fill="#e63946" style="animation-duration:5.8s;animation-delay:-2.8s"/>
+  <ellipse class="fall" cx="390" cy="-40" rx="3.2" ry="2" fill="#ff6fa5" style="animation-duration:6.6s;animation-delay:-0.9s"/>
+  <ellipse class="fall" cx="430" cy="-40" rx="3.2" ry="2" fill="#ffc300" style="animation-duration:5.4s;animation-delay:-4.1s"/>
+  <ellipse class="fall" cx="475" cy="-40" rx="3.2" ry="2" fill="#e63946" style="animation-duration:6.1s;animation-delay:-2.5s"/>
+</svg>

@@ -1,4 +1,11 @@
-import { STORAGE_KEYS, normalizeInstanceUrl, type StoredConfig } from "../shared/storage";
+import {
+  OFFLINE_FEATURE_DEFAULTS,
+  STORAGE_KEYS,
+  normalizeInstanceUrl,
+  offlineFeatureOn,
+  type OfflineFeature,
+  type StoredConfig,
+} from "../shared/storage";
 import type { ExtensionState } from "../shared/messages";
 import { loginAndStoreToken } from "./api";
 
@@ -28,6 +35,12 @@ export async function getState(): Promise<ExtensionState> {
     instanceUrl: config.instanceUrl || "",
     email: config.email || "",
     connectedByApproval: Boolean(config.connectionToken),
+    offlineFeatures: Object.fromEntries(
+      (Object.keys(OFFLINE_FEATURE_DEFAULTS) as OfflineFeature[]).map((feature) => [
+        feature,
+        offlineFeatureOn(config, feature),
+      ]),
+    ) as Record<OfflineFeature, boolean>,
   };
 }
 
@@ -52,5 +65,11 @@ export async function saveConfig({
 
 export async function setDisabled(disabled: boolean): Promise<null> {
   await chrome.storage.local.set({ disabled: Boolean(disabled) });
+  return null;
+}
+
+export async function setOfflineFeature(feature: OfflineFeature, enabled: boolean): Promise<null> {
+  if (!(feature in OFFLINE_FEATURE_DEFAULTS)) throw new Error(`Unknown feature: ${feature}`);
+  await chrome.storage.local.set({ [feature]: Boolean(enabled) });
   return null;
 }

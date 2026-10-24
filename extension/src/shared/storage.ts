@@ -10,6 +10,10 @@ export const STORAGE_KEYS = {
   // A connection by approval in progress: the secret it proves itself with, and the tab it opened.
   pendingPairing: "pendingPairing",
   disabled: "disabled",
+  // The popup's Offline features (see OFFLINE_FEATURE_DEFAULTS); unset means the default.
+  normalizeMakerworld: "normalizeMakerworld",
+  thingiverseDark: "thingiverseDark",
+  thingiverseHideAds: "thingiverseHideAds",
   // From the last login: admins get "Add to the queue" in the import panel.
   isAdmin: "isAdmin",
   token: "token",
@@ -49,6 +53,9 @@ export type StoredConfig = {
   connectionToken?: string;
   pendingPairing?: PendingPairing;
   disabled?: boolean;
+  normalizeMakerworld?: boolean;
+  thingiverseDark?: boolean;
+  thingiverseHideAds?: boolean;
   isAdmin?: boolean;
   token?: string;
   tokenExpiresAt?: number;
@@ -68,6 +75,22 @@ export type StoredConfig = {
   printablesPlanHandedOutAt?: number;
 };
 
+/** What works without a Thingport instance, and whether each is on until the user says otherwise. */
+export const OFFLINE_FEATURE_DEFAULTS = {
+  // The "Download normalized" button on MakerWorld.
+  normalizeMakerworld: true,
+  // Restyles Thingiverse, which has no dark theme of its own, while the system theme is dark.
+  thingiverseDark: true,
+  // Hides the ads on Thingiverse's pages.
+  thingiverseHideAds: true,
+} as const;
+
+export type OfflineFeature = keyof typeof OFFLINE_FEATURE_DEFAULTS;
+
+export function offlineFeatureOn(config: StoredConfig, feature: OfflineFeature): boolean {
+  return config[feature] ?? OFFLINE_FEATURE_DEFAULTS[feature];
+}
+
 export type PendingPairing = { instanceUrl: string; verifier: string; tabId: number; startedAt: number };
 
 export const CONFIG_CHANGE_KEYS: readonly string[] = [
@@ -76,6 +99,7 @@ export const CONFIG_CHANGE_KEYS: readonly string[] = [
   STORAGE_KEYS.password,
   STORAGE_KEYS.connectionToken,
   STORAGE_KEYS.disabled,
+  STORAGE_KEYS.normalizeMakerworld,
   STORAGE_KEYS.isAdmin,
 ];
 

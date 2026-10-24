@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -45 530 175" fill="none">
+  <title>Easter</title>
+  <style>
+    .twitch { transform-origin: 0 0; animation: twitch 4s ease-in-out infinite; }
+    @keyframes twitch { 0%, 78%, 100% { transform: rotate(0); } 84% { transform: rotate(-20deg); } 89% { transform: rotate(2deg); } 94% { transform: rotate(-12deg); } }
+    .wobble { transform-origin: 0 0; animation: wobble 2.4s ease-in-out infinite; }
+    @keyframes wobble { 0%, 100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
+    .hop { animation: hop 3s ease-in-out infinite; }
+    @keyframes hop { 0%, 70%, 100% { transform: translateY(0); } 80% { transform: translateY(-6px); } 90% { transform: translateY(0); } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } .fall { display: none; } }
+  </style>
+  <!-- Bunny ears on the mark's top corner -->
+  <g class="hop">
+    <g transform="translate(41 25) rotate(-16)">
+      <ellipse cx="0" cy="-19" rx="7.5" ry="20" fill="#ffffff" stroke="#c4c4c4" stroke-width="1.6"/>
+      <ellipse cx="0" cy="-18" rx="3.6" ry="14" fill="#f7b6c8"/>
+    </g>
+    <g transform="translate(59 25) rotate(18)"><g class="twitch">
+      <ellipse cx="0" cy="-19" rx="7.5" ry="20" fill="#ffffff" stroke="#c4c4c4" stroke-width="1.6"/>
+      <ellipse cx="0" cy="-18" rx="3.6" ry="14" fill="#f7b6c8"/>
+    </g></g>
+  </g>
+  <!-- Eggs in the grass -->
+  <g transform="translate(428 80) scale(1.0)"><g class="wobble" style="animation-delay:0s">
+    <path d="M0 0 C-13 0 -13 -15 -10.5 -21 C-7.5 -31 7.5 -31 10.5 -21 C13 -15 13 0 0 0 Z" fill="#ffd166" stroke="#d9a93a" stroke-width="1.5"/>
+    <polyline points="-10.5,-12 -7,-16 -3.5,-12 0,-16 3.5,-12 7,-16 10.5,-12" stroke="#ef476f" stroke-width="2" stroke-linejoin="round" fill="none"/>
+  </g></g>
+  <g transform="translate(454 80) scale(1.15)"><g class="wobble" style="animation-delay:-0.8s">
+    <path d="M0 0 C-13 0 -13 -15 -10.5 -21 C-7.5 -31 7.5 -31 10.5 -21 C13 -15 13 0 0 0 Z" fill="#9bdcf5" stroke="#5fb3d6" stroke-width="1.5"/>
+    <circle cx="-5" cy="-20" r="1.6" fill="#3a86ff"/><circle cx="0" cy="-23" r="1.6" fill="#3a86ff"/><circle cx="5" cy="-20" r="1.6" fill="#3a86ff"/><circle cx="-6" cy="-8" r="1.6" fill="#3a86ff"/><circle cx="0" cy="-6" r="1.6" fill="#3a86ff"/><circle cx="6" cy="-8" r="1.6" fill="#3a86ff"/>
+  </g></g>
+  <g transform="translate(480 80) scale(1.0)"><g class="wobble" style="animation-delay:-1.6s">
+    <path d="M0 0 C-13 0 -13 -15 -10.5 -21 C-7.5 -31 7.5 -31 10.5 -21 C13 -15 13 0 0 0 Z" fill="#c9adf7" stroke="#9a7ad6" stroke-width="1.5"/>
+    <polyline points="-10.5,-12 -7,-16 -3.5,-12 0,-16 3.5,-12 7,-16 10.5,-12" stroke="#ffd166" stroke-width="2" stroke-linejoin="round" fill="none"/>
+  </g></g>
+  <path d="M410 84 L412 72 L414 84 L416 76 L418 84 L420 74 L422 84 L424 72 L426 84 L428 76 L430 84 L432 74 L434 84 L436 72 L438 84 L440 76 L442 84 L444 74 L446 84 L448 72 L450 84 L452 76 L454 84 L456 74 L458 84 L460 72 L462 84 L464 76 L466 84 L468 74 L470 84 L472 72 L474 84 L476 76 L478 84 L480 74 L482 84 L484 72 L486 84 L488 76 L490 84 L492 74 L494 84 L496 72 L498 84 Z" fill="#5cb85c" stroke="#3f9a3f" stroke-width="1" stroke-linejoin="round"/>
+</svg>

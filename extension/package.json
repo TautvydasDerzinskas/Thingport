@@ -18,6 +18,7 @@
     "zip:edge": "npm run build:edge && tsx scripts/zip.ts edge",
     "screenshots": "npm run build:chrome && tsx scripts/screenshots.ts",
     "store-assets": "tsx scripts/store-assets.ts",
+    "preview:seasonal": "tsx scripts/seasonal-preview.ts",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint .",
     "lint:firefox": "npm run build:firefox && web-ext lint --source-dir dist/firefox",

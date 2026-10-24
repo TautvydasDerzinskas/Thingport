@@ -47,29 +47,39 @@ $palette-light: (
   "shadow": rgba(0, 0, 0, 0.25),
 );
 
+// Thingport's dark theme (frontend/src/theme.ts): navy panels on a deeper navy page.
 $palette-dark: map.merge(
   $palette-light,
   (
     "accent-soft": rgba(0, 184, 0, 0.16),
-    "accent-disabled": #2f5f2f,
-    "text": #ececec,
-    "text-muted": #a0a0a0,
-    "border": #3a3a3a,
-    "border-soft": #2e2e2e,
-    "surface": #1e1e1e,
-    "surface-raised": #262626,
-    "surface-sunken": #2a2a2a,
-    "hover": rgba(255, 255, 255, 0.08),
+    "accent-disabled": #22533a,
+    "text": #e4e6eb,
+    "text-muted": #969ba0,
+    "border": #333a54,
+    "border-soft": #283050,
+    "surface": #1e2746,
+    "surface-raised": #26315a,
+    "surface-sunken": #181f39,
+    "hover": rgba(255, 255, 255, 0.07),
     "danger": #ef6b6b,
     "danger-soft": rgba(239, 107, 107, 0.12),
-    "switch-off": #555555,
-    "shadow": rgba(0, 0, 0, 0.6),
+    "switch-off": #434b6b,
+    "shadow": rgba(5, 8, 20, 0.6),
   )
 );
 
 @mixin theme-vars($palette) {
   @each $name, $value in $palette {
     --tg-#{$name}: #{$value};
+  }
+}
+
+/** The light palette, and the dark one where the browser/OS prefers it. */
+@mixin themed {
+  @include theme-vars($palette-light);
+
+  @media (prefers-color-scheme: dark) {
+    @include theme-vars($palette-dark);
   }
 }
 

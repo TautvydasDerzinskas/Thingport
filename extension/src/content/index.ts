@@ -14,6 +14,7 @@ import { captureProviderAccount } from "./providerAccount";
 import { snapmakerUserId } from "./snapmaker";
 import { crealitycloudUserId } from "./crealitycloud";
 import { providerEnabled } from "./providerSettings";
+import { trackViewedModel } from "./recentlyViewed";
 import { errorHtml } from "./panels/results";
 import { api } from "./runtime";
 import { closeSetupModal, openSetupModal } from "./setupModal";
@@ -70,7 +71,13 @@ async function init(): Promise<void> {
     return;
   }
 
-  if (classification.provider === "makerworld" && classification.kind === "single") {
+  if (classification.kind === "single") void trackViewedModel(url, isStale);
+
+  if (
+    classification.provider === "makerworld" &&
+    classification.kind === "single" &&
+    stateRes.data.offlineFeatures.normalizeMakerworld
+  ) {
     void offerNormalizedDownload(url, stateRes.data.configured, isStale);
   }
 

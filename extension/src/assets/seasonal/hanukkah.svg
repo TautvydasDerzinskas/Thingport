@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -45 530 175" fill="none">
+  <title>Hanukkah</title>
+  <style>
+    .flame { transform-origin: 0 4px; animation: flicker 0.5s ease-in-out infinite alternate; }
+    @keyframes flicker { from { transform: scale(1, 1) rotate(-4deg); } to { transform: scale(0.85, 1.15) rotate(4deg); } }
+    .twinkle { transform-origin: 0 0; animation: twinkle 1.8s ease-in-out infinite; }
+    @keyframes twinkle { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.5); opacity: 0.4; } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } .fall { display: none; } }
+  </style>
+  <g stroke="#d9a400" stroke-width="2.4" fill="none" stroke-linecap="round"><path d="M447 33 C447 53 463 53 463 33"/><path d="M439 33 C439 54 471 54 471 33"/><path d="M431 33 C431 55 479 55 479 33"/><path d="M423 33 C423 56 487 56 487 33"/><path d="M455 27 L455 72"/></g>
+  <rect x="419.5" y="30" width="7" height="3" rx="1" fill="#d9a400"/>
+  <rect x="427.5" y="30" width="7" height="3" rx="1" fill="#d9a400"/>
+  <rect x="435.5" y="30" width="7" height="3" rx="1" fill="#d9a400"/>
+  <rect x="443.5" y="30" width="7" height="3" rx="1" fill="#d9a400"/>
+  <rect x="451.5" y="22" width="7" height="3" rx="1" fill="#d9a400"/>
+  <rect x="459.5" y="30" width="7" height="3" rx="1" fill="#d9a400"/>
+  <rect x="467.5" y="30" width="7" height="3" rx="1" fill="#d9a400"/>
+  <rect x="475.5" y="30" width="7" height="3" rx="1" fill="#d9a400"/>
+  <rect x="483.5" y="30" width="7" height="3" rx="1" fill="#d9a400"/>
+  <path d="M440 78 L470 78 L464 71 L446 71 Z" fill="#d9a400"/>
+  <rect x="421" y="20" width="4" height="12" rx="1" fill="#5aa9ff" stroke="#2f6fbf" stroke-width="0.8"/><g transform="translate(423 15)" style="animation-delay:0.00s"><g class="flame" style="animation-delay:0.00s"><path class="flame" d="M0 -6 C3 -2 3.5 2 0 4 C-3.5 2 -3 -2 0 -6 Z" fill="#ffb703" stroke="#f77f00" stroke-width="0.8"/></g></g>
+  <rect x="429" y="20" width="4" height="12" rx="1" fill="#5aa9ff" stroke="#2f6fbf" stroke-width="0.8"/><g transform="translate(431 15)" style="animation-delay:-0.17s"><g class="flame" style="animation-delay:-0.17s"><path class="flame" d="M0 -6 C3 -2 3.5 2 0 4 C-3.5 2 -3 -2 0 -6 Z" fill="#ffb703" stroke="#f77f00" stroke-width="0.8"/></g></g>
+  <rect x="437" y="20" width="4" height="12" rx="1" fill="#5aa9ff" stroke="#2f6fbf" stroke-width="0.8"/><g transform="translate(439 15)" style="animation-delay:-0.34s"><g class="flame" style="animation-delay:-0.34s"><path class="flame" d="M0 -6 C3 -2 3.5 2 0 4 C-3.5 2 -3 -2 0 -6 Z" fill="#ffb703" stroke="#f77f00" stroke-width="0.8"/></g></g>
+  <rect x="445" y="20" width="4" height="12" rx="1" fill="#5aa9ff" stroke="#2f6fbf" stroke-width="0.8"/><g transform="translate(447 15)" style="animation-delay:0.00s"><g class="flame" style="animation-delay:0.00s"><path class="flame" d="M0 -6 C3 -2 3.5 2 0 4 C-3.5 2 -3 -2 0 -6 Z" fill="#ffb703" stroke="#f77f00" stroke-width="0.8"/></g></g>
+  <rect x="453" y="12" width="4" height="12" rx="1" fill="#5aa9ff" stroke="#2f6fbf" stroke-width="0.8"/><g transform="translate(455 7)" style="animation-delay:-0.17s"><g class="flame" style="animation-delay:-0.17s"><path class="flame" d="M0 -6 C3 -2 3.5 2 0 4 C-3.5 2 -3 -2 0 -6 Z" fill="#ffb703" stroke="#f77f00" stroke-width="0.8"/></g></g>
+  <rect x="461" y="20" width="4" height="12" rx="1" fill="#5aa9ff" stroke="#2f6fbf" stroke-width="0.8"/><g transform="translate(463 15)" style="animation-delay:-0.34s"><g class="flame" style="animation-delay:-0.34s"><path class="flame" d="M0 -6 C3 -2 3.5 2 0 4 C-3.5 2 -3 -2 0 -6 Z" fill="#ffb703" stroke="#f77f00" stroke-width="0.8"/></g></g>
+  <rect x="469" y="20" width="4" height="12" rx="1" fill="#5aa9ff" stroke="#2f6fbf" stroke-width="0.8"/><g transform="translate(471 15)" style="animation-delay:0.00s"><g class="flame" style="animation-delay:0.00s"><path class="flame" d="M0 -6 C3 -2 3.5 2 0 4 C-3.5 2 -3 -2 0 -6 Z" fill="#ffb703" stroke="#f77f00" stroke-width="0.8"/></g></g>
+  <rect x="477" y="20" width="4" height="12" rx="1" fill="#5aa9ff" stroke="#2f6fbf" stroke-width="0.8"/><g transform="translate(479 15)" style="animation-delay:-0.17s"><g class="flame" style="animation-delay:-0.17s"><path class="flame" d="M0 -6 C3 -2 3.5 2 0 4 C-3.5 2 -3 -2 0 -6 Z" fill="#ffb703" stroke="#f77f00" stroke-width="0.8"/></g></g>
+  <rect x="485" y="20" width="4" height="12" rx="1" fill="#5aa9ff" stroke="#2f6fbf" stroke-width="0.8"/><g transform="translate(487 15)" style="animation-delay:-0.34s"><g class="flame" style="animation-delay:-0.34s"><path class="flame" d="M0 -6 C3 -2 3.5 2 0 4 C-3.5 2 -3 -2 0 -6 Z" fill="#ffb703" stroke="#f77f00" stroke-width="0.8"/></g></g>
+  <g transform="translate(120 -28)"><path class="twinkle" style="animation-delay:0s" d="M0 -4 Q0.7 -0.7 4 0 Q0.7 0.7 0 4 Q-0.7 0.7 -4 0 Q-0.7 -0.7 0 -4 Z" fill="#5aa9ff"/></g>
+  <g transform="translate(230 -36)"><path class="twinkle" style="animation-delay:-0.8s" d="M0 -3.5 Q0.6 -0.6 3.5 0 Q0.6 0.6 0 3.5 Q-0.6 0.6 -3.5 0 Q-0.6 -0.6 0 -3.5 Z" fill="#5aa9ff"/></g>
+  <g transform="translate(340 -26)"><path class="twinkle" style="animation-delay:-1.4s" d="M0 -4 Q0.7 -0.7 4 0 Q0.7 0.7 0 4 Q-0.7 0.7 -4 0 Q-0.7 -0.7 0 -4 Z" fill="#5aa9ff"/></g>
+  <g transform="translate(-14 24)"><path class="twinkle" style="animation-delay:-0.5s" d="M0 -3.5 Q0.6 -0.6 3.5 0 Q0.6 0.6 0 3.5 Q-0.6 0.6 -3.5 0 Q-0.6 -0.6 0 -3.5 Z" fill="#5aa9ff"/></g>
+</svg>

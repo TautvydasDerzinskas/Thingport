@@ -4,12 +4,10 @@
 @use "form";
 @use "switch";
 @use "recent";
+@use "tabs";
+@use "dialog";
 
 :root {
   color-scheme: light dark;
-  @include t.theme-vars(t.$palette-light);
-
-  @media (prefers-color-scheme: dark) {
-    @include t.theme-vars(t.$palette-dark);
-  }
+  @include t.themed;
 }

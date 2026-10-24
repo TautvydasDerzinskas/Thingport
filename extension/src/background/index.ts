@@ -2,8 +2,8 @@
 // and every request to the Thingport instance.
 
 import { listen, type BackgroundMessages } from "../shared/messages";
-import { apiCall, checkConnection } from "./api";
-import { getState, saveConfig, setDisabled } from "./config";
+import { apiCall, checkConnection, disconnect } from "./api";
+import { getState, saveConfig, setDisabled, setOfflineFeature } from "./config";
 import { armDownloadCapture, awaitDownloadCapture, disarmDownloadCapture } from "./downloadCapture";
 import { importSingle, queueImport } from "./importJobs";
 import {
@@ -17,6 +17,8 @@ import {
 } from "./makerworldJob";
 import { getPrintablesToken, printablesPushDue, pushPrintables, reportProviderAccount } from "./providerAccounts";
 import { getRecentImports } from "./recentImports";
+import { seasonalIcon } from "../shared/seasonalIcon";
+import { clearRecentlyViewed, getRecentlyViewed, recordViewedModel } from "./recentlyViewed";
 import { syncMyminifactorySession } from "./myminifactorySession";
 import { scheduleSnapmakerRenewal, SNAPMAKER_ALARM, syncSnapmakerSession } from "./snapmakerSession";
 import { importMakeronlineModel, runWaitingImports, syncMakeronlineSession } from "./makeronline";
@@ -38,8 +40,14 @@ listen<BackgroundMessages>({
   GET_STATE: () => getState(),
   SAVE_CONFIG: (payload) => saveConfig(payload),
   SET_DISABLED: ({ disabled }) => setDisabled(disabled),
+  DISCONNECT: () => disconnect(),
+  SET_OFFLINE_FEATURE: ({ feature, enabled }) => setOfflineFeature(feature, enabled),
   START_PAIRING: ({ instanceUrl }) => startPairing(instanceUrl),
   GET_RECENT_IMPORTS: () => getRecentImports(),
+  GET_SEASONAL_ICON: () => seasonalIcon(),
+  RECORD_VIEWED_MODEL: (model) => recordViewedModel(model),
+  GET_RECENTLY_VIEWED: () => getRecentlyViewed(),
+  CLEAR_RECENTLY_VIEWED: () => clearRecentlyViewed(),
   CHECK_CONNECTION: () => checkConnection(),
   GET_PRINTABLES_TOKEN: () => getPrintablesToken(),
   REPORT_PROVIDER_ACCOUNT: ({ provider, value }) => reportProviderAccount(provider, value),

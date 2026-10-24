@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -45 530 175" fill="none">
+  <title>Día de los Muertos</title>
+  <style>
+    .flutter { transform-origin: 13px 0; animation: flutter 2.4s ease-in-out infinite; }
+    @keyframes flutter { 0%, 100% { transform: skewX(0) scaleY(1); } 50% { transform: skewX(-8deg) scaleY(0.92); } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } .fall { display: none; } }
+  </style>
+  <path d="M-30 -40 L500 -40" stroke="#8a8aa0" stroke-width="1.2"/>
+  <g transform="translate(-22 -40)"><path class="flutter" style="animation-delay:0.0s" d="M0 0 L26 0 L26 15 L22 19 L18 15 L13 19 L8 15 L4 19 L0 15 Z" fill="#ff3d8b"/></g>
+  <g transform="translate(12 -40)"><path class="flutter" style="animation-delay:-0.4s" d="M0 0 L26 0 L26 15 L22 19 L18 15 L13 19 L8 15 L4 19 L0 15 Z" fill="#ffc300"/></g>
+  <g transform="translate(46 -40)"><path class="flutter" style="animation-delay:-0.8s" d="M0 0 L26 0 L26 15 L22 19 L18 15 L13 19 L8 15 L4 19 L0 15 Z" fill="#00b4ff"/></g>
+  <g transform="translate(80 -40)"><path class="flutter" style="animation-delay:-1.2s" d="M0 0 L26 0 L26 15 L22 19 L18 15 L13 19 L8 15 L4 19 L0 15 Z" fill="#00c853"/></g>
+  <g transform="translate(114 -40)"><path class="flutter" style="animation-delay:-1.6s" d="M0 0 L26 0 L26 15 L22 19 L18 15 L13 19 L8 15 L4 19 L0 15 Z" fill="#9b5de5"/></g>
+  <g transform="translate(148 -40)"><path class="flutter" style="animation-delay:0.0s" d="M0 0 L26 0 L26 15 L22 19 L18 15 L13 19 L8 15 L4 19 L0 15 Z" fill="#ff8c00"/></g>
+  <g transform="translate(182 -40)"><path class="flutter" style="animation-delay:-0.4s" d="M0 0 L26 0 L26 15 L22 19 L18 15 L13 19 L8 15 L4 19 L0 15 Z" fill="#ff3d8b"/></g>
+  <g transform="translate(216 -40)"><path class="flutter" style="animation-delay:-0.8s" d="M0 0 L26 0 L26 15 L22 19 L18 15 L13 19 L8 15 L4 19 L0 15 Z" fill="#ffc300"/></g>
+  <g transform="translate(250 -40)"><path class="flutter" style="animation-delay:-1.2s" d="M0 0 L26 0 L26 15 L22 19 L18 15 L13 19 L8 15 L4 19 L0 15 Z" fill="#00b4ff"/></g>
+  <g transform="translate(284 -40)"><path class="flutter" style="animation-delay:-1.6s" d="M0 0 L26 0 L26 15 L22 19 L18 15 L13 19 L8 15 L4 19 L0 15 Z" fill="#00c853"/></g>
+  <g transform="translate(318 -40)"><path class="flutter" style="animation-delay:0.0s" d="M0 0 L26 0 L26 15 L22 19 L18 15 L13 19 L8 15 L4 19 L0 15 Z" fill="#9b5de5"/></g>
+  <g transform="translate(352 -40)"><path class="flutter" style="animation-delay:-0.4s" d="M0 0 L26 0 L26 15 L22 19 L18 15 L13 19 L8 15 L4 19 L0 15 Z" fill="#ff8c00"/></g>
+  <g transform="translate(386 -40)"><path class="flutter" style="animation-delay:-0.8s" d="M0 0 L26 0 L26 15 L22 19 L18 15 L13 19 L8 15 L4 19 L0 15 Z" fill="#ff3d8b"/></g>
+  <g transform="translate(420 -40)"><path class="flutter" style="animation-delay:-1.2s" d="M0 0 L26 0 L26 15 L22 19 L18 15 L13 19 L8 15 L4 19 L0 15 Z" fill="#ffc300"/></g>
+  <g transform="translate(454 -40)"><path class="flutter" style="animation-delay:-1.6s" d="M0 0 L26 0 L26 15 L22 19 L18 15 L13 19 L8 15 L4 19 L0 15 Z" fill="#00b4ff"/></g>
+  <g transform="translate(488 -40)"><path class="flutter" style="animation-delay:0.0s" d="M0 0 L26 0 L26 15 L22 19 L18 15 L13 19 L8 15 L4 19 L0 15 Z" fill="#00c853"/></g>
+  <path d="M455 22 C470 22 476 33 474 45 C473 52 468 55 466 60 L444 60 C442 55 437 52 436 45 C434 33 440 22 455 22 Z" fill="#ffffff" stroke="#9aa4ae" stroke-width="1.6"/>
+  <rect x="445" y="57" width="20" height="9" rx="3" fill="#ffffff" stroke="#9aa4ae" stroke-width="1.6"/>
+  <path d="M450 58 L450 66 M455 58 L455 66 M460 58 L460 66" stroke="#9aa4ae" stroke-width="1.2"/>
+  <g transform="translate(447 42)"><circle cx="6.5" cy="0.0" r="2.4" fill="#ff3d8b"/><circle cx="3.3" cy="5.6" r="2.4" fill="#ff3d8b"/><circle cx="-3.2" cy="5.6" r="2.4" fill="#ff3d8b"/><circle cx="-6.5" cy="0.0" r="2.4" fill="#ff3d8b"/><circle cx="-3.3" cy="-5.6" r="2.4" fill="#ff3d8b"/><circle cx="3.3" cy="-5.6" r="2.4" fill="#ff3d8b"/><circle r="4.2" fill="#2b2b3a"/></g>
+  <g transform="translate(463 42)"><circle cx="6.5" cy="0.0" r="2.4" fill="#00b4ff"/><circle cx="3.3" cy="5.6" r="2.4" fill="#00b4ff"/><circle cx="-3.2" cy="5.6" r="2.4" fill="#00b4ff"/><circle cx="-6.5" cy="0.0" r="2.4" fill="#00b4ff"/><circle cx="-3.3" cy="-5.6" r="2.4" fill="#00b4ff"/><circle cx="3.3" cy="-5.6" r="2.4" fill="#00b4ff"/><circle r="4.2" fill="#2b2b3a"/></g>
+  <path d="M455 50 L452.5 54 L457.5 54 Z" fill="#2b2b3a"/>
+  <path d="M449 30 Q455 26 461 30" stroke="#9b5de5" stroke-width="1.6" stroke-linecap="round"/>
+  <g transform="translate(430 72) scale(1.0)"><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(0)" fill="#ff8c00"/><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(40)" fill="#ff8c00"/><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(80)" fill="#ff8c00"/><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(120)" fill="#ff8c00"/><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(160)" fill="#ff8c00"/><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(200)" fill="#ff8c00"/><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(240)" fill="#ff8c00"/><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(280)" fill="#ff8c00"/><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(320)" fill="#ff8c00"/><circle r="3.5" fill="#d9480f"/></g>
+  <g transform="translate(482 70) scale(1.1)"><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(0)" fill="#ff8c00"/><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(40)" fill="#ff8c00"/><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(80)" fill="#ff8c00"/><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(120)" fill="#ff8c00"/><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(160)" fill="#ff8c00"/><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(200)" fill="#ff8c00"/><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(240)" fill="#ff8c00"/><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(280)" fill="#ff8c00"/><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(320)" fill="#ff8c00"/><circle r="3.5" fill="#d9480f"/></g>
+  <g transform="translate(474 18) scale(0.8)"><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(0)" fill="#ff8c00"/><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(40)" fill="#ff8c00"/><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(80)" fill="#ff8c00"/><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(120)" fill="#ff8c00"/><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(160)" fill="#ff8c00"/><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(200)" fill="#ff8c00"/><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(240)" fill="#ff8c00"/><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(280)" fill="#ff8c00"/><ellipse cx="0" cy="-5" rx="3" ry="4.5" transform="rotate(320)" fill="#ff8c00"/><circle r="3.5" fill="#d9480f"/></g>
+</svg>

@@ -5,8 +5,8 @@
 @use "../../styles/mixins" as m;
 
 :host {
-  @include t.theme-vars(t.$palette-light);
   all: initial;
+  @include t.themed;
   display: inline-flex;
   vertical-align: middle;
   margin-left: t.$space-2;

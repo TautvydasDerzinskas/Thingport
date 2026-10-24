@@ -1,17 +1,22 @@
 // The popup's "Recent imports" strip. The list is in the browser's sync storage, so it follows the
-// user to their other browsers and devices; thumbnails are too big for its quota, so each browser
+// user to their other browsers and devices. Each shows the provider's own picture of the model, as its page showed it
+// (see recentlyViewed.ts); without one, Thingport's thumbnail, which is too big for the sync quota, so each browser
 // caches its own in local storage. Entries reflect the model as it was when imported.
 
 import type { Print } from "../shared/api";
 import type { RecentImport } from "../shared/messages";
 import { normalizeInstanceUrl } from "../shared/storage";
+import { classifyUrl, modelKey } from "../shared/urls";
 import { apiFetchBlob } from "./api";
 import { getStoredConfig, isConfigured, type ConfiguredConfig } from "./config";
+import { getRecentlyViewed } from "./recentlyViewed";
 
 const RECENT_IMPORTS_STORAGE_KEY = "recentImports";
 const THUMBS_STORAGE_KEY = "recentImportThumbs";
 const RECENT_IMPORTS_KEPT = 5;
 const RECENT_IMPORT_THUMB_PX = 96;
+// The whole list is one sync item, capped at 8 KB: longer picture addresses are left out.
+const PROVIDER_IMAGE_MAX_CHARS = 400;
 
 /** No email: the account is a hash of instance + email, so sync never carries the address. */
 type SyncedRecentImport = {
@@ -20,6 +25,10 @@ type SyncedRecentImport = {
   url: string;
   thumbPath: string | null;
   account: string;
+  /** The model page it was imported from. Missing from older entries. */
+  sourceUrl?: string | null;
+  /** The provider's picture of the model, as its page showed it. */
+  providerImage?: string | null;
 };
 
 /** Up to 1.3.0 the list, thumbnails included, lived in local storage only. */
@@ -75,18 +84,29 @@ async function readSynced(): Promise<SyncedRecentImport[]> {
   return (stored[RECENT_IMPORTS_STORAGE_KEY] as SyncedRecentImport[] | undefined) ?? [];
 }
 
+/** The picture the model's own page showed, if it was opened in this browser lately. */
+async function providerImageFor(sourceUrl: string): Promise<string | null> {
+  const key = modelKey(sourceUrl);
+  if (!key) return null;
+  const image = (await getRecentlyViewed()).find((viewed) => modelKey(viewed.url) === key)?.image ?? null;
+  return image && image.length <= PROVIDER_IMAGE_MAX_CHARS ? image : null;
+}
+
 /** `titleHint` covers zip imports, whose job reports only the id. Scoped to instance + account. */
-export async function recordRecentImport(print: Print, titleHint: string | null): Promise<void> {
+export async function recordRecentImport(print: Print, titleHint: string | null, sourceUrl: string): Promise<void> {
   const config = await getStoredConfig();
   if (!isConfigured(config)) return;
   await migrateLegacy(config);
   const thumbPath = print.thumb_url || print.preview_images?.[0]?.url || null;
+  const providerImage = await providerImageFor(sourceUrl);
   const entry: SyncedRecentImport = {
     printId: print.id,
     title: print.title || print.name || titleHint || null,
     url: `${normalizeInstanceUrl(config.instanceUrl)}/models/${print.id}`,
     thumbPath,
     account: await accountKey(config),
+    sourceUrl,
+    providerImage,
   };
   // Another profile of a listed model moves it to the front instead of adding a slot.
   const rest = (await readSynced()).filter((e) => thumbKey(e) !== thumbKey(entry));
@@ -94,7 +114,7 @@ export async function recordRecentImport(print: Print, titleHint: string | null)
   const list = [entry, ...rest].slice(0, RECENT_IMPORTS_KEPT * 2);
   await chrome.storage.sync.set({ [RECENT_IMPORTS_STORAGE_KEY]: list });
   const thumbs = await readThumbs();
-  const thumb = thumbPath ? await fetchThumbDataUrl(config, thumbPath).catch(() => null) : null;
+  const thumb = thumbPath && !providerImage ? await fetchThumbDataUrl(config, thumbPath).catch(() => null) : null;
   if (thumb) thumbs[thumbKey(entry)] = thumb;
   await writeThumbs(thumbs, list);
 }
@@ -135,7 +155,7 @@ export async function getRecentImports(): Promise<RecentImport[]> {
   const account = await accountKey(config);
   const mine = all.filter((e) => e.account === account).slice(0, RECENT_IMPORTS_KEPT);
   const thumbs = await readThumbs();
-  const missing = mine.filter((e) => !thumbs[thumbKey(e)] && e.thumbPath);
+  const missing = mine.filter((e) => !e.providerImage && !thumbs[thumbKey(e)] && e.thumbPath);
   if (missing.length) {
     await Promise.all(
       missing.map(async (e) => {
@@ -149,6 +169,7 @@ export async function getRecentImports(): Promise<RecentImport[]> {
     printId: e.printId,
     title: e.title,
     url: e.url,
-    thumbDataUrl: thumbs[thumbKey(e)] ?? null,
+    image: e.providerImage ?? thumbs[thumbKey(e)] ?? null,
+    provider: (e.sourceUrl && classifyUrl(e.sourceUrl)?.provider) || null,
   }));
 }

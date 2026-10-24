@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -45 530 175" fill="none">
+  <title>Holi</title>
+  <style>
+    .puff { transform-origin: 0 0; animation: puff 3s ease-out infinite; }
+    @keyframes puff { 0% { transform: scale(0.2); opacity: 0; } 20% { opacity: 1; } 70% { transform: scale(1); opacity: 0.9; } 100% { transform: scale(1.25); opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } .fall { display: none; } }
+  </style>
+  <defs><radialGradient id="g0"><stop offset="0" stop-color="#ff3d8b" stop-opacity="0.95"/><stop offset="0.6" stop-color="#ff3d8b" stop-opacity="0.55"/><stop offset="1" stop-color="#ff3d8b" stop-opacity="0"/></radialGradient><radialGradient id="g1"><stop offset="0" stop-color="#ffc300" stop-opacity="0.95"/><stop offset="0.6" stop-color="#ffc300" stop-opacity="0.55"/><stop offset="1" stop-color="#ffc300" stop-opacity="0"/></radialGradient><radialGradient id="g2"><stop offset="0" stop-color="#00b4ff" stop-opacity="0.95"/><stop offset="0.6" stop-color="#00b4ff" stop-opacity="0.55"/><stop offset="1" stop-color="#00b4ff" stop-opacity="0"/></radialGradient><radialGradient id="g3"><stop offset="0" stop-color="#00c853" stop-opacity="0.95"/><stop offset="0.6" stop-color="#00c853" stop-opacity="0.55"/><stop offset="1" stop-color="#00c853" stop-opacity="0"/></radialGradient><radialGradient id="g4"><stop offset="0" stop-color="#9b5de5" stop-opacity="0.95"/><stop offset="0.6" stop-color="#9b5de5" stop-opacity="0.55"/><stop offset="1" stop-color="#9b5de5" stop-opacity="0"/></radialGradient><radialGradient id="g5"><stop offset="0" stop-color="#ff8c00" stop-opacity="0.95"/><stop offset="0.6" stop-color="#ff8c00" stop-opacity="0.55"/><stop offset="1" stop-color="#ff8c00" stop-opacity="0"/></radialGradient></defs>
+  <g transform="translate(10 10)"><circle class="puff" style="animation-delay:0s" r="22" fill="url(#g0)"/></g>
+  <g transform="translate(88 -18)"><circle class="puff" style="animation-delay:-0.7s" r="18" fill="url(#g1)"/></g>
+  <g transform="translate(170 -26)"><circle class="puff" style="animation-delay:-1.5s" r="20" fill="url(#g2)"/></g>
+  <g transform="translate(250 -20)"><circle class="puff" style="animation-delay:-2.2s" r="17" fill="url(#g3)"/></g>
+  <g transform="translate(330 -28)"><circle class="puff" style="animation-delay:-0.4s" r="19" fill="url(#g4)"/></g>
+  <g transform="translate(420 -6)"><circle class="puff" style="animation-delay:-1.2s" r="22" fill="url(#g5)"/></g>
+  <g transform="translate(470 40)"><circle class="puff" style="animation-delay:-1.9s" r="20" fill="url(#g0)"/></g>
+  <g transform="translate(430 74)"><circle class="puff" style="animation-delay:-2.6s" r="17" fill="url(#g2)"/></g>
+  <g transform="translate(-10 72)"><circle class="puff" style="animation-delay:-1.0s" r="16" fill="url(#g3)"/></g>
+  <circle cx="34" cy="36" r="3" fill="#ff3d8b" opacity="0.9"/>
+  <circle cx="62" cy="30" r="2.5" fill="#ffc300" opacity="0.9"/>
+  <circle cx="44" cy="62" r="2.2" fill="#00b4ff" opacity="0.9"/>
+  <circle cx="68" cy="56" r="3" fill="#00c853" opacity="0.9"/>
+  <circle cx="52" cy="46" r="1.8" fill="#9b5de5" opacity="0.9"/>
+  <circle cx="28" cy="52" r="2" fill="#ff8c00" opacity="0.9"/>
+</svg>

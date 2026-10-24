@@ -16,16 +16,17 @@ the list of recent imports, which is synced between your browsers as described b
   you sign in to it with. They're stored as you entered them, so the extension can sign in again
   when its session expires.
 - **A session token** your Thingport instance issues when the extension signs in.
-- **Your settings:** whether the extension is switched on. Which optional sites you turned on is kept by your browser,
-  as the access you granted.
-- **Recent imports:** the title and a link for the last five models you imported through the
-  extension, shown in its toolbar popup. This list is kept in your browser's sync storage, so it
+- **Your settings:** whether the extension is switched on, which Offline features are on (the MakerWorld Download
+  normalized button, Thingiverse dark mode and hidden Thingiverse ads). Which optional sites you turned on
+  is kept by your browser, as the access you granted.
+- **Recent imports:** the title, a link, the address of the page it was imported from and of that page's picture of
+  it, for the last five models you imported through the extension, shown in its toolbar popup. This list is kept in your browser's sync storage, so it
   appears in the extension on your other browsers and devices where you're signed in to the same
   browser account and have sync on. It travels through your browser vendor's sync service (Google,
   Mozilla or Microsoft) under that service's own privacy terms. It doesn't include your email or
   password: entries are tied to your Thingport account by a one-way hash of your instance address
-  and email. Each model's thumbnail is fetched from your Thingport instance and kept in local
-  storage on each device; it isn't synced.
+  and email. The picture loads from the site the model came from; where there's none, the model's thumbnail is
+  fetched from your Thingport instance and kept in local storage on each device, not synced.
 - **Your Printables, Thingiverse and MyMiniFactory usernames,** as last sent to your Thingport instance, so they're
   only sent again when they change, and when it last read your Printables collections and likes.
 - **Your Snapmaker Space sign-in (its access token),** as last sent to your Thingport instance, so it's only sent
@@ -40,6 +41,9 @@ the list of recent imports, which is synced between your browsers as described b
   it's only sent again when it changes.
 - **Your Cults3D sign-in (its `_session_id` and `cf_clearance` cookies, and your browser's User-Agent),** as last sent
   to your Thingport instance, so it's only sent again when it changes.
+- **Recently viewed:** the address, title and picture link of the last 10 model pages you opened on the sites the
+  extension runs on, shown in its popup's **History** tab. They're kept in this browser only, never synced or sent
+  anywhere; **Clear** in that tab deletes them.
 - **Collection import progress:** while a MakerWorld collection import is running, the list of
   model pages still to visit, so it can carry on across page loads. It's deleted when the import
   ends.
@@ -49,7 +53,8 @@ the list of recent imports, which is synced between your browsers as described b
 The extension only communicates with **your Thingport instance** (the address you entered) and with
 the **provider site you're on**. The one exception: once you've allowed Snapmaker Space, it also renews your
 Snapmaker sign-in at id.snapmaker.com every few hours while the browser is open, even with no Snapmaker page open
-(see below).
+(see below). And when you open the popup's **History** tab, the pictures of your recently viewed models load straight
+from the image servers of the sites you viewed them on, without saying which page asked for them.
 
 **To your Thingport instance:**
 
@@ -137,7 +142,7 @@ Snapmaker sign-in at id.snapmaker.com every few hours while the browser is open,
   your account may download the model, with your existing Thangs sign-in, the same way the page's own Download button
   does. This doesn't download anything.
 
-**The extension reads, on supported pages only:** the model's title, MakerWorld's page data for the
+**The extension reads, on supported pages only:** the model's title and main picture, MakerWorld's page data for the
 model, the model links listed on collection pages, and, on Thingiverse and MyMiniFactory, your username from the
 page's header. It doesn't read any other websites.
 
@@ -164,7 +169,9 @@ page's header. It doesn't read any other websites.
 
 ## Your control over your data
 
-- Change your Thingport connection, or switch the extension off, from its toolbar popup.
+- Change your Thingport connection, disconnect from your instance (which deletes the connection and your sign-in from
+  the extension), or switch the extension off, from its toolbar popup. Clear your recently viewed
+  models from its **History** tab.
 - Uninstalling the extension deletes everything it stored on that device. The synced list of recent
   imports can stay in your browser account's sync data while the extension is still installed on
   another of your browsers; clearing your browser's synced data removes it.

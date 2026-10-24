@@ -68,7 +68,7 @@ export async function importSingle(
   }
   // Skip no-op imports. Adding a profile returns the existing model, moved to the front.
   if (print?.id && print.import_outcome !== "already_imported") {
-    await recordRecentImport(print, title ?? null).catch(() => undefined);
+    await recordRecentImport(print, title ?? null, url).catch(() => undefined);
   }
   return print;
 }

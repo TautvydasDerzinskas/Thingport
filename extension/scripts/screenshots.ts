@@ -369,7 +369,7 @@ async function main(): Promise<void> {
     await screenshotPopup(context, extensionId, "popup-connected.png", "light");
     await screenshotPopup(context, extensionId, "popup-connected-dark.png", "dark");
 
-    // Each shot again over the site's dark scheme, for the READMEs' <picture>. Grab's panel stays light either way.
+    // Each shot again over the site's dark scheme, for the READMEs' <picture>; Grab's panel follows it too.
     // Printables and Creality Cloud ignore the emulated scheme and follow the OS one, so take their shots of each
     // scheme with the OS set to match (--only=panel-printables,collection-printables,panel-crealitycloud, then the
     // -dark ones).

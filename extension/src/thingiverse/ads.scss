@@ -1,0 +1,17 @@
+// Hides Thingiverse's ads (see index.ts): the slots Thingiverse lays out for them and the ones its ad network injects.
+// Only hides what's on the page -- nothing about the user's account or membership is touched. The ads are frames
+// from other sites, so the slot around each one is what's hidden.
+
+// Banners above and between a thing's sections, and on the home page.
+[class*="AdBanner__adBanner--"],
+// "Ad" cards in every model grid, with their "Remove ads" link.
+[class*="AdCard__adCard--"],
+// The download dialog's ad and its "why ads" note; the license and tip panel beside it stays.
+[class*="DownloadAllModal__downloadModalMainContent--"],
+// Slots the ad network injects into the content, the sticky bar along the bottom, and its video player.
+.adthrive-ad,
+.adthrive-footer,
+.adthrive-auto-injected-player-container,
+[class*="raptive-player"] {
+  display: none !important;
+}

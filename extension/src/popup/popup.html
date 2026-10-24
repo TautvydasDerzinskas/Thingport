@@ -8,7 +8,7 @@
   </head>
   <body>
     <header class="header">
-      <span class="header__icon" data-icon></span>
+      <span class="header__icon" id="header-icon" data-icon></span>
       <div class="header__text">
         <h1 class="header__title">Thingport Grab</h1>
         <div class="instance" id="instance-row" hidden>
@@ -33,6 +33,27 @@
               <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
             </svg>
           </button>
+          <button
+            type="button"
+            class="icon-btn icon-btn--danger"
+            id="disconnect-btn"
+            aria-label="Disconnect from Thingport"
+            title="Disconnect"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <path d="m16 17 5-5-5-5" />
+              <path d="M21 12H9" />
+            </svg>
+          </button>
         </div>
       </div>
       <span class="tooltip" id="enabled-toggle" data-tooltip="Extension enabled" hidden>
@@ -40,42 +61,150 @@
       </span>
     </header>
 
+    <div class="tabs" role="tablist" aria-label="Sections" id="tabs">
+      <button type="button" class="tabs__tab" role="tab" id="tab-connect" aria-controls="panel-connect">Connect</button>
+      <button type="button" class="tabs__tab" role="tab" id="tab-offline" aria-controls="panel-offline">
+        Offline features
+      </button>
+      <button type="button" class="tabs__tab" role="tab" id="tab-history" aria-controls="panel-history">History</button>
+      <span class="tabs__indicator" aria-hidden="true"></span>
+    </div>
+
     <main>
-      <section id="configured-view" hidden>
+      <div class="tab-panel" role="tabpanel" id="panel-connect" aria-labelledby="tab-connect">
+        <section id="configured-view" hidden>
+          <div class="section">
+            <ul class="sites" id="sites-list" aria-label="Providers"></ul>
+          </div>
+          <div class="error" id="configured-error" role="alert"></div>
+        </section>
+
+        <form id="setup-form" class="form" hidden>
+          <p class="form__intro">Connect to your Thingport instance to import models with one click.</p>
+          <label class="form__label" for="instance-url">Thingport instance URL</label>
+          <input
+            class="form__input"
+            type="url"
+            id="instance-url"
+            placeholder="https://thingport.example.com"
+            required
+          />
+          <label class="form__label" for="email">Email</label>
+          <input class="form__input" type="email" id="email" autocomplete="username" required />
+          <label class="form__label" for="password">Password</label>
+          <input class="form__input" type="password" id="password" autocomplete="current-password" required />
+          <p class="note">
+            If you're logged into MakerWorld in this browser, Thingport Grab reads your MakerWorld session cookie
+            locally to import from it -- it's sent only to the instance URL above, never anywhere else.
+          </p>
+          <button type="submit" class="btn" id="save-btn">Save</button>
+          <button type="button" class="btn btn--secondary" id="cancel-btn" hidden>Cancel</button>
+          <div class="sso" id="sso-block" hidden>
+            <div class="sso__divider">or</div>
+            <button type="button" class="btn btn--secondary" id="sso-btn">Sign in with single sign-on</button>
+            <p class="note">Opens Thingport to approve this browser. No password is saved in the extension.</p>
+          </div>
+          <p class="note" id="disconnected-note" hidden></p>
+          <p class="note" id="sso-pending" hidden>Finish connecting in the Thingport tab that just opened.</p>
+          <div class="error" id="error" role="alert"></div>
+        </form>
+      </div>
+
+      <div class="tab-panel" role="tabpanel" id="panel-offline" aria-labelledby="tab-offline" hidden>
+        <p class="note" id="offline-note">These work without a Thingport instance.</p>
+        <ul class="features">
+          <li class="feature">
+            <div class="feature__text">
+              <label class="feature__name" for="normalize-switch">Normalize MakerWorld 3MFs</label>
+              <p class="feature__desc" id="normalize-desc">
+                Adds a Download normalized button to MakerWorld models, for slicers that mis-read Bambu 3MFs.
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              role="switch"
+              class="switch"
+              id="normalize-switch"
+              aria-describedby="normalize-desc"
+            />
+          </li>
+          <li class="feature">
+            <div class="feature__text">
+              <label class="feature__name" for="thingiverse-dark-switch">Thingiverse dark mode</label>
+              <p class="feature__desc" id="thingiverse-dark-desc">
+                A dark theme for Thingiverse, which doesn't have one, while your system theme is dark.
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              role="switch"
+              class="switch"
+              id="thingiverse-dark-switch"
+              aria-describedby="thingiverse-dark-desc"
+            />
+          </li>
+          <li class="feature">
+            <div class="feature__text">
+              <label class="feature__name" for="thingiverse-ads-switch">Hide Thingiverse ads</label>
+              <p class="feature__desc" id="thingiverse-ads-desc">
+                Hides the banners, ad cards and video ads on Thingiverse's pages.
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              role="switch"
+              class="switch"
+              id="thingiverse-ads-switch"
+              aria-describedby="thingiverse-ads-desc"
+            />
+          </li>
+        </ul>
+        <div class="error" id="offline-error" role="alert"></div>
+      </div>
+
+      <div class="tab-panel" role="tabpanel" id="panel-history" aria-labelledby="tab-history" hidden>
         <div class="section" id="recent-section" hidden>
           <h2 class="section__title">Recent imports</h2>
           <div class="recent-grid" id="recent-grid"></div>
         </div>
         <div class="section">
-          <h2 class="section__title">Providers</h2>
-          <ul class="sites" id="sites-list"></ul>
+          <div class="section__head">
+            <h2 class="section__title">Recently viewed</h2>
+            <span class="tooltip" data-tooltip="Clear" id="viewed-clear-wrap" hidden>
+              <button type="button" class="icon-btn" id="viewed-clear" aria-label="Clear recently viewed">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M3 6h18" />
+                  <path d="M8 6V4h8v2" />
+                  <path d="M19 6l-1 14H6L5 6" />
+                </svg>
+              </button>
+            </span>
+          </div>
+          <div class="recent-grid" id="viewed-grid"></div>
+          <div class="error" id="history-error" role="alert"></div>
+          <p class="note" id="viewed-empty" hidden>
+            Models you open on MakerWorld, Printables, Thingiverse and the other sites Grab runs on show up here.
+          </p>
         </div>
-        <div class="error" id="configured-error" role="alert"></div>
-      </section>
-
-      <form id="setup-form" class="form" hidden>
-        <p class="form__intro">Connect to your Thingport instance to import models with one click.</p>
-        <label class="form__label" for="instance-url">Thingport instance URL</label>
-        <input class="form__input" type="url" id="instance-url" placeholder="https://thingport.example.com" required />
-        <label class="form__label" for="email">Email</label>
-        <input class="form__input" type="email" id="email" autocomplete="username" required />
-        <label class="form__label" for="password">Password</label>
-        <input class="form__input" type="password" id="password" autocomplete="current-password" required />
-        <p class="note">
-          If you're logged into MakerWorld in this browser, Thingport Grab reads your MakerWorld session cookie locally
-          to import from it -- it's sent only to the instance URL above, never anywhere else.
-        </p>
-        <button type="submit" class="btn" id="save-btn">Save</button>
-        <button type="button" class="btn btn--secondary" id="cancel-btn" hidden>Cancel</button>
-        <div class="sso" id="sso-block" hidden>
-          <div class="sso__divider">or</div>
-          <button type="button" class="btn btn--secondary" id="sso-btn">Sign in with single sign-on</button>
-          <p class="note">Opens Thingport to approve this browser. No password is saved in the extension.</p>
-        </div>
-        <p class="note" id="sso-pending" hidden>Finish connecting in the Thingport tab that just opened.</p>
-        <div class="error" id="error" role="alert"></div>
-      </form>
+      </div>
     </main>
+
+    <dialog class="dialog" id="disconnect-dialog" aria-labelledby="disconnect-title" aria-describedby="disconnect-text">
+      <h2 class="dialog__title" id="disconnect-title">Disconnect from Thingport?</h2>
+      <p class="dialog__text" id="disconnect-text"></p>
+      <div class="dialog__actions">
+        <button type="button" class="btn btn--secondary" id="disconnect-cancel" autofocus>Cancel</button>
+        <button type="button" class="btn btn--danger" id="disconnect-confirm">Disconnect</button>
+      </div>
+    </dialog>
 
     <footer class="footer">
       <a class="footer__link" href="https://thingport.net" target="_blank" rel="noopener noreferrer">thingport.net</a>

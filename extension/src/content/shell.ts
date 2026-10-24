@@ -1,6 +1,9 @@
 // Shadow-rooted host for all in-page UI, isolated from the provider page's styles.
 
 import { createIcon } from "../shared/icon";
+import { send } from "../shared/messages";
+import { dressMark } from "../shared/seasonalMark";
+import { attachMagnet } from "./magnet";
 import css from "./styles/content.scss?inline";
 
 const HOST_ID = "thingport-grab-host";
@@ -44,9 +47,30 @@ export function mountFab(root: ShadowRoot, { variant, label, title, onClick }: F
   button.className = variant ? `tg-fab tg-fab--${variant}` : "tg-fab";
   button.setAttribute("aria-label", label);
   if (title) button.title = title;
-  button.appendChild(createIcon());
+  // The button stays put as the hit area; its body leans toward the pointer (see magnet.ts), the blob behind the
+  // icon stretching as it goes.
+  const body = document.createElement("span");
+  body.className = "tg-fab__body";
+  const blob = document.createElement("span");
+  blob.className = "tg-fab__blob";
+  // The icon and, on its days, its seasonal edition over it (see shared/seasonalMark.ts).
+  const mark = document.createElement("span");
+  mark.className = "tg-fab__mark";
+  mark.append(createIcon());
+  body.append(blob, mark);
+  void send("GET_SEASONAL_ICON").then(
+    (res) => {
+      if (res?.ok) dressMark(mark, res.data, "tg-fab__season");
+    },
+    () => undefined,
+  );
+  button.appendChild(body);
   button.addEventListener("click", onClick);
   root.appendChild(button);
+  attachMagnet(button, body, {
+    paused: () => Boolean(panelEl && !panelEl.hidden),
+    dodges: () => "dodge" in mark.dataset,
+  });
 }
 
 /** `onFirstOpen` runs once. Returns the toggle for the icon's click handler. */

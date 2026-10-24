@@ -2,6 +2,9 @@
 // `{ ok, data } | { ok: false, error }` envelope: `send` returns it, `request` throws on error.
 
 import type { Print, QueueImportResult } from "./api";
+import type { SeasonalIcon } from "./seasonalMark";
+import type { OfflineFeature } from "./storage";
+import type { Provider } from "./urls";
 
 export type ExtensionState = {
   configured: boolean;
@@ -12,6 +15,8 @@ export type ExtensionState = {
   email: string;
   /** Connected by approving Grab in Thingport, not with a saved password. */
   connectedByApproval: boolean;
+  /** Work without a Thingport instance. */
+  offlineFeatures: Record<OfflineFeature, boolean>;
 };
 
 /** Whether the saved instance URL, email and password still sign in. */
@@ -47,7 +52,20 @@ export type RecentImport = {
   printId: string;
   title: string | null;
   url: string;
-  thumbDataUrl: string | null;
+  /** The provider's own picture, or Thingport's thumbnail as a data URL. */
+  image: string | null;
+  /** Where it was imported from; null for older entries. */
+  provider: Provider | null;
+};
+
+/** A model page the user opened on a provider site (see background/recentlyViewed.ts). */
+export type ViewedModel = {
+  provider: Provider;
+  url: string;
+  title: string | null;
+  /** The provider's own image URL, loaded straight from it. */
+  image: string | null;
+  viewedAt: number;
 };
 
 /** See content/makerworld/downloadResolver.ts. */
@@ -106,9 +124,18 @@ export type BackgroundMessages = {
   GET_STATE: { payload: void; result: ExtensionState };
   SAVE_CONFIG: { payload: { instanceUrl: string; email: string; password: string }; result: null };
   SET_DISABLED: { payload: { disabled: boolean }; result: null };
+  /** Forgets the Thingport connection. `approvalKept`: still listed in the user's Thingport profile. */
+  DISCONNECT: { payload: void; result: { approvalKept: boolean } };
+  SET_OFFLINE_FEATURE: { payload: { feature: OfflineFeature; enabled: boolean }; result: null };
   /** Opens Thingport to approve this browser's Grab; it finishes in the background once approved. */
   START_PAIRING: { payload: { instanceUrl: string }; result: null };
   GET_RECENT_IMPORTS: { payload: void; result: RecentImport[] };
+  /** Today's edition of the icon, for the floating icon; null on an ordinary day. */
+  GET_SEASONAL_ICON: { payload: void; result: SeasonalIcon | null };
+  /** The provider is read from the address. */
+  RECORD_VIEWED_MODEL: { payload: Pick<ViewedModel, "url" | "title" | "image">; result: null };
+  GET_RECENTLY_VIEWED: { payload: void; result: ViewedModel[] };
+  CLEAR_RECENTLY_VIEWED: { payload: void; result: null };
   CHECK_CONNECTION: { payload: void; result: Connection };
   /** Printables' session token, which the page itself can't read. Null when signed out. */
   GET_PRINTABLES_TOKEN: { payload: void; result: string | null };
