@@ -26,6 +26,7 @@ describe("hostIs", () => {
   it("matches the domain and its subdomains, in any case", () => {
     expect(hostIs("makerworld.com", "makerworld.com")).toBe(true);
     expect(hostIs("www.makerworld.com", "makerworld.com")).toBe(true);
+    expect(hostIs("attacker.makerworld.com", "makerworld.com")).toBe(true);
     expect(hostIs("MakerWorld.com", "makerworld.com")).toBe(true);
   });
 
@@ -111,7 +112,17 @@ describe("importing with a stored MakerWorld cookie", () => {
     }
   });
 
-  it("still sends it to makerworld.com and its subdomains", async () => {
+  it("rejects arbitrary MakerWorld subdomains before sending the saved cookie", async () => {
+    const calls = stubFetch();
+    await request(app)
+      .post("/api/import")
+      .set({ Authorization: `Bearer ${token}` })
+      .send({ url: "https://attacker.makerworld.com/en/models/123" });
+
+    expect(calls).toEqual([]);
+  });
+
+  it("still sends it to makerworld.com and www.makerworld.com", async () => {
     for (const host of ["makerworld.com", "www.makerworld.com"]) {
       const calls = stubFetch();
       await request(app)

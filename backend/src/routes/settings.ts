@@ -744,10 +744,8 @@ const MAKERWORLD_UNVERIFIABLE_MESSAGES: Record<
   Extract<MakerworldCookieCheck, { result: "unverifiable" }>["reason"],
   string
 > = {
-  cloudflare_no_flaresolverr:
-    "Couldn't check this cookie: MakerWorld's Cloudflare protection blocked the request and FlareSolverr isn't configured. Set its URL in Administration → Connections and try again.",
-  flaresolverr_failed:
-    "Couldn't check this cookie: MakerWorld's Cloudflare protection blocked the request and FlareSolverr didn't get past it. Make sure FlareSolverr is running and reachable at the URL set in Administration → Connections, then try again.",
+  provider:
+    "Couldn't check this cookie: MakerWorld's verification service is unavailable or returned an unexpected response. Try again later.",
   network:
     "Couldn't check this cookie: MakerWorld didn't respond. Check this server's internet connection and try again.",
 };

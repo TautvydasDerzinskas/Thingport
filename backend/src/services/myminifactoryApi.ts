@@ -1,4 +1,5 @@
 import { IMPORT_TIMEOUT_SECONDS } from "../config";
+import { assertCredentialDestination, browserCredentialRequest } from "../providers/credentialRequest";
 import { browserFetch } from "../utils/browserFetch";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "./importResolvers";
 import { htmlToMarkdown } from "./descriptionMarkdown";
@@ -104,7 +105,10 @@ export function myminifactoryObjectUrl(objectId: string): string {
 
 async function fetchApi(path: string, apiKey: string): Promise<{ ok: boolean; status: number; data: unknown }> {
   const url = `${API_BASE}${path}${path.includes("?") ? "&" : "?"}key=${encodeURIComponent(apiKey)}`;
-  let res = await browserFetch(url, { headers: { Accept: "application/json" }, timeoutMs: API_TIMEOUT_MS });
+  let res = await browserCredentialRequest("myminifactory-api", url, {
+    headers: { Accept: "application/json" },
+    timeoutMs: API_TIMEOUT_MS,
+  });
   let viaBrowser = false;
   if ((res.status === 429 || res.status === 403) && looksLikeCloudflareBlock(res.headers)) {
     const solved = await fetchViaFlaresolverr(url);
@@ -311,7 +315,9 @@ export class MyminifactorySessionExpiredError extends Error {
 /** A request the site's own pages make with the user's session. A redirect to the login page means it's no longer
  *  accepted. */
 async function sessionFetch(path: string, cookie: string): Promise<Response> {
-  const res = await browserFetch(`${MYMINIFACTORY_ORIGIN}${path}`, {
+  const url = `${MYMINIFACTORY_ORIGIN}${path}`;
+  assertCredentialDestination("myminifactory-session", url);
+  const res = await browserFetch(url, {
     headers: { Cookie: cookie, Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
     redirect: "manual",
     timeoutMs: API_TIMEOUT_MS,

@@ -1,4 +1,5 @@
 import { IMPORT_TIMEOUT_SECONDS } from "../config";
+import { assertCredentialDestination, credentialRequest } from "../providers/credentialRequest";
 import { sleep } from "../utils/concurrency";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "./importResolvers";
 import type { ProviderCollectionCard } from "./providerCollectionCard";
@@ -230,7 +231,7 @@ async function postGraphql(
   variables: Record<string, unknown>,
 ): Promise<Response> {
   const auth = Buffer.from(`${credentials.nick}:${credentials.apiKey}`).toString("base64");
-  return fetch(GRAPHQL_URL, {
+  return credentialRequest("cults3d-api", GRAPHQL_URL, {
     method: "POST",
     headers: { Accept: "application/json", "Content-Type": "application/json", Authorization: `Basic ${auth}` },
     body: JSON.stringify({ query, variables }),
@@ -486,6 +487,7 @@ async function fetchSite(
   browser: Cults3dBrowser,
   { method = "GET", body, referer }: { method?: "GET" | "POST"; body?: string; referer?: string } = {},
 ): Promise<Response> {
+  assertCredentialDestination("cults3d-session", url);
   const cookie = [`_session_id=${browser.session}`, browser.clearance ? `cf_clearance=${browser.clearance}` : null]
     .filter(Boolean)
     .join("; ");

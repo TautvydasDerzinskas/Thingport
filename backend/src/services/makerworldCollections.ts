@@ -1,4 +1,5 @@
 import { IMPORT_BROWSER_USER_AGENT, IMPORT_TIMEOUT_SECONDS } from "../config";
+import { credentialRequest } from "../providers/credentialRequest";
 import {
   extractJsonFromBrowserBody,
   fetchViaFlaresolverr,
@@ -80,11 +81,15 @@ async function fetchCollectionJson(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), IMPORT_TIMEOUT_SECONDS * 1000);
   try {
-    const res = await fetch(url, {
-      headers: collectionHeaders(bearerToken),
-      redirect: "follow",
-      signal: controller.signal,
-    });
+    const res = await credentialRequest(
+      url.startsWith(BAMBU_DESIGN_API_BASE) ? "makerworld-cloud" : "makerworld-page",
+      url,
+      {
+        headers: collectionHeaders(bearerToken),
+        redirect: "follow",
+        signal: controller.signal,
+      },
+    );
     // Cloudflare's 403 isn't MakerWorld turning the login down, which would pause the user's syncs.
     if (res.status === 403 && looksLikeCloudflareBlock(res.headers)) {
       if (!(await isFlaresolverrEnabled())) throw new MakerworldCollectionFetchError("blocked by Cloudflare");

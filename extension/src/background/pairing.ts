@@ -5,7 +5,7 @@
 
 import type { LoginResult } from "../shared/api";
 import { STORAGE_KEYS, apiUrl, normalizeInstanceUrl, type PendingPairing } from "../shared/storage";
-import { storeApprovedConnection } from "./api";
+import { fetchInstance, storeApprovedConnection } from "./api";
 import { getStoredConfig } from "./config";
 
 // Long enough to sign in through a provider on the way.
@@ -69,7 +69,7 @@ async function errorDetail(res: Response): Promise<string> {
 }
 
 async function claim(pending: PendingPairing, code: string): Promise<void> {
-  const res = await fetch(apiUrl(pending.instanceUrl, "/grab/pairings/claim"), {
+  const res = await fetchInstance(apiUrl(pending.instanceUrl, "/grab/pairings/claim"), {
     method: "POST",
     headers: { "X-Thingport-Client": "grab", "Content-Type": "application/json" },
     body: JSON.stringify({ code, verifier: pending.verifier }),

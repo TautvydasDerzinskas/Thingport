@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { prisma } from "../src/db";
+
+vi.mock("../src/services/settingsService", () => ({
+  getFlaresolverrUrl: async () => "http://fake-flaresolverr.test/v1",
+}));
 
 const ACCESS_TOKEN = "test-access-token";
 const FLARESOLVERR_URL = "http://fake-flaresolverr.test/v1";
@@ -8,15 +11,6 @@ function cloudflareChallengeResponse(): Response {
   return new Response("<!doctype html><html><body>Just a moment...</body></html>", {
     status: 429,
     headers: { server: "cloudflare", "cf-mitigated": "challenge", "content-type": "text/html" },
-  });
-}
-
-/** FlareSolverr's Chrome renders JSON inside its JSON-viewer <pre>. */
-function flaresolverrEnvelope(thingJson: unknown): Response {
-  const rendered = `<html><head></head><body><pre>${JSON.stringify(thingJson)}</pre></body></html>`;
-  return new Response(JSON.stringify({ status: "ok", solution: { status: 200, response: rendered } }), {
-    status: 200,
-    headers: { "content-type": "application/json" },
   });
 }
 
@@ -32,9 +26,7 @@ describe("fetchThingiverseApiJson FlareSolverr fallback", () => {
     vi.resetModules();
   });
 
-  it("solves a Cloudflare challenge via FlareSolverr, then reuses the proxy for later calls to the same host", async () => {
-    // config.ts reads this on first import, hence the dynamic import below. A saved setting would override it.
-    await prisma.setting.deleteMany({ where: { key: "flaresolverr_url" } });
+  it("does not send the API access token to browser navigation when Cloudflare blocks the API", async () => {
     process.env.FLARESOLVERR_URL = FLARESOLVERR_URL;
     vi.resetModules();
     const { resolveThingiverseThing } = await import("../src/services/thingiverseApi");
@@ -45,7 +37,7 @@ describe("fetchThingiverseApiJson FlareSolverr fallback", () => {
       const url = String(input);
       if (url.startsWith(FLARESOLVERR_URL)) {
         flaresolverrCalls++;
-        return flaresolverrEnvelope({ name: "Rate Limited Thing", zip_data: { files: [], images: [] } });
+        throw new Error("Credential-bearing URLs must not reach the solver");
       }
       if (url.startsWith("https://api.thingiverse.com/")) {
         directCalls++;
@@ -54,15 +46,9 @@ describe("fetchThingiverseApiJson FlareSolverr fallback", () => {
       throw new Error(`Unexpected fetch: ${url}`);
     }) as unknown as typeof fetch;
 
-    const first = await resolveThingiverseThing("999", ACCESS_TOKEN);
-    expect(first?.meta.title).toBe("Rate Limited Thing");
-    expect(directCalls).toBe(1);
-    expect(flaresolverrCalls).toBe(1);
-
-    // The host just challenged us, so this call should go straight through FlareSolverr.
-    const second = await resolveThingiverseThing("1000", ACCESS_TOKEN);
-    expect(second?.meta.title).toBe("Rate Limited Thing");
-    expect(directCalls).toBe(1);
-    expect(flaresolverrCalls).toBe(2);
+    await expect(resolveThingiverseThing("999", ACCESS_TOKEN)).rejects.toThrow(/Cloudflare/);
+    await expect(resolveThingiverseThing("1000", ACCESS_TOKEN)).rejects.toThrow(/Cloudflare/);
+    expect(directCalls).toBe(2);
+    expect(flaresolverrCalls).toBe(0);
   });
 });

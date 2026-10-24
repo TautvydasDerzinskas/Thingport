@@ -52,18 +52,6 @@ export function looksLikeCloudflareBlock(headers: Headers): boolean {
   return isCloudflareChallenge(headers);
 }
 
-function parseCookieHeader(raw: string | null | undefined): Record<string, string> {
-  const jar: Record<string, string> = {};
-  for (const part of (raw || "").split(";")) {
-    const trimmed = part.trim();
-    if (!trimmed) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    jar[trimmed.slice(0, eq)] = trimmed.slice(eq + 1);
-  }
-  return jar;
-}
-
 // Cloudflare's clearance is bound to the solving browser's fingerprint, so its cookies can't be
 // replayed. Once a host blocks us, proxy every request to it for a TTL.
 const proxyHosts = new Map<string, number>();
@@ -82,34 +70,77 @@ export type FlaresolverrResult = {
   body: string;
 };
 
+// A browser can follow redirects and execute scripts outside our HTTP destination guard.
+// Only known provider read endpoints may enter it; a forged Cloudflare response is not trust.
+// Deployment must still isolate the solver from private networks: trusted pages can redirect
+// or load third-party resources, and this allowlist cannot constrain browser subrequests.
+function solverDestination(url: string): URL | null {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== "https:" || parsed.port || parsed.username || parsed.password) return null;
+  const routes: Record<string, { path: RegExp; query: string[] }> = {
+    "makerworld.com": {
+      path: /^(?:\/[a-z]{2}\/models\/\d+(?:-[\w-]+)?\/?|\/api\/v1\/models?\/\d+(?:\/files|\/download)?|\/api\/v1\/design-service\/instance\/\d+\/f3mf|\/api\/v1\/design-service\/favorites\/\d+(?:\/designs)?|\/api\/v1\/design-user-service\/user\/profile\/[\w-]+)$/,
+      query: ["type", "fileType", "seed", "collectionId", "limit", "offset"],
+    },
+    "api.thingiverse.com": {
+      path: /^\/(?:things\/\d+(?:\/categories)?|users\/[\w-]+(?:\/likes|\/collections)?|collections\/\d+(?:\/things)?|popular)$/,
+      query: ["page", "per_page"],
+    },
+    "www.thingiverse.com": { path: /^\/thing:\d+\/?$/, query: [] },
+    "www.printables.com": { path: /^(?:\/[a-z]{2})?\/model\/\d+(?:-[\w-]+)?\/?$/, query: [] },
+    "www.myminifactory.com": {
+      path: /^\/(?:object\/3d-print-[\w-]+|api\/v2\/(?:objects\/\d+|users\/[\w-]+(?:\/collections(?:\/[\w-]+)?)?|search))$/,
+      query: ["q", "sort", "page", "per_page"],
+    },
+    "thangs.com": {
+      path: /^\/(?:m\/\d+|designer\/[\w-]+\/3d-model\/[\w-]+|api\/(?:models\/v2\/\d+|users\/v4\/[\w-]+\/likes|collections\/\d+|landing\/models\/v8\/root))$/,
+      query: ["likes", "page", "pageSize", "sortBy", "costType", "showContent", "category", "tags", "range", "sortDir"],
+    },
+    "cults3d.com": { path: /^\/[a-z]{2}\/3d-model\/[\w-]+\/[\w-]+\/?$/, query: [] },
+  };
+  const rule = routes[parsed.hostname];
+  if (!rule || !rule.path.test(parsed.pathname)) return null;
+  // In particular, never forward Thingiverse access_token or MyMiniFactory key:
+  // URL credentials have the same uncontrolled browser redirect risk as cookies.
+  for (const [key, value] of parsed.searchParams) {
+    if (!rule.query.includes(key) || parsed.searchParams.getAll(key).length !== 1) return null;
+    if (!/^[\w -]*$/.test(value)) return null;
+  }
+  // Fragments are unnecessary for these read endpoints and may drive client-side navigation.
+  parsed.hash = "";
+  return parsed;
+}
+
 /** GET only: FlareSolverr's POST submits a browser form, not a raw body. */
 export async function fetchViaFlaresolverr(
   url: string,
   cookieHeader?: string | null,
 ): Promise<FlaresolverrResult | null> {
+  // Browser navigation cannot enforce our credential destination checks on redirects.
+  if (cookieHeader) return null;
+  const parsed = solverDestination(url);
+  if (!parsed) return null;
   const endpoint = await getFlaresolverrUrl();
   if (!endpoint) return null;
-  let hostname: string;
-  try {
-    hostname = new URL(url).hostname.toLowerCase();
-  } catch {
-    return null;
-  }
+  const hostname = parsed.hostname;
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FLARESOLVERR_TIMEOUT_MS);
   try {
-    const seedCookies = parseCookieHeader(cookieHeader);
-    const cookieList = Object.entries(seedCookies).map(([name, value]) => ({ name, value, domain: hostname }));
     const body: Record<string, unknown> = {
       cmd: "request.get",
-      url,
+      url: parsed.href,
       maxTimeout: FLARESOLVERR_TIMEOUT_MS,
     };
-    if (cookieList.length) body.cookies = cookieList;
 
     const res = await fetch(endpoint, {
       method: "POST",
+      redirect: "error",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
       signal: controller.signal,

@@ -24,5 +24,6 @@ jobs:
           go-version-file: bridge/go.mod
       - run: npm ci
       - run: npx prettier --check .
+      - run: npm run providers:security:check
       - name: gofmt
         run: test -z "$(gofmt -l bridge)" || { gofmt -l bridge; exit 1; }

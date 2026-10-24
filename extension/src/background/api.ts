@@ -37,6 +37,37 @@ export class LoginRejectedError extends Error {
 // A JWT outlives a password change, so only signing in proves the saved password still works.
 const CONNECTION_RECHECK_MS = 10 * 60 * 1000;
 
+/** A provider session or Thingport token must not be replayed to a redirect target. */
+export async function fetchInstance(url: string, init: RequestInit): Promise<Response> {
+  let current = new URL(url);
+  const request = { ...init, redirect: "manual" as const };
+  for (let hop = 0; hop < 5; hop++) {
+    const res = await fetch(current.href, request);
+    if (res.type === "opaqueredirect") throw new Error("Thingport instance redirected a credential-bearing request");
+    const location = res.headers.get("location");
+    if (![301, 302, 303, 307, 308].includes(res.status) || !location) return res;
+    let next: URL;
+    try {
+      next = new URL(location, current);
+    } finally {
+      await res.body?.cancel().catch(() => undefined);
+    }
+    if (next.origin !== current.origin) throw new Error("Thingport instance redirected a credential-bearing request");
+    if (
+      res.status === 303 ||
+      ((res.status === 301 || res.status === 302) && request.method?.toUpperCase() === "POST")
+    ) {
+      const headers = new Headers(request.headers);
+      headers.delete("content-type");
+      request.method = "GET";
+      request.body = undefined;
+      request.headers = headers;
+    }
+    current = next;
+  }
+  throw new Error("Thingport instance redirected too many times");
+}
+
 /** Mirrored on the toolbar icon, so a broken connection shows before the user reaches a provider. */
 function setConnectionBadge(connected: boolean): void {
   void chrome.action.setBadgeText({ text: connected ? "" : "!" }).catch(() => undefined);
@@ -46,15 +77,18 @@ function setConnectionBadge(connected: boolean): void {
 /** Also called once on a 401, so a password change doesn't require reopening the popup. A connection made by
  *  approval trades its token for a session instead. */
 export async function loginAndStoreToken(credentials: Credentials): Promise<string> {
-  const res = await fetch(apiUrl(credentials.instanceUrl, credentials.connectionToken ? "/grab/session" : "/login"), {
-    method: "POST",
-    headers: { ...CLIENT_HEADERS, "Content-Type": "application/json" },
-    body: JSON.stringify(
-      credentials.connectionToken
-        ? { connection_token: credentials.connectionToken }
-        : { email: credentials.email, password: credentials.password },
-    ),
-  });
+  const res = await fetchInstance(
+    apiUrl(credentials.instanceUrl, credentials.connectionToken ? "/grab/session" : "/login"),
+    {
+      method: "POST",
+      headers: { ...CLIENT_HEADERS, "Content-Type": "application/json" },
+      body: JSON.stringify(
+        credentials.connectionToken
+          ? { connection_token: credentials.connectionToken }
+          : { email: credentials.email, password: credentials.password },
+      ),
+    },
+  );
   if (!res.ok) {
     const detail = await errorDetail(res, `Could not sign in to this Thingport instance (${res.status})`);
     throw res.status === 401 || res.status === 403 ? new LoginRejectedError(detail) : new Error(detail);
@@ -179,7 +213,7 @@ export async function apiCall<T = unknown>(method: string, path: string, body?: 
   }
 
   const doFetch = (token: string) =>
-    fetch(apiUrl(config.instanceUrl, path), {
+    fetchInstance(apiUrl(config.instanceUrl, path), {
       method,
       headers: {
         ...CLIENT_HEADERS,
@@ -197,7 +231,7 @@ export async function apiCall<T = unknown>(method: string, path: string, body?: 
 }
 
 export async function apiFetchBlob(config: ConfiguredConfig, path: string): Promise<Blob | null> {
-  const res = await fetch(apiUrl(config.instanceUrl, path), {
+  const res = await fetchInstance(apiUrl(config.instanceUrl, path), {
     headers: { ...CLIENT_HEADERS, Authorization: `Bearer ${await ensureToken(config)}` },
   });
   return res.ok ? res.blob() : null;
@@ -236,7 +270,7 @@ export async function disconnect(): Promise<{ approvalKept: boolean }> {
   let approvalKept = false;
   if (config.instanceUrl) {
     const post = (path: string, init: RequestInit = {}) =>
-      fetch(apiUrl(config.instanceUrl!, path), {
+      fetchInstance(apiUrl(config.instanceUrl!, path), {
         method: "POST",
         ...init,
         headers: { ...CLIENT_HEADERS, "Content-Type": "application/json", ...init.headers },

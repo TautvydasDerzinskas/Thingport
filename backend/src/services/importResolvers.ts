@@ -1,3 +1,4 @@
+import { remoteRequest } from "../utils/remoteRequest";
 import path from "node:path";
 import * as cheerio from "cheerio";
 import {
@@ -10,6 +11,7 @@ import {
 } from "../config";
 import { isJsonContentType } from "../utils/fileUtils";
 import { hostIs } from "../utils/urlUtils";
+import { assertCredentialDestination, credentialRequest } from "../providers/credentialRequest";
 import { htmlToMarkdown } from "./descriptionMarkdown";
 import { decodeHtmlEntities } from "../utils/htmlEntities";
 import {
@@ -100,13 +102,15 @@ async function rawFetchBuffer(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), IMPORT_TIMEOUT_SECONDS * 1000);
   try {
-    const res = await fetch(url, {
+    const request: RequestInit = {
       method: init?.method || "GET",
       headers,
       body: init?.body,
-      redirect: "follow",
       signal: controller.signal,
-    });
+    };
+    const res = await (headers.Cookie
+      ? credentialRequest("makerworld-page", url, request)
+      : remoteRequest(url, request));
     const arrayBuf = await res.arrayBuffer();
     const buffer = Buffer.from(arrayBuf);
     return { status: res.status, headers: res.headers, buffer, url: res.url || url };
@@ -123,6 +127,7 @@ async function proxiedBuffer(
   url: string,
   cookieHeader?: string | null,
 ): Promise<{ status: number; headers: Headers; buffer: Buffer; url: string } | null> {
+  if (cookieHeader) assertCredentialDestination("makerworld-page", url);
   const solved = await fetchViaFlaresolverr(url, cookieHeader);
   if (!solved) return null;
   const json = extractJsonFromBrowserBody(solved.body);
