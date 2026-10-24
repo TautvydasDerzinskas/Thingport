@@ -1,6 +1,23 @@
+import fs from "node:fs";
 import type { Server } from "node:http";
+import os from "node:os";
+import { join } from "node:path";
 import { Test } from "supertest";
 import { vi } from "vitest";
+
+// backend/.env is the dev instance's: its database, its storage folder and its FlareSolverr. config.ts loads it, but
+// never over a variable already set, so the suite sets its own first. The database has to be given, as CI does: the
+// suite registers accounts and deletes rows. An empty FLARESOLVERR_URL counts as set, so .env's stays out.
+if (!process.env.DATABASE_URL) {
+  throw new Error(
+    "Set DATABASE_URL to a test database (see docs/DEVELOPMENT.md): the one in backend/.env is the dev instance's.",
+  );
+}
+const storage = process.env.FILE_STORAGE || join(os.tmpdir(), "thingport-test-storage");
+fs.mkdirSync(storage, { recursive: true });
+// By its real path: services compare the real paths of what they move, and macOS's temp folders are behind links.
+process.env.FILE_STORAGE = fs.realpathSync(storage);
+process.env.FLARESOLVERR_URL ??= "";
 
 // supertest's request(app) listens on port 0 on every interface, then connects to 127.0.0.1 on the
 // port it got. On macOS a wildcard bind succeeds even when another program already holds that port
