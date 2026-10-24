@@ -1,7 +1,9 @@
 // The popup's "Recent imports" strip. The list is in the browser's sync storage, so it follows the
-// user to their other browsers and devices. Each shows the provider's own picture of the model, as its page showed it
-// (see recentlyViewed.ts); without one, Thingport's thumbnail, which is too big for the sync quota, so each browser
-// caches its own in local storage. Entries reflect the model as it was when imported.
+// user to their other browsers and devices, one item per import: a sync item holds 8 KB at most, which a list of
+// them with long titles and addresses could outgrow, while one is far short of it. Each shows the provider's own
+// picture of the model, as its page showed it (see recentlyViewed.ts); without one, Thingport's thumbnail, which is
+// too big for the sync quota, so each browser caches its own in local storage. Entries reflect the model as it was
+// when imported.
 
 import type { Print } from "../shared/api";
 import type { RecentImport } from "../shared/messages";
@@ -11,12 +13,17 @@ import { apiFetchBlob } from "./api";
 import { getStoredConfig, isConfigured, type ConfiguredConfig } from "./config";
 import { getRecentlyViewed } from "./recentlyViewed";
 
+/** The whole list used to be this one sync item (and, up to 1.3.0, a local one: see migrateLegacy). */
 const RECENT_IMPORTS_STORAGE_KEY = "recentImports";
+/** Then `recentImport:<account>:<printId>` per import. */
+const ITEM_PREFIX = "recentImport:";
 const THUMBS_STORAGE_KEY = "recentImportThumbs";
+/** Shown per account; twice as many are kept overall, shared by every account synced. */
 const RECENT_IMPORTS_KEPT = 5;
 const RECENT_IMPORT_THUMB_PX = 96;
-// The whole list is one sync item, capped at 8 KB: longer picture addresses are left out.
-const PROVIDER_IMAGE_MAX_CHARS = 400;
+// Each well short of a sync item's 8 KB, with room for what else an entry holds.
+const TITLE_MAX_CHARS = 200;
+const ADDRESS_MAX_CHARS = 2000;
 
 /** No email: the account is a hash of instance + email, so sync never carries the address. */
 type SyncedRecentImport = {
@@ -29,6 +36,8 @@ type SyncedRecentImport = {
   sourceUrl?: string | null;
   /** The provider's picture of the model, as its page showed it. */
   providerImage?: string | null;
+  /** When it was imported, newest first. Entries from the single-item list sort behind every newer one. */
+  importedAt?: number;
 };
 
 /** Up to 1.3.0 the list, thumbnails included, lived in local storage only. */
@@ -47,6 +56,10 @@ async function accountKey(config: ConfiguredConfig): Promise<string> {
 function thumbKey(entry: Pick<SyncedRecentImport, "account" | "printId">): string {
   return `${entry.account}:${entry.printId}`;
 }
+
+const itemKey = (entry: Pick<SyncedRecentImport, "account" | "printId">) => `${ITEM_PREFIX}${thumbKey(entry)}`;
+
+const capped = (text: string | null | undefined, max: number) => (text && text.length <= max ? text : null);
 
 async function readThumbs(): Promise<Record<string, string>> {
   const stored = await chrome.storage.local.get(THUMBS_STORAGE_KEY);
@@ -73,23 +86,40 @@ async function migrateLegacy(config: ConfiguredConfig): Promise<SyncedRecentImpo
   const thumbs = await readThumbs();
   for (const e of mine) if (e.thumbDataUrl) thumbs[thumbKey({ account, printId: e.printId })] = e.thumbDataUrl;
   const synced = await readSynced();
-  const merged = [...synced, ...list.filter((e) => !synced.some((s) => thumbKey(s) === thumbKey(e)))];
-  await chrome.storage.sync.set({ [RECENT_IMPORTS_STORAGE_KEY]: merged.slice(0, RECENT_IMPORTS_KEPT) });
+  const added = list.filter((e) => !synced.some((s) => thumbKey(s) === thumbKey(e)));
+  // Behind every timed entry, in the order they were listed.
+  await chrome.storage.sync.set(
+    Object.fromEntries(added.map((e, i) => [itemKey(e), { ...e, importedAt: added.length - i }])),
+  );
+  const merged = await readSynced();
   await writeThumbs(thumbs, merged);
   return merged;
 }
 
+/** Every account's entries, newest first. A single-item list, from before or a browser still on an older version,
+ *  is split into items here, its entries behind the newer ones. */
 async function readSynced(): Promise<SyncedRecentImport[]> {
-  const stored = await chrome.storage.sync.get(RECENT_IMPORTS_STORAGE_KEY);
-  return (stored[RECENT_IMPORTS_STORAGE_KEY] as SyncedRecentImport[] | undefined) ?? [];
+  const stored = await chrome.storage.sync.get(null);
+  const items = Object.entries(stored)
+    .filter(([key]) => key.startsWith(ITEM_PREFIX))
+    .map(([, value]) => value as SyncedRecentImport);
+  const old = stored[RECENT_IMPORTS_STORAGE_KEY] as SyncedRecentImport[] | undefined;
+  if (Array.isArray(old)) {
+    const known = new Set(items.map(thumbKey));
+    const added = old.filter((e) => !known.has(thumbKey(e)));
+    for (const [i, e] of added.entries()) e.importedAt = added.length - i;
+    await chrome.storage.sync.set(Object.fromEntries(added.map((e) => [itemKey(e), e])));
+    await chrome.storage.sync.remove(RECENT_IMPORTS_STORAGE_KEY);
+    items.push(...added);
+  }
+  return items.toSorted((a, b) => (b.importedAt ?? 0) - (a.importedAt ?? 0));
 }
 
 /** The picture the model's own page showed, if it was opened in this browser lately. */
 async function providerImageFor(sourceUrl: string): Promise<string | null> {
   const key = modelKey(sourceUrl);
   if (!key) return null;
-  const image = (await getRecentlyViewed()).find((viewed) => modelKey(viewed.url) === key)?.image ?? null;
-  return image && image.length <= PROVIDER_IMAGE_MAX_CHARS ? image : null;
+  return capped((await getRecentlyViewed()).find((viewed) => modelKey(viewed.url) === key)?.image, ADDRESS_MAX_CHARS);
 }
 
 /** `titleHint` covers zip imports, whose job reports only the id. Scoped to instance + account. */
@@ -101,18 +131,21 @@ export async function recordRecentImport(print: Print, titleHint: string | null,
   const providerImage = await providerImageFor(sourceUrl);
   const entry: SyncedRecentImport = {
     printId: print.id,
-    title: print.title || print.name || titleHint || null,
+    title: (print.title || print.name || titleHint || "").slice(0, TITLE_MAX_CHARS) || null,
     url: `${normalizeInstanceUrl(config.instanceUrl)}/models/${print.id}`,
-    thumbPath,
+    thumbPath: capped(thumbPath, ADDRESS_MAX_CHARS),
     account: await accountKey(config),
-    sourceUrl,
+    sourceUrl: capped(sourceUrl, ADDRESS_MAX_CHARS),
     providerImage,
+    importedAt: Date.now(),
   };
-  // Another profile of a listed model moves it to the front instead of adding a slot.
-  const rest = (await readSynced()).filter((e) => thumbKey(e) !== thumbKey(entry));
+  // Another profile of a listed model overwrites its item, which moves it to the front.
+  await chrome.storage.sync.set({ [itemKey(entry)]: entry });
   // Lists from other accounts share the slots; only the newest few overall are kept.
-  const list = [entry, ...rest].slice(0, RECENT_IMPORTS_KEPT * 2);
-  await chrome.storage.sync.set({ [RECENT_IMPORTS_STORAGE_KEY]: list });
+  const all = await readSynced();
+  const list = all.slice(0, RECENT_IMPORTS_KEPT * 2);
+  const dropped = all.slice(RECENT_IMPORTS_KEPT * 2).map(itemKey);
+  if (dropped.length) await chrome.storage.sync.remove(dropped);
   const thumbs = await readThumbs();
   const thumb = thumbPath && !providerImage ? await fetchThumbDataUrl(config, thumbPath).catch(() => null) : null;
   if (thumb) thumbs[thumbKey(entry)] = thumb;

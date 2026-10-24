@@ -63,7 +63,7 @@ function inner(overlay: string, suffix = ""): string {
 
 const box = ([x, y, width, height]: Box) => `x="${x}" y="${y}" width="${width}" height="${height}"`;
 
-/** The edition for `season` from its overlay's SVG, as an SVG document; `null` for a season without one. */
+/** The edition for `season` from its overlay's SVG, as an SVG document. A season with no prop gets no badge. */
 export function composeSeasonalMark(season: Season, overlay: string): string {
   const prop = season in PROPS ? PROPS[season] : PROP;
   const badge = prop
