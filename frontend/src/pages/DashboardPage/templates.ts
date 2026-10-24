@@ -13,6 +13,7 @@ import type {
   WidgetSettingValues,
 } from "../../api/settings";
 import { allowed, DASHBOARD_WIDGETS, widgetById, widgetOf, type ResolvedSettings } from "./widgets";
+import type { TrendingProvider } from "../../api/dashboard";
 
 /** Widest first; a breakpoint applies from its width up. Phones get one column, so panels simply stack. */
 export const BREAKPOINTS: { id: DashboardBreakpoint; minWidth: number; cols: number }[] = [
@@ -494,7 +495,7 @@ export const DASHBOARD_PRESETS: DashboardPreset[] = [
           "crealitycloud",
           "nexprint",
           "snapmaker",
-        ],
+        ] satisfies TrendingProvider[],
       },
       recentlyAdded: { count: "3" },
       topPrinted: { count: "3" },
@@ -568,7 +569,7 @@ export const DASHBOARD_PRESETS: DashboardPreset[] = [
     ],
     settings: {
       rss: BLOG,
-      trending: { providers: ["printables", "makerworld", "thingiverse"] },
+      trending: { providers: ["printables", "makerworld", "thingiverse"] satisfies TrendingProvider[] },
       launcher: LAUNCHER,
     },
   },

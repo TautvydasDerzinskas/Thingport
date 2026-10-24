@@ -17,6 +17,8 @@ import {
   selectCrealitycloudProfiles,
 } from "./api";
 import { CREALITYCLOUD_CONNECT, getUserCrealitycloudAuth, markCrealitycloudSessionRejected } from "./session";
+import type { ProviderTrending } from "../types";
+import { fetchCrealitycloudRecommended } from "./api";
 
 const SESSION_CODE = MANIFESTS.crealitycloud.errorCodes.session;
 const BLOCKED =
@@ -105,4 +107,8 @@ export const crealitycloudImport: SourcedImport<CrealitycloudAuth, Crealitycloud
       };
     },
   },
+};
+
+export const crealitycloudTrending: ProviderTrending = {
+  fetch: (_userId, limit) => fetchCrealitycloudRecommended(limit),
 };

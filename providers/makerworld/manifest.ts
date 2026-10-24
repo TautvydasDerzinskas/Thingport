@@ -17,7 +17,14 @@ export default {
   },
   signIn: "user",
   helpers: { grab: "recommended", flaresolverr: "optional" },
-  capabilities: { collections: true, likes: false, profiles: true, paidModels: false, categoryIds: "int" },
+  capabilities: {
+    collections: true,
+    likes: false,
+    profiles: true,
+    paidModels: false,
+    categoryIds: "int",
+    trending: { kind: "trending", moreUrl: "https://makerworld.com/en", rank: 2 },
+  },
   errorCodes: { session: "MAKERWORLD_AUTH", downloadLimit: "MAKERWORLD_DOWNLOAD_LIMIT" },
   extension: { site: "builtin", origins: ["*://*.makerworld.com/*"] },
 } as const satisfies ProviderManifest;

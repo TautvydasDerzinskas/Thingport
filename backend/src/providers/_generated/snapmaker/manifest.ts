@@ -22,7 +22,14 @@ export default {
   },
   signIn: "user",
   helpers: { grab: "recommended", flaresolverr: "none" },
-  capabilities: { collections: true, likes: true, profiles: true, paidModels: false, categoryIds: "int" },
+  capabilities: {
+    collections: true,
+    likes: true,
+    profiles: true,
+    paidModels: false,
+    categoryIds: "int",
+    trending: { kind: "featured", moreUrl: "https://space.snapmaker.com/", rank: 10 },
+  },
   errorCodes: { session: "snapmaker_session" },
   extension: { site: "optional", origins: ["*://space.snapmaker.com/*", "*://id.snapmaker.com/*"] },
 } as const satisfies ProviderManifest;

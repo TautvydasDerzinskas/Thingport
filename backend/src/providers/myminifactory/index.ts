@@ -17,6 +17,8 @@ import {
   resolveMyminifactoryObject,
 } from "./api";
 import { getUserMyminifactoryCookie, markMyminifactoryCookieRejected } from "./session";
+import type { ProviderTrending } from "../types";
+import { fetchMyminifactoryPopular } from "./api";
 
 const SESSION_CODE = MANIFESTS.myminifactory.errorCodes.session;
 const BLOCKED =
@@ -116,5 +118,13 @@ export const myminifactoryImport: SourcedImport<string, MyminifactoryObject> = {
     return anonymous?.kind === "file"
       ? downloadFile(anonymous.url, kit)
       : downloadFromLibrary(userId, externalId, object.paid, kit);
+  },
+};
+
+/** Read with the instance's API key. */
+export const myminifactoryTrending: ProviderTrending = {
+  async fetch(_userId, limit) {
+    const key = await getMyminifactoryApiKey();
+    return key ? fetchMyminifactoryPopular(limit, key) : "myminifactoryKey";
   },
 };

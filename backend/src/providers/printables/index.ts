@@ -2,6 +2,8 @@ import { HttpError } from "../../utils/fileUtils";
 import type { NewPlateInput } from "../../services/printCreation";
 import type { ResolvedModel, SourcedImport } from "../types";
 import { resolvePrintablesDownloadLinks, resolvePrintablesModel, type PrintablesPlateFile } from "./api";
+import type { ProviderTrending } from "../types";
+import { fetchPrintablesTrending } from "./api";
 
 type Model = ResolvedModel & { plateFiles: PrintablesPlateFile[] };
 
@@ -52,3 +54,5 @@ export const printablesImport: SourcedImport<null, Model> = {
     return downloaded;
   },
 };
+
+export const printablesTrending: ProviderTrending = { fetch: (_userId, limit) => fetchPrintablesTrending(limit) };

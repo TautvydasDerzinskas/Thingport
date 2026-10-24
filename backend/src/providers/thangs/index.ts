@@ -13,6 +13,8 @@ import {
   type ThangsModelResolution,
 } from "./api";
 import { getUserThangsToken, markThangsSessionRejected, THANGS_CONNECT, withThangsToken } from "./session";
+import type { ProviderTrending } from "../types";
+import { fetchThangsTrending } from "./api";
 
 const { session: SESSION_CODE, downloadLimit: DOWNLOAD_LIMIT_CODE } = MANIFESTS.thangs.errorCodes;
 const BLOCKED =
@@ -90,3 +92,5 @@ export const thangsImport: SourcedImport<null, ThangsModelResolution> = {
     return downloaded;
   },
 };
+
+export const thangsTrending: ProviderTrending = { fetch: (_userId, limit) => fetchThangsTrending(limit) };

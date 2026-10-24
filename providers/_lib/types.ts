@@ -50,6 +50,10 @@ export type ProviderManifest = {
     /** How a category keeps this site's category ids: numbers, or text where they don't fit one (NexPrint's are
      *  past Int, Thangs' are paths). */
     categoryIds: "int" | "text";
+    /** The list the dashboard's trending panel shows: its trending one, or the popular, featured or recommended one
+     *  standing in where it has none, and that list's page on the site. `rank` is its place among the panel's
+     *  providers. False for a provider with no such list. */
+    trending: false | { kind: "trending" | "popular" | "featured" | "recommended"; moreUrl: string; rank: number };
   };
   /** The codes of the errors the API answers with, which clients act on: never change them. `session` when the
    *  sign-in is missing or turned down, `downloadLimit` when the account's daily downloads are used up, `needsGrab`

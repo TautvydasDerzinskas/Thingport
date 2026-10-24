@@ -34,7 +34,14 @@ export default {
   },
   signIn: "user",
   helpers: { grab: "recommended", flaresolverr: "none" },
-  capabilities: { collections: true, likes: true, profiles: true, paidModels: false, categoryIds: "int" },
+  capabilities: {
+    collections: true,
+    likes: true,
+    profiles: true,
+    paidModels: false,
+    categoryIds: "int",
+    trending: { kind: "recommended", moreUrl: "https://www.crealitycloud.com/", rank: 8 },
+  },
   errorCodes: { session: "crealitycloud_session" },
   extension: { site: "optional", origins: ["*://*.crealitycloud.com/*"] },
 } as const satisfies ProviderManifest;

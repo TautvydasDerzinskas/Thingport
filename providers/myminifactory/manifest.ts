@@ -18,7 +18,14 @@ export default {
   },
   signIn: "adminUser",
   helpers: { grab: "optional", flaresolverr: "recommended" },
-  capabilities: { collections: true, likes: false, profiles: false, paidModels: true, categoryIds: "int" },
+  capabilities: {
+    collections: true,
+    likes: false,
+    profiles: false,
+    paidModels: true,
+    categoryIds: "int",
+    trending: { kind: "popular", moreUrl: "https://www.myminifactory.com/search/?sortBy=popularity", rank: 6 },
+  },
   errorCodes: { session: "myminifactory_session" },
   extension: { site: "optional", origins: ["*://*.myminifactory.com/*"] },
 } as const satisfies ProviderManifest;

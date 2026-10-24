@@ -5,6 +5,8 @@ import type { NewPlateInput } from "../../services/printCreation";
 import type { CustomImport, ImportKit } from "../types";
 import { MANIFESTS } from "../_generated";
 import { isMakeronlineFileHost, resolveMakeronlineModel } from "./api";
+import type { ProviderTrending } from "../types";
+import { fetchMakeronlineTrending } from "./api";
 
 /** A MakerOnline import that came without the signed file links only Thingport Grab can get. */
 const NEEDS_GRAB_CODE = MANIFESTS.makeronline.errorCodes.needsGrab;
@@ -69,3 +71,5 @@ export const makeronlineImport: CustomImport = {
     return kit.addProfiles(existing, inputs, model ? kit.profileDetails(model.profiles) : {});
   },
 };
+
+export const makeronlineTrending: ProviderTrending = { fetch: (_userId, limit) => fetchMakeronlineTrending(limit) };

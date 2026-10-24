@@ -13,7 +13,14 @@ export default {
   },
   signIn: "none",
   helpers: { grab: "optional", flaresolverr: "recommended" },
-  capabilities: { collections: true, likes: true, profiles: false, paidModels: false, categoryIds: "int" },
+  capabilities: {
+    collections: true,
+    likes: true,
+    profiles: false,
+    paidModels: false,
+    categoryIds: "int",
+    trending: { kind: "trending", moreUrl: "https://www.printables.com/model?ordering=trending", rank: 1 },
+  },
   errorCodes: {},
   extension: { site: "builtin", origins: ["*://*.printables.com/*"] },
 } as const satisfies ProviderManifest;

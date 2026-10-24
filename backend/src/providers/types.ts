@@ -11,6 +11,8 @@ import type {
   ProfileDetails,
 } from "../services/importService";
 import type { NewPlateInput } from "../services/printCreation";
+import type { TrendingSetup } from "../services/providerTrendingService";
+import type { TrendingModel } from "../services/trendingModel";
 
 /** A model as its provider describes it. */
 export type ResolvedModel = {
@@ -116,4 +118,12 @@ export type CustomImport = {
   ): Promise<ImportResult>;
   /** A re-import of a model already in the library. */
   addToExisting(existing: ExistingImportedPrint, body: ImportRequestBody, kit: PipelineKit): Promise<ImportResult>;
+};
+
+/** The list for the dashboard's trending panel (the manifest's capabilities.trending says which it is). */
+export type ProviderTrending = {
+  /** Up to `limit` models, or the setup it can't be read without (an admin's token or key, or the user's own). */
+  fetch(userId: string, limit: number): Promise<TrendingModel[] | TrendingSetup>;
+  /** Read with each user's own key, so one user's list isn't kept for the others. */
+  perUser?: boolean;
 };

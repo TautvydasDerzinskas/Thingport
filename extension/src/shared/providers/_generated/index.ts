@@ -66,6 +66,21 @@ export const MANIFESTS = {
   cults3d,
 } as const;
 
+/** The providers with a list for the dashboard's trending panel, in the panel's order. */
+export const TRENDING_PROVIDER_IDS = [
+  "printables",
+  "makerworld",
+  "thangs",
+  "makeronline",
+  "thingiverse",
+  "myminifactory",
+  "cults3d",
+  "crealitycloud",
+  "nexprint",
+  "snapmaker",
+] as const;
+export type TrendingProviderId = (typeof TRENDING_PROVIDER_IDS)[number];
+
 export const URLS: { readonly [K in ProviderId]: ProviderUrls } = {
   makerworld: makerworldUrls,
   printables: printablesUrls,

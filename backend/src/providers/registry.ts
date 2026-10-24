@@ -3,16 +3,17 @@
 
 import type { Category } from "@prisma/client";
 import { MANIFESTS, PROVIDER_IDS, type ProviderId, type ProviderManifest } from "./_generated";
-import { crealitycloudImport } from "./crealitycloud";
-import { cults3dImport } from "./cults3d";
-import { makeronlineImport } from "./makeronline";
-import { myminifactoryImport } from "./myminifactory";
-import { nexprintImport } from "./nexprint";
-import { printablesImport } from "./printables";
-import { snapmakerImport } from "./snapmaker";
-import { thangsImport } from "./thangs";
-import { thingiverseImport } from "./thingiverse";
-import type { CustomImport, SourcedImport } from "./types";
+import { crealitycloudImport, crealitycloudTrending } from "./crealitycloud";
+import { cults3dImport, cults3dTrending } from "./cults3d";
+import { makeronlineImport, makeronlineTrending } from "./makeronline";
+import { makerworldTrending } from "./makerworld";
+import { myminifactoryImport, myminifactoryTrending } from "./myminifactory";
+import { nexprintImport, nexprintTrending } from "./nexprint";
+import { printablesImport, printablesTrending } from "./printables";
+import { snapmakerImport, snapmakerTrending } from "./snapmaker";
+import { thangsImport, thangsTrending } from "./thangs";
+import { thingiverseImport, thingiverseTrending } from "./thingiverse";
+import type { CustomImport, ProviderTrending, SourcedImport } from "./types";
 
 export type ProviderBackend = {
   /** Why a batch import stopped when the provider turned the user's sign-in down, read after "failed because". */
@@ -22,56 +23,73 @@ export type ProviderBackend = {
   sourcedImport?: SourcedImport<any, any>;
   /** How its models import, for a provider that doesn't go the shared way. */
   customImport?: CustomImport;
+  /** Its list for the dashboard's trending panel, where its manifest says it has one. */
+  trending?: ProviderTrending;
 };
+
+type Manifests = typeof MANIFESTS;
+/** A provider's entry: its trending list is required where its manifest declares one. */
+type Entry<K extends ProviderId> = ProviderBackend &
+  (Manifests[K]["capabilities"]["trending"] extends false ? unknown : { trending: ProviderTrending });
 
 export const PROVIDERS = {
   makerworld: {
     authStopText: "the MakerWorld session expired — update the cookie in Settings, then retry",
+    trending: makerworldTrending,
   },
   printables: {
     // Printables has no sign-in; its imports never stop for one.
     authStopText: "Printables turned the request down — wait a while, then retry",
     sourcedImport: printablesImport,
+    trending: printablesTrending,
   },
   thingiverse: {
     authStopText:
       "Thingiverse turned the instance's App Token down — an admin can check it in Administration, then retry",
     sourcedImport: thingiverseImport,
+    trending: thingiverseTrending,
   },
   myminifactory: {
     authStopText:
       "MyMiniFactory turned your sign-in down — visit myminifactory.com signed in with Thingport Grab, then retry",
     sourcedImport: myminifactoryImport,
+    trending: myminifactoryTrending,
   },
   snapmaker: {
     authStopText: "your Snapmaker sign-in ran out — visit space.snapmaker.com with Thingport Grab, then retry",
     sourcedImport: snapmakerImport,
+    trending: snapmakerTrending,
   },
   makeronline: {
     authStopText:
       "MakerOnline turned your sign-in down — visit makeronline.com signed in with Thingport Grab, then retry",
     customImport: makeronlineImport,
+    trending: makeronlineTrending,
   },
   crealitycloud: {
     authStopText:
       "Creality Cloud turned your sign-in down — visit crealitycloud.com signed in with Thingport Grab, then retry",
     sourcedImport: crealitycloudImport,
+    trending: crealitycloudTrending,
   },
   nexprint: {
     authStopText: "NexPrint turned your sign-in down — visit nexprint.com signed in with Thingport Grab, then retry",
     sourcedImport: nexprintImport,
+    trending: nexprintTrending,
   },
   thangs: {
     authStopText: "Thangs turned your sign-in down — visit thangs.com signed in with Thingport Grab, then retry",
     sourcedImport: thangsImport,
+    trending: thangsTrending,
   },
   cults3d: {
     authStopText:
       "Cults3D turned your API key or sign-in down — check the key in Configuration → Providers, or visit cults3d.com " +
       "signed in with Thingport Grab, then retry",
     sourcedImport: cults3dImport,
+    trending: cults3dTrending,
   },
-} satisfies { [K in ProviderId]: ProviderBackend } as { readonly [K in ProviderId]: ProviderBackend };
+} satisfies { [K in ProviderId]: Entry<K> } as { readonly [K in ProviderId]: ProviderBackend };
 
 const errorCodes = (id: ProviderId): ProviderManifest["errorCodes"] => MANIFESTS[id].errorCodes;
 

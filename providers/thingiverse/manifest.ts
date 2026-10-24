@@ -16,7 +16,14 @@ export default {
   },
   signIn: "admin",
   helpers: { grab: "optional", flaresolverr: "recommended" },
-  capabilities: { collections: true, likes: true, profiles: false, paidModels: false, categoryIds: "int" },
+  capabilities: {
+    collections: true,
+    likes: true,
+    profiles: false,
+    paidModels: false,
+    categoryIds: "int",
+    trending: { kind: "popular", moreUrl: "https://www.thingiverse.com/search?sort=popular&type=things", rank: 5 },
+  },
   errorCodes: {},
   extension: { site: "builtin", origins: ["*://*.thingiverse.com/*"] },
 } as const satisfies ProviderManifest;

@@ -27,6 +27,8 @@ import {
   markCults3dApiRejected,
   markCults3dSessionRejected,
 } from "./session";
+import type { ProviderTrending } from "../types";
+import { fetchCults3dPopular } from "./api";
 
 const SESSION_CODE = MANIFESTS.cults3d.errorCodes.session;
 
@@ -95,4 +97,13 @@ export const cults3dImport: SourcedImport<Cults3dCredentials, Cults3dModelResolu
     }
     return downloaded;
   },
+};
+
+/** Cults3D's API answers only the user's own key, so each user reads their own list. */
+export const cults3dTrending: ProviderTrending = {
+  async fetch(userId, limit) {
+    const credentials = await getUserCults3dCredentials(userId);
+    return credentials ? fetchCults3dPopular(limit, credentials) : "cults3dKey";
+  },
+  perUser: true,
 };

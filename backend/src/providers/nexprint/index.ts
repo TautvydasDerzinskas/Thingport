@@ -16,6 +16,8 @@ import {
   selectNexprintProfiles,
 } from "./api";
 import { getUserNexprintToken, markNexprintSessionRejected, NEXPRINT_CONNECT } from "./session";
+import type { ProviderTrending } from "../types";
+import { fetchNexprintRecommended } from "./api";
 
 const SESSION_CODE = MANIFESTS.nexprint.errorCodes.session;
 const BLOCKED =
@@ -100,3 +102,5 @@ export const nexprintImport: SourcedImport<string, NexprintModelResolution> = {
     },
   },
 };
+
+export const nexprintTrending: ProviderTrending = { fetch: (_userId, limit) => fetchNexprintRecommended(limit) };

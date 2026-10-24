@@ -10,6 +10,8 @@ import {
   type ThingiversePlateFile,
   type ThingiverseThingResolution,
 } from "./api";
+import type { ProviderTrending } from "../types";
+import { fetchThingiversePopular } from "./api";
 
 const DOWNLOAD_CONCURRENCY = 2;
 
@@ -62,5 +64,13 @@ export const thingiverseImport: SourcedImport<string, Thing> = {
       );
     }
     return downloaded;
+  },
+};
+
+/** Read with the instance's App Token. */
+export const thingiverseTrending: ProviderTrending = {
+  async fetch(_userId, limit) {
+    const token = await getThingiverseAccessToken();
+    return token ? fetchThingiversePopular(limit, token) : "thingiverseToken";
   },
 };

@@ -21,7 +21,14 @@ export default {
   },
   signIn: "userOptional",
   helpers: { grab: "required", flaresolverr: "none" },
-  capabilities: { collections: true, likes: true, profiles: true, paidModels: false, categoryIds: "int" },
+  capabilities: {
+    collections: true,
+    likes: true,
+    profiles: true,
+    paidModels: false,
+    categoryIds: "int",
+    trending: { kind: "trending", moreUrl: "https://www.makeronline.com/", rank: 4 },
+  },
   errorCodes: { needsGrab: "makeronline_grab" },
   extension: { site: "optional", origins: ["*://*.makeronline.com/*"] },
 } as const satisfies ProviderManifest;

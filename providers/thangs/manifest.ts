@@ -17,7 +17,14 @@ export default {
   },
   signIn: "user",
   helpers: { grab: "recommended", flaresolverr: "optional" },
-  capabilities: { collections: true, likes: true, profiles: false, paidModels: true, categoryIds: "text" },
+  capabilities: {
+    collections: true,
+    likes: true,
+    profiles: false,
+    paidModels: true,
+    categoryIds: "text",
+    trending: { kind: "trending", moreUrl: "https://thangs.com/browse/trending", rank: 3 },
+  },
   errorCodes: { session: "thangs_session", downloadLimit: "THANGS_DOWNLOAD_LIMIT" },
   extension: { site: "optional", origins: ["*://thangs.com/*", "*://*.thangs.com/*"] },
 } as const satisfies ProviderManifest;

@@ -48,11 +48,19 @@ async function loadManifests() {
   if (builtin.toSorted().join() !== BUILTIN_SITES.toSorted().join()) {
     throw new Error(`Only ${BUILTIN_SITES.join(", ")} may be built-in Grab sites; new ones are "optional"`);
   }
+  const ranks = manifests.flatMap((manifest) =>
+    manifest.capabilities.trending ? [manifest.capabilities.trending.rank] : [],
+  );
+  if (new Set(ranks).size !== ranks.length) throw new Error(`Two providers share a trending rank: ${ranks.join(", ")}`);
   return manifests;
 }
 
 function index(manifests) {
   const ids = manifests.map((manifest) => manifest.id);
+  const trending = manifests
+    .filter((manifest) => manifest.capabilities.trending)
+    .sort((a, b) => a.capabilities.trending.rank - b.capabilities.trending.rank)
+    .map((manifest) => manifest.id);
   return `${header("providers/*/")}
 import { hostIs } from "./_lib/hosts";
 import type { ListLink, ModelLink, ProviderUrls } from "./_lib/types";
@@ -67,6 +75,10 @@ export const PROVIDER_IDS = [${ids.map((id) => JSON.stringify(id)).join(", ")}] 
 export type ProviderId = (typeof PROVIDER_IDS)[number];
 
 export const MANIFESTS = { ${ids.join(", ")} } as const;
+
+/** The providers with a list for the dashboard's trending panel, in the panel's order. */
+export const TRENDING_PROVIDER_IDS = [${trending.map((id) => JSON.stringify(id)).join(", ")}] as const;
+export type TrendingProviderId = (typeof TRENDING_PROVIDER_IDS)[number];
 
 export const URLS: { readonly [K in ProviderId]: ProviderUrls } = { ${ids.map((id) => `${id}: ${id}Urls`).join(", ")} };
 

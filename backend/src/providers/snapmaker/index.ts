@@ -15,6 +15,8 @@ import {
   snapmakerModelUrl,
 } from "./api";
 import { getUserSnapmakerToken, markSnapmakerTokenRejected, SNAPMAKER_CONNECT } from "./session";
+import type { ProviderTrending } from "../types";
+import { fetchSnapmakerFeatured } from "./api";
 
 const SESSION_CODE = MANIFESTS.snapmaker.errorCodes.session;
 const BLOCKED =
@@ -105,3 +107,5 @@ export const snapmakerImport: SourcedImport<string, SnapmakerModelResolution> = 
     },
   },
 };
+
+export const snapmakerTrending: ProviderTrending = { fetch: (_userId, limit) => fetchSnapmakerFeatured(limit) };
