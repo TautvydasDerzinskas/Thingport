@@ -33,7 +33,6 @@ describe("FlareSolverr credential boundary", () => {
     "https://makerworld.com:8443/en/models/1",
     "https://user@makerworld.com/en/models/1",
     "https://makerworld.com/redirect?url=http://127.0.0.1",
-    "https://makerworld.com/en/models/1?next=http://127.0.0.1",
     "https://makerworld.com/en/models/%2fredirect",
     "https://api.thingiverse.com/users/%2e%2e/redirect",
     "https://api.thingiverse.com/things/123?access_token=secret",
@@ -57,10 +56,39 @@ describe("FlareSolverr credential boundary", () => {
     expect(await fetchViaFlaresolverr(url)).toEqual({ status: 200, body: "page" });
   });
 
-  it("declines authenticated browser navigation before sending the saved cookie", async () => {
+  it("seeds cookies only for an allowed provider host", async () => {
+    const sent = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(JSON.stringify({ status: "ok", solution: { status: 200, response: "page" } })));
+    expect(await fetchViaFlaresolverr("https://makerworld.com/en/models/1", "token=saved-secret; theme=dark")).toEqual({
+      status: 200,
+      body: "page",
+    });
+    const body = JSON.parse(sent.mock.calls[0][1]?.body as string);
+    expect(body.cookies).toEqual([
+      { name: "token", value: "saved-secret", domain: "makerworld.com", path: "/", secure: true },
+      { name: "theme", value: "dark", domain: "makerworld.com", path: "/", secure: true },
+    ]);
+  });
+
+  it("declines cookies for a non-allowlisted destination before sending a request", async () => {
     const sent = vi.spyOn(globalThis, "fetch");
-    expect(await fetchViaFlaresolverr("https://makerworld.com/en/models/1", "token=saved-secret")).toBeNull();
+    expect(await fetchViaFlaresolverr("https://attacker.example/model", "token=saved-secret")).toBeNull();
     expect(sent).not.toHaveBeenCalled();
+  });
+
+  it("accepts encoded provider slugs and strips unrelated query parameters", async () => {
+    const sent = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(JSON.stringify({ status: "ok", solution: { response: "page" } })));
+    expect(
+      await fetchViaFlaresolverr(
+        "https://makerworld.com/en/models/123-%E4%BD%A0?from=search&utm_source=test&next=http://127.0.0.1",
+      ),
+    ).toEqual({ status: 200, body: "page" });
+    expect(JSON.parse(sent.mock.calls[0][1]?.body as string).url).toBe(
+      "https://makerworld.com/en/models/123-%E4%BD%A0",
+    );
   });
 
   it("preserves unauthenticated challenge solving without seeded cookies", async () => {

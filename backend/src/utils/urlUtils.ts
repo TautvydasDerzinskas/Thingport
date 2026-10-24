@@ -18,10 +18,19 @@ export function isBlockedIp(address: string): boolean {
     if (a >= 224) return true; // multicast/reserved
     return false;
   }
-  // Canonicalise alternate spellings; only global unicast IPv6 is routable here.
+  // Canonicalise alternate spellings before checking IPv6 ranges.
   // This also rejects IPv4-mapped/compatible addresses, link-local /10, ULA,
-  // unspecified, multicast and translation prefixes without textual bypasses.
+  // unspecified and multicast without textual bypasses.
   const canonical = new URL(`http://[${address}]/`).hostname.slice(1, -1);
+  // DNS64's well-known /96 prefix preserves the destination in its last 32 bits.
+  // Apply the IPv4 policy there too, so NAT64 cannot reach private destinations.
+  if (canonical.startsWith("64:ff9b::")) {
+    const tail = canonical.slice("64:ff9b::".length).split(":").filter(Boolean);
+    if (tail.length > 2) return true;
+    const low = parseInt(tail.pop() || "0", 16);
+    const high = parseInt(tail.pop() || "0", 16);
+    return isBlockedIp(`${high >> 8}.${high & 255}.${low >> 8}.${low & 255}`);
+  }
   const first = parseInt(canonical.split(":")[0], 16);
   if (first < 0x2000 || first > 0x3fff || !Number.isFinite(first)) return true;
   // Teredo and 6to4 can encapsulate private IPv4 destinations.

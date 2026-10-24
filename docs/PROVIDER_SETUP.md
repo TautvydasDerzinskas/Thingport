@@ -24,8 +24,8 @@ badge, shows the same in short.
 | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------- | -------------- | ------------ | ----------- | ----- | ---- | -------------- |
 | <img src="assets/providers/makerworld.svg" alt="" width="18" height="18" align="absmiddle"> [MakerWorld](providers/makerworld.md)                | Your cookie                     | Recommended    | Optional     | ✓           |       | ✓    | ✓              |
 | <img src="assets/providers/printables.svg" alt="" width="18" height="18" align="absmiddle"> [Printables](providers/printables.md)                | None                            | Optional¹      | Recommended  | ✓           | ✓¹    | ✓    |                |
-| <img src="assets/providers/thingiverse.svg" alt="" width="18" height="18" align="absmiddle"> [Thingiverse](providers/thingiverse.md)             | Admin's App Token               | Optional       | Recommended  | ✓           | ✓     | ✓    |                |
-| <img src="assets/providers/myminifactory.svg" alt="" width="18" height="18" align="absmiddle"> [MyMiniFactory](providers/myminifactory.md)       | Admin's API key, yours for paid | Optional       | Recommended  | ✓           |       | ✓    |                |
+| <img src="assets/providers/thingiverse.svg" alt="" width="18" height="18" align="absmiddle"> [Thingiverse](providers/thingiverse.md)             | Admin's App Token               | Optional       | Pages only⁴  | ✓           | ✓     | ✓    |                |
+| <img src="assets/providers/myminifactory.svg" alt="" width="18" height="18" align="absmiddle"> [MyMiniFactory](providers/myminifactory.md)       | Admin's API key, yours for paid | Optional       | Pages only⁴  | ✓           |       | ✓    |                |
 | <img src="assets/providers/snapmaker-space.svg" alt="" width="18" height="18" align="absmiddle"> [Snapmaker Space](providers/snapmaker-space.md) | Yours, for a day                | Recommended²   |              | Bookmarks   | ✓     | ✓    | ✓              |
 | <img src="assets/providers/makeronline.svg" alt="" width="18" height="18" align="absmiddle"> [MakerOnline](providers/makeronline.md)             | Yours, for likes only           | **Required**   |              | ✓           | ✓     | ✓    | ✓              |
 | <img src="assets/providers/creality-cloud.svg" alt="" width="18" height="18" align="absmiddle"> [Creality Cloud](providers/creality-cloud.md)    | Yours, for a week               | Recommended    |              | ✓           | ✓     | ✓    | ✓              |
@@ -36,6 +36,7 @@ badge, shows the same in short.
 1. Your private Printables collections and your likes are read by Grab, while you're on Printables.
 2. Snapmaker's sign-in lasts a day and only Grab renews it; without Grab you paste a new one every day.
 3. Cults3D's files need your browser's Cloudflare clearance, and Thingport on the same IP address as that browser.
+4. FlareSolverr supports public pages; authenticated API calls use impit directly.
 
 **Sign-in** is what Thingport needs before it can import; "yours" means each user connects their own account.
 
@@ -47,15 +48,20 @@ badge, shows the same in short.
 importing straight from a model's page, it hands your browser's sign-in to Thingport, so the sites that need one connect
 by just being visited, and stay connected. On MakerOnline it does the downloading itself, so there it's required.
 Sites after MakerWorld, Printables and Thingiverse need one click first: **Enable** next to the site in Grab's popup.
-Install it from the **Downloads** page.
+Install it from the **Downloads** page. If a reverse proxy redirects your Thingport instance URL (for example,
+from HTTP to HTTPS), enter the final HTTPS URL in Grab; instance requests reject redirects.
 
 ### FlareSolverr
 
-Printables, Thingiverse and MyMiniFactory sit behind Cloudflare, which now and then challenges a server instead of
-answering it. [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) gets past those challenges with a real
-browser. It's part of the standard Docker Compose stack; its address is set under **Administration → Connections →
-FlareSolverr**, and [System Health](guides/system-health.md) checks it. Without it, imports and syncs from those sites
-fail whenever Cloudflare steps in. MakerWorld and Thangs use it only as a fallback, and it can't help with Cults3D.
+[FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) uses a real browser to solve Cloudflare challenges
+on supported public pages, including Printables, Thingiverse and MyMiniFactory. It's part of the standard Docker
+Compose stack; its address is set under **Administration → Connections → FlareSolverr**, and
+[System Health](guides/system-health.md) checks it. MakerWorld and Thangs also use it as a fallback.
+Keep FlareSolverr private: authenticated MakerWorld fallbacks send session cookies to it, and its logs may record requests.
+
+Thingiverse and MyMiniFactory API requests use impit directly for a Chrome-like TLS handshake. Their App Tokens
+and API keys are never sent through FlareSolverr navigation, so configuring FlareSolverr does not resolve API
+challenges on those providers. FlareSolverr cannot relay binary downloads or help with Cults3D.
 
 ## Connecting a provider
 

@@ -4,13 +4,7 @@ import { browserFetch } from "../utils/browserFetch";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "./importResolvers";
 import { htmlToMarkdown } from "./descriptionMarkdown";
 import type { ProviderCollectionCard } from "./providerCollectionCard";
-import {
-  extractJsonFromBrowserBody,
-  fetchViaFlaresolverr,
-  isCloudflareChallenge,
-  looksLikeCloudflareBlock,
-} from "./flaresolverr";
-import { getFlaresolverrUrl } from "./settingsService";
+import { isCloudflareChallenge } from "./flaresolverr";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "./trendingModel";
 
 // The official API takes an API key as `?key=`. Its file download links are for OAuth users only,
@@ -40,15 +34,10 @@ export class MyminifactoryAuthError extends Error {
 }
 
 export class MyminifactoryRateLimitError extends Error {
-  constructor(flaresolverr?: "missing" | "failed") {
+  constructor() {
     super(
       "MyMiniFactory blocked this request (rate limit or Cloudflare challenge). This usually clears after a " +
-        "while -- wait, then try again." +
-        (flaresolverr === "missing"
-          ? " Setting up FlareSolverr in Administration > Connections gets past it."
-          : flaresolverr === "failed"
-            ? " FlareSolverr couldn't get past it either: check it in Administration > Connections."
-            : ""),
+        "while -- wait, then try again.",
     );
     this.name = "MyminifactoryRateLimitError";
   }
@@ -105,31 +94,20 @@ export function myminifactoryObjectUrl(objectId: string): string {
 
 async function fetchApi(path: string, apiKey: string): Promise<{ ok: boolean; status: number; data: unknown }> {
   const url = `${API_BASE}${path}${path.includes("?") ? "&" : "?"}key=${encodeURIComponent(apiKey)}`;
-  let res = await browserCredentialRequest("myminifactory-api", url, {
+  const res = await browserCredentialRequest("myminifactory-api", url, {
     headers: { Accept: "application/json" },
     timeoutMs: API_TIMEOUT_MS,
   });
-  let viaBrowser = false;
-  if ((res.status === 429 || res.status === 403) && looksLikeCloudflareBlock(res.headers)) {
-    const solved = await fetchViaFlaresolverr(url);
-    if (solved) {
-      viaBrowser = true;
-      res = new Response(solved.body, { status: solved.status });
-    }
-  }
   const text = await res.text();
   let data: unknown = null;
   if (text.trim()) {
     try {
-      data = viaBrowser ? extractJsonFromBrowserBody(text) : JSON.parse(text);
+      data = JSON.parse(text);
     } catch {
       data = null;
     }
   }
-  if (!viaBrowser && (res.status === 429 || isCloudflareChallenge(res.headers))) {
-    throw new MyminifactoryRateLimitError((await getFlaresolverrUrl()) ? "failed" : "missing");
-  }
-  if (res.status === 429) throw new MyminifactoryRateLimitError();
+  if (res.status === 429 || isCloudflareChallenge(res.headers)) throw new MyminifactoryRateLimitError();
   if (res.status === 401) throw new MyminifactoryAuthError();
   return { ok: res.ok, status: res.status, data };
 }

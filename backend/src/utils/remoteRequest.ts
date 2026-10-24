@@ -26,8 +26,10 @@ const BROWSER_ORIGINS = new Set([
   "https://thingiverse.com",
   "https://www.thingiverse.com",
   "https://api.thingiverse.com",
+  "https://cdn.thingiverse.com",
   "https://myminifactory.com",
   "https://www.myminifactory.com",
+  "https://dl4.myminifactory.com",
   "https://thangs.com",
   "https://www.thangs.com",
 ]);

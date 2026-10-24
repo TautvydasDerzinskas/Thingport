@@ -2,11 +2,16 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import dns from "node:dns";
 import dnsPromises from "node:dns/promises";
 import net from "node:net";
+import fs from "node:fs/promises";
+import { downloadPlainFileToTemp } from "../src/services/importService";
 import { isBlockedIp } from "../src/utils/urlUtils";
 import { remoteRequest } from "../src/utils/remoteRequest";
 import { browserFetch } from "../src/utils/browserFetch";
 
-vi.mock("../src/utils/browserFetch", () => ({ browserFetch: vi.fn<typeof browserFetch>() }));
+vi.mock("../src/utils/browserFetch", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../src/utils/browserFetch")>()),
+  browserFetch: vi.fn<typeof browserFetch>(),
+}));
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -63,7 +68,39 @@ describe.each([false, true])("remote request (browser=%s)", (browser) => {
 });
 
 describe("connection-time DNS policy", () => {
+  it.each(["cdn.thingiverse.com", "dl4.myminifactory.com"])(
+    "preserves browser transport for downloads from %s",
+    async (host) => {
+      vi.spyOn(dnsPromises, "resolve4").mockResolvedValue(["8.8.8.8"] as never);
+      vi.spyOn(dnsPromises, "resolve6").mockResolvedValue([] as never);
+      const native = vi.fn<typeof fetch>().mockResolvedValue(new Response("solid test\nendsolid test"));
+      vi.stubGlobal("fetch", native);
+      vi.mocked(browserFetch).mockResolvedValue(new Response("solid test\nendsolid test"));
+      const result = await downloadPlainFileToTemp(`https://${host}/file.stl`, "file.stl");
+      expect(browserFetch).toHaveBeenCalledOnce();
+      expect(native).not.toHaveBeenCalled();
+      expect(result && "input" in result).toBe(true);
+      if (result && "input" in result) await fs.rm(result.input.tempFilePath!, { force: true });
+    },
+  );
+
+  it.each(["64:ff9b::808:808", "64:ff9b::8.8.8.8", "64:ff9b:0:0:0:0:808:808"])(
+    "allows public or fake-IP address %s",
+    (address) => {
+      expect(isBlockedIp(address)).toBe(false);
+    },
+  );
+
   it.each([
+    "198.18.0.1",
+    "198.19.255.254",
+    "64:ff9b::",
+    "64:ff9b::7f00:1",
+    "64:ff9b::a00:1",
+    "64:ff9b::a9fe:a9fe",
+    "64:ff9b::c0a8:1",
+    "64:ff9b:1::808:808",
+    "64:ff9b::1:808:808",
     "127.0.0.1",
     "10.0.0.1",
     "169.254.169.254",

@@ -84,31 +84,44 @@ function solverDestination(url: string): URL | null {
   if (parsed.protocol !== "https:" || parsed.port || parsed.username || parsed.password) return null;
   const routes: Record<string, { path: RegExp; query: string[] }> = {
     "makerworld.com": {
-      path: /^(?:\/[a-z]{2}\/models\/\d+(?:-[\w-]+)?\/?|\/api\/v1\/models?\/\d+(?:\/files|\/download)?|\/api\/v1\/design-service\/instance\/\d+\/f3mf|\/api\/v1\/design-service\/favorites\/\d+(?:\/designs)?|\/api\/v1\/design-user-service\/user\/profile\/[\w-]+)$/,
+      path: /^(?:\/[a-z]{2}\/models\/\d+(?:-[\w%-]+)?\/?|\/api\/v1\/models?\/\d+(?:\/files|\/download)?|\/api\/v1\/design-service\/instance\/\d+\/f3mf|\/api\/v1\/design-service\/favorites\/\d+(?:\/designs)?|\/api\/v1\/design-user-service\/user\/profile\/[\w%-]+)$/,
       query: ["type", "fileType", "seed", "collectionId", "limit", "offset"],
     },
     "api.thingiverse.com": {
-      path: /^\/(?:things\/\d+(?:\/categories)?|users\/[\w-]+(?:\/likes|\/collections)?|collections\/\d+(?:\/things)?|popular)$/,
+      path: /^\/(?:things\/\d+(?:\/categories)?|users\/[\w%-]+(?:\/likes|\/collections)?|collections\/\d+(?:\/things)?|popular)$/,
       query: ["page", "per_page"],
     },
     "www.thingiverse.com": { path: /^\/thing:\d+\/?$/, query: [] },
-    "www.printables.com": { path: /^(?:\/[a-z]{2})?\/model\/\d+(?:-[\w-]+)?\/?$/, query: [] },
+    "www.printables.com": { path: /^(?:\/[a-z]{2})?\/model\/\d+(?:-[\w%-]+)?\/?$/, query: [] },
     "www.myminifactory.com": {
-      path: /^\/(?:object\/3d-print-[\w-]+|api\/v2\/(?:objects\/\d+|users\/[\w-]+(?:\/collections(?:\/[\w-]+)?)?|search))$/,
+      path: /^\/(?:object\/3d-print-[\w%-]+|api\/v2\/(?:objects\/\d+|users\/[\w%-]+(?:\/collections(?:\/[\w%-]+)?)?|search))$/,
       query: ["q", "sort", "page", "per_page"],
     },
     "thangs.com": {
-      path: /^\/(?:m\/\d+|designer\/[\w-]+\/3d-model\/[\w-]+|api\/(?:models\/v2\/\d+|users\/v4\/[\w-]+\/likes|collections\/\d+|landing\/models\/v8\/root))$/,
+      path: /^\/(?:m\/\d+|designer\/[\w%-]+\/3d-model\/[\w%-]+|api\/(?:models\/v2\/\d+|users\/v4\/[\w%-]+\/likes|collections\/\d+|landing\/models\/v8\/root))$/,
       query: ["likes", "page", "pageSize", "sortBy", "costType", "showContent", "category", "tags", "range", "sortDir"],
     },
-    "cults3d.com": { path: /^\/[a-z]{2}\/3d-model\/[\w-]+\/[\w-]+\/?$/, query: [] },
+    "cults3d.com": { path: /^\/[a-z]{2}\/3d-model\/[\w%-]+\/[\w%-]+\/?$/, query: [] },
   };
   const rule = routes[parsed.hostname];
   if (!rule || !rule.path.test(parsed.pathname)) return null;
+  // Only UTF-8 bytes for non-ASCII slug characters may be percent-encoded.
+  // Encoded ASCII delimiters and double-encoding could change the server-side route.
+  if (/%(?![89a-f][0-9a-f])/i.test(parsed.pathname)) return null;
+  try {
+    decodeURIComponent(parsed.pathname);
+  } catch {
+    return null;
+  }
   // In particular, never forward Thingiverse access_token or MyMiniFactory key:
   // URL credentials have the same uncontrolled browser redirect risk as cookies.
-  for (const [key, value] of parsed.searchParams) {
-    if (!rule.query.includes(key) || parsed.searchParams.getAll(key).length !== 1) return null;
+  for (const [key, value] of Array.from(parsed.searchParams)) {
+    if (!rule.query.includes(key)) {
+      if (/^(?:access_token|key|token|authorization)$/i.test(key)) return null;
+      parsed.searchParams.delete(key);
+      continue;
+    }
+    if (parsed.searchParams.getAll(key).length !== 1) return null;
     if (!/^[\w -]*$/.test(value)) return null;
   }
   // Fragments are unnecessary for these read endpoints and may drive client-side navigation.
@@ -121,8 +134,6 @@ export async function fetchViaFlaresolverr(
   url: string,
   cookieHeader?: string | null,
 ): Promise<FlaresolverrResult | null> {
-  // Browser navigation cannot enforce our credential destination checks on redirects.
-  if (cookieHeader) return null;
   const parsed = solverDestination(url);
   if (!parsed) return null;
   const endpoint = await getFlaresolverrUrl();
@@ -137,6 +148,21 @@ export async function fetchViaFlaresolverr(
       url: parsed.href,
       maxTimeout: FLARESOLVERR_TIMEOUT_MS,
     };
+    if (cookieHeader) {
+      // FlareSolverr seeds cookies after its first navigation. Pin their domain to the
+      // original provider so a redirect cannot bind them to another site.
+      const cookies = cookieHeader.split(";").flatMap((part) => {
+        const equals = part.indexOf("=");
+        if (equals < 1) return [];
+        const name = part.slice(0, equals).trim();
+        const value = part.slice(equals + 1).trim();
+        return /^[!#$%&'*+.^_`|~\w-]+$/.test(name) &&
+          !Array.from(value).some((char) => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127)
+          ? [{ name, value, domain: parsed.hostname, path: "/", secure: true }]
+          : [];
+      });
+      if (cookies.length) body.cookies = cookies;
+    }
 
     const res = await fetch(endpoint, {
       method: "POST",

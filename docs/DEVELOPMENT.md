@@ -94,8 +94,10 @@ Open <http://localhost:5173>. **The first account you register becomes the admin
 
 ## Optional: FlareSolverr
 
-Thingiverse and MyMiniFactory sit behind Cloudflare, and some imports need FlareSolverr to get through. It's optional --
-without it those imports will simply fail.
+FlareSolverr is an optional fallback for supported public pages challenged by Cloudflare, including Printables,
+Thingiverse and MyMiniFactory, and supported MakerWorld and Thangs requests. Thingiverse and MyMiniFactory API
+calls use impit directly for a Chrome-like TLS handshake; their App Tokens and API keys never enter solver
+navigation. FlareSolverr cannot resolve challenges on those authenticated API calls or relay binary downloads.
 
 ```bash
 docker run -d --name thingport-flaresolverr -p 8191:8191 ghcr.io/flaresolverr/flaresolverr:latest

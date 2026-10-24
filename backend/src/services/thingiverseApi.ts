@@ -3,21 +3,13 @@ import { assertCredentialDestination, browserCredentialRequest } from "../provid
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "./importResolvers";
 import { cleanThingiverseMarkdown } from "./descriptionMarkdown";
 import type { ProviderCollectionCard } from "./providerCollectionCard";
-import {
-  extractJsonFromBrowserBody,
-  fetchViaFlaresolverr,
-  isCloudflareChallenge,
-  looksLikeCloudflareBlock,
-  shouldProxyHost,
-} from "./flaresolverr";
-import { getFlaresolverrUrl } from "./settingsService";
+import { isCloudflareChallenge } from "./flaresolverr";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "./trendingModel";
 
 // The official API needs an App Token (not a session cookie). It's still behind Cloudflare
 // and returns a sticky 429 challenge after a few rapid requests, hence ThingiverseRateLimitError
-// and the FlareSolverr fallback.
+// despite using Chrome's TLS handshake.
 const THINGIVERSE_API_BASE = "https://api.thingiverse.com";
-const THINGIVERSE_API_HOSTNAME = new URL(THINGIVERSE_API_BASE).hostname;
 const API_TIMEOUT_MS = IMPORT_TIMEOUT_SECONDS * 1000;
 const THINGIVERSE_PROVIDER = "thingiverse";
 
@@ -35,19 +27,12 @@ export class ThingiverseAuthError extends Error {
   }
 }
 
-const FLARESOLVERR_HINTS = {
-  missing: " Setting up FlareSolverr in Administration > Connections gets past it.",
-  failed:
-    " FlareSolverr couldn't get past it either: it may be down or unreachable. Check it in Administration > Connections.",
-};
-
-/** Cloudflare's 429 challenge, distinct from a 404 or rejected token: the fix is to wait, or a working FlareSolverr. */
+/** Cloudflare's challenge is distinct from a rejected token; retry after waiting. */
 export class ThingiverseRateLimitError extends Error {
-  constructor(flaresolverr?: keyof typeof FLARESOLVERR_HINTS) {
+  constructor() {
     super(
       "Thingiverse blocked this request with a rate-limit challenge (Cloudflare). This usually " +
-        "clears after a while -- wait, then try again." +
-        (flaresolverr ? FLARESOLVERR_HINTS[flaresolverr] : ""),
+        "clears after a while -- wait, then try again.",
     );
     this.name = "ThingiverseRateLimitError";
   }
@@ -88,8 +73,6 @@ async function rawApiFetch(url: string): Promise<Response> {
   });
 }
 
-/** Once a challenge is seen, calls go straight through FlareSolverr for a while. JSON API calls
- * only: FlareSolverr can't relay binary file downloads. */
 async function fetchThingiverseApiJson(path: string, accessToken: string): Promise<unknown> {
   const { ok, data } = await fetchThingiverseApi(path, accessToken);
   return ok ? data : null;
@@ -102,41 +85,20 @@ async function fetchThingiverseApi(
   const url = `${THINGIVERSE_API_BASE}${path}${path.includes("?") ? "&" : "?"}access_token=${encodeURIComponent(accessToken)}`;
   assertCredentialDestination("thingiverse-api", url);
 
-  let res: Response;
-  let viaBrowser = false;
-  if (shouldProxyHost(THINGIVERSE_API_HOSTNAME)) {
-    const solved = await fetchViaFlaresolverr(url);
-    if (solved) {
-      viaBrowser = true;
-      res = new Response(solved.body, { status: solved.status });
-    } else {
-      res = await rawApiFetch(url);
-    }
-  } else {
-    res = await rawApiFetch(url);
-    if ((res.status === 429 || res.status === 403) && looksLikeCloudflareBlock(res.headers)) {
-      const solved = await fetchViaFlaresolverr(url);
-      if (solved) {
-        viaBrowser = true;
-        res = new Response(solved.body, { status: solved.status });
-      }
-    }
-  }
+  // API tokens stay in the guarded browser transport; solver navigation cannot carry them.
+  const res = await rawApiFetch(url);
 
   const text = await res.text();
   let data: unknown = null;
   if (text.trim()) {
     try {
-      data = viaBrowser ? extractJsonFromBrowserBody(text) : JSON.parse(text);
+      data = JSON.parse(text);
     } catch {
       data = null;
     }
   }
   // An unsolved challenge is a 403 too; it says nothing about the token.
-  if (!viaBrowser && (res.status === 429 || isCloudflareChallenge(res.headers))) {
-    throw new ThingiverseRateLimitError((await getFlaresolverrUrl()) ? "failed" : "missing");
-  }
-  if (res.status === 429) throw new ThingiverseRateLimitError();
+  if (res.status === 429 || isCloudflareChallenge(res.headers)) throw new ThingiverseRateLimitError();
   if (res.status === 401 || res.status === 403) throw new ThingiverseAuthError();
   return { ok: res.ok, status: res.status, data };
 }
