@@ -84,6 +84,9 @@ export type ProviderManifest = {
      *  providers are always optional: changing the built-in set makes browsers disable Grab until it's approved. */
     site: "builtin" | "optional";
     origins: readonly string[];
+    /** A built-in site whose cookies Grab reads: chrome.cookies needs its origins as host permissions, which a
+     *  content script's matches don't count as. Optional sites' come with their granted access. */
+    cookies?: true;
   };
 };
 

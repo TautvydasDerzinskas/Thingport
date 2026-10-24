@@ -34,5 +34,5 @@ export default {
   },
   errorCodes: {},
   legacy: { lists: [{ path: "printables-collection", kinds: ["collection"], idsField: "model_ids" }] },
-  extension: { site: "builtin", origins: ["*://*.printables.com/*"] },
+  extension: { site: "builtin", origins: ["*://*.printables.com/*"], cookies: true },
 } as const satisfies ProviderManifest;

@@ -20,9 +20,9 @@ exports[`browser manifests > chrome manifest 1`] = `
         "content.js",
       ],
       "matches": [
-        "*://*.thingiverse.com/*",
         "*://*.makerworld.com/*",
         "*://*.printables.com/*",
+        "*://*.thingiverse.com/*",
       ],
       "run_at": "document_idle",
     },
@@ -83,9 +83,9 @@ exports[`browser manifests > edge manifest 1`] = `
         "content.js",
       ],
       "matches": [
-        "*://*.thingiverse.com/*",
         "*://*.makerworld.com/*",
         "*://*.printables.com/*",
+        "*://*.thingiverse.com/*",
       ],
       "run_at": "document_idle",
     },
@@ -159,9 +159,9 @@ exports[`browser manifests > firefox manifest 1`] = `
         "content.js",
       ],
       "matches": [
-        "*://*.thingiverse.com/*",
         "*://*.makerworld.com/*",
         "*://*.printables.com/*",
+        "*://*.thingiverse.com/*",
       ],
       "run_at": "document_idle",
     },

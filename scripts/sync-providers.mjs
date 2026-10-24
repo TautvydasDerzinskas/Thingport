@@ -48,6 +48,8 @@ async function loadManifests() {
   if (builtin.toSorted().join() !== BUILTIN_SITES.toSorted().join()) {
     throw new Error(`Only ${BUILTIN_SITES.join(", ")} may be built-in Grab sites; new ones are "optional"`);
   }
+  const cookies = manifests.filter((m) => m.extension.cookies && m.extension.site !== "builtin").map((m) => m.id);
+  if (cookies.length) throw new Error(`Only built-in sites take cookies in the manifest, not ${cookies.join(", ")}`);
   const ranks = manifests.flatMap((manifest) =>
     manifest.capabilities.trending ? [manifest.capabilities.trending.rank] : [],
   );

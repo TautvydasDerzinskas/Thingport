@@ -8,8 +8,13 @@ export function isTarget(value: string): value is Target {
   return (TARGETS as readonly string[]).includes(value);
 }
 
-const PROVIDER_MATCHES = ["*://*.thingiverse.com/*", "*://*.makerworld.com/*", "*://*.printables.com/*"];
-const COOKIE_HOSTS = ["*://*.makerworld.com/*", "*://*.printables.com/*"];
+import { MANIFESTS, PROVIDER_IDS } from "../src/shared/providers/_generated";
+
+// The sites in the manifest itself; any change makes browsers disable Grab until each user approves it, so the
+// generator keeps them to the legacy three (scripts/sync-providers.mjs).
+const BUILTIN = PROVIDER_IDS.map((id) => MANIFESTS[id].extension).filter((site) => site.site === "builtin");
+export const PROVIDER_MATCHES = BUILTIN.flatMap((site) => site.origins);
+export const COOKIE_HOSTS = BUILTIN.flatMap((site) => ("cookies" in site ? site.origins : []));
 
 function iconSet(variant: "color" | "dark"): Record<string, string> {
   return Object.fromEntries(
