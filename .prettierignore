@@ -9,3 +9,6 @@ web/.astro/
 **/.env*
 **/Dockerfile
 **/.gitignore
+
+# A recorded page whose invalid nesting (Manyfold's <p> inside a <p>) is what the test reads; prettier refuses it
+backend/tests/fixtures/providers/threedprintsocial/model-page.html

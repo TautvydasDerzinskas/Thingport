@@ -1,0 +1,82 @@
+[
+  {
+    "url": "https://3dprint.social/models/xc68zh951g26",
+    "expect": {
+      "provider": "threedprintsocial",
+      "kind": "model",
+      "externalId": "xc68zh951g26"
+    }
+  },
+  {
+    "url": "https://www.3dprint.social/models/nvc523dlrs6j/?utm_source=feed",
+    "expect": {
+      "provider": "threedprintsocial",
+      "kind": "model",
+      "externalId": "nvc523dlrs6j"
+    }
+  },
+  {
+    "url": "https://3dprint.social/collections/krfflpzgbtvf",
+    "expect": {
+      "provider": "threedprintsocial",
+      "kind": "list",
+      "externalId": "krfflpzgbtvf",
+      "listKind": "collection"
+    }
+  },
+  {
+    "url": "https://3dprint.social/models?collection=krfflpzgbtvf&tag%5B%5D=bracket",
+    "expect": {
+      "provider": "threedprintsocial",
+      "kind": "list",
+      "externalId": "krfflpzgbtvf",
+      "listKind": "collection"
+    }
+  },
+  {
+    "url": "https://3dprint.social/creators/dansup",
+    "expect": {
+      "provider": "threedprintsocial",
+      "kind": "list",
+      "externalId": "creator:dansup",
+      "listKind": "collection"
+    }
+  },
+  {
+    "url": "https://3dprint.social/models?creator=quin_antarctic",
+    "expect": {
+      "provider": "threedprintsocial",
+      "kind": "list",
+      "externalId": "creator:quin_antarctic",
+      "listKind": "collection"
+    }
+  },
+  {
+    "url": "https://3dprint.social/models/w35tk0prbf7h.zip?selection=step",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  },
+  {
+    "url": "https://3dprint.social/models/xc68zh951g26/model_files/dkf8s0qm2v3t",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  },
+  {
+    "url": "https://3dprint.social/creators/new",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  },
+  {
+    "url": "https://3dprint.social/dashboard",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  }
+]

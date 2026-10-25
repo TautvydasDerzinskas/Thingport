@@ -102,4 +102,12 @@ export const PROVIDER_DOCS = [
     nav: "Pinshape",
     description: "Import Pinshape models, and anyone's collections and likes, with your own sign-in for the files.",
   },
+  {
+    slug: "providers/3dprint-social",
+    source: "docs/providers/3dprint-social.md",
+    group: "Providers",
+    title: "3DPrint.social",
+    nav: "3DPrint.social",
+    description: "Import 3DPrint.social models, and sync its collections and anyone's models, with nothing to connect.",
+  },
 ];

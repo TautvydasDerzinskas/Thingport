@@ -15,6 +15,7 @@ import thangsCategories from "./thangs/categories.json";
 import cults3dCategories from "./cults3d/categories.json";
 import eufymakeCategories from "./eufymake/categories.json";
 import pinshapeCategories from "./pinshape/categories.json";
+import threedprintsocialCategories from "./threedprintsocial/categories.json";
 import {
   crealitycloudImport,
   crealitycloudTrending,
@@ -36,6 +37,7 @@ import {
 import { nexprintImport, nexprintTrending, nexprintLists, nexprintDetails } from "./nexprint";
 import { pinshapeImport, pinshapeTrending, pinshapeLists, pinshapeDetails } from "./pinshape";
 import { printablesImport, printablesTrending, printablesLists, printablesDetails } from "./printables";
+import { printSocialImport, printSocialLists, printSocialDetails } from "./threedprintsocial";
 import { snapmakerImport, snapmakerTrending, snapmakerLists, snapmakerDetails } from "./snapmaker";
 import { thangsImport, thangsTrending, thangsLists, thangsDetails } from "./thangs";
 import {
@@ -68,6 +70,7 @@ import { thangsSync } from "./thangs/sync";
 import { cults3dSync } from "./cults3d/sync";
 import { eufymakeSync } from "./eufymake/sync";
 import { pinshapeSync } from "./pinshape/sync";
+import { printSocialSync } from "./threedprintsocial/sync";
 import { makerworldBrowse } from "./makerworld/browse";
 import { printablesBrowse } from "./printables/browse";
 import { thingiverseBrowse } from "./thingiverse/browse";
@@ -80,6 +83,7 @@ import { thangsBrowse } from "./thangs/browse";
 import { cults3dBrowse } from "./cults3d/browse";
 import { eufymakeBrowse } from "./eufymake/browse";
 import { pinshapeBrowse } from "./pinshape/browse";
+import { printSocialBrowse } from "./threedprintsocial/browse";
 import type { AuthSlot } from "./index.generated";
 import type {
   ConnectionSlot,
@@ -370,6 +374,17 @@ export const PROVIDERS = {
     browse: pinshapeBrowse,
     trending: pinshapeTrending,
     details: pinshapeDetails,
+  },
+  threedprintsocial: {
+    starterCategories: threedprintsocialCategories,
+    connection: {},
+    // It has no sign-in; its imports never stop for one.
+    authStopText: `${name("threedprintsocial")} turned the request down — wait a while, then retry`,
+    sourcedImport: printSocialImport,
+    lists: printSocialLists,
+    sync: printSocialSync,
+    browse: printSocialBrowse,
+    details: printSocialDetails,
   },
 } satisfies { [K in ProviderId]: Entry<K> } as { readonly [K in ProviderId]: ProviderBackend };
 

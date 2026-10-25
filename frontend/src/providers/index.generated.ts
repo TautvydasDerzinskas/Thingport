@@ -27,6 +27,8 @@ import eufymake from "./eufymake/manifest.generated";
 import { urls as eufymakeUrls } from "./eufymake/urls.generated";
 import pinshape from "./pinshape/manifest.generated";
 import { urls as pinshapeUrls } from "./pinshape/urls.generated";
+import threedprintsocial from "./threedprintsocial/manifest.generated";
+import { urls as threedprintsocialUrls } from "./threedprintsocial/urls.generated";
 
 export type {
   AuthField,
@@ -58,6 +60,7 @@ export const PROVIDER_IDS = [
   "cults3d",
   "eufymake",
   "pinshape",
+  "threedprintsocial",
 ] as const;
 export type ProviderId = (typeof PROVIDER_IDS)[number];
 
@@ -74,6 +77,7 @@ export const MANIFESTS = {
   cults3d,
   eufymake,
   pinshape,
+  threedprintsocial,
 } as const;
 
 /** The providers with a list for the dashboard's trending panel, in the panel's order. */
@@ -106,6 +110,7 @@ export const URLS: { readonly [K in ProviderId]: ProviderUrls } = {
   cults3d: cults3dUrls,
   eufymake: eufymakeUrls,
   pinshape: pinshapeUrls,
+  threedprintsocial: threedprintsocialUrls,
 };
 
 export function isProviderId(value: unknown): value is ProviderId {
