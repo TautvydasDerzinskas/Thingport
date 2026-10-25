@@ -122,7 +122,7 @@ describe("importing with a stored MakerWorld cookie", () => {
     expect(calls).toEqual([]);
   });
 
-  it("still sends it to makerworld.com and www.makerworld.com", async () => {
+  it("sends it to the canonical MakerWorld origin for apex and www model URLs", async () => {
     for (const host of ["makerworld.com", "www.makerworld.com"]) {
       const calls = stubFetch();
       await request(app)
@@ -130,8 +130,9 @@ describe("importing with a stored MakerWorld cookie", () => {
         .set({ Authorization: `Bearer ${token}` })
         .send({ url: `https://${host}/en/models/${(stamp % 1_000_000) + host.length}` });
 
-      const page = calls.find((call) => new URL(call.url).hostname === host);
+      const page = calls.find((call) => call.url.startsWith("https://makerworld.com/"));
       expect(page?.headers.Cookie).toContain(SECRET);
+      expect(calls.every((call) => new URL(call.url).hostname === "makerworld.com")).toBe(true);
       vi.unstubAllGlobals();
     }
   });
@@ -144,9 +145,9 @@ describe("importing with a stored MakerWorld cookie", () => {
         .set({ Authorization: `Bearer ${token}` })
         .send({ url: `http://${host}/en/models/${(stamp % 1_000_000) + host.length + 100}` });
 
-      const page = calls.find((call) => call.url.startsWith(`http://${host}/`));
+      const page = calls.find((call) => call.url.startsWith("http://makerworld.com/"));
       expect(page).toBeDefined();
-      expect(JSON.stringify(page?.headers)).not.toContain(SECRET);
+      for (const call of calls) expect(JSON.stringify(call.headers)).not.toContain(SECRET);
       vi.unstubAllGlobals();
     }
   });
