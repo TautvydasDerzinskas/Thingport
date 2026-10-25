@@ -9,37 +9,22 @@ import { normalizeTags } from "../utils/tagNormalization";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { modelUpload } from "../uploadMiddleware";
-import { deletePlateFiles, resolvePlateFilePath } from "../services/printCreation";
+import { resolvePlateFilePath } from "../services/printCreation";
 import { createUploadedModel } from "../services/uploadService";
-import {
-  plateThumbPath,
-  relocatePrint,
-  relocatePrintsForToken,
-  removeAssetHome,
-  assetOwnerIds,
-  removePlatePictures,
-  uniqueModelName,
-} from "../services/printService";
+import { plateThumbPath, relocatePrintsForToken } from "../services/printService";
 import { setPrintCategory } from "../services/printCategoryService";
-import { previewImagePath, deleteAllPreviewImages } from "../services/previewImageService";
-import {
-  deleteAllDescriptionImages,
-  descriptionImagePath,
-  localizeDescriptionImages,
-  pruneDescriptionImages,
-} from "../services/descriptionImageService";
+import { previewImagePath } from "../services/previewImageService";
+import { descriptionImagePath } from "../services/descriptionImageService";
 import { deleteAuthorIfOrphaned } from "../services/authorService";
-import { loadFullPrint, printOutById, printOutsByIds } from "../services/printLoader";
-import { deleteAllPrintFiles } from "../services/printFileService";
+import { printOutById, printOutsByIds } from "../services/printLoader";
 import { estimateDownloadSize, resolvePrintsForDownload, sendPrintsZip } from "../services/downloadZip";
 import { createLog } from "../services/auditLog";
 import { recordActivity } from "../services/activityService";
 import { notifyUpload } from "../services/modelNotifications";
 import { fillSourceGaps } from "../services/fillGapsService";
-import { forgetAiDescription } from "../services/aiDescriptionService";
+import { deletePrint, setPrintTags, updatePrintMeta } from "../services/printEditService";
 import { isNormalizable3mf, normalize3mfStatus, normalized3mfFor } from "../services/normalized3mfCache";
 import { listPrints, listTagsOf, parseSortMode, splitList, type PrintFilters } from "../services/printQuery";
-import type { Prisma } from "@prisma/client";
 import { printQuality, startPrintQualityCheck } from "../services/modelQualityService";
 
 const router = Router();
@@ -405,21 +390,8 @@ router.post(
   "/print/:id/tags",
   asyncHandler(async (req, res) => {
     const body = parseBody(tagsSchema, req.body);
-    const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
-    if (!print) throw new HttpError(404, "Print not found");
-    const updated = await prisma.print.update({
-      where: { id: print.id },
-      data: { tags: normalizeTags(body.tags) },
-    });
-    const plates = await prisma.plate.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } });
-    await relocatePrint(updated, plates);
+    const print = await setPrintTags(req.userId!, req.params.id, body.tags);
     res.json({ print: await printOutById(req.userId!, print.id) });
-    void createLog({
-      userId: req.userId!,
-      action: "model_edited",
-      targetId: print.id,
-      details: { field: "tags", name: updated.name },
-    });
   }),
 );
 
@@ -433,38 +405,12 @@ router.post(
   "/print/:id/meta",
   asyncHandler(async (req, res) => {
     const body = parseBody(metaSchema, req.body);
-    const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
-    if (!print) throw new HttpError(404, "Print not found");
-
-    const data: Prisma.PrintUpdateInput = {};
-    const requestedName = body.name !== undefined ? body.name : body.title;
-    if (requestedName !== undefined) {
-      const nextName = await uniqueModelName(req.userId!, requestedName, print.categoryId, print.id);
-      if (nextName !== print.name) {
-        data.name = nextName;
-        data.nameNormalized = nextName.trim().toLowerCase();
-        data.title = nextName;
-      }
-    }
-    if (body.notes !== undefined) data.notes = body.notes;
-    if (body.creator !== undefined) data.creator = body.creator.trim() || null;
-
-    const updated = await prisma.print.update({ where: { id: print.id }, data });
-    const plates = await prisma.plate.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } });
-    await relocatePrint(updated, plates);
-    if (body.notes !== undefined) {
-      if (body.notes !== (print.notes ?? "")) await forgetAiDescription(print.id);
-      await pruneDescriptionImages(print.id);
-      // Images pasted in by URL are fetched in the background: slow hosts mustn't hold up the save.
-      void localizeDescriptionImages(print.id);
-    }
-    res.json({ print: await printOutById(req.userId!, print.id) });
-    void createLog({
-      userId: req.userId!,
-      action: "model_edited",
-      targetId: print.id,
-      details: { field: "meta", name: updated.name },
+    const print = await updatePrintMeta(req.userId!, req.params.id, {
+      name: body.name !== undefined ? body.name : body.title,
+      notes: body.notes,
+      creator: body.creator,
     });
+    res.json({ print: await printOutById(req.userId!, print.id) });
   }),
 );
 
@@ -515,27 +461,6 @@ router.post(
     });
   }),
 );
-
-async function deletePrint(userId: string, printId: string): Promise<void> {
-  const full = await loadFullPrint(userId, printId);
-  const assetOwners = await assetOwnerIds(printId);
-  await deleteAllPrintFiles(printId);
-  await deleteAllPreviewImages(printId);
-  await deleteAllDescriptionImages(printId);
-  await prisma.print.delete({ where: { id: printId } });
-  for (const plate of full.plates) {
-    await deletePlateFiles(plate);
-    await removePlatePictures(plate.id, full.print.assetsPath);
-  }
-  await removeAssetHome(full.print.assetsPath, assetOwners);
-  void recordActivity(userId, "delete", printId, full.print.name);
-  void createLog({
-    userId,
-    action: "model_deleted",
-    targetId: printId,
-    details: { name: full.print.name },
-  });
-}
 
 router.delete(
   "/print/:id",

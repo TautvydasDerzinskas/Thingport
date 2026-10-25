@@ -1,6 +1,7 @@
-import type { Prisma } from "@prisma/client";
+import type { Category, Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
+import { normalizeTags } from "../utils/tagNormalization";
 import { DEFAULT_CATEGORIES, type DefaultCategoryNode } from "../seedData/defaultCategories";
 import { replaceSiteIds, siteIdsOf, starterSiteIds, WITH_SITE_IDS, type SiteIds } from "./categorySiteIds";
 import { availableModelName, reorganizeManagedPrints, sanitizePathSegment } from "./printService";
@@ -59,6 +60,18 @@ export async function validateParentCategory(
   }
 
   return parentId;
+}
+
+/** A new category or folder; under a parent it takes the parent's kind. */
+export async function createCategory(
+  userId: string,
+  input: { name: string; tags?: string[]; parentId?: string | null; kind?: CategoryKind },
+): Promise<Category> {
+  const parentId = await validateParentCategory(userId, input.parentId ?? null);
+  const kind = await kindUnder(userId, parentId, input.kind ?? "folder");
+  return prisma.category.create({
+    data: { userId, name: input.name, tags: normalizeTags(input.tags ?? []), parentId, kind },
+  });
 }
 
 /** A default category's own fields, without its place in the tree. */

@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { prisma } from "../db";
+import { HttpError } from "../utils/fileUtils";
 import { generateModelImage } from "./modelPreviewCache";
 import { photoJpeg, renderThumbShade } from "./imageProcessing";
 import {
@@ -105,13 +106,7 @@ export async function removeGeneratedPreviewImages(printId: string): Promise<voi
   if (!generated.length) return;
   await prisma.previewImage.deleteMany({ where: { id: { in: generated.map((img) => img.id) } } });
   const remaining = await prisma.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } });
-  // Two-phase renumber, as in plates.ts, to avoid (printId, position) collisions.
-  await prisma.$transaction(
-    remaining.map((img, idx) => prisma.previewImage.update({ where: { id: img.id }, data: { position: -(idx + 1) } })),
-  );
-  await prisma.$transaction(
-    remaining.map((img, idx) => prisma.previewImage.update({ where: { id: img.id }, data: { position: idx } })),
-  );
+  await renumberPreviewImages(remaining.map((img) => img.id));
   const home = await printAssetHome(printId);
   for (const img of generated) await removeAsset(home, galleryImageFile(img.id));
 }
@@ -138,6 +133,35 @@ export async function deleteAllPreviewImages(printId: string): Promise<void> {
 /** Removes one gallery image's file, wherever it is. */
 export async function removePreviewImageFile(printId: string, id: string): Promise<void> {
   await removeAsset(await printAssetHome(printId), galleryImageFile(id));
+}
+
+/** Renumbers the model's gallery in this order. Two phases, as in plates.ts, to avoid (printId, position) collisions. */
+async function renumberPreviewImages(ids: string[]): Promise<void> {
+  await prisma.$transaction(
+    ids.map((id, idx) => prisma.previewImage.update({ where: { id }, data: { position: -(idx + 1) } })),
+  );
+  await prisma.$transaction(
+    ids.map((id, idx) => prisma.previewImage.update({ where: { id }, data: { position: idx } })),
+  );
+}
+
+/** Removes one of the model's gallery images; the next one up becomes the cover if it was. */
+export async function removePreviewImage(printId: string, imageId: string): Promise<void> {
+  const images = await prisma.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } });
+  if (!images.some((img) => img.id === imageId)) throw new HttpError(404, "Preview image not found");
+  await prisma.previewImage.delete({ where: { id: imageId } });
+  await renumberPreviewImages(images.filter((img) => img.id !== imageId).map((img) => img.id));
+  await removePreviewImageFile(printId, imageId);
+}
+
+/** Puts the model's gallery in this order; `ids` must be exactly its images. The first is the cover. */
+export async function reorderPreviewImages(printId: string, ids: string[]): Promise<void> {
+  const images = await prisma.previewImage.findMany({ where: { printId }, select: { id: true } });
+  const known = new Set(images.map((img) => img.id));
+  if (ids.length !== images.length || new Set(ids).size !== ids.length || ids.some((id) => !known.has(id))) {
+    throw new HttpError(400, "image_ids must contain exactly the print's current preview image ids");
+  }
+  await renumberPreviewImages(ids);
 }
 
 // The card render is white shading for the cards to tint, too pale on a light background as it is; as a thumb it's

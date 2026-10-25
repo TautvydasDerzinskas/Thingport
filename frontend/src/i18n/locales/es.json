@@ -258,6 +258,10 @@
               "title": "Obtener un archivo del modelo",
               "description": "Lee uno de los archivos de un modelo, p. ej. para laminarlo o convertirlo."
             },
+            "list_model_images": {
+              "title": "Listar las imágenes de un modelo",
+              "description": "Ve las imágenes de un modelo y cuál es su portada."
+            },
             "get_import_status": {
               "title": "Seguir una importación",
               "description": "Sigue una importación que aún está en curso."
@@ -270,6 +274,34 @@
               "title": "Subir un modelo",
               "description": "Añade un modelo hecho con tus propios archivos, como + Añadir > Subir archivos."
             },
+            "edit_model": {
+              "title": "Editar un modelo",
+              "description": "Cambia el título, la descripción, las etiquetas, la categoría y el favorito de un modelo."
+            },
+            "edit_model_images": {
+              "title": "Editar las imágenes de un modelo",
+              "description": "Añade, quita y reordena las imágenes de un modelo, y elige su portada."
+            },
+            "add_model_files": {
+              "title": "Añadir archivos a un modelo",
+              "description": "Añade placas o archivos adicionales a uno de tus modelos."
+            },
+            "remove_model_file": {
+              "title": "Quitar un archivo del modelo",
+              "description": "Borra para siempre uno de los archivos de un modelo."
+            },
+            "rename_model_file": {
+              "title": "Renombrar un archivo del modelo",
+              "description": "Renombra una de las placas de un modelo."
+            },
+            "delete_model": {
+              "title": "Borrar un modelo",
+              "description": "Borra para siempre un modelo con sus archivos e imágenes."
+            },
+            "create_category": {
+              "title": "Crear una categoría",
+              "description": "Crea una categoría o carpeta nueva."
+            },
             "create_collection": {
               "title": "Crear una colección",
               "description": "Crea una colección nueva y vacía."
@@ -277,6 +309,10 @@
             "add_to_collection": {
               "title": "Añadir a una colección",
               "description": "Pon modelos de tu biblioteca en una de tus colecciones."
+            },
+            "remove_from_collection": {
+              "title": "Quitar de una colección",
+              "description": "Saca modelos de una de tus colecciones."
             },
             "widget_guide": {
               "title": "Guía de widgets",

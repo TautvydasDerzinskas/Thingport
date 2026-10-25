@@ -256,6 +256,10 @@
               "title": "Gauti modelio failą",
               "description": "Skaityti vieną modelio failą, pvz., norint jį supjaustyti ar konvertuoti."
             },
+            "list_model_images": {
+              "title": "Modelio nuotraukų sąrašas",
+              "description": "Matyti modelio nuotraukas ir kuri iš jų yra viršelis."
+            },
             "get_import_status": {
               "title": "Importo būsena",
               "description": "Sekti importą, kuris dar vyksta."
@@ -268,6 +272,34 @@
               "title": "Įkelti modelį",
               "description": "Pridėti modelį iš savo failų, kaip + Pridėti > Įkelti failus."
             },
+            "edit_model": {
+              "title": "Redaguoti modelį",
+              "description": "Keisti modelio pavadinimą, aprašymą, žymas, kategoriją ir mėgstamumą."
+            },
+            "edit_model_images": {
+              "title": "Redaguoti modelio nuotraukas",
+              "description": "Pridėti, pašalinti ir pertvarkyti modelio nuotraukas, pasirinkti viršelį."
+            },
+            "add_model_files": {
+              "title": "Pridėti failų prie modelio",
+              "description": "Pridėti plokščių ar papildomų failų prie vieno iš jūsų modelių."
+            },
+            "remove_model_file": {
+              "title": "Pašalinti modelio failą",
+              "description": "Visam laikui ištrinti vieną modelio failą."
+            },
+            "rename_model_file": {
+              "title": "Pervadinti modelio failą",
+              "description": "Pervadinti vieną modelio plokštę."
+            },
+            "delete_model": {
+              "title": "Ištrinti modelį",
+              "description": "Visam laikui ištrinti modelį su jo failais ir nuotraukomis."
+            },
+            "create_category": {
+              "title": "Sukurti kategoriją",
+              "description": "Sukurti naują kategoriją ar aplanką."
+            },
             "create_collection": {
               "title": "Sukurti kolekciją",
               "description": "Sukurti naują, tuščią kolekciją."
@@ -275,6 +307,10 @@
             "add_to_collection": {
               "title": "Įtraukti į kolekciją",
               "description": "Įdėti bibliotekos modelius į vieną iš jūsų kolekcijų."
+            },
+            "remove_from_collection": {
+              "title": "Išimti iš kolekcijos",
+              "description": "Išimti modelius iš vienos iš jūsų kolekcijų."
             },
             "widget_guide": {
               "title": "Valdiklių vadovas",

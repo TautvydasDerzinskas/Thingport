@@ -8,6 +8,7 @@ import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import {
   CATEGORY_KINDS,
+  createCategory,
   kindUnder,
   previewCategoryReset,
   resetDefaultCategories,
@@ -156,10 +157,11 @@ router.post(
   "/categories",
   asyncHandler(async (req, res) => {
     const body = parseBody(categorySchema, req.body);
-    const parentId = await validateParentCategory(req.userId!, body.parent_id ?? null);
-    const kind = await kindUnder(req.userId!, parentId, body.kind ?? "folder");
-    const category = await prisma.category.create({
-      data: { userId: req.userId!, name: body.name, tags: normalizeTags(body.tags), parentId, kind },
+    const category = await createCategory(req.userId!, {
+      name: body.name,
+      tags: body.tags,
+      parentId: body.parent_id,
+      kind: body.kind,
     });
     res.json(toCategoryOut({ ...category, siteIds: [] }));
   }),

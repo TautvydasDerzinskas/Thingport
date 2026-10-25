@@ -2,9 +2,17 @@ import path from "node:path";
 import type { Print } from "@prisma/client";
 import { prisma } from "../db";
 import { RENDERABLE_MODEL_EXTS } from "../config";
-import { sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
-import { createPrint, discardPrint, type NewPlateInput, type PrintMetaInput } from "./printCreation";
-import { saveFileFromTemp } from "./printFileService";
+import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
+import {
+  addPlatesToPrint,
+  createPrint,
+  discardPrint,
+  removePlate,
+  type NewPlateInput,
+  type PrintMetaInput,
+} from "./printCreation";
+import { deletePreparedFile, deleteSupportingFile, saveFileFromTemp } from "./printFileService";
+import { isPreparedPrintFilename } from "./preparedPrint";
 import { addPreviewImage, preferImageOverRenders } from "./previewImageService";
 import { recordActivity } from "./activityService";
 import { createLog } from "./auditLog";
@@ -50,15 +58,59 @@ export async function createUploadedModel(userId: string, meta: PrintMetaInput, 
   return print;
 }
 
+export type FileKind = "plate" | "supporting";
+
+/** Adds files to one of the user's models: 3D files become plates, the rest supporting files (a sliced print takes
+ *  the place of the model's own), unless `kind` says otherwise. All or nothing, bar a sliced print already replaced. */
+export async function addUploadedFiles(
+  userId: string,
+  printId: string,
+  files: (UploadedFile & { kind?: FileKind })[],
+): Promise<{ plates: number; files: number }> {
+  const print = await prisma.print.findFirst({ where: { id: printId, userId } });
+  if (!print) throw new HttpError(404, "Print not found");
+  const isPlate = (f: (typeof files)[number]) =>
+    f.kind ? f.kind === "plate" : isRenderable(f) && !isPreparedPrintFilename(f.originalname);
+
+  const plateIds: string[] = [];
+  const before = new Set(
+    (await prisma.printFile.findMany({ where: { printId }, select: { id: true } })).map((f) => f.id),
+  );
+  try {
+    for (const f of files) {
+      if (isPlate(f)) {
+        const safeName = sanitizeFilename(f.originalname);
+        const [plate] = await addPlatesToPrint(userId, printId, [
+          { filename: safeName, mime: mimeFromContentType(f.mimetype, safeName), tempFilePath: f.path },
+        ]);
+        plateIds.push(plate.id);
+      } else {
+        await saveFileFromTemp(userId, printId, f.path, f.originalname, f.mimetype);
+      }
+    }
+  } catch (err) {
+    for (const plateId of plateIds) await removePlate(print, plateId).catch(() => undefined);
+    const added = await prisma.printFile.findMany({ where: { printId, id: { notIn: [...before] } } });
+    for (const file of added) {
+      const undo =
+        file.role === "PREPARED" ? deletePreparedFile(userId, printId) : deleteSupportingFile(userId, printId, file.id);
+      await undo.catch(() => undefined);
+    }
+    throw err;
+  }
+  return { plates: plateIds.length, files: files.length - plateIds.length };
+}
+
 /** Adds pictures to a model's gallery; the first that decodes becomes its cover in place of our render. Undecodable
- *  ones are skipped. Returns how many were added. */
-export async function addUploadedPreviewImages(printId: string, buffers: Buffer[]): Promise<number> {
+ *  ones are skipped. Returns the added ones' ids. */
+export async function addUploadedPreviewImages(printId: string, buffers: Buffer[]): Promise<string[]> {
   const firstPlate = await prisma.plate.findFirst({ where: { printId }, orderBy: { position: "asc" } });
-  let added = 0;
+  const added: string[] = [];
   for (const buffer of buffers) {
-    if (!(await addPreviewImage(printId, buffer, { keepExif: true }))) continue;
-    if (added === 0) await preferImageOverRenders(printId, firstPlate?.id, buffer, true);
-    added++;
+    const image = await addPreviewImage(printId, buffer, { keepExif: true });
+    if (!image) continue;
+    if (!added.length) await preferImageOverRenders(printId, firstPlate?.id, buffer, true);
+    added.push(image.id);
   }
   return added;
 }
