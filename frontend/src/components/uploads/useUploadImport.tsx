@@ -52,6 +52,18 @@ export function useUploadImport({ onUploaded, categoryId, onUnauthorized }: Prop
   const zipPrompt = useZipImportPrompt();
   const collectionPrompt = useCollectionImportPrompt();
   const importModePrompt = useImportModePrompt();
+  // Page inspections can finish together, but each picker holds only one pending choice.
+  const promptTail = useRef<Promise<void>>(Promise.resolve());
+  const showPrompt = (prompt: () => Promise<void>) => {
+    const next = promptTail.current.then(prompt);
+    promptTail.current = next.catch(() => undefined);
+    return next;
+  };
+  const showZipPrompt = (config: Parameters<typeof zipPrompt.prompt>[0]) => showPrompt(() => zipPrompt.prompt(config));
+  const showCollectionPrompt = (config: Parameters<typeof collectionPrompt.prompt>[0]) =>
+    showPrompt(() => collectionPrompt.prompt(config));
+  const showImportModePrompt = (config: Parameters<typeof importModePrompt.prompt>[0]) =>
+    showPrompt(() => importModePrompt.prompt(config));
   const { startSingleImport, startZipImport, startListImport, startProfilesImport, startLinksImport } = useImportJob();
   const isBusy = uploading || zipPrompt.isOpen || collectionPrompt.isOpen || importModePrompt.isOpen;
 
@@ -106,7 +118,7 @@ export function useUploadImport({ onUploaded, categoryId, onUnauthorized }: Prop
     };
     if (normalEntries.length) {
       if (isFlatFileSet(normalEntries)) {
-        await importModePrompt.prompt({
+        await showImportModePrompt({
           label: normalEntries.map((entry) => entry.file.name).join(", "),
           count: normalEntries.length,
           onChoose: async (mode: ImportMode) => {
@@ -120,7 +132,7 @@ export function useUploadImport({ onUploaded, categoryId, onUnauthorized }: Prop
       } else if (hasModelFolders(normalEntries)) {
         // Libraries often keep one model per folder, split into several files with its photos alongside.
         const roots = [...new Set(normalEntries.map((entry) => entry.relativePath.split("/")[0]))];
-        await importModePrompt.prompt({
+        await showImportModePrompt({
           label: roots.join(", "),
           count: normalEntries.length,
           variant: "folders",
@@ -139,7 +151,7 @@ export function useUploadImport({ onUploaded, categoryId, onUnauthorized }: Prop
       const baseParts = entry.relativePath.split("/").filter(Boolean);
       baseParts.pop();
       const basePath = baseParts.join("/");
-      await zipPrompt.prompt({
+      await showZipPrompt({
         label: entry.file.name,
         onImportAsZip: async () => {
           const result = await uploadEntriesToCategory([entry], categoryId || null, onUnauthorized);
@@ -262,7 +274,7 @@ export function useUploadImport({ onUploaded, categoryId, onUnauthorized }: Prop
 
       if (list) {
         const { provider } = list;
-        await collectionPrompt.prompt({
+        await showCollectionPrompt({
           label: url,
           loadEntries: async () => {
             try {
@@ -300,7 +312,7 @@ export function useUploadImport({ onUploaded, categoryId, onUnauthorized }: Prop
         await startSingleImport(payload);
         return;
       }
-      await zipPrompt.prompt({
+      await showZipPrompt({
         label: inspect.filename,
         onImportAsZip: async () => {
           try {
