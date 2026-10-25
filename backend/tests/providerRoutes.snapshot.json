@@ -4,6 +4,7 @@
   "GET /api/import/jobs/:id",
   "GET /api/import/jobs/:id/items",
   "GET /api/import/jobs/active",
+  "GET /api/import/jobs/active-list",
   "GET /api/import/makeronline/waiting",
   "GET /api/import/status",
   "GET /api/import/tasks/:id",
