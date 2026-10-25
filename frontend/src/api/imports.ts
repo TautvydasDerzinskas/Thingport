@@ -28,11 +28,11 @@ export type ImportCollectionEntriesResult = {
   entries: ImportCollectionEntry[];
 };
 
-export type ImportJobType = "COLLECTION" | "ZIP" | "PROFILES" | "LINKS";
+export type ImportJobType = "SINGLE" | "COLLECTION" | "ZIP" | "PROFILES" | "LINKS";
 
 export type MakerworldProfileScope = "url" | "designer" | "all";
 // PAUSED: a link queue waiting to be started from the admin import queue.
-export type ImportJobStatus = "RUNNING" | "DONE" | "ERROR" | "PAUSED";
+export type ImportJobStatus = "QUEUED" | "RUNNING" | "DONE" | "ERROR" | "PAUSED";
 
 /** Polled by ImportJobContext until status leaves RUNNING. */
 export type ImportJob = {
@@ -83,6 +83,17 @@ type ImportLinkPayload = {
 export type ImportOutcome = "created" | "profile_added" | "already_imported";
 
 export const importsApi = {
+  queueFromLink: async (payload: ImportLinkPayload): Promise<{ job_id: string }> => {
+    const res = await fetch(`${apiBase()}/import?async=1`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Import failed"));
+    return res.json();
+  },
+
   fromLink: async (payload: ImportLinkPayload): Promise<Print & { import_outcome?: ImportOutcome }> => {
     const res = await fetch(`${apiBase()}/import`, {
       method: "POST",

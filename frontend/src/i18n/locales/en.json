@@ -591,6 +591,8 @@
       }
     },
     "importProgress": {
+      "queued": "Waiting in the import queue…",
+      "singleFailed": "Import failed. Try the link again.",
       "starting": "Starting import…",
       "label": "{{phrase}} {{processed}} of {{total}}",
       "phrases": [
@@ -1884,12 +1886,14 @@
         "columnActions": "Actions",
         "progress": "{{processed}} of {{total}}, {{imported}} imported, {{failed}} failed",
         "type": {
+          "SINGLE": "Model",
           "LINKS": "Links",
           "COLLECTION": "Collection",
           "ZIP": "ZIP",
           "PROFILES": "Print profiles"
         },
         "status": {
+          "queued": "Queued",
           "paused": "Paused",
           "pausing": "Pausing",
           "running": "Running",
@@ -1899,6 +1903,7 @@
           "doneWithFailures": "Done, with failures"
         },
         "statusHint": {
+          "queued": "Waiting for the downloader.",
           "paused": "Waiting to be started.",
           "pausing": "Finishing the link it's on, then it stops.",
           "running": "Importing now.",

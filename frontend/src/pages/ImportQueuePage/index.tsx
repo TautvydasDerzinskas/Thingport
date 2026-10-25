@@ -55,6 +55,7 @@ function isStalled(job: AdminImportJob): boolean {
 
 function jobStatus(job: AdminImportJob): { key: string; color: StatusColor } {
   if (isStalled(job)) return { key: "stalled", color: "error" };
+  if (job.status === "QUEUED") return { key: "queued", color: "info" };
   if (job.status === "PAUSED") return { key: job.runner_live ? "pausing" : "paused", color: "info" };
   if (job.status === "RUNNING") return { key: "running", color: "warning" };
   if (job.status === "ERROR") return { key: "error", color: "error" };
@@ -66,7 +67,7 @@ function matchesFilter(job: AdminImportJob, filter: Filter): boolean {
     case "paused":
       return job.status === "PAUSED";
     case "running":
-      return job.status === "RUNNING";
+      return job.status === "RUNNING" || job.status === "QUEUED";
     case "failed":
       return job.status === "ERROR" || job.failed_items_count > 0 || job.failed_count > 0;
     case "done":
@@ -121,7 +122,9 @@ export default function ImportQueuePage({ onUnauthorized }: Props) {
   }, [expanded, load]);
 
   const active = Boolean(
-    queue && (queue.bulk.running || queue.jobs.some((job) => job.status === "RUNNING" || job.runner_live)),
+    queue &&
+    (queue.bulk.running ||
+      queue.jobs.some((job) => job.status === "RUNNING" || job.status === "QUEUED" || job.runner_live)),
   );
 
   React.useEffect(() => {

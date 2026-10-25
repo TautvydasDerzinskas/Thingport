@@ -9,11 +9,13 @@ type StartZipImportPayload = Parameters<typeof importsApi.zipFromLink>[0];
 type StartListImportPayload = Parameters<typeof importsApi.startList>[1];
 type StartProfilesImportPayload = Parameters<typeof importsApi.startProfiles>[1];
 type StartLinksImportPayload = Parameters<typeof importsApi.fromLinks>[0];
+type StartSingleImportPayload = Parameters<typeof importsApi.queueFromLink>[0];
 
 type ImportJobContextValue = {
   /** Non-null while a batch import runs; drives the progress bar and disables importing. */
   activeJob: ImportJob | null;
   isImporting: boolean;
+  startSingleImport: (payload: StartSingleImportPayload) => Promise<void>;
   startZipImport: (payload: StartZipImportPayload) => Promise<void>;
   /** The models queued for Thingport Grab where the provider's files come through it, else null: a job runs. */
   startListImport: (
@@ -57,7 +59,7 @@ export function ImportJobProvider({
     async (jobId: string) => {
       try {
         const job = await importsApi.getImportJob(jobId);
-        if (job.status === "RUNNING") {
+        if (job.status === "RUNNING" || job.status === "QUEUED") {
           setActiveJob(job);
           return;
         }
@@ -68,8 +70,8 @@ export function ImportJobProvider({
           return;
         }
         onJobCompletedRef.current?.();
-        // A link queue with failures stays on screen so they can be retried or dismissed.
-        if (job.type === "LINKS" && (job.failed_count > 0 || job.status === "ERROR")) {
+        // Keep failures visible until dismissed; only LINKS currently supports retrying failed items.
+        if (job.failed_count > 0 || job.status === "ERROR") {
           setActiveJob(job);
           return;
         }
@@ -106,7 +108,7 @@ export function ImportJobProvider({
     (async () => {
       try {
         const job = await importsApi.getActiveImportJob();
-        if (job && job.status === "RUNNING") {
+        if (job && (job.status === "RUNNING" || job.status === "QUEUED")) {
           setActiveJob(job);
           startPolling(job.id);
         }
@@ -124,6 +126,11 @@ export function ImportJobProvider({
       startPolling(jobId);
     },
     [startPolling],
+  );
+
+  const startSingleImport = useCallback(
+    async (payload: StartSingleImportPayload) => followJob((await importsApi.queueFromLink(payload)).job_id),
+    [followJob],
   );
 
   const startZipImport = useCallback(
@@ -166,6 +173,7 @@ export function ImportJobProvider({
     () => ({
       activeJob,
       isImporting: activeJob !== null,
+      startSingleImport,
       startZipImport,
       startListImport,
       startProfilesImport,
@@ -173,7 +181,16 @@ export function ImportJobProvider({
       retryJob,
       dismissJob,
     }),
-    [activeJob, startZipImport, startListImport, startProfilesImport, startLinksImport, retryJob, dismissJob],
+    [
+      activeJob,
+      startSingleImport,
+      startZipImport,
+      startListImport,
+      startProfilesImport,
+      startLinksImport,
+      retryJob,
+      dismissJob,
+    ],
   );
 
   return <ImportJobContext.Provider value={value}>{children}</ImportJobContext.Provider>;

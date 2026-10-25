@@ -3,7 +3,7 @@ import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { UnauthorizedError } from "../../api/client";
-import { importsApi, type ImportOutcome, type MakerworldProfileScope } from "../../api/imports";
+import { importsApi, type MakerworldProfileScope } from "../../api/imports";
 import { printsApi, type Print } from "../../api/prints";
 import { useNotifications } from "../Layout/NotificationsContext";
 import {
@@ -54,16 +54,12 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
   const zipPrompt = useZipImportPrompt();
   const collectionPrompt = useCollectionImportPrompt();
   const importModePrompt = useImportModePrompt();
-  const { startZipImport, startListImport, startProfilesImport, startLinksImport } = useImportJob();
+  const { startSingleImport, startZipImport, startListImport, startProfilesImport, startLinksImport } = useImportJob();
   const isBusy = uploading || importing || zipPrompt.isOpen || collectionPrompt.isOpen || importModePrompt.isOpen;
 
   // A plain upload has no metadata yet, so open it straight in edit mode.
   const openForEditing = (print: Print) => {
     navigate(`/models/${print.id}?edit=${print.id}`);
-  };
-
-  const openForViewing = (print: Print) => {
-    navigate(`/models/${print.id}`);
   };
 
   const uploadFlatAsMultiplate = async (files: File[]) => {
@@ -229,17 +225,6 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
     />
   );
 
-  const showImportedToast = (imported: Print & { import_outcome?: ImportOutcome }) => {
-    const name = imported.title || imported.name;
-    const key =
-      imported.import_outcome === "profile_added"
-        ? "uploadBar.profileAdded"
-        : imported.import_outcome === "already_imported"
-          ? "uploadBar.alreadyInLibrary"
-          : "uploadBar.imported";
-    showToast({ message: t(key, { name }) });
-  };
-
   /** `profileScope`: which print profiles to import, for a provider with them; more than the link's runs as a job,
    *  and MakerOnline's wait for Thingport Grab. */
   const submitImport = async (
@@ -312,19 +297,13 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
       // A model whose link may be a zip of its raw files imports as any other link does, asking what to do with a zip;
       // the backend splits the rest into plates itself.
       if (model && !mayBeRawFilesZip(model.provider)) {
-        const imported = await importsApi.fromLink(payload);
-        showImportedToast(imported);
-        onUploaded();
-        openForViewing(imported);
+        await startSingleImport(payload);
         return;
       }
 
       const inspect = await importsApi.inspectLink(payload);
       if (!inspect.is_zip) {
-        const imported = await importsApi.fromLink(payload);
-        showImportedToast(imported);
-        onUploaded();
-        openForViewing(imported);
+        await startSingleImport(payload);
         return;
       }
       setImporting(false);
@@ -332,10 +311,7 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
         label: inspect.filename,
         onImportAsZip: async () => {
           try {
-            const imported = await importsApi.fromLink(payload);
-            showImportedToast(imported);
-            onUploaded();
-            openForViewing(imported);
+            await startSingleImport(payload);
           } catch (err) {
             if (err instanceof UnauthorizedError) {
               onUnauthorized?.();

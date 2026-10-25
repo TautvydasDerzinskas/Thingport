@@ -23,29 +23,39 @@ export default function ImportProgressBar() {
   const { activeJob, retryJob, dismissJob } = useImportJob();
   const [detailsOpen, setDetailsOpen] = useState(false);
   const running = activeJob?.status === "RUNNING";
+  const queued = activeJob?.status === "QUEUED";
   const phrase = useRotatingPhrase("importProgress.phrases", running);
 
   if (!activeJob) return null;
 
   const { total, processed, imported, already_in_library: alreadyInLibrary, failed_count: failedCount } = activeJob;
   const progressValue = total > 0 ? Math.min(100, (processed / total) * 100) : 0;
-  const hasFailures = !running && (failedCount > 0 || activeJob.status === "ERROR");
-  const label = running
-    ? total > 0
-      ? t("importProgress.label", { phrase, processed, total })
-      : t("importProgress.starting")
-    : hasFailures
-      ? t("importProgress.doneWithFailures", { imported, alreadyInLibrary, failedCount })
-      : t("importProgress.done", { imported, alreadyInLibrary });
-  const tooltip = hasFailures
-    ? t("importProgress.tooltipFailed", { failedCount })
-    : t("importProgress.tooltip", { imported, alreadyInLibrary, failedCount });
+  const hasFailures = !running && !queued && (failedCount > 0 || activeJob.status === "ERROR");
+  const singleError = activeJob.type === "SINGLE" && activeJob.status === "ERROR";
+  const label = singleError
+    ? (activeJob.error_message ?? t("importProgress.singleFailed"))
+    : queued
+      ? t("importProgress.queued")
+      : running
+        ? total > 0
+          ? t("importProgress.label", { phrase, processed, total })
+          : t("importProgress.starting")
+        : hasFailures
+          ? t("importProgress.doneWithFailures", { imported, alreadyInLibrary, failedCount })
+          : t("importProgress.done", { imported, alreadyInLibrary });
+  const tooltip = singleError
+    ? (activeJob.error_message ?? t("importProgress.singleFailed"))
+    : queued
+      ? t("importProgress.queued")
+      : hasFailures
+        ? t("importProgress.tooltipFailed", { failedCount })
+        : t("importProgress.tooltip", { imported, alreadyInLibrary, failedCount });
 
   return (
     <>
       <Tooltip title={tooltip} placement="top">
         <Box
-          onClick={() => setDetailsOpen(true)}
+          onClick={activeJob.type === "LINKS" ? () => setDetailsOpen(true) : undefined}
           sx={{
             bgcolor: hasFailures ? "warning.main" : "background.paper",
             color: hasFailures ? "warning.contrastText" : "inherit",
@@ -53,7 +63,7 @@ export default function ImportProgressBar() {
             borderColor: hasFailures ? "warning.dark" : "divider",
             px: 2,
             py: 0.75,
-            cursor: "pointer",
+            cursor: activeJob.type === "LINKS" ? "pointer" : "default",
           }}
         >
           <Stack direction="row" spacing={1.5} alignItems="center" sx={{ maxWidth: 520, mx: "auto" }}>
@@ -80,25 +90,27 @@ export default function ImportProgressBar() {
                   {label}
                 </Typography>
               </Stack>
-              {running ? (
+              {running || queued ? (
                 <LinearProgress
-                  variant={total > 0 ? "determinate" : "indeterminate"}
+                  variant={running && total > 0 ? "determinate" : "indeterminate"}
                   value={progressValue}
                   sx={{ borderRadius: 1, height: 6 }}
                 />
               ) : (
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <Button
-                    size="small"
-                    startIcon={<ReplayIcon fontSize="small" />}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      void retryJob();
-                    }}
-                    sx={hasFailures ? { color: "warning.contrastText" } : undefined}
-                  >
-                    {t("importProgress.retryFailed")}
-                  </Button>
+                  {activeJob.type === "LINKS" && hasFailures && (
+                    <Button
+                      size="small"
+                      startIcon={<ReplayIcon fontSize="small" />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void retryJob();
+                      }}
+                      sx={{ color: "warning.contrastText" }}
+                    >
+                      {t("importProgress.retryFailed")}
+                    </Button>
+                  )}
                   <IconButton
                     size="small"
                     aria-label={t("importProgress.dismiss")}
