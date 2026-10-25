@@ -39,9 +39,11 @@ let host: HTMLElement | null = null;
 let observer: MutationObserver | null = null;
 let themeObserver: MutationObserver | null = null;
 let bubbleTimer: ReturnType<typeof setTimeout> | undefined;
+// The instance's slicer for the explanation, once it has answered; the button doesn't wait for it.
+let slicerLabel: string | null = null;
 
-function explanation(slicerLabel: string | null): string {
-  const slicers = slicerLabel ? `${slicerLabel} often opens` : "PrusaSlicer, Cura and other slicers often open";
+function explanation(slicer: string | null): string {
+  const slicers = slicer ? `${slicer} often opens` : "PrusaSlicer, Cura and other slicers often open";
   return (
     `MakerWorld files are Bambu Studio projects, which ${slicers} without their colors or print ` +
     "settings. This downloads a converted copy that keeps painted colors, filament colors, plates and the " +
@@ -141,7 +143,7 @@ async function downloadNormalized(pageUrl: string, onProgress: (text: string) =>
   saveFile(output, normalizedFilename(sourceFilename(res, resolved.downloadUrl)));
 }
 
-function buildHost(pageUrl: string, slicerLabel: string | null): HTMLElement {
+function buildHost(pageUrl: string): HTMLElement {
   const el = document.createElement("span");
   el.id = HOST_ID;
   const root = el.attachShadow({ mode: "open" });
@@ -276,9 +278,9 @@ function place(): void {
   host.toggleAttribute("data-gapped", Boolean(gap) && gap !== "normal" && gap !== "0px");
 }
 
-function mount(pageUrl: string, slicerLabel: string | null): void {
+function mount(pageUrl: string): void {
   unmountNormalizedDownload();
-  host = buildHost(pageUrl, slicerLabel);
+  host = buildHost(pageUrl);
   let scheduled = false;
   const schedule = () => {
     if (scheduled) return;
@@ -306,6 +308,7 @@ export function unmountNormalizedDownload(): void {
   host?.remove();
   host = null;
   anchor = null;
+  slicerLabel = null;
   clearTimeout(bubbleTimer);
 }
 
@@ -316,10 +319,12 @@ export async function offerNormalizedDownload(
   configured: boolean,
   isStale: () => boolean,
 ): Promise<void> {
-  const slicer = configured
-    ? await api<{ slicer: string | null }>("GET", "/settings/slicer")
-        .then((res) => res.slicer)
-        .catch(() => null)
-    : null;
-  if (!isStale()) mount(pageUrl, slicer ? (NORMALIZE_3MF_SLICERS[slicer] ?? null) : null);
+  if (isStale()) return;
+  mount(pageUrl);
+  if (!configured) return;
+  const mounted = host;
+  const slicer = await api<{ slicer: string | null }>("GET", "/settings/slicer")
+    .then((res) => res.slicer)
+    .catch(() => null);
+  if (host === mounted) slicerLabel = slicer ? (NORMALIZE_3MF_SLICERS[slicer] ?? null) : null;
 }
