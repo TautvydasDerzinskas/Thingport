@@ -414,8 +414,8 @@ router.post(
       if (url && !urls.includes(url)) urls.push(url);
     }
     if (!urls.length) throw new HttpError(400, "No links to import");
-    if (parsedRequest.makerworld_cookie?.trim()) {
-      // TTL/privacy compatibility: request sessions stay in this immediate runner, never in durable payloads.
+    if (urls.some((url) => needsImmediateImport({ ...parsedRequest, url }))) {
+      // Signed links and request sessions cannot wait for the durable queue.
       if (await getActiveJob(req.userId!))
         throw new HttpError(409, "An import is already running; try again when it finishes");
       const job = await startImmediateImport(

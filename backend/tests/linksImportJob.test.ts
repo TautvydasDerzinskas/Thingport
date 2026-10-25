@@ -71,7 +71,7 @@ function mockFetch() {
         url: `https://s3.example.com/phoenix-${profile[1]}.stl`,
         filename: `phoenix-${profile[1]}.stl`,
       });
-    const file = url.match(/^https:\/\/s3\.example\.com\/phoenix-(\d+)\.stl$/);
+    const file = url.match(/^https:\/\/s3\.example\.com\/phoenix-(\d+)\.stl(?:\?.*)?$/);
     if (file)
       return new Response(`solid phoenix-${file[1]}\nendsolid\n`, {
         headers: { "content-type": "application/octet-stream" },
@@ -293,6 +293,22 @@ describe("the links import queue", () => {
     expect(typeof response.body.job_id).toBe("string");
     expect((await waitJob(response.body.job_id)).status).toBe("DONE");
   });
+
+  it.each(["X-Amz-Signature=test", "Expires=1893456000"])(
+    "imports a LINKS batch immediately when a later URL is signed with %s",
+    async (signature) => {
+      const id = String((stamp % 1_000_000_000) + 20 + (signature.startsWith("Expires") ? 1 : 0));
+      const response = await startLinks([
+        `https://makerworld.com/en/models/${id}-phoenix`,
+        `https://s3.example.com/phoenix-${id}.stl?${signature}`,
+      ]);
+      expect(response.status).toBe(202);
+      const finished = await waitJob(response.body.job_id);
+      expect(finished).toMatchObject({ status: "DONE", imported: 2 });
+      const job = await prisma.importJob.findUniqueOrThrow({ where: { id: response.body.job_id } });
+      expect(job.payload).toMatchObject({ immediate: true });
+    },
+  );
 
   it("imports immediately with an explicit session without retaining its cookie", async () => {
     const id = String((stamp % 1_000_000_000) + 11);
