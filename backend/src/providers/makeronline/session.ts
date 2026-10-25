@@ -1,9 +1,19 @@
-import { prisma } from "../../db";
+import {
+  connectionState,
+  readConnection,
+  rejectConnection,
+  usableSecret,
+  writeConnection,
+  type ConnectionState,
+} from "../connections";
+import manifest from "./manifest.generated";
 
 // Per-user: the MakerOnline access token, the JWT in its mo_access_token cookie, sent bare in Authorization. It lasts
 // about 90 days and Thingport never renews it; Thingport Grab sends a new one whenever the browser's changes.
 
-const ACCESS_COOKIE = "mo_access_token";
+const ID = manifest.id;
+const ACCESS_COOKIE = manifest.sessionCookies.token;
+type Secret = { token: string };
 
 export type MakeronlineToken = { token: string; expiresAt: Date | null; userId: string | null };
 
@@ -48,50 +58,32 @@ export function normalizeMakeronlineToken(raw: string | null | undefined): Maker
 /** The user's token while it's still valid; null once it has expired or been turned down, so nothing asks MakerOnline
  *  with it in vain and public reads go without it. */
 export async function getUserMakeronlineToken(userId: string): Promise<string | null> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { makeronlineToken: true, makeronlineTokenExpires: true, makeronlineRejectedAt: true },
-  });
-  if (!user?.makeronlineToken || user.makeronlineRejectedAt) return null;
-  if (user.makeronlineTokenExpires && user.makeronlineTokenExpires.getTime() <= Date.now()) return null;
-  return user.makeronlineToken;
+  return usableSecret(await readConnection<Secret>(userId, ID), true)?.token ?? null;
 }
 
 export async function getUserMakeronlineId(userId: string): Promise<string | null> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { makeronlineUserId: true } });
-  return user?.makeronlineUserId ?? null;
+  return (await readConnection(userId, ID))?.accountId ?? null;
 }
 
 /** A new token clears an earlier rejection. The MakerOnline user id is kept on disconnect, as for Snapmaker. */
 export async function setUserMakeronlineToken(userId: string, token: MakeronlineToken | null): Promise<boolean> {
-  await prisma.user.update({
-    where: { id: userId },
-    data: token
-      ? {
-          makeronlineToken: token.token,
-          makeronlineTokenExpires: token.expiresAt,
-          makeronlineRejectedAt: null,
-          ...(token.userId ? { makeronlineUserId: token.userId } : {}),
-        }
-      : { makeronlineToken: null, makeronlineTokenExpires: null, makeronlineRejectedAt: null },
+  await writeConnection<Secret>(userId, ID, {
+    secret: token && { token: token.token },
+    expiresAt: token?.expiresAt ?? null,
+    rejectedAt: null,
+    ...(token?.userId ? { accountId: token.userId } : {}),
   });
   return Boolean(token);
 }
 
 export async function markMakeronlineTokenRejected(userId: string): Promise<void> {
-  await prisma.user.update({ where: { id: userId }, data: { makeronlineRejectedAt: new Date() } });
+  await rejectConnection(userId, ID);
 }
 
-export type MakeronlineConnection = "connected" | "disconnected" | "expired";
+export type MakeronlineConnection = ConnectionState;
 
 export async function getMakeronlineConnection(userId: string): Promise<MakeronlineConnection> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { makeronlineToken: true, makeronlineTokenExpires: true, makeronlineRejectedAt: true },
-  });
-  if (!user?.makeronlineToken) return "disconnected";
-  const expired = user.makeronlineTokenExpires && user.makeronlineTokenExpires.getTime() <= Date.now();
-  return user.makeronlineRejectedAt || expired ? "expired" : "connected";
+  return connectionState(await readConnection(userId, ID), true);
 }
 
 /** Shown wherever reading the user's own MakerOnline lists needs a sign-in they haven't given, or that has run out. */

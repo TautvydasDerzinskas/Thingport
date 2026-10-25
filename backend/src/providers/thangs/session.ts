@@ -1,4 +1,10 @@
-import { prisma } from "../../db";
+import {
+  connectionState,
+  readConnection,
+  rejectConnection,
+  writeConnection,
+  type ConnectionState,
+} from "../connections";
 import { createLogger } from "../../logger";
 import manifest from "./manifest.generated";
 import { decodeThangsJwt, refreshThangsToken, ThangsAuthError } from "./api";
@@ -7,7 +13,8 @@ import { decodeThangsJwt, refreshThangsToken, ThangsAuthError } from "./api";
 // cookie that renews it. The refresh token lasts about a year and Thangs keeps it as it is on use, so Thingport renews
 // the access token itself as it runs out; Thingport Grab sends both whenever the browser's change.
 
-const log = createLogger(manifest.id);
+const ID = manifest.id;
+const log = createLogger(ID);
 
 // Renewed a little before it runs out, so a long import never starts with a token about to.
 const RENEW_BEFORE_MS = 10 * 60 * 1000;
@@ -42,62 +49,62 @@ export function normalizeThangsSession(raw: string | null | undefined): ThangsSe
   return userId && (token || refreshToken) ? { token, refreshToken, userId, expiresAt } : null;
 }
 
-const SESSION_SELECT = {
-  thangsToken: true,
-  thangsRefreshToken: true,
-  thangsExpiresAt: true,
-  thangsUserId: true,
-  thangsRejectedAt: true,
-} as const;
+type Secret = { token: string | null; refreshToken: string | null };
+
+/** What's stored, flattened; null without a row. */
+async function stored(userId: string) {
+  const connection = await readConnection<Secret>(userId, ID);
+  return (
+    connection && {
+      token: connection.secret?.token ?? null,
+      refreshToken: connection.secret?.refreshToken ?? null,
+      expiresAt: connection.expiresAt,
+      userId: connection.accountId,
+      rejectedAt: connection.rejectedAt,
+    }
+  );
+}
+
+/** Both tokens as a secret: null when neither is left. */
+const secretOf = (token: string | null, refreshToken: string | null): Secret | null =>
+  token || refreshToken ? { token, refreshToken } : null;
 
 /** A new sign-in clears an earlier rejection. One without a refresh token keeps the one already there for the same
  *  Thangs account, so pasting a fresh access token doesn't lose the renewals. */
 export async function setUserThangsSession(userId: string, session: ThangsSession | null): Promise<boolean> {
   if (!session) {
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        thangsToken: null,
-        thangsRefreshToken: null,
-        thangsExpiresAt: null,
-        thangsUserId: null,
-        thangsRejectedAt: null,
-      },
-    });
+    await writeConnection(userId, ID, { secret: null, expiresAt: null, accountId: null, rejectedAt: null });
     return false;
   }
-  const current = await prisma.user.findUnique({ where: { id: userId }, select: SESSION_SELECT });
-  const sameAccount = current?.thangsUserId === session.userId;
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      thangsToken: session.token ?? (sameAccount ? current?.thangsToken : null) ?? null,
-      thangsRefreshToken: session.refreshToken ?? (sameAccount ? current?.thangsRefreshToken : null) ?? null,
-      thangsExpiresAt: session.token ? session.expiresAt : sameAccount ? (current?.thangsExpiresAt ?? null) : null,
-      thangsUserId: session.userId,
-      thangsRejectedAt: null,
-    },
+  const current = await stored(userId);
+  const sameAccount = current?.userId === session.userId;
+  await writeConnection<Secret>(userId, ID, {
+    secret: secretOf(
+      session.token ?? (sameAccount ? current?.token : null) ?? null,
+      session.refreshToken ?? (sameAccount ? current?.refreshToken : null) ?? null,
+    ),
+    expiresAt: session.token ? session.expiresAt : sameAccount ? (current?.expiresAt ?? null) : null,
+    accountId: session.userId,
+    rejectedAt: null,
   });
   return true;
 }
 
 export async function markThangsSessionRejected(userId: string): Promise<void> {
-  await prisma.user.update({ where: { id: userId }, data: { thangsRejectedAt: new Date() } });
+  await rejectConnection(userId, ID);
 }
 
-export type ThangsConnection = "connected" | "disconnected" | "expired";
+export type ThangsConnection = ConnectionState;
 
 export async function getThangsConnection(userId: string): Promise<ThangsConnection> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: SESSION_SELECT });
-  if (!user?.thangsToken && !user?.thangsRefreshToken) return "disconnected";
-  return user.thangsRejectedAt ? "expired" : "connected";
+  return connectionState(await readConnection(userId, ID));
 }
 
 /** The Thangs account the user connected, whose likes are theirs; null when none is. */
 export async function getUserThangsId(userId: string): Promise<string | null> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: SESSION_SELECT });
-  if (!user?.thangsUserId || user.thangsRejectedAt) return null;
-  return user.thangsToken || user.thangsRefreshToken ? user.thangsUserId : null;
+  const user = await stored(userId);
+  if (!user?.userId || user.rejectedAt) return null;
+  return user.token || user.refreshToken ? user.userId : null;
 }
 
 // One renewal at a time per user, however many imports ask at once.
@@ -115,7 +122,8 @@ function renewToken(userId: string, refreshToken: string | null): Promise<string
     }
     try {
       const { token, expiresAt } = await refreshThangsToken(refreshToken);
-      await prisma.user.update({ where: { id: userId }, data: { thangsToken: token, thangsExpiresAt: expiresAt } });
+      const current = await stored(userId);
+      await writeConnection<Secret>(userId, ID, { secret: secretOf(token, current?.refreshToken ?? null), expiresAt });
       log.info("access token renewed", { user: userId });
       return token;
     } catch (err) {
@@ -133,11 +141,11 @@ function renewToken(userId: string, refreshToken: string | null): Promise<string
 /** The user's access token, renewed first when it's out or nearly; null when they haven't connected Thangs or it
  *  turned them down. Throws ThangsAuthError when the renewal is turned down. */
 export async function getUserThangsToken(userId: string): Promise<string | null> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: SESSION_SELECT });
-  if (!user || user.thangsRejectedAt || (!user.thangsToken && !user.thangsRefreshToken)) return null;
-  const fresh = user.thangsExpiresAt && user.thangsExpiresAt.getTime() - Date.now() > RENEW_BEFORE_MS;
-  if (user.thangsToken && (fresh || !user.thangsRefreshToken)) return user.thangsToken;
-  return renewToken(userId, user.thangsRefreshToken);
+  const user = await stored(userId);
+  if (!user || user.rejectedAt || (!user.token && !user.refreshToken)) return null;
+  const fresh = user.expiresAt && user.expiresAt.getTime() - Date.now() > RENEW_BEFORE_MS;
+  if (user.token && (fresh || !user.refreshToken)) return user.token;
+  return renewToken(userId, user.refreshToken);
 }
 
 /** Runs `call` with the user's access token; when Thangs turns it down, renews it and tries once more. Throws
@@ -152,12 +160,10 @@ export async function withThangsToken<T>(
     return await call(token);
   } catch (err) {
     if (!(err instanceof ThangsAuthError)) throw err;
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: SESSION_SELECT });
+    const user = await stored(userId);
     // Renewed by a concurrent call meanwhile: that one's token is tried instead.
     const renewed =
-      user?.thangsToken && user.thangsToken !== token
-        ? user.thangsToken
-        : await renewToken(userId, user?.thangsRefreshToken ?? null);
+      user?.token && user.token !== token ? user.token : await renewToken(userId, user?.refreshToken ?? null);
     try {
       return await call(renewed);
     } catch (retryErr) {

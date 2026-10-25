@@ -4,10 +4,10 @@
 // frontend/src/providers/collectionTiles.ts in the app, and the tables in extension/src/providers/ in Grab.
 //
 // Outside them, and why:
-// - prisma/schema.prisma: its User columns (makeronlineToken, makeronlineTokenExpires, makeronlineUserId,
-//   makeronlineRejectedAt, and its GrabImport rows) and Category's makeronlineCatIds, a column apiece until Phase 7 of
-//   docs/rfc/provider-modules.md moves them into tables of their own. dto.ts, routes/categories.ts,
-//   services/categoryService.ts and seedData/defaultCategories.ts name its category ids for the same reason.
+// - prisma/schema.prisma: Category's makeronlineCatIds, a column apiece until Phase 7 of docs/rfc/provider-modules.md
+//   moves them into a table of their own; dto.ts, routes/categories.ts, services/categoryService.ts and
+//   seedData/defaultCategories.ts name its category ids for the same reason. Its GrabImport rows are a model of their
+//   own there, as the schema is one file.
 // - routes/importRequest.ts: resolved_files, its files as Grab signed them, on the import body every import route
 //   takes.
 // - services/apiTokenScopes.ts: its waiting imports' path, as every scope is listed there for apps that read with a

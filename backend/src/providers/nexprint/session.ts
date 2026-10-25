@@ -1,4 +1,11 @@
-import { prisma } from "../../db";
+import {
+  connectionState,
+  readConnection,
+  rejectConnection,
+  usableSecret,
+  writeConnection,
+  type ConnectionState,
+} from "../connections";
 import manifest from "./manifest.generated";
 
 // Per-user: the NexPrint token, its auth_token cookie, sent as a Bearer token. The site keeps the cookie for a week and
@@ -6,6 +13,8 @@ import manifest from "./manifest.generated";
 // only to show; the token is used until NexPrint turns it down, as it may outlive the cookie.
 
 const TOKEN_COOKIE = manifest.sessionCookies.token;
+const ID = manifest.id;
+type Secret = { token: string };
 
 export type NexprintSession = { token: string; expiresAt: Date | null };
 
@@ -34,38 +43,27 @@ export function normalizeNexprintSession(
 
 /** The user's token until NexPrint turns it down; null without one. */
 export async function getUserNexprintToken(userId: string): Promise<string | null> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { nexprintToken: true, nexprintRejectedAt: true },
-  });
-  if (!user?.nexprintToken || user.nexprintRejectedAt) return null;
-  return user.nexprintToken;
+  return usableSecret(await readConnection<Secret>(userId, ID))?.token ?? null;
 }
 
 /** A new token clears an earlier rejection. */
 export async function setUserNexprintSession(userId: string, session: NexprintSession | null): Promise<boolean> {
-  await prisma.user.update({
-    where: { id: userId },
-    data: session
-      ? { nexprintToken: session.token, nexprintExpiresAt: session.expiresAt, nexprintRejectedAt: null }
-      : { nexprintToken: null, nexprintExpiresAt: null, nexprintRejectedAt: null },
+  await writeConnection<Secret>(userId, ID, {
+    secret: session && { token: session.token },
+    expiresAt: session?.expiresAt ?? null,
+    rejectedAt: null,
   });
   return Boolean(session);
 }
 
 export async function markNexprintSessionRejected(userId: string): Promise<void> {
-  await prisma.user.update({ where: { id: userId }, data: { nexprintRejectedAt: new Date() } });
+  await rejectConnection(userId, ID);
 }
 
-export type NexprintConnection = "connected" | "disconnected" | "expired";
+export type NexprintConnection = ConnectionState;
 
 export async function getNexprintConnection(userId: string): Promise<NexprintConnection> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { nexprintToken: true, nexprintRejectedAt: true },
-  });
-  if (!user?.nexprintToken) return "disconnected";
-  return user.nexprintRejectedAt ? "expired" : "connected";
+  return connectionState(await readConnection(userId, ID));
 }
 
 /** Shown wherever a NexPrint download needs a sign-in the user hasn't given, or that ran out. */

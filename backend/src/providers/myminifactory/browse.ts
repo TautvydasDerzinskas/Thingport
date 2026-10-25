@@ -1,4 +1,5 @@
-import { prisma } from "../../db";
+import { readConnection, writeConnection } from "../connections";
+import manifest from "./manifest.generated";
 import { getMyminifactoryApiKey } from "./apiKey";
 import { HttpError } from "../../utils/fileUtils";
 import type { ProviderBrowse } from "../types";
@@ -18,23 +19,20 @@ async function requireKey(): Promise<string> {
 
 export const myminifactoryBrowse: ProviderBrowse = {
   async account(userId) {
-    const [user, key] = await Promise.all([
-      prisma.user.findUnique({ where: { id: userId }, select: { myminifactoryUsername: true } }),
-      getMyminifactoryApiKey(),
-    ]);
-    return { connected: Boolean(key), account: user?.myminifactoryUsername ?? null };
+    const [user, key] = await Promise.all([readConnection(userId, manifest.id), getMyminifactoryApiKey()]);
+    return { connected: Boolean(key), account: user?.accountName ?? null };
   },
   async setAccount(userId, value) {
     const key = value ? await requireKey() : null;
     const user = key ? await resolveMyminifactoryUser(value!, key) : null;
     if (value && !user) throw new HttpError(404, `MyMiniFactory has no user "${value}"`);
-    await prisma.user.update({ where: { id: userId }, data: { myminifactoryUsername: user?.username ?? null } });
+    await writeConnection(userId, manifest.id, { accountName: user?.username ?? null });
   },
   async cards(userId) {
     const key = await requireKey();
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { myminifactoryUsername: true } });
-    if (!user?.myminifactoryUsername) throw new HttpError(409, "Tell Thingport your MyMiniFactory username first");
-    return listMyminifactoryUserCollections(user.myminifactoryUsername, key);
+    const username = (await readConnection(userId, manifest.id))?.accountName;
+    if (!username) throw new HttpError(409, "Tell Thingport your MyMiniFactory username first");
+    return listMyminifactoryUserCollections(username, key);
   },
   async card(_userId, source) {
     const key = await requireKey();

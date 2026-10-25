@@ -2,6 +2,7 @@
 // and the syncs of private lists read it (listings.ts).
 
 import { prisma } from "../../db";
+import { readConnection, writeConnection } from "../connections";
 import { HttpError } from "../../utils/fileUtils";
 import { LIKES_ID_PREFIX } from "../index.generated";
 import manifest from "./manifest.generated";
@@ -37,14 +38,11 @@ export async function savePrintablesPush(userId: string, push: PrintablesPush): 
   const { id: printablesUserId, handle } = push.user;
   // The signed-in account wins over a username typed into the app, once Printables confirms it: the
   // handle is what proves a likes sync is the user's own (see assertOwnPrintablesLikes).
-  const stored = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { printablesUserId: true, printablesHandle: true },
-  });
-  if (stored?.printablesUserId !== printablesUserId || stored.printablesHandle !== handle) {
+  const stored = await readConnection(userId, manifest.id);
+  if (stored?.accountId !== printablesUserId || stored.accountName !== handle) {
     const confirmed = await resolvePrintablesUser(printablesUserId);
     if (confirmed?.handle !== handle) throw new HttpError(400, "That isn't a Printables user");
-    await prisma.user.update({ where: { id: userId }, data: { printablesUserId, printablesHandle: handle } });
+    await writeConnection(userId, manifest.id, { accountId: printablesUserId, accountName: handle });
   }
 
   if (push.collections) {

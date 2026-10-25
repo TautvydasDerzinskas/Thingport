@@ -4,10 +4,10 @@
 // app, and the tables in extension/src/providers/ in Grab.
 //
 // Outside them, and why:
-// - prisma/schema.prisma: its User columns (printablesUserId, printablesHandle, printablesPushOff, and its
-//   ProviderListing rows) and Category's printablesCatIds, a column apiece until Phase 7 of docs/rfc/provider-
-//   modules.md moves them into tables of their own. dto.ts, routes/categories.ts, services/categoryService.ts and
-//   seedData/defaultCategories.ts name its category ids for the same reason.
+// - prisma/schema.prisma: Category's printablesCatIds, a column apiece until Phase 7 of docs/rfc/provider-modules.md
+//   moves them into a table of their own; dto.ts, routes/categories.ts, services/categoryService.ts and
+//   seedData/defaultCategories.ts name its category ids for the same reason. Its ProviderListing rows are there too, as
+//   the schema is one file.
 // - Grab: content/panels/batch.ts reads a private collection as its owner within every provider's batch panel;
 //   shared/urls.ts leaves its likes pages to the push (content.ts), and shared/storage.ts keeps its push's keys with
 //   the others.

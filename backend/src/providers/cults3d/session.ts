@@ -1,4 +1,11 @@
-import { prisma } from "../../db";
+import {
+  connectionState,
+  readConnection,
+  rejectConnection,
+  usableSecret,
+  writeConnection,
+  type ConnectionState,
+} from "../connections";
 import type { Cults3dBrowser, Cults3dCredentials } from "./api";
 import manifest from "./manifest.generated";
 
@@ -28,76 +35,49 @@ export function normalizeCults3dBrowser(
   return { session, clearance, userAgent: agent };
 }
 
-const SELECT = {
-  cults3dNick: true,
-  cults3dApiKey: true,
-  cults3dApiRejectedAt: true,
-  cults3dSession: true,
-  cults3dClearance: true,
-  cults3dUserAgent: true,
-  cults3dSessionRejectedAt: true,
-} as const;
+const ID = manifest.id;
+// The API credentials are the default slot, the browser's sign-in the "browser" one.
+const BROWSER = "browser";
 
 /** New credentials clear an earlier rejection; null forgets them. */
 export async function setUserCults3dCredentials(userId: string, credentials: Cults3dCredentials | null): Promise<void> {
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      cults3dNick: credentials?.nick ?? null,
-      cults3dApiKey: credentials?.apiKey ?? null,
-      cults3dApiRejectedAt: null,
-    },
+  await writeConnection<Cults3dCredentials>(userId, ID, {
+    secret: credentials,
+    rejectedAt: null,
   });
 }
 
 /** A new sign-in clears an earlier rejection; null forgets it. */
 export async function setUserCults3dBrowser(userId: string, browser: Cults3dBrowser | null): Promise<void> {
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      cults3dSession: browser?.session ?? null,
-      cults3dClearance: browser?.clearance ?? null,
-      cults3dUserAgent: browser?.userAgent ?? null,
-      cults3dSessionRejectedAt: null,
-    },
-  });
+  await writeConnection<Cults3dBrowser>(userId, ID, { secret: browser, rejectedAt: null }, BROWSER);
 }
 
 export async function markCults3dApiRejected(userId: string): Promise<void> {
-  await prisma.user.update({ where: { id: userId }, data: { cults3dApiRejectedAt: new Date() } });
+  await rejectConnection(userId, ID);
 }
 
 export async function markCults3dSessionRejected(userId: string): Promise<void> {
-  await prisma.user.update({ where: { id: userId }, data: { cults3dSessionRejectedAt: new Date() } });
+  await rejectConnection(userId, ID, BROWSER);
 }
 
-export type Cults3dConnectionState = "connected" | "disconnected" | "expired";
-export type Cults3dConnection = { api: Cults3dConnectionState; site: Cults3dConnectionState; nick: string | null };
+export type Cults3dConnection = { api: ConnectionState; site: ConnectionState; nick: string | null };
 
 export async function getCults3dConnection(userId: string): Promise<Cults3dConnection> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: SELECT });
-  const api: Cults3dConnectionState =
-    !user?.cults3dNick || !user.cults3dApiKey ? "disconnected" : user.cults3dApiRejectedAt ? "expired" : "connected";
-  const site: Cults3dConnectionState = !user?.cults3dSession
-    ? "disconnected"
-    : user.cults3dSessionRejectedAt
-      ? "expired"
-      : "connected";
-  return { api, site, nick: user?.cults3dNick ?? null };
+  const [api, site] = await Promise.all([
+    readConnection<Cults3dCredentials>(userId, ID),
+    readConnection(userId, ID, BROWSER),
+  ]);
+  return { api: connectionState(api), site: connectionState(site), nick: api?.secret?.nick ?? null };
 }
 
 /** The user's API credentials; null when they haven't given them, or Cults3D turned them down. */
 export async function getUserCults3dCredentials(userId: string): Promise<Cults3dCredentials | null> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: SELECT });
-  if (!user?.cults3dNick || !user.cults3dApiKey || user.cults3dApiRejectedAt) return null;
-  return { nick: user.cults3dNick, apiKey: user.cults3dApiKey };
+  return usableSecret(await readConnection<Cults3dCredentials>(userId, ID));
 }
 
 /** The browser's sign-in; null when Grab hasn't sent one, or the site turned it down since. */
 export async function getUserCults3dBrowser(userId: string): Promise<Cults3dBrowser | null> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: SELECT });
-  if (!user?.cults3dSession || user.cults3dSessionRejectedAt) return null;
-  return { session: user.cults3dSession, clearance: user.cults3dClearance, userAgent: user.cults3dUserAgent };
+  return usableSecret(await readConnection<Cults3dBrowser>(userId, ID, BROWSER));
 }
 
 /** Shown wherever Cults3D's API is needed and the user hasn't given their credentials, or they were turned down. */

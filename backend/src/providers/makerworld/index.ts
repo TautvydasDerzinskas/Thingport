@@ -4,10 +4,9 @@
 // app, and the tables in extension/src/providers/ in Grab.
 //
 // Outside them, and why:
-// - prisma/schema.prisma: its User columns (makerworldCookie, makerworldRejectedAt) and Category's makerworldCatIds, a
-//   column apiece until Phase 7 of docs/rfc/provider-modules.md moves them into tables of their own. dto.ts,
-//   routes/categories.ts, services/categoryService.ts and seedData/defaultCategories.ts name its category ids for the
-//   same reason.
+// - prisma/schema.prisma: Category's makerworldCatIds, a column apiece until Phase 7 of docs/rfc/provider-modules.md
+//   moves them into a table of their own; dto.ts, routes/categories.ts, services/categoryService.ts and
+//   seedData/defaultCategories.ts name its category ids for the same reason.
 // - services/importService.ts: its models import by the shared link import, which every page link of no provider's
 //   goes through too (LINK_PROVIDER in providers/registry.ts), woven into the download, plate and print steps there.
 //   importResolvers.ts carries its cookie (ImportCookies) and print profile (MakerworldProfileRef) on that import's

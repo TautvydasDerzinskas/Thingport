@@ -1,4 +1,11 @@
-import { prisma } from "../../db";
+import {
+  connectionState,
+  readConnection,
+  rejectConnection,
+  usableSecret,
+  writeConnection,
+  type ConnectionState,
+} from "../connections";
 import type { CrealitycloudAuth } from "./api";
 import manifest from "./manifest.generated";
 
@@ -9,6 +16,8 @@ import manifest from "./manifest.generated";
 
 const TOKEN_COOKIE = manifest.sessionCookies.token;
 const USER_COOKIE = manifest.sessionCookies.user;
+const ID = manifest.id;
+type Secret = { token: string };
 
 export type CrealitycloudSession = CrealitycloudAuth & { expiresAt: Date | null };
 
@@ -43,17 +52,13 @@ export function normalizeCrealitycloudSession(
 
 /** The user's sign-in until Creality Cloud turns it down; null without one. */
 export async function getUserCrealitycloudAuth(userId: string): Promise<CrealitycloudAuth | null> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { crealitycloudToken: true, crealitycloudUserId: true, crealitycloudRejectedAt: true },
-  });
-  if (!user?.crealitycloudToken || !user.crealitycloudUserId || user.crealitycloudRejectedAt) return null;
-  return { token: user.crealitycloudToken, userId: user.crealitycloudUserId };
+  const connection = await readConnection<Secret>(userId, ID);
+  const secret = usableSecret(connection);
+  return secret && connection?.accountId ? { token: secret.token, userId: connection.accountId } : null;
 }
 
 export async function getUserCrealitycloudId(userId: string): Promise<string | null> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { crealitycloudUserId: true } });
-  return user?.crealitycloudUserId ?? null;
+  return (await readConnection(userId, ID))?.accountId ?? null;
 }
 
 /** A new sign-in clears an earlier rejection. The Creality Cloud user id is kept on disconnect, as for Snapmaker. */
@@ -61,33 +66,23 @@ export async function setUserCrealitycloudSession(
   userId: string,
   session: CrealitycloudSession | null,
 ): Promise<boolean> {
-  await prisma.user.update({
-    where: { id: userId },
-    data: session
-      ? {
-          crealitycloudToken: session.token,
-          crealitycloudExpiresAt: session.expiresAt,
-          crealitycloudUserId: session.userId,
-          crealitycloudRejectedAt: null,
-        }
-      : { crealitycloudToken: null, crealitycloudExpiresAt: null, crealitycloudRejectedAt: null },
+  await writeConnection<Secret>(userId, ID, {
+    secret: session && { token: session.token },
+    expiresAt: session?.expiresAt ?? null,
+    rejectedAt: null,
+    ...(session ? { accountId: session.userId } : {}),
   });
   return Boolean(session);
 }
 
 export async function markCrealitycloudSessionRejected(userId: string): Promise<void> {
-  await prisma.user.update({ where: { id: userId }, data: { crealitycloudRejectedAt: new Date() } });
+  await rejectConnection(userId, ID);
 }
 
-export type CrealitycloudConnection = "connected" | "disconnected" | "expired";
+export type CrealitycloudConnection = ConnectionState;
 
 export async function getCrealitycloudConnection(userId: string): Promise<CrealitycloudConnection> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { crealitycloudToken: true, crealitycloudRejectedAt: true },
-  });
-  if (!user?.crealitycloudToken) return "disconnected";
-  return user.crealitycloudRejectedAt ? "expired" : "connected";
+  return connectionState(await readConnection(userId, ID));
 }
 
 /** Shown wherever a Creality Cloud download or the user's likes need a sign-in they haven't given, or that ran out. */

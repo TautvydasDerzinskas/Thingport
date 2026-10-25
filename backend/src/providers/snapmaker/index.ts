@@ -4,9 +4,8 @@
 // frontend/src/providers/collectionTiles.ts in the app, and the tables in extension/src/providers/ in Grab.
 //
 // Outside them, and why:
-// - prisma/schema.prisma: its User columns (snapmakerToken, snapmakerTokenExpiresAt, snapmakerUserId,
-//   snapmakerRejectedAt) and Category's snapmakerCatIds, a column apiece until Phase 7 of docs/rfc/provider-modules.md
-//   moves them into tables of their own. dto.ts, routes/categories.ts, services/categoryService.ts and
+// - prisma/schema.prisma: Category's snapmakerCatIds, a column apiece until Phase 7 of docs/rfc/provider-modules.md
+//   moves them into a table of their own; dto.ts, routes/categories.ts, services/categoryService.ts and
 //   seedData/defaultCategories.ts name its category ids for the same reason.
 // - Grab: content/panels/batch.ts switches between its likes and bookmarks, which share one page, within every
 //   provider's batch panel (shared/urls.ts reads which); scripts/manifest.ts asks for the alarms permission its sign-

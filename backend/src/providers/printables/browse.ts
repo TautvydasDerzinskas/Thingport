@@ -1,4 +1,5 @@
-import { prisma } from "../../db";
+import { readConnection, writeConnection } from "../connections";
+import manifest from "./manifest.generated";
 import { HttpError } from "../../utils/fileUtils";
 import { deletePrintablesListings, pushedLikes, pushedPrintablesCards } from "./listings";
 import type { ProviderBrowse } from "../types";
@@ -6,28 +7,28 @@ import { fetchPrintablesCollectionCard, listPrintablesUserCollections, resolvePr
 
 export const printablesBrowse: ProviderBrowse = {
   async account(userId) {
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { printablesHandle: true } });
-    return { connected: true, account: user?.printablesHandle ?? null };
+    return { connected: true, account: (await readConnection(userId, manifest.id))?.accountName ?? null };
   },
   async setAccount(userId, value) {
     const user = value ? await resolvePrintablesUser(value) : null;
     if (value && !user) throw new HttpError(404, `Printables has no user "${value}"`);
-    // Forgetting the account also turns off what Grab sends from Printables, and drops what it sent:
-    // otherwise its next push would quietly link the account again.
-    await prisma.user.update({
-      where: { id: userId },
-      data: { printablesUserId: user?.id ?? null, printablesHandle: user?.handle ?? null, printablesPushOff: !user },
+    // Forgetting the account also turns off what Grab sends from Printables (the account turned down), and drops what
+    // it sent: otherwise its next push would quietly link the account again.
+    await writeConnection(userId, manifest.id, {
+      accountId: user?.id ?? null,
+      accountName: user?.handle ?? null,
+      rejectedAt: user ? null : new Date(),
     });
     if (!user) await deletePrintablesListings(userId);
   },
   async cards(userId) {
     // Printables shows anyone the public ones; Thingport Grab adds the private ones and the likes.
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { printablesUserId: true } });
+    const printablesUserId = (await readConnection(userId, manifest.id))?.accountId;
     const pushed = await pushedPrintablesCards(userId);
-    if (!user?.printablesUserId && !pushed.collections) {
+    if (!printablesUserId && !pushed.collections) {
       throw new HttpError(409, "Tell Thingport your Printables username first");
     }
-    const listed = user?.printablesUserId ? await listPrintablesUserCollections(user.printablesUserId) : [];
+    const listed = printablesUserId ? await listPrintablesUserCollections(printablesUserId) : [];
     const listedIds = new Set(listed.map((card) => card.id));
     const privateOnes = (pushed.collections ?? []).filter((card) => card.private && !listedIds.has(card.id));
     return [...(pushed.likes ? [pushed.likes] : []), ...listed, ...privateOnes];

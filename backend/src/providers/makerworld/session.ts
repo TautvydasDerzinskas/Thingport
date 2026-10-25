@@ -1,10 +1,19 @@
-import { prisma } from "../../db";
+import {
+  connectionState,
+  readConnection,
+  rejectConnection,
+  writeConnection,
+  type ConnectionState,
+} from "../connections";
+import manifest from "./manifest.generated";
+
+const ID = manifest.id;
+type Secret = { cookie: string };
 
 /** Per-user, unlike the instance-wide Thingiverse token: MakerWorld imports run as the user's own
  * login. */
 export async function getUserMakerworldCookie(userId: string): Promise<string | null> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { makerworldCookie: true } });
-  return user?.makerworldCookie ?? null;
+  return (await readConnection<Secret>(userId, ID))?.secret?.cookie ?? null;
 }
 
 // Falls back to the cookie saved in Settings when the request doesn't carry one.
@@ -26,12 +35,9 @@ export async function setUserMakerworldCookie(
 ): Promise<boolean> {
   const trimmed = (cookie ?? "").trim() || null;
   const current = await getUserMakerworldCookie(userId);
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      makerworldCookie: trimmed,
-      ...(verified || trimmed !== current ? { makerworldRejectedAt: null } : {}),
-    },
+  await writeConnection<Secret>(userId, ID, {
+    secret: trimmed ? { cookie: trimmed } : null,
+    ...(verified || trimmed !== current ? { rejectedAt: null } : {}),
   });
   return Boolean(trimmed);
 }
@@ -40,16 +46,11 @@ export async function setUserMakerworldCookie(
 export const MAKERWORLD_REJECTED_ERROR = "Your MakerWorld sign-in has expired";
 
 export async function markMakerworldCookieRejected(userId: string): Promise<void> {
-  await prisma.user.update({ where: { id: userId }, data: { makerworldRejectedAt: new Date() } });
+  await rejectConnection(userId, ID);
 }
 
-export type MakerworldConnection = "connected" | "disconnected" | "expired";
+export type MakerworldConnection = ConnectionState;
 
 export async function getMakerworldConnection(userId: string): Promise<MakerworldConnection> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { makerworldCookie: true, makerworldRejectedAt: true },
-  });
-  if (!user?.makerworldCookie) return "disconnected";
-  return user.makerworldRejectedAt ? "expired" : "connected";
+  return connectionState(await readConnection(userId, ID));
 }

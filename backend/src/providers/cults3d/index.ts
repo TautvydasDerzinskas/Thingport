@@ -4,10 +4,9 @@
 // tables in extension/src/providers/ in Grab.
 //
 // Outside them, and why:
-// - prisma/schema.prisma: its User columns (cults3dNick, cults3dApiKey, cults3dApiRejectedAt, cults3dSession,
-//   cults3dClearance, cults3dUserAgent, cults3dSessionRejectedAt) and Category's cults3dCatIds, a column apiece until
-//   Phase 7 of docs/rfc/provider-modules.md moves them into tables of their own. dto.ts, routes/categories.ts,
-//   services/categoryService.ts and seedData/defaultCategories.ts name its category ids for the same reason.
+// - prisma/schema.prisma: Category's cults3dCatIds, a column apiece until Phase 7 of docs/rfc/provider-modules.md moves
+//   them into a table of their own; dto.ts, routes/categories.ts, services/categoryService.ts and
+//   seedData/defaultCategories.ts name its category ids for the same reason.
 // - The app's text for it, under its id in frontend/src/i18n/locales/*.json, where all of the app's text is kept.
 
 import fs from "node:fs/promises";
@@ -46,7 +45,7 @@ import {
   markCults3dSessionRejected,
 } from "./session";
 import { z } from "zod";
-import { Prisma } from "@prisma/client";
+import { hasUsableSecretSql } from "../connections";
 import { detailsOf } from "../details";
 
 const SESSION_CODE = MANIFESTS.cults3d.errorCodes.session;
@@ -220,7 +219,7 @@ export const cults3dDetails: ProviderDetails = {
     perUser: true,
     check: async (userId) => ((await getUserCults3dCredentials(userId)) ? null : "cults3d_no_key"),
   },
-  readableBy: Prisma.sql`u."cults3dNick" IS NOT NULL AND u."cults3dApiKey" IS NOT NULL AND u."cults3dApiRejectedAt" IS NULL`,
+  readableBy: hasUsableSecretSql(MANIFESTS.cults3d.id, "u"),
   problemOf(err) {
     if (err instanceof Cults3dAuthError) return { problem: "cults3d_key_rejected", perUser: true };
     if (err instanceof Cults3dRateLimitError) return { problem: "cults3d_rate_limited" };

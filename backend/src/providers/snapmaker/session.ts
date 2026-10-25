@@ -1,10 +1,20 @@
-import { prisma } from "../../db";
+import {
+  connectionState,
+  readConnection,
+  rejectConnection,
+  usableSecret,
+  writeConnection,
+  type ConnectionState,
+} from "../connections";
+import manifest from "./manifest.generated";
 
 // Per-user: the Snapmaker access token that downloads files and reads the user's likes and bookmarks. It lasts a
 // day. Snapmaker's refresh tokens work once, and using one signs out whoever held it before, so Thingport never
 // refreshes: Thingport Grab keeps the browser's login fresh and sends each new access token here.
 
-const ACCESS_COOKIE = "login_access_token";
+const ID = manifest.id;
+const ACCESS_COOKIE = manifest.sessionCookies.token;
+type Secret = { token: string };
 
 export type SnapmakerToken = { token: string; expiresAt: Date | null; userId: string | null };
 
@@ -51,50 +61,32 @@ export function normalizeSnapmakerToken(raw: string | null | undefined): Snapmak
 /** The user's token while it's still valid; null once it has expired or Snapmaker turned it down, so nothing asks
  *  Snapmaker with it in vain. */
 export async function getUserSnapmakerToken(userId: string): Promise<string | null> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { snapmakerToken: true, snapmakerTokenExpiresAt: true, snapmakerRejectedAt: true },
-  });
-  if (!user?.snapmakerToken || user.snapmakerRejectedAt) return null;
-  if (user.snapmakerTokenExpiresAt && user.snapmakerTokenExpiresAt.getTime() <= Date.now()) return null;
-  return user.snapmakerToken;
+  return usableSecret(await readConnection<Secret>(userId, ID), true)?.token ?? null;
 }
 
 export async function getUserSnapmakerId(userId: string): Promise<string | null> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { snapmakerUserId: true } });
-  return user?.snapmakerUserId ?? null;
+  return (await readConnection(userId, ID))?.accountId ?? null;
 }
 
 /** A new token clears an earlier rejection. The Snapmaker user id is kept on disconnect, so syncs stay addressable. */
 export async function setUserSnapmakerToken(userId: string, token: SnapmakerToken | null): Promise<boolean> {
-  await prisma.user.update({
-    where: { id: userId },
-    data: token
-      ? {
-          snapmakerToken: token.token,
-          snapmakerTokenExpiresAt: token.expiresAt,
-          snapmakerRejectedAt: null,
-          ...(token.userId ? { snapmakerUserId: token.userId } : {}),
-        }
-      : { snapmakerToken: null, snapmakerTokenExpiresAt: null, snapmakerRejectedAt: null },
+  await writeConnection<Secret>(userId, ID, {
+    secret: token && { token: token.token },
+    expiresAt: token?.expiresAt ?? null,
+    rejectedAt: null,
+    ...(token?.userId ? { accountId: token.userId } : {}),
   });
   return Boolean(token);
 }
 
 export async function markSnapmakerTokenRejected(userId: string): Promise<void> {
-  await prisma.user.update({ where: { id: userId }, data: { snapmakerRejectedAt: new Date() } });
+  await rejectConnection(userId, ID);
 }
 
-export type SnapmakerConnection = "connected" | "disconnected" | "expired";
+export type SnapmakerConnection = ConnectionState;
 
 export async function getSnapmakerConnection(userId: string): Promise<SnapmakerConnection> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { snapmakerToken: true, snapmakerTokenExpiresAt: true, snapmakerRejectedAt: true },
-  });
-  if (!user?.snapmakerToken) return "disconnected";
-  const expired = user.snapmakerTokenExpiresAt && user.snapmakerTokenExpiresAt.getTime() <= Date.now();
-  return user.snapmakerRejectedAt || expired ? "expired" : "connected";
+  return connectionState(await readConnection(userId, ID), true);
 }
 
 /** Shown wherever a Snapmaker download needs a login the user hasn't given, or that has run out. */

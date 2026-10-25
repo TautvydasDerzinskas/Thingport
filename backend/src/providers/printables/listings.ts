@@ -4,6 +4,7 @@
 
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../../db";
+import { readConnection } from "../connections";
 import { HttpError } from "../../utils/fileUtils";
 import { LIKES_ID_PREFIX } from "../index.generated";
 import manifest from "./manifest.generated";
@@ -46,8 +47,8 @@ export const PRINTABLES_FORGOTTEN =
   "Couldn't read this Printables collection: it may be private, and your Printables account is forgotten in Thingport. Give your username in Browse to read it again";
 
 export async function printablesPushIsOff(userId: string): Promise<boolean> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { printablesPushOff: true } });
-  return Boolean(user?.printablesPushOff);
+  // Turned down by the user, who forgot it in the app; giving it again clears that.
+  return Boolean((await readConnection(userId, PROVIDER))?.rejectedAt);
 }
 
 /** Refuses Grab's Printables pushes for a user who forgot their Printables account in the app. */

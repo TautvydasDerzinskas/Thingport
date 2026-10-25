@@ -11,8 +11,9 @@ import {
   TAG_MOSAICS,
   THUMBS,
 } from "../config";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../db";
+import { MANIFESTS } from "../providers/index.generated";
 import { deleteAllPrintFiles } from "./printFileService";
 import { deleteAllPreviewImages } from "./previewImageService";
 import { deleteAllDescriptionImages } from "./descriptionImageService";
@@ -29,8 +30,7 @@ export type UserWithPrintCount = {
   isOwner: boolean;
   printCount: number;
   collectionCount: number;
-  /** Shown in the admin's users list, from before Configuration → Providers showed every provider's connection. Its
-   *  column is the User row's until Phase 7 moves sign-ins into a table of their own. */
+  /** Shown in the admin's users list, from before Configuration → Providers showed every provider's connection. */
   makerworldConnected: boolean;
   hasPassword: boolean;
   /** The single sign-on providers they've connected, by name, and whether each is still on. */
@@ -48,7 +48,10 @@ export async function listUsersWithPrintCounts(): Promise<UserWithPrintCount[]> 
       role: true,
       isOwner: true,
       createdAt: true,
-      makerworldCookie: true,
+      providerConnections: {
+        where: { provider: MANIFESTS.makerworld.id, slot: "default", secret: { not: Prisma.DbNull } },
+        select: { provider: true },
+      },
       passwordHash: true,
       identities: {
         select: { provider: { select: { name: true, enabled: true, position: true } } },
@@ -65,7 +68,7 @@ export async function listUsersWithPrintCounts(): Promise<UserWithPrintCount[]> 
     createdAt: u.createdAt,
     printCount: u._count.prints,
     collectionCount: u._count.collections,
-    makerworldConnected: Boolean(u.makerworldCookie),
+    makerworldConnected: u.providerConnections.length > 0,
     hasPassword: Boolean(u.passwordHash),
     signInProviders: u.identities
       .map((identity) => identity.provider)

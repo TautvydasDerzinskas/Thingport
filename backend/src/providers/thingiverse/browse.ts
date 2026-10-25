@@ -1,4 +1,5 @@
-import { prisma } from "../../db";
+import { readConnection, writeConnection } from "../connections";
+import manifest from "./manifest.generated";
 import { LIKES_ID_PREFIX } from "../index.generated";
 import { thingiverseLikesUrl } from "./urls.generated";
 import { getThingiverseAccessToken } from "./token";
@@ -37,23 +38,19 @@ async function likesCard(username: string, token: string): Promise<ProviderColle
 
 export const thingiverseBrowse: ProviderBrowse = {
   async account(userId) {
-    const [user, token] = await Promise.all([
-      prisma.user.findUnique({ where: { id: userId }, select: { thingiverseUsername: true } }),
-      getThingiverseAccessToken(),
-    ]);
-    return { connected: Boolean(token), account: user?.thingiverseUsername ?? null };
+    const [user, token] = await Promise.all([readConnection(userId, manifest.id), getThingiverseAccessToken()]);
+    return { connected: Boolean(token), account: user?.accountName ?? null };
   },
   async setAccount(userId, value) {
     const token = value ? await requireToken() : null;
     const user = token ? await resolveThingiverseUser(value!, token) : null;
     if (value && !user) throw new HttpError(404, `Thingiverse has no user "${value}"`);
-    await prisma.user.update({ where: { id: userId }, data: { thingiverseUsername: user?.username ?? null } });
+    await writeConnection(userId, manifest.id, { accountName: user?.username ?? null });
   },
   async cards(userId) {
     const token = await requireToken();
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { thingiverseUsername: true } });
-    if (!user?.thingiverseUsername) throw new HttpError(409, "Tell Thingport your Thingiverse username first");
-    const username = user.thingiverseUsername;
+    const username = (await readConnection(userId, manifest.id))?.accountName;
+    if (!username) throw new HttpError(409, "Tell Thingport your Thingiverse username first");
     // Its likes sync like a collection; a failed count costs only them.
     const [likes, collections] = await Promise.all([
       likesCard(username, token).catch(() => null),

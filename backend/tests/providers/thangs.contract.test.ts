@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { prisma } from "../../src/db";
+import { readConnection } from "../../src/providers/connections";
 import { getThangsConnection, setUserThangsSession } from "../../src/providers/thangs/session";
 import { describeProviderContract, type ProviderContractSpec } from "./contract";
 import {
@@ -148,7 +149,7 @@ const spec: ProviderContractSpec = {
 const ctx = describeProviderContract(spec);
 
 const storedToken = async () =>
-  (await prisma.user.findUniqueOrThrow({ where: { id: ctx.userId }, select: { thangsToken: true } })).thangsToken;
+  (await readConnection<{ token: string | null }>(ctx.userId, "thangs"))?.secret?.token ?? null;
 const pathsOf = (calls: { url: URL }[]) => calls.map((call) => call.url.pathname.replace(/^\/api/, ""));
 
 describe("Thangs specifics", () => {

@@ -1,10 +1,18 @@
-import { prisma } from "../../db";
+import {
+  connectionState,
+  readConnection,
+  rejectConnection,
+  writeConnection,
+  type ConnectionState,
+} from "../connections";
 import manifest from "./manifest.generated";
 
 // Per-user, beside the instance-wide API key: the user's MyMiniFactory session downloads the paid and login-only
 // models in their library, which the API key can't.
 
 const SESSION_COOKIE = manifest.sessionCookies.session;
+const ID = manifest.id;
+type Secret = { cookie: string };
 
 /** "PHPSESSID=<value>" from a whole Cookie header, a "PHPSESSID=..." pair or a bare value; null when there's none.
  *  The other cookies a browser sends are Cloudflare's and tied to that browser, so only this one is kept. */
@@ -20,8 +28,7 @@ export function normalizeMyminifactoryCookie(raw: string | null | undefined): st
 }
 
 export async function getUserMyminifactoryCookie(userId: string): Promise<string | null> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { myminifactoryCookie: true } });
-  return user?.myminifactoryCookie ?? null;
+  return (await readConnection<Secret>(userId, ID))?.secret?.cookie ?? null;
 }
 
 /** `verified`: MyMiniFactory just accepted it, so an earlier rejection no longer stands. A different cookie clears
@@ -32,27 +39,19 @@ export async function setUserMyminifactoryCookie(
   { verified = false } = {},
 ): Promise<boolean> {
   const current = await getUserMyminifactoryCookie(userId);
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      myminifactoryCookie: cookie,
-      ...(verified || cookie !== current ? { myminifactoryRejectedAt: null } : {}),
-    },
+  await writeConnection<Secret>(userId, ID, {
+    secret: cookie ? { cookie } : null,
+    ...(verified || cookie !== current ? { rejectedAt: null } : {}),
   });
   return Boolean(cookie);
 }
 
 export async function markMyminifactoryCookieRejected(userId: string): Promise<void> {
-  await prisma.user.update({ where: { id: userId }, data: { myminifactoryRejectedAt: new Date() } });
+  await rejectConnection(userId, ID);
 }
 
-export type MyminifactoryConnection = "connected" | "disconnected" | "expired";
+export type MyminifactoryConnection = ConnectionState;
 
 export async function getMyminifactoryConnection(userId: string): Promise<MyminifactoryConnection> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { myminifactoryCookie: true, myminifactoryRejectedAt: true },
-  });
-  if (!user?.myminifactoryCookie) return "disconnected";
-  return user.myminifactoryRejectedAt ? "expired" : "connected";
+  return connectionState(await readConnection(userId, ID));
 }
