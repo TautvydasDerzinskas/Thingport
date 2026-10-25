@@ -7,6 +7,10 @@ export default {
   site: "https://cults3d.com",
   docsSlug: "cults3d",
   hosts: ["cults3d.com"],
+  credentialHosts: {
+    "cults3d-api": { exact: ["cults3d.com"] },
+    "cults3d-session": { exact: ["cults3d.com"] },
+  },
   endpoints: { downloads: "https://download.cults3d.com" },
   brand: {
     logo: {

@@ -10,6 +10,7 @@ export default {
   site: "https://www.crealitycloud.com",
   docsSlug: "creality-cloud",
   hosts: ["crealitycloud.com"],
+  credentialHosts: { "crealitycloud-api": { exact: ["www.crealitycloud.com"] } },
   brand: {
     logo: {
       viewBox: "0 -30 1084 1084",

@@ -10,6 +10,11 @@ export default {
   site: "https://makerworld.com",
   docsSlug: "makerworld",
   hosts: ["makerworld.com"],
+  credentialHosts: {
+    "makerworld-page": { exact: ["makerworld.com", "www.makerworld.com"] },
+    "makerworld-extension": { exact: ["makerworld.com"] },
+    "makerworld-cloud": { exact: ["api.bambulab.com"] },
+  },
   endpoints: { api: "https://makerworld.com/api/v1", cloudApi: "https://api.bambulab.com/v1" },
   brand: {
     logo: {

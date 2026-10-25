@@ -68,7 +68,7 @@ describe.each([false, true])("remote request (browser=%s)", (browser) => {
 });
 
 describe("connection-time DNS policy", () => {
-  it.each(["cdn.thingiverse.com", "dl4.myminifactory.com"])(
+  it.each(["cdn.thingiverse.com", "assets.myminifactory.com", "dl2.myminifactory.com", "dl4.myminifactory.com"])(
     "preserves browser transport for downloads from %s",
     async (host) => {
       vi.spyOn(dnsPromises, "resolve4").mockResolvedValue(["8.8.8.8"] as never);
@@ -161,6 +161,7 @@ describe("connection-time DNS policy", () => {
 
   it.each([
     "https://evil.thingiverse.com/file",
+    "https://evil.myminifactory.com/file",
     "http://www.thingiverse.com/file",
     "https://www.thingiverse.com:8443/file",
   ])("uses guarded transport for %s", async (url) => {

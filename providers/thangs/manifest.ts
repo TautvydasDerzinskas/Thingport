@@ -7,6 +7,10 @@ export default {
   site: "https://thangs.com",
   docsSlug: "thangs",
   hosts: ["thangs.com"],
+  credentialHosts: {
+    "thangs-api": { exact: ["thangs.com"] },
+    "thangs-site": { exact: ["thangs.com", "www.thangs.com"] },
+  },
   brand: {
     logo: {
       color: "#FFBC00",
@@ -26,7 +30,7 @@ export default {
   ],
   modelNoun: "models",
   helpers: { grab: "recommended", flaresolverr: "optional" },
-  browserFetch: true,
+  browserFetchOrigins: ["https://thangs.com", "https://www.thangs.com"],
   capabilities: {
     collections: true,
     likes: true,

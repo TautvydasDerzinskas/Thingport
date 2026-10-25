@@ -9,6 +9,7 @@ export default {
   site: "https://www.thingiverse.com",
   docsSlug: "thingiverse",
   hosts: ["thingiverse.com"],
+  credentialHosts: { "thingiverse-api": { exact: ["api.thingiverse.com"] } },
   endpoints: { api: "https://api.thingiverse.com" },
   brand: {
     logo: {
@@ -28,7 +29,12 @@ export default {
   ],
   modelNoun: "things",
   helpers: { grab: "optional", flaresolverr: "recommended" },
-  browserFetch: true,
+  browserFetchOrigins: [
+    "https://thingiverse.com",
+    "https://www.thingiverse.com",
+    "https://api.thingiverse.com",
+    "https://cdn.thingiverse.com",
+  ],
   slicers: ["cura"],
   capabilities: {
     collections: true,

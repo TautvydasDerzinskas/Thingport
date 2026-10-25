@@ -10,6 +10,10 @@ export default {
   site: "https://www.myminifactory.com",
   docsSlug: "myminifactory",
   hosts: ["myminifactory.com"],
+  credentialHosts: {
+    "myminifactory-api": { exact: ["www.myminifactory.com"] },
+    "myminifactory-session": { exact: ["www.myminifactory.com"] },
+  },
   brand: {
     logo: {
       color: "#00C4A6",
@@ -35,7 +39,13 @@ export default {
   ],
   modelNoun: "objects",
   helpers: { grab: "optional", flaresolverr: "recommended" },
-  browserFetch: true,
+  browserFetchOrigins: [
+    "https://myminifactory.com",
+    "https://www.myminifactory.com",
+    "https://assets.myminifactory.com",
+    "https://dl2.myminifactory.com",
+    "https://dl4.myminifactory.com",
+  ],
   capabilities: {
     collections: true,
     likes: false,

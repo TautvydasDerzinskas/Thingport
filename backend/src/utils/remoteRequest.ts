@@ -1,4 +1,4 @@
-import { browserFetch } from "./browserFetch";
+import { browserFetch, needsBrowserFetch } from "./browserFetch";
 import dns from "node:dns";
 import type { LookupFunction } from "node:net";
 import { Agent } from "undici";
@@ -20,20 +20,6 @@ const guardedLookup: LookupFunction = (hostname, options, callback) => {
 };
 const remoteDispatcher = new Agent({ connect: { lookup: guardedLookup } });
 
-// Impit cannot pin DNS. Its exception is confined to provider-controlled origins;
-// never extend this to suffix matches, arbitrary ports or caller-provided hosts.
-const BROWSER_ORIGINS = new Set([
-  "https://thingiverse.com",
-  "https://www.thingiverse.com",
-  "https://api.thingiverse.com",
-  "https://cdn.thingiverse.com",
-  "https://myminifactory.com",
-  "https://www.myminifactory.com",
-  "https://dl4.myminifactory.com",
-  "https://thangs.com",
-  "https://www.thangs.com",
-]);
-
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 
 /** Follow redirects only after checking each destination, including anonymous imports. */
@@ -45,7 +31,7 @@ export async function remoteRequest(url: string, init: RequestInit = {}, browser
   for (let hop = 0; hop <= 10; hop++) {
     await validateRemoteUrl(current);
     const response =
-      browser && BROWSER_ORIGINS.has(new URL(current).origin)
+      browser && needsBrowserFetch(current)
         ? await browserFetch(current, {
             method: method as "GET" | "POST",
             body: body as string | undefined,
