@@ -273,6 +273,7 @@ export async function fetchEufymakeLikes(
     // Only the first page says how many there are; later ones say 0.
     if (page === 1) total = count(data.total);
     const models = records(data.models);
+    const before = entries.length;
     for (const model of models) {
       const modelId = hexId(model.model_id, 32);
       if (!modelId || seen.has(modelId)) continue;
@@ -281,7 +282,8 @@ export async function fetchEufymakeLikes(
       entries.push({ modelId, title: str(model.name) ?? `Model ${modelId}`, cover });
       if (entries.length >= maxItems) break;
     }
-    if (models.length < pageSize) break;
+    // A page with nothing new would repeat forever if the API ignored the page number.
+    if (models.length < pageSize || entries.length === before) break;
   }
   return { entries, total: Math.max(total, entries.length), truncated: entries.length >= maxItems && total > maxItems };
 }

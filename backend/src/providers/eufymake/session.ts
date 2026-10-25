@@ -25,7 +25,16 @@ const GTOKEN = /^[0-9a-f]{32}$/i;
 /** A request header's value from pasted headers, as DevTools copies them: `name: value`, or the name and value on
  *  lines of their own. */
 function headerValue(text: string, name: string): string | null {
-  return text.match(new RegExp(`(?:^|\\n)\\s*${name}\\s*:?\\s*\\n?\\s*([0-9a-f]+)\\s*(?:\\n|$)`, "i"))?.[1] ?? null;
+  const lines = text.split("\n").map((line) => line.trim());
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.slice(0, name.length).toLowerCase() !== name) continue;
+    const rest = line.slice(name.length);
+    if (rest && !/^[\s:]/.test(rest)) continue;
+    const value = rest.replace(/^\s*:?\s*/, "") || (lines[i + 1] ?? "");
+    if (/^[0-9a-f]+$/i.test(value)) return value;
+  }
+  return null;
 }
 
 /** The sign-in from the site's mk-userinfo value (or just its auth_token, with `userId`), or from a signed-in
