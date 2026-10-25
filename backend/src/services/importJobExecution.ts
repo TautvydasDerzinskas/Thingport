@@ -1,11 +1,6 @@
 import type { ImportJob } from "@prisma/client";
 import { isProviderId } from "../providers/index.generated";
-import {
-  enabledImportUrl,
-  listImportSchema,
-  profilesImportSchema,
-  zipExtractRequestSchema,
-} from "../routes/importRequest";
+import { enabledImportUrl, listImportSchema, profilesImportSchema, zipExtractRequestSchema } from "./importRequest";
 import { prisma } from "../db";
 import { PROVIDERS, withLinkAuth } from "../providers/registry";
 import { HttpError } from "../utils/fileUtils";

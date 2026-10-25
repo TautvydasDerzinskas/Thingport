@@ -1,4 +1,4 @@
-import { listImportSchema, profilesImportSchema, zipExtractRequestSchema } from "../routes/importRequest";
+import { listImportSchema, profilesImportSchema, zipExtractRequestSchema } from "./importRequest";
 
 export type BatchType = "COLLECTION" | "ZIP" | "PROFILES";
 

@@ -1,7 +1,7 @@
-// What every import route takes, the shared ones and providers' own (providers/routes.ts).
+// Shared import request contract for routes and queued workers.
 
 import { z } from "zod";
-import { assertUrlProviderEnabled } from "../services/providerSettingsService";
+import { assertUrlProviderEnabled } from "./providerSettingsService";
 import { normalizeImportUrl } from "../utils/urlUtils";
 
 export const importRequestSchema = z.object({
@@ -55,7 +55,7 @@ export function needsImmediateImport(body: {
       // A bare archive URL can itself be signed, rather than carried as resolved_download_url.
       if ([...params.keys()].some((key) => /^(x-amz-|x-goog-|signature$|expires$)/i.test(key))) return true;
     } catch {
-      /* URL validation belongs to the route. */
+      /* URL validation happens before a job is accepted or executed. */
     }
   }
   return false;

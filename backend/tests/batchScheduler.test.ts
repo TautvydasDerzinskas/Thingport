@@ -2,8 +2,8 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Client } from "pg";
 
 const calls = vi.hoisted(() => ({ starts: 0, profiles: 0, zip: 0, cookie: "" }));
-vi.mock("../src/routes/importRequest", async (original) => ({
-  ...(await original<typeof import("../src/routes/importRequest")>()),
+vi.mock("../src/services/importRequest", async (original) => ({
+  ...(await original<typeof import("../src/services/importRequest")>()),
   enabledImportUrl: async (url: string) => url,
 }));
 vi.mock("../src/providers/registry", async (original) => {
@@ -56,7 +56,7 @@ vi.mock("../src/services/importJobRunner", async (original) => {
 
 import { prisma } from "../src/db";
 import { enqueueBatchImport, drainImportQueue, IMPORT_WORKER_LOCK } from "../src/services/importScheduler";
-import { needsImmediateImport } from "../src/routes/importRequest";
+import { needsImmediateImport } from "../src/services/importRequest";
 import { startLinksJob, pauseLinksJob } from "../src/services/importQueueService";
 
 let userId: string;
@@ -121,7 +121,7 @@ describe("queued batch reconstruction", () => {
     expect((await prisma.importJob.findUniqueOrThrow({ where: { id: job!.id } })).status).toBe("DONE");
   });
 
-  it("recovers collection/profile jobs, persists preparation failures and does not replay interrupted ZIP extraction", async () => {
+  it("stops interrupted batches, persists preparation failures and runs only waiting ZIP extraction", async () => {
     const jobs = await Promise.all([
       prisma.importJob.create({
         data: {
@@ -164,11 +164,13 @@ describe("queued batch reconstruction", () => {
     const finished = await Promise.all(
       jobs.map((job) => prisma.importJob.findUniqueOrThrow({ where: { id: job.id } })),
     );
-    expect(finished.map((job) => job.status)).toEqual(["DONE", "DONE", "ERROR", "ERROR", "DONE"]);
-    expect(calls.profiles).toBe(1);
+    expect(finished.map((job) => job.status)).toEqual(["ERROR", "ERROR", "ERROR", "ERROR", "DONE"]);
+    expect(finished[0].errorMessage).toMatch(/missing content/);
+    expect(finished[1].errorMessage).toMatch(/missing content/);
+    expect(calls.profiles).toBe(0);
     expect(calls.zip).toBe(1);
-    expect(finished[3].errorMessage).toMatch(/remaining entries/);
+    expect(finished[3].errorMessage).toMatch(/missing content/);
     await expect(startLinksJob(finished[3], { retryFailed: true })).rejects.toThrow(/remaining entries/);
-    await expect(pauseLinksJob({ ...finished[0], status: "RUNNING" })).rejects.toThrow(/waiting batch/);
+    await expect(pauseLinksJob({ ...finished[0], status: "RUNNING" })).rejects.toThrow(/waiting import/);
   });
 });

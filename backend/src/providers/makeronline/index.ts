@@ -5,7 +5,7 @@
 //
 // Outside them, and why:
 // - prisma/schema.prisma: its GrabImport rows, a model of their own there, as the schema is one file.
-// - routes/importRequest.ts: resolved_files, its files as Grab signed them, on the import body every import route
+// - services/importRequest.ts: resolved_files, its files as Grab signed them, on the import body every import route
 //   takes.
 // - services/apiTokenScopes.ts: its waiting imports' path, as every scope is listed there for apps that read with a
 //   token.

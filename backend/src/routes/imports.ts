@@ -15,7 +15,7 @@ import {
   profilesImportSchema,
   zipExtractRequestSchema,
   needsImmediateImport,
-} from "./importRequest";
+} from "../services/importRequest";
 import {
   checkImportStatus,
   downloadImportToTemp,
