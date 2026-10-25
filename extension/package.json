@@ -1,7 +1,7 @@
 {
   "name": "thingport-grab",
   "private": true,
-  "version": "1.8.0",
+  "version": "1.8.1",
   "description": "Import MakerWorld, Thingiverse, Printables and MyMiniFactory models into Thingport, and convert MakerWorld 3MFs for other slicers.",
   "license": "AGPL-3.0-only",
   "type": "module",
