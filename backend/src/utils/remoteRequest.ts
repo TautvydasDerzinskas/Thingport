@@ -22,6 +22,20 @@ const remoteDispatcher = new Agent({ connect: { lookup: guardedLookup } });
 
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 
+/** One checked request without following redirects; callers must validate the next hop separately. */
+export async function fetchRemoteHop(url: string, init: RequestInit = {}, browser = false): Promise<Response> {
+  await validateRemoteUrl(url);
+  return browser && needsBrowserFetch(url)
+    ? browserFetch(url, {
+        method: (init.method || "GET") as "GET" | "POST",
+        body: init.body as string | undefined,
+        headers: Object.fromEntries(new Headers(init.headers).entries()),
+        signal: init.signal || undefined,
+        redirect: "manual",
+      })
+    : fetch(url, { ...init, redirect: "manual", dispatcher: remoteDispatcher } as RequestInit & { dispatcher: Agent });
+}
+
 /** Follow redirects only after checking each destination, including anonymous imports. */
 export async function remoteRequest(url: string, init: RequestInit = {}, browser = false): Promise<Response> {
   let current = url;
@@ -29,24 +43,7 @@ export async function remoteRequest(url: string, init: RequestInit = {}, browser
   let body = init.body;
   const headers = new Headers(init.headers);
   for (let hop = 0; hop <= 10; hop++) {
-    await validateRemoteUrl(current);
-    const response =
-      browser && needsBrowserFetch(current)
-        ? await browserFetch(current, {
-            method: method as "GET" | "POST",
-            body: body as string | undefined,
-            headers: Object.fromEntries(headers.entries()),
-            signal: init.signal || undefined,
-            redirect: "manual",
-          })
-        : await fetch(current, {
-            ...init,
-            method,
-            body,
-            headers,
-            redirect: "manual",
-            dispatcher: remoteDispatcher,
-          } as RequestInit & { dispatcher: Agent });
+    const response = await fetchRemoteHop(current, { ...init, method, body, headers }, browser);
     const location = response.headers.get("location");
     if (!REDIRECT_STATUSES.has(response.status) || !location) return response;
     await response.body?.cancel();

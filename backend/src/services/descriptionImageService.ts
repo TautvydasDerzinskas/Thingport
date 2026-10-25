@@ -15,8 +15,7 @@ import { ensureAssetHome } from "./printService";
 import { plainWriteMode, reuseMarker, shareStoredBytes } from "./fileReuse";
 import { findStoredCopies } from "./storedContent";
 import { mapWithConcurrency } from "../utils/concurrency";
-import { validateRemoteUrl } from "../utils/urlUtils";
-import { browserFetch, needsBrowserFetch } from "../utils/browserFetch";
+import { fetchRemoteHop } from "../utils/remoteRequest";
 import { readCapped } from "../utils/readCapped";
 import { imageFormat } from "./imageProcessing";
 
@@ -60,11 +59,8 @@ async function fetchImage(url: string, deadline: number): Promise<Buffer | null>
   try {
     let current = url;
     for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
-      await validateRemoteUrl(current);
       const headers = { "User-Agent": IMPORT_BROWSER_USER_AGENT, Accept: "image/*" };
-      const res = needsBrowserFetch(current)
-        ? await browserFetch(current, { headers, redirect: "manual", signal: controller.signal })
-        : await fetch(current, { headers, redirect: "manual", signal: controller.signal });
+      const res = await fetchRemoteHop(current, { headers, signal: controller.signal }, true);
       const location = res.headers.get("location");
       if (res.status >= 300 && res.status < 400 && location) {
         await res.body?.cancel().catch(() => undefined);
