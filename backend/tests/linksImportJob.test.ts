@@ -266,10 +266,11 @@ describe("the links import queue", () => {
     const res = await request(app).get(`/api/import/jobs/${job.id}/items`).set(auth());
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(2);
-    expect(res.body[0]).toMatchObject({ status: "DONE", attempts: 1, error_message: null });
-    expect(res.body[1].status).toBe("FAILED");
-    expect(res.body[1].error_message).toBeTruthy();
-    expect(res.body[1].url).toContain(badId);
+    const good = res.body.find((item: { url: string }) => item.url.includes(goodId));
+    const bad = res.body.find((item: { url: string }) => item.url.includes(badId));
+    expect(good).toMatchObject({ status: "DONE", attempts: 1, error_message: null });
+    expect(bad).toMatchObject({ status: "FAILED", attempts: 1 });
+    expect(bad.error_message).toBeTruthy();
   });
 
   it("refuses a retry with nothing failed", async () => {

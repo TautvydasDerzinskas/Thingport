@@ -2,6 +2,8 @@ import crypto from "node:crypto";
 import { Client } from "pg";
 import { prisma, getActiveDatabaseUrl } from "../db";
 import type { Prisma } from "@prisma/client";
+import { reserveDatabaseOperation } from "./databaseSwitchGate";
+import { createJob } from "./importJobService";
 
 /** Separate from the scheduler lock: browser sessions may run in another API process. */
 export async function acquireImmediateImportLock(jobId: string): Promise<(() => Promise<void>) | null> {
@@ -40,18 +42,51 @@ export async function startImmediateImport(
   data: Prisma.ImportJobUncheckedCreateInput,
   run: (jobId: string) => Promise<void>,
 ) {
+  const releaseOperation = reserveDatabaseOperation();
   const id = crypto.randomUUID();
-  const release = await acquireImmediateImportLock(id);
-  if (!release) throw new Error("Could not acquire immediate import ownership");
+  let releaseLock: (() => Promise<void>) | null = null;
   try {
+    releaseLock = await acquireImmediateImportLock(id);
+    if (!releaseLock) throw new Error("Could not acquire immediate import ownership");
     const job = await prisma.importJob.create({ data: { ...data, id } });
     void Promise.resolve()
       .then(() => run(id))
-      .finally(release)
+      .finally(async () => {
+        try {
+          await releaseLock?.();
+        } finally {
+          releaseOperation();
+        }
+      })
       .catch((err) => console.error(`Immediate import ${id} failed:`, err));
     return job;
   } catch (err) {
-    await release();
+    try {
+      await releaseLock?.();
+    } finally {
+      releaseOperation();
+    }
+    throw err;
+  }
+}
+
+/** Keep the old request-bound batch runners on their database until they finish. */
+export async function startDirectBatchImport(
+  userId: string,
+  type: "COLLECTION" | "ZIP" | "PROFILES",
+  data: Parameters<typeof createJob>[2],
+  run: (jobId: string) => Promise<void>,
+) {
+  const releaseOperation = reserveDatabaseOperation();
+  try {
+    const job = await createJob(userId, type, data);
+    void Promise.resolve()
+      .then(() => run(job.id))
+      .finally(releaseOperation)
+      .catch((err) => console.error(`Direct import ${job.id} failed:`, err));
+    return job;
+  } catch (err) {
+    releaseOperation();
     throw err;
   }
 }

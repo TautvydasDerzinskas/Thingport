@@ -24,9 +24,9 @@ import {
 } from "../services/importService";
 import { findLibraryPrints } from "../services/collectionSyncService";
 import { listZipEntries } from "../services/zipService";
-import { createJob, getActiveJob, getJob, listJobItems } from "../services/importJobService";
+import { getActiveJob, getJob, listJobItems } from "../services/importJobService";
 import { queueLink, startLinksJob } from "../services/importQueueService";
-import { startImmediateImport } from "../services/immediateImport";
+import { startDirectBatchImport, startImmediateImport } from "../services/immediateImport";
 import { getPersistentImportTask, startImportTask } from "../services/importTaskService";
 import {
   enqueueSingleImport,
@@ -39,6 +39,7 @@ import { notifyImportRun } from "../services/modelNotifications";
 import { toImportJobItemOut, toImportJobOut } from "../dto";
 import type { Prisma } from "@prisma/client";
 import { importAndDescribe, prepareSingleImport } from "../services/singleImport";
+import { reserveDatabaseOperation, withDatabaseOperation } from "../services/databaseSwitchGate";
 import {
   isProviderId,
   type LegacyIdsField,
@@ -55,6 +56,14 @@ import type { ProviderLists } from "../providers/types";
 
 const router = Router();
 router.use(requireAuth);
+// A request that has already read credentials or categories must finish against the same database.
+router.use((req, res, next) => {
+  if (req.method !== "POST") return next();
+  const release = reserveDatabaseOperation();
+  res.once("finish", release);
+  res.once("close", release);
+  next();
+});
 
 // `?async=1` answers 202 with a task id to poll at /import/tasks/:id (see importTaskService.ts).
 router.post(
@@ -69,7 +78,9 @@ router.post(
       // Browser-signed links and an explicitly supplied session belong to this immediate request.
       // Keep Grab's short-lived task path until these providers can resolve fresh links in a worker.
       if (immediate) {
-        const taskId = startImportTask(req.userId!, () => importAndDescribe(req.userId!, url, body));
+        const taskId = startImportTask(req.userId!, () =>
+          withDatabaseOperation(() => importAndDescribe(req.userId!, url, body)),
+        );
         res.status(202).json({ task_id: taskId });
         return;
       }
@@ -78,7 +89,7 @@ router.post(
       return;
     }
     if (immediate) {
-      res.json(await importAndDescribe(req.userId!, url, body));
+      res.json(await withDatabaseOperation(() => importAndDescribe(req.userId!, url, body)));
       return;
     }
     // Preserve the synchronous API response while using the same persisted worker as async callers.
@@ -264,17 +275,24 @@ async function importList(
     res.status(202).json({ job_id: job.id });
     return;
   }
-  const start = await lists.start(userId, url, { ...body, url });
-  if ("waitForGrab" in start) {
-    const grabQueue = PROVIDERS[provider].grabQueue;
-    if (!grabQueue) throw new Error(`${provider} waits for Grab without a queue for it`);
-    const { queued, collectionId } = await grabQueue.queueList(userId, start.waitForGrab.title, { ...body, url });
-    res.status(202).json({ queued, collection_id: collectionId });
-    return;
-  }
-  const job = await createJob(userId, "COLLECTION", { sourceUrl: url, provider, total: body.model_ids.length });
-  void ("run" in start ? start.run(job.id) : runListImportJob(job.id, userId, provider, start.batch, { ...body, url }));
-  res.status(202).json({ job_id: job.id });
+  await withDatabaseOperation(async () => {
+    const start = await lists.start(userId, url, { ...body, url });
+    if ("waitForGrab" in start) {
+      const grabQueue = PROVIDERS[provider].grabQueue;
+      if (!grabQueue) throw new Error(`${provider} waits for Grab without a queue for it`);
+      const { queued, collectionId } = await grabQueue.queueList(userId, start.waitForGrab.title, { ...body, url });
+      res.status(202).json({ queued, collection_id: collectionId });
+      return;
+    }
+    const job = await startDirectBatchImport(
+      userId,
+      "COLLECTION",
+      { sourceUrl: url, provider, total: body.model_ids.length },
+      (jobId) =>
+        "run" in start ? start.run(jobId) : runListImportJob(jobId, userId, provider, start.batch, { ...body, url }),
+    );
+    res.status(202).json({ job_id: job.id });
+  });
 }
 
 async function importProfiles(req: Request, res: Response, provider: ProviderId) {
@@ -290,8 +308,9 @@ async function importProfiles(req: Request, res: Response, provider: ProviderId)
     res.status(202).json({ job_id: job.id });
     return;
   }
-  const job = await createJob(userId, "PROFILES", { sourceUrl: url, provider });
-  void run(job.id, userId, { ...body, url });
+  const job = await startDirectBatchImport(userId, "PROFILES", { sourceUrl: url, provider }, (jobId) =>
+    run(jobId, userId, { ...body, url }),
+  );
   res.status(202).json({ job_id: job.id });
 }
 
@@ -344,11 +363,12 @@ router.post(
       res.status(202).json({ job_id: job.id });
       return;
     }
-    const job = await createJob(req.userId!, "ZIP", {
-      sourceUrl: url,
-      total: body.entries.length,
-    });
-    void runZipImportJob(job.id, req.userId!, { ...body, url });
+    const job = await startDirectBatchImport(
+      req.userId!,
+      "ZIP",
+      { sourceUrl: url, total: body.entries.length },
+      (jobId) => runZipImportJob(jobId, req.userId!, { ...body, url }),
+    );
     res.status(202).json({ job_id: job.id });
   }),
 );

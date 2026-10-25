@@ -26,9 +26,10 @@ import { startLinksJob, pauseLinksJob, pauseAll, deleteQueueJob } from "../src/s
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { Client } from "pg";
+import crypto from "node:crypto";
 import { testAndSwitchDatabase } from "../src/services/databaseSettingsService";
 import { reserveSync, releaseSync } from "../src/services/collectionSyncRunner";
-import { isDatabaseSwitching } from "../src/services/databaseSwitchGate";
+import { isDatabaseSwitching, withDatabaseOperation } from "../src/services/databaseSwitchGate";
 import { getPersistentImportTask } from "../src/services/importTaskService";
 
 let userId: string;
@@ -234,6 +235,30 @@ describe("durable import scheduler (PostgreSQL)", () => {
     }
   });
 
+  it("refuses a database switch while request-bound import work is active", async () => {
+    let release!: () => void;
+    const active = withDatabaseOperation(
+      () =>
+        new Promise<void>((resolve) => {
+          release = resolve;
+        }),
+    );
+    const database = new URL(process.env.DATABASE_URL!);
+    try {
+      await expect(
+        testAndSwitchDatabase({
+          database: database.pathname.slice(1),
+          user: decodeURIComponent(database.username),
+          password: decodeURIComponent(database.password),
+        }),
+      ).rejects.toMatchObject({ status: 409, message: expect.stringContaining("direct imports") });
+      expect(isDatabaseSwitching()).toBe(false);
+    } finally {
+      release();
+      await active;
+    }
+  });
+
   it("switches the database client only after a running import commits its result", async () => {
     const active = await job("actual-switch");
     let release!: () => void;
@@ -265,8 +290,11 @@ describe("durable import scheduler (PostgreSQL)", () => {
   });
 
   it("leaves immediate sessions and payload-less legacy jobs alone", async () => {
+    const immediateId = crypto.randomUUID();
+    const release = await acquireImmediateImportLock(immediateId);
     const immediate = await prisma.importJob.create({
       data: {
+        id: immediateId,
         userId,
         type: "LINKS",
         status: "RUNNING",
@@ -283,7 +311,6 @@ describe("durable import scheduler (PostgreSQL)", () => {
         sourceUrl: urls("legacy"),
       },
     });
-    const release = await acquireImmediateImportLock(immediate.id);
     try {
       await drainImportQueue();
     } finally {
