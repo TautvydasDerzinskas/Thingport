@@ -89,7 +89,7 @@ export type ImportRequestBody = ImportCookies & {
    *  profile's 3MF. */
   resolved_files?: { url: string; name: string; profile_id?: string | null }[] | null;
   /** The page's MakerWorld design data, so the backend needn't fetch a Cloudflare-gated page.
-   *  Client-supplied -- see makerworldMetaFromExtension. */
+   *  Client-supplied -- see makerworldMetaFromExtension in importFiles.ts. */
   makerworld_design?: Record<string, unknown> | null;
   /** Internal only: per-request delay for MakerWorld collection imports. Never from the body. */
   makerworldPaceMs?: number;

@@ -81,6 +81,10 @@ type ImportLinkPayload = {
 
 /** "profile_added": an existing MakerWorld model gained another profile's file. */
 export type ImportOutcome = "created" | "profile_added" | "already_imported";
+type ImportTaskResponse =
+  | { status: "queued" | "running" }
+  | { status: "done"; result: { id?: string; import_outcome?: ImportOutcome } | null }
+  | { status: "error"; detail: string; http_status: number };
 export type SingleImportResponse =
   (Print & { import_outcome?: ImportOutcome }) | { task_id: string; job_id: string; status: "QUEUED" };
 
@@ -101,7 +105,7 @@ export const importsApi = {
     const res = await fetch(`${apiBase()}/import/tasks/${taskId}`, { headers: authHeaders() });
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to load import progress"));
-    const task = await res.json();
+    const task: ImportTaskResponse = await res.json();
     const done = task.status === "done";
     const failed = task.status === "error";
     const existing = done && task.result?.import_outcome === "already_imported";
