@@ -1,7 +1,13 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Client } from "pg";
 
-const calls = vi.hoisted(() => ({ starts: 0, profiles: 0, zip: 0, cookie: "" }));
+const calls = vi.hoisted(() => ({
+  starts: 0,
+  profiles: 0,
+  zip: 0,
+  cookie: "",
+  notification: null as Promise<void> | null,
+}));
 vi.mock("../src/services/importRequest", async (original) => ({
   ...(await original<typeof import("../src/services/importRequest")>()),
   enabledImportUrl: async (url: string) => url,
@@ -33,8 +39,12 @@ vi.mock("../src/providers/registry", async (original) => {
                 const { prisma } = await import("../src/db");
                 await prisma.importJob.update({
                   where: { id },
-                  data: { status: "DONE", processed: body.model_ids.length },
+                  data: { status: "DONE", processed: body.model_ids.length, failedCount: calls.notification ? 1 : 0 },
                 });
+                if (calls.notification) {
+                  await calls.notification;
+                  throw new Error("notification failed after DONE");
+                }
               },
             };
           },
@@ -47,7 +57,14 @@ vi.mock("../src/services/importJobRunner", async (original) => {
   const runner = await original<typeof import("../src/services/importJobRunner")>();
   const done = async (id: string) => {
     const { prisma } = await import("../src/db");
-    await prisma.importJob.update({ where: { id }, data: { status: "DONE", processed: 1 } });
+    await prisma.importJob.update({
+      where: { id },
+      data: { status: "DONE", processed: 1, failedCount: calls.notification ? 1 : 0 },
+    });
+    if (calls.notification) {
+      await calls.notification;
+      throw new Error("notification failed after DONE");
+    }
   };
   return {
     ...runner,
@@ -64,6 +81,7 @@ vi.mock("../src/services/importJobRunner", async (original) => {
 
 import { prisma } from "../src/db";
 import { enqueueBatchImport, drainImportQueue, IMPORT_WORKER_LOCK } from "../src/services/importScheduler";
+import { acquireImmediateImportLock, startDirectBatchImport } from "../src/services/immediateImport";
 import { needsImmediateImport } from "../src/services/importRequest";
 import { startLinksJob, pauseLinksJob } from "../src/services/importQueueService";
 
@@ -195,6 +213,73 @@ describe("queued batch reconstruction", () => {
       processed: 1,
       imported: 1,
       errorMessage: "Internal server error",
+    });
+  });
+
+  it.each(["COLLECTION", "PROFILES"] as const)(
+    "rejects %s retries until notification finalization settles",
+    async (type) => {
+      let releaseNotification!: () => void;
+      calls.notification = new Promise<void>((resolve) => {
+        releaseNotification = resolve;
+      });
+      const body = type === "COLLECTION" ? { url, model_ids: ["1"] } : { url, scope: "all" };
+      const queued = await enqueueBatchImport(userId, type, body, "makerworld");
+      try {
+        await vi.waitFor(async () => {
+          expect((await prisma.importJob.findUniqueOrThrow({ where: { id: queued.id } })).status).toBe("DONE");
+        });
+        const finishing = await prisma.importJob.findUniqueOrThrow({ where: { id: queued.id } });
+        expect(finishing.failedCount).toBe(1);
+        // A remote API process also has no local runner entry: ownership must come from PostgreSQL.
+        await expect(startLinksJob(finishing, { retryFailed: true })).rejects.toMatchObject({ status: 409 });
+        expect((await prisma.importJob.findUniqueOrThrow({ where: { id: queued.id } })).status).toBe("DONE");
+      } finally {
+        calls.notification = null;
+        releaseNotification();
+      }
+      await vi.waitFor(async () => {
+        expect((await prisma.importJob.findUniqueOrThrow({ where: { id: queued.id } })).status).toBe("ERROR");
+      });
+      await vi.waitFor(async () => {
+        await startLinksJob(await prisma.importJob.findUniqueOrThrow({ where: { id: queued.id } }), {
+          retryFailed: true,
+        });
+      });
+      await drainToCompletion([queued.id]);
+      expect((await prisma.importJob.findUniqueOrThrow({ where: { id: queued.id } })).status).toBe("DONE");
+    },
+  );
+
+  it("keeps direct batch ownership through its final notification", async () => {
+    let finish!: () => void;
+    const notification = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    const direct = await startDirectBatchImport(
+      userId,
+      "PROFILES",
+      { sourceUrl: url, provider: "makerworld" },
+      async (id) => {
+        await prisma.importJob.update({ where: { id }, data: { status: "DONE", failedCount: 1 } });
+        await notification;
+      },
+    );
+    try {
+      await vi.waitFor(async () => {
+        expect((await prisma.importJob.findUniqueOrThrow({ where: { id: direct.id } })).status).toBe("DONE");
+      });
+      expect(await acquireImmediateImportLock(direct.id)).toBeNull();
+      await expect(
+        startLinksJob(await prisma.importJob.findUniqueOrThrow({ where: { id: direct.id } }), { retryFailed: true }),
+      ).rejects.toMatchObject({ status: 409 });
+    } finally {
+      finish();
+    }
+    await vi.waitFor(async () => {
+      const release = await acquireImmediateImportLock(direct.id);
+      expect(release).not.toBeNull();
+      await release?.();
     });
   });
 });

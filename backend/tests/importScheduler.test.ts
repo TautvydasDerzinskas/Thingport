@@ -210,7 +210,10 @@ describe("durable import scheduler (PostgreSQL)", () => {
       run.hold = null;
       await draining;
     }
-    expect((await prisma.importJob.findUniqueOrThrow({ where: { id: active.id } })).status).toBe("DONE");
+    // A wake from the preceding retry can own the worker; wait for its committed result.
+    await vi.waitFor(async () => {
+      expect((await prisma.importJob.findUniqueOrThrow({ where: { id: active.id } })).status).toBe("DONE");
+    });
   });
 
   it("does not delete a paused SINGLE that was claimed after the idle check", async () => {
@@ -402,9 +405,10 @@ describe("durable import scheduler (PostgreSQL)", () => {
     try {
       await admin.connect();
       await vi.waitFor(() => expect(output).toContain("CLAIMED"), { timeout: 10000 });
-      const { rows } = await admin.query("SELECT pid FROM pg_locks WHERE locktype = 'advisory' AND objid = $1::oid", [
-        IMPORT_WORKER_LOCK,
-      ]);
+      const { rows } = await admin.query(
+        "SELECT pid FROM pg_locks WHERE locktype = 'advisory' AND objid = $1::oid AND database = (SELECT oid FROM pg_database WHERE datname = current_database())",
+        [IMPORT_WORKER_LOCK],
+      );
       expect(rows).toHaveLength(1);
       await admin.query("SELECT pg_terminate_backend($1)", [rows[0].pid]);
       const [code] = await exited;
@@ -438,9 +442,10 @@ describe("durable import scheduler (PostgreSQL)", () => {
     try {
       await admin.connect();
       await vi.waitFor(() => expect(output).toContain("IDLE"), { timeout: 10000 });
-      const { rows } = await admin.query("SELECT pid FROM pg_locks WHERE locktype = 'advisory' AND objid = $1::oid", [
-        IMPORT_WORKER_LOCK,
-      ]);
+      const { rows } = await admin.query(
+        "SELECT pid FROM pg_locks WHERE locktype = 'advisory' AND objid = $1::oid AND database = (SELECT oid FROM pg_database WHERE datname = current_database())",
+        [IMPORT_WORKER_LOCK],
+      );
       expect(rows).toHaveLength(1);
       await admin.query("SELECT pg_terminate_backend($1)", [rows[0].pid]);
       await vi.waitFor(() => expect(errors).toContain("Import worker lock connection failed"));

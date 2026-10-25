@@ -129,8 +129,8 @@ async function drainQueue(): Promise<void> {
       working = true;
       // Share the job lock with start/retry, including the final notification phase
       // where a paused job may have no RUNNING items left but still has a live owner.
-      const releaseJob = job.type === "LINKS" ? await acquireImmediateImportLock(job.id) : null;
-      if (job.type === "LINKS" && !releaseJob) return;
+      const releaseJob = await acquireImmediateImportLock(job.id);
+      if (!releaseJob) return;
       try {
         const claim = await prisma.importJob.updateMany({
           where: { id: job.id, status: "QUEUED" },

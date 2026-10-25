@@ -3,7 +3,7 @@ import { Client } from "pg";
 import { prisma, getActiveDatabaseUrl } from "../db";
 import type { Prisma } from "@prisma/client";
 import { reserveDatabaseOperation } from "./databaseSwitchGate";
-import { createJob } from "./importJobService";
+import type { createJob } from "./importJobService";
 
 /** Shared job ownership for browser/durable runners and start/retry in other API processes. */
 export async function acquireImmediateImportLock(jobId: string): Promise<(() => Promise<void>) | null> {
@@ -77,18 +77,7 @@ export async function startDirectBatchImport(
   data: Parameters<typeof createJob>[2],
   run: (jobId: string) => Promise<void>,
 ) {
-  const releaseOperation = reserveDatabaseOperation();
-  try {
-    const job = await createJob(userId, type, data);
-    void Promise.resolve()
-      .then(() => run(job.id))
-      .finally(releaseOperation)
-      .catch((err) => console.error(`Direct import ${job.id} failed:`, err));
-    return job;
-  } catch (err) {
-    releaseOperation();
-    throw err;
-  }
+  return startImmediateImport({ userId, type, ...data }, run);
 }
 
 export async function recoverImmediateImports(): Promise<void> {

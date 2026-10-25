@@ -22,17 +22,14 @@ export async function startLinksJob(
 ): Promise<void> {
   // The runner keeps this lock through notifications and final status writes, even
   // after its last item settles. Local runner maps cannot protect another process.
-  if (job.type === "LINKS") {
-    const release = await acquireImmediateImportLock(job.id);
-    if (!release) throw new HttpError(409, "This import is still finishing its current link, try again shortly");
-    try {
-      const current = await prisma.importJob.findUniqueOrThrow({ where: { id: job.id } });
-      return await startLinksJobUnlocked(current, opts);
-    } finally {
-      await release();
-    }
+  const release = await acquireImmediateImportLock(job.id);
+  if (!release) throw new HttpError(409, "This import is still finishing, try again shortly");
+  try {
+    const current = await prisma.importJob.findUniqueOrThrow({ where: { id: job.id } });
+    return await startLinksJobUnlocked(current, opts);
+  } finally {
+    await release();
   }
-  return startLinksJobUnlocked(job, opts);
 }
 
 async function startLinksJobUnlocked(job: ImportJob, opts: { retryFailed?: boolean; manual?: boolean }): Promise<void> {
