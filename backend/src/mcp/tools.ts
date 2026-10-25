@@ -507,8 +507,12 @@ const MCP_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
 const MB = 1024 * 1024;
 
 function decodeBase64(base64: string, what: string): Buffer {
-  // A data: URL's prefix is dropped, so either works.
-  const buffer = Buffer.from(base64.replace(/^data:[^,]*,/, ""), "base64");
+  // A data: URL's prefix is dropped, so either works. Checked first: Buffer.from skips what isn't base64.
+  const encoded = base64.replace(/^data:[^,]*,/, "").replace(/\s+/g, "");
+  if (!/^[A-Za-z0-9+/_-]*={0,2}$/.test(encoded) || encoded.length % 4 === 1) {
+    throw new HttpError(400, `${what} isn't base64`);
+  }
+  const buffer = Buffer.from(encoded, "base64");
   if (!buffer.length) throw new HttpError(400, `${what} is empty or isn't base64`);
   return buffer;
 }
@@ -519,7 +523,8 @@ const uploadModel: McpToolDefinition = {
   description:
     "Add one model to the library from the user's own files, as + Add > Upload files does: e.g. a test piece or a " +
     "part a script generated. Its 3D files (STL, 3MF, STEP, OBJ) become its plates, any other file a supporting " +
-    `file. Files and images go as base64, up to ${MCP_UPLOAD_MAX_BYTES / MB} MB in all.`,
+    "file; with no 3D file among them, every file is a plate. " +
+    `Files and images go as base64, up to ${MCP_UPLOAD_MAX_BYTES / MB} MB in all.`,
   readOnly: false,
   inputSchema: {
     files: z
@@ -651,6 +656,7 @@ function fileOut(ctx: McpToolContext, file: ModelFile) {
     kind: file.kind,
     mime: file.mime,
     size_bytes: file.size_bytes,
+    api_path: `/api${file.apiPath}`,
     download_url: ctx.publicUrl ? `${ctx.publicUrl}/api${file.apiPath}` : null,
   };
 }
@@ -660,8 +666,8 @@ const listModelFiles: McpToolDefinition = {
   title: "List a model's files",
   description:
     "A model's files: its plates (the 3D files), supporting files and sliced print, each with the id get_model_file " +
-    "takes. download_url, when the server knows its address, opens with the same token as 'Authorization: Bearer' " +
-    "if it may read Model files.",
+    "takes. api_path (on the server's own address) or download_url, when the server knows its address, opens with " +
+    "the same token as 'Authorization: Bearer' if it may read Model files.",
   readOnly: true,
   inputSchema: { model_id: z.string().min(1).describe("The model's id, from search_models or list_models.") },
   async run(ctx, args) {
@@ -675,7 +681,8 @@ const getModelFile: McpToolDefinition = {
   title: "Get a model file",
   description:
     `One of a model's files, base64-encoded, up to ${MCP_FILE_MAX_BYTES / MB} MB: e.g. to slice or convert it. ` +
-    "Find its id with list_model_files. A bigger file comes without its contents; fetch it by its download_url.",
+    "Find its id with list_model_files. A bigger file comes without its contents; fetch it by its download_url or " +
+    "api_path.",
   readOnly: true,
   inputSchema: {
     model_id: z.string().min(1).describe("The model's id."),
@@ -690,7 +697,11 @@ const getModelFile: McpToolDefinition = {
     if (!diskPath || !stat?.isFile()) throw new HttpError(404, "The file is missing from storage");
     const out = { ...fileOut(ctx, file), size_bytes: stat.size };
     if (stat.size > MCP_FILE_MAX_BYTES) {
-      return { ...out, base64: null, note: `Over ${MCP_FILE_MAX_BYTES / MB} MB: fetch it by its download_url.` };
+      return {
+        ...out,
+        base64: null,
+        note: `Over ${MCP_FILE_MAX_BYTES / MB} MB: fetch it by its download_url or api_path.`,
+      };
     }
     return { ...out, base64: (await fs.readFile(diskPath)).toString("base64") };
   },

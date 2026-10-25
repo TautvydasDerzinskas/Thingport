@@ -355,6 +355,8 @@ describe("the tools", () => {
     expect(data.files).toEqual([
       expect.objectContaining({ name: "dragon.stl", kind: "plate", size_bytes: expect.any(Number) }),
     ]);
+    // Reachable without a public address too.
+    expect(data.files[0].api_path).toBe(`/api/print/${dragonId}/plate/${data.files[0].id}/file/dragon.stl`);
     const file = await callTool(alice.token, "get_model_file", { model_id: dragonId, file_id: data.files[0].id });
     expect(Buffer.from(file.data.base64, "base64").toString()).toBe("solid dragon.stl\nendsolid dragon.stl\n");
   });
@@ -638,9 +640,13 @@ describe("the tools that write", () => {
   });
 
   it("upload_model refuses a file that isn't base64", async () => {
-    const result = await callTool(writer.token, "upload_model", { files: [{ name: "x.stl", base64: "!!!" }] });
-    expect(result.isError).toBe(true);
-    expect(result.text).toMatch(/base64/);
+    const before = await prisma.print.count({ where: { userId: writer.userId } });
+    for (const base64 of ["!!!", `${Buffer.from("solid x\nendsolid x\n").toString("base64")}!!!`]) {
+      const result = await callTool(writer.token, "upload_model", { files: [{ name: "x.stl", base64 }] });
+      expect(result.isError).toBe(true);
+      expect(result.text).toMatch(/base64/);
+    }
+    expect(await prisma.print.count({ where: { userId: writer.userId } })).toBe(before);
   });
 
   it("get_import_status says when it doesn't know the import", async () => {

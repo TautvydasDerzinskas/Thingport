@@ -90,7 +90,8 @@ router.post(
       // One model per file, or one holding them all.
       const groups = files.length === 1 || mode === "separate" ? files.map((f) => [f]) : [files];
       for (const group of groups) {
-        const print = await createUploadedModel(req.userId!, meta, group, (f) => pending.delete(f));
+        const print = await createUploadedModel(req.userId!, meta, group);
+        for (const f of group) pending.delete(f);
         created.push({ id: print.id, name: print.title || print.name });
         printsOut.push(await printOutById(req.userId!, print.id));
       }

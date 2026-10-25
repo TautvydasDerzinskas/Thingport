@@ -75,12 +75,14 @@ assistant has nowhere to show one. Most imports finish within the call; a long o
 assistant follows it with `get_import_status`.
 
 `upload_model` takes the files and pictures as base64 in the call, up to 24 MB in all, and makes one model of them: the
-3D files (STL, 3MF, STEP, OBJ) become its plates and anything else a supporting file. It shows up in your notifications
+3D files (STL, 3MF, STEP, OBJ) become its plates and anything else a supporting file; if none is a 3D file, every file
+becomes a plate. It shows up in your notifications
 and the admin logs as an upload from the app does.
 
-`get_model_file` hands a file over in the call up to 10 MB. With a public address set (below), `list_model_files` and
-`get_model_file` also give each file a `download_url`, which opens with the same token in the `Authorization: Bearer`
-header if the token may read **Model files** (see [API token](api-token.md)); a bigger file comes that way.
+`get_model_file` hands a file over in the call up to 10 MB. `list_model_files` and `get_model_file` give each file an
+`api_path` on Thingport's own address and, with a public address set (below), a full `download_url`; either opens with
+the same token in the `Authorization: Bearer` header if the token may read **Model files** (see
+[API token](api-token.md)). A bigger file comes that way.
 
 Every tool sees only your own library, exactly as you do in Thingport. Looking a model up through MCP doesn't count as a
 view, so it doesn't change your Browsing History or your most viewed models.
