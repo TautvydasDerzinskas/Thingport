@@ -703,11 +703,15 @@ const editModel: McpToolDefinition = {
     }
 
     const changed: string[] = [];
+    const moving = categoryId !== undefined && categoryId !== print.categoryId;
+    // With a new title, the move goes in the same write: the name is free in the new category, maybe not the old.
+    const moveWithRename = moving && title !== undefined;
     if (title !== undefined || args.description !== undefined || args.creator !== undefined) {
       await updatePrintMeta(userId, print.id, {
         name: title,
         notes: args.description as string | undefined,
         creator: args.creator as string | undefined,
+        categoryId: moveWithRename ? categoryId : undefined,
       });
       if (title !== undefined) changed.push("title");
       if (args.description !== undefined) changed.push("description");
@@ -723,7 +727,7 @@ const editModel: McpToolDefinition = {
         changed.push("tags");
       }
     }
-    if (categoryId !== undefined && categoryId !== print.categoryId) {
+    if (moving && !moveWithRename) {
       const updated = await setPrintCategory(userId, print.id, categoryId, categoryId ? "MANUAL" : null, {
         clearSuggestion: true,
       });
@@ -736,6 +740,7 @@ const editModel: McpToolDefinition = {
       });
       changed.push("category");
     }
+    if (moveWithRename) changed.push("category");
     if (args.favorite !== undefined && args.favorite !== Boolean(print.favoritedAt)) {
       await prisma.print.update({ where: { id: print.id }, data: { favoritedAt: args.favorite ? new Date() : null } });
       changed.push("favorite");

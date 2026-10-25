@@ -707,6 +707,27 @@ describe("the tools that write", () => {
     expect(await prisma.print.findUniqueOrThrow({ where: { id } })).toMatchObject({ categoryId: null, tags: [] });
   });
 
+  it("edit_model moves and renames in one go, to a name taken only where the model was", async () => {
+    await upload(writer.session, "clip.stl");
+    const id = await upload(writer.session, "clip-v2.stl");
+    const { data: category } = await callTool(writer.token, "create_category", { name: "MCP Clips" });
+    const result = await callTool(writer.token, "edit_model", {
+      model_id: id,
+      title: "clip",
+      category_id: category.id,
+    });
+    expect(result.isError).toBe(false);
+    expect(result.data.changed).toEqual(["title", "category"]);
+    const print = await prisma.print.findUniqueOrThrow({ where: { id } });
+    expect(print).toMatchObject({ name: "clip", categoryId: category.id, categorySource: "MANUAL" });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const fields = await prisma.log.findMany({
+      where: { action: "model_edited", targetId: id },
+      select: { details: true },
+    });
+    expect(fields.map((log) => (log.details as { field: string }).field).toSorted()).toEqual(["category", "meta"]);
+  });
+
   it("edit_model checks the name and category before changing anything", async () => {
     const id = await upload(writer.session, "hinge.stl");
     await upload(writer.session, "taken.stl");

@@ -2,8 +2,8 @@
 
 Thingport speaks the [Model Context Protocol](https://modelcontextprotocol.io), so an AI assistant such as Claude Code
 can search and read your library for you: "which of my models are articulated dragons?", "what's in my Printer
-upgrades collection?", "what did I import from Printables this month?". If you let it, it can also import models and
-file them into collections: "import this Printables link into my Benchies collection".
+upgrades collection?", "what did I import from Printables this month?". If you let it, it can also import, upload, edit
+and delete models and file them into collections: "import this Printables link into my Benchies collection".
 
 It's built into the backend, so there's nothing extra to install or run. The endpoint is `/api/mcp` on the same address
 you open Thingport at, and the assistant signs in with your [API token](api-token.md).
@@ -124,11 +124,12 @@ Since an MCP import doesn't ask for a captcha, an admin who requires one for imp
 ## A word on what the assistant reads
 
 Model descriptions come from the sites they were imported from, and the assistant reads them. A description written to
-look like instructions could talk it into calling another tool you gave it. Most tools can only import models or file
-them into collections, since none deletes anything. `save_widget` is the exception: it writes code that runs in your
-dashboard with your session, so a widget it saves can do in Thingport whatever you can, and it can replace a widget of
-yours with the same name. It's on for a new token: deny it in **Token permissions** if you don't have your assistant
-write widgets, and keep the other tools that change the library off unless you use them.
+look like instructions could talk it into calling another tool you gave it. `delete_model`, `edit_model_images` and
+`remove_model_file` delete models, pictures and files for good, and `edit_model` overwrites a model's title, description
+and tags; they're off for a new token, so turn them on only while you have the assistant edit your library. `save_widget`
+writes code that runs in your dashboard with your session, so a widget it saves can do in Thingport whatever you can, and
+it can replace a widget of yours with the same name. It's on for a new token: deny it in **Token permissions** if you
+don't have your assistant write widgets, and keep the other tools that change the library off unless you use them.
 
 ## Turn it off
 

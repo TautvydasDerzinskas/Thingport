@@ -1,4 +1,4 @@
-import type { Prisma, Print } from "@prisma/client";
+import { Prisma, type Print } from "@prisma/client";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { normalizeTags } from "../utils/tagNormalization";
@@ -40,14 +40,30 @@ export async function setPrintTags(userId: string, printId: string, tags: string
   return updated;
 }
 
-export type PrintMetaUpdate = { name?: string; notes?: string; creator?: string };
+export type PrintMetaUpdate = {
+  name?: string;
+  notes?: string;
+  creator?: string;
+  /** A category to move it to with the rename, so the name is checked there and both change together. */
+  categoryId?: string | null;
+};
 
 /** Renames the model (409 when the name is taken in its category), or changes its description or creator. */
 export async function updatePrintMeta(userId: string, printId: string, meta: PrintMetaUpdate): Promise<Print> {
   const print = await ownPrint(userId, printId);
   const data: Prisma.PrintUpdateInput = {};
-  if (meta.name !== undefined) {
-    const nextName = await uniqueModelName(userId, meta.name, print.categoryId, print.id);
+  const moving = meta.categoryId !== undefined && meta.categoryId !== print.categoryId;
+  const categoryId = moving ? (meta.categoryId ?? null) : print.categoryId;
+  if (moving) {
+    if (categoryId && !(await prisma.category.count({ where: { id: categoryId, userId } }))) {
+      throw new HttpError(400, "Category not found");
+    }
+    data.category = categoryId ? { connect: { id: categoryId } } : { disconnect: true };
+    data.categorySource = categoryId ? "MANUAL" : null;
+    data.aiSuggestion = Prisma.DbNull;
+  }
+  if (meta.name !== undefined || moving) {
+    const nextName = await uniqueModelName(userId, meta.name ?? print.name, categoryId, print.id);
     if (nextName !== print.name) {
       data.name = nextName;
       data.nameNormalized = nextName.trim().toLowerCase();
@@ -65,12 +81,9 @@ export async function updatePrintMeta(userId: string, printId: string, meta: Pri
     // Images pasted in by URL are fetched in the background: slow hosts mustn't hold up the save.
     void localizeDescriptionImages(print.id);
   }
-  void createLog({
-    userId,
-    action: "model_edited",
-    targetId: print.id,
-    details: { field: "meta", name: updated.name },
-  });
+  for (const field of moving ? ["meta", "category"] : ["meta"]) {
+    void createLog({ userId, action: "model_edited", targetId: print.id, details: { field, name: updated.name } });
+  }
   return updated;
 }
 
