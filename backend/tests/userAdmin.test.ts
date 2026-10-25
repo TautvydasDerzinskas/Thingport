@@ -36,7 +36,9 @@ let admin: Account;
 let member: Account;
 
 beforeEach(async () => {
-  [owner, admin, member] = await Promise.all([account("owner"), account("admin"), account("member")]);
+  owner = await account("owner");
+  admin = await account("admin");
+  member = await account("member");
 });
 
 describe("roles", () => {
