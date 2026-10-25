@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -8,6 +8,7 @@ import IconButton from "@mui/material/IconButton";
 import Skeleton from "@mui/material/Skeleton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import { UnauthorizedError } from "../../api/client";
@@ -15,6 +16,7 @@ import { widgetsApi, type CustomWidget, type WidgetManifest } from "../../api/wi
 import Segmented from "../../components/controls/Segmented";
 import { readUser } from "../../utils/auth";
 import { WidgetIcon } from "./CustomWidgetCard";
+import AiWidgetGuide from "./widgetEditor/AiWidgetGuide";
 import DetailsForm from "./widgetEditor/DetailsForm";
 import SettingsEditor from "./widgetEditor/SettingsEditor";
 import WidgetPreview from "./widgetEditor/WidgetPreview";
@@ -95,6 +97,8 @@ function Editor({ widget, onClose, onSaved, onUnauthorized }: Omit<Props, "open"
   const [html, setHtml] = useState(widget?.html ?? "");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+  const aiButton = useRef<HTMLButtonElement>(null);
 
   const errors = useMemo(() => problems(draft), [draft]);
   const manifest = useMemo(() => toManifest(draft), [draft]);
@@ -163,7 +167,18 @@ function Editor({ widget, onClose, onSaved, onUnauthorized }: Omit<Props, "open"
 
       <Box sx={{ flex: 1, minHeight: 0, display: "flex", flexDirection: { xs: "column-reverse", md: "row" } }}>
         <Box sx={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column" }}>
-          <Box sx={{ px: 2.5, pt: 1.75, pb: 1.25, flexShrink: 0 }}>
+          <Box
+            sx={{
+              px: 2.5,
+              pt: 1.75,
+              pb: 1.25,
+              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 1,
+            }}
+          >
             <Segmented
               label={t("dashboard.custom.editor.part")}
               value={part}
@@ -181,6 +196,22 @@ function Editor({ widget, onClose, onSaved, onUnauthorized }: Omit<Props, "open"
                 { value: "html", label: t("dashboard.custom.editor.html") },
               ]}
             />
+            {!widget && (
+              <>
+                <Typography variant="body2" color="text.secondary">
+                  {t("dashboard.custom.ai.or")}
+                </Typography>
+                <Button
+                  ref={aiButton}
+                  size="small"
+                  variant="outlined"
+                  startIcon={<AutoAwesomeOutlinedIcon fontSize="small" />}
+                  onClick={() => setAiOpen(true)}
+                >
+                  {t("dashboard.custom.ai.open")}
+                </Button>
+              </>
+            )}
           </Box>
           {part === "details" || part === "settings" ? (
             <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", px: 2.5, pt: 1, pb: 2.5 }}>
@@ -281,6 +312,15 @@ function Editor({ widget, onClose, onSaved, onUnauthorized }: Omit<Props, "open"
           </span>
         </Tooltip>
       </Box>
+      {aiOpen && (
+        <AiWidgetGuide
+          onClose={() => {
+            setAiOpen(false);
+            // Once the editor is reachable again.
+            requestAnimationFrame(() => aiButton.current?.focus());
+          }}
+        />
+      )}
     </>
   );
 }
