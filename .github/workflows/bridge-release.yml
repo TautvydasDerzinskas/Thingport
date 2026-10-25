@@ -1,7 +1,9 @@
 name: Bridge release
 
-# Runs when bridge/ changes. PRs build all three binaries; pushes to main also publish a GitHub
-# release, which the in-app Download page links to via /releases/latest.
+# Runs when bridge/ changes. PRs test and build all three binaries. A merge into main may give Bridge a new version
+# (release-project.yml, bridge/.releaserc.json): the binaries are then built from the release commit with that version,
+# attached to its thingport-bridge-vX.Y.Z release, and the fixed bridge-latest release, which the in-app Download page
+# links to, moves to the same build.
 on:
   push:
     branches: [main]
@@ -17,126 +19,155 @@ on:
 
 concurrency:
   group: bridge-release-${{ github.ref }}
-  cancel-in-progress: true
+  # Never cut off a run on main: mid-release, a version could be tagged without its binaries.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+# release and publish ask for write themselves; test and build run PR code.
+permissions:
+  contents: read
 
 jobs:
-  build-windows:
+  test:
     # A main -> develop back-merge only brings release commits main already tested.
     if: github.head_ref != 'main'
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # macOS for its cgo URL handler; Linux covers the rest.
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-go@v5
         with:
           go-version-file: bridge/go.mod
       - name: Test
         working-directory: bridge
         run: go test ./...
-      - name: Build (cross-compiled, no cgo needed)
-        working-directory: bridge
-        env:
-          CGO_ENABLED: 0
-          GOOS: windows
-          GOARCH: amd64
-        run: go build -o dist/thingport-bridge-windows-amd64.exe ./cmd/thingport-bridge
-      - uses: actions/upload-artifact@v4
-        with:
-          name: bridge-windows-amd64
-          path: bridge/dist/thingport-bridge-windows-amd64.exe
-          if-no-files-found: error
-
-  build-linux:
-    # A main -> develop back-merge only brings release commits main already tested.
-    if: github.head_ref != 'main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: bridge/go.mod
-      - name: Test
-        working-directory: bridge
-        run: go test ./...
-      - name: Build (cross-compiled, no cgo needed)
-        working-directory: bridge
-        env:
-          CGO_ENABLED: 0
-          GOOS: linux
-          GOARCH: amd64
-        run: go build -o dist/thingport-bridge-linux-amd64 ./cmd/thingport-bridge
-      - uses: actions/upload-artifact@v4
-        with:
-          name: bridge-linux-amd64
-          path: bridge/dist/thingport-bridge-linux-amd64
-          if-no-files-found: error
-
-  build-macos:
-    # A main -> develop back-merge only brings release commits main already tested.
-    if: github.head_ref != 'main'
-    # macOS URL-scheme handling needs cgo and Cocoa, so it can't be cross-compiled.
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: bridge/go.mod
-      - name: Test
-        working-directory: bridge
-        run: go test ./...
-      - name: Build arm64 + amd64
-        working-directory: bridge
-        env:
-          CGO_ENABLED: 1
-        run: |
-          GOARCH=arm64 go build -o dist/thingport-bridge-darwin-arm64 ./cmd/thingport-bridge
-          GOARCH=amd64 go build -o dist/thingport-bridge-darwin-amd64 ./cmd/thingport-bridge
-      - name: Combine into a universal binary
-        working-directory: bridge
-        run: lipo -create -output dist/thingport-bridge-macos dist/thingport-bridge-darwin-arm64 dist/thingport-bridge-darwin-amd64
-      - name: Re-sign universal binary
-        working-directory: bridge
-        run: codesign --force -s - dist/thingport-bridge-macos
-      - uses: actions/upload-artifact@v4
-        with:
-          name: bridge-macos
-          path: bridge/dist/thingport-bridge-macos
-          if-no-files-found: error
 
   release:
+    needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [build-windows, build-linux, build-macos]
+    permissions:
+      contents: write
+    uses: ./.github/workflows/release-project.yml
+    with:
+      project_dir: bridge
+      title: Thingport Bridge
+
+  build:
+    needs: [test, release]
+    # release is skipped outside main; the build still runs there as a check.
+    if: ${{ !cancelled() && needs.test.result == 'success' && needs.release.result != 'failure' }}
+    strategy:
+      matrix:
+        include:
+          - target: windows-amd64
+            os: ubuntu-latest
+          - target: linux-amd64
+            os: ubuntu-latest
+          # macOS URL-scheme handling needs cgo and Cocoa, so it can't be cross-compiled.
+          - target: macos
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.ref || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: bridge/go.mod
+      - name: Build
+        working-directory: bridge
+        env:
+          LDFLAGS: -X main.version=${{ needs.release.outputs.version || 'dev' }}
+        run: |
+          case "${{ matrix.target }}" in
+            windows-amd64)
+              CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags "$LDFLAGS" -o dist/thingport-bridge-windows-amd64.exe ./cmd/thingport-bridge
+              ;;
+            linux-amd64)
+              CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "$LDFLAGS" -o dist/thingport-bridge-linux-amd64 ./cmd/thingport-bridge
+              ;;
+            macos)
+              CGO_ENABLED=1 GOARCH=arm64 go build -ldflags "$LDFLAGS" -o dist/thingport-bridge-darwin-arm64 ./cmd/thingport-bridge
+              CGO_ENABLED=1 GOARCH=amd64 go build -ldflags "$LDFLAGS" -o dist/thingport-bridge-darwin-amd64 ./cmd/thingport-bridge
+              lipo -create -output dist/thingport-bridge-macos dist/thingport-bridge-darwin-arm64 dist/thingport-bridge-darwin-amd64
+              # lipo invalidates the ad-hoc signatures of the two halves.
+              codesign --force -s - dist/thingport-bridge-macos
+              rm dist/thingport-bridge-darwin-*
+              ;;
+          esac
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bridge-${{ matrix.target }}
+          path: bridge/dist/thingport-bridge-*
+          if-no-files-found: error
+
+  publish:
+    needs: [release, build]
+    if: needs.release.outputs.version != ''
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      VERSION: ${{ needs.release.outputs.version }}
+      TAG: thingport-bridge-v${{ needs.release.outputs.version }}
+      REF: ${{ needs.release.outputs.ref }}
     steps:
-      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          path: dist
-      - name: Flatten downloaded artifacts
+          path: release
+          merge-multiple: true
+      - run: chmod +x release/thingport-bridge-linux-amd64 release/thingport-bridge-macos
+      - name: Attach the binaries to the release
         run: |
-          mkdir -p release
-          mv dist/bridge-windows-amd64/thingport-bridge-windows-amd64.exe release/
-          mv dist/bridge-linux-amd64/thingport-bridge-linux-amd64 release/
-          mv dist/bridge-macos/thingport-bridge-macos release/
-          chmod +x release/thingport-bridge-linux-amd64 release/thingport-bridge-macos
-      - name: Compute release tag
-        id: tag
-        run: echo "tag=bridge-$(date +%Y%m%d)-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-      - name: Publish release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.tag.outputs.tag }}
-          name: Thingport Bridge ${{ steps.tag.outputs.tag }}
-          body: |
-            Automated build of the Thingport slicer bridge (see `bridge/README.md`) from
-            ${{ github.sha }}.
+          gh release upload "$TAG" release/* --clobber
+          # Download pages before bridge-latest link through GitHub's repo-wide "latest" slot.
+          gh release edit "$TAG" --latest
+      # A fixed tag, like extension-latest: the repo-wide "latest" slot is shared with every other release.
+      - name: Move bridge-latest to this release
+        run: |
+          cat > "$RUNNER_TEMP/notes.md" <<EOF
+          Thingport Bridge $VERSION ([release notes](https://github.com/$GH_REPO/releases/tag/$TAG)). See
+          \`bridge/README.md\` for the exact commands:
 
-            - **Windows**: `thingport-bridge-windows-amd64.exe` — run it once (double-click is fine) to install.
-            - **Linux**: `thingport-bridge-linux-amd64` — `chmod +x`, then run it once to install.
-            - **macOS**: `thingport-bridge-macos` (universal) — `chmod +x`, remove the quarantine flag, then run with `--install`. See the README for the exact commands.
-          make_latest: true
-          files: |
-            release/thingport-bridge-windows-amd64.exe
-            release/thingport-bridge-linux-amd64
-            release/thingport-bridge-macos
+          - **Windows**: \`thingport-bridge-windows-amd64.exe\` — run it once (double-click is fine) to install.
+          - **Linux**: \`thingport-bridge-linux-amd64\` — \`chmod +x\`, then run it once to install.
+          - **macOS**: \`thingport-bridge-macos\` (universal) — \`chmod +x\`, remove the quarantine flag, then run with \`--install\`.
+          EOF
+          # Updated in place: deleting and recreating it would 404 the Download page's links in between.
+          if gh release view bridge-latest >/dev/null 2>&1; then
+            # --clobber deletes the live asset before its replacement uploads, so upload under a .next name and
+            # swap by renaming: the old binary stays up until then, and stays up if an upload fails.
+            asset_id() { gh api "repos/$GH_REPO/releases/tags/bridge-latest" --jq ".assets[] | select(.name == \"$1\") | .id"; }
+            mkdir "$RUNNER_TEMP/next"
+            for f in release/*; do cp "$f" "$RUNNER_TEMP/next/$(basename "$f").next"; done
+            gh release upload bridge-latest "$RUNNER_TEMP"/next/* --clobber
+            for f in release/*; do
+              name=$(basename "$f")
+              stale=$(asset_id "$name.old"); [ -z "$stale" ] || gh api -X DELETE "repos/$GH_REPO/releases/assets/$stale"
+              old=$(asset_id "$name")
+              new=$(asset_id "$name.next")
+              # Names are unique per release, so the two renames leave a gap of one API call; if the second
+              # fails, give the old binary its name back rather than leave the Download page on a 404.
+              [ -z "$old" ] || gh api -X PATCH "repos/$GH_REPO/releases/assets/$old" -f name="$name.old" >/dev/null
+              if ! gh api -X PATCH "repos/$GH_REPO/releases/assets/$new" -f name="$name" >/dev/null; then
+                [ -z "$old" ] || gh api -X PATCH "repos/$GH_REPO/releases/assets/$old" -f name="$name" >/dev/null
+                exit 1
+              fi
+              [ -z "$old" ] || gh api -X DELETE "repos/$GH_REPO/releases/assets/$old"
+            done
+            gh api -X PATCH "repos/$GH_REPO/git/refs/tags/bridge-latest" -f sha="$REF" -F force=true
+            gh release edit bridge-latest --notes-file "$RUNNER_TEMP/notes.md"
+          else
+            gh release create bridge-latest release/* \
+              --target "$REF" \
+              --title "Thingport Bridge (latest)" \
+              --notes-file "$RUNNER_TEMP/notes.md" \
+              --latest=false
+          fi
