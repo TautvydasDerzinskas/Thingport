@@ -1,7 +1,8 @@
 import crypto from "node:crypto";
 import { Client } from "pg";
 import { prisma, getActiveDatabaseUrl } from "../db";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { SYNC_JOB_INTERRUPTED } from "./importJobRunner";
 import { reserveDatabaseOperation } from "./databaseSwitchGate";
 import type { createJob } from "./importJobService";
 
@@ -111,6 +112,31 @@ export async function recoverImmediateImports(): Promise<void> {
           where: { id: job.id },
           data: { failedCount: await tx.importJobItem.count({ where: { jobId: job.id, status: "FAILED" } }) },
         });
+      });
+    } finally {
+      await release();
+    }
+  }
+}
+
+/** Another API process may still own a request-bound batch when this process starts. */
+export async function recoverDirectBatchImports(): Promise<void> {
+  const where: Prisma.ImportJobWhereInput = {
+    payload: { equals: Prisma.DbNull },
+    type: { in: ["COLLECTION", "ZIP", "PROFILES"] },
+    status: "RUNNING",
+  };
+  const jobs = await prisma.importJob.findMany({ where, select: { id: true, collectionSyncId: true } });
+  for (const job of jobs) {
+    const release = await acquireImmediateImportLock(job.id);
+    if (!release) continue;
+    try {
+      await prisma.importJob.updateMany({
+        where: { ...where, id: job.id },
+        data: {
+          status: job.collectionSyncId ? "PAUSED" : "ERROR",
+          errorMessage: SYNC_JOB_INTERRUPTED,
+        },
       });
     } finally {
       await release();

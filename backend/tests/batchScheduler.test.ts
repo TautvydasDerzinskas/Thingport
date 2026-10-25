@@ -81,7 +81,11 @@ vi.mock("../src/services/importJobRunner", async (original) => {
 
 import { prisma } from "../src/db";
 import { enqueueBatchImport, drainImportQueue, IMPORT_WORKER_LOCK } from "../src/services/importScheduler";
-import { acquireImmediateImportLock, startDirectBatchImport } from "../src/services/immediateImport";
+import {
+  acquireImmediateImportLock,
+  startDirectBatchImport,
+  recoverDirectBatchImports,
+} from "../src/services/immediateImport";
 import { needsImmediateImport } from "../src/services/importRequest";
 import { startLinksJob, pauseLinksJob } from "../src/services/importQueueService";
 
@@ -282,4 +286,30 @@ describe("queued batch reconstruction", () => {
       await release?.();
     });
   });
+  it.each(["COLLECTION", "ZIP", "PROFILES"] as const)(
+    "does not recover an owned direct %s batch on another API startup",
+    async (type) => {
+      let finish!: () => void;
+      const running = new Promise<void>((resolve) => {
+        finish = resolve;
+      });
+      const direct = await startDirectBatchImport(userId, type, { sourceUrl: url }, () => running);
+      const abandoned = await prisma.importJob.create({ data: { userId, type, sourceUrl: url } });
+      try {
+        await recoverDirectBatchImports();
+        expect((await prisma.importJob.findUniqueOrThrow({ where: { id: direct.id } })).status).toBe("RUNNING");
+        expect(await prisma.importJob.findUniqueOrThrow({ where: { id: abandoned.id } })).toMatchObject({
+          status: "ERROR",
+          errorMessage: "Interrupted by server restart",
+        });
+      } finally {
+        finish();
+      }
+      // Model an owner disappearing without a final status write; its released lock permits recovery.
+      await vi.waitFor(async () => {
+        await recoverDirectBatchImports();
+        expect((await prisma.importJob.findUniqueOrThrow({ where: { id: direct.id } })).status).toBe("ERROR");
+      });
+    },
+  );
 });
