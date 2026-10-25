@@ -97,7 +97,11 @@ router.post(
     await waitForScheduledImport(job.id);
     const finished = await prisma.importJob.findUniqueOrThrow({ where: { id: job.id } });
     if (finished.status === "ERROR")
-      throw new HttpError(finished.errorHttpStatus ?? 500, finished.errorMessage ?? "Import failed");
+      throw new HttpError(
+        finished.errorHttpStatus ?? 500,
+        finished.errorMessage ?? "Import failed",
+        finished.errorCode ?? undefined,
+      );
     if (finished.status === "PAUSED") throw new HttpError(409, "Import was paused");
     if (finished.status !== "DONE" || !finished.result) throw new HttpError(500, "Import did not finish");
     res.json(finished.result);

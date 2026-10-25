@@ -100,6 +100,7 @@ export async function executeQueuedImport(job: ImportJob): Promise<void> {
         ...(job.type === "SINGLE" ? { failedCount: 1, processed: 1 } : {}),
         errorMessage: err instanceof HttpError ? err.message : "Internal server error",
         errorHttpStatus: err instanceof HttpError ? err.status : 500,
+        errorCode: err instanceof HttpError ? err.code : null,
       },
     });
     console.error(`Queued import ${job.id} failed:`, err);

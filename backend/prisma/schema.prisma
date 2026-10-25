@@ -383,6 +383,7 @@ model ImportJob {
   payload            Json?
   result             Json?
   errorHttpStatus    Int?
+  errorCode          String?
   // Set on the LINKS jobs a collection sync queues. They pause on a rate limit instead of failing
   // the rest, and are kept out of the extension's "Add to the queue" job.
   collectionSyncId   String?
