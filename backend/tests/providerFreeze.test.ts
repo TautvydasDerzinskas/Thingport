@@ -36,6 +36,7 @@ describe("provider-module freeze", () => {
         "https://cults3d.com/en/3d-model/art/example",
         "https://makeitreal.eufymake.com/models/be7c829023dd11f19919128e55eac07e/",
         "https://pinshape.com/items/111504-articulated-dragon",
+        "https://3dprint.social/models/xc68zh951g26",
       ].map((url) => identifySourceModel(url)?.provider),
     ).toEqual([
       "makerworld",
@@ -50,6 +51,7 @@ describe("provider-module freeze", () => {
       "cults3d",
       "eufymake",
       "pinshape",
+      "threedprintsocial",
     ]);
   });
 
@@ -67,6 +69,7 @@ describe("provider-module freeze", () => {
       "cults3d",
       "eufymake",
       "pinshape",
+      "threedprintsocial",
     ]);
   });
 
@@ -84,6 +87,7 @@ describe("provider-module freeze", () => {
       "cults3d",
       "eufymake",
       "pinshape",
+      "threedprintsocial",
     ]);
   });
 
@@ -101,6 +105,7 @@ describe("provider-module freeze", () => {
       "cults3d",
       "eufymake",
       "pinshape",
+      "threedprintsocial",
     ]);
   });
 
@@ -135,6 +140,7 @@ describe("provider-module freeze", () => {
       "cults3d",
       "eufymake",
       "pinshape",
+      "threedprintsocial",
     ]);
   });
 
@@ -213,7 +219,7 @@ describe("provider-module freeze", () => {
       API_TOKEN_SCOPES.flatMap(({ id, paths }) =>
         paths
           .filter((path) =>
-            /makerworld|thingiverse|printables|myminifactory|snapmaker|makeronline|crealitycloud|nexprint|thangs|cults3d|eufymake|pinshape|provider/.test(
+            /makerworld|thingiverse|printables|myminifactory|snapmaker|makeronline|crealitycloud|nexprint|thangs|cults3d|eufymake|pinshape|threedprintsocial|provider/.test(
               path,
             ),
           )
@@ -251,7 +257,7 @@ describe("provider-module freeze", () => {
           const path = `${prefix}${layer.route.path}`;
           if (
             !wholeRouter &&
-            !/makerworld|thingiverse|printables|myminifactory|snapmaker|makeronline|crealitycloud|nexprint|thangs|cults3d|eufymake|pinshape|provider/i.test(
+            !/makerworld|thingiverse|printables|myminifactory|snapmaker|makeronline|crealitycloud|nexprint|thangs|cults3d|eufymake|pinshape|threedprintsocial|provider/i.test(
               path,
             )
           )
@@ -303,6 +309,7 @@ describe("provider-module freeze", () => {
           "cults3d_cat_ids",
           "eufymake_cat_ids",
           "pinshape_cat_ids",
+          "threedprintsocial_cat_ids",
         ].toSorted(),
       );
     } finally {

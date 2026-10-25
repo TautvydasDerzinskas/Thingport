@@ -84,6 +84,8 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
   eufymake: {},
   // Its collections and anyone's likes are anyone's to read.
   pinshape: {},
+  // Anything public on it is anyone's to read: models, their files, collections and creators.
+  threedprintsocial: {},
   cults3d: {
     async blockReason() {
       return isUnboughtCults3dModel()

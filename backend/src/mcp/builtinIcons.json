@@ -92,6 +92,11 @@
     "group": "providers"
   },
   {
+    "value": "builtin:providers/threedprintsocial",
+    "name": "3DPrint.social",
+    "group": "providers"
+  },
+  {
     "value": "builtin:ai/ai21",
     "name": "AI21",
     "group": "ai"

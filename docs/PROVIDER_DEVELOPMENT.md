@@ -72,6 +72,7 @@ how lists are read. When a new site resembles one of these, copy that provider's
 | The site's own private API (what its pages call) | Snapmaker, MakerOnline, Creality Cloud, NexPrint, Thangs. Each wraps answers in a `code` of its own, so check that, not the HTTP status. Creality Cloud refuses any call without its full set of `__cxy_*` headers |
 | Model pages plus the maker's cloud API           | MakerWorld (page data, and `api.bambulab.com` with the user's cookie)                                                                                                                                              |
 | Its pages' HTML, rendered on the server          | Pinshape, read with cheerio. Its own calls answer with more HTML (`{success, html, pagination}`), and its redirects are its answers: `/index` for a missing model or user, `/auth/login` for a refused sign-in     |
+| Its pages' HTML, rendered on the server          | 3DPrint.social, a Manyfold server whose JSON API needs an OAuth app registered there. A 404 is what it hasn't got; a redirect to `/users/sign_in`, what isn't public                                               |
 
 **Cloudflare:**
 
@@ -128,6 +129,7 @@ Rules of thumb:
 - **Snapmaker** and **NexPrint** return file links signed for whoever asked, so files only download with the user's
   token, even where the details are public.
 - **Creality Cloud** links can name a model by an alias, so `keptId` maps the alias to the id it's kept under.
+- **3DPrint.social**'s files download from their own links on its pages, with nothing, for any public model.
 - **Pinshape**'s download link for each file redirects a signed-in user to a signed S3 link, and anyone else to its
   sign-in page, which is how a refused sign-in shows.
 

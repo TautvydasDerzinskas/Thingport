@@ -612,6 +612,7 @@ describe("a sync's model links", () => {
       cults3d: "a-model",
       eufymake: "be7c829023dd11f19919128e55eac07e",
       pinshape: "111504",
+      threedprintsocial: "xc68zh951g26",
     };
     const readBack = Object.fromEntries(
       PROVIDER_IDS.map((provider) => [provider, modelIdFromUrl(provider, modelUrlFor(provider, ids[provider]))]),

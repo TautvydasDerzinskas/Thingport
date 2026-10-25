@@ -62,8 +62,8 @@ function listKindOf(provider: string, url: string): Expected["listKind"] {
 
 describe("provider URL corpus (backend)", () => {
   it("contains every provider and both positive and negative cases", () => {
-    expect(cases).toHaveLength(70);
-    expect(new Set(cases.map((item) => item.expect.provider).filter(Boolean)).size).toBe(12);
+    expect(cases).toHaveLength(80);
+    expect(new Set(cases.map((item) => item.expect.provider).filter(Boolean)).size).toBe(13);
   });
 
   it.each(cases)("$url", ({ url, expect: common, divergent }) => {

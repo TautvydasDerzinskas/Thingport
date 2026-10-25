@@ -3480,7 +3480,7 @@
           "takenBy": "Synced with \"{{name}}\"",
           "loadFailed": "Couldn't load the collections.",
           "lookupFailed": "Couldn't find that collection.",
-          "notALink": "Paste a MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D or Pinshape collection link.",
+          "notALink": "Paste a MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, Pinshape or 3DPrint.social collection link.",
           "usernameFailed": "Couldn't save the username.",
           "openProviders": "Open Providers",
           "usernameLabel": "Your {{provider}} username",
@@ -4205,6 +4205,29 @@
       },
       "sync": {
         "notConnected": "Connect Pinshape in Configuration > Providers, or visit it with Thingport Grab, to see your likes and collections here."
+      }
+    },
+    "threedprintsocial": {
+      "status": {
+        "alwaysConnected": "3DPrint.social is connected by default: it needs no account or key."
+      },
+      "about": {
+        "summary": "A Fediverse home for 3D models, run on Manyfold: free models, collections, and creators you can follow from Mastodon.",
+        "signIn": "Nothing to connect.",
+        "grab": "Optional: imports from its pages in one click.",
+        "setup": [
+          "Nothing to set up: paste a 3DPrint.social model, collection or creator link, or import from its page with Thingport Grab."
+        ]
+      },
+      "admin": {
+        "description": "The Fediverse's model site: public models, collections and creators, read without a sign-in."
+      },
+      "sync": {
+        "notConnected": "3DPrint.social can't be reached right now.",
+        "usernameHint": "Thingport lists the models and collections of the creator you publish as. It only needs asking once.",
+        "usernamePlaceholder": "@handle or creator page link",
+        "showing": "Showing @{{user}}'s models and collections.",
+        "forgetMessage": "Thingport stops listing your 3DPrint.social models and collections until you give your handle again. Syncs already set up keep going."
       }
     }
   }

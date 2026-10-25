@@ -369,7 +369,14 @@ export const printSocialListKey = (list: PrintSocialList) =>
 
 export type PrintSocialListInfo = { name: string; owner: string | null };
 
-type ListPage = { info: PrintSocialListInfo; total: number | null; pages: number; entries: PrintSocialModelSummary[] };
+type ListPage = {
+  info: PrintSocialListInfo;
+  total: number | null;
+  pages: number;
+  /** How many cards it shows a page, its other servers' models included, by the first page's. */
+  perPage: number;
+  entries: PrintSocialModelSummary[];
+};
 
 /** A collection's or creator's page: its name, the count it gives ("12 models"), and one page of its models. Null
  *  when it isn't one. */
@@ -390,6 +397,7 @@ export function printSocialListFromPage(html: string, list: PrintSocialList): Li
     info: { name, owner },
     total: countIn(total),
     pages: pageCount($),
+    perPage: $("#item_list .preview-card").length,
     entries: printSocialModelCards($),
   };
 }
@@ -411,8 +419,10 @@ export async function fetchPrintSocialList(
 ): Promise<PrintSocialFetchedList | null> {
   const first = await listPage(list, 1);
   if (!first) return null;
-  const perPage = Math.max(first.entries.length, 1);
-  const pages = Math.min(first.pages, Math.ceil(maxItems / perPage));
+  const perPage = Math.max(first.perPage, 1);
+  // Its pagination's last page, or as many as its count of models takes where that says more: a list never stops at
+  // its first page for want of the links. A page past the last is an empty one.
+  const pages = Math.min(Math.max(first.pages, Math.ceil((first.total ?? 0) / perPage)), Math.ceil(maxItems / perPage));
   const rest = await mapWithConcurrency(
     Array.from({ length: Math.max(pages - 1, 0) }, (_, i) => i + 2),
     PAGE_CONCURRENCY,

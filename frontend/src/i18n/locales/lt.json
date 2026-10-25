@@ -3584,7 +3584,7 @@
           "takenBy": "Sinchronizuojama su „{{name}}“",
           "loadFailed": "Nepavyko įkelti kolekcijų.",
           "lookupFailed": "Nepavyko rasti šios kolekcijos.",
-          "notALink": "Įklijuokite MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D arba Pinshape kolekcijos nuorodą.",
+          "notALink": "Įklijuokite MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, Pinshape arba 3DPrint.social kolekcijos nuorodą.",
           "usernameFailed": "Nepavyko išsaugoti vartotojo vardo.",
           "openProviders": "Atidaryti tiekėjus",
           "usernameLabel": "Jūsų {{provider}} vartotojo vardas",
@@ -4377,6 +4377,29 @@
       },
       "sync": {
         "notConnected": "Prijunkite Pinshape skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte pamėgtus modelius ir kolekcijas."
+      }
+    },
+    "threedprintsocial": {
+      "status": {
+        "alwaysConnected": "3DPrint.social prijungtas iš karto: jam nereikia paskyros ar rakto."
+      },
+      "about": {
+        "summary": "Fediverse 3D modelių namai, veikiantys su Manyfold: nemokami modeliai, kolekcijos ir kūrėjai, kuriuos galite sekti iš Mastodon.",
+        "signIn": "Nieko nereikia prijungti.",
+        "grab": "Nebūtina: importuoja iš jo puslapių vienu paspaudimu.",
+        "setup": [
+          "Nieko nereikia nustatyti: įklijuokite 3DPrint.social modelio, kolekcijos ar kūrėjo nuorodą arba importuokite iš jo puslapio su Thingport Grab."
+        ]
+      },
+      "admin": {
+        "description": "Fediverse modelių svetainė: vieši modeliai, kolekcijos ir kūrėjai, skaitomi neprisijungus."
+      },
+      "sync": {
+        "notConnected": "3DPrint.social šiuo metu nepasiekiamas.",
+        "usernameHint": "Thingport parodys kūrėjo, kurio vardu skelbiate, modelius ir kolekcijas. Paklausiama tik kartą.",
+        "usernamePlaceholder": "@vardas arba kūrėjo puslapio nuoroda",
+        "showing": "Rodomi @{{user}} modeliai ir kolekcijos.",
+        "forgetMessage": "Thingport neberodys jūsų 3DPrint.social modelių ir kolekcijų, kol vėl nurodysite savo vardą. Jau nustatyti sinchronizavimai veiks toliau."
       }
     }
   }

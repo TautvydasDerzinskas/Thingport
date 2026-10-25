@@ -3490,7 +3490,7 @@
           "takenBy": "Sincronizada con «{{name}}»",
           "loadFailed": "No se pudieron cargar las colecciones.",
           "lookupFailed": "No se encontró esa colección.",
-          "notALink": "Pega un enlace de colección de MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D o Pinshape.",
+          "notALink": "Pega un enlace de colección de MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, Pinshape o 3DPrint.social.",
           "usernameFailed": "No se pudo guardar el nombre de usuario.",
           "openProviders": "Abrir proveedores",
           "usernameLabel": "Tu nombre de usuario en {{provider}}",
@@ -4216,6 +4216,29 @@
       },
       "sync": {
         "notConnected": "Conecta Pinshape en Configuración > Proveedores, o visítalo con Thingport Grab, para ver aquí tus me gusta y colecciones."
+      }
+    },
+    "threedprintsocial": {
+      "status": {
+        "alwaysConnected": "3DPrint.social está conectado de forma predeterminada: no necesita cuenta ni clave."
+      },
+      "about": {
+        "summary": "Un hogar en el Fediverso para modelos 3D, con Manyfold: modelos gratuitos, colecciones y creadores que puedes seguir desde Mastodon.",
+        "signIn": "Nada que conectar.",
+        "grab": "Opcional: importa desde sus páginas con un clic.",
+        "setup": [
+          "Nada que configurar: pega un enlace de modelo, colección o creador de 3DPrint.social, o importa desde su página con Thingport Grab."
+        ]
+      },
+      "admin": {
+        "description": "El sitio de modelos del Fediverso: modelos, colecciones y creadores públicos, leídos sin iniciar sesión."
+      },
+      "sync": {
+        "notConnected": "3DPrint.social no está accesible en este momento.",
+        "usernameHint": "Thingport muestra los modelos y colecciones del creador con el que publicas. Solo hace falta pedirlo una vez.",
+        "usernamePlaceholder": "@usuario o enlace de la página del creador",
+        "showing": "Mostrando los modelos y colecciones de @{{user}}.",
+        "forgetMessage": "Thingport deja de mostrar tus modelos y colecciones de 3DPrint.social hasta que vuelvas a indicar tu usuario. Las sincronizaciones ya configuradas siguen funcionando."
       }
     }
   }

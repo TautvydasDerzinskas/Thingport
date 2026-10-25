@@ -183,6 +183,17 @@ describe("3DPrint.social lists", () => {
     expect(list?.truncated).toBe(true);
   });
 
+  it("reads past the first page by its count of models where it has no pagination links", async () => {
+    const bare = (name: string) => loadFixtureHtml(P, name).replace(/<nav class="pagy[\s\S]*?<\/nav>/g, "");
+    stub = installFetch(({ url }) =>
+      url.pathname === "/collections/krfflpzgbtvf"
+        ? html(bare(url.searchParams.get("page") === "2" ? "collection-page-2" : "collection-page"))
+        : undefined,
+    );
+    const list = await fetchPrintSocialList({ kind: "collection", collectionId: "krfflpzgbtvf" });
+    expect(list?.entries.map((entry) => entry.modelId)).toContain("whv4ph9w9ctv");
+  });
+
   it("answers a collection that's gone with null", async () => {
     stub = installFetch(() => new Response("Not found", { status: 404 }));
     expect(await fetchPrintSocialList({ kind: "collection", collectionId: "krfflpzgbtvf" })).toBeNull();

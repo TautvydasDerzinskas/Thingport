@@ -1,4 +1,4 @@
-# Import from MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake and Pinshape
+# Import from MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape and 3DPrint.social
 
 Thingport keeps a real copy of every model you import: its files, photos, title, description, tags, author and a link
 back to where it came from. If the original page disappears, the model is still in your library.
@@ -6,10 +6,10 @@ back to where it came from. If the original page disappears, the model is still 
 ## Ways to import
 
 - **Paste a link.** Click **Add → Import** and paste a model link from MakerWorld, Printables, Thingiverse,
-  MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake or Pinshape, or any direct link to a model file. Paste several links, one per line, and they're imported one after
+  MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape or 3DPrint.social, or any direct link to a model file. Paste several links, one per line, and they're imported one after
   another as a background job. You can also paste a link straight into the search bar.
 - **Use Thingport Grab.** The [browser extension](../../extension/README.md) adds a Thingport button to model pages on
-  all twelve sites (MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake and Pinshape once you allow them, with a single click in its popup), so you can
+  all thirteen sites (MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape and 3DPrint.social once you allow them, with a single click in its popup), so you can
   import without leaving the page, file the model into a collection, and import whole collections.
   This is the recommended way to import.
 - **Or use the bookmarklet.** Without the extension, drag the [bookmarklet](../guides/bookmarklet.md) to your
