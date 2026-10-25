@@ -1,6 +1,6 @@
 /** Destinations that may receive a provider credential. URL recognition is deliberately broader than this list. */
 import { browserFetch } from "../utils/browserFetch";
-import { CREDENTIAL_HOSTS, type CredentialDestination } from "./credentialHosts.generated";
+import { CREDENTIAL_HOSTS, type CredentialDestination } from "./_lib/credentialHosts.generated";
 
 /** Check the request that actually carries a secret, not just the URL originally classified as a provider link. */
 export function assertCredentialDestination(destination: CredentialDestination, input: string | URL): URL {

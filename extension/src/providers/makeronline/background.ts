@@ -3,7 +3,7 @@
 // page sign each one, the same way its own Download button does, and hands the signed links to the instance. Imports
 // started anywhere else wait on the instance until Grab sees a makeronline.com page (runWaitingImports).
 
-import { CREDENTIAL_HOSTS } from "../../shared/credentialHosts.generated";
+import { CREDENTIAL_HOSTS } from "../_lib/credentialHosts.generated";
 import type { Print } from "../../shared/api";
 import type { MakeronlineSignedFile } from "../../shared/messages";
 import { apiCall } from "../../background/api";

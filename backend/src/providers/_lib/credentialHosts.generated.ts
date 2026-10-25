@@ -1,4 +1,5 @@
-// Generated from providers/credentialHosts.ts. Run npm run providers:security:sync.
+// GENERATED from providers/_lib/credentialHosts.ts by scripts/sync-providers.mjs. Don't edit it here:
+// change providers/ and run npm run providers:sync.
 /** Hosts allowed to receive provider credentials. URL parsers may accept a different set of page hosts. */
 export const CREDENTIAL_HOSTS = {
   "makerworld-page": { exact: ["makerworld.com", "www.makerworld.com"] },
@@ -11,6 +12,7 @@ export const CREDENTIAL_HOSTS = {
   "makeronline-api": { exact: ["www.makeronline.com"] },
   "makeronline-site": { exact: ["makeronline.com", "www.makeronline.com"] },
   "crealitycloud-api": { exact: ["www.crealitycloud.com"] },
+  "eufymake-api": { exact: ["aiot-wapi-eu.ankermake.com"] },
   "nexprint-api": { exact: ["www.nexprint.com"] },
   "thangs-api": { exact: ["thangs.com"] },
   "cults3d-api": { exact: ["cults3d.com"] },

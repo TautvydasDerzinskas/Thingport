@@ -33,8 +33,8 @@ badge, shows the same in short.
 | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------- | -------------- | ------------ | ----------- | ----- | ---- | -------------- |
 | <img src="assets/providers/makerworld.svg" alt="" width="18" height="18" align="absmiddle"> [MakerWorld](providers/makerworld.md)                | Your cookie                     | Recommended    | Optional     | ✓           |       | ✓    | ✓              |
 | <img src="assets/providers/printables.svg" alt="" width="18" height="18" align="absmiddle"> [Printables](providers/printables.md)                | None                            | Optional¹      | Recommended  | ✓           | ✓¹    | ✓    |                |
-| <img src="assets/providers/thingiverse.svg" alt="" width="18" height="18" align="absmiddle"> [Thingiverse](providers/thingiverse.md)             | Admin's App Token               | Optional       | Pages only⁴  | ✓           | ✓     | ✓    |                |
-| <img src="assets/providers/myminifactory.svg" alt="" width="18" height="18" align="absmiddle"> [MyMiniFactory](providers/myminifactory.md)       | Admin's API key, yours for paid | Optional       | Pages only⁴  | ✓           |       | ✓    |                |
+| <img src="assets/providers/thingiverse.svg" alt="" width="18" height="18" align="absmiddle"> [Thingiverse](providers/thingiverse.md)             | Admin's App Token               | Optional       | Recommended  | ✓           | ✓     | ✓    |                |
+| <img src="assets/providers/myminifactory.svg" alt="" width="18" height="18" align="absmiddle"> [MyMiniFactory](providers/myminifactory.md)       | Admin's API key, yours for paid | Optional       | Recommended  | ✓           |       | ✓    |                |
 | <img src="assets/providers/snapmaker-space.svg" alt="" width="18" height="18" align="absmiddle"> [Snapmaker Space](providers/snapmaker-space.md) | Yours, for a day                | Recommended²   |              | Bookmarks   | ✓     | ✓    | ✓              |
 | <img src="assets/providers/makeronline.svg" alt="" width="18" height="18" align="absmiddle"> [MakerOnline](providers/makeronline.md)             | Yours, for likes only           | **Required**   |              | ✓           | ✓     | ✓    | ✓              |
 | <img src="assets/providers/creality-cloud.svg" alt="" width="18" height="18" align="absmiddle"> [Creality Cloud](providers/creality-cloud.md)    | Yours, for a week               | Recommended    |              | ✓           | ✓     | ✓    | ✓              |
@@ -46,7 +46,6 @@ badge, shows the same in short.
 1. Your private Printables collections and your likes are read by Grab, while you're on Printables.
 2. Snapmaker's sign-in lasts a day and only Grab renews it; without Grab you paste a new one every day.
 3. Cults3D's files need your browser's Cloudflare clearance, and Thingport on the same IP address as that browser.
-4. FlareSolverr supports public pages; authenticated API calls use impit directly.
 
 <!-- /providers:table -->
 

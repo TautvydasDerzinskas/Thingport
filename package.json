@@ -15,8 +15,6 @@
     "semantic-release-monorepo": "^8.0.2"
   },
   "scripts": {
-    "providers:security:sync": "node scripts/sync-provider-security.mjs",
-    "providers:security:check": "node scripts/sync-provider-security.mjs --check",
     "prepare": "husky",
     "format": "prettier --write . && gofmt -w bridge && npm --prefix backend exec -- prisma format --schema backend/prisma/schema.prisma",
     "format:check": "prettier --check . && test -z \"$(gofmt -l bridge)\"",

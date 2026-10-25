@@ -1,4 +1,4 @@
-import { CREDENTIAL_HOSTS, type CredentialDestination } from "./credentialHosts.generated";
+import { CREDENTIAL_HOSTS, type CredentialDestination } from "../providers/_lib/credentialHosts.generated";
 
 type ProviderCredentialDestination = Extract<
   CredentialDestination,
