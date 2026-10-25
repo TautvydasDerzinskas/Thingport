@@ -71,7 +71,7 @@ the browser's color scheme.
 
 ### Adding a provider site
 
-The checklist for a whole provider is in [the root CONTRIBUTING.md](../CONTRIBUTING.md#adding-a-provider). Grab's
+The checklist for a whole provider is in [docs/PROVIDER_DEVELOPMENT.md](../docs/PROVIDER_DEVELOPMENT.md#adding-a-provider). Grab's
 part:
 
 - Its manifest's `extension` entry (`providers/<id>/manifest.ts`) says how Grab reaches its site. Make it

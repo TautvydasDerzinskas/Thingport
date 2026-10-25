@@ -8,7 +8,7 @@ import { fetchListing } from "../../src/services/collectionSyncRunner";
 import { setProviderEnabled } from "../../src/services/providerSettingsService";
 import { expectStatus, type FetchHandler, type FetchStub, installFetch } from "./support";
 
-// The provider contract suite (docs/rfc/provider-modules.md, section 6). `describeProviderContract(spec)` pins what an
+// The provider contract suite (docs/PROVIDER_DEVELOPMENT.md). `describeProviderContract(spec)` pins what an
 // import from one provider does, end to end through the HTTP routes, with the provider's answers stubbed from the
 // recorded fixtures in tests/fixtures/providers/<id>/ -- never a real site. It is the acceptance test for a new
 // provider too: register one, write its spec, and the same assertions run against it.

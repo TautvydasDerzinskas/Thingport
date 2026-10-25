@@ -1,5 +1,5 @@
-// Guards the provider-module refactor (docs/rfc/provider-modules.md): change these literal contracts deliberately.
-// Some lists are read from the source text because they aren't exported; Phase 3 points these at the provider registry.
+// Guards what clients depend on (docs/PROVIDER_DEVELOPMENT.md, "What never changes"): change these literal contracts
+// deliberately. Some lists are read from the source text because they aren't exported.
 import { readFileSync } from "node:fs";
 import { afterAll, describe, expect, it } from "vitest";
 import request from "supertest";
