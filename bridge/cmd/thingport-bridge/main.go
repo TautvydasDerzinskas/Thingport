@@ -127,11 +127,14 @@ func handleProtocol(raw string, cfg Config) error {
 	}
 
 	if slicerID == "" || slicerID == "other" {
+		log.Printf("open with default app path=%s", targetPath)
 		return openWithDefault(targetPath)
 	}
 
 	cmd, args := resolveSlicerCommand(slicerID, cfg)
 	if cmd == "" {
+		// Otherwise a slicer that isn't found looks, in the log, like one that was launched.
+		log.Printf("slicer not found slicer=%s; open with default app path=%s", slicerID, targetPath)
 		return openWithDefault(targetPath)
 	}
 
@@ -346,7 +349,9 @@ func findMacCommand(id string, candidates map[string][]string) string {
 
 func windowsCandidates() map[string][]string {
 	return map[string][]string{
-		"bambustudio": {"Bambu Studio\\BambuStudio.exe"},
+		// The installer ships bambu-studio.exe; BambuStudio.exe is kept in case a build names it that.
+		// "/" so the test runs on any OS; Windows accepts it.
+		"bambustudio": {"Bambu Studio/bambu-studio.exe", "Bambu Studio/BambuStudio.exe"},
 		"orcaslicer":  {"OrcaSlicer\\OrcaSlicer.exe"},
 		"prusaslicer": {"PrusaSlicer\\PrusaSlicer.exe"},
 		// Globs because the dir embeds the version; renamed "Ultimaker" -> "UltiMaker" around 5.7.
