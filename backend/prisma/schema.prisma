@@ -343,6 +343,7 @@ model CollectionItem {
 }
 
 enum ImportJobType {
+  SINGLE
   COLLECTION
   ZIP
   PROFILES
@@ -350,6 +351,7 @@ enum ImportJobType {
 }
 
 enum ImportJobStatus {
+  QUEUED
   RUNNING
   DONE
   ERROR
@@ -358,7 +360,7 @@ enum ImportJobStatus {
   PAUSED
 }
 
-/// A background batch import. At most one RUNNING job per user (enforced in routes/imports.ts).
+/// Durable SINGLE/LINKS imports share one scheduler; legacy batch jobs still run directly.
 model ImportJob {
   id                 String          @id @default(cuid())
   userId             String
@@ -379,6 +381,8 @@ model ImportJob {
   resultPrintId      String?
   // The LINKS job's shared request body (never the MakerWorld cookie), so a retry can rerun it.
   payload            Json?
+  result             Json?
+  errorHttpStatus    Int?
   // Set on the LINKS jobs a collection sync queues. They pause on a rate limit instead of failing
   // the rest, and are kept out of the extension's "Add to the queue" job.
   collectionSyncId   String?
@@ -388,6 +392,7 @@ model ImportJob {
   items              ImportJobItem[]
 
   @@index([userId, status])
+  @@index([status, createdAt])
   @@index([collectionSyncId])
 }
 

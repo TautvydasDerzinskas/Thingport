@@ -597,7 +597,7 @@ describe("the tools that write", () => {
       await new Promise((resolve) => setTimeout(resolve, 300));
       const result = await callTool(writer.token, "get_import_status", { task_id: started.body.task_id });
       expect(result.isError).toBe(true);
-      expect(result.text).toMatch(/import_model/);
+      expect(result.text).toMatch(/no such import/i);
     } finally {
       global.fetch = originalFetch;
     }

@@ -17,10 +17,11 @@ import {
 } from "../services/importService";
 import { findLibraryPrints } from "../services/collectionSyncService";
 import { listZipEntries } from "../services/zipService";
-import { createJob, createJobItems, getActiveJob, getJob, listJobItems } from "../services/importJobService";
+import { createJob, getActiveJob, getJob, listJobItems } from "../services/importJobService";
 import { queueLink, startLinksJob } from "../services/importQueueService";
-import { getImportTask, startImportTask } from "../services/importTaskService";
-import { profilesImportJob, runLinksImportJob, runListImportJob, runZipImportJob } from "../services/importJobRunner";
+import { getPersistentImportTask, startImportTask } from "../services/importTaskService";
+import { enqueueSingleImport, enqueueLinksImport } from "../services/importScheduler";
+import { profilesImportJob, runListImportJob, runZipImportJob } from "../services/importJobRunner";
 import { notifyImportRun } from "../services/modelNotifications";
 import { toImportJobItemOut, toImportJobOut } from "../dto";
 import type { Prisma } from "@prisma/client";
@@ -49,8 +50,15 @@ router.post(
   asyncHandler(async (req, res) => {
     const { url, body } = await prepareSingleImport(req.userId!, parseBody(importRequestSchema, req.body));
     if (req.query.async === "1") {
-      const taskId = startImportTask(req.userId!, () => importAndDescribe(req.userId!, url, body));
-      res.status(202).json({ task_id: taskId });
+      // Browser-signed links and an explicitly supplied session belong to this immediate request.
+      // Keep Grab's short-lived task path until these providers can resolve fresh links in a worker.
+      if (body.resolved_download_url || body.resolved_files?.length || req.body.makerworld_cookie) {
+        const taskId = startImportTask(req.userId!, () => importAndDescribe(req.userId!, url, body));
+        res.status(202).json({ task_id: taskId });
+        return;
+      }
+      const job = await enqueueSingleImport(req.userId!, { ...body, url });
+      res.status(202).json({ task_id: job.id, job_id: job.id, status: "QUEUED" });
       return;
     }
     res.json(await importAndDescribe(req.userId!, url, body));
@@ -94,7 +102,7 @@ router.post(
 router.get(
   "/import/tasks/:id",
   asyncHandler(async (req, res) => {
-    const task = getImportTask(req.params.id, req.userId!);
+    const task = await getPersistentImportTask(req.params.id, req.userId!);
     if (!task) throw new HttpError(404, "Import task not found -- it may have expired or the server restarted");
     res.json(task);
   }),
@@ -352,20 +360,13 @@ router.post(
   requireCaptcha("import"),
   asyncHandler(async (req, res) => {
     const body = await withLinkAuth(req.userId!, parseBody(linksImportRequestSchema, req.body));
-    await assertNoActiveJob(req.userId!);
     const urls: string[] = [];
     for (const raw of body.urls) {
       const url = await enabledImportUrl(raw.trim());
       if (url && !urls.includes(url)) urls.push(url);
     }
     if (!urls.length) throw new HttpError(400, "No links to import");
-    const job = await createJob(req.userId!, "LINKS", {
-      sourceUrl: urls[0],
-      total: urls.length,
-      payload: linksJobPayload(body),
-    });
-    await createJobItems(job.id, urls);
-    void runLinksImportJob(job.id, req.userId!, { ...body, url: urls[0] });
+    const job = await enqueueLinksImport(req.userId!, urls, linksJobPayload(body));
     res.status(202).json({ job_id: job.id });
   }),
 );

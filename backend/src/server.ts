@@ -4,6 +4,7 @@ import { prisma } from "./db"; // also ensures storage directories exist before 
 import { startConsumeWatcher } from "./services/consumeService";
 import { startCollectionSyncScheduler } from "./services/collectionSyncRunner";
 import { SYNC_JOB_INTERRUPTED } from "./services/importJobRunner";
+import { startImportScheduler } from "./services/importScheduler";
 import { seedFlaresolverrUrl, seedPublicUrl } from "./services/settingsService";
 import { startNotificationCleanup } from "./services/notificationService";
 import { startSystemNotificationSync } from "./services/systemNotificationService";
@@ -18,11 +19,11 @@ const app = createApp();
 // job is paused instead, for its next sync to pick up again.
 (async () => {
   await prisma.importJob.updateMany({
-    where: { status: "RUNNING", collectionSyncId: { not: null } },
+    where: { type: { notIn: ["SINGLE", "LINKS"] }, status: "RUNNING", collectionSyncId: { not: null } },
     data: { status: "PAUSED", errorMessage: SYNC_JOB_INTERRUPTED },
   });
   await prisma.importJob.updateMany({
-    where: { status: "RUNNING" },
+    where: { type: { notIn: ["SINGLE", "LINKS"] }, status: "RUNNING" },
     data: { status: "ERROR", errorMessage: "Interrupted by server restart" },
   });
 })().catch((err) => console.error("Failed to recover stale import jobs on startup:", err));
@@ -33,6 +34,7 @@ seedProviderCategoryIds().catch((err) => console.error("Failed to seed a new pro
 
 app.listen(API_PORT, () => {
   console.log(`Thingport API listening on port ${API_PORT}`);
+  startImportScheduler();
   startConsumeWatcher();
   startCollectionSyncScheduler();
   startNotificationCleanup();

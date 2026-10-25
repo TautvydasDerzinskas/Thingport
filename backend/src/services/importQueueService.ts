@@ -7,40 +7,33 @@ import { prisma } from "../db";
 import { createNotification } from "./notificationService";
 import { HttpError } from "../utils/fileUtils";
 import { createKeyedLock } from "../utils/concurrency";
-import { getActiveJob, resetFailedItems } from "./importJobService";
-import {
-  isRunnerLive,
-  runLinksImportJob,
-  runnerSettled,
-  type LinksImportJobBody,
-  type QueuedLinkOptions,
-} from "./importJobRunner";
-import { liftProviderHolds, withLinkAuth } from "../providers/registry";
-
-/** The shared body a LINKS job reruns with: its stored payload plus the owner's saved sign-in for LINK_PROVIDER. The
- *  sign-in is never stored on the job. */
-async function linksJobBody(job: ImportJob): Promise<LinksImportJobBody> {
-  const payload = (job.payload ?? {}) as Record<string, unknown>;
-  return withLinkAuth<LinksImportJobBody>(job.userId, {
-    url: job.sourceUrl,
-    notes: (payload.notes as string | null) ?? null,
-    tags: Array.isArray(payload.tags) ? (payload.tags as string[]) : [],
-    category_id: (payload.category_id as string | null) ?? null,
-    scope: payload.scope === "designer" || payload.scope === "all" ? payload.scope : "url",
-    itemDelayMs: typeof payload.item_delay_ms === "number" ? payload.item_delay_ms : undefined,
-  });
-}
+import { resetFailedItems } from "./importJobService";
+import { isRunnerLive, runnerSettled, type QueuedLinkOptions } from "./importJobRunner";
+import { liftProviderHolds } from "../providers/registry";
+import { wakeImportScheduler } from "./importScheduler";
 
 /** Starts a LINKS job's PENDING links, or with `retryFailed` puts its FAILED links back first.
- *  Resolves once the runner is launched; `run` settles when it stops (finished or paused), which is
- *  what the bulk run waits on. `manual` is a person clicking start or retry: it lifts the MakerWorld
+ *  Resolves once the job is persisted as QUEUED; `run` is retained for older callers. `manual` is a person clicking start or retry: it lifts the MakerWorld
  *  CAPTCHA cooloff, which would otherwise fail every link without trying. */
 export async function startLinksJob(
   job: ImportJob,
   opts: { retryFailed?: boolean; manual?: boolean } = {},
 ): Promise<{ run: Promise<void> }> {
+  if (job.type === "SINGLE") {
+    if (job.status !== "PAUSED" && job.status !== "ERROR") {
+      throw new HttpError(409, "Only a paused or failed import can be started");
+    }
+    const { count } = await prisma.importJob.updateMany({
+      where: { id: job.id, status: job.status },
+      data: { status: "QUEUED", errorMessage: null, errorHttpStatus: null, failedCount: 0, processed: 0 },
+    });
+    if (!count) throw new HttpError(409, "This import changed while it was being started");
+    if (opts.manual) liftProviderHolds();
+    wakeImportScheduler();
+    return { run: Promise.resolve() };
+  }
   if (job.type !== "LINKS") throw new HttpError(400, "Only a link-list import can be started or retried");
-  if (job.status === "RUNNING" && isRunnerLive(job.id)) throw new HttpError(409, "This import is already running");
+  if (job.status === "RUNNING" || job.status === "QUEUED") throw new HttpError(409, "This import is already running");
   // An ERROR job was cut off (a restart, or its runner crashed) with links still waiting, and has
   // no failed links for a retry to pick up, so it starts like a paused one.
   if (!opts.retryFailed && job.status !== "PAUSED" && job.status !== "ERROR") {
@@ -54,9 +47,6 @@ export async function startLinksJob(
     // A finished one is only writing its notification.
     await runnerSettled(job.id);
   }
-  const active = await getActiveJob(job.userId);
-  if (active && active.id !== job.id) throw new HttpError(409, "An import is already in progress");
-
   if (opts.retryFailed) {
     const failed = await resetFailedItems(job.id);
     // Links an interrupted run never reached are rerun too, so a retry alone can finish it.
@@ -74,7 +64,7 @@ export async function startLinksJob(
   const { count } = await prisma.importJob.updateMany({
     where: { id: job.id, status: job.status },
     data: {
-      status: "RUNNING",
+      status: "QUEUED",
       errorMessage: null,
       processed: await prisma.importJobItem.count({ where: { jobId: job.id, status: { in: ["DONE", "FAILED"] } } }),
       failedCount: await prisma.importJobItem.count({ where: { jobId: job.id, status: "FAILED" } }),
@@ -82,18 +72,18 @@ export async function startLinksJob(
   });
   if (!count) throw new HttpError(409, "This import changed while it was being started, reload and try again");
   if (opts.manual) liftProviderHolds();
-  const body = await linksJobBody(job);
-  return { run: runLinksImportJob(job.id, job.userId, body) };
+  wakeImportScheduler();
+  return { run: Promise.resolve() };
 }
 
 /** Pausing only flips the status: the runner finishes the link it's on, then stops. */
 export async function pauseLinksJob(job: ImportJob): Promise<void> {
-  if (job.type !== "LINKS") throw new HttpError(400, "Only a link-list import can be paused");
+  if (job.type !== "LINKS" && job.type !== "SINGLE") throw new HttpError(400, "This import cannot be paused");
   const { count } = await prisma.importJob.updateMany({
-    where: { id: job.id, status: "RUNNING" },
+    where: { id: job.id, status: { in: ["RUNNING", "QUEUED"] } },
     data: { status: "PAUSED" },
   });
-  if (!count) throw new HttpError(400, "Only a running import can be paused");
+  if (!count) throw new HttpError(400, "Only a running or queued import can be paused");
 }
 
 // ---- Sending links to the queue (the extension) ----
@@ -212,13 +202,12 @@ export async function getQueueJob(jobId: string): Promise<ImportJob> {
 }
 
 function assertIdle(job: ImportJob): void {
-  if (job.status === "RUNNING" || isRunnerLive(job.id)) {
+  if (job.status === "QUEUED" || job.status === "RUNNING" || isRunnerLive(job.id)) {
     throw new HttpError(409, "Pause this import first, and wait for its current link to finish");
   }
 }
 
 async function deleteJob(job: ImportJob): Promise<void> {
-  bulkQueue = bulkQueue.filter((entry) => entry.jobId !== job.id);
   await prisma.importJob.delete({ where: { id: job.id } });
 }
 
@@ -254,83 +243,68 @@ export async function removeQueueItem(itemId: string): Promise<{ jobDeleted: boo
  *  possible. */
 export async function clearFinishedJobs(): Promise<number> {
   const { count } = await prisma.importJob.deleteMany({
-    where: { status: "DONE", failedCount: 0, NOT: { id: { in: bulkQueue.map((e) => e.jobId) } } },
+    where: { status: "DONE", failedCount: 0 },
   });
   return count;
 }
 
 // ---- Bulk runs: "Start all" and "Retry all failed" ----
 
-// One job at a time, across all users: every job of a bulk run hits the same providers from the
-// same IP, and parallel bursts are what trip MakerWorld's CAPTCHA.
-type BulkEntry = { jobId: string; retryFailed: boolean };
-let bulkQueue: BulkEntry[] = [];
-let bulkCurrent: string | null = null;
-
-export function bulkRunState(): { running: boolean; currentJobId: string | null; remaining: number } {
-  return {
-    running: bulkCurrent !== null || bulkQueue.length > 0,
-    currentJobId: bulkCurrent,
-    remaining: bulkQueue.length,
-  };
+// The database scheduler owns the ordering; these counters are retained for older admin clients.
+export async function bulkRunState(): Promise<{ running: boolean; currentJobId: string | null; remaining: number }> {
+  const [current, remaining] = await Promise.all([
+    prisma.importJob.findFirst({
+      where: { type: { in: ["SINGLE", "LINKS"] }, status: "RUNNING" },
+      select: { id: true },
+    }),
+    prisma.importJob.count({ where: { type: { in: ["SINGLE", "LINKS"] }, status: "QUEUED" } }),
+  ]);
+  return { running: Boolean(current) || remaining > 0, currentJobId: current?.id ?? null, remaining };
 }
 
-async function drainBulkQueue(): Promise<void> {
-  if (bulkCurrent !== null) return;
-  try {
-    for (let entry = bulkQueue.shift(); entry; entry = bulkQueue.shift()) {
-      bulkCurrent = entry.jobId;
-      try {
-        const job = await prisma.importJob.findUnique({ where: { id: entry.jobId } });
-        if (!job) continue;
-        const { run } = await startLinksJob(job, { retryFailed: entry.retryFailed });
-        await run;
-      } catch (err) {
-        // A job that can't start (deleted, already running, nothing left) is skipped, not fatal.
-        console.warn(`[import] bulk run skipped job ${entry.jobId}:`, err instanceof Error ? err.message : err);
-      }
-    }
-  } finally {
-    bulkCurrent = null;
-  }
-}
-
-/** Bulk runs are started by hand, so they lift providers' pauses once (see startLinksJob). Not per job: after a
- *  CAPTCHA, the jobs behind it should fail fast, not each probe the site again. */
-function enqueueBulk(entries: BulkEntry[]): number {
+async function enqueueBulk(entries: { id: string }[], retryFailed: boolean): Promise<number> {
   if (entries.length) liftProviderHolds();
-  const known = new Set([bulkCurrent, ...bulkQueue.map((e) => e.jobId)]);
-  const fresh = entries.filter((e) => !known.has(e.jobId));
-  bulkQueue.push(...fresh);
-  void drainBulkQueue();
-  return fresh.length;
+  let queued = 0;
+  for (const entry of entries) {
+    try {
+      await startLinksJob(await getQueueJob(entry.id), { retryFailed });
+      queued++;
+    } catch (err) {
+      console.warn(`[import] could not queue ${entry.id}:`, err);
+    }
+  }
+  return queued;
 }
 
 /** Every PAUSED link-list job, oldest first. */
 export async function startAllPaused(): Promise<number> {
   const jobs = await prisma.importJob.findMany({
-    where: { type: "LINKS", status: "PAUSED" },
+    where: { type: { in: ["SINGLE", "LINKS"] }, status: "PAUSED" },
     orderBy: { createdAt: "asc" },
     select: { id: true },
   });
-  return enqueueBulk(jobs.map((j) => ({ jobId: j.id, retryFailed: false })));
+  return enqueueBulk(jobs, false);
 }
 
 /** Every finished link-list job that has failed links, oldest first. */
 export async function retryAllFailed(): Promise<number> {
   const jobs = await prisma.importJob.findMany({
-    where: { type: "LINKS", status: { in: ["DONE", "ERROR"] }, items: { some: { status: "FAILED" } } },
+    where: {
+      OR: [
+        { type: "SINGLE", status: "ERROR" },
+        { type: "LINKS", status: { in: ["DONE", "ERROR"] }, items: { some: { status: "FAILED" } } },
+      ],
+    },
     orderBy: { createdAt: "asc" },
     select: { id: true },
   });
-  return enqueueBulk(jobs.map((j) => ({ jobId: j.id, retryFailed: true })));
+  return enqueueBulk(jobs, true);
 }
 
 /** Stops a bulk run: what hasn't started is dropped, and every running link-list job is paused. */
 export async function pauseAll(): Promise<number> {
-  bulkQueue = [];
   const { count } = await prisma.importJob.updateMany({
-    where: { type: "LINKS", status: "RUNNING" },
+    where: { type: { in: ["SINGLE", "LINKS"] }, status: { in: ["RUNNING", "QUEUED"] } },
     data: { status: "PAUSED" },
   });
   return count;

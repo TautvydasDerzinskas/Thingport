@@ -381,7 +381,7 @@ describe("the import queue", () => {
       await waitStatus(first.body.job_id, "DONE");
     });
 
-    it("refuses to start a job that isn't paused, or while the owner has another import running", async () => {
+    it("refuses duplicate starts and queues a second job behind the running one", async () => {
       const release = gate(String(base + 50));
       const a = await queue(member, { url: modelUrl(base + 50) });
       await request(app).post(`/api/admin/import-queue/jobs/${a.body.job_id}/start`).set(auth(admin));
@@ -393,11 +393,12 @@ describe("the import queue", () => {
       const again = await request(app).post(`/api/admin/import-queue/jobs/${a.body.job_id}/start`).set(auth(admin));
       expect(again.status).toBe(409);
 
-      // A second queue of the same owner can't run next to the first.
+      // A second queue of the same owner waits durably behind the first.
       const b = await queue(member, { url: modelUrl(base + 51) });
       const blocked = await request(app).post(`/api/admin/import-queue/jobs/${b.body.job_id}/start`).set(auth(admin));
-      expect(blocked.status).toBe(409);
-      expect((await job(b.body.job_id)).status).toBe("PAUSED");
+      expect(blocked.status).toBe(202);
+      expect((await job(b.body.job_id)).status).toBe("QUEUED");
+      expect(designCalls.get(String(base + 51))).toBeUndefined();
 
       release();
       await waitStatus(a.body.job_id, "DONE");
@@ -453,7 +454,7 @@ describe("the import queue", () => {
       expect(listed.body.jobs.find((j: { id: string }) => j.id === jobId).runner_live).toBe(false);
 
       expect((await request(app).post(`/api/admin/import-queue/jobs/${jobId}/start`).set(auth(admin))).status).toBe(
-        400,
+        409,
       );
       expect((await request(app).post(`/api/admin/import-queue/jobs/${jobId}/pause`).set(auth(admin))).status).toBe(
         200,
@@ -657,7 +658,7 @@ describe("the import queue", () => {
       );
 
       const res = await request(app).post("/api/admin/import-queue/pause-all").set(auth(admin));
-      expect(res.body.paused).toBe(1);
+      expect(res.body.paused).toBe(2);
       release();
       await waitFor(
         async () => (await request(app).get("/api/admin/import-queue").set(auth(admin))).body,

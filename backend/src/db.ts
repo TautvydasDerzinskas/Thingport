@@ -11,6 +11,11 @@ for (const dir of [STORAGE, MODEL_PREVIEWS, NORMALIZED_3MFS, TAG_MOSAICS, ICONS]
 fs.rmSync(path.join(STORAGE, "sanitized-3mf"), { recursive: true, force: true });
 
 let client = new PrismaClient();
+let activeDatabaseUrl = process.env.DATABASE_URL ?? "";
+
+export function getActiveDatabaseUrl(): string {
+  return activeDatabaseUrl;
+}
 
 // Forwards to whichever client is current, so databaseSettingsService.ts can swap it without
 // every importer holding a stale reference.
@@ -21,7 +26,8 @@ export const prisma = new Proxy({} as PrismaClient, {
 });
 
 /** Only called after the new connection has been verified. */
-export function setActiveClient(next: PrismaClient): void {
+export function setActiveClient(next: PrismaClient, databaseUrl = activeDatabaseUrl): void {
+  activeDatabaseUrl = databaseUrl;
   const old = client;
   client = next;
   void old.$disconnect().catch(() => undefined);

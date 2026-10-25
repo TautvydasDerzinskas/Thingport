@@ -229,7 +229,7 @@ router.get(
   "/import-queue",
   asyncHandler(async (_req, res) => {
     const jobs = await listQueueJobs();
-    res.json({ jobs: jobs.map(toAdminImportJobOut), bulk: bulkRunState() });
+    res.json({ jobs: jobs.map(toAdminImportJobOut), bulk: await bulkRunState() });
   }),
 );
 
@@ -283,21 +283,21 @@ router.delete(
 router.post(
   "/import-queue/start-all",
   asyncHandler(async (_req, res) => {
-    res.status(202).json({ queued: await startAllPaused(), bulk: bulkRunState() });
+    res.status(202).json({ queued: await startAllPaused(), bulk: await bulkRunState() });
   }),
 );
 
 router.post(
   "/import-queue/retry-failed",
   asyncHandler(async (_req, res) => {
-    res.status(202).json({ queued: await retryAllFailed(), bulk: bulkRunState() });
+    res.status(202).json({ queued: await retryAllFailed(), bulk: await bulkRunState() });
   }),
 );
 
 router.post(
   "/import-queue/pause-all",
   asyncHandler(async (_req, res) => {
-    res.json({ paused: await pauseAll(), bulk: bulkRunState() });
+    res.json({ paused: await pauseAll(), bulk: await bulkRunState() });
   }),
 );
 

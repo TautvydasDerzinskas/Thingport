@@ -510,8 +510,8 @@ export function toCategoryOut(
 
 export type ImportJobOut = {
   id: string;
-  type: "COLLECTION" | "ZIP" | "PROFILES" | "LINKS";
-  status: "RUNNING" | "DONE" | "ERROR" | "PAUSED";
+  type: "SINGLE" | "COLLECTION" | "ZIP" | "PROFILES" | "LINKS";
+  status: "QUEUED" | "RUNNING" | "DONE" | "ERROR" | "PAUSED";
   source_url: string;
   source_label: string | null;
   provider: string | null;

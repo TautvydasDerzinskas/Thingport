@@ -4,6 +4,7 @@
 // In memory on purpose: a task lives for one import, and a lost one just reads as "not found".
 
 import crypto from "node:crypto";
+import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 
 export type ImportTaskState =
@@ -52,4 +53,26 @@ export function getImportTask(id: string, userId: string): ImportTaskState | nul
   pruneFinished();
   const task = tasks.get(id);
   return task && task.userId === userId ? task.state : null;
+}
+
+type DurableImportTaskState =
+  | { status: "queued" | "running" }
+  | { status: "done"; result: unknown }
+  | { status: "error"; detail: string; http_status: number };
+
+/** Persistent compatibility endpoint for the extension's task polling. */
+export async function getPersistentImportTask(
+  id: string,
+  userId: string,
+): Promise<DurableImportTaskState | ImportTaskState | null> {
+  const job = await prisma.importJob.findFirst({ where: { id, userId, type: "SINGLE" } });
+  if (!job) return getImportTask(id, userId);
+  if (job.status === "DONE") return { status: "done", result: job.result };
+  if (job.status === "ERROR")
+    return {
+      status: "error",
+      detail: job.errorMessage ?? "Internal server error",
+      http_status: job.errorHttpStatus ?? 500,
+    };
+  return { status: job.status === "QUEUED" ? "queued" : "running" };
 }

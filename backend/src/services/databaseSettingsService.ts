@@ -79,7 +79,7 @@ export async function testAndSwitchDatabase(creds: PostgresCredentials): Promise
     throw new Error(friendlyConnectionError(err), { cause: err });
   }
 
-  setActiveClient(candidate);
+  setActiveClient(candidate, url);
   active = creds;
   return getDatabaseInfo();
 }
