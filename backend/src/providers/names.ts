@@ -29,12 +29,16 @@ export function likesCollectionName(username: string, provider: string): string 
   return `${providerName(provider)} likes (@${username})`;
 }
 
-/** The user whose likes a sync follows (on Thingiverse, Printables or Cults3D), as written in its page
+/** The user whose likes a sync follows (on Thingiverse, Printables, Cults3D or Pinshape), as written in its page
  *  address, or null for a collection sync. */
 export function syncLikesUsername(sync: { externalId: string; sourceUrl: string }): string | null {
   if (!sync.externalId.startsWith(LIKES_ID_PREFIX)) return null;
   const parts = new URL(sync.sourceUrl).pathname.split("/").filter(Boolean);
-  // Printables writes its profile paths as "/@handle"; Cults3D's are "/en/users/<nick>/likes".
-  const fromUrl = (/^[a-z]{2}$/.test(parts[0] ?? "") && parts.length === 4 ? parts[2] : parts[0])?.replace(/^@/, "");
+  // Printables writes its profile paths as "/@handle"; Cults3D's are "/en/users/<nick>/likes"; Pinshape's
+  // "/users/<id>-<name>" (its Likes tab), named by what follows the id, and by the id where nothing does.
+  const pinshape = parts.length === 2 && parts[0] === "users" ? parts[1].match(/^\d+(?:-(.+))?$/) : null;
+  const fromUrl = pinshape
+    ? pinshape[1]
+    : (/^[a-z]{2}$/.test(parts[0] ?? "") && parts.length === 4 ? parts[2] : parts[0])?.replace(/^@/, "");
   return fromUrl ? decodeURIComponent(fromUrl) : sync.externalId.slice(LIKES_ID_PREFIX.length);
 }

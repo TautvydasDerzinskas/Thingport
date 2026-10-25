@@ -14,6 +14,7 @@ import nexprintCategories from "./nexprint/categories.json";
 import thangsCategories from "./thangs/categories.json";
 import cults3dCategories from "./cults3d/categories.json";
 import eufymakeCategories from "./eufymake/categories.json";
+import pinshapeCategories from "./pinshape/categories.json";
 import {
   crealitycloudImport,
   crealitycloudTrending,
@@ -33,6 +34,7 @@ import {
   myminifactoryInstanceHealth,
 } from "./myminifactory";
 import { nexprintImport, nexprintTrending, nexprintLists, nexprintDetails } from "./nexprint";
+import { pinshapeImport, pinshapeTrending, pinshapeLists, pinshapeDetails } from "./pinshape";
 import { printablesImport, printablesTrending, printablesLists, printablesDetails } from "./printables";
 import { snapmakerImport, snapmakerTrending, snapmakerLists, snapmakerDetails } from "./snapmaker";
 import { thangsImport, thangsTrending, thangsLists, thangsDetails } from "./thangs";
@@ -50,6 +52,7 @@ import { makeronlineConnection } from "./makeronline/connection";
 import { makerworldConnection } from "./makerworld/connection";
 import { myminifactoryKeyConnection, myminifactorySessionConnection } from "./myminifactory/connection";
 import { nexprintConnection } from "./nexprint/connection";
+import { pinshapeConnection } from "./pinshape/connection";
 import { snapmakerConnection } from "./snapmaker/connection";
 import { thangsConnection } from "./thangs/connection";
 import { thingiverseConnection } from "./thingiverse/connection";
@@ -64,6 +67,7 @@ import { nexprintSync } from "./nexprint/sync";
 import { thangsSync } from "./thangs/sync";
 import { cults3dSync } from "./cults3d/sync";
 import { eufymakeSync } from "./eufymake/sync";
+import { pinshapeSync } from "./pinshape/sync";
 import { makerworldBrowse } from "./makerworld/browse";
 import { printablesBrowse } from "./printables/browse";
 import { thingiverseBrowse } from "./thingiverse/browse";
@@ -75,6 +79,7 @@ import { nexprintBrowse } from "./nexprint/browse";
 import { thangsBrowse } from "./thangs/browse";
 import { cults3dBrowse } from "./cults3d/browse";
 import { eufymakeBrowse } from "./eufymake/browse";
+import { pinshapeBrowse } from "./pinshape/browse";
 import type { AuthSlot } from "./index.generated";
 import type {
   ConnectionSlot,
@@ -353,6 +358,18 @@ export const PROVIDERS = {
     browse: eufymakeBrowse,
     trending: eufymakeTrending,
     details: eufymakeDetails,
+  },
+  pinshape: {
+    starterCategories: pinshapeCategories,
+    connection: { default: pinshapeConnection },
+    // Only its files are read with the sign-in; its models, collections and likes read without one.
+    authStopText: grabSignInStop("pinshape"),
+    sourcedImport: pinshapeImport,
+    lists: pinshapeLists,
+    sync: pinshapeSync,
+    browse: pinshapeBrowse,
+    trending: pinshapeTrending,
+    details: pinshapeDetails,
   },
 } satisfies { [K in ProviderId]: Entry<K> } as { readonly [K in ProviderId]: ProviderBackend };
 

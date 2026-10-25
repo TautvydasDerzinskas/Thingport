@@ -87,6 +87,11 @@
     "group": "providers"
   },
   {
+    "value": "builtin:providers/pinshape",
+    "name": "Pinshape",
+    "group": "providers"
+  },
+  {
     "value": "builtin:ai/ai21",
     "name": "AI21",
     "group": "ai"

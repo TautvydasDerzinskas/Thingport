@@ -94,4 +94,12 @@ export const PROVIDER_DOCS = [
     nav: "eufyMake",
     description: "Import models from eufyMake's Make it Real, and your likes with your own sign-in.",
   },
+  {
+    slug: "providers/pinshape",
+    source: "docs/providers/pinshape.md",
+    group: "Providers",
+    title: "Pinshape",
+    nav: "Pinshape",
+    description: "Import Pinshape models, and anyone's collections and likes, with your own sign-in for the files.",
+  },
 ];

@@ -25,6 +25,8 @@ import cults3d from "./cults3d/manifest.generated";
 import { urls as cults3dUrls } from "./cults3d/urls.generated";
 import eufymake from "./eufymake/manifest.generated";
 import { urls as eufymakeUrls } from "./eufymake/urls.generated";
+import pinshape from "./pinshape/manifest.generated";
+import { urls as pinshapeUrls } from "./pinshape/urls.generated";
 
 export type {
   AuthField,
@@ -55,6 +57,7 @@ export const PROVIDER_IDS = [
   "thangs",
   "cults3d",
   "eufymake",
+  "pinshape",
 ] as const;
 export type ProviderId = (typeof PROVIDER_IDS)[number];
 
@@ -70,6 +73,7 @@ export const MANIFESTS = {
   thangs,
   cults3d,
   eufymake,
+  pinshape,
 } as const;
 
 /** The providers with a list for the dashboard's trending panel, in the panel's order. */
@@ -85,6 +89,7 @@ export const TRENDING_PROVIDER_IDS = [
   "nexprint",
   "snapmaker",
   "eufymake",
+  "pinshape",
 ] as const;
 export type TrendingProviderId = (typeof TRENDING_PROVIDER_IDS)[number];
 
@@ -100,6 +105,7 @@ export const URLS: { readonly [K in ProviderId]: ProviderUrls } = {
   thangs: thangsUrls,
   cults3d: cults3dUrls,
   eufymake: eufymakeUrls,
+  pinshape: pinshapeUrls,
 };
 
 export function isProviderId(value: unknown): value is ProviderId {
