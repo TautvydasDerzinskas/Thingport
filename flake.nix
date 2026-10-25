@@ -22,6 +22,7 @@
             just
             nodejs_24
             nixfmt
+            postgresql_17
           ];
           shellHook = ''echo "Thingport dev shell ready"'';
         };
