@@ -138,9 +138,20 @@ describe("eufyMake specifics", () => {
 describe("eufyMake sign-in", () => {
   const gtoken = eufymakeGtoken(EUFY_USER);
 
-  it("reads the site's mk-userinfo value", () => {
-    const info = JSON.stringify({ auth_token: TOKEN, user_id: EUFY_USER, email: "someone@example.com" });
-    expect(normalizeEufymakeSession(info)).toEqual({ token: TOKEN, gtoken, userId: EUFY_USER });
+  const INFO = JSON.stringify({ auth_token: TOKEN, user_id: EUFY_USER, email: "someone@example.com" });
+  const stored = (value: string) => Buffer.from(encodeURIComponent(value)).toString("base64");
+
+  it("reads the site's mk-userinfo value, base64 of the percent-encoded JSON as it writes it now", () => {
+    expect(normalizeEufymakeSession(stored(INFO))).toEqual({ token: TOKEN, gtoken, userId: EUFY_USER });
+    // Its store stamps a value that runs out with when it does, inside the base64.
+    expect(normalizeEufymakeSession(stored(`exp@1795520520;${INFO}`))).toEqual({
+      token: TOKEN,
+      gtoken,
+      userId: EUFY_USER,
+    });
+    // What builds before October 2026 wrote, which a user may still have.
+    expect(normalizeEufymakeSession(INFO)).toEqual({ token: TOKEN, gtoken, userId: EUFY_USER });
+    expect(normalizeEufymakeSession(stored("not a sign-in"))).toBeNull();
   });
 
   it("reads request headers pasted from DevTools, either way it copies them", () => {
@@ -150,7 +161,17 @@ describe("eufyMake sign-in", () => {
     expect(normalizeEufymakeSession(pairs)).toEqual({ token: TOKEN, gtoken, userId: null });
   });
 
-  it("takes a bare token only with whose it is", () => {
+  it("reads the two values pasted with their names stripped off, either way round", () => {
+    expect(normalizeEufymakeSession(`${TOKEN}\n${gtoken}`)).toEqual({ token: TOKEN, gtoken, userId: null });
+    expect(normalizeEufymakeSession(`${gtoken}\n${TOKEN}`)).toEqual({ token: TOKEN, gtoken, userId: null });
+  });
+
+  it("takes the user id from a pasted cookie row, whose Gtoken it works out", () => {
+    const cookies = `makeitreal-euid\t${EUFY_USER}\nx-auth-token\t${TOKEN}`;
+    expect(normalizeEufymakeSession(cookies)).toEqual({ token: TOKEN, gtoken, userId: EUFY_USER });
+  });
+
+  it("takes a bare token only with whose it is: the Gtoken can't be worked out from the token", () => {
     expect(normalizeEufymakeSession(TOKEN)).toBeNull();
     expect(normalizeEufymakeSession(TOKEN, EUFY_USER)).toEqual({ token: TOKEN, gtoken, userId: EUFY_USER });
     expect(normalizeEufymakeSession("not a sign-in")).toBeNull();
