@@ -13,6 +13,7 @@ import {
   IMPORT_HTML_MAX_BYTES,
   IMPORT_MAX_BYTES,
   IMPORT_PREVIEW_IMAGE_DELAY_MS,
+  IMPORT_TIMEOUT_SECONDS,
 } from "../config";
 import {
   HttpError,
@@ -92,6 +93,7 @@ import { addPreviewImage, preferImageOverRenders } from "./previewImageService";
 import { localizeDescriptionImages } from "./descriptionImageService";
 import { sha256OfFile } from "./fileReuse";
 import { DROP } from "./storedContent";
+import { downloadResponseToTemp } from "./importDownload";
 import { prisma } from "../db";
 import { recordActivity } from "./activityService";
 import { Prisma } from "@prisma/client";
@@ -487,32 +489,6 @@ export async function openImportResponse(
   return { response: res, finalUrl, meta: inheritedMeta };
 }
 
-async function streamToFileCapped(response: Response, destPath: string, maxBytes: number): Promise<number> {
-  if (!response.body) {
-    await fs.writeFile(destPath, Buffer.alloc(0));
-    return 0;
-  }
-  const reader = response.body.getReader();
-  const handle = await fs.open(destPath, "w");
-  let total = 0;
-  try {
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const chunk = Buffer.from(value);
-      total += chunk.length;
-      if (total > maxBytes) {
-        await reader.cancel().catch(() => undefined);
-        throw new HttpError(413, "Imported file exceeds size limit");
-      }
-      await handle.write(chunk);
-    }
-  } finally {
-    await handle.close();
-  }
-  return total;
-}
-
 /** Downloads `url` to a temp file without creating a Print (used by inspect/zip-entries/zip-extract). */
 export async function downloadImportToTemp(
   url: string,
@@ -526,21 +502,9 @@ async function saveImportResponseToTemp(
   { response, finalUrl, meta }: OpenImportResult,
   body: ImportRequestBody,
 ): Promise<{ tempPath: string; filename: string; mime: string; meta: ImportedPageMetadata }> {
-  const contentLength = response.headers.get("content-length");
-  if (contentLength && Number(contentLength) > IMPORT_MAX_BYTES) {
-    await response.body?.cancel().catch(() => undefined);
-    throw new HttpError(413, "Imported file exceeds size limit");
-  }
   const filename = buildImportFilename(finalUrl, response.headers, body.filename ?? meta.filename);
   const mime = mimeFromContentType(response.headers.get("content-type"), filename);
-  const suffix = path.extname(filename) || "";
-  const tempPath = path.join(os.tmpdir(), `thingport-import-${crypto.randomBytes(8).toString("hex")}${suffix}`);
-  try {
-    await streamToFileCapped(response, tempPath, IMPORT_MAX_BYTES);
-  } catch (err) {
-    await fs.rm(tempPath, { force: true }).catch(() => undefined);
-    throw err;
-  }
+  const tempPath = await downloadResponseToTemp(response, filename, IMPORT_MAX_BYTES, IMPORT_TIMEOUT_SECONDS * 1000);
   return { tempPath, filename, mime, meta };
 }
 
@@ -884,11 +848,7 @@ export async function downloadPlainFileToTemp(url: string, suggestedName: string
       return null;
     }
     const filename = sanitizeFilename(suggestedName);
-    const tempFilePath = path.join(
-      os.tmpdir(),
-      `thingport-thingiverse-${crypto.randomBytes(8).toString("hex")}${path.extname(filename)}`,
-    );
-    await streamToFileCapped(res, tempFilePath, IMPORT_MAX_BYTES);
+    const tempFilePath = await downloadResponseToTemp(res, filename, IMPORT_MAX_BYTES, IMPORT_TIMEOUT_SECONDS * 1000);
     return { input: { filename, mime: guessMimeFromPath(filename), tempFilePath } };
   } catch {
     return null;
