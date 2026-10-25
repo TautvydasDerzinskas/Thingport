@@ -15,7 +15,6 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import TextField from "@mui/material/TextField";
-import CircularProgress from "@mui/material/CircularProgress";
 import Tooltip from "@mui/material/Tooltip";
 import Stack from "@mui/material/Stack";
 import IconButton from "@mui/material/IconButton";
@@ -148,22 +147,25 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname, location.search]);
 
-  const closeImport = () => {
-    if (upload.importing) return;
-    setImportOpen(false);
-  };
+  const closeImport = () => setImportOpen(false);
 
-  const submitImport = async () => {
+  const submitImport = () => {
     if (!links.length || isBlockedCollection) return;
     if (needsCaptcha && !captcha?.captcha_answer.trim()) return;
-    // Each captcha works once; reopening shows a fresh one.
+    // The request may inspect a provider page before enqueueing. Release the dialog now so
+    // another link can be added while that work and the queued import continue.
+    const submittedLinks = links;
+    const submittedUrl = linkValue;
+    const submittedCaptcha = needsCaptcha ? captcha : null;
+    const submittedScope = hasProfiles ? profileScope : "url";
+    setImportOpen(false);
+    setLinkValue("");
+    setCaptcha(null);
     if (isBatch) {
-      await upload.submitImportMany(links, needsCaptcha ? captcha : null, hasProfiles ? profileScope : "url");
-      setImportOpen(false);
+      void upload.submitImportMany(submittedLinks, submittedCaptcha, submittedScope);
       return;
     }
-    await upload.submitImport(linkValue, needsCaptcha ? captcha : null, hasProfiles ? profileScope : "url");
-    setImportOpen(false);
+    void upload.submitImport(submittedUrl, submittedCaptcha, submittedScope);
   };
 
   return (
@@ -299,7 +301,6 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
               }
             }}
             placeholder={t("addMenu.linksPlaceholder") ?? undefined}
-            disabled={upload.importing}
           />
           {isBatch && (
             <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 0.5 }}>
@@ -315,7 +316,6 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
               label={t("addMenu.profilesLabel")}
               value={profileScope}
               onChange={(e) => setProfileScope(e.target.value as MakerworldProfileScope)}
-              disabled={upload.importing}
               helperText={profileScope === "url" ? t("addMenu.profilesHelpUrl") : t("addMenu.profilesHelpMany")}
               sx={{ mt: 1.5 }}
             >
@@ -326,7 +326,7 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
           )}
           {needsCaptcha && (
             <Box sx={{ mt: 2 }}>
-              <CaptchaField onChange={setCaptcha} disabled={upload.importing} />
+              <CaptchaField onChange={setCaptcha} />
             </Box>
           )}
         </DialogContent>
@@ -339,21 +339,13 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
           >
             {t("bookmarklet.guide.open")}
           </Button>
-          <Button onClick={closeImport} disabled={upload.importing}>
-            {t("common:cancel")}
-          </Button>
+          <Button onClick={closeImport}>{t("common:cancel")}</Button>
           <Button
             variant="contained"
             onClick={submitImport}
-            disabled={
-              upload.importing ||
-              !links.length ||
-              isBlockedCollection ||
-              (needsCaptcha && !captcha?.captcha_answer.trim())
-            }
-            startIcon={upload.importing ? <CircularProgress size={14} /> : undefined}
+            disabled={!links.length || isBlockedCollection || (needsCaptcha && !captcha?.captcha_answer.trim())}
           >
-            {upload.importing ? t("uploadBar.importing") : t("common:import")}
+            {t("common:import")}
           </Button>
         </DialogActions>
       </Dialog>

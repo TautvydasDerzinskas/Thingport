@@ -49,12 +49,11 @@ export function useUploadImport({ onUploaded, categoryId, onUnauthorized }: Prop
   const inputRef = useRef<HTMLInputElement | null>(null);
   const folderInputRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [importing, setImporting] = useState(false);
   const zipPrompt = useZipImportPrompt();
   const collectionPrompt = useCollectionImportPrompt();
   const importModePrompt = useImportModePrompt();
   const { startSingleImport, startZipImport, startListImport, startProfilesImport, startLinksImport } = useImportJob();
-  const isBusy = uploading || importing || zipPrompt.isOpen || collectionPrompt.isOpen || importModePrompt.isOpen;
+  const isBusy = uploading || zipPrompt.isOpen || collectionPrompt.isOpen || importModePrompt.isOpen;
 
   // A plain upload has no metadata yet, so open it straight in edit mode.
   const openForEditing = (print: Print) => {
@@ -233,7 +232,6 @@ export function useUploadImport({ onUploaded, categoryId, onUnauthorized }: Prop
   ) => {
     const url = rawUrl.trim();
     if (!url) return;
-    setImporting(true);
     try {
       const payload = {
         url,
@@ -264,7 +262,6 @@ export function useUploadImport({ onUploaded, categoryId, onUnauthorized }: Prop
 
       if (list) {
         const { provider } = list;
-        setImporting(false);
         await collectionPrompt.prompt({
           label: url,
           loadEntries: async () => {
@@ -303,7 +300,6 @@ export function useUploadImport({ onUploaded, categoryId, onUnauthorized }: Prop
         await startSingleImport(payload);
         return;
       }
-      setImporting(false);
       await zipPrompt.prompt({
         label: inspect.filename,
         onImportAsZip: async () => {
@@ -349,8 +345,7 @@ export function useUploadImport({ onUploaded, categoryId, onUnauthorized }: Prop
       const message = err instanceof Error ? err.message : t("uploadBar.importFailed");
       alert(message);
     } finally {
-      setImporting(false);
-      // The import's notification is already written; show it on the bell now, not at the next poll.
+      // Refresh any notification from preparing this request; completed jobs refresh again through the provider.
       void refreshNotifications();
     }
   };
@@ -362,7 +357,6 @@ export function useUploadImport({ onUploaded, categoryId, onUnauthorized }: Prop
     profileScope: MakerworldProfileScope = "url",
   ) => {
     if (!urls.length) return;
-    setImporting(true);
     try {
       await startLinksImport({
         urls,
@@ -377,8 +371,6 @@ export function useUploadImport({ onUploaded, categoryId, onUnauthorized }: Prop
       }
       console.error("Import failed for", urls, err);
       alert(err instanceof Error ? err.message : t("uploadBar.importFailed"));
-    } finally {
-      setImporting(false);
     }
   };
 
@@ -386,7 +378,6 @@ export function useUploadImport({ onUploaded, categoryId, onUnauthorized }: Prop
     fileInput,
     folderInput,
     uploading,
-    importing,
     isBusy,
     triggerUpload,
     triggerFolderUpload,
