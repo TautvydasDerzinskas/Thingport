@@ -284,40 +284,67 @@ async function deleteJob(job: ImportJob): Promise<void> {
 }
 
 export async function deleteQueueJob(jobId: string): Promise<void> {
-  const job = await getQueueJob(jobId);
-  assertIdle(job);
-  await deleteJob(job);
+  const release = await acquireImmediateImportLock(jobId);
+  if (!release) throw new HttpError(409, "This import is still finishing, try again shortly");
+  try {
+    const job = await getQueueJob(jobId);
+    assertIdle(job);
+    await deleteJob(job);
+  } finally {
+    await release();
+  }
 }
 
 /** Drops one link from an idle job. A job left without links is deleted with it. */
 export async function removeQueueItem(itemId: string): Promise<{ jobDeleted: boolean }> {
   const item = await prisma.importJobItem.findUnique({ where: { id: itemId }, include: { job: true } });
   if (!item) throw new HttpError(404, "Queue item not found");
-  assertIdle(item.job);
-  await prisma.importJobItem.delete({ where: { id: itemId } });
-  const left = await prisma.importJobItem.count({ where: { jobId: item.jobId } });
-  if (!left) {
-    await deleteJob(item.job);
-    return { jobDeleted: true };
+  const release = await acquireImmediateImportLock(item.jobId);
+  if (!release) throw new HttpError(409, "This import is still finishing, try again shortly");
+  try {
+    const current = await prisma.importJobItem.findUnique({ where: { id: itemId }, include: { job: true } });
+    if (!current) throw new HttpError(404, "Queue item not found");
+    assertIdle(current.job);
+    await prisma.importJobItem.delete({ where: { id: itemId } });
+    const left = await prisma.importJobItem.count({ where: { jobId: current.jobId } });
+    if (!left) {
+      await deleteJob(current.job);
+      return { jobDeleted: true };
+    }
+    await prisma.importJob.update({
+      where: { id: current.jobId },
+      data: {
+        total: left,
+        processed: await prisma.importJobItem.count({
+          where: { jobId: current.jobId, status: { in: ["DONE", "FAILED"] } },
+        }),
+        failedCount: await prisma.importJobItem.count({ where: { jobId: current.jobId, status: "FAILED" } }),
+      },
+    });
+    return { jobDeleted: false };
+  } finally {
+    await release();
   }
-  await prisma.importJob.update({
-    where: { id: item.jobId },
-    data: {
-      total: left,
-      processed: await prisma.importJobItem.count({ where: { jobId: item.jobId, status: { in: ["DONE", "FAILED"] } } }),
-      failedCount: await prisma.importJobItem.count({ where: { jobId: item.jobId, status: "FAILED" } }),
-    },
-  });
-  return { jobDeleted: false };
 }
 
 /** Finished jobs with nothing left to retry. Jobs with failed links stay, so a retry is still
  *  possible. */
 export async function clearFinishedJobs(): Promise<number> {
-  const { count } = await prisma.importJob.deleteMany({
-    where: { status: "DONE", failedCount: 0 },
-  });
-  return count;
+  const jobs = await prisma.importJob.findMany({ where: { status: "DONE", failedCount: 0 }, select: { id: true } });
+  let deleted = 0;
+  for (const job of jobs) {
+    const release = await acquireImmediateImportLock(job.id);
+    if (!release) continue;
+    try {
+      const { count } = await prisma.importJob.deleteMany({
+        where: { id: job.id, status: "DONE", failedCount: 0 },
+      });
+      deleted += count;
+    } finally {
+      await release();
+    }
+  }
+  return deleted;
 }
 
 // ---- Bulk runs: "Start all" and "Retry all failed" ----

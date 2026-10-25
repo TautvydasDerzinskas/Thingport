@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
+import { Client } from "pg";
 
 // No pacing or DNS here. config.ts reads the pace on load, so it's hoisted.
 vi.hoisted(() => {
@@ -725,6 +726,42 @@ describe("the import queue", () => {
       await waitStatus(jobId, "DONE");
       expect((await request(app).delete(`/api/admin/import-queue/jobs/${jobId}`).set(auth(admin))).status).toBe(200);
       expect(await prisma.importJobItem.count({ where: { jobId } })).toBe(0);
+    });
+
+    it("keeps a paused job while another process owns its runner lock", async () => {
+      const queued = await queue(member, { url: modelUrl(base + 135) });
+      const jobId = queued.body.job_id;
+      const [item] = await items(jobId);
+      const owner = new Client({ connectionString: process.env.DATABASE_URL });
+      await owner.connect();
+      try {
+        await owner.query("SELECT pg_advisory_lock(174830220, hashtext($1))", [jobId]);
+        expect((await request(app).delete(`/api/admin/import-queue/items/${item.id}`).set(auth(admin))).status).toBe(
+          409,
+        );
+        expect((await request(app).delete(`/api/admin/import-queue/jobs/${jobId}`).set(auth(admin))).status).toBe(409);
+        expect(await prisma.importJobItem.count({ where: { jobId } })).toBe(1);
+      } finally {
+        await owner.end();
+      }
+      expect((await request(app).delete(`/api/admin/import-queue/jobs/${jobId}`).set(auth(admin))).status).toBe(200);
+    });
+
+    it("skips a finished job whose runner still holds its lock during bulk cleanup", async () => {
+      const queued = await queue(member, { url: modelUrl(base + 136) });
+      const jobId = queued.body.job_id;
+      await prisma.importJob.update({ where: { id: jobId }, data: { status: "DONE" } });
+      const owner = new Client({ connectionString: process.env.DATABASE_URL });
+      await owner.connect();
+      try {
+        await owner.query("SELECT pg_advisory_lock(174830220, hashtext($1))", [jobId]);
+        await request(app).post("/api/admin/import-queue/clear-finished").set(auth(admin));
+        expect(await prisma.importJob.findUnique({ where: { id: jobId } })).not.toBeNull();
+      } finally {
+        await owner.end();
+      }
+      await request(app).post("/api/admin/import-queue/clear-finished").set(auth(admin));
+      expect(await prisma.importJob.findUnique({ where: { id: jobId } })).toBeNull();
     });
 
     it("clears finished jobs but keeps ones with failed links to retry", async () => {
