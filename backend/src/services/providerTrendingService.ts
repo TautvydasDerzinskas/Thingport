@@ -2,7 +2,12 @@
 // read through the server and kept a while, as every user of the instance sees the same lists.
 
 import { TtlCache } from "../utils/ttlCache";
-import { MANIFESTS, type ProviderId, TRENDING_PROVIDER_IDS, type TrendingProviderId } from "../providers/_generated";
+import {
+  MANIFESTS,
+  type ProviderId,
+  TRENDING_PROVIDER_IDS,
+  type TrendingProviderId,
+} from "../providers/index.generated";
 import { PROVIDERS } from "../providers/registry";
 import type { TrendingModel } from "./trendingModel";
 

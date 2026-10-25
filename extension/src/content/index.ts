@@ -20,7 +20,7 @@ import { errorHtml } from "./panels/results";
 import { api } from "./runtime";
 import { closeSetupModal, openSetupModal } from "./setupModal";
 import { mountFab, mountHost, mountPanel, renderPanel, setPanelOpen, unmountHost } from "./shell";
-import { manifestOf } from "../shared/providers/_generated";
+import { manifestOf } from "../providers/index.generated";
 
 declare global {
   interface Window {

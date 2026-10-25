@@ -5,7 +5,7 @@
 
 import type { BatchEntriesResult, ImportJob, SyncLookup } from "../../shared/api";
 import { ctx, setContext } from "../context";
-import { MANIFESTS, manifestOf } from "../../shared/providers/_generated";
+import { MANIFESTS, manifestOf } from "../../providers/index.generated";
 import { parseSnapmakerListUrl, snapmakerListUrl, type SnapmakerList } from "../../shared/urls";
 import { request } from "../../shared/messages";
 import { api, escapeHtml, sleep } from "../runtime";

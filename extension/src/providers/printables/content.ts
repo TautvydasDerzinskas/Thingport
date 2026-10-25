@@ -6,7 +6,7 @@
 import type { PrintablesPush, PrintablesPushPlan } from "../../shared/messages";
 import { request } from "../../shared/messages";
 import { sleep } from "../../content/runtime";
-import { MANIFESTS } from "../../shared/providers/_generated";
+import { MANIFESTS } from "../index.generated";
 
 const { graphql: GRAPHQL_URL, media: MEDIA_BASE } = MANIFESTS.printables.endpoints;
 const PAGE_SIZE = 30;

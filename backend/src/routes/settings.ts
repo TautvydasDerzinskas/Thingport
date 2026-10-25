@@ -108,7 +108,7 @@ import {
   updateAiConnection,
 } from "../services/aiConnectionService";
 import { getDisabledProviders, PROVIDERS, setProviderEnabled } from "../services/providerSettingsService";
-import { type AuthSlot, MANIFESTS, type ProviderId } from "../providers/_generated";
+import { type AuthSlot, MANIFESTS, type ProviderId } from "../providers/index.generated";
 import { PROVIDERS as PROVIDER_BACKENDS } from "../providers/registry";
 import { CARD_PREVIEWS, getCardPreview, setCardPreview } from "../services/cardPreviewService";
 import { createLog } from "../services/auditLog";

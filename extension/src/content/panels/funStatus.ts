@@ -4,7 +4,7 @@
 
 import type { Provider } from "../../shared/urls";
 import { panelQuery, renderPanel } from "../shell";
-import { MANIFESTS, PROVIDER_IDS } from "../../shared/providers/_generated";
+import { MANIFESTS, PROVIDER_IDS } from "../../providers/index.generated";
 
 const ROTATE_MS = 2500;
 

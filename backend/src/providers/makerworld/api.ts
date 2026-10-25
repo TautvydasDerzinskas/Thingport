@@ -24,8 +24,8 @@ import {
   noteCaptchaChallenge,
 } from "./captcha";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
-import manifest from "../_generated/makerworld/manifest";
-import { makerworldModelUrl, parseMakerworldModelUrl } from "../_generated/makerworld/urls";
+import manifest from "./manifest.generated";
+import { makerworldModelUrl, parseMakerworldModelUrl } from "./urls.generated";
 export { parseMakerworldModelUrl };
 
 export {

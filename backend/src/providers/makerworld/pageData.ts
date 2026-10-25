@@ -17,7 +17,7 @@ import {
   isRecord,
 } from "../../services/importResolvers";
 import { decodeHtmlEntities } from "../../utils/htmlEntities";
-import manifest from "../_generated/makerworld/manifest";
+import manifest from "./manifest.generated";
 import {
   isCaptchaChallenge,
   isDownloadLimitReply,

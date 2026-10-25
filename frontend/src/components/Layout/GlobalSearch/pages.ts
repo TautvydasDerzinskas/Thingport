@@ -1,5 +1,5 @@
 import { SELF_AUTHOR_ID } from "../../../constants/selfAuthor";
-import { MANIFESTS, PROVIDER_IDS } from "../../../providers/_generated";
+import { MANIFESTS, PROVIDER_IDS } from "../../../providers/index.generated";
 import { bestScore, minScoreFor } from "./match";
 
 // The app's own views, and Administration's for admins.

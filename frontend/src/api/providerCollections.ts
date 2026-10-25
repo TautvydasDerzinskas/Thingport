@@ -1,6 +1,6 @@
 import { authHeaders } from "../utils/auth";
 import { apiBase, readErrorMessage, UnauthorizedError } from "./client";
-import { PROVIDER_IDS, type ProviderId } from "../providers/_generated";
+import { PROVIDER_IDS, type ProviderId } from "../providers/index.generated";
 
 /** The providers a collection can be synced with from the app. */
 export const BROWSABLE_PROVIDERS = PROVIDER_IDS;

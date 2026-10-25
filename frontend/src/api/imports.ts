@@ -1,6 +1,6 @@
 import { authHeaders } from "../utils/auth";
 import { apiBase, readErrorMessage, UnauthorizedError } from "./client";
-import { MANIFESTS, type ProviderId } from "../providers/_generated";
+import { MANIFESTS, type ProviderId } from "../providers/index.generated";
 import type { Print } from "./prints";
 
 export type ImportInspectInfo = {

@@ -3,7 +3,7 @@ import type React from "react";
 import { useNavigate } from "react-router-dom";
 import { importsApi, type ImportJob } from "../../api/imports";
 import { UnauthorizedError } from "../../api/client";
-import type { ProviderId } from "../../providers/_generated";
+import type { ProviderId } from "../../providers/index.generated";
 
 type StartZipImportPayload = Parameters<typeof importsApi.zipFromLink>[0];
 type StartListImportPayload = Parameters<typeof importsApi.startList>[1];

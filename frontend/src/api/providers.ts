@@ -1,6 +1,6 @@
 import { authHeaders } from "../utils/auth";
 import { apiBase, readErrorMessage, UnauthorizedError } from "./client";
-import { type AuthSlot, isProviderId, type ProviderId } from "../providers/_generated";
+import { type AuthSlot, isProviderId, type ProviderId } from "../providers/index.generated";
 
 export type ConnectionStatus = "connected" | "expired" | "disconnected";
 export type SlotName = AuthSlot["slot"];

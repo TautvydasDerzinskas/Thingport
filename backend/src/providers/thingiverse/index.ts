@@ -40,7 +40,7 @@ import {
   fetchThingiversePopular,
   checkThingiverseAccessToken,
 } from "./api";
-import manifest from "../_generated/thingiverse/manifest";
+import manifest from "./manifest.generated";
 import { detailsOf } from "../details";
 
 const DOWNLOAD_CONCURRENCY = 2;

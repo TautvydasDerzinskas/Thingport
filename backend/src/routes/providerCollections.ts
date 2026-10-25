@@ -12,7 +12,7 @@ import {
   setProviderAccount,
   type BrowsableProvider,
 } from "../services/providerCollectionsService";
-import { isProviderId } from "../providers/_generated";
+import { isProviderId } from "../providers/index.generated";
 
 const router = Router();
 router.use(requireAuth);

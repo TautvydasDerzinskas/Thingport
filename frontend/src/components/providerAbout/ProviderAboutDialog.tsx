@@ -31,7 +31,7 @@ import Segmented from "../controls/Segmented";
 import HelpTip from "../HelpTip";
 import { ProviderLogo, type ProviderId } from "../Layout/ConfigurationDialog/providerLogos";
 import ProviderFlowAnimation from "./ProviderFlowAnimation";
-import { PROVIDER_IDS } from "../../providers/_generated";
+import { PROVIDER_IDS } from "../../providers/index.generated";
 
 type View = "about" | "compare";
 

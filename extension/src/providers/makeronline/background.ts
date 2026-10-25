@@ -9,7 +9,7 @@ import { apiCall } from "../../background/api";
 import { importSingle } from "../../background/importJobs";
 import { recordRecentImport } from "../../background/recentImports";
 import type { SessionSource } from "../../background/sessionSync";
-import { MANIFESTS } from "../../shared/providers/_generated";
+import { MANIFESTS } from "../index.generated";
 import { type BackgroundMessages, type Handlers, senderTabId } from "../../shared/messages";
 
 const SITE = MANIFESTS.makeronline.site;

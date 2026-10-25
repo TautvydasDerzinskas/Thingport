@@ -10,9 +10,10 @@ One folder per provider site Thingport imports from. The plan is in
 - `<id>/urls.fixtures.json`: the URL corpus, see below.
 
 The backend, frontend and extension build on their own, so `npm run providers:sync` (`scripts/sync-providers.mjs`)
-copies this folder into each of them, under `providers/_generated/` (`src/shared/providers/_generated/` in the
-extension), with an index listing every provider. The copies are committed; the pre-commit hook refreshes them and CI
-fails when they're out of date (`npm run providers:check`). Never edit them by hand.
+copies this folder into each of them, beside the package's own code for each provider, as `<file>.generated.ts`:
+`src/providers/<id>/manifest.generated.ts` and `urls.generated.ts`, `src/providers/_lib/*.generated.ts`, and
+`src/providers/index.generated.ts`, the index listing every provider. The copies are committed; the pre-commit hook
+refreshes them and CI fails when they're out of date (`npm run providers:check`). Never edit them by hand.
 
 ## A provider's bundle
 

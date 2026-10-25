@@ -14,7 +14,7 @@ import settingsRoutes from "../src/routes/settings";
 import providerCollectionsRoutes from "../src/routes/providerCollections";
 import { identifySourceModel } from "../src/services/importService";
 import { LOOKUP_PROVIDERS } from "../src/services/authorLinkingService";
-import { MANIFESTS, PROVIDER_IDS } from "../src/providers/_generated";
+import { MANIFESTS, PROVIDER_IDS } from "../src/providers/index.generated";
 import { PROFILE_PROVIDERS } from "../src/providers/registry";
 
 const app = createApp();

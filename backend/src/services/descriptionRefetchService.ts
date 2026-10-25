@@ -1,5 +1,5 @@
 import { prisma } from "../db";
-import { isProviderId, PROVIDER_IDS, type ProviderId } from "../providers/_generated";
+import { isProviderId, PROVIDER_IDS, type ProviderId } from "../providers/index.generated";
 import { IMPORT_COLLECTION_DELAY_MS } from "../config";
 import { maybeSleep } from "../utils/concurrency";
 import { createLog } from "./auditLog";

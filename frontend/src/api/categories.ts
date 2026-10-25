@@ -1,6 +1,6 @@
 import { authHeaders } from "../utils/auth";
 import { apiBase, assertOk, readErrorMessage, UnauthorizedError } from "./client";
-import { PROVIDER_IDS, type ProviderId } from "../providers/_generated";
+import { PROVIDER_IDS, type ProviderId } from "../providers/index.generated";
 
 /** "category": the starter categories imports sort into. "folder": the user's own tree. */
 export type CategoryKind = "category" | "folder";

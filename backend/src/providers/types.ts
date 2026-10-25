@@ -17,7 +17,7 @@ import type { TrendingSetup } from "../services/providerTrendingService";
 import type { ProviderCollectionCard } from "../services/providerCollectionCard";
 import type { TrendingModel } from "../services/trendingModel";
 import type { HttpError } from "../utils/fileUtils";
-import type { ProviderId } from "./_generated";
+import type { ProviderId } from "./index.generated";
 import type { SyncProblem } from "./syncProblem";
 
 /** A model as its provider describes it. */

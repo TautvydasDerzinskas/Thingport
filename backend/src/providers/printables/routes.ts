@@ -6,7 +6,7 @@ import { requireAuth } from "../../auth";
 import { assertProviderEnabled } from "../../services/providerSettingsService";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { parseBody } from "../../utils/validate";
-import manifest from "../_generated/printables/manifest";
+import manifest from "./manifest.generated";
 import { assertPrintablesPushOn, wantedPrintablesListings } from "./listings";
 import { savePrintablesPush } from "./push";
 

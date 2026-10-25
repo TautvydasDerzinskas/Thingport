@@ -5,7 +5,7 @@
 
 import type { ImportStatus, SyncLookup } from "../../shared/api";
 import { request } from "../../shared/messages";
-import { makerworldModelUrl } from "../../shared/providers/_generated/makerworld/urls";
+import { makerworldModelUrl } from "./urls.generated";
 import { ctx } from "../../content/context";
 import { findOrCreateCollection } from "../../content/panels/collectionPicker";
 import { NO_MORE_DATA } from "./labels";
@@ -21,7 +21,7 @@ import {
   syncChangeNote,
   syncToggleHtml,
 } from "../../content/panels/syncToggle";
-import { MANIFESTS } from "../../shared/providers/_generated";
+import { MANIFESTS } from "../index.generated";
 
 // The page may still be hydrating; checking too early sees zero cards and looks like the end.
 const SCAN_START_DELAY_MS = 1500;

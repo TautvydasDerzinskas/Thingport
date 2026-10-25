@@ -12,8 +12,8 @@ import {
   parseCrealitycloudCollectionUrl,
   parseCrealitycloudLikesUrl,
   parseCrealitycloudModelUrl,
-} from "../_generated/crealitycloud/urls";
-import manifest from "../_generated/crealitycloud/manifest";
+} from "./urls.generated";
+import manifest from "./manifest.generated";
 export {
   crealitycloudCollectionUrl,
   crealitycloudLikesKey,

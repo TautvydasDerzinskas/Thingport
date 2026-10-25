@@ -1,7 +1,7 @@
 import { authHeaders } from "../utils/auth";
 import { ForbiddenError, apiBase, assertOk } from "./client";
 import type { Print } from "./prints";
-import { type ProviderId, TRENDING_PROVIDER_IDS, type TrendingProviderId } from "../providers/_generated";
+import { type ProviderId, TRENDING_PROVIDER_IDS, type TrendingProviderId } from "../providers/index.generated";
 
 export type DashboardModel = {
   id: string;

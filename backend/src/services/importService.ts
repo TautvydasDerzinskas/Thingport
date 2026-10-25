@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import { isProviderId, MANIFESTS, manifestOf, modelUrl, parseModelUrl, URLS } from "../providers/_generated";
+import { isProviderId, MANIFESTS, manifestOf, modelUrl, parseModelUrl, URLS } from "../providers/index.generated";
 import { catIdsField, PROFILE_PROVIDERS, PROVIDERS } from "../providers/registry";
 import type { PipelineKit, ResolvedModel, SourcedImport } from "../providers/types";
 import fsSync from "node:fs";

@@ -5,7 +5,7 @@
 
 import { OPTIONAL_SITES, siteEnabled } from "../../shared/optionalSites";
 import type { SessionSource } from "../../background/sessionSync";
-import { MANIFESTS } from "../../shared/providers/_generated";
+import { MANIFESTS } from "../index.generated";
 
 const { snapmaker } = MANIFESTS;
 const SITE = snapmaker.site;

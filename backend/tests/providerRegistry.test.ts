@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MANIFESTS, PROVIDER_IDS, type ProviderManifest } from "../src/providers/_generated";
+import { MANIFESTS, PROVIDER_IDS, type ProviderManifest } from "../src/providers/index.generated";
 import { profilesImportJob } from "../src/services/importJobRunner";
 import { PROVIDERS, SESSION_CODES } from "../src/providers/registry";
 

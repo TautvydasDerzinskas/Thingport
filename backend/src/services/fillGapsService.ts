@@ -1,5 +1,5 @@
 import { prisma } from "../db";
-import { isProviderId } from "../providers/_generated";
+import { isProviderId } from "../providers/index.generated";
 import { PROVIDERS } from "../providers/registry";
 import type { Print, Prisma } from "@prisma/client";
 import { HttpError } from "../utils/fileUtils";

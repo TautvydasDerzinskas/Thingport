@@ -1,7 +1,7 @@
 // Who the user is signed in as on MyMiniFactory, read on its pages for the web app's Browse tab, and its session.
 
 import { send } from "../../shared/messages";
-import { MANIFESTS } from "../../shared/providers/_generated";
+import { MANIFESTS } from "../index.generated";
 
 /** MyMiniFactory renders its top menu from data in the page, which names the signed-in user;
  *  `userDetails` is null when signed out. */

@@ -3,8 +3,8 @@ import { resolveMakerworldCookie } from "./pageData";
 import type { ImportRequestBody } from "../../services/importService";
 import { HttpError } from "../../utils/fileUtils";
 import { decodeHtmlEntities } from "../../utils/htmlEntities";
-import manifest from "../_generated/makerworld/manifest";
-import { makerworldModelUrl } from "../_generated/makerworld/urls";
+import manifest from "./manifest.generated";
+import { makerworldModelUrl } from "./urls.generated";
 import { type MakerworldProfileScope, parseMakerworldModelUrl, selectMakerworldProfiles } from "./api";
 import { fetchMakerworldDesignForImport } from "./pages";
 

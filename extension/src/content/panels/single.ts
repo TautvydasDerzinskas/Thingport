@@ -25,7 +25,7 @@ import {
   SITE_NAMES,
   zipFilesPhrases,
 } from "./funStatus";
-import { MANIFESTS, manifestOf } from "../../shared/providers/_generated";
+import { MANIFESTS, manifestOf } from "../../providers/index.generated";
 
 /** Model name for pages that skip /import/inspect. The <h1> first: Thingiverse's og:title goes
  *  stale on SPA navigation and Printables' has a suffix. */

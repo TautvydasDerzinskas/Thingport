@@ -75,4 +75,4 @@ export async function normalizeImportUrl(raw: string | null | undefined): Promis
 
 // Whether a host is a domain or its subdomain, never a look-alike (`fake-makerworld.com`) that would be sent the
 // user's cookie or token for the provider.
-export { hostIs } from "../providers/_generated";
+export { hostIs } from "../providers/index.generated";

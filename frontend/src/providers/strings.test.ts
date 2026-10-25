@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { LOCALES } from "../constants/languages";
-import { type AuthSlot, MANIFESTS, PROVIDER_IDS, type ProviderId } from "./_generated";
+import { type AuthSlot, MANIFESTS, PROVIDER_IDS, type ProviderId } from "./index.generated";
 
 const camelCase = (name: string) => name.replace(/_(\w)/g, (_, c: string) => c.toUpperCase());
 

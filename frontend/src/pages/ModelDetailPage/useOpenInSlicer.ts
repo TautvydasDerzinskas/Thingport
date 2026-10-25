@@ -3,7 +3,7 @@ import { type Plate, type Print, printsApi } from "../../api/prints";
 import { NORMALIZE_3MF_SLICER_IDS, SLICER_OPTIONS } from "../../constants/settingsOptions";
 import { useSlicerSettings } from "../../hooks/useSlicerPreference";
 import { slicerLaunchUrl } from "../../utils/slicerLaunch";
-import { isProviderId, manifestOf } from "../../providers/_generated";
+import { isProviderId, manifestOf } from "../../providers/index.generated";
 
 /** A file of the model a slicer can open or the user can download: a plate, or the prepared print when it
  *  isn't one of them. `launchFilename` is what the slicer is told the file is called. */

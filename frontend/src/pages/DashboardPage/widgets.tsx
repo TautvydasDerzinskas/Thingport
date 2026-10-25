@@ -40,7 +40,7 @@ import TrendingCard from "./TrendingCard";
 import CustomWidgetCard, { WidgetIcon } from "./CustomWidgetCard";
 import type { DashboardSkeleton } from "./DashboardCardSkeleton";
 import type { PanelSketchKind } from "./PanelSketch";
-import { TRENDING_PROVIDER_IDS } from "../../providers/_generated";
+import { TRENDING_PROVIDER_IDS } from "../../providers/index.generated";
 
 export type WidgetSize = { w: number; h: number; minW: number; minH: number };
 

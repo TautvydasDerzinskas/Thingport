@@ -19,8 +19,8 @@ import {
   thingiverseCollectionUrl,
   thingiverseThingUrl,
   urls,
-} from "../_generated/thingiverse/urls";
-import manifest from "../_generated/thingiverse/manifest";
+} from "./urls.generated";
+import manifest from "./manifest.generated";
 export { parseThingiverseCollectionUrl, parseThingiverseLikesUrl, parseThingiverseThingUrl };
 
 // The official API needs an App Token (not a session cookie). It's still behind Cloudflare

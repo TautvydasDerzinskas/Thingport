@@ -19,8 +19,8 @@ import { importPrintFromUrl, type ImportRequestBody } from "../../services/impor
 import { createNotification } from "../../services/notificationService";
 import { mapWithConcurrency } from "../../utils/concurrency";
 import { HttpError } from "../../utils/fileUtils";
-import manifest from "../_generated/makerworld/manifest";
-import { makerworldModelUrl } from "../_generated/makerworld/urls";
+import manifest from "./manifest.generated";
+import { makerworldModelUrl } from "./urls.generated";
 import { extractMakerworldBearerToken, MAKERWORLD_DOWNLOAD_LIMIT_CODE, MAKERWORLD_DOWNLOAD_LIMIT_MESSAGE } from "./api";
 import { fetchMakerworldCollectionTitle, parseMakerworldCollectionUrl } from "./collections";
 import { listMakerworldProfileUrls } from "./profiles";

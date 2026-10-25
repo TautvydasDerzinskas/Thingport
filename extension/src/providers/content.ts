@@ -1,8 +1,8 @@
 // What the content script does differently on each provider's pages. A provider with nothing of its own has an
 // empty entry; the type makes sure every provider has one.
 
-import type { ListKind, ProviderId } from "../shared/providers/_generated";
-import { parseCrealitycloudLikesUrl } from "../shared/providers/_generated/crealitycloud/urls";
+import type { ListKind, ProviderId } from "./index.generated";
+import { parseCrealitycloudLikesUrl } from "./crealitycloud/urls.generated";
 import { parseSnapmakerListUrl, snapmakerListUrl } from "../shared/urls";
 import { crealitycloudUserId, loadCrealitycloudProfiles } from "./crealitycloud/content";
 import { isUnboughtCults3dModel } from "./cults3d/content";

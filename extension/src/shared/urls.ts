@@ -1,8 +1,8 @@
 // Which provider page a URL is, for the content script and the popup. The parsing is the providers' own
 // (providers/<id>/urls.ts), the same the backend and the web app use.
 
-import { type ListKind, parseListUrl, parseModelUrl, type ProviderId, MANIFESTS } from "./providers/_generated";
-import { parseSnapmakerListUrl as parseSnapmakerListLink } from "./providers/_generated/snapmaker/urls";
+import { type ListKind, parseListUrl, parseModelUrl, type ProviderId, MANIFESTS } from "../providers/index.generated";
+import { parseSnapmakerListUrl as parseSnapmakerListLink } from "../providers/snapmaker/urls.generated";
 
 export type Provider = ProviderId;
 
@@ -11,8 +11,8 @@ export type Classification =
 
 export type SnapmakerList = "likes" | "bookmarks";
 
-export { hostIs } from "./providers/_generated";
-export { snapmakerListUrl } from "./providers/_generated/snapmaker/urls";
+export { hostIs } from "../providers/index.generated";
+export { snapmakerListUrl } from "../providers/snapmaker/urls.generated";
 
 /** The user's likes and bookmarks share one page, `/creator/<id>?tab=interactions`, whose address stays the same
  *  whichever is shown, so a page without `list` opens on likes, as the site does; the panel switches between them. */

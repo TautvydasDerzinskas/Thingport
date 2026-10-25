@@ -13,8 +13,8 @@ import {
   parseCults3dModelUrl,
   parseCults3dPrintlistUrl,
   urls,
-} from "../_generated/cults3d/urls";
-import manifest from "../_generated/cults3d/manifest";
+} from "./urls.generated";
+import manifest from "./manifest.generated";
 export {
   cults3dLikesKey,
   cults3dLikesUrl,

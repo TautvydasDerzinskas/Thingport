@@ -5,7 +5,8 @@ module.exports = {
   // The packages' copies of providers/ (scripts/sync-providers.mjs) are committed with it.
   "providers/**": () => [
     "npm run providers:sync",
-    "git add backend/src/providers/_generated frontend/src/providers/_generated extension/src/shared/providers/_generated",
+    // Only the copies, which sit beside the packages' own provider code: added, changed or removed.
+    "git add --all -- *.generated.ts",
   ],
   "bridge/**/*.go": "gofmt -w",
   "backend/prisma/schema.prisma": () =>

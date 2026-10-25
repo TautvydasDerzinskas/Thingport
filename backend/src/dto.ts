@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { LIKES_ID_PREFIX } from "./providers/_generated";
+import { LIKES_ID_PREFIX } from "./providers/index.generated";
 import { syncLikesUsername } from "./providers/names";
 import { nextSyncAt, syncNowAvailableAt } from "./services/collectionSyncSchedule";
 import type {

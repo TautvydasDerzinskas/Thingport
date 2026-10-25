@@ -17,8 +17,8 @@ import {
   parseMyminifactoryCollectionUrl,
   parseMyminifactoryObjectUrl,
   urls,
-} from "../_generated/myminifactory/urls";
-import manifest from "../_generated/myminifactory/manifest";
+} from "./urls.generated";
+import manifest from "./manifest.generated";
 export {
   myminifactoryCollectionKey,
   myminifactoryCollectionUrl,

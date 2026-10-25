@@ -15,7 +15,7 @@ import { HttpError } from "../../utils/fileUtils";
 import type { NewPlateInput } from "../../services/printCreation";
 import { CLOUDFLARE_BLOCKED_CODE } from "../../services/flaresolverr";
 import type { SourcedImport, ProviderTrending, ProviderList, ProviderLists, ProviderDetails } from "../types";
-import { MANIFESTS } from "../_generated";
+import { MANIFESTS } from "../index.generated";
 import {
   Cults3dAuthError,
   Cults3dBlockedError,

@@ -5,8 +5,8 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../../db";
 import { HttpError } from "../../utils/fileUtils";
-import { LIKES_ID_PREFIX } from "../_generated";
-import manifest from "../_generated/printables/manifest";
+import { LIKES_ID_PREFIX } from "../index.generated";
+import manifest from "./manifest.generated";
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
 
 const PROVIDER = manifest.id;

@@ -21,7 +21,7 @@ import { HttpError } from "../../utils/fileUtils";
 import type { ImportRequestBody } from "../../services/importService";
 import type { NewPlateInput } from "../../services/printCreation";
 import type { CustomImport, ImportKit, ProviderTrending, ProviderList, ProviderLists, ProviderDetails } from "../types";
-import { MANIFESTS } from "../_generated";
+import { MANIFESTS } from "../index.generated";
 import {
   isMakeronlineFileHost,
   resolveMakeronlineModel,

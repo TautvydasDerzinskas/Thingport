@@ -30,7 +30,7 @@ import SyncBrowse, { type BrowsePick } from "./SyncBrowse";
 import HelpTip from "../../components/HelpTip";
 import Segmented from "../../components/controls/Segmented";
 import { SectionLabel } from "../../components/Layout/ConfigurationDialog/parts";
-import { isProviderId, manifestOf } from "../../providers/_generated";
+import { isProviderId, manifestOf } from "../../providers/index.generated";
 
 const SCOPES: SyncProfileScope[] = ["url", "designer", "all"];
 

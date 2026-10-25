@@ -1,6 +1,6 @@
 // Once per tab, what the provider's page has to tell the background (providers/accounts.ts).
 
-import { PROVIDER_IDS, URLS } from "../shared/providers/_generated";
+import { PROVIDER_IDS, URLS } from "../providers/index.generated";
 import { CAPTURE } from "../providers/accounts";
 
 let captured = false;

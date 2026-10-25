@@ -1,6 +1,6 @@
 // Glyphs from Simple Icons (CC0) where it has them, otherwise the marks from the sites themselves; each provider's
 // manifest in providers/ says which, and why its colours are what they are.
-import { MANIFESTS, PROVIDER_IDS, type Logo, type ProviderId } from "../../../providers/_generated";
+import { MANIFESTS, PROVIDER_IDS, type Logo, type ProviderId } from "../../../providers/index.generated";
 
 export type { ProviderId };
 

@@ -14,7 +14,7 @@ import fs from "node:fs/promises";
 import { HttpError } from "../../utils/fileUtils";
 import type { NewPlateInput } from "../../services/printCreation";
 import type { ImportKit, SourcedImport, ProviderTrending, ProviderLists, ProviderDetails } from "../types";
-import { MANIFESTS } from "../_generated";
+import { MANIFESTS } from "../index.generated";
 import {
   fetchNexprintModelFiles,
   fetchNexprintProfileFile,

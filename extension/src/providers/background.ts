@@ -2,7 +2,7 @@
 // wires in beside its own.
 
 import type { BackgroundMessages, Handlers } from "../shared/messages";
-import { MANIFESTS } from "../shared/providers/_generated";
+import { MANIFESTS } from "./index.generated";
 import { syncSession } from "../background/sessionSync";
 import { makeronlineHandlers } from "./makeronline/background";
 import { advanceJob, dropJobIfForTab, makerworldHandlers } from "./makerworld/job";

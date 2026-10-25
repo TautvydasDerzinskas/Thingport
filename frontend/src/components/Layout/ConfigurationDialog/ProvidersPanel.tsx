@@ -25,7 +25,7 @@ import { AppGrid, AppTile, menuPosition, reopenContextMenuBelow, TileMenuHeader 
 import { PanelHeader } from "./parts";
 import { COMING_SOON_PROVIDERS, ProviderLogo, type ProviderId } from "./providerLogos";
 import { refreshProviders, useProviders } from "../../../hooks/useProviders";
-import { type AuthSlot, MANIFESTS, PROVIDER_IDS } from "../../../providers/_generated";
+import { type AuthSlot, MANIFESTS, PROVIDER_IDS } from "../../../providers/index.generated";
 import { PROVIDER_UI } from "../../../providers/overrides";
 import { useProviderAbout } from "../../providerAbout/ProviderAboutProvider";
 

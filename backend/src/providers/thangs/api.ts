@@ -14,8 +14,8 @@ import {
   THANGS_LIKES_URL,
   thangsCollectionUrl,
   thangsModelUrl,
-} from "../_generated/thangs/urls";
-import manifest from "../_generated/thangs/manifest";
+} from "./urls.generated";
+import manifest from "./manifest.generated";
 export {
   isThangsLikesUrl,
   parseThangsCollectionUrl,

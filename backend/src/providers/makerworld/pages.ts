@@ -9,7 +9,7 @@ import { fetchWithGuard } from "../../services/guardedFetch";
 import { extractNextDataJson, type ImportedAuthorInfo } from "../../services/importResolvers";
 import { makerworldHtmlHeaders } from "./pageData";
 import { makerworldPageMetadata } from "./pageData";
-import { makerworldModelUrl } from "../_generated/makerworld/urls";
+import { makerworldModelUrl } from "./urls.generated";
 import {
   completeMakerworldAuthor,
   extractMakerworldBearerToken,

@@ -2,8 +2,8 @@
 
 import { providerEnabled } from "../../content/providerSettings";
 import { request, send } from "../../shared/messages";
-import { MANIFESTS } from "../../shared/providers/_generated";
-import { parseMakeronlineModelUrl } from "../../shared/providers/_generated/makeronline/urls";
+import { MANIFESTS } from "../index.generated";
+import { parseMakeronlineModelUrl } from "./urls.generated";
 
 export type MakeronlineProfileScope = "url" | "designer" | "all";
 

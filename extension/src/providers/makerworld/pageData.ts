@@ -1,4 +1,4 @@
-import { parseMakerworldModelUrl } from "../../shared/providers/_generated/makerworld/urls";
+import { parseMakerworldModelUrl } from "./urls.generated";
 
 export type MakerworldCreator = { uid?: string | number; name?: string };
 export type MakerworldInstance = { id?: string | number; title?: string; instanceCreator?: MakerworldCreator };

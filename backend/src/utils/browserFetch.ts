@@ -1,5 +1,5 @@
 import { Impit } from "impit";
-import { hostIs, manifestOf, PROVIDER_IDS } from "../providers/_generated";
+import { hostIs, manifestOf, PROVIDER_IDS } from "../providers/index.generated";
 
 // Some providers' Cloudflare challenges clients by their TLS handshake, whatever the headers or cookies, and Node's
 // fetch is on its list. impit sends Chrome's handshake and headers.

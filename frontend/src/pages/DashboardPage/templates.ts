@@ -13,7 +13,7 @@ import type {
   WidgetSettingValues,
 } from "../../api/settings";
 import { allowed, DASHBOARD_WIDGETS, widgetById, widgetOf, type ResolvedSettings } from "./widgets";
-import { MANIFESTS, PROVIDER_IDS, TRENDING_PROVIDER_IDS } from "../../providers/_generated";
+import { MANIFESTS, PROVIDER_IDS, TRENDING_PROVIDER_IDS } from "../../providers/index.generated";
 
 /** Widest first; a breakpoint applies from its width up. Phones get one column, so panels simply stack. */
 export const BREAKPOINTS: { id: DashboardBreakpoint; minWidth: number; cols: number }[] = [

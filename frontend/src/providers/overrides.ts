@@ -1,6 +1,6 @@
 import type { TFunction } from "i18next";
 import type { ProviderState, SlotName } from "../api/providers";
-import type { ProviderId } from "./_generated";
+import type { ProviderId } from "./index.generated";
 
 /** Where a provider's UI isn't what its manifest alone gives. */
 type ProviderUi = {

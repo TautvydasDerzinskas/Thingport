@@ -9,9 +9,9 @@ import {
   parseListUrl,
   parseModelUrl,
   type ProviderId,
-} from "../providers/_generated";
+} from "../providers/index.generated";
 
-export { hostIs } from "../providers/_generated";
+export { hostIs } from "../providers/index.generated";
 
 export type ImportProviderKey = ProviderId;
 

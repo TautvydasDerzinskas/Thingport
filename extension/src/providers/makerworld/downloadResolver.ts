@@ -6,7 +6,7 @@
 
 import type { ResolvedDownload } from "../../shared/messages";
 import { send } from "../../shared/messages";
-import { parseMakerworldModelUrl } from "../../shared/providers/_generated/makerworld/urls";
+import { parseMakerworldModelUrl } from "./urls.generated";
 import { sleep } from "../../content/runtime";
 import { DOWNLOAD_3MF, DOWNLOAD_ALL, DOWNLOAD_OTHER, DOWNLOAD_STL, OPEN_IN_APP } from "./labels";
 import {
@@ -16,7 +16,7 @@ import {
   readMakerworldDesignForPage,
   type MakerworldDesign,
 } from "./pageData";
-import { MANIFESTS } from "../../shared/providers/_generated";
+import { MANIFESTS } from "../index.generated";
 
 const MAKERWORLD_API = MANIFESTS.makerworld.endpoints.api;
 

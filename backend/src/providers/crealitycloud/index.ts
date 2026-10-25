@@ -22,7 +22,7 @@ import type {
   ProviderLists,
   ProviderDetails,
 } from "../types";
-import { MANIFESTS } from "../_generated";
+import { MANIFESTS } from "../index.generated";
 import {
   CrealitycloudAuthError,
   type CrealitycloudAuth,

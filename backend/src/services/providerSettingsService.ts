@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
-import { MANIFESTS, PROVIDER_IDS, providerOfHost, type ProviderId } from "../providers/_generated";
+import { MANIFESTS, PROVIDER_IDS, providerOfHost, type ProviderId } from "../providers/index.generated";
 
 // An admin can turn a provider off for the whole instance: nothing new comes from it (imports by link, Thingport
 // Grab, the queue, collection imports), its collection syncs pause, and background jobs leave it alone. Models

@@ -35,7 +35,7 @@ import {
   PROVIDER_IDS,
   type ProviderId,
   type ProviderManifest,
-} from "../providers/_generated";
+} from "../providers/index.generated";
 import { PROVIDERS, withLinkAuth } from "../providers/registry";
 import type { ProviderLists } from "../providers/types";
 

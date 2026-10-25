@@ -1,7 +1,7 @@
 // Sends the instance a provider's sign-in as this browser holds it, at the endpoint its manifest names, whenever it
 // changed since it was last sent. Each provider's own module says how its cookies read (providers/sessions.ts).
 
-import { MANIFESTS, type AuthSlot, type ProviderId } from "../shared/providers/_generated";
+import { MANIFESTS, type AuthSlot, type ProviderId } from "../providers/index.generated";
 import { STORAGE_KEYS, type StoredConfig } from "../shared/storage";
 import { apiCall, requireConfig } from "./api";
 import { SESSION_SOURCES } from "../providers/sessions";

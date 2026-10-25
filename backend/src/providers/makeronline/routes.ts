@@ -14,7 +14,7 @@ import { importAndDescribe } from "../../services/singleImport";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { HttpError } from "../../utils/fileUtils";
 import { parseBody } from "../../utils/validate";
-import manifest from "../_generated/makeronline/manifest";
+import manifest from "./manifest.generated";
 import { parseMakeronlineModelUrl } from "./api";
 import {
   clearGrabImport,

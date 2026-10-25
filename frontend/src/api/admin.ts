@@ -1,7 +1,7 @@
 import { authHeaders } from "../utils/auth";
 import { apiBase, assertOk, readErrorMessage, UnauthorizedError } from "./client";
 import type { ImportJob, ImportJobItem } from "./imports";
-import type { ProviderId } from "../providers/_generated";
+import type { ProviderId } from "../providers/index.generated";
 
 export type AdminUser = {
   id: string;

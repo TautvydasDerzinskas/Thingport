@@ -1,7 +1,14 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { mapWithConcurrency, sleep } from "../utils/concurrency";
-import { detectProvider, isProviderId, MANIFESTS, manifestOf, type ProviderId, URLS } from "../providers/_generated";
+import {
+  detectProvider,
+  isProviderId,
+  MANIFESTS,
+  manifestOf,
+  type ProviderId,
+  URLS,
+} from "../providers/index.generated";
 import {
   DOWNLOAD_LIMIT_CODES,
   LINK_PROVIDER,

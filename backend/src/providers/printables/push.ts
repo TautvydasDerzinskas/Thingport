@@ -3,9 +3,9 @@
 
 import { prisma } from "../../db";
 import { HttpError } from "../../utils/fileUtils";
-import { LIKES_ID_PREFIX } from "../_generated";
-import manifest from "../_generated/printables/manifest";
-import { printablesCollectionUrl, printablesLikesUrl } from "../_generated/printables/urls";
+import { LIKES_ID_PREFIX } from "../index.generated";
+import manifest from "./manifest.generated";
+import { printablesCollectionUrl, printablesLikesUrl } from "./urls.generated";
 import { syncCollection } from "../../services/collectionSyncRunner";
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
 import { resolvePrintablesUser } from "./api";

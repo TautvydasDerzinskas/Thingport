@@ -4,13 +4,9 @@ import { type ImportedAuthorInfo, type ImportedPageMetadata } from "../../servic
 import { htmlToMarkdown } from "../../services/descriptionMarkdown";
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
 import { asCount, asRecord, asText, recordsOf, type TrendingModel } from "../../services/trendingModel";
-import manifest from "../_generated/printables/manifest";
-import { printablesCollectionUrl, printablesModelUrl, printablesUserUrl, urls } from "../_generated/printables/urls";
-export {
-  parsePrintablesCollectionUrl,
-  parsePrintablesLikesUrl,
-  parsePrintablesModelUrl,
-} from "../_generated/printables/urls";
+import manifest from "./manifest.generated";
+import { printablesCollectionUrl, printablesModelUrl, printablesUserUrl, urls } from "./urls.generated";
+export { parsePrintablesCollectionUrl, parsePrintablesLikesUrl, parsePrintablesModelUrl } from "./urls.generated";
 
 // Unlike Cloudflare-gated www.printables.com, the GraphQL API answers unauthenticated requests.
 const PRINTABLES_GRAPHQL_URL = manifest.endpoints.graphql;

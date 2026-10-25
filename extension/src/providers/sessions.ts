@@ -1,7 +1,7 @@
 // How each provider's sign-in reads from this browser's cookies, for background/sessionSync.ts. One without is signed in
 // some other way (an admin's key, the user's own API key or username) or not at all.
 
-import type { ProviderId } from "../shared/providers/_generated";
+import type { ProviderId } from "./index.generated";
 import type { SessionSource } from "../background/sessionSync";
 import { crealitycloudSession } from "./crealitycloud/session";
 import { cults3dSession } from "./cults3d/session";

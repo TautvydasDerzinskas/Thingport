@@ -3,7 +3,7 @@
 import type { BackgroundMessages, Handlers, PrintablesPush, PrintablesPushPlan } from "../../shared/messages";
 import { STORAGE_KEYS } from "../../shared/storage";
 import { apiCall, requireConfig } from "../../background/api";
-import { MANIFESTS } from "../../shared/providers/_generated";
+import { MANIFESTS } from "../index.generated";
 
 const { printables } = MANIFESTS;
 

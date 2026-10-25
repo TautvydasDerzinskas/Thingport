@@ -11,7 +11,7 @@ import { useDisabledProviders } from "../../hooks/useProviders";
 import type { ImportProvider } from "../../api/settings";
 import { ProviderLogo } from "../Layout/ConfigurationDialog/providerLogos";
 import ProviderCategoryPicker from "./ProviderCategoryPicker";
-import { PROVIDER_IDS } from "../../providers/_generated";
+import { PROVIDER_IDS } from "../../providers/index.generated";
 import { indexCatalog, joinCatIds, loadProviderCatalog, splitCatIds, type CatalogCategory } from "./providerCatalog";
 
 /** The providers a category can take imports from, in the order the rows show them. */

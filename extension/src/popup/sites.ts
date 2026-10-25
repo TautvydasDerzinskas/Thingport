@@ -5,7 +5,7 @@
 import { OPTIONAL_SITES, siteEnabled, type OptionalSite } from "../shared/optionalSites";
 import type { Provider } from "../shared/urls";
 import { clearError, els, showError } from "./dom";
-import { MANIFESTS, PROVIDER_IDS, type Logo } from "../shared/providers/_generated";
+import { MANIFESTS, PROVIDER_IDS, type Logo } from "../providers/index.generated";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 

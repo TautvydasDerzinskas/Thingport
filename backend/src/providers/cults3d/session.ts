@@ -1,6 +1,6 @@
 import { prisma } from "../../db";
 import type { Cults3dBrowser, Cults3dCredentials } from "./api";
-import manifest from "../_generated/cults3d/manifest";
+import manifest from "./manifest.generated";
 
 // Per-user, two things. The API credentials -- the user's Cults3D nickname and an API key they make on the site --
 // read models, likes, printlists and orders. The browser's sign-in -- its _session_id cookie, and the cf_clearance

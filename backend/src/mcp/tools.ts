@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MANIFESTS } from "../providers/_generated";
+import { MANIFESTS } from "../providers/index.generated";
 import { providerNames } from "../providers/names";
 import { prisma } from "../db";
 import { toAuthorOut, type PrintOut } from "../dto";

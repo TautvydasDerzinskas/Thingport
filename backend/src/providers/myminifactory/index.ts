@@ -26,7 +26,7 @@ import type {
   ProviderDetails,
   InstanceHealth,
 } from "../types";
-import { MANIFESTS } from "../_generated";
+import { MANIFESTS } from "../index.generated";
 import {
   fetchMyminifactoryCollectionObjects,
   isMyminifactoryFileHost,

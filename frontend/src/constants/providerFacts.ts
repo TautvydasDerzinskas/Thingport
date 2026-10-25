@@ -1,5 +1,5 @@
 import { darken, getContrastRatio, lighten, type Theme } from "@mui/material/styles";
-import { MANIFESTS, PROVIDER_IDS, type Need, type ProviderId, type SignIn } from "../providers/_generated";
+import { MANIFESTS, PROVIDER_IDS, type Need, type ProviderId, type SignIn } from "../providers/index.generated";
 import { IMPORT_PROVIDER_INFO } from "./importProviders";
 import { THINGPORT_WEBSITE_URL } from "./website";
 

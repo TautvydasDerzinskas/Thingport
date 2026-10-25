@@ -20,7 +20,7 @@ import TableRow from "@mui/material/TableRow";
 import { UnauthorizedError } from "../../api/client";
 import { adminApi, type AdminUser, type LogAction, type LogEntry } from "../../api/admin";
 import { TableRowSkeletons } from "../../components/ListSkeleton";
-import { isProviderId, MANIFESTS } from "../../providers/_generated";
+import { isProviderId, MANIFESTS } from "../../providers/index.generated";
 
 type Props = {
   onUnauthorized?: () => void;

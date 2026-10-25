@@ -12,7 +12,7 @@ import {
   type MakeronlineProfileScope,
 } from "./api";
 import { HttpError } from "../../utils/fileUtils";
-import { MANIFESTS } from "../_generated";
+import { MANIFESTS } from "../index.generated";
 import { siteHost } from "../names";
 
 // Imports waiting for Thingport Grab. MakerOnline hands out download links only to a page its anti-bot script runs on,

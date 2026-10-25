@@ -3,7 +3,7 @@
 // them, so Grab only sends each new pair on, with the cookie's expiry for the app to show.
 
 import type { SessionSource } from "../../background/sessionSync";
-import { MANIFESTS } from "../../shared/providers/_generated";
+import { MANIFESTS } from "../index.generated";
 
 const { site: SITE, sessionCookies: COOKIES } = MANIFESTS.crealitycloud;
 

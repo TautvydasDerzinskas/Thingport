@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
 import type { Theme } from "@mui/material/styles";
 import type { BrowsableProvider, ProviderCollection } from "../api/providerCollections";
-import { MANIFESTS } from "./_generated";
+import { MANIFESTS } from "./index.generated";
 
 /** Each provider's own accent, so a tile reads as theirs. */
 export const accent = (provider: BrowsableProvider) => MANIFESTS[provider].brand.accent;

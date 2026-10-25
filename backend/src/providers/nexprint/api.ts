@@ -8,8 +8,8 @@ import {
   nexprintModelUrl,
   parseNexprintCollectionUrl,
   parseNexprintModelUrl,
-} from "../_generated/nexprint/urls";
-import manifest from "../_generated/nexprint/manifest";
+} from "./urls.generated";
+import manifest from "./manifest.generated";
 export { nexprintCollectionUrl, nexprintModelUrl, parseNexprintCollectionUrl, parseNexprintModelUrl };
 
 // NexPrint (Elegoo's model site) has no public API, so this is the one its own pages call, under /gateway: answers are

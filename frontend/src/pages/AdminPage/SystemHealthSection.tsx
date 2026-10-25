@@ -31,7 +31,7 @@ import {
 import SectionHeader from "../../components/SectionHeader";
 import { formatFileSize } from "../../utils/fileSize";
 import { relativeTime } from "../../utils/relativeTime";
-import { isProviderId, MANIFESTS, type ProviderId } from "../../providers/_generated";
+import { isProviderId, MANIFESTS, type ProviderId } from "../../providers/index.generated";
 
 type Props = {
   onUnauthorized?: () => void;

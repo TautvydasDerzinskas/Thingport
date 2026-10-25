@@ -1,4 +1,4 @@
-import { MANIFESTS } from "../_generated";
+import { MANIFESTS } from "../index.generated";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);

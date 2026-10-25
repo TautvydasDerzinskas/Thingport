@@ -4,7 +4,7 @@
 // the background registers the content script there. It only ever runs on the sites listed here: the providers whose
 // manifest (providers/) says their site is optional.
 
-import { MANIFESTS, PROVIDER_IDS } from "./providers/_generated";
+import { MANIFESTS, PROVIDER_IDS } from "../providers/index.generated";
 
 type Manifests = typeof MANIFESTS;
 type OptionalId = {

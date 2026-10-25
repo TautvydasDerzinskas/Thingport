@@ -2,7 +2,7 @@
 // entry, so tsc fails until a new one has it.
 
 import type { Category } from "@prisma/client";
-import { MANIFESTS, PROVIDER_IDS, type ProviderId, type ProviderManifest } from "./_generated";
+import { MANIFESTS, PROVIDER_IDS, type ProviderId, type ProviderManifest } from "./index.generated";
 import { siteHost } from "./names";
 import {
   crealitycloudImport,
@@ -61,7 +61,7 @@ import { crealitycloudBrowse } from "./crealitycloud/browse";
 import { nexprintBrowse } from "./nexprint/browse";
 import { thangsBrowse } from "./thangs/browse";
 import { cults3dBrowse } from "./cults3d/browse";
-import type { AuthSlot } from "./_generated";
+import type { AuthSlot } from "./index.generated";
 import type {
   ConnectionSlot,
   CustomImport,

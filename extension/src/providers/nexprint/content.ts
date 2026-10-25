@@ -1,6 +1,6 @@
 // NexPrint's own model data, as its pages read it: which print profiles a model has, and whose they are.
 
-import { parseNexprintModelUrl } from "../../shared/providers/_generated/nexprint/urls";
+import { parseNexprintModelUrl } from "./urls.generated";
 
 export type NexprintProfileScope = "url" | "designer" | "all";
 

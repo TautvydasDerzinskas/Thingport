@@ -5,7 +5,7 @@
 import type { Collection, CollectionSync } from "@prisma/client";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
-import { isProviderId, modelUrl, parseListUrl, type ProviderId, URLS } from "../providers/_generated";
+import { isProviderId, modelUrl, parseListUrl, type ProviderId, URLS } from "../providers/index.generated";
 import { PROFILE_PROVIDERS, PROVIDERS } from "../providers/registry";
 import type { SyncSource } from "../providers/types";
 import {

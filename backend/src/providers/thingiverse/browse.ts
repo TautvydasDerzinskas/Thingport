@@ -1,6 +1,6 @@
 import { prisma } from "../../db";
-import { LIKES_ID_PREFIX } from "../_generated";
-import { thingiverseLikesUrl } from "../_generated/thingiverse/urls";
+import { LIKES_ID_PREFIX } from "../index.generated";
+import { thingiverseLikesUrl } from "./urls.generated";
 import { getThingiverseAccessToken } from "./token";
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
 import { HttpError } from "../../utils/fileUtils";

@@ -3,7 +3,7 @@
 // as this browser would; the clearance only holds from this browser's IP address. Sent on when they change.
 
 import type { SessionSource } from "../../background/sessionSync";
-import { MANIFESTS } from "../../shared/providers/_generated";
+import { MANIFESTS } from "../index.generated";
 
 const { cults3d } = MANIFESTS;
 const SITE = cults3d.site;

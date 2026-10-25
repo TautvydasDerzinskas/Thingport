@@ -1,7 +1,7 @@
 import { authHeaders } from "../utils/auth";
 import { apiBase, assertOk, readErrorMessage, UnauthorizedError } from "./client";
 import type { AccentColor, RenderColor, ThemeSelection } from "../constants/settingsOptions";
-import type { ProviderId } from "../providers/_generated";
+import type { ProviderId } from "../providers/index.generated";
 import { invalidateAiCategorizationStatus } from "./aiCategorization";
 import type { QualityIssueCode, QualitySeverity } from "./prints";
 

@@ -5,7 +5,7 @@ import type { Print, QueueImportResult } from "./api";
 import type { SeasonalIcon } from "./seasonalMark";
 import type { OfflineFeature } from "./storage";
 import type { Provider } from "./urls";
-import type { MANIFESTS, ProviderId } from "./providers/_generated";
+import type { MANIFESTS, ProviderId } from "../providers/index.generated";
 
 export type ExtensionState = {
   configured: boolean;

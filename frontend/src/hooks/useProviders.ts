@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { type ProviderState, providersApi } from "../api/providers";
 import type { ImportProvider, ProviderSetting } from "../api/settings";
-import { PROVIDER_IDS } from "../providers/_generated";
+import { PROVIDER_IDS } from "../providers/index.generated";
 
 // Asked once and shared, as every Add menu and sync dialog needs it; a change to one refreshes everyone's.
 let cached: Promise<ProviderState[]> | null = null;

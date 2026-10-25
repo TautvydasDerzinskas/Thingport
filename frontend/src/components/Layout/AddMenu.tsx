@@ -42,7 +42,7 @@ import {
 import type { MakerworldProfileScope } from "../../api/imports";
 import { allProvidersOff, useDisabledProviders } from "../../hooks/useProviders";
 import { readImportLink } from "../../utils/bookmarklet";
-import { MANIFESTS, manifestOf, PROVIDER_IDS } from "../../providers/_generated";
+import { MANIFESTS, manifestOf, PROVIDER_IDS } from "../../providers/index.generated";
 
 const IMPORT_PROVIDERS: readonly ImportProviderKey[] = PROVIDER_IDS;
 

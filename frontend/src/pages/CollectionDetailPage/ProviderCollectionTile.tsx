@@ -6,7 +6,7 @@ import Typography from "@mui/material/Typography";
 import CheckIcon from "@mui/icons-material/Check";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import type { BrowsableProvider, ProviderCollection } from "../../api/providerCollections";
-import { parseListUrl } from "../../providers/_generated";
+import { parseListUrl } from "../../providers/index.generated";
 import { accent, ModelCount, Thumb } from "../../providers/collectionTile";
 import { COLLECTION_TILES } from "../../providers/collectionTiles";
 

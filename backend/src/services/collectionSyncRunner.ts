@@ -20,7 +20,7 @@ import { findLibraryPrints, hasProfiles, modelUrlFor, providerName, sourceDescri
 import { getActiveJob } from "./importJobService";
 import { type LinksImportJobBody, runLinksImportJob, SYNC_JOB_INTERRUPTED } from "./importJobRunner";
 import { startLinksJob } from "./importQueueService";
-import { isProviderId } from "../providers/_generated";
+import { isProviderId } from "../providers/index.generated";
 import { PROVIDERS, withLinkAuth } from "../providers/registry";
 import { SyncHeldError, type SyncProblem } from "../providers/syncProblem";
 import type { ProviderSync, SyncedList } from "../providers/types";

@@ -9,7 +9,7 @@ import Typography from "@mui/material/Typography";
 import { UnauthorizedError } from "../../api/client";
 import { providersApi } from "../../api/providers";
 import { refreshProviders } from "../../hooks/useProviders";
-import type { AuthSlot, ProviderId } from "../../providers/_generated";
+import type { AuthSlot, ProviderId } from "../../providers/index.generated";
 
 type Props = {
   provider: ProviderId;

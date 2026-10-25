@@ -1,5 +1,5 @@
 import { prisma } from "../../db";
-import manifest from "../_generated/nexprint/manifest";
+import manifest from "./manifest.generated";
 
 // Per-user: the NexPrint token, its auth_token cookie, sent as a Bearer token. The site keeps the cookie for a week and
 // sets it again whenever it refreshes the token, so Thingport Grab sends each new one on. The cookie's expiry is kept

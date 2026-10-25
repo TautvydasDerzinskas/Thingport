@@ -10,8 +10,8 @@ import {
   snapmakerListUrl,
   snapmakerModelUrl,
   type SnapmakerList,
-} from "../_generated/snapmaker/urls";
-import manifest from "../_generated/snapmaker/manifest";
+} from "./urls.generated";
+import manifest from "./manifest.generated";
 export {
   parseSnapmakerListUrl,
   parseSnapmakerModelUrl,

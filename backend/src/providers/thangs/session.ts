@@ -1,6 +1,6 @@
 import { prisma } from "../../db";
 import { createLogger } from "../../logger";
-import manifest from "../_generated/thangs/manifest";
+import manifest from "./manifest.generated";
 import { decodeThangsJwt, refreshThangsToken, ThangsAuthError } from "./api";
 
 // Per-user: the Thangs sign-in, its accessToken cookie (a 7-day JWT, sent as a Bearer token) and the refreshToken

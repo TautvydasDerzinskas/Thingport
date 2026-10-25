@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
-import { MANIFESTS, PROVIDER_IDS } from "../src/providers/_generated";
+import { MANIFESTS, PROVIDER_IDS } from "../src/providers/index.generated";
 import { setThingiverseAccessToken } from "../src/providers/thingiverse/token";
 
 const app = createApp();

@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../db";
-import { PROVIDER_IDS, type ProviderId } from "../providers/_generated";
+import { PROVIDER_IDS, type ProviderId } from "../providers/index.generated";
 import { IMPORT_COLLECTION_DELAY_MS } from "../config";
 import { maybeSleep } from "../utils/concurrency";
 import { LINKABLE_PRINTS, linkUnattributedPrints, upsertAuthorFromImport } from "./authorService";

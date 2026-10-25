@@ -2,7 +2,7 @@
 // the user is there. Only the signed-in account: these pages link to plenty of other people's profiles too.
 
 import { send } from "../shared/messages";
-import type { ProviderId } from "../shared/providers/_generated";
+import type { ProviderId } from "./index.generated";
 import { cults3dSignedIn } from "./cults3d/content";
 import { syncMakeronline } from "./makeronline/content";
 import { captureMyminifactoryAccount } from "./myminifactory/account";

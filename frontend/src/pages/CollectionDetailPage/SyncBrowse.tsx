@@ -18,7 +18,7 @@ import {
 } from "../../api/providerCollections";
 import { importProviderInfo } from "../../constants/importProviders";
 import { detectImportProvider } from "../../utils/importLinkDetection";
-import { MANIFESTS, manifestOf } from "../../providers/_generated";
+import { MANIFESTS, manifestOf } from "../../providers/index.generated";
 import HelpTip from "../../components/HelpTip";
 import Segmented from "../../components/controls/Segmented";
 import { SectionLabel } from "../../components/Layout/ConfigurationDialog/parts";

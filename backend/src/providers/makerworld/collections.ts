@@ -14,8 +14,8 @@ import {
   MakerworldCaptchaError,
   noteCaptchaChallenge,
 } from "./captcha";
-import manifest from "../_generated/makerworld/manifest";
-import { makerworldCollectionUrl, parseMakerworldCollectionUrl } from "../_generated/makerworld/urls";
+import manifest from "./manifest.generated";
+import { makerworldCollectionUrl, parseMakerworldCollectionUrl } from "./urls.generated";
 export { parseMakerworldCollectionUrl };
 
 // Not behind Cloudflare. Private collections return 403 without the bearer token, so it's sent

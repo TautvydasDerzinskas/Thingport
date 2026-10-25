@@ -17,7 +17,7 @@ import {
 } from "./collectionSyncService";
 import type { ProviderCollectionCard } from "./providerCollectionCard";
 import { assertProviderEnabled } from "./providerSettingsService";
-import { manifestOf, PROVIDER_IDS, type ProviderId } from "../providers/_generated";
+import { manifestOf, PROVIDER_IDS, type ProviderId } from "../providers/index.generated";
 import { NO_PROFILES_TEXT, providerName, providerNames } from "../providers/names";
 import { PROVIDERS } from "../providers/registry";
 import type { ProviderAccount, ProviderBrowse } from "../providers/types";

@@ -1,7 +1,7 @@
 import { IMPORT_MAKERWORLD_CALL_DELAY_MS } from "../../config";
 import { makerworldMetaFromDesign, resolveMakerworldCookie } from "./pageData";
 import { HttpError } from "../../utils/fileUtils";
-import manifest from "../_generated/makerworld/manifest";
+import manifest from "./manifest.generated";
 import type { ProviderDetails } from "../types";
 import {
   extractMakerworldBearerToken,

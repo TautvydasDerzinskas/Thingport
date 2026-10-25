@@ -1,6 +1,6 @@
 // chrome.storage.local keys and their shapes. Nothing is synced across browsers.
 
-import type { ProviderId } from "./providers/_generated";
+import type { ProviderId } from "../providers/index.generated";
 
 export const STORAGE_KEYS = {
   instanceUrl: "instanceUrl",

@@ -24,7 +24,7 @@ import SectionHeader from "../../components/SectionHeader";
 import { publishProviders, refreshProviders, useProviders } from "../../hooks/useProviders";
 import { useProviderAbout } from "../../components/providerAbout/ProviderAboutProvider";
 import ProviderKeySection from "./ProviderKeySection";
-import { type AuthSlot, MANIFESTS, PROVIDER_IDS } from "../../providers/_generated";
+import { type AuthSlot, MANIFESTS, PROVIDER_IDS } from "../../providers/index.generated";
 
 type Props = {
   onUnauthorized?: () => void;

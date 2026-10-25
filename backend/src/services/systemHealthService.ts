@@ -16,7 +16,7 @@ import { listAiProviderModels } from "./aiCategorizationService";
 import { resolveAiConnection } from "./aiConnectionService";
 import { testFlaresolverr } from "./flaresolverr";
 import { getFlaresolverrUrl, getSmtpSettings } from "./settingsService";
-import { isProviderId, PROVIDER_IDS, type ProviderId } from "../providers/_generated";
+import { isProviderId, PROVIDER_IDS, type ProviderId } from "../providers/index.generated";
 import { PROVIDERS } from "../providers/registry";
 import { isProviderEnabled } from "./providerSettingsService";
 

@@ -3,7 +3,7 @@
 // expiry for the app to show.
 
 import type { SessionSource } from "../../background/sessionSync";
-import { MANIFESTS } from "../../shared/providers/_generated";
+import { MANIFESTS } from "../index.generated";
 
 const { nexprint } = MANIFESTS;
 

@@ -9,7 +9,7 @@ import {
   IMPORT_TIMEOUT_SECONDS,
 } from "../config";
 import { isJsonContentType } from "../utils/fileUtils";
-import { type ProviderId } from "../providers/_generated";
+import { type ProviderId } from "../providers/index.generated";
 // The metadata a link import carries holds MakerWorld's print profile, as its link import is the shared one.
 import type { MakerworldProfileRef } from "../providers/makerworld/pageData";
 import { decodeHtmlEntities } from "../utils/htmlEntities";

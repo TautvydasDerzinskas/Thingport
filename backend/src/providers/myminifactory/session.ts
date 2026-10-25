@@ -1,5 +1,5 @@
 import { prisma } from "../../db";
-import manifest from "../_generated/myminifactory/manifest";
+import manifest from "./manifest.generated";
 
 // Per-user, beside the instance-wide API key: the user's MyMiniFactory session downloads the paid and login-only
 // models in their library, which the API key can't.

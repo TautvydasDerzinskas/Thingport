@@ -45,7 +45,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { catIdsKey, type Category, type CategoryKind, type CategoryMetaInput } from "../../api/categories";
-import { PROVIDER_IDS } from "../../providers/_generated";
+import { PROVIDER_IDS } from "../../providers/index.generated";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { buildCategoryTree, flattenCategoryTree } from "../../utils/categoryTree";
 import CategoryMetaDialog from "./CategoryMetaDialog";

@@ -3,7 +3,7 @@
 // imports, the web app's included, pick up the renewed one on the next page opened.
 
 import type { SessionSource } from "../../background/sessionSync";
-import { MANIFESTS } from "../../shared/providers/_generated";
+import { MANIFESTS } from "../index.generated";
 
 const { myminifactory } = MANIFESTS;
 

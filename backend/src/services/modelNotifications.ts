@@ -1,7 +1,7 @@
 import { prisma } from "../db";
 import { createKeyedLock } from "../utils/concurrency";
 import { createNotification } from "./notificationService";
-import { detectProvider, MANIFESTS } from "../providers/_generated";
+import { detectProvider, MANIFESTS } from "../providers/index.generated";
 
 /** Lists names for a notification body, shortening long lists to the first few. */
 export function nameList(names: string[], max = 5): string {

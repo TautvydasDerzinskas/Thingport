@@ -22,7 +22,7 @@ import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
 import { useGravatarUrl } from "../../hooks/useGravatarUrl";
 import type { ProviderState } from "../../api/providers";
 import { refreshProviders, useProviders } from "../../hooks/useProviders";
-import { MANIFESTS } from "../../providers/_generated";
+import { MANIFESTS } from "../../providers/index.generated";
 import { PROVIDER_UI, providerReady } from "../../providers/overrides";
 
 type Props = {

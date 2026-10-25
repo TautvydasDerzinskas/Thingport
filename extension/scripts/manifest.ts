@@ -8,7 +8,7 @@ export function isTarget(value: string): value is Target {
   return (TARGETS as readonly string[]).includes(value);
 }
 
-import { MANIFESTS, PROVIDER_IDS } from "../src/shared/providers/_generated";
+import { MANIFESTS, PROVIDER_IDS } from "../src/providers/index.generated";
 
 // The sites in the manifest itself; any change makes browsers disable Grab until each user approves it, so the
 // generator keeps them to the legacy three (scripts/sync-providers.mjs).

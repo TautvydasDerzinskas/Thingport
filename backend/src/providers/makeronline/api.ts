@@ -11,8 +11,8 @@ import {
   makeronlineModelUrl,
   parseMakeronlineCollectionUrl,
   parseMakeronlineModelUrl,
-} from "../_generated/makeronline/urls";
-import manifest from "../_generated/makeronline/manifest";
+} from "./urls.generated";
+import manifest from "./manifest.generated";
 export {
   isMakeronlineLikesUrl,
   MAKERONLINE_LIKES_KEY,

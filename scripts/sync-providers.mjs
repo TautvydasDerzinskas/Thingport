@@ -1,5 +1,7 @@
 // Copies providers/ into the backend, frontend and extension, each of which builds on its own (their own Docker
-// contexts and lockfiles), and writes the index that lists them. The copies are committed:
+// contexts and lockfiles), and writes the index that lists them. Each copy goes beside the package's own code for that
+// provider, named <file>.generated.ts (src/providers/<id>/manifest.generated.ts, src/providers/_lib/,
+// src/providers/index.generated.ts), and only *.generated.* files are ever written or removed. The copies are committed:
 //
 //   npm run providers:sync    rewrite them
 //   npm run providers:check   fail when one is out of date (CI)
@@ -13,15 +15,18 @@ import * as prettier from "prettier";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SOURCE = path.join(ROOT, "providers");
-const TARGETS = [
-  "backend/src/providers/_generated",
-  "frontend/src/providers/_generated",
-  "extension/src/shared/providers/_generated",
-];
+const TARGETS = ["backend/src/providers", "frontend/src/providers", "extension/src/providers"];
+const GENERATED = /\.generated\.[a-z]+$/;
 // Grab's manifest.json lists these sites; any change makes browsers disable it until each user approves the update.
 const BUILTIN_SITES = ["makerworld", "printables", "thingiverse"];
 // What each provider's folder holds, copied as they are.
 const PROVIDER_FILES = ["manifest.ts", "urls.ts"];
+
+/** `file.ts` as its copy is named. */
+const generatedName = (file) => file.replace(/\.ts$/, ".generated.ts");
+
+/** A copied file's relative imports, which are all of other copies, by their copies' names. */
+const pointAtCopies = (text) => text.replace(/(from\s+"\.{1,2}\/[^"]+?)(")/g, "$1.generated$2");
 
 const header = (from) =>
   `// GENERATED from ${from} by scripts/sync-providers.mjs. Don't edit it here:\n` +
@@ -64,9 +69,9 @@ function index(manifests) {
     .sort((a, b) => a.capabilities.trending.rank - b.capabilities.trending.rank)
     .map((manifest) => manifest.id);
   return `${header("providers/*/")}
-import { hostIs } from "./_lib/hosts";
-import type { ListLink, ModelLink, ProviderManifest, ProviderUrls } from "./_lib/types";
-${ids.map((id) => `import ${id} from "./${id}/manifest";\nimport { urls as ${id}Urls } from "./${id}/urls";`).join("\n")}
+import { hostIs } from "./_lib/hosts.generated";
+import type { ListLink, ModelLink, ProviderManifest, ProviderUrls } from "./_lib/types.generated";
+${ids.map((id) => `import ${id} from "./${id}/manifest.generated";\nimport { urls as ${id}Urls } from "./${id}/urls.generated";`).join("\n")}
 
 export type {
   AuthField,
@@ -81,9 +86,9 @@ export type {
   ProviderManifest,
   ProviderUrls,
   SignIn,
-} from "./_lib/types";
-export { hostIs } from "./_lib/hosts";
-export { LIKES_ID_PREFIX } from "./_lib/lists";
+} from "./_lib/types.generated";
+export { hostIs } from "./_lib/hosts.generated";
+export { LIKES_ID_PREFIX } from "./_lib/lists.generated";
 
 /** Every provider, in the order lists show them. */
 export const PROVIDER_IDS = [${ids.map((id) => JSON.stringify(id)).join(", ")}] as const;
@@ -148,24 +153,33 @@ export function modelUrl(provider: string, externalId: string): string | null {
 async function outputs(manifests) {
   const files = new Map();
   for (const file of readdirSync(path.join(SOURCE, "_lib")).filter((file) => file.endsWith(".ts"))) {
-    files.set(`_lib/${file}`, header(`providers/_lib/${file}`) + readFileSync(path.join(SOURCE, "_lib", file), "utf8"));
+    const text = readFileSync(path.join(SOURCE, "_lib", file), "utf8");
+    files.set(`_lib/${generatedName(file)}`, header(`providers/_lib/${file}`) + pointAtCopies(text));
   }
   for (const { id } of manifests) {
     for (const file of PROVIDER_FILES) {
       const from = `providers/${id}/${file}`;
-      files.set(`${id}/${file}`, header(from) + readFileSync(path.join(ROOT, from), "utf8"));
+      files.set(
+        `${id}/${generatedName(file)}`,
+        header(from) + pointAtCopies(readFileSync(path.join(ROOT, from), "utf8")),
+      );
     }
   }
-  files.set("index.ts", index(manifests));
+  files.set("index.generated.ts", index(manifests));
   const config = await prettier.resolveConfig(path.join(ROOT, "package.json"));
   for (const [file, text] of files) files.set(file, await prettier.format(text, { ...config, filepath: file }));
   return files;
 }
 
-function listFiles(dir, prefix = "") {
+/** The generated files a target holds, beside the package's own. */
+function listGenerated(dir, prefix = "") {
   if (!existsSync(dir)) return [];
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
-    entry.isDirectory() ? listFiles(path.join(dir, entry.name), `${prefix}${entry.name}/`) : [`${prefix}${entry.name}`],
+    entry.isDirectory()
+      ? listGenerated(path.join(dir, entry.name), `${prefix}${entry.name}/`)
+      : GENERATED.test(entry.name)
+        ? [`${prefix}${entry.name}`]
+        : [],
   );
 }
 
@@ -174,7 +188,7 @@ const files = await outputs(await loadManifests());
 const stale = [];
 for (const target of TARGETS) {
   const dir = path.join(ROOT, target);
-  for (const file of listFiles(dir)) {
+  for (const file of listGenerated(dir)) {
     if (files.has(file)) continue;
     stale.push(`${target}/${file}`);
     if (!check) rmSync(path.join(dir, file));

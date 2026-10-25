@@ -1,5 +1,5 @@
 import type { Theme } from "@mui/material/styles";
-import { MANIFESTS, PROVIDER_IDS, type Chip } from "../providers/_generated";
+import { MANIFESTS, PROVIDER_IDS, type Chip } from "../providers/index.generated";
 
 // `color`/`textColor` are sx palette tokens or hex brand colors; `textColor` may also be a theme
 // callback. `outlined` adds a primary-colour ring.

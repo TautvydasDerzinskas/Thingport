@@ -1,7 +1,7 @@
 // What the backend calls a provider and the things it files, kept apart from the services so provider modules can use
 // them without reaching the registry they're part of.
 
-import { isProviderId, LIKES_ID_PREFIX, MANIFESTS, PROVIDER_IDS, type ProviderId } from "./_generated";
+import { isProviderId, LIKES_ID_PREFIX, MANIFESTS, PROVIDER_IDS, type ProviderId } from "./index.generated";
 
 export function providerName(provider: string): string {
   return isProviderId(provider) ? MANIFESTS[provider].name : provider;

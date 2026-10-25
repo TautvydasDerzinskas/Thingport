@@ -2,7 +2,7 @@
 
 import { sleep } from "../../content/runtime";
 import { send } from "../../shared/messages";
-import { MANIFESTS } from "../../shared/providers/_generated";
+import { MANIFESTS } from "../index.generated";
 
 // The header is drawn after load; give up quietly if it never shows (e.g. signed out).
 const HEADER_WAIT_MS = 15_000;

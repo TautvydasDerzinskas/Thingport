@@ -22,7 +22,7 @@ import { UnauthorizedError } from "../../api/client";
 import { dashboardApi, type TrendingModel, type TrendingProvider, type TrendingResult } from "../../api/dashboard";
 import { printProviderInfo } from "../../constants/importProviders";
 import ProviderBadge from "../../components/ProviderBadge";
-import { MANIFESTS } from "../../providers/_generated";
+import { MANIFESTS } from "../../providers/index.generated";
 import { ListRowSkeletons } from "../../components/ListSkeleton";
 import { openConfiguration } from "../../utils/configurationEvents";
 import DashboardCard, { DashboardCardBody, DashboardCardTitle } from "./DashboardCard";

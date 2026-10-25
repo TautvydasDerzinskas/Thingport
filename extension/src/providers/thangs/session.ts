@@ -3,7 +3,7 @@
 // on when the browser's change: a sign-in, or the site renewing its own.
 
 import type { SessionSource } from "../../background/sessionSync";
-import { MANIFESTS } from "../../shared/providers/_generated";
+import { MANIFESTS } from "../index.generated";
 
 const { thangs } = MANIFESTS;
 
