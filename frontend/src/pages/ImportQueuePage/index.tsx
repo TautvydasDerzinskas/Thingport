@@ -1,4 +1,4 @@
-import { isStalled, queueJobActions } from "./queueJobActions";
+import { queueJobActions } from "./queueJobActions";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import Stack from "@mui/material/Stack";
@@ -50,7 +50,7 @@ const POLL_IDLE_MS = 8000;
 type StatusColor = "default" | "success" | "warning" | "error" | "info";
 
 function jobStatus(job: AdminImportJob): { key: string; color: StatusColor } {
-  if (isStalled(job)) return { key: "stalled", color: "error" };
+  // runner_live is process-local, so it cannot classify a job running on another API node.
   if (job.status === "QUEUED") return { key: "queued", color: "info" };
   if (job.status === "PAUSED") return { key: job.runner_live ? "pausing" : "paused", color: "info" };
   if (job.status === "RUNNING") return { key: "running", color: "warning" };
