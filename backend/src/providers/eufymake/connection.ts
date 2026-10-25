@@ -22,7 +22,7 @@ export const eufymakeConnection: ConnectionSlot = {
       throw new HttpError(
         422,
         "That doesn't look like a eufyMake sign-in: copy the whole mk-userinfo value from the site's local " +
-          "storage -- one long line starting JTdC -- and paste it as it comes. A token on its own won't do, as " +
+          "storage -- one long line of letters and digits, or JSON on an older build -- and paste it as it comes. A token on its own won't do, as " +
           "eufyMake needs the Gtoken that goes with it.",
       );
     }

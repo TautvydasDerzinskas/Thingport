@@ -86,9 +86,13 @@ export function normalizeEufymakeSession(
     token = labelledHex(text, ["x-auth-token", "auth_token"]);
     gtoken = labelledHex(text, ["gtoken"]);
     id = labelledHex(text, ["user_id", "userid", "euid"]) ?? id;
-    // Pasted with the names stripped off: the run of exactly 32 digits is the Gtoken, the other one the token.
-    const spare = hexRuns(text).filter((run) => !sameHex(run, gtoken) && !sameHex(run, id));
-    gtoken ??= spare.find((run) => GTOKEN.test(run)) ?? null;
+    // A user id settles the Gtoken, its MD5, so a pasted copy of that isn't taken for the token.
+    if (!gtoken && id && USER_ID.test(id)) gtoken = eufymakeGtoken(id.toLowerCase());
+    // Pasted with the names stripped off: the run of exactly 32 digits is the Gtoken, the other one the token. A
+    // token can be 32 digits too, and then either could be the Gtoken, so it has to come labelled.
+    const spare = hexRuns(text).filter((run) => !sameHex(run, token) && !sameHex(run, gtoken) && !sameHex(run, id));
+    const short = spare.filter((run) => GTOKEN.test(run));
+    if (!gtoken && short.length === 1) gtoken = short[0];
     token ??= spare.find((run) => !sameHex(run, gtoken)) ?? null;
   }
   id = id && USER_ID.test(id) ? id.toLowerCase() : null;

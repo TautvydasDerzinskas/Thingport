@@ -166,6 +166,22 @@ describe("eufyMake sign-in", () => {
     expect(normalizeEufymakeSession(`${gtoken}\n${TOKEN}`)).toEqual({ token: TOKEN, gtoken, userId: null });
   });
 
+  it("won't guess which of two unlabelled 32-digit values is the Gtoken", () => {
+    const short = TOKEN.slice(0, 32);
+    expect(normalizeEufymakeSession(`${short}\n${gtoken}`)).toBeNull();
+    expect(normalizeEufymakeSession(`X-Auth-Token: ${short}\n${gtoken}`)).toEqual({
+      token: short,
+      gtoken,
+      userId: null,
+    });
+    expect(normalizeEufymakeSession(`${short}\nGtoken: ${gtoken}`)).toEqual({ token: short, gtoken, userId: null });
+    expect(normalizeEufymakeSession(`${gtoken}\n${short}`, EUFY_USER)).toEqual({
+      token: short,
+      gtoken,
+      userId: EUFY_USER,
+    });
+  });
+
   it("takes the user id from a pasted cookie row, whose Gtoken it works out", () => {
     const cookies = `makeitreal-euid\t${EUFY_USER}\nx-auth-token\t${TOKEN}`;
     expect(normalizeEufymakeSession(cookies)).toEqual({ token: TOKEN, gtoken, userId: EUFY_USER });

@@ -4174,9 +4174,9 @@
         "steps": [
           "Le plus simple : avec Thingport Grab, il suffit d’ouvrir makeitreal.eufymake.com en étant connecté. Votre compte est relié, et une nouvelle connexion est envoyée chaque fois que vous vous y reconnectez.",
           "Ou manuellement : connectez-vous à makeitreal.eufymake.com et ouvrez les outils de développement de votre navigateur (F12).",
-          "Sous Application (Chrome, Edge) ou Stockage (Firefox) → Local Storage → makeitreal.eufymake.com, copiez la valeur complète de mk-userinfo et collez-la ci-dessous — une seule longue ligne commençant par JTdC…"
+          "Sous Application (Chrome, Edge) ou Stockage (Firefox) → Local Storage → makeitreal.eufymake.com, copiez la valeur complète de mk-userinfo et collez-la ci-dessous — une seule longue ligne de lettres et de chiffres, ou du JSON sur une version plus ancienne"
         ],
-        "placeholder": "La valeur complète de mk-userinfo (JTdC…)"
+        "placeholder": "La valeur complète de mk-userinfo"
       },
       "status": {
         "notConnected": "Reliez votre compte pour lire vos « J’aime » eufyMake. Ses modèles s’importent sans lui.",

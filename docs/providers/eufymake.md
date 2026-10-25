@@ -33,9 +33,10 @@ reads it from an open tab. By hand:
 2. Open DevTools (`F12`, or `Cmd+Option+I` on macOS).
 3. Chrome/Edge: **Application** tab > **Local Storage** > `https://makeitreal.eufymake.com`. Firefox: **Storage**
    tab > **Local Storage**.
-4. Copy the whole value of `mk-userinfo`. Since October 2026 the site stores it base64-encoded, so it is one long
-   line starting `JTdC` (that is `%7B`, the `{` of the JSON inside); builds before that kept the JSON as it was,
-   starting `{"user_id":`. Either is fine -- paste it as it comes.
+4. Copy the whole value of `mk-userinfo`. Since October 2026, the site stores it base64-encoded, so it is one long
+   line of letters and digits: usually starting `JTdC` (that is `%7B`, the `{` of the JSON inside), or `ZXhw` when
+   the site has stamped it with an expiry (`exp@`). Builds before that kept the JSON as it was, starting
+   `{"user_id":`. Any of these is fine -- paste it as it comes.
 
    ```text
    JTdCJTIydXNlcl9pZCUyMiUzQSUyMj...JTIyJTdE

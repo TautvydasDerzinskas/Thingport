@@ -4150,9 +4150,9 @@
         "steps": [
           "Easiest: with Thingport Grab, just open makeitreal.eufymake.com while signed in. It connects your account, and sends a new sign-in whenever you sign in there again.",
           "Or by hand: sign in at makeitreal.eufymake.com and open your browser's developer tools (F12).",
-          "Under Application (Chrome, Edge) or Storage (Firefox) → Local Storage → makeitreal.eufymake.com, copy the whole value of mk-userinfo and paste it below — one long line starting JTdC…"
+          "Under Application (Chrome, Edge) or Storage (Firefox) → Local Storage → makeitreal.eufymake.com, copy the whole value of mk-userinfo and paste it below — one long line of letters and digits, or JSON from an older build"
         ],
-        "placeholder": "The whole mk-userinfo value (JTdC…)"
+        "placeholder": "The whole mk-userinfo value"
       },
       "status": {
         "notConnected": "Connect your account to read your eufyMake likes. Its models import without it.",
