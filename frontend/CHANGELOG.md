@@ -1,5 +1,32 @@
 # Thingport frontend changelog
 
+# [thingport-frontend-v1.3.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-frontend-v1.2.0...thingport-frontend-v1.3.0) (2026-10-25)
+
+
+### Bug Fixes
+
+* community widgets from develop on the dev image, no duplicate weather panel ([#138](https://github.com/TautvydasDerzinskas/Thingport/issues/138)) ([6b9a478](https://github.com/TautvydasDerzinskas/Thingport/commit/6b9a478035efd2874d6808eaac632df7e37c2b32))
+* keep long file names without spaces from widening the model page's side panel ([#136](https://github.com/TautvydasDerzinskas/Thingport/issues/136)) ([1446304](https://github.com/TautvydasDerzinskas/Thingport/commit/144630404cda7a2be88285102e60b30e6cc54c98))
+* link the Download page's Bridge buttons to bridge-latest ([#158](https://github.com/TautvydasDerzinskas/Thingport/issues/158)) ([6a36b3d](https://github.com/TautvydasDerzinskas/Thingport/commit/6a36b3d20ee09752388e5f2806dab91cde5b6ed9)), closes [#155](https://github.com/TautvydasDerzinskas/Thingport/issues/155)
+* match provider hosts on a dot boundary, so look-alike domains never get a user's cookie ([#150](https://github.com/TautvydasDerzinskas/Thingport/issues/150)) ([e67924e](https://github.com/TautvydasDerzinskas/Thingport/commit/e67924ee8c18493182c5e149e5306a1e6c8269f4))
+* open files in OrcaSlicer without the session token in their name ([#134](https://github.com/TautvydasDerzinskas/Thingport/issues/134)) ([5d53af3](https://github.com/TautvydasDerzinskas/Thingport/commit/5d53af3c60ce4e3e87b6dc29a9088956d62e9d27))
+
+
+### Features
+
+* add the Pinshape provider  ([#164](https://github.com/TautvydasDerzinskas/Thingport/issues/164)) ([7cd0bca](https://github.com/TautvydasDerzinskas/Thingport/commit/7cd0bca062de072c41c7dc46f916c0b9f7036af4))
+* added bulk management for tags and improved bulk removal for collections ([8eea308](https://github.com/TautvydasDerzinskas/Thingport/commit/8eea30871ad33946796c0710034be1b397aeb459))
+* dashboard remade (v3) + custom dashboard widget system ([#131](https://github.com/TautvydasDerzinskas/Thingport/issues/131)) ([0dfdae5](https://github.com/TautvydasDerzinskas/Thingport/commit/0dfdae545f946d65c6141363ea9303801752ad28))
+* **dashboard:** add widget creation with AI scene ([#165](https://github.com/TautvydasDerzinskas/Thingport/issues/165)) ([931a90c](https://github.com/TautvydasDerzinskas/Thingport/commit/931a90c2448a7eb312dbc38739401eb25f264e70))
+* go back over stored files when file reuse is turned on ([#143](https://github.com/TautvydasDerzinskas/Thingport/issues/143)) ([76130fa](https://github.com/TautvydasDerzinskas/Thingport/commit/76130fafb7e32c269bc9451c12c258408c15ecfb))
+* keep browsers signed in ([#137](https://github.com/TautvydasDerzinskas/Thingport/issues/137)) ([6d13036](https://github.com/TautvydasDerzinskas/Thingport/commit/6d13036b83bb63e6aa1a6ede5fd49c7081368130))
+* **mcp:** edit_model and tools to change a model's pictures, files and category ([#163](https://github.com/TautvydasDerzinskas/Thingport/issues/163)) ([c4abb24](https://github.com/TautvydasDerzinskas/Thingport/commit/c4abb24800efb2ea1af6e7e95c60b04eae18da8f))
+* **mcp:** upload_model, list_model_files and get_model_file tools ([#162](https://github.com/TautvydasDerzinskas/Thingport/issues/162)) ([3464316](https://github.com/TautvydasDerzinskas/Thingport/commit/34643164644906077fc6c56212acc80d1baa0c05)), closes [#154](https://github.com/TautvydasDerzinskas/Thingport/issues/154)
+* open models in any installed slicer and download from the same menu ([#133](https://github.com/TautvydasDerzinskas/Thingport/issues/133)) ([f2e71f6](https://github.com/TautvydasDerzinskas/Thingport/commit/f2e71f63c5353d639eafa3c2d2654d7e390a90c2))
+* search opens over the page from a top bar button, with ⌘K actions per result ([#139](https://github.com/TautvydasDerzinskas/Thingport/issues/139)) ([ce42a44](https://github.com/TautvydasDerzinskas/Thingport/commit/ce42a44300581e0f368a01dc12b9b9048324e581))
+* share identical model files between users via copy-on-write clones ([#132](https://github.com/TautvydasDerzinskas/Thingport/issues/132)) ([bc31127](https://github.com/TautvydasDerzinskas/Thingport/commit/bc31127f9dc7edb648dddcd5053a216e011625bc)), closes [#130](https://github.com/TautvydasDerzinskas/Thingport/issues/130)
+* share identical supporting files and images between users ([#142](https://github.com/TautvydasDerzinskas/Thingport/issues/142)) ([e7df2f9](https://github.com/TautvydasDerzinskas/Thingport/commit/e7df2f9307403160590873566b5a799b72c816b0))
+
 # [thingport-frontend-v1.2.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-frontend-v1.1.0...thingport-frontend-v1.2.0) (2026-10-21)
 
 
