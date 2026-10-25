@@ -7,12 +7,9 @@ import { MANIFESTS } from "../index.generated";
 
 const { pinshape } = MANIFESTS;
 
+// A lookup that fails throws on, so the sync takes it as unreadable rather than signed out.
 async function cookieValue(name: string): Promise<string> {
-  try {
-    return (await chrome.cookies.get({ url: pinshape.site, name }))?.value ?? "";
-  } catch {
-    return "";
-  }
+  return (await chrome.cookies.get({ url: pinshape.site, name }))?.value ?? "";
 }
 
 export const pinshapeSession: SessionSource = {

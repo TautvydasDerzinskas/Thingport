@@ -71,6 +71,9 @@ describe("Pinshape links", () => {
     const bare = parseSyncSource("https://pinshape.com/users/208297?tab=likes")!;
     expect(bare.likesOf).toBe("208297");
     expect(syncLikesUsername({ externalId: bare.externalId, sourceUrl: bare.url })).toBe("208297");
+    // A name that isn't valid percent-encoding stays as written.
+    const odd = parseSyncSource("https://pinshape.com/users/208297-%?tab=likes")!;
+    expect(syncLikesUsername({ externalId: odd.externalId, sourceUrl: odd.url })).toBe("%");
     // Other sites' "/users/…" paths are theirs as before.
     expect(syncLikesUsername({ externalId: "likes:users", sourceUrl: "https://www.thingiverse.com/users/likes" })).toBe(
       "users",

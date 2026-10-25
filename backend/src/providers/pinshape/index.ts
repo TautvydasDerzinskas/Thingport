@@ -91,8 +91,8 @@ export const pinshapeImport: SourcedImport<string, PinshapeModelResolution> = {
 
 export const pinshapeTrending: ProviderTrending = { fetch: (_userId, limit) => fetchPinshapePopular(limit) };
 
-/** A collection, or someone's likes, from a Pinshape link; anyone's to read. */
-async function listOf(url: string): Promise<ProviderList & { title: string }> {
+/** A collection, or someone's likes, from a Pinshape link; anyone's to read. A collection's first `maxItems`. */
+async function listOf(url: string, maxItems?: number): Promise<ProviderList & { title: string }> {
   const likes = parsePinshapeLikesUrl(url);
   const collection = likes ? null : parsePinshapeCollectionUrl(url);
   if (!likes && !collection) throw new HttpError(400, "Not a link to a Pinshape collection or someone's likes");
@@ -105,7 +105,7 @@ async function listOf(url: string): Promise<ProviderList & { title: string }> {
       title = pinshapeLikesName(found.owner);
       listing = found;
     } else {
-      const found = await fetchPinshapeCollection(collection!.collectionId);
+      const found = await fetchPinshapeCollection(collection!.collectionId, maxItems);
       if (!found) throw new HttpError(404, "That collection can't be found. It may have been deleted.");
       title = found.info.name;
       listing = found;
@@ -134,7 +134,8 @@ export const pinshapeLists: ProviderLists = {
     .min(1)
     .max(1000),
   async start(userId, url) {
-    const { title } = await listOf(url);
+    // Only its title: the first page has it.
+    const { title } = await listOf(url, 1);
     return {
       batch: {
         // Each model's import reads the sign-in itself.

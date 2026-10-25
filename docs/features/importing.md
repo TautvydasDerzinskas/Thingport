@@ -27,8 +27,8 @@ back to where it came from. If the original page disappears, the model is still 
 
 - Every file, and on MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud and NexPrint, its print profiles: the one the link points to, all of the
   designer's, or the community's too. Each profile becomes its own file on the model.
-- The photo gallery, the formatted description, tags and the source site's category, which Thingport maps to your own
-  [categories](organize-and-search.md).
+- The photo gallery, the formatted description, tags and, where the site gives one, its category, which Thingport maps
+  to your own [categories](organize-and-search.md).
 - The author, with their avatar and profile, linked to an [author page](authors.md).
 
 If a detail couldn't be fetched at the time, such as the author, **Fetch missing details** on the model page tries
@@ -43,9 +43,9 @@ from Thingport Grab wait in **Administration → Import queue** until they're st
 
 ## Before you start
 
-MakerWorld needs your session cookie, Printables works with no setup, and Thingiverse needs an App Token set by an
-admin. The other sites each need a key or your own sign-in, which Thingport Grab mostly hands over for you; MakerOnline's
-files come only through Grab. [Providers](../PROVIDER_SETUP.md) compares what each one needs, with a setup page per
+MakerWorld needs your session cookie, Printables and eufyMake work with no setup, and Thingiverse needs an App Token set
+by an admin. The other sites each need a key or your own sign-in, which Thingport Grab mostly hands over for you;
+MakerOnline's files come only through Grab. [Providers](../PROVIDER_SETUP.md) compares what each one needs, with a setup page per
 site. Admins can also [turn a provider off](../PROVIDER_SETUP.md#turning-a-provider-off) for the whole instance, and
 then nothing is imported from it.
 

@@ -63,17 +63,20 @@ export async function getUserPinshapeCookie(userId: string): Promise<string | nu
 }
 
 /** A new sign-in clears an earlier rejection. Who it is, where known, is kept on disconnect, as for MakerOnline: as
- *  checked, or else the id its remember token starts with, keeping what's known of that id but not another's. */
+ *  checked, or else the id its remember token starts with, keeping what's known of that id but not another's. A
+ *  sign-in that doesn't say whose it is forgets the last one's: it may be someone else's. */
 export async function setUserPinshapeSession(
   userId: string,
   session: PinshapeSession | null,
   account: PinshapeAccount | null = null,
 ): Promise<boolean> {
-  let who: { accountId: string; accountName: string | null } | null = null;
+  let who: { accountId: string | null; accountName: string | null } | null = null;
   if (account) who = { accountId: account.key, accountName: account.name };
-  else if (session?.userId && (await getPinshapeConnection(userId)).account?.userId !== session.userId) {
-    who = { accountId: session.userId, accountName: null };
-  }
+  else if (session?.userId) {
+    if ((await getPinshapeConnection(userId)).account?.userId !== session.userId) {
+      who = { accountId: session.userId, accountName: null };
+    }
+  } else if (session) who = { accountId: null, accountName: null };
   await writeConnection<Secret>(userId, ID, {
     secret: session && { remember: session.remember, session: session.session },
     expiresAt: null,

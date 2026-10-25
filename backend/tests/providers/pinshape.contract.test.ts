@@ -211,5 +211,9 @@ describe("Pinshape specifics", () => {
       key: "1000002",
       name: null,
     });
+    // A session cookie alone doesn't say whose it is, so the last account isn't kept for it.
+    await connect(ctx.userId);
+    await pinshapeConnection.save(ctx.userId, { session: `session=${"y".repeat(40)}` });
+    expect(await getPinshapeConnection(ctx.userId)).toEqual({ state: "connected", account: null });
   });
 });

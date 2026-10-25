@@ -40,5 +40,14 @@ export function syncLikesUsername(sync: { externalId: string; sourceUrl: string 
   const fromUrl = pinshape
     ? pinshape[1]
     : (/^[a-z]{2}$/.test(parts[0] ?? "") && parts.length === 4 ? parts[2] : parts[0])?.replace(/^@/, "");
-  return fromUrl ? decodeURIComponent(fromUrl) : sync.externalId.slice(LIKES_ID_PREFIX.length);
+  return fromUrl ? decodeName(fromUrl) : sync.externalId.slice(LIKES_ID_PREFIX.length);
+}
+
+/** As written where its percent-encoding is malformed (`%`, `%zz`), which decodeURIComponent throws on. */
+function decodeName(name: string): string {
+  try {
+    return decodeURIComponent(name);
+  } catch {
+    return name;
+  }
 }
