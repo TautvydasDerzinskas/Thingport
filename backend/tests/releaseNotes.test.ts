@@ -11,6 +11,7 @@ import {
   parseChangelog,
   parseCuratedNotes,
 } from "../src/services/releaseNotesService";
+import { compareVersions } from "../src/services/systemNotificationService";
 
 const BACKEND_CHANGELOG = `# Thingport backend changelog
 
@@ -156,6 +157,56 @@ describe("release notes", () => {
     }
   });
 
+  it("shows the release's curated notes on a quiet hotfix of it, but not across x.y lines", async () => {
+    const files: Record<string, string> = {
+      // The file still names 1.2.0: a quiet 1.2.1 ships without curated notes of its own.
+      "/release-notes/latest-release-notes.json": JSON.stringify({
+        version: "1.2.0",
+        items: [{ type: "feature", title: "Curated feature" }],
+      }),
+      "/backend/CHANGELOG.md": BACKEND_CHANGELOG,
+      "/frontend/CHANGELOG.md": FRONTEND_CHANGELOG,
+    };
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const body = files[new URL(String(input)).pathname];
+      return new Response(body ?? "", { status: body ? 200 : 404 });
+    });
+    try {
+      clearReleaseNotesCache();
+      const notes = await getReleaseNotes({ version: "1.2.1", since: "1.1.0" }, "https://notes.example");
+      expect(notes?.source).toBe("curated");
+      // Headed by the version the instance is on, not the one the file names.
+      expect(notes?.version).toBe("1.2.1");
+      expect(notes?.items.map((i) => i.title)).toEqual(["Curated feature", "Load listings faster"]);
+
+      // Already past 1.2.0, so the curated notes aren't theirs to see again.
+      const seen = await getReleaseNotes({ version: "1.2.1", since: "1.2.0" }, "https://notes.example");
+      expect(seen?.source).toBe("changelog");
+
+      // A file left behind a whole line never stands in for a later release's notes.
+      const later = await getReleaseNotes({ version: "1.3.1", since: "1.1.0" }, "https://notes.example");
+      expect(later?.source).toBe("changelog");
+
+      // A patch that wasn't quiet brings its own changelog entries ahead of the curated notes.
+      files["/backend/CHANGELOG.md"] = BACKEND_CHANGELOG.replace(
+        "\n# [thingport-backend-v1.2.0]",
+        "\n## [thingport-backend-v1.2.1](https://github.com/o/r/compare/a...b) (2026-11-05)\n\n\n### Bug Fixes\n\n" +
+          "* hotfix the import ([1212121](https://github.com/o/r/commit/1212121a))\n\n# [thingport-backend-v1.2.0]",
+      );
+      clearReleaseNotesCache();
+      const patched = await getReleaseNotes({ version: "1.2.1", since: "1.1.0" }, "https://notes.example");
+      expect(patched?.source).toBe("curated");
+      expect(patched?.items.map((i) => i.title)).toEqual([
+        "Hotfix the import",
+        "Curated feature",
+        "Load listings faster",
+      ]);
+    } finally {
+      fetchMock.mockRestore();
+      clearReleaseNotesCache();
+    }
+  });
+
   it("resolves curated screenshots against the file and drops unsafe ones", () => {
     const notes = parseCuratedNotes(
       {
@@ -197,9 +248,13 @@ describe("version update notification", () => {
         prisma.setting.upsert({ where: { key }, create: { key, value: version }, update: { value: version } }),
       ),
     );
-  // Never reaches the network: the quiet list is given.
+  // Never reaches the network: the quiet list is given, each entry quiet from its own x.y.0 as the file's are.
   const announce = (version: string, quiet: string[] = []) =>
-    announceVersionUpdate(version, new Date(), async (v) => quiet.includes(v));
+    announceVersionUpdate(version, new Date(), async (v, since) => {
+      if (!quiet.includes(v)) return false;
+      const from = `${v.split(".").slice(0, 2).join(".")}.0`;
+      return from === v || (since !== null && compareVersions(since, from) >= 0);
+    });
 
   beforeAll(async () => {
     const email = `release-notes-${run}@example.com`;
@@ -266,6 +321,18 @@ describe("version update notification", () => {
     expect((await updates())[0].internalPath).toBe("?whats-new=1.3.0&since=1.2.0");
   });
 
+  it("still announces a quiet hotfix to whoever hasn't seen the release it fixes", async () => {
+    // 1.2.0 -> 1.2.1: they already read 1.2.0's notes, so the hotfix is silent.
+    await ranBefore("1.2.0");
+    expect(await announce("1.2.1", ["1.2.1"])).toBe(false);
+    expect(await updates()).toHaveLength(0);
+
+    // 1.1.0 -> 1.2.1 straight: 1.2.0's notes would be lost, so they are told, and What's new starts at 1.1.0.
+    await ranBefore("1.1.0");
+    expect(await announce("1.2.1", ["1.2.1"])).toBe(true);
+    expect((await updates())[0].internalPath).toBe("?whats-new=1.2.1&since=1.1.0");
+  });
+
   it("reads quiet releases from the repo file, and treats an unreadable one as not quiet", async () => {
     let body: string | null = JSON.stringify({ versions: ["1.2.1", 7] });
     const fetchMock = vi
@@ -273,15 +340,24 @@ describe("version update notification", () => {
       .mockImplementation(async () => new Response(body ?? "", { status: body === null ? 404 : 200 }));
     try {
       clearReleaseNotesCache();
-      expect(await isQuietRelease("1.2.1", "https://notes.example")).toBe(true);
-      expect(await isQuietRelease("1.3.0", "https://notes.example")).toBe(false);
+      // Quiet for an instance already on 1.2.0, told to anyone further back, and for a version not listed at all.
+      expect(await isQuietRelease("1.2.1", "1.2.0", "https://notes.example")).toBe(true);
+      expect(await isQuietRelease("1.2.1", "1.2.5", "https://notes.example")).toBe(true);
+      expect(await isQuietRelease("1.2.1", "1.1.0", "https://notes.example")).toBe(false);
+      expect(await isQuietRelease("1.2.1", null, "https://notes.example")).toBe(false);
+      expect(await isQuietRelease("1.3.0", "1.2.1", "https://notes.example")).toBe(false);
+      // An explicit quietFrom, and a version that is its own line's first release, are quiet for everyone.
+      body = JSON.stringify({ versions: [{ version: "1.2.1", quietFrom: "1.2.1" }, "1.4.0"] });
+      clearReleaseNotesCache();
+      expect(await isQuietRelease("1.2.1", "1.0.0", "https://notes.example")).toBe(true);
+      expect(await isQuietRelease("1.4.0", "1.0.0", "https://notes.example")).toBe(true);
       body = "not json";
       clearReleaseNotesCache();
-      expect(await isQuietRelease("1.2.1", "https://notes.example")).toBe(false);
+      expect(await isQuietRelease("1.2.1", "1.2.0", "https://notes.example")).toBe(false);
       body = null;
       clearReleaseNotesCache();
-      expect(await isQuietRelease("1.2.1", "https://notes.example")).toBe(false);
-      expect(await isQuietRelease("1.2.1", "")).toBe(false);
+      expect(await isQuietRelease("1.2.1", "1.2.0", "https://notes.example")).toBe(false);
+      expect(await isQuietRelease("1.2.1", "1.2.0", "")).toBe(false);
     } finally {
       fetchMock.mockRestore();
       clearReleaseNotesCache();

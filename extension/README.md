@@ -133,11 +133,10 @@ settings (walls, layer height, infill, supports). Multi-part objects may be merg
 per-object overrides and layer color changes are dropped, and you pick your own printer profile.
 Hover the bulb on the button for the same summary.
 
-- **Who sees it:** everyone who hasn't connected the extension to a Thingport instance, and people
-  who have, when the slicer chosen in Thingport's Configuration > Slicer is one of those above (with Bambu Studio or
-  OrcaSlicer picked, the original file is the right one, so the button stays hidden). To hide it
-  altogether, turn off **Normalize MakerWorld 3MFs** under **Offline features** (**Extra features** once connected) in
-  the toolbar popup.
+- **Who sees it:** everyone, whether or not the extension is connected to a Thingport instance. The
+  switch in the popup is the only thing that decides: turn off **Normalize MakerWorld 3MFs** under **Offline
+  features** (**Extra features** once connected) to hide it. With Bambu Studio or OrcaSlicer, MakerWorld's own
+  file is already the right one, so you probably want it off.
 - **Where it runs:** entirely in your browser, the same conversion Thingport's "Open normalized"
   does on the server. The file goes nowhere but your downloads folder.
 - **Limits:** you need to be signed in to MakerWorld, as for its own Download button, and files over
