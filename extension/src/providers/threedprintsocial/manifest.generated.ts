@@ -1,7 +1,7 @@
 // GENERATED from providers/threedprintsocial/manifest.ts by scripts/sync-providers.mjs. Don't edit it here:
 // change providers/ and run npm run providers:sync.
-// Not its own logo, which Thingport hasn't a copy of: an isometric cube, its three faces apart, in the Fediverse's
-// violet, as the site is a Manyfold server on the Fediverse.
+// Its roundel (Manyfold's), drawn flat: the purple disc, the cyan hexagon and the magenta star within it, without its
+// glow and gradients, which a logo here can't have.
 import type { ProviderManifest } from "../_lib/types.generated";
 
 export default {
@@ -14,10 +14,22 @@ export default {
   hosts: ["3dprint.social"],
   brand: {
     logo: {
-      color: "#6364FF",
-      path: "M12 1.6l8.6 4.95L12 11.5 3.4 6.55zM2.6 7.95l8.6 4.95v9.5l-8.6-4.95zM21.4 7.95v9.5l-8.6 4.95v-9.5z",
+      color: "#553D8F",
+      path: "M0 12a12 12 0 1 0 24 0a12 12 0 1 0 -24 0Z",
+      layers: [
+        { d: "M12 3.6L19.275 7.8L19.275 16.2L12 20.4L4.725 16.2L4.725 7.8Z", color: "#C321E0" },
+        { d: "M9.1 12a2.9 2.9 0 1 0 5.8 0a2.9 2.9 0 1 0 -5.8 0Z", color: "#1F0B26" },
+        {
+          d: "M12 3.6L19.275 16.2L4.725 16.2ZM5.418 15.8L18.582 15.8L12 4.4ZM12 20.4L4.725 7.8L19.275 7.8ZM18.582 8.2L5.418 8.2L12 19.6Z",
+          color: "#EFA3FA",
+        },
+        {
+          d: "M12 2.4L20.314 7.2L20.314 16.8L12 21.6L3.686 16.8L3.686 7.2ZM4.725 7.8L4.725 16.2L12 20.4L19.275 16.2L19.275 7.8L12 3.6Z",
+          color: "#6DF4FC",
+        },
+      ],
     },
-    accent: "#6364FF",
+    accent: "#C321E0",
   },
   signIn: "none",
   auth: [],
