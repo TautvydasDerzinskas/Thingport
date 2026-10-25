@@ -148,7 +148,8 @@ export async function removeModelsFromCollection(
       details: { name: collection.name, count: removed.length },
     });
   }
-  return { collection, removed, notIn: [...new Set(printIds)].filter((id) => !removed.includes(id)) };
+  const gone = new Set(removed);
+  return { collection, removed, notIn: [...new Set(printIds)].filter((id) => !gone.has(id)) };
 }
 
 // Favourites and History aren't real rows: they're derived from Print.favoritedAt/lastViewedAt.

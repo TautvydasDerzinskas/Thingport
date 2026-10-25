@@ -74,7 +74,7 @@ export type McpToolDefinition = {
   readOnly: boolean;
   /** A write tool a new token gets anyway, for writes that stay in the user's own space. */
   defaultOn?: boolean;
-  /** Deletes something for good, e.g. a model's file. */
+  /** Changes or removes something already there, rather than only adding: MCP's destructiveHint. */
   destructive?: boolean;
   /** Calling it again with the same arguments changes nothing more. */
   idempotent?: boolean;
@@ -657,6 +657,7 @@ const editModel: McpToolDefinition = {
     "it's a favourite. Only what's given changes. Tags are free text: a tag the library hasn't used yet is " +
     "created by giving it. Pictures change with edit_model_images, files with add_model_files and remove_model_file.",
   readOnly: false,
+  destructive: true,
   idempotent: true,
   inputSchema: {
     model_id: z.string().min(1).describe("The model's id, from search_models or list_models."),
@@ -860,6 +861,7 @@ const addModelFiles: McpToolDefinition = {
     "a sliced 3MF) takes the place of the model's own. `kind` overrides that. " +
     `Files go as base64, up to ${MCP_UPLOAD_MAX_BYTES / MB} MB in all.`,
   readOnly: false,
+  destructive: true,
   inputSchema: {
     model_id: z.string().min(1).describe("The model's id, from search_models or list_models."),
     files: z
@@ -1029,6 +1031,7 @@ const editModelImages: McpToolDefinition = {
     const unknown = [...remove, ...order].filter((id) => !current.has(id));
     if (unknown.length) throw new HttpError(404, `No such picture on this model: ${unknown.join(", ")}`);
     if (order.some((id) => remove.has(id))) throw new HttpError(400, "A picture can't be both removed and ordered");
+    if (new Set(order).size !== order.length) throw new HttpError(400, "A picture can be in the order only once");
 
     for (const id of remove) await removePreviewImage(modelId, id);
     const added = images.length ? await addUploadedPreviewImages(modelId, images) : [];
@@ -1056,6 +1059,7 @@ const renameModelFile: McpToolDefinition = {
     "Rename one of a model's plates (its 3D files), by its id from list_model_files. A name another plate has gets " +
     "a number added; the extension should stay the same.",
   readOnly: false,
+  destructive: true,
   idempotent: true,
   inputSchema: {
     model_id: z.string().min(1).describe("The model's id."),
@@ -1174,6 +1178,7 @@ const removeFromCollection: McpToolDefinition = {
     "Take models out of one of the user's collections. The models stay in the library; only their place in the " +
     "collection goes.",
   readOnly: false,
+  destructive: true,
   idempotent: true,
   inputSchema: {
     collection_id: z.string().min(1).describe("The collection, an id from list_collections."),
@@ -1242,6 +1247,7 @@ const saveWidget: McpToolDefinition = {
     "then adds it from Add panel while editing their dashboard.",
   readOnly: false,
   defaultOn: true,
+  destructive: true,
   idempotent: true,
   inputSchema: {
     slug: z

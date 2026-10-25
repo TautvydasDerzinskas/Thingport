@@ -77,10 +77,15 @@ These change your library. `save_widget` and `upload_icon` are on for a new toke
 | `save_widget`            | Creates one of your own [dashboard widgets](custom-widgets.md), or replaces one it or you saved earlier.     |
 | `upload_icon`            | Adds an image (an SVG, or a PNG, JPEG or WebP) to your icons, as the icon browser's **Upload** does.         |
 
-`delete_model`, `edit_model_images` and `remove_model_file` delete what you ask them to for good, so they're marked as
-destructive and an assistant's app may ask you before calling them; the rest delete nothing. An import runs the same checks as **+ Add > Import** (a provider an admin
-turned off stays off, and a model already in your library isn't imported twice) and shows up in your notifications and
-the admin logs the same way. It doesn't ask for a captcha, even when imports do in the app: like Thingport Grab, an
+Only `import_model`, `upload_model`, `create_category`, `create_collection`, `add_to_collection` and `upload_icon` just
+add. The rest change or take away what's there, so they're marked as destructive and an assistant's app may ask you
+before calling them: `delete_model`, `edit_model_images` and `remove_model_file` delete models, pictures and files for
+good, `add_model_files` replaces a model's sliced print, `edit_model` and `rename_model_file` overwrite what they change,
+`remove_from_collection` takes models out of a collection (not your library) and `save_widget` replaces a widget with the
+same name.
+
+An import runs the same checks as **+ Add > Import** (a provider an admin turned off stays off, and a model already in
+your library isn't imported twice) and shows up in your notifications and the admin logs the same way. It doesn't ask for a captcha, even when imports do in the app: like Thingport Grab, an
 assistant has nowhere to show one. Most imports finish within the call; a long one carries on in the background, and the
 assistant follows it with `get_import_status`.
 

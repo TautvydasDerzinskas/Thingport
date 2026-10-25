@@ -391,8 +391,16 @@ describe("the tools that write", () => {
     "add_to_collection",
     "remove_from_collection",
   ];
-  // The ones that delete something for good, so an assistant's client can ask before calling them.
-  const DESTRUCTIVE_TOOLS = ["edit_model_images", "remove_model_file", "delete_model"];
+  // The ones that change or remove what's there rather than only add, so an assistant's client can ask first.
+  const DESTRUCTIVE_TOOLS = [
+    "edit_model",
+    "edit_model_images",
+    "add_model_files",
+    "remove_model_file",
+    "rename_model_file",
+    "delete_model",
+    "remove_from_collection",
+  ];
   // A public IP literal passes the SSRF check without a DNS lookup; fetch is mocked below.
   const FILE_URL = "https://93.184.215.14/files/mcp-imported-widget.stl";
   let writer: Account;
@@ -789,6 +797,17 @@ describe("the tools that write", () => {
     expect(result.isError).toBe(true);
     expect(await prisma.previewImage.count({ where: { id: { in: [data.images[0].id, bobImage.id] } } })).toBe(2);
     expect((await callTool(writer.token, "list_model_images", { model_id: bobSecretId })).isError).toBe(true);
+
+    // A repeated id in the order is refused before the new picture is kept.
+    const pictureId = data.images[0].id;
+    const before = await prisma.previewImage.findMany({ where: { printId: id }, select: { id: true } });
+    const repeated = await callTool(writer.token, "edit_model_images", {
+      model_id: id,
+      add: [await png("#33cc33")],
+      order: [pictureId, pictureId],
+    });
+    expect(repeated.isError).toBe(true);
+    expect(await prisma.previewImage.findMany({ where: { printId: id }, select: { id: true } })).toEqual(before);
   });
 
   it("add_model_files adds plates and supporting files, and remove_model_file takes them off", async () => {
@@ -846,8 +865,8 @@ describe("the tools that write", () => {
       name: "list_model_images",
       arguments: { model_id: id, include_pictures: true },
     });
-    const content = res.body.result.content as { type: string; mimeType?: string; data?: string }[];
-    expect(JSON.parse(content[0].text as unknown as string).pictures_shown).toBe(2);
+    const content = res.body.result.content as { type: string; text: string; mimeType?: string; data?: string }[];
+    expect(JSON.parse(content[0].text).pictures_shown).toBe(2);
     expect(content.slice(1).map((c) => [c.type, c.mimeType])).toEqual([
       ["image", "image/jpeg"],
       ["image", "image/jpeg"],
