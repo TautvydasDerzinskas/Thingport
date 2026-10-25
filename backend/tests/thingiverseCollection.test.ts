@@ -5,8 +5,8 @@ import {
   fetchThingiverseCollectionThings,
   fetchThingiverseCollectionTitle,
   parseThingiverseCollectionUrl,
-} from "../src/services/thingiverseApi";
-import { setThingiverseAccessToken } from "../src/services/settingsService";
+} from "../src/providers/thingiverse/api";
+import { setThingiverseAccessToken } from "../src/providers/thingiverse/token";
 import { prisma } from "../src/db";
 
 const ACCESS_TOKEN = "test-access-token";
@@ -173,6 +173,37 @@ describe("POST /import/thingiverse-collection/entries", () => {
       .set("Authorization", `Bearer ${token}`)
       .send({ url: "https://www.thingiverse.com/Derzinskas/likes", tags: [] });
     expect(res.status).toBe(400);
+  });
+
+  it("reads the same list at the generic endpoint", async () => {
+    await setThingiverseAccessToken(ACCESS_TOKEN);
+    global.fetch = vi.fn<(input: RequestInfo | URL) => Promise<Response>>(async (input) => {
+      const url = String(input);
+      if (url.includes("/things?")) return jsonResponse(200, [thingEntry(1)]);
+      return jsonResponse(200, { id: Number(COLLECTION_ID), name: COLLECTION_TITLE });
+    }) as unknown as typeof fetch;
+
+    const res = await request(app)
+      .post("/api/import/thingiverse/list/entries")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ url: `https://www.thingiverse.com/Derzinskas/collections/${COLLECTION_ID}/things`, tags: [] });
+
+    expect(res.status).toBe(200);
+    expect(res.body.title).toBe(COLLECTION_TITLE);
+    expect(res.body.entries.map((e: { design_id: string }) => e.design_id)).toEqual(["1"]);
+  });
+
+  it("turns a list of another provider down at the generic endpoint, and a provider it doesn't know", async () => {
+    const other = await request(app)
+      .post("/api/import/thingiverse/list/entries")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ url: "https://www.printables.com/@someone/collections/123", tags: [] });
+    expect(other.status).toBe(400);
+    const unknown = await request(app)
+      .post("/api/import/nosuchsite/list/entries")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ url: `https://www.thingiverse.com/Derzinskas/collections/${COLLECTION_ID}/things`, tags: [] });
+    expect(unknown.status).toBe(404);
   });
 
   it("fails with a clear 503 when no App Token is configured", async () => {

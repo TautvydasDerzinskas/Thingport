@@ -5,9 +5,9 @@ import {
   parseMyminifactoryCollectionUrl,
   parseMyminifactoryObjectUrl,
   resolveMyminifactoryDownload,
-} from "../src/services/myminifactoryApi";
+} from "../src/providers/myminifactory/api";
 import { modelIdFromUrl, modelUrlFor, parseSyncSource } from "../src/services/collectionSyncService";
-import { normalizeMyminifactoryCookie } from "../src/services/myminifactorySessionService";
+import { normalizeMyminifactoryCookie } from "../src/providers/myminifactory/session";
 import { buildImportSourceUrl, identifySourceModel } from "../src/services/importService";
 
 // The MyMiniFactory client against the official API v2's documented shapes, with fetch mocked. No database.

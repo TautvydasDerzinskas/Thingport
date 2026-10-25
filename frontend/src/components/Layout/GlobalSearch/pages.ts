@@ -1,4 +1,5 @@
 import { SELF_AUTHOR_ID } from "../../../constants/selfAuthor";
+import { MANIFESTS, PROVIDER_IDS } from "../../../providers/index.generated";
 import { bestScore, minScoreFor } from "./match";
 
 // The app's own views, and Administration's for admins.
@@ -80,16 +81,7 @@ export const SEARCH_PAGES: SearchPage[] = [
   adminPage("adminProviders", "/admin-providers", "app:adminSettings.providers.heading", [
     "providers",
     "import sources",
-    "makerworld",
-    "printables",
-    "thingiverse",
-    "myminifactory",
-    "snapmaker",
-    "makeronline",
-    "creality cloud",
-    "nexprint",
-    "thangs",
-    "cults3d",
+    ...PROVIDER_IDS.map((id) => MANIFESTS[id].name.toLowerCase()),
     "app token",
     "api key",
     "access token",

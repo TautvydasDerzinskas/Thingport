@@ -32,6 +32,7 @@ import { startStorageMove } from "../src/services/storageMoveService";
 import { setFileReuse } from "../src/services/settingsService";
 import { withStorageLock } from "../src/utils/storageLock";
 import { prisma } from "../src/db";
+import { delegate, managedPathOf, STORED } from "../src/services/storedContent";
 
 // The backfill replaces files already stored by clones of identical ones, in place. What matters most is that it never
 // loses or changes a file: the checks below are each a way the swap must refuse or recover.
@@ -119,6 +120,24 @@ function leftoverTemps(): string[] {
   return found;
 }
 
+/** Drops every stored-file row whose file isn't there to read, whoever's it is. */
+async function dropUnreadableRows() {
+  for (const kind of ["plate", "printFile", "previewImage", "descriptionImage"] as const) {
+    const rows = await delegate(kind).findMany({ where: STORED[kind].managed, select: STORED[kind].select });
+    const gone = rows
+      .filter((row) => {
+        const file = managedPathOf(STORED[kind].toRow(row));
+        return file && !fs.statSync(file, { throwIfNoEntry: false })?.isFile();
+      })
+      .map((row) => row.id as string);
+    if (gone.length) {
+      await (prisma[kind] as unknown as { deleteMany(args: object): Promise<unknown> }).deleteMany({
+        where: { id: { in: gone } },
+      });
+    }
+  }
+}
+
 beforeAll(async () => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "reuse-backfill-"));
   firstUserId = (await register(app, "backfill", "first")).id;
@@ -126,7 +145,9 @@ beforeAll(async () => {
   const admin = await register(app, "backfill", "admin");
   await prisma.user.update({ where: { id: admin.id }, data: { role: "ADMIN" } });
   adminToken = (await request(app).post("/api/login").send({ email: admin.email, password: "password123" })).body.token;
-  // Whatever earlier test files left, settled once, so each run below sees only its own files.
+  // Whatever earlier test files left, settled once, so each run below sees only its own files. Rows whose file those
+  // files removed on purpose can't be settled: the backfill would skip them on every run, so they go first.
+  await dropUnreadableRows();
   mockClones();
   await backfill();
   vi.restoreAllMocks();

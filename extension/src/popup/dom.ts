@@ -30,6 +30,7 @@ export const els = {
   viewedClear: byId<HTMLButtonElement>("viewed-clear"),
   historyError: byId("history-error"),
   normalizeSwitch: byId<HTMLInputElement>("normalize-switch"),
+  // Thingiverse's offline features (providers/thingiverse/index.ts), switched in the popup with the others.
   thingiverseDarkSwitch: byId<HTMLInputElement>("thingiverse-dark-switch"),
   thingiverseAdsSwitch: byId<HTMLInputElement>("thingiverse-ads-switch"),
   offlineError: byId("offline-error"),

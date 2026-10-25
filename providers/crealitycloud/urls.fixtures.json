@@ -1,0 +1,51 @@
+[
+  {
+    "url": "https://www.crealitycloud.com/model-detail/Example-Model",
+    "expect": {
+      "provider": "crealitycloud",
+      "kind": "model",
+      "externalId": "example-model"
+    }
+  },
+  {
+    "url": "https://crealitycloud.com/en-us/model-detail/ABC-def/?from=app#profileId-abcdef012345abcdef012345",
+    "expect": {
+      "provider": "crealitycloud",
+      "kind": "model",
+      "externalId": "abc-def",
+      "requestedProfileId": "abcdef012345abcdef012345"
+    }
+  },
+  {
+    "url": "https://www.crealitycloud.com/collection/3d-model-collection-AbCdEf",
+    "expect": {
+      "provider": "crealitycloud",
+      "kind": "list",
+      "externalId": "3d-model-collection-AbCdEf",
+      "listKind": "collection"
+    }
+  },
+  {
+    "url": "https://crealitycloud.com/user/12345/likes",
+    "expect": {
+      "provider": "crealitycloud",
+      "kind": "list",
+      "externalId": "likes-12345",
+      "listKind": "likes"
+    }
+  },
+  {
+    "url": "https://crealitycloud.com/user/12345",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  },
+  {
+    "url": "https://badcrealitycloud.com/model-detail/example",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  }
+]

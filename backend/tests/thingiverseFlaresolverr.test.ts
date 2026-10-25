@@ -37,7 +37,7 @@ describe("fetchThingiverseApiJson FlareSolverr fallback", () => {
     await prisma.setting.deleteMany({ where: { key: "flaresolverr_url" } });
     process.env.FLARESOLVERR_URL = FLARESOLVERR_URL;
     vi.resetModules();
-    const { resolveThingiverseThing } = await import("../src/services/thingiverseApi");
+    const { resolveThingiverseThing } = await import("../src/providers/thingiverse/api");
 
     let directCalls = 0;
     let flaresolverrCalls = 0;

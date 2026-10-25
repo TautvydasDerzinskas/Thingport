@@ -13,79 +13,18 @@ import {
   SYNC_TICK_MS,
   syncSchedulerEnabled,
 } from "./collectionSyncSchedule";
-import { COLLECTION_SYNC_ITEM_DELAY_MS, IMPORT_COLLECTION_DELAY_MS, IMPORT_MAKERWORLD_CALL_DELAY_MS } from "../config";
+import { COLLECTION_SYNC_ITEM_DELAY_MS, IMPORT_COLLECTION_DELAY_MS } from "../config";
 import { sleep } from "../utils/concurrency";
 import { addPrintsToCollection } from "./collectionService";
 import { findLibraryPrints, hasProfiles, modelUrlFor, providerName, sourceDescription } from "./collectionSyncService";
-import {
-  PRINTABLES_FORGOTTEN,
-  printablesPushIsOff,
-  pushedPrintablesModels,
-  WAITING_FOR_GRAB,
-} from "./providerListingsService";
 import { getActiveJob } from "./importJobService";
-import { runLinksImportJob, SYNC_JOB_INTERRUPTED } from "./importJobRunner";
+import { type LinksImportJobBody, runLinksImportJob, SYNC_JOB_INTERRUPTED } from "./importJobRunner";
 import { startLinksJob } from "./importQueueService";
-import { extractMakerworldBearerToken, MakerworldAuthError } from "./makerworldCloudApi";
-import { checkMakerworldCollection, fetchMakerworldCollectionEntries } from "./makerworldCollections";
-import {
-  getMakerworldConnection,
-  getUserMakerworldCookie,
-  MAKERWORLD_REJECTED_ERROR,
-  markMakerworldCookieRejected,
-} from "./makerworldCookieService";
-import { checkPrintablesCollection, fetchPrintablesCollectionEntries } from "./printablesApi";
-import { fetchSnapmakerList, SnapmakerAuthError } from "./snapmakerApi";
-import {
-  fetchMakeronlineCollection,
-  fetchMakeronlineLikes,
-  MAKERONLINE_LIKES_KEY,
-  MakeronlineAuthError,
-} from "./makeronlineApi";
-import {
-  getMakeronlineConnection,
-  getUserMakeronlineToken,
-  markMakeronlineTokenRejected,
-} from "./makeronlineSessionService";
-import {
-  CrealitycloudAuthError,
-  crealitycloudLikesKey,
-  fetchCrealitycloudCollection,
-  fetchCrealitycloudLikes,
-} from "./crealitycloudApi";
-import {
-  getCrealitycloudConnection,
-  getUserCrealitycloudAuth,
-  markCrealitycloudSessionRejected,
-} from "./crealitycloudSessionService";
-import { fetchNexprintCollection } from "./nexprintApi";
-import {
-  fetchThangsCollection,
-  fetchThangsLikes,
-  fetchThangsPurchases,
-  THANGS_LIKES_KEY,
-  ThangsAuthError,
-} from "./thangsApi";
-import {
-  getThangsConnection,
-  getUserThangsId,
-  getUserThangsToken,
-  markThangsSessionRejected,
-  withThangsToken,
-} from "./thangsSessionService";
-import { Cults3dAuthError, fetchCults3dLikes, fetchCults3dOrders, fetchCults3dPrintlist } from "./cults3dApi";
-import { getCults3dConnection, getUserCults3dCredentials, markCults3dApiRejected } from "./cults3dSessionService";
-import { notifyGrabImportsQueued, queueGrabImport } from "./grabImportService";
-import { getSnapmakerConnection, getUserSnapmakerToken, markSnapmakerTokenRejected } from "./snapmakerSessionService";
-import {
-  checkThingiverseCollection,
-  checkThingiverseUser,
-  fetchThingiverseCollectionThings,
-  fetchThingiverseUserLikes,
-} from "./thingiverseApi";
-import { checkMyminifactoryCollection, fetchMyminifactoryCollectionObjects } from "./myminifactoryApi";
-import { syncLikesUsername } from "../dto";
-import { getMyminifactoryApiKey, getThingiverseAccessToken } from "./settingsService";
+import { isProviderId } from "../providers/index.generated";
+import { PROVIDERS, withLinkAuth } from "../providers/registry";
+import { SyncHeldError, type SyncProblem } from "../providers/syncProblem";
+import type { ProviderSync, SyncedList } from "../providers/types";
+import { syncLikesUsername } from "../providers/names";
 import { createNotification } from "./notificationService";
 import { createLog } from "./auditLog";
 import { getDisabledProviders, isProviderEnabled, type Provider } from "./providerSettingsService";
@@ -95,134 +34,22 @@ const MISSING_CHECKS_TO_UNSYNC = 2;
 
 type SyncWithCollection = CollectionSync & { collection: Collection };
 
-/** The user's MakerOnline or Creality Cloud likes can't be read without their sign-in; unlike a rejected one, it holds
- *  the likes only. */
-class LikesUnreadableError extends Error {
-  constructor(readonly problem: ConnectionProblem) {
-    super(problem.error);
-  }
-}
+/** How the provider's synced lists are checked; every provider with lists has it. */
+const syncOf = (provider: string): ProviderSync | undefined =>
+  isProviderId(provider) ? PROVIDERS[provider].sync : undefined;
 
-/** Likes on a provider whose collections read without a sign-in: only they wait for one. */
-const isSignInLikes = (sync: Pick<CollectionSync, "provider" | "externalId">) =>
-  (sync.provider === "makeronline" && sync.externalId === MAKERONLINE_LIKES_KEY) ||
-  (sync.provider === "crealitycloud" && sync.externalId.startsWith("likes-"));
+/** The one list a provider's problem holds, where only it needs the sign-in; all of the provider's otherwise. */
+const heldAlone = (sync: Pick<CollectionSync, "provider" | "externalId">) =>
+  syncOf(sync.provider)?.signInOnly?.(sync.externalId) ? sync.externalId : undefined;
 
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
 /** The provider collection's model ids, or null when the provider says it no longer exists. Throws
  *  when there's no clear answer, so an outage never unsyncs anything. */
-export async function fetchListing(
-  sync: Pick<CollectionSync, "userId" | "provider" | "externalId" | "sourceUrl">,
-): Promise<string[] | null> {
-  const id = sync.externalId;
-  if (sync.provider === "makerworld") {
-    // A public collection lists without a login; a private one needs the owner's.
-    const bearer = extractMakerworldBearerToken(await getUserMakerworldCookie(sync.userId));
-    if (!(await checkMakerworldCollection(id, bearer, IMPORT_MAKERWORLD_CALL_DELAY_MS))) return null;
-    const { entries } = await fetchMakerworldCollectionEntries(id, bearer, undefined, IMPORT_MAKERWORLD_CALL_DELAY_MS);
-    return entries.map((e) => e.designId);
-  }
-  if (sync.provider === "printables") {
-    // Private collections and likes come from Thingport Grab, as of the user's last visit.
-    const pushed = await pushedPrintablesModels(sync.userId, id);
-    if (pushed === "waiting") throw new Error(WAITING_FOR_GRAB);
-    if (pushed) return pushed;
-    if (!(await checkPrintablesCollection(id))) {
-      // Private, most likely: with the user's Printables account forgotten, Grab no longer says which
-      // ones are. Paused rather than unsynced, until they give it again.
-      if (await printablesPushIsOff(sync.userId)) throw new Error(PRINTABLES_FORGOTTEN);
-      return null;
-    }
-    const { entries } = await fetchPrintablesCollectionEntries(id);
-    return entries.map((e) => e.modelId);
-  }
-  if (sync.provider === "thingiverse") {
-    const token = await getThingiverseAccessToken();
-    if (!token) throw new Error("Thingiverse isn't connected on this Thingport");
-    const likesOf = syncLikesUsername(sync);
-    if (likesOf) {
-      if (!(await checkThingiverseUser(likesOf, token))) return null;
-      const { entries } = await fetchThingiverseUserLikes(likesOf, token);
-      return entries.map((e) => e.thingId);
-    }
-    if (!(await checkThingiverseCollection(id, token))) return null;
-    const { entries } = await fetchThingiverseCollectionThings(id, token);
-    return entries.map((e) => e.thingId);
-  }
-  if (sync.provider === "myminifactory") {
-    const apiKey = await getMyminifactoryApiKey();
-    if (!apiKey) throw new Error("MyMiniFactory isn't connected on this Thingport");
-    const [username, slug] = id.split("/");
-    if (!(await checkMyminifactoryCollection(username, slug, apiKey))) return null;
-    const listing = await fetchMyminifactoryCollectionObjects(username, slug, apiKey);
-    return listing ? listing.entries.map((e) => e.objectId) : null;
-  }
-  if (sync.provider === "snapmaker") {
-    // The user's own likes or bookmarks ("likes-<id>"), read as them: they're never gone.
-    const token = await getUserSnapmakerToken(sync.userId);
-    if (!token) throw new SnapmakerAuthError();
-    const { entries } = await fetchSnapmakerList(id.startsWith("likes-") ? "likes" : "bookmarks", token);
-    return entries.map((e) => e.modelId);
-  }
-  if (sync.provider === "makeronline") {
-    // Public collections list without a sign-in; the user's likes and private collections need theirs.
-    const token = await getUserMakeronlineToken(sync.userId);
-    if (id === MAKERONLINE_LIKES_KEY) {
-      if (!token) throw new LikesUnreadableError(CONNECTION_PROBLEMS.makeronlineLikesDisconnected);
-      return (await fetchMakeronlineLikes(token)).entries.map((e) => e.modelId);
-    }
-    const listing = await fetchMakeronlineCollection(id, token);
-    return listing ? listing.entries.map((e) => e.modelId) : null;
-  }
-  if (sync.provider === "crealitycloud") {
-    // Collections, the private ones too, list without a sign-in; the user's likes ("likes-<id>") need theirs.
-    if (isSignInLikes(sync)) {
-      const auth = await getUserCrealitycloudAuth(sync.userId);
-      if (!auth) throw new LikesUnreadableError(CONNECTION_PROBLEMS.crealitycloudLikesDisconnected);
-      // The sign-in may since be another account's, whose likes aren't this sync's.
-      if (crealitycloudLikesKey(auth.userId) !== id) {
-        throw new LikesUnreadableError(CONNECTION_PROBLEMS.crealitycloudLikesOtherAccount);
-      }
-      return (await fetchCrealitycloudLikes(auth)).entries.map((e) => e.modelId);
-    }
-    const listing = await fetchCrealitycloudCollection(id);
-    return listing ? listing.entries.map((e) => e.modelId) : null;
-  }
-  if (sync.provider === "nexprint") {
-    // Collections, the private ones too, list without a sign-in; only their files need one. All of it, not the import
-    // dialog's first 600, or models past those would never be found.
-    const listing = await fetchNexprintCollection(id, Number.POSITIVE_INFINITY);
-    return listing ? listing.entries.map((e) => e.modelId) : null;
-  }
-  if (sync.provider === "thangs") {
-    // Every file is the user's to download, so the sign-in is there (see connectionProblem). Paid models they own
-    // are kept in, the rest of the paid ones left out.
-    const token = await getUserThangsToken(sync.userId);
-    const thangsId = await getUserThangsId(sync.userId);
-    if (!token || !thangsId) throw new ThangsAuthError();
-    const owned = await withThangsToken(sync.userId, token, fetchThangsPurchases);
-    if (id === THANGS_LIKES_KEY) {
-      return (await fetchThangsLikes(thangsId, owned, Number.POSITIVE_INFINITY)).entries.map((e) => e.modelId);
-    }
-    const listing = await withThangsToken(sync.userId, token, (fresh) =>
-      fetchThangsCollection(id, fresh, owned, Number.POSITIVE_INFINITY),
-    );
-    return listing ? listing.entries.map((e) => e.modelId) : null;
-  }
-  if (sync.provider === "cults3d") {
-    // Read with the user's API key (see connectionProblem). Paid models they own are kept in, the rest of the paid
-    // ones left out.
-    const credentials = await getUserCults3dCredentials(sync.userId);
-    if (!credentials) throw new Cults3dAuthError();
-    const owned = new Set((await fetchCults3dOrders(credentials)).keys());
-    const likesOf = syncLikesUsername(sync);
-    const listing = likesOf
-      ? await fetchCults3dLikes(credentials, likesOf, owned, Number.POSITIVE_INFINITY)
-      : await fetchCults3dPrintlist(credentials, id, owned, Number.POSITIVE_INFINITY);
-    return listing ? listing.entries.map((e) => e.slug) : null;
-  }
-  throw new Error(`Unknown provider "${sync.provider}"`);
+export async function fetchListing(sync: SyncedList & Pick<CollectionSync, "provider">): Promise<string[] | null> {
+  const provider = syncOf(sync.provider);
+  if (!provider) throw new Error(`Unknown provider "${sync.provider}"`);
+  return provider.fetchListing(sync);
 }
 
 export type SyncOutcome =
@@ -264,96 +91,6 @@ export function syncCollection(syncId: string, { reserved = false } = {}): Promi
   return run;
 }
 
-type ConnectionProblem = { error: string; reason: string; fix: string };
-
-const CONNECTION_PROBLEMS = {
-  makerworldDisconnected: {
-    error: "MakerWorld isn't connected",
-    reason: "MakerWorld isn't connected.",
-    fix: "you connect it again",
-  },
-  makeronlineLikesDisconnected: {
-    error: "MakerOnline isn't connected",
-    reason: "MakerOnline shows likes to their owner only, and it isn't connected.",
-    fix: "you open makeronline.com with Thingport Grab, or connect it",
-  },
-  makeronlineExpired: {
-    error: "MakerOnline sign-in ran out",
-    reason: "Your MakerOnline sign-in ran out.",
-    fix: "you open makeronline.com with Thingport Grab, or connect it again",
-  },
-  crealitycloudLikesDisconnected: {
-    error: "Creality Cloud isn't connected",
-    reason: "Creality Cloud shows likes to their owner only, and it isn't connected.",
-    fix: "you open crealitycloud.com with Thingport Grab, or connect it",
-  },
-  crealitycloudLikesOtherAccount: {
-    error: "Creality Cloud is connected to another account",
-    reason: "These likes are another Creality Cloud account's than the one connected now.",
-    fix: "you connect the account the likes are from again",
-  },
-  crealitycloudExpired: {
-    error: "Creality Cloud sign-in ran out",
-    reason: "Creality Cloud turned your sign-in down; it lasts a week from when you signed in there.",
-    fix: "you sign in on crealitycloud.com with Thingport Grab, or connect it again",
-  },
-  makerworldExpired: {
-    error: MAKERWORLD_REJECTED_ERROR,
-    reason: "MakerWorld turned your sign-in down; it may have expired.",
-    fix: "you connect MakerWorld again",
-  },
-  thingiverseDisconnected: {
-    error: "Thingiverse isn't connected on this Thingport",
-    reason: "Thingiverse isn't connected on this Thingport.",
-    fix: "an admin connects it again",
-  },
-  myminifactoryDisconnected: {
-    error: "MyMiniFactory isn't connected on this Thingport",
-    reason: "MyMiniFactory isn't connected on this Thingport.",
-    fix: "an admin connects it again",
-  },
-  snapmakerDisconnected: {
-    error: "Snapmaker Space isn't connected",
-    reason: "Snapmaker Space isn't connected.",
-    fix: "you connect it",
-  },
-  snapmakerExpired: {
-    error: "Snapmaker Space sign-in ran out",
-    reason: "Your Snapmaker Space sign-in ran out; Thingport Grab renews it while the browser it's in is open.",
-    fix: "you open space.snapmaker.com with Thingport Grab, or connect it again",
-  },
-  thangsDisconnected: {
-    error: "Thangs isn't connected",
-    reason: "Thangs gives its files to a signed-in user only, and it isn't connected.",
-    fix: "you open thangs.com with Thingport Grab, or connect it",
-  },
-  thangsExpired: {
-    error: "Thangs sign-in ran out",
-    reason: "Thangs turned your sign-in down; signing out there, or a year since signing in, ends it.",
-    fix: "you sign in on thangs.com with Thingport Grab, or connect it again",
-  },
-  cults3dApiDisconnected: {
-    error: "Cults3D isn't connected",
-    reason: "Thingport reads Cults3D with your own API key, and none is set.",
-    fix: "you enter your Cults3D nickname and API key",
-  },
-  cults3dApiExpired: {
-    error: "Cults3D turned the API key down",
-    reason: "Cults3D turned your API key down; deleting it on the site ends it.",
-    fix: "you enter a working Cults3D API key",
-  },
-  cults3dSiteDisconnected: {
-    error: "Cults3D sign-in missing",
-    reason: "Cults3D gives its files to a signed-in user only, and Thingport Grab hasn't sent the browser's sign-in.",
-    fix: "you open cults3d.com signed in with Thingport Grab, or paste its sign-in",
-  },
-  cults3dSiteExpired: {
-    error: "Cults3D sign-in ran out",
-    reason: "Cults3D turned your sign-in down; it ends 20 days after it was last used, or on signing out.",
-    fix: "you sign in on cults3d.com with Thingport Grab, or paste its sign-in again",
-  },
-} satisfies Record<string, ConnectionProblem>;
-
 /** `"A"`, `"A" and "B"`, or the first few and how many more. */
 function listNames(names: string[]): string {
   const quoted = names.map((name) => `"${name}"`);
@@ -366,7 +103,7 @@ function listNames(names: string[]): string {
 async function notifyHeld(
   userId: string,
   provider: string,
-  problem: ConnectionProblem,
+  problem: SyncProblem,
   syncs: SyncWithCollection[],
 ): Promise<void> {
   if (!syncs.length) return;
@@ -384,49 +121,8 @@ async function notifyHeld(
 
 /** Why the provider can't be reached for this sync right now, or null when it can. Checked before
  *  any provider call, so a sync with nothing to sign in with waits instead of failing every round. */
-async function connectionProblem(
-  sync: Pick<CollectionSync, "userId" | "provider" | "externalId">,
-): Promise<ConnectionProblem | null> {
-  if (sync.provider === "makerworld") {
-    const connection = await getMakerworldConnection(sync.userId);
-    if (connection === "disconnected") return CONNECTION_PROBLEMS.makerworldDisconnected;
-    if (connection === "expired") return CONNECTION_PROBLEMS.makerworldExpired;
-  }
-  if (sync.provider === "cults3d") {
-    const connection = await getCults3dConnection(sync.userId);
-    if (connection.api === "disconnected") return CONNECTION_PROBLEMS.cults3dApiDisconnected;
-    if (connection.api === "expired") return CONNECTION_PROBLEMS.cults3dApiExpired;
-    if (connection.site === "disconnected") return CONNECTION_PROBLEMS.cults3dSiteDisconnected;
-    if (connection.site === "expired") return CONNECTION_PROBLEMS.cults3dSiteExpired;
-  }
-  if (sync.provider === "thingiverse" && !(await getThingiverseAccessToken())) {
-    return CONNECTION_PROBLEMS.thingiverseDisconnected;
-  }
-  if (sync.provider === "myminifactory" && !(await getMyminifactoryApiKey())) {
-    return CONNECTION_PROBLEMS.myminifactoryDisconnected;
-  }
-  if (sync.provider === "snapmaker") {
-    const connection = await getSnapmakerConnection(sync.userId);
-    if (connection === "disconnected") return CONNECTION_PROBLEMS.snapmakerDisconnected;
-    if (connection === "expired") return CONNECTION_PROBLEMS.snapmakerExpired;
-  }
-  if (isSignInLikes(sync) && sync.provider === "makeronline") {
-    // Public collections read without a sign-in, so only the likes wait for one.
-    const connection = await getMakeronlineConnection(sync.userId);
-    if (connection === "disconnected") return CONNECTION_PROBLEMS.makeronlineLikesDisconnected;
-    if (connection === "expired") return CONNECTION_PROBLEMS.makeronlineExpired;
-  }
-  if (isSignInLikes(sync) && sync.provider === "crealitycloud") {
-    const connection = await getCrealitycloudConnection(sync.userId);
-    if (connection === "disconnected") return CONNECTION_PROBLEMS.crealitycloudLikesDisconnected;
-    if (connection === "expired") return CONNECTION_PROBLEMS.crealitycloudExpired;
-  }
-  if (sync.provider === "thangs") {
-    const connection = await getThangsConnection(sync.userId);
-    if (connection === "disconnected") return CONNECTION_PROBLEMS.thangsDisconnected;
-    if (connection === "expired") return CONNECTION_PROBLEMS.thangsExpired;
-  }
-  return null;
+async function connectionProblem(sync: SyncedList & Pick<CollectionSync, "provider">): Promise<SyncProblem | null> {
+  return (await syncOf(sync.provider)?.connectionProblem?.(sync)) ?? null;
 }
 
 /** Holds every one of the user's syncs with this provider at once (or only the one with `externalId`),
@@ -435,7 +131,7 @@ async function connectionProblem(
 async function holdProvider(
   userId: string,
   provider: string,
-  problem: ConnectionProblem,
+  problem: SyncProblem,
   externalId?: string,
 ): Promise<void> {
   const fresh = await prisma.collectionSync.findMany({
@@ -458,7 +154,7 @@ async function runSync(syncId: string): Promise<SyncOutcome> {
   const { userId } = sync;
   const problem = await connectionProblem(sync);
   if (problem) {
-    await holdProvider(userId, sync.provider, problem, isSignInLikes(sync) ? sync.externalId : undefined);
+    await holdProvider(userId, sync.provider, problem, heldAlone(sync));
     return "disconnected";
   }
 
@@ -486,39 +182,14 @@ async function runSync(syncId: string): Promise<SyncOutcome> {
   try {
     listing = await fetchListing(sync);
   } catch (err) {
-    if (err instanceof MakerworldAuthError) {
-      await markMakerworldCookieRejected(userId);
-      await holdProvider(userId, sync.provider, CONNECTION_PROBLEMS.makerworldExpired);
-      return "disconnected";
-    }
-    if (err instanceof SnapmakerAuthError) {
-      await markSnapmakerTokenRejected(userId);
-      await holdProvider(userId, sync.provider, CONNECTION_PROBLEMS.snapmakerExpired);
-      return "disconnected";
-    }
-    if (err instanceof LikesUnreadableError) {
+    if (err instanceof SyncHeldError) {
       await holdProvider(userId, sync.provider, err.problem, sync.externalId);
       return "disconnected";
     }
-    if (err instanceof MakeronlineAuthError) {
-      await markMakeronlineTokenRejected(userId);
-      await holdProvider(userId, sync.provider, CONNECTION_PROBLEMS.makeronlineExpired);
-      return "disconnected";
-    }
-    if (err instanceof CrealitycloudAuthError) {
-      // Only the likes are read with the sign-in, so only they wait for a new one.
-      await markCrealitycloudSessionRejected(userId);
-      await holdProvider(userId, sync.provider, CONNECTION_PROBLEMS.crealitycloudExpired, sync.externalId);
-      return "disconnected";
-    }
-    if (err instanceof ThangsAuthError) {
-      await markThangsSessionRejected(userId);
-      await holdProvider(userId, sync.provider, CONNECTION_PROBLEMS.thangsExpired);
-      return "disconnected";
-    }
-    if (err instanceof Cults3dAuthError) {
-      await markCults3dApiRejected(userId);
-      await holdProvider(userId, sync.provider, CONNECTION_PROBLEMS.cults3dApiExpired);
+    const rejected = syncOf(sync.provider)?.rejected;
+    if (rejected?.is(err)) {
+      await rejected.mark(userId);
+      await holdProvider(userId, sync.provider, rejected.problem, rejected.onlyThis ? sync.externalId : undefined);
       return "disconnected";
     }
     const message = err instanceof Error && err.message.trim() ? err.message.trim() : "Sync failed";
@@ -568,17 +239,18 @@ async function runSync(syncId: string): Promise<SyncOutcome> {
     title: null,
   };
 
-  if (toImport.length && sync.provider === "makeronline") {
-    // MakerOnline's files only come through Thingport Grab: the new models wait for its next visit there.
+  const grabQueue = isProviderId(sync.provider) ? PROVIDERS[sync.provider].grabQueue : undefined;
+  if (toImport.length && grabQueue) {
+    // Its files only come through Thingport Grab: the new models wait for its next visit there.
     for (const id of toImport) {
-      await queueGrabImport(userId, modelUrlFor(sync.provider, id), {
+      await grabQueue.queue(userId, modelUrlFor(sync.provider, id), {
         scope: sync.profileScope === "designer" || sync.profileScope === "all" ? sync.profileScope : "url",
         collectionId: sync.collectionId,
       });
     }
     await addPrintsToCollection(sync.collectionId, [...inLibrary.values()]);
     await markChecked();
-    await notifyGrabImportsQueued(userId, toImport.length, {
+    await grabQueue.notifyQueued(userId, toImport.length, {
       label: sync.collection.name,
       externalUrl: sync.sourceUrl,
       internalPath: `/models/collections/${sync.collectionId}`,
@@ -634,16 +306,19 @@ async function runSync(syncId: string): Promise<SyncOutcome> {
     });
     await addPrintsToCollection(sync.collectionId, [...inLibrary.values()]);
     await markChecked();
-    const cookie = sync.provider === "makerworld" ? await getUserMakerworldCookie(userId) : null;
-    await runLinksImportJob(job.id, userId, {
-      url: sync.sourceUrl,
-      notes: null,
-      tags: [],
-      category_id: null,
-      scope: "url",
-      makerworld_cookie: cookie ?? undefined,
-      itemDelayMs: COLLECTION_SYNC_ITEM_DELAY_MS,
-    });
+    // As every LINKS job runs, with LINK_PROVIDER's stored sign-in (see importQueueService.ts).
+    await runLinksImportJob(
+      job.id,
+      userId,
+      await withLinkAuth<LinksImportJobBody>(userId, {
+        url: sync.sourceUrl,
+        notes: null,
+        tags: [],
+        category_id: null,
+        scope: "url",
+        itemDelayMs: COLLECTION_SYNC_ITEM_DELAY_MS,
+      }),
+    );
     return "queued";
   }
 
@@ -722,7 +397,7 @@ async function notifyManualOutcome(before: SyncWithCollection, outcome: SyncOutc
   const after = await prisma.collectionSync.findUnique({ where: { id: before.id } });
   // holdProvider only notifies the first time; a click after that still gets an answer.
   if (outcome === "disconnected" && after?.lastError === before.lastError) {
-    const problem = Object.values(CONNECTION_PROBLEMS).find((p) => p.error === after?.lastError);
+    const problem = syncOf(before.provider)?.problems.find((p) => p.error === after?.lastError);
     if (problem) await notifyHeld(before.userId, before.provider, problem, [before]);
     return;
   }
@@ -766,15 +441,24 @@ export function runSyncRound(): Promise<void> {
   currentRound = (async () => {
     const syncs = await prisma.collectionSync.findMany({
       orderBy: { lastCheckedAt: { sort: "asc", nulls: "first" } },
-      select: { id: true, userId: true, provider: true, externalId: true, lastCheckedAt: true, intervalHours: true },
+      select: {
+        id: true,
+        userId: true,
+        provider: true,
+        externalId: true,
+        sourceUrl: true,
+        lastCheckedAt: true,
+        intervalHours: true,
+      },
     });
     const due: string[] = [];
     // A provider an admin turned off: its syncs wait, quietly, until it's back on.
     const disabled = await getDisabledProviders();
     // Each user's connection to each provider, looked up once a round.
-    const problems = new Map<string, ConnectionProblem | null>();
+    const problems = new Map<string, SyncProblem | null>();
     for (const sync of syncs.filter((s) => isSyncDue(s) && !disabled.has(s.provider as Provider))) {
-      const key = `${sync.userId} ${sync.provider}${isSignInLikes(sync) ? " likes" : ""}`;
+      const only = heldAlone(sync);
+      const key = `${sync.userId} ${sync.provider}${only ? ` ${only}` : ""}`;
       if (problems.has(key)) {
         if (!problems.get(key)) due.push(sync.id);
         continue;
@@ -786,7 +470,6 @@ export function runSyncRound(): Promise<void> {
         continue;
       }
       // Held here rather than in the lane: there's no provider call to pace.
-      const only = isSignInLikes(sync) ? sync.externalId : undefined;
       await holdProvider(sync.userId, sync.provider, problem, only).catch((err) =>
         console.error(`[sync] holding ${key} failed:`, err),
       );

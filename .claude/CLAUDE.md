@@ -11,6 +11,11 @@ Read [CONTRIBUTING.md](../CONTRIBUTING.md) for the workflow, commit style and co
   pull request or update one when the user explicitly asks for that, each time -- approval for one push isn't
   approval for the next.
 
+## Providers
+
+Before adding or changing a provider (a model site Thingport imports from), read
+[docs/PROVIDER_DEVELOPMENT.md](../docs/PROVIDER_DEVELOPMENT.md) and follow its checklist.
+
 ## API token permissions
 
 Third-party apps (dashboards, launchers such as Homarr and holm) read the REST API with a user's API token, and the

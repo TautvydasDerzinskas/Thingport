@@ -16,9 +16,9 @@ import {
   ThangsDownloadLimitError,
   thangsMetaFromModel,
   ThangsPrivateCollectionError,
-} from "../src/services/thangsApi";
+} from "../src/providers/thangs/api";
 import { modelIdFromUrl, modelUrlFor, parseSyncSource } from "../src/services/collectionSyncService";
-import { normalizeThangsSession } from "../src/services/thangsSessionService";
+import { normalizeThangsSession } from "../src/providers/thangs/session";
 import { buildImportSourceUrl, identifySourceModel } from "../src/services/importService";
 
 // The Thangs client against the shapes its own site gets back, with fetch mocked. No database.

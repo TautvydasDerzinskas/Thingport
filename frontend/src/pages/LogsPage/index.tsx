@@ -20,6 +20,7 @@ import TableRow from "@mui/material/TableRow";
 import { UnauthorizedError } from "../../api/client";
 import { adminApi, type AdminUser, type LogAction, type LogEntry } from "../../api/admin";
 import { TableRowSkeletons } from "../../components/ListSkeleton";
+import { isProviderId, MANIFESTS } from "../../providers/index.generated";
 
 type Props = {
   onUnauthorized?: () => void;
@@ -166,19 +167,8 @@ export default function LogsPage({ onUnauthorized }: Props) {
           email: typeof d.email === "string" ? d.email : "",
         });
       case "provider_toggled": {
-        const names: Record<string, string> = {
-          makerworld: "MakerWorld",
-          printables: "Printables",
-          thingiverse: "Thingiverse",
-          myminifactory: "MyMiniFactory",
-          snapmaker: "Snapmaker Space",
-          makeronline: "MakerOnline",
-          crealitycloud: "Creality Cloud",
-          nexprint: "NexPrint",
-          thangs: "Thangs",
-          cults3d: "Cults3D",
-        };
-        const provider = typeof d.provider === "string" ? (names[d.provider] ?? d.provider) : "";
+        const provider =
+          typeof d.provider === "string" ? (isProviderId(d.provider) ? MANIFESTS[d.provider].name : d.provider) : "";
         return t(d.enabled ? "adminSettings.logs.providerOn" : "adminSettings.logs.providerOff", { provider });
       }
       case "user_deleted":

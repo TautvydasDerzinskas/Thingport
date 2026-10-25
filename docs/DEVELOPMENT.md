@@ -113,9 +113,10 @@ saved value wins and the env var is ignored.
 creating and deleting rows as they go.
 
 > [!WARNING]
-> `npm test` loads `DATABASE_URL` from `backend/.env` through dotenv. If that points at your
-> development database, **the suite will mutate it**. Always pass the variable on the command
-> line -- an explicit shell variable takes precedence over `.env`, so this is safe.
+> `backend/.env` is your development instance's. The suite won't take its database: it stops unless
+> `DATABASE_URL` is set on the command line. It doesn't take its storage folder or FlareSolverr
+> either; files go to `thingport-test-storage` in the system temp folder unless `FILE_STORAGE` says
+> otherwise (see `backend/tests/setup.ts`).
 
 ```bash
 docker run -d --name thingport-test-db \
@@ -126,7 +127,7 @@ cd backend
 export TEST_DB="postgresql://thingport:thingport@localhost:55432/thingport_test?schema=public"
 
 DATABASE_URL="$TEST_DB" npx prisma migrate deploy
-DATABASE_URL="$TEST_DB" FILE_STORAGE=/tmp/thingport-test-storage npm test
+DATABASE_URL="$TEST_DB" npm test
 ```
 
 The suite takes about 30 seconds. It runs test files sequentially on purpose -- several files

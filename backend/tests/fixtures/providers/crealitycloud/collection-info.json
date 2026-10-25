@@ -1,0 +1,13 @@
+{
+  "code": 0,
+  "msg": "ok",
+  "reqId": "contract-fixture",
+  "result": {
+    "id": "6b1111111111111111111111",
+    "customizationUrl": "3d-model-collection-gQVJSX",
+    "thematicName": "Fidgets",
+    "creator": 4247093750,
+    "isPublic": true,
+    "modelQuantity": 3
+  }
+}

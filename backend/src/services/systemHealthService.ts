@@ -15,18 +15,19 @@ import { clientLastSeen } from "./clientActivityService";
 import { listAiProviderModels } from "./aiCategorizationService";
 import { resolveAiConnection } from "./aiConnectionService";
 import { testFlaresolverr } from "./flaresolverr";
-import {
-  getFlaresolverrUrl,
-  getMyminifactoryApiKey,
-  getSmtpSettings,
-  getThingiverseAccessToken,
-} from "./settingsService";
-import { checkThingiverseAccessToken } from "./thingiverseApi";
-import { checkMyminifactoryApiKey } from "./myminifactoryApi";
+import { getFlaresolverrUrl, getSmtpSettings } from "./settingsService";
+import { isProviderId, PROVIDER_IDS, type ProviderId } from "../providers/index.generated";
+import { PROVIDERS } from "../providers/registry";
 import { isProviderEnabled } from "./providerSettingsService";
 
 // Administration's System Health: each component Thingport relies on, tested only when an admin asks. Results are
 // kept, with when each was taken, so the page shows the last ones without testing anything on its own.
+
+/** The providers tested with the instance's own credential. */
+const PROVIDER_COMPONENTS = PROVIDER_IDS.filter((id) => PROVIDERS[id].instanceHealth);
+
+type ServiceComponent = "database" | "storage" | "memory" | "internet" | "flaresolverr" | "grab" | "ai" | "smtp";
+export type HealthComponent = ServiceComponent | ProviderId;
 
 /** By importance: what everything needs first, what's optional last. */
 export const HEALTH_COMPONENTS = [
@@ -35,13 +36,11 @@ export const HEALTH_COMPONENTS = [
   "memory",
   "internet",
   "flaresolverr",
-  "thingiverse",
-  "myminifactory",
+  ...PROVIDER_COMPONENTS,
   "grab",
   "ai",
   "smtp",
-] as const;
-export type HealthComponent = (typeof HEALTH_COMPONENTS)[number];
+] as [HealthComponent, ...HealthComponent[]];
 
 export type HealthStatus = "ok" | "warning" | "error" | "not_configured";
 
@@ -187,29 +186,17 @@ async function checkFlaresolverr(): Promise<Found> {
     : found("error", "unreachable", { url }, result.error);
 }
 
-async function checkThingiverse(): Promise<Found> {
-  if (!(await isProviderEnabled("thingiverse"))) return found("not_configured", "disabled");
-  const token = await getThingiverseAccessToken();
-  if (!token) return found("not_configured", "not_configured");
+async function checkProvider(id: ProviderId): Promise<Found> {
+  const health = PROVIDERS[id].instanceHealth;
+  if (!health) return found("not_configured", "not_configured");
+  if (!(await isProviderEnabled(id))) return found("not_configured", "disabled");
   const start = Date.now();
-  const result = await checkThingiverseAccessToken(token);
+  const result = await health();
   const latency_ms = Date.now() - start;
+  if (result === "not_configured") return found("not_configured", "not_configured");
   if (result === "ok") return { ...found("ok", "ok"), latency_ms };
   if (result === "rejected") return found("error", "token_rejected");
-  // Cloudflare's challenge says nothing about the token; FlareSolverr is the way past it.
-  if (result === "blocked") return found("warning", "blocked", { flaresolverr: (await getFlaresolverrUrl()) ? 1 : 0 });
-  return found("error", "unreachable");
-}
-
-async function checkMyminifactory(): Promise<Found> {
-  if (!(await isProviderEnabled("myminifactory"))) return found("not_configured", "disabled");
-  const apiKey = await getMyminifactoryApiKey();
-  if (!apiKey) return found("not_configured", "not_configured");
-  const start = Date.now();
-  const result = await checkMyminifactoryApiKey(apiKey);
-  const latency_ms = Date.now() - start;
-  if (result === "ok") return { ...found("ok", "ok"), latency_ms };
-  if (result === "rejected") return found("error", "token_rejected");
+  // Cloudflare's challenge says nothing about the credential; FlareSolverr is the way past it.
   if (result === "blocked") return found("warning", "blocked", { flaresolverr: (await getFlaresolverrUrl()) ? 1 : 0 });
   return found("error", "unreachable");
 }
@@ -264,18 +251,20 @@ async function checkGrab(): Promise<Found> {
   return last ? found("ok", "ok", { last_seen_at: last.toISOString() }) : found("not_configured", "not_seen");
 }
 
-const CHECKS: Record<HealthComponent, () => Promise<Found>> = {
+const CHECKS: Record<ServiceComponent, () => Promise<Found>> = {
   database: checkDatabase,
   storage: checkStorage,
   memory: checkMemory,
   internet: checkInternet,
   flaresolverr: checkFlaresolverr,
-  thingiverse: checkThingiverse,
-  myminifactory: checkMyminifactory,
   grab: checkGrab,
   ai: checkAi,
   smtp: checkSmtp,
 };
+
+function checkOf(component: HealthComponent): () => Promise<Found> {
+  return isProviderId(component) ? () => checkProvider(component) : CHECKS[component];
+}
 
 async function runCheck(component: HealthComponent): Promise<HealthResult> {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -287,7 +276,7 @@ async function runCheck(component: HealthComponent): Promise<HealthResult> {
   });
   try {
     const result = await Promise.race([
-      CHECKS[component]().catch((err: unknown) => found("error", "failed", {}, message(err))),
+      checkOf(component)().catch((err: unknown) => found("error", "failed", {}, message(err))),
       timeout,
     ]);
     return { latency_ms: null, ...result, component, checked_at: new Date().toISOString() };

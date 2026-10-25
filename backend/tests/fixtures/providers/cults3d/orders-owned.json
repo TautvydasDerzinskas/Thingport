@@ -1,0 +1,21 @@
+{
+  "data": {
+    "myself": {
+      "ordersBatch": {
+        "total": 1,
+        "results": [
+          {
+            "lines": [
+              {
+                "downloadUrl": "https://cults3d.com/en/downloads/1?creation=ghostship-benchy",
+                "creation": {
+                  "slug": "ghostship-benchy"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

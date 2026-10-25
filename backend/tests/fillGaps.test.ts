@@ -16,7 +16,7 @@ vi.mock("node:dns/promises", () => ({
 
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
-import { getThingiverseAccessToken, setThingiverseAccessToken } from "../src/services/settingsService";
+import { getThingiverseAccessToken, setThingiverseAccessToken } from "../src/providers/thingiverse/token";
 
 const app = createApp();
 const stamp = Date.now();

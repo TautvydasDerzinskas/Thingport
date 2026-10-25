@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { makerworldInstanceCover, makerworldInstanceIdFromNextData } from "../src/services/importResolvers";
+import { makerworldInstanceCover, makerworldInstanceIdFromNextData } from "../src/providers/makerworld/pageData";
 
 function nextData(design: Record<string, unknown>) {
   return { props: { pageProps: { design } } };

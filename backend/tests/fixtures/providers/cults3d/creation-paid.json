@@ -1,0 +1,41 @@
+{
+  "data": {
+    "creation": {
+      "slug": "ghostship-benchy",
+      "name": "Ghostship Benchy",
+      "description": "A benchy.\r\nBoooo",
+      "details": "Supports: none",
+      "tags": ["benchy", "ghost", "benchy"],
+      "url": "https://cults3d.com/en/3d-model/art/ghostship-benchy",
+      "price": {
+        "cents": 299,
+        "formatted": "\u20ac 2.99"
+      },
+      "category": {
+        "id": "Q2F0ZWdvcnkvMjM"
+      },
+      "subCategories": [
+        {
+          "id": "Q2F0ZWdvcnkvNDM"
+        }
+      ],
+      "illustrations": [
+        {
+          "imageUrl": "https://videos.cults3d.com/x=/516x516/filters:no_upscale()/https://fbi.cults3d.com/u/1/turn.mp4"
+        },
+        {
+          "imageUrl": "https://images.cults3d.com/y=/516x516/filters:no_upscale()/https://fbi.cults3d.com/uploaders/1/illustration-file/a/Ghost_Benchy.jpg"
+        },
+        {
+          "imageUrl": "https://images.cults3d.com/y=/516x516/filters:no_upscale()/https://fbi.cults3d.com/uploaders/1/illustration-file/b/Ghost_Benchy_2.jpg"
+        }
+      ],
+      "creator": {
+        "nick": "3rdesignworks",
+        "imageUrl": "https://images.cults3d.com/avatar.jpg",
+        "bio": "Hi",
+        "url": null
+      }
+    }
+  }
+}

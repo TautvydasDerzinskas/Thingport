@@ -1,6 +1,7 @@
 import { authHeaders } from "../utils/auth";
 import { ForbiddenError, apiBase, assertOk } from "./client";
 import type { Print } from "./prints";
+import { type ProviderId, TRENDING_PROVIDER_IDS, type TrendingProviderId } from "../providers/index.generated";
 
 export type DashboardModel = {
   id: string;
@@ -38,20 +39,9 @@ export type SystemStats = {
   uptime: { thingport: number; host: number };
 };
 
-// Kept in sync by hand with the backend's TRENDING_PROVIDERS.
-export const TRENDING_PROVIDERS = [
-  "printables",
-  "makerworld",
-  "thangs",
-  "makeronline",
-  "thingiverse",
-  "myminifactory",
-  "cults3d",
-  "crealitycloud",
-  "nexprint",
-  "snapmaker",
-] as const;
-export type TrendingProvider = (typeof TRENDING_PROVIDERS)[number];
+/** The providers the trending panel can show, in its order: those whose manifest gives them a list. */
+export const TRENDING_PROVIDERS = TRENDING_PROVIDER_IDS;
+export type TrendingProvider = TrendingProviderId;
 
 export type TrendingModel = {
   id: string;
@@ -73,7 +63,7 @@ export type TrendingResult =
       moreUrl: string;
       models: TrendingModel[];
     }
-  | { status: "needsSetup"; setup: "thingiverseToken" | "myminifactoryKey" | "cults3dKey"; moreUrl: string };
+  | { status: "needsSetup"; setup: `${ProviderId}${string}`; moreUrl: string };
 
 export type DashboardSummary = {
   collection_count: number;

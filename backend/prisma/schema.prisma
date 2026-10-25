@@ -28,111 +28,39 @@ enum ReasoningEffort {
 }
 
 model User {
-  id                       String            @id @default(cuid())
-  email                    String            @unique
+  id                       String               @id @default(cuid())
+  email                    String               @unique
   // Null for someone who has only ever signed in through an OIDC provider.
   passwordHash             String?
   displayName              String
-  role                     Role              @default(MEMBER)
+  role                     Role                 @default(MEMBER)
   // The first admin: may demote and delete other admins, and can be neither demoted nor deleted.
-  isOwner                  Boolean           @default(false)
+  isOwner                  Boolean              @default(false)
   // Defaults true so existing accounts aren't locked out; registration sets false when SMTP is on.
-  emailVerified            Boolean           @default(true)
-  emailVerificationToken   String?           @unique
+  emailVerified            Boolean              @default(true)
+  emailVerificationToken   String?              @unique
   emailVerificationExpires DateTime?
   // Awaiting confirmation of an email change.
   pendingEmail             String?
   // SHA-256 of the emailed token, so a database leak can't be used to take over accounts.
-  passwordResetTokenHash   String?           @unique
+  passwordResetTokenHash   String?              @unique
   passwordResetExpires     DateTime?
   // A read-only token other apps use to call the API as this user. Only its SHA-256
   // is stored; the token itself is shown once, when generated. One per user: generating replaces it.
-  apiTokenHash             String?           @unique
+  apiTokenHash             String?              @unique
   // The token's last four characters, so the profile can show which one is in use.
   apiTokenHint             String?
   apiTokenCreatedAt        DateTime?
   apiTokenLastUsedAt       DateTime?
   // The MCP tools the token may call at /api/mcp (see mcp/tools.ts). Chosen per token, so a tool
   // that writes is only ever reachable if the user ticked it.
-  apiTokenMcpTools         String[]          @default([])
+  apiTokenMcpTools         String[]             @default([])
   // What the token may read over the REST API, by scope (see services/apiTokenScopes.ts).
-  apiTokenRestScopes       String[]          @default([])
-  // Per-user, unlike the instance-wide Thingiverse token.
-  makerworldCookie         String?
-  // When MakerWorld last turned the cookie down. Scheduled MakerWorld syncs wait until it changes.
-  makerworldRejectedAt     DateTime?
-  // Who the user is on providers without a per-user login, so their collections can be listed for
-  // syncing. Printables keeps its numeric id (the API's key) with the handle to show.
-  printablesUserId         String?
-  printablesHandle         String?
-  // Set when the user forgot their Printables account in the app: Thingport Grab's pushes of their
-  // private collections and likes are refused until they give one again.
-  printablesPushOff        Boolean           @default(false)
-  thingiverseUsername      String?
-  myminifactoryUsername    String?
-  // Per-user, beside the instance-wide API key: the MyMiniFactory session (PHPSESSID) that downloads
-  // paid and login-only models from the user's own library.
-  myminifactoryCookie      String?
-  // When MyMiniFactory last turned the session down.
-  myminifactoryRejectedAt  DateTime?
-  // The user's Snapmaker access token (a JWT, valid a day). Snapmaker's refresh tokens work once, so Thingport never
-  // refreshes it itself: Thingport Grab keeps the browser's login fresh and sends each new one here.
-  snapmakerToken           String?
-  snapmakerTokenExpiresAt  DateTime?
-  // Their Snapmaker user id, from the token: their likes and bookmarks are synced under it.
-  snapmakerUserId          String?
-  // When Snapmaker last turned the token down.
-  snapmakerRejectedAt      DateTime?
-  // The user's MakerOnline access token (a JWT, valid about 90 days), from its mo_access_token cookie. It reads
-  // models, likes and collections; files only download through Thingport Grab (see GrabImport).
-  makeronlineToken         String?
-  makeronlineTokenExpires  DateTime?
-  // Their MakerOnline user id, from the token: their likes are synced under it.
-  makeronlineUserId        String?
-  // When MakerOnline last turned the token down.
-  makeronlineRejectedAt    DateTime?
-  // The user's Creality Cloud token, from its model_token cookie. The site sets it once at sign-in for 7 days and
-  // never renews it; Thingport Grab sends each new one here.
-  crealitycloudToken       String?
-  crealitycloudExpiresAt   DateTime?
-  // Their Creality Cloud user id (model_user_id): their likes are synced under it.
-  crealitycloudUserId      String?
-  // When Creality Cloud last turned the token down.
-  crealitycloudRejectedAt  DateTime?
-  // The user's NexPrint token, from its auth_token cookie, sent as a Bearer token. The site keeps the cookie for a
-  // week and renews it as it refreshes the token; Thingport Grab sends each new one here.
-  nexprintToken            String?
-  nexprintExpiresAt        DateTime?
-  // When NexPrint last turned the token down.
-  nexprintRejectedAt       DateTime?
-  // The user's Thangs sign-in: the accessToken cookie (a 7-day JWT, sent as a Bearer token) and the refreshToken
-  // cookie that renews it, which lasts about a year and isn't replaced on use. Thingport renews the access token
-  // itself; Thingport Grab sends both whenever the browser's change.
-  thangsToken              String?
-  thangsRefreshToken       String?
-  // The access token's own expiry, from its JWT.
-  thangsExpiresAt          DateTime?
-  thangsUserId             String?
-  // When Thangs last turned the sign-in down, refresh token included.
-  thangsRejectedAt         DateTime?
-  // The user's Cults3D API credentials (their nickname and an API key they made on the site), which read models,
-  // likes, printlists and orders without Cloudflare in the way.
-  cults3dNick              String?
-  cults3dApiKey            String?
-  // When Cults3D last turned the API key down.
-  cults3dApiRejectedAt     DateTime?
-  // The browser's Cults3D sign-in, sent by Thingport Grab: the _session_id cookie (20 days, renewed on use), and the
-  // cf_clearance cookie with the User-Agent it was issued to, which the site's Cloudflare wants for the order and
-  // download pages. The clearance only holds from the browser's own IP address.
-  cults3dSession           String?
-  cults3dClearance         String?
-  cults3dUserAgent         String?
-  // When Cults3D last answered the session with its sign-in page.
-  cults3dSessionRejectedAt DateTime?
+  apiTokenRestScopes       String[]             @default([])
   // The slicer a model's "Open in" button opens: the last one used. Always one of `slicers`.
   slicer                   String?
   // The slicers the user has installed, offered in a model's "Open in" menu.
-  slicers                  String[]          @default([])
+  slicers                  String[]             @default([])
   // "light" | "dark" | "system"; null means never set.
   themePreference          String?
   // One of ACCENT_COLORS; null means Thingport green.
@@ -153,9 +81,9 @@ model User {
   cardPreview              String?
   // Where the dashboard's weather is for: { lat, lon, name, source }. Null until the user sets one.
   weatherLocation          Json?
-  authorPreviewEnabled     Boolean           @default(true)
+  authorPreviewEnabled     Boolean              @default(true)
   // Model cards cycle through a model's pictures while hovered.
-  hoverSlideshowEnabled    Boolean           @default(true)
+  hoverSlideshowEnabled    Boolean              @default(true)
   // Filled from the first linked Author with this data; later links never overwrite it.
   bio                      String?
   backgroundUrl            String?
@@ -177,9 +105,10 @@ model User {
   invitationsSent          Invitation[]
   identities               UserIdentity[]
   grabConnections          GrabConnection[]
+  providerConnections      ProviderConnection[]
   sessions                 Session[]
-  createdAt                DateTime          @default(now())
-  updatedAt                DateTime          @updatedAt
+  createdAt                DateTime             @default(now())
+  updatedAt                DateTime             @updatedAt
 }
 
 // Lets one email register while registrations are closed. Re-inviting replaces the token.
@@ -195,51 +124,29 @@ model Invitation {
 }
 
 model Category {
-  id                  String     @id @default(cuid())
-  userId              String
-  user                User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name                String
-  tags                String[]   @default([])
+  id              String           @id @default(cuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  tags            String[]         @default([])
   // "category" (the starter categories imports sort into) or "folder" (the user's own tree, e.g.
   // from uploading folders). Always the same as the top-level ancestor's.
-  kind                String     @default("folder")
-  parentId            String?
-  parent              Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
-  children            Category[] @relation("CategoryTree")
+  kind            String           @default("folder")
+  parentId        String?
+  parent          Category?        @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children        Category[]       @relation("CategoryTree")
   // Order among siblings. No unique index: Postgres treats NULL parentIds as distinct.
-  position            Int        @default(0)
-  metaTitle           String?
-  metaDescription     String?
-  // Imports whose site category id matches any of these land in this category. Each site has its
-  // own id namespace.
-  makerworldCatIds    Int[]      @default([])
-  thingiverseCatIds   Int[]      @default([])
-  printablesCatIds    Int[]      @default([])
-  myminifactoryCatIds Int[]      @default([])
-  snapmakerCatIds     Int[]      @default([])
-  makeronlineCatIds   Int[]      @default([])
-  crealitycloudCatIds Int[]      @default([])
-  // Text: NexPrint's ids are 16 digits, past Int, and a BigInt would break JSON serialization of the row.
-  nexprintCatIds      String[]   @default([])
-  // Thangs has no category ids, only paths: "Tools & Organizers", or "Tools & Organizers/Multiboard".
-  thangsCatIds        String[]   @default([])
-  cults3dCatIds       Int[]      @default([])
-  prints              Print[]
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
+  position        Int              @default(0)
+  metaTitle       String?
+  metaDescription String?
+  // The ids on each provider's site imports land in this category by (CategorySiteId).
+  siteIds         CategorySiteId[]
+  prints          Print[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   @@index([userId, parentId, position])
   @@index([tags], type: Gin)
-  @@index([makerworldCatIds], type: Gin)
-  @@index([thingiverseCatIds], type: Gin)
-  @@index([printablesCatIds], type: Gin)
-  @@index([myminifactoryCatIds], type: Gin)
-  @@index([snapmakerCatIds], type: Gin)
-  @@index([makeronlineCatIds], type: Gin)
-  @@index([crealitycloudCatIds], type: Gin)
-  @@index([nexprintCatIds], type: Gin)
-  @@index([thangsCatIds], type: Gin)
-  @@index([cults3dCatIds], type: Gin)
 }
 
 model Print {
@@ -790,6 +697,43 @@ model UserIdentity {
 
 /// A browser's Thingport Grab, connected by the user approving it in Thingport rather than by saving their
 /// password in the extension. It trades its token for sessions, until the user removes it.
+/// A user's sign-in on a provider, and who they are there (providers/connections.ts): one per user, provider and the
+/// manifest's auth slot, so a provider needs no column of its own.
+model ProviderConnection {
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider    String
+  /// "default", or "browser" for a second sign-in beside it (Cults3D's).
+  slot        String    @default("default")
+  /// The credential, shaped as the provider's session.ts reads it; null once disconnected, the account kept.
+  secret      Json?
+  expiresAt   DateTime?
+  /// When the provider last turned the secret down; a new one clears it.
+  rejectedAt  DateTime?
+  /// Who the user is there: the site's user id and name, where it has them.
+  accountId   String?
+  accountName String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@id([userId, provider, slot])
+}
+
+/// One of a category's ids on a provider's site: an import whose site category is one lands in it. Each provider's ids
+/// are its own; the starter categories' come from backend/src/providers/<id>/categories.json.
+model CategorySiteId {
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  provider   String
+  /// Text for every provider: numbers, NexPrint's 16-digit ones, or Thangs' "Parent/Child" paths.
+  siteId     String
+  /// The order they were given in.
+  position   Int      @default(0)
+
+  @@id([categoryId, provider, siteId])
+  @@index([provider, siteId])
+}
+
 model GrabConnection {
   id         String    @id @default(cuid())
   userId     String

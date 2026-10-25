@@ -82,6 +82,11 @@ reviewer otherwise has to reconstruct your reasoning from scratch.
 
 If you couldn't verify something end to end, say so. That's useful information, not a weakness.
 
+## Adding a provider
+
+A provider is a model site Thingport imports from. How they're built, the approaches the existing ones take and the
+checklist for a new one are in [docs/PROVIDER_DEVELOPMENT.md](docs/PROVIDER_DEVELOPMENT.md). Open an issue first.
+
 ## Code style
 
 - **Match the surrounding code.** This codebase uses long explanatory comments that say _why_

@@ -20,6 +20,11 @@ beforeAll(async () => {
   token = res.body.token;
 });
 
+const storedIds = async (categoryId: string, provider: string) =>
+  (await prisma.categorySiteId.findMany({ where: { categoryId, provider }, orderBy: { position: "asc" } })).map(
+    (row) => row.siteId,
+  );
+
 function auth() {
   return { Authorization: `Bearer ${token}` };
 }
@@ -41,8 +46,7 @@ describe("PATCH /category/:id/meta -- multi-value category ids", () => {
     expect(res.status).toBe(200);
     expect(res.body.thingiverse_cat_ids).toBe("800;71;1001");
 
-    const stored = await prisma.category.findUnique({ where: { id: categoryId } });
-    expect(stored?.thingiverseCatIds).toEqual([800, 71, 1001]);
+    expect(await storedIds(categoryId, "thingiverse")).toEqual(["800", "71", "1001"]);
   });
 
   it("tolerates stray/duplicate separators and whitespace, deduping the result", async () => {
@@ -67,8 +71,7 @@ describe("PATCH /category/:id/meta -- multi-value category ids", () => {
     expect(res.status).toBe(200);
     expect(res.body.printables_cat_ids).toBe("");
 
-    const stored = await prisma.category.findUnique({ where: { id: categoryId } });
-    expect(stored?.printablesCatIds).toEqual([]);
+    expect(await storedIds(categoryId, "printables")).toEqual([]);
   });
 
   it("rejects a non-numeric token, naming it in the error", async () => {
@@ -114,6 +117,28 @@ describe("PATCH /category/:id/meta -- multi-value category ids", () => {
     expect(res.body.makerworld_cat_ids).toBe("1;2");
     expect(res.body.thingiverse_cat_ids).toBe("3;4");
     expect(res.body.printables_cat_ids).toBe("5;6");
+  });
+
+  it("leaves a provider's ids alone when the request doesn't name it", async () => {
+    const categoryId = await createCategory("Left Alone Category");
+    await request(app).patch(`/api/category/${categoryId}/meta`).set(auth()).send({ cults3d_cat_ids: "7;8" });
+    const res = await request(app)
+      .patch(`/api/category/${categoryId}/meta`)
+      .set(auth())
+      .send({ meta_title: "Only the title" });
+    expect(res.status).toBe(200);
+    expect(res.body.cults3d_cat_ids).toBe("7;8");
+  });
+
+  it("takes Thangs' category paths and NexPrint's 16-digit ids as given", async () => {
+    const categoryId = await createCategory("Text Ids Category");
+    const res = await request(app)
+      .patch(`/api/category/${categoryId}/meta`)
+      .set(auth())
+      .send({ thangs_cat_ids: "Toys & Games / Puzzles;Art", nexprint_cat_ids: "1422473859022863" });
+    expect(res.status).toBe(200);
+    expect(res.body.thangs_cat_ids).toBe("Toys & Games/Puzzles;Art");
+    expect(res.body.nexprint_cat_ids).toBe("1422473859022863");
   });
 });
 

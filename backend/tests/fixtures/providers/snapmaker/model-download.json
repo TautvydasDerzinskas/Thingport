@@ -1,0 +1,24 @@
+{
+  "code": 200,
+  "msg": "success",
+  "data": {
+    "modelFiles": [
+      {
+        "fileName": "princess.stl",
+        "downloadUrl": "https://models.snapmaker.com/models/download/snapmaker/model-file/princess.stl?sign=c"
+      }
+    ],
+    "printProfiles": [
+      {
+        "profileId": "501",
+        "fileName": "501.3mf",
+        "downloadUrl": "https://models.snapmaker.com/models/download/snapmaker/model-file/designer.3mf?sign=a"
+      },
+      {
+        "profileId": "502",
+        "fileName": "502.3mf",
+        "downloadUrl": "https://models.snapmaker.com/models/download/snapmaker/model-file/remix.3mf?sign=b"
+      }
+    ]
+  }
+}

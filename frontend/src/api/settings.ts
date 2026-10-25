@@ -1,6 +1,7 @@
 import { authHeaders } from "../utils/auth";
 import { apiBase, assertOk, readErrorMessage, UnauthorizedError } from "./client";
 import type { AccentColor, RenderColor, ThemeSelection } from "../constants/settingsOptions";
+import type { ProviderId } from "../providers/index.generated";
 import { invalidateAiCategorizationStatus } from "./aiCategorization";
 import type { QualityIssueCode, QualitySeverity } from "./prints";
 
@@ -272,25 +273,7 @@ export type DatabaseCredentialsInput = {
   password: string;
 };
 
-export type ImportProvider =
-  | "makerworld"
-  | "printables"
-  | "thingiverse"
-  | "myminifactory"
-  | "snapmaker"
-  | "makeronline"
-  | "crealitycloud"
-  | "nexprint"
-  | "thangs"
-  | "cults3d";
-export type Cults3dSettings = {
-  configured: boolean;
-  expired: boolean;
-  nick: string | null;
-  session_configured: boolean;
-  session_expired: boolean;
-};
-
+export type ImportProvider = ProviderId;
 /** An admin can turn a provider off for the whole instance; menus hide it then. */
 export type ProviderSetting = { id: ImportProvider; enabled: boolean };
 
@@ -529,195 +512,6 @@ export const settingsApi = {
     return ((await res.json()) as { providers: ProviderSetting[] }).providers;
   },
 
-  // Write-only: GET only reports whether a token is configured.
-  getThingiverse: async (): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/thingiverse`, { headers: authHeaders() });
-    assertOk(res, "Failed to load Thingiverse settings");
-    return res.json();
-  },
-
-  updateThingiverse: async (accessToken: string | null): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/thingiverse`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ access_token: accessToken }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) {
-      throw new Error(await readErrorMessage(res, "Failed to update Thingiverse settings"));
-    }
-    return res.json();
-  },
-
-  // Write-only, like Thingiverse's token: GET only reports whether a key is configured.
-  getMyminifactory: async (): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/myminifactory`, { headers: authHeaders() });
-    assertOk(res, "Failed to load MyMiniFactory settings");
-    return res.json();
-  },
-
-  updateMyminifactory: async (apiKey: string | null): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/myminifactory`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ api_key: apiKey }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) {
-      throw new Error(await readErrorMessage(res, "Failed to update MyMiniFactory settings"));
-    }
-    return res.json();
-  },
-
-  // The user's own MyMiniFactory sign-in, for paid and login-only models. Write-only, like MakerWorld's cookie.
-  getMyminifactorySession: async (): Promise<{ configured: boolean; expired: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/myminifactory-session`, { headers: authHeaders() });
-    assertOk(res, "Failed to load MyMiniFactory settings");
-    return res.json();
-  },
-
-  /** Checked with MyMiniFactory before it's saved. */
-  updateMyminifactorySession: async (cookie: string | null): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/myminifactory-session`, {
-      method: "PATCH",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ cookie, verify: true }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update MyMiniFactory settings"));
-    return res.json();
-  },
-
-  // The user's own Snapmaker Space sign-in (its access token), which Thingport Grab keeps fresh. Write-only.
-  getSnapmakerSession: async (): Promise<{ configured: boolean; expired: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/snapmaker-session`, { headers: authHeaders() });
-    assertOk(res, "Failed to load Snapmaker Space settings");
-    return res.json();
-  },
-
-  /** Checked with Snapmaker before it's saved. */
-  updateSnapmakerSession: async (token: string | null): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/snapmaker-session`, {
-      method: "PATCH",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ token, verify: true }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update Snapmaker Space settings"));
-    return res.json();
-  },
-
-  // The user's own MakerOnline sign-in (its access token), which Thingport Grab sends on. Write-only.
-  getMakeronlineSession: async (): Promise<{ configured: boolean; expired: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/makeronline-session`, { headers: authHeaders() });
-    assertOk(res, "Failed to load MakerOnline settings");
-    return res.json();
-  },
-
-  /** Checked with MakerOnline before it's saved. */
-  updateMakeronlineSession: async (token: string | null): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/makeronline-session`, {
-      method: "PATCH",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ token, verify: true }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update MakerOnline settings"));
-    return res.json();
-  },
-
-  // The user's own Creality Cloud sign-in (its model_token and model_user_id cookies), which Thingport Grab sends on.
-  // Write-only.
-  getCrealitycloudSession: async (): Promise<{ configured: boolean; expired: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/crealitycloud-session`, { headers: authHeaders() });
-    assertOk(res, "Failed to load Creality Cloud settings");
-    return res.json();
-  },
-
-  /** Checked with Creality Cloud before it's saved. */
-  updateCrealitycloudSession: async (token: string | null): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/crealitycloud-session`, {
-      method: "PATCH",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ token, verify: true }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update Creality Cloud settings"));
-    return res.json();
-  },
-
-  // The user's own NexPrint sign-in (its auth_token cookie), which Thingport Grab sends on. Write-only.
-  getNexprintSession: async (): Promise<{ configured: boolean; expired: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/nexprint-session`, { headers: authHeaders() });
-    assertOk(res, "Failed to load NexPrint settings");
-    return res.json();
-  },
-
-  /** Checked with NexPrint before it's saved. */
-  updateNexprintSession: async (token: string | null): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/nexprint-session`, {
-      method: "PATCH",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ token, verify: true }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update NexPrint settings"));
-    return res.json();
-  },
-
-  // The user's own Thangs sign-in (its accessToken and refreshToken cookies), which Thingport Grab sends on. Write-only.
-  getThangsSession: async (): Promise<{ configured: boolean; expired: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/thangs-session`, { headers: authHeaders() });
-    assertOk(res, "Failed to load Thangs settings");
-    return res.json();
-  },
-
-  /** Checked with Thangs before it's saved. Takes a token, either cookie, or a whole Cookie header. */
-  updateThangsSession: async (token: string | null): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/thangs-session`, {
-      method: "PATCH",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ token, verify: true }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update Thangs settings"));
-    return res.json();
-  },
-
-  // The user's own Cults3D API credentials, their nickname and an API key made on the site, and whether Thingport
-  // Grab has sent the browser's sign-in, which the downloads need. The key is write-only.
-  getCults3d: async (): Promise<Cults3dSettings> => {
-    const res = await fetch(`${apiBase()}/settings/cults3d`, { headers: authHeaders() });
-    assertOk(res, "Failed to load Cults3D settings");
-    return res.json();
-  },
-
-  /** Checked with Cults3D before it's saved; null forgets them. */
-  updateCults3d: async (
-    credentials: { nick: string; apiKey: string } | null,
-  ): Promise<{ configured: boolean; nick: string | null }> => {
-    const res = await fetch(`${apiBase()}/settings/cults3d`, {
-      method: "PATCH",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ nick: credentials?.nick ?? null, api_key: credentials?.apiKey ?? null, verify: true }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update Cults3D settings"));
-    return res.json();
-  },
-
-  /** The browser's sign-in by hand: a signed-in cults3d.com request's copied headers. Null forgets it. */
-  updateCults3dSession: async (session: string | null): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/cults3d-session`, {
-      method: "PATCH",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ session }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update the Cults3D sign-in"));
-    return res.json();
-  },
-
   getAuth: async (): Promise<AuthSettings> => {
     const res = await fetch(`${apiBase()}/settings/auth`, { headers: authHeaders() });
     assertOk(res, "Failed to load session settings");
@@ -822,27 +616,6 @@ export const settingsApi = {
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) {
       throw new Error(await readErrorMessage(res, "Failed to switch database"));
-    }
-    return res.json();
-  },
-
-  // `expired`: MakerWorld turned the saved cookie down; scheduled syncs wait for a new one.
-  getMakerworld: async (): Promise<{ configured: boolean; expired: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/makerworld`, { headers: authHeaders() });
-    assertOk(res, "Failed to load MakerWorld settings");
-    return res.json();
-  },
-
-  // Clearing (null) is never verified.
-  updateMakerworld: async (cookie: string | null): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/makerworld`, {
-      method: "PATCH",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ cookie, verify: true }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) {
-      throw new Error(await readErrorMessage(res, "Failed to update MakerWorld settings"));
     }
     return res.json();
   },

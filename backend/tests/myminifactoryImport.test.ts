@@ -3,9 +3,9 @@ import request from "supertest";
 import JSZip from "jszip";
 import { createApp } from "../src/app";
 import { importPrintFromUrl } from "../src/services/importService";
-import { setMyminifactoryApiKey } from "../src/services/settingsService";
+import { setMyminifactoryApiKey } from "../src/providers/myminifactory/apiKey";
 import { prisma } from "../src/db";
-import { getMyminifactoryConnection, setUserMyminifactoryCookie } from "../src/services/myminifactorySessionService";
+import { getMyminifactoryConnection, setUserMyminifactoryCookie } from "../src/providers/myminifactory/session";
 
 // MyMiniFactory import end to end: metadata from the API v2 shapes, files from /download, fetch mocked.
 

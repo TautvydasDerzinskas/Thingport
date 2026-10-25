@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { MANIFESTS } from "../providers/index.generated";
+import { providerNames } from "../providers/names";
 import { prisma } from "../db";
 import { toAuthorOut, type PrintOut } from "../dto";
 import { HttpError } from "../utils/fileUtils";
@@ -426,14 +428,14 @@ const importModel: McpToolDefinition = {
   name: "import_model",
   title: "Import a model",
   description:
-    "Import a model into the library from its page on a supported site (MakerWorld, Printables, Thingiverse and " +
-    "the others Thingport supports), as + Add > Import does. A model already in the library isn't imported twice. " +
+    `Import a model into the library from its page on a supported site (${providerNames(() => true)}), as + Add > ` +
+    "Import does. A model already in the library isn't imported twice. " +
     "Usually finishes in the call; a long import returns a task_id to check with get_import_status.",
   readOnly: false,
   idempotent: true,
   openWorld: true,
   inputSchema: {
-    url: z.string().min(1).describe("The model's page, e.g. https://www.printables.com/model/3161-3d-benchy"),
+    url: z.string().min(1).describe(`The model's page, e.g. ${MANIFESTS.printables.examples.model}`),
     title: z.string().max(500).optional().describe("A title to use instead of the site's."),
     tags: z.array(z.string()).optional().describe("Tags to use instead of the site's."),
     category_id: z.string().optional().describe("A category to file it in (an id from list_categories)."),

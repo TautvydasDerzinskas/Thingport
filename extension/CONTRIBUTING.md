@@ -37,7 +37,10 @@ src/
                 Download normalized button (makerworld/)
     styles/     its SCSS, compiled into the bundle and injected into its shadow root
   normalizer/   the Bambu 3MF normalizer and the worker that runs it
-  thingiverse/  Thingiverse's dark mode and hidden ads, a second content script that runs at document_start
+  providers/    each provider's own code in <id>/, beside the copies of its manifest and links
+                (*.generated.ts), and the tables that wire them in (content, sessions, accounts,
+                background); Thingiverse's dark mode and hidden ads are thingiverse/index.ts, a
+                second content script that runs at document_start
   popup/        toolbar popup (popup.html, its script and styles/)
   styles/       SCSS design tokens and mixins shared by the popup and the content UI
   assets/       the Thingport icon SVG (inlined into the bundles)
@@ -68,11 +71,21 @@ the browser's color scheme.
 
 ### Adding a provider site
 
-Don't add a new site to `PROVIDER_MATCHES` in `scripts/manifest.ts`: new host access in an update makes Chrome and
-Edge switch the extension off for every user until they approve it. Add it to `OPTIONAL_SITES` in
-`src/shared/optionalSites.ts` instead, with its logo in `LOGOS` in `src/popup/sites.ts`. The popup lists it under
-**Providers** with an **Enable** button that asks for access to that site; once granted, the background registers the
-content script there. Users who had granted all-sites access earlier get it straight away.
+The checklist for a whole provider is in [docs/PROVIDER_DEVELOPMENT.md](../docs/PROVIDER_DEVELOPMENT.md#adding-a-provider). Grab's
+part:
+
+- Its manifest's `extension` entry (`providers/<id>/manifest.ts`) says how Grab reaches its site. Make it
+  `site: "optional"`: new host access in an update makes Chrome and Edge switch the extension off for every user until
+  they approve it, so `npm run providers:sync` keeps the built-in sites, the ones in `manifest.json`, to the first
+  three. An optional site is listed in the popup under **Providers** with an **Enable** button that asks for access to
+  it; once granted, the background registers the content script there. Users who had granted all-sites access earlier
+  get it straight away.
+- What Grab does on its pages goes in `src/providers/<id>/`, entered in `CONTENT_MODULES` (`src/providers/content.ts`),
+  which tsc insists on for every provider.
+- A sign-in the background sends the instance goes in `SESSION_SOURCES` (`src/providers/sessions.ts`), with
+  `src/providers/<id>/session.ts` where it can't be declared. The account Grab reports from its pages goes in
+  `CAPTURE` (`src/providers/accounts.ts`), and background handlers, alarms or tab events of its own in
+  `src/providers/background.ts`.
 
 Don't add the provider to `scripts/edge-certification-notes.txt`: it covers optional sites as a group, and Edge
 rejects notes of 2,000 characters or more (`npm run check:edge-notes`).
@@ -87,8 +100,9 @@ rejects notes of 2,000 characters or more (`npm run check:edge-notes`).
   event page in Firefox, so keep top-level background code free of anything only one supports.
 - If it changes anything visible, run `npm run screenshots` and commit the updated images.
 - If it adds a runtime message, add it to `src/shared/messages.ts` so both ends stay typed.
-- Provider URL patterns in `src/shared/urls.ts` are duplicated from the web app and backend (see
-  the comment there) -- change them in all three places.
+- Provider URL patterns live in `providers/<id>/urls.ts` at the repo root, shared with the web app
+  and backend: change them there, run `npm run providers:sync` at the root, and add a case to
+  `providers/<id>/urls.fixtures.json`.
 
 ### Scripts
 

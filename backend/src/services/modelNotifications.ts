@@ -1,6 +1,7 @@
 import { prisma } from "../db";
 import { createKeyedLock } from "../utils/concurrency";
 import { createNotification } from "./notificationService";
+import { detectProvider, MANIFESTS } from "../providers/index.generated";
 
 /** Lists names for a notification body, shortening long lists to the first few. */
 export function nameList(names: string[], max = 5): string {
@@ -144,9 +145,10 @@ export async function notifyImportRun(
   const parts: string[] = [];
   if (imported) parts.push(`${nameList(run.prints.map((p) => p.name))}.`);
   if (run.stopped) parts.push(`Stopped early: ${run.stopped}`);
+  const site = detectProvider(run.sourceUrl);
   await createNotification(userId, {
     type: "import",
-    title: `Imported ${imported} of ${run.total} models from MakerWorld`,
+    title: `Imported ${imported} of ${run.total} models${site ? ` from ${MANIFESTS[site].name}` : ""}`,
     body: parts.join(" ") || null,
     externalUrl: run.sourceUrl,
     internalPath: run.collectionId

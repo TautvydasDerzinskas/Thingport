@@ -1,0 +1,50 @@
+[
+  {
+    "url": "https://thangs.com/designer/MultiBuild/3d-model/Tile-1320962",
+    "expect": {
+      "provider": "thangs",
+      "kind": "model",
+      "externalId": "1320962"
+    }
+  },
+  {
+    "url": "https://www.thangs.com/m/1137615/?ref=share",
+    "expect": {
+      "provider": "thangs",
+      "kind": "model",
+      "externalId": "1137615"
+    }
+  },
+  {
+    "url": "https://thangs.com/designer/tautvydasuk/collection/Thangs%20collection-493183/sort/date?x=1",
+    "expect": {
+      "provider": "thangs",
+      "kind": "list",
+      "externalId": "493183",
+      "listKind": "collection"
+    }
+  },
+  {
+    "url": "https://thangs.com/mythangs/liked-models",
+    "expect": {
+      "provider": "thangs",
+      "kind": "list",
+      "externalId": "likes",
+      "listKind": "likes"
+    }
+  },
+  {
+    "url": "https://thangs.com/designer/MultiBuild",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  },
+  {
+    "url": "https://thangs.co/m/1137615",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  }
+]

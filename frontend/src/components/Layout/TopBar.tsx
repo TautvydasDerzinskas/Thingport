@@ -147,7 +147,6 @@ export default function TopBar({
         theme={theme}
         onThemeChange={onThemeChange}
         isAdmin={user?.role === "ADMIN"}
-        makerworldCookie={makerworldCookie}
         onUpdateMakerWorld={onUpdateMakerWorld}
         onUnauthorized={onUnauthorized}
       />

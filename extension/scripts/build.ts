@@ -107,7 +107,7 @@ async function buildTarget(target: Target, watch: boolean): Promise<void> {
       background: path.join(SRC, "background", "index.ts"),
       content: path.join(SRC, "content", "index.ts"),
       popup: path.join(SRC, "popup", "index.ts"),
-      thingiverse: path.join(SRC, "thingiverse", "index.ts"),
+      thingiverse: path.join(SRC, "providers", "thingiverse", "index.ts"),
     },
     outdir,
     bundle: true,

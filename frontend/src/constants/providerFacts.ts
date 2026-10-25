@@ -1,13 +1,9 @@
 import { darken, getContrastRatio, lighten, type Theme } from "@mui/material/styles";
-import type { ProviderId } from "../components/Layout/ConfigurationDialog/providerLogos";
+import { MANIFESTS, PROVIDER_IDS, type Need, type ProviderId, type SignIn } from "../providers/index.generated";
 import { IMPORT_PROVIDER_INFO } from "./importProviders";
 import { THINGPORT_WEBSITE_URL } from "./website";
 
-/** How much a provider leans on a helper: Thingport Grab or FlareSolverr. */
-export type Need = "required" | "recommended" | "optional" | "none";
-
-/** What Thingport needs before importing: nothing, the admin's instance key, each user's own sign-in, or both. */
-export type SignIn = "none" | "admin" | "user" | "adminUser" | "userOptional";
+export type { Need, SignIn };
 
 export type ProviderFacts = {
   site: string;
@@ -22,121 +18,26 @@ export type ProviderFacts = {
   paid: boolean;
 };
 
-// Mirrors docs/PROVIDER_SETUP.md's table; the legacy three come first, as everywhere in the docs.
-export const PROVIDER_FACTS: Record<ProviderId, ProviderFacts> = {
-  makerworld: {
-    site: "https://makerworld.com",
-    docs: "makerworld",
-    signIn: "user",
-    grab: "recommended",
-    flaresolverr: "optional",
-    collections: true,
-    likes: false,
-    profiles: true,
-    paid: false,
-  },
-  printables: {
-    site: "https://www.printables.com",
-    docs: "printables",
-    signIn: "none",
-    grab: "optional",
-    flaresolverr: "recommended",
-    collections: true,
-    likes: true,
-    profiles: false,
-    paid: false,
-  },
-  thingiverse: {
-    site: "https://www.thingiverse.com",
-    docs: "thingiverse",
-    signIn: "admin",
-    grab: "optional",
-    flaresolverr: "recommended",
-    collections: true,
-    likes: true,
-    profiles: false,
-    paid: false,
-  },
-  myminifactory: {
-    site: "https://www.myminifactory.com",
-    docs: "myminifactory",
-    signIn: "adminUser",
-    grab: "optional",
-    flaresolverr: "recommended",
-    collections: true,
-    likes: false,
-    profiles: false,
-    paid: true,
-  },
-  snapmaker: {
-    site: "https://space.snapmaker.com",
-    docs: "snapmaker-space",
-    signIn: "user",
-    grab: "recommended",
-    flaresolverr: "none",
-    collections: true,
-    likes: true,
-    profiles: true,
-    paid: false,
-  },
-  makeronline: {
-    site: "https://www.makeronline.com",
-    docs: "makeronline",
-    signIn: "userOptional",
-    grab: "required",
-    flaresolverr: "none",
-    collections: true,
-    likes: true,
-    profiles: true,
-    paid: false,
-  },
-  crealitycloud: {
-    site: "https://www.crealitycloud.com",
-    docs: "creality-cloud",
-    signIn: "user",
-    grab: "recommended",
-    flaresolverr: "none",
-    collections: true,
-    likes: true,
-    profiles: true,
-    paid: false,
-  },
-  nexprint: {
-    site: "https://www.nexprint.com",
-    docs: "nexprint",
-    signIn: "user",
-    grab: "recommended",
-    flaresolverr: "none",
-    collections: true,
-    likes: false,
-    profiles: true,
-    paid: false,
-  },
-  thangs: {
-    site: "https://thangs.com",
-    docs: "thangs",
-    signIn: "user",
-    grab: "recommended",
-    flaresolverr: "optional",
-    collections: true,
-    likes: true,
-    profiles: false,
-    paid: true,
-  },
-  cults3d: {
-    site: "https://cults3d.com",
-    docs: "cults3d",
-    signIn: "user",
-    grab: "recommended",
-    flaresolverr: "none",
-    collections: true,
-    likes: true,
-    profiles: false,
-    paid: true,
-  },
-};
+// Mirrors docs/PROVIDER_SETUP.md's table.
+export const PROVIDER_FACTS = Object.fromEntries(
+  PROVIDER_IDS.map((id) => {
+    const { site, docsSlug, signIn, helpers, capabilities } = MANIFESTS[id];
+    const facts: ProviderFacts = {
+      site,
+      docs: docsSlug,
+      signIn,
+      grab: helpers.grab,
+      flaresolverr: helpers.flaresolverr,
+      collections: capabilities.collections,
+      likes: capabilities.likes,
+      profiles: capabilities.profiles,
+      paid: capabilities.paidModels,
+    };
+    return [id, facts];
+  }),
+) as Record<ProviderId, ProviderFacts>;
 
-export const PROVIDER_ORDER = Object.keys(PROVIDER_FACTS) as ProviderId[];
+export const PROVIDER_ORDER: ProviderId[] = [...PROVIDER_IDS];
 
 export const providerDocsUrl = (id: ProviderId) => `${THINGPORT_WEBSITE_URL}docs/providers/${PROVIDER_FACTS[id].docs}/`;
 

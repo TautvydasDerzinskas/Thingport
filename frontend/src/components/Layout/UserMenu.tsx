@@ -17,31 +17,13 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import LogoutIcon from "@mui/icons-material/Logout";
 import type { AuthUser } from "../../api/auth";
 import type { ConfigurationTab } from "./ConfigurationDialog";
-import { IMPORT_PROVIDER_INFO } from "../../constants/importProviders";
 import { COMING_SOON_PROVIDERS, ProviderLogo, type ProviderId } from "./ConfigurationDialog/providerLogos";
 import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
 import { useGravatarUrl } from "../../hooks/useGravatarUrl";
-import { settingsApi, type Cults3dSettings } from "../../api/settings";
-import { cults3dReady, cults3dStatus } from "./ConfigurationDialog/cults3dStatus";
-import { useDisabledProviders } from "../../hooks/useDisabledProviders";
-
-type ServiceChipDef = {
-  key:
-    | "makerworld"
-    | "thingiverse"
-    | "printables"
-    | "myminifactory"
-    | "snapmaker"
-    | "makeronline"
-    | "crealitycloud"
-    | "nexprint"
-    | "thangs"
-    | "cults3d";
-  label: string;
-  connected: boolean;
-  /** Explains what's missing when not connected. */
-  disabledReason?: string;
-};
+import type { ProviderState } from "../../api/providers";
+import { refreshProviders, useProviders } from "../../hooks/useProviders";
+import { MANIFESTS } from "../../providers/index.generated";
+import { PROVIDER_UI, providerReady } from "../../providers/overrides";
 
 type Props = {
   user: AuthUser | null;
@@ -57,172 +39,41 @@ export function UserMenu({ user, onOpenConfiguration, onOpenProfile, onLogout }:
   const navigate = useNavigate();
   const avatarUrl = useGravatarUrl(user?.email, 128);
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
-  const [makerworldConfigured, setMakerworldConfigured] = React.useState(false);
-  const [makerworldExpired, setMakerworldExpired] = React.useState(false);
-  const [thingiverseConfigured, setThingiverseConfigured] = React.useState(false);
-  const [myminifactoryConfigured, setMyminifactoryConfigured] = React.useState(false);
-  const [snapmakerConfigured, setSnapmakerConfigured] = React.useState(false);
-  const [snapmakerExpired, setSnapmakerExpired] = React.useState(false);
-  const [makeronlineConfigured, setMakeronlineConfigured] = React.useState(false);
-  const [makeronlineExpired, setMakeronlineExpired] = React.useState(false);
-  const [crealitycloudConfigured, setCrealitycloudConfigured] = React.useState(false);
-  const [crealitycloudExpired, setCrealitycloudExpired] = React.useState(false);
-  const [nexprintConfigured, setNexprintConfigured] = React.useState(false);
-  const [nexprintExpired, setNexprintExpired] = React.useState(false);
-  const [thangsConfigured, setThangsConfigured] = React.useState(false);
-  const [thangsExpired, setThangsExpired] = React.useState(false);
-  const [cults3d, setCults3d] = React.useState<Cults3dSettings | null>(null);
+  const providers = useProviders();
 
   const menuOpen = Boolean(anchorEl);
-  // Checked on every open: the cookie can change in Configuration while the menu stays mounted.
+  // Asked again on every open: a sign-in can change in Configuration, or come from Thingport Grab, meanwhile.
   React.useEffect(() => {
-    if (!menuOpen) return;
-    let active = true;
-    settingsApi
-      .getMakerworld()
-      .then((res) => {
-        if (!active) return;
-        setMakerworldConfigured(res.configured);
-        setMakerworldExpired(res.expired);
-      })
-      .catch(() => undefined);
-    settingsApi
-      .getThingiverse()
-      .then((res) => {
-        if (active) setThingiverseConfigured(res.configured);
-      })
-      .catch(() => undefined);
-    settingsApi
-      .getMyminifactory()
-      .then((res) => {
-        if (active) setMyminifactoryConfigured(res.configured);
-      })
-      .catch(() => undefined);
-    settingsApi
-      .getSnapmakerSession()
-      .then((res) => {
-        if (!active) return;
-        setSnapmakerConfigured(res.configured);
-        setSnapmakerExpired(res.expired);
-      })
-      .catch(() => undefined);
-    settingsApi
-      .getMakeronlineSession()
-      .then((res) => {
-        if (!active) return;
-        setMakeronlineConfigured(res.configured);
-        setMakeronlineExpired(res.expired);
-      })
-      .catch(() => undefined);
-    settingsApi
-      .getCrealitycloudSession()
-      .then((res) => {
-        if (!active) return;
-        setCrealitycloudConfigured(res.configured);
-        setCrealitycloudExpired(res.expired);
-      })
-      .catch(() => undefined);
-    settingsApi
-      .getNexprintSession()
-      .then((res) => {
-        if (!active) return;
-        setNexprintConfigured(res.configured);
-        setNexprintExpired(res.expired);
-      })
-      .catch(() => undefined);
-    settingsApi
-      .getThangsSession()
-      .then((res) => {
-        if (!active) return;
-        setThangsConfigured(res.configured);
-        setThangsExpired(res.expired);
-      })
-      .catch(() => undefined);
-    settingsApi
-      .getCults3d()
-      .then((res) => active && setCults3d(res))
-      .catch(() => undefined);
-    return () => {
-      active = false;
-    };
+    if (menuOpen) void refreshProviders().catch(() => undefined);
   }, [menuOpen]);
 
   const closeMenu = () => setAnchorEl(null);
-  const disabledProviders = useDisabledProviders();
 
-  const allServices: ServiceChipDef[] = [
-    {
-      key: "makerworld",
-      ...IMPORT_PROVIDER_INFO.makerworld,
-      connected: makerworldConfigured && !makerworldExpired,
-      disabledReason: makerworldExpired ? t("providers.makerworld.expired") : t("userMenu.makerworldDisabledReason"),
-    },
-    {
-      key: "thingiverse",
-      ...IMPORT_PROVIDER_INFO.thingiverse,
-      connected: thingiverseConfigured,
-      disabledReason: t("userMenu.thingiverseDisabledReason"),
-    },
-    // Printables' public API needs no configuration.
-    { key: "printables", ...IMPORT_PROVIDER_INFO.printables, connected: true },
-    {
-      key: "myminifactory",
-      ...IMPORT_PROVIDER_INFO.myminifactory,
-      connected: myminifactoryConfigured,
-      disabledReason: t("userMenu.myminifactoryDisabledReason"),
-    },
-    {
-      key: "snapmaker",
-      ...IMPORT_PROVIDER_INFO.snapmaker,
-      connected: snapmakerConfigured && !snapmakerExpired,
-      disabledReason: snapmakerExpired ? t("providers.snapmaker.expired") : t("userMenu.snapmakerDisabledReason"),
-    },
-    {
-      key: "makeronline",
-      ...IMPORT_PROVIDER_INFO.makeronline,
-      connected: makeronlineConfigured && !makeronlineExpired,
-      disabledReason: makeronlineExpired ? t("providers.makeronline.expired") : t("userMenu.makeronlineDisabledReason"),
-    },
-    {
-      key: "crealitycloud",
-      ...IMPORT_PROVIDER_INFO.crealitycloud,
-      connected: crealitycloudConfigured && !crealitycloudExpired,
-      disabledReason: crealitycloudExpired
-        ? t("providers.crealitycloud.expired")
-        : t("userMenu.crealitycloudDisabledReason"),
-    },
-    {
-      key: "nexprint",
-      ...IMPORT_PROVIDER_INFO.nexprint,
-      connected: nexprintConfigured && !nexprintExpired,
-      disabledReason: nexprintExpired ? t("providers.nexprint.expired") : t("userMenu.nexprintDisabledReason"),
-    },
-    {
-      key: "thangs",
-      ...IMPORT_PROVIDER_INFO.thangs,
-      connected: thangsConfigured && !thangsExpired,
-      disabledReason: thangsExpired ? t("providers.thangs.expired") : t("userMenu.thangsDisabledReason"),
-    },
-    {
-      key: "cults3d",
-      ...IMPORT_PROVIDER_INFO.cults3d,
-      // Downloads need both: the API key, and the browser's sign-in Grab sends.
-      connected: cults3dReady(cults3d),
-      disabledReason: cults3dStatus(cults3d, t),
-    },
-  ];
+  /** Why its imports don't work yet. */
+  const notReadyReason = (state: ProviderState) => {
+    const status = state.slots.default?.status;
+    if (status === "expired") return t(`providers:${state.id}.status.expired`);
+    if (status === "connected") {
+      const missing = PROVIDER_UI[state.id]?.missing?.(state, t);
+      if (missing) return missing.tooltip;
+    }
+    return t(`providers:${state.id}.status.disabledReason`);
+  };
+
   // Turned off by an admin: no icon. Coming-soon sites follow the live ones.
   const services: { id: ProviderId; label: string; connected: boolean; tooltip: string }[] = [
-    ...allServices
-      .filter((service) => !disabledProviders.has(service.key))
-      .map((svc) => ({
-        id: svc.key,
-        label: svc.label,
-        connected: svc.connected,
-        tooltip: svc.connected
-          ? t("userMenu.serviceConnected", { service: svc.label })
-          : (svc.disabledReason ?? t("userMenu.serviceNotConnected", { service: svc.label })),
-      })),
+    ...(providers ?? [])
+      .filter((state) => state.enabled)
+      .map((state) => {
+        const label = MANIFESTS[state.id].name;
+        const connected = providerReady(state);
+        return {
+          id: state.id,
+          label,
+          connected,
+          tooltip: connected ? t("userMenu.serviceConnected", { service: label }) : notReadyReason(state),
+        };
+      }),
     ...COMING_SOON_PROVIDERS.map(({ id, name }) => ({
       id,
       label: name,

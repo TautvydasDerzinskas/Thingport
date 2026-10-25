@@ -426,15 +426,6 @@
       "system": "Adapt to system",
       "serviceConnected": "{{service}}: connected",
       "serviceNotConnected": "{{service}}: not connected",
-      "makerworldDisabledReason": "MakerWorld: not connected",
-      "thingiverseDisabledReason": "Thingiverse: the admin hasn't configured an API key yet",
-      "myminifactoryDisabledReason": "MyMiniFactory: the admin hasn't configured an API key yet",
-      "snapmakerDisabledReason": "Snapmaker Space: connect your account in Configuration → Providers",
-      "makeronlineDisabledReason": "MakerOnline: connect your account in Configuration → Providers",
-      "crealitycloudDisabledReason": "Creality Cloud: connect your account in Configuration → Providers",
-      "nexprintDisabledReason": "NexPrint: connect your account in Configuration → Providers",
-      "thangsDisabledReason": "Thangs: connect your account in Configuration → Providers",
-      "cults3dDisabledReason": "Cults3D: enter your nickname and API key in Configuration → Providers",
       "myModels": "My models"
     },
     "notifications": {
@@ -1016,28 +1007,6 @@
       "providers": {
         "heading": "Providers",
         "subtitle": "The sites Thingport imports from and syncs with. Turn one off and nothing new comes from it for anyone; models already imported stay.",
-        "descriptions": {
-          "makerworld": "Bambu Lab's model site: imports with print profiles, and collections to sync.",
-          "printables": "Prusa's model site: imports, and public and private collections to sync.",
-          "thingiverse": "Imports, collections and liked models, through this Thingport's App Token.",
-          "myminifactory": "Models and public collections, through this Thingport's API key; bought models through each user's own MyMiniFactory account.",
-          "snapmaker": "Models with their print profiles, and each user's likes and bookmarks, through each user's own Snapmaker account.",
-          "makeronline": "Models with their print profiles, collections and each user's likes. Files come through Thingport Grab: MakerOnline gives them only to its own pages.",
-          "crealitycloud": "Models with their print profiles, collections and each user's likes, through each user's own Creality Cloud account.",
-          "nexprint": "Models with their print profiles, and collections, through each user's own NexPrint account.",
-          "thangs": "Free and bought models, likes and collections, through each user's own Thangs account.",
-          "cults3d": "Free and bought models, likes and printlists, through each user's own Cults3D API key. Files come with the browser's sign-in, which Thingport Grab sends."
-        },
-        "keyStatus": {
-          "thingiverse": {
-            "set": "App Token set",
-            "missing": "No App Token: Thingiverse imports won't work until one is set"
-          },
-          "myminifactory": {
-            "set": "API key set",
-            "missing": "No API key: MyMiniFactory imports won't work until one is set"
-          }
-        },
         "turnOff": "Turn {{name}} off",
         "turnOn": "Turn {{name}} on",
         "disableTitle": "Turn {{name}} off?",
@@ -1407,36 +1376,6 @@
         "refetchProgress": "Refetching descriptions for {{email}}: {{done}} of {{total}} — {{updated}} updated so far.",
         "refetchDone": "Refetched descriptions for {{email}}: {{updated}} of {{total}} changed.",
         "refetchFailedCount": "{{count}} couldn't be read from their source and were left as they were."
-      },
-      "thingiverse": {
-        "heading": "Thingiverse App Token",
-        "helpText": "Create an app at thingiverse.com/apps/create (any type, e.g. \"Desktop\") and paste the App Token it shows you.",
-        "statusConfigured": "An App Token is currently configured.",
-        "statusNotConfigured": "No App Token is configured yet -- Thingiverse imports will fail until one is set.",
-        "tokenLabel": "App Token",
-        "tokenPlaceholder": "Paste a new token to replace the current one",
-        "tokenHelperConfigured": "For security, the current token is never shown again -- leave this blank to keep it, or paste a new one to replace it.",
-        "save": "Save",
-        "saving": "Saving…",
-        "clear": "Remove token",
-        "saved": "Saved.",
-        "cleared": "App Token removed.",
-        "failed": "Failed to save Thingiverse settings."
-      },
-      "myminifactory": {
-        "heading": "MyMiniFactory API key",
-        "helpText": "Create an app at myminifactory.com/settings/developer/application and paste the API key it shows you. Free models download without it, but it's needed to read their details and your collections.",
-        "statusConfigured": "An API key is currently configured.",
-        "statusNotConfigured": "No API key is configured yet -- MyMiniFactory imports will fail until one is set.",
-        "tokenLabel": "API key",
-        "tokenPlaceholder": "Paste a new key to replace the current one",
-        "tokenHelperConfigured": "For security, the current key is never shown again -- leave this blank to keep it, or paste a new one to replace it.",
-        "save": "Save",
-        "saving": "Saving…",
-        "clear": "Remove key",
-        "saved": "Saved.",
-        "cleared": "API key removed.",
-        "failed": "Failed to save MyMiniFactory settings."
       },
       "ai": {
         "heading": "AI",
@@ -2279,123 +2218,6 @@
       "disconnectMessage": "Your {{name}} key is removed, and imports from {{name}} stop working until you connect it again.",
       "disconnectMessageShared": "The {{name}} token is removed for everyone on this Thingport, and imports from {{name}} stop working until it's connected again.",
       "failed": "Failed to save -- try again.",
-      "makerworld": {
-        "expiredStatus": "Sign-in expired",
-        "expired": "Sign-in expired. Connect MakerWorld again with a fresh cookie in Configuration → Providers.",
-        "placeholder": "example: mw_session=...; mw_token=...;",
-        "steps": [
-          "Sign in at makerworld.com in your browser.",
-          "Open the developer tools (F12 or ⌥⌘I) and go to the Network tab.",
-          "Reload the page and pick any request to makerworld.com.",
-          "Under Request Headers, copy the whole value of the Cookie header and paste it below."
-        ]
-      },
-      "thingiverse": {
-        "placeholder": "Paste the App Token",
-        "steps": [
-          "Sign in at thingiverse.com and open thingiverse.com/apps/create.",
-          "Create an app of any type, such as \"Desktop app\".",
-          "Copy the App Token it shows and paste it below."
-        ],
-        "shared": "This token is shared by everyone on this Thingport.",
-        "adminOnly": "Only an admin of this Thingport can set this up."
-      },
-      "myminifactory": {
-        "placeholder": "PHPSESSID value, or the whole Cookie header",
-        "steps": [
-          "Easiest: with Thingport Grab, just open myminifactory.com while signed in, and it connects your account for you.",
-          "Or by hand: sign in at myminifactory.com and open your browser's developer tools (F12).",
-          "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → www.myminifactory.com, copy the value of PHPSESSID and paste it below."
-        ],
-        "notConnected": "Free models import without it. Connect your account to import the models you bought, and free ones that need a sign-in.",
-        "expired": "Sign-in expired. Visit myminifactory.com with Thingport Grab, or connect MyMiniFactory again in Configuration → Providers.",
-        "expiredStatus": "Sign-in expired"
-      },
-      "snapmaker": {
-        "placeholder": "login_access_token value, or the whole Cookie header",
-        "steps": [
-          "Easiest: with Thingport Grab, just open space.snapmaker.com while signed in. It connects your account and keeps the sign-in fresh, since Snapmaker's lasts only a day.",
-          "Or by hand: sign in at space.snapmaker.com and open your browser's developer tools (F12).",
-          "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → space.snapmaker.com, copy the value of login_access_token and paste it below. Pasted by hand, it lasts a day."
-        ],
-        "notConnected": "Snapmaker gives its files to signed-in users only. Connect your account to import its models, and your likes and bookmarks.",
-        "expired": "Sign-in expired. Visit space.snapmaker.com with Thingport Grab, or connect Snapmaker Space again in Configuration → Providers.",
-        "expiredStatus": "Sign-in expired"
-      },
-      "makeronline": {
-        "placeholder": "mo_access_token value, or the whole Cookie header",
-        "steps": [
-          "Easiest: with Thingport Grab, just open makeronline.com while signed in. It connects your account, and brings in the MakerOnline models waiting for it, since MakerOnline gives its files only to its own pages.",
-          "Or by hand: sign in at makeronline.com and open your browser's developer tools (F12).",
-          "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → www.makeronline.com, copy the value of mo_access_token and paste it below. It lasts about three months."
-        ],
-        "notConnected": "Connect your account to read your MakerOnline likes and private collections. Its files always come through Thingport Grab.",
-        "expired": "Sign-in expired. Visit makeronline.com with Thingport Grab, or connect MakerOnline again in Configuration → Providers.",
-        "expiredStatus": "Sign-in expired"
-      },
-      "crealitycloud": {
-        "placeholder": "The Cookie header, with model_token and model_user_id",
-        "steps": [
-          "Easiest: with Thingport Grab, just open crealitycloud.com while signed in. It connects your account, and again each time you sign in there.",
-          "Or by hand: sign in at crealitycloud.com, open your browser's developer tools (F12) and reload the page.",
-          "Under Network, pick any request to crealitycloud.com/api, copy its Cookie request header and paste it below. It lasts a week from when you signed in."
-        ],
-        "notConnected": "Creality Cloud gives its files to signed-in users only. Connect your account to import its models, and your likes.",
-        "expired": "Sign-in expired. Sign in on crealitycloud.com with Thingport Grab, or connect Creality Cloud again in Configuration → Providers.",
-        "expiredStatus": "Sign-in expired"
-      },
-      "nexprint": {
-        "placeholder": "The auth_token cookie, or the Authorization header",
-        "steps": [
-          "Easiest: with Thingport Grab, just open nexprint.com while signed in. It connects your account, and keeps it connected as you visit.",
-          "Or by hand: sign in at nexprint.com, open your browser's developer tools (F12) and reload the page.",
-          "Under Network, pick any request to nexprint.com/gateway, copy its Authorization request header (or the auth_token cookie) and paste it below."
-        ],
-        "notConnected": "NexPrint gives its files to signed-in users only. Connect your account to import its models.",
-        "expired": "Sign-in expired. Sign in on nexprint.com with Thingport Grab, or connect NexPrint again in Configuration → Providers.",
-        "expiredStatus": "Sign-in expired"
-      },
-      "thangs": {
-        "placeholder": "The accessToken or refreshToken cookie, or the whole Cookie header",
-        "steps": [
-          "Easiest: with Thingport Grab, just open thangs.com while signed in. It connects your account, and Thingport keeps it connected for about a year.",
-          "Or by hand: sign in at thangs.com, open your browser's developer tools (F12) and reload the page.",
-          "Under Network, pick any request to thangs.com/api, copy its Cookie request header (it holds both tokens) and paste it below."
-        ],
-        "notConnected": "Thangs gives its files to signed-in users only. Connect your account to import its models.",
-        "expired": "Sign-in expired. Sign in on thangs.com with Thingport Grab, or connect Thangs again in Configuration → Providers.",
-        "expiredStatus": "Sign-in expired"
-      },
-      "cults3d": {
-        "nickLabel": "Cults3D nickname",
-        "keyLabel": "API key",
-        "placeholder": "Your nickname, as written on your profile",
-        "steps": [
-          "Sign in at cults3d.com and open cults3d.com/en/api/keys. Make a key there and copy its secret.",
-          "Enter your nickname exactly as your profile writes it (capitals count) and the key below. Thingport reads models, likes, printlists and your downloads with it.",
-          "Then open cults3d.com once with Thingport Grab, signed in: Cults3D gives its files only to its own signed-in pages, and Grab passes that sign-in on."
-        ],
-        "notConnected": "Thingport reads Cults3D with your own API key. Connect it with your nickname and a key made on cults3d.com.",
-        "expired": "Cults3D turned the API key down. Make a new one on cults3d.com and connect again in Configuration → Providers.",
-        "expiredStatus": "API key turned down",
-        "siteMissing": "Connected, but downloads need the browser's sign-in: open cults3d.com signed in with Thingport Grab, or paste it from the tile's menu.",
-        "siteExpired": "The browser's sign-in ran out: open cults3d.com signed in with Thingport Grab, or paste it again from the tile's menu.",
-        "siteMissingStatus": "No browser sign-in yet",
-        "session": {
-          "title": "Paste the Cults3D sign-in",
-          "paste": "Paste browser sign-in",
-          "save": "Save",
-          "placeholder": "The request headers of a signed-in cults3d.com page",
-          "steps": [
-            "Easiest: with Thingport Grab, just open cults3d.com while signed in. It sends the sign-in itself.",
-            "Or by hand: open your browser's developer tools (F12) on a signed-in cults3d.com page and reload it.",
-            "Under Network, pick the page's own request, copy its request headers (with the Cookie and User-Agent) and paste them below. It only works when Thingport reaches the internet from the same address as that browser."
-          ]
-        }
-      },
-      "printables": {
-        "alwaysConnected": "Printables is connected by default: it needs no account or key."
-      },
       "comingSoon": "Coming soon"
     },
     "slicer": {
@@ -2518,107 +2340,7 @@
       "compareLabel": "What each provider needs and imports",
       "off": "Turned off",
       "yes": "Yes",
-      "no": "No",
-      "providers": {
-        "makerworld": {
-          "summary": "Bambu Lab's platform for sharing 3D printable models, many with tuned print profiles. Open to any printer, with MakerLab tools for customising models.",
-          "signIn": "Your own MakerWorld session cookie.",
-          "grab": "Reads the cookie for you, and imports whole collections without running into MakerWorld's rate limits.",
-          "setup": [
-            "Install Thingport Grab and import once from a MakerWorld page while signed in: it connects MakerWorld for you.",
-            "Or by hand: copy the token cookie from your browser's developer tools (Application → Cookies → makerworld.com).",
-            "Right-click MakerWorld in Configuration → Providers, choose Connect and paste it."
-          ]
-        },
-        "printables": {
-          "summary": "Prusa Research's free model repository, formerly PrusaPrinters, with contests and Prusameters rewards. Its files work on any printer.",
-          "signIn": "Nothing to connect.",
-          "grab": "Needed only for your private collections and likes, which Printables shows to you alone.",
-          "setup": [
-            "Nothing to set up: paste a Printables link, or import from its page with Thingport Grab.",
-            "For your private collections and likes, visit Printables signed in, with Thingport Grab."
-          ]
-        },
-        "thingiverse": {
-          "summary": "One of the oldest and largest libraries of user-made 3D printable designs, most of them free and openly licensed.",
-          "signIn": "One App Token for everyone, set by an admin.",
-          "grab": "Handy for importing from Thingiverse's pages, but not needed.",
-          "setup": [
-            "Sign in at thingiverse.com and open thingiverse.com/apps/create.",
-            "Create an app of a type without a redirect URL, such as Desktop app, and copy its App Token.",
-            "An admin pastes it in Configuration → Providers → Thingiverse, or in Administration → Providers."
-          ]
-        },
-        "myminifactory": {
-          "summary": "A curated marketplace of free and paid 3D printable files, best known for tabletop miniatures. Models are checked before they're listed.",
-          "signIn": "An API key set by an admin; your own sign-in adds the models you bought.",
-          "grab": "Connects your account when you just visit myminifactory.com.",
-          "setup": [
-            "An admin creates an application at myminifactory.com/settings/developer and saves its API key in Administration → Providers.",
-            "For bought models, open myminifactory.com signed in with Thingport Grab, or paste your PHPSESSID cookie in Configuration → Providers."
-          ]
-        },
-        "snapmaker": {
-          "summary": "Snapmaker's model platform, built around its U1 printer. Featured models are test-printed, with profiles tuned for multi-colour prints.",
-          "signIn": "Your own sign-in. It lasts a day.",
-          "grab": "The only thing that renews the sign-in. Without it, you paste a new one every day.",
-          "setup": [
-            "Install Thingport Grab, enable it on Snapmaker Space and open space.snapmaker.com signed in.",
-            "Grab then keeps the sign-in fresh while your browser is open.",
-            "By hand: paste the login_access_token cookie in Configuration → Providers. It lasts a day."
-          ]
-        },
-        "makeronline": {
-          "summary": "Anycubic's model platform: free and paid models, designer contests and an AI text-to-3D tool.",
-          "signIn": "None to import; your sign-in adds your likes and private collections.",
-          "grab": "Grab downloads every MakerOnline file, in a makeronline.com page. Imports started elsewhere wait for it.",
-          "setup": [
-            "Install Thingport Grab and enable it on MakerOnline.",
-            "Import from a model page, or open any makeronline.com page to bring in the models waiting for Grab.",
-            "Signed in there, Grab also connects your account for your likes and private collections."
-          ]
-        },
-        "crealitycloud": {
-          "summary": "Creality's 3D printing platform: a large library of free and premium models, with cloud slicing and remote printing.",
-          "signIn": "Your own sign-in. It lasts a week and isn't renewed.",
-          "grab": "Sends each new sign-in as you sign in on crealitycloud.com.",
-          "setup": [
-            "Install Thingport Grab, enable it on Creality Cloud and open crealitycloud.com signed in.",
-            "By hand: copy the Cookie header of a crealitycloud.com/api request and paste it in Configuration → Providers.",
-            "After a week, sign in there again to reconnect."
-          ]
-        },
-        "nexprint": {
-          "summary": "Elegoo's open model platform, launched in 2025. It mixes Elegoo's own library with community designs, and works with Elegoo Slicer and OrcaSlicer.",
-          "signIn": "Your own sign-in, which the site renews as you use it.",
-          "grab": "Sends the renewed sign-in as you visit nexprint.com.",
-          "setup": [
-            "Install Thingport Grab, enable it on NexPrint and open nexprint.com signed in.",
-            "By hand: copy the Authorization header of a nexprint.com/gateway request and paste it in Configuration → Providers."
-          ]
-        },
-        "thangs": {
-          "summary": "A 3D model search engine by Physna that finds models by their shape as well as their name, with a marketplace and designer memberships.",
-          "signIn": "Your own sign-in; Thingport renews it for about a year.",
-          "grab": "Connects your account in one visit to thangs.com.",
-          "setup": [
-            "Install Thingport Grab, enable it on Thangs and open thangs.com signed in.",
-            "By hand: copy the Cookie header of a thangs.com/api request and paste it in Configuration → Providers.",
-            "Free accounts download a limited number of models a day."
-          ]
-        },
-        "cults3d": {
-          "summary": "A French marketplace for free and paid 3D printable designs, founded in 2014, and a social network for makers.",
-          "signIn": "Your own API key, and your browser's sign-in for files.",
-          "grab": "Sends the browser's sign-in and Cloudflare clearance. Thingport must reach the internet from that browser's IP address.",
-          "flaresolverr": "Doesn't help: its browser can't hand over a download link.",
-          "setup": [
-            "Make an API key at cults3d.com/en/api/keys.",
-            "Right-click Cults3D in Configuration → Providers, choose Connect, and enter your nickname and the key.",
-            "Open cults3d.com signed in with Thingport Grab, so its files can download."
-          ]
-        }
-      }
+      "no": "No"
     },
     "whatsNew": {
       "label": "What's new",
@@ -3686,34 +3408,7 @@
           "notALink": "Paste a MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs or Cults3D collection link.",
           "usernameFailed": "Couldn't save the username.",
           "openProviders": "Open Providers",
-          "notConnected": {
-            "makerworld": "Connect MakerWorld in Configuration > Providers to see your collections here. Its cookie tells Thingport who you are there.",
-            "printables": "Printables can't be reached right now.",
-            "thingiverse": "Thingiverse isn't connected on this Thingport yet. An admin can connect it in Configuration > Providers.",
-            "myminifactory": "MyMiniFactory isn't connected on this Thingport yet. An admin can connect it in Configuration > Providers.",
-            "snapmaker": "Connect Snapmaker Space in Configuration > Providers, or visit it with Thingport Grab, to see your likes and bookmarks here.",
-            "makeronline": "Connect MakerOnline in Configuration > Providers, or visit it with Thingport Grab, to see your likes and collections here.",
-            "crealitycloud": "Connect Creality Cloud in Configuration > Providers, or visit it with Thingport Grab, to see your likes and collections here.",
-            "nexprint": "Connect NexPrint in Configuration > Providers, or visit it with Thingport Grab, to see your collections here.",
-            "thangs": "Connect Thangs in Configuration > Providers, or visit it with Thingport Grab, to see your likes and collections here.",
-            "cults3d": "Enter your Cults3D nickname and API key in Configuration > Providers to see your likes and printlists here."
-          },
           "usernameLabel": "Your {{provider}} username",
-          "usernameHint": {
-            "printables": "Thingport lists your public Printables collections. It only needs asking once.",
-            "thingiverse": "Thingport lists your public Thingiverse collections. It only needs asking once.",
-            "myminifactory": "Thingport lists your public MyMiniFactory collections. It only needs asking once."
-          },
-          "usernamePlaceholder": {
-            "printables": "@handle or profile link",
-            "thingiverse": "Username or profile link",
-            "myminifactory": "Username or profile link"
-          },
-          "showing": {
-            "printables": "Showing @{{user}}'s collections.",
-            "thingiverse": "Showing @{{user}}'s public collections.",
-            "myminifactory": "Showing @{{user}}'s public collections."
-          },
           "change": "Change",
           "empty": "No collections on {{provider}} yet.",
           "pasteLabel": "Someone else's collection",
@@ -3729,15 +3424,9 @@
           "startedWaiting": "\"{{name}}\" now syncs with \"{{source}}\". Its models come in the next time you open {{provider}} with Thingport Grab.",
           "pickPrompt": "Pick a collection above, or paste a link.",
           "startNothing": "Sync",
-          "printablesPrivateHelp": "Private collections and likes are added once Thingport Grab sees you signed in on Printables, since Printables shows them to you alone.",
           "makerworldHelp": "MakerWorld quickly rate-limits bulk imports, so the models in it now aren't imported. Any already in your library are added to \"{{name}}\".",
           "forget": "Forget",
-          "forgetTitle": "Forget your {{provider}} account?",
-          "forgetMessage": {
-            "printables": "Thingport stops listing your Printables collections, and Thingport Grab stops sending your private collections and likes, until you give your username again. Syncs already set up keep their models; those of private collections and likes pause until then.",
-            "thingiverse": "Thingport stops listing your Thingiverse collections until you give your username again. Syncs already set up keep their models.",
-            "myminifactory": "Thingport stops listing your MyMiniFactory collections until you give your username again. Syncs already set up keep their models."
-          }
+          "forgetTitle": "Forget your {{provider}} account?"
         }
       },
       "sortByModels": "Most models",
@@ -4004,6 +3693,381 @@
         "othersGo_one": "{{names}} is removed. Its models are tagged “{{name}}” instead.",
         "othersGo_other": "{{names}} are removed. Their models are tagged “{{name}}” instead.",
         "keepsOwn": "Models already tagged “{{name}}” stay as they are."
+      }
+    }
+  },
+  "providers": {
+    "makerworld": {
+      "connect": {
+        "steps": [
+          "Sign in at makerworld.com in your browser.",
+          "Open the developer tools (F12 or ⌥⌘I) and go to the Network tab.",
+          "Reload the page and pick any request to makerworld.com.",
+          "Under Request Headers, copy the whole value of the Cookie header and paste it below."
+        ],
+        "placeholder": "example: mw_session=...; mw_token=...;"
+      },
+      "status": {
+        "expired": "Sign-in expired. Connect MakerWorld again with a fresh cookie in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "MakerWorld: not connected"
+      },
+      "about": {
+        "summary": "Bambu Lab's platform for sharing 3D printable models, many with tuned print profiles. Open to any printer, with MakerLab tools for customising models.",
+        "signIn": "Your own MakerWorld session cookie.",
+        "grab": "Reads the cookie for you, and imports whole collections without running into MakerWorld's rate limits.",
+        "setup": [
+          "Install Thingport Grab and import once from a MakerWorld page while signed in: it connects MakerWorld for you.",
+          "Or by hand: copy the token cookie from your browser's developer tools (Application → Cookies → makerworld.com).",
+          "Right-click MakerWorld in Configuration → Providers, choose Connect and paste it."
+        ]
+      },
+      "admin": {
+        "description": "Bambu Lab's model site: imports with print profiles, and collections to sync."
+      },
+      "sync": {
+        "notConnected": "Connect MakerWorld in Configuration > Providers to see your collections here. Its cookie tells Thingport who you are there."
+      }
+    },
+    "printables": {
+      "status": {
+        "alwaysConnected": "Printables is connected by default: it needs no account or key."
+      },
+      "about": {
+        "summary": "Prusa Research's free model repository, formerly PrusaPrinters, with contests and Prusameters rewards. Its files work on any printer.",
+        "signIn": "Nothing to connect.",
+        "grab": "Needed only for your private collections and likes, which Printables shows to you alone.",
+        "setup": [
+          "Nothing to set up: paste a Printables link, or import from its page with Thingport Grab.",
+          "For your private collections and likes, visit Printables signed in, with Thingport Grab."
+        ]
+      },
+      "admin": {
+        "description": "Prusa's model site: imports, and public and private collections to sync."
+      },
+      "sync": {
+        "notConnected": "Printables can't be reached right now.",
+        "usernameHint": "Thingport lists your public Printables collections. It only needs asking once.",
+        "usernamePlaceholder": "@handle or profile link",
+        "showing": "Showing @{{user}}'s collections.",
+        "forgetMessage": "Thingport stops listing your Printables collections, and Thingport Grab stops sending your private collections and likes, until you give your username again. Syncs already set up keep their models; those of private collections and likes pause until then.",
+        "showingHelp": "Private collections and likes are added once Thingport Grab sees you signed in on Printables, since Printables shows them to you alone."
+      }
+    },
+    "thingiverse": {
+      "connect": {
+        "steps": [
+          "Sign in at thingiverse.com and open thingiverse.com/apps/create.",
+          "Create an app of any type, such as \"Desktop app\".",
+          "Copy the App Token it shows and paste it below."
+        ],
+        "placeholder": "Paste the App Token",
+        "shared": "This token is shared by everyone on this Thingport."
+      },
+      "status": {
+        "adminOnly": "Only an admin of this Thingport can set this up.",
+        "disabledReason": "Thingiverse: the admin hasn't configured an API key yet"
+      },
+      "about": {
+        "summary": "One of the oldest and largest libraries of user-made 3D printable designs, most of them free and openly licensed.",
+        "signIn": "One App Token for everyone, set by an admin.",
+        "grab": "Handy for importing from Thingiverse's pages, but not needed.",
+        "setup": [
+          "Sign in at thingiverse.com and open thingiverse.com/apps/create.",
+          "Create an app of a type without a redirect URL, such as Desktop app, and copy its App Token.",
+          "An admin pastes it in Configuration → Providers → Thingiverse, or in Administration → Providers."
+        ]
+      },
+      "admin": {
+        "description": "Imports, collections and liked models, through this Thingport's App Token.",
+        "keyStatus": {
+          "set": "App Token set",
+          "missing": "No App Token: Thingiverse imports won't work until one is set"
+        },
+        "key": {
+          "heading": "Thingiverse App Token",
+          "helpText": "Create an app at thingiverse.com/apps/create (any type, e.g. \"Desktop\") and paste the App Token it shows you.",
+          "statusConfigured": "An App Token is currently configured.",
+          "statusNotConfigured": "No App Token is configured yet -- Thingiverse imports will fail until one is set.",
+          "tokenLabel": "App Token",
+          "tokenPlaceholder": "Paste a new token to replace the current one",
+          "tokenHelperConfigured": "For security, the current token is never shown again -- leave this blank to keep it, or paste a new one to replace it.",
+          "save": "Save",
+          "saving": "Saving…",
+          "clear": "Remove token",
+          "saved": "Saved.",
+          "cleared": "App Token removed.",
+          "failed": "Failed to save Thingiverse settings."
+        }
+      },
+      "sync": {
+        "notConnected": "Thingiverse isn't connected on this Thingport yet. An admin can connect it in Configuration > Providers.",
+        "usernameHint": "Thingport lists your public Thingiverse collections. It only needs asking once.",
+        "usernamePlaceholder": "Username or profile link",
+        "showing": "Showing @{{user}}'s public collections.",
+        "forgetMessage": "Thingport stops listing your Thingiverse collections until you give your username again. Syncs already set up keep their models."
+      }
+    },
+    "myminifactory": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open myminifactory.com while signed in, and it connects your account for you.",
+          "Or by hand: sign in at myminifactory.com and open your browser's developer tools (F12).",
+          "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → www.myminifactory.com, copy the value of PHPSESSID and paste it below."
+        ],
+        "placeholder": "PHPSESSID value, or the whole Cookie header"
+      },
+      "status": {
+        "notConnected": "Free models import without it. Connect your account to import the models you bought, and free ones that need a sign-in.",
+        "expired": "Sign-in expired. Visit myminifactory.com with Thingport Grab, or connect MyMiniFactory again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "MyMiniFactory: the admin hasn't configured an API key yet"
+      },
+      "about": {
+        "summary": "A curated marketplace of free and paid 3D printable files, best known for tabletop miniatures. Models are checked before they're listed.",
+        "signIn": "An API key set by an admin; your own sign-in adds the models you bought.",
+        "grab": "Connects your account when you just visit myminifactory.com.",
+        "setup": [
+          "An admin creates an application at myminifactory.com/settings/developer and saves its API key in Administration → Providers.",
+          "For bought models, open myminifactory.com signed in with Thingport Grab, or paste your PHPSESSID cookie in Configuration → Providers."
+        ]
+      },
+      "admin": {
+        "description": "Models and public collections, through this Thingport's API key; bought models through each user's own MyMiniFactory account.",
+        "keyStatus": {
+          "set": "API key set",
+          "missing": "No API key: MyMiniFactory imports won't work until one is set"
+        },
+        "key": {
+          "heading": "MyMiniFactory API key",
+          "helpText": "Create an app at myminifactory.com/settings/developer/application and paste the API key it shows you. Free models download without it, but it's needed to read their details and your collections.",
+          "statusConfigured": "An API key is currently configured.",
+          "statusNotConfigured": "No API key is configured yet -- MyMiniFactory imports will fail until one is set.",
+          "tokenLabel": "API key",
+          "tokenPlaceholder": "Paste a new key to replace the current one",
+          "tokenHelperConfigured": "For security, the current key is never shown again -- leave this blank to keep it, or paste a new one to replace it.",
+          "save": "Save",
+          "saving": "Saving…",
+          "clear": "Remove key",
+          "saved": "Saved.",
+          "cleared": "API key removed.",
+          "failed": "Failed to save MyMiniFactory settings."
+        }
+      },
+      "sync": {
+        "notConnected": "MyMiniFactory isn't connected on this Thingport yet. An admin can connect it in Configuration > Providers.",
+        "usernameHint": "Thingport lists your public MyMiniFactory collections. It only needs asking once.",
+        "usernamePlaceholder": "Username or profile link",
+        "showing": "Showing @{{user}}'s public collections.",
+        "forgetMessage": "Thingport stops listing your MyMiniFactory collections until you give your username again. Syncs already set up keep their models."
+      }
+    },
+    "snapmaker": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open space.snapmaker.com while signed in. It connects your account and keeps the sign-in fresh, since Snapmaker's lasts only a day.",
+          "Or by hand: sign in at space.snapmaker.com and open your browser's developer tools (F12).",
+          "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → space.snapmaker.com, copy the value of login_access_token and paste it below. Pasted by hand, it lasts a day."
+        ],
+        "placeholder": "login_access_token value, or the whole Cookie header"
+      },
+      "status": {
+        "notConnected": "Snapmaker gives its files to signed-in users only. Connect your account to import its models, and your likes and bookmarks.",
+        "expired": "Sign-in expired. Visit space.snapmaker.com with Thingport Grab, or connect Snapmaker Space again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "Snapmaker Space: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "Snapmaker's model platform, built around its U1 printer. Featured models are test-printed, with profiles tuned for multi-colour prints.",
+        "signIn": "Your own sign-in. It lasts a day.",
+        "grab": "The only thing that renews the sign-in. Without it, you paste a new one every day.",
+        "setup": [
+          "Install Thingport Grab, enable it on Snapmaker Space and open space.snapmaker.com signed in.",
+          "Grab then keeps the sign-in fresh while your browser is open.",
+          "By hand: paste the login_access_token cookie in Configuration → Providers. It lasts a day."
+        ]
+      },
+      "admin": {
+        "description": "Models with their print profiles, and each user's likes and bookmarks, through each user's own Snapmaker account."
+      },
+      "sync": {
+        "notConnected": "Connect Snapmaker Space in Configuration > Providers, or visit it with Thingport Grab, to see your likes and bookmarks here."
+      }
+    },
+    "makeronline": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open makeronline.com while signed in. It connects your account, and brings in the MakerOnline models waiting for it, since MakerOnline gives its files only to its own pages.",
+          "Or by hand: sign in at makeronline.com and open your browser's developer tools (F12).",
+          "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → www.makeronline.com, copy the value of mo_access_token and paste it below. It lasts about three months."
+        ],
+        "placeholder": "mo_access_token value, or the whole Cookie header"
+      },
+      "status": {
+        "notConnected": "Connect your account to read your MakerOnline likes and private collections. Its files always come through Thingport Grab.",
+        "expired": "Sign-in expired. Visit makeronline.com with Thingport Grab, or connect MakerOnline again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "MakerOnline: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "Anycubic's model platform: free and paid models, designer contests and an AI text-to-3D tool.",
+        "signIn": "None to import; your sign-in adds your likes and private collections.",
+        "grab": "Grab downloads every MakerOnline file, in a makeronline.com page. Imports started elsewhere wait for it.",
+        "setup": [
+          "Install Thingport Grab and enable it on MakerOnline.",
+          "Import from a model page, or open any makeronline.com page to bring in the models waiting for Grab.",
+          "Signed in there, Grab also connects your account for your likes and private collections."
+        ]
+      },
+      "admin": {
+        "description": "Models with their print profiles, collections and each user's likes. Files come through Thingport Grab: MakerOnline gives them only to its own pages."
+      },
+      "sync": {
+        "notConnected": "Connect MakerOnline in Configuration > Providers, or visit it with Thingport Grab, to see your likes and collections here."
+      }
+    },
+    "crealitycloud": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open crealitycloud.com while signed in. It connects your account, and again each time you sign in there.",
+          "Or by hand: sign in at crealitycloud.com, open your browser's developer tools (F12) and reload the page.",
+          "Under Network, pick any request to crealitycloud.com/api, copy its Cookie request header and paste it below. It lasts a week from when you signed in."
+        ],
+        "placeholder": "The Cookie header, with model_token and model_user_id"
+      },
+      "status": {
+        "notConnected": "Creality Cloud gives its files to signed-in users only. Connect your account to import its models, and your likes.",
+        "expired": "Sign-in expired. Sign in on crealitycloud.com with Thingport Grab, or connect Creality Cloud again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "Creality Cloud: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "Creality's 3D printing platform: a large library of free and premium models, with cloud slicing and remote printing.",
+        "signIn": "Your own sign-in. It lasts a week and isn't renewed.",
+        "grab": "Sends each new sign-in as you sign in on crealitycloud.com.",
+        "setup": [
+          "Install Thingport Grab, enable it on Creality Cloud and open crealitycloud.com signed in.",
+          "By hand: copy the Cookie header of a crealitycloud.com/api request and paste it in Configuration → Providers.",
+          "After a week, sign in there again to reconnect."
+        ]
+      },
+      "admin": {
+        "description": "Models with their print profiles, collections and each user's likes, through each user's own Creality Cloud account."
+      },
+      "sync": {
+        "notConnected": "Connect Creality Cloud in Configuration > Providers, or visit it with Thingport Grab, to see your likes and collections here."
+      }
+    },
+    "nexprint": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open nexprint.com while signed in. It connects your account, and keeps it connected as you visit.",
+          "Or by hand: sign in at nexprint.com, open your browser's developer tools (F12) and reload the page.",
+          "Under Network, pick any request to nexprint.com/gateway, copy its Authorization request header (or the auth_token cookie) and paste it below."
+        ],
+        "placeholder": "The auth_token cookie, or the Authorization header"
+      },
+      "status": {
+        "notConnected": "NexPrint gives its files to signed-in users only. Connect your account to import its models.",
+        "expired": "Sign-in expired. Sign in on nexprint.com with Thingport Grab, or connect NexPrint again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "NexPrint: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "Elegoo's open model platform, launched in 2025. It mixes Elegoo's own library with community designs, and works with Elegoo Slicer and OrcaSlicer.",
+        "signIn": "Your own sign-in, which the site renews as you use it.",
+        "grab": "Sends the renewed sign-in as you visit nexprint.com.",
+        "setup": [
+          "Install Thingport Grab, enable it on NexPrint and open nexprint.com signed in.",
+          "By hand: copy the Authorization header of a nexprint.com/gateway request and paste it in Configuration → Providers."
+        ]
+      },
+      "admin": {
+        "description": "Models with their print profiles, and collections, through each user's own NexPrint account."
+      },
+      "sync": {
+        "notConnected": "Connect NexPrint in Configuration > Providers, or visit it with Thingport Grab, to see your collections here."
+      }
+    },
+    "thangs": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open thangs.com while signed in. It connects your account, and Thingport keeps it connected for about a year.",
+          "Or by hand: sign in at thangs.com, open your browser's developer tools (F12) and reload the page.",
+          "Under Network, pick any request to thangs.com/api, copy its Cookie request header (it holds both tokens) and paste it below."
+        ],
+        "placeholder": "The accessToken or refreshToken cookie, or the whole Cookie header"
+      },
+      "status": {
+        "notConnected": "Thangs gives its files to signed-in users only. Connect your account to import its models.",
+        "expired": "Sign-in expired. Sign in on thangs.com with Thingport Grab, or connect Thangs again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "Thangs: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "A 3D model search engine by Physna that finds models by their shape as well as their name, with a marketplace and designer memberships.",
+        "signIn": "Your own sign-in; Thingport renews it for about a year.",
+        "grab": "Connects your account in one visit to thangs.com.",
+        "setup": [
+          "Install Thingport Grab, enable it on Thangs and open thangs.com signed in.",
+          "By hand: copy the Cookie header of a thangs.com/api request and paste it in Configuration → Providers.",
+          "Free accounts download a limited number of models a day."
+        ]
+      },
+      "admin": {
+        "description": "Free and bought models, likes and collections, through each user's own Thangs account."
+      },
+      "sync": {
+        "notConnected": "Connect Thangs in Configuration > Providers, or visit it with Thingport Grab, to see your likes and collections here."
+      }
+    },
+    "cults3d": {
+      "connect": {
+        "steps": [
+          "Sign in at cults3d.com and open cults3d.com/en/api/keys. Make a key there and copy its secret.",
+          "Enter your nickname exactly as your profile writes it (capitals count) and the key below. Thingport reads models, likes, printlists and your downloads with it.",
+          "Then open cults3d.com once with Thingport Grab, signed in: Cults3D gives its files only to its own signed-in pages, and Grab passes that sign-in on."
+        ],
+        "placeholder": "Your nickname, as written on your profile",
+        "nickLabel": "Cults3D nickname",
+        "apiKeyLabel": "API key",
+        "browser": {
+          "title": "Paste the Cults3D sign-in",
+          "paste": "Paste browser sign-in",
+          "save": "Save",
+          "placeholder": "The request headers of a signed-in cults3d.com page",
+          "steps": [
+            "Easiest: with Thingport Grab, just open cults3d.com while signed in. It sends the sign-in itself.",
+            "Or by hand: open your browser's developer tools (F12) on a signed-in cults3d.com page and reload it.",
+            "Under Network, pick the page's own request, copy its request headers (with the Cookie and User-Agent) and paste them below. It only works when Thingport reaches the internet from the same address as that browser."
+          ]
+        }
+      },
+      "status": {
+        "notConnected": "Thingport reads Cults3D with your own API key. Connect it with your nickname and a key made on cults3d.com.",
+        "expired": "Cults3D turned the API key down. Make a new one on cults3d.com and connect again in Configuration → Providers.",
+        "expiredStatus": "API key turned down",
+        "siteMissing": "Connected, but downloads need the browser's sign-in: open cults3d.com signed in with Thingport Grab, or paste it from the tile's menu.",
+        "siteExpired": "The browser's sign-in ran out: open cults3d.com signed in with Thingport Grab, or paste it again from the tile's menu.",
+        "siteMissingStatus": "No browser sign-in yet",
+        "disabledReason": "Cults3D: enter your nickname and API key in Configuration → Providers"
+      },
+      "about": {
+        "summary": "A French marketplace for free and paid 3D printable designs, founded in 2014, and a social network for makers.",
+        "signIn": "Your own API key, and your browser's sign-in for files.",
+        "grab": "Sends the browser's sign-in and Cloudflare clearance. Thingport must reach the internet from that browser's IP address.",
+        "flaresolverr": "Doesn't help: its browser can't hand over a download link.",
+        "setup": [
+          "Make an API key at cults3d.com/en/api/keys.",
+          "Right-click Cults3D in Configuration → Providers, choose Connect, and enter your nickname and the key.",
+          "Open cults3d.com signed in with Thingport Grab, so its files can download."
+        ]
+      },
+      "admin": {
+        "description": "Free and bought models, likes and printlists, through each user's own Cults3D API key. Files come with the browser's sign-in, which Thingport Grab sends."
+      },
+      "sync": {
+        "notConnected": "Enter your Cults3D nickname and API key in Configuration > Providers to see your likes and printlists here."
       }
     }
   }

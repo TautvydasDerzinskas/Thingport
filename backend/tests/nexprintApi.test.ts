@@ -12,9 +12,9 @@ import {
   parseNexprintModelUrl,
   resolveNexprintModel,
   selectNexprintProfiles,
-} from "../src/services/nexprintApi";
+} from "../src/providers/nexprint/api";
 import { modelIdFromUrl, modelUrlFor, parseSyncSource } from "../src/services/collectionSyncService";
-import { normalizeNexprintSession } from "../src/services/nexprintSessionService";
+import { normalizeNexprintSession } from "../src/providers/nexprint/session";
 import { buildImportSourceUrl, identifySourceModel } from "../src/services/importService";
 
 // The NexPrint client against the shapes its own site gets back, with fetch mocked. No database.

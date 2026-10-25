@@ -1,19 +1,23 @@
 import { Impit } from "impit";
+import { hostIs, manifestOf, PROVIDER_IDS } from "../providers/index.generated";
 
-// Thingiverse's, MyMiniFactory's and Thangs' Cloudflare challenge clients by their TLS handshake, whatever the
-// headers or cookies, and Node's fetch is on its list. impit sends Chrome's handshake and headers.
+// Some providers' Cloudflare challenges clients by their TLS handshake, whatever the headers or cookies, and Node's
+// fetch is on its list. impit sends Chrome's handshake and headers.
 const following = new Impit({ browser: "chrome", timeout: null });
 const manual = new Impit({ browser: "chrome", timeout: null, followRedirects: false });
+
+const BROWSER_FETCH_HOSTS = PROVIDER_IDS.flatMap((id) => {
+  const manifest = manifestOf(id);
+  return manifest.browserFetch ? manifest.hosts : [];
+});
 
 const NULL_BODY_STATUSES = new Set([204, 205, 304]);
 
 /** Hosts that challenge Node's own fetch, so every request to them goes through browserFetch. */
 export function needsBrowserFetch(url: string): boolean {
   try {
-    const host = new URL(url).hostname.toLowerCase();
-    return ["thingiverse.com", "myminifactory.com", "thangs.com"].some(
-      (domain) => host === domain || host.endsWith(`.${domain}`),
-    );
+    const host = new URL(url).hostname;
+    return BROWSER_FETCH_HOSTS.some((domain) => hostIs(host, domain));
   } catch {
     return false;
   }

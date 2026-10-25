@@ -1,4 +1,4 @@
-// Backup for content/makerworld/downloadResolver.ts, which normally reads the file URL from the link
+// Backup for providers/makerworld/downloadResolver.ts, which normally reads the file URL from the link
 // MakerWorld clicks before any download starts: should a real browser download start instead, this
 // captures it, cancels it, and reads its URL.
 //
@@ -42,8 +42,8 @@ export function awaitDownloadCapture(): Promise<string | null> {
   return currentCapture ?? Promise.resolve(null);
 }
 
-/** Drops a capture the page's own file link already answered (see content/makerworld/
- *  downloadResolver.ts), so it can't swallow the user's next real download. */
+/** Drops a capture the page's own file link already answered (see
+ *  providers/makerworld/downloadResolver.ts), so it can't swallow the user's next real download. */
 export function disarmDownloadCapture(): null {
   if (pending) {
     clearTimeout(pending.timeoutId);

@@ -17,48 +17,32 @@ import Typography from "@mui/material/Typography";
 import CloseIcon from "@mui/icons-material/Close";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import { UnauthorizedError } from "../../api/client";
-import { type ImportProvider, type ProviderSetting, settingsApi } from "../../api/settings";
+import { type ImportProvider, settingsApi } from "../../api/settings";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { COMING_SOON_PROVIDERS, ProviderLogo } from "../../components/Layout/ConfigurationDialog/providerLogos";
 import SectionHeader from "../../components/SectionHeader";
-import { publishProviders } from "../../hooks/useDisabledProviders";
+import { publishProviders, refreshProviders, useProviders } from "../../hooks/useProviders";
 import { useProviderAbout } from "../../components/providerAbout/ProviderAboutProvider";
-import ProviderKeySection, { type KeyedProvider } from "./ProviderKeySection";
+import ProviderKeySection from "./ProviderKeySection";
+import { type AuthSlot, MANIFESTS, PROVIDER_IDS } from "../../providers/index.generated";
 
 type Props = {
   onUnauthorized?: () => void;
 };
 
-const NAMES: Record<ImportProvider, string> = {
-  makerworld: "MakerWorld",
-  printables: "Printables",
-  thingiverse: "Thingiverse",
-  myminifactory: "MyMiniFactory",
-  snapmaker: "Snapmaker Space",
-  makeronline: "MakerOnline",
-  crealitycloud: "Creality Cloud",
-  nexprint: "NexPrint",
-  thangs: "Thangs",
-  cults3d: "Cults3D",
-};
-
-const KEYED = new Set<ImportProvider>(["thingiverse", "myminifactory"]);
-const isKeyed = (provider: ImportProvider): provider is KeyedProvider => KEYED.has(provider);
+/** The key for the whole instance a provider needs, which an admin sets here; none for most. */
+const instanceAuth = (provider: ImportProvider) =>
+  (MANIFESTS[provider].auth as readonly AuthSlot[]).find((auth) => auth.scope === "instance");
 
 /** The sites Thingport imports from and syncs with: each can be turned off for everyone, and the instance keys of
  *  the ones that need one set. */
 export default function ProvidersPage({ onUnauthorized }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const confirm = useConfirm();
-  const [providers, setProviders] = React.useState<ProviderSetting[] | null>(null);
+  const providers = useProviders();
   const [saving, setSaving] = React.useState<ImportProvider | null>(null);
   const [error, setError] = React.useState<string | null>(null);
-  const [keyOpen, setKeyOpen] = React.useState<KeyedProvider | null>(null);
-  const [keySet, setKeySet] = React.useState<Partial<Record<KeyedProvider, boolean>>>({});
-  const onKeyConfigured = React.useCallback(
-    (configured: boolean) => keyOpen && setKeySet((current) => ({ ...current, [keyOpen]: configured })),
-    [keyOpen],
-  );
+  const [keyOpen, setKeyOpen] = React.useState<ImportProvider | null>(null);
 
   const fail = React.useCallback(
     (err: unknown) => {
@@ -69,29 +53,14 @@ export default function ProvidersPage({ onUnauthorized }: Props) {
   );
 
   React.useEffect(() => {
-    let active = true;
-    settingsApi.getProviders().then(
-      (loaded) => active && setProviders(loaded),
-      (err: unknown) => active && fail(err),
-    );
-    settingsApi.getThingiverse().then(
-      (data) => active && setKeySet((current) => ({ ...current, thingiverse: data.configured })),
-      () => undefined,
-    );
-    settingsApi.getMyminifactory().then(
-      (data) => active && setKeySet((current) => ({ ...current, myminifactory: data.configured })),
-      () => undefined,
-    );
-    return () => {
-      active = false;
-    };
+    refreshProviders().catch(fail);
   }, [fail]);
 
   const toggle = async (provider: ImportProvider, enabled: boolean) => {
     if (!enabled) {
       const ok = await confirm({
-        title: t("adminSettings.providers.disableTitle", { name: NAMES[provider] }),
-        message: t("adminSettings.providers.disableMessage", { name: NAMES[provider] }),
+        title: t("adminSettings.providers.disableTitle", { name: MANIFESTS[provider].name }),
+        message: t("adminSettings.providers.disableMessage", { name: MANIFESTS[provider].name }),
         confirmLabel: t("adminSettings.providers.disableConfirm"),
         destructive: true,
       });
@@ -100,10 +69,8 @@ export default function ProvidersPage({ onUnauthorized }: Props) {
     setSaving(provider);
     setError(null);
     try {
-      const updated = await settingsApi.setProviderEnabled(provider, enabled);
-      setProviders(updated);
       // Menus open elsewhere in the app hide or show it at once.
-      publishProviders(updated);
+      publishProviders(await settingsApi.setProviderEnabled(provider, enabled));
     } catch (err) {
       fail(err);
     } finally {
@@ -120,27 +87,10 @@ export default function ProvidersPage({ onUnauthorized }: Props) {
         </Alert>
       )}
       <Paper variant="outlined" sx={{ borderRadius: "12px", overflow: "hidden" }}>
-        {(
-          providers ??
-          (
-            [
-              "makerworld",
-              "printables",
-              "thingiverse",
-              "myminifactory",
-              "snapmaker",
-              "makeronline",
-              "crealitycloud",
-              "nexprint",
-              "thangs",
-              "cults3d",
-            ] as const
-          ).map((id) => ({
-            id,
-            enabled: true,
-          }))
-        ).map(({ id, enabled }) => {
-          const keySetHere = isKeyed(id) ? keySet[id] : undefined;
+        {(providers ?? PROVIDER_IDS.map((id) => ({ id, enabled: true }))).map(({ id, enabled }) => {
+          const key = instanceAuth(id);
+          const keySetHere =
+            key && providers ? providers.find((p) => p.id === id)?.slots[key.slot]?.status === "connected" : undefined;
           return (
             <Stack
               key={id}
@@ -149,29 +99,29 @@ export default function ProvidersPage({ onUnauthorized }: Props) {
               alignItems="center"
               sx={{ px: 2, py: 1.5, "&:not(:last-of-type)": { borderBottom: 1, borderColor: "divider" } }}
             >
-              <AboutButton id={id} name={NAMES[id]}>
+              <AboutButton id={id} name={MANIFESTS[id].name}>
                 <Box sx={{ flexShrink: 0, lineHeight: 0, opacity: enabled ? 1 : 0.45 }}>
                   <ProviderLogo id={id} size={32} />
                 </Box>
               </AboutButton>
               <Box sx={{ flex: 1, minWidth: 0 }}>
-                <AboutButton id={id} name={NAMES[id]} tabIndex={-1}>
+                <AboutButton id={id} name={MANIFESTS[id].name} tabIndex={-1}>
                   <Typography variant="body1" fontWeight={600}>
-                    {NAMES[id]}
+                    {MANIFESTS[id].name}
                   </Typography>
                 </AboutButton>
                 <Typography variant="body2" color="text.secondary">
-                  {t(`adminSettings.providers.descriptions.${id}`)}
+                  {t(`providers:${id}.admin.description`)}
                 </Typography>
-                {isKeyed(id) && keySetHere !== undefined && (
+                {keySetHere !== undefined && (
                   <Typography variant="caption" color={keySetHere ? "success.main" : "warning.main"}>
-                    {t(`adminSettings.providers.keyStatus.${id}.${keySetHere ? "set" : "missing"}`)}
+                    {t(`providers:${id}.admin.keyStatus.${keySetHere ? "set" : "missing"}`)}
                   </Typography>
                 )}
               </Box>
-              {isKeyed(id) && (
-                <Tooltip title={t(`adminSettings.${id}.heading`)}>
-                  <IconButton aria-label={t(`adminSettings.${id}.heading`)} onClick={() => setKeyOpen(id)}>
+              {key && (
+                <Tooltip title={t(`providers:${id}.admin.key.heading`)}>
+                  <IconButton aria-label={t(`providers:${id}.admin.key.heading`)} onClick={() => setKeyOpen(id)}>
                     <SettingsOutlinedIcon />
                   </IconButton>
                 </Tooltip>
@@ -184,7 +134,7 @@ export default function ProvidersPage({ onUnauthorized }: Props) {
                   slotProps={{
                     input: {
                       "aria-label": t(enabled ? "adminSettings.providers.turnOff" : "adminSettings.providers.turnOn", {
-                        name: NAMES[id],
+                        name: MANIFESTS[id].name,
                       }),
                     },
                   }}
@@ -217,7 +167,7 @@ export default function ProvidersPage({ onUnauthorized }: Props) {
 
       <Dialog open={Boolean(keyOpen)} onClose={() => setKeyOpen(null)} fullWidth maxWidth="sm">
         <DialogTitle sx={{ pr: 6 }}>
-          {keyOpen && t(`adminSettings.${keyOpen}.heading`)}
+          {keyOpen && t(`providers:${keyOpen}.admin.key.heading`)}
           <IconButton
             aria-label={t("common:close")}
             onClick={() => setKeyOpen(null)}
@@ -227,12 +177,15 @@ export default function ProvidersPage({ onUnauthorized }: Props) {
           </IconButton>
         </DialogTitle>
         <DialogContent>
-          {keyOpen && (
+          {keyOpen && instanceAuth(keyOpen) && (
             <ProviderKeySection
               key={keyOpen}
               provider={keyOpen}
+              auth={instanceAuth(keyOpen)!}
+              configured={
+                providers?.find((p) => p.id === keyOpen)?.slots[instanceAuth(keyOpen)!.slot]?.status === "connected"
+              }
               onUnauthorized={onUnauthorized}
-              onConfiguredChange={onKeyConfigured}
             />
           )}
         </DialogContent>

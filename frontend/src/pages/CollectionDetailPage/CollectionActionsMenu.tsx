@@ -23,7 +23,7 @@ import { useToast } from "../../components/ToastProvider";
 import DownloadZipConfirmDialog from "../../components/DownloadZipConfirmDialog";
 import CollectionFormModal from "../CollectionsPage/CollectionFormModal";
 import CollectionSyncDialog from "./CollectionSyncDialog";
-import { allProvidersOff, useDisabledProviders } from "../../hooks/useDisabledProviders";
+import { allProvidersOff, useDisabledProviders } from "../../hooks/useProviders";
 import { importProviderInfo } from "../../constants/importProviders";
 import type { ImportProvider } from "../../api/settings";
 import { reopenContextMenuBelow } from "../../components/Layout/ConfigurationDialog/AppTiles";

@@ -2,12 +2,13 @@ import i18n from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
 
-import { FALLBACK_LANGUAGE, LANGUAGE_STORAGE_KEY, LOCALES, SUPPORTED_LANGUAGES } from "../constants/languages";
-
-// Namespaces by area: "common" (generic words), "app" (shell chrome, modals), "library" (viewer
-// overlays and previews), "models" (Models page, model detail, author page). A locale may be partial:
-// missing keys fall back to English.
-const NAMESPACES = ["common", "app", "library", "models"];
+import {
+  FALLBACK_LANGUAGE,
+  LANGUAGE_STORAGE_KEY,
+  LOCALES,
+  NAMESPACES,
+  SUPPORTED_LANGUAGES,
+} from "../constants/languages";
 
 i18n
   .use(LanguageDetector)

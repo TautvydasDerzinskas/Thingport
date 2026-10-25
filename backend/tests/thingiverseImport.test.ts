@@ -2,7 +2,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { downloadPlainFileToTemp, importPrintFromUrl } from "../src/services/importService";
-import { setThingiverseAccessToken } from "../src/services/settingsService";
+import { setThingiverseAccessToken } from "../src/providers/thingiverse/token";
 import { prisma } from "../src/db";
 
 // Thingiverse import end to end against the official API's response shapes, with fetch mocked.
@@ -158,7 +158,13 @@ describe("importPrintFromUrl -- Thingiverse", () => {
         name: "Thingiverse Tests",
         kind: "category",
         tags: [],
-        thingiverseCatIds: [999001, CATEGORY_ID, 999002],
+        siteIds: {
+          create: [999001, CATEGORY_ID, 999002].map((id, position) => ({
+            provider: "thingiverse",
+            siteId: String(id),
+            position,
+          })),
+        },
       },
     });
 

@@ -10,10 +10,11 @@ import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
-import type { Category, CategoryMetaInput } from "../../api/categories";
+import { catIdsKey, type Category, type CategoryMetaInput } from "../../api/categories";
 import HelpTip from "../../components/HelpTip";
 import { SectionLabel } from "../../components/Layout/ConfigurationDialog/parts";
 import ProviderCategoryMappings, {
+  MAPPED_PROVIDERS,
   type MappedProvider,
 } from "../../components/categoryMapping/ProviderCategoryMappings";
 
@@ -32,18 +33,13 @@ export default function CategoryMetaDialog({ category, showSiteCatIds, onClose, 
   const untitledLabel = t("models:categories.untitled");
   const [title, setTitle] = useState(category.meta_title ?? "");
   const [description, setDescription] = useState(category.meta_description ?? "");
-  const [catIds, setCatIds] = useState<Record<MappedProvider, string>>({
-    makerworld: category.makerworld_cat_ids,
-    thingiverse: category.thingiverse_cat_ids,
-    printables: category.printables_cat_ids,
-    myminifactory: category.myminifactory_cat_ids,
-    snapmaker: category.snapmaker_cat_ids,
-    makeronline: category.makeronline_cat_ids,
-    crealitycloud: category.crealitycloud_cat_ids,
-    nexprint: category.nexprint_cat_ids,
-    thangs: category.thangs_cat_ids,
-    cults3d: category.cults3d_cat_ids,
-  });
+  const [catIds, setCatIds] = useState<Record<MappedProvider, string>>(
+    () =>
+      Object.fromEntries(MAPPED_PROVIDERS.map((provider) => [provider, category[catIdsKey(provider)]])) as Record<
+        MappedProvider,
+        string
+      >,
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,16 +50,7 @@ export default function CategoryMetaDialog({ category, showSiteCatIds, onClose, 
       await onSave({
         metaTitle: title.trim() || null,
         metaDescription: description.trim() || null,
-        makerworldCatIds: catIds.makerworld,
-        thingiverseCatIds: catIds.thingiverse,
-        printablesCatIds: catIds.printables,
-        myminifactoryCatIds: catIds.myminifactory,
-        snapmakerCatIds: catIds.snapmaker,
-        makeronlineCatIds: catIds.makeronline,
-        crealitycloudCatIds: catIds.crealitycloud,
-        nexprintCatIds: catIds.nexprint,
-        thangsCatIds: catIds.thangs,
-        cults3dCatIds: catIds.cults3d,
+        catIds,
       });
       onClose();
     } catch (err) {

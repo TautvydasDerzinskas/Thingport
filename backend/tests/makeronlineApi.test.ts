@@ -10,9 +10,9 @@ import {
   parseMakeronlineModelUrl,
   resolveMakeronlineModel,
   selectMakeronlineProfiles,
-} from "../src/services/makeronlineApi";
+} from "../src/providers/makeronline/api";
 import { modelIdFromUrl, modelUrlFor, parseSyncSource } from "../src/services/collectionSyncService";
-import { normalizeMakeronlineToken } from "../src/services/makeronlineSessionService";
+import { normalizeMakeronlineToken } from "../src/providers/makeronline/session";
 import { buildImportSourceUrl, identifySourceModel } from "../src/services/importService";
 
 // The MakerOnline client against the shapes its own site gets back, with fetch mocked. No database.

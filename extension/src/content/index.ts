@@ -1,24 +1,26 @@
 // Content script entry point (MakerWorld, Thingiverse, Printables, and the optional sites in optionalSites.ts once
-// turned on). Network calls go through the background (see runtime.ts).
+// turned on). Network calls go through the background (see runtime.ts). MakerWorld's normalized download and its
+// download resolution for the import button are wired in here, as the page's offline features and the button are
+// every provider's.
 
 import type { ImportStatus } from "../shared/api";
 import { listen, send, type ContentMessages } from "../shared/messages";
 import { CONFIG_CHANGE_KEYS } from "../shared/storage";
-import { classifyUrl, parseCrealitycloudLikesUrl, parseSnapmakerListUrl, snapmakerListUrl } from "../shared/urls";
+import { classifyUrl } from "../shared/urls";
 import { setContext, type LibraryState } from "./context";
-import { isMakerworldBlockingError, resolveMakerworldDownloadUrl } from "./makerworld/downloadResolver";
-import { offerNormalizedDownload, unmountNormalizedDownload } from "./makerworld/normalizedDownload";
+import { isMakerworldBlockingError, resolveMakerworldDownloadUrl } from "../providers/makerworld/downloadResolver";
+import { offerNormalizedDownload, unmountNormalizedDownload } from "../providers/makerworld/normalizedDownload";
 import { mountJobOverlay, mountPausedJobOverlay } from "./overlays";
 import { loadPanel } from "./panels";
 import { captureProviderAccount } from "./providerAccount";
-import { snapmakerUserId } from "./snapmaker";
-import { crealitycloudUserId } from "./crealitycloud";
 import { providerEnabled } from "./providerSettings";
+import { CONTENT_MODULES } from "../providers/content";
 import { trackViewedModel } from "./recentlyViewed";
 import { errorHtml } from "./panels/results";
 import { api } from "./runtime";
 import { closeSetupModal, openSetupModal } from "./setupModal";
 import { mountFab, mountHost, mountPanel, renderPanel, setPanelOpen, unmountHost } from "./shell";
+import { manifestOf } from "../providers/index.generated";
 
 declare global {
   interface Window {
@@ -74,8 +76,8 @@ async function init(): Promise<void> {
   if (classification.kind === "single") void trackViewedModel(url, isStale);
 
   if (
-    classification.provider === "makerworld" &&
     classification.kind === "single" &&
+    manifestOf(classification.provider).capabilities.bambuProjects &&
     stateRes.data.offlineFeatures.normalizeMakerworld
   ) {
     void offerNormalizedDownload(url, stateRes.data.configured, isStale);
@@ -128,26 +130,16 @@ async function init(): Promise<void> {
     return;
   }
 
-  // Snapmaker shows likes and bookmarks to their owner only, and the instance reads them as the user: offered on
-  // their own page alone, as the address that names the list.
+  // Some lists only their owner sees, and the instance reads them as the user: offered on their own page alone.
   let pageUrl = url;
-  if (classification.provider === "snapmaker" && classification.kind === "batch") {
-    const own = await snapmakerUserId();
+  if (classification.kind === "batch") {
+    const own = await CONTENT_MODULES[classification.provider].ownList?.(url, classification.type);
     if (isStale()) return;
-    if (!own || own !== parseSnapmakerListUrl(url)?.userId) {
+    if (own === null) {
       reportTabIconState(false);
       return;
     }
-    pageUrl = snapmakerListUrl(own, classification.type);
-  }
-  // Creality Cloud's likes too: anyone can open the address, but only the owner sees them.
-  if (classification.provider === "crealitycloud" && classification.type === "likes") {
-    const own = await crealitycloudUserId();
-    if (isStale()) return;
-    if (!own || own !== parseCrealitycloudLikesUrl(url)?.userId) {
-      reportTabIconState(false);
-      return;
-    }
+    pageUrl = own ?? url;
   }
 
   let library: LibraryState | null = null;

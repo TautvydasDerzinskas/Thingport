@@ -1,0 +1,28 @@
+{
+  "code": 0,
+  "msg": "ok",
+  "reqId": "contract-fixture",
+  "result": {
+    "groupItem": {
+      "id": "6ac6f004729f5ba4b3574093",
+      "urlAlias": "snap-clip-fidget",
+      "groupName": "Snap-Clip Fidget",
+      "groupDesc": "<p>A <strong>fidget</strong> toy.</p>",
+      "categoryId": "1904",
+      "categories": [
+        { "id": "1904", "name": "3D Printer Accessories" },
+        { "id": "1731", "name": "3D Printer" }
+      ],
+      "tags": [{ "name": "clip" }, { "name": "fidget" }, { "name": "clip" }],
+      "covers": [
+        { "url": "https://pic2-cdn.creality.com/crealityCloud/common/cover.webp" },
+        { "url": "https://pic2-cdn.creality.com/pic/second.png" }
+      ],
+      "userInfo": {
+        "userId": 4247093750,
+        "nickName": "Pablo Zebari",
+        "avatar": "https://pic2-cdn.creality.com/avatar/a"
+      }
+    }
+  }
+}
