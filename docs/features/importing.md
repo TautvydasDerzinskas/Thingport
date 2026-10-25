@@ -40,8 +40,8 @@ Model links, collections, ZIP imports and lists of links run as background jobs 
 You can submit another import while a job is waiting or running; closing or reloading the app does not cancel queued work.
 Imports that need browser-signed links or an explicitly supplied session run immediately instead; their progress is
 only available until the server restarts or the finished task expires.
-The progress bar follows one job at a time. **Administration → Import queue** shows all jobs and lets admins pause,
-resume and retry them.
+The footer shows each active job in its own progress row. **Administration → Import queue** shows all jobs and lets
+admins pause, resume and retry them.
 
 Collections and lists of links track progress per model. A progress bar shows how far along they are, and a notification
 says what came in when they finish. A model you already have is never imported twice, so importing the same collection
