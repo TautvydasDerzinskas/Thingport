@@ -3463,7 +3463,7 @@
           "takenBy": "Sincronizada con «{{name}}»",
           "loadFailed": "No se pudieron cargar las colecciones.",
           "lookupFailed": "No se encontró esa colección.",
-          "notALink": "Pega un enlace de colección de MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space o MakerOnline.",
+          "notALink": "Pega un enlace de colección de MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D o Pinshape.",
           "usernameFailed": "No se pudo guardar el nombre de usuario.",
           "openProviders": "Abrir proveedores",
           "usernameLabel": "Tu nombre de usuario en {{provider}}",
@@ -4158,6 +4158,37 @@
       },
       "sync": {
         "notConnected": "Conecta eufyMake en Configuración > Proveedores, o visítalo con Thingport Grab, para ver aquí tus me gusta."
+      }
+    },
+    "pinshape": {
+      "connect": {
+        "steps": [
+          "Lo más fácil: con Thingport Grab, basta con abrir pinshape.com con la sesión iniciada. Conecta tu cuenta y envía un nuevo inicio de sesión cada vez que vuelvas a iniciarla allí.",
+          "O manualmente: inicia sesión en pinshape.com con «Remember Me» marcado, para que la sesión dure un año, y abre las herramientas de desarrollador de tu navegador (F12).",
+          "En Application (Chrome, Edge) o Storage (Firefox) → Cookies → pinshape.com, copia el valor de remember_token y pégalo abajo. También sirve la cabecera Cookie de una petición a pinshape.com con la sesión iniciada."
+        ],
+        "placeholder": "La cookie remember_token, o la cabecera Cookie de una petición con la sesión iniciada"
+      },
+      "status": {
+        "notConnected": "Pinshape solo entrega sus archivos a usuarios con sesión iniciada. Conecta tu cuenta para importar sus modelos; las colecciones y los me gusta se leen sin ella.",
+        "expired": "El inicio de sesión ha caducado. Inicia sesión en pinshape.com con Thingport Grab o vuelve a conectar Pinshape en Configuración → Proveedores.",
+        "expiredStatus": "Inicio de sesión caducado",
+        "disabledReason": "Pinshape: conecta tu cuenta en Configuración → Proveedores"
+      },
+      "about": {
+        "summary": "Un veterano sitio de modelos de la comunidad, hoy en manos de MatterHackers: modelos gratuitos y colecciones que cualquiera puede seguir.",
+        "signIn": "Tu propio inicio de sesión, para los archivos; las colecciones y los me gusta se leen sin él.",
+        "grab": "Envía tu inicio de sesión cuando visitas pinshape.com.",
+        "setup": [
+          "Instala Thingport Grab, actívalo en Pinshape y abre pinshape.com con la sesión iniciada.",
+          "Manualmente: copia la cookie remember_token de una pestaña de pinshape.com con la sesión iniciada y pégala en Configuración → Proveedores."
+        ]
+      },
+      "admin": {
+        "description": "Modelos, y las colecciones y los me gusta de cualquiera. Las listas se leen sin iniciar sesión; los archivos necesitan la del propio usuario."
+      },
+      "sync": {
+        "notConnected": "Conecta Pinshape en Configuración > Proveedores, o visítalo con Thingport Grab, para ver aquí tus me gusta y colecciones."
       }
     }
   }

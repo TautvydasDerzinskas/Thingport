@@ -6,6 +6,7 @@ import type { ProviderId } from "./index.generated";
 import { cults3dSignedIn } from "./cults3d/content";
 import { syncMakeronline } from "./makeronline/content";
 import { captureMyminifactoryAccount } from "./myminifactory/account";
+import { pinshapeSignedIn } from "./pinshape/content";
 import { syncPrintables } from "./printables/content";
 import { captureThingiverseAccount } from "./thingiverse/account";
 
@@ -31,6 +32,10 @@ export const CAPTURE: Partial<Record<ProviderId, (id: ProviderId) => void>> = {
   snapmaker: syncSession,
   // Its sign-in reads the likes; the site keeps it in page storage, which the background reads from this tab.
   eufymake: syncSession,
+  // Its sign-in downloads the files; sent once it changes, and only from a signed-in page.
+  pinshape: (id) => {
+    if (pinshapeSignedIn()) syncSession(id);
+  },
   printables: () => void syncPrintables(),
   myminifactory: captureMyminifactoryAccount,
   thingiverse: captureThingiverseAccount,

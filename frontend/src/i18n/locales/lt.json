@@ -3557,7 +3557,7 @@
           "takenBy": "Sinchronizuojama su „{{name}}“",
           "loadFailed": "Nepavyko įkelti kolekcijų.",
           "lookupFailed": "Nepavyko rasti šios kolekcijos.",
-          "notALink": "Įklijuokite MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs arba Cults3D kolekcijos nuorodą.",
+          "notALink": "Įklijuokite MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D arba Pinshape kolekcijos nuorodą.",
           "usernameFailed": "Nepavyko išsaugoti vartotojo vardo.",
           "openProviders": "Atidaryti tiekėjus",
           "usernameLabel": "Jūsų {{provider}} vartotojo vardas",
@@ -4319,6 +4319,37 @@
       },
       "sync": {
         "notConnected": "Prijunkite eufyMake skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte pamėgtus modelius."
+      }
+    },
+    "pinshape": {
+      "connect": {
+        "steps": [
+          "Paprasčiausia: su Thingport Grab tiesiog atverkite pinshape.com prisijungę. Jis prijungs jūsų paskyrą ir atsiųs naują prisijungimą kaskart, kai ten vėl prisijungsite.",
+          "Arba rankiniu būdu: prisijunkite prie pinshape.com pažymėję „Remember Me“, kad prisijungimas galiotų metus, ir atverkite naršyklės kūrėjo įrankius (F12).",
+          "Skiltyje Application (Chrome, Edge) arba Storage (Firefox) → Cookies → pinshape.com nukopijuokite remember_token reikšmę ir įklijuokite ją žemiau. Tiks ir prisijungus siųstos pinshape.com užklausos Cookie antraštė."
+        ],
+        "placeholder": "remember_token slapukas arba prisijungus siųstos užklausos Cookie antraštė"
+      },
+      "status": {
+        "notConnected": "Pinshape failus duoda tik prisijungusiems naudotojams. Prijunkite paskyrą, kad galėtumėte importuoti jo modelius; kolekcijos ir pamėgti modeliai skaitomi ir be jos.",
+        "expired": "Prisijungimo galiojimas baigėsi. Prisijunkite pinshape.com su Thingport Grab arba vėl prijunkite Pinshape skiltyje Konfigūracija → Šaltiniai.",
+        "expiredStatus": "Prisijungimas nebegalioja",
+        "disabledReason": "Pinshape: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai"
+      },
+      "about": {
+        "summary": "Ilgametė bendruomenės modelių svetainė, dabar priklausanti MatterHackers: nemokami modeliai ir kolekcijos, kurias gali sekti bet kas.",
+        "signIn": "Jūsų pačių prisijungimas, failams; kolekcijos ir pamėgti modeliai skaitomi ir be jo.",
+        "grab": "Atsiunčia jūsų prisijungimą, kai lankotės pinshape.com.",
+        "setup": [
+          "Įdiekite Thingport Grab, įjunkite jį Pinshape ir atverkite pinshape.com prisijungę.",
+          "Rankiniu būdu: nukopijuokite prisijungusio pinshape.com skirtuko remember_token slapuką ir įklijuokite jį skiltyje Konfigūracija → Šaltiniai."
+        ]
+      },
+      "admin": {
+        "description": "Modeliai ir bet kieno kolekcijos bei pamėgti modeliai. Sąrašai skaitomi be prisijungimo; failams reikia paties naudotojo prisijungimo."
+      },
+      "sync": {
+        "notConnected": "Prijunkite Pinshape skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte pamėgtus modelius ir kolekcijas."
       }
     }
   }

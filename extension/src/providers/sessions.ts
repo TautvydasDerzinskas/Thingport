@@ -10,6 +10,7 @@ import { eufymakeSession } from "./eufymake/session";
 import { makeronlineSession } from "./makeronline/background";
 import { myminifactorySession } from "./myminifactory/session";
 import { nexprintSession } from "./nexprint/session";
+import { pinshapeSession } from "./pinshape/session";
 import { snapmakerSession } from "./snapmaker/session";
 import { thangsSession } from "./thangs/session";
 
@@ -22,4 +23,5 @@ export const SESSION_SOURCES: Partial<Record<ProviderId, SessionSource>> = {
   thangs: thangsSession,
   cults3d: cults3dSession,
   eufymake: eufymakeSession,
+  pinshape: pinshapeSession,
 };

@@ -44,7 +44,7 @@ function pageImage(key: string): string | null {
 
 // Trailing " - Free 3D Print Model - MakerWorld"-style parts of a page title.
 const TITLE_SUFFIX =
-  /makerworld|printables|thingiverse|myminifactory|snapmaker|makeronline|creality|nexprint|thangs|cults|eufymake|make it real|3d (print )?model|\bstl\b/i;
+  /makerworld|printables|thingiverse|myminifactory|snapmaker|makeronline|creality|nexprint|thangs|cults|eufymake|make it real|pinshape|3d (print )?model|\bstl\b/i;
 
 function withoutSiteSuffix(title: string): string {
   const parts = title.split(/\s+[-|–·]\s+/);

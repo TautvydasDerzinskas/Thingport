@@ -19,8 +19,9 @@ import { expectStatus, type FetchHandler, type FetchStub, installFetch } from ".
 //
 // What each assertion pins, by `ContractAssertion`:
 //   import               POST /api/import of the model's link creates a print with sourceProvider/sourceExternalId,
-//                        the author, the category its site category ids map to (categorySource RULE), the gallery
-//                        and the plates (with the profile each belongs to).
+//                        the author, the category its site category ids map to (categorySource RULE; none for a
+//                        provider whose models don't say theirs), the gallery and the plates (with the profile each
+//                        belongs to).
 //   reimport             The same link again is answered `already_imported` without asking the provider anything;
 //                        for a provider with print profiles, a link naming another profile adds its plate
 //                        (`profile_added`).
@@ -68,8 +69,9 @@ export type ProviderContractSpec = {
     author: string;
     /** The model's tags as the library keeps them, sorted. */
     tags: string[];
-    /** The seeded category the model's site category ids map to. */
-    category: { name: string; parent: string | null };
+    /** The seeded category the model's site category ids map to; null for a provider whose models don't say their
+     *  category (manifest `categoryIds: "none"`), so the import comes uncategorized and fill-gaps leaves it. */
+    category: { name: string; parent: string | null } | null;
     /** Pictures kept as the model's gallery (the cover included). */
     galleryImages: number;
     /** The profile each plate belongs to, in order; null for a plate that isn't a profile's. */
@@ -187,6 +189,14 @@ export function describeProviderContract(spec: ProviderContractSpec): ContractCo
 
   const plateInstanceIds = async (printId: string) =>
     (await prisma.plate.findMany({ where: { printId }, orderBy: { position: "asc" } })).map((p) => p.sourceInstanceId);
+  /** The seeded category the spec's model maps to; null for a provider with none. */
+  const expectedCategory = async () => {
+    const expected = spec.expected.category;
+    if (!expected) return null;
+    return prisma.category.findFirstOrThrow({
+      where: { userId, name: expected.name, ...(expected.parent ? { parent: { name: expected.parent } } : {}) },
+    });
+  };
 
   beforeAll(async () => {
     const res = await request(app)
@@ -226,15 +236,8 @@ export function describeProviderContract(spec: ProviderContractSpec): ContractCo
       "imports a model link into a print with its source, author, rule-based category and gallery",
       async () => {
         await spec.connect(userId);
-        const category = await prisma.category.findFirst({
-          where: {
-            userId,
-            name: spec.expected.category.name,
-            ...(spec.expected.category.parent ? { parent: { name: spec.expected.category.parent } } : {}),
-          },
-        });
         // The fixture's site category ids must map to a seeded category.
-        expect(category).not.toBeNull();
+        const category = await expectedCategory();
 
         const stubbed = ctx.stub("ok");
         const res = await ctx.importUrl();
@@ -251,8 +254,8 @@ export function describeProviderContract(spec: ProviderContractSpec): ContractCo
         expect(print.notes).toContain(spec.expected.notesIncludes);
         expect(print.tags.toSorted()).toEqual(spec.expected.tags);
         expect(print.creator).toBe(spec.expected.author);
-        expect(print.categoryId).toBe(category!.id);
-        expect(print.categorySource).toBe("RULE");
+        expect(print.categoryId).toBe(category?.id ?? null);
+        expect(print.categorySource).toBe(category ? "RULE" : null);
         const author = await prisma.author.findUnique({ where: { id: print.authorId! } });
         expect(author?.name).toBe(spec.expected.author);
         expect(author?.provider).toBe(spec.id);
@@ -408,13 +411,7 @@ export function describeProviderContract(spec: ProviderContractSpec): ContractCo
       "fills a bare print's empty details from the provider, and asks nothing once they're filled",
       async () => {
         await spec.connect(userId);
-        const category = await prisma.category.findFirstOrThrow({
-          where: {
-            userId,
-            name: spec.expected.category.name,
-            ...(spec.expected.category.parent ? { parent: { name: spec.expected.category.parent } } : {}),
-          },
-        });
+        const category = await expectedCategory();
         const print = await prisma.print.create({
           data: {
             userId,
@@ -437,22 +434,23 @@ export function describeProviderContract(spec: ProviderContractSpec): ContractCo
         expectStatus(res, 200);
         expect(res.body.filled.toSorted()).toEqual([
           "author",
-          "category",
+          ...(category ? ["category"] : []),
           "creator",
           "description",
           "images",
           "tags",
           "title",
         ]);
-        expect(res.body.remaining).toEqual([]);
+        // A provider whose models don't say their category leaves it: there's nothing to fill it from.
+        expect(res.body.remaining).toEqual(category ? [] : ["category"]);
         const filled = await prisma.print.findUniqueOrThrow({ where: { id: print.id }, include: { author: true } });
         expect(filled.title).toBe(spec.expected.title);
         expect(filled.notes).toContain(spec.expected.notesIncludes);
         expect(filled.tags.toSorted()).toEqual(spec.expected.tags);
         expect(filled.creator).toBe(spec.expected.author);
         expect(filled.author?.name).toBe(spec.expected.author);
-        expect(filled.categoryId).toBe(category.id);
-        expect(filled.categorySource).toBe("RULE");
+        expect(filled.categoryId).toBe(category?.id ?? null);
+        expect(filled.categorySource).toBe(category ? "RULE" : null);
         expect(await prisma.previewImage.count({ where: { printId: print.id, generated: false } })).toBe(
           spec.expected.galleryImages,
         );

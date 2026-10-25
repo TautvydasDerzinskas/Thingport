@@ -3453,7 +3453,7 @@
           "takenBy": "Synced with \"{{name}}\"",
           "loadFailed": "Couldn't load the collections.",
           "lookupFailed": "Couldn't find that collection.",
-          "notALink": "Paste a MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs or Cults3D collection link.",
+          "notALink": "Paste a MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D or Pinshape collection link.",
           "usernameFailed": "Couldn't save the username.",
           "openProviders": "Open Providers",
           "usernameLabel": "Your {{provider}} username",
@@ -4147,6 +4147,37 @@
       },
       "sync": {
         "notConnected": "Connect eufyMake in Configuration > Providers, or visit it with Thingport Grab, to see your likes here."
+      }
+    },
+    "pinshape": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open pinshape.com while signed in. It connects your account, and sends a new sign-in whenever you sign in there again.",
+          "Or by hand: sign in at pinshape.com with Remember Me ticked, so the sign-in lasts a year, and open your browser's developer tools (F12).",
+          "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → pinshape.com, copy the value of remember_token and paste it below. The Cookie header of a signed-in pinshape.com request works too."
+        ],
+        "placeholder": "The remember_token cookie, or a signed-in request's Cookie header"
+      },
+      "status": {
+        "notConnected": "Pinshape gives its files to signed-in users only. Connect your account to import its models; collections and likes read without it.",
+        "expired": "Sign-in expired. Sign in on pinshape.com with Thingport Grab, or connect Pinshape again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "Pinshape: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "A long-running community model site, now run by MatterHackers: free models, and collections anyone can follow.",
+        "signIn": "Your own sign-in, for the files; collections and likes read without it.",
+        "grab": "Sends your sign-in as you visit pinshape.com.",
+        "setup": [
+          "Install Thingport Grab, enable it on Pinshape and open pinshape.com signed in.",
+          "By hand: copy the remember_token cookie of a signed-in pinshape.com tab and paste it in Configuration → Providers."
+        ]
+      },
+      "admin": {
+        "description": "Models, and anyone's collections and likes. Lists read without a sign-in; the files need each user's own."
+      },
+      "sync": {
+        "notConnected": "Connect Pinshape in Configuration > Providers, or visit it with Thingport Grab, to see your likes and collections here."
       }
     }
   }

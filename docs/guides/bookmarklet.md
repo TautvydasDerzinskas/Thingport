@@ -32,7 +32,7 @@ The copy button needs Thingport to be opened over HTTPS or on `localhost`. On a 
 ## Use it
 
 1. Open a model's page on any [supported site](../features/importing.md): MakerWorld, Printables, Thingiverse,
-   MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs or Cults3D.
+   MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake or Pinshape.
 2. Click **Send to Thingport** in the bookmarks bar.
 3. Thingport opens with the link in the import dialog. Pick the print profiles to bring in if the site has them, then
    click **Import**.

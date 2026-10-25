@@ -3476,7 +3476,7 @@
           "takenBy": "Synchronisée avec « {{name}} »",
           "loadFailed": "Impossible de charger les collections.",
           "lookupFailed": "Impossible de trouver cette collection.",
-          "notALink": "Collez un lien de collection MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space ou MakerOnline.",
+          "notALink": "Collez un lien de collection MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D ou Pinshape.",
           "usernameFailed": "Impossible d’enregistrer le nom d’utilisateur.",
           "openProviders": "Ouvrir les fournisseurs",
           "usernameLabel": "Votre nom d’utilisateur {{provider}}",
@@ -4171,6 +4171,37 @@
       },
       "sync": {
         "notConnected": "Connectez eufyMake dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir vos « J’aime » ici."
+      }
+    },
+    "pinshape": {
+      "connect": {
+        "steps": [
+          "Le plus simple : avec Thingport Grab, il suffit d’ouvrir pinshape.com en étant connecté. Votre compte est relié, et une nouvelle connexion est envoyée chaque fois que vous vous y reconnectez.",
+          "Ou manuellement : connectez-vous à pinshape.com en cochant « Remember Me », pour que la connexion dure un an, et ouvrez les outils de développement de votre navigateur (F12).",
+          "Sous Application (Chrome, Edge) ou Stockage (Firefox) → Cookies → pinshape.com, copiez la valeur de remember_token et collez-la ci-dessous. L’en-tête Cookie d’une requête à pinshape.com faite en étant connecté convient aussi."
+        ],
+        "placeholder": "Le cookie remember_token, ou l’en-tête Cookie d’une requête faite en étant connecté"
+      },
+      "status": {
+        "notConnected": "Pinshape ne remet ses fichiers qu’aux utilisateurs connectés. Reliez votre compte pour importer ses modèles ; les collections et les « J’aime » se lisent sans lui.",
+        "expired": "La connexion a expiré. Connectez-vous à pinshape.com avec Thingport Grab, ou reconnectez Pinshape dans Configuration → Fournisseurs.",
+        "expiredStatus": "Connexion expirée",
+        "disabledReason": "Pinshape : connectez votre compte dans Configuration → Fournisseurs"
+      },
+      "about": {
+        "summary": "Un site de modèles communautaire de longue date, désormais géré par MatterHackers : des modèles gratuits, et des collections que chacun peut suivre.",
+        "signIn": "Votre propre connexion, pour les fichiers ; les collections et les « J’aime » se lisent sans elle.",
+        "grab": "Envoie votre connexion lorsque vous visitez pinshape.com.",
+        "setup": [
+          "Installez Thingport Grab, activez-le sur Pinshape et ouvrez pinshape.com en étant connecté.",
+          "Manuellement : copiez le cookie remember_token d’un onglet pinshape.com connecté et collez-le dans Configuration → Fournisseurs."
+        ]
+      },
+      "admin": {
+        "description": "Les modèles, et les collections et « J’aime » de chacun. Les listes se lisent sans connexion ; les fichiers demandent celle de l’utilisateur."
+      },
+      "sync": {
+        "notConnected": "Connectez Pinshape dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir vos « J’aime » et collections ici."
       }
     }
   }

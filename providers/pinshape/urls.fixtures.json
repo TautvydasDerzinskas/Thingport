@@ -1,0 +1,66 @@
+[
+  {
+    "url": "https://pinshape.com/items/111504-articulated-dragon",
+    "expect": {
+      "provider": "pinshape",
+      "kind": "model",
+      "externalId": "111504"
+    }
+  },
+  {
+    "url": "https://www.pinshape.com/items/111504?utm_source=feed",
+    "expect": {
+      "provider": "pinshape",
+      "kind": "model",
+      "externalId": "111504"
+    }
+  },
+  {
+    "url": "https://pinshape.com/items?collection_id=187772",
+    "expect": {
+      "provider": "pinshape",
+      "kind": "list",
+      "externalId": "187772",
+      "listKind": "collection"
+    }
+  },
+  {
+    "url": "https://pinshape.com/users/9100090-tautvydas?tab=likes",
+    "expect": {
+      "provider": "pinshape",
+      "kind": "list",
+      "externalId": "likes:9100090",
+      "listKind": "likes"
+    }
+  },
+  {
+    "url": "https://pinshape.com/users/208297-angel-spy#likes",
+    "expect": {
+      "provider": "pinshape",
+      "kind": "list",
+      "externalId": "likes:208297",
+      "listKind": "likes"
+    }
+  },
+  {
+    "url": "https://pinshape.com/users/9100090-tautvydas",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  },
+  {
+    "url": "https://pinshape.com/items/111504-articulated-dragon/download/file/1784513",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  },
+  {
+    "url": "https://pinshape.com/items?category=6&sort=popular",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  }
+]
