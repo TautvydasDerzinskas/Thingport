@@ -7,6 +7,7 @@ import { prisma } from "../db";
 import { createNotification } from "./notificationService";
 import { HttpError } from "../utils/fileUtils";
 import { createKeyedLock } from "../utils/concurrency";
+import { acquireImmediateImportLock } from "./immediateImport";
 import { resetFailedItems } from "./importJobService";
 import { isRunnerLive, runnerSettled, type QueuedLinkOptions } from "./importJobRunner";
 import { liftProviderHolds } from "../providers/registry";
@@ -18,6 +19,24 @@ import { wakeImportScheduler, MANAGED_TYPES } from "./importScheduler";
 export async function startLinksJob(
   job: ImportJob,
   opts: { retryFailed?: boolean; manual?: boolean } = {},
+): Promise<{ run: Promise<void> }> {
+  const payload = job.payload as Record<string, unknown> | null;
+  if (job.type === "LINKS" && payload?.immediate === true) {
+    const release = await acquireImmediateImportLock(job.id);
+    if (!release) throw new HttpError(409, "This import is still finishing its current link, try again shortly");
+    try {
+      const current = await prisma.importJob.findUniqueOrThrow({ where: { id: job.id } });
+      return await startLinksJobUnlocked(current, opts);
+    } finally {
+      await release();
+    }
+  }
+  return startLinksJobUnlocked(job, opts);
+}
+
+async function startLinksJobUnlocked(
+  job: ImportJob,
+  opts: { retryFailed?: boolean; manual?: boolean },
 ): Promise<{ run: Promise<void> }> {
   if (job.type === "COLLECTION" || job.type === "ZIP" || job.type === "PROFILES") {
     if (!job.payload) throw new HttpError(400, "This older import has no saved request; start a new import");
@@ -84,11 +103,18 @@ export async function startLinksJob(
   const pending = await prisma.importJobItem.count({ where: { jobId: job.id, status: "PENDING" } });
   if (!pending) throw new HttpError(400, "This import has no links waiting to import");
 
+  // A retry resolves fresh saved credentials; never carry a request-only session into the queue.
+  const {
+    immediate: _immediate,
+    makerworld_cookie: _cookie,
+    ...payload
+  } = (job.payload ?? {}) as Record<string, Prisma.InputJsonValue>;
   // Conditional on the status read above, so two starts at once launch one runner.
   const { count } = await prisma.importJob.updateMany({
     where: { id: job.id, status: job.status },
     data: {
       status: "QUEUED",
+      payload,
       errorMessage: null,
       processed: await prisma.importJobItem.count({ where: { jobId: job.id, status: { in: ["DONE", "FAILED"] } } }),
       failedCount: await prisma.importJobItem.count({ where: { jobId: job.id, status: "FAILED" } }),

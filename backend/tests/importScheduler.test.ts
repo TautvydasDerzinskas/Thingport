@@ -15,6 +15,7 @@ vi.mock("../src/services/singleImport", () => ({
 }));
 
 import { prisma } from "../src/db";
+import { acquireImmediateImportLock } from "../src/services/immediateImport";
 import {
   drainImportQueue,
   storedImportBody,
@@ -282,7 +283,12 @@ describe("durable import scheduler (PostgreSQL)", () => {
         sourceUrl: urls("legacy"),
       },
     });
-    await drainImportQueue();
+    const release = await acquireImmediateImportLock(immediate.id);
+    try {
+      await drainImportQueue();
+    } finally {
+      await release?.();
+    }
     expect((await prisma.importJob.findUniqueOrThrow({ where: { id: immediate.id } })).status).toBe("RUNNING");
     expect((await prisma.importJobItem.findFirstOrThrow({ where: { jobId: immediate.id } })).status).toBe("RUNNING");
     expect((await prisma.importJob.findUniqueOrThrow({ where: { id: legacy.id } })).status).toBe("RUNNING");

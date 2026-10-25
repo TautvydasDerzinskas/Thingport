@@ -26,6 +26,7 @@ import { findLibraryPrints } from "../services/collectionSyncService";
 import { listZipEntries } from "../services/zipService";
 import { createJob, getActiveJob, getJob, listJobItems } from "../services/importJobService";
 import { queueLink, startLinksJob } from "../services/importQueueService";
+import { startImmediateImport } from "../services/immediateImport";
 import { getPersistentImportTask, startImportTask } from "../services/importTaskService";
 import {
   enqueueSingleImport,
@@ -393,8 +394,8 @@ router.post(
       // TTL/privacy compatibility: request sessions stay in this immediate runner, never in durable payloads.
       if (await getActiveJob(req.userId!))
         throw new HttpError(409, "An import is already running; try again when it finishes");
-      const job = await prisma.importJob.create({
-        data: {
+      const job = await startImmediateImport(
+        {
           userId: req.userId!,
           type: "LINKS",
           status: "RUNNING",
@@ -403,8 +404,8 @@ router.post(
           payload: { ...(linksJobPayload(body) as Prisma.InputJsonObject), immediate: true },
           items: { create: urls.map((url) => ({ url })) },
         },
-      });
-      void runLinksImportJob(job.id, req.userId!, { ...body, url: urls[0] });
+        (jobId) => runLinksImportJob(jobId, req.userId!, { ...body, url: urls[0] }),
+      );
       res.status(202).json({ job_id: job.id });
       return;
     }

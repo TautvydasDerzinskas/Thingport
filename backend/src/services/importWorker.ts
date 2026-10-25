@@ -3,6 +3,7 @@ import { Client } from "pg";
 import { prisma, getActiveDatabaseUrl } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { executeQueuedImport } from "./importJobExecution";
+import { recoverImmediateImports } from "./immediateImport";
 
 // A dedicated PostgreSQL session holds the global advisory lock across provider requests.
 // Progress commits independently, without a long-running transaction or a pooled session lock.
@@ -64,6 +65,7 @@ async function drainQueue(): Promise<void> {
     if (lostLock || suspended) return;
     // Recovery and claiming also write shared state: a lost session here must fail closed.
     working = true;
+    await recoverImmediateImports();
     // Only the lock holder recovers: another API starting must never reset a live worker.
     await prisma.importJobItem.updateMany({
       where: {
