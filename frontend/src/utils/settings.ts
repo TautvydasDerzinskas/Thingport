@@ -3,7 +3,8 @@ export type MakerWorldSettings = {
 };
 
 // The MakerWorld cookie is mirrored locally because it's write-only server-side; it's what this
-// browser sends with its import requests.
+// browser sends with its import requests. MakerWorld's alone, as a page link of no provider's imports with its session
+// too (the backend's LINK_PROVIDER); the app's settings are one object, so it isn't kept in providers/makerworld/.
 export type AppSettings = {
   makerworld: MakerWorldSettings;
 };

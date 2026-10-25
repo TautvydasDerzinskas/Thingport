@@ -7,4 +7,5 @@ export const NORMALIZE_3MF_SLICERS: Readonly<Record<string, string>> = {
   crealityprintlink: "Creality Print",
   elegooslicer: "Elegoo Slicer",
   "snapmaker-orca": "Snapmaker Orca",
+  eufystudio3d: "eufyMake Studio",
 };

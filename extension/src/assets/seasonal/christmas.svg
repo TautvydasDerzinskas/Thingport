@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -45 530 175" fill="none">
+  <title>Christmas</title>
+  <style>
+    .fall { fill: #a9d4f5; animation: fall linear infinite; }
+    @keyframes fall { 0% { transform: translateY(0); opacity: 0; } 10%, 85% { opacity: 1; } 100% { transform: translateY(160px); opacity: 0; } }
+    .sway { transform-origin: 0 0; animation: sway 3.2s ease-in-out infinite; }
+    @keyframes sway { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(5deg); } }
+    .star { transform-origin: 0 0; animation: twinkle 1.8s ease-in-out infinite; }
+    @keyframes twinkle { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.3); } }
+    .bulb { animation: blink 1.4s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0.25; } }
+    .wave { transform-origin: 0 0; animation: wave 2.6s ease-in-out infinite; }
+    @keyframes wave { 0%, 60%, 100% { transform: rotate(0); } 70%, 90% { transform: rotate(-22deg); } 80% { transform: rotate(6deg); } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } .fall { display: none; } }
+  </style>
+  <!-- Santa hat on the mark's top corner -->
+  <g transform="translate(50 19) rotate(-8)">
+    <g class="sway">
+      <path d="M-19 -4 C-15 -30 6 -44 30 -34 C21 -29 15 -18 19 -4 Z" fill="#d62828" stroke="#a61b1b" stroke-width="1.6" stroke-linejoin="round"/>
+      <rect x="-23" y="-8" width="46" height="12" rx="6" fill="#ffffff" stroke="#c9d3dc" stroke-width="1.6"/>
+      <circle cx="31" cy="-34" r="7" fill="#ffffff" stroke="#c9d3dc" stroke-width="1.6"/>
+    </g>
+  </g>
+  <!-- Tree -->
+  <rect x="435" y="60" width="10" height="13" rx="1.5" fill="#8d5a2b"/>
+  <path d="M440 4 L454 27 L426 27 Z M440 15 L459 43 L421 43 Z M440 29 L465 62 L415 62 Z" fill="#1f9d48" stroke="#157a37" stroke-width="1.6" stroke-linejoin="round"/>
+  <circle class="bulb" cx="436" cy="20" r="2.6" fill="#e63946" style="animation-delay:0s"/>
+  <circle class="bulb" cx="446" cy="25" r="2.6" fill="#ffc300" style="animation-delay:-0.4s"/>
+  <circle class="bulb" cx="431" cy="37" r="2.6" fill="#3a86ff" style="animation-delay:-0.8s"/>
+  <circle class="bulb" cx="447" cy="40" r="2.6" fill="#e63946" style="animation-delay:-0.2s"/>
+  <circle class="bulb" cx="440" cy="33" r="2.6" fill="#ffc300" style="animation-delay:-0.6s"/>
+  <circle class="bulb" cx="426" cy="55" r="2.6" fill="#ffc300" style="animation-delay:-1.0s"/>
+  <circle class="bulb" cx="437" cy="51" r="2.6" fill="#e63946" style="animation-delay:-0.5s"/>
+  <circle class="bulb" cx="452" cy="56" r="2.6" fill="#3a86ff" style="animation-delay:-0.9s"/>
+  <circle class="bulb" cx="458" cy="48" r="2.6" fill="#ffc300" style="animation-delay:-0.3s"/>
+  <g transform="translate(440 3)"><polygon class="star" points="0.00,-7.00 1.76,-2.43 6.66,-2.16 2.85,0.93 4.11,5.66 0.00,3.00 -4.11,5.66 -2.85,0.93 -6.66,-2.16 -1.76,-2.43" fill="#ffc300" stroke="#e0a800" stroke-width="1"/></g>
+  <!-- Snowman -->
+  <g stroke="#7a5230" stroke-width="2.2" stroke-linecap="round">
+    <line x1="469" y1="40" x2="458" y2="31"/>
+    <g transform="translate(487 40)"><line class="wave" x1="0" y1="0" x2="9" y2="-10"/></g>
+  </g>
+  <g fill="#ffffff" stroke="#b8c4cf" stroke-width="1.6">
+    <circle cx="478" cy="62" r="13"/>
+    <circle cx="478" cy="41" r="10"/>
+    <circle cx="478" cy="24" r="8"/>
+  </g>
+  <rect x="469" y="14" width="18" height="3" rx="1" fill="#1f1f1f"/>
+  <rect x="472" y="3" width="12" height="12" rx="1.5" fill="#1f1f1f"/>
+  <rect x="472" y="11" width="12" height="2.5" fill="#d62828"/>
+  <circle cx="475" cy="22" r="1.3" fill="#1f1f1f"/>
+  <circle cx="481" cy="22" r="1.3" fill="#1f1f1f"/>
+  <path d="M478 25 L487 26.5 L478 28 Z" fill="#f77f00"/>
+  <circle cx="478" cy="37" r="1.4" fill="#1f1f1f"/>
+  <circle cx="478" cy="43" r="1.4" fill="#1f1f1f"/>
+  <!-- Snow they stand in -->
+  <ellipse cx="456" cy="75" rx="44" ry="5.5" fill="#ffffff" stroke="#c9d6e2" stroke-width="1.6"/>
+  <circle class="fall" cx="-20" cy="-42" r="3" style="animation-duration:6.5s;animation-delay:0s"/>
+  <circle class="fall" cx="15" cy="-42" r="2.5" style="animation-duration:5.2s;animation-delay:-2.1s"/>
+  <circle class="fall" cx="60" cy="-42" r="3.5" style="animation-duration:7s;animation-delay:-4.3s"/>
+  <circle class="fall" cx="105" cy="-42" r="2.5" style="animation-duration:5.8s;animation-delay:-1.2s"/>
+  <circle class="fall" cx="140" cy="-42" r="3" style="animation-duration:6.2s;animation-delay:-3.6s"/>
+  <circle class="fall" cx="185" cy="-42" r="2.5" style="animation-duration:5.4s;animation-delay:-0.6s"/>
+  <circle class="fall" cx="220" cy="-42" r="3.5" style="animation-duration:7.4s;animation-delay:-5.1s"/>
+  <circle class="fall" cx="262" cy="-42" r="2.5" style="animation-duration:5.9s;animation-delay:-2.7s"/>
+  <circle class="fall" cx="300" cy="-42" r="3" style="animation-duration:6.6s;animation-delay:-4.8s"/>
+  <circle class="fall" cx="338" cy="-42" r="2.5" style="animation-duration:5.1s;animation-delay:-1.8s"/>
+  <circle class="fall" cx="372" cy="-42" r="3.5" style="animation-duration:7.2s;animation-delay:-3.1s"/>
+  <circle class="fall" cx="405" cy="-42" r="2.5" style="animation-duration:5.6s;animation-delay:-0.3s"/>
+  <circle class="fall" cx="440" cy="-42" r="3" style="animation-duration:6.8s;animation-delay:-5.6s"/>
+  <circle class="fall" cx="482" cy="-42" r="2.5" style="animation-duration:5.3s;animation-delay:-2.4s"/>
+</svg>

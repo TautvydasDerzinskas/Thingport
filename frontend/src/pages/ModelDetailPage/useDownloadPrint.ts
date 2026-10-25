@@ -31,13 +31,14 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRe
   };
   const recordUse = () => record("slicer");
 
-  const downloadPlate = async (plate: Plate) => {
+  /** A plate, or any other of the model's files, such as its prepared print. */
+  const downloadFile = async (file: Pick<Plate, "url" | "filename">) => {
     setDownloading(true);
     try {
-      const res = await fetch(printsApi.fileUrl(plate.url));
+      const res = await fetch(printsApi.fileUrl(file.url));
       if (res.status === 401) throw new UnauthorizedError();
       if (!res.ok) throw new Error("Download failed");
-      await saveResponseToDisk(res, plate.filename || "download");
+      await saveResponseToDisk(res, file.filename || "download");
       setPickerOpen(false);
       record("download");
     } catch (err) {
@@ -64,7 +65,7 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRe
   const handleDownload = () => {
     if (print.plates.length <= 1) {
       const plate = print.plates[0];
-      if (plate) void downloadPlate(plate);
+      if (plate) void downloadFile(plate);
       return;
     }
     setPickerOpen(true);
@@ -77,7 +78,8 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRe
     setPickerOpen,
     downloading,
     handleDownload,
-    downloadPlate,
+    downloadFile,
+    downloadPlate: downloadFile,
     downloadAllZip,
     sortedPlates,
     recordUse,

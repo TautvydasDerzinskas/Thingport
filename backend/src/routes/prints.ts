@@ -4,51 +4,31 @@ import { Router, type Request, type Response } from "express";
 import { z } from "zod";
 import { prisma } from "../db";
 import { requireAuth } from "../auth";
-import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
+import { HttpError, sanitizeFilename } from "../utils/fileUtils";
 import { normalizeTags } from "../utils/tagNormalization";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { modelUpload } from "../uploadMiddleware";
-import { createPrint, deletePlateFiles, resolvePlateFilePath, type NewPlateInput } from "../services/printCreation";
-import {
-  plateThumbPath,
-  relocatePrint,
-  relocatePrintsForToken,
-  removeAssetHome,
-  assetOwnerIds,
-  removePlatePictures,
-  uniqueModelName,
-} from "../services/printService";
+import { resolvePlateFilePath } from "../services/printCreation";
+import { createUploadedModel } from "../services/uploadService";
+import { plateThumbPath, relocatePrintsForToken } from "../services/printService";
 import { setPrintCategory } from "../services/printCategoryService";
-import { previewImagePath, deleteAllPreviewImages } from "../services/previewImageService";
-import {
-  deleteAllDescriptionImages,
-  descriptionImagePath,
-  localizeDescriptionImages,
-  pruneDescriptionImages,
-} from "../services/descriptionImageService";
+import { previewImagePath } from "../services/previewImageService";
+import { descriptionImagePath } from "../services/descriptionImageService";
 import { deleteAuthorIfOrphaned } from "../services/authorService";
-import { toPrintOut } from "../dto";
-import { loadFullPrint, printOutById, printOutsByIds } from "../services/printLoader";
-import { deleteAllPrintFiles, saveFileFromTemp } from "../services/printFileService";
-import { RENDERABLE_MODEL_EXTS } from "../config";
+import { printOutById, printOutsByIds } from "../services/printLoader";
 import { estimateDownloadSize, resolvePrintsForDownload, sendPrintsZip } from "../services/downloadZip";
 import { createLog } from "../services/auditLog";
 import { recordActivity } from "../services/activityService";
 import { notifyUpload } from "../services/modelNotifications";
 import { fillSourceGaps } from "../services/fillGapsService";
-import { forgetAiDescription } from "../services/aiDescriptionService";
+import { deletePrint, setPrintTags, updatePrintMeta } from "../services/printEditService";
 import { isNormalizable3mf, normalize3mfStatus, normalized3mfFor } from "../services/normalized3mfCache";
 import { listPrints, listTagsOf, parseSortMode, splitList, type PrintFilters } from "../services/printQuery";
-import type { Prisma } from "@prisma/client";
 import { printQuality, startPrintQualityCheck } from "../services/modelQualityService";
 
 const router = Router();
 router.use(requireAuth);
-
-function isRenderableUpload(f: Express.Multer.File): boolean {
-  return RENDERABLE_MODEL_EXTS.has(path.extname(f.originalname).toLowerCase());
-}
 
 /** GET /prints' and GET /tags' query string as listing filters. */
 function printFiltersFromQuery(req: Request): PrintFilters {
@@ -92,53 +72,13 @@ router.post(
       };
 
       const printsOut = [];
-      if (files.length === 1 || mode === "separate") {
-        for (const file of files) {
-          const safeName = sanitizeFilename(file.originalname);
-          const mime = mimeFromContentType(file.mimetype, safeName);
-          const { print, plates } = await createPrint(req.userId!, meta, path.parse(safeName).name, [
-            { filename: safeName, mime, tempFilePath: file.path },
-          ]);
-          printsOut.push(toPrintOut(print, plates, [], null));
-          created.push({ id: print.id, name: print.title || print.name });
-          pending.delete(file);
-          void recordActivity(req.userId!, "upload", print.id, print.name);
-          void createLog({
-            userId: req.userId!,
-            action: "model_uploaded",
-            targetId: print.id,
-            details: { name: print.name },
-          });
-        }
-      } else {
-        // Non-renderable files become SUPPORTING files. If nothing is renderable, every file becomes a
-        // plate so the print still has one.
-        const renderableFiles = files.filter(isRenderableUpload);
-        const supportingFiles = renderableFiles.length ? files.filter((f) => !isRenderableUpload(f)) : [];
-        const plateFiles = renderableFiles.length ? renderableFiles : files;
-
-        const plateInputs: NewPlateInput[] = plateFiles.map((f) => {
-          const safeName = sanitizeFilename(f.originalname);
-          return { filename: safeName, mime: mimeFromContentType(f.mimetype, safeName), tempFilePath: f.path };
-        });
-        const nameHint = path.parse(plateInputs[0].filename).name;
-        const { print } = await createPrint(req.userId!, meta, nameHint, plateInputs);
+      // One model per file, or one holding them all.
+      const groups = files.length === 1 || mode === "separate" ? files.map((f) => [f]) : [files];
+      for (const group of groups) {
+        const print = await createUploadedModel(req.userId!, meta, group);
+        for (const f of group) pending.delete(f);
         created.push({ id: print.id, name: print.title || print.name });
-        for (const f of plateFiles) pending.delete(f);
-
-        for (const f of supportingFiles) {
-          await saveFileFromTemp(req.userId!, print.id, f.path, f.originalname, f.mimetype);
-          pending.delete(f);
-        }
-
         printsOut.push(await printOutById(req.userId!, print.id));
-        void recordActivity(req.userId!, "upload", print.id, print.name);
-        void createLog({
-          userId: req.userId!,
-          action: "model_uploaded",
-          targetId: print.id,
-          details: { name: print.name },
-        });
       }
       if (notify) {
         await notifyUpload(req.userId!, created).catch((err) => console.error("Upload notification failed:", err));
@@ -450,21 +390,8 @@ router.post(
   "/print/:id/tags",
   asyncHandler(async (req, res) => {
     const body = parseBody(tagsSchema, req.body);
-    const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
-    if (!print) throw new HttpError(404, "Print not found");
-    const updated = await prisma.print.update({
-      where: { id: print.id },
-      data: { tags: normalizeTags(body.tags) },
-    });
-    const plates = await prisma.plate.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } });
-    await relocatePrint(updated, plates);
+    const print = await setPrintTags(req.userId!, req.params.id, body.tags);
     res.json({ print: await printOutById(req.userId!, print.id) });
-    void createLog({
-      userId: req.userId!,
-      action: "model_edited",
-      targetId: print.id,
-      details: { field: "tags", name: updated.name },
-    });
   }),
 );
 
@@ -478,38 +405,12 @@ router.post(
   "/print/:id/meta",
   asyncHandler(async (req, res) => {
     const body = parseBody(metaSchema, req.body);
-    const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
-    if (!print) throw new HttpError(404, "Print not found");
-
-    const data: Prisma.PrintUpdateInput = {};
-    const requestedName = body.name !== undefined ? body.name : body.title;
-    if (requestedName !== undefined) {
-      const nextName = await uniqueModelName(req.userId!, requestedName, print.categoryId, print.id);
-      if (nextName !== print.name) {
-        data.name = nextName;
-        data.nameNormalized = nextName.trim().toLowerCase();
-        data.title = nextName;
-      }
-    }
-    if (body.notes !== undefined) data.notes = body.notes;
-    if (body.creator !== undefined) data.creator = body.creator.trim() || null;
-
-    const updated = await prisma.print.update({ where: { id: print.id }, data });
-    const plates = await prisma.plate.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } });
-    await relocatePrint(updated, plates);
-    if (body.notes !== undefined) {
-      if (body.notes !== (print.notes ?? "")) await forgetAiDescription(print.id);
-      await pruneDescriptionImages(print.id);
-      // Images pasted in by URL are fetched in the background: slow hosts mustn't hold up the save.
-      void localizeDescriptionImages(print.id);
-    }
-    res.json({ print: await printOutById(req.userId!, print.id) });
-    void createLog({
-      userId: req.userId!,
-      action: "model_edited",
-      targetId: print.id,
-      details: { field: "meta", name: updated.name },
+    const print = await updatePrintMeta(req.userId!, req.params.id, {
+      name: body.name !== undefined ? body.name : body.title,
+      notes: body.notes,
+      creator: body.creator,
     });
+    res.json({ print: await printOutById(req.userId!, print.id) });
   }),
 );
 
@@ -561,27 +462,6 @@ router.post(
   }),
 );
 
-async function deletePrint(userId: string, printId: string): Promise<void> {
-  const full = await loadFullPrint(userId, printId);
-  const assetOwners = await assetOwnerIds(printId);
-  await deleteAllPrintFiles(printId);
-  await deleteAllPreviewImages(printId);
-  await deleteAllDescriptionImages(printId);
-  await prisma.print.delete({ where: { id: printId } });
-  for (const plate of full.plates) {
-    await deletePlateFiles(plate);
-    await removePlatePictures(plate.id, full.print.assetsPath);
-  }
-  await removeAssetHome(full.print.assetsPath, assetOwners);
-  void recordActivity(userId, "delete", printId, full.print.name);
-  void createLog({
-    userId,
-    action: "model_deleted",
-    targetId: printId,
-    details: { name: full.print.name },
-  });
-}
-
 router.delete(
   "/print/:id",
   asyncHandler(async (req, res) => {
@@ -626,6 +506,47 @@ router.post(
     });
     const prints = await printOutsByIds(req.userId!, body.print_ids);
     res.json({ prints: body.print_ids.flatMap((id) => prints.get(id) ?? []) });
+  }),
+);
+
+const bulkTagsSchema = bulkPrintIdsSchema.extend({
+  add: z.array(z.string()).max(50).default([]),
+  remove: z.array(z.string()).max(50).default([]),
+});
+router.post(
+  "/prints/tags",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(bulkTagsSchema, req.body);
+    const remove = new Set(normalizeTags(body.remove));
+    const add = normalizeTags(body.add).filter((tag) => !remove.has(tag));
+    if (!add.length && !remove.size) throw new HttpError(400, "Tag is required");
+    const prints = await prisma.print.findMany({
+      where: { id: { in: body.print_ids }, userId: req.userId },
+      select: { id: true, name: true, tags: true },
+    });
+    // Added after the model's own, and only the models that change are written.
+    const changed = prints.flatMap((print) => {
+      const own = normalizeTags(print.tags);
+      const tags = normalizeTags([...own.filter((tag) => !remove.has(tag)), ...add]);
+      return tags.join("\n") === own.join("\n") ? [] : [{ ...print, tags }];
+    });
+    for (const print of changed) {
+      await prisma.print.update({ where: { id: print.id }, data: { tags: print.tags } });
+    }
+    await relocatePrintsForToken(
+      "tags",
+      changed.map((print) => print.id),
+    );
+    const out = await printOutsByIds(req.userId!, body.print_ids);
+    res.json({ prints: body.print_ids.flatMap((id) => out.get(id) ?? []), changed: changed.length });
+    for (const print of changed) {
+      void createLog({
+        userId: req.userId!,
+        action: "model_edited",
+        targetId: print.id,
+        details: { field: "tags", name: print.name },
+      });
+    }
   }),
 );
 

@@ -12,7 +12,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { browserFetch } from "../src/utils/browserFetch";
 import { getMyminifactoryApiKey, getThingiverseAccessToken } from "../src/services/settingsService";
-import { cults3dNumericId } from "../src/services/cults3dApi";
+import { cults3dNumericId } from "../src/providers/cults3d/api";
 import { prisma } from "../src/db";
 
 type Entry = { id: string; name: string; parent: string | null };

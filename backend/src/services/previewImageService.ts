@@ -1,8 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import sharp from "sharp";
 import { prisma } from "../db";
+import { HttpError } from "../utils/fileUtils";
 import { generateModelImage } from "./modelPreviewCache";
+import { photoJpeg, renderThumbShade } from "./imageProcessing";
 import {
   assetExists,
   assetPath,
@@ -13,6 +14,8 @@ import {
   removeAsset,
   type AssetHome,
 } from "./modelAssets";
+import { plainWriteMode, reuseMarker, shareStoredBytes, type ReuseMarker } from "./fileReuse";
+import { findStoredCopies } from "./storedContent";
 import { ensureAssetHome, plateThumbExists, plateThumbReplaceable, saveThumbFromBytes } from "./printService";
 import type { PreviewImage } from "@prisma/client";
 
@@ -25,23 +28,35 @@ export function previewImageExists(id: string, home: AssetHome): boolean {
   return assetExists(home, galleryImageFile(id));
 }
 
-async function saveBuffer(printId: string, id: string, input: Buffer): Promise<boolean> {
+/** Where the JPEG was stored, its size, and its SHA-256 when it was hashed for sharing (file reuse on),
+ *  and the marker of a clone that was kept. Null when it
+ *  couldn't be saved. The path is returned so a caller that has to undo the save removes exactly this file, without
+ *  looking the folder up again through a print that may be gone. */
+async function saveBuffer(
+  printId: string,
+  id: string,
+  input: Buffer,
+  keepExif: boolean,
+): Promise<({ dest: string; size: number; contentSha256: string | null } & ReuseMarker) | null> {
   let tmp: string | null = null;
   try {
     const dest = assetTarget(await ensureAssetHome(printId), galleryImageFile(id));
     tmp = `${dest}.${process.pid}.${Date.now()}.tmp`;
     await fs.mkdir(path.dirname(dest), { recursive: true });
-    // Hero-sized: this is the detail page's main image.
-    await sharp(input)
-      .flatten({ background: { r: 248, g: 250, b: 252 } })
-      .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
-      .jpeg({ quality: 90, mozjpeg: true })
-      .toFile(tmp);
+    // Hero-sized: this is the detail page's main image. Kept in memory rather than written by sharp: what's shared is
+    // the re-encoded JPEG, not the download (the same picture fetched twice is rarely the same bytes, but encoded the
+    // same way it is), so it's hashed before it's written.
+    const out = await photoJpeg(input, 1600, 90, keepExif);
+    // Cloned (or written) at the temp name, then renamed into place as before, so a half-written picture is never
+    // served. A clone that can't be made is no reason to fail: the bytes are written as usual.
+    const { contentSha256, shared } = await shareStoredBytes(out, tmp, findStoredCopies, plainWriteMode());
+    if (!shared) await fs.writeFile(tmp, out, { flag: "wx" });
     await fs.rename(tmp, dest);
-    return true;
+    // After the rename, which changes the file's ctime.
+    return { dest, size: out.length, contentSha256, ...(await reuseMarker(dest, shared, contentSha256)) };
   } catch {
     if (tmp) await fs.rm(tmp, { force: true });
-    return false;
+    return null;
   }
 }
 
@@ -49,24 +64,40 @@ async function saveBuffer(printId: string, id: string, input: Buffer): Promise<b
 export async function addPreviewImage(
   printId: string,
   buffer: Buffer,
-  generated = false,
+  { generated = false, keepExif = false }: { generated?: boolean; keepExif?: boolean } = {},
 ): Promise<PreviewImage | null> {
   const last = await prisma.previewImage.findFirst({ where: { printId }, orderBy: { position: "desc" } });
   const position = last ? last.position + 1 : 0;
   const row = await prisma.previewImage.create({ data: { printId, position, generated } });
-  const ok = await saveBuffer(printId, row.id, buffer);
-  if (!ok) {
+  const saved = await saveBuffer(printId, row.id, buffer, keepExif);
+  if (!saved) {
     await prisma.previewImage.delete({ where: { id: row.id } }).catch(() => undefined);
     return null;
   }
-  return row;
+  // Recorded after the file is in place, so a stored copy is only ever offered once it's there. The row may have been
+  // deleted meanwhile (its print removed while the picture was being saved): then the file has no row, so it goes too.
+  // It's removed by the path it was written to: with the print gone there's no folder left to look up.
+  const { dest, ...stored } = saved;
+  try {
+    const { count } = await prisma.previewImage.updateMany({ where: { id: row.id }, data: stored });
+    if (count === 0) {
+      await fs.rm(dest, { force: true });
+      return null;
+    }
+    return await prisma.previewImage.findUnique({ where: { id: row.id } });
+  } catch (err) {
+    console.error(`Failed to record preview image ${row.id}:`, err);
+    await fs.rm(dest, { force: true }).catch(() => undefined);
+    await prisma.previewImage.deleteMany({ where: { id: row.id } }).catch(() => undefined);
+    return null;
+  }
 }
 
 /** An existing image (e.g. an import's cover) always wins. */
 export async function addGeneratedPreviewImageIfNone(printId: string, buffer: Buffer): Promise<void> {
   const count = await prisma.previewImage.count({ where: { printId } });
   if (count > 0) return;
-  await addPreviewImage(printId, buffer, true);
+  await addPreviewImage(printId, buffer, { generated: true });
 }
 
 /** Drops our own renders, so the images that replace them start at position 0. */
@@ -75,13 +106,7 @@ export async function removeGeneratedPreviewImages(printId: string): Promise<voi
   if (!generated.length) return;
   await prisma.previewImage.deleteMany({ where: { id: { in: generated.map((img) => img.id) } } });
   const remaining = await prisma.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } });
-  // Two-phase renumber, as in plates.ts, to avoid (printId, position) collisions.
-  await prisma.$transaction(
-    remaining.map((img, idx) => prisma.previewImage.update({ where: { id: img.id }, data: { position: -(idx + 1) } })),
-  );
-  await prisma.$transaction(
-    remaining.map((img, idx) => prisma.previewImage.update({ where: { id: img.id }, data: { position: idx } })),
-  );
+  await renumberPreviewImages(remaining.map((img) => img.id));
   const home = await printAssetHome(printId);
   for (const img of generated) await removeAsset(home, galleryImageFile(img.id));
 }
@@ -92,9 +117,10 @@ export async function preferImageOverRenders(
   printId: string,
   plateId: string | null | undefined,
   buffer: Buffer,
+  keepExif = false,
 ): Promise<void> {
   await removeGeneratedPreviewImages(printId);
-  if (plateId && (await plateThumbReplaceable(plateId))) await saveThumbFromBytes(plateId, buffer);
+  if (plateId && (await plateThumbReplaceable(plateId))) await saveThumbFromBytes(plateId, buffer, keepExif);
 }
 
 export async function deleteAllPreviewImages(printId: string): Promise<void> {
@@ -109,6 +135,35 @@ export async function removePreviewImageFile(printId: string, id: string): Promi
   await removeAsset(await printAssetHome(printId), galleryImageFile(id));
 }
 
+/** Renumbers the model's gallery in this order. Two phases, as in plates.ts, to avoid (printId, position) collisions. */
+async function renumberPreviewImages(ids: string[]): Promise<void> {
+  await prisma.$transaction(
+    ids.map((id, idx) => prisma.previewImage.update({ where: { id }, data: { position: -(idx + 1) } })),
+  );
+  await prisma.$transaction(
+    ids.map((id, idx) => prisma.previewImage.update({ where: { id }, data: { position: idx } })),
+  );
+}
+
+/** Removes one of the model's gallery images; the next one up becomes the cover if it was. */
+export async function removePreviewImage(printId: string, imageId: string): Promise<void> {
+  const images = await prisma.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } });
+  if (!images.some((img) => img.id === imageId)) throw new HttpError(404, "Preview image not found");
+  await prisma.previewImage.delete({ where: { id: imageId } });
+  await renumberPreviewImages(images.filter((img) => img.id !== imageId).map((img) => img.id));
+  await removePreviewImageFile(printId, imageId);
+}
+
+/** Puts the model's gallery in this order; `ids` must be exactly its images. The first is the cover. */
+export async function reorderPreviewImages(printId: string, ids: string[]): Promise<void> {
+  const images = await prisma.previewImage.findMany({ where: { printId }, select: { id: true } });
+  const known = new Set(images.map((img) => img.id));
+  if (ids.length !== images.length || new Set(ids).size !== ids.length || ids.some((id) => !known.has(id))) {
+    throw new HttpError(400, "image_ids must contain exactly the print's current preview image ids");
+  }
+  await renumberPreviewImages(ids);
+}
+
 // The card render is white shading for the cards to tint, too pale on a light background as it is; as a thumb it's
 // slate, like the live viewer's model.
 const RENDER_THUMB_SHADE = [0.58, 0.64, 0.72, 1];
@@ -119,7 +174,7 @@ async function adoptRenderAsThumb(plateId: string, renderPath: string): Promise<
   if (plateThumbExists(plateId, await plateAssetHome(plateId))) return;
   const plate = await prisma.plate.findUnique({ where: { id: plateId }, select: { printId: true } });
   if (!plate) return;
-  const buffer = await sharp(renderPath).linear(RENDER_THUMB_SHADE, [0, 0, 0, 0]).png().toBuffer();
+  const buffer = await renderThumbShade(renderPath, RENDER_THUMB_SHADE);
   if (!(await saveThumbFromBytes(plateId, buffer))) return;
   await prisma.plate.update({ where: { id: plateId }, data: { thumbGenerated: true } });
   await addGeneratedPreviewImageIfNone(plate.printId, buffer);

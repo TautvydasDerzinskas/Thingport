@@ -1,7 +1,5 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import Paper from "@mui/material/Paper";
-import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import List from "@mui/material/List";
@@ -10,6 +8,7 @@ import ListItemText from "@mui/material/ListItemText";
 import type { DashboardModel } from "../../api/dashboard";
 import SeeMoreDialog from "./SeeMoreDialog";
 import DashboardModelThumb from "./DashboardModelThumb";
+import DashboardCard, { DashboardCardBody, DashboardCardTitle, hasMore } from "./DashboardCard";
 
 type Props = {
   icon: React.ReactNode;
@@ -20,6 +19,9 @@ type Props = {
   emptyText: string;
   seeMoreLabel: string;
   fetchMore: () => Promise<DashboardModel[]>;
+  /** How many rows show; the summary holds more. */
+  count: number;
+  showMore: boolean;
 };
 
 function ModelRow({
@@ -56,49 +58,42 @@ export default function ModelListCard({
   emptyText,
   seeMoreLabel,
   fetchMore,
+  count,
+  showMore,
 }: Props) {
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
   return (
-    <Paper
-      variant="outlined"
-      sx={{
-        p: 2.5,
-        display: "flex",
-        flexDirection: "column",
-        borderColor: (theme) => (theme.palette.mode === "dark" ? "transparent" : "divider"),
-      }}
-    >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1, color: "primary.main" }}>
-        {icon}
-        <Typography variant="h6" fontWeight={700} sx={{ color: (theme) => theme.thingport.headingText }}>
-          {title}
-        </Typography>
-      </Box>
+    <DashboardCard scroll={false} sx={{ p: 2.5, display: "flex", flexDirection: "column" }}>
+      <DashboardCardTitle icon={icon} title={title} sx={{ mb: 1, flexShrink: 0 }} />
 
-      {models.length === 0 ? (
-        <Typography color="text.secondary" sx={{ py: 2 }}>
-          {emptyText}
-        </Typography>
-      ) : (
-        <List dense disablePadding>
-          {models.map((model, idx) => (
-            <ModelRow
-              key={model.id}
-              model={model}
-              rank={idx + 1}
-              valueOf={valueOf}
-              valueLabel={valueLabel}
-              onClick={() => navigate(`/models/${model.id}`)}
-            />
-          ))}
-        </List>
+      <DashboardCardBody>
+        {models.length === 0 ? (
+          <Typography color="text.secondary" sx={{ py: 2 }}>
+            {emptyText}
+          </Typography>
+        ) : (
+          <List dense disablePadding>
+            {models.slice(0, count).map((model, idx) => (
+              <ModelRow
+                key={model.id}
+                model={model}
+                rank={idx + 1}
+                valueOf={valueOf}
+                valueLabel={valueLabel}
+                onClick={() => navigate(`/models/${model.id}`)}
+              />
+            ))}
+          </List>
+        )}
+      </DashboardCardBody>
+
+      {showMore && hasMore(models.length, count) && (
+        <Button onClick={() => setDialogOpen(true)} sx={{ alignSelf: "flex-start", mt: 1, flexShrink: 0 }}>
+          {seeMoreLabel}
+        </Button>
       )}
-
-      <Button onClick={() => setDialogOpen(true)} sx={{ alignSelf: "flex-start", mt: 1 }}>
-        {seeMoreLabel}
-      </Button>
 
       <SeeMoreDialog
         open={dialogOpen}
@@ -120,6 +115,6 @@ export default function ModelListCard({
           />
         )}
       />
-    </Paper>
+    </DashboardCard>
   );
 }

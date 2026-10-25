@@ -7,6 +7,7 @@ import { HttpError } from "../utils/fileUtils";
 import { deleteAllPrintsForUser } from "./adminService";
 import { createLog } from "./auditLog";
 import { removeUserTagMosaics } from "./tagMosaicService";
+import { removeUserIcons } from "./iconService";
 
 // Any admin manages members; only the owner (the first admin) manages other admins. Nobody demotes or
 // deletes the owner, or themselves, so the instance always keeps an admin who can.
@@ -64,6 +65,7 @@ export async function deleteUser(actorId: string, targetId: string): Promise<{ m
   if (!permissionsOver(actor, target).canDelete) throw new HttpError(403, "You can't delete this user");
   const models = await deleteAllPrintsForUser(target.id);
   await removeUserTagMosaics(target.id);
+  await removeUserIcons(target.id);
   // Model files live under u-<id>; anything left there (a file the database lost track of) goes too.
   await fs.rm(path.join(STORAGE, `u-${target.id}`), { recursive: true, force: true });
   await prisma.user.delete({ where: { id: target.id } });

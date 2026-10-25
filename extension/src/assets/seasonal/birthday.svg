@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -45 530 175" fill="none">
+  <title>Thingport's birthday</title>
+  <style>
+    .fall { animation: fall linear infinite; transform-box: fill-box; transform-origin: center; }
+    @keyframes fall { 0% { transform: translateY(0) rotate(0); opacity: 0; } 10%, 85% { opacity: 1; } 100% { transform: translateY(160px) rotate(540deg); opacity: 0; } }
+
+    .sway { transform-origin: 0 0; animation: sway 3s ease-in-out infinite; }
+    @keyframes sway { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+    .flame { transform-origin: 0 4px; animation: flicker 0.5s ease-in-out infinite alternate; }
+    @keyframes flicker { from { transform: scale(1, 1) rotate(-4deg); } to { transform: scale(0.85, 1.15) rotate(4deg); } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } .fall, .rise { display: none; } }
+  </style>
+  <g transform="translate(50 20) rotate(10)"><g class="sway">
+    <path d="M-17 0 L0 -44 L17 0 Q0 6 -17 0 Z" fill="#3a86ff" stroke="#2563c9" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M-12.5 -11 L12.5 -11 M-8 -23 L8 -23 M-4 -34 L4 -34" stroke="#ffc300" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="0" cy="-46" r="5.5" fill="#ff3d8b" stroke="#d61f6c" stroke-width="1.2"/>
+  </g></g>
+  <rect x="426" y="52" width="58" height="24" rx="4" fill="#f4a6c0" stroke="#d97a9c" stroke-width="1.6"/>
+  <rect x="436" y="36" width="38" height="17" rx="3" fill="#f4a6c0" stroke="#d97a9c" stroke-width="1.6"/>
+  <path d="M426 56 Q431 62 436 56 Q441 62 446 56 Q451 62 455 56 Q460 62 465 56 Q470 62 475 56 Q480 62 484 56 L484 54 Q484 52 482 52 L428 52 Q426 52 426 54 Z" fill="#ffffff"/>
+  <path d="M436 40 Q441 45 446 40 Q451 45 455 40 Q460 45 465 40 Q470 45 474 40 L474 38 Q474 36 472 36 L438 36 Q436 36 436 38 Z" fill="#ffffff"/>
+  <circle cx="436" cy="66" r="2" fill="#ffc300"/><circle cx="448" cy="68" r="2" fill="#00b4ff"/><circle cx="462" cy="66" r="2" fill="#00b800"/><circle cx="474" cy="68" r="2" fill="#ffc300"/>
+  <rect x="453" y="22" width="4.5" height="14" rx="1" fill="#ffffff" stroke="#9aa4ae" stroke-width="1"/>
+  <path d="M453 26 l4.5 -2 M453 31 l4.5 -2" stroke="#ff3d8b" stroke-width="1.2"/>
+  <g transform="translate(455.2 14)"><path class="flame" d="M0 -6 C3 -2 3.5 2 0 4 C-3.5 2 -3 -2 0 -6 Z" fill="#ffb703" stroke="#f77f00" stroke-width="0.8"/></g>
+  <rect class="fall" x="-15" y="-42" width="5" height="3" rx="0.8" fill="#ffc300" style="animation-duration:5.5s;animation-delay:-1s"/>
+  <rect class="fall" x="30" y="-42" width="5" height="3" rx="0.8" fill="#ff3d8b" style="animation-duration:6.2s;animation-delay:-3.2s"/>
+  <rect class="fall" x="75" y="-42" width="5" height="3" rx="0.8" fill="#00b4ff" style="animation-duration:5.1s;animation-delay:-0.4s"/>
+  <rect class="fall" x="120" y="-42" width="5" height="3" rx="0.8" fill="#00b800" style="animation-duration:6.8s;animation-delay:-4.6s"/>
+  <rect class="fall" x="165" y="-42" width="5" height="3" rx="0.8" fill="#ffc300" style="animation-duration:5.7s;animation-delay:-2.2s"/>
+  <rect class="fall" x="210" y="-42" width="5" height="3" rx="0.8" fill="#ff3d8b" style="animation-duration:6.4s;animation-delay:-5.0s"/>
+  <rect class="fall" x="255" y="-42" width="5" height="3" rx="0.8" fill="#00b4ff" style="animation-duration:5.3s;animation-delay:-1.6s"/>
+  <rect class="fall" x="300" y="-42" width="5" height="3" rx="0.8" fill="#00b800" style="animation-duration:6.0s;animation-delay:-3.8s"/>
+  <rect class="fall" x="345" y="-42" width="5" height="3" rx="0.8" fill="#ffc300" style="animation-duration:5.8s;animation-delay:-2.8s"/>
+  <rect class="fall" x="390" y="-42" width="5" height="3" rx="0.8" fill="#ff3d8b" style="animation-duration:6.6s;animation-delay:-0.9s"/>
+  <rect class="fall" x="430" y="-42" width="5" height="3" rx="0.8" fill="#00b4ff" style="animation-duration:5.4s;animation-delay:-4.1s"/>
+  <rect class="fall" x="475" y="-42" width="5" height="3" rx="0.8" fill="#00b800" style="animation-duration:6.1s;animation-delay:-2.5s"/>
+</svg>

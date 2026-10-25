@@ -1,10 +1,8 @@
 import type { Author } from "../api/prints";
+import { isProviderId, URLS } from "../providers/index.generated";
 
-/** MakerWorld's Author.links are the creator's bio links, so its profile URL is built from the
- * numeric id (/u/<id> always resolves). Thingiverse, Printables and MyMiniFactory store it as links[0]. */
+/** A creator's page: the one their provider builds from their id where it does, else the first of their links. */
 export function authorProfileUrl(author: Pick<Author, "provider" | "external_id" | "links">): string | null {
-  if (author.provider === "makerworld") {
-    return `https://makerworld.com/en/u/${author.external_id}`;
-  }
-  return author.links[0] ?? null;
+  const fromId = isProviderId(author.provider) ? URLS[author.provider].authorUrl?.(author.external_id) : undefined;
+  return fromId ?? author.links[0] ?? null;
 }

@@ -15,8 +15,10 @@ export type Weather = {
 
 export type Place = { name: string; admin1?: string; country?: string; latitude: number; longitude: number };
 
-export async function fetchWeather(lat: number, lon: number): Promise<Weather> {
-  const params = new URLSearchParams({ lat: String(lat), lon: String(lon) });
+export type TemperatureUnit = "celsius" | "fahrenheit";
+
+export async function fetchWeather(lat: number, lon: number, unit: TemperatureUnit = "celsius"): Promise<Weather> {
+  const params = new URLSearchParams({ lat: String(lat), lon: String(lon), unit });
   const res = await fetch(`${apiBase()}/dashboard/weather?${params}`, { headers: authHeaders() });
   assertOk(res, "Failed to load the weather");
   return res.json();

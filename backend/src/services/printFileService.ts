@@ -3,9 +3,12 @@ import fsSync from "node:fs";
 import path from "node:path";
 import { prisma } from "../db";
 import { STORAGE, IMPORT_MAX_BYTES } from "../config";
+import { withStorageLock } from "../utils/storageLock";
 import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
 import { isPreparedPrintFilename, inspectPreparedPrint } from "./preparedPrint";
 import { pruneEmptyStorageDirs, renderPrintFileStoragePath } from "./printService";
+import { reuseMarker, shareStoredCopy } from "./fileReuse";
+import { findStoredCopies } from "./storedContent";
 import type { Prisma, Print, PrintFile } from "@prisma/client";
 
 export function managedPrintFilePath(printFile: Pick<PrintFile, "storagePath">): string {
@@ -24,8 +27,15 @@ export async function listSupportingFiles(printId: string): Promise<PrintFile[]>
   });
 }
 
-/** Never over another file: a link fails on one that's there, where a rename would replace it. */
+/** Never over another file: a link fails on one that's there, where a rename would replace it. Only the placing is
+ *  under the storage lock (the file reuse backfill's swap renames over a path it has just checked, and mustn't land
+ *  after a file saved at a path its row just freed); removing the temp file is not. */
 async function placeUpload(tempPath: string, destination: string): Promise<void> {
+  await withStorageLock(() => linkOrCopy(tempPath, destination));
+  await fs.rm(tempPath, { force: true });
+}
+
+async function linkOrCopy(tempPath: string, destination: string): Promise<void> {
   try {
     await fs.link(tempPath, destination);
   } catch (err: any) {
@@ -40,7 +50,6 @@ async function placeUpload(tempPath: string, destination: string): Promise<void>
       throw copyErr;
     }
   }
-  await fs.rm(tempPath, { force: true });
 }
 
 /**
@@ -80,7 +89,19 @@ export async function saveFileFromTemp(
     await prisma.printFile.update({ where: { id: record.id }, data: { storagePath } });
     destination = path.join(STORAGE, storagePath);
     await fs.mkdir(path.dirname(destination), { recursive: true });
-    await placeUpload(tempPath, destination);
+    // A clone of a stored copy of the same bytes (any user's, any kind of file) when the admin setting allows; the
+    // upload is then only clutter, not a reason to fail.
+    let contentSha256: string | null = null;
+    let shared = false;
+    try {
+      ({ contentSha256, shared } = await shareStoredCopy(tempPath, destination, findStoredCopies));
+    } catch (err) {
+      // Sharing only saves space: stored as usual, with no hash recorded. Another file at the path is a conflict.
+      if (err instanceof HttpError && err.status === 409) throw err;
+    }
+    if (shared) await fs.rm(tempPath, { force: true }).catch(() => undefined);
+    else await placeUpload(tempPath, destination);
+    const marker = await reuseMarker(destination, shared, contentSha256);
 
     let metadata: Record<string, unknown> | null = null;
     if (role === "PREPARED" || safeName.toLowerCase().endsWith(".3mf")) {
@@ -97,6 +118,8 @@ export async function saveFileFromTemp(
         where: { id: record.id },
         data: {
           size: stat.size,
+          contentSha256,
+          ...marker,
           role,
           metadata: (metadata as Prisma.InputJsonValue | undefined) ?? undefined,
         },

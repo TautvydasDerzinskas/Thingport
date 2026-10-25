@@ -10,6 +10,14 @@ export class UnauthorizedError extends Error {
   }
 }
 
+/** Signed in, but not allowed, e.g. an admin-only endpoint read by a user who isn't one. */
+export class ForbiddenError extends Error {
+  constructor(message = "Forbidden") {
+    super(message);
+    this.name = "ForbiddenError";
+  }
+}
+
 export class LastPlateError extends Error {
   constructor(message = "Cannot remove the only remaining plate. Delete the print instead.") {
     super(message);

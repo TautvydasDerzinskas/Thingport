@@ -1,0 +1,17 @@
+{
+  "code": 0,
+  "msg": "ok",
+  "reqId": "contract-fixture",
+  "result": {
+    "downloadUrls": [
+      {
+        "fileName": "fidget",
+        "url": "https://internal-creality-usa.oss-us-east-1.aliyuncs.com/models/fidget.stl?Signature=s"
+      },
+      {
+        "fileName": "fidget base.stl",
+        "url": "https://internal-creality-usa.oss-us-east-1.aliyuncs.com/models/fidget-base.stl?Signature=s"
+      }
+    ]
+  }
+}

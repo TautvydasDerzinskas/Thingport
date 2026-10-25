@@ -129,12 +129,16 @@ export async function extractZipEntriesToPrints(
     await validateParentCategory(userId, options.categoryId);
   }
 
+  // Normalized path -> the entry's own name in the zip, which readZipEntry matches exactly
+  // ("./Benchy/benchy.stl" is listed as "Benchy/benchy.stl").
   const raw = await listRawZipEntries(zipPath);
-  const entryMap = new Map<string, { isDirectory: boolean; size: number }>();
+  const entryMap = new Map<string, { isDirectory: boolean; size: number; rawName: string }>();
   for (const entry of raw) {
     const name = normalizeZipEntryPath(entry.name);
     if (!name) continue;
-    entryMap.set(name, { isDirectory: entry.isDirectory, size: entry.size });
+    // Two entries can normalize to one path ("a.stl" and "./a.stl"); the one named exactly that wins.
+    if (entryMap.has(name) && entry.name !== name) continue;
+    entryMap.set(name, { isDirectory: entry.isDirectory, size: entry.size, rawName: entry.name });
   }
 
   const prints: (Print & { plates: Plate[]; previewImages: PreviewImage[] })[] = [];
@@ -152,7 +156,7 @@ export async function extractZipEntriesToPrints(
     try {
       const targetCategoryId = await resolveZipCategoryId(userId, options.categoryId ?? null, entryName, categoryCache);
       const filename = sanitizeFilename(path.basename(entryName));
-      const buffer = await readZipEntry(zipPath, entryName, IMPORT_MAX_BYTES);
+      const buffer = await readZipEntry(zipPath, info.rawName, IMPORT_MAX_BYTES);
       if (!buffer) throw new Error("Extracted file exceeds size limit or could not be read");
 
       tempPath = path.join(os.tmpdir(), `thingport-zip-${crypto.randomBytes(8).toString("hex")}`);

@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
-import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import ThreeDRotationIcon from "@mui/icons-material/ThreeDRotation";
 import { dashboardApi } from "../../api/dashboard";
@@ -12,6 +11,7 @@ import { printsApi, type Print } from "../../api/prints";
 import { UnauthorizedError } from "../../api/client";
 import ModelViewer from "../../components/media/ModelViewer";
 import { extOf } from "../../utils/fileExtensions";
+import DashboardCard, { DashboardCardTitle } from "./DashboardCard";
 
 // Further than this between press and release is a spin, not a click to open the model.
 const CLICK_SLOP_PX = 6;
@@ -96,23 +96,9 @@ export default function FeaturedModelCard({ onUnauthorized }: Props) {
     );
 
   return (
-    <Paper
-      variant="outlined"
-      sx={{
-        p: 2.5,
-        display: "flex",
-        flexDirection: "column",
-        gap: 1.5,
-        borderColor: (theme) => (theme.palette.mode === "dark" ? "transparent" : "divider"),
-      }}
-    >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: "primary.main", minWidth: 0 }}>
-        <ThreeDRotationIcon />
-        <Typography variant="h6" fontWeight={700} sx={{ color: (theme) => theme.thingport.headingText }}>
-          {t("dashboard.featuredModel.title")}
-        </Typography>
-      </Box>
+    <DashboardCard sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 1.5 }}>
+      <DashboardCardTitle icon={<ThreeDRotationIcon />} title={t("dashboard.featuredModel.title")} />
       {body}
-    </Paper>
+    </DashboardCard>
   );
 }

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -45 530 175" fill="none">
+  <title>International Coffee Day</title>
+  <style>
+    .steam { animation: steam 2.8s ease-in-out infinite; }
+    @keyframes steam { 0% { transform: translateY(6px); opacity: 0; } 40% { opacity: 0.9; } 100% { transform: translateY(-12px); opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { .steam { opacity: 0.7; } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } .fall { display: none; } }
+  </style>
+  <path class="steam" style="animation-delay:0s" d="M437 36 C431 30 443 24 437 18 C431 12 443 6 437 0" stroke="#9aa4ae" stroke-width="2.6" stroke-linecap="round"/>
+  <path class="steam" style="animation-delay:-0.9s" d="M449 36 C443 30 455 24 449 18 C443 12 455 6 449 0" stroke="#9aa4ae" stroke-width="2.6" stroke-linecap="round"/>
+  <path class="steam" style="animation-delay:-1.8s" d="M461 36 C455 30 467 24 461 18 C455 12 467 6 461 0" stroke="#9aa4ae" stroke-width="2.6" stroke-linecap="round"/>
+  <ellipse cx="452" cy="79" rx="34" ry="5" fill="#e6e9ec" stroke="#9aa4ae" stroke-width="1.6"/>
+  <path d="M476 50 C492 50 492 70 474 70" stroke="#9aa4ae" stroke-width="5" stroke-linecap="round"/>
+  <path d="M427 42 L477 42 L473 72 Q472 78 466 78 L438 78 Q432 78 431 72 Z" fill="#ffffff" stroke="#9aa4ae" stroke-width="1.8" stroke-linejoin="round"/>
+  <ellipse cx="452" cy="43" rx="24.5" ry="4" fill="#6f4e37" stroke="#9aa4ae" stroke-width="1.4"/>
+  <path d="M452 51 L459 55 L459 63 L452 67 L445 63 L445 55 Z" fill="#00b800"/>
+</svg>

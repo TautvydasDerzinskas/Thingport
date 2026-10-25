@@ -1,4 +1,7 @@
 import fs from "node:fs/promises";
+import { isProviderId, MANIFESTS, manifestOf, modelUrl, parseModelUrl, URLS } from "../providers/index.generated";
+import { PROFILE_PROVIDERS, PROVIDERS } from "../providers/registry";
+import type { PipelineKit, ResolvedModel, SourcedImport } from "../providers/types";
 import fsSync from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -10,7 +13,6 @@ import {
   IMPORT_HTML_MAX_BYTES,
   IMPORT_MAX_BYTES,
   IMPORT_PREVIEW_IMAGE_DELAY_MS,
-  IMPORT_TIMEOUT_SECONDS,
 } from "../config";
 import {
   HttpError,
@@ -22,170 +24,60 @@ import {
 } from "../utils/fileUtils";
 import { validateRemoteUrl } from "../utils/urlUtils";
 import { readCapped } from "../utils/readCapped";
-import { browserFetch, needsBrowserFetch } from "../utils/browserFetch";
-import { mapWithConcurrency, maybeSleep, sleep } from "../utils/concurrency";
-import {
-  CLOUDFLARE_BLOCKED_CODE,
-  fetchViaFlaresolverr,
-  isCloudflareChallenge,
-  looksLikeCloudflareBlock,
-  shouldProxyHost,
-} from "./flaresolverr";
+import { fetchWithGuard, rawFetch } from "./guardedFetch";
+import { maybeSleep, sleep } from "../utils/concurrency";
+import { isCloudflareChallenge } from "./flaresolverr";
 import {
   emptyImportedPageMetadata,
-  extractNextDataJson,
   extractPageMetadata,
   findDownloadUrl,
+  type ImportCookies,
+  type ImportedPageMetadata,
+} from "./importResolvers";
+import {
   makerworldHtmlHeaders,
   makerworldInstanceCover,
   makerworldInstanceTitles,
   makerworldMetaFromDesign,
+  makerworldPageMetadata,
   resolveMakerworldCookie,
   resolveMakerworldDownloadUrl,
-  type ImportCookies,
-  type ImportedAuthorInfo,
-  type ImportedPageMetadata,
   type MakerworldProfileRef,
-} from "./importResolvers";
+} from "../providers/makerworld/pageData";
+// MakerWorld's models import through this shared link import, which reads their pages, resolves their downloads
+// through its cloud API or what Grab resolved, and adds their print profiles. It stays here rather than in
+// providers/makerworld/: it is the link import every page link of no provider's goes through too (LINK_PROVIDER),
+// woven into the download, plate and print steps below.
 import {
   extractMakerworldBearerToken,
   MAKERWORLD_AUTH_CODE,
   MakerworldAuthError,
   MakerworldCaptchaError,
-  makerworldCaptchaCooloffActive,
   MAKERWORLD_DOWNLOAD_LIMIT_CODE,
   MakerworldDownloadLimitError,
   parseMakerworldModelUrl,
   resolveMakerworldViaCloudApi,
   completeMakerworldAuthor,
-  fetchMakerworldDesign,
-} from "./makerworldCloudApi";
+} from "../providers/makerworld/api";
 import { openSourceGaps, type SourceGap } from "./sourceGaps";
-import {
-  parseThingiverseThingUrl,
-  resolveThingiverseThing,
-  ThingiverseAuthError,
-  ThingiverseRateLimitError,
-  type ThingiversePlateFile,
-} from "./thingiverseApi";
-import {
-  parsePrintablesModelUrl,
-  resolvePrintablesDownloadLinks,
-  resolvePrintablesModel,
-  type PrintablesPlateFile,
-} from "./printablesApi";
-import {
-  isMyminifactoryFileHost,
-  listMyminifactoryLibraryFiles,
-  MyminifactoryAuthError,
-  MyminifactoryRateLimitError,
-  MyminifactorySessionExpiredError,
-  parseMyminifactoryObjectUrl,
-  resolveMyminifactoryDownload,
-  resolveMyminifactoryLibraryDownload,
-  resolveMyminifactoryObject,
-} from "./myminifactoryApi";
-import { getUserMyminifactoryCookie, markMyminifactoryCookieRejected } from "./myminifactorySessionService";
-import {
-  fetchSnapmakerDownloads,
-  isSnapmakerFileHost,
-  parseSnapmakerModelUrl,
-  resolveSnapmakerModel,
-  selectSnapmakerProfiles,
-  SnapmakerAuthError,
-  type SnapmakerFile,
-} from "./snapmakerApi";
-import { getUserSnapmakerToken, markSnapmakerTokenRejected, SNAPMAKER_CONNECT } from "./snapmakerSessionService";
-import { isMakeronlineFileHost, parseMakeronlineModelUrl, resolveMakeronlineModel } from "./makeronlineApi";
-import { clearGrabImports } from "./grabImportService";
-import {
-  CrealitycloudAuthError,
-  type CrealitycloudFile,
-  type CrealitycloudModelResolution,
-  fetchCrealitycloudModelFiles,
-  fetchCrealitycloudProfileFile,
-  isCrealitycloudFileHost,
-  parseCrealitycloudModelUrl,
-  resolveCrealitycloudModel,
-  selectCrealitycloudProfiles,
-  type CrealitycloudAuth,
-} from "./crealitycloudApi";
-import {
-  CREALITYCLOUD_CONNECT,
-  getUserCrealitycloudAuth,
-  markCrealitycloudSessionRejected,
-} from "./crealitycloudSessionService";
-import {
-  fetchNexprintModelFiles,
-  fetchNexprintProfileFile,
-  isNexprintFileHost,
-  NexprintAuthError,
-  type NexprintFile,
-  type NexprintModelResolution,
-  parseNexprintModelUrl,
-  resolveNexprintModel,
-  selectNexprintProfiles,
-} from "./nexprintApi";
-import { getUserNexprintToken, markNexprintSessionRejected, NEXPRINT_CONNECT } from "./nexprintSessionService";
-import {
-  fetchThangsDownload,
-  isThangsFileHost,
-  parseThangsModelUrl,
-  resolveThangsModel,
-  ThangsAuthError,
-  ThangsBlockedError,
-  ThangsDownloadLimitError,
-  thangsModelUrl,
-  type ThangsModelResolution,
-} from "./thangsApi";
-import { getUserThangsToken, markThangsSessionRejected, THANGS_CONNECT, withThangsToken } from "./thangsSessionService";
-import {
-  Cults3dAuthError,
-  Cults3dBlockedError,
-  cults3dModelUrl,
-  Cults3dRateLimitError,
-  Cults3dSessionError,
-  fetchCults3dOrders,
-  isCults3dFileHost,
-  parseCults3dModelUrl,
-  placeCults3dFreeOrder,
-  resolveCults3dDownload,
-  resolveCults3dModel,
-  type Cults3dCredentials,
-  type Cults3dModelResolution,
-} from "./cults3dApi";
-import {
-  CULTS3D_CONNECT,
-  CULTS3D_NO_CLEARANCE,
-  CULTS3D_SIGN_IN,
-  getUserCults3dBrowser,
-  getUserCults3dCredentials,
-  markCults3dApiRejected,
-  markCults3dSessionRejected,
-} from "./cults3dSessionService";
 
 /** An import refused because the user's MyMiniFactory session has expired. */
-export const MYMINIFACTORY_SESSION_CODE = "myminifactory_session";
+export const MYMINIFACTORY_SESSION_CODE = MANIFESTS.myminifactory.errorCodes.session;
 /** An import refused because the user hasn't connected Snapmaker, or their sign-in has run out. */
-export const SNAPMAKER_SESSION_CODE = "snapmaker_session";
+export const SNAPMAKER_SESSION_CODE = MANIFESTS.snapmaker.errorCodes.session;
 /** An import refused because the user hasn't connected Creality Cloud, or it turned their sign-in down. */
-export const CREALITYCLOUD_SESSION_CODE = "crealitycloud_session";
+export const CREALITYCLOUD_SESSION_CODE = MANIFESTS.crealitycloud.errorCodes.session;
 /** An import refused because the user hasn't connected NexPrint, or it turned their sign-in down. */
-export const NEXPRINT_SESSION_CODE = "nexprint_session";
+export const NEXPRINT_SESSION_CODE = MANIFESTS.nexprint.errorCodes.session;
 /** An import refused because the user hasn't connected Thangs, or it turned their sign-in down. */
-export const THANGS_SESSION_CODE = "thangs_session";
+export const THANGS_SESSION_CODE = MANIFESTS.thangs.errorCodes.session;
 /** A Thangs import refused because the account's daily downloads are used up. */
-export const THANGS_DOWNLOAD_LIMIT_CODE = "THANGS_DOWNLOAD_LIMIT";
+export const THANGS_DOWNLOAD_LIMIT_CODE = MANIFESTS.thangs.errorCodes.downloadLimit;
 /** A Cults3D import refused for want of the user's API key, or of the browser's sign-in, or because one was turned
  *  down. */
-export const CULTS3D_SESSION_CODE = "cults3d_session";
-/** A MakerOnline import that came without the signed file links only Thingport Grab can get. */
-export const MAKERONLINE_GRAB_CODE = "makeronline_grab";
-export const MAKERONLINE_NEEDS_GRAB =
-  "MakerOnline only gives its files to its own pages: import it with Thingport Grab on makeronline.com.";
+export const CULTS3D_SESSION_CODE = MANIFESTS.cults3d.errorCodes.session;
 import { listZipEntries, readZipEntry } from "../utils/zipReader";
 import { enqueueAiDescription } from "./aiDescriptionService";
-import { getMyminifactoryApiKey, getThingiverseAccessToken } from "./settingsService";
 import { upsertAuthorFromImport } from "./authorService";
 import {
   addPlatesToPrint,
@@ -198,6 +90,8 @@ import {
 import { availablePlateFilename, relocatePrint, saveThumbFromBytes } from "./printService";
 import { addPreviewImage, preferImageOverRenders } from "./previewImageService";
 import { localizeDescriptionImages } from "./descriptionImageService";
+import { sha256OfFile } from "./fileReuse";
+import { DROP } from "./storedContent";
 import { prisma } from "../db";
 import { recordActivity } from "./activityService";
 import { Prisma } from "@prisma/client";
@@ -239,124 +133,7 @@ function parseCharset(contentType: string | null): string {
   return match ? match[1].trim().replace(/["']/g, "") : "utf-8";
 }
 
-async function rawFetch(url: string, headers: Record<string, string>): Promise<Response> {
-  if (needsBrowserFetch(url)) return browserFetch(url, { headers, timeoutMs: IMPORT_TIMEOUT_SECONDS * 1000 });
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), IMPORT_TIMEOUT_SECONDS * 1000);
-  try {
-    return await fetch(url, { headers, redirect: "follow", signal: controller.signal });
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-/** Loads `url` through FlareSolverr and wraps the rendered body as an HTML Response. */
-async function proxiedResponse(url: string, cookieHeader?: string | null): Promise<Response | null> {
-  const solved = await fetchViaFlaresolverr(url, cookieHeader);
-  if (!solved) return null;
-  return new Response(solved.body, {
-    status: solved.status,
-    headers: { "content-type": "text/html; charset=utf-8" },
-  });
-}
-
-async function fetchWithGuard(url: string, headers: Record<string, string>): Promise<Response> {
-  try {
-    let hostname = "";
-    try {
-      hostname = new URL(url).hostname;
-    } catch {}
-
-    let res: Response;
-    if (shouldProxyHost(hostname)) {
-      res = (await proxiedResponse(url, headers.Cookie)) || (await rawFetch(url, headers));
-    } else {
-      res = await rawFetch(url, headers);
-      if (res.status === 403 && looksLikeCloudflareBlock(res.headers)) {
-        const proxied = await proxiedResponse(url, headers.Cookie);
-        if (proxied) res = proxied;
-      }
-    }
-
-    if (res.status === 403 && looksLikeCloudflareBlock(res.headers)) {
-      throw new HttpError(
-        403,
-        "Cloudflare blocked the request and FlareSolverr didn't get past it",
-        CLOUDFLARE_BLOCKED_CODE,
-      );
-    }
-    if (!res.ok) {
-      throw new HttpError(res.status || 400, `Failed to fetch URL: ${res.statusText || res.status}`);
-    }
-    return res;
-  } catch (err) {
-    if (err instanceof HttpError) throw err;
-    throw new HttpError(400, "Failed to reach the provided URL", undefined, true);
-  }
-}
-
 export type OpenImportResult = { response: Response; finalUrl: string; meta: ImportedPageMetadata };
-
-/** Fallback for fetchMakerworldDesign when there's no MakerWorld login. */
-async function fetchMakerworldPageDesign(
-  designId: string,
-  cookie: string | null,
-  paceMs?: number,
-): Promise<Record<string, unknown> | null> {
-  if (makerworldCaptchaCooloffActive()) throw new MakerworldCaptchaError();
-  const url = `https://makerworld.com/en/models/${designId}`;
-  await maybeSleep(paceMs);
-  let res: Response;
-  try {
-    res = await fetchWithGuard(url, {
-      "User-Agent": IMPORT_BROWSER_USER_AGENT,
-      Accept: "*/*",
-      ...makerworldHtmlHeaders(url, cookie),
-    });
-  } catch (err) {
-    // Kept apart from "couldn't read the model", so a sync hands the model back for later.
-    if (err instanceof HttpError && err.code === CLOUDFLARE_BLOCKED_CODE) throw err;
-    return null;
-  }
-  if (!isHtmlContentType(res.headers.get("content-type") || "")) return null;
-  const { buffer } = await readCapped(res, IMPORT_HTML_MAX_BYTES);
-  const nextData = extractNextDataJson(buffer.toString("utf-8"));
-  const design = (nextData as { props?: { pageProps?: { design?: unknown } } } | null)?.props?.pageProps?.design;
-  return design && typeof design === "object" && !Array.isArray(design) ? (design as Record<string, unknown>) : null;
-}
-
-export async function fetchMakerworldDesignForImport(
-  designId: string,
-  cookie: string | null,
-  paceMs?: number,
-): Promise<Record<string, unknown> | null> {
-  const bearer = extractMakerworldBearerToken(cookie);
-  return bearer ? fetchMakerworldDesign(designId, bearer, paceMs) : fetchMakerworldPageDesign(designId, cookie, paceMs);
-}
-
-/** Fallback for fetchMakerworldDesignAuthor when there's no MakerWorld login. */
-export async function fetchMakerworldPageAuthor(
-  designId: string,
-  cookie: string | null,
-  paceMs?: number,
-): Promise<ImportedAuthorInfo | null> {
-  if (makerworldCaptchaCooloffActive()) throw new MakerworldCaptchaError();
-  const url = `https://makerworld.com/en/models/${designId}`;
-  await maybeSleep(paceMs);
-  let res: Response;
-  try {
-    res = await fetchWithGuard(url, {
-      "User-Agent": IMPORT_BROWSER_USER_AGENT,
-      Accept: "*/*",
-      ...makerworldHtmlHeaders(url, cookie),
-    });
-  } catch {
-    return null;
-  }
-  if (!isHtmlContentType(res.headers.get("content-type") || "")) return null;
-  const { buffer } = await readCapped(res, IMPORT_HTML_MAX_BYTES);
-  return completeMakerworldAuthor(extractPageMetadata(buffer.toString("utf-8"), "makerworld.com").author, paceMs);
-}
 
 function isMakerworldCdnUrl(url: string | null | undefined): url is string {
   if (!url) return false;
@@ -407,7 +184,7 @@ function extensionProfile(url: string, body: ImportRequestBody): MakerworldProfi
 
 /** What tells a model's print profiles apart, by profile id: their names, for files that come named alike, and their
  *  own pictures, for their files' thumbnails. */
-type ProfileDetails = { titles?: Record<string, string>; covers?: Record<string, string> };
+export type ProfileDetails = { titles?: Record<string, string>; covers?: Record<string, string> };
 
 /** `names: false` for a provider whose profile files are already named after their profiles. */
 function profileDetailsOf(
@@ -606,13 +383,13 @@ export async function openImportResponse(
   }
 
   // Only at depth 0, so a resolved download URL isn't treated as a model page on recursion.
-  if (depth === 0 && host.endsWith("makerworld.com") && !body.resolved_download_url) {
+  if (depth === 0 && URLS.makerworld.isHost(host) && !body.resolved_download_url) {
     const cloudResolved = await tryMakerworldCloudApi(validatedUrl, body);
     if (cloudResolved) {
       return openImportResponse(cloudResolved.downloadUrl, body, validatedUrl, depth + 1, cloudResolved.meta);
     }
   }
-  if (depth === 0 && host.endsWith("makerworld.com") && body.resolved_download_url) {
+  if (depth === 0 && URLS.makerworld.isHost(host) && body.resolved_download_url) {
     const fromExtension = await makerworldMetaFromExtension(validatedUrl, body);
     if (fromExtension) {
       return openImportResponse(body.resolved_download_url, body, validatedUrl, depth + 1, fromExtension);
@@ -621,9 +398,15 @@ export async function openImportResponse(
 
   const headers: Record<string, string> = { "User-Agent": IMPORT_BROWSER_USER_AGENT, Accept: "*/*" };
   let makerworldCookie: string | null = null;
-  if (host.endsWith("makerworld.com")) {
+  if (URLS.makerworld.isHost(host)) {
     makerworldCookie = resolveMakerworldCookie(body);
-    Object.assign(headers, makerworldHtmlHeaders(referer || validatedUrl, makerworldCookie));
+    Object.assign(
+      headers,
+      makerworldHtmlHeaders(
+        referer || validatedUrl,
+        new URL(validatedUrl).protocol === "https:" ? makerworldCookie : null,
+      ),
+    );
   }
   if (referer) headers.Referer = referer;
 
@@ -644,7 +427,8 @@ export async function openImportResponse(
     } catch {
       pageHost = "";
     }
-    const extracted = extractPageMetadata(html, pageHost);
+    // A link of no provider's goes the way MakerWorld's do (LINK_PROVIDER), but only its pages carry a design.
+    const extracted = URLS.makerworld.isHost(pageHost) ? makerworldPageMetadata(html) : extractPageMetadata(html);
     const resolvedMeta: ImportedPageMetadata = {
       title: extracted.title ?? inheritedMeta.title,
       tags: extracted.tags.length ? extracted.tags : inheritedMeta.tags,
@@ -658,10 +442,10 @@ export async function openImportResponse(
       categorySite: extracted.categorySite ?? inheritedMeta.categorySite,
       makerworldProfile: inheritedMeta.makerworldProfile,
     };
-    if (pageHost.endsWith("makerworld.com") && extracted.author) {
+    if (URLS.makerworld.isHost(pageHost) && extracted.author) {
       resolvedMeta.author = await completeMakerworldAuthor(extracted.author, body.makerworldPaceMs);
     }
-    if (pageHost.endsWith("makerworld.com")) {
+    if (URLS.makerworld.isHost(pageHost)) {
       // Skipped for an extension-resolved URL: these calls can trip the CAPTCHA cooloff.
       if (body.resolved_download_url) {
         downloadUrl = body.resolved_download_url;
@@ -834,48 +618,24 @@ export async function attachImportedPreviewImages(
   }
 }
 
-const CATEGORY_SITE_CAT_IDS_FIELD = {
-  makerworld: "makerworldCatIds",
-  thingiverse: "thingiverseCatIds",
-  printables: "printablesCatIds",
-  myminifactory: "myminifactoryCatIds",
-  snapmaker: "snapmakerCatIds",
-  makeronline: "makeronlineCatIds",
-  crealitycloud: "crealitycloudCatIds",
-  nexprint: "nexprintCatIds",
-  thangs: "thangsCatIds",
-  cults3d: "cults3dCatIds",
-} as const;
-
-// Columns of text: NexPrint's ids are past Int, and Thangs' are category paths.
-const TEXT_CAT_IDS_FIELDS = new Set<string>(["nexprintCatIds", "thangsCatIds"]);
-
-/** Auto-categorizes an import when a category's `*CatIds` for this site overlap the model's own
- * category ids. Those come most specific first (a model's own category, then its parent), and the
- * category matching the earliest one wins, so a subcategory beats the category its parent maps to.
- * Best-effort. */
+/** Auto-categorizes an import when a category's ids for this site (CategorySiteId) overlap the model's own category
+ * ids. Those come most specific first (a model's own category, then its parent), and the category matching the
+ * earliest one wins, so a subcategory beats the category its parent maps to. Best-effort. */
 export async function resolveCategoryIdByCategory(
   userId: string,
   categorySite: ImportedPageMetadata["categorySite"],
   siteCategoryIds: (number | string)[],
 ): Promise<string | null> {
   if (!categorySite || !siteCategoryIds.length) return null;
-  const field = CATEGORY_SITE_CAT_IDS_FIELD[categorySite];
-  // Compared as text, so one path serves the text columns and the Int ones alike.
   const wanted = siteCategoryIds.map(String);
-  const numeric = siteCategoryIds.map(Number).filter((n) => Number.isSafeInteger(n));
-  if (!TEXT_CAT_IDS_FIELDS.has(field) && !numeric.length) return null;
   const candidates = await prisma.category.findMany({
     // Folders are the user's own tree; only categories take imports by site category id.
-    where: {
-      userId,
-      kind: "category",
-      [field]: { hasSome: TEXT_CAT_IDS_FIELDS.has(field) ? wanted : numeric },
-    },
+    where: { userId, kind: "category", siteIds: { some: { provider: categorySite, siteId: { in: wanted } } } },
     orderBy: { position: "asc" },
+    select: { id: true, siteIds: { where: { provider: categorySite }, select: { siteId: true } } },
   });
   const rank = (category: (typeof candidates)[number]) => {
-    const ids = new Set((category[field] as (number | string)[]).map(String));
+    const ids = new Set(category.siteIds.map((row) => row.siteId));
     const index = wanted.findIndex((id) => ids.has(id));
     return index === -1 ? wanted.length : index;
   };
@@ -885,37 +645,14 @@ export async function resolveCategoryIdByCategory(
 
 /** Provider + stable external id for a model URL, used to dedupe imports. Null if unknown. */
 export function identifySourceModel(url: string): { provider: string; externalId: string } | null {
-  const makerworld = parseMakerworldModelUrl(url);
-  if (makerworld) return { provider: "makerworld", externalId: makerworld.designId };
-  const thingiverse = parseThingiverseThingUrl(url);
-  if (thingiverse) return { provider: "thingiverse", externalId: thingiverse.thingId };
-  const printables = parsePrintablesModelUrl(url);
-  if (printables) return { provider: "printables", externalId: printables.modelId };
-  const myminifactory = parseMyminifactoryObjectUrl(url);
-  if (myminifactory) return { provider: "myminifactory", externalId: myminifactory.objectId };
-  const snapmaker = parseSnapmakerModelUrl(url);
-  if (snapmaker) return { provider: "snapmaker", externalId: snapmaker.modelId };
-  const makeronline = parseMakeronlineModelUrl(url);
-  if (makeronline) return { provider: "makeronline", externalId: makeronline.modelId };
-  const crealitycloud = parseCrealitycloudModelUrl(url);
-  if (crealitycloud) return { provider: "crealitycloud", externalId: crealitycloud.modelId };
-  const nexprint = parseNexprintModelUrl(url);
-  if (nexprint) return { provider: "nexprint", externalId: nexprint.modelId };
-  const thangs = parseThangsModelUrl(url);
-  if (thangs) return { provider: "thangs", externalId: thangs.modelId };
-  const cults3d = parseCults3dModelUrl(url);
-  if (cults3d) return { provider: "cults3d", externalId: cults3d.slug };
-  return null;
+  const model = parseModelUrl(url);
+  return model && { provider: model.provider, externalId: model.externalId };
 }
 
 /** The print profile a MakerWorld, Snapmaker, MakerOnline, Creality Cloud or NexPrint link names, if any. */
 function requestedProfileOf(provider: string, url: string): string | null {
-  if (provider === "makerworld") return parseMakerworldModelUrl(url)?.requestedInstanceId ?? null;
-  if (provider === "snapmaker") return parseSnapmakerModelUrl(url)?.requestedProfileId ?? null;
-  if (provider === "makeronline") return parseMakeronlineModelUrl(url)?.requestedProfileId ?? null;
-  if (provider === "crealitycloud") return parseCrealitycloudModelUrl(url)?.requestedProfileId ?? null;
-  if (provider === "nexprint") return parseNexprintModelUrl(url)?.requestedProfileId ?? null;
-  return null;
+  const model = parseModelUrl(url);
+  return model?.provider === provider ? model.requestedProfileId : null;
 }
 
 /** `state` refines already_imported for a MakerWorld URL naming a profile: "profile_missing"
@@ -935,10 +672,25 @@ export type ImportStatus = {
 export async function checkImportStatus(userId: string, url: string): Promise<ImportStatus> {
   const source = identifySourceModel(url);
   if (!source) return { recognized: false, already_imported: false, print_id: null, state: "not_imported", gaps: [] };
-  const print = await prisma.print.findFirst({
+  const include = {
+    plates: { select: { sourceInstanceId: true } },
+    previewImages: { select: { generated: true } },
+  } as const;
+  let print = await prisma.print.findFirst({
     where: { userId, sourceProvider: source.provider, sourceExternalId: source.externalId },
-    include: { plates: { select: { sourceInstanceId: true } }, previewImages: { select: { generated: true } } },
+    include,
   });
+  // An import may keep a model under another id than its link names it by.
+  const keptId = isProviderId(source.provider) ? PROVIDERS[source.provider].keptId : undefined;
+  if (!print && keptId) {
+    const alias = await keptId(source.externalId);
+    if (alias !== source.externalId) {
+      print = await prisma.print.findFirst({
+        where: { userId, sourceProvider: source.provider, sourceExternalId: alias },
+        include,
+      });
+    }
+  }
   if (!print) return { recognized: true, already_imported: false, print_id: null, state: "not_imported", gaps: [] };
   const gaps = openSourceGaps(print, print.previewImages);
   // Without a profile in the URL, any imported profile counts; asking MakerWorld on every page
@@ -953,19 +705,7 @@ export async function checkImportStatus(userId: string, url: string): Promise<Im
 
 /** Inverse of identifySourceModel, for the "Open in {Provider}" link. */
 export function buildImportSourceUrl(provider: string | null, externalId: string | null): string | null {
-  if (!provider || !externalId) return null;
-  if (provider === "makerworld") return `https://makerworld.com/en/models/${externalId}`;
-  if (provider === "thingiverse") return `https://www.thingiverse.com/thing:${externalId}`;
-  if (provider === "printables") return `https://www.printables.com/model/${externalId}`;
-  // MyMiniFactory redirects an object id with any slug, or none, to its page.
-  if (provider === "myminifactory") return `https://www.myminifactory.com/object/3d-print-${externalId}`;
-  if (provider === "snapmaker") return `https://space.snapmaker.com/en/model/${externalId}`;
-  if (provider === "makeronline") return `https://www.makeronline.com/en/model/${externalId}`;
-  if (provider === "crealitycloud") return `https://www.crealitycloud.com/model-detail/${externalId}`;
-  if (provider === "nexprint") return `https://www.nexprint.com/en/models/${externalId}`;
-  if (provider === "thangs") return thangsModelUrl(externalId);
-  if (provider === "cults3d") return cults3dModelUrl(externalId);
-  return null;
+  return provider && externalId ? modelUrl(provider, externalId) : null;
 }
 
 async function findExistingImportedPrint(
@@ -984,20 +724,36 @@ async function findExistingImportedPrint(
   return { print, plates, author: print.author, previewImages };
 }
 
-type ExistingImportedPrint = NonNullable<Awaited<ReturnType<typeof findExistingImportedPrint>>>;
+export type ExistingImportedPrint = NonNullable<Awaited<ReturnType<typeof findExistingImportedPrint>>>;
 
-export async function sha256OfFile(filePath: string): Promise<string> {
-  const hash = crypto.createHash("sha256");
-  for await (const chunk of fsSync.createReadStream(filePath)) hash.update(chunk as Buffer);
-  return hash.digest("hex");
+/** Size of the plate's file on disk now, or null when it can't be found. */
+async function plateFileSize(plate: Plate): Promise<number | null> {
+  const filePath = resolvePlateFilePath(plate);
+  if (!filePath) return null;
+  return fs.stat(filePath).then(
+    (stat) => stat.size,
+    () => null,
+  );
 }
 
+/** SHA-256 of the plate's file as it is on disk now, or null when the file is missing. Always read, never taken from
+ *  the hash on record: the storage folder may be mounted and the file edited outside Thingport since it was hashed.
+ *  The record is brought up to date when it differs, unless something else changed it meanwhile. */
 export async function plateContentSha256(plate: Plate): Promise<string | null> {
-  if (plate.contentSha256) return plate.contentSha256;
   const filePath = resolvePlateFilePath(plate);
-  if (!filePath || !fsSync.existsSync(filePath)) return null;
-  const sha = await sha256OfFile(filePath);
-  await prisma.plate.update({ where: { id: plate.id }, data: { contentSha256: sha } });
+  if (!filePath) return null;
+  let sha: string;
+  try {
+    sha = await sha256OfFile(filePath);
+  } catch (err: any) {
+    if (err?.code === "ENOENT") return null;
+    throw err;
+  }
+  if (sha !== plate.contentSha256)
+    await prisma.plate.updateMany({
+      where: { id: plate.id, contentSha256: plate.contentSha256 },
+      data: { ...DROP, contentSha256: sha },
+    });
   return sha;
 }
 
@@ -1053,7 +809,10 @@ async function addProfilePlate(
     const untagged = existing.plates.filter((plate) => plate.sourceInstanceId == null);
     if (untagged.length) {
       const downloadedSha = await sha256OfFile(tempPath);
+      const downloadedSize = (await fs.stat(tempPath)).size;
       for (const plate of untagged) {
+        // Cheap first: a file of another size can't match, so it isn't read (and hashed on record) for nothing.
+        if ((await plateFileSize(plate)) !== downloadedSize) continue;
         if ((await plateContentSha256(plate)) !== downloadedSha) continue;
         try {
           await prisma.plate.update({ where: { id: plate.id }, data: { sourceInstanceId: instanceId } });
@@ -1100,9 +859,6 @@ export const MULTI_FILE_PLATE_EXTS = new Set([...IMPORT_ALLOWED_EXTS].filter((ex
 
 export type PlainDownloadResult = { input: NewPlateInput } | { rateLimited: true } | null;
 
-// Thingiverse's CDN challenges request bursts; parallel downloads trip it more often.
-const THINGIVERSE_DOWNLOAD_CONCURRENCY = 2;
-
 /** A 429, or a 403 Cloudflare challenge (which FlareSolverr can't solve for a binary download). */
 function isDownloadBlocked(res: Response): boolean {
   return res.status === 429 || (res.status === 403 && isCloudflareChallenge(res.headers));
@@ -1139,213 +895,6 @@ export async function downloadPlainFileToTemp(url: string, suggestedName: string
   }
 }
 
-/** Every model file bundled with the Thing becomes its own Plate on one Print. */
-async function importThingiverseThing(
-  userId: string,
-  source: { provider: string; externalId: string },
-  body: ImportRequestBody,
-): Promise<{
-  print: Print;
-  plates: Plate[];
-  author: Author | null;
-  previewImages: PreviewImage[];
-  alreadyImported: boolean;
-}> {
-  const accessToken = await getThingiverseAccessToken();
-  if (!accessToken) {
-    throw new HttpError(
-      503,
-      "Thingiverse import isn't configured for this instance yet -- ask an admin to add an App Token in Administration > Providers.",
-    );
-  }
-
-  let resolved;
-  try {
-    resolved = await resolveThingiverseThing(source.externalId, accessToken);
-  } catch (err) {
-    if (err instanceof ThingiverseRateLimitError) throw new HttpError(429, err.message);
-    // 400, not 401: see tryMakerworldCloudApi.
-    if (err instanceof ThingiverseAuthError) throw new HttpError(400, err.message);
-    throw err;
-  }
-  if (!resolved) {
-    throw new HttpError(
-      404,
-      "This Thingiverse Thing could not be found, or isn't accessible with the configured App Token.",
-    );
-  }
-  const { meta, plateFiles, galleryImages } = resolved;
-
-  const author = await upsertAuthorFromImport(meta.author ?? null);
-  const categoryId =
-    body.category_id ??
-    (await resolveCategoryIdByCategory(userId, meta.categorySite ?? null, meta.siteCategoryIds ?? []));
-  const printMeta: PrintMetaInput = {
-    title: body.title ?? meta.title ?? null,
-    notes: body.notes ?? meta.description ?? null,
-    tags: body.tags && body.tags.length ? body.tags : (meta.tags ?? []),
-    categoryId,
-    categorySource: body.category_id ? "MANUAL" : categoryId ? "RULE" : null,
-    creator: meta.creator ?? null,
-    authorId: author?.id ?? null,
-    sourceProvider: source.provider,
-    sourceExternalId: source.externalId,
-  };
-
-  const modelFiles = plateFiles.filter((f: ThingiversePlateFile) =>
-    MULTI_FILE_PLATE_EXTS.has(path.extname(f.name).toLowerCase()),
-  );
-  const downloadResults = await mapWithConcurrency(
-    modelFiles,
-    THINGIVERSE_DOWNLOAD_CONCURRENCY,
-    (f: ThingiversePlateFile) => downloadPlainFileToTemp(f.url, f.name),
-  );
-  const downloaded = downloadResults
-    .filter((result): result is { input: NewPlateInput } => result !== null && "input" in result)
-    .map((result) => result.input);
-  if (!downloaded.length) {
-    const wasRateLimited = downloadResults.some((result) => result !== null && "rateLimited" in result);
-    if (wasRateLimited) {
-      throw new HttpError(
-        429,
-        "Thingiverse blocked a file download with a rate-limit challenge (Cloudflare). This usually clears after a while -- wait, then retry the same import.",
-      );
-    }
-    throw new HttpError(400, "None of this Thing's files could be downloaded.");
-  }
-
-  try {
-    let result: { print: Print; plates: Plate[] };
-    try {
-      result = await createPrint(userId, printMeta, meta.title || `thing-${source.externalId}`, downloaded, IMPORTED);
-    } catch (err) {
-      // Race guard: a concurrent import of the same source model won.
-      if (isUniqueConstraintError(err)) {
-        const existing = await findExistingImportedPrint(userId, source);
-        if (existing) return { ...existing, alreadyImported: true };
-      }
-      throw err;
-    }
-    const gallery = galleryImages.map((img) => ({ url: img.url, filename: img.name }));
-    await attachImportedPreviewImages(result.print.id, result.plates[0]?.id, meta.previewImageUrl ?? null, gallery);
-    await localizeDescriptionImages(result.print.id);
-    const previewImages = await prisma.previewImage.findMany({
-      where: { printId: result.print.id },
-      orderBy: { position: "asc" },
-    });
-    return { ...result, author, previewImages, alreadyImported: false };
-  } finally {
-    for (const input of downloaded) {
-      if (input.tempFilePath && fsSync.existsSync(input.tempFilePath)) {
-        await fs.rm(input.tempFilePath, { force: true }).catch(() => undefined);
-      }
-    }
-  }
-}
-
-async function importPrintablesModel(
-  userId: string,
-  source: { provider: string; externalId: string },
-  body: ImportRequestBody,
-): Promise<{
-  print: Print;
-  plates: Plate[];
-  author: Author | null;
-  previewImages: PreviewImage[];
-  alreadyImported: boolean;
-}> {
-  const resolved = await resolvePrintablesModel(source.externalId);
-  if (!resolved) {
-    throw new HttpError(404, "This Printables model could not be found, or isn't public.");
-  }
-  const { meta, plateFiles, galleryImages } = resolved;
-
-  const modelFiles = plateFiles.filter((f: PrintablesPlateFile) =>
-    MULTI_FILE_PLATE_EXTS.has(path.extname(f.name).toLowerCase()),
-  );
-  if (!modelFiles.length) {
-    throw new HttpError(
-      400,
-      "This Printables model has no downloadable model files (only sliced/print-ready files, if any).",
-    );
-  }
-  const downloadLinks = await resolvePrintablesDownloadLinks(
-    source.externalId,
-    modelFiles.map((f) => f.id),
-  );
-  const downloadResults = await Promise.all(
-    modelFiles
-      .map((f) => ({ file: f, link: downloadLinks.get(f.id) }))
-      .filter((entry): entry is { file: PrintablesPlateFile; link: string } => Boolean(entry.link))
-      .map((entry) => downloadPlainFileToTemp(entry.link, entry.file.name)),
-  );
-  const downloaded = downloadResults
-    .filter((result): result is { input: NewPlateInput } => result !== null && "input" in result)
-    .map((result) => result.input);
-  if (!downloaded.length) {
-    if (downloadResults.some((result) => result !== null && "rateLimited" in result)) {
-      throw new HttpError(
-        429,
-        "Printables blocked a file download (rate limit or Cloudflare challenge). This usually clears after a while -- wait, then retry the same import.",
-      );
-    }
-    throw new HttpError(400, "None of this model's files could be downloaded.");
-  }
-
-  const author = await upsertAuthorFromImport(meta.author ?? null);
-  const categoryId =
-    body.category_id ??
-    (await resolveCategoryIdByCategory(userId, meta.categorySite ?? null, meta.siteCategoryIds ?? []));
-  const printMeta: PrintMetaInput = {
-    title: body.title ?? meta.title ?? null,
-    notes: body.notes ?? meta.description ?? null,
-    tags: body.tags && body.tags.length ? body.tags : (meta.tags ?? []),
-    categoryId,
-    categorySource: body.category_id ? "MANUAL" : categoryId ? "RULE" : null,
-    creator: meta.creator ?? null,
-    authorId: author?.id ?? null,
-    sourceProvider: source.provider,
-    sourceExternalId: source.externalId,
-  };
-
-  try {
-    let result: { print: Print; plates: Plate[] };
-    try {
-      result = await createPrint(
-        userId,
-        printMeta,
-        meta.title || `printables-${source.externalId}`,
-        downloaded,
-        IMPORTED,
-      );
-    } catch (err) {
-      // Race guard: a concurrent import of the same source model won.
-      if (isUniqueConstraintError(err)) {
-        const existing = await findExistingImportedPrint(userId, source);
-        if (existing) return { ...existing, alreadyImported: true };
-      }
-      throw err;
-    }
-    const gallery = galleryImages.map((img) => ({ url: img.url, filename: img.name }));
-    await attachImportedPreviewImages(result.print.id, result.plates[0]?.id, meta.previewImageUrl ?? null, gallery);
-    await localizeDescriptionImages(result.print.id);
-    const previewImages = await prisma.previewImage.findMany({
-      where: { printId: result.print.id },
-      orderBy: { position: "asc" },
-    });
-    return { ...result, author, previewImages, alreadyImported: false };
-  } finally {
-    for (const input of downloaded) {
-      if (input.tempFilePath && fsSync.existsSync(input.tempFilePath)) {
-        await fs.rm(input.tempFilePath, { force: true }).catch(() => undefined);
-      }
-    }
-  }
-}
-
-const MYMINIFACTORY_NOT_CONFIGURED =
-  "MyMiniFactory import isn't configured for this instance yet -- ask an admin to add an API key in Administration > Providers.";
-
 /** The model files in a downloaded zip, each as its own plate; the zip itself is left for the caller. Plates have no
  *  folders, so files named alike in different folders are named after their folder too: "2x2 - Top.stl". */
 async function modelFilesFromZip(zipPath: string): Promise<NewPlateInput[]> {
@@ -1377,190 +926,6 @@ async function modelFilesFromZip(zipPath: string): Promise<NewPlateInput[]> {
   return inputs;
 }
 
-const MYMINIFACTORY_BLOCKED =
-  "MyMiniFactory blocked the file download (rate limit or Cloudflare challenge). This usually clears after a while -- wait, then retry the same import.";
-
-/** One signed MyMiniFactory download, unpacked into model files when it's a zip. */
-async function downloadMyminifactoryFile(url: string, suggestedName?: string): Promise<NewPlateInput[]> {
-  const fileUrl = new URL(url);
-  if (!isMyminifactoryFileHost(fileUrl.hostname)) return [];
-  const name = suggestedName ?? decodeURIComponent(fileUrl.pathname.split("/").pop() || "myminifactory-file");
-  const result = await downloadPlainFileToTemp(url, name);
-  if (result && "rateLimited" in result) throw new HttpError(429, MYMINIFACTORY_BLOCKED);
-  if (!result) return [];
-  const ext = path.extname(result.input.filename).toLowerCase();
-  if (ext === ".zip") {
-    try {
-      return await modelFilesFromZip(result.input.tempFilePath!);
-    } finally {
-      await fs.rm(result.input.tempFilePath!, { force: true }).catch(() => undefined);
-    }
-  }
-  if (MULTI_FILE_PLATE_EXTS.has(ext)) return [result.input];
-  await fs.rm(result.input.tempFilePath!, { force: true }).catch(() => undefined);
-  return [];
-}
-
-const MYMINIFACTORY_CONNECT =
-  "Connect your MyMiniFactory account in Configuration > Providers (or visit myminifactory.com with Thingport Grab), then import it again.";
-
-/** As the user, from their MyMiniFactory library: what Thingport can't download anonymously. */
-async function downloadMyminifactoryFromLibrary(
-  userId: string,
-  objectId: string,
-  paid: boolean,
-): Promise<NewPlateInput[]> {
-  const cookie = await getUserMyminifactoryCookie(userId);
-  if (!cookie) {
-    throw new HttpError(
-      403,
-      paid
-        ? `This is a paid MyMiniFactory model, so it downloads only from the account that bought it. ${MYMINIFACTORY_CONNECT}`
-        : `This MyMiniFactory model downloads only when signed in. ${MYMINIFACTORY_CONNECT}`,
-    );
-  }
-  const isModel = (name: string) =>
-    MULTI_FILE_PLATE_EXTS.has(path.extname(name).toLowerCase()) || path.extname(name).toLowerCase() === ".zip";
-  const downloaded: NewPlateInput[] = [];
-  try {
-    const files = await listMyminifactoryLibraryFiles(objectId, cookie, isModel);
-    if (!files) {
-      throw new HttpError(
-        403,
-        paid
-          ? "This paid MyMiniFactory model isn't in your library: buy it on MyMiniFactory first, with the account connected to Thingport."
-          : "MyMiniFactory doesn't let your account download this model.",
-      );
-    }
-    for (const file of files) {
-      await maybeSleep(MYMINIFACTORY_FILE_DELAY_MS);
-      const url = await resolveMyminifactoryLibraryDownload(file.path, cookie);
-      if (url) downloaded.push(...(await downloadMyminifactoryFile(url, file.name)));
-    }
-    if (!downloaded.length && files.length) {
-      throw new HttpError(
-        400,
-        files.every((file) => !isModel(file.name))
-          ? "This model's files are in an archive Thingport can't open (such as RAR), and MyMiniFactory hasn't unpacked it."
-          : "Couldn't download this model's files from your MyMiniFactory library. Try again later.",
-      );
-    }
-    return downloaded;
-  } catch (err) {
-    await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
-    if (err instanceof MyminifactorySessionExpiredError) {
-      await markMyminifactoryCookieRejected(userId);
-      throw new HttpError(400, err.message, MYMINIFACTORY_SESSION_CODE);
-    }
-    throw err;
-  }
-}
-
-/** Every model file is its own request; spaced out a little, as the site's own pages would be. */
-const MYMINIFACTORY_FILE_DELAY_MS = 500;
-
-/** Metadata from the API (the instance's key). Files from /download when anyone may have them: one file, or a zip
- *  whose model files each become a plate; else, paid and login-only ones, from the user's own library. */
-async function importMyminifactoryObject(
-  userId: string,
-  source: { provider: string; externalId: string },
-  body: ImportRequestBody,
-): Promise<{
-  print: Print;
-  plates: Plate[];
-  author: Author | null;
-  previewImages: PreviewImage[];
-  alreadyImported: boolean;
-}> {
-  const apiKey = await getMyminifactoryApiKey();
-  if (!apiKey) throw new HttpError(503, MYMINIFACTORY_NOT_CONFIGURED);
-
-  let resolved;
-  let downloaded: NewPlateInput[];
-  try {
-    resolved = await resolveMyminifactoryObject(source.externalId, apiKey);
-    if (!resolved) throw new HttpError(404, "This MyMiniFactory object could not be found, or isn't public.");
-    // Paid models, and free ones whose files are archives, only download as the user, from their library.
-    const anonymous = resolved.paid || resolved.archives ? null : await resolveMyminifactoryDownload(source.externalId);
-    if (anonymous?.kind === "missing") {
-      throw new HttpError(404, "This MyMiniFactory object could not be found, or isn't public.");
-    }
-    downloaded =
-      anonymous?.kind === "file"
-        ? await downloadMyminifactoryFile(anonymous.url)
-        : await downloadMyminifactoryFromLibrary(userId, source.externalId, resolved.paid);
-  } catch (err) {
-    if (err instanceof MyminifactoryRateLimitError) throw new HttpError(429, err.message);
-    // 400, not 401: see tryMakerworldCloudApi.
-    if (err instanceof MyminifactoryAuthError) throw new HttpError(400, err.message);
-    throw err;
-  }
-  const { meta, galleryImages } = resolved;
-  if (!downloaded.length)
-    throw new HttpError(400, "This MyMiniFactory object has no model files Thingport can import.");
-
-  try {
-    const author = await upsertAuthorFromImport(meta.author ?? null);
-    const categoryId =
-      body.category_id ??
-      (await resolveCategoryIdByCategory(userId, meta.categorySite ?? null, meta.siteCategoryIds ?? []));
-    const printMeta: PrintMetaInput = {
-      title: body.title ?? meta.title ?? null,
-      notes: body.notes ?? meta.description ?? null,
-      tags: body.tags && body.tags.length ? body.tags : (meta.tags ?? []),
-      categoryId,
-      categorySource: body.category_id ? "MANUAL" : categoryId ? "RULE" : null,
-      creator: meta.creator ?? null,
-      authorId: author?.id ?? null,
-      sourceProvider: source.provider,
-      sourceExternalId: source.externalId,
-    };
-    let created: { print: Print; plates: Plate[] };
-    try {
-      created = await createPrint(
-        userId,
-        printMeta,
-        meta.title || `myminifactory-${source.externalId}`,
-        downloaded,
-        IMPORTED,
-      );
-    } catch (err) {
-      // Race guard: a concurrent import of the same source model won.
-      if (isUniqueConstraintError(err)) {
-        const existing = await findExistingImportedPrint(userId, source);
-        if (existing) return { ...existing, alreadyImported: true };
-      }
-      throw err;
-    }
-    await attachImportedPreviewImages(
-      created.print.id,
-      created.plates[0]?.id,
-      meta.previewImageUrl ?? null,
-      galleryImages,
-    );
-    await localizeDescriptionImages(created.print.id);
-    const previewImages = await prisma.previewImage.findMany({
-      where: { printId: created.print.id },
-      orderBy: { position: "asc" },
-    });
-    return { ...created, author, previewImages, alreadyImported: false };
-  } finally {
-    for (const input of downloaded) {
-      if (input.tempFilePath && fsSync.existsSync(input.tempFilePath)) {
-        await fs.rm(input.tempFilePath, { force: true }).catch(() => undefined);
-      }
-    }
-  }
-}
-
-const SNAPMAKER_BLOCKED =
-  "Snapmaker blocked the file download (rate limit). This usually clears after a while -- wait, then retry the same import.";
-
-/** One of a Snapmaker model's signed files; a zip is unpacked into its model files. Null when it didn't download. */
-function downloadSnapmakerFile(file: SnapmakerFile): Promise<NewPlateInput[] | null> {
-  return downloadSignedFile(file, isSnapmakerFileHost, SNAPMAKER_BLOCKED);
-}
-
 /** A provider's signed file link, on one of its own hosts; a zip is unpacked into its model files. Null when it
  *  didn't download. */
 async function downloadSignedFile(
@@ -1589,85 +954,6 @@ async function downloadSignedFile(
   if (MULTI_FILE_PLATE_EXTS.has(ext)) return [result.input];
   await fs.rm(result.input.tempFilePath!, { force: true }).catch(() => undefined);
   return [];
-}
-
-/** The user's token, or the HttpError that says to connect Snapmaker. */
-async function requireSnapmakerToken(userId: string): Promise<string> {
-  const token = await getUserSnapmakerToken(userId);
-  if (!token) throw new HttpError(400, SNAPMAKER_CONNECT, SNAPMAKER_SESSION_CODE);
-  return token;
-}
-
-/** Snapmaker's errors as the HttpErrors an import reports; a rejected token is remembered, so the app can say so. */
-async function snapmakerFailure(userId: string, err: unknown): Promise<unknown> {
-  if (err instanceof SnapmakerAuthError) {
-    await markSnapmakerTokenRejected(userId);
-    // 400, not 401: see tryMakerworldCloudApi.
-    return new HttpError(400, err.message, SNAPMAKER_SESSION_CODE);
-  }
-  return err;
-}
-
-/** Downloads one print profile's 3MF, tagged with the profile; null when the profile isn't among the downloads. */
-async function downloadSnapmakerProfile(
-  modelId: string,
-  profileId: string,
-  token: string,
-): Promise<NewPlateInput | null> {
-  const downloads = await fetchSnapmakerDownloads(modelId, token);
-  if (!downloads) throw new HttpError(404, "This Snapmaker model could not be found, or isn't public.");
-  const file = downloads.profiles.find((profile) => profile.profileId === profileId);
-  if (!file) return null;
-  const inputs = await downloadSnapmakerFile(file);
-  if (!inputs?.length) {
-    throw new HttpError(400, "Couldn't download this print profile from Snapmaker. Try again later.");
-  }
-  // A profile is one 3MF; anything else it unpacked to is dropped.
-  await Promise.all(inputs.slice(1).map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
-  return { ...inputs[0], sourceInstanceId: profileId };
-}
-
-/** Like MakerWorld: a model is one print, and each print profile its 3MF on a plate of its own, tagged with the
- *  profile. An import brings the profile the link names, else the designer's first; a model without profiles brings
- *  its model files instead. Files only download as the user, so everything needs their Snapmaker sign-in. */
-async function importSnapmakerModel(
-  userId: string,
-  source: { provider: string; externalId: string },
-  url: string,
-  body: ImportRequestBody,
-): Promise<ImportResult> {
-  const token = await requireSnapmakerToken(userId);
-  let resolved;
-  const downloaded: NewPlateInput[] = [];
-  try {
-    resolved = await resolveSnapmakerModel(source.externalId);
-    if (!resolved) throw new HttpError(404, "This Snapmaker model could not be found, or isn't public.");
-    const requested = body.resolved_instance_id ?? parseSnapmakerModelUrl(url)?.requestedProfileId ?? null;
-    const [profileId] = selectSnapmakerProfiles(resolved, "url", requested);
-    if (profileId) {
-      const profile = await downloadSnapmakerProfile(source.externalId, profileId, token);
-      if (profile) downloaded.push(profile);
-    }
-    if (!downloaded.length) {
-      const downloads = await fetchSnapmakerDownloads(source.externalId, token);
-      if (!downloads) throw new HttpError(404, "This Snapmaker model could not be found, or isn't public.");
-      for (const file of downloads.modelFiles) downloaded.push(...((await downloadSnapmakerFile(file)) ?? []));
-    }
-  } catch (err) {
-    await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
-    throw await snapmakerFailure(userId, err);
-  }
-  if (!downloaded.length) throw new HttpError(400, "This Snapmaker model has no files Thingport can import.");
-
-  return createSourcedPrint(
-    userId,
-    source,
-    body,
-    resolved,
-    downloaded,
-    `snapmaker-${source.externalId}`,
-    profileDetailsOf(resolved.profiles),
-  );
 }
 
 /** A new print from a provider model whose files are downloaded: its metadata, author, category and gallery. Removes
@@ -1737,522 +1023,117 @@ async function createSourcedPrint(
   }
 }
 
-/** Re-import of a Snapmaker model naming a profile it doesn't have yet: that profile's 3MF becomes another plate. A
- *  link without a profile, or with one already there, needs no request at all. */
-async function addSnapmakerProfileToPrint(
-  existing: ExistingImportedPrint,
-  url: string,
-  body: ImportRequestBody,
-): Promise<ImportResult> {
-  const wanted = body.resolved_instance_id ?? parseSnapmakerModelUrl(url)?.requestedProfileId ?? null;
-  if (!wanted || existing.plates.some((plate) => plate.sourceInstanceId === wanted)) {
-    return { ...existing, alreadyImported: true };
-  }
-  const userId = existing.print.userId;
-  const token = await requireSnapmakerToken(userId);
-  let profile: NewPlateInput | null;
-  try {
-    profile = await downloadSnapmakerProfile(existing.print.sourceExternalId!, wanted, token);
-  } catch (err) {
-    throw await snapmakerFailure(userId, err);
-  }
-  if (!profile) throw new HttpError(404, "This Snapmaker model has no such print profile.");
-  // Its public details name and picture the profiles; without them the file still comes in.
-  const model = await resolveSnapmakerModel(existing.print.sourceExternalId!).catch(() => null);
-  return addProfilePlateWithDetails(existing, profile, wanted, model ? profileDetailsOf(model.profiles) : {});
-}
+const IMPORT_KIT: PipelineKit = {
+  downloadSignedFile,
+  downloadFile: downloadPlainFileToTemp,
+  isModelFile: (name) => MULTI_FILE_PLATE_EXTS.has(path.extname(name).toLowerCase()),
+  createPrint: (userId, source, body, resolved, downloaded, details) =>
+    createSourcedPrint(userId, source, body, resolved, downloaded, `${source.provider}-${source.externalId}`, details),
+  async addProfiles(existing, inputs, details) {
+    let current: ExistingImportedPrint = existing;
+    let profileAdded = false;
+    try {
+      for (const input of inputs) {
+        const result = await addProfilePlateWithDetails(current, input, input.sourceInstanceId!, details);
+        profileAdded ||= Boolean(result.profileAdded);
+        current = result;
+      }
+    } finally {
+      for (const input of inputs) {
+        if (input.tempFilePath && fsSync.existsSync(input.tempFilePath)) {
+          await fs.rm(input.tempFilePath, { force: true }).catch(() => undefined);
+        }
+      }
+    }
+    return profileAdded ? { ...current, alreadyImported: false, profileAdded } : { ...current, alreadyImported: true };
+  },
+  profileDetails: profileDetailsOf,
+};
 
-const CREALITYCLOUD_BLOCKED =
-  "Creality Cloud blocked the file download (rate limit). This usually clears after a while -- wait, then retry the same import.";
-const CREALITYCLOUD_MISSING = "This Creality Cloud model could not be found, or isn't public.";
-
-function downloadCrealitycloudFile(file: CrealitycloudFile): Promise<NewPlateInput[] | null> {
-  return downloadSignedFile(file, isCrealitycloudFileHost, CREALITYCLOUD_BLOCKED);
-}
-
-/** The user's sign-in, or the HttpError that says to connect Creality Cloud. */
-async function requireCrealitycloudAuth(userId: string): Promise<CrealitycloudAuth> {
-  const auth = await getUserCrealitycloudAuth(userId);
-  if (!auth) throw new HttpError(400, CREALITYCLOUD_CONNECT, CREALITYCLOUD_SESSION_CODE);
-  return auth;
-}
-
-/** Creality Cloud's errors as the HttpErrors an import reports; a rejected sign-in is remembered, so the app can say
- *  so. */
-async function crealitycloudFailure(userId: string, err: unknown): Promise<unknown> {
-  if (err instanceof CrealitycloudAuthError) {
-    await markCrealitycloudSessionRejected(userId);
-    // 400, not 401: see tryMakerworldCloudApi.
-    return new HttpError(400, err.message, CREALITYCLOUD_SESSION_CODE);
-  }
-  return err;
-}
-
-/** Downloads one print profile's 3MF, tagged with the profile; null when the model has no such profile. */
-async function downloadCrealitycloudProfile(
-  resolved: CrealitycloudModelResolution,
-  profileId: string,
-  auth: CrealitycloudAuth,
-): Promise<NewPlateInput | null> {
-  const profile = resolved.profiles.find((p) => p.id === profileId);
-  const file = profile ? await fetchCrealitycloudProfileFile(profile, auth) : null;
-  if (!file) return null;
-  const inputs = await downloadCrealitycloudFile(file);
-  if (!inputs?.length) {
-    throw new HttpError(400, "Couldn't download this print profile from Creality Cloud. Try again later.");
-  }
-  // A profile is one 3MF; anything else it unpacked to is dropped.
-  await Promise.all(inputs.slice(1).map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
-  return { ...inputs[0], sourceInstanceId: profileId };
-}
-
-/** Like Snapmaker: a model is one print, and each print profile its 3MF on a plate of its own, tagged with the
- *  profile. An import brings the profile the link names, else the designer's first; a model without profiles brings
- *  its model files instead. Files only download as the user, so everything needs their Creality Cloud sign-in. A link
- *  by id is kept under the model's alias, the id the site's own links have. */
-async function importCrealitycloudModel(
+/** A new print from a provider on the shared pipeline: its sign-in, the model, the profile the link names (or the
+ *  provider's pick) or else the model's files, then the print. A model kept under another id than its link's goes
+ *  onto the print already there under that one. */
+async function importSourced(
   userId: string,
   linked: { provider: string; externalId: string },
   url: string,
   body: ImportRequestBody,
+  impl: SourcedImport,
 ): Promise<ImportResult> {
-  const auth = await requireCrealitycloudAuth(userId);
-  let resolved: CrealitycloudModelResolution | null;
+  const auth = await impl.requireAuth(userId);
+  let resolved: ResolvedModel | null;
   try {
-    resolved = await resolveCrealitycloudModel(linked.externalId);
+    resolved = await impl.resolveModel(linked.externalId, auth);
   } catch (err) {
-    throw await crealitycloudFailure(userId, err);
+    throw await impl.mapError(userId, err);
   }
-  if (!resolved) throw new HttpError(404, CREALITYCLOUD_MISSING);
-  const source = { provider: linked.provider, externalId: resolved.alias };
+  if (!resolved) throw new HttpError(404, impl.missingMessage);
+  const source = { provider: linked.provider, externalId: impl.canonicalId?.(resolved) ?? linked.externalId };
   if (source.externalId !== linked.externalId) {
     const existing = await findExistingImportedPrint(userId, source);
-    if (existing) return addCrealitycloudProfileToPrint(existing, url, body, resolved);
+    if (existing) return addSourcedProfile(existing, url, body, impl, resolved);
   }
-  const downloaded: NewPlateInput[] = [];
+  const requested = body.resolved_instance_id ?? requestedProfileOf(source.provider, url);
+  let downloaded: NewPlateInput[];
   try {
-    const requested = body.resolved_instance_id ?? parseCrealitycloudModelUrl(url)?.requestedProfileId ?? null;
-    const [profileId] = selectCrealitycloudProfiles(resolved, "url", requested);
-    if (profileId) {
-      const profile = await downloadCrealitycloudProfile(resolved, profileId, auth);
-      if (profile) downloaded.push(profile);
-    }
-    if (!downloaded.length) {
-      const files = await fetchCrealitycloudModelFiles(resolved.groupId, auth);
-      if (!files) throw new HttpError(404, CREALITYCLOUD_MISSING);
-      for (const file of files) downloaded.push(...((await downloadCrealitycloudFile(file)) ?? []));
-    }
+    downloaded = await impl.downloadModel(
+      { userId, externalId: source.externalId },
+      resolved,
+      auth,
+      requested,
+      IMPORT_KIT,
+    );
   } catch (err) {
-    await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
-    throw await crealitycloudFailure(userId, err);
+    throw await impl.mapError(userId, err);
   }
-  if (!downloaded.length) throw new HttpError(400, "This Creality Cloud model has no files Thingport can import.");
-
-  // Its profile files are named after their profiles already.
+  if (!downloaded.length) throw new HttpError(400, impl.noFilesMessage);
   return createSourcedPrint(
     userId,
     source,
     body,
     resolved,
     downloaded,
-    `crealitycloud-${source.externalId}`,
-    profileDetailsOf(resolved.profiles, { names: false }),
+    impl.nameHint?.(source.externalId) ?? `${source.provider}-${source.externalId}`,
+    profileDetailsOf(resolved.profiles ?? [], { names: impl.profiles?.namedAlike ?? true }),
   );
 }
 
-/** Re-import of a Creality Cloud model naming a profile it doesn't have yet: that profile's 3MF becomes another plate.
- *  A link without a profile, or with one already there, needs no download. */
-async function addCrealitycloudProfileToPrint(
+/** Re-import of a model naming a profile it doesn't have yet: that profile's file becomes another plate. A link
+ *  without a profile, or with one already there, or from a provider without profiles, needs no download. */
+async function addSourcedProfile(
   existing: ExistingImportedPrint,
   url: string,
   body: ImportRequestBody,
-  resolved: CrealitycloudModelResolution | null = null,
+  impl: SourcedImport,
+  resolved: ResolvedModel | null = null,
 ): Promise<ImportResult> {
-  const wanted = body.resolved_instance_id ?? parseCrealitycloudModelUrl(url)?.requestedProfileId ?? null;
-  if (!wanted || existing.plates.some((plate) => plate.sourceInstanceId === wanted)) {
+  const wanted = body.resolved_instance_id ?? requestedProfileOf(existing.print.sourceProvider!, url);
+  const profiles = impl.profiles;
+  if (!profiles || !wanted || existing.plates.some((plate) => plate.sourceInstanceId === wanted)) {
     return { ...existing, alreadyImported: true };
   }
   const userId = existing.print.userId;
-  const auth = await requireCrealitycloudAuth(userId);
+  const externalId = existing.print.sourceExternalId!;
+  const auth = await impl.requireAuth(userId);
   let profile: NewPlateInput | null;
-  let model: CrealitycloudModelResolution | null;
+  let model: ResolvedModel | null = resolved;
   try {
-    model = resolved ?? (await resolveCrealitycloudModel(existing.print.sourceExternalId!));
-    if (!model) throw new HttpError(404, CREALITYCLOUD_MISSING);
-    profile = await downloadCrealitycloudProfile(model, wanted, auth);
-  } catch (err) {
-    throw await crealitycloudFailure(userId, err);
-  }
-  if (!profile) throw new HttpError(404, "This Creality Cloud model has no such print profile.");
-  // Its profile files are named after their profiles already.
-  return addProfilePlateWithDetails(existing, profile, wanted, profileDetailsOf(model.profiles, { names: false }));
-}
-
-const NEXPRINT_BLOCKED =
-  "NexPrint blocked the file download (rate limit). This usually clears after a while -- wait, then retry the same import.";
-const NEXPRINT_MISSING = "This NexPrint model could not be found, or isn't public.";
-
-function downloadNexprintFile(file: NexprintFile): Promise<NewPlateInput[] | null> {
-  return downloadSignedFile(file, isNexprintFileHost, NEXPRINT_BLOCKED);
-}
-
-/** The user's token, or the HttpError that says to connect NexPrint. */
-async function requireNexprintToken(userId: string): Promise<string> {
-  const token = await getUserNexprintToken(userId);
-  if (!token) throw new HttpError(400, NEXPRINT_CONNECT, NEXPRINT_SESSION_CODE);
-  return token;
-}
-
-/** NexPrint's errors as the HttpErrors an import reports; a rejected sign-in is remembered, so the app can say so. */
-async function nexprintFailure(userId: string, err: unknown): Promise<unknown> {
-  if (err instanceof NexprintAuthError) {
-    await markNexprintSessionRejected(userId);
-    // 400, not 401: see tryMakerworldCloudApi.
-    return new HttpError(400, err.message, NEXPRINT_SESSION_CODE);
-  }
-  return err;
-}
-
-/** Downloads one print profile's 3MF, tagged with the profile; null when the model has no such profile. */
-async function downloadNexprintProfile(
-  resolved: NexprintModelResolution,
-  profileId: string,
-  token: string,
-): Promise<NewPlateInput | null> {
-  const profile = resolved.profiles.find((p) => p.id === profileId);
-  const file = profile ? await fetchNexprintProfileFile(profile, token) : null;
-  if (!file) return null;
-  const inputs = await downloadNexprintFile(file);
-  if (!inputs?.length) throw new HttpError(400, "Couldn't download this print profile from NexPrint. Try again later.");
-  // A profile is one 3MF; anything else it unpacked to is dropped.
-  await Promise.all(inputs.slice(1).map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
-  return { ...inputs[0], sourceInstanceId: profileId };
-}
-
-/** Like Creality Cloud: a model is one print, and each print profile its 3MF on a plate of its own, tagged with the
- *  profile. An import brings the profile the link names, else the designer's first; a model without profiles brings
- *  its model files instead. Files only download as the user, so everything needs their NexPrint sign-in. */
-async function importNexprintModel(
-  userId: string,
-  source: { provider: string; externalId: string },
-  url: string,
-  body: ImportRequestBody,
-): Promise<ImportResult> {
-  const token = await requireNexprintToken(userId);
-  let resolved: NexprintModelResolution | null;
-  try {
-    resolved = await resolveNexprintModel(source.externalId);
-  } catch (err) {
-    throw await nexprintFailure(userId, err);
-  }
-  if (!resolved) throw new HttpError(404, NEXPRINT_MISSING);
-  const downloaded: NewPlateInput[] = [];
-  try {
-    const requested = body.resolved_instance_id ?? parseNexprintModelUrl(url)?.requestedProfileId ?? null;
-    const [profileId] = selectNexprintProfiles(resolved, "url", requested);
-    if (profileId) {
-      const profile = await downloadNexprintProfile(resolved, profileId, token);
-      if (profile) downloaded.push(profile);
+    if (!profiles.downloadsWithoutModel) {
+      model ??= await impl.resolveModel(externalId, auth);
+      if (!model) throw new HttpError(404, impl.missingMessage);
     }
-    if (!downloaded.length) {
-      for (const file of await fetchNexprintModelFiles(resolved, token)) {
-        downloaded.push(...((await downloadNexprintFile(file)) ?? []));
-      }
-    }
+    profile = await profiles.download({ userId, externalId }, model, wanted, auth, IMPORT_KIT);
   } catch (err) {
-    await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
-    throw await nexprintFailure(userId, err);
+    throw await impl.mapError(userId, err);
   }
-  if (!downloaded.length) throw new HttpError(400, "This NexPrint model has no files Thingport can import.");
-
-  // Its profile files are named after their profiles already.
-  return createSourcedPrint(
-    userId,
-    source,
-    body,
-    resolved,
-    downloaded,
-    `nexprint-${source.externalId}`,
-    profileDetailsOf(resolved.profiles, { names: false }),
-  );
+  if (!profile) throw new HttpError(404, profiles.missingMessage);
+  // Without its details the profile still comes in, only not named or pictured apart.
+  model ??= await impl.resolveModel(externalId, auth).catch(() => null);
+  const details = model ? profileDetailsOf(model.profiles ?? [], { names: profiles.namedAlike }) : {};
+  return addProfilePlateWithDetails(existing, profile, wanted, details);
 }
 
-/** Re-import of a NexPrint model naming a profile it doesn't have yet: that profile's 3MF becomes another plate. A
- *  link without a profile, or with one already there, needs no download. */
-async function addNexprintProfileToPrint(
-  existing: ExistingImportedPrint,
-  url: string,
-  body: ImportRequestBody,
-): Promise<ImportResult> {
-  const wanted = body.resolved_instance_id ?? parseNexprintModelUrl(url)?.requestedProfileId ?? null;
-  if (!wanted || existing.plates.some((plate) => plate.sourceInstanceId === wanted)) {
-    return { ...existing, alreadyImported: true };
-  }
-  const userId = existing.print.userId;
-  const token = await requireNexprintToken(userId);
-  let profile: NewPlateInput | null;
-  let model: NexprintModelResolution | null;
-  try {
-    model = await resolveNexprintModel(existing.print.sourceExternalId!);
-    if (!model) throw new HttpError(404, NEXPRINT_MISSING);
-    profile = await downloadNexprintProfile(model, wanted, token);
-  } catch (err) {
-    throw await nexprintFailure(userId, err);
-  }
-  if (!profile) throw new HttpError(404, "This NexPrint model has no such print profile.");
-  // Its profile files are named after their profiles already.
-  return addProfilePlateWithDetails(existing, profile, wanted, profileDetailsOf(model.profiles, { names: false }));
-}
-
-const THANGS_BLOCKED =
-  "Thangs blocked the file download (rate limit). This usually clears after a while -- wait, then retry the same import.";
-const THANGS_MISSING = "This Thangs model could not be found, or isn't public.";
-
-/** The user's access token, renewed when it's out, or the HttpError that says to connect Thangs. */
-async function requireThangsToken(userId: string): Promise<string> {
-  let token: string | null;
-  try {
-    token = await getUserThangsToken(userId);
-  } catch (err) {
-    throw await thangsFailure(userId, err);
-  }
-  if (!token) throw new HttpError(400, THANGS_CONNECT, THANGS_SESSION_CODE);
-  return token;
-}
-
-/** Thangs' errors as the HttpErrors an import reports; a rejected sign-in is remembered, so the app can say so. */
-async function thangsFailure(userId: string, err: unknown): Promise<unknown> {
-  if (err instanceof ThangsAuthError) {
-    await markThangsSessionRejected(userId);
-    // 400, not 401: see tryMakerworldCloudApi.
-    return new HttpError(400, err.message, THANGS_SESSION_CODE);
-  }
-  if (err instanceof ThangsDownloadLimitError) return new HttpError(429, err.message, THANGS_DOWNLOAD_LIMIT_CODE);
-  if (err instanceof ThangsBlockedError) return new HttpError(429, err.message);
-  return err;
-}
-
-/** Why Thangs won't hand over a model's files, by what kind of model it is. */
-function thangsUnavailable(resolved: ThangsModelResolution): HttpError {
-  if (resolved.access === "printOnly") {
-    return new HttpError(403, "This Thangs model is sold only as a print: its designer doesn't offer its files.");
-  }
-  if (resolved.access === "paid") {
-    const price = resolved.price !== null ? ` ($${resolved.price})` : "";
-    return new HttpError(
-      403,
-      `This is a paid Thangs model${price}, so it downloads only for an account that bought it, or a member of a ` +
-        "designer membership that includes it. Get it on Thangs with the account connected to Thingport, then import it again.",
-    );
-  }
-  if (resolved.access === "membership") {
-    return new HttpError(
-      403,
-      "This Thangs model is for members of its designer's membership only: join it on Thangs with the account " +
-        "connected to Thingport, then import it again.",
-    );
-  }
-  return new HttpError(403, "Thangs doesn't let your account download this model.");
-}
-
-/** Like MyMiniFactory: metadata from the public API, then the files as the user, in one download -- the model file, or
- *  a zip whose model files each become a plate. Every download counts towards the account's daily ones, so a model
- *  that can't be had (print-only) is refused before asking. */
-async function importThangsModel(
-  userId: string,
-  source: { provider: string; externalId: string },
-  body: ImportRequestBody,
-): Promise<ImportResult> {
-  let resolved: ThangsModelResolution | null;
-  try {
-    resolved = await resolveThangsModel(source.externalId);
-  } catch (err) {
-    throw await thangsFailure(userId, err);
-  }
-  if (!resolved) throw new HttpError(404, THANGS_MISSING);
-  if (resolved.access === "printOnly") throw thangsUnavailable(resolved);
-  const token = await requireThangsToken(userId);
-  const downloaded: NewPlateInput[] = [];
-  try {
-    const file = await withThangsToken(userId, token, (fresh) => fetchThangsDownload(source.externalId, fresh));
-    if (!file) throw thangsUnavailable(resolved);
-    downloaded.push(...((await downloadSignedFile(file, isThangsFileHost, THANGS_BLOCKED)) ?? []));
-  } catch (err) {
-    await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
-    throw await thangsFailure(userId, err);
-  }
-  if (!downloaded.length) throw new HttpError(400, "This Thangs model has no files Thingport can import.");
-
-  return createSourcedPrint(userId, source, body, resolved, downloaded, `thangs-${source.externalId}`);
-}
-
-const CULTS3D_MISSING = "This Cults3D model could not be found, or isn't public.";
-
-/** The user's API credentials, or the HttpError that says to give them. */
-async function requireCults3dCredentials(userId: string): Promise<Cults3dCredentials> {
-  const credentials = await getUserCults3dCredentials(userId);
-  if (!credentials) throw new HttpError(400, CULTS3D_CONNECT, CULTS3D_SESSION_CODE);
-  return credentials;
-}
-
-/** Cults3D's errors as the HttpErrors an import reports; a rejected key or sign-in is remembered, so the app can say
- *  so. */
-async function cults3dFailure(userId: string, err: unknown): Promise<unknown> {
-  if (err instanceof Cults3dAuthError) {
-    await markCults3dApiRejected(userId);
-    // 400, not 401: see tryMakerworldCloudApi.
-    return new HttpError(400, err.message, CULTS3D_SESSION_CODE);
-  }
-  if (err instanceof Cults3dSessionError) {
-    await markCults3dSessionRejected(userId);
-    return new HttpError(400, err.message, CULTS3D_SESSION_CODE);
-  }
-  // Its own code, so a sync waits for the next visit with Grab rather than failing the model.
-  if (err instanceof Cults3dBlockedError) return new HttpError(403, err.message, CLOUDFLARE_BLOCKED_CODE);
-  if (err instanceof Cults3dRateLimitError) return new HttpError(429, err.message);
-  return err;
-}
-
-function cults3dPaid(resolved: Cults3dModelResolution): HttpError {
-  return new HttpError(
-    403,
-    `This is a paid Cults3D model (${resolved.priceText}), so it downloads only once bought. Buy it on Cults3D with ` +
-      "the account connected to Thingport, then import it again.",
-  );
-}
-
-/** Metadata from the API; the files from the user's Cults3D library, where every model they ordered, bought or free,
- *  stays. A free model not in it yet is ordered first, as its Download button does; a paid one is refused. The order
- *  and download pages need the browser's sign-in and clearance, which Thingport Grab sends. */
-async function importCults3dModel(
-  userId: string,
-  source: { provider: string; externalId: string },
-  body: ImportRequestBody,
-): Promise<ImportResult> {
-  const credentials = await requireCults3dCredentials(userId);
-  const downloaded: NewPlateInput[] = [];
-  let resolved: Cults3dModelResolution | null;
-  try {
-    resolved = await resolveCults3dModel(source.externalId, credentials);
-    if (!resolved) throw new HttpError(404, CULTS3D_MISSING);
-    let downloadUrl = (await fetchCults3dOrders(credentials)).get(resolved.slug) ?? null;
-    if (!downloadUrl && resolved.priceCents > 0) throw cults3dPaid(resolved);
-    const browser = await getUserCults3dBrowser(userId);
-    if (!browser) throw new HttpError(400, CULTS3D_SIGN_IN, CULTS3D_SESSION_CODE);
-    // Without it every site page is a Cloudflare challenge.
-    if (!browser.clearance) throw new HttpError(400, CULTS3D_NO_CLEARANCE, CULTS3D_SESSION_CODE);
-    if (!downloadUrl) {
-      await placeCults3dFreeOrder(resolved.slug, browser);
-      downloadUrl = (await fetchCults3dOrders(credentials)).get(resolved.slug) ?? null;
-      if (!downloadUrl) throw new HttpError(502, "Cults3D took the free order, but it isn't in your downloads yet.");
-    }
-    const file = await resolveCults3dDownload(downloadUrl, browser);
-    downloaded.push(
-      ...((await downloadSignedFile(
-        file,
-        isCults3dFileHost,
-        "Cults3D blocked the file download (rate limit). This usually clears after a while -- wait, then retry.",
-      )) ?? []),
-    );
-  } catch (err) {
-    await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
-    throw await cults3dFailure(userId, err);
-  }
-  if (!downloaded.length) throw new HttpError(400, "This Cults3D model has no files Thingport can import.");
-
-  return createSourcedPrint(userId, source, body, resolved, downloaded, `cults3d-${source.externalId}`);
-}
-
-const MAKERONLINE_BLOCKED =
-  "MakerOnline blocked the file download (rate limit). This usually clears after a while -- wait, then try again.";
-
-/** MakerOnline's files as Grab signed them: a profile's 3MF tagged with the profile, a model's own files untagged.
- *  Throws once nothing came down, since the signed links run out quickly. */
-async function downloadMakeronlineFiles(
-  files: NonNullable<ImportRequestBody["resolved_files"]>,
-): Promise<NewPlateInput[]> {
-  const downloaded: NewPlateInput[] = [];
-  try {
-    for (const file of files) {
-      const inputs = (await downloadSignedFile(file, isMakeronlineFileHost, MAKERONLINE_BLOCKED)) ?? [];
-      if (!file.profile_id) {
-        downloaded.push(...inputs);
-        continue;
-      }
-      // A profile is one 3MF; anything else it unpacked to is dropped.
-      await Promise.all(
-        inputs.slice(1).map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)),
-      );
-      if (inputs[0]) downloaded.push({ ...inputs[0], sourceInstanceId: file.profile_id });
-    }
-  } catch (err) {
-    await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
-    throw err;
-  }
-  if (!downloaded.length) {
-    throw new HttpError(
-      400,
-      "Couldn't download this model's files from MakerOnline: the signed links may have run out. Try again from its page.",
-    );
-  }
-  return downloaded;
-}
-
-/** Like Snapmaker: a model is one print, each print profile its 3MF on a plate of its own, tagged with the profile,
- *  and a model without profiles brings its model files. The details come from MakerOnline's public API; the files
- *  only with links Grab signed (see grabImportService.ts). */
-async function importMakeronlineModel(
-  userId: string,
-  source: { provider: string; externalId: string },
-  body: ImportRequestBody,
-): Promise<ImportResult> {
-  if (!body.resolved_files?.length) throw new HttpError(409, MAKERONLINE_NEEDS_GRAB, MAKERONLINE_GRAB_CODE);
-  const resolved = await resolveMakeronlineModel(source.externalId);
-  if (!resolved) throw new HttpError(404, "This MakerOnline model could not be found, or isn't public.");
-  const downloaded = await downloadMakeronlineFiles(body.resolved_files);
-  return createSourcedPrint(
-    userId,
-    source,
-    body,
-    resolved,
-    downloaded,
-    `makeronline-${source.externalId}`,
-    profileDetailsOf(resolved.profiles),
-  );
-}
-
-/** Re-import of a MakerOnline model with print profiles it doesn't have yet: each becomes another plate. Anything
- *  else is already in the library, and needs no download. */
-async function addMakeronlineProfilesToPrint(
-  existing: ExistingImportedPrint,
-  body: ImportRequestBody,
-): Promise<ImportResult> {
-  const have = new Set(existing.plates.map((plate) => plate.sourceInstanceId));
-  const wanted = (body.resolved_files ?? []).filter((file) => file.profile_id && !have.has(file.profile_id));
-  if (!wanted.length) return { ...existing, alreadyImported: true };
-  const inputs = await downloadMakeronlineFiles(wanted);
-  // Its public details name and picture the profiles; without them the files still come in.
-  const model = await resolveMakeronlineModel(existing.print.sourceExternalId!).catch(() => null);
-  const details = model ? profileDetailsOf(model.profiles) : {};
-  let current: ExistingImportedPrint = existing;
-  let profileAdded = false;
-  try {
-    for (const input of inputs) {
-      const result = await addProfilePlateWithDetails(current, input, input.sourceInstanceId!, details);
-      profileAdded ||= Boolean(result.profileAdded);
-      current = result;
-    }
-  } finally {
-    for (const input of inputs) {
-      if (input.tempFilePath && fsSync.existsSync(input.tempFilePath)) {
-        await fs.rm(input.tempFilePath, { force: true }).catch(() => undefined);
-      }
-    }
-  }
-  return profileAdded ? { ...current, alreadyImported: false, profileAdded } : { ...current, alreadyImported: true };
-}
-
-type ImportResult = {
+export type ImportResult = {
   print: Print;
   plates: Plate[];
   author: Author | null;
@@ -2274,8 +1155,10 @@ export async function importPrintFromUrl(
 ): Promise<ImportResult> {
   const result = await importNewOrExisting(userId, url, body);
   // However it came in, nothing need wait for Grab to bring it.
-  if (!keepGrabImports && result.print.sourceProvider === "makeronline" && result.print.sourceExternalId) {
-    await clearGrabImports(userId, result.print.sourceExternalId).catch(() => undefined);
+  const provider = result.print.sourceProvider;
+  const grabQueue = isProviderId(provider) ? PROVIDERS[provider].grabQueue : undefined;
+  if (!keepGrabImports && grabQueue && result.print.sourceExternalId) {
+    await grabQueue.clear(userId, result.print.sourceExternalId).catch(() => undefined);
   }
   if (!result.alreadyImported && !result.profileAdded) {
     void recordActivity(userId, "import", result.print.id, result.print.name);
@@ -2284,9 +1167,6 @@ export async function importPrintFromUrl(
   }
   return result;
 }
-
-/** Providers whose re-import of a model may add a print profile, so fetches. */
-const PROFILE_PROVIDERS = new Set(["makerworld", "snapmaker", "makeronline", "crealitycloud", "nexprint"]);
 
 /** Refuses a link from a provider an admin turned off, unless it's a model the user already has (MakerWorld, Snapmaker,
  *  MakerOnline, Creality Cloud and NexPrint add a profile, so fetch). */
@@ -2303,44 +1183,29 @@ async function importNewOrExisting(userId: string, url: string, body: ImportRequ
   // also for imports queued, or started by Grab, before it was turned off.
   if (existing && !PROFILE_PROVIDERS.has(source!.provider)) return { ...existing, alreadyImported: true };
   await assertUrlProviderEnabled(url);
-  if (existing && source?.provider === "snapmaker") return addSnapmakerProfileToPrint(existing, url, body);
-  if (existing && source?.provider === "makeronline") return addMakeronlineProfilesToPrint(existing, body);
-  if (existing && source?.provider === "crealitycloud") return addCrealitycloudProfileToPrint(existing, url, body);
-  if (existing && source?.provider === "nexprint") return addNexprintProfileToPrint(existing, url, body);
+  const sourced = source && isProviderId(source.provider) ? PROVIDERS[source.provider].sourcedImport : undefined;
+  if (existing && sourced) return addSourcedProfile(existing, url, body, sourced);
+  if (sourced) return importSourced(userId, source!, url, body, sourced);
+  const custom = source && isProviderId(source.provider) ? PROVIDERS[source.provider].customImport : undefined;
+  if (existing && custom) return custom.addToExisting(existing, body, IMPORT_KIT);
+  if (custom) return custom.importModel(userId, source!, body, IMPORT_KIT);
+  // MakerWorld still imports here: its pages are what the link import below reads.
   if (existing) return addMakerworldProfileToPrint(existing, url, body);
+  return importLinkedFile(userId, url, source, body);
+}
 
-  if (source?.provider === "thingiverse") {
-    return importThingiverseThing(userId, source, body);
-  }
-  if (source?.provider === "printables") {
-    return importPrintablesModel(userId, source, body);
-  }
-  if (source?.provider === "myminifactory") {
-    return importMyminifactoryObject(userId, source, body);
-  }
-  if (source?.provider === "snapmaker") {
-    return importSnapmakerModel(userId, source, url, body);
-  }
-  if (source?.provider === "makeronline") {
-    return importMakeronlineModel(userId, source, body);
-  }
-  if (source?.provider === "crealitycloud") {
-    return importCrealitycloudModel(userId, source, url, body);
-  }
-  if (source?.provider === "nexprint") {
-    return importNexprintModel(userId, source, url, body);
-  }
-  if (source?.provider === "thangs") {
-    return importThangsModel(userId, source, body);
-  }
-  if (source?.provider === "cults3d") {
-    return importCults3dModel(userId, source, body);
-  }
-
+/** A link to a page or a file, imported as what it downloads to: a MakerWorld model page (its 3MF, or a zip of its
+ *  model files), or any other site's file. */
+async function importLinkedFile(
+  userId: string,
+  url: string,
+  source: { provider: string; externalId: string } | null,
+  body: ImportRequestBody,
+): Promise<ImportResult> {
   const { tempPath, filename, mime, meta } = await downloadImportToTemp(url, body);
   let plates: NewPlateInput[] = [];
   try {
-    plates = await makerworldZipPlates(source, tempPath, filename);
+    plates = await rawFilesZipPlates(source, tempPath, filename);
   } catch (err) {
     await fs.rm(tempPath, { force: true }).catch(() => undefined);
     throw err;
@@ -2396,14 +1261,16 @@ async function importNewOrExisting(userId: string, url: string, body: ImportRequ
   }
 }
 
-/** A MakerWorld zip -- the raw files of a model with no print profiles -- as its model files, one plate each, the zip
- *  itself removed. Empty for anything else, or a zip with no model file in it, which is kept as it came. */
-async function makerworldZipPlates(
+/** A zip of a model's raw files, from a provider whose links download them so (MakerWorld's, for a model with no print
+ *  profiles), as its model files, one plate each, the zip itself removed. Empty for anything else, or a zip with no
+ *  model file in it, which is kept as it came. */
+async function rawFilesZipPlates(
   source: { provider: string } | null,
   tempPath: string,
   filename: string,
 ): Promise<NewPlateInput[]> {
-  if (source?.provider !== "makerworld" || path.extname(filename).toLowerCase() !== ".zip") return [];
+  const zipOfFiles = source && isProviderId(source.provider) && manifestOf(source.provider).capabilities.rawFilesZip;
+  if (!zipOfFiles || path.extname(filename).toLowerCase() !== ".zip") return [];
   const plates = await modelFilesFromZip(tempPath);
   if (plates.length) await fs.rm(tempPath, { force: true }).catch(() => undefined);
   return plates;

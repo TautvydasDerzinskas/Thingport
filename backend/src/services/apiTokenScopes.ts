@@ -37,10 +37,15 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
       "/dashboard/top-viewed",
       "/dashboard/top-printed",
       "/dashboard/top-authors",
+      "/dashboard/recently-added",
       "/dashboard/featured",
       "/dashboard/weather",
       "/dashboard/weather/places",
       "/dashboard/weather/place-name",
+      "/dashboard/feeds",
+      "/dashboard/monitors",
+      "/dashboard/system",
+      "/dashboard/trending",
     ],
   },
   {
@@ -110,6 +115,8 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
       "/import/jobs/active",
       "/import/jobs/:id",
       "/import/jobs/:id/items",
+      // MakerOnline's imports waiting for Grab (providers/makeronline/routes.ts). Scopes are listed here, one place for
+      // every app that reads with a token, rather than by each provider.
       "/import/makeronline/waiting",
     ],
   },

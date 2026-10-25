@@ -1,5 +1,6 @@
 @use "../../styles/tokens" as t;
 @use "../../styles/mixins" as m;
+@use "../../styles/seasonal" as s;
 
 *,
 *::before,
@@ -26,6 +27,22 @@ body {
   align-items: center;
   gap: 10px;
   margin-bottom: 14px;
+
+  &--seasonal {
+    padding-top: 6px;
+  }
+
+  &__icon {
+    position: relative;
+    display: block;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+  }
+
+  &__season {
+    @include s.overlay;
+  }
 
   &__icon svg {
     display: block;
@@ -92,6 +109,11 @@ body {
     width: 14px;
     height: 14px;
   }
+
+  &--danger:hover {
+    background: t.c("danger-soft");
+    color: t.c("danger");
+  }
 }
 
 .section {
@@ -104,6 +126,14 @@ body {
     font-size: t.$font-size-sm;
     font-weight: 600;
     color: t.c("text-muted");
+  }
+
+  // A title with an action beside it.
+  &__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: t.$space-2;
   }
 }
 

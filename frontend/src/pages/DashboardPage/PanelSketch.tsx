@@ -5,7 +5,20 @@ import { MONO_FONT } from "./ClockCard";
 
 /** Which drawing a widget gets in the Panels picker: the shape of its real card, without its data. */
 export type PanelSketchKind =
-  "count" | "models" | "authors" | "providers" | "clock" | "weather" | "featured" | "heatmap";
+  | "count"
+  | "models"
+  | "authors"
+  | "providers"
+  | "clock"
+  | "weather"
+  | "featured"
+  | "heatmap"
+  | "rss"
+  | "cpu"
+  | "uptime"
+  | "launcher"
+  | "trending"
+  | "custom";
 
 const accent = (theme: Theme) => alpha(theme.palette.primary.main, 0.55);
 const ink = (theme: Theme) => alpha(theme.palette.text.primary, 0.16);
@@ -66,6 +79,8 @@ function Rows({ count, lead }: { count: number; lead: "thumb" | "avatar" | "chip
 
 // A fixed pattern, so the drawing doesn't change between renders. Levels 0-4, as the real heatmap's.
 const LEVELS = [0, 1, 0, 2, 3, 1, 0, 4, 2, 1, 0, 3];
+// The CPU panel's history line, as bar heights in percent.
+const LOAD = [30, 45, 38, 60, 52, 70, 48, 40, 55, 35, 42, 58];
 const HEAT = Array.from({ length: 60 }, (_, id) => ({
   id,
   level: LEVELS[(id * 5 + Math.floor(id / 5)) % LEVELS.length],
@@ -179,6 +194,119 @@ function sketchBody(kind: PanelSketchKind) {
             ))}
           </Box>
         </>
+      );
+    case "rss":
+      return (
+        <>
+          <Header />
+          <Box sx={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+            {[0, 1, 2].map((index) => (
+              <Box key={index} sx={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                <Bar width={`${80 - index * 12}%`} />
+                <Bar width="30%" height={3} fill={faint} />
+              </Box>
+            ))}
+          </Box>
+        </>
+      );
+    case "cpu":
+      return (
+        <Box sx={{ display: "flex", flexDirection: "column", flex: 1, gap: "4px" }}>
+          <Header />
+          <Bar width="34%" height={11} />
+          <Box sx={{ flex: 1, display: "flex", alignItems: "flex-end", gap: "2px" }}>
+            {LOAD.map((value, index) => (
+              <Box key={index} sx={{ flex: 1, height: `${value}%`, borderRadius: "1px", bgcolor: accent }} />
+            ))}
+          </Box>
+        </Box>
+      );
+    case "uptime":
+      return (
+        <>
+          <Header />
+          <Box sx={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+            {[true, true, false, true].map((up, index) => (
+              <Box key={index} sx={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                <Bar
+                  width="6px"
+                  height={6}
+                  round
+                  fill={(theme) => (up ? theme.palette.success.main : theme.palette.error.main)}
+                />
+                <Bar width={`${46 - (index % 3) * 8}%`} />
+                <Box sx={{ flex: 1 }} />
+                <Bar width="12%" height={3} fill={faint} />
+              </Box>
+            ))}
+          </Box>
+        </>
+      );
+    case "custom":
+      return (
+        <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {/* A jigsaw piece: something the user or the community made. */}
+          <Box
+            sx={{
+              width: 22,
+              height: 22,
+              borderRadius: "4px",
+              bgcolor: accent,
+              position: "relative",
+              "&::before, &::after": {
+                content: '""',
+                position: "absolute",
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                bgcolor: accent,
+              },
+              "&::before": { top: -4, left: 7 },
+              "&::after": { right: -4, top: 7 },
+            }}
+          />
+        </Box>
+      );
+    case "trending":
+      return (
+        <>
+          <Box sx={{ display: "flex", gap: "4px", mb: "5px" }}>
+            {[0, 1, 2].map((index) => (
+              <Box
+                key={index}
+                sx={(theme) => ({
+                  width: 9,
+                  height: 9,
+                  borderRadius: "50%",
+                  bgcolor: index === 0 ? accent(theme) : ink(theme),
+                  outline: index === 0 ? `1px solid ${theme.palette.primary.main}` : "none",
+                  outlineOffset: "1px",
+                })}
+              />
+            ))}
+          </Box>
+          <Rows count={3} lead="thumb" />
+        </>
+      );
+    case "launcher":
+      return (
+        <Box
+          sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6px", alignContent: "center", flex: 1 }}
+        >
+          {[0, 1, 2, 3, 4, 5, 6, 7].map((index) => (
+            <Box key={index} sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
+              <Box
+                sx={{
+                  width: 14,
+                  height: 14,
+                  borderRadius: "4px",
+                  bgcolor: index % 3 === 0 ? accent : ink,
+                }}
+              />
+              <Bar width="70%" height={2} fill={faint} />
+            </Box>
+          ))}
+        </Box>
       );
   }
 }

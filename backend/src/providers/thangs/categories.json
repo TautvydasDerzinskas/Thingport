@@ -1,0 +1,107 @@
+{
+  "3D Printer": ["3D Printer Parts & Accessories"],
+  "3D Printer/3D Printer Accessories": [
+    "3D Printer Parts & Accessories/Enclosures & Racks",
+    "3D Printer Parts & Accessories/Filament Management",
+    "3D Printer Parts & Accessories/Maintenance Tools",
+    "3D Printer Parts & Accessories/Print Bed Accessories"
+  ],
+  "3D Printer/3D Printer Parts": ["3D Printer Parts & Accessories/Printer Upgrades"],
+  "3D Printer/Test Models": ["3D Printer Parts & Accessories/Test Prints & Calibration"],
+  "Art": ["Art & Decor"],
+  "Art/2D Art": ["Art & Decor/Wall Art"],
+  "Art/Coin & Badges": ["Art & Decor/Trophies & Awards"],
+  "Art/Sculptures": ["Art & Decor/Sculptures & Statues", "Art & Decor/Busts"],
+  "Art/Other Art Models": ["Art & Decor/Textured & Patterned"],
+  "Education": ["Educational & Scientific"],
+  "Education/Biology": ["Educational & Scientific/Biology", "Educational & Scientific/Human Anatomy & Medical"],
+  "Education/Chemistry": ["Educational & Scientific/Chemistry"],
+  "Education/Geography": ["Educational & Scientific/Geology"],
+  "Education/Physics & Astronomy": ["Educational & Scientific/Physics", "Educational & Scientific/Astronomy"],
+  "Fashion": ["Fashion & Jewelry"],
+  "Fashion/Clothes": ["Fashion & Jewelry/Clothing"],
+  "Fashion/Earrings": ["Fashion & Jewelry/Earrings"],
+  "Fashion/Jewelry": [
+    "Fashion & Jewelry/Necklaces",
+    "Fashion & Jewelry/Bracelets",
+    "Fashion & Jewelry/Jewelry Storage"
+  ],
+  "Fashion/Rings": ["Fashion & Jewelry/Rings"],
+  "Fashion/Other Fashion Models": ["Fashion & Jewelry/Accessories"],
+  "Hobby & DIY": ["Hobby & DIY"],
+  "Hobby & DIY/Electronics": ["Hobby & DIY/Electronics"],
+  "Hobby & DIY/Music": ["Hobby & DIY/Music & Audio"],
+  "Hobby & DIY/RC": ["Hobby & DIY/RC"],
+  "Hobby & DIY/Robotics": ["Hobby & DIY/Robotics"],
+  "Hobby & DIY/Sport & Outdoors": ["Hobby & DIY/Outdoor", "Health & Fitness/Sports"],
+  "Hobby & DIY/Vehicles": ["Hobby & DIY/Automotive"],
+  "Hobby & DIY/Other Hobby & DIY": ["Hobby & DIY/Baking and Cooking", "Hobby & DIY/Photography & Video"],
+  "Household": ["Home & Garden"],
+  "Household/Decor": [
+    "Home & Garden/Home Decor & Accessories",
+    "Home & Garden/Living Room",
+    "Home & Garden/Bedroom",
+    "Art & Decor/Lamps & Lighting",
+    "Art & Decor/Vases & Planters"
+  ],
+  "Household/Festivities": [
+    "Seasonal",
+    "Seasonal/Beach & Summer",
+    "Seasonal/Easter & Spring",
+    "Seasonal/Halloween & Fall",
+    "Seasonal/Holidays & Winter"
+  ],
+  "Household/Garden": ["Home & Garden/Outdoor & Garden"],
+  "Household/Office": ["Tools & Organizers/Office & Desk"],
+  "Household/Pets": ["Home & Garden/Pet Accessories"],
+  "Household/Other Household Models": [
+    "Home & Garden/Bathroom",
+    "Home & Garden/Kitchen & Dining",
+    "Health & Fitness",
+    "Health & Fitness/Wellness",
+    "Health & Fitness/Accessibility"
+  ],
+  "Miniatures": ["Miniatures & Tabletop"],
+  "Miniatures/Architecture": ["Miniatures & Tabletop/Dioramas & Scenery"],
+  "Miniatures/Creatures": ["Miniatures & Tabletop/Fantasy Miniatures"],
+  "Miniatures/Other Miniatures": [
+    "Miniatures & Tabletop/Sci-Fi Miniatures",
+    "Miniatures & Tabletop/War & Tactics",
+    "Miniatures & Tabletop/Naval",
+    "Miniatures & Tabletop/Airplanes",
+    "Miniatures & Tabletop/Trains",
+    "Miniatures & Tabletop/Vehicles",
+    "Miniatures & Tabletop/Accessories"
+  ],
+  "Props & Cosplays": ["Costumes & Cosplay"],
+  "Props & Cosplays/Costumes": ["Costumes & Cosplay/Full Outfits", "Costumes & Cosplay/Character Specific"],
+  "Props & Cosplays/Masks & Helmets": ["Costumes & Cosplay/Masks & Helmets"],
+  "Props & Cosplays/Cosplay Weapons": ["Costumes & Cosplay/Armor & Props"],
+  "Props & Cosplays/Other Props & Cosplays": ["Costumes & Cosplay/Accessories"],
+  "Tools": ["Tools & Organizers", "Functional Prints"],
+  "Tools/Hand Tools": ["Tools & Organizers/Utility & Tools", "Functional Prints/Tools"],
+  "Tools/Machine Tools": ["Functional Prints/Jigs & Fixtures"],
+  "Tools/Organizers": [
+    "Tools & Organizers/Gridfinity",
+    "Tools & Organizers/Multiboard",
+    "Tools & Organizers/Storage Solutions",
+    "Tools & Organizers/Shop & Garage"
+  ],
+  "Tools/Other Tools": [
+    "Functional Prints/Mechanical Parts",
+    "Functional Prints/Replacement Parts",
+    "Functional Prints/Customizable"
+  ],
+  "Toys & Games": ["Toys & Games"],
+  "Toys & Games/Board Games": ["Toys & Games/Board Game Accessories"],
+  "Toys & Games/Characters": ["Toys & Games/Action Figures & Collectibles", "Toys & Games/Articulated"],
+  "Toys & Games/Outdoor Toys": ["Toys & Games/Outdoor Toys"],
+  "Toys & Games/Puzzles": ["Toys & Games/Puzzles"],
+  "Toys & Games/Other Toys & Games": [
+    "Toys & Games/Educational Toys",
+    "Toys & Games/Fidget Toys",
+    "Toys & Games/Keychains",
+    "Toys & Games/Video Games"
+  ],
+  "Generative 3D Model/Hueforge & Lithophane": ["Art & Decor/Hueforge", "Art & Decor/Lithophanes"]
+}

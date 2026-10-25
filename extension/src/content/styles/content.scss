@@ -1,6 +1,6 @@
 // Everything the content script draws, compiled into one string and injected into its shadow root
-// (see shell.ts) -- it never touches, and isn't touched by, the provider page's own styles. Always
-// the light palette: it floats over provider pages of either scheme, and matches their own panels.
+// (see shell.ts) -- it never touches, and isn't touched by, the provider page's own styles. Follows
+// the browser/OS color scheme, like the popup.
 @use "../../styles/tokens" as t;
 @use "fab";
 @use "panel";
@@ -10,5 +10,11 @@
 @use "modal";
 
 :host {
-  @include t.theme-vars(t.$palette-light);
+  color-scheme: light dark;
+  @include t.themed;
+}
+
+// The icon's hexagon outline is near-black in the source SVG: follow the text color, so it shows on dark.
+svg [stroke="#1f1f1f"] {
+  stroke: t.c("text");
 }

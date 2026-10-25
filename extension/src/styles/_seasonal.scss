@@ -1,0 +1,9 @@
+// The icon's seasonal edition (shared/seasonalMark.ts), laid over the icon in the popup and the floating icon. Its
+// box is set inline from SEASONAL_PLACEMENT; the icon's wrapper is what it's placed against.
+
+@mixin overlay {
+  position: absolute;
+  max-width: none;
+  pointer-events: none;
+  user-select: none;
+}

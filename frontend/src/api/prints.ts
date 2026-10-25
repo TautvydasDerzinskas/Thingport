@@ -1,4 +1,4 @@
-import { appendTokenToUrl, authHeaders } from "../utils/auth";
+import { appendTokenToUrl, authHeaders, readToken } from "../utils/auth";
 import { apiBase, assertOk, readErrorMessage, LastPlateError, UnauthorizedError } from "./client";
 
 export type PreparedPrint = {
@@ -198,6 +198,14 @@ export const printsApi = {
   fileUrl: (rel: string) => {
     if (!rel) return rel;
     return appendTokenToUrl(`${apiBase()}${rel}`);
+  },
+
+  /** An absolute file URL for a slicer to download, with the session in the path rather than `?token=`: OrcaSlicer
+   *  and its forks name the file after everything past the last slash, query string included. */
+  slicerFileUrl: (rel: string) => {
+    const token = readToken();
+    const path = token ? `${apiBase()}/t/${encodeURIComponent(token)}${rel}` : `${apiBase()}${rel}`;
+    return new URL(path, window.location.origin).toString();
   },
 
   list: async (
@@ -542,6 +550,34 @@ export const printsApi = {
       prints.push(...((await res.json()) as { prints: Print[] }).prints);
     }
     return prints;
+  },
+
+  /** Adds `add` to and takes `remove` off every model; answers the models and how many changed. A batch failing
+   *  after an earlier one went through answers what did, with `partial` set, so the grid isn't left stale. */
+  bulkEditTags: async (
+    ids: string[],
+    tags: { add: string[]; remove: string[] },
+  ): Promise<{ prints: Print[]; changed: number; partial: boolean }> => {
+    const result = { prints: [] as Print[], changed: 0, partial: false };
+    for (const chunk of bulkChunks(ids)) {
+      try {
+        const res = await fetch(`${apiBase()}/prints/tags`, {
+          method: "POST",
+          headers: authHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ print_ids: chunk, ...tags }),
+        });
+        if (res.status === 401) throw new UnauthorizedError();
+        if (!res.ok) throw new Error(await readErrorMessage(res, "Tag update failed"));
+        const part = (await res.json()) as { prints: Print[]; changed: number };
+        result.prints.push(...part.prints);
+        result.changed += part.changed;
+      } catch (err) {
+        if (!result.prints.length || err instanceof UnauthorizedError) throw err;
+        console.error(err);
+        return { ...result, partial: true };
+      }
+    }
+    return result;
   },
 
   updateCategory: async (id: string, category_id: string | null) => {

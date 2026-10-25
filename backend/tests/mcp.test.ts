@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
+import sharp from "sharp";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { DEFAULT_MCP_TOOL_NAMES, MCP_TOOLS, mcpImportTiming } from "../src/mcp/tools";
@@ -12,6 +13,10 @@ import { setMcpAccess } from "../src/services/settingsService";
 // reads the token owner's own library.
 
 const app = createApp();
+
+// The write tools a new token gets without asking; every other default only reads.
+const DEFAULT_ON_WRITES = ["save_widget", "upload_icon"];
+const READ_TOOL_NAMES = MCP_TOOLS.filter((tool) => tool.readOnly).map((tool) => tool.name);
 
 type Account = { session: string; userId: string; token: string };
 
@@ -164,10 +169,12 @@ describe("/api/mcp authentication", () => {
 });
 
 describe("choosing a token's tools", () => {
-  it("gives a new token every read-only tool, all marked read-only", async () => {
+  it("gives a new token every read-only tool, and the write tools that are on by default", async () => {
     expect(await toolNames(alice.token)).toEqual([...DEFAULT_MCP_TOOL_NAMES].toSorted());
     const res = await mcp(alice.token, "tools/list");
-    for (const tool of res.body.result.tools) expect(tool.annotations.readOnlyHint).toBe(true);
+    for (const tool of res.body.result.tools) {
+      expect(tool.annotations.readOnlyHint).toBe(!DEFAULT_ON_WRITES.includes(tool.name));
+    }
   });
 
   it("offers only the tools the token was given, and refuses a call to any other", async () => {
@@ -240,9 +247,10 @@ describe("choosing a token's tools", () => {
   });
 
   it("only ever ships tools that say whether they write", () => {
-    // A write tool must not slip into the default set.
+    // A write tool must not slip into the default set unless it's marked defaultOn.
     for (const tool of MCP_TOOLS) expect(typeof tool.readOnly).toBe("boolean");
-    expect(DEFAULT_MCP_TOOL_NAMES.every((name) => MCP_TOOLS.find((t) => t.name === name)?.readOnly)).toBe(true);
+    const writes = DEFAULT_MCP_TOOL_NAMES.filter((name) => !MCP_TOOLS.find((t) => t.name === name)?.readOnly);
+    expect(writes.toSorted()).toEqual([...DEFAULT_ON_WRITES].toSorted());
   });
 });
 
@@ -342,6 +350,26 @@ describe("the tools", () => {
     expect(stats.data.collection_count).toBe(1);
   });
 
+  it("list_model_files lists a model's files, and get_model_file returns one", async () => {
+    const { data } = await callTool(alice.token, "list_model_files", { model_id: dragonId });
+    expect(data.files).toEqual([
+      expect.objectContaining({ name: "dragon.stl", kind: "plate", size_bytes: expect.any(Number) }),
+    ]);
+    // Reachable without a public address too.
+    expect(data.files[0].api_path).toBe(`/api/print/${dragonId}/plate/${data.files[0].id}/file/dragon.stl`);
+    const file = await callTool(alice.token, "get_model_file", { model_id: dragonId, file_id: data.files[0].id });
+    expect(Buffer.from(file.data.base64, "base64").toString()).toBe("solid dragon.stl\nendsolid dragon.stl\n");
+  });
+
+  it("get_model_file won't read another user's model, nor a file of another model", async () => {
+    const theirs = await callTool(alice.token, "list_model_files", { model_id: bobSecretId });
+    expect(theirs.isError).toBe(true);
+    const bobFiles = (await callTool(bob.token, "list_model_files", { model_id: bobSecretId })).data.files;
+    const crossed = await callTool(alice.token, "get_model_file", { model_id: dragonId, file_id: bobFiles[0].id });
+    expect(crossed.isError).toBe(true);
+    expect(crossed.text).not.toContain("solid");
+  });
+
   it("get_author says not found for an unknown author", async () => {
     const result = await callTool(alice.token, "get_author", { id: "no-such-author" });
     expect(result.isError).toBe(true);
@@ -349,7 +377,30 @@ describe("the tools", () => {
 });
 
 describe("the tools that write", () => {
-  const WRITE_TOOLS = ["import_model", "create_collection", "add_to_collection"];
+  const WRITE_TOOLS = [
+    "import_model",
+    "upload_model",
+    "edit_model",
+    "edit_model_images",
+    "add_model_files",
+    "remove_model_file",
+    "rename_model_file",
+    "delete_model",
+    "create_category",
+    "create_collection",
+    "add_to_collection",
+    "remove_from_collection",
+  ];
+  // The ones that change or remove what's there rather than only add, so an assistant's client can ask first.
+  const DESTRUCTIVE_TOOLS = [
+    "edit_model",
+    "edit_model_images",
+    "add_model_files",
+    "remove_model_file",
+    "rename_model_file",
+    "delete_model",
+    "remove_from_collection",
+  ];
   // A public IP literal passes the SSRF check without a DNS lookup; fetch is mocked below.
   const FILE_URL = "https://93.184.215.14/files/mcp-imported-widget.stl";
   let writer: Account;
@@ -381,7 +432,7 @@ describe("the tools that write", () => {
     }[];
     for (const tool of listed.filter((t) => WRITE_TOOLS.includes(t.name))) {
       expect(tool.annotations.readOnlyHint).toBe(false);
-      expect(tool.annotations.destructiveHint).toBe(false);
+      expect(tool.annotations.destructiveHint).toBe(DESTRUCTIVE_TOOLS.includes(tool.name));
     }
   });
 
@@ -552,6 +603,349 @@ describe("the tools that write", () => {
     }
   });
 
+  it("upload_model makes one model from the files, with its pictures and collection", async () => {
+    const { data: collection } = await callTool(writer.token, "create_collection", { name: "Uploaded here" });
+    const png = await sharp({ create: { width: 8, height: 8, channels: 3, background: "#3366cc" } })
+      .png()
+      .toBuffer();
+    const b64 = (text: string) => Buffer.from(text).toString("base64");
+    const result = await callTool(writer.token, "upload_model", {
+      title: "Stringing test",
+      description: "0.2 mm layers, PLA.",
+      tags: ["calibration"],
+      collection_id: collection.id,
+      files: [
+        { name: "stringing.stl", base64: b64("solid s\nendsolid s\n") },
+        { name: "settings.txt", base64: b64("retraction 0.8 mm") },
+      ],
+      images: [png.toString("base64"), b64("not an image")],
+    });
+    expect(result.isError).toBe(false);
+    expect(result.data.model.title).toBe("Stringing test");
+    expect(result.data.images_added).toBe(1);
+    expect(result.data.images_skipped).toBe(1);
+    expect(result.data.collection).toEqual({ id: collection.id, name: "Uploaded here" });
+
+    const print = await prisma.print.findUniqueOrThrow({
+      where: { id: result.data.model.id },
+      include: { plates: true, files: true },
+    });
+    expect(print.userId).toBe(writer.userId);
+    expect(print.notes).toBe("0.2 mm layers, PLA.");
+    expect(print.plates.map((p) => p.filename)).toEqual(["stringing.stl"]);
+    expect(print.files.map((f) => [f.filename, f.role])).toEqual([["settings.txt", "SUPPORTING"]]);
+    expect(await prisma.previewImage.count({ where: { printId: print.id } })).toBeGreaterThanOrEqual(1);
+    expect(await prisma.collectionItem.count({ where: { collectionId: collection.id, printId: print.id } })).toBe(1);
+    // The same trail as + Add > Upload.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(
+      await prisma.log.count({ where: { userId: writer.userId, action: "model_uploaded", targetId: print.id } }),
+    ).toBe(1);
+
+    // Both files read back with the file tools.
+    const { data: listed } = await callTool(writer.token, "list_model_files", { model_id: print.id });
+    expect(listed.files.map((f: { name: string; kind: string }) => [f.name, f.kind])).toEqual([
+      ["stringing.stl", "plate"],
+      ["settings.txt", "supporting"],
+    ]);
+  });
+
+  it("upload_model checks the collection and category before storing anything", async () => {
+    const before = await prisma.print.count({ where: { userId: writer.userId } });
+    const files = [{ name: "x.stl", base64: Buffer.from("solid x\nendsolid x\n").toString("base64") }];
+    const theirs = await callTool(writer.token, "upload_model", { files, collection_id: bobCollectionId });
+    expect(theirs.isError).toBe(true);
+    const bobCategory = await prisma.category.findFirstOrThrow({ where: { userId: bob.userId } });
+    const category = await callTool(writer.token, "upload_model", { files, category_id: bobCategory.id });
+    expect(category.isError).toBe(true);
+    expect(category.text).toMatch(/category not found/i);
+    expect(await prisma.print.count({ where: { userId: writer.userId } })).toBe(before);
+  });
+
+  it("upload_model refuses a file that isn't base64", async () => {
+    const before = await prisma.print.count({ where: { userId: writer.userId } });
+    for (const base64 of ["!!!", `${Buffer.from("solid x\nendsolid x\n").toString("base64")}!!!`]) {
+      const result = await callTool(writer.token, "upload_model", { files: [{ name: "x.stl", base64 }] });
+      expect(result.isError).toBe(true);
+      expect(result.text).toMatch(/base64/);
+    }
+    expect(await prisma.print.count({ where: { userId: writer.userId } })).toBe(before);
+  });
+
+  const b64 = (text: string) => Buffer.from(text).toString("base64");
+  const png = (background: string) =>
+    sharp({ create: { width: 8, height: 8, channels: 3, background } })
+      .png()
+      .toBuffer()
+      .then((buffer) => buffer.toString("base64"));
+
+  it("edit_model changes only what it's given, and files the model in a new category", async () => {
+    const id = await upload(writer.session, "bracket.stl");
+    await prisma.print.update({ where: { id }, data: { tags: ["Old", "Keep"] } });
+    const { data: category } = await callTool(writer.token, "create_category", { name: "MCP Brackets" });
+    expect(category).toMatchObject({ name: "MCP Brackets", parent_id: null, kind: "folder" });
+
+    const result = await callTool(writer.token, "edit_model", {
+      model_id: id,
+      title: "Shelf bracket",
+      description: "Print on its side.",
+      add_tags: ["brand-new-tag"],
+      remove_tags: ["old"],
+      category_id: category.id,
+      favorite: true,
+    });
+    expect(result.isError).toBe(false);
+    expect(result.data.changed).toEqual(["title", "description", "tags", "category", "favorite"]);
+    const print = await prisma.print.findUniqueOrThrow({ where: { id } });
+    expect(print).toMatchObject({ title: "Shelf bracket", notes: "Print on its side.", categoryId: category.id });
+    expect(print.tags).toEqual(["Keep", "Brand-new-tag"]);
+    expect(print.favoritedAt).not.toBeNull();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(await prisma.log.count({ where: { userId: writer.userId, action: "model_edited", targetId: id } })).toBe(3);
+
+    // Asked again, nothing changes.
+    const again = await callTool(writer.token, "edit_model", {
+      model_id: id,
+      favorite: true,
+      category_id: category.id,
+    });
+    expect(again.data.changed).toEqual([]);
+    const cleared = await callTool(writer.token, "edit_model", { model_id: id, category_id: null, tags: [] });
+    expect(cleared.data.changed).toEqual(["tags", "category"]);
+    expect(await prisma.print.findUniqueOrThrow({ where: { id } })).toMatchObject({ categoryId: null, tags: [] });
+  });
+
+  it("edit_model moves and renames in one go, to a name taken only where the model was", async () => {
+    await upload(writer.session, "clip.stl");
+    const id = await upload(writer.session, "clip-v2.stl");
+    const { data: category } = await callTool(writer.token, "create_category", { name: "MCP Clips" });
+    const result = await callTool(writer.token, "edit_model", {
+      model_id: id,
+      title: "clip",
+      category_id: category.id,
+    });
+    expect(result.isError).toBe(false);
+    expect(result.data.changed).toEqual(["title", "category"]);
+    const print = await prisma.print.findUniqueOrThrow({ where: { id } });
+    expect(print).toMatchObject({ name: "clip", categoryId: category.id, categorySource: "MANUAL" });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const fields = await prisma.log.findMany({
+      where: { action: "model_edited", targetId: id },
+      select: { details: true },
+    });
+    expect(fields.map((log) => (log.details as { field: string }).field).toSorted()).toEqual(["category", "meta"]);
+  });
+
+  it("edit_model checks the name and category before changing anything", async () => {
+    const id = await upload(writer.session, "hinge.stl");
+    await upload(writer.session, "taken.stl");
+    const taken = await callTool(writer.token, "edit_model", { model_id: id, title: "taken", description: "x" });
+    expect(taken.isError).toBe(true);
+    expect(taken.text).toMatch(/already exists/);
+    const bobCategory = await prisma.category.findFirstOrThrow({ where: { userId: bob.userId } });
+    const theirs = await callTool(writer.token, "edit_model", {
+      model_id: id,
+      category_id: bobCategory.id,
+      tags: ["x"],
+    });
+    expect(theirs.isError).toBe(true);
+    expect(await prisma.print.findUniqueOrThrow({ where: { id } })).toMatchObject({ notes: null, tags: [] });
+
+    expect((await callTool(writer.token, "edit_model", { model_id: id })).text).toMatch(/nothing to change/i);
+    const bobs = await callTool(writer.token, "edit_model", { model_id: bobSecretId, title: "Mine now" });
+    expect(bobs.isError).toBe(true);
+    expect((await prisma.print.findUniqueOrThrow({ where: { id: bobSecretId } })).title).toBe("Bob's Secret Dragon");
+  });
+
+  it("edit_model_images adds, orders and removes a model's pictures", async () => {
+    const id = await upload(writer.session, "vase.stl");
+    const first = await callTool(writer.token, "edit_model_images", {
+      model_id: id,
+      add: [await png("#cc3333"), await png("#33cc33"), b64("not an image")],
+    });
+    expect(first.data).toMatchObject({ added: 2, skipped: 1, removed: 0 });
+    const [red, green] = first.data.images.map((image: { id: string }) => image.id);
+    expect(first.data.images.map((image: { cover: boolean }) => image.cover)).toEqual([true, false]);
+
+    const { data: listed } = await callTool(writer.token, "list_model_images", { model_id: id });
+    expect(listed.images.map((image: { id: string }) => image.id)).toEqual([red, green]);
+    expect(listed.images[0].api_path).toBe(`/api/preview-image/${red}/file.jpg`);
+
+    const reordered = await callTool(writer.token, "edit_model_images", { model_id: id, order: [green] });
+    expect(reordered.data.images.map((image: { id: string }) => image.id)).toEqual([green, red]);
+
+    const blueFirst = await callTool(writer.token, "edit_model_images", {
+      model_id: id,
+      add: [await png("#3333cc")],
+      added_first: true,
+      remove: [green],
+    });
+    const ids = blueFirst.data.images.map((image: { id: string }) => image.id);
+    expect(ids).toHaveLength(2);
+    expect(ids[1]).toBe(red);
+    expect(await prisma.previewImage.count({ where: { id: green } })).toBe(0);
+  });
+
+  it("edit_model_images checks every id before changing anything", async () => {
+    const id = await upload(writer.session, "lamp.stl");
+    const { data } = await callTool(writer.token, "edit_model_images", { model_id: id, add: [await png("#cccc33")] });
+    const bobImage = await prisma.previewImage.create({ data: { printId: bobSecretId, position: 99 } });
+    const result = await callTool(writer.token, "edit_model_images", {
+      model_id: id,
+      remove: [data.images[0].id, bobImage.id],
+    });
+    expect(result.isError).toBe(true);
+    expect(await prisma.previewImage.count({ where: { id: { in: [data.images[0].id, bobImage.id] } } })).toBe(2);
+    expect((await callTool(writer.token, "list_model_images", { model_id: bobSecretId })).isError).toBe(true);
+
+    // A repeated id in the order is refused before the new picture is kept.
+    const pictureId = data.images[0].id;
+    const before = await prisma.previewImage.findMany({ where: { printId: id }, select: { id: true } });
+    const repeated = await callTool(writer.token, "edit_model_images", {
+      model_id: id,
+      add: [await png("#33cc33")],
+      order: [pictureId, pictureId],
+    });
+    expect(repeated.isError).toBe(true);
+    expect(await prisma.previewImage.findMany({ where: { printId: id }, select: { id: true } })).toEqual(before);
+  });
+
+  it("add_model_files adds plates and supporting files, and remove_model_file takes them off", async () => {
+    const id = await upload(writer.session, "gear.stl");
+    const added = await callTool(writer.token, "add_model_files", {
+      model_id: id,
+      files: [
+        { name: "gear-v2.stl", base64: b64("solid v2\nendsolid v2\n") },
+        { name: "notes.txt", base64: b64("print at 0.12 mm") },
+        { name: "spare.stl", base64: b64("solid s\nendsolid s\n"), kind: "supporting" },
+      ],
+    });
+    expect(added.isError).toBe(false);
+    expect(added.data).toMatchObject({ plates_added: 1, files_added: 2 });
+    const kinds = (files: { name: string; kind: string }[]) => files.map((f) => [f.name, f.kind]);
+    expect(kinds(added.data.files)).toEqual([
+      ["gear.stl", "plate"],
+      ["gear-v2.stl", "plate"],
+      ["notes.txt", "supporting"],
+      ["spare.stl", "supporting"],
+    ]);
+
+    const byName = (name: string) => added.data.files.find((f: { name: string }) => f.name === name).id;
+    const notes = await callTool(writer.token, "remove_model_file", { model_id: id, file_id: byName("notes.txt") });
+    expect(notes.data.removed).toMatchObject({ name: "notes.txt", kind: "supporting" });
+    const plate = await callTool(writer.token, "remove_model_file", { model_id: id, file_id: byName("gear.stl") });
+    expect(kinds(plate.data.files)).toEqual([
+      ["gear-v2.stl", "plate"],
+      ["spare.stl", "supporting"],
+    ]);
+    const last = await callTool(writer.token, "remove_model_file", { model_id: id, file_id: byName("gear-v2.stl") });
+    expect(last.isError).toBe(true);
+    expect(last.text).toMatch(/only plate/);
+  });
+
+  it("add_model_files and remove_model_file won't touch another user's model", async () => {
+    const files = [{ name: "x.stl", base64: b64("solid x\nendsolid x\n") }];
+    expect((await callTool(writer.token, "add_model_files", { model_id: bobSecretId, files })).isError).toBe(true);
+    const bobFiles = (await callTool(bob.token, "list_model_files", { model_id: bobSecretId })).data.files;
+    const removed = await callTool(writer.token, "remove_model_file", {
+      model_id: bobSecretId,
+      file_id: bobFiles[0].id,
+    });
+    expect(removed.isError).toBe(true);
+    expect(await prisma.plate.count({ where: { printId: bobSecretId } })).toBe(1);
+  });
+
+  it("list_model_images shows the pictures themselves when asked", async () => {
+    const id = await upload(writer.session, "statue.stl");
+    await callTool(writer.token, "edit_model_images", {
+      model_id: id,
+      add: [await png("#cc33cc"), await png("#33cccc")],
+    });
+    const res = await mcp(writer.token, "tools/call", {
+      name: "list_model_images",
+      arguments: { model_id: id, include_pictures: true },
+    });
+    const content = res.body.result.content as { type: string; text: string; mimeType?: string; data?: string }[];
+    expect(JSON.parse(content[0].text).pictures_shown).toBe(2);
+    expect(content.slice(1).map((c) => [c.type, c.mimeType])).toEqual([
+      ["image", "image/jpeg"],
+      ["image", "image/jpeg"],
+    ]);
+    const meta = await sharp(Buffer.from(content[1].data!, "base64")).metadata();
+    expect(meta.format).toBe("jpeg");
+
+    // Without it, only the list.
+    const plain = await mcp(writer.token, "tools/call", { name: "list_model_images", arguments: { model_id: id } });
+    expect(plain.body.result.content).toHaveLength(1);
+  });
+
+  it("rename_model_file renames a plate, and only a plate", async () => {
+    const id = await upload(writer.session, "arm.stl");
+    const { data } = await callTool(writer.token, "add_model_files", {
+      model_id: id,
+      files: [
+        { name: "arm-left.stl", base64: b64("solid l\nendsolid l\n") },
+        { name: "readme.txt", base64: b64("hi") },
+      ],
+    });
+    const byName = (name: string) => data.files.find((f: { name: string }) => f.name === name).id;
+    const renamed = await callTool(writer.token, "rename_model_file", {
+      model_id: id,
+      file_id: byName("arm.stl"),
+      name: "arm-right.stl",
+    });
+    expect(renamed.data).toEqual({ id: byName("arm.stl"), name: "arm-right.stl", previous_name: "arm.stl" });
+    const clash = await callTool(writer.token, "rename_model_file", {
+      model_id: id,
+      file_id: byName("arm-left.stl"),
+      name: "arm-right.stl",
+    });
+    expect(clash.data.name).toBe("arm-right (2).stl");
+    const readme = await callTool(writer.token, "rename_model_file", {
+      model_id: id,
+      file_id: byName("readme.txt"),
+      name: "x.txt",
+    });
+    expect(readme.text).toMatch(/only a plate/i);
+  });
+
+  it("delete_model deletes the user's own model, and only theirs", async () => {
+    const id = await upload(writer.session, "doomed.stl");
+    const result = await callTool(writer.token, "delete_model", { model_id: id });
+    expect(result.data.deleted.id).toBe(id);
+    expect(await prisma.print.count({ where: { id } })).toBe(0);
+    expect(await prisma.plate.count({ where: { printId: id } })).toBe(0);
+    expect((await callTool(writer.token, "delete_model", { model_id: id })).isError).toBe(true);
+    expect((await callTool(writer.token, "delete_model", { model_id: bobSecretId })).isError).toBe(true);
+    expect(await prisma.print.count({ where: { id: bobSecretId } })).toBe(1);
+  });
+
+  it("remove_from_collection takes models out, leaving them in the library", async () => {
+    const id = await upload(writer.session, "shelved.stl");
+    const other = await upload(writer.session, "unshelved.stl");
+    const { data: collection } = await callTool(writer.token, "create_collection", { name: "To trim" });
+    await callTool(writer.token, "add_to_collection", { collection_id: collection.id, model_ids: [id] });
+    const result = await callTool(writer.token, "remove_from_collection", {
+      collection_id: collection.id,
+      model_ids: [id, other, bobSecretId],
+    });
+    expect(result.data.removed).toEqual([id]);
+    expect(result.data.not_in_it).toEqual([other, bobSecretId]);
+    expect(await prisma.collectionItem.count({ where: { collectionId: collection.id } })).toBe(0);
+    expect(await prisma.print.count({ where: { id } })).toBe(1);
+
+    const theirs = await callTool(writer.token, "remove_from_collection", {
+      collection_id: bobCollectionId,
+      model_ids: [id],
+    });
+    expect(theirs.isError).toBe(true);
+    const builtIn = await callTool(writer.token, "remove_from_collection", {
+      collection_id: "favorites",
+      model_ids: [id],
+    });
+    expect(builtIn.isError).toBe(true);
+  });
+
   it("get_import_status says when it doesn't know the import", async () => {
     const unknown = await callTool(writer.token, "get_import_status", { task_id: "no-such-task" });
     expect(unknown.isError).toBe(true);
@@ -559,7 +953,7 @@ describe("the tools that write", () => {
 });
 
 describe("the instance's MCP access", () => {
-  const WRITE_TOOLS = ["import_model", "create_collection", "add_to_collection"];
+  const WRITE_TOOLS = ["import_model", "upload_model", "create_collection", "add_to_collection"];
   let writer: Account;
 
   beforeAll(async () => {
@@ -596,7 +990,7 @@ describe("the instance's MCP access", () => {
 
   it("read only, hides the write tools without forgetting them", async () => {
     await setMcpAccess("read");
-    expect(await toolNames(writer.token)).toEqual([...DEFAULT_MCP_TOOL_NAMES].toSorted());
+    expect(await toolNames(writer.token)).toEqual([...READ_TOOL_NAMES].toSorted());
     const call = await mcp(writer.token, "tools/call", { name: "create_collection", arguments: { name: "Nope" } });
     expect(call.body.error ?? (call.body.result?.isError ? call.body.result : null)).toBeTruthy();
 
@@ -613,7 +1007,7 @@ describe("the instance's MCP access", () => {
     const kept = await request(app)
       .put("/api/profile/api-token/mcp-tools")
       .set(auth(writer.session))
-      .send({ mcp_tools: DEFAULT_MCP_TOOL_NAMES.filter((name) => name !== "library_stats") });
+      .send({ mcp_tools: READ_TOOL_NAMES.filter((name) => name !== "library_stats") });
     expect(kept.status).toBe(200);
     expect(kept.body.mcp_tools).toEqual(expect.arrayContaining(WRITE_TOOLS));
 

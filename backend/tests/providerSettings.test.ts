@@ -4,7 +4,7 @@ import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { setProviderEnabled } from "../src/services/providerSettingsService";
 import { runAuthorLinking, type AuthorLinkingRun } from "../src/services/authorLinkingService";
-import { getThingiverseAccessToken, setThingiverseAccessToken } from "../src/services/settingsService";
+import { getThingiverseAccessToken, setThingiverseAccessToken } from "../src/providers/thingiverse/token";
 
 const app = createApp();
 let admin: string;
@@ -41,6 +41,8 @@ afterAll(async () => {
     "nexprint",
     "thangs",
     "cults3d",
+    "eufymake",
+    "pinshape",
   ] as const)
     await setProviderEnabled(provider, true);
 });
@@ -60,6 +62,8 @@ describe("turning providers off", () => {
       nexprint: true,
       thangs: true,
       cults3d: true,
+      eufymake: true,
+      pinshape: true,
     });
 
     expect(
@@ -82,6 +86,8 @@ describe("turning providers off", () => {
       nexprint: true,
       thangs: true,
       cults3d: true,
+      eufymake: true,
+      pinshape: true,
     });
   });
 

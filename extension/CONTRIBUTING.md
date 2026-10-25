@@ -37,6 +37,10 @@ src/
                 Download normalized button (makerworld/)
     styles/     its SCSS, compiled into the bundle and injected into its shadow root
   normalizer/   the Bambu 3MF normalizer and the worker that runs it
+  providers/    each provider's own code in <id>/, beside the copies of its manifest and links
+                (*.generated.ts), and the tables that wire them in (content, sessions, accounts,
+                background); Thingiverse's dark mode and hidden ads are thingiverse/index.ts, a
+                second content script that runs at document_start
   popup/        toolbar popup (popup.html, its script and styles/)
   styles/       SCSS design tokens and mixins shared by the popup and the content UI
   assets/       the Thingport icon SVG (inlined into the bundles)
@@ -48,6 +52,13 @@ The content script and the popup never call the Thingport instance themselves: t
 message to the background script, which owns the credentials and the instance's host permission.
 Every message and its reply is typed in `src/shared/messages.ts`.
 
+On the web app's special days, Grab's icon in the popup and on pages wears the sidebar logo's seasonal overlay
+(`src/shared/seasonalMark.ts`). `src/shared/season.ts` and `src/assets/seasonal/` are copies of
+`frontend/src/utils/season.ts` and `frontend/src/assets/logos/seasonal/`, for the same reason as the normalizer below:
+change them together. Each overlay's main prop is brought in as a badge from where it sits past the end of the logo's
+name; `PROPS` in `seasonalMark.ts` moves that box for the seasons whose prop sits elsewhere. `npm run
+preview:seasonal -- out.html` renders every edition, in the popup and on a page, light and dark, to check them.
+
 `src/normalizer/threeMfNormalizer.ts` is a copy of the backend's
 `backend/src/services/threeMfNormalizer.ts` (the Mozilla source zip can only hold this folder), and
 `src/shared/slicers.ts` mirrors the web app's list of slicers that need it. Change them together.
@@ -55,16 +66,26 @@ The normalizer runs in a worker, bundled into the content script as a string thr
 `?worker` imports; where a page's CSP blocks that worker, it runs on the page's main thread instead.
 
 Colors, spacing and type live in `src/styles/_tokens.scss`. Colors are CSS custom properties with a
-light and a dark palette: the popup follows the browser's color scheme, while the in-page UI always
-uses the light one.
+light and a dark palette (the dark one is Thingport's navy): the popup and the in-page UI both follow
+the browser's color scheme.
 
 ### Adding a provider site
 
-Don't add a new site to `PROVIDER_MATCHES` in `scripts/manifest.ts`: new host access in an update makes Chrome and
-Edge switch the extension off for every user until they approve it. Add it to `OPTIONAL_SITES` in
-`src/shared/optionalSites.ts` instead, with its logo in `LOGOS` in `src/popup/sites.ts`. The popup lists it under
-**Providers** with an **Enable** button that asks for access to that site; once granted, the background registers the
-content script there. Users who had granted all-sites access earlier get it straight away.
+The checklist for a whole provider is in [docs/PROVIDER_DEVELOPMENT.md](../docs/PROVIDER_DEVELOPMENT.md#adding-a-provider). Grab's
+part:
+
+- Its manifest's `extension` entry (`providers/<id>/manifest.ts`) says how Grab reaches its site. Make it
+  `site: "optional"`: new host access in an update makes Chrome and Edge switch the extension off for every user until
+  they approve it, so `npm run providers:sync` keeps the built-in sites, the ones in `manifest.json`, to the first
+  three. An optional site is listed in the popup under **Providers** with an **Enable** button that asks for access to
+  it; once granted, the background registers the content script there. Users who had granted all-sites access earlier
+  get it straight away.
+- What Grab does on its pages goes in `src/providers/<id>/`, entered in `CONTENT_MODULES` (`src/providers/content.ts`),
+  which tsc insists on for every provider.
+- A sign-in the background sends the instance goes in `SESSION_SOURCES` (`src/providers/sessions.ts`), with
+  `src/providers/<id>/session.ts` where it can't be declared. The account Grab reports from its pages goes in
+  `CAPTURE` (`src/providers/accounts.ts`), and background handlers, alarms or tab events of its own in
+  `src/providers/background.ts`.
 
 Don't add the provider to `scripts/edge-certification-notes.txt`: it covers optional sites as a group, and Edge
 rejects notes of 2,000 characters or more (`npm run check:edge-notes`).
@@ -79,8 +100,9 @@ rejects notes of 2,000 characters or more (`npm run check:edge-notes`).
   event page in Firefox, so keep top-level background code free of anything only one supports.
 - If it changes anything visible, run `npm run screenshots` and commit the updated images.
 - If it adds a runtime message, add it to `src/shared/messages.ts` so both ends stay typed.
-- Provider URL patterns in `src/shared/urls.ts` are duplicated from the web app and backend (see
-  the comment there) -- change them in all three places.
+- Provider URL patterns live in `providers/<id>/urls.ts` at the repo root, shared with the web app
+  and backend: change them there, run `npm run providers:sync` at the root, and add a case to
+  `providers/<id>/urls.fixtures.json`.
 
 ### Scripts
 

@@ -34,41 +34,17 @@ import { IMPORT_PROVIDER_INFO } from "../../constants/importProviders";
 import { COMING_SOON_PROVIDERS, ProviderLogo } from "./ConfigurationDialog/providerLogos";
 import {
   detectImportProvider,
-  IMPORT_LINK_EXAMPLES,
-  isMakerworldCollectionUrl,
-  isMakerworldModelUrl,
-  isMyminifactoryCollectionUrl,
-  isPrintablesCollectionUrl,
-  isSnapmakerListUrl,
-  isSnapmakerModelUrl,
-  isMakeronlineListUrl,
-  isMakeronlineModelUrl,
-  isCrealitycloudListUrl,
-  isCrealitycloudModelUrl,
-  isNexprintCollectionUrl,
-  isNexprintModelUrl,
-  isThangsListUrl,
-  isCults3dListUrl,
-  isThingiverseCollectionUrl,
-  isThingiverseLikesUrl,
+  hasPrintProfiles,
+  isGrabOnlyList,
+  listLinkOf,
   type ImportProviderKey,
 } from "../../utils/importLinkDetection";
 import type { MakerworldProfileScope } from "../../api/imports";
-import { allProvidersOff, useDisabledProviders } from "../../hooks/useDisabledProviders";
+import { allProvidersOff, useDisabledProviders } from "../../hooks/useProviders";
 import { readImportLink } from "../../utils/bookmarklet";
+import { MANIFESTS, manifestOf, PROVIDER_IDS } from "../../providers/index.generated";
 
-const IMPORT_PROVIDERS: ImportProviderKey[] = [
-  "makerworld",
-  "thingiverse",
-  "printables",
-  "myminifactory",
-  "snapmaker",
-  "makeronline",
-  "crealitycloud",
-  "nexprint",
-  "thangs",
-  "cults3d",
-];
+const IMPORT_PROVIDERS: readonly ImportProviderKey[] = PROVIDER_IDS;
 
 /** What the search palette's !import command calls. */
 export type AddMenuHandle = {
@@ -85,8 +61,7 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-/** The top bar's "+ Add" button. MakerWorld collection links are blocked here; they can only be
- *  imported via the browser extension. */
+/** The top bar's "+ Add" button. Lists of a provider that imports them through Thingport Grab only are blocked here. */
 const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
   { categoryId, makerworldCookie, onUploaded, onUnauthorized },
   ref,
@@ -126,31 +101,9 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
     }
     return found;
   }, [links]);
-  const isBlockedCollection = isBatch
-    ? links.some(
-        (link) =>
-          isMakerworldCollectionUrl(link) ||
-          isThingiverseLikesUrl(link) ||
-          isThingiverseCollectionUrl(link) ||
-          isPrintablesCollectionUrl(link) ||
-          isMyminifactoryCollectionUrl(link) ||
-          isSnapmakerListUrl(link) ||
-          isMakeronlineListUrl(link) ||
-          isCrealitycloudListUrl(link) ||
-          isNexprintCollectionUrl(link) ||
-          isThangsListUrl(link) ||
-          isCults3dListUrl(link),
-      )
-    : isMakerworldCollectionUrl(linkValue);
+  const isBlockedCollection = isBatch ? links.some((link) => !!listLinkOf(link)) : isGrabOnlyList(linkValue);
   // Models with print profiles to pick between.
-  const hasProfiles = links.some(
-    (link) =>
-      isMakerworldModelUrl(link) ||
-      isSnapmakerModelUrl(link) ||
-      isMakeronlineModelUrl(link) ||
-      isCrealitycloudModelUrl(link) ||
-      isNexprintModelUrl(link),
-  );
+  const hasProfiles = links.some(hasPrintProfiles);
 
   const closeMenu = () => setAnchorEl(null);
 
@@ -180,8 +133,7 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
         return;
       }
       const url = link?.trim() ?? "";
-      const direct =
-        url && !/\s/.test(url) && detectImportProvider(url) && !isMakerworldCollectionUrl(url) && !needsCaptcha;
+      const direct = url && !/\s/.test(url) && detectImportProvider(url) && !isGrabOnlyList(url) && !needsCaptcha;
       if (direct) void upload.submitImport(url);
       else openImport(url);
     },
@@ -320,11 +272,12 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
                 {t("addMenu.exampleLinksFor", { provider: IMPORT_PROVIDER_INFO[exampleProvider].label })}
               </Typography>
               <Typography variant="caption" component="div" sx={{ wordBreak: "break-all" }}>
-                {t("addMenu.exampleModel")}: {IMPORT_LINK_EXAMPLES[exampleProvider].model}
+                {t("addMenu.exampleModel")}: {MANIFESTS[exampleProvider].examples.model}
               </Typography>
               <Typography variant="caption" component="div" sx={{ wordBreak: "break-all" }}>
-                {t("addMenu.exampleCollection")}: {IMPORT_LINK_EXAMPLES[exampleProvider].collection}
-                {exampleProvider === "makerworld" && ` (${t("addMenu.makerworldCollectionExtensionOnly")})`}
+                {t("addMenu.exampleCollection")}: {MANIFESTS[exampleProvider].examples.list}
+                {manifestOf(exampleProvider).capabilities.listImport === "grab" &&
+                  ` (${t("addMenu.makerworldCollectionExtensionOnly")})`}
               </Typography>
             </Alert>
           )}

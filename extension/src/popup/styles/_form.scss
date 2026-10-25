@@ -34,6 +34,10 @@
     @include m.button-secondary;
     margin-top: t.$space-2;
   }
+
+  &--danger {
+    @include m.button-danger;
+  }
 }
 
 // Single sign-on, offered under the password form only by instances that support connecting by approval.

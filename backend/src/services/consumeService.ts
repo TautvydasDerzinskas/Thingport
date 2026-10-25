@@ -139,24 +139,25 @@ async function freePath(target: string) {
  * one top folder (Benchy.zip holding Benchy/...), that folder is used instead of nesting it twice.
  */
 async function expandZip(file: FoundFile): Promise<Item[]> {
+  // Placed by the normalized path, read by the name in the zip ("./Benchy/benchy.stl" -> "Benchy/benchy.stl").
   const entries = (await listZipEntries(file.abs))
     .filter((e) => !e.isDirectory)
-    .map((e) => normalizeZipEntryPath(e.name))
-    .filter((name): name is string => Boolean(name) && !name!.split("/").some(isSystemName));
+    .map((e) => ({ rawName: e.name, name: normalizeZipEntryPath(e.name) }))
+    .filter((e): e is { rawName: string; name: string } => Boolean(e.name) && !e.name!.split("/").some(isSystemName));
   const parent = path.posix.dirname(file.rel) === "." ? "" : path.posix.dirname(file.rel);
-  const tops = new Set(entries.map((e) => e.split("/")[0]));
-  const selfFoldered = tops.size === 1 && entries.every((e) => e.includes("/"));
+  const tops = new Set(entries.map((e) => e.name.split("/")[0]));
+  const selfFoldered = tops.size === 1 && entries.every((e) => e.name.includes("/"));
   const prefix = selfFoldered ? parent : path.posix.join(parent, path.parse(file.rel).name);
 
   const items: Item[] = [];
   try {
     for (const entry of entries) {
       // All or nothing: the zip is deleted afterwards, so a skipped entry would be lost.
-      const buffer = await readZipEntry(file.abs, entry, IMPORT_MAX_BYTES);
-      if (!buffer) throw new Error(`Couldn't extract ${entry} (too large or unreadable)`);
+      const buffer = await readZipEntry(file.abs, entry.rawName, IMPORT_MAX_BYTES);
+      if (!buffer) throw new Error(`Couldn't extract ${entry.name} (too large or unreadable)`);
       const tmp = tempPath();
       await fs.writeFile(tmp, buffer);
-      items.push({ rel: path.posix.join(prefix, entry), path: tmp, size: buffer.length });
+      items.push({ rel: path.posix.join(prefix, entry.name), path: tmp, size: buffer.length });
     }
   } catch (err) {
     for (const item of items) await fs.rm(item.path, { force: true });
@@ -277,10 +278,10 @@ export async function consumeFolder(dir = CONSUME_DIR): Promise<ConsumeSummary |
       try {
         if (PREVIEW_IMAGE_EXTS.has(extOf(item.rel)) && item.size <= PREVIEW_IMAGE_MAX_BYTES) {
           const buffer = await fs.readFile(item.path);
-          if (await addPreviewImage(printId, buffer)) {
+          if (await addPreviewImage(printId, buffer, { keepExif: true })) {
             if (!preferred) {
               preferred = true;
-              await preferImageOverRenders(printId, firstPlateId, buffer);
+              await preferImageOverRenders(printId, firstPlateId, buffer, true);
             }
             await fs.rm(item.path, { force: true });
             summary.files += 1;

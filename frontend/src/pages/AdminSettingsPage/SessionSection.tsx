@@ -10,6 +10,8 @@ import Typography from "@mui/material/Typography";
 import { UnauthorizedError } from "../../api/client";
 import { settingsApi } from "../../api/settings";
 import HelpTip from "../../components/HelpTip";
+import Segmented from "../../components/controls/Segmented";
+import { useToast } from "../../components/ToastProvider";
 import SectionHeader from "../../components/SectionHeader";
 import { AnimatedTile } from "../../components/storageAnimations/parts";
 import HourglassAnimation from "../../components/authAnimations/HourglassAnimation";
@@ -30,6 +32,9 @@ const UNIT_SECONDS: Record<DurationUnit, number> = {
   weeks: 604800,
   months: 2629800, // a year / 12
 };
+
+// How long a browser stays signed in without being used. 0 is off.
+const REMEMBER_CHOICES = [0, 7 * 86400, 30 * 86400, 90 * 86400, 365 * 86400];
 
 /** e.g. 90000 -> "1 day". Null under a minute. */
 function bestFitDuration(totalSeconds: number): { unit: DurationUnit; value: number } | null {
@@ -52,6 +57,9 @@ export default function SessionSection({ onUnauthorized }: Props) {
   const [saving, setSaving] = React.useState(false);
   const [status, setStatus] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [remember, setRemember] = React.useState(30 * 86400);
+  const [savingRemember, setSavingRemember] = React.useState(false);
+  const toast = useToast();
 
   React.useEffect(() => {
     let active = true;
@@ -62,6 +70,7 @@ export default function SessionSection({ onUnauthorized }: Props) {
         if (active) {
           setSeconds(data.token_ttl_seconds);
           setDraft(String(data.token_ttl_seconds));
+          setRemember(data.remember_session_ttl_seconds);
         }
       } catch (err) {
         if (err instanceof UnauthorizedError) onUnauthorized?.();
@@ -84,7 +93,7 @@ export default function SessionSection({ onUnauthorized }: Props) {
     setStatus(null);
     setError(null);
     try {
-      const data = await settingsApi.updateAuth(parsed);
+      const data = await settingsApi.updateAuth({ token_ttl_seconds: parsed });
       setSeconds(data.token_ttl_seconds);
       setDraft(String(data.token_ttl_seconds));
       setStatus(t("adminSettings.session.saved"));
@@ -97,6 +106,31 @@ export default function SessionSection({ onUnauthorized }: Props) {
     } finally {
       setSaving(false);
     }
+  };
+
+  const selectRemember = async (next: number) => {
+    if (next === remember || savingRemember) return;
+    const previous = remember;
+    setRemember(next);
+    setSavingRemember(true);
+    try {
+      setRemember((await settingsApi.updateAuth({ remember_session_ttl_seconds: next })).remember_session_ttl_seconds);
+    } catch (err) {
+      setRemember(previous);
+      if (err instanceof UnauthorizedError) onUnauthorized?.();
+      else toast({ message: t("adminSettings.session.failed"), severity: "error" });
+    } finally {
+      setSavingRemember(false);
+    }
+  };
+
+  // A length set through REMEMBER_SESSION_TTL that isn't one of the choices is shown as one.
+  const rememberChoices = REMEMBER_CHOICES.includes(remember) ? REMEMBER_CHOICES : [...REMEMBER_CHOICES, remember];
+  const rememberLabel = (value: number) => {
+    const fit = value > 0 ? bestFitDuration(value) : null;
+    return fit
+      ? t(`adminSettings.session.units.${fit.unit}`, { count: fit.value })
+      : t("adminSettings.session.rememberOff");
   };
 
   return (
@@ -160,6 +194,23 @@ export default function SessionSection({ onUnauthorized }: Props) {
                 {error}
               </Alert>
             )}
+
+            <Stack spacing={0.75} alignItems="flex-start">
+              <Typography variant="body2" fontWeight={600}>
+                {t("adminSettings.session.rememberLabel")}
+                <HelpTip text={t("adminSettings.session.rememberHelp")} />
+              </Typography>
+              <Stack direction="row" spacing={1.5} alignItems="center">
+                <Segmented
+                  label={t("adminSettings.session.rememberLabel")}
+                  value={String(remember)}
+                  onChange={(next) => void selectRemember(Number(next))}
+                  disabled={loading || savingRemember}
+                  options={rememberChoices.map((value) => ({ value: String(value), label: rememberLabel(value) }))}
+                />
+                {savingRemember && <CircularProgress size={14} />}
+              </Stack>
+            </Stack>
           </Stack>
         </Stack>
       </Paper>

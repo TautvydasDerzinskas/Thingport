@@ -8,6 +8,7 @@ const TOP_MODELS_LIST_MAX = 50;
 const TOP_AUTHORS_PREVIEW = 5;
 const TOP_AUTHORS_LIST_MAX = 50;
 const RECENTLY_ADDED_LIMIT = 3;
+const RECENTLY_ADDED_LIST_MAX = 50;
 
 export type DashboardModel = {
   id: string;
@@ -152,7 +153,14 @@ async function fetchTopProviders(userId: string): Promise<DashboardProvider[]> {
     .toSorted((a, b) => b.modelCount - a.modelCount);
 }
 
-export async function getDashboardSummary(userId: string): Promise<DashboardSummary> {
+/** How many of each list the summary holds. The defaults suit a quick overview, as the MCP tool gives; the web
+ *  dashboard asks for as many as a panel can be set to show. */
+export type SummaryListSizes = { models: number; authors: number; recent: number };
+
+export async function getDashboardSummary(
+  userId: string,
+  sizes: SummaryListSizes = { models: TOP_MODELS_PREVIEW, authors: TOP_AUTHORS_PREVIEW, recent: RECENTLY_ADDED_LIMIT },
+): Promise<DashboardSummary> {
   const [
     collectionCount,
     modelCount,
@@ -168,11 +176,11 @@ export async function getDashboardSummary(userId: string): Promise<DashboardSumm
     prisma.print.count({ where: { userId } }),
     prisma.print.groupBy({ by: ["authorId"], where: { userId, authorId: { not: null } } }),
     prisma.category.count({ where: { userId } }),
-    fetchTopViewed(userId, TOP_MODELS_PREVIEW),
-    fetchTopPrinted(userId, TOP_MODELS_PREVIEW),
-    fetchTopAuthors(userId, TOP_AUTHORS_PREVIEW),
+    fetchTopViewed(userId, sizes.models),
+    fetchTopPrinted(userId, sizes.models),
+    fetchTopAuthors(userId, sizes.authors),
     fetchTopProviders(userId),
-    fetchRecentlyAdded(userId, RECENTLY_ADDED_LIMIT),
+    fetchRecentlyAdded(userId, sizes.recent),
   ]);
 
   return {
@@ -225,4 +233,8 @@ export async function getFeaturedModelId(userId: string, day: string): Promise<s
     select: { id: true },
   });
   return pick?.id ?? null;
+}
+
+export function getRecentlyAddedList(userId: string): Promise<DashboardModel[]> {
+  return fetchRecentlyAdded(userId, RECENTLY_ADDED_LIST_MAX);
 }

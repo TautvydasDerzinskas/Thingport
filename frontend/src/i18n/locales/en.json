@@ -247,6 +247,18 @@
               "title": "Library stats",
               "description": "Your totals, most viewed, most printed and newest models."
             },
+            "list_model_files": {
+              "title": "List a model's files",
+              "description": "See a model's files, so one can be fetched."
+            },
+            "get_model_file": {
+              "title": "Get a model file",
+              "description": "Read one of a model's files, e.g. to slice or convert it."
+            },
+            "list_model_images": {
+              "title": "List a model's pictures",
+              "description": "See a model's pictures and which is its cover."
+            },
             "get_import_status": {
               "title": "Check an import",
               "description": "Follow an import that's still running."
@@ -255,6 +267,38 @@
               "title": "Import a model",
               "description": "Import a model from a link, as + Add > Import does."
             },
+            "upload_model": {
+              "title": "Upload a model",
+              "description": "Add a model made from your own files, as + Add > Upload files does."
+            },
+            "edit_model": {
+              "title": "Edit a model",
+              "description": "Change a model's title, description, tags, category and favourite."
+            },
+            "edit_model_images": {
+              "title": "Edit a model's pictures",
+              "description": "Add, remove and reorder a model's pictures, and pick its cover."
+            },
+            "add_model_files": {
+              "title": "Add files to a model",
+              "description": "Add plates or supporting files to one of your models."
+            },
+            "remove_model_file": {
+              "title": "Remove a model file",
+              "description": "Delete one of a model's files for good."
+            },
+            "rename_model_file": {
+              "title": "Rename a model file",
+              "description": "Rename one of a model's plates."
+            },
+            "delete_model": {
+              "title": "Delete a model",
+              "description": "Delete a model with its files and pictures, for good."
+            },
+            "create_category": {
+              "title": "Create a category",
+              "description": "Make a new category or folder."
+            },
             "create_collection": {
               "title": "Create a collection",
               "description": "Make a new, empty collection."
@@ -262,6 +306,30 @@
             "add_to_collection": {
               "title": "Add to a collection",
               "description": "Put models from your library in one of your collections."
+            },
+            "remove_from_collection": {
+              "title": "Remove from a collection",
+              "description": "Take models out of one of your collections."
+            },
+            "widget_guide": {
+              "title": "Widget guide",
+              "description": "Read how to write a custom dashboard widget."
+            },
+            "list_widgets": {
+              "title": "List widgets",
+              "description": "See your custom dashboard widgets."
+            },
+            "save_widget": {
+              "title": "Save a dashboard widget",
+              "description": "Create or change your own dashboard widgets. Their scripts run in your dashboard."
+            },
+            "list_icons": {
+              "title": "Find an icon",
+              "description": "Search Thingport's icons and the ones you uploaded, e.g. for a widget."
+            },
+            "upload_icon": {
+              "title": "Upload an icon",
+              "description": "Add an image to your icons, as the icon browser's Upload does."
             }
           },
           "writeConfirmTitle": "Let the assistant use “{{tool}}”?",
@@ -399,21 +467,13 @@
       "batchCollectionsBlocked": "Collection links (likes, collections) can only be imported one at a time. Paste model links here instead, or import a collection on its own."
     },
     "userMenu": {
+      "logOutFailed": "Couldn't sign out. Check your connection and try again.",
       "theme": "Theme",
       "light": "Light",
       "dark": "Dark",
       "system": "Adapt to system",
       "serviceConnected": "{{service}}: connected",
       "serviceNotConnected": "{{service}}: not connected",
-      "makerworldDisabledReason": "MakerWorld: not connected",
-      "thingiverseDisabledReason": "Thingiverse: the admin hasn't configured an API key yet",
-      "myminifactoryDisabledReason": "MyMiniFactory: the admin hasn't configured an API key yet",
-      "snapmakerDisabledReason": "Snapmaker Space: connect your account in Configuration → Providers",
-      "makeronlineDisabledReason": "MakerOnline: connect your account in Configuration → Providers",
-      "crealitycloudDisabledReason": "Creality Cloud: connect your account in Configuration → Providers",
-      "nexprintDisabledReason": "NexPrint: connect your account in Configuration → Providers",
-      "thangsDisabledReason": "Thangs: connect your account in Configuration → Providers",
-      "cults3dDisabledReason": "Cults3D: enter your nickname and API key in Configuration → Providers",
       "myModels": "My models"
     },
     "notifications": {
@@ -459,7 +519,13 @@
       "sectionRecent": "Recent",
       "sectionCommands": "Commands",
       "open": "Open",
+      "openSearch": "Search",
       "runCommand": "Run command",
+      "actions": "Actions",
+      "actionsFor": "Actions for {{title}}",
+      "openInNewTab": "Open in new tab",
+      "copyLink": "Copy link",
+      "linkCopied": "Link copied",
       "toMove": "to move",
       "kind": {
         "model": "Model",
@@ -642,22 +708,373 @@
         "total_other": "{{count}} activities"
       },
       "widgets": {
-        "open": "Customize dashboard",
         "title": "Customize dashboard",
-        "subtitle": "Choose which boxes your dashboard shows.",
-        "allHidden": "Every dashboard box is hidden.",
+        "subtitle": "Switch panels on or off for this template. Edit the dashboard to move, resize or merge them.",
         "sections": {
-          "layout": "Layout",
-          "panels": "Panels"
+          "templates": "Templates",
+          "panels": "Panels",
+          "widgets": "Custom widgets"
         },
-        "layoutSubtitle": "Choose how your dashboard arranges its boxes. The coloured part shows where the counts go.",
-        "layouts": {
-          "left": "Counts on the left",
-          "top": "Counts on top, three columns",
-          "right": "Counts on the right",
-          "bottom": "Counts at the bottom, three columns",
-          "topTwo": "Counts on top, two columns",
-          "puzzle": "Puzzle"
+        "panelsOf": "Panels in {{name}}",
+        "addAnother": "Click to add another",
+        "copies": "{{name}} · {{count}}"
+      },
+      "edit": {
+        "enter": "Edit dashboard",
+        "exit": "Done editing",
+        "toolbar": "Dashboard editing actions",
+        "add": "Add panel",
+        "addNone": "Every panel is already on the dashboard",
+        "merge": "Merge into tabs",
+        "mergeHint": "Select two or more panels to merge them into tabs",
+        "remove": "Remove panels",
+        "removeHint": "Select the panels to remove",
+        "removeTitle_one": "Remove {{count}} panel?",
+        "removeTitle_other": "Remove {{count}} panels?",
+        "removeMessage": "You can add them back with Add panel, but their size and place are forgotten.",
+        "removeConfirm": "Remove",
+        "removed_one": "Removed {{count}} panel",
+        "removed_other": "Removed {{count}} panels",
+        "merged_one": "Merged {{count}} panel into tabs",
+        "merged_other": "Merged {{count}} panels into tabs",
+        "help": "Drag a panel to move it, or its corner to resize it. Drag a panel's name onto another panel to show them as tabs, or a tab onto empty space to give it a panel of its own.",
+        "keys": "Space selects the panel. Arrow keys move it; Shift with the arrow keys resizes it.",
+        "panelLabel": "{{name}} panel",
+        "panelActions": "Panel actions",
+        "split": "Split into panels",
+        "removePanel": "Remove panel",
+        "dragToMerge": "Drag onto another panel to show them as tabs",
+        "dragTab": "Drag to reorder tabs (or use ← →), onto another panel, or onto empty space for a panel of its own",
+        "mergeHere": "Add as a tab",
+        "empty": "This template has no panels yet.",
+        "fit": "Fit to content",
+        "splitHint": "Select tabbed panels to split them",
+        "splitDone_one": "Split {{count}} panel into its tabs",
+        "splitDone_other": "Split {{count}} panels into their tabs"
+      },
+      "templates": {
+        "open": "Templates",
+        "manage": "Manage templates…",
+        "heading": "Your templates",
+        "help": "Each template keeps its own panels and arrangement. Pick one to show it, then edit the dashboard to change it.",
+        "presets": {
+          "homepage": "Homepage",
+          "classic": "Classic",
+          "overview": "Overview",
+          "compact": "Compact tabs",
+          "showcase": "Showcase",
+          "puzzle": "Puzzle",
+          "minimal": "Minimal"
+        },
+        "untitled": "Untitled",
+        "new": "New template",
+        "newCopy": "Copy of {{name}}",
+        "newEmpty": "Empty template",
+        "emptyName": "My template",
+        "fromPreset": "Start from a built-in",
+        "actions": "Template actions",
+        "rename": "Rename",
+        "renameTitle": "Rename template",
+        "duplicate": "Duplicate",
+        "reset": "Reset to built-in",
+        "resetTitle": "Reset {{name}}?",
+        "resetMessage": "Its panels and arrangement go back to how the built-in template comes.",
+        "resetConfirm": "Reset",
+        "delete": "Delete",
+        "deleteTitle": "Delete {{name}}?",
+        "deleteMessage": "This can't be undone.",
+        "deleteConfirm": "Delete",
+        "limit": "You can keep up to {{max}} templates"
+      },
+      "settings": {
+        "open": "Settings",
+        "openFor": "{{name}} settings",
+        "title": "{{name}} settings",
+        "titlePanel": "Panel settings",
+        "panelTitle": "Title",
+        "reset": "Reset to defaults",
+        "done": "Done",
+        "count": "Items shown",
+        "showMore": "“See more” link",
+        "hourCycle": "Time format",
+        "hour24": "24-hour",
+        "hour12": "12-hour",
+        "showDate": "Date",
+        "showGreeting": "Greeting",
+        "unit": "Temperature",
+        "showLater": "Forecast for later",
+        "feeds": "Feeds",
+        "feedPlaceholder": "https://example.com/feed.xml",
+        "monitors": "Addresses to check",
+        "monitorPlaceholder": "http://192.168.1.20:8123",
+        "showDates": "Dates",
+        "showLoad": "Load average",
+        "showMemory": "Memory",
+        "showServer": "Server uptime",
+        "addUrl": "Add",
+        "removeUrl": "Remove",
+        "urlInvalid": "Enter an http or https address",
+        "urlDuplicate": "Already in the list",
+        "urlsFull": "Up to {{max}} addresses",
+        "links": "Links",
+        "iconStyle": "Icon style",
+        "iconColored": "Colored",
+        "iconMono": "Mono",
+        "iconGrayed": "Grayed",
+        "limit": "Items shown",
+        "limitAll": "All",
+        "search": "Search",
+        "linkName": "Name",
+        "linkUrl": "Address",
+        "linkIcon": "Icon",
+        "linkIconSite": "The site's own icon",
+        "saveLink": "Save",
+        "cancelEdit": "Cancel",
+        "editLink": "Edit",
+        "reorderLink": "Move {{name}}",
+        "linksFull": "Up to {{max}} links",
+        "place": "Place",
+        "placeAccount": "Your account's place",
+        "placeReset": "Use the account's",
+        "providers": "Providers",
+        "view": "View",
+        "viewList": "List",
+        "viewCards": "Cards",
+        "showProvider": "Show {{name}}",
+        "opensFirst": "Opens first",
+        "keepOne": "At least one provider stays",
+        "showSecret": "Show",
+        "hideSecret": "Hide"
+      },
+      "rss": {
+        "title": "RSS feeds",
+        "empty": "Add a feed in this panel's settings.",
+        "loadError": "Couldn't load the feeds.",
+        "noItems": "These feeds have nothing yet.",
+        "failed_one": "{{count}} feed couldn't be read",
+        "failed_other": "{{count}} feeds couldn't be read"
+      },
+      "cpu": {
+        "title": "CPU",
+        "adminsOnly": "Only admins can see the server's stats.",
+        "loadError": "Couldn't load the server's stats.",
+        "cores_one": "{{count}} core",
+        "cores_other": "{{count}} cores",
+        "load": "Load {{values}}",
+        "loadHint": "Load average over 1, 5 and 15 minutes",
+        "memory": "Memory",
+        "memoryUsed": "{{used}} / {{total}} GB"
+      },
+      "uptime": {
+        "title": "Uptime",
+        "empty": "Add addresses to watch in this panel's settings.",
+        "loadError": "Couldn't check the services.",
+        "up": "Up",
+        "down": "Down",
+        "ms": "{{ms}} ms",
+        "status": "HTTP {{status}}",
+        "summary": "{{up}}/{{total}} up",
+        "thingport": "Thingport",
+        "host": "Host",
+        "days": "{{days}}d {{hours}}h",
+        "hours": "{{hours}}h {{minutes}}m",
+        "minutes": "{{minutes}}m"
+      },
+      "launcher": {
+        "title": "Launcher",
+        "empty": "Add links in this panel's settings.",
+        "noMatch": "Nothing matches.",
+        "search": "Search",
+        "showAll": "Show all",
+        "allTitle": "All links · {{count}}",
+        "close": "Close"
+      },
+      "trending": {
+        "title": "Explore trending",
+        "none": "Pick providers in this panel's settings.",
+        "loadError": "Couldn't load {{name}}'s models.",
+        "retry": "Try again",
+        "empty": "{{name}} has nothing to show right now.",
+        "kind": {
+          "trending": "Trending on {{name}}",
+          "popular": "Popular on {{name}}",
+          "featured": "Featured on {{name}}",
+          "recommended": "Recommended on {{name}}"
+        },
+        "more": "More on {{name}}",
+        "paid": "Paid",
+        "setupTitle": "{{name}} needs setting up",
+        "setup": {
+          "thingiverseToken": "Its list needs the instance's Thingiverse App Token, which an admin adds in the provider settings.",
+          "myminifactoryKey": "Its list needs the instance's MyMiniFactory API key, which an admin adds in the provider settings.",
+          "cults3dKey": "Its list needs your Cults3D nickname and API key, added under Providers in Configuration."
+        },
+        "openProviders": "Open provider settings",
+        "askAdmin": "Ask an admin to add it.",
+        "connect": "Connect {{name}}"
+      },
+      "homepage": {
+        "open": "Open as a homepage: just the panels, in a new tab"
+      },
+      "custom": {
+        "heading": "Custom widgets",
+        "manage": "Manage custom widgets…",
+        "noExport": "The script has no export default function.",
+        "failed": "{{name}} stopped with an error",
+        "removed": "This widget was removed.",
+        "off": "Custom widgets are turned off on this Thingport.",
+        "title": "Custom widgets",
+        "tabs": {
+          "mine": "Mine",
+          "community": "Community",
+          "share": "Build & share"
+        },
+        "new": "New widget",
+        "none": "You haven't made or installed any widgets yet.",
+        "browse": "Browse the community's",
+        "fromCommunity": "Community",
+        "add": "Add to dashboard",
+        "actions": "Widget actions",
+        "edit": "Edit",
+        "copyToMine": "Copy to my widgets",
+        "download": "Download for publishing",
+        "remove": "Remove",
+        "removeTitle": "Remove {{name}}?",
+        "removeMessage": "Its panels will say it was removed. This can’t be undone.",
+        "saved": "Saved {{name}}",
+        "installTitle": "Install {{name}}?",
+        "updateTitle": "Update {{name}}?",
+        "installTrust": "Its script runs in your dashboard with your access to Thingport. Only install widgets you trust.",
+        "installHosts": "It can reach: {{hosts}}",
+        "install": "Install",
+        "update": "Update",
+        "installed": "Installed {{name}}",
+        "isInstalled": "Installed",
+        "retry": "Try again",
+        "communityError": "Couldn't load the community widgets. Check that this Thingport can reach GitHub.",
+        "communityEmpty": "No community widgets yet. Be the first: see Build & share.",
+        "reaches_one": "Reaches {{count}} host",
+        "reaches_other": "Reaches {{count}} hosts",
+        "editor": {
+          "newTitle": "New widget",
+          "editTitle": "Edit widget",
+          "trust": "Its script runs in your dashboard with your access to Thingport. Only use code you trust.",
+          "slug": "Slug",
+          "slugHelp": "Its folder name: lowercase letters, digits and dashes",
+          "part": "Part",
+          "script": "Script",
+          "html": "HTML",
+          "htmlPlaceholder": "Markup and a <style> put into the panel before the script runs (optional)",
+          "cancel": "Cancel",
+          "save": "Save",
+          "details": "Details",
+          "settingsCount_one": "Settings ({{count}})",
+          "settingsCount_other": "Settings ({{count}})",
+          "fixFirst": "Fix the marked fields first",
+          "preview": "Preview",
+          "previewHelp": "Runs your script as you type, with each setting at its default. Requests through thingport.fetch use the hosts of the saved widget, so save before trying a new host.",
+          "previewSize": "Preview size",
+          "previewMin": "Min {{w}}×{{h}}",
+          "previewDefault": "Default {{w}}×{{h}}",
+          "rerun": "Run again",
+          "name": "Name",
+          "version": "Version",
+          "description": "Description",
+          "icon": "Icon",
+          "iconHelp": "Pick one of Thingport's icons, upload your own or give an image address; an SVG stays sharp at every size. Without one, a jigsaw piece is shown.",
+          "iconUrl": "Icon",
+          "iconNone": "None",
+          "author": "Author",
+          "authorHelp": "Credited when the widget is shared. Your profile name is filled in when it's left empty.",
+          "authorName": "Full name",
+          "authorUrl": "Page (optional)",
+          "size": "Size",
+          "sizeHelp": "In grid cells: 12 columns across, rows 64 px tall. It's added at its size and can't be made smaller than its minimum.",
+          "width": "Width",
+          "height": "Height",
+          "minWidth": "Min width",
+          "minHeight": "Min height",
+          "hosts": "Hosts it may reach",
+          "hostsHelp": "What thingport.fetch may call through Thingport: host, host:port or *.domain. Leave empty if it calls nothing outside.",
+          "hostsPlaceholder": "octopi.local, *.example.com",
+          "noSettings": "No settings yet. Add one for anything a user should set, like an address or a token.",
+          "type": "Type",
+          "types": {
+            "text": "Text",
+            "number": "Number",
+            "toggle": "Switch",
+            "choice": "Choice"
+          },
+          "settingActions": "Setting actions",
+          "settingLabel": "Label",
+          "settingKey": "Key",
+          "settingKeyHelp": "How the script reads it: thingport.settings.<key>",
+          "addSetting": "Add setting",
+          "moveUp": "Move up",
+          "moveDown": "Move down",
+          "removeSetting": "Remove",
+          "defaultOn": "On by default",
+          "default": "Default",
+          "options": "Options",
+          "optionLabel": "Label",
+          "optionValue": "Value",
+          "removeOption": "Remove option",
+          "addOption": "Add option",
+          "placeholder": "Placeholder",
+          "secret": "Secret",
+          "secretHelp": "Shown as a password field, for tokens and keys.",
+          "errors": {
+            "slug": "2–40 lowercase letters, digits and dashes",
+            "name": "Give it a name",
+            "url": "Not an http or https address",
+            "minSize": "Larger than its size",
+            "key": "Letters, digits and _, starting with a letter",
+            "keyTaken": "Another setting uses this key",
+            "label": "Give it a label",
+            "number": "Not a number",
+            "options": "At least two options, each with a label and a different value"
+          }
+        },
+        "share": {
+          "aiTitle": "Build one with AI",
+          "ai1": "Connect your AI assistant to Thingport over MCP, with an API token.",
+          "ai2": "On your profile, give the token the <strong>Save a dashboard widget</strong> tool.",
+          "ai3": "Ask it, for example: “Make me a Thingport widget that shows my OctoPrint printer’s progress.” It reads the widget guide, then saves the widget.",
+          "ai4": "Add it from Add panel while editing your dashboard.",
+          "connect": "Connect an AI",
+          "publishTitle": "Publish to the community",
+          "publish1": "Download your widget from Mine (⋮, then Download for publishing).",
+          "publish2": "Fork the Thingport repository and unzip it into the <folder>community-widgets</folder> folder.",
+          "publish3": "Add its folder name to community-widgets/index.json, and say what it does in its README.md.",
+          "publish4": "Open a pull request. Once it’s merged, every Thingport can install it.",
+          "guide": "Read the full guide"
+        },
+        "ai": {
+          "or": "or",
+          "open": "Use AI",
+          "title": "Build a widget with AI",
+          "back": "Back to the editor",
+          "step1": "Connect your AI assistant to Thingport over MCP.",
+          "step3": "Ask for any widget, in your own words. For example:",
+          "step4": "It appears in Mine, ready to add to your dashboard. Ask again to change it, or fine-tune it here.",
+          "examplesLabel": "Example prompts",
+          "examples": {
+            "printer": {
+              "label": "Printer progress",
+              "name": "Printer",
+              "prompt": "Make me a Thingport widget that shows my OctoPrint printer’s progress."
+            },
+            "filament": {
+              "label": "Filament stock",
+              "name": "Filament",
+              "prompt": "Make me a Thingport widget that lists my Spoolman spools and warns when one runs low."
+            },
+            "library": {
+              "label": "Models per month",
+              "name": "Models added",
+              "prompt": "Make me a Thingport widget that charts how many models I added each month."
+            }
+          }
         }
       }
     },
@@ -665,28 +1082,6 @@
       "providers": {
         "heading": "Providers",
         "subtitle": "The sites Thingport imports from and syncs with. Turn one off and nothing new comes from it for anyone; models already imported stay.",
-        "descriptions": {
-          "makerworld": "Bambu Lab's model site: imports with print profiles, and collections to sync.",
-          "printables": "Prusa's model site: imports, and public and private collections to sync.",
-          "thingiverse": "Imports, collections and liked models, through this Thingport's App Token.",
-          "myminifactory": "Models and public collections, through this Thingport's API key; bought models through each user's own MyMiniFactory account.",
-          "snapmaker": "Models with their print profiles, and each user's likes and bookmarks, through each user's own Snapmaker account.",
-          "makeronline": "Models with their print profiles, collections and each user's likes. Files come through Thingport Grab: MakerOnline gives them only to its own pages.",
-          "crealitycloud": "Models with their print profiles, collections and each user's likes, through each user's own Creality Cloud account.",
-          "nexprint": "Models with their print profiles, and collections, through each user's own NexPrint account.",
-          "thangs": "Free and bought models, likes and collections, through each user's own Thangs account.",
-          "cults3d": "Free and bought models, likes and printlists, through each user's own Cults3D API key. Files come with the browser's sign-in, which Thingport Grab sends."
-        },
-        "keyStatus": {
-          "thingiverse": {
-            "set": "App Token set",
-            "missing": "No App Token: Thingiverse imports won't work until one is set"
-          },
-          "myminifactory": {
-            "set": "API key set",
-            "missing": "No API key: MyMiniFactory imports won't work until one is set"
-          }
-        },
         "turnOff": "Turn {{name}} off",
         "turnOn": "Turn {{name}} on",
         "disableTitle": "Turn {{name}} off?",
@@ -921,6 +1316,39 @@
         "moveThem": "Move them",
         "pathLabel": "Path"
       },
+      "fileReuse": {
+        "heading": "Identical files",
+        "subtitle": "Save space when several users import the same model.",
+        "modeLabel": "Clone identical files (copy-on-write)",
+        "help": "Thingport compares each new model file, supporting file, gallery image and description image with the ones already stored, whichever kind they are. Copy-on-write clones a match on btrfs, XFS or ZFS 2.2 and later, and stores the file as usual elsewhere. Thumbnails and renders aren't shared. Each clone is a file of its own, so editing one on disk never changes another user's. Files stored before it was turned on are checked too, see Existing files.",
+        "failed": "Couldn't save how identical files are stored. Please try again.",
+        "loadFailed": "Couldn't load how identical files are stored.",
+        "modeHelp": {
+          "off": "Every file takes its own space.",
+          "reflink": "A file already stored is cloned where the filesystem can, taking no extra space until one copy changes."
+        },
+        "backfill": {
+          "label": "Existing files",
+          "help": "Turning on cloning goes over the files already stored: each one's hash is recorded, then files with the same content are replaced by clones of the oldest one, keeping their own name, place and owner. Only files in Thingport's storage folder are touched, and a file that changes meanwhile is left as it is. Run it again after turning cloning on for a while off, or for files that couldn't be checked. Snapshots of the storage can keep the old copies, so the space freed is an upper bound.",
+          "idle": "Not checked since the server started",
+          "starting": "Starting...",
+          "restarting": "Stopping, then starting again...",
+          "hashing": "Recording hashes: {{done}} of {{total}}",
+          "cloning": "Cloning identical files: {{done}} of {{total}}, {{cloned}} cloned",
+          "result_one": "{{count}} file cloned, up to {{size}} freed",
+          "result_other": "{{count}} files cloned, up to {{size}} freed",
+          "nothing": "Nothing to clone",
+          "unsupported": "This filesystem can't clone files; hashes were recorded",
+          "stopped": "Stopped: cloning was turned off",
+          "failedRun": "Stopped early because of an error; see the server log",
+          "skippedNote": "{{count}} not checked",
+          "checkAgain": "Check again",
+          "confirmTitle": "Check existing files?",
+          "confirmMessage": "Thingport will go over every stored file and replace identical ones by clones. It runs in the background and can take a while on a large library.",
+          "confirmAction": "Check",
+          "failed": "Couldn't start the check. Please try again."
+        }
+      },
       "consume": {
         "heading": "Consume Folder",
         "subtitle": "Import anything dropped into a watched folder: files, folder structures and ZIPs.",
@@ -1023,36 +1451,6 @@
         "refetchProgress": "Refetching descriptions for {{email}}: {{done}} of {{total}} — {{updated}} updated so far.",
         "refetchDone": "Refetched descriptions for {{email}}: {{updated}} of {{total}} changed.",
         "refetchFailedCount": "{{count}} couldn't be read from their source and were left as they were."
-      },
-      "thingiverse": {
-        "heading": "Thingiverse App Token",
-        "helpText": "Create an app at thingiverse.com/apps/create (any type, e.g. \"Desktop\") and paste the App Token it shows you.",
-        "statusConfigured": "An App Token is currently configured.",
-        "statusNotConfigured": "No App Token is configured yet -- Thingiverse imports will fail until one is set.",
-        "tokenLabel": "App Token",
-        "tokenPlaceholder": "Paste a new token to replace the current one",
-        "tokenHelperConfigured": "For security, the current token is never shown again -- leave this blank to keep it, or paste a new one to replace it.",
-        "save": "Save",
-        "saving": "Saving…",
-        "clear": "Remove token",
-        "saved": "Saved.",
-        "cleared": "App Token removed.",
-        "failed": "Failed to save Thingiverse settings."
-      },
-      "myminifactory": {
-        "heading": "MyMiniFactory API key",
-        "helpText": "Create an app at myminifactory.com/settings/developer/application and paste the API key it shows you. Free models download without it, but it's needed to read their details and your collections.",
-        "statusConfigured": "An API key is currently configured.",
-        "statusNotConfigured": "No API key is configured yet -- MyMiniFactory imports will fail until one is set.",
-        "tokenLabel": "API key",
-        "tokenPlaceholder": "Paste a new key to replace the current one",
-        "tokenHelperConfigured": "For security, the current key is never shown again -- leave this blank to keep it, or paste a new one to replace it.",
-        "save": "Save",
-        "saving": "Saving…",
-        "clear": "Remove key",
-        "saved": "Saved.",
-        "cleared": "API key removed.",
-        "failed": "Failed to save MyMiniFactory settings."
       },
       "ai": {
         "heading": "AI",
@@ -1183,11 +1581,11 @@
         "empty": "No description."
       },
       "session": {
-        "heading": "Session Length",
-        "subtitle": "Control how long a signed-in session stays valid for the whole instance.",
+        "heading": "Sessions",
+        "subtitle": "How long sign-ins last across the whole instance.",
         "infoTitle": "What this controls",
-        "infoBody": "How long a freshly issued sign-in token stays valid before that user is asked to log in again. Applies instance-wide to every new login, registration, and email verification. Changing this only affects tokens issued from now on -- anyone already signed in keeps whatever length was active when they logged in.",
-        "tokenTtlLabel": "Session length (seconds)",
+        "infoBody": "How long an access token lasts before the browser renews it. A browser away for longer signs back in from its remembered session, set below; with that off, it's asked to sign in again. Only affects tokens issued from now on.",
+        "tokenTtlLabel": "Token length (seconds)",
         "tokenTtlHelp": "Between 5 minutes and 1 year.",
         "invalid": "Enter a number between 300 (5 minutes) and 31536000 (1 year) seconds.",
         "approx": "≈ {{value}}",
@@ -1206,7 +1604,10 @@
         "save": "Save",
         "saving": "Saving…",
         "saved": "Saved.",
-        "failed": "Failed to save session settings."
+        "failed": "Failed to save session settings.",
+        "rememberLabel": "Keep browsers signed in",
+        "rememberHelp": "How long a browser stays signed in without being used, so a dashboard set as its homepage never lands on the sign-in form. Every visit starts the count again. Signing out, or changing the password, ends it.",
+        "rememberOff": "Off"
       },
       "connections": {
         "heading": "Connections"
@@ -1392,7 +1793,10 @@
           "grab_disconnected": "Thingport Grab removed",
           "collections_merged": "Collections merged",
           "tags_merged": "Tags merged",
-          "mcp_access_changed": "Changed the MCP access"
+          "mcp_access_changed": "Changed the MCP access",
+          "file_reuse_changed": "Changed how identical files are stored",
+          "file_reuse_backfill_started": "Started checking stored files for identical content",
+          "custom_widgets_changed": "Changed which custom widgets are allowed"
         },
         "authorsLinked": "{{count}} model(s) linked",
         "descriptionsRefetched": "{{email}} — {{updated}} of {{total}} description(s) changed",
@@ -1677,6 +2081,58 @@
           "read": "Tokens can search and read their own library, never change it.",
           "write": "Tokens can also import models and file them into collections, if their user turns that on."
         }
+      },
+      "dashboard": {
+        "heading": "Dashboard",
+        "subtitle": "Which custom widgets users may add, and the ones they use.",
+        "sources": {
+          "heading": "Custom widgets",
+          "help": "A custom widget's script runs in its user's dashboard with their access to Thingport. Turn a kind off on an instance shared with people you don't fully trust: its widgets stop loading, and their panels say so.",
+          "own": {
+            "label": "Users' own widgets",
+            "on": "Users can make and edit their own.",
+            "off": "Off: users' own widgets don't load."
+          },
+          "community": {
+            "label": "Community widgets",
+            "on": "Users can install widgets from the community repository.",
+            "off": "Off: community widgets don't load."
+          },
+          "failed": "Couldn't change the setting."
+        },
+        "stats": {
+          "widgets": "Widgets in use",
+          "users": "Users with widgets",
+          "placed": "On dashboards",
+          "installs": "Community installs"
+        },
+        "tabs": {
+          "inUse": "In use",
+          "community": "Community"
+        },
+        "inUse": {
+          "own": "Own",
+          "community": "Community",
+          "placed_one": "On {{count}} dashboard",
+          "placed_other": "On {{count}} dashboards",
+          "open": "Who uses {{name}}",
+          "empty": "No one has a custom widget yet. Users add them from their dashboard: Edit, then Add panel.",
+          "failed": "Couldn't load the widgets in use."
+        },
+        "community": {
+          "installs_one": "{{count}} install",
+          "installs_other": "{{count}} installs",
+          "outdated_one": "{{count}} on an older version",
+          "outdated_other": "{{count}} on an older version",
+          "source": "View source",
+          "off": "Community widgets are off: users can't install these, and installed ones don't load.",
+          "empty": "The community repository has no widgets yet.",
+          "error": "Couldn't reach the community repository."
+        },
+        "users": {
+          "placed": "On dashboard",
+          "installed": "Installed only"
+        }
       }
     },
     "download": {
@@ -1837,130 +2293,15 @@
       "disconnectMessage": "Your {{name}} key is removed, and imports from {{name}} stop working until you connect it again.",
       "disconnectMessageShared": "The {{name}} token is removed for everyone on this Thingport, and imports from {{name}} stop working until it's connected again.",
       "failed": "Failed to save -- try again.",
-      "makerworld": {
-        "expiredStatus": "Sign-in expired",
-        "expired": "Sign-in expired. Connect MakerWorld again with a fresh cookie in Configuration → Providers.",
-        "placeholder": "example: mw_session=...; mw_token=...;",
-        "steps": [
-          "Sign in at makerworld.com in your browser.",
-          "Open the developer tools (F12 or ⌥⌘I) and go to the Network tab.",
-          "Reload the page and pick any request to makerworld.com.",
-          "Under Request Headers, copy the whole value of the Cookie header and paste it below."
-        ]
-      },
-      "thingiverse": {
-        "placeholder": "Paste the App Token",
-        "steps": [
-          "Sign in at thingiverse.com and open thingiverse.com/apps/create.",
-          "Create an app of any type, such as \"Desktop app\".",
-          "Copy the App Token it shows and paste it below."
-        ],
-        "shared": "This token is shared by everyone on this Thingport.",
-        "adminOnly": "Only an admin of this Thingport can set this up."
-      },
-      "myminifactory": {
-        "placeholder": "PHPSESSID value, or the whole Cookie header",
-        "steps": [
-          "Easiest: with Thingport Grab, just open myminifactory.com while signed in, and it connects your account for you.",
-          "Or by hand: sign in at myminifactory.com and open your browser's developer tools (F12).",
-          "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → www.myminifactory.com, copy the value of PHPSESSID and paste it below."
-        ],
-        "notConnected": "Free models import without it. Connect your account to import the models you bought, and free ones that need a sign-in.",
-        "expired": "Sign-in expired. Visit myminifactory.com with Thingport Grab, or connect MyMiniFactory again in Configuration → Providers.",
-        "expiredStatus": "Sign-in expired"
-      },
-      "snapmaker": {
-        "placeholder": "login_access_token value, or the whole Cookie header",
-        "steps": [
-          "Easiest: with Thingport Grab, just open space.snapmaker.com while signed in. It connects your account and keeps the sign-in fresh, since Snapmaker's lasts only a day.",
-          "Or by hand: sign in at space.snapmaker.com and open your browser's developer tools (F12).",
-          "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → space.snapmaker.com, copy the value of login_access_token and paste it below. Pasted by hand, it lasts a day."
-        ],
-        "notConnected": "Snapmaker gives its files to signed-in users only. Connect your account to import its models, and your likes and bookmarks.",
-        "expired": "Sign-in expired. Visit space.snapmaker.com with Thingport Grab, or connect Snapmaker Space again in Configuration → Providers.",
-        "expiredStatus": "Sign-in expired"
-      },
-      "makeronline": {
-        "placeholder": "mo_access_token value, or the whole Cookie header",
-        "steps": [
-          "Easiest: with Thingport Grab, just open makeronline.com while signed in. It connects your account, and brings in the MakerOnline models waiting for it, since MakerOnline gives its files only to its own pages.",
-          "Or by hand: sign in at makeronline.com and open your browser's developer tools (F12).",
-          "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → www.makeronline.com, copy the value of mo_access_token and paste it below. It lasts about three months."
-        ],
-        "notConnected": "Connect your account to read your MakerOnline likes and private collections. Its files always come through Thingport Grab.",
-        "expired": "Sign-in expired. Visit makeronline.com with Thingport Grab, or connect MakerOnline again in Configuration → Providers.",
-        "expiredStatus": "Sign-in expired"
-      },
-      "crealitycloud": {
-        "placeholder": "The Cookie header, with model_token and model_user_id",
-        "steps": [
-          "Easiest: with Thingport Grab, just open crealitycloud.com while signed in. It connects your account, and again each time you sign in there.",
-          "Or by hand: sign in at crealitycloud.com, open your browser's developer tools (F12) and reload the page.",
-          "Under Network, pick any request to crealitycloud.com/api, copy its Cookie request header and paste it below. It lasts a week from when you signed in."
-        ],
-        "notConnected": "Creality Cloud gives its files to signed-in users only. Connect your account to import its models, and your likes.",
-        "expired": "Sign-in expired. Sign in on crealitycloud.com with Thingport Grab, or connect Creality Cloud again in Configuration → Providers.",
-        "expiredStatus": "Sign-in expired"
-      },
-      "nexprint": {
-        "placeholder": "The auth_token cookie, or the Authorization header",
-        "steps": [
-          "Easiest: with Thingport Grab, just open nexprint.com while signed in. It connects your account, and keeps it connected as you visit.",
-          "Or by hand: sign in at nexprint.com, open your browser's developer tools (F12) and reload the page.",
-          "Under Network, pick any request to nexprint.com/gateway, copy its Authorization request header (or the auth_token cookie) and paste it below."
-        ],
-        "notConnected": "NexPrint gives its files to signed-in users only. Connect your account to import its models.",
-        "expired": "Sign-in expired. Sign in on nexprint.com with Thingport Grab, or connect NexPrint again in Configuration → Providers.",
-        "expiredStatus": "Sign-in expired"
-      },
-      "thangs": {
-        "placeholder": "The accessToken or refreshToken cookie, or the whole Cookie header",
-        "steps": [
-          "Easiest: with Thingport Grab, just open thangs.com while signed in. It connects your account, and Thingport keeps it connected for about a year.",
-          "Or by hand: sign in at thangs.com, open your browser's developer tools (F12) and reload the page.",
-          "Under Network, pick any request to thangs.com/api, copy its Cookie request header (it holds both tokens) and paste it below."
-        ],
-        "notConnected": "Thangs gives its files to signed-in users only. Connect your account to import its models.",
-        "expired": "Sign-in expired. Sign in on thangs.com with Thingport Grab, or connect Thangs again in Configuration → Providers.",
-        "expiredStatus": "Sign-in expired"
-      },
-      "cults3d": {
-        "nickLabel": "Cults3D nickname",
-        "keyLabel": "API key",
-        "placeholder": "Your nickname, as written on your profile",
-        "steps": [
-          "Sign in at cults3d.com and open cults3d.com/en/api/keys. Make a key there and copy its secret.",
-          "Enter your nickname exactly as your profile writes it (capitals count) and the key below. Thingport reads models, likes, printlists and your downloads with it.",
-          "Then open cults3d.com once with Thingport Grab, signed in: Cults3D gives its files only to its own signed-in pages, and Grab passes that sign-in on."
-        ],
-        "notConnected": "Thingport reads Cults3D with your own API key. Connect it with your nickname and a key made on cults3d.com.",
-        "expired": "Cults3D turned the API key down. Make a new one on cults3d.com and connect again in Configuration → Providers.",
-        "expiredStatus": "API key turned down",
-        "siteMissing": "Connected, but downloads need the browser's sign-in: open cults3d.com signed in with Thingport Grab, or paste it from the tile's menu.",
-        "siteExpired": "The browser's sign-in ran out: open cults3d.com signed in with Thingport Grab, or paste it again from the tile's menu.",
-        "siteMissingStatus": "No browser sign-in yet",
-        "session": {
-          "title": "Paste the Cults3D sign-in",
-          "paste": "Paste browser sign-in",
-          "save": "Save",
-          "placeholder": "The request headers of a signed-in cults3d.com page",
-          "steps": [
-            "Easiest: with Thingport Grab, just open cults3d.com while signed in. It sends the sign-in itself.",
-            "Or by hand: open your browser's developer tools (F12) on a signed-in cults3d.com page and reload it.",
-            "Under Network, pick the page's own request, copy its request headers (with the Cookie and User-Agent) and paste them below. It only works when Thingport reaches the internet from the same address as that browser."
-          ]
-        }
-      },
-      "printables": {
-        "alwaysConnected": "Printables is connected by default: it needs no account or key."
-      },
       "comingSoon": "Coming soon"
     },
     "slicer": {
-      "subtitle": "The slicer a model's \"Open in Slicer\" opens it in. Right-click one and Activate it, or double-click it.",
+      "subtitle": "The slicers installed on this computer. A model opens in the last one you used; the others are in its “Open in” menu. Double-click one, or right-click it, to switch it on or off.",
       "active": "Active",
       "notActive": "Not active",
-      "activate": "Activate"
+      "activate": "Activate",
+      "lastUsed": "Last used",
+      "deactivate": "Deactivate"
     },
     "storageMoveProgress": {
       "label": "{{phrase}} {{done}} of {{total}} models",
@@ -2074,107 +2415,7 @@
       "compareLabel": "What each provider needs and imports",
       "off": "Turned off",
       "yes": "Yes",
-      "no": "No",
-      "providers": {
-        "makerworld": {
-          "summary": "Bambu Lab's platform for sharing 3D printable models, many with tuned print profiles. Open to any printer, with MakerLab tools for customising models.",
-          "signIn": "Your own MakerWorld session cookie.",
-          "grab": "Reads the cookie for you, and imports whole collections without running into MakerWorld's rate limits.",
-          "setup": [
-            "Install Thingport Grab and import once from a MakerWorld page while signed in: it connects MakerWorld for you.",
-            "Or by hand: copy the token cookie from your browser's developer tools (Application → Cookies → makerworld.com).",
-            "Right-click MakerWorld in Configuration → Providers, choose Connect and paste it."
-          ]
-        },
-        "printables": {
-          "summary": "Prusa Research's free model repository, formerly PrusaPrinters, with contests and Prusameters rewards. Its files work on any printer.",
-          "signIn": "Nothing to connect.",
-          "grab": "Needed only for your private collections and likes, which Printables shows to you alone.",
-          "setup": [
-            "Nothing to set up: paste a Printables link, or import from its page with Thingport Grab.",
-            "For your private collections and likes, visit Printables signed in, with Thingport Grab."
-          ]
-        },
-        "thingiverse": {
-          "summary": "One of the oldest and largest libraries of user-made 3D printable designs, most of them free and openly licensed.",
-          "signIn": "One App Token for everyone, set by an admin.",
-          "grab": "Handy for importing from Thingiverse's pages, but not needed.",
-          "setup": [
-            "Sign in at thingiverse.com and open thingiverse.com/apps/create.",
-            "Create an app of a type without a redirect URL, such as Desktop app, and copy its App Token.",
-            "An admin pastes it in Configuration → Providers → Thingiverse, or in Administration → Providers."
-          ]
-        },
-        "myminifactory": {
-          "summary": "A curated marketplace of free and paid 3D printable files, best known for tabletop miniatures. Models are checked before they're listed.",
-          "signIn": "An API key set by an admin; your own sign-in adds the models you bought.",
-          "grab": "Connects your account when you just visit myminifactory.com.",
-          "setup": [
-            "An admin creates an application at myminifactory.com/settings/developer and saves its API key in Administration → Providers.",
-            "For bought models, open myminifactory.com signed in with Thingport Grab, or paste your PHPSESSID cookie in Configuration → Providers."
-          ]
-        },
-        "snapmaker": {
-          "summary": "Snapmaker's model platform, built around its U1 printer. Featured models are test-printed, with profiles tuned for multi-colour prints.",
-          "signIn": "Your own sign-in. It lasts a day.",
-          "grab": "The only thing that renews the sign-in. Without it, you paste a new one every day.",
-          "setup": [
-            "Install Thingport Grab, enable it on Snapmaker Space and open space.snapmaker.com signed in.",
-            "Grab then keeps the sign-in fresh while your browser is open.",
-            "By hand: paste the login_access_token cookie in Configuration → Providers. It lasts a day."
-          ]
-        },
-        "makeronline": {
-          "summary": "Anycubic's model platform: free and paid models, designer contests and an AI text-to-3D tool.",
-          "signIn": "None to import; your sign-in adds your likes and private collections.",
-          "grab": "Grab downloads every MakerOnline file, in a makeronline.com page. Imports started elsewhere wait for it.",
-          "setup": [
-            "Install Thingport Grab and enable it on MakerOnline.",
-            "Import from a model page, or open any makeronline.com page to bring in the models waiting for Grab.",
-            "Signed in there, Grab also connects your account for your likes and private collections."
-          ]
-        },
-        "crealitycloud": {
-          "summary": "Creality's 3D printing platform: a large library of free and premium models, with cloud slicing and remote printing.",
-          "signIn": "Your own sign-in. It lasts a week and isn't renewed.",
-          "grab": "Sends each new sign-in as you sign in on crealitycloud.com.",
-          "setup": [
-            "Install Thingport Grab, enable it on Creality Cloud and open crealitycloud.com signed in.",
-            "By hand: copy the Cookie header of a crealitycloud.com/api request and paste it in Configuration → Providers.",
-            "After a week, sign in there again to reconnect."
-          ]
-        },
-        "nexprint": {
-          "summary": "Elegoo's open model platform, launched in 2025. It mixes Elegoo's own library with community designs, and works with Elegoo Slicer and OrcaSlicer.",
-          "signIn": "Your own sign-in, which the site renews as you use it.",
-          "grab": "Sends the renewed sign-in as you visit nexprint.com.",
-          "setup": [
-            "Install Thingport Grab, enable it on NexPrint and open nexprint.com signed in.",
-            "By hand: copy the Authorization header of a nexprint.com/gateway request and paste it in Configuration → Providers."
-          ]
-        },
-        "thangs": {
-          "summary": "A 3D model search engine by Physna that finds models by their shape as well as their name, with a marketplace and designer memberships.",
-          "signIn": "Your own sign-in; Thingport renews it for about a year.",
-          "grab": "Connects your account in one visit to thangs.com.",
-          "setup": [
-            "Install Thingport Grab, enable it on Thangs and open thangs.com signed in.",
-            "By hand: copy the Cookie header of a thangs.com/api request and paste it in Configuration → Providers.",
-            "Free accounts download a limited number of models a day."
-          ]
-        },
-        "cults3d": {
-          "summary": "A French marketplace for free and paid 3D printable designs, founded in 2014, and a social network for makers.",
-          "signIn": "Your own API key, and your browser's sign-in for files.",
-          "grab": "Sends the browser's sign-in and Cloudflare clearance. Thingport must reach the internet from that browser's IP address.",
-          "flaresolverr": "Doesn't help: its browser can't hand over a download link.",
-          "setup": [
-            "Make an API key at cults3d.com/en/api/keys.",
-            "Right-click Cults3D in Configuration → Providers, choose Connect, and enter your nickname and the key.",
-            "Open cults3d.com signed in with Thingport Grab, so its files can download."
-          ]
-        }
-      }
+      "no": "No"
     },
     "whatsNew": {
       "label": "What's new",
@@ -2235,6 +2476,36 @@
       },
       "guide": "MCP guide",
       "close": "Close"
+    },
+    "iconPicker": {
+      "title": "Choose an icon",
+      "close": "Close",
+      "search": "Search icons",
+      "upload": "Upload",
+      "uploadHelp": "PNG, JPEG, WebP, GIF or SVG, up to 1 MB. Pictures are scaled down to 256 px; drop files anywhere here to upload them.",
+      "uploadFailed": "Couldn't upload the icon",
+      "deleteTitle": "Delete “{{name}}”?",
+      "deleteMessage": "Launcher links and widgets using it go back to their usual icon.",
+      "delete": "Delete",
+      "noUploads": "Nothing uploaded yet. Upload a picture or drop one here.",
+      "noMatches": "No icons match “{{query}}”",
+      "address": "Or an image address",
+      "useAddress": "Use",
+      "actionsFor": "Actions for {{name}}",
+      "uploadedIcon": "Uploaded icon",
+      "clear": "Remove icon",
+      "choose": "Choose",
+      "groups": {
+        "uploaded": "Your icons",
+        "thingport": "Thingport",
+        "providers": "Model sites",
+        "printing": "3D printing",
+        "selfhosted": "Self-hosted",
+        "media": "Media",
+        "popular": "Popular sites",
+        "ai": "AI",
+        "browsers": "Browsers"
+      }
     }
   },
   "common": {
@@ -2969,7 +3240,6 @@
       "size": "Size",
       "sizeHint": "Total size of all this model's files in storage",
       "author": "Author",
-      "downloadModelFiles": "Download model files",
       "imported": "Imported {{date}}",
       "quality": {
         "scanning": "Checking print quality…",
@@ -3046,7 +3316,13 @@
           "minorHint": "Slicers usually cope, or it's a quick fix in one."
         },
         "manageSettings": "Manage quality checks"
-      }
+      },
+      "fileSelectLabel": "Files ({{count}})",
+      "fileSelectAria": "File: {{file}}. Choose another",
+      "downloadFile": "Download file",
+      "moreOpenOptions": "Other slicers and downloads",
+      "openActions": "Open or download",
+      "openInHeading": "Open in"
     },
     "edit": {
       "title": "Edit model",
@@ -3204,37 +3480,10 @@
           "takenBy": "Synced with \"{{name}}\"",
           "loadFailed": "Couldn't load the collections.",
           "lookupFailed": "Couldn't find that collection.",
-          "notALink": "Paste a MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs or Cults3D collection link.",
+          "notALink": "Paste a MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D or Pinshape collection link.",
           "usernameFailed": "Couldn't save the username.",
           "openProviders": "Open Providers",
-          "notConnected": {
-            "makerworld": "Connect MakerWorld in Configuration > Providers to see your collections here. Its cookie tells Thingport who you are there.",
-            "printables": "Printables can't be reached right now.",
-            "thingiverse": "Thingiverse isn't connected on this Thingport yet. An admin can connect it in Configuration > Providers.",
-            "myminifactory": "MyMiniFactory isn't connected on this Thingport yet. An admin can connect it in Configuration > Providers.",
-            "snapmaker": "Connect Snapmaker Space in Configuration > Providers, or visit it with Thingport Grab, to see your likes and bookmarks here.",
-            "makeronline": "Connect MakerOnline in Configuration > Providers, or visit it with Thingport Grab, to see your likes and collections here.",
-            "crealitycloud": "Connect Creality Cloud in Configuration > Providers, or visit it with Thingport Grab, to see your likes and collections here.",
-            "nexprint": "Connect NexPrint in Configuration > Providers, or visit it with Thingport Grab, to see your collections here.",
-            "thangs": "Connect Thangs in Configuration > Providers, or visit it with Thingport Grab, to see your likes and collections here.",
-            "cults3d": "Enter your Cults3D nickname and API key in Configuration > Providers to see your likes and printlists here."
-          },
           "usernameLabel": "Your {{provider}} username",
-          "usernameHint": {
-            "printables": "Thingport lists your public Printables collections. It only needs asking once.",
-            "thingiverse": "Thingport lists your public Thingiverse collections. It only needs asking once.",
-            "myminifactory": "Thingport lists your public MyMiniFactory collections. It only needs asking once."
-          },
-          "usernamePlaceholder": {
-            "printables": "@handle or profile link",
-            "thingiverse": "Username or profile link",
-            "myminifactory": "Username or profile link"
-          },
-          "showing": {
-            "printables": "Showing @{{user}}'s collections.",
-            "thingiverse": "Showing @{{user}}'s public collections.",
-            "myminifactory": "Showing @{{user}}'s public collections."
-          },
           "change": "Change",
           "empty": "No collections on {{provider}} yet.",
           "pasteLabel": "Someone else's collection",
@@ -3250,15 +3499,9 @@
           "startedWaiting": "\"{{name}}\" now syncs with \"{{source}}\". Its models come in the next time you open {{provider}} with Thingport Grab.",
           "pickPrompt": "Pick a collection above, or paste a link.",
           "startNothing": "Sync",
-          "printablesPrivateHelp": "Private collections and likes are added once Thingport Grab sees you signed in on Printables, since Printables shows them to you alone.",
           "makerworldHelp": "MakerWorld quickly rate-limits bulk imports, so the models in it now aren't imported. Any already in your library are added to \"{{name}}\".",
           "forget": "Forget",
-          "forgetTitle": "Forget your {{provider}} account?",
-          "forgetMessage": {
-            "printables": "Thingport stops listing your Printables collections, and Thingport Grab stops sending your private collections and likes, until you give your username again. Syncs already set up keep their models; those of private collections and likes pause until then.",
-            "thingiverse": "Thingport stops listing your Thingiverse collections until you give your username again. Syncs already set up keep their models.",
-            "myminifactory": "Thingport stops listing your MyMiniFactory collections until you give your username again. Syncs already set up keep their models."
-          }
+          "forgetTitle": "Forget your {{provider}} account?"
         }
       },
       "sortByModels": "Most models",
@@ -3436,8 +3679,6 @@
       "improveDescriptions": "Improve descriptions with AI",
       "aiRunActive": "An AI run is already in progress",
       "aiTooMany": "Select up to {{max}} models for an AI run",
-      "addToCollectionTitle_one": "Add {{count}} model to a collection",
-      "addToCollectionTitle_other": "Add {{count}} models to a collection",
       "downloadTitle_one": "Download {{count}} model",
       "downloadTitle_other": "Download {{count}} models",
       "favorited_one": "Added {{count}} model to Favourites",
@@ -3461,7 +3702,33 @@
       "confirmRemoveFromCollection_one": "Remove {{count}} model from this collection? The model itself is kept.",
       "confirmRemoveFromCollection_other": "Remove {{count}} models from this collection? The models themselves are kept.",
       "removedFromCollection_one": "Removed {{count}} model from the collection",
-      "removedFromCollection_other": "Removed {{count}} models from the collection"
+      "removedFromCollection_other": "Removed {{count}} models from the collection",
+      "addTagsPlaceholder": "Type a tag, press Enter",
+      "existingTags": "Your tags",
+      "editTags": "Edit tags",
+      "editTagsTitle_one": "Tags of {{count}} model",
+      "editTagsTitle_other": "Tags of {{count}} models",
+      "selectedTags": "On the selected models",
+      "selectedTagsHelp": "Click a tag to put it on all the selected models, take it off all of them, or, if only some have it, leave it as it is.",
+      "noTags": "None of them have tags yet.",
+      "summaryAdd": "Add {{count}}",
+      "summaryRemove": "Remove {{count}}",
+      "tagsUpdated_one": "Updated the tags of {{count}} model",
+      "tagsUpdated_other": "Updated the tags of {{count}} models",
+      "tagsFailed": "Failed to update the tags. Please try again.",
+      "apply": "Apply",
+      "onSome": "{{name}}, on {{count}} of {{total}}",
+      "editCollections": "Edit collections",
+      "editCollectionsTitle_one": "Collections of {{count}} model",
+      "editCollectionsTitle_other": "Collections of {{count}} models",
+      "editCollectionsHelp": "Click a collection to put all the selected models in it, take them all out of it, or, if only some are in it, leave it as it is.",
+      "summaryAddTo": "Add to {{count}}",
+      "summaryRemoveFrom": "Remove from {{count}}",
+      "collectionsUpdated_one": "Updated {{count}} collection",
+      "collectionsUpdated_other": "Updated {{count}} collections",
+      "collectionsFailed": "Failed to update the collections. Please try again.",
+      "tagsPartlyUpdated_one": "Updated the tags of {{count}} model, but the rest failed. Please try again.",
+      "tagsPartlyUpdated_other": "Updated the tags of {{count}} models, but the rest failed. Please try again."
     },
     "merge": {
       "action": "Merge",
@@ -3501,6 +3768,443 @@
         "othersGo_one": "{{names}} is removed. Its models are tagged “{{name}}” instead.",
         "othersGo_other": "{{names}} are removed. Their models are tagged “{{name}}” instead.",
         "keepsOwn": "Models already tagged “{{name}}” stay as they are."
+      }
+    }
+  },
+  "providers": {
+    "makerworld": {
+      "connect": {
+        "steps": [
+          "Sign in at makerworld.com in your browser.",
+          "Open the developer tools (F12 or ⌥⌘I) and go to the Network tab.",
+          "Reload the page and pick any request to makerworld.com.",
+          "Under Request Headers, copy the whole value of the Cookie header and paste it below."
+        ],
+        "placeholder": "example: mw_session=...; mw_token=...;"
+      },
+      "status": {
+        "expired": "Sign-in expired. Connect MakerWorld again with a fresh cookie in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "MakerWorld: not connected"
+      },
+      "about": {
+        "summary": "Bambu Lab's platform for sharing 3D printable models, many with tuned print profiles. Open to any printer, with MakerLab tools for customising models.",
+        "signIn": "Your own MakerWorld session cookie.",
+        "grab": "Reads the cookie for you, and imports whole collections without running into MakerWorld's rate limits.",
+        "setup": [
+          "Install Thingport Grab and import once from a MakerWorld page while signed in: it connects MakerWorld for you.",
+          "Or by hand: copy the token cookie from your browser's developer tools (Application → Cookies → makerworld.com).",
+          "Right-click MakerWorld in Configuration → Providers, choose Connect and paste it."
+        ]
+      },
+      "admin": {
+        "description": "Bambu Lab's model site: imports with print profiles, and collections to sync."
+      },
+      "sync": {
+        "notConnected": "Connect MakerWorld in Configuration > Providers to see your collections here. Its cookie tells Thingport who you are there."
+      }
+    },
+    "printables": {
+      "status": {
+        "alwaysConnected": "Printables is connected by default: it needs no account or key."
+      },
+      "about": {
+        "summary": "Prusa Research's free model repository, formerly PrusaPrinters, with contests and Prusameters rewards. Its files work on any printer.",
+        "signIn": "Nothing to connect.",
+        "grab": "Needed only for your private collections and likes, which Printables shows to you alone.",
+        "setup": [
+          "Nothing to set up: paste a Printables link, or import from its page with Thingport Grab.",
+          "For your private collections and likes, visit Printables signed in, with Thingport Grab."
+        ]
+      },
+      "admin": {
+        "description": "Prusa's model site: imports, and public and private collections to sync."
+      },
+      "sync": {
+        "notConnected": "Printables can't be reached right now.",
+        "usernameHint": "Thingport lists your public Printables collections. It only needs asking once.",
+        "usernamePlaceholder": "@handle or profile link",
+        "showing": "Showing @{{user}}'s collections.",
+        "forgetMessage": "Thingport stops listing your Printables collections, and Thingport Grab stops sending your private collections and likes, until you give your username again. Syncs already set up keep their models; those of private collections and likes pause until then.",
+        "showingHelp": "Private collections and likes are added once Thingport Grab sees you signed in on Printables, since Printables shows them to you alone."
+      }
+    },
+    "thingiverse": {
+      "connect": {
+        "steps": [
+          "Sign in at thingiverse.com and open thingiverse.com/apps/create.",
+          "Create an app of any type, such as \"Desktop app\".",
+          "Copy the App Token it shows and paste it below."
+        ],
+        "placeholder": "Paste the App Token",
+        "shared": "This token is shared by everyone on this Thingport."
+      },
+      "status": {
+        "adminOnly": "Only an admin of this Thingport can set this up.",
+        "disabledReason": "Thingiverse: the admin hasn't configured an API key yet"
+      },
+      "about": {
+        "summary": "One of the oldest and largest libraries of user-made 3D printable designs, most of them free and openly licensed.",
+        "signIn": "One App Token for everyone, set by an admin.",
+        "grab": "Handy for importing from Thingiverse's pages, but not needed.",
+        "setup": [
+          "Sign in at thingiverse.com and open thingiverse.com/apps/create.",
+          "Create an app of a type without a redirect URL, such as Desktop app, and copy its App Token.",
+          "An admin pastes it in Configuration → Providers → Thingiverse, or in Administration → Providers."
+        ]
+      },
+      "admin": {
+        "description": "Imports, collections and liked models, through this Thingport's App Token.",
+        "keyStatus": {
+          "set": "App Token set",
+          "missing": "No App Token: Thingiverse imports won't work until one is set"
+        },
+        "key": {
+          "heading": "Thingiverse App Token",
+          "helpText": "Create an app at thingiverse.com/apps/create (any type, e.g. \"Desktop\") and paste the App Token it shows you.",
+          "statusConfigured": "An App Token is currently configured.",
+          "statusNotConfigured": "No App Token is configured yet -- Thingiverse imports will fail until one is set.",
+          "tokenLabel": "App Token",
+          "tokenPlaceholder": "Paste a new token to replace the current one",
+          "tokenHelperConfigured": "For security, the current token is never shown again -- leave this blank to keep it, or paste a new one to replace it.",
+          "save": "Save",
+          "saving": "Saving…",
+          "clear": "Remove token",
+          "saved": "Saved.",
+          "cleared": "App Token removed.",
+          "failed": "Failed to save Thingiverse settings."
+        }
+      },
+      "sync": {
+        "notConnected": "Thingiverse isn't connected on this Thingport yet. An admin can connect it in Configuration > Providers.",
+        "usernameHint": "Thingport lists your public Thingiverse collections. It only needs asking once.",
+        "usernamePlaceholder": "Username or profile link",
+        "showing": "Showing @{{user}}'s public collections.",
+        "forgetMessage": "Thingport stops listing your Thingiverse collections until you give your username again. Syncs already set up keep their models."
+      }
+    },
+    "myminifactory": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open myminifactory.com while signed in, and it connects your account for you.",
+          "Or by hand: sign in at myminifactory.com and open your browser's developer tools (F12).",
+          "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → www.myminifactory.com, copy the value of PHPSESSID and paste it below."
+        ],
+        "placeholder": "PHPSESSID value, or the whole Cookie header"
+      },
+      "status": {
+        "notConnected": "Free models import without it. Connect your account to import the models you bought, and free ones that need a sign-in.",
+        "expired": "Sign-in expired. Visit myminifactory.com with Thingport Grab, or connect MyMiniFactory again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "MyMiniFactory: the admin hasn't configured an API key yet"
+      },
+      "about": {
+        "summary": "A curated marketplace of free and paid 3D printable files, best known for tabletop miniatures. Models are checked before they're listed.",
+        "signIn": "An API key set by an admin; your own sign-in adds the models you bought.",
+        "grab": "Connects your account when you just visit myminifactory.com.",
+        "setup": [
+          "An admin creates an application at myminifactory.com/settings/developer and saves its API key in Administration → Providers.",
+          "For bought models, open myminifactory.com signed in with Thingport Grab, or paste your PHPSESSID cookie in Configuration → Providers."
+        ]
+      },
+      "admin": {
+        "description": "Models and public collections, through this Thingport's API key; bought models through each user's own MyMiniFactory account.",
+        "keyStatus": {
+          "set": "API key set",
+          "missing": "No API key: MyMiniFactory imports won't work until one is set"
+        },
+        "key": {
+          "heading": "MyMiniFactory API key",
+          "helpText": "Create an app at myminifactory.com/settings/developer/application and paste the API key it shows you. Free models download without it, but it's needed to read their details and your collections.",
+          "statusConfigured": "An API key is currently configured.",
+          "statusNotConfigured": "No API key is configured yet -- MyMiniFactory imports will fail until one is set.",
+          "tokenLabel": "API key",
+          "tokenPlaceholder": "Paste a new key to replace the current one",
+          "tokenHelperConfigured": "For security, the current key is never shown again -- leave this blank to keep it, or paste a new one to replace it.",
+          "save": "Save",
+          "saving": "Saving…",
+          "clear": "Remove key",
+          "saved": "Saved.",
+          "cleared": "API key removed.",
+          "failed": "Failed to save MyMiniFactory settings."
+        }
+      },
+      "sync": {
+        "notConnected": "MyMiniFactory isn't connected on this Thingport yet. An admin can connect it in Configuration > Providers.",
+        "usernameHint": "Thingport lists your public MyMiniFactory collections. It only needs asking once.",
+        "usernamePlaceholder": "Username or profile link",
+        "showing": "Showing @{{user}}'s public collections.",
+        "forgetMessage": "Thingport stops listing your MyMiniFactory collections until you give your username again. Syncs already set up keep their models."
+      }
+    },
+    "snapmaker": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open space.snapmaker.com while signed in. It connects your account and keeps the sign-in fresh, since Snapmaker's lasts only a day.",
+          "Or by hand: sign in at space.snapmaker.com and open your browser's developer tools (F12).",
+          "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → space.snapmaker.com, copy the value of login_access_token and paste it below. Pasted by hand, it lasts a day."
+        ],
+        "placeholder": "login_access_token value, or the whole Cookie header"
+      },
+      "status": {
+        "notConnected": "Snapmaker gives its files to signed-in users only. Connect your account to import its models, and your likes and bookmarks.",
+        "expired": "Sign-in expired. Visit space.snapmaker.com with Thingport Grab, or connect Snapmaker Space again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "Snapmaker Space: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "Snapmaker's model platform, built around its U1 printer. Featured models are test-printed, with profiles tuned for multi-colour prints.",
+        "signIn": "Your own sign-in. It lasts a day.",
+        "grab": "The only thing that renews the sign-in. Without it, you paste a new one every day.",
+        "setup": [
+          "Install Thingport Grab, enable it on Snapmaker Space and open space.snapmaker.com signed in.",
+          "Grab then keeps the sign-in fresh while your browser is open.",
+          "By hand: paste the login_access_token cookie in Configuration → Providers. It lasts a day."
+        ]
+      },
+      "admin": {
+        "description": "Models with their print profiles, and each user's likes and bookmarks, through each user's own Snapmaker account."
+      },
+      "sync": {
+        "notConnected": "Connect Snapmaker Space in Configuration > Providers, or visit it with Thingport Grab, to see your likes and bookmarks here."
+      }
+    },
+    "makeronline": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open makeronline.com while signed in. It connects your account, and brings in the MakerOnline models waiting for it, since MakerOnline gives its files only to its own pages.",
+          "Or by hand: sign in at makeronline.com and open your browser's developer tools (F12).",
+          "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → www.makeronline.com, copy the value of mo_access_token and paste it below. It lasts about three months."
+        ],
+        "placeholder": "mo_access_token value, or the whole Cookie header"
+      },
+      "status": {
+        "notConnected": "Connect your account to read your MakerOnline likes and private collections. Its files always come through Thingport Grab.",
+        "expired": "Sign-in expired. Visit makeronline.com with Thingport Grab, or connect MakerOnline again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "MakerOnline: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "Anycubic's model platform: free and paid models, designer contests and an AI text-to-3D tool.",
+        "signIn": "None to import; your sign-in adds your likes and private collections.",
+        "grab": "Grab downloads every MakerOnline file, in a makeronline.com page. Imports started elsewhere wait for it.",
+        "setup": [
+          "Install Thingport Grab and enable it on MakerOnline.",
+          "Import from a model page, or open any makeronline.com page to bring in the models waiting for Grab.",
+          "Signed in there, Grab also connects your account for your likes and private collections."
+        ]
+      },
+      "admin": {
+        "description": "Models with their print profiles, collections and each user's likes. Files come through Thingport Grab: MakerOnline gives them only to its own pages."
+      },
+      "sync": {
+        "notConnected": "Connect MakerOnline in Configuration > Providers, or visit it with Thingport Grab, to see your likes and collections here."
+      }
+    },
+    "crealitycloud": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open crealitycloud.com while signed in. It connects your account, and again each time you sign in there.",
+          "Or by hand: sign in at crealitycloud.com, open your browser's developer tools (F12) and reload the page.",
+          "Under Network, pick any request to crealitycloud.com/api, copy its Cookie request header and paste it below. It lasts a week from when you signed in."
+        ],
+        "placeholder": "The Cookie header, with model_token and model_user_id"
+      },
+      "status": {
+        "notConnected": "Creality Cloud gives its files to signed-in users only. Connect your account to import its models, and your likes.",
+        "expired": "Sign-in expired. Sign in on crealitycloud.com with Thingport Grab, or connect Creality Cloud again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "Creality Cloud: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "Creality's 3D printing platform: a large library of free and premium models, with cloud slicing and remote printing.",
+        "signIn": "Your own sign-in. It lasts a week and isn't renewed.",
+        "grab": "Sends each new sign-in as you sign in on crealitycloud.com.",
+        "setup": [
+          "Install Thingport Grab, enable it on Creality Cloud and open crealitycloud.com signed in.",
+          "By hand: copy the Cookie header of a crealitycloud.com/api request and paste it in Configuration → Providers.",
+          "After a week, sign in there again to reconnect."
+        ]
+      },
+      "admin": {
+        "description": "Models with their print profiles, collections and each user's likes, through each user's own Creality Cloud account."
+      },
+      "sync": {
+        "notConnected": "Connect Creality Cloud in Configuration > Providers, or visit it with Thingport Grab, to see your likes and collections here."
+      }
+    },
+    "nexprint": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open nexprint.com while signed in. It connects your account, and keeps it connected as you visit.",
+          "Or by hand: sign in at nexprint.com, open your browser's developer tools (F12) and reload the page.",
+          "Under Network, pick any request to nexprint.com/gateway, copy its Authorization request header (or the auth_token cookie) and paste it below."
+        ],
+        "placeholder": "The auth_token cookie, or the Authorization header"
+      },
+      "status": {
+        "notConnected": "NexPrint gives its files to signed-in users only. Connect your account to import its models.",
+        "expired": "Sign-in expired. Sign in on nexprint.com with Thingport Grab, or connect NexPrint again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "NexPrint: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "Elegoo's open model platform, launched in 2025. It mixes Elegoo's own library with community designs, and works with Elegoo Slicer and OrcaSlicer.",
+        "signIn": "Your own sign-in, which the site renews as you use it.",
+        "grab": "Sends the renewed sign-in as you visit nexprint.com.",
+        "setup": [
+          "Install Thingport Grab, enable it on NexPrint and open nexprint.com signed in.",
+          "By hand: copy the Authorization header of a nexprint.com/gateway request and paste it in Configuration → Providers."
+        ]
+      },
+      "admin": {
+        "description": "Models with their print profiles, and collections, through each user's own NexPrint account."
+      },
+      "sync": {
+        "notConnected": "Connect NexPrint in Configuration > Providers, or visit it with Thingport Grab, to see your collections here."
+      }
+    },
+    "thangs": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open thangs.com while signed in. It connects your account, and Thingport keeps it connected for about a year.",
+          "Or by hand: sign in at thangs.com, open your browser's developer tools (F12) and reload the page.",
+          "Under Network, pick any request to thangs.com/api, copy its Cookie request header (it holds both tokens) and paste it below."
+        ],
+        "placeholder": "The accessToken or refreshToken cookie, or the whole Cookie header"
+      },
+      "status": {
+        "notConnected": "Thangs gives its files to signed-in users only. Connect your account to import its models.",
+        "expired": "Sign-in expired. Sign in on thangs.com with Thingport Grab, or connect Thangs again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "Thangs: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "A 3D model search engine by Physna that finds models by their shape as well as their name, with a marketplace and designer memberships.",
+        "signIn": "Your own sign-in; Thingport renews it for about a year.",
+        "grab": "Connects your account in one visit to thangs.com.",
+        "setup": [
+          "Install Thingport Grab, enable it on Thangs and open thangs.com signed in.",
+          "By hand: copy the Cookie header of a thangs.com/api request and paste it in Configuration → Providers.",
+          "Free accounts download a limited number of models a day."
+        ]
+      },
+      "admin": {
+        "description": "Free and bought models, likes and collections, through each user's own Thangs account."
+      },
+      "sync": {
+        "notConnected": "Connect Thangs in Configuration > Providers, or visit it with Thingport Grab, to see your likes and collections here."
+      }
+    },
+    "cults3d": {
+      "connect": {
+        "steps": [
+          "Sign in at cults3d.com and open cults3d.com/en/api/keys. Make a key there and copy its secret.",
+          "Enter your nickname exactly as your profile writes it (capitals count) and the key below. Thingport reads models, likes, printlists and your downloads with it.",
+          "Then open cults3d.com once with Thingport Grab, signed in: Cults3D gives its files only to its own signed-in pages, and Grab passes that sign-in on."
+        ],
+        "placeholder": "Your nickname, as written on your profile",
+        "nickLabel": "Cults3D nickname",
+        "apiKeyLabel": "API key",
+        "browser": {
+          "title": "Paste the Cults3D sign-in",
+          "paste": "Paste browser sign-in",
+          "save": "Save",
+          "placeholder": "The request headers of a signed-in cults3d.com page",
+          "steps": [
+            "Easiest: with Thingport Grab, just open cults3d.com while signed in. It sends the sign-in itself.",
+            "Or by hand: open your browser's developer tools (F12) on a signed-in cults3d.com page and reload it.",
+            "Under Network, pick the page's own request, copy its request headers (with the Cookie and User-Agent) and paste them below. It only works when Thingport reaches the internet from the same address as that browser."
+          ]
+        }
+      },
+      "status": {
+        "notConnected": "Thingport reads Cults3D with your own API key. Connect it with your nickname and a key made on cults3d.com.",
+        "expired": "Cults3D turned the API key down. Make a new one on cults3d.com and connect again in Configuration → Providers.",
+        "expiredStatus": "API key turned down",
+        "siteMissing": "Connected, but downloads need the browser's sign-in: open cults3d.com signed in with Thingport Grab, or paste it from the tile's menu.",
+        "siteExpired": "The browser's sign-in ran out: open cults3d.com signed in with Thingport Grab, or paste it again from the tile's menu.",
+        "siteMissingStatus": "No browser sign-in yet",
+        "disabledReason": "Cults3D: enter your nickname and API key in Configuration → Providers"
+      },
+      "about": {
+        "summary": "A French marketplace for free and paid 3D printable designs, founded in 2014, and a social network for makers.",
+        "signIn": "Your own API key, and your browser's sign-in for files.",
+        "grab": "Sends the browser's sign-in and Cloudflare clearance. Thingport must reach the internet from that browser's IP address.",
+        "flaresolverr": "Doesn't help: its browser can't hand over a download link.",
+        "setup": [
+          "Make an API key at cults3d.com/en/api/keys.",
+          "Right-click Cults3D in Configuration → Providers, choose Connect, and enter your nickname and the key.",
+          "Open cults3d.com signed in with Thingport Grab, so its files can download."
+        ]
+      },
+      "admin": {
+        "description": "Free and bought models, likes and printlists, through each user's own Cults3D API key. Files come with the browser's sign-in, which Thingport Grab sends."
+      },
+      "sync": {
+        "notConnected": "Enter your Cults3D nickname and API key in Configuration > Providers to see your likes and printlists here."
+      }
+    },
+    "eufymake": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open makeitreal.eufymake.com while signed in. It connects your account, and sends a new sign-in whenever you sign in there again.",
+          "Or by hand: sign in at makeitreal.eufymake.com and open your browser's developer tools (F12).",
+          "Under Application (Chrome, Edge) or Storage (Firefox) → Local Storage → makeitreal.eufymake.com, copy the value of mk-userinfo and paste it below. The X-Auth-Token and Gtoken headers of a signed-in aiot-wapi-eu.ankermake.com request work too."
+        ],
+        "placeholder": "The mk-userinfo value, or a request's X-Auth-Token and Gtoken headers"
+      },
+      "status": {
+        "notConnected": "Connect your account to read your eufyMake likes. Its models import without it.",
+        "expired": "Sign-in expired. Sign in on makeitreal.eufymake.com with Thingport Grab, or connect eufyMake again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "eufyMake: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "eufyMake's (Anker's) Make it Real: community models, sorted into its own categories, with AI and photo-to-3D tools.",
+        "signIn": "None to import; your sign-in adds your likes.",
+        "grab": "Sends your sign-in as you visit makeitreal.eufymake.com.",
+        "setup": [
+          "Import any model link; no sign-in is needed.",
+          "For your likes: install Thingport Grab, enable it on eufyMake and open makeitreal.eufymake.com signed in."
+        ]
+      },
+      "admin": {
+        "description": "Models and each user's likes. Models import without a sign-in; likes need the user's own."
+      },
+      "sync": {
+        "notConnected": "Connect eufyMake in Configuration > Providers, or visit it with Thingport Grab, to see your likes here."
+      }
+    },
+    "pinshape": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open pinshape.com while signed in. It connects your account, and sends a new sign-in whenever you sign in there again.",
+          "Or by hand: sign in at pinshape.com with Remember Me ticked, so the sign-in lasts a year, and open your browser's developer tools (F12).",
+          "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → pinshape.com, copy the value of remember_token and paste it below. The Cookie header of a signed-in pinshape.com request works too."
+        ],
+        "placeholder": "The remember_token cookie, or a signed-in request's Cookie header"
+      },
+      "status": {
+        "notConnected": "Pinshape gives its files to signed-in users only. Connect your account to import its models; collections and likes read without it.",
+        "expired": "Sign-in expired. Sign in on pinshape.com with Thingport Grab, or connect Pinshape again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "Pinshape: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "A long-running community model site, now run by MatterHackers: free models, and collections anyone can follow.",
+        "signIn": "Your own sign-in, for the files; collections and likes read without it.",
+        "grab": "Sends your sign-in as you visit pinshape.com.",
+        "setup": [
+          "Install Thingport Grab, enable it on Pinshape and open pinshape.com signed in.",
+          "By hand: copy the remember_token cookie of a signed-in pinshape.com tab and paste it in Configuration → Providers."
+        ]
+      },
+      "admin": {
+        "description": "Models, and anyone's collections and likes. Lists read without a sign-in; the files need each user's own."
+      },
+      "sync": {
+        "notConnected": "Connect Pinshape in Configuration > Providers, or visit it with Thingport Grab, to see your likes and collections here."
       }
     }
   }

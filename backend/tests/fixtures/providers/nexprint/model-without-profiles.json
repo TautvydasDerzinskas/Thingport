@@ -1,0 +1,23 @@
+{
+  "code": 0,
+  "msg": "",
+  "traceId": "contract-fixture",
+  "data": {
+    "id": "2109988470143172700",
+    "modelId": "G1215999",
+    "modelName": "Bare Dog",
+    "modelDetail": "<p>No profiles.</p>",
+    "coverImgUrl": "https://np.nexprint.com/images/2/cover.png",
+    "modelPicList": [{ "fileUrl": "https://np.nexprint.com/images/2/cover.png" }],
+    "modelTagList": [],
+    "classificationId": 1422473859022858,
+    "classificationInfos": [],
+    "authorId": "2109966715818881024",
+    "author": { "userId": "U0030208991", "nickname": "Cute Animals" },
+    "modelFileList": [
+      { "fileId": "2109986422412036001", "fileName": "Bare Dog.stl", "fileExt": "stl" },
+      { "fileId": "2109986422412036002", "fileName": "Bare Dog Base.stl", "fileExt": "stl" }
+    ],
+    "settingInfoList": []
+  }
+}

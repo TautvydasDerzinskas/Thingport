@@ -1,0 +1,1 @@
+# Thingport Bridge changelog

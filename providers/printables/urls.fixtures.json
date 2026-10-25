@@ -1,0 +1,51 @@
+[
+  {
+    "url": "https://www.printables.com/model/123456-example-model",
+    "expect": {
+      "provider": "printables",
+      "kind": "model",
+      "externalId": "123456"
+    }
+  },
+  {
+    "url": "https://printables.com/model/42/?x=1#photo",
+    "expect": {
+      "provider": "printables",
+      "kind": "model",
+      "externalId": "42"
+    }
+  },
+  {
+    "url": "https://www.printables.com/@username/collections/12345-example",
+    "expect": {
+      "provider": "printables",
+      "kind": "list",
+      "externalId": "12345",
+      "listKind": "collection"
+    }
+  },
+  {
+    "url": "https://printables.com/@Maker/collections/liked/",
+    "expect": {
+      "provider": "printables",
+      "kind": "list",
+      "externalId": "likes:maker",
+      "listKind": "likes"
+    },
+    "divergent": { "extension": null }
+  },
+  {
+    "url": "https://printables.com/@Maker",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  },
+  {
+    "url": "https://badprintables.com/model/1",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  }
+]

@@ -7,7 +7,6 @@ import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
-import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
@@ -31,9 +30,11 @@ import {
   searchPlaces,
   type Condition,
   type Place,
+  type TemperatureUnit,
   type Weather,
 } from "../../utils/weather";
 import { MONO_FONT } from "./ClockCard";
+import DashboardCard from "./DashboardCard";
 
 const ICONS: Record<Condition, typeof WbSunnyIcon> = {
   clear: WbSunnyIcon,
@@ -155,25 +156,41 @@ function LocationPicker({ onPick, onCancel }: { onPick: (location: WeatherLocati
   );
 }
 
-export default function WeatherCard() {
+type Props = {
+  unit: TemperatureUnit;
+  /** The line with the forecast a few hours on. */
+  showLater: boolean;
+  /** This panel's own place; null uses the account's, as the one weather panel always did. */
+  place: WeatherLocation | null;
+  onPlace: (place: WeatherLocation | null) => void;
+};
+
+/** One place's weather. Several weather panels can each show their own place. */
+export default function WeatherCard({ unit, showLater, place, onPlace }: Props) {
   const { t } = useTranslation("app");
-  const [location, setLocation] = useWeatherLocation();
+  const [account, setAccount] = useWeatherLocation();
+  const location = place ?? account;
+  // Chosen here, a place is this panel's own. Forgetting it falls back to the account's place; forgetting that clears it.
+  const setLocation = (picked: WeatherLocation | null) => (picked || place ? onPlace(picked) : setAccount(null));
+  const lat = location?.lat;
+  const lon = location?.lon;
   const [weather, setWeather] = useState<Weather | null>(null);
   const [failed, setFailed] = useState(false);
   const [editing, setEditing] = useState(false);
 
+  // By its coordinates: the place object is rebuilt with every render.
   useEffect(() => {
     setWeather(null);
     setFailed(false);
-    if (!location) return;
+    if (lat === undefined || lon === undefined) return;
     let active = true;
-    fetchWeather(location.lat, location.lon)
+    fetchWeather(lat, lon, unit)
       .then((result) => active && setWeather(result))
       .catch(() => active && setFailed(true));
     return () => {
       active = false;
     };
-  }, [location]);
+  }, [lat, lon, unit]);
 
   const condition = weather ? conditionOf(weather.code) : null;
   const Icon = condition ? ICONS[condition] : null;
@@ -221,6 +238,9 @@ export default function WeatherCard() {
             }}
           >
             {`${weather.temperature}°`}
+            <Box component="span" sx={{ fontSize: "0.4em", fontWeight: 500, ml: 0.25, color: "text.secondary" }}>
+              {unit === "fahrenheit" ? "F" : "C"}
+            </Box>
           </Typography>
         </Stack>
         <Typography
@@ -234,28 +254,27 @@ export default function WeatherCard() {
         >
           {`${t(`dashboard.weather.conditions.${condition}`)} · ${t("dashboard.weather.highLow", { high: weather.high, low: weather.low })}`}
         </Typography>
-        <Typography sx={{ fontFamily: "inherit", fontSize: "0.75rem", color: "text.disabled" }}>
-          {t("dashboard.weather.later", {
-            hours: weather.later.hours,
-            temperature: weather.later.temperature,
-            condition: t(`dashboard.weather.conditions.${later}`).toLowerCase(),
-          })}
-        </Typography>
+        {showLater && (
+          <Typography sx={{ fontFamily: "inherit", fontSize: "0.75rem", color: "text.disabled" }}>
+            {t("dashboard.weather.later", {
+              hours: weather.later.hours,
+              temperature: weather.later.temperature,
+              condition: t(`dashboard.weather.conditions.${later}`).toLowerCase(),
+            })}
+          </Typography>
+        )}
       </Stack>
     );
 
   return (
-    <Paper
-      variant="outlined"
+    <DashboardCard
       sx={{
         p: 3,
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
         gap: 1,
-        minHeight: 140,
         position: "relative",
-        borderColor: (theme) => (theme.palette.mode === "dark" ? "transparent" : "divider"),
       }}
     >
       {location && !editing && (
@@ -281,6 +300,6 @@ export default function WeatherCard() {
         </Box>
       )}
       {body}
-    </Paper>
+    </DashboardCard>
   );
 }

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_CATEGORIES, type DefaultCategoryNode } from "../src/seedData/defaultCategories";
+import { MANIFESTS, PROVIDER_IDS } from "../src/providers/index.generated";
+import { PROVIDERS } from "../src/providers/registry";
 
 // Validates the static starter tree against the constraints enforced on real categories.
 
@@ -34,15 +36,37 @@ describe("DEFAULT_CATEGORIES", () => {
   it("has no duplicate names among siblings", () => {
     expect(duplicateSiblingNames(DEFAULT_CATEGORIES)).toEqual([]);
   });
+});
 
-  it("only uses positive whole-number category ids, matching routes/categories.ts's parseCatIdsInput rules", () => {
-    for (const { node } of all) {
-      for (const ids of [node.makerworldCatIds, node.thingiverseCatIds, node.printablesCatIds]) {
-        for (const id of ids ?? []) {
-          expect(Number.isSafeInteger(id)).toBe(true);
-          expect(id).toBeGreaterThan(0);
-        }
-      }
+describe("each provider's categories.json", () => {
+  const paths = new Set<string>();
+  const walk = (nodes: DefaultCategoryNode[], parent: string[]) => {
+    for (const node of nodes) {
+      const path = [...parent, node.name];
+      paths.add(path.join("/"));
+      walk(node.children ?? [], path);
     }
-  });
+  };
+  walk(DEFAULT_CATEGORIES, []);
+
+  for (const id of PROVIDER_IDS) {
+    it(`${id}: names only starter categories, with ids its routes would take`, () => {
+      const starter = PROVIDERS[id].starterCategories;
+      expect(Object.keys(starter).filter((path) => !paths.has(path))).toEqual([]);
+      const byPath = MANIFESTS[id].capabilities.categoryIds === "path";
+      // As routes/categories.ts takes them: paths of non-blank names, or positive whole numbers of up to 16 digits.
+      const valid = (siteId: number | string) =>
+        byPath
+          ? String(siteId)
+              .split("/")
+              .every((part) => part && part.trim() === part)
+          : /^[1-9]\d{0,15}$/.test(String(siteId)) && Number.isSafeInteger(Number(siteId));
+      expect(Object.values(starter).filter((ids) => !ids.length)).toEqual([]);
+      expect(
+        Object.values(starter)
+          .flat()
+          .filter((siteId) => !valid(siteId)),
+      ).toEqual([]);
+    });
+  }
 });

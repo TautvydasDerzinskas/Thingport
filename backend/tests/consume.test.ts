@@ -9,6 +9,9 @@ import { createApp } from "../src/app";
 import { IMPORT_MAX_BYTES } from "../src/config";
 import { createPrint } from "../src/services/printCreation";
 import { prisma } from "../src/db";
+import { previewImagePath } from "../src/services/previewImageService";
+import { plateThumbPath } from "../src/services/printService";
+import { plateAssetHome, printAssetHome } from "../src/services/modelAssets";
 import {
   NOT_IMPORTED_DIR,
   consumeFolder,
@@ -28,11 +31,6 @@ function put(rel: string, contents: string | Buffer) {
   fs.mkdirSync(path.dirname(abs), { recursive: true });
   fs.writeFileSync(abs, contents);
 }
-
-const png = () =>
-  sharp({ create: { width: 8, height: 8, channels: 3, background: { r: 200, g: 0, b: 0 } } })
-    .png()
-    .toBuffer();
 
 async function printsNamed(name: string) {
   return prisma.print.findMany({
@@ -84,7 +82,14 @@ describe("consume folder", () => {
     await setConsumeSettings({ mode: "folder" });
     put("Robots/Walker/leg.stl", STL);
     put("Robots/Walker/body.stl", STL);
-    put("Robots/Walker/photo.png", await png());
+    put(
+      "Robots/Walker/photo.jpg",
+      await sharp({ create: { width: 80, height: 40, channels: 3, background: "#cc0000" } })
+        .jpeg()
+        .withMetadata({ orientation: 6 })
+        .withExifMerge({ IFD0: { Artist: "Consume photographer" } })
+        .toBuffer(),
+    );
     put("Robots/Walker/readme.pdf", "pdf");
 
     const summary = await consumeFolder(dir);
@@ -92,6 +97,15 @@ describe("consume folder", () => {
     const [walker] = await printsNamed("Walker");
     expect(walker.plates.map((p) => p.filename).toSorted()).toEqual(["body.stl", "leg.stl"]);
     expect(walker.previewImages).toHaveLength(1);
+    const firstPlate = walker.plates.find((plate) => plate.filename === "body.stl")!;
+    for (const file of [
+      previewImagePath(walker.previewImages[0].id, await printAssetHome(walker.id)),
+      plateThumbPath(firstPlate.id, await plateAssetHome(firstPlate.id)),
+    ]) {
+      const metadata = await sharp(file).metadata();
+      expect(metadata).toMatchObject({ width: 40, height: 80, orientation: 1 });
+      expect(metadata.exif?.toString("latin1")).toContain("Consume photographer");
+    }
     expect(walker.files.map((f) => f.filename)).toEqual(["readme.pdf"]);
     expect(walker.category?.name).toBe("Robots");
     expect(fs.readdirSync(dir)).toEqual([]);
@@ -107,6 +121,20 @@ describe("consume folder", () => {
 
     expect(await consumeFolder(dir)).toMatchObject({ models: 1, failed: [] });
     expect((await printsNamed("Zipped Model"))[0].plates).toHaveLength(2);
+    expect(fs.readdirSync(dir)).toEqual([]);
+  });
+
+  it("unpacks a zip whose paths start with ./, as macOS tar -a writes them", async () => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), "consume-"));
+    await setConsumeSettings({ mode: "separate" });
+    const zip = new JSZip();
+    zip.file("./Dotted/hull.stl", STL);
+    zip.file("./Dotted/Parts/mast.stl", STL);
+    put("dotted.zip", await zip.generateAsync({ type: "nodebuffer" }));
+
+    expect(await consumeFolder(dir)).toMatchObject({ models: 2, files: 2, failed: [] });
+    expect((await printsNamed("hull"))[0].category?.name).toBe("Dotted");
+    expect((await printsNamed("mast"))[0].category?.name).toBe("Parts");
     expect(fs.readdirSync(dir)).toEqual([]);
   });
 

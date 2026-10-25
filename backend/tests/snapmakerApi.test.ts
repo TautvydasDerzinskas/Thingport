@@ -7,9 +7,9 @@ import {
   selectSnapmakerProfiles,
   SnapmakerAuthError,
   snapmakerMetaFromDetail,
-} from "../src/services/snapmakerApi";
+} from "../src/providers/snapmaker/api";
 import { modelIdFromUrl, modelUrlFor, parseSyncSource } from "../src/services/collectionSyncService";
-import { normalizeSnapmakerToken } from "../src/services/snapmakerSessionService";
+import { normalizeSnapmakerToken } from "../src/providers/snapmaker/session";
 import { buildImportSourceUrl, identifySourceModel } from "../src/services/importService";
 
 // The Snapmaker Space client against the shapes its own site gets back, with fetch mocked. No database.

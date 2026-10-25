@@ -11,22 +11,52 @@ export const SLICER_IDS = [
   "anycubicslicernext",
   "elegooslicer",
   "snapmaker-orca",
+  "eufystudio3d",
   "other",
 ] as const;
 export type SlicerId = (typeof SLICER_IDS)[number];
+
+/** `slicer` is the one a model's main button opens (the last one used), `slicers` the ones installed. */
+export type SlicerSettings = { slicer: SlicerId | null; slicers: SlicerId[] };
 
 function isSlicerId(value: string): value is SlicerId {
   return (SLICER_IDS as readonly string[]).includes(value);
 }
 
-export async function getUserSlicer(userId: string): Promise<SlicerId | null> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { slicer: true } });
-  const value = user?.slicer;
-  return value && isSlicerId(value) ? value : null;
+/** Keeps `slicer` one of `slicers`: a new current slicer joins the list, and dropping the current one moves to
+ *  the first left. Ordered as SLICER_IDS, so the menu doesn't reshuffle. */
+function normalize(slicer: string | null, slicers: string[]): SlicerSettings {
+  const current = slicer && isSlicerId(slicer) ? slicer : null;
+  const installed = new Set(slicers.filter(isSlicerId));
+  if (current) installed.add(current);
+  const list = SLICER_IDS.filter((id) => installed.has(id));
+  return { slicer: current ?? list[0] ?? null, slicers: list };
 }
 
-export async function setUserSlicer(userId: string, slicer: string | null): Promise<SlicerId | null> {
-  const next = slicer && isSlicerId(slicer) ? slicer : null;
-  await prisma.user.update({ where: { id: userId }, data: { slicer: next } });
-  return next;
+export async function getUserSlicerSettings(userId: string): Promise<SlicerSettings> {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { slicer: true, slicers: true } });
+  return normalize(user?.slicer ?? null, user?.slicers ?? []);
+}
+
+/** A field left undefined keeps its value. `enable` and `disable` switch one slicer on or off in the list as it is
+ *  now, so two devices switching different slicers both count; `slicers` replaces the whole list. A list without the
+ *  current slicer moves it to the first one left, unless the same call names a new current one. */
+export async function setUserSlicerSettings(
+  userId: string,
+  patch: { slicer?: string | null; slicers?: string[]; enable?: string; disable?: string },
+): Promise<SlicerSettings> {
+  // The row lock makes changes that arrive at once apply one after the other, each to the other's result.
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId} FOR UPDATE`;
+    const user = await tx.user.findUnique({ where: { id: userId }, select: { slicer: true, slicers: true } });
+    const existing = normalize(user?.slicer ?? null, user?.slicers ?? []);
+    let slicers: string[] = patch.slicers ?? existing.slicers;
+    if (patch.enable) slicers = [...slicers, patch.enable];
+    if (patch.disable) slicers = slicers.filter((id) => id !== patch.disable);
+    let slicer = patch.slicer !== undefined ? patch.slicer : existing.slicer;
+    if (patch.slicer === undefined && slicer && !slicers.includes(slicer)) slicer = null;
+    const next = normalize(slicer, slicers);
+    await tx.user.update({ where: { id: userId }, data: next });
+    return next;
+  });
 }

@@ -19,6 +19,8 @@ function tmpFile(name: string, contents: string): string {
   return p;
 }
 
+let memberEmail: string;
+
 beforeAll(async () => {
   const adminEmail = `admin-test-${Date.now()}@example.com`;
   const adminRegister = await request(app)
@@ -33,7 +35,7 @@ beforeAll(async () => {
   const adminLogin = await request(app).post("/api/login").send({ email: adminEmail, password: "password123" });
   adminToken = adminLogin.body.token;
 
-  const memberEmail = `member-test-${Date.now()}@example.com`;
+  memberEmail = `member-test-${Date.now()}@example.com`;
   const memberRegister = await request(app)
     .post("/api/register")
     .send({ displayName: "Member Test", email: memberEmail, password: "password123" });
@@ -140,7 +142,9 @@ describe("admin audit logs", () => {
   });
 
   it("logs a logout", async () => {
-    const res = await request(app).post("/api/logout").set(auth(memberToken));
+    // A session of its own: signing out ends it, and memberToken is still needed below.
+    const login = await request(app).post("/api/login").send({ email: memberEmail, password: "password123" });
+    const res = await request(app).post("/api/logout").set(auth(login.body.token));
     expect(res.status).toBe(200);
     const found = await waitForLog(adminToken, (l) => l.action === "user_logged_out");
     expect(found).toBeTruthy();

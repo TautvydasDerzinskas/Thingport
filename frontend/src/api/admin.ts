@@ -1,6 +1,7 @@
 import { authHeaders } from "../utils/auth";
 import { apiBase, assertOk, readErrorMessage, UnauthorizedError } from "./client";
 import type { ImportJob, ImportJobItem } from "./imports";
+import type { ProviderId } from "../providers/index.generated";
 
 export type AdminUser = {
   id: string;
@@ -22,16 +23,7 @@ export type AdminUser = {
 };
 
 export type HealthComponent =
-  | "database"
-  | "storage"
-  | "memory"
-  | "internet"
-  | "flaresolverr"
-  | "thingiverse"
-  | "myminifactory"
-  | "grab"
-  | "ai"
-  | "smtp";
+  "database" | "storage" | "memory" | "internet" | "flaresolverr" | ProviderId | "grab" | "ai" | "smtp";
 export type HealthStatus = "ok" | "warning" | "error" | "not_configured";
 
 export type HealthResult = {
@@ -62,6 +54,9 @@ export type LogAction =
   | "api_token_mcp_tools_changed"
   | "api_token_rest_scopes_changed"
   | "mcp_access_changed"
+  | "file_reuse_changed"
+  | "file_reuse_backfill_started"
+  | "custom_widgets_changed"
   | "user_invited"
   | "authors_linked"
   | "descriptions_refetched"
@@ -147,18 +142,8 @@ export type StorageListing = {
   files: StorageFile[];
 };
 
-export type AuthorLookupProblem =
-  | "thingiverse_no_token"
-  | "thingiverse_token_rejected"
-  | "thingiverse_rate_limited"
-  | "myminifactory_no_key"
-  | "myminifactory_key_rejected"
-  | "myminifactory_rate_limited"
-  | "makerworld_captcha"
-  | "makerworld_login_rejected"
-  | "cults3d_no_key"
-  | "cults3d_key_rejected"
-  | "cults3d_rate_limited";
+/** Each provider's own, worded under admin's author-linking problems. */
+export type AuthorLookupProblem = `${ProviderId}_${string}`;
 
 export type AuthorLinkingRun = {
   running: boolean;

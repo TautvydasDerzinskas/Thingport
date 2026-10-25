@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -45 530 175" fill="none">
+  <title>Šaltibarščių diena</title>
+  <style>
+    .twinkle { transform-origin: 0 0; animation: twinkle 1.8s ease-in-out infinite; }
+    @keyframes twinkle { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.5); opacity: 0.4; } }
+    .pink { animation: pink 6s ease-in-out infinite; }
+    @keyframes pink { 0%, 15%, 100% { opacity: 0; } 30%, 80% { opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { .pink { opacity: 1; } }
+    .stir { transform-origin: 0 0; animation: stir 2.6s ease-in-out infinite; }
+    @keyframes stir { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(10deg); } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+  </style>
+  <g class="pink" transform="translate(8 8)"><path d="M44.464 39.045Q42 40.468 39.536 39.045L28.164 32.48Q25.7 31.057 28.164 29.635L39.536 23.069Q42 21.646 44.464 23.069L55.836 29.635Q58.3 31.057 55.836 32.48Z" fill="#ff9ccb"/><path d="M38.209 41.343Q40.673 42.766 40.673 45.611L40.673 58.742Q40.673 61.588 38.209 60.165L26.837 53.599Q24.373 52.177 24.373 49.332L24.373 36.2Q24.373 33.355 26.837 34.778Z" fill="#ff5fa2"/><path d="M43.327 45.611Q43.327 42.766 45.791 41.343L57.163 34.778Q59.627 33.355 59.627 36.2L59.627 49.332Q59.627 52.177 57.163 53.599L45.791 60.165Q43.327 61.588 43.327 58.742Z" fill="#e0408a"/></g>
+  <g transform="translate(472 50)"><g class="stir">
+    <path d="M0 0 L16 -34" stroke="#b0b8c0" stroke-width="3.2" stroke-linecap="round"/>
+    <ellipse cx="-1" cy="2" rx="4" ry="6" transform="rotate(25)" fill="#c9d1d8"/>
+  </g></g>
+  <path d="M420 51 L492 51 Q488 80 456 80 Q424 80 420 51 Z" fill="#ffffff" stroke="#9aa4ae" stroke-width="1.8" stroke-linejoin="round"/>
+  <path d="M422.5 62 Q456 70 489.5 62" stroke="#3a86ff" stroke-width="2.2"/>
+  <ellipse cx="456" cy="51" rx="36" ry="6.5" fill="#ff5fa2" stroke="#e0408a" stroke-width="1.4"/>
+  <ellipse cx="442" cy="50" rx="6.5" ry="4.2" fill="#ffffff" stroke="#d9d9d9" stroke-width="0.8"/><circle cx="442" cy="50" r="2.6" fill="#ffc300"/><ellipse cx="463" cy="52" rx="6.5" ry="4.2" fill="#ffffff" stroke="#d9d9d9" stroke-width="0.8"/><circle cx="463" cy="52" r="2.6" fill="#ffc300"/>
+  <circle cx="452" cy="54" r="2.2" fill="#b7e4a3" stroke="#6fa85a" stroke-width="0.6"/><circle cx="480" cy="50" r="2.2" fill="#b7e4a3" stroke="#6fa85a" stroke-width="0.6"/><circle cx="430" cy="51" r="2" fill="#b7e4a3" stroke="#6fa85a" stroke-width="0.6"/>
+  <g stroke="#3f9a3f" stroke-width="1.2" stroke-linecap="round"><path d="M456 50 l-3 -4" /><path d="M456 50 l3 -4" /><path d="M456 50 l0 -5" /><path d="M459 47 l3 -2" /><path d="M453 47 l-3 -2" /><path d="M474 53 l-3 -3" /><path d="M474 53 l2 -4" /><path d="M438 53 l3 -3" /><path d="M438 53 l-2 -4" /></g>
+  <ellipse cx="456" cy="81" rx="30" ry="3.5" fill="#e6e9ec" stroke="#9aa4ae" stroke-width="1.2"/>
+  <g transform="translate(426 34)"><path class="twinkle" style="animation-delay:0s" d="M0 -4 Q0.7 -0.7 4 0 Q0.7 0.7 0 4 Q-0.7 0.7 -4 0 Q-0.7 -0.7 0 -4 Z" fill="#7cc4f5"/></g>
+  <g transform="translate(487 30)"><path class="twinkle" style="animation-delay:-0.8s" d="M0 -3.5 Q0.6 -0.6 3.5 0 Q0.6 0.6 0 3.5 Q-0.6 0.6 -3.5 0 Q-0.6 -0.6 0 -3.5 Z" fill="#7cc4f5"/></g>
+  <g transform="translate(440 24)"><path class="twinkle" style="animation-delay:-1.4s" d="M0 -3 Q0.5 -0.5 3 0 Q0.5 0.5 0 3 Q-0.5 0.5 -3 0 Q-0.5 -0.5 0 -3 Z" fill="#7cc4f5"/></g>
+</svg>

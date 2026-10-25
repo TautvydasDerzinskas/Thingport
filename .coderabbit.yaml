@@ -25,8 +25,7 @@ reviews:
     - "!**/CHANGELOG.md"
     - "!web/.astro/**"
     - "!**/dist/**"
-    # Binaries and fixtures
-    - "!bridge/thingport-bridge"
+    # Fixtures
     - "!regression/fixtures/**"
 
   path_instructions:

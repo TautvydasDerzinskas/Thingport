@@ -7,26 +7,19 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import TuneIcon from "@mui/icons-material/Tune";
 import { IMPORT_PROVIDER_INFO } from "../../constants/importProviders";
-import { useDisabledProviders } from "../../hooks/useDisabledProviders";
+import { useDisabledProviders } from "../../hooks/useProviders";
 import type { ImportProvider } from "../../api/settings";
 import { ProviderLogo } from "../Layout/ConfigurationDialog/providerLogos";
 import ProviderCategoryPicker from "./ProviderCategoryPicker";
+import { MANIFESTS, PROVIDER_IDS } from "../../providers/index.generated";
 import { indexCatalog, joinCatIds, loadProviderCatalog, splitCatIds, type CatalogCategory } from "./providerCatalog";
 
-/** The providers a category can take imports from, in the order the rows show them. */
-export const MAPPED_PROVIDERS = [
-  "makerworld",
-  "printables",
-  "thingiverse",
-  "myminifactory",
-  "snapmaker",
-  "makeronline",
-  "crealitycloud",
-  "nexprint",
-  "thangs",
-  "cults3d",
-] as const satisfies readonly ImportProvider[];
-export type MappedProvider = (typeof MAPPED_PROVIDERS)[number];
+/** The providers a category can take imports from, in the order the rows show them: not those whose models don't say
+ *  their category (Pinshape), which have nothing to map. Their ids are left as they are on save. */
+export const MAPPED_PROVIDERS: readonly ImportProvider[] = PROVIDER_IDS.filter(
+  (id) => MANIFESTS[id].capabilities.categoryIds !== "none",
+);
+export type MappedProvider = ImportProvider;
 
 type Props = {
   /** Each provider's stored ids, ";"-separated. */

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -45 530 175" fill="none">
+  <title>Diwali</title>
+  <style>
+    .flame { transform-origin: 0 4px; animation: flicker 0.5s ease-in-out infinite alternate; }
+    @keyframes flicker { from { transform: scale(1, 1) rotate(-4deg); } to { transform: scale(0.85, 1.15) rotate(4deg); } }
+    .twinkle { transform-origin: 0 0; animation: twinkle 1.8s ease-in-out infinite; }
+    @keyframes twinkle { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.5); opacity: 0.4; } }
+    .bulb { animation: blink 1.4s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0.35; } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } .fall { display: none; } }
+  </style>
+  <path d="M-25 -34 Q235 -18 495 -34" stroke="#8f7a5a" stroke-width="1.2"/>
+  <circle class="bulb" style="animation-delay:0.00s" cx="-15" cy="-33.5" r="3" fill="#ffc300"/><circle class="bulb" style="animation-delay:-0.35s" cx="17" cy="-32.0" r="3" fill="#ff8c00"/><circle class="bulb" style="animation-delay:-0.70s" cx="49" cy="-30.5" r="3" fill="#ff3d8b"/><circle class="bulb" style="animation-delay:-1.05s" cx="81" cy="-29.2" r="3" fill="#ffd23f"/><circle class="bulb" style="animation-delay:0.00s" cx="113" cy="-28.1" r="3" fill="#ffc300"/><circle class="bulb" style="animation-delay:-0.35s" cx="145" cy="-27.2" r="3" fill="#ff8c00"/><circle class="bulb" style="animation-delay:-0.70s" cx="177" cy="-26.5" r="3" fill="#ff3d8b"/><circle class="bulb" style="animation-delay:-1.05s" cx="209" cy="-26.1" r="3" fill="#ffd23f"/><circle class="bulb" style="animation-delay:0.00s" cx="241" cy="-26.0" r="3" fill="#ffc300"/><circle class="bulb" style="animation-delay:-0.35s" cx="273" cy="-26.2" r="3" fill="#ff8c00"/><circle class="bulb" style="animation-delay:-0.70s" cx="305" cy="-26.7" r="3" fill="#ff3d8b"/><circle class="bulb" style="animation-delay:-1.05s" cx="337" cy="-27.5" r="3" fill="#ffd23f"/><circle class="bulb" style="animation-delay:0.00s" cx="369" cy="-28.5" r="3" fill="#ffc300"/><circle class="bulb" style="animation-delay:-0.35s" cx="401" cy="-29.7" r="3" fill="#ff8c00"/><circle class="bulb" style="animation-delay:-0.70s" cx="433" cy="-31.1" r="3" fill="#ff3d8b"/><circle class="bulb" style="animation-delay:-1.05s" cx="465" cy="-32.6" r="3" fill="#ffd23f"/>
+  <g transform="translate(423 68) scale(1.2)">
+    <path d="M-13 0 Q0 15 13 0 Q6 -2 0 -1 Q-6 -2 -13 0 Z" fill="#d4691f" stroke="#8f4512" stroke-width="1.4" stroke-linejoin="round"/>
+    <path d="M-7 4 L-4 6 M-1 6.5 L2 6.5 M5 5.5 L8 3.5" stroke="#ffd23f" stroke-width="1.4" stroke-linecap="round"/>
+    <g transform="translate(0 -5)" style="animation-delay:0s"><path class="flame" d="M0 -6 C3 -2 3.5 2 0 4 C-3.5 2 -3 -2 0 -6 Z" fill="#ffb703" stroke="#f77f00" stroke-width="0.8"/></g>
+  </g>
+  <g transform="translate(455 68) scale(1.4)">
+    <path d="M-13 0 Q0 15 13 0 Q6 -2 0 -1 Q-6 -2 -13 0 Z" fill="#d4691f" stroke="#8f4512" stroke-width="1.4" stroke-linejoin="round"/>
+    <path d="M-7 4 L-4 6 M-1 6.5 L2 6.5 M5 5.5 L8 3.5" stroke="#ffd23f" stroke-width="1.4" stroke-linecap="round"/>
+    <g transform="translate(0 -5)" style="animation-delay:-0.2s"><path class="flame" d="M0 -6 C3 -2 3.5 2 0 4 C-3.5 2 -3 -2 0 -6 Z" fill="#ffb703" stroke="#f77f00" stroke-width="0.8"/></g>
+  </g>
+  <g transform="translate(487 68) scale(1.2)">
+    <path d="M-13 0 Q0 15 13 0 Q6 -2 0 -1 Q-6 -2 -13 0 Z" fill="#d4691f" stroke="#8f4512" stroke-width="1.4" stroke-linejoin="round"/>
+    <path d="M-7 4 L-4 6 M-1 6.5 L2 6.5 M5 5.5 L8 3.5" stroke="#ffd23f" stroke-width="1.4" stroke-linecap="round"/>
+    <g transform="translate(0 -5)" style="animation-delay:-0.35s"><path class="flame" d="M0 -6 C3 -2 3.5 2 0 4 C-3.5 2 -3 -2 0 -6 Z" fill="#ffb703" stroke="#f77f00" stroke-width="0.8"/></g>
+  </g>
+  <g transform="translate(440 36)"><path class="twinkle" style="animation-delay:0s" d="M0 -4 Q0.7 -0.7 4 0 Q0.7 0.7 0 4 Q-0.7 0.7 -4 0 Q-0.7 -0.7 0 -4 Z" fill="#ffc300"/></g>
+  <g transform="translate(470 30)"><path class="twinkle" style="animation-delay:-0.7s" d="M0 -5 Q0.9 -0.9 5 0 Q0.9 0.9 0 5 Q-0.9 0.9 -5 0 Q-0.9 -0.9 0 -5 Z" fill="#ffc300"/></g>
+  <g transform="translate(455 14)"><path class="twinkle" style="animation-delay:-1.3s" d="M0 -3.5 Q0.6 -0.6 3.5 0 Q0.6 0.6 0 3.5 Q-0.6 0.6 -3.5 0 Q-0.6 -0.6 0 -3.5 Z" fill="#ffc300"/></g>
+</svg>

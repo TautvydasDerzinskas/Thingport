@@ -1,11 +1,51 @@
 import { authHeaders } from "../utils/auth";
 import { apiBase, assertOk, readErrorMessage, UnauthorizedError } from "./client";
 import type { AccentColor, RenderColor, ThemeSelection } from "../constants/settingsOptions";
+import type { ProviderId } from "../providers/index.generated";
 import { invalidateAiCategorizationStatus } from "./aiCategorization";
 import type { QualityIssueCode, QualitySeverity } from "./prints";
 
 /** What API tokens may do at /api/mcp, instance-wide. */
 export type McpAccess = "off" | "read" | "write";
+
+export type FileReuse = "off" | "reflink";
+
+/** Going over the stored files for identical ones, after file reuse is turned on or when asked to. */
+export type FileReuseBackfill = {
+  running: boolean;
+  started_at: string;
+  finished_at: string | null;
+  phase: "hashing" | "cloning";
+  /** Files to go through in the current phase. */
+  total: number;
+  done: number;
+  hashed: number;
+  cloned: number;
+  /** An upper bound: snapshots may keep the old copies. */
+  reclaimed_bytes: number;
+  /** Files left as they were: gone, not a regular file, hard-linked, changed meanwhile... */
+  skipped: number;
+  /** The filesystem can't clone: hashes were recorded and nothing replaced. */
+  unsupported: boolean;
+  /** Cloning was turned off while it ran. */
+  stopped: boolean;
+  /** It hit an error and ended early; the server log says what. */
+  failed: boolean;
+  /** Turned on again while it was stopping: a new run starts as soon as it has ended. */
+  restart_queued: boolean;
+};
+
+/** Null when none has run since the server started. */
+export type FileReuseSettings = { mode: FileReuse; backfill: FileReuseBackfill | null };
+
+/** `slicer` is the one a model's main button opens (the last one used), `slicers` the ones installed. */
+export type SlicerSettings = { slicer: string | null; slicers: string[] };
+
+/** A backend older than the installed-slicers list answers with `slicer` alone: that one is the one installed. */
+function toSlicerSettings(body: Partial<SlicerSettings>): SlicerSettings {
+  const slicer = body.slicer ?? null;
+  return { slicer, slicers: body.slicers ?? (slicer ? [slicer] : []) };
+}
 
 export type StorageToken =
   "category-or-folder" | "collection" | "tags" | "creator" | "model" | "filename" | "id" | "plate";
@@ -74,7 +114,12 @@ export type DashboardWidgetId =
   | "clock"
   | "weather"
   | "featuredModel"
-  | "activityHeatmap";
+  | "activityHeatmap"
+  | "rss"
+  | "cpu"
+  | "uptime"
+  | "launcher"
+  | "trending";
 /** Where the dashboard's weather is for; "device" came from the browser, "manual" from a search. */
 export type WeatherLocation = { lat: number; lon: number; name: string | null; source: "device" | "manual" };
 // Kept in sync by hand with the backend's DASHBOARD_LAYOUTS.
@@ -84,6 +129,39 @@ export type DashboardLayout = "left" | "top" | "right" | "bottom" | "topTwo" | "
 export type CardPreview = "images" | "renders";
 /** Only the widgets the user has switched; the rest follow their default. */
 export type DashboardWidgetChoices = Partial<Record<DashboardWidgetId, boolean>>;
+// Kept in sync by hand with the backend's DASHBOARD_BREAKPOINTS.
+export type DashboardBreakpoint = "lg" | "md" | "sm";
+/** A panel's cell on the grid, in columns and rows; `i` is the panel's id. */
+export type DashboardGridItem = { i: string; x: number; y: number; w: number; h: number };
+/**
+ * A placed widget: its id, or for a further copy of one that may repeat, its id and a suffix ("rss:k3j2h9"). The first
+ * copy keeps the bare id, so settings saved before copies existed still match. Kept in sync by hand with the backend.
+ */
+export type WidgetInstanceId = string;
+/** One box on the dashboard. More than one widget makes it a tabbed panel, showing the one at `tab`. */
+export type DashboardPanel = { id: string; widgets: WidgetInstanceId[]; tab?: number };
+export type DashboardTemplate = {
+  id: string;
+  /** Null shows the preset's translated name. */
+  name: string | null;
+  /** The built-in template it started from, if any. */
+  preset: string | null;
+  panels: DashboardPanel[];
+  /** Only the breakpoints the user has arranged; the rest are derived from the widest one. */
+  layouts: Partial<Record<DashboardBreakpoint, DashboardGridItem[]>>;
+  /** Each widget instance's options that differ from its defaults. */
+  settings?: Record<WidgetInstanceId, WidgetSettingValues>;
+};
+export type WidgetSettingValues = Record<
+  string,
+  string | number | boolean | null | string[] | Record<string, string>[] | Record<string, string | number | null>
+>;
+export type DashboardConfig = {
+  active: string;
+  templates: DashboardTemplate[];
+  /** The built-in templates the user has been given; missing on configs saved before it was tracked. */
+  offered?: string[];
+};
 
 export type PreviewMode = "automatic" | "on-demand" | "disabled";
 
@@ -143,7 +221,10 @@ export const QUALITY_CHECK_SEVERITY: Record<QualityCheckKey, QualitySeverity> = 
 export type QualityCheckSettings = { enabled: boolean; checks_off: QualityCheckKey[] };
 
 export type AuthSettings = {
+  /** How long an access token lasts before the browser renews it. */
   token_ttl_seconds: number;
+  /** How long a browser stays signed in without being used. 0 is off. */
+  remember_session_ttl_seconds: number;
 };
 
 /** How categorization behaves; the AIs themselves are in api/aiConnections.ts. */
@@ -192,25 +273,7 @@ export type DatabaseCredentialsInput = {
   password: string;
 };
 
-export type ImportProvider =
-  | "makerworld"
-  | "printables"
-  | "thingiverse"
-  | "myminifactory"
-  | "snapmaker"
-  | "makeronline"
-  | "crealitycloud"
-  | "nexprint"
-  | "thangs"
-  | "cults3d";
-export type Cults3dSettings = {
-  configured: boolean;
-  expired: boolean;
-  nick: string | null;
-  session_configured: boolean;
-  session_expired: boolean;
-};
-
+export type ImportProvider = ProviderId;
 /** An admin can turn a provider off for the whole instance; menus hide it then. */
 export type ProviderSetting = { id: ImportProvider; enabled: boolean };
 
@@ -327,6 +390,35 @@ export const settingsApi = {
     return res.json();
   },
 
+  getFileReuse: async (): Promise<FileReuseSettings> => {
+    const res = await fetch(`${apiBase()}/settings/file-reuse`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    assertOk(res, "Failed to load file reuse settings");
+    return res.json();
+  },
+
+  updateFileReuse: async (mode: FileReuse): Promise<FileReuseSettings> => {
+    const res = await fetch(`${apiBase()}/settings/file-reuse`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ mode }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update file reuse settings"));
+    return res.json();
+  },
+
+  /** Goes over the stored files again; refused with the server's message while the switch is off or files are moving. */
+  startFileReuseBackfill: async (): Promise<FileReuseBackfill | null> => {
+    const res = await fetch(`${apiBase()}/settings/file-reuse/backfill`, {
+      method: "POST",
+      headers: authHeaders(),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to check the stored files"));
+    return (await res.json()).backfill;
+  },
+
   getPreviews: async (): Promise<{ mode: PreviewMode }> => {
     const res = await fetch(`${apiBase()}/settings/previews`, { headers: authHeaders() });
     assertOk(res, "Failed to load preview settings");
@@ -420,206 +512,17 @@ export const settingsApi = {
     return ((await res.json()) as { providers: ProviderSetting[] }).providers;
   },
 
-  // Write-only: GET only reports whether a token is configured.
-  getThingiverse: async (): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/thingiverse`, { headers: authHeaders() });
-    assertOk(res, "Failed to load Thingiverse settings");
-    return res.json();
-  },
-
-  updateThingiverse: async (accessToken: string | null): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/thingiverse`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ access_token: accessToken }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) {
-      throw new Error(await readErrorMessage(res, "Failed to update Thingiverse settings"));
-    }
-    return res.json();
-  },
-
-  // Write-only, like Thingiverse's token: GET only reports whether a key is configured.
-  getMyminifactory: async (): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/myminifactory`, { headers: authHeaders() });
-    assertOk(res, "Failed to load MyMiniFactory settings");
-    return res.json();
-  },
-
-  updateMyminifactory: async (apiKey: string | null): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/myminifactory`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ api_key: apiKey }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) {
-      throw new Error(await readErrorMessage(res, "Failed to update MyMiniFactory settings"));
-    }
-    return res.json();
-  },
-
-  // The user's own MyMiniFactory sign-in, for paid and login-only models. Write-only, like MakerWorld's cookie.
-  getMyminifactorySession: async (): Promise<{ configured: boolean; expired: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/myminifactory-session`, { headers: authHeaders() });
-    assertOk(res, "Failed to load MyMiniFactory settings");
-    return res.json();
-  },
-
-  /** Checked with MyMiniFactory before it's saved. */
-  updateMyminifactorySession: async (cookie: string | null): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/myminifactory-session`, {
-      method: "PATCH",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ cookie, verify: true }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update MyMiniFactory settings"));
-    return res.json();
-  },
-
-  // The user's own Snapmaker Space sign-in (its access token), which Thingport Grab keeps fresh. Write-only.
-  getSnapmakerSession: async (): Promise<{ configured: boolean; expired: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/snapmaker-session`, { headers: authHeaders() });
-    assertOk(res, "Failed to load Snapmaker Space settings");
-    return res.json();
-  },
-
-  /** Checked with Snapmaker before it's saved. */
-  updateSnapmakerSession: async (token: string | null): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/snapmaker-session`, {
-      method: "PATCH",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ token, verify: true }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update Snapmaker Space settings"));
-    return res.json();
-  },
-
-  // The user's own MakerOnline sign-in (its access token), which Thingport Grab sends on. Write-only.
-  getMakeronlineSession: async (): Promise<{ configured: boolean; expired: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/makeronline-session`, { headers: authHeaders() });
-    assertOk(res, "Failed to load MakerOnline settings");
-    return res.json();
-  },
-
-  /** Checked with MakerOnline before it's saved. */
-  updateMakeronlineSession: async (token: string | null): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/makeronline-session`, {
-      method: "PATCH",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ token, verify: true }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update MakerOnline settings"));
-    return res.json();
-  },
-
-  // The user's own Creality Cloud sign-in (its model_token and model_user_id cookies), which Thingport Grab sends on.
-  // Write-only.
-  getCrealitycloudSession: async (): Promise<{ configured: boolean; expired: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/crealitycloud-session`, { headers: authHeaders() });
-    assertOk(res, "Failed to load Creality Cloud settings");
-    return res.json();
-  },
-
-  /** Checked with Creality Cloud before it's saved. */
-  updateCrealitycloudSession: async (token: string | null): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/crealitycloud-session`, {
-      method: "PATCH",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ token, verify: true }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update Creality Cloud settings"));
-    return res.json();
-  },
-
-  // The user's own NexPrint sign-in (its auth_token cookie), which Thingport Grab sends on. Write-only.
-  getNexprintSession: async (): Promise<{ configured: boolean; expired: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/nexprint-session`, { headers: authHeaders() });
-    assertOk(res, "Failed to load NexPrint settings");
-    return res.json();
-  },
-
-  /** Checked with NexPrint before it's saved. */
-  updateNexprintSession: async (token: string | null): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/nexprint-session`, {
-      method: "PATCH",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ token, verify: true }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update NexPrint settings"));
-    return res.json();
-  },
-
-  // The user's own Thangs sign-in (its accessToken and refreshToken cookies), which Thingport Grab sends on. Write-only.
-  getThangsSession: async (): Promise<{ configured: boolean; expired: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/thangs-session`, { headers: authHeaders() });
-    assertOk(res, "Failed to load Thangs settings");
-    return res.json();
-  },
-
-  /** Checked with Thangs before it's saved. Takes a token, either cookie, or a whole Cookie header. */
-  updateThangsSession: async (token: string | null): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/thangs-session`, {
-      method: "PATCH",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ token, verify: true }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update Thangs settings"));
-    return res.json();
-  },
-
-  // The user's own Cults3D API credentials, their nickname and an API key made on the site, and whether Thingport
-  // Grab has sent the browser's sign-in, which the downloads need. The key is write-only.
-  getCults3d: async (): Promise<Cults3dSettings> => {
-    const res = await fetch(`${apiBase()}/settings/cults3d`, { headers: authHeaders() });
-    assertOk(res, "Failed to load Cults3D settings");
-    return res.json();
-  },
-
-  /** Checked with Cults3D before it's saved; null forgets them. */
-  updateCults3d: async (
-    credentials: { nick: string; apiKey: string } | null,
-  ): Promise<{ configured: boolean; nick: string | null }> => {
-    const res = await fetch(`${apiBase()}/settings/cults3d`, {
-      method: "PATCH",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ nick: credentials?.nick ?? null, api_key: credentials?.apiKey ?? null, verify: true }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update Cults3D settings"));
-    return res.json();
-  },
-
-  /** The browser's sign-in by hand: a signed-in cults3d.com request's copied headers. Null forgets it. */
-  updateCults3dSession: async (session: string | null): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/cults3d-session`, {
-      method: "PATCH",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ session }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update the Cults3D sign-in"));
-    return res.json();
-  },
-
   getAuth: async (): Promise<AuthSettings> => {
     const res = await fetch(`${apiBase()}/settings/auth`, { headers: authHeaders() });
     assertOk(res, "Failed to load session settings");
     return res.json();
   },
 
-  updateAuth: async (tokenTtlSeconds: number): Promise<AuthSettings> => {
+  updateAuth: async (patch: Partial<AuthSettings>): Promise<AuthSettings> => {
     const res = await fetch(`${apiBase()}/settings/auth`, {
       method: "PATCH",
       headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ token_ttl_seconds: tokenTtlSeconds }),
+      body: JSON.stringify(patch),
     });
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) {
@@ -717,44 +620,26 @@ export const settingsApi = {
     return res.json();
   },
 
-  // `expired`: MakerWorld turned the saved cookie down; scheduled syncs wait for a new one.
-  getMakerworld: async (): Promise<{ configured: boolean; expired: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/makerworld`, { headers: authHeaders() });
-    assertOk(res, "Failed to load MakerWorld settings");
-    return res.json();
-  },
-
-  // Clearing (null) is never verified.
-  updateMakerworld: async (cookie: string | null): Promise<{ configured: boolean }> => {
-    const res = await fetch(`${apiBase()}/settings/makerworld`, {
-      method: "PATCH",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ cookie, verify: true }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) {
-      throw new Error(await readErrorMessage(res, "Failed to update MakerWorld settings"));
-    }
-    return res.json();
-  },
-
-  getSlicer: async (): Promise<{ slicer: string | null }> => {
+  getSlicer: async (): Promise<SlicerSettings> => {
     const res = await fetch(`${apiBase()}/settings/slicer`, { headers: authHeaders() });
     assertOk(res, "Failed to load slicer setting");
-    return res.json();
+    return toSlicerSettings(await res.json());
   },
 
-  updateSlicer: async (slicer: string | null): Promise<{ slicer: string | null }> => {
+  /** A field left out keeps its value. `enable`/`disable` switch one slicer in the list as the server has it. */
+  updateSlicer: async (
+    patch: Partial<SlicerSettings> & { enable?: string; disable?: string },
+  ): Promise<SlicerSettings> => {
     const res = await fetch(`${apiBase()}/settings/slicer`, {
       method: "PATCH",
       headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ slicer }),
+      body: JSON.stringify(patch),
     });
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) {
       throw new Error(await readErrorMessage(res, "Failed to update slicer setting"));
     }
-    return res.json();
+    return toSlicerSettings(await res.json());
   },
 
   // Null means never set.
@@ -847,7 +732,26 @@ export const settingsApi = {
     return res.json();
   },
 
-  getDashboardLayout: async (): Promise<{ layout: DashboardLayout }> => {
+  /** Null until the user's templates have been saved once. */
+  getDashboard: async (): Promise<{ config: DashboardConfig | null }> => {
+    const res = await fetch(`${apiBase()}/settings/dashboard`, { headers: authHeaders() });
+    assertOk(res, "Failed to load the dashboard settings");
+    return res.json();
+  },
+
+  updateDashboard: async (config: DashboardConfig): Promise<{ config: DashboardConfig }> => {
+    const res = await fetch(`${apiBase()}/settings/dashboard`, {
+      method: "PUT",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ config }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to save the dashboard settings"));
+    return res.json();
+  },
+
+  /** Null when the user never chose one of the old fixed layouts. */
+  getDashboardLayout: async (): Promise<{ layout: DashboardLayout | null }> => {
     const res = await fetch(`${apiBase()}/settings/dashboard-layout`, { headers: authHeaders() });
     assertOk(res, "Failed to load the dashboard layout setting");
     return res.json();

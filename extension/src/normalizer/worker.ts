@@ -1,4 +1,4 @@
-// Worker entry for normalizing off the page's main thread (see content/makerworld/normalize.ts).
+// Worker entry for normalizing off the page's main thread (see providers/makerworld/normalize.ts).
 // Says "ready" first, so the page can tell a worker that never started from a failed conversion.
 
 import { normalize3mf } from "./threeMfNormalizer";

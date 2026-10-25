@@ -3,6 +3,7 @@ import fsSync from "node:fs";
 import path from "node:path";
 import { prisma } from "../db";
 import { STORAGE } from "../config";
+import { withStorageLock } from "../utils/storageLock";
 import { HttpError, sanitizeFilename, guessMimeFromPath, mimeFromContentType } from "../utils/fileUtils";
 import { normalizeTags } from "../utils/tagNormalization";
 import { inspectPreparedPrint } from "./preparedPrint";
@@ -13,6 +14,7 @@ import {
   ensurePlateThumbnail,
   managedPlatePath,
   pruneEmptyStorageDirs,
+  relocatePrint,
   removeAssetHome,
   assetOwnerIds,
   removePlatePictures,
@@ -24,10 +26,13 @@ import { generateCardRender } from "./previewImageService";
 import { printAssetHome } from "./modelAssets";
 import { deleteNormalized3mf } from "./normalized3mfCache";
 import { getPreviewMode } from "./settingsService";
+import { reuseMarker, shareStoredCopy, type ReuseMarker } from "./fileReuse";
+import { findStoredCopies } from "./storedContent";
 import { Prisma } from "@prisma/client";
 import type { CategorySource, Plate, Print } from "@prisma/client";
 import { enqueueAiCategorization } from "./aiCategorizationService";
 import { enqueueAiDescription } from "./aiDescriptionService";
+import { deleteAllPrintFiles } from "./printFileService";
 
 const IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".webp", ".bmp"]);
 
@@ -56,23 +61,29 @@ export type PrintMetaInput = {
   sourceExternalId?: string | null;
 };
 
-/** Never over another file: a link fails on one that's there, where a rename would replace it. */
+/** Never over another file: a link fails on one that's there, where a rename would replace it. Only the placing is
+ *  under the storage lock (the file reuse backfill's swap renames over a path it has just checked, and mustn't land
+ *  after a file saved at a path its row just freed); removing the temp file is not. */
 async function placeFile(input: NewPlateInput, destAbsPath: string): Promise<string | null> {
   await fs.mkdir(path.dirname(destAbsPath), { recursive: true });
   try {
     if (input.tempFilePath) {
-      try {
-        await fs.link(input.tempFilePath, destAbsPath);
-      } catch (err: any) {
-        if (err?.code === "EEXIST") throw err;
-        // Another disk, or one without hard links.
-        await fs.copyFile(input.tempFilePath, destAbsPath, fsSync.constants.COPYFILE_EXCL);
-      }
-      await fs.rm(input.tempFilePath, { force: true });
+      const tempFilePath = input.tempFilePath;
+      await withStorageLock(async () => {
+        try {
+          await fs.link(tempFilePath, destAbsPath);
+        } catch (err: any) {
+          if (err?.code === "EEXIST") throw err;
+          // Another disk, or one without hard links.
+          await fs.copyFile(tempFilePath, destAbsPath, fsSync.constants.COPYFILE_EXCL);
+        }
+      });
+      await fs.rm(tempFilePath, { force: true });
       return destAbsPath;
     }
     if (input.copyFromPath) {
-      await fs.copyFile(input.copyFromPath, destAbsPath, fsSync.constants.COPYFILE_EXCL);
+      const copyFromPath = input.copyFromPath;
+      await withStorageLock(() => fs.copyFile(copyFromPath, destAbsPath, fsSync.constants.COPYFILE_EXCL));
       return destAbsPath;
     }
   } catch (err: any) {
@@ -80,6 +91,21 @@ async function placeFile(input: NewPlateInput, destAbsPath: string): Promise<str
     throw err;
   }
   return input.sourcePath ?? null;
+}
+
+/** Stores the file, sharing a stored copy of it when the admin setting allows. Returns where it is and, when it was
+ *  hashed for that, its SHA-256 -- recorded either way so a later identical file finds it. */
+async function placePlateFile(
+  input: NewPlateInput,
+  destAbsPath: string,
+): Promise<{ effectivePath: string | null; contentSha256: string | null; marker: ReuseMarker }> {
+  const fromPath = input.tempFilePath ?? input.copyFromPath;
+  if (!fromPath) return { effectivePath: await placeFile(input, destAbsPath), contentSha256: null, marker: {} };
+  const { contentSha256, shared } = await shareStoredCopy(fromPath, destAbsPath, findStoredCopies);
+  if (!shared) return { effectivePath: await placeFile(input, destAbsPath), contentSha256, marker: {} };
+  // The clone is in place: a temp file left behind is only clutter, not a reason to fail the import.
+  if (input.tempFilePath) await fs.rm(input.tempFilePath, { force: true }).catch(() => undefined);
+  return { effectivePath: destAbsPath, contentSha256, marker: await reuseMarker(destAbsPath, true, contentSha256) };
 }
 
 async function resolveSize(input: NewPlateInput, effectivePath: string | null): Promise<number> {
@@ -143,7 +169,7 @@ async function createPlateAtPosition(
   const desiredFilename = await availablePlateFilename(print.id, sanitized);
   const storagePath = await renderPlateStoragePath(print, desiredFilename, position);
   const destAbsPath = path.join(STORAGE, storagePath);
-  const effectivePath = await placeFile(input, destAbsPath);
+  const { effectivePath, contentSha256, marker } = await placePlateFile(input, destAbsPath);
   const size = await resolveSize(input, effectivePath);
   const mime = input.mime || guessMimeFromPath(desiredFilename) || "application/octet-stream";
 
@@ -159,6 +185,8 @@ async function createPlateAtPosition(
         storagePath,
         sourcePath: input.sourcePath ?? null,
         sourceInstanceId: input.sourceInstanceId ?? null,
+        contentSha256,
+        ...marker,
       },
     });
   } catch (err) {
@@ -243,12 +271,13 @@ export async function createPrint(
   }
 }
 
-/** Undoes a half-created print, so a failure doesn't leave a model with only some of its plates. */
-async function discardPrint(printId: string): Promise<void> {
+/** Undoes a half-created print, so a failure doesn't leave a model with only some of its files. */
+export async function discardPrint(printId: string): Promise<void> {
   try {
     const plates = await prisma.plate.findMany({ where: { printId } });
     const home = await printAssetHome(printId);
     const assetOwners = await assetOwnerIds(printId);
+    await deleteAllPrintFiles(printId);
     await prisma.print.delete({ where: { id: printId } });
     for (const plate of plates) {
       await removePlatePictures(plate.id, home);
@@ -280,6 +309,42 @@ export async function addPlatesToPrint(
     nextPosition += 1;
   }
   return created;
+}
+
+/** Removes one of the model's plates and its file. The only plate can't go: the model is deleted instead. */
+export async function removePlate(print: Pick<Print, "id" | "assetsPath">, plateId: string): Promise<void> {
+  const plates = await prisma.plate.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } });
+  const target = plates.find((p) => p.id === plateId);
+  if (!target) throw new HttpError(404, "Plate not found");
+  if (plates.length <= 1) {
+    throw new HttpError(409, "Cannot remove the only plate of a print; delete the print instead.");
+  }
+
+  const remaining = plates.filter((p) => p.id !== target.id);
+  // Renumber in two phases (negative temp positions) to avoid (printId, position) collisions.
+  await prisma.plate.delete({ where: { id: target.id } });
+  await prisma.$transaction(
+    remaining.map((p, idx) => prisma.plate.update({ where: { id: p.id }, data: { position: -(idx + 1) } })),
+  );
+  await prisma.$transaction(
+    remaining.map((p, idx) => prisma.plate.update({ where: { id: p.id }, data: { position: idx } })),
+  );
+  await deletePlateFiles(target);
+  await removePlatePictures(target.id, print.assetsPath);
+  if (target.position === 0) await refreshAutoPreparedMetadata(print.id);
+}
+
+/** Renames one of the model's plates, suffixed when another plate has the name. Returns the name it got. */
+export async function renamePlate(print: Print, plateId: string, filename: string): Promise<string> {
+  const plate = await prisma.plate.findUnique({ where: { id: plateId } });
+  if (!plate || plate.printId !== print.id) throw new HttpError(404, "Plate not found");
+  const nextFilename = await availablePlateFilename(print.id, sanitizeFilename(filename), plate.id);
+  if (nextFilename !== plate.filename) {
+    await prisma.plate.update({ where: { id: plate.id }, data: { filename: nextFilename } });
+    await relocatePrint(print, [{ ...plate, filename: nextFilename }]);
+    if (plate.position === 0) await refreshAutoPreparedMetadata(print.id);
+  }
+  return nextFilename;
 }
 
 export async function deletePlateFiles(plate: Pick<Plate, "id" | "storagePath">): Promise<void> {

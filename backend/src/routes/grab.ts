@@ -4,7 +4,13 @@ import { issueToken, requireAuth } from "../auth";
 import { prisma } from "../db";
 import { toUserOut } from "../dto";
 import { createLog } from "../services/auditLog";
-import { CHALLENGE_PATTERN, approvePairing, claimPairing, grabConnectionUser } from "../services/grabPairingService";
+import {
+  CHALLENGE_PATTERN,
+  approvePairing,
+  claimPairing,
+  grabConnectionUser,
+  removeGrabConnection,
+} from "../services/grabPairingService";
 import { asyncHandler } from "../utils/asyncHandler";
 import { HttpError } from "../utils/fileUtils";
 import { parseBody } from "../utils/validate";
@@ -54,6 +60,17 @@ router.post(
     }
     const { token, expiresIn } = await issueToken(user.id, user.role, NOT_A_SIGN_IN);
     res.json({ token, expires_in: expiresIn, user: toUserOut(user) });
+  }),
+);
+
+// The extension's Disconnect. Holding the token is the proof; one already gone is no error.
+router.post(
+  "/grab/disconnect",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(z.object({ connection_token: z.string().min(1).max(200) }), req.body);
+    const userId = await removeGrabConnection(body.connection_token);
+    res.status(204).end();
+    if (userId) void createLog({ userId, action: "grab_disconnected" });
   }),
 );
 

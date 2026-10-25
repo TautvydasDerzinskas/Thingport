@@ -1,7 +1,11 @@
 # Open in your slicer
 
 **Open in Slicer** on a model page hands a file straight to the slicer on your computer, without saving it somewhere
-first. When a model has several files, you pick which one.
+first. When a model has several files, pick one in the **Files** box above the button; opening and downloading both
+use it.
+
+The button opens the slicer you used last. Its arrow lists your other slicers, downloads the chosen file, and, for a
+model with several files, downloads them all as a zip.
 
 Supported slicers:
 
@@ -13,9 +17,11 @@ Supported slicers:
 - Anycubic Slicer Next
 - Elegoo Slicer
 - Snapmaker Orca
+- eufyMake Studio
 
-Choose yours under **Configuration → Slicer**, from the user menu: double-click a slicer, or right-click it and choose
-**Activate**. **Other / Manual** hides the button, for when you'd rather download files and open them yourself.
+Switch on the ones you have installed under **Configuration → Slicer**, from the user menu: double-click a slicer, or
+right-click it and choose **Activate** (or **Deactivate**). With none switched on, or only **Other / Manual**, the
+button downloads the file instead, for when you'd rather open files yourself.
 
 ## Thingport Bridge
 

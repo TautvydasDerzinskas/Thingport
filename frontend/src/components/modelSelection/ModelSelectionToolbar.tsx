@@ -8,6 +8,7 @@ import ListItemText from "@mui/material/ListItemText";
 import CircularProgress from "@mui/material/CircularProgress";
 import PlaylistAddIcon from "@mui/icons-material/PlaylistAdd";
 import PlaylistRemoveIcon from "@mui/icons-material/PlaylistRemove";
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import DownloadIcon from "@mui/icons-material/Download";
@@ -24,7 +25,8 @@ import { useAiDescriptionRun, useAiRun } from "../Layout/AiRunContext";
 import { useConfirm } from "../ConfirmProvider";
 import { useToast } from "../ToastProvider";
 import DownloadZipConfirmDialog from "../DownloadZipConfirmDialog";
-import BulkAddToCollectionDialog from "./BulkAddToCollectionDialog";
+import BulkEditCollectionsDialog from "./BulkEditCollectionsDialog";
+import BulkEditTagsDialog from "./BulkEditTagsDialog";
 import SelectionToolbar, { SelectionAction } from "../selection/SelectionToolbar";
 
 type Props = {
@@ -64,6 +66,7 @@ export default function ModelSelectionToolbar({
   const [busy, setBusy] = useState<Busy>(null);
   const [aiMenuAnchor, setAiMenuAnchor] = useState<HTMLElement | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [tagsOpen, setTagsOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const { active, selected } = selection;
   const ids = selected.map((item) => item.id);
@@ -262,10 +265,19 @@ export default function ModelSelectionToolbar({
             )}
           </Menu>
 
-          <BulkAddToCollectionDialog
+          <BulkEditCollectionsDialog
             open={addOpen}
             onClose={() => setAddOpen(false)}
             printIds={ids}
+            collectionId={collectionId}
+            onRemovedFromCollection={onRemovedFromCollection}
+            onUnauthorized={onUnauthorized}
+          />
+          <BulkEditTagsDialog
+            open={tagsOpen}
+            onClose={() => setTagsOpen(false)}
+            prints={selected}
+            onUpdated={onUpdated}
             onUnauthorized={onUnauthorized}
           />
           <DownloadZipConfirmDialog
@@ -279,13 +291,14 @@ export default function ModelSelectionToolbar({
         </>
       }
     >
-      {action(t("models:detail.addToCollection"), <PlaylistAddIcon fontSize="small" />, () => setAddOpen(true))}
+      {action(t("models:selection.editCollections"), <PlaylistAddIcon fontSize="small" />, () => setAddOpen(true))}
       {collectionId &&
         action(
           t("models:detail.removeFromCollection"),
           busy === "removeFromCollection" ? <CircularProgress size={18} /> : <PlaylistRemoveIcon fontSize="small" />,
           () => void removeFromCollection(),
         )}
+      {action(t("models:selection.editTags"), <LocalOfferIcon fontSize="small" />, () => setTagsOpen(true))}
       {action(
         favoriteLabel,
         busy === "favorite" ? (

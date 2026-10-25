@@ -1,10 +1,13 @@
 import fs from "node:fs";
+import { LIKES_ID_PREFIX, PROVIDER_IDS, type ProviderId } from "./providers/index.generated";
+import { syncLikesUsername } from "./providers/names";
 import { nextSyncAt, syncNowAvailableAt } from "./services/collectionSyncSchedule";
 import type {
   CollectionSync,
   Author,
   Collection,
   Category,
+  CategorySiteId,
   ImportJob,
   ImportJobItem,
   Notification,
@@ -189,17 +192,10 @@ export type CategoryOut = {
   position: number;
   meta_title: string | null;
   meta_description: string | null;
-  // Semicolon-separated, e.g. "800;71;1001"; empty when none.
-  makerworld_cat_ids: string;
-  thingiverse_cat_ids: string;
-  printables_cat_ids: string;
-  myminifactory_cat_ids: string;
-  snapmaker_cat_ids: string;
-  makeronline_cat_ids: string;
-  crealitycloud_cat_ids: string;
-  nexprint_cat_ids: string;
-  thangs_cat_ids: string;
-  cults3d_cat_ids: string;
+} & {
+  // Each provider's category ids, semicolon-separated, e.g. "800;71;1001"; empty when none. A field apiece, as the
+  // API had them before they were kept in a table of their own.
+  [K in ProviderId as `${K}_cat_ids`]: string;
 };
 
 /** `url` versioned by the file's mtime; null when it isn't there. One stat, as a storage move can take the file
@@ -426,17 +422,7 @@ export type CollectionSyncOut = {
 };
 
 // A Likes sync's externalId; collection ids are numeric, so the two never collide.
-export const LIKES_ID_PREFIX = "likes:";
-
-/** The user whose likes a sync follows (on Thingiverse, Printables or Cults3D), as written in its page
- *  address, or null for a collection sync. */
-export function syncLikesUsername(sync: { externalId: string; sourceUrl: string }): string | null {
-  if (!sync.externalId.startsWith(LIKES_ID_PREFIX)) return null;
-  const parts = new URL(sync.sourceUrl).pathname.split("/").filter(Boolean);
-  // Printables writes its profile paths as "/@handle"; Cults3D's are "/en/users/<nick>/likes".
-  const fromUrl = (/^[a-z]{2}$/.test(parts[0] ?? "") && parts.length === 4 ? parts[2] : parts[0])?.replace(/^@/, "");
-  return fromUrl ? decodeURIComponent(fromUrl) : sync.externalId.slice(LIKES_ID_PREFIX.length);
-}
+export { LIKES_ID_PREFIX, syncLikesUsername };
 
 export function toCollectionSyncOut(sync: CollectionSync): CollectionSyncOut {
   const syncNowAt = syncNowAvailableAt(sync.lastCheckedAt);
@@ -497,11 +483,10 @@ export function toSystemCollectionOut(
   };
 }
 
-function formatCatIds(ids: (number | string)[]): string {
-  return ids.join(";");
-}
-
-export function toCategoryOut(category: Category): CategoryOut {
+/** `siteIds` in their order, as WITH_SITE_IDS (services/categorySiteIds.ts) includes them. */
+export function toCategoryOut(
+  category: Category & { siteIds: readonly Pick<CategorySiteId, "provider" | "siteId">[] },
+): CategoryOut {
   return {
     id: category.id,
     name: category.name,
@@ -511,16 +496,15 @@ export function toCategoryOut(category: Category): CategoryOut {
     position: category.position,
     meta_title: category.metaTitle,
     meta_description: category.metaDescription,
-    makerworld_cat_ids: formatCatIds(category.makerworldCatIds),
-    thingiverse_cat_ids: formatCatIds(category.thingiverseCatIds),
-    printables_cat_ids: formatCatIds(category.printablesCatIds),
-    myminifactory_cat_ids: formatCatIds(category.myminifactoryCatIds),
-    snapmaker_cat_ids: formatCatIds(category.snapmakerCatIds),
-    makeronline_cat_ids: formatCatIds(category.makeronlineCatIds),
-    crealitycloud_cat_ids: formatCatIds(category.crealitycloudCatIds),
-    nexprint_cat_ids: formatCatIds(category.nexprintCatIds),
-    thangs_cat_ids: formatCatIds(category.thangsCatIds),
-    cults3d_cat_ids: formatCatIds(category.cults3dCatIds),
+    ...(Object.fromEntries(
+      PROVIDER_IDS.map((id) => [
+        `${id}_cat_ids`,
+        category.siteIds
+          .filter((row) => row.provider === id)
+          .map((row) => row.siteId)
+          .join(";"),
+      ]),
+    ) as Record<`${ProviderId}_cat_ids`, string>),
   };
 }
 

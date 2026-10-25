@@ -8,8 +8,13 @@ export function isTarget(value: string): value is Target {
   return (TARGETS as readonly string[]).includes(value);
 }
 
-const PROVIDER_MATCHES = ["*://*.thingiverse.com/*", "*://*.makerworld.com/*", "*://*.printables.com/*"];
-const COOKIE_HOSTS = ["*://*.makerworld.com/*", "*://*.printables.com/*"];
+import { MANIFESTS, PROVIDER_IDS } from "../src/providers/index.generated";
+
+// The sites in the manifest itself; any change makes browsers disable Grab until each user approves it, so the
+// generator keeps them to the legacy three (scripts/sync-providers.mjs).
+const BUILTIN = PROVIDER_IDS.map((id) => MANIFESTS[id].extension).filter((site) => site.site === "builtin");
+export const PROVIDER_MATCHES = BUILTIN.flatMap((site) => site.origins);
+export const COOKIE_HOSTS = BUILTIN.flatMap((site) => ("cookies" in site ? site.origins : []));
 
 function iconSet(variant: "color" | "dark"): Record<string, string> {
   return Object.fromEntries(
@@ -30,7 +35,7 @@ export function buildManifest(target: Target, pkg: { version: string; descriptio
     },
     background: target === "firefox" ? { scripts: ["background.js"] } : { service_worker: "background.js" },
     // scripting: the content script for sites the user turns on later (src/shared/optionalSites.ts). alarms: renewing
-    // the Snapmaker sign-in on a timer (src/background/snapmakerSession.ts). Neither carries an install warning, so
+    // the Snapmaker sign-in on a timer (src/providers/snapmaker/session.ts). Neither carries an install warning, so
     // adding them didn't need everyone to approve the update.
     permissions: ["storage", "cookies", "downloads", "scripting", "alarms"],
     // chrome.cookies needs these as host permissions; content script matches don't count. Their
@@ -38,7 +43,11 @@ export function buildManifest(target: Target, pkg: { version: string; descriptio
     host_permissions: COOKIE_HOSTS,
     // The user's instance origin, requested at setup, and the optional sites, requested when turned on.
     optional_host_permissions: ["*://*/*"],
-    content_scripts: [{ matches: PROVIDER_MATCHES, js: ["content.js"], run_at: "document_idle" }],
+    content_scripts: [
+      { matches: PROVIDER_MATCHES, js: ["content.js"], run_at: "document_idle" },
+      // Thingiverse's restyles, before the page paints so it doesn't flash white or show ads first (src/providers/thingiverse/).
+      { matches: ["*://*.thingiverse.com/*"], js: ["thingiverse.js"], run_at: "document_start" },
+    ],
   };
 
   if (target === "firefox") {

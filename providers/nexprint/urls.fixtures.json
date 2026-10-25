@@ -1,0 +1,52 @@
+[
+  {
+    "url": "https://www.nexprint.com/en/models/G1215164?printConfigId=G6354239",
+    "expect": {
+      "provider": "nexprint",
+      "kind": "model",
+      "externalId": "G1215164",
+      "requestedProfileId": "G6354239"
+    }
+  },
+  {
+    "url": "https://nexprint.com/de/models/g1215164/#profileId-g9",
+    "expect": {
+      "provider": "nexprint",
+      "kind": "model",
+      "externalId": "G1215164",
+      "requestedProfileId": "G9"
+    }
+  },
+  {
+    "url": "https://www.nexprint.com/en/collection/G10199482",
+    "expect": {
+      "provider": "nexprint",
+      "kind": "list",
+      "externalId": "G10199482",
+      "listKind": "collection"
+    }
+  },
+  {
+    "url": "https://nexprint.com/en/u0092359913/home?component=UserCollect&collectionId=g10199482",
+    "expect": {
+      "provider": "nexprint",
+      "kind": "list",
+      "externalId": "G10199482",
+      "listKind": "collection"
+    }
+  },
+  {
+    "url": "https://nexprint.com/en/U0092359913/home",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  },
+  {
+    "url": "https://fakenexprint.com/en/models/G123",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  }
+]

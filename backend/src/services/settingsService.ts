@@ -44,6 +44,28 @@ export async function setCaptchaSettings(patch: Partial<CaptchaSettings>): Promi
   return getCaptchaSettings();
 }
 
+// Custom widgets' scripts run in their users' dashboard pages with their access; an admin can turn off users' own
+// widgets and the community's separately.
+export const WIDGET_SOURCES = ["own", "community"] as const;
+export type WidgetSource = (typeof WIDGET_SOURCES)[number];
+export type WidgetSources = Record<WidgetSource, boolean>;
+
+const widgetSourceKey = (source: WidgetSource) => `${source === "own" ? "user" : source}_widgets_enabled`;
+
+export async function getWidgetSources(): Promise<WidgetSources> {
+  const [own, community] = await Promise.all(
+    WIDGET_SOURCES.map((source) => getBoolSetting(widgetSourceKey(source), true)),
+  );
+  return { own, community };
+}
+
+export async function setWidgetSources(patch: Partial<WidgetSources>): Promise<WidgetSources> {
+  for (const source of WIDGET_SOURCES) {
+    if (patch[source] !== undefined) await setBoolSetting(widgetSourceKey(source), patch[source]);
+  }
+  return getWidgetSources();
+}
+
 const ALLOW_REGISTRATIONS_KEY = "allow_registrations";
 
 export async function getAllowRegistrations(fallback: boolean): Promise<boolean> {
@@ -115,6 +137,33 @@ export async function setPreviewMode(value: PreviewMode): Promise<void> {
   });
 }
 
+// How a model file identical to one already stored (by SHA-256) is saved (services/fileReuse.ts), instance-wide
+// since the copies may belong to different users. "reflink" clones it copy-on-write where the filesystem can (btrfs,
+// XFS, ZFS >= 2.2), so the copies stay independent files and only take space once they differ; elsewhere it's stored
+// as usual. There's deliberately no hard-link mode: a hard link is one file, so editing one user's copy on disk would
+// silently change every other user's too. Off unless an admin chooses, since the storage folder may be mounted and
+// its files edited outside Thingport; an unknown stored value (such as an old "hardlink") reads as off.
+export type FileReuse = "off" | "reflink";
+export const FILE_REUSE_MODES: readonly FileReuse[] = ["off", "reflink"];
+const FILE_REUSE_KEY = "file_reuse";
+const DEFAULT_FILE_REUSE: FileReuse = "off";
+
+export async function getFileReuse(): Promise<FileReuse> {
+  const row = await prisma.setting.findUnique({ where: { key: FILE_REUSE_KEY } });
+  const value = row?.value;
+  return typeof value === "string" && FILE_REUSE_MODES.includes(value as FileReuse)
+    ? (value as FileReuse)
+    : DEFAULT_FILE_REUSE;
+}
+
+export async function setFileReuse(value: FileReuse): Promise<void> {
+  await prisma.setting.upsert({
+    where: { key: FILE_REUSE_KEY },
+    create: { key: FILE_REUSE_KEY, value },
+    update: { value },
+  });
+}
+
 // What API tokens may do at /api/mcp, instance-wide. "read" also keeps a write tool off for a token
 // whose user ticked it, without forgetting the choice.
 export type McpAccess = "off" | "read" | "write";
@@ -135,50 +184,6 @@ export async function setMcpAccess(value: McpAccess): Promise<void> {
     where: { key: MCP_ACCESS_KEY },
     create: { key: MCP_ACCESS_KEY, value },
     update: { value },
-  });
-}
-
-const THINGIVERSE_ACCESS_TOKEN_KEY = "thingiverse_access_token";
-
-// Instance-wide: the token belongs to whichever Thingiverse account registered the app.
-export async function getThingiverseAccessToken(): Promise<string | null> {
-  const row = await prisma.setting.findUnique({ where: { key: THINGIVERSE_ACCESS_TOKEN_KEY } });
-  const value = row?.value;
-  return typeof value === "string" && value.trim() ? value.trim() : null;
-}
-
-export async function setThingiverseAccessToken(value: string | null): Promise<void> {
-  const trimmed = (value ?? "").trim();
-  if (!trimmed) {
-    await prisma.setting.deleteMany({ where: { key: THINGIVERSE_ACCESS_TOKEN_KEY } });
-    return;
-  }
-  await prisma.setting.upsert({
-    where: { key: THINGIVERSE_ACCESS_TOKEN_KEY },
-    create: { key: THINGIVERSE_ACCESS_TOKEN_KEY, value: trimmed },
-    update: { value: trimmed },
-  });
-}
-
-const MYMINIFACTORY_API_KEY_KEY = "myminifactory_api_key";
-
-// Instance-wide, like the Thingiverse token: the key belongs to whichever account created it.
-export async function getMyminifactoryApiKey(): Promise<string | null> {
-  const row = await prisma.setting.findUnique({ where: { key: MYMINIFACTORY_API_KEY_KEY } });
-  const value = row?.value;
-  return typeof value === "string" && value.trim() ? value.trim() : null;
-}
-
-export async function setMyminifactoryApiKey(value: string | null): Promise<void> {
-  const trimmed = (value ?? "").trim();
-  if (!trimmed) {
-    await prisma.setting.deleteMany({ where: { key: MYMINIFACTORY_API_KEY_KEY } });
-    return;
-  }
-  await prisma.setting.upsert({
-    where: { key: MYMINIFACTORY_API_KEY_KEY },
-    create: { key: MYMINIFACTORY_API_KEY_KEY, value: trimmed },
-    update: { value: trimmed },
   });
 }
 
@@ -481,6 +486,25 @@ export async function setAuthTokenTtl(seconds: number): Promise<void> {
   await prisma.setting.upsert({
     where: { key: AUTH_TOKEN_TTL_KEY },
     create: { key: AUTH_TOKEN_TTL_KEY, value: seconds },
+    update: { value: seconds },
+  });
+}
+
+const REMEMBER_SESSION_TTL_KEY = "remember_session_ttl_seconds";
+const DEFAULT_REMEMBER_SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;
+
+/** How long a browser stays signed in without being used. 0 is off: it signs in again when its access token runs out. */
+export async function getRememberSessionTtl(): Promise<number> {
+  const row = await prisma.setting.findUnique({ where: { key: REMEMBER_SESSION_TTL_KEY } });
+  const value = row?.value;
+  if (typeof value === "number" && Number.isFinite(value) && value >= 0) return Math.trunc(value);
+  return Math.max(0, envInt("REMEMBER_SESSION_TTL", DEFAULT_REMEMBER_SESSION_TTL_SECONDS));
+}
+
+export async function setRememberSessionTtl(seconds: number): Promise<void> {
+  await prisma.setting.upsert({
+    where: { key: REMEMBER_SESSION_TTL_KEY },
+    create: { key: REMEMBER_SESSION_TTL_KEY, value: seconds },
     update: { value: seconds },
   });
 }

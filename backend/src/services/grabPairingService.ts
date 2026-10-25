@@ -46,6 +46,15 @@ export async function claimPairing(code: string, verifier: string): Promise<{ to
   return { token, userId: entry.userId };
 }
 
+/** The extension disconnecting itself: drops the connection this token is for. Whose it was, or null if it's gone. */
+export async function removeGrabConnection(token: string): Promise<string | null> {
+  if (!token.startsWith(TOKEN_PREFIX)) return null;
+  const connection = await prisma.grabConnection.findUnique({ where: { tokenHash: sha256(token, "hex") } });
+  if (!connection) return null;
+  await prisma.grabConnection.deleteMany({ where: { id: connection.id } });
+  return connection.userId;
+}
+
 /** Whose Grab this token is; null once the user removed the connection (or it never was one). */
 export async function grabConnectionUser(token: string) {
   if (!token.startsWith(TOKEN_PREFIX)) return null;

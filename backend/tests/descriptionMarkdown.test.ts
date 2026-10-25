@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { cleanThingiverseMarkdown, htmlToMarkdown } from "../src/services/descriptionMarkdown";
+import { htmlToMarkdown } from "../src/services/descriptionMarkdown";
+import { cleanThingiverseMarkdown } from "../src/providers/thingiverse/markdown";
 
 describe("htmlToMarkdown", () => {
   it("keeps headings, emphasis, lists and step images from a MakerWorld summary", () => {

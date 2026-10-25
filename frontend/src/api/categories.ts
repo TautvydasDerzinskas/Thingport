@@ -1,8 +1,14 @@
 import { authHeaders } from "../utils/auth";
 import { apiBase, assertOk, readErrorMessage, UnauthorizedError } from "./client";
+import { PROVIDER_IDS, type ProviderId } from "../providers/index.generated";
 
 /** "category": the starter categories imports sort into. "folder": the user's own tree. */
 export type CategoryKind = "category" | "folder";
+
+/** A category's ids on a provider, semicolon-separated, e.g. "800;71;1001"; empty when none. A field per provider, as
+ *  the API has always had them. */
+export type CatIdsKey = `${ProviderId}_cat_ids`;
+export const catIdsKey = (provider: ProviderId): CatIdsKey => `${provider}_cat_ids`;
 
 export type Category = {
   id: string;
@@ -14,32 +20,13 @@ export type Category = {
   position: number;
   meta_title: string | null;
   meta_description: string | null;
-  // Semicolon-separated, e.g. "800;71;1001"; empty when none.
-  makerworld_cat_ids: string;
-  thingiverse_cat_ids: string;
-  printables_cat_ids: string;
-  myminifactory_cat_ids: string;
-  snapmaker_cat_ids: string;
-  makeronline_cat_ids: string;
-  crealitycloud_cat_ids: string;
-  nexprint_cat_ids: string;
-  thangs_cat_ids: string;
-  cults3d_cat_ids: string;
-};
+} & Record<CatIdsKey, string>;
 
 export type CategoryMetaInput = {
   metaTitle: string | null;
   metaDescription: string | null;
-  makerworldCatIds: string;
-  thingiverseCatIds: string;
-  printablesCatIds: string;
-  myminifactoryCatIds: string;
-  snapmakerCatIds: string;
-  makeronlineCatIds: string;
-  crealitycloudCatIds: string;
-  nexprintCatIds: string;
-  thangsCatIds: string;
-  cults3dCatIds: string;
+  /** Each provider's ids, as Category keeps them. */
+  catIds: Record<ProviderId, string>;
 };
 
 /** Category paths, top level first. */
@@ -100,16 +87,7 @@ export const categoriesApi = {
       body: JSON.stringify({
         meta_title: meta.metaTitle,
         meta_description: meta.metaDescription,
-        makerworld_cat_ids: meta.makerworldCatIds,
-        thingiverse_cat_ids: meta.thingiverseCatIds,
-        printables_cat_ids: meta.printablesCatIds,
-        myminifactory_cat_ids: meta.myminifactoryCatIds,
-        snapmaker_cat_ids: meta.snapmakerCatIds,
-        makeronline_cat_ids: meta.makeronlineCatIds,
-        crealitycloud_cat_ids: meta.crealitycloudCatIds,
-        nexprint_cat_ids: meta.nexprintCatIds,
-        thangs_cat_ids: meta.thangsCatIds,
-        cults3d_cat_ids: meta.cults3dCatIds,
+        ...Object.fromEntries(PROVIDER_IDS.map((provider) => [catIdsKey(provider), meta.catIds[provider]])),
       }),
     });
     if (res.status === 401) throw new UnauthorizedError();

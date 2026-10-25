@@ -9,7 +9,11 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import type { AuthUser } from "../../api/auth";
 import type { ThemeSelection } from "../../constants/settingsOptions";
 import type { MakerWorldSettings } from "../../utils/settings";
-import { notifyConfigurationClosed, onOpenConfiguration } from "../../utils/configurationEvents";
+import {
+  notifyConfigurationClosed,
+  onOpenConfiguration,
+  takeConfigurationParam,
+} from "../../utils/configurationEvents";
 import AddMenu, { type AddMenuHandle } from "./AddMenu";
 import ConfigurationDialog, { type ConfigurationTab } from "./ConfigurationDialog";
 import NotificationBell from "./NotificationBell";
@@ -34,7 +38,6 @@ type Props = {
   onLogout: () => void;
 };
 
-/** A grid with equal `1fr` side columns keeps the search box centered however wide the sides are. */
 export default function TopBar({
   title,
   subtitle,
@@ -57,6 +60,11 @@ export default function TopBar({
   const [configTab, setConfigTab] = useState<ConfigurationTab | null>(null);
 
   useEffect(() => onOpenConfiguration(setConfigTab), []);
+  // Arriving with `?configuration=<tab>`, as from the homepage view's search.
+  useEffect(() => {
+    const tab = takeConfigurationParam();
+    if (tab) setConfigTab(tab);
+  }, []);
 
   // Publishes the bar's real height (it can wrap) as a CSS var for sticky elements below it.
   useLayoutEffect(() => {
@@ -74,7 +82,7 @@ export default function TopBar({
       ref={rootRef}
       sx={{
         display: "grid",
-        gridTemplateColumns: "1fr minmax(0, 360px) 1fr",
+        gridTemplateColumns: "minmax(0, 1fr) auto",
         alignItems: "center",
         gap: 1.5,
         // Padding rather than margin so the spacing is part of the pinned, painted box.
@@ -89,8 +97,7 @@ export default function TopBar({
     >
       {/* minWidth: 0 overrides the grid item default of `min-width: auto` -- without it, this
           column refuses to shrink below its content's natural width (the title, mainly), which
-          would push the center/right columns off `justify-content` center/right well before the
-          window actually runs out of room. */}
+          would push the right column off the edge well before the window actually runs out of room. */}
       <Stack direction="row" alignItems="center" spacing={1} minWidth={0}>
         {onBack && (
           <Tooltip title={t("shell.backToLibrary")}>
@@ -111,7 +118,7 @@ export default function TopBar({
         </Box>
         {actions}
       </Stack>
-      <Box sx={{ minWidth: 0, justifySelf: "center", width: "100%" }}>
+      <Stack direction="row" alignItems="center" spacing={1} minWidth={0} justifySelf="end">
         <GlobalSearch
           onUnauthorized={onUnauthorized}
           theme={theme}
@@ -121,8 +128,6 @@ export default function TopBar({
           onOpenConfiguration={setConfigTab}
           isAdmin={user?.role === "ADMIN"}
         />
-      </Box>
-      <Stack direction="row" alignItems="center" spacing={1} minWidth={0} justifySelf="end">
         <AddMenu
           ref={addMenuRef}
           categoryId={categoryId}
@@ -142,7 +147,6 @@ export default function TopBar({
         theme={theme}
         onThemeChange={onThemeChange}
         isAdmin={user?.role === "ADMIN"}
-        makerworldCookie={makerworldCookie}
         onUpdateMakerWorld={onUpdateMakerWorld}
         onUnauthorized={onUnauthorized}
       />

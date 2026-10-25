@@ -31,6 +31,7 @@ import {
 import SectionHeader from "../../components/SectionHeader";
 import { formatFileSize } from "../../utils/fileSize";
 import { relativeTime } from "../../utils/relativeTime";
+import { isProviderId, MANIFESTS, type ProviderId } from "../../providers/index.generated";
 
 type Props = {
   onUnauthorized?: () => void;
@@ -42,19 +43,24 @@ type ComponentInfo = { icon: React.ReactNode; need: Need; settings?: string; dow
 
 /** How much Thingport needs each one, and where it's set up or, for Grab, downloaded. Order comes from the
  *  server: by importance. */
-const COMPONENTS: Record<HealthComponent, ComponentInfo> = {
+const COMPONENTS: Record<Exclude<HealthComponent, ProviderId>, ComponentInfo> = {
   database: { icon: <StorageIcon />, need: "required", settings: "/admin-connections?tab=database" },
   storage: { icon: <FolderOutlinedIcon />, need: "required", settings: "/admin-storage" },
   memory: { icon: <MemoryIcon />, need: "required", settings: "/admin-rendering" },
   // Nothing in Thingport to set up: it's the server's network.
   internet: { icon: <LanguageIcon />, need: "recommended" },
   flaresolverr: { icon: <ShieldOutlinedIcon />, need: "recommended", settings: "/admin-connections?tab=flaresolverr" },
-  thingiverse: { icon: <CloudOutlinedIcon />, need: "recommended", settings: "/admin-providers" },
-  myminifactory: { icon: <CloudOutlinedIcon />, need: "optional", settings: "/admin-providers" },
   grab: { icon: <ExtensionOutlinedIcon />, need: "recommended", download: "/downloads" },
   ai: { icon: <AutoAwesomeOutlinedIcon />, need: "optional", settings: "/admin-ai" },
   smtp: { icon: <MailOutlineIcon />, need: "optional", settings: "/admin-connections?tab=smtp" },
 };
+
+/** A provider checked with the instance's own credential: all its imports need it where nothing else signs in. */
+function componentInfo(component: HealthComponent): ComponentInfo {
+  if (!isProviderId(component)) return COMPONENTS[component];
+  const need = MANIFESTS[component].signIn === "admin" ? "recommended" : "optional";
+  return { icon: <CloudOutlinedIcon />, need, settings: "/admin-providers" };
+}
 
 const STATUS_COLOR: Record<HealthStatus, "success" | "warning" | "error" | "default"> = {
   ok: "success",
@@ -109,7 +115,7 @@ function ComponentRow({
   onTest: () => void;
 }) {
   const { t, i18n } = useTranslation("app");
-  const info = COMPONENTS[component];
+  const info = componentInfo(component);
   const base = `adminSettings.health.components.${component}`;
   const problem = result && result.status !== "ok";
   return (

@@ -1,8 +1,7 @@
 import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
 import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
-import type { Theme } from "@mui/material/styles";
+import DashboardCard from "./DashboardCard";
 
 /** How a widget's placeholder looks: a count box, or a titled list of `rows`. */
 export type DashboardSkeleton =
@@ -16,34 +15,31 @@ export type DashboardSkeleton =
       footer?: boolean;
     };
 
-const cardBorder = (theme: Theme) => (theme.palette.mode === "dark" ? "transparent" : "divider");
-
 /** A dashboard card's shape while the summary loads, matching CountCard and the list cards. */
 export default function DashboardCardSkeleton({ skeleton }: { skeleton: DashboardSkeleton }) {
   if (skeleton.kind === "count") {
     return (
-      <Paper
-        variant="outlined"
+      <DashboardCard
         aria-hidden
+        scroll={false}
         sx={{
-          p: 3,
-          minHeight: 140,
+          px: 3,
+          py: 2,
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          gap: 1,
-          borderColor: cardBorder,
+          gap: 0.5,
         }}
       >
         <Skeleton variant="rounded" width={32} height={32} />
-        <Skeleton variant="text" sx={{ fontSize: "3rem", width: "40%" }} />
+        <Skeleton variant="text" sx={{ fontSize: "3rem", lineHeight: 1, width: "40%" }} />
         <Skeleton variant="text" sx={{ width: "55%" }} />
-      </Paper>
+      </DashboardCard>
     );
   }
   const { rows, avatar = true, footer = false } = skeleton;
   return (
-    <Paper variant="outlined" aria-hidden sx={{ p: 2.5, borderColor: cardBorder }}>
+    <DashboardCard aria-hidden scroll={false} sx={{ p: 2.5 }}>
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
         <Skeleton variant="circular" width={24} height={24} />
         <Skeleton variant="text" sx={{ fontSize: "1.25rem", width: "45%" }} />
@@ -64,6 +60,6 @@ export default function DashboardCardSkeleton({ skeleton }: { skeleton: Dashboar
         ))}
       </Stack>
       {footer && <Skeleton variant="text" sx={{ width: 72, mt: 1.5, ml: 1 }} />}
-    </Paper>
+    </DashboardCard>
   );
 }

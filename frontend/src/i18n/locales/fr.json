@@ -250,6 +250,18 @@
               "title": "Statistiques de la bibliothèque",
               "description": "Vos totaux et vos modèles les plus vus, les plus imprimés et les plus récents."
             },
+            "list_model_files": {
+              "title": "Lister les fichiers d'un modèle",
+              "description": "Voir les fichiers d'un modèle, pour pouvoir en récupérer un."
+            },
+            "get_model_file": {
+              "title": "Obtenir un fichier du modèle",
+              "description": "Lit l'un des fichiers d'un modèle, par ex. pour le trancher ou le convertir."
+            },
+            "list_model_images": {
+              "title": "Lister les images d'un modèle",
+              "description": "Voit les images d'un modèle et laquelle est sa couverture."
+            },
             "get_import_status": {
               "title": "Suivre un import",
               "description": "Suit un import encore en cours."
@@ -258,6 +270,38 @@
               "title": "Importer un modèle",
               "description": "Importe un modèle depuis un lien, comme + Ajouter > Importer."
             },
+            "upload_model": {
+              "title": "Téléverser un modèle",
+              "description": "Ajoute un modèle fait de vos propres fichiers, comme + Ajouter > Téléverser des fichiers."
+            },
+            "edit_model": {
+              "title": "Modifier un modèle",
+              "description": "Change le titre, la description, les étiquettes, la catégorie et le favori d'un modèle."
+            },
+            "edit_model_images": {
+              "title": "Modifier les images d'un modèle",
+              "description": "Ajoute, supprime et réordonne les images d'un modèle, et choisit sa couverture."
+            },
+            "add_model_files": {
+              "title": "Ajouter des fichiers à un modèle",
+              "description": "Ajoute des plateaux ou des fichiers annexes à l'un de vos modèles."
+            },
+            "remove_model_file": {
+              "title": "Supprimer un fichier du modèle",
+              "description": "Supprime définitivement l'un des fichiers d'un modèle."
+            },
+            "rename_model_file": {
+              "title": "Renommer un fichier du modèle",
+              "description": "Renomme l'un des plateaux d'un modèle."
+            },
+            "delete_model": {
+              "title": "Supprimer un modèle",
+              "description": "Supprime définitivement un modèle avec ses fichiers et images."
+            },
+            "create_category": {
+              "title": "Créer une catégorie",
+              "description": "Crée une nouvelle catégorie ou un nouveau dossier."
+            },
             "create_collection": {
               "title": "Créer une collection",
               "description": "Crée une nouvelle collection vide."
@@ -265,6 +309,30 @@
             "add_to_collection": {
               "title": "Ajouter à une collection",
               "description": "Range des modèles de votre bibliothèque dans une de vos collections."
+            },
+            "remove_from_collection": {
+              "title": "Retirer d'une collection",
+              "description": "Retire des modèles de l'une de vos collections."
+            },
+            "widget_guide": {
+              "title": "Guide des widgets",
+              "description": "Lire comment écrire un widget personnalisé du tableau de bord."
+            },
+            "list_widgets": {
+              "title": "Lister les widgets",
+              "description": "Voir vos widgets personnalisés du tableau de bord."
+            },
+            "save_widget": {
+              "title": "Enregistrer un widget du tableau de bord",
+              "description": "Créer ou modifier vos propres widgets du tableau de bord. Leurs scripts s’exécutent dans votre tableau de bord."
+            },
+            "list_icons": {
+              "title": "Trouver une icône",
+              "description": "Chercher parmi les icônes de Thingport et celles que vous avez importées, p. ex. pour un widget."
+            },
+            "upload_icon": {
+              "title": "Importer une icône",
+              "description": "Ajouter une image à vos icônes, comme le fait Importer dans l’explorateur d’icônes."
             }
           },
           "writeConfirmTitle": "Laisser l'assistant utiliser « {{tool}} » ?",
@@ -399,21 +467,13 @@
       "batchCollectionsBlocked": "Les liens de collections (« J’aime », collections) ne peuvent être importés qu’un par un. Collez plutôt ici des liens de modèles, ou importez une collection séparément."
     },
     "userMenu": {
+      "logOutFailed": "Impossible de se déconnecter. Vérifiez votre connexion et réessayez.",
       "theme": "Thème",
       "light": "Clair",
       "dark": "Sombre",
       "system": "Selon le système",
       "serviceConnected": "{{service}} : connecté",
       "serviceNotConnected": "{{service}} : non connecté",
-      "makerworldDisabledReason": "MakerWorld : non connecté",
-      "thingiverseDisabledReason": "Thingiverse : l’administrateur n’a pas encore configuré de clé d’API",
-      "myminifactoryDisabledReason": "MyMiniFactory : l’administrateur n’a pas encore configuré de clé d’API",
-      "snapmakerDisabledReason": "Snapmaker Space : connectez votre compte dans Configuration → Fournisseurs",
-      "makeronlineDisabledReason": "MakerOnline : connectez votre compte dans Configuration → Fournisseurs",
-      "crealitycloudDisabledReason": "Creality Cloud : connectez votre compte dans Configuration → Fournisseurs",
-      "nexprintDisabledReason": "NexPrint : connectez votre compte dans Configuration → Fournisseurs",
-      "thangsDisabledReason": "Thangs : connectez votre compte dans Configuration → Fournisseurs",
-      "cults3dDisabledReason": "Cults3D : saisissez votre pseudo et votre clé d’API dans Configuration → Fournisseurs",
       "myModels": "Mes modèles"
     },
     "notifications": {
@@ -459,7 +519,13 @@
       "sectionRecent": "Récents",
       "sectionCommands": "Commandes",
       "open": "Ouvrir",
+      "openSearch": "Rechercher",
       "runCommand": "Exécuter la commande",
+      "actions": "Actions",
+      "actionsFor": "Actions pour {{title}}",
+      "openInNewTab": "Ouvrir dans un nouvel onglet",
+      "copyLink": "Copier le lien",
+      "linkCopied": "Lien copié",
       "toMove": "pour naviguer",
       "kind": {
         "model": "Modèle",
@@ -642,22 +708,380 @@
         "total_other": "{{count}} activités"
       },
       "widgets": {
-        "open": "Personnaliser le tableau de bord",
         "title": "Personnaliser le tableau de bord",
-        "subtitle": "Choisissez les blocs affichés sur votre tableau de bord.",
-        "allHidden": "Tous les blocs du tableau de bord sont masqués.",
+        "subtitle": "Activez ou désactivez les panneaux de ce modèle. Modifiez le tableau de bord pour les déplacer, les redimensionner ou les fusionner.",
         "sections": {
-          "layout": "Disposition",
-          "panels": "Panneaux"
+          "templates": "Modèles",
+          "panels": "Panneaux",
+          "widgets": "Widgets personnalisés"
         },
-        "layoutSubtitle": "Choisissez la disposition des blocs du tableau de bord. La partie colorée indique l’emplacement des compteurs.",
-        "layouts": {
-          "left": "Compteurs à gauche",
-          "top": "Compteurs en haut, sur trois colonnes",
-          "right": "Compteurs à droite",
-          "bottom": "Compteurs en bas, sur trois colonnes",
-          "topTwo": "Compteurs en haut, sur deux colonnes",
-          "puzzle": "Puzzle"
+        "panelsOf": "Panneaux de {{name}}",
+        "addAnother": "Cliquez pour en ajouter un autre",
+        "copies": "{{name}} · {{count}}"
+      },
+      "edit": {
+        "enter": "Modifier le tableau de bord",
+        "exit": "Terminer",
+        "toolbar": "Actions de modification du tableau de bord",
+        "add": "Ajouter un panneau",
+        "addNone": "Tous les panneaux sont déjà sur le tableau de bord",
+        "merge": "Fusionner en onglets",
+        "mergeHint": "Sélectionnez au moins deux panneaux pour les fusionner en onglets",
+        "remove": "Retirer les panneaux",
+        "removeHint": "Sélectionnez les panneaux à retirer",
+        "removeTitle_one": "Retirer {{count}} panneau ?",
+        "removeTitle_many": "Retirer {{count}} panneaux ?",
+        "removeTitle_other": "Retirer {{count}} panneaux ?",
+        "removeMessage": "Vous pourrez les rajouter avec Ajouter un panneau, mais leur taille et leur place seront oubliées.",
+        "removeConfirm": "Retirer",
+        "removed_one": "{{count}} panneau retiré",
+        "removed_many": "{{count}} panneaux retirés",
+        "removed_other": "{{count}} panneaux retirés",
+        "merged_one": "{{count}} panneau fusionné en onglets",
+        "merged_many": "{{count}} panneaux fusionnés en onglets",
+        "merged_other": "{{count}} panneaux fusionnés en onglets",
+        "help": "Faites glisser un panneau pour le déplacer, ou son coin pour le redimensionner. Faites glisser le nom d'un panneau sur un autre pour les afficher en onglets, ou un onglet vers un espace vide pour lui donner son propre panneau.",
+        "keys": "Espace sélectionne le panneau. Les flèches le déplacent ; Maj avec les flèches le redimensionne.",
+        "panelLabel": "Panneau {{name}}",
+        "panelActions": "Actions du panneau",
+        "split": "Séparer en panneaux",
+        "removePanel": "Retirer le panneau",
+        "dragToMerge": "Faites glisser sur un autre panneau pour les afficher en onglets",
+        "dragTab": "Faites glisser pour réordonner les onglets (ou ← →), sur un autre panneau, ou vers un espace vide pour un panneau à part",
+        "mergeHere": "Ajouter en onglet",
+        "empty": "Ce modèle n'a pas encore de panneaux.",
+        "fit": "Ajuster au contenu",
+        "splitHint": "Sélectionnez des panneaux à onglets pour les séparer",
+        "splitDone_one": "{{count}} panneau séparé en ses onglets",
+        "splitDone_many": "{{count}} panneaux séparés en leurs onglets",
+        "splitDone_other": "{{count}} panneaux séparés en leurs onglets"
+      },
+      "templates": {
+        "open": "Modèles",
+        "manage": "Gérer les modèles…",
+        "heading": "Vos modèles",
+        "help": "Chaque modèle garde ses propres panneaux et sa disposition. Choisissez-en un pour l’afficher, puis modifiez le tableau de bord pour le changer.",
+        "presets": {
+          "homepage": "Accueil",
+          "classic": "Classique",
+          "overview": "Vue d’ensemble",
+          "compact": "Onglets compacts",
+          "showcase": "Vitrine",
+          "puzzle": "Puzzle",
+          "minimal": "Minimal"
+        },
+        "untitled": "Sans titre",
+        "new": "Nouveau modèle",
+        "newCopy": "Copie de {{name}}",
+        "newEmpty": "Modèle vide",
+        "emptyName": "Mon modèle",
+        "fromPreset": "Partir d’un modèle intégré",
+        "actions": "Actions du modèle",
+        "rename": "Renommer",
+        "renameTitle": "Renommer le modèle",
+        "duplicate": "Dupliquer",
+        "reset": "Rétablir l’original",
+        "resetTitle": "Rétablir {{name}} ?",
+        "resetMessage": "Ses panneaux et sa disposition reviennent à ceux du modèle intégré.",
+        "resetConfirm": "Rétablir",
+        "delete": "Supprimer",
+        "deleteTitle": "Supprimer {{name}} ?",
+        "deleteMessage": "Cette action est irréversible.",
+        "deleteConfirm": "Supprimer",
+        "limit": "Vous pouvez garder jusqu’à {{max}} modèles"
+      },
+      "settings": {
+        "open": "Paramètres",
+        "openFor": "Paramètres de {{name}}",
+        "title": "Paramètres de {{name}}",
+        "titlePanel": "Paramètres du panneau",
+        "panelTitle": "Titre",
+        "reset": "Rétablir les valeurs par défaut",
+        "done": "Terminé",
+        "count": "Éléments affichés",
+        "showMore": "Lien « Voir plus »",
+        "hourCycle": "Format de l'heure",
+        "hour24": "24 h",
+        "hour12": "12 h",
+        "showDate": "Date",
+        "showGreeting": "Salutation",
+        "unit": "Température",
+        "showLater": "Prévision pour plus tard",
+        "feeds": "Flux",
+        "feedPlaceholder": "https://example.com/feed.xml",
+        "monitors": "Adresses à vérifier",
+        "monitorPlaceholder": "http://192.168.1.20:8123",
+        "showDates": "Dates",
+        "showLoad": "Charge moyenne",
+        "showMemory": "Mémoire",
+        "showServer": "Disponibilité du serveur",
+        "addUrl": "Ajouter",
+        "removeUrl": "Retirer",
+        "urlInvalid": "Saisissez une adresse http ou https",
+        "urlDuplicate": "Déjà dans la liste",
+        "urlsFull": "Jusqu'à {{max}} adresses",
+        "links": "Liens",
+        "iconStyle": "Style des icônes",
+        "iconColored": "En couleur",
+        "iconMono": "Monochrome",
+        "iconGrayed": "Grisé",
+        "limit": "Éléments affichés",
+        "limitAll": "Tous",
+        "search": "Recherche",
+        "linkName": "Nom",
+        "linkUrl": "Adresse",
+        "linkIcon": "Icône",
+        "linkIconSite": "L’icône du site",
+        "saveLink": "Enregistrer",
+        "cancelEdit": "Annuler",
+        "editLink": "Modifier",
+        "reorderLink": "Déplacer {{name}}",
+        "linksFull": "Jusqu'à {{max}} liens",
+        "place": "Lieu",
+        "placeAccount": "Le lieu de votre compte",
+        "placeReset": "Utiliser celui du compte",
+        "providers": "Fournisseurs",
+        "view": "Affichage",
+        "viewList": "Liste",
+        "viewCards": "Cartes",
+        "showProvider": "Afficher {{name}}",
+        "opensFirst": "S'ouvre en premier",
+        "keepOne": "Il doit rester au moins un fournisseur",
+        "showSecret": "Afficher",
+        "hideSecret": "Masquer"
+      },
+      "rss": {
+        "title": "Flux RSS",
+        "empty": "Ajoutez un flux dans les paramètres de ce panneau.",
+        "loadError": "Impossible de charger les flux.",
+        "noItems": "Ces flux n'ont encore rien.",
+        "failed_one": "{{count}} flux illisible",
+        "failed_many": "{{count}} flux illisibles",
+        "failed_other": "{{count}} flux illisibles"
+      },
+      "cpu": {
+        "title": "Processeur",
+        "adminsOnly": "Seuls les administrateurs voient les statistiques du serveur.",
+        "loadError": "Impossible de charger les statistiques du serveur.",
+        "cores_one": "{{count}} cœur",
+        "cores_many": "{{count}} cœurs",
+        "cores_other": "{{count}} cœurs",
+        "load": "Charge {{values}}",
+        "loadHint": "Charge moyenne sur 1, 5 et 15 minutes",
+        "memory": "Mémoire",
+        "memoryUsed": "{{used}} / {{total}} Go"
+      },
+      "uptime": {
+        "title": "Disponibilité",
+        "empty": "Ajoutez des adresses à surveiller dans les paramètres de ce panneau.",
+        "loadError": "Impossible de vérifier les services.",
+        "up": "En ligne",
+        "down": "Hors ligne",
+        "ms": "{{ms}} ms",
+        "status": "HTTP {{status}}",
+        "summary": "{{up}}/{{total}} en ligne",
+        "thingport": "Thingport",
+        "host": "Serveur",
+        "days": "{{days}} j {{hours}} h",
+        "hours": "{{hours}} h {{minutes}} min",
+        "minutes": "{{minutes}} min"
+      },
+      "launcher": {
+        "title": "Lanceur",
+        "empty": "Ajoutez des liens dans les paramètres de ce panneau.",
+        "noMatch": "Aucun résultat.",
+        "search": "Rechercher",
+        "showAll": "Tout afficher",
+        "allTitle": "Tous les liens · {{count}}",
+        "close": "Fermer"
+      },
+      "trending": {
+        "title": "Explorer les tendances",
+        "none": "Choisissez des fournisseurs dans les paramètres de ce panneau.",
+        "loadError": "Impossible de charger les modèles de {{name}}.",
+        "retry": "Réessayer",
+        "empty": "{{name}} n'a rien à montrer pour l'instant.",
+        "kind": {
+          "trending": "Tendance sur {{name}}",
+          "popular": "Populaire sur {{name}}",
+          "featured": "À la une sur {{name}}",
+          "recommended": "Recommandé sur {{name}}"
+        },
+        "more": "Plus sur {{name}}",
+        "paid": "Payant",
+        "setupTitle": "{{name}} doit être configuré",
+        "setup": {
+          "thingiverseToken": "Sa liste a besoin du App Token Thingiverse de l'instance, qu'un administrateur ajoute dans les paramètres des fournisseurs.",
+          "myminifactoryKey": "Sa liste a besoin de la clé API MyMiniFactory de l'instance, qu'un administrateur ajoute dans les paramètres des fournisseurs.",
+          "cults3dKey": "Sa liste a besoin de votre pseudo et de votre clé API Cults3D, à ajouter dans Fournisseurs de la Configuration."
+        },
+        "openProviders": "Ouvrir les paramètres des fournisseurs",
+        "askAdmin": "Demandez à un administrateur de l'ajouter.",
+        "connect": "Connecter {{name}}"
+      },
+      "homepage": {
+        "open": "Ouvrir comme page d'accueil : seulement les panneaux, dans un nouvel onglet"
+      },
+      "custom": {
+        "heading": "Widgets personnalisés",
+        "manage": "Gérer les widgets personnalisés…",
+        "noExport": "Le script n'a pas de fonction export default.",
+        "failed": "{{name}} s'est arrêté sur une erreur",
+        "removed": "Ce widget a été retiré.",
+        "off": "Les widgets personnalisés sont désactivés sur ce Thingport.",
+        "title": "Widgets personnalisés",
+        "tabs": {
+          "mine": "Les miens",
+          "community": "Communauté",
+          "share": "Créer et partager"
+        },
+        "new": "Nouveau widget",
+        "none": "Vous n'avez encore créé ni installé aucun widget.",
+        "browse": "Voir ceux de la communauté",
+        "fromCommunity": "Communauté",
+        "add": "Ajouter au tableau de bord",
+        "actions": "Actions du widget",
+        "edit": "Modifier",
+        "copyToMine": "Copier dans mes widgets",
+        "download": "Télécharger pour publier",
+        "remove": "Retirer",
+        "removeTitle": "Retirer {{name}} ?",
+        "removeMessage": "Ses panneaux indiqueront qu’il a été retiré. Cette action est irréversible.",
+        "saved": "{{name}} enregistré",
+        "installTitle": "Installer {{name}} ?",
+        "updateTitle": "Mettre à jour {{name}} ?",
+        "installTrust": "Son script s’exécute dans votre tableau de bord avec votre accès à Thingport. N’installez que des widgets de confiance.",
+        "installHosts": "Il peut joindre : {{hosts}}",
+        "install": "Installer",
+        "update": "Mettre à jour",
+        "installed": "{{name}} installé",
+        "isInstalled": "Installé",
+        "retry": "Réessayer",
+        "communityError": "Impossible de charger les widgets de la communauté. Vérifiez que ce Thingport peut joindre GitHub.",
+        "communityEmpty": "Pas encore de widgets de la communauté. Soyez le premier : voir Créer et partager.",
+        "reaches_one": "Joint {{count}} hôte",
+        "reaches_other": "Joint {{count}} hôtes",
+        "reaches_many": "Joint {{count}} hôtes",
+        "editor": {
+          "newTitle": "Nouveau widget",
+          "editTitle": "Modifier le widget",
+          "trust": "Son script s’exécute dans votre tableau de bord avec votre accès à Thingport. N’utilisez que du code de confiance.",
+          "slug": "Identifiant",
+          "slugHelp": "Le nom de son dossier : minuscules, chiffres et tirets",
+          "part": "Partie",
+          "script": "Script",
+          "html": "HTML",
+          "htmlPlaceholder": "Balisage et <style> placés dans le panneau avant le script (facultatif)",
+          "cancel": "Annuler",
+          "save": "Enregistrer",
+          "details": "Détails",
+          "settingsCount_one": "Réglages ({{count}})",
+          "settingsCount_other": "Réglages ({{count}})",
+          "fixFirst": "Corrigez d’abord les champs signalés",
+          "preview": "Aperçu",
+          "previewHelp": "Exécute votre script pendant que vous tapez, chaque réglage à sa valeur par défaut. Les requêtes via thingport.fetch utilisent les hôtes du widget enregistré : enregistrez avant d’essayer un nouvel hôte.",
+          "previewSize": "Taille de l’aperçu",
+          "previewMin": "Min. {{w}}×{{h}}",
+          "previewDefault": "Par défaut {{w}}×{{h}}",
+          "rerun": "Relancer",
+          "name": "Nom",
+          "version": "Version",
+          "description": "Description",
+          "icon": "Icône",
+          "iconHelp": "Choisissez une icône de Thingport, importez la vôtre ou donnez l’adresse d’une image ; un SVG reste net à toutes les tailles. Sans elle, une pièce de puzzle s’affiche.",
+          "iconUrl": "Icône",
+          "iconNone": "Aucune",
+          "author": "Auteur",
+          "authorHelp": "Crédité quand le widget est partagé. Laissé vide, le nom de votre profil est utilisé.",
+          "authorName": "Nom complet",
+          "authorUrl": "Page (facultatif)",
+          "size": "Taille",
+          "sizeHelp": "En cases de la grille : 12 colonnes de large, lignes de 64 px. Il est ajouté à sa taille et ne peut pas être plus petit que son minimum.",
+          "width": "Largeur",
+          "height": "Hauteur",
+          "minWidth": "Largeur min.",
+          "minHeight": "Hauteur min.",
+          "hosts": "Hôtes qu’il peut joindre",
+          "hostsHelp": "Ce que thingport.fetch peut appeler via Thingport : hôte, hôte:port ou *.domaine. Laissez vide s’il n’appelle rien d’extérieur.",
+          "hostsPlaceholder": "octopi.local, *.example.com",
+          "noSettings": "Aucun réglage pour l’instant. Ajoutez-en un pour ce que l’utilisateur doit choisir, comme une adresse ou un jeton.",
+          "type": "Type",
+          "types": {
+            "text": "Texte",
+            "number": "Nombre",
+            "toggle": "Interrupteur",
+            "choice": "Choix"
+          },
+          "settingActions": "Actions du réglage",
+          "settingLabel": "Libellé",
+          "settingKey": "Clé",
+          "settingKeyHelp": "Comment le script le lit : thingport.settings.<clé>",
+          "addSetting": "Ajouter un réglage",
+          "moveUp": "Monter",
+          "moveDown": "Descendre",
+          "removeSetting": "Supprimer",
+          "defaultOn": "Activé par défaut",
+          "default": "Par défaut",
+          "options": "Options",
+          "optionLabel": "Libellé",
+          "optionValue": "Valeur",
+          "removeOption": "Supprimer l’option",
+          "addOption": "Ajouter une option",
+          "placeholder": "Texte indicatif",
+          "secret": "Secret",
+          "secretHelp": "Affiché comme un champ de mot de passe, pour les jetons et les clés.",
+          "errors": {
+            "slug": "2 à 40 minuscules, chiffres et tirets",
+            "name": "Donnez-lui un nom",
+            "url": "Pas une adresse http ou https",
+            "minSize": "Plus grand que sa taille",
+            "key": "Lettres, chiffres et _, en commençant par une lettre",
+            "keyTaken": "Un autre réglage utilise cette clé",
+            "label": "Donnez-lui un libellé",
+            "number": "Pas un nombre",
+            "options": "Au moins deux options, chacune avec un libellé et une valeur différente"
+          }
+        },
+        "share": {
+          "aiTitle": "Le créer avec une IA",
+          "ai1": "Connectez votre assistant IA à Thingport par MCP, avec un jeton d’API.",
+          "ai2": "Dans votre profil, donnez au jeton l’outil <strong>Enregistrer un widget du tableau de bord</strong>.",
+          "ai3": "Demandez-lui par exemple : « Crée-moi un widget Thingport qui montre l’avancement de mon imprimante OctoPrint. » Il lit le guide des widgets, puis enregistre le widget.",
+          "ai4": "Ajoutez-le depuis Ajouter un panneau en modifiant votre tableau de bord.",
+          "connect": "Connecter une IA",
+          "publishTitle": "Publier pour la communauté",
+          "publish1": "Téléchargez votre widget depuis Les miens (⋮, puis Télécharger pour publier).",
+          "publish2": "Forkez le dépôt Thingport et décompressez-le dans le dossier <folder>community-widgets</folder>.",
+          "publish3": "Ajoutez le nom de son dossier à community-widgets/index.json et décrivez-le dans son README.md.",
+          "publish4": "Ouvrez une pull request. Une fois fusionnée, tout Thingport pourra l’installer.",
+          "guide": "Lire le guide complet"
+        },
+        "ai": {
+          "or": "ou",
+          "open": "Utiliser l’IA",
+          "title": "Créer un widget avec une IA",
+          "back": "Retour à l’éditeur",
+          "step1": "Connectez votre assistant IA à Thingport par MCP.",
+          "step3": "Demandez le widget que vous voulez, avec vos propres mots. Par exemple :",
+          "step4": "Il apparaît dans Les miens, prêt à être ajouté à votre tableau de bord. Redemandez pour le changer, ou peaufinez-le ici.",
+          "examplesLabel": "Exemples de demandes",
+          "examples": {
+            "printer": {
+              "label": "Avancement de l’imprimante",
+              "name": "Imprimante",
+              "prompt": "Crée-moi un widget Thingport qui montre l’avancement de mon imprimante OctoPrint."
+            },
+            "filament": {
+              "label": "Stock de filament",
+              "name": "Filament",
+              "prompt": "Crée-moi un widget Thingport qui liste mes bobines Spoolman et prévient quand l’une d’elles est presque vide."
+            },
+            "library": {
+              "label": "Modèles par mois",
+              "name": "Modèles ajoutés",
+              "prompt": "Crée-moi un widget Thingport avec un graphique du nombre de modèles ajoutés chaque mois."
+            }
+          }
         }
       }
     },
@@ -665,28 +1089,6 @@
       "providers": {
         "heading": "Fournisseurs",
         "subtitle": "Les sites depuis lesquels Thingport importe des modèles et avec lesquels il se synchronise. Si vous en désactivez un, plus rien de nouveau n’en provient pour personne ; les modèles déjà importés sont conservés.",
-        "descriptions": {
-          "makerworld": "Le site de modèles de Bambu Lab : importations avec profils d’impression, et collections à synchroniser.",
-          "printables": "Le site de modèles de Prusa : importations, ainsi que collections publiques et privées à synchroniser.",
-          "thingiverse": "Importations, collections et modèles aimés, via le jeton d’application de ce Thingport.",
-          "myminifactory": "Modèles et collections publiques, via la clé d’API de ce Thingport ; modèles achetés, via le compte MyMiniFactory de chaque utilisateur.",
-          "snapmaker": "Modèles avec leurs profils d’impression, ainsi que les « J’aime » et favoris de chaque utilisateur, via son propre compte Snapmaker.",
-          "makeronline": "Modèles avec leurs profils d’impression, collections et « J’aime » de chaque utilisateur. Les fichiers passent par Thingport Grab : MakerOnline ne les remet qu’à ses propres pages.",
-          "crealitycloud": "Modèles avec leurs profils d’impression, collections et « J’aime » de chaque utilisateur, via le propre compte Creality Cloud de chaque utilisateur.",
-          "nexprint": "Modèles avec leurs profils d’impression, et collections, via le propre compte NexPrint de chaque utilisateur.",
-          "thangs": "Modèles gratuits et achetés, « J’aime » et collections, via le propre compte Thangs de chaque utilisateur.",
-          "cults3d": "Modèles gratuits et achetés, « J’aime » et listes d’impression, via la propre clé d’API Cults3D de chaque utilisateur. Les fichiers arrivent avec la connexion du navigateur, que Thingport Grab transmet."
-        },
-        "keyStatus": {
-          "thingiverse": {
-            "set": "Jeton d’application configuré",
-            "missing": "Aucun jeton d’application : les importations Thingiverse ne fonctionneront pas tant que vous n’en aurez pas configuré un"
-          },
-          "myminifactory": {
-            "set": "Clé d’API configurée",
-            "missing": "Aucune clé d’API : les importations MyMiniFactory ne fonctionneront pas tant que vous n’en aurez pas configuré une"
-          }
-        },
         "turnOff": "Désactiver {{name}}",
         "turnOn": "Activer {{name}}",
         "disableTitle": "Désactiver {{name}} ?",
@@ -921,6 +1323,39 @@
         "moveThem": "Les déplacer",
         "pathLabel": "Chemin"
       },
+      "fileReuse": {
+        "heading": "Fichiers identiques",
+        "subtitle": "Économisez de l'espace quand plusieurs utilisateurs importent le même modèle.",
+        "modeLabel": "Cloner les fichiers identiques (copie sur écriture)",
+        "help": "Thingport compare chaque nouveau fichier de modèle, fichier complémentaire, image de galerie et image de description à ceux déjà stockés, quel que soit leur type. Les miniatures et les rendus ne sont pas partagés. La copie sur écriture clone un fichier identique sur btrfs, XFS ou ZFS 2.2 et plus récent, et le stocke normalement ailleurs. Chaque clone est un fichier à part entière : en modifier un sur le disque ne change jamais celui d'un autre utilisateur. Les fichiers stockés avant son activation sont aussi vérifiés, voir Fichiers existants.",
+        "failed": "Impossible d'enregistrer le stockage des fichiers identiques. Veuillez réessayer.",
+        "loadFailed": "Impossible de charger le stockage des fichiers identiques.",
+        "modeHelp": {
+          "off": "Chaque fichier occupe son propre espace.",
+          "reflink": "Un fichier déjà stocké est cloné quand le système de fichiers le permet, sans espace supplémentaire tant qu'aucune copie ne change."
+        },
+        "backfill": {
+          "label": "Fichiers existants",
+          "help": "Activer le clonage parcourt les fichiers déjà stockés : l'empreinte de chacun est enregistrée, puis les fichiers de même contenu sont remplacés par des clones du plus ancien, en gardant leur nom, leur emplacement et leur propriétaire. Seuls les fichiers du dossier de stockage de Thingport sont touchés, et un fichier modifié entre-temps est laissé tel quel. Relancez-le après une période sans clonage, ou pour des fichiers qui n'ont pas pu être vérifiés. Les instantanés du stockage peuvent garder les anciennes copies : l'espace libéré est donc un maximum.",
+          "idle": "Pas de vérification depuis le démarrage du serveur",
+          "starting": "Démarrage...",
+          "restarting": "Arrêt en cours, puis nouveau démarrage...",
+          "hashing": "Enregistrement des empreintes : {{done}} sur {{total}}",
+          "cloning": "Clonage des fichiers identiques : {{done}} sur {{total}}, {{cloned}} clonés",
+          "result_one": "{{count}} fichier cloné, jusqu'à {{size}} libérés",
+          "result_other": "{{count}} fichiers clonés, jusqu'à {{size}} libérés",
+          "nothing": "Rien à cloner",
+          "unsupported": "Ce système de fichiers ne sait pas cloner ; les empreintes ont été enregistrées",
+          "stopped": "Arrêté : le clonage a été désactivé",
+          "failedRun": "Arrêté plus tôt à cause d'une erreur ; voir le journal du serveur",
+          "skippedNote": "{{count}} non vérifiés",
+          "checkAgain": "Revérifier",
+          "confirmTitle": "Vérifier les fichiers existants ?",
+          "confirmMessage": "Thingport va parcourir tous les fichiers stockés et remplacer les fichiers identiques par des clones. Cela s'exécute en arrière-plan et peut prendre du temps sur une grande bibliothèque.",
+          "confirmAction": "Vérifier",
+          "failed": "Impossible de lancer la vérification. Veuillez réessayer."
+        }
+      },
       "consume": {
         "heading": "Dossier d’importation automatique",
         "subtitle": "Importe tout ce qui est déposé dans un dossier surveillé : fichiers, structures de dossiers et archives ZIP.",
@@ -1023,36 +1458,6 @@
         "refetchProgress": "Récupération des descriptions de {{email}} : {{done}} sur {{total}} — {{updated}} mises à jour jusqu’à présent.",
         "refetchDone": "Descriptions de {{email}} récupérées à nouveau : {{updated}} sur {{total}} modifiées.",
         "refetchFailedCount": "{{count}} n’ont pas pu être lus depuis leur source et ont été laissés tels quels."
-      },
-      "thingiverse": {
-        "heading": "Jeton d’application Thingiverse",
-        "helpText": "Créez une application sur thingiverse.com/apps/create (de n’importe quel type, par exemple « Desktop ») et collez le jeton d’application affiché.",
-        "statusConfigured": "Un jeton d’application est actuellement configuré.",
-        "statusNotConfigured": "Aucun jeton d’application n’est encore configuré : les importations Thingiverse échoueront tant qu’un jeton ne sera pas défini.",
-        "tokenLabel": "Jeton d’application",
-        "tokenPlaceholder": "Collez un nouveau jeton pour remplacer le jeton actuel",
-        "tokenHelperConfigured": "Pour des raisons de sécurité, le jeton actuel n’est plus jamais affiché : laissez ce champ vide pour le conserver, ou collez-en un nouveau pour le remplacer.",
-        "save": "Enregistrer",
-        "saving": "Enregistrement…",
-        "clear": "Supprimer le jeton",
-        "saved": "Enregistré.",
-        "cleared": "Jeton d’application supprimé.",
-        "failed": "Échec de l’enregistrement des paramètres Thingiverse."
-      },
-      "myminifactory": {
-        "heading": "Clé d’API MyMiniFactory",
-        "helpText": "Créez une application sur myminifactory.com/settings/developer/application et collez la clé d’API affichée. Les modèles gratuits se téléchargent sans elle, mais elle est nécessaire pour lire leurs détails et vos collections.",
-        "statusConfigured": "Une clé d’API est actuellement configurée.",
-        "statusNotConfigured": "Aucune clé d’API n’est encore configurée : les importations MyMiniFactory échoueront tant qu’une clé ne sera pas définie.",
-        "tokenLabel": "Clé d’API",
-        "tokenPlaceholder": "Collez une nouvelle clé pour remplacer la clé actuelle",
-        "tokenHelperConfigured": "Pour des raisons de sécurité, la clé actuelle n’est plus jamais affichée : laissez ce champ vide pour la conserver, ou collez-en une nouvelle pour la remplacer.",
-        "save": "Enregistrer",
-        "saving": "Enregistrement…",
-        "clear": "Supprimer la clé",
-        "saved": "Enregistré.",
-        "cleared": "Clé d’API supprimée.",
-        "failed": "Échec de l’enregistrement des paramètres MyMiniFactory."
       },
       "ai": {
         "heading": "IA",
@@ -1183,11 +1588,11 @@
         "empty": "Aucune description."
       },
       "session": {
-        "heading": "Durée de la session",
-        "subtitle": "Contrôle la durée de validité d’une session ouverte pour l’ensemble de l’instance.",
+        "heading": "Sessions",
+        "subtitle": "Durée des connexions pour toute l'instance.",
         "infoTitle": "Ce que cela contrôle",
-        "infoBody": "Durée de validité d’un jeton de connexion nouvellement émis avant que l’utilisateur ne soit invité à se reconnecter. S’applique à l’ensemble de l’instance, à chaque nouvelle connexion, inscription et vérification d’adresse e-mail. Ce réglage ne concerne que les jetons émis à partir de maintenant : les personnes déjà connectées conservent la durée en vigueur au moment de leur connexion.",
-        "tokenTtlLabel": "Durée de la session (secondes)",
+        "infoBody": "Durée de validité d'un jeton d'accès avant que le navigateur le renouvelle. Un navigateur absent plus longtemps se reconnecte grâce à sa session mémorisée, réglée ci-dessous ; si elle est désactivée, il doit se reconnecter. Ne s'applique qu'aux jetons émis à partir de maintenant.",
+        "tokenTtlLabel": "Durée du jeton (secondes)",
         "tokenTtlHelp": "Entre 5 minutes et 1 an.",
         "invalid": "Saisissez un nombre de secondes compris entre 300 (5 minutes) et 31536000 (1 an).",
         "approx": "≈ {{value}}",
@@ -1206,7 +1611,10 @@
         "save": "Enregistrer",
         "saving": "Enregistrement…",
         "saved": "Enregistré.",
-        "failed": "Échec de l’enregistrement des paramètres de session."
+        "failed": "Échec de l’enregistrement des paramètres de session.",
+        "rememberLabel": "Garder les navigateurs connectés",
+        "rememberHelp": "Combien de temps un navigateur reste connecté sans être utilisé, pour qu'un tableau de bord défini comme page d'accueil n'affiche jamais le formulaire de connexion. Chaque visite relance le décompte. Se déconnecter ou changer le mot de passe y met fin.",
+        "rememberOff": "Désactivé"
       },
       "connections": {
         "heading": "Connexions"
@@ -1392,7 +1800,10 @@
           "tags_merged": "Étiquettes fusionnées",
           "mcp_access_changed": "A modifié l'accès MCP",
           "api_token_mcp_tools_changed": "A modifié les outils MCP de son jeton d'API",
-          "api_token_rest_scopes_changed": "A modifié les autorisations de son jeton d'API"
+          "api_token_rest_scopes_changed": "A modifié les autorisations de son jeton d'API",
+          "file_reuse_changed": "A modifié le stockage des fichiers identiques",
+          "file_reuse_backfill_started": "A commencé à vérifier les fichiers stockés au contenu identique",
+          "custom_widgets_changed": "A modifié les widgets personnalisés autorisés"
         },
         "authorsLinked": "{{count}} modèle(s) relié(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} description(s) sur {{total}} modifiée(s)",
@@ -1677,6 +2088,61 @@
           "read": "Les jetons peuvent chercher et lire leur propre bibliothèque, jamais la modifier.",
           "write": "Les jetons peuvent aussi importer des modèles et les ranger dans des collections, si leur utilisateur l'active."
         }
+      },
+      "dashboard": {
+        "heading": "Tableau de bord",
+        "subtitle": "Les widgets personnalisés que les utilisateurs peuvent ajouter, et ceux qu’ils utilisent.",
+        "sources": {
+          "heading": "Widgets personnalisés",
+          "help": "Le script d’un widget personnalisé s’exécute dans le tableau de bord de son utilisateur avec son accès à Thingport. Désactivez un type sur une instance partagée avec des personnes en qui vous n’avez pas toute confiance : ses widgets ne se chargent plus et leurs panneaux l’indiquent.",
+          "own": {
+            "label": "Widgets des utilisateurs",
+            "on": "Les utilisateurs peuvent créer et modifier les leurs.",
+            "off": "Désactivé : les widgets des utilisateurs ne se chargent pas."
+          },
+          "community": {
+            "label": "Widgets de la communauté",
+            "on": "Les utilisateurs peuvent installer des widgets du dépôt de la communauté.",
+            "off": "Désactivé : les widgets de la communauté ne se chargent pas."
+          },
+          "failed": "Impossible de modifier le réglage."
+        },
+        "stats": {
+          "widgets": "Widgets utilisés",
+          "users": "Utilisateurs avec widgets",
+          "placed": "Sur des tableaux de bord",
+          "installs": "Installations communautaires"
+        },
+        "tabs": {
+          "inUse": "Utilisés",
+          "community": "Communauté"
+        },
+        "inUse": {
+          "own": "Personnel",
+          "community": "Communauté",
+          "placed_one": "Sur {{count}} tableau de bord",
+          "placed_many": "Sur {{count}} tableaux de bord",
+          "placed_other": "Sur {{count}} tableaux de bord",
+          "open": "Qui utilise {{name}}",
+          "empty": "Personne n’a encore de widget personnalisé. Les utilisateurs les ajoutent depuis leur tableau de bord : Modifier, puis Ajouter un panneau.",
+          "failed": "Impossible de charger les widgets utilisés."
+        },
+        "community": {
+          "installs_one": "{{count}} installation",
+          "installs_many": "{{count}} installations",
+          "installs_other": "{{count}} installations",
+          "outdated_one": "{{count}} sur une version antérieure",
+          "outdated_many": "{{count}} sur une version antérieure",
+          "outdated_other": "{{count}} sur une version antérieure",
+          "source": "Voir le code",
+          "off": "Les widgets de la communauté sont désactivés : les utilisateurs ne peuvent pas les installer et ceux installés ne se chargent pas.",
+          "empty": "Le dépôt de la communauté n’a pas encore de widgets.",
+          "error": "Impossible de joindre le dépôt de la communauté."
+        },
+        "users": {
+          "placed": "Sur le tableau de bord",
+          "installed": "Installé seulement"
+        }
       }
     },
     "download": {
@@ -1850,130 +2316,15 @@
       "disconnectMessage": "Votre clé {{name}} est supprimée, et les importations depuis {{name}} cessent de fonctionner jusqu’à ce que vous la reconnectiez.",
       "disconnectMessageShared": "Le jeton {{name}} est supprimé pour tous les utilisateurs de ce Thingport, et les importations depuis {{name}} cessent de fonctionner jusqu’à sa reconnexion.",
       "failed": "Échec de l’enregistrement. Réessayez.",
-      "makerworld": {
-        "expiredStatus": "Connexion expirée",
-        "expired": "La connexion a expiré. Reconnectez MakerWorld avec un cookie récent dans Configuration → Fournisseurs.",
-        "placeholder": "exemple : mw_session=...; mw_token=...;",
-        "steps": [
-          "Connectez-vous à makerworld.com dans votre navigateur.",
-          "Ouvrez les outils de développement (F12 ou ⌥⌘I) et allez dans l’onglet Réseau.",
-          "Rechargez la page et sélectionnez n’importe quelle requête vers makerworld.com.",
-          "Sous Request Headers (en-têtes de requête), copiez la valeur complète de l’en-tête Cookie et collez-la ci-dessous."
-        ]
-      },
-      "thingiverse": {
-        "placeholder": "Collez le jeton d’application",
-        "steps": [
-          "Connectez-vous à thingiverse.com et ouvrez thingiverse.com/apps/create.",
-          "Créez une application de n’importe quel type, par exemple « Desktop app ».",
-          "Copiez le jeton d’application affiché et collez-le ci-dessous."
-        ],
-        "shared": "Ce jeton est partagé par tous les utilisateurs de ce Thingport.",
-        "adminOnly": "Seul un administrateur de ce Thingport peut effectuer cette configuration."
-      },
-      "myminifactory": {
-        "placeholder": "Valeur de PHPSESSID, ou l’en-tête Cookie complet",
-        "steps": [
-          "Le plus simple : avec Thingport Grab, il suffit d’ouvrir myminifactory.com en étant connecté, et votre compte sera relié automatiquement.",
-          "Ou manuellement : connectez-vous à myminifactory.com et ouvrez les outils de développement de votre navigateur (F12).",
-          "Sous Application (Chrome, Edge) ou Stockage (Firefox) → Cookies → www.myminifactory.com, copiez la valeur de PHPSESSID et collez-la ci-dessous."
-        ],
-        "notConnected": "Les modèles gratuits s’importent sans elle. Reliez votre compte pour importer les modèles que vous avez achetés, ainsi que les modèles gratuits qui nécessitent une connexion.",
-        "expired": "La connexion a expiré. Visitez myminifactory.com avec Thingport Grab, ou reconnectez MyMiniFactory dans Configuration → Fournisseurs.",
-        "expiredStatus": "Connexion expirée"
-      },
-      "snapmaker": {
-        "placeholder": "Valeur de login_access_token, ou l’en-tête Cookie complet",
-        "steps": [
-          "Le plus simple : avec Thingport Grab, il suffit d’ouvrir space.snapmaker.com en étant connecté. Votre compte est relié et la connexion reste à jour, car celle de Snapmaker ne dure qu’un jour.",
-          "Ou manuellement : connectez-vous à space.snapmaker.com et ouvrez les outils de développement de votre navigateur (F12).",
-          "Sous Application (Chrome, Edge) ou Stockage (Firefox) → Cookies → space.snapmaker.com, copiez la valeur de login_access_token et collez-la ci-dessous. Collée à la main, elle reste valable un jour."
-        ],
-        "notConnected": "Snapmaker ne remet ses fichiers qu’aux utilisateurs connectés. Reliez votre compte pour importer ses modèles, ainsi que vos « J’aime » et favoris.",
-        "expired": "La connexion a expiré. Visitez space.snapmaker.com avec Thingport Grab, ou reconnectez Snapmaker Space dans Configuration → Fournisseurs.",
-        "expiredStatus": "Connexion expirée"
-      },
-      "makeronline": {
-        "placeholder": "Valeur de mo_access_token, ou l’en-tête Cookie complet",
-        "steps": [
-          "Le plus simple : avec Thingport Grab, il suffit d’ouvrir makeronline.com en étant connecté. Votre compte est relié et les modèles MakerOnline en attente sont importés, car MakerOnline ne remet ses fichiers qu’à ses propres pages.",
-          "Ou manuellement : connectez-vous à makeronline.com et ouvrez les outils de développement de votre navigateur (F12).",
-          "Sous Application (Chrome, Edge) ou Stockage (Firefox) → Cookies → www.makeronline.com, copiez la valeur de mo_access_token et collez-la ci-dessous. Elle reste valable environ trois mois."
-        ],
-        "notConnected": "Reliez votre compte pour lire vos « J’aime » et collections privées MakerOnline. Ses fichiers passent toujours par Thingport Grab.",
-        "expired": "La connexion a expiré. Visitez makeronline.com avec Thingport Grab, ou reconnectez MakerOnline dans Configuration → Fournisseurs.",
-        "expiredStatus": "Connexion expirée"
-      },
-      "crealitycloud": {
-        "placeholder": "L’en-tête Cookie, avec model_token et model_user_id",
-        "steps": [
-          "Le plus simple : avec Thingport Grab, il suffit d’ouvrir crealitycloud.com en étant connecté. Votre compte est relié, et de nouveau à chaque fois que vous vous y connectez.",
-          "Ou manuellement : connectez-vous à crealitycloud.com, ouvrez les outils de développement de votre navigateur (F12) et rechargez la page.",
-          "Sous Réseau, choisissez n’importe quelle requête vers crealitycloud.com/api, copiez son en-tête de requête Cookie et collez-le ci-dessous. Il reste valable une semaine à partir de votre connexion."
-        ],
-        "notConnected": "Creality Cloud ne remet ses fichiers qu’aux utilisateurs connectés. Reliez votre compte pour importer ses modèles, ainsi que vos « J’aime ».",
-        "expired": "La connexion a expiré. Connectez-vous à crealitycloud.com avec Thingport Grab, ou reconnectez Creality Cloud dans Configuration → Fournisseurs.",
-        "expiredStatus": "Connexion expirée"
-      },
-      "nexprint": {
-        "placeholder": "Le cookie auth_token, ou l’en-tête Authorization",
-        "steps": [
-          "Le plus simple : avec Thingport Grab, il suffit d’ouvrir nexprint.com en étant connecté. Votre compte est relié et le reste au fil de vos visites.",
-          "Ou manuellement : connectez-vous à nexprint.com, ouvrez les outils de développement de votre navigateur (F12) et rechargez la page.",
-          "Sous Réseau, choisissez n’importe quelle requête vers nexprint.com/gateway, copiez son en-tête de requête Authorization (ou le cookie auth_token) et collez-le ci-dessous."
-        ],
-        "notConnected": "NexPrint ne remet ses fichiers qu’aux utilisateurs connectés. Reliez votre compte pour importer ses modèles.",
-        "expired": "La connexion a expiré. Connectez-vous à nexprint.com avec Thingport Grab, ou reconnectez NexPrint dans Configuration → Fournisseurs.",
-        "expiredStatus": "Connexion expirée"
-      },
-      "thangs": {
-        "placeholder": "Le cookie accessToken ou refreshToken, ou l’en-tête Cookie complet",
-        "steps": [
-          "Le plus simple : avec Thingport Grab, il suffit d’ouvrir thangs.com en étant connecté. Votre compte est relié, et Thingport le garde connecté pendant environ un an.",
-          "Ou manuellement : connectez-vous à thangs.com, ouvrez les outils de développement de votre navigateur (F12) et rechargez la page.",
-          "Sous Réseau, choisissez n’importe quelle requête vers thangs.com/api, copiez son en-tête de requête Cookie (il contient les deux jetons) et collez-le ci-dessous."
-        ],
-        "notConnected": "Thangs ne remet ses fichiers qu’aux utilisateurs connectés. Reliez votre compte pour importer ses modèles.",
-        "expired": "La connexion a expiré. Connectez-vous à thangs.com avec Thingport Grab, ou reconnectez Thangs dans Configuration → Fournisseurs.",
-        "expiredStatus": "Connexion expirée"
-      },
-      "cults3d": {
-        "nickLabel": "Pseudo Cults3D",
-        "keyLabel": "Clé d’API",
-        "placeholder": "Votre pseudo, tel qu’il est écrit sur votre profil",
-        "steps": [
-          "Connectez-vous à cults3d.com et ouvrez cults3d.com/en/api/keys. Créez-y une clé et copiez son secret.",
-          "Saisissez ci-dessous votre pseudo exactement comme votre profil l’écrit (les majuscules comptent) ainsi que la clé. Thingport s’en sert pour lire les modèles, les « J’aime », les listes d’impression et vos téléchargements.",
-          "Ouvrez ensuite cults3d.com une fois avec Thingport Grab, en étant connecté : Cults3D ne remet ses fichiers qu’à ses propres pages connectées, et Grab transmet cette connexion."
-        ],
-        "notConnected": "Thingport lit Cults3D avec votre propre clé d’API. Reliez-la avec votre pseudo et une clé créée sur cults3d.com.",
-        "expired": "Cults3D a refusé la clé d’API. Créez-en une nouvelle sur cults3d.com et reconnectez-vous dans Configuration → Fournisseurs.",
-        "expiredStatus": "Clé d’API refusée",
-        "siteMissing": "Connecté, mais les téléchargements nécessitent la connexion du navigateur : ouvrez cults3d.com en étant connecté avec Thingport Grab, ou collez-la depuis le menu de la vignette.",
-        "siteExpired": "La connexion du navigateur a expiré : ouvrez cults3d.com en étant connecté avec Thingport Grab, ou collez-la de nouveau depuis le menu de la vignette.",
-        "siteMissingStatus": "Pas encore de connexion du navigateur",
-        "session": {
-          "title": "Coller la connexion Cults3D",
-          "paste": "Coller la connexion du navigateur",
-          "save": "Enregistrer",
-          "placeholder": "Les en-têtes de requête d’une page cults3d.com connectée",
-          "steps": [
-            "Le plus simple : avec Thingport Grab, il suffit d’ouvrir cults3d.com en étant connecté. Il envoie lui-même la connexion.",
-            "Ou manuellement : ouvrez les outils de développement de votre navigateur (F12) sur une page cults3d.com connectée et rechargez-la.",
-            "Sous Réseau, choisissez la requête de la page elle-même, copiez ses en-têtes de requête (avec Cookie et User-Agent) et collez-les ci-dessous. Cela ne fonctionne que si Thingport accède à Internet depuis la même adresse que ce navigateur."
-          ]
-        }
-      },
-      "printables": {
-        "alwaysConnected": "Printables est connecté par défaut : il ne nécessite ni compte ni clé."
-      },
       "comingSoon": "Bientôt disponible"
     },
     "slicer": {
-      "subtitle": "Le slicer dans lequel s’ouvrent les modèles avec « Ouvrir dans le slicer ». Faites un clic droit sur l’un d’eux et choisissez Activer, ou double-cliquez dessus.",
+      "subtitle": "Les slicers installés sur cet ordinateur. Un modèle s’ouvre dans le dernier utilisé ; les autres sont dans son menu « Ouvrir dans ». Double-cliquez sur l’un d’eux, ou faites un clic droit, pour l’activer ou le désactiver.",
       "active": "Actif",
       "notActive": "Inactif",
-      "activate": "Activer"
+      "activate": "Activer",
+      "lastUsed": "Dernier utilisé",
+      "deactivate": "Désactiver"
     },
     "storageMoveProgress": {
       "label": "{{phrase}} {{done}} sur {{total}} modèles",
@@ -2087,107 +2438,7 @@
       "compareLabel": "Ce que chaque fournisseur nécessite et importe",
       "off": "Désactivé",
       "yes": "Oui",
-      "no": "Non",
-      "providers": {
-        "makerworld": {
-          "summary": "La plateforme de Bambu Lab pour partager des modèles imprimables en 3D, dont beaucoup avec des profils d’impression optimisés. Ouverte à toutes les imprimantes, avec les outils MakerLab pour personnaliser les modèles.",
-          "signIn": "Votre propre cookie de session MakerWorld.",
-          "grab": "Lit le cookie pour vous, et importe des collections entières sans se heurter aux limites de fréquence de MakerWorld.",
-          "setup": [
-            "Installez Thingport Grab et importez une fois depuis une page MakerWorld en étant connecté : MakerWorld est alors relié pour vous.",
-            "Ou manuellement : copiez le cookie token depuis les outils de développement de votre navigateur (Application → Cookies → makerworld.com).",
-            "Faites un clic droit sur MakerWorld dans Configuration → Fournisseurs, choisissez Connecter et collez-le."
-          ]
-        },
-        "printables": {
-          "summary": "Le dépôt de modèles gratuit de Prusa Research, anciennement PrusaPrinters, avec des concours et des récompenses Prusameters. Ses fichiers fonctionnent sur toutes les imprimantes.",
-          "signIn": "Rien à connecter.",
-          "grab": "Nécessaire uniquement pour vos collections privées et vos « J’aime », que Printables ne montre qu’à vous.",
-          "setup": [
-            "Rien à configurer : collez un lien Printables, ou importez depuis sa page avec Thingport Grab.",
-            "Pour vos collections privées et vos « J’aime », visitez Printables en étant connecté, avec Thingport Grab."
-          ]
-        },
-        "thingiverse": {
-          "summary": "L’une des bibliothèques de modèles imprimables en 3D créés par les utilisateurs les plus anciennes et les plus vastes, la plupart gratuits et sous licence libre.",
-          "signIn": "Un seul jeton d’application pour tous, défini par un administrateur.",
-          "grab": "Pratique pour importer depuis les pages de Thingiverse, mais pas nécessaire.",
-          "setup": [
-            "Connectez-vous à thingiverse.com et ouvrez thingiverse.com/apps/create.",
-            "Créez une application d’un type sans URL de redirection, comme Desktop app, et copiez son App Token.",
-            "Un administrateur le colle dans Configuration → Fournisseurs → Thingiverse, ou dans Administration → Fournisseurs."
-          ]
-        },
-        "myminifactory": {
-          "summary": "Une place de marché sélective de fichiers imprimables en 3D gratuits et payants, surtout connue pour ses figurines de jeux de plateau. Les modèles sont vérifiés avant d’être publiés.",
-          "signIn": "Une clé d’API définie par un administrateur ; votre propre connexion ajoute les modèles que vous avez achetés.",
-          "grab": "Relie votre compte dès que vous visitez myminifactory.com.",
-          "setup": [
-            "Un administrateur crée une application sur myminifactory.com/settings/developer et enregistre sa clé d’API dans Administration → Fournisseurs.",
-            "Pour les modèles achetés, ouvrez myminifactory.com en étant connecté avec Thingport Grab, ou collez votre cookie PHPSESSID dans Configuration → Fournisseurs."
-          ]
-        },
-        "snapmaker": {
-          "summary": "La plateforme de modèles de Snapmaker, conçue autour de son imprimante U1. Les modèles mis en avant sont testés à l’impression, avec des profils optimisés pour l’impression multicolore.",
-          "signIn": "Votre propre connexion. Elle dure un jour.",
-          "grab": "Le seul moyen de renouveler la connexion. Sans lui, vous en collez une nouvelle chaque jour.",
-          "setup": [
-            "Installez Thingport Grab, activez-le sur Snapmaker Space et ouvrez space.snapmaker.com en étant connecté.",
-            "Grab garde ensuite la connexion à jour tant que votre navigateur est ouvert.",
-            "Manuellement : collez le cookie login_access_token dans Configuration → Fournisseurs. Il dure un jour."
-          ]
-        },
-        "makeronline": {
-          "summary": "La plateforme de modèles d’Anycubic : modèles gratuits et payants, concours de créateurs et un outil d’IA qui transforme du texte en 3D.",
-          "signIn": "Aucune pour importer ; votre connexion ajoute vos « J’aime » et vos collections privées.",
-          "grab": "Grab télécharge chaque fichier MakerOnline depuis une page de makeronline.com. Les importations lancées ailleurs l’attendent.",
-          "setup": [
-            "Installez Thingport Grab et activez-le sur MakerOnline.",
-            "Importez depuis la page d’un modèle, ou ouvrez n’importe quelle page makeronline.com pour faire venir les modèles qui attendent Grab.",
-            "Si vous y êtes connecté, Grab relie aussi votre compte pour vos « J’aime » et vos collections privées."
-          ]
-        },
-        "crealitycloud": {
-          "summary": "La plateforme d’impression 3D de Creality : une vaste bibliothèque de modèles gratuits et premium, avec tranchage dans le cloud et impression à distance.",
-          "signIn": "Votre propre connexion. Elle dure une semaine et n’est pas renouvelée.",
-          "grab": "Envoie chaque nouvelle connexion lorsque vous vous connectez sur crealitycloud.com.",
-          "setup": [
-            "Installez Thingport Grab, activez-le sur Creality Cloud et ouvrez crealitycloud.com en étant connecté.",
-            "Manuellement : copiez l’en-tête Cookie d’une requête vers crealitycloud.com/api et collez-le dans Configuration → Fournisseurs.",
-            "Au bout d’une semaine, reconnectez-vous sur le site pour relier de nouveau votre compte."
-          ]
-        },
-        "nexprint": {
-          "summary": "La plateforme de modèles ouverte d’Elegoo, lancée en 2025. Elle mêle la bibliothèque d’Elegoo et des créations de la communauté, et fonctionne avec Elegoo Slicer et OrcaSlicer.",
-          "signIn": "Votre propre connexion, que le site renouvelle au fil de son utilisation.",
-          "grab": "Envoie la connexion renouvelée lorsque vous visitez nexprint.com.",
-          "setup": [
-            "Installez Thingport Grab, activez-le sur NexPrint et ouvrez nexprint.com en étant connecté.",
-            "Manuellement : copiez l’en-tête Authorization d’une requête vers nexprint.com/gateway et collez-le dans Configuration → Fournisseurs."
-          ]
-        },
-        "thangs": {
-          "summary": "Un moteur de recherche de modèles 3D de Physna qui trouve les modèles par leur forme comme par leur nom, avec une place de marché et des abonnements de créateurs.",
-          "signIn": "Votre propre connexion ; Thingport la renouvelle pendant environ un an.",
-          "grab": "Relie votre compte en une seule visite sur thangs.com.",
-          "setup": [
-            "Installez Thingport Grab, activez-le sur Thangs et ouvrez thangs.com en étant connecté.",
-            "Manuellement : copiez l’en-tête Cookie d’une requête vers thangs.com/api et collez-le dans Configuration → Fournisseurs.",
-            "Les comptes gratuits téléchargent un nombre limité de modèles par jour."
-          ]
-        },
-        "cults3d": {
-          "summary": "Une place de marché française de modèles imprimables en 3D gratuits et payants, fondée en 2014, et un réseau social pour les makers.",
-          "signIn": "Votre propre clé d’API, et la connexion de votre navigateur pour les fichiers.",
-          "grab": "Envoie la connexion du navigateur et l’autorisation Cloudflare. Thingport doit accéder à Internet depuis l’adresse IP de ce navigateur.",
-          "flaresolverr": "N’aide pas : son navigateur ne peut pas transmettre de lien de téléchargement.",
-          "setup": [
-            "Créez une clé d’API sur cults3d.com/en/api/keys.",
-            "Faites un clic droit sur Cults3D dans Configuration → Fournisseurs, choisissez Connecter, puis saisissez votre pseudo et la clé.",
-            "Ouvrez cults3d.com en étant connecté avec Thingport Grab, pour que ses fichiers puissent se télécharger."
-          ]
-        }
-      }
+      "no": "Non"
     },
     "whatsNew": {
       "label": "Nouveautés",
@@ -2248,6 +2499,36 @@
       },
       "guide": "Guide MCP",
       "close": "Fermer"
+    },
+    "iconPicker": {
+      "title": "Choisir une icône",
+      "close": "Fermer",
+      "search": "Rechercher des icônes",
+      "upload": "Importer",
+      "uploadHelp": "PNG, JPEG, WebP, GIF ou SVG, jusqu’à 1 Mo. Les images sont réduites à 256 px ; déposez des fichiers n’importe où ici pour les importer.",
+      "uploadFailed": "Impossible d’importer l’icône",
+      "deleteTitle": "Supprimer « {{name}} » ?",
+      "deleteMessage": "Les liens et widgets qui l’utilisent reprennent leur icône habituelle.",
+      "delete": "Supprimer",
+      "noUploads": "Rien d’importé pour l’instant. Importez une image ou déposez-la ici.",
+      "noMatches": "Aucune icône ne correspond à « {{query}} »",
+      "address": "Ou l’adresse d’une image",
+      "useAddress": "Utiliser",
+      "actionsFor": "Actions pour {{name}}",
+      "uploadedIcon": "Icône importée",
+      "clear": "Retirer l’icône",
+      "choose": "Choisir",
+      "groups": {
+        "uploaded": "Vos icônes",
+        "thingport": "Thingport",
+        "providers": "Sites de modèles",
+        "printing": "Impression 3D",
+        "selfhosted": "Auto-hébergé",
+        "media": "Médias",
+        "popular": "Sites populaires",
+        "ai": "IA",
+        "browsers": "Navigateurs"
+      }
     }
   },
   "common": {
@@ -2982,7 +3263,6 @@
       "size": "Taille",
       "sizeHint": "Taille totale de tous les fichiers de ce modèle dans le stockage",
       "author": "Auteur",
-      "downloadModelFiles": "Télécharger les fichiers du modèle",
       "imported": "Importé le {{date}}",
       "quality": {
         "scanning": "Contrôle de la qualité d’impression…",
@@ -3059,7 +3339,13 @@
           "minorHint": "Les slicers s’en accommodent généralement, ou cela se corrige vite dans l’un d’eux."
         },
         "manageSettings": "Gérer le contrôle de qualité"
-      }
+      },
+      "fileSelectLabel": "Fichiers ({{count}})",
+      "fileSelectAria": "Fichier : {{file}}. En choisir un autre",
+      "downloadFile": "Télécharger le fichier",
+      "moreOpenOptions": "Autres slicers et téléchargements",
+      "openActions": "Ouvrir ou télécharger",
+      "openInHeading": "Ouvrir dans"
     },
     "edit": {
       "title": "Modifier le modèle",
@@ -3217,37 +3503,10 @@
           "takenBy": "Synchronisée avec « {{name}} »",
           "loadFailed": "Impossible de charger les collections.",
           "lookupFailed": "Impossible de trouver cette collection.",
-          "notALink": "Collez un lien de collection MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space ou MakerOnline.",
+          "notALink": "Collez un lien de collection MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D ou Pinshape.",
           "usernameFailed": "Impossible d’enregistrer le nom d’utilisateur.",
           "openProviders": "Ouvrir les fournisseurs",
-          "notConnected": {
-            "makerworld": "Connectez MakerWorld dans Configuration > Fournisseurs pour voir ici vos collections. Son cookie indique à Thingport qui vous êtes sur ce site.",
-            "printables": "Printables est injoignable pour le moment.",
-            "thingiverse": "Thingiverse n’est pas encore connecté sur ce Thingport. Un administrateur peut le connecter dans Configuration > Fournisseurs.",
-            "myminifactory": "MyMiniFactory n’est pas encore connecté sur ce Thingport. Un administrateur peut le connecter dans Configuration > Fournisseurs.",
-            "snapmaker": "Connectez Snapmaker Space dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir ici vos « J’aime » et favoris.",
-            "makeronline": "Connectez MakerOnline dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir ici vos « J’aime » et collections.",
-            "crealitycloud": "Connectez Creality Cloud dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir ici vos « J’aime » et collections.",
-            "nexprint": "Connectez NexPrint dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir ici vos collections.",
-            "thangs": "Connectez Thangs dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir ici vos « J’aime » et collections.",
-            "cults3d": "Saisissez votre pseudo et votre clé d’API Cults3D dans Configuration > Fournisseurs pour voir ici vos « J’aime » et listes d’impression."
-          },
           "usernameLabel": "Votre nom d’utilisateur {{provider}}",
-          "usernameHint": {
-            "printables": "Thingport affiche vos collections publiques Printables. Cette information n’est demandée qu’une fois.",
-            "thingiverse": "Thingport affiche vos collections publiques Thingiverse. Cette information n’est demandée qu’une fois.",
-            "myminifactory": "Thingport affiche vos collections publiques MyMiniFactory. Cette information n’est demandée qu’une fois."
-          },
-          "usernamePlaceholder": {
-            "printables": "@identifiant ou lien du profil",
-            "thingiverse": "Nom d’utilisateur ou lien du profil",
-            "myminifactory": "Nom d’utilisateur ou lien du profil"
-          },
-          "showing": {
-            "printables": "Affichage des collections de @{{user}}.",
-            "thingiverse": "Affichage des collections publiques de @{{user}}.",
-            "myminifactory": "Affichage des collections publiques de @{{user}}."
-          },
           "change": "Changer",
           "empty": "Aucune collection sur {{provider}} pour le moment.",
           "pasteLabel": "La collection d’une autre personne",
@@ -3263,15 +3522,9 @@
           "startedWaiting": "« {{name}} » se synchronise désormais avec « {{source}} ». Ses modèles arriveront la prochaine fois que vous ouvrirez {{provider}} avec Thingport Grab.",
           "pickPrompt": "Choisissez une collection ci-dessus, ou collez un lien.",
           "startNothing": "Synchroniser",
-          "printablesPrivateHelp": "Les collections privées et les « J’aime » sont ajoutés une fois que Thingport Grab vous voit connecté sur Printables, car ce site ne les montre qu’à vous.",
           "makerworldHelp": "MakerWorld limite rapidement les importations en masse ; les modèles de cette collection ne sont donc pas importés pour le moment. Ceux déjà présents dans votre bibliothèque sont ajoutés à « {{name}} ».",
           "forget": "Oublier",
-          "forgetTitle": "Oublier votre compte {{provider}} ?",
-          "forgetMessage": {
-            "printables": "Thingport n’affiche plus vos collections Printables, et Thingport Grab cesse d’envoyer vos collections privées et vos « J’aime », jusqu’à ce que vous indiquiez de nouveau votre nom d’utilisateur. Les synchronisations déjà configurées conservent leurs modèles ; celles des collections privées et des « J’aime » sont suspendues jusque-là.",
-            "thingiverse": "Thingport n’affiche plus vos collections Thingiverse tant que vous n’avez pas à nouveau indiqué votre nom d’utilisateur. Les synchronisations déjà configurées conservent leurs modèles.",
-            "myminifactory": "Thingport n’affiche plus vos collections MyMiniFactory tant que vous n’avez pas à nouveau indiqué votre nom d’utilisateur. Les synchronisations déjà configurées conservent leurs modèles."
-          }
+          "forgetTitle": "Oublier votre compte {{provider}} ?"
         }
       },
       "sortByModels": "Plus de modèles",
@@ -3450,8 +3703,6 @@
       "improveDescriptions": "Améliorer les descriptions avec l’IA",
       "aiRunActive": "Un traitement IA est déjà en cours",
       "aiTooMany": "Sélectionnez jusqu’à {{max}} modèles pour un traitement IA",
-      "addToCollectionTitle_one": "Ajouter {{count}} modèle à une collection",
-      "addToCollectionTitle_other": "Ajouter {{count}} modèles à une collection",
       "downloadTitle_one": "Télécharger {{count}} modèle",
       "downloadTitle_other": "Télécharger {{count}} modèles",
       "favorited_one": "{{count}} modèle ajouté aux Favoris",
@@ -3475,7 +3726,33 @@
       "confirmRemoveFromCollection_one": "Retirer {{count}} modèle de cette collection ? Le modèle lui-même est conservé.",
       "confirmRemoveFromCollection_other": "Retirer {{count}} modèles de cette collection ? Les modèles eux-mêmes sont conservés.",
       "removedFromCollection_one": "{{count}} modèle retiré de la collection",
-      "removedFromCollection_other": "{{count}} modèles retirés de la collection"
+      "removedFromCollection_other": "{{count}} modèles retirés de la collection",
+      "addTagsPlaceholder": "Saisissez une étiquette, puis Entrée",
+      "existingTags": "Vos étiquettes",
+      "editTags": "Modifier les étiquettes",
+      "editTagsTitle_one": "Étiquettes de {{count}} modèle",
+      "editTagsTitle_other": "Étiquettes de {{count}} modèles",
+      "selectedTags": "Sur les modèles sélectionnés",
+      "selectedTagsHelp": "Cliquez sur une étiquette pour l’ajouter à tous les modèles sélectionnés, la retirer de tous, ou, si seulement certains l’ont, la laisser telle quelle.",
+      "noTags": "Aucun d’eux n’a encore d’étiquette.",
+      "summaryAdd": "Ajouter {{count}}",
+      "summaryRemove": "Retirer {{count}}",
+      "tagsUpdated_one": "Étiquettes de {{count}} modèle mises à jour",
+      "tagsUpdated_other": "Étiquettes de {{count}} modèles mises à jour",
+      "tagsFailed": "Impossible de mettre à jour les étiquettes. Veuillez réessayer.",
+      "apply": "Appliquer",
+      "onSome": "{{name}}, sur {{count}} modèles sur {{total}}",
+      "editCollections": "Modifier les collections",
+      "editCollectionsTitle_one": "Collections de {{count}} modèle",
+      "editCollectionsTitle_other": "Collections de {{count}} modèles",
+      "editCollectionsHelp": "Cliquez sur une collection pour y mettre tous les modèles sélectionnés, les en retirer tous, ou, si seulement certains y sont, la laisser telle quelle.",
+      "summaryAddTo": "Ajouter à {{count}}",
+      "summaryRemoveFrom": "Retirer de {{count}}",
+      "collectionsUpdated_one": "{{count}} collection mise à jour",
+      "collectionsUpdated_other": "{{count}} collections mises à jour",
+      "collectionsFailed": "Impossible de mettre à jour les collections. Veuillez réessayer.",
+      "tagsPartlyUpdated_one": "Étiquettes de {{count}} modèle mises à jour, mais les autres ont échoué. Veuillez réessayer.",
+      "tagsPartlyUpdated_other": "Étiquettes de {{count}} modèles mises à jour, mais les autres ont échoué. Veuillez réessayer."
     },
     "merge": {
       "action": "Fusionner",
@@ -3515,6 +3792,443 @@
         "othersGo_one": "{{names}} est retirée. Ses modèles reçoivent « {{name}} » à la place.",
         "othersGo_other": "{{names}} sont retirées. Leurs modèles reçoivent « {{name}} » à la place.",
         "keepsOwn": "Les modèles qui ont déjà « {{name}} » ne changent pas."
+      }
+    }
+  },
+  "providers": {
+    "makerworld": {
+      "connect": {
+        "steps": [
+          "Connectez-vous à makerworld.com dans votre navigateur.",
+          "Ouvrez les outils de développement (F12 ou ⌥⌘I) et allez dans l’onglet Réseau.",
+          "Rechargez la page et sélectionnez n’importe quelle requête vers makerworld.com.",
+          "Sous Request Headers (en-têtes de requête), copiez la valeur complète de l’en-tête Cookie et collez-la ci-dessous."
+        ],
+        "placeholder": "exemple : mw_session=...; mw_token=...;"
+      },
+      "status": {
+        "expired": "La connexion a expiré. Reconnectez MakerWorld avec un cookie récent dans Configuration → Fournisseurs.",
+        "expiredStatus": "Connexion expirée",
+        "disabledReason": "MakerWorld : non connecté"
+      },
+      "about": {
+        "summary": "La plateforme de Bambu Lab pour partager des modèles imprimables en 3D, dont beaucoup avec des profils d’impression optimisés. Ouverte à toutes les imprimantes, avec les outils MakerLab pour personnaliser les modèles.",
+        "signIn": "Votre propre cookie de session MakerWorld.",
+        "grab": "Lit le cookie pour vous, et importe des collections entières sans se heurter aux limites de fréquence de MakerWorld.",
+        "setup": [
+          "Installez Thingport Grab et importez une fois depuis une page MakerWorld en étant connecté : MakerWorld est alors relié pour vous.",
+          "Ou manuellement : copiez le cookie token depuis les outils de développement de votre navigateur (Application → Cookies → makerworld.com).",
+          "Faites un clic droit sur MakerWorld dans Configuration → Fournisseurs, choisissez Connecter et collez-le."
+        ]
+      },
+      "admin": {
+        "description": "Le site de modèles de Bambu Lab : importations avec profils d’impression, et collections à synchroniser."
+      },
+      "sync": {
+        "notConnected": "Connectez MakerWorld dans Configuration > Fournisseurs pour voir ici vos collections. Son cookie indique à Thingport qui vous êtes sur ce site."
+      }
+    },
+    "printables": {
+      "status": {
+        "alwaysConnected": "Printables est connecté par défaut : il ne nécessite ni compte ni clé."
+      },
+      "about": {
+        "summary": "Le dépôt de modèles gratuit de Prusa Research, anciennement PrusaPrinters, avec des concours et des récompenses Prusameters. Ses fichiers fonctionnent sur toutes les imprimantes.",
+        "signIn": "Rien à connecter.",
+        "grab": "Nécessaire uniquement pour vos collections privées et vos « J’aime », que Printables ne montre qu’à vous.",
+        "setup": [
+          "Rien à configurer : collez un lien Printables, ou importez depuis sa page avec Thingport Grab.",
+          "Pour vos collections privées et vos « J’aime », visitez Printables en étant connecté, avec Thingport Grab."
+        ]
+      },
+      "admin": {
+        "description": "Le site de modèles de Prusa : importations, ainsi que collections publiques et privées à synchroniser."
+      },
+      "sync": {
+        "notConnected": "Printables est injoignable pour le moment.",
+        "usernameHint": "Thingport affiche vos collections publiques Printables. Cette information n’est demandée qu’une fois.",
+        "usernamePlaceholder": "@identifiant ou lien du profil",
+        "showing": "Affichage des collections de @{{user}}.",
+        "forgetMessage": "Thingport n’affiche plus vos collections Printables, et Thingport Grab cesse d’envoyer vos collections privées et vos « J’aime », jusqu’à ce que vous indiquiez de nouveau votre nom d’utilisateur. Les synchronisations déjà configurées conservent leurs modèles ; celles des collections privées et des « J’aime » sont suspendues jusque-là.",
+        "showingHelp": "Les collections privées et les « J’aime » sont ajoutés une fois que Thingport Grab vous voit connecté sur Printables, car ce site ne les montre qu’à vous."
+      }
+    },
+    "thingiverse": {
+      "connect": {
+        "steps": [
+          "Connectez-vous à thingiverse.com et ouvrez thingiverse.com/apps/create.",
+          "Créez une application de n’importe quel type, par exemple « Desktop app ».",
+          "Copiez le jeton d’application affiché et collez-le ci-dessous."
+        ],
+        "placeholder": "Collez le jeton d’application",
+        "shared": "Ce jeton est partagé par tous les utilisateurs de ce Thingport."
+      },
+      "status": {
+        "adminOnly": "Seul un administrateur de ce Thingport peut effectuer cette configuration.",
+        "disabledReason": "Thingiverse : l’administrateur n’a pas encore configuré de clé d’API"
+      },
+      "about": {
+        "summary": "L’une des bibliothèques de modèles imprimables en 3D créés par les utilisateurs les plus anciennes et les plus vastes, la plupart gratuits et sous licence libre.",
+        "signIn": "Un seul jeton d’application pour tous, défini par un administrateur.",
+        "grab": "Pratique pour importer depuis les pages de Thingiverse, mais pas nécessaire.",
+        "setup": [
+          "Connectez-vous à thingiverse.com et ouvrez thingiverse.com/apps/create.",
+          "Créez une application d’un type sans URL de redirection, comme Desktop app, et copiez son App Token.",
+          "Un administrateur le colle dans Configuration → Fournisseurs → Thingiverse, ou dans Administration → Fournisseurs."
+        ]
+      },
+      "admin": {
+        "description": "Importations, collections et modèles aimés, via le jeton d’application de ce Thingport.",
+        "keyStatus": {
+          "set": "Jeton d’application configuré",
+          "missing": "Aucun jeton d’application : les importations Thingiverse ne fonctionneront pas tant que vous n’en aurez pas configuré un"
+        },
+        "key": {
+          "heading": "Jeton d’application Thingiverse",
+          "helpText": "Créez une application sur thingiverse.com/apps/create (de n’importe quel type, par exemple « Desktop ») et collez le jeton d’application affiché.",
+          "statusConfigured": "Un jeton d’application est actuellement configuré.",
+          "statusNotConfigured": "Aucun jeton d’application n’est encore configuré : les importations Thingiverse échoueront tant qu’un jeton ne sera pas défini.",
+          "tokenLabel": "Jeton d’application",
+          "tokenPlaceholder": "Collez un nouveau jeton pour remplacer le jeton actuel",
+          "tokenHelperConfigured": "Pour des raisons de sécurité, le jeton actuel n’est plus jamais affiché : laissez ce champ vide pour le conserver, ou collez-en un nouveau pour le remplacer.",
+          "save": "Enregistrer",
+          "saving": "Enregistrement…",
+          "clear": "Supprimer le jeton",
+          "saved": "Enregistré.",
+          "cleared": "Jeton d’application supprimé.",
+          "failed": "Échec de l’enregistrement des paramètres Thingiverse."
+        }
+      },
+      "sync": {
+        "notConnected": "Thingiverse n’est pas encore connecté sur ce Thingport. Un administrateur peut le connecter dans Configuration > Fournisseurs.",
+        "usernameHint": "Thingport affiche vos collections publiques Thingiverse. Cette information n’est demandée qu’une fois.",
+        "usernamePlaceholder": "Nom d’utilisateur ou lien du profil",
+        "showing": "Affichage des collections publiques de @{{user}}.",
+        "forgetMessage": "Thingport n’affiche plus vos collections Thingiverse tant que vous n’avez pas à nouveau indiqué votre nom d’utilisateur. Les synchronisations déjà configurées conservent leurs modèles."
+      }
+    },
+    "myminifactory": {
+      "connect": {
+        "steps": [
+          "Le plus simple : avec Thingport Grab, il suffit d’ouvrir myminifactory.com en étant connecté, et votre compte sera relié automatiquement.",
+          "Ou manuellement : connectez-vous à myminifactory.com et ouvrez les outils de développement de votre navigateur (F12).",
+          "Sous Application (Chrome, Edge) ou Stockage (Firefox) → Cookies → www.myminifactory.com, copiez la valeur de PHPSESSID et collez-la ci-dessous."
+        ],
+        "placeholder": "Valeur de PHPSESSID, ou l’en-tête Cookie complet"
+      },
+      "status": {
+        "notConnected": "Les modèles gratuits s’importent sans elle. Reliez votre compte pour importer les modèles que vous avez achetés, ainsi que les modèles gratuits qui nécessitent une connexion.",
+        "expired": "La connexion a expiré. Visitez myminifactory.com avec Thingport Grab, ou reconnectez MyMiniFactory dans Configuration → Fournisseurs.",
+        "expiredStatus": "Connexion expirée",
+        "disabledReason": "MyMiniFactory : l’administrateur n’a pas encore configuré de clé d’API"
+      },
+      "about": {
+        "summary": "Une place de marché sélective de fichiers imprimables en 3D gratuits et payants, surtout connue pour ses figurines de jeux de plateau. Les modèles sont vérifiés avant d’être publiés.",
+        "signIn": "Une clé d’API définie par un administrateur ; votre propre connexion ajoute les modèles que vous avez achetés.",
+        "grab": "Relie votre compte dès que vous visitez myminifactory.com.",
+        "setup": [
+          "Un administrateur crée une application sur myminifactory.com/settings/developer et enregistre sa clé d’API dans Administration → Fournisseurs.",
+          "Pour les modèles achetés, ouvrez myminifactory.com en étant connecté avec Thingport Grab, ou collez votre cookie PHPSESSID dans Configuration → Fournisseurs."
+        ]
+      },
+      "admin": {
+        "description": "Modèles et collections publiques, via la clé d’API de ce Thingport ; modèles achetés, via le compte MyMiniFactory de chaque utilisateur.",
+        "keyStatus": {
+          "set": "Clé d’API configurée",
+          "missing": "Aucune clé d’API : les importations MyMiniFactory ne fonctionneront pas tant que vous n’en aurez pas configuré une"
+        },
+        "key": {
+          "heading": "Clé d’API MyMiniFactory",
+          "helpText": "Créez une application sur myminifactory.com/settings/developer/application et collez la clé d’API affichée. Les modèles gratuits se téléchargent sans elle, mais elle est nécessaire pour lire leurs détails et vos collections.",
+          "statusConfigured": "Une clé d’API est actuellement configurée.",
+          "statusNotConfigured": "Aucune clé d’API n’est encore configurée : les importations MyMiniFactory échoueront tant qu’une clé ne sera pas définie.",
+          "tokenLabel": "Clé d’API",
+          "tokenPlaceholder": "Collez une nouvelle clé pour remplacer la clé actuelle",
+          "tokenHelperConfigured": "Pour des raisons de sécurité, la clé actuelle n’est plus jamais affichée : laissez ce champ vide pour la conserver, ou collez-en une nouvelle pour la remplacer.",
+          "save": "Enregistrer",
+          "saving": "Enregistrement…",
+          "clear": "Supprimer la clé",
+          "saved": "Enregistré.",
+          "cleared": "Clé d’API supprimée.",
+          "failed": "Échec de l’enregistrement des paramètres MyMiniFactory."
+        }
+      },
+      "sync": {
+        "notConnected": "MyMiniFactory n’est pas encore connecté sur ce Thingport. Un administrateur peut le connecter dans Configuration > Fournisseurs.",
+        "usernameHint": "Thingport affiche vos collections publiques MyMiniFactory. Cette information n’est demandée qu’une fois.",
+        "usernamePlaceholder": "Nom d’utilisateur ou lien du profil",
+        "showing": "Affichage des collections publiques de @{{user}}.",
+        "forgetMessage": "Thingport n’affiche plus vos collections MyMiniFactory tant que vous n’avez pas à nouveau indiqué votre nom d’utilisateur. Les synchronisations déjà configurées conservent leurs modèles."
+      }
+    },
+    "snapmaker": {
+      "connect": {
+        "steps": [
+          "Le plus simple : avec Thingport Grab, il suffit d’ouvrir space.snapmaker.com en étant connecté. Votre compte est relié et la connexion reste à jour, car celle de Snapmaker ne dure qu’un jour.",
+          "Ou manuellement : connectez-vous à space.snapmaker.com et ouvrez les outils de développement de votre navigateur (F12).",
+          "Sous Application (Chrome, Edge) ou Stockage (Firefox) → Cookies → space.snapmaker.com, copiez la valeur de login_access_token et collez-la ci-dessous. Collée à la main, elle reste valable un jour."
+        ],
+        "placeholder": "Valeur de login_access_token, ou l’en-tête Cookie complet"
+      },
+      "status": {
+        "notConnected": "Snapmaker ne remet ses fichiers qu’aux utilisateurs connectés. Reliez votre compte pour importer ses modèles, ainsi que vos « J’aime » et favoris.",
+        "expired": "La connexion a expiré. Visitez space.snapmaker.com avec Thingport Grab, ou reconnectez Snapmaker Space dans Configuration → Fournisseurs.",
+        "expiredStatus": "Connexion expirée",
+        "disabledReason": "Snapmaker Space : connectez votre compte dans Configuration → Fournisseurs"
+      },
+      "about": {
+        "summary": "La plateforme de modèles de Snapmaker, conçue autour de son imprimante U1. Les modèles mis en avant sont testés à l’impression, avec des profils optimisés pour l’impression multicolore.",
+        "signIn": "Votre propre connexion. Elle dure un jour.",
+        "grab": "Le seul moyen de renouveler la connexion. Sans lui, vous en collez une nouvelle chaque jour.",
+        "setup": [
+          "Installez Thingport Grab, activez-le sur Snapmaker Space et ouvrez space.snapmaker.com en étant connecté.",
+          "Grab garde ensuite la connexion à jour tant que votre navigateur est ouvert.",
+          "Manuellement : collez le cookie login_access_token dans Configuration → Fournisseurs. Il dure un jour."
+        ]
+      },
+      "admin": {
+        "description": "Modèles avec leurs profils d’impression, ainsi que les « J’aime » et favoris de chaque utilisateur, via son propre compte Snapmaker."
+      },
+      "sync": {
+        "notConnected": "Connectez Snapmaker Space dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir ici vos « J’aime » et favoris."
+      }
+    },
+    "makeronline": {
+      "connect": {
+        "steps": [
+          "Le plus simple : avec Thingport Grab, il suffit d’ouvrir makeronline.com en étant connecté. Votre compte est relié et les modèles MakerOnline en attente sont importés, car MakerOnline ne remet ses fichiers qu’à ses propres pages.",
+          "Ou manuellement : connectez-vous à makeronline.com et ouvrez les outils de développement de votre navigateur (F12).",
+          "Sous Application (Chrome, Edge) ou Stockage (Firefox) → Cookies → www.makeronline.com, copiez la valeur de mo_access_token et collez-la ci-dessous. Elle reste valable environ trois mois."
+        ],
+        "placeholder": "Valeur de mo_access_token, ou l’en-tête Cookie complet"
+      },
+      "status": {
+        "notConnected": "Reliez votre compte pour lire vos « J’aime » et collections privées MakerOnline. Ses fichiers passent toujours par Thingport Grab.",
+        "expired": "La connexion a expiré. Visitez makeronline.com avec Thingport Grab, ou reconnectez MakerOnline dans Configuration → Fournisseurs.",
+        "expiredStatus": "Connexion expirée",
+        "disabledReason": "MakerOnline : connectez votre compte dans Configuration → Fournisseurs"
+      },
+      "about": {
+        "summary": "La plateforme de modèles d’Anycubic : modèles gratuits et payants, concours de créateurs et un outil d’IA qui transforme du texte en 3D.",
+        "signIn": "Aucune pour importer ; votre connexion ajoute vos « J’aime » et vos collections privées.",
+        "grab": "Grab télécharge chaque fichier MakerOnline depuis une page de makeronline.com. Les importations lancées ailleurs l’attendent.",
+        "setup": [
+          "Installez Thingport Grab et activez-le sur MakerOnline.",
+          "Importez depuis la page d’un modèle, ou ouvrez n’importe quelle page makeronline.com pour faire venir les modèles qui attendent Grab.",
+          "Si vous y êtes connecté, Grab relie aussi votre compte pour vos « J’aime » et vos collections privées."
+        ]
+      },
+      "admin": {
+        "description": "Modèles avec leurs profils d’impression, collections et « J’aime » de chaque utilisateur. Les fichiers passent par Thingport Grab : MakerOnline ne les remet qu’à ses propres pages."
+      },
+      "sync": {
+        "notConnected": "Connectez MakerOnline dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir ici vos « J’aime » et collections."
+      }
+    },
+    "crealitycloud": {
+      "connect": {
+        "steps": [
+          "Le plus simple : avec Thingport Grab, il suffit d’ouvrir crealitycloud.com en étant connecté. Votre compte est relié, et de nouveau à chaque fois que vous vous y connectez.",
+          "Ou manuellement : connectez-vous à crealitycloud.com, ouvrez les outils de développement de votre navigateur (F12) et rechargez la page.",
+          "Sous Réseau, choisissez n’importe quelle requête vers crealitycloud.com/api, copiez son en-tête de requête Cookie et collez-le ci-dessous. Il reste valable une semaine à partir de votre connexion."
+        ],
+        "placeholder": "L’en-tête Cookie, avec model_token et model_user_id"
+      },
+      "status": {
+        "notConnected": "Creality Cloud ne remet ses fichiers qu’aux utilisateurs connectés. Reliez votre compte pour importer ses modèles, ainsi que vos « J’aime ».",
+        "expired": "La connexion a expiré. Connectez-vous à crealitycloud.com avec Thingport Grab, ou reconnectez Creality Cloud dans Configuration → Fournisseurs.",
+        "expiredStatus": "Connexion expirée",
+        "disabledReason": "Creality Cloud : connectez votre compte dans Configuration → Fournisseurs"
+      },
+      "about": {
+        "summary": "La plateforme d’impression 3D de Creality : une vaste bibliothèque de modèles gratuits et premium, avec tranchage dans le cloud et impression à distance.",
+        "signIn": "Votre propre connexion. Elle dure une semaine et n’est pas renouvelée.",
+        "grab": "Envoie chaque nouvelle connexion lorsque vous vous connectez sur crealitycloud.com.",
+        "setup": [
+          "Installez Thingport Grab, activez-le sur Creality Cloud et ouvrez crealitycloud.com en étant connecté.",
+          "Manuellement : copiez l’en-tête Cookie d’une requête vers crealitycloud.com/api et collez-le dans Configuration → Fournisseurs.",
+          "Au bout d’une semaine, reconnectez-vous sur le site pour relier de nouveau votre compte."
+        ]
+      },
+      "admin": {
+        "description": "Modèles avec leurs profils d’impression, collections et « J’aime » de chaque utilisateur, via le propre compte Creality Cloud de chaque utilisateur."
+      },
+      "sync": {
+        "notConnected": "Connectez Creality Cloud dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir ici vos « J’aime » et collections."
+      }
+    },
+    "nexprint": {
+      "connect": {
+        "steps": [
+          "Le plus simple : avec Thingport Grab, il suffit d’ouvrir nexprint.com en étant connecté. Votre compte est relié et le reste au fil de vos visites.",
+          "Ou manuellement : connectez-vous à nexprint.com, ouvrez les outils de développement de votre navigateur (F12) et rechargez la page.",
+          "Sous Réseau, choisissez n’importe quelle requête vers nexprint.com/gateway, copiez son en-tête de requête Authorization (ou le cookie auth_token) et collez-le ci-dessous."
+        ],
+        "placeholder": "Le cookie auth_token, ou l’en-tête Authorization"
+      },
+      "status": {
+        "notConnected": "NexPrint ne remet ses fichiers qu’aux utilisateurs connectés. Reliez votre compte pour importer ses modèles.",
+        "expired": "La connexion a expiré. Connectez-vous à nexprint.com avec Thingport Grab, ou reconnectez NexPrint dans Configuration → Fournisseurs.",
+        "expiredStatus": "Connexion expirée",
+        "disabledReason": "NexPrint : connectez votre compte dans Configuration → Fournisseurs"
+      },
+      "about": {
+        "summary": "La plateforme de modèles ouverte d’Elegoo, lancée en 2025. Elle mêle la bibliothèque d’Elegoo et des créations de la communauté, et fonctionne avec Elegoo Slicer et OrcaSlicer.",
+        "signIn": "Votre propre connexion, que le site renouvelle au fil de son utilisation.",
+        "grab": "Envoie la connexion renouvelée lorsque vous visitez nexprint.com.",
+        "setup": [
+          "Installez Thingport Grab, activez-le sur NexPrint et ouvrez nexprint.com en étant connecté.",
+          "Manuellement : copiez l’en-tête Authorization d’une requête vers nexprint.com/gateway et collez-le dans Configuration → Fournisseurs."
+        ]
+      },
+      "admin": {
+        "description": "Modèles avec leurs profils d’impression, et collections, via le propre compte NexPrint de chaque utilisateur."
+      },
+      "sync": {
+        "notConnected": "Connectez NexPrint dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir ici vos collections."
+      }
+    },
+    "thangs": {
+      "connect": {
+        "steps": [
+          "Le plus simple : avec Thingport Grab, il suffit d’ouvrir thangs.com en étant connecté. Votre compte est relié, et Thingport le garde connecté pendant environ un an.",
+          "Ou manuellement : connectez-vous à thangs.com, ouvrez les outils de développement de votre navigateur (F12) et rechargez la page.",
+          "Sous Réseau, choisissez n’importe quelle requête vers thangs.com/api, copiez son en-tête de requête Cookie (il contient les deux jetons) et collez-le ci-dessous."
+        ],
+        "placeholder": "Le cookie accessToken ou refreshToken, ou l’en-tête Cookie complet"
+      },
+      "status": {
+        "notConnected": "Thangs ne remet ses fichiers qu’aux utilisateurs connectés. Reliez votre compte pour importer ses modèles.",
+        "expired": "La connexion a expiré. Connectez-vous à thangs.com avec Thingport Grab, ou reconnectez Thangs dans Configuration → Fournisseurs.",
+        "expiredStatus": "Connexion expirée",
+        "disabledReason": "Thangs : connectez votre compte dans Configuration → Fournisseurs"
+      },
+      "about": {
+        "summary": "Un moteur de recherche de modèles 3D de Physna qui trouve les modèles par leur forme comme par leur nom, avec une place de marché et des abonnements de créateurs.",
+        "signIn": "Votre propre connexion ; Thingport la renouvelle pendant environ un an.",
+        "grab": "Relie votre compte en une seule visite sur thangs.com.",
+        "setup": [
+          "Installez Thingport Grab, activez-le sur Thangs et ouvrez thangs.com en étant connecté.",
+          "Manuellement : copiez l’en-tête Cookie d’une requête vers thangs.com/api et collez-le dans Configuration → Fournisseurs.",
+          "Les comptes gratuits téléchargent un nombre limité de modèles par jour."
+        ]
+      },
+      "admin": {
+        "description": "Modèles gratuits et achetés, « J’aime » et collections, via le propre compte Thangs de chaque utilisateur."
+      },
+      "sync": {
+        "notConnected": "Connectez Thangs dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir ici vos « J’aime » et collections."
+      }
+    },
+    "cults3d": {
+      "connect": {
+        "steps": [
+          "Connectez-vous à cults3d.com et ouvrez cults3d.com/en/api/keys. Créez-y une clé et copiez son secret.",
+          "Saisissez ci-dessous votre pseudo exactement comme votre profil l’écrit (les majuscules comptent) ainsi que la clé. Thingport s’en sert pour lire les modèles, les « J’aime », les listes d’impression et vos téléchargements.",
+          "Ouvrez ensuite cults3d.com une fois avec Thingport Grab, en étant connecté : Cults3D ne remet ses fichiers qu’à ses propres pages connectées, et Grab transmet cette connexion."
+        ],
+        "placeholder": "Votre pseudo, tel qu’il est écrit sur votre profil",
+        "nickLabel": "Pseudo Cults3D",
+        "apiKeyLabel": "Clé d’API",
+        "browser": {
+          "title": "Coller la connexion Cults3D",
+          "paste": "Coller la connexion du navigateur",
+          "save": "Enregistrer",
+          "placeholder": "Les en-têtes de requête d’une page cults3d.com connectée",
+          "steps": [
+            "Le plus simple : avec Thingport Grab, il suffit d’ouvrir cults3d.com en étant connecté. Il envoie lui-même la connexion.",
+            "Ou manuellement : ouvrez les outils de développement de votre navigateur (F12) sur une page cults3d.com connectée et rechargez-la.",
+            "Sous Réseau, choisissez la requête de la page elle-même, copiez ses en-têtes de requête (avec Cookie et User-Agent) et collez-les ci-dessous. Cela ne fonctionne que si Thingport accède à Internet depuis la même adresse que ce navigateur."
+          ]
+        }
+      },
+      "status": {
+        "notConnected": "Thingport lit Cults3D avec votre propre clé d’API. Reliez-la avec votre pseudo et une clé créée sur cults3d.com.",
+        "expired": "Cults3D a refusé la clé d’API. Créez-en une nouvelle sur cults3d.com et reconnectez-vous dans Configuration → Fournisseurs.",
+        "expiredStatus": "Clé d’API refusée",
+        "siteMissing": "Connecté, mais les téléchargements nécessitent la connexion du navigateur : ouvrez cults3d.com en étant connecté avec Thingport Grab, ou collez-la depuis le menu de la vignette.",
+        "siteExpired": "La connexion du navigateur a expiré : ouvrez cults3d.com en étant connecté avec Thingport Grab, ou collez-la de nouveau depuis le menu de la vignette.",
+        "siteMissingStatus": "Pas encore de connexion du navigateur",
+        "disabledReason": "Cults3D : saisissez votre pseudo et votre clé d’API dans Configuration → Fournisseurs"
+      },
+      "about": {
+        "summary": "Une place de marché française de modèles imprimables en 3D gratuits et payants, fondée en 2014, et un réseau social pour les makers.",
+        "signIn": "Votre propre clé d’API, et la connexion de votre navigateur pour les fichiers.",
+        "grab": "Envoie la connexion du navigateur et l’autorisation Cloudflare. Thingport doit accéder à Internet depuis l’adresse IP de ce navigateur.",
+        "flaresolverr": "N’aide pas : son navigateur ne peut pas transmettre de lien de téléchargement.",
+        "setup": [
+          "Créez une clé d’API sur cults3d.com/en/api/keys.",
+          "Faites un clic droit sur Cults3D dans Configuration → Fournisseurs, choisissez Connecter, puis saisissez votre pseudo et la clé.",
+          "Ouvrez cults3d.com en étant connecté avec Thingport Grab, pour que ses fichiers puissent se télécharger."
+        ]
+      },
+      "admin": {
+        "description": "Modèles gratuits et achetés, « J’aime » et listes d’impression, via la propre clé d’API Cults3D de chaque utilisateur. Les fichiers arrivent avec la connexion du navigateur, que Thingport Grab transmet."
+      },
+      "sync": {
+        "notConnected": "Saisissez votre pseudo et votre clé d’API Cults3D dans Configuration > Fournisseurs pour voir ici vos « J’aime » et listes d’impression."
+      }
+    },
+    "eufymake": {
+      "connect": {
+        "steps": [
+          "Le plus simple : avec Thingport Grab, il suffit d’ouvrir makeitreal.eufymake.com en étant connecté. Votre compte est relié, et une nouvelle connexion est envoyée chaque fois que vous vous y reconnectez.",
+          "Ou manuellement : connectez-vous à makeitreal.eufymake.com et ouvrez les outils de développement de votre navigateur (F12).",
+          "Sous Application (Chrome, Edge) ou Stockage (Firefox) → Local Storage → makeitreal.eufymake.com, copiez la valeur de mk-userinfo et collez-la ci-dessous. Les en-têtes X-Auth-Token et Gtoken d’une requête à aiot-wapi-eu.ankermake.com faite en étant connecté conviennent aussi."
+        ],
+        "placeholder": "La valeur de mk-userinfo, ou les en-têtes X-Auth-Token et Gtoken d’une requête"
+      },
+      "status": {
+        "notConnected": "Reliez votre compte pour lire vos « J’aime » eufyMake. Ses modèles s’importent sans lui.",
+        "expired": "La connexion a expiré. Connectez-vous à makeitreal.eufymake.com avec Thingport Grab, ou reconnectez eufyMake dans Configuration → Fournisseurs.",
+        "expiredStatus": "Connexion expirée",
+        "disabledReason": "eufyMake : connectez votre compte dans Configuration → Fournisseurs"
+      },
+      "about": {
+        "summary": "Make it Real d’eufyMake (Anker) : des modèles de la communauté, classés dans ses propres catégories, avec des outils d’IA et de photo vers 3D.",
+        "signIn": "Aucune pour importer ; votre connexion ajoute vos « J’aime ».",
+        "grab": "Envoie votre connexion lorsque vous visitez makeitreal.eufymake.com.",
+        "setup": [
+          "Importez n’importe quel lien de modèle ; aucune connexion n’est nécessaire.",
+          "Pour vos « J’aime » : installez Thingport Grab, activez-le sur eufyMake et ouvrez makeitreal.eufymake.com en étant connecté."
+        ]
+      },
+      "admin": {
+        "description": "Les modèles et les « J’aime » de chaque utilisateur. Les modèles s’importent sans connexion ; les « J’aime » demandent celle de l’utilisateur."
+      },
+      "sync": {
+        "notConnected": "Connectez eufyMake dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir vos « J’aime » ici."
+      }
+    },
+    "pinshape": {
+      "connect": {
+        "steps": [
+          "Le plus simple : avec Thingport Grab, il suffit d’ouvrir pinshape.com en étant connecté. Votre compte est relié, et une nouvelle connexion est envoyée chaque fois que vous vous y reconnectez.",
+          "Ou manuellement : connectez-vous à pinshape.com en cochant « Remember Me », pour que la connexion dure un an, et ouvrez les outils de développement de votre navigateur (F12).",
+          "Sous Application (Chrome, Edge) ou Stockage (Firefox) → Cookies → pinshape.com, copiez la valeur de remember_token et collez-la ci-dessous. L’en-tête Cookie d’une requête à pinshape.com faite en étant connecté convient aussi."
+        ],
+        "placeholder": "Le cookie remember_token, ou l’en-tête Cookie d’une requête faite en étant connecté"
+      },
+      "status": {
+        "notConnected": "Pinshape ne remet ses fichiers qu’aux utilisateurs connectés. Reliez votre compte pour importer ses modèles ; les collections et les « J’aime » se lisent sans lui.",
+        "expired": "La connexion a expiré. Connectez-vous à pinshape.com avec Thingport Grab, ou reconnectez Pinshape dans Configuration → Fournisseurs.",
+        "expiredStatus": "Connexion expirée",
+        "disabledReason": "Pinshape : connectez votre compte dans Configuration → Fournisseurs"
+      },
+      "about": {
+        "summary": "Un site de modèles communautaire de longue date, désormais géré par MatterHackers : des modèles gratuits, et des collections que chacun peut suivre.",
+        "signIn": "Votre propre connexion, pour les fichiers ; les collections et les « J’aime » se lisent sans elle.",
+        "grab": "Envoie votre connexion lorsque vous visitez pinshape.com.",
+        "setup": [
+          "Installez Thingport Grab, activez-le sur Pinshape et ouvrez pinshape.com en étant connecté.",
+          "Manuellement : copiez le cookie remember_token d’un onglet pinshape.com connecté et collez-le dans Configuration → Fournisseurs."
+        ]
+      },
+      "admin": {
+        "description": "Les modèles, et les collections et « J’aime » de chacun. Les listes se lisent sans connexion ; les fichiers demandent celle de l’utilisateur."
+      },
+      "sync": {
+        "notConnected": "Connectez Pinshape dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir vos « J’aime » et collections ici."
       }
     }
   }

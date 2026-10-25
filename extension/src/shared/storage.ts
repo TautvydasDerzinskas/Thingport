@@ -1,5 +1,7 @@
 // chrome.storage.local keys and their shapes. Nothing is synced across browsers.
 
+import type { ProviderId } from "../providers/index.generated";
+
 export const STORAGE_KEYS = {
   instanceUrl: "instanceUrl",
   email: "email",
@@ -10,6 +12,10 @@ export const STORAGE_KEYS = {
   // A connection by approval in progress: the secret it proves itself with, and the tab it opened.
   pendingPairing: "pendingPairing",
   disabled: "disabled",
+  // The popup's Offline features (see OFFLINE_FEATURE_DEFAULTS); unset means the default.
+  normalizeMakerworld: "normalizeMakerworld",
+  thingiverseDark: "thingiverseDark",
+  thingiverseHideAds: "thingiverseHideAds",
   // From the last login: admins get "Add to the queue" in the import panel.
   isAdmin: "isAdmin",
   token: "token",
@@ -17,21 +23,10 @@ export const STORAGE_KEYS = {
   // Last successful sign-in; the connection check signs in again once it's a few minutes old.
   loginVerifiedAt: "loginVerifiedAt",
   // Lets the cookie sync skip a redundant PATCH.
+  // Providers' own keys are listed here with the others: storage is one namespace, and the popup clears it whole.
   lastSyncedMakerworldCookie: "lastSyncedMakerworldCookie",
-  // The MyMiniFactory session last sent, and to which Thingport account.
-  lastSyncedMyminifactorySession: "lastSyncedMyminifactorySession",
-  // The Snapmaker access token last sent, and to which Thingport account.
-  lastSyncedSnapmakerToken: "lastSyncedSnapmakerToken",
-  // The MakerOnline access token last sent, and to which Thingport account.
-  lastSyncedMakeronlineToken: "lastSyncedMakeronlineToken",
-  // The Creality Cloud sign-in last sent, and to which Thingport account.
-  lastSyncedCrealitycloudSession: "lastSyncedCrealitycloudSession",
-  // The NexPrint token last sent, and to which Thingport account.
-  lastSyncedNexprintSession: "lastSyncedNexprintSession",
-  // The Thangs tokens last sent, and to which Thingport account.
-  lastSyncedThangsSession: "lastSyncedThangsSession",
-  // The Cults3D sign-in last sent, and to which Thingport account.
-  lastSyncedCults3dSession: "lastSyncedCults3dSession",
+  // Each provider's sign-in last sent, and to which Thingport account (see background/sessionSync.ts).
+  lastSyncedSessions: "lastSyncedSessions",
   // The Printables and Thingiverse usernames last sent to the instance, so unchanged ones aren't.
   lastSentProviderAccounts: "lastSentProviderAccounts",
   // When Printables' lists were last read and sent, so a burst of page loads reads them once.
@@ -49,18 +44,16 @@ export type StoredConfig = {
   connectionToken?: string;
   pendingPairing?: PendingPairing;
   disabled?: boolean;
+  normalizeMakerworld?: boolean;
+  thingiverseDark?: boolean;
+  thingiverseHideAds?: boolean;
   isAdmin?: boolean;
   token?: string;
   tokenExpiresAt?: number;
   loginVerifiedAt?: number;
   lastSyncedMakerworldCookie?: string;
-  lastSyncedMyminifactorySession?: { account: string; value: string };
-  lastSyncedSnapmakerToken?: { account: string; value: string };
-  lastSyncedMakeronlineToken?: { account: string; value: string };
-  lastSyncedCrealitycloudSession?: { account: string; value: string };
-  lastSyncedNexprintSession?: { account: string; value: string };
-  lastSyncedThangsSession?: { account: string; value: string };
-  lastSyncedCults3dSession?: { account: string; value: string };
+  /** `account` is the Thingport instance and email it was sent to. */
+  lastSyncedSessions?: Partial<Record<ProviderId, { account: string; value: string }>>;
   /** `account` is the Thingport instance and email they were sent to. */
   lastSentProviderAccounts?: { account: string; values: Record<string, string> };
   lastPrintablesPushAt?: number;
@@ -68,7 +61,34 @@ export type StoredConfig = {
   printablesPlanHandedOutAt?: number;
 };
 
+/** What works without a Thingport instance, and whether each is on until the user says otherwise. */
+export const OFFLINE_FEATURE_DEFAULTS = {
+  // The "Download normalized" button on MakerWorld.
+  normalizeMakerworld: true,
+  // Restyles Thingiverse, which has no dark theme of its own, while the system theme is dark.
+  thingiverseDark: true,
+  // Hides the ads on Thingiverse's pages.
+  thingiverseHideAds: true,
+} as const;
+
+export type OfflineFeature = keyof typeof OFFLINE_FEATURE_DEFAULTS;
+
+export function offlineFeatureOn(config: StoredConfig, feature: OfflineFeature): boolean {
+  return config[feature] ?? OFFLINE_FEATURE_DEFAULTS[feature];
+}
+
 export type PendingPairing = { instanceUrl: string; verifier: string; tabId: number; startedAt: number };
+
+/** Where each sign-in sent was remembered before lastSyncedSessions; dropped on update, so each is sent once more. */
+export const LEGACY_SESSION_KEYS = [
+  "lastSyncedMyminifactorySession",
+  "lastSyncedSnapmakerToken",
+  "lastSyncedMakeronlineToken",
+  "lastSyncedCrealitycloudSession",
+  "lastSyncedNexprintSession",
+  "lastSyncedThangsSession",
+  "lastSyncedCults3dSession",
+];
 
 export const CONFIG_CHANGE_KEYS: readonly string[] = [
   STORAGE_KEYS.instanceUrl,
@@ -76,6 +96,7 @@ export const CONFIG_CHANGE_KEYS: readonly string[] = [
   STORAGE_KEYS.password,
   STORAGE_KEYS.connectionToken,
   STORAGE_KEYS.disabled,
+  STORAGE_KEYS.normalizeMakerworld,
   STORAGE_KEYS.isAdmin,
 ];
 

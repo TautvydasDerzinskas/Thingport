@@ -44,6 +44,8 @@ export const DESCRIPTION_IMAGES = path.join(STORAGE, "description-images");
 export const MODEL_PREVIEWS = path.join(STORAGE, "model-previews");
 // One picture per tag for the Tags page, built from its models' pictures.
 export const TAG_MOSAICS = path.join(STORAGE, "tag-mosaics");
+// Icons users uploaded, by id; see services/iconService.ts.
+export const ICONS = path.join(STORAGE, "icons");
 // Slicer-compatible copies of MakerWorld 3MFs, rebuilt when the source plate changes.
 export const NORMALIZED_3MFS = path.join(STORAGE, "normalized-3mf");
 // Large multi-part projects take minutes on a slow CPU; the page waits for it, not the request.
@@ -122,6 +124,7 @@ export const IMPORT_COLLECTION_DELAY_MS = envInt("IMPORT_COLLECTION_DELAY_MS", 1
 export const IMPORT_DOWNLOAD_RETRY_DELAY_MS = envInt("IMPORT_DOWNLOAD_RETRY_DELAY_MS", 2000);
 // MakerWorld's CAPTCHA trips on bursts, so in collection imports this delay precedes every
 // MakerWorld request (listing pages, each resolution step, each image), not just each model.
+// MakerWorld's pacing against its CAPTCHA, here with the other settings an admin can set by environment variable.
 export const IMPORT_MAKERWORLD_CALL_DELAY_MS = envInt("IMPORT_MAKERWORLD_CALL_DELAY_MS", 5000);
 // Synced collections are checked on each one's own interval; "false" turns the scheduled sync off
 // ("Sync now" still works).

@@ -12,7 +12,7 @@ type Props = {
 };
 
 /** Where Thingport lives, who can join, how people sign in, how long they stay signed in, and what API tokens may do
- *  over MCP. */
+ *  over MCP, and whether custom dashboard widgets may run. */
 export default function AuthPage({ onUnauthorized }: Props) {
   // Sign-in methods depend on the public URL (redirect URIs, whether a provider can be added): reloaded with it.
   const [publicUrlVersion, setPublicUrlVersion] = React.useState(0);

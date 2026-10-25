@@ -1,10 +1,10 @@
 name: Release project
 
-# Versioning for backend/ and frontend/, called from their image workflows when a release reaches main. semantic-release
-# (<project>/.releaserc.json) reads only that project's commits: a feat or fix since its last version gives it a new
-# one, a CHANGELOG.md entry and a thingport-<project>-vX.Y.Z tag, committed back to main. Anything else (refactor,
-# docs, chore) gives no version, and the image is still published as :latest. The output ref is main after the release
-# commit, so the image is built with the version it says it is.
+# Versioning for backend/, frontend/ and bridge/, called from their workflows when a release reaches main.
+# semantic-release (<project>/.releaserc.json) reads only that project's commits: a feat or fix since its last version
+# gives it a new one, a CHANGELOG.md entry and a thingport-<project>-vX.Y.Z tag, committed back to main. Anything else
+# (refactor, docs, chore) gives no version; the images are still published as :latest, Bridge publishes nothing. The
+# output ref is main after the release commit, so the build is from the version it says it is.
 on:
   workflow_call:
     inputs:
@@ -83,7 +83,7 @@ jobs:
           done
           echo "ref=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-      # Not semantic-release's GitHub plugin: it marks releases "latest", a slot Bridge's links rely on.
+      # Not semantic-release's GitHub plugin: it marks releases "latest", a slot older Download pages link Bridge through.
       - name: GitHub release
         if: steps.release.outputs.version != ''
         env:
