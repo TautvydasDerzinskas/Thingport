@@ -34,6 +34,9 @@ type Config struct {
 // any URL, so it never reaches here.
 const scheme = "thingport"
 
+// Release builds set it with -ldflags "-X main.version=...".
+var version = "dev"
+
 func main() {
 	if len(os.Args) < 2 {
 		// Windows/Linux pass the URL as argv[1], so no args means "install". macOS delivers it as an
@@ -46,6 +49,9 @@ func main() {
 	switch arg {
 	case "", "-h", "--help":
 		printUsage()
+		return
+	case "-v", "--version":
+		fmt.Println(version)
 		return
 	case "install", "--install":
 		runInstallAndReport()
@@ -63,6 +69,7 @@ func main() {
 func printUsage() {
 	fmt.Println("Usage:")
 	fmt.Println("  thingport-bridge --install")
+	fmt.Println("  thingport-bridge --version")
 	fmt.Println("  thingport-bridge <thingport://open?...>")
 }
 
@@ -127,11 +134,14 @@ func handleProtocol(raw string, cfg Config) error {
 	}
 
 	if slicerID == "" || slicerID == "other" {
+		log.Printf("open with default app path=%s", targetPath)
 		return openWithDefault(targetPath)
 	}
 
 	cmd, args := resolveSlicerCommand(slicerID, cfg)
 	if cmd == "" {
+		// Otherwise a slicer that isn't found looks, in the log, like one that was launched.
+		log.Printf("slicer not found slicer=%s; open with default app path=%s", slicerID, targetPath)
 		return openWithDefault(targetPath)
 	}
 
@@ -346,7 +356,9 @@ func findMacCommand(id string, candidates map[string][]string) string {
 
 func windowsCandidates() map[string][]string {
 	return map[string][]string{
-		"bambustudio": {"Bambu Studio\\BambuStudio.exe"},
+		// The installer ships bambu-studio.exe; BambuStudio.exe is kept in case a build names it that.
+		// "/" so the test runs on any OS; Windows accepts it.
+		"bambustudio": {"Bambu Studio/bambu-studio.exe", "Bambu Studio/BambuStudio.exe"},
 		"orcaslicer":  {"OrcaSlicer\\OrcaSlicer.exe"},
 		"prusaslicer": {"PrusaSlicer\\PrusaSlicer.exe"},
 		// Globs because the dir embeds the version; renamed "Ultimaker" -> "UltiMaker" around 5.7.

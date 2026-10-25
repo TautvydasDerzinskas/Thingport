@@ -12,7 +12,7 @@ import {
   type AssetHome,
 } from "./modelAssets";
 import { ensureAssetHome } from "./printService";
-import { plainWriteMode, shareStoredBytes } from "./fileReuse";
+import { plainWriteMode, reuseMarker, shareStoredBytes } from "./fileReuse";
 import { findStoredCopies } from "./storedContent";
 import { mapWithConcurrency } from "../utils/concurrency";
 import { validateRemoteUrl } from "../utils/urlUtils";
@@ -117,7 +117,10 @@ export async function saveDescriptionImage(printId: string, buffer: Buffer, sour
     if (!shared) await fs.writeFile(dest, buffer, { flag: "wx" });
     placed = dest;
     // After the file is in place, so a stored copy is only ever offered once it's there.
-    if (contentSha256) await prisma.descriptionImage.update({ where: { id: row.id }, data: { contentSha256 } });
+    if (contentSha256) {
+      const marker = await reuseMarker(dest, shared, contentSha256);
+      await prisma.descriptionImage.update({ where: { id: row.id }, data: { contentSha256, ...marker } });
+    }
   } catch {
     if (placed) await fs.rm(placed, { force: true }).catch(() => undefined);
     await prisma.descriptionImage.delete({ where: { id: row.id } }).catch(() => undefined);

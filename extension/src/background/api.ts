@@ -6,7 +6,7 @@ import type { Connection } from "../shared/messages";
 import { STORAGE_KEYS, apiUrl } from "../shared/storage";
 import { isMakerworldUrl } from "../shared/urls";
 import { getStoredConfig, isConfigured, type ConfiguredConfig } from "./config";
-import { getLiveMakerworldCookie, maybeSyncMakerworldCookie } from "./makerworldCookie";
+import { getLiveMakerworldCookie, maybeSyncMakerworldCookie } from "../providers/makerworld/cookie";
 
 const TOKEN_REFRESH_MARGIN_MS = 5 * 60 * 1000;
 
@@ -199,6 +199,9 @@ export async function apiCall<T = unknown>(method: string, path: string, body?: 
   const config = await requireConfig();
 
   let finalBody = body as Record<string, unknown> | undefined;
+  // The browser's own MakerWorld cookie, on any import of a MakerWorld link: the backend imports MakerWorld's models by
+  // the shared link import (its LINK_PROVIDER), which reads the cookie from the request. Here, as every call to the
+  // instance passes through, rather than in providers/makerworld/.
   if (
     path.startsWith("/import") &&
     finalBody &&
@@ -250,13 +253,7 @@ const CONNECTION_KEYS = [
   STORAGE_KEYS.tokenExpiresAt,
   STORAGE_KEYS.loginVerifiedAt,
   STORAGE_KEYS.lastSyncedMakerworldCookie,
-  STORAGE_KEYS.lastSyncedMyminifactorySession,
-  STORAGE_KEYS.lastSyncedSnapmakerToken,
-  STORAGE_KEYS.lastSyncedMakeronlineToken,
-  STORAGE_KEYS.lastSyncedCrealitycloudSession,
-  STORAGE_KEYS.lastSyncedNexprintSession,
-  STORAGE_KEYS.lastSyncedThangsSession,
-  STORAGE_KEYS.lastSyncedCults3dSession,
+  STORAGE_KEYS.lastSyncedSessions,
   STORAGE_KEYS.lastSentProviderAccounts,
   STORAGE_KEYS.lastPrintablesPushAt,
   STORAGE_KEYS.lastPrintablesLikesAt,

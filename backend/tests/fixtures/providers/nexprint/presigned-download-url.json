@@ -1,0 +1,13 @@
+{
+  "code": 0,
+  "msg": "",
+  "traceId": "contract-fixture",
+  "data": {
+    "fileInfoList": [
+      {
+        "fileId": "{fileId}",
+        "resultUrl": "https://nexprint.oss-eu-central-1.aliyuncs.com/models/{fileId}.{ext}?X-Amz-Signature=s"
+      }
+    ]
+  }
+}

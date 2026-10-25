@@ -1,0 +1,41 @@
+[
+  {
+    "url": "https://www.myminifactory.com/object/3d-print-example-model-123456",
+    "expect": {
+      "provider": "myminifactory",
+      "kind": "model",
+      "externalId": "123456"
+    }
+  },
+  {
+    "url": "https://myminifactory.com/it/object/dragon-42/?ref=share",
+    "expect": {
+      "provider": "myminifactory",
+      "kind": "model",
+      "externalId": "42"
+    }
+  },
+  {
+    "url": "https://www.myminifactory.com/users/Creator/collection/Dragons",
+    "expect": {
+      "provider": "myminifactory",
+      "kind": "list",
+      "externalId": "creator/dragons",
+      "listKind": "collection"
+    }
+  },
+  {
+    "url": "https://myminifactory.com/users/Creator",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  },
+  {
+    "url": "https://fake-myminifactory.com/object/3d-print-42",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  }
+]

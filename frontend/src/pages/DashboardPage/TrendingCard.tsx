@@ -22,6 +22,7 @@ import { UnauthorizedError } from "../../api/client";
 import { dashboardApi, type TrendingModel, type TrendingProvider, type TrendingResult } from "../../api/dashboard";
 import { printProviderInfo } from "../../constants/importProviders";
 import ProviderBadge from "../../components/ProviderBadge";
+import { MANIFESTS } from "../../providers/index.generated";
 import { ListRowSkeletons } from "../../components/ListSkeleton";
 import { openConfiguration } from "../../utils/configurationEvents";
 import DashboardCard, { DashboardCardBody, DashboardCardTitle } from "./DashboardCard";
@@ -127,7 +128,8 @@ export default function TrendingCard({ providers, count, showMore, view, isAdmin
         </Button>
       </Stack>
     );
-  else if (result.status === "needsSetup") body = <SetupNeeded setup={result.setup} name={name} isAdmin={isAdmin} />;
+  else if (result.status === "needsSetup")
+    body = <SetupNeeded provider={active} setup={result.setup} name={name} isAdmin={isAdmin} />;
   else if (!result.models.length)
     body = (
       <Typography color="text.secondary" sx={{ py: 1 }}>
@@ -362,18 +364,20 @@ function ModelTile({ model }: { model: TrendingModel }) {
 
 /** A provider that needs a token or key before it can be read: what's missing, and where to add it. */
 function SetupNeeded({
+  provider,
   setup,
   name,
   isAdmin,
 }: {
-  setup: "thingiverseToken" | "myminifactoryKey" | "cults3dKey";
+  provider: TrendingProvider;
+  setup: string;
   name: string;
   isAdmin: boolean;
 }) {
   const { t } = useTranslation("app");
   const navigate = useNavigate();
-  // An instance-wide token is an admin's to add; a Cults3D key is each user's own.
-  const forAdmin = setup !== "cults3dKey";
+  // A provider with an instance-wide token or key is read with it, an admin's to add; the others with the user's own.
+  const forAdmin = MANIFESTS[provider].auth.some((auth) => auth.scope === "instance");
   return (
     <Stack alignItems="center" spacing={1.25} sx={{ py: 2, px: 1, textAlign: "center" }}>
       <Box

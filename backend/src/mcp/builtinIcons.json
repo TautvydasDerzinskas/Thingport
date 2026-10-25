@@ -37,18 +37,13 @@
     "group": "providers"
   },
   {
-    "value": "builtin:providers/thingiverse",
-    "name": "Thingiverse",
-    "group": "providers"
-  },
-  {
-    "value": "builtin:providers/thangs",
-    "name": "Thangs",
-    "group": "providers"
-  },
-  {
     "value": "builtin:providers/printables",
     "name": "Printables",
+    "group": "providers"
+  },
+  {
+    "value": "builtin:providers/thingiverse",
+    "name": "Thingiverse",
     "group": "providers"
   },
   {
@@ -57,8 +52,8 @@
     "group": "providers"
   },
   {
-    "value": "builtin:providers/cults3d",
-    "name": "Cults3D",
+    "value": "builtin:providers/snapmaker",
+    "name": "Snapmaker Space",
     "group": "providers"
   },
   {
@@ -77,8 +72,18 @@
     "group": "providers"
   },
   {
-    "value": "builtin:providers/snapmaker",
-    "name": "Snapmaker Space",
+    "value": "builtin:providers/thangs",
+    "name": "Thangs",
+    "group": "providers"
+  },
+  {
+    "value": "builtin:providers/cults3d",
+    "name": "Cults3D",
+    "group": "providers"
+  },
+  {
+    "value": "builtin:providers/eufymake",
+    "name": "eufyMake",
     "group": "providers"
   },
   {

@@ -30,7 +30,7 @@ vi.mock("../src/services/notificationService", async (importOriginal) => {
 
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
-import { makerworldCaptchaCooloffActive, resetCaptchaCooloffForTest } from "../src/services/makerworldCaptcha";
+import { makerworldCaptchaCooloffActive, resetCaptchaCooloffForTest } from "../src/providers/makerworld/captcha";
 
 const app = createApp();
 const stamp = Date.now();

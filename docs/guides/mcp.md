@@ -51,6 +51,8 @@ These read your library, and are on for a new token:
 | `get_author`        | A designer, where to find them, and their models in your library.                                       |
 | `library_stats`     | Your totals, and your most viewed, most printed and newest models.                                      |
 | `get_import_status` | How an import that `import_model` left running is getting on.                                           |
+| `list_model_files`  | A model's files (plates, supporting files and sliced print), each with the id `get_model_file` takes.   |
+| `get_model_file`    | One of a model's files, base64-encoded up to 10 MB, e.g. for the assistant to slice or convert it.      |
 | `widget_guide`      | How to write a [custom dashboard widget](custom-widgets.md), read before saving one.                    |
 | `list_widgets`      | Your custom dashboard widgets, optionally with their code.                                              |
 | `list_icons`        | Thingport's own icons and the ones you uploaded, searched by name, e.g. for a widget's icon.            |
@@ -60,6 +62,7 @@ These change your library. `save_widget` and `upload_icon` are on for a new toke
 | Tool                | What it does                                                                                                 |
 | ------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `import_model`      | Imports a model from its page on a supported site, as **+ Add > Import** does, optionally into a collection. |
+| `upload_model`      | Adds a model made from your own files, as **+ Add > Upload files** does, with pictures and a collection.     |
 | `create_collection` | Creates a new, empty collection.                                                                             |
 | `add_to_collection` | Adds models from your library to one of your collections.                                                    |
 | `save_widget`       | Creates one of your own [dashboard widgets](custom-widgets.md), or replaces one it or you saved earlier.     |
@@ -70,6 +73,16 @@ turned off stays off, and a model already in your library isn't imported twice) 
 the admin logs the same way. It doesn't ask for a captcha, even when imports do in the app: like Thingport Grab, an
 assistant has nowhere to show one. Most imports finish within the call; a long one carries on in the background, and the
 assistant follows it with `get_import_status`.
+
+`upload_model` takes the files and pictures as base64 in the call, up to 24 MB in all, and makes one model of them: the
+3D files (STL, 3MF, STEP, OBJ) become its plates and anything else a supporting file; if none is a 3D file, every file
+becomes a plate. It shows up in your notifications
+and the admin logs as an upload from the app does.
+
+`get_model_file` hands a file over in the call up to 10 MB. `list_model_files` and `get_model_file` give each file an
+`api_path` on Thingport's own address and, with a public address set (below), a full `download_url`; either opens with
+the same token in the `Authorization: Bearer` header if the token may read **Model files** (see
+[API token](api-token.md)). A bigger file comes that way.
 
 Every tool sees only your own library, exactly as you do in Thingport. Looking a model up through MCP doesn't count as a
 view, so it doesn't change your Browsing History or your most viewed models.

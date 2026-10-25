@@ -22,7 +22,7 @@ vi.mock("node:dns/promises", () => ({
 import { createApp } from "../src/app";
 import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
-import { selectMakerworldProfiles } from "../src/services/makerworldCloudApi";
+import { selectMakerworldProfiles } from "../src/providers/makerworld/api";
 import { plateThumbPath } from "../src/services/printService";
 import { plateAssetHome } from "../src/services/modelAssets";
 import { createAiConnection } from "../src/services/aiConnectionService";

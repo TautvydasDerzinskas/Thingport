@@ -5,6 +5,7 @@ import type { Print, QueueImportResult } from "./api";
 import type { SeasonalIcon } from "./seasonalMark";
 import type { OfflineFeature } from "./storage";
 import type { Provider } from "./urls";
+import type { MANIFESTS, ProviderId } from "../providers/index.generated";
 
 export type ExtensionState = {
   configured: boolean;
@@ -30,9 +31,11 @@ export type Connection =
       byApproval?: boolean;
     };
 
-/** Providers whose signed-in user the extension tells the instance, for its Browse tab. MakerWorld
- *  needs none: the instance has its session cookie. */
-export type AccountProvider = "printables" | "thingiverse" | "myminifactory";
+/** Providers whose signed-in user the extension tells the instance, for its Browse tab: those whose lists it finds by
+ *  a username rather than a sign-in it holds. */
+export type AccountProvider = {
+  [K in ProviderId]: (typeof MANIFESTS)[K]["capabilities"]["ownLists"] extends "username" ? K : never;
+}[ProviderId];
 
 /** `wanted`: the private collections whose models the instance asked for. `likes`: whether to read
  *  every page of the user's likes this time. */
@@ -68,7 +71,7 @@ export type ViewedModel = {
   viewedAt: number;
 };
 
-/** See content/makerworld/downloadResolver.ts. */
+/** See providers/makerworld/downloadResolver.ts. */
 /** `design` is absent when the page data couldn't be trusted to be this model's. */
 export type ResolvedDownload = {
   downloadUrl: string;
@@ -85,7 +88,7 @@ export type ImportSinglePayload = {
   entries?: string[];
   collectionId?: string | null;
   resolved?: ResolvedDownload | null;
-  /** MakerOnline's files, signed by its own page (see background/makeronline.ts). */
+  /** MakerOnline's files, signed by its own page (see providers/makeronline/background.ts). */
   files?: MakeronlineSignedFile[] | null;
   title?: string | null;
 };
@@ -120,6 +123,8 @@ export type MakerworldJobError = { message: string; imported: number; total: num
 
 export type ApiCallPayload = { method: string; path: string; body?: unknown };
 
+/** Every message the background answers, providers' own among them (providers/background.ts): one type, so a page's
+ *  `request` checks its payload whichever module handles it. */
 export type BackgroundMessages = {
   GET_STATE: { payload: void; result: ExtensionState };
   SAVE_CONFIG: { payload: { instanceUrl: string; email: string; password: string }; result: null };
@@ -141,20 +146,8 @@ export type BackgroundMessages = {
   GET_PRINTABLES_TOKEN: { payload: void; result: string | null };
   /** Who the user is signed in as on a provider, read from its pages. */
   REPORT_PROVIDER_ACCOUNT: { payload: { provider: AccountProvider; value: string }; result: null };
-  /** On a MyMiniFactory page while signed in: send the session on, if it changed. */
-  SYNC_MYMINIFACTORY_SESSION: { payload: void; result: null };
-  /** On a Snapmaker Space page: keep the sign-in fresh and send it on. Says who's signed in there. */
-  SYNC_SNAPMAKER_SESSION: { payload: void; result: { userId: string | null } };
-  /** On a MakerOnline page: send the sign-in on, if it changed. Says who's signed in there. */
-  SYNC_MAKERONLINE_SESSION: { payload: void; result: { userId: string | null } };
-  /** On a Creality Cloud page: send the sign-in on, if it changed. Says who's signed in there. */
-  SYNC_CREALITYCLOUD_SESSION: { payload: void; result: { userId: string | null } };
-  /** On a NexPrint page: send the sign-in on, if it changed. */
-  SYNC_NEXPRINT_SESSION: { payload: void; result: void };
-  /** On a Thangs page: send the sign-in on, if it changed. */
-  SYNC_THANGS_SESSION: { payload: void; result: void };
-  /** On a Cults3D page: send the sign-in and Cloudflare clearance on, if they changed. */
-  SYNC_CULTS3D_SESSION: { payload: void; result: void };
+  /** On a provider's page: send its sign-in on, if it changed. Says who's signed in there, where its cookies tell. */
+  SYNC_PROVIDER_SESSION: { payload: { provider: Provider }; result: { userId: string | null } };
   /** On a MakerOnline model page: get its files signed there, then import it. */
   IMPORT_MAKERONLINE_MODEL: {
     payload: { url: string; scope: "url" | "designer" | "all"; collectionId: string | null; title: string | null };
@@ -229,6 +222,12 @@ type Handler<M extends AnyMessages, K extends keyof M> = (
   sender: chrome.runtime.MessageSender,
 ) => Promise<M[K]["result"]> | M[K]["result"];
 export type Handlers<M extends AnyMessages> = { [K in keyof M]: Handler<M, K> };
+
+/** The tab a message came from, for an action only a page can ask for. */
+export function senderTabId(sender: chrome.runtime.MessageSender): number {
+  if (!sender.tab?.id) throw new Error("This action is only available from a page");
+  return sender.tab.id;
+}
 
 /** Message types not in `handlers` are left for other listeners. */
 export function listen<M extends AnyMessages>(handlers: Partial<Handlers<M>>): void {

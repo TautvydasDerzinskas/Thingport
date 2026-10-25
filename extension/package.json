@@ -17,13 +17,13 @@
     "zip:firefox": "npm run build:firefox && tsx scripts/zip.ts firefox sources",
     "zip:edge": "npm run build:edge && tsx scripts/zip.ts edge",
     "screenshots": "npm run build:chrome && tsx scripts/screenshots.ts",
+    "test": "vitest run",
     "store-assets": "tsx scripts/store-assets.ts",
     "preview:seasonal": "tsx scripts/seasonal-preview.ts",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint .",
     "lint:firefox": "npm run build:firefox && web-ext lint --source-dir dist/firefox",
-    "verify": "npm run typecheck && npm run lint && npm run test:security && npm run check:edge-notes && npm run build",
-    "test:security": "tsx --test src/shared/providerCredentialRequest.test.ts src/background/api.security.test.ts",
+    "verify": "npm run typecheck && npm run lint && npm run test && npm run check:edge-notes && npm run build",
     "release:dry-run": "semantic-release --dry-run --no-ci",
     "check:edge-notes": "tsx scripts/publish-edge.ts --check-notes scripts/edge-certification-notes.txt"
   },
@@ -43,6 +43,7 @@
     "semantic-release-monorepo": "^8.0.2",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
+    "vitest": "4.1.12",
     "web-ext": "^10.8.0"
   },
   "allowScripts": {

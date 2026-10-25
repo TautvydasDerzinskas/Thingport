@@ -4,7 +4,11 @@ import sharp from "sharp";
 import { createApp } from "../src/app";
 import { importPrintFromUrl } from "../src/services/importService";
 import { prisma } from "../src/db";
-import { getSnapmakerConnection, setUserSnapmakerToken } from "../src/services/snapmakerSessionService";
+import {
+  getSnapmakerConnection,
+  getUserSnapmakerToken,
+  setUserSnapmakerToken,
+} from "../src/providers/snapmaker/session";
 import { plateThumbPath } from "../src/services/printService";
 import { plateAssetHome } from "../src/services/modelAssets";
 
@@ -238,5 +242,8 @@ describe("importPrintFromUrl -- Snapmaker Space", () => {
     global.fetch = mockSnapmaker({ downloadCode: 110002 });
     await expect(importPrintFromUrl(userId, MODEL_URL, { url: MODEL_URL, tags: [] })).rejects.toThrow(/Snapmaker/);
     expect(await getSnapmakerConnection(userId)).toBe("expired");
+    expect(await getUserSnapmakerToken(userId)).toBeNull();
+    await setUserSnapmakerToken(userId, token());
+    expect(await getUserSnapmakerToken(userId)).not.toBeNull();
   });
 });

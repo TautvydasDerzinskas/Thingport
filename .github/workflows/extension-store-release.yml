@@ -63,7 +63,7 @@ jobs:
           GIT_COMMITTER_NAME: github-actions[bot]
           GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
         run: npx semantic-release
-      # Not semantic-release's GitHub plugin: it marks releases "latest", a slot Bridge's links rely on.
+      # Not semantic-release's GitHub plugin: it marks releases "latest", a slot older Download pages link Bridge through.
       - name: GitHub release
         if: steps.release.outputs.version != ''
         env:
@@ -200,7 +200,7 @@ jobs:
             --approval-timeout 0
 
   # The builds for installing by hand, on the fixed "extension-latest" tag rather than GitHub's single
-  # repo-wide "latest" release, which Bridge's download links rely on.
+  # repo-wide "latest" release, which older Download pages link Bridge through.
   # Runs after publish-firefox, even if it failed: both sign with the same AMO key, and in parallel they hit
   # AMO's rate limit.
   publish-latest:
@@ -267,10 +267,16 @@ jobs:
           - **Edge**: [Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/kahfidpmojfocohinlmglnfoaimocbol).
             \`thingport-grab-edge.zip\` loads by hand (\`edge://extensions\` → **Developer mode** → **Load unpacked**).
           EOF
-          gh release delete extension-latest --yes --cleanup-tag || true
-          gh release create extension-latest \
-            dist/zips/thingport-grab-chrome.zip dist/zips/thingport-grab-edge.zip dist/signed/thingport-grab-firefox.xpi \
-            --target "$(git rev-parse HEAD)" \
-            --title "Thingport Grab (latest)" \
-            --notes-file "$RUNNER_TEMP/notes.md" \
-            --latest=false
+          files="dist/zips/thingport-grab-chrome.zip dist/zips/thingport-grab-edge.zip dist/signed/thingport-grab-firefox.xpi"
+          # Updated in place: deleting and recreating it would 404 the Download page's links in between.
+          if gh release view extension-latest >/dev/null 2>&1; then
+            gh release upload extension-latest $files --clobber
+            gh api -X PATCH "repos/${{ github.repository }}/git/refs/tags/extension-latest" -f sha="$(git rev-parse HEAD)" -F force=true
+            gh release edit extension-latest --notes-file "$RUNNER_TEMP/notes.md"
+          else
+            gh release create extension-latest $files \
+              --target "$(git rev-parse HEAD)" \
+              --title "Thingport Grab (latest)" \
+              --notes-file "$RUNNER_TEMP/notes.md" \
+              --latest=false
+          fi

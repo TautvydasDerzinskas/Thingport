@@ -105,3 +105,26 @@ func TestHandleProtocolRejectsUntrustedShapesBeforeDownload(t *testing.T) {
 		}
 	}
 }
+
+func TestFindWindowsCommandResolvesBambuStudioInstallerExe(t *testing.T) {
+	base := t.TempDir()
+	t.Setenv("ProgramFiles", base)
+	t.Setenv("ProgramFiles(x86)", "")
+	t.Setenv("LOCALAPPDATA", "")
+
+	// The official installer's layout: bambu-studio.exe beside BambuStudio.dll, no BambuStudio.exe.
+	dir := filepath.Join(base, "Bambu Studio")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	exePath := filepath.Join(dir, "bambu-studio.exe")
+	for _, name := range []string{"bambu-studio.exe", "BambuStudio.dll"} {
+		if err := os.WriteFile(filepath.Join(dir, name), nil, 0644); err != nil {
+			t.Fatalf("write %s: %v", name, err)
+		}
+	}
+
+	if got := findWindowsCommand("bambustudio", windowsCandidates()); got != exePath {
+		t.Fatalf("findWindowsCommand(\"bambustudio\", ...) = %q, expected %q", got, exePath)
+	}
+}

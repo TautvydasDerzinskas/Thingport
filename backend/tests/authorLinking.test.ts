@@ -9,9 +9,11 @@ vi.hoisted(() => {
 
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
+import { setUserMakerworldCookie } from "../src/providers/makerworld/session";
+import { setUserCults3dCredentials } from "../src/providers/cults3d/session";
 import { linkUnattributedPrints, upsertAuthorFromImport } from "../src/services/authorService";
 import { runAuthorLinking, type AuthorLinkingRun } from "../src/services/authorLinkingService";
-import { getThingiverseAccessToken, setThingiverseAccessToken } from "../src/services/settingsService";
+import { getThingiverseAccessToken, setThingiverseAccessToken } from "../src/providers/thingiverse/token";
 import type { ImportedAuthorInfo } from "../src/services/importResolvers";
 
 // Name-only models link to an author record, but only when the match is unambiguous.
@@ -227,7 +229,7 @@ describe("looking up authors no known author matches", () => {
 
   it("uses the model owner's MakerWorld login to read MakerWorld's API", async () => {
     const designId = String((stamp % 1_000_000_000) + 7);
-    await prisma.user.update({ where: { id: userId }, data: { makerworldCookie: "token=owner-bearer" } });
+    await setUserMakerworldCookie(userId, "token=owner-bearer");
     const print = await unattributedPrint("lookup-mw", "makerworld", `mw-nick-${stamp}`);
     await prisma.print.update({ where: { id: print.id }, data: { sourceExternalId: designId } });
     let authorization: string | null = null;
@@ -250,7 +252,7 @@ describe("looking up authors no known author matches", () => {
     await runAuthorLinking(newRun());
     expect(authorization).toBe("Bearer owner-bearer");
     expect(await authorOf(print.id)).toBe(`makerworld:${777000 + (stamp % 1000)}`);
-    await prisma.user.update({ where: { id: userId }, data: { makerworldCookie: null } });
+    await setUserMakerworldCookie(userId, null);
   });
 
   it("skips Thingiverse without an App Token, and says so", async () => {
@@ -272,10 +274,7 @@ describe("looking up authors no known author matches", () => {
         password: "password123",
       });
     const keyedUserId: string = keyed.body.user.id;
-    await prisma.user.update({
-      where: { id: keyedUserId },
-      data: { cults3dNick: `keyed${stamp}`, cults3dApiKey: "secret" },
-    });
+    await setUserCults3dCredentials(keyedUserId, { nick: `keyed${stamp}`, apiKey: "secret" });
     const creator = `c3d-creator-${stamp}`;
     const older = await prisma.print.create({
       data: {

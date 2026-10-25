@@ -68,6 +68,7 @@ import { matchSystemCollections } from "./systemCollections";
 import { matchPages, pagesFor, SEARCH_PAGES, type PageId, type SearchPage } from "./pages";
 import { addRecent, readRecents, RECENTS_SHOWN, type RecentEntry, type RecentKind } from "./recents";
 import { ListRowSkeletons } from "../../ListSkeleton";
+import { PROVIDER_IDS } from "../../../providers/index.generated";
 
 const MIN_QUERY_LENGTH = 2;
 const DEBOUNCE_MS = 250;
@@ -403,7 +404,7 @@ export default function GlobalSearch({
       id: "providers",
       bang: "providers",
       label: t("app:search.commands.providers"),
-      keywords: ["providers", "makerworld", "cookie"],
+      keywords: ["providers", ...PROVIDER_IDS, "cookie"],
       icon: <HubIcon />,
       run: () => onOpenConfiguration("providers"),
     },

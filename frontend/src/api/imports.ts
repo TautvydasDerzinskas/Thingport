@@ -1,5 +1,6 @@
 import { authHeaders } from "../utils/auth";
 import { apiBase, readErrorMessage, UnauthorizedError } from "./client";
+import { MANIFESTS, type ProviderId } from "../providers/index.generated";
 import type { Print } from "./prints";
 
 export type ImportInspectInfo = {
@@ -151,27 +152,25 @@ export const importsApi = {
     return res.json();
   },
 
-  listCollectionEntries: async (payload: ImportLinkPayload): Promise<ImportCollectionEntriesResult> => {
-    const res = await fetch(`${apiBase()}/import/collection/entries`, {
+  /** A provider's collection, likes or bookmarks, to pick models from. */
+  listEntries: async (provider: ProviderId, payload: ImportLinkPayload): Promise<ImportCollectionEntriesResult> => {
+    const res = await fetch(`${apiBase()}/import/${provider}/list/entries`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
     });
-    if (res.status === 401) {
-      throw new UnauthorizedError();
-    }
-    if (!res.ok) {
-      const message = await readErrorMessage(res, "Could not load collection");
-      throw new Error(message);
-    }
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Could not load this list"));
     return res.json();
   },
 
-  /** ("url" is a plain fromLink import.) */
-  fromMakerworldProfiles: async (
-    payload: ImportLinkPayload & { scope: Exclude<MakerworldProfileScope, "url"> },
-  ): Promise<{ job_id: string }> => {
-    const res = await fetch(`${apiBase()}/import/makerworld-profiles`, {
+  /** Returns immediately: a job ImportJobContext polls, or, for a provider whose files come through Thingport Grab,
+   *  the models queued for it, filed into a collection named after the list. */
+  startList: async (
+    provider: ProviderId,
+    payload: ImportLinkPayload & { model_ids: string[] },
+  ): Promise<{ job_id: string } | { queued: number; collection_id: string }> => {
+    const res = await fetch(`${apiBase()}/import/${provider}/list`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
@@ -181,39 +180,12 @@ export const importsApi = {
     return res.json();
   },
 
-  /** fromMakerworldProfiles for a Snapmaker Space model. */
-  fromSnapmakerProfiles: async (
+  /** Returns immediately; ImportJobContext polls the job. ("url" is a plain fromLink import.) */
+  startProfiles: async (
+    provider: ProviderId,
     payload: ImportLinkPayload & { scope: Exclude<MakerworldProfileScope, "url"> },
   ): Promise<{ job_id: string }> => {
-    const res = await fetch(`${apiBase()}/import/snapmaker-profiles`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Import failed"));
-    return res.json();
-  },
-
-  /** fromMakerworldProfiles for a Creality Cloud model. */
-  fromCrealitycloudProfiles: async (
-    payload: ImportLinkPayload & { scope: Exclude<MakerworldProfileScope, "url"> },
-  ): Promise<{ job_id: string }> => {
-    const res = await fetch(`${apiBase()}/import/crealitycloud-profiles`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Import failed"));
-    return res.json();
-  },
-
-  /** fromMakerworldProfiles for a NexPrint model. */
-  fromNexprintProfiles: async (
-    payload: ImportLinkPayload & { scope: Exclude<MakerworldProfileScope, "url"> },
-  ): Promise<{ job_id: string }> => {
-    const res = await fetch(`${apiBase()}/import/nexprint-profiles`, {
+    const res = await fetch(`${apiBase()}/import/${provider}/profiles`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
@@ -249,318 +221,18 @@ export const importsApi = {
     return res.json();
   },
 
-  /** Returns immediately; ImportJobContext polls the job. */
-  fromCollection: async (payload: ImportLinkPayload & { design_ids: string[] }): Promise<{ job_id: string }> => {
-    const res = await fetch(`${apiBase()}/import/collection`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 401) {
-      throw new UnauthorizedError();
-    }
-    if (!res.ok) {
-      const message = await readErrorMessage(res, "Collection import failed");
-      throw new Error(message);
-    }
-    return res.json();
-  },
-
-  listThingiverseLikesEntries: async (payload: ImportLinkPayload): Promise<ImportCollectionEntriesResult> => {
-    const res = await fetch(`${apiBase()}/import/thingiverse-likes/entries`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 401) {
-      throw new UnauthorizedError();
-    }
-    if (!res.ok) {
-      const message = await readErrorMessage(res, "Could not load this user's likes");
-      throw new Error(message);
-    }
-    return res.json();
-  },
-
-  /** Returns immediately; ImportJobContext polls the job. */
-  fromThingiverseLikes: async (payload: ImportLinkPayload & { thing_ids: string[] }): Promise<{ job_id: string }> => {
-    const res = await fetch(`${apiBase()}/import/thingiverse-likes`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 401) {
-      throw new UnauthorizedError();
-    }
-    if (!res.ok) {
-      const message = await readErrorMessage(res, "Thingiverse Likes import failed");
-      throw new Error(message);
-    }
-    return res.json();
-  },
-
-  listThingiverseCollectionEntries: async (payload: ImportLinkPayload): Promise<ImportCollectionEntriesResult> => {
-    const res = await fetch(`${apiBase()}/import/thingiverse-collection/entries`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 401) {
-      throw new UnauthorizedError();
-    }
-    if (!res.ok) {
-      const message = await readErrorMessage(res, "Could not load this collection");
-      throw new Error(message);
-    }
-    return res.json();
-  },
-
-  /** Returns immediately; ImportJobContext polls the job. */
-  fromThingiverseCollection: async (
-    payload: ImportLinkPayload & { thing_ids: string[] },
-  ): Promise<{ job_id: string }> => {
-    const res = await fetch(`${apiBase()}/import/thingiverse-collection`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 401) {
-      throw new UnauthorizedError();
-    }
-    if (!res.ok) {
-      const message = await readErrorMessage(res, "Thingiverse Collection import failed");
-      throw new Error(message);
-    }
-    return res.json();
-  },
-
-  listPrintablesCollectionEntries: async (payload: ImportLinkPayload): Promise<ImportCollectionEntriesResult> => {
-    const res = await fetch(`${apiBase()}/import/printables-collection/entries`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 401) {
-      throw new UnauthorizedError();
-    }
-    if (!res.ok) {
-      const message = await readErrorMessage(res, "Could not load this collection");
-      throw new Error(message);
-    }
-    return res.json();
-  },
-
-  /** Returns immediately; ImportJobContext polls the job. */
-  fromPrintablesCollection: async (
-    payload: ImportLinkPayload & { model_ids: string[] },
-  ): Promise<{ job_id: string }> => {
-    const res = await fetch(`${apiBase()}/import/printables-collection`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 401) {
-      throw new UnauthorizedError();
-    }
-    if (!res.ok) {
-      const message = await readErrorMessage(res, "Printables Collection import failed");
-      throw new Error(message);
-    }
-    return res.json();
-  },
-
-  listMyminifactoryCollectionEntries: async (payload: ImportLinkPayload): Promise<ImportCollectionEntriesResult> => {
-    const res = await fetch(`${apiBase()}/import/myminifactory-collection/entries`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 401) {
-      throw new UnauthorizedError();
-    }
-    if (!res.ok) {
-      const message = await readErrorMessage(res, "Could not load this collection");
-      throw new Error(message);
-    }
-    return res.json();
-  },
-
-  /** Returns immediately; ImportJobContext polls the job. */
-  fromMyminifactoryCollection: async (
-    payload: ImportLinkPayload & { object_ids: string[] },
-  ): Promise<{ job_id: string }> => {
-    const res = await fetch(`${apiBase()}/import/myminifactory-collection`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 401) {
-      throw new UnauthorizedError();
-    }
-    if (!res.ok) {
-      const message = await readErrorMessage(res, "MyMiniFactory collection import failed");
-      throw new Error(message);
-    }
-    return res.json();
-  },
-
-  /** The user's own Snapmaker Space likes or bookmarks, read with their sign-in. */
-  listSnapmakerListEntries: async (payload: ImportLinkPayload): Promise<ImportCollectionEntriesResult> => {
-    const res = await fetch(`${apiBase()}/import/snapmaker-list/entries`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Could not load this collection"));
-    return res.json();
-  },
-
-  /** Returns immediately; ImportJobContext polls the job. */
-  fromSnapmakerList: async (payload: ImportLinkPayload & { model_ids: string[] }): Promise<{ job_id: string }> => {
-    const res = await fetch(`${apiBase()}/import/snapmaker-list`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Snapmaker Space import failed"));
-    return res.json();
-  },
-
-  /** A Creality Cloud collection, or the user's own likes. */
-  listCrealitycloudListEntries: async (payload: ImportLinkPayload): Promise<ImportCollectionEntriesResult> => {
-    const res = await fetch(`${apiBase()}/import/crealitycloud-list/entries`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Could not load this collection"));
-    return res.json();
-  },
-
-  /** Returns immediately; ImportJobContext polls the job. */
-  fromCrealitycloudList: async (payload: ImportLinkPayload & { model_ids: string[] }): Promise<{ job_id: string }> => {
-    const res = await fetch(`${apiBase()}/import/crealitycloud-list`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Creality Cloud import failed"));
-    return res.json();
-  },
-
-  /** A NexPrint collection, private ones too. */
-  listNexprintCollectionEntries: async (payload: ImportLinkPayload): Promise<ImportCollectionEntriesResult> => {
-    const res = await fetch(`${apiBase()}/import/nexprint-collection/entries`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Could not load this collection"));
-    return res.json();
-  },
-
-  /** Returns immediately; ImportJobContext polls the job. */
-  fromNexprintCollection: async (payload: ImportLinkPayload & { model_ids: string[] }): Promise<{ job_id: string }> => {
-    const res = await fetch(`${apiBase()}/import/nexprint-collection`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "NexPrint import failed"));
-    return res.json();
-  },
-
-  /** The user's Thangs likes, or a collection, read with their Thangs sign-in. */
-  listThangsListEntries: async (payload: ImportLinkPayload): Promise<ImportCollectionEntriesResult> => {
-    const res = await fetch(`${apiBase()}/import/thangs-list/entries`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Could not load this list"));
-    return res.json();
-  },
-
-  /** Returns immediately; ImportJobContext polls the job. */
-  fromThangsList: async (payload: ImportLinkPayload & { model_ids: string[] }): Promise<{ job_id: string }> => {
-    const res = await fetch(`${apiBase()}/import/thangs-list`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Thangs import failed"));
-    return res.json();
-  },
-
-  /** A Cults3D user's likes, or one of the user's printlists, read with their API key. */
-  listCults3dListEntries: async (payload: ImportLinkPayload): Promise<ImportCollectionEntriesResult> => {
-    const res = await fetch(`${apiBase()}/import/cults3d-list/entries`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Could not load this list"));
-    return res.json();
-  },
-
-  /** Returns immediately; ImportJobContext polls the job. */
-  fromCults3dList: async (payload: ImportLinkPayload & { model_ids: string[] }): Promise<{ job_id: string }> => {
-    const res = await fetch(`${apiBase()}/import/cults3d-list`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Cults3D import failed"));
-    return res.json();
-  },
-
-  /** MakerOnline gives its files only to its own pages: the link waits for Thingport Grab's next visit there. */
-  queueMakeronline: async (
+  /** A provider that gives its files only to its own pages: the link waits for Thingport Grab's next visit there. */
+  queueForGrab: async (
+    provider: ProviderId,
     payload: ImportLinkPayload & { scope: MakerworldProfileScope },
   ): Promise<{ queued: number }> => {
-    const res = await fetch(`${apiBase()}/import/makeronline/queue`, {
+    const res = await fetch(`${apiBase()}/import/${provider}/queue`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
     });
     if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "MakerOnline import failed"));
-    return res.json();
-  },
-
-  /** A MakerOnline collection, or the user's own likes. */
-  listMakeronlineListEntries: async (payload: ImportLinkPayload): Promise<ImportCollectionEntriesResult> => {
-    const res = await fetch(`${apiBase()}/import/makeronline-list/entries`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Could not load this collection"));
-    return res.json();
-  },
-
-  /** The picked models wait for Thingport Grab, filed into a collection named after the list. */
-  queueMakeronlineList: async (
-    payload: ImportLinkPayload & { model_ids: string[] },
-  ): Promise<{ queued: number; collection_id: string }> => {
-    const res = await fetch(`${apiBase()}/import/makeronline-list`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "MakerOnline import failed"));
+    if (!res.ok) throw new Error(await readErrorMessage(res, `${MANIFESTS[provider].name} import failed`));
     return res.json();
   },
 

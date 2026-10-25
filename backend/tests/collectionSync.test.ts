@@ -18,11 +18,12 @@ vi.mock("node:dns/promises", () => ({
 
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
+import { setUserMakerworldCookie } from "../src/providers/makerworld/session";
 import { releaseSync, reserveSync, runManualSync, syncCollection } from "../src/services/collectionSyncRunner";
 import { SYNC_JOB_INTERRUPTED } from "../src/services/importJobRunner";
 import { isSyncDue, markSchedulerStarted, nextSyncAt } from "../src/services/collectionSyncSchedule";
-import { setThingiverseAccessToken } from "../src/services/settingsService";
-import { checkPrintablesCollection } from "../src/services/printablesApi";
+import { setThingiverseAccessToken } from "../src/providers/thingiverse/token";
+import { checkPrintablesCollection } from "../src/providers/printables/api";
 import { findOrCreateCollectionByName } from "../src/services/collectionService";
 
 const app = createApp();
@@ -145,7 +146,7 @@ describe("synced collections", () => {
       .send({ displayName: "Sync Test", email, password: "password123" });
     token = res.body.token;
     userId = res.body.user.id;
-    await prisma.user.update({ where: { id: userId }, data: { makerworldCookie: "token=test-bearer" } });
+    await setUserMakerworldCookie(userId, "token=test-bearer");
     mockFetch();
   });
 
@@ -788,7 +789,7 @@ describe("synced collections", () => {
     expect(await syncCollection(sync.id)).not.toBe("disconnected");
     const settings = await request(app).get("/api/settings/makerworld").set(auth());
     expect(settings.body).toEqual({ configured: true, expired: false });
-    await prisma.user.update({ where: { id: userId }, data: { makerworldCookie: "token=test-bearer" } });
+    await setUserMakerworldCookie(userId, "token=test-bearer");
   });
 
   it("hands models back to the sync when the sign-in is turned down mid-import, for after reconnecting", async () => {
@@ -827,7 +828,7 @@ describe("synced collections", () => {
       }
       expect((await syncOf(collectionId)).knownIds).toEqual(expect.arrayContaining([first, second, third]));
     } finally {
-      await prisma.user.update({ where: { id: userId }, data: { makerworldCookie: "token=test-bearer" } });
+      await setUserMakerworldCookie(userId, "token=test-bearer");
     }
   });
 

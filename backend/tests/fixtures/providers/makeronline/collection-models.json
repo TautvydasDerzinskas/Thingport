@@ -1,0 +1,30 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "data": [
+      {
+        "mold_id": 281521,
+        "title": "Ergonomic Super Scraper",
+        "main_image": "https://cdn-acop.makeronline.com/asop/main.png",
+        "status": 1
+      },
+      {
+        "mold_id": 329173,
+        "title": "Bone Wagon",
+        "main_image": "https://cdn-acop.makeronline.com/asop/bone.png",
+        "status": 1
+      },
+      {
+        "mold_id": 1,
+        "title": "Taken down",
+        "status": 0
+      }
+    ],
+    "page": {
+      "current_page": 1,
+      "last_page": 1,
+      "total": 3
+    }
+  }
+}

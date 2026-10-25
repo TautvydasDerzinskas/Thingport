@@ -6,22 +6,9 @@ import BlockIcon from "@mui/icons-material/Block";
 import CheckIcon from "@mui/icons-material/Check";
 import type { CollectionSync } from "../api/collections";
 import { importProviderInfo } from "../constants/importProviders";
-import { ProviderLogo, type ProviderId } from "./Layout/ConfigurationDialog/providerLogos";
-import { useDisabledProviders } from "../hooks/useDisabledProviders";
+import { hasProviderLogo, ProviderLogo, type ProviderId } from "./Layout/ConfigurationDialog/providerLogos";
+import { useDisabledProviders } from "../hooks/useProviders";
 import type { ImportProvider } from "../api/settings";
-
-const LOGO_PROVIDERS = new Set<string>([
-  "makerworld",
-  "thingiverse",
-  "printables",
-  "myminifactory",
-  "snapmaker",
-  "makeronline",
-  "crealitycloud",
-  "nexprint",
-  "thangs",
-  "cults3d",
-]);
 
 type Props = {
   sync: CollectionSync;
@@ -55,7 +42,7 @@ export default function CollectionSyncBadge({ sync, size = 30, onClick }: Props)
   } as const;
   const content = (
     <>
-      {LOGO_PROVIDERS.has(sync.provider) && (
+      {hasProviderLogo(sync.provider) && (
         <Box sx={{ lineHeight: 0, opacity: off ? 0.45 : 1 }}>
           <ProviderLogo id={sync.provider as ProviderId} size={Math.round(size * 0.55)} />
         </Box>

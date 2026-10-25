@@ -16,7 +16,7 @@ vi.mock("node:dns/promises", () => ({
 
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
-import { getThingiverseAccessToken, setThingiverseAccessToken } from "../src/services/settingsService";
+import { getThingiverseAccessToken, setThingiverseAccessToken } from "../src/providers/thingiverse/token";
 
 const app = createApp();
 const stamp = Date.now();
@@ -201,16 +201,17 @@ describe("filling a model's missing details from its source", () => {
     expect(updated.authorId).not.toBeNull();
   });
 
-  it("fills empty tags", async () => {
+  it("fills empty tags, in the casing an import gives them", async () => {
     const designId = String((stamp % 1_000_000_000) + 1);
     setDesign(designId, { tags: ["phoenix", "articulated"] });
     const print = await importMakerworldModel(designId);
     await prisma.print.update({ where: { id: print.id }, data: { tags: [] } });
+    setDesign(designId, { tags: ["phoenix", "ARTICULATED", "Phoenix"] });
 
     const res = await fillGaps(print.id);
     expect(res.body.filled).toContain("tags");
     const updated = await prisma.print.findUniqueOrThrow({ where: { id: print.id } });
-    expect(updated.tags.toSorted()).toEqual(["articulated", "phoenix"]);
+    expect(updated.tags.toSorted()).toEqual(["Articulated", "Phoenix"]);
   });
 
   it("stops offering gaps the source can't fill, until a new gap appears", async () => {

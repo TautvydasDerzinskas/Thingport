@@ -4,7 +4,7 @@ import {
   makerworldCaptchaCooloffActive,
   MakerworldDownloadLimitError,
   resolveMakerworldViaCloudApi,
-} from "../src/services/makerworldCloudApi";
+} from "../src/providers/makerworld/api";
 
 function jsonResponse(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });

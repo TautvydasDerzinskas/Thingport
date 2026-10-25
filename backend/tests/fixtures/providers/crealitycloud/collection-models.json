@@ -1,0 +1,25 @@
+{
+  "code": 0,
+  "msg": "ok",
+  "reqId": "contract-fixture",
+  "result": {
+    "count": 3,
+    "list": [
+      {
+        "id": "6ac6f004729f5ba4b3574093",
+        "urlAlias": "snap-clip-fidget",
+        "groupName": "Snap-Clip Fidget",
+        "covers": [{ "url": "https://pic2-cdn.creality.com/crealityCloud/common/cover.webp" }],
+        "isShared": true
+      },
+      {
+        "id": "6ad5fedd23030f2e2c088000",
+        "urlAlias": "ghost-ship-sliced",
+        "groupName": "Ghost Ship",
+        "covers": [{ "url": "https://pic2-cdn.creality.com/pic/ghost.png" }],
+        "isShared": true
+      },
+      { "id": "6ad5fedd23030f2e2c088001", "urlAlias": "unshared", "groupName": "Unshared", "isShared": false }
+    ]
+  }
+}

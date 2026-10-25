@@ -79,6 +79,12 @@ const download = keyframes`
   70% { transform: translateY(3px); opacity: 1; }
   100% { transform: translateY(5px); opacity: 0; }
 `;
+const upload = keyframes`
+  0% { transform: translateY(5px); opacity: 0; }
+  30% { opacity: 1; }
+  70% { transform: translateY(-3px); opacity: 1; }
+  100% { transform: translateY(-5px); opacity: 0; }
+`;
 const fileIn = keyframes`
   0% { transform: translateY(0); opacity: 1; }
   65% { transform: translateY(13px); opacity: 1; }
@@ -106,6 +112,35 @@ function Folder({ accent, children }: { accent: Accent; children?: React.ReactNo
       {children}
       <Box sx={{ ...at(8, 21, 24, 10), bgcolor: `${accent}.dark`, borderRadius: "0 0 2px 2px" }} />
     </>
+  );
+}
+
+/** A file: a sheet with its corner folded. `animation` makes it come and go. */
+function Sheet({ x, y, animation, faded = false }: { x: number; y: number; animation?: string; faded?: boolean }) {
+  return (
+    <Box sx={{ ...at(x, y, 18, 24), animation, ...(faded && { opacity: 0.5, transform: "scale(0.8)" }) }}>
+      <Box
+        sx={{
+          ...at(0, 0, 18, 24),
+          bgcolor: "background.paper",
+          border: 1.5,
+          borderColor: "text.disabled",
+          borderRadius: "2px",
+          clipPath: "polygon(0 0, 65% 0, 100% 27%, 100% 100%, 0 100%)",
+        }}
+      />
+      <Box sx={{ ...at(11, 0, 7, 7), bgcolor: "text.disabled", clipPath: "polygon(0 0, 100% 100%, 0 100%)" }} />
+    </Box>
+  );
+}
+
+/** An arrow, pointing down or up. */
+function Arrow({ up = false }: { up?: boolean }) {
+  return (
+    <Box sx={{ ...at(0, 0, 12, 12), transform: up ? "rotate(180deg)" : undefined }}>
+      <Box sx={{ ...at(4.5, 0, 3, 6), bgcolor: "primary.main" }} />
+      <Box sx={{ ...at(1, 5, 10, 6), bgcolor: "primary.main", clipPath: "polygon(0 0, 100% 0, 50% 100%)" }} />
+    </Box>
   );
 }
 
@@ -277,6 +312,29 @@ const pictures: Record<string, () => React.ReactNode> = {
       />
     </>
   ),
+  // A model's own files: listing them, fetching one, and adding a model made of them.
+  list_model_files: () => (
+    <>
+      <Sheet x={7} y={6} faded animation={run(sweep, 2.4, "0.6s")} />
+      <Sheet x={15} y={10} animation={run(sweep, 2.4)} />
+    </>
+  ),
+  get_model_file: () => (
+    <>
+      <Sheet x={11} y={7} />
+      <Box sx={{ ...at(14, 14, 12, 12), animation: run(download, 1.6) }}>
+        <Arrow />
+      </Box>
+    </>
+  ),
+  upload_model: () => (
+    <>
+      <Sheet x={11} y={7} />
+      <Box sx={{ ...at(14, 14, 12, 12), animation: run(upload, 1.6) }}>
+        <Arrow up />
+      </Box>
+    </>
+  ),
   create_collection: () => (
     <Folder accent="warning">
       <Box sx={{ ...at(14, 18, 12, 12), zIndex: 1, animation: run(pulse, 1.6) }}>
@@ -385,25 +443,6 @@ const pictures: Record<string, () => React.ReactNode> = {
       />
     </Box>
   ),
-  files: () => (
-    <>
-      <Box
-        sx={{
-          ...at(11, 7, 18, 24),
-          bgcolor: "background.paper",
-          border: 1.5,
-          borderColor: "text.disabled",
-          borderRadius: "2px",
-          clipPath: "polygon(0 0, 65% 0, 100% 27%, 100% 100%, 0 100%)",
-        }}
-      />
-      <Box sx={{ ...at(22, 7, 7, 7), bgcolor: "text.disabled", clipPath: "polygon(0 0, 100% 100%, 0 100%)" }} />
-      <Box sx={{ ...at(14, 14, 12, 12), animation: run(download, 1.6) }}>
-        <Box sx={{ ...at(4.5, 0, 3, 6), bgcolor: "primary.main" }} />
-        <Box sx={{ ...at(1, 5, 10, 6), bgcolor: "primary.main", clipPath: "polygon(0 0, 100% 0, 50% 100%)" }} />
-      </Box>
-    </>
-  ),
   other: () => (
     <>
       {[0, 1, 2].map((i) => (
@@ -431,6 +470,7 @@ const aliases: Record<string, string> = {
   authors: "get_author",
   dashboard: "library_stats",
   imports: "get_import_status",
+  files: "get_model_file",
 };
 
 /** A plug, for a permission the frontend doesn't have a picture of yet. */

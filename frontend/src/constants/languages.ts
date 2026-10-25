@@ -1,5 +1,10 @@
 export type Locale = Record<string, Record<string, unknown>>;
 
+// Namespaces by area: "common" (generic words), "app" (shell chrome, modals), "library" (viewer
+// overlays and previews), "models" (Models page, model detail, author page), "providers" (each provider's own, by
+// its id). A locale may be partial: missing keys fall back to English.
+export const NAMESPACES = ["common", "app", "library", "models", "providers"];
+
 /** Every `i18n/locales/<code>.json`, keyed by code: dropping in a file adds the language. */
 export const LOCALES: Record<string, Locale> = Object.fromEntries(
   Object.entries(import.meta.glob<Locale>("../i18n/locales/*.json", { eager: true, import: "default" })).map(

@@ -1,0 +1,61 @@
+{
+  "id": "493183",
+  "name": "Thangs collection",
+  "private": true,
+  "owner": {
+    "username": "tautvydasuk"
+  },
+  "totalCount": 4,
+  "items": [
+    {
+      "id": "1060509",
+      "name": "Crystal Dragon",
+      "visibility": "public",
+      "attachments": [
+        {
+          "attachmentType": "image",
+          "imageUrl": "https://storage.googleapis.com/p/1060509.png"
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "name": "Model 2",
+      "visibility": "print-only",
+      "attachments": [
+        {
+          "attachmentType": "image",
+          "imageUrl": "https://storage.googleapis.com/p/2.png"
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "name": "Model 3",
+      "visibility": "market-paid",
+      "attachments": [
+        {
+          "attachmentType": "image",
+          "imageUrl": "https://storage.googleapis.com/p/3.png"
+        }
+      ],
+      "marketplaceInfo": {
+        "priceInUSD": 4
+      }
+    },
+    {
+      "id": "1582292",
+      "name": "Model 1582292",
+      "visibility": "market-paid",
+      "attachments": [
+        {
+          "attachmentType": "image",
+          "imageUrl": "https://storage.googleapis.com/p/1582292.png"
+        }
+      ],
+      "marketplaceInfo": {
+        "priceInUSD": 2
+      }
+    }
+  ]
+}

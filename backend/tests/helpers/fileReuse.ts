@@ -1,5 +1,7 @@
+import { execFileSync } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import type { Express } from "express";
 import request from "supertest";
@@ -8,11 +10,32 @@ import { createPrint } from "../../src/services/printCreation";
 import { saveFileFromTemp } from "../../src/services/printFileService";
 import { MIN_SHARE_BYTES } from "../../src/services/fileReuse";
 import { prisma } from "../../src/db";
+import { STORAGE } from "../../src/config";
 
 // The helpers the file reuse suites share. Each suite keeps its own temp folder and passes it in.
 
 export const nonce = () => crypto.randomBytes(12).toString("hex");
 export const sha = (bytes: Buffer | string) => crypto.createHash("sha256").update(bytes).digest("hex");
+
+/** The file a clone or copy from an open handle (handlePath) reads, by its name now: the /proc link on Linux; macOS
+ *  has no such link, so lsof tells. macOS reports the real path, under /private, so it's named as the suites name it. */
+export function openedPath(src: unknown): string {
+  const fdPath = String(src);
+  if (process.platform === "linux") return fs.readlinkSync(fdPath);
+  const fd = fdPath.match(/^\/dev\/fd\/(\d+)$/)?.[1];
+  if (!fd) throw new Error(`Not an open file's path: ${fdPath}`);
+  const listing = execFileSync("lsof", ["-a", "-p", String(process.pid), "-d", fd, "-Fn"], { encoding: "utf8" });
+  const real = listing
+    .split("\n")
+    .find((line) => line.startsWith("n"))
+    ?.slice(1);
+  if (!real) throw new Error(`lsof doesn't know ${fdPath}`);
+  for (const root of [STORAGE, os.tmpdir()]) {
+    const realRoot = fs.realpathSync(root);
+    if (real.startsWith(realRoot + path.sep)) return root + real.slice(realRoot.length);
+  }
+  return real;
+}
 
 /** Bytes no other test has stored, past the sharing minimum, so only the copies made here can match them. */
 export function uniqueBytes(): Buffer {

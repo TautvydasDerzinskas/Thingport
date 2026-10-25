@@ -1,0 +1,6 @@
+{
+  "code": 0,
+  "msg": "ok",
+  "reqId": "contract-fixture",
+  "result": { "downloadUrl": "https://internal-creality-usa.oss-us-east-1.aliyuncs.com/profiles/{id}.3mf?Signature=s" }
+}

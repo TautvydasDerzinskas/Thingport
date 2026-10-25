@@ -25,12 +25,13 @@ import {
   providerAccentText,
   providerDocsUrl,
 } from "../../constants/providerFacts";
-import { useDisabledProviders } from "../../hooks/useDisabledProviders";
+import { useDisabledProviders } from "../../hooks/useProviders";
 import type { ImportProvider } from "../../api/settings";
 import Segmented from "../controls/Segmented";
 import HelpTip from "../HelpTip";
 import { ProviderLogo, type ProviderId } from "../Layout/ConfigurationDialog/providerLogos";
 import ProviderFlowAnimation from "./ProviderFlowAnimation";
+import { PROVIDER_IDS } from "../../providers/index.generated";
 
 type View = "about" | "compare";
 
@@ -55,7 +56,7 @@ type Props = {
 export default function ProviderAboutDialog({ provider, onClose }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const theme = useTheme();
-  const [id, setId] = React.useState<ProviderId>(provider ?? "makerworld");
+  const [id, setId] = React.useState<ProviderId>(provider ?? PROVIDER_IDS[0]);
   const [view, setView] = React.useState<View>("about");
 
   // Kept while closing, so the dialog doesn't change during the fade.
@@ -206,7 +207,7 @@ function NeedPill({ need, accent }: { need: Need; accent: string }) {
 function AboutView({ id, accent, onClose }: { id: ProviderId; accent: string; onClose: () => void }) {
   const { t } = useTranslation("app");
   const facts = PROVIDER_FACTS[id];
-  const key = `providerAbout.providers.${id}`;
+  const key = `providers:${id}.about`;
   const setup = t(`${key}.setup`, { returnObjects: true }) as string[];
   const flareNote = t(`${key}.flaresolverr`, { defaultValue: t(`providerAbout.flareNote.${facts.flaresolverr}`) });
   const rows: { label: string; help?: string; pill: React.ReactNode; note: string }[] = [

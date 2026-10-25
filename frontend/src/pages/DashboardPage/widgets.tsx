@@ -40,6 +40,7 @@ import TrendingCard from "./TrendingCard";
 import CustomWidgetCard, { WidgetIcon } from "./CustomWidgetCard";
 import type { DashboardSkeleton } from "./DashboardCardSkeleton";
 import type { PanelSketchKind } from "./PanelSketch";
+import { TRENDING_PROVIDER_IDS } from "../../providers/index.generated";
 
 export type WidgetSize = { w: number; h: number; minW: number; minH: number };
 
@@ -538,7 +539,7 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
         kind: "pick",
         labelKey: "dashboard.settings.providers",
         options: TRENDING_PROVIDERS,
-        default: ["printables", "makerworld", "thangs"],
+        default: TRENDING_PROVIDER_IDS.slice(0, 3),
       },
       LIST_SETTINGS[0],
       LIST_SETTINGS[1],

@@ -21,6 +21,7 @@ import printFilesRoutes from "./routes/printFiles";
 import tagsRoutes from "./routes/tags";
 import settingsRoutes from "./routes/settings";
 import importsRoutes from "./routes/imports";
+import providerRoutes from "./providers/routes";
 import collectionsRoutes from "./routes/collections";
 import collectionSyncsRoutes from "./routes/collectionSyncs";
 import providerCollectionsRoutes from "./routes/providerCollections";
@@ -49,7 +50,9 @@ export function createApp(): Express {
 
   app.use(pathToken);
   // A widget's script, HTML and fetch body are larger than the default 100 kB; their own validation sets the limits.
-  app.use(["/api/widgets", "/api/mcp"], express.json({ limit: "8mb" }));
+  app.use("/api/widgets", express.json({ limit: "8mb" }));
+  // upload_model's files come as base64 in the call: MCP_UPLOAD_MAX_BYTES, a third bigger, and some room.
+  app.use("/api/mcp", express.json({ limit: "40mb" }));
   app.use(express.json());
   app.use("/api", trackClients);
 
@@ -73,6 +76,7 @@ export function createApp(): Express {
   app.use("/api", categoriesRoutes);
   app.use("/api", printFilesRoutes);
   app.use("/api", tagsRoutes);
+  app.use("/api", providerRoutes);
   app.use("/api", importsRoutes);
   app.use("/api", collectionsRoutes);
   app.use("/api", collectionSyncsRoutes);

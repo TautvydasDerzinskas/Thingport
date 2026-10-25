@@ -1,0 +1,106 @@
+{
+  "code": 0,
+  "msg": "success!",
+  "data": {
+    "model": {
+      "model_id": "9255b7378ac611efa154f2247282c358",
+      "user_id": "0000000000000000000000000000000000abc000",
+      "source": 1,
+      "files_key": null,
+      "zipfile_key": "",
+      "tags": ["Halloween", "Light", "Lampshade"],
+      "type": 9000,
+      "name": "Halloween ghost night light/lampshade",
+      "covers": [
+        "https://d3c3n9aoannddt.cloudfront.net/makeitreal/makeitreal/ugc_pic/default/0000000000000000000000000000000000abc000/YYy1h7umjwZv7Qyq/%E4%B8%87%E5%9C%A3%E8%8A%82.png?X-Amz-Signature=test",
+        "https://d3c3n9aoannddt.cloudfront.net/makeitreal/makeitreal/ugc_pic/default/0000000000000000000000000000000000abc000/ATKhyl9s05zBXq0Q/%E4%B8%87%E5%9C%A3%E8%8A%823.png?X-Amz-Signature=test"
+      ],
+      "adult_flag": 2,
+      "license": 6,
+      "description": "Halloween-style night light lampshade. You can place a sensing light inside the model.",
+      "downloads": 929,
+      "collection": 0,
+      "likes": 540,
+      "prints": 0,
+      "update_time": 1728977093,
+      "user": {
+        "user_id": "0000000000000000000000000000000000abc000",
+        "nickname": "Maker 1",
+        "avatar": "",
+        "is_following": false,
+        "is_followed_by": false
+      },
+      "like_status": 0,
+      "collection_status": 0,
+      "model_file": [
+        {
+          "file_id": 9781,
+          "model_id": "9255b7378ac611efa154f2247282c358",
+          "file_name": "ghost.stl",
+          "cover": "https://d3c3n9aoannddt.cloudfront.net/makeitreal/makeitreal/ugc_pic/default/0000000000000000000000000000000000abc000/GxWi2FNFB4bhmnYS/ghost.png?X-Amz-Signature=test",
+          "file_type": 1,
+          "download_link": "https://d3c3n9aoannddt.cloudfront.net/makeitreal/makeitreal/ugc_model/default/0000000000000000000000000000000000abc000/Tm6XMOrejppCrums/ghost.stl?X-Amz-Signature=test",
+          "update_time": 1728977093,
+          "file_size": 28523684,
+          "file_key": "/makeitreal/makeitreal/ugc_model/default/0000000000000000000000000000000000abc000/Tm6XMOrejppCrums/ghost.stl",
+          "cover_key": "/makeitreal/makeitreal/ugc_pic/default/0000000000000000000000000000000000abc000/GxWi2FNFB4bhmnYS/ghost.png"
+        },
+        {
+          "file_id": 9782,
+          "model_id": "9255b7378ac611efa154f2247282c358",
+          "file_name": "Halloween ghost night light/lampshade.zip",
+          "cover": "",
+          "file_type": 2,
+          "download_link": "",
+          "update_time": 1728977094,
+          "file_size": 0,
+          "file_key": "",
+          "cover_key": ""
+        }
+      ],
+      "model_print_info": {
+        "model_id": "",
+        "printer": "",
+        "multi_colors": 0,
+        "print_time": 0,
+        "material": "",
+        "nozzle": "",
+        "file_3mf_key": "",
+        "print_name": "",
+        "print_size": 0,
+        "print_weight": 0,
+        "print_layer_height": 0,
+        "print_nozzle_height": 0,
+        "print_infill": 0,
+        "walls_num": 0,
+        "update_time": 0,
+        "info_id": 0,
+        "key_prefix": "",
+        "cover_key": "",
+        "cover_url": ""
+      },
+      "model_print_infos": null,
+      "origin_model_id": "",
+      "origin_model_url": "",
+      "origin_model_description": "",
+      "origin_model_title": "",
+      "origin_model_pic": "",
+      "hot_value": 1261,
+      "views": 6203,
+      "sub_type": 9010,
+      "cover_keys": [
+        "/makeitreal/makeitreal/ugc_pic/default/0000000000000000000000000000000000abc000/YYy1h7umjwZv7Qyq/万圣节.png",
+        "/makeitreal/makeitreal/ugc_pic/default/0000000000000000000000000000000000abc000/ATKhyl9s05zBXq0Q/万圣节3.png"
+      ],
+      "private_flag": 2,
+      "operation_tag": 0,
+      "operation_weight": 0,
+      "status": 1,
+      "reason": 0,
+      "reason_desc": "",
+      "cover_tiny_key": "/makeitreal/makeitreal/ugc_pic/default/0000000000000000000000000000000000abc000/q9L2MTJBkUsn11Nu/万圣节.png",
+      "cover_tiny_url": "https://d3c3n9aoannddt.cloudfront.net/makeitreal/makeitreal/ugc_pic/default/0000000000000000000000000000000000abc000/q9L2MTJBkUsn11Nu/%E4%B8%87%E5%9C%A3%E8%8A%82.png?X-Amz-Signature=test",
+      "makes": 0
+    }
+  }
+}

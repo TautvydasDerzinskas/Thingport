@@ -1,0 +1,203 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`browser manifests > chrome manifest 1`] = `
+{
+  "action": {
+    "default_icon": {
+      "128": "icons/thingport-icon-dark-128.png",
+      "16": "icons/thingport-icon-dark-16.png",
+      "32": "icons/thingport-icon-dark-32.png",
+      "48": "icons/thingport-icon-dark-48.png",
+    },
+    "default_popup": "popup.html",
+  },
+  "background": {
+    "service_worker": "background.js",
+  },
+  "content_scripts": [
+    {
+      "js": [
+        "content.js",
+      ],
+      "matches": [
+        "*://*.makerworld.com/*",
+        "*://*.printables.com/*",
+        "*://*.thingiverse.com/*",
+      ],
+      "run_at": "document_idle",
+    },
+    {
+      "js": [
+        "thingiverse.js",
+      ],
+      "matches": [
+        "*://*.thingiverse.com/*",
+      ],
+      "run_at": "document_start",
+    },
+  ],
+  "description": "Import MakerWorld, Thingiverse, Printables and MyMiniFactory models into Thingport, and convert MakerWorld 3MFs for other slicers.",
+  "host_permissions": [
+    "*://*.makerworld.com/*",
+    "*://*.printables.com/*",
+  ],
+  "icons": {
+    "128": "icons/thingport-icon-color-128.png",
+    "16": "icons/thingport-icon-color-16.png",
+    "32": "icons/thingport-icon-color-32.png",
+    "48": "icons/thingport-icon-color-48.png",
+  },
+  "manifest_version": 3,
+  "name": "Thingport Grab",
+  "optional_host_permissions": [
+    "*://*/*",
+  ],
+  "permissions": [
+    "storage",
+    "cookies",
+    "downloads",
+    "scripting",
+    "alarms",
+  ],
+  "version": "1.7.0",
+}
+`;
+
+exports[`browser manifests > edge manifest 1`] = `
+{
+  "action": {
+    "default_icon": {
+      "128": "icons/thingport-icon-dark-128.png",
+      "16": "icons/thingport-icon-dark-16.png",
+      "32": "icons/thingport-icon-dark-32.png",
+      "48": "icons/thingport-icon-dark-48.png",
+    },
+    "default_popup": "popup.html",
+  },
+  "background": {
+    "service_worker": "background.js",
+  },
+  "content_scripts": [
+    {
+      "js": [
+        "content.js",
+      ],
+      "matches": [
+        "*://*.makerworld.com/*",
+        "*://*.printables.com/*",
+        "*://*.thingiverse.com/*",
+      ],
+      "run_at": "document_idle",
+    },
+    {
+      "js": [
+        "thingiverse.js",
+      ],
+      "matches": [
+        "*://*.thingiverse.com/*",
+      ],
+      "run_at": "document_start",
+    },
+  ],
+  "description": "Import MakerWorld, Thingiverse, Printables and MyMiniFactory models into Thingport, and convert MakerWorld 3MFs for other slicers.",
+  "host_permissions": [
+    "*://*.makerworld.com/*",
+    "*://*.printables.com/*",
+  ],
+  "icons": {
+    "128": "icons/thingport-icon-color-128.png",
+    "16": "icons/thingport-icon-color-16.png",
+    "32": "icons/thingport-icon-color-32.png",
+    "48": "icons/thingport-icon-color-48.png",
+  },
+  "manifest_version": 3,
+  "name": "Thingport Grab",
+  "optional_host_permissions": [
+    "*://*/*",
+  ],
+  "permissions": [
+    "storage",
+    "cookies",
+    "downloads",
+    "scripting",
+    "alarms",
+  ],
+  "version": "1.7.0",
+}
+`;
+
+exports[`browser manifests > firefox manifest 1`] = `
+{
+  "action": {
+    "default_icon": {
+      "128": "icons/thingport-icon-dark-128.png",
+      "16": "icons/thingport-icon-dark-16.png",
+      "32": "icons/thingport-icon-dark-32.png",
+      "48": "icons/thingport-icon-dark-48.png",
+    },
+    "default_popup": "popup.html",
+  },
+  "background": {
+    "scripts": [
+      "background.js",
+    ],
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "data_collection_permissions": {
+        "required": [
+          "none",
+        ],
+      },
+      "id": "grab@thingport.app",
+      "strict_min_version": "109.0",
+    },
+  },
+  "content_scripts": [
+    {
+      "js": [
+        "content.js",
+      ],
+      "matches": [
+        "*://*.makerworld.com/*",
+        "*://*.printables.com/*",
+        "*://*.thingiverse.com/*",
+      ],
+      "run_at": "document_idle",
+    },
+    {
+      "js": [
+        "thingiverse.js",
+      ],
+      "matches": [
+        "*://*.thingiverse.com/*",
+      ],
+      "run_at": "document_start",
+    },
+  ],
+  "description": "Import MakerWorld, Thingiverse, Printables and MyMiniFactory models into Thingport, and convert MakerWorld 3MFs for other slicers.",
+  "host_permissions": [
+    "*://*.makerworld.com/*",
+    "*://*.printables.com/*",
+  ],
+  "icons": {
+    "128": "icons/thingport-icon-color-128.png",
+    "16": "icons/thingport-icon-color-16.png",
+    "32": "icons/thingport-icon-color-32.png",
+    "48": "icons/thingport-icon-color-48.png",
+  },
+  "manifest_version": 3,
+  "name": "Thingport Grab",
+  "optional_host_permissions": [
+    "*://*/*",
+  ],
+  "permissions": [
+    "storage",
+    "cookies",
+    "downloads",
+    "scripting",
+    "alarms",
+  ],
+  "version": "1.7.0",
+}
+`;

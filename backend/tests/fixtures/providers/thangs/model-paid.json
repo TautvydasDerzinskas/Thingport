@@ -1,0 +1,43 @@
+{
+  "id": "1060509",
+  "name": "Crystal Dragon",
+  "description": "**Print-in-place** dragon",
+  "tags": ["dragon", "articulated", "dragon"],
+  "category": "Toys & Games/Articulated",
+  "v3Categories": ["Art & Decor/Sculptures & Statues", "Toys & Games/Articulated"],
+  "secondaryCategory": "",
+  "visibility": "market-paid",
+  "marketplaceInfo": {
+    "priceInUSD": 4,
+    "stripePriceId": "price_x"
+  },
+  "owner": {
+    "id": 3457741,
+    "username": "Cinderwing3D",
+    "profile": {
+      "avatarUrl": "https://storage.googleapis.com/production-thangs-public/uploads/avatars/a",
+      "description": ""
+    }
+  },
+  "attachments": [
+    {
+      "attachmentType": "image",
+      "isApproved": true,
+      "imageUrl": "https://storage.googleapis.com/p/uploads/attachments/1/Main%201.png"
+    },
+    {
+      "attachmentType": "video",
+      "imageUrl": "https://storage.googleapis.com/p/uploads/attachments/2/clip.mp4"
+    },
+    {
+      "attachmentType": "image",
+      "isNsfwFlagged": true,
+      "imageUrl": "https://storage.googleapis.com/p/uploads/attachments/3/x.png"
+    }
+  ],
+  "parts": [
+    {
+      "thumbnailUrl": "https://storage.googleapis.com/thangs-thumbnails/production/part.png"
+    }
+  ]
+}

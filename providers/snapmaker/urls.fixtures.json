@@ -1,0 +1,54 @@
+[
+  {
+    "url": "https://space.snapmaker.com/en/model/33595-sample",
+    "expect": {
+      "provider": "snapmaker",
+      "kind": "model",
+      "externalId": "33595"
+    }
+  },
+  {
+    "url": "https://space.snapmaker.com/de-de/model/42/#profileId-7",
+    "expect": {
+      "provider": "snapmaker",
+      "kind": "model",
+      "externalId": "42",
+      "requestedProfileId": "7"
+    }
+  },
+  {
+    "url": "https://space.snapmaker.com/en/creator/12345?tab=interactions&list=likes",
+    "expect": {
+      "provider": "snapmaker",
+      "kind": "list",
+      "externalId": "likes-12345",
+      "listKind": "likes"
+    }
+  },
+  {
+    "url": "https://space.snapmaker.com/creator/12345/?tab=interactions&list=bookmarks",
+    "expect": {
+      "provider": "snapmaker",
+      "kind": "list",
+      "externalId": "bookmarks-12345",
+      "listKind": "bookmarks"
+    }
+  },
+  {
+    "url": "https://space.snapmaker.com/en/creator/12345?tab=interactions",
+    "expect": {
+      "provider": null,
+      "kind": null
+    },
+    "divergent": {
+      "extension": { "provider": "snapmaker", "kind": "list", "listKind": "likes" }
+    }
+  },
+  {
+    "url": "https://www.snapmaker.com/en/model/33595",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  }
+]

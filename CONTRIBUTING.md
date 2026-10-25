@@ -26,9 +26,9 @@ Thingport into your language, see [docs/TRANSLATING.md](docs/TRANSLATING.md) -- 
    ```
 
    The type also decides the next version of what you touched (`feat:` minor, `fix:` and `perf:` patch, `!`
-   major; anything else none). The backend, the frontend and the browser extension are each versioned on their
-   own, from the commits under their folder: the backend and frontend when a release is merged into `main`, the
-   extension weekly -- see [extension/CONTRIBUTING.md](extension/CONTRIBUTING.md#versioning-how-the-next-version-is-picked).
+   major; anything else none). The backend, the frontend, Bridge and the browser extension are each versioned on
+   their own, from the commits under their folder: the backend, frontend and Bridge when a release is merged into
+   `main`, the extension weekly -- see [extension/CONTRIBUTING.md](extension/CONTRIBUTING.md#versioning-how-the-next-version-is-picked).
    Each gets a `CHANGELOG.md` and a GitHub release.
 
 4. **Push** to your fork and open a pull request against `develop`.
@@ -81,6 +81,11 @@ you verified it** is much faster to review than a diff alone -- especially for a
 reviewer otherwise has to reconstruct your reasoning from scratch.
 
 If you couldn't verify something end to end, say so. That's useful information, not a weakness.
+
+## Adding a provider
+
+A provider is a model site Thingport imports from. How they're built, the approaches the existing ones take and the
+checklist for a new one are in [docs/PROVIDER_DEVELOPMENT.md](docs/PROVIDER_DEVELOPMENT.md). Open an issue first.
 
 ## Code style
 

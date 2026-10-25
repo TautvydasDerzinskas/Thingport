@@ -1,0 +1,26 @@
+{
+  "code": 0,
+  "msg": "ok",
+  "reqId": "contract-fixture",
+  "result": {
+    "list": [
+      {
+        "id": "6ac6f004729f5ba4b35740a6",
+        "secondName": "0.2mm layer, 2 walls",
+        "printerName": "Ender-3 V3 Plus",
+        "isAuth": true,
+        "covers": [{ "url": "https://pic2-cdn.creality.com/crealityCloud/upload/profile.webp" }],
+        "thumbnail": "https://pic2-cdn.creality.com/pic/plate.png",
+        "userInfo": { "userId": 4247093750 }
+      },
+      {
+        "id": "6ad5fedd23030f2e2c08899b",
+        "secondName": "0.16mm layer",
+        "printerName": "SPARKX i7",
+        "isAuth": false,
+        "thumbnail": "https://pic2-cdn.creality.com/pic/other-plate.png",
+        "userInfo": { "userId": 4055423748 }
+      }
+    ]
+  }
+}

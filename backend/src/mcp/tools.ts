@@ -1,7 +1,14 @@
+import crypto from "node:crypto";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { z } from "zod";
+import { MANIFESTS } from "../providers/index.generated";
+import { providerNames } from "../providers/names";
 import { prisma } from "../db";
 import { toAuthorOut, type PrintOut } from "../dto";
-import { HttpError } from "../utils/fileUtils";
+import { HttpError, sanitizeFilename } from "../utils/fileUtils";
+import { IMPORT_MAX_BYTES } from "../config";
 import type { McpAccess } from "../services/settingsService";
 import {
   addModelsToCollection,
@@ -26,11 +33,15 @@ import {
 } from "../services/customWidgetsService";
 import { CUSTOM_WIDGET_GUIDE } from "../services/customWidgetGuide";
 import { ICON_MAX_BYTES, listIcons as listUserIcons, saveIcon } from "../services/iconService";
+import { resolvePlateFilePath } from "../services/printCreation";
+import { managedPrintFilePath } from "../services/printFileService";
+import { notifyUpload } from "../services/modelNotifications";
+import { addUploadedPreviewImages, createUploadedModel, type UploadedFile } from "../services/uploadService";
 import BUILTIN_ICONS from "./builtinIcons.json";
 
 // The tools /api/mcp offers. Each runs as the token's user, through the same services as the REST
 // API, so it sees exactly that user's library. Outputs are trimmed to what an assistant can use:
-// no image or file URLs, which need a session to open anyway.
+// no image URLs, and file URLs only from the file tools.
 //
 // A token reaches only the tools its user ticked (see routes/mcp.ts). A tool that writes must say so with
 // `readOnly: false`: it's then off for a new token until its user turns it on, unless it's `defaultOn`.
@@ -422,18 +433,25 @@ function importStateOut(ctx: McpToolContext, taskId: string, state: ImportTaskSt
   };
 }
 
+/** Collections models can be filed in: the user's own, not Favourites or Browsing History. */
+async function assertFilableCollection(userId: string, collectionId: string): Promise<void> {
+  if (isSystemCollectionId(collectionId)) throw new HttpError(400, "Models can't be added to that collection");
+  const owned = await prisma.collection.count({ where: { id: collectionId, userId } });
+  if (!owned) throw new HttpError(404, "Collection not found");
+}
+
 const importModel: McpToolDefinition = {
   name: "import_model",
   title: "Import a model",
   description:
-    "Import a model into the library from its page on a supported site (MakerWorld, Printables, Thingiverse and " +
-    "the others Thingport supports), as + Add > Import does. A model already in the library isn't imported twice. " +
+    `Import a model into the library from its page on a supported site (${providerNames(() => true)}), as + Add > ` +
+    "Import does. A model already in the library isn't imported twice. " +
     "Usually finishes in the call; a long import returns a task_id to check with get_import_status.",
   readOnly: false,
   idempotent: true,
   openWorld: true,
   inputSchema: {
-    url: z.string().min(1).describe("The model's page, e.g. https://www.printables.com/model/3161-3d-benchy"),
+    url: z.string().min(1).describe(`The model's page, e.g. ${MANIFESTS.printables.examples.model}`),
     title: z.string().max(500).optional().describe("A title to use instead of the site's."),
     tags: z.array(z.string()).optional().describe("Tags to use instead of the site's."),
     category_id: z.string().optional().describe("A category to file it in (an id from list_categories)."),
@@ -443,11 +461,7 @@ const importModel: McpToolDefinition = {
     const { userId } = ctx;
     const collectionId = args.collection_id as string | undefined;
     // Checked first, so a bad collection doesn't leave an import half done.
-    if (collectionId) {
-      if (isSystemCollectionId(collectionId)) throw new HttpError(400, "Models can't be added to that collection");
-      const owned = await prisma.collection.count({ where: { id: collectionId, userId } });
-      if (!owned) throw new HttpError(404, "Collection not found");
-    }
+    if (collectionId) await assertFilableCollection(userId, collectionId);
     // No captcha: like Thingport Grab, an assistant has nowhere to show one. The token's user turned this
     // tool on themselves, and an admin who doesn't want that sets MCP to read only.
     const { url, body } = await prepareSingleImport(userId, {
@@ -484,6 +498,212 @@ const getImportStatus: McpToolDefinition = {
     // Tasks live in memory for a while after they finish; a restart forgets them.
     if (!state) throw new HttpError(404, "No such import: it may have finished a while ago, or the server restarted");
     return importStateOut(ctx, taskId, state);
+  },
+};
+
+// What one call may carry: the JSON body /api/mcp takes is capped in app.ts, and base64 is a third bigger.
+export const MCP_UPLOAD_MAX_BYTES = 24 * 1024 * 1024;
+const MCP_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
+const MB = 1024 * 1024;
+
+function decodeBase64(base64: string, what: string): Buffer {
+  // A data: URL's prefix is dropped, so either works. Checked first: Buffer.from skips what isn't base64.
+  const encoded = base64.replace(/^data:[^,]*,/, "").replace(/\s+/g, "");
+  if (!/^[A-Za-z0-9+/_-]*={0,2}$/.test(encoded) || encoded.length % 4 === 1) {
+    throw new HttpError(400, `${what} isn't base64`);
+  }
+  const buffer = Buffer.from(encoded, "base64");
+  if (!buffer.length) throw new HttpError(400, `${what} is empty or isn't base64`);
+  return buffer;
+}
+
+const uploadModel: McpToolDefinition = {
+  name: "upload_model",
+  title: "Upload a model",
+  description:
+    "Add one model to the library from the user's own files, as + Add > Upload files does: e.g. a test piece or a " +
+    "part a script generated. Its 3D files (STL, 3MF, STEP, OBJ) become its plates, any other file a supporting " +
+    "file; with no 3D file among them, every file is a plate. " +
+    `Files and images go as base64, up to ${MCP_UPLOAD_MAX_BYTES / MB} MB in all.`,
+  readOnly: false,
+  inputSchema: {
+    files: z
+      .array(
+        z.object({
+          name: z.string().min(1).max(255).describe("The file's name with its extension, e.g. stringing-test.stl."),
+          base64: z.string().min(1).describe("The file's contents, base64-encoded."),
+        }),
+      )
+      .min(1)
+      .max(20)
+      .describe("The model's files."),
+    title: z.string().max(500).optional().describe("The model's title; the first file's name when left out."),
+    description: z.string().max(50_000).optional().describe("Its description, in Markdown, e.g. print settings."),
+    tags: z.array(z.string()).optional(),
+    category_id: z.string().optional().describe("A category to file it in (an id from list_categories)."),
+    collection_id: z.string().optional().describe("A collection to add it to (an id from list_collections)."),
+    images: z
+      .array(z.string().min(1))
+      .max(10)
+      .optional()
+      .describe("Pictures of it (PNG, JPEG or WebP), base64-encoded; the first becomes its cover."),
+  },
+  async run(ctx, args) {
+    const { userId } = ctx;
+    const collectionId = args.collection_id as string | undefined;
+    if (collectionId) await assertFilableCollection(userId, collectionId);
+    // Decoded and sized up before anything is written.
+    const files = (args.files as { name: string; base64: string }[]).map((file) => ({
+      name: sanitizeFilename(file.name) || "model",
+      buffer: decodeBase64(file.base64, file.name),
+    }));
+    const images = ((args.images as string[] | undefined) ?? []).map((image, i) =>
+      decodeBase64(image, `Image ${i + 1}`),
+    );
+    for (const file of files) {
+      if (file.buffer.length > IMPORT_MAX_BYTES) throw new HttpError(413, `${file.name} is over the size limit`);
+    }
+    if (images.some((image) => image.length > MCP_IMAGE_MAX_BYTES)) {
+      throw new HttpError(413, `Each image can be up to ${MCP_IMAGE_MAX_BYTES / MB} MB`);
+    }
+    const total = [...files.map((f) => f.buffer), ...images].reduce((sum, b) => sum + b.length, 0);
+    if (total > MCP_UPLOAD_MAX_BYTES) throw new HttpError(413, `Up to ${MCP_UPLOAD_MAX_BYTES / MB} MB in all`);
+
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "thingport-mcp-upload-"));
+    try {
+      const uploaded: UploadedFile[] = [];
+      for (const file of files) {
+        // Each in its own name, so two files called the same don't overwrite each other here.
+        const tempPath = path.join(dir, `${crypto.randomBytes(8).toString("hex")}${path.extname(file.name)}`);
+        await fs.writeFile(tempPath, file.buffer);
+        uploaded.push({ path: tempPath, originalname: file.name });
+      }
+      const title = (args.title as string | undefined)?.trim() || null;
+      const print = await createUploadedModel(
+        userId,
+        {
+          title,
+          notes: (args.description as string | undefined) || null,
+          tags: (args.tags as string[] | undefined) ?? [],
+          categoryId: (args.category_id as string | undefined) || null,
+          categorySource: args.category_id ? "MANUAL" : null,
+        },
+        uploaded,
+      );
+      const imagesAdded = images.length ? await addUploadedPreviewImages(print.id, images) : 0;
+      const filed = collectionId ? (await addModelsToCollection(userId, collectionId, [print.id])).collection : null;
+      await notifyUpload(userId, [{ id: print.id, name: print.title || print.name }]).catch((err) =>
+        console.error("Upload notification failed:", err),
+      );
+      return {
+        model: modelSummary(ctx, await printOutById(userId, print.id)),
+        images_added: imagesAdded,
+        images_skipped: images.length - imagesAdded,
+        collection: filed ? { id: filed.id, name: filed.name } : null,
+      };
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true });
+    }
+  },
+};
+
+// Bigger files come by their download_url instead: base64 a third bigger in the assistant's context costs a lot.
+export const MCP_FILE_MAX_BYTES = 10 * 1024 * 1024;
+
+type ModelFile = {
+  id: string;
+  name: string;
+  kind: "plate" | "supporting" | "prepared";
+  mime: string;
+  size_bytes: number;
+  /** Under /api; read with the token when it may read Model files. */
+  apiPath: string;
+  diskPath: () => string | null;
+};
+
+/** Every file of one of the user's models: its plates, supporting files and sliced print. */
+async function modelFiles(userId: string, modelId: string): Promise<ModelFile[]> {
+  const print = await prisma.print.findFirst({
+    where: { id: modelId, userId },
+    include: { plates: { orderBy: { position: "asc" } }, files: { orderBy: { createdAt: "asc" } } },
+  });
+  if (!print) throw new HttpError(404, "Print not found");
+  const plates = print.plates.map((plate): ModelFile => ({
+    id: plate.id,
+    name: plate.filename,
+    kind: "plate",
+    mime: plate.mime || "application/octet-stream",
+    size_bytes: plate.size,
+    apiPath: `/print/${print.id}/plate/${plate.id}/file/${encodeURIComponent(plate.filename)}`,
+    diskPath: () => resolvePlateFilePath(plate),
+  }));
+  const others = print.files.map((file): ModelFile => ({
+    id: file.id,
+    name: file.filename,
+    kind: file.role === "PREPARED" ? "prepared" : "supporting",
+    mime: file.mime || "application/octet-stream",
+    size_bytes: file.size,
+    apiPath: file.role === "PREPARED" ? `/print/${print.id}/prepared-print` : `/print/${print.id}/files/${file.id}`,
+    diskPath: () => managedPrintFilePath(file),
+  }));
+  return [...plates, ...others];
+}
+
+function fileOut(ctx: McpToolContext, file: ModelFile) {
+  return {
+    id: file.id,
+    name: file.name,
+    kind: file.kind,
+    mime: file.mime,
+    size_bytes: file.size_bytes,
+    api_path: `/api${file.apiPath}`,
+    download_url: ctx.publicUrl ? `${ctx.publicUrl}/api${file.apiPath}` : null,
+  };
+}
+
+const listModelFiles: McpToolDefinition = {
+  name: "list_model_files",
+  title: "List a model's files",
+  description:
+    "A model's files: its plates (the 3D files), supporting files and sliced print, each with the id get_model_file " +
+    "takes. api_path (on the server's own address) or download_url, when the server knows its address, opens with " +
+    "the same token as 'Authorization: Bearer' if it may read Model files.",
+  readOnly: true,
+  inputSchema: { model_id: z.string().min(1).describe("The model's id, from search_models or list_models.") },
+  async run(ctx, args) {
+    const files = await modelFiles(ctx.userId, args.model_id as string);
+    return { files: files.map((file) => fileOut(ctx, file)) };
+  },
+};
+
+const getModelFile: McpToolDefinition = {
+  name: "get_model_file",
+  title: "Get a model file",
+  description:
+    `One of a model's files, base64-encoded, up to ${MCP_FILE_MAX_BYTES / MB} MB: e.g. to slice or convert it. ` +
+    "Find its id with list_model_files. A bigger file comes without its contents; fetch it by its download_url or " +
+    "api_path.",
+  readOnly: true,
+  inputSchema: {
+    model_id: z.string().min(1).describe("The model's id."),
+    file_id: z.string().min(1).describe("The file's id, from list_model_files."),
+  },
+  async run(ctx, args) {
+    const files = await modelFiles(ctx.userId, args.model_id as string);
+    const file = files.find((f) => f.id === args.file_id);
+    if (!file) throw new HttpError(404, "File not found");
+    const diskPath = file.diskPath();
+    const stat = diskPath ? await fs.stat(diskPath).catch(() => null) : null;
+    if (!diskPath || !stat?.isFile()) throw new HttpError(404, "The file is missing from storage");
+    const out = { ...fileOut(ctx, file), size_bytes: stat.size };
+    if (stat.size > MCP_FILE_MAX_BYTES) {
+      return {
+        ...out,
+        base64: null,
+        note: `Over ${MCP_FILE_MAX_BYTES / MB} MB: fetch it by its download_url or api_path.`,
+      };
+    }
+    return { ...out, base64: (await fs.readFile(diskPath)).toString("base64") };
   },
 };
 
@@ -685,8 +905,11 @@ export const MCP_TOOLS: readonly McpToolDefinition[] = [
   listCategories,
   getAuthor,
   libraryStats,
+  listModelFiles,
+  getModelFile,
   getImportStatus,
   importModel,
+  uploadModel,
   createCollectionTool,
   addToCollection,
   widgetGuide,

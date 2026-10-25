@@ -1,0 +1,32 @@
+{
+  "data": {
+    "user": {
+      "likedCreations": [
+        {
+          "slug": "ghostship-benchy",
+          "name": "Ghostship Benchy",
+          "illustrationImageUrl": "https://images.cults3d.com/a.jpg",
+          "price": {
+            "cents": 0
+          }
+        },
+        {
+          "slug": "free-model",
+          "name": "Free Model",
+          "illustrationImageUrl": "https://images.cults3d.com/b.jpg",
+          "price": {
+            "cents": 0
+          }
+        },
+        {
+          "slug": "paid-model",
+          "name": "Paid Model",
+          "illustrationImageUrl": null,
+          "price": {
+            "cents": 299
+          }
+        }
+      ]
+    }
+  }
+}

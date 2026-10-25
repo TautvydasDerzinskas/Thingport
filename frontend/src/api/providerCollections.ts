@@ -1,20 +1,10 @@
 import { authHeaders } from "../utils/auth";
 import { apiBase, readErrorMessage, UnauthorizedError } from "./client";
+import { PROVIDER_IDS, type ProviderId } from "../providers/index.generated";
 
 /** The providers a collection can be synced with from the app. */
-export const BROWSABLE_PROVIDERS = [
-  "makerworld",
-  "printables",
-  "thingiverse",
-  "myminifactory",
-  "snapmaker",
-  "makeronline",
-  "crealitycloud",
-  "nexprint",
-  "thangs",
-  "cults3d",
-] as const;
-export type BrowsableProvider = (typeof BROWSABLE_PROVIDERS)[number];
+export const BROWSABLE_PROVIDERS = PROVIDER_IDS;
+export type BrowsableProvider = ProviderId;
 
 /** `connected`: the instance can reach the provider for this user. `account`: who they are there,
  *  for providers without a per-user login; MakerWorld's cookie already says, so it's always null. */

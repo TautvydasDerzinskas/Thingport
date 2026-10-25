@@ -3,7 +3,7 @@
   "log_file": "",
   "slicers": {
     "bambustudio": {
-      "command": "C:\\\\Program Files\\\\Bambu Studio\\\\BambuStudio.exe"
+      "command": "C:\\Program Files\\Bambu Studio\\bambu-studio.exe"
     },
     "orcaslicer": {
       "command": "/usr/bin/orca-slicer",

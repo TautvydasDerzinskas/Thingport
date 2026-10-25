@@ -1,5 +1,6 @@
-// /releases/latest/download/<asset> always resolves to the newest Bridge build.
-const BRIDGE_RELEASES_BASE = "https://github.com/TautvydasDerzinskas/Thingport/releases/latest/download";
+// The bridge-latest release always holds the newest Bridge build. Not /releases/latest: that slot is
+// repo-wide, and the frontend, backend and extension releases can take it.
+const BRIDGE_RELEASES_BASE = "https://github.com/TautvydasDerzinskas/Thingport/releases/download/bridge-latest";
 
 export type BridgeDownload = { os: "windows" | "macos" | "linux"; label: string; asset: string };
 

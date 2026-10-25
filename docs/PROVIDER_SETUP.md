@@ -1,8 +1,11 @@
 # Providers
 
-Thingport imports from ten model sites. **MakerWorld**, **Printables** and **Thingiverse** are the main ones and have
-been supported the longest; the rest came later. Each has a page of its own with what it imports, what it needs and how
-to connect it:
+Thingport imports from the model sites below. **MakerWorld**, **Printables** and **Thingiverse** are the main ones and
+have been supported the longest; the rest came later. Each has a page of its own with what it imports, what it needs and
+how to connect it:
+
+<!-- providers:list -->
+<!-- Written by scripts/sync-providers.mjs from providers/: change it there. -->
 
 - <img src="assets/providers/makerworld.svg" alt="" width="18" height="18" align="absmiddle"> [MakerWorld](providers/makerworld.md) -- your own session cookie; Thingport Grab connects it for you.
 - <img src="assets/providers/printables.svg" alt="" width="18" height="18" align="absmiddle"> [Printables](providers/printables.md) -- works out of the box.
@@ -14,11 +17,17 @@ to connect it:
 - <img src="assets/providers/nexprint.svg" alt="" width="18" height="18" align="absmiddle"> [NexPrint](providers/nexprint.md) -- your own sign-in, renewed as you use the site.
 - <img src="assets/providers/thangs.svg" alt="" width="18" height="18" align="absmiddle"> [Thangs](providers/thangs.md) -- your own sign-in, which Thingport renews for about a year.
 - <img src="assets/providers/cults3d.svg" alt="" width="18" height="18" align="absmiddle"> [Cults3D](providers/cults3d.md) -- your own API key, and your browser's sign-in for files.
+- <img src="assets/providers/eufymake.svg" alt="" width="18" height="18" align="absmiddle"> [eufyMake](providers/eufymake.md) -- no sign-in to import; yours adds your likes.
+
+<!-- /providers:list -->
 
 Inside Thingport, **About** in a provider's menu under **Configuration → Providers**, or a click on a model's provider
 badge, shows the same in short.
 
 ## At a glance
+
+<!-- providers:table -->
+<!-- Written by scripts/sync-providers.mjs from providers/: change it there. -->
 
 | Provider                                                                                                                                         | Sign-in                         | Thingport Grab | FlareSolverr | Collections | Likes | Sync | Print profiles |
 | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------- | -------------- | ------------ | ----------- | ----- | ---- | -------------- |
@@ -32,11 +41,14 @@ badge, shows the same in short.
 | <img src="assets/providers/nexprint.svg" alt="" width="18" height="18" align="absmiddle"> [NexPrint](providers/nexprint.md)                      | Yours                           | Recommended    |              | ✓           |       | ✓    | ✓              |
 | <img src="assets/providers/thangs.svg" alt="" width="18" height="18" align="absmiddle"> [Thangs](providers/thangs.md)                            | Yours, renewed for a year       | Recommended    | Optional     | ✓           | ✓     | ✓    |                |
 | <img src="assets/providers/cults3d.svg" alt="" width="18" height="18" align="absmiddle"> [Cults3D](providers/cults3d.md)                         | Your API key + browser sign-in  | Recommended³   |              | Printlists  | ✓     | ✓    |                |
+| <img src="assets/providers/eufymake.svg" alt="" width="18" height="18" align="absmiddle"> [eufyMake](providers/eufymake.md)                      | Yours, for likes only           | Recommended    |              |             | ✓     | ✓    |                |
 
 1. Your private Printables collections and your likes are read by Grab, while you're on Printables.
 2. Snapmaker's sign-in lasts a day and only Grab renews it; without Grab you paste a new one every day.
 3. Cults3D's files need your browser's Cloudflare clearance, and Thingport on the same IP address as that browser.
 4. FlareSolverr supports public pages; authenticated API calls use impit directly.
+
+<!-- /providers:table -->
 
 **Sign-in** is what Thingport needs before it can import; "yours" means each user connects their own account.
 
@@ -74,7 +86,7 @@ has [turned off](#turning-a-provider-off) isn't listed.
 
 ## Turning a provider off
 
-Admins choose which providers this Thingport imports from, under **Administration → Providers**. All ten are on by
+Admins choose which providers this Thingport imports from, under **Administration → Providers**. All are on by
 default. Turn one off and nothing new comes from it for anyone: links to it, Thingport Grab and the import queue are
 refused, its synced collections pause, and background jobs skip it. It also disappears from everyone's
 **Configuration → Providers**. Models already imported from it stay as they are, and turning it back on picks up where

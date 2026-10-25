@@ -1,0 +1,10 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "name": "Scrapers",
+    "user_id": "owner-uuid",
+    "permission": 0,
+    "mold_num": 3
+  }
+}

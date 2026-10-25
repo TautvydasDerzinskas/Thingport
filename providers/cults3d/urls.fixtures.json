@@ -1,0 +1,50 @@
+[
+  {
+    "url": "https://cults3d.com/en/3d-model/art/example-model",
+    "expect": {
+      "provider": "cults3d",
+      "kind": "model",
+      "externalId": "example-model"
+    }
+  },
+  {
+    "url": "https://www.cults3d.com/fr/creations/dragon/?x=1",
+    "expect": {
+      "provider": "cults3d",
+      "kind": "model",
+      "externalId": "dragon"
+    }
+  },
+  {
+    "url": "https://cults3d.com/en/design-collections/Creator/My-Printlist",
+    "expect": {
+      "provider": "cults3d",
+      "kind": "list",
+      "externalId": "creator/my-printlist",
+      "listKind": "collection"
+    }
+  },
+  {
+    "url": "https://cults3d.com/en/users/Creator/likes",
+    "expect": {
+      "provider": "cults3d",
+      "kind": "list",
+      "externalId": "likes:creator",
+      "listKind": "likes"
+    }
+  },
+  {
+    "url": "https://cults3d.com/en/creations/latest",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  },
+  {
+    "url": "https://notcults3d.com/en/3d-model/art/example",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  }
+]
