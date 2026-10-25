@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { importsApi } from "./imports";
+import { UnauthorizedError } from "./client";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -53,4 +54,21 @@ it("preserves explicitly supplied request cookies", async () => {
   const payload = { url: "https://makerworld.com/en/models/12345", makerworld_cookie: "explicit-cookie" };
   await importsApi.queueFromLink(payload);
   expect(JSON.parse(fetch.mock.calls[0][1]!.body as string)).toEqual(payload);
+});
+
+describe("active import jobs", () => {
+  it("loads all active jobs for recovery", async () => {
+    const jobs = [
+      { id: "first", status: "RUNNING" },
+      { id: "second", status: "QUEUED" },
+    ];
+    const fetch = respond(jobs);
+    expect(await importsApi.getActiveImportJobs()).toEqual(jobs);
+    expect(fetch.mock.calls[0][0]).toBe("/api/import/jobs/active-list");
+  });
+
+  it("reports an authorization failure", async () => {
+    respond({}, 401);
+    await expect(importsApi.getActiveImportJobs()).rejects.toThrow(UnauthorizedError);
+  });
 });

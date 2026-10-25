@@ -8,6 +8,13 @@ export async function getActiveJob(userId: string): Promise<ImportJob | null> {
   });
 }
 
+export async function getActiveJobs(userId: string): Promise<ImportJob[]> {
+  return prisma.importJob.findMany({
+    where: { userId, status: { in: ["RUNNING", "QUEUED"] } },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
 /** Read fresh on every link, so a runner sees a pause made while it works. */
 export async function getJobStatus(id: string): Promise<ImportJob["status"] | null> {
   const job = await prisma.importJob.findUnique({ where: { id }, select: { status: true } });

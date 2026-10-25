@@ -373,6 +373,48 @@ describe("import job lock", () => {
   });
 });
 
+describe("active import jobs", () => {
+  it("returns only the owner's queued and running jobs in creation order", async () => {
+    const other = await prisma.user.create({
+      data: { email: `other-import-${Date.now()}@example.com`, displayName: "Other", passwordHash: "unused" },
+    });
+    const ids: string[] = [];
+    try {
+      for (const [owner, status, timestamp] of [
+        [userId, "QUEUED", 3000],
+        [userId, "RUNNING", 1000],
+        [other.id, "RUNNING", 500],
+        [userId, "DONE", 2000],
+        [userId, "ERROR", 2000],
+        [userId, "PAUSED", 2000],
+      ] as const) {
+        const job = await prisma.importJob.create({
+          data: {
+            userId: owner,
+            type: "SINGLE",
+            sourceUrl: "https://example.com/model",
+            status,
+            createdAt: new Date(timestamp),
+          },
+        });
+        ids.push(job.id);
+      }
+      const response = await request(app).get("/api/import/jobs/active-list").set(auth());
+      expect(response.status).toBe(200);
+      expect(response.body.map((job: { id: string }) => job.id)).toEqual([ids[1], ids[0]]);
+      expect(response.body[0]).toMatchObject({ status: "RUNNING", source_url: "https://example.com/model" });
+      expect(response.body[0]).not.toHaveProperty("userId");
+    } finally {
+      await prisma.importJob.deleteMany({ where: { id: { in: ids } } });
+      await prisma.user.delete({ where: { id: other.id } });
+    }
+  });
+
+  it("requires authentication", async () => {
+    expect((await request(app).get("/api/import/jobs/active-list")).status).toBe(401);
+  });
+});
+
 describe("zip import", () => {
   it("imports the entries it lists from a zip whose paths start with ./, as macOS tar -a writes them", async () => {
     const zip = new JSZip();

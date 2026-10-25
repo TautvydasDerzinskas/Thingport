@@ -24,7 +24,7 @@ import {
 } from "../services/importService";
 import { findLibraryPrints } from "../services/collectionSyncService";
 import { listZipEntries } from "../services/zipService";
-import { getActiveJob, getJob, listJobItems } from "../services/importJobService";
+import { getActiveJob, getActiveJobs, getJob, listJobItems } from "../services/importJobService";
 import { queueLink, startLinksJob } from "../services/importQueueService";
 import { startDirectBatchImport, startImmediateImport } from "../services/immediateImport";
 import { getPersistentImportTask, startImportTask } from "../services/importTaskService";
@@ -395,6 +395,13 @@ router.get(
   asyncHandler(async (req, res) => {
     const job = await getActiveJob(req.userId!);
     res.json(job ? toImportJobOut(job) : null);
+  }),
+);
+
+router.get(
+  "/import/jobs/active-list",
+  asyncHandler(async (req, res) => {
+    res.json((await getActiveJobs(req.userId!)).map(toImportJobOut));
   }),
 );
 

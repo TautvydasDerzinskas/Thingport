@@ -284,6 +284,13 @@ export const importsApi = {
     return res.json();
   },
 
+  getActiveImportJobs: async (): Promise<ImportJob[]> => {
+    const res = await fetch(`${apiBase()}/import/jobs/active-list`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to check for active imports"));
+    return res.json();
+  },
+
   getImportJob: async (jobId: string): Promise<ImportJob> => {
     const res = await fetch(`${apiBase()}/import/jobs/${jobId}`, { headers: authHeaders() });
     if (res.status === 401) throw new UnauthorizedError();
