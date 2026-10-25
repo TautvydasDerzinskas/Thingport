@@ -33,7 +33,8 @@ import { CLOUDFLARE_BLOCKED_CODE } from "./flaresolverr";
 import { PROVIDER_DISABLED_CODE } from "./providerSettingsService";
 import { HttpError } from "../utils/fileUtils";
 import { prisma } from "../db";
-import type { ImportJob } from "@prisma/client";
+import type { ImportJob, Prisma } from "@prisma/client";
+import { readLinkResult, mergeLinkResult, summarizeLinkResults } from "./linkImportResults";
 import { createLogger } from "../logger";
 
 const log = createLogger("import");
@@ -533,7 +534,18 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
   try {
     const job = await getJob(jobId, userId);
     if (!job) throw new HttpError(404, "Import job not found");
-    const items = (await listJobItems(jobId)).filter((item) => item.status === "PENDING");
+    const allItems = await listJobItems(jobId);
+    const items = allItems.filter((item) => item.status === "PENDING");
+    const results = new Map(
+      allItems.flatMap((item) => {
+        const result = readLinkResult(item.result);
+        return result ? [[item.id, result] as const] : [];
+      }),
+    );
+    const saved = summarizeLinkResults(results.values());
+    // Existing jobs have no per-item outcomes before this migration.
+    const legacyImported = Math.max(0, job.imported - saved.imported);
+    const legacyAlreadyInLibrary = Math.max(0, job.alreadyInLibrary - saved.alreadyInLibrary);
     const total = await countJobItems(jobId, { in: ["PENDING", "RUNNING", "DONE", "FAILED"] });
     log.info("links job running", { job: jobId, pending: items.length, total });
 
@@ -553,6 +565,16 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
     let processed = (await countJobItems(jobId, "DONE")) + (await countJobItems(jobId, "FAILED"));
     // The models this run brought in new, for a sync's notification.
     const newPrintIds: string[] = [];
+    const refreshTotals = () => {
+      const totals = summarizeLinkResults(results.values());
+      imported = legacyImported + totals.imported;
+      alreadyInLibrary = legacyAlreadyInLibrary + totals.alreadyInLibrary;
+      profilesImported = totals.profilesImported;
+      profilesProcessed = totals.profilesProcessed;
+      printId = totals.printId;
+      newPrintIds.splice(0, newPrintIds.length, ...totals.newPrintIds);
+    };
+    refreshTotals();
     // MakerOnline links, handed to Thingport Grab: only it can get their files.
     let waitingForGrab = 0;
 
@@ -600,16 +622,14 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
           break;
         }
         try {
-          const result = await importOneLink(userId, item.url, itemBody);
-          // A link is one model however many of its profiles came in.
-          if (result.imported && result.printId) newPrintIds.push(result.printId);
-          if (result.imported) imported++;
-          else if (result.alreadyInLibrary) alreadyInLibrary++;
-          if (result.profiles) {
-            profilesImported += result.imported;
-            profilesProcessed += result.processed;
-          }
-          if (result.printId) printId = result.printId;
+          const previous = results.get(item.id) ?? null;
+          const completed = previous && previous.failed === 0 ? previous : null;
+          const result = completed ?? (await importOneLink(userId, item.url, itemBody));
+          const stored = completed ?? mergeLinkResult(previous, result);
+          // Persist before the item status or aggregate counters: restart can finish this checkpoint without importing again.
+          await updateJobItem(item.id, { result: stored as unknown as Prisma.InputJsonValue });
+          results.set(item.id, stored);
+          refreshTotals();
           if (result.printId && options.collection_id) {
             await fileIntoCollection(userId, options.collection_id, result.printId);
           }
@@ -692,25 +712,25 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
       processed++;
       await updateJob(jobId, {
         processed,
-        imported: job.imported + imported,
-        alreadyInLibrary: job.alreadyInLibrary + alreadyInLibrary,
+        imported,
+        alreadyInLibrary,
         failedCount: await countJobItems(jobId, "FAILED"),
       }).catch(() => undefined);
     }
 
-    const totalImported = job.imported + imported;
+    const totalImported = imported;
     const failedCount = await countJobItems(jobId, "FAILED");
     log.info("links job done", {
       job: jobId,
       imported: totalImported,
-      already_in_library: job.alreadyInLibrary + alreadyInLibrary,
+      already_in_library: alreadyInLibrary,
       failed: failedCount,
     });
     await updateJob(jobId, {
       status: "DONE",
       processed,
       imported: totalImported,
-      alreadyInLibrary: job.alreadyInLibrary + alreadyInLibrary,
+      alreadyInLibrary,
       failedCount,
       resultPrintId: totalImported === 1 ? (printId ?? job.resultPrintId) : null,
     });

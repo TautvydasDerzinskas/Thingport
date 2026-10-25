@@ -28,7 +28,7 @@ import { createJob, getActiveJob, getJob, listJobItems } from "../services/impor
 import { queueLink, startLinksJob } from "../services/importQueueService";
 import { getPersistentImportTask, startImportTask } from "../services/importTaskService";
 import { enqueueSingleImport, enqueueLinksImport, enqueueBatchImport } from "../services/importScheduler";
-import { profilesImportJob, runListImportJob, runZipImportJob } from "../services/importJobRunner";
+import { profilesImportJob, runLinksImportJob, runListImportJob, runZipImportJob } from "../services/importJobRunner";
 import { notifyImportRun } from "../services/modelNotifications";
 import { toImportJobItemOut, toImportJobOut } from "../dto";
 import type { Prisma } from "@prisma/client";
@@ -55,11 +55,12 @@ router.post(
   "/import",
   requireCaptcha("import"),
   asyncHandler(async (req, res) => {
-    const { url, body } = await prepareSingleImport(req.userId!, parseBody(importRequestSchema, req.body));
+    const parsedRequest = parseBody(importRequestSchema, req.body);
+    const { url, body } = await prepareSingleImport(req.userId!, parsedRequest);
     if (req.query.async === "1") {
       // Browser-signed links and an explicitly supplied session belong to this immediate request.
       // Keep Grab's short-lived task path until these providers can resolve fresh links in a worker.
-      if (body.resolved_download_url || body.resolved_files?.length || req.body.makerworld_cookie) {
+      if (needsImmediateImport({ ...body, makerworld_cookie: parsedRequest.makerworld_cookie, url })) {
         const taskId = startImportTask(req.userId!, () => importAndDescribe(req.userId!, url, body));
         res.status(202).json({ task_id: taskId });
         return;
@@ -361,13 +362,33 @@ router.post(
   "/import/links",
   requireCaptcha("import"),
   asyncHandler(async (req, res) => {
-    const body = await withLinkAuth(req.userId!, parseBody(linksImportRequestSchema, req.body));
+    const parsedRequest = parseBody(linksImportRequestSchema, req.body);
+    const body = await withLinkAuth(req.userId!, parsedRequest);
     const urls: string[] = [];
     for (const raw of body.urls) {
       const url = await enabledImportUrl(raw.trim());
       if (url && !urls.includes(url)) urls.push(url);
     }
     if (!urls.length) throw new HttpError(400, "No links to import");
+    if (parsedRequest.makerworld_cookie?.trim()) {
+      // TTL/privacy compatibility: request sessions stay in this immediate runner, never in durable payloads.
+      if (await getActiveJob(req.userId!))
+        throw new HttpError(409, "An import is already running; try again when it finishes");
+      const job = await prisma.importJob.create({
+        data: {
+          userId: req.userId!,
+          type: "LINKS",
+          status: "RUNNING",
+          sourceUrl: urls[0],
+          total: urls.length,
+          payload: { ...(linksJobPayload(body) as Prisma.InputJsonObject), immediate: true },
+          items: { create: urls.map((url) => ({ url })) },
+        },
+      });
+      void runLinksImportJob(job.id, req.userId!, { ...body, url: urls[0] });
+      res.status(202).json({ job_id: job.id });
+      return;
+    }
     const job = await enqueueLinksImport(req.userId!, urls, linksJobPayload(body));
     res.status(202).json({ job_id: job.id });
   }),

@@ -16,6 +16,7 @@ vi.mock("node:dns/promises", () => ({
 
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
+import { runLinksImportJob } from "../src/services/importJobRunner";
 
 const app = createApp();
 const stamp = Date.now();
@@ -101,7 +102,7 @@ function startLinks(urls: string[], extra: Record<string, unknown> = {}) {
   return request(app)
     .post("/api/import/links")
     .set(auth())
-    .send({ urls, makerworld_cookie: "token=test-bearer", ...extra });
+    .send({ urls, ...extra });
 }
 
 describe("the links import queue", () => {
@@ -279,5 +280,92 @@ describe("the links import queue", () => {
 
     const retry = await request(app).post(`/api/import/jobs/${job.id}/retry`).set(auth()).send({});
     expect(retry.status).toBe(400);
+  });
+  it("keeps a single import queued when its session comes from saved settings", async () => {
+    const id = String((stamp % 1_000_000_000) + 12);
+    const response = await request(app)
+      .post("/api/import?async=1")
+      .set(auth())
+      .send({ url: `https://makerworld.com/en/models/${id}-phoenix` });
+    expect(response.status).toBe(202);
+    expect(response.body.job_id).toBe(response.body.task_id);
+    expect(typeof response.body.job_id).toBe("string");
+    expect((await waitJob(response.body.job_id)).status).toBe("DONE");
+  });
+
+  it("imports immediately with an explicit session without retaining its cookie", async () => {
+    const id = String((stamp % 1_000_000_000) + 11);
+    const response = await startLinks([`https://makerworld.com/en/models/${id}-phoenix`], {
+      makerworld_cookie: "token=test-bearer",
+    });
+    expect(response.status).toBe(202);
+    const finished = await waitJob(response.body.job_id);
+    expect(finished).toMatchObject({ status: "DONE", imported: 1 });
+    const job = await prisma.importJob.findUniqueOrThrow({ where: { id: response.body.job_id } });
+    expect(job.payload).toMatchObject({ immediate: true });
+    expect(JSON.stringify(job.payload)).not.toContain("test-bearer");
+    expect(designCalls.get(id)).toBe(1);
+  });
+
+  it.each(["DONE", "PENDING"] as const)("reconstructs sync results after a crash with the item %s", async (status) => {
+    const user = await prisma.user.findFirstOrThrow({ where: { email: `links-${stamp}@example.com` } });
+    const print = await prisma.print.create({
+      data: { userId: user.id, name: `Recovered ${status}`, nameNormalized: `recovered ${status}` },
+    });
+    const collection = await prisma.collection.create({
+      data: { userId: user.id, name: `Recovered ${status}`, nameNormalized: `recovered ${status}` },
+    });
+    const sync = await prisma.collectionSync.create({
+      data: {
+        userId: user.id,
+        collectionId: collection.id,
+        provider: "makerworld",
+        externalId: `recovered-${status}`,
+        sourceUrl: "https://makerworld.com/en/collections/123",
+      },
+    });
+    const job = await prisma.importJob.create({
+      data: {
+        userId: user.id,
+        type: "LINKS",
+        status: "RUNNING",
+        total: 1,
+        sourceUrl: sync.sourceUrl,
+        collectionSyncId: sync.id,
+        items: {
+          create: [
+            {
+              url: "https://makerworld.com/en/models/123",
+              status,
+              result: {
+                processed: 1,
+                imported: 1,
+                alreadyInLibrary: 0,
+                failed: 0,
+                printId: print.id,
+                stopReason: null,
+                profiles: false,
+              },
+            },
+          ],
+        },
+      },
+    });
+    await runLinksImportJob(job.id, user.id, { url: sync.sourceUrl });
+    const recovered = await prisma.importJob.findUniqueOrThrow({ where: { id: job.id } });
+    expect(recovered).toMatchObject({
+      status: "DONE",
+      processed: 1,
+      imported: 1,
+      alreadyInLibrary: 0,
+      resultPrintId: print.id,
+    });
+    expect(designCalls.size).toBe(0);
+    const notification = await prisma.notification.findFirstOrThrow({
+      where: { userId: user.id, type: "sync" },
+      orderBy: { createdAt: "desc" },
+    });
+    expect(notification.title).toBe(`1 new model synced into "Recovered ${status}"`);
+    expect(notification.body).toContain(`"Recovered ${status}"`);
   });
 });

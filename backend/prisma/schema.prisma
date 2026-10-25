@@ -415,6 +415,8 @@ model ImportJobItem {
   // Per-link options a queued link carries on its own (collection_id, scope, title), over the
   // job's shared payload.
   payload      Json?
+  // Durable import outcome, independent of the job progress checkpoint.
+  result       Json?
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
 
