@@ -154,18 +154,14 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
     if (needsCaptcha && !captcha?.captcha_answer.trim()) return;
     // The request may inspect a provider page before enqueueing. Release the dialog now so
     // another link can be added while that work and the queued import continue.
-    const submittedLinks = links;
-    const submittedUrl = linkValue;
-    const submittedCaptcha = needsCaptcha ? captcha : null;
-    const submittedScope = hasProfiles ? profileScope : "url";
     setImportOpen(false);
     setLinkValue("");
     setCaptcha(null);
     if (isBatch) {
-      void upload.submitImportMany(submittedLinks, submittedCaptcha, submittedScope);
+      void upload.submitImportMany(links, needsCaptcha ? captcha : null, hasProfiles ? profileScope : "url");
       return;
     }
-    void upload.submitImport(submittedUrl, submittedCaptcha, submittedScope);
+    void upload.submitImport(linkValue, needsCaptcha ? captcha : null, hasProfiles ? profileScope : "url");
   };
 
   return (

@@ -13,9 +13,6 @@ type StartSingleImportPayload = Parameters<typeof importsApi.queueFromLink>[0];
 
 type ImportJobContextValue = {
   jobs: ImportJob[];
-  /** The job currently shown in the progress bar, including finished failures. */
-  activeJob: ImportJob | null;
-  isImporting: boolean;
   startSingleImport: (payload: StartSingleImportPayload) => Promise<void>;
   startZipImport: (payload: StartZipImportPayload) => Promise<void>;
   /** The models queued for Thingport Grab where the provider's files come through it, else null: a job runs. */
@@ -26,8 +23,8 @@ type ImportJobContextValue = {
   startProfilesImport: (provider: ProviderId, payload: StartProfilesImportPayload) => Promise<void>;
   startLinksImport: (payload: StartLinksImportPayload) => Promise<void>;
   /** Reruns the links that failed on the finished job shown in the progress bar. */
-  retryJob: (jobId?: string) => Promise<void>;
-  dismissJob: (jobId?: string) => void;
+  retryJob: (jobId: string) => Promise<void>;
+  dismissJob: (jobId: string) => void;
 };
 
 const ImportJobContext = createContext<ImportJobContextValue | null>(null);
@@ -45,7 +42,6 @@ export function ImportJobProvider({
 }) {
   const navigate = useNavigate();
   const [jobs, setJobs] = useState<ImportJob[]>([]);
-  const activeJob = jobs[0] ?? null;
   const tracked = useRef(new Map<string, { timer: number | null; polling: boolean; running: boolean }>());
   const mounted = useRef(true);
   const onJobCompletedRef = useRef(onJobCompleted);
@@ -177,47 +173,34 @@ export function ImportJobProvider({
   );
 
   const retryJob = useCallback(
-    async (jobId?: string) => {
-      const id = jobId ?? activeJob?.id;
-      if (!id) return;
-      const started = await importsApi.retryImportJob(id);
-      removeJob(id);
+    async (jobId: string) => {
+      const started = await importsApi.retryImportJob(jobId);
+      removeJob(jobId);
       await followJob(started.job_id);
     },
-    [activeJob, followJob, removeJob],
-  );
-
-  const dismissJob = useCallback(
-    (jobId?: string) => {
-      const id = jobId ?? activeJob?.id;
-      if (id) removeJob(id);
-    },
-    [activeJob, removeJob],
+    [followJob, removeJob],
   );
 
   const value = useMemo(
     () => ({
       jobs,
-      activeJob,
-      isImporting: jobs.some((job) => job.status === "RUNNING" || job.status === "QUEUED"),
       startSingleImport,
       startZipImport,
       startListImport,
       startProfilesImport,
       startLinksImport,
       retryJob,
-      dismissJob,
+      dismissJob: removeJob,
     }),
     [
       jobs,
-      activeJob,
       startSingleImport,
       startZipImport,
       startListImport,
       startProfilesImport,
       startLinksImport,
       retryJob,
-      dismissJob,
+      removeJob,
     ],
   );
 
