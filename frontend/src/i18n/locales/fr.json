@@ -250,6 +250,14 @@
               "title": "Statistiques de la bibliothèque",
               "description": "Vos totaux et vos modèles les plus vus, les plus imprimés et les plus récents."
             },
+            "list_model_files": {
+              "title": "Lister les fichiers d'un modèle",
+              "description": "Voir les fichiers d'un modèle, pour pouvoir en récupérer un."
+            },
+            "get_model_file": {
+              "title": "Obtenir un fichier du modèle",
+              "description": "Lit l'un des fichiers d'un modèle, par ex. pour le trancher ou le convertir."
+            },
             "get_import_status": {
               "title": "Suivre un import",
               "description": "Suit un import encore en cours."
@@ -257,6 +265,10 @@
             "import_model": {
               "title": "Importer un modèle",
               "description": "Importe un modèle depuis un lien, comme + Ajouter > Importer."
+            },
+            "upload_model": {
+              "title": "Téléverser un modèle",
+              "description": "Ajoute un modèle fait de vos propres fichiers, comme + Ajouter > Téléverser des fichiers."
             },
             "create_collection": {
               "title": "Créer une collection",

@@ -248,6 +248,14 @@
               "title": "Bibliotekos statistika",
               "description": "Jūsų suvestinė, daugiausiai peržiūrėti, spausdinti ir naujausi modeliai."
             },
+            "list_model_files": {
+              "title": "Modelio failai",
+              "description": "Matyti modelio failus, kad būtų galima gauti vieną iš jų."
+            },
+            "get_model_file": {
+              "title": "Gauti modelio failą",
+              "description": "Skaityti vieną modelio failą, pvz., norint jį supjaustyti ar konvertuoti."
+            },
             "get_import_status": {
               "title": "Importo būsena",
               "description": "Sekti importą, kuris dar vyksta."
@@ -255,6 +263,10 @@
             "import_model": {
               "title": "Importuoti modelį",
               "description": "Importuoti modelį iš nuorodos, kaip + Pridėti > Importuoti."
+            },
+            "upload_model": {
+              "title": "Įkelti modelį",
+              "description": "Pridėti modelį iš savo failų, kaip + Pridėti > Įkelti failus."
             },
             "create_collection": {
               "title": "Sukurti kolekciją",

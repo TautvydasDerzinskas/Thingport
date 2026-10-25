@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
+import sharp from "sharp";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { DEFAULT_MCP_TOOL_NAMES, MCP_TOOLS, mcpImportTiming } from "../src/mcp/tools";
@@ -349,6 +350,24 @@ describe("the tools", () => {
     expect(stats.data.collection_count).toBe(1);
   });
 
+  it("list_model_files lists a model's files, and get_model_file returns one", async () => {
+    const { data } = await callTool(alice.token, "list_model_files", { model_id: dragonId });
+    expect(data.files).toEqual([
+      expect.objectContaining({ name: "dragon.stl", kind: "plate", size_bytes: expect.any(Number) }),
+    ]);
+    const file = await callTool(alice.token, "get_model_file", { model_id: dragonId, file_id: data.files[0].id });
+    expect(Buffer.from(file.data.base64, "base64").toString()).toBe("solid dragon.stl\nendsolid dragon.stl\n");
+  });
+
+  it("get_model_file won't read another user's model, nor a file of another model", async () => {
+    const theirs = await callTool(alice.token, "list_model_files", { model_id: bobSecretId });
+    expect(theirs.isError).toBe(true);
+    const bobFiles = (await callTool(bob.token, "list_model_files", { model_id: bobSecretId })).data.files;
+    const crossed = await callTool(alice.token, "get_model_file", { model_id: dragonId, file_id: bobFiles[0].id });
+    expect(crossed.isError).toBe(true);
+    expect(crossed.text).not.toContain("solid");
+  });
+
   it("get_author says not found for an unknown author", async () => {
     const result = await callTool(alice.token, "get_author", { id: "no-such-author" });
     expect(result.isError).toBe(true);
@@ -356,7 +375,7 @@ describe("the tools", () => {
 });
 
 describe("the tools that write", () => {
-  const WRITE_TOOLS = ["import_model", "create_collection", "add_to_collection"];
+  const WRITE_TOOLS = ["import_model", "upload_model", "create_collection", "add_to_collection"];
   // A public IP literal passes the SSRF check without a DNS lookup; fetch is mocked below.
   const FILE_URL = "https://93.184.215.14/files/mcp-imported-widget.stl";
   let writer: Account;
@@ -559,6 +578,71 @@ describe("the tools that write", () => {
     }
   });
 
+  it("upload_model makes one model from the files, with its pictures and collection", async () => {
+    const { data: collection } = await callTool(writer.token, "create_collection", { name: "Uploaded here" });
+    const png = await sharp({ create: { width: 8, height: 8, channels: 3, background: "#3366cc" } })
+      .png()
+      .toBuffer();
+    const b64 = (text: string) => Buffer.from(text).toString("base64");
+    const result = await callTool(writer.token, "upload_model", {
+      title: "Stringing test",
+      description: "0.2 mm layers, PLA.",
+      tags: ["calibration"],
+      collection_id: collection.id,
+      files: [
+        { name: "stringing.stl", base64: b64("solid s\nendsolid s\n") },
+        { name: "settings.txt", base64: b64("retraction 0.8 mm") },
+      ],
+      images: [png.toString("base64"), b64("not an image")],
+    });
+    expect(result.isError).toBe(false);
+    expect(result.data.model.title).toBe("Stringing test");
+    expect(result.data.images_added).toBe(1);
+    expect(result.data.images_skipped).toBe(1);
+    expect(result.data.collection).toEqual({ id: collection.id, name: "Uploaded here" });
+
+    const print = await prisma.print.findUniqueOrThrow({
+      where: { id: result.data.model.id },
+      include: { plates: true, files: true },
+    });
+    expect(print.userId).toBe(writer.userId);
+    expect(print.notes).toBe("0.2 mm layers, PLA.");
+    expect(print.plates.map((p) => p.filename)).toEqual(["stringing.stl"]);
+    expect(print.files.map((f) => [f.filename, f.role])).toEqual([["settings.txt", "SUPPORTING"]]);
+    expect(await prisma.previewImage.count({ where: { printId: print.id } })).toBeGreaterThanOrEqual(1);
+    expect(await prisma.collectionItem.count({ where: { collectionId: collection.id, printId: print.id } })).toBe(1);
+    // The same trail as + Add > Upload.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(
+      await prisma.log.count({ where: { userId: writer.userId, action: "model_uploaded", targetId: print.id } }),
+    ).toBe(1);
+
+    // Both files read back with the file tools.
+    const { data: listed } = await callTool(writer.token, "list_model_files", { model_id: print.id });
+    expect(listed.files.map((f: { name: string; kind: string }) => [f.name, f.kind])).toEqual([
+      ["stringing.stl", "plate"],
+      ["settings.txt", "supporting"],
+    ]);
+  });
+
+  it("upload_model checks the collection and category before storing anything", async () => {
+    const before = await prisma.print.count({ where: { userId: writer.userId } });
+    const files = [{ name: "x.stl", base64: Buffer.from("solid x\nendsolid x\n").toString("base64") }];
+    const theirs = await callTool(writer.token, "upload_model", { files, collection_id: bobCollectionId });
+    expect(theirs.isError).toBe(true);
+    const bobCategory = await prisma.category.findFirstOrThrow({ where: { userId: bob.userId } });
+    const category = await callTool(writer.token, "upload_model", { files, category_id: bobCategory.id });
+    expect(category.isError).toBe(true);
+    expect(category.text).toMatch(/category not found/i);
+    expect(await prisma.print.count({ where: { userId: writer.userId } })).toBe(before);
+  });
+
+  it("upload_model refuses a file that isn't base64", async () => {
+    const result = await callTool(writer.token, "upload_model", { files: [{ name: "x.stl", base64: "!!!" }] });
+    expect(result.isError).toBe(true);
+    expect(result.text).toMatch(/base64/);
+  });
+
   it("get_import_status says when it doesn't know the import", async () => {
     const unknown = await callTool(writer.token, "get_import_status", { task_id: "no-such-task" });
     expect(unknown.isError).toBe(true);
@@ -566,7 +650,7 @@ describe("the tools that write", () => {
 });
 
 describe("the instance's MCP access", () => {
-  const WRITE_TOOLS = ["import_model", "create_collection", "add_to_collection"];
+  const WRITE_TOOLS = ["import_model", "upload_model", "create_collection", "add_to_collection"];
   let writer: Account;
 
   beforeAll(async () => {

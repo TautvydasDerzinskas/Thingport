@@ -6,7 +6,8 @@ import { HttpError } from "../utils/fileUtils";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { thumbnailUpload } from "../uploadMiddleware";
-import { addPreviewImage, preferImageOverRenders, removePreviewImageFile } from "../services/previewImageService";
+import { removePreviewImageFile } from "../services/previewImageService";
+import { addUploadedPreviewImages } from "../services/uploadService";
 import { printOutById } from "../services/printLoader";
 
 const router = Router();
@@ -21,16 +22,10 @@ router.post(
     const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
     if (!print) throw new HttpError(404, "Print not found");
     // As with an import's gallery, the first image becomes the cover and card thumbnail in place of our render.
-    const firstPlate = await prisma.plate.findFirst({ where: { printId: print.id }, orderBy: { position: "asc" } });
-    let preferred = false;
-    // Undecodable files are skipped rather than failing the batch.
-    for (const file of files) {
-      const added = await addPreviewImage(print.id, file.buffer, { keepExif: true });
-      if (added && !preferred) {
-        preferred = true;
-        await preferImageOverRenders(print.id, firstPlate?.id, file.buffer, true);
-      }
-    }
+    await addUploadedPreviewImages(
+      print.id,
+      files.map((f) => f.buffer),
+    );
     res.json({ print: await printOutById(req.userId!, print.id) });
   }),
 );

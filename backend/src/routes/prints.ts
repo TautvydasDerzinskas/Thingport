@@ -4,12 +4,13 @@ import { Router, type Request, type Response } from "express";
 import { z } from "zod";
 import { prisma } from "../db";
 import { requireAuth } from "../auth";
-import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
+import { HttpError, sanitizeFilename } from "../utils/fileUtils";
 import { normalizeTags } from "../utils/tagNormalization";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { modelUpload } from "../uploadMiddleware";
-import { createPrint, deletePlateFiles, resolvePlateFilePath, type NewPlateInput } from "../services/printCreation";
+import { deletePlateFiles, resolvePlateFilePath } from "../services/printCreation";
+import { createUploadedModel } from "../services/uploadService";
 import {
   plateThumbPath,
   relocatePrint,
@@ -28,10 +29,8 @@ import {
   pruneDescriptionImages,
 } from "../services/descriptionImageService";
 import { deleteAuthorIfOrphaned } from "../services/authorService";
-import { toPrintOut } from "../dto";
 import { loadFullPrint, printOutById, printOutsByIds } from "../services/printLoader";
-import { deleteAllPrintFiles, saveFileFromTemp } from "../services/printFileService";
-import { RENDERABLE_MODEL_EXTS } from "../config";
+import { deleteAllPrintFiles } from "../services/printFileService";
 import { estimateDownloadSize, resolvePrintsForDownload, sendPrintsZip } from "../services/downloadZip";
 import { createLog } from "../services/auditLog";
 import { recordActivity } from "../services/activityService";
@@ -45,10 +44,6 @@ import { printQuality, startPrintQualityCheck } from "../services/modelQualitySe
 
 const router = Router();
 router.use(requireAuth);
-
-function isRenderableUpload(f: Express.Multer.File): boolean {
-  return RENDERABLE_MODEL_EXTS.has(path.extname(f.originalname).toLowerCase());
-}
 
 /** GET /prints' and GET /tags' query string as listing filters. */
 function printFiltersFromQuery(req: Request): PrintFilters {
@@ -92,53 +87,12 @@ router.post(
       };
 
       const printsOut = [];
-      if (files.length === 1 || mode === "separate") {
-        for (const file of files) {
-          const safeName = sanitizeFilename(file.originalname);
-          const mime = mimeFromContentType(file.mimetype, safeName);
-          const { print, plates } = await createPrint(req.userId!, meta, path.parse(safeName).name, [
-            { filename: safeName, mime, tempFilePath: file.path },
-          ]);
-          printsOut.push(toPrintOut(print, plates, [], null));
-          created.push({ id: print.id, name: print.title || print.name });
-          pending.delete(file);
-          void recordActivity(req.userId!, "upload", print.id, print.name);
-          void createLog({
-            userId: req.userId!,
-            action: "model_uploaded",
-            targetId: print.id,
-            details: { name: print.name },
-          });
-        }
-      } else {
-        // Non-renderable files become SUPPORTING files. If nothing is renderable, every file becomes a
-        // plate so the print still has one.
-        const renderableFiles = files.filter(isRenderableUpload);
-        const supportingFiles = renderableFiles.length ? files.filter((f) => !isRenderableUpload(f)) : [];
-        const plateFiles = renderableFiles.length ? renderableFiles : files;
-
-        const plateInputs: NewPlateInput[] = plateFiles.map((f) => {
-          const safeName = sanitizeFilename(f.originalname);
-          return { filename: safeName, mime: mimeFromContentType(f.mimetype, safeName), tempFilePath: f.path };
-        });
-        const nameHint = path.parse(plateInputs[0].filename).name;
-        const { print } = await createPrint(req.userId!, meta, nameHint, plateInputs);
+      // One model per file, or one holding them all.
+      const groups = files.length === 1 || mode === "separate" ? files.map((f) => [f]) : [files];
+      for (const group of groups) {
+        const print = await createUploadedModel(req.userId!, meta, group, (f) => pending.delete(f));
         created.push({ id: print.id, name: print.title || print.name });
-        for (const f of plateFiles) pending.delete(f);
-
-        for (const f of supportingFiles) {
-          await saveFileFromTemp(req.userId!, print.id, f.path, f.originalname, f.mimetype);
-          pending.delete(f);
-        }
-
         printsOut.push(await printOutById(req.userId!, print.id));
-        void recordActivity(req.userId!, "upload", print.id, print.name);
-        void createLog({
-          userId: req.userId!,
-          action: "model_uploaded",
-          targetId: print.id,
-          details: { name: print.name },
-        });
       }
       if (notify) {
         await notifyUpload(req.userId!, created).catch((err) => console.error("Upload notification failed:", err));
