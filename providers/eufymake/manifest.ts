@@ -34,6 +34,7 @@ export default {
   ],
   modelNoun: "models",
   helpers: { grab: "recommended", flaresolverr: "none" },
+  slicers: ["eufystudio3d"],
   capabilities: {
     collections: false,
     likes: true,

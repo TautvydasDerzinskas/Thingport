@@ -125,7 +125,7 @@ A hand-installed copy doesn't update itself -- repeat these steps for a newer ve
 ## Download normalized (no Thingport needed)
 
 MakerWorld's files are Bambu Studio projects, which PrusaSlicer, Cura, Anycubic Slicer Next,
-Creality Print, Elegoo Slicer and Snapmaker Orca often open without their colors or print settings.
+Creality Print, Elegoo Slicer, Snapmaker Orca and eufyMake Studio often open without their colors or print settings.
 On a MakerWorld model page, the extension adds a **Download normalized** button under MakerWorld's
 own "Open in Bambu Studio" (or Download) button. Clicking it downloads the selected print profile's file, converts it, and saves
 a `<name>-normalized.3mf` that keeps painted colors, filament colors, plates and the designer's
