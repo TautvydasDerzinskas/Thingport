@@ -1,7 +1,7 @@
-// A single-URL import run in the background so the caller can poll instead of holding one request
-// open. The extension needs this: Chromium kills an extension service worker whose fetch() takes
-// over 30s to answer, which cut long MakerWorld imports off mid-request (nginx logged a 499).
-// In memory on purpose: a task lives for one import, and a lost one just reads as "not found".
+// Browser-bound imports still use a request-local background task when their short-lived
+// credentials cannot be persisted. Other single imports are queued as durable ImportJobs.
+// The extension polls either kind instead of holding a request open: Chromium kills a
+// service worker whose fetch() takes over 30s to answer.
 
 import crypto from "node:crypto";
 import { prisma } from "../db";

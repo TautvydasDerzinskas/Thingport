@@ -91,7 +91,7 @@ function mockFetch() {
 
 async function waitJob(jobId: string) {
   let job = (await request(app).get(`/api/import/jobs/${jobId}`).set(auth())).body;
-  for (let i = 0; i < 150 && job.status === "RUNNING"; i++) {
+  for (let i = 0; i < 150 && (job.status === "QUEUED" || job.status === "RUNNING"); i++) {
     await new Promise((resolve) => setTimeout(resolve, 100));
     job = (await request(app).get(`/api/import/jobs/${jobId}`).set(auth())).body;
   }
@@ -178,7 +178,7 @@ describe("the links import queue", () => {
     expect(job.imported).toBe(1);
     expect(job.failed_count).toBe(1);
 
-    let items = await prisma.importJobItem.findMany({ where: { jobId: job.id }, orderBy: { createdAt: "asc" } });
+    let items = await prisma.importJobItem.findMany({ where: { jobId: job.id }, orderBy: { url: "asc" } });
     expect(items.map((i) => i.status)).toEqual(["DONE", "FAILED"]);
     expect(items[1].errorMessage).toBeTruthy();
     expect(items[1].attempts).toBe(1);
@@ -193,7 +193,7 @@ describe("the links import queue", () => {
     expect(rerun.imported).toBe(2);
     expect(rerun.failed_count).toBe(0);
 
-    items = await prisma.importJobItem.findMany({ where: { jobId: job.id }, orderBy: { createdAt: "asc" } });
+    items = await prisma.importJobItem.findMany({ where: { jobId: job.id }, orderBy: { url: "asc" } });
     expect(items.map((i) => i.status)).toEqual(["DONE", "DONE"]);
     expect(designCalls.get(goodId)).toBeUndefined(); // the good link wasn't downloaded again
   });
