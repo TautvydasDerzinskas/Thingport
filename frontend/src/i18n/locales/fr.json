@@ -1055,6 +1055,33 @@
           "publish3": "Ajoutez le nom de son dossier à community-widgets/index.json et décrivez-le dans son README.md.",
           "publish4": "Ouvrez une pull request. Une fois fusionnée, tout Thingport pourra l’installer.",
           "guide": "Lire le guide complet"
+        },
+        "ai": {
+          "or": "ou",
+          "open": "Utiliser l’IA",
+          "title": "Créer un widget avec une IA",
+          "back": "Retour à l’éditeur",
+          "step1": "Connectez votre assistant IA à Thingport par MCP.",
+          "step3": "Demandez le widget que vous voulez, avec vos propres mots. Par exemple :",
+          "step4": "Il apparaît dans Les miens, prêt à être ajouté à votre tableau de bord. Redemandez pour le changer, ou peaufinez-le ici.",
+          "examplesLabel": "Exemples de demandes",
+          "examples": {
+            "printer": {
+              "label": "Avancement de l’imprimante",
+              "name": "Imprimante",
+              "prompt": "Crée-moi un widget Thingport qui montre l’avancement de mon imprimante OctoPrint."
+            },
+            "filament": {
+              "label": "Stock de filament",
+              "name": "Filament",
+              "prompt": "Crée-moi un widget Thingport qui liste mes bobines Spoolman et prévient quand l’une d’elles est presque vide."
+            },
+            "library": {
+              "label": "Modèles par mois",
+              "name": "Modèles ajoutés",
+              "prompt": "Crée-moi un widget Thingport avec un graphique du nombre de modèles ajoutés chaque mois."
+            }
+          }
         }
       }
     },
