@@ -30,6 +30,7 @@ vi.mock("../src/services/notificationService", async (importOriginal) => {
 
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
+import { drainImportQueue } from "../src/services/importScheduler";
 import { makerworldCaptchaCooloffActive, resetCaptchaCooloffForTest } from "../src/providers/makerworld/captcha";
 
 const app = createApp();
@@ -443,7 +444,7 @@ describe("the import queue", () => {
       for (const id of ids) expect(designCalls.get(String(id))).toBe(1);
     });
 
-    it("recovers a job left RUNNING by a restart: pause, then start", async () => {
+    it("requires worker recovery and explicit retry after pausing an interrupted job", async () => {
       const res = await queue(member, { url: modelUrl(base + 70) });
       const jobId = res.body.job_id;
       // What a crash mid-link leaves behind: no runner, the job and its link still RUNNING.
@@ -460,13 +461,19 @@ describe("the import queue", () => {
         200,
       );
       expect((await request(app).post(`/api/admin/import-queue/jobs/${jobId}/start`).set(auth(admin))).status).toBe(
+        409,
+      );
+      await drainImportQueue();
+      expect((await items(jobId))[0].status).toBe("FAILED");
+      expect((await items(jobId))[0].errorMessage).toContain("Check your library");
+      expect((await request(app).post(`/api/admin/import-queue/jobs/${jobId}/retry`).set(auth(admin))).status).toBe(
         202,
       );
       const finished = await waitStatus(jobId, "DONE");
       expect(finished.imported).toBe(1);
     });
 
-    it("starts a job a restart cut off, which has links waiting but none failed", async () => {
+    it("starts untouched links of a legacy interrupted job without replaying its interrupted link", async () => {
       const res = await queue(member, { url: modelUrl(base + 86) });
       await queue(member, { url: modelUrl(base + 87) });
       const jobId = res.body.job_id;
@@ -481,9 +488,12 @@ describe("the import queue", () => {
       const start = await request(app).post(`/api/admin/import-queue/jobs/${jobId}/start`).set(auth(admin));
       expect(start.status).toBe(202);
       const finished = await waitStatus(jobId, "DONE");
-      expect(finished.imported).toBe(2);
+      expect(finished.imported).toBe(1);
+      expect(finished.failedCount).toBe(1);
       expect(finished.errorMessage).toBeNull();
-      expect((await items(jobId)).map((item) => item.status)).toEqual(["DONE", "DONE"]);
+      expect((await items(jobId)).map((item) => item.status)).toEqual(["FAILED", "DONE"]);
+      expect((await items(jobId))[0].errorMessage).toContain("Check your library");
+      expect(designCalls.get(String(base + 86))).toBeUndefined();
     });
 
     it("lets a retry finish a job a restart cut off, too, though none of its links failed", async () => {

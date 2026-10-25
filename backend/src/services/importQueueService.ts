@@ -93,6 +93,21 @@ async function startLinksJobUnlocked(
   }
   // A remote runner can still own the current link after a pause. Only recovery
   // under the worker/per-job advisory lock may classify that item as interrupted.
+  // Older startup recovery left ERROR jobs with RUNNING items. We own the job
+  // lock here; expose these as failed, and replay them only on an explicit retry.
+  if (job.status === "ERROR") {
+    await prisma.importJobItem.updateMany({
+      where: { jobId: job.id, status: "RUNNING" },
+      data: {
+        status: "FAILED",
+        errorMessage: "Import interrupted; this link may already be imported. Check your library before retrying.",
+      },
+    });
+    await prisma.importJob.update({
+      where: { id: job.id },
+      data: { failedCount: await prisma.importJobItem.count({ where: { jobId: job.id, status: "FAILED" } }) },
+    });
+  }
   if (await prisma.importJobItem.count({ where: { jobId: job.id, status: "RUNNING" } })) {
     throw new HttpError(409, "This import is still finishing or recovering its current link, try again shortly");
   }
