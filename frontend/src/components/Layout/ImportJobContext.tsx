@@ -12,7 +12,7 @@ type StartLinksImportPayload = Parameters<typeof importsApi.fromLinks>[0];
 type StartSingleImportPayload = Parameters<typeof importsApi.queueFromLink>[0];
 
 type ImportJobContextValue = {
-  /** Non-null while a batch import runs; drives the progress bar and disables importing. */
+  /** The job currently shown in the progress bar, including finished failures. */
   activeJob: ImportJob | null;
   isImporting: boolean;
   startSingleImport: (payload: StartSingleImportPayload) => Promise<void>;
@@ -44,6 +44,7 @@ export function ImportJobProvider({
 }) {
   const navigate = useNavigate();
   const [activeJob, setActiveJob] = useState<ImportJob | null>(null);
+  const taskSourceRef = useRef<string | null>(null);
   const pollRef = useRef<number | null>(null);
   const onJobCompletedRef = useRef(onJobCompleted);
   onJobCompletedRef.current = onJobCompleted;
@@ -58,7 +59,10 @@ export function ImportJobProvider({
   const pollJob = useCallback(
     async (jobId: string) => {
       try {
-        const job = await importsApi.getImportJob(jobId);
+        const job =
+          taskSourceRef.current !== null
+            ? await importsApi.getImportTaskJob(jobId, taskSourceRef.current)
+            : await importsApi.getImportJob(jobId);
         if (job.status === "RUNNING" || job.status === "QUEUED") {
           setActiveJob(job);
           return;
@@ -122,6 +126,7 @@ export function ImportJobProvider({
 
   const followJob = useCallback(
     async (jobId: string) => {
+      taskSourceRef.current = null;
       setActiveJob(await importsApi.getImportJob(jobId));
       startPolling(jobId);
     },
@@ -129,8 +134,15 @@ export function ImportJobProvider({
   );
 
   const startSingleImport = useCallback(
-    async (payload: StartSingleImportPayload) => followJob((await importsApi.queueFromLink(payload)).job_id),
-    [followJob],
+    async (payload: StartSingleImportPayload) => {
+      const started = await importsApi.queueFromLink(payload);
+      if (started.job_id) return followJob(started.job_id);
+      stopPolling();
+      taskSourceRef.current = payload.url;
+      setActiveJob(await importsApi.getImportTaskJob(started.task_id, payload.url));
+      startPolling(started.task_id);
+    },
+    [followJob, startPolling, stopPolling],
   );
 
   const startZipImport = useCallback(

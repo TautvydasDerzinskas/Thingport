@@ -34,7 +34,7 @@ export type MakerworldProfileScope = "url" | "designer" | "all";
 // PAUSED: a link queue waiting to be started from the admin import queue.
 export type ImportJobStatus = "QUEUED" | "RUNNING" | "DONE" | "ERROR" | "PAUSED";
 
-/** Polled by ImportJobContext until status leaves RUNNING. */
+/** Polled by ImportJobContext while QUEUED or RUNNING. */
 export type ImportJob = {
   id: string;
   type: ImportJobType;
@@ -83,7 +83,7 @@ type ImportLinkPayload = {
 export type ImportOutcome = "created" | "profile_added" | "already_imported";
 
 export const importsApi = {
-  queueFromLink: async (payload: ImportLinkPayload): Promise<{ job_id: string }> => {
+  queueFromLink: async (payload: ImportLinkPayload): Promise<{ job_id?: string; task_id: string }> => {
     const res = await fetch(`${apiBase()}/import?async=1`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),
@@ -92,6 +92,33 @@ export const importsApi = {
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) throw new Error(await readErrorMessage(res, "Import failed"));
     return res.json();
+  },
+
+  /** Browser-signed imports use the short-lived task endpoint instead of a durable job. */
+  getImportTaskJob: async (taskId: string, sourceUrl: string): Promise<ImportJob> => {
+    const res = await fetch(`${apiBase()}/import/tasks/${taskId}`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to load import progress"));
+    const task = await res.json();
+    const done = task.status === "done";
+    const failed = task.status === "error";
+    const existing = done && task.result?.import_outcome === "already_imported";
+    return {
+      id: taskId,
+      type: "SINGLE",
+      source_url: sourceUrl,
+      source_label: null,
+      provider: null,
+      status: done ? "DONE" : failed ? "ERROR" : task.status === "queued" ? "QUEUED" : "RUNNING",
+      total: 1,
+      processed: done || failed ? 1 : 0,
+      imported: done && !existing ? 1 : 0,
+      already_in_library: existing ? 1 : 0,
+      failed_count: failed ? 1 : 0,
+      error_message: failed ? task.detail : null,
+      result_collection_id: null,
+      result_print_id: done ? (task.result?.id ?? null) : null,
+    };
   },
 
   fromLink: async (payload: ImportLinkPayload): Promise<Print & { import_outcome?: ImportOutcome }> => {

@@ -28,7 +28,6 @@ import LinkIcon from "@mui/icons-material/Link";
 import BookmarkAddOutlinedIcon from "@mui/icons-material/BookmarkAddOutlined";
 import BookmarkletGuideDialog from "../BookmarkletGuideDialog";
 import { useUploadImport } from "../uploads/useUploadImport";
-import { useImportJob } from "./ImportJobContext";
 import { useToast } from "../ToastProvider";
 import { IMPORT_PROVIDER_INFO } from "../../constants/importProviders";
 import { COMING_SOON_PROVIDERS, ProviderLogo } from "./ConfigurationDialog/providerLogos";
@@ -76,14 +75,13 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
   const [exampleProvider, setExampleProvider] = React.useState<ImportProviderKey | null>(null);
   const [profileScope, setProfileScope] = React.useState<MakerworldProfileScope>("url");
   const [bookmarkletGuideOpen, setBookmarkletGuideOpen] = React.useState(false);
-  const { isImporting } = useImportJob();
   const upload = useUploadImport({ categoryId, makerworldCookie, onUploaded, onUnauthorized });
   const captchaSettings = useCaptchaSettings();
   const [captcha, setCaptcha] = React.useState<CaptchaAnswer | null>(null);
   const needsCaptcha = Boolean(captchaSettings?.import);
 
   // A pasted block of links becomes one queue job; a single link keeps the existing flows
-  // (collection pickers, zip inspection, immediate import).
+  // (collection pickers, zip inspection, queued import).
   const links = React.useMemo(
     () =>
       linkValue
@@ -128,7 +126,7 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
   React.useImperativeHandle(ref, () => ({
     importFromCommand: (link) => {
       // The same rule as the Add button, which is disabled meanwhile.
-      if (upload.isBusy || isImporting) {
+      if (upload.isBusy) {
         showToast({ message: t("addMenu.disabledWhileImporting"), severity: "info" });
         return;
       }
@@ -146,7 +144,7 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
     const link = readImportLink(location.pathname, location.search);
     if (link === null) return;
     navigate("/", { replace: true });
-    if (upload.isBusy || isImporting) showToast({ message: t("addMenu.disabledWhileImporting"), severity: "info" });
+    if (upload.isBusy) showToast({ message: t("addMenu.disabledWhileImporting"), severity: "info" });
     else openImport(link);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname, location.search]);
@@ -173,13 +171,13 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
     <>
       {upload.fileInput}
       {upload.folderInput}
-      <Tooltip title={isImporting ? t("addMenu.disabledWhileImporting") : ""}>
+      <Tooltip title={upload.isBusy ? t("addMenu.disabledWhileImporting") : ""}>
         <span>
           <Button
             variant="contained"
             size="small"
             startIcon={<AddIcon fontSize="small" />}
-            disabled={upload.isBusy || isImporting}
+            disabled={upload.isBusy}
             onClick={(e) => setAnchorEl(e.currentTarget)}
           >
             {upload.uploading ? t("uploadBar.uploading") : t("common:add")}
