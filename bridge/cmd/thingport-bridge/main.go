@@ -34,6 +34,9 @@ type Config struct {
 // any URL, so it never reaches here.
 const scheme = "thingport"
 
+// Release builds set it with -ldflags "-X main.version=...".
+var version = "dev"
+
 func main() {
 	if len(os.Args) < 2 {
 		// Windows/Linux pass the URL as argv[1], so no args means "install". macOS delivers it as an
@@ -46,6 +49,9 @@ func main() {
 	switch arg {
 	case "", "-h", "--help":
 		printUsage()
+		return
+	case "-v", "--version":
+		fmt.Println(version)
 		return
 	case "install", "--install":
 		runInstallAndReport()
@@ -63,6 +69,7 @@ func main() {
 func printUsage() {
 	fmt.Println("Usage:")
 	fmt.Println("  thingport-bridge --install")
+	fmt.Println("  thingport-bridge --version")
 	fmt.Println("  thingport-bridge <thingport://open?...>")
 }
 

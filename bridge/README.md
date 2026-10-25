@@ -27,9 +27,10 @@ auth token in that URL.
 ## Quick install (no shell commands)
 
 Download the latest Bridge binary for your OS from the
-[Thingport releases](https://github.com/TautvydasDerzinskas/Thingport/releases/latest) page
-(also linked from the in-app Download page) and run it once. It registers the `thingport://`
-protocol handler and copies itself into a stable location:
+[`bridge-latest` release](https://github.com/TautvydasDerzinskas/Thingport/releases/tag/bridge-latest)
+(also linked from the in-app Download page) and run it once. Each build has its own version
+(`thingport-bridge --version`; changes in [CHANGELOG.md](CHANGELOG.md)). Running it registers the
+`thingport://` protocol handler and copies the binary into a stable location:
 
 - Windows: `%LOCALAPPDATA%\Thingport\Bridge\thingport-bridge.exe`
 - Linux: `~/.local/bin/thingport-bridge`
