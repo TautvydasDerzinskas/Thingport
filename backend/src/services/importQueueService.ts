@@ -20,8 +20,9 @@ export async function startLinksJob(
   job: ImportJob,
   opts: { retryFailed?: boolean; manual?: boolean } = {},
 ): Promise<{ run: Promise<void> }> {
-  const payload = job.payload as Record<string, unknown> | null;
-  if (job.type === "LINKS" && payload?.immediate === true) {
+  // The runner keeps this lock through notifications and final status writes, even
+  // after its last item settles. Local runner maps cannot protect another process.
+  if (job.type === "LINKS") {
     const release = await acquireImmediateImportLock(job.id);
     if (!release) throw new HttpError(409, "This import is still finishing its current link, try again shortly");
     try {

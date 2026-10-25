@@ -3,7 +3,7 @@ import { Client } from "pg";
 import { prisma, getActiveDatabaseUrl } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { executeQueuedImport } from "./importJobExecution";
-import { recoverImmediateImports } from "./immediateImport";
+import { acquireImmediateImportLock, recoverImmediateImports } from "./immediateImport";
 
 // A dedicated PostgreSQL session holds the global advisory lock across provider requests.
 // Progress commits independently, without a long-running transaction or a pooled session lock.
@@ -127,11 +127,19 @@ async function drainQueue(): Promise<void> {
       });
       if (!job || lostLock || suspended) return;
       working = true;
-      const claim = await prisma.importJob.updateMany({
-        where: { id: job.id, status: "QUEUED" },
-        data: { status: "RUNNING", errorMessage: null },
-      });
-      if (claim.count) await executeQueuedImport(job);
+      // Share the job lock with start/retry, including the final notification phase
+      // where a paused job may have no RUNNING items left but still has a live owner.
+      const releaseJob = job.type === "LINKS" ? await acquireImmediateImportLock(job.id) : null;
+      if (job.type === "LINKS" && !releaseJob) return;
+      try {
+        const claim = await prisma.importJob.updateMany({
+          where: { id: job.id, status: "QUEUED" },
+          data: { status: "RUNNING", errorMessage: null },
+        });
+        if (claim.count) await executeQueuedImport(job);
+      } finally {
+        await releaseJob?.();
+      }
       working = false;
     }
   } finally {

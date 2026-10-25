@@ -574,7 +574,7 @@ describe("the import queue", () => {
       expect(makerworldCaptchaCooloffActive()).toBe(false);
     });
 
-    it("retries a finished job right away, while its runner is still writing the notification", async () => {
+    it("allows retry only after the finished runner has written its notification", async () => {
       gone.add(String(base + 85));
       const res = await queue(member, { url: modelUrl(base + 85) });
       const jobId = res.body.job_id;
@@ -593,7 +593,11 @@ describe("the import queue", () => {
       notifyDelay.ms = 0;
       gone.clear();
       const retry = await request(app).post(`/api/admin/import-queue/jobs/${jobId}/retry`).set(auth(admin));
-      expect(retry.status).toBe(202);
+      expect(retry.status).toBe(409);
+      await waitFor(
+        () => request(app).post(`/api/admin/import-queue/jobs/${jobId}/retry`).set(auth(admin)),
+        (response) => response.status === 202,
+      );
       const finished = await waitFor(
         () => job(jobId),
         (j) => j.status === "DONE" && j.failedCount === 0,

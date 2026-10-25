@@ -5,7 +5,7 @@ import type { Prisma } from "@prisma/client";
 import { reserveDatabaseOperation } from "./databaseSwitchGate";
 import { createJob } from "./importJobService";
 
-/** Separate from the scheduler lock: browser sessions may run in another API process. */
+/** Shared job ownership for browser/durable runners and start/retry in other API processes. */
 export async function acquireImmediateImportLock(jobId: string): Promise<(() => Promise<void>) | null> {
   const client = new Client({ connectionString: getActiveDatabaseUrl(), keepAlive: true });
   let owned = false;
