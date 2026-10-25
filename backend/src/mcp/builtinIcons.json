@@ -82,6 +82,11 @@
     "group": "providers"
   },
   {
+    "value": "builtin:providers/eufymake",
+    "name": "eufyMake",
+    "group": "providers"
+  },
+  {
     "value": "builtin:ai/ai21",
     "name": "AI21",
     "group": "ai"

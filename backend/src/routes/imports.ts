@@ -274,7 +274,8 @@ router.post(
 );
 
 for (const provider of PROVIDER_IDS) {
-  const legacy: ProviderManifest["legacy"] = MANIFESTS[provider].legacy;
+  // Widened: providers added since the generic routes have none.
+  const { legacy } = MANIFESTS[provider] as ProviderManifest;
   for (const { path: listPath, kinds, idsField } of legacy?.lists ?? []) {
     router.post(
       `/import/${listPath}/entries`,

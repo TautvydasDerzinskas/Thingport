@@ -610,6 +610,7 @@ describe("a sync's model links", () => {
       nexprint: "G1617",
       thangs: "1819",
       cults3d: "a-model",
+      eufymake: "be7c829023dd11f19919128e55eac07e",
     };
     const readBack = Object.fromEntries(
       PROVIDER_IDS.map((provider) => [provider, modelIdFromUrl(provider, modelUrlFor(provider, ids[provider]))]),

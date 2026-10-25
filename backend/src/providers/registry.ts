@@ -13,6 +13,7 @@ import crealitycloudCategories from "./crealitycloud/categories.json";
 import nexprintCategories from "./nexprint/categories.json";
 import thangsCategories from "./thangs/categories.json";
 import cults3dCategories from "./cults3d/categories.json";
+import eufymakeCategories from "./eufymake/categories.json";
 import {
   crealitycloudImport,
   crealitycloudTrending,
@@ -21,6 +22,7 @@ import {
   crealitycloudKeptId,
 } from "./crealitycloud";
 import { cults3dImport, cults3dTrending, cults3dLists, cults3dDetails } from "./cults3d";
+import { eufymakeImport, eufymakeTrending, eufymakeLists, eufymakeDetails } from "./eufymake";
 import { makeronlineImport, makeronlineTrending, makeronlineLists, makeronlineDetails } from "./makeronline";
 import { makerworldTrending, makerworldLists, makerworldDetails } from "./makerworld";
 import {
@@ -43,6 +45,7 @@ import {
 } from "./thingiverse";
 import { crealitycloudConnection } from "./crealitycloud/connection";
 import { cults3dApiConnection, cults3dBrowserConnection } from "./cults3d/connection";
+import { eufymakeConnection } from "./eufymake/connection";
 import { makeronlineConnection } from "./makeronline/connection";
 import { makerworldConnection } from "./makerworld/connection";
 import { myminifactoryKeyConnection, myminifactorySessionConnection } from "./myminifactory/connection";
@@ -60,6 +63,7 @@ import { crealitycloudSync } from "./crealitycloud/sync";
 import { nexprintSync } from "./nexprint/sync";
 import { thangsSync } from "./thangs/sync";
 import { cults3dSync } from "./cults3d/sync";
+import { eufymakeSync } from "./eufymake/sync";
 import { makerworldBrowse } from "./makerworld/browse";
 import { printablesBrowse } from "./printables/browse";
 import { thingiverseBrowse } from "./thingiverse/browse";
@@ -70,6 +74,7 @@ import { crealitycloudBrowse } from "./crealitycloud/browse";
 import { nexprintBrowse } from "./nexprint/browse";
 import { thangsBrowse } from "./thangs/browse";
 import { cults3dBrowse } from "./cults3d/browse";
+import { eufymakeBrowse } from "./eufymake/browse";
 import type { AuthSlot } from "./index.generated";
 import type {
   ConnectionSlot,
@@ -336,6 +341,18 @@ export const PROVIDERS = {
     stopTexts: {
       blocked: `${name("cults3d")}'s Cloudflare turned Thingport away — visit ${siteHost("cults3d")} with Thingport Grab to renew its clearance`,
     },
+  },
+  eufymake: {
+    starterCategories: eufymakeCategories,
+    connection: { default: eufymakeConnection },
+    // Only its likes are read with the sign-in; its models import without one.
+    authStopText: grabSignInStop("eufymake"),
+    sourcedImport: eufymakeImport,
+    lists: eufymakeLists,
+    sync: eufymakeSync,
+    browse: eufymakeBrowse,
+    trending: eufymakeTrending,
+    details: eufymakeDetails,
   },
 } satisfies { [K in ProviderId]: Entry<K> } as { readonly [K in ProviderId]: ProviderBackend };
 

@@ -29,6 +29,8 @@ export const CAPTURE: Partial<Record<ProviderId, (id: ProviderId) => void>> = {
   thangs: syncSession,
   // Its sign-in downloads the files, and lasts a day: kept fresh by the background, and sent on.
   snapmaker: syncSession,
+  // Its sign-in reads the likes; the site keeps it in page storage, which the background reads from this tab.
+  eufymake: syncSession,
   printables: () => void syncPrintables(),
   myminifactory: captureMyminifactoryAccount,
   thingiverse: captureThingiverseAccount,

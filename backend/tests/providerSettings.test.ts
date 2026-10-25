@@ -41,6 +41,7 @@ afterAll(async () => {
     "nexprint",
     "thangs",
     "cults3d",
+    "eufymake",
   ] as const)
     await setProviderEnabled(provider, true);
 });
@@ -60,6 +61,7 @@ describe("turning providers off", () => {
       nexprint: true,
       thangs: true,
       cults3d: true,
+      eufymake: true,
     });
 
     expect(
@@ -82,6 +84,7 @@ describe("turning providers off", () => {
       nexprint: true,
       thangs: true,
       cults3d: true,
+      eufymake: true,
     });
   });
 

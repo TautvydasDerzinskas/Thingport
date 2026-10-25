@@ -86,4 +86,12 @@ export const PROVIDER_DOCS = [
     nav: "Cults3D",
     description: "Import free and bought Cults3D models, likes and printlists with your API key and browser sign-in.",
   },
+  {
+    slug: "providers/eufymake",
+    source: "docs/providers/eufymake.md",
+    group: "Providers",
+    title: "eufyMake",
+    nav: "eufyMake",
+    description: "Import models from eufyMake's Make it Real, and your likes with your own sign-in.",
+  },
 ];
