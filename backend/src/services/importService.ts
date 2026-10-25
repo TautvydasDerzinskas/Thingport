@@ -373,13 +373,21 @@ export async function openImportResponse(
   inheritedMeta: ImportedPageMetadata = emptyImportedPageMetadata(),
 ): Promise<OpenImportResult> {
   if (depth > 3) throw new HttpError(400, "Too many redirects while resolving download link");
-  const validatedUrl = await validateRemoteUrl(url);
+  let validatedUrl = await validateRemoteUrl(url);
 
   let host = "";
   try {
     host = (new URL(validatedUrl).hostname || "").toLowerCase();
   } catch {
     host = "";
+  }
+
+  // MakerWorld redirects www to apex; choose that origin before attaching a cookie.
+  if (depth === 0 && host === "www.makerworld.com" && parseMakerworldModelUrl(validatedUrl)) {
+    const canonical = new URL(validatedUrl);
+    canonical.hostname = "makerworld.com";
+    validatedUrl = await validateRemoteUrl(canonical.href);
+    host = canonical.hostname;
   }
 
   // Only at depth 0, so a resolved download URL isn't treated as a model page on recursion.
