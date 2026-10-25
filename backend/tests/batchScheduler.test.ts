@@ -20,6 +20,14 @@ vi.mock("../src/providers/registry", async (original) => {
             calls.starts++;
             calls.cookie = body.makerworld_cookie;
             if (body.model_ids.includes("failure")) throw new Error("provider preparation failed");
+            if (body.model_ids.includes("partial-failure"))
+              return {
+                async run(id: string) {
+                  const { prisma } = await import("../src/db");
+                  await prisma.importJob.update({ where: { id }, data: { processed: 1, imported: 1 } });
+                  throw new Error("provider failed after progress");
+                },
+              };
             return {
               async run(id: string) {
                 const { prisma } = await import("../src/db");
@@ -172,5 +180,21 @@ describe("queued batch reconstruction", () => {
     expect(finished[3].errorMessage).toMatch(/missing content/);
     await expect(startLinksJob(finished[3], { retryFailed: true })).rejects.toThrow(/remaining entries/);
     await expect(pauseLinksJob({ ...finished[0], status: "RUNNING" })).rejects.toThrow(/waiting import/);
+  });
+
+  it("keeps committed batch progress when a provider fails later", async () => {
+    const queued = await enqueueBatchImport(
+      userId,
+      "COLLECTION",
+      { url, model_ids: ["partial-failure"] },
+      "makerworld",
+    );
+    await drainToCompletion([queued.id]);
+    expect(await prisma.importJob.findUniqueOrThrow({ where: { id: queued.id } })).toMatchObject({
+      status: "ERROR",
+      processed: 1,
+      imported: 1,
+      errorMessage: "Internal server error",
+    });
   });
 });
