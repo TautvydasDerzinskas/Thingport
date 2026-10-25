@@ -1,5 +1,21 @@
 # Thingport Grab changelog
 
+# [thingport-grab-v1.8.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-grab-v1.7.0...thingport-grab-v1.8.0) (2026-10-25)
+
+
+### Bug Fixes
+
+* **extension:** list sync storage and Snapmaker renewal in Edge notes ([f240dce](https://github.com/TautvydasDerzinskas/Thingport/commit/f240dce392c96f57749f32dafe3ee0165a6f6f26))
+* **extension:** narrow the data claim in Edge certification notes ([900731f](https://github.com/TautvydasDerzinskas/Thingport/commit/900731fbd943404c9ea4f088e60282d480d5a3c2))
+* match provider hosts on a dot boundary, so look-alike domains never get a user's cookie ([#150](https://github.com/TautvydasDerzinskas/Thingport/issues/150)) ([e67924e](https://github.com/TautvydasDerzinskas/Thingport/commit/e67924ee8c18493182c5e149e5306a1e6c8269f4))
+* prevent AMO rate limit errors in extension release ([d33802d](https://github.com/TautvydasDerzinskas/Thingport/commit/d33802d8c0706068d1f6fee8e34689be4e913cca))
+
+
+### Features
+
+* add the Pinshape provider  ([#164](https://github.com/TautvydasDerzinskas/Thingport/issues/164)) ([7cd0bca](https://github.com/TautvydasDerzinskas/Thingport/commit/7cd0bca062de072c41c7dc46f916c0b9f7036af4))
+* **extension:** add new features & improve ui ([#147](https://github.com/TautvydasDerzinskas/Thingport/issues/147)) ([6ebc65b](https://github.com/TautvydasDerzinskas/Thingport/commit/6ebc65b8c9e898ec8a1eb64b7e0bcf6fdc4642c2))
+
 # [thingport-grab-v1.7.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-grab-v1.6.0...thingport-grab-v1.7.0) (2026-10-20)
 
 

@@ -107,7 +107,9 @@ export default function CustomWidgetsSection({ onAdd, onUnauthorized }: Props) {
           onUnauthorized={onUnauthorized}
         />
       )}
-      {tab === "community" && <Community reload={custom?.reload} onUnauthorized={onUnauthorized} />}
+      {tab === "community" && (
+        <Community installed={custom?.widgets} reload={custom?.reload} onUnauthorized={onUnauthorized} />
+      )}
       {tab === "share" && <Share />}
     </Stack>
   );
@@ -115,13 +117,24 @@ export default function CustomWidgetsSection({ onAdd, onUnauthorized }: Props) {
 
 function WidgetRow({
   manifest,
+  fromVersion,
+  fullDescription,
   extra,
   actions,
 }: {
   manifest: WidgetManifest;
+  /** The installed copy's version, shown before the new one when an update changes it. */
+  fromVersion?: string;
+  /** All of the description rather than its first two lines. */
+  fullDescription?: boolean;
   extra?: React.ReactNode;
-  actions: React.ReactNode;
+  actions?: React.ReactNode;
 }) {
+  const version =
+    manifest.version &&
+    (fromVersion && fromVersion !== manifest.version
+      ? `v${fromVersion} → v${manifest.version}`
+      : `v${manifest.version}`);
   return (
     <Paper variant="outlined" sx={{ p: 1.5, display: "flex", alignItems: "center", gap: 1.5 }}>
       <Box
@@ -129,6 +142,7 @@ function WidgetRow({
           width: 36,
           height: 36,
           flexShrink: 0,
+          alignSelf: "flex-start",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -142,9 +156,12 @@ function WidgetRow({
           <Typography variant="body2" fontWeight={600} noWrap>
             {manifest.name}
           </Typography>
-          <Typography variant="caption" color="text.secondary" noWrap>
-            {manifest.version && `v${manifest.version}`}
-            {manifest.author && " · "}
+          {extra && <Box sx={{ display: "flex", flexShrink: 0 }}>{extra}</Box>}
+        </Stack>
+        {(version || manifest.author) && (
+          <Typography variant="caption" color="text.secondary" component="div" noWrap>
+            {version}
+            {version && manifest.author && " · "}
             {manifest.author &&
               (manifest.authorUrl ? (
                 <Link href={manifest.authorUrl} target="_blank" rel="noopener noreferrer" color="inherit">
@@ -154,14 +171,17 @@ function WidgetRow({
                 manifest.author
               ))}
           </Typography>
-          {extra}
-        </Stack>
+        )}
         {manifest.description && (
           <Typography
             variant="caption"
             color="text.secondary"
             component="div"
-            sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+            sx={
+              fullDescription
+                ? { whiteSpace: "pre-line" }
+                : { display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }
+            }
           >
             {manifest.description}
           </Typography>
@@ -222,7 +242,7 @@ function MyWidgets({
         </Box>
       )}
       {widgets === null ? (
-        [0, 1].map((index) => <Skeleton key={index} variant="rounded" height={62} />)
+        [0, 1].map((index) => <Skeleton key={index} variant="rounded" height={98} />)
       ) : widgets.length === 0 ? (
         <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
           {t("dashboard.custom.none")}{" "}
@@ -334,7 +354,16 @@ function MyWidgets({
   );
 }
 
-function Community({ reload, onUnauthorized }: { reload?: () => Promise<void>; onUnauthorized?: () => void }) {
+function Community({
+  installed,
+  reload,
+  onUnauthorized,
+}: {
+  /** The user's widgets, to name the version an update replaces. */
+  installed?: CustomWidget[];
+  reload?: () => Promise<void>;
+  onUnauthorized?: () => void;
+}) {
   const { t } = useTranslation("app");
   const confirm = useConfirm();
   const toast = useToast();
@@ -360,21 +389,23 @@ function Community({ reload, onUnauthorized }: { reload?: () => Promise<void>; o
   // Installing is consenting: the prompt says what the code can do and which hosts it reaches.
   const install = async (widget: CommunityWidget) => {
     const update = widget.installed !== null;
+    const installedId = widget.installed?.id;
     const ok = await confirm({
       title: t(update ? "dashboard.custom.updateTitle" : "dashboard.custom.installTitle", {
         name: widget.manifest.name,
       }),
       message: (
-        <>
-          {t("dashboard.custom.installTrust")}
+        <Stack spacing={1.5}>
+          <WidgetRow
+            manifest={widget.manifest}
+            fromVersion={installed?.find((own) => own.id === installedId)?.manifest.version}
+            fullDescription
+          />
+          <span>{t("dashboard.custom.installTrust")}</span>
           {widget.manifest.hosts.length > 0 && (
-            <>
-              <br />
-              <br />
-              {t("dashboard.custom.installHosts", { hosts: widget.manifest.hosts.join(", ") })}
-            </>
+            <span>{t("dashboard.custom.installHosts", { hosts: widget.manifest.hosts.join(", ") })}</span>
           )}
-        </>
+        </Stack>
       ),
       confirmLabel: t(update ? "dashboard.custom.update" : "dashboard.custom.install"),
     });
@@ -403,7 +434,7 @@ function Community({ reload, onUnauthorized }: { reload?: () => Promise<void>; o
     return (
       <Stack spacing={1}>
         {[0, 1, 2].map((index) => (
-          <Skeleton key={index} variant="rounded" height={62} />
+          <Skeleton key={index} variant="rounded" height={98} />
         ))}
       </Stack>
     );

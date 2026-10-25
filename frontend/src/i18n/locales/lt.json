@@ -1065,6 +1065,33 @@
           "publish3": "Įrašykite aplanko pavadinimą į community-widgets/index.json ir aprašykite valdiklį README.md faile.",
           "publish4": "Atidarykite pull request. Kai jis bus priimtas, kiekvienas Thingport galės jį įdiegti.",
           "guide": "Skaityti visą vadovą"
+        },
+        "ai": {
+          "or": "arba",
+          "open": "Naudoti DI",
+          "title": "Sukurkite valdiklį su DI",
+          "back": "Grįžti į redaktorių",
+          "step1": "Prijunkite savo DI asistentą prie Thingport per MCP.",
+          "step3": "Paprašykite bet kokio valdiklio savais žodžiais. Pavyzdžiui:",
+          "step4": "Jis atsiras skiltyje „Mano“ ir bus paruoštas įdėti į suvestinę. Norėdami pakeisti, paprašykite dar kartą arba pataisykite čia.",
+          "examplesLabel": "Užklausų pavyzdžiai",
+          "examples": {
+            "printer": {
+              "label": "Spausdintuvo eiga",
+              "name": "Spausdintuvas",
+              "prompt": "Sukurk Thingport valdiklį, rodantį mano OctoPrint spausdintuvo eigą."
+            },
+            "filament": {
+              "label": "Gijų atsargos",
+              "name": "Gijos",
+              "prompt": "Sukurk Thingport valdiklį, rodantį mano Spoolman ritinius ir įspėjantį, kai kurio nors lieka mažai."
+            },
+            "library": {
+              "label": "Modeliai per mėnesį",
+              "name": "Pridėti modeliai",
+              "prompt": "Sukurk Thingport valdiklį su diagrama, kiek modelių pridėjau kiekvieną mėnesį."
+            }
+          }
         }
       }
     },

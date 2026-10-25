@@ -1050,6 +1050,33 @@
           "publish3": "Add its folder name to community-widgets/index.json, and say what it does in its README.md.",
           "publish4": "Open a pull request. Once it’s merged, every Thingport can install it.",
           "guide": "Read the full guide"
+        },
+        "ai": {
+          "or": "or",
+          "open": "Use AI",
+          "title": "Build a widget with AI",
+          "back": "Back to the editor",
+          "step1": "Connect your AI assistant to Thingport over MCP.",
+          "step3": "Ask for any widget, in your own words. For example:",
+          "step4": "It appears in Mine, ready to add to your dashboard. Ask again to change it, or fine-tune it here.",
+          "examplesLabel": "Example prompts",
+          "examples": {
+            "printer": {
+              "label": "Printer progress",
+              "name": "Printer",
+              "prompt": "Make me a Thingport widget that shows my OctoPrint printer’s progress."
+            },
+            "filament": {
+              "label": "Filament stock",
+              "name": "Filament",
+              "prompt": "Make me a Thingport widget that lists my Spoolman spools and warns when one runs low."
+            },
+            "library": {
+              "label": "Models per month",
+              "name": "Models added",
+              "prompt": "Make me a Thingport widget that charts how many models I added each month."
+            }
+          }
         }
       }
     },
