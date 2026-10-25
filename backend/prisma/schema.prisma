@@ -197,39 +197,40 @@ model Invitation {
 }
 
 model Category {
-  id                  String     @id @default(cuid())
+  id                  String           @id @default(cuid())
   userId              String
-  user                User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   name                String
-  tags                String[]   @default([])
+  tags                String[]         @default([])
   // "category" (the starter categories imports sort into) or "folder" (the user's own tree, e.g.
   // from uploading folders). Always the same as the top-level ancestor's.
-  kind                String     @default("folder")
+  kind                String           @default("folder")
   parentId            String?
-  parent              Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
-  children            Category[] @relation("CategoryTree")
+  parent              Category?        @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children            Category[]       @relation("CategoryTree")
   // Order among siblings. No unique index: Postgres treats NULL parentIds as distinct.
-  position            Int        @default(0)
+  position            Int              @default(0)
   metaTitle           String?
   metaDescription     String?
-  // Imports whose site category id matches any of these land in this category. Each site has its
-  // own id namespace.
-  // Each provider's category ids, a column apiece until Phase 7 of docs/rfc/provider-modules.md.
-  makerworldCatIds    Int[]      @default([])
-  thingiverseCatIds   Int[]      @default([])
-  printablesCatIds    Int[]      @default([])
-  myminifactoryCatIds Int[]      @default([])
-  snapmakerCatIds     Int[]      @default([])
-  makeronlineCatIds   Int[]      @default([])
-  crealitycloudCatIds Int[]      @default([])
+  // The ids on each provider's site imports land in this category by (CategorySiteId).
+  siteIds             CategorySiteId[]
+  // Superseded by CategorySiteId, which the migration 20261109120000_category_site_ids copied them into, and read by
+  // nothing since: kept one release so a downgrade still finds them, then dropped with their indexes.
+  makerworldCatIds    Int[]            @default([])
+  thingiverseCatIds   Int[]            @default([])
+  printablesCatIds    Int[]            @default([])
+  myminifactoryCatIds Int[]            @default([])
+  snapmakerCatIds     Int[]            @default([])
+  makeronlineCatIds   Int[]            @default([])
+  crealitycloudCatIds Int[]            @default([])
   // Text: NexPrint's ids are 16 digits, past Int, and a BigInt would break JSON serialization of the row.
-  nexprintCatIds      String[]   @default([])
+  nexprintCatIds      String[]         @default([])
   // Thangs has no category ids, only paths: "Tools & Organizers", or "Tools & Organizers/Multiboard".
-  thangsCatIds        String[]   @default([])
-  cults3dCatIds       Int[]      @default([])
+  thangsCatIds        String[]         @default([])
+  cults3dCatIds       Int[]            @default([])
   prints              Print[]
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
 
   @@index([userId, parentId, position])
   @@index([tags], type: Gin)
@@ -813,6 +814,21 @@ model ProviderConnection {
   updatedAt   DateTime  @updatedAt
 
   @@id([userId, provider, slot])
+}
+
+/// One of a category's ids on a provider's site: an import whose site category is one lands in it. Each provider's ids
+/// are its own; the starter categories' come from backend/src/providers/<id>/categories.json.
+model CategorySiteId {
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  provider   String
+  /// Text for every provider: numbers, NexPrint's 16-digit ones, or Thangs' "Parent/Child" paths.
+  siteId     String
+  /// The order they were given in.
+  position   Int      @default(0)
+
+  @@id([categoryId, provider, siteId])
+  @@index([provider, siteId])
 }
 
 model GrabConnection {

@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { DEFAULT_CATEGORIES, type DefaultCategoryNode } from "../seedData/defaultCategories";
+import { replaceSiteIds, siteIdsOf, starterSiteIds, WITH_SITE_IDS, type SiteIds } from "./categorySiteIds";
 import { availableModelName, reorganizeManagedPrints, sanitizePathSegment } from "./printService";
 
 export const CATEGORY_KINDS = ["category", "folder"] as const;
@@ -68,28 +69,26 @@ function defaultCategoryData(node: DefaultCategoryNode) {
     tags: node.tags ?? [],
     metaTitle: node.metaTitle ?? null,
     metaDescription: node.metaDescription ?? null,
-    // A column per provider until Phase 7 of docs/rfc/provider-modules.md.
-    makerworldCatIds: node.makerworldCatIds ?? [],
-    thingiverseCatIds: node.thingiverseCatIds ?? [],
-    printablesCatIds: node.printablesCatIds ?? [],
-    myminifactoryCatIds: node.myminifactoryCatIds ?? [],
-    snapmakerCatIds: node.snapmakerCatIds ?? [],
-    makeronlineCatIds: node.makeronlineCatIds ?? [],
-    crealitycloudCatIds: node.crealitycloudCatIds ?? [],
-    nexprintCatIds: node.nexprintCatIds ?? [],
-    thangsCatIds: node.thangsCatIds ?? [],
-    cults3dCatIds: node.cults3dCatIds ?? [],
   };
 }
 
 /** Takes a Prisma client so it can run in the user-creation transaction. */
 export async function seedDefaultCategories(tx: Prisma.TransactionClient, userId: string): Promise<void> {
-  async function createNode(node: DefaultCategoryNode, parentId: string | null, position: number): Promise<void> {
+  const siteIds: { categoryId: string; ids: SiteIds }[] = [];
+  async function createNode(
+    node: DefaultCategoryNode,
+    parentId: string | null,
+    position: number,
+    path: string[],
+  ): Promise<void> {
     const category = await tx.category.create({ data: { userId, parentId, position, ...defaultCategoryData(node) } });
-    for (const [i, child] of (node.children ?? []).entries()) await createNode(child, category.id, i);
+    siteIds.push({ categoryId: category.id, ids: starterSiteIds(path) });
+    for (const [i, child] of (node.children ?? []).entries())
+      await createNode(child, category.id, i, [...path, child.name]);
   }
 
-  for (const [i, root] of DEFAULT_CATEGORIES.entries()) await createNode(root, null, i);
+  for (const [i, root] of DEFAULT_CATEGORIES.entries()) await createNode(root, null, i, [root.name]);
+  await replaceSiteIds(tx, siteIds);
 }
 
 const pathKey = (parentKey: string, name: string) => `${parentKey}/${name.trim().toLowerCase()}`;
@@ -113,6 +112,7 @@ async function planCategoryReset(db: Prisma.TransactionClient, userId: string): 
   const existing = await db.category.findMany({
     where: { userId, kind: "category" },
     orderBy: [{ position: "asc" }, { name: "asc" }],
+    include: WITH_SITE_IDS,
   });
   const byId = new Map(existing.map((c) => [c.id, c]));
   const childrenOf = new Map<string | null, typeof existing>();
@@ -156,7 +156,8 @@ async function planCategoryReset(db: Prisma.TransactionClient, userId: string): 
           c.position === position &&
           (Object.keys(fields) as (keyof typeof fields)[]).every(
             (k) => JSON.stringify(c[k]) === JSON.stringify(fields[k]),
-          );
+          ) &&
+          JSON.stringify(siteIdsOf(c.siteIds)) === JSON.stringify(starterSiteIds(path));
         if (!same) restored.push(path);
       } else {
         added.push(path);
@@ -258,18 +259,27 @@ export async function resetDefaultCategories(userId: string): Promise<void> {
   await prisma.$transaction(
     async (tx) => {
       const plan = await planCategoryReset(tx, userId);
-      const restore = async (nodes: DefaultCategoryNode[], parentId: string | null, parentKey: string) => {
+      const siteIds: { categoryId: string; ids: SiteIds }[] = [];
+      const restore = async (
+        nodes: DefaultCategoryNode[],
+        parentId: string | null,
+        parentKey: string,
+        parentPath: string[],
+      ) => {
         for (const [position, node] of nodes.entries()) {
           const key = pathKey(parentKey, node.name);
+          const path = [...parentPath, node.name];
           const data = { parentId, position, ...defaultCategoryData(node) };
           const match = plan.matches.get(key);
           const id = match
             ? (await tx.category.update({ where: { id: match }, data, select: { id: true } })).id
             : (await tx.category.create({ data: { userId, ...data }, select: { id: true } })).id;
-          await restore(node.children ?? [], id, key);
+          siteIds.push({ categoryId: id, ids: starterSiteIds(path) });
+          await restore(node.children ?? [], id, key, path);
         }
       };
-      await restore(DEFAULT_CATEGORIES, null, "");
+      await restore(DEFAULT_CATEGORIES, null, "", []);
+      await replaceSiteIds(tx, siteIds);
 
       for (const move of plan.moves) {
         const name = await availableModelName(userId, move.name, move.target, move.id, tx);

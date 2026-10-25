@@ -35,7 +35,7 @@ export default {
     profiles: false,
     paidModels: true,
     ownLists: "signIn",
-    categoryIds: "text",
+    categoryIds: "path",
     trending: { kind: "trending", moreUrl: "https://thangs.com/browse/trending", rank: 3 },
   },
   examples: {

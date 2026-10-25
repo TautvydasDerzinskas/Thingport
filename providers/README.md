@@ -24,6 +24,11 @@ and `overrides.ts`, and `extension/src/providers/{content,sessions,accounts,back
 has to name a provider, it says why in a comment, and `backend/src/providers/<id>/index.ts` lists every such place,
 in all three packages, at its top. Keep that list current when adding or removing one.
 
+What it stores needs no column of its own: each user's sign-in and account are a `ProviderConnection` row per auth
+slot (`backend/src/providers/connections.ts`), and its ids for the starter categories are
+`backend/src/providers/<id>/categories.json`, by category path. A new provider's are added to existing users' starter
+categories once, at startup (`backend/src/services/categorySiteIds.ts`).
+
 ## URL corpus
 
 `<id>/urls.fixtures.json` is an array of URL cases. `expect` describes the backend's current interpretation:

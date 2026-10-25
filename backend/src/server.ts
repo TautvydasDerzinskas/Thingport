@@ -10,6 +10,7 @@ import { startSystemNotificationSync } from "./services/systemNotificationServic
 import { announceVersionUpdate } from "./services/releaseNotesService";
 import { resumeStorageMove } from "./services/storageMoveService";
 import { resumeFileReuseBackfill } from "./services/fileReuseBackfill";
+import { seedProviderCategoryIds } from "./services/categorySiteIds";
 
 const app = createApp();
 
@@ -28,6 +29,7 @@ const app = createApp();
 
 seedFlaresolverrUrl().catch((err) => console.error("Failed to seed the FlareSolverr URL setting:", err));
 seedPublicUrl().catch((err) => console.error("Failed to seed the public URL setting:", err));
+seedProviderCategoryIds().catch((err) => console.error("Failed to seed a new provider's starter category ids:", err));
 
 app.listen(API_PORT, () => {
   console.log(`Thingport API listening on port ${API_PORT}`);

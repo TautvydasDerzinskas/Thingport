@@ -27,7 +27,7 @@ export default {
     profiles: false,
     paidModels: false,
     ownLists: "username",
-    categoryIds: "int",
+    categoryIds: "number",
     trending: { kind: "trending", moreUrl: "https://www.printables.com/model?ordering=trending", rank: 1 },
   },
   examples: {

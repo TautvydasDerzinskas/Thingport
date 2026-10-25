@@ -39,7 +39,7 @@ export default {
     profiles: true,
     paidModels: false,
     ownLists: "signIn",
-    categoryIds: "int",
+    categoryIds: "number",
     trending: { kind: "featured", moreUrl: "https://space.snapmaker.com/", rank: 10 },
   },
   examples: {

@@ -158,7 +158,13 @@ describe("importPrintFromUrl -- Thingiverse", () => {
         name: "Thingiverse Tests",
         kind: "category",
         tags: [],
-        thingiverseCatIds: [999001, CATEGORY_ID, 999002],
+        siteIds: {
+          create: [999001, CATEGORY_ID, 999002].map((id, position) => ({
+            provider: "thingiverse",
+            siteId: String(id),
+            position,
+          })),
+        },
       },
     });
 

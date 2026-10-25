@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import { isProviderId, MANIFESTS, manifestOf, modelUrl, parseModelUrl, URLS } from "../providers/index.generated";
-import { catIdsField, PROFILE_PROVIDERS, PROVIDERS } from "../providers/registry";
+import { PROFILE_PROVIDERS, PROVIDERS } from "../providers/registry";
 import type { PipelineKit, ResolvedModel, SourcedImport } from "../providers/types";
 import fsSync from "node:fs";
 import os from "node:os";
@@ -618,32 +618,24 @@ export async function attachImportedPreviewImages(
   }
 }
 
-/** Auto-categorizes an import when a category's `*CatIds` for this site overlap the model's own
- * category ids. Those come most specific first (a model's own category, then its parent), and the
- * category matching the earliest one wins, so a subcategory beats the category its parent maps to.
- * Best-effort. */
+/** Auto-categorizes an import when a category's ids for this site (CategorySiteId) overlap the model's own category
+ * ids. Those come most specific first (a model's own category, then its parent), and the category matching the
+ * earliest one wins, so a subcategory beats the category its parent maps to. Best-effort. */
 export async function resolveCategoryIdByCategory(
   userId: string,
   categorySite: ImportedPageMetadata["categorySite"],
   siteCategoryIds: (number | string)[],
 ): Promise<string | null> {
   if (!categorySite || !siteCategoryIds.length) return null;
-  const { field, text } = catIdsField(categorySite);
-  // Compared as text, so one path serves the text columns and the Int ones alike.
   const wanted = siteCategoryIds.map(String);
-  const numeric = siteCategoryIds.map(Number).filter((n) => Number.isSafeInteger(n));
-  if (!text && !numeric.length) return null;
   const candidates = await prisma.category.findMany({
     // Folders are the user's own tree; only categories take imports by site category id.
-    where: {
-      userId,
-      kind: "category",
-      [field]: { hasSome: text ? wanted : numeric },
-    },
+    where: { userId, kind: "category", siteIds: { some: { provider: categorySite, siteId: { in: wanted } } } },
     orderBy: { position: "asc" },
+    select: { id: true, siteIds: { where: { provider: categorySite }, select: { siteId: true } } },
   });
   const rank = (category: (typeof candidates)[number]) => {
-    const ids = new Set((category[field] as (number | string)[]).map(String));
+    const ids = new Set(category.siteIds.map((row) => row.siteId));
     const index = wanted.findIndex((id) => ids.has(id));
     return index === -1 ? wanted.length : index;
   };

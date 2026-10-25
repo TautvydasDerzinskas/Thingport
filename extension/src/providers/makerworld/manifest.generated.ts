@@ -38,7 +38,7 @@ export default {
     profiles: true,
     paidModels: false,
     ownLists: "signIn",
-    categoryIds: "int",
+    categoryIds: "number",
     trending: { kind: "trending", moreUrl: "https://makerworld.com/en", rank: 2 },
     listImport: "grab",
     syncsNewOnly: true,

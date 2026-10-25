@@ -1,9 +1,18 @@
 // What the backend knows of each provider beyond its manifest (providers/<id>/manifest.ts). Every provider needs an
 // entry, so tsc fails until a new one has it.
 
-import type { Category } from "@prisma/client";
 import { MANIFESTS, PROVIDER_IDS, type ProviderId, type ProviderManifest } from "./index.generated";
 import { siteHost } from "./names";
+import makerworldCategories from "./makerworld/categories.json";
+import printablesCategories from "./printables/categories.json";
+import thingiverseCategories from "./thingiverse/categories.json";
+import myminifactoryCategories from "./myminifactory/categories.json";
+import snapmakerCategories from "./snapmaker/categories.json";
+import makeronlineCategories from "./makeronline/categories.json";
+import crealitycloudCategories from "./crealitycloud/categories.json";
+import nexprintCategories from "./nexprint/categories.json";
+import thangsCategories from "./thangs/categories.json";
+import cults3dCategories from "./cults3d/categories.json";
 import {
   crealitycloudImport,
   crealitycloudTrending,
@@ -87,7 +96,12 @@ import { liftCaptchaCooloffByHand } from "./makerworld/captcha";
 import type { GrabImportOptions } from "./makeronline/grabImports";
 import type { ImportCookies } from "../services/importResolvers";
 
+/** A provider's ids for the starter categories, by their path ("Parent/Child"). */
+export type StarterCategories = Readonly<Record<string, readonly (number | string)[]>>;
+
 export type ProviderBackend = {
+  /** Its ids for the starter categories (categories.json beside it), which a new user's come with. */
+  starterCategories: StarterCategories;
   /** Each credential its manifest lists under `auth`, by slot. */
   connection: Partial<Record<AuthSlot["slot"], ConnectionSlot>>;
   /** Why a batch import stopped when the provider turned the user's sign-in down, read after "failed because". */
@@ -181,6 +195,7 @@ const grabSignInStop = (id: ProviderId): string =>
 
 export const PROVIDERS = {
   makerworld: {
+    starterCategories: makerworldCategories,
     connection: { default: makerworldConnection },
     authStopText: `the ${name("makerworld")} session expired — update the cookie in Settings, then retry`,
     lists: makerworldLists,
@@ -208,6 +223,7 @@ export const PROVIDERS = {
     },
   },
   printables: {
+    starterCategories: printablesCategories,
     connection: {},
     // Printables has no sign-in; its imports never stop for one.
     authStopText: `${name("printables")} turned the request down — wait a while, then retry`,
@@ -219,6 +235,7 @@ export const PROVIDERS = {
     details: printablesDetails,
   },
   thingiverse: {
+    starterCategories: thingiverseCategories,
     connection: { default: thingiverseConnection },
     authStopText: `${name("thingiverse")} turned the instance's App Token down — an admin can check it in Administration, then retry`,
     sourcedImport: thingiverseImport,
@@ -230,6 +247,7 @@ export const PROVIDERS = {
     instanceHealth: thingiverseInstanceHealth,
   },
   myminifactory: {
+    starterCategories: myminifactoryCategories,
     connection: { default: myminifactorySessionConnection, instance: myminifactoryKeyConnection },
     authStopText: grabSignInStop("myminifactory"),
     sourcedImport: myminifactoryImport,
@@ -241,6 +259,7 @@ export const PROVIDERS = {
     instanceHealth: myminifactoryInstanceHealth,
   },
   snapmaker: {
+    starterCategories: snapmakerCategories,
     connection: { default: snapmakerConnection },
     authStopText: `your ${name("snapmaker")} sign-in ran out — visit ${siteHost("snapmaker")} with Thingport Grab, then retry`,
     sourcedImport: snapmakerImport,
@@ -251,6 +270,7 @@ export const PROVIDERS = {
     details: snapmakerDetails,
   },
   makeronline: {
+    starterCategories: makeronlineCategories,
     connection: { default: makeronlineConnection },
     authStopText: grabSignInStop("makeronline"),
     customImport: makeronlineImport,
@@ -267,6 +287,7 @@ export const PROVIDERS = {
     details: makeronlineDetails,
   },
   crealitycloud: {
+    starterCategories: crealitycloudCategories,
     connection: { default: crealitycloudConnection },
     authStopText: grabSignInStop("crealitycloud"),
     sourcedImport: crealitycloudImport,
@@ -278,6 +299,7 @@ export const PROVIDERS = {
     keptId: crealitycloudKeptId,
   },
   nexprint: {
+    starterCategories: nexprintCategories,
     connection: { default: nexprintConnection },
     authStopText: grabSignInStop("nexprint"),
     sourcedImport: nexprintImport,
@@ -288,6 +310,7 @@ export const PROVIDERS = {
     details: nexprintDetails,
   },
   thangs: {
+    starterCategories: thangsCategories,
     connection: { default: thangsConnection },
     authStopText: grabSignInStop("thangs"),
     sourcedImport: thangsImport,
@@ -298,6 +321,7 @@ export const PROVIDERS = {
     details: thangsDetails,
   },
   cults3d: {
+    starterCategories: cults3dCategories,
     connection: { default: cults3dApiConnection, browser: cults3dBrowserConnection },
     authStopText:
       `${name("cults3d")} turned your API key or sign-in down — check the key in Configuration → Providers, or visit ${siteHost("cults3d")} ` +
@@ -329,10 +353,3 @@ export const SESSION_CODES: ReadonlySet<string> = new Set(PROVIDER_IDS.flatMap((
 export const DOWNLOAD_LIMIT_CODES: ReadonlySet<string> = new Set(
   PROVIDER_IDS.flatMap((id) => errorCodes(id).downloadLimit ?? []),
 );
-
-export type CatIdsField = `${ProviderId}CatIds` & keyof Category;
-
-/** The Category column a category keeps this site's category ids in, and whether they're text or numbers. */
-export function catIdsField(id: ProviderId): { field: CatIdsField; text: boolean } {
-  return { field: `${id}CatIds`, text: MANIFESTS[id].capabilities.categoryIds === "text" };
-}

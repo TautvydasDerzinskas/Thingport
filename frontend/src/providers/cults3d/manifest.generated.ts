@@ -43,7 +43,7 @@ export default {
     profiles: false,
     paidModels: true,
     ownLists: "signIn",
-    categoryIds: "int",
+    categoryIds: "number",
     trending: { kind: "popular", moreUrl: "https://cults3d.com/en/creations/popular", rank: 7 },
   },
   examples: {

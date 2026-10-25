@@ -35,7 +35,7 @@ export default {
     profiles: false,
     paidModels: false,
     ownLists: "username",
-    categoryIds: "int",
+    categoryIds: "number",
     trending: { kind: "popular", moreUrl: "https://www.thingiverse.com/search?sort=popular&type=things", rank: 5 },
   },
   examples: {

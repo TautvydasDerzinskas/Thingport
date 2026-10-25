@@ -36,7 +36,7 @@ export default {
     profiles: true,
     paidModels: false,
     ownLists: "signIn",
-    categoryIds: "text",
+    categoryIds: "number",
     trending: { kind: "recommended", moreUrl: "https://www.nexprint.com/", rank: 9 },
   },
   examples: {

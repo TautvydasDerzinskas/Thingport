@@ -50,7 +50,7 @@ export default {
     profiles: true,
     paidModels: false,
     ownLists: "signIn",
-    categoryIds: "int",
+    categoryIds: "number",
     trending: { kind: "recommended", moreUrl: "https://www.crealitycloud.com/", rank: 8 },
   },
   examples: {

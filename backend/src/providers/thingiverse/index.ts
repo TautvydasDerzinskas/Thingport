@@ -4,9 +4,6 @@
 // frontend/src/providers/collectionTiles.ts in the app, and the tables in extension/src/providers/ in Grab.
 //
 // Outside them, and why:
-// - prisma/schema.prisma: Category's thingiverseCatIds, a column apiece until Phase 7 of docs/rfc/provider-modules.md
-//   moves them into a table of their own; dto.ts, routes/categories.ts, services/categoryService.ts and
-//   seedData/defaultCategories.ts name its category ids for the same reason.
 // - settings: its App Token is the Setting row thingiverse_access_token (token.ts), an instance-wide one.
 // - Grab: its offline features (dark mode, hidden ads) are switched in the popup (popup/dom.ts, popup/index.ts) and
 //   kept in shared/storage.ts with the others; scripts/build.ts builds providers/thingiverse/index.ts as an entry of

@@ -4,9 +4,6 @@
 // frontend/src/providers/collectionTiles.ts in the app, and the tables in extension/src/providers/ in Grab.
 //
 // Outside them, and why:
-// - prisma/schema.prisma: Category's myminifactoryCatIds, a column apiece until Phase 7 of docs/rfc/provider-modules.md
-//   moves them into a table of their own; dto.ts, routes/categories.ts, services/categoryService.ts and
-//   seedData/defaultCategories.ts name its category ids for the same reason.
 // - settings: its API key is the Setting row myminifactory_api_key (apiKey.ts), an instance-wide one.
 // - The app's text for it, under its id in frontend/src/i18n/locales/*.json, where all of the app's text is kept.
 

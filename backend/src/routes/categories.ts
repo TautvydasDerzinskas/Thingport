@@ -16,6 +16,8 @@ import {
 } from "../services/categoryService";
 import { availableModelName, reorganizeManagedPrints } from "../services/printService";
 import { toCategoryOut } from "../dto";
+import { replaceSiteIds, WITH_SITE_IDS } from "../services/categorySiteIds";
+import { MANIFESTS, PROVIDER_IDS, type ProviderId } from "../providers/index.generated";
 import { sendPrintsZip } from "../services/downloadZip";
 import type { Prisma } from "@prisma/client";
 
@@ -36,6 +38,7 @@ router.get(
     const categories = await prisma.category.findMany({
       where: { userId: req.userId },
       orderBy: [{ position: "asc" }, { name: "asc" }],
+      include: WITH_SITE_IDS,
     });
     res.json(categories.map(toCategoryOut));
   }),
@@ -56,6 +59,7 @@ router.post(
     const categories = await prisma.category.findMany({
       where: { userId: req.userId },
       orderBy: [{ position: "asc" }, { name: "asc" }],
+      include: WITH_SITE_IDS,
     });
     res.json(categories.map(toCategoryOut));
   }),
@@ -137,6 +141,7 @@ router.post(
       return tx.category.update({
         where: { id: category.id },
         data: { parentId, position: ids.indexOf(category.id) },
+        include: WITH_SITE_IDS,
       });
     });
 
@@ -156,7 +161,7 @@ router.post(
     const category = await prisma.category.create({
       data: { userId: req.userId!, name: body.name, tags: normalizeTags(body.tags), parentId, kind },
     });
-    res.json(toCategoryOut(category));
+    res.json(toCategoryOut({ ...category, siteIds: [] }));
   }),
 );
 
@@ -170,6 +175,7 @@ router.patch(
     const updated = await prisma.category.update({
       where: { id: category.id },
       data: { name: body.name, tags: normalizeTags(body.tags), parentId },
+      include: WITH_SITE_IDS,
     });
     const kind = await kindUnder(req.userId!, parentId, category.kind);
     if (kind !== category.kind) await setSubtreeKind(req.userId!, category.id, kind);
@@ -242,26 +248,14 @@ function parseCatPathsInput(raw: string | null | undefined): string[] {
 
 const catIdsField = z.string().trim().max(1000).nullable().optional();
 const catPathsField = z.string().trim().max(5000).nullable().optional();
+const isPaths = (id: ProviderId) => MANIFESTS[id].capabilities.categoryIds === "path";
 
-/** A field the request leaves out is left as it is (Prisma skips undefined), so a client from before a provider was
- *  added can't wipe that provider's ids; blank or null still clears them. */
-function catIdsUpdate(raw: string | null | undefined): number[] | undefined {
-  return raw === undefined ? undefined : parseCatIdsInput(raw);
-}
 const categoryMetaSchema = z.object({
   meta_title: z.string().trim().max(200).nullable().optional(),
   meta_description: z.string().trim().max(2000).nullable().optional(),
-  // A field per provider, as the Category row has a column per provider until Phase 7 of docs/rfc/provider-modules.md.
-  makerworld_cat_ids: catIdsField,
-  thingiverse_cat_ids: catIdsField,
-  printables_cat_ids: catIdsField,
-  myminifactory_cat_ids: catIdsField,
-  snapmaker_cat_ids: catIdsField,
-  makeronline_cat_ids: catIdsField,
-  crealitycloud_cat_ids: catIdsField,
-  nexprint_cat_ids: catIdsField,
-  thangs_cat_ids: catPathsField,
-  cults3d_cat_ids: catIdsField,
+  ...(Object.fromEntries(
+    PROVIDER_IDS.map((id) => [`${id}_cat_ids`, isPaths(id) ? catPathsField : catIdsField]),
+  ) as Record<`${ProviderId}_cat_ids`, typeof catIdsField>),
 });
 
 router.patch(
@@ -270,22 +264,22 @@ router.patch(
     const body = parseBody(categoryMetaSchema, req.body);
     const category = await prisma.category.findFirst({ where: { id: req.params.id, userId: req.userId } });
     if (!category) throw new HttpError(404, "Not found");
-    const updated = await prisma.category.update({
-      where: { id: category.id },
-      data: {
-        metaTitle: body.meta_title || null,
-        metaDescription: body.meta_description || null,
-        makerworldCatIds: catIdsUpdate(body.makerworld_cat_ids),
-        thingiverseCatIds: catIdsUpdate(body.thingiverse_cat_ids),
-        printablesCatIds: catIdsUpdate(body.printables_cat_ids),
-        myminifactoryCatIds: catIdsUpdate(body.myminifactory_cat_ids),
-        snapmakerCatIds: catIdsUpdate(body.snapmaker_cat_ids),
-        makeronlineCatIds: catIdsUpdate(body.makeronline_cat_ids),
-        crealitycloudCatIds: catIdsUpdate(body.crealitycloud_cat_ids),
-        nexprintCatIds: catIdsUpdate(body.nexprint_cat_ids)?.map(String),
-        thangsCatIds: body.thangs_cat_ids === undefined ? undefined : parseCatPathsInput(body.thangs_cat_ids),
-        cults3dCatIds: catIdsUpdate(body.cults3d_cat_ids),
-      },
+    // A field the request leaves out is left as it is, so a client from before a provider was added can't wipe that
+    // provider's ids; blank or null still clears them.
+    const given = PROVIDER_IDS.filter((id) => body[`${id}_cat_ids`] !== undefined);
+    const ids = Object.fromEntries(
+      given.map((id) => {
+        const raw = body[`${id}_cat_ids`];
+        return [id, isPaths(id) ? parseCatPathsInput(raw) : parseCatIdsInput(raw).map(String)];
+      }),
+    );
+    const updated = await prisma.$transaction(async (tx) => {
+      await replaceSiteIds(tx, [{ categoryId: category.id, ids }], given);
+      return tx.category.update({
+        where: { id: category.id },
+        data: { metaTitle: body.meta_title || null, metaDescription: body.meta_description || null },
+        include: WITH_SITE_IDS,
+      });
     });
     res.json(toCategoryOut(updated));
   }),

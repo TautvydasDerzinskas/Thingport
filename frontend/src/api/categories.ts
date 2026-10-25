@@ -6,7 +6,7 @@ import { PROVIDER_IDS, type ProviderId } from "../providers/index.generated";
 export type CategoryKind = "category" | "folder";
 
 /** A category's ids on a provider, semicolon-separated, e.g. "800;71;1001"; empty when none. A field per provider, as
- *  the backend keeps a column per provider until Phase 7 of docs/rfc/provider-modules.md. */
+ *  the API has always had them. */
 export type CatIdsKey = `${ProviderId}_cat_ids`;
 export const catIdsKey = (provider: ProviderId): CatIdsKey => `${provider}_cat_ids`;
 

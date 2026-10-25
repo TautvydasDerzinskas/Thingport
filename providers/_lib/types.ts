@@ -64,9 +64,8 @@ export type ProviderManifest = {
     paidModels: boolean;
     /** How the sync dialog finds the user's own lists: their sign-in says who they are, or they give a username. */
     ownLists: "signIn" | "username";
-    /** How a category keeps this site's category ids: numbers, or text where they don't fit one (NexPrint's are
-     *  past Int, Thangs' are paths). */
-    categoryIds: "int" | "text";
+    /** What a category is given as this site's ids: numbers, or paths ("Parent/Child") where it has none (Thangs). */
+    categoryIds: "number" | "path";
     /** The list the dashboard's trending panel shows: its trending one, or the popular, featured or recommended one
      *  standing in where it has none, and that list's page on the site. `rank` is its place among the panel's
      *  providers. False for a provider with no such list. */

@@ -42,7 +42,7 @@ export default {
     profiles: false,
     paidModels: true,
     ownLists: "username",
-    categoryIds: "int",
+    categoryIds: "number",
     trending: { kind: "popular", moreUrl: "https://www.myminifactory.com/search/?sortBy=popularity", rank: 6 },
   },
   examples: {

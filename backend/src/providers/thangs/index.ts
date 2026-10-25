@@ -4,9 +4,6 @@
 // tables in extension/src/providers/ in Grab.
 //
 // Outside them, and why:
-// - prisma/schema.prisma: Category's thangsCatIds, a column apiece until Phase 7 of docs/rfc/provider-modules.md moves
-//   them into a table of their own; dto.ts, routes/categories.ts, services/categoryService.ts and
-//   seedData/defaultCategories.ts name its category ids for the same reason.
 // - The app's text for it, under its id in frontend/src/i18n/locales/*.json, where all of the app's text is kept.
 
 import fs from "node:fs/promises";
