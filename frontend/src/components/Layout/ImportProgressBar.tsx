@@ -1,3 +1,4 @@
+import type { ImportJob } from "../../api/imports";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
@@ -19,8 +20,19 @@ const MINI_TILE = 40;
 /** Shown while a batch import runs; clicking shows the per-link queue. A link queue that finished
  *  with failures stays up, in warning colors, with a retry button until it's dismissed. */
 export default function ImportProgressBar() {
+  const { jobs } = useImportJob();
+  return (
+    <Box sx={{ maxHeight: 192, overflowY: "auto", flexShrink: 0 }}>
+      {jobs.map((job) => (
+        <ImportProgressRow key={job.id} activeJob={job} />
+      ))}
+    </Box>
+  );
+}
+
+function ImportProgressRow({ activeJob }: { activeJob: ImportJob }) {
   const { t } = useTranslation("app");
-  const { activeJob, retryJob, dismissJob } = useImportJob();
+  const { retryJob, dismissJob } = useImportJob();
   const [detailsOpen, setDetailsOpen] = useState(false);
   const running = activeJob?.status === "RUNNING";
   const queued = activeJob?.status === "QUEUED";
@@ -87,12 +99,14 @@ export default function ImportProgressBar() {
             <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
               <Stack direction="row" spacing={0.75} alignItems="center" sx={{ minWidth: 0 }}>
                 <Typography variant="caption" noWrap={running} sx={{ display: "block", minWidth: 0 }}>
+                  {activeJob.source_label ?? activeJob.provider ?? activeJob.source_url}
+                  {" · "}
                   {label}
                 </Typography>
               </Stack>
               {running || queued ? (
                 <LinearProgress
-                  variant={running && total > 0 ? "determinate" : "indeterminate"}
+                  variant={running && total > 0 && activeJob.type !== "SINGLE" ? "determinate" : "indeterminate"}
                   value={progressValue}
                   sx={{ borderRadius: 1, height: 6 }}
                 />
@@ -104,7 +118,7 @@ export default function ImportProgressBar() {
                       startIcon={<ReplayIcon fontSize="small" />}
                       onClick={(e) => {
                         e.stopPropagation();
-                        void retryJob();
+                        void retryJob(activeJob.id);
                       }}
                       sx={{ color: "warning.contrastText" }}
                     >
@@ -116,7 +130,7 @@ export default function ImportProgressBar() {
                     aria-label={t("importProgress.dismiss")}
                     onClick={(e) => {
                       e.stopPropagation();
-                      dismissJob();
+                      dismissJob(activeJob.id);
                     }}
                     sx={hasFailures ? { color: "warning.contrastText" } : undefined}
                   >
