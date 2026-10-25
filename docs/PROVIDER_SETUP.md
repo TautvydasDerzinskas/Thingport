@@ -17,6 +17,7 @@ how to connect it:
 - <img src="assets/providers/nexprint.svg" alt="" width="18" height="18" align="absmiddle"> [NexPrint](providers/nexprint.md) -- your own sign-in, renewed as you use the site.
 - <img src="assets/providers/thangs.svg" alt="" width="18" height="18" align="absmiddle"> [Thangs](providers/thangs.md) -- your own sign-in, which Thingport renews for about a year.
 - <img src="assets/providers/cults3d.svg" alt="" width="18" height="18" align="absmiddle"> [Cults3D](providers/cults3d.md) -- your own API key, and your browser's sign-in for files.
+- <img src="assets/providers/eufymake.svg" alt="" width="18" height="18" align="absmiddle"> [eufyMake](providers/eufymake.md) -- no sign-in to import; yours adds your likes.
 
 <!-- /providers:list -->
 
@@ -40,6 +41,7 @@ badge, shows the same in short.
 | <img src="assets/providers/nexprint.svg" alt="" width="18" height="18" align="absmiddle"> [NexPrint](providers/nexprint.md)                      | Yours                           | Recommended    |              | ✓           |       | ✓    | ✓              |
 | <img src="assets/providers/thangs.svg" alt="" width="18" height="18" align="absmiddle"> [Thangs](providers/thangs.md)                            | Yours, renewed for a year       | Recommended    | Optional     | ✓           | ✓     | ✓    |                |
 | <img src="assets/providers/cults3d.svg" alt="" width="18" height="18" align="absmiddle"> [Cults3D](providers/cults3d.md)                         | Your API key + browser sign-in  | Recommended³   |              | Printlists  | ✓     | ✓    |                |
+| <img src="assets/providers/eufymake.svg" alt="" width="18" height="18" align="absmiddle"> [eufyMake](providers/eufymake.md)                      | Yours, for likes only           | Recommended    |              |             | ✓     | ✓    |                |
 
 1. Your private Printables collections and your likes are read by Grab, while you're on Printables.
 2. Snapmaker's sign-in lasts a day and only Grab renews it; without Grab you paste a new one every day.

@@ -17,6 +17,7 @@ Supported slicers:
 - Anycubic Slicer Next
 - Elegoo Slicer
 - Snapmaker Orca
+- eufyMake Studio
 
 Switch on the ones you have installed under **Configuration → Slicer**, from the user menu: double-click a slicer, or
 right-click it and choose **Activate** (or **Deactivate**). With none switched on, or only **Other / Manual**, the

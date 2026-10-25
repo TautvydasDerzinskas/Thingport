@@ -4081,6 +4081,37 @@
       "sync": {
         "notConnected": "Enter your Cults3D nickname and API key in Configuration > Providers to see your likes and printlists here."
       }
+    },
+    "eufymake": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open makeitreal.eufymake.com while signed in. It connects your account, and sends a new sign-in whenever you sign in there again.",
+          "Or by hand: sign in at makeitreal.eufymake.com and open your browser's developer tools (F12).",
+          "Under Application (Chrome, Edge) or Storage (Firefox) → Local Storage → makeitreal.eufymake.com, copy the value of mk-userinfo and paste it below. The X-Auth-Token and Gtoken headers of a signed-in aiot-wapi-eu.ankermake.com request work too."
+        ],
+        "placeholder": "The mk-userinfo value, or a request's X-Auth-Token and Gtoken headers"
+      },
+      "status": {
+        "notConnected": "Connect your account to read your eufyMake likes. Its models import without it.",
+        "expired": "Sign-in expired. Sign in on makeitreal.eufymake.com with Thingport Grab, or connect eufyMake again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "eufyMake: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "eufyMake's (Anker's) Make it Real: community models, sorted into its own categories, with AI and photo-to-3D tools.",
+        "signIn": "None to import; your sign-in adds your likes.",
+        "grab": "Sends your sign-in as you visit makeitreal.eufymake.com.",
+        "setup": [
+          "Import any model link; no sign-in is needed.",
+          "For your likes: install Thingport Grab, enable it on eufyMake and open makeitreal.eufymake.com signed in."
+        ]
+      },
+      "admin": {
+        "description": "Models and each user's likes. Models import without a sign-in; likes need the user's own."
+      },
+      "sync": {
+        "notConnected": "Connect eufyMake in Configuration > Providers, or visit it with Thingport Grab, to see your likes here."
+      }
     }
   }
 }

@@ -4253,6 +4253,37 @@
       "sync": {
         "notConnected": "Įveskite Cults3D slapyvardį ir API raktą per Konfigūracija > Šaltiniai, kad čia matytumėte patikusius modelius ir spausdinimo sąrašus."
       }
+    },
+    "eufymake": {
+      "connect": {
+        "steps": [
+          "Paprasčiausia: su Thingport Grab tiesiog atverkite makeitreal.eufymake.com prisijungę. Jis prijungs jūsų paskyrą ir atsiųs naują prisijungimą kaskart, kai ten vėl prisijungsite.",
+          "Arba rankiniu būdu: prisijunkite prie makeitreal.eufymake.com ir atverkite naršyklės kūrėjo įrankius (F12).",
+          "Skiltyje Application (Chrome, Edge) arba Storage (Firefox) → Local Storage → makeitreal.eufymake.com nukopijuokite mk-userinfo reikšmę ir įklijuokite ją žemiau. Tiks ir prisijungus siųstos aiot-wapi-eu.ankermake.com užklausos X-Auth-Token bei Gtoken antraštės."
+        ],
+        "placeholder": "mk-userinfo reikšmė arba užklausos X-Auth-Token ir Gtoken antraštės"
+      },
+      "status": {
+        "notConnected": "Prijunkite paskyrą, kad Thingport matytų jūsų pamėgtus eufyMake modelius. Modeliai importuojami ir be jos.",
+        "expired": "Prisijungimo galiojimas baigėsi. Prisijunkite makeitreal.eufymake.com su Thingport Grab arba vėl prijunkite eufyMake skiltyje Konfigūracija → Šaltiniai.",
+        "expiredStatus": "Prisijungimas nebegalioja",
+        "disabledReason": "eufyMake: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai"
+      },
+      "about": {
+        "summary": "eufyMake (Anker) Make it Real: bendruomenės modeliai, suskirstyti į savas kategorijas, su DI ir nuotraukos į 3D įrankiais.",
+        "signIn": "Importuoti nereikia; prisijungimas prideda jūsų pamėgtus modelius.",
+        "grab": "Atsiunčia jūsų prisijungimą, kai lankotės makeitreal.eufymake.com.",
+        "setup": [
+          "Importuokite bet kurio modelio nuorodą; prisijungti nereikia.",
+          "Pamėgtiems modeliams: įdiekite Thingport Grab, įjunkite jį eufyMake ir atverkite makeitreal.eufymake.com prisijungę."
+        ]
+      },
+      "admin": {
+        "description": "Modeliai ir kiekvieno naudotojo pamėgti modeliai. Modeliai importuojami be prisijungimo; pamėgtiems reikia naudotojo paties."
+      },
+      "sync": {
+        "notConnected": "Prijunkite eufyMake skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte pamėgtus modelius."
+      }
     }
   }
 }

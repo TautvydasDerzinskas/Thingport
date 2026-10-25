@@ -34,6 +34,7 @@ describe("provider-module freeze", () => {
         "https://www.nexprint.com/en/models/G1215164",
         "https://www.thangs.com/m/1137615",
         "https://cults3d.com/en/3d-model/art/example",
+        "https://makeitreal.eufymake.com/models/be7c829023dd11f19919128e55eac07e/",
       ].map((url) => identifySourceModel(url)?.provider),
     ).toEqual([
       "makerworld",
@@ -46,6 +47,7 @@ describe("provider-module freeze", () => {
       "nexprint",
       "thangs",
       "cults3d",
+      "eufymake",
     ]);
   });
 
@@ -61,6 +63,7 @@ describe("provider-module freeze", () => {
       "nexprint",
       "thangs",
       "cults3d",
+      "eufymake",
     ]);
   });
 
@@ -76,6 +79,7 @@ describe("provider-module freeze", () => {
       "nexprint",
       "thangs",
       "cults3d",
+      "eufymake",
     ]);
   });
 
@@ -91,6 +95,7 @@ describe("provider-module freeze", () => {
       "nexprint",
       "thangs",
       "cults3d",
+      "eufymake",
     ]);
   });
 
@@ -106,6 +111,7 @@ describe("provider-module freeze", () => {
       "crealitycloud",
       "nexprint",
       "snapmaker",
+      "eufymake",
     ]);
   });
 
@@ -121,6 +127,7 @@ describe("provider-module freeze", () => {
       "nexprint",
       "thangs",
       "cults3d",
+      "eufymake",
     ]);
   });
 
@@ -144,6 +151,7 @@ describe("provider-module freeze", () => {
         "THANGS_DOWNLOAD_LIMIT",
         "crealitycloud_session",
         "cults3d_session",
+        "eufymake_session",
         "makeronline_grab",
         "myminifactory_session",
         "nexprint_session",
@@ -197,7 +205,7 @@ describe("provider-module freeze", () => {
       API_TOKEN_SCOPES.flatMap(({ id, paths }) =>
         paths
           .filter((path) =>
-            /makerworld|thingiverse|printables|myminifactory|snapmaker|makeronline|crealitycloud|nexprint|thangs|cults3d|provider/.test(
+            /makerworld|thingiverse|printables|myminifactory|snapmaker|makeronline|crealitycloud|nexprint|thangs|cults3d|eufymake|provider/.test(
               path,
             ),
           )
@@ -235,7 +243,7 @@ describe("provider-module freeze", () => {
           const path = `${prefix}${layer.route.path}`;
           if (
             !wholeRouter &&
-            !/makerworld|thingiverse|printables|myminifactory|snapmaker|makeronline|crealitycloud|nexprint|thangs|cults3d|provider/i.test(
+            !/makerworld|thingiverse|printables|myminifactory|snapmaker|makeronline|crealitycloud|nexprint|thangs|cults3d|eufymake|provider/i.test(
               path,
             )
           )
@@ -285,6 +293,7 @@ describe("provider-module freeze", () => {
           "nexprint_cat_ids",
           "thangs_cat_ids",
           "cults3d_cat_ids",
+          "eufymake_cat_ids",
         ].toSorted(),
       );
     } finally {

@@ -40,7 +40,8 @@ page again.
   renewed; its paid models you don't own and its print-only ones are left out, and once your account's daily
   downloads are used up, the rest come in on a later check. Cults3D syncs read your likes, anyone's likes and your own
   printlists with your API key, and download with the browser sign-in Grab sends; its paid models you don't own are
-  left out, and if its Cloudflare turns Thingport away, the rest come in after your next visit to cults3d.com with Grab.
+  left out, and if its Cloudflare turns Thingport away, the rest come in after your next visit to cults3d.com with Grab. eufyMake has no collections; syncing your likes needs your sign-in, which Grab sends as you visit
+  makeitreal.eufymake.com.
 
 ## Turn sync on in Thingport
 

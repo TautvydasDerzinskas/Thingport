@@ -12,6 +12,7 @@ export const SLICER_OPTIONS: SlicerOption[] = [
   { id: "anycubicslicernext", label: "Anycubic Slicer Next" },
   { id: "elegooslicer", label: "Elegoo Slicer" },
   { id: "snapmaker-orca", label: "Snapmaker Orca" },
+  { id: "eufystudio3d", label: "eufyMake Studio" },
   { id: "other", label: "Other / Manual" },
 ];
 
@@ -24,6 +25,7 @@ export const NORMALIZE_3MF_SLICER_IDS: ReadonlySet<string> = new Set([
   "crealityprintlink",
   "elegooslicer",
   "snapmaker-orca",
+  "eufystudio3d",
 ]);
 
 /** "system" follows prefers-color-scheme; resolve with useResolvedTheme before rendering. */

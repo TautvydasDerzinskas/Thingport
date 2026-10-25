@@ -13,6 +13,7 @@ your slicer is one of:
 - Anycubic Slicer Next
 - Elegoo Slicer
 - Snapmaker Orca
+- eufyMake Studio
 
 It prepares a converted copy that keeps painted colours, filament colours, plates and the designer's print settings in
 a form that slicer understands, then opens it. Your stored file is never changed. If a file can't be converted, use the

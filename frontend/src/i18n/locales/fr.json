@@ -4105,6 +4105,37 @@
       "sync": {
         "notConnected": "Saisissez votre pseudo et votre clé d’API Cults3D dans Configuration > Fournisseurs pour voir ici vos « J’aime » et listes d’impression."
       }
+    },
+    "eufymake": {
+      "connect": {
+        "steps": [
+          "Le plus simple : avec Thingport Grab, il suffit d’ouvrir makeitreal.eufymake.com en étant connecté. Votre compte est relié, et une nouvelle connexion est envoyée chaque fois que vous vous y reconnectez.",
+          "Ou manuellement : connectez-vous à makeitreal.eufymake.com et ouvrez les outils de développement de votre navigateur (F12).",
+          "Sous Application (Chrome, Edge) ou Stockage (Firefox) → Local Storage → makeitreal.eufymake.com, copiez la valeur de mk-userinfo et collez-la ci-dessous. Les en-têtes X-Auth-Token et Gtoken d’une requête à aiot-wapi-eu.ankermake.com faite en étant connecté conviennent aussi."
+        ],
+        "placeholder": "La valeur de mk-userinfo, ou les en-têtes X-Auth-Token et Gtoken d’une requête"
+      },
+      "status": {
+        "notConnected": "Reliez votre compte pour lire vos « J’aime » eufyMake. Ses modèles s’importent sans lui.",
+        "expired": "La connexion a expiré. Connectez-vous à makeitreal.eufymake.com avec Thingport Grab, ou reconnectez eufyMake dans Configuration → Fournisseurs.",
+        "expiredStatus": "Connexion expirée",
+        "disabledReason": "eufyMake : connectez votre compte dans Configuration → Fournisseurs"
+      },
+      "about": {
+        "summary": "Make it Real d’eufyMake (Anker) : des modèles de la communauté, classés dans ses propres catégories, avec des outils d’IA et de photo vers 3D.",
+        "signIn": "Aucune pour importer ; votre connexion ajoute vos « J’aime ».",
+        "grab": "Envoie votre connexion lorsque vous visitez makeitreal.eufymake.com.",
+        "setup": [
+          "Importez n’importe quel lien de modèle ; aucune connexion n’est nécessaire.",
+          "Pour vos « J’aime » : installez Thingport Grab, activez-le sur eufyMake et ouvrez makeitreal.eufymake.com en étant connecté."
+        ]
+      },
+      "admin": {
+        "description": "Les modèles et les « J’aime » de chaque utilisateur. Les modèles s’importent sans connexion ; les « J’aime » demandent celle de l’utilisateur."
+      },
+      "sync": {
+        "notConnected": "Connectez eufyMake dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir vos « J’aime » ici."
+      }
     }
   }
 }

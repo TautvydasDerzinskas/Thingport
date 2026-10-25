@@ -1,0 +1,41 @@
+[
+  {
+    "url": "https://makeitreal.eufymake.com/models/be7c829023dd11f19919128e55eac07e/phone%20stand/?ref=home",
+    "expect": {
+      "provider": "eufymake",
+      "kind": "model",
+      "externalId": "be7c829023dd11f19919128e55eac07e"
+    }
+  },
+  {
+    "url": "https://makeitreal.eufymake.com/de/models/BE7C829023DD11F19919128E55EAC07E",
+    "expect": {
+      "provider": "eufymake",
+      "kind": "model",
+      "externalId": "be7c829023dd11f19919128e55eac07e"
+    }
+  },
+  {
+    "url": "https://makeitreal.eufymake.com/user/me/",
+    "expect": {
+      "provider": "eufymake",
+      "kind": "list",
+      "externalId": "likes",
+      "listKind": "likes"
+    }
+  },
+  {
+    "url": "https://makeitreal.eufymake.com/user/13017cf9dde39d3b9a7ff5ae6e848a4e573973fa/",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  },
+  {
+    "url": "https://www.eufymake.com/models/be7c829023dd11f19919128e55eac07e",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  }
+]

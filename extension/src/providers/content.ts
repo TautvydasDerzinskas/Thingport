@@ -80,6 +80,8 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
   },
   // Thangs counts every download against the account's daily ones, so one it would refuse isn't tried.
   thangs: { blockReason: thangsDownloadBlock },
+  // Its only list, the likes, is the viewer's own page (/user/me/), which names no one else.
+  eufymake: {},
   cults3d: {
     async blockReason() {
       return isUnboughtCults3dModel()
