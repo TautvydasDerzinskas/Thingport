@@ -77,8 +77,19 @@ how lists are read. When a new site resembles one of these, copy that provider's
 - `browserFetch: true` in the manifest sends every request to the provider's hosts with a browser's TLS handshake
   (`backend/src/utils/browserFetch.ts`). Use it where Cloudflare tells Node's fetch apart by its handshake, as with
   Thingiverse, MyMiniFactory and Thangs. Headers and cookies don't help there.
-- FlareSolverr is a fallback for challenge pages (`services/flaresolverr.ts`), used by MakerWorld, Thingiverse,
-  MyMiniFactory and Thangs. `helpers.flaresolverr` in the manifest says how much the provider leans on it.
+- FlareSolverr is a fallback for declared pages and API reads (`services/flaresolverr.ts`). A manifest's
+  `solverRoutes` owns exact hosts, anchored path patterns, allowed query names and route-specific `credentials`
+  (`query` names or `cookies: true`). Only those HTTPS destinations may enter the solver; ordinary query fields
+  cannot carry credentials. Callers cannot override this policy. API tokens belong on API routes only.
+  `helpers.flaresolverr` describes the provider's recommendation; providers with routes get an admin switch.
+  Missing switches default to enabled for compatibility, and explicit false gates every solve, even with a warm
+  page-proxy cache. Thingiverse and MyMiniFactory still try guarded direct transport first and solve only a 429 or
+  Cloudflare challenge; ordinary 401/403 responses remain credential rejections.
+- Solver navigation can redirect or load third parties outside Thingport's per-hop destination guard. A declaration
+  permits credential exposure to the configured solver and potentially its logs; it does not constrain the browser's
+  later requests. Document that trust requirement and recommend a private, isolated solver. Binary downloads,
+  authenticated Cults3D calls and MakerWorld's `api.bambulab.com` cloud API are unsupported; Cults3D's declaration is
+  for public pages only. Regenerate all manifest copies with `npm run providers:sync`.
 - Creality Cloud only needs a browser's User-Agent.
 - Cults3D's site gets past no challenge at all. Its downloads use the browser's own `cf_clearance`, sent with the
   User-Agent it was issued to and from the browser's IP address, which Grab hands over.

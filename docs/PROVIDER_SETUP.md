@@ -64,15 +64,22 @@ from HTTP to HTTPS), enter the final HTTPS URL in Grab; instance requests reject
 
 ### FlareSolverr
 
-[FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) uses a real browser to solve Cloudflare challenges
-on supported public pages, including Printables, Thingiverse and MyMiniFactory. It's part of the standard Docker
-Compose stack; its address is set under **Administration → Connections → FlareSolverr**, and
-[System Health](guides/system-health.md) checks it. MakerWorld and Thangs also use it as a fallback.
-Keep FlareSolverr private: authenticated MakerWorld fallbacks send session cookies to it, and its logs may record requests.
+[FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) uses a real browser to solve Cloudflare challenges.
+It's part of the standard Docker Compose stack. Set its global URL and enable or disable each supported provider
+under **Administration → Connections → FlareSolverr**. [System Health](guides/system-health.md) checks the service.
+Provider fallbacks default to enabled for existing instances; an explicit off setting stays off, including when a
+previous request warmed the proxy cache. Clearing the URL disables all fallbacks.
 
-Thingiverse and MyMiniFactory API requests use impit directly for a Chrome-like TLS handshake. Their App Tokens
-and API keys are never sent through FlareSolverr navigation, so configuring FlareSolverr does not resolve API
-challenges on those providers. FlareSolverr cannot relay binary downloads or help with Cults3D.
+Thingiverse and MyMiniFactory API requests first use guarded direct transport with a Chrome-like TLS handshake.
+Only a 429 or Cloudflare challenge retries through the enabled solver, including the Thingiverse `access_token` or
+MyMiniFactory `key` in the URL. Ordinary 401/403 rejections remain credential errors. MakerWorld, Printables and
+Thangs support selected page/API fallbacks; Cults3D supports public pages only. Binary downloads, authenticated
+Cults3D calls and MakerWorld's separate Bambu cloud API do not support solver fallback.
+
+**Use a private, isolated solver.** It receives provider cookies and URL API tokens, and its logs may record them.
+Thingport checks the initial HTTPS host, path and query against each provider's declarations, but the solver's
+browser navigation, redirects and third-party requests are outside Thingport's per-hop destination guard. Isolate
+its network access from private services and restrict access to the solver and its logs.
 
 ## Connecting a provider
 

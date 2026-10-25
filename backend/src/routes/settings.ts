@@ -23,6 +23,10 @@ import {
   getQualityChecksOff,
   getSmtpSettings,
   getFlaresolverrUrl,
+  getFlaresolverrProviders,
+  setFlaresolverrProviders,
+  FLARESOLVERR_PROVIDER_IDS,
+  normalizeFlaresolverrUrl,
   getPublicUrl,
   normalizeAiBaseUrl,
   normalizePublicUrl,
@@ -651,20 +655,34 @@ router.get(
   "/settings/flaresolverr",
   requireAdmin,
   asyncHandler(async (_req, res) => {
-    res.json({ url: await getFlaresolverrUrl() });
+    res.json({ url: await getFlaresolverrUrl(), providers: await getFlaresolverrProviders() });
   }),
 );
 
 const flaresolverrUrlSchema = z.string().trim().url("Enter a full URL, like http://flaresolverr:8191");
 
 // A URL is only saved once FlareSolverr answers on it; clearing it turns FlareSolverr off without a test.
-const flaresolverrSettingsSchema = z.object({ url: flaresolverrUrlSchema.nullable().or(z.literal("")) }).strict();
+const flaresolverrSettingsSchema = z
+  .object({
+    url: flaresolverrUrlSchema.nullable().or(z.literal("")).optional(),
+    providers: z
+      .record(z.boolean())
+      .refine(
+        (values) => Object.keys(values).every((id) => FLARESOLVERR_PROVIDER_IDS.some((provider) => provider === id)),
+        "Unknown or unsupported FlareSolverr provider",
+      )
+      .optional(),
+  })
+  .strict()
+  .refine((body) => body.url !== undefined || body.providers !== undefined, "No settings supplied");
 router.patch(
   "/settings/flaresolverr",
   requireAdmin,
   asyncHandler(async (req, res) => {
     const body = parseBody(flaresolverrSettingsSchema, req.body);
-    if (body.url) {
+    const currentUrl = await getFlaresolverrUrl();
+    // Policy changes must remain possible when an already configured solver is unavailable.
+    if (body.url && normalizeFlaresolverrUrl(body.url) !== currentUrl) {
       const result = await testFlaresolverr(body.url);
       if (!result.ok)
         throw new HttpError(
@@ -673,7 +691,10 @@ router.patch(
           "flaresolverr_connection_failed",
         );
     }
-    res.json({ url: await setFlaresolverrUrl(body.url || null) });
+    const url = body.url === undefined ? currentUrl : await setFlaresolverrUrl(body.url || null);
+    const providers =
+      body.providers === undefined ? await getFlaresolverrProviders() : await setFlaresolverrProviders(body.providers);
+    res.json({ url, providers });
   }),
 );
 

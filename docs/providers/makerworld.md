@@ -49,3 +49,9 @@ and Grab or a fresh paste connects it again.
 ## Limits
 
 - A MakerWorld CAPTCHA or daily download limit pauses imports and syncs until it clears.
+
+- The FlareSolverr provider switch covers declared MakerWorld page/API routes and can send your session cookie to
+  the configured solver. Use a private, isolated solver; its logs may record credentials, and its browser navigation
+  and third-party requests are outside Thingport's per-hop destination guard.
+- MakerWorld's separate Bambu cloud API (`api.bambulab.com`), including the user's collection listing, has no solver
+  fallback. A challenge there remains blocked even when the MakerWorld switch is on.

@@ -20,6 +20,7 @@ export default {
   auth: [],
   modelNoun: "models",
   helpers: { grab: "optional", flaresolverr: "recommended" },
+  solverRoutes: [{ host: "www.printables.com", path: /^(?:\/[a-z]{2})?\/model\/\d+(?:-[\w%-]+)?\/?$/, query: [] }],
   slicers: ["prusaslicer"],
   capabilities: {
     collections: true,

@@ -21,7 +21,7 @@ const originalFetch = global.fetch;
 
 afterEach(async () => {
   global.fetch = originalFetch;
-  await prisma.setting.deleteMany({ where: { key: "flaresolverr_url" } });
+  await prisma.setting.deleteMany({ where: { key: { startsWith: "flaresolverr_" } } });
 });
 
 function fakeFlaresolverr(answer: () => Response) {
@@ -62,7 +62,7 @@ describe("FlareSolverr URL setting", () => {
       .set({ Authorization: `Bearer ${adminToken}` })
       .send({ url: ENDPOINT });
     expect(saved.status).toBe(200);
-    expect(saved.body).toEqual({ url: ENDPOINT });
+    expect(saved.body).toMatchObject({ url: ENDPOINT });
 
     const tested = await request(app)
       .post("/api/settings/flaresolverr/test")
@@ -77,7 +77,7 @@ describe("FlareSolverr URL setting", () => {
       .patch("/api/settings/flaresolverr")
       .set({ Authorization: `Bearer ${adminToken}` })
       .send({ url: "http://fake-flaresolverr.test/" });
-    expect(saved.body).toEqual({ url: ENDPOINT });
+    expect(saved.body).toMatchObject({ url: ENDPOINT });
     expect(calls).toEqual([ENDPOINT]);
   });
 
@@ -87,7 +87,54 @@ describe("FlareSolverr URL setting", () => {
       .patch("/api/settings/flaresolverr")
       .set({ Authorization: `Bearer ${adminToken}` })
       .send({ url: "" });
-    expect(cleared.body).toEqual({ url: null });
+    expect(cleared.body).toMatchObject({ url: null });
     expect(calls).toEqual([]);
+  });
+});
+
+describe("FlareSolverr provider preferences", () => {
+  const auth = () => ({ Authorization: `Bearer ${adminToken}` });
+  it("defaults supported providers on and persists explicit false across URL-only saves", async () => {
+    const initial = await request(app).get("/api/settings/flaresolverr").set(auth());
+    expect(initial.body.providers).toMatchObject({
+      makerworld: true,
+      thingiverse: true,
+      myminifactory: true,
+      printables: true,
+      thangs: true,
+    });
+    expect(initial.body.providers).not.toHaveProperty("snapmaker");
+    const changed = await request(app)
+      .patch("/api/settings/flaresolverr")
+      .set(auth())
+      .send({ providers: { thingiverse: false } });
+    expect(changed.status).toBe(200);
+    expect(changed.body.providers.thingiverse).toBe(false);
+    await request(app).patch("/api/settings/flaresolverr").set(auth()).send({ url: null }).expect(200);
+    const reload = await request(app).get("/api/settings/flaresolverr").set(auth());
+    expect(reload.body.providers.thingiverse).toBe(false);
+    expect(reload.body.providers.myminifactory).toBe(true);
+  });
+
+  it("can disable a provider while the saved solver is unavailable, including an unchanged URL", async () => {
+    await setFlaresolverrUrl(ENDPOINT);
+    const calls = fakeFlaresolverr(() => new Response("offline", { status: 502 }));
+    await request(app)
+      .patch("/api/settings/flaresolverr")
+      .set(auth())
+      .send({ url: ENDPOINT, providers: { makerworld: false } })
+      .expect(200);
+    expect(calls).toEqual([]);
+  });
+
+  it("rejects unknown providers, non-booleans and unauthorized updates", async () => {
+    for (const providers of [{ unknown: true }, { snapmaker: false }, { thingiverse: "false" }]) {
+      const response = await request(app).patch("/api/settings/flaresolverr").set(auth()).send({ providers });
+      expect(response.status).toBe(400);
+    }
+    await request(app)
+      .patch("/api/settings/flaresolverr")
+      .send({ providers: { thingiverse: false } })
+      .expect(401);
   });
 });

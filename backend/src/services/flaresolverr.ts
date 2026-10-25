@@ -1,5 +1,6 @@
+import { PROVIDER_IDS, manifestOf } from "../providers/index.generated";
 import { FLARESOLVERR_SESSION_TTL_MS, FLARESOLVERR_TIMEOUT_MS } from "../config";
-import { getFlaresolverrUrl, normalizeFlaresolverrUrl } from "./settingsService";
+import { getFlaresolverrUrl, normalizeFlaresolverrUrl, isFlaresolverrProviderEnabled } from "./settingsService";
 
 const TEST_TIMEOUT_MS = 10000;
 
@@ -74,41 +75,11 @@ export type FlaresolverrResult = {
 // Only known provider read endpoints may enter it; a forged Cloudflare response is not trust.
 // Deployment must still isolate the solver from private networks: trusted pages can redirect
 // or load third-party resources, and this allowlist cannot constrain browser subrequests.
-const SOLVER_ROUTES = new Map<string, { path: RegExp; query: string[] }>([
-  [
-    "makerworld.com",
-    {
-      path: /^(?:\/[a-z]{2}\/models\/\d+(?:-[\w%-]+)?\/?|\/api\/v1\/models?\/\d+(?:\/files|\/download)?|\/api\/v1\/design-service\/instance\/\d+\/f3mf|\/api\/v1\/design-service\/favorites\/\d+(?:\/designs)?|\/api\/v1\/design-user-service\/user\/profile\/[\w%-]+)$/,
-      query: ["type", "fileType", "seed", "collectionId", "limit", "offset"],
-    },
-  ],
-  [
-    "api.thingiverse.com",
-    {
-      path: /^\/(?:things\/\d+(?:\/categories)?|users\/[\w%-]+(?:\/likes|\/collections)?|collections\/\d+(?:\/things)?|popular)$/,
-      query: ["page", "per_page"],
-    },
-  ],
-  ["www.thingiverse.com", { path: /^\/thing:\d+\/?$/, query: [] }],
-  ["www.printables.com", { path: /^(?:\/[a-z]{2})?\/model\/\d+(?:-[\w%-]+)?\/?$/, query: [] }],
-  [
-    "www.myminifactory.com",
-    {
-      path: /^\/(?:object\/3d-print-[\w%-]+|api\/v2\/(?:objects\/\d+|users\/[\w%-]+(?:\/collections(?:\/[\w%-]+)?)?|search))$/,
-      query: ["q", "sort", "page", "per_page"],
-    },
-  ],
-  [
-    "thangs.com",
-    {
-      path: /^\/(?:m\/\d+|designer\/[\w%-]+\/3d-model\/[\w%-]+|api\/(?:models\/v2\/\d+|users\/v4\/[\w%-]+\/likes|collections\/\d+|landing\/models\/v8\/root))$/,
-      query: ["likes", "page", "pageSize", "sortBy", "costType", "showContent", "category", "tags", "range", "sortDir"],
-    },
-  ],
-  ["cults3d.com", { path: /^\/[a-z]{2}\/3d-model\/[\w%-]+\/[\w%-]+\/?$/, query: [] }],
-]);
+const SOLVER_ROUTES = PROVIDER_IDS.flatMap((provider) =>
+  (manifestOf(provider).solverRoutes ?? []).map((route) => Object.assign({}, route, { provider })),
+);
 
-function solverDestination(url: string): URL | null {
+function solverDestination(url: string) {
   let parsed: URL;
   try {
     parsed = new URL(url);
@@ -116,8 +87,8 @@ function solverDestination(url: string): URL | null {
     return null;
   }
   if (parsed.protocol !== "https:" || parsed.port || parsed.username || parsed.password) return null;
-  const rule = SOLVER_ROUTES.get(parsed.hostname);
-  if (!rule || !rule.path.test(parsed.pathname)) return null;
+  const rule = SOLVER_ROUTES.find((route) => route.host === parsed.hostname && route.path.test(parsed.pathname));
+  if (!rule) return null;
   // Only UTF-8 bytes for non-ASCII slug characters may be percent-encoded.
   // Encoded ASCII delimiters and double-encoding could change the server-side route.
   if (/%(?![89a-f][0-9a-f])/i.test(parsed.pathname)) return null;
@@ -126,9 +97,17 @@ function solverDestination(url: string): URL | null {
   } catch {
     return null;
   }
-  // In particular, never forward Thingiverse access_token or MyMiniFactory key:
-  // URL credentials have the same uncontrolled browser redirect risk as cookies.
+  // Credential names come only from this route, never from caller-supplied bypass options.
   for (const [key, value] of Array.from(parsed.searchParams)) {
+    if (rule.credentials?.query?.includes(key)) {
+      if (
+        parsed.searchParams.getAll(key).length !== 1 ||
+        !value ||
+        Array.from(value).some((char) => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127)
+      )
+        return null;
+      continue;
+    }
     if (!rule.query.includes(key)) {
       if (/^(?:access_token|key|token|authorization)$/i.test(key)) return null;
       parsed.searchParams.delete(key);
@@ -139,7 +118,7 @@ function solverDestination(url: string): URL | null {
   }
   // Fragments are unnecessary for these read endpoints and may drive client-side navigation.
   parsed.hash = "";
-  return parsed;
+  return { parsed, rule };
 }
 
 /** GET only: FlareSolverr's POST submits a browser form, not a raw body. */
@@ -147,8 +126,12 @@ export async function fetchViaFlaresolverr(
   url: string,
   cookieHeader?: string | null,
 ): Promise<FlaresolverrResult | null> {
-  const parsed = solverDestination(url);
-  if (!parsed) return null;
+  const destination = solverDestination(url);
+  if (!destination) return null;
+  const { parsed, rule } = destination;
+  if (cookieHeader && !rule.credentials?.cookies) return null;
+  // Always consult persisted policy, even when a caller has a warm proxy-host cache.
+  if (!(await isFlaresolverrProviderEnabled(rule.provider))) return null;
   const endpoint = await getFlaresolverrUrl();
   if (!endpoint) return null;
   const hostname = parsed.hostname;

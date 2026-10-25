@@ -94,18 +94,29 @@ Open <http://localhost:5173>. **The first account you register becomes the admin
 
 ## Optional: FlareSolverr
 
-FlareSolverr is an optional fallback for supported public pages challenged by Cloudflare, including Printables,
-Thingiverse and MyMiniFactory, and supported MakerWorld and Thangs requests. Thingiverse and MyMiniFactory API
-calls use impit directly for a Chrome-like TLS handshake; their App Tokens and API keys never enter solver
-navigation. FlareSolverr cannot resolve challenges on those authenticated API calls or relay binary downloads.
+FlareSolverr is an optional fallback for declared provider pages and API reads challenged by Cloudflare.
+Thingiverse and MyMiniFactory first use guarded direct transport; a 429 or challenge may retry through the solver
+with the API token in the URL. MakerWorld may send session cookies. The configured solver and its logs therefore
+receive credentials. Use a private, isolated solver: its browser redirects and third-party requests are outside
+Thingport's per-hop destination guard, even though Thingport validates the initial destination.
+
+Binary downloads, authenticated Cults3D calls and MakerWorld's Bambu cloud API are unsupported. Cults3D's switch
+covers public pages only.
 
 ```bash
-docker run -d --name thingport-flaresolverr -p 8191:8191 ghcr.io/flaresolverr/flaresolverr:latest
+docker run -d --name thingport-flaresolverr -p 127.0.0.1:8191:8191 ghcr.io/flaresolverr/flaresolverr:latest
 ```
 
 Then set its URL (`http://localhost:8191`, with or without `/v1`) in **Administration → Connections →
 FlareSolverr**. `FLARESOLVERR_URL` in `backend/.env` is copied into that setting on the first startup; after that the
-saved value wins and the env var is ignored.
+saved value wins and the env var is ignored. The same panel has a switch for each provider with declared solver
+routes. Missing preferences default to enabled for compatibility; explicit false is persisted and checked before
+every solver request, including cached page-proxy decisions. Policy-only changes do not need a reachable solver.
+
+Provider manifests own `solverRoutes`: exact host, anchored path pattern, ordinary query names and any permitted
+query credentials or cookies. The shared solver enforces HTTPS and those declarations; callers cannot request a
+credential bypass. Keep API credentials on API-only routes and regenerate copies with `npm run providers:sync`.
+See [Provider development](PROVIDER_DEVELOPMENT.md) for the module contract.
 
 ## Running the tests
 

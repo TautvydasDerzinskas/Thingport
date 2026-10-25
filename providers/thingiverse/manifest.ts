@@ -27,6 +27,15 @@ export default {
   ],
   modelNoun: "things",
   helpers: { grab: "optional", flaresolverr: "recommended" },
+  solverRoutes: [
+    {
+      host: "api.thingiverse.com",
+      path: /^\/(?:things\/\d+(?:\/categories)?|users\/[\w%-]+(?:\/likes|\/collections)?|collections\/\d+(?:\/things)?|popular)$/,
+      query: ["page", "per_page"],
+      credentials: { query: ["access_token"] },
+    },
+    { host: "www.thingiverse.com", path: /^\/thing:\d+\/?$/, query: [] },
+  ],
   browserFetchOrigins: [
     "https://thingiverse.com",
     "https://www.thingiverse.com",

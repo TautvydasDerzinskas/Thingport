@@ -4,7 +4,7 @@ import { browserFetch } from "../../utils/browserFetch";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
 import { htmlToMarkdown } from "../../services/descriptionMarkdown";
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
-import { isCloudflareChallenge } from "../../services/flaresolverr";
+import { isCloudflareChallenge, fetchViaFlaresolverr, extractJsonFromBrowserBody } from "../../services/flaresolverr";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
 import {
   myminifactoryCollectionKey,
@@ -67,6 +67,15 @@ async function fetchApi(path: string, apiKey: string): Promise<{ ok: boolean; st
     headers: { Accept: "application/json" },
     timeoutMs: API_TIMEOUT_MS,
   });
+  if (res.status === 429 || isCloudflareChallenge(res.headers)) {
+    await res.body?.cancel().catch(() => undefined);
+    const solved = await fetchViaFlaresolverr(url);
+    if (!solved || solved.status === 429) throw new MyminifactoryRateLimitError();
+    const data = extractJsonFromBrowserBody(solved.body);
+    if (solved.status === 401 || (solved.status === 403 && data !== null)) throw new MyminifactoryAuthError();
+    if (data === null || solved.status === 403) throw new MyminifactoryRateLimitError();
+    return { ok: solved.status >= 200 && solved.status < 300, status: solved.status, data };
+  }
   const text = await res.text();
   let data: unknown = null;
   if (text.trim()) {
@@ -76,8 +85,7 @@ async function fetchApi(path: string, apiKey: string): Promise<{ ok: boolean; st
       data = null;
     }
   }
-  if (res.status === 429 || isCloudflareChallenge(res.headers)) throw new MyminifactoryRateLimitError();
-  if (res.status === 401) throw new MyminifactoryAuthError();
+  if (res.status === 401 || res.status === 403) throw new MyminifactoryAuthError();
   return { ok: res.ok, status: res.status, data };
 }
 

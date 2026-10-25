@@ -38,6 +38,7 @@ export default {
   ],
   modelNoun: "models",
   helpers: { grab: "recommended", flaresolverr: "none" },
+  solverRoutes: [{ host: "cults3d.com", path: /^\/[a-z]{2}\/3d-model\/[\w%-]+\/[\w%-]+\/?$/, query: [] }],
   capabilities: {
     collections: true,
     likes: true,

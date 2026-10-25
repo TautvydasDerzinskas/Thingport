@@ -1,3 +1,4 @@
+import { PROVIDER_IDS, manifestOf, type ProviderId } from "../providers/index.generated";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { FLARESOLVERR_URL, PUBLIC_URL } from "../config";
@@ -239,6 +240,25 @@ export async function setSmtpSettings(patch: Partial<SmtpSettings>): Promise<Smt
 }
 
 const FLARESOLVERR_URL_KEY = "flaresolverr_url";
+export const FLARESOLVERR_PROVIDER_IDS = PROVIDER_IDS.filter((id) => manifestOf(id).solverRoutes?.length);
+const flaresolverrProviderKey = (id: ProviderId) => `flaresolverr_provider_${id}`;
+
+/** Absent preferences preserve fallback for existing configured instances. Explicit false always wins. */
+export async function isFlaresolverrProviderEnabled(id: ProviderId): Promise<boolean> {
+  return FLARESOLVERR_PROVIDER_IDS.includes(id) && getBoolSetting(flaresolverrProviderKey(id), true);
+}
+
+export async function getFlaresolverrProviders(): Promise<Record<string, boolean>> {
+  const enabled = await Promise.all(FLARESOLVERR_PROVIDER_IDS.map(isFlaresolverrProviderEnabled));
+  return Object.fromEntries(FLARESOLVERR_PROVIDER_IDS.map((id, i) => [id, enabled[i]]));
+}
+
+export async function setFlaresolverrProviders(patch: Record<string, boolean>): Promise<Record<string, boolean>> {
+  for (const id of FLARESOLVERR_PROVIDER_IDS) {
+    if (Object.hasOwn(patch, id)) await setBoolSetting(flaresolverrProviderKey(id), patch[id]);
+  }
+  return getFlaresolverrProviders();
+}
 
 /** FlareSolverr only answers at /v1, so the base URL works too: `http://host:8191` → `http://host:8191/v1`. */
 export function normalizeFlaresolverrUrl(value: string | null | undefined): string | null {

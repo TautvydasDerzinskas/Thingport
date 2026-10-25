@@ -242,6 +242,7 @@ SMTP_USER=
 SMTP_PASS=
 SMTP_FROM=Thingport <no-reply@localhost>
 # first-run default only; once Thingport has started, change it in Administration -> Connections -> FlareSolverr
+# Per-provider fallbacks are controlled in the same panel; existing providers default to enabled.
 FLARESOLVERR_URL=http://flaresolverr:8191/v1
 TZ=UTC
 ```

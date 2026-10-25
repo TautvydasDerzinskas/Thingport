@@ -51,6 +51,14 @@ export type ProviderManifest = {
   /** The credentials Thingport keeps for it, connected in Configuration → Providers; none for Printables. */
   auth: readonly AuthSlot[];
   helpers: { grab: Need; flaresolverr: Need };
+  /** Browser fallback entry points. Exact HTTPS hosts only; browser redirects/subrequests remain outside
+   * Thingport's per-hop guard. Credential permissions are scoped to each declared route. */
+  solverRoutes?: readonly {
+    host: string;
+    path: RegExp;
+    query: readonly string[];
+    credentials?: { query?: readonly string[]; cookies?: true };
+  }[];
   /** Exact HTTPS origins where Cloudflare rejects Node's TLS handshake. Requests to these origins use impit;
    *  keep the list here so each provider owns its transport exceptions. */
   browserFetchOrigins?: readonly `https://${string}`[];

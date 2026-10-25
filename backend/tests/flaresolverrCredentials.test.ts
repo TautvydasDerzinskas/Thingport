@@ -12,10 +12,16 @@ vi.mock("../src/utils/urlUtils", async (original) => ({
   validateRemoteUrl: async (url: string) => url,
 }));
 
-import { fetchViaFlaresolverr } from "../src/services/flaresolverr";
+import { fetchViaFlaresolverr, shouldProxyHost } from "../src/services/flaresolverr";
 import { openImportResponse } from "../src/services/importService";
 
-afterEach(() => vi.restoreAllMocks());
+import { setFlaresolverrProviders } from "../src/services/settingsService";
+import { fetchJsonFromUrl } from "../src/services/importResolvers";
+
+afterEach(async () => {
+  vi.restoreAllMocks();
+  await setFlaresolverrProviders({ makerworld: true });
+});
 
 describe("FlareSolverr credential boundary", () => {
   it("does not promote an arbitrary import URL to browser navigation on a forged Cloudflare block", async () => {
@@ -37,8 +43,17 @@ describe("FlareSolverr credential boundary", () => {
     "https://makerworld.com/redirect?url=http://127.0.0.1",
     "https://makerworld.com/en/models/%2fredirect",
     "https://api.thingiverse.com/users/%2e%2e/redirect",
-    "https://api.thingiverse.com/things/123?access_token=secret",
-    "https://www.myminifactory.com/api/v2/objects/123?key=secret",
+    "https://api.thingiverse.com/things/123?key=secret",
+    "https://api.thingiverse.com/things/123?access_token=one&access_token=two",
+    "https://api.thingiverse.com/things/123?access_token=",
+    "https://api.thingiverse.com/things/123?access_token=%0asecret",
+    "https://api.thingiverse.com/redirect?access_token=secret",
+    "https://www.thingiverse.com/thing:123?access_token=secret",
+    "https://www.myminifactory.com/object/3d-print-123?key=secret",
+    "https://www.myminifactory.com/api/v2/objects/123?access_token=secret",
+    "https://www.myminifactory.com/api/v2/objects/123?key=one&key=two",
+    "https://www.myminifactory.com/api/data-library/me?key=secret",
+    "https://api.bambulab.com/v1/design-service/my/favorites/listlite?query=",
   ])("rejects untrusted solver destination %s", async (url) => {
     const sent = vi.spyOn(globalThis, "fetch");
     expect(await fetchViaFlaresolverr(url)).toBeNull();
@@ -48,6 +63,8 @@ describe("FlareSolverr credential boundary", () => {
   it.each([
     "https://makerworld.com/api/v1/design-service/favorites/123/designs?seed=0&collectionId=123&limit=20&offset=0",
     "https://api.thingiverse.com/things/123",
+    "https://api.thingiverse.com/things/123?access_token=opaque%2B%2F%3Dtoken",
+    "https://www.myminifactory.com/api/v2/objects/123?key=opaque%2B%2F%3Dkey",
     "https://www.myminifactory.com/api/v2/objects/123",
     "https://thangs.com/api/models/v2/123?likes=false",
     "https://www.printables.com/model/123-test",
@@ -56,6 +73,27 @@ describe("FlareSolverr credential boundary", () => {
       new Response(JSON.stringify({ status: "ok", solution: { response: "page" } })),
     );
     expect(await fetchViaFlaresolverr(url)).toEqual({ status: 200, body: "page" });
+  });
+
+  it("disabling a provider stops solver calls even with a warm page proxy cache", async () => {
+    const sent = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(
+        async () => new Response(JSON.stringify({ status: "ok", solution: { response: '{"id":1}' } })),
+      );
+    const url = "https://makerworld.com/en/models/1";
+    expect(await fetchViaFlaresolverr(url)).not.toBeNull();
+    expect(shouldProxyHost("makerworld.com")).toBe(true);
+    await setFlaresolverrProviders({ makerworld: false });
+    sent.mockClear();
+    expect(await fetchJsonFromUrl(url)).toBeNull();
+    expect(sent).not.toHaveBeenCalled();
+  });
+
+  it("does not allow callers to seed cookies for routes without that declared permission", async () => {
+    const sent = vi.spyOn(globalThis, "fetch");
+    expect(await fetchViaFlaresolverr("https://api.thingiverse.com/things/123", "token=secret")).toBeNull();
+    expect(sent).not.toHaveBeenCalled();
   });
 
   it("seeds cookies only for an allowed provider host", async () => {

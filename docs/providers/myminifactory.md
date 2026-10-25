@@ -52,3 +52,9 @@ Thingport then says so, and opening MyMiniFactory with Grab connects it again.
 
 MyMiniFactory sits behind Cloudflare. Set up [FlareSolverr](../PROVIDER_SETUP.md#flaresolverr) so imports get through
 when it challenges the server.
+
+The MyMiniFactory switch under **Administration → Connections → FlareSolverr** controls this fallback and defaults
+to on. Requests try the guarded direct connection first. On a 429 or Cloudflare challenge, the enabled fallback sends
+the API key (`key`) in the URL to the configured solver; ordinary credential rejections do not use it.
+The solver and its logs may receive this secret. Use a private, isolated solver: its browser navigation and third-party
+requests are outside Thingport's per-hop destination guard. Turning this provider off leaves direct requests active.
