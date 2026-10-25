@@ -217,6 +217,11 @@ describe("MakerWorld print profiles", () => {
     const res = await request(app).post("/api/import").set(auth()).send({ url: pageUrl });
     expect(res.status).toBe(429);
     expect(res.body.detail).toMatch(/CAPTCHA/);
+    const queued = await prisma.importJob.findFirstOrThrow({
+      where: { userId, type: "SINGLE", sourceUrl: pageUrl },
+      orderBy: { createdAt: "desc" },
+    });
+    expect(queued).toMatchObject({ status: "ERROR", errorHttpStatus: 429 });
     // None of the generic API fallbacks ran after the CAPTCHA.
     expect(fetchMock.mock.calls.map(([input]) => String(input)).filter((u) => u.includes("/api/v1/"))).toEqual([
       `https://makerworld.com/api/v1/models/${designId}/download`,

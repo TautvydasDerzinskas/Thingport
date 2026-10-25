@@ -71,4 +71,4 @@ Poll `GET /api/import/tasks/:task_id`, which supports both immediate tasks and d
 `queued` or `running` means keep polling, `done` includes the model in `result`, and `error` includes
 `detail` and `http_status`. These task statuses are lowercase. Immediate tasks are held in memory;
 HTTP 404 means the task is unknown, expired, or lost after a server restart. Without `async=1`, the
-single-import endpoint returns the model directly after importing it.
+single-import endpoint waits for its turn in the same queue and returns the model after importing it.

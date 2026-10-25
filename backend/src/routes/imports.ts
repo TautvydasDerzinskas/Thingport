@@ -27,7 +27,12 @@ import { listZipEntries } from "../services/zipService";
 import { createJob, getActiveJob, getJob, listJobItems } from "../services/importJobService";
 import { queueLink, startLinksJob } from "../services/importQueueService";
 import { getPersistentImportTask, startImportTask } from "../services/importTaskService";
-import { enqueueSingleImport, enqueueLinksImport, enqueueBatchImport } from "../services/importScheduler";
+import {
+  enqueueSingleImport,
+  enqueueLinksImport,
+  enqueueBatchImport,
+  waitForScheduledImport,
+} from "../services/importScheduler";
 import { profilesImportJob, runLinksImportJob, runListImportJob, runZipImportJob } from "../services/importJobRunner";
 import { notifyImportRun } from "../services/modelNotifications";
 import { toImportJobItemOut, toImportJobOut } from "../dto";
@@ -57,10 +62,12 @@ router.post(
   asyncHandler(async (req, res) => {
     const parsedRequest = parseBody(importRequestSchema, req.body);
     const { url, body } = await prepareSingleImport(req.userId!, parsedRequest);
+    // A signed browser URL or an explicit session cannot wait in the durable queue.
+    const immediate = needsImmediateImport({ ...body, makerworld_cookie: parsedRequest.makerworld_cookie, url });
     if (req.query.async === "1") {
       // Browser-signed links and an explicitly supplied session belong to this immediate request.
       // Keep Grab's short-lived task path until these providers can resolve fresh links in a worker.
-      if (needsImmediateImport({ ...body, makerworld_cookie: parsedRequest.makerworld_cookie, url })) {
+      if (immediate) {
         const taskId = startImportTask(req.userId!, () => importAndDescribe(req.userId!, url, body));
         res.status(202).json({ task_id: taskId });
         return;
@@ -69,7 +76,19 @@ router.post(
       res.status(202).json({ task_id: job.id, job_id: job.id, status: "QUEUED" });
       return;
     }
-    res.json(await importAndDescribe(req.userId!, url, body));
+    if (immediate) {
+      res.json(await importAndDescribe(req.userId!, url, body));
+      return;
+    }
+    // Preserve the synchronous API response while using the same persisted worker as async callers.
+    const job = await enqueueSingleImport(req.userId!, { ...body, url });
+    await waitForScheduledImport(job.id);
+    const finished = await prisma.importJob.findUniqueOrThrow({ where: { id: job.id } });
+    if (finished.status === "ERROR")
+      throw new HttpError(finished.errorHttpStatus ?? 500, finished.errorMessage ?? "Import failed");
+    if (finished.status === "PAUSED") throw new HttpError(409, "Import was paused");
+    if (finished.status !== "DONE" || !finished.result) throw new HttpError(500, "Import did not finish");
+    res.json(finished.result);
   }),
 );
 
