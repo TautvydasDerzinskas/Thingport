@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { createApp } from "./app";
 import { API_PORT } from "./config";
 import { prisma } from "./db"; // also ensures storage directories exist before we start serving
@@ -19,11 +20,16 @@ const app = createApp();
 // job is paused instead, for its next sync to pick up again.
 (async () => {
   await prisma.importJob.updateMany({
-    where: { type: { notIn: ["SINGLE", "LINKS"] }, status: "RUNNING", collectionSyncId: { not: null } },
+    where: {
+      payload: { equals: Prisma.DbNull },
+      type: { notIn: ["SINGLE", "LINKS"] },
+      status: "RUNNING",
+      collectionSyncId: { not: null },
+    },
     data: { status: "PAUSED", errorMessage: SYNC_JOB_INTERRUPTED },
   });
   await prisma.importJob.updateMany({
-    where: { type: { notIn: ["SINGLE", "LINKS"] }, status: "RUNNING" },
+    where: { payload: { equals: Prisma.DbNull }, type: { notIn: ["SINGLE", "LINKS"] }, status: "RUNNING" },
     data: { status: "ERROR", errorMessage: "Interrupted by server restart" },
   });
 })().catch((err) => console.error("Failed to recover stale import jobs on startup:", err));

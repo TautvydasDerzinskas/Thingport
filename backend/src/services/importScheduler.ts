@@ -1,15 +1,29 @@
-import type { ImportJob, Prisma } from "@prisma/client";
+import { isProviderId, type ProviderId } from "../providers/index.generated";
+import {
+  enabledImportUrl,
+  listImportSchema,
+  profilesImportSchema,
+  zipExtractRequestSchema,
+} from "../routes/importRequest";
+import { Prisma, type ImportJob } from "@prisma/client";
 import { Client } from "pg";
 import { prisma, getActiveDatabaseUrl } from "../db";
-import { withLinkAuth } from "../providers/registry";
+import { PROVIDERS, withLinkAuth } from "../providers/registry";
 import { HttpError } from "../utils/fileUtils";
-import { runLinksImportJob, runnerSettled, type LinksImportJobBody } from "./importJobRunner";
+import {
+  runLinksImportJob,
+  runListImportJob,
+  runZipImportJob,
+  profilesImportJob,
+  runnerSettled,
+  type LinksImportJobBody,
+} from "./importJobRunner";
 import { importAndDescribe, prepareSingleImport, type SingleImportBody } from "./singleImport";
 
 // A dedicated PostgreSQL session holds the global advisory lock across provider requests.
 // Progress commits independently, without a long-running transaction or a pooled session lock.
-const WORKER_LOCK = 174830219;
-const MANAGED_TYPES = ["SINGLE", "LINKS"] as const;
+export const IMPORT_WORKER_LOCK = 174830219;
+export const MANAGED_TYPES = ["SINGLE", "LINKS", "COLLECTION", "ZIP", "PROFILES"] as const;
 let draining: Promise<void> | null = null;
 let wakeRequested = false;
 
@@ -54,10 +68,84 @@ export async function enqueueLinksImport(
   return job;
 }
 
+type BatchType = "COLLECTION" | "ZIP" | "PROFILES";
+
+function batchPayload(type: BatchType, body: unknown) {
+  const parsed =
+    type === "COLLECTION"
+      ? listImportSchema.parse(body)
+      : type === "PROFILES"
+        ? profilesImportSchema.parse(body)
+        : zipExtractRequestSchema.parse(body);
+  const {
+    makerworld_cookie: _cookie,
+    resolved_download_url: _download,
+    resolved_files: _files,
+    resolved_instance_id: _instance,
+    makerworld_design: _design,
+    ...stored
+  } = parsed;
+  return stored;
+}
+
+export async function enqueueBatchImport(
+  userId: string,
+  type: BatchType,
+  body: unknown,
+  provider?: ProviderId,
+): Promise<ImportJob> {
+  const payload = batchPayload(type, body);
+  const total = "model_ids" in payload ? payload.model_ids.length : "entries" in payload ? payload.entries.length : 0;
+  const job = await prisma.importJob.create({
+    data: {
+      userId,
+      type,
+      status: "QUEUED",
+      sourceUrl: payload.url,
+      provider,
+      total,
+      payload: JSON.parse(JSON.stringify(payload)),
+    },
+  });
+  wakeImportScheduler();
+  return job;
+}
+
+async function executeBatchImport(job: ImportJob): Promise<void> {
+  const type = job.type as BatchType;
+  const payload = batchPayload(type, job.payload);
+  const url = await enabledImportUrl(job.sourceUrl);
+  const body = await withLinkAuth<SingleImportBody>(job.userId, { ...payload, url });
+  if (type === "ZIP") {
+    await runZipImportJob(job.id, job.userId, zipExtractRequestSchema.parse(body));
+    return;
+  }
+  if (!job.provider || !isProviderId(job.provider)) throw new HttpError(400, "Unknown import provider");
+  const provider = job.provider;
+  if (type === "PROFILES") {
+    const run = profilesImportJob(provider);
+    if (!run) throw new HttpError(400, "Provider cannot import print profiles");
+    await run(job.id, job.userId, profilesImportSchema.parse(body));
+    return;
+  }
+  const lists = PROVIDERS[provider].lists;
+  if (!lists || lists.waitsForGrab) throw new HttpError(400, "This provider requires Thingport Grab");
+  const listBody = listImportSchema
+    .extend({ model_ids: lists.modelIds ?? listImportSchema.shape.model_ids })
+    .parse(body);
+  // Includes MakerWorld's own paced runner; rebuild its closure from fresh credentials here.
+  const start = await lists.start(job.userId, url, listBody);
+  if ("waitForGrab" in start) throw new HttpError(400, "This provider requires Thingport Grab");
+  if ("run" in start) await start.run(job.id);
+  else await runListImportJob(job.id, job.userId, provider, start.batch, listBody);
+}
+
 export async function executeQueuedImport(job: ImportJob): Promise<void> {
   const payload = (job.payload ?? {}) as Record<string, unknown>;
   try {
-    if (job.type === "LINKS") {
+    if (job.type === "COLLECTION" || job.type === "ZIP" || job.type === "PROFILES") {
+      await executeBatchImport(job);
+    } else if (job.type === "LINKS") {
       const body = await withLinkAuth<LinksImportJobBody>(job.userId, {
         url: job.sourceUrl,
         notes: typeof payload.notes === "string" ? payload.notes : null,
@@ -113,15 +201,31 @@ export async function drainImportQueue(): Promise<void> {
     await lock.connect();
     const {
       rows: [row],
-    } = await lock.query<{ acquired: boolean }>("SELECT pg_try_advisory_lock($1) AS acquired", [WORKER_LOCK]);
+    } = await lock.query<{ acquired: boolean }>("SELECT pg_try_advisory_lock($1) AS acquired", [IMPORT_WORKER_LOCK]);
     if (!row.acquired) return;
     // Only the lock holder recovers: another API starting must never reset a live worker.
     await prisma.importJobItem.updateMany({
       where: { status: "RUNNING", job: { type: { in: [...MANAGED_TYPES] }, status: { in: ["RUNNING", "QUEUED"] } } },
       data: { status: "PENDING" },
     });
+    // ZIP extraction creates new Prints without per-entry idempotency. Replaying a partially
+    // extracted archive would duplicate them; keep the failure visible for manual inspection.
     await prisma.importJob.updateMany({
-      where: { type: { in: [...MANAGED_TYPES] }, status: "RUNNING" },
+      where: { type: "ZIP", status: "RUNNING", payload: { not: Prisma.DbNull } },
+      data: {
+        status: "ERROR",
+        errorMessage:
+          "ZIP import interrupted by server restart. Some entries may already be in your library; select only the remaining entries in a new import.",
+      },
+    });
+    await prisma.importJob.updateMany({
+      where: {
+        status: "RUNNING",
+        OR: [
+          { type: { in: ["SINGLE", "LINKS"] } },
+          { type: { in: ["COLLECTION", "PROFILES"] }, payload: { not: Prisma.DbNull } },
+        ],
+      },
       data: { status: "QUEUED", errorMessage: null },
     });
     for (;;) {

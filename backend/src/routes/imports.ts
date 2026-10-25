@@ -8,7 +8,14 @@ import { prisma } from "../db";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { requireCaptcha } from "../services/captchaService";
-import { enabledImportUrl, importRequestSchema } from "./importRequest";
+import {
+  enabledImportUrl,
+  importRequestSchema,
+  listImportSchema,
+  profilesImportSchema,
+  zipExtractRequestSchema,
+  needsImmediateImport,
+} from "./importRequest";
 import {
   checkImportStatus,
   downloadImportToTemp,
@@ -20,7 +27,7 @@ import { listZipEntries } from "../services/zipService";
 import { createJob, getActiveJob, getJob, listJobItems } from "../services/importJobService";
 import { queueLink, startLinksJob } from "../services/importQueueService";
 import { getPersistentImportTask, startImportTask } from "../services/importTaskService";
-import { enqueueSingleImport, enqueueLinksImport } from "../services/importScheduler";
+import { enqueueSingleImport, enqueueLinksImport, enqueueBatchImport } from "../services/importScheduler";
 import { profilesImportJob, runListImportJob, runZipImportJob } from "../services/importJobRunner";
 import { notifyImportRun } from "../services/modelNotifications";
 import { toImportJobItemOut, toImportJobOut } from "../dto";
@@ -166,14 +173,6 @@ router.post(
 // the picked models, and /import/<provider>/profiles a model's print profiles as one model. The endpoints each
 // provider had before them stay as aliases (its manifest's `legacy`), for clients that still call them.
 
-const listImportSchema = importRequestSchema.extend({
-  model_ids: z.array(z.string()).min(1),
-  // As Thingport Grab read it: the instance can't read a private Printables collection's name itself.
-  collection_title: z.string().max(300).nullable().optional(),
-});
-
-const profilesImportSchema = importRequestSchema.extend({ scope: z.enum(["designer", "all"]) });
-
 function providerParam(req: Request): ProviderId {
   if (!isProviderId(req.params.provider)) throw new HttpError(404, "Unknown provider");
   return req.params.provider;
@@ -237,8 +236,13 @@ async function importList(
     listImportSchema.extend({ model_ids: lists.modelIds ?? listImportSchema.shape.model_ids }),
     renamed,
   );
-  if (!lists.waitsForGrab) await assertNoActiveJob(userId);
   const url = await listUrlOf(provider, body.url, kinds);
+  // Grab handoffs and request-only browser inputs retain their immediate compatibility path.
+  if (!lists.waitsForGrab && !needsImmediateImport(body)) {
+    const job = await enqueueBatchImport(userId, "COLLECTION", { ...body, url }, provider);
+    res.status(202).json({ job_id: job.id });
+    return;
+  }
   const start = await lists.start(userId, url, { ...body, url });
   if ("waitForGrab" in start) {
     const grabQueue = PROVIDERS[provider].grabQueue;
@@ -258,9 +262,13 @@ async function importProfiles(req: Request, res: Response, provider: ProviderId)
   const run = profilesImportJob(provider);
   if (!run) throw new HttpError(404, `${name} has no print profiles to import together`);
   const body = parseBody(profilesImportSchema, req.body);
-  await assertNoActiveJob(userId);
   const url = await enabledImportUrl(body.url);
   if (parseModelUrl(url)?.provider !== provider) throw new HttpError(400, `Not a ${name} model link`);
+  if (!needsImmediateImport(body)) {
+    const job = await enqueueBatchImport(userId, "PROFILES", { ...body, url }, provider);
+    res.status(202).json({ job_id: job.id });
+    return;
+  }
   const job = await createJob(userId, "PROFILES", { sourceUrl: url, provider });
   void run(job.id, userId, { ...body, url });
   res.status(202).json({ job_id: job.id });
@@ -304,23 +312,17 @@ for (const provider of PROVIDER_IDS) {
   }
 }
 
-// Batch imports run in the background and are polled via GET /import/jobs/:id. One RUNNING job
-// per user doubles as the "already in progress" lock.
-
-async function assertNoActiveJob(userId: string): Promise<void> {
-  const active = await getActiveJob(userId);
-  if (active) throw new HttpError(409, "An import is already in progress");
-}
-
-const zipExtractRequestSchema = importRequestSchema.extend({ entries: z.array(z.string()) });
-
 router.post(
   "/import/zip",
   requireCaptcha("import"),
   asyncHandler(async (req, res) => {
     const body = parseBody(zipExtractRequestSchema, req.body);
-    await assertNoActiveJob(req.userId!);
     const url = await enabledImportUrl(body.url);
+    if (!needsImmediateImport(body)) {
+      const job = await enqueueBatchImport(req.userId!, "ZIP", { ...body, url });
+      res.status(202).json({ job_id: job.id });
+      return;
+    }
     const job = await createJob(req.userId!, "ZIP", {
       sourceUrl: url,
       total: body.entries.length,
