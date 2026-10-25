@@ -1,6 +1,6 @@
 // MakerWorld's model pages, read for what its cloud API gives a signed-in user: the design, and its author.
 
-import { IMPORT_BROWSER_USER_AGENT, IMPORT_HTML_MAX_BYTES } from "../../config";
+import { IMPORT_BROWSER_USER_AGENT, IMPORT_HTML_MAX_BYTES, IMPORT_TIMEOUT_SECONDS } from "../../config";
 import { maybeSleep } from "../../utils/concurrency";
 import { HttpError, isHtmlContentType } from "../../utils/fileUtils";
 import { readCapped } from "../../utils/readCapped";
@@ -40,7 +40,7 @@ async function fetchMakerworldPageDesign(
     return null;
   }
   if (!isHtmlContentType(res.headers.get("content-type") || "")) return null;
-  const { buffer } = await readCapped(res, IMPORT_HTML_MAX_BYTES);
+  const { buffer } = await readCapped(res, IMPORT_HTML_MAX_BYTES, IMPORT_TIMEOUT_SECONDS * 1000);
   const nextData = extractNextDataJson(buffer.toString("utf-8"));
   const design = (nextData as { props?: { pageProps?: { design?: unknown } } } | null)?.props?.pageProps?.design;
   return design && typeof design === "object" && !Array.isArray(design) ? (design as Record<string, unknown>) : null;
@@ -75,6 +75,6 @@ export async function fetchMakerworldPageAuthor(
     return null;
   }
   if (!isHtmlContentType(res.headers.get("content-type") || "")) return null;
-  const { buffer } = await readCapped(res, IMPORT_HTML_MAX_BYTES);
+  const { buffer } = await readCapped(res, IMPORT_HTML_MAX_BYTES, IMPORT_TIMEOUT_SECONDS * 1000);
   return completeMakerworldAuthor(makerworldPageMetadata(buffer.toString("utf-8")).author, paceMs);
 }

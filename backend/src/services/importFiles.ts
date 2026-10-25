@@ -196,7 +196,7 @@ export async function openImportResponse(
 
   const contentType = res.headers.get("content-type") || "";
   if (isHtmlContentType(contentType)) {
-    const { buffer, truncated } = await readCapped(res, IMPORT_HTML_MAX_BYTES);
+    const { buffer, truncated } = await readCapped(res, IMPORT_HTML_MAX_BYTES, IMPORT_TIMEOUT_SECONDS * 1000);
     const html = buffer.toString(parseCharset(contentType) as BufferEncoding);
 
     let downloadUrl: string | null = null;
