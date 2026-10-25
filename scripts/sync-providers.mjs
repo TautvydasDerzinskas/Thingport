@@ -83,7 +83,6 @@ ${ids.map((id) => `import ${id} from "./${id}/manifest.generated";\nimport { url
 export type {
   AuthField,
   AuthSlot,
-  Chip,
   LegacyIdsField,
   ListKind,
   ListLink,

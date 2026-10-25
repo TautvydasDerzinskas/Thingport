@@ -27,7 +27,6 @@ import { urls as cults3dUrls } from "./cults3d/urls.generated";
 export type {
   AuthField,
   AuthSlot,
-  Chip,
   LegacyIdsField,
   ListKind,
   ListLink,

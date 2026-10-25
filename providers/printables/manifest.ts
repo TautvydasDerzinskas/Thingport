@@ -10,7 +10,6 @@ export default {
   endpoints: { graphql: "https://api.printables.com/graphql/", media: "https://media.printables.com/" },
   brand: {
     logo: { color: "#FA6831", path: "M3.678 4.8 12 9.6v9.6l8.322-4.8V4.8L12 0ZM12 19.2l-8.322-4.8V24Z" },
-    chip: { bg: "#FA6831" },
     accent: "#FA6831",
   },
   signIn: "none",

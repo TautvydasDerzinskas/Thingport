@@ -3,7 +3,7 @@
 One folder per provider site Thingport imports from. How a provider is built, and how to add one, is in
 [docs/PROVIDER_DEVELOPMENT.md](../docs/PROVIDER_DEVELOPMENT.md).
 
-- `<id>/manifest.ts`: what the provider is: id (stored in the database, never change it), name, hosts, logo and chip
+- `<id>/manifest.ts`: what the provider is: id (stored in the database, never change it), name, hosts, logo and accent
   colours, sign-in, helpers, capabilities and how Grab reaches its site. Pure data, typed by `_lib/types.ts`.
 - `_lib/`: the types and the small helpers every package shares.
 - `<id>/urls.ts`: how its links are read and written, the same in all three packages.

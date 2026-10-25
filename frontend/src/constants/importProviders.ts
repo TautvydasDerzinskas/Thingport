@@ -1,5 +1,5 @@
 import type { Theme } from "@mui/material/styles";
-import { MANIFESTS, PROVIDER_IDS, type Chip } from "../providers/index.generated";
+import { MANIFESTS, PROVIDER_IDS } from "../providers/index.generated";
 
 // `color`/`textColor` are sx palette tokens or hex brand colors; `textColor` may also be a theme
 // callback. `outlined` adds a primary-colour ring.
@@ -10,19 +10,13 @@ export type ImportProviderInfo = {
   outlined?: boolean;
 };
 
-/** A manifest's chip as sx values. */
-function chipInfo(label: string, { bg, fg }: Chip): ImportProviderInfo {
-  const textColor =
-    fg === "black"
-      ? "common.black"
-      : fg === "inverse"
-        ? (theme: Theme) => (theme.palette.mode === "dark" ? "#FFFFFF" : theme.palette.background.paper)
-        : fg;
-  return { label, color: bg === "text" ? "text.primary" : bg, ...(textColor && { textColor }) };
+/** A provider's chip in its accent, the label black or white, whichever reads on it. */
+function accentInfo(label: string, accent: string): ImportProviderInfo {
+  return { label, color: accent, textColor: (theme: Theme) => theme.palette.getContrastText(accent) };
 }
 
 export const IMPORT_PROVIDER_INFO: Record<string, ImportProviderInfo> = {
-  ...Object.fromEntries(PROVIDER_IDS.map((id) => [id, chipInfo(MANIFESTS[id].name, MANIFESTS[id].brand.chip)])),
+  ...Object.fromEntries(PROVIDER_IDS.map((id) => [id, accentInfo(MANIFESTS[id].name, MANIFESTS[id].brand.accent)])),
   // Direct uploads (source_provider is null).
   thingport: { label: "Thingport", color: "common.white", textColor: "common.black", outlined: true },
 };
