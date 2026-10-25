@@ -1,4 +1,4 @@
-// Its mark is black and white, the two diamonds of its logo, so the mark and the chip follow the theme.
+// Its mark is black and white, the two diamonds of its logo, so the mark follows the theme.
 import type { ProviderManifest } from "../_lib/types";
 
 export default {
@@ -15,7 +15,6 @@ export default {
       path: "M13.036 4.95V.25l11.99 11.988v4.701L13.035 4.951Zm11.99 12.296L12.917 5.14.812 17.246l12.106 12.106 12.107-12.106Zm24.452 0L37.371 5.14 25.265 17.246 37.37 29.352l12.107-12.106ZM12.807.25.817 12.238v4.701l11.99-11.988V.25Zm24.674 4.7V.25l11.99 11.988v4.701L37.48 4.951Zm-.23-4.7L25.263 12.238v4.701l11.99-11.988V.25Z",
       fillRule: "evenodd",
     },
-    chip: { bg: "text", fg: "inverse" },
     // Anycubic's blue: MakerOnline's own mark is black and white.
     accent: "#1F7AE0",
   },

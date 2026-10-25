@@ -20,14 +20,6 @@ export type Logo = {
   layers?: readonly { d: string; color: `#${string}` }[];
 };
 
-export type Chip = {
-  /** The chip's fill: a hex colour, or "text" for the theme's text colour. */
-  bg: `#${string}` | "text";
-  /** The label's colour, white when left out: a hex colour, "black", or "inverse" (white in dark mode, the paper
-   *  colour in light mode) for a chip filled with the text colour. */
-  fg?: `#${string}` | "black" | "inverse";
-};
-
 export type ProviderManifest = {
   /** Stored in the database and sent by clients: never change it. */
   id: string;
@@ -41,8 +33,9 @@ export type ProviderManifest = {
   hosts: readonly string[];
   /** Its APIs and file hosts, by what they serve, for every package that calls them. */
   endpoints?: Readonly<Record<string, `https://${string}`>>;
-  /** `accent`: its own colour for what's drawn in its manner, such as its collections' tiles in the sync dialog. */
-  brand: { logo: Logo; chip: Chip; accent: `#${string}` };
+  /** `accent`: its own colour for what's drawn in its manner, such as its name chip and its collections' tiles in the
+   *  sync dialog. */
+  brand: { logo: Logo; accent: `#${string}` };
   /** The site's own word for what it holds, as the sync dialog counts it. */
   modelNoun: "models" | "things" | "objects";
   /** Links to show as examples: a model's, a list's, and the pattern of a list the sync dialog can follow. */
