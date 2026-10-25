@@ -74,9 +74,9 @@ how lists are read. When a new site resembles one of these, copy that provider's
 
 **Cloudflare:**
 
-- `browserFetch: true` in the manifest sends every request to the provider's hosts with a browser's TLS handshake
-  (`backend/src/utils/browserFetch.ts`). Use it where Cloudflare tells Node's fetch apart by its handshake, as with
-  Thingiverse, MyMiniFactory and Thangs. Headers and cookies don't help there.
+- `browserFetchOrigins` in the manifest lists the exact HTTPS origins that need a browser's TLS handshake
+  (`backend/src/utils/browserFetch.ts`). Include every affected origin, including CDN and download hosts, as with
+  Thingiverse, MyMiniFactory and Thangs. Headers and cookies don't help where Cloudflare distinguishes the handshake.
 - FlareSolverr is a fallback for declared pages and API reads (`services/flaresolverr.ts`). A manifest's
   `solverRoutes` owns exact hosts, anchored path patterns, allowed query names and route-specific `credentials`
   (`query` names or `cookies: true`). Only those HTTPS destinations may enter the solver; ordinary query fields
@@ -165,7 +165,7 @@ Rules of thumb:
 
 1. Find what the site's own pages call, and which calls need a sign-in. Record real responses for the contract test.
 2. Keep everything server-side if the site allows it, with the sign-in Grab hands over.
-3. If Cloudflare blocks Node, try `browserFetch` first and FlareSolverr second.
+3. If Cloudflare blocks Node, declare the affected `browserFetchOrigins` first and try FlareSolverr second.
 4. Fall back to Grab doing the work on the site's pages (MakerOnline) only when nothing server-side works.
 5. Prefer the generic shape. When a site doesn't fit, declare the exception rather than bending the shared code:
    `customImport`, `providers/routes.ts`, `PROVIDER_UI`, or a content or session module of its own.
