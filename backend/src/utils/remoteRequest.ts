@@ -25,6 +25,7 @@ const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 /** One checked request without following redirects; callers must validate the next hop separately. */
 export async function fetchRemoteHop(url: string, init: RequestInit = {}, browser = false): Promise<Response> {
   await validateRemoteUrl(url);
+  // Impit has no connection-time DNS hook; its exception stays limited to provider-owned exact HTTPS origins.
   return browser && needsBrowserFetch(url)
     ? browserFetch(url, {
         method: (init.method || "GET") as "GET" | "POST",
