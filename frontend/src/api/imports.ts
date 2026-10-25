@@ -81,6 +81,8 @@ type ImportLinkPayload = {
 
 /** "profile_added": an existing MakerWorld model gained another profile's file. */
 export type ImportOutcome = "created" | "profile_added" | "already_imported";
+export type SingleImportResponse =
+  (Print & { import_outcome?: ImportOutcome }) | { task_id: string; job_id: string; status: "QUEUED" };
 
 export const importsApi = {
   queueFromLink: async (payload: ImportLinkPayload): Promise<{ job_id?: string; task_id: string }> => {
@@ -121,7 +123,8 @@ export const importsApi = {
     };
   },
 
-  fromLink: async (payload: ImportLinkPayload): Promise<Print & { import_outcome?: ImportOutcome }> => {
+  /** Long queued imports return task identifiers after the synchronous wait expires. */
+  fromLink: async (payload: ImportLinkPayload): Promise<SingleImportResponse> => {
     const res = await fetch(`${apiBase()}/import`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),

@@ -3,13 +3,21 @@ import { importsApi } from "./imports";
 
 afterEach(() => vi.unstubAllGlobals());
 
-function respond(body: unknown) {
-  const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(new Response(JSON.stringify(body)));
+function respond(body: unknown, status = 200) {
+  const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(new Response(JSON.stringify(body), { status }));
   vi.stubGlobal("fetch", fetch);
   return fetch;
 }
 
 describe("single import progress", () => {
+  it("preserves the synchronous model result and its queued 202 fallback", async () => {
+    const payload = { url: "https://example.com/model" };
+    respond({ id: "model", import_outcome: "created" });
+    expect(await importsApi.fromLink(payload)).toMatchObject({ id: "model" });
+    respond({ task_id: "queued", job_id: "queued", status: "QUEUED" }, 202);
+    expect(await importsApi.fromLink(payload)).toEqual({ task_id: "queued", job_id: "queued", status: "QUEUED" });
+  });
+
   it.each([{ task_id: "immediate" }, { task_id: "durable", job_id: "durable" }])(
     "preserves both asynchronous response contracts: %j",
     async (response) => {
