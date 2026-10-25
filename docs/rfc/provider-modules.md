@@ -1,5 +1,19 @@
 # Plan: self-contained provider modules for Thingport
 
+> **Status: done, Phases 0–8.** Where it was built differently from the plan below:
+>
+> - The generated copies sit beside each package's own provider code, as `src/providers/<id>/*.generated.ts`, not in
+>   `_generated/` folders.
+> - Phase 7 copies the columns into `ProviderConnection` and `CategorySiteId` without dual writes or fallback reads,
+>   and drops them in the same branch. The starter categories' ids are `backend/src/providers/<id>/categories.json`,
+>   as only the backend reads them, and the startup seed is SQL.
+> - The docs' prose for each provider (`providers/<id>/docs.ts`) is read only by the generator, so no package carries
+>   it.
+> - Credentials are still stored unencrypted (D9).
+>
+> The current layout is in [providers/README.md](../../providers/README.md), and the checklist for a new provider in
+> [CONTRIBUTING.md](../../CONTRIBUTING.md#adding-a-provider).
+
 All paths below are relative to `/home/sebastian/git/github.com/Thingport`. I only read files. I made no edits and wrote no files.
 
 ## Goal

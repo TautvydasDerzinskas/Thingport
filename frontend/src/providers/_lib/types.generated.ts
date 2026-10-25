@@ -147,3 +147,18 @@ export type ProviderUrls = {
    *  (MakerWorld's are their bio's). */
   authorUrl?(externalId: string): string;
 };
+
+/** What the docs say of a provider beyond what its manifest shows (docs/PROVIDER_SETUP.md and the website, written by
+ *  scripts/sync-providers.mjs): <id>/docs.ts, read only by the generator, so no package carries it. */
+export type ProviderDocs = {
+  /** Its line in the providers page's list, after its name: what it needs, in short. */
+  summary: string;
+  /** Its page's description on the website. */
+  description: string;
+  /** The comparison table's Sign-in cell. */
+  signIn: string;
+  /** The Collections cell, where the site calls its lists something else. */
+  collections?: string;
+  /** A footnote to the table, marked on the cells it qualifies. */
+  note?: { text: string; on: readonly ("grab" | "likes")[] };
+};

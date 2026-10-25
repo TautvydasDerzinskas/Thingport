@@ -82,6 +82,37 @@ reviewer otherwise has to reconstruct your reasoning from scratch.
 
 If you couldn't verify something end to end, say so. That's useful information, not a weakness.
 
+## Adding a provider
+
+A provider is a model site Thingport imports from. Everything of its own lives in its folders, which
+[providers/README.md](providers/README.md) describes, and shared code reaches it through the tables that wire providers
+in. Open an issue first, then:
+
+1. **`providers/<id>/manifest.ts`**: what it is, typed by `providers/_lib/types.ts`. The id is stored in the database
+   and sent by clients, so it never changes. Its Grab site is `"optional"`: new built-in host access would switch Grab
+   off for every user until they approve it.
+2. **`providers/<id>/urls.ts`** reads and writes its links, the same in all three packages, with cases in
+   `urls.fixtures.json`. **`providers/<id>/docs.ts`** is what the docs say of it beyond the manifest.
+3. **`npm run providers:sync`** copies them into the backend, frontend and Grab, and writes the docs logo, the list and
+   table in `docs/PROVIDER_SETUP.md` and the website's page entry. The pre-commit hook runs it too.
+4. **Backend**, `backend/src/providers/<id>/`: `api.ts` for the site's API, `index.ts` for its import, lists, trending
+   and details, `session.ts` and `connection.ts` for a sign-in (kept in `ProviderConnection` through
+   `providers/connections.ts`, so no column), `browse.ts` and `sync.ts` for its lists, and `categories.json` with its
+   ids for the starter categories, by path. Add its entry to `providers/registry.ts`, which tsc insists on, and any
+   routes of its own to `providers/routes.ts`. Existing users' starter categories get its ids at the next startup.
+5. **A contract test**, `backend/tests/providers/<id>.contract.test.ts`, with `describeProviderContract` and recorded
+   responses.
+6. **App**, `frontend/src/providers/<id>/`: only what the generic UI can't do, such as its tile in the sync dialog
+   (`collectionTiles.ts`) or an entry in `overrides.ts`. Its text goes under `providers.<id>` in every
+   `frontend/src/i18n/locales/*.json`; `frontend/src/providers/strings.test.ts` lists what's missing.
+7. **Grab**, `extension/src/providers/<id>/`: its entry in `content.ts`, and its sign-in in `sessions.ts` if Grab hands
+   one over. See [extension/CONTRIBUTING.md](extension/CONTRIBUTING.md#adding-a-provider-site).
+8. **`docs/providers/<docsSlug>.md`**, its own page.
+
+There's no migration to write and no shared page to edit. Where shared code still has to name a provider, say why in a
+comment there, and list it at the top of the provider's backend `index.ts`. If it serves a GET that a dashboard app
+would read, give it an API token scope (see `services/apiTokenScopes.ts`).
+
 ## Code style
 
 - **Match the surrounding code.** This codebase uses long explanatory comments that say _why_

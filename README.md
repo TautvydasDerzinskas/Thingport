@@ -330,7 +330,7 @@ Thingport ships two small companion tools, each downloadable from the in-app Dow
 
 ## Provider Setup
 
-MakerWorld needs each user's session cookie, Printables works with no setup, and Thingiverse needs an App Token an admin sets once for the whole instance. The newer sites each need their own sign-in or key, mostly handed over by [Thingport Grab](extension/README.md); MakerOnline's files come only through Grab, and Printables, Thingiverse and MyMiniFactory work best with FlareSolverr. Connect them under **Configuration → Providers** (from the user menu): right-click a provider to connect it, or choose **About** for what it needs. Admins can turn any provider off for the whole instance under **Administration → Providers**. See **[docs/PROVIDER_SETUP.md](docs/PROVIDER_SETUP.md)** for a comparison of all ten, and a setup page for each.
+MakerWorld needs each user's session cookie, Printables works with no setup, and Thingiverse needs an App Token an admin sets once for the whole instance. The newer sites each need their own sign-in or key, mostly handed over by [Thingport Grab](extension/README.md); MakerOnline's files come only through Grab, and Printables, Thingiverse and MyMiniFactory work best with FlareSolverr. Connect them under **Configuration → Providers** (from the user menu): right-click a provider to connect it, or choose **About** for what it needs. Admins can turn any provider off for the whole instance under **Administration → Providers**. See **[docs/PROVIDER_SETUP.md](docs/PROVIDER_SETUP.md)** for a comparison of them all, and a setup page for each.
 
 ## Contributing
 
