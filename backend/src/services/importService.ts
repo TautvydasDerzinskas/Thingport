@@ -91,7 +91,7 @@ import {
 import { availablePlateFilename, relocatePrint, saveThumbFromBytes } from "./printService";
 import { addPreviewImage, preferImageOverRenders } from "./previewImageService";
 import { localizeDescriptionImages } from "./descriptionImageService";
-import { sha256OfFile } from "./fileReuse";
+import { plainWriteMode, sha256OfFile } from "./fileReuse";
 import { DROP } from "./storedContent";
 import { downloadResponseToTemp } from "./importDownload";
 import { prisma } from "../db";
@@ -849,7 +849,7 @@ export async function downloadPlainFileToTemp(url: string, suggestedName: string
     }
     const filename = sanitizeFilename(suggestedName);
     const tempFilePath = await downloadResponseToTemp(res, filename, IMPORT_MAX_BYTES, IMPORT_TIMEOUT_SECONDS * 1000);
-    return { input: { filename, mime: guessMimeFromPath(filename), tempFilePath } };
+    return { input: { filename, mime: guessMimeFromPath(filename), tempFilePath, storageMode: plainWriteMode() } };
   } catch {
     return null;
   }
@@ -1171,7 +1171,15 @@ async function importLinkedFile(
     throw err;
   }
   if (!plates.length) {
-    plates = [{ filename, mime, tempFilePath: tempPath, sourceInstanceId: meta.makerworldProfile?.instanceId ?? null }];
+    plates = [
+      {
+        filename,
+        mime,
+        tempFilePath: tempPath,
+        storageMode: plainWriteMode(),
+        sourceInstanceId: meta.makerworldProfile?.instanceId ?? null,
+      },
+    ];
   }
   const author = await upsertAuthorFromImport(meta.author);
   const categoryId =
