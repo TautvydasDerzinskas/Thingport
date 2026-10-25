@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -12,6 +12,10 @@ import { previewImagePath } from "../src/services/previewImageService";
 import { plateAssetHome, printAssetHome } from "../src/services/modelAssets";
 import { MOSAICS, renderTagMosaic } from "../src/services/tagMosaicService";
 import { TAG_MOSAICS } from "../src/config";
+
+vi.mock("node:dns/promises", () => ({
+  default: { resolve4: async () => ["93.184.216.34"], resolve6: async () => [] },
+}));
 
 const app = createApp();
 let token: string;
