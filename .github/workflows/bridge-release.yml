@@ -142,7 +142,21 @@ jobs:
           EOF
           # Updated in place: deleting and recreating it would 404 the Download page's links in between.
           if gh release view bridge-latest >/dev/null 2>&1; then
-            gh release upload bridge-latest release/* --clobber
+            # --clobber deletes the live asset before its replacement uploads, so upload under a .next name and
+            # swap by renaming: the old binary stays up until then, and stays up if an upload fails.
+            asset_id() { gh api "repos/$GH_REPO/releases/tags/bridge-latest" --jq ".assets[] | select(.name == \"$1\") | .id"; }
+            mkdir "$RUNNER_TEMP/next"
+            for f in release/*; do cp "$f" "$RUNNER_TEMP/next/$(basename "$f").next"; done
+            gh release upload bridge-latest "$RUNNER_TEMP"/next/* --clobber
+            for f in release/*; do
+              name=$(basename "$f")
+              stale=$(asset_id "$name.old"); [ -z "$stale" ] || gh api -X DELETE "repos/$GH_REPO/releases/assets/$stale"
+              old=$(asset_id "$name")
+              new=$(asset_id "$name.next")
+              [ -z "$old" ] || gh api -X PATCH "repos/$GH_REPO/releases/assets/$old" -f name="$name.old" >/dev/null
+              gh api -X PATCH "repos/$GH_REPO/releases/assets/$new" -f name="$name" >/dev/null
+              [ -z "$old" ] || gh api -X DELETE "repos/$GH_REPO/releases/assets/$old"
+            done
             gh api -X PATCH "repos/$GH_REPO/git/refs/tags/bridge-latest" -f sha="$REF" -F force=true
             gh release edit bridge-latest --notes-file "$RUNNER_TEMP/notes.md"
           else
