@@ -14,12 +14,12 @@ import { liftProviderHolds } from "../providers/registry";
 import { wakeImportScheduler, MANAGED_TYPES } from "./importScheduler";
 
 /** Starts a LINKS job's PENDING links, or with `retryFailed` puts its FAILED links back first.
- *  Resolves once the job is persisted as QUEUED; `run` is retained for older callers. `manual` is a person clicking start or retry: it lifts the MakerWorld
+ *  Resolves once the job is persisted as QUEUED. `manual` is a person clicking start or retry: it lifts the MakerWorld
  *  CAPTCHA cooloff, which would otherwise fail every link without trying. */
 export async function startLinksJob(
   job: ImportJob,
   opts: { retryFailed?: boolean; manual?: boolean } = {},
-): Promise<{ run: Promise<void> }> {
+): Promise<void> {
   // The runner keeps this lock through notifications and final status writes, even
   // after its last item settles. Local runner maps cannot protect another process.
   if (job.type === "LINKS") {
@@ -35,10 +35,7 @@ export async function startLinksJob(
   return startLinksJobUnlocked(job, opts);
 }
 
-async function startLinksJobUnlocked(
-  job: ImportJob,
-  opts: { retryFailed?: boolean; manual?: boolean },
-): Promise<{ run: Promise<void> }> {
+async function startLinksJobUnlocked(job: ImportJob, opts: { retryFailed?: boolean; manual?: boolean }): Promise<void> {
   if (job.type === "COLLECTION" || job.type === "ZIP" || job.type === "PROFILES") {
     if (!job.payload) throw new HttpError(400, "This older import has no saved request; start a new import");
     if (
@@ -61,7 +58,7 @@ async function startLinksJobUnlocked(
     if (!count) throw new HttpError(409, "This import changed while it was being started");
     if (opts.manual) liftProviderHolds();
     wakeImportScheduler();
-    return { run: Promise.resolve() };
+    return;
   }
   if (job.type === "SINGLE") {
     if (job.status !== "PAUSED" && job.status !== "ERROR") {
@@ -74,7 +71,7 @@ async function startLinksJobUnlocked(
     if (!count) throw new HttpError(409, "This import changed while it was being started");
     if (opts.manual) liftProviderHolds();
     wakeImportScheduler();
-    return { run: Promise.resolve() };
+    return;
   }
   if (job.type !== "LINKS") throw new HttpError(400, "Only a link-list import can be started or retried");
   if (job.status === "RUNNING" || job.status === "QUEUED") throw new HttpError(409, "This import is already running");
@@ -111,16 +108,13 @@ async function startLinksJobUnlocked(
   if (await prisma.importJobItem.count({ where: { jobId: job.id, status: "RUNNING" } })) {
     throw new HttpError(409, "This import is still finishing or recovering its current link, try again shortly");
   }
-  if (opts.retryFailed) {
-    const failed = await resetFailedItems(job.id);
-    // Links an interrupted run never reached are rerun too, so a retry alone can finish it.
-    const waiting = await prisma.importJobItem.count({
-      where: { jobId: job.id, status: { in: ["PENDING", "RUNNING"] } },
-    });
-    if (!failed && !waiting) throw new HttpError(400, "This import has no failed links to retry");
-  }
+  if (opts.retryFailed) await resetFailedItems(job.id);
   const pending = await prisma.importJobItem.count({ where: { jobId: job.id, status: "PENDING" } });
-  if (!pending) throw new HttpError(400, "This import has no links waiting to import");
+  if (!pending)
+    throw new HttpError(
+      400,
+      opts.retryFailed ? "This import has no failed links to retry" : "This import has no links waiting to import",
+    );
 
   // A retry resolves fresh saved credentials; never carry a request-only session into the queue.
   const {
@@ -142,7 +136,6 @@ async function startLinksJobUnlocked(
   if (!count) throw new HttpError(409, "This import changed while it was being started, reload and try again");
   if (opts.manual) liftProviderHolds();
   wakeImportScheduler();
-  return { run: Promise.resolve() };
 }
 
 /** Pausing only flips the status: the runner finishes the link it's on, then stops. */
