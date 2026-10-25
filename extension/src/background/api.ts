@@ -39,33 +39,14 @@ const CONNECTION_RECHECK_MS = 10 * 60 * 1000;
 
 /** A provider session or Thingport token must not be replayed to a redirect target. */
 export async function fetchInstance(url: string, init: RequestInit): Promise<Response> {
-  let current = new URL(url);
-  const request = { ...init, redirect: "manual" as const };
-  for (let hop = 0; hop < 5; hop++) {
-    const res = await fetch(current.href, request);
-    if (res.type === "opaqueredirect") throw new Error("Thingport instance redirected a credential-bearing request");
-    const location = res.headers.get("location");
-    if (![301, 302, 303, 307, 308].includes(res.status) || !location) return res;
-    let next: URL;
-    try {
-      next = new URL(location, current);
-    } finally {
-      await res.body?.cancel().catch(() => undefined);
-    }
-    if (next.origin !== current.origin) throw new Error("Thingport instance redirected a credential-bearing request");
-    if (
-      res.status === 303 ||
-      ((res.status === 301 || res.status === 302) && request.method?.toUpperCase() === "POST")
-    ) {
-      const headers = new Headers(request.headers);
-      headers.delete("content-type");
-      request.method = "GET";
-      request.body = undefined;
-      request.headers = headers;
-    }
-    current = next;
+  // Browsers hide redirect targets behind opaqueredirect, even for same-origin redirects.
+  // Require the configured final URL instead of replaying credentials to any redirect.
+  const res = await fetch(url, { ...init, redirect: "manual" });
+  if (res.type === "opaqueredirect" || [301, 302, 303, 307, 308].includes(res.status)) {
+    await res.body?.cancel().catch(() => undefined);
+    throw new Error("Thingport instance redirected a credential-bearing request; configure its final URL");
   }
-  throw new Error("Thingport instance redirected too many times");
+  return res;
 }
 
 /** Mirrored on the toolbar icon, so a broken connection shows before the user reaches a provider. */

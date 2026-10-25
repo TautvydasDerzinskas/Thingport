@@ -3,6 +3,7 @@
 // what Printables shows its owner only: private collections and likes (see background/
 // providerAccounts.ts for where it goes).
 
+import { providerCredentialRequest } from "../../shared/providerCredentialRequest";
 import type { PrintablesPush, PrintablesPushPlan } from "../../shared/messages";
 import { request } from "../../shared/messages";
 import { sleep } from "../../content/runtime";

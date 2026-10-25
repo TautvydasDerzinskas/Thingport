@@ -1,6 +1,8 @@
 // Whether Thangs lets the signed-in user download a model, asked the way its own page asks. It costs none of their
 // daily downloads, so the panel can say why before an import is tried.
 
+import { providerCredentialRequest } from "../../shared/providerCredentialRequest";
+
 import { parseThangsModelUrl } from "./urls.generated";
 
 export type ThangsBlock = { title: string; hint: string };

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { test } from "vitest";
 import { providerCredentialRequest } from "./providerCredentialRequest";
 
 test("provider credentials use only listed HTTPS hosts and never follow redirects", async () => {

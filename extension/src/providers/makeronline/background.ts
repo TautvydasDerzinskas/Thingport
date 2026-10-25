@@ -3,6 +3,7 @@
 // page sign each one, the same way its own Download button does, and hands the signed links to the instance. Imports
 // started anywhere else wait on the instance until Grab sees a makeronline.com page (runWaitingImports).
 
+import { CREDENTIAL_HOSTS } from "../../shared/credentialHosts.generated";
 import type { Print } from "../../shared/api";
 import type { MakeronlineSignedFile } from "../../shared/messages";
 import { apiCall } from "../../background/api";
@@ -42,7 +43,12 @@ type SignAnswer = { code: number | null; message: string | null; data: unknown }
 /** Runs in the page itself (world: "MAIN"), where MakerOnline's script is, so it must stand on its own. Asks the
  *  site's download call for each file, as its Download button does: the sign-in from its cookie, a fresh Risk-Token
  *  from its anti-bot script. */
-async function signInPage(requests: DownloadRequest[], gapMs: number, cookieName: string): Promise<SignAnswer[]> {
+async function signInPage(
+  requests: DownloadRequest[],
+  gapMs: number,
+  cookieName: string,
+  allowedHosts: readonly string[],
+): Promise<SignAnswer[]> {
   type Neg = { getToken: () => Promise<{ token?: string } | null> };
   const nuxt = (window as unknown as { $nuxt?: { $ensureNeg?: () => Promise<Neg> } }).$nuxt;
   let neg: Neg | null = null;
@@ -146,7 +152,7 @@ async function signRequests(tabId: number, requests: DownloadRequest[]): Promise
       target: { tabId },
       world: "MAIN",
       func: signInPage,
-      args: [requests, SIGN_GAP_MS, ACCESS_COOKIE],
+      args: [requests, SIGN_GAP_MS, ACCESS_COOKIE, CREDENTIAL_HOSTS["makeronline-site"].exact],
     });
     answers = (result?.result as SignAnswer[] | undefined) ?? [];
   } catch (err) {
