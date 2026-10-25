@@ -258,6 +258,10 @@
               "title": "Obtenir un fichier du modèle",
               "description": "Lit l'un des fichiers d'un modèle, par ex. pour le trancher ou le convertir."
             },
+            "list_model_images": {
+              "title": "Lister les images d'un modèle",
+              "description": "Voit les images d'un modèle et laquelle est sa couverture."
+            },
             "get_import_status": {
               "title": "Suivre un import",
               "description": "Suit un import encore en cours."
@@ -269,6 +273,26 @@
             "upload_model": {
               "title": "Téléverser un modèle",
               "description": "Ajoute un modèle fait de vos propres fichiers, comme + Ajouter > Téléverser des fichiers."
+            },
+            "edit_model": {
+              "title": "Modifier un modèle",
+              "description": "Change le titre, la description, les étiquettes, la catégorie et le favori d'un modèle."
+            },
+            "edit_model_images": {
+              "title": "Modifier les images d'un modèle",
+              "description": "Ajoute, supprime et réordonne les images d'un modèle, et choisit sa couverture."
+            },
+            "add_model_files": {
+              "title": "Ajouter des fichiers à un modèle",
+              "description": "Ajoute des plateaux ou des fichiers annexes à l'un de vos modèles."
+            },
+            "remove_model_file": {
+              "title": "Supprimer un fichier du modèle",
+              "description": "Supprime définitivement l'un des fichiers d'un modèle."
+            },
+            "create_category": {
+              "title": "Créer une catégorie",
+              "description": "Crée une nouvelle catégorie ou un nouveau dossier."
             },
             "create_collection": {
               "title": "Créer une collection",

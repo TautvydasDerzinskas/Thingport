@@ -37,8 +37,7 @@ export function buildMcpServer(ctx: McpToolContext, allowedTools: ReadonlySet<st
         inputSchema: tool.inputSchema,
         annotations: {
           readOnlyHint: tool.readOnly,
-          // Nothing here deletes or overwrites.
-          destructiveHint: false,
+          destructiveHint: tool.destructive ?? false,
           idempotentHint: tool.idempotent ?? tool.readOnly,
           openWorldHint: tool.openWorld ?? false,
         },

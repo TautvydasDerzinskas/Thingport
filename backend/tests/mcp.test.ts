@@ -377,7 +377,19 @@ describe("the tools", () => {
 });
 
 describe("the tools that write", () => {
-  const WRITE_TOOLS = ["import_model", "upload_model", "create_collection", "add_to_collection"];
+  const WRITE_TOOLS = [
+    "import_model",
+    "upload_model",
+    "edit_model",
+    "edit_model_images",
+    "add_model_files",
+    "remove_model_file",
+    "create_category",
+    "create_collection",
+    "add_to_collection",
+  ];
+  // The ones that delete something for good, so an assistant's client can ask before calling them.
+  const DESTRUCTIVE_TOOLS = ["edit_model_images", "remove_model_file"];
   // A public IP literal passes the SSRF check without a DNS lookup; fetch is mocked below.
   const FILE_URL = "https://93.184.215.14/files/mcp-imported-widget.stl";
   let writer: Account;
@@ -409,7 +421,7 @@ describe("the tools that write", () => {
     }[];
     for (const tool of listed.filter((t) => WRITE_TOOLS.includes(t.name))) {
       expect(tool.annotations.readOnlyHint).toBe(false);
-      expect(tool.annotations.destructiveHint).toBe(false);
+      expect(tool.annotations.destructiveHint).toBe(DESTRUCTIVE_TOOLS.includes(tool.name));
     }
   });
 
@@ -647,6 +659,157 @@ describe("the tools that write", () => {
       expect(result.text).toMatch(/base64/);
     }
     expect(await prisma.print.count({ where: { userId: writer.userId } })).toBe(before);
+  });
+
+  const b64 = (text: string) => Buffer.from(text).toString("base64");
+  const png = (background: string) =>
+    sharp({ create: { width: 8, height: 8, channels: 3, background } })
+      .png()
+      .toBuffer()
+      .then((buffer) => buffer.toString("base64"));
+
+  it("edit_model changes only what it's given, and files the model in a new category", async () => {
+    const id = await upload(writer.session, "bracket.stl");
+    await prisma.print.update({ where: { id }, data: { tags: ["Old", "Keep"] } });
+    const { data: category } = await callTool(writer.token, "create_category", { name: "MCP Brackets" });
+    expect(category).toMatchObject({ name: "MCP Brackets", parent_id: null, kind: "folder" });
+
+    const result = await callTool(writer.token, "edit_model", {
+      model_id: id,
+      title: "Shelf bracket",
+      description: "Print on its side.",
+      add_tags: ["brand-new-tag"],
+      remove_tags: ["old"],
+      category_id: category.id,
+      favorite: true,
+    });
+    expect(result.isError).toBe(false);
+    expect(result.data.changed).toEqual(["title", "description", "tags", "category", "favorite"]);
+    const print = await prisma.print.findUniqueOrThrow({ where: { id } });
+    expect(print).toMatchObject({ title: "Shelf bracket", notes: "Print on its side.", categoryId: category.id });
+    expect(print.tags).toEqual(["Keep", "Brand-new-tag"]);
+    expect(print.favoritedAt).not.toBeNull();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(await prisma.log.count({ where: { userId: writer.userId, action: "model_edited", targetId: id } })).toBe(3);
+
+    // Asked again, nothing changes.
+    const again = await callTool(writer.token, "edit_model", {
+      model_id: id,
+      favorite: true,
+      category_id: category.id,
+    });
+    expect(again.data.changed).toEqual([]);
+    const cleared = await callTool(writer.token, "edit_model", { model_id: id, category_id: null, tags: [] });
+    expect(cleared.data.changed).toEqual(["tags", "category"]);
+    expect(await prisma.print.findUniqueOrThrow({ where: { id } })).toMatchObject({ categoryId: null, tags: [] });
+  });
+
+  it("edit_model checks the name and category before changing anything", async () => {
+    const id = await upload(writer.session, "hinge.stl");
+    await upload(writer.session, "taken.stl");
+    const taken = await callTool(writer.token, "edit_model", { model_id: id, title: "taken", description: "x" });
+    expect(taken.isError).toBe(true);
+    expect(taken.text).toMatch(/already exists/);
+    const bobCategory = await prisma.category.findFirstOrThrow({ where: { userId: bob.userId } });
+    const theirs = await callTool(writer.token, "edit_model", {
+      model_id: id,
+      category_id: bobCategory.id,
+      tags: ["x"],
+    });
+    expect(theirs.isError).toBe(true);
+    expect(await prisma.print.findUniqueOrThrow({ where: { id } })).toMatchObject({ notes: null, tags: [] });
+
+    expect((await callTool(writer.token, "edit_model", { model_id: id })).text).toMatch(/nothing to change/i);
+    const bobs = await callTool(writer.token, "edit_model", { model_id: bobSecretId, title: "Mine now" });
+    expect(bobs.isError).toBe(true);
+    expect((await prisma.print.findUniqueOrThrow({ where: { id: bobSecretId } })).title).toBe("Bob's Secret Dragon");
+  });
+
+  it("edit_model_images adds, orders and removes a model's pictures", async () => {
+    const id = await upload(writer.session, "vase.stl");
+    const first = await callTool(writer.token, "edit_model_images", {
+      model_id: id,
+      add: [await png("#cc3333"), await png("#33cc33"), b64("not an image")],
+    });
+    expect(first.data).toMatchObject({ added: 2, skipped: 1, removed: 0 });
+    const [red, green] = first.data.images.map((image: { id: string }) => image.id);
+    expect(first.data.images.map((image: { cover: boolean }) => image.cover)).toEqual([true, false]);
+
+    const { data: listed } = await callTool(writer.token, "list_model_images", { model_id: id });
+    expect(listed.images.map((image: { id: string }) => image.id)).toEqual([red, green]);
+    expect(listed.images[0].api_path).toBe(`/api/preview-image/${red}/file.jpg`);
+
+    const reordered = await callTool(writer.token, "edit_model_images", { model_id: id, order: [green] });
+    expect(reordered.data.images.map((image: { id: string }) => image.id)).toEqual([green, red]);
+
+    const blueFirst = await callTool(writer.token, "edit_model_images", {
+      model_id: id,
+      add: [await png("#3333cc")],
+      added_first: true,
+      remove: [green],
+    });
+    const ids = blueFirst.data.images.map((image: { id: string }) => image.id);
+    expect(ids).toHaveLength(2);
+    expect(ids[1]).toBe(red);
+    expect(await prisma.previewImage.count({ where: { id: green } })).toBe(0);
+  });
+
+  it("edit_model_images checks every id before changing anything", async () => {
+    const id = await upload(writer.session, "lamp.stl");
+    const { data } = await callTool(writer.token, "edit_model_images", { model_id: id, add: [await png("#cccc33")] });
+    const bobImage = await prisma.previewImage.create({ data: { printId: bobSecretId, position: 99 } });
+    const result = await callTool(writer.token, "edit_model_images", {
+      model_id: id,
+      remove: [data.images[0].id, bobImage.id],
+    });
+    expect(result.isError).toBe(true);
+    expect(await prisma.previewImage.count({ where: { id: { in: [data.images[0].id, bobImage.id] } } })).toBe(2);
+    expect((await callTool(writer.token, "list_model_images", { model_id: bobSecretId })).isError).toBe(true);
+  });
+
+  it("add_model_files adds plates and supporting files, and remove_model_file takes them off", async () => {
+    const id = await upload(writer.session, "gear.stl");
+    const added = await callTool(writer.token, "add_model_files", {
+      model_id: id,
+      files: [
+        { name: "gear-v2.stl", base64: b64("solid v2\nendsolid v2\n") },
+        { name: "notes.txt", base64: b64("print at 0.12 mm") },
+        { name: "spare.stl", base64: b64("solid s\nendsolid s\n"), kind: "supporting" },
+      ],
+    });
+    expect(added.isError).toBe(false);
+    expect(added.data).toMatchObject({ plates_added: 1, files_added: 2 });
+    const kinds = (files: { name: string; kind: string }[]) => files.map((f) => [f.name, f.kind]);
+    expect(kinds(added.data.files)).toEqual([
+      ["gear.stl", "plate"],
+      ["gear-v2.stl", "plate"],
+      ["notes.txt", "supporting"],
+      ["spare.stl", "supporting"],
+    ]);
+
+    const byName = (name: string) => added.data.files.find((f: { name: string }) => f.name === name).id;
+    const notes = await callTool(writer.token, "remove_model_file", { model_id: id, file_id: byName("notes.txt") });
+    expect(notes.data.removed).toMatchObject({ name: "notes.txt", kind: "supporting" });
+    const plate = await callTool(writer.token, "remove_model_file", { model_id: id, file_id: byName("gear.stl") });
+    expect(kinds(plate.data.files)).toEqual([
+      ["gear-v2.stl", "plate"],
+      ["spare.stl", "supporting"],
+    ]);
+    const last = await callTool(writer.token, "remove_model_file", { model_id: id, file_id: byName("gear-v2.stl") });
+    expect(last.isError).toBe(true);
+    expect(last.text).toMatch(/only plate/);
+  });
+
+  it("add_model_files and remove_model_file won't touch another user's model", async () => {
+    const files = [{ name: "x.stl", base64: b64("solid x\nendsolid x\n") }];
+    expect((await callTool(writer.token, "add_model_files", { model_id: bobSecretId, files })).isError).toBe(true);
+    const bobFiles = (await callTool(bob.token, "list_model_files", { model_id: bobSecretId })).data.files;
+    const removed = await callTool(writer.token, "remove_model_file", {
+      model_id: bobSecretId,
+      file_id: bobFiles[0].id,
+    });
+    expect(removed.isError).toBe(true);
+    expect(await prisma.plate.count({ where: { printId: bobSecretId } })).toBe(1);
   });
 
   it("get_import_status says when it doesn't know the import", async () => {

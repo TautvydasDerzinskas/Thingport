@@ -255,6 +255,10 @@
               "title": "Get a model file",
               "description": "Read one of a model's files, e.g. to slice or convert it."
             },
+            "list_model_images": {
+              "title": "List a model's pictures",
+              "description": "See a model's pictures and which is its cover."
+            },
             "get_import_status": {
               "title": "Check an import",
               "description": "Follow an import that's still running."
@@ -266,6 +270,26 @@
             "upload_model": {
               "title": "Upload a model",
               "description": "Add a model made from your own files, as + Add > Upload files does."
+            },
+            "edit_model": {
+              "title": "Edit a model",
+              "description": "Change a model's title, description, tags, category and favourite."
+            },
+            "edit_model_images": {
+              "title": "Edit a model's pictures",
+              "description": "Add, remove and reorder a model's pictures, and pick its cover."
+            },
+            "add_model_files": {
+              "title": "Add files to a model",
+              "description": "Add plates or supporting files to one of your models."
+            },
+            "remove_model_file": {
+              "title": "Remove a model file",
+              "description": "Delete one of a model's files for good."
+            },
+            "create_category": {
+              "title": "Create a category",
+              "description": "Make a new category or folder."
             },
             "create_collection": {
               "title": "Create a collection",

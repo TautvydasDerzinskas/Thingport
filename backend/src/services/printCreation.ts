@@ -310,6 +310,29 @@ export async function addPlatesToPrint(
   return created;
 }
 
+/** Removes one of the model's plates and its file. The only plate can't go: the model is deleted instead. */
+export async function removePlate(print: Pick<Print, "id" | "assetsPath">, plateId: string): Promise<void> {
+  const plates = await prisma.plate.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } });
+  const target = plates.find((p) => p.id === plateId);
+  if (!target) throw new HttpError(404, "Plate not found");
+  if (plates.length <= 1) {
+    throw new HttpError(409, "Cannot remove the only plate of a print; delete the print instead.");
+  }
+
+  const remaining = plates.filter((p) => p.id !== target.id);
+  // Renumber in two phases (negative temp positions) to avoid (printId, position) collisions.
+  await prisma.plate.delete({ where: { id: target.id } });
+  await prisma.$transaction(
+    remaining.map((p, idx) => prisma.plate.update({ where: { id: p.id }, data: { position: -(idx + 1) } })),
+  );
+  await prisma.$transaction(
+    remaining.map((p, idx) => prisma.plate.update({ where: { id: p.id }, data: { position: idx } })),
+  );
+  await deletePlateFiles(target);
+  await removePlatePictures(target.id, print.assetsPath);
+  if (target.position === 0) await refreshAutoPreparedMetadata(print.id);
+}
+
 export async function deletePlateFiles(plate: Pick<Plate, "id" | "storagePath">): Promise<void> {
   await deleteNormalized3mf(plate.id);
   const abs = path.join(STORAGE, plate.storagePath);

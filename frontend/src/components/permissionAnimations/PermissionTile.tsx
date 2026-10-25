@@ -93,7 +93,19 @@ const fileIn = keyframes`
   100% { transform: translateY(0); opacity: 1; }
 `;
 
+const scribble = keyframes`
+  0%, 100% { transform: translate(0, 0) rotate(45deg); }
+  25% { transform: translate(-5px, 2px) rotate(45deg); }
+  50% { transform: translate(-1px, 5px) rotate(45deg); }
+  75% { transform: translate(-6px, 6px) rotate(45deg); }
+`;
+const swap = keyframes`
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-6px, -5px); }
+`;
+
 type Accent = "primary" | "warning";
+type BadgeColor = "primary" | "warning" | "error";
 
 function at(x: number, y: number, w: number, h: number): SxProps<Theme> {
   return { position: "absolute", left: x, top: y, width: w, height: h };
@@ -140,6 +152,34 @@ function Arrow({ up = false }: { up?: boolean }) {
     <Box sx={{ ...at(0, 0, 12, 12), transform: up ? "rotate(180deg)" : undefined }}>
       <Box sx={{ ...at(4.5, 0, 3, 6), bgcolor: "primary.main" }} />
       <Box sx={{ ...at(1, 5, 10, 6), bgcolor: "primary.main", clipPath: "polygon(0 0, 100% 0, 50% 100%)" }} />
+    </Box>
+  );
+}
+
+/** A picture: a frame with a sun and two hills. */
+function Picture({ sx, sun }: { sx: SxProps<Theme>; sun?: string }) {
+  return (
+    <Box sx={{ borderRadius: "3px", border: 1.5, borderColor: "text.disabled", overflow: "hidden", ...sx }}>
+      <Box sx={{ ...at(14, 3, 5, 5), borderRadius: "50%", bgcolor: "warning.main", animation: sun }} />
+      <Box sx={{ ...at(-2, 7, 18, 12), bgcolor: "primary.main", clipPath: "polygon(50% 0, 100% 100%, 0 100%)" }} />
+      <Box
+        sx={{
+          ...at(9, 10, 14, 9),
+          bgcolor: "primary.dark",
+          opacity: 0.8,
+          clipPath: "polygon(50% 0, 100% 100%, 0 100%)",
+        }}
+      />
+    </Box>
+  );
+}
+
+/** A round badge with a plus, or a minus, that pulses: something added or taken away. */
+function Badge({ x, y, color, minus = false }: { x: number; y: number; color: BadgeColor; minus?: boolean }) {
+  return (
+    <Box sx={{ ...at(x, y, 13, 13), borderRadius: "50%", bgcolor: `${color}.main`, animation: run(pulse, 1.6) }}>
+      <Box sx={{ ...at(3, 5.5, 7, 2), bgcolor: "background.paper", borderRadius: 1 }} />
+      {!minus && <Box sx={{ ...at(5.5, 3, 2, 7), bgcolor: "background.paper", borderRadius: 1 }} />}
     </Box>
   );
 }
@@ -335,6 +375,55 @@ const pictures: Record<string, () => React.ReactNode> = {
       </Box>
     </>
   ),
+  add_model_files: () => (
+    <>
+      <Sheet x={9} y={7} />
+      <Badge x={20} y={20} color="primary" />
+    </>
+  ),
+  remove_model_file: () => (
+    <>
+      <Sheet x={9} y={7} />
+      <Badge x={20} y={20} color="error" minus />
+    </>
+  ),
+  // A model's details, written over with a pencil.
+  edit_model: () => (
+    <>
+      <Card sx={at(9, 7, 20, 26)} />
+      <Box sx={{ ...at(22, 13, 4, 14), transformOrigin: "50% 100%", animation: run(scribble, 2.4) }}>
+        <Box sx={{ ...at(0, 0, 4, 11), bgcolor: "warning.main", borderRadius: "1px 1px 0 0" }} />
+        <Box sx={{ ...at(0, 11, 4, 3), bgcolor: "text.primary", clipPath: "polygon(0 0, 100% 0, 50% 100%)" }} />
+      </Box>
+    </>
+  ),
+  // A model's pictures: its gallery, and changing it.
+  list_model_images: () => <Picture sx={at(8, 10, 24, 20)} sun={run(sunrise, 2.2)} />,
+  edit_model_images: () => (
+    <>
+      <Picture sx={{ ...at(12, 7, 20, 17), opacity: 0.5, animation: run(swap, 2.4) }} />
+      <Picture sx={{ ...at(7, 14, 20, 17), bgcolor: "background.paper" }} />
+      <Badge x={22} y={22} color="primary" />
+    </>
+  ),
+  create_category: () => (
+    <>
+      <Box sx={{ ...at(8, 8, 10, 6), bgcolor: "primary.main", borderRadius: "2px" }} />
+      <Box sx={{ ...at(11, 14, 2, 15), bgcolor: "text.disabled" }} />
+      <Box sx={{ ...at(11, 20, 8, 2), bgcolor: "text.disabled" }} />
+      <Box sx={{ ...at(19, 18, 13, 6), bgcolor: "primary.main", borderRadius: "2px" }} />
+      <Box sx={{ ...at(11, 29, 8, 2), bgcolor: "text.disabled" }} />
+      <Box
+        sx={{
+          ...at(19, 27, 13, 6),
+          bgcolor: "warning.main",
+          borderRadius: "2px",
+          transformOrigin: "0 50%",
+          animation: run(pulse, 1.6),
+        }}
+      />
+    </>
+  ),
   create_collection: () => (
     <Folder accent="warning">
       <Box sx={{ ...at(14, 18, 12, 12), zIndex: 1, animation: run(pulse, 1.6) }}>
@@ -427,22 +516,6 @@ const pictures: Record<string, () => React.ReactNode> = {
       ))}
     </>
   ),
-  images: () => (
-    <Box
-      sx={{ ...at(8, 10, 24, 20), borderRadius: "3px", border: 1.5, borderColor: "text.disabled", overflow: "hidden" }}
-    >
-      <Box sx={{ ...at(14, 3, 5, 5), borderRadius: "50%", bgcolor: "warning.main", animation: run(sunrise, 2.2) }} />
-      <Box sx={{ ...at(-2, 7, 18, 12), bgcolor: "primary.main", clipPath: "polygon(50% 0, 100% 100%, 0 100%)" }} />
-      <Box
-        sx={{
-          ...at(9, 10, 14, 9),
-          bgcolor: "primary.dark",
-          opacity: 0.8,
-          clipPath: "polygon(50% 0, 100% 100%, 0 100%)",
-        }}
-      />
-    </Box>
-  ),
   other: () => (
     <>
       {[0, 1, 2].map((i) => (
@@ -471,6 +544,7 @@ const aliases: Record<string, string> = {
   dashboard: "library_stats",
   imports: "get_import_status",
   files: "get_model_file",
+  images: "list_model_images",
 };
 
 /** A plug, for a permission the frontend doesn't have a picture of yet. */

@@ -10,8 +10,8 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { modelUpload, thumbnailUpload } from "../uploadMiddleware";
 import {
   addPlatesToPrint,
-  deletePlateFiles,
   refreshAutoPreparedMetadata,
+  removePlate,
   resolvePlateFilePath,
   type NewPlateInput,
 } from "../services/printCreation";
@@ -20,7 +20,6 @@ import {
   plateThumbPath,
   plateThumbReplaceable,
   relocatePrint,
-  removePlatePictures,
   saveThumbFromBytes,
 } from "../services/printService";
 import { addGeneratedPreviewImageIfNone, generateCardRender } from "../services/previewImageService";
@@ -68,28 +67,7 @@ router.delete(
   asyncHandler(async (req, res) => {
     const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
     if (!print) throw new HttpError(404, "Print not found");
-    const plates = await prisma.plate.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } });
-    const target = plates.find((p) => p.id === req.params.plateId);
-    if (!target) throw new HttpError(404, "Plate not found");
-    if (plates.length <= 1) {
-      throw new HttpError(409, "Cannot remove the only plate of a print; delete the print instead.");
-    }
-
-    const remaining = plates.filter((p) => p.id !== target.id);
-    // Renumber in two phases (negative temp positions) to avoid (printId, position) collisions.
-    await prisma.plate.delete({ where: { id: target.id } });
-    await prisma.$transaction(
-      remaining.map((p, idx) => prisma.plate.update({ where: { id: p.id }, data: { position: -(idx + 1) } })),
-    );
-    await prisma.$transaction(
-      remaining.map((p, idx) => prisma.plate.update({ where: { id: p.id }, data: { position: idx } })),
-    );
-    await deletePlateFiles(target);
-    await removePlatePictures(target.id, print.assetsPath);
-
-    if (target.position === 0) {
-      await refreshAutoPreparedMetadata(print.id);
-    }
+    await removePlate(print, req.params.plateId);
     res.json({ print: await printOutById(req.userId!, print.id) });
   }),
 );

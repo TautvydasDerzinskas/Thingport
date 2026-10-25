@@ -256,6 +256,10 @@
               "title": "Gauti modelio failą",
               "description": "Skaityti vieną modelio failą, pvz., norint jį supjaustyti ar konvertuoti."
             },
+            "list_model_images": {
+              "title": "Modelio nuotraukų sąrašas",
+              "description": "Matyti modelio nuotraukas ir kuri iš jų yra viršelis."
+            },
             "get_import_status": {
               "title": "Importo būsena",
               "description": "Sekti importą, kuris dar vyksta."
@@ -267,6 +271,26 @@
             "upload_model": {
               "title": "Įkelti modelį",
               "description": "Pridėti modelį iš savo failų, kaip + Pridėti > Įkelti failus."
+            },
+            "edit_model": {
+              "title": "Redaguoti modelį",
+              "description": "Keisti modelio pavadinimą, aprašymą, žymas, kategoriją ir mėgstamumą."
+            },
+            "edit_model_images": {
+              "title": "Redaguoti modelio nuotraukas",
+              "description": "Pridėti, pašalinti ir pertvarkyti modelio nuotraukas, pasirinkti viršelį."
+            },
+            "add_model_files": {
+              "title": "Pridėti failų prie modelio",
+              "description": "Pridėti plokščių ar papildomų failų prie vieno iš jūsų modelių."
+            },
+            "remove_model_file": {
+              "title": "Pašalinti modelio failą",
+              "description": "Visam laikui ištrinti vieną modelio failą."
+            },
+            "create_category": {
+              "title": "Sukurti kategoriją",
+              "description": "Sukurti naują kategoriją ar aplanką."
             },
             "create_collection": {
               "title": "Sukurti kolekciją",
