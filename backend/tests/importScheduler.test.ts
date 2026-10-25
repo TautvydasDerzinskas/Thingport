@@ -19,6 +19,7 @@ import { acquireImmediateImportLock } from "../src/services/immediateImport";
 import {
   drainImportQueue,
   storedImportBody,
+  waitForScheduledImport,
   withImportSchedulerStopped,
   IMPORT_WORKER_LOCK,
 } from "../src/services/importScheduler";
@@ -61,6 +62,20 @@ describe("durable import scheduler (PostgreSQL)", () => {
       detail: "Import was paused; resume it from the import queue",
       http_status: 409,
     });
+  });
+
+  it("stops waiting for a queued import at a deadline or client cancellation", async () => {
+    const queued = await job("bounded-wait");
+    try {
+      expect(await waitForScheduledImport(queued.id, { timeoutMs: 20 })).toBe(false);
+      const disconnected = new AbortController();
+      const wait = waitForScheduledImport(queued.id, { signal: disconnected.signal });
+      disconnected.abort();
+      expect(await wait).toBe(false);
+      expect((await prisma.importJob.findUniqueOrThrow({ where: { id: queued.id } })).status).toBe("QUEUED");
+    } finally {
+      await prisma.importJob.delete({ where: { id: queued.id } });
+    }
   });
 
   it("recovers interrupted paused durable links without silently replaying them", async () => {

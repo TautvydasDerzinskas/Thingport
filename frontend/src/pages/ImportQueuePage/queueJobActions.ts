@@ -24,3 +24,8 @@ export function queueJobActions(job: QueueJobState) {
         : batch && (job.status === "ERROR" || (job.status === "DONE" && job.failed_count > 0)));
   return { idle, canStart, canPause, canRetry };
 }
+
+/** Only LINKS jobs register a local runner; other jobs execute through the scheduler. */
+export function isStalled(job: Pick<AdminImportJob, "type" | "status" | "runner_live">): boolean {
+  return job.type === "LINKS" && job.status === "RUNNING" && !job.runner_live;
+}

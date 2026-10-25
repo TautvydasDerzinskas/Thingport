@@ -37,12 +37,11 @@ function isFlatFileSet(entries: { file: File; relativePath: string }[]) {
 type Props = {
   onUploaded: () => void;
   categoryId?: string | null;
-  makerworldCookie?: string | null;
   onUnauthorized?: () => void;
 };
 
 /** `modals` must be rendered by the caller alongside the menu. */
-export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUnauthorized }: Props) {
+export function useUploadImport({ onUploaded, categoryId, onUnauthorized }: Props) {
   const { t } = useTranslation("app");
   const showToast = useToast();
   const { refresh: refreshNotifications } = useNotifications();
@@ -236,11 +235,9 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
     if (!url) return;
     setImporting(true);
     try {
-      const cookie = (makerworldCookie || "").trim();
       const payload = {
         url,
         category_id: categoryId || undefined,
-        makerworld_cookie: cookie || undefined,
         ...captcha,
       };
 
@@ -371,7 +368,6 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
         urls,
         scope: profileScope,
         category_id: categoryId || undefined,
-        makerworld_cookie: (makerworldCookie || "").trim() || undefined,
         ...captcha,
       });
     } catch (err) {

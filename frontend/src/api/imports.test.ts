@@ -39,3 +39,10 @@ describe("single import progress", () => {
     expect(fetch.mock.calls[0][0]).toBe("/api/import/tasks/task");
   });
 });
+
+it("preserves explicitly supplied request cookies", async () => {
+  const fetch = respond({ task_id: "immediate" });
+  const payload = { url: "https://makerworld.com/en/models/12345", makerworld_cookie: "explicit-cookie" };
+  await importsApi.queueFromLink(payload);
+  expect(JSON.parse(fetch.mock.calls[0][1]!.body as string)).toEqual(payload);
+});

@@ -39,7 +39,6 @@ type AppLayoutProps = {
   isAdmin: boolean;
   onOpenProfile: () => void;
   onLogout: () => Promise<void>;
-  makerworldCookie: string;
   onUpdateMakerWorld: (patch: Partial<MakerWorldSettings>) => void;
   user: AuthUser | null;
   onThemeChange: (theme: ThemeSelection) => Promise<boolean>;
@@ -160,7 +159,6 @@ function AppLayoutShell({
   isAdmin,
   onOpenProfile,
   onLogout,
-  makerworldCookie,
   onUpdateMakerWorld,
   user,
   onThemeChange,
@@ -206,7 +204,6 @@ function AppLayoutShell({
                 onBack={pageHeader?.onBack ?? routeOnBack}
                 actions={pageHeader?.actions}
                 categoryId={categoryId}
-                makerworldCookie={makerworldCookie}
                 onUpdateMakerWorld={onUpdateMakerWorld}
                 onUploaded={onPrintsChanged}
                 onUnauthorized={onUnauthorized}

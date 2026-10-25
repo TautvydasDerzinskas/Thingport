@@ -27,7 +27,6 @@ type Props = {
   onBack?: () => void;
   actions?: React.ReactNode;
   categoryId: string | null;
-  makerworldCookie: string;
   onUpdateMakerWorld: (patch: Partial<MakerWorldSettings>) => void;
   onUploaded: () => void;
   onUnauthorized?: () => void;
@@ -44,7 +43,6 @@ export default function TopBar({
   onBack,
   actions,
   categoryId,
-  makerworldCookie,
   onUpdateMakerWorld,
   onUploaded,
   onUnauthorized,
@@ -128,13 +126,7 @@ export default function TopBar({
           onOpenConfiguration={setConfigTab}
           isAdmin={user?.role === "ADMIN"}
         />
-        <AddMenu
-          ref={addMenuRef}
-          categoryId={categoryId}
-          makerworldCookie={makerworldCookie}
-          onUploaded={onUploaded}
-          onUnauthorized={onUnauthorized}
-        />
+        <AddMenu ref={addMenuRef} categoryId={categoryId} onUploaded={onUploaded} onUnauthorized={onUnauthorized} />
         <NotificationBell />
         <UserMenu user={user} onOpenConfiguration={setConfigTab} onOpenProfile={onOpenProfile} onLogout={onLogout} />
       </Stack>

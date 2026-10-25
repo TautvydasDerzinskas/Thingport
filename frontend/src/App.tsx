@@ -107,7 +107,6 @@ function AppShell({
   isAdmin,
   user,
   apiUp,
-  settings,
   setSettings,
   previewMode,
   setPreviewMode,
@@ -174,7 +173,6 @@ function AppShell({
       isAdmin={isAdmin}
       onOpenProfile={() => navigate("/profile")}
       onLogout={onLogout}
-      makerworldCookie={settings.makerworld.cookie}
       onUpdateMakerWorld={updateMakerWorld}
       user={user}
       onThemeChange={onThemeChange}

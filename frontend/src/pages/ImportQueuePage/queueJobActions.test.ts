@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { queueJobActions } from "./queueJobActions";
+import { isStalled, queueJobActions } from "./queueJobActions";
 import type { ImportJobStatus, ImportJobType } from "../../api/imports";
 
 const state = (type: ImportJobType, status: ImportJobStatus) => ({
@@ -43,5 +43,19 @@ describe("queue actions", () => {
       canRetry: false,
       idle: false,
     });
+  });
+});
+
+describe("stalled imports", () => {
+  it.each<ImportJobType>(["SINGLE", "COLLECTION", "ZIP", "PROFILES"])(
+    "does not require a local runner for %s",
+    (type) => {
+      expect(isStalled(state(type, "RUNNING"))).toBe(false);
+    },
+  );
+  it("detects only running LINKS jobs without a local runner", () => {
+    expect(isStalled(state("LINKS", "RUNNING"))).toBe(true);
+    expect(isStalled({ ...state("LINKS", "RUNNING"), runner_live: true })).toBe(false);
+    expect(isStalled(state("LINKS", "QUEUED"))).toBe(false);
   });
 });

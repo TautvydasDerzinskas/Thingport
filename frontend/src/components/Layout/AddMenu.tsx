@@ -55,14 +55,13 @@ export type AddMenuHandle = {
 
 type Props = {
   categoryId?: string | null;
-  makerworldCookie?: string | null;
   onUploaded: () => void;
   onUnauthorized?: () => void;
 };
 
 /** The top bar's "+ Add" button. Lists of a provider that imports them through Thingport Grab only are blocked here. */
 const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
-  { categoryId, makerworldCookie, onUploaded, onUnauthorized },
+  { categoryId, onUploaded, onUnauthorized },
   ref,
 ) {
   const { t } = useTranslation(["app", "common"]);
@@ -75,7 +74,7 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
   const [exampleProvider, setExampleProvider] = React.useState<ImportProviderKey | null>(null);
   const [profileScope, setProfileScope] = React.useState<MakerworldProfileScope>("url");
   const [bookmarkletGuideOpen, setBookmarkletGuideOpen] = React.useState(false);
-  const upload = useUploadImport({ categoryId, makerworldCookie, onUploaded, onUnauthorized });
+  const upload = useUploadImport({ categoryId, onUploaded, onUnauthorized });
   const captchaSettings = useCaptchaSettings();
   const [captcha, setCaptcha] = React.useState<CaptchaAnswer | null>(null);
   const needsCaptcha = Boolean(captchaSettings?.import);

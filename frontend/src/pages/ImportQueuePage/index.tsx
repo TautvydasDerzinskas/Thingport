@@ -1,4 +1,4 @@
-import { queueJobActions } from "./queueJobActions";
+import { isStalled, queueJobActions } from "./queueJobActions";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import Stack from "@mui/material/Stack";
@@ -48,11 +48,6 @@ const POLL_ACTIVE_MS = 1500;
 const POLL_IDLE_MS = 8000;
 
 type StatusColor = "default" | "success" | "warning" | "error" | "info";
-
-/** Single imports execute in the scheduler, outside the batch runner registry. */
-function isStalled(job: AdminImportJob): boolean {
-  return job.type !== "SINGLE" && job.status === "RUNNING" && !job.runner_live;
-}
 
 function jobStatus(job: AdminImportJob): { key: string; color: StatusColor } {
   if (isStalled(job)) return { key: "stalled", color: "error" };

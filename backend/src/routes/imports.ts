@@ -94,7 +94,20 @@ router.post(
     }
     // Preserve the synchronous API response while using the same persisted worker as async callers.
     const job = await enqueueSingleImport(req.userId!, { ...body, url });
-    await waitForScheduledImport(job.id);
+    const disconnected = new AbortController();
+    const onClose = () => disconnected.abort();
+    res.once("close", onClose);
+    if (res.destroyed) disconnected.abort();
+    let settled: boolean;
+    try {
+      settled = await waitForScheduledImport(job.id, { signal: disconnected.signal, timeoutMs: 25_000 });
+    } finally {
+      res.off("close", onClose);
+    }
+    if (!settled) {
+      if (!disconnected.signal.aborted) res.status(202).json({ task_id: job.id, job_id: job.id, status: "QUEUED" });
+      return;
+    }
     const finished = await prisma.importJob.findUniqueOrThrow({ where: { id: job.id } });
     if (finished.status === "ERROR")
       throw new HttpError(
