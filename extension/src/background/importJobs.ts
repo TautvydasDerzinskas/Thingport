@@ -51,6 +51,7 @@ export async function importSingle(
   if (entries) {
     const { job_id } = await apiCall<{ job_id: string }>("POST", "/import/zip", { url, entries, ...extra });
     const job = await pollJobToCompletion(job_id);
+    if (job.status === "PAUSED") throw new Error("Import was paused; resume it from the import queue");
     if (job.status === "ERROR") throw new Error(job.error_message || "Import failed");
     print = job.result_print_id ? { id: job.result_print_id } : null;
   } else {

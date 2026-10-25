@@ -69,6 +69,8 @@ export async function getPersistentImportTask(
   const job = await prisma.importJob.findFirst({ where: { id, userId, type: "SINGLE" } });
   if (!job) return getImportTask(id, userId);
   if (job.status === "DONE") return { status: "done", result: job.result };
+  if (job.status === "PAUSED")
+    return { status: "error", detail: "Import was paused; resume it from the import queue", http_status: 409 };
   if (job.status === "ERROR")
     return {
       status: "error",

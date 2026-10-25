@@ -76,6 +76,34 @@ describe("immediate LINKS ownership across processes", () => {
     );
   });
 
+  it("preserves a pause and fails its interrupted item only after the owner dies", async () => {
+    const { child, id } = await childImport();
+    try {
+      await prisma.importJob.update({ where: { id }, data: { status: "PAUSED" } });
+      await drainImportQueue();
+      expect((await prisma.importJobItem.findFirstOrThrow({ where: { jobId: id } })).status).toBe("RUNNING");
+      const stopped = once(child, "exit");
+      child.kill("SIGKILL");
+      await stopped;
+      await drainImportQueue();
+      const paused = await prisma.importJob.findUniqueOrThrow({ where: { id } });
+      expect(paused.status).toBe("PAUSED");
+      expect(paused.failedCount).toBe(1);
+      expect((await prisma.importJobItem.findFirstOrThrow({ where: { jobId: id } })).status).toBe("FAILED");
+      await expect(startLinksJob(paused)).rejects.toMatchObject({ status: 400 });
+      await withImportSchedulerStopped(async () => {
+        await startLinksJob(paused, { retryFailed: true });
+        expect((await prisma.importJob.findUniqueOrThrow({ where: { id } })).status).toBe("QUEUED");
+      });
+      await vi.waitFor(async () =>
+        expect((await prisma.importJob.findUniqueOrThrow({ where: { id } })).status).toBe("DONE"),
+      );
+    } finally {
+      if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
+      await prisma.importJob.delete({ where: { id } });
+    }
+  });
+
   it("strips request-only markers and cookies when retrying a completed immediate job", async () => {
     const job = await prisma.importJob.create({
       data: {

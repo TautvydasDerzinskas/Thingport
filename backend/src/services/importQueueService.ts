@@ -90,6 +90,11 @@ async function startLinksJobUnlocked(
     // A finished one is only writing its notification.
     await runnerSettled(job.id);
   }
+  // A remote runner can still own the current link after a pause. Only recovery
+  // under the worker/per-job advisory lock may classify that item as interrupted.
+  if (await prisma.importJobItem.count({ where: { jobId: job.id, status: "RUNNING" } })) {
+    throw new HttpError(409, "This import is still finishing or recovering its current link, try again shortly");
+  }
   if (opts.retryFailed) {
     const failed = await resetFailedItems(job.id);
     // Links an interrupted run never reached are rerun too, so a retry alone can finish it.
@@ -98,8 +103,6 @@ async function startLinksJobUnlocked(
     });
     if (!failed && !waiting) throw new HttpError(400, "This import has no failed links to retry");
   }
-  // No runner is alive, so a RUNNING item was cut off (a restart, or a pause mid-link).
-  await prisma.importJobItem.updateMany({ where: { jobId: job.id, status: "RUNNING" }, data: { status: "PENDING" } });
   const pending = await prisma.importJobItem.count({ where: { jobId: job.id, status: "PENDING" } });
   if (!pending) throw new HttpError(400, "This import has no links waiting to import");
 

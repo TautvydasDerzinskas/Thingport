@@ -94,19 +94,19 @@ export async function startDirectBatchImport(
 export async function recoverImmediateImports(): Promise<void> {
   const where: Prisma.ImportJobWhereInput = {
     type: "LINKS",
-    status: "RUNNING",
+    OR: [{ status: "RUNNING" }, { status: "PAUSED", items: { some: { status: "RUNNING" } } }],
     payload: { path: ["immediate"], equals: true },
   };
-  const jobs = await prisma.importJob.findMany({ where, select: { id: true } });
+  const jobs = await prisma.importJob.findMany({ where, select: { id: true, status: true } });
   for (const job of jobs) {
     const release = await acquireImmediateImportLock(job.id);
     if (!release) continue;
     try {
       await prisma.$transaction(async (tx) => {
         const changed = await tx.importJob.updateMany({
-          where: { ...where, id: job.id },
+          where: { ...where, id: job.id, status: job.status },
           data: {
-            status: "ERROR",
+            status: job.status === "PAUSED" ? "PAUSED" : "ERROR",
             errorMessage: "Browser import interrupted. Check your library before retrying with your saved sign-in.",
           },
         });

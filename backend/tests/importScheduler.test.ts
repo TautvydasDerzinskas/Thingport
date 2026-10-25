@@ -54,6 +54,45 @@ describe("durable import scheduler (PostgreSQL)", () => {
     await prisma.user.delete({ where: { id: userId } });
   });
 
+  it("reports paused single tasks as an actionable interruption", async () => {
+    const paused = await job("task-paused", "PAUSED");
+    expect(await getPersistentImportTask(paused.id, userId)).toEqual({
+      status: "error",
+      detail: "Import was paused; resume it from the import queue",
+      http_status: 409,
+    });
+  });
+
+  it("recovers interrupted paused durable links without silently replaying them", async () => {
+    const paused = await prisma.importJob.create({
+      data: {
+        userId,
+        type: "LINKS",
+        status: "PAUSED",
+        sourceUrl: urls("paused-crash"),
+        payload: {},
+        items: { create: [{ url: urls("paused-crash"), status: "RUNNING" }] },
+      },
+    });
+    const owner = new Client({ connectionString: process.env.DATABASE_URL });
+    try {
+      await owner.connect();
+      await owner.query("SELECT pg_advisory_lock($1)", [IMPORT_WORKER_LOCK]);
+      await drainImportQueue();
+      await expect(startLinksJob(paused)).rejects.toMatchObject({ status: 409 });
+      await expect(startLinksJob(paused, { retryFailed: true })).rejects.toMatchObject({ status: 409 });
+      expect((await prisma.importJobItem.findFirstOrThrow({ where: { jobId: paused.id } })).status).toBe("RUNNING");
+    } finally {
+      await owner.end();
+    }
+    await drainImportQueue();
+    const recovered = await prisma.importJob.findUniqueOrThrow({ where: { id: paused.id } });
+    expect(recovered.status).toBe("PAUSED");
+    expect(recovered.failedCount).toBe(1);
+    expect((await prisma.importJobItem.findFirstOrThrow({ where: { jobId: paused.id } })).status).toBe("FAILED");
+    await expect(startLinksJob(recovered)).rejects.toMatchObject({ status: 400 });
+  });
+
   it("claims queued jobs once across simultaneous workers and leaves paused jobs alone", async () => {
     const first = await job("first");
     const second = await job("second");

@@ -66,17 +66,29 @@ async function drainQueue(): Promise<void> {
     // Recovery and claiming also write shared state: a lost session here must fail closed.
     working = true;
     await recoverImmediateImports();
+    const pausedJobs = await prisma.importJob.findMany({
+      where: { ...DURABLE_JOB, type: "LINKS", status: "PAUSED", items: { some: { status: "RUNNING" } } },
+      select: { id: true },
+    });
     // Only the lock holder recovers: another API starting must never reset a live worker.
     await prisma.importJobItem.updateMany({
       where: {
         status: "RUNNING",
-        job: { ...DURABLE_JOB, type: { in: [...MANAGED_TYPES] }, status: { in: ["RUNNING", "QUEUED"] } },
+        job: { ...DURABLE_JOB, type: { in: [...MANAGED_TYPES] }, status: { in: ["RUNNING", "QUEUED", "PAUSED"] } },
       },
       data: {
         status: "FAILED",
         errorMessage: "Import interrupted; this link may already be imported. Check your library before retrying.",
       },
     });
+    // A pause can be committed while its current link is still running. After a crash,
+    // preserve the pause but expose the interrupted item to the normal retry controls.
+    for (const job of pausedJobs) {
+      await prisma.importJob.updateMany({
+        where: { id: job.id, status: "PAUSED" },
+        data: { failedCount: await prisma.importJobItem.count({ where: { jobId: job.id, status: "FAILED" } }) },
+      });
+    }
     await prisma.importJob.updateMany({
       where: { ...DURABLE_JOB, type: "SINGLE", status: "RUNNING" },
       data: {

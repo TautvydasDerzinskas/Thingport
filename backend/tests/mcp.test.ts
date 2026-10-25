@@ -536,6 +536,25 @@ describe("the tools that write", () => {
     }
   });
 
+  it("reports an administratively paused import as interrupted rather than running", async () => {
+    const job = await prisma.importJob.create({
+      data: {
+        userId: writer.userId,
+        type: "SINGLE",
+        status: "PAUSED",
+        sourceUrl: FILE_URL,
+        payload: { mcp: {} },
+      },
+    });
+    try {
+      const result = await callTool(writer.token, "get_import_status", { task_id: job.id });
+      expect(result.isError).toBe(true);
+      expect(JSON.stringify(result)).toContain("Import was paused");
+    } finally {
+      await prisma.importJob.delete({ where: { id: job.id } });
+    }
+  });
+
   it("hands a slow import over to get_import_status, which only its user can read", async () => {
     const slowUrl = "https://93.184.215.14/files/mcp-slow-widget.stl";
     let release!: () => void;
