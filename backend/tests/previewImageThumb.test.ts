@@ -8,7 +8,7 @@ import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { attachImportedPreviewImages } from "../src/services/importService";
 import { plateThumbPath, saveThumbFromBytes } from "../src/services/printService";
-import { previewImagePath } from "../src/services/previewImageService";
+import { addPreviewImage, previewImagePath } from "../src/services/previewImageService";
 import { plateAssetHome, printAssetHome } from "../src/services/modelAssets";
 import { MOSAICS, renderTagMosaic } from "../src/services/tagMosaicService";
 import { TAG_MOSAICS } from "../src/config";
@@ -51,6 +51,19 @@ beforeAll(async () => {
 });
 
 describe("preview images", () => {
+  it("keeps simultaneous render and imported images at distinct gallery positions", async () => {
+    const print = await prisma.print.create({
+      data: { userId, name: "Concurrent previews", nameNormalized: "concurrent previews" },
+    });
+    const buffer = await png(120);
+    const images = await Promise.all(
+      Array.from({ length: 8 }, (_, i) => addPreviewImage(print.id, buffer, { generated: i === 0 })),
+    );
+    expect(images.every(Boolean)).toBe(true);
+    const stored = await prisma.previewImage.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } });
+    expect(stored.map((image) => image.position)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+  });
+
   it("makes the first added image the thumbnail of a model without one", async () => {
     const print = await uploadStl();
     expect(print.thumb_url).toBeNull();
