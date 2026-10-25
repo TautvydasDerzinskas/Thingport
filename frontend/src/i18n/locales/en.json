@@ -247,6 +247,14 @@
               "title": "Library stats",
               "description": "Your totals, most viewed, most printed and newest models."
             },
+            "list_model_files": {
+              "title": "List a model's files",
+              "description": "See a model's files, so one can be fetched."
+            },
+            "get_model_file": {
+              "title": "Get a model file",
+              "description": "Read one of a model's files, e.g. to slice or convert it."
+            },
             "get_import_status": {
               "title": "Check an import",
               "description": "Follow an import that's still running."
@@ -254,6 +262,10 @@
             "import_model": {
               "title": "Import a model",
               "description": "Import a model from a link, as + Add > Import does."
+            },
+            "upload_model": {
+              "title": "Upload a model",
+              "description": "Add a model made from your own files, as + Add > Upload files does."
             },
             "create_collection": {
               "title": "Create a collection",

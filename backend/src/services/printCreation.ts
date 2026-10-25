@@ -31,6 +31,7 @@ import { Prisma } from "@prisma/client";
 import type { CategorySource, Plate, Print } from "@prisma/client";
 import { enqueueAiCategorization } from "./aiCategorizationService";
 import { enqueueAiDescription } from "./aiDescriptionService";
+import { deleteAllPrintFiles } from "./printFileService";
 
 const IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".webp", ".bmp"]);
 
@@ -269,12 +270,13 @@ export async function createPrint(
   }
 }
 
-/** Undoes a half-created print, so a failure doesn't leave a model with only some of its plates. */
-async function discardPrint(printId: string): Promise<void> {
+/** Undoes a half-created print, so a failure doesn't leave a model with only some of its files. */
+export async function discardPrint(printId: string): Promise<void> {
   try {
     const plates = await prisma.plate.findMany({ where: { printId } });
     const home = await printAssetHome(printId);
     const assetOwners = await assetOwnerIds(printId);
+    await deleteAllPrintFiles(printId);
     await prisma.print.delete({ where: { id: printId } });
     for (const plate of plates) {
       await removePlatePictures(plate.id, home);
