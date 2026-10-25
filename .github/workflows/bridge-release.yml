@@ -153,8 +153,13 @@ jobs:
               stale=$(asset_id "$name.old"); [ -z "$stale" ] || gh api -X DELETE "repos/$GH_REPO/releases/assets/$stale"
               old=$(asset_id "$name")
               new=$(asset_id "$name.next")
+              # Names are unique per release, so the two renames leave a gap of one API call; if the second
+              # fails, give the old binary its name back rather than leave the Download page on a 404.
               [ -z "$old" ] || gh api -X PATCH "repos/$GH_REPO/releases/assets/$old" -f name="$name.old" >/dev/null
-              gh api -X PATCH "repos/$GH_REPO/releases/assets/$new" -f name="$name" >/dev/null
+              if ! gh api -X PATCH "repos/$GH_REPO/releases/assets/$new" -f name="$name" >/dev/null; then
+                [ -z "$old" ] || gh api -X PATCH "repos/$GH_REPO/releases/assets/$old" -f name="$name" >/dev/null
+                exit 1
+              fi
               [ -z "$old" ] || gh api -X DELETE "repos/$GH_REPO/releases/assets/$old"
             done
             gh api -X PATCH "repos/$GH_REPO/git/refs/tags/bridge-latest" -f sha="$REF" -F force=true
