@@ -75,6 +75,20 @@ describe("FlareSolverr credential boundary", () => {
     expect(await fetchViaFlaresolverr(url)).toEqual({ status: 200, body: "page" });
   });
 
+  it.each(["", "/likes", "/collections"])(
+    "preserves dotted Thingiverse usernames on /users/alice.smith%s",
+    async (suffix) => {
+      const url = `https://api.thingiverse.com/users/alice.smith${suffix}?access_token=test-token`;
+      const sent = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValue(
+          new Response(JSON.stringify({ status: "ok", solution: { status: 200, response: '{"id":1}' } })),
+        );
+      expect(await fetchViaFlaresolverr(url)).toEqual({ status: 200, body: '{"id":1}' });
+      expect(JSON.parse(sent.mock.calls[0][1]?.body as string).url).toBe(url);
+    },
+  );
+
   it("disabling a provider stops solver calls even with a warm page proxy cache", async () => {
     const sent = vi
       .spyOn(globalThis, "fetch")

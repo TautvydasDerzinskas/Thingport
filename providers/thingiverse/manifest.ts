@@ -30,7 +30,7 @@ export default {
   solverRoutes: [
     {
       host: "api.thingiverse.com",
-      path: /^\/(?:things\/\d+(?:\/categories)?|users\/[\w%-]+(?:\/likes|\/collections)?|collections\/\d+(?:\/things)?|popular)$/,
+      path: /^\/(?:things\/\d+(?:\/categories)?|users\/[\w.%-]+(?:\/likes|\/collections)?|collections\/\d+(?:\/things)?|popular)$/,
       query: ["page", "per_page"],
       credentials: { query: ["access_token"] },
     },
