@@ -15,8 +15,11 @@ instance, follow the Docker Compose instructions in the [README](../README.md) i
 
 ## Prerequisites
 
+- **Nix** (recommended): `nix develop` provides Node.js 24, Go, PostgreSQL tools, `just`, and the formatter.
+  Run `just setup` in that shell to install project dependencies; `just` lists the available tasks and
+  `just check` runs the repository checks. The shell provides PostgreSQL binaries but does not start a server.
 - **Node.js 24 or newer.** The root `.nvmrc` says 24 (`nvm use` picks it up), and CI and the Docker images run on it.
-- **Docker**, to run Postgres. Everything else runs natively so you get hot reload.
+- **Docker**, to run Postgres with the container workflow below. Everything else runs natively so you get hot reload.
 - **Go 1.21+** -- only if you're changing `bridge/`.
 
 ## 1. Install dependencies
@@ -29,6 +32,8 @@ npm install # root -- installs the husky pre-commit hook
 npm --prefix backend ci
 npm --prefix frontend ci
 ```
+
+In the Nix shell, `just setup` installs the same dependencies plus the extension, website and regression suites.
 
 Each project has its own `package-lock.json`; there is no workspace root tying them together.
 
