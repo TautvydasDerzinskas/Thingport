@@ -1,16 +1,9 @@
+import { browserCredentialRequest, assertCredentialDestination } from "../credentialRequest";
 import { IMPORT_TIMEOUT_SECONDS } from "../../config";
-import { browserFetch } from "../../utils/browserFetch";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
 import { cleanThingiverseMarkdown } from "./markdown";
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
-import {
-  extractJsonFromBrowserBody,
-  fetchViaFlaresolverr,
-  isCloudflareChallenge,
-  looksLikeCloudflareBlock,
-  shouldProxyHost,
-} from "../../services/flaresolverr";
-import { getFlaresolverrUrl } from "../../services/settingsService";
+import { isCloudflareChallenge } from "../../services/flaresolverr";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
 import {
   parseThingiverseCollectionUrl,
@@ -24,10 +17,9 @@ import manifest from "./manifest.generated";
 export { parseThingiverseCollectionUrl, parseThingiverseLikesUrl, parseThingiverseThingUrl };
 
 // The official API needs an App Token (not a session cookie). It's still behind Cloudflare
-// and returns a sticky 429 challenge after a few rapid requests, hence ThingiverseRateLimitError
-// and the FlareSolverr fallback.
+// and returns a sticky 429 challenge after a few rapid requests, hence ThingiverseRateLimitError.
+// Keep its token out of FlareSolverr browser navigation.
 const THINGIVERSE_API_BASE = manifest.endpoints.api;
-const THINGIVERSE_API_HOSTNAME = new URL(THINGIVERSE_API_BASE).hostname;
 const API_TIMEOUT_MS = IMPORT_TIMEOUT_SECONDS * 1000;
 const THINGIVERSE_PROVIDER = manifest.id;
 

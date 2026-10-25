@@ -1,3 +1,4 @@
+import { credentialRequest } from "../credentialRequest";
 import { createHash } from "node:crypto";
 import { IMPORT_TIMEOUT_SECONDS } from "../../config";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
@@ -92,7 +93,7 @@ async function post(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
   try {
-    const res = await fetch(`${API_BASE}/${path}`, {
+    const res = await credentialRequest("eufymake-api", `${API_BASE}/${path}`, {
       method: "POST",
       headers: {
         Accept: "application/json",

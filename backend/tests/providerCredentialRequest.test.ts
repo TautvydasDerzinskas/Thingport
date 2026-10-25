@@ -1,6 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { assertCredentialDestination, credentialRequest } from "../src/providers/credentialRequest";
-import { resolveCults3dDownload } from "../src/services/cults3dApi";
+import { resolveCults3dDownload } from "../src/providers/cults3d/api";
+
+import { checkEufymakeAuth } from "../src/providers/eufymake/api";
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe("provider credential destinations", () => {
   it.each([
@@ -14,6 +18,7 @@ describe("provider credential destinations", () => {
     ["crealitycloud-api", "https://www.crealitycloud.com/api/cxy/model/1"],
     ["nexprint-api", "https://www.nexprint.com/gateway/api/v1/model/1"],
     ["thangs-api", "https://thangs.com/api/models/1"],
+    ["eufymake-api", "https://aiot-wapi-eu.ankermake.com/web/modelbase/list"],
     ["cults3d-api", "https://cults3d.com/graphql"],
   ] as const)("permits %s at %s", (destination, url) => {
     expect(assertCredentialDestination(destination, url).href).toBe(url);
@@ -106,4 +111,22 @@ describe("provider credential destinations", () => {
       sent.mockRestore();
     }
   });
+});
+
+it("does not forward EufyMake tokens to another origin", async () => {
+  const transport = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(
+      new Response(null, { status: 307, headers: { location: "https://makeitreal.eufymake.com/capture" } }),
+    );
+  vi.stubGlobal("fetch", transport);
+  await expect(checkEufymakeAuth({ token: "secret-token", gtoken: "secret-gtoken" })).resolves.toBe("unreachable");
+  expect(transport).toHaveBeenCalledTimes(1);
+  expect(transport).toHaveBeenCalledWith(
+    "https://aiot-wapi-eu.ankermake.com/web/modelbase/user/get_user_info",
+    expect.objectContaining({
+      redirect: "manual",
+      headers: expect.objectContaining({ "X-Auth-Token": "secret-token", Gtoken: "secret-gtoken" }),
+    }),
+  );
 });

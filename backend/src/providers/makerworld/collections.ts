@@ -1,3 +1,4 @@
+import { credentialRequest } from "../credentialRequest";
 import { IMPORT_BROWSER_USER_AGENT, IMPORT_TIMEOUT_SECONDS } from "../../config";
 import {
   extractJsonFromBrowserBody,

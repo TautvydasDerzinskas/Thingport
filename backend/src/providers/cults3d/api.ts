@@ -1,3 +1,4 @@
+import { credentialRequest, assertCredentialDestination } from "../credentialRequest";
 import { IMPORT_TIMEOUT_SECONDS } from "../../config";
 import { sleep } from "../../utils/concurrency";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
@@ -419,6 +420,7 @@ async function fetchSite(
   const cookie = [`${session}=${browser.session}`, browser.clearance ? `${clearance}=${browser.clearance}` : null]
     .filter(Boolean)
     .join("; ");
+  assertCredentialDestination("cults3d-session", url);
   const res = await fetch(url, {
     method,
     body,

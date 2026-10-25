@@ -1,15 +1,10 @@
+import { browserCredentialRequest, assertCredentialDestination } from "../credentialRequest";
 import { IMPORT_TIMEOUT_SECONDS } from "../../config";
 import { browserFetch } from "../../utils/browserFetch";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
 import { htmlToMarkdown } from "../../services/descriptionMarkdown";
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
-import {
-  extractJsonFromBrowserBody,
-  fetchViaFlaresolverr,
-  isCloudflareChallenge,
-  looksLikeCloudflareBlock,
-} from "../../services/flaresolverr";
-import { getFlaresolverrUrl } from "../../services/settingsService";
+import { isCloudflareChallenge } from "../../services/flaresolverr";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
 import {
   myminifactoryCollectionKey,

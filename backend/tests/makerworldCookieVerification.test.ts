@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { verifyMakerworldCookie } from "../src/services/makerworldCloudApi";
+import { verifyMakerworldCookie } from "../src/providers/makerworld/api";
 
 afterEach(() => vi.unstubAllGlobals());
 

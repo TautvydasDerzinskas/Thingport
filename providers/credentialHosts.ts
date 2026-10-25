@@ -10,6 +10,7 @@ export const CREDENTIAL_HOSTS = {
   "makeronline-api": { exact: ["www.makeronline.com"] },
   "makeronline-site": { exact: ["makeronline.com", "www.makeronline.com"] },
   "crealitycloud-api": { exact: ["www.crealitycloud.com"] },
+  "eufymake-api": { exact: ["aiot-wapi-eu.ankermake.com"] },
   "nexprint-api": { exact: ["www.nexprint.com"] },
   "thangs-api": { exact: ["thangs.com"] },
   "cults3d-api": { exact: ["cults3d.com"] },

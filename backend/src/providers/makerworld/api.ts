@@ -1,8 +1,8 @@
+import { credentialRequest } from "../credentialRequest";
 import { IMPORT_BROWSER_USER_AGENT, IMPORT_TIMEOUT_SECONDS } from "../../config";
 import {
   extractJsonFromBrowserBody,
   fetchViaFlaresolverr,
-  isFlaresolverrEnabled,
   looksLikeCloudflareBlock,
 } from "../../services/flaresolverr";
 import { type ImportedAuthorInfo, type ImportedPageMetadata } from "../../services/importResolvers";
@@ -45,7 +45,7 @@ const DESIGN_API_BASE = `${manifest.endpoints.cloudApi}/design-service`;
 const PROFILE_DOWNLOAD_BASE = `${manifest.endpoints.cloudApi}/iot-service/api/user/profile`;
 const AUTHOR_PROFILE_BASE = `${manifest.endpoints.api}/design-user-service/user/profile`;
 // Only succeeds for a logged-in session, so it doubles as the cookie check.
-const SELF_PREFERENCE_URL = `${manifest.endpoints.api}/design-user-service/my/preference`;
+const SELF_PREFERENCE_URL = `${manifest.endpoints.cloudApi}/design-user-service/my/preference`;
 const CLOUD_API_TIMEOUT_MS = IMPORT_TIMEOUT_SECONDS * 1000;
 const MAKERWORLD_PROVIDER = manifest.id;
 const REFERER = `${manifest.site}/`;
@@ -140,13 +140,13 @@ export async function verifyMakerworldCookie(rawCookieOrToken: string): Promise<
       redirect: "follow",
       signal: controller.signal,
     });
-    if (res.status === 403 && looksLikeCloudflareBlock(res.headers)) {
-      if (!(await isFlaresolverrEnabled())) return { result: "unverifiable", reason: "cloudflare_no_flaresolverr" };
-      // Through FlareSolverr this answers 200 even when logged out; only a real session has a `uid`.
-      const solved = await fetchViaFlaresolverr(SELF_PREFERENCE_URL, `${TOKEN_COOKIE}=${bearerToken}`);
-      if (!solved) return { result: "unverifiable", reason: "flaresolverr_failed" };
-      const data = extractJsonFromBrowserBody(solved.body);
-      return isRecord(data) && data.uid != null ? { result: "valid" } : { result: "invalid" };
+    if (res.status === 401) return { result: "invalid" };
+    if (!res.ok) return { result: "unverifiable", reason: "provider" };
+    let data: unknown;
+    try {
+      data = await res.json();
+    } catch {
+      return { result: "unverifiable", reason: "provider" };
     }
     const uid = isRecord(data) ? data.uid : null;
     const hasUid =

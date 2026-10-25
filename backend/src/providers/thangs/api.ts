@@ -1,5 +1,5 @@
+import { browserCredentialRequest } from "../credentialRequest";
 import { IMPORT_DOWNLOAD_RETRY_DELAY_MS, IMPORT_TIMEOUT_SECONDS } from "../../config";
-import { browserFetch } from "../../utils/browserFetch";
 import { sleep } from "../../utils/concurrency";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";

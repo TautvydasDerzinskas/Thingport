@@ -1,3 +1,4 @@
+import { credentialRequest } from "../credentialRequest";
 import { IMPORT_TIMEOUT_SECONDS } from "../../config";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
 import { htmlToMarkdown } from "../../services/descriptionMarkdown";
