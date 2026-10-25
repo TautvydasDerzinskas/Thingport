@@ -1,3 +1,4 @@
+import { queueJobActions } from "./queueJobActions";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import Stack from "@mui/material/Stack";
@@ -48,9 +49,9 @@ const POLL_IDLE_MS = 8000;
 
 type StatusColor = "default" | "success" | "warning" | "error" | "info";
 
-/** A RUNNING job without a live runner was cut off by a restart. */
+/** Single imports execute in the scheduler, outside the batch runner registry. */
 function isStalled(job: AdminImportJob): boolean {
-  return job.status === "RUNNING" && !job.runner_live;
+  return job.type !== "SINGLE" && job.status === "RUNNING" && !job.runner_live;
 }
 
 function jobStatus(job: AdminImportJob): { key: string; color: StatusColor } {
@@ -151,11 +152,9 @@ export default function ImportQueuePage({ onUnauthorized }: Props) {
 
   const jobs = queue?.jobs ?? [];
   const visible = jobs.filter((job) => matchesFilter(job, filter));
-  const pausedCount = jobs.filter((job) => job.status === "PAUSED" && job.type === "LINKS").length;
-  const failedCount = jobs.filter(
-    (job) => job.type === "LINKS" && job.status !== "RUNNING" && job.status !== "PAUSED" && job.failed_items_count > 0,
-  ).length;
-  const runningCount = jobs.filter((job) => job.status === "RUNNING" && job.type === "LINKS").length;
+  const pausedCount = jobs.filter((job) => job.status === "PAUSED" && queueJobActions(job).canStart).length;
+  const failedCount = jobs.filter((job) => job.status !== "PAUSED" && queueJobActions(job).canRetry).length;
+  const runningCount = jobs.filter((job) => queueJobActions(job).canPause).length;
   const finishedCount = jobs.filter((job) => job.status === "DONE" && job.failed_count === 0).length;
 
   const deleteJob = async (job: AdminImportJob) => {
@@ -203,7 +202,7 @@ export default function ImportQueuePage({ onUnauthorized }: Props) {
               variant="outlined"
               size="small"
               startIcon={<PauseIcon />}
-              disabled={(!runningCount && !queue?.bulk.running) || busy !== null}
+              disabled={!runningCount || busy !== null}
               onClick={() => void run("pauseAll", adminApi.pauseAllQueued)}
             >
               {t("adminSettings.importQueue.pauseAll")}
@@ -326,15 +325,7 @@ function JobRow({
   const { t } = useTranslation("app");
   const isLinks = job.type === "LINKS";
   const status = jobStatus(job);
-  const idle = job.status !== "RUNNING" && !job.runner_live;
-  // An ERROR job was cut off with links still waiting (a restart, say), and starts like a paused one.
-  const canStart =
-    isLinks &&
-    (job.status === "PAUSED" || job.status === "ERROR") &&
-    !job.runner_live &&
-    job.pending_count + job.running_count > 0;
-  const canPause = isLinks && job.status === "RUNNING";
-  const canRetry = isLinks && idle && job.failed_items_count > 0;
+  const { idle, canStart, canPause, canRetry } = queueJobActions(job);
   const progress = job.total > 0 ? Math.min(100, (job.processed / job.total) * 100) : 0;
   const disabled = busy !== null;
 

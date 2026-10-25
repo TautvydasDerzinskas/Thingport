@@ -44,12 +44,13 @@ export function ImportJobProvider({
 }) {
   const navigate = useNavigate();
   const [activeJob, setActiveJob] = useState<ImportJob | null>(null);
-  const taskSourceRef = useRef<string | null>(null);
+  const generationRef = useRef(0);
   const pollRef = useRef<number | null>(null);
   const onJobCompletedRef = useRef(onJobCompleted);
   onJobCompletedRef.current = onJobCompleted;
 
   const stopPolling = useCallback(() => {
+    generationRef.current++;
     if (pollRef.current !== null) {
       window.clearInterval(pollRef.current);
       pollRef.current = null;
@@ -57,12 +58,13 @@ export function ImportJobProvider({
   }, []);
 
   const pollJob = useCallback(
-    async (jobId: string) => {
+    async (jobId: string, generation: number, taskSource: string | null) => {
       try {
         const job =
-          taskSourceRef.current !== null
-            ? await importsApi.getImportTaskJob(jobId, taskSourceRef.current)
+          taskSource !== null
+            ? await importsApi.getImportTaskJob(jobId, taskSource)
             : await importsApi.getImportJob(jobId);
+        if (generation !== generationRef.current) return;
         if (job.status === "RUNNING" || job.status === "QUEUED") {
           setActiveJob(job);
           return;
@@ -90,6 +92,7 @@ export function ImportJobProvider({
           }
         }
       } catch (err) {
+        if (generation !== generationRef.current) return;
         stopPolling();
         setActiveJob(null);
         if (err instanceof UnauthorizedError) onUnauthorized?.();
@@ -99,24 +102,28 @@ export function ImportJobProvider({
   );
 
   const startPolling = useCallback(
-    (jobId: string) => {
+    (jobId: string, taskSource: string | null = null) => {
       stopPolling();
+      const generation = generationRef.current;
       pollRef.current = window.setInterval(() => {
-        void pollJob(jobId);
+        void pollJob(jobId, generation, taskSource);
       }, POLL_INTERVAL_MS);
     },
     [pollJob, stopPolling],
   );
 
   useEffect(() => {
+    const generation = generationRef.current;
     (async () => {
       try {
         const job = await importsApi.getActiveImportJob();
+        if (generation !== generationRef.current) return;
         if (job && (job.status === "RUNNING" || job.status === "QUEUED")) {
           setActiveJob(job);
           startPolling(job.id);
         }
       } catch (err) {
+        if (generation !== generationRef.current) return;
         if (err instanceof UnauthorizedError) onUnauthorized?.();
       }
     })();
@@ -125,24 +132,26 @@ export function ImportJobProvider({
   }, []);
 
   const followJob = useCallback(
-    async (jobId: string) => {
-      taskSourceRef.current = null;
-      setActiveJob(await importsApi.getImportJob(jobId));
-      startPolling(jobId);
+    async (jobId: string, taskSource: string | null = null) => {
+      stopPolling();
+      const generation = generationRef.current;
+      const job =
+        taskSource !== null
+          ? await importsApi.getImportTaskJob(jobId, taskSource)
+          : await importsApi.getImportJob(jobId);
+      if (generation !== generationRef.current) return;
+      setActiveJob(job);
+      startPolling(jobId, taskSource);
     },
-    [startPolling],
+    [startPolling, stopPolling],
   );
 
   const startSingleImport = useCallback(
     async (payload: StartSingleImportPayload) => {
       const started = await importsApi.queueFromLink(payload);
-      if (started.job_id) return followJob(started.job_id);
-      stopPolling();
-      taskSourceRef.current = payload.url;
-      setActiveJob(await importsApi.getImportTaskJob(started.task_id, payload.url));
-      startPolling(started.task_id);
+      return followJob(started.job_id ?? started.task_id, started.job_id ? null : payload.url);
     },
-    [followJob, startPolling, stopPolling],
+    [followJob],
   );
 
   const startZipImport = useCallback(
