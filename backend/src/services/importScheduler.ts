@@ -19,6 +19,7 @@ import {
   type LinksImportJobBody,
 } from "./importJobRunner";
 import { importAndDescribe, prepareSingleImport, type SingleImportBody } from "./singleImport";
+import { addModelsToCollection, isSystemCollectionId } from "./collectionService";
 
 // A dedicated PostgreSQL session holds the global advisory lock across provider requests.
 // Progress commits independently, without a long-running transaction or a pooled session lock.
@@ -56,7 +57,11 @@ export function storedImportBody(body: SingleImportBody): Prisma.InputJsonValue 
   return JSON.parse(JSON.stringify(stored)) as Prisma.InputJsonValue;
 }
 
-export async function enqueueSingleImport(userId: string, body: SingleImportBody): Promise<ImportJob> {
+export async function enqueueSingleImport(
+  userId: string,
+  body: SingleImportBody,
+  mcp?: { collectionId?: string },
+): Promise<ImportJob> {
   const job = await prisma.importJob.create({
     data: {
       userId,
@@ -64,7 +69,7 @@ export async function enqueueSingleImport(userId: string, body: SingleImportBody
       status: "QUEUED",
       sourceUrl: body.url,
       total: 1,
-      payload: storedImportBody(body),
+      payload: storedImportBody({ ...body, ...(mcp ? { mcp } : {}) }),
     },
   });
   wakeImportScheduler();
@@ -185,7 +190,21 @@ export async function executeQueuedImport(job: ImportJob): Promise<void> {
         ...payload,
         url: job.sourceUrl,
       } as SingleImportBody);
+      const mcp = payload.mcp as { collectionId?: string } | undefined;
+      // Recheck ownership at execution: a queued collection can be removed before its turn.
+      if (mcp?.collectionId) {
+        if (isSystemCollectionId(mcp.collectionId))
+          throw new HttpError(400, "Models can't be added to that collection");
+        const owned = await prisma.collection.count({ where: { id: mcp.collectionId, userId: job.userId } });
+        if (!owned) throw new HttpError(404, "Collection not found");
+      }
       const result = await importAndDescribe(job.userId, url, body);
+      const filed = mcp?.collectionId
+        ? (await addModelsToCollection(job.userId, mcp.collectionId, [result.id])).collection
+        : null;
+      const taskResult = mcp
+        ? { model: result, collection: filed ? { id: filed.id, name: filed.name } : null }
+        : result;
       await prisma.importJob.update({
         where: { id: job.id },
         data: {
@@ -194,7 +213,7 @@ export async function executeQueuedImport(job: ImportJob): Promise<void> {
           imported: result.import_outcome === "already_imported" ? 0 : 1,
           alreadyInLibrary: result.import_outcome === "already_imported" ? 1 : 0,
           resultPrintId: result.id,
-          result: JSON.parse(JSON.stringify(result)),
+          result: JSON.parse(JSON.stringify(taskResult)),
         },
       });
     }

@@ -55,8 +55,9 @@ export function getImportTask(id: string, userId: string): ImportTaskState | nul
   return task && task.userId === userId ? task.state : null;
 }
 
-type DurableImportTaskState =
-  | { status: "queued" | "running" }
+export type DurableImportTaskState =
+  | { status: "queued" }
+  | { status: "running" }
   | { status: "done"; result: unknown }
   | { status: "error"; detail: string; http_status: number };
 

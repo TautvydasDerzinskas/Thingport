@@ -552,6 +552,10 @@ describe("the tools that write", () => {
       const started = await callTool(writer.token, "import_model", { url: slowUrl });
       expect(started.data.status).toBe("running");
       const taskId = started.data.task_id as string;
+      const job = await prisma.importJob.findUniqueOrThrow({ where: { id: taskId } });
+      expect(job.type).toBe("SINGLE");
+      expect(job.userId).toBe(writer.userId);
+      expect(job.payload).toMatchObject({ mcp: {} });
 
       // Someone else's token can't follow it, even with the id.
       const peek = await callTool(alice.token, "get_import_status", { task_id: taskId });
@@ -565,6 +569,9 @@ describe("the tools that write", () => {
       }
       expect(state.status).toBe("created");
       expect(state.model.id).toBeTruthy();
+      const finished = await prisma.importJob.findUniqueOrThrow({ where: { id: taskId } });
+      expect(finished.status).toBe("DONE");
+      expect(finished.result).toMatchObject({ model: { id: state.model.id }, collection: null });
     } finally {
       Object.assign(mcpImportTiming, saved);
       global.fetch = originalFetch;
