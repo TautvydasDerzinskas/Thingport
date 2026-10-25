@@ -27,7 +27,7 @@ export async function rawFetch(url: string, headers: Record<string, string>): Pr
       ? needsBrowserFetch(url)
         ? browserCredentialRequest("makerworld-page", url, { headers, signal: controller.signal })
         : credentialRequest("makerworld-page", url, init)
-      : remoteRequest(url, init, needsBrowserFetch(url)));
+      : remoteRequest(url, init, true));
   } finally {
     clearTimeout(timeout);
   }

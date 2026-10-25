@@ -4,6 +4,7 @@ import dnsPromises from "node:dns/promises";
 import net from "node:net";
 import fs from "node:fs/promises";
 import { downloadPlainFileToTemp } from "../src/services/importService";
+import { rawFetch } from "../src/services/guardedFetch";
 import { isBlockedIp } from "../src/utils/urlUtils";
 import { remoteRequest } from "../src/utils/remoteRequest";
 import { browserFetch } from "../src/utils/browserFetch";
@@ -68,6 +69,24 @@ describe.each([false, true])("remote request (browser=%s)", (browser) => {
 });
 
 describe("connection-time DNS policy", () => {
+  it("uses browser transport after a public page redirects to a declared provider origin", async () => {
+    vi.spyOn(dnsPromises, "resolve4").mockResolvedValue(["8.8.8.8"] as never);
+    vi.spyOn(dnsPromises, "resolve6").mockResolvedValue([] as never);
+    const native = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        new Response(null, { status: 302, headers: { location: "https://cdn.thingiverse.com/file.stl" } }),
+      );
+    vi.stubGlobal("fetch", native);
+    vi.mocked(browserFetch).mockResolvedValue(new Response("ok"));
+
+    await rawFetch("https://8.8.8.8/start", {});
+
+    expect(native).toHaveBeenCalledOnce();
+    expect(browserFetch).toHaveBeenCalledOnce();
+    expect(vi.mocked(browserFetch).mock.calls[0][0]).toBe("https://cdn.thingiverse.com/file.stl");
+  });
+
   it.each(["cdn.thingiverse.com", "assets.myminifactory.com", "dl2.myminifactory.com", "dl4.myminifactory.com"])(
     "preserves browser transport for downloads from %s",
     async (host) => {
