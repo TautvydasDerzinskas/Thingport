@@ -4161,9 +4161,9 @@
         "steps": [
           "Lo más fácil: con Thingport Grab, basta con abrir makeitreal.eufymake.com con la sesión iniciada. Conecta tu cuenta y envía un nuevo inicio de sesión cada vez que vuelvas a iniciarla allí.",
           "O manualmente: inicia sesión en makeitreal.eufymake.com y abre las herramientas de desarrollador de tu navegador (F12).",
-          "En Application (Chrome, Edge) o Storage (Firefox) → Local Storage → makeitreal.eufymake.com, copia el valor de mk-userinfo y pégalo abajo. También sirven las cabeceras X-Auth-Token y Gtoken de una petición a aiot-wapi-eu.ankermake.com con la sesión iniciada."
+          "En Application (Chrome, Edge) o Storage (Firefox) → Local Storage → makeitreal.eufymake.com, copia el valor completo de mk-userinfo y pégalo abajo: una sola línea larga de letras y números, o JSON en una versión anterior"
         ],
-        "placeholder": "El valor de mk-userinfo, o las cabeceras X-Auth-Token y Gtoken de una petición"
+        "placeholder": "El valor completo de mk-userinfo"
       },
       "status": {
         "notConnected": "Conecta tu cuenta para leer tus me gusta de eufyMake. Sus modelos se importan sin ella.",

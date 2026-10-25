@@ -22,19 +22,42 @@ const TOKEN = /^[0-9a-f]{32,128}$/i;
 const USER_ID = /^[0-9a-f]{40}$/i;
 const GTOKEN = /^[0-9a-f]{32}$/i;
 
-/** A request header's value from pasted headers, as DevTools copies them: `name: value`, or the name and value on
- *  lines of their own. */
-function headerValue(text: string, name: string): string | null {
+const sameHex = (value: string, other: string | null) => other !== null && value.toLowerCase() === other.toLowerCase();
+
+/** The runs of hex digits in a paste long enough to be a token, a Gtoken or a user id, as they appear. */
+function hexRuns(text: string): string[] {
+  return text.match(/[0-9a-f]{32,128}/gi) ?? [];
+}
+
+/** A hex value under one of `names`, as pasted header and cookie lists show it: after the name on its own line, or
+ *  on the line below it. The name need only be part of the line, so a `makeitreal-euid` cookie row reads too. */
+function labelledHex(text: string, names: readonly string[]): string | null {
   const lines = text.split("\n").map((line) => line.trim());
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (line.slice(0, name.length).toLowerCase() !== name) continue;
-    const rest = line.slice(name.length);
-    if (rest && !/^[\s:]/.test(rest)) continue;
-    const value = rest.replace(/^\s*:?\s*/, "") || (lines[i + 1] ?? "");
-    if (/^[0-9a-f]+$/i.test(value)) return value;
+    const lower = lines[i].toLowerCase();
+    const name = names.find((candidate) => lower.includes(candidate));
+    if (name === undefined) continue;
+    const value = hexRuns(lines[i].slice(lower.indexOf(name) + name.length))[0] ?? lines[i + 1] ?? "";
+    if (TOKEN.test(value)) return value;
   }
   return null;
+}
+
+/** The JSON inside an mk-userinfo value: base64 of the percent-encoded JSON, behind the `exp@<unix seconds>;` stamp
+ *  the site's store puts on values that run out -- or the plain JSON builds before October 2026 wrote. Null when the
+ *  value is neither. */
+export function eufymakeUserInfoJson(value: string): string | null {
+  let plain = value;
+  if (!plain.startsWith("{")) {
+    if (!/^[A-Za-z0-9+/=]+$/.test(plain)) return null;
+    try {
+      plain = decodeURIComponent(Buffer.from(plain, "base64").toString("utf8"));
+    } catch {
+      return null;
+    }
+  }
+  const json = plain.startsWith("exp@") ? plain.slice(plain.indexOf(";") + 1) : plain;
+  return json.startsWith("{") ? json : null;
 }
 
 /** The sign-in from the site's mk-userinfo value (or just its auth_token, with `userId`), or from a signed-in
@@ -48,9 +71,10 @@ export function normalizeEufymakeSession(
   let token: string | null = null;
   let gtoken: string | null = null;
   let id = userId;
-  if (text.startsWith("{")) {
+  const userInfo = eufymakeUserInfoJson(text);
+  if (userInfo) {
     try {
-      const info = JSON.parse(text) as { auth_token?: unknown; user_id?: unknown };
+      const info = JSON.parse(userInfo) as { auth_token?: unknown; user_id?: unknown };
       token = typeof info.auth_token === "string" ? info.auth_token : null;
       id = typeof info.user_id === "string" ? info.user_id : id;
     } catch {
@@ -59,8 +83,17 @@ export function normalizeEufymakeSession(
   } else if (TOKEN.test(text)) {
     token = text;
   } else {
-    token = headerValue(text, "x-auth-token");
-    gtoken = headerValue(text, "gtoken");
+    token = labelledHex(text, ["x-auth-token", "auth_token"]);
+    gtoken = labelledHex(text, ["gtoken"]);
+    id = labelledHex(text, ["user_id", "userid", "euid"]) ?? id;
+    // A user id settles the Gtoken, its MD5, so a pasted copy of that isn't taken for the token.
+    if (!gtoken && id && USER_ID.test(id)) gtoken = eufymakeGtoken(id.toLowerCase());
+    // Pasted with the names stripped off: the run of exactly 32 digits is the Gtoken, the other one the token. A
+    // token can be 32 digits too, and then either could be the Gtoken, so it has to come labelled.
+    const spare = hexRuns(text).filter((run) => !sameHex(run, token) && !sameHex(run, gtoken) && !sameHex(run, id));
+    const short = spare.filter((run) => GTOKEN.test(run));
+    if (!gtoken && short.length === 1) gtoken = short[0];
+    token ??= spare.find((run) => !sameHex(run, gtoken)) ?? null;
   }
   id = id && USER_ID.test(id) ? id.toLowerCase() : null;
   gtoken = id ? eufymakeGtoken(id) : gtoken;
