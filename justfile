@@ -5,6 +5,11 @@ default:
 # Install root dependencies
 setup:
     npm ci
+    npm --prefix backend ci
+    npm --prefix frontend ci
+    npm --prefix extension ci
+    npm --prefix web ci
+    npm --prefix regression ci
 
 # Format source files
 fmt:
@@ -43,6 +48,11 @@ test-frontend:
 test-bridge:
     cd bridge && go test ./...
 
+# Run the extension CI verification
+[group('test')]
+verify-extension:
+    npm --prefix extension run verify
+
 # Build the frontend
 [group('validate')]
 build-frontend:
@@ -60,4 +70,4 @@ check-web:
     npm --prefix web run build
 
 # Run checks available in the local checkout
-check: fmt-check typecheck lint test-backend test-frontend test-bridge build-frontend build-backend
+check: fmt-check typecheck lint test-backend test-frontend test-bridge verify-extension build-frontend build-backend check-web
