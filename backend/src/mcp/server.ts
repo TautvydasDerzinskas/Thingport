@@ -8,7 +8,7 @@ import {
 import type { ZodRawShape } from "zod";
 import { HttpError } from "../utils/fileUtils";
 import { getBackendVersion } from "../services/versionService";
-import { MCP_TOOLS, type McpToolContext } from "./tools";
+import { MCP_TOOLS, WithImages, type McpToolContext } from "./tools";
 
 /** A server offering only the tools this token was given. One per request: /api/mcp is stateless. */
 export function buildMcpServer(ctx: McpToolContext, allowedTools: ReadonlySet<string>): McpServer {
@@ -45,6 +45,14 @@ export function buildMcpServer(ctx: McpToolContext, allowedTools: ReadonlySet<st
       async (args: Record<string, unknown>) => {
         try {
           const result = await tool.run(ctx, args);
+          if (result instanceof WithImages) {
+            return {
+              content: [
+                { type: "text" as const, text: JSON.stringify(result.data) },
+                ...result.images.map((image) => ({ type: "image" as const, ...image })),
+              ],
+            };
+          }
           return { content: [{ type: "text" as const, text: JSON.stringify(result) }] };
         } catch (err) {
           // An HttpError is meant for the caller ("Print not found"); anything else stays in the logs.

@@ -123,6 +123,34 @@ export async function addModelsToCollection(
   };
 }
 
+/** Takes the user's own models out of one of their collections; the models themselves are untouched. Ids that
+ *  aren't in it, or aren't the user's models, are reported. */
+export async function removeModelsFromCollection(
+  userId: string,
+  collectionId: string,
+  printIds: string[],
+): Promise<{ collection: Collection; removed: string[]; notIn: string[] }> {
+  if (isSystemCollectionId(collectionId)) throw new HttpError(400, "This collection can't be edited");
+  const collection = await prisma.collection.findFirst({ where: { id: collectionId, userId } });
+  if (!collection) throw new HttpError(404, "Collection not found");
+  const present = await prisma.collectionItem.findMany({
+    where: { collectionId, printId: { in: printIds }, print: { userId } },
+    select: { printId: true },
+  });
+  const removed = present.map((item) => item.printId);
+  await prisma.collectionItem.deleteMany({ where: { collectionId, printId: { in: removed } } });
+  await relocatePrintsForToken("collection", removed);
+  if (removed.length) {
+    void createLog({
+      userId,
+      action: "collection_item_removed",
+      targetId: collection.id,
+      details: { name: collection.name, count: removed.length },
+    });
+  }
+  return { collection, removed, notIn: [...new Set(printIds)].filter((id) => !removed.includes(id)) };
+}
+
 // Favourites and History aren't real rows: they're derived from Print.favoritedAt/lastViewedAt.
 // Their ids are reserved.
 

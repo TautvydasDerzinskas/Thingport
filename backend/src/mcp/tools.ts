@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import sharp from "sharp";
 import { z } from "zod";
 import { MANIFESTS } from "../providers/index.generated";
 import { providerNames } from "../providers/names";
@@ -13,6 +14,7 @@ import type { McpAccess } from "../services/settingsService";
 import {
   addModelsToCollection,
   createCollection,
+  removeModelsFromCollection,
   isSystemCollectionId,
   SYSTEM_COLLECTIONS,
   systemCollectionKeyForId,
@@ -33,7 +35,7 @@ import {
 } from "../services/customWidgetsService";
 import { CUSTOM_WIDGET_GUIDE } from "../services/customWidgetGuide";
 import { ICON_MAX_BYTES, listIcons as listUserIcons, saveIcon } from "../services/iconService";
-import { removePlate, resolvePlateFilePath } from "../services/printCreation";
+import { removePlate, renamePlate, resolvePlateFilePath } from "../services/printCreation";
 import { deletePreparedFile, deleteSupportingFile, managedPrintFilePath } from "../services/printFileService";
 import { notifyUpload } from "../services/modelNotifications";
 import {
@@ -43,8 +45,8 @@ import {
   type FileKind,
   type UploadedFile,
 } from "../services/uploadService";
-import { removePreviewImage, reorderPreviewImages } from "../services/previewImageService";
-import { setPrintTags, updatePrintMeta } from "../services/printEditService";
+import { previewImagePath, removePreviewImage, reorderPreviewImages } from "../services/previewImageService";
+import { deletePrint, setPrintTags, updatePrintMeta } from "../services/printEditService";
 import { setPrintCategory } from "../services/printCategoryService";
 import { uniqueModelName } from "../services/printService";
 import { CATEGORY_KINDS, createCategory, type CategoryKind } from "../services/categoryService";
@@ -81,6 +83,14 @@ export type McpToolDefinition = {
   inputSchema: z.ZodRawShape;
   run: (ctx: McpToolContext, args: Record<string, unknown>) => Promise<unknown>;
 };
+
+/** A result that also shows the assistant pictures, beside its JSON. */
+export class WithImages {
+  constructor(
+    readonly data: unknown,
+    readonly images: { data: string; mimeType: string }[],
+  ) {}
+}
 
 const MAX_PAGE = 50;
 const DEFAULT_PAGE = 20;
@@ -924,17 +934,58 @@ async function modelImages(ctx: McpToolContext, modelId: string) {
   });
 }
 
+// Small enough that a gallery costs the assistant little, big enough to tell pictures apart.
+const PICTURE_SIZE = 512;
+const MAX_PICTURES = 8;
+
+/** The pictures themselves, scaled down; one that's missing from storage is left out. */
+async function picturesOf(userId: string, ids: string[]) {
+  const rows = await prisma.previewImage.findMany({
+    where: { id: { in: ids }, print: { userId } },
+    include: { print: { select: { assetsPath: true } } },
+  });
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  const pictures = [];
+  for (const id of ids) {
+    const row = byId.get(id);
+    if (!row) continue;
+    const jpeg = await sharp(previewImagePath(row.id, row.print.assetsPath))
+      .resize(PICTURE_SIZE, PICTURE_SIZE, { fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: 75 })
+      .toBuffer()
+      .catch(() => null);
+    if (jpeg) pictures.push({ data: jpeg.toString("base64"), mimeType: "image/jpeg" });
+  }
+  return pictures;
+}
+
 const listModelImages: McpToolDefinition = {
   name: "list_model_images",
   title: "List a model's pictures",
   description:
     "A model's pictures in the order its page shows them, the cover first, each with the id edit_model_images " +
     "takes. `generated` marks Thingport's own render of the model, there only while it has no picture of its own. " +
+    `With include_pictures, the first ${MAX_PICTURES} also come as images to look at, scaled down, in the same order. ` +
     "api_path or download_url opens with the same token as 'Authorization: Bearer' if it may read Images.",
   readOnly: true,
-  inputSchema: { model_id: z.string().min(1).describe("The model's id, from search_models or list_models.") },
+  inputSchema: {
+    model_id: z.string().min(1).describe("The model's id, from search_models or list_models."),
+    include_pictures: z
+      .boolean()
+      .optional()
+      .describe("Also show the pictures, e.g. to pick the best cover or describe the model."),
+  },
   async run(ctx, args) {
-    return { images: await modelImages(ctx, args.model_id as string) };
+    const images = await modelImages(ctx, args.model_id as string);
+    if (!args.include_pictures) return { images };
+    const shown = images.slice(0, MAX_PICTURES);
+    return new WithImages(
+      { images, pictures_shown: shown.length },
+      await picturesOf(
+        ctx.userId,
+        shown.map((image) => image.id),
+      ),
+    );
   },
 };
 
@@ -993,6 +1044,48 @@ const editModelImages: McpToolDefinition = {
   },
 };
 
+const renameModelFile: McpToolDefinition = {
+  name: "rename_model_file",
+  title: "Rename a model file",
+  description:
+    "Rename one of a model's plates (its 3D files), by its id from list_model_files. A name another plate has gets " +
+    "a number added; the extension should stay the same.",
+  readOnly: false,
+  idempotent: true,
+  inputSchema: {
+    model_id: z.string().min(1).describe("The model's id."),
+    file_id: z.string().min(1).describe("The plate's id, from list_model_files."),
+    name: z.string().trim().min(1).max(255).describe("Its new name with its extension, e.g. bracket-left.stl."),
+  },
+  async run(ctx, args) {
+    const { userId } = ctx;
+    const modelId = args.model_id as string;
+    const file = (await modelFiles(userId, modelId)).find((f) => f.id === args.file_id);
+    if (!file) throw new HttpError(404, "File not found");
+    if (file.kind !== "plate") throw new HttpError(400, "Only a plate can be renamed");
+    const print = await prisma.print.findFirstOrThrow({ where: { id: modelId, userId } });
+    const name = await renamePlate(print, file.id, args.name as string);
+    return { id: file.id, name, previous_name: file.name };
+  },
+};
+
+const deleteModel: McpToolDefinition = {
+  name: "delete_model",
+  title: "Delete a model",
+  description:
+    "Delete a model from the library for good, with its files and pictures, as its page's Delete does. There's no " +
+    "undo: only delete what the user asked to, and say which model it is first.",
+  readOnly: false,
+  destructive: true,
+  inputSchema: { model_id: z.string().min(1).describe("The model's id, from search_models or list_models.") },
+  async run(ctx, args) {
+    const print = await prisma.print.findFirst({ where: { id: args.model_id as string, userId: ctx.userId } });
+    if (!print) throw new HttpError(404, "Print not found");
+    await deletePrint(ctx.userId, print.id);
+    return { deleted: { id: print.id, title: print.title || print.name } };
+  },
+};
+
 const createCategoryTool: McpToolDefinition = {
   name: "create_category",
   title: "Create a category",
@@ -1045,8 +1138,8 @@ const addToCollection: McpToolDefinition = {
   name: "add_to_collection",
   title: "Add models to a collection",
   description:
-    "Add models from the library to one of the user's collections. Models already in it stay as they are. " +
-    "Nothing is ever removed.",
+    "Add models from the library to one of the user's collections. Models already in it stay as they are; take " +
+    "them out with remove_from_collection.",
   readOnly: false,
   idempotent: true,
   inputSchema: {
@@ -1065,6 +1158,32 @@ const addToCollection: McpToolDefinition = {
       added: result.added,
       already_in: result.alreadyIn,
       not_found: result.notFound,
+    };
+  },
+};
+
+const removeFromCollection: McpToolDefinition = {
+  name: "remove_from_collection",
+  title: "Remove models from a collection",
+  description:
+    "Take models out of one of the user's collections. The models stay in the library; only their place in the " +
+    "collection goes.",
+  readOnly: false,
+  idempotent: true,
+  inputSchema: {
+    collection_id: z.string().min(1).describe("The collection, an id from list_collections."),
+    model_ids: z.array(z.string().min(1)).min(1).max(100).describe("The models, ids from get_collection."),
+  },
+  async run(ctx, args) {
+    const result = await removeModelsFromCollection(
+      ctx.userId,
+      args.collection_id as string,
+      args.model_ids as string[],
+    );
+    return {
+      collection: { id: result.collection.id, name: result.collection.name },
+      removed: result.removed,
+      not_in_it: result.notIn,
     };
   },
 };
@@ -1228,9 +1347,12 @@ export const MCP_TOOLS: readonly McpToolDefinition[] = [
   editModelImages,
   addModelFiles,
   removeModelFile,
+  renameModelFile,
+  deleteModel,
   createCategoryTool,
   createCollectionTool,
   addToCollection,
+  removeFromCollection,
   widgetGuide,
   listWidgets,
   saveWidget,

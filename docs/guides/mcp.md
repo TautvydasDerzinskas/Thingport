@@ -53,29 +53,32 @@ These read your library, and are on for a new token:
 | `get_import_status` | How an import that `import_model` left running is getting on.                                           |
 | `list_model_files`  | A model's files (plates, supporting files and sliced print), each with the id `get_model_file` takes.   |
 | `get_model_file`    | One of a model's files, base64-encoded up to 10 MB, e.g. for the assistant to slice or convert it.      |
-| `list_model_images` | A model's pictures, cover first, each with the id `edit_model_images` takes.                            |
+| `list_model_images` | A model's pictures, cover first, with the id `edit_model_images` takes, and the pictures if asked.      |
 | `widget_guide`      | How to write a [custom dashboard widget](custom-widgets.md), read before saving one.                    |
 | `list_widgets`      | Your custom dashboard widgets, optionally with their code.                                              |
 | `list_icons`        | Thingport's own icons and the ones you uploaded, searched by name, e.g. for a widget's icon.            |
 
 These change your library. `save_widget` and `upload_icon` are on for a new token; the rest are off until you turn them on:
 
-| Tool                | What it does                                                                                                 |
-| ------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `import_model`      | Imports a model from its page on a supported site, as **+ Add > Import** does, optionally into a collection. |
-| `upload_model`      | Adds a model made from your own files, as **+ Add > Upload files** does, with pictures and a collection.     |
-| `edit_model`        | Changes a model's title, description, creator, tags, category and whether it's a favourite.                  |
-| `edit_model_images` | Adds pictures to a model, removes some, or reorders them; the first is its cover.                            |
-| `add_model_files`   | Adds plates, supporting files or a sliced print to one of your models.                                       |
-| `remove_model_file` | Deletes one of a model's files: a plate (not its only one), a supporting file or its sliced print.           |
-| `create_category`   | Creates a category or folder, e.g. to file a model under with `edit_model`.                                  |
-| `create_collection` | Creates a new, empty collection.                                                                             |
-| `add_to_collection` | Adds models from your library to one of your collections.                                                    |
-| `save_widget`       | Creates one of your own [dashboard widgets](custom-widgets.md), or replaces one it or you saved earlier.     |
-| `upload_icon`       | Adds an image (an SVG, or a PNG, JPEG or WebP) to your icons, as the icon browser's **Upload** does.         |
+| Tool                     | What it does                                                                                                 |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `import_model`           | Imports a model from its page on a supported site, as **+ Add > Import** does, optionally into a collection. |
+| `upload_model`           | Adds a model made from your own files, as **+ Add > Upload files** does, with pictures and a collection.     |
+| `edit_model`             | Changes a model's title, description, creator, tags, category and whether it's a favourite.                  |
+| `edit_model_images`      | Adds pictures to a model, removes some, or reorders them; the first is its cover.                            |
+| `add_model_files`        | Adds plates, supporting files or a sliced print to one of your models.                                       |
+| `remove_model_file`      | Deletes one of a model's files: a plate (not its only one), a supporting file or its sliced print.           |
+| `rename_model_file`      | Renames one of a model's plates.                                                                             |
+| `delete_model`           | Deletes a model with its files and pictures, as its page's **Delete** does.                                  |
+| `create_category`        | Creates a category or folder, e.g. to file a model under with `edit_model`.                                  |
+| `create_collection`      | Creates a new, empty collection.                                                                             |
+| `add_to_collection`      | Adds models from your library to one of your collections.                                                    |
+| `remove_from_collection` | Takes models out of one of your collections; they stay in your library.                                      |
+| `save_widget`            | Creates one of your own [dashboard widgets](custom-widgets.md), or replaces one it or you saved earlier.     |
+| `upload_icon`            | Adds an image (an SVG, or a PNG, JPEG or WebP) to your icons, as the icon browser's **Upload** does.         |
 
-`edit_model_images` and `remove_model_file` delete what you ask them to for good, so they're marked as destructive and
-an assistant's app may ask you before calling them; the rest delete nothing. An import runs the same checks as **+ Add > Import** (a provider an admin
+`delete_model`, `edit_model_images` and `remove_model_file` delete what you ask them to for good, so they're marked as
+destructive and an assistant's app may ask you before calling them; the rest delete nothing. An import runs the same checks as **+ Add > Import** (a provider an admin
 turned off stays off, and a model already in your library isn't imported twice) and shows up in your notifications and
 the admin logs the same way. It doesn't ask for a captcha, even when imports do in the app: like Thingport Grab, an
 assistant has nowhere to show one. Most imports finish within the call; a long one carries on in the background, and the
@@ -97,7 +100,8 @@ replaced).
 `api_path` on Thingport's own address and, with a public address set (below), a full `download_url`; either opens with
 the same token in the `Authorization: Bearer` header if the token may read **Model files** (see
 [API token](api-token.md)). A bigger file comes that way. `list_model_images` gives each picture the same, which opens
-if the token may read **Images**.
+if the token may read **Images**. With `include_pictures`, it also hands the assistant the first 8 pictures, scaled down
+to 512 px, so it can look at them, e.g. to pick a cover.
 
 Every tool sees only your own library, exactly as you do in Thingport. Looking a model up through MCP doesn't count as a
 view, so it doesn't change your Browsing History or your most viewed models.

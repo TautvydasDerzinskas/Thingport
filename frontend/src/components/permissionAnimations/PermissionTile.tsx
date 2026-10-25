@@ -93,6 +93,12 @@ const fileIn = keyframes`
   100% { transform: translateY(0); opacity: 1; }
 `;
 
+const fileOut = keyframes`
+  0% { transform: translateY(13px); opacity: 0; }
+  1% { transform: translateY(13px); opacity: 1; }
+  65% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(-4px); opacity: 0; }
+`;
 const scribble = keyframes`
   0%, 100% { transform: translate(0, 0) rotate(45deg); }
   25% { transform: translate(-5px, 2px) rotate(45deg); }
@@ -387,6 +393,29 @@ const pictures: Record<string, () => React.ReactNode> = {
       <Badge x={20} y={20} color="error" minus />
     </>
   ),
+  rename_model_file: () => (
+    <>
+      <Sheet x={7} y={6} />
+      <Box
+        sx={{
+          ...at(17, 25, 16, 7),
+          borderRadius: "2px",
+          bgcolor: "background.paper",
+          border: 1.5,
+          borderColor: "primary.main",
+        }}
+      >
+        <Box sx={{ ...at(2, 1.5, 8, 2), bgcolor: "text.disabled", borderRadius: 1 }} />
+        <Box sx={{ ...at(11, 0.5, 1.5, 4), bgcolor: "primary.main", animation: run(blink, 1) }} />
+      </Box>
+    </>
+  ),
+  delete_model: () => (
+    <>
+      <Card sx={{ ...at(10, 7, 20, 26), opacity: 0.6 }} />
+      <Badge x={21} y={21} color="error" minus />
+    </>
+  ),
   // A model's details, written over with a pencil.
   edit_model: () => (
     <>
@@ -435,6 +464,11 @@ const pictures: Record<string, () => React.ReactNode> = {
   add_to_collection: () => (
     <Folder accent="warning">
       <Card sx={{ ...at(14, 3, 12, 13), animation: run(fileIn, 2) }} />
+    </Folder>
+  ),
+  remove_from_collection: () => (
+    <Folder accent="warning">
+      <Card sx={{ ...at(14, 3, 12, 13), animation: run(fileOut, 2) }} />
     </Folder>
   ),
   // A dashboard widget's panel, drawn by the tool: its guide, the list of them, and saving one.

@@ -14,6 +14,7 @@ import {
   ensurePlateThumbnail,
   managedPlatePath,
   pruneEmptyStorageDirs,
+  relocatePrint,
   removeAssetHome,
   assetOwnerIds,
   removePlatePictures,
@@ -331,6 +332,19 @@ export async function removePlate(print: Pick<Print, "id" | "assetsPath">, plate
   await deletePlateFiles(target);
   await removePlatePictures(target.id, print.assetsPath);
   if (target.position === 0) await refreshAutoPreparedMetadata(print.id);
+}
+
+/** Renames one of the model's plates, suffixed when another plate has the name. Returns the name it got. */
+export async function renamePlate(print: Print, plateId: string, filename: string): Promise<string> {
+  const plate = await prisma.plate.findUnique({ where: { id: plateId } });
+  if (!plate || plate.printId !== print.id) throw new HttpError(404, "Plate not found");
+  const nextFilename = await availablePlateFilename(print.id, sanitizeFilename(filename), plate.id);
+  if (nextFilename !== plate.filename) {
+    await prisma.plate.update({ where: { id: plate.id }, data: { filename: nextFilename } });
+    await relocatePrint(print, [{ ...plate, filename: nextFilename }]);
+    if (plate.position === 0) await refreshAutoPreparedMetadata(print.id);
+  }
+  return nextFilename;
 }
 
 export async function deletePlateFiles(plate: Pick<Plate, "id" | "storagePath">): Promise<void> {

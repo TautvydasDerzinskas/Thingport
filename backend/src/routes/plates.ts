@@ -12,16 +12,11 @@ import {
   addPlatesToPrint,
   refreshAutoPreparedMetadata,
   removePlate,
+  renamePlate,
   resolvePlateFilePath,
   type NewPlateInput,
 } from "../services/printCreation";
-import {
-  availablePlateFilename,
-  plateThumbPath,
-  plateThumbReplaceable,
-  relocatePrint,
-  saveThumbFromBytes,
-} from "../services/printService";
+import { plateThumbPath, plateThumbReplaceable, saveThumbFromBytes } from "../services/printService";
 import { addGeneratedPreviewImageIfNone, generateCardRender } from "../services/previewImageService";
 import { printOutById } from "../services/printLoader";
 import {
@@ -107,18 +102,7 @@ router.post(
     const body = parseBody(renameSchema, req.body);
     const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
     if (!print) throw new HttpError(404, "Print not found");
-    const plate = await prisma.plate.findUnique({ where: { id: req.params.plateId } });
-    if (!plate || plate.printId !== print.id) throw new HttpError(404, "Plate not found");
-
-    const sanitized = sanitizeFilename(body.filename);
-    const nextFilename = await availablePlateFilename(print.id, sanitized, plate.id);
-    if (nextFilename !== plate.filename) {
-      await prisma.plate.update({ where: { id: plate.id }, data: { filename: nextFilename } });
-      await relocatePrint(print, [{ ...plate, filename: nextFilename }]);
-      if (plate.position === 0) {
-        await refreshAutoPreparedMetadata(print.id);
-      }
-    }
+    await renamePlate(print, req.params.plateId, body.filename);
     res.json({ print: await printOutById(req.userId!, print.id) });
   }),
 );

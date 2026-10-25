@@ -384,12 +384,15 @@ describe("the tools that write", () => {
     "edit_model_images",
     "add_model_files",
     "remove_model_file",
+    "rename_model_file",
+    "delete_model",
     "create_category",
     "create_collection",
     "add_to_collection",
+    "remove_from_collection",
   ];
   // The ones that delete something for good, so an assistant's client can ask before calling them.
-  const DESTRUCTIVE_TOOLS = ["edit_model_images", "remove_model_file"];
+  const DESTRUCTIVE_TOOLS = ["edit_model_images", "remove_model_file", "delete_model"];
   // A public IP literal passes the SSRF check without a DNS lookup; fetch is mocked below.
   const FILE_URL = "https://93.184.215.14/files/mcp-imported-widget.stl";
   let writer: Account;
@@ -810,6 +813,97 @@ describe("the tools that write", () => {
     });
     expect(removed.isError).toBe(true);
     expect(await prisma.plate.count({ where: { printId: bobSecretId } })).toBe(1);
+  });
+
+  it("list_model_images shows the pictures themselves when asked", async () => {
+    const id = await upload(writer.session, "statue.stl");
+    await callTool(writer.token, "edit_model_images", {
+      model_id: id,
+      add: [await png("#cc33cc"), await png("#33cccc")],
+    });
+    const res = await mcp(writer.token, "tools/call", {
+      name: "list_model_images",
+      arguments: { model_id: id, include_pictures: true },
+    });
+    const content = res.body.result.content as { type: string; mimeType?: string; data?: string }[];
+    expect(JSON.parse(content[0].text as unknown as string).pictures_shown).toBe(2);
+    expect(content.slice(1).map((c) => [c.type, c.mimeType])).toEqual([
+      ["image", "image/jpeg"],
+      ["image", "image/jpeg"],
+    ]);
+    const meta = await sharp(Buffer.from(content[1].data!, "base64")).metadata();
+    expect(meta.format).toBe("jpeg");
+
+    // Without it, only the list.
+    const plain = await mcp(writer.token, "tools/call", { name: "list_model_images", arguments: { model_id: id } });
+    expect(plain.body.result.content).toHaveLength(1);
+  });
+
+  it("rename_model_file renames a plate, and only a plate", async () => {
+    const id = await upload(writer.session, "arm.stl");
+    const { data } = await callTool(writer.token, "add_model_files", {
+      model_id: id,
+      files: [
+        { name: "arm-left.stl", base64: b64("solid l\nendsolid l\n") },
+        { name: "readme.txt", base64: b64("hi") },
+      ],
+    });
+    const byName = (name: string) => data.files.find((f: { name: string }) => f.name === name).id;
+    const renamed = await callTool(writer.token, "rename_model_file", {
+      model_id: id,
+      file_id: byName("arm.stl"),
+      name: "arm-right.stl",
+    });
+    expect(renamed.data).toEqual({ id: byName("arm.stl"), name: "arm-right.stl", previous_name: "arm.stl" });
+    const clash = await callTool(writer.token, "rename_model_file", {
+      model_id: id,
+      file_id: byName("arm-left.stl"),
+      name: "arm-right.stl",
+    });
+    expect(clash.data.name).toBe("arm-right (2).stl");
+    const readme = await callTool(writer.token, "rename_model_file", {
+      model_id: id,
+      file_id: byName("readme.txt"),
+      name: "x.txt",
+    });
+    expect(readme.text).toMatch(/only a plate/i);
+  });
+
+  it("delete_model deletes the user's own model, and only theirs", async () => {
+    const id = await upload(writer.session, "doomed.stl");
+    const result = await callTool(writer.token, "delete_model", { model_id: id });
+    expect(result.data.deleted.id).toBe(id);
+    expect(await prisma.print.count({ where: { id } })).toBe(0);
+    expect(await prisma.plate.count({ where: { printId: id } })).toBe(0);
+    expect((await callTool(writer.token, "delete_model", { model_id: id })).isError).toBe(true);
+    expect((await callTool(writer.token, "delete_model", { model_id: bobSecretId })).isError).toBe(true);
+    expect(await prisma.print.count({ where: { id: bobSecretId } })).toBe(1);
+  });
+
+  it("remove_from_collection takes models out, leaving them in the library", async () => {
+    const id = await upload(writer.session, "shelved.stl");
+    const other = await upload(writer.session, "unshelved.stl");
+    const { data: collection } = await callTool(writer.token, "create_collection", { name: "To trim" });
+    await callTool(writer.token, "add_to_collection", { collection_id: collection.id, model_ids: [id] });
+    const result = await callTool(writer.token, "remove_from_collection", {
+      collection_id: collection.id,
+      model_ids: [id, other, bobSecretId],
+    });
+    expect(result.data.removed).toEqual([id]);
+    expect(result.data.not_in_it).toEqual([other, bobSecretId]);
+    expect(await prisma.collectionItem.count({ where: { collectionId: collection.id } })).toBe(0);
+    expect(await prisma.print.count({ where: { id } })).toBe(1);
+
+    const theirs = await callTool(writer.token, "remove_from_collection", {
+      collection_id: bobCollectionId,
+      model_ids: [id],
+    });
+    expect(theirs.isError).toBe(true);
+    const builtIn = await callTool(writer.token, "remove_from_collection", {
+      collection_id: "favorites",
+      model_ids: [id],
+    });
+    expect(builtIn.isError).toBe(true);
   });
 
   it("get_import_status says when it doesn't know the import", async () => {

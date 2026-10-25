@@ -9,27 +9,20 @@ import { normalizeTags } from "../utils/tagNormalization";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { modelUpload } from "../uploadMiddleware";
-import { deletePlateFiles, resolvePlateFilePath } from "../services/printCreation";
+import { resolvePlateFilePath } from "../services/printCreation";
 import { createUploadedModel } from "../services/uploadService";
-import {
-  plateThumbPath,
-  relocatePrintsForToken,
-  removeAssetHome,
-  assetOwnerIds,
-  removePlatePictures,
-} from "../services/printService";
+import { plateThumbPath, relocatePrintsForToken } from "../services/printService";
 import { setPrintCategory } from "../services/printCategoryService";
-import { previewImagePath, deleteAllPreviewImages } from "../services/previewImageService";
-import { deleteAllDescriptionImages, descriptionImagePath } from "../services/descriptionImageService";
+import { previewImagePath } from "../services/previewImageService";
+import { descriptionImagePath } from "../services/descriptionImageService";
 import { deleteAuthorIfOrphaned } from "../services/authorService";
-import { loadFullPrint, printOutById, printOutsByIds } from "../services/printLoader";
-import { deleteAllPrintFiles } from "../services/printFileService";
+import { printOutById, printOutsByIds } from "../services/printLoader";
 import { estimateDownloadSize, resolvePrintsForDownload, sendPrintsZip } from "../services/downloadZip";
 import { createLog } from "../services/auditLog";
 import { recordActivity } from "../services/activityService";
 import { notifyUpload } from "../services/modelNotifications";
 import { fillSourceGaps } from "../services/fillGapsService";
-import { setPrintTags, updatePrintMeta } from "../services/printEditService";
+import { deletePrint, setPrintTags, updatePrintMeta } from "../services/printEditService";
 import { isNormalizable3mf, normalize3mfStatus, normalized3mfFor } from "../services/normalized3mfCache";
 import { listPrints, listTagsOf, parseSortMode, splitList, type PrintFilters } from "../services/printQuery";
 import { printQuality, startPrintQualityCheck } from "../services/modelQualityService";
@@ -468,27 +461,6 @@ router.post(
     });
   }),
 );
-
-async function deletePrint(userId: string, printId: string): Promise<void> {
-  const full = await loadFullPrint(userId, printId);
-  const assetOwners = await assetOwnerIds(printId);
-  await deleteAllPrintFiles(printId);
-  await deleteAllPreviewImages(printId);
-  await deleteAllDescriptionImages(printId);
-  await prisma.print.delete({ where: { id: printId } });
-  for (const plate of full.plates) {
-    await deletePlateFiles(plate);
-    await removePlatePictures(plate.id, full.print.assetsPath);
-  }
-  await removeAssetHome(full.print.assetsPath, assetOwners);
-  void recordActivity(userId, "delete", printId, full.print.name);
-  void createLog({
-    userId,
-    action: "model_deleted",
-    targetId: printId,
-    details: { name: full.print.name },
-  });
-}
 
 router.delete(
   "/print/:id",

@@ -290,6 +290,14 @@
               "title": "Quitar un archivo del modelo",
               "description": "Borra para siempre uno de los archivos de un modelo."
             },
+            "rename_model_file": {
+              "title": "Renombrar un archivo del modelo",
+              "description": "Renombra una de las placas de un modelo."
+            },
+            "delete_model": {
+              "title": "Borrar un modelo",
+              "description": "Borra para siempre un modelo con sus archivos e imágenes."
+            },
             "create_category": {
               "title": "Crear una categoría",
               "description": "Crea una categoría o carpeta nueva."
@@ -301,6 +309,10 @@
             "add_to_collection": {
               "title": "Añadir a una colección",
               "description": "Pon modelos de tu biblioteca en una de tus colecciones."
+            },
+            "remove_from_collection": {
+              "title": "Quitar de una colección",
+              "description": "Saca modelos de una de tus colecciones."
             },
             "widget_guide": {
               "title": "Guía de widgets",

@@ -288,6 +288,14 @@
               "title": "Pašalinti modelio failą",
               "description": "Visam laikui ištrinti vieną modelio failą."
             },
+            "rename_model_file": {
+              "title": "Pervadinti modelio failą",
+              "description": "Pervadinti vieną modelio plokštę."
+            },
+            "delete_model": {
+              "title": "Ištrinti modelį",
+              "description": "Visam laikui ištrinti modelį su jo failais ir nuotraukomis."
+            },
             "create_category": {
               "title": "Sukurti kategoriją",
               "description": "Sukurti naują kategoriją ar aplanką."
@@ -299,6 +307,10 @@
             "add_to_collection": {
               "title": "Įtraukti į kolekciją",
               "description": "Įdėti bibliotekos modelius į vieną iš jūsų kolekcijų."
+            },
+            "remove_from_collection": {
+              "title": "Išimti iš kolekcijos",
+              "description": "Išimti modelius iš vienos iš jūsų kolekcijų."
             },
             "widget_guide": {
               "title": "Valdiklių vadovas",

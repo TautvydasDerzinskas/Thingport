@@ -287,6 +287,14 @@
               "title": "Remove a model file",
               "description": "Delete one of a model's files for good."
             },
+            "rename_model_file": {
+              "title": "Rename a model file",
+              "description": "Rename one of a model's plates."
+            },
+            "delete_model": {
+              "title": "Delete a model",
+              "description": "Delete a model with its files and pictures, for good."
+            },
             "create_category": {
               "title": "Create a category",
               "description": "Make a new category or folder."
@@ -298,6 +306,10 @@
             "add_to_collection": {
               "title": "Add to a collection",
               "description": "Put models from your library in one of your collections."
+            },
+            "remove_from_collection": {
+              "title": "Remove from a collection",
+              "description": "Take models out of one of your collections."
             },
             "widget_guide": {
               "title": "Widget guide",

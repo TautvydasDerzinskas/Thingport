@@ -2,12 +2,18 @@ import type { Prisma, Print } from "@prisma/client";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { normalizeTags } from "../utils/tagNormalization";
-import { relocatePrint, uniqueModelName } from "./printService";
+import { assetOwnerIds, relocatePrint, removeAssetHome, removePlatePictures, uniqueModelName } from "./printService";
 import { forgetAiDescription } from "./aiDescriptionService";
 import { localizeDescriptionImages, pruneDescriptionImages } from "./descriptionImageService";
 import { createLog } from "./auditLog";
+import { recordActivity } from "./activityService";
+import { loadFullPrint } from "./printLoader";
+import { deleteAllPrintFiles } from "./printFileService";
+import { deleteAllPreviewImages } from "./previewImageService";
+import { deleteAllDescriptionImages } from "./descriptionImageService";
+import { deletePlateFiles } from "./printCreation";
 
-// Editing a model's details, shared by the model page's routes and the MCP edit_model tool.
+// Editing and deleting a model, shared by the model page's routes and the MCP tools.
 
 async function ownPrint(userId: string, printId: string): Promise<Print> {
   const print = await prisma.print.findFirst({ where: { id: printId, userId } });
@@ -66,4 +72,26 @@ export async function updatePrintMeta(userId: string, printId: string, meta: Pri
     details: { field: "meta", name: updated.name },
   });
   return updated;
+}
+
+/** Deletes the model with its files and pictures, for good. */
+export async function deletePrint(userId: string, printId: string): Promise<void> {
+  const full = await loadFullPrint(userId, printId);
+  const assetOwners = await assetOwnerIds(printId);
+  await deleteAllPrintFiles(printId);
+  await deleteAllPreviewImages(printId);
+  await deleteAllDescriptionImages(printId);
+  await prisma.print.delete({ where: { id: printId } });
+  for (const plate of full.plates) {
+    await deletePlateFiles(plate);
+    await removePlatePictures(plate.id, full.print.assetsPath);
+  }
+  await removeAssetHome(full.print.assetsPath, assetOwners);
+  void recordActivity(userId, "delete", printId, full.print.name);
+  void createLog({
+    userId,
+    action: "model_deleted",
+    targetId: printId,
+    details: { name: full.print.name },
+  });
 }
