@@ -102,17 +102,17 @@ export async function startLinksJob(
 
 /** Pausing only flips the status: the runner finishes the link it's on, then stops. */
 export async function pauseLinksJob(job: ImportJob): Promise<void> {
-  if (job.type === "COLLECTION" || job.type === "ZIP" || job.type === "PROFILES") {
-    if (!job.payload) throw new HttpError(400, "This older import has no saved request");
+  if (job.type === "SINGLE" || job.type === "COLLECTION" || job.type === "ZIP" || job.type === "PROFILES") {
+    if (job.type !== "SINGLE" && !job.payload) throw new HttpError(400, "This older import has no saved request");
     // These runners finish the current batch; they have no safe mid-batch pause checkpoint.
     const { count } = await prisma.importJob.updateMany({
       where: { id: job.id, status: "QUEUED" },
       data: { status: "PAUSED" },
     });
-    if (!count) throw new HttpError(409, "Only a waiting batch import can be paused");
+    if (!count) throw new HttpError(409, "Only a waiting import can be paused; a running import must finish first");
     return;
   }
-  if (job.type !== "LINKS" && job.type !== "SINGLE") throw new HttpError(400, "This import cannot be paused");
+  if (job.type !== "LINKS") throw new HttpError(400, "This import cannot be paused");
   const { count } = await prisma.importJob.updateMany({
     where: { id: job.id, status: { in: ["RUNNING", "QUEUED"] } },
     data: { status: "PAUSED" },
@@ -242,7 +242,10 @@ function assertIdle(job: ImportJob): void {
 }
 
 async function deleteJob(job: ImportJob): Promise<void> {
-  await prisma.importJob.delete({ where: { id: job.id } });
+  const { count } = await prisma.importJob.deleteMany({
+    where: { id: job.id, status: job.status },
+  });
+  if (!count) throw new HttpError(409, "This import changed while it was being deleted");
 }
 
 export async function deleteQueueJob(jobId: string): Promise<void> {
@@ -342,8 +345,8 @@ export async function pauseAll(): Promise<number> {
   const { count } = await prisma.importJob.updateMany({
     where: {
       OR: [
-        { type: { in: ["SINGLE", "LINKS"] }, status: { in: ["RUNNING", "QUEUED"] } },
-        { type: { in: ["COLLECTION", "ZIP", "PROFILES"] }, status: "QUEUED" },
+        { type: "LINKS", status: { in: ["RUNNING", "QUEUED"] } },
+        { type: { in: ["SINGLE", "COLLECTION", "ZIP", "PROFILES"] }, status: "QUEUED" },
       ],
     },
     data: { status: "PAUSED" },

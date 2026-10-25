@@ -1,5 +1,9 @@
-import { PrismaClient } from "@prisma/client";
-import { setActiveClient } from "../db";
+import { Prisma, PrismaClient } from "@prisma/client";
+import { prisma, setActiveClient } from "../db";
+import { HttpError } from "../utils/fileUtils";
+import { withDatabaseSwitchGate } from "./databaseSwitchGate";
+import { hasActiveCollectionSync } from "./collectionSyncRunner";
+import { withImportSchedulerStopped } from "./importScheduler";
 
 export type PostgresCredentials = {
   database: string;
@@ -79,7 +83,28 @@ export async function testAndSwitchDatabase(creds: PostgresCredentials): Promise
     throw new Error(friendlyConnectionError(err), { cause: err });
   }
 
-  setActiveClient(candidate, url);
-  active = creds;
-  return getDatabaseInfo();
+  try {
+    return await withDatabaseSwitchGate(async () => {
+      // A sync can be waiting for a queued import. Stopping claims and then waiting for
+      // that sync would deadlock; keep the old database and ask for a retry once it settles.
+      if (hasActiveCollectionSync())
+        throw new HttpError(409, "Wait for collection syncs to finish before switching databases");
+      const directImport = await prisma.importJob.findFirst({
+        where: {
+          status: "RUNNING",
+          OR: [{ payload: { path: ["immediate"], equals: true } }, { payload: { equals: Prisma.DbNull } }],
+        },
+        select: { id: true },
+      });
+      if (directImport) throw new HttpError(409, "Wait for direct imports to finish before switching databases");
+      return withImportSchedulerStopped(() => {
+        setActiveClient(candidate, url);
+        active = creds;
+        return getDatabaseInfo();
+      });
+    });
+  } catch (err) {
+    await candidate.$disconnect().catch(() => undefined);
+    throw err;
+  }
 }
