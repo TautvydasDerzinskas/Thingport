@@ -186,6 +186,21 @@ describe("release notes", () => {
       // A file left behind a whole line never stands in for a later release's notes.
       const later = await getReleaseNotes({ version: "1.3.1", since: "1.1.0" }, "https://notes.example");
       expect(later?.source).toBe("changelog");
+
+      // A patch that wasn't quiet brings its own changelog entries ahead of the curated notes.
+      files["/backend/CHANGELOG.md"] = BACKEND_CHANGELOG.replace(
+        "\n# [thingport-backend-v1.2.0]",
+        "\n## [thingport-backend-v1.2.1](https://github.com/o/r/compare/a...b) (2026-11-05)\n\n\n### Bug Fixes\n\n" +
+          "* hotfix the import ([1212121](https://github.com/o/r/commit/1212121a))\n\n# [thingport-backend-v1.2.0]",
+      );
+      clearReleaseNotesCache();
+      const patched = await getReleaseNotes({ version: "1.2.1", since: "1.1.0" }, "https://notes.example");
+      expect(patched?.source).toBe("curated");
+      expect(patched?.items.map((i) => i.title)).toEqual([
+        "Hotfix the import",
+        "Curated feature",
+        "Load listings faster",
+      ]);
     } finally {
       fetchMock.mockRestore();
       clearReleaseNotesCache();

@@ -400,11 +400,11 @@ export async function getReleaseNotes(
   const since = options.since && SEMVER.test(options.since) ? options.since : null;
   const frontendVersion =
     options.frontendVersion && SEMVER.test(options.frontendVersion) ? options.frontendVersion : null;
-  const fromChangelogs = (earlierOnly: boolean, upTo = version) =>
+  const fromChangelogs = (earlierOnly: boolean, upTo = version, after = since) =>
     backendText
       ? notesFromChangelogs(parseChangelog(backendText), parseChangelog(frontendText ?? ""), {
           version: upTo,
-          since,
+          since: after,
           frontendVersion,
           earlierOnly,
         })
@@ -428,10 +428,12 @@ export async function getReleaseNotes(
   if (curated && covers) {
     // Someone who skipped releases gets theirs from the changelog after the curated ones; commit links aren't
     // "Learn more" links.
+    // A patch past the curated release brings its own changelog entries, ahead of the notes it builds on.
+    const later = curated.version === version ? [] : fromChangelogs(false, version, curated.version);
     const earlier = fromChangelogs(true, curated.version);
-    for (const item of earlier) item.url = null;
+    for (const item of [...later, ...earlier]) item.url = null;
     // The version the instance is actually on, so the dialog's heading matches what it updated to.
-    return { ...curated, version, items: [...curated.items, ...earlier], releases_url };
+    return { ...curated, version, items: [...later, ...curated.items, ...earlier], releases_url };
   }
 
   if (!backendText) return empty;
