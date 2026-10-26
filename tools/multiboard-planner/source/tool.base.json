@@ -1,0 +1,30 @@
+{
+  "name": "Multiboard planner",
+  "description": "Plans a Multiboard wall: the layout, and every tile and mount to print it, from your own library.",
+  "version": "1.0.0",
+  "author": "Thingport contributors",
+  "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
+  "window": {
+    "width": 1280,
+    "height": 780
+  },
+  "hosts": [],
+  "screenshots": [
+    {
+      "file": "screenshots/grid-tiles.webp",
+      "caption": "Grid tiles with offset snaps: corners, edges and core tiles, and every snap counted, single, dual or quad."
+    },
+    {
+      "file": "screenshots/single-tiles-dark.webp",
+      "caption": "Single bordered tiles joined by dual clips, standing free, in the dark theme."
+    },
+    {
+      "file": "screenshots/inches.webp",
+      "caption": "A wall measured in inches, with the strips that fill its edges and the space left over."
+    }
+  ],
+  "collection": {
+    "name": "Multiboard models",
+    "description": "The Multiboard tiles and mounts the Multiboard planner lists, fetched from Thangs when the tool was installed. Multiboard is MultiBuild's design: see multibuild.io/license."
+  }
+}
