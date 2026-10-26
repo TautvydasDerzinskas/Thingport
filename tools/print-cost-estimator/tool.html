@@ -1,0 +1,1292 @@
+<style>
+  /* Everything is under .pce, so none of it reaches the rest of Thingport. The colours are Thingport's own: tool.js
+     sets the variables below from the theme it's given, which is why there is no hex code in here. */
+  .pce {
+    --panel-2: color-mix(in srgb, var(--panel) 92%, var(--text));
+    --panel-3: color-mix(in srgb, var(--panel) 85%, var(--text));
+    --line: var(--divider);
+    --tint: color-mix(in srgb, var(--accent) 14%, transparent);
+    --ease: cubic-bezier(0.2, 0, 0.2, 1);
+    position: relative;
+    container-type: inline-size;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font: 13px/1.45 var(--font);
+  }
+  .pce *,
+  .pce *::before,
+  .pce *::after {
+    box-sizing: border-box;
+  }
+  .pce button,
+  .pce input,
+  .pce select {
+    font: inherit;
+    color: inherit;
+  }
+  .pce :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .pce [hidden] {
+    display: none !important;
+  }
+  .pce svg {
+    flex-shrink: 0;
+  }
+  .pce h2,
+  .pce h3 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  /* ---- the bar across the top ---- */
+  .pce-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
+  }
+  .pce-spacer {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .pce-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel-2);
+    cursor: pointer;
+    white-space: nowrap;
+    transition:
+      background 140ms var(--ease),
+      border-color 140ms var(--ease),
+      transform 140ms var(--ease);
+  }
+  .pce-btn:hover:not(:disabled) {
+    background: var(--panel-3);
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  }
+  .pce-btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  .pce-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  .pce-btn-main {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+  }
+  .pce-btn-main:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 85%, var(--text));
+    border-color: color-mix(in srgb, var(--accent) 85%, var(--text));
+  }
+  .pce-icon {
+    width: 30px;
+    padding: 0;
+    justify-content: center;
+  }
+  .pce-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel-2);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .pce-chip b {
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- the three panels ---- */
+  .pce-main {
+    flex: 1 1 auto;
+    display: grid;
+    gap: 10px;
+    padding: 10px;
+    min-height: 0;
+    grid-template-columns: 280px minmax(0, 1fr) 320px;
+    grid-template-rows: minmax(0, 1fr);
+    overflow: auto;
+  }
+  @container (max-width: 1099px) {
+    .pce-main {
+      grid-template-columns: 250px minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr) auto;
+    }
+    .pce-queue {
+      grid-row: span 2;
+    }
+  }
+  @container (max-width: 759px) {
+    .pce-main {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: none;
+      align-content: start;
+      overflow: auto;
+    }
+    .pce-queue {
+      grid-row: auto;
+    }
+  }
+  .pce-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--panel);
+    overflow: auto;
+    animation: pce-rise 220ms var(--ease) both;
+  }
+  @keyframes pce-rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+  .pce-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 24px;
+  }
+  .pce-head h2 {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .pce-hint {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 400;
+  }
+
+  /* ---- the drop zone and the queue ---- */
+  .pce-drop {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 14px 10px;
+    border: 1.5px dashed color-mix(in srgb, var(--accent) 40%, var(--line));
+    border-radius: 10px;
+    background: none;
+    color: var(--muted);
+    text-align: center;
+    cursor: pointer;
+    transition:
+      background 160ms var(--ease),
+      border-color 160ms var(--ease);
+  }
+  .pce-drop:hover,
+  .pce-drop:focus-visible {
+    background: var(--tint);
+    border-color: var(--accent);
+  }
+  .pce-drop b {
+    color: var(--text);
+  }
+  .pce-drop svg {
+    color: var(--accent);
+  }
+  .pce.pce-dragging .pce-drop {
+    background: var(--tint);
+    border-color: var(--accent);
+  }
+  .pce-veil {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    display: none;
+    place-items: center;
+    background: color-mix(in srgb, var(--bg) 78%, transparent);
+    font-weight: 600;
+    pointer-events: none;
+  }
+  .pce.pce-dragging .pce-veil {
+    display: grid;
+  }
+
+  .pce-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 0;
+    overflow: auto;
+  }
+  .pce-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 2px 6px;
+    padding: 7px 8px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--panel-2);
+    cursor: pointer;
+    animation: pce-in 200ms var(--ease) both;
+    transition:
+      border-color 140ms var(--ease),
+      background 140ms var(--ease);
+  }
+  @keyframes pce-in {
+    from {
+      opacity: 0;
+      transform: translateX(-6px);
+    }
+  }
+  @keyframes pce-out {
+    to {
+      opacity: 0;
+      transform: translateX(-10px);
+    }
+  }
+  .pce-item.pce-going {
+    animation: pce-out 160ms var(--ease) both;
+  }
+  .pce-item:hover {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  }
+  .pce-item[aria-selected="true"] {
+    border-color: var(--accent);
+    background: var(--tint);
+  }
+  .pce-item-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+  }
+  .pce-item-sum {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .pce-item-sum b {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .pce-tag {
+    padding: 0 5px;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    background: var(--panel);
+    color: var(--muted);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .pce-tag-exact {
+    border-color: color-mix(in srgb, var(--success) 50%, var(--line));
+    color: var(--success);
+  }
+  .pce-tag-guess {
+    border-color: color-mix(in srgb, var(--warning) 50%, var(--line));
+    color: var(--warning);
+  }
+  .pce-spin {
+    width: 13px;
+    height: 13px;
+    border: 2px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: pce-turn 700ms linear infinite;
+  }
+  @keyframes pce-turn {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  .pce-empty {
+    padding: 10px 2px;
+    color: var(--muted);
+    text-align: center;
+  }
+  .pce-skeleton {
+    border-radius: 8px;
+    background: linear-gradient(90deg, var(--panel-2), var(--panel-3), var(--panel-2));
+    background-size: 200% 100%;
+    animation: pce-sweep 1.1s linear infinite;
+  }
+  @keyframes pce-sweep {
+    to {
+      background-position: -200% 0;
+    }
+  }
+  .pce-batch {
+    display: grid;
+    gap: 2px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+    font-variant-numeric: tabular-nums;
+  }
+  .pce-batch div {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .pce-batch span {
+    color: var(--muted);
+  }
+
+  /* ---- the part, its view and its figures ---- */
+  .pce-view {
+    position: relative;
+    min-height: 180px;
+    flex: 1 1 auto;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: radial-gradient(circle at 50% 35%, var(--panel-2), var(--panel));
+    overflow: hidden;
+  }
+  .pce-view canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+    touch-action: none;
+  }
+  .pce-view-tools {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: flex;
+    gap: 4px;
+  }
+  .pce-view-size {
+    position: absolute;
+    bottom: 6px;
+    left: 8px;
+    color: var(--muted);
+    font-size: 11.5px;
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+  }
+  .pce-view-note {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    color: var(--muted);
+    text-align: center;
+  }
+  /* A sliced file holds no shape to draw, so the view gives its room back to the figures instead of sitting empty. */
+  .pce-view-flat {
+    flex: 0 0 auto;
+    min-height: 0;
+    height: 64px;
+    background: var(--panel-2);
+  }
+  .pce-view-flat canvas,
+  .pce-view-flat .pce-view-tools,
+  .pce-view-flat .pce-view-size {
+    display: none;
+  }
+  .pce-view-flat .pce-view-note {
+    font-size: 12px;
+  }
+
+  /* On and off, as Thingport's own switches look. */
+  .pce-switch {
+    position: relative;
+    display: inline-flex;
+    flex: 0 0 auto;
+    width: 36px;
+    height: 20px;
+  }
+  .pce-switch input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .pce-switch span {
+    width: 100%;
+    height: 100%;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--panel-3);
+    pointer-events: none;
+    transition:
+      background 160ms var(--ease),
+      border-color 160ms var(--ease);
+  }
+  .pce-switch span::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition:
+      transform 160ms var(--ease),
+      background 160ms var(--ease);
+  }
+  .pce-switch input:checked + span {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .pce-switch input:checked + span::after {
+    transform: translateX(16px);
+    background: var(--accent-ink);
+  }
+  .pce-switch input:focus-visible + span {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .pce-btn-on {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  .pce-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+    gap: 6px;
+  }
+  .pce-fact {
+    padding: 5px 7px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel-2);
+  }
+  .pce-fact span {
+    display: block;
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .pce-fact b {
+    font-variant-numeric: tabular-nums;
+  }
+  .pce-fact-warn b {
+    color: var(--warning);
+  }
+  .pce-fact-bad b {
+    color: var(--danger);
+  }
+
+  .pce-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+    gap: 8px;
+  }
+  .pce-field {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+  }
+  .pce-field label {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    color: var(--muted);
+    font-size: 11.5px;
+  }
+  .pce-in {
+    display: flex;
+    align-items: center;
+    height: 28px;
+    padding: 0 7px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--bg);
+    transition: border-color 140ms var(--ease);
+  }
+  .pce-in:focus-within {
+    border-color: var(--accent);
+  }
+  .pce-in input,
+  .pce-in select {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    background: none;
+    outline: none;
+    font-variant-numeric: tabular-nums;
+  }
+  .pce-in select {
+    cursor: pointer;
+  }
+  .pce-in i {
+    color: var(--muted);
+    font-size: 11px;
+    font-style: normal;
+    white-space: nowrap;
+  }
+  .pce-in-set {
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  }
+  .pce-help {
+    width: 15px;
+    height: 15px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: var(--panel-2);
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1;
+    cursor: help;
+  }
+  .pce-help:hover {
+    color: var(--text);
+    border-color: var(--accent);
+  }
+  .pce-note {
+    padding: 7px 9px;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    background: var(--panel-2);
+    color: var(--muted);
+    font-size: 12px;
+    animation: pce-rise 180ms var(--ease) both;
+  }
+  .pce-note-warn {
+    border-left-color: var(--warning);
+  }
+  .pce-note-bad {
+    border-left-color: var(--danger);
+    color: var(--text);
+  }
+  .pce-note b {
+    color: var(--text);
+  }
+
+  /* ---- the money ---- */
+  .pce-hero {
+    display: grid;
+    gap: 2px;
+    padding: 10px 12px;
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line));
+    border-radius: 10px;
+    background: var(--tint);
+  }
+  .pce-hero span {
+    color: var(--muted);
+    font-size: 11.5px;
+  }
+  .pce-hero strong {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+  .pce-hero em {
+    color: var(--muted);
+    font-size: 11.5px;
+    font-style: normal;
+  }
+  /* The stacked bar: one segment a layer of the cost, with a 2px gap of the panel between them so neighbours never
+     touch, and every segment also named with its figure in the legend below. */
+  .pce-bar-chart {
+    display: flex;
+    height: 14px;
+    border-radius: 7px;
+    background: var(--panel-3);
+    overflow: hidden;
+  }
+  .pce-seg {
+    min-width: 0;
+    box-shadow: -2px 0 0 0 var(--panel);
+    transition: width 320ms var(--ease);
+  }
+  .pce-seg:first-child {
+    box-shadow: none;
+  }
+  .pce-legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 3px;
+  }
+  .pce-legend li {
+    display: grid;
+    grid-template-columns: 9px minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 7px;
+    font-variant-numeric: tabular-nums;
+  }
+  .pce-legend i {
+    width: 9px;
+    height: 9px;
+    border-radius: 3px;
+  }
+  .pce-legend b {
+    font-weight: 600;
+  }
+  .pce-legend em {
+    width: 34px;
+    color: var(--muted);
+    font-size: 11.5px;
+    font-style: normal;
+    text-align: right;
+  }
+  .pce-legend .pce-legend-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .pce-rows {
+    display: grid;
+    gap: 4px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+    font-variant-numeric: tabular-nums;
+  }
+  .pce-rows div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .pce-rows span {
+    color: var(--muted);
+  }
+  .pce-rows b {
+    font-weight: 600;
+  }
+  .pce-good {
+    color: var(--success);
+  }
+  .pce-bad {
+    color: var(--danger);
+  }
+
+  /* ---- the sheets: setup, the library, saved estimates ---- */
+  .pce-sheet {
+    position: absolute;
+    inset: 0;
+    z-index: 8;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: color-mix(in srgb, var(--bg) 70%, transparent);
+    animation: pce-fade 140ms var(--ease) both;
+  }
+  @keyframes pce-fade {
+    from {
+      opacity: 0;
+    }
+  }
+  .pce-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(680px, 100%);
+    max-height: 100%;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--panel);
+    box-shadow: 0 18px 50px color-mix(in srgb, #000 28%, transparent);
+    overflow: auto;
+    animation: pce-pop 200ms var(--ease) both;
+  }
+  @keyframes pce-pop {
+    from {
+      opacity: 0;
+      transform: translateY(10px) scale(0.985);
+    }
+  }
+  .pce-card h2 {
+    font-size: 14px;
+  }
+  .pce-group {
+    display: grid;
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--panel-2);
+  }
+  .pce-group h3 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 11.5px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .pce-tabs {
+    display: inline-flex;
+    padding: 2px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--panel-2);
+  }
+  .pce-tabs button {
+    height: 24px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 7px;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    transition:
+      background 140ms var(--ease),
+      color 140ms var(--ease);
+  }
+  .pce-tabs button[aria-selected="true"] {
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+  }
+  .pce-found {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+    min-height: 120px;
+    max-height: 46vh;
+    overflow: auto;
+  }
+  .pce-model {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 9px;
+    align-items: center;
+    padding: 6px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--panel-2);
+    animation: pce-in 180ms var(--ease) both;
+  }
+  .pce-model img,
+  .pce-model .pce-thumb {
+    width: 42px;
+    height: 42px;
+    border-radius: 7px;
+    background: var(--panel-3);
+    object-fit: cover;
+  }
+  .pce-model b {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .pce-files {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 3px;
+  }
+  .pce-files button {
+    height: 23px;
+    padding: 0 8px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--panel);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 11.5px;
+    transition:
+      background 140ms var(--ease),
+      color 140ms var(--ease),
+      border-color 140ms var(--ease);
+  }
+  .pce-files button:hover {
+    border-color: var(--accent);
+    background: var(--tint);
+    color: var(--text);
+  }
+  .pce-saved {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+    max-height: 50vh;
+    overflow: auto;
+  }
+  .pce-saved li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 2px 8px;
+    align-items: center;
+    padding: 7px 9px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--panel-2);
+    animation: pce-in 180ms var(--ease) both;
+  }
+  .pce-saved b {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .pce-saved .pce-item-sum {
+    grid-column: 1 / -1;
+  }
+  .pce-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  /* ---- the menu on a part ---- */
+  .pce-menu {
+    position: absolute;
+    z-index: 9;
+    min-width: 190px;
+    padding: 4px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--panel);
+    box-shadow: 0 12px 34px color-mix(in srgb, #000 26%, transparent);
+    animation: pce-pop 140ms var(--ease) both;
+  }
+  .pce-menu button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    height: 28px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 7px;
+    background: none;
+    cursor: pointer;
+    text-align: left;
+  }
+  .pce-menu button:hover:not(:disabled) {
+    background: var(--tint);
+  }
+  .pce-menu button:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+  .pce-menu hr {
+    margin: 4px 2px;
+    border: 0;
+    border-top: 1px solid var(--line);
+  }
+  .pce-menu .pce-danger {
+    color: var(--danger);
+  }
+
+  /* One column: the panels grow with what's in them and the window scrolls past them, rather than each panel keeping
+     a scrollbar of its own — three nested scrolling areas on a narrow screen is one way to lose a list. These come
+     last so they win over the panels' own rules above. */
+  @container (max-width: 759px) {
+    /* Stacked, it's the window that scrolls, not the grid inside it: with no height to divide up, each panel is
+       simply as tall as what's in it. */
+    .pce {
+      overflow: auto;
+    }
+    .pce-main {
+      flex: 0 0 auto;
+      overflow: visible;
+    }
+    .pce-panel,
+    .pce-list,
+    .pce-found,
+    .pce-saved {
+      max-height: none;
+      min-height: auto;
+      overflow: visible;
+    }
+    /* With the panel no longer scrolling, nothing inside it may shrink to fit: a list that can would collapse to
+       nothing and take the parts with it. */
+    .pce-panel > * {
+      flex: 0 0 auto;
+    }
+    .pce-list {
+      min-height: auto;
+    }
+    .pce-view {
+      height: 260px;
+      min-height: 0;
+    }
+    .pce-queue > .pce-spacer {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pce *,
+    .pce *::before,
+    .pce *::after {
+      animation-duration: 1ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 1ms !important;
+    }
+  }
+</style>
+
+<div class="pce">
+  <div class="pce-bar">
+    <button type="button" class="pce-btn pce-btn-main" id="pce-add">
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M12 5v14M5 12h14" />
+      </svg>
+      Add files
+    </button>
+    <button type="button" class="pce-btn" id="pce-library">
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="m21 21-4.3-4.3M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z" />
+      </svg>
+      From the library
+    </button>
+    <div class="pce-spacer"></div>
+    <div class="pce-chip" id="pce-totals" role="status" aria-live="polite" hidden></div>
+    <button type="button" class="pce-btn" id="pce-saved-open">
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2Z" />
+      </svg>
+      Saved
+    </button>
+    <button type="button" class="pce-btn" id="pce-setup-open">
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="3" />
+        <path
+          d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 4.6 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 11.5 4a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 19.4 11a2 2 0 1 1 0 4Z"
+        />
+      </svg>
+      Setup
+    </button>
+  </div>
+
+  <div class="pce-main">
+    <section class="pce-panel pce-queue" aria-labelledby="pce-queue-title">
+      <div class="pce-head">
+        <h2 id="pce-queue-title">Parts</h2>
+        <div class="pce-spacer"></div>
+        <button
+          type="button"
+          class="pce-btn pce-icon"
+          id="pce-export"
+          title="Download every part as a CSV"
+          aria-label="Download every part as a CSV"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="pce-btn pce-icon"
+          id="pce-clear"
+          title="Remove every part"
+          aria-label="Remove every part"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6" />
+          </svg>
+        </button>
+      </div>
+      <button type="button" class="pce-drop" id="pce-drop">
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M12 16V4m0 0 4 4m-4-4-4 4M4 16v2a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-2" />
+        </svg>
+        <b>Drop a model here</b>
+        <span>STL, OBJ, 3MF — or what your slicer exported</span>
+      </button>
+      <ul class="pce-list" id="pce-list"></ul>
+      <div class="pce-spacer"></div>
+      <div class="pce-batch" id="pce-batch" hidden></div>
+    </section>
+
+    <section class="pce-panel pce-part" aria-labelledby="pce-part-title">
+      <div class="pce-head">
+        <h2 id="pce-part-title">The part</h2>
+        <div class="pce-spacer"></div>
+        <span class="pce-tag" id="pce-kind" hidden></span>
+        <button
+          type="button"
+          class="pce-btn pce-icon"
+          id="pce-more"
+          title="What to do with this part"
+          aria-label="What to do with this part"
+          aria-haspopup="menu"
+          disabled
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <circle cx="12" cy="5" r="1.8" />
+            <circle cx="12" cy="12" r="1.8" />
+            <circle cx="12" cy="19" r="1.8" />
+          </svg>
+        </button>
+      </div>
+      <div class="pce-view" id="pce-view">
+        <canvas id="pce-canvas" tabindex="0" aria-label="The part on the bed: drag to turn it, scroll to zoom"></canvas>
+        <div class="pce-view-tools">
+          <button
+            type="button"
+            class="pce-btn pce-icon"
+            id="pce-overhangs"
+            title="Pick out the faces that need support"
+            aria-label="Pick out the faces that need support"
+            aria-pressed="false"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M3 5h12a6 6 0 0 1 0 12H9m0 0 3-3m-3 3 3 3" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="pce-btn pce-icon"
+            id="pce-recentre"
+            title="Back to the starting view"
+            aria-label="Back to the starting view"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M3 12a9 9 0 1 0 3-6.7M3 4v4h4" />
+            </svg>
+          </button>
+        </div>
+        <div class="pce-view-size" id="pce-size"></div>
+        <div class="pce-view-note" id="pce-view-note">Nothing to show yet.</div>
+      </div>
+      <div class="pce-facts" id="pce-facts"></div>
+      <div id="pce-messages"></div>
+      <div class="pce-fields" id="pce-fields"></div>
+    </section>
+
+    <section class="pce-panel pce-money" aria-labelledby="pce-money-title">
+      <div class="pce-head">
+        <h2 id="pce-money-title">Cost and price</h2>
+        <div class="pce-spacer"></div>
+        <span class="pce-hint" id="pce-money-hint"></span>
+      </div>
+      <div id="pce-money"></div>
+    </section>
+  </div>
+
+  <div class="pce-veil" aria-hidden="true">Drop to add</div>
+  <input type="file" id="pce-file" multiple accept=".stl,.obj,.3mf,.gcode,.gco,.g,.bgcode" hidden />
+
+  <div class="pce-sheet" id="pce-setup" role="dialog" aria-modal="true" aria-labelledby="pce-setup-title" hidden>
+    <div class="pce-card">
+      <div class="pce-head">
+        <h2 id="pce-setup-title">Setup</h2>
+        <span class="pce-hint">Kept on this Thingport, for you</span>
+        <div class="pce-spacer"></div>
+        <button type="button" class="pce-btn pce-icon" id="pce-setup-close" aria-label="Close the setup">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </div>
+      <div class="pce-tabs" id="pce-setup-tabs" role="tablist"></div>
+      <div id="pce-setup-body"></div>
+      <div class="pce-actions">
+        <button type="button" class="pce-btn" id="pce-setup-reset">Back to the defaults</button>
+        <div class="pce-spacer"></div>
+        <button type="button" class="pce-btn pce-btn-main" id="pce-setup-done">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="pce-sheet" id="pce-picker" role="dialog" aria-modal="true" aria-labelledby="pce-picker-title" hidden>
+    <div class="pce-card">
+      <div class="pce-head">
+        <h2 id="pce-picker-title">From the library</h2>
+        <div class="pce-spacer"></div>
+        <button type="button" class="pce-btn pce-icon" id="pce-picker-close" aria-label="Close the library">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </div>
+      <div class="pce-in">
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          aria-hidden="true"
+        >
+          <path d="m21 21-4.3-4.3M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z" />
+        </svg>
+        <input type="search" id="pce-search" placeholder="Search your models" aria-label="Search your models" />
+      </div>
+      <ul class="pce-found" id="pce-found"></ul>
+      <p class="pce-hint" id="pce-picker-hint"></p>
+    </div>
+  </div>
+
+  <div class="pce-sheet" id="pce-saved" role="dialog" aria-modal="true" aria-labelledby="pce-saved-title" hidden>
+    <div class="pce-card">
+      <div class="pce-head">
+        <h2 id="pce-saved-title">Saved estimates</h2>
+        <div class="pce-spacer"></div>
+        <button type="button" class="pce-btn pce-icon" id="pce-saved-close" aria-label="Close the saved estimates">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </div>
+      <ul class="pce-saved" id="pce-saved-list"></ul>
+      <div class="pce-actions">
+        <button type="button" class="pce-btn" id="pce-saved-export">Download them as a CSV</button>
+      </div>
+    </div>
+  </div>
+</div>
