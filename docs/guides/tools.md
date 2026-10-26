@@ -123,6 +123,19 @@ A tool in the repository is a folder under [`tools/`](../../tools), listed in it
 - `README.md`: what it does, what it reaches, and where its models come from.
 
 Open a pull request; a check validates the folder (`npx tsx scripts/validateTools.ts` in `backend/` runs it locally), and
-a maintainer reads the code. The [tools README](../../tools/README.md) lists what reviewers look for. To try one before
-it's merged, start the backend with `TOOLS_DIR` set to your `tools` folder, and it's offered under **Administration →
-Tools** as if it were in the repository.
+a maintainer reads the code. The [tools README](../../tools/README.md) lists what reviewers look for.
+
+### Where the tools come from
+
+**Administration → Tools** says which of these it's reading:
+
+| Thingport running                                                 | Offers the tools from                                                        |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| From a checkout: `npm run dev` ([development](../DEVELOPMENT.md)) | The checkout's own `tools` folder, read afresh each time: edit, then refresh |
+| The local `docker-compose.yml`, which builds from the checkout    | The checkout's `tools` folder, mounted into the backend                      |
+| The `:dev` image                                                  | The repository's `develop` branch on GitHub                                  |
+| The `:latest` image, or a version's                               | The repository's `main` branch on GitHub                                     |
+
+`TOOLS_DIR` points the backend at any folder instead, and `TOOLS_URL` at another repository's `tools` folder as raw
+files, such as a fork's (`https://raw.githubusercontent.com/<you>/Thingport/<branch>/tools`). From GitHub, the list is
+read again at most hourly; installing or updating a tool always reads it afresh.
