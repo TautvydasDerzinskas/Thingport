@@ -1,0 +1,1025 @@
+<style>
+  /* Everything is under .enc, so nothing reaches the rest of Thingport. Colours come from Thingport's theme; tool.js
+     sets the variables. */
+  .enc {
+    --panel-2: color-mix(in srgb, var(--panel) 90%, var(--text));
+    --line: var(--divider);
+    --tint: color-mix(in srgb, var(--accent) 12%, transparent);
+    position: relative;
+    container-type: inline-size;
+    box-sizing: border-box;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--text);
+    font: 13px/1.4 var(--font);
+  }
+  .enc *,
+  .enc *::before,
+  .enc *::after {
+    box-sizing: border-box;
+  }
+  .enc button,
+  .enc input,
+  .enc select {
+    font: inherit;
+    color: inherit;
+  }
+  .enc :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .enc [hidden] {
+    display: none !important;
+  }
+  .enc svg {
+    flex-shrink: 0;
+  }
+
+  /* The bar along the top. */
+  .enc-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 12px 0;
+    flex-wrap: wrap;
+  }
+  .enc-name {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+  .enc-name input {
+    width: 240px;
+    max-width: 40cqw;
+    height: 32px;
+    padding: 0 26px 0 10px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    font-weight: 600;
+    font-size: 14px;
+    outline: none;
+    transition:
+      border-color 0.15s,
+      background-color 0.15s;
+  }
+  .enc-name input:hover,
+  .enc-name input:focus {
+    border-color: var(--line);
+    background: var(--panel);
+  }
+  .enc-dirty {
+    position: absolute;
+    right: 10px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--warning);
+    animation: enc-pop 0.2s ease-out;
+  }
+  .enc-spacer {
+    flex: 1;
+  }
+  .enc-sep {
+    width: 1px;
+    height: 20px;
+    background: var(--line);
+    margin: 0 2px;
+  }
+
+  .enc-btn {
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    white-space: nowrap;
+    transition:
+      border-color 0.15s,
+      background-color 0.15s;
+  }
+  .enc-btn:hover:not(:disabled) {
+    border-color: var(--muted);
+  }
+  .enc-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  .enc-btn.enc-primary {
+    background: var(--accent);
+    color: var(--accent-ink);
+    border-color: transparent;
+    font-weight: 600;
+  }
+  .enc-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+  .enc-btn.enc-small {
+    height: 28px;
+    padding: 0 10px;
+    font-size: 12px;
+  }
+  .enc-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    color: var(--muted);
+    display: grid;
+    place-items: center;
+    transition:
+      background-color 0.15s,
+      color 0.15s;
+  }
+  .enc-icon-btn:hover:not(:disabled) {
+    background: var(--panel-2);
+    color: var(--text);
+  }
+  .enc-icon-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+  .enc-icon-btn svg {
+    width: 17px;
+    height: 17px;
+  }
+  .enc-icon-btn.enc-tiny {
+    width: 26px;
+    height: 26px;
+  }
+  .enc-icon-btn.enc-tiny svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .enc-main {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    gap: 12px;
+    padding: 10px 12px 12px;
+    grid-template-columns: 340px minmax(0, 1fr);
+  }
+  @container (max-width: 760px) {
+    .enc-main {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto minmax(360px, 1fr);
+      overflow: auto;
+    }
+  }
+  .enc-panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    min-height: 0;
+  }
+
+  /* Settings. */
+  .enc-settings {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .enc-tabs {
+    display: flex;
+    gap: 2px;
+    padding: 6px;
+    margin: 10px 10px 0;
+    border-radius: 10px;
+    background: var(--panel-2);
+  }
+  .enc-tabs button {
+    flex: 1;
+    border: 0;
+    background: none;
+    border-radius: 7px;
+    padding: 5px 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition:
+      background-color 0.15s,
+      color 0.15s;
+  }
+  .enc-tabs button[aria-selected="true"] {
+    background: var(--panel);
+    color: var(--text);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+  }
+  .enc-form {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 12px 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    animation: enc-fade 0.15s ease-out;
+  }
+  .enc-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .enc-section + .enc-section {
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+  .enc-section-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 24px;
+  }
+  .enc-section-head h3 {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+  .enc-help {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    display: inline-grid;
+    place-items: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--muted);
+    cursor: help;
+  }
+  .enc-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--n, 2), minmax(0, 1fr));
+    gap: 8px;
+  }
+  .enc-field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+  .enc-field > span {
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .enc-input {
+    position: relative;
+  }
+  .enc-input input,
+  .enc-input select,
+  .enc-text {
+    width: 100%;
+    height: 30px;
+    padding: 0 26px 0 8px;
+    border-radius: 7px;
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .enc-input select,
+  .enc-text {
+    padding-right: 8px;
+  }
+  .enc-input select {
+    cursor: pointer;
+  }
+  .enc-input input:focus,
+  .enc-input select:focus,
+  .enc-text:focus {
+    border-color: var(--accent);
+  }
+  .enc-input input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+  .enc-input input::-webkit-inner-spin-button,
+  .enc-input input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .enc-unit {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 11px;
+    pointer-events: none;
+  }
+
+  /* Segmented choices and chips. */
+  .enc-seg {
+    display: flex;
+    padding: 3px;
+    gap: 2px;
+    border-radius: 8px;
+    background: var(--panel-2);
+  }
+  .enc-seg button {
+    flex: 1;
+    border: 0;
+    background: none;
+    border-radius: 6px;
+    padding: 4px 6px;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition:
+      background-color 0.15s,
+      color 0.15s;
+  }
+  .enc-seg button[aria-pressed="true"] {
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+  }
+  .enc-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .enc-chips button {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    transition:
+      background-color 0.15s,
+      border-color 0.15s,
+      color 0.15s;
+  }
+  .enc-chips button[aria-pressed="true"] {
+    border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+    background: var(--tint);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* On/off switches. */
+  .enc-switch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .enc-switch input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+  }
+  .enc-switch .enc-track {
+    width: 32px;
+    height: 18px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--muted) 45%, transparent);
+    position: relative;
+    flex-shrink: 0;
+    transition: background-color 0.15s;
+  }
+  .enc-switch .enc-track::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--panel);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.25);
+    transition: transform 0.15s;
+  }
+  .enc-switch input:checked + .enc-track {
+    background: var(--accent);
+  }
+  .enc-switch input:checked + .enc-track::after {
+    transform: translateX(14px);
+  }
+  .enc-switch input:focus-visible + .enc-track {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .enc-switch b {
+    font-weight: 600;
+    font-size: 12px;
+  }
+
+  /* Lists: cutouts and standoffs. */
+  .enc-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .enc-item {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    padding: 5px 4px 5px 6px;
+    border-radius: 9px;
+    background: var(--panel-2);
+    border: 1px solid transparent;
+    cursor: pointer;
+    animation: enc-rise 0.2s ease-out both;
+  }
+  .enc-item:hover {
+    border-color: var(--line);
+  }
+  .enc-item[aria-current="true"] {
+    border-color: var(--accent);
+    background: var(--tint);
+  }
+  .enc-item svg.enc-shape {
+    width: 32px;
+    height: 24px;
+  }
+  .enc-item b {
+    display: block;
+    font-weight: 500;
+    font-size: 12.5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .enc-item small {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .enc-empty {
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+    padding: 10px 6px;
+    border: 1px dashed var(--line);
+    border-radius: 9px;
+  }
+  .enc-editor {
+    border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    animation: enc-rise 0.18s ease-out;
+  }
+  .enc-editor-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+  .enc-standoff {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) 26px;
+    gap: 4px;
+    align-items: end;
+  }
+  .enc-standoff .enc-input input {
+    padding: 0 4px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  /* The view. */
+  .enc-view {
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--panel) 100%, transparent), var(--panel-2));
+  }
+  .enc-view canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: grab;
+    touch-action: none;
+  }
+  .enc-overlay {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    pointer-events: none;
+  }
+  .enc-overlay > * {
+    pointer-events: auto;
+  }
+  .enc-overlay.enc-top-left {
+    top: 10px;
+    left: 10px;
+    flex-wrap: wrap;
+    right: 120px;
+  }
+  .enc-overlay.enc-top-right {
+    top: 10px;
+    right: 10px;
+  }
+  .enc-overlay.enc-bottom-left {
+    bottom: 10px;
+    left: 10px;
+    flex-wrap: wrap;
+    right: 10px;
+  }
+  .enc-float {
+    background: color-mix(in srgb, var(--panel) 92%, transparent);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.08);
+  }
+  .enc-float.enc-seg {
+    padding: 3px;
+  }
+  .enc-explode {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .enc-explode input {
+    width: 90px;
+    accent-color: var(--accent);
+  }
+  .enc-swatches {
+    display: flex;
+    gap: 4px;
+    padding: 5px 7px;
+  }
+  .enc-swatches button {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 25%, transparent);
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.15s;
+  }
+  .enc-swatches button[aria-pressed="true"] {
+    border-color: var(--panel);
+    box-shadow: 0 0 0 2px var(--accent);
+    transform: scale(1.08);
+  }
+  .enc-stat {
+    padding: 4px 10px;
+    font-size: 12px;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .enc-stat b {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .enc-stat span {
+    color: var(--muted);
+  }
+  .enc-building {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4px 10px;
+    font-size: 12px;
+    color: var(--muted);
+    animation: enc-fade 0.15s ease-out;
+  }
+  .enc-spinner {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    border: 2px solid color-mix(in srgb, var(--accent) 25%, transparent);
+    border-top-color: var(--accent);
+    animation: enc-spin 0.8s linear infinite;
+  }
+  .enc-warnings {
+    cursor: pointer;
+    color: var(--warning);
+    border-color: color-mix(in srgb, var(--warning) 45%, var(--line));
+  }
+  .enc-warning-list {
+    position: absolute;
+    left: 10px;
+    bottom: 48px;
+    max-width: min(460px, calc(100% - 20px));
+    padding: 10px 14px;
+    margin: 0;
+    font-size: 12px;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    animation: enc-rise 0.15s ease-out;
+  }
+  .enc-warning-list li::before {
+    content: "• ";
+    color: var(--warning);
+  }
+  .enc-novw {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+  }
+
+  /* Dialogs within the window: projects. */
+  .enc-dialog {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    background: color-mix(in srgb, var(--bg) 60%, transparent);
+    display: grid;
+    place-items: start center;
+    padding: 48px 16px 16px;
+    animation: enc-fade 0.15s ease-out;
+  }
+  .enc-card {
+    width: min(620px, 100%);
+    max-height: 100%;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 18px 50px rgb(0 0 0 / 0.25);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    animation: enc-rise 0.2s ease-out;
+  }
+  .enc-card-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .enc-card-head h2 {
+    margin: 0;
+    font-size: 15px;
+  }
+  .enc-projects {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 120px;
+  }
+  .enc-project {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    padding: 7px 6px 7px 8px;
+    border-radius: 10px;
+    background: var(--panel-2);
+    border: 1px solid transparent;
+    cursor: pointer;
+    animation: enc-rise 0.2s ease-out both;
+    transition: border-color 0.15s;
+  }
+  .enc-project:hover {
+    border-color: var(--line);
+  }
+  .enc-project[aria-current="true"] {
+    border-color: var(--accent);
+  }
+  .enc-project .enc-box-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 9px;
+    display: grid;
+    place-items: center;
+    background: var(--tint);
+    color: var(--accent);
+  }
+  .enc-project .enc-box-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+  .enc-project b {
+    display: block;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .enc-project small {
+    color: var(--muted);
+    font-size: 11.5px;
+  }
+  .enc-project.enc-leaving {
+    animation: enc-leave 0.18s ease-in both;
+  }
+
+  .enc-status {
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 4px 10px;
+    animation: enc-fade 0.2s ease-out;
+  }
+  .enc-link {
+    border: 0;
+    background: none;
+    padding: 0;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  /* Menus. */
+  .enc-menu {
+    position: absolute;
+    z-index: 20;
+    min-width: 200px;
+    padding: 4px;
+    border-radius: 10px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    box-shadow: 0 12px 32px rgb(0 0 0 / 0.22);
+    display: flex;
+    flex-direction: column;
+    transform-origin: top right;
+    animation: enc-menu 0.14s ease-out;
+  }
+  .enc-menu button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 0;
+    background: none;
+    border-radius: 7px;
+    padding: 7px 10px;
+    text-align: left;
+    cursor: pointer;
+  }
+  .enc-menu button:hover,
+  .enc-menu button:focus-visible {
+    background: var(--panel-2);
+    outline: none;
+  }
+  .enc-menu button svg {
+    width: 16px;
+    height: 16px;
+    color: var(--muted);
+  }
+  .enc-menu button.enc-danger,
+  .enc-menu button.enc-danger svg {
+    color: var(--danger);
+  }
+  .enc-menu hr {
+    border: 0;
+    border-top: 1px solid var(--line);
+    margin: 4px 2px;
+  }
+
+  @keyframes enc-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes enc-rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+  @keyframes enc-leave {
+    to {
+      opacity: 0;
+      transform: translateX(-12px);
+    }
+  }
+  @keyframes enc-fade {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes enc-pop {
+    from {
+      transform: scale(0);
+    }
+  }
+  @keyframes enc-menu {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .enc *,
+    .enc *::before,
+    .enc *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition: none !important;
+    }
+  }
+</style>
+
+<div class="enc" id="enc-shell">
+  <div class="enc-bar">
+    <label class="enc-name">
+      <input id="enc-name" maxlength="120" autocomplete="off" aria-label="Project name" />
+      <span class="enc-dirty" id="enc-dirty" title="Not saved" hidden></span>
+    </label>
+    <button class="enc-btn" id="enc-projects" type="button" title="Saved projects">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M4 5a1 1 0 0 1 1-1h4l2 2h8a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+      </svg>
+      Projects
+    </button>
+    <button
+      class="enc-icon-btn"
+      id="enc-saveProject"
+      type="button"
+      title="Save project (Ctrl+S)"
+      aria-label="Save project"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M5 4h11l3 3v13H5z" />
+        <path d="M8 4v5h7V4M8 20v-6h8v6" />
+      </svg>
+    </button>
+    <span class="enc-sep" aria-hidden="true"></span>
+    <button class="enc-icon-btn" id="enc-undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        aria-hidden="true"
+      >
+        <path d="M9 14 4 9l5-5" />
+        <path d="M4 9h10a6 6 0 0 1 0 12h-3" />
+      </svg>
+    </button>
+    <button class="enc-icon-btn" id="enc-redo" type="button" title="Redo (Ctrl+Y)" aria-label="Redo">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        aria-hidden="true"
+      >
+        <path d="m15 14 5-5-5-5" />
+        <path d="M20 9H10a6 6 0 0 0 0 12h3" />
+      </svg>
+    </button>
+    <button
+      class="enc-icon-btn"
+      id="enc-reset"
+      type="button"
+      title="Back to the defaults"
+      aria-label="Back to the defaults"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        aria-hidden="true"
+      >
+        <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+        <path d="M3 3v5h5" />
+      </svg>
+    </button>
+    <span class="enc-spacer"></span>
+    <button class="enc-btn" id="enc-download" type="button" aria-haspopup="menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+      </svg>
+      Download
+    </button>
+    <button class="enc-btn enc-primary" id="enc-saveModel" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M12 3 20 7.5v9L12 21l-8-4.5v-9z" />
+        <path d="M12 12l8-4.5M12 12v9M12 12 4 7.5" />
+      </svg>
+      Save to Thingport
+    </button>
+  </div>
+
+  <div class="enc-main">
+    <section class="enc-panel enc-settings" aria-label="Settings">
+      <div class="enc-tabs" role="tablist" aria-label="Settings" id="enc-tabs"></div>
+      <div class="enc-form" id="enc-form" role="tabpanel"></div>
+    </section>
+
+    <section class="enc-panel enc-view" id="enc-view" aria-label="The enclosure in 3D">
+      <canvas
+        id="enc-canvas"
+        tabindex="0"
+        aria-label="The enclosure in 3D. Drag or use the arrow keys to turn it, the wheel or + and − to zoom, 0 to start again."
+      ></canvas>
+      <div class="enc-overlay enc-top-left">
+        <div class="enc-seg enc-float" id="enc-show" role="group" aria-label="Show"></div>
+        <label class="enc-explode enc-float" title="Lift the lid off">
+          Lid
+          <input type="range" id="enc-explode" min="0" max="60" step="1" value="0" aria-label="Lift the lid" />
+        </label>
+        <div class="enc-swatches enc-float" id="enc-swatches" role="group" aria-label="Colour"></div>
+      </div>
+      <div class="enc-overlay enc-top-right">
+        <div class="enc-seg enc-float" id="enc-quality" role="group" aria-label="Detail"></div>
+        <button
+          class="enc-icon-btn enc-float"
+          id="enc-resetView"
+          type="button"
+          title="Reset the view"
+          aria-label="Reset the view"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M4 9V4h5M20 15v5h-5M4 15v5h5M20 9V4h-5" />
+          </svg>
+        </button>
+      </div>
+      <div class="enc-overlay enc-bottom-left">
+        <div class="enc-stat enc-float" id="enc-size"></div>
+        <div class="enc-stat enc-float" id="enc-weight"></div>
+        <button
+          class="enc-stat enc-float enc-warnings"
+          id="enc-warnings"
+          type="button"
+          aria-expanded="false"
+          hidden
+        ></button>
+        <div class="enc-building enc-float" id="enc-building" role="status" hidden>
+          <span class="enc-spinner"></span>Building…
+        </div>
+        <div class="enc-status enc-float" id="enc-status" role="status" hidden></div>
+      </div>
+      <ul class="enc-warning-list enc-float" id="enc-warningList" hidden></ul>
+    </section>
+  </div>
+
+  <div
+    class="enc-dialog"
+    id="enc-projectsDialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="enc-projectsTitle"
+    hidden
+  >
+    <div class="enc-card">
+      <div class="enc-card-head">
+        <h2 id="enc-projectsTitle">Projects</h2>
+        <span class="enc-spacer"></span>
+        <button
+          class="enc-btn enc-small"
+          id="enc-import"
+          type="button"
+          title="Open a project saved as JSON, here or on PrintCasing"
+        >
+          Import JSON
+        </button>
+        <button class="enc-btn enc-small enc-primary" id="enc-new" type="button">New project</button>
+        <button class="enc-icon-btn" id="enc-projectsClose" type="button" title="Close" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </div>
+      <ul class="enc-projects" id="enc-projectList" aria-label="Saved projects"></ul>
+      <input type="file" id="enc-importFile" accept=".json,application/json" hidden />
+    </div>
+  </div>
+
+  <div class="enc-menu" id="enc-menu" role="menu" hidden></div>
+</div>

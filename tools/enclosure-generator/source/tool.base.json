@@ -1,0 +1,26 @@
+{
+  "name": "Enclosure generator",
+  "description": "Designs a 3D-printable case for electronics: a box and lid with screws or snaps, PCB standoffs, port cutouts, vents and text, saved as a model or kept as a project to come back to.",
+  "version": "1.0.0",
+  "author": "Thingport contributors",
+  "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
+  "window": {
+    "width": 1280,
+    "height": 820
+  },
+  "hosts": [],
+  "screenshots": [
+    {
+      "file": "screenshots/pi.webp",
+      "caption": "A Raspberry Pi 4 case: the board's standoffs from its preset, labelled ports on two walls, honeycomb vents and text in the lid, which is lifted to show inside."
+    },
+    {
+      "file": "screenshots/sensor.webp",
+      "caption": "A sensor box in the dark theme: snap latches with an opening groove, mounting flanges, vents in the walls, a window for a screen and raised text on the lid."
+    },
+    {
+      "file": "screenshots/projects.webp",
+      "caption": "Projects kept to open again, duplicate, download as JSON or delete."
+    }
+  ]
+}
