@@ -9,6 +9,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import type { Theme } from "@mui/material/styles";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
 import LockIcon from "@mui/icons-material/Lock";
 import { type Collection } from "../../api/collections";
 import { type PreviewMode } from "../../api/settings";
@@ -119,7 +120,8 @@ export default function CollectionCard({
   const openTarget = soleModelId ? `/models/${soleModelId}` : `/models/collections/${collection.id}`;
   const [syncOpen, setSyncOpen] = useState(false);
   const contextMenu = useCardContextMenu();
-  const system = Boolean(collection.system_key);
+  // A tool's collection is as fixed as a built-in one: no menu, and left out of merging and deleting.
+  const system = Boolean(collection.system_key || collection.tool_id);
   // Built-in ones can't be merged or deleted, so in select mode they step back and do nothing.
   const sittingOut = selectMode && system;
   const toggleSelect = (event: React.MouseEvent | React.KeyboardEvent) => onToggleSelect?.(event.shiftKey);
@@ -280,7 +282,16 @@ export default function CollectionCard({
             <Stack direction="row" alignItems="center" spacing={1}>
               <Box sx={{ minWidth: 0, flexGrow: 1 }}>
                 <Stack direction="row" alignItems="center" spacing={0.5} minWidth={0}>
-                  {collection.system_key && <LockIcon sx={{ fontSize: 14, color: "text.disabled", flexShrink: 0 }} />}
+                  {collection.tool_id ? (
+                    <Tooltip title={t("models:collections.card.toolOwned")}>
+                      <HandymanOutlinedIcon
+                        aria-label={t("models:collections.card.toolOwned")}
+                        sx={{ fontSize: 14, color: "text.disabled", flexShrink: 0 }}
+                      />
+                    </Tooltip>
+                  ) : (
+                    collection.system_key && <LockIcon sx={{ fontSize: 14, color: "text.disabled", flexShrink: 0 }} />
+                  )}
                   <Typography
                     variant="body2"
                     fontWeight={600}

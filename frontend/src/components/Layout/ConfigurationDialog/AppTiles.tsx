@@ -18,8 +18,9 @@ function breakableName(name: string): React.ReactNode {
   return parts.length < 2 ? name : parts.flatMap((part, i) => (i ? [<wbr key={`before-${part}`} />, part] : [part]));
 }
 
-export function AppGrid({ children }: { children: React.ReactNode }) {
-  return <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, 76px)", gap: 1 }}>{children}</Box>;
+/** `column` is each tile's width, wider for a page of bigger icons than the Configuration dialog's. */
+export function AppGrid({ children, column = 76 }: { children: React.ReactNode; column?: number }) {
+  return <Box sx={{ display: "grid", gridTemplateColumns: `repeat(auto-fill, ${column}px)`, gap: 1 }}>{children}</Box>;
 }
 
 type TileProps = {
@@ -40,6 +41,10 @@ type TileProps = {
   onActivate: () => void;
   /** Each click, double-clicks included; `event.detail` says which click it is. */
   onClick?: (event: React.MouseEvent<HTMLElement>) => void;
+  /** The icon's square, in pixels. */
+  size?: number;
+  /** Behind the logo; white suits a brand's logo, a themed one an icon drawn in the theme's colours. */
+  tileBg?: string;
 };
 
 /** An app icon with its name under it. */
@@ -55,6 +60,8 @@ export function AppTile({
   onContextMenu,
   onActivate,
   onClick,
+  size = TILE,
+  tileBg = "#ffffff",
 }: TileProps) {
   return (
     <Tooltip title={tooltip ?? ""} placement="bottom">
@@ -82,13 +89,13 @@ export function AppTile({
         <Box sx={{ position: "relative" }}>
           <Box
             sx={{
-              width: TILE,
-              height: TILE,
-              borderRadius: "12px",
+              width: size,
+              height: size,
+              borderRadius: `${Math.round(size * 0.27)}px`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              bgcolor: "#ffffff",
+              bgcolor: tileBg,
               boxShadow: "inset 0 0 0 1px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04)",
               filter: on ? "none" : "grayscale(1)",
               opacity: on ? 1 : 0.45,

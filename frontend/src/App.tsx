@@ -33,6 +33,8 @@ import ProvidersPage from "./pages/AdminSettingsPage/ProvidersPage";
 import StorageSettingsPage from "./pages/AdminSettingsPage/StoragePage";
 import AuthSettingsPage from "./pages/AdminSettingsPage/AuthPage";
 import DashboardAdminPage from "./pages/DashboardAdminPage";
+import ToolsAdminPage from "./pages/ToolsAdminPage";
+import ToolsPage from "./pages/ToolsPage";
 import UsersPage from "./pages/UsersPage";
 import LogsPage from "./pages/LogsPage";
 import NotificationsPage from "./pages/NotificationsPage";
@@ -62,6 +64,7 @@ import { setCachedAccentColor, setCachedRenderColor, useAccentColor } from "./ho
 import { resetCardPreview } from "./hooks/useCardPreview";
 import { resetHoverSlideshowEnabled } from "./hooks/useHoverSlideshowEnabled";
 import { resetCustomWidgets } from "./hooks/useCustomWidgets";
+import { resetTools } from "./hooks/useTools";
 import { DEFAULT_ACCENT, type ResolvedTheme, type ThemeSelection } from "./constants/settingsOptions";
 import { buildTheme } from "./theme";
 
@@ -278,6 +281,7 @@ function AppShell({
         <Route path="/profile/password" element={<ChangePasswordPage onUnauthorized={onUnauthorized} />} />
         <Route path="/connect-grab" element={<ConnectGrabPage user={user} onUnauthorized={onUnauthorized} />} />
         <Route path="/downloads" element={<DownloadPage />} />
+        <Route path="/tools" element={<ToolsPage isAdmin={isAdmin} onUnauthorized={onUnauthorized} />} />
         {/* The bookmarklet's link: AddMenu opens the import dialog with it and moves on to the home page. */}
         <Route path={IMPORT_PATH} element={null} />
         <Route path="/notifications" element={<NotificationsPage onUnauthorized={onUnauthorized} />} />
@@ -312,6 +316,10 @@ function AppShell({
         <Route
           path="/admin-dashboard"
           element={isAdmin ? <DashboardAdminPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
+        />
+        <Route
+          path="/admin-tools"
+          element={isAdmin ? <ToolsAdminPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
         />
         <Route
           path="/admin-ai"
@@ -429,6 +437,7 @@ export default function App() {
     resetCardPreview();
     resetHoverSlideshowEnabled();
     resetCustomWidgets();
+    resetTools();
     storeToken(tok);
     storeUser(loggedInUser);
     setToken(tok);
@@ -458,6 +467,7 @@ export default function App() {
 
   const expireSession = React.useCallback(() => {
     resetCustomWidgets();
+    resetTools();
     clearToken();
     setToken(null);
     setShowExpiredToast(true);
@@ -534,6 +544,7 @@ export default function App() {
   const handleLogout = async () => {
     await authApi.logout();
     resetCustomWidgets();
+    resetTools();
     clearToken();
     clearUser();
     setToken(null);

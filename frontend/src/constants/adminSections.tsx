@@ -2,6 +2,7 @@ import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import BoltIcon from "@mui/icons-material/Bolt";
 import CableIcon from "@mui/icons-material/Cable";
 import DashboardCustomizeOutlinedIcon from "@mui/icons-material/DashboardCustomizeOutlined";
+import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
 import HistoryIcon from "@mui/icons-material/History";
 import PeopleIcon from "@mui/icons-material/People";
 import QueueIcon from "@mui/icons-material/Queue";
@@ -32,6 +33,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     icon: <DashboardCustomizeOutlinedIcon fontSize="small" />,
     labelKey: "adminSettings.dashboard.heading",
   },
+  { path: "/admin-tools", icon: <HandymanOutlinedIcon fontSize="small" />, labelKey: "adminSettings.tools.heading" },
   { path: "/admin-ai", icon: <AutoAwesomeIcon fontSize="small" />, labelKey: "adminSettings.ai.heading" },
   { path: "/admin-users", icon: <PeopleIcon fontSize="small" />, labelKey: "adminSettings.users.heading" },
   { path: "/admin-queue", icon: <QueueIcon fontSize="small" />, labelKey: "adminSettings.importQueue.heading" },

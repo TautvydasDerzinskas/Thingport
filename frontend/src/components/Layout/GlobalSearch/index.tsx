@@ -45,6 +45,7 @@ import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import BoltIcon from "@mui/icons-material/Bolt";
 import CableIcon from "@mui/icons-material/Cable";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
+import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
 import HistoryIcon from "@mui/icons-material/History";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import PeopleIcon from "@mui/icons-material/People";
@@ -132,6 +133,7 @@ const PAGE_ICONS: Record<PageId, ReactNode> = {
   collections: <CollectionsIcon />,
   tags: <LocalOfferIcon />,
   downloads: <DownloadIcon />,
+  tools: <HandymanOutlinedIcon />,
   myModels: <ViewInArIcon />,
   profile: <PersonIcon />,
   // As in Administration's own menu.
@@ -140,6 +142,7 @@ const PAGE_ICONS: Record<PageId, ReactNode> = {
   adminStorage: <FolderOutlinedIcon />,
   adminAuth: <LockOutlinedIcon />,
   adminRendering: <ViewInArIcon />,
+  adminTools: <HandymanOutlinedIcon />,
   adminAi: <AutoAwesomeIcon />,
   adminUsers: <PeopleIcon />,
   adminQueue: <QueueIcon />,

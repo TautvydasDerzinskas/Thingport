@@ -42,6 +42,8 @@ export type Collection = {
   /** Always false for a system pseudo-collection. */
   bookmarked: boolean;
   sync: CollectionSync | null;
+  /** Set on the collection of a tool's models: it can be opened and bookmarked, not edited, and goes with the tool. */
+  tool_id: string | null;
 };
 
 export type CollectionInput = {

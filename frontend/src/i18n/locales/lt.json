@@ -91,7 +91,8 @@
       "collections": "Kolekcijos",
       "tags": "Žymos",
       "downloads": "Atsisiuntimai",
-      "bookmarks": "Įsimintos"
+      "bookmarks": "Įsimintos",
+      "tools": "Įrankiai"
     },
     "uploadBar": {
       "uploading": "Įkeliama…",
@@ -2189,6 +2190,67 @@
           "placed": "Suvestinėje",
           "installed": "Tik įdiegtas"
         }
+      },
+      "tools": {
+        "heading": "Įrankiai",
+        "subtitle": "Nedidelės programėlės, kurias naudotojai atsidaro puslapyje „Įrankiai“: įdiekite jas iš saugyklos ir pasirinkite, kas jas mato.",
+        "access": {
+          "heading": "Kas mato įrankius",
+          "help": "Administratoriai įrankius mato visada. Kas dar mato puslapį „Įrankiai“ ir gauna kiekvieno įdiegto įrankio modelius į savo biblioteką. Įrankiai veikia naudotojo naršyklėje su jo prieiga prie Thingport.",
+          "audience": "Kas mato įrankius",
+          "admins": "Tik administratoriai",
+          "everyone": "Visi",
+          "selected": "Pasirinkti naudotojai",
+          "users": "Naudotojai",
+          "usersHint": "Be administratorių, kurie juos mato visada.",
+          "failed": "Nepavyko pakeisti, kas mato įrankius",
+          "userTools": "Naudotojų įrankiai",
+          "userToolsHelp": "Leidžia tiems, kurie mato įrankius, kurti savo – redaktoriuje su pradiniu scenarijumi. Jų scenarijai veikia jų pačių naršyklėje, su jų pačių prieiga.",
+          "userToolsOn": "Tie, kurie mato įrankius, gali kurti savo",
+          "userToolsOff": "Tik įdiegti įrankiai"
+        },
+        "repo": {
+          "heading": "Iš saugyklos",
+          "help": "Įrankiai Thingport saugyklos aplanke tools. Kiekvienas peržiūrimas prieš įtraukiant; įdiegtas tampa prieinamas visiems, kurie mato įrankius.",
+          "refresh": "Dar kartą patikrinti saugyklą",
+          "failed": "Nepavyko perskaityti įrankių saugyklos",
+          "unreachable": "Įrankių saugyklos šiuo metu perskaityti nepavyksta: {{error}}",
+          "empty": "Saugykloje kol kas nėra įrankių.",
+          "install": "Įdiegti",
+          "update": "Atnaujinti",
+          "installed": "Įdiegta: {{name}}",
+          "updated": "Atnaujinta: {{name}}",
+          "installFailed": "Nepavyko įdiegti įrankio",
+          "installedVersion": "Įdiegta {{version}}",
+          "updateTo": "Atnaujinti į {{version}}",
+          "gone": "Saugykloje jo nebėra",
+          "by": "Autorius: {{name}}",
+          "brings_one": "Atsineša {{count}} modelį",
+          "brings_few": "Atsineša {{count}} modelius",
+          "brings_other": "Atsineša {{count}} modelių",
+          "fetching": "Gaunami modeliai: {{ready}} iš {{total}}",
+          "missing_one": "{{count}} iš {{total}} modelių dar negautas",
+          "missing_few": "{{count}} iš {{total}} modelių dar negauti",
+          "missing_other": "{{count}} iš {{total}} modelių dar negauta",
+          "lastError": "Paskutinis bandymas: {{error}}",
+          "retry": "Gauti trūkstamus modelius",
+          "more": "Daugiau",
+          "moreFor": "Daugiau: {{name}}",
+          "uninstall": "Pašalinti",
+          "uninstallTitle": "Pašalinti {{name}}?",
+          "uninstallMessage": "{{name}} dings iš visų puslapio „Įrankiai“ kartu su jų duomenimis, kuriuos jis saugojo.",
+          "uninstallWithModels": "{{name}} dings iš visų puslapio „Įrankiai“ kartu su jų duomenimis, kuriuos jis saugojo, ir jo modelių kolekcija iš kiekvienos bibliotekos. Su juo išsaugoti naudotojų modeliai liks.",
+          "uninstalled": "Pašalinta: {{name}}",
+          "uninstallFailed": "Nepavyko pašalinti įrankio",
+          "updateAvailable": "Yra atnaujinimas"
+        },
+        "own": {
+          "heading": "Naudotojų įrankiai",
+          "help": "Įrankiai, kuriuos naudotojai susikūrė patys. Kiekvienas veikia tik jį sukūrusiam naudotojui.",
+          "empty": "Kol kas niekas nesukūrė įrankio.",
+          "off": "Naudotojų įrankiai išjungti.",
+          "by": "{{name}} · {{email}}"
+        }
       }
     },
     "download": {
@@ -2586,6 +2648,145 @@
         "popular": "Populiarios svetainės",
         "ai": "DI",
         "browsers": "Naršyklės"
+      }
+    },
+    "tools": {
+      "page": {
+        "title": "Įrankiai",
+        "subtitle": "Dukart spustelėkite įrankį, kad jį atidarytumėte",
+        "new": "Naujas įrankis",
+        "installed": "Įdiegti",
+        "mine": "Mano",
+        "yours": "Jūsų",
+        "tileLabel": "{{name}}: Enter – atidaryti, kontekstinio meniu klavišas – daugiau",
+        "open": "Atidaryti",
+        "about": "Apie",
+        "models": "Jo modeliai",
+        "edit": "Redaguoti",
+        "delete": "Ištrinti",
+        "deleteTitle": "Ištrinti šį įrankį?",
+        "deleteMessage": "{{name}} ir jo saugoti duomenys dings. Su juo išsaugoti modeliai liks.",
+        "deleted": "Ištrinta: {{name}}",
+        "empty": "Kol kas nėra įrankių. Juos įdiegia administratorius.",
+        "emptyAdmin": "Kol kas nėra įrankių. Įdiekite kurį nors iš saugyklos.",
+        "emptyCreate": "Kol kas nėra įrankių. Susikurkite savo arba paprašykite administratoriaus įdiegti.",
+        "install": "Įdiegti įrankius",
+        "noAccess": "Šiame Thingport įrankiai jums neprieinami."
+      },
+      "window": {
+        "about": "Apie šį įrankį",
+        "maximize": "Per visą ekraną",
+        "restore": "Grąžinti dydį",
+        "close": "Uždaryti"
+      },
+      "about": {
+        "version": "Versija {{version}}",
+        "source": "Iš",
+        "fromRepo": "Thingport saugyklos, įdiegė administratorius",
+        "own": "Sukūrėte jūs",
+        "author": "Autorius",
+        "hosts": "Pasiekia",
+        "hostsHelp": "Paslaugos už Thingport ribų, kurias įrankis gali kviesti per Thingport.",
+        "noHosts": "Nieko už Thingport ribų",
+        "models": "Modeliai",
+        "modelsHelp": "Įrankio atsinešti modeliai, atskiroje kolekcijoje jūsų bibliotekoje. Juos galima atidaryti ir spausdinti, bet ne keisti.",
+        "modelCount_one": "{{count}} modelis",
+        "modelCount_few": "{{count}} modeliai",
+        "modelCount_other": "{{count}} modelių",
+        "openModels": "Atidaryti jo modelius",
+        "open": "Atidaryti",
+        "close": "Uždaryti"
+      },
+      "runner": {
+        "failed": "{{name}} sustojo dėl klaidos",
+        "noExport": "Scenarijus neturi numatytojo eksporto, kurį būtų galima iškviesti"
+      },
+      "picker": {
+        "title": "Pasirinkite kolekciją",
+        "search": "Rasti kolekciją",
+        "noMatch": "Jokia kolekcija neatitinka.",
+        "empty": "Kol kas nėra kolekcijų. Įrašykite pavadinimą žemiau, kad sukurtumėte.",
+        "count_one": "{{count}} modelis",
+        "count_few": "{{count}} modeliai",
+        "count_other": "{{count}} modelių",
+        "newName": "Nauja kolekcija",
+        "create": "Sukurti šią kolekciją",
+        "cancel": "Atšaukti",
+        "choose": "Pasirinkti"
+      },
+      "editor": {
+        "newTitle": "Naujas įrankis",
+        "editTitle": "Redaguoti įrankį",
+        "part": "Įrankio dalis",
+        "details": "Informacija",
+        "script": "Scenarijus",
+        "html": "HTML ir CSS",
+        "preview": "Peržiūra",
+        "htmlPlaceholder": "Žymėjimas ir <style> blokas, įdedami į langą prieš paleidžiant scenarijų",
+        "previewHelp": "Įrankis veikia taip, kaip veiks savo lange. Kol neišsaugotas, jo saugomi duomenys gyvuoja tik peržiūros metu, ir jis negali pasiekti kitų serverių.",
+        "previewHelpSaved": "Įrankis veikia taip, kaip veiks savo lange, su jūsų duomenimis, kuriuos jis saugo.",
+        "rerun": "Paleisti iš naujo",
+        "reference": "SDK žinynas",
+        "showReference": "Rodyti SDK žinyną",
+        "hideReference": "Slėpti SDK žinyną",
+        "referenceIntro": "Ką scenarijaus numatytasis eksportas gauna kaip thingport. Pradinis scenarijus naudoja kiekvieną.",
+        "trust": "Įrankio scenarijus veikia jūsų naršyklėje su jūsų prieiga prie Thingport.",
+        "cancel": "Atšaukti",
+        "save": "Išsaugoti",
+        "saved": "Išsaugota: {{name}}",
+        "fixFirst": "Pirmiausia pataisykite pažymėtus laukus",
+        "name": "Pavadinimas",
+        "version": "Versija",
+        "description": "Aprašymas",
+        "icon": "Piktograma",
+        "iconHelp": "Rodoma puslapyje „Įrankiai“ ir įrankio lange.",
+        "iconUrl": "Paveikslėlio adresas",
+        "iconNone": "Įrankių dėžė",
+        "window": "Langas",
+        "windowHelp": "Lango dydis atidarant, pikseliais; mažesniame ekrane – kiek telpa, ir jį galima išskleisti per visą ekraną.",
+        "width": "Plotis",
+        "height": "Aukštis",
+        "author": "Autorius",
+        "authorHelp": "Nurodomas lange „Apie“.",
+        "authorName": "Vardas",
+        "authorUrl": "Puslapis",
+        "hosts": "Serveriai",
+        "hostsHelp": "Paslaugos už Thingport ribų, kurias jo thingport.fetch gali pasiekti per Thingport: serverio vardas, *.example.com jo subdomenams ir prievadas, jei reikia.",
+        "hostsPlaceholder": "api.example.com",
+        "slug": "Aplanko pavadinimas",
+        "slugHelp": "Kaip įrankis išsaugomas: išsaugojus kitą tuo pačiu aplanko pavadinimu, jis pakeičiamas.",
+        "errors": {
+          "slug": "2–40 mažųjų raidžių, skaitmenų ir brūkšnelių",
+          "name": "Suteikite pavadinimą",
+          "url": "Tai ne http ar https adresas"
+        },
+        "sdk": {
+          "root": "Lango elementas su įrankio HTML ir CSS selektorius jam.",
+          "theme": "Thingport spalvos ir šriftas, šviesiai ir tamsiai temai.",
+          "size": "Lango dydis ir būdas sužinoti, kai jis pasikeičia.",
+          "storage": "Naudotojui saugomos JSON reikšmės pagal raktą.",
+          "collections": "Naudotojo kolekcijos ir naujos kūrimas.",
+          "collectionModels": "Kolekcijos modeliai ir modelių įdėjimas ar išėmimas.",
+          "pick": "Paprašo naudotojo pasirinkti kolekciją ar sukurti naują, kaip išsaugojimo langas.",
+          "models": "Bibliotekos modeliai: jų puslapis, paieška arba vienas.",
+          "file": "Vienas modelio failas kaip ArrayBuffer.",
+          "create": "Naujas modelis iš pateiktų failų, pvz., įrankio sukurtas STL.",
+          "edit": "Daugiau failų, pakeistas failas arba pavadinimas, aprašymas ir žymos.",
+          "open": "Uždaro įrankį ir atidaro modelio puslapį.",
+          "toolModels": "Saugyklos įrankio atsinešti modeliai pagal raktą.",
+          "fetch": "Užklausa įrankio nurodytam serveriui, kurią atlieka Thingport.",
+          "api": "Paties Thingport API naudotojo vardu.",
+          "download": "Duoda naudotojui failą pasilikti.",
+          "ui": "Pranešimas, patvirtinimas arba lango uždarymas."
+        }
+      },
+      "screenshots": {
+        "title": "{{name}} ekrano vaizdai",
+        "open": "{{name}} ekrano vaizdas {{index}} iš {{count}}",
+        "position": "{{index}} iš {{count}}",
+        "previous": "Ankstesnis vaizdas",
+        "next": "Kitas vaizdas",
+        "close": "Uždaryti"
       }
     }
   },
@@ -3411,7 +3612,9 @@
       "downloadFile": "Atsisiųsti failą",
       "moreOpenOptions": "Kitos pjaustyklės ir atsisiuntimai",
       "openActions": "Atverti arba atsisiųsti",
-      "openInHeading": "Atverti su"
+      "openInHeading": "Atverti su",
+      "toolOwned": "Priklauso įrankiui",
+      "toolOwnedHint": "Jo negalima redaguoti ar ištrinti"
     },
     "edit": {
       "title": "Redaguoti modelį",
@@ -3497,7 +3700,8 @@
         "empty": "Kol kas nėra modelių",
         "itemCount_one": "{{count}} modelis",
         "itemCount_few": "{{count}} modeliai",
-        "itemCount_other": "{{count}} modelių"
+        "itemCount_other": "{{count}} modelių",
+        "toolOwned": "Priklauso įrankiui: dings, kai įrankis bus pašalintas"
       },
       "form": {
         "createTitle": "Nauja kolekcija",
