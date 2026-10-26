@@ -2196,7 +2196,9 @@
           "uninstallWithModels": "{{name}} desaparece de la página Herramientas de todos, con los datos que guardaba para ellos y su colección de modelos de cada biblioteca. Los modelos que los usuarios guardaron con ella se quedan.",
           "uninstalled": "{{name}} desinstalada",
           "uninstallFailed": "No se pudo desinstalar la herramienta",
-          "updateAvailable": "Actualización disponible"
+          "updateAvailable": "Actualización disponible",
+          "fromFolder": "Se ofrecen desde la carpeta {{location}}",
+          "fromRepository": "Se ofrecen desde {{location}}"
         },
         "own": {
           "heading": "Herramientas propias de los usuarios",

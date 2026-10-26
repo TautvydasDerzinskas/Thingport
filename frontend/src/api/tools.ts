@@ -78,6 +78,12 @@ export type AdminTool = {
   } | null;
 };
 
+/** Where the offered tools come from: a folder on disk (a checkout of Thingport, or TOOLS_DIR), or the repository's
+ *  tools folder on GitHub, on the branch the image follows. */
+export type ToolsSource = { kind: "folder" | "repository"; location: string };
+
+export type ToolCatalog = { tools: AdminTool[]; repoError: string | null; source?: ToolsSource };
+
 export type OwnToolInUse = {
   id: string;
   slug: string;
@@ -172,7 +178,7 @@ export const toolsApi = {
 
   // --- For admins ---------------------------------------------------------------------------------------------------
 
-  catalog: async (): Promise<{ tools: AdminTool[]; repoError: string | null }> => {
+  catalog: async (): Promise<ToolCatalog> => {
     const res = await fetch(`${apiBase()}/admin/tools`, { headers: authHeaders() });
     if (!res.ok) return failed(res, "Failed to load the tools repository");
     return res.json();

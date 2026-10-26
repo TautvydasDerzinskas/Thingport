@@ -2184,7 +2184,9 @@
           "uninstallWithModels": "{{name}} goes from everyone's Tools page, with the data it kept for them and its collection of models from every library. Models users saved from it stay.",
           "uninstalled": "Uninstalled {{name}}",
           "uninstallFailed": "Couldn't uninstall the tool",
-          "updateAvailable": "Update available"
+          "updateAvailable": "Update available",
+          "fromFolder": "Offered from the folder {{location}}",
+          "fromRepository": "Offered from {{location}}"
         },
         "own": {
           "heading": "Users' own tools",

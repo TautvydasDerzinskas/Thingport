@@ -2196,7 +2196,9 @@
           "uninstallWithModels": "{{name}} disparaît de la page Outils de tous, avec les données qu'il gardait pour eux et sa collection de modèles de chaque bibliothèque. Les modèles que les utilisateurs ont enregistrés avec lui restent.",
           "uninstalled": "{{name}} désinstallé",
           "uninstallFailed": "Impossible de désinstaller l'outil",
-          "updateAvailable": "Mise à jour disponible"
+          "updateAvailable": "Mise à jour disponible",
+          "fromFolder": "Proposés depuis le dossier {{location}}",
+          "fromRepository": "Proposés depuis {{location}}"
         },
         "own": {
           "heading": "Outils des utilisateurs",

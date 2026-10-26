@@ -2242,7 +2242,9 @@
           "uninstallWithModels": "{{name}} dings iš visų puslapio „Įrankiai“ kartu su jų duomenimis, kuriuos jis saugojo, ir jo modelių kolekcija iš kiekvienos bibliotekos. Su juo išsaugoti naudotojų modeliai liks.",
           "uninstalled": "Pašalinta: {{name}}",
           "uninstallFailed": "Nepavyko pašalinti įrankio",
-          "updateAvailable": "Yra atnaujinimas"
+          "updateAvailable": "Yra atnaujinimas",
+          "fromFolder": "Siūloma iš aplanko {{location}}",
+          "fromRepository": "Siūloma iš {{location}}"
         },
         "own": {
           "heading": "Naudotojų įrankiai",

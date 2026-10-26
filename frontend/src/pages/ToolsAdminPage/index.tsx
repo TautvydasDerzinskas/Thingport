@@ -27,7 +27,13 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import SystemUpdateAltIcon from "@mui/icons-material/SystemUpdateAlt";
 import { adminApi, type AdminUser } from "../../api/admin";
 import { UnauthorizedError } from "../../api/client";
-import { toolsApi, type AdminTool, type OwnToolInUse, type ToolsAccessSettings } from "../../api/tools";
+import {
+  toolsApi,
+  type AdminTool,
+  type ToolCatalog,
+  type OwnToolInUse,
+  type ToolsAccessSettings,
+} from "../../api/tools";
 import { useConfirm } from "../../components/ConfirmProvider";
 import Segmented from "../../components/controls/Segmented";
 import HelpTip from "../../components/HelpTip";
@@ -61,7 +67,7 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
   const confirm = useConfirm();
   const [access, setAccess] = useState<ToolsAccessSettings | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
-  const [catalog, setCatalog] = useState<{ tools: AdminTool[]; repoError: string | null } | null>(null);
+  const [catalog, setCatalog] = useState<ToolCatalog | null>(null);
   const [own, setOwn] = useState<OwnToolInUse[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [menu, setMenu] = useState<{ anchor: HTMLElement; tool: AdminTool } | null>(null);
@@ -254,6 +260,21 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
             </IconButton>
           </Tooltip>
         </Stack>
+        {catalog?.source && (
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{
+              mt: -0.75,
+              wordBreak: "break-all",
+              fontFamily: catalog.source.kind === "folder" ? "monospace" : undefined,
+            }}
+          >
+            {catalog.source.kind === "folder"
+              ? t("adminSettings.tools.repo.fromFolder", { location: catalog.source.location })
+              : t("adminSettings.tools.repo.fromRepository", { location: catalog.source.location })}
+          </Typography>
+        )}
         {catalog?.repoError && (
           <Alert severity="warning">{t("adminSettings.tools.repo.unreachable", { error: catalog.repoError })}</Alert>
         )}
