@@ -44,7 +44,8 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
       <Dialog open={Boolean(pending)} onClose={() => settle(null)} maxWidth="xs" fullWidth>
         <DialogTitle>{pending?.title || t("confirm")}</DialogTitle>
         <DialogContent>
-          <DialogContentText>{pending?.message}</DialogContentText>
+          {/* A div, not a <p>, so a message can hold blocks such as a card. */}
+          <DialogContentText component="div">{pending?.message}</DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => settle(false)}>{pending?.cancelLabel || t("cancel")}</Button>

@@ -51,17 +51,55 @@ export function whatsNewPath(version: string, since: string | null): string {
   return `?${params}`;
 }
 
-/** Versions listed in release-notes/quiet-releases.json, e.g. a hotfix straight after a release, update without telling
- *  anyone. Unreadable means not quiet: an update is announced rather than missed. */
-export async function isQuietRelease(version: string, baseUrl = RELEASE_NOTES_URL): Promise<boolean> {
+/** One entry of release-notes/quiet-releases.json: the version, and the release it is quiet from. */
+type QuietRelease = { version: string; quietFrom: string };
+
+/** `"1.3.1"`, or `{ "version": "1.3.1", "quietFrom": "1.3.0" }`. `quietFrom` defaults to the version's own x.y.0, so
+ *  a hotfix is quiet only for instances already told about the release it fixes; set it to the version itself to keep
+ *  one quiet for everyone. */
+function quietRelease(value: unknown): QuietRelease | null {
+  const entry =
+    typeof value === "string"
+      ? { version: value }
+      : value && typeof value === "object" && !Array.isArray(value)
+        ? (value as { version?: unknown; quietFrom?: unknown })
+        : null;
+  if (typeof entry?.version !== "string") return null;
+  const version = entry.version.trim();
+  if (!SEMVER.test(version)) return null;
+  const from = typeof entry.quietFrom === "string" ? entry.quietFrom.trim() : "";
+  const [major, minor] = version.split(".");
+  return { version, quietFrom: SEMVER.test(from) ? from : `${major}.${minor}.0` };
+}
+
+/** Versions listed in release-notes/quiet-releases.json, e.g. a hotfix straight after a release, update without
+ *  telling anyone who already heard about the release it fixes. `since` is the version their notes last covered: an
+ *  instance further back than the entry's `quietFrom` is still told, so a quiet hotfix doesn't swallow the notes it
+ *  hasn't seen. Unreadable means not quiet: an update is announced rather than missed. */
+export async function isQuietRelease(
+  version: string,
+  since: string | null = null,
+  baseUrl = RELEASE_NOTES_URL,
+): Promise<boolean> {
   if (!baseUrl) return false;
   const text = await fetchText(`${baseUrl}/${QUIET_RELEASES_PATH}`);
+  let entry: QuietRelease | undefined;
   try {
     const versions = (JSON.parse(text ?? "null") as { versions?: unknown } | null)?.versions;
-    return Array.isArray(versions) && versions.some((v) => typeof v === "string" && v.trim() === version);
+    if (!Array.isArray(versions)) return false;
+    entry = versions.flatMap((value) => quietRelease(value) ?? []).find((quiet) => quiet.version === version);
   } catch {
     return false;
   }
+  if (!entry) return false;
+  // Quiet from itself onwards means quiet for everyone: there's no earlier release of its line to have missed.
+  if (compareVersions(entry.quietFrom, version) >= 0) return true;
+  return since !== null && compareVersions(since, entry.quietFrom) >= 0;
+}
+
+/** "1.3" of "1.3.1": the release line a patch belongs to. */
+function minorLine(version: string): string {
+  return version.split(".").slice(0, 2).join(".");
 }
 
 function asVersion(value: Prisma.JsonValue | undefined): string | null {
@@ -74,7 +112,7 @@ function asVersion(value: Prisma.JsonValue | undefined): string | null {
 export async function announceVersionUpdate(
   version = getBackendVersion(),
   now = new Date(),
-  isQuiet: (version: string) => Promise<boolean> = isQuietRelease,
+  isQuiet: (version: string, since: string | null) => Promise<boolean> = isQuietRelease,
 ): Promise<boolean> {
   if (!version || !SEMVER.test(version)) return false;
   const [lastRun, lastAnnounced] = await Promise.all([
@@ -87,7 +125,7 @@ export async function announceVersionUpdate(
   if (previous && compareVersions(version, previous) <= 0) return false;
   const updated = previous !== null || (await prisma.user.count()) > 0;
   const since = asVersion(lastAnnounced?.value) ?? previous;
-  const quiet = updated && (await isQuiet(version));
+  const quiet = updated && (await isQuiet(version, since));
   const users = updated && !quiet ? await prisma.user.findMany({ select: { id: true } }) : [];
 
   return prisma.$transaction(async (tx) => {
@@ -362,11 +400,11 @@ export async function getReleaseNotes(
   const since = options.since && SEMVER.test(options.since) ? options.since : null;
   const frontendVersion =
     options.frontendVersion && SEMVER.test(options.frontendVersion) ? options.frontendVersion : null;
-  const fromChangelogs = (earlierOnly: boolean) =>
+  const fromChangelogs = (earlierOnly: boolean, upTo = version, after = since) =>
     backendText
       ? notesFromChangelogs(parseChangelog(backendText), parseChangelog(frontendText ?? ""), {
-          version,
-          since,
+          version: upTo,
+          since: after,
           frontendVersion,
           earlierOnly,
         })
@@ -378,12 +416,24 @@ export async function getReleaseNotes(
   } catch {
     // not JSON: the changelog is shown instead
   }
-  if (curated?.version === version) {
+  // The curated file is the newest release's, so a quiet hotfix runs with the notes of the release it fixes still in
+  // it. Those are shown to whoever hasn't seen them, but only within the same x.y line, so a lagging file can't label
+  // one release's notes as another's.
+  const covers =
+    curated &&
+    (curated.version === version ||
+      (minorLine(curated.version) === minorLine(version) &&
+        compareVersions(curated.version, version) < 0 &&
+        (since === null || compareVersions(curated.version, since) > 0)));
+  if (curated && covers) {
     // Someone who skipped releases gets theirs from the changelog after the curated ones; commit links aren't
     // "Learn more" links.
-    const earlier = fromChangelogs(true);
-    for (const item of earlier) item.url = null;
-    return { ...curated, items: [...curated.items, ...earlier], releases_url };
+    // A patch past the curated release brings its own changelog entries, ahead of the notes it builds on.
+    const later = curated.version === version ? [] : fromChangelogs(false, version, curated.version);
+    const earlier = fromChangelogs(true, curated.version);
+    for (const item of [...later, ...earlier]) item.url = null;
+    // The version the instance is actually on, so the dialog's heading matches what it updated to.
+    return { ...curated, version, items: [...later, ...curated.items, ...earlier], releases_url };
   }
 
   if (!backendText) return empty;

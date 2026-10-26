@@ -14,6 +14,7 @@ import * as nexprint from "./nexprint/CollectionTile";
 import * as thangs from "./thangs/CollectionTile";
 import * as cults3d from "./cults3d/CollectionTile";
 import * as eufymake from "./eufymake/CollectionTile";
+import * as pinshape from "./pinshape/CollectionTile";
 
 type Own = { Tile: (props: TileProps) => JSX.Element; TileSkeleton: (props: SkeletonProps) => JSX.Element };
 
@@ -29,4 +30,5 @@ export const COLLECTION_TILES: Partial<Record<BrowsableProvider, Own>> = {
   thangs,
   cults3d,
   eufymake,
+  pinshape,
 };

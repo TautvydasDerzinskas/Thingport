@@ -258,6 +258,10 @@
               "title": "Obtenir un fichier du modèle",
               "description": "Lit l'un des fichiers d'un modèle, par ex. pour le trancher ou le convertir."
             },
+            "list_model_images": {
+              "title": "Lister les images d'un modèle",
+              "description": "Voit les images d'un modèle et laquelle est sa couverture."
+            },
             "get_import_status": {
               "title": "Suivre un import",
               "description": "Suit un import encore en cours."
@@ -270,6 +274,34 @@
               "title": "Téléverser un modèle",
               "description": "Ajoute un modèle fait de vos propres fichiers, comme + Ajouter > Téléverser des fichiers."
             },
+            "edit_model": {
+              "title": "Modifier un modèle",
+              "description": "Change le titre, la description, les étiquettes, la catégorie et le favori d'un modèle."
+            },
+            "edit_model_images": {
+              "title": "Modifier les images d'un modèle",
+              "description": "Ajoute, supprime et réordonne les images d'un modèle, et choisit sa couverture."
+            },
+            "add_model_files": {
+              "title": "Ajouter des fichiers à un modèle",
+              "description": "Ajoute des plateaux ou des fichiers annexes à l'un de vos modèles."
+            },
+            "remove_model_file": {
+              "title": "Supprimer un fichier du modèle",
+              "description": "Supprime définitivement l'un des fichiers d'un modèle."
+            },
+            "rename_model_file": {
+              "title": "Renommer un fichier du modèle",
+              "description": "Renomme l'un des plateaux d'un modèle."
+            },
+            "delete_model": {
+              "title": "Supprimer un modèle",
+              "description": "Supprime définitivement un modèle avec ses fichiers et images."
+            },
+            "create_category": {
+              "title": "Créer une catégorie",
+              "description": "Crée une nouvelle catégorie ou un nouveau dossier."
+            },
             "create_collection": {
               "title": "Créer une collection",
               "description": "Crée une nouvelle collection vide."
@@ -277,6 +309,10 @@
             "add_to_collection": {
               "title": "Ajouter à une collection",
               "description": "Range des modèles de votre bibliothèque dans une de vos collections."
+            },
+            "remove_from_collection": {
+              "title": "Retirer d'une collection",
+              "description": "Retire des modèles de l'une de vos collections."
             },
             "widget_guide": {
               "title": "Guide des widgets",
@@ -1019,6 +1055,33 @@
           "publish3": "Ajoutez le nom de son dossier à community-widgets/index.json et décrivez-le dans son README.md.",
           "publish4": "Ouvrez une pull request. Une fois fusionnée, tout Thingport pourra l’installer.",
           "guide": "Lire le guide complet"
+        },
+        "ai": {
+          "or": "ou",
+          "open": "Utiliser l’IA",
+          "title": "Créer un widget avec une IA",
+          "back": "Retour à l’éditeur",
+          "step1": "Connectez votre assistant IA à Thingport par MCP.",
+          "step3": "Demandez le widget que vous voulez, avec vos propres mots. Par exemple :",
+          "step4": "Il apparaît dans Les miens, prêt à être ajouté à votre tableau de bord. Redemandez pour le changer, ou peaufinez-le ici.",
+          "examplesLabel": "Exemples de demandes",
+          "examples": {
+            "printer": {
+              "label": "Avancement de l’imprimante",
+              "name": "Imprimante",
+              "prompt": "Crée-moi un widget Thingport qui montre l’avancement de mon imprimante OctoPrint."
+            },
+            "filament": {
+              "label": "Stock de filament",
+              "name": "Filament",
+              "prompt": "Crée-moi un widget Thingport qui liste mes bobines Spoolman et prévient quand l’une d’elles est presque vide."
+            },
+            "library": {
+              "label": "Modèles par mois",
+              "name": "Modèles ajoutés",
+              "prompt": "Crée-moi un widget Thingport avec un graphique du nombre de modèles ajoutés chaque mois."
+            }
+          }
         }
       }
     },
@@ -3440,7 +3503,7 @@
           "takenBy": "Synchronisée avec « {{name}} »",
           "loadFailed": "Impossible de charger les collections.",
           "lookupFailed": "Impossible de trouver cette collection.",
-          "notALink": "Collez un lien de collection MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space ou MakerOnline.",
+          "notALink": "Collez un lien de collection MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D ou Pinshape.",
           "usernameFailed": "Impossible d’enregistrer le nom d’utilisateur.",
           "openProviders": "Ouvrir les fournisseurs",
           "usernameLabel": "Votre nom d’utilisateur {{provider}}",
@@ -4111,9 +4174,9 @@
         "steps": [
           "Le plus simple : avec Thingport Grab, il suffit d’ouvrir makeitreal.eufymake.com en étant connecté. Votre compte est relié, et une nouvelle connexion est envoyée chaque fois que vous vous y reconnectez.",
           "Ou manuellement : connectez-vous à makeitreal.eufymake.com et ouvrez les outils de développement de votre navigateur (F12).",
-          "Sous Application (Chrome, Edge) ou Stockage (Firefox) → Local Storage → makeitreal.eufymake.com, copiez la valeur de mk-userinfo et collez-la ci-dessous. Les en-têtes X-Auth-Token et Gtoken d’une requête à aiot-wapi-eu.ankermake.com faite en étant connecté conviennent aussi."
+          "Sous Application (Chrome, Edge) ou Stockage (Firefox) → Local Storage → makeitreal.eufymake.com, copiez la valeur complète de mk-userinfo et collez-la ci-dessous — une seule longue ligne de lettres et de chiffres, ou du JSON sur une version plus ancienne"
         ],
-        "placeholder": "La valeur de mk-userinfo, ou les en-têtes X-Auth-Token et Gtoken d’une requête"
+        "placeholder": "La valeur complète de mk-userinfo"
       },
       "status": {
         "notConnected": "Reliez votre compte pour lire vos « J’aime » eufyMake. Ses modèles s’importent sans lui.",
@@ -4135,6 +4198,37 @@
       },
       "sync": {
         "notConnected": "Connectez eufyMake dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir vos « J’aime » ici."
+      }
+    },
+    "pinshape": {
+      "connect": {
+        "steps": [
+          "Le plus simple : avec Thingport Grab, il suffit d’ouvrir pinshape.com en étant connecté. Votre compte est relié, et une nouvelle connexion est envoyée chaque fois que vous vous y reconnectez.",
+          "Ou manuellement : connectez-vous à pinshape.com en cochant « Remember Me », pour que la connexion dure un an, et ouvrez les outils de développement de votre navigateur (F12).",
+          "Sous Application (Chrome, Edge) ou Stockage (Firefox) → Cookies → pinshape.com, copiez la valeur de remember_token et collez-la ci-dessous. L’en-tête Cookie d’une requête à pinshape.com faite en étant connecté convient aussi."
+        ],
+        "placeholder": "Le cookie remember_token, ou l’en-tête Cookie d’une requête faite en étant connecté"
+      },
+      "status": {
+        "notConnected": "Pinshape ne remet ses fichiers qu’aux utilisateurs connectés. Reliez votre compte pour importer ses modèles ; les collections et les « J’aime » se lisent sans lui.",
+        "expired": "La connexion a expiré. Connectez-vous à pinshape.com avec Thingport Grab, ou reconnectez Pinshape dans Configuration → Fournisseurs.",
+        "expiredStatus": "Connexion expirée",
+        "disabledReason": "Pinshape : connectez votre compte dans Configuration → Fournisseurs"
+      },
+      "about": {
+        "summary": "Un site de modèles communautaire de longue date, désormais géré par MatterHackers : des modèles gratuits, et des collections que chacun peut suivre.",
+        "signIn": "Votre propre connexion, pour les fichiers ; les collections et les « J’aime » se lisent sans elle.",
+        "grab": "Envoie votre connexion lorsque vous visitez pinshape.com.",
+        "setup": [
+          "Installez Thingport Grab, activez-le sur Pinshape et ouvrez pinshape.com en étant connecté.",
+          "Manuellement : copiez le cookie remember_token d’un onglet pinshape.com connecté et collez-le dans Configuration → Fournisseurs."
+        ]
+      },
+      "admin": {
+        "description": "Les modèles, et les collections et « J’aime » de chacun. Les listes se lisent sans connexion ; les fichiers demandent celle de l’utilisateur."
+      },
+      "sync": {
+        "notConnected": "Connectez Pinshape dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir vos « J’aime » et collections ici."
       }
     }
   }

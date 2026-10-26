@@ -82,6 +82,8 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
   thangs: { blockReason: thangsDownloadBlock },
   // Its only list, the likes, is the viewer's own page (/user/me/), which names no one else.
   eufymake: {},
+  // Its collections and anyone's likes are anyone's to read.
+  pinshape: {},
   cults3d: {
     async blockReason() {
       return isUnboughtCults3dModel()

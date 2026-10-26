@@ -14,6 +14,7 @@ import {
   ensurePlateThumbnail,
   managedPlatePath,
   pruneEmptyStorageDirs,
+  relocatePrint,
   removeAssetHome,
   assetOwnerIds,
   removePlatePictures,
@@ -308,6 +309,42 @@ export async function addPlatesToPrint(
     nextPosition += 1;
   }
   return created;
+}
+
+/** Removes one of the model's plates and its file. The only plate can't go: the model is deleted instead. */
+export async function removePlate(print: Pick<Print, "id" | "assetsPath">, plateId: string): Promise<void> {
+  const plates = await prisma.plate.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } });
+  const target = plates.find((p) => p.id === plateId);
+  if (!target) throw new HttpError(404, "Plate not found");
+  if (plates.length <= 1) {
+    throw new HttpError(409, "Cannot remove the only plate of a print; delete the print instead.");
+  }
+
+  const remaining = plates.filter((p) => p.id !== target.id);
+  // Renumber in two phases (negative temp positions) to avoid (printId, position) collisions.
+  await prisma.plate.delete({ where: { id: target.id } });
+  await prisma.$transaction(
+    remaining.map((p, idx) => prisma.plate.update({ where: { id: p.id }, data: { position: -(idx + 1) } })),
+  );
+  await prisma.$transaction(
+    remaining.map((p, idx) => prisma.plate.update({ where: { id: p.id }, data: { position: idx } })),
+  );
+  await deletePlateFiles(target);
+  await removePlatePictures(target.id, print.assetsPath);
+  if (target.position === 0) await refreshAutoPreparedMetadata(print.id);
+}
+
+/** Renames one of the model's plates, suffixed when another plate has the name. Returns the name it got. */
+export async function renamePlate(print: Print, plateId: string, filename: string): Promise<string> {
+  const plate = await prisma.plate.findUnique({ where: { id: plateId } });
+  if (!plate || plate.printId !== print.id) throw new HttpError(404, "Plate not found");
+  const nextFilename = await availablePlateFilename(print.id, sanitizeFilename(filename), plate.id);
+  if (nextFilename !== plate.filename) {
+    await prisma.plate.update({ where: { id: plate.id }, data: { filename: nextFilename } });
+    await relocatePrint(print, [{ ...plate, filename: nextFilename }]);
+    if (plate.position === 0) await refreshAutoPreparedMetadata(print.id);
+  }
+  return nextFilename;
 }
 
 export async function deletePlateFiles(plate: Pick<Plate, "id" | "storagePath">): Promise<void> {

@@ -310,7 +310,8 @@ To write the notes for a release, replace the file's contents:
 - `images` are relative to the file (put them in `release-notes/screenshots/`, named after the version) or full
   `https://` URLs; up to six per item. Crop them to the control being shown rather than the whole page; WebP keeps them
   small. Everything but `type` and `title` is optional.
-- A file that doesn't parse, or names another version, falls back to the changelog.
+- A file that doesn't parse falls back to the changelog, as does one naming a version outside the running
+  release's `x.y` line. One naming an earlier patch of that line still counts, for the quiet hotfixes below.
 - `RELEASE_NOTES_URL` points a backend at another copy of the repo files; an empty value turns fetching off.
 
 To update without telling anyone, e.g. a hotfix straight after a release, add its version to
@@ -321,8 +322,21 @@ before instances update:
 { "versions": ["1.2.1"] }
 ```
 
-No notification is sent for it, and the next release's What's new also covers what the quiet one changed. If the file
-can't be read when an instance starts, the update is announced as usual.
+No notification is sent to an instance that already heard about the release the hotfix follows, and the next release's
+What's new also covers what the quiet one changed. An instance further back is still told, so a quiet hotfix never
+swallows notes nobody has seen: coming from 1.1.0 straight to 1.2.1 announces as usual, with What's new starting at
+1.1.0. Leave `latest-release-notes.json` naming 1.2.0 for this -- a curated file is shown by a later patch of the same
+`x.y` line, so those notes are what that instance reads. If the file can't be read when an instance starts, the update
+is announced as usual.
+
+An entry can say where it is quiet from, which is its own `x.y.0` by default:
+
+```json
+{ "versions": [{ "version": "1.2.1", "quietFrom": "1.2.1" }] }
+```
+
+`quietFrom` at the version itself keeps it quiet for everyone, however far back they are -- as does listing an `x.y.0`,
+which has no earlier release of its line to miss.
 
 ## Related documents
 

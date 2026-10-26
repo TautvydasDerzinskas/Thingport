@@ -69,8 +69,9 @@ export type ProviderManifest = {
     paidModels: boolean;
     /** How the sync dialog finds the user's own lists: their sign-in says who they are, or they give a username. */
     ownLists: "signIn" | "username";
-    /** What a category is given as this site's ids: numbers, or paths ("Parent/Child") where it has none (Thangs). */
-    categoryIds: "number" | "path";
+    /** What a category is given as this site's ids: numbers, or paths ("Parent/Child") where it has none (Thangs).
+     *  "none" where its models don't say their category (Pinshape): its imports bring none, so there's nothing to map. */
+    categoryIds: "number" | "path" | "none";
     /** The list the dashboard's trending panel shows: its trending one, or the popular, featured or recommended one
      *  standing in where it has none, and that list's page on the site. `rank` is its place among the panel's
      *  providers. False for a provider with no such list. */

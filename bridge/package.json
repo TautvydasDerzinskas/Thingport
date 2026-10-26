@@ -1,6 +1,6 @@
 {
   "name": "thingport-bridge",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Not an npm package: semantic-release reads Bridge's name and version from here.",
   "license": "AGPL-3.0-only"

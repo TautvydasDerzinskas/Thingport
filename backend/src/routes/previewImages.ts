@@ -6,7 +6,7 @@ import { HttpError } from "../utils/fileUtils";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { thumbnailUpload } from "../uploadMiddleware";
-import { removePreviewImageFile } from "../services/previewImageService";
+import { removePreviewImage, reorderPreviewImages } from "../services/previewImageService";
 import { addUploadedPreviewImages } from "../services/uploadService";
 import { printOutById } from "../services/printLoader";
 
@@ -35,23 +35,7 @@ router.delete(
   asyncHandler(async (req, res) => {
     const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
     if (!print) throw new HttpError(404, "Print not found");
-    const images = await prisma.previewImage.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } });
-    const target = images.find((img) => img.id === req.params.imageId);
-    if (!target) throw new HttpError(404, "Preview image not found");
-
-    const remaining = images.filter((img) => img.id !== target.id);
-    // Two-phase renumber, as in plates.ts, to avoid (printId, position) collisions.
-    await prisma.previewImage.delete({ where: { id: target.id } });
-    await prisma.$transaction(
-      remaining.map((img, idx) =>
-        prisma.previewImage.update({ where: { id: img.id }, data: { position: -(idx + 1) } }),
-      ),
-    );
-    await prisma.$transaction(
-      remaining.map((img, idx) => prisma.previewImage.update({ where: { id: img.id }, data: { position: idx } })),
-    );
-    await removePreviewImageFile(print.id, target.id);
-
+    await removePreviewImage(print.id, req.params.imageId);
     res.json({ print: await printOutById(req.userId!, print.id) });
   }),
 );
@@ -63,18 +47,7 @@ router.post(
     const body = parseBody(reorderSchema, req.body);
     const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
     if (!print) throw new HttpError(404, "Print not found");
-    const images = await prisma.previewImage.findMany({ where: { printId: print.id } });
-    const byId = new Map(images.map((img) => [img.id, img]));
-    if (body.image_ids.length !== images.length || body.image_ids.some((id) => !byId.has(id))) {
-      throw new HttpError(400, "image_ids must contain exactly the print's current preview image ids");
-    }
-
-    await prisma.$transaction(
-      body.image_ids.map((id, idx) => prisma.previewImage.update({ where: { id }, data: { position: -(idx + 1) } })),
-    );
-    await prisma.$transaction(
-      body.image_ids.map((id, idx) => prisma.previewImage.update({ where: { id }, data: { position: idx } })),
-    );
+    await reorderPreviewImages(print.id, body.image_ids);
     res.json({ print: await printOutById(req.userId!, print.id) });
   }),
 );

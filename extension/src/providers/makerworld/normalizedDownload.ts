@@ -1,6 +1,8 @@
 // "Download normalized" next to MakerWorld's own download/open button, for people whose slicer mis-reads
-// Bambu Studio projects: not linked to a Thingport instance at all, or linked with such a slicer
-// picked. The file is downloaded and converted in this tab; it never goes anywhere else.
+// Bambu Studio projects. Whether it is offered is the popup's "Normalize MakerWorld 3MFs" switch alone
+// (content/index.ts): the slicer the instance has picked only words the explanation, since plenty of people slice
+// with something other than the one Thingport knows about. The file is downloaded and converted in this tab; it
+// never goes anywhere else.
 
 import { createIcon } from "../../shared/icon";
 import { NORMALIZE_3MF_SLICERS } from "../../shared/slicers";
@@ -37,9 +39,11 @@ let host: HTMLElement | null = null;
 let observer: MutationObserver | null = null;
 let themeObserver: MutationObserver | null = null;
 let bubbleTimer: ReturnType<typeof setTimeout> | undefined;
+// The instance's slicer for the explanation, once it has answered; the button doesn't wait for it.
+let slicerLabel: string | null = null;
 
-function explanation(slicerLabel: string | null): string {
-  const slicers = slicerLabel ? `${slicerLabel} often opens` : "PrusaSlicer, Cura and other slicers often open";
+function explanation(slicer: string | null): string {
+  const slicers = slicer ? `${slicer} often opens` : "PrusaSlicer, Cura and other slicers often open";
   return (
     `MakerWorld files are Bambu Studio projects, which ${slicers} without their colors or print ` +
     "settings. This downloads a converted copy that keeps painted colors, filament colors, plates and the " +
@@ -139,7 +143,7 @@ async function downloadNormalized(pageUrl: string, onProgress: (text: string) =>
   saveFile(output, normalizedFilename(sourceFilename(res, resolved.downloadUrl)));
 }
 
-function buildHost(pageUrl: string, slicerLabel: string | null): HTMLElement {
+function buildHost(pageUrl: string): HTMLElement {
   const el = document.createElement("span");
   el.id = HOST_ID;
   const root = el.attachShadow({ mode: "open" });
@@ -274,9 +278,9 @@ function place(): void {
   host.toggleAttribute("data-gapped", Boolean(gap) && gap !== "normal" && gap !== "0px");
 }
 
-function mount(pageUrl: string, slicerLabel: string | null): void {
+function mount(pageUrl: string): void {
   unmountNormalizedDownload();
-  host = buildHost(pageUrl, slicerLabel);
+  host = buildHost(pageUrl);
   let scheduled = false;
   const schedule = () => {
     if (scheduled) return;
@@ -304,24 +308,23 @@ export function unmountNormalizedDownload(): void {
   host?.remove();
   host = null;
   anchor = null;
+  slicerLabel = null;
   clearTimeout(bubbleTimer);
 }
 
-/** Offered when the user isn't linked to Thingport, or is but picked a slicer that needs it. */
+/** Offered wherever the popup's switch is on. The instance's slicer, where it can be asked for and is one Thingport
+ *  knows mis-reads these files, only names it in the explanation. */
 export async function offerNormalizedDownload(
   pageUrl: string,
   configured: boolean,
   isStale: () => boolean,
 ): Promise<void> {
-  let slicerLabel: string | null = null;
-  if (configured) {
-    try {
-      const { slicer } = await api<{ slicer: string | null }>("GET", "/settings/slicer");
-      slicerLabel = slicer ? (NORMALIZE_3MF_SLICERS[slicer] ?? null) : null;
-    } catch {
-      return;
-    }
-    if (!slicerLabel) return;
-  }
-  if (!isStale()) mount(pageUrl, slicerLabel);
+  if (isStale()) return;
+  mount(pageUrl);
+  if (!configured) return;
+  const mounted = host;
+  const slicer = await api<{ slicer: string | null }>("GET", "/settings/slicer")
+    .then((res) => res.slicer)
+    .catch(() => null);
+  if (host === mounted) slicerLabel = slicer ? (NORMALIZE_3MF_SLICERS[slicer] ?? null) : null;
 }

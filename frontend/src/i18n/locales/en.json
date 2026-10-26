@@ -255,6 +255,10 @@
               "title": "Get a model file",
               "description": "Read one of a model's files, e.g. to slice or convert it."
             },
+            "list_model_images": {
+              "title": "List a model's pictures",
+              "description": "See a model's pictures and which is its cover."
+            },
             "get_import_status": {
               "title": "Check an import",
               "description": "Follow an import that's still running."
@@ -267,6 +271,34 @@
               "title": "Upload a model",
               "description": "Add a model made from your own files, as + Add > Upload files does."
             },
+            "edit_model": {
+              "title": "Edit a model",
+              "description": "Change a model's title, description, tags, category and favourite."
+            },
+            "edit_model_images": {
+              "title": "Edit a model's pictures",
+              "description": "Add, remove and reorder a model's pictures, and pick its cover."
+            },
+            "add_model_files": {
+              "title": "Add files to a model",
+              "description": "Add plates or supporting files to one of your models."
+            },
+            "remove_model_file": {
+              "title": "Remove a model file",
+              "description": "Delete one of a model's files for good."
+            },
+            "rename_model_file": {
+              "title": "Rename a model file",
+              "description": "Rename one of a model's plates."
+            },
+            "delete_model": {
+              "title": "Delete a model",
+              "description": "Delete a model with its files and pictures, for good."
+            },
+            "create_category": {
+              "title": "Create a category",
+              "description": "Make a new category or folder."
+            },
             "create_collection": {
               "title": "Create a collection",
               "description": "Make a new, empty collection."
@@ -274,6 +306,10 @@
             "add_to_collection": {
               "title": "Add to a collection",
               "description": "Put models from your library in one of your collections."
+            },
+            "remove_from_collection": {
+              "title": "Remove from a collection",
+              "description": "Take models out of one of your collections."
             },
             "widget_guide": {
               "title": "Widget guide",
@@ -1012,6 +1048,33 @@
           "publish3": "Add its folder name to community-widgets/index.json, and say what it does in its README.md.",
           "publish4": "Open a pull request. Once it’s merged, every Thingport can install it.",
           "guide": "Read the full guide"
+        },
+        "ai": {
+          "or": "or",
+          "open": "Use AI",
+          "title": "Build a widget with AI",
+          "back": "Back to the editor",
+          "step1": "Connect your AI assistant to Thingport over MCP.",
+          "step3": "Ask for any widget, in your own words. For example:",
+          "step4": "It appears in Mine, ready to add to your dashboard. Ask again to change it, or fine-tune it here.",
+          "examplesLabel": "Example prompts",
+          "examples": {
+            "printer": {
+              "label": "Printer progress",
+              "name": "Printer",
+              "prompt": "Make me a Thingport widget that shows my OctoPrint printer’s progress."
+            },
+            "filament": {
+              "label": "Filament stock",
+              "name": "Filament",
+              "prompt": "Make me a Thingport widget that lists my Spoolman spools and warns when one runs low."
+            },
+            "library": {
+              "label": "Models per month",
+              "name": "Models added",
+              "prompt": "Make me a Thingport widget that charts how many models I added each month."
+            }
+          }
         }
       }
     },
@@ -3418,7 +3481,7 @@
           "takenBy": "Synced with \"{{name}}\"",
           "loadFailed": "Couldn't load the collections.",
           "lookupFailed": "Couldn't find that collection.",
-          "notALink": "Paste a MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs or Cults3D collection link.",
+          "notALink": "Paste a MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D or Pinshape collection link.",
           "usernameFailed": "Couldn't save the username.",
           "openProviders": "Open Providers",
           "usernameLabel": "Your {{provider}} username",
@@ -4088,9 +4151,9 @@
         "steps": [
           "Easiest: with Thingport Grab, just open makeitreal.eufymake.com while signed in. It connects your account, and sends a new sign-in whenever you sign in there again.",
           "Or by hand: sign in at makeitreal.eufymake.com and open your browser's developer tools (F12).",
-          "Under Application (Chrome, Edge) or Storage (Firefox) → Local Storage → makeitreal.eufymake.com, copy the value of mk-userinfo and paste it below. The X-Auth-Token and Gtoken headers of a signed-in aiot-wapi-eu.ankermake.com request work too."
+          "Under Application (Chrome, Edge) or Storage (Firefox) → Local Storage → makeitreal.eufymake.com, copy the whole value of mk-userinfo and paste it below — one long line of letters and digits, or JSON from an older build"
         ],
-        "placeholder": "The mk-userinfo value, or a request's X-Auth-Token and Gtoken headers"
+        "placeholder": "The whole mk-userinfo value"
       },
       "status": {
         "notConnected": "Connect your account to read your eufyMake likes. Its models import without it.",
@@ -4112,6 +4175,37 @@
       },
       "sync": {
         "notConnected": "Connect eufyMake in Configuration > Providers, or visit it with Thingport Grab, to see your likes here."
+      }
+    },
+    "pinshape": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open pinshape.com while signed in. It connects your account, and sends a new sign-in whenever you sign in there again.",
+          "Or by hand: sign in at pinshape.com with Remember Me ticked, so the sign-in lasts a year, and open your browser's developer tools (F12).",
+          "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → pinshape.com, copy the value of remember_token and paste it below. The Cookie header of a signed-in pinshape.com request works too."
+        ],
+        "placeholder": "The remember_token cookie, or a signed-in request's Cookie header"
+      },
+      "status": {
+        "notConnected": "Pinshape gives its files to signed-in users only. Connect your account to import its models; collections and likes read without it.",
+        "expired": "Sign-in expired. Sign in on pinshape.com with Thingport Grab, or connect Pinshape again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "Pinshape: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "A long-running community model site, now run by MatterHackers: free models, and collections anyone can follow.",
+        "signIn": "Your own sign-in, for the files; collections and likes read without it.",
+        "grab": "Sends your sign-in as you visit pinshape.com.",
+        "setup": [
+          "Install Thingport Grab, enable it on Pinshape and open pinshape.com signed in.",
+          "By hand: copy the remember_token cookie of a signed-in pinshape.com tab and paste it in Configuration → Providers."
+        ]
+      },
+      "admin": {
+        "description": "Models, and anyone's collections and likes. Lists read without a sign-in; the files need each user's own."
+      },
+      "sync": {
+        "notConnected": "Connect Pinshape in Configuration > Providers, or visit it with Thingport Grab, to see your likes and collections here."
       }
     }
   }

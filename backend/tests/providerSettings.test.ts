@@ -42,6 +42,7 @@ afterAll(async () => {
     "thangs",
     "cults3d",
     "eufymake",
+    "pinshape",
   ] as const)
     await setProviderEnabled(provider, true);
 });
@@ -62,6 +63,7 @@ describe("turning providers off", () => {
       thangs: true,
       cults3d: true,
       eufymake: true,
+      pinshape: true,
     });
 
     expect(
@@ -85,6 +87,7 @@ describe("turning providers off", () => {
       thangs: true,
       cults3d: true,
       eufymake: true,
+      pinshape: true,
     });
   });
 

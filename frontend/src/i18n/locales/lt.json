@@ -256,6 +256,10 @@
               "title": "Gauti modelio failą",
               "description": "Skaityti vieną modelio failą, pvz., norint jį supjaustyti ar konvertuoti."
             },
+            "list_model_images": {
+              "title": "Modelio nuotraukų sąrašas",
+              "description": "Matyti modelio nuotraukas ir kuri iš jų yra viršelis."
+            },
             "get_import_status": {
               "title": "Importo būsena",
               "description": "Sekti importą, kuris dar vyksta."
@@ -268,6 +272,34 @@
               "title": "Įkelti modelį",
               "description": "Pridėti modelį iš savo failų, kaip + Pridėti > Įkelti failus."
             },
+            "edit_model": {
+              "title": "Redaguoti modelį",
+              "description": "Keisti modelio pavadinimą, aprašymą, žymas, kategoriją ir mėgstamumą."
+            },
+            "edit_model_images": {
+              "title": "Redaguoti modelio nuotraukas",
+              "description": "Pridėti, pašalinti ir pertvarkyti modelio nuotraukas, pasirinkti viršelį."
+            },
+            "add_model_files": {
+              "title": "Pridėti failų prie modelio",
+              "description": "Pridėti plokščių ar papildomų failų prie vieno iš jūsų modelių."
+            },
+            "remove_model_file": {
+              "title": "Pašalinti modelio failą",
+              "description": "Visam laikui ištrinti vieną modelio failą."
+            },
+            "rename_model_file": {
+              "title": "Pervadinti modelio failą",
+              "description": "Pervadinti vieną modelio plokštę."
+            },
+            "delete_model": {
+              "title": "Ištrinti modelį",
+              "description": "Visam laikui ištrinti modelį su jo failais ir nuotraukomis."
+            },
+            "create_category": {
+              "title": "Sukurti kategoriją",
+              "description": "Sukurti naują kategoriją ar aplanką."
+            },
             "create_collection": {
               "title": "Sukurti kolekciją",
               "description": "Sukurti naują, tuščią kolekciją."
@@ -275,6 +307,10 @@
             "add_to_collection": {
               "title": "Įtraukti į kolekciją",
               "description": "Įdėti bibliotekos modelius į vieną iš jūsų kolekcijų."
+            },
+            "remove_from_collection": {
+              "title": "Išimti iš kolekcijos",
+              "description": "Išimti modelius iš vienos iš jūsų kolekcijų."
             },
             "widget_guide": {
               "title": "Valdiklių vadovas",
@@ -1027,6 +1063,33 @@
           "publish3": "Įrašykite aplanko pavadinimą į community-widgets/index.json ir aprašykite valdiklį README.md faile.",
           "publish4": "Atidarykite pull request. Kai jis bus priimtas, kiekvienas Thingport galės jį įdiegti.",
           "guide": "Skaityti visą vadovą"
+        },
+        "ai": {
+          "or": "arba",
+          "open": "Naudoti DI",
+          "title": "Sukurkite valdiklį su DI",
+          "back": "Grįžti į redaktorių",
+          "step1": "Prijunkite savo DI asistentą prie Thingport per MCP.",
+          "step3": "Paprašykite bet kokio valdiklio savais žodžiais. Pavyzdžiui:",
+          "step4": "Jis atsiras skiltyje „Mano“ ir bus paruoštas įdėti į suvestinę. Norėdami pakeisti, paprašykite dar kartą arba pataisykite čia.",
+          "examplesLabel": "Užklausų pavyzdžiai",
+          "examples": {
+            "printer": {
+              "label": "Spausdintuvo eiga",
+              "name": "Spausdintuvas",
+              "prompt": "Sukurk Thingport valdiklį, rodantį mano OctoPrint spausdintuvo eigą."
+            },
+            "filament": {
+              "label": "Gijų atsargos",
+              "name": "Gijos",
+              "prompt": "Sukurk Thingport valdiklį, rodantį mano Spoolman ritinius ir įspėjantį, kai kurio nors lieka mažai."
+            },
+            "library": {
+              "label": "Modeliai per mėnesį",
+              "name": "Pridėti modeliai",
+              "prompt": "Sukurk Thingport valdiklį su diagrama, kiek modelių pridėjau kiekvieną mėnesį."
+            }
+          }
         }
       }
     },
@@ -3521,7 +3584,7 @@
           "takenBy": "Sinchronizuojama su „{{name}}“",
           "loadFailed": "Nepavyko įkelti kolekcijų.",
           "lookupFailed": "Nepavyko rasti šios kolekcijos.",
-          "notALink": "Įklijuokite MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs arba Cults3D kolekcijos nuorodą.",
+          "notALink": "Įklijuokite MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D arba Pinshape kolekcijos nuorodą.",
           "usernameFailed": "Nepavyko išsaugoti vartotojo vardo.",
           "openProviders": "Atidaryti tiekėjus",
           "usernameLabel": "Jūsų {{provider}} vartotojo vardas",
@@ -4259,9 +4322,9 @@
         "steps": [
           "Paprasčiausia: su Thingport Grab tiesiog atverkite makeitreal.eufymake.com prisijungę. Jis prijungs jūsų paskyrą ir atsiųs naują prisijungimą kaskart, kai ten vėl prisijungsite.",
           "Arba rankiniu būdu: prisijunkite prie makeitreal.eufymake.com ir atverkite naršyklės kūrėjo įrankius (F12).",
-          "Skiltyje Application (Chrome, Edge) arba Storage (Firefox) → Local Storage → makeitreal.eufymake.com nukopijuokite mk-userinfo reikšmę ir įklijuokite ją žemiau. Tiks ir prisijungus siųstos aiot-wapi-eu.ankermake.com užklausos X-Auth-Token bei Gtoken antraštės."
+          "Skiltyje Application (Chrome, Edge) arba Storage (Firefox) → Local Storage → makeitreal.eufymake.com nukopijuokite visą mk-userinfo reikšmę ir įklijuokite ją žemiau — tai viena ilga raidžių ir skaitmenų eilutė arba, senesnėje versijoje, JSON"
         ],
-        "placeholder": "mk-userinfo reikšmė arba užklausos X-Auth-Token ir Gtoken antraštės"
+        "placeholder": "Visa mk-userinfo reikšmė"
       },
       "status": {
         "notConnected": "Prijunkite paskyrą, kad Thingport matytų jūsų pamėgtus eufyMake modelius. Modeliai importuojami ir be jos.",
@@ -4283,6 +4346,37 @@
       },
       "sync": {
         "notConnected": "Prijunkite eufyMake skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte pamėgtus modelius."
+      }
+    },
+    "pinshape": {
+      "connect": {
+        "steps": [
+          "Paprasčiausia: su Thingport Grab tiesiog atverkite pinshape.com prisijungę. Jis prijungs jūsų paskyrą ir atsiųs naują prisijungimą kaskart, kai ten vėl prisijungsite.",
+          "Arba rankiniu būdu: prisijunkite prie pinshape.com pažymėję „Remember Me“, kad prisijungimas galiotų metus, ir atverkite naršyklės kūrėjo įrankius (F12).",
+          "Skiltyje Application (Chrome, Edge) arba Storage (Firefox) → Cookies → pinshape.com nukopijuokite remember_token reikšmę ir įklijuokite ją žemiau. Tiks ir prisijungus siųstos pinshape.com užklausos Cookie antraštė."
+        ],
+        "placeholder": "remember_token slapukas arba prisijungus siųstos užklausos Cookie antraštė"
+      },
+      "status": {
+        "notConnected": "Pinshape failus duoda tik prisijungusiems naudotojams. Prijunkite paskyrą, kad galėtumėte importuoti jo modelius; kolekcijos ir pamėgti modeliai skaitomi ir be jos.",
+        "expired": "Prisijungimo galiojimas baigėsi. Prisijunkite pinshape.com su Thingport Grab arba vėl prijunkite Pinshape skiltyje Konfigūracija → Šaltiniai.",
+        "expiredStatus": "Prisijungimas nebegalioja",
+        "disabledReason": "Pinshape: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai"
+      },
+      "about": {
+        "summary": "Ilgametė bendruomenės modelių svetainė, dabar priklausanti MatterHackers: nemokami modeliai ir kolekcijos, kurias gali sekti bet kas.",
+        "signIn": "Jūsų pačių prisijungimas, failams; kolekcijos ir pamėgti modeliai skaitomi ir be jo.",
+        "grab": "Atsiunčia jūsų prisijungimą, kai lankotės pinshape.com.",
+        "setup": [
+          "Įdiekite Thingport Grab, įjunkite jį Pinshape ir atverkite pinshape.com prisijungę.",
+          "Rankiniu būdu: nukopijuokite prisijungusio pinshape.com skirtuko remember_token slapuką ir įklijuokite jį skiltyje Konfigūracija → Šaltiniai."
+        ]
+      },
+      "admin": {
+        "description": "Modeliai ir bet kieno kolekcijos bei pamėgti modeliai. Sąrašai skaitomi be prisijungimo; failams reikia paties naudotojo prisijungimo."
+      },
+      "sync": {
+        "notConnected": "Prijunkite Pinshape skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte pamėgtus modelius ir kolekcijas."
       }
     }
   }

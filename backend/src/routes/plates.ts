@@ -10,19 +10,13 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { modelUpload, thumbnailUpload } from "../uploadMiddleware";
 import {
   addPlatesToPrint,
-  deletePlateFiles,
   refreshAutoPreparedMetadata,
+  removePlate,
+  renamePlate,
   resolvePlateFilePath,
   type NewPlateInput,
 } from "../services/printCreation";
-import {
-  availablePlateFilename,
-  plateThumbPath,
-  plateThumbReplaceable,
-  relocatePrint,
-  removePlatePictures,
-  saveThumbFromBytes,
-} from "../services/printService";
+import { plateThumbPath, plateThumbReplaceable, saveThumbFromBytes } from "../services/printService";
 import { addGeneratedPreviewImageIfNone, generateCardRender } from "../services/previewImageService";
 import { printOutById } from "../services/printLoader";
 import {
@@ -68,28 +62,7 @@ router.delete(
   asyncHandler(async (req, res) => {
     const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
     if (!print) throw new HttpError(404, "Print not found");
-    const plates = await prisma.plate.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } });
-    const target = plates.find((p) => p.id === req.params.plateId);
-    if (!target) throw new HttpError(404, "Plate not found");
-    if (plates.length <= 1) {
-      throw new HttpError(409, "Cannot remove the only plate of a print; delete the print instead.");
-    }
-
-    const remaining = plates.filter((p) => p.id !== target.id);
-    // Renumber in two phases (negative temp positions) to avoid (printId, position) collisions.
-    await prisma.plate.delete({ where: { id: target.id } });
-    await prisma.$transaction(
-      remaining.map((p, idx) => prisma.plate.update({ where: { id: p.id }, data: { position: -(idx + 1) } })),
-    );
-    await prisma.$transaction(
-      remaining.map((p, idx) => prisma.plate.update({ where: { id: p.id }, data: { position: idx } })),
-    );
-    await deletePlateFiles(target);
-    await removePlatePictures(target.id, print.assetsPath);
-
-    if (target.position === 0) {
-      await refreshAutoPreparedMetadata(print.id);
-    }
+    await removePlate(print, req.params.plateId);
     res.json({ print: await printOutById(req.userId!, print.id) });
   }),
 );
@@ -129,18 +102,7 @@ router.post(
     const body = parseBody(renameSchema, req.body);
     const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
     if (!print) throw new HttpError(404, "Print not found");
-    const plate = await prisma.plate.findUnique({ where: { id: req.params.plateId } });
-    if (!plate || plate.printId !== print.id) throw new HttpError(404, "Plate not found");
-
-    const sanitized = sanitizeFilename(body.filename);
-    const nextFilename = await availablePlateFilename(print.id, sanitized, plate.id);
-    if (nextFilename !== plate.filename) {
-      await prisma.plate.update({ where: { id: plate.id }, data: { filename: nextFilename } });
-      await relocatePrint(print, [{ ...plate, filename: nextFilename }]);
-      if (plate.position === 0) {
-        await refreshAutoPreparedMetadata(print.id);
-      }
-    }
+    await renamePlate(print, req.params.plateId, body.filename);
     res.json({ print: await printOutById(req.userId!, print.id) });
   }),
 );
