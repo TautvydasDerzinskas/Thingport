@@ -1,7 +1,7 @@
 {
   "name": "MakerWorld 3MF normalizer",
   "description": "Makes Bambu Studio and MakerWorld 3MF files open in Cura, PrusaSlicer and other slicers, keeping painted colours, filaments, plates and the designer's print settings.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Thingport contributors",
   "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
   "window": {
@@ -23,5 +23,5 @@
       "caption": "A model's 3MF taken from your library, to normalize and add back to the model it came from."
     }
   ],
-  "iconUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2048%2048%22%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%2244%22%20height%3D%2244%22%20rx%3D%2211%22%20fill%3D%22%231f2a37%22%2F%3E%3Cpath%20d%3D%22M24%209%2037%2016.2%2024%2023.4%2011%2016.2Z%22%20fill%3D%22%23a7f3d0%22%2F%3E%3Cpath%20d%3D%22M11%2016.2%2024%2023.4V38L11%2030.8Z%22%20fill%3D%22%2310b981%22%2F%3E%3Cpath%20d%3D%22M24%2023.4%2037%2016.2V30.8L24%2038Z%22%20fill%3D%22%230e7490%22%2F%3E%3Cpath%20d%3D%22M17.5%2019.8%2024%2023.4l6.5-3.6%22%20fill%3D%22none%22%20stroke%3D%22%23f0fdf4%22%20stroke-opacity%3D%22.35%22%20stroke-width%3D%221%22%2F%3E%3Ccircle%20cx%3D%2236.5%22%20cy%3D%2236.5%22%20r%3D%227.5%22%20fill%3D%22%23f8fafc%22%2F%3E%3Cpath%20d%3D%22m32.8%2036.6%202.6%202.6%204.6-5%22%20fill%3D%22none%22%20stroke%3D%22%23059669%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E"
+  "iconUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2048%2048%22%3E%3Cpath%20d%3D%22M7.5%209.5%2013.5%2012.8%207.5%2016.1%201.5%2012.8Z%22%20fill%3D%22%23c3c9d0%22%2F%3E%3Cpath%20d%3D%22M1%2018.4l5.8%203.2v6.7L1%2025.1Z%22%20fill%3D%22%23a1a9b3%22%2F%3E%3Cpath%20d%3D%22M8.6%2024.4l5.8-3.2v6.7l-5.8%203.2Z%22%20fill%3D%22%237d8792%22%2F%3E%3Cpath%20d%3D%22m3%2032.5%203.2%203.2L3%2038.9m5.6-6.4%203.2%203.2-3.2%203.2%22%20fill%3D%22none%22%20stroke%3D%22%2300b800%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpath%20d%3D%22M20%203h15.5L45%2012.5V41a4%204%200%200%201-4%204H20a4%204%200%200%201-4-4V7a4%204%200%200%201%204-4Z%22%20fill%3D%22%2300b800%22%2F%3E%3Cpath%20d%3D%22M35.5%203v6.5a3%203%200%200%200%203%203H45Z%22%20fill%3D%22%235be584%22%2F%3E%3Cpath%20d%3D%22M30.5%2014.5%2039.5%2019.5%2030.5%2024.5%2021.5%2019.5Z%22%20fill%3D%22%23fff%22%2F%3E%3Cpath%20d%3D%22M21.5%2019.5%2030.5%2024.5v10.2l-9-5Z%22%20fill%3D%22%23dcf6dc%22%2F%3E%3Cpath%20d%3D%22M30.5%2024.5%2039.5%2019.5v10.2l-9%205Z%22%20fill%3D%22%23a9e8ad%22%2F%3E%3Ctext%20x%3D%2230.5%22%20y%3D%2242%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2C%20Helvetica%2C%20sans-serif%22%20font-weight%3D%22700%22%20font-size%3D%226%22%20fill%3D%22%23fff%22%20letter-spacing%3D%22.3%22%3E3MF%3C%2Ftext%3E%3C%2Fsvg%3E"
 }
