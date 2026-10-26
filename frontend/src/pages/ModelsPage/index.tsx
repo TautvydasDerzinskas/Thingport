@@ -47,6 +47,7 @@ type Props = {
   viewer?: AuthUser | null;
 };
 
+/** Shares category selection between desktop filters and the collapsible mobile panel above the model grid. */
 export default function ModelsPage({
   categoryId,
   onSelectCategory,

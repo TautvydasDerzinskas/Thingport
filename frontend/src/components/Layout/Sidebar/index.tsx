@@ -156,6 +156,7 @@ function SortableBookmarkRow({
   );
 }
 
+/** Mobile drawers keep full labels without changing the user's persisted desktop collapse preference. */
 export default function Sidebar({ mobile = false, isAdmin, onSelectCategory, bookmarksVersion }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const location = useLocation();

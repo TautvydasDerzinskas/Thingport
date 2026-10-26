@@ -41,6 +41,7 @@ type Props = {
   onLogout: () => void;
 };
 
+/** Wraps route actions on narrow screens; the shell supplies a menu trigger only when navigation is modal. */
 export default function TopBar({
   onMenuClick,
   menuOpen,

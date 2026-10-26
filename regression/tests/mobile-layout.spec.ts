@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { uploadCube } from "./helpers";
 
+/** Allows subpixel rounding, but catches panels or cards extending beyond the viewport. */
 async function expectNoHorizontalOverflow(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
 }
@@ -23,6 +24,9 @@ for (const width of [320, 393, 768]) {
       expect(before!.width).toBeGreaterThanOrEqual(width - 1);
 
       await menu.click();
+      const dialog = page.getByRole("dialog", { name: "Navigation menu", exact: true });
+      await expect(dialog).toBeVisible();
+      await expect(dialog).toHaveAttribute("aria-modal", "true");
       await expect(drawer.getByRole("button", { name: "Models", exact: true })).toBeVisible();
       await drawer.getByRole("button", { name: "Collections", exact: true }).click();
       await expect(page).toHaveURL(/\/models\/collections$/);

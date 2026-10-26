@@ -211,6 +211,9 @@ function AppLayoutShell({
                 open={Boolean(navigationOpen)}
                 onClose={closeNavigation}
                 PaperProps={{
+                  role: "dialog",
+                  "aria-modal": true,
+                  "aria-label": t("sidebar.navigationMenu"),
                   sx: {
                     width: "min(320px, calc(100vw - 40px))",
                     pt: "env(safe-area-inset-top)",
@@ -286,6 +289,7 @@ function AppLayoutShell({
   );
 }
 
+/** Keeps responsive navigation inside the same theme, session and notification providers as the page. */
 export default function AppLayout({ muiTheme, onUnauthorized, ...shellProps }: AppLayoutProps) {
   return (
     <ThemeProvider theme={muiTheme}>
