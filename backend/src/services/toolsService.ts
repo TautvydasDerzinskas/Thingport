@@ -194,13 +194,29 @@ export async function deleteOwnTool(userId: string, id: string): Promise<void> {
 
 // --- The repository -------------------------------------------------------------------------------------------------
 
-// The repository's tools folder as GitHub serves its files, on develop for the :dev image. A fork can point its
-// instances at its own, and TOOLS_DIR reads a folder on disk instead, for working on a tool.
+// Where tools come from. A Thingport run from a checkout of the repository (npm run dev, or the local
+// docker-compose.yml, which mounts it as TOOLS_DIR) reads the checkout's own tools folder, so a tool being worked on
+// is what's offered. A published image has none and reads the repository's as GitHub serves it, on develop for the
+// :dev image; TOOLS_URL points it at a fork's, and TOOLS_DIR at any folder on disk.
 const REPO_URL =
   process.env.TOOLS_URL?.replace(/\/+$/, "") ??
   `https://raw.githubusercontent.com/${GITHUB_REPO}/${releaseBranch()}/tools`;
-let repoDir: string | null = process.env.TOOLS_DIR ? path.resolve(process.env.TOOLS_DIR) : null;
+// backend/src/services here, backend/dist/services built: the checkout's root is three up either way.
+const CHECKOUT_TOOLS = path.resolve(__dirname, "../../../tools");
+
+function defaultRepoDir(): string | null {
+  if (process.env.TOOLS_DIR) return path.resolve(process.env.TOOLS_DIR);
+  if (process.env.TOOLS_URL) return null;
+  return fsSync.existsSync(path.join(CHECKOUT_TOOLS, "index.json")) ? CHECKOUT_TOOLS : null;
+}
+
+let repoDir: string | null = defaultRepoDir();
 const REPO_TTL_MS = 60 * 60 * 1000;
+
+/** Where the tools offered come from, for the admin page to say. */
+export function toolsSource(): { kind: "folder" | "repository"; location: string } {
+  return repoDir ? { kind: "folder", location: repoDir } : { kind: "repository", location: REPO_URL };
+}
 const TEXT_MAX_BYTES = 1024 * 1024;
 
 type RepoTool = { slug: string; manifest: ToolManifest; script: string; html: string | null; sha: string };
@@ -209,7 +225,7 @@ const repoCache = new TtlCache<RepoTool[] | RepoTool>(REPO_TTL_MS);
 let fetchImpl: typeof fetch = (...args) => fetch(...args);
 /** Lets tests stand in for the repository, as a folder on disk or as GitHub's answers. */
 export function setToolsRepoForTest(source?: { dir?: string; fetch?: typeof fetch }): void {
-  repoDir = source?.dir ?? (process.env.TOOLS_DIR ? path.resolve(process.env.TOOLS_DIR) : null);
+  repoDir = source?.dir ?? defaultRepoDir();
   fetchImpl = source?.fetch ?? ((...args) => fetch(...args));
   repoCache.clear();
   screenshotCache.clear();
@@ -238,7 +254,8 @@ const repoText = async (file: string) => (await repoFile(file, TEXT_MAX_BYTES))?
 
 /** `fresh` for an install, which takes the repository's files as they are now, not as they were an hour ago. */
 async function fetchRepoTool(slug: string, fresh = false): Promise<RepoTool> {
-  const cached = fresh ? undefined : repoCache.get(`tool:${slug}`);
+  // A folder on disk is read afresh each time, so a tool being worked on shows its changes at once.
+  const cached = fresh || repoDir ? undefined : repoCache.get(`tool:${slug}`);
   if (cached && !Array.isArray(cached)) return cached;
   const metadata = (await repoText(`${slug}/tool.json`)) ?? (await repoText(`${slug}/tool.yml`));
   const script = await repoText(`${slug}/tool.js`);
@@ -253,7 +270,7 @@ async function fetchRepoTool(slug: string, fresh = false): Promise<RepoTool> {
 
 /** The repository's tools, from its index.json; one that doesn't load is left out rather than hiding the rest. */
 async function repoCatalog(): Promise<RepoTool[]> {
-  const cached = repoCache.get("index");
+  const cached = repoDir ? undefined : repoCache.get("index");
   if (Array.isArray(cached)) return cached;
   const indexText = await repoText("index.json");
   let slugs: string[] = [];
@@ -284,7 +301,7 @@ export async function repoToolScreenshot(slug: string, index: number): Promise<{
   const shot = tool.manifest.screenshots[index];
   if (!shot) throw new HttpError(404, "No such screenshot");
   const key = `${slug}/${tool.sha}/${shot.file}`;
-  const cached = screenshotCache.get(key);
+  const cached = repoDir ? undefined : screenshotCache.get(key);
   if (cached) return cached;
   const body = await repoFile(`${slug}/${shot.file}`, TOOL_SCREENSHOT_MAX_BYTES);
   if (!body) throw new HttpError(404, "The tools repository has no such screenshot");
@@ -362,7 +379,11 @@ async function modelsState(tool: Tool, manifest: ToolManifest): Promise<ToolMode
 }
 
 /** The repository's tools with what's installed of each, and installed ones the repository no longer lists. */
-export async function adminToolCatalog(): Promise<{ tools: AdminTool[]; repoError: string | null }> {
+export async function adminToolCatalog(): Promise<{
+  tools: AdminTool[];
+  repoError: string | null;
+  source: ReturnType<typeof toolsSource>;
+}> {
   const installed = await prisma.tool.findMany({ where: { source: "repo" }, orderBy: { createdAt: "asc" } });
   let catalog: RepoTool[] = [];
   let repoError: string | null = null;
@@ -405,7 +426,7 @@ export async function adminToolCatalog(): Promise<{ tools: AdminTool[]; repoErro
         installed: await installedOut(tool),
       })),
   );
-  return { tools: [...fromRepo, ...gone], repoError };
+  return { tools: [...fromRepo, ...gone], repoError, source: toolsSource() };
 }
 
 /** Installs a repository tool for the instance, or takes its update, then fetches the models it brings in the

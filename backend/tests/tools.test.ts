@@ -7,7 +7,7 @@ import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { setToolsAccess } from "../src/services/settingsService";
 import { parseToolManifest } from "../src/services/toolFormat";
-import { setToolsRepoForTest, syncToolModels, toolFetchSettled } from "../src/services/toolsService";
+import { setToolsRepoForTest, syncToolModels, toolFetchSettled, toolsSource } from "../src/services/toolsService";
 
 const app = createApp();
 const stamp = Date.now();
@@ -109,6 +109,19 @@ describe("metadata", () => {
       '{"name":"x","collection":{"name":"c","models":[{"key":"a","name":"A","source":"https://thangs.com/m/1"}]}}',
     );
     expect(sourced.collection?.models[0].source).toBe("https://thangs.com/m/1");
+  });
+});
+
+describe("where tools come from", () => {
+  it("reads the checkout's own tools folder when run from one", () => {
+    setToolsRepoForTest();
+    expect(toolsSource()).toEqual({ kind: "folder", location: path.resolve(__dirname, "../../tools") });
+    setToolsRepoForTest({ dir: repo });
+  });
+
+  it("tells admins which", async () => {
+    const res = await request(app).get("/api/admin/tools").set(auth(adminToken));
+    expect(res.body.source).toEqual({ kind: "folder", location: repo });
   });
 });
 
