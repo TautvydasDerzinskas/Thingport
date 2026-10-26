@@ -51,7 +51,8 @@ export const STARTER_SCRIPT = `// A tool is an ES module. When its window opens,
 // \`thingport\`; the function that returns is called when the window closes. Everything below is optional.
 //
 // thingport.root               the window's element, with tool.html already in it
-// thingport.theme              { mode, primary, background, paper, text, textSecondary, divider, error, success, fontFamily }
+// thingport.theme              { mode, primary, background, paper, text, textSecondary, divider, error, warning, success,
+//                              fontFamily }
 // thingport.size, onResize(fn) the window's size in pixels, and a way to hear when it changes
 // thingport.tool               { id, slug, name, version, source }
 // thingport.storage            get(key), set(key, value), remove(key), keys(): JSON kept for this user, up to 20 MB

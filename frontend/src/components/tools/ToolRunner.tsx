@@ -59,6 +59,7 @@ export default function ToolRunner({ tool, onClose }: Props) {
     textSecondary: muiTheme.palette.text.secondary,
     divider: muiTheme.palette.divider,
     error: muiTheme.palette.error.main,
+    warning: muiTheme.palette.warning.main,
     success: muiTheme.palette.success.main,
     fontFamily: String(muiTheme.typography.fontFamily),
   };

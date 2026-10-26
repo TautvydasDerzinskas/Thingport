@@ -31,6 +31,7 @@ export type ToolTheme = {
   textSecondary: string;
   divider: string;
   error: string;
+  warning: string;
   success: string;
   fontFamily: string;
 };
