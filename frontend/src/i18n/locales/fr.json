@@ -2715,7 +2715,7 @@
           "models": "Les modèles de la bibliothèque : une page, une recherche ou un seul.",
           "file": "Un des fichiers d'un modèle, en ArrayBuffer.",
           "create": "Un nouveau modèle des fichiers donnés, p. ex. un STL créé par l'outil.",
-          "edit": "D'autres fichiers, un fichier remplacé, ou son nom, sa description et ses tags.",
+          "edit": "D'autres fichiers, des images de galerie, un fichier remplacé, ou son nom, sa description et ses tags.",
           "open": "Ferme l'outil et ouvre la page du modèle.",
           "toolModels": "Les modèles qu'apporte un outil du dépôt, par clé.",
           "fetch": "Une requête vers un hôte que l'outil déclare, faite par Thingport.",

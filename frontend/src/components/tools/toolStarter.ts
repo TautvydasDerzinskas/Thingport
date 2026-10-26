@@ -59,7 +59,8 @@ export const STARTER_SCRIPT = `// A tool is an ES module. When its window opens,
 //                              add(id, modelIds), remove(id, modelIds), pick({ title }): asks the user for one
 // thingport.models             list({ q, tags, collectionId, limit, offset }), search(q), get(id), file(id, fileId?),
 //                              create({ name, description, tags, collectionId, files: [{ name, data }] }),
-//                              addFiles(id, files), replaceFile(id, fileId, file), update(id, { name, description, tags }),
+//                              addFiles(id, files), addImages(id, images), replaceFile(id, fileId, file),
+//                              update(id, { name, description, tags }),
 //                              open(id): closes the tool and opens the model's page
 // thingport.toolModels()       the models a tool from the repository brings, by key
 // thingport.fetch(url, init)   a request through Thingport to a host the tool's details declare

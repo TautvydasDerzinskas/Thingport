@@ -188,6 +188,9 @@ export function buildToolSdk({ tool, root, selector, theme, size, onResize, ui }
     /** Adds files to a model, each a plate. */
     addFiles: async (id: string, files: ToolFileInput[]) =>
       toModel((await printsApi.addPlates(id, files.map(toFile))).print),
+    /** Adds pictures (PNG, JPEG, WebP) to a model's gallery; the first becomes its cover in place of the render. */
+    addImages: async (id: string, images: ToolFileInput[]) =>
+      toModel((await printsApi.addPreviewImages(id, images.map(toFile))).print),
     /** Replaces one of a model's files with a new one, in its place. */
     replaceFile: async (id: string, fileId: string, file: ToolFileInput) => {
       const before = await printsApi.get(id);

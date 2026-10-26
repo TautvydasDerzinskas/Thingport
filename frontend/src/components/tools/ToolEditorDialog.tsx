@@ -40,7 +40,7 @@ const SDK: { name: string; key: string }[] = [
   { name: "models.list / search / get", key: "models" },
   { name: "models.file(id, fileId?)", key: "file" },
   { name: "models.create({ …, files })", key: "create" },
-  { name: "models.addFiles / replaceFile / update", key: "edit" },
+  { name: "models.addFiles / addImages / replaceFile / update", key: "edit" },
   { name: "models.open(id)", key: "open" },
   { name: "toolModels()", key: "toolModels" },
   { name: "fetch(url, init)", key: "fetch" },

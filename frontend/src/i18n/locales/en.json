@@ -2688,7 +2688,7 @@
           "models": "Models in the library: a page of them, a search, or one.",
           "file": "One of a model's files, as an ArrayBuffer.",
           "create": "A new model of the files given, e.g. an STL the tool made.",
-          "edit": "More files, a file replaced, or its name, description and tags.",
+          "edit": "More files, gallery pictures, a file replaced, or its name, description and tags.",
           "open": "Closes the tool and opens the model's page.",
           "toolModels": "The models a repository tool brings, by key.",
           "fetch": "A request to a host the tool declares, made by Thingport.",

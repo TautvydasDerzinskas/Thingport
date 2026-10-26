@@ -2773,7 +2773,7 @@
           "models": "Bibliotekos modeliai: jų puslapis, paieška arba vienas.",
           "file": "Vienas modelio failas kaip ArrayBuffer.",
           "create": "Naujas modelis iš pateiktų failų, pvz., įrankio sukurtas STL.",
-          "edit": "Daugiau failų, pakeistas failas arba pavadinimas, aprašymas ir žymos.",
+          "edit": "Daugiau failų, galerijos paveikslėlių, pakeistas failas arba pavadinimas, aprašymas ir žymos.",
           "open": "Uždaro įrankį ir atidaro modelio puslapį.",
           "toolModels": "Saugyklos įrankio atsinešti modeliai pagal raktą.",
           "fetch": "Užklausa įrankio nurodytam serveriui, kurią atlieka Thingport.",
