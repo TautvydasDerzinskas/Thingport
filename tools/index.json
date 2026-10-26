@@ -1,3 +1,3 @@
 {
-  "tools": ["multiboard-planner", "gridfinity-drawer"]
+  "tools": ["multiboard-planner", "gridfinity-drawer", "makerworld-3mf-normalizer"]
 }
