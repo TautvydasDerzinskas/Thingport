@@ -318,6 +318,7 @@ To have Thingport import whatever you drop into a folder on the server, uncommen
 - **[API token](docs/guides/api-token.md)**
 - **[Connect an AI assistant (MCP)](docs/guides/mcp.md)**
 - **[Custom dashboard widgets](docs/guides/custom-widgets.md)**
+- **[Tools](docs/guides/tools.md)**
 - **[Light and dark themes, accent colours, in English, Spanish, French and Lithuanian](docs/features/appearance.md)**
 - **[Self-hosted](#installation)**
 
