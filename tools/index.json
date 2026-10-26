@@ -4,6 +4,7 @@
     "gridfinity-drawer",
     "makerworld-3mf-normalizer",
     "enclosure-generator",
-    "print-cost-estimator"
+    "print-cost-estimator",
+    "skadis-planner"
   ]
 }
