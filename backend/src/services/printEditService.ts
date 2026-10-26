@@ -15,10 +15,18 @@ import { deletePlateFiles } from "./printCreation";
 
 // Editing and deleting a model, shared by the model page's routes and the MCP tools.
 
+/** The user's own model, for a change to it: never one a tool brought (services/toolsService.ts), which stays as the
+ *  tool needs it until the tool is uninstalled. */
 async function ownPrint(userId: string, printId: string): Promise<Print> {
   const print = await prisma.print.findFirst({ where: { id: printId, userId } });
   if (!print) throw new HttpError(404, "Print not found");
+  assertNotToolModel(print);
   return print;
+}
+
+export function assertNotToolModel(print: Pick<Print, "toolId" | "title" | "name">): void {
+  if (print.toolId)
+    throw new HttpError(403, `"${print.title || print.name}" belongs to a tool and can't be changed`, "TOOL_OWNED");
 }
 
 async function relocate(print: Print): Promise<void> {
@@ -88,8 +96,11 @@ export async function updatePrintMeta(userId: string, printId: string, meta: Pri
 }
 
 /** Deletes the model with its files and pictures, for good. */
-export async function deletePrint(userId: string, printId: string): Promise<void> {
+/** `quiet` for a model the user never chose to delete, such as one a tool brought, which goes with the tool. */
+export async function deletePrint(userId: string, printId: string, { quiet = false } = {}): Promise<void> {
   const full = await loadFullPrint(userId, printId);
+  // Only the tool's uninstall, quietly, removes a model a tool brought.
+  if (!quiet) assertNotToolModel(full.print);
   const assetOwners = await assetOwnerIds(printId);
   await deleteAllPrintFiles(printId);
   await deleteAllPreviewImages(printId);
@@ -100,6 +111,7 @@ export async function deletePrint(userId: string, printId: string): Promise<void
     await removePlatePictures(plate.id, full.print.assetsPath);
   }
   await removeAssetHome(full.print.assetsPath, assetOwners);
+  if (quiet) return;
   void recordActivity(userId, "delete", printId, full.print.name);
   void createLog({
     userId,

@@ -32,6 +32,8 @@ import releaseNotesRoutes from "./routes/releaseNotes";
 import adminRoutes from "./routes/admin";
 import dashboardRoutes from "./routes/dashboard";
 import widgetRoutes from "./routes/widgets";
+import toolRoutes from "./routes/tools";
+import { toolLocks } from "./routes/toolLocks";
 import activityRoutes from "./routes/activity";
 import aiCategorizationRoutes from "./routes/aiCategorization";
 import aiDescriptionRoutes from "./routes/aiDescriptions";
@@ -51,10 +53,14 @@ export function createApp(): Express {
   app.use(pathToken);
   // A widget's script, HTML and fetch body are larger than the default 100 kB; their own validation sets the limits.
   app.use("/api/widgets", express.json({ limit: "8mb" }));
+  // A tool's script and the values it keeps.
+  app.use("/api/tools", express.json({ limit: "8mb" }));
   // upload_model's files come as base64 in the call: MCP_UPLOAD_MAX_BYTES, a third bigger, and some room.
   app.use("/api/mcp", express.json({ limit: "40mb" }));
   app.use(express.json());
   app.use("/api", trackClients);
+  // Refuses changes to the models and collections tools bring, whichever router would make them.
+  app.use("/api", toolLocks);
 
   // The frontend's nginx proxies /api/* here unmodified.
   app.use("/api", healthRoutes);
@@ -89,6 +95,7 @@ export function createApp(): Express {
   app.use("/api/admin", adminRoutes);
   app.use("/api", dashboardRoutes);
   app.use("/api", widgetRoutes);
+  app.use("/api", toolRoutes);
   app.use("/api", activityRoutes);
 
   app.use((_req: Request, res: Response) => {

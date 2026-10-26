@@ -8,6 +8,16 @@ import { parseBody } from "../utils/validate";
 import { deleteAllPrintsForUser, getStorageUsage, listLogs, listUsersWithPrintCounts } from "../services/adminService";
 import { createLog } from "../services/auditLog";
 import { communityWidgetUsage, widgetsInUse } from "../services/customWidgetsService";
+import { getToolsAccess, setToolsAccess, TOOLS_AUDIENCES } from "../services/settingsService";
+import {
+  adminToolCatalog,
+  installRepoTool,
+  ownToolsInUse,
+  provisionEveryoneSoon,
+  repoToolScreenshot,
+  retryModelFetch,
+  uninstallRepoTool,
+} from "../services/toolsService";
 import { listStorageFolder } from "../services/storageBrowserService";
 import { deleteUser, permissionsOver, setUserRole } from "../services/userAdminService";
 import { getHealthReport, HEALTH_COMPONENTS, testHealth } from "../services/systemHealthService";
@@ -320,6 +330,87 @@ router.get(
   "/widgets/community",
   asyncHandler(async (_req, res) => {
     res.json({ widgets: await communityWidgetUsage() });
+  }),
+);
+
+// Tools: the repository's, with what's installed of each, and who may use them.
+router.get(
+  "/tools",
+  asyncHandler(async (_req, res) => {
+    res.json(await adminToolCatalog());
+  }),
+);
+
+router.get(
+  "/tools/own",
+  asyncHandler(async (_req, res) => {
+    res.json({ tools: await ownToolsInUse() });
+  }),
+);
+
+router.get(
+  "/tools/access",
+  asyncHandler(async (_req, res) => {
+    res.json(await getToolsAccess());
+  }),
+);
+
+const toolsAccessSchema = z.object({
+  audience: z.enum(TOOLS_AUDIENCES).optional(),
+  userIds: z.array(z.string()).max(10_000).optional(),
+  userTools: z.boolean().optional(),
+});
+router.post(
+  "/tools/access",
+  asyncHandler(async (req, res) => {
+    const patch = parseBody(toolsAccessSchema, req.body);
+    if (patch.userIds) {
+      const known = await prisma.user.findMany({ where: { id: { in: patch.userIds } }, select: { id: true } });
+      patch.userIds = known.map((user) => user.id);
+    }
+    res.json(await setToolsAccess(patch));
+    void createLog({ userId: req.userId!, action: "tools_access_changed", details: patch });
+    // The tools' models go to whoever may now use them, and from whoever no longer may.
+    provisionEveryoneSoon();
+  }),
+);
+
+// A repository tool's screenshot, by its place in its metadata: for an <img>, so the token may come as ?token=.
+router.get(
+  "/tools/:slug/screenshots/:index",
+  asyncHandler(async (req, res) => {
+    const index = Number(req.params.index);
+    if (!Number.isInteger(index) || index < 0) throw new HttpError(400, "Not a screenshot");
+    const image = await repoToolScreenshot(String(req.params.slug), index);
+    res.set("Content-Type", image.type);
+    res.set("Cache-Control", "private, max-age=3600");
+    res.set("X-Content-Type-Options", "nosniff");
+    res.send(image.body);
+  }),
+);
+
+// Installs a tool from the repository, or takes its update; the models it brings are fetched in the background.
+router.post(
+  "/tools/:slug/install",
+  asyncHandler(async (req, res) => {
+    res.json(await installRepoTool(String(req.params.slug), req.userId!));
+  }),
+);
+
+// Tries the models that didn't come again, e.g. once the provider's daily downloads are back.
+router.post(
+  "/tools/:slug/fetch-models",
+  asyncHandler(async (req, res) => {
+    await retryModelFetch(String(req.params.slug), req.userId!);
+    res.status(202).json({ ok: true });
+  }),
+);
+
+router.delete(
+  "/tools/:slug",
+  asyncHandler(async (req, res) => {
+    await uninstallRepoTool(String(req.params.slug), req.userId!);
+    res.status(204).end();
   }),
 );
 

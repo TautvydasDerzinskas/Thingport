@@ -33,6 +33,7 @@ import type { CategorySource, Plate, Print } from "@prisma/client";
 import { enqueueAiCategorization } from "./aiCategorizationService";
 import { enqueueAiDescription } from "./aiDescriptionService";
 import { deleteAllPrintFiles } from "./printFileService";
+import { importingQuietly } from "../utils/quietImport";
 
 const IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".webp", ".bmp"]);
 
@@ -200,13 +201,14 @@ async function createPlateAtPosition(
 }
 
 /** `describe: false` leaves the AI description check to the caller: an import's description is rewritten after this,
- *  when its images are stored locally, and a check started before then would come back to a changed description. */
+ *  when its images are stored locally, and a check started before then would come back to a changed description.
+ *  `classify: false` keeps it out of AI categorization too, as for a tool's own models, which no one may change. */
 export async function createPrint(
   userId: string,
   meta: PrintMetaInput,
   nameHint: string,
   plateInputs: NewPlateInput[],
-  { describe = true } = {},
+  { describe = true, classify = true } = {},
 ): Promise<{ print: Print; plates: Plate[] }> {
   if (!plateInputs.length) throw new Error("createPrint requires at least one plate");
   // categoryId may come straight from a request body, so verify ownership here.
@@ -262,8 +264,9 @@ export async function createPrint(
 
     // Background classification is intentionally detached: importing a model must not wait for,
     // or fail because of, a third-party AI provider.
-    if (!print.categoryId) void enqueueAiCategorization(userId, print.id);
-    if (describe) enqueueAiDescription(userId, print.id);
+    const quiet = importingQuietly();
+    if (!print.categoryId && classify && !quiet) void enqueueAiCategorization(userId, print.id);
+    if (describe && !quiet) enqueueAiDescription(userId, print.id);
     return { print, plates };
   } catch (err) {
     await discardPrint(print.id);

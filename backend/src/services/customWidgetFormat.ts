@@ -8,12 +8,12 @@ import { HttpError } from "../utils/fileUtils";
 export const SLUG = /^[a-z0-9][a-z0-9-]{1,39}$/;
 const KEY = /^[a-zA-Z][a-zA-Z0-9_]{0,39}$/;
 // A host name, optionally starting with "*." for any of its subdomains, and optionally a port.
-const HOST = /^(\*\.)?[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*(:\d{1,5})?$/i;
+export const HOST = /^(\*\.)?[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*(:\d{1,5})?$/i;
 const SCRIPT_MAX = 500_000;
 const HTML_MAX = 200_000;
 
 const label = z.string().trim().min(1).max(60);
-const webAddress = z
+export const webAddress = z
   .string()
   .trim()
   .max(2048)
@@ -21,7 +21,7 @@ const webAddress = z
   .refine((url) => /^https?:\/\//i.test(url), "Not an http or https address");
 // One of Thingport's own icons, or one the user uploaded (services/iconService.ts).
 const ICON_REF = /^(builtin:[a-z]+\/[a-z0-9-]+|\/api\/icons\/[a-f0-9]{32}\.(png|svg))$/;
-const iconAddress = z.union([z.string().trim().regex(ICON_REF), webAddress]);
+export const iconAddress = z.union([z.string().trim().regex(ICON_REF), webAddress]);
 const settingSchema = z.discriminatedUnion("type", [
   z.object({
     key: z.string().regex(KEY),
@@ -93,12 +93,13 @@ export function parseManifest(text: string): WidgetManifest {
 
 export function validateManifest(raw: unknown): WidgetManifest {
   const parsed = manifestSchema.safeParse(raw);
-  if (!parsed.success)
-    throw new HttpError(
-      400,
-      `The metadata isn't right: ${parsed.error.issues.map((issue) => `${issue.path.join(".") || "metadata"}: ${issue.message}`).join("; ")}`,
-    );
+  if (!parsed.success) throw new HttpError(400, `The metadata isn't right: ${describeIssues(parsed.error)}`);
   return parsed.data;
+}
+
+/** Each issue as "path: message", for an error that says what to fix. */
+export function describeIssues(error: z.ZodError, root = "metadata"): string {
+  return error.issues.map((issue) => `${issue.path.join(".") || root}: ${issue.message}`).join("; ");
 }
 
 export function validateCode(script: string, html: string | null): void {

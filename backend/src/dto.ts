@@ -131,6 +131,8 @@ export type PreviewImageOut = {
 
 export type PrintOut = {
   id: string;
+  /** Set on a model a tool brought: it can be opened and downloaded but not edited or deleted. */
+  tool_id: string | null;
   name: string;
   title: string | null;
   notes: string | null;
@@ -346,6 +348,7 @@ export function toPrintOut(
 
   return {
     id: print.id,
+    tool_id: print.toolId ?? null,
     name: print.name,
     title: print.title,
     notes: print.notes,
@@ -400,6 +403,8 @@ export type CollectionOut = {
   bookmarked: boolean;
   /** Set while the collection is synced with one on a provider. */
   sync: CollectionSyncOut | null;
+  /** Set on the collection of a tool's models: fixed, and gone when the tool is uninstalled. */
+  tool_id: string | null;
 };
 
 export type SyncProfileScope = "url" | "designer" | "all";
@@ -458,6 +463,7 @@ export function toCollectionOut(
     system_key: null,
     bookmarked,
     sync: sync ? toCollectionSyncOut(sync) : null,
+    tool_id: collection.toolId ?? null,
   };
 }
 
@@ -480,6 +486,7 @@ export function toSystemCollectionOut(
     system_key: key,
     bookmarked: false,
     sync: null,
+    tool_id: null,
   };
 }
 

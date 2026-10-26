@@ -94,6 +94,7 @@ import { sha256OfFile } from "./fileReuse";
 import { DROP } from "./storedContent";
 import { prisma } from "../db";
 import { recordActivity } from "./activityService";
+import { importingQuietly } from "../utils/quietImport";
 import { Prisma } from "@prisma/client";
 import type { Author, Plate, PreviewImage, Print } from "@prisma/client";
 import { assertUrlProviderEnabled } from "./providerSettingsService";
@@ -1160,7 +1161,7 @@ export async function importPrintFromUrl(
   if (!keepGrabImports && grabQueue && result.print.sourceExternalId) {
     await grabQueue.clear(userId, result.print.sourceExternalId).catch(() => undefined);
   }
-  if (!result.alreadyImported && !result.profileAdded) {
+  if (!result.alreadyImported && !result.profileAdded && !importingQuietly()) {
     void recordActivity(userId, "import", result.print.id, result.print.name);
     // Only now: the pictures it may write from are attached, and its description's images stored locally.
     enqueueAiDescription(userId, result.print.id);

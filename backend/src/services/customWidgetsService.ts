@@ -358,9 +358,7 @@ const blockedByLookup = (err: unknown): boolean =>
 // Headers the server sets or that would leak the browser's own session; a widget can't send them.
 const DROPPED_HEADERS = new Set(["host", "cookie", "content-length", "connection", "transfer-encoding"]);
 
-/** A widget's request to one of its declared hosts, made by the server so CORS and the LAN aren't in the way. Like
- *  the RSS panel, it may reach the local network; what's limited is the scheme, the hosts (never a cloud metadata
- *  address), the time and the size. */
+/** A widget's request to one of its declared hosts, made by the server so CORS and the LAN aren't in the way. */
 export async function widgetFetch(
   userId: string,
   widgetId: string,
@@ -368,10 +366,20 @@ export async function widgetFetch(
 ): Promise<{ status: number; contentType: string | null; body: string }> {
   const widget = await getCustomWidget(userId, widgetId);
   await assertWidgetSourceEnabled(widget.source);
+  return declaredHostFetch(widget.manifest.hosts, request, "widget");
+}
+
+/** A request to one of the hosts a widget's or tool's metadata declares. Like the RSS panel, it may reach the local
+ *  network; what's limited is the scheme, the hosts (never a cloud metadata address), the time and the size. */
+export async function declaredHostFetch(
+  hosts: string[],
+  request: z.infer<typeof widgetFetchSchema>,
+  what: "widget" | "tool",
+): Promise<{ status: number; contentType: string | null; body: string }> {
   const url = new URL(request.url);
   if (url.protocol !== "http:" && url.protocol !== "https:") throw new HttpError(400, "Only http and https addresses");
-  if (!hostAllowed(url, widget.manifest.hosts))
-    throw new HttpError(403, `"${url.host}" isn't among the hosts this widget declares`, "WIDGET_HOST_NOT_DECLARED");
+  if (!hostAllowed(url, hosts))
+    throw new HttpError(403, `"${url.host}" isn't among the hosts this ${what} declares`, "WIDGET_HOST_NOT_DECLARED");
   if (metadataHost(url.hostname)) throw new HttpError(403, `"${url.host}" is a cloud metadata address`, BLOCKED);
   const headers = Object.fromEntries(
     Object.entries(request.headers).filter(([name]) => !DROPPED_HEADERS.has(name.toLowerCase())),

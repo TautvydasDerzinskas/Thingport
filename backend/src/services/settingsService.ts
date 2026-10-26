@@ -66,6 +66,38 @@ export async function setWidgetSources(patch: Partial<WidgetSources>): Promise<W
   return getWidgetSources();
 }
 
+// Who sees the tools an admin installed (services/toolsService.ts): admins only, everyone, or admins and the users
+// picked. Those who see them may also make their own when userTools is on. A tool's script runs in its user's page
+// with their access, as a widget's does.
+export const TOOLS_AUDIENCES = ["admins", "everyone", "selected"] as const;
+export type ToolsAudience = (typeof TOOLS_AUDIENCES)[number];
+export type ToolsAccess = { audience: ToolsAudience; userIds: string[]; userTools: boolean };
+const TOOLS_ACCESS_KEY = "tools_access";
+const DEFAULT_TOOLS_ACCESS: ToolsAccess = { audience: "everyone", userIds: [], userTools: false };
+
+export async function getToolsAccess(): Promise<ToolsAccess> {
+  const row = await prisma.setting.findUnique({ where: { key: TOOLS_ACCESS_KEY } });
+  const value = (row?.value ?? {}) as Partial<ToolsAccess>;
+  return {
+    audience: TOOLS_AUDIENCES.includes(value.audience as ToolsAudience)
+      ? (value.audience as ToolsAudience)
+      : DEFAULT_TOOLS_ACCESS.audience,
+    userIds: Array.isArray(value.userIds) ? value.userIds.filter((id): id is string => typeof id === "string") : [],
+    userTools: typeof value.userTools === "boolean" ? value.userTools : DEFAULT_TOOLS_ACCESS.userTools,
+  };
+}
+
+/** Changes only what's given. */
+export async function setToolsAccess(patch: Partial<ToolsAccess>): Promise<ToolsAccess> {
+  const value = { ...(await getToolsAccess()), ...patch };
+  await prisma.setting.upsert({
+    where: { key: TOOLS_ACCESS_KEY },
+    create: { key: TOOLS_ACCESS_KEY, value },
+    update: { value },
+  });
+  return value;
+}
+
 const ALLOW_REGISTRATIONS_KEY = "allow_registrations";
 
 export async function getAllowRegistrations(fallback: boolean): Promise<boolean> {

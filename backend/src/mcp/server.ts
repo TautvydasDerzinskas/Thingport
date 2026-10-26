@@ -8,7 +8,12 @@ import {
 import type { ZodRawShape } from "zod";
 import { HttpError } from "../utils/fileUtils";
 import { getBackendVersion } from "../services/versionService";
+import { assertNotToolModels } from "../services/toolsService";
 import { MCP_TOOLS, WithImages, type McpToolContext } from "./tools";
+
+// The tools that change a model's files or pictures, refused for a model a Thingport tool brought, which stays as the
+// tool needs it (services/toolsService.ts). edit_model may only favourite one, and delete_model is refused by printEditService.
+const CHANGES_MODEL_FILES = new Set(["add_model_files", "remove_model_file", "edit_model_images", "rename_model_file"]);
 
 /** A server offering only the tools this token was given. One per request: /api/mcp is stateless. */
 export function buildMcpServer(ctx: McpToolContext, allowedTools: ReadonlySet<string>): McpServer {
@@ -44,6 +49,11 @@ export function buildMcpServer(ctx: McpToolContext, allowedTools: ReadonlySet<st
       },
       async (args: Record<string, unknown>) => {
         try {
+          // edit_model may still favourite one.
+          const edits =
+            tool.name === "edit_model" && Object.keys(args).some((k) => k !== "model_id" && k !== "favorite");
+          if ((CHANGES_MODEL_FILES.has(tool.name) || edits) && typeof args.model_id === "string")
+            await assertNotToolModels([args.model_id]);
           const result = await tool.run(ctx, args);
           if (result instanceof WithImages) {
             return {
