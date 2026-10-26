@@ -81,6 +81,20 @@ describe("FlareSolverr URL setting", () => {
     expect(calls).toEqual([ENDPOINT]);
   });
 
+  it("accepts an unchanged normalized URL while the configured solver is unavailable", async () => {
+    await setFlaresolverrUrl(ENDPOINT);
+    const calls = fakeFlaresolverr(() => new Response("offline", { status: 502 }));
+    for (const url of [ENDPOINT, "http://fake-flaresolverr.test/"]) {
+      const saved = await request(app)
+        .patch("/api/settings/flaresolverr")
+        .set({ Authorization: `Bearer ${adminToken}` })
+        .send({ url })
+        .expect(200);
+      expect(saved.body).toEqual({ url: ENDPOINT });
+    }
+    expect(calls).toEqual([]);
+  });
+
   it("clears the URL without testing it", async () => {
     const calls = fakeFlaresolverr(ready);
     const cleared = await request(app)

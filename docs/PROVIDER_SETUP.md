@@ -67,10 +67,9 @@ from HTTP to HTTPS), enter the final HTTPS URL in Grab; instance requests reject
 ### FlareSolverr
 
 [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) uses a real browser to solve Cloudflare challenges.
-It's part of the standard Docker Compose stack. Set its global URL and enable or disable each supported provider
-under **Administration → Connections → FlareSolverr**. [System Health](guides/system-health.md) checks the service.
-Provider fallbacks default to enabled for existing instances; an explicit off setting stays off, including when a
-previous request warmed the proxy cache. Clearing the URL disables all fallbacks.
+It's part of the standard Docker Compose stack. Set its global URL under **Administration → Connections →
+FlareSolverr** to enable fallback for all declared provider routes. [System Health](guides/system-health.md) checks
+the service. Clearing the URL disables all fallbacks, including when a previous request warmed the proxy cache.
 
 Thingiverse and MyMiniFactory API requests first use guarded direct transport with a Chrome-like TLS handshake.
 Only a 429 or Cloudflare challenge retries through the enabled solver, including the Thingiverse `access_token` or
