@@ -198,6 +198,7 @@ export default function CollectionDetailPage({
           }
           onUnauthorized={onUnauthorized}
           collectionId={collection.system_key || collection.tool_id ? undefined : collection.id}
+          toolOwned={Boolean(collection.tool_id)}
           onRemovedFromCollection={(ids) => setItems((prev) => prev.filter((i) => !ids.includes(i.id)))}
         />
         <Box sx={{ ml: "auto" }}>

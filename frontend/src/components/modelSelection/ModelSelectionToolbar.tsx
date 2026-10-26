@@ -41,6 +41,8 @@ type Props = {
   /** Only for a real collection; shows "Remove from collection". */
   collectionId?: string;
   onRemovedFromCollection?: (ids: string[]) => void;
+  /** Every model in the grid belongs to a tool, as in a tool's collection: what would change them isn't offered. */
+  toolOwned?: boolean;
 };
 
 type Busy = "favorite" | "removeFromCollection" | "delete" | "ai" | null;
@@ -55,6 +57,7 @@ export default function ModelSelectionToolbar({
   onUnauthorized,
   collectionId,
   onRemovedFromCollection,
+  toolOwned = false,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const confirm = useConfirm();
@@ -75,6 +78,10 @@ export default function ModelSelectionToolbar({
   const disabled = count === 0 || busy !== null;
   // An AI run is one request, so unlike delete and favourite it can't be split.
   const tooManyForAi = count > BULK_LIMIT;
+  // Models a tool brought can be favourited, downloaded and put in collections, but not changed: with any of them
+  // picked, what would change them waits until they're left out.
+  const toolPicked = selected.filter((item) => item.tool_id).length;
+  const toolHint = toolPicked ? t("models:selection.toolOwned", { count: toolPicked }) : undefined;
 
   // Both statuses are cached for the session, so this costs nothing after the first grid.
   useEffect(() => {
@@ -215,8 +222,19 @@ export default function ModelSelectionToolbar({
     }
   };
 
-  const action = (label: string, icon: React.ReactNode, onClick: (e: React.MouseEvent<HTMLElement>) => void) => (
-    <SelectionAction label={label} icon={icon} disabled={disabled} onClick={onClick} />
+  const action = (
+    label: string,
+    icon: React.ReactNode,
+    onClick: (e: React.MouseEvent<HTMLElement>) => void,
+    blocked?: string,
+  ) => (
+    <SelectionAction
+      label={label}
+      hint={blocked}
+      icon={icon}
+      disabled={disabled || Boolean(blocked)}
+      onClick={onClick}
+    />
   );
 
   const aiHint = (running: boolean) =>
@@ -298,7 +316,8 @@ export default function ModelSelectionToolbar({
           busy === "removeFromCollection" ? <CircularProgress size={18} /> : <PlaylistRemoveIcon fontSize="small" />,
           () => void removeFromCollection(),
         )}
-      {action(t("models:selection.editTags"), <LocalOfferIcon fontSize="small" />, () => setTagsOpen(true))}
+      {!toolOwned &&
+        action(t("models:selection.editTags"), <LocalOfferIcon fontSize="small" />, () => setTagsOpen(true), toolHint)}
       {action(
         favoriteLabel,
         busy === "favorite" ? (
@@ -311,20 +330,24 @@ export default function ModelSelectionToolbar({
         () => void toggleFavorite(),
       )}
       {action(t("common:download"), <DownloadIcon fontSize="small" />, () => setDownloadOpen(true))}
-      {action(
-        t("common:delete"),
-        busy === "delete" ? (
-          <CircularProgress size={18} />
-        ) : (
-          <DeleteOutlineIcon fontSize="small" color={disabled ? undefined : "error"} />
-        ),
-        () => void remove(),
-      )}
+      {!toolOwned &&
+        action(
+          t("common:delete"),
+          busy === "delete" ? (
+            <CircularProgress size={18} />
+          ) : (
+            <DeleteOutlineIcon fontSize="small" color={disabled || toolHint ? undefined : "error"} />
+          ),
+          () => void remove(),
+          toolHint,
+        )}
       {(aiEnabled || descriptionsEnabled) &&
+        !toolOwned &&
         action(
           t("models:selection.aiActions"),
           busy === "ai" ? <CircularProgress size={18} /> : <AutoAwesomeIcon fontSize="small" />,
           (e) => setAiMenuAnchor(e.currentTarget),
+          toolHint,
         )}
     </SelectionToolbar>
   );

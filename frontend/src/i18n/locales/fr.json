@@ -3958,7 +3958,10 @@
       "collectionsUpdated_other": "{{count}} collections mises à jour",
       "collectionsFailed": "Impossible de mettre à jour les collections. Veuillez réessayer.",
       "tagsPartlyUpdated_one": "Étiquettes de {{count}} modèle mises à jour, mais les autres ont échoué. Veuillez réessayer.",
-      "tagsPartlyUpdated_other": "Étiquettes de {{count}} modèles mises à jour, mais les autres ont échoué. Veuillez réessayer."
+      "tagsPartlyUpdated_other": "Étiquettes de {{count}} modèles mises à jour, mais les autres ont échoué. Veuillez réessayer.",
+      "toolOwned_one": "{{count}} des modèles choisis appartient à un outil : retirez-le pour faire ceci",
+      "toolOwned_other": "{{count}} des modèles choisis appartiennent à un outil : retirez-les pour faire ceci",
+      "toolOwned_many": "{{count}} des modèles choisis appartiennent à un outil : retirez-les pour faire ceci"
     },
     "merge": {
       "action": "Fusionner",

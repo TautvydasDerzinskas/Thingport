@@ -3945,7 +3945,10 @@
       "collectionsUpdated_other": "Se actualizaron {{count}} colecciones",
       "collectionsFailed": "No se pudieron actualizar las colecciones. Inténtalo de nuevo.",
       "tagsPartlyUpdated_one": "Se actualizaron las etiquetas de {{count}} modelo, pero el resto falló. Inténtalo de nuevo.",
-      "tagsPartlyUpdated_other": "Se actualizaron las etiquetas de {{count}} modelos, pero el resto falló. Inténtalo de nuevo."
+      "tagsPartlyUpdated_other": "Se actualizaron las etiquetas de {{count}} modelos, pero el resto falló. Inténtalo de nuevo.",
+      "toolOwned_one": "{{count}} de los modelos elegidos pertenece a una herramienta: déjalo fuera para hacer esto",
+      "toolOwned_other": "{{count}} de los modelos elegidos pertenecen a una herramienta: déjalos fuera para hacer esto",
+      "toolOwned_many": "{{count}} de los modelos elegidos pertenecen a una herramienta: déjalos fuera para hacer esto"
     },
     "merge": {
       "action": "Fusionar",
