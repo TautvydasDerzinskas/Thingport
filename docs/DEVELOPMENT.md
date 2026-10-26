@@ -109,9 +109,8 @@ docker run -d --name thingport-flaresolverr -p 127.0.0.1:8191:8191 ghcr.io/flare
 
 Then set its URL (`http://localhost:8191`, with or without `/v1`) in **Administration → Connections →
 FlareSolverr**. `FLARESOLVERR_URL` in `backend/.env` is copied into that setting on the first startup; after that the
-saved value wins and the env var is ignored. The same panel has a switch for each provider with declared solver
-routes. Missing preferences default to enabled for compatibility; explicit false is persisted and checked before
-every solver request, including cached page-proxy decisions. Policy-only changes do not need a reachable solver.
+saved value wins and the env var is ignored. Configuring the URL enables fallback for all declared provider
+routes; clearing it disables FlareSolverr globally, including cached page-proxy decisions.
 
 Provider manifests own `solverRoutes`: exact host, anchored path pattern, ordinary query names and any permitted
 query credentials or cookies. The shared solver enforces HTTPS and those declarations; callers cannot request a

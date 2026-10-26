@@ -1,6 +1,6 @@
 import { PROVIDER_IDS, manifestOf } from "../providers/index.generated";
 import { FLARESOLVERR_SESSION_TTL_MS, FLARESOLVERR_TIMEOUT_MS } from "../config";
-import { getFlaresolverrUrl, normalizeFlaresolverrUrl, isFlaresolverrProviderEnabled } from "./settingsService";
+import { getFlaresolverrUrl, normalizeFlaresolverrUrl } from "./settingsService";
 
 const TEST_TIMEOUT_MS = 10000;
 
@@ -75,9 +75,7 @@ export type FlaresolverrResult = {
 // Only known provider read endpoints may enter it; a forged Cloudflare response is not trust.
 // Deployment must still isolate the solver from private networks: trusted pages can redirect
 // or load third-party resources, and this allowlist cannot constrain browser subrequests.
-const SOLVER_ROUTES = PROVIDER_IDS.flatMap((provider) =>
-  (manifestOf(provider).solverRoutes ?? []).map((route) => Object.assign({}, route, { provider })),
-);
+const SOLVER_ROUTES = PROVIDER_IDS.flatMap((provider) => manifestOf(provider).solverRoutes ?? []);
 
 function solverDestination(url: string) {
   let parsed: URL;
@@ -130,8 +128,6 @@ export async function fetchViaFlaresolverr(
   if (!destination) return null;
   const { parsed, rule } = destination;
   if (cookieHeader && !rule.credentials?.cookies) return null;
-  // Always consult persisted policy, even when a caller has a warm proxy-host cache.
-  if (!(await isFlaresolverrProviderEnabled(rule.provider))) return null;
   const endpoint = await getFlaresolverrUrl();
   if (!endpoint) return null;
   const hostname = parsed.hostname;

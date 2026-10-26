@@ -35,8 +35,8 @@ Thingiverse sits behind Cloudflare, which sometimes challenges servers. Set up
 [FlareSolverr](../PROVIDER_SETUP.md#flaresolverr) under **Administration → Connections** so those imports get
 through.
 
-The Thingiverse switch under **Administration → Connections → FlareSolverr** controls this fallback and defaults
-to on. Requests try the guarded direct connection first. On a 429 or Cloudflare challenge, the enabled fallback sends
+Configuring the URL under **Administration → Connections → FlareSolverr** enables this fallback. Requests try
+the guarded direct connection first. On a 429 or Cloudflare challenge, the fallback sends
 the App Token (`access_token`) in the URL to the configured solver; ordinary credential rejections do not use it.
 The solver and its logs may receive this secret. Use a private, isolated solver: its browser navigation and third-party
-requests are outside Thingport's per-hop destination guard. Turning this provider off leaves direct requests active.
+requests are outside Thingport's per-hop destination guard. Clearing the solver URL disables fallback for every provider and leaves direct requests active.

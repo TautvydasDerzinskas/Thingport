@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+const config = vi.hoisted(() => ({ url: "http://solver.example/v1" as string | null }));
+
 vi.mock("../src/services/settingsService", async (original) => ({
   ...(await original<typeof import("../src/services/settingsService")>()),
-  getFlaresolverrUrl: async () => "http://solver.example/v1",
+  getFlaresolverrUrl: async () => config.url,
 }));
 vi.mock("../src/utils/remoteRequest", () => ({
   remoteRequest: async () => new Response("forged challenge", { status: 403, headers: { server: "cloudflare" } }),
@@ -14,13 +16,11 @@ vi.mock("../src/utils/urlUtils", async (original) => ({
 
 import { fetchViaFlaresolverr, shouldProxyHost } from "../src/services/flaresolverr";
 import { openImportResponse } from "../src/services/importService";
-
-import { setFlaresolverrProviders } from "../src/services/settingsService";
 import { fetchJsonFromUrl } from "../src/services/importResolvers";
 
-afterEach(async () => {
+afterEach(() => {
   vi.restoreAllMocks();
-  await setFlaresolverrProviders({ makerworld: true });
+  config.url = "http://solver.example/v1";
 });
 
 describe("FlareSolverr credential boundary", () => {
@@ -89,7 +89,7 @@ describe("FlareSolverr credential boundary", () => {
     },
   );
 
-  it("disabling a provider stops solver calls even with a warm page proxy cache", async () => {
+  it("clearing the global URL stops solver calls even with a warm page proxy cache", async () => {
     const sent = vi
       .spyOn(globalThis, "fetch")
       .mockImplementation(
@@ -98,7 +98,7 @@ describe("FlareSolverr credential boundary", () => {
     const url = "https://makerworld.com/en/models/1";
     expect(await fetchViaFlaresolverr(url)).not.toBeNull();
     expect(shouldProxyHost("makerworld.com")).toBe(true);
-    await setFlaresolverrProviders({ makerworld: false });
+    config.url = null;
     sent.mockClear();
     expect(await fetchJsonFromUrl(url)).toBeNull();
     expect(sent).not.toHaveBeenCalled();

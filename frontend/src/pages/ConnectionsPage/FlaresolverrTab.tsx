@@ -5,9 +5,6 @@ import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Alert from "@mui/material/Alert";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Switch from "@mui/material/Switch";
-import { isProviderId, MANIFESTS } from "../../providers/index.generated";
 import CircularProgress from "@mui/material/CircularProgress";
 import { UnauthorizedError } from "../../api/client";
 import { settingsApi } from "../../api/settings";
@@ -21,7 +18,6 @@ export default function FlaresolverrTab({ onUnauthorized }: Props) {
   const { t } = useTranslation("app");
   const [savedUrl, setSavedUrl] = React.useState<string | null>(null);
   const [url, setUrl] = React.useState("");
-  const [providers, setProviders] = React.useState<Record<string, boolean>>({});
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [testing, setTesting] = React.useState(false);
@@ -36,7 +32,6 @@ export default function FlaresolverrTab({ onUnauthorized }: Props) {
         if (!active) return;
         setSavedUrl(settings.url);
         setUrl(settings.url ?? "");
-        setProviders(settings.providers);
       })
       .catch((err: unknown) => {
         if (err instanceof UnauthorizedError) onUnauthorized?.();
@@ -55,10 +50,9 @@ export default function FlaresolverrTab({ onUnauthorized }: Props) {
     setStatus(null);
     setError(null);
     try {
-      const next = await settingsApi.updateFlaresolverr(url.trim() || null, providers);
+      const next = await settingsApi.updateFlaresolverr(url.trim() || null);
       setSavedUrl(next.url);
       setUrl(next.url ?? "");
-      setProviders(next.providers);
       setStatus(next.url ? t("adminSettings.flaresolverr.saved") : t("adminSettings.flaresolverr.cleared"));
     } catch (err) {
       if (err instanceof UnauthorizedError) onUnauthorized?.();
@@ -120,26 +114,6 @@ export default function FlaresolverrTab({ onUnauthorized }: Props) {
       />
 
       <Alert severity="info">{t("adminSettings.flaresolverr.trustDisclosure")}</Alert>
-
-      <Stack>
-        <Typography variant="subtitle2">{t("adminSettings.flaresolverr.providersLabel")}</Typography>
-        <Typography variant="caption" color="text.secondary">
-          {t("adminSettings.flaresolverr.providersHelp")}
-        </Typography>
-        {Object.entries(providers).map(([id, enabled]) => (
-          <FormControlLabel
-            key={id}
-            label={isProviderId(id) ? MANIFESTS[id].name : id}
-            control={
-              <Switch
-                checked={enabled}
-                disabled={busy}
-                onChange={(_, checked) => setProviders((current) => ({ ...current, [id]: checked }))}
-              />
-            }
-          />
-        ))}
-      </Stack>
 
       <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
         <Button

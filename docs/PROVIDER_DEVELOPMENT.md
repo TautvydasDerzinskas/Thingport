@@ -81,9 +81,8 @@ how lists are read. When a new site resembles one of these, copy that provider's
   `solverRoutes` owns exact hosts, anchored path patterns, allowed query names and route-specific `credentials`
   (`query` names or `cookies: true`). Only those HTTPS destinations may enter the solver; ordinary query fields
   cannot carry credentials. Callers cannot override this policy. API tokens belong on API routes only.
-  `helpers.flaresolverr` describes the provider's recommendation; providers with routes get an admin switch.
-  Missing switches default to enabled for compatibility, and explicit false gates every solve, even with a warm
-  page-proxy cache. Thingiverse and MyMiniFactory still try guarded direct transport first and solve only a 429 or
+  `helpers.flaresolverr` describes the provider's recommendation. Configuring the global solver URL enables
+  fallback for all declared routes; clearing it disables every solve, including warm page-proxy cache requests. Thingiverse and MyMiniFactory still try guarded direct transport first and solve only a 429 or
   Cloudflare challenge; ordinary 401/403 responses remain credential rejections.
 - Solver navigation can redirect or load third parties outside Thingport's per-hop destination guard. A declaration
   permits credential exposure to the configured solver and potentially its logs; it does not constrain the browser's

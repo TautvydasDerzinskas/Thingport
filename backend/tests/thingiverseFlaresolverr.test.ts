@@ -1,9 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-const config = vi.hoisted(() => ({ enabled: true }));
+const config = vi.hoisted(() => ({ url: "http://fake-flaresolverr.test/v1" as string | null }));
 vi.mock("../src/services/settingsService", () => ({
-  getFlaresolverrUrl: async () => "http://fake-flaresolverr.test/v1",
-  isFlaresolverrProviderEnabled: async () => config.enabled,
+  getFlaresolverrUrl: async () => config.url,
 }));
 
 import { checkThingiverseAccessToken } from "../src/providers/thingiverse/api";
@@ -12,10 +11,10 @@ import { checkMyminifactoryApiKey } from "../src/providers/myminifactory/api";
 const SOLVER = "http://fake-flaresolverr.test/v1";
 const TOKEN = "opaque+/=token&value";
 
-beforeEach(() => {
-  config.enabled = true;
+afterEach(() => {
+  vi.restoreAllMocks();
+  config.url = SOLVER;
 });
-afterEach(() => vi.restoreAllMocks());
 
 describe.each([
   ["Thingiverse", checkThingiverseAccessToken, "access_token"],
@@ -57,8 +56,8 @@ describe.each([
     expect(sent).toHaveBeenCalledTimes(1);
   });
 
-  it("honors disabled fallback", async () => {
-    config.enabled = false;
+  it("does not solve when no solver URL is configured", async () => {
+    config.url = null;
     const sent = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("challenge", { status: 429 }));
     expect(await check(TOKEN)).toBe("blocked");
     expect(sent).toHaveBeenCalledTimes(1);

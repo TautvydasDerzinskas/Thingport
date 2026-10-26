@@ -1624,8 +1624,6 @@
       "flaresolverr": {
         "tabLabel": "FlareSolverr",
         "trustDisclosure": "The configured solver receives provider cookies and URL API tokens; its logs may record them. Its browser navigation and third-party requests are outside Thingport's per-hop destination guard. Use a private, isolated solver.",
-        "providersLabel": "Provider fallbacks",
-        "providersHelp": "Allow FlareSolverr for these providers when a URL is configured. Existing providers default to on; save to apply changes. Cults3D supports public pages only, not authenticated or binary downloads.",
         "helpText": "FlareSolverr gets imports past Cloudflare challenges on MakerWorld and Thingiverse. Enter its URL (with or without /v1), or leave it blank to turn it off. Saving checks that FlareSolverr answers first.",
         "urlLabel": "URL",
         "urlPlaceholder": "http://flaresolverr:8191",
