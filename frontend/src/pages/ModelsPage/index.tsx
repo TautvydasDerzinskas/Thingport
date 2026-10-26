@@ -339,7 +339,7 @@ export default function ModelsPage({
           }}
         >
           {t(panelKind === "folder" ? "models:view.folders" : "models:view.categories")}:{" "}
-          {selectedCategory
+          {selectedCategory?.kind === panelKind
             ? translateCategoryDisplay(selectedCategory, i18n).name || t("models:categories.untitled")
             : t("models:categories.all")}
         </Box>

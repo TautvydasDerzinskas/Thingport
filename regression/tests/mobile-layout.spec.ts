@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { uploadCube } from "./helpers";
+import { authToken, uploadCube } from "./helpers";
 
 /** Allows subpixel rounding, but catches panels or cards extending beyond the viewport. */
 async function expectNoHorizontalOverflow(page: Page) {
@@ -44,7 +44,7 @@ for (const width of [320, 393, 768]) {
       await expectNoHorizontalOverflow(page);
     });
 
-    test("category and folder filters do not squeeze model cards", async ({ page }) => {
+    test("category and folder filters do not squeeze model cards", async ({ page, request }) => {
       await page.goto("/models");
       const id = await uploadCube(page);
       const edit = page.getByRole("dialog", { name: "Edit model" });
@@ -52,6 +52,27 @@ for (const width of [320, 393, 768]) {
       await edit.getByLabel("Title").fill(title);
       await edit.getByRole("button", { name: "Update" }).click();
       await expect(edit).toBeHidden();
+
+      // Real assignments exercise non-null selection as well as the All/reset path.
+      const headers = { Authorization: `Bearer ${await authToken(page)}` };
+      const categoryResponse = await request.post("/api/categories", {
+        headers,
+        data: { name: `Mobile category ${width}`, kind: "category" },
+      });
+      expect(categoryResponse.ok()).toBeTruthy();
+      const category: { id: string; name: string } = await categoryResponse.json();
+      const folderResponse = await request.post("/api/categories", {
+        headers,
+        data: { name: `Mobile folder ${width}`, kind: "folder" },
+      });
+      expect(folderResponse.ok()).toBeTruthy();
+      const folder: { id: string; name: string } = await folderResponse.json();
+      const assignedCategory = await request.post(`/api/print/${id}/category`, {
+        headers,
+        data: { category_id: category.id },
+      });
+      expect(assignedCategory.ok()).toBeTruthy();
+
       await page.goto("/models");
       const main = page.getByRole("main");
       await main.getByRole("button", { name: "Categories", exact: true }).click();
@@ -70,10 +91,56 @@ for (const width of [320, 393, 768]) {
       await expect(filterButton).toHaveAttribute("aria-expanded", "true");
       await filterButton.click();
       await expect(filters).toBeHidden();
-      await main.getByRole("button", { name: "Folders", exact: true }).click();
-      await expect(filters.getByRole("heading", { name: "Folders" })).toBeVisible();
+
+      await filterButton.click();
+      await filters.getByRole("button", { name: category.name, exact: true }).click();
+      await expect(filters).toBeHidden();
+      const selectedCategoryButton = main.getByRole("button", { name: `Categories: ${category.name}`, exact: true });
+      await expect(selectedCategoryButton).toHaveAttribute("aria-expanded", "false");
+      await expect.poll(() => new URL(page.url()).searchParams.get("category")).toBe(category.id);
+      await expect(card).toBeVisible();
+      await selectedCategoryButton.click();
       await filters.getByRole("button", { name: "All", exact: true }).click();
       await expect(filters).toBeHidden();
+
+      const assignedFolder = await request.post(`/api/print/${id}/category`, {
+        headers,
+        data: { category_id: folder.id },
+      });
+      expect(assignedFolder.ok()).toBeTruthy();
+      await main.getByRole("button", { name: "Folders", exact: true }).click();
+      await expect(filters.getByRole("heading", { name: "Folders" })).toBeVisible();
+      await filters.getByRole("button", { name: folder.name, exact: true }).click();
+      await expect(filters).toBeHidden();
+      const selectedFolderButton = main.getByRole("button", { name: `Folders: ${folder.name}`, exact: true });
+      await expect(selectedFolderButton).toHaveAttribute("aria-expanded", "false");
+      await expect.poll(() => new URL(page.url()).searchParams.get("category")).toBe(folder.id);
+      await expect(card).toBeVisible();
+      await selectedFolderButton.click();
+      await filters.getByRole("button", { name: "All", exact: true }).click();
+      await expect(filters).toBeHidden();
+      await expectNoHorizontalOverflow(page);
+
+      // A folder deep link must not label the Categories panel with a folder name.
+      const savedView = page.waitForResponse(
+        (response) =>
+          response.url().endsWith("/api/settings/categories-view") &&
+          response.request().method() === "PATCH" &&
+          response.ok(),
+      );
+      await main.getByRole("button", { name: "Categories", exact: true }).click();
+      await savedView;
+      await page.goto(`/models?category=${folder.id}`);
+      await expect(main.getByRole("button", { name: "Categories", exact: true })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+      await expect(main.getByRole("button", { name: "Categories: All", exact: true })).toHaveAttribute(
+        "aria-expanded",
+        "false",
+      );
+      await expect(main.getByRole("button", { name: `Categories: ${folder.name}`, exact: true })).toHaveCount(0);
+      await expect(card).toBeVisible();
       await expectNoHorizontalOverflow(page);
 
       // The card still opens the uploaded model after filtering.
