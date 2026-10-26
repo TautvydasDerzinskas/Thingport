@@ -86,6 +86,8 @@
       "dashboard": "Dashboard",
       "administration": "Administration",
       "expandSidebar": "Expand sidebar",
+      "openNavigation": "Open navigation menu",
+      "closeNavigation": "Close navigation menu",
       "collapseSidebar": "Collapse sidebar",
       "models": "Models",
       "collections": "Collections",

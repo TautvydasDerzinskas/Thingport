@@ -34,14 +34,14 @@ function readCollapsed(): boolean {
  * Administration's own pages, in a second column beside the sidebar while one of them is open. The sidebar folds to
  * icons meanwhile, so this one has the collapse button; folded, it's an icon rail too.
  */
-export default function AdminSubnav() {
+export default function AdminSubnav({ mobile = false }: { mobile?: boolean }) {
   const { t } = useTranslation(["app", "common"]);
   const location = useLocation();
   const navigate = useNavigate();
   const [collapsedByUser, setCollapsed] = useState(readCollapsed);
   // Too narrow for a second open column beside the page.
   const narrow = useMediaQuery((theme: Theme) => theme.breakpoints.down("md"));
-  const collapsed = collapsedByUser || narrow;
+  const collapsed = !mobile && (collapsedByUser || narrow);
   const pages = [
     { path: "/admin", icon: <DashboardOutlinedIcon fontSize="small" />, label: t("sidebar.adminOverview") },
     ...ADMIN_SECTIONS.map((section) => ({ path: section.path, icon: section.icon, label: t(section.labelKey) })),
@@ -63,14 +63,14 @@ export default function AdminSubnav() {
       component="nav"
       aria-label={t("sidebar.administration")}
       sx={{
-        width: collapsed ? SIDEBAR_COLLAPSED_WIDTH : WIDTH,
+        width: mobile ? "100%" : collapsed ? SIDEBAR_COLLAPSED_WIDTH : WIDTH,
         flexShrink: 0,
-        height: "100vh",
-        position: "sticky",
+        height: mobile ? "auto" : "100vh",
+        position: mobile ? "static" : "sticky",
         top: 0,
         display: "flex",
         flexDirection: "column",
-        borderRight: "1px solid",
+        borderRight: mobile ? 0 : "1px solid",
         borderColor: dividerBorderColor,
         bgcolor: (theme) => theme.thingport.subnavBackground,
         overflowX: "hidden",
@@ -90,7 +90,7 @@ export default function AdminSubnav() {
             {t("sidebar.administration")}
           </Typography>
         )}
-        {!narrow && (
+        {!narrow && !mobile && (
           <Tooltip title={collapsed ? t("sidebar.expandAdminMenu") : t("sidebar.collapseAdminMenu")}>
             <IconButton size="small" onClick={toggle} aria-expanded={!collapsed}>
               {collapsed ? <ChevronRightIcon fontSize="small" /> : <ChevronLeftIcon fontSize="small" />}

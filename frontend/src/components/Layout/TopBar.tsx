@@ -6,6 +6,7 @@ import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import MenuIcon from "@mui/icons-material/Menu";
 import type { AuthUser } from "../../api/auth";
 import type { ThemeSelection } from "../../constants/settingsOptions";
 import type { MakerWorldSettings } from "../../utils/settings";
@@ -21,6 +22,8 @@ import { UserMenu } from "./UserMenu";
 import GlobalSearch from "./GlobalSearch";
 
 type Props = {
+  onMenuClick?: () => void;
+  menuOpen?: boolean;
   title: string;
   /** The entity kind, shown under the title so a long name gets the full line. */
   subtitle?: string;
@@ -39,6 +42,8 @@ type Props = {
 };
 
 export default function TopBar({
+  onMenuClick,
+  menuOpen,
   title,
   subtitle,
   onBack,
@@ -82,7 +87,7 @@ export default function TopBar({
       ref={rootRef}
       sx={{
         display: "grid",
-        gridTemplateColumns: "minmax(0, 1fr) auto",
+        gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "minmax(0, 1fr) auto" },
         alignItems: "center",
         gap: 1.5,
         // Padding rather than margin so the spacing is part of the pinned, painted box.
@@ -99,6 +104,17 @@ export default function TopBar({
           column refuses to shrink below its content's natural width (the title, mainly), which
           would push the right column off the edge well before the window actually runs out of room. */}
       <Stack direction="row" alignItems="center" spacing={1} minWidth={0}>
+        {onMenuClick && (
+          <IconButton
+            aria-label={t("sidebar.openNavigation")}
+            aria-controls="mobile-navigation"
+            aria-expanded={Boolean(menuOpen)}
+            onClick={onMenuClick}
+            sx={{ width: 44, height: 44, flexShrink: 0 }}
+          >
+            <MenuIcon />
+          </IconButton>
+        )}
         {onBack && (
           <Tooltip title={t("shell.backToLibrary")}>
             <IconButton size="small" onClick={onBack}>

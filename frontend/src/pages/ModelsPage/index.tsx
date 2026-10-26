@@ -4,6 +4,13 @@ import { useSearchParams } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import Collapse from "@mui/material/Collapse";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import type { Theme } from "@mui/material/styles";
+import FilterListIcon from "@mui/icons-material/FilterList";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { translateCategoryDisplay } from "../../utils/translateCategoryDisplay";
 import { UnauthorizedError } from "../../api/client";
 import { type Print, type PrintSortMode, printsApi } from "../../api/prints";
 import { type Category, type CategoryKind, type CategoryMetaInput, categoriesApi } from "../../api/categories";
@@ -51,7 +58,9 @@ export default function ModelsPage({
   previewMode,
   viewer,
 }: Props) {
-  const { t } = useTranslation(["models", "common"]);
+  const { t, i18n } = useTranslation(["models", "common"]);
+  const mobile = useMediaQuery((muiTheme: Theme) => muiTheme.breakpoints.down("md"));
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [items, setItems] = useState<Print[]>([]);
@@ -260,6 +269,7 @@ export default function ModelsPage({
   // A selection from the other box would be invisible after the switch.
   const switchCategoriesView = (view: CategoriesView) => {
     setCategoriesView(view);
+    if (mobile) setFiltersOpen(true);
     if (selectedCategory && selectedCategory.kind !== (view === "folders" ? "folder" : "category")) {
       onSelectCategory(null);
     }
@@ -288,7 +298,7 @@ export default function ModelsPage({
           onUpdated={(updated) => setItems((prev) => replacePrints(prev, updated))}
           onUnauthorized={onUnauthorized}
         />
-        <Box sx={{ ml: "auto" }}>
+        <Box sx={{ ml: "auto", width: { xs: "100%", md: "auto" }, overflowX: "auto" }}>
           <SortTabs value={sortMode} onChange={setSortMode} />
         </Box>
       </Box>
@@ -307,16 +317,56 @@ export default function ModelsPage({
         onLibraryChanged={refreshLibrary}
         onUnauthorized={onUnauthorized}
       />
-      <Stack direction="row" spacing={2} alignItems="flex-start">
-        <CategoriesPanel
-          kind={panelKind}
-          categories={panelCategories}
-          loading={categoriesLoading || categoriesView === null}
-          selectedId={categoryId}
-          onSelect={onSelectCategory}
-          onManage={() => setManagerSection(panelKind === "folder" ? "folders" : "categories")}
-        />
-        <Box sx={{ flex: 1, minWidth: 0 }}>
+      <Button
+        variant="outlined"
+        startIcon={<FilterListIcon />}
+        endIcon={<ExpandMoreIcon sx={{ transform: filtersOpen ? "rotate(180deg)" : "none" }} />}
+        aria-expanded={filtersOpen}
+        aria-controls="model-category-filters"
+        onClick={() => setFiltersOpen((open) => !open)}
+        sx={{ display: { xs: "flex", md: "none" }, minHeight: 44, justifyContent: "flex-start", textTransform: "none" }}
+      >
+        <Box
+          component="span"
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            textAlign: "left",
+          }}
+        >
+          {t(panelKind === "folder" ? "models:view.folders" : "models:view.categories")}:{" "}
+          {selectedCategory
+            ? translateCategoryDisplay(selectedCategory, i18n).name || t("models:categories.untitled")
+            : t("models:categories.all")}
+        </Box>
+      </Button>
+      <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems="flex-start">
+        <Collapse
+          id="model-category-filters"
+          in={!mobile || filtersOpen}
+          unmountOnExit
+          sx={{
+            width: { xs: "100%", md: 260 },
+            flexShrink: 0,
+            "& .MuiCollapse-wrapperInner > .MuiPaper-root": { width: "100%", boxSizing: "border-box" },
+          }}
+        >
+          <CategoriesPanel
+            kind={panelKind}
+            categories={panelCategories}
+            loading={categoriesLoading || categoriesView === null}
+            selectedId={categoryId}
+            onSelect={(id) => {
+              onSelectCategory(id);
+              if (mobile) setFiltersOpen(false);
+            }}
+            onManage={() => setManagerSection(panelKind === "folder" ? "folders" : "categories")}
+          />
+        </Collapse>
+        <Box sx={{ flex: 1, minWidth: 0, width: { xs: "100%", md: "auto" } }}>
           {selectedCategory?.meta_title && (
             <Box sx={{ mb: 2 }}>
               <CategoryBanner category={selectedCategory} />

@@ -4,6 +4,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ThemeProvider, type Theme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import Box from "@mui/material/Box";
+import Drawer from "@mui/material/Drawer";
+import IconButton from "@mui/material/IconButton";
+import CloseIcon from "@mui/icons-material/Close";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import Alert from "@mui/material/Alert";
 import Sidebar from "./Sidebar";
 import AdminSubnav from "./AdminSubnav";
@@ -168,7 +172,16 @@ function AppLayoutShell({
 }: ShellProps) {
   const { t } = useTranslation(["app", "common"]);
   const { title: routeTitle, subtitle: routeSubtitle, onBack: routeOnBack } = useRouteChrome();
-  const { pathname } = useLocation();
+  const { pathname, key: locationKey } = useLocation();
+  const mobile = useMediaQuery((theme: Theme) => theme.breakpoints.down("md"));
+  // Associate opening with the current route and breakpoint: navigating, including
+  // back/forward and query-only changes, must not leave an overlay covering the page.
+  const [navigation, setNavigation] = React.useState<{ key: string; mobile: boolean } | null>(null);
+  const navigationOpen = mobile && navigation?.key === locationKey && navigation.mobile;
+  const closeNavigation = () => setNavigation(null);
+  if (navigation && (navigation.key !== locationKey || navigation.mobile !== mobile)) {
+    setNavigation(null);
+  }
   const [pageHeader, setPageHeader] = React.useState<PageHeader>(null);
   const { refresh: refreshNotifications } = useNotifications();
   const showToast = useToast();
@@ -192,15 +205,54 @@ function AppLayoutShell({
               display: "flex",
             }}
           >
-            <Sidebar isAdmin={isAdmin} onSelectCategory={onSelectCategory} bookmarksVersion={bookmarksVersion} />
-            {isAdmin && pathname.startsWith("/admin") && <AdminSubnav />}
-            <Box component="main" sx={{ flex: 1, minWidth: 0, p: 2, pt: 0 }}>
+            {mobile ? (
+              <Drawer
+                id="mobile-navigation"
+                open={Boolean(navigationOpen)}
+                onClose={closeNavigation}
+                PaperProps={{
+                  sx: {
+                    width: "min(320px, calc(100vw - 40px))",
+                    pt: "env(safe-area-inset-top)",
+                    pb: "env(safe-area-inset-bottom)",
+                  },
+                }}
+              >
+                <Box sx={{ display: "flex", justifyContent: "flex-end", px: 1, pt: 1 }}>
+                  <IconButton
+                    aria-label={t("sidebar.closeNavigation")}
+                    onClick={closeNavigation}
+                    sx={{ width: 44, height: 44 }}
+                  >
+                    <CloseIcon />
+                  </IconButton>
+                </Box>
+                <Sidebar
+                  mobile
+                  isAdmin={isAdmin}
+                  onSelectCategory={(id) => {
+                    onSelectCategory(id);
+                    closeNavigation();
+                  }}
+                  bookmarksVersion={bookmarksVersion}
+                />
+                {isAdmin && pathname.startsWith("/admin") && <AdminSubnav mobile />}
+              </Drawer>
+            ) : (
+              <>
+                <Sidebar isAdmin={isAdmin} onSelectCategory={onSelectCategory} bookmarksVersion={bookmarksVersion} />
+                {isAdmin && pathname.startsWith("/admin") && <AdminSubnav />}
+              </>
+            )}
+            <Box component="main" sx={{ flex: 1, minWidth: 0, px: { xs: 1.5, md: 2 }, pb: 2 }}>
               {apiUp === false && (
                 <Alert severity="error" sx={{ mb: 1.5 }}>
                   {t("shell.apiUnreachable")}
                 </Alert>
               )}
               <TopBar
+                onMenuClick={mobile ? () => setNavigation({ key: locationKey, mobile }) : undefined}
+                menuOpen={Boolean(navigationOpen)}
                 title={pageHeader?.title || routeTitle}
                 subtitle={pageHeader?.subtitle ?? routeSubtitle}
                 onBack={pageHeader?.onBack ?? routeOnBack}

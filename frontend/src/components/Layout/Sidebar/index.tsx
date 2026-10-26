@@ -100,6 +100,7 @@ export function CollapsedNavIcon({
 }
 
 type Props = {
+  mobile?: boolean;
   isAdmin: boolean;
   onSelectCategory: (id: string | null) => void;
   /** Bumped when a bookmark changes elsewhere, to refetch the list. */
@@ -155,7 +156,7 @@ function SortableBookmarkRow({
   );
 }
 
-export default function Sidebar({ isAdmin, onSelectCategory, bookmarksVersion }: Props) {
+export default function Sidebar({ mobile = false, isAdmin, onSelectCategory, bookmarksVersion }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const location = useLocation();
   const navigate = useNavigate();
@@ -237,7 +238,7 @@ export default function Sidebar({ isAdmin, onSelectCategory, bookmarksVersion }:
   const showTools = Boolean(tools?.access.canUse && (tools.tools.length > 0 || tools.access.canCreate));
   const onAdmin = location.pathname.startsWith("/admin");
   // Administration opens its own menu beside this one, so this one folds to icons there, whatever the user chose.
-  const collapsed = collapsedByUser || onAdmin;
+  const collapsed = !mobile && (collapsedByUser || onAdmin);
 
   const toggleCollapsed = () => {
     setCollapsedByUser((prev) => {
@@ -261,14 +262,14 @@ export default function Sidebar({ isAdmin, onSelectCategory, bookmarksVersion }:
     <Box
       component="aside"
       sx={{
-        width: currentWidth,
+        width: mobile ? "100%" : currentWidth,
         flexShrink: 0,
-        height: "100vh",
-        position: "sticky",
+        height: mobile ? "auto" : "100vh",
+        position: mobile ? "static" : "sticky",
         top: 0,
         display: "flex",
         flexDirection: "column",
-        borderRight: "1px solid",
+        borderRight: mobile ? 0 : "1px solid",
         borderColor: dividerBorderColor,
         bgcolor: "background.paper",
         overflow: "hidden",
@@ -291,28 +292,29 @@ export default function Sidebar({ isAdmin, onSelectCategory, bookmarksVersion }:
             <Wordmark size="lg" seasonal />
           </Link>
         )}
-        {onAdmin ? (
-          // Folded for administration, there's nothing to unfold: the mark leads home instead.
-          <Tooltip title={t("sidebar.dashboard")} placement="right">
-            <Link
-              component={RouterLink}
-              to="/"
-              aria-label={t("sidebar.dashboard")}
-              sx={{ display: "flex", alignItems: "center", lineHeight: 0, p: 0.5 }}
-            >
-              <BrandMark theme={muiTheme.palette.mode} size="md" />
-            </Link>
-          </Tooltip>
-        ) : (
-          <Tooltip title={collapsed ? t("sidebar.expandSidebar") : t("sidebar.collapseSidebar")}>
-            <IconButton size="small" onClick={toggleCollapsed}>
-              {collapsed ? <ChevronRightIcon fontSize="small" /> : <ChevronLeftIcon fontSize="small" />}
-            </IconButton>
-          </Tooltip>
-        )}
+        {!mobile &&
+          (onAdmin ? (
+            // Folded for administration, there's nothing to unfold: the mark leads home instead.
+            <Tooltip title={t("sidebar.dashboard")} placement="right">
+              <Link
+                component={RouterLink}
+                to="/"
+                aria-label={t("sidebar.dashboard")}
+                sx={{ display: "flex", alignItems: "center", lineHeight: 0, p: 0.5 }}
+              >
+                <BrandMark theme={muiTheme.palette.mode} size="md" />
+              </Link>
+            </Tooltip>
+          ) : (
+            <Tooltip title={collapsed ? t("sidebar.expandSidebar") : t("sidebar.collapseSidebar")}>
+              <IconButton size="small" onClick={toggleCollapsed}>
+                {collapsed ? <ChevronRightIcon fontSize="small" /> : <ChevronLeftIcon fontSize="small" />}
+              </IconButton>
+            </Tooltip>
+          ))}
       </Stack>
 
-      <Box component="nav" sx={{ flex: 1, overflow: "auto", px: collapsed ? 0.5 : 1 }}>
+      <Box component="nav" sx={{ flex: 1, overflow: mobile ? "visible" : "auto", px: collapsed ? 0.5 : 1 }}>
         <List disablePadding>
           {collapsed ? (
             <CollapsedNavIcon
