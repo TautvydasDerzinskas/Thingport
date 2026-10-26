@@ -9,7 +9,6 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import type { Theme } from "@mui/material/styles";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
-import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
 import LockIcon from "@mui/icons-material/Lock";
 import { type Collection } from "../../api/collections";
 import { type PreviewMode } from "../../api/settings";
@@ -21,6 +20,7 @@ import CollectionSyncBadge from "../../components/CollectionSyncBadge";
 import CollectionSyncDialog from "../CollectionDetailPage/CollectionSyncDialog";
 import { useCardContextMenu } from "../../components/Layout/ConfigurationDialog/AppTiles";
 import SelectionCheck from "../../components/selection/SelectionCheck";
+import { ToolCollectionBadge, ToolCollectionMenu } from "../../components/tools/ToolCollectionBadge";
 
 type Props = {
   collection: Collection;
@@ -127,7 +127,14 @@ export default function CollectionCard({
   const toggleSelect = (event: React.MouseEvent | React.KeyboardEvent) => onToggleSelect?.(event.shiftKey);
 
   return (
-    <Tooltip title={sittingOut ? t("models:collections.selection.builtIn") : ""} followCursor>
+    <Tooltip
+      title={
+        sittingOut
+          ? t(collection.tool_id ? "models:collections.tool.cantSelect" : "models:collections.selection.builtIn")
+          : ""
+      }
+      followCursor
+    >
       <Box
         sx={{
           position: "relative",
@@ -158,8 +165,8 @@ export default function CollectionCard({
         ))}
         <Paper
           variant="outlined"
-          // System collections have no menu, so they keep the browser's.
-          onContextMenu={system || selectMode ? undefined : contextMenu.onContextMenu}
+          // Built-in collections have no menu, so they keep the browser's; a tool's has one of its own.
+          onContextMenu={collection.system_key || selectMode ? undefined : contextMenu.onContextMenu}
           {...(selectMode &&
             !system && {
               onClick: toggleSelect,
@@ -282,16 +289,7 @@ export default function CollectionCard({
             <Stack direction="row" alignItems="center" spacing={1}>
               <Box sx={{ minWidth: 0, flexGrow: 1 }}>
                 <Stack direction="row" alignItems="center" spacing={0.5} minWidth={0}>
-                  {collection.tool_id ? (
-                    <Tooltip title={t("models:collections.card.toolOwned")}>
-                      <HandymanOutlinedIcon
-                        aria-label={t("models:collections.card.toolOwned")}
-                        sx={{ fontSize: 14, color: "text.disabled", flexShrink: 0 }}
-                      />
-                    </Tooltip>
-                  ) : (
-                    collection.system_key && <LockIcon sx={{ fontSize: 14, color: "text.disabled", flexShrink: 0 }} />
-                  )}
+                  {collection.system_key && <LockIcon sx={{ fontSize: 14, color: "text.disabled", flexShrink: 0 }} />}
                   <Typography
                     variant="body2"
                     fontWeight={600}
@@ -309,6 +307,7 @@ export default function CollectionCard({
                   </Typography>
                 </Stack>
               </Box>
+              {collection.tool_id && <ToolCollectionBadge toolId={collection.tool_id} />}
               {collection.sync && (
                 <CollectionSyncBadge
                   sync={collection.sync}
@@ -318,6 +317,15 @@ export default function CollectionCard({
             </Stack>
           </Box>
         </Paper>
+        {collection.tool_id && (
+          <ToolCollectionMenu
+            toolId={collection.tool_id}
+            name={displayName}
+            at={contextMenu.at}
+            onClose={contextMenu.close}
+            onOpenCollection={() => navigate(`/models/collections/${collection.id}`)}
+          />
+        )}
         {syncOpen && collection.sync && (
           <CollectionSyncDialog
             collection={{ ...collection, sync: collection.sync }}

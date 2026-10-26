@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { keyframes } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -59,6 +59,24 @@ export default function ToolsPage({ isAdmin, onUnauthorized }: Props) {
   const [about, setAbout] = useState<Tool | null>(null);
   const [menu, setMenu] = useState<{ tool: Tool; at: { top: number; left: number } } | null>(null);
   const [editing, setEditing] = useState<Tool | "new" | null>(null);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // ?open=<id>, from "Open <tool>" on a tool's collection: that tool's window, once the tools are in.
+  const openId = searchParams.get("open");
+  useEffect(() => {
+    if (!openId || !state) return;
+    const tool = state.tools.find((candidate) => candidate.id === openId);
+    if (tool) setRunning(tool);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete("open");
+        return next;
+      },
+      { replace: true },
+    );
+  }, [openId, state, setSearchParams]);
 
   const canCreate = state?.access.canCreate ?? false;
   const installed = useMemo(() => state?.tools.filter((tool) => tool.source === "repo") ?? [], [state]);

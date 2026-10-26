@@ -3633,8 +3633,7 @@
       "card": {
         "empty": "Aucun modèle pour le moment",
         "itemCount_one": "{{count}} modèle",
-        "itemCount_other": "{{count}} modèles",
-        "toolOwned": "Appartient à un outil : disparaît à sa désinstallation"
+        "itemCount_other": "{{count}} modèles"
       },
       "form": {
         "createTitle": "Nouvelle collection",
@@ -3750,6 +3749,15 @@
         "deleted_other": "{{count}} collections supprimées",
         "merged_one": "{{count}} collection fusionnée dans « {{name}} »",
         "merged_other": "{{count}} collections fusionnées dans « {{name}} »"
+      },
+      "tool": {
+        "badge": "Appartient à l'outil {{tool}} : elle ne peut être ni modifiée ni supprimée, et disparaît à sa désinstallation",
+        "badgeUnknown": "Appartient à un outil : elle ne peut être ni modifiée ni supprimée",
+        "status": "Appartient à {{tool}} · non modifiable",
+        "openCollection": "Ouvrir la collection",
+        "openTool": "Ouvrir {{tool}}",
+        "openToolUnknown": "Ouvrir l'outil",
+        "cantSelect": "La collection d'un outil ne peut être ni fusionnée ni supprimée"
       }
     },
     "tags": {

@@ -3702,8 +3702,7 @@
         "empty": "Kol kas nėra modelių",
         "itemCount_one": "{{count}} modelis",
         "itemCount_few": "{{count}} modeliai",
-        "itemCount_other": "{{count}} modelių",
-        "toolOwned": "Priklauso įrankiui: dings, kai įrankis bus pašalintas"
+        "itemCount_other": "{{count}} modelių"
       },
       "form": {
         "createTitle": "Nauja kolekcija",
@@ -3845,6 +3844,15 @@
         "merged_few": "{{count}} kolekcijos sujungtos į „{{name}}“",
         "merged_many": "{{count}} kolekcijos sujungta į „{{name}}“",
         "merged_other": "{{count}} kolekcijų sujungta į „{{name}}“"
+      },
+      "tool": {
+        "badge": "Priklauso įrankiui „{{tool}}“: jos negalima redaguoti ar ištrinti, ji dings pašalinus įrankį",
+        "badgeUnknown": "Priklauso įrankiui: jos negalima redaguoti ar ištrinti",
+        "status": "Priklauso „{{tool}}“ · negalima keisti",
+        "openCollection": "Atidaryti kolekciją",
+        "openTool": "Atidaryti „{{tool}}“",
+        "openToolUnknown": "Atidaryti įrankį",
+        "cantSelect": "Įrankio kolekcijos negalima sujungti ar ištrinti"
       }
     },
     "tags": {

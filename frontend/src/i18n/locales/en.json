@@ -3606,8 +3606,7 @@
       "card": {
         "empty": "No models yet",
         "itemCount_one": "{{count}} model",
-        "itemCount_other": "{{count}} models",
-        "toolOwned": "Belongs to a tool: it goes when the tool is uninstalled"
+        "itemCount_other": "{{count}} models"
       },
       "form": {
         "createTitle": "New Collection",
@@ -3723,6 +3722,15 @@
         "deleted_other": "Deleted {{count}} collections",
         "merged_one": "Merged {{count}} collection into “{{name}}”",
         "merged_other": "Merged {{count}} collections into “{{name}}”"
+      },
+      "tool": {
+        "badge": "Belongs to the {{tool}} tool: it can't be edited or deleted, and goes when the tool is uninstalled",
+        "badgeUnknown": "Belongs to a tool: it can't be edited or deleted",
+        "status": "Belongs to {{tool}} · can't be changed",
+        "openCollection": "Open collection",
+        "openTool": "Open {{tool}}",
+        "openToolUnknown": "Open the tool",
+        "cantSelect": "A tool's collection can't be merged or deleted"
       }
     },
     "tags": {
