@@ -17,9 +17,10 @@
   .mbp *::after {
     box-sizing: border-box;
   }
-  .mbp button,
-  .mbp input,
-  .mbp select {
+  /* `:where()` holds this reset at the specificity of the root class alone, so a button's own rule further down —
+     the accent-filled one, say — still decides its colour and its weight. Written as `.mbp button`, the reset
+     outranks every single-class rule and quietly wins both. */
+  .mbp :where(button, input, select) {
     font: inherit;
     color: inherit;
   }

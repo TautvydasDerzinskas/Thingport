@@ -53,6 +53,7 @@ export default function ToolRunner({ tool, onClose }: Props) {
   const theme: ToolTheme = {
     mode: muiTheme.palette.mode,
     primary: muiTheme.palette.primary.main,
+    primaryContrast: muiTheme.palette.primary.contrastText,
     background: muiTheme.thingport.pageBackground,
     paper: muiTheme.palette.background.paper,
     text: muiTheme.palette.text.primary,
@@ -85,6 +86,25 @@ export default function ToolRunner({ tool, onClose }: Props) {
     observer.observe(root);
 
     setError(null);
+    // The theme as CSS variables on the window itself, before the tool's HTML goes in, so a tool's stylesheet can
+    // use `var(--tp-accent)` without copying the theme across in script first. Copying it by hand is where a tool
+    // picks the wrong colour for text on the accent — the paper colour is white in the light theme and dark in the
+    // dark one, while what reads on an accent is its own contrast colour.
+    for (const [name, value] of Object.entries({
+      "--tp-accent": theme.primary,
+      "--tp-accent-ink": theme.primaryContrast,
+      "--tp-background": theme.background,
+      "--tp-paper": theme.paper,
+      "--tp-text": theme.text,
+      "--tp-text-muted": theme.textSecondary,
+      "--tp-divider": theme.divider,
+      "--tp-error": theme.error,
+      "--tp-warning": theme.warning,
+      "--tp-success": theme.success,
+      "--tp-font": theme.fontFamily,
+    })) {
+      root.style.setProperty(name, value);
+    }
     root.innerHTML = tool.html ?? "";
     const thingport = buildToolSdk({
       tool,

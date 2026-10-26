@@ -19,8 +19,10 @@
   .mwn *::after {
     box-sizing: border-box;
   }
-  .mwn button,
-  .mwn input {
+  /* `:where()` holds this reset at the specificity of the root class alone, so a button's own rule further down —
+     the accent-filled one, say — still decides its colour and its weight. Written as `.mwn button`, the reset
+     outranks every single-class rule and quietly wins both. */
+  .mwn :where(button, input) {
     font: inherit;
     color: inherit;
   }

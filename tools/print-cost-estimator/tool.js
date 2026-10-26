@@ -1569,8 +1569,9 @@ export default async function mount(thingport) {
     text: theme.text,
     muted: theme.textSecondary,
     accent: theme.primary,
-    // Text on the accent: the panel's colour reads on it in both themes, as Thingport's own buttons do.
-    "accent-ink": theme.paper,
+    // What reads on the accent, which Thingport picks per accent colour: white for most, dark for the light ones
+    // like amber. The fallback keeps an older Thingport, which didn't hand it over, close to right.
+    "accent-ink": theme.primaryContrast ?? "#ffffff",
     danger: theme.error,
     warning: theme.warning,
     success: theme.success,

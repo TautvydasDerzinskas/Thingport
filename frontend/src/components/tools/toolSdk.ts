@@ -25,6 +25,9 @@ export type RunnableTool = {
 export type ToolTheme = {
   mode: "light" | "dark";
   primary: string;
+  /** What reads on `primary`: white for most accents, dark for the light ones. Text and icons on an accent-filled
+   *  button take this, not the paper colour, which is dark in the dark theme. */
+  primaryContrast: string;
   background: string;
   paper: string;
   text: string;

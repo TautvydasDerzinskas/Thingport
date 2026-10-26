@@ -43,7 +43,12 @@ With **Users' own tools** on, **New tool** on the Tools page opens the editor:
 - **Script**: an ES module. The editor starts with a working tool, _Cube maker_, that uses most of what a tool can do;
   the **SDK reference** beside it lists the rest.
 - **HTML & CSS**: markup and a `<style>` block, put into the window before the script runs. Scope the styles to a class
-  of your own so they stay in the tool.
+  of your own so they stay in the tool. The theme is already on the window as CSS variables — `--tp-accent`,
+  `--tp-accent-ink`, `--tp-background`, `--tp-paper`, `--tp-text`, `--tp-text-muted`, `--tp-divider`, `--tp-error`,
+  `--tp-warning`, `--tp-success` and `--tp-font` — so a stylesheet can use them without the script copying anything.
+  Text and icons on an accent-filled button take `--tp-accent-ink`, never the paper colour, which is dark in the dark
+  theme. Watch the specificity while you're at it: a reset written `.yours button { color: inherit }` outranks
+  `.yours-button { color: … }` and quietly wins, so wrap such a reset in `:where()`.
 - **Preview**: the tool running alone, as its window will show it. Until it's saved, what it keeps lasts only as long as
   the preview, and it can't reach other hosts.
 
@@ -67,26 +72,26 @@ export default async function mount(thingport) {
 }
 ```
 
-| `thingport.`                                                                                                                      | What it is                                                                                                       |
-| --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `root`, `selector`                                                                                                                | The window's element, with the tool's HTML in it, and a CSS selector for it                                      |
-| `theme`                                                                                                                           | `{ mode, primary, background, paper, text, textSecondary, divider, error, warning, success, fontFamily }`        |
-| `size`, `onResize(fn)`                                                                                                            | The window's size in pixels, and a way to hear when it changes                                                   |
-| `tool`                                                                                                                            | `{ id, slug, name, version, source }`                                                                            |
-| `storage.get(key)`, `set(key, value)`, `remove(key)`, `keys()`                                                                    | JSON kept for the user, by key: up to 1 MB a value and 20 MB a tool                                              |
-| `collections.list()`, `get(id)`, `create({ name, description, tags })`                                                            | The user's collections                                                                                           |
-| `collections.models(id)`, `add(id, modelIds)`, `remove(id, modelIds)`                                                             | A collection's models                                                                                            |
-| `collections.pick({ title })`                                                                                                     | Asks the user for one of their collections, or a new one; `null` when they cancel                                |
-| `models.list({ q, tags, collectionId, limit, offset })`, `search(q)`, `get(id)`                                                   | Models in the library                                                                                            |
-| `models.file(id, fileId?)`                                                                                                        | One of a model's files, as an `ArrayBuffer`                                                                      |
-| `models.create({ name, description, tags, collectionId, files })`                                                                 | A new model; each file `{ name, data }`, data a `Blob`, `ArrayBuffer` or string                                  |
-| `models.addFiles(id, files)`, `addImages(id, images)`, `replaceFile(id, fileId, file)`, `update(id, { name, description, tags })` | Changing a model the user owns: its files, gallery pictures (the first is its cover), name, description and tags |
-| `models.open(id)`                                                                                                                 | Closes the tool and opens the model's page                                                                       |
-| `toolModels()`                                                                                                                    | The models a repository tool brings: `{ key, name, source, printId }`, `printId` null until it's come in         |
-| `fetch(url, init)`                                                                                                                | A request through Thingport to one of the tool's declared hosts, answered like `fetch`                           |
-| `api(path, init)`                                                                                                                 | Thingport's own API, as the user                                                                                 |
-| `download({ name, data })`                                                                                                        | Hands the user a file                                                                                            |
-| `ui.toast(message, severity)`, `ui.confirm({ title, message })`, `ui.close()`                                                     | Thingport's own toast, confirmation and closing the window                                                       |
+| `thingport.`                                                                                                                      | What it is                                                                                                                 |
+| --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `root`, `selector`                                                                                                                | The window's element, with the tool's HTML in it, and a CSS selector for it                                                |
+| `theme`                                                                                                                           | `{ mode, primary, primaryContrast, background, paper, text, textSecondary, divider, error, warning, success, fontFamily }` |
+| `size`, `onResize(fn)`                                                                                                            | The window's size in pixels, and a way to hear when it changes                                                             |
+| `tool`                                                                                                                            | `{ id, slug, name, version, source }`                                                                                      |
+| `storage.get(key)`, `set(key, value)`, `remove(key)`, `keys()`                                                                    | JSON kept for the user, by key: up to 1 MB a value and 20 MB a tool                                                        |
+| `collections.list()`, `get(id)`, `create({ name, description, tags })`                                                            | The user's collections                                                                                                     |
+| `collections.models(id)`, `add(id, modelIds)`, `remove(id, modelIds)`                                                             | A collection's models                                                                                                      |
+| `collections.pick({ title })`                                                                                                     | Asks the user for one of their collections, or a new one; `null` when they cancel                                          |
+| `models.list({ q, tags, collectionId, limit, offset })`, `search(q)`, `get(id)`                                                   | Models in the library                                                                                                      |
+| `models.file(id, fileId?)`                                                                                                        | One of a model's files, as an `ArrayBuffer`                                                                                |
+| `models.create({ name, description, tags, collectionId, files })`                                                                 | A new model; each file `{ name, data }`, data a `Blob`, `ArrayBuffer` or string                                            |
+| `models.addFiles(id, files)`, `addImages(id, images)`, `replaceFile(id, fileId, file)`, `update(id, { name, description, tags })` | Changing a model the user owns: its files, gallery pictures (the first is its cover), name, description and tags           |
+| `models.open(id)`                                                                                                                 | Closes the tool and opens the model's page                                                                                 |
+| `toolModels()`                                                                                                                    | The models a repository tool brings: `{ key, name, source, printId }`, `printId` null until it's come in                   |
+| `fetch(url, init)`                                                                                                                | A request through Thingport to one of the tool's declared hosts, answered like `fetch`                                     |
+| `api(path, init)`                                                                                                                 | Thingport's own API, as the user                                                                                           |
+| `download({ name, data })`                                                                                                        | Hands the user a file                                                                                                      |
+| `ui.toast(message, severity)`, `ui.confirm({ title, message })`, `ui.close()`                                                     | Thingport's own toast, confirmation and closing the window                                                                 |
 
 A model's files are `{ id, name, size, url }`; a model a tool brought has `toolOwned: true` and can't be changed.
 

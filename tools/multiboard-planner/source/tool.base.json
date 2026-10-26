@@ -1,7 +1,7 @@
 {
   "name": "Multiboard planner",
   "description": "Plans a Multiboard wall: the layout, and every tile and mount to print it, from your own library.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Thingport contributors",
   "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
   "window": {

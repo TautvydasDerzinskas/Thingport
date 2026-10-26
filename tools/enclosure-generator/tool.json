@@ -1,7 +1,7 @@
 {
   "name": "Enclosure generator",
   "description": "Designs a 3D-printable case for electronics: a box and lid with screws or snaps, PCB standoffs, port cutouts, vents and text, saved as a model or kept as a project to come back to.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Thingport contributors",
   "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
   "window": {

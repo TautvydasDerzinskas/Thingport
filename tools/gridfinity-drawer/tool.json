@@ -1,7 +1,7 @@
 {
   "name": "Gridfinity drawer builder",
   "description": "Fits a Gridfinity baseplate and bins to a drawer, cut to your printer's bed, and saves the whole set as one model.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Thingport contributors",
   "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
   "window": {

@@ -51,8 +51,8 @@ export const STARTER_SCRIPT = `// A tool is an ES module. When its window opens,
 // \`thingport\`; the function that returns is called when the window closes. Everything below is optional.
 //
 // thingport.root               the window's element, with tool.html already in it
-// thingport.theme              { mode, primary, background, paper, text, textSecondary, divider, error, warning, success,
-//                              fontFamily }
+// thingport.theme              { mode, primary, primaryContrast, background, paper, text, textSecondary, divider,
+//                              error, warning, success, fontFamily }
 // thingport.size, onResize(fn) the window's size in pixels, and a way to hear when it changes
 // thingport.tool               { id, slug, name, version, source }
 // thingport.storage            get(key), set(key, value), remove(key), keys(): JSON kept for this user, up to 20 MB
@@ -73,7 +73,8 @@ export default async function mount(thingport) {
   const { root, theme, storage, models, ui } = thingport;
   const $ = (id) => root.querySelector("#" + id);
 
-  // The theme's colours for tool.html's styles, so the tool looks right in light and dark.
+  // The theme is already on the window as CSS variables (--tp-accent, --tp-accent-ink, --tp-text, …), so a
+  // stylesheet can use it without this. These are here for drawing, where only script can reach the colours.
   const colours = { text: theme.text, muted: theme.textSecondary, paper: theme.paper, divider: theme.divider,
     primary: theme.primary, font: theme.fontFamily };
   for (const [name, value] of Object.entries(colours)) root.style.setProperty("--" + name, value);
