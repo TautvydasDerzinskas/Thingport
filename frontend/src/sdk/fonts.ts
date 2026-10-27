@@ -35,13 +35,19 @@ export const TOOL_FONTS: readonly ToolFont[] = [
 ];
 
 // Addresses only: the bundler emits each file as its own asset and nothing is fetched until a tool asks for one.
-const files = import.meta.glob("../../assets/toolFonts/*.ttf", {
+const files = import.meta.glob("../assets/toolFonts/*.ttf", {
   query: "?url",
   import: "default",
   eager: true,
 }) as Record<string, string>;
 
-const urls = new Map(
+/**
+ * Each font file's address, by its id.
+ *
+ * Exported so a test can check it against the list above: a glob that matches nothing is not an error anywhere
+ * else, and the tools would only find out at the moment someone asks for a typeface.
+ */
+export const TOOL_FONT_URLS: ReadonlyMap<string, string> = new Map(
   Object.entries(files).map(([path, url]) => [path.slice(path.lastIndexOf("/") + 1, -".ttf".length), url]),
 );
 
@@ -68,7 +74,7 @@ export function toolFontLibrary(opentype: () => Promise<unknown>): ToolFontLibra
   };
 
   const address = (id: string) => {
-    const url = urls.get(id);
+    const url = TOOL_FONT_URLS.get(id);
     if (!url)
       throw new Error(`Thingport has no font called "${id}". It has: ${TOOL_FONTS.map((f) => f.id).join(", ")}`);
     return url;
