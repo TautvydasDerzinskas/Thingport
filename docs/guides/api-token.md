@@ -66,8 +66,8 @@ it shows thumbnails.
 ## Connect an AI assistant
 
 The same token connects an AI assistant to your library over MCP, with the tools you allow in **Token permissions** (the cog next to the token). The tools that
-read are on for a new token, and so are `save_widget` and `upload_icon`; the others that change your library, such as
-importing a model, stay off until you turn them on. See [Connect an AI assistant with MCP](mcp.md).
+read are on for a new token, and so are `save_widget`, `save_tool` and `upload_icon`; the others that change your
+library, such as importing a model, stay off until you turn them on. See [Connect an AI assistant with MCP](mcp.md).
 
 ## What a token can and can't do
 

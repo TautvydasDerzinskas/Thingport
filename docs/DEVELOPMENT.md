@@ -92,6 +92,13 @@ Open <http://localhost:5173>. **The first account you register becomes the admin
 `backend/src/routes/auth.ts`, which bootstraps the first user as `ADMIN` and everyone after as
 `MEMBER`.
 
+## Tools
+
+Run from the checkout, the backend offers the tools in its own [`tools`](../tools) folder under **Administration →
+Tools**, not the repository's on GitHub, and reads them afresh on each visit: change a tool, refresh, and **Update**
+takes the change. The local `docker-compose.yml` mounts the folder for the same. See the [tools guide](guides/tools.md)
+for using them, and [tool development](TOOL_DEVELOPMENT.md) for writing one.
+
 ## Optional: FlareSolverr
 
 Thingiverse and MyMiniFactory sit behind Cloudflare, and some imports need FlareSolverr to get through. It's optional --

@@ -85,13 +85,16 @@ export default function CollectionDetailPage({
             onBookmarksChanged={onBookmarksChanged}
             onToggled={(bookmarked) => setCollection((prev) => (prev ? { ...prev, bookmarked } : prev))}
           />
-          <CollectionActionsMenu
-            collection={collection}
-            onUpdated={setCollection}
-            onUnauthorized={onUnauthorized}
-            onDeleted={goBack}
-            onBookmarksChanged={onBookmarksChanged}
-          />
+          {/* A tool's collection can be bookmarked, nothing more. */}
+          {!collection.tool_id && (
+            <CollectionActionsMenu
+              collection={collection}
+              onUpdated={setCollection}
+              onUnauthorized={onUnauthorized}
+              onDeleted={goBack}
+              onBookmarksChanged={onBookmarksChanged}
+            />
+          )}
         </Stack>
       ) : undefined,
   });
@@ -194,7 +197,8 @@ export default function CollectionDetailPage({
             )
           }
           onUnauthorized={onUnauthorized}
-          collectionId={collection.system_key ? undefined : collection.id}
+          collectionId={collection.system_key || collection.tool_id ? undefined : collection.id}
+          toolOwned={Boolean(collection.tool_id)}
           onRemovedFromCollection={(ids) => setItems((prev) => prev.filter((i) => !ids.includes(i.id)))}
         />
         <Box sx={{ ml: "auto" }}>
@@ -229,7 +233,7 @@ export default function CollectionDetailPage({
                       : prev.map((i) => (i.id === updated.id ? updated : i)),
                   )
                 }
-                collectionId={collection && !collection.system_key ? collection.id : undefined}
+                collectionId={collection && !collection.system_key && !collection.tool_id ? collection.id : undefined}
                 onRemovedFromCollection={(removedId) => setItems((prev) => prev.filter((i) => i.id !== removedId))}
                 onUpdated={(updated) => setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)))}
                 onUnauthorized={onUnauthorized}

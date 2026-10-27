@@ -3,6 +3,12 @@ package-lock.json
 **/CHANGELOG.md
 backend/prisma/migrations/
 web/.astro/
+# A tool's built files, and the original Multiboard Planner's core and tests, kept as it has them
+tools/*/tool.js
+tools/*/tool.json
+tools/multiboard-planner/source/core.js
+tools/multiboard-planner/source/original_tests.json
+tools/makerworld-3mf-normalizer/source/sanitizer.js
 .husky/_/
 
 # prettier-plugin-sh would claim these, but they aren't shell scripts

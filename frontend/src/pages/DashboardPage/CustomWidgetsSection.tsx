@@ -27,7 +27,14 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PublishOutlinedIcon from "@mui/icons-material/PublishOutlined";
 import { UnauthorizedError } from "../../api/client";
-import { widgetsApi, type CommunityWidget, type CustomWidget, type WidgetManifest } from "../../api/widgets";
+import {
+  communityScreenshotUrl,
+  widgetsApi,
+  type CommunityWidget,
+  type CustomWidget,
+  type WidgetManifest,
+} from "../../api/widgets";
+import Screenshots from "../../components/Screenshots";
 import Segmented from "../../components/controls/Segmented";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { useToast } from "../../components/ToastProvider";
@@ -58,6 +65,10 @@ async function downloadForPublishing(widget: CustomWidget) {
     [`${folder}/README.md`]: strToU8(readme),
   };
   if (widget.html) files[`${folder}/widget.html`] = strToU8(widget.html);
+  // A language per file, where the repository keeps them: the metadata already names which languages there are.
+  for (const [code, words] of Object.entries(widget.locales ?? {})) {
+    files[`${folder}/locales/${code}.json`] = strToU8(`${JSON.stringify(words, null, 2)}\n`);
+  }
   const blob = new Blob([zipSync(files)], { type: "application/zip" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -119,6 +130,7 @@ function WidgetRow({
   manifest,
   fromVersion,
   fullDescription,
+  shots,
   extra,
   actions,
 }: {
@@ -127,6 +139,8 @@ function WidgetRow({
   fromVersion?: string;
   /** All of the description rather than its first two lines. */
   fullDescription?: boolean;
+  /** The slug a shared widget's screenshots are served under; left out, none are shown. */
+  shots?: string;
   extra?: React.ReactNode;
   actions?: React.ReactNode;
 }) {
@@ -185,6 +199,13 @@ function WidgetRow({
           >
             {manifest.description}
           </Typography>
+        )}
+        {shots && manifest.screenshots.length > 0 && (
+          <Screenshots
+            name={manifest.name}
+            screenshots={manifest.screenshots}
+            urlFor={(index) => communityScreenshotUrl(shots, index)}
+          />
         )}
       </Box>
       {actions}
@@ -400,6 +421,7 @@ function Community({
             manifest={widget.manifest}
             fromVersion={installed?.find((own) => own.id === installedId)?.manifest.version}
             fullDescription
+            shots={widget.slug}
           />
           <span>{t("dashboard.custom.installTrust")}</span>
           {widget.manifest.hosts.length > 0 && (
@@ -450,6 +472,7 @@ function Community({
         <WidgetRow
           key={widget.slug}
           manifest={widget.manifest}
+          shots={widget.slug}
           extra={
             widget.manifest.hosts.length > 0 && (
               <Tooltip title={widget.manifest.hosts.join(", ")}>

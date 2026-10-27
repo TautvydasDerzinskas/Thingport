@@ -9,6 +9,7 @@ export type PageId =
   | "collections"
   | "tags"
   | "downloads"
+  | "tools"
   | "myModels"
   | "profile"
   | "admin"
@@ -16,6 +17,7 @@ export type PageId =
   | "adminStorage"
   | "adminAuth"
   | "adminRendering"
+  | "adminTools"
   | "adminAi"
   | "adminUsers"
   | "adminQueue"
@@ -56,6 +58,7 @@ export const SEARCH_PAGES: SearchPage[] = [
     labelKey: "app:sidebar.downloads",
     terms: ["downloads", "bridge", "extension", "browser extension", "install"],
   },
+  { id: "tools", path: "/tools", labelKey: "app:sidebar.tools", terms: ["tools", "apps", "planner", "multiboard"] },
   {
     id: "myModels",
     path: `/authors/${SELF_AUTHOR_ID}`,
@@ -114,6 +117,12 @@ export const SEARCH_PAGES: SearchPage[] = [
     "previews",
     "model previews",
     "thumbnails",
+  ]),
+  adminPage("adminTools", "/admin-tools", "app:adminSettings.tools.heading", [
+    "tools",
+    "install tools",
+    "tools repository",
+    "own tools",
   ]),
   adminPage("adminAi", "/admin-ai", "app:adminSettings.ai.heading", [
     "ai",

@@ -25,6 +25,8 @@ backend/prisma/dev.db*
 
 # Thingport runtime content
 data/
+# …but a tool's own part data is source, not a runtime folder.
+!tools/*/source/data/
 imports/
 backend/storage/
 
@@ -44,3 +46,8 @@ regression/.auth/
 regression/test-results/
 regression/playwright-report/
 regression/consume/
+
+# A local page for running a tool against the real SDK while working on it; never part of a build.
+frontend/tool-harness.html
+frontend/src/toolHarness.ts
+frontend/public/tool-harness/

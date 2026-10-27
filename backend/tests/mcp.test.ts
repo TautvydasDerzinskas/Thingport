@@ -15,7 +15,7 @@ import { setMcpAccess } from "../src/services/settingsService";
 const app = createApp();
 
 // The write tools a new token gets without asking; every other default only reads.
-const DEFAULT_ON_WRITES = ["save_widget", "upload_icon"];
+const DEFAULT_ON_WRITES = ["save_widget", "save_tool", "upload_icon"];
 const READ_TOOL_NAMES = MCP_TOOLS.filter((tool) => tool.readOnly).map((tool) => tool.name);
 
 type Account = { session: string; userId: string; token: string };

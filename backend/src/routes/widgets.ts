@@ -1,10 +1,12 @@
 import { Router } from "express";
 import { z } from "zod";
 import { requireAuth } from "../auth";
+import { HttpError } from "../utils/fileUtils";
 import { asyncHandler } from "../utils/asyncHandler";
 import { parseBody } from "../utils/validate";
 import {
   assertWidgetSourceEnabled,
+  communityWidgetScreenshot,
   deleteCustomWidget,
   enabledWidgetSources,
   installCommunityWidget,
@@ -30,12 +32,14 @@ router.get(
   }),
 );
 
-// The metadata comes as JSON or YAML text, as a widget's file holds it.
+// The metadata comes as JSON or YAML text, as a widget's file holds it; the labels as a map per language, as the
+// widget's locales folder holds them.
 const saveSchema = z.object({
   slug: z.string(),
   metadata: z.string().max(200_000),
   script: z.string(),
   html: z.string().nullable().optional(),
+  locales: z.record(z.string(), z.record(z.string(), z.string())).optional(),
 });
 router.put(
   "/widgets",
@@ -48,6 +52,7 @@ router.put(
         manifest: parseManifest(body.metadata),
         script: body.script,
         html: body.html,
+        locales: body.locales,
       }),
     );
   }),
@@ -66,6 +71,21 @@ router.get(
   asyncHandler(async (req, res) => {
     await assertWidgetSourceEnabled("community");
     res.json({ widgets: await listCommunityWidgets(req.userId!) });
+  }),
+);
+
+// A community widget's screenshot, by its place in its metadata: for an <img>, so the token may come as ?token=.
+router.get(
+  "/widgets/community/:slug/screenshots/:index",
+  asyncHandler(async (req, res) => {
+    await assertWidgetSourceEnabled("community");
+    const index = Number(req.params.index);
+    if (!Number.isInteger(index) || index < 0) throw new HttpError(400, "Not a screenshot");
+    const image = await communityWidgetScreenshot(String(req.params.slug), index);
+    res.set("Content-Type", image.type);
+    res.set("Cache-Control", "private, max-age=3600");
+    res.set("X-Content-Type-Options", "nosniff");
+    res.send(image.body);
   }),
 );
 

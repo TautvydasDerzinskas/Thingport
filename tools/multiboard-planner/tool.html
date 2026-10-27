@@ -1,0 +1,751 @@
+<style>
+  /* Everything is under .mbp, so nothing reaches the rest of Thingport. The colours come from Thingport's theme
+     (tool.js sets the variables); the board's own colours are the original planner's, so exports look the same. */
+  .mbp {
+    --panel-2: color-mix(in srgb, var(--panel) 90%, var(--text));
+    --line: var(--divider);
+    --room: color-mix(in srgb, var(--panel) 70%, var(--text));
+    container-type: inline-size;
+    box-sizing: border-box;
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.4 var(--font);
+  }
+  .mbp *,
+  .mbp *::before,
+  .mbp *::after {
+    box-sizing: border-box;
+  }
+  /* `:where()` holds this reset at the specificity of the root class alone, so a button's own rule further down —
+     the accent-filled one, say — still decides its colour and its weight. Written as `.mbp button`, the reset
+     outranks every single-class rule and quietly wins both. */
+  .mbp :where(button, input, select) {
+    font: inherit;
+    color: inherit;
+  }
+  .mbp :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .mbp [hidden] {
+    display: none !important;
+  }
+
+  .mbp-main {
+    display: grid;
+    gap: 12px;
+    padding: 12px;
+    align-items: start;
+    grid-template-columns: 260px minmax(0, 1fr) 340px;
+  }
+  @container (max-width: 1080px) {
+    .mbp-main {
+      grid-template-columns: 260px minmax(0, 1fr);
+    }
+    .mbp-results {
+      grid-column: 1 / -1;
+    }
+  }
+  @container (max-width: 640px) {
+    .mbp-main {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .mbp-panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+  .mbp-inputs {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .mbp-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .mbp-label {
+    font-size: 11px;
+    font-weight: 650;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .mbp-row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .mbp-field {
+    position: relative;
+  }
+  .mbp-field input,
+  .mbp-field select {
+    width: 100%;
+    height: 34px;
+    padding: 0 34px 0 10px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .mbp-field select {
+    padding-right: 10px;
+    cursor: pointer;
+  }
+  .mbp-field input:focus,
+  .mbp-field select:focus {
+    border-color: var(--accent);
+  }
+  .mbp-field .mbp-suffix {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 12px;
+    pointer-events: none;
+  }
+  .mbp-field .mbp-prefix {
+    position: absolute;
+    left: 8px;
+    top: -7px;
+    padding: 0 4px;
+    background: var(--panel);
+    color: var(--muted);
+    font-size: 10px;
+    border-radius: 4px;
+  }
+
+  .mbp-seg {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 3px;
+  }
+  .mbp-seg.mbp-grid2 {
+    grid-auto-flow: row;
+    grid-template-columns: 1fr 1fr;
+  }
+  .mbp-seg button {
+    border: 0;
+    background: transparent;
+    border-radius: 6px;
+    padding: 6px 8px;
+    cursor: pointer;
+    color: var(--muted);
+    transition:
+      background-color 0.18s,
+      color 0.18s;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .mbp-seg button:hover {
+    color: var(--text);
+  }
+  .mbp-seg button[aria-pressed="true"] {
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+  }
+
+  .mbp-hint {
+    color: var(--muted);
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .mbp-hint b {
+    color: var(--text);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .mbp-warn {
+    color: var(--accent);
+  }
+
+  .mbp-help {
+    position: relative;
+    display: inline-grid;
+  }
+  .mbp-help button {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid var(--muted);
+    background: transparent;
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1;
+    cursor: help;
+    padding: 0;
+  }
+  .mbp-help [role="tooltip"] {
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 6px);
+    transform: translateX(-50%) translateY(-4px);
+    width: 220px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--text);
+    color: var(--bg);
+    font-size: 12px;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    line-height: 1.35;
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      opacity 0.15s,
+      transform 0.15s;
+    z-index: 5;
+  }
+  .mbp-help:hover [role="tooltip"],
+  .mbp-help button:focus-visible + [role="tooltip"] {
+    opacity: 1;
+    transform: translateX(-50%);
+  }
+
+  .mbp-unused {
+    border-top: 1px dashed var(--line);
+    padding-top: 12px;
+    display: none;
+  }
+  .mbp-unused.mbp-show {
+    display: flex;
+    animation: mbp-rise 0.25s ease-out;
+  }
+  .mbp-about-toggle {
+    align-self: flex-start;
+    border: 0;
+    background: none;
+    padding: 0;
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .mbp-about {
+    font-size: 12px;
+    color: var(--muted);
+    border-top: 1px dashed var(--line);
+    padding-top: 12px;
+    animation: mbp-rise 0.2s ease-out;
+  }
+  .mbp-about p {
+    margin: 0 0 6px;
+  }
+  .mbp-about ul {
+    margin: 0 0 6px;
+    padding-left: 18px;
+  }
+  .mbp-about b {
+    color: var(--text);
+  }
+
+  .mbp-preview {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 380px;
+  }
+  .mbp-preview-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .mbp-dims {
+    font-weight: 600;
+  }
+  .mbp-legend {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    color: var(--muted);
+    font-size: 12px;
+    margin-left: auto;
+  }
+  .mbp-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .mbp-legend i {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    display: inline-block;
+  }
+  .mbp-legend i.mbp-dot {
+    border-radius: 50%;
+  }
+  .mbp-stage {
+    position: relative;
+    flex: 1;
+    min-height: 320px;
+    display: grid;
+    place-items: center;
+  }
+  .mbp-stage svg {
+    width: 100%;
+    height: 100%;
+    max-height: 62vh;
+    display: block;
+  }
+  .mbp-stage .tile {
+    transition: opacity 0.18s;
+  }
+  .mbp-stage.mbp-dim .tile:not(.hl) {
+    opacity: 0.25;
+  }
+  .mbp-stage .tile.enter {
+    animation: mbp-pop 0.3s ease-out both;
+  }
+  .mbp-stage .snap.enter {
+    animation: mbp-fade 0.3s ease-out both;
+  }
+  .mbp-empty {
+    text-align: center;
+    color: var(--muted);
+    max-width: 280px;
+  }
+  .mbp-empty strong {
+    display: block;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .mbp-error {
+    color: var(--danger);
+  }
+
+  .mbp-results {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .mbp-results-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .mbp-results-head h2 {
+    margin: 0;
+    font-size: 14px;
+  }
+  .mbp-count {
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .mbp-spacer {
+    flex: 1;
+  }
+  .mbp-btn {
+    height: 30px;
+    padding: 0 10px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    transition: border-color 0.15s;
+  }
+  .mbp-btn:hover:not(:disabled) {
+    border-color: var(--muted);
+  }
+  .mbp-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  .mbp-btn.mbp-primary {
+    background: var(--accent);
+    color: var(--accent-ink);
+    border-color: transparent;
+    font-weight: 600;
+  }
+  .mbp-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+  .mbp-note {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* ---- naming the wall before it's saved ---- */
+  .mbp-cover {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: color-mix(in srgb, var(--bg) 72%, transparent);
+    backdrop-filter: blur(2px);
+    animation: mbp-fade 150ms ease both;
+  }
+  @keyframes mbp-fade {
+    from {
+      opacity: 0;
+    }
+  }
+  .mbp-dialog {
+    width: min(420px, 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--panel);
+    box-shadow: 0 20px 56px rgb(0 0 0 / 36%);
+    animation: mbp-rise 180ms ease both;
+  }
+  @keyframes mbp-rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mbp-cover,
+    .mbp-dialog {
+      animation: none;
+    }
+  }
+  .mbp-dialog h2 {
+    margin: 0;
+    font-size: 14px;
+  }
+  .mbp-dialog-foot {
+    display: flex;
+    gap: 7px;
+    justify-content: flex-end;
+  }
+  .mbp-section-title {
+    font-size: 11px;
+    font-weight: 650;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .mbp-parts {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .mbp-part {
+    display: grid;
+    grid-template-columns: 34px 1fr auto auto;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: 9px;
+    background: var(--panel-2);
+    border: 1px solid transparent;
+    animation: mbp-rise 0.25s ease-out both;
+    transition: border-color 0.15s;
+  }
+  .mbp-part:hover,
+  .mbp-part:focus-within {
+    border-color: var(--line);
+  }
+  .mbp-part .mbp-ico {
+    width: 34px;
+    height: 34px;
+  }
+  .mbp-part .mbp-name {
+    white-space: pre-line;
+    font-size: 13px;
+    line-height: 1.25;
+  }
+  .mbp-part .mbp-qty {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    min-width: 30px;
+    text-align: right;
+  }
+  .mbp-part .mbp-qty small {
+    color: var(--muted);
+    font-weight: 400;
+  }
+  .mbp-links {
+    display: inline-flex;
+    gap: 2px;
+  }
+  .mbp-link {
+    color: var(--accent);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 6px;
+    border-radius: 6px;
+  }
+  .mbp-link:hover {
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+
+  @keyframes mbp-rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes mbp-pop {
+    from {
+      opacity: 0;
+      transform: scale(0.94);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes mbp-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mbp *,
+    .mbp *::before,
+    .mbp *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+</style>
+<div class="mbp">
+  <main class="mbp-main">
+    <section class="mbp-panel mbp-inputs" data-t-aria="aria.settings" aria-label="Wall and tile settings">
+      <div class="mbp-group">
+        <div class="mbp-label" data-t="wall.title">Wall size</div>
+        <div class="mbp-seg" role="group" data-t-aria="aria.units" aria-label="Units" id="mbp-units">
+          <button type="button" data-value="0">mm</button>
+          <button type="button" data-value="1">inch</button>
+        </div>
+        <div class="mbp-row2">
+          <div class="mbp-field">
+            <span class="mbp-prefix" data-t="wall.width">Width</span
+            ><input
+              id="mbp-width"
+              inputmode="decimal"
+              autocomplete="off"
+              data-t-aria="aria.wallWidth"
+              aria-label="Wall width"
+            /><span class="mbp-suffix" data-unit></span>
+          </div>
+          <div class="mbp-field">
+            <span class="mbp-prefix" data-t="wall.height">Height</span
+            ><input
+              id="mbp-height"
+              inputmode="decimal"
+              autocomplete="off"
+              data-t-aria="aria.wallHeight"
+              aria-label="Wall height"
+            /><span class="mbp-suffix" data-unit></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mbp-group">
+        <div class="mbp-label">
+          <span data-t="tile.title">Tile size</span>
+          <span class="mbp-help"
+            ><button type="button" data-t-aria="aria.aboutTileSize" aria-label="About tile size">?</button
+            ><span role="tooltip" data-t="tile.help"
+              >Largest tile you print, in 25 mm grid cells. Smaller tiles fill the leftover strip at the right and top
+              edges.</span
+            ></span
+          >
+        </div>
+        <div class="mbp-field">
+          <select id="mbp-tileSize" data-t-aria="aria.tileSize" aria-label="Tile size"></select>
+        </div>
+        <div class="mbp-hint">
+          <span><span data-t="tile.needs">Needs</span> <b id="mbp-required"></b></span
+          ><span class="mbp-warn" id="mbp-recommend" data-t="tile.recommend">8×8 is recommended</span>
+        </div>
+      </div>
+
+      <div class="mbp-group">
+        <div class="mbp-label">
+          <span data-t="setup.title">Tile setup</span>
+          <span class="mbp-help"
+            ><button type="button" data-t-aria="aria.aboutSetup" aria-label="About tile setup">?</button
+            ><span role="tooltip" data-t="setup.help"
+              >Single tiles: every tile has its own border, joined with dual clips. Grid tiles: core, edge and corner
+              tiles that interlock into one bordered board.</span
+            ></span
+          >
+        </div>
+        <div class="mbp-seg" role="group" data-t-aria="aria.setup" aria-label="Tile setup" id="mbp-setup">
+          <button type="button" data-value="0" data-t="setup.single">Single tiles</button>
+          <button type="button" data-value="1" data-t="setup.grid">Grid tiles</button>
+        </div>
+      </div>
+
+      <div class="mbp-group">
+        <div class="mbp-label">
+          <span data-t="mount.title">Mounting</span>
+          <span class="mbp-help"
+            ><button type="button" data-t-aria="aria.aboutMount" aria-label="About mounting">?</button
+            ><span role="tooltip" data-t="mount.help"
+              >How the board attaches to the wall. Offset snaps and free-standing mounts are counted per tile corner;
+              shared corners use dual or quad parts.</span
+            ></span
+          >
+        </div>
+        <div
+          class="mbp-seg mbp-grid2"
+          role="group"
+          data-t-aria="aria.mount"
+          aria-label="Mount type"
+          id="mbp-mount"
+        ></div>
+      </div>
+
+      <div class="mbp-group mbp-unused" id="mbp-unused" aria-live="polite">
+        <div class="mbp-label" data-t="unused.title">Unused space</div>
+        <div class="mbp-hint"><span data-t="wall.width">Width</span><b id="mbp-unusedW"></b></div>
+        <div class="mbp-hint"><span data-t="wall.height">Height</span><b id="mbp-unusedH"></b></div>
+      </div>
+
+      <button
+        type="button"
+        class="mbp-about-toggle"
+        id="mbp-aboutToggle"
+        aria-expanded="false"
+        aria-controls="mbp-about"
+      >
+        <span data-t="about.toggle">How it works</span>
+      </button>
+      <div class="mbp-about" id="mbp-about" hidden>
+        <p data-t="about.how">
+          Enter your wall size, pick a tile size, a tile setup and a mounting method. The planner fills the wall with
+          full tiles, adds smaller tiles along the right and top edges, and lists every part.
+        </p>
+        <ul>
+          <li>
+            <b data-t="setup.single">Single tiles</b
+            ><span data-t="about.single">: bordered tiles joined by dual clips.</span>
+          </li>
+          <li>
+            <b data-t="setup.grid">Grid tiles</b
+            ><span data-t="about.grid"
+              >: interlocking core, edge and corner tiles (strips for a single row or column).</span
+            >
+          </li>
+          <li data-t="about.snapColours">Snap colours: yellow single, orange dual, red quad.</li>
+        </ul>
+        <p data-t="about.source">
+          The layout and counting rules are a port of the official Multiboard Planner (multiboard.itch.io/planner). Each
+          part opens from your Tool: Multiboard models collection once Thingport has it, or on Thangs until then.
+        </p>
+      </div>
+    </section>
+
+    <section class="mbp-panel mbp-preview" data-t-aria="aria.preview" aria-label="Layout preview">
+      <div class="mbp-preview-head">
+        <span class="mbp-dims" id="mbp-dims"></span>
+        <div class="mbp-legend" id="mbp-legend"></div>
+      </div>
+      <div class="mbp-stage" id="mbp-stage"></div>
+    </section>
+
+    <section class="mbp-panel mbp-results" data-t-aria="aria.parts" aria-label="Parts list">
+      <div class="mbp-results-head">
+        <h2 data-t="parts.title">Parts</h2>
+        <span class="mbp-count" id="mbp-count"></span>
+        <span class="mbp-spacer"></span>
+        <button
+          class="mbp-btn"
+          id="mbp-copyBtn"
+          data-t-title="parts.copyHint"
+          title="Copy the list as tab-separated text"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <rect x="9" y="9" width="11" height="11" rx="2" />
+            <path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg
+          ><span data-t="parts.copy">Copy</span>
+        </button>
+        <button
+          class="mbp-btn"
+          id="mbp-downloadBtn"
+          data-t-title="parts.listHint"
+          title="Download the list with the layout as an HTML page"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" /></svg
+          ><span data-t="parts.list">List</span>
+        </button>
+        <button
+          class="mbp-btn mbp-primary"
+          id="mbp-saveBtn"
+          data-t-title="save.hint"
+          title="Save this wall to your library as one model, with every part as its own file"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M5 4h11l4 4v12H5z" />
+            <path d="M9 4v5h6M9 15h6" /></svg
+          ><span data-t="save.button">Save to Thingport</span>
+        </button>
+      </div>
+      <div class="mbp-note" id="mbp-modelsNote" hidden></div>
+      <div id="mbp-results"></div>
+    </section>
+  </main>
+
+  <div class="mbp-cover" id="mbp-saveCover" hidden>
+    <div class="mbp-dialog" role="dialog" aria-modal="true" aria-labelledby="mbp-saveTitle">
+      <h2 id="mbp-saveTitle" data-t="save.title">Save this wall to Thingport</h2>
+      <p class="mbp-note" id="mbp-saveNote"></p>
+      <div class="mbp-group">
+        <div class="mbp-label" data-t="save.name">What to call it</div>
+        <div class="mbp-field">
+          <input id="mbp-saveName" autocomplete="off" data-t-aria="save.name" aria-label="What to call it" />
+        </div>
+      </div>
+      <div class="mbp-dialog-foot">
+        <button type="button" class="mbp-btn" id="mbp-saveCancel" data-t="save.cancel">Cancel</button>
+        <button type="button" class="mbp-btn mbp-primary" id="mbp-saveGo" data-t="save.go">Save</button>
+      </div>
+    </div>
+  </div>
+</div>

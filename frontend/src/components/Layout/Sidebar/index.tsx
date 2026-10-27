@@ -22,6 +22,7 @@ import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import DownloadIcon from "@mui/icons-material/Download";
+import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -46,6 +47,7 @@ import { CSS } from "@dnd-kit/utilities";
 import Wordmark from "../../Wordmark";
 import BrandMark from "../../BrandMark";
 import { type BookmarkEntry, bookmarksApi } from "../../../api/bookmarks";
+import { useTools } from "../../../hooks/useTools";
 
 const SIDEBAR_WIDTH = 240;
 export const SIDEBAR_COLLAPSED_WIDTH = 72;
@@ -229,6 +231,10 @@ export default function Sidebar({ isAdmin, onSelectCategory, bookmarksVersion }:
   const onModels =
     (location.pathname.startsWith("/models") && !onCollections && !onTags) || location.pathname.startsWith("/authors");
   const onDownload = location.pathname.startsWith("/downloads");
+  const onTools = location.pathname === "/tools";
+  // Shown to whoever may use tools, once there's one to open or they may make their own.
+  const tools = useTools();
+  const showTools = Boolean(tools?.access.canUse && (tools.tools.length > 0 || tools.access.canCreate));
   const onAdmin = location.pathname.startsWith("/admin");
   // Administration opens its own menu beside this one, so this one folds to icons there, whatever the user chose.
   const collapsed = collapsedByUser || onAdmin;
@@ -407,6 +413,27 @@ export default function Sidebar({ isAdmin, onSelectCategory, bookmarksVersion }:
               <ListItemText primary={t("sidebar.downloads")} primaryTypographyProps={{ variant: "body2" }} />
             </ListItemButton>
           )}
+
+          {showTools &&
+            (collapsed ? (
+              <CollapsedNavIcon
+                icon={<HandymanOutlinedIcon fontSize="small" />}
+                label={t("sidebar.tools")}
+                selected={onTools}
+                onClick={() => navigate("/tools")}
+              />
+            ) : (
+              <ListItemButton
+                selected={onTools}
+                onClick={() => navigate("/tools")}
+                sx={{ borderRadius: 1, mb: 0.5, ...navRowSx(onTools) }}
+              >
+                <ListItemIcon sx={{ minWidth: 30 }}>
+                  <HandymanOutlinedIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary={t("sidebar.tools")} primaryTypographyProps={{ variant: "body2" }} />
+              </ListItemButton>
+            ))}
 
           {/* Bookmarked tags + collections, interleaved in the user's own manual order -- only
               once any exist, so an empty section never shows just a bare divider with nothing

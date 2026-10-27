@@ -91,7 +91,8 @@
       "collections": "Collections",
       "tags": "Étiquettes",
       "downloads": "Téléchargements",
-      "bookmarks": "Favoris"
+      "bookmarks": "Favoris",
+      "tools": "Outils"
     },
     "uploadBar": {
       "uploading": "Téléversement…",
@@ -325,6 +326,18 @@
             "save_widget": {
               "title": "Enregistrer un widget du tableau de bord",
               "description": "Créer ou modifier vos propres widgets du tableau de bord. Leurs scripts s’exécutent dans votre tableau de bord."
+            },
+            "tool_guide": {
+              "title": "Guide des outils",
+              "description": "Lire comment écrire un outil pour votre page Outils."
+            },
+            "list_tools": {
+              "title": "Lister les outils",
+              "description": "Voir les outils que vous pouvez ouvrir, et le code des vôtres."
+            },
+            "save_tool": {
+              "title": "Enregistrer un outil",
+              "description": "Créer ou modifier vos propres outils. Leur code s'exécute dans votre navigateur avec vos accès."
             },
             "list_icons": {
               "title": "Trouver une icône",
@@ -1082,6 +1095,10 @@
               "prompt": "Crée-moi un widget Thingport avec un graphique du nombre de modèles ajoutés chaque mois."
             }
           }
+        },
+        "labels": {
+          "help": "Les mots que votre widget affiche, un fichier par langue. Le script les demande par clé avec t(\"clé\") : ils restent hors de la logique et se traduisent sans y toucher.",
+          "empty": "Votre widget n'a pas encore de libellés. Gardez les mots qu'il affiche dans un fichier par langue, et le script les demandera par clé avec t(\"clé\") — un traducteur n'aura jamais à ouvrir le script."
         }
       }
     },
@@ -2143,6 +2160,88 @@
           "placed": "Sur le tableau de bord",
           "installed": "Installé seulement"
         }
+      },
+      "tools": {
+        "heading": "Outils",
+        "subtitle": "De petites applis que les utilisateurs ouvrent depuis la page Outils : installez-les depuis le dépôt et choisissez qui les voit.",
+        "access": {
+          "heading": "Qui voit les outils",
+          "help": "Les administrateurs voient toujours les outils. Qui d'autre voit la page Outils et reçoit dans sa bibliothèque les modèles de chaque outil installé. Les outils s'exécutent dans le navigateur de l'utilisateur avec son accès à Thingport.",
+          "audience": "Qui voit les outils",
+          "admins": "Administrateurs seulement",
+          "everyone": "Tout le monde",
+          "selected": "Utilisateurs choisis",
+          "users": "Utilisateurs",
+          "usersHint": "En plus des administrateurs, qui les voient toujours.",
+          "failed": "Impossible de changer qui voit les outils",
+          "userTools": "Outils des utilisateurs",
+          "userToolsHelp": "Permet à ceux qui voient les outils de créer les leurs, dans un éditeur avec un script de départ. Leurs scripts s'exécutent dans leur propre navigateur, avec leur propre accès.",
+          "userToolsOn": "Ceux qui voient les outils peuvent créer les leurs",
+          "userToolsOff": "Seulement les outils installés"
+        },
+        "repo": {
+          "heading": "Depuis le dépôt",
+          "help": "Les outils du dossier tools du dépôt de Thingport. Chacun est relu avant d'être intégré ; une fois installé, il est disponible pour tous ceux qui voient les outils.",
+          "refresh": "Vérifier à nouveau le dépôt",
+          "failed": "Impossible de lire le dépôt des outils",
+          "unreachable": "Le dépôt des outils est illisible pour le moment : {{error}}",
+          "empty": "Le dépôt n'a pas encore d'outils.",
+          "install": "Installer",
+          "update": "Mettre à jour",
+          "installed": "{{name}} installé",
+          "updated": "{{name}} mis à jour",
+          "installFailed": "Impossible d'installer l'outil",
+          "installedVersion": "Installé {{version}}",
+          "updateTo": "Mettre à jour vers {{version}}",
+          "gone": "N'est plus dans le dépôt",
+          "by": "Par {{name}}",
+          "brings_one": "Apporte {{count}} modèle",
+          "brings_many": "Apporte {{count}} modèles",
+          "brings_other": "Apporte {{count}} modèles",
+          "fetching": "Récupération des modèles : {{ready}} sur {{total}}",
+          "missing_one": "{{count}} modèle sur {{total}} n'est pas encore arrivé",
+          "missing_many": "{{count}} modèles sur {{total}} ne sont pas encore arrivés",
+          "missing_other": "{{count}} modèles sur {{total}} ne sont pas encore arrivés",
+          "lastError": "Dernier essai : {{error}}",
+          "retry": "Récupérer les modèles manquants",
+          "more": "Plus",
+          "moreFor": "Plus pour {{name}}",
+          "uninstall": "Désinstaller",
+          "uninstallTitle": "Désinstaller {{name}} ?",
+          "uninstallMessage": "{{name}} disparaît de la page Outils de tous, avec les données qu'il gardait pour eux.",
+          "uninstallWithModels": "{{name}} disparaît de la page Outils de tous, avec les données qu'il gardait pour eux et sa collection de modèles de chaque bibliothèque. Les modèles que les utilisateurs ont enregistrés avec lui restent.",
+          "uninstalled": "{{name}} désinstallé",
+          "uninstallFailed": "Impossible de désinstaller l'outil",
+          "updateAvailable": "Mise à jour disponible",
+          "fromFolder": "Proposés depuis le dossier {{location}}",
+          "fromRepository": "Proposés depuis {{location}}",
+          "open": "Ouvrir",
+          "openHint": "Ouvrir {{name}} — double-clic",
+          "notInstalled": "Non installé",
+          "isInstalled": "installé",
+          "version": "v{{version}}",
+          "tileLabel": "{{name}}, {{state}} : Entrée pour voir ce que c'est, la touche de menu contextuel pour le reste",
+          "shelfHint": "Double-cliquez sur un outil pour voir ce qu'il est et ce qu'on peut en faire ; clic droit sur un outil installé pour son menu.",
+          "installTitle": "Installer {{name}} ?",
+          "installBody_one": "Il apporte {{count}} modèle à lui : une pièce avec laquelle il travaille, importée une fois pour tout le serveur.",
+          "installBody_other": "Il apporte {{count}} modèles à lui : les pièces avec lesquelles il travaille, importées une fois pour tout le serveur.",
+          "withModels": "Importer ses modèles",
+          "modelsRoom": "{{count}} modèles, c'est un grand ensemble : comptez des gigaoctets sur ce serveur, et un moment pour qu'ils arrivent.",
+          "modelsLater": "Sans eux, l'outil ne fonctionne que tant que le site d'où il télécharge est joignable et ce serveur en ligne, et ce qu'il assemble avec ses pièces ne pourra pas être enregistré. Vous pourrez les importer plus tard.",
+          "modelsSkipped_one": "Installé sans son {{count}} modèle.",
+          "modelsSkipped_other": "Installé sans ses {{count}} modèles.",
+          "importModels": "Importer ses modèles",
+          "importingModels": "Importation des modèles de {{name}}",
+          "installBody_many": "Il apporte {{count}} modèles à lui : les pièces avec lesquelles il travaille, importées une fois pour tout le serveur.",
+          "modelsSkipped_many": "Installé sans ses {{count}} modèles."
+        },
+        "own": {
+          "heading": "Outils des utilisateurs",
+          "help": "Les outils que les utilisateurs ont créés eux-mêmes. Chacun ne s'exécute que pour celui qui l'a créé.",
+          "empty": "Personne n'a encore créé d'outil.",
+          "off": "Les outils des utilisateurs sont désactivés.",
+          "by": "{{name}} · {{email}}"
+        }
       }
     },
     "download": {
@@ -2529,6 +2628,218 @@
         "ai": "IA",
         "browsers": "Navigateurs"
       }
+    },
+    "tools": {
+      "page": {
+        "title": "Outils",
+        "subtitle": "Double-cliquez sur un outil pour l'ouvrir",
+        "new": "Nouvel outil",
+        "installed": "Installés",
+        "mine": "Les miens",
+        "yours": "À vous",
+        "tileLabel": "{{name}} : Entrée pour l'ouvrir, la touche menu contextuel pour plus",
+        "open": "Ouvrir",
+        "about": "À propos",
+        "models": "Ses modèles",
+        "edit": "Modifier",
+        "delete": "Supprimer",
+        "deleteTitle": "Supprimer cet outil ?",
+        "deleteMessage": "{{name}} et les données qu'il gardait disparaissent. Les modèles enregistrés avec lui restent.",
+        "deleted": "{{name}} supprimé",
+        "empty": "Pas encore d'outils. Un administrateur les installe.",
+        "emptyAdmin": "Pas encore d'outils. Installez-en un depuis le dépôt.",
+        "emptyCreate": "Pas encore d'outils. Créez le vôtre, ou demandez à un administrateur d'en installer.",
+        "install": "Installer des outils",
+        "noAccess": "Les outils ne vous sont pas accessibles sur ce Thingport.",
+        "dropHere": "Déposez un outil ici",
+        "layout": "Afficher en",
+        "layoutFlat": "Une grille",
+        "layoutCategories": "Étagères",
+        "moveTo": "Déplacer vers",
+        "sort": {
+          "name": "Nom",
+          "newest": "Plus récents",
+          "author": "Auteur"
+        },
+        "uninstall": "Désinstaller",
+        "uninstallTitle": "Désinstaller cet outil ?",
+        "uninstallMessage": "{{name}} disparaît de la page Outils de tout le monde, avec les données qu'il gardait pour eux et sa collection de modèles de chaque bibliothèque. Les modèles enregistrés depuis l'outil restent.",
+        "uninstalled": "{{name}} désinstallé"
+      },
+      "categories": {
+        "generators": "Générateurs",
+        "planners": "Planificateurs",
+        "calculators": "Calculatrices",
+        "files": "Fichiers",
+        "library": "Bibliothèque",
+        "other": "Autres"
+      },
+      "window": {
+        "about": "À propos de cet outil",
+        "maximize": "Remplir l'écran",
+        "restore": "Revenir à sa taille",
+        "close": "Fermer"
+      },
+      "about": {
+        "version": "Version {{version}}",
+        "source": "Provenance",
+        "fromRepo": "Le dépôt de Thingport, installé par un administrateur",
+        "own": "Vous l'avez créé",
+        "author": "Auteur",
+        "hosts": "Accède à",
+        "hostsHelp": "Les services hors de Thingport que l'outil peut appeler, via Thingport.",
+        "noHosts": "Rien hors de Thingport",
+        "models": "Modèles",
+        "modelsHelp": "Les modèles qu'apporte l'outil, dans une collection à eux dans votre bibliothèque. Ils s'ouvrent et s'impriment, mais ne se modifient pas, et ils sont listés dans cette collection plutôt que parmi vos modèles.",
+        "modelCount_one": "{{count}} modèle",
+        "modelCount_many": "{{count}} modèles",
+        "modelCount_other": "{{count}} modèles",
+        "openModels": "Ouvrir ses modèles",
+        "open": "Ouvrir",
+        "close": "Fermer"
+      },
+      "runner": {
+        "failed": "{{name}} s'est arrêté sur une erreur",
+        "noExport": "Le script n'a pas d'export par défaut à appeler"
+      },
+      "picker": {
+        "title": "Choisir une collection",
+        "search": "Trouver une collection",
+        "noMatch": "Aucune collection ne correspond.",
+        "empty": "Pas encore de collections. Nommez-en une ci-dessous pour la créer.",
+        "count_one": "{{count}} modèle",
+        "count_many": "{{count}} modèles",
+        "count_other": "{{count}} modèles",
+        "newName": "Nouvelle collection",
+        "create": "Créer cette collection",
+        "cancel": "Annuler",
+        "choose": "Choisir"
+      },
+      "ai": {
+        "or": "ou",
+        "open": "Utiliser l'IA",
+        "title": "Créer un outil avec l'IA",
+        "back": "Retour à l'éditeur",
+        "connect": "Connecter une IA",
+        "step1": "Connectez votre assistant IA à Thingport via MCP.",
+        "step2": "Dans votre profil, donnez au jeton l'outil <strong>Enregistrer un outil</strong>.",
+        "step3": "Demandez l'outil que vous voulez, avec vos mots. Par exemple :",
+        "step4": "Il apparaît sur votre page Outils, prêt à ouvrir. Redemandez pour le changer, ou ajustez-le ici.",
+        "examplesLabel": "Exemples de demandes",
+        "examples": {
+          "label": {
+            "label": "Étiquettes",
+            "name": "Générateur d'étiquettes",
+            "prompt": "Fais-moi un outil Thingport qui transforme quelques mots en une étiquette imprimable et l'enregistre dans ma bibliothèque."
+          },
+          "box": {
+            "label": "Boîtes",
+            "name": "Générateur de boîtes",
+            "prompt": "Fais-moi un outil Thingport qui fabrique une boîte de n'importe quelle taille avec un couvercle, en millimètres."
+          },
+          "tidy": {
+            "label": "Étiquetage",
+            "name": "Assistant d'étiquettes",
+            "prompt": "Fais-moi un outil Thingport qui liste mes modèles sans tags et me laisse les taguer."
+          }
+        }
+      },
+      "editor": {
+        "newTitle": "Nouvel outil",
+        "editTitle": "Modifier l'outil",
+        "part": "Partie de l'outil",
+        "details": "Détails",
+        "script": "Script",
+        "html": "HTML et CSS",
+        "preview": "Aperçu",
+        "htmlPlaceholder": "Le balisage et un bloc <style>, placés dans la fenêtre avant l'exécution du script",
+        "previewHelp": "L'outil tel qu'il fonctionnera dans sa fenêtre. Tant qu'il n'est pas enregistré, ce qu'il garde ne dure que le temps de l'aperçu, et il ne peut pas joindre d'autres hôtes.",
+        "previewHelpSaved": "L'outil tel qu'il fonctionnera dans sa fenêtre, avec les données qu'il garde pour vous.",
+        "rerun": "Relancer",
+        "reference": "Référence du SDK",
+        "showReference": "Afficher la référence du SDK",
+        "hideReference": "Masquer la référence du SDK",
+        "referenceIntro": "Ce que l'export par défaut du script reçoit comme thingport. Le script de départ utilise chaque élément.",
+        "trust": "Le script d'un outil s'exécute dans votre navigateur avec votre accès à Thingport.",
+        "cancel": "Annuler",
+        "save": "Enregistrer",
+        "saved": "{{name}} enregistré",
+        "fixFirst": "Corrigez d'abord les détails signalés",
+        "name": "Nom",
+        "version": "Version",
+        "description": "Description",
+        "icon": "Icône",
+        "iconHelp": "Affichée sur la page Outils et dans la fenêtre de l'outil.",
+        "iconUrl": "Adresse de l'image",
+        "iconNone": "Boîte à outils",
+        "window": "Fenêtre",
+        "windowHelp": "La taille à laquelle sa fenêtre s'ouvre, en pixels ; un écran plus petit en reçoit ce qui tient, et elle peut remplir l'écran.",
+        "width": "Largeur",
+        "height": "Hauteur",
+        "author": "Auteur",
+        "authorHelp": "Crédité sur sa page À propos.",
+        "authorName": "Nom",
+        "authorUrl": "Page",
+        "hosts": "Hôtes",
+        "hostsHelp": "Les services hors de Thingport que son thingport.fetch peut joindre, via Thingport : un nom d'hôte, *.example.com pour ses sous-domaines, et un port s'il en faut un.",
+        "hostsPlaceholder": "api.example.com",
+        "slug": "Nom du dossier",
+        "slugHelp": "Ce sous quoi l'outil est enregistré : en enregistrer un autre avec le même nom de dossier le remplace.",
+        "errors": {
+          "slug": "De 2 à 40 lettres minuscules, chiffres et tirets",
+          "name": "Donnez-lui un nom",
+          "url": "Ce n'est pas une adresse http ou https"
+        },
+        "sdk": {
+          "root": "L'élément de la fenêtre, avec le HTML de l'outil, et un sélecteur CSS pour lui.",
+          "theme": "Les couleurs et la police de Thingport, en clair et en sombre.",
+          "size": "La taille de la fenêtre, et un moyen de savoir quand elle change.",
+          "storage": "Des valeurs JSON gardées pour l'utilisateur, par clé.",
+          "collections": "Les collections de l'utilisateur, et en créer une.",
+          "collectionModels": "Les modèles d'une collection, et y mettre ou en retirer des modèles.",
+          "pick": "Demande une collection à l'utilisateur, ou une nouvelle, comme une boîte d'enregistrement.",
+          "models": "Les modèles de la bibliothèque : une page, une recherche ou un seul.",
+          "file": "Un des fichiers d'un modèle, en ArrayBuffer.",
+          "create": "Un nouveau modèle des fichiers donnés, p. ex. un STL créé par l'outil.",
+          "edit": "D'autres fichiers, des images de galerie, un fichier remplacé, ou son nom, sa description et ses tags.",
+          "open": "Ferme l'outil et ouvre la page du modèle.",
+          "toolModels": "Les modèles qu'apporte un outil du dépôt, par clé.",
+          "fetch": "Une requête vers un hôte que l'outil déclare, faite par Thingport.",
+          "api": "L'API de Thingport elle-même, en tant que l'utilisateur.",
+          "download": "Remet à l'utilisateur un fichier à garder.",
+          "ui": "Une notification, une confirmation, ou fermer la fenêtre.",
+          "translate": "Les mots de votre outil, depuis ses Libellés, dans la langue de l'utilisateur.",
+          "language": "La langue dans laquelle Thingport s'affiche, et toutes celles qu'il a.",
+          "library": "Une grosse bibliothèque fournie par Thingport : Three.js, opentype, Manifold, ses polices."
+        },
+        "labels": {
+          "help": "Les mots qu'affiche votre outil, un fichier par langue. Le script les demande par clé avec t(\"clé\") : ils restent hors de la logique et se traduisent sans y toucher.",
+          "empty": "Votre outil n'a pas encore de libellés. Gardez les mots qu'il affiche dans un fichier par langue, et le script les demandera par clé avec t(\"clé\") — ainsi un traducteur n'a jamais à ouvrir le script."
+        },
+        "category": "Catégorie",
+        "categoryHelp": "Sur quelle étagère la page Outils le range. Chacun peut le déplacer lui-même."
+      }
+    },
+    "screenshots": {
+      "title": "Captures de {{name}}",
+      "open": "Capture {{index}} sur {{count}} de {{name}}",
+      "position": "{{index}} sur {{count}}",
+      "previous": "Capture précédente",
+      "next": "Capture suivante",
+      "close": "Fermer"
+    },
+    "labelsPanel": {
+      "tab": "Libellés",
+      "start": "Commencer par l'anglais",
+      "add": "Ajouter une langue",
+      "file": "Les libellés en {{code}}, en JSON",
+      "fallbackNote": "L'anglais sert de secours : ce qui manque dans une autre langue est affiché d'ici.",
+      "untranslated_one": "{{count}} libellé n'a encore aucun texte dans cette langue.",
+      "untranslated_other": "{{count}} libellés n'ont encore aucun texte dans cette langue.",
+      "badJson": "Ce n'est pas encore du JSON valide, donc ce ne sera pas enregistré.",
+      "badShape": "Les libellés sont un objet plat de clés vers du texte, comme { \"save\": \"Enregistrer\" }.",
+      "removeTitle": "Retirer les libellés en {{name}} ?",
+      "removeBody": "Le fichier et ses mots disparaissent. Les autres langues restent."
     }
   },
   "common": {
@@ -3345,7 +3656,9 @@
       "downloadFile": "Télécharger le fichier",
       "moreOpenOptions": "Autres slicers et téléchargements",
       "openActions": "Ouvrir ou télécharger",
-      "openInHeading": "Ouvrir dans"
+      "openInHeading": "Ouvrir dans",
+      "toolOwned": "Appartient à un outil",
+      "toolOwnedHint": "Il ne peut être ni modifié ni supprimé"
     },
     "edit": {
       "title": "Modifier le modèle",
@@ -3544,6 +3857,15 @@
         "deleted_other": "{{count}} collections supprimées",
         "merged_one": "{{count}} collection fusionnée dans « {{name}} »",
         "merged_other": "{{count}} collections fusionnées dans « {{name}} »"
+      },
+      "tool": {
+        "badge": "Appartient à l'outil {{tool}} : elle ne peut être ni modifiée ni supprimée, et disparaît à sa désinstallation",
+        "badgeUnknown": "Appartient à un outil : elle ne peut être ni modifiée ni supprimée",
+        "status": "Appartient à {{tool}} · non modifiable",
+        "openCollection": "Ouvrir la collection",
+        "openTool": "Ouvrir {{tool}}",
+        "openToolUnknown": "Ouvrir l'outil",
+        "cantSelect": "La collection d'un outil ne peut être ni fusionnée ni supprimée"
       }
     },
     "tags": {
@@ -3752,7 +4074,10 @@
       "collectionsUpdated_other": "{{count}} collections mises à jour",
       "collectionsFailed": "Impossible de mettre à jour les collections. Veuillez réessayer.",
       "tagsPartlyUpdated_one": "Étiquettes de {{count}} modèle mises à jour, mais les autres ont échoué. Veuillez réessayer.",
-      "tagsPartlyUpdated_other": "Étiquettes de {{count}} modèles mises à jour, mais les autres ont échoué. Veuillez réessayer."
+      "tagsPartlyUpdated_other": "Étiquettes de {{count}} modèles mises à jour, mais les autres ont échoué. Veuillez réessayer.",
+      "toolOwned_one": "{{count}} des modèles choisis appartient à un outil : retirez-le pour faire ceci",
+      "toolOwned_other": "{{count}} des modèles choisis appartiennent à un outil : retirez-les pour faire ceci",
+      "toolOwned_many": "{{count}} des modèles choisis appartiennent à un outil : retirez-les pour faire ceci"
     },
     "merge": {
       "action": "Fusionner",

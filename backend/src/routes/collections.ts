@@ -30,6 +30,7 @@ import { printOutsByIds } from "../services/printLoader";
 import { relocatePrintsForToken } from "../services/printService";
 import { createLog } from "../services/auditLog";
 import { toCollectionOut, type PrintOut } from "../dto";
+import { syncToolModelsSoon } from "../services/toolsService";
 
 const router = Router();
 router.use(requireAuth);
@@ -65,11 +66,14 @@ async function collectionPrintIds(collectionId: string): Promise<string[]> {
 router.get(
   "/collections",
   asyncHandler(async (req, res) => {
+    // A tool installed since, or tools allowed since: their collections come along for next time.
+    syncToolModelsSoon({ id: req.userId!, role: req.userRole! });
     const [systemCollections, collections, bookmarkedIds] = await Promise.all([
       listSystemCollectionOuts(req.userId!),
       prisma.collection.findMany({
         where: { userId: req.userId },
-        orderBy: { createdAt: "desc" },
+        // Tools' collections last, after the user's own.
+        orderBy: [{ toolId: { sort: "desc", nulls: "first" } }, { createdAt: "desc" }],
         include: {
           _count: { select: { items: true } },
           items: { orderBy: { position: "asc" }, take: COVER_ITEM_LIMIT },
@@ -344,8 +348,9 @@ router.get(
   asyncHandler(async (req, res) => {
     const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
     if (!print) throw new HttpError(404, "Print not found");
+    // Not a tool's: nothing can be put in or taken out of one.
     const collections = await prisma.collection.findMany({
-      where: { userId: req.userId },
+      where: { userId: req.userId, toolId: null },
       orderBy: { createdAt: "desc" },
       include: { items: { where: { printId: print.id }, select: { id: true } } },
     });
@@ -361,7 +366,7 @@ router.post(
     const body = parseBody(membershipSchema, req.body);
     const [collections, items] = await Promise.all([
       prisma.collection.findMany({
-        where: { userId: req.userId },
+        where: { userId: req.userId, toolId: null },
         orderBy: { createdAt: "desc" },
         select: { id: true, name: true },
       }),

@@ -78,6 +78,11 @@ export async function buildPrintWhere(
     if (systemKey === "favorites") where.favoritedAt = { not: null };
     else if (systemKey === "history") where.lastViewedAt = { not: null };
     else where.collectionItems = { some: { collectionId } };
+  } else {
+    // The models a tool brings are its parts, not the user's library: a planner with two hundred of them would
+    // otherwise bury everything the user put there under it. They are listed where they belong -- in the tool's
+    // own collection -- and in Favourites or Browsing History, where the user put them.
+    where.toolId = null;
   }
   // Matched as the search palette matches, so its "see all results" lists what it found.
   const rankedIds = q ? await rankedPrintIds(userId, q) : null;

@@ -87,6 +87,12 @@ If you couldn't verify something end to end, say so. That's useful information, 
 A provider is a model site Thingport imports from. How they're built, the approaches the existing ones take and the
 checklist for a new one are in [docs/PROVIDER_DEVELOPMENT.md](docs/PROVIDER_DEVELOPMENT.md). Open an issue first.
 
+## Adding a tool
+
+A tool is a small app that opens in a window from the Tools page. The format, the rules its script follows and the
+steps to get one merged are in [docs/TOOL_DEVELOPMENT.md](docs/TOOL_DEVELOPMENT.md); a tool's script runs in its
+users' browsers, so it's read before it's merged.
+
 ## Code style
 
 - **Match the surrounding code.** This codebase uses long explanatory comments that say _why_

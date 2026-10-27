@@ -57,6 +57,8 @@ export type Author = {
 
 export type Print = {
   id: string;
+  /** Set on a model a tool brought: it can be opened, downloaded and printed, not edited or deleted. */
+  tool_id?: string | null;
   name: string;
   title?: string | null;
   notes?: string | null;

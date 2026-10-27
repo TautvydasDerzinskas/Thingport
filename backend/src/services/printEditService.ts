@@ -1,7 +1,7 @@
 import { Prisma, type Print } from "@prisma/client";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
-import { normalizeTags } from "../utils/tagNormalization";
+import { normalizeTag, normalizeTags } from "../utils/tagNormalization";
 import { assetOwnerIds, relocatePrint, removeAssetHome, removePlatePictures, uniqueModelName } from "./printService";
 import { forgetAiDescription } from "./aiDescriptionService";
 import { localizeDescriptionImages, pruneDescriptionImages } from "./descriptionImageService";
@@ -12,13 +12,56 @@ import { deleteAllPrintFiles } from "./printFileService";
 import { deleteAllPreviewImages } from "./previewImageService";
 import { deleteAllDescriptionImages } from "./descriptionImageService";
 import { deletePlateFiles } from "./printCreation";
+import { deleteAuthorIfOrphaned } from "./authorService";
+import { removeTagBookmark } from "./bookmarkService";
+import { removeTagMosaics } from "./tagMosaicService";
 
 // Editing and deleting a model, shared by the model page's routes and the MCP tools.
 
+/** The user's own model, for a change to it: never one a tool brought (services/toolsService.ts), which stays as the
+ *  tool needs it until the tool is uninstalled. */
 async function ownPrint(userId: string, printId: string): Promise<Print> {
   const print = await prisma.print.findFirst({ where: { id: printId, userId } });
   if (!print) throw new HttpError(404, "Print not found");
+  assertNotToolModel(print);
   return print;
+}
+
+/**
+ * What deleted models leave behind that nothing else needs: their author, and the pictures and bookmarks of their
+ * tags.
+ *
+ * Rows under a model go with it, but an author is shared between models and users, and a tag is only a word on a
+ * model: deleting the last model of either leaves an author in the authors list with nothing to show and a tag
+ * mosaic that is a picture of models that are gone. Each goes only when nothing is left that needs it, which is
+ * why this runs after the models rather than with them.
+ */
+export async function pruneWhatModelsLeft(
+  userId: string,
+  went: { authorId: string | null; tags: string[] }[],
+): Promise<void> {
+  for (const authorId of new Set(went.map((one) => one.authorId).filter((id): id is string => Boolean(id)))) {
+    await deleteAuthorIfOrphaned(authorId);
+  }
+
+  const tags = new Set(went.flatMap((one) => one.tags.map(normalizeTag)).filter(Boolean));
+  if (!tags.size) return;
+  // Postgres array containment is case-sensitive, so what's still tagged is read and normalized here instead.
+  const left = await prisma.print.findMany({
+    where: { userId, NOT: { tags: { isEmpty: true } } },
+    select: { tags: true },
+  });
+  const kept = new Set(left.flatMap((print) => print.tags.map(normalizeTag)));
+  for (const tag of tags) {
+    if (kept.has(tag)) continue;
+    await removeTagMosaics(userId, tag);
+    await removeTagBookmark(userId, tag);
+  }
+}
+
+export function assertNotToolModel(print: Pick<Print, "toolId" | "title" | "name">): void {
+  if (print.toolId)
+    throw new HttpError(403, `"${print.title || print.name}" belongs to a tool and can't be changed`, "TOOL_OWNED");
 }
 
 async function relocate(print: Print): Promise<void> {
@@ -88,8 +131,11 @@ export async function updatePrintMeta(userId: string, printId: string, meta: Pri
 }
 
 /** Deletes the model with its files and pictures, for good. */
-export async function deletePrint(userId: string, printId: string): Promise<void> {
+/** `quiet` for a model the user never chose to delete, such as one a tool brought, which goes with the tool. */
+export async function deletePrint(userId: string, printId: string, { quiet = false } = {}): Promise<void> {
   const full = await loadFullPrint(userId, printId);
+  // Only the tool's uninstall, quietly, removes a model a tool brought.
+  if (!quiet) assertNotToolModel(full.print);
   const assetOwners = await assetOwnerIds(printId);
   await deleteAllPrintFiles(printId);
   await deleteAllPreviewImages(printId);
@@ -100,6 +146,8 @@ export async function deletePrint(userId: string, printId: string): Promise<void
     await removePlatePictures(plate.id, full.print.assetsPath);
   }
   await removeAssetHome(full.print.assetsPath, assetOwners);
+  await pruneWhatModelsLeft(userId, [{ authorId: full.print.authorId, tags: full.print.tags }]);
+  if (quiet) return;
   void recordActivity(userId, "delete", printId, full.print.name);
   void createLog({
     userId,

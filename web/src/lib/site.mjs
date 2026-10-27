@@ -328,6 +328,15 @@ export const DOCS = [
     description: "Write your own dashboard panels in JavaScript, or install ones the community has shared.",
   },
   {
+    slug: "guides/tools",
+    source: "docs/guides/tools.md",
+    group: "Integrations",
+    title: "Tools",
+    nav: "Tools",
+    description:
+      "Small apps that open in a window from the Tools page: planners, generators and calculators that work with your library.",
+  },
+  {
     slug: "contributing",
     source: "CONTRIBUTING.md",
     group: "Contributing",
@@ -342,6 +351,15 @@ export const DOCS = [
     title: "Development setup",
     nav: "Development",
     description: "Run Thingport locally with hot reload, and run the test suites.",
+  },
+  {
+    slug: "tool-development",
+    source: "docs/TOOL_DEVELOPMENT.md",
+    group: "Contributing",
+    title: "Tool development",
+    nav: "Tool development",
+    description:
+      "Write a tool for the Tools page: the folder, the metadata, the models it brings, and getting it merged.",
   },
   {
     slug: "translating",

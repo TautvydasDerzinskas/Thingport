@@ -318,6 +318,7 @@ To have Thingport import whatever you drop into a folder on the server, uncommen
 - **[API token](docs/guides/api-token.md)**
 - **[Connect an AI assistant (MCP)](docs/guides/mcp.md)**
 - **[Custom dashboard widgets](docs/guides/custom-widgets.md)**
+- **[Tools](docs/guides/tools.md)**
 - **[Light and dark themes, accent colours, in English, Spanish, French and Lithuanian](docs/features/appearance.md)**
 - **[Self-hosted](#installation)**
 
@@ -336,7 +337,9 @@ MakerWorld needs each user's session cookie, Printables works with no setup, and
 
 Bug reports and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the branch,
 commit and pull request workflow, and [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for how to run
-Thingport locally with hot reload.
+Thingport locally with hot reload. Adding a model site is in
+[docs/PROVIDER_DEVELOPMENT.md](docs/PROVIDER_DEVELOPMENT.md), and writing a tool for the Tools page in
+[docs/TOOL_DEVELOPMENT.md](docs/TOOL_DEVELOPMENT.md).
 
 ### Honourable contributors
 

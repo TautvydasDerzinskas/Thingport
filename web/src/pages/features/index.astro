@@ -17,6 +17,7 @@ import collectionSync from "../../../../docs/assets/collection-sync-light.gif";
 import collectionSyncDark from "../../../../docs/assets/collection-sync-dark.gif";
 import aiSuggestions from "../../../../frontend/src/assets/screenshots/22_ai_suggestions.png";
 import adminOverview from "../../../../frontend/src/assets/screenshots/13_admin_overview.png";
+import qrTool from "../../../../tools/qr-code-generator/screenshots/link.webp";
 
 const SECTIONS: FeatureSection[] = [
   {
@@ -183,6 +184,25 @@ const SECTIONS: FeatureSection[] = [
     link: { label: "Thingport Bridge", href: url("docs/bridge/") },
     image: downloads,
     alt: "The downloads view in Thingport",
+  },
+  {
+    id: "tools",
+    short: "Tools",
+    icon: "wrench",
+    title: "Little apps that make things to print",
+    intro:
+      "Tools open in a window of their own from the Tools page and work with your library, so what they make is saved straight into it.",
+    points: [
+      "A QR code generator that turns a link, a Wi-Fi network or a contact into a printable tile, with the code, the tile and the border each going to their own filament.",
+      "Planners for Multiboard walls, Gridfinity drawers, Skadis boards and enclosures: arrange the parts, and the whole thing is saved to your library as one model.",
+      "A keyring generator that cuts every letter's real outline, and a print cost estimator that prices a model from your own filament and electricity.",
+      "A MakerWorld 3MF normalizer, for Bambu Studio projects other slicers won't open.",
+      "Admins choose who sees tools and install the ones they want: a new Thingport starts with none of them.",
+      "With users' own tools turned on, anyone can write one in the editor, or ask a connected AI assistant to write it for them.",
+    ],
+    link: { label: "Tools", href: url("docs/guides/tools/") },
+    image: qrTool,
+    alt: "The QR code generator tool, showing a code on a printable tile in 3D",
   },
   {
     id: "storage",
