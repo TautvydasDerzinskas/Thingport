@@ -216,6 +216,11 @@ function AppLayoutShell({
                   "aria-label": t("sidebar.navigationMenu"),
                   sx: {
                     width: "min(320px, calc(100vw - 40px))",
+                    // MUI pins the paper to height:100%, which on a phone is the viewport with the URL bar
+                    // hidden -- taller than what's on screen. dvh follows the bar, so the menu ends where the
+                    // screen does, and the panel keeps its own scrolling instead of dragging the page with it.
+                    height: "100dvh",
+                    overscrollBehavior: "contain",
                     pt: "env(safe-area-inset-top)",
                     pb: "env(safe-area-inset-bottom)",
                   },
