@@ -5,7 +5,7 @@ import { searchApi } from "../../api/search";
 import { toolsApi, type ToolLocales, type ToolManifest, type ToolModelCopy } from "../../api/tools";
 import { headerRecord } from "../../api/widgets";
 import { TOOL_LIBRARIES, toolLibrary } from "./toolLibraries";
-import { toolTranslator } from "./toolTranslate";
+import { applyToolLabels, toolTranslator } from "./toolTranslate";
 import { authHeaders } from "../../utils/auth";
 
 // The `thingport` object a tool's script gets: what it may do with the user's library, through the same API the app
@@ -144,6 +144,7 @@ type Build = {
 
 /** The object a tool's default export is called with. */
 export function buildToolSdk({ tool, root, selector, theme, language, languages, size, onResize, ui }: Build) {
+  const translate = toolTranslator(tool.locales ?? {}, language);
   // An unsaved tool's data lasts as long as its preview does.
   const draftData = new Map<string, unknown>();
   const saved = (what: string) => {
@@ -295,7 +296,13 @@ export function buildToolSdk({ tool, root, selector, theme, language, languages,
      * `t("rings.ring", { n: 2 })` to fill `{n}` in. Missing words fall back to the tool's English key by key, and
      * a key with no words anywhere comes back as itself so the gap shows.
      */
-    t: toolTranslator(tool.locales ?? {}, language),
+    t: translate,
+    /**
+     * Writes the tool's words into its own markup: every `data-t` under `where` (the window by default) gets its
+     * key's sentence as text, and `data-t-title`, `data-t-aria` and `data-t-placeholder` fill those attributes.
+     * Saves a tool assigning each label by hand, and keeps readable English in the HTML for anyone reading it.
+     */
+    labels: (where: ParentNode = root) => applyToolLabels(where, translate),
     get size() {
       return size();
     },

@@ -13,6 +13,36 @@ import type { ToolLocales } from "../../api/tools";
 /** What a tool calls to turn a key into words. `t("rings.ring", { n: 2 })` fills `{n}` in. */
 export type ToolTranslate = (key: string, vars?: Record<string, unknown>) => string;
 
+/** Where a `data-t…` attribute puts its words. Text only: a label is a sentence, never markup. */
+const PLACES = [
+  ["t", (node: HTMLElement, text: string) => (node.textContent = text)],
+  ["tTitle", (node: HTMLElement, text: string) => (node.title = text)],
+  ["tAria", (node: HTMLElement, text: string) => node.setAttribute("aria-label", text)],
+  ["tPlaceholder", (node: HTMLElement, text: string) => node.setAttribute("placeholder", text)],
+] as const;
+
+/**
+ * Writes the tool's words into its own HTML, so the markup carries a key where the sentence would be and the
+ * script doesn't have to assign each one by hand:
+ *
+ * ```html
+ * <h2 data-t="wall.title">Wall size</h2>
+ * <button data-t="parts.copy" data-t-title="parts.copyHint">Copy</button>
+ * ```
+ *
+ * The English left in the markup is what shows if the labels never arrive, and what a reviewer reads. Call it
+ * again after adding more markup; running it twice over the same nodes is harmless.
+ */
+export function applyToolLabels(root: ParentNode, t: ToolTranslate): void {
+  for (const [name, put] of PLACES) {
+    const attribute = `data-${name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`;
+    root.querySelectorAll<HTMLElement>(`[${attribute}]`).forEach((node) => {
+      const key = node.dataset[name];
+      if (key) put(node, t(key));
+    });
+  }
+}
+
 const FALLBACK = "en";
 
 /**

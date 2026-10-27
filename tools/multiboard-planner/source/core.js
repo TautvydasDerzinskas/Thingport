@@ -35,42 +35,36 @@
   }
 
   class PartDataLinks {
-    constructor(partLinksCsv, snapsCsv, tileNamesCsv) {
+    /** Takes data/parts.json: { tiles, tileNames, snaps }. */
+    constructor(data) {
       this.dataCore = new Map();
       this.dataSide = new Map();
       this.dataCorner = new Map();
       this.borderedTiles = new Map();
       this.snaps = new Map();
-      this.tileNames = new Map();
-      parseCsv(partLinksCsv).forEach((line, index) => {
-        if (line.length < 2 || index === 0) return;
-        const [key, type, link] = line;
-        if (type === 'C') this.dataCore.set(key, link);
-        else if (type === 'S') this.dataSide.set(key, link);
-        else if (type === 'CR') this.dataCorner.set(key, link);
-        else this.borderedTiles.set(key + '_' + type, link);
-      });
-      for (const line of parseCsv(snapsCsv)) {
-        const entry = [line[3], line[2], line[1], [line[4]], line[6], line[5]];
-        if (!this.snaps.has(line[0])) this.snaps.set(line[0], []);
-        this.snaps.get(line[0]).push(entry);
+      this.tileNames = new Map(Object.entries(data.tileNames ?? {}));
+      for (const { size, type, link } of data.tiles ?? []) {
+        if (type === 'C') this.dataCore.set(size, link);
+        else if (type === 'S') this.dataSide.set(size, link);
+        else if (type === 'CR') this.dataCorner.set(size, link);
+        else this.borderedTiles.set(size + '_' + type, link);
       }
-      parseCsv(tileNamesCsv).forEach((line, index) => {
-        if (index === 0 || line.length < 2) return;
-        if (!this.tileNames.has(line[0])) this.tileNames.set(line[0], line[1]);
-      });
+      for (const snap of data.snaps ?? []) {
+        if (!this.snaps.has(snap.mount)) this.snaps.set(snap.mount, []);
+        this.snaps.get(snap.mount).push(snap);
+      }
     }
     getBorderedTile(size, type) { return this.borderedTiles.get(size + '_' + type) ?? TILE_GENERATOR_LINK_BORDERED; }
     getCoreTile(size) { return this.dataCore.get(size) ?? TILE_GENERATOR_LINK; }
     getSnapData(name, type, side, alignment = '') {
       for (const snap of this.snaps.get(name) ?? []) {
-        if (snap[0] === side && snap[1] === type && snap[5] === alignment) return snap;
+        if (snap.side === side && snap.type === type && snap.alignment === alignment) return snap;
       }
-      return [];
+      return null;
     }
     getSnapMinTileSize(name) {
       const list = this.snaps.get(name);
-      return list && list.length ? parseInt(list[0][4], 10) || 0 : 0;
+      return list && list.length ? Number(list[0].minTileSize) || 0 : 0;
     }
     mountTypes() { return [...this.snaps.keys()].filter((k) => k !== 'Dual Clips'); }
   }
@@ -376,7 +370,7 @@
       for (const size in mounts) {
         if (mounts[size] <= 0) continue;
         const d = parts.getSnapData(data.mountingType, 'None', 'None');
-        if (d.length) addData(out, d[2], mounts[size], d[3]);
+        if (d) addData(out, d.name, mounts[size], [d.link]);
       }
     },
     // OffsetSnapMountProcessor: single/dual/quad part A, plus one part B per snap point.
@@ -388,11 +382,11 @@
         if (value <= 0) continue;
         partB += size === '1x1' ? value : size === '2x1' ? 2 * value : 4 * value;
         const d = parts.getSnapData(data.mountingType, NAMING[size], 'A');
-        if (d.length) addData(out, d[2], value, d[3]);
+        if (d) addData(out, d.name, value, [d.link]);
       }
       if (partB > 0) {
         const d = parts.getSnapData(data.mountingType, 'None', 'None');
-        addData(out, d[2], partB, d[3]);
+        if (d) addData(out, d.name, partB, [d.link]);
       }
     },
     // FreeStandingMountPorcessor: part A + part B per mount, plus optional feet.
@@ -403,11 +397,11 @@
         if (value <= 0) continue;
         for (const side of ['A', 'B']) {
           const d = parts.getSnapData(data.mountingType, NAMING[size], side);
-          if (d.length) addData(out, d[2], value, d[3]);
+          if (d) addData(out, d.name, value, [d.link]);
         }
       }
       const stand = parts.getSnapData(data.mountingType, 'None', 'None');
-      if (stand.length) addData(out, stand[2], '-', stand[3]);
+      if (stand) addData(out, stand.name, '-', [stand.link]);
     },
   };
 
@@ -443,7 +437,7 @@
     const mountRows = mountsAsArray(data, parts);
     if ('dualClips' in placed) {
       const d = parts.getSnapData('Dual Clips', 'None', 'None');
-      mountRows.push([['Dual Clip', String(placed.dualClips), d[3]]]);
+      mountRows.push([['Dual Clip', String(placed.dualClips), d ? [d.link] : []]]);
     }
     return { data, tileRows, mountRows, dualClips: placed.dualClips };
   }

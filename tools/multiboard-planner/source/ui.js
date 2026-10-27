@@ -1,6 +1,10 @@
 // The planner's window: the original planner's page, run as a Thingport tool. Its settings are kept with
 // thingport.storage, and each part opens from the user's "Tool: Multiboard models" collection once Thingport has
 // fetched it, or on Thangs until then.
+//
+// Its words come from locales/<code>.json, which Thingport reads and hands over as `t()`; `labels()` fills in the
+// markup's own `data-t` attributes. The part and mount names ("Dual Clip", "Offset Snap") are not among them:
+// they are the official catalogue's names, which the planner compares against and which match the real parts.
 
 const SVGNS = "http://www.w3.org/2000/svg";
 
@@ -32,9 +36,9 @@ export function modelKey(link) {
 }
 
 export default async function mount(thingport) {
-  const { root, theme, storage, ui, models } = thingport;
+  const { root, theme, storage, ui, models, collections, t, labels } = thingport;
   const C = PlannerCore;
-  const parts = new C.PartDataLinks(PLANNER_DATA.partLinks, PLANNER_DATA.snaps, PLANNER_DATA.tileNames);
+  const parts = new C.PartDataLinks(PLANNER_DATA);
   const $ = (id) => root.querySelector(`#mbp-${id}`);
   const shell = root.querySelector(".mbp");
 
@@ -78,10 +82,7 @@ export default async function mount(thingport) {
       const note = $("modelsNote");
       const missing = copies.length - local.size;
       note.hidden = missing === 0;
-      note.textContent =
-        local.size === 0
-          ? "Thingport hasn't fetched the parts yet: they open on Thangs for now."
-          : `${missing} of ${copies.length} parts aren't in Thingport yet: those open on Thangs.`;
+      note.textContent = local.size === 0 ? t("models.none") : t("models.some", { missing, total: copies.length });
     } catch {
       local = new Map();
     }
@@ -423,15 +424,15 @@ export default async function mount(thingport) {
         const open = document.createElement("button");
         open.type = "button";
         open.className = "mbp-link";
-        open.textContent = "Open";
-        open.setAttribute("aria-label", `Open the model for ${label}`);
+        open.textContent = t("part.open");
+        open.setAttribute("aria-label", t("part.openAria", { name: label }));
         open.addEventListener("click", () => models.open(copy.printId));
         const save = document.createElement("button");
         save.type = "button";
         save.className = "mbp-link";
         save.textContent = "↓";
-        save.title = "Download its files";
-        save.setAttribute("aria-label", `Download the files for ${label}`);
+        save.title = t("part.download");
+        save.setAttribute("aria-label", t("part.downloadAria", { name: label }));
         save.addEventListener("click", () => void downloadModel(copy.printId));
         wrap.append(open, save);
       } else {
@@ -440,8 +441,8 @@ export default async function mount(thingport) {
         a.href = href;
         a.target = "_blank";
         a.rel = "noopener";
-        a.textContent = "Thangs ↗";
-        a.setAttribute("aria-label", `Open the model for ${label} on Thangs`);
+        a.textContent = t("part.thangs");
+        a.setAttribute("aria-label", t("part.thangsAria", { name: label }));
         wrap.appendChild(a);
       }
     }
@@ -523,7 +524,7 @@ export default async function mount(thingport) {
     $("count").textContent = "";
     $("legend").innerHTML = "";
     $("unused").classList.remove("mbp-show");
-    $("copyBtn").disabled = $("downloadBtn").disabled = $("collectBtn").disabled = true;
+    $("copyBtn").disabled = $("downloadBtn").disabled = $("saveBtn").disabled = true;
   }
 
   // ---- main update ----------------------------------------------------------------
@@ -573,7 +574,7 @@ export default async function mount(thingport) {
     renderLegend(colored, result.data.tiles.values());
     renderParts(result);
     $("copyBtn").disabled = $("downloadBtn").disabled = false;
-    $("collectBtn").disabled = !partsInThingport(result).length;
+    $("saveBtn").disabled = !partsInThingport(result).length;
     const [uw, uh] = C.unusedSpace(result.data);
     const show = uw > 1e-9 || uh > 1e-9;
     $("unused").classList.toggle("mbp-show", show);
@@ -630,37 +631,142 @@ ${rows}
 </body></html>`;
     const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, "_");
     thingport.download({ name: `Multiboard-Design-${stamp}.html`, data: html, type: "text/html" });
-    ui.toast("Parts list downloaded", "success");
+    ui.toast(t("toast.listDownloaded"), "success");
   });
 
   $("copyBtn").addEventListener("click", async () => {
     if (!current) return;
-    const text = ["Part\tQuantity\tLink"]
+    const text = [`${t("list.part")}\t${t("list.quantity")}\t${t("list.link")}`]
       .concat(saveRows(current).map((r) => `${r[0]}\t${r[1]}\t${(r[2] || []).filter(Boolean).join(" ")}`))
       .join("\n");
     try {
       await navigator.clipboard.writeText(text);
-      ui.toast("Copied to clipboard", "success");
+      ui.toast(t("toast.copied"), "success");
     } catch {
-      ui.toast("Copy failed: the browser blocked the clipboard", "error");
+      ui.toast(t("toast.copyFailed"), "error");
     }
   });
 
-  // A collection of the user's own with this wall's parts in, ready to print from.
-  $("collectBtn").addEventListener("click", async () => {
+  // ---- saving the wall as a model of its own -------------------------------------
+  /** Every part of the wall Thingport has a copy of, with how many are needed. */
+  function wallParts(result) {
+    const parts = new Map();
+    for (const row of saveRows(result)) {
+      const quantity = Number(row[1]) || 0;
+      for (const link of row[2] || []) {
+        const copy = localCopy(link);
+        if (!copy) continue;
+        const already = parts.get(copy.printId);
+        if (already) already.quantity += quantity;
+        else parts.set(copy.printId, { copy, name: row[0].replace(/\n/g, " "), quantity });
+      }
+    }
+    return [...parts.values()];
+  }
+
+  /** What to print and in what order, for the saved model's description. */
+  function printNotes(result, title, parts) {
+    const d = result.data;
+    const total = parts.reduce((sum, part) => sum + part.quantity, 0);
+    const lines = [
+      title,
+      "",
+      t("notes.wall", { width: fmt(d.width), height: fmt(d.height), units: d.unitsLabel() }),
+      t("notes.tiles", { size: `${state.tileSize} × ${state.tileSize}` }),
+      t("notes.setup", { setup: state.setup === 1 ? t("setup.grid") : t("setup.single") }),
+      t("notes.mount", { mount: d.mountingType }),
+      "",
+      t("notes.whatToPrint", { total }),
+    ];
+    // Left in the order the planner lists them, which is the boards and then the mounting hardware — the same
+    // order the note below gives, and the order you want to print in.
+    for (const part of parts) lines.push(`  ${part.quantity} × ${part.name}`);
+    lines.push("", t("notes.order"), `  1. ${t("notes.orderTiles")}`, `  2. ${t("notes.orderMounts")}`);
+    lines.push("", t("notes.files"));
+    lines.push("", t("notes.madeWith", { version: thingport.tool.version }));
+    return lines.join("\n");
+  }
+
+  const saveCover = $("saveCover");
+  const closeSave = () => {
+    saveCover.hidden = true;
+  };
+  $("saveCancel").addEventListener("click", closeSave);
+  saveCover.addEventListener("pointerdown", (event) => {
+    if (event.target === saveCover) closeSave();
+  });
+  saveCover.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeSave();
+    if (event.key === "Enter" && event.target === $("saveName")) $("saveGo").click();
+  });
+
+  $("saveBtn").addEventListener("click", () => {
     if (!current) return;
-    const ids = partsInThingport(current);
-    if (!ids.length) return;
+    const parts = wallParts(current);
+    if (!parts.length) {
+      ui.toast(t("toast.nothingToSave"), "error");
+      return;
+    }
+    const d = current.data;
+    $("saveNote").textContent = t("save.note", {
+      parts: parts.length,
+      files: parts.reduce((sum, part) => sum + part.quantity, 0),
+    });
+    $("saveName").value = t("save.suggested", {
+      width: fmt(d.width),
+      height: fmt(d.height),
+      units: d.unitsLabel(),
+    });
+    saveCover.hidden = false;
+    $("saveName").focus();
+    $("saveName").select();
+  });
+
+  $("saveGo").addEventListener("click", async () => {
+    if (!current) return;
+    const go = $("saveGo");
+    const parts = wallParts(current);
+    const title = $("saveName").value.trim() || t("save.untitled");
+    go.disabled = true;
+    go.textContent = t("save.saving");
     try {
-      const collection = await thingport.collections.pick({ title: "Put this wall's parts in" });
+      const collection = await collections.pick({ title: t("save.pickCollection") });
       if (!collection) return;
-      await thingport.collections.add(collection.id, ids);
-      ui.toast(`Added ${ids.length} part${ids.length === 1 ? "" : "s"} to ${collection.name}`, "success");
+      // Every part as its own file, named so the list reads in print order with its count.
+      const files = [];
+      const used = new Set();
+      for (const part of parts) {
+        const model = await models.get(part.copy.printId);
+        for (const file of model.files) {
+          const dot = file.name.lastIndexOf(".");
+          const stem = dot > 0 ? file.name.slice(0, dot) : file.name;
+          const extension = dot > 0 ? file.name.slice(dot) : "";
+          let name = `${part.quantity}x ${stem}${extension}`;
+          // Two parts can ship a file of the same name; keep both rather than losing one.
+          for (let n = 2; used.has(name); n++) name = `${part.quantity}x ${stem} (${n})${extension}`;
+          used.add(name);
+          files.push({ name, data: await models.file(part.copy.printId, file.id) });
+        }
+      }
+      const saved = await models.create({
+        name: title,
+        description: printNotes(current, title, parts),
+        tags: ["multiboard", "generated"],
+        collectionId: collection.id,
+        files,
+      });
+      closeSave();
+      ui.toast(t("toast.saved", { name: title, collection: collection.name }), "success");
+      void saved;
     } catch (err) {
-      ui.toast(err.message, "error");
+      ui.toast(err.message || t("toast.saveFailed"), "error");
+    } finally {
+      go.disabled = false;
+      go.textContent = t("save.go");
     }
   });
 
+  labels();
   update();
   // The parts' local copies, then the list again with them.
   await loadLocal();

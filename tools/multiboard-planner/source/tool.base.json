@@ -9,6 +9,7 @@
     "height": 780
   },
   "hosts": [],
+  "locales": ["en", "lt", "es", "fr"],
   "screenshots": [
     {
       "file": "screenshots/grid-tiles.webp",

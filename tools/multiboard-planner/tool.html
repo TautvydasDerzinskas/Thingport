@@ -393,6 +393,57 @@
     font-size: 12px;
     color: var(--muted);
   }
+
+  /* ---- naming the wall before it's saved ---- */
+  .mbp-cover {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: color-mix(in srgb, var(--bg) 72%, transparent);
+    backdrop-filter: blur(2px);
+    animation: mbp-fade 150ms ease both;
+  }
+  @keyframes mbp-fade {
+    from {
+      opacity: 0;
+    }
+  }
+  .mbp-dialog {
+    width: min(420px, 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--panel);
+    box-shadow: 0 20px 56px rgb(0 0 0 / 36%);
+    animation: mbp-rise 180ms ease both;
+  }
+  @keyframes mbp-rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mbp-cover,
+    .mbp-dialog {
+      animation: none;
+    }
+  }
+  .mbp-dialog h2 {
+    margin: 0;
+    font-size: 14px;
+  }
+  .mbp-dialog-foot {
+    display: flex;
+    gap: 7px;
+    justify-content: flex-end;
+  }
   .mbp-section-title {
     font-size: 11px;
     font-weight: 650;
@@ -502,84 +553,98 @@
 </style>
 <div class="mbp">
   <main class="mbp-main">
-    <section class="mbp-panel mbp-inputs" aria-label="Wall and tile settings">
+    <section class="mbp-panel mbp-inputs" data-t-aria="aria.settings" aria-label="Wall and tile settings">
       <div class="mbp-group">
-        <div class="mbp-label">Wall size</div>
-        <div class="mbp-seg" role="group" aria-label="Units" id="mbp-units">
+        <div class="mbp-label" data-t="wall.title">Wall size</div>
+        <div class="mbp-seg" role="group" data-t-aria="aria.units" aria-label="Units" id="mbp-units">
           <button type="button" data-value="0">mm</button>
           <button type="button" data-value="1">inch</button>
         </div>
         <div class="mbp-row2">
           <div class="mbp-field">
-            <span class="mbp-prefix">Width</span
-            ><input id="mbp-width" inputmode="decimal" autocomplete="off" aria-label="Wall width" /><span
-              class="mbp-suffix"
-              data-unit
-            ></span>
+            <span class="mbp-prefix" data-t="wall.width">Width</span
+            ><input
+              id="mbp-width"
+              inputmode="decimal"
+              autocomplete="off"
+              data-t-aria="aria.wallWidth"
+              aria-label="Wall width"
+            /><span class="mbp-suffix" data-unit></span>
           </div>
           <div class="mbp-field">
-            <span class="mbp-prefix">Height</span
-            ><input id="mbp-height" inputmode="decimal" autocomplete="off" aria-label="Wall height" /><span
-              class="mbp-suffix"
-              data-unit
-            ></span>
+            <span class="mbp-prefix" data-t="wall.height">Height</span
+            ><input
+              id="mbp-height"
+              inputmode="decimal"
+              autocomplete="off"
+              data-t-aria="aria.wallHeight"
+              aria-label="Wall height"
+            /><span class="mbp-suffix" data-unit></span>
           </div>
         </div>
       </div>
 
       <div class="mbp-group">
         <div class="mbp-label">
-          Tile size
+          <span data-t="tile.title">Tile size</span>
           <span class="mbp-help"
-            ><button type="button" aria-label="About tile size">?</button
-            ><span role="tooltip"
+            ><button type="button" data-t-aria="aria.aboutTileSize" aria-label="About tile size">?</button
+            ><span role="tooltip" data-t="tile.help"
               >Largest tile you print, in 25 mm grid cells. Smaller tiles fill the leftover strip at the right and top
               edges.</span
             ></span
           >
         </div>
-        <div class="mbp-field"><select id="mbp-tileSize" aria-label="Tile size"></select></div>
+        <div class="mbp-field">
+          <select id="mbp-tileSize" data-t-aria="aria.tileSize" aria-label="Tile size"></select>
+        </div>
         <div class="mbp-hint">
-          <span>Needs <b id="mbp-required"></b></span
-          ><span class="mbp-warn" id="mbp-recommend">8×8 is recommended</span>
+          <span><span data-t="tile.needs">Needs</span> <b id="mbp-required"></b></span
+          ><span class="mbp-warn" id="mbp-recommend" data-t="tile.recommend">8×8 is recommended</span>
         </div>
       </div>
 
       <div class="mbp-group">
         <div class="mbp-label">
-          Tile setup
+          <span data-t="setup.title">Tile setup</span>
           <span class="mbp-help"
-            ><button type="button" aria-label="About tile setup">?</button
-            ><span role="tooltip"
+            ><button type="button" data-t-aria="aria.aboutSetup" aria-label="About tile setup">?</button
+            ><span role="tooltip" data-t="setup.help"
               >Single tiles: every tile has its own border, joined with dual clips. Grid tiles: core, edge and corner
               tiles that interlock into one bordered board.</span
             ></span
           >
         </div>
-        <div class="mbp-seg" role="group" aria-label="Tile setup" id="mbp-setup">
-          <button type="button" data-value="0">Single tiles</button>
-          <button type="button" data-value="1">Grid tiles</button>
+        <div class="mbp-seg" role="group" data-t-aria="aria.setup" aria-label="Tile setup" id="mbp-setup">
+          <button type="button" data-value="0" data-t="setup.single">Single tiles</button>
+          <button type="button" data-value="1" data-t="setup.grid">Grid tiles</button>
         </div>
       </div>
 
       <div class="mbp-group">
         <div class="mbp-label">
-          Mounting
+          <span data-t="mount.title">Mounting</span>
           <span class="mbp-help"
-            ><button type="button" aria-label="About mounting">?</button
-            ><span role="tooltip"
+            ><button type="button" data-t-aria="aria.aboutMount" aria-label="About mounting">?</button
+            ><span role="tooltip" data-t="mount.help"
               >How the board attaches to the wall. Offset snaps and free-standing mounts are counted per tile corner;
               shared corners use dual or quad parts.</span
             ></span
           >
         </div>
-        <div class="mbp-seg mbp-grid2" role="group" aria-label="Mount type" id="mbp-mount"></div>
+        <div
+          class="mbp-seg mbp-grid2"
+          role="group"
+          data-t-aria="aria.mount"
+          aria-label="Mount type"
+          id="mbp-mount"
+        ></div>
       </div>
 
       <div class="mbp-group mbp-unused" id="mbp-unused" aria-live="polite">
-        <div class="mbp-label">Unused space</div>
-        <div class="mbp-hint"><span>Width</span><b id="mbp-unusedW"></b></div>
-        <div class="mbp-hint"><span>Height</span><b id="mbp-unusedH"></b></div>
+        <div class="mbp-label" data-t="unused.title">Unused space</div>
+        <div class="mbp-hint"><span data-t="wall.width">Width</span><b id="mbp-unusedW"></b></div>
+        <div class="mbp-hint"><span data-t="wall.height">Height</span><b id="mbp-unusedH"></b></div>
       </div>
 
       <button
@@ -589,26 +654,34 @@
         aria-expanded="false"
         aria-controls="mbp-about"
       >
-        How it works
+        <span data-t="about.toggle">How it works</span>
       </button>
       <div class="mbp-about" id="mbp-about" hidden>
-        <p>
+        <p data-t="about.how">
           Enter your wall size, pick a tile size, a tile setup and a mounting method. The planner fills the wall with
           full tiles, adds smaller tiles along the right and top edges, and lists every part.
         </p>
         <ul>
-          <li><b>Single tiles</b>: bordered tiles joined by dual clips.</li>
-          <li><b>Grid tiles</b>: interlocking core, edge and corner tiles (strips for a single row or column).</li>
-          <li>Snap colours: <b>yellow</b> single, <b>orange</b> dual, <b>red</b> quad.</li>
+          <li>
+            <b data-t="setup.single">Single tiles</b
+            ><span data-t="about.single">: bordered tiles joined by dual clips.</span>
+          </li>
+          <li>
+            <b data-t="setup.grid">Grid tiles</b
+            ><span data-t="about.grid"
+              >: interlocking core, edge and corner tiles (strips for a single row or column).</span
+            >
+          </li>
+          <li data-t="about.snapColours">Snap colours: yellow single, orange dual, red quad.</li>
         </ul>
-        <p>
+        <p data-t="about.source">
           The layout and counting rules are a port of the official Multiboard Planner (multiboard.itch.io/planner). Each
-          part opens from your <b>Tool: Multiboard models</b> collection once Thingport has it, or on Thangs until then.
+          part opens from your Tool: Multiboard models collection once Thingport has it, or on Thangs until then.
         </p>
       </div>
     </section>
 
-    <section class="mbp-panel mbp-preview" aria-label="Layout preview">
+    <section class="mbp-panel mbp-preview" data-t-aria="aria.preview" aria-label="Layout preview">
       <div class="mbp-preview-head">
         <span class="mbp-dims" id="mbp-dims"></span>
         <div class="mbp-legend" id="mbp-legend"></div>
@@ -616,34 +689,63 @@
       <div class="mbp-stage" id="mbp-stage"></div>
     </section>
 
-    <section class="mbp-panel mbp-results" aria-label="Parts list">
+    <section class="mbp-panel mbp-results" data-t-aria="aria.parts" aria-label="Parts list">
       <div class="mbp-results-head">
-        <h2>Parts</h2>
+        <h2 data-t="parts.title">Parts</h2>
         <span class="mbp-count" id="mbp-count"></span>
         <span class="mbp-spacer"></span>
-        <button class="mbp-btn" id="mbp-copyBtn" title="Copy the list as tab-separated text">
+        <button
+          class="mbp-btn"
+          id="mbp-copyBtn"
+          data-t-title="parts.copyHint"
+          title="Copy the list as tab-separated text"
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <rect x="9" y="9" width="11" height="11" rx="2" />
             <path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg
-          >Copy
+          ><span data-t="parts.copy">Copy</span>
         </button>
-        <button class="mbp-btn" id="mbp-downloadBtn" title="Download the list with the layout as an HTML page">
+        <button
+          class="mbp-btn"
+          id="mbp-downloadBtn"
+          data-t-title="parts.listHint"
+          title="Download the list with the layout as an HTML page"
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" /></svg
-          >List
+          ><span data-t="parts.list">List</span>
         </button>
         <button
           class="mbp-btn mbp-primary"
-          id="mbp-collectBtn"
-          title="Put this wall's parts into a collection of yours"
+          id="mbp-saveBtn"
+          data-t-title="save.hint"
+          title="Save this wall to your library as one model, with every part as its own file"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M12 5v14M5 12h14" /></svg
-          >Collection
+            <path d="M5 4h11l4 4v12H5z" />
+            <path d="M9 4v5h6M9 15h6" /></svg
+          ><span data-t="save.button">Save to Thingport</span>
         </button>
       </div>
       <div class="mbp-note" id="mbp-modelsNote" hidden></div>
       <div id="mbp-results"></div>
     </section>
   </main>
+
+  <div class="mbp-cover" id="mbp-saveCover" hidden>
+    <div class="mbp-dialog" role="dialog" aria-modal="true" aria-labelledby="mbp-saveTitle">
+      <h2 id="mbp-saveTitle" data-t="save.title">Save this wall to Thingport</h2>
+      <p class="mbp-note" id="mbp-saveNote"></p>
+      <div class="mbp-group">
+        <div class="mbp-label" data-t="save.name">What to call it</div>
+        <div class="mbp-field">
+          <input id="mbp-saveName" autocomplete="off" data-t-aria="save.name" aria-label="What to call it" />
+        </div>
+      </div>
+      <div class="mbp-dialog-foot">
+        <button type="button" class="mbp-btn" id="mbp-saveCancel" data-t="save.cancel">Cancel</button>
+        <button type="button" class="mbp-btn mbp-primary" id="mbp-saveGo" data-t="save.go">Save</button>
+      </div>
+    </div>
+  </div>
 </div>
