@@ -4,15 +4,30 @@
 // widgets off for the instance.
 
 import { createHash } from "node:crypto";
+import nodePath from "node:path";
 import { lookup as dnsLookup } from "node:dns";
 import { BlockList, isIP, type LookupFunction } from "node:net";
 import { Agent } from "undici";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { readCapped } from "../utils/readCapped";
 import { TtlCache } from "../utils/ttlCache";
-import { SLUG, manifestSchema, parseManifest, validateCode, type WidgetManifest } from "./customWidgetFormat";
+import {
+  LOCALE_MAX_BYTES,
+  LOCALES_MAX_BYTES,
+  SCREENSHOT_EXTS,
+  SCREENSHOT_MAX_BYTES,
+  SLUG,
+  localeFile,
+  localesSchema,
+  manifestSchema,
+  parseManifest,
+  validateCode,
+  type Locales,
+  type WidgetManifest,
+} from "./customWidgetFormat";
 import { getWidgetSources, WIDGET_SOURCES, type WidgetSource } from "./settingsService";
 import { GITHUB_REPO, releaseBranch } from "./versionService";
 
@@ -29,15 +44,32 @@ export async function enabledWidgetSources(): Promise<WidgetSource[]> {
   return WIDGET_SOURCES.filter((source) => sources[source]);
 }
 
-export { SLUG, manifestSchema, parseManifest, validateManifest, type WidgetManifest } from "./customWidgetFormat";
+export {
+  SLUG,
+  manifestSchema,
+  parseManifest,
+  validateManifest,
+  localesSchema,
+  type Locales,
+  type WidgetManifest,
+} from "./customWidgetFormat";
 
-const shaOf = (manifest: WidgetManifest, script: string, html: string | null) =>
+// The labels are part of it: a widget whose words changed has changed, and the panel runs it again.
+const shaOf = (manifest: WidgetManifest, script: string, html: string | null, locales: Locales = {}) =>
   createHash("sha256")
     .update(JSON.stringify(manifest))
     .update("\0")
     .update(script)
     .update("\0")
     .update(html ?? "")
+    .update("\0")
+    .update(
+      JSON.stringify(
+        Object.keys(locales)
+          .toSorted()
+          .map((code) => [code, locales[code]]),
+      ),
+    )
     .digest("hex");
 
 export type CustomWidgetOut = {
@@ -47,6 +79,8 @@ export type CustomWidgetOut = {
   manifest: WidgetManifest;
   script: string;
   html: string | null;
+  /** Its labels by language; `{}` for a widget that ships none. */
+  locales: Locales;
   sha: string;
   updatedAt: string;
 };
@@ -58,9 +92,17 @@ type Row = {
   manifest: unknown;
   script: string;
   html: string | null;
+  locales?: unknown;
   sha: string;
   updatedAt: Date;
 };
+
+/** The stored labels, ignoring anything that no longer fits the shape rather than refusing the whole widget. */
+function localesOf(row: Pick<Row, "locales">): Locales {
+  if (!row.locales) return {};
+  const parsed = localesSchema.safeParse(row.locales);
+  return parsed.success ? parsed.data : {};
+}
 
 function out(row: Row): CustomWidgetOut | null {
   const manifest = manifestSchema.safeParse(row.manifest);
@@ -72,6 +114,7 @@ function out(row: Row): CustomWidgetOut | null {
     manifest: manifest.data,
     script: row.script,
     html: row.html,
+    locales: localesOf(row),
     sha: row.sha,
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -101,27 +144,53 @@ export async function getCustomWidget(userId: string, id: string): Promise<Custo
 /** Creates or replaces one of the user's own widgets, by its slug. */
 export async function saveOwnWidget(
   userId: string,
-  input: { slug: string; manifest: WidgetManifest; script: string; html?: string | null },
+  input: {
+    slug: string;
+    manifest: WidgetManifest;
+    script: string;
+    html?: string | null;
+    locales?: Locales;
+  },
 ): Promise<CustomWidgetOut> {
   if (!SLUG.test(input.slug))
     throw new HttpError(400, "The slug is 2-40 lowercase letters, digits and dashes, starting with a letter or digit");
+  if (input.manifest.screenshots.length)
+    throw new HttpError(400, "Only a widget shared through the repository has screenshots: it carries the files");
   const html = input.html?.trim() ? input.html : null;
   validateCode(input.script, html);
   // Credited when downloaded to share, so it goes out with a name on it.
-  const manifest = input.manifest.author
-    ? input.manifest
-    : {
-        ...input.manifest,
-        author: (await prisma.user.findUnique({ where: { id: userId } }))?.displayName.slice(0, 60),
-      };
-  const sha = shaOf(manifest, input.script, html);
-  const data = { manifest, script: input.script, html, sha };
+  const author =
+    input.manifest.author ?? (await prisma.user.findUnique({ where: { id: userId } }))?.displayName.slice(0, 60);
+  const locales = ownLocales(input.locales);
+  // What the widget actually has, rather than what its metadata claims: the languages come from the labels given.
+  const manifest = { ...input.manifest, author, locales: Object.keys(locales) };
+  const data = {
+    manifest,
+    script: input.script,
+    html,
+    locales: locales as Prisma.InputJsonValue,
+    sha: shaOf(manifest, input.script, html, locales),
+  };
   const row = await prisma.customWidget.upsert({
     where: { userId_source_slug: { userId, source: "own", slug: input.slug } },
     create: { userId, source: "own", slug: input.slug, ...data },
     update: data,
   });
   return out(row)!;
+}
+
+/** A user's own labels, checked the way a shared widget's files are, and held to the same total size. */
+function ownLocales(raw: Locales | undefined): Locales {
+  if (!raw) return {};
+  const parsed = localesSchema.safeParse(raw);
+  if (!parsed.success) throw new HttpError(400, "Those labels aren't right");
+  if (JSON.stringify(parsed.data).length > LOCALES_MAX_BYTES)
+    throw new HttpError(400, `The labels are larger than ${Math.round(LOCALES_MAX_BYTES / 1024)} KB`);
+  for (const [code, words] of Object.entries(parsed.data)) {
+    if (JSON.stringify(words).length > LOCALE_MAX_BYTES)
+      throw new HttpError(400, `The ${code} labels are larger than ${Math.round(LOCALE_MAX_BYTES / 1024)} KB`);
+  }
+  return parsed.data;
 }
 
 export async function deleteCustomWidget(userId: string, id: string): Promise<void> {
@@ -139,21 +208,53 @@ const COMMUNITY_BASE =
 const COMMUNITY_TTL_MS = 60 * 60 * 1000;
 const FILE_MAX_BYTES = 1024 * 1024;
 
-type CommunityFiles = { manifest: WidgetManifest; script: string; html: string | null; sha: string };
+type CommunityFiles = {
+  manifest: WidgetManifest;
+  script: string;
+  html: string | null;
+  locales: Locales;
+  sha: string;
+};
 const communityCache = new TtlCache<CommunityFiles[] | (CommunityFiles & { slug: string })>(COMMUNITY_TTL_MS);
+const screenshotCache = new TtlCache<{ body: Buffer; type: string }>(COMMUNITY_TTL_MS);
 
 let fetchImpl: typeof fetch = (...args) => fetch(...args);
 /** Lets tests answer for GitHub and for the hosts widgets reach. */
 export function setCustomWidgetsFetchForTest(impl?: typeof fetch): void {
   fetchImpl = impl ?? ((...args) => fetch(...args));
   communityCache.clear();
+  screenshotCache.clear();
+}
+
+async function fetchFile(path: string, maxBytes = FILE_MAX_BYTES): Promise<Buffer | null> {
+  const url = `${COMMUNITY_BASE}/${path.split("/").map(encodeURIComponent).join("/")}`;
+  const res = await fetchImpl(url, { signal: AbortSignal.timeout(15_000) });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new HttpError(502, `The community repository answered HTTP ${res.status}`);
+  const { buffer, truncated } = await readCapped(res, maxBytes);
+  if (truncated) throw new HttpError(502, `${path} is larger than ${Math.round(maxBytes / 1048576)} MB`);
+  return buffer;
 }
 
 async function fetchText(path: string): Promise<string | null> {
-  const res = await fetchImpl(`${COMMUNITY_BASE}/${path}`, { signal: AbortSignal.timeout(15_000) });
-  if (res.status === 404) return null;
-  if (!res.ok) throw new HttpError(502, `The community repository answered HTTP ${res.status}`);
-  return (await readCapped(res, FILE_MAX_BYTES)).buffer.toString("utf8");
+  return (await fetchFile(path))?.toString("utf8") ?? null;
+}
+
+/** A shared widget's labels: the file for each language its metadata names, as far as each of them reads. */
+async function fetchCommunityLocales(slug: string, manifest: WidgetManifest): Promise<Locales> {
+  const locales: Locales = {};
+  let total = 0;
+  for (const code of manifest.locales) {
+    const buffer = await fetchFile(`${slug}/${localeFile(code)}`, LOCALE_MAX_BYTES).catch(() => null);
+    if (!buffer) continue;
+    total += buffer.byteLength;
+    if (total > LOCALES_MAX_BYTES)
+      throw new HttpError(502, `${slug}'s labels are larger than ${Math.round(LOCALES_MAX_BYTES / 1024)} KB`);
+    const parsed = localesSchema.safeParse({ [code]: JSON.parse(buffer.toString("utf8")) as unknown });
+    // A language that won't read is simply one the widget doesn't have.
+    if (parsed.success) Object.assign(locales, parsed.data);
+  }
+  return locales;
 }
 
 async function fetchCommunityWidget(slug: string): Promise<CommunityFiles & { slug: string }> {
@@ -165,9 +266,31 @@ async function fetchCommunityWidget(slug: string): Promise<CommunityFiles & { sl
   const html = await fetchText(`${slug}/widget.html`);
   const manifest = parseManifest(metadata);
   validateCode(script, html);
-  const files = { slug, manifest, script, html, sha: shaOf(manifest, script, html) };
+  const locales = await fetchCommunityLocales(slug, manifest);
+  const files = { slug, manifest, script, html, locales, sha: shaOf(manifest, script, html, locales) };
   communityCache.set(`widget:${slug}`, files);
   return files;
+}
+
+/**
+ * One of a shared widget's screenshots, by its place in its metadata: what someone looks at before installing it.
+ *
+ * Only a widget in the repository has these, because only it brings files of its own; a widget someone wrote here
+ * has none to serve.
+ */
+export async function communityWidgetScreenshot(slug: string, index: number): Promise<{ body: Buffer; type: string }> {
+  if (!SLUG.test(slug)) throw new HttpError(400, "Not a widget name");
+  const widget = await fetchCommunityWidget(slug);
+  const shot = widget.manifest.screenshots[index];
+  if (!shot) throw new HttpError(404, "No such screenshot");
+  const key = `${slug}/${widget.sha}/${shot.file}`;
+  const cached = screenshotCache.get(key);
+  if (cached) return cached;
+  const body = await fetchFile(`${slug}/${shot.file}`, SCREENSHOT_MAX_BYTES);
+  if (!body) throw new HttpError(404, "The community repository has no such screenshot");
+  const image = { body, type: SCREENSHOT_EXTS.get(nodePath.extname(shot.file).toLowerCase())! };
+  screenshotCache.set(key, image);
+  return image;
 }
 
 export type CommunityWidget = {
@@ -218,8 +341,8 @@ export async function listCommunityWidgets(userId: string): Promise<CommunityWid
 /** Installs a community widget, or takes its update: a copy of the repository's files as they are now. */
 export async function installCommunityWidget(userId: string, slug: string): Promise<CustomWidgetOut> {
   if (!SLUG.test(slug)) throw new HttpError(400, "Not a widget name");
-  const { manifest, script, html, sha } = await fetchCommunityWidget(slug);
-  const data = { manifest, script, html, sha };
+  const { manifest, script, html, locales, sha } = await fetchCommunityWidget(slug);
+  const data = { manifest, script, html, locales: locales as Prisma.InputJsonValue, sha };
   const row = await prisma.customWidget.upsert({
     where: { userId_source_slug: { userId, source: "community", slug } },
     create: { userId, source: "community", slug, ...data },

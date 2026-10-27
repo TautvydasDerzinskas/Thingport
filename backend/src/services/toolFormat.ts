@@ -6,7 +6,26 @@ import path from "node:path";
 import { parse as parseYaml } from "yaml";
 import { z } from "zod";
 import { HttpError } from "../utils/fileUtils";
-import { describeIssues, HOST, iconAddress, SLUG, validateCode, webAddress } from "./customWidgetFormat";
+import {
+  describeIssues,
+  HOST,
+  iconAddress,
+  LANGUAGE,
+  localeSchema,
+  localesSchema,
+  localeFile,
+  LOCALE_MAX_BYTES,
+  LOCALES_MAX_BYTES,
+  SCREENSHOT_EXTS,
+  SCREENSHOT_MAX_BYTES,
+  screenshotSchema,
+  SLUG,
+  validateCode,
+  validateLocale,
+  webAddress,
+  type Locale,
+  type Locales,
+} from "./customWidgetFormat";
 
 export { SLUG, validateCode };
 
@@ -15,16 +34,12 @@ const KEY = /^[a-z0-9][a-z0-9-]{0,59}$/;
 // A file beside tool.json, in it or a folder under it: no "..", no absolute path, no hidden files.
 const FILE = /^[A-Za-z0-9_][A-Za-z0-9_. -]*(\/[A-Za-z0-9_][A-Za-z0-9_. -]*)*$/;
 export const TOOL_MODEL_EXTS = new Set([".stl", ".3mf", ".step", ".stp", ".obj"]);
-export const TOOL_SCREENSHOT_EXTS = new Map([
-  [".png", "image/png"],
-  [".jpg", "image/jpeg"],
-  [".jpeg", "image/jpeg"],
-  [".webp", "image/webp"],
-]);
-export const TOOL_SCREENSHOT_MAX_BYTES = 5 * 1024 * 1024;
-/** One language's labels, as a file and as the lot of them: enough for a wordy tool, not enough to hide a payload. */
-export const TOOL_LOCALE_MAX_BYTES = 128 * 1024;
-export const TOOL_LOCALES_MAX_BYTES = 1024 * 1024;
+// A tool's screenshots and labels are the same thing a shared widget's are, and are checked by the same schemas;
+// these names stay so the tool code and its tests read as they did.
+export const TOOL_SCREENSHOT_EXTS = SCREENSHOT_EXTS;
+export const TOOL_SCREENSHOT_MAX_BYTES = SCREENSHOT_MAX_BYTES;
+export const TOOL_LOCALE_MAX_BYTES = LOCALE_MAX_BYTES;
+export const TOOL_LOCALES_MAX_BYTES = LOCALES_MAX_BYTES;
 export const TOOL_FILE_MAX_BYTES = 50 * 1024 * 1024;
 export const TOOL_FILES_MAX_BYTES = 250 * 1024 * 1024;
 
@@ -47,45 +62,14 @@ const modelFile = z
     "Not a 3D model file (.stl, .3mf, .step, .obj)",
   );
 
-/** A language code as Thingport writes them: "en", "lt", "pt-BR". */
-export const LANGUAGE = /^[a-z]{2,3}(-[A-Za-z0-9]{2,8})?$/;
+export { LANGUAGE };
 
-/**
- * One language's labels: a flat map of key to sentence. Flat because a tool looks a label up by its whole key
- * ("rings.ring"), and because nesting invites a file that is really a program.
- */
-export const toolLocaleSchema = z.record(
-  z
-    .string()
-    .trim()
-    .min(1)
-    .max(200)
-    .regex(/^[A-Za-z0-9][\w.-]*$/, "Not a label key"),
-  z.string().max(2000),
-);
-export type ToolLocale = z.infer<typeof toolLocaleSchema>;
-
-/** Every language a tool has, by code. */
-export const toolLocalesSchema = z.record(z.string().trim().regex(LANGUAGE, "Not a language code"), toolLocaleSchema);
-export type ToolLocales = z.infer<typeof toolLocalesSchema>;
-
-export function validateToolLocale(code: string, raw: unknown): ToolLocale {
-  if (!LANGUAGE.test(code)) throw new HttpError(400, `"${code}" isn't a language code`);
-  const parsed = toolLocaleSchema.safeParse(raw);
-  if (!parsed.success) throw new HttpError(400, `The ${code} labels aren't right: ${describeIssues(parsed.error)}`);
-  return parsed.data;
-}
-
-const screenshotSchema = z.object({
-  /** An image beside tool.json, e.g. "screenshots/plan.png". */
-  file: z
-    .string()
-    .trim()
-    .max(200)
-    .regex(FILE, "Not a file beside tool.json")
-    .refine((file) => TOOL_SCREENSHOT_EXTS.has(path.extname(file).toLowerCase()), "Not a PNG, JPEG or WebP image"),
-  caption: z.string().trim().max(200).optional(),
-});
+/** One language's labels, and every language, as the widget format defines them: a tool's are the same shape. */
+export const toolLocaleSchema = localeSchema;
+export const toolLocalesSchema = localesSchema;
+export type ToolLocale = Locale;
+export type ToolLocales = Locales;
+export const validateToolLocale = validateLocale;
 
 const toolModelSchema = z
   .object({
@@ -158,7 +142,7 @@ export function validateToolManifest(raw: unknown): ToolManifest {
 }
 
 /** Where a language's labels live in the tool's folder. */
-export const toolLocaleFile = (code: string): string => `locales/${code}.json`;
+export const toolLocaleFile = localeFile;
 
 /** Every file its models name, once. */
 export function toolModelFiles(manifest: ToolManifest): string[] {

@@ -1103,6 +1103,10 @@
               "prompt": "Sukurk Thingport valdiklį su diagrama, kiek modelių pridėjau kiekvieną mėnesį."
             }
           }
+        },
+        "labels": {
+          "help": "Žodžiai, kuriuos rodo tavo valdiklis — po failą kiekvienai kalbai. Scenarijus jų prašo pagal raktą su t(\"raktas\"), tad jie nesimaišo su logika ir išverčiami jos nekeičiant.",
+          "empty": "Tavo valdiklis dar neturi užrašų. Rodomus žodžius laikyk po failą kiekvienai kalbai, o scenarijus jų prašys pagal raktą su t(\"raktas\") — vertėjui niekada nereikės atverti kodo."
         }
       }
     },
@@ -2826,31 +2830,33 @@
           "library": "Sunki biblioteka, kurią turi Thingport: Three.js, opentype, Manifold, jo šriftai."
         },
         "labels": {
-          "tab": "Užrašai",
           "help": "Žodžiai, kuriuos rodo jūsų įrankis — po failą kiekvienai kalbai. Scenarijus jų prašo pagal raktą su t(\"raktas\"), tad jie lieka atskirai nuo logikos ir verčiami jos neliečiant.",
-          "empty": "Jūsų įrankis dar neturi užrašų. Laikykite rodomus žodžius po failą kiekvienai kalbai, o scenarijus jų prašys pagal raktą su t(\"raktas\") — tad vertėjui niekada nereikės atverti scenarijaus.",
-          "start": "Pradėti nuo anglų kalbos",
-          "add": "Pridėti kalbą",
-          "file": "{{code}} užrašai JSON formatu",
-          "fallbackNote": "Anglų kalba yra atsarginė: ko trūksta kitoje kalboje, rodoma iš čia.",
-          "untranslated_one": "{{count}} užrašas šia kalba dar neturi teksto.",
-          "untranslated_few": "{{count}} užrašai šia kalba dar neturi teksto.",
-          "untranslated_many": "{{count}} užrašo šia kalba dar neturi teksto.",
-          "untranslated_other": "{{count}} užrašų šia kalba dar neturi teksto.",
-          "badJson": "Tai dar nėra taisyklingas JSON, tad nebus įrašyta.",
-          "badShape": "Užrašai — tai paprastas objektas, siejantis raktus su tekstu, pvz. { \"save\": \"Įrašyti\" }.",
-          "removeTitle": "Pašalinti {{name}} užrašus?",
-          "removeBody": "Failas ir jo žodžiai dings. Kitos kalbos liks."
+          "empty": "Jūsų įrankis dar neturi užrašų. Laikykite rodomus žodžius po failą kiekvienai kalbai, o scenarijus jų prašys pagal raktą su t(\"raktas\") — tad vertėjui niekada nereikės atverti scenarijaus."
         }
-      },
-      "screenshots": {
-        "title": "{{name}} ekrano vaizdai",
-        "open": "{{name}} ekrano vaizdas {{index}} iš {{count}}",
-        "position": "{{index}} iš {{count}}",
-        "previous": "Ankstesnis vaizdas",
-        "next": "Kitas vaizdas",
-        "close": "Uždaryti"
       }
+    },
+    "screenshots": {
+      "title": "{{name}} ekrano vaizdai",
+      "open": "{{name}} ekrano vaizdas {{index}} iš {{count}}",
+      "position": "{{index}} iš {{count}}",
+      "previous": "Ankstesnis vaizdas",
+      "next": "Kitas vaizdas",
+      "close": "Uždaryti"
+    },
+    "labelsPanel": {
+      "tab": "Užrašai",
+      "start": "Pradėti nuo anglų kalbos",
+      "add": "Pridėti kalbą",
+      "file": "{{code}} užrašai JSON formatu",
+      "fallbackNote": "Anglų kalba yra atsarginė: ko trūksta kitoje kalboje, rodoma iš čia.",
+      "untranslated_one": "{{count}} užrašas šia kalba dar neturi teksto.",
+      "untranslated_few": "{{count}} užrašai šia kalba dar neturi teksto.",
+      "untranslated_many": "{{count}} užrašo šia kalba dar neturi teksto.",
+      "untranslated_other": "{{count}} užrašų šia kalba dar neturi teksto.",
+      "badJson": "Tai dar nėra taisyklingas JSON, tad nebus įrašyta.",
+      "badShape": "Užrašai — tai paprastas objektas, siejantis raktus su tekstu, pvz. { \"save\": \"Įrašyti\" }.",
+      "removeTitle": "Pašalinti {{name}} užrašus?",
+      "removeBody": "Failas ir jo žodžiai dings. Kitos kalbos liks."
     }
   },
   "common": {

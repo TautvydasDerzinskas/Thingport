@@ -2,7 +2,7 @@
   "name": "Weather scene",
   "description": "Current weather from Open-Meteo, drawn as an animated sky that follows the weather, the time of day and the season.",
   "iconUrl": "builtin:thingport/weather",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "Dante D.",
   "size": {
     "w": 4,
@@ -14,154 +14,169 @@
     {
       "key": "location",
       "type": "text",
-      "label": "Location",
+      "label": "settings.location",
       "default": "Vilnius",
-      "placeholder": "City, or lat,lon"
+      "placeholder": "settings.locationHint"
     },
     {
       "key": "label",
       "type": "text",
-      "label": "Name shown",
-      "placeholder": "The location's name"
+      "label": "settings.name",
+      "placeholder": "settings.nameHint"
     },
     {
       "key": "units",
       "type": "choice",
-      "label": "Units",
+      "label": "settings.units",
       "default": "metric",
       "options": [
         {
           "value": "metric",
-          "label": "°C, km/h"
+          "label": "settings.metric"
         },
         {
           "value": "imperial",
-          "label": "°F, mph"
+          "label": "settings.imperial"
         }
       ]
     },
     {
       "key": "refresh",
       "type": "choice",
-      "label": "Refresh",
+      "label": "settings.refresh",
       "default": "30",
       "options": [
         {
           "value": "15",
-          "label": "15 min"
+          "label": "settings.every15"
         },
         {
           "value": "30",
-          "label": "30 min"
+          "label": "settings.every30"
         },
         {
           "value": "60",
-          "label": "1 h"
+          "label": "settings.every60"
         }
       ]
     },
     {
       "key": "details",
       "type": "toggle",
-      "label": "Show wind and humidity",
+      "label": "settings.details",
       "default": true
     },
     {
       "key": "scene",
       "type": "choice",
-      "label": "Weather shown",
+      "label": "settings.scene",
       "default": "live",
       "options": [
         {
           "value": "live",
-          "label": "Live"
+          "label": "settings.live"
         },
         {
           "value": "clear",
-          "label": "Clear"
+          "label": "code.clear"
         },
         {
           "value": "partly",
-          "label": "Partly cloudy"
+          "label": "code.partly"
         },
         {
           "value": "overcast",
-          "label": "Overcast"
+          "label": "code.overcast"
         },
         {
           "value": "rain",
-          "label": "Rain"
+          "label": "code.rain"
         },
         {
           "value": "snow",
-          "label": "Snow"
+          "label": "code.snow"
         },
         {
           "value": "storm",
-          "label": "Storm"
+          "label": "code.storm"
         },
         {
           "value": "fog",
-          "label": "Fog"
+          "label": "code.fog"
         }
       ]
     },
     {
       "key": "time",
       "type": "choice",
-      "label": "Time shown",
+      "label": "settings.time",
       "default": "auto",
       "options": [
         {
           "value": "auto",
-          "label": "Live"
+          "label": "settings.live"
         },
         {
           "value": "dawn",
-          "label": "Dawn"
+          "label": "settings.dawn"
         },
         {
           "value": "day",
-          "label": "Day"
+          "label": "settings.day"
         },
         {
           "value": "dusk",
-          "label": "Dusk"
+          "label": "settings.dusk"
         },
         {
           "value": "night",
-          "label": "Night"
+          "label": "settings.night"
         }
       ]
     },
     {
       "key": "season",
       "type": "choice",
-      "label": "Season shown",
+      "label": "settings.season",
       "default": "auto",
       "options": [
         {
           "value": "auto",
-          "label": "Live"
+          "label": "settings.live"
         },
         {
           "value": "spring",
-          "label": "Spring"
+          "label": "settings.spring"
         },
         {
           "value": "summer",
-          "label": "Summer"
+          "label": "settings.summer"
         },
         {
           "value": "autumn",
-          "label": "Autumn"
+          "label": "settings.autumn"
         },
         {
           "value": "winter",
-          "label": "Winter"
+          "label": "settings.winter"
         }
       ]
     }
   ],
-  "hosts": ["api.open-meteo.com", "geocoding-api.open-meteo.com"]
+  "hosts": ["api.open-meteo.com", "geocoding-api.open-meteo.com"],
+  "locales": ["en", "lt", "es", "fr"],
+  "screenshots": [
+    {
+      "file": "screenshots/day.webp",
+      "caption": "A clear summer afternoon: the sun on its arc, drifting clouds, and the temperature with today's high and low."
+    },
+    {
+      "file": "screenshots/night.webp",
+      "caption": "The same panel at night in winter: stars, the moon at its phase, snow falling and bare trees."
+    },
+    {
+      "file": "screenshots/storm.webp",
+      "caption": "A thunderstorm, drawn from the live weather, with wind and humidity shown."
+    }
+  ]
 }

@@ -619,10 +619,12 @@ model CustomWidget {
   source    String
   /// The folder name: unique among a user's own widgets, and the community repository's for an installed one.
   slug      String
-  /// The validated metadata: name, description, icon, size, settings, hosts.
+  /// The validated metadata: name, description, icon, size, settings, hosts, labels and screenshots.
   manifest  Json
   script    String
   html      String?
+  /// Its labels by language, as { "en": { "key": "text" } }: what `thingport.t()` reads.
+  locales   Json?
   /// Of the installed files, to tell when the community repository's copy has changed.
   sha       String
   createdAt DateTime @default(now())

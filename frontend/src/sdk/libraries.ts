@@ -1,12 +1,12 @@
-// The heavy libraries a tool can ask for, loaded the first time one does and shared from then on.
+// The heavy libraries a widget or a tool can ask for, loaded the first time one does and shared from then on.
 //
-// A tool is a single script with a size limit, and the review reads it before it is merged, so a tool can't carry
-// something like a font parser or a solid modelling kernel of its own — one is most of the budget, the other is a
-// binary a reviewer could never read. These are Thingport's own copies instead: fetched only when a tool asks, and
-// handed to every tool after that from the same promise, so two tools open in two windows share one instance and
-// one download.
+// A widget or a tool is a single script with a size limit, and the review reads it before it is merged, so it
+// can't carry something like a font parser or a solid modelling kernel of its own — one is most of the budget,
+// the other is a binary a reviewer could never read. These are Thingport's own copies instead: fetched only when
+// something asks, and handed to everything after that from the same promise, so two tools in two windows and a
+// panel on the dashboard share one instance and one download.
 
-import { toolFontLibrary } from "./toolFonts";
+import { toolFontLibrary } from "./fonts";
 
 /** The promise for each library, kept for the life of the page: asking twice never loads twice. */
 const loading = new Map<string, Promise<unknown>>();
@@ -37,26 +37,26 @@ const loaders: Record<string, () => Promise<unknown>> = {
       import("manifold-3d"),
       import("manifold-3d/manifold.wasm?url"),
     ]);
-    const library = await Module({ locateFile: () => wasm });
-    library.setup();
-    return library;
+    const manifold = await Module({ locateFile: () => wasm });
+    manifold.setup();
+    return manifold;
   },
   /**
    * The typefaces in `assets/toolFonts`, as a list to show and a loader per font. Each font is fetched the first
    * time any tool asks for it, and parsed by the opentype above, so the same `Font` is handed out after that.
    */
-  fonts: async () => toolFontLibrary(() => toolLibrary("opentype")),
+  fonts: async () => toolFontLibrary(() => library("opentype")),
 };
 
-export const TOOL_LIBRARIES = Object.keys(loaders);
+export const LIBRARIES = Object.keys(loaders);
 
 /**
  * One of the libraries above, by name. The same promise comes back every time, so the download and the start-up
  * happen once however many tools ask.
  */
-export function toolLibrary(name: string): Promise<unknown> {
+export function library(name: string): Promise<unknown> {
   const loader = loaders[name];
-  if (!loader) throw new Error(`Thingport has no library called "${name}". It has: ${TOOL_LIBRARIES.join(", ")}`);
+  if (!loader) throw new Error(`Thingport has no library called "${name}". It has: ${LIBRARIES.join(", ")}`);
   let loaded = loading.get(name);
   if (!loaded) {
     loaded = loader();

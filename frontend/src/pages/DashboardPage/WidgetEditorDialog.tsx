@@ -17,6 +17,7 @@ import Segmented from "../../components/controls/Segmented";
 import { readUser } from "../../utils/auth";
 import { WidgetIcon } from "./CustomWidgetCard";
 import AiWidgetGuide from "./widgetEditor/AiWidgetGuide";
+import LabelsPanel, { FALLBACK_LANGUAGE, labelProblem, labelsOf, type LabelDrafts } from "../../components/LabelsPanel";
 import DetailsForm from "./widgetEditor/DetailsForm";
 import SettingsEditor from "./widgetEditor/SettingsEditor";
 import WidgetPreview from "./widgetEditor/WidgetPreview";
@@ -25,7 +26,7 @@ import { fromManifest, problems, toManifest, type Draft } from "./widgetEditor/d
 // Loaded with the editor only, so the dashboard doesn't carry CodeMirror.
 const CodeEditor = lazy(() => import("../../components/CodeEditor"));
 
-type Part = "details" | "settings" | "script" | "html";
+type Part = "details" | "settings" | "script" | "html" | "labels";
 
 // The smallest widget that runs: a name and a script that draws into its panel.
 const STARTER: WidgetManifest = {
@@ -35,6 +36,8 @@ const STARTER: WidgetManifest = {
   size: { w: 3, h: 2, minW: 2, minH: 2 },
   settings: [],
   hosts: [],
+  locales: [],
+  screenshots: [],
 };
 
 const STARTER_SCRIPT = `export default function mount(thingport) {
@@ -95,6 +98,13 @@ function Editor({ widget, onClose, onSaved, onUnauthorized }: Omit<Props, "open"
   });
   const [script, setScript] = useState(widget?.script ?? STARTER_SCRIPT);
   const [html, setHtml] = useState(widget?.html ?? "");
+  // Each language's file as text, so a half-typed one can sit there without being thrown away.
+  const [labels, setLabels] = useState<LabelDrafts>(() =>
+    Object.fromEntries(
+      Object.entries(widget?.locales ?? {}).map(([code, words]) => [code, JSON.stringify(words, null, 2)]),
+    ),
+  );
+  const [labelCode, setLabelCode] = useState(FALLBACK_LANGUAGE);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
@@ -102,9 +112,11 @@ function Editor({ widget, onClose, onSaved, onUnauthorized }: Omit<Props, "open"
 
   const errors = useMemo(() => problems(draft), [draft]);
   const manifest = useMemo(() => toManifest(draft), [draft]);
+  const badLabels = useMemo(() => Object.keys(labels).filter((code) => labelProblem(labels[code])), [labels]);
+  const words = useMemo(() => labelsOf(labels), [labels]);
   const settingErrors = Object.keys(errors).some((field) => field.startsWith("settings."));
   const detailErrors = Object.keys(errors).some((field) => !field.startsWith("settings."));
-  const invalid = Object.keys(errors).length > 0 || !script.trim();
+  const invalid = Object.keys(errors).length > 0 || !script.trim() || badLabels.length > 0;
 
   const save = async () => {
     setSaving(true);
@@ -113,9 +125,10 @@ function Editor({ widget, onClose, onSaved, onUnauthorized }: Omit<Props, "open"
       onSaved(
         await widgetsApi.save({
           slug: draft.slug.trim(),
-          metadata: JSON.stringify(manifest),
+          metadata: JSON.stringify({ ...manifest, locales: Object.keys(words) }),
           script,
           html: html.trim() ? html : null,
+          locales: words,
         }),
       );
     } catch (err) {
@@ -194,6 +207,7 @@ function Editor({ widget, onClose, onSaved, onUnauthorized }: Omit<Props, "open"
                 },
                 { value: "script", label: t("dashboard.custom.editor.script") },
                 { value: "html", label: t("dashboard.custom.editor.html") },
+                { value: "labels", label: flagged(t("labelsPanel.tab"), badLabels.length > 0) },
               ]}
             />
             {!widget && (
@@ -229,6 +243,17 @@ function Editor({ widget, onClose, onSaved, onUnauthorized }: Omit<Props, "open"
                   onChange={(settings) => setDraft((current) => ({ ...current, settings }))}
                 />
               )}
+            </Box>
+          ) : part === "labels" ? (
+            <Box sx={{ flex: 1, minHeight: 0, mx: 2.5, mb: 2 }}>
+              <LabelsPanel
+                drafts={labels}
+                onChange={setLabels}
+                code={labelCode}
+                onCode={setLabelCode}
+                help={t("dashboard.custom.labels.help")}
+                empty={t("dashboard.custom.labels.empty")}
+              />
             </Box>
           ) : (
             <Box
@@ -278,7 +303,13 @@ function Editor({ widget, onClose, onSaved, onUnauthorized }: Omit<Props, "open"
             bgcolor: (muiTheme) => muiTheme.thingport.pageBackground,
           }}
         >
-          <WidgetPreview manifest={manifest} script={script} html={html} widgetId={own ? widget!.id : null} />
+          <WidgetPreview
+            manifest={manifest}
+            script={script}
+            html={html}
+            locales={words}
+            widgetId={own ? widget!.id : null}
+          />
         </Box>
       </Box>
 

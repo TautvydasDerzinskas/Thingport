@@ -1095,6 +1095,10 @@
               "prompt": "Crée-moi un widget Thingport avec un graphique du nombre de modèles ajoutés chaque mois."
             }
           }
+        },
+        "labels": {
+          "help": "Les mots que votre widget affiche, un fichier par langue. Le script les demande par clé avec t(\"clé\") : ils restent hors de la logique et se traduisent sans y toucher.",
+          "empty": "Votre widget n'a pas encore de libellés. Gardez les mots qu'il affiche dans un fichier par langue, et le script les demandera par clé avec t(\"clé\") — un traducteur n'aura jamais à ouvrir le script."
         }
       }
     },
@@ -2768,29 +2772,31 @@
           "library": "Une grosse bibliothèque fournie par Thingport : Three.js, opentype, Manifold, ses polices."
         },
         "labels": {
-          "tab": "Libellés",
           "help": "Les mots qu'affiche votre outil, un fichier par langue. Le script les demande par clé avec t(\"clé\") : ils restent hors de la logique et se traduisent sans y toucher.",
-          "empty": "Votre outil n'a pas encore de libellés. Gardez les mots qu'il affiche dans un fichier par langue, et le script les demandera par clé avec t(\"clé\") — ainsi un traducteur n'a jamais à ouvrir le script.",
-          "start": "Commencer par l'anglais",
-          "add": "Ajouter une langue",
-          "file": "Les libellés en {{code}}, en JSON",
-          "fallbackNote": "L'anglais sert de secours : ce qui manque dans une autre langue est affiché d'ici.",
-          "untranslated_one": "{{count}} libellé n'a encore aucun texte dans cette langue.",
-          "untranslated_other": "{{count}} libellés n'ont encore aucun texte dans cette langue.",
-          "badJson": "Ce n'est pas encore du JSON valide, donc ce ne sera pas enregistré.",
-          "badShape": "Les libellés sont un objet plat de clés vers du texte, comme { \"save\": \"Enregistrer\" }.",
-          "removeTitle": "Retirer les libellés en {{name}} ?",
-          "removeBody": "Le fichier et ses mots disparaissent. Les autres langues restent."
+          "empty": "Votre outil n'a pas encore de libellés. Gardez les mots qu'il affiche dans un fichier par langue, et le script les demandera par clé avec t(\"clé\") — ainsi un traducteur n'a jamais à ouvrir le script."
         }
-      },
-      "screenshots": {
-        "title": "Captures de {{name}}",
-        "open": "Capture {{index}} sur {{count}} de {{name}}",
-        "position": "{{index}} sur {{count}}",
-        "previous": "Capture précédente",
-        "next": "Capture suivante",
-        "close": "Fermer"
       }
+    },
+    "screenshots": {
+      "title": "Captures de {{name}}",
+      "open": "Capture {{index}} sur {{count}} de {{name}}",
+      "position": "{{index}} sur {{count}}",
+      "previous": "Capture précédente",
+      "next": "Capture suivante",
+      "close": "Fermer"
+    },
+    "labelsPanel": {
+      "tab": "Libellés",
+      "start": "Commencer par l'anglais",
+      "add": "Ajouter une langue",
+      "file": "Les libellés en {{code}}, en JSON",
+      "fallbackNote": "L'anglais sert de secours : ce qui manque dans une autre langue est affiché d'ici.",
+      "untranslated_one": "{{count}} libellé n'a encore aucun texte dans cette langue.",
+      "untranslated_other": "{{count}} libellés n'ont encore aucun texte dans cette langue.",
+      "badJson": "Ce n'est pas encore du JSON valide, donc ce ne sera pas enregistré.",
+      "badShape": "Les libellés sont un objet plat de clés vers du texte, comme { \"save\": \"Enregistrer\" }.",
+      "removeTitle": "Retirer les libellés en {{name}} ?",
+      "removeBody": "Le fichier et ses mots disparaissent. Les autres langues restent."
     }
   },
   "common": {

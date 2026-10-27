@@ -11,8 +11,8 @@ import Typography from "@mui/material/Typography";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import CloseIcon from "@mui/icons-material/Close";
-import { printsApi } from "../../api/prints";
-import type { ToolScreenshot } from "../../api/tools";
+/** A picture of a widget or a tool at work, as its metadata names it. */
+export type Screenshot = { file: string; caption?: string };
 
 const THUMB = { width: 112, height: 70 };
 // The strip shows this many; the last one says how many more the viewer has.
@@ -20,19 +20,17 @@ const SHOWN = 3;
 
 const fadeIn = keyframes`from { opacity: 0; transform: scale(0.985); } to { opacity: 1; transform: none; }`;
 
-/** A repository tool's screenshot, as the admin routes serve it; an <img> sends the session as ?token=. */
-const screenshotUrl = (slug: string, index: number) =>
-  printsApi.fileUrl(`/admin/tools/${encodeURIComponent(slug)}/screenshots/${index}`);
-
 type Props = {
-  slug: string;
+  /** What it's of, for the labels a screen reader gets. */
   name: string;
-  screenshots: ToolScreenshot[];
+  screenshots: Screenshot[];
+  /** Where each one is served from: the admin routes for a repository tool, the widget routes for a shared widget. */
+  urlFor: (index: number) => string;
 };
 
-/** A few of a tool's screenshots in a row, and all of them, large, in a viewer: what it looks like before it's
+/** A few screenshots in a row, and all of them, large, in a viewer: what something looks like before it's
  *  installed. */
-export default function ToolScreenshots({ slug, name, screenshots }: Props) {
+export default function Screenshots({ name, screenshots, urlFor }: Props) {
   const { t } = useTranslation("app");
   const [open, setOpen] = useState<number | null>(null);
   if (!screenshots.length) return null;
@@ -47,7 +45,7 @@ export default function ToolScreenshots({ slug, name, screenshots }: Props) {
             <ButtonBase
               key={shot.file}
               onClick={() => setOpen(index)}
-              aria-label={t("tools.screenshots.open", { name, index: index + 1, count: screenshots.length })}
+              aria-label={t("screenshots.open", { name, index: index + 1, count: screenshots.length })}
               sx={{
                 position: "relative",
                 flexShrink: 0,
@@ -66,7 +64,7 @@ export default function ToolScreenshots({ slug, name, screenshots }: Props) {
             >
               <Box
                 component="img"
-                src={screenshotUrl(slug, index)}
+                src={urlFor(index)}
                 alt=""
                 loading="lazy"
                 sx={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }}
@@ -93,8 +91,8 @@ export default function ToolScreenshots({ slug, name, screenshots }: Props) {
         })}
       </Stack>
       <ScreenshotViewer
-        slug={slug}
         name={name}
+        urlFor={urlFor}
         screenshots={screenshots}
         index={open}
         onIndex={setOpen}
@@ -105,8 +103,8 @@ export default function ToolScreenshots({ slug, name, screenshots }: Props) {
 }
 
 function ScreenshotViewer({
-  slug,
   name,
+  urlFor,
   screenshots,
   index,
   onIndex,
@@ -133,7 +131,7 @@ function ScreenshotViewer({
       open={index !== null}
       onClose={onClose}
       maxWidth={false}
-      aria-label={t("tools.screenshots.title", { name })}
+      aria-label={t("screenshots.title", { name })}
       slotProps={{
         paper: {
           sx: { width: 1200, maxWidth: "calc(100% - 32px)", m: 2, overflow: "hidden", bgcolor: "background.paper" },
@@ -146,11 +144,11 @@ function ScreenshotViewer({
             <Typography variant="body2" fontWeight={600} noWrap sx={{ flex: 1, minWidth: 0 }}>
               {name}
               <Box component="span" sx={{ color: "text.secondary", fontWeight: 400 }}>
-                {` · ${t("tools.screenshots.position", { index: index + 1, count })}`}
+                {` · ${t("screenshots.position", { index: index + 1, count })}`}
               </Box>
             </Typography>
-            <Tooltip title={t("tools.screenshots.close")}>
-              <IconButton size="small" aria-label={t("tools.screenshots.close")} onClick={onClose}>
+            <Tooltip title={t("screenshots.close")}>
+              <IconButton size="small" aria-label={t("screenshots.close")} onClick={onClose}>
                 <CloseIcon fontSize="small" />
               </IconButton>
             </Tooltip>
@@ -168,7 +166,7 @@ function ScreenshotViewer({
             <Box
               key={index}
               component="img"
-              src={screenshotUrl(slug, index)}
+              src={urlFor(index)}
               alt={shot.caption ?? ""}
               sx={{
                 display: "block",
@@ -186,9 +184,9 @@ function ScreenshotViewer({
                   [1, "next", <ChevronRightIcon key="r" />, { right: 8 }],
                 ] as const
               ).map(([step, label, icon, place]) => (
-                <Tooltip key={label} title={t(`tools.screenshots.${label}`)}>
+                <Tooltip key={label} title={t(`screenshots.${label}`)}>
                   <IconButton
-                    aria-label={t(`tools.screenshots.${label}`)}
+                    aria-label={t(`screenshots.${label}`)}
                     onClick={() => go(step)}
                     sx={{
                       position: "absolute",

@@ -41,7 +41,8 @@ import { ListRowSkeletons } from "../../components/ListSkeleton";
 import SectionHeader from "../../components/SectionHeader";
 import { useToast } from "../../components/ToastProvider";
 import ToolIcon from "../../components/tools/ToolIcon";
-import ToolScreenshots from "../../components/tools/ToolScreenshots";
+import { printsApi } from "../../api/prints";
+import Screenshots from "../../components/Screenshots";
 import { reloadTools } from "../../hooks/useTools";
 
 // While a tool's models are being fetched, the page asks how far it's got this often.
@@ -447,7 +448,11 @@ function RepoToolRow({ tool, index, busy, onInstall, onRetry, onMenu }: RowProps
               .filter(Boolean)
               .join(" · ")}
           </Typography>
-          <ToolScreenshots slug={tool.slug} name={manifest.name} screenshots={manifest.screenshots ?? []} />
+          <Screenshots
+            name={manifest.name}
+            screenshots={manifest.screenshots ?? []}
+            urlFor={(shot) => printsApi.fileUrl(`/admin/tools/${encodeURIComponent(tool.slug)}/screenshots/${shot}`)}
+          />
           {models && (missing > 0 || models.fetching) && (
             <Box sx={{ mt: 1.25 }} aria-live="polite">
               <Stack direction="row" alignItems="center" spacing={1}>

@@ -8,6 +8,7 @@ import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import { useConfirm } from "../ConfirmProvider";
 import { useToast } from "../ToastProvider";
 import CollectionPickerDialog from "./CollectionPickerDialog";
+import { sdkTheme, setThemeVariables } from "../../sdk/theme";
 import { buildToolSdk, type RunnableTool, type ToolCollection, type ToolTheme } from "./toolSdk";
 import { SUPPORTED_LANGUAGES, matchLanguage } from "../../constants/languages";
 
@@ -51,20 +52,7 @@ export default function ToolRunner({ tool, onClose }: Props) {
     null,
   );
   const rootId = `tp-tool-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
-  const theme: ToolTheme = {
-    mode: muiTheme.palette.mode,
-    primary: muiTheme.palette.primary.main,
-    primaryContrast: muiTheme.palette.primary.contrastText,
-    background: muiTheme.thingport.pageBackground,
-    paper: muiTheme.palette.background.paper,
-    text: muiTheme.palette.text.primary,
-    textSecondary: muiTheme.palette.text.secondary,
-    divider: muiTheme.palette.divider,
-    error: muiTheme.palette.error.main,
-    warning: muiTheme.palette.warning.main,
-    success: muiTheme.palette.success.main,
-    fontFamily: String(muiTheme.typography.fontFamily),
-  };
+  const theme: ToolTheme = sdkTheme(muiTheme);
   const themeKey = JSON.stringify(theme);
   // The language a tool is handed, matched to one Thingport has; changing it runs the tool again, as the theme does.
   const language = matchLanguage(i18n.language);
@@ -93,21 +81,7 @@ export default function ToolRunner({ tool, onClose }: Props) {
     // use `var(--tp-accent)` without copying the theme across in script first. Copying it by hand is where a tool
     // picks the wrong colour for text on the accent — the paper colour is white in the light theme and dark in the
     // dark one, while what reads on an accent is its own contrast colour.
-    for (const [name, value] of Object.entries({
-      "--tp-accent": theme.primary,
-      "--tp-accent-ink": theme.primaryContrast,
-      "--tp-background": theme.background,
-      "--tp-paper": theme.paper,
-      "--tp-text": theme.text,
-      "--tp-text-muted": theme.textSecondary,
-      "--tp-divider": theme.divider,
-      "--tp-error": theme.error,
-      "--tp-warning": theme.warning,
-      "--tp-success": theme.success,
-      "--tp-font": theme.fontFamily,
-    })) {
-      root.style.setProperty(name, value);
-    }
+    setThemeVariables(root, theme);
     root.innerHTML = tool.html ?? "";
     const thingport = buildToolSdk({
       tool,

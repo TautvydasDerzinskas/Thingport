@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { widgetsApi, type CustomWidget, type WidgetSources } from "../api/widgets";
+import { matchLanguage } from "../constants/languages";
+import i18n from "../i18n";
 import { registerCustomWidgets } from "../pages/DashboardPage/widgets";
 
 type State = { sources: WidgetSources; widgets: CustomWidget[] };
@@ -13,10 +15,16 @@ const listeners = new Set<(state: State) => void>();
 
 function publish(state: State) {
   cached = state;
-  // Registered before anyone renders with it, so a panel showing the widget finds it.
-  registerCustomWidgets(state.widgets);
-  listeners.forEach((listener) => listener(state));
+  // Registered before anyone renders with it, so a panel showing the widget finds it. The language goes with
+  // them: a widget's own labels are what its name and its cog's words are read from.
+  registerCustomWidgets(state.widgets, matchLanguage(i18n.language));
+  listeners.forEach((listener) => listener({ ...state }));
 }
+
+// A widget's words follow the language the user picks, as the rest of Thingport does.
+i18n.on("languageChanged", () => {
+  if (cached) publish(cached);
+});
 
 function load(): Promise<State> {
   if (cached) return Promise.resolve(cached);

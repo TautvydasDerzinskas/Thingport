@@ -1095,6 +1095,10 @@
               "prompt": "Hazme un widget de Thingport con un gráfico de cuántos modelos añadí cada mes."
             }
           }
+        },
+        "labels": {
+          "help": "Las palabras que muestra tu widget, un archivo por idioma. El script las pide por clave con t(\"clave\"), así que quedan fuera de la lógica y se traducen sin tocarla.",
+          "empty": "Tu widget aún no tiene textos. Guarda las palabras que muestra en un archivo por idioma, y el script las pedirá por clave con t(\"clave\"): quien traduzca nunca tendrá que abrir el script."
         }
       }
     },
@@ -2755,29 +2759,31 @@
           "library": "Una biblioteca pesada que trae Thingport: Three.js, opentype, Manifold, sus tipografías."
         },
         "labels": {
-          "tab": "Etiquetas",
           "help": "Las palabras que muestra tu herramienta, un archivo por idioma. El script las pide por clave con t(\"clave\"), así que quedan fuera de la lógica y se pueden traducir sin tocarla.",
-          "empty": "Tu herramienta aún no tiene etiquetas. Guarda las palabras que muestra en un archivo por idioma, y el script las pedirá por clave con t(\"clave\"): así quien traduzca nunca tendrá que abrir el script.",
-          "start": "Empezar por el inglés",
-          "add": "Añadir un idioma",
-          "file": "Las etiquetas en {{code}}, como JSON",
-          "fallbackNote": "El inglés es el recurso de reserva: lo que falte en otro idioma se muestra desde aquí.",
-          "untranslated_one": "{{count}} etiqueta sigue sin texto en este idioma.",
-          "untranslated_other": "{{count}} etiquetas siguen sin texto en este idioma.",
-          "badJson": "Esto todavía no es JSON válido, así que no se guardará.",
-          "badShape": "Las etiquetas son un objeto plano de claves a texto, como { \"save\": \"Guardar\" }.",
-          "removeTitle": "¿Quitar las etiquetas en {{name}}?",
-          "removeBody": "El archivo y sus palabras desaparecen. Los demás idiomas se quedan."
+          "empty": "Tu herramienta aún no tiene etiquetas. Guarda las palabras que muestra en un archivo por idioma, y el script las pedirá por clave con t(\"clave\"): así quien traduzca nunca tendrá que abrir el script."
         }
-      },
-      "screenshots": {
-        "title": "Capturas de {{name}}",
-        "open": "Captura {{index}} de {{count}} de {{name}}",
-        "position": "{{index}} de {{count}}",
-        "previous": "Captura anterior",
-        "next": "Captura siguiente",
-        "close": "Cerrar"
       }
+    },
+    "screenshots": {
+      "title": "Capturas de {{name}}",
+      "open": "Captura {{index}} de {{count}} de {{name}}",
+      "position": "{{index}} de {{count}}",
+      "previous": "Captura anterior",
+      "next": "Captura siguiente",
+      "close": "Cerrar"
+    },
+    "labelsPanel": {
+      "tab": "Etiquetas",
+      "start": "Empezar por el inglés",
+      "add": "Añadir un idioma",
+      "file": "Las etiquetas en {{code}}, como JSON",
+      "fallbackNote": "El inglés es el recurso de reserva: lo que falte en otro idioma se muestra desde aquí.",
+      "untranslated_one": "{{count}} etiqueta sigue sin texto en este idioma.",
+      "untranslated_other": "{{count}} etiquetas siguen sin texto en este idioma.",
+      "badJson": "Esto todavía no es JSON válido, así que no se guardará.",
+      "badShape": "Las etiquetas son un objeto plano de claves a texto, como { \"save\": \"Guardar\" }.",
+      "removeTitle": "¿Quitar las etiquetas en {{name}}?",
+      "removeBody": "El archivo y sus palabras desaparecen. Los demás idiomas se quedan."
     }
   },
   "common": {

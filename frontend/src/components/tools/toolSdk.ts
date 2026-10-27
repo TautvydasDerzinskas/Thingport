@@ -1,16 +1,22 @@
 import { apiBase } from "../../api/client";
-import { collectionsApi, type Collection } from "../../api/collections";
-import { printsApi, type Print } from "../../api/prints";
-import { searchApi } from "../../api/search";
 import { toolsApi, type ToolLocales, type ToolManifest, type ToolModelCopy } from "../../api/tools";
 import { headerRecord } from "../../api/widgets";
-import { TOOL_LIBRARIES, toolLibrary } from "./toolLibraries";
-import { applyToolLabels, toolTranslator } from "./toolTranslate";
+import { applyLabels, translator, type Translate } from "../../sdk/labels";
+import { LIBRARIES, library } from "../../sdk/libraries";
+import type { SdkTheme } from "../../sdk/theme";
+import {
+  buildUserLibrary,
+  toCollection as toSdkCollection,
+  toFile,
+  type SdkCollection,
+  type SdkFileInput,
+  type SdkModel,
+} from "../../sdk/userLibrary";
 import { authHeaders } from "../../utils/auth";
 
-// The `thingport` object a tool's script gets: what it may do with the user's library, through the same API the app
-// uses, as the user. Kept small and plain (no Print objects, no React), so it stays the same as the app changes and a
-// tool's author can read all of it in the editor's starter script.
+// The `thingport` object a tool's script gets. Most of it is the SDK a dashboard widget gets as well — the theme,
+// the libraries, the labels and the user's library all come from `src/sdk/` — and what's added here is what only a
+// tool has: the window it owns, the models it brought, and the data it keeps between openings.
 
 /** A tool as it runs: a saved one has an id; the editor's preview of one not saved yet has none, and keeps its data in
  *  memory only. */
@@ -26,24 +32,9 @@ export type RunnableTool = {
   sha: string;
 };
 
-export type ToolTheme = {
-  mode: "light" | "dark";
-  primary: string;
-  /** What reads on `primary`: white for most accents, dark for the light ones. Text and icons on an accent-filled
-   *  button take this, not the paper colour, which is dark in the dark theme. */
-  primaryContrast: string;
-  background: string;
-  paper: string;
-  text: string;
-  textSecondary: string;
-  divider: string;
-  error: string;
-  warning: string;
-  success: string;
-  fontFamily: string;
-};
+/** The theme as a tool sees it: Thingport's own colours, the same ones a widget gets. */
+export type ToolTheme = SdkTheme;
 
-/** A model as a tool sees it. */
 /** A language Thingport has, as a tool sees it. */
 export type ToolLanguage = {
   code: string;
@@ -53,32 +44,10 @@ export type ToolLanguage = {
   englishName: string;
 };
 
-export type ToolModel = {
-  id: string;
-  name: string;
-  description: string | null;
-  tags: string[];
-  /** A picture of it, an address an <img> can show. */
-  thumbnail: string | null;
-  /** Its 3D files (plates), in order. */
-  files: { id: string; name: string; size: number; url: string }[];
-  /** Brought by a tool: it can be read, not changed. */
-  toolOwned: boolean;
-  createdAt: string | null;
-};
-
-export type ToolCollection = {
-  id: string;
-  name: string;
-  description: string | null;
-  tags: string[];
-  modelCount: number;
-  /** A tool's own collection, which can't be saved into. */
-  toolOwned: boolean;
-};
-
-/** A file to save: its name (with the extension, e.g. "bin-2x3.stl") and its content. */
-export type ToolFileInput = { name: string; data: Blob | ArrayBuffer | ArrayBufferView | string; type?: string };
+/** A model, a collection and a file to save, as the shared SDK describes them. */
+export type ToolModel = SdkModel;
+export type ToolCollection = SdkCollection;
+export type ToolFileInput = SdkFileInput;
 
 export type ToolUi = {
   toast: (message: string, severity?: "success" | "info" | "warning" | "error") => void;
@@ -95,40 +64,8 @@ export type ToolUi = {
   close: () => void;
 };
 
-const toModel = (print: Print): ToolModel => ({
-  id: print.id,
-  name: print.title || print.name,
-  description: print.notes ?? null,
-  tags: print.tags,
-  thumbnail: print.thumb_url ? printsApi.fileUrl(print.thumb_url) : null,
-  files: (print.plates ?? []).map((plate) => ({
-    id: plate.id,
-    name: plate.filename,
-    size: plate.size,
-    url: printsApi.fileUrl(plate.url),
-  })),
-  toolOwned: Boolean(print.tool_id),
-  createdAt: print.created_at ?? null,
-});
-
-export const toCollection = (collection: Collection): ToolCollection => ({
-  id: collection.id,
-  name: collection.name,
-  description: collection.description,
-  tags: collection.tags,
-  modelCount: collection.item_count,
-  toolOwned: Boolean(collection.tool_id),
-});
-
-function toFile(input: ToolFileInput): File {
-  if (!input || typeof input.name !== "string" || !input.name.trim()) throw new Error("A file needs a name");
-  const data = input.data instanceof Blob ? input.data : new Blob([input.data as BlobPart]);
-  return new File([data], input.name, { type: input.type ?? (data.type || "application/octet-stream") });
-}
-
-function listOptions(options: { limit?: number; offset?: number } = {}) {
-  return { limit: Math.min(Math.max(1, options.limit ?? 50), 200), offset: Math.max(0, options.offset ?? 0) };
-}
+/** A collection as a tool sees it; the picker dialog hands its choice back through this. */
+export const toCollection = toSdkCollection;
 
 type Build = {
   tool: RunnableTool;
@@ -144,7 +81,7 @@ type Build = {
 
 /** The object a tool's default export is called with. */
 export function buildToolSdk({ tool, root, selector, theme, language, languages, size, onResize, ui }: Build) {
-  const translate = toolTranslator(tool.locales ?? {}, language);
+  const translate: Translate = translator(tool.locales ?? {}, language);
   // An unsaved tool's data lasts as long as its preview does.
   const draftData = new Map<string, unknown>();
   const saved = (what: string) => {
@@ -152,108 +89,7 @@ export function buildToolSdk({ tool, root, selector, theme, language, languages,
     return tool.id;
   };
 
-  const getModel = async (id: string) => toModel(await printsApi.get(id));
-
-  const models = {
-    /** Models in the library, newest first; `q` searches as the models page does. */
-    list: async (
-      options: { q?: string; tags?: string[]; collectionId?: string; limit?: number; offset?: number } = {},
-    ) => {
-      const page = await printsApi.list({
-        q: options.q,
-        tags: options.tags,
-        collection_id: options.collectionId,
-        ...listOptions(options),
-      });
-      return { models: page.items.map(toModel), hasMore: page.hasMore, total: page.total ?? null };
-    },
-    /** The best matches for a search, as the search box finds them. */
-    search: async (q: string) => {
-      const result = await searchApi.search(q);
-      return {
-        models: result.models.map(toModel),
-        collections: result.collections.map((c) => ({ id: c.id, name: c.name, modelCount: c.item_count })),
-        tags: result.tags,
-      };
-    },
-    get: getModel,
-    /** One of its files' content; the first when `fileId` is left out. */
-    file: async (id: string, fileId?: string): Promise<ArrayBuffer> => {
-      const model = await getModel(id);
-      const file = fileId ? model.files.find((f) => f.id === fileId) : model.files[0];
-      if (!file) throw new Error("The model has no such file");
-      const res = await fetch(file.url);
-      // A 404 here means the row is in the library but the file isn't in storage, which reads as a mystery
-      // unless the message says so.
-      if (res.status === 404) throw new Error(`${file.name} is missing from Thingport's storage`);
-      if (!res.ok) throw new Error(`Couldn't read ${file.name} (HTTP ${res.status})`);
-      return res.arrayBuffer();
-    },
-    /** A new model of the files given, each a plate, saved into a collection when one is given. */
-    create: async (input: {
-      name: string;
-      description?: string;
-      tags?: string[];
-      collectionId?: string;
-      files: ToolFileInput[];
-    }) => {
-      if (!input.files?.length) throw new Error("A model needs at least one file");
-      const { prints } = await printsApi.upload(input.files.map(toFile), {
-        title: input.name,
-        notes: input.description,
-        tags: input.tags,
-        mode: "multiplate",
-      });
-      const print = prints[0];
-      if (input.collectionId) await collectionsApi.addItems(input.collectionId, [print.id]);
-      return toModel(print);
-    },
-    /** Adds files to a model, each a plate. */
-    addFiles: async (id: string, files: ToolFileInput[]) =>
-      toModel((await printsApi.addPlates(id, files.map(toFile))).print),
-    /** Adds pictures (PNG, JPEG, WebP) to a model's gallery; the first becomes its cover in place of the render. */
-    addImages: async (id: string, images: ToolFileInput[]) =>
-      toModel((await printsApi.addPreviewImages(id, images.map(toFile))).print),
-    /** Replaces one of a model's files with a new one, in its place. */
-    replaceFile: async (id: string, fileId: string, file: ToolFileInput) => {
-      const before = await printsApi.get(id);
-      const order = before.plates.map((plate) => plate.id);
-      if (!order.includes(fileId)) throw new Error("The model has no such file");
-      const added = (await printsApi.addPlates(id, [toFile(file)])).print;
-      const fresh = added.plates.find((plate) => !order.includes(plate.id));
-      if (!fresh) throw new Error("The new file didn't arrive");
-      await printsApi.reorderPlates(
-        id,
-        order.map((plateId) => (plateId === fileId ? fresh.id : plateId)).concat(fileId),
-      );
-      return toModel((await printsApi.deletePlate(id, fileId)).print);
-    },
-    /** Its name, description or tags. */
-    update: async (id: string, patch: { name?: string; description?: string; tags?: string[] }) => {
-      if (patch.name !== undefined || patch.description !== undefined)
-        await printsApi.updateMeta(id, {
-          ...(patch.name !== undefined ? { title: patch.name } : {}),
-          ...(patch.description !== undefined ? { notes: patch.description } : {}),
-        });
-      if (patch.tags) await printsApi.setTags(id, patch.tags);
-      return getModel(id);
-    },
-    open: (id: string) => ui.openModel(id),
-  };
-
-  const collections = {
-    /** The user's collections, not the built-in Favourites and History. */
-    list: async () => (await collectionsApi.list()).filter((collection) => !collection.system_key).map(toCollection),
-    get: async (id: string) => toCollection(await collectionsApi.get(id)),
-    create: async (input: { name: string; description?: string; tags?: string[] }) =>
-      toCollection(await collectionsApi.create(input)),
-    models: (id: string, options: { limit?: number; offset?: number } = {}) =>
-      models.list({ ...options, collectionId: id }),
-    add: (id: string, modelIds: string[]) => collectionsApi.addItems(id, modelIds),
-    remove: (id: string, modelIds: string[]) => collectionsApi.removeItems(id, modelIds),
-    /** Asks the user which collection, as a Save dialog would. */
-    pick: (options?: { title?: string }) => ui.pickCollection(options),
-  };
+  const { models, collections } = buildUserLibrary({ openModel: ui.openModel, pickCollection: ui.pickCollection });
 
   const storage = {
     get: async (key: string) => (tool.id ? toolsApi.storageGet(tool.id, key) : draftData.get(key)),
@@ -279,9 +115,9 @@ export function buildToolSdk({ tool, root, selector, theme, language, languages,
      * watertight, `"fonts"` for the typefaces Thingport carries. Fetched the first time any tool asks and shared
      * with every tool after that.
      */
-    library: (name: string) => toolLibrary(name),
+    library: (name: string) => library(name),
     /** Which libraries `library()` knows. */
-    libraries: TOOL_LIBRARIES,
+    libraries: LIBRARIES,
     theme,
     /**
      * The language Thingport is in, as a code like `"en"` or `"lt"`, already matched to one it has (a browser
@@ -305,7 +141,7 @@ export function buildToolSdk({ tool, root, selector, theme, language, languages,
      * key's sentence as text, and `data-t-title`, `data-t-aria` and `data-t-placeholder` fill those attributes.
      * Saves a tool assigning each label by hand, and keeps readable English in the HTML for anyone reading it.
      */
-    labels: (where: ParentNode = root) => applyToolLabels(where, translate),
+    labels: (where: ParentNode = root) => applyLabels(where, translate),
     get size() {
       return size();
     },

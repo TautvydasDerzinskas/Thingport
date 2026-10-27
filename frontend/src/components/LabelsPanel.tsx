@@ -12,13 +12,13 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import { SUPPORTED_LANGUAGES } from "../../constants/languages";
-import HelpTip from "../HelpTip";
-import { useConfirm } from "../ConfirmProvider";
+import { SUPPORTED_LANGUAGES } from "../constants/languages";
+import HelpTip from "./HelpTip";
+import { useConfirm } from "./ConfirmProvider";
 
-const CodeEditor = lazy(() => import("../CodeEditor"));
+const CodeEditor = lazy(() => import("./CodeEditor"));
 
-/** The language a tool falls back to, key by key, for anything another language hasn't got. */
+/** The language a widget or a tool falls back to, key by key, for anything another language hasn't got. */
 export const FALLBACK_LANGUAGE = "en";
 
 /** Each language's file as the person is typing it, which may not be valid JSON yet. */
@@ -30,6 +30,10 @@ type Props = {
   /** Which language is open; kept outside so switching parts doesn't lose it. */
   code: string;
   onCode: (code: string) => void;
+  /** What this is, in the caller's own words: a widget's labels and a tool's are explained differently. */
+  help: string;
+  /** What to say before there are any, which is also where the first language is added from. */
+  empty: string;
 };
 
 /** What's wrong with a language's file, or null when it reads. */
@@ -57,10 +61,10 @@ export function labelsOf(drafts: LabelDrafts): Record<string, Record<string, str
 }
 
 /**
- * The tool's words, one file per language, kept out of its script so they can be read, reviewed and translated as
- * text. The script asks for them by key through `thingport.t()`.
+ * The words a widget or a tool shows, one file per language, kept out of its script so they can be read, reviewed
+ * and translated as text. The script asks for them by key through `thingport.t()`.
  */
-export default function ToolLabelsPanel({ drafts, onChange, code, onCode }: Props) {
+export default function LabelsPanel({ drafts, onChange, code, onCode, help, empty }: Props) {
   const { t } = useTranslation("app");
   const confirm = useConfirm();
   const [adding, setAdding] = useState<HTMLElement | null>(null);
@@ -99,8 +103,8 @@ export default function ToolLabelsPanel({ drafts, onChange, code, onCode }: Prop
 
   const remove = async (language: string) => {
     const name = SUPPORTED_LANGUAGES.find((one) => one.code === language)?.label ?? language;
-    const title = t("tools.editor.labels.removeTitle", { name });
-    if (!(await confirm({ title, message: t("tools.editor.labels.removeBody"), destructive: true }))) return;
+    const title = t("labelsPanel.removeTitle", { name });
+    if (!(await confirm({ title, message: t("labelsPanel.removeBody"), destructive: true }))) return;
     const next = { ...drafts };
     delete next[language];
     onChange(next);
@@ -111,10 +115,10 @@ export default function ToolLabelsPanel({ drafts, onChange, code, onCode }: Prop
     return (
       <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, alignItems: "flex-start", p: 2 }}>
         <Typography variant="body2" color="text.secondary" sx={{ maxWidth: "62ch" }}>
-          {t("tools.editor.labels.empty")}
+          {empty}
         </Typography>
         <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={() => add(FALLBACK_LANGUAGE)}>
-          {t("tools.editor.labels.start")}
+          {t("labelsPanel.start")}
         </Button>
       </Box>
     );
@@ -139,7 +143,7 @@ export default function ToolLabelsPanel({ drafts, onChange, code, onCode }: Prop
           );
         })}
         {missing.length > 0 && (
-          <Tooltip title={t("tools.editor.labels.add")}>
+          <Tooltip title={t("labelsPanel.add")}>
             <IconButton size="small" onClick={(event) => setAdding(event.currentTarget)}>
               <AddIcon fontSize="small" />
             </IconButton>
@@ -156,20 +160,18 @@ export default function ToolLabelsPanel({ drafts, onChange, code, onCode }: Prop
           ))}
         </Menu>
         <Box sx={{ flex: 1 }} />
-        <HelpTip text={t("tools.editor.labels.help")} />
+        <HelpTip text={help} />
       </Box>
 
-      {problem && (
-        <Alert severity="error">{t(`tools.editor.labels.${problem === "json" ? "badJson" : "badShape"}`)}</Alert>
-      )}
+      {problem && <Alert severity="error">{t(`labelsPanel.${problem === "json" ? "badJson" : "badShape"}`)}</Alert>}
       {!problem && open === FALLBACK_LANGUAGE && (
         <Typography variant="caption" color="text.secondary">
-          {t("tools.editor.labels.fallbackNote")}
+          {t("labelsPanel.fallbackNote")}
         </Typography>
       )}
       {!problem && untranslated > 0 && (
         <Typography variant="caption" color="warning.main">
-          {t("tools.editor.labels.untranslated", { count: untranslated })}
+          {t("labelsPanel.untranslated", { count: untranslated })}
         </Typography>
       )}
 
@@ -178,7 +180,7 @@ export default function ToolLabelsPanel({ drafts, onChange, code, onCode }: Prop
           <CodeEditor
             key={open}
             language="json"
-            label={t("tools.editor.labels.file", { code: open })}
+            label={t("labelsPanel.file", { code: open })}
             value={text}
             onChange={(next) => onChange({ ...drafts, [open]: next })}
           />

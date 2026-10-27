@@ -29,6 +29,7 @@ import {
   assertWidgetSourceEnabled,
   enabledWidgetSources,
   listCustomWidgets,
+  localesSchema,
   parseManifest,
   saveOwnWidget,
   validateManifest,
@@ -1205,8 +1206,9 @@ const widgetGuide: McpToolDefinition = {
   name: "widget_guide",
   title: "How to write a dashboard widget",
   description:
-    "Read this before writing a custom dashboard widget: its metadata, the script's `thingport` argument, the rules, " +
-    "and how to share it. Then save it with save_widget.",
+    "Read this before writing a custom dashboard widget: its metadata, the script's `thingport` argument, its " +
+    "labels and how they translate its settings, the libraries it can borrow, the rules, and how to share it with " +
+    "screenshots. Then save it with save_widget.",
   readOnly: true,
   idempotent: true,
   inputSchema: {},
@@ -1220,11 +1222,11 @@ const listWidgets: McpToolDefinition = {
   title: "List my dashboard widgets",
   description:
     "The user's custom dashboard widgets: their own and those installed from the community, with each one's " +
-    "metadata, and with `include_code` its script and HTML too, e.g. to change one.",
+    "metadata, and with `include_code` its script, HTML and labels too, e.g. to change one.",
   readOnly: true,
   idempotent: true,
   inputSchema: {
-    include_code: z.boolean().optional().describe("Also return each widget's script and HTML."),
+    include_code: z.boolean().optional().describe("Also return each widget's script, HTML and labels."),
   },
   async run(ctx, args) {
     const widgets = await listCustomWidgets(ctx.userId, await enabledWidgetSources());
@@ -1236,6 +1238,7 @@ const listWidgets: McpToolDefinition = {
         metadata: widget.manifest,
         script: args.include_code ? widget.script : undefined,
         html: args.include_code ? widget.html : undefined,
+        locales: args.include_code ? widget.locales : undefined,
       })),
     };
   },
@@ -1246,8 +1249,10 @@ const saveWidget: McpToolDefinition = {
   title: "Save a dashboard widget",
   description:
     "Create one of the user's own dashboard widgets, or replace the one with the same slug. Read widget_guide first. " +
-    "Its script runs in the user's dashboard with their access, so write only what the user asked for. The user " +
-    "then adds it from Add panel while editing their dashboard.",
+    "Its script runs in the user's dashboard with their access, so write only what the user asked for. Keep every " +
+    "word it shows in `locales` rather than in the script, including the labels its settings use. Screenshots " +
+    "belong only to a widget shared through the repository, which carries the files, so leave them out here. The " +
+    "user then adds it from Add panel while editing their dashboard.",
   readOnly: false,
   defaultOn: true,
   destructive: true,
@@ -1261,21 +1266,28 @@ const saveWidget: McpToolDefinition = {
       .describe("The metadata, as an object, or as JSON or YAML text."),
     script: z.string().describe("The ES module; its `export default` function draws the widget."),
     html: z.string().optional().describe("Markup put into the panel before the script runs, e.g. a <style>."),
+    locales: z
+      .record(z.string(), z.record(z.string(), z.string()))
+      .optional()
+      .describe('The words it shows, by language: `{ "en": { "wind.label": "Wind" } }`. English is the fallback.'),
   },
   async run(ctx, args) {
     await assertWidgetSourceEnabled("own");
     const metadata = args.metadata;
     const manifest = typeof metadata === "string" ? parseManifest(metadata) : validateManifest(metadata);
+    const locales = args.locales ? localesSchema.parse(args.locales) : undefined;
     const widget = await saveOwnWidget(ctx.userId, {
       slug: args.slug as string,
       manifest,
       script: args.script as string,
       html: (args.html as string | undefined) ?? null,
+      locales,
     });
     return {
       id: widget.id,
       slug: widget.slug,
       name: widget.manifest.name,
+      languages: Object.keys(widget.locales),
       next: "Ask the user to open their dashboard, choose Edit, then Add panel, and pick the widget.",
     };
   },

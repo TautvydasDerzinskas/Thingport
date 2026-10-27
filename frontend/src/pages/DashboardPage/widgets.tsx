@@ -1,5 +1,6 @@
 import type React from "react";
 import type { TFunction } from "i18next";
+import { translator, type Translate } from "../../sdk/labels";
 import type { NavigateFunction } from "react-router-dom";
 import CollectionsIcon from "@mui/icons-material/Collections";
 import ViewInArIcon from "@mui/icons-material/ViewInAr";
@@ -598,26 +599,33 @@ export function isCustomInstance(instance: WidgetInstanceId): boolean {
 }
 
 /** A custom widget's settings, as the dashboard's own kinds of setting. */
-function settingsOf(specs: WidgetSettingSpec[]): WidgetSetting[] {
+/**
+ * A custom widget's settings as the cog shows them.
+ *
+ * Every word is passed through the widget's own labels: a label written as a key, such as `settings.units`, comes
+ * out in the user's language, and one written as a sentence comes back unchanged, because a key with no words
+ * anywhere is its own answer. So a widget can translate what its cog says without a second place to declare it.
+ */
+function settingsOf(specs: WidgetSettingSpec[], words: Translate): WidgetSetting[] {
   return specs.map((spec): WidgetSetting => {
     if (spec.type === "toggle")
-      return { key: spec.key, kind: "toggle", labelKey: "", label: spec.label, default: spec.default ?? false };
+      return { key: spec.key, kind: "toggle", labelKey: "", label: words(spec.label), default: spec.default ?? false };
     if (spec.type === "choice")
       return {
         key: spec.key,
         kind: "choice",
         labelKey: "",
-        label: spec.label,
-        options: spec.options,
+        label: words(spec.label),
+        options: spec.options.map((option) => ({ value: option.value, label: words(option.label) })),
         default: spec.default ?? spec.options[0].value,
       };
     return {
       key: spec.key,
       kind: "text",
       labelKey: "",
-      label: spec.label,
+      label: words(spec.label),
       default: spec.default === undefined ? "" : String(spec.default),
-      placeholder: spec.type === "text" ? spec.placeholder : undefined,
+      placeholder: spec.type === "text" && spec.placeholder ? words(spec.placeholder) : undefined,
       secret: spec.type === "text" ? spec.secret : undefined,
       numeric: spec.type === "number",
     };
@@ -626,24 +634,25 @@ function settingsOf(specs: WidgetSettingSpec[]): WidgetSetting[] {
 
 /** A custom widget's settings at their defaults, as a new panel of it gets them. */
 export function customDefaults(specs: WidgetSettingSpec[]): ResolvedSettings {
-  return resolveSettings({ settings: settingsOf(specs) } as DashboardWidget, undefined);
+  return resolveSettings({ settings: settingsOf(specs, (key) => key) } as DashboardWidget, undefined);
 }
 
 /** Makes the user's custom widgets available to the dashboard, replacing what was there. */
-export function registerCustomWidgets(widgets: CustomWidget[]): void {
+export function registerCustomWidgets(widgets: CustomWidget[], language = "en"): void {
   CUSTOM.clear();
   for (const custom of widgets) {
     const { manifest } = custom;
+    const words = translator(custom.locales ?? {}, language);
     const id = `${CUSTOM_PREFIX}${custom.id}` as DashboardWidgetId;
     CUSTOM.set(id, {
       id,
       multiple: true,
       labelKey: "",
-      label: manifest.name,
+      label: words(manifest.name),
       icon: <WidgetIcon iconUrl={manifest.iconUrl} />,
       size: { w: manifest.size.w, h: manifest.size.h, minW: manifest.size.minW ?? 1, minH: manifest.size.minH ?? 1 },
       sketch: "custom",
-      settings: settingsOf(manifest.settings),
+      settings: settingsOf(manifest.settings, words),
       custom,
       render: ({ settings, instance }) => (
         <CustomWidgetCard widget={custom} instanceId={instance} settings={settings} />

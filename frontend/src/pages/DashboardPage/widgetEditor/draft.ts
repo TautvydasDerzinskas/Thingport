@@ -171,6 +171,9 @@ export function toManifest(draft: Draft): WidgetManifest {
     size: { ...draft.size },
     settings: draft.settings.map(toSpec),
     hosts: draft.hosts,
+    // Filled in from the labels when saving, and only a shared widget carries screenshots.
+    locales: [],
+    screenshots: [],
   };
 }
 

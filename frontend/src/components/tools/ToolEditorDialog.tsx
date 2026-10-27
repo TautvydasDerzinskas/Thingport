@@ -22,7 +22,7 @@ import AiToolGuide from "./AiToolGuide";
 import ToolDetailsForm, { fromManifest, problems, toManifest, type ToolDraft } from "./ToolDetailsForm";
 import ToolIcon from "./ToolIcon";
 import ToolRunner from "./ToolRunner";
-import ToolLabelsPanel, { FALLBACK_LANGUAGE, labelProblem, labelsOf, type LabelDrafts } from "./ToolLabelsPanel";
+import LabelsPanel, { FALLBACK_LANGUAGE, labelProblem, labelsOf, type LabelDrafts } from "../LabelsPanel";
 import { STARTER_HTML, STARTER_MANIFEST, STARTER_SCRIPT } from "./toolStarter";
 import type { RunnableTool } from "./toolSdk";
 
@@ -216,7 +216,7 @@ function Editor({ tool, onClose, onSaved, onUnauthorized }: Omit<Props, "open">)
             { value: "html", label: t("tools.editor.html") },
             {
               value: "labels",
-              label: badLabels.length ? `${t("tools.editor.labels.tab")} •` : t("tools.editor.labels.tab"),
+              label: badLabels.length ? `${t("labelsPanel.tab")} •` : t("labelsPanel.tab"),
             },
             { value: "preview", label: t("tools.editor.preview") },
           ]}
@@ -278,7 +278,14 @@ function Editor({ tool, onClose, onSaved, onUnauthorized }: Omit<Props, "open">)
         )}
         {part === "labels" && (
           <Box sx={{ flex: 1, minHeight: 0, mx: 2.5, mb: 2 }}>
-            <ToolLabelsPanel drafts={labels} onChange={setLabels} code={labelCode} onCode={setLabelCode} />
+            <LabelsPanel
+              drafts={labels}
+              onChange={setLabels}
+              code={labelCode}
+              onCode={setLabelCode}
+              help={t("tools.editor.labels.help")}
+              empty={t("tools.editor.labels.empty")}
+            />
           </Box>
         )}
         {(part === "script" || part === "html") && (
