@@ -1,11 +1,17 @@
 import { PROVIDER_IDS, manifestOf } from "../providers/index.generated";
 import { FLARESOLVERR_SESSION_TTL_MS, FLARESOLVERR_TIMEOUT_MS } from "../config";
-import { getFlaresolverrUrl, normalizeFlaresolverrUrl } from "./settingsService";
+import {
+  getFlaresolverrUrl,
+  normalizeFlaresolverrUrl,
+  isAllowedFlaresolverrUrl,
+  FLARESOLVERR_URL_POLICY_ERROR,
+} from "./settingsService";
 
 const TEST_TIMEOUT_MS = 10000;
 
 export async function isFlaresolverrEnabled(): Promise<boolean> {
-  return Boolean(await getFlaresolverrUrl());
+  const endpoint = await getFlaresolverrUrl();
+  return Boolean(endpoint && isAllowedFlaresolverrUrl(endpoint));
 }
 
 /** `sessions.list` is a cheap command that only FlareSolverr's /v1 endpoint answers with status "ok". Takes the
@@ -15,6 +21,7 @@ export async function testFlaresolverr(
 ): Promise<{ ok: true; latencyMs: number; version: string | null } | { ok: false; error: string }> {
   const endpoint = normalizeFlaresolverrUrl(url);
   if (!endpoint) return { ok: false, error: "Enter the FlareSolverr URL first" };
+  if (!isAllowedFlaresolverrUrl(endpoint)) return { ok: false, error: FLARESOLVERR_URL_POLICY_ERROR };
   const start = Date.now();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), TEST_TIMEOUT_MS);
@@ -23,6 +30,7 @@ export async function testFlaresolverr(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ cmd: "sessions.list" }),
+      redirect: "error",
       signal: controller.signal,
     });
     if (!res.ok) return { ok: false, error: `FlareSolverr answered HTTP ${res.status}` };
@@ -87,9 +95,16 @@ function solverDestination(url: string) {
   if (parsed.protocol !== "https:" || parsed.port || parsed.username || parsed.password) return null;
   const rule = SOLVER_ROUTES.find((route) => route.host === parsed.hostname && route.path.test(parsed.pathname));
   if (!rule) return null;
-  // Only UTF-8 bytes for non-ASCII slug characters may be percent-encoded.
+  // UTF-8 slug bytes are allowed; a route may also permit spaces in a particular segment.
   // Encoded ASCII delimiters and double-encoding could change the server-side route.
-  if (/%(?![89a-f][0-9a-f])/i.test(parsed.pathname)) return null;
+  const segments = parsed.pathname.slice(1).split("/");
+  if (
+    segments.some((segment, index) => {
+      const checked = index === rule.encodedSpaceSegment ? segment.replace(/%20/gi, " ") : segment;
+      return /%(?![89a-f][0-9a-f])/i.test(checked);
+    })
+  )
+    return null;
   try {
     decodeURIComponent(parsed.pathname);
   } catch {
@@ -129,7 +144,7 @@ export async function fetchViaFlaresolverr(
   const { parsed, rule } = destination;
   if (cookieHeader && !rule.credentials?.cookies) return null;
   const endpoint = await getFlaresolverrUrl();
-  if (!endpoint) return null;
+  if (!endpoint || !isAllowedFlaresolverrUrl(endpoint)) return null;
   const hostname = parsed.hostname;
 
   const controller = new AbortController();

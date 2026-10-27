@@ -24,6 +24,8 @@ import {
   getSmtpSettings,
   getFlaresolverrUrl,
   normalizeFlaresolverrUrl,
+  isAllowedFlaresolverrUrl,
+  FLARESOLVERR_URL_POLICY_ERROR,
   getPublicUrl,
   normalizeAiBaseUrl,
   normalizePublicUrl,
@@ -656,7 +658,11 @@ router.get(
   }),
 );
 
-const flaresolverrUrlSchema = z.string().trim().url("Enter a full URL, like http://flaresolverr:8191");
+const flaresolverrUrlSchema = z
+  .string()
+  .trim()
+  .url("Enter a full URL, like http://flaresolverr:8191")
+  .refine(isAllowedFlaresolverrUrl, FLARESOLVERR_URL_POLICY_ERROR);
 
 // A changed URL is only saved once FlareSolverr answers; clearing it or saving it unchanged needs no test.
 const flaresolverrSettingsSchema = z.object({ url: flaresolverrUrlSchema.nullable().or(z.literal("")) }).strict();

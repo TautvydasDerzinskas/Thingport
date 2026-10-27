@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const config = vi.hoisted(() => ({ url: "http://solver.example/v1" as string | null }));
+const config = vi.hoisted(() => ({ url: "https://solver.example/v1" as string | null }));
 
 vi.mock("../src/services/settingsService", async (original) => ({
   ...(await original<typeof import("../src/services/settingsService")>()),
@@ -20,7 +20,7 @@ import { fetchJsonFromUrl } from "../src/services/importResolvers";
 
 afterEach(() => {
   vi.restoreAllMocks();
-  config.url = "http://solver.example/v1";
+  config.url = "https://solver.example/v1";
 });
 
 describe("FlareSolverr credential boundary", () => {
@@ -73,6 +73,69 @@ describe("FlareSolverr credential boundary", () => {
       new Response(JSON.stringify({ status: "ok", solution: { response: "page" } })),
     );
     expect(await fetchViaFlaresolverr(url)).toEqual({ status: 200, body: "page" });
+  });
+
+  it.each(["alice.smith", "alice%20smith", "alice.%20smith", "%E4%BD%A0%20smith"])(
+    "preserves MMF usernames on canonical API routes: %s",
+    async (username) => {
+      const sent = vi
+        .spyOn(globalThis, "fetch")
+        .mockImplementation(async () => new Response(JSON.stringify({ status: "ok", solution: { response: "{}" } })));
+      for (const suffix of ["", "/collections", "/collections/my-collection"]) {
+        const url = `https://www.myminifactory.com/api/v2/users/${username}${suffix}?key=test-key`;
+        expect(await fetchViaFlaresolverr(url)).not.toBeNull();
+        expect(JSON.parse(sent.mock.calls.at(-1)![1]?.body as string).url).toBe(url);
+      }
+    },
+  );
+
+  it.each([
+    "alice%2Fsmith",
+    "alice%5csmith",
+    "alice%2esmith",
+    "alice%2520smith",
+    "alice%00smith",
+    "alice%0asmith",
+    "alice%7fsmith",
+    "alice%ZZsmith",
+    "alice%E4%20smith",
+    "alice/collections/my%20collection",
+  ])("rejects structural or malformed MMF username encoding: %s", async (path) => {
+    const sent = vi.spyOn(globalThis, "fetch");
+    expect(await fetchViaFlaresolverr(`https://www.myminifactory.com/api/v2/users/${path}?key=test-key`)).toBeNull();
+    expect(sent).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    "http://solver.example/v1",
+    "http://192.168.1.5:8191/v1",
+    "ftp://solver.example/v1",
+    "http://localhost.evil/v1",
+    "http://127.1/v1",
+    "http://localhost./v1",
+    "http://flaresolverr.evil/v1",
+  ])("never sends cookies or query credentials to a rejected configured endpoint: %s", async (endpoint) => {
+    config.url = endpoint;
+    const sent = vi.spyOn(globalThis, "fetch");
+    expect(await fetchViaFlaresolverr("https://makerworld.com/en/models/1", "token=secret")).toBeNull();
+    expect(await fetchViaFlaresolverr("https://api.thingiverse.com/things/123?access_token=secret")).toBeNull();
+    expect(await fetchViaFlaresolverr("https://www.myminifactory.com/api/v2/objects/123?key=secret")).toBeNull();
+    expect(sent).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    "http://flaresolverr:8191/v1",
+    "http://localhost:8191/v1",
+    "http://127.0.0.1:8191/v1",
+    "http://[::1]:8191/v1",
+    "https://solver.example/v1",
+  ])("uses supported solver endpoints without redirects: %s", async (endpoint) => {
+    config.url = endpoint;
+    const sent = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async () => new Response(JSON.stringify({ status: "ok", solution: { response: "{}" } })));
+    expect(await fetchViaFlaresolverr("https://makerworld.com/en/models/1", "token=secret")).not.toBeNull();
+    expect(sent).toHaveBeenCalledWith(endpoint, expect.objectContaining({ redirect: "error" }));
   });
 
   it.each(["", "/likes", "/collections"])(

@@ -82,6 +82,8 @@ how lists are read. When a new site resembles one of these, copy that provider's
   `solverRoutes` owns exact hosts, anchored path patterns, allowed query names and route-specific `credentials`
   (`query` names or `cookies: true`). Only those HTTPS destinations may enter the solver; ordinary query fields
   cannot carry credentials. Callers cannot override this policy. API tokens belong on API routes only.
+  `encodedSpaceSegment` permits `%20` in a single pathname segment where needed for usernames; encoded delimiters,
+  controls and double encoding remain rejected.
   `helpers.flaresolverr` describes the provider's recommendation. Configuring the global solver URL enables
   fallback for all declared routes; clearing it disables every solve, including warm page-proxy cache requests. Thingiverse and MyMiniFactory still try guarded direct transport first and solve only a 429 or
   Cloudflare challenge; ordinary 401/403 responses remain credential rejections.

@@ -2,10 +2,16 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
+import { fetchViaFlaresolverr, testFlaresolverr } from "../src/services/flaresolverr";
 import { getFlaresolverrUrl, seedFlaresolverrUrl, setFlaresolverrUrl } from "../src/services/settingsService";
 
+vi.mock("../src/config", async (original) => ({
+  ...(await original<typeof import("../src/config")>()),
+  FLARESOLVERR_URL: "http://legacy-env.example:8191",
+}));
+
 const app = createApp();
-const ENDPOINT = "http://fake-flaresolverr.test/v1";
+const ENDPOINT = "https://fake-flaresolverr.test/v1";
 let adminToken: string;
 
 beforeAll(async () => {
@@ -36,13 +42,22 @@ function fakeFlaresolverr(answer: () => Response) {
 const ready = () => new Response(JSON.stringify({ status: "ok", sessions: [], version: "3.3.21" }), { status: 200 });
 
 describe("FlareSolverr URL setting", () => {
+  it("rejects an unseeded legacy environment endpoint before sending credentials", async () => {
+    await prisma.setting.deleteMany({ where: { key: "flaresolverr_url" } });
+    const calls = fakeFlaresolverr(ready);
+    expect(await getFlaresolverrUrl()).toBe("http://legacy-env.example:8191/v1");
+    expect(await fetchViaFlaresolverr("https://makerworld.com/en/models/1", "token=secret")).toBeNull();
+    expect(await fetchViaFlaresolverr("https://api.thingiverse.com/things/123?access_token=secret")).toBeNull();
+    expect(calls).toEqual([]);
+  });
+
   it("seeds the DB from FLARESOLVERR_URL once, then ignores the env var", async () => {
     await prisma.setting.deleteMany({ where: { key: "flaresolverr_url" } });
-    await seedFlaresolverrUrl("http://fake-flaresolverr.test");
+    await seedFlaresolverrUrl("https://fake-flaresolverr.test");
     expect(await getFlaresolverrUrl()).toBe(ENDPOINT);
 
     await setFlaresolverrUrl(null);
-    await seedFlaresolverrUrl("http://other-flaresolverr.test/v1");
+    await seedFlaresolverrUrl("https://other-flaresolverr.test/v1");
     expect(await getFlaresolverrUrl()).toBeNull();
   });
 
@@ -76,7 +91,7 @@ describe("FlareSolverr URL setting", () => {
     const saved = await request(app)
       .patch("/api/settings/flaresolverr")
       .set({ Authorization: `Bearer ${adminToken}` })
-      .send({ url: "http://fake-flaresolverr.test/" });
+      .send({ url: "https://fake-flaresolverr.test/" });
     expect(saved.body).toMatchObject({ url: ENDPOINT });
     expect(calls).toEqual([ENDPOINT]);
   });
@@ -84,7 +99,7 @@ describe("FlareSolverr URL setting", () => {
   it("accepts an unchanged normalized URL while the configured solver is unavailable", async () => {
     await setFlaresolverrUrl(ENDPOINT);
     const calls = fakeFlaresolverr(() => new Response("offline", { status: 502 }));
-    for (const url of [ENDPOINT, "http://fake-flaresolverr.test/"]) {
+    for (const url of [ENDPOINT, "https://fake-flaresolverr.test/"]) {
       const saved = await request(app)
         .patch("/api/settings/flaresolverr")
         .set({ Authorization: `Bearer ${adminToken}` })
@@ -93,6 +108,57 @@ describe("FlareSolverr URL setting", () => {
       expect(saved.body).toEqual({ url: ENDPOINT });
     }
     expect(calls).toEqual([]);
+  });
+
+  it.each(["http://remote.example:8191", "http://192.168.1.10:8191", "ftp://localhost:8191", "http://127.1:8191"])(
+    "rejects unsafe settings and legacy configured endpoints without any request: %s",
+    async (url) => {
+      const calls = fakeFlaresolverr(ready);
+      // Even an unchanged legacy DB value cannot bypass the endpoint policy.
+      await prisma.setting.upsert({
+        where: { key: "flaresolverr_url" },
+        create: { key: "flaresolverr_url", value: url },
+        update: { value: url },
+      });
+      for (const path of ["/api/settings/flaresolverr", "/api/settings/flaresolverr/test"]) {
+        const response = path.endsWith("/test")
+          ? await request(app)
+              .post(path)
+              .set({ Authorization: `Bearer ${adminToken}` })
+              .send({ url })
+          : await request(app)
+              .patch(path)
+              .set({ Authorization: `Bearer ${adminToken}` })
+              .send({ url });
+        expect(response.status).toBe(400);
+        expect(JSON.stringify(response.body)).toContain("Use HTTPS");
+      }
+      expect(await testFlaresolverr(url)).toMatchObject({ ok: false, error: expect.stringContaining("Use HTTPS") });
+      expect(await fetchViaFlaresolverr("https://makerworld.com/en/models/1", "token=secret")).toBeNull();
+      expect(await fetchViaFlaresolverr("https://api.thingiverse.com/things/123?access_token=secret")).toBeNull();
+      await prisma.setting.deleteMany({ where: { key: "flaresolverr_url" } });
+      await seedFlaresolverrUrl(url);
+      expect(await fetchViaFlaresolverr("https://www.myminifactory.com/api/v2/objects/123?key=secret")).toBeNull();
+      expect(calls).toEqual([]);
+    },
+  );
+
+  it.each([
+    "http://flaresolverr:8191",
+    "http://localhost:8191",
+    "http://127.0.0.1:8191",
+    "http://[::1]:8191",
+    "https://solver.example/proxy",
+  ])("tests and saves supported endpoint %s without following redirects", async (url) => {
+    const calls = fakeFlaresolverr(ready);
+    const saved = await request(app)
+      .patch("/api/settings/flaresolverr")
+      .set({ Authorization: `Bearer ${adminToken}` })
+      .send({ url })
+      .expect(200);
+    expect(saved.body).toEqual({ url: `${url}/v1` });
+    expect(calls).toEqual([`${url}/v1`]);
+    expect(global.fetch).toHaveBeenCalledWith(`${url}/v1`, expect.objectContaining({ redirect: "error" }));
   });
 
   it("clears the URL without testing it", async () => {

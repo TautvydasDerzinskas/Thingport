@@ -100,8 +100,8 @@ with the API token in the URL. MakerWorld may send session cookies. The configur
 receive credentials. Use a private, isolated solver: its browser redirects and third-party requests are outside
 Thingport's per-hop destination guard, even though Thingport validates the initial destination.
 
-Binary downloads, authenticated Cults3D calls and MakerWorld's Bambu cloud API are unsupported. Cults3D's switch
-covers public pages only.
+Binary downloads, authenticated Cults3D calls and MakerWorld's Bambu cloud API are unsupported. Cults3D's solver
+routes cover public pages only.
 
 ```bash
 docker run -d --name thingport-flaresolverr -p 127.0.0.1:8191:8191 ghcr.io/flaresolverr/flaresolverr:latest
@@ -111,6 +111,10 @@ Then set its URL (`http://localhost:8191`, with or without `/v1`) in **Administr
 FlareSolverr**. `FLARESOLVERR_URL` in `backend/.env` is copied into that setting on the first startup; after that the
 saved value wins and the env var is ignored. Configuring the URL enables fallback for all declared provider
 routes; clearing it disables FlareSolverr globally, including cached page-proxy decisions.
+
+Remote solver endpoints must use HTTPS. HTTP is allowed only for exact `flaresolverr`, `localhost`, `127.0.0.1`
+or `[::1]` hosts, with an optional port. Existing custom LAN HTTP URLs must move behind HTTPS; saved settings and
+`FLARESOLVERR_URL` cannot bypass this policy. Solver requests and connection tests refuse endpoint redirects.
 
 Provider manifests own `solverRoutes`: exact host, anchored path pattern, ordinary query names and any permitted
 query credentials or cookies. The shared solver enforces HTTPS and those declarations; callers cannot request a

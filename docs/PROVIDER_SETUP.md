@@ -71,6 +71,11 @@ It's part of the standard Docker Compose stack. Set its global URL under **Admin
 FlareSolverr** to enable fallback for all declared provider routes. [System Health](guides/system-health.md) checks
 the service. Clearing the URL disables all fallbacks, including when a previous request warmed the proxy cache.
 
+Use HTTPS for a remote solver. HTTP is supported only for the exact local endpoints `flaresolverr` (the Compose
+service), `localhost`, `127.0.0.1` and `[::1]`, with an optional port. Custom LAN HTTP addresses and other service
+names previously accepted must move behind HTTPS. Existing saved or environment URLs follow the same rule;
+unsupported URLs cannot receive cookies or API tokens. Endpoint redirects are refused.
+
 Thingiverse and MyMiniFactory API requests first use guarded direct transport with a Chrome-like TLS handshake.
 Only a 429 or Cloudflare challenge retries through the enabled solver, including the Thingiverse `access_token` or
 MyMiniFactory `key` in the URL. Ordinary 401/403 rejections remain credential errors. MakerWorld, Printables and

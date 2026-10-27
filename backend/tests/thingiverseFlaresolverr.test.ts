@@ -1,14 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const config = vi.hoisted(() => ({ url: "http://fake-flaresolverr.test/v1" as string | null }));
-vi.mock("../src/services/settingsService", () => ({
+const config = vi.hoisted(() => ({ url: "https://fake-flaresolverr.test/v1" as string | null }));
+vi.mock("../src/services/settingsService", async (original) => ({
+  ...(await original<typeof import("../src/services/settingsService")>()),
   getFlaresolverrUrl: async () => config.url,
 }));
 
 import { checkThingiverseAccessToken } from "../src/providers/thingiverse/api";
 import { checkMyminifactoryApiKey } from "../src/providers/myminifactory/api";
 
-const SOLVER = "http://fake-flaresolverr.test/v1";
+const SOLVER = "https://fake-flaresolverr.test/v1";
 const TOKEN = "opaque+/=token&value";
 
 afterEach(() => {

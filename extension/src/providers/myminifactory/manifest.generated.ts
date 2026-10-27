@@ -43,8 +43,9 @@ export default {
     { host: "www.myminifactory.com", path: /^\/object\/3d-print-[\w%-]+$/, query: [] },
     {
       host: "www.myminifactory.com",
-      path: /^\/api\/v2\/(?:objects\/\d+|users\/[\w%-]+(?:\/collections(?:\/[\w%-]+)?)?|search)$/,
+      path: /^\/api\/v2\/(?:objects\/\d+|users\/[\w%.-]+(?:\/collections(?:\/[\w%-]+)?)?|search)$/,
       query: ["q", "sort", "page", "per_page"],
+      encodedSpaceSegment: 3,
       credentials: { query: ["key"] },
     },
   ],

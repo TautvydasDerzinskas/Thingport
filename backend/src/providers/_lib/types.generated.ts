@@ -57,6 +57,8 @@ export type ProviderManifest = {
     host: string;
     path: RegExp;
     query: readonly string[];
+    /** Permit encoded spaces only in this pathname segment (zero-based, excluding the leading slash). */
+    encodedSpaceSegment?: number;
     credentials?: { query?: readonly string[]; cookies?: true };
   }[];
   /** Exact HTTPS origins where Cloudflare rejects Node's TLS handshake. Requests to these origins use impit;
