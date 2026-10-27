@@ -46,6 +46,15 @@ const loaders: Record<string, () => Promise<unknown>> = {
    * time any tool asks for it, and parsed by the opentype above, so the same `Font` is handed out after that.
    */
   fonts: async () => toolFontLibrary(() => library("opentype")),
+  /**
+   * OpenSCAD, for the models that came with the script they were generated from: what parameters a script
+   * offers, and the model a given set of them makes. The engine is WebAssembly and several megabytes, so it is
+   * compiled the first time something asks and shared from then on.
+   */
+  openscad: async () => {
+    const { scadParameters, scadRender, SCAD_LIBRARIES } = await import("./openscad");
+    return { parameters: scadParameters, render: scadRender, libraries: SCAD_LIBRARIES };
+  },
 };
 
 export const LIBRARIES = Object.keys(loaders);
