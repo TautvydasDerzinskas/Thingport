@@ -19,7 +19,13 @@ import { trackViewedModel } from "./recentlyViewed";
 import { errorHtml } from "./panels/results";
 import { api } from "./runtime";
 import { closeSetupModal, openSetupModal } from "./setupModal";
-import { mountFab, mountHost, mountPanel, renderPanel, setPanelOpen, unmountHost } from "./shell";
+import {
+  SHARED_SCRIPT_EXPLAINER,
+  SHARED_SCRIPT_NOTE_HTML,
+  WITHHELD_SCRIPT_EXPLAINER,
+  WITHHELD_SCRIPT_NOTE_HTML,
+} from "./scriptNote";
+import { mountFab, mountFabNote, mountHost, mountPanel, renderPanel, setPanelOpen, unmountHost } from "./shell";
 import { manifestOf } from "../providers/index.generated";
 
 declare global {
@@ -183,6 +189,21 @@ async function init(): Promise<void> {
     onClick: togglePanel,
   });
   reportTabIconState(true);
+
+  // A model built from a script says under the icon whether the script comes with it, before anyone opens the
+  // panel and finds out. Best-effort and last: a page that won't say is treated as any other model.
+  if (classification.kind === "single") {
+    void CONTENT_MODULES[classification.provider]
+      .scriptState?.(pageUrl)
+      .then((script) => {
+        if (!script || isStale()) return;
+        const [html, explainer] = script.withheld
+          ? [WITHHELD_SCRIPT_NOTE_HTML, WITHHELD_SCRIPT_EXPLAINER]
+          : [SHARED_SCRIPT_NOTE_HTML, SHARED_SCRIPT_EXPLAINER];
+        mountFabNote(root, html, explainer);
+      })
+      .catch(() => undefined);
+  }
 
   // A guided import that stopped early lands back here, so show why.
   if (jobRes?.ok && jobRes.data.error) {

@@ -7,7 +7,7 @@ import { parseSnapmakerListUrl, snapmakerListUrl } from "../shared/urls";
 import { crealitycloudUserId, loadCrealitycloudProfiles } from "./crealitycloud/content";
 import { isUnboughtCults3dModel } from "./cults3d/content";
 import { loadMakeronlineProfiles } from "./makeronline/content";
-import { loadMakerworldDesignForPage, makerworldProfileIds } from "./makerworld/pageData";
+import { loadMakerworldDesignForPage, makerworldProfileIds, makerworldScripts } from "./makerworld/pageData";
 import { loadNexprintProfiles } from "./nexprint/content";
 import { loadSnapmakerProfiles, snapmakerUserId } from "./snapmaker/content";
 import { thangsDownloadBlock } from "./thangs/content";
@@ -17,6 +17,9 @@ export type ProfileScope = "url" | "designer" | "all";
 /** What the panel shows in place of an import the site wouldn't allow. */
 export type ImportBlock = { title: string; hint: string };
 
+/** The generator script a page's model was built from: its name(s), and whether its creator kept it back. */
+export type ScriptState = { filenames: string[]; withheld: boolean };
+
 export type ContentModule = {
   /** The print profile ids each scope brings, the page's own first, for the panel's picker and its import. Null
    *  when they can't be read. */
@@ -25,6 +28,9 @@ export type ContentModule = {
   profileUrl?(url: string, profileId: string): string;
   /** Why the model on this page can't be imported, or null when it can, or that can't be told. */
   blockReason?(url: string): Promise<ImportBlock | null>;
+  /** The script this page's model was generated from, or null where it wasn't generated from one. A withheld
+   *  script still lets the model import; it is only the script that can't come along. */
+  scriptState?(url: string): Promise<ScriptState | null>;
   /** For lists only their owner sees, which the instance reads as the user, so they're offered on the owner's own
    *  page alone: the list's address as the instance takes it, or null on someone else's. Undefined for a list anyone
    *  sees. */
@@ -36,6 +42,10 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
     async loadProfiles(url) {
       const page = await loadMakerworldDesignForPage(url);
       return page ? (scope) => makerworldProfileIds(page.design, scope, page.requestedInstanceId) : null;
+    },
+    async scriptState(url) {
+      const page = await loadMakerworldDesignForPage(url);
+      return (page && makerworldScripts(page.design)) ?? null;
     },
   },
   printables: {},

@@ -14,9 +14,10 @@ import {
 import { currentMakerworldProfileTitle } from "../../providers/makerworld/pageData";
 import { CONTENT_MODULES, type ProfileScope } from "../../providers/content";
 import { api, escapeHtml } from "../runtime";
-import { onPanelAction, panelQuery, panelQueryAll, renderPanel } from "../shell";
+import { onPanelAction, panelQuery, panelQueryAll, renderPanel, setPanelNote } from "../shell";
 import { collectionIdFor, collectionPickerHtml, readCollectionChoice, wireCollectionPicker } from "./collectionPicker";
 import { errorHtml, statusHtml, successHtml } from "./results";
+import { SHARED_SCRIPT_PANEL_NOTE_HTML, WITHHELD_SCRIPT_PANEL_NOTE_HTML } from "../scriptNote";
 import {
   checkingLinkPhrases,
   fillingGapsPhrases,
@@ -78,6 +79,15 @@ function importHeading(): string {
   return title ? `Import "${escapeHtml(title)}"` : "Import this model";
 }
 
+/** A card of its own above the panel, since it is about the model rather than about the import. */
+function showScriptNote(script: { filenames: string[]; withheld: boolean } | null): void {
+  if (!script) return setPanelNote(null);
+  setPanelNote(
+    script.withheld ? WITHHELD_SCRIPT_PANEL_NOTE_HTML : SHARED_SCRIPT_PANEL_NOTE_HTML,
+    script.withheld ? "withheld" : "shared",
+  );
+}
+
 /** Admins only: the same import, but waiting paused in the instance's import queue. Not where only Grab gets the files:
  *  the queue would only hand the link back to it. */
 function queueButtonHtml(): string {
@@ -122,6 +132,9 @@ export async function loadSingleItem(): Promise<void> {
     `);
     return;
   }
+  // Best-effort: a page that won't say whether its script is shared is treated as any other model.
+  const script = await CONTENT_MODULES[provider].scriptState?.(ctx().url).catch(() => null);
+  showScriptNote(script ?? null);
   // A link that may be a zip of raw files is looked at first; every other site's is a model page the instance reads.
   const skipInspect = !manifestOf(provider).capabilities.rawFilesZip;
 

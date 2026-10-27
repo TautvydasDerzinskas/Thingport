@@ -7,6 +7,8 @@ export type MakerworldDesign = {
   defaultInstanceId?: string | number;
   designCreator?: MakerworldCreator;
   instances?: MakerworldInstance[];
+  /** Holds the design's files, among them the script it was generated from, where it has one. */
+  designExtension?: { model_files?: unknown[] };
 };
 
 export type MakerworldProfileScope = "url" | "designer" | "all";
@@ -111,6 +113,33 @@ export function pickMakerworldInstanceId(design: MakerworldDesign, requestedInst
   const defaultId = design.defaultInstanceId ? String(design.defaultInstanceId) : null;
   if (defaultId && has(defaultId)) return defaultId;
   return instances.length ? String(instances[0].id) : null;
+}
+
+/**
+ * The generator scripts a design lists, and whether every one of them is held back.
+ *
+ * Mirrors the backend's makerworldParametricSource, so the page says the same thing the import would: a
+ * creator can mark a .scad `protected`, and MakerWorld then hands out the models it makes but never the
+ * script itself. Null where the design has no script at all, which is most of them.
+ */
+export function makerworldScripts(design: MakerworldDesign): { filenames: string[]; withheld: boolean } | null {
+  const files = design.designExtension?.model_files;
+  if (!Array.isArray(files)) return null;
+  const scripts = files.filter((file): file is Record<string, unknown> => {
+    if (!file || typeof file !== "object") return false;
+    const entry = file as Record<string, unknown>;
+    return (
+      String(entry.modelType ?? "").toLowerCase() === "scad" ||
+      String(entry.modelName ?? "")
+        .toLowerCase()
+        .endsWith(".scad")
+    );
+  });
+  if (!scripts.length) return null;
+  const filenames = scripts
+    .map((file) => (typeof file.modelName === "string" ? file.modelName.trim() : ""))
+    .filter((name) => name.length > 0);
+  return { filenames, withheld: scripts.every((file) => file.protected === true) };
 }
 
 /** Mirrors the backend's selectMakerworldProfiles. */
