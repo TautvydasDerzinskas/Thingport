@@ -327,6 +327,18 @@
               "title": "Enregistrer un widget du tableau de bord",
               "description": "Créer ou modifier vos propres widgets du tableau de bord. Leurs scripts s’exécutent dans votre tableau de bord."
             },
+            "tool_guide": {
+              "title": "Guide des outils",
+              "description": "Lire comment écrire un outil pour votre page Outils."
+            },
+            "list_tools": {
+              "title": "Lister les outils",
+              "description": "Voir les outils que vous pouvez ouvrir, et le code des vôtres."
+            },
+            "save_tool": {
+              "title": "Enregistrer un outil",
+              "description": "Créer ou modifier vos propres outils. Leur code s'exécute dans votre navigateur avec vos accès."
+            },
             "list_icons": {
               "title": "Trouver une icône",
               "description": "Chercher parmi les icônes de Thingport et celles que vous avez importées, p. ex. pour un widget."

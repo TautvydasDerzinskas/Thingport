@@ -35,6 +35,24 @@ you**: for designs that may be downloaded but not passed on, such as Multiboard'
 (**Configuration → Providers**). The tool's row shows how many have come in; a provider that limits daily downloads, or
 a sign-in that's missing, stops the fetch, and **Fetch missing models** tries the rest again later.
 
+## Have an AI write one
+
+With **Users' own tools** on, the quickest way to get a tool is to describe it to an AI assistant connected to
+Thingport.
+
+1. [Connect your assistant over MCP](mcp.md) with your API token.
+2. A new token already allows **Save a tool** (`save_tool`) and **Upload an icon** (`upload_icon`). For the tool's
+   icon, the assistant searches Thingport's own icons with `list_icons`, and uploads an SVG of its own when none fits.
+3. Ask for what you want, e.g. _"Make me a Thingport tool that turns a few words into a printable label and saves it
+   to my library."_ The assistant reads the `tool_guide` tool first, which teaches it the format below, then saves the
+   tool.
+4. Open it from **Tools** in the sidebar. To change it, ask again: `list_tools` lets the assistant read back the
+   script, the HTML and the labels it wrote before.
+
+A tool an assistant saves is one of your own, so the same warning applies: its script runs in your browser with your
+access to Thingport. Read what it wrote in the editor if you're unsure, and remember that it can't bring models of its
+own — only a tool from the repository does that.
+
 ## Making your own
 
 With **Users' own tools** on, **New tool** on the Tools page opens the editor:

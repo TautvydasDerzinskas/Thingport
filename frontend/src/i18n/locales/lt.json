@@ -325,6 +325,18 @@
               "title": "Išsaugoti suvestinės valdiklį",
               "description": "Kurti ar keisti savo suvestinės valdiklius. Jų skriptai veikia jūsų suvestinėje."
             },
+            "tool_guide": {
+              "title": "Įrankių vadovas",
+              "description": "Perskaityti, kaip rašomas įrankis tavo Įrankių puslapiui."
+            },
+            "list_tools": {
+              "title": "Išvardyti įrankius",
+              "description": "Pamatyti, kuriuos įrankius gali atverti, ir savo įrankių kodą."
+            },
+            "save_tool": {
+              "title": "Įrašyti įrankį",
+              "description": "Sukurti ar pakeisti savo įrankius. Jų kodas vykdomas tavo naršyklėje su tavo teisėmis."
+            },
             "list_icons": {
               "title": "Rasti piktogramą",
               "description": "Ieškoti Thingport piktogramų ir jūsų įkeltų, pvz., valdikliui."

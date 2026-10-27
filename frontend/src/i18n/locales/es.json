@@ -327,6 +327,18 @@
               "title": "Guardar un widget del panel",
               "description": "Crear o cambiar tus propios widgets del panel. Sus scripts se ejecutan en tu panel."
             },
+            "tool_guide": {
+              "title": "Guía de herramientas",
+              "description": "Lee cómo se escribe una herramienta para tu página de Herramientas."
+            },
+            "list_tools": {
+              "title": "Listar herramientas",
+              "description": "Ver las herramientas que puedes abrir, y el código de las tuyas."
+            },
+            "save_tool": {
+              "title": "Guardar una herramienta",
+              "description": "Crear o cambiar tus propias herramientas. Su código se ejecuta en tu navegador con tu acceso."
+            },
             "list_icons": {
               "title": "Buscar un icono",
               "description": "Buscar entre los iconos de Thingport y los que has subido, p. ej. para un widget."

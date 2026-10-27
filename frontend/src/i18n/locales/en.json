@@ -324,6 +324,18 @@
               "title": "Save a dashboard widget",
               "description": "Create or change your own dashboard widgets. Their scripts run in your dashboard."
             },
+            "tool_guide": {
+              "title": "Tool guide",
+              "description": "Read how to write a tool for your Tools page."
+            },
+            "list_tools": {
+              "title": "List tools",
+              "description": "See the tools you can open, and the code of your own."
+            },
+            "save_tool": {
+              "title": "Save a tool",
+              "description": "Create or change your own tools. Their scripts run in your browser with your access."
+            },
             "list_icons": {
               "title": "Find an icon",
               "description": "Search Thingport's icons and the ones you uploaded, e.g. for a widget."
