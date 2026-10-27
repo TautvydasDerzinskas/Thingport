@@ -73,8 +73,12 @@ export type ToolUi = {
 /** A collection as a tool sees it; the picker dialog hands its choice back through this. */
 export const toCollection = toSdkCollection;
 
+/** What a tool was opened on, where it was opened from something rather than from the Tools page. */
+export type ToolContext = { modelId?: string };
+
 type Build = {
   tool: RunnableTool;
+  context?: ToolContext;
   root: HTMLElement;
   selector: string;
   theme: ToolTheme;
@@ -86,7 +90,7 @@ type Build = {
 };
 
 /** The object a tool's default export is called with. */
-export function buildToolSdk({ tool, root, selector, theme, language, languages, size, onResize, ui }: Build) {
+export function buildToolSdk({ tool, context, root, selector, theme, language, languages, size, onResize, ui }: Build) {
   const translate: Translate = translator(tool.locales ?? {}, language);
   // An unsaved tool's data lasts as long as its preview does.
   const draftData = new Map<string, unknown>();
@@ -159,6 +163,8 @@ export function buildToolSdk({ tool, root, selector, theme, language, languages,
       version: tool.manifest.version,
       source: tool.source,
     },
+    /** What the tool was opened on: `{ modelId }` when it was opened from a model, empty from the Tools page. */
+    context: { ...context },
     models,
     collections,
     /** The models this tool brought, by the keys its metadata gives them. */
