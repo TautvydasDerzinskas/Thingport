@@ -1,0 +1,1244 @@
+<style>
+  /* Everything is under .qrg, so none of it reaches the rest of Thingport. The colours are Thingport's own: tool.js
+     sets the variables below from the theme it's given, which is why there is no hex code in here. */
+  .qrg {
+    --panel-2: color-mix(in srgb, var(--panel) 92%, var(--text));
+    --panel-3: color-mix(in srgb, var(--panel) 85%, var(--text));
+    --line: var(--divider);
+    --tint: color-mix(in srgb, var(--accent) 14%, transparent);
+    --ease: cubic-bezier(0.2, 0, 0.2, 1);
+    position: relative;
+    container-type: inline-size;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font: 13px/1.45 var(--font);
+  }
+  .qrg *,
+  .qrg *::before,
+  .qrg *::after {
+    box-sizing: border-box;
+  }
+  /* `:where()` holds this reset at the specificity of the root class alone, so a button's own rule further down —
+     the accent-filled one, say — still decides its colour and its weight. Written as `.qrg button`, the reset
+     outranks every single-class rule and quietly wins both. */
+  .qrg :where(button, input, select, textarea) {
+    font: inherit;
+    color: inherit;
+  }
+  .qrg :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .qrg [hidden] {
+    display: none !important;
+  }
+  .qrg svg {
+    flex-shrink: 0;
+  }
+  .qrg h2,
+  .qrg h3 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  /* ---- the bar across the top ---- */
+  .qrg-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
+  }
+  .qrg-spacer {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .qrg-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel-2);
+    cursor: pointer;
+    white-space: nowrap;
+    transition:
+      background 140ms var(--ease),
+      border-color 140ms var(--ease),
+      transform 140ms var(--ease);
+  }
+  .qrg-btn:hover:not(:disabled) {
+    background: var(--panel-3);
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  }
+  .qrg-btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  .qrg-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  .qrg-btn-main {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+  }
+  .qrg-btn-main:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 85%, var(--text));
+    border-color: color-mix(in srgb, var(--accent) 85%, var(--text));
+  }
+  .qrg-btn-on {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+  .qrg-icon {
+    width: 30px;
+    padding: 0;
+    justify-content: center;
+  }
+  .qrg-danger {
+    color: var(--danger);
+  }
+  .qrg-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel-2);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .qrg-chip b {
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  /* The light that says whether what you are looking at is up to date. */
+  .qrg-state {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel-2);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .qrg-state::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+  }
+  .qrg-state[data-state="ready"]::before {
+    background: var(--success);
+  }
+  .qrg-state[data-state="working"]::before {
+    background: var(--accent);
+    animation: qrg-pulse 900ms var(--ease) infinite;
+  }
+  .qrg-state[data-state="error"]::before {
+    background: var(--danger);
+  }
+  @keyframes qrg-pulse {
+    50% {
+      opacity: 0.25;
+      transform: scale(0.7);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .qrg-state[data-state="working"]::before {
+      animation: none;
+    }
+  }
+
+  /* ---- the two columns ---- */
+  .qrg-main {
+    flex: 1 1 auto;
+    display: grid;
+    gap: 10px;
+    padding: 10px;
+    min-height: 0;
+    grid-template-columns: 322px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+  }
+  @container (max-width: 859px) {
+    .qrg-main {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: none;
+      align-content: start;
+    }
+    .qrg {
+      overflow: auto;
+    }
+    .qrg-form,
+    .qrg-stage {
+      flex: 0 0 auto;
+      overflow: visible;
+    }
+    .qrg-stage {
+      height: 420px;
+    }
+  }
+  .qrg-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--panel);
+    animation: qrg-rise 220ms var(--ease) both;
+  }
+  @keyframes qrg-rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .qrg-panel {
+      animation: none;
+    }
+  }
+  .qrg-form {
+    gap: 0;
+    overflow: hidden;
+  }
+  /* Which settings are showing: a chooser rather than a row of tabs, so it stays one line however many there
+     are and the panel below keeps the height. */
+  .qrg-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .qrg-nav .qrg-in {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 30px;
+    background: var(--panel-2);
+  }
+  .qrg-nav select {
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .qrg-sheet {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    padding: 12px;
+    overflow: auto;
+  }
+
+  /* ---- the form ---- */
+  .qrg-group {
+    display: grid;
+    gap: 7px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .qrg-group:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+  .qrg-group > h3 {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--muted);
+    font-size: 11.5px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .qrg-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+    gap: 7px;
+  }
+  .qrg-field {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+  }
+  .qrg-field > span,
+  .qrg-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--muted);
+    font-size: 11.5px;
+  }
+  .qrg-in {
+    display: flex;
+    align-items: center;
+    height: 28px;
+    padding: 0 7px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--bg);
+    transition: border-color 140ms var(--ease);
+  }
+  .qrg-in:focus-within {
+    border-color: var(--accent);
+  }
+  .qrg-in input,
+  .qrg-in select {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    background: none;
+    outline: none;
+    font-variant-numeric: tabular-nums;
+  }
+  .qrg-in select {
+    cursor: pointer;
+  }
+  .qrg-in i {
+    color: var(--muted);
+    font-size: 11px;
+    font-style: normal;
+    white-space: nowrap;
+  }
+  /* A number with a slider under it: the slider for feel, the box for a figure you already know. */
+  .qrg-slider {
+    display: grid;
+    gap: 4px;
+  }
+  .qrg-slider input[type="range"] {
+    width: 100%;
+    height: 14px;
+    margin: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .qrg-help {
+    width: 15px;
+    height: 15px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: var(--panel-2);
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1;
+    cursor: help;
+  }
+  .qrg-help:hover {
+    color: var(--text);
+    border-color: var(--accent);
+  }
+  /* A choice between a few things, as a switchable bar rather than a dropdown. */
+  .qrg-seg {
+    display: flex;
+    padding: 2px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--panel-2);
+  }
+  .qrg-seg button {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 24px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 7px;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition:
+      background 140ms var(--ease),
+      color 140ms var(--ease);
+  }
+  .qrg-seg button[aria-pressed="true"] {
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+  }
+  /* On or off, as a switch. */
+  .qrg-switch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+  .qrg-switch input {
+    appearance: none;
+    position: relative;
+    flex: 0 0 auto;
+    width: 32px;
+    height: 18px;
+    margin: 0;
+    border-radius: 99px;
+    background: var(--panel-3);
+    cursor: pointer;
+    transition: background 160ms var(--ease);
+  }
+  .qrg-switch input::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--panel);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 35%);
+    transition: transform 160ms var(--ease);
+  }
+  .qrg-switch input:checked {
+    background: var(--accent);
+  }
+  .qrg-switch input:checked::after {
+    transform: translateX(14px);
+    background: var(--accent-ink);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .qrg-switch input,
+    .qrg-switch input::after {
+      transition: none;
+    }
+  }
+  .qrg-note {
+    margin: 0;
+    color: var(--muted);
+    font-size: 11.5px;
+  }
+  .qrg-note b {
+    color: var(--text);
+  }
+  .qrg-warn,
+  .qrg-bad {
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--warning);
+    border-radius: 8px;
+    background: var(--panel-2);
+    color: var(--text);
+    font-size: 12px;
+  }
+  .qrg-bad {
+    border-left-color: var(--danger);
+  }
+  .qrg-empty {
+    display: grid;
+    gap: 8px;
+    justify-items: start;
+    padding: 14px;
+    border: 1px dashed var(--line);
+    border-radius: 10px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  /* ---- the text box ---- */
+  .qrg-text {
+    width: 100%;
+    min-height: 74px;
+    padding: 8px 9px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--bg);
+    outline: none;
+    resize: vertical;
+    font-size: 15px;
+    line-height: 1.35;
+    transition: border-color 140ms var(--ease);
+  }
+  .qrg-text:focus {
+    border-color: var(--accent);
+  }
+
+  /* ---- the typefaces ---- */
+  .qrg-fonts {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 6px;
+    max-height: 232px;
+    overflow: auto;
+  }
+  .qrg-font {
+    display: grid;
+    gap: 2px;
+    padding: 7px 8px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--panel-2);
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+    transition:
+      border-color 140ms var(--ease),
+      background 140ms var(--ease),
+      transform 140ms var(--ease);
+  }
+  .qrg-font:hover {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+    transform: translateY(-1px);
+  }
+  .qrg-font[aria-pressed="true"] {
+    border-color: var(--accent);
+    background: var(--tint);
+  }
+  .qrg-font em {
+    font-size: 17px;
+    font-style: normal;
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .qrg-font span {
+    color: var(--muted);
+    font-size: 10.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .qrg-font:hover {
+      transform: none;
+    }
+  }
+
+  /* ---- the colours ---- */
+  .qrg-colour {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 9px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--panel-2);
+  }
+  .qrg-colour > div {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .qrg-colour strong {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .qrg-colour span {
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .qrg-swatch {
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: none;
+    cursor: pointer;
+    overflow: hidden;
+  }
+  .qrg-swatch::-webkit-color-swatch-wrapper {
+    padding: 2px;
+  }
+  .qrg-swatch::-webkit-color-swatch {
+    border: 0;
+    border-radius: 6px;
+  }
+  .qrg-swatch::-moz-color-swatch {
+    border: 0;
+    border-radius: 6px;
+  }
+
+  /* ---- the rings and the magnets ---- */
+  .qrg-card {
+    display: grid;
+    gap: 7px;
+    padding: 9px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--panel-2);
+    animation: qrg-rise 180ms var(--ease) both;
+  }
+  .qrg-card[data-active="true"] {
+    border-color: var(--accent);
+    background: var(--tint);
+  }
+  .qrg-card-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .qrg-card-top strong {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .qrg-card-top em {
+    color: var(--muted);
+    font-size: 11px;
+    font-style: normal;
+    font-variant-numeric: tabular-nums;
+  }
+  .qrg-x {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    line-height: 1;
+  }
+  .qrg-x:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+
+  /* ---- the picture ---- */
+  .qrg-stage {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .qrg-canvas-wrap {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .qrg-stage canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    outline: none;
+  }
+  .qrg-tools {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    align-items: center;
+    max-width: calc(100% - 16px);
+  }
+  .qrg-tools .qrg-seg button {
+    flex: 0 0 auto;
+  }
+  .qrg-tools .qrg-btn,
+  .qrg-tools .qrg-in {
+    height: 27px;
+    background: color-mix(in srgb, var(--panel) 85%, transparent);
+    backdrop-filter: blur(6px);
+  }
+  .qrg-readout {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    align-items: center;
+    max-width: calc(100% - 16px);
+  }
+  .qrg-readout .qrg-chip {
+    height: 26px;
+    background: color-mix(in srgb, var(--panel) 85%, transparent);
+    backdrop-filter: blur(6px);
+    font-size: 11.5px;
+  }
+  /* What the engine is doing, over the picture, so the last good one stays visible behind it. */
+  .qrg-busy {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 10px;
+    background: color-mix(in srgb, var(--panel) 72%, transparent);
+    backdrop-filter: blur(3px);
+    animation: qrg-fade 160ms var(--ease) both;
+  }
+  @keyframes qrg-fade {
+    from {
+      opacity: 0;
+    }
+  }
+  .qrg-spin {
+    width: 26px;
+    height: 26px;
+    border: 2.5px solid var(--line);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: qrg-turn 700ms linear infinite;
+  }
+  @keyframes qrg-turn {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .qrg-busy {
+      animation: none;
+    }
+    .qrg-spin {
+      animation-duration: 2.4s;
+    }
+  }
+  .qrg-busy p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  /* The shape won't build: said over the picture, with what to change. */
+  .qrg-stop {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 10px;
+    padding: 24px;
+    background: color-mix(in srgb, var(--panel) 88%, transparent);
+    text-align: center;
+  }
+  .qrg-stop strong {
+    font-size: 13px;
+  }
+  .qrg-stop p {
+    margin: 0;
+    max-width: 44ch;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  /* While a ring or a magnet is being dragged about on the picture. */
+  .qrg-editing {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px 6px 10px;
+    border: 1px solid var(--accent);
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--panel) 90%, transparent);
+    backdrop-filter: blur(6px);
+    font-size: 12px;
+  }
+
+  /* ---- the menu under Download, and the saving sheet ---- */
+  .qrg-menu {
+    position: absolute;
+    z-index: 6;
+    min-width: 212px;
+    padding: 5px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--panel);
+    box-shadow: 0 12px 32px rgb(0 0 0 / 28%);
+    animation: qrg-pop 150ms var(--ease) both;
+    transform-origin: top right;
+  }
+  @keyframes qrg-pop {
+    from {
+      opacity: 0;
+      transform: scale(0.96) translateY(-4px);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .qrg-menu {
+      animation: none;
+    }
+  }
+  .qrg-menu button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 9px;
+    border: 0;
+    border-radius: 7px;
+    background: none;
+    cursor: pointer;
+    text-align: left;
+  }
+  .qrg-menu button:hover {
+    background: var(--panel-2);
+  }
+  .qrg-menu button small {
+    display: block;
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .qrg-menu hr {
+    margin: 4px 2px;
+    border: 0;
+    border-top: 1px solid var(--line);
+  }
+  .qrg-cover {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: color-mix(in srgb, var(--bg) 70%, transparent);
+    backdrop-filter: blur(2px);
+    animation: qrg-fade 150ms var(--ease) both;
+  }
+  .qrg-dialog {
+    width: min(430px, 100%);
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--panel);
+    box-shadow: 0 20px 56px rgb(0 0 0 / 36%);
+    overflow: auto;
+    animation: qrg-rise 200ms var(--ease) both;
+  }
+  .qrg-dialog-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .qrg-dialog-top h2 {
+    flex: 1 1 auto;
+    font-size: 14px;
+  }
+  .qrg-dialog-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    overflow: auto;
+  }
+  .qrg-dialog-foot {
+    display: flex;
+    gap: 7px;
+    justify-content: flex-end;
+    padding-top: 2px;
+  }
+  .qrg-review {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 4px 10px;
+    margin: 0;
+    padding: 9px 10px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--panel-2);
+    font-size: 12px;
+  }
+  .qrg-review dt {
+    color: var(--muted);
+  }
+  .qrg-review dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .qrg-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  /* ---- the pattern pickers ---- */
+  .qrg-patterns {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(62px, 1fr));
+    gap: 6px;
+  }
+  .qrg-pattern {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 2px 4px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--panel-2);
+    cursor: pointer;
+    font-size: 10.5px;
+    color: var(--muted);
+    transition:
+      border-color 150ms var(--ease),
+      background 150ms var(--ease),
+      transform 150ms var(--ease);
+  }
+  .qrg-pattern:hover {
+    background: var(--panel-3);
+  }
+  .qrg-pattern[aria-pressed="true"] {
+    border-color: var(--accent);
+    background: var(--tint);
+    color: var(--text);
+  }
+  .qrg-pattern[aria-pressed="true"] canvas {
+    transform: scale(1.04);
+  }
+  .qrg-pattern canvas {
+    width: 44px;
+    height: 44px;
+    border-radius: 5px;
+    transition: transform 150ms var(--ease);
+  }
+
+  /* ---- which view the stage is showing ---- */
+  .qrg-views {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    display: flex;
+    gap: 6px;
+    z-index: 2;
+  }
+  .qrg-turn {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    display: flex;
+    gap: 6px;
+    z-index: 2;
+  }
+  .qrg-flat {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+  }
+  .qrg-flat canvas {
+    max-width: 100%;
+    max-height: 100%;
+  }
+  .qrg-scan {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+  .qrg-scan canvas {
+    width: min(62vh, 420px);
+    height: min(62vh, 420px);
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 1px 10px rgb(0 0 0 / 18%);
+    image-rendering: pixelated;
+  }
+  .qrg-scan p {
+    max-width: 44ch;
+    margin: 0;
+    color: var(--muted);
+  }
+
+  /* ---- what's worth knowing before printing ---- */
+  .qrg-checks {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .qrg-check {
+    display: flex;
+    gap: 7px;
+    align-items: flex-start;
+    padding: 7px 9px;
+    border: 1px solid var(--line);
+    border-left-width: 3px;
+    border-radius: 7px;
+    background: var(--panel-2);
+    animation: qrg-rise 180ms var(--ease) both;
+  }
+  .qrg-check[data-tone="warn"] {
+    border-left-color: var(--warning);
+  }
+  .qrg-check[data-tone="bad"] {
+    border-left-color: var(--danger);
+  }
+  .qrg-check[data-tone="good"] {
+    border-left-color: var(--success);
+  }
+  .qrg-check b {
+    display: block;
+    font-weight: 600;
+  }
+  .qrg-check span {
+    color: var(--muted);
+  }
+  @keyframes qrg-rise {
+    from {
+      opacity: 0;
+      transform: translateY(-3px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .qrg-check {
+      animation: none;
+    }
+    .qrg-pattern,
+    .qrg-pattern canvas,
+    .qrg-btn {
+      transition: none;
+    }
+  }
+  .qrg-meter {
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--danger), var(--warning) 32%, var(--success) 62%);
+    position: relative;
+  }
+  .qrg-meter i {
+    position: absolute;
+    top: -3px;
+    width: 3px;
+    height: 12px;
+    border-radius: 2px;
+    background: var(--text);
+    box-shadow: 0 0 0 1.5px var(--panel);
+    transition: left 220ms var(--ease);
+  }
+  .qrg-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .qrg-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .qrg-logo canvas {
+    width: 46px;
+    height: 46px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--panel-2);
+  }
+</style>
+
+<div class="qrg" id="qrg-shell">
+  <div class="qrg-bar">
+    <button
+      class="qrg-btn qrg-icon"
+      id="qrg-undo"
+      type="button"
+      title="Undo (Ctrl+Z)"
+      aria-label="Undo"
+      data-t-title="bar.undoHint"
+      data-t-aria="bar.undo"
+    >
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        aria-hidden="true"
+      >
+        <path d="M3 10h11a5 5 0 1 1 0 10H8" />
+        <path d="M3 10l5-5M3 10l5 5" />
+      </svg>
+    </button>
+    <button
+      class="qrg-btn qrg-icon"
+      id="qrg-redo"
+      type="button"
+      title="Redo (Ctrl+Shift+Z)"
+      aria-label="Redo"
+      data-t-title="bar.redoHint"
+      data-t-aria="bar.redo"
+    >
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        aria-hidden="true"
+      >
+        <path d="M21 10H10a5 5 0 1 0 0 10h6" />
+        <path d="M21 10l-5-5M21 10l-5 5" />
+      </svg>
+    </button>
+    <span class="qrg-chip" id="qrg-dims" title="Width × height × thickness" data-t-title="bar.sizeHint"><b>—</b></span>
+    <span
+      class="qrg-chip"
+      id="qrg-code"
+      title="Which QR version, error correction and module size"
+      data-t-title="bar.codeHint"
+      ><b>—</b></span
+    >
+    <span class="qrg-chip" id="qrg-filaments" title="How many filaments it takes" data-t-title="bar.filamentsHint"
+      ><b>—</b></span
+    >
+    <span class="qrg-spacer"></span>
+    <span class="qrg-state" id="qrg-state" role="status" data-state="idle">Starting up</span>
+    <button
+      class="qrg-btn qrg-icon"
+      id="qrg-more"
+      type="button"
+      aria-haspopup="menu"
+      aria-expanded="false"
+      aria-label="More"
+      data-t-aria="bar.more"
+      data-t-title="bar.more"
+    >
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <circle cx="12" cy="5" r="1.7" />
+        <circle cx="12" cy="12" r="1.7" />
+        <circle cx="12" cy="19" r="1.7" />
+      </svg>
+    </button>
+    <button class="qrg-btn" id="qrg-download" type="button" aria-haspopup="menu" aria-expanded="false">
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        aria-hidden="true"
+      >
+        <path d="M12 3v12M7 11l5 5 5-5M4 20h16" />
+      </svg>
+      <span data-t="bar.download">Download</span>
+    </button>
+    <button class="qrg-btn qrg-btn-main" id="qrg-save" type="button">
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        aria-hidden="true"
+      >
+        <path d="M5 4h11l4 4v12H5z" />
+        <path d="M9 4v5h6M9 15h6" />
+      </svg>
+      <span data-t="bar.save">Save to Thingport</span>
+    </button>
+  </div>
+
+  <div class="qrg-main">
+    <section class="qrg-panel qrg-form">
+      <div class="qrg-nav">
+        <label class="qrg-in"><select id="qrg-nav" aria-label="Which settings" data-t-aria="nav.which"></select></label>
+      </div>
+      <div class="qrg-sheet" id="qrg-sheet"></div>
+    </section>
+
+    <section class="qrg-panel qrg-stage" aria-label="The code">
+      <div class="qrg-canvas-wrap">
+        <div
+          class="qrg-seg qrg-views"
+          id="qrg-stage-views"
+          role="group"
+          aria-label="Which view"
+          data-t-aria="view.which"
+        >
+          <button type="button" data-stage="solid" aria-pressed="true" data-t="view.solid">Tile</button>
+          <button type="button" data-stage="flat" aria-pressed="false" data-t="view.flat">Flat</button>
+          <button type="button" data-stage="scan" aria-pressed="false" data-t="view.scan">Scan it</button>
+        </div>
+        <canvas
+          id="qrg-canvas"
+          tabindex="0"
+          aria-label="The tile, drag to turn it, scroll to zoom"
+          data-t-aria="view.canvas"
+        ></canvas>
+        <div class="qrg-flat" id="qrg-flat-wrap" hidden>
+          <canvas id="qrg-flat" aria-label="The code seen from above" data-t-aria="view.flatCanvas"></canvas>
+        </div>
+        <div class="qrg-flat qrg-scan" id="qrg-scan-wrap" hidden>
+          <canvas id="qrg-scan" aria-label="The code as a reader sees it" data-t-aria="view.scanCanvas"></canvas>
+          <p id="qrg-scan-note" data-t="view.scanNote">
+            Point a phone at this. If it reads here, it will read off the print.
+          </p>
+        </div>
+        <div class="qrg-turn" id="qrg-turn">
+          <button
+            class="qrg-btn qrg-icon"
+            id="qrg-fit"
+            type="button"
+            title="Fit the view"
+            aria-label="Fit the view"
+            data-t-title="view.fit"
+            data-t-aria="view.fit"
+          >
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+            </svg>
+          </button>
+          <div class="qrg-seg" id="qrg-looks" role="group" aria-label="Which way to look at it" data-t-aria="view.look">
+            <button type="button" data-view="home" aria-pressed="true" data-t="view.home">3D</button>
+            <button type="button" data-view="front" aria-pressed="false" data-t="view.top">Top</button>
+            <button type="button" data-view="angle" aria-pressed="false" data-t="view.angle">Low</button>
+            <button type="button" data-view="back" aria-pressed="false" data-t="view.under">Under</button>
+          </div>
+        </div>
+        <div class="qrg-readout" id="qrg-readout" hidden></div>
+        <div class="qrg-busy" id="qrg-busy" hidden>
+          <div class="qrg-spin" aria-hidden="true"></div>
+          <p id="qrg-busy-text" role="status" data-t="state.working">Working it out</p>
+        </div>
+        <div class="qrg-stop" id="qrg-stop" hidden>
+          <strong id="qrg-stop-title" data-t="state.wontBuild">That won't build</strong>
+          <p id="qrg-stop-text"></p>
+          <button class="qrg-btn" id="qrg-stop-retry" type="button" data-t="state.tryAgain">Try again</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

@@ -6,6 +6,7 @@
     "enclosure-generator",
     "print-cost-estimator",
     "skadis-planner",
-    "keyring-generator"
+    "keyring-generator",
+    "qr-code-generator"
   ]
 }

@@ -1,0 +1,19 @@
+{
+  "name": "QR code generator",
+  "description": "Makes a printable QR code: a link, a Wi-Fi network or a contact, styled, and saved as a 3MF with a part per filament.",
+  "version": "1.0.0",
+  "author": "Thingport contributors",
+  "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
+  "window": {
+    "width": 1320,
+    "height": 840
+  },
+  "hosts": [],
+  "locales": [
+    "en",
+    "lt",
+    "es",
+    "fr"
+  ],
+  "iconUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2048%2048%22%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%2242%22%20height%3D%2242%22%20rx%3D%226%22%20fill%3D%22%23eceff1%22%2F%3E%3Cpath%20d%3D%22M6%206h12v12H6z%22%20fill%3D%22%23101418%22%2F%3E%3Cpath%20d%3D%22M9%209h6v6H9z%22%20fill%3D%22%23eceff1%22%2F%3E%3Cpath%20d%3D%22M10.5%2010.5h3v3h-3z%22%20fill%3D%22%23101418%22%2F%3E%3Cpath%20d%3D%22M30%206h12v12H30z%22%20fill%3D%22%23101418%22%2F%3E%3Cpath%20d%3D%22M33%209h6v6h-6z%22%20fill%3D%22%23eceff1%22%2F%3E%3Cpath%20d%3D%22M34.5%2010.5h3v3h-3z%22%20fill%3D%22%23101418%22%2F%3E%3Cpath%20d%3D%22M6%2030h12v12H6z%22%20fill%3D%22%23101418%22%2F%3E%3Cpath%20d%3D%22M9%2033h6v6H9z%22%20fill%3D%22%23eceff1%22%2F%3E%3Cpath%20d%3D%22M10.5%2034.5h3v3h-3z%22%20fill%3D%22%23101418%22%2F%3E%3Cg%20fill%3D%22%231e88e5%22%3E%3Crect%20x%3D%2221%22%20y%3D%226%22%20width%3D%223%22%20height%3D%223%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%2221%22%20y%3D%2212%22%20width%3D%223%22%20height%3D%223%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%2224%22%20y%3D%2218%22%20width%3D%223%22%20height%3D%223%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%2221%22%20width%3D%223%22%20height%3D%223%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%2221%22%20width%3D%223%22%20height%3D%223%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%2218%22%20y%3D%2221%22%20width%3D%223%22%20height%3D%223%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%2230%22%20y%3D%2221%22%20width%3D%223%22%20height%3D%223%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%2236%22%20y%3D%2221%22%20width%3D%223%22%20height%3D%223%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%2221%22%20y%3D%2224%22%20width%3D%223%22%20height%3D%223%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%2227%22%20y%3D%2227%22%20width%3D%223%22%20height%3D%223%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%2233%22%20y%3D%2227%22%20width%3D%223%22%20height%3D%223%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%2239%22%20y%3D%2230%22%20width%3D%223%22%20height%3D%223%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%2221%22%20y%3D%2233%22%20width%3D%223%22%20height%3D%223%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%2227%22%20y%3D%2233%22%20width%3D%223%22%20height%3D%223%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%2233%22%20y%3D%2236%22%20width%3D%223%22%20height%3D%223%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%2224%22%20y%3D%2239%22%20width%3D%223%22%20height%3D%223%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%2239%22%20y%3D%2239%22%20width%3D%223%22%20height%3D%223%22%20rx%3D%221%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"
+}
