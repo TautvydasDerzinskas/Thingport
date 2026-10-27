@@ -41,8 +41,9 @@ room. Under it, **Customize** holds the script's own parameters, grouped as the 
 What comes out can be downloaded as a 3MF or an STL, or saved back into your library as a model of its own.
 A saved one keeps a copy of the script beside it, so it can be customised again in turn.
 
-Nothing is sent anywhere — the engine runs in your browser, so the script, the values you choose and the
-result all stay on your instance. There is nothing to install.
+The engine runs in your browser, so generating sends nothing anywhere: the script, the values you choose and
+the result never leave the tab until you save, and saving uploads to your own instance like any other model.
+There is nothing to install.
 
 **Generative**, above the model grid, narrows the library to the models that have one.
 

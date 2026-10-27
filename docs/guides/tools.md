@@ -241,7 +241,8 @@ const { parameters } = await openscad.parameters(source);
 const { bytes, log, seconds } = await openscad.render(source, { parameters: { TEXT: "Hello", size: 40 } });
 ```
 
-Nothing of the script, the parameters or the result leaves the browser.
+Generating happens entirely in the browser: the script, the parameters and the result go nowhere on their own.
+Saving the result is a separate step — `models.create` uploads it to the instance like any other model.
 
 The fonts are all static faces, under the Open Font License, listed in
 [`frontend/src/assets/toolFonts`](../../frontend/src/assets/toolFonts). A variable font is deliberately not among
