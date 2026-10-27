@@ -109,8 +109,7 @@ export function planDrawer(project) {
   }
   const runsX = split(x, bed.x);
   const runsY = split(y, bed.y);
-  if (!runsX || !runsY)
-    problems.push({ kind: "bed", text: "A single cell and its border don't fit the bed: make the bed bigger." });
+  if (!runsX || !runsY) problems.push({ kind: "bed", text: "problem.cellTooBig" });
 
   // Tiles, and the kinds of tile, each with how many of it.
   const tiles = [];
@@ -135,19 +134,21 @@ export function planDrawer(project) {
   const bins = project.bins.map((b) => {
     const size = binSize(b, grid);
     const issues = [];
-    if (b.x < 0 || b.y < 0 || b.x + b.w > x.count || b.y + b.d > y.count) issues.push("is outside the grid");
+    if (b.x < 0 || b.y < 0 || b.x + b.w > x.count || b.y + b.d > y.count) issues.push("issue.outsideGrid");
     for (let i = b.x; i < b.x + b.w; i++)
       for (let j = b.y; j < b.y + b.d; j++) {
         const cell = `${i},${j}`;
-        if (taken.has(cell) && !issues.includes("overlaps another bin")) issues.push("overlaps another bin");
+        if (taken.has(cell) && !issues.includes("issue.overlaps")) issues.push("issue.overlaps");
         taken.set(cell, b.id);
       }
-    if (!fitsBed(size.width, size.depth, bed)) issues.push("is too big for the bed");
-    if (size.height > drawer.height) issues.push("is taller than the drawer");
+    if (!fitsBed(size.width, size.depth, bed)) issues.push("issue.tooBigForBed");
+    if (size.height > drawer.height) issues.push("issue.tallerThanDrawer");
     return { ...b, size, issues };
   });
   for (const b of bins)
-    if (b.issues.length) problems.push({ kind: "bin", id: b.id, text: `A ${b.w}×${b.d} bin ${listText(b.issues)}.` });
+    // The reasons are label keys; the window joins and says them.
+    if (b.issues.length)
+      problems.push({ kind: "bin", id: b.id, text: "problem.bin", vars: { w: b.w, d: b.d }, issues: b.issues });
 
   const binKinds = new Map();
   for (const b of bins) {
@@ -167,8 +168,9 @@ export function planDrawer(project) {
       cols: kind.cols,
       rows: kind.rows,
       pad: kind.pad,
-      name: `Baseplate tile ${kind.letter}: ${kind.cols}×${kind.rows}`,
-      detail: borderText(kind.pad),
+      name: "part.baseplateTile",
+      nameVars: { letter: kind.letter, cols: kind.cols, rows: kind.rows },
+      detail: borderLabel(kind.pad),
       file: `${kind.count}x-baseplate-${kind.letter.toLowerCase()}-${kind.cols}x${kind.rows}.stl`,
     })),
     ...[...binKinds.values()].map((kind) => ({
@@ -180,29 +182,33 @@ export function planDrawer(project) {
       units: kind.units,
       across: kind.across,
       along: kind.along,
-      name: `Bin ${kind.w}×${kind.d}, ${kind.units}u`,
-      detail: kind.across * kind.along > 1 ? `${kind.across}×${kind.along} compartments` : "",
+      name: "part.bin",
+      nameVars: { w: kind.w, d: kind.d, units: kind.units },
+      detail:
+        kind.across * kind.along > 1
+          ? { key: "part.compartments", vars: { across: kind.across, along: kind.along } }
+          : null,
       file: `${kind.count}x-bin-${kind.w}x${kind.d}-${kind.units}u${kind.across * kind.along > 1 ? `-${kind.across}x${kind.along}` : ""}.stl`,
     })),
   ];
   return { grid, tiles, tileRuns: { x: runsX ?? [], y: runsY ?? [] }, parts, bins, problems };
 }
 
-/** A tile's borders, by how many sides and how wide: it's turned to fit, so which side is left to the layout. */
-function borderText(pad) {
+/**
+ * A tile's borders, by how many sides and how wide: it's turned to fit, so which side is left to the layout.
+ * Comes back as a label and what fills it in, so the window can say it in the user's own words.
+ */
+function borderLabel(pad) {
   const sides = pad.filter((p) => p > 0);
-  if (!sides.length) return "";
+  if (!sides.length) return null;
   const widths = [...new Set(sides)];
   const across = pad[0] > 0 && pad[1] > 0;
   const along = pad[2] > 0 && pad[3] > 0;
-  const where = sides.length === 1 ? "on one side" : across || along ? "on opposite sides" : "on two sides at a corner";
-  return widths.length === 1
-    ? `${widths[0]} mm border ${sides.length > 2 ? `on ${sides.length} sides` : where}`
-    : `borders of ${listText(widths.map((w) => `${w}`))} mm`;
+  if (widths.length > 1) return { key: "border.several", vars: { widths: widths.join(", ") } };
+  if (sides.length > 2) return { key: "border.sides", vars: { mm: widths[0], sides: sides.length } };
+  const where = sides.length === 1 ? "border.oneSide" : across || along ? "border.opposite" : "border.corner";
+  return { key: where, vars: { mm: widths[0] } };
 }
-
-const listText = (items) =>
-  items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`;
 
 /** Where each tile goes, as letters on the drawer's grid of tiles, back row first as one looks down into it. */
 export function tileMap(plan) {
@@ -219,7 +225,7 @@ export function tileMap(plan) {
 }
 
 /** The model's description: what it's for, what to print and how many, and how it goes together. */
-export function description(project, plan) {
+export function description(project, plan, t) {
   const { drawer, bed } = project;
   const { x, y } = plan.grid;
   const tiles = plan.parts.filter((p) => p.type === "tile");
@@ -227,41 +233,43 @@ export function description(project, plan) {
   const count = (list) => list.reduce((sum, p) => sum + p.count, 0);
   const cellText =
     project.cells === "stretch"
-      ? `${x.count} × ${y.count} cells stretched to ${round(x.pitch)} × ${round(y.pitch)} mm to fill the drawer exactly (bins are made to match)`
-      : `${x.count} × ${y.count} Gridfinity cells of 42 mm`;
+      ? t("plan.cellsStretched", { across: x.count, along: y.count, pitchX: round(x.pitch), pitchY: round(y.pitch) })
+      : t("plan.cellsStandard", { across: x.count, along: y.count });
   const lines = [
-    `A Gridfinity organizer for a ${drawer.width} × ${drawer.depth} × ${drawer.height} mm drawer, cut to print on a ${bed.x} × ${bed.y} mm bed.`,
+    t("plan.intro", { width: drawer.width, depth: drawer.depth, height: drawer.height, bedX: bed.x, bedY: bed.y }),
     "",
-    `${cellText}. The baseplate leaves ${project.clearance} mm of room to the walls${
-      project.cells === "gridfinity" && (x.before > 0 || y.before > 0) ? " and fills the rest with a flat border" : ""
-    }.`,
+    `${cellText}. ` +
+      t("plan.clearance", { mm: project.clearance }) +
+      (project.cells === "gridfinity" && (x.before > 0 || y.before > 0) ? t("plan.andBorder") : "") +
+      ".",
     "",
-    "## What to print",
+    `## ${t("plan.whatToPrint")}`,
     "",
-    "| Part | Print | File |",
+    `| ${t("plan.colPart")} | ${t("plan.colPrint")} | ${t("plan.colFile")} |`,
     "| --- | ---: | --- |",
-    ...plan.parts.map((p) => `| ${p.name}${p.detail ? ` (${p.detail})` : ""} | ${p.count} | \`${p.file}\` |`),
+    ...plan.parts.map(
+      (p) =>
+        `| ${t(p.name, p.nameVars)}${p.detail ? ` (${t(p.detail.key, p.detail.vars)})` : ""} | ${p.count} | \`${p.file}\` |`,
+    ),
     "",
-    `In all: ${count(tiles)} baseplate tile${count(tiles) === 1 ? "" : "s"}${
-      bins.length ? ` and ${count(bins)} bin${count(bins) === 1 ? "" : "s"}` : ""
-    }. Each file's name starts with how many of it to print.`,
+    t("plan.inAll", {
+      tiles: t(count(tiles) === 1 ? "plan.tile.one" : "plan.tile.many", { count: count(tiles) }),
+      bins: bins.length
+        ? t("plan.andBins", { bins: t(count(bins) === 1 ? "plan.bin.one" : "plan.bin.many", { count: count(bins) }) })
+        : "",
+    }),
     "",
-    "## Putting it together",
+    `## ${t("plan.puttingTogether")}`,
     "",
-    "Lay the baseplate tiles in the drawer as below, looking down into it with its front at the bottom, each turned so its border meets the drawer's wall. They lie side by side, held by the walls; no glue is needed.",
+    t("plan.layTiles"),
     "",
     "```",
     tileMap(plan),
     "```",
   ];
   if (bins.length) {
-    lines.push("", "Then drop the bins into the pockets, as in the picture.");
+    lines.push("", t("plan.dropBins"));
   }
-  lines.push(
-    "",
-    "Bins are " +
-      (bins.length ? `${HEIGHT_UNIT} mm a height unit (u), ` : "") +
-      "printed without supports, open side up; tiles print flat as they lie.",
-  );
+  lines.push("", bins.length ? t("plan.binsWithUnit", { unit: HEIGHT_UNIT }) : t("plan.binsPlain"));
   return lines.join("\n");
 }

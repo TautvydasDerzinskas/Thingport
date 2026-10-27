@@ -532,84 +532,123 @@
 </style>
 <div class="gfd">
   <main class="gfd-main">
-    <section class="gfd-panel gfd-settings" aria-label="Drawer and printer">
+    <section class="gfd-panel gfd-settings" data-t-aria="aria.drawerPrinter" aria-label="Drawer and printer">
       <div class="gfd-group">
-        <div class="gfd-label">Project</div>
+        <div class="gfd-label"><span data-t="form.project">Project</span></div>
         <div class="gfd-field gfd-name">
-          <input id="gfd-name" maxlength="120" autocomplete="off" aria-label="Project name" placeholder="Desk drawer" />
+          <input
+            id="gfd-name"
+            maxlength="120"
+            autocomplete="off"
+            data-t-aria="form.projectName"
+            aria-label="Project name"
+            data-t-placeholder="form.projectPlaceholder"
+            placeholder="Desk drawer"
+          />
         </div>
       </div>
       <div class="gfd-group">
-        <div class="gfd-label">Drawer inside</div>
+        <div class="gfd-label"><span data-t="form.drawerInside">Drawer inside</span></div>
         <div class="gfd-row" style="--n: 3">
           <div class="gfd-field">
-            <span class="gfd-prefix">Width</span
-            ><input id="gfd-width" type="number" min="40" max="2000" step="1" aria-label="Drawer width" /><span
-              class="gfd-suffix"
-              >mm</span
-            >
+            <span class="gfd-prefix"><span data-t="form.width">Width</span></span
+            ><input
+              id="gfd-width"
+              type="number"
+              min="40"
+              max="2000"
+              step="1"
+              data-t-aria="form.drawerWidth"
+              aria-label="Drawer width"
+            /><span class="gfd-suffix">mm</span>
           </div>
           <div class="gfd-field">
-            <span class="gfd-prefix">Depth</span
-            ><input id="gfd-depth" type="number" min="40" max="2000" step="1" aria-label="Drawer depth" /><span
-              class="gfd-suffix"
-              >mm</span
-            >
+            <span class="gfd-prefix"><span data-t="form.depth">Depth</span></span
+            ><input
+              id="gfd-depth"
+              type="number"
+              min="40"
+              max="2000"
+              step="1"
+              data-t-aria="form.drawerDepth"
+              aria-label="Drawer depth"
+            /><span class="gfd-suffix">mm</span>
           </div>
           <div class="gfd-field">
-            <span class="gfd-prefix">Height</span
-            ><input id="gfd-height" type="number" min="10" max="500" step="1" aria-label="Drawer height" /><span
-              class="gfd-suffix"
-              >mm</span
-            >
+            <span class="gfd-prefix"><span data-t="form.height">Height</span></span
+            ><input
+              id="gfd-height"
+              type="number"
+              min="10"
+              max="500"
+              step="1"
+              data-t-aria="form.drawerHeight"
+              aria-label="Drawer height"
+            /><span class="gfd-suffix">mm</span>
           </div>
         </div>
       </div>
       <div class="gfd-group">
-        <div class="gfd-label">Printer bed</div>
+        <div class="gfd-label"><span data-t="form.printerBed">Printer bed</span></div>
         <div class="gfd-field">
-          <select id="gfd-bedPreset" aria-label="Printer bed preset"></select>
+          <select id="gfd-bedPreset" data-t-aria="form.bedPreset" aria-label="Printer bed preset"></select>
         </div>
         <div class="gfd-row">
           <div class="gfd-field">
             <span class="gfd-prefix">X</span
-            ><input id="gfd-bedX" type="number" min="60" max="1000" step="1" aria-label="Bed width" /><span
-              class="gfd-suffix"
-              >mm</span
-            >
+            ><input
+              id="gfd-bedX"
+              type="number"
+              min="60"
+              max="1000"
+              step="1"
+              data-t-aria="form.bedWidth"
+              aria-label="Bed width"
+            /><span class="gfd-suffix">mm</span>
           </div>
           <div class="gfd-field">
             <span class="gfd-prefix">Y</span
-            ><input id="gfd-bedY" type="number" min="60" max="1000" step="1" aria-label="Bed depth" /><span
-              class="gfd-suffix"
-              >mm</span
-            >
+            ><input
+              id="gfd-bedY"
+              type="number"
+              min="60"
+              max="1000"
+              step="1"
+              data-t-aria="form.bedDepth"
+              aria-label="Bed depth"
+            /><span class="gfd-suffix">mm</span>
           </div>
         </div>
       </div>
       <div class="gfd-group">
-        <div class="gfd-label">Cells</div>
-        <div class="gfd-seg" role="group" aria-label="Cell size" id="gfd-cells">
-          <button type="button" data-value="gridfinity">Gridfinity 42</button>
-          <button type="button" data-value="stretch">Fill exactly</button>
+        <div class="gfd-label"><span data-t="form.cells">Cells</span></div>
+        <div class="gfd-seg" role="group" data-t-aria="form.cellSize" aria-label="Cell size" id="gfd-cells">
+          <button type="button" data-value="gridfinity"><span data-t="cells.gridfinity">Gridfinity 42</span></button>
+          <button type="button" data-value="stretch"><span data-t="cells.stretch">Fill exactly</span></button>
         </div>
         <div class="gfd-hint" id="gfd-cellsHint"></div>
       </div>
       <div class="gfd-group">
-        <div class="gfd-label">Room to the walls</div>
+        <div class="gfd-label"><span data-t="form.clearance">Room to the walls</span></div>
         <div class="gfd-field">
-          <input id="gfd-clearance" type="number" min="0" max="10" step="0.5" aria-label="Room to the walls" /><span
-            class="gfd-suffix"
-            >mm</span
-          >
+          <input
+            id="gfd-clearance"
+            type="number"
+            min="0"
+            max="10"
+            step="0.5"
+            data-t-aria="form.clearance"
+            aria-label="Room to the walls"
+          /><span class="gfd-suffix">mm</span>
         </div>
       </div>
       <div class="gfd-group">
-        <div class="gfd-label">New bins</div>
+        <div class="gfd-label"><span data-t="bins.new">New bins</span></div>
         <div class="gfd-hint">
-          <span class="gfd-stepper" role="group" aria-label="Height of new bins"
-            ><button type="button" id="gfd-unitsDown" aria-label="Lower">−</button><output id="gfd-units"></output
-            ><button type="button" id="gfd-unitsUp" aria-label="Taller">+</button></span
+          <span class="gfd-stepper" role="group" data-t-aria="bins.newHeight" aria-label="Height of new bins"
+            ><button type="button" id="gfd-unitsDown" data-t-aria="bins.lower" aria-label="Lower">−</button
+            ><output id="gfd-units"></output
+            ><button type="button" id="gfd-unitsUp" data-t-aria="bins.taller" aria-label="Taller">+</button></span
           >
           <span id="gfd-unitsMm"></span>
         </div>
@@ -617,22 +656,24 @@
       <div class="gfd-facts" id="gfd-facts" aria-live="polite"></div>
     </section>
 
-    <section class="gfd-panel gfd-layout" aria-label="Drawer layout">
+    <section class="gfd-panel gfd-layout" data-t-aria="aria.layout" aria-label="Drawer layout">
       <div class="gfd-layout-head">
         <span class="gfd-dims" id="gfd-dims"></span>
-        <span class="gfd-hint">Drag to draw a bin, drag a bin to move it</span>
+        <span class="gfd-hint"><span data-t="bins.dragHint">Drag to draw a bin, drag a bin to move it</span></span>
         <span class="gfd-spacer"></span>
-        <button class="gfd-btn" id="gfd-fill" title="A 1×1 bin in every free cell">Fill gaps</button>
-        <button class="gfd-btn" id="gfd-clear">Clear bins</button>
+        <button class="gfd-btn" id="gfd-fill" data-t-title="bins.fillGapsHint" title="A 1×1 bin in every free cell">
+          <span data-t="bins.fillGaps">Fill gaps</span>
+        </button>
+        <button class="gfd-btn" id="gfd-clear"><span data-t="bins.clearBins">Clear bins</span></button>
       </div>
       <div class="gfd-stage" id="gfd-stage"></div>
       <div class="gfd-selected" id="gfd-selected" hidden></div>
     </section>
 
-    <section class="gfd-panel gfd-parts" aria-label="Parts">
+    <section class="gfd-panel gfd-parts" data-t-aria="parts.title" aria-label="Parts">
       <h2>Parts <span class="gfd-hint" id="gfd-count"></span></h2>
-      <div class="gfd-view" id="gfd-view" title="Drag to turn it">
-        <canvas id="gfd-viewCanvas" aria-label="The part, in 3D"></canvas>
+      <div class="gfd-view" id="gfd-view" data-t-title="aria.dragToTurn" title="Drag to turn it">
+        <canvas id="gfd-viewCanvas" data-t-aria="aria.part3d" aria-label="The part, in 3D"></canvas>
         <span class="gfd-view-name" id="gfd-viewName"></span>
       </div>
       <ul class="gfd-problems" id="gfd-problems" hidden></ul>
@@ -643,9 +684,11 @@
             <path d="M5 4h11l3 3v13H5z" />
             <path d="M8 4v5h7V4M8 20v-6h8v6" />
           </svg>
-          Save to Thingport
+          <span data-t="bar.save">Save to Thingport</span>
         </button>
-        <div class="gfd-hint">Every part as one model, with how many to print of each in its description.</div>
+        <div class="gfd-hint">
+          <span data-t="save.note">Every part as one model, with how many to print of each in its description.</span>
+        </div>
         <div class="gfd-status" id="gfd-status" aria-live="polite" hidden></div>
       </div>
     </section>

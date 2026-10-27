@@ -383,8 +383,7 @@ export function planDrawer(project) {
   }
   const runsX = split(x, bed.x);
   const runsY = split(y, bed.y);
-  if (!runsX || !runsY)
-    problems.push({ kind: "bed", text: "A single cell and its border don't fit the bed: make the bed bigger." });
+  if (!runsX || !runsY) problems.push({ kind: "bed", text: "problem.cellTooBig" });
 
   // Tiles, and the kinds of tile, each with how many of it.
   const tiles = [];
@@ -409,19 +408,21 @@ export function planDrawer(project) {
   const bins = project.bins.map((b) => {
     const size = binSize(b, grid);
     const issues = [];
-    if (b.x < 0 || b.y < 0 || b.x + b.w > x.count || b.y + b.d > y.count) issues.push("is outside the grid");
+    if (b.x < 0 || b.y < 0 || b.x + b.w > x.count || b.y + b.d > y.count) issues.push("issue.outsideGrid");
     for (let i = b.x; i < b.x + b.w; i++)
       for (let j = b.y; j < b.y + b.d; j++) {
         const cell = `${i},${j}`;
-        if (taken.has(cell) && !issues.includes("overlaps another bin")) issues.push("overlaps another bin");
+        if (taken.has(cell) && !issues.includes("issue.overlaps")) issues.push("issue.overlaps");
         taken.set(cell, b.id);
       }
-    if (!fitsBed(size.width, size.depth, bed)) issues.push("is too big for the bed");
-    if (size.height > drawer.height) issues.push("is taller than the drawer");
+    if (!fitsBed(size.width, size.depth, bed)) issues.push("issue.tooBigForBed");
+    if (size.height > drawer.height) issues.push("issue.tallerThanDrawer");
     return { ...b, size, issues };
   });
   for (const b of bins)
-    if (b.issues.length) problems.push({ kind: "bin", id: b.id, text: `A ${b.w}×${b.d} bin ${listText(b.issues)}.` });
+    // The reasons are label keys; the window joins and says them.
+    if (b.issues.length)
+      problems.push({ kind: "bin", id: b.id, text: "problem.bin", vars: { w: b.w, d: b.d }, issues: b.issues });
 
   const binKinds = new Map();
   for (const b of bins) {
@@ -441,8 +442,9 @@ export function planDrawer(project) {
       cols: kind.cols,
       rows: kind.rows,
       pad: kind.pad,
-      name: `Baseplate tile ${kind.letter}: ${kind.cols}×${kind.rows}`,
-      detail: borderText(kind.pad),
+      name: "part.baseplateTile",
+      nameVars: { letter: kind.letter, cols: kind.cols, rows: kind.rows },
+      detail: borderLabel(kind.pad),
       file: `${kind.count}x-baseplate-${kind.letter.toLowerCase()}-${kind.cols}x${kind.rows}.stl`,
     })),
     ...[...binKinds.values()].map((kind) => ({
@@ -454,29 +456,33 @@ export function planDrawer(project) {
       units: kind.units,
       across: kind.across,
       along: kind.along,
-      name: `Bin ${kind.w}×${kind.d}, ${kind.units}u`,
-      detail: kind.across * kind.along > 1 ? `${kind.across}×${kind.along} compartments` : "",
+      name: "part.bin",
+      nameVars: { w: kind.w, d: kind.d, units: kind.units },
+      detail:
+        kind.across * kind.along > 1
+          ? { key: "part.compartments", vars: { across: kind.across, along: kind.along } }
+          : null,
       file: `${kind.count}x-bin-${kind.w}x${kind.d}-${kind.units}u${kind.across * kind.along > 1 ? `-${kind.across}x${kind.along}` : ""}.stl`,
     })),
   ];
   return { grid, tiles, tileRuns: { x: runsX ?? [], y: runsY ?? [] }, parts, bins, problems };
 }
 
-/** A tile's borders, by how many sides and how wide: it's turned to fit, so which side is left to the layout. */
-function borderText(pad) {
+/**
+ * A tile's borders, by how many sides and how wide: it's turned to fit, so which side is left to the layout.
+ * Comes back as a label and what fills it in, so the window can say it in the user's own words.
+ */
+function borderLabel(pad) {
   const sides = pad.filter((p) => p > 0);
-  if (!sides.length) return "";
+  if (!sides.length) return null;
   const widths = [...new Set(sides)];
   const across = pad[0] > 0 && pad[1] > 0;
   const along = pad[2] > 0 && pad[3] > 0;
-  const where = sides.length === 1 ? "on one side" : across || along ? "on opposite sides" : "on two sides at a corner";
-  return widths.length === 1
-    ? `${widths[0]} mm border ${sides.length > 2 ? `on ${sides.length} sides` : where}`
-    : `borders of ${listText(widths.map((w) => `${w}`))} mm`;
+  if (widths.length > 1) return { key: "border.several", vars: { widths: widths.join(", ") } };
+  if (sides.length > 2) return { key: "border.sides", vars: { mm: widths[0], sides: sides.length } };
+  const where = sides.length === 1 ? "border.oneSide" : across || along ? "border.opposite" : "border.corner";
+  return { key: where, vars: { mm: widths[0] } };
 }
-
-const listText = (items) =>
-  items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`;
 
 /** Where each tile goes, as letters on the drawer's grid of tiles, back row first as one looks down into it. */
 export function tileMap(plan) {
@@ -493,7 +499,7 @@ export function tileMap(plan) {
 }
 
 /** The model's description: what it's for, what to print and how many, and how it goes together. */
-export function description(project, plan) {
+export function description(project, plan, t) {
   const { drawer, bed } = project;
   const { x, y } = plan.grid;
   const tiles = plan.parts.filter((p) => p.type === "tile");
@@ -501,42 +507,44 @@ export function description(project, plan) {
   const count = (list) => list.reduce((sum, p) => sum + p.count, 0);
   const cellText =
     project.cells === "stretch"
-      ? `${x.count} × ${y.count} cells stretched to ${round(x.pitch)} × ${round(y.pitch)} mm to fill the drawer exactly (bins are made to match)`
-      : `${x.count} × ${y.count} Gridfinity cells of 42 mm`;
+      ? t("plan.cellsStretched", { across: x.count, along: y.count, pitchX: round(x.pitch), pitchY: round(y.pitch) })
+      : t("plan.cellsStandard", { across: x.count, along: y.count });
   const lines = [
-    `A Gridfinity organizer for a ${drawer.width} × ${drawer.depth} × ${drawer.height} mm drawer, cut to print on a ${bed.x} × ${bed.y} mm bed.`,
+    t("plan.intro", { width: drawer.width, depth: drawer.depth, height: drawer.height, bedX: bed.x, bedY: bed.y }),
     "",
-    `${cellText}. The baseplate leaves ${project.clearance} mm of room to the walls${
-      project.cells === "gridfinity" && (x.before > 0 || y.before > 0) ? " and fills the rest with a flat border" : ""
-    }.`,
+    `${cellText}. ` +
+      t("plan.clearance", { mm: project.clearance }) +
+      (project.cells === "gridfinity" && (x.before > 0 || y.before > 0) ? t("plan.andBorder") : "") +
+      ".",
     "",
-    "## What to print",
+    `## ${t("plan.whatToPrint")}`,
     "",
-    "| Part | Print | File |",
+    `| ${t("plan.colPart")} | ${t("plan.colPrint")} | ${t("plan.colFile")} |`,
     "| --- | ---: | --- |",
-    ...plan.parts.map((p) => `| ${p.name}${p.detail ? ` (${p.detail})` : ""} | ${p.count} | \`${p.file}\` |`),
+    ...plan.parts.map(
+      (p) =>
+        `| ${t(p.name, p.nameVars)}${p.detail ? ` (${t(p.detail.key, p.detail.vars)})` : ""} | ${p.count} | \`${p.file}\` |`,
+    ),
     "",
-    `In all: ${count(tiles)} baseplate tile${count(tiles) === 1 ? "" : "s"}${
-      bins.length ? ` and ${count(bins)} bin${count(bins) === 1 ? "" : "s"}` : ""
-    }. Each file's name starts with how many of it to print.`,
+    t("plan.inAll", {
+      tiles: t(count(tiles) === 1 ? "plan.tile.one" : "plan.tile.many", { count: count(tiles) }),
+      bins: bins.length
+        ? t("plan.andBins", { bins: t(count(bins) === 1 ? "plan.bin.one" : "plan.bin.many", { count: count(bins) }) })
+        : "",
+    }),
     "",
-    "## Putting it together",
+    `## ${t("plan.puttingTogether")}`,
     "",
-    "Lay the baseplate tiles in the drawer as below, looking down into it with its front at the bottom, each turned so its border meets the drawer's wall. They lie side by side, held by the walls; no glue is needed.",
+    t("plan.layTiles"),
     "",
     "```",
     tileMap(plan),
     "```",
   ];
   if (bins.length) {
-    lines.push("", "Then drop the bins into the pockets, as in the picture.");
+    lines.push("", t("plan.dropBins"));
   }
-  lines.push(
-    "",
-    "Bins are " +
-      (bins.length ? `${HEIGHT_UNIT} mm a height unit (u), ` : "") +
-      "printed without supports, open side up; tiles print flat as they lie.",
-  );
+  lines.push("", bins.length ? t("plan.binsWithUnit", { unit: HEIGHT_UNIT }) : t("plan.binsPlain"));
   return lines.join("\n");
 }
 
@@ -673,8 +681,24 @@ const MAX_UNITS = 20;
 const SAVE_DEBOUNCE_MS = 500;
 
 export default async function mount(thingport) {
-  const { root, theme, storage, models, ui } = thingport;
+  const { root, theme, storage, models, ui, t, labels } = thingport;
   const $ = (id) => root.querySelector(`#gfd-${id}`);
+
+  /** A problem from the plan, said in words: its reasons are label keys, joined as a list. */
+  /** A part's name in words: the plan stores a label and what fills it in. */
+  const partName = (part) => t(part.name, part.nameVars);
+
+  const problemText = (problem) =>
+    t(problem.text, {
+      ...problem.vars,
+      issues: (problem.issues ?? [])
+        .map((issue) => t(issue))
+        .reduce(
+          (all, one, i, list) =>
+            i === 0 ? one : i === list.length - 1 ? `${all}${t("problem.and")}${one}` : `${all}, ${one}`,
+          "",
+        ),
+    });
   const shell = root.querySelector(".gfd");
   const colours = {
     bg: theme.background,
@@ -826,12 +850,12 @@ export default async function mount(thingport) {
     const stage = $("stage");
     const g = geometryOf();
     if (!g.x.count || !g.y.count) {
-      stage.innerHTML = `<div class="gfd-empty"><strong>No cell fits</strong>${plan.problems[0]?.text ?? ""}</div>`;
+      stage.innerHTML = `<div class="gfd-empty"><strong>${escapeHtml(t("stage.noCellFits"))}</strong>${plan.problems[0] ? escapeHtml(problemText(plan.problems[0])) : ""}</div>`;
       svg = null;
       return;
     }
     const pad = Math.max(g.W, g.D) * 0.02;
-    // Room below for the "Front" mark.
+    // Room below for the t("view.front") mark.
     const below = pad + 18;
     svg = svgEl("svg", {
       viewBox: `${-pad} ${-pad} ${g.W + 2 * pad} ${g.D + pad + below}`,
@@ -970,7 +994,7 @@ export default async function mount(thingport) {
       "text",
       { x: g.W / 2, y: g.D + 14, "text-anchor": "middle", "font-size": 11, fill: "var(--muted)" },
       svg,
-    ).textContent = "Front";
+    ).textContent = t("view.front");
     stage.replaceChildren(svg);
     svg.addEventListener("pointerdown", onDown);
     svg.addEventListener("keydown", onKey);
@@ -1064,7 +1088,7 @@ export default async function mount(thingport) {
     if (!done) return;
     if (done.kind === "draw") {
       if (!free(done.rect)) {
-        ui.toast("That's over another bin", "warning");
+        ui.toast(t("bins.overAnother"), "warning");
         return update();
       }
       const units = Math.min(project.units, maxUnits());
@@ -1075,7 +1099,7 @@ export default async function mount(thingport) {
       update();
     } else if (done.moved) {
       if (free(done.rect, done.bin.id)) Object.assign(done.bin, { x: done.rect.x, y: done.rect.y });
-      else ui.toast("That's over another bin", "warning");
+      else ui.toast(t("bins.overAnother"), "warning");
       update();
     }
   }
@@ -1094,7 +1118,7 @@ export default async function mount(thingport) {
       let spot = null;
       for (let row = 0; row < g.y.count && !spot; row++)
         for (let col = 0; col < g.x.count && !spot; col++) if (!cells.has(`${col},${row}`)) spot = { x: col, y: row };
-      if (!spot) ui.toast("Every cell has a bin", "info");
+      if (!spot) ui.toast(t("bins.allFilled"), "info");
       else {
         const b = { id: newId(), ...spot, w: 1, d: 1, units: Math.min(project.units, maxUnits()), across: 1, along: 1 };
         project.bins.push(b);
@@ -1196,9 +1220,9 @@ export default async function mount(thingport) {
     host.append(
       title,
       size,
-      stepper("Height (u)", b.units, 1, maxUnits(), set("units")),
-      stepper("Across", b.across, 1, Math.max(1, b.w * 3), set("across")),
-      stepper("Along", b.along, 1, Math.max(1, b.d * 3), set("along")),
+      stepper(t("bins.heightUnits"), b.units, 1, maxUnits(), set("units")),
+      stepper(t("view.across"), b.across, 1, Math.max(1, b.w * 3), set("across")),
+      stepper(t("view.along"), b.along, 1, Math.max(1, b.d * 3), set("along")),
       spacer,
       remove,
     );
@@ -1247,15 +1271,15 @@ export default async function mount(thingport) {
       item.tabIndex = 0;
       item.style.animationDelay = `${Math.min(index * 30, 240)}ms`;
       item.setAttribute("aria-current", String(part.key === viewed?.key));
-      item.setAttribute("aria-label", `${part.name}, print ${part.count}`);
+      item.setAttribute("aria-label", t("parts.itemAria", { name: partName(part), count: part.count }));
       const thumb = document.createElement("canvas");
       thumb.setAttribute("aria-hidden", "true");
       const text = document.createElement("span");
       text.className = "gfd-part-name";
-      text.textContent = part.name;
+      text.textContent = partName(part);
       if (part.detail) {
         const small = document.createElement("small");
-        small.textContent = part.detail;
+        small.textContent = t(part.detail.key, part.detail.vars);
         text.appendChild(small);
       }
       const qty = document.createElement("span");
@@ -1270,7 +1294,7 @@ export default async function mount(thingport) {
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>';
       save.addEventListener("click", (event) => {
         event.stopPropagation();
-        thingport.download({ name: part.file, data: stl(meshOf(part), part.name), type: "model/stl" });
+        thingport.download({ name: part.file, data: stl(meshOf(part), partName(part)), type: "model/stl" });
       });
       const look = () => {
         viewed = part;
@@ -1292,14 +1316,16 @@ export default async function mount(thingport) {
     listed = new Set(plan.parts.map((p) => p.key));
     const problems = $("problems");
     problems.hidden = plan.problems.length === 0;
-    problems.innerHTML = plan.problems.map((p) => `<li>${escapeHtml(p.text)}</li>`).join("");
+    problems.innerHTML = plan.problems.map((p) => `<li>${escapeHtml(problemText(p))}</li>`).join("");
     $("save").disabled = !plan.parts.length;
     drawView();
   }
 
   function drawView() {
     const canvas = $("viewCanvas");
-    $("viewName").textContent = viewed ? `${viewed.name}${viewed.detail ? ` · ${viewed.detail}` : ""}` : "";
+    $("viewName").textContent = viewed
+      ? `${partName(viewed)}${viewed.detail ? ` · ${t(viewed.detail.key, viewed.detail.vars)}` : ""}`
+      : "";
     requestAnimationFrame(() =>
       renderMesh(canvas, viewed ? meshOf(viewed) : [], { ...view, color: viewed ? partColour(viewed) : binColour }),
     );
@@ -1339,21 +1365,18 @@ export default async function mount(thingport) {
     $("unitsMm").textContent = `${project.units * HEIGHT_UNIT} mm tall`;
     $("unitsDown").disabled = project.units <= 1;
     $("unitsUp").disabled = project.units >= maxUnits();
-    $("cellsHint").textContent =
-      project.cells === "stretch"
-        ? "Cells widen to fill the drawer; bins are made to match, so other Gridfinity bins sit loosely."
-        : "Standard cells: any Gridfinity bin fits. A flat border fills what's left.";
+    $("cellsHint").textContent = project.cells === "stretch" ? t("cells.stretchHelp") : t("cells.standardHelp");
     $("dims").textContent = `${project.drawer.width} × ${project.drawer.depth} mm`;
     const { x, y } = plan.grid;
     const fmt = (v) => (Math.round(v * 10) / 10).toString();
     $("facts").innerHTML =
       x.count && y.count
         ? [
-            ["Cells", `${x.count} × ${y.count}`],
-            ["Cell size", `${fmt(x.pitch)} × ${fmt(y.pitch)} mm`],
-            ["Border", x.before || y.before ? `${fmt(x.before)} / ${fmt(y.before)} mm` : "none"],
-            ["Tiles", `${plan.tileRuns.x.length} × ${plan.tileRuns.y.length}`],
-            ["Baseplate", `${BASEPLATE_HEIGHT} mm high`],
+            [t("facts.cells"), `${x.count} × ${y.count}`],
+            [t("facts.cellSize"), `${fmt(x.pitch)} × ${fmt(y.pitch)} mm`],
+            [t("facts.border"), x.before || y.before ? `${fmt(x.before)} / ${fmt(y.before)} mm` : t("facts.none")],
+            [t("facts.tiles"), `${plan.tileRuns.x.length} × ${plan.tileRuns.y.length}`],
+            [t("facts.baseplate"), t("facts.mmHigh", { mm: BASEPLATE_HEIGHT })],
           ]
             .map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`)
             .join("")
@@ -1397,15 +1420,15 @@ export default async function mount(thingport) {
           freshBins.add(b.id);
           added++;
         }
-    if (!added) ui.toast("Every cell has a bin already", "info");
+    if (!added) ui.toast(t("bins.alreadyFilled"), "info");
     update();
   });
   $("clear").addEventListener("click", async () => {
     if (!project.bins.length) return;
     const ok = await ui.confirm({
-      title: "Clear the bins?",
+      title: t("bins.clearTitle"),
       message: `All ${project.bins.length} bins go; the drawer and baseplate stay.`,
-      confirmLabel: "Clear",
+      confirmLabel: t("bins.clear"),
       destructive: true,
     });
     if (!ok) return;
@@ -1489,27 +1512,27 @@ export default async function mount(thingport) {
     if (!plan.parts.length) return;
     if (plan.problems.some((p) => p.kind === "bin")) {
       const ok = await ui.confirm({
-        title: "Save without some bins?",
-        message: "The bins marked in red can't be made as they are, and are left out. Save the rest?",
-        confirmLabel: "Save",
+        title: t("save.withoutTitle"),
+        message: t("save.withoutBody"),
+        confirmLabel: t("save.go"),
       });
       if (!ok) return;
     }
     const button = $("save");
     button.disabled = true;
-    showStatus("Making the parts…");
+    showStatus(t("save.making"));
     try {
       const title = project.name.trim() || `Drawer ${project.drawer.width} × ${project.drawer.depth}`;
       const files = plan.parts.map((part) => ({
         name: part.file,
-        data: stl(meshOf(part), part.name),
+        data: stl(meshOf(part), partName(part)),
         type: "model/stl",
       }));
-      showStatus("Saving…");
+      showStatus(t("save.saving"));
       const model = await models.create({
         name: title,
-        description: description(project, plan),
-        tags: ["gridfinity", "drawer organizer"],
+        description: description(project, plan, t),
+        tags: ["gridfinity", t("save.tag")],
         files,
       });
       const picture = await layoutPicture();
@@ -1519,11 +1542,11 @@ export default async function mount(thingport) {
           .catch(() => undefined);
       lastSaved = model;
       showStatus(`Saved as ${model.name}.`, [
-        ["Open it", () => models.open(lastSaved.id)],
+        [t("save.open"), () => models.open(lastSaved.id)],
         [
-          "Add to a collection",
+          t("save.addToCollection"),
           async () => {
-            const collection = await thingport.collections.pick({ title: "Add the drawer to" });
+            const collection = await thingport.collections.pick({ title: t("save.pickCollection") });
             if (!collection) return;
             await thingport.collections.add(collection.id, [lastSaved.id]);
             ui.toast(`Added to ${collection.name}`, "success");
@@ -1540,6 +1563,8 @@ export default async function mount(thingport) {
     }
   });
 
+  // The window's own words, before the first render.
+  labels();
   update();
 
   return () => {
