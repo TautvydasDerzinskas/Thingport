@@ -41,34 +41,41 @@ describe("scadParameters", () => {
 });
 
 describe("scadRender", () => {
-  it("renders an STL by default, quickly enough to prove the Manifold backend is in use", async () => {
+  it("renders a 3MF by default, quickly enough to prove the Manifold backend is in use", async () => {
     const { bytes, seconds } = await scadRender(BOX);
 
-    expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe("solid");
+    expect([bytes[0], bytes[1]]).toEqual([0x50, 0x4b]); // a zip, which a 3MF is
     expect(seconds).toBeLessThan(30);
   }, 120000);
 
-  it("renders the other formats the engine was built with", async () => {
+  it("renders the formats the engine writes itself", async () => {
+    expect(new TextDecoder().decode((await scadRender(BOX, { format: "stl" })).bytes.slice(0, 5))).toBe("solid");
     expect((await scadRender(BOX, { format: "obj" })).bytes.length).toBeGreaterThan(0);
     expect((await scadRender(BOX, { format: "off" })).bytes.length).toBeGreaterThan(0);
   }, 180000);
 
+  it("makes a far smaller file as a 3MF than the engine's own STL", async () => {
+    const source = "sphere(r = 20, $fn = 120);\n";
+    const [threeMf, stl] = await Promise.all([
+      scadRender(source, { format: "3mf" }),
+      scadRender(source, { format: "stl" }),
+    ]);
+
+    expect(threeMf.bytes.length).toBeLessThan(stl.bytes.length / 4);
+  }, 300000);
+
   it("changes the model when a parameter changes", async () => {
     const source = "size = 10;\ncube([size, size, size]);\n";
-    const small = await scadRender(source, { parameters: { size: 10 } });
-    const large = await scadRender(source, { parameters: { size: 40 } });
+    // As OFF, so the coordinates can simply be read back.
+    const small = await scadRender(source, { parameters: { size: 10 }, format: "off" });
+    const large = await scadRender(source, { parameters: { size: 40 }, format: "off" });
 
-    expect(small.bytes.length).toBeGreaterThan(0);
-    // Same facet count, different coordinates: the files differ byte for byte, not in length.
-    expect(large.bytes).not.toEqual(small.bytes);
-    expect(new TextDecoder().decode(large.bytes)).toContain("40");
+    expect(new TextDecoder().decode(small.bytes)).toContain("10 10 10");
+    expect(new TextDecoder().decode(large.bytes)).toContain("40 40 40");
   }, 180000);
 
   // Pinned so it isn't rediscovered the hard way: the engine renders first and only then says it can't write
   // the file, so what comes back is a successful-looking run and nothing on disk.
-  it("has no 3MF export in this build, whatever Thingport prefers elsewhere", async () => {
-    await expect(scadRender(BOX, { format: "3mf" as never })).rejects.toThrow(/not enabled/i);
-  }, 120000);
 
   it("passes a string parameter through untouched, brackets and quotes included", async () => {
     // Through the command line any of these would have ended the argument early or started a new one.

@@ -34,19 +34,23 @@ export type ScadRender = {
 };
 
 /**
- * The mesh formats this engine can write.
+ * The formats a render can come back as.
  *
- * Not 3MF, which Thingport otherwise prefers: the WebAssembly build is made without lib3mf and says so only once
- * it has already rendered ("Export to 3MF format was not enabled when building the application"), leaving an
- * empty file behind. STL is the default because every slicer takes it; OBJ shares its vertices, so the same
- * model is a fraction of the size where that matters more than being universally understood.
+ * 3MF is the default and is Thingport's own: the WebAssembly build is made without lib3mf, and asked for one
+ * directly it renders, writes nothing and exits as though it had worked. So the engine is asked for OFF, which
+ * lists each vertex once, and that is turned into a 3MF here. The difference is not small -- a generator's
+ * output is tens of megabytes as the ASCII STL the engine writes, against a couple as a 3MF.
+ *
+ * The rest are the engine's own, for a tool that wants what it writes untouched.
  */
-export type ScadFormat = "stl" | "obj" | "off" | "amf";
+export type ScadFormat = "3mf" | "stl" | "obj" | "off" | "amf";
 
 export type ScadRenderOptions = {
   /** By parameter name, as `parameters()` gives them. Anything left out keeps the script's own value. */
   parameters?: Record<string, unknown>;
   format?: ScadFormat;
+  /** The title written into a 3MF, which slicers show. Ignored by the engine's own formats. */
+  name?: string;
 };
 
 type Instance = {
@@ -210,15 +214,23 @@ export async function scadParameters(source: string): Promise<ScadParameters> {
 
 /** The model the script makes with the parameters given. */
 export async function scadRender(source: string, options: ScadRenderOptions = {}): Promise<ScadRender> {
-  const format = options.format ?? "stl";
+  const wanted = options.format ?? "3mf";
+  // A 3MF is made here from the engine's OFF; everything else it writes itself.
+  const asked = wanted === "3mf" ? "off" : wanted;
   const entries = Object.entries(options.parameters ?? {});
-  if (!entries.length) return run(source, [], `/model.${format}`);
 
-  // Through a parameter set rather than -D: the engine does its own typing, so a value holding a bracket or a
-  // quote can't turn into something else on the way through a command line.
-  const set = Object.fromEntries(entries.map(([name, value]) => [name, parameterValue(value)]));
-  const file = JSON.stringify({ parameterSets: { thingport: set }, fileFormatVersion: "1" });
-  return run(source, ["-p", "/parameters.json", "-P", "thingport"], `/model.${format}`, {
-    "/parameters.json": file,
-  });
+  let args: string[] = [];
+  let extra: Record<string, string> = {};
+  if (entries.length) {
+    // Through a parameter set rather than -D: the engine does its own typing, so a value holding a bracket or a
+    // quote can't turn into something else on the way through a command line.
+    const set = Object.fromEntries(entries.map(([name, value]) => [name, parameterValue(value)]));
+    args = ["-p", "/parameters.json", "-P", "thingport"];
+    extra = { "/parameters.json": JSON.stringify({ parameterSets: { thingport: set }, fileFormatVersion: "1" }) };
+  }
+
+  const rendered = await run(source, args, `/model.${asked}`, extra);
+  if (wanted !== "3mf") return rendered;
+  const { offToThreeMf } = await import("./threeMf");
+  return { ...rendered, bytes: offToThreeMf(new TextDecoder().decode(rendered.bytes), { name: options.name }) };
 }
