@@ -1,5 +1,9 @@
 {
   "app": {
+    "importQueue": {
+      "title": "Ma file d’importation",
+      "position": "Position d’attente {{position}}"
+    },
     "shell": {
       "apiUnreachable": "API injoignable. Vérifiez que le conteneur de l’API est en cours d’exécution et accessible.",
       "backToLibrary": "Retour à la bibliothèque",

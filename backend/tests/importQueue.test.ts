@@ -31,6 +31,8 @@ vi.mock("../src/services/notificationService", async (importOriginal) => {
 
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
+import { withDatabaseSwitchGate } from "../src/services/databaseSwitchGate";
+import { acquireImmediateImportLock } from "../src/services/immediateImport";
 import { drainImportQueue } from "../src/services/importScheduler";
 import { makerworldCaptchaCooloffActive, resetCaptchaCooloffForTest } from "../src/providers/makerworld/captcha";
 
@@ -212,6 +214,209 @@ describe("the import queue", () => {
 
   afterAll(async () => {
     await prisma.user.deleteMany({ where: { id: { in: [admin.id, member.id, other.id] } } });
+  });
+
+  describe("the owner's queue", () => {
+    it("retains old unfinished and failed jobs beyond bounded completed history", async () => {
+      const old = new Date("2019-01-01T00:00:00Z");
+      const retained = [];
+      for (const status of ["QUEUED", "PAUSED", "RUNNING", "ERROR", "DONE"] as const) {
+        retained.push(
+          await prisma.importJob.create({
+            data: {
+              userId: member.id,
+              type: "LINKS",
+              sourceUrl: "https://example.com/old",
+              status,
+              payload: {},
+              createdAt: old,
+              failedCount: status === "DONE" ? 1 : 0,
+              items: { create: { url: "https://example.com/old", status: "FAILED", errorMessage: "old failure" } },
+            },
+          }),
+        );
+      }
+      await prisma.importJob.createMany({
+        data: Array.from({ length: 205 }, () => ({
+          userId: member.id,
+          type: "LINKS" as const,
+          sourceUrl: "https://example.com/done",
+          status: "DONE" as const,
+          payload: {},
+        })),
+      });
+      const listed = await request(app).get("/api/import/jobs").set(auth(member));
+      expect(listed.status).toBe(200);
+      expect(listed.body.jobs).toHaveLength(205);
+      for (const retainedJob of retained)
+        expect(listed.body.jobs.some((row: { id: string }) => row.id === retainedJob.id)).toBe(true);
+      expect(listed.body.jobs.find((row: { id: string }) => row.id === retained[0].id)).toMatchObject({
+        queue_position: 1,
+      });
+      const errors = await request(app).get(`/api/import/jobs/${retained[3].id}/items`).set(auth(member));
+      expect(errors.body[0].error_message).toBe("old failure");
+      expect((await request(app).delete(`/api/import/jobs/${retained[3].id}`).set(auth(member))).status).toBe(200);
+      const adminList = await request(app).get("/api/admin/import-queue").set(auth(admin));
+      expect(adminList.body.jobs).toHaveLength(200);
+    });
+
+    it("rejects deletion during a database switch without removing the job", async () => {
+      const waiting = await prisma.importJob.create({
+        data: {
+          userId: member.id,
+          type: "LINKS",
+          sourceUrl: "https://example.com/waiting",
+          status: "QUEUED",
+          payload: {},
+        },
+      });
+      await withDatabaseSwitchGate(async () => {
+        expect((await request(app).get("/api/import/jobs").set(auth(member))).status).toBe(409);
+        expect((await request(app).get(`/api/import/jobs/${waiting.id}/items`).set(auth(member))).status).toBe(409);
+        const response = await request(app).delete(`/api/import/jobs/${waiting.id}`).set(auth(member));
+        expect(response.status).toBe(409);
+        expect(await prisma.importJob.findUnique({ where: { id: waiting.id } })).not.toBeNull();
+      });
+      expect((await request(app).delete(`/api/import/jobs/${waiting.id}`).set(auth(member))).status).toBe(200);
+    });
+
+    it("requires authentication and never exposes another owner's jobs or errors", async () => {
+      const foreign = await prisma.importJob.create({
+        data: {
+          sourceUrl: "https://example.com/other",
+          userId: other.id,
+          type: "LINKS",
+          status: "ERROR",
+
+          payload: {},
+          items: { create: { url: "https://example.com/private", status: "FAILED", errorMessage: "private error" } },
+        },
+      });
+      const own = await prisma.importJob.create({
+        data: {
+          sourceUrl: "https://example.com/own",
+          userId: member.id,
+          type: "LINKS",
+          status: "ERROR",
+          payload: {},
+          items: { create: { url: "https://example.com/own", status: "FAILED", errorMessage: "own error" } },
+        },
+      });
+      expect((await request(app).get("/api/import/jobs")).status).toBe(401);
+      const listed = await request(app).get("/api/import/jobs").set(auth(member));
+      expect(listed.status).toBe(200);
+      expect(listed.body.jobs.map((j: { id: string }) => j.id)).toEqual([own.id]);
+      expect(listed.body.jobs[0]).not.toHaveProperty("owner");
+      expect(JSON.stringify(listed.body)).not.toContain("private");
+      expect((await request(app).get(`/api/import/jobs/${foreign.id}/items`).set(auth(member))).status).toBe(404);
+      expect((await request(app).delete(`/api/import/jobs/${foreign.id}`).set(auth(member))).status).toBe(404);
+      const ownItems = await request(app).get(`/api/import/jobs/${own.id}/items`).set(auth(member));
+      expect(ownItems.body[0].error_message).toBe("own error");
+      expect(await prisma.importJob.findUnique({ where: { id: foreign.id } })).not.toBeNull();
+    });
+
+    it("ranks globally before the display limit with scheduler eligibility and tie ordering", async () => {
+      const createdAt = new Date("2020-01-01T00:00:00Z");
+      await prisma.importJob.createMany({
+        data: Array.from({ length: 205 }, (_, i) => ({
+          id: `rank-${stamp}-${String(i).padStart(3, "0")}`,
+          sourceUrl: "https://example.com/other",
+          userId: other.id,
+          type: "LINKS" as const,
+          status: "QUEUED" as const,
+          payload: {},
+          createdAt,
+        })),
+      });
+      await prisma.importJob.createMany({
+        data: [
+          {
+            sourceUrl: "https://example.com/other",
+            userId: other.id,
+            type: "LINKS",
+            status: "PAUSED",
+            payload: {},
+            createdAt,
+          },
+          {
+            sourceUrl: "https://example.com/other",
+            userId: other.id,
+            type: "LINKS",
+            status: "RUNNING",
+            payload: {},
+            createdAt,
+          },
+          {
+            sourceUrl: "https://example.com/other",
+            userId: other.id,
+            type: "LINKS",
+            status: "QUEUED",
+            payload: { immediate: true },
+            createdAt,
+          },
+          { sourceUrl: "https://example.com/other", userId: other.id, type: "LINKS", status: "QUEUED", createdAt },
+        ],
+      });
+      const own = await prisma.importJob.create({
+        data: {
+          id: `rank-${stamp}-999`,
+          sourceUrl: "https://example.com/own",
+          userId: member.id,
+          type: "LINKS",
+          status: "QUEUED",
+          payload: {},
+          createdAt,
+        },
+      });
+      const paused = await prisma.importJob.create({
+        data: { sourceUrl: "https://example.com/own", userId: member.id, type: "LINKS", status: "PAUSED", payload: {} },
+      });
+      const listed = await request(app).get("/api/import/jobs").set(auth(member));
+      expect(listed.body.jobs.find((j: { id: string }) => j.id === own.id)).toMatchObject({
+        queue_position: 206,
+      });
+      expect(listed.body.jobs.find((j: { id: string }) => j.id === paused.id)).toMatchObject({
+        queue_position: null,
+      });
+    });
+
+    it("deletes own idle and queued jobs while protecting running and finishing jobs", async () => {
+      for (const status of ["QUEUED", "PAUSED", "ERROR", "DONE"] as const) {
+        const ownedJob = await prisma.importJob.create({
+          data: {
+            sourceUrl: "https://example.com/own",
+            userId: member.id,
+            type: "LINKS",
+            status,
+            payload: {},
+            items: { create: { url: "https://example.com/link" } },
+          },
+        });
+        expect((await request(app).delete(`/api/import/jobs/${ownedJob.id}`).set(auth(member))).status).toBe(200);
+        expect(await prisma.importJobItem.count({ where: { jobId: ownedJob.id } })).toBe(0);
+      }
+      const running = await prisma.importJob.create({
+        data: {
+          sourceUrl: "https://example.com/own",
+          userId: member.id,
+          type: "LINKS",
+          status: "RUNNING",
+          payload: {},
+        },
+      });
+      expect((await request(app).delete(`/api/import/jobs/${running.id}`).set(auth(member))).status).toBe(409);
+      const finishing = await prisma.importJob.create({
+        data: { sourceUrl: "https://example.com/own", userId: member.id, type: "LINKS", status: "PAUSED", payload: {} },
+      });
+      const release = await acquireImmediateImportLock(finishing.id);
+      expect(release).not.toBeNull();
+      try {
+        expect((await request(app).delete(`/api/import/jobs/${finishing.id}`).set(auth(member))).status).toBe(409);
+        expect((await request(app).delete(`/api/import/jobs/${finishing.id}`).set(auth(other))).status).toBe(404);
+      } finally {
+        await release?.();
+      }
+    });
   });
 
   describe("sending links from the extension", () => {

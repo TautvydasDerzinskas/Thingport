@@ -1,5 +1,6 @@
 import type { ImportJob } from "../../api/imports";
 import { useState } from "react";
+import { Link as RouterLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
@@ -21,8 +22,14 @@ const MINI_TILE = 40;
  *  with failures stays up, in warning colors, with a retry button until it's dismissed. */
 export default function ImportProgressBar() {
   const { jobs } = useImportJob();
+  const { t } = useTranslation("app");
   return (
     <Box sx={{ maxHeight: 192, overflowY: "auto", flexShrink: 0 }}>
+      {jobs.length > 0 && (
+        <Button component={RouterLink} to="/import-queue" size="small">
+          {t("importQueue.title")}
+        </Button>
+      )}
       {jobs.map((job) => (
         <ImportProgressRow key={job.id} activeJob={job} />
       ))}

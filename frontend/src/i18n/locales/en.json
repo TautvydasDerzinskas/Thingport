@@ -1,5 +1,9 @@
 {
   "app": {
+    "importQueue": {
+      "title": "My import queue",
+      "position": "Waiting position {{position}}"
+    },
     "shell": {
       "apiUnreachable": "API unreachable. Ensure the API container is running and reachable.",
       "backToLibrary": "Back to library",

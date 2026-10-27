@@ -11,7 +11,7 @@ export const IMPORT_WORKER_LOCK = 174830219;
 export const MANAGED_TYPES = ["SINGLE", "LINKS", "COLLECTION", "ZIP", "PROFILES"] as const;
 // Explicit browser sessions belong to another request/process, not the durable worker.
 // A payload-less batch is a legacy direct runner and must likewise never be recovered here.
-const DURABLE_JOB: Prisma.ImportJobWhereInput = {
+export const DURABLE_JOB: Prisma.ImportJobWhereInput = {
   payload: { not: Prisma.DbNull },
   OR: [
     { payload: { path: ["immediate"], equals: Prisma.AnyNull } },

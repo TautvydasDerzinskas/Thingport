@@ -40,13 +40,15 @@ Model links, collections, ZIP imports and lists of links run as background jobs 
 You can submit another import while a job is waiting or running; closing or reloading the app does not cancel queued work.
 Imports that need browser-signed links or an explicitly supplied session run immediately instead; their progress is
 only available until the server restarts or the finished task expires.
-The footer shows each active job in its own progress row. **Administration → Import queue** shows all jobs and lets
-admins pause, resume and retry them.
+The footer shows each active job in its own progress row. Open **My import queue** from the sidebar or footer to see
+your jobs and their waiting position in the shared queue. Use the **Failed** filter to find errors, and expand a list
+of links to see individual link errors. You can delete your queued or idle jobs; running imports cannot be deleted.
+**Administration → Import queue** shows all users’ jobs and lets admins pause, resume and retry them.
 
 Collections and lists of links track progress per model. A progress bar shows how far along they are, and a notification
 says what came in when they finish. A model you already have is never imported twice, so importing the same collection
 again only brings in what's new. Failed links can be retried once the cause is fixed, and imports sent to the queue
-from Thingport Grab wait in **Administration → Import queue** until they're started.
+from Thingport Grab appear paused in your queue until an admin starts them in **Administration → Import queue**.
 
 ## Before you start
 

@@ -1,5 +1,9 @@
 {
   "app": {
+    "importQueue": {
+      "title": "Mano importavimo eilė",
+      "position": "Laukimo vieta {{position}}"
+    },
     "shell": {
       "apiUnreachable": "API nepasiekiamas. Įsitikinkite, kad API konteineris veikia ir pasiekiamas.",
       "backToLibrary": "Grįžti į biblioteką",

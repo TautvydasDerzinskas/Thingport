@@ -2,6 +2,7 @@ import { authHeaders } from "../utils/auth";
 import { apiBase, readErrorMessage, UnauthorizedError } from "./client";
 import { MANIFESTS, type ProviderId } from "../providers/index.generated";
 import type { Print } from "./prints";
+import type { AdminImportJob } from "./admin";
 
 export type ImportInspectInfo = {
   filename: string;
@@ -66,6 +67,10 @@ export type ImportJobItem = {
   scope: MakerworldProfileScope | null;
 };
 
+export type UserImportJob = Omit<AdminImportJob, "owner"> & {
+  queue_position: number | null;
+};
+
 type ImportLinkPayload = {
   url: string;
   title?: string;
@@ -89,6 +94,20 @@ export type SingleImportResponse =
   (Print & { import_outcome?: ImportOutcome }) | { task_id: string; job_id: string; status: "QUEUED" };
 
 export const importsApi = {
+  getImportQueue: async (): Promise<{ jobs: UserImportJob[] }> => {
+    const res = await fetch(`${apiBase()}/import/jobs`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to load the import queue"));
+    return res.json();
+  },
+
+  deleteImportJob: async (jobId: string): Promise<{ ok: true }> => {
+    const res = await fetch(`${apiBase()}/import/jobs/${jobId}`, { method: "DELETE", headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to delete the import"));
+    return res.json();
+  },
+
   queueFromLink: async (payload: ImportLinkPayload): Promise<{ job_id?: string; task_id: string }> => {
     const res = await fetch(`${apiBase()}/import?async=1`, {
       method: "POST",

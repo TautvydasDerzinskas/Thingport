@@ -1,6 +1,8 @@
 [
+  "DELETE /api/import/jobs/:id",
   "DELETE /api/settings/ai-connections/:id",
   "DELETE /api/settings/auth/oidc/providers/:id",
+  "GET /api/import/jobs",
   "GET /api/import/jobs/:id",
   "GET /api/import/jobs/:id/items",
   "GET /api/import/jobs/active",

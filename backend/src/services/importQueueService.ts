@@ -11,6 +11,7 @@ import { acquireImmediateImportLock } from "./immediateImport";
 import { resetFailedItems } from "./importJobService";
 import { isRunnerLive, runnerSettled, type QueuedLinkOptions } from "./importJobRunner";
 import { liftProviderHolds } from "../providers/registry";
+import { DURABLE_JOB } from "./importWorker";
 import { wakeImportScheduler, MANAGED_TYPES } from "./importScheduler";
 
 /** Starts a LINKS job's PENDING links, or with `retryFailed` puts its FAILED links back first.
@@ -234,18 +235,42 @@ export type QueueJobRow = ImportJob & {
   user: { id: string; displayName: string; email: string };
   counts: { pending: number; running: number; done: number; failed: number };
   runnerLive: boolean;
+  queuePosition: number | null;
 };
 
 const LIST_LIMIT = 200;
 
-/** Every user's batch imports, newest first. Only LINKS jobs can be started or retried, but the
- *  others are listed too so the page shows everything that ran. */
-export async function listQueueJobs(): Promise<QueueJobRow[]> {
-  const jobs = await prisma.importJob.findMany({
-    orderBy: { createdAt: "desc" },
-    take: LIST_LIMIT,
-    include: { user: { select: { id: true, displayName: true, email: true } } },
-  });
+/** Recent imports, optionally scoped to their owner. Ranking counts the entire runnable queue. */
+export async function listQueueJobs(userId?: string): Promise<QueueJobRow[]> {
+  const { jobs, queued } = await prisma.$transaction(
+    async (tx) => {
+      let listedJobs = await tx.importJob.findMany({
+        where: userId ? { userId, status: "DONE", failedCount: 0 } : {},
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        take: LIST_LIMIT,
+        include: { user: { select: { id: true, displayName: true, email: true } } },
+      });
+      if (userId) {
+        const unfinished = await tx.importJob.findMany({
+          where: { userId, OR: [{ status: { not: "DONE" } }, { failedCount: { gt: 0 } }] },
+          include: { user: { select: { id: true, displayName: true, email: true } } },
+        });
+        listedJobs = [...listedJobs, ...unfinished].toSorted(
+          (a, b) => b.createdAt.getTime() - a.createdAt.getTime() || b.id.localeCompare(a.id),
+        );
+      }
+      const waitingJobs = userId
+        ? await tx.importJob.findMany({
+            where: { ...DURABLE_JOB, type: { in: [...MANAGED_TYPES] }, status: "QUEUED" },
+            orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+            select: { id: true },
+          })
+        : [];
+      return { jobs: listedJobs, queued: waitingJobs };
+    },
+    { isolationLevel: "RepeatableRead" },
+  );
+  const positions = new Map(queued.map((job, index) => [job.id, index + 1]));
   const grouped = jobs.length
     ? await prisma.importJobItem.groupBy({
         by: ["jobId", "status"],
@@ -260,12 +285,16 @@ export async function listQueueJobs(): Promise<QueueJobRow[]> {
       const key = g.status.toLowerCase() as keyof typeof counts;
       counts[key] = g._count.status;
     }
-    return Object.assign(job, { counts, runnerLive: isRunnerLive(job.id) });
+    return Object.assign(job, {
+      counts,
+      runnerLive: isRunnerLive(job.id),
+      queuePosition: positions.get(job.id) ?? null,
+    });
   });
 }
 
-export async function getQueueJob(jobId: string): Promise<ImportJob> {
-  const job = await prisma.importJob.findUnique({ where: { id: jobId } });
+export async function getQueueJob(jobId: string, userId?: string): Promise<ImportJob> {
+  const job = await prisma.importJob.findFirst({ where: { id: jobId, ...(userId ? { userId } : {}) } });
   if (!job) throw new HttpError(404, "Import job not found");
   return job;
 }
@@ -283,12 +312,21 @@ async function deleteJob(job: ImportJob): Promise<void> {
   if (!count) throw new HttpError(409, "This import changed while it was being deleted");
 }
 
-export async function deleteQueueJob(jobId: string): Promise<void> {
+export async function deleteQueueJob(jobId: string, userId?: string): Promise<void> {
+  // Check ownership before taking a lock, so another user cannot probe a live job.
+  if (userId) await getQueueJob(jobId, userId);
   const release = await acquireImmediateImportLock(jobId);
   if (!release) throw new HttpError(409, "This import is still finishing, try again shortly");
   try {
-    const job = await getQueueJob(jobId);
-    assertIdle(job);
+    const job = await getQueueJob(jobId, userId);
+    if (userId) {
+      if (!["QUEUED", "PAUSED", "ERROR", "DONE"].includes(job.status)) {
+        throw new HttpError(409, "Only waiting, paused or finished imports can be deleted");
+      }
+      if (isRunnerLive(job.id)) throw new HttpError(409, "This import is still finishing, try again shortly");
+    } else {
+      assertIdle(job);
+    }
     await deleteJob(job);
   } finally {
     await release();

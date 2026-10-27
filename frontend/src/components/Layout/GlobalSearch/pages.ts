@@ -9,6 +9,7 @@ export type PageId =
   | "collections"
   | "tags"
   | "downloads"
+  | "importQueue"
   | "myModels"
   | "profile"
   | "admin"
@@ -46,6 +47,12 @@ const adminPage = (id: PageId, path: string, labelKey: string, terms: string[]):
 });
 
 export const SEARCH_PAGES: SearchPage[] = [
+  {
+    id: "importQueue",
+    path: "/import-queue",
+    labelKey: "app:importQueue.title",
+    terms: ["my imports", "queue", "errors", "waiting"],
+  },
   { id: "dashboard", path: "/", labelKey: "app:sidebar.dashboard", terms: ["home", "overview", "stats"] },
   { id: "models", path: "/models", labelKey: "app:sidebar.models", terms: ["library", "prints", "all models"] },
   { id: "collections", path: "/models/collections", labelKey: "app:sidebar.collections", terms: ["collections"] },

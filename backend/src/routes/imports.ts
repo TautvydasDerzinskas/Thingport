@@ -25,7 +25,7 @@ import {
 import { findLibraryPrints } from "../services/collectionSyncService";
 import { listZipEntries } from "../services/zipService";
 import { getActiveJob, getActiveJobs, getJob, listJobItems } from "../services/importJobService";
-import { queueLink, startLinksJob } from "../services/importQueueService";
+import { deleteQueueJob, listQueueJobs, queueLink, startLinksJob } from "../services/importQueueService";
 import { startDirectBatchImport, startImmediateImport } from "../services/immediateImport";
 import { getPersistentImportTask, startImportTask } from "../services/importTaskService";
 import {
@@ -36,7 +36,7 @@ import {
 } from "../services/importScheduler";
 import { profilesImportJob, runLinksImportJob, runListImportJob, runZipImportJob } from "../services/importJobRunner";
 import { notifyImportRun } from "../services/modelNotifications";
-import { toImportJobItemOut, toImportJobOut } from "../dto";
+import { toImportJobItemOut, toImportJobOut, toUserImportJobOut } from "../dto";
 import type { Prisma } from "@prisma/client";
 import { importAndDescribe, prepareSingleImport } from "../services/singleImport";
 import { reserveDatabaseOperation, withDatabaseOperation } from "../services/databaseSwitchGate";
@@ -391,6 +391,23 @@ router.post(
 );
 
 router.get(
+  "/import/jobs",
+  asyncHandler(async (req, res) => {
+    res.json(
+      await withDatabaseOperation(async () => ({ jobs: (await listQueueJobs(req.userId!)).map(toUserImportJobOut) })),
+    );
+  }),
+);
+
+router.delete(
+  "/import/jobs/:id",
+  asyncHandler(async (req, res) => {
+    await withDatabaseOperation(() => deleteQueueJob(req.params.id, req.userId!));
+    res.json({ ok: true });
+  }),
+);
+
+router.get(
   "/import/jobs/active",
   asyncHandler(async (req, res) => {
     const job = await getActiveJob(req.userId!);
@@ -504,9 +521,13 @@ router.post(
 router.get(
   "/import/jobs/:id/items",
   asyncHandler(async (req, res) => {
-    const job = await getJob(req.params.id, req.userId!);
-    if (!job) throw new HttpError(404, "Import job not found");
-    res.json((await listJobItems(job.id)).map(toImportJobItemOut));
+    res.json(
+      await withDatabaseOperation(async () => {
+        const job = await getJob(req.params.id, req.userId!);
+        if (!job) throw new HttpError(404, "Import job not found");
+        return (await listJobItems(job.id)).map(toImportJobItemOut);
+      }),
+    );
   }),
 );
 

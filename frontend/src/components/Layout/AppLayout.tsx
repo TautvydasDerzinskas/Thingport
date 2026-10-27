@@ -101,6 +101,9 @@ function useRouteChrome() {
     onBack = goBack;
   } else if (path === "/connect-grab") {
     title = "Thingport Grab";
+  } else if (path === "/import-queue") {
+    title = t("importQueue.title");
+    onBack = goBack;
   } else if (path === "/downloads") {
     title = t("sidebar.downloads");
     onBack = () => navigate("/");

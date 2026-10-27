@@ -331,6 +331,7 @@ function AppShell({
           path="/admin-connections"
           element={isAdmin ? <ConnectionsPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
         />
+        <Route path="/import-queue" element={<ImportQueuePage own onUnauthorized={onUnauthorized} />} />
         <Route
           path="/admin-queue"
           element={isAdmin ? <ImportQueuePage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}

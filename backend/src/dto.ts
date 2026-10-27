@@ -571,6 +571,18 @@ export function toImportJobOut(job: ImportJob): ImportJobOut {
   };
 }
 
+export type UserImportJobOut = Omit<AdminImportJobOut, "owner"> & {
+  queue_position: number | null;
+};
+
+export function toUserImportJobOut(row: QueueJobRow): UserImportJobOut {
+  const { owner: _owner, ...job } = toAdminImportJobOut(row);
+  return {
+    ...job,
+    queue_position: row.queuePosition,
+  };
+}
+
 /** A row of the admin import queue: any user's job, with its links counted by status. */
 export type AdminImportJobOut = ImportJobOut & {
   owner: { id: string; display_name: string; email: string };

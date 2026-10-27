@@ -7,6 +7,7 @@ const EN: Record<PageId, string> = {
   collections: "Collections",
   tags: "Tags",
   downloads: "Downloads",
+  importQueue: "My import queue",
   myModels: "My models",
   profile: "Profile",
   admin: "Administration",
@@ -29,7 +30,7 @@ describe("matchPages", () => {
     expect(ids("d")).toEqual(["dashboard", "downloads"]);
     expect(ids("prof")).toEqual(["profile"]);
     expect(ids("models")[0]).toBe("models");
-    expect(ids("my")).toEqual(["myModels"]);
+    expect(ids("my")).toEqual(expect.arrayContaining(["myModels", "importQueue"]));
   });
 
   it("matches the extra terms", () => {

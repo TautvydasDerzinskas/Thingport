@@ -143,6 +143,7 @@ const PAGE_ICONS: Record<PageId, ReactNode> = {
   adminAi: <AutoAwesomeIcon />,
   adminUsers: <PeopleIcon />,
   adminQueue: <QueueIcon />,
+  importQueue: <QueueIcon />,
   adminLogs: <HistoryIcon />,
   adminTriggers: <BoltIcon />,
   adminConnections: <CableIcon />,

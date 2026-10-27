@@ -72,3 +72,27 @@ describe("active import jobs", () => {
     await expect(importsApi.getActiveImportJobs()).rejects.toThrow(UnauthorizedError);
   });
 });
+
+describe("own import queue", () => {
+  it("loads waiting positions from the authenticated queue endpoint", async () => {
+    const result = { jobs: [{ id: "mine", queue_position: 3 }] };
+    const fetch = respond(result);
+    expect(await importsApi.getImportQueue()).toEqual(result);
+    expect(fetch.mock.calls[0][0]).toMatch(/\/import\/jobs$/);
+  });
+
+  it("deletes an own queue entry and surfaces a refusal", async () => {
+    const fetch = respond({ ok: true });
+    await expect(importsApi.deleteImportJob("mine")).resolves.toEqual({ ok: true });
+    expect(fetch.mock.calls[0][0]).toMatch(/\/import\/jobs\/mine$/);
+    expect(fetch.mock.calls[0][1]?.method).toBe("DELETE");
+    respond({ detail: "Import is running" }, 409);
+    await expect(importsApi.deleteImportJob("mine")).rejects.toThrow("Import is running");
+  });
+
+  it("handles expired authentication for listing and deletion", async () => {
+    respond({}, 401);
+    await expect(importsApi.getImportQueue()).rejects.toBeInstanceOf(UnauthorizedError);
+    await expect(importsApi.deleteImportJob("mine")).rejects.toBeInstanceOf(UnauthorizedError);
+  });
+});

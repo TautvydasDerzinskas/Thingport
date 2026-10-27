@@ -1,5 +1,9 @@
 {
   "app": {
+    "importQueue": {
+      "title": "Mi cola de importación",
+      "position": "Posición de espera {{position}}"
+    },
     "shell": {
       "apiUnreachable": "No se puede acceder a la API. Asegúrate de que el contenedor de la API esté en marcha y sea accesible.",
       "backToLibrary": "Volver a la biblioteca",
