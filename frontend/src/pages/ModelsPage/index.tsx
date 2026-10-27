@@ -175,7 +175,13 @@ export default function ModelsPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoriesVersion]);
 
+  // Which set of filters the list on screen belongs to. Changing one -- Generative, a category, the sort --
+  // starts a new set, and an answer belonging to an older one is dropped rather than written over the newer
+  // list: the two requests are a page apart and the slower one can land last.
+  const listRun = useRef(0);
+
   useEffect(() => {
+    const run = ++listRun.current;
     setLoading(true);
     (async () => {
       try {
@@ -186,13 +192,15 @@ export default function ModelsPage({
           limit: PAGE_SIZE,
           offset: 0,
         });
+        if (run !== listRun.current) return;
         setItems(result.items);
         setOffset(result.items.length);
         setHasMore(result.hasMore);
       } catch (err) {
+        if (run !== listRun.current) return;
         handleError(err, t("models:errors.loadFailed"));
       } finally {
-        setLoading(false);
+        if (run === listRun.current) setLoading(false);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -200,6 +208,7 @@ export default function ModelsPage({
 
   const loadMore = async () => {
     if (loadingMore || !hasMore) return;
+    const run = listRun.current;
     setLoadingMore(true);
     try {
       const result = await printsApi.list({
@@ -209,13 +218,16 @@ export default function ModelsPage({
         limit: PAGE_SIZE,
         offset,
       });
+      // A filter changed while this page was on its way: appending it would mix two lists together.
+      if (run !== listRun.current) return;
       setItems((prev) => [...prev, ...result.items]);
       setOffset(offset + result.items.length);
       setHasMore(result.hasMore);
     } catch (err) {
+      if (run !== listRun.current) return;
       handleError(err, t("models:errors.loadFailed"));
     } finally {
-      setLoadingMore(false);
+      if (run === listRun.current) setLoadingMore(false);
     }
   };
 
