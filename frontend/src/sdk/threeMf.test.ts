@@ -58,6 +58,12 @@ describe("parseOff", () => {
 
     expect(Array.from(mesh.triangles)).toEqual([0, 1, 2, 1, 3, 2]);
     expect(mesh.vertices.length).toBe(12);
+    // Dropped, but not silently: the caller can say the model comes out in one colour.
+    expect(mesh.colored).toBe(true);
+  });
+
+  it("says a mesh is uncoloured when no face carried a colour", () => {
+    expect(parseOff("OFF 3 1 0\n0 0 0\n1 0 0\n0 1 0\n3 0 1 2\n").colored).toBe(false);
   });
 
   it("reads a header that keeps its counts on the same line", () => {

@@ -146,7 +146,12 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
           url: showMesh(result.mesh),
           name,
           seconds: result.seconds,
-          warnings: readableWarnings(result.log),
+          warnings: [
+            ...readableWarnings(result.log),
+            // The 3MF carries the shape but not the script's colours, which is better said than discovered
+            // in a slicer.
+            ...(result.mesh.colored ? [t("models:customizer.warning.colorsDropped")] : []),
+          ],
         });
         setRenderedValues(JSON.stringify(wanted));
       } catch (err) {
@@ -158,7 +163,7 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
         if (token === run.current) setBusy(null);
       }
     },
-    [print.name, print.title, showMesh],
+    [print.name, print.title, showMesh, t],
   );
 
   // Reading the chosen script, then generating it once on its own values, so the dialog opens on a model

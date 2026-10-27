@@ -5,6 +5,8 @@
 
 import OpenSCAD from "../assets/openscad/openscad.js";
 import { TOOL_FONT_URLS } from "./fonts";
+// Type only, so the writer itself stays behind the dynamic import at the bottom of this file.
+import type { Mesh } from "./threeMf";
 
 /** A parameter as OpenSCAD's own customizer describes it: enough to build the control for it without guessing. */
 export type ScadParameter = {
@@ -33,7 +35,7 @@ export type ScadRender = {
   seconds: number;
   /** The geometry behind the bytes, when the format is one made here: it is already parsed, so a tool that
    *  wants to draw what it just generated needn't render a second time to get at it. */
-  mesh?: { vertices: Float64Array; triangles: Uint32Array };
+  mesh?: Mesh;
 };
 
 /**

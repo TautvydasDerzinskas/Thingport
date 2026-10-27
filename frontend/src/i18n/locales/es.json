@@ -3687,6 +3687,9 @@
       "status": {
         "generated": "Generado en {{seconds}} s · {{size}} kB"
       },
+      "warning": {
+        "colorsDropped": "El script colorea partes de este modelo. El archivo guardado conserva su forma, pero no sus colores."
+      },
       "download": {
         "threeMf": "Descargar como 3MF",
         "stl": "Descargar como STL"

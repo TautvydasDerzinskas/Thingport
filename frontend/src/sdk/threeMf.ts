@@ -12,6 +12,9 @@ export type Mesh = {
   vertices: Float64Array;
   /** Flat vertex-index triples. */
   triangles: Uint32Array;
+  /** At least one face arrived with a colour. The mesh keeps the shape but not the colour, so a caller that
+   *  hands the result to someone can say the model came out in one colour rather than let it surprise them. */
+  colored?: boolean;
 };
 
 /**
@@ -58,16 +61,19 @@ export function parseOff(text: string): Mesh {
   }
 
   const triangles: number[] = [];
+  let colored = false;
   for (let face = 0; face < faceCount; face++, at++) {
     const parts = words(at);
     const corners = Number(parts[0]);
+    // Anything past the corner count and its corners is that face's colour, which is noted and then dropped.
+    if (parts.length > corners + 1) colored = true;
     // A polygon is fanned from its first corner. The engine merges coplanar triangles into one face, and the
     // shapes it merges them into are convex, so a fan covers them exactly.
     for (let i = 2; i < corners; i++) {
       triangles.push(Number(parts[1]), Number(parts[i]), Number(parts[i + 1]));
     }
   }
-  return { vertices, triangles: Uint32Array.from(triangles) };
+  return { vertices, triangles: Uint32Array.from(triangles), colored };
 }
 
 /** Trims a coordinate to what a printer could tell apart, so the file isn't mostly trailing digits. */
