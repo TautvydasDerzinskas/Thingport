@@ -84,21 +84,21 @@ function search(context, { tol = 0, extraK = 0, accept, score }) {
 export const STRATEGIES = [
   {
     id: "balanced",
-    name: "Balanced",
-    summary: "The fewest boards, sizes kept even, and as few mirrored as it can manage.",
+    name: "layout.balanced",
+    summary: "layout.balanced.summary",
     run: (context) => search(context, { score: (units) => [mirrors(units), distinct(units), spread(units)] }),
   },
   {
     id: "largest",
-    name: "Largest first",
-    summary: "The biggest boards that fit the bed, with one smaller board left over.",
+    name: "layout.largest",
+    summary: "layout.largest.summary",
     run: (context) =>
       search(context, { score: (units) => [mirrors(units), distinct(units), ...units.map((unit) => -unit)] }),
   },
   {
     id: "uniform",
-    name: "One size",
-    summary: "Every board identical, which may leave a strip of the wall open.",
+    name: "layout.uniform",
+    summary: "layout.uniform.summary",
     run: (context) => {
       let best = null;
       let bestScore = null;
@@ -118,8 +118,8 @@ export const STRATEGIES = [
   },
   {
     id: "no-mirror",
-    name: "Nothing mirrored",
-    summary: "Odd-hole boards only, so no file has to be flipped before slicing.",
+    name: "layout.no-mirror",
+    summary: "layout.no-mirror.summary",
     run: (context) =>
       search(context, {
         tol: 1,
@@ -130,8 +130,8 @@ export const STRATEGIES = [
   },
   {
     id: "gap",
-    name: "Allow a gap",
-    summary: "The fewest boards, leaving up to the gap you allow uncovered.",
+    name: "layout.gap",
+    summary: "layout.gap.summary",
     run: (context) =>
       search(context, {
         tol: context.gapUnits,
@@ -174,7 +174,7 @@ export function splitAxis(lengthMm, bedMm, { strategy = getStrategy(DEFAULT_STRA
   // A strategy that can't cover this wall falls back to the balanced one rather than failing: a plan with a note on
   // it is more use than an error.
   const units = strategy.run(context) ?? getStrategy("balanced").run(context);
-  if (!units) throw new PlanError("no-layout", "No run of boards fits this wall on that bed.");
+  if (!units) throw new PlanError("no-layout", "error.noFit");
   return { holes: units.map((unit) => unit - 1), leftoverMm: lengthMm - sum(units) * PITCH_MM };
 }
 

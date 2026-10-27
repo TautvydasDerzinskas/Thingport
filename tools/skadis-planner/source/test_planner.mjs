@@ -30,12 +30,22 @@ import { describePlan, partListText, printOrder, toBuy } from "./printlist.js";
 import { partFiles } from "./parts3mf.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+
+// The real English labels, so the text the tests read is the text the window shows — and a label that goes
+// missing from locales/en.json fails here rather than quietly showing its key to a user.
+const WORDS = JSON.parse(fs.readFileSync(path.join(here, "..", "locales", "en.json"), "utf8"));
+const t = (key, vars) => {
+  const text = WORDS[key] ?? key;
+  return vars ? text.replace(/\{(\w+)\}/g, (whole, name) => (name in vars ? String(vars[name]) : whole)) : text;
+};
+
 const a1 = getPrinter("a1");
 const context = (over = {}) => ({
   printer: a1,
   system: getMountSystem("wall-mounts"),
   wallMm: 10,
   strategy: getStrategy("balanced"),
+  t,
   ...over,
 });
 
@@ -225,7 +235,8 @@ test("wall mounts are counted off the lattice, and there is one marker for each"
   const plan = planWall({ widthMm: 820, heightMm: 860, printer: a1 });
   const system = getMountSystem("wall-mounts");
   const hardware = hardwareFor(plan, system);
-  const named = (name) => hardware.find((item) => item.name.startsWith(name));
+  // The catalogue holds label keys now, so look the parts up by what they are called.
+  const named = (name) => hardware.find((item) => t(item.name).startsWith(name));
   assert.equal(named("Quad").count, 9);
   assert.equal(named("Double").count, 12);
   assert.equal(named("Single").count, 4);
@@ -239,7 +250,7 @@ test("screw spacers are four to a board", () => {
   const plan = planWall({ widthMm: 820, heightMm: 860, printer: a1 });
   const system = getMountSystem("spacers");
   const hardware = hardwareFor(plan, system);
-  assert.equal(hardware.find((item) => item.name === "Screw spacer").count, 64);
+  assert.equal(hardware.find((item) => t(item.name) === "Screw spacer").count, 64);
   assert.equal(hardwareMarkers(plan, system).length, 64);
 });
 
@@ -279,7 +290,7 @@ test("every mount system offers only distances all of its printed parts come in"
 
 test("the print order is the boards biggest first, then the mounts, and counts every part", () => {
   const plan = planWall({ widthMm: 820, heightMm: 860, printer: a1 });
-  const steps = printOrder(plan, getMountSystem("wall-mounts"), 10);
+  const steps = printOrder(plan, getMountSystem("wall-mounts"), 10, t);
   assert.deepEqual(
     steps.map((step) => step.step),
     steps.map((_, index) => index + 1),
@@ -321,7 +332,7 @@ test("the part list says what to print, how many and where it comes from", () =>
 test("the description carries the same order, for the model it's saved on", () => {
   const plan = planWall({ widthMm: 600, heightMm: 600, printer: a1 });
   const description = describePlan(plan, context());
-  const steps = printOrder(plan, getMountSystem("wall-mounts"), 10);
+  const steps = printOrder(plan, getMountSystem("wall-mounts"), 10, t);
   assert.match(description, /Print in this order:/);
   for (const step of steps) assert.ok(description.includes(`${step.step}. ${step.count} × ${step.name}`));
   assert.match(description, /this model is the plan, not their files/);
@@ -382,7 +393,7 @@ function unzip(bytes) {
 
 test("every part of the plan saves as its own 3MF a reader can open", () => {
   const plan = planWall({ widthMm: 820, heightMm: 860, printer: a1 });
-  const steps = printOrder(plan, getMountSystem("wall-mounts"), 10);
+  const steps = printOrder(plan, getMountSystem("wall-mounts"), 10, t);
   const files = partFiles(steps, { wallMm: 10 });
 
   // One file per part, in print order, and nothing combined into one.
@@ -417,7 +428,7 @@ test("every part of the plan saves as its own 3MF a reader can open", () => {
 
 test("a board plate is the board's true size, and says which file it stands for", () => {
   const plan = planWall({ widthMm: 820, heightMm: 860, printer: a1 });
-  const steps = printOrder(plan, getMountSystem("wall-mounts"), 10);
+  const steps = printOrder(plan, getMountSystem("wall-mounts"), 10, t);
   const files = partFiles(steps, { wallMm: 10 });
   const board = steps.find((step) => step.kind === "board");
   const file = files.find((entry) => entry.step === board.step);
@@ -438,7 +449,7 @@ test("a board plate is the board's true size, and says which file it stands for"
 test("a mount plate is as deep as the standoff the plan uses", () => {
   const plan = planWall({ widthMm: 820, heightMm: 860, printer: a1 });
   for (const wallMm of [10, 20]) {
-    const steps = printOrder(plan, getMountSystem("wall-mounts"), wallMm);
+    const steps = printOrder(plan, getMountSystem("wall-mounts"), wallMm, t);
     const files = partFiles(steps, { wallMm });
     const mount = steps.find((step) => step.kind === "mount");
     const model = unzip(files.find((entry) => entry.step === mount.step).data).get("3D/3dmodel.model");
@@ -449,7 +460,7 @@ test("a mount plate is as deep as the standoff the plan uses", () => {
 
 test("the count rides on the plate's name, so the plate list reads as the print order", () => {
   const plan = planWall({ widthMm: 820, heightMm: 860, printer: a1 });
-  const steps = printOrder(plan, getMountSystem("wall-mounts"), 10);
+  const steps = printOrder(plan, getMountSystem("wall-mounts"), 10, t);
   const files = partFiles(steps, { wallMm: 10 });
   for (const [index, step] of steps.entries()) {
     if (step.count > 1) assert.ok(files[index].name.includes(`x${step.count}`), files[index].name);

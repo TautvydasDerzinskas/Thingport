@@ -81,8 +81,8 @@ export const boardExists = (cols, rows) => boardSource(cols, rows) !== null;
 export const MOUNT_SYSTEMS = [
   {
     id: "wall-mounts",
-    name: "Wall mounts",
-    summary: "One printed mount wherever board corners meet.",
+    name: "system.wall-mounts",
+    summary: "system.wall-mounts.summary",
     design: MOUNT_DESIGNS.multi,
     markers: "nodes",
     insetMm: 9,
@@ -91,27 +91,27 @@ export const MOUNT_SYSTEMS = [
     distances: [10, 20],
     profiles: { 10: "1609221", 20: "811358" },
     items: [
-      { name: "Quad wall mount", per: { junction: 1 }, print: true, from: "multi" },
-      { name: "Double wall mount", per: { edgeNode: 1 }, print: true, from: "multi" },
-      { name: "Single wall mount", per: { outerCorner: 1 }, print: true, from: "single" },
-      { name: "M4 × 40–60 wall screw", per: { junction: 1, edgeNode: 1, outerCorner: 1 }, print: false },
-      { name: "M4 × 20 board screw", per: { board: 4 }, print: false },
-      { name: "Wall plug", per: { junction: 1, edgeNode: 1, outerCorner: 1 }, print: false },
+      { name: "part.quad-wall-mount", per: { junction: 1 }, print: true, from: "multi" },
+      { name: "part.double-wall-mount", per: { edgeNode: 1 }, print: true, from: "multi" },
+      { name: "part.single-wall-mount", per: { outerCorner: 1 }, print: true, from: "single" },
+      { name: "part.m4-40-60-wall-screw", per: { junction: 1, edgeNode: 1, outerCorner: 1 }, print: false },
+      { name: "part.m4-20-board-screw", per: { board: 4 }, print: false },
+      { name: "part.wall-plug", per: { junction: 1, edgeNode: 1, outerCorner: 1 }, print: false },
     ],
   },
   {
     id: "spacers",
-    name: "Screw spacers",
-    summary: "A spacer and a screw at each board corner.",
+    name: "system.spacers",
+    summary: "system.spacers.summary",
     design: MOUNT_DESIGNS.spacers,
     markers: "boardCorners",
     insetMm: 10,
     distances: [10, 15, 20],
     profiles: { 10: "321444", 15: "321441", 20: "321437" },
     items: [
-      { name: "Screw spacer", per: { board: 4 }, print: true, from: "spacers" },
-      { name: "M4 wall screw, 30 mm or longer", per: { board: 4 }, print: false },
-      { name: "Wall plug", per: { board: 4 }, print: false },
+      { name: "part.screw-spacer", per: { board: 4 }, print: true, from: "spacers" },
+      { name: "part.m4-wall-screw-30-mm-or-longer", per: { board: 4 }, print: false },
+      { name: "part.wall-plug", per: { board: 4 }, print: false },
     ],
   },
 ];
@@ -134,7 +134,7 @@ export const PRINTERS = [
   { id: "ender3", name: "Creality Ender 3", x: 220, y: 220 },
   { id: "k1", name: "Creality K1 / K1C", x: 220, y: 220 },
   { id: "neptune4", name: "Elegoo Neptune 4", x: 225, y: 225 },
-  { id: "custom", name: "A bed of my own", x: 256, y: 256 },
+  { id: "custom", name: "printer.custom", x: 256, y: 256 },
 ];
 
 export const getPrinter = (id, own) => {
@@ -288,21 +288,21 @@ function search(context, { tol = 0, extraK = 0, accept, score }) {
 export const STRATEGIES = [
   {
     id: "balanced",
-    name: "Balanced",
-    summary: "The fewest boards, sizes kept even, and as few mirrored as it can manage.",
+    name: "layout.balanced",
+    summary: "layout.balanced.summary",
     run: (context) => search(context, { score: (units) => [mirrors(units), distinct(units), spread(units)] }),
   },
   {
     id: "largest",
-    name: "Largest first",
-    summary: "The biggest boards that fit the bed, with one smaller board left over.",
+    name: "layout.largest",
+    summary: "layout.largest.summary",
     run: (context) =>
       search(context, { score: (units) => [mirrors(units), distinct(units), ...units.map((unit) => -unit)] }),
   },
   {
     id: "uniform",
-    name: "One size",
-    summary: "Every board identical, which may leave a strip of the wall open.",
+    name: "layout.uniform",
+    summary: "layout.uniform.summary",
     run: (context) => {
       let best = null;
       let bestScore = null;
@@ -322,8 +322,8 @@ export const STRATEGIES = [
   },
   {
     id: "no-mirror",
-    name: "Nothing mirrored",
-    summary: "Odd-hole boards only, so no file has to be flipped before slicing.",
+    name: "layout.no-mirror",
+    summary: "layout.no-mirror.summary",
     run: (context) =>
       search(context, {
         tol: 1,
@@ -334,8 +334,8 @@ export const STRATEGIES = [
   },
   {
     id: "gap",
-    name: "Allow a gap",
-    summary: "The fewest boards, leaving up to the gap you allow uncovered.",
+    name: "layout.gap",
+    summary: "layout.gap.summary",
     run: (context) =>
       search(context, {
         tol: context.gapUnits,
@@ -378,7 +378,7 @@ export function splitAxis(lengthMm, bedMm, { strategy = getStrategy(DEFAULT_STRA
   // A strategy that can't cover this wall falls back to the balanced one rather than failing: a plan with a note on
   // it is more use than an error.
   const units = strategy.run(context) ?? getStrategy("balanced").run(context);
-  if (!units) throw new PlanError("no-layout", "No run of boards fits this wall on that bed.");
+  if (!units) throw new PlanError("no-layout", "error.noFit");
   return { holes: units.map((unit) => unit - 1), leftoverMm: lengthMm - sum(units) * PITCH_MM };
 }
 
@@ -585,18 +585,20 @@ export function hardwareMarkers(plan, system) {
 // always say the same thing.
 
 
-const plural = (count, one, many) => `${count} ${count === 1 ? one : (many ?? `${one}s`)}`;
+/** "1 board" / "4 boards": the word is a pair of labels, so a language with other plurals can say it its way. */
+const plural = (t, count, one, many) => `${count} ${t(count === 1 ? one : many)}`;
 const mm = (value) => `${Math.round(value)} mm`;
 /** "820 × 860 mm": the unit once, at the end, as a size is written. */
 const size = (a, b) => `${Math.round(a)} × ${Math.round(b)} mm`;
 
 /** How a board is described in one line: "9 × 11 holes, 200 × 240 mm". */
-export const boardLabel = (group) => `${group.cols} × ${group.rows} holes, ${size(group.widthMm, group.heightMm)}`;
+export const boardLabel = (group, t) =>
+  t("list.boardLabel", { cols: group.cols, rows: group.rows, size: size(group.widthMm, group.heightMm) });
 
 /** Which way a board has to be flipped before slicing, or null when it goes on the plate as it comes. */
-export function mirrorNote(group) {
+export function mirrorNote(group, t) {
   const axes = [group.mirrorX && "X", group.mirrorY && "Y"].filter(Boolean);
-  return axes.length ? `mirror in ${axes.join(" and ")}` : null;
+  return axes.length ? t("list.mirrorIn", { axes: axes.join(t("list.and")) }) : null;
 }
 
 /**
@@ -606,18 +608,18 @@ export function mirrorNote(group) {
  * the bed, the wall or the plan is wrong, so it is the one to find out about first. Then the mounts, which are
  * quick and can be printed while the boards go up.
  */
-export function printOrder(plan, system, wallMm) {
+export function printOrder(plan, system, wallMm, t) {
   const steps = [];
   for (const group of plan.groups) {
     const source = boardSource(group.cols, group.rows);
     steps.push({
       kind: "board",
-      name: `Board ${group.cols} × ${group.rows}`,
-      detail: boardLabel(group),
+      name: t("list.board", { cols: group.cols, rows: group.rows }),
+      detail: boardLabel(group, t),
       count: group.count,
       widthMm: group.widthMm,
       heightMm: group.heightMm,
-      mirror: mirrorNote(group),
+      mirror: mirrorNote(group, t),
       file: source?.file ?? null,
       turned: source?.turned ?? false,
       from: source ? `${BOARD_DESIGN.name} — ${source.profile.title}` : null,
@@ -629,8 +631,8 @@ export function printOrder(plan, system, wallMm) {
     const design = item.from === "single" ? MOUNT_DESIGNS.single : system.design;
     steps.push({
       kind: "mount",
-      name: item.name,
-      detail: `${wallMm} mm off the wall`,
+      name: t(item.name),
+      detail: t("list.offTheWall", { mm: wallMm }),
       count: item.count,
       widthMm: null,
       heightMm: null,
@@ -649,15 +651,15 @@ export function printOrder(plan, system, wallMm) {
 export const toBuy = (plan, system) => hardwareFor(plan, system).filter((item) => !item.print);
 
 /** A line that fits in a title: "Skadis wall 820 × 860 mm". */
-export const planTitle = (plan) => `Skadis wall ${size(plan.widthMm, plan.heightMm)}`;
+export const planTitle = (plan, t) => t("list.planTitle", { size: size(plan.widthMm, plan.heightMm) });
 
 /**
  * The whole plan as plain text. `context` carries what the plan itself doesn't know: the printer, the mount system
  * and the distance from the wall.
  */
 export function partListText(plan, context) {
-  const { printer, system, wallMm, strategy } = context;
-  const steps = printOrder(plan, system, wallMm);
+  const { printer, system, wallMm, strategy, t } = context;
+  const steps = printOrder(plan, system, wallMm, t);
   const buy = toBuy(plan, system);
   const out = [];
   const line = (text = "") => out.push(text);
@@ -667,98 +669,107 @@ export function partListText(plan, context) {
     line("-".repeat(text.length));
   };
 
-  line(planTitle(plan));
-  line("Planned with the Skadis planner in Thingport.");
+  line(planTitle(plan, t));
+  line(t("list.plannedWith"));
 
-  rule("The wall");
-  line(`  Space            ${mm(plan.widthMm)} wide × ${mm(plan.heightMm)} high`);
-  line(
-    `  Covered          ${size(plan.coveredWidthMm, plan.coveredHeightMm)}` +
+  rule(t("list.theWall"));
+  const field = (label, value) => line(`  ${t(label).padEnd(17)}${value}`);
+  field("list.space", t("list.spaceValue", { width: mm(plan.widthMm), height: mm(plan.heightMm) }));
+  field(
+    "list.covered",
+    size(plan.coveredWidthMm, plan.coveredHeightMm) +
       (plan.leftoverWidthMm || plan.leftoverHeightMm
-        ? `, leaving ${mm(plan.leftoverWidthMm)} across and ${mm(plan.leftoverHeightMm)} down`
-        : ", the whole of it"),
+        ? t("list.leaving", { across: mm(plan.leftoverWidthMm), down: mm(plan.leftoverHeightMm) })
+        : t("list.wholeOfIt")),
   );
-  line(
-    `  Boards           ${plural(plan.boards.length, "board")}, ${plan.columns.length} across × ${plan.rows.length} down`,
+  field(
+    "list.boards",
+    `${plural(t, plan.boards.length, "list.board.one", "list.board.many")}, ` +
+      t("list.acrossDown", { across: plan.columns.length, down: plan.rows.length }),
   );
-  line(`  Printer          ${printer.name}, ${printer.x} × ${printer.y} mm bed`);
-  line(`  Layout           ${strategy.name}`);
-  line(`  Held by          ${system.name}, ${wallMm} mm off the wall`);
+  field("list.printer", t("list.printerValue", { printer: t(printer.name), x: printer.x, y: printer.y }));
+  field("list.layout", t(strategy.name));
+  field("list.heldBy", t("list.heldByValue", { system: t(system.name), mm: wallMm }));
 
-  rule("Print in this order");
+  rule(t("list.printInThisOrder"));
   for (const step of steps) {
     const flip = step.mirror ? `, ${step.mirror}` : "";
     line(`  ${String(step.step).padStart(2)}. ${step.count} × ${step.name}${flip}`);
     line(`      ${step.detail}`);
     if (step.file) {
-      line(`      file "${step.file}"${step.turned ? ", printed a quarter turn round" : ""}`);
+      line(`      ${t("list.file", { file: step.file })}${step.turned ? t("list.turned") : ""}`);
     }
-    if (step.from) line(`      from ${step.from}`);
-    if (step.missing) line("      NOT PUBLISHED IN THIS SIZE — change the wall or the layout");
+    if (step.from) line(`      ${t("list.from", { from: step.from })}`);
+    if (step.missing) line(`      ${t("list.notPublished")}`);
   }
   line();
   line(
-    `  ${plural(
-      steps.reduce((total, step) => total + step.count, 0),
-      "part",
-    )} to print in all.`,
+    `  ${t("list.toPrintInAll", {
+      parts: plural(
+        t,
+        steps.reduce((total, step) => total + step.count, 0),
+        "list.part.one",
+        "list.part.many",
+      ),
+    })}`,
   );
-  line("  Print one board first and offer it up to the wall before committing to the rest.");
+  line(`  ${t("list.printOneFirst")}`);
 
   if (steps.some((step) => step.mirror)) {
-    rule("Mirroring");
-    line("  A board with an even number of holes has to be flipped for its pattern to carry on into its neighbour,");
-    line("  so every other one of them is mirrored. In Bambu Studio or Orca: right-click the object, Mirror, then");
-    line("  the axis named above. The counts above say how many to print each way round.");
+    rule(t("list.mirroring"));
+    for (const part of ["list.mirroring.1", "list.mirroring.2", "list.mirroring.3"]) line(`  ${t(part)}`);
   }
 
   if (buy.length) {
-    rule("Buy");
-    for (const item of buy) line(`  ${String(item.count).padStart(4)} × ${item.name}`);
+    rule(t("list.buy"));
+    for (const item of buy) line(`  ${String(item.count).padStart(4)} × ${t(item.name)}`);
   }
 
-  rule("Where the files come from");
-  line(`  Boards   ${BOARD_DESIGN.name} by ${BOARD_DESIGN.author.name}`);
+  rule(t("list.whereFilesComeFrom"));
+  line(`  ${t("list.boardsFrom")} ${BOARD_DESIGN.name} — ${BOARD_DESIGN.author.name}`);
   line(`           ${BOARD_DESIGN.url}`);
-  line(`  Mounts   ${system.design.name}`);
+  line(`  ${t("list.mountsFrom")} ${system.design.name}`);
   line(`           ${system.design.url}`);
   if (steps.some((step) => step.modelKey?.startsWith("single"))) {
     line(`           ${MOUNT_DESIGNS.single.name}`);
     line(`           ${MOUNT_DESIGNS.single.url}`);
   }
   line();
-  line(`  Everything printed here is ${BOARD_DESIGN.author.name}'s design. This plan says which of their files to`);
-  line("  print and how many; the files themselves come from MakerWorld under their licence.");
+  line(`  ${t("list.credit", { author: BOARD_DESIGN.author.name })}`);
   return out.join("\n");
 }
 
 /** The same thing, shortened for a model's description, which sits above a page rather than in a file. */
 export function describePlan(plan, context) {
-  const { printer, system, wallMm, strategy } = context;
-  const steps = printOrder(plan, system, wallMm);
+  const { printer, system, wallMm, strategy, t } = context;
+  const steps = printOrder(plan, system, wallMm, t);
   const out = [];
   out.push(
-    `${plural(plan.boards.length, "board")} filling ${size(plan.widthMm, plan.heightMm)} of wall, ` +
-      `${plan.columns.length} across × ${plan.rows.length} down, for a ${printer.name}. ` +
-      `${strategy.name} layout, held by ${system.name.toLowerCase()} ${wallMm} mm off the wall.`,
+    t("describe.summary", {
+      boards: plural(t, plan.boards.length, "list.board.one", "list.board.many"),
+      size: size(plan.widthMm, plan.heightMm),
+      across: plan.columns.length,
+      down: plan.rows.length,
+      printer: t(printer.name),
+      layout: t(strategy.name),
+      system: t(system.name).toLowerCase(),
+      mm: wallMm,
+    }),
   );
   out.push("");
-  out.push("Print in this order:");
+  out.push(t("describe.printInThisOrder"));
   for (const step of steps) {
     const flip = step.mirror ? ` (${step.mirror})` : "";
-    const file = step.file ? ` — file "${step.file}"${step.turned ? ", turned a quarter turn" : ""}` : "";
+    const file = step.file ? t("describe.file", { file: step.file }) + (step.turned ? t("list.turned") : "") : "";
     out.push(`${step.step}. ${step.count} × ${step.name}${flip} — ${step.detail}${file}`);
   }
   const buy = toBuy(plan, system);
   if (buy.length) {
     out.push("");
-    out.push(`Buy: ${buy.map((item) => `${item.count} × ${item.name}`).join(", ")}.`);
+    out.push(t("describe.buy", { items: buy.map((item) => `${item.count} × ${t(item.name)}`).join(", ") }));
   }
   out.push("");
-  out.push(
-    `The boards and mounts are ${BOARD_DESIGN.author.name}'s designs on MakerWorld (${BOARD_DESIGN.url}); ` +
-      "this model is the plan, not their files.",
-  );
+  out.push(t("describe.credit", { author: BOARD_DESIGN.author.name, url: BOARD_DESIGN.url }));
   return out.join("\n");
 }
 
@@ -1188,7 +1199,7 @@ const START = {
 };
 
 export default async function mount(thingport) {
-  const { root, theme, models, storage, ui, download, collections } = thingport;
+  const { root, theme, models, storage, ui, download, collections, t, labels } = thingport;
   const shell = root.querySelector(".skp");
   const $ = (id) => root.querySelector(`#skp-${id}`);
 
@@ -1281,7 +1292,7 @@ export default async function mount(thingport) {
   const printer = () => getPrinter(form.printerId, { x: clean(form.bedX, 256), y: clean(form.bedY, 256) });
   const system = () => getMountSystem(form.mountId);
   const strategy = () => getStrategy(form.strategyId);
-  const context = () => ({ printer: printer(), system: system(), wallMm: form.wallMm, strategy: strategy() });
+  const context = () => ({ printer: printer(), system: system(), wallMm: form.wallMm, strategy: strategy(), t });
 
   function replan() {
     planError = null;
@@ -1316,54 +1327,54 @@ export default async function mount(thingport) {
 
     into.innerHTML = `
       <div class="skp-group">
-        <h3>The wall <button type="button" class="skp-help" title="The space you want covered, not the boards. The planner fills as much of it as whole boards can.">?</button></h3>
+        <h3>${escapeHtml(t("form.theWall"))} <button type="button" class="skp-help" title="${escapeHtml(t("form.spaceHelp"))}">?</button></h3>
         <div class="skp-fields">
-          <label class="skp-field"><span>Width</span><div class="skp-in"><input id="skp-width" type="number" min="1" step="${unit === "in" ? "0.1" : "10"}" value="${fromMm(form.widthMm)}"><i>${unit}</i></div></label>
-          <label class="skp-field"><span>Height</span><div class="skp-in"><input id="skp-height" type="number" min="1" step="${unit === "in" ? "0.1" : "10"}" value="${fromMm(form.heightMm)}"><i>${unit}</i></div></label>
+          <label class="skp-field"><span>${escapeHtml(t("form.width"))}</span><div class="skp-in"><input id="skp-width" type="number" min="1" step="${unit === "in" ? "0.1" : "10"}" value="${fromMm(form.widthMm)}"><i>${unit}</i></div></label>
+          <label class="skp-field"><span>${escapeHtml(t("form.height"))}</span><div class="skp-in"><input id="skp-height" type="number" min="1" step="${unit === "in" ? "0.1" : "10"}" value="${fromMm(form.heightMm)}"><i>${unit}</i></div></label>
         </div>
-        <div class="skp-seg" role="group" aria-label="Units">
+        <div class="skp-seg" role="group" aria-label="${escapeHtml(t("form.units"))}">
           <button type="button" data-units="mm" aria-pressed="${form.units === "mm"}">mm</button>
           <button type="button" data-units="in" aria-pressed="${form.units === "in"}">inches</button>
         </div>
       </div>
 
       <div class="skp-group">
-        <h3>Printer <button type="button" class="skp-help" title="The bed decides the biggest board you can print: a board is 20 mm per hole plus 20, so a 256 mm bed takes 11 holes, or 240 mm.">?</button></h3>
-        <div class="skp-in"><select id="skp-printer" aria-label="Printer">
-          ${PRINTERS.map((p) => `<option value="${p.id}"${p.id === form.printerId ? " selected" : ""}>${escapeHtml(p.name)}${p.id === "custom" ? "" : ` — ${p.x} × ${p.y}`}</option>`).join("")}
+        <h3>${escapeHtml(t("form.printer"))} <button type="button" class="skp-help" title="${escapeHtml(t("form.printerHelp"))}">?</button></h3>
+        <div class="skp-in"><select id="skp-printer" aria-label="${escapeHtml(t("form.printer"))}">
+          ${PRINTERS.map((p) => `<option value="${p.id}"${p.id === form.printerId ? " selected" : ""}>${escapeHtml(t(p.name))}${p.id === "custom" ? "" : ` — ${p.x} × ${p.y}`}</option>`).join("")}
         </select></div>
         ${
           custom
             ? `<div class="skp-fields">
-                 <label class="skp-field"><span>Bed width</span><div class="skp-in"><input id="skp-bedx" type="number" min="60" step="5" value="${clean(form.bedX, 256)}"><i>mm</i></div></label>
-                 <label class="skp-field"><span>Bed depth</span><div class="skp-in"><input id="skp-bedy" type="number" min="60" step="5" value="${clean(form.bedY, 256)}"><i>mm</i></div></label>
+                 <label class="skp-field"><span>${escapeHtml(t("form.bedWidth"))}</span><div class="skp-in"><input id="skp-bedx" type="number" min="60" step="5" value="${clean(form.bedX, 256)}"><i>mm</i></div></label>
+                 <label class="skp-field"><span>${escapeHtml(t("form.bedDepth"))}</span><div class="skp-in"><input id="skp-bedy" type="number" min="60" step="5" value="${clean(form.bedY, 256)}"><i>mm</i></div></label>
                </div>`
             : ""
         }
-        <p class="skp-note">Largest board on this bed: <b>${holesFor(Math.min(bed.x, bed.y)) >= 2 ? `${Math.min(15, holesFor(bed.x))} × ${Math.min(15, holesFor(bed.y))} holes, ${sizeMm(Math.min(15, holesFor(bed.x)))} × ${sizeMm(Math.min(15, holesFor(bed.y)))} mm` : "none — the bed is too small"}</b></p>
+        <p class="skp-note">${escapeHtml(t("form.largestBoard"))} <b>${holesFor(Math.min(bed.x, bed.y)) >= 2 ? escapeHtml(t("form.boardSize", { cols: Math.min(15, holesFor(bed.x)), rows: Math.min(15, holesFor(bed.y)), width: sizeMm(Math.min(15, holesFor(bed.x))), height: sizeMm(Math.min(15, holesFor(bed.y))) })) : escapeHtml(t("form.bedTooSmall"))}</b></p>
       </div>
 
       <div class="skp-group">
-        <h3>Layout</h3>
-        <div class="skp-in"><select id="skp-strategy" aria-label="Layout">
-          ${STRATEGIES.map((s) => `<option value="${s.id}"${s.id === form.strategyId ? " selected" : ""}>${escapeHtml(s.name)}</option>`).join("")}
+        <h3>${escapeHtml(t("form.layout"))}</h3>
+        <div class="skp-in"><select id="skp-strategy" aria-label="${escapeHtml(t("form.layout"))}">
+          ${STRATEGIES.map((s) => `<option value="${s.id}"${s.id === form.strategyId ? " selected" : ""}>${escapeHtml(t(s.name))}</option>`).join("")}
         </select></div>
-        <p class="skp-note">${escapeHtml(strategy().summary)}</p>
+        <p class="skp-note">${escapeHtml(t(strategy().summary))}</p>
         ${
           form.strategyId === "gap"
-            ? `<label class="skp-field"><span>Gap allowed</span><div class="skp-in"><input id="skp-gap" type="number" min="0" step="20" value="${clean(form.maxGapMm, 40)}"><i>mm</i></div></label>`
+            ? `<label class="skp-field"><span>${escapeHtml(t("form.gapAllowed"))}</span><div class="skp-in"><input id="skp-gap" type="number" min="0" step="20" value="${clean(form.maxGapMm, 40)}"><i>mm</i></div></label>`
             : ""
         }
       </div>
 
       <div class="skp-group">
-        <h3>Mounting</h3>
-        <div class="skp-seg" role="group" aria-label="How the boards are held">
-          ${MOUNT_SYSTEMS.map((s) => `<button type="button" data-mount="${s.id}" aria-pressed="${s.id === form.mountId}">${escapeHtml(s.name)}</button>`).join("")}
+        <h3>${escapeHtml(t("form.mounting"))}</h3>
+        <div class="skp-seg" role="group" aria-label="${escapeHtml(t("form.heldBy"))}">
+          ${MOUNT_SYSTEMS.map((s) => `<button type="button" data-mount="${s.id}" aria-pressed="${s.id === form.mountId}">${escapeHtml(t(s.name))}</button>`).join("")}
         </div>
-        <p class="skp-note">${escapeHtml(system().summary)}</p>
-        <span class="skp-label">Off the wall</span>
-        <div class="skp-seg" role="group" aria-label="Distance from the wall">
+        <p class="skp-note">${escapeHtml(t(system().summary))}</p>
+        <span class="skp-label">${escapeHtml(t("form.offTheWall"))}</span>
+        <div class="skp-seg" role="group" aria-label="${escapeHtml(t("form.distance"))}">
           ${distances.map((mm) => `<button type="button" data-wall="${mm}" aria-pressed="${mm === form.wallMm}">${mm} mm</button>`).join("")}
         </div>
       </div>`;
@@ -1511,28 +1522,28 @@ export default async function mount(thingport) {
   function renderList() {
     const into = $("list-body");
     if (!plan) {
-      into.innerHTML = `<div class="skp-note skp-note-bad">${escapeHtml(planError ?? "Nothing to plan yet.")}</div>`;
+      into.innerHTML = `<div class="skp-note skp-note-bad">${escapeHtml(planError ?? t("ui.nothingToPlan"))}</div>`;
       return;
     }
-    const steps = printOrder(plan, system(), form.wallMm);
+    const steps = printOrder(plan, system(), form.wallMm, t);
     const buy = toBuy(plan, system());
     const parts = steps.reduce((total, step) => total + step.count, 0);
 
     const stepRow = (step) => {
       const model = step.modelKey ? broughtModel(step.modelKey) : null;
       const where = model?.printId
-        ? `<button type="button" class="skp-link" data-open="${escapeHtml(model.printId)}">In your library ${ICONS.open}</button>`
+        ? `<button type="button" class="skp-link" data-open="${escapeHtml(model.printId)}">${escapeHtml(t("plan.inYourLibrary"))} ${ICONS.open}</button>`
         : step.modelKey
-          ? `<span class="skp-dim">Not fetched yet</span>`
+          ? `<span class="skp-dim">${escapeHtml(t("plan.notFetched"))}</span>`
           : "";
       return `<li class="skp-step${step.missing ? " skp-step-bad" : ""}">
         <span class="skp-step-n">${step.step}</span>
         <div>
           <b>${escapeHtml(step.name)}</b>
           <span class="skp-count">× ${step.count}</span>
-          ${step.mirror ? `<span class="skp-flag" title="This board isn't symmetric, so every other one is flipped">⇄ ${escapeHtml(step.mirror)}</span>` : ""}
+          ${step.mirror ? `<span class="skp-flag" title="${escapeHtml(t("plan.flipNote"))}">⇄ ${escapeHtml(step.mirror)}</span>` : ""}
           <div class="skp-dim">${escapeHtml(step.detail)}${step.file ? ` · <code>${escapeHtml(step.file)}</code>` : ""}${step.turned ? " · a quarter turn round" : ""}</div>
-          ${step.missing ? '<div class="skp-bad">No file is published in this size.</div>' : ""}
+          ${step.missing ? `<div class="skp-bad">${escapeHtml(t("plan.notPublished"))}</div>` : ""}
           ${where}
         </div>
       </li>`;
@@ -1540,15 +1551,15 @@ export default async function mount(thingport) {
 
     into.innerHTML = `
       <ol class="skp-steps">${steps.map(stepRow).join("")}</ol>
-      <div class="skp-total"><span>${parts} parts to print</span><b>${plan.boards.length} boards</b></div>
+      <div class="skp-total"><span>${escapeHtml(t("plan.partsToPrint", { parts }))}</span><b>${escapeHtml(t("plan.boardsCount", { boards: plan.boards.length }))}</b></div>
       ${
         buy.length
-          ? `<h3 class="skp-sub">Buy</h3><ul class="skp-buy">${buy
-              .map((item) => `<li><b>${item.count} ×</b> ${escapeHtml(item.name)}</li>`)
+          ? `<h3 class="skp-sub">${escapeHtml(t("plan.buy"))}</h3><ul class="skp-buy">${buy
+              .map((item) => `<li><b>${item.count} ×</b> ${escapeHtml(t(item.name))}</li>`)
               .join("")}</ul>`
           : ""
       }
-      <p class="skp-credit">Boards and mounts by <b>${escapeHtml(BOARD_DESIGN.author.name)}</b> on MakerWorld. This plans which of their files to print; the files come into your library with the tool.</p>`;
+      <p class="skp-credit">${escapeHtml(t("plan.credit", { author: BOARD_DESIGN.author.name }))}</p>`;
 
     for (const button of into.querySelectorAll("[data-open]")) {
       button.addEventListener("click", () => models.open(button.dataset.open));
@@ -1564,12 +1575,12 @@ export default async function mount(thingport) {
     }
     const left =
       plan.leftoverWidthMm || plan.leftoverHeightMm
-        ? ` · ${Math.round(plan.leftoverWidthMm)} mm across and ${Math.round(plan.leftoverHeightMm)} mm down left over`
-        : " · the whole wall";
-    status.textContent = `${Math.round(plan.coveredWidthMm)} × ${Math.round(plan.coveredHeightMm)} mm covered${left}`;
+        ? ` · ${t("plan.leftOver", { across: Math.round(plan.leftoverWidthMm), down: Math.round(plan.leftoverHeightMm) })}`
+        : ` · ${t("plan.wholeWall")}`;
+    status.textContent = `${t("plan.covered", { width: Math.round(plan.coveredWidthMm), height: Math.round(plan.coveredHeightMm) })}${left}`;
     const summary = $("summary");
     summary.hidden = false;
-    summary.innerHTML = `<b>${plan.boards.length}</b><span>boards</span><span>·</span><b>${plan.columns.length} × ${plan.rows.length}</b>`;
+    summary.innerHTML = `<b>${plan.boards.length}</b><span>${escapeHtml(t("plan.boardsWord"))}</span><span>·</span><b>${plan.columns.length} × ${plan.rows.length}</b>`;
   }
 
   function update() {
@@ -1621,7 +1632,7 @@ export default async function mount(thingport) {
   function renderProjects() {
     const list = $("projects-list");
     if (!projects.length) {
-      list.innerHTML = '<li class="skp-empty">Nothing saved yet. “Save the plan” keeps the wall you’re on.</li>';
+      list.innerHTML = `<li class="skp-empty">${escapeHtml(t("plans.empty"))}</li>`;
       return;
     }
     list.replaceChildren(
@@ -1639,14 +1650,14 @@ export default async function mount(thingport) {
           element.addEventListener("click", safely(run));
           actions.append(element);
         };
-        button("Open it", ICONS.open, () => {
+        button(t("plans.open"), ICONS.open, () => {
           form = { ...START, ...project.form };
           userView = false;
           sheets.projects.close();
           update();
           ui.toast(`Opened “${project.name}”`, "success");
         });
-        button("Duplicate it", ICONS.copy, async () => {
+        button(t("plans.duplicate"), ICONS.copy, async () => {
           projects.unshift({
             ...project,
             id: `${Date.now()}`,
@@ -1658,13 +1669,13 @@ export default async function mount(thingport) {
           renderProjects();
         });
         button(
-          "Delete it",
+          t("plans.delete"),
           ICONS.remove,
           async () => {
             const yes = await ui.confirm({
-              title: "Delete this plan?",
+              title: t("plans.deleteTitle"),
               message: `“${project.name}” goes from the tool. Anything you saved to your library stays.`,
-              confirmLabel: "Delete it",
+              confirmLabel: t("plans.delete"),
               destructive: true,
             });
             if (!yes) return;
@@ -1681,7 +1692,7 @@ export default async function mount(thingport) {
 
   const saveProject = safely(async () => {
     if (!plan) return;
-    const name = $("project-name").value.trim() || planTitle(plan);
+    const name = $("project-name").value.trim() || planTitle(plan, t);
     projects.unshift({
       id: `${Date.now()}`,
       name,
@@ -1693,28 +1704,28 @@ export default async function mount(thingport) {
     await keepProjects();
     $("project-name").value = "";
     renderProjects();
-    ui.toast("The plan is saved in the tool", "success");
+    ui.toast(t("plans.savedInTool"), "success");
   });
 
   /* ---- saving to the library ---- */
 
   const saveToThingport = safely(async () => {
     if (!plan) return;
-    const name = $("save-name").value.trim() || planTitle(plan);
+    const name = $("save-name").value.trim() || planTitle(plan, t);
     const intoCollection = $("save-collect").checked;
     const button = $("save-go");
     button.disabled = true;
-    button.textContent = "Saving…";
+    button.textContent = t("save.saving");
     try {
       let collectionId;
       if (intoCollection) {
-        const picked = await collections.pick({ title: "Save the plan to" });
+        const picked = await collections.pick({ title: t("save.pickCollection") });
         if (!picked) return;
         collectionId = picked.id;
       }
       // One plate per part, in print order, rather than the whole wall in one file: the library then holds the
       // plan the way it holds any multi-plate model, a plate for each thing there is to print.
-      const parts = partFiles(printOrder(plan, system(), form.wallMm), { wallMm: form.wallMm });
+      const parts = partFiles(printOrder(plan, system(), form.wallMm, t), { wallMm: form.wallMm });
       const description = describePlan(plan, context());
       const model = await models.create({
         name,
@@ -1733,14 +1744,14 @@ export default async function mount(thingport) {
       sheets["save-sheet"].close();
       ui.toast(`Saved “${name}” to your library`, "success");
       const yes = await ui.confirm({
-        title: "Open it?",
-        message: "The plan is in your library, with the print order in its notes.",
-        confirmLabel: "Open it",
+        title: t("plans.openTitle"),
+        message: t("plans.openBody"),
+        confirmLabel: t("plans.open"),
       });
       if (yes) models.open(model.id);
     } finally {
       button.disabled = false;
-      button.textContent = "Save it";
+      button.textContent = t("plans.save");
     }
   });
 
@@ -1754,7 +1765,7 @@ export default async function mount(thingport) {
   const downloadParts = () => {
     if (!plan) return;
     download({
-      name: `${slug(planTitle(plan))}-part-list.txt`,
+      name: `${slug(planTitle(plan, t))}-part-list.txt`,
       data: partListText(plan, context()),
       type: "text/plain",
     });
@@ -1764,7 +1775,7 @@ export default async function mount(thingport) {
 
   $("save").addEventListener("click", () => {
     if (!plan) return;
-    $("save-name").value = planTitle(plan);
+    $("save-name").value = planTitle(plan, t);
     sheets["save-sheet"].open();
     $("save-name").focus();
   });
@@ -1811,6 +1822,8 @@ export default async function mount(thingport) {
   );
 
   const stopResize = thingport.onResize(() => drawCanvas());
+  // The window's own words, before the first render.
+  labels();
   update();
 
   return () => {

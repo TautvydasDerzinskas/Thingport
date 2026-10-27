@@ -687,7 +687,7 @@
         <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" />
         <path d="M17 21v-8H7v8M7 3v5h8" />
       </svg>
-      Save to Thingport
+      <span data-t="bar.save">Save to Thingport</span>
     </button>
     <button type="button" class="skp-btn" id="skp-parts">
       <svg
@@ -703,7 +703,7 @@
       >
         <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
       </svg>
-      Part list
+      <span data-t="bar.partList">Part list</span>
     </button>
     <button type="button" class="skp-btn" id="skp-projects-open">
       <svg
@@ -719,7 +719,7 @@
       >
         <path d="M3 7h6l2 2h10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
       </svg>
-      Plans
+      <span data-t="bar.plans">Plans</span>
     </button>
     <div class="skp-spacer"></div>
     <div class="skp-chip" id="skp-summary" role="status" aria-live="polite" hidden></div>
@@ -727,15 +727,18 @@
 
   <div class="skp-main">
     <section class="skp-panel skp-form" aria-labelledby="skp-form-title">
-      <div class="skp-head"><h2 id="skp-form-title">The wall</h2></div>
+      <div class="skp-head">
+        <h2 id="skp-form-title"><span data-t="form.theWall">The wall</span></h2>
+      </div>
       <div id="skp-form-body"></div>
     </section>
 
-    <section class="skp-stage" aria-label="The plan">
+    <section class="skp-stage" data-t-aria="view.plan" aria-label="The plan">
       <div class="skp-canvas-wrap">
         <canvas
           id="skp-canvas"
           tabindex="0"
+          data-t-aria="view.canvas"
           aria-label="The wall seen from the front: drag to move it, scroll to zoom"
         ></canvas>
         <div class="skp-tools">
@@ -743,7 +746,9 @@
             type="button"
             class="skp-btn skp-icon"
             id="skp-measure"
+            data-t-title="view.measure"
             title="Measurements"
+            data-t-aria="view.measureAria"
             aria-label="Show the measurements"
             aria-pressed="true"
           >
@@ -765,7 +770,9 @@
             type="button"
             class="skp-btn skp-icon"
             id="skp-mounts"
+            data-t-title="view.mounts"
             title="Mounting points"
+            data-t-aria="view.mountsAria"
             aria-label="Show the mounting points"
             aria-pressed="true"
           >
@@ -784,7 +791,15 @@
               <path d="M12 2v4m0 12v4M2 12h4m12 0h4" />
             </svg>
           </button>
-          <button type="button" class="skp-btn skp-icon" id="skp-zoom-out" title="Zoom out" aria-label="Zoom out">
+          <button
+            type="button"
+            class="skp-btn skp-icon"
+            id="skp-zoom-out"
+            data-t-title="view.zoomOut"
+            title="Zoom out"
+            data-t-aria="view.zoomOut"
+            aria-label="Zoom out"
+          >
             <svg
               width="14"
               height="14"
@@ -798,7 +813,15 @@
               <path d="M5 12h14" />
             </svg>
           </button>
-          <button type="button" class="skp-btn skp-icon" id="skp-zoom-in" title="Zoom in" aria-label="Zoom in">
+          <button
+            type="button"
+            class="skp-btn skp-icon"
+            id="skp-zoom-in"
+            data-t-title="view.zoomIn"
+            title="Zoom in"
+            data-t-aria="view.zoomIn"
+            aria-label="Zoom in"
+          >
             <svg
               width="14"
               height="14"
@@ -816,7 +839,9 @@
             type="button"
             class="skp-btn skp-icon"
             id="skp-fit"
+            data-t-title="view.fit"
             title="Fit the wall"
+            data-t-aria="view.fitAria"
             aria-label="Fit the wall in the view"
           >
             <svg
@@ -841,9 +866,9 @@
 
     <section class="skp-panel skp-list-panel" aria-labelledby="skp-list-title">
       <div class="skp-head">
-        <h2 id="skp-list-title">Print in this order</h2>
+        <h2 id="skp-list-title"><span data-t="list.printInThisOrder">Print in this order</span></h2>
         <div class="skp-spacer"></div>
-        <span class="skp-hint">biggest first</span>
+        <span class="skp-hint"><span data-t="list.biggestFirst">biggest first</span></span>
       </div>
       <div id="skp-list-body"></div>
     </section>
@@ -852,10 +877,16 @@
   <div class="skp-sheet" id="skp-projects" role="dialog" aria-modal="true" aria-labelledby="skp-projects-title" hidden>
     <div class="skp-card">
       <div class="skp-head">
-        <h2 id="skp-projects-title">Plans</h2>
-        <span class="skp-hint">Kept in the tool, for you</span>
+        <h2 id="skp-projects-title"><span data-t="bar.plans">Plans</span></h2>
+        <span class="skp-hint"><span data-t="plans.kept">Kept in the tool, for you</span></span>
         <div class="skp-spacer"></div>
-        <button type="button" class="skp-btn skp-icon" id="skp-projects-close" aria-label="Close the plans">
+        <button
+          type="button"
+          class="skp-btn skp-icon"
+          id="skp-projects-close"
+          data-t-aria="plans.close"
+          aria-label="Close the plans"
+        >
           <svg
             width="14"
             height="14"
@@ -872,9 +903,17 @@
       </div>
       <div class="skp-actions">
         <div class="skp-in" style="flex: 1 1 200px">
-          <input id="skp-project-name" placeholder="Name this wall" aria-label="Name this wall" />
+          <input
+            id="skp-project-name"
+            data-t-placeholder="plans.nameThis"
+            placeholder="Name this wall"
+            data-t-aria="plans.nameThis"
+            aria-label="Name this wall"
+          />
         </div>
-        <button type="button" class="skp-btn skp-btn-main" id="skp-project-save">Save the plan</button>
+        <button type="button" class="skp-btn skp-btn-main" id="skp-project-save">
+          <span data-t="plans.saveThe">Save the plan</span>
+        </button>
       </div>
       <ul class="skp-list" id="skp-projects-list"></ul>
     </div>
@@ -883,9 +922,15 @@
   <div class="skp-sheet" id="skp-save-sheet" role="dialog" aria-modal="true" aria-labelledby="skp-save-title" hidden>
     <div class="skp-card">
       <div class="skp-head">
-        <h2 id="skp-save-title">Save the plan to your library</h2>
+        <h2 id="skp-save-title"><span data-t="save.title">Save the plan to your library</span></h2>
         <div class="skp-spacer"></div>
-        <button type="button" class="skp-btn skp-icon" id="skp-save-close" aria-label="Close">
+        <button
+          type="button"
+          class="skp-btn skp-icon"
+          id="skp-save-close"
+          data-t-aria="common.close"
+          aria-label="Close"
+        >
           <svg
             width="14"
             height="14"
@@ -901,21 +946,25 @@
         </button>
       </div>
       <label class="skp-field"
-        ><span>Call it</span>
-        <div class="skp-in"><input id="skp-save-name" aria-label="Name" /></div
+        ><span><span data-t="save.callIt">Call it</span></span>
+        <div class="skp-in"><input id="skp-save-name" data-t-aria="save.nameLabel" aria-label="Name" /></div
       ></label>
       <p class="skp-note">
-        One model with a plate for every part, in print order, each at its true size — a picture of the plan is its
-        cover and the print order is in its notes. The parts themselves stay where they came from: these plates are the
-        plan, not AU3D's files.
+        <span data-t="save.note"
+          >One model with a plate for every part, in print order, each at its true size — a picture of the plan is its
+          cover and the print order is in its notes. The parts themselves stay where they came from: these plates are
+          the plan, not AU3D's files.</span
+        >
       </p>
       <label class="skp-check"
-        ><span class="skp-switch"><input type="checkbox" id="skp-save-collect" /><span></span></span> Put it in a
-        collection</label
+        ><span class="skp-switch"><input type="checkbox" id="skp-save-collect" /><span></span></span>
+        <span data-t="save.putItIn">Put it in a collection</span></label
       >
       <div class="skp-actions">
         <div class="skp-spacer"></div>
-        <button type="button" class="skp-btn skp-btn-main" id="skp-save-go">Save it</button>
+        <button type="button" class="skp-btn skp-btn-main" id="skp-save-go">
+          <span data-t="plans.save">Save it</span>
+        </button>
       </div>
     </div>
   </div>

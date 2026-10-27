@@ -55,7 +55,7 @@ const START = {
 };
 
 export default async function mount(thingport) {
-  const { root, theme, models, storage, ui, download, collections } = thingport;
+  const { root, theme, models, storage, ui, download, collections, t, labels } = thingport;
   const shell = root.querySelector(".skp");
   const $ = (id) => root.querySelector(`#skp-${id}`);
 
@@ -148,7 +148,7 @@ export default async function mount(thingport) {
   const printer = () => getPrinter(form.printerId, { x: clean(form.bedX, 256), y: clean(form.bedY, 256) });
   const system = () => getMountSystem(form.mountId);
   const strategy = () => getStrategy(form.strategyId);
-  const context = () => ({ printer: printer(), system: system(), wallMm: form.wallMm, strategy: strategy() });
+  const context = () => ({ printer: printer(), system: system(), wallMm: form.wallMm, strategy: strategy(), t });
 
   function replan() {
     planError = null;
@@ -183,54 +183,54 @@ export default async function mount(thingport) {
 
     into.innerHTML = `
       <div class="skp-group">
-        <h3>The wall <button type="button" class="skp-help" title="The space you want covered, not the boards. The planner fills as much of it as whole boards can.">?</button></h3>
+        <h3>${escapeHtml(t("form.theWall"))} <button type="button" class="skp-help" title="${escapeHtml(t("form.spaceHelp"))}">?</button></h3>
         <div class="skp-fields">
-          <label class="skp-field"><span>Width</span><div class="skp-in"><input id="skp-width" type="number" min="1" step="${unit === "in" ? "0.1" : "10"}" value="${fromMm(form.widthMm)}"><i>${unit}</i></div></label>
-          <label class="skp-field"><span>Height</span><div class="skp-in"><input id="skp-height" type="number" min="1" step="${unit === "in" ? "0.1" : "10"}" value="${fromMm(form.heightMm)}"><i>${unit}</i></div></label>
+          <label class="skp-field"><span>${escapeHtml(t("form.width"))}</span><div class="skp-in"><input id="skp-width" type="number" min="1" step="${unit === "in" ? "0.1" : "10"}" value="${fromMm(form.widthMm)}"><i>${unit}</i></div></label>
+          <label class="skp-field"><span>${escapeHtml(t("form.height"))}</span><div class="skp-in"><input id="skp-height" type="number" min="1" step="${unit === "in" ? "0.1" : "10"}" value="${fromMm(form.heightMm)}"><i>${unit}</i></div></label>
         </div>
-        <div class="skp-seg" role="group" aria-label="Units">
+        <div class="skp-seg" role="group" aria-label="${escapeHtml(t("form.units"))}">
           <button type="button" data-units="mm" aria-pressed="${form.units === "mm"}">mm</button>
           <button type="button" data-units="in" aria-pressed="${form.units === "in"}">inches</button>
         </div>
       </div>
 
       <div class="skp-group">
-        <h3>Printer <button type="button" class="skp-help" title="The bed decides the biggest board you can print: a board is 20 mm per hole plus 20, so a 256 mm bed takes 11 holes, or 240 mm.">?</button></h3>
-        <div class="skp-in"><select id="skp-printer" aria-label="Printer">
-          ${PRINTERS.map((p) => `<option value="${p.id}"${p.id === form.printerId ? " selected" : ""}>${escapeHtml(p.name)}${p.id === "custom" ? "" : ` — ${p.x} × ${p.y}`}</option>`).join("")}
+        <h3>${escapeHtml(t("form.printer"))} <button type="button" class="skp-help" title="${escapeHtml(t("form.printerHelp"))}">?</button></h3>
+        <div class="skp-in"><select id="skp-printer" aria-label="${escapeHtml(t("form.printer"))}">
+          ${PRINTERS.map((p) => `<option value="${p.id}"${p.id === form.printerId ? " selected" : ""}>${escapeHtml(t(p.name))}${p.id === "custom" ? "" : ` — ${p.x} × ${p.y}`}</option>`).join("")}
         </select></div>
         ${
           custom
             ? `<div class="skp-fields">
-                 <label class="skp-field"><span>Bed width</span><div class="skp-in"><input id="skp-bedx" type="number" min="60" step="5" value="${clean(form.bedX, 256)}"><i>mm</i></div></label>
-                 <label class="skp-field"><span>Bed depth</span><div class="skp-in"><input id="skp-bedy" type="number" min="60" step="5" value="${clean(form.bedY, 256)}"><i>mm</i></div></label>
+                 <label class="skp-field"><span>${escapeHtml(t("form.bedWidth"))}</span><div class="skp-in"><input id="skp-bedx" type="number" min="60" step="5" value="${clean(form.bedX, 256)}"><i>mm</i></div></label>
+                 <label class="skp-field"><span>${escapeHtml(t("form.bedDepth"))}</span><div class="skp-in"><input id="skp-bedy" type="number" min="60" step="5" value="${clean(form.bedY, 256)}"><i>mm</i></div></label>
                </div>`
             : ""
         }
-        <p class="skp-note">Largest board on this bed: <b>${holesFor(Math.min(bed.x, bed.y)) >= 2 ? `${Math.min(15, holesFor(bed.x))} × ${Math.min(15, holesFor(bed.y))} holes, ${sizeMm(Math.min(15, holesFor(bed.x)))} × ${sizeMm(Math.min(15, holesFor(bed.y)))} mm` : "none — the bed is too small"}</b></p>
+        <p class="skp-note">${escapeHtml(t("form.largestBoard"))} <b>${holesFor(Math.min(bed.x, bed.y)) >= 2 ? escapeHtml(t("form.boardSize", { cols: Math.min(15, holesFor(bed.x)), rows: Math.min(15, holesFor(bed.y)), width: sizeMm(Math.min(15, holesFor(bed.x))), height: sizeMm(Math.min(15, holesFor(bed.y))) })) : escapeHtml(t("form.bedTooSmall"))}</b></p>
       </div>
 
       <div class="skp-group">
-        <h3>Layout</h3>
-        <div class="skp-in"><select id="skp-strategy" aria-label="Layout">
-          ${STRATEGIES.map((s) => `<option value="${s.id}"${s.id === form.strategyId ? " selected" : ""}>${escapeHtml(s.name)}</option>`).join("")}
+        <h3>${escapeHtml(t("form.layout"))}</h3>
+        <div class="skp-in"><select id="skp-strategy" aria-label="${escapeHtml(t("form.layout"))}">
+          ${STRATEGIES.map((s) => `<option value="${s.id}"${s.id === form.strategyId ? " selected" : ""}>${escapeHtml(t(s.name))}</option>`).join("")}
         </select></div>
-        <p class="skp-note">${escapeHtml(strategy().summary)}</p>
+        <p class="skp-note">${escapeHtml(t(strategy().summary))}</p>
         ${
           form.strategyId === "gap"
-            ? `<label class="skp-field"><span>Gap allowed</span><div class="skp-in"><input id="skp-gap" type="number" min="0" step="20" value="${clean(form.maxGapMm, 40)}"><i>mm</i></div></label>`
+            ? `<label class="skp-field"><span>${escapeHtml(t("form.gapAllowed"))}</span><div class="skp-in"><input id="skp-gap" type="number" min="0" step="20" value="${clean(form.maxGapMm, 40)}"><i>mm</i></div></label>`
             : ""
         }
       </div>
 
       <div class="skp-group">
-        <h3>Mounting</h3>
-        <div class="skp-seg" role="group" aria-label="How the boards are held">
-          ${MOUNT_SYSTEMS.map((s) => `<button type="button" data-mount="${s.id}" aria-pressed="${s.id === form.mountId}">${escapeHtml(s.name)}</button>`).join("")}
+        <h3>${escapeHtml(t("form.mounting"))}</h3>
+        <div class="skp-seg" role="group" aria-label="${escapeHtml(t("form.heldBy"))}">
+          ${MOUNT_SYSTEMS.map((s) => `<button type="button" data-mount="${s.id}" aria-pressed="${s.id === form.mountId}">${escapeHtml(t(s.name))}</button>`).join("")}
         </div>
-        <p class="skp-note">${escapeHtml(system().summary)}</p>
-        <span class="skp-label">Off the wall</span>
-        <div class="skp-seg" role="group" aria-label="Distance from the wall">
+        <p class="skp-note">${escapeHtml(t(system().summary))}</p>
+        <span class="skp-label">${escapeHtml(t("form.offTheWall"))}</span>
+        <div class="skp-seg" role="group" aria-label="${escapeHtml(t("form.distance"))}">
           ${distances.map((mm) => `<button type="button" data-wall="${mm}" aria-pressed="${mm === form.wallMm}">${mm} mm</button>`).join("")}
         </div>
       </div>`;
@@ -378,28 +378,28 @@ export default async function mount(thingport) {
   function renderList() {
     const into = $("list-body");
     if (!plan) {
-      into.innerHTML = `<div class="skp-note skp-note-bad">${escapeHtml(planError ?? "Nothing to plan yet.")}</div>`;
+      into.innerHTML = `<div class="skp-note skp-note-bad">${escapeHtml(planError ?? t("ui.nothingToPlan"))}</div>`;
       return;
     }
-    const steps = printOrder(plan, system(), form.wallMm);
+    const steps = printOrder(plan, system(), form.wallMm, t);
     const buy = toBuy(plan, system());
     const parts = steps.reduce((total, step) => total + step.count, 0);
 
     const stepRow = (step) => {
       const model = step.modelKey ? broughtModel(step.modelKey) : null;
       const where = model?.printId
-        ? `<button type="button" class="skp-link" data-open="${escapeHtml(model.printId)}">In your library ${ICONS.open}</button>`
+        ? `<button type="button" class="skp-link" data-open="${escapeHtml(model.printId)}">${escapeHtml(t("plan.inYourLibrary"))} ${ICONS.open}</button>`
         : step.modelKey
-          ? `<span class="skp-dim">Not fetched yet</span>`
+          ? `<span class="skp-dim">${escapeHtml(t("plan.notFetched"))}</span>`
           : "";
       return `<li class="skp-step${step.missing ? " skp-step-bad" : ""}">
         <span class="skp-step-n">${step.step}</span>
         <div>
           <b>${escapeHtml(step.name)}</b>
           <span class="skp-count">× ${step.count}</span>
-          ${step.mirror ? `<span class="skp-flag" title="This board isn't symmetric, so every other one is flipped">⇄ ${escapeHtml(step.mirror)}</span>` : ""}
+          ${step.mirror ? `<span class="skp-flag" title="${escapeHtml(t("plan.flipNote"))}">⇄ ${escapeHtml(step.mirror)}</span>` : ""}
           <div class="skp-dim">${escapeHtml(step.detail)}${step.file ? ` · <code>${escapeHtml(step.file)}</code>` : ""}${step.turned ? " · a quarter turn round" : ""}</div>
-          ${step.missing ? '<div class="skp-bad">No file is published in this size.</div>' : ""}
+          ${step.missing ? `<div class="skp-bad">${escapeHtml(t("plan.notPublished"))}</div>` : ""}
           ${where}
         </div>
       </li>`;
@@ -407,15 +407,15 @@ export default async function mount(thingport) {
 
     into.innerHTML = `
       <ol class="skp-steps">${steps.map(stepRow).join("")}</ol>
-      <div class="skp-total"><span>${parts} parts to print</span><b>${plan.boards.length} boards</b></div>
+      <div class="skp-total"><span>${escapeHtml(t("plan.partsToPrint", { parts }))}</span><b>${escapeHtml(t("plan.boardsCount", { boards: plan.boards.length }))}</b></div>
       ${
         buy.length
-          ? `<h3 class="skp-sub">Buy</h3><ul class="skp-buy">${buy
-              .map((item) => `<li><b>${item.count} ×</b> ${escapeHtml(item.name)}</li>`)
+          ? `<h3 class="skp-sub">${escapeHtml(t("plan.buy"))}</h3><ul class="skp-buy">${buy
+              .map((item) => `<li><b>${item.count} ×</b> ${escapeHtml(t(item.name))}</li>`)
               .join("")}</ul>`
           : ""
       }
-      <p class="skp-credit">Boards and mounts by <b>${escapeHtml(BOARD_DESIGN.author.name)}</b> on MakerWorld. This plans which of their files to print; the files come into your library with the tool.</p>`;
+      <p class="skp-credit">${escapeHtml(t("plan.credit", { author: BOARD_DESIGN.author.name }))}</p>`;
 
     for (const button of into.querySelectorAll("[data-open]")) {
       button.addEventListener("click", () => models.open(button.dataset.open));
@@ -431,12 +431,12 @@ export default async function mount(thingport) {
     }
     const left =
       plan.leftoverWidthMm || plan.leftoverHeightMm
-        ? ` · ${Math.round(plan.leftoverWidthMm)} mm across and ${Math.round(plan.leftoverHeightMm)} mm down left over`
-        : " · the whole wall";
-    status.textContent = `${Math.round(plan.coveredWidthMm)} × ${Math.round(plan.coveredHeightMm)} mm covered${left}`;
+        ? ` · ${t("plan.leftOver", { across: Math.round(plan.leftoverWidthMm), down: Math.round(plan.leftoverHeightMm) })}`
+        : ` · ${t("plan.wholeWall")}`;
+    status.textContent = `${t("plan.covered", { width: Math.round(plan.coveredWidthMm), height: Math.round(plan.coveredHeightMm) })}${left}`;
     const summary = $("summary");
     summary.hidden = false;
-    summary.innerHTML = `<b>${plan.boards.length}</b><span>boards</span><span>·</span><b>${plan.columns.length} × ${plan.rows.length}</b>`;
+    summary.innerHTML = `<b>${plan.boards.length}</b><span>${escapeHtml(t("plan.boardsWord"))}</span><span>·</span><b>${plan.columns.length} × ${plan.rows.length}</b>`;
   }
 
   function update() {
@@ -488,7 +488,7 @@ export default async function mount(thingport) {
   function renderProjects() {
     const list = $("projects-list");
     if (!projects.length) {
-      list.innerHTML = '<li class="skp-empty">Nothing saved yet. “Save the plan” keeps the wall you’re on.</li>';
+      list.innerHTML = `<li class="skp-empty">${escapeHtml(t("plans.empty"))}</li>`;
       return;
     }
     list.replaceChildren(
@@ -506,14 +506,14 @@ export default async function mount(thingport) {
           element.addEventListener("click", safely(run));
           actions.append(element);
         };
-        button("Open it", ICONS.open, () => {
+        button(t("plans.open"), ICONS.open, () => {
           form = { ...START, ...project.form };
           userView = false;
           sheets.projects.close();
           update();
           ui.toast(`Opened “${project.name}”`, "success");
         });
-        button("Duplicate it", ICONS.copy, async () => {
+        button(t("plans.duplicate"), ICONS.copy, async () => {
           projects.unshift({
             ...project,
             id: `${Date.now()}`,
@@ -525,13 +525,13 @@ export default async function mount(thingport) {
           renderProjects();
         });
         button(
-          "Delete it",
+          t("plans.delete"),
           ICONS.remove,
           async () => {
             const yes = await ui.confirm({
-              title: "Delete this plan?",
+              title: t("plans.deleteTitle"),
               message: `“${project.name}” goes from the tool. Anything you saved to your library stays.`,
-              confirmLabel: "Delete it",
+              confirmLabel: t("plans.delete"),
               destructive: true,
             });
             if (!yes) return;
@@ -548,7 +548,7 @@ export default async function mount(thingport) {
 
   const saveProject = safely(async () => {
     if (!plan) return;
-    const name = $("project-name").value.trim() || planTitle(plan);
+    const name = $("project-name").value.trim() || planTitle(plan, t);
     projects.unshift({
       id: `${Date.now()}`,
       name,
@@ -560,28 +560,28 @@ export default async function mount(thingport) {
     await keepProjects();
     $("project-name").value = "";
     renderProjects();
-    ui.toast("The plan is saved in the tool", "success");
+    ui.toast(t("plans.savedInTool"), "success");
   });
 
   /* ---- saving to the library ---- */
 
   const saveToThingport = safely(async () => {
     if (!plan) return;
-    const name = $("save-name").value.trim() || planTitle(plan);
+    const name = $("save-name").value.trim() || planTitle(plan, t);
     const intoCollection = $("save-collect").checked;
     const button = $("save-go");
     button.disabled = true;
-    button.textContent = "Saving…";
+    button.textContent = t("save.saving");
     try {
       let collectionId;
       if (intoCollection) {
-        const picked = await collections.pick({ title: "Save the plan to" });
+        const picked = await collections.pick({ title: t("save.pickCollection") });
         if (!picked) return;
         collectionId = picked.id;
       }
       // One plate per part, in print order, rather than the whole wall in one file: the library then holds the
       // plan the way it holds any multi-plate model, a plate for each thing there is to print.
-      const parts = partFiles(printOrder(plan, system(), form.wallMm), { wallMm: form.wallMm });
+      const parts = partFiles(printOrder(plan, system(), form.wallMm, t), { wallMm: form.wallMm });
       const description = describePlan(plan, context());
       const model = await models.create({
         name,
@@ -600,14 +600,14 @@ export default async function mount(thingport) {
       sheets["save-sheet"].close();
       ui.toast(`Saved “${name}” to your library`, "success");
       const yes = await ui.confirm({
-        title: "Open it?",
-        message: "The plan is in your library, with the print order in its notes.",
-        confirmLabel: "Open it",
+        title: t("plans.openTitle"),
+        message: t("plans.openBody"),
+        confirmLabel: t("plans.open"),
       });
       if (yes) models.open(model.id);
     } finally {
       button.disabled = false;
-      button.textContent = "Save it";
+      button.textContent = t("plans.save");
     }
   });
 
@@ -621,7 +621,7 @@ export default async function mount(thingport) {
   const downloadParts = () => {
     if (!plan) return;
     download({
-      name: `${slug(planTitle(plan))}-part-list.txt`,
+      name: `${slug(planTitle(plan, t))}-part-list.txt`,
       data: partListText(plan, context()),
       type: "text/plain",
     });
@@ -631,7 +631,7 @@ export default async function mount(thingport) {
 
   $("save").addEventListener("click", () => {
     if (!plan) return;
-    $("save-name").value = planTitle(plan);
+    $("save-name").value = planTitle(plan, t);
     sheets["save-sheet"].open();
     $("save-name").focus();
   });
@@ -678,6 +678,8 @@ export default async function mount(thingport) {
   );
 
   const stopResize = thingport.onResize(() => drawCanvas());
+  // The window's own words, before the first render.
+  labels();
   update();
 
   return () => {

@@ -77,8 +77,8 @@ export const boardExists = (cols, rows) => boardSource(cols, rows) !== null;
 export const MOUNT_SYSTEMS = [
   {
     id: "wall-mounts",
-    name: "Wall mounts",
-    summary: "One printed mount wherever board corners meet.",
+    name: "system.wall-mounts",
+    summary: "system.wall-mounts.summary",
     design: MOUNT_DESIGNS.multi,
     markers: "nodes",
     insetMm: 9,
@@ -87,27 +87,27 @@ export const MOUNT_SYSTEMS = [
     distances: [10, 20],
     profiles: { 10: "1609221", 20: "811358" },
     items: [
-      { name: "Quad wall mount", per: { junction: 1 }, print: true, from: "multi" },
-      { name: "Double wall mount", per: { edgeNode: 1 }, print: true, from: "multi" },
-      { name: "Single wall mount", per: { outerCorner: 1 }, print: true, from: "single" },
-      { name: "M4 × 40–60 wall screw", per: { junction: 1, edgeNode: 1, outerCorner: 1 }, print: false },
-      { name: "M4 × 20 board screw", per: { board: 4 }, print: false },
-      { name: "Wall plug", per: { junction: 1, edgeNode: 1, outerCorner: 1 }, print: false },
+      { name: "part.quad-wall-mount", per: { junction: 1 }, print: true, from: "multi" },
+      { name: "part.double-wall-mount", per: { edgeNode: 1 }, print: true, from: "multi" },
+      { name: "part.single-wall-mount", per: { outerCorner: 1 }, print: true, from: "single" },
+      { name: "part.m4-40-60-wall-screw", per: { junction: 1, edgeNode: 1, outerCorner: 1 }, print: false },
+      { name: "part.m4-20-board-screw", per: { board: 4 }, print: false },
+      { name: "part.wall-plug", per: { junction: 1, edgeNode: 1, outerCorner: 1 }, print: false },
     ],
   },
   {
     id: "spacers",
-    name: "Screw spacers",
-    summary: "A spacer and a screw at each board corner.",
+    name: "system.spacers",
+    summary: "system.spacers.summary",
     design: MOUNT_DESIGNS.spacers,
     markers: "boardCorners",
     insetMm: 10,
     distances: [10, 15, 20],
     profiles: { 10: "321444", 15: "321441", 20: "321437" },
     items: [
-      { name: "Screw spacer", per: { board: 4 }, print: true, from: "spacers" },
-      { name: "M4 wall screw, 30 mm or longer", per: { board: 4 }, print: false },
-      { name: "Wall plug", per: { board: 4 }, print: false },
+      { name: "part.screw-spacer", per: { board: 4 }, print: true, from: "spacers" },
+      { name: "part.m4-wall-screw-30-mm-or-longer", per: { board: 4 }, print: false },
+      { name: "part.wall-plug", per: { board: 4 }, print: false },
     ],
   },
 ];
@@ -130,7 +130,7 @@ export const PRINTERS = [
   { id: "ender3", name: "Creality Ender 3", x: 220, y: 220 },
   { id: "k1", name: "Creality K1 / K1C", x: 220, y: 220 },
   { id: "neptune4", name: "Elegoo Neptune 4", x: 225, y: 225 },
-  { id: "custom", name: "A bed of my own", x: 256, y: 256 },
+  { id: "custom", name: "printer.custom", x: 256, y: 256 },
 ];
 
 export const getPrinter = (id, own) => {
