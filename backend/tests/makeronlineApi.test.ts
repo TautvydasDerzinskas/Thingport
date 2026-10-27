@@ -169,6 +169,33 @@ describe("MakerOnline model details", () => {
     ]);
   });
 
+  it("asks for a model's generator scripts alongside its profiles, untagged", () => {
+    // A profile is one printer's 3MF; the .scad belongs to the model, so without this it is never requested
+    // at all and the import arrives with nothing to customise.
+    const withScript = makeronlineMetaFromDetail({
+      ...DETAIL,
+      files: [...DETAIL.files, { key: "aa11bb", file_name: "scraper.scad" }],
+    });
+    expect(makeronlineDownloadPlan("281521", withScript, "url", null)).toEqual([
+      {
+        payload: { key: "13d314", file_type: 2, is_batch_down: 0, print_profile_id: 176077 },
+        name: "scraper.3mf",
+        profile_id: "176077",
+      },
+      {
+        payload: { key: "aa11bb", file_type: 1, is_batch_down: 0, mold_id: 281521 },
+        name: "scraper.scad",
+        profile_id: null,
+      },
+    ]);
+  });
+
+  it("leaves a model's meshes out of a profile plan: only the scripts come alongside", () => {
+    const resolution = makeronlineMetaFromDetail(DETAIL);
+    // DETAIL's own files are two STLs and no script, so a profile plan is the profile alone.
+    expect(makeronlineDownloadPlan("281521", resolution, "url", null)).toHaveLength(1);
+  });
+
   it("gives null for a model that's gone, and sends no sign-in for details", async () => {
     const fetchMock = vi
       .fn<typeof fetch>()

@@ -1146,6 +1146,9 @@ const IMPORT_KIT: PipelineKit = {
   downloadSignedFile,
   downloadFile: downloadPlainFileToTemp,
   isModelFile: (name) => MULTI_FILE_PLATE_EXTS.has(path.extname(name).toLowerCase()),
+  isImportableFile: (name) =>
+    MULTI_FILE_PLATE_EXTS.has(path.extname(name).toLowerCase()) ||
+    PARAMETRIC_SOURCE_EXTS.has(path.extname(name).toLowerCase()),
   createPrint: (userId, source, body, resolved, downloaded, details) =>
     createSourcedPrint(userId, source, body, resolved, downloaded, `${source.provider}-${source.externalId}`, details),
   async addProfiles(existing, inputs, details) {
