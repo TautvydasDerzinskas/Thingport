@@ -75,7 +75,10 @@ for (const width of [320, 393, 768]) {
 
       await page.goto("/models");
       const main = page.getByRole("main");
-      await main.getByRole("button", { name: "Categories", exact: true }).click();
+      // Categories is already the saved view, and a toggle group ignores a click on the option it
+      // has: the panel opens from its own button, which is also the only way in once a view is set.
+      const filterButton = main.getByRole("button", { name: "Categories: All", exact: true });
+      await filterButton.click();
       const filters = page.locator("#model-category-filters");
       await expect(filters).toBeVisible();
       await filters.getByRole("button", { name: "All", exact: true }).click();
@@ -86,7 +89,6 @@ for (const width of [320, 393, 768]) {
       expect((await card.boundingBox())!.width).toBeGreaterThan(width - 60);
       await expectNoHorizontalOverflow(page);
 
-      const filterButton = main.getByRole("button", { name: "Categories: All", exact: true });
       await filterButton.click();
       await expect(filterButton).toHaveAttribute("aria-expanded", "true");
       await filterButton.click();
