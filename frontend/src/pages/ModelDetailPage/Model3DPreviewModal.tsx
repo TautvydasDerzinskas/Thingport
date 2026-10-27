@@ -99,6 +99,9 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
     // The viewer won't remount for the same file, so its plates wouldn't be re-reported.
     if (plateId === activePlate?.id) return;
     setActivePlateId(plateId);
+    // The next file answers for itself; until it does, the palette shouldn't stay disabled on the strength
+    // of the last one.
+    setOwnColor(false);
     setInternalPlates([]);
     setInternalThumbnails({});
     setSelectedInternalPlateId(null);

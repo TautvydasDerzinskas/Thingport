@@ -491,6 +491,7 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
           buildVolume = cached.buildVolume;
           layoutBuildPlate();
           applyAppearance(cachedGlbRoot);
+          onOwnColorRef.current?.(objectHasOwnColor(cachedGlbRoot));
           activeObject = cachedGlbRoot;
           scene.add(cachedGlbRoot);
           if (currentPlateId == null && cached.plates.length > 0) currentPlateId = cached.plates[0].index;

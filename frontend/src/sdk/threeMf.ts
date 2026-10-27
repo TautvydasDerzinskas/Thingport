@@ -27,6 +27,9 @@ export type Mesh = {
 /** The mesh's colours, in the form a caller that only wants to know "is this multicoloured" can ask. */
 export const isColored = (mesh: Mesh): boolean => (mesh.palette?.length ?? 0) > 1;
 
+/** What a face the script never coloured is shown and saved as: OFF states no default, so a plain grey it is. */
+const UNCOLORED = "#cccccc";
+
 /**
  * The OFF the engine writes, as a mesh.
  *
@@ -75,16 +78,17 @@ export function parseOff(text: string): Mesh {
   const palette: string[] = [];
   const indexOfColor = new Map<string, number>();
   const colors: number[] = [];
+  // A script can colour part of what it makes and leave the rest -- `cube(); color("red") sphere();` -- and
+  // the faces it left have no colour on them at all. They get an entry of their own rather than falling to
+  // index 0, which is whichever colour happened to be named first and has nothing to do with them.
+  const indexOfUncolored = () => indexOfColor.get(UNCOLORED) ?? (palette.push(UNCOLORED), palette.length - 1);
   for (let face = 0; face < faceCount; face++, at++) {
     const parts = words(at);
     const corners = Number(parts[0]);
     // Anything past the corner count and its corners is that face's colour.
     const color = faceColor(parts.slice(corners + 1));
-    let index = 0;
-    if (color) {
-      index = indexOfColor.get(color) ?? palette.push(color) - 1;
-      indexOfColor.set(color, index);
-    }
+    const index = color ? (indexOfColor.get(color) ?? palette.push(color) - 1) : indexOfUncolored();
+    indexOfColor.set(color ?? UNCOLORED, index);
     // A polygon is fanned from its first corner. The engine merges coplanar triangles into one face, and the
     // shapes it merges them into are convex, so a fan covers them exactly. Each piece keeps the face's colour.
     for (let i = 2; i < corners; i++) {
@@ -153,7 +157,8 @@ const MATERIALS_ID = 2;
 export function writeThreeMf(mesh: Mesh, { name = "model" }: { name?: string } = {}): Uint8Array {
   if (!mesh.triangles.length) throw new Error("There is nothing in the model to save.");
   const palette = mesh.palette ?? [];
-  const colored = palette.length > 1 && mesh.colors?.length === mesh.triangles.length / 3;
+  const faceColors = mesh.colors;
+  const colored = palette.length > 1 && faceColors?.length === mesh.triangles.length / 3;
 
   const parts: string[] = [
     '<?xml version="1.0" encoding="UTF-8"?>\n',
@@ -186,7 +191,7 @@ export function writeThreeMf(mesh: Mesh, { name = "model" }: { name?: string } =
   parts.push("    </vertices>\n    <triangles>\n");
   for (let i = 0; i < mesh.triangles.length; i += 3) {
     // p1 alone colours the whole triangle; p2 and p3 would blend it across the corners.
-    const material = colored ? ` p1="${mesh.colors![i / 3]}"` : "";
+    const material = colored && faceColors ? ` p1="${faceColors[i / 3]}"` : "";
     parts.push(
       `     <triangle v1="${mesh.triangles[i]}" v2="${mesh.triangles[i + 1]}" v3="${mesh.triangles[i + 2]}"${material}/>\n`,
     );

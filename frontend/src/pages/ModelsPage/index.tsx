@@ -227,7 +227,9 @@ export default function ModelsPage({
       if (run !== listRun.current) return;
       handleError(err, t("models:errors.loadFailed"));
     } finally {
-      if (run === listRun.current) setLoadingMore(false);
+      // Cleared whether or not this page still belongs to the list on screen: left set, it would turn
+      // "a page is on its way" into "no page may ever be asked for again".
+      setLoadingMore(false);
     }
   };
 

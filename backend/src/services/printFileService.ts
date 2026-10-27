@@ -63,15 +63,21 @@ async function linkOrCopy(tempPath: string, destination: string): Promise<void> 
  */
 async function normalizeGeneratorScript(tempPath: string, filename: string): Promise<void> {
   if (!PARAMETRIC_SOURCE_EXTS.has(path.extname(filename).toLowerCase())) return;
+  const rewritten = `${tempPath}.lf`;
   try {
     const bytes = await fs.readFile(tempPath);
     if (!bytes.includes("\r\n")) return;
     // Through latin1, which maps every byte to one code unit and back again: reading as UTF-8 would replace
     // any byte that isn't valid UTF-8 with U+FFFD and write that back, losing it. A script in some other
     // encoding -- a Latin-1 "é" in a comment -- then survives, since CR and LF are the only bytes touched.
-    await fs.writeFile(tempPath, Buffer.from(bytes.toString("latin1").replace(/\r\n/g, "\n"), "latin1"));
+    //
+    // Beside the original and renamed over it once it is whole: writing in place truncates first, so a write
+    // that failed halfway would leave a damaged script behind and this would carry on and store it.
+    await fs.writeFile(rewritten, Buffer.from(bytes.toString("latin1").replace(/\r\n/g, "\n"), "latin1"));
+    await fs.rename(rewritten, tempPath);
   } catch (err) {
-    // Best-effort: on a failure to read or write it, the script is stored exactly as it came.
+    // Best-effort, and now truthful: the original is untouched, so the script is stored exactly as it came.
+    await fs.rm(rewritten, { force: true }).catch(() => undefined);
     console.warn(`Couldn't normalize the line endings of ${filename}:`, err);
   }
 }

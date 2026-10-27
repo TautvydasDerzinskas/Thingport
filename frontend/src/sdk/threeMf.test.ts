@@ -83,6 +83,17 @@ describe("parseOff", () => {
     expect(Array.from(two.colors!)).toEqual([0, 0, 1]);
   });
 
+  it("keeps a face the script never coloured apart from the ones it did", () => {
+    // `cube(); color("red") sphere();` -- the cube's faces carry no colour at all. Taking the first entry
+    // for them would paint them red, which is a colour the script never asked for.
+    const mixed = parseOff("OFF\n4 2 0\n0 0 0\n1 0 0\n0 1 0\n1 1 0\n3 0 1 2\n3 1 3 2 255 0 0\n");
+    expect(mixed.palette).toHaveLength(2);
+    expect(mixed.palette).toContain("#ff0000");
+    const [uncolored, red] = Array.from(mixed.colors!);
+    expect(uncolored).not.toBe(red);
+    expect(mixed.palette![red]).toBe("#ff0000");
+  });
+
   it("reads 0-1 colour channels as well as 0-255 ones", () => {
     const fractions = parseOff("OFF\n4 2 0\n0 0 0\n1 0 0\n0 1 0\n1 1 0\n3 0 1 2 1 0 0\n3 1 3 2 0.2 0.4 0.8\n");
     // The first face's "1 0 0" is whole numbers, so it stays 0-255 -- it is the fractional face that sets the

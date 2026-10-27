@@ -70,14 +70,16 @@ export function objectFromMesh(mesh: SdkMesh): THREE.Object3D {
   indexed.dispose();
 
   const palette = mesh.palette ?? [];
-  const colored = palette.length > 1 && mesh.colors?.length === mesh.triangles.length / 3;
-  if (colored) {
+  const faceColors = mesh.colors;
+  const colored = palette.length > 1 && faceColors?.length === mesh.triangles.length / 3;
+  if (colored && faceColors) {
     // One colour per corner, the same for all three of a triangle, so each face reads flat rather than
-    // blending into its neighbours.
+    // blending into its neighbours. Three converts a hex string out of sRGB on its own, so these are
+    // already in the working space; converting again would darken every mid-tone.
     const colors = new Float32Array(geometry.getAttribute("position").count * 3);
-    const swatches = palette.map((entry) => new THREE.Color(entry).convertSRGBToLinear());
-    for (let triangle = 0; triangle < mesh.colors!.length; triangle++) {
-      const swatch = swatches[mesh.colors![triangle]] ?? swatches[0];
+    const swatches = palette.map((entry) => new THREE.Color(entry));
+    for (let triangle = 0; triangle < faceColors.length; triangle++) {
+      const swatch = swatches[faceColors[triangle]] ?? swatches[0];
       for (let corner = 0; corner < 3; corner++) {
         const at = (triangle * 3 + corner) * 3;
         colors[at] = swatch.r;

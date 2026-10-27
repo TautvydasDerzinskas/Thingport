@@ -62,7 +62,10 @@ export type ParsedBambuThreeMF = {
  */
 function paintedExtruder(code: string | null): number | null {
   if (!code) return null;
-  const bits = Number.parseInt(code, 16);
+  // Only the last two nibbles are read -- two bits of split count, two of state and four of escape is eight
+  // bits, and they sit at the low end. A deeply split triangle's stream is far longer than a number can hold
+  // exactly, and taking all of it would shift rubbish into those bits and name the wrong filament.
+  const bits = Number.parseInt(code.slice(-2), 16);
   if (!Number.isFinite(bits)) return null;
   let state = (bits >> 2) & 0b11;
   if (state === 0b11) state = 3 + ((bits >> 4) & 0b1111);
@@ -609,10 +612,11 @@ export function buildBambuModelGroup(
   const { objects, buildItems } = parsedData;
   const group = new THREE.Group();
 
-  // Only worth calling a model's own colour where it has more than one of them: a single-filament model is a
-  // shape in whatever colour the slicer happened to be set to, which the reader should still be able to change.
-  const multicolour = new Set(filamentColors.slice(0, Math.max(1, filamentColors.length))).size > 1;
-  const getMaterial = (extruder: number, fallbackColor: THREE.Color): THREE.MeshStandardMaterial => {
+  const getMaterial = (
+    extruder: number,
+    fallbackColor: THREE.Color,
+    multicolour: boolean,
+  ): THREE.MeshStandardMaterial => {
     const colorStr = filamentColors[extruder];
     const color = colorStr ? new THREE.Color(colorStr) : fallbackColor;
     const material = new THREE.MeshStandardMaterial({
@@ -654,11 +658,21 @@ export function buildBambuModelGroup(
   }
 
   const fallbackColor = new THREE.Color(0xdddddd);
+  // Only what is actually on screen counts as the model's own colour. A project may list three filaments
+  // while the plate being shown uses one, and that one is a shape in whatever colour the slicer happened to
+  // be set to -- the reader should still be able to change it.
+  const shown = new Set(
+    [...geometriesByExtruder]
+      .filter(([, geometries]) => geometries.length > 0)
+      .map(([extruder]) => filamentColors[extruder])
+      .filter((color): color is string => Boolean(color)),
+  );
+  const multicolour = shown.size > 1;
   for (const [extruder, geometries] of geometriesByExtruder) {
     if (geometries.length === 0) continue;
     const mergedGeometry = geometries.length === 1 ? geometries[0] : mergeGeometries(geometries, false);
     if (mergedGeometry) {
-      const mesh = new THREE.Mesh(mergedGeometry, getMaterial(extruder, fallbackColor));
+      const mesh = new THREE.Mesh(mergedGeometry, getMaterial(extruder, fallbackColor, multicolour));
       mesh.castShadow = true;
       group.add(mesh);
     }
