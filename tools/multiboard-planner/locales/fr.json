@@ -74,5 +74,12 @@
   "unused.title": "Espace inutilisé",
   "wall.height": "Hauteur",
   "wall.title": "Taille du mur",
-  "wall.width": "Largeur"
+  "wall.width": "Largeur",
+  "fetch.title": "Télécharger les pièces ?",
+  "fetch.go": "Les télécharger",
+  "fetch.refused": "Sans ses pièces, le mur ne peut pas être enregistré comme modèle. La liste et les fichiers restent téléchargeables.",
+  "fetch.failed": "Les pièces n'ont pas pu être téléchargées : {reason}",
+  "fetch.message": "Thingport n'a pas encore {count} des pièces de ce mur. Elles peuvent être téléchargées maintenant, puis le mur enregistré comme un seul modèle.",
+  "fetch.working": "Téléchargement des pièces ({count})…",
+  "fetch.someFailed": "{count} ne sont pas arrivées : {reason}"
 }

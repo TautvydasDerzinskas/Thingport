@@ -579,6 +579,53 @@ export async function installRepoTool(
   };
 }
 
+/**
+ * The few models a user needs right now, fetched and given to them.
+ *
+ * A tool installed without its models still works, until the user asks it for something built out of them -- a
+ * wall of a planner's tiles, saved as one model. Rather than make them wait for a set that runs to gigabytes,
+ * only the parts that piece of work uses come in, which is a handful. Anyone who may use the tool may ask: what
+ * they can bring in is what the thing in front of them is made of.
+ *
+ * What didn't come says why, in the provider's own words -- a daily download limit reads as one -- so the tool
+ * can tell the user what to wait for.
+ */
+export async function fetchToolModelsFor(
+  user: ToolUser,
+  toolId: string,
+  keys: string[],
+): Promise<{ ready: string[]; failed: { key: string; reason: string }[] }> {
+  const tool = await usableTool(user, toolId);
+  const wanted = (tool.parsed.collection?.models ?? []).filter((model) => keys.includes(model.key));
+  if (!wanted.length) throw new HttpError(400, "That tool doesn't bring those models");
+  // Downloading is done as an admin, whose provider connections the tool's models were meant to come through.
+  const admin = await prisma.user.findFirst({ where: { role: "ADMIN" }, orderBy: { createdAt: "asc" } });
+  if (!admin) throw new HttpError(409, "There's no admin to fetch them as");
+
+  const dir = modelsDir(tool);
+  const failed: { key: string; reason: string }[] = [];
+  const ready: string[] = [];
+  for (const model of wanted) {
+    if (await fetchedModel(dir, model.key)) {
+      ready.push(model.key);
+      continue;
+    }
+    if (!model.source) {
+      failed.push({ key: model.key, reason: "That model is one of the tool's own files, which didn't install" });
+      continue;
+    }
+    try {
+      await importToolModel(admin.id, model, path.join(dir, model.key));
+      ready.push(model.key);
+    } catch (err) {
+      failed.push({ key: model.key, reason: err instanceof Error ? err.message : String(err) });
+    }
+  }
+  // Their own copies of what came, so the tool can go straight on and use them.
+  if (ready.length) await syncToolModels(user);
+  return { ready, failed };
+}
+
 /** The models of a tool installed without them, fetched and given out now. */
 export async function importToolModels(slug: string, adminId: string): Promise<AdminTool["installed"]> {
   const tool = await prisma.tool.findUnique({ where: { scope_slug: { scope: "repo", slug } } });

@@ -80,6 +80,9 @@ export type ToolModelsState = {
   imported: boolean;
 };
 
+/** What came of asking for a tool's models, and why the rest didn't -- a provider's daily limit reads as a reason. */
+export type ToolModelsFetched = { ready: string[]; failed: { key: string; reason: string }[] };
+
 /** A repository tool, with what's installed of it. `inRepo` false for one the repository no longer lists. */
 export type AdminTool = {
   slug: string;
@@ -147,6 +150,17 @@ export const toolsApi = {
     const res = await fetch(`${apiBase()}/tools/${id}/models`, { headers: authHeaders() });
     if (!res.ok) return failed(res, "Failed to load the tool's models");
     return (await res.json()).models;
+  },
+
+  /** Fetches the models the tool brings that aren't here yet, by key; says what came and why the rest didn't. */
+  fetchNeededModels: async (id: string, keys: string[]): Promise<ToolModelsFetched> => {
+    const res = await fetch(`${apiBase()}/tools/${id}/models`, {
+      method: "POST",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ keys }),
+    });
+    if (!res.ok) return failed(res, "Failed to fetch the tool's models");
+    return res.json();
   },
 
   storageKeys: async (id: string): Promise<{ key: string; size: number; updatedAt: string }[]> => {

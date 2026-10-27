@@ -1066,7 +1066,7 @@ export default async function mount(thingport) {
     renderLegend(colored, result.data.tiles.values());
     renderParts(result);
     $("copyBtn").disabled = $("downloadBtn").disabled = false;
-    $("saveBtn").disabled = !partsInThingport(result).length;
+    $("saveBtn").disabled = !wallKeys(result).length;
     const [uw, uh] = C.unusedSpace(result.data);
     const show = uw > 1e-9 || uh > 1e-9;
     $("unused").classList.toggle("mbp-show", show);
@@ -1095,6 +1095,17 @@ export default async function mount(thingport) {
         if (copy) ids.add(copy.printId);
       }
     return [...ids];
+  }
+
+  /** Every part the wall is made of, by the key the tool's metadata gives it. */
+  function wallKeys(result) {
+    const keys = new Set();
+    for (const row of saveRows(result))
+      for (const link of row[2] || []) {
+        const key = modelKey(link);
+        if (key) keys.add(key);
+      }
+    return [...keys];
   }
 
   $("downloadBtn").addEventListener("click", () => {
@@ -1179,6 +1190,43 @@ ${rows}
     return lines.join("\n");
   }
 
+  /**
+   * The wall's parts, in Thingport, ready to be put in the saved model.
+   *
+   * The tool may have been installed without its parts -- there are hundreds, and they are gigabytes -- so the
+   * ones this wall uses are offered now rather than all of them. Saying no is an answer: the wall is a list of
+   * parts, and without the parts there is nothing to save. What didn't come says why, which is how a daily
+   * download limit at the other end reaches the person waiting for it.
+   */
+  async function haveTheParts(result) {
+    const missing = wallKeys(result).filter((key) => !local.has(key));
+    if (!missing.length) return true;
+    const ok = await ui.confirm({
+      title: t("fetch.title"),
+      message: t("fetch.message", { count: missing.length }),
+      confirmLabel: t("fetch.go"),
+    });
+    if (!ok) {
+      ui.toast(t("fetch.refused"), "warning");
+      return false;
+    }
+    ui.toast(t("fetch.working", { count: missing.length }), "info");
+    let got;
+    try {
+      got = await thingport.fetchToolModels(missing);
+    } catch (err) {
+      ui.toast(t("fetch.failed", { reason: err.message || String(err) }), "error");
+      return false;
+    }
+    await loadLocal();
+    renderParts(result);
+    if (got.failed.length) {
+      ui.toast(t("fetch.someFailed", { count: got.failed.length, reason: got.failed[0].reason }), "error");
+      return false;
+    }
+    return true;
+  }
+
   const saveCover = $("saveCover");
   const closeSave = () => {
     saveCover.hidden = true;
@@ -1222,6 +1270,7 @@ ${rows}
     go.disabled = true;
     go.textContent = t("save.saving");
     try {
+      if (!(await haveTheParts(current))) return;
       const collection = await collections.pick({ title: t("save.pickCollection") });
       if (!collection) return;
       // Every part as its own file, named so the list reads in print order with its count.

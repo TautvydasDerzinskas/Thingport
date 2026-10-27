@@ -50,6 +50,11 @@ The collection is where they are and the only place they are listed: a planner w
 bury your own models under it, so they stay out of the models page, its categories and search. Favourite one and it
 shows in Favourites, as anything you favourite does.
 
+An admin may install a tool without them -- they can run to gigabytes -- and import them later from
+**Administration → Tools**. A tool asked meanwhile for something built out of a few of them can fetch just those,
+with the user's say-so, through `fetchToolModels`; the planner does this when you save a wall whose parts aren't
+here yet, and says so when the site they come from has had enough for one day.
+
 The files behind them are the tool's, and are kept once for the instance however many people use the tool -- a
 planner that brings twelve gigabytes of parts takes twelve gigabytes, not twelve per person. Each user still has
 their own model, in their own collection and language; what they share is the bytes on disk.
@@ -138,6 +143,7 @@ export default async function mount(thingport) {
 | `models.addFiles(id, files)`, `addImages(id, images)`, `replaceFile(id, fileId, file)`, `update(id, { name, description, tags })` | Changing a model the user owns: its files, gallery pictures (the first is its cover), name, description and tags                                                                                                                                                          |
 | `models.open(id)`                                                                                                                 | Closes the tool and opens the model's page                                                                                                                                                                                                                                |
 | `toolModels()`                                                                                                                    | The models a repository tool brings: `{ key, name, source, printId }`, `printId` null until it's come in                                                                                                                                                                  |
+| `fetchToolModels(keys)`                                                                                                           | Fetches those of the tool's models that aren't here yet and gives the user their copies: `{ ready, failed }`, each `failed` carrying the provider's own reason, a daily download limit included                                                                           |
 | `library(name)`, `libraries`                                                                                                      | A library Thingport carries, so a tool needn't: `"three"` to build or draw geometry, `"opentype"` for a font's real outlines, `"manifold"` for watertight solid modelling, `"fonts"` for the typefaces it ships. Loaded when the first tool asks and shared with the rest |
 | `fetch(url, init)`                                                                                                                | A request through Thingport to one of the tool's declared hosts, answered like `fetch`                                                                                                                                                                                    |
 | `api(path, init)`                                                                                                                 | Thingport's own API, as the user                                                                                                                                                                                                                                          |

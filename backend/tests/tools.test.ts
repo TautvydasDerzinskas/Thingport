@@ -496,6 +496,48 @@ describe("models from a provider", () => {
   });
 });
 
+describe("a tool asking for the models a job needs", () => {
+  it("fetches only the keys asked for, and says why one didn't come", async () => {
+    writeRepo();
+    const models = [
+      { key: "tile", name: "Part tile", files: ["models/tile.stl"] },
+      { key: "far", name: "Part far", source: "https://models.example.invalid/far.stl" },
+    ];
+    fs.writeFileSync(
+      path.join(repo, "planner", "tool.json"),
+      JSON.stringify({ name: "Planner", collection: { name: "Planner parts", models } }),
+    );
+    const installed = await request(app)
+      .post("/api/admin/tools/planner/install")
+      .set(auth(adminToken))
+      .send({ models: false });
+    const toolId = installed.body.id as string;
+    await syncToolModels({ id: memberId, role: "MEMBER" });
+    expect(await prisma.print.count({ where: { userId: memberId, toolId } })).toBe(0);
+
+    // The one that has to be downloaded can't be, and says so in the provider's words rather than silently.
+    const asked = await request(app)
+      .post(`/api/tools/${toolId}/models`)
+      .set(auth(memberToken))
+      .send({ keys: ["far"] });
+    expect(asked.status).toBe(200);
+    expect(asked.body.ready).toEqual([]);
+    expect(asked.body.failed).toHaveLength(1);
+    expect(asked.body.failed[0]).toMatchObject({ key: "far" });
+    expect(String(asked.body.failed[0].reason).length).toBeGreaterThan(0);
+
+    // A key the tool doesn't have isn't a download at all.
+    expect(
+      (
+        await request(app)
+          .post(`/api/tools/${toolId}/models`)
+          .set(auth(memberToken))
+          .send({ keys: ["nothing-like-it"] })
+      ).status,
+    ).toBe(400);
+  });
+});
+
 describe("who may use tools", () => {
   it("shows them to admins and the users picked, and takes their models from the rest", async () => {
     writeRepo();

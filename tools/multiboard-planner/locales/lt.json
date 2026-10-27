@@ -74,5 +74,12 @@
   "unused.title": "Nepanaudota erdvė",
   "wall.height": "Aukštis",
   "wall.title": "Sienos dydis",
-  "wall.width": "Plotis"
+  "wall.width": "Plotis",
+  "fetch.title": "Parsisiųsti detales?",
+  "fetch.go": "Parsisiųsti",
+  "fetch.refused": "Be detalių sienos kaip modelio išsaugoti nepavyks. Sąrašą ir failus vis tiek galima atsisiųsti.",
+  "fetch.failed": "Detalių parsisiųsti nepavyko: {reason}",
+  "fetch.message": "Thingport dar neturi {count} šios sienos detalių. Jas galima parsisiųsti dabar ir tada išsaugoti sieną kaip vieną modelį.",
+  "fetch.working": "Siunčiamos detalės ({count})…",
+  "fetch.someFailed": "Neatsiuntė {count}: {reason}"
 }

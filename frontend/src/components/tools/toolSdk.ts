@@ -1,5 +1,11 @@
 import { apiBase } from "../../api/client";
-import { toolsApi, type ToolLocales, type ToolManifest, type ToolModelCopy } from "../../api/tools";
+import {
+  toolsApi,
+  type ToolLocales,
+  type ToolManifest,
+  type ToolModelCopy,
+  type ToolModelsFetched,
+} from "../../api/tools";
 import { headerRecord } from "../../api/widgets";
 import { applyLabels, translator, type Translate } from "../../sdk/labels";
 import { LIBRARIES, library } from "../../sdk/libraries";
@@ -157,6 +163,15 @@ export function buildToolSdk({ tool, root, selector, theme, language, languages,
     collections,
     /** The models this tool brought, by the keys its metadata gives them. */
     toolModels: async (): Promise<ToolModelCopy[]> => (tool.id ? toolsApi.models(tool.id) : []),
+    /**
+     * Fetches the ones that aren't here yet, by key, and gives the user their copies.
+     *
+     * A tool may be installed without its models -- a planner's parts run to gigabytes -- and still be asked for
+     * something built out of a few of them. Ask for those few; what didn't come says why, in the provider's own
+     * words, so a daily download limit can be read back to the user.
+     */
+    fetchToolModels: async (keys: string[]): Promise<ToolModelsFetched> =>
+      tool.id ? toolsApi.fetchNeededModels(tool.id, keys) : { ready: [], failed: [] },
     storage,
     /** A request to one of the hosts the tool's metadata declares, made by the server; answers as `fetch` does. */
     fetch: (url: string, init?: RequestInit) => toolsApi.fetchVia(saved("thingport.fetch"), url, init),

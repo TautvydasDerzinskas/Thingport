@@ -15,6 +15,7 @@ import {
   syncToolModelsSoon,
   toolFetch,
   toolFetchSchema,
+  fetchToolModelsFor,
   toolModelsOf,
   type ToolUser,
 } from "../services/toolsService";
@@ -74,6 +75,17 @@ router.get(
   "/tools/:id/models",
   asyncHandler(async (req, res) => {
     res.json({ models: await toolModelsOf(userOf(req), String(req.params.id)) });
+  }),
+);
+
+// The models the tool brings that a piece of work needs, fetched now: a tool installed without its models can
+// still be asked for something built out of a few of them.
+const fetchModelsSchema = z.object({ keys: z.array(z.string().min(1)).min(1).max(100) });
+router.post(
+  "/tools/:id/models",
+  asyncHandler(async (req, res) => {
+    const { keys } = parseBody(fetchModelsSchema, req.body);
+    res.json(await fetchToolModelsFor(userOf(req), String(req.params.id), keys));
   }),
 );
 

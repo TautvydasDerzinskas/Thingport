@@ -74,5 +74,12 @@
   "unused.title": "Espacio sin usar",
   "wall.height": "Alto",
   "wall.title": "Tamaño de la pared",
-  "wall.width": "Ancho"
+  "wall.width": "Ancho",
+  "fetch.title": "¿Descargar las piezas?",
+  "fetch.go": "Descargarlas",
+  "fetch.refused": "Sin sus piezas, la pared no se puede guardar como modelo. La lista y los archivos sí se pueden descargar.",
+  "fetch.failed": "No se pudieron descargar las piezas: {reason}",
+  "fetch.message": "Thingport aún no tiene {count} de las piezas de esta pared. Se pueden descargar ahora y luego guardar la pared como un modelo.",
+  "fetch.working": "Descargando piezas ({count})…",
+  "fetch.someFailed": "No llegaron {count}: {reason}"
 }

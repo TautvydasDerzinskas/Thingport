@@ -74,5 +74,12 @@
   "unused.title": "Unused space",
   "wall.height": "Height",
   "wall.title": "Wall size",
-  "wall.width": "Width"
+  "wall.width": "Width",
+  "fetch.title": "Fetch the parts?",
+  "fetch.go": "Fetch them",
+  "fetch.refused": "Without its parts the wall can't be saved as a model. Its list and its files can still be downloaded.",
+  "fetch.failed": "The parts couldn't be fetched: {reason}",
+  "fetch.message": "Thingport hasn't got {count} of this wall's parts yet. They can be fetched now, and the wall then saved as one model.",
+  "fetch.working": "Fetching {count} part(s)…",
+  "fetch.someFailed": "{count} didn't come: {reason}"
 }

@@ -107,7 +107,13 @@ The \`thingport\` argument has:
   file is \`{ name, data }\` and data a \`Blob\`, \`ArrayBuffer\` or string, \`addFiles(id, files)\`,
   \`addImages(id, images)\` (the first becomes the cover), \`replaceFile(id, fileId, file)\`,
   \`update(id, { name, description, tags })\`, and \`open(id)\`, which closes the tool and opens the model's page.
-- **toolModels()**: the models a repository tool brings, by the keys its metadata gave them.
+- **toolModels()**: the models a repository tool brings, by the keys its metadata gave them. \`printId\` is null
+  for one that isn't here: an admin may have installed the tool without its models, which is usual where they are
+  large.
+- **fetchToolModels(keys)**: fetches those of them, and gives the user their copies. Ask for the few a piece of
+  work needs rather than the lot, and only once the user has said yes to waiting for them. It answers
+  \`{ ready, failed }\`, and a \`failed\` entry's \`reason\` is the provider's own -- a daily download limit
+  included -- so it can be read back to the user.
 - **library(name)**, **libraries**: a library Thingport carries, so the tool needn't ship it. See below.
 - **fetch(url, init)**: a request made by the Thingport server to one of the metadata's \`hosts\`, answered like
   \`fetch\`, so CORS and the local network aren't in the way. Any other host throws.
