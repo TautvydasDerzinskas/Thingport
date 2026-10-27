@@ -26,14 +26,27 @@ model is then marked **Generated from a script**.
 A script on its own isn't a model — it describes one but holds no shape until something runs it — so it can't
 be uploaded by itself. Upload it with the model it belongs to, or attach it to one from the model's page.
 
-**Customize…**, in the model's ⋮ menu, opens it in the [Script customizer](../../tools/openscad-customizer)
-tool: the same sliders, choices and text boxes the creator set up, read from the script by OpenSCAD itself. What
-you generate is saved back into your library as a 3MF. Nothing is sent anywhere — the engine runs in your
-browser, so the script, the values you choose and the result all stay on your instance.
+**Customize**, under **Open** on the model's page and in its ⋮ menu, opens the customizer: the same sliders,
+choices and text boxes the creator set up, read from the script by OpenSCAD itself. A model that came with
+several scripts asks which one first, and you can switch between them without leaving.
+
+The **Model** pane keeps the model's picture, title and description in view, and folds away when you want the
+room. Under it, **Customize** holds the script's own parameters, grouped as the creator grouped them, with
+**Generate** at the foot. Every change can be undone and redone — with the buttons, or Ctrl/Cmd+Z — and the
+`<>` button shows the script itself.
+
+What comes out can be downloaded as a 3MF or an STL, or saved back into your library as a model of its own.
+A saved one keeps a copy of the script beside it, so it can be customised again in turn.
+
+Nothing is sent anywhere — the engine runs in your browser, so the script, the values you choose and the
+result all stay on your instance. There is nothing to install.
 
 **Generative**, above the model grid, narrows the library to the models that have one.
 
 A creator can choose not to share the script, and many don't. That model still imports, and is marked **Script
 not shared** so it's clear why there's nothing to customise rather than leaving it looking like a model that
-never had one — only its creator can change that. The tool itself has to be installed first, from
-**Administration → Tools**, like any other.
+never had one — only its creator can change that.
+
+The [Script customizer](../../tools/openscad-customizer) tool does the same for a script that isn't a model's
+— one opened from a file on your disk, say. An admin installs it from **Administration → Tools**, like any
+other tool.
