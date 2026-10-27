@@ -1,6 +1,7 @@
 // The user's eufyMake sign-in, which reads their likes. The site keeps it in page storage rather than a cookie, as
 // "mk-userinfo": its auth token and the user's id, whose MD5 goes with the token. So Grab reads it from an open
-// makeitreal.eufymake.com tab, as the site does: the tab's session copy first, then the lasting one.
+// makeitreal.eufymake.com tab, as the site does: the tab's session copy first, then the lasting one. Since October
+// 2026 the value is base64 of the percent-encoded JSON, so it is decoded the way the site's own store reads it.
 
 import type { SessionSource } from "../../background/sessionSync";
 import { MANIFESTS } from "../index.generated";
@@ -13,11 +14,16 @@ type UserInfo = { token: string; userId: string } | null;
 function readUserInfo(): UserInfo {
   for (const storage of [sessionStorage, localStorage]) {
     try {
-      const info = JSON.parse(storage.getItem("mk-userinfo") ?? "null") as Record<string, unknown> | null;
+      const raw = storage.getItem("mk-userinfo") ?? "";
+      // Base64 of the percent-encoded JSON, behind the `exp@<unix seconds>;` stamp the store puts on values that run
+      // out; older builds kept the JSON as it was.
+      const plain = raw.startsWith("{") ? raw : decodeURIComponent(atob(raw));
+      const json = plain.startsWith("exp@") ? plain.slice(plain.indexOf(";") + 1) : plain;
+      const info = JSON.parse(json) as Record<string, unknown> | null;
       const token = info?.auth_token;
       const userId = info?.user_id;
       if (typeof token === "string" && token && typeof userId === "string" && userId) return { token, userId };
-    } catch {} // "expired", or not JSON: not a sign-in.
+    } catch {} // "expired", or not a value Grab can read: not a sign-in.
   }
   return null;
 }

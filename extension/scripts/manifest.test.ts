@@ -13,9 +13,11 @@ describe("browser manifests", () => {
     expect(COOKIE_HOSTS.toSorted()).toEqual(["*://*.makerworld.com/*", "*://*.printables.com/*"]);
   });
 
+  // Snapshotted at a fixed version, so a release bumping package.json doesn't break them.
   for (const target of TARGETS) {
     it(`${target} manifest`, () => {
-      expect(buildManifest(target, pkg)).toMatchSnapshot();
+      expect(buildManifest(target, { ...pkg, version: "0.0.0" })).toMatchSnapshot();
+      expect(buildManifest(target, pkg).version).toBe(pkg.version);
     });
   }
 });

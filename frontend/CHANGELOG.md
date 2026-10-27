@@ -1,5 +1,12 @@
 # Thingport frontend changelog
 
+# [thingport-frontend-v1.3.1](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-frontend-v1.3.0...thingport-frontend-v1.3.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* **extension,backend:** use eufyMake's sign-in now the site base64s mk-userinfo ([#170](https://github.com/TautvydasDerzinskas/Thingport/issues/170)) ([d8d095c](https://github.com/TautvydasDerzinskas/Thingport/commit/d8d095c3b32427f7268e2b7e6ac3b4d5cbefdb9f))
+
 # [thingport-frontend-v1.3.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-frontend-v1.2.0...thingport-frontend-v1.3.0) (2026-10-25)
 
 

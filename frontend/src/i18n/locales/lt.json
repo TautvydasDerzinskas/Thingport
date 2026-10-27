@@ -4331,9 +4331,9 @@
         "steps": [
           "Paprasčiausia: su Thingport Grab tiesiog atverkite makeitreal.eufymake.com prisijungę. Jis prijungs jūsų paskyrą ir atsiųs naują prisijungimą kaskart, kai ten vėl prisijungsite.",
           "Arba rankiniu būdu: prisijunkite prie makeitreal.eufymake.com ir atverkite naršyklės kūrėjo įrankius (F12).",
-          "Skiltyje Application (Chrome, Edge) arba Storage (Firefox) → Local Storage → makeitreal.eufymake.com nukopijuokite mk-userinfo reikšmę ir įklijuokite ją žemiau. Tiks ir prisijungus siųstos aiot-wapi-eu.ankermake.com užklausos X-Auth-Token bei Gtoken antraštės."
+          "Skiltyje Application (Chrome, Edge) arba Storage (Firefox) → Local Storage → makeitreal.eufymake.com nukopijuokite visą mk-userinfo reikšmę ir įklijuokite ją žemiau — tai viena ilga raidžių ir skaitmenų eilutė arba, senesnėje versijoje, JSON"
         ],
-        "placeholder": "mk-userinfo reikšmė arba užklausos X-Auth-Token ir Gtoken antraštės"
+        "placeholder": "Visa mk-userinfo reikšmė"
       },
       "status": {
         "notConnected": "Prijunkite paskyrą, kad Thingport matytų jūsų pamėgtus eufyMake modelius. Modeliai importuojami ir be jos.",

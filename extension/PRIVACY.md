@@ -69,7 +69,7 @@ from the image servers of the sites you viewed them on, without saying which pag
   that collection is synced. When you turn sync on: the collection's name and the ids of the models
   listed in it, so your instance knows which models are new later.
 - A request for the slicer picked in your Thingport Configuration, when a MakerWorld model page opens, so
-  the extension knows whether to show its **Download normalized** button.
+  the **Download normalized** button's explanation can name that slicer.
 - If you're logged into MakerWorld in this browser: your MakerWorld session cookie, when you import
   from MakerWorld. MakerWorld requires it to download files. The extension also saves it to your
   Thingport account's MakerWorld setting, so imports made from Thingport's own web app work too.
