@@ -3507,7 +3507,8 @@
         "spin": "Girar",
         "zoomIn": "Acercar",
         "zoomOut": "Alejar",
-        "color": "Color del modelo"
+        "color": "Color del modelo",
+        "colorOwn": "Este modelo trae sus propios colores, así que no hay ninguno que elegir"
       },
       "downloadFailed": "La descarga ha fallado. Inténtalo de nuevo.",
       "deleteFailed": "No se pudo eliminar el modelo.",

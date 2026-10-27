@@ -3520,7 +3520,8 @@
         "spin": "Rotation",
         "zoomIn": "Zoomer",
         "zoomOut": "Dézoomer",
-        "color": "Couleur du modèle"
+        "color": "Couleur du modèle",
+        "colorOwn": "Ce modèle a ses propres couleurs ; il n’y en a aucune à choisir"
       },
       "downloadFailed": "Échec du téléchargement. Veuillez réessayer.",
       "deleteFailed": "Échec de la suppression du modèle.",

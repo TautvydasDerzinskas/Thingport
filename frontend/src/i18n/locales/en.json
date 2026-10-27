@@ -3491,7 +3491,8 @@
         "spin": "Spin",
         "zoomIn": "Zoom in",
         "zoomOut": "Zoom out",
-        "color": "Model color"
+        "color": "Model color",
+        "colorOwn": "This model came with its own colours, so there is none to pick"
       },
       "downloadFailed": "Download failed. Please try again.",
       "deleteFailed": "Failed to delete the model.",

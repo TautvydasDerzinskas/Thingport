@@ -4,6 +4,7 @@
 // Adapted (with modifications) from github.com/maziggy/bambuddy, AGPL-3.0-only.
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { keepsOwnColor } from "./ownColor";
 
 type MeshData = {
   vertices: number[];
@@ -45,6 +46,52 @@ export type ParsedBambuThreeMF = {
   /** Reads from the already-unzipped archive. */
   getPlateThumbnail: (plateIndex: number) => Promise<string | null>;
 };
+
+/**
+ * Which filament a painted triangle belongs to, from Bambu Studio's `paint_color`.
+ *
+ * The attribute is a bitstream in hex, as PrusaSlicer's triangle selector writes it: two bits saying into how
+ * many pieces the triangle was split, then two bits of state, and where that state reads 3 it is an escape and
+ * the next four bits hold the rest of it. State 0 means unpainted -- the object's own filament -- and state N
+ * means the Nth, so the filament list is indexed by N - 1.
+ *
+ * A split triangle is one painted part of the way across, and its pieces can belong to different filaments.
+ * Only the first is read here, so such a triangle takes one of its two colours whole. They lie along the
+ * boundary between painted regions, so the seam moves by a triangle; splitting the geometry to follow it
+ * exactly would cost more than it shows.
+ */
+function paintedExtruder(code: string | null): number | null {
+  if (!code) return null;
+  const bits = Number.parseInt(code, 16);
+  if (!Number.isFinite(bits)) return null;
+  let state = (bits >> 2) & 0b11;
+  if (state === 0b11) state = 3 + ((bits >> 4) & 0b1111);
+  return state > 0 ? state - 1 : null;
+}
+
+/** One mesh per filament, keeping only the vertices each one actually uses. */
+function byExtruder(vertices: number[], triangles: number[], painted: number[]): MeshData[] {
+  const parts = new Map<number, { triangles: number[]; remap: Map<number, number>; vertices: number[] }>();
+  for (let face = 0; face < painted.length; face++) {
+    const extruder = painted[face];
+    let part = parts.get(extruder);
+    if (!part) {
+      part = { triangles: [], remap: new Map(), vertices: [] };
+      parts.set(extruder, part);
+    }
+    for (let corner = 0; corner < 3; corner++) {
+      const original = triangles[face * 3 + corner];
+      let moved = part.remap.get(original);
+      if (moved === undefined) {
+        moved = part.vertices.length / 3;
+        part.remap.set(original, moved);
+        part.vertices.push(vertices[original * 3], vertices[original * 3 + 1], vertices[original * 3 + 2]);
+      }
+      part.triangles.push(moved);
+    }
+  }
+  return [...parts].map(([extruder, part]) => ({ vertices: part.vertices, triangles: part.triangles, extruder }));
+}
 
 function bytesToDataUrl(bytes: Uint8Array, mime: string): Promise<string> {
   const blob = new Blob([bytes as unknown as BlobPart], { type: mime });
@@ -122,6 +169,8 @@ async function parseMeshFromDoc(doc: ElementSource, defaultExtruder = 0): Promis
       if (k > 0 && k % YIELD_EVERY_N_VERTICES === 0) await nextTick();
     }
 
+    // A painted model says which filament each triangle belongs to; null until one actually does.
+    let painted: number[] | null = null;
     const triangleElements = meshEl.getElementsByTagName("triangle");
     for (let k = 0; k < triangleElements.length; k++) {
       const t = triangleElements[k];
@@ -130,11 +179,21 @@ async function parseMeshFromDoc(doc: ElementSource, defaultExtruder = 0): Promis
         parseInt(t.getAttribute("v2") || "0", 10),
         parseInt(t.getAttribute("v3") || "0", 10),
       );
+      const paint = paintedExtruder(t.getAttribute("paint_color"));
+      if (paint !== null) {
+        painted ??= Array.from<number>({ length: triangleElements.length }).fill(defaultExtruder);
+        painted[k] = paint;
+      }
       if (k > 0 && k % YIELD_EVERY_N_TRIANGLES === 0) await nextTick();
     }
 
     if (vertices.length > 0 && triangles.length > 0) {
-      meshes.push({ vertices, triangles, extruder: defaultExtruder });
+      // A painted mesh becomes one mesh per filament, which is how the builder already colours them.
+      for (const part of painted
+        ? byExtruder(vertices, triangles, painted)
+        : [{ vertices, triangles, extruder: defaultExtruder }]) {
+        meshes.push(part);
+      }
     }
   }
   return meshes;
@@ -550,10 +609,20 @@ export function buildBambuModelGroup(
   const { objects, buildItems } = parsedData;
   const group = new THREE.Group();
 
+  // Only worth calling a model's own colour where it has more than one of them: a single-filament model is a
+  // shape in whatever colour the slicer happened to be set to, which the reader should still be able to change.
+  const multicolour = new Set(filamentColors.slice(0, Math.max(1, filamentColors.length))).size > 1;
   const getMaterial = (extruder: number, fallbackColor: THREE.Color): THREE.MeshStandardMaterial => {
     const colorStr = filamentColors[extruder];
     const color = colorStr ? new THREE.Color(colorStr) : fallbackColor;
-    return new THREE.MeshStandardMaterial({ color, roughness: 0.62, metalness: 0.0, envMapIntensity: 0.55 });
+    const material = new THREE.MeshStandardMaterial({
+      color,
+      roughness: 0.62,
+      metalness: 0.0,
+      envMapIntensity: 0.55,
+    });
+    if (colorStr && multicolour) keepsOwnColor(material);
+    return material;
   };
 
   const geometriesByExtruder = new Map<number, THREE.BufferGeometry[]>();

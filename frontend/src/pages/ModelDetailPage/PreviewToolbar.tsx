@@ -5,6 +5,8 @@ import Paper from "@mui/material/Paper";
 import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import ToggleButton from "@mui/material/ToggleButton";
+import Tooltip from "@mui/material/Tooltip";
+import Box from "@mui/material/Box";
 import GridOnIcon from "@mui/icons-material/GridOn";
 import ThreeSixtyIcon from "@mui/icons-material/ThreeSixty";
 import type { CameraView, RenderStyle } from "../../components/media/ModelViewer";
@@ -22,6 +24,8 @@ type Props = {
   onRenderStyleChange: (style: RenderStyle) => void;
   color: RenderColor;
   onColorChange: (color: RenderColor) => void;
+  /** The model brought colours of its own, so there is no colour here left to choose. */
+  ownColor?: boolean;
   showGrid: boolean;
   onShowGridChange: (show: boolean) => void;
   spin: boolean;
@@ -40,6 +44,7 @@ export default function PreviewToolbar({
   onRenderStyleChange,
   color,
   onColorChange,
+  ownColor = false,
   showGrid,
   onShowGridChange,
   spin,
@@ -93,17 +98,23 @@ export default function PreviewToolbar({
 
         {sectionDivider}
 
-        {/* The render palette, so the model can be seen in any of the app's colours. */}
-        <ColorSwatches
-          bare
-          label={t("models:detail.previewToolbar.color")}
-          value={color}
-          onChange={onColorChange}
-          options={RENDER_COLORS.map((value) => {
-            const { color: swatch, contrast } = renderSwatch(value);
-            return { value, label: t(renderColorLabelKey(value)), color: swatch, contrast };
-          })}
-        />
+        {/* The render palette, so the model can be seen in any of the app's colours -- but a model that came
+            with colours of its own is shown in those, and there is nothing here left to choose. */}
+        <Tooltip title={ownColor ? t("models:detail.previewToolbar.colorOwn") : ""}>
+          <Box component="span" sx={{ display: "inline-flex", opacity: ownColor ? 0.45 : 1 }}>
+            <ColorSwatches
+              bare
+              disabled={ownColor}
+              label={t("models:detail.previewToolbar.color")}
+              value={color}
+              onChange={onColorChange}
+              options={RENDER_COLORS.map((value) => {
+                const { color: swatch, contrast } = renderSwatch(value);
+                return { value, label: t(renderColorLabelKey(value)), color: swatch, contrast };
+              })}
+            />
+          </Box>
+        </Tooltip>
 
         {sectionDivider}
 

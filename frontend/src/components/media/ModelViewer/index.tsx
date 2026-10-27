@@ -13,9 +13,9 @@ import {
   loadBambuThreeMFForViewer,
   loadObjectFromAsset,
   objectFromMesh,
-  objectHasOwnColor,
   paletteForTheme,
 } from "../../../utils/modelLoaders";
+import { objectHasOwnColor } from "../../../utils/ownColor";
 import type { Mesh as SdkMesh } from "../../../sdk/threeMf";
 import {
   buildBambuModelGroup,
@@ -405,6 +405,7 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
       }
       const group = buildBambuModelGroup(bambuParsed, currentPlateId, bambuFilamentColors);
       applyAppearance(group);
+      onOwnColorRef.current?.(objectHasOwnColor(group));
       activeObject = group;
       scene.add(group);
       finalizeGroupPlacement(group, centerOnBuildPlate, refitCamera);

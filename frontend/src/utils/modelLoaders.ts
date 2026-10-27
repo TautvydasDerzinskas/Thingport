@@ -7,6 +7,7 @@ import type { ResolvedTheme } from "../constants/settingsOptions";
 import { buildTheme } from "../theme";
 import { buildBambuModelGroup, parseBambuThreeMF, type Parsed3MFData, type PlateSummary } from "./bambuThreeMf";
 import type { Mesh as SdkMesh } from "../sdk/threeMf";
+import { hasOwnColor, keepsOwnColor } from "./ownColor";
 
 export type ModelPalette = {
   color: THREE.Color;
@@ -30,30 +31,6 @@ export function paletteForTheme(theme: ResolvedTheme): ModelPalette {
     metalness: 0.2,
     roughness: 0.8,
   };
-}
-
-/**
- * Marks a material as carrying the model's own colours, so nothing paints over them.
- *
- * Most models have no colour of their own and are drawn in the theme's or the reader's: one grey shape they
- * can tint as they like. A model that does carry colour -- a script's `color()` calls, a 3MF's painted parts --
- * means them, and showing it in one colour is showing something it isn't.
- */
-export function keepsOwnColor(material: THREE.Material): void {
-  material.userData.ownColor = true;
-}
-
-const hasOwnColor = (material: THREE.Material): boolean => material.userData.ownColor === true;
-
-/** Whether anything in the object brought its own colours. */
-export function objectHasOwnColor(obj: THREE.Object3D): boolean {
-  let found = false;
-  obj.traverse((child) => {
-    if (found || !(child instanceof THREE.Mesh)) return;
-    const materials = Array.isArray(child.material) ? child.material : [child.material];
-    if (materials.some(hasOwnColor)) found = true;
-  });
-  return found;
 }
 
 export function applyThemeToObject(obj: THREE.Object3D, palette: ModelPalette) {

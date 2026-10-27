@@ -3583,7 +3583,8 @@
         "spin": "Sukimas",
         "zoomIn": "Priartinti",
         "zoomOut": "Nutolinti",
-        "color": "Modelio spalva"
+        "color": "Modelio spalva",
+        "colorOwn": "Šis modelis atsiuntė su savo spalvomis, tad nėra ką rinktis"
       },
       "downloadFailed": "Nepavyko atsisiųsti. Bandykite dar kartą.",
       "deleteFailed": "Nepavyko ištrinti modelio.",
