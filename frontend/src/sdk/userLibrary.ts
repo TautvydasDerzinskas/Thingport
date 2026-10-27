@@ -15,6 +15,8 @@ export type SdkModel = {
   thumbnail: string | null;
   /** Its 3D files (plates), in order. */
   files: { id: string; name: string; size: number; url: string }[];
+  /** How many files are kept beside it that aren't plates, so a list can be narrowed without asking for each. */
+  relatedCount: number;
   /** Brought by a tool: it can be read, not changed. */
   toolOwned: boolean;
   createdAt: string | null;
@@ -48,6 +50,7 @@ const toModel = (print: Print): SdkModel => ({
     size: plate.size,
     url: printsApi.fileUrl(plate.url),
   })),
+  relatedCount: print.supporting_file_count ?? 0,
   toolOwned: Boolean(print.tool_id),
   createdAt: print.created_at ?? null,
 });

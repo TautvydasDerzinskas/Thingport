@@ -31,6 +31,9 @@ export type ScadRender = {
   log: string[];
   /** Seconds the engine spent, for a UI that wants to say why it took a moment. */
   seconds: number;
+  /** The geometry behind the bytes, when the format is one made here: it is already parsed, so a tool that
+   *  wants to draw what it just generated needn't render a second time to get at it. */
+  mesh?: { vertices: Float64Array; triangles: Uint32Array };
 };
 
 /**
@@ -231,6 +234,7 @@ export async function scadRender(source: string, options: ScadRenderOptions = {}
 
   const rendered = await run(source, args, `/model.${asked}`, extra);
   if (wanted !== "3mf") return rendered;
-  const { offToThreeMf } = await import("./threeMf");
-  return { ...rendered, bytes: offToThreeMf(new TextDecoder().decode(rendered.bytes), { name: options.name }) };
+  const { parseOff, writeThreeMf } = await import("./threeMf");
+  const mesh = parseOff(new TextDecoder().decode(rendered.bytes));
+  return { ...rendered, bytes: writeThreeMf(mesh, { name: options.name }), mesh };
 }
