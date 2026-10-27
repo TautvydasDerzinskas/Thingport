@@ -57,6 +57,8 @@ export const STARTER_SCRIPT = `// A tool is an ES module. When its window opens,
 //                              other tool: "three", "opentype", "manifold", "fonts". thingport.libraries lists them
 // thingport.t(key, vars)       your tool's own words, from its Labels, in the user's language: t("hello"),
 //                              t("rings.ring", { n: 2 }). thingport.language is the code, languages lists them all
+// thingport.labels(where?)     fills in every data-t in your HTML from those labels, so the markup can carry the
+//                              keys: <h2 data-t="wall.title">Wall size</h2>, and data-t-title/-aria/-placeholder
 // thingport.size, onResize(fn) the window's size in pixels, and a way to hear when it changes
 // thingport.tool               { id, slug, name, version, source }
 // thingport.storage            get(key), set(key, value), remove(key), keys(): JSON kept for this user, up to 20 MB

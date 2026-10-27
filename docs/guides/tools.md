@@ -98,6 +98,7 @@ export default async function mount(thingport) {
 | `download({ name, data })`                                                                                                        | Hands the user a file                                                                                                                                                                                                                                                     |
 | `ui.toast(message, severity)`, `ui.confirm({ title, message })`, `ui.close()`                                                     | Thingport's own toast, confirmation and closing the window                                                                                                                                                                                                                |
 | `t(key, vars)`                                                                                                                    | The tool's own words, in the user's language: `t("rings.ring", { n: 2 })`                                                                                                                                                                                                 |
+| `labels(where?)`                                                                                                                  | Fills in every `data-t` under `where` (the window by default) from the labels, so the markup carries the keys                                                                                                                                                             |
 | `language`, `languages`                                                                                                           | The language Thingport is in (`"lt"`), and every language it has: `{ code, label, englishName }`                                                                                                                                                                          |
 
 A model's files are `{ id, name, size, url }`; a model a tool brought has `toolOwned: true` and can't be changed.
@@ -120,11 +121,22 @@ nesting invites a file that is really a program. `{name}` in a sentence is fille
 Thingport reads the file matching the user's language, and hands the tool `t`:
 
 ```js
-export default async function mount({ t, language }) {
-  heading.textContent = t("save.title");
+export default async function mount({ t, labels }) {
+  labels(); // every data-t in tool.html, filled in
   badge.textContent = t("rings.ring", { n: 2 }); // "Žiedas 2"
 }
 ```
+
+The markup carries the key where the sentence would be, so a panel's words need no script at all:
+
+```html
+<h2 data-t="wall.title">Wall size</h2>
+<button data-t="parts.copy" data-t-title="parts.copyHint">Copy</button>
+```
+
+`data-t` sets the text; `data-t-title`, `data-t-aria` and `data-t-placeholder` fill those attributes. The English
+left in the markup is what a reviewer reads, and what shows if the labels never arrive. Call `labels()` again after
+adding more markup.
 
 - The metadata's `locales` lists the languages the folder has; a language it names without a file is an error, not
   a shrug, so a missing translation can't install quietly.
@@ -133,6 +145,8 @@ export default async function mount({ t, language }) {
 - A key with no words anywhere comes back as itself, so a label nobody wrote shows up in the window.
 - The user changing language runs the tool again, as changing the theme does, so `t` is read once at the top of
   `mount` rather than watched.
+- A table of labels a tool builds up front — the sections of a settings dialog, the names of the parts it makes —
+  holds keys, and whatever shows them says them. A `t()` at the top of the file would run before there is a `t`.
 - A language Thingport doesn't have is simply never asked for; a language the tool doesn't have falls back to
   English. `languages` lists what Thingport has, if a tool wants to say so itself.
 - At most 128 KB a language and 1 MB in all.
