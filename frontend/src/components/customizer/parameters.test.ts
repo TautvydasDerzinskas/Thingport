@@ -35,6 +35,36 @@ describe("controlFor", () => {
     expect(controlFor(parameter({ type: "string", options })).kind).toBe("switch");
   });
 
+  it("points the switch at what each choice means, not at the order it was declared", () => {
+    // A script is as free to write `// [No, Yes]` as `// [Yes, No]`; taking the first for "on" would set the
+    // opposite of whatever the switch was moved to.
+    const pair = (first: string, second: string) => [
+      { name: first, value: first },
+      { name: second, value: second },
+    ];
+    for (const [on, off] of [
+      ["Yes", "No"],
+      ["No", "Yes"],
+      ["true", "false"],
+      ["false", "true"],
+      ["on", "off"],
+      ["off", "on"],
+    ].map(([a, b]) => (/^(yes|true|on)$/i.test(a) ? [a, b] : [b, a]))) {
+      const control = controlFor(parameter({ type: "string", options: pair(on, off) }));
+      expect(control).toMatchObject({ kind: "switch", on: { value: on }, off: { value: off } });
+      const reversed = controlFor(parameter({ type: "string", options: pair(off, on) }));
+      expect(reversed).toMatchObject({ kind: "switch", on: { value: on }, off: { value: off } });
+    }
+  });
+
+  it("gives a declared boolean a true/false switch", () => {
+    expect(controlFor(parameter({ type: "boolean", initial: true }))).toMatchObject({
+      kind: "switch",
+      on: { value: true },
+      off: { value: false },
+    });
+  });
+
   it("gives a number a slider only when it has both ends", () => {
     expect(controlFor(parameter({ min: 0, max: 10 }))).toMatchObject({ kind: "slider", min: 0, max: 10 });
     expect(controlFor(parameter({ min: 0 })).kind).toBe("number");

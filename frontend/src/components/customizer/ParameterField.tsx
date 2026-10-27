@@ -46,8 +46,10 @@ export default function ParameterField({ parameter, value, onChange, disabled }:
   );
 
   if (control.kind === "switch") {
-    const [on, off] = control.options;
-    const checked = value === on.value || /^(yes|true|on)$/i.test(String(value));
+    const { on, off } = control;
+    // Compared as text so a boolean value still matches a "true"/"false" choice; anything matching neither
+    // reads as off rather than guessing.
+    const checked = String(value) === String(on.value);
     return (
       <FormControlLabel
         sx={{ ml: 0, gap: 1 }}

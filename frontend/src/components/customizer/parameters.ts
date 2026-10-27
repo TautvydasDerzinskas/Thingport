@@ -17,7 +17,8 @@ export type Choice = { name: string; value: unknown };
 
 /** What kind of control a parameter wants, with whatever that control needs to draw itself. */
 export type Control =
-  | { kind: "switch"; options: Choice[] }
+  /** `on` and `off` are which choice each way of the switch sets, never the order they were declared in. */
+  | { kind: "switch"; on: Choice; off: Choice }
   | { kind: "segmented"; options: Choice[] }
   | { kind: "select"; options: Choice[] }
   | { kind: "slider"; min: number; max: number; step: number }
@@ -38,10 +39,11 @@ export function readyScript(text: string): string {
 
 const YES_NO = /^(yes|no|true|false|on|off)$/i;
 
-const BOOLEAN_OPTIONS: Choice[] = [
-  { name: "true", value: true },
-  { name: "false", value: false },
-];
+/** Which of a two-way choice means "on", whichever order the script declared the pair in. */
+const isOnChoice = (choice: Choice) => choice.value === true || /^(yes|true|on)$/i.test(String(choice.value));
+
+const BOOLEAN_ON: Choice = { name: "true", value: true };
+const BOOLEAN_OFF: Choice = { name: "false", value: false };
 
 /** A step fine enough to reach the values in between, without a slider of ten thousand positions. */
 function stepFor(min: number, max: number): number {
@@ -62,10 +64,15 @@ export function controlFor(parameter: ScadParameter): Control {
   const options = parameter.options ?? [];
   if (options.length) {
     const yesNo = options.length === 2 && options.every((option) => YES_NO.test(String(option.value)));
-    if (yesNo) return { kind: "switch", options };
+    if (yesNo) {
+      // By what each choice means, not by where it was declared: `// [No, Yes]` is as legal as `// [Yes, No]`,
+      // and taking the first for "on" would set the opposite of whatever the switch was moved to.
+      const on = options.find(isOnChoice) ?? options[0];
+      return { kind: "switch", on, off: options.find((option) => option !== on) ?? options[1] };
+    }
     return options.length <= 4 ? { kind: "segmented", options } : { kind: "select", options };
   }
-  if (parameter.type === "boolean") return { kind: "switch", options: BOOLEAN_OPTIONS };
+  if (parameter.type === "boolean") return { kind: "switch", on: BOOLEAN_ON, off: BOOLEAN_OFF };
   if (parameter.type === "number") {
     const { min, max } = parameter;
     if (Number.isFinite(min) && Number.isFinite(max)) {
