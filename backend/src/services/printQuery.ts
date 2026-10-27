@@ -20,6 +20,8 @@ export type PrintFilters = {
   authorId?: string;
   /** Every one of them, case-insensitively. */
   tags?: string[];
+  /** Only the models that came with a script they can be generated from again. */
+  generative?: boolean;
 };
 
 export const PRINT_SORT_MODES = ["newest", "popular", "downloads", "relevance"] as const;
@@ -83,6 +85,13 @@ export async function buildPrintWhere(
     // otherwise bury everything the user put there under it. They are listed where they belong -- in the tool's
     // own collection -- and in Favourites or Browsing History, where the user put them.
     where.toolId = null;
+  }
+  if (filters.generative) {
+    // A generator script is kept beside a model, never as one of its plates, so this is what marks one as
+    // generated rather than only printed. `.scad` is the only kind so far; config.ts's set is the list.
+    andClauses.push({
+      files: { some: { role: "SUPPORTING", filename: { endsWith: ".scad", mode: "insensitive" } } },
+    });
   }
   // Matched as the search palette matches, so its "see all results" lists what it found.
   const rankedIds = q ? await rankedPrintIds(userId, q) : null;
