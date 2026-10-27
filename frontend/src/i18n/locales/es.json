@@ -2656,7 +2656,7 @@
         "hostsHelp": "Los servicios fuera de Thingport a los que la herramienta puede llamar, a través de Thingport.",
         "noHosts": "Nada fuera de Thingport",
         "models": "Modelos",
-        "modelsHelp": "Los modelos que trae la herramienta, en una colección propia en tu biblioteca. Se pueden abrir e imprimir, pero no cambiar.",
+        "modelsHelp": "Los modelos que trae la herramienta, en una colección propia de tu biblioteca. Se pueden abrir e imprimir, pero no cambiar, y se listan en esa colección y no entre tus modelos.",
         "modelCount_one": "{{count}} modelo",
         "modelCount_many": "{{count}} modelos",
         "modelCount_other": "{{count}} modelos",

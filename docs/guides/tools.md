@@ -42,10 +42,17 @@ every device:
 ### Tools that bring models
 
 A tool may need models: a wall planner its tiles, for example. They come in a collection of their own, **Tool:
-&lt;name&gt;**, in the library of everyone who sees tools, listed after their own collections. Its models open, appear in
-search, download and go to a slicer like any other, but neither they nor the collection can be edited or deleted; they
-go, from every library, when you uninstall the tool. A user who loses access to tools loses them too, and gets them back
-with it.
+&lt;name&gt;**, in the library of everyone who sees tools, listed after their own collections. They open, download and go
+to a slicer like any other, but neither they nor the collection can be edited or deleted; they go, from every library,
+when you uninstall the tool. A user who loses access to tools loses them too, and gets them back with it.
+
+The collection is where they are and the only place they are listed: a planner with two hundred parts would otherwise
+bury your own models under it, so they stay out of the models page, its categories and search. Favourite one and it
+shows in Favourites, as anything you favourite does.
+
+The files behind them are the tool's, and are kept once for the instance however many people use the tool -- a
+planner that brings twelve gigabytes of parts takes twelve gigabytes, not twelve per person. Each user still has
+their own model, in their own collection and language; what they share is the bytes on disk.
 
 A tool's models are either files in its repository folder, or model pages Thingport imports when you install it, **as
 you**: for designs that may be downloaded but not passed on, such as Multiboard's. For those, connect the provider first

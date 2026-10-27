@@ -736,14 +736,14 @@ export async function ownToolsInUse(): Promise<OwnToolInUse[]> {
   });
 }
 
-// --- Everyone's copies of a tool's models ---------------------------------------------------------------------------
+// --- Everyone's own models from a tool's files ---------------------------------------------------------------------------
 
 // One run per tool and user at a time: the collections page and the Tools page may both ask at once.
 const provisioning = new Map<string, Promise<void>>();
 // Tools whose models are being taken away, by an uninstall or an update: no new copies are made meanwhile.
 const removing = new Set<string>();
 
-/** Stops new copies of a tool's models, and waits out the ones being made and its fetch, before `fn` takes them. */
+/** Stops new models being given out, and waits out the ones being given and the fetch, before `fn` takes them. */
 async function whileNotCopying<T>(toolId: string, fn: () => Promise<T>): Promise<T> {
   removing.add(toolId);
   try {
@@ -866,13 +866,24 @@ async function provisionUser(tool: Tool, userId: string): Promise<void> {
     if (have.has(model.key)) continue;
     const fetched = await fetchedModel(dir, model.key);
     if (!fetched) continue;
-    await copyModelTo(userId, tool.id, collection.id, model, fetched, path.join(dir, model.key));
+    await giveModelTo(userId, tool.id, collection.id, model, fetched, path.join(dir, model.key));
     added = true;
   }
   if (added) await orderCollection(collection.id, spec.models);
 }
 
-async function copyModelTo(
+/**
+ * One of a tool's models in a user's library.
+ *
+ * The model is the user's -- their own row, in their own collection, in their own language -- but the files are
+ * the tool's, and stay in the tool's folder: a plate's `sourcePath` is read wherever it points, so a planner
+ * bringing twelve gigabytes of parts costs that once for the instance rather than once for every user who can
+ * open it. Nothing here is the user's to change, so there is nothing to be gained by giving them a copy to
+ * change: deleting one of these models leaves the tool's file where it is (deletePlateFiles only removes what
+ * is under the model's own path, which for these is nothing), and an update that changes the models takes
+ * everyone's away with the folder they point at, before the new ones are given out.
+ */
+async function giveModelTo(
   userId: string,
   toolId: string,
   collectionId: string,
@@ -884,7 +895,7 @@ async function copyModelTo(
     userId,
     { title: model.name, notes: model.description ?? fetched.notes, tags: model.tags },
     model.name,
-    fetched.files.map((file) => ({ filename: file, copyFromPath: path.join(from, "files", file) })),
+    fetched.files.map((file) => ({ filename: file, sourcePath: path.join(from, "files", file) })),
     { describe: false, classify: false },
   );
   try {

@@ -20,6 +20,7 @@ import { deleteAllDescriptionImages } from "./descriptionImageService";
 import { deletePlateFiles } from "./printCreation";
 import { assetOwnerIds, removeAssetHome, removePlatePictures } from "./printService";
 import { loadFullPrint } from "./printLoader";
+import { pruneWhatModelsLeft } from "./printEditService";
 import { removeUserTagMosaics } from "./tagMosaicService";
 
 export type UserWithPrintCount = {
@@ -117,8 +118,18 @@ export async function listLogs(filter: { userId?: string; from?: Date; to?: Date
   }));
 }
 
+/**
+ * Every model the user put there, gone.
+ *
+ * A model a tool brought isn't one of theirs to lose: it is the tool's part, listed in the tool's own collection,
+ * and the tool gives it back the moment it is asked for anyway. What the models leave behind -- an author with
+ * nothing else to show, the pictures and bookmarks of tags nothing is tagged with any more -- goes with them.
+ */
 export async function deleteAllPrintsForUser(userId: string): Promise<number> {
-  const prints = await prisma.print.findMany({ where: { userId }, select: { id: true } });
+  const prints = await prisma.print.findMany({
+    where: { userId, toolId: null },
+    select: { id: true, authorId: true, tags: true },
+  });
   for (const { id } of prints) {
     const full = await loadFullPrint(userId, id);
     const assetOwners = await assetOwnerIds(id);
@@ -132,8 +143,10 @@ export async function deleteAllPrintsForUser(userId: string): Promise<number> {
     }
     await removeAssetHome(full.print.assetsPath, assetOwners);
   }
-  // With no models left the user has no tags, so none of their tag pictures is needed.
-  await removeUserTagMosaics(userId);
+  await pruneWhatModelsLeft(userId, prints);
+  // Nothing of theirs left at all, not even a tool's: the whole folder of their tag pictures goes, including any
+  // for a tag the database has since forgotten.
+  if ((await prisma.print.count({ where: { userId } })) === 0) await removeUserTagMosaics(userId);
   return prints.length;
 }
 
@@ -198,13 +211,28 @@ function measureDisk(): Promise<DiskUsage> {
   return value;
 }
 
-/** Plates plus supporting and prepared files, from stored sizes (matches dto.ts's total_size). */
+/**
+ * Plates plus supporting and prepared files, from stored sizes (matches dto.ts's total_size).
+ *
+ * A file read where it lies rather than copied -- every user's model from a tool is the tool's one file -- is
+ * counted once, however many models point at it, so this is what the models take rather than what they would take
+ * if each had a copy.
+ */
 export async function getStorageUsage(): Promise<StorageUsage> {
-  const [plates, files, modelCount, disk] = await Promise.all([
-    prisma.plate.aggregate({ _sum: { size: true } }),
+  const [owned, shared, files, modelCount, disk] = await Promise.all([
+    prisma.plate.aggregate({ _sum: { size: true }, where: { sourcePath: null } }),
+    prisma.$queryRaw<{ bytes: bigint | null }[]>`
+      SELECT COALESCE(SUM(size), 0) AS bytes
+      FROM (SELECT DISTINCT ON ("sourcePath") size FROM "Plate" WHERE "sourcePath" IS NOT NULL ORDER BY "sourcePath") s
+    `,
     prisma.printFile.aggregate({ _sum: { size: true } }),
     prisma.print.count(),
     measureDisk(),
   ]);
-  return { modelBytes: (plates._sum.size ?? 0) + (files._sum.size ?? 0), modelCount, ...disk };
+  const sharedBytes = Number(shared[0]?.bytes ?? 0);
+  return {
+    modelBytes: (owned._sum.size ?? 0) + sharedBytes + (files._sum.size ?? 0),
+    modelCount,
+    ...disk,
+  };
 }

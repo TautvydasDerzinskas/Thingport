@@ -2727,7 +2727,7 @@
         "hostsHelp": "Paslaugos už Thingport ribų, kurias įrankis gali kviesti per Thingport.",
         "noHosts": "Nieko už Thingport ribų",
         "models": "Modeliai",
-        "modelsHelp": "Įrankio atsinešti modeliai, atskiroje kolekcijoje jūsų bibliotekoje. Juos galima atidaryti ir spausdinti, bet ne keisti.",
+        "modelsHelp": "Įrankio atsinešami modeliai – atskiroje tavo bibliotekos kolekcijoje. Juos galima atidaryti ir spausdinti, bet ne keisti; jie rodomi toje kolekcijoje, o ne tarp tavo modelių.",
         "modelCount_one": "{{count}} modelis",
         "modelCount_few": "{{count}} modeliai",
         "modelCount_other": "{{count}} modelių",

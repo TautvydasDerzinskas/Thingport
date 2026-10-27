@@ -5,6 +5,8 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
+import { STORAGE } from "../src/config";
+import { deletePrint } from "../src/services/printEditService";
 import { setToolsAccess } from "../src/services/settingsService";
 import { parseToolManifest } from "../src/services/toolFormat";
 import { setToolsRepoForTest, syncToolModels, toolFetchSettled, toolsSource } from "../src/services/toolsService";
@@ -276,6 +278,50 @@ describe("installing", () => {
     ]);
   });
 
+  it("gives everyone the tool's own files rather than a copy each, and leaves them when a model goes", async () => {
+    writeRepo();
+    const toolId = await install();
+    await syncToolModels({ id: memberId, role: "MEMBER" });
+    const tool = await prisma.tool.findUniqueOrThrow({ where: { id: toolId } });
+    const dir = path.join(STORAGE, "tools", "planner", (tool.modelsSha ?? "").slice(0, 16));
+
+    const plates = await prisma.plate.findMany({ where: { print: { toolId } } });
+    expect(plates.length).toBeGreaterThan(0);
+    for (const plate of plates) {
+      // The bytes are the tool's, where the tool put them, and no copy was made under the model's own path.
+      expect(plate.sourcePath?.startsWith(dir)).toBe(true);
+      expect(fs.existsSync(plate.sourcePath!)).toBe(true);
+      expect(fs.existsSync(path.join(STORAGE, plate.storagePath))).toBe(false);
+    }
+
+    // Taking a model away is the tool's to do, and it leaves the tool's own file alone.
+    const print = await prisma.print.findFirstOrThrow({ where: { userId: memberId, toolId } });
+    const source = (await prisma.plate.findFirstOrThrow({ where: { printId: print.id } })).sourcePath!;
+    await deletePrint(memberId, print.id, { quiet: true });
+    expect(fs.existsSync(source)).toBe(true);
+  });
+
+  it("keeps the tool's models out of the library, but not out of their own collection", async () => {
+    writeRepo();
+    const toolId = await install();
+    await syncToolModels({ id: memberId, role: "MEMBER" });
+    const collection = await prisma.collection.findFirstOrThrow({ where: { userId: memberId, toolId } });
+    const as = auth(memberToken);
+
+    const library = await request(app).get("/api/prints").set(as);
+    expect(library.body.some((p: { tool_id: string | null }) => p.tool_id === toolId)).toBe(false);
+
+    const inCollection = await request(app).get(`/api/prints?collection_id=${collection.id}`).set(as);
+    expect(inCollection.body).toHaveLength(2);
+    expect(inCollection.body.every((p: { tool_id: string | null }) => p.tool_id === toolId)).toBe(true);
+
+    // Favourited, it is the user's own doing, so it shows where they put it.
+    const print = await prisma.print.findFirstOrThrow({ where: { userId: memberId, toolId } });
+    await request(app).post(`/api/print/${print.id}/favorite`).set(as);
+    const favourites = await request(app).get("/api/prints?collection_id=favorites").set(as);
+    expect(favourites.body.some((p: { id: string }) => p.id === print.id)).toBe(true);
+  });
+
   it("won't let the tool's models or collection be changed, but they can be opened and favourited", async () => {
     writeRepo();
     const toolId = await install();
@@ -323,6 +369,23 @@ describe("installing", () => {
     // Not offered as somewhere to put a model.
     const pickers = await request(app).get(`/api/print/${print.id}/collections`).set(as);
     expect(pickers.body.some((c: { id: string }) => c.id === collection.id)).toBe(false);
+  });
+
+  it("leaves a tool's models where the admin wipes a user's own", async () => {
+    writeRepo();
+    const toolId = await install();
+    await syncToolModels({ id: memberId, role: "MEMBER" });
+    const mine = await prisma.print.create({
+      data: { userId: memberId, name: "Mine", nameNormalized: "mine", title: "Mine", tags: ["keep"] },
+    });
+
+    const wiped = await request(app).post(`/api/admin/users/${memberId}/delete-all-prints`).set(auth(adminToken));
+    expect(wiped.status).toBe(200);
+    // Only the model they put there counts, and only it goes.
+    expect(wiped.body.deleted).toBe(1);
+    expect(await prisma.print.findUnique({ where: { id: mine.id } })).toBeNull();
+    expect(await prisma.print.count({ where: { userId: memberId, toolId } })).toBe(2);
+    expect(await prisma.collection.count({ where: { userId: memberId, toolId } })).toBe(1);
   });
 
   it("takes everyone's copies and the collection away on uninstall", async () => {
@@ -375,7 +438,9 @@ describe("screenshots", () => {
 
   it("are images beside tool.json", () => {
     expect(() => parseToolManifest('{"name":"x","screenshots":[{"file":"shot.svg"}]}')).toThrow(/PNG, JPEG or WebP/);
-    expect(() => parseToolManifest('{"name":"x","screenshots":[{"file":"../shot.png"}]}')).toThrow(/beside tool.json/);
+    expect(() => parseToolManifest('{"name":"x","screenshots":[{"file":"../shot.png"}]}')).toThrow(
+      /beside the metadata/,
+    );
   });
 });
 

@@ -156,7 +156,7 @@ describe("own widgets", () => {
         script: SCRIPT,
       });
     expect(refused.status).toBe(400);
-    expect(refused.body.error).toMatch(/repository/i);
+    expect(refused.body.detail).toMatch(/repository/i);
   });
 
   it("credits the user when the metadata names no author, and keeps an author it names", async () => {

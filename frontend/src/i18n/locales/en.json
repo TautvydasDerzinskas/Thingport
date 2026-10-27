@@ -2644,7 +2644,7 @@
         "hostsHelp": "The services outside Thingport the tool may call, through Thingport.",
         "noHosts": "Nothing outside Thingport",
         "models": "Models",
-        "modelsHelp": "The models the tool brings, in a collection of their own in your library. They can be opened and printed but not changed.",
+        "modelsHelp": "The models the tool brings, in a collection of their own in your library. They can be opened and printed but not changed, and they are listed in that collection rather than among your own models.",
         "modelCount_one": "{{count}} model",
         "modelCount_other": "{{count}} models",
         "openModels": "Open its models",
