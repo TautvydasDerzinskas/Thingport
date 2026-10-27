@@ -111,6 +111,9 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
   }, []);
   useEffect(
     () => () => {
+      // Anything still in flight is abandoned first: a render that landed after the dialog went would make a
+      // blob URL with nothing left to revoke it, and the browser would hold the mesh until the page unloaded.
+      run.current += 1;
       if (url.current) URL.revokeObjectURL(url.current);
     },
     [],
@@ -127,6 +130,19 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
     [onUnauthorized],
   );
 
+  /**
+   * What changes under the dialog without changing which script is open.
+   *
+   * The detail page hands in its own `print` and replaces it whenever anything about the model updates -- a
+   * suggested category accepted, a favourite toggled, a view counted. Reading any of that directly would put
+   * it in the load effect's dependencies, and re-reading the script would throw away every value the reader
+   * had set along with everything they could undo.
+   */
+  const printRef = useRef(print);
+  printRef.current = print;
+  const scriptsRef = useRef(scripts);
+  scriptsRef.current = scripts;
+
   /** Runs the script as the form stands and shows what comes out. */
   const generate = useCallback(
     async (current: Loaded, wanted: Record<string, unknown>, token: number) => {
@@ -134,12 +150,13 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
       setFailure(null);
       setSaved(null);
       try {
+        const model = printRef.current;
         const changed = changedValues(current.parameters, wanted);
-        const name = generatedName(current.script.filename, print.title || print.name, changed);
+        const name = generatedName(current.script.filename, model.title || model.name, changed);
         const result = await scadRender(current.source, { parameters: changed, name });
         if (token !== run.current) return;
         // 3MF is the default format, so the geometry behind it comes back parsed with it.
-        if (!result.mesh) throw new Error("The engine returned no geometry.");
+        if (!result.mesh?.triangles.length) throw new Error(t("models:customizer.error.noGeometry"));
         setGenerated({
           threeMf: result.bytes,
           mesh: result.mesh,
@@ -163,14 +180,25 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
         if (token === run.current) setBusy(null);
       }
     },
-    [print.name, print.title, showMesh, t],
+    [showMesh, t],
   );
+
+  const generateRef = useRef(generate);
+  generateRef.current = generate;
+  const reportFailureRef = useRef(reportFailure);
+  reportFailureRef.current = reportFailure;
 
   // Reading the chosen script, then generating it once on its own values, so the dialog opens on a model
   // rather than on an empty stage.
+  //
+  // It runs for the model, the set of scripts it has and the one chosen, and for nothing else: those are what
+  // decide which script to read. Everything else it needs is read through a ref at the time, so an unrelated
+  // update to the model doesn't start the reader's work over.
+  const printId = print.id;
+  const scriptsKey = scripts.map((script) => script.id).join(",");
   useEffect(() => {
     const token = ++run.current;
-    const script = scripts.find((candidate) => candidate.id === currentId);
+    const script = scriptsRef.current.find((candidate) => candidate.id === currentId);
     // Nothing to open: the model's scripts went while the dialog was up, or it never had one.
     if (!script) {
       setLoaded(null);
@@ -184,22 +212,24 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
     setRenderedValues(null);
     void (async () => {
       try {
-        const source = readyScript(await printsApi.supportingText(print.id, script.id));
+        const source = readyScript(await printsApi.supportingText(printId, script.id));
         const { parameters } = await scadParameters(source);
         if (token !== run.current) return;
         const current = { script, source, parameters };
         const initial = defaultValues(parameters);
         setLoaded(current);
         restart(initial);
-        await generate(current, initial, token);
+        await generateRef.current(current, initial, token);
       } catch (err) {
         if (token !== run.current) return;
         setLoaded(null);
         setBusy(null);
-        reportFailure(err);
+        reportFailureRef.current(err);
       }
     })();
-  }, [currentId, print.id, scripts, restart, generate, reportFailure]);
+    // The rest is read through refs on purpose, so a change to the model doesn't reload the script.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentId, printId, scriptsKey, restart]);
 
   const onGenerate = () => {
     if (loaded) void generate(loaded, values, ++run.current);
@@ -446,7 +476,10 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
         open
         onClose={busy === "saving" ? undefined : onClose}
         fullScreen
-        aria-label={t("models:customizer.title", { model: print.title || print.name })}
+        // On the paper, which is the element carrying role="dialog"; there is no DialogTitle to name it from.
+        slotProps={{
+          paper: { "aria-label": t("models:customizer.title", { model: print.title || print.name }) },
+        }}
       >
         <Box sx={{ position: "relative", height: "100%", display: "flex", flexDirection: "column" }}>
           <Tooltip title={t("common:close")}>

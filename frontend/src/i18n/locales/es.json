@@ -3708,7 +3708,8 @@
         "download": "Descargar el script"
       },
       "error": {
-        "failed": "El script no generó ningún modelo."
+        "failed": "El script no generó ningún modelo.",
+        "noGeometry": "El script se ejecutó pero no produjo ninguna forma que mostrar."
       }
     },
     "edit": {

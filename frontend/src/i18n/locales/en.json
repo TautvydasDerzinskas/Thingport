@@ -3692,7 +3692,8 @@
         "download": "Download the script"
       },
       "error": {
-        "failed": "The script didn't generate a model."
+        "failed": "The script didn't generate a model.",
+        "noGeometry": "The script ran but produced no shape to show."
       }
     },
     "edit": {

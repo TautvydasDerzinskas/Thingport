@@ -3791,7 +3791,8 @@
         "download": "Atsisiųsti scenarijų"
       },
       "error": {
-        "failed": "Scenarijus nesugeneravo modelio."
+        "failed": "Scenarijus nesugeneravo modelio.",
+        "noGeometry": "Scenarijus įvykdytas, bet nesukūrė jokios formos."
       }
     },
     "edit": {
