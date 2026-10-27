@@ -38,15 +38,6 @@ const round = (value, places) => {
 const clean = (value, fallback = 0) => (Number.isFinite(Number(value)) ? Number(value) : fallback);
 
 /** "3 h 24 min", "48 min", "35 s": short enough for a table, exact enough to compare. */
-function timeText(hours) {
-  const seconds = Math.max(0, hours) * SECONDS_PER_HOUR;
-  if (!seconds) return "0 min";
-  if (seconds < 60) return `${Math.round(seconds)} s`;
-  const whole = Math.floor(seconds / SECONDS_PER_HOUR);
-  const minutes = Math.round((seconds - whole * SECONDS_PER_HOUR) / 60);
-  if (!whole) return `${minutes} min`;
-  return minutes ? `${whole} h ${minutes} min` : `${whole} h`;
-}
 
 /** "2nd", "3rd", "11th": only ever seen on a mesh too big to draw whole. */
 const ordinal = (n) => {
@@ -63,9 +54,20 @@ const sizeText = (bytes) => {
 };
 
 export default async function mount(thingport) {
-  const { root, theme, models, storage, ui, download } = thingport;
+  const { root, theme, models, storage, ui, download, t, labels } = thingport;
   const shell = root.querySelector(".pce");
   const $ = (id) => root.querySelector(`#pce-${id}`);
+
+  /** Hours as words. Inside mount so it can use the tool's own labels. */
+  function timeText(hours) {
+    const seconds = Math.max(0, hours) * SECONDS_PER_HOUR;
+    if (!seconds) return t("time.zero");
+    if (seconds < 60) return t("time.seconds", { seconds: Math.round(seconds) });
+    const whole = Math.floor(seconds / SECONDS_PER_HOUR);
+    const minutes = Math.round((seconds - whole * SECONDS_PER_HOUR) / 60);
+    if (!whole) return t("time.minutes", { minutes });
+    return minutes ? t("time.hoursMinutes", { hours: whole, minutes }) : t("time.hours", { hours: whole });
+  }
 
   const dark = theme.mode === "dark";
   const colours = {
@@ -192,8 +194,8 @@ export default async function mount(thingport) {
     if (rest) {
       ui.toast(
         rest === 1
-          ? `${files.find((file) => !isMeshFile(file.name) && !isSlicedName(file.name)).name} isn't a model or a sliced file`
-          : `${rest} files aren't models or sliced files and were left out`,
+          ? t("drop.notAModel", { name: files.find((file) => !isMeshFile(file.name) && !isSlicedName(file.name)).name })
+          : t("drop.someLeftOut", { count: rest }),
         "warning",
       );
     }
@@ -265,7 +267,7 @@ export default async function mount(thingport) {
       item.sliced = sliced;
       item.mesh = mesh;
       item.measurement = mesh ? measure(mesh.triangles, { overhang: clean(printer().overhang, 45) }) : null;
-      if (!sliced && !item.measurement) throw new MeshError("Nothing in this file could be measured.");
+      if (!sliced && !item.measurement) throw new MeshError(t("part.nothingMeasured"));
       item.kind = sliced ? "sliced" : "mesh";
       if (sliced && sliced.plates.length === 1) item.plate = sliced.plates[0].index;
       item.status = "done";
@@ -381,7 +383,7 @@ export default async function mount(thingport) {
         let summary = "";
         if (item.status === "failed") summary = `<span style="color:var(--danger)">${escapeHtml(item.error)}</span>`;
         else if (item.status !== "done")
-          summary = `<span>${item.status === "measuring" ? "Measuring…" : "Reading…"}</span>`;
+          summary = `<span>${item.status === "measuring" ? t("status.measuring") : t("status.reading")}</span>`;
         else if (figures) {
           summary = `<b>${money(figures.priced.recommended)}</b><span>${timeText(figures.hours)}</span><span>${figures.grams.toFixed(1)} g</span>`;
         }
@@ -389,7 +391,7 @@ export default async function mount(thingport) {
           <div class="pce-item-name">${escapeHtml(item.name)}</div>
           ${
             item.status === "done"
-              ? `<span class="pce-tag ${item.kind === "sliced" ? "pce-tag-exact" : "pce-tag-guess"}">${item.kind === "sliced" ? "Sliced" : "Estimate"}</span>`
+              ? `<span class="pce-tag ${item.kind === "sliced" ? "pce-tag-exact" : "pce-tag-guess"}">${item.kind === "sliced" ? t("kind.sliced") : t("csv.estimate")}</span>`
               : item.status === "failed"
                 ? '<span class="pce-tag">Failed</span>'
                 : '<span class="pce-spin" role="presentation"></span>'
@@ -443,9 +445,9 @@ export default async function mount(thingport) {
     const b = batchOf();
     batch.hidden = false;
     batch.innerHTML = `
-      <div><span>${b.parts} parts${b.units !== b.parts ? `, ${b.units} to print` : ""}</span><b>${timeText(b.hours)}</b></div>
-      <div><span>Filament</span><b>${b.grams.toFixed(0)} g</b></div>
-      <div><span>Cost</span><b>${money(b.cost)}</b></div>
+      <div><span>${escapeHtml(t("batch.parts", { parts: b.parts }))}${b.units !== b.parts ? escapeHtml(t("batch.toPrint", { units: b.units })) : ""}</span><b>${timeText(b.hours)}</b></div>
+      <div><span>${escapeHtml(t("money.filament"))}</span><b>${b.grams.toFixed(0)} g</b></div>
+      <div><span>${escapeHtml(t("csv.cost"))}</span><b>${money(b.cost)}</b></div>
       <div><span>Recommended</span><b>${money(b.price)}</b></div>`;
     totals.hidden = false;
     totals.innerHTML = `<span>${b.units} to print</span><b>${timeText(b.hours)}</b><span>·</span><b>${money(b.price)}</b>`;
@@ -459,11 +461,11 @@ export default async function mount(thingport) {
     if (item.kind === "mesh") {
       fields.push({
         key: "scale",
-        label: "Scale",
+        label: "field.scale",
         unit: "%",
         step: 1,
         value: item.scale,
-        help: "Printing it larger or smaller. Everything is measured again at this size.",
+        help: "field.scale.help",
         set: (value) => {
           item.scale = Math.min(1000, Math.max(1, value || 100));
         },
@@ -472,13 +474,13 @@ export default async function mount(thingport) {
     if (item.kind === "sliced" && item.sliced.plates.length > 1) {
       fields.push({
         key: "plate",
-        label: "Plate",
+        label: "field.plate",
         choices: [
-          { value: "all", text: "All plates" },
+          { value: "all", text: t("part.allPlates") },
           ...item.sliced.plates.map((plate) => ({ value: String(plate.index), text: `Plate ${plate.index}` })),
         ],
         value: String(item.plate),
-        help: "Which sliced plate to price. All of them adds the plates up.",
+        help: "field.plate.help",
         set: (value) => {
           item.plate = value === "all" ? "all" : parseInt(value, 10);
         },
@@ -487,11 +489,11 @@ export default async function mount(thingport) {
     if (item.kind === "sliced") {
       fields.push({
         key: "parts",
-        label: "Parts on it",
-        unit: "pcs",
+        label: "field.parts",
+        unit: "unit.pcs",
         step: 1,
         value: item.parts,
-        help: "How many copies were on the plate. The time and the filament are divided by this to price one part.",
+        help: "field.parts.help",
         set: (value) => {
           item.parts = Math.max(1, Math.floor(value) || 1);
         },
@@ -500,72 +502,69 @@ export default async function mount(thingport) {
     fields.push(
       {
         key: "hours",
-        label: "Print time",
-        unit: "h",
+        label: "field.hours",
+        unit: "unit.h",
         step: 0.1,
         value: round(figures.hours, 2),
         manual: item.manual.hours != null,
-        help:
-          item.kind === "sliced"
-            ? "What the slicer worked out. Type over it to try another figure."
-            : "Estimated from the volume and the speed in Setup. Type your slicer's figure in to be exact.",
+        help: item.kind === "sliced" ? "field.hours.help.sliced" : "field.hours.help.mesh",
         set: (value) => {
           item.manual.hours = Math.max(0, value);
         },
       },
       {
         key: "grams",
-        label: "Filament",
-        unit: "g",
+        label: "field.grams",
+        unit: "unit.g",
         step: 0.1,
         value: round(figures.grams, 1),
         manual: item.manual.grams != null,
-        help: "The weight of the part itself, supports included. The purge below is counted on top.",
+        help: "field.grams.help",
         set: (value) => {
           item.manual.grams = Math.max(0, value);
         },
       },
       {
         key: "purgeGrams",
-        label: "Purge",
-        unit: "g",
+        label: "field.purgeGrams",
+        unit: "unit.g",
         step: 0.1,
         value: round(figures.purgeGrams, 1),
         manual: item.manual.purgeGrams != null,
-        help: "Filament that goes in the bin: purge towers and colour changes. On a multicolour print it can outweigh the part.",
+        help: "field.purgeGrams.help",
         set: (value) => {
           item.manual.purgeGrams = Math.max(0, value);
         },
       },
       {
         key: "postMinutes",
-        label: "Your work",
-        unit: "min",
+        label: "field.postMinutes",
+        unit: "unit.min",
         step: 1,
         value: item.postMinutes ?? business().postMinutes,
-        help: "Minutes spent taking off supports, sanding, assembling and packing it. The part of the job almost everyone gives away.",
+        help: "field.postMinutes.help",
         set: (value) => {
           item.postMinutes = Math.max(0, value);
         },
       },
       {
         key: "quantity",
-        label: "Order",
-        unit: "pcs",
+        label: "field.quantity",
+        unit: "unit.pcs",
         step: 1,
         value: item.quantity,
-        help: "How many of it are being sold. It changes the order total, not what one costs.",
+        help: "field.quantity.help",
         set: (value) => {
           item.quantity = Math.max(1, Math.floor(value) || 1);
         },
       },
       {
         key: "currentPrice",
-        label: "Your price",
+        label: "field.currentPrice",
         unit: business().currency,
         step: 0.5,
         value: item.currentPrice,
-        help: "What you charge for it today, to compare against the recommendation. Leave it at zero to skip the comparison.",
+        help: "field.currentPrice.help",
         set: (value) => {
           item.currentPrice = Math.max(0, value);
         },
@@ -586,14 +585,14 @@ export default async function mount(thingport) {
     $("more").disabled = !item || item.status !== "done";
 
     if (!item) {
-      title.textContent = "The part";
+      title.textContent = t("part.title");
       kind.hidden = true;
       facts.replaceChildren();
       fields.replaceChildren();
       messages.replaceChildren();
       size.textContent = "";
       note.hidden = false;
-      note.textContent = "Nothing to show yet.";
+      note.textContent = t("price.empty");
       viewer?.clear();
       shownKey = null;
       return;
@@ -611,7 +610,7 @@ export default async function mount(thingport) {
           : '<div class="pce-note">Reading it…</div>';
       size.textContent = "";
       note.hidden = false;
-      note.textContent = item.status === "failed" ? "Nothing to show." : "Reading it…";
+      note.textContent = item.status === "failed" ? t("common.nothingToShow") : t("status.readingIt");
       viewer?.clear();
       shownKey = null;
       return;
@@ -621,7 +620,9 @@ export default async function mount(thingport) {
     kind.hidden = false;
     kind.className = `pce-tag ${item.kind === "sliced" ? "pce-tag-exact" : "pce-tag-guess"}`;
     kind.textContent =
-      item.kind === "sliced" ? `From ${item.sliced.slicer ?? "the slicer"}` : `Estimated · ${item.mesh.format}`;
+      item.kind === "sliced"
+        ? `From ${item.sliced.slicer ?? t("source.theSlicer")}`
+        : `Estimated · ${item.mesh.format}`;
 
     renderView(item, figures);
     renderFacts(item, figures, facts);
@@ -637,7 +638,7 @@ export default async function mount(thingport) {
       // Nothing to draw: the view shrinks to a line of explanation and the figures take the room.
       view.classList.add("pce-view-flat");
       note.hidden = false;
-      note.textContent = "This file holds the sliced plate, not the shape, so there's nothing to draw.";
+      note.textContent = t("view.slicedOnly");
       size.textContent = "";
       viewer?.clear();
       shownKey = null;
@@ -646,7 +647,7 @@ export default async function mount(thingport) {
     view.classList.remove("pce-view-flat");
     if (!viewer) {
       note.hidden = false;
-      note.textContent = "This browser has no WebGL, so the part can't be drawn. The figures are all there.";
+      note.textContent = t("view.noWebgl");
     } else {
       note.hidden = true;
       const highlight = $("overhangs").getAttribute("aria-pressed") === "true";
@@ -670,28 +671,37 @@ export default async function mount(thingport) {
     const cell = (label, value, tone = "") => cells.push({ label, value, tone });
     if (figures.measurement) {
       const m = figures.measurement;
-      cell("Volume", `${(m.volume / 1000).toFixed(1)} cm³`);
-      cell("Surface", `${(m.area / 100).toFixed(0)} cm²`);
-      cell("Triangles", m.count.toLocaleString());
-      cell("Mesh", m.closed === null ? "Not checked" : m.closed ? "Closed" : "Open", m.closed === false ? "warn" : "");
+      cell(t("facts.volume"), `${(m.volume / 1000).toFixed(1)} cm³`);
+      cell(t("facts.surface"), `${(m.area / 100).toFixed(0)} cm²`);
+      cell(t("facts.triangles"), m.count.toLocaleString());
+      cell(
+        t("kind.mesh"),
+        m.closed === null ? t("supports.notChecked") : m.closed ? t("mesh.closed") : t("mesh.open"),
+        m.closed === false ? "warn" : "",
+      );
       const bed = bedOf();
       const room = fits(m.box.size, bed);
-      cell("Bed", room.fits ? (room.turned ? "Fits turned" : "Fits") : "Too big", room.fits ? "" : "bad");
+      cell(
+        t("facts.bed"),
+        room.fits ? (room.turned ? t("part.fitsTurned") : t("part.fits")) : t("part.tooBig"),
+        room.fits ? "" : "bad",
+      );
     }
     if (item.kind === "mesh" && figures.guess) {
-      cell("Layers", figures.guess.layers.toLocaleString());
-      if (figures.guess.supportGrams > 0.05) cell("Supports", `${figures.guess.supportGrams.toFixed(1)} g`, "warn");
+      cell(t("facts.layers"), figures.guess.layers.toLocaleString());
+      if (figures.guess.supportGrams > 0.05)
+        cell(t("money.supports"), `${figures.guess.supportGrams.toFixed(1)} g`, "warn");
       cell(
-        "Infill goes in",
+        t("facts.infillGoesIn"),
         `${((figures.guess.infillVolume / Math.max(1, figures.guess.partVolume)) * 100).toFixed(0)}%`,
       );
     }
     if (item.kind === "sliced") {
       const plates = item.sliced.plates;
-      cell("Plates", String(plates.length));
+      cell(t("facts.plates"), String(plates.length));
       const filaments = plates.flatMap((plate) => plate.filaments);
-      if (filaments.length) cell("Filaments", String(new Set(filaments.map((f) => f.type || "?")).size));
-      cell("File", sizeText(item.size));
+      if (filaments.length) cell(t("money.filaments"), String(new Set(filaments.map((f) => f.type || "?")).size));
+      cell(t("facts.file"), sizeText(item.size));
     }
     into.replaceChildren(
       ...cells.map(({ label, value, tone }) => {
@@ -721,7 +731,7 @@ export default async function mount(thingport) {
     if (m && m.inverted) {
       notes.push({
         tone: "warn",
-        html: "The faces are wound inside out. The volume is right, but a slicer may complain.",
+        html: t("note.inverted"),
       });
     }
     if (m) {
@@ -737,19 +747,19 @@ export default async function mount(thingport) {
     if (item.kind === "mesh" && figures.guess?.solid) {
       notes.push({
         tone: "warn",
-        html: "The walls meet in the middle: at these settings it prints solid, so the infill makes no difference to it.",
+        html: t("note.solid"),
       });
     }
     if (item.kind === "sliced" && !figures.base.exact) {
       notes.push({
         tone: "warn",
-        html: "This sliced file gives one figure but not the other. Type the missing one in.",
+        html: t("note.halfSliced"),
       });
     }
     if (item.kind === "sliced" && item.sliced.plates.some((plate) => plate.estimated)) {
       notes.push({
         tone: "warn",
-        html: "The slicer gave a length rather than a weight, so the grams were worked out from PLA's density here.",
+        html: t("note.lengthOnly"),
       });
     }
     into.replaceChildren(
@@ -770,10 +780,10 @@ export default async function mount(thingport) {
         const id = `pce-f-${field.key}`;
         const control = field.choices
           ? `<select id="${id}">${field.choices.map((choice) => `<option value="${escapeHtml(choice.value)}"${choice.value === field.value ? " selected" : ""}>${escapeHtml(choice.text)}</option>`).join("")}</select>`
-          : `<input id="${id}" type="number" step="${field.step}" min="0" value="${field.value}" />${field.unit ? `<i>${escapeHtml(field.unit)}</i>` : ""}`;
+          : `<input id="${id}" type="number" step="${field.step}" min="0" value="${field.value}" />${field.unit ? `<i>${escapeHtml(t(field.unit))}</i>` : ""}`;
         wrap.innerHTML = `
-          <label for="${id}">${escapeHtml(field.label)}${field.manual ? " ·" : ""}
-            <button type="button" class="pce-help" tabindex="0" aria-label="${escapeHtml(`${field.label}: ${field.help}`)}" title="${escapeHtml(field.help)}">?</button>
+          <label for="${id}">${escapeHtml(t(field.label))}${field.manual ? " ·" : ""}
+            <button type="button" class="pce-help" tabindex="0" aria-label="${escapeHtml(`${t(field.label)}: ${t(field.help)}`)}" title="${escapeHtml(t(field.help))}">?</button>
           </label>
           <div class="pce-in${field.manual ? " pce-in-set" : ""}">${control}</div>`;
         const input = wrap.querySelector("input, select");
@@ -807,7 +817,7 @@ export default async function mount(thingport) {
       return;
     }
     const { priced } = figures;
-    hint.textContent = item.kind === "sliced" ? "From the slicer" : "An estimate";
+    hint.textContent = item.kind === "sliced" ? t("kind.fromSlicer") : t("kind.estimate");
 
     const total = Math.max(priced.cost, 0.0001);
     const segments = LAYERS.map((layer) => ({ ...layer, value: priced.parts[layer.key] ?? 0 }));
@@ -883,13 +893,12 @@ export default async function mount(thingport) {
     closeMenu();
     const figures = figuresOf(item);
     const actions = [
-      item.source && { label: "Open it in Thingport", icon: ICONS.open, run: () => models.open(item.source.modelId) },
-      figures && { label: "Save this estimate", icon: ICONS.save, run: () => saveEstimate(item) },
-      figures &&
-        item.source && { label: "Add it to the model's notes", icon: ICONS.note, run: () => noteOnModel(item) },
-      figures && { label: "Copy the figures", icon: ICONS.copy, run: () => copyFigures(item) },
+      item.source && { label: t("part.open"), icon: ICONS.open, run: () => models.open(item.source.modelId) },
+      figures && { label: t("part.save"), icon: ICONS.save, run: () => saveEstimate(item) },
+      figures && item.source && { label: t("notes.add"), icon: ICONS.note, run: () => noteOnModel(item) },
+      figures && { label: t("part.copy"), icon: ICONS.copy, run: () => copyFigures(item) },
       Object.keys(item.manual).length > 0 && {
-        label: "Back to the measured figures",
+        label: t("part.backToMeasured"),
         icon: ICONS.undo,
         run: () => {
           item.manual = {};
@@ -897,7 +906,7 @@ export default async function mount(thingport) {
         },
       },
       { divider: true },
-      { label: "Remove it", icon: ICONS.remove, danger: true, run: () => remove(item) },
+      { label: t("part.remove"), icon: ICONS.remove, danger: true, run: () => remove(item) },
     ].filter(Boolean);
 
     const element = document.createElement("div");
@@ -942,7 +951,7 @@ export default async function mount(thingport) {
       `Price: ${money(figures.priced.recommended)} (${clean(business().margin, 40)}% margin)`,
     ].join("\n");
     await navigator.clipboard.writeText(text);
-    ui.toast("The figures are on the clipboard", "success");
+    ui.toast(t("toast.copied"), "success");
   }
 
   function saveEstimate(item) {
@@ -966,23 +975,23 @@ export default async function mount(thingport) {
     });
     saved = saved.slice(0, SAVED_LIMIT);
     void keepSaved();
-    ui.toast("Saved", "success");
+    ui.toast(t("toast.saved"), "success");
   }
 
   /** Writes the estimate into the model's notes, under a line of its own, leaving what's there alone. */
   async function noteOnModel(item) {
     const figures = figuresOf(item);
-    const text = `Print cost estimate (${new Date().toLocaleDateString()}): ${timeText(figures.hours)}, ${figures.grams.toFixed(1)} g, ${money(figures.priced.cost)} to make, ${money(figures.priced.recommended)} to charge — ${printer().name}, ${material().name}, ${item.kind === "sliced" ? "from the sliced file" : "estimated from the shape"}.`;
+    const text = `Print cost estimate (${new Date().toLocaleDateString()}): ${timeText(figures.hours)}, ${figures.grams.toFixed(1)} g, ${money(figures.priced.cost)} to make, ${money(figures.priced.recommended)} to charge — ${printer().name}, ${material().name}, ${item.kind === "sliced" ? t("source.fromSliced") : t("source.estimated")}.`;
     const yes = await ui.confirm({
-      title: "Add it to the model's notes?",
+      title: t("notes.confirmTitle"),
       message: `This is added to the end of “${item.source.modelName}”'s notes:\n\n${text}`,
-      confirmLabel: "Add it",
+      confirmLabel: t("notes.addShort"),
     });
     if (!yes) return;
     const model = await models.get(item.source.modelId);
     const description = model.description?.trim() ? `${model.description.trim()}\n\n${text}` : text;
     await models.update(item.source.modelId, { description });
-    ui.toast("Added to the model's notes", "success");
+    ui.toast(t("notes.added"), "success");
   }
 
   const csvCell = (value) => {
@@ -993,30 +1002,30 @@ export default async function mount(thingport) {
 
   function exportQueue() {
     const done = items.filter((item) => item.status === "done");
-    if (!done.length) return ui.toast("Nothing to export yet", "warning");
+    if (!done.length) return ui.toast(t("saved.nothingToExport"), "warning");
     const b = business();
     const rows = [
       [
-        "Part",
-        "From",
-        "Source",
-        "Print time (h)",
-        "Filament (g)",
-        "Purge (g)",
+        t("csv.part"),
+        t("csv.from"),
+        t("facts.source"),
+        t("csv.hours"),
+        t("csv.filament"),
+        t("csv.purge"),
         `Cost (${b.currency})`,
         `Price (${b.currency})`,
-        "Quantity",
+        t("csv.quantity"),
         `Order (${b.currency})`,
-        "Printer",
-        "Filament",
-        "Margin (%)",
+        t("money.printer"),
+        t("money.filament"),
+        t("csv.margin"),
       ],
       ...done.map((item) => {
         const figures = figuresOf(item);
         return [
           item.name,
-          item.kind === "sliced" ? (item.sliced.slicer ?? "a slicer") : "its shape",
-          item.source?.modelName ?? "a file",
+          item.kind === "sliced" ? (item.sliced.slicer ?? t("source.slicer")) : t("source.shape"),
+          item.source?.modelName ?? t("source.aFile"),
           round(figures.hours, 3),
           round(figures.grams, 2),
           round(figures.purgeGrams, 2),
@@ -1034,26 +1043,26 @@ export default async function mount(thingport) {
   }
 
   function exportSaved() {
-    if (!saved.length) return ui.toast("Nothing saved yet", "warning");
+    if (!saved.length) return ui.toast(t("saved.none"), "warning");
     const rows = [
       [
-        "Saved",
-        "Part",
-        "Model",
-        "From",
-        "Print time (h)",
-        "Filament (g)",
-        "Cost",
-        "Price",
-        "Currency",
-        "Printer",
-        "Filament",
+        t("csv.saved"),
+        t("csv.part"),
+        t("facts.model"),
+        t("csv.from"),
+        t("csv.hours"),
+        t("csv.filament"),
+        t("csv.cost"),
+        t("csv.price"),
+        t("csv.currency"),
+        t("money.printer"),
+        t("money.filament"),
       ],
       ...saved.map((entry) => [
         entry.at.slice(0, 16).replace("T", " "),
         entry.name,
         entry.modelName ?? "",
-        entry.kind === "sliced" ? "a slicer" : "its shape",
+        entry.kind === "sliced" ? t("source.slicer") : t("source.shape"),
         entry.hours,
         entry.grams,
         entry.cost,
@@ -1106,177 +1115,177 @@ export default async function mount(thingport) {
 
   const SETUP = {
     printer: {
-      title: "Printer",
+      title: "setup.printer",
       groups: [
         {
-          title: "What it costs to own",
+          title: "setup.printer.g1",
           fields: [
             {
               key: "price",
-              label: "What it cost",
+              label: "setup.f.price",
               unit: business().currency,
-              help: "What the machine cost, upgrades and spare parts included.",
+              help: "setup.f.price.help",
             },
             {
               key: "lifespan",
-              label: "Hours it will last",
-              unit: "h",
-              help: "How many printing hours you expect out of it before retiring it. Its cost is spread over those hours, the way a shop writes a machine off.",
+              label: "setup.f.lifespan",
+              unit: "unit.h",
+              help: "setup.f.lifespan.help",
             },
             {
               key: "watts",
-              label: "Power",
-              unit: "W",
-              help: "Average watts while printing. PLA on an enclosed printer sits around 100–120 W; a hot bed pushes it higher.",
+              label: "setup.f.watts",
+              unit: "unit.W",
+              help: "setup.f.watts.help",
             },
             {
               key: "kwhPrice",
-              label: "Electricity",
+              label: "setup.f.kwhPrice",
               unit: "/kWh",
               step: 0.01,
-              help: "What a kilowatt-hour costs you. It's on your bill.",
+              help: "setup.f.kwhPrice.help",
             },
             {
               key: "failRate",
-              label: "Prints that fail",
+              label: "setup.f.failRate",
               unit: "%",
-              help: "Out of a hundred prints, how many go in the bin. Leaving it at zero claims you never fail, which is exactly the assumption that quietly loses money.",
+              help: "setup.f.failRate.help",
             },
           ],
         },
         {
-          title: "The bed",
+          title: "setup.printer.g2",
           fields: [
-            { key: "bedX", label: "Width", unit: "mm" },
-            { key: "bedY", label: "Depth", unit: "mm" },
-            { key: "bedZ", label: "Height", unit: "mm" },
+            { key: "bedX", label: "setup.f.bedX", unit: "unit.mm" },
+            { key: "bedY", label: "setup.f.bedY", unit: "unit.mm" },
+            { key: "bedZ", label: "setup.f.bedZ", unit: "unit.mm" },
           ],
         },
         {
-          title: "How it prints",
-          hint: "What the estimate from a shape is built on. A sliced file's own figures are used instead whenever there are any.",
+          title: "setup.printer.g3",
+          hint: "setup.printer.g3.hint",
           fields: [
-            { key: "layerHeight", label: "Layer height", unit: "mm", step: 0.02 },
+            { key: "layerHeight", label: "setup.f.layerHeight", unit: "unit.mm", step: 0.02 },
             {
               key: "lineWidth",
-              label: "Line width",
-              unit: "mm",
+              label: "setup.f.lineWidth",
+              unit: "unit.mm",
               step: 0.02,
-              help: "The width of one extruded line, usually a little over the nozzle's size.",
+              help: "setup.f.lineWidth.help",
             },
-            { key: "walls", label: "Walls", unit: "lines", help: "How many lines thick the outside is." },
+            { key: "walls", label: "setup.f.walls", unit: "unit.lines", help: "setup.f.walls.help" },
             {
               key: "solidLayers",
-              label: "Solid layers",
-              unit: "each",
-              help: "Solid layers on the top and on the bottom, each.",
+              label: "setup.f.solidLayers",
+              unit: "unit.each",
+              help: "setup.f.solidLayers.help",
             },
-            { key: "infill", label: "Infill", unit: "%" },
-            { key: "speed", label: "Speed", unit: "mm/s", help: "The printing speed your profile asks for." },
+            { key: "infill", label: "setup.f.infill", unit: "%" },
+            { key: "speed", label: "setup.f.speed", unit: "mm/s", help: "setup.f.speed.help" },
             {
               key: "efficiency",
-              label: "Speed reached",
+              label: "setup.f.efficiency",
               unit: "%",
-              help: "The share of that speed actually reached: the printer is forever accelerating into a corner, so it never holds the full figure. This is the dial to turn if the estimated time comes out wrong — raise it if the estimate is long, lower it if it's short.",
+              help: "setup.f.efficiency.help",
             },
             {
               key: "perLayer",
-              label: "Lost a layer",
-              unit: "s",
-              help: "Seconds a layer that aren't extruding: travel, the Z move, the seam, retractions.",
+              label: "setup.f.perLayer",
+              unit: "unit.s",
+              help: "setup.f.perLayer.help",
             },
           ],
         },
         {
-          title: "Supports",
+          title: "setup.printer.g4",
           fields: [
             {
               key: "supports",
-              label: "Count supports",
+              label: "setup.f.supports",
               toggle: true,
-              help: "Whether to add what supports would weigh to the estimate.",
+              help: "setup.f.supports.help",
             },
             {
               key: "overhang",
-              label: "Overhang from",
+              label: "setup.f.overhang",
               unit: "°",
-              help: "A face shallower than this needs holding up. Slicers call it the support threshold; 45° is the usual.",
+              help: "setup.f.overhang.help",
             },
-            { key: "supportDensity", label: "Support density", unit: "%" },
+            { key: "supportDensity", label: "setup.f.supportDensity", unit: "%" },
           ],
         },
       ],
     },
     material: {
-      title: "Filament",
+      title: "setup.material",
       groups: [
         {
-          title: "The spool",
+          title: "setup.material.g1",
           fields: [
             {
               key: "density",
-              label: "Density",
+              label: "setup.f.density",
               unit: "g/cm³",
               step: 0.01,
-              help: "What a cubic centimetre of it weighs. PLA is 1.24, PETG 1.27, ABS 1.04 — the spool's label says.",
+              help: "setup.f.density.help",
             },
             {
               key: "spoolPrice",
-              label: "Spool price",
+              label: "setup.f.spoolPrice",
               unit: business().currency,
-              help: "What you paid for the whole spool, postage included.",
+              help: "setup.f.spoolPrice.help",
             },
             {
               key: "spoolWeight",
-              label: "Spool holds",
-              unit: "g",
-              help: "Grams of filament on it, not counting the reel. 1 kg is standard; 750 g and 250 g spools exist.",
+              label: "setup.f.spoolWeight",
+              unit: "unit.g",
+              help: "setup.f.spoolWeight.help",
             },
           ],
         },
       ],
     },
     business: {
-      title: "You",
+      title: "setup.business",
       groups: [
         {
-          title: "Your rates",
+          title: "setup.business.g1",
           fields: [
             {
               key: "hourlyRate",
-              label: "Your hour",
+              label: "setup.f.hourlyRate",
               unit: business().currency,
-              help: "What you want to be paid an hour. If you're unsure, start with what your day job pays you.",
+              help: "setup.f.hourlyRate.help",
             },
             {
               key: "postMinutes",
-              label: "Work a part",
-              unit: "min",
-              help: "The default minutes of your own work on a part. Each part can be given its own.",
+              label: "setup.f.postMinutes",
+              unit: "unit.min",
+              help: "setup.f.postMinutes.help",
             },
             {
               key: "packaging",
-              label: "Packaging",
+              label: "setup.f.packaging",
               unit: business().currency,
-              help: "Bag, box, label and filler for one.",
+              help: "setup.f.packaging.help",
             },
             {
               key: "fee",
-              label: "Platform fee",
+              label: "setup.f.fee",
               unit: "%",
-              help: "What the platform keeps, commission and card charges together. It's taken off the selling price, as the platform takes it. Selling in person, it's zero.",
+              help: "setup.f.fee.help",
             },
             {
               key: "margin",
-              label: "Margin you want",
+              label: "setup.f.margin",
               unit: "%",
-              help: "What you want on top of the cost. Below 20% there's nothing left to reinvest or to absorb a surprise.",
+              help: "setup.f.margin.help",
             },
             {
               key: "currency",
-              label: "Currency",
+              label: "setup.f.currency",
               text: true,
-              help: "The sign to put in front of the money. Nothing is converted: type the figures in whatever you sell in.",
+              help: "setup.f.currency.help",
             },
           ],
         },
@@ -1286,6 +1295,14 @@ export default async function mount(thingport) {
 
   let setupTab = "printer";
 
+  // One picture per section in the side menu, as the app's Configuration has.
+  const SETUP_ICONS = {
+    printer:
+      '<path d="M6 9V3h12v6M6 18H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-1"/><path d="M6 14h12v7H6z"/>',
+    material: '<path d="M7 3h10v4H7zM7 17h10v4H7z"/><path d="M8.5 7v10M15.5 7v10"/><circle cx="12" cy="12" r="1"/>',
+    business: '<circle cx="12" cy="8" r="3.2"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>',
+  };
+
   function renderSetup() {
     const tabs = $("setup-tabs");
     tabs.replaceChildren(
@@ -1294,7 +1311,8 @@ export default async function mount(thingport) {
         button.type = "button";
         button.setAttribute("role", "tab");
         button.setAttribute("aria-selected", String(key === setupTab));
-        button.textContent = section.title;
+        button.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SETUP_ICONS[key] ?? ""}</svg>`;
+        button.append(t(section.title));
         button.addEventListener("click", () => {
           setupTab = key;
           renderSetup();
@@ -1314,12 +1332,12 @@ export default async function mount(thingport) {
       const chooser = document.createElement("div");
       chooser.className = "pce-group";
       chooser.innerHTML = `
-        <h3>${setupTab === "printer" ? "Which printer" : "Which filament"}</h3>
+        <h3>${setupTab === "printer" ? t("setup.whichPrinter") : t("setup.whichFilament")}</h3>
         <div class="pce-actions">
-          <div class="pce-in" style="flex:1 1 140px"><select id="pce-which" aria-label="${setupTab === "printer" ? "Which printer" : "Which filament"}">
-            ${list.map((entry, index) => `<option value="${index}"${index === (setupTab === "printer" ? setup.printer : setup.material) ? " selected" : ""}>${escapeHtml(entry.name || "Unnamed")}</option>`).join("")}
+          <div class="pce-in" style="flex:1 1 140px"><select id="pce-which" aria-label="${setupTab === "printer" ? t("setup.whichPrinter") : t("setup.whichFilament")}">
+            ${list.map((entry, index) => `<option value="${index}"${index === (setupTab === "printer" ? setup.printer : setup.material) ? " selected" : ""}>${escapeHtml(entry.name || t("common.unnamed"))}</option>`).join("")}
           </select></div>
-          <div class="pce-in" style="flex:1 1 140px"><input id="pce-which-name" value="${escapeHtml(target.name ?? "")}" aria-label="Its name" placeholder="Its name" /></div>
+          <div class="pce-in" style="flex:1 1 140px"><input id="pce-which-name" value="${escapeHtml(target.name ?? "")}" aria-label=t("setup.itsName") placeholder=t("setup.itsName") /></div>
           <button type="button" class="pce-btn" id="pce-which-add">Add another</button>
           <button type="button" class="pce-btn" id="pce-which-drop"${list.length < 2 ? " disabled" : ""}>Remove</button>
         </div>`;
@@ -1340,10 +1358,10 @@ export default async function mount(thingport) {
       chooser.querySelector("#pce-which-name").addEventListener("change", () => renderSetup());
       chooser.querySelector("#pce-which-add").addEventListener("click", () => {
         if (setupTab === "printer") {
-          setup.printers.push({ ...target, name: `${target.name || "Printer"} copy` });
+          setup.printers.push({ ...target, name: t("setup.copyOf", { name: target.name || t("money.printer") }) });
           setup.printer = setup.printers.length - 1;
         } else {
-          setup.materials.push({ ...target, name: `${target.name || "Filament"} copy` });
+          setup.materials.push({ ...target, name: t("setup.copyOf", { name: target.name || t("money.filament") }) });
           setup.material = setup.materials.length - 1;
         }
         keepSetup();
@@ -1391,7 +1409,7 @@ export default async function mount(thingport) {
     for (const group of section.groups) {
       const box = document.createElement("div");
       box.className = "pce-group";
-      box.innerHTML = `<h3>${escapeHtml(group.title)}</h3>${group.hint ? `<p class="pce-hint" style="margin:0">${escapeHtml(group.hint)}</p>` : ""}<div class="pce-fields"></div>`;
+      box.innerHTML = `<h3>${escapeHtml(t(group.title))}</h3>${group.hint ? `<p class="pce-hint" style="margin:0">${escapeHtml(t(group.hint))}</p>` : ""}<div class="pce-fields"></div>`;
       const into = box.querySelector(".pce-fields");
       for (const field of group.fields) {
         const wrap = document.createElement("div");
@@ -1400,10 +1418,10 @@ export default async function mount(thingport) {
         const value = target[field.key];
         const control = field.text
           ? `<input id="${id}" type="text" value="${escapeHtml(value ?? "")}" maxlength="4" />`
-          : `<input id="${id}" type="number" step="${field.step ?? 1}" min="0" value="${clean(value, 0)}" />${field.unit ? `<i>${escapeHtml(field.unit)}</i>` : ""}`;
+          : `<input id="${id}" type="number" step="${field.step ?? 1}" min="0" value="${clean(value, 0)}" />${field.unit ? `<i>${escapeHtml(t(field.unit))}</i>` : ""}`;
         wrap.innerHTML = `
-          <label for="${id}">${escapeHtml(field.label)}
-            ${field.help ? `<button type="button" class="pce-help" aria-label="${escapeHtml(`${field.label}: ${field.help}`)}" title="${escapeHtml(field.help)}">?</button>` : ""}
+          <label for="${id}">${escapeHtml(t(field.label))}
+            ${field.help ? `<button type="button" class="pce-help" aria-label="${escapeHtml(`${t(field.label)}: ${t(field.help)}`)}" title="${escapeHtml(t(field.help))}">?</button>` : ""}
           </label>
           ${
             field.toggle
@@ -1454,11 +1472,9 @@ export default async function mount(thingport) {
           files: model.files.filter((file) => isMeshFile(file.name) || isSlicedName(file.name)),
         }))
         .filter((entry) => entry.files.length);
-      $("picker-hint").textContent = usable.length
-        ? "Pick a file to measure it. A sliced file brings the slicer's own time and weight."
-        : "";
+      $("picker-hint").textContent = usable.length ? t("library.hint") : "";
       if (!usable.length) {
-        found.innerHTML = `<li class="pce-empty">${q ? `Nothing matching “${escapeHtml(q)}” has a file this can read.` : "No models with an STL, OBJ, 3MF or sliced file yet."}</li>`;
+        found.innerHTML = `<li class="pce-empty">${q ? escapeHtml(t("library.noMatch", { query: q })) : t("library.none")}</li>`;
         return;
       }
       found.replaceChildren(
@@ -1522,8 +1538,8 @@ export default async function mount(thingport) {
           const open = document.createElement("button");
           open.type = "button";
           open.className = "pce-btn pce-icon";
-          open.title = `Open ${entry.modelName ?? "the model"}`;
-          open.setAttribute("aria-label", `Open ${entry.modelName ?? "the model"} in Thingport`);
+          open.title = `Open ${entry.modelName ?? t("source.model")}`;
+          open.setAttribute("aria-label", `Open ${entry.modelName ?? t("source.model")} in Thingport`);
           open.innerHTML = ICONS.open;
           open.addEventListener("click", () => models.open(entry.modelId));
           actions.append(open);
@@ -1531,7 +1547,7 @@ export default async function mount(thingport) {
         const drop = document.createElement("button");
         drop.type = "button";
         drop.className = "pce-btn pce-icon pce-danger";
-        drop.title = "Forget it";
+        drop.title = t("saved.forget");
         drop.setAttribute("aria-label", `Forget the estimate for ${entry.name}`);
         drop.innerHTML = ICONS.remove;
         drop.addEventListener(
@@ -1569,7 +1585,7 @@ export default async function mount(thingport) {
 
   // Files dropped anywhere on the window, not only on the zone.
   let dragDepth = 0;
-  const hasFiles = (event) => [...(event.dataTransfer?.types ?? [])].includes("Files");
+  const hasFiles = (event) => [...(event.dataTransfer?.types ?? [])].includes(t("facts.files"));
   const onDragEnter = (event) => {
     if (!hasFiles(event)) return;
     dragDepth++;
@@ -1620,9 +1636,9 @@ export default async function mount(thingport) {
     safely(async () => {
       if (!items.length) return;
       const yes = await ui.confirm({
-        title: "Remove every part?",
-        message: `${items.length} ${items.length === 1 ? "part goes" : "parts go"} from the list. Saved estimates stay.`,
-        confirmLabel: "Remove them",
+        title: t("parts.clearTitle"),
+        message: `${items.length} ${items.length === 1 ? t("order.partGoes") : t("order.partsGo")} from the list. Saved estimates stay.`,
+        confirmLabel: t("parts.clearConfirm"),
         destructive: true,
       });
       if (!yes) return;
@@ -1641,9 +1657,9 @@ export default async function mount(thingport) {
     "click",
     safely(async () => {
       const yes = await ui.confirm({
-        title: "Back to the defaults?",
-        message: "Your printers, filaments and rates go back to how they started.",
-        confirmLabel: "Reset them",
+        title: t("setup.resetTitle"),
+        message: t("setup.resetBody"),
+        confirmLabel: t("setup.resetConfirm"),
         destructive: true,
       });
       if (!yes) return;
@@ -1690,6 +1706,7 @@ export default async function mount(thingport) {
 
   const stopResize = thingport.onResize(() => viewer?.redraw());
 
+  labels();
   renderAll();
 
   return () => {
