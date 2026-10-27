@@ -60,6 +60,8 @@ export type PrintMetaInput = {
   /** Backs de-duplication of future imports of the same source model. */
   sourceProvider?: string | null;
   sourceExternalId?: string | null;
+  /** The source has the script this model is generated from, but its creator chose not to share it. */
+  generatorScriptWithheld?: boolean;
 };
 
 /** Never over another file: a link fails on one that's there, where a rename would replace it. Only the placing is
@@ -233,6 +235,7 @@ export async function createPrint(
       authorId: meta.authorId ?? null,
       sourceProvider: meta.sourceProvider ?? null,
       sourceExternalId: meta.sourceExternalId ?? null,
+      generatorScriptWithheld: meta.generatorScriptWithheld ?? false,
     },
   });
   // Chosen now, though nothing is in it yet, so a null assetsPath only ever means a model from before (see

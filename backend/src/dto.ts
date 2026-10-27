@@ -173,6 +173,9 @@ export type PrintOut = {
    *  for an ordinary model. Here rather than behind a request of its own because the files are already loaded,
    *  and because a list of models needs it too: it is what marks one as generated rather than only printed. */
   generator_scripts: { id: string; filename: string }[];
+  /** The source had a script for this model but its creator chose not to share it, so there is none to open.
+   *  Without it, that is indistinguishable from a model that never had one. */
+  generator_script_withheld: boolean;
   /** All plates plus supporting and prepared files; gallery images aren't counted. */
   total_size: number;
   prepared_print: PreparedPrintOut | null;
@@ -383,6 +386,7 @@ export function toPrintOut(
     render_url: plateOuts.find((plate) => plate.render_url)?.render_url ?? null,
     supporting_file_count: supportingCount,
     generator_scripts: generatorScripts,
+    generator_script_withheld: print.generatorScriptWithheld,
     total_size: totalSize,
     prepared_print: prepared,
     slicer_url: slicerUrl,

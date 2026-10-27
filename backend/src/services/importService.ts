@@ -1107,6 +1107,7 @@ async function createSourcedPrint(
       authorId: author?.id ?? null,
       sourceProvider: source.provider,
       sourceExternalId: source.externalId,
+      generatorScriptWithheld: meta.parametricSource?.withheld === true,
     };
     let created: { print: Print; plates: Plate[] };
     try {
@@ -1353,6 +1354,7 @@ async function importLinkedFile(
     authorId: author?.id ?? null,
     sourceProvider: source?.provider ?? null,
     sourceExternalId: source?.externalId ?? null,
+    generatorScriptWithheld: meta.parametricSource?.withheld === true,
   };
 
   try {

@@ -173,6 +173,11 @@ model Print {
   sourceExternalId         String?
   // Gaps (see services/sourceGaps.ts) the source had nothing for at the last fill.
   unfillableGaps           String[]                 @default([])
+  // The source published the script this model is generated from, but its creator chose not to share it. Worth
+  // keeping, because from the outside a withheld script and a model that never had one look identical: no script
+  // beside it and no way to customize it. The site says so only at import, and answers the request for a withheld
+  // one with an empty download rather than a refusal.
+  generatorScriptWithheld  Boolean                  @default(false)
   categoryId               String?
   category                 Category?                @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   categorySource           CategorySource?

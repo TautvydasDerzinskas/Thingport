@@ -78,6 +78,11 @@ describe("models that came with a generator script", () => {
     expect(ids(only.body)).toEqual([generated]);
   });
 
+  it("starts as not withheld, which is what an uploaded model is", async () => {
+    const res = await request(app).get(`/api/print/${plain}`).set(auth());
+    expect(res.body.generator_script_withheld).toBe(false);
+  });
+
   it("goes by the file beside the model, not by its plates", async () => {
     // A model whose *plate* happens to be named like a script is still an ordinary model: a plate is geometry.
     const odd = await makeModel(`Odd ${stamp}`);
