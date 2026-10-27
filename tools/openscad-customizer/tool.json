@@ -1,0 +1,34 @@
+{
+  "name": "Script customizer",
+  "description": "Generates a model again from the OpenSCAD script it came with: its own sliders, choices and text, rendered here and saved back into your library.",
+  "version": "1.0.0",
+  "author": "Thingport contributors",
+  "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
+  "window": {
+    "width": 1180,
+    "height": 820
+  },
+  "hosts": [],
+  "category": "generators",
+  "locales": [
+    "en",
+    "lt",
+    "es",
+    "fr"
+  ],
+  "screenshots": [
+    {
+      "file": "screenshots/keychain.webp",
+      "caption": "A keychain generated from the script it was imported with: the author's own text, typeface and sizes, changed here and rendered in under a second."
+    },
+    {
+      "file": "screenshots/configurator.webp",
+      "caption": "A drawer configurator with sixty-five parameters in sixteen groups, folded so the first is open; what the engine had to say about the model is under the preview."
+    },
+    {
+      "file": "screenshots/keychain-light.webp",
+      "caption": "The same keychain in the light theme, with the dropdowns the script declares rather than free text boxes."
+    }
+  ],
+  "iconUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2048%2048%22%3E%3Cpath%20d%3D%22M24%204%2042%2014v20L24%2044%206%2034V14Z%22%20fill%3D%22%23f9a825%22%2F%3E%3Cpath%20d%3D%22M24%204%2042%2014%2024%2024%206%2014Z%22%20fill%3D%22%23ffd54f%22%2F%3E%3Cpath%20d%3D%22M6%2014%2024%2024v20L6%2034Z%22%20fill%3D%22%23ef6c00%22%20opacity%3D%22.85%22%2F%3E%3Cpath%20d%3D%22M24%2024%2042%2014v20L24%2044Z%22%20fill%3D%22%23e65100%22%20opacity%3D%22.7%22%2F%3E%3Ccircle%20cx%3D%2233%22%20cy%3D%2230%22%20r%3D%227.5%22%20fill%3D%22%23263238%22%20opacity%3D%22.9%22%2F%3E%3Cpath%20d%3D%22M33%2026v8M29%2030h8%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E"
+}
