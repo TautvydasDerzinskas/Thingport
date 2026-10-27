@@ -933,6 +933,12 @@
     gap: 6px;
     z-index: 2;
   }
+  /* These two float over the stage, so they're only as wide as their words: sharing a width out of a box that
+     shrinks to fit clips the longest label. */
+  .qrg-views button,
+  .qrg-turn button {
+    flex: 0 0 auto;
+  }
   .qrg-flat {
     position: absolute;
     inset: 0;
