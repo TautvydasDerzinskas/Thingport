@@ -68,6 +68,7 @@
   "toast.copyFailed": "Copie impossible : le navigateur a bloqué le presse-papiers",
   "toast.listDownloaded": "Liste des pièces téléchargée",
   "toast.nothingToSave": "Aucune pièce de ce mur n'est encore dans Thingport, il n'y a donc rien à enregistrer.",
+  "toast.partFailed": "Impossible d'enregistrer « {part} » : {reason}",
   "toast.saveFailed": "L'enregistrement a échoué.",
   "toast.saved": "« {name} » enregistré dans {collection}",
   "unused.title": "Espace inutilisé",

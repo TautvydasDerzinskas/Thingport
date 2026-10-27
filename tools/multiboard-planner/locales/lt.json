@@ -68,6 +68,7 @@
   "toast.copyFailed": "Nukopijuoti nepavyko: naršyklė užblokavo iškarpinę",
   "toast.listDownloaded": "Dalių sąrašas atsisiųstas",
   "toast.nothingToSave": "Nė vienos šios sienos dalies dar nėra Thingport, tad nėra ko įrašyti.",
+  "toast.partFailed": "Nepavyko įrašyti „{part}“: {reason}",
   "toast.saveFailed": "Įrašyti nepavyko.",
   "toast.saved": "„{name}“ įrašyta į {collection}",
   "unused.title": "Nepanaudota erdvė",

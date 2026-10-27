@@ -1228,16 +1228,21 @@ ${rows}
       const files = [];
       const used = new Set();
       for (const part of parts) {
-        const model = await models.get(part.copy.printId);
-        for (const file of model.files) {
-          const dot = file.name.lastIndexOf(".");
-          const stem = dot > 0 ? file.name.slice(0, dot) : file.name;
-          const extension = dot > 0 ? file.name.slice(dot) : "";
-          let name = `${part.quantity}x ${stem}${extension}`;
-          // Two parts can ship a file of the same name; keep both rather than losing one.
-          for (let n = 2; used.has(name); n++) name = `${part.quantity}x ${stem} (${n})${extension}`;
-          used.add(name);
-          files.push({ name, data: await models.file(part.copy.printId, file.id) });
+        try {
+          const model = await models.get(part.copy.printId);
+          for (const file of model.files) {
+            const dot = file.name.lastIndexOf(".");
+            const stem = dot > 0 ? file.name.slice(0, dot) : file.name;
+            const extension = dot > 0 ? file.name.slice(dot) : "";
+            let name = `${part.quantity}x ${stem}${extension}`;
+            // Two parts can ship a file of the same name; keep both rather than losing one.
+            for (let n = 2; used.has(name); n++) name = `${part.quantity}x ${stem} (${n})${extension}`;
+            used.add(name);
+            files.push({ name, data: await models.file(part.copy.printId, file.id) });
+          }
+        } catch (err) {
+          // A wall has dozens of parts, so which one failed matters more than which file inside it.
+          throw new Error(t("toast.partFailed", { part: part.name, reason: err.message }), { cause: err });
         }
       }
       const saved = await models.create({

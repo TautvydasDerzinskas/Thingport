@@ -68,6 +68,7 @@
   "toast.copyFailed": "Copy failed: the browser blocked the clipboard",
   "toast.listDownloaded": "Parts list downloaded",
   "toast.nothingToSave": "None of this wall's parts are in Thingport yet, so there's nothing to save.",
+  "toast.partFailed": "Couldn't save \"{part}\": {reason}",
   "toast.saveFailed": "That wouldn't save.",
   "toast.saved": "Saved \"{name}\" to {collection}",
   "unused.title": "Unused space",

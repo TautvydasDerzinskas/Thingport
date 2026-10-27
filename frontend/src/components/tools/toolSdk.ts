@@ -183,7 +183,10 @@ export function buildToolSdk({ tool, root, selector, theme, language, languages,
       const file = fileId ? model.files.find((f) => f.id === fileId) : model.files[0];
       if (!file) throw new Error("The model has no such file");
       const res = await fetch(file.url);
-      if (!res.ok) throw new Error(`Couldn't read ${file.name}`);
+      // A 404 here means the row is in the library but the file isn't in storage, which reads as a mystery
+      // unless the message says so.
+      if (res.status === 404) throw new Error(`${file.name} is missing from Thingport's storage`);
+      if (!res.ok) throw new Error(`Couldn't read ${file.name} (HTTP ${res.status})`);
       return res.arrayBuffer();
     },
     /** A new model of the files given, each a plate, saved into a collection when one is given. */

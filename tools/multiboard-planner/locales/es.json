@@ -68,6 +68,7 @@
   "toast.copyFailed": "No se pudo copiar: el navegador bloqueó el portapapeles",
   "toast.listDownloaded": "Lista de piezas descargada",
   "toast.nothingToSave": "Ninguna pieza de esta pared está todavía en Thingport, así que no hay nada que guardar.",
+  "toast.partFailed": "No se pudo guardar «{part}»: {reason}",
   "toast.saveFailed": "No se pudo guardar.",
   "toast.saved": "«{name}» guardada en {collection}",
   "unused.title": "Espacio sin usar",
