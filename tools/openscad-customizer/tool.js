@@ -287,7 +287,7 @@ export function createViewer(host, { library, theme }) {
 
 
 export default async function mount(thingport) {
-  const { root, theme, models, ui, t, labels, library } = thingport;
+  const { root, theme, models, ui, t, labels, library, context } = thingport;
   const $ = (id) => root.querySelector(`#osc-${id}`);
   const shell = root.querySelector(".osc");
 
@@ -700,5 +700,15 @@ export default async function mount(thingport) {
 
   labels();
   enable(false);
+
+  // Opened from a model's own menu rather than from the Tools page: that model's script is what to open.
+  if (context?.modelId) {
+    try {
+      await loadFromModel(await models.get(context.modelId));
+    } catch (err) {
+      ui.toast(t("error.unreadable", { reason: err.message }), "error");
+    }
+  }
+
   return () => viewer.dispose();
 }
