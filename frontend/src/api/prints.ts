@@ -95,6 +95,9 @@ export type Print = {
   supporting_file_count: number;
   /** The scripts it can be generated again from, out of the files kept beside it; empty for an ordinary model. */
   generator_scripts?: { id: string; filename: string }[];
+  /** The source had a script for it but its creator chose not to share it: there is none to open, and that is
+   *  why, which a model that simply never had one wouldn't explain. */
+  generator_script_withheld?: boolean;
   // Optional: an older backend (published separately) doesn't send it.
   total_size?: number;
   prepared_print?: PreparedPrint | null;

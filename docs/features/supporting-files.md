@@ -28,6 +28,7 @@ browser, so the script, the values you choose and the result all stay on your in
 
 **Generative**, above the model grid, narrows the library to the models that have one.
 
-Two things it can't do. A creator can choose not to share the script, and many don't; that model imports as
-usual, with no script to open. And the tool has to be installed first, from **Administration → Tools**, like any
-other.
+A creator can choose not to share the script, and many don't. That model still imports, and is marked **Script
+not shared** so it's clear why there's nothing to customise rather than leaving it looking like a model that
+never had one — only its creator can change that. The tool itself has to be installed first, from
+**Administration → Tools**, like any other.

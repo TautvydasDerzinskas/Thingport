@@ -12,6 +12,7 @@ import Tooltip from "@mui/material/Tooltip";
 import ButtonBase from "@mui/material/ButtonBase";
 import FolderIcon from "@mui/icons-material/Folder";
 import TuneIcon from "@mui/icons-material/Tune";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import StorageIcon from "@mui/icons-material/Storage";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PrintIcon from "@mui/icons-material/Print";
@@ -176,6 +177,19 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
               label={t("models:detail.generatedFromScript")}
               variant="outlined"
               sx={{ alignSelf: "flex-start" }}
+            />
+          </Tooltip>
+        )}
+
+        {/* Why there is nothing to customise here, which otherwise looks like a model that never had a script. */}
+        {print.generator_script_withheld && !hasGeneratorScript(print) && (
+          <Tooltip title={t("models:detail.scriptWithheldHint")}>
+            <Chip
+              size="small"
+              icon={<LockOutlinedIcon />}
+              label={t("models:detail.scriptWithheld")}
+              variant="outlined"
+              sx={{ alignSelf: "flex-start", color: "text.secondary" }}
             />
           </Tooltip>
         )}

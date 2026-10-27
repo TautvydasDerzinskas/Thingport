@@ -3734,7 +3734,9 @@
       "toolOwnedHint": "Jo negalima redaguoti ar ištrinti",
       "customize": "Keisti…",
       "generatedFromScript": "Sugeneruota iš scenarijaus",
-      "generatedFromScriptHint": "Šis modelis atkeliavo kartu su jį sugeneravusiu OpenSCAD scenarijumi, tad jį galima sugeneruoti iš naujo su kitomis reikšmėmis."
+      "generatedFromScriptHint": "Šis modelis atkeliavo kartu su jį sugeneravusiu OpenSCAD scenarijumi, tad jį galima sugeneruoti iš naujo su kitomis reikšmėmis.",
+      "scriptWithheld": "Scenarijus nepateiktas",
+      "scriptWithheldHint": "Šis modelis sukurtas iš scenarijaus, bet jo autorius nusprendė juo nesidalinti, tad čia nėra ko keisti. Tai pakeisti gali tik jis."
     },
     "edit": {
       "title": "Redaguoti modelį",

@@ -3635,7 +3635,9 @@
       "toolOwnedHint": "It can't be edited or deleted",
       "customize": "Customize…",
       "generatedFromScript": "Generated from a script",
-      "generatedFromScriptHint": "This model came with the OpenSCAD script it was generated from, so it can be generated again with other values."
+      "generatedFromScriptHint": "This model came with the OpenSCAD script it was generated from, so it can be generated again with other values.",
+      "scriptWithheld": "Script not shared",
+      "scriptWithheldHint": "This model was built from a script, but its creator chose not to share it, so there is nothing here to customise. Only they can change that."
     },
     "edit": {
       "title": "Edit model",
