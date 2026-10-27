@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -8,6 +8,7 @@ import IconButton from "@mui/material/IconButton";
 import Skeleton from "@mui/material/Skeleton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import ReplayIcon from "@mui/icons-material/Replay";
@@ -17,6 +18,7 @@ import { toolsApi, type Tool } from "../../api/tools";
 import { readUser } from "../../utils/auth";
 import Segmented from "../controls/Segmented";
 import HelpTip from "../HelpTip";
+import AiToolGuide from "./AiToolGuide";
 import ToolDetailsForm, { fromManifest, problems, toManifest, type ToolDraft } from "./ToolDetailsForm";
 import ToolIcon from "./ToolIcon";
 import ToolRunner from "./ToolRunner";
@@ -119,6 +121,8 @@ function Editor({ tool, onClose, onSaved, onUnauthorized }: Omit<Props, "open">)
   const [saving, setSaving] = useState(false);
   const [reference, setReference] = useState(true);
   const [run, setRun] = useState(0);
+  const [aiOpen, setAiOpen] = useState(false);
+  const aiButton = useRef<HTMLButtonElement>(null);
 
   const errors = useMemo(() => problems(draft), [draft]);
   const badLabels = useMemo(() => Object.keys(labels).filter((code) => labelProblem(labels[code])), [labels]);
@@ -217,6 +221,22 @@ function Editor({ tool, onClose, onSaved, onUnauthorized }: Omit<Props, "open">)
             { value: "preview", label: t("tools.editor.preview") },
           ]}
         />
+        {!tool && (
+          <>
+            <Typography variant="body2" color="text.secondary">
+              {t("tools.ai.or")}
+            </Typography>
+            <Button
+              ref={aiButton}
+              size="small"
+              variant="outlined"
+              startIcon={<AutoAwesomeOutlinedIcon fontSize="small" />}
+              onClick={() => setAiOpen(true)}
+            >
+              {t("tools.ai.open")}
+            </Button>
+          </>
+        )}
         <Box sx={{ flex: 1 }} />
         {part === "script" && (
           <Tooltip title={reference ? t("tools.editor.hideReference") : t("tools.editor.showReference")}>
@@ -363,6 +383,15 @@ function Editor({ tool, onClose, onSaved, onUnauthorized }: Omit<Props, "open">)
           </span>
         </Tooltip>
       </Box>
+      {aiOpen && (
+        <AiToolGuide
+          onClose={() => {
+            setAiOpen(false);
+            // Once the editor is reachable again.
+            requestAnimationFrame(() => aiButton.current?.focus());
+          }}
+        />
+      )}
     </>
   );
 }

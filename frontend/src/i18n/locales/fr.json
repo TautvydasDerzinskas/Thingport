@@ -2670,6 +2670,35 @@
         "cancel": "Annuler",
         "choose": "Choisir"
       },
+      "ai": {
+        "or": "ou",
+        "open": "Utiliser l'IA",
+        "title": "Créer un outil avec l'IA",
+        "back": "Retour à l'éditeur",
+        "connect": "Connecter une IA",
+        "step1": "Connectez votre assistant IA à Thingport via MCP.",
+        "step2": "Dans votre profil, donnez au jeton l'outil <strong>Enregistrer un outil</strong>.",
+        "step3": "Demandez l'outil que vous voulez, avec vos mots. Par exemple :",
+        "step4": "Il apparaît sur votre page Outils, prêt à ouvrir. Redemandez pour le changer, ou ajustez-le ici.",
+        "examplesLabel": "Exemples de demandes",
+        "examples": {
+          "label": {
+            "label": "Étiquettes",
+            "name": "Générateur d'étiquettes",
+            "prompt": "Fais-moi un outil Thingport qui transforme quelques mots en une étiquette imprimable et l'enregistre dans ma bibliothèque."
+          },
+          "box": {
+            "label": "Boîtes",
+            "name": "Générateur de boîtes",
+            "prompt": "Fais-moi un outil Thingport qui fabrique une boîte de n'importe quelle taille avec un couvercle, en millimètres."
+          },
+          "tidy": {
+            "label": "Étiquetage",
+            "name": "Assistant d'étiquettes",
+            "prompt": "Fais-moi un outil Thingport qui liste mes modèles sans tags et me laisse les taguer."
+          }
+        }
+      },
       "editor": {
         "newTitle": "Nouvel outil",
         "editTitle": "Modifier l'outil",

@@ -2643,6 +2643,35 @@
         "cancel": "Cancel",
         "choose": "Choose"
       },
+      "ai": {
+        "or": "or",
+        "open": "Use AI",
+        "title": "Build a tool with AI",
+        "back": "Back to the editor",
+        "connect": "Connect an AI",
+        "step1": "Connect your AI assistant to Thingport over MCP.",
+        "step2": "On your profile, give the token the <strong>Save a tool</strong> tool.",
+        "step3": "Ask for any tool, in your own words. For example:",
+        "step4": "It appears on your Tools page, ready to open. Ask again to change it, or fine-tune it here.",
+        "examplesLabel": "Example prompts",
+        "examples": {
+          "label": {
+            "label": "Label maker",
+            "name": "Label maker",
+            "prompt": "Make me a Thingport tool that turns a few words into a printable label and saves it to my library."
+          },
+          "box": {
+            "label": "Box maker",
+            "name": "Box maker",
+            "prompt": "Make me a Thingport tool that makes a box of any size with a lid, in millimetres."
+          },
+          "tidy": {
+            "label": "Tagging helper",
+            "name": "Tagging helper",
+            "prompt": "Make me a Thingport tool that lists my models with no tags and lets me tag them."
+          }
+        }
+      },
       "editor": {
         "newTitle": "New tool",
         "editTitle": "Edit tool",

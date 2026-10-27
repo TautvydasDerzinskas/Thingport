@@ -49,6 +49,9 @@ Thingport.
 4. Open it from **Tools** in the sidebar. To change it, ask again: `list_tools` lets the assistant read back the
    script, the HTML and the labels it wrote before.
 
+**New tool** on the Tools page shows these steps as well, under **Use AI**, with example prompts to copy and the
+**Connect an AI** command ready to paste.
+
 A tool an assistant saves is one of your own, so the same warning applies: its script runs in your browser with your
 access to Thingport. Read what it wrote in the editor if you're unsure, and remember that it can't bring models of its
 own — only a tool from the repository does that.

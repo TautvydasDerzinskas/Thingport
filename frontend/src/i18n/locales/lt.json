@@ -2728,6 +2728,35 @@
         "cancel": "Atšaukti",
         "choose": "Pasirinkti"
       },
+      "ai": {
+        "or": "arba",
+        "open": "Pasitelk AI",
+        "title": "Sukurk įrankį su AI",
+        "back": "Atgal į redaktorių",
+        "connect": "Prijungti AI",
+        "step1": "Prijunk savo AI asistentą prie Thingport per MCP.",
+        "step2": "Savo profilyje leisk raktui naudoti <strong>Įrašyti įrankį</strong>.",
+        "step3": "Paprašyk bet kokio įrankio savais žodžiais. Pavyzdžiui:",
+        "step4": "Jis atsiras tavo Įrankių puslapyje — tik atverk. Nori pakeisti? Paprašyk dar arba pataisyk čia.",
+        "examplesLabel": "Užklausų pavyzdžiai",
+        "examples": {
+          "label": {
+            "label": "Etikečių kūrėjas",
+            "name": "Etikečių kūrėjas",
+            "prompt": "Sukurk Thingport įrankį, kuris iš kelių žodžių padaro spausdinamą etiketę ir ją įrašo į mano biblioteką."
+          },
+          "box": {
+            "label": "Dėžių kūrėjas",
+            "name": "Dėžių kūrėjas",
+            "prompt": "Sukurk Thingport įrankį, kuris padaro bet kokio dydžio dėžę su dangteliu, milimetrais."
+          },
+          "tidy": {
+            "label": "Žymų pagalbininkas",
+            "name": "Žymų pagalbininkas",
+            "prompt": "Sukurk Thingport įrankį, kuris išvardija modelius be žymų ir leidžia jas uždėti."
+          }
+        }
+      },
       "editor": {
         "newTitle": "Naujas įrankis",
         "editTitle": "Redaguoti įrankį",

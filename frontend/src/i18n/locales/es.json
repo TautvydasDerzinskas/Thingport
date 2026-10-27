@@ -2657,6 +2657,35 @@
         "cancel": "Cancelar",
         "choose": "Elegir"
       },
+      "ai": {
+        "or": "o",
+        "open": "Usar IA",
+        "title": "Crear una herramienta con IA",
+        "back": "Volver al editor",
+        "connect": "Conectar una IA",
+        "step1": "Conecta tu asistente de IA a Thingport por MCP.",
+        "step2": "En tu perfil, dale al token la herramienta <strong>Guardar una herramienta</strong>.",
+        "step3": "Pide la herramienta que quieras, con tus palabras. Por ejemplo:",
+        "step4": "Aparece en tu página de Herramientas, lista para abrir. Pide otra vez para cambiarla, o ajústala aquí.",
+        "examplesLabel": "Ejemplos de peticiones",
+        "examples": {
+          "label": {
+            "label": "Etiquetas",
+            "name": "Generador de etiquetas",
+            "prompt": "Hazme una herramienta de Thingport que convierta unas palabras en una etiqueta imprimible y la guarde en mi biblioteca."
+          },
+          "box": {
+            "label": "Cajas",
+            "name": "Generador de cajas",
+            "prompt": "Hazme una herramienta de Thingport que haga una caja de cualquier tamaño con tapa, en milímetros."
+          },
+          "tidy": {
+            "label": "Etiquetado",
+            "name": "Ayudante de etiquetas",
+            "prompt": "Hazme una herramienta de Thingport que liste mis modelos sin etiquetas y me deje etiquetarlos."
+          }
+        }
+      },
       "editor": {
         "newTitle": "Nueva herramienta",
         "editTitle": "Editar herramienta",
