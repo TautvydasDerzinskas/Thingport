@@ -34,6 +34,7 @@ import {
   findDownloadUrl,
   type ImportCookies,
   type ImportedPageMetadata,
+  type ParametricSourceInfo,
 } from "./importResolvers";
 import {
   makerworldHtmlHeaders,
@@ -973,6 +974,26 @@ export function withUnixLineEndings(text: string): string {
   return text.replace(/\r\n/g, "\n");
 }
 
+/**
+ * The generator scripts of a model whose own download didn't carry them, from the zip its metadata points at.
+ *
+ * Best-effort throughout: this is an extra download on top of the one the user asked for, and a model with its
+ * plates is worth more than a failed import over the script it could also have been generated from.
+ */
+async function fetchParametricSources(source: ParametricSourceInfo | undefined): Promise<NewPlateInput[]> {
+  if (!source?.zipUrl || source.withheld) return [];
+  const result = await downloadPlainFileToTemp(source.zipUrl, "sources.zip");
+  if (!result || "rateLimited" in result || !result.input.tempFilePath) return [];
+  try {
+    return await parametricSourcesFromZip(result.input.tempFilePath);
+  } catch (err) {
+    console.warn("Couldn't read the generator scripts the model points at:", err);
+    return [];
+  } finally {
+    await fs.rm(result.input.tempFilePath, { force: true }).catch(() => undefined);
+  }
+}
+
 /** Saves a model's generator scripts onto it. Best-effort: one that won't store leaves the model itself imported,
  *  since the plates are what the user asked for. */
 async function attachParametricSources(userId: string, printId: string, sources: NewPlateInput[]): Promise<void> {
@@ -1317,6 +1338,8 @@ async function importLinkedFile(
   if (!plates.length) {
     plates = [{ filename, mime, tempFilePath: tempPath, sourceInstanceId: meta.makerworldProfile?.instanceId ?? null }];
   }
+  // A zip of raw files already gave up its scripts above; anything else has to fetch them separately.
+  if (!sources.length) sources = await fetchParametricSources(meta.parametricSource);
   const author = await upsertAuthorFromImport(meta.author);
   const categoryId =
     body.category_id ?? (await resolveCategoryIdByCategory(userId, meta.categorySite, meta.siteCategoryIds));

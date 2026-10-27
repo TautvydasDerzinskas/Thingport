@@ -360,6 +360,9 @@ export type ParametricSourceInfo = {
   /** The creator chose not to share them. MakerWorld answers such a request with an empty zip rather than a
    *  refusal, so without this an import looks like it worked and quietly brings nothing. */
   withheld: boolean;
+  /** A zip to fetch them from, for a model whose own download doesn't carry them -- a MakerWorld design with print
+   *  profiles downloads one profile's 3MF. Absent when they arrive with the model's files anyway. */
+  zipUrl?: string | null;
 };
 
 export type ImportedAuthorInfo = {
