@@ -12,10 +12,20 @@ export type Mesh = {
   vertices: Float64Array;
   /** Flat vertex-index triples. */
   triangles: Uint32Array;
-  /** At least one face arrived with a colour. The mesh keeps the shape but not the colour, so a caller that
-   *  hands the result to someone can say the model came out in one colour rather than let it surprise them. */
-  colored?: boolean;
+  /**
+   * The distinct colours the model is made of, as "#rrggbb", or absent where it is all one colour.
+   *
+   * A palette with an index per triangle rather than a colour per triangle: colour arrives a region at a time
+   * -- one `color()` call, one painted part -- so a model of a hundred thousand triangles has a handful of
+   * colours, and this is the shape 3MF and a slicer's filament slots want anyway.
+   */
+  palette?: string[];
+  /** One entry per triangle, indexing `palette`. Present whenever `palette` is. */
+  colors?: Uint16Array;
 };
+
+/** The mesh's colours, in the form a caller that only wants to know "is this multicoloured" can ask. */
+export const isColored = (mesh: Mesh): boolean => (mesh.palette?.length ?? 0) > 1;
 
 /**
  * The OFF the engine writes, as a mesh.
@@ -61,19 +71,55 @@ export function parseOff(text: string): Mesh {
   }
 
   const triangles: number[] = [];
-  let colored = false;
+  // Built as the faces are read: a model has a colour per `color()` call, not per face.
+  const palette: string[] = [];
+  const indexOfColor = new Map<string, number>();
+  const colors: number[] = [];
   for (let face = 0; face < faceCount; face++, at++) {
     const parts = words(at);
     const corners = Number(parts[0]);
-    // Anything past the corner count and its corners is that face's colour, which is noted and then dropped.
-    if (parts.length > corners + 1) colored = true;
+    // Anything past the corner count and its corners is that face's colour.
+    const color = faceColor(parts.slice(corners + 1));
+    let index = 0;
+    if (color) {
+      index = indexOfColor.get(color) ?? palette.push(color) - 1;
+      indexOfColor.set(color, index);
+    }
     // A polygon is fanned from its first corner. The engine merges coplanar triangles into one face, and the
-    // shapes it merges them into are convex, so a fan covers them exactly.
+    // shapes it merges them into are convex, so a fan covers them exactly. Each piece keeps the face's colour.
     for (let i = 2; i < corners; i++) {
       triangles.push(Number(parts[1]), Number(parts[i]), Number(parts[i + 1]));
+      colors.push(index);
     }
   }
-  return { vertices, triangles: Uint32Array.from(triangles), colored };
+  const mesh: Mesh = { vertices, triangles: Uint32Array.from(triangles) };
+  // A model of one colour carries none: it is the default everywhere, and a palette of one says nothing.
+  if (palette.length > 1) {
+    mesh.palette = palette;
+    mesh.colors = Uint16Array.from(colors);
+  }
+  return mesh;
+}
+
+/**
+ * A face's trailing numbers as a colour, or null where it has none.
+ *
+ * OFF writes red, green and blue after the corners, with alpha sometimes following. OpenSCAD writes them as
+ * 0-255 whole numbers, but the format allows 0-1 fractions and other writers use them, so which it is comes
+ * from the values themselves.
+ */
+function faceColor(parts: string[]): string | null {
+  if (parts.length < 3) return null;
+  const channels = parts.slice(0, 3).map(Number);
+  if (channels.some((channel) => !Number.isFinite(channel))) return null;
+  const fractional =
+    channels.every((channel) => channel <= 1) && channels.some((channel) => !Number.isInteger(channel));
+  const scale = fractional ? 255 : 1;
+  const hex = channels
+    .map((channel) => Math.max(0, Math.min(255, Math.round(channel * scale))))
+    .map((channel) => channel.toString(16).padStart(2, "0"))
+    .join("");
+  return `#${hex}`;
 }
 
 /** Trims a coordinate to what a printer could tell apart, so the file isn't mostly trailing digits. */
@@ -94,9 +140,20 @@ const RELS = `<?xml version="1.0" encoding="UTF-8"?>
 </Relationships>
 `;
 
-/** The 3MF package for one mesh, as the bytes of a .3mf file. */
+/** The id of the base-material group a coloured mesh's triangles point at; the object itself is 1. */
+const MATERIALS_ID = 2;
+
+/**
+ * The 3MF package for one mesh, as the bytes of a .3mf file.
+ *
+ * A mesh with a palette is written as a base-material group, one material per colour, with each triangle
+ * naming the one it belongs to. That is the core spec's own way of colouring a model, and it is what a slicer
+ * reads to put each part on a filament.
+ */
 export function writeThreeMf(mesh: Mesh, { name = "model" }: { name?: string } = {}): Uint8Array {
   if (!mesh.triangles.length) throw new Error("There is nothing in the model to save.");
+  const palette = mesh.palette ?? [];
+  const colored = palette.length > 1 && mesh.colors?.length === mesh.triangles.length / 3;
 
   const parts: string[] = [
     '<?xml version="1.0" encoding="UTF-8"?>\n',
@@ -104,8 +161,21 @@ export function writeThreeMf(mesh: Mesh, { name = "model" }: { name?: string } =
     ' xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">\n',
     ` <metadata name="Title">${escapeXml(name)}</metadata>\n`,
     ' <metadata name="Application">Thingport</metadata>\n',
-    ' <resources>\n  <object id="1" type="model">\n   <mesh>\n    <vertices>\n',
+    " <resources>\n",
   ];
+  if (colored) {
+    parts.push(`  <basematerials id="${MATERIALS_ID}">\n`);
+    for (const [index, color] of palette.entries()) {
+      // Opaque: OFF carries no alpha that OpenSCAD writes, and a slicer reads these as filament slots.
+      parts.push(`   <base name="Colour ${index + 1}" displaycolor="${displayColor(color)}"/>\n`);
+    }
+    parts.push("  </basematerials>\n");
+  }
+  parts.push(
+    colored
+      ? `  <object id="1" type="model" pid="${MATERIALS_ID}" pindex="0">\n   <mesh>\n    <vertices>\n`
+      : '  <object id="1" type="model">\n   <mesh>\n    <vertices>\n',
+  );
   for (let i = 0; i < mesh.vertices.length; i += 3) {
     parts.push(
       `     <vertex x="${coordinate(mesh.vertices[i])}" y="${coordinate(mesh.vertices[i + 1])}" z="${coordinate(
@@ -115,8 +185,10 @@ export function writeThreeMf(mesh: Mesh, { name = "model" }: { name?: string } =
   }
   parts.push("    </vertices>\n    <triangles>\n");
   for (let i = 0; i < mesh.triangles.length; i += 3) {
+    // p1 alone colours the whole triangle; p2 and p3 would blend it across the corners.
+    const material = colored ? ` p1="${mesh.colors![i / 3]}"` : "";
     parts.push(
-      `     <triangle v1="${mesh.triangles[i]}" v2="${mesh.triangles[i + 1]}" v3="${mesh.triangles[i + 2]}"/>\n`,
+      `     <triangle v1="${mesh.triangles[i]}" v2="${mesh.triangles[i + 1]}" v3="${mesh.triangles[i + 2]}"${material}/>\n`,
     );
   }
   parts.push("    </triangles>\n   </mesh>\n  </object>\n </resources>\n");
@@ -127,6 +199,12 @@ export function writeThreeMf(mesh: Mesh, { name = "model" }: { name?: string } =
     "_rels/.rels": strToU8(RELS),
     "3D/3dmodel.model": strToU8(parts.join("")),
   });
+}
+
+/** A palette entry as 3MF writes a colour: #RRGGBB plus the alpha it always wants. */
+function displayColor(color: string): string {
+  const hex = color.replace("#", "").toUpperCase();
+  return `#${hex.length === 8 ? hex : `${hex}FF`}`;
 }
 
 function escapeXml(text: string): string {

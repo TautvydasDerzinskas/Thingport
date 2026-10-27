@@ -6,6 +6,7 @@ import occtWorkerUrl from "occt-import-js/dist/occt-import-js-worker.js?url";
 import type { ResolvedTheme } from "../constants/settingsOptions";
 import { buildTheme } from "../theme";
 import { buildBambuModelGroup, parseBambuThreeMF, type Parsed3MFData, type PlateSummary } from "./bambuThreeMf";
+import type { Mesh as SdkMesh } from "../sdk/threeMf";
 
 export type ModelPalette = {
   color: THREE.Color;
@@ -31,11 +32,36 @@ export function paletteForTheme(theme: ResolvedTheme): ModelPalette {
   };
 }
 
+/**
+ * Marks a material as carrying the model's own colours, so nothing paints over them.
+ *
+ * Most models have no colour of their own and are drawn in the theme's or the reader's: one grey shape they
+ * can tint as they like. A model that does carry colour -- a script's `color()` calls, a 3MF's painted parts --
+ * means them, and showing it in one colour is showing something it isn't.
+ */
+export function keepsOwnColor(material: THREE.Material): void {
+  material.userData.ownColor = true;
+}
+
+const hasOwnColor = (material: THREE.Material): boolean => material.userData.ownColor === true;
+
+/** Whether anything in the object brought its own colours. */
+export function objectHasOwnColor(obj: THREE.Object3D): boolean {
+  let found = false;
+  obj.traverse((child) => {
+    if (found || !(child instanceof THREE.Mesh)) return;
+    const materials = Array.isArray(child.material) ? child.material : [child.material];
+    if (materials.some(hasOwnColor)) found = true;
+  });
+  return found;
+}
+
 export function applyThemeToObject(obj: THREE.Object3D, palette: ModelPalette) {
   obj.traverse((child) => {
     if (!(child instanceof THREE.Mesh)) return;
     const materials = Array.isArray(child.material) ? child.material : [child.material];
     materials.forEach((mat) => {
+      if (hasOwnColor(mat)) return;
       const typed = mat as THREE.MeshStandardMaterial;
       if (typed.color) typed.color.copy(palette.color);
       if (typed.emissive) {
@@ -47,6 +73,56 @@ export function applyThemeToObject(obj: THREE.Object3D, palette: ModelPalette) {
       mat.needsUpdate = true;
     });
   });
+}
+
+/**
+ * A mesh already in memory, as something to draw.
+ *
+ * For geometry the tab made itself -- the customizer's engine hands back the mesh behind the file it wrote --
+ * so nothing is written out and parsed again just to look at it.
+ *
+ * The triangles are given their own corners before the normals are worked out. A solid shares a vertex between
+ * the faces meeting at an edge, and averaging across them rounds every hard edge off, which on lettering reads
+ * as a smear. It is also what lets each face carry its own colour, since the corners are no longer shared.
+ */
+export function objectFromMesh(mesh: SdkMesh): THREE.Object3D {
+  const indexed = new THREE.BufferGeometry();
+  indexed.setAttribute("position", new THREE.BufferAttribute(Float32Array.from(mesh.vertices), 3));
+  indexed.setIndex(new THREE.BufferAttribute(Uint32Array.from(mesh.triangles), 1));
+  const geometry = indexed.toNonIndexed();
+  indexed.dispose();
+
+  const palette = mesh.palette ?? [];
+  const colored = palette.length > 1 && mesh.colors?.length === mesh.triangles.length / 3;
+  if (colored) {
+    // One colour per corner, the same for all three of a triangle, so each face reads flat rather than
+    // blending into its neighbours.
+    const colors = new Float32Array(geometry.getAttribute("position").count * 3);
+    const swatches = palette.map((entry) => new THREE.Color(entry).convertSRGBToLinear());
+    for (let triangle = 0; triangle < mesh.colors!.length; triangle++) {
+      const swatch = swatches[mesh.colors![triangle]] ?? swatches[0];
+      for (let corner = 0; corner < 3; corner++) {
+        const at = (triangle * 3 + corner) * 3;
+        colors[at] = swatch.r;
+        colors[at + 1] = swatch.g;
+        colors[at + 2] = swatch.b;
+      }
+    }
+    geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  }
+  geometry.computeVertexNormals();
+
+  const material = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    metalness: 0.2,
+    roughness: 0.8,
+    vertexColors: colored,
+  });
+  if (colored) keepsOwnColor(material);
+  const object = new THREE.Mesh(geometry, material);
+  // Generated geometry is Z-up, as print files are; three.js is Y-up.
+  object.rotateX(-Math.PI / 2);
+  return object;
 }
 
 export async function loadObjectFromAsset(ext: string, url: string): Promise<THREE.Object3D | null> {

@@ -3770,12 +3770,10 @@
       "status": {
         "generated": "Sugeneruota per {{seconds}} s · {{size}} kB"
       },
-      "warning": {
-        "colorsDropped": "Scenarijus nuspalvina šio modelio dalis. Išsaugotas failas išlaiko formą, bet ne spalvas."
-      },
       "download": {
         "threeMf": "Atsisiųsti kaip 3MF",
-        "stl": "Atsisiųsti kaip STL"
+        "stl": "Atsisiųsti kaip STL",
+        "stlNoColors": "Išlaiko formą, bet ne spalvas"
       },
       "save": {
         "action": "Išsaugoti į Thingport",

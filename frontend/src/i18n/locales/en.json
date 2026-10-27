@@ -3671,12 +3671,10 @@
       "status": {
         "generated": "Generated in {{seconds}} s · {{size}} kB"
       },
-      "warning": {
-        "colorsDropped": "The script colours parts of this model. The saved file keeps its shape but not its colours."
-      },
       "download": {
         "threeMf": "Download as 3MF",
-        "stl": "Download as STL"
+        "stl": "Download as STL",
+        "stlNoColors": "Keeps the shape, not the colours"
       },
       "save": {
         "action": "Save to Thingport",

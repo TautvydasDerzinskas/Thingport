@@ -3700,12 +3700,10 @@
       "status": {
         "generated": "Généré en {{seconds}} s · {{size}} ko"
       },
-      "warning": {
-        "colorsDropped": "Le script colore des parties de ce modèle. Le fichier enregistré conserve sa forme, mais pas ses couleurs."
-      },
       "download": {
         "threeMf": "Télécharger en 3MF",
-        "stl": "Télécharger en STL"
+        "stl": "Télécharger en STL",
+        "stlNoColors": "Conserve la forme, pas les couleurs"
       },
       "save": {
         "action": "Enregistrer dans Thingport",

@@ -12,8 +12,11 @@ import {
   disposeObject3D,
   loadBambuThreeMFForViewer,
   loadObjectFromAsset,
+  objectFromMesh,
+  objectHasOwnColor,
   paletteForTheme,
 } from "../../../utils/modelLoaders";
+import type { Mesh as SdkMesh } from "../../../sdk/threeMf";
 import {
   buildBambuModelGroup,
   loadCachedBambuGlb,
@@ -36,8 +39,14 @@ export type ModelViewerHandle = {
 };
 
 type ModelViewerProps = {
-  url: string;
+  /** Where to fetch the model from; left out when `mesh` carries it already. */
+  url?: string;
   ext: string;
+  /** Geometry already in memory -- the customizer's engine hands back what it just made -- drawn instead of
+   *  fetching `url`. Its colours, where it has them, are the model's own and are shown as they are. */
+  mesh?: SdkMesh | null;
+  /** Fired once the model is on screen, saying whether it brought colours of its own. */
+  onOwnColorChange?: (ownColor: boolean) => void;
   viewKey?: string;
   theme: ResolvedTheme;
   /** Overrides the theme-derived material color while keeping the rest of the palette. */
@@ -121,8 +130,10 @@ function fitCameraToBox(
 
 const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function ModelViewer(
   {
-    url,
+    url = "",
     ext,
+    mesh,
+    onOwnColorChange,
     viewKey,
     theme,
     colorOverride,
@@ -143,6 +154,11 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
   const mountRef = useRef<HTMLDivElement | null>(null);
   const appearanceRef = useRef<Appearance>({ colorOverride, renderStyle, showBuildPlate, autoRotate });
   appearanceRef.current = { colorOverride, renderStyle, showBuildPlate, autoRotate };
+  // Read when the scene is built rather than depended on: a new mesh arrives with a new `viewKey`.
+  const meshRef = useRef(mesh);
+  meshRef.current = mesh;
+  const onOwnColorRef = useRef(onOwnColorChange);
+  onOwnColorRef.current = onOwnColorChange;
   const sceneApiRef = useRef<{
     applyAppearance: () => void;
     setCameraView: (view: CameraView) => void;
@@ -312,7 +328,8 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
         const materials = Array.isArray(child.material) ? child.material : [child.material];
         materials.forEach((mat) => {
           const typed = mat as THREE.MeshStandardMaterial;
-          if (color) typed.color?.set(color);
+          // A model that brought its own colours keeps them; the reader's colour is for the ones that didn't.
+          if (color && mat.userData.ownColor !== true) typed.color?.set(color);
           if (typed.userData.baseSide === undefined) typed.userData.baseSide = typed.side;
           typed.wireframe = style === "wire";
           typed.transparent = xray;
@@ -424,6 +441,7 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
           applyThemeToObject(obj, palette);
           applyAppearance(obj);
           activeObject = obj;
+          onOwnColorRef.current?.(objectHasOwnColor(obj));
           scene.add(obj);
           const box = visibleBox(obj);
           if (buildPlateForMeshes && !box.isEmpty()) {
@@ -481,7 +499,15 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
         };
 
         try {
-          if (e === "3mf") {
+          // Geometry the caller already holds: nothing to fetch or parse.
+          if (meshRef.current) {
+            const obj = objectFromMesh(meshRef.current);
+            if (disposed) {
+              disposeObject3D(obj);
+              return;
+            }
+            showMeshObject(obj);
+          } else if (e === "3mf") {
             if (disposed) return;
             const usedCache = await tryLoadCachedGlb();
             if (!usedCache && !disposed) {

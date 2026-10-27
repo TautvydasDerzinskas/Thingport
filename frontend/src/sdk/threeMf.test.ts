@@ -58,12 +58,41 @@ describe("parseOff", () => {
 
     expect(Array.from(mesh.triangles)).toEqual([0, 1, 2, 1, 3, 2]);
     expect(mesh.vertices.length).toBe(12);
-    // Dropped, but not silently: the caller can say the model comes out in one colour.
-    expect(mesh.colored).toBe(true);
+    // Kept, as a palette with an index per triangle.
+    expect(mesh.palette).toEqual(["#ffffff", "#008040"]);
+    expect(Array.from(mesh.colors!)).toEqual([0, 1]);
   });
 
-  it("says a mesh is uncoloured when no face carried a colour", () => {
-    expect(parseOff("OFF 3 1 0\n0 0 0\n1 0 0\n0 1 0\n3 0 1 2\n").colored).toBe(false);
+  it("carries no palette for a model that is all one colour", () => {
+    const plain = parseOff("OFF 3 1 0\n0 0 0\n1 0 0\n0 1 0\n3 0 1 2\n");
+    expect(plain.palette).toBeUndefined();
+    expect(plain.colors).toBeUndefined();
+    // One colour repeated is still one colour, so still no palette.
+    const same = parseOff("OFF\n4 2 0\n0 0 0\n1 0 0\n0 1 0\n1 1 0\n3 0 1 2 255 0 0\n3 1 3 2 255 0 0\n");
+    expect(same.palette).toBeUndefined();
+  });
+
+  it("gives every piece of a fanned polygon the face's own colour", () => {
+    // One quad, one colour, fanned into two triangles.
+    const quad = parseOff("OFF\n4 1 0\n0 0 0\n1 0 0\n1 1 0\n0 1 0\n4 0 1 2 3 10 20 30\n");
+    expect(quad.triangles.length).toBe(6);
+    expect(quad.palette).toBeUndefined();
+    // With a second, differently coloured face the palette appears and both halves of the quad share entry 0.
+    const two = parseOff("OFF\n5 2 0\n0 0 0\n1 0 0\n1 1 0\n0 1 0\n2 2 0\n4 0 1 2 3 10 20 30\n3 1 4 2 200 100 50\n");
+    expect(two.palette).toEqual(["#0a141e", "#c86432"]);
+    expect(Array.from(two.colors!)).toEqual([0, 0, 1]);
+  });
+
+  it("reads 0-1 colour channels as well as 0-255 ones", () => {
+    const fractions = parseOff("OFF\n4 2 0\n0 0 0\n1 0 0\n0 1 0\n1 1 0\n3 0 1 2 1 0 0\n3 1 3 2 0.2 0.4 0.8\n");
+    // The first face's "1 0 0" is whole numbers, so it stays 0-255 -- it is the fractional face that sets the
+    // scale, and OFF gives no other way to tell 1 from 1.0.
+    expect(fractions.palette).toEqual(["#010000", "#3366cc"]);
+  });
+
+  it("ignores an alpha channel after the colour", () => {
+    const rgba = parseOff("OFF\n4 2 0\n0 0 0\n1 0 0\n0 1 0\n1 1 0\n3 0 1 2 255 0 0 128\n3 1 3 2 0 255 0 255\n");
+    expect(rgba.palette).toEqual(["#ff0000", "#00ff00"]);
   });
 
   it("reads a header that keeps its counts on the same line", () => {
@@ -93,6 +122,27 @@ describe("writeThreeMf", () => {
     expect(xml.match(/<triangle /g)).toHaveLength(12);
     expect(xml).toContain('<vertex x="10" y="20" z="30"/>');
     expect(xml).toContain("<build>");
+  });
+
+  it("writes a coloured mesh as base materials each triangle points at", () => {
+    // Two triangles, two colours.
+    const off = "OFF\n4 2 0\n0 0 0\n1 0 0\n0 1 0\n1 1 0\n3 0 1 2 255 0 0\n3 1 3 2 0 128 64\n";
+    const xml = model(offToThreeMf(off));
+
+    expect(xml).toContain('<basematerials id="2">');
+    expect(xml).toContain('<base name="Colour 1" displaycolor="#FF0000FF"/>');
+    expect(xml).toContain('<base name="Colour 2" displaycolor="#008040FF"/>');
+    // The object points at the group, and each triangle at its own material in it.
+    expect(xml).toContain('<object id="1" type="model" pid="2" pindex="0">');
+    expect(xml).toContain('<triangle v1="0" v2="1" v3="2" p1="0"/>');
+    expect(xml).toContain('<triangle v1="1" v2="3" v3="2" p1="1"/>');
+  });
+
+  it("leaves a single-colour mesh exactly as it was, with no materials at all", () => {
+    const xml = model(offToThreeMf(CUBE_OFF));
+    expect(xml).not.toContain("basematerials");
+    expect(xml).not.toContain("p1=");
+    expect(xml).toContain('<object id="1" type="model">');
   });
 
   it("escapes a name that would otherwise break the XML", () => {

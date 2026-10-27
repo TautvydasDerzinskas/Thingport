@@ -29,7 +29,7 @@ import { useToast } from "../ToastProvider";
 import ModelViewer from "../media/ModelViewer";
 import { scadParameters, scadRender, type ScadParameter } from "../../sdk/openscad";
 import { writeStl } from "../../sdk/stl";
-import type { Mesh } from "../../sdk/threeMf";
+import { isColored, type Mesh } from "../../sdk/threeMf";
 import { saveBytesToDisk } from "../../utils/downloadResponse";
 import { useRenderColor } from "../../hooks/useAccentColor";
 import { renderSwatch } from "../../theme";
@@ -50,8 +50,8 @@ type Generated = {
   /** What a save and a 3MF download hand over, straight from the engine's run. */
   threeMf: Uint8Array;
   mesh: Mesh;
-  /** A blob of the same geometry as STL, which is what the viewer loads. */
-  url: string;
+  /** Counts up per render, so the viewer knows to rebuild its scene from the new mesh. */
+  key: number;
   name: string;
   seconds: number;
   warnings: string[];
@@ -102,22 +102,9 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
   // Only the newest load or render may touch the state: switching scripts mid-render must not be overwritten
   // by the render it interrupted.
   const run = useRef(0);
-  // Revoked as the next result replaces it, and when the dialog goes.
-  const url = useRef<string | null>(null);
-  const showMesh = useCallback((mesh: Mesh) => {
-    if (url.current) URL.revokeObjectURL(url.current);
-    url.current = URL.createObjectURL(new Blob([writeStl(mesh) as BlobPart], { type: "model/stl" }));
-    return url.current;
-  }, []);
-  useEffect(
-    () => () => {
-      // Anything still in flight is abandoned first: a render that landed after the dialog went would make a
-      // blob URL with nothing left to revoke it, and the browser would hold the mesh until the page unloaded.
-      run.current += 1;
-      if (url.current) URL.revokeObjectURL(url.current);
-    },
-    [],
-  );
+  // Anything still in flight is abandoned when the dialog goes, so a render that lands afterwards doesn't
+  // build a scene nobody will take down.
+  useEffect(() => () => void (run.current += 1), []);
 
   const reportFailure = useCallback(
     (err: unknown) => {
@@ -160,15 +147,10 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
         setGenerated({
           threeMf: result.bytes,
           mesh: result.mesh,
-          url: showMesh(result.mesh),
+          key: token,
           name,
           seconds: result.seconds,
-          warnings: [
-            ...readableWarnings(result.log),
-            // The 3MF carries the shape but not the script's colours, which is better said than discovered
-            // in a slicer.
-            ...(result.mesh.colored ? [t("models:customizer.warning.colorsDropped")] : []),
-          ],
+          warnings: readableWarnings(result.log),
         });
         setRenderedValues(JSON.stringify(wanted));
       } catch (err) {
@@ -180,7 +162,7 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
         if (token === run.current) setBusy(null);
       }
     },
-    [showMesh, t],
+    [t],
   );
 
   const generateRef = useRef(generate);
@@ -356,12 +338,15 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
       }}
     >
       {generated ? (
-        // No key: the viewer reloads on a new url, so each generate reuses the WebGL context rather than
-        // tearing the canvas down and building another.
+        // The mesh goes straight in rather than through a file: the engine already handed it back, and an STL
+        // would drop the script's colours on the way. No React key, so each generate rebuilds the scene within
+        // the same WebGL context instead of tearing the canvas down and building another.
         <ModelViewer
-          url={generated.url}
-          ext="stl"
+          mesh={generated.mesh}
+          viewKey={String(generated.key)}
+          ext="3mf"
           theme={theme.palette.mode}
+          // Ignored where the script coloured the model; it is the colour for the ones that didn't.
           colorOverride={renderSwatch(renderColor).color}
           buildPlateForMeshes
           initialCameraView="topFront"
@@ -517,7 +502,11 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
           <ListItemIcon>
             <DownloadIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>{t("models:customizer.download.stl")}</ListItemText>
+          <ListItemText
+            primary={t("models:customizer.download.stl")}
+            // STL has no way to carry a colour, so a coloured model says what it will lose before it goes.
+            secondary={generated && isColored(generated.mesh) ? t("models:customizer.download.stlNoColors") : null}
+          />
         </MenuItem>
       </Menu>
 
