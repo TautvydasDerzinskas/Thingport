@@ -138,7 +138,7 @@ export default function ModelActionsMenu({
     onContextMenuClose?.();
   };
 
-  const customize = useCustomize(print, closeMenu);
+  const customize = useCustomize(print, closeMenu, onUnauthorized);
 
   const openEdit = () => {
     closeMenu();

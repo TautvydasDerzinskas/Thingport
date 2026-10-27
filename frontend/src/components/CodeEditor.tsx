@@ -10,8 +10,10 @@ import { Compartment, EditorState } from "@codemirror/state";
 import { EditorView, keymap, placeholder as placeholderText } from "@codemirror/view";
 import { tags } from "@lezer/highlight";
 
-// JSON is highlighted by the JavaScript grammar, which reads it exactly: no separate mode to carry.
-export type CodeLanguage = "javascript" | "html" | "json";
+// JSON is highlighted by the JavaScript grammar, which reads it exactly: no separate mode to carry. OpenSCAD is
+// close enough to be read by it too -- the same comments, numbers, strings and brackets -- and its own grammar
+// would be another dependency for a panel that only ever shows a script, never edits one.
+export type CodeLanguage = "javascript" | "html" | "json" | "scad";
 
 type Props = {
   value: string;
@@ -20,6 +22,8 @@ type Props = {
   /** Its accessible name. */
   label: string;
   placeholder?: string;
+  /** Shown but not editable, for code the reader owns nowhere else: the cursor and selection still work. */
+  readOnly?: boolean;
 };
 
 /** The editor's look, from the app theme so it follows light and dark and the accent. */
@@ -77,7 +81,7 @@ function themeOf(theme: Theme) {
 
 /** A code editor with highlighting, line numbers, bracket matching and completion. Tab indents; Escape then Tab
  *  leaves it, as CodeMirror does for keyboard users. */
-export default function CodeEditor({ value, onChange, language, label, placeholder }: Props) {
+export default function CodeEditor({ value, onChange, language, label, placeholder, readOnly }: Props) {
   const muiTheme = useTheme();
   const hostRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -97,6 +101,7 @@ export default function CodeEditor({ value, onChange, language, label, placehold
           keymap.of([indentWithTab]),
           language === "html" ? html() : javascript(),
           themeSlot.current.of(themeOf(muiTheme)),
+          ...(readOnly ? [EditorState.readOnly.of(true)] : []),
           EditorView.contentAttributes.of({ "aria-label": label, spellcheck: "false" }),
           ...(placeholder ? [placeholderText(placeholder)] : []),
           EditorView.updateListener.of((update) => {
@@ -110,9 +115,9 @@ export default function CodeEditor({ value, onChange, language, label, placehold
       view.destroy();
       viewRef.current = null;
     };
-    // The language and label are fixed for an editor's life; the value and theme are synced below.
+    // The language, label and read-only-ness are fixed for an editor's life; value and theme are synced below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [language]);
+  }, [language, readOnly]);
 
   useEffect(() => {
     viewRef.current?.dispatch({ effects: themeSlot.current.reconfigure(themeOf(muiTheme)) });

@@ -3639,6 +3639,61 @@
       "scriptWithheld": "Script not shared",
       "scriptWithheldHint": "This model was built from a script, but its creator chose not to share it, so there is nothing here to customise. Only they can change that."
     },
+    "customizer": {
+      "title": "Customizing {{model}}",
+      "model": {
+        "title": "Model",
+        "script": "Script"
+      },
+      "pane": {
+        "minimize": "Minimize",
+        "expand": "Expand"
+      },
+      "pick": {
+        "title": "Which script?",
+        "body": "This model came with {{count}} scripts. Pick the one to customize."
+      },
+      "form": {
+        "title": "Customize",
+        "generate": "Generate",
+        "generating": "Generating…",
+        "noParameters": "This script has nothing to change.",
+        "undo": "Undo",
+        "redo": "Redo",
+        "reset": "Back to the script's own values",
+        "code": "Show the code of {{name}}"
+      },
+      "busy": {
+        "reading": "Reading the script…",
+        "generating": "Generating…"
+      },
+      "stage": {
+        "empty": "Nothing generated yet."
+      },
+      "status": {
+        "generated": "Generated in {{seconds}} s · {{size}} kB"
+      },
+      "download": {
+        "threeMf": "Download as 3MF",
+        "stl": "Download as STL"
+      },
+      "save": {
+        "action": "Save to Thingport",
+        "done": "Saved {{name}}",
+        "open": "Open the model",
+        "description": "Generated from {{script}}, which came with {{model}}."
+      },
+      "code": {
+        "label": "The code of {{name}}",
+        "lines": "{{count}} lines · read-only",
+        "copy": "Copy",
+        "copied": "Copied",
+        "download": "Download the script"
+      },
+      "error": {
+        "failed": "The script didn't generate a model."
+      }
+    },
     "edit": {
       "title": "Edit model",
       "titleLabel": "Title",

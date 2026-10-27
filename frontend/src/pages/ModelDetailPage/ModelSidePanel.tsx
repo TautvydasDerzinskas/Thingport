@@ -27,7 +27,7 @@ import { dividerBorderColor } from "../../theme";
 import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
 import { useDownloadPrint } from "./useDownloadPrint";
 import { useOpenInSlicer } from "./useOpenInSlicer";
-import { hasGeneratorScript } from "./useCustomize";
+import { hasGeneratorScript, useCustomize } from "./useCustomize";
 import NormalizedOpenButton from "./NormalizedOpenButton";
 import ModelFileSelect from "./ModelFileSelect";
 import OpenInSlicerButton from "./OpenInSlicerButton";
@@ -60,6 +60,8 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
   const selectedFile = files.find((file) => file.key === selectedKey) ?? files[0] ?? null;
   const normalizedTarget = normalizedTargetFor(selectedFile);
   const normalized = useNormalizedOpen(print.id, recordUse, onUnauthorized);
+  // Opened from the button below rather than a menu, so there is no menu to close.
+  const customize = useCustomize(print, () => {}, onUnauthorized);
 
   const goToCategory = () => {
     if (!print.category_id) return;
@@ -310,6 +312,14 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
           />
         )}
 
+        {/* Under Open: a model that came with its script can be generated again, which is the other thing to
+            do with it besides printing what is already here. */}
+        {customize.available && (
+          <Button fullWidth variant="outlined" startIcon={<TuneIcon fontSize="small" />} onClick={customize.start}>
+            {t("models:detail.customize")}
+          </Button>
+        )}
+
         <Stack direction="row" spacing={1.5}>
           <Stack
             direction="row"
@@ -343,6 +353,7 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
           </Typography>
         )}
       </Stack>
+      {customize.window}
     </Paper>
   );
 }

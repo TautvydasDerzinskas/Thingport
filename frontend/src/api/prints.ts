@@ -435,6 +435,13 @@ export const printsApi = {
     return res.json();
   },
 
+  /** One supporting file as text, for the generator script the customizer runs. */
+  supportingText: async (printId: string, fileId: string): Promise<string> => {
+    const res = await fetch(`${apiBase()}/print/${printId}/files/${fileId}`, { headers: authHeaders() });
+    assertOk(res, "Failed to read the script");
+    return res.text();
+  },
+
   uploadFile: async (id: string, file: File): Promise<Print> => {
     const body = new FormData();
     body.set("file", file, file.name);

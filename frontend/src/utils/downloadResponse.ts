@@ -6,7 +6,16 @@ export function filenameFromDisposition(res: Response, fallback: string): string
 
 export async function saveResponseToDisk(res: Response, fallback: string): Promise<void> {
   const filename = filenameFromDisposition(res, fallback);
-  const blob = await res.blob();
+  await saveBlobToDisk(await res.blob(), filename);
+}
+
+/** Bytes the browser made itself -- a generated model, a script read back out -- offered as a file. */
+export async function saveBytesToDisk(bytes: Uint8Array, filename: string, type: string): Promise<void> {
+  // A Uint8Array is a BlobPart; the cast is only because its buffer is typed as possibly shared.
+  await saveBlobToDisk(new Blob([bytes as BlobPart], { type }), filename);
+}
+
+async function saveBlobToDisk(blob: Blob, filename: string): Promise<void> {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

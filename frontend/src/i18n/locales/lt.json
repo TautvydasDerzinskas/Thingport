@@ -3738,6 +3738,61 @@
       "scriptWithheld": "Scenarijus nepateiktas",
       "scriptWithheldHint": "Šis modelis sukurtas iš scenarijaus, bet jo autorius nusprendė juo nesidalinti, tad čia nėra ko keisti. Tai pakeisti gali tik jis."
     },
+    "customizer": {
+      "title": "Keičiamas {{model}}",
+      "model": {
+        "title": "Modelis",
+        "script": "Scenarijus"
+      },
+      "pane": {
+        "minimize": "Sutraukti",
+        "expand": "Išskleisti"
+      },
+      "pick": {
+        "title": "Kuris scenarijus?",
+        "body": "Su šiuo modeliu atsiuntė {{count}} scenarijus. Pasirinkite, kurį keisti."
+      },
+      "form": {
+        "title": "Keitimas",
+        "generate": "Generuoti",
+        "generating": "Generuojama…",
+        "noParameters": "Šis scenarijus neturi ką keisti.",
+        "undo": "Atšaukti",
+        "redo": "Pakartoti",
+        "reset": "Atstatyti scenarijaus reikšmes",
+        "code": "Rodyti {{name}} kodą"
+      },
+      "busy": {
+        "reading": "Skaitomas scenarijus…",
+        "generating": "Generuojama…"
+      },
+      "stage": {
+        "empty": "Kol kas nieko nesugeneruota."
+      },
+      "status": {
+        "generated": "Sugeneruota per {{seconds}} s · {{size}} kB"
+      },
+      "download": {
+        "threeMf": "Atsisiųsti kaip 3MF",
+        "stl": "Atsisiųsti kaip STL"
+      },
+      "save": {
+        "action": "Išsaugoti į Thingport",
+        "done": "Išsaugota {{name}}",
+        "open": "Atidaryti modelį",
+        "description": "Sugeneruota iš {{script}}, kuris atsiuntė su {{model}}."
+      },
+      "code": {
+        "label": "{{name}} kodas",
+        "lines": "{{count}} eilutės · tik skaitymui",
+        "copy": "Kopijuoti",
+        "copied": "Nukopijuota",
+        "download": "Atsisiųsti scenarijų"
+      },
+      "error": {
+        "failed": "Scenarijus nesugeneravo modelio."
+      }
+    },
     "edit": {
       "title": "Redaguoti modelį",
       "titleLabel": "Pavadinimas",
