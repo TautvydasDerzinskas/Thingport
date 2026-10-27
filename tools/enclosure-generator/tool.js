@@ -1380,43 +1380,43 @@ export const PORTS = [
   ["USB", "microusb", "Micro USB", "rect", 8, 3.5],
   ["USB", "miniusb", "Mini USB", "rect", 8, 5.5],
   ["USB", "lightning", "Lightning", "rect", 8.4, 3],
-  ["Power", "dc5521", "DC jack 5.5/2.1", "circle", 11],
-  ["Power", "dc5525", "DC jack 5.5/2.5", "circle", 11],
-  ["Power", "dc-eiaj-3", "DC EIAJ-3", "circle", 9.5],
-  ["Power", "dc-4017", "DC jack 4.0/1.7", "circle", 7],
-  ["Power", "xt60", "XT60", "xt60", 15.5, 8.1],
-  ["Power", "xt30", "XT30", "xt60", 10.5, 5.5],
-  ["Power", "ec3", "EC3", "circle", 5.5],
-  ["Power", "switch", "ON/OFF switch", "rect", 9, 18.5],
-  ["Network", "rj45", "RJ45 Ethernet", "rect", 16, 14],
-  ["Network", "rj11", "RJ11", "rect", 9.5, 9.5],
-  ["Network", "rj12", "RJ12", "rect", 9.5, 9.5],
-  ["Video", "hdmi", "HDMI", "hdmi", 14.5, 5],
-  ["Video", "mini-hdmi", "Mini HDMI", "rect", 10.5, 3],
-  ["Video", "micro-hdmi", "Micro HDMI", "rect", 7, 2.8],
-  ["Video", "displayport", "DisplayPort", "rect", 16, 7],
+  ["group.power", "dc5521", "DC jack 5.5/2.1", "circle", 11],
+  ["group.power", "dc5525", "DC jack 5.5/2.5", "circle", 11],
+  ["group.power", "dc-eiaj-3", "DC EIAJ-3", "circle", 9.5],
+  ["group.power", "dc-4017", "DC jack 4.0/1.7", "circle", 7],
+  ["group.power", "xt60", "XT60", "xt60", 15.5, 8.1],
+  ["group.power", "xt30", "XT30", "xt60", 10.5, 5.5],
+  ["group.power", "ec3", "EC3", "circle", 5.5],
+  ["group.power", "switch", "ON/OFF switch", "rect", 9, 18.5],
+  ["group.network", "rj45", "RJ45 Ethernet", "rect", 16, 14],
+  ["group.network", "rj11", "RJ11", "rect", 9.5, 9.5],
+  ["group.network", "rj12", "RJ12", "rect", 9.5, 9.5],
+  ["group.video", "hdmi", "HDMI", "hdmi", 14.5, 5],
+  ["group.video", "mini-hdmi", "Mini HDMI", "rect", 10.5, 3],
+  ["group.video", "micro-hdmi", "Micro HDMI", "rect", 7, 2.8],
+  ["group.video", "displayport", "DisplayPort", "rect", 16, 7],
   ["D-sub", "vga", "VGA (DE-15)", "dsub", 20.5, 12.5],
   ["D-sub", "db9", "DB9 / RS-232", "dsub", 20.5, 11.4],
   ["D-sub", "db25", "DB25", "dsub", 38.3, 12.5],
   ["RF", "sma", "SMA", "circle", 6.5],
   ["RF", "bnc", "BNC", "circle", 10],
   ["RF", "f-type", "F-type", "circle", 9.5],
-  ["Pin headers", "jst-xh-2", "JST-XH 2-pin", "rect", 5, 7],
-  ["Pin headers", "jst-ph-2", "JST-PH 2-pin", "rect", 4, 6],
-  ["Pin headers", "molex-kk", "Molex KK 2.54", "rect", 5, 7],
-  ["Pin headers", "dupont-4", "Dupont 4-pin", "rect", 10, 7],
-  ["Cards", "microsd", "microSD slot", "rect", 15, 2],
-  ["Cards", "nano-sim", "Nano-SIM tray", "rect", 12, 10],
-  ["Screens", "oled-091", 'OLED 0.91"', "rect", 24, 8],
-  ["Screens", "oled-096", 'OLED 0.96"', "rect", 24, 14],
-  ["Screens", "oled-13", 'OLED 1.3"', "rect", 32, 17],
-  ["Screens", "tft-177", 'TFT 1.77"', "rect", 30, 37],
-  ["Screens", "tft-20", 'TFT 2.0"', "rect", 33, 43],
-  ["Screens", "tft-24", 'TFT 2.4"', "rect", 39, 51],
-  ["Screens", "tft-28", 'TFT 2.8"', "rect", 46, 60],
-  ["Screens", "tft-32", 'TFT 3.2"', "rect", 51, 67],
-  ["Screens", "tft-35", 'TFT 3.5"', "rect", 51, 76],
-  ["Screens", "lcd-162", "LCD 16×2", "rect", 67, 18],
+  ["group.pinHeaders", "jst-xh-2", "JST-XH 2-pin", "rect", 5, 7],
+  ["group.pinHeaders", "jst-ph-2", "JST-PH 2-pin", "rect", 4, 6],
+  ["group.pinHeaders", "molex-kk", "Molex KK 2.54", "rect", 5, 7],
+  ["group.pinHeaders", "dupont-4", "Dupont 4-pin", "rect", 10, 7],
+  ["group.cards", "microsd", "microSD slot", "rect", 15, 2],
+  ["group.cards", "nano-sim", "Nano-SIM tray", "rect", 12, 10],
+  ["group.screens", "oled-091", 'OLED 0.91"', "rect", 24, 8],
+  ["group.screens", "oled-096", 'OLED 0.96"', "rect", 24, 14],
+  ["group.screens", "oled-13", 'OLED 1.3"', "rect", 32, 17],
+  ["group.screens", "tft-177", 'TFT 1.77"', "rect", 30, 37],
+  ["group.screens", "tft-20", 'TFT 2.0"', "rect", 33, 43],
+  ["group.screens", "tft-24", 'TFT 2.4"', "rect", 39, 51],
+  ["group.screens", "tft-28", 'TFT 2.8"', "rect", 46, 60],
+  ["group.screens", "tft-32", 'TFT 3.2"', "rect", 51, 67],
+  ["group.screens", "tft-35", 'TFT 3.5"', "rect", 51, 76],
+  ["group.screens", "lcd-162", "LCD 16×2", "rect", 67, 18],
 ].map(([group, id, name, shape, a, b]) =>
   shape === "circle" ? { group, id, name, shape, diameter: a } : { group, id, name, shape, width: a, height: b },
 );
@@ -1689,8 +1689,7 @@ export function buildEnclosure(input, { quality = "normal" } = {}) {
         );
       }
     }
-    if (p.screwHeadDiameter <= p.lidScrewDiameter)
-      warnings.push("The screw heads are no wider than their holes in the lid.");
+    if (p.screwHeadDiameter <= p.lidScrewDiameter) warnings.push("warn.screwHeads");
   }
 
   // ---- snap fits ---------------------------------------------------------------------------------------------
@@ -1752,8 +1751,7 @@ export function buildEnclosure(input, { quality = "normal" } = {}) {
           ),
         );
       }
-      if (t - p.latchDepth - tol < 0.8)
-        warnings.push("The walls are thin for the snap grooves: make them thicker or the snaps shallower.");
+      if (t - p.latchDepth - tol < 0.8) warnings.push("warn.thinWalls");
     }
   }
 
@@ -1785,7 +1783,7 @@ export function buildEnclosure(input, { quality = "normal" } = {}) {
       const hole = reach - end;
       const [hx, hy] = [origin[0] + wall.n[0] * hole, origin[1] + wall.n[1] * hole];
       baseHoles.push(cylinder(hx, hy, p.flangeHoleDiameter / 2, -1, p.flangeThickness + 1, q));
-      if (p.flangeHoleDiameter > end * 2 - 2) warnings.push("The flange holes are nearly as wide as the flanges.");
+      if (p.flangeHoleDiameter > end * 2 - 2) warnings.push("warn.flangeHoles");
     }
   }
 
@@ -1820,7 +1818,7 @@ export function buildEnclosure(input, { quality = "normal" } = {}) {
       if (p.pcbOnLid && lid) {
         const ringIn = [innerW / 2 - tol - p.lidLipThickness, innerL / 2 - tol - p.lidLipThickness];
         if (lip && (Math.abs(x) + r > ringIn[0] || Math.abs(y) + r > ringIn[1]) && s.height > 0)
-          warnings.push("A standoff under the lid runs into its lip.");
+          warnings.push("warn.standoffLip");
         lidAdd.push(cylinder(x, y, r, H - s.height, H + 0.5, q));
         lidHoles.push(cylinder(x, y, hole, H - s.height - 1, H + lt - 0.8, q));
       } else {
@@ -1839,7 +1837,7 @@ export function buildEnclosure(input, { quality = "normal" } = {}) {
     const along = p.ventOrientation === "X" ? 0 : 1;
     const long = Math.min(p.ventSlotLength, room[along]);
     const wide = Math.min(p.ventSlotCount * (p.ventSlotWidth + p.ventSlotSpacing), room[1 - along]);
-    if (long < p.ventSlotWidth * 2 || wide < p.ventSlotWidth) warnings.push("The lid has no room for vents.");
+    if (long < p.ventSlotWidth * 2 || wide < p.ventSlotWidth) warnings.push("warn.noRoomVents");
     else
       for (const outline of ventOutlines(p, long, wide, q))
         lidHoles.push(prism(along === 0 ? outline : rotate2(outline, 90), H - lipH - 1, lidTop + 1));
@@ -1912,14 +1910,14 @@ export function buildEnclosure(input, { quality = "normal" } = {}) {
       const vw = (p.ventSlotCount * (p.ventSlotWidth + p.ventSlotSpacing)) / 2;
       const [vx, vy] = along ? [vl, vw] : [vw, vl];
       if (Math.abs(p.textOffsetX) < vx + tw / 2 && Math.abs(p.textOffsetY) < vy + th / 2)
-        warnings.push("The text runs into the lid's vents: move it with Move X or Y.");
+        warnings.push("warn.textVents");
     }
     const depth = raise ? p.textDepth : Math.min(p.textDepth, (p.textPlacement === "lid" ? lt : t) - 0.6);
     const [d0, d1] = raise ? [-0.2, depth] : [-depth, 1];
     const { width, height } = measure(p.textString, p.textSize);
     if (p.textPlacement === "lid") {
       if (lid) {
-        if (width > W - 2 * p.radius || height > L - 4) warnings.push("The text is bigger than the lid.");
+        if (width > W - 2 * p.radius || height > L - 4) warnings.push("warn.textTooBig");
         const solid = textSolid(
           p.textString,
           p.textSize,
@@ -2392,29 +2390,29 @@ const ICONS = {
 };
 
 const COLOURS = [
-  ["Accent", null],
-  ["Graphite", "#3b3f45"],
-  ["White", "#e9e7e1"],
-  ["Orange", "#f07f19"],
-  ["Navy", "#23395b"],
-  ["Red", "#cf3f45"],
+  ["colour.accent", null],
+  ["colour.graphite", "#3b3f45"],
+  ["colour.white", "#e9e7e1"],
+  ["colour.orange", "#f07f19"],
+  ["colour.navy", "#23395b"],
+  ["colour.red", "#cf3f45"],
 ];
-const WALL_NAMES = { front: "Front", back: "Back", left: "Left", right: "Right", lid: "Lid" };
+const WALL_NAMES = { front: "side.front", back: "side.back", left: "side.left", right: "side.right", lid: "part.lid" };
 const SHAPES = [
-  ["rect", "Rectangle"],
-  ["circle", "Circle"],
-  ["type-c", "Rounded slot"],
+  ["rect", "shape.rectangle"],
+  ["circle", "shape.circle"],
+  ["type-c", "shape.roundedSlot"],
   ["dsub", "D-sub"],
 ];
 const TABS = [
-  ["shell", "Shell"],
-  ["lid", "Lid"],
-  ["pcb", "PCB"],
-  ["ports", "Ports"],
-  ["vents", "Vents"],
-  ["text", "Text"],
+  ["shell", "shell.title"],
+  ["lid", "part.lid"],
+  ["pcb", "pcb.title"],
+  ["ports", "cutout.ports"],
+  ["vents", "vent.vents"],
+  ["text", "text.title"],
 ];
-const UNTITLED = "Untitled enclosure";
+const UNTITLED = "projects.untitled";
 const BUILD_DELAY_MS = 180;
 const SAVE_DRAFT_MS = 600;
 
@@ -2452,11 +2450,11 @@ function mix(a, b, t) {
 }
 
 /** "3 h ago" and the like. */
-function ago(time) {
+function ago(time, t) {
   const s = Math.max(0, (Date.now() - new Date(time).getTime()) / 1000);
-  if (s < 60) return "just now";
-  if (s < 3600) return `${Math.round(s / 60)} min ago`;
-  if (s < 86400) return `${Math.round(s / 3600)} h ago`;
+  if (s < 60) return t("time.justNow");
+  if (s < 3600) return t("time.minutesAgo", { minutes: Math.round(s / 60) });
+  if (s < 86400) return t("time.hoursAgo", { hours: Math.round(s / 3600) });
   return new Date(time).toLocaleDateString();
 }
 
@@ -2474,7 +2472,7 @@ const el = (tag, props = {}, ...children) => {
 };
 
 export default async function mount(thingport) {
-  const { root, theme, storage, models, ui } = thingport;
+  const { root, theme, storage, models, ui, t, labels } = thingport;
   const shell = root.querySelector(".enc");
   const $ = (id) => root.querySelector(`#enc-${id}`);
   const colours = {
@@ -2593,7 +2591,7 @@ export default async function mount(thingport) {
     building = new Promise((resolve) => {
       clearTimeout(busyTimer);
       busyTimer = setTimeout(() => ($("building").hidden = false), 120);
-      // A frame first, so "Building…" shows before the work holds the page.
+      // A frame first, so t("status.building") shows before the work holds the page.
       requestAnimationFrame(() =>
         setTimeout(() => {
           if (closed) return resolve();
@@ -2602,7 +2600,7 @@ export default async function mount(thingport) {
           } catch (err) {
             model = {
               ...(model ?? { base: [], lid: [], stats: null }),
-              warnings: [`It couldn't be built: ${err?.message || err}`],
+              warnings: [t("warn.buildFailed", { error: err?.message || err })],
             };
           }
           clearTimeout(busyTimer);
@@ -2630,8 +2628,7 @@ export default async function mount(thingport) {
   } catch {
     viewer = null;
   }
-  if (!viewer)
-    $("view").append(el("div", { class: "enc-novw" }, "The 3D view needs WebGL, which this browser has turned off."));
+  if (!viewer) $("view").append(el("div", { class: "enc-novw" }, t("view.noWebgl")));
 
   const baseColour = () => COLOURS[view.colour]?.[1] ?? theme.primary;
   const lidColour = () => mix(baseColour(), theme.mode === "dark" ? "#000000" : "#ffffff", 0.22);
@@ -2660,9 +2657,9 @@ export default async function mount(thingport) {
     const warnings = model.warnings ?? [];
     const button = $("warnings");
     button.hidden = !warnings.length;
-    button.textContent = warnings.length === 1 ? "1 note" : `${warnings.length} notes`;
+    button.textContent = t(warnings.length === 1 ? "notes.one" : "notes.many", { count: warnings.length });
     const list = $("warningList");
-    list.replaceChildren(...warnings.map((w) => el("li", {}, w)));
+    list.replaceChildren(...warnings.map((w) => el("li", {}, t(w))));
     if (!warnings.length) {
       list.hidden = true;
       button.setAttribute("aria-expanded", "false");
@@ -2685,9 +2682,9 @@ export default async function mount(thingport) {
     segment(
       $("show"),
       [
-        ["both", "Both"],
-        ["base", "Base"],
-        ["lid", "Lid"],
+        ["both", t("opt.both")],
+        ["base", t("part.base")],
+        ["lid", t("part.lid")],
       ],
       view.show,
       (v) => {
@@ -2700,9 +2697,9 @@ export default async function mount(thingport) {
     segment(
       $("quality"),
       [
-        ["draft", "Draft"],
-        ["normal", "Normal"],
-        ["high", "Fine"],
+        ["draft", t("detail.draft")],
+        ["normal", t("detail.normal")],
+        ["high", t("detail.fine")],
       ],
       view.quality,
       (v) => {
@@ -2712,13 +2709,13 @@ export default async function mount(thingport) {
         void build();
       },
     );
-    $("quality").title = "How finely curves are cut: Fine for the files to print, Draft to work quickly";
+    $("quality").title = t("detail.help");
     $("swatches").replaceChildren(
       ...COLOURS.map(([label, hex], i) =>
         el("button", {
           type: "button",
-          title: label,
-          "aria-label": label,
+          title: t(label),
+          "aria-label": t(label),
           "aria-pressed": String(i === view.colour),
           style: `background:${hex ?? theme.primary}`,
           onclick: () => {
@@ -2841,87 +2838,94 @@ export default async function mount(thingport) {
       ...(toggleKey && !params[toggleKey] ? [] : children),
     );
 
-  const wallOptions = Object.entries(WALL_NAMES).filter(([w]) => w !== "lid");
+  const wallOptions = Object.entries(WALL_NAMES)
+    .filter(([w]) => w !== "lid")
+    .map(([id, label]) => [id, t(label)]);
 
   const TAB_CONTENT = {
     shell: () => [
       section(
-        "Size outside",
-        { tip: "The base's outside size. The lid adds its thickness on top." },
-        grid(3, numberField("width", "Width"), numberField("length", "Length"), numberField("height", "Height")),
+        t("shell.sizeOutside"),
+        { tip: t("shell.sizeHelp") },
         grid(
           3,
-          numberField("thickness", "Walls", { title: "1.6 to 4 mm prints well" }),
-          numberField("radius", "Corners"),
-          numberField("tolerance", "Lid fit", { title: "Room between the lid and the base: 0.1 to 0.3 mm" }),
+          numberField("width", t("dim.width")),
+          numberField("length", t("dim.length")),
+          numberField("height", t("dim.height")),
+        ),
+        grid(
+          3,
+          numberField("thickness", t("part.walls"), { title: "1.6 to 4 mm prints well" }),
+          numberField("radius", t("shell.corners")),
+          numberField("tolerance", t("lid.fit"), { title: t("lid.fitHelp") }),
         ),
       ),
       section(
-        "Mounting flanges",
+        t("flange.title"),
         {
           toggleKey: "hasFlanges",
-          tip: "Ears with a screw hole at the foot of the walls, to fix the case to a wall or panel.",
+          tip: t("flange.help"),
         },
         chips("flangeWalls", "On", wallOptions),
         grid(
           2,
-          numberField("flangeLength", "Reach"),
-          numberField("flangeWidth", "Width"),
-          numberField("flangeHoleDiameter", "Hole"),
-          numberField("flangeThickness", "Thickness"),
+          numberField("flangeLength", t("screw.reach")),
+          numberField("flangeWidth", t("dim.width")),
+          numberField("flangeHoleDiameter", t("screw.hole")),
+          numberField("flangeThickness", t("dim.thickness")),
         ),
       ),
     ],
     lid: () => [
       section(
-        "Lid",
+        t("part.lid"),
         { toggleKey: "hasLid", tip: "A separate lid, printed upside down." },
-        seg("lidType", "Profile", [
-          ["flat", "Flat", "A plate sitting on top"],
-          ["lip", "With a lip", "A lip drops inside the base and keeps it in place"],
+        seg("lidType", t("shell.profile"), [
+          ["flat", t("lid.flat"), "A plate sitting on top"],
+          ["lip", t("lid.withLip"), "A lip drops inside the base and keeps it in place"],
         ]),
         params.lidType === "lip"
           ? grid(
               3,
-              numberField("lidThickness", "Thickness"),
-              numberField("lidLipHeight", "Lip height"),
-              numberField("lidLipThickness", "Lip wall"),
+              numberField("lidThickness", t("dim.thickness")),
+              numberField("lidLipHeight", t("lid.lipHeight")),
+              numberField("lidLipThickness", t("lid.lipWall")),
             )
-          : grid(3, numberField("lidThickness", "Thickness")),
+          : grid(3, numberField("lidThickness", t("dim.thickness"))),
       ),
       params.hasLid
         ? section(
-            "Fixing",
-            { tip: "Screws hold best and come apart; snaps need no tools or parts. Snaps need the lip." },
+            t("flange.fixing"),
+            { tip: t("join.help") },
             seg("lidFixation", "", [
-              ["screws", "Screws"],
-              ["snap", "Snap latches", "Hooks on the base's walls click into windows in the lid's lip"],
-              ["snapJoint", "Snap joint", "Bumps on the lid's lip click into grooves inside the base's walls"],
+              ["screws", t("join.screws")],
+              ["snap", t("snap.title"), t("snap.hooksHelp")],
+              ["snapJoint", t("join.snap"), t("snap.bumpsHelp")],
             ]),
             ...(params.lidFixation === "screws"
               ? [
-                  toggle("hasCornerScrews", "Corner screw bosses"),
+                  toggle("hasCornerScrews", t("screw.cornerBosses")),
                   params.hasCornerScrews
                     ? grid(
                         3,
-                        numberField("screwDiameter", "Base hole", {
-                          title: "For the screw to cut its own thread: a little under its size",
+                        numberField("screwDiameter", t("screw.baseHole"), {
+                          title: t("screw.pilotHelp"),
                         }),
-                        numberField("lidScrewDiameter", "Lid hole"),
-                        numberField("screwHeadDiameter", "Head"),
-                        numberField("screwHeadDepth", "Head sinks"),
-                        numberField("bossRadius", "Boss radius"),
-                        numberField("bossInset", "Inset", { title: "From the outside of the corner to the screw" }),
+                        numberField("lidScrewDiameter", t("screw.lidHole")),
+                        numberField("screwHeadDiameter", t("screw.head")),
+                        numberField("screwHeadDepth", t("screw.headSinks")),
+                        numberField("bossRadius", t("screw.bossRadius")),
+                        numberField("bossInset", t("vent.inset"), { title: t("screw.reachHelp") }),
                       )
                     : null,
                 ]
               : [
                   grid(
                     2,
-                    numberField("latchWidth", "Width"),
-                    numberField("latchDepth", "Catch"),
-                    numberField("latchHeight", "Height"),
-                    numberField("latchCount", "Per wall", { unit: "" }),
+                    numberField("latchWidth", t("dim.width")),
+                    numberField("latchDepth", t("snap.catch")),
+                    numberField("latchHeight", t("dim.height")),
+                    numberField("latchCount", t("vent.perWall"), { unit: "" }),
                   ),
                   chips("latchWalls", "On", wallOptions),
                 ]),
@@ -2929,65 +2933,65 @@ export default async function mount(thingport) {
         : null,
       params.hasLid
         ? section(
-            "Opening groove",
+            t("snap.openingGroove"),
             { toggleKey: "hasLidGroove", tip: "A notch at the top of a wall, for a flat tool to lift the lid." },
-            seg("grooveWall", "Wall", [["auto", "Auto"], ...wallOptions]),
+            seg("grooveWall", t("part.wall"), [["auto", t("opt.auto")], ...wallOptions]),
             grid(
               3,
-              numberField("grooveWidth", "Width"),
-              numberField("grooveHeight", "Height"),
-              numberField("grooveDepth", "Depth"),
+              numberField("grooveWidth", t("dim.width")),
+              numberField("grooveHeight", t("dim.height")),
+              numberField("grooveDepth", t("dim.depth")),
             ),
           )
         : null,
     ],
     pcb: () => [
       section(
-        "PCB standoffs",
-        { toggleKey: "hasPcbStandoffs", tip: "Posts to screw a circuit board to, with holes for its screws." },
+        t("pcb.standoffs"),
+        { toggleKey: "hasPcbStandoffs", tip: t("pcb.help") },
         boardPicker(),
         grid(
           2,
           segmented(
-            "Mounted on",
+            t("pcb.mountedOn"),
             [
-              [false, "Base"],
-              [true, "Lid"],
+              [false, t("part.base")],
+              [true, t("part.lid")],
             ],
             params.pcbOnLid,
             (v) => set("pcbOnLid", v, true),
           ),
-          el("div", { class: "enc-field" }, el("span", {}, " "), toggle("pcbRotated", "Turned 90°")),
+          el("div", { class: "enc-field" }, el("span", {}, " "), toggle("pcbRotated", t("pcb.turned90"))),
         ),
-        seg("standoffMode", "Holes", [
+        seg("standoffMode", t("vent.holes"), [
           ["grid", "4 corners"],
-          ["list", "Each one"],
+          ["list", t("vent.eachOne")],
         ]),
         ...(params.standoffMode === "grid"
           ? [
               grid(
                 3,
-                numberField("pcbWidth", "Across"),
-                numberField("pcbLength", "Along"),
-                numberField("pcbStandoffHeight", "Height"),
-                numberField("pcbStandoffOuterDia", "Post Ø"),
-                numberField("pcbStandoffInnerDia", "Hole Ø"),
+                numberField("pcbWidth", t("dir.across")),
+                numberField("pcbLength", t("dir.along")),
+                numberField("pcbStandoffHeight", t("dim.height")),
+                numberField("pcbStandoffOuterDia", t("pcb.postDia")),
+                numberField("pcbStandoffInnerDia", t("screw.holeDia")),
               ),
             ]
           : [standoffList()]),
-        grid(2, numberField("pcbOffsetX", "Move X"), numberField("pcbOffsetY", "Move Y")),
+        grid(2, numberField("pcbOffsetX", t("cutout.moveX")), numberField("pcbOffsetY", t("cutout.moveY"))),
       ),
     ],
     ports: () => [
       section(
-        "Ports and cutouts",
+        t("cutout.title"),
         {
-          tip: "Openings in the walls or lid for sockets, switches, screens and cables, each with an optional label cut beside it.",
+          tip: t("cutout.help"),
           action: el(
             "button",
             { class: "enc-btn enc-small", type: "button", onclick: addCutout },
             el("span", { html: ICONS.add }),
-            "Add",
+            t("act.add"),
           ),
         },
         cutoutList(),
@@ -2995,28 +2999,33 @@ export default async function mount(thingport) {
     ],
     vents: () => [
       section(
-        "Vents",
-        { tip: "Holes to let warm air out, in the lid and in the walls." },
-        toggle("hasVentilation", "In the lid"),
-        chips("ventWalls", "In the walls", wallOptions),
+        t("vent.vents"),
+        { tip: t("vent.help") },
+        toggle("hasVentilation", t("place.inLid")),
+        chips("ventWalls", t("place.inWalls"), wallOptions),
         ...(params.hasVentilation || params.ventWalls.length
           ? [
-              seg("ventPattern", "Pattern", [
-                ["slots", "Slots"],
-                ["honeycomb", "Honeycomb"],
-                ["dots", "Dots"],
-                ["diamonds", "Diamonds"],
+              seg("ventPattern", t("vent.pattern"), [
+                ["slots", t("vent.slots")],
+                ["honeycomb", t("vent.honeycomb")],
+                ["dots", t("vent.dots")],
+                ["diamonds", t("vent.diamonds")],
               ]),
-              seg("ventOrientation", "Running", [
-                ["X", "Along X", "In the lid, across the width; in a wall, along it"],
-                ["Y", "Along Y", "In the lid, front to back; in a wall, up it"],
+              seg("ventOrientation", t("vent.running"), [
+                ["X", t("dir.alongX"), t("place.acrossHelp")],
+                ["Y", t("dir.alongY"), t("place.alongHelp")],
               ]),
               grid(
                 2,
-                numberField("ventSlotCount", params.ventPattern === "slots" ? "Slots" : "Rows up to", { unit: "" }),
-                numberField("ventSlotLength", "Length"),
-                numberField("ventSlotWidth", params.ventPattern === "slots" ? "Slot width" : "Hole size"),
-                numberField("ventSlotSpacing", "Gap"),
+                numberField("ventSlotCount", params.ventPattern === "slots" ? t("vent.slots") : t("vent.rowsUpTo"), {
+                  unit: "",
+                }),
+                numberField("ventSlotLength", t("dim.length")),
+                numberField(
+                  "ventSlotWidth",
+                  params.ventPattern === "slots" ? t("vent.slotWidth") : t("screw.holeSize"),
+                ),
+                numberField("ventSlotSpacing", t("vent.gap")),
               ),
             ]
           : []),
@@ -3024,23 +3033,23 @@ export default async function mount(thingport) {
     ],
     text: () => [
       section(
-        "Text",
+        t("text.title"),
         {
           toggleKey: "hasText",
-          tip: "Words raised on or cut into the lid or a wall: capitals, digits and common signs.",
+          tip: t("text.help"),
         },
-        textInput("textString", "Text"),
-        seg("textPlacement", "On", [["lid", "Lid"], ...wallOptions]),
-        seg("textType", "Style", [
-          ["deboss", "Cut in"],
-          ["emboss", "Raised"],
+        textInput("textString", t("text.title")),
+        seg("textPlacement", "On", [["lid", t("part.lid")], ...wallOptions]),
+        seg("textType", t("text.style"), [
+          ["deboss", t("text.cutIn")],
+          ["emboss", t("text.raised")],
         ]),
         grid(
           2,
-          numberField("textSize", "Size"),
-          numberField("textDepth", "Depth"),
-          numberField("textOffsetX", "Move X"),
-          numberField("textOffsetY", "Move Y"),
+          numberField("textSize", t("dim.size")),
+          numberField("textDepth", t("dim.depth")),
+          numberField("textOffsetX", t("cutout.moveX")),
+          numberField("textOffsetY", t("cutout.moveY")),
         ),
       ),
     ],
@@ -3062,8 +3071,8 @@ export default async function mount(thingport) {
   function boardPicker() {
     const select = el(
       "select",
-      { "aria-label": "Board" },
-      el("option", { value: "none" }, "Custom"),
+      { "aria-label": t("pcb.board") },
+      el("option", { value: "none" }, t("opt.custom")),
       BOARDS.map((b) => el("option", { value: b.id }, b.name)),
     );
     select.value = BOARDS.some((b) => b.id === params.pcbPreset) ? params.pcbPreset : "none";
@@ -3087,7 +3096,12 @@ export default async function mount(thingport) {
         };
       afterChange(true);
     });
-    return el("label", { class: "enc-field" }, el("span", {}, "Board"), el("div", { class: "enc-input" }, select));
+    return el(
+      "label",
+      { class: "enc-field" },
+      el("span", {}, t("pcb.board")),
+      el("div", { class: "enc-input" }, select),
+    );
   }
 
   function standoffList() {
@@ -3103,19 +3117,19 @@ export default async function mount(thingport) {
         { class: "enc-standoff" },
         numberField(null, "X", { range: "standoffX", value: s.x, onValue: (v) => update(i, "x", v), unit: "" }),
         numberField(null, "Y", { range: "standoffY", value: s.y, onValue: (v) => update(i, "y", v), unit: "" }),
-        numberField(null, "Height", {
+        numberField(null, t("dim.height"), {
           range: "standoffHeight",
           value: s.height,
           onValue: (v) => update(i, "height", v),
           unit: "",
         }),
-        numberField(null, "Post Ø", {
+        numberField(null, t("pcb.postDia"), {
           range: "standoffOuterDia",
           value: s.outerDia,
           onValue: (v) => update(i, "outerDia", v),
           unit: "",
         }),
-        numberField(null, "Hole Ø", {
+        numberField(null, t("screw.holeDia"), {
           range: "standoffInnerDia",
           value: s.innerDia,
           onValue: (v) => update(i, "innerDia", v),
@@ -3124,7 +3138,7 @@ export default async function mount(thingport) {
         el("button", {
           class: "enc-icon-btn enc-tiny",
           type: "button",
-          title: "Remove",
+          title: t("act.remove"),
           "aria-label": `Remove standoff ${i + 1}`,
           html: ICONS.close,
           onclick: () => {
@@ -3161,12 +3175,12 @@ export default async function mount(thingport) {
         },
       },
       el("span", { html: ICONS.add }),
-      "Add standoff",
+      t("standoff.add"),
     );
     return el(
       "div",
       { class: "enc-section" },
-      rows.length ? rows : el("div", { class: "enc-empty" }, "No standoffs yet"),
+      rows.length ? rows : el("div", { class: "enc-empty" }, t("standoff.none")),
       el("div", {}, add),
     );
   }
@@ -3177,7 +3191,8 @@ export default async function mount(thingport) {
   const wallTall = (wall) => (wall === "lid" ? params.length : params.height);
   function cutoutName(c) {
     const template = PORTS.find((p) => p.id === c.portTemplate);
-    return c.label || template?.name || SHAPES.find(([s]) => s === c.shape)?.[1] || "Cutout";
+    const shape = SHAPES.find(([s]) => s === c.shape)?.[1];
+    return c.label || template?.name || (shape ? t(shape) : t("cutout.one"));
   }
   function shapeIcon(c) {
     const w = c.shape === "circle" ? c.diameter : c.width;
@@ -3239,10 +3254,10 @@ export default async function mount(thingport) {
     afterChange(true);
   }
   const cutoutActions = (c) => [
-    { label: "Edit", icon: ICONS.edit, run: () => editCutout(c.id) },
-    { label: "Duplicate", icon: ICONS.copy, run: () => duplicateCutout(c.id) },
+    { label: t("act.edit"), icon: ICONS.edit, run: () => editCutout(c.id) },
+    { label: t("act.duplicate"), icon: ICONS.copy, run: () => duplicateCutout(c.id) },
     "divider",
-    { label: "Remove", icon: ICONS.remove, danger: true, run: () => removeCutout(c.id) },
+    { label: t("act.remove"), icon: ICONS.remove, danger: true, run: () => removeCutout(c.id) },
   ];
 
   function cutoutList() {
@@ -3254,7 +3269,7 @@ export default async function mount(thingport) {
           class: "enc-item",
           tabindex: "0",
           "aria-current": String(editing?.id === c.id),
-          "aria-label": `${cutoutName(c)}, ${WALL_NAMES[c.wall]}, ${size} mm`,
+          "aria-label": `${cutoutName(c)}, ${t(WALL_NAMES[c.wall])}, ${size} mm`,
           onclick: () => editCutout(c.id),
           oncontextmenu: (event) => {
             event.preventDefault();
@@ -3273,12 +3288,12 @@ export default async function mount(thingport) {
           "span",
           {},
           el("b", {}, cutoutName(c)),
-          el("small", {}, `${WALL_NAMES[c.wall]} · ${size} mm · at ${fmt(c.x)}, ${fmt(c.z)}`),
+          el("small", {}, `${t(WALL_NAMES[c.wall])} · ${size} mm · ${t("cutout.at", { x: fmt(c.x), z: fmt(c.z) })}`),
         ),
         el("button", {
           class: "enc-icon-btn enc-tiny",
           type: "button",
-          title: "More",
+          title: t("act.more"),
           "aria-label": `More for ${cutoutName(c)}`,
           "aria-haspopup": "menu",
           html: ICONS.more,
@@ -3294,9 +3309,7 @@ export default async function mount(thingport) {
     return el(
       "div",
       { class: "enc-section" },
-      items.length
-        ? el("ul", { class: "enc-list" }, items)
-        : el("div", { class: "enc-empty" }, "No cutouts yet: Add one for a socket, a switch or a screen."),
+      items.length ? el("ul", { class: "enc-list" }, items) : el("div", { class: "enc-empty" }, t("cutout.none")),
       editingCutout ? cutoutEditor(editingCutout) : null,
     );
   }
@@ -3305,16 +3318,16 @@ export default async function mount(thingport) {
     const isLid = c.wall === "lid";
     const select = el(
       "select",
-      { "aria-label": "Socket or shape" },
+      { "aria-label": t("cutout.socketOrShape") },
       el(
         "optgroup",
-        { label: "Shapes" },
-        SHAPES.map(([s, label]) => el("option", { value: `shape:${s}` }, label)),
+        { label: t("shape.title") },
+        SHAPES.map(([s, label]) => el("option", { value: `shape:${s}` }, t(label))),
       ),
       [...new Set(PORTS.map((p) => p.group))].map((group) =>
         el(
           "optgroup",
-          { label: group },
+          { label: t(group) },
           PORTS.filter((p) => p.group === group).map((p) => el("option", { value: `port:${p.id}` }, p.name)),
         ),
       ),
@@ -3360,35 +3373,45 @@ export default async function mount(thingport) {
     return el(
       "div",
       { class: "enc-editor", onkeydown: (event) => event.key === "Escape" && (event.stopPropagation(), cancel()) },
-      segmented("Wall", Object.entries(WALL_NAMES), c.wall, (wall) => {
-        setCutout(c.id, { wall, x: round(wallLength(wall) / 2), z: round(wallTall(wall) / 2) });
-        renderForm();
-      }),
-      el("label", { class: "enc-field" }, el("span", {}, "Socket or shape"), el("div", { class: "enc-input" }, select)),
+      segmented(
+        t("part.wall"),
+        Object.entries(WALL_NAMES).map(([id, label]) => [id, t(label)]),
+        c.wall,
+        (wall) => {
+          setCutout(c.id, { wall, x: round(wallLength(wall) / 2), z: round(wallTall(wall) / 2) });
+          renderForm();
+        },
+      ),
+      el(
+        "label",
+        { class: "enc-field" },
+        el("span", {}, t("cutout.socketOrShape")),
+        el("div", { class: "enc-input" }, select),
+      ),
       c.shape === "circle"
-        ? grid(3, field("diameter", "Diameter", "cutoutDiameter"))
+        ? grid(3, field("diameter", t("dim.diameter"), "cutoutDiameter"))
         : grid(
             3,
-            field("width", "Width", "cutoutWidth"),
-            field("height", "Height", "cutoutHeight"),
-            field("rotation", "Turned", "cutoutRotation", "°"),
+            field("width", t("dim.width"), "cutoutWidth"),
+            field("height", t("dim.height"), "cutoutHeight"),
+            field("rotation", t("pcb.turned"), "cutoutRotation", "°"),
           ),
       grid(
         2,
-        numberField(null, "From left", {
+        numberField(null, t("pos.fromLeft"), {
           range: "cutoutPosition",
           value: c.x,
           onValue: (v) => setCutout(c.id, { x: v }),
           title: `0 to ${fmt(wallLength(c.wall))} mm`,
         }),
-        numberField(null, isLid ? "From front" : "From bottom", {
+        numberField(null, isLid ? t("pos.fromFront") : t("pos.fromBottom"), {
           range: "cutoutPosition",
           value: c.z,
           onValue: (v) => setCutout(c.id, { z: v }),
           title: `0 to ${fmt(wallTall(c.wall))} mm`,
         }),
       ),
-      textInput(null, "Label", {
+      textInput(null, t("cutout.label"), {
         value: c.label,
         onValue: (v) => setCutout(c.id, { label: v }),
         maxlength: 16,
@@ -3398,12 +3421,12 @@ export default async function mount(thingport) {
         ? grid(
             2,
             segmented(
-              "Label goes",
+              t("cutout.labelGoes"),
               [
-                ["above", "Above"],
-                ["below", "Below"],
-                ["left", "Left"],
-                ["right", "Right"],
+                ["above", t("pos.above")],
+                ["below", t("pos.below")],
+                ["left", t("side.left")],
+                ["right", t("side.right")],
               ],
               c.labelPosition,
               (labelPosition) => {
@@ -3411,7 +3434,7 @@ export default async function mount(thingport) {
                 renderForm();
               },
             ),
-            numberField(null, "Label size", {
+            numberField(null, t("cutout.labelSize"), {
               range: "cutoutLabelSize",
               value: c.labelSize,
               onValue: (v) => setCutout(c.id, { labelSize: v }),
@@ -3421,11 +3444,11 @@ export default async function mount(thingport) {
       el(
         "div",
         { class: "enc-editor-actions" },
-        el("button", { class: "enc-btn enc-small", type: "button", onclick: cancel }, "Cancel"),
+        el("button", { class: "enc-btn enc-small", type: "button", onclick: cancel }, t("act.cancel")),
         el(
           "button",
           { class: "enc-btn enc-small enc-primary", type: "button", onclick: done },
-          editing.isNew ? "Add" : "Done",
+          editing.isNew ? t("act.add") : t("act.done"),
         ),
       ),
     );
@@ -3461,7 +3484,7 @@ export default async function mount(thingport) {
               tabs.querySelector(`#enc-tab-${view.tab}`)?.focus();
             },
           },
-          label,
+          t(label),
         ),
       ),
     );
@@ -3503,8 +3526,8 @@ export default async function mount(thingport) {
     safely(async () => {
       if (
         !(await ui.confirm({
-          title: "Back to the defaults?",
-          message: "Every setting goes back to how it starts. Undo brings them back.",
+          title: t("reset.title"),
+          message: t("reset.body"),
         }))
       )
         return;
@@ -3553,7 +3576,7 @@ export default async function mount(thingport) {
 
   const confirmLeave = async (what) =>
     !dirty() ||
-    ui.confirm({ title: "Leave your changes?", message: `${name} has changes that aren't saved. ${what} anyway?` });
+    ui.confirm({ title: t("projects.leaveTitle"), message: `${name} has changes that aren't saved. ${what} anyway?` });
 
   function load(record) {
     params = normalize(record.params).params;
@@ -3570,10 +3593,10 @@ export default async function mount(thingport) {
 
   const openProject = safely(async (id) => {
     if (id === projectId) return closeProjects();
-    if (!(await confirmLeave("Open another"))) return;
+    if (!(await confirmLeave(t("projects.openAnother")))) return;
     const record = await storage.get(`project:${id}`);
     if (!record) {
-      ui.toast("That project isn't there any more", "warning");
+      ui.toast(t("projects.gone"), "warning");
       await renderProjects();
       return;
     }
@@ -3618,8 +3641,8 @@ export default async function mount(thingport) {
     const entry = index.find((p) => p.id === id);
     if (
       !(await ui.confirm({
-        title: `Delete ${entry?.name ?? "this project"}?`,
-        message: "It goes from your projects for good. Models saved from it stay in your library.",
+        title: `Delete ${entry?.name ?? t("projects.thisProject")}?`,
+        message: t("projects.deleteBody"),
       }))
     )
       return;
@@ -3640,13 +3663,13 @@ export default async function mount(thingport) {
       row.classList.add("enc-leaving");
       row.addEventListener("animationend", finish, { once: true });
     } else finish();
-    ui.toast(`Deleted ${entry?.name ?? "the project"}`, "success");
+    ui.toast(`Deleted ${entry?.name ?? t("projects.theProject")}`, "success");
   });
 
   const projectActions = (p) => [
-    { label: "Open", icon: ICONS.open, run: () => openProject(p.id) },
-    { label: "Duplicate", icon: ICONS.copy, run: () => duplicateProject(p.id) },
-    { label: "Download JSON", icon: ICONS.json, run: () => exportProject(p.id) },
+    { label: t("act.open"), icon: ICONS.open, run: () => openProject(p.id) },
+    { label: t("act.duplicate"), icon: ICONS.copy, run: () => duplicateProject(p.id) },
+    { label: t("act.downloadJson"), icon: ICONS.json, run: () => exportProject(p.id) },
     "divider",
     { label: "Delete", icon: ICONS.remove, danger: true, run: () => deleteProject(p.id) },
   ];
@@ -3665,8 +3688,12 @@ export default async function mount(thingport) {
         el(
           "li",
           { class: "enc-empty" },
-          "No saved projects yet. ",
-          el("button", { class: "enc-link", type: "button", onclick: () => void saveProject() }, "Save this one"),
+          t("projects.none"),
+          el(
+            "button",
+            { class: "enc-link", type: "button", onclick: () => void saveProject() },
+            t("projects.saveThisOne"),
+          ),
         ),
       );
       return;
@@ -3684,7 +3711,7 @@ export default async function mount(thingport) {
               tabindex: "0",
               style: `animation-delay:${Math.min(i * 30, 240)}ms`,
               "aria-current": String(p.id === projectId),
-              "aria-label": `${p.name}, ${p.size}, saved ${ago(p.updatedAt)}`,
+              "aria-label": t("projects.itemAria", { name: p.name, size: p.size, when: ago(p.updatedAt, t) }),
               onclick: () => openProject(p.id),
               oncontextmenu: (event) => {
                 event.preventDefault();
@@ -3705,12 +3732,16 @@ export default async function mount(thingport) {
               "span",
               {},
               el("b", {}, p.name),
-              el("small", {}, `${p.size} · saved ${ago(p.updatedAt)}${p.id === projectId ? " · open now" : ""}`),
+              el(
+                "small",
+                {},
+                `${p.size} · ${t("projects.savedWhen", { when: ago(p.updatedAt, t) })}${p.id === projectId ? ` · ${t("projects.openNow")}` : ""}`,
+              ),
             ),
             el("button", {
               class: "enc-icon-btn",
               type: "button",
-              title: "More",
+              title: t("act.more"),
               "aria-label": `More for ${p.name}`,
               "aria-haspopup": "menu",
               html: ICONS.more,
@@ -3749,7 +3780,7 @@ export default async function mount(thingport) {
   $("new").addEventListener(
     "click",
     safely(async () => {
-      if (!(await confirmLeave("Start a new one"))) return;
+      if (!(await confirmLeave(t("projects.startNew")))) return;
       load({ id: null, name: UNTITLED, params: DEFAULTS });
       saved = JSON.parse(stateJson());
       updateBar();
@@ -3775,7 +3806,7 @@ export default async function mount(thingport) {
         data && typeof data === "object" && data.params && typeof data.params === "object" ? data.params : data;
       if (!raw || typeof raw !== "object" || !("width" in raw || "height" in raw || "length" in raw))
         throw new Error(`${file.name} doesn't look like an enclosure project`);
-      if (!(await confirmLeave("Import"))) return;
+      if (!(await confirmLeave(t("act.import")))) return;
       load({ id: null, name: data.name || file.name.replace(/\.json$/i, ""), params: raw });
       closeProjects();
       ui.toast(`Imported ${name}: save it to keep it here`, "success");
@@ -3794,9 +3825,13 @@ export default async function mount(thingport) {
   $("download").addEventListener("click", (event) => {
     const button = event.currentTarget;
     openMenu(button, [
-      { label: "Base STL", icon: ICONS.stl, run: safely(async () => (await ready(), thingport.download(files()[0]))) },
       {
-        label: "Lid STL, turned to print",
+        label: t("file.baseStl"),
+        icon: ICONS.stl,
+        run: safely(async () => (await ready(), thingport.download(files()[0]))),
+      },
+      {
+        label: t("file.lidStl"),
         icon: ICONS.stl,
         disabled: !params.hasLid,
         run: safely(async () => {
@@ -3806,7 +3841,7 @@ export default async function mount(thingport) {
         }),
       },
       "divider",
-      { label: "Project JSON", icon: ICONS.json, run: () => exportProject(null) },
+      { label: t("file.projectJson"), icon: ICONS.json, run: () => exportProject(null) },
     ]);
   });
 
@@ -3834,10 +3869,10 @@ export default async function mount(thingport) {
         p.lidFixation === "snap"
           ? `held by ${p.latchCount} snap latch${p.latchCount === 1 ? "" : "es"} on each of the ${(p.latchWalls.length ? p.latchWalls : ["left", "right"]).join(", ")} walls`
           : p.lidFixation === "snapJoint"
-            ? "held by a snap joint"
+            ? t("join.heldBySnap")
             : p.hasCornerScrews
               ? `screwed at the corners: ${fmt(p.screwDiameter)} mm holes in the base, ${fmt(p.lidScrewDiameter)} mm in the lid, for heads up to ${fmt(p.screwHeadDiameter)} mm`
-              : "resting in place";
+              : t("join.restingInPlace");
       lines.push(`- Lid ${fmt(p.lidThickness)} mm${lip}, ${fixing}`);
     }
     if (p.hasPcbStandoffs) {
@@ -3854,11 +3889,11 @@ export default async function mount(thingport) {
     const ventsIn = [...(p.hasVentilation && p.hasLid ? ["lid"] : []), ...p.ventWalls.map((w) => `${w} wall`)];
     if (ventsIn.length)
       lines.push(
-        `- ${p.ventPattern === "slots" ? "Vent slots" : `${p.ventPattern[0].toUpperCase()}${p.ventPattern.slice(1)} vents`} in the ${ventsIn.join(", ")}`,
+        `- ${p.ventPattern === "slots" ? t("vent.title") : `${p.ventPattern[0].toUpperCase()}${p.ventPattern.slice(1)} vents`} in the ${ventsIn.join(", ")}`,
       );
     if (p.hasText && p.textString.trim())
       lines.push(
-        `- "${p.textString}" ${p.textType === "emboss" ? "raised on" : "cut into"} the ${p.textPlacement === "lid" ? "lid" : `${p.textPlacement} wall`}`,
+        `- "${p.textString}" ${p.textType === "emboss" ? t("text.raisedOn") : t("text.cutIntoLower")} the ${p.textPlacement === "lid" ? "lid" : `${p.textPlacement} wall`}`,
       );
     return lines.join("\n");
   }
@@ -3879,7 +3914,7 @@ export default async function mount(thingport) {
       button.disabled = true;
       try {
         await ready();
-        if (!model?.base?.length) throw new Error("There's nothing to save yet");
+        if (!model?.base?.length) throw new Error(t("save.nothingYet"));
         const created = await models.create({
           name: name.trim() || UNTITLED,
           description: describe(),
@@ -3899,9 +3934,9 @@ export default async function mount(thingport) {
         }
         ui.toast(`Saved ${created.name} to Thingport`, "success");
         showStatus(`Saved as ${created.name}.`, [
-          ["Open it", () => models.open(created.id)],
+          [t("save.openIt"), () => models.open(created.id)],
           [
-            "Add to a collection",
+            t("save.addToCollection"),
             safely(async () => {
               const collection = await ui.pickCollection({ title: `Add ${created.name} to` });
               if (!collection) return;
@@ -4002,6 +4037,8 @@ export default async function mount(thingport) {
 
   renderTabs();
   renderForm();
+  // The window's own words, before the first render.
+  labels();
   renderViewControls();
   updateBar();
   await build();

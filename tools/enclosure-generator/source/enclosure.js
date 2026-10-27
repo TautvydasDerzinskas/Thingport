@@ -198,8 +198,7 @@ export function buildEnclosure(input, { quality = "normal" } = {}) {
         );
       }
     }
-    if (p.screwHeadDiameter <= p.lidScrewDiameter)
-      warnings.push("The screw heads are no wider than their holes in the lid.");
+    if (p.screwHeadDiameter <= p.lidScrewDiameter) warnings.push("warn.screwHeads");
   }
 
   // ---- snap fits ---------------------------------------------------------------------------------------------
@@ -261,8 +260,7 @@ export function buildEnclosure(input, { quality = "normal" } = {}) {
           ),
         );
       }
-      if (t - p.latchDepth - tol < 0.8)
-        warnings.push("The walls are thin for the snap grooves: make them thicker or the snaps shallower.");
+      if (t - p.latchDepth - tol < 0.8) warnings.push("warn.thinWalls");
     }
   }
 
@@ -294,7 +292,7 @@ export function buildEnclosure(input, { quality = "normal" } = {}) {
       const hole = reach - end;
       const [hx, hy] = [origin[0] + wall.n[0] * hole, origin[1] + wall.n[1] * hole];
       baseHoles.push(cylinder(hx, hy, p.flangeHoleDiameter / 2, -1, p.flangeThickness + 1, q));
-      if (p.flangeHoleDiameter > end * 2 - 2) warnings.push("The flange holes are nearly as wide as the flanges.");
+      if (p.flangeHoleDiameter > end * 2 - 2) warnings.push("warn.flangeHoles");
     }
   }
 
@@ -329,7 +327,7 @@ export function buildEnclosure(input, { quality = "normal" } = {}) {
       if (p.pcbOnLid && lid) {
         const ringIn = [innerW / 2 - tol - p.lidLipThickness, innerL / 2 - tol - p.lidLipThickness];
         if (lip && (Math.abs(x) + r > ringIn[0] || Math.abs(y) + r > ringIn[1]) && s.height > 0)
-          warnings.push("A standoff under the lid runs into its lip.");
+          warnings.push("warn.standoffLip");
         lidAdd.push(cylinder(x, y, r, H - s.height, H + 0.5, q));
         lidHoles.push(cylinder(x, y, hole, H - s.height - 1, H + lt - 0.8, q));
       } else {
@@ -348,7 +346,7 @@ export function buildEnclosure(input, { quality = "normal" } = {}) {
     const along = p.ventOrientation === "X" ? 0 : 1;
     const long = Math.min(p.ventSlotLength, room[along]);
     const wide = Math.min(p.ventSlotCount * (p.ventSlotWidth + p.ventSlotSpacing), room[1 - along]);
-    if (long < p.ventSlotWidth * 2 || wide < p.ventSlotWidth) warnings.push("The lid has no room for vents.");
+    if (long < p.ventSlotWidth * 2 || wide < p.ventSlotWidth) warnings.push("warn.noRoomVents");
     else
       for (const outline of ventOutlines(p, long, wide, q))
         lidHoles.push(prism(along === 0 ? outline : rotate2(outline, 90), H - lipH - 1, lidTop + 1));
@@ -421,14 +419,14 @@ export function buildEnclosure(input, { quality = "normal" } = {}) {
       const vw = (p.ventSlotCount * (p.ventSlotWidth + p.ventSlotSpacing)) / 2;
       const [vx, vy] = along ? [vl, vw] : [vw, vl];
       if (Math.abs(p.textOffsetX) < vx + tw / 2 && Math.abs(p.textOffsetY) < vy + th / 2)
-        warnings.push("The text runs into the lid's vents: move it with Move X or Y.");
+        warnings.push("warn.textVents");
     }
     const depth = raise ? p.textDepth : Math.min(p.textDepth, (p.textPlacement === "lid" ? lt : t) - 0.6);
     const [d0, d1] = raise ? [-0.2, depth] : [-depth, 1];
     const { width, height } = measure(p.textString, p.textSize);
     if (p.textPlacement === "lid") {
       if (lid) {
-        if (width > W - 2 * p.radius || height > L - 4) warnings.push("The text is bigger than the lid.");
+        if (width > W - 2 * p.radius || height > L - 4) warnings.push("warn.textTooBig");
         const solid = textSolid(
           p.textString,
           p.textSize,

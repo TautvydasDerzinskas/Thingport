@@ -9,6 +9,12 @@
     "height": 820
   },
   "hosts": [],
+  "locales": [
+    "en",
+    "lt",
+    "es",
+    "fr"
+  ],
   "screenshots": [
     {
       "file": "screenshots/pi.webp",

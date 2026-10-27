@@ -854,20 +854,22 @@
 <div class="enc" id="enc-shell">
   <div class="enc-bar">
     <label class="enc-name">
-      <input id="enc-name" maxlength="120" autocomplete="off" aria-label="Project name" />
-      <span class="enc-dirty" id="enc-dirty" title="Not saved" hidden></span>
+      <input id="enc-name" maxlength="120" autocomplete="off" data-t-aria="projects.name" aria-label="Project name" />
+      <span class="enc-dirty" id="enc-dirty" data-t-title="projects.notSaved" title="Not saved" hidden></span>
     </label>
-    <button class="enc-btn" id="enc-projects" type="button" title="Saved projects">
+    <button class="enc-btn" id="enc-projects" type="button" data-t-title="projects.title" title="Saved projects">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
         <path d="M4 5a1 1 0 0 1 1-1h4l2 2h8a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
       </svg>
-      Projects
+      <span data-t="projects.title">Projects</span>
     </button>
     <button
       class="enc-icon-btn"
       id="enc-saveProject"
       type="button"
+      data-t-title="act.saveHint"
       title="Save project (Ctrl+S)"
+      data-t-aria="act.saveProject"
       aria-label="Save project"
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -876,7 +878,15 @@
       </svg>
     </button>
     <span class="enc-sep" aria-hidden="true"></span>
-    <button class="enc-icon-btn" id="enc-undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo">
+    <button
+      class="enc-icon-btn"
+      id="enc-undo"
+      type="button"
+      data-t-title="act.undoHint"
+      title="Undo (Ctrl+Z)"
+      data-t-aria="act.undo"
+      aria-label="Undo"
+    >
       <svg
         viewBox="0 0 24 24"
         fill="none"
@@ -889,7 +899,15 @@
         <path d="M4 9h10a6 6 0 0 1 0 12h-3" />
       </svg>
     </button>
-    <button class="enc-icon-btn" id="enc-redo" type="button" title="Redo (Ctrl+Y)" aria-label="Redo">
+    <button
+      class="enc-icon-btn"
+      id="enc-redo"
+      type="button"
+      data-t-title="act.redoHint"
+      title="Redo (Ctrl+Y)"
+      data-t-aria="act.redo"
+      aria-label="Redo"
+    >
       <svg
         viewBox="0 0 24 24"
         fill="none"
@@ -906,7 +924,9 @@
       class="enc-icon-btn"
       id="enc-reset"
       type="button"
+      data-t-title="act.reset"
       title="Back to the defaults"
+      data-t-aria="act.reset"
       aria-label="Back to the defaults"
     >
       <svg
@@ -926,44 +946,68 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
         <path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
       </svg>
-      Download
+      <span data-t="act.download">Download</span>
     </button>
     <button class="enc-btn enc-primary" id="enc-saveModel" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
         <path d="M12 3 20 7.5v9L12 21l-8-4.5v-9z" />
         <path d="M12 12l8-4.5M12 12v9M12 12 4 7.5" />
       </svg>
-      Save to Thingport
+      <span data-t="bar.save">Save to Thingport</span>
     </button>
   </div>
 
   <div class="enc-main">
-    <section class="enc-panel enc-settings" aria-label="Settings">
-      <div class="enc-tabs" role="tablist" aria-label="Settings" id="enc-tabs"></div>
+    <section class="enc-panel enc-settings" data-t-aria="aria.settings" aria-label="Settings">
+      <div class="enc-tabs" role="tablist" data-t-aria="aria.settings" aria-label="Settings" id="enc-tabs"></div>
       <div class="enc-form" id="enc-form" role="tabpanel"></div>
     </section>
 
-    <section class="enc-panel enc-view" id="enc-view" aria-label="The enclosure in 3D">
+    <section class="enc-panel enc-view" id="enc-view" data-t-aria="aria.view3d" aria-label="The enclosure in 3D">
       <canvas
         id="enc-canvas"
         tabindex="0"
+        data-t-aria="aria.view3dFull"
         aria-label="The enclosure in 3D. Drag or use the arrow keys to turn it, the wheel or + and − to zoom, 0 to start again."
       ></canvas>
       <div class="enc-overlay enc-top-left">
-        <div class="enc-seg enc-float" id="enc-show" role="group" aria-label="Show"></div>
-        <label class="enc-explode enc-float" title="Lift the lid off">
-          Lid
-          <input type="range" id="enc-explode" min="0" max="60" step="1" value="0" aria-label="Lift the lid" />
+        <div class="enc-seg enc-float" id="enc-show" role="group" data-t-aria="view.show" aria-label="Show"></div>
+        <label class="enc-explode enc-float" data-t-title="view.liftLidOff" title="Lift the lid off">
+          <span data-t="part.lid">Lid</span>
+          <input
+            type="range"
+            id="enc-explode"
+            min="0"
+            max="60"
+            step="1"
+            value="0"
+            data-t-aria="view.liftLid"
+            aria-label="Lift the lid"
+          />
         </label>
-        <div class="enc-swatches enc-float" id="enc-swatches" role="group" aria-label="Colour"></div>
+        <div
+          class="enc-swatches enc-float"
+          id="enc-swatches"
+          role="group"
+          data-t-aria="view.colour"
+          aria-label="Colour"
+        ></div>
       </div>
       <div class="enc-overlay enc-top-right">
-        <div class="enc-seg enc-float" id="enc-quality" role="group" aria-label="Detail"></div>
+        <div
+          class="enc-seg enc-float"
+          id="enc-quality"
+          role="group"
+          data-t-aria="view.detail"
+          aria-label="Detail"
+        ></div>
         <button
           class="enc-icon-btn enc-float"
           id="enc-resetView"
           type="button"
+          data-t-title="view.reset"
           title="Reset the view"
+          data-t-aria="view.reset"
           aria-label="Reset the view"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -982,7 +1026,7 @@
           hidden
         ></button>
         <div class="enc-building enc-float" id="enc-building" role="status" hidden>
-          <span class="enc-spinner"></span>Building…
+          <span class="enc-spinner"></span><span data-t="status.building">Building…</span>
         </div>
         <div class="enc-status enc-float" id="enc-status" role="status" hidden></div>
       </div>
@@ -1000,24 +1044,35 @@
   >
     <div class="enc-card">
       <div class="enc-card-head">
-        <h2 id="enc-projectsTitle">Projects</h2>
+        <h2 id="enc-projectsTitle"><span data-t="projects.title">Projects</span></h2>
         <span class="enc-spacer"></span>
         <button
           class="enc-btn enc-small"
           id="enc-import"
           type="button"
+          data-t-title="act.importHint"
           title="Open a project saved as JSON, here or on PrintCasing"
         >
-          Import JSON
+          <span data-t="act.importJson">Import JSON</span>
         </button>
-        <button class="enc-btn enc-small enc-primary" id="enc-new" type="button">New project</button>
-        <button class="enc-icon-btn" id="enc-projectsClose" type="button" title="Close" aria-label="Close">
+        <button class="enc-btn enc-small enc-primary" id="enc-new" type="button">
+          <span data-t="projects.new">New project</span>
+        </button>
+        <button
+          class="enc-icon-btn"
+          id="enc-projectsClose"
+          type="button"
+          data-t-title="act.close"
+          title="Close"
+          data-t-aria="act.close"
+          aria-label="Close"
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M6 6l12 12M18 6 6 18" />
           </svg>
         </button>
       </div>
-      <ul class="enc-projects" id="enc-projectList" aria-label="Saved projects"></ul>
+      <ul class="enc-projects" id="enc-projectList" data-t-aria="projects.title" aria-label="Saved projects"></ul>
       <input type="file" id="enc-importFile" accept=".json,application/json" hidden />
     </div>
   </div>
