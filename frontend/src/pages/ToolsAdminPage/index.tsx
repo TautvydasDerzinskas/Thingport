@@ -18,6 +18,8 @@ import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
+import ButtonBase from "@mui/material/ButtonBase";
+import LaunchIcon from "@mui/icons-material/Launch";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
@@ -30,6 +32,7 @@ import { UnauthorizedError } from "../../api/client";
 import {
   toolsApi,
   type AdminTool,
+  type Tool,
   type ToolCatalog,
   type OwnToolInUse,
   type ToolsAccessSettings,
@@ -43,7 +46,8 @@ import { useToast } from "../../components/ToastProvider";
 import ToolIcon from "../../components/tools/ToolIcon";
 import { printsApi } from "../../api/prints";
 import Screenshots from "../../components/Screenshots";
-import { reloadTools } from "../../hooks/useTools";
+import { reloadTools, useTools } from "../../hooks/useTools";
+import ToolWindow from "../../components/tools/ToolWindow";
 
 // While a tool's models are being fetched, the page asks how far it's got this often.
 const POLL_MS = 3000;
@@ -72,6 +76,11 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
   const [own, setOwn] = useState<OwnToolInUse[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [menu, setMenu] = useState<{ anchor: HTMLElement; tool: AdminTool } | null>(null);
+  // The admin's own copies of the installed tools, so one can be opened from here rather than from the Tools page.
+  const mine = useTools();
+  const [running, setRunning] = useState<Tool | null>(null);
+  const openable = (tool: AdminTool) =>
+    tool.installed ? (mine?.tools.find((ours) => ours.source === "repo" && ours.slug === tool.slug) ?? null) : null;
 
   const fail = useCallback(
     (err: unknown, fallback: string) => {
@@ -296,6 +305,7 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
                 onInstall={() => void install(tool)}
                 onRetry={() => void retry(tool)}
                 onMenu={(anchor) => setMenu({ anchor, tool })}
+                onOpen={openable(tool) ? () => setRunning(openable(tool)) : undefined}
               />
             ))}
           </Stack>
@@ -332,6 +342,21 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
       </Stack>
 
       <Menu anchorEl={menu?.anchor} open={Boolean(menu)} onClose={() => setMenu(null)}>
+        {menu && openable(menu.tool) && (
+          <MenuItem
+            onClick={() => {
+              const open = openable(menu.tool);
+              setMenu(null);
+              setRunning(open);
+            }}
+          >
+            <ListItemIcon>
+              <LaunchIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t("adminSettings.tools.repo.open")}</ListItemText>
+          </MenuItem>
+        )}
+        {menu && openable(menu.tool) && <Divider />}
         {menu?.tool.installed?.models && menu.tool.installed.models.ready < menu.tool.installed.models.total && (
           <MenuItem
             disabled={menu.tool.installed.models.fetching}
@@ -361,6 +386,8 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
           <ListItemText sx={{ color: "error.main" }}>{t("adminSettings.tools.repo.uninstall")}</ListItemText>
         </MenuItem>
       </Menu>
+
+      <ToolWindow tool={running} onClose={() => setRunning(null)} />
     </Stack>
   );
 }
@@ -372,10 +399,12 @@ type RowProps = {
   onInstall: () => void;
   onRetry: () => void;
   onMenu: (anchor: HTMLElement) => void;
+  /** Opens the admin's own copy, where the tool is installed; absent while it isn't. */
+  onOpen?: () => void;
 };
 
 /** One of the repository's tools: what it is, whether it's installed, and how far its models have come. */
-function RepoToolRow({ tool, index, busy, onInstall, onRetry, onMenu }: RowProps) {
+function RepoToolRow({ tool, index, busy, onInstall, onRetry, onMenu, onOpen }: RowProps) {
   const { t } = useTranslation("app");
   const { manifest, installed } = tool;
   const models = installed?.models ?? null;
@@ -412,22 +441,43 @@ function RepoToolRow({ tool, index, busy, onInstall, onRetry, onMenu }: RowProps
       }}
     >
       <Stack direction="row" spacing={1.5} alignItems="flex-start">
-        <Box
-          sx={{
-            width: 44,
-            height: 44,
-            flexShrink: 0,
-            borderRadius: "12px",
-            border: 1,
-            borderColor: "divider",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "primary.main",
-          }}
-        >
-          <ToolIcon iconUrl={manifest.iconUrl} size={26} />
-        </Box>
+        <Tooltip title={onOpen ? t("adminSettings.tools.repo.openHint", { name: manifest.name }) : ""}>
+          <Box
+            component={onOpen ? ButtonBase : "div"}
+            onDoubleClick={onOpen}
+            onKeyDown={
+              onOpen
+                ? (event: React.KeyboardEvent) => {
+                    if (event.key === "Enter") onOpen();
+                  }
+                : undefined
+            }
+            aria-label={onOpen ? t("adminSettings.tools.repo.openHint", { name: manifest.name }) : undefined}
+            sx={{
+              width: 44,
+              height: 44,
+              flexShrink: 0,
+              borderRadius: "12px",
+              border: 1,
+              borderColor: "divider",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "primary.main",
+              cursor: onOpen ? "pointer" : "default",
+              transition: "border-color 160ms, transform 160ms",
+              ...(onOpen
+                ? {
+                    "&:hover": { borderColor: "primary.main" },
+                    "&:active": { transform: "scale(0.96)" },
+                    "@media (prefers-reduced-motion: reduce)": { transition: "none" },
+                  }
+                : {}),
+            }}
+          >
+            <ToolIcon iconUrl={manifest.iconUrl} size={26} />
+          </Box>
+        </Tooltip>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Stack direction="row" alignItems="center" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
             <Typography variant="body2" fontWeight={600}>

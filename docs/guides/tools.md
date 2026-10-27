@@ -5,7 +5,21 @@ It's a short JavaScript module with some HTML and CSS, like a [custom dashboard 
 with your library: it can browse and make collections, find models, read their files, and save the models it makes.
 
 Open **Tools** in the sidebar. Double-click a tool to open it, or press <kbd>Enter</kbd> on it; right-click it, or press
-the context menu key, for **About**, **Its models** and, on your own tools, **Edit** and **Delete**.
+the context menu key, for **About**, **Its models** and, on your own tools, **Edit** and **Delete**. From anywhere,
+<kbd>⌘</kbd><kbd>K</kbd> and `!tool` lists them: every tool you can open is there by name, and picking one opens its
+window. An admin can open an installed tool straight from **Administration → Tools** as well, by double-clicking its
+icon or choosing **Open** from its ⋮ menu.
+
+### Arranging them
+
+**Arrange** (the sliders in the page's corner) is where the page itself is set up, and what you choose is kept on your
+account, so it opens the same way on every device:
+
+- **Show as** — **One grid**, which is the installed tools and then your own, or **Shelves**, which splits them into
+  Generators, Planners, Calculators, Files, Library and Other, with a heading each. Empty shelves aren't shown.
+- The order: by **Name**, **Newest** or **Author**, as the models page orders its grid.
+- Where each tool sits: right-click one while arranging and pick a shelf under **Move to**. A tool starts on the shelf
+  its own metadata names, and moving it is yours alone — an update to the tool won't move it back.
 
 > [!WARNING]
 > A tool's script runs in your browser with your access to Thingport, like code you paste into the browser console. The
@@ -60,7 +74,8 @@ own — only a tool from the repository does that.
 
 With **Users' own tools** on, **New tool** on the Tools page opens the editor:
 
-- **Details**: its name, icon, version, author, the size its window opens at, and the hosts it may reach.
+- **Details**: its name, icon, version, author, category, the size its window opens at, and the hosts it may reach.
+  The category is the shelf the Tools page starts it on; anyone using it can move it themselves.
 - **Script**: an ES module. The editor starts with a working tool, _Cube maker_, that uses most of what a tool can do;
   the **SDK reference** beside it lists the rest.
 - **Labels**: the words the tool shows, one file per language, so they aren't buried in the script. The script asks
@@ -211,6 +226,7 @@ A tool in the repository is a folder under [`tools/`](../../tools), listed in it
     "author": "Your Name",
     "window": { "width": 1100, "height": 720 },
     "hosts": [],
+    "category": "planners",
     "locales": ["en", "lt"],
     "collection": {
       "name": "Bin parts",

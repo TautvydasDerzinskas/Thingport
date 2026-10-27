@@ -69,6 +69,8 @@ model User {
   renderColor              String?
   // Which tree the models page shows: "categories" | "folders"; null means categories.
   categoriesView           String?
+  // How the Tools page is arranged: { layout, sort, categories: { [toolId]: category } }. Null until it's changed.
+  toolsView                Json?
   // The dashboard widgets the user had switched on or off, as { [widgetId]: boolean }. Superseded by
   // dashboardTemplates; read only to carry the user's choices into their first template.
   dashboardWidgets         Json?

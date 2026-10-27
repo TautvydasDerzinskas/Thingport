@@ -9,11 +9,12 @@
     "height": 800
   },
   "hosts": [],
+  "category": "planners",
   "locales": ["en", "lt", "es", "fr"],
   "screenshots": [
     {
       "file": "screenshots/wall.webp",
-      "caption": "A 820 \u00d7 860 mm wall filled by 16 boards on an A1, with every mounting point marked and each part linked to the model it came from in your library."
+      "caption": "A 820 × 860 mm wall filled by 16 boards on an A1, with every mounting point marked and each part linked to the model it came from in your library."
     },
     {
       "file": "screenshots/mini.webp",

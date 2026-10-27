@@ -9,11 +9,12 @@
     "height": 800
   },
   "hosts": [],
+  "category": "planners",
   "locales": ["en", "lt", "es", "fr"],
   "screenshots": [
     {
       "file": "screenshots/workshop.webp",
-      "caption": "A 500 \u00d7 400 mm drawer: the baseplate cut into six tiles for a 256 mm bed, with bins of several sizes and heights, some with compartments."
+      "caption": "A 500 × 400 mm drawer: the baseplate cut into six tiles for a 256 mm bed, with bins of several sizes and heights, some with compartments."
     },
     {
       "file": "screenshots/workshop-dark.webp",

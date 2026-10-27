@@ -9,6 +9,7 @@
     "height": 800
   },
   "hosts": [],
+  "category": "calculators",
   "locales": ["en", "lt", "es", "fr"],
   "screenshots": [
     {

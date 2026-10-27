@@ -2214,7 +2214,9 @@
           "uninstallFailed": "No se pudo desinstalar la herramienta",
           "updateAvailable": "Actualización disponible",
           "fromFolder": "Se ofrecen desde la carpeta {{location}}",
-          "fromRepository": "Se ofrecen desde {{location}}"
+          "fromRepository": "Se ofrecen desde {{location}}",
+          "open": "Abrir",
+          "openHint": "Abrir {{name}}: doble clic"
         },
         "own": {
           "heading": "Herramientas propias de los usuarios",
@@ -2618,7 +2620,28 @@
         "emptyAdmin": "Aún no hay herramientas. Instala alguna desde el repositorio.",
         "emptyCreate": "Aún no hay herramientas. Crea la tuya o pide a un administrador que instale alguna.",
         "install": "Instalar herramientas",
-        "noAccess": "Las herramientas no están disponibles para ti en este Thingport."
+        "noAccess": "Las herramientas no están disponibles para ti en este Thingport.",
+        "arrange": "Organizar",
+        "arrangeDone": "Listo",
+        "arrangeHintFlat": "Elige un orden, o coloca las herramientas en estantes; haz clic derecho en una para moverla.",
+        "arrangeHintCategories": "Haz clic derecho en una herramienta para moverla a otro estante.",
+        "layout": "Mostrar como",
+        "layoutFlat": "Una cuadrícula",
+        "layoutCategories": "Estantes",
+        "moveTo": "Mover a",
+        "sort": {
+          "name": "Nombre",
+          "newest": "Más nuevas",
+          "author": "Autor"
+        }
+      },
+      "categories": {
+        "generators": "Generadores",
+        "planners": "Planificadores",
+        "calculators": "Calculadoras",
+        "files": "Archivos",
+        "library": "Biblioteca",
+        "other": "Otras"
       },
       "window": {
         "about": "Acerca de esta herramienta",
@@ -2761,7 +2784,9 @@
         "labels": {
           "help": "Las palabras que muestra tu herramienta, un archivo por idioma. El script las pide por clave con t(\"clave\"), así que quedan fuera de la lógica y se pueden traducir sin tocarla.",
           "empty": "Tu herramienta aún no tiene etiquetas. Guarda las palabras que muestra en un archivo por idioma, y el script las pedirá por clave con t(\"clave\"): así quien traduzca nunca tendrá que abrir el script."
-        }
+        },
+        "category": "Categoría",
+        "categoryHelp": "En qué estante lo pone la página de Herramientas. Quien la use puede moverla."
       }
     },
     "screenshots": {

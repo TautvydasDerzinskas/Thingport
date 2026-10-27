@@ -9,5 +9,6 @@
     "height": 840
   },
   "hosts": [],
+  "category": "generators",
   "locales": ["en", "lt", "es", "fr"]
 }

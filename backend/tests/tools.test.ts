@@ -123,6 +123,41 @@ describe("metadata", () => {
     expect(parseToolManifest('{"name":"x","locales":["en","lt","pt-BR"]}').locales).toEqual(["en", "lt", "pt-BR"]);
     expect(() => parseToolManifest('{"name":"x","locales":["english"]}')).toThrow(/language code/);
   });
+
+  it("takes a shelf it belongs on, and refuses one that isn't a shelf", () => {
+    expect(parseToolManifest('{"name":"x"}').category).toBeUndefined();
+    expect(parseToolManifest('{"name":"x","category":"planners"}').category).toBe("planners");
+    expect(() => parseToolManifest('{"name":"x","category":"gadgets"}')).toThrow(/category/);
+  });
+});
+
+describe("the Tools page's arrangement", () => {
+  it("starts with none, keeps what's changed, and leaves the rest alone", async () => {
+    const view = await request(app).get("/api/settings/tools-view").set(auth(memberToken));
+    expect(view.body).toEqual({ layout: "flat", sort: "name", categories: {} });
+
+    const shelved = await request(app)
+      .patch("/api/settings/tools-view")
+      .set(auth(memberToken))
+      .send({ layout: "categories", categories: { abc: "files" } });
+    expect(shelved.body).toMatchObject({ layout: "categories", sort: "name", categories: { abc: "files" } });
+
+    // Changing the order mustn't forget where a tool was put.
+    const sorted = await request(app).patch("/api/settings/tools-view").set(auth(memberToken)).send({ sort: "newest" });
+    expect(sorted.body).toEqual({ layout: "categories", sort: "newest", categories: { abc: "files" } });
+
+    expect(
+      (await request(app).patch("/api/settings/tools-view").set(auth(memberToken)).send({ layout: "sideways" })).status,
+    ).toBe(400);
+    expect(
+      (
+        await request(app)
+          .patch("/api/settings/tools-view")
+          .set(auth(memberToken))
+          .send({ categories: { abc: "x" } })
+      ).status,
+    ).toBe(400);
+  });
 });
 
 describe("labels", () => {

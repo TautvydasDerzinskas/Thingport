@@ -2202,7 +2202,9 @@
           "uninstallFailed": "Couldn't uninstall the tool",
           "updateAvailable": "Update available",
           "fromFolder": "Offered from the folder {{location}}",
-          "fromRepository": "Offered from {{location}}"
+          "fromRepository": "Offered from {{location}}",
+          "open": "Open",
+          "openHint": "Open {{name}} — double-click"
         },
         "own": {
           "heading": "Users' own tools",
@@ -2606,7 +2608,28 @@
         "emptyAdmin": "No tools yet. Install one from the repository.",
         "emptyCreate": "No tools yet. Make your own, or ask an admin to install some.",
         "install": "Install tools",
-        "noAccess": "Tools aren't available to you on this Thingport."
+        "noAccess": "Tools aren't available to you on this Thingport.",
+        "arrange": "Arrange",
+        "arrangeDone": "Done arranging",
+        "arrangeHintFlat": "Pick an order, or put the tools on shelves; right-click one to move it.",
+        "arrangeHintCategories": "Right-click a tool to move it to another shelf.",
+        "layout": "Show as",
+        "layoutFlat": "One grid",
+        "layoutCategories": "Shelves",
+        "moveTo": "Move to",
+        "sort": {
+          "name": "Name",
+          "newest": "Newest",
+          "author": "Author"
+        }
+      },
+      "categories": {
+        "generators": "Generators",
+        "planners": "Planners",
+        "calculators": "Calculators",
+        "files": "Files",
+        "library": "Library",
+        "other": "Other"
       },
       "window": {
         "about": "About this tool",
@@ -2747,7 +2770,9 @@
         "labels": {
           "help": "The words your tool shows, one file per language. The script asks for them by key with t(\"key\"), so they stay out of the logic and can be translated without touching it.",
           "empty": "Your tool has no labels yet. Keep the words it shows in a file per language, and the script asks for them by key with t(\"key\") — so a translator never has to open the script."
-        }
+        },
+        "category": "Category",
+        "categoryHelp": "Which shelf the Tools page puts it on. Anyone using it can move it themselves."
       }
     },
     "screenshots": {

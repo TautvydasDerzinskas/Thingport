@@ -65,6 +65,7 @@ import { resetCardPreview } from "./hooks/useCardPreview";
 import { resetHoverSlideshowEnabled } from "./hooks/useHoverSlideshowEnabled";
 import { resetCustomWidgets } from "./hooks/useCustomWidgets";
 import { resetTools } from "./hooks/useTools";
+import { resetToolsView } from "./hooks/useToolsView";
 import { DEFAULT_ACCENT, type ResolvedTheme, type ThemeSelection } from "./constants/settingsOptions";
 import { buildTheme } from "./theme";
 
@@ -438,6 +439,7 @@ export default function App() {
     resetHoverSlideshowEnabled();
     resetCustomWidgets();
     resetTools();
+    resetToolsView();
     storeToken(tok);
     storeUser(loggedInUser);
     setToken(tok);
@@ -468,6 +470,7 @@ export default function App() {
   const expireSession = React.useCallback(() => {
     resetCustomWidgets();
     resetTools();
+    resetToolsView();
     clearToken();
     setToken(null);
     setShowExpiredToast(true);
@@ -545,6 +548,7 @@ export default function App() {
     await authApi.logout();
     resetCustomWidgets();
     resetTools();
+    resetToolsView();
     clearToken();
     clearUser();
     setToken(null);

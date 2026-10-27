@@ -97,6 +97,13 @@ const collectionSchema = z
     message: "Two models share a key",
   });
 
+/**
+ * The shelves the Tools page sorts tools onto. A small fixed set, so that one Thingport's shelves read like
+ * another's and a tool from the repository lands somewhere sensible without anyone filing it.
+ */
+export const TOOL_CATEGORIES = ["generators", "planners", "calculators", "files", "library", "other"] as const;
+export type ToolCategory = (typeof TOOL_CATEGORIES)[number];
+
 export const toolManifestSchema = z.object({
   name: z.string().trim().min(1).max(40),
   description: z.string().trim().max(300).default(""),
@@ -111,6 +118,8 @@ export const toolManifestSchema = z.object({
     .default({ width: 960, height: 640 }),
   /** The hosts its `thingport.fetch` may reach through the server. */
   hosts: z.array(z.string().trim().toLowerCase().regex(HOST, "Not a host name")).max(20).default([]),
+  /** Which shelf it belongs on, where the user hasn't moved it themselves. */
+  category: z.enum(TOOL_CATEGORIES).optional(),
   /** Pictures of it at work, for an admin to look at before installing it. */
   screenshots: z.array(screenshotSchema).max(8).default([]),
   /**

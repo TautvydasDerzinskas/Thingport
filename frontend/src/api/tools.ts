@@ -16,6 +16,10 @@ export type ToolModelSpec = {
 export type ToolScreenshot = { file: string; caption?: string };
 
 /** A tool's metadata, as its tool.json (or .yml) holds it, checked by the server. */
+/** The shelves the Tools page sorts tools onto. Kept in step with the backend's TOOL_CATEGORIES. */
+export const TOOL_CATEGORIES = ["generators", "planners", "calculators", "files", "library", "other"] as const;
+export type ToolCategory = (typeof TOOL_CATEGORIES)[number];
+
 export type ToolManifest = {
   name: string;
   description: string;
@@ -28,6 +32,8 @@ export type ToolManifest = {
   window: { width: number; height: number };
   /** The hosts its `thingport.fetch` may reach. */
   hosts: string[];
+  /** Which shelf it belongs on, where the user hasn't moved it themselves. */
+  category?: ToolCategory;
   /** For an admin to look at before installing it; the server fills in none for a tool that has none. */
   screenshots?: ToolScreenshot[];
   /** The models it brings, in a collection of their own; only a repository tool has them. */

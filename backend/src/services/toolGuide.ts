@@ -28,7 +28,8 @@ ticked **Users' own tools** under **Administration → Tools**; \`save_tool\` sa
   "author": "Jane Doe",
   "authorUrl": "https://github.com/janedoe",
   "window": { "width": 1100, "height": 720 },
-  "hosts": []
+  "hosts": [],
+  "category": "generators"
 }
 \`\`\`
 
@@ -43,6 +44,8 @@ ticked **Users' own tools** under **Administration → Tools**; \`save_tool\` sa
   so a tool must still work narrow. 960 x 640 if you say nothing.
 - **hosts**: the hosts \`thingport.fetch\` may reach through the server, as \`host\`, \`host:port\` or \`*.domain\`.
   Leave it empty when the tool calls no outside service, which most don't. Local network hosts are fine.
+- **category**: which shelf the Tools page starts it on — \`generators\`, \`planners\`, \`calculators\`, \`files\`,
+  \`library\` or \`other\`. The user can move it themselves afterwards, and their move wins.
 - **locales** is filled in from the labels you save; don't set it yourself.
 - Only a tool in the Thingport repository may bring models of its own (a \`collection\`), because its files are what a
   reviewer reads. A tool the user saves saves what it makes into their library instead.

@@ -2214,7 +2214,9 @@
           "uninstallFailed": "Impossible de désinstaller l'outil",
           "updateAvailable": "Mise à jour disponible",
           "fromFolder": "Proposés depuis le dossier {{location}}",
-          "fromRepository": "Proposés depuis {{location}}"
+          "fromRepository": "Proposés depuis {{location}}",
+          "open": "Ouvrir",
+          "openHint": "Ouvrir {{name}} — double-clic"
         },
         "own": {
           "heading": "Outils des utilisateurs",
@@ -2631,7 +2633,28 @@
         "emptyAdmin": "Pas encore d'outils. Installez-en un depuis le dépôt.",
         "emptyCreate": "Pas encore d'outils. Créez le vôtre, ou demandez à un administrateur d'en installer.",
         "install": "Installer des outils",
-        "noAccess": "Les outils ne vous sont pas accessibles sur ce Thingport."
+        "noAccess": "Les outils ne vous sont pas accessibles sur ce Thingport.",
+        "arrange": "Organiser",
+        "arrangeDone": "Terminé",
+        "arrangeHintFlat": "Choisissez un ordre, ou rangez les outils sur des étagères ; clic droit sur un outil pour le déplacer.",
+        "arrangeHintCategories": "Clic droit sur un outil pour le déplacer vers une autre étagère.",
+        "layout": "Afficher en",
+        "layoutFlat": "Une grille",
+        "layoutCategories": "Étagères",
+        "moveTo": "Déplacer vers",
+        "sort": {
+          "name": "Nom",
+          "newest": "Plus récents",
+          "author": "Auteur"
+        }
+      },
+      "categories": {
+        "generators": "Générateurs",
+        "planners": "Planificateurs",
+        "calculators": "Calculatrices",
+        "files": "Fichiers",
+        "library": "Bibliothèque",
+        "other": "Autres"
       },
       "window": {
         "about": "À propos de cet outil",
@@ -2774,7 +2797,9 @@
         "labels": {
           "help": "Les mots qu'affiche votre outil, un fichier par langue. Le script les demande par clé avec t(\"clé\") : ils restent hors de la logique et se traduisent sans y toucher.",
           "empty": "Votre outil n'a pas encore de libellés. Gardez les mots qu'il affiche dans un fichier par langue, et le script les demandera par clé avec t(\"clé\") — ainsi un traducteur n'a jamais à ouvrir le script."
-        }
+        },
+        "category": "Catégorie",
+        "categoryHelp": "Sur quelle étagère la page Outils le range. Chacun peut le déplacer lui-même."
       }
     },
     "screenshots": {

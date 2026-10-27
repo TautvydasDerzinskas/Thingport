@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
+import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import type { ToolManifest } from "../../api/tools";
+import { TOOL_CATEGORIES, type ToolCategory, type ToolManifest } from "../../api/tools";
 import HelpTip from "../HelpTip";
 import IconPicker from "../IconPicker/IconPicker";
 import { isIconRef } from "../IconPicker/iconRef";
@@ -25,6 +26,8 @@ export type ToolDraft = {
   width: number;
   height: number;
   hosts: string[];
+  /** Which shelf the Tools page puts it on, until the user moves it themselves. */
+  category: ToolCategory;
 };
 
 const SLUG = /^[a-z0-9][a-z0-9-]{1,39}$/;
@@ -56,6 +59,7 @@ export function fromManifest(manifest: ToolManifest, slug: string): ToolDraft {
     width: manifest.window.width,
     height: manifest.window.height,
     hosts: manifest.hosts,
+    category: manifest.category ?? "other",
   };
 }
 
@@ -71,6 +75,7 @@ export function toManifest(draft: ToolDraft): ToolManifest {
     authorUrl: optional(draft.authorUrl),
     window: { width: draft.width, height: draft.height },
     hosts: draft.hosts,
+    category: draft.category,
   };
 }
 
@@ -210,6 +215,23 @@ export default function ToolDetailsForm({ draft, onChange, errors, slugLocked }:
           onChange={(event) => onChange({ description: event.target.value })}
           slotProps={{ htmlInput: { maxLength: 300 } }}
         />
+        <Stack direction="row" spacing={1} alignItems="center">
+          <TextField
+            select
+            size="small"
+            label={t("tools.editor.category")}
+            value={draft.category}
+            onChange={(event) => onChange({ category: event.target.value as ToolCategory })}
+            sx={{ width: 220 }}
+          >
+            {TOOL_CATEGORIES.map((category) => (
+              <MenuItem key={category} value={category}>
+                {t(`tools.categories.${category}`)}
+              </MenuItem>
+            ))}
+          </TextField>
+          <HelpTip text={t("tools.editor.categoryHelp")} />
+        </Stack>
       </Stack>
 
       <Stack spacing={1.5}>

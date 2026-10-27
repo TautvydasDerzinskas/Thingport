@@ -6,6 +6,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
 import ListItemIcon from "@mui/material/ListItemIcon";
+import ListSubheader from "@mui/material/ListSubheader";
 import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
@@ -13,13 +14,18 @@ import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import AddIcon from "@mui/icons-material/Add";
+import CheckIcon from "@mui/icons-material/Check";
 import CollectionsOutlinedIcon from "@mui/icons-material/CollectionsOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import LaunchIcon from "@mui/icons-material/Launch";
-import { toolsApi, type Tool } from "../../api/tools";
+import TuneIcon from "@mui/icons-material/Tune";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import { toolsApi, TOOL_CATEGORIES, type Tool, type ToolCategory } from "../../api/tools";
+import type { ToolSort } from "../../api/settings";
 import { UnauthorizedError } from "../../api/client";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { useToast } from "../../components/ToastProvider";
@@ -31,14 +37,26 @@ import {
   TileMenuHeader,
 } from "../../components/Layout/ConfigurationDialog/AppTiles";
 import { usePageHeader } from "../../components/Layout/PageHeaderContext";
+import Segmented from "../../components/controls/Segmented";
 import ToolAboutDialog from "../../components/tools/ToolAboutDialog";
 import ToolEditorDialog from "../../components/tools/ToolEditorDialog";
 import ToolIcon from "../../components/tools/ToolIcon";
 import ToolWindow from "../../components/tools/ToolWindow";
 import { useTools } from "../../hooks/useTools";
+import { useToolsView } from "../../hooks/useToolsView";
 
 const ICON = 60;
 const COLUMN = 104;
+
+/** The orders the page offers, as the models page's grid does. */
+const SORTS: ToolSort[] = ["name", "newest", "author"];
+
+/** Where a tool sits: where the user put it, else where its own metadata says, else with the rest. */
+const shelfOf = (tool: Tool, moved: Record<string, string>): ToolCategory => {
+  const chosen = moved[tool.id];
+  if (chosen && (TOOL_CATEGORIES as readonly string[]).includes(chosen)) return chosen as ToolCategory;
+  return tool.manifest.category ?? "other";
+};
 
 // Each icon settles into place as the page opens, one after another.
 const appear = keyframes`from { opacity: 0; transform: translateY(6px) scale(0.96); } to { opacity: 1; transform: none; }`;
@@ -59,6 +77,9 @@ export default function ToolsPage({ isAdmin, onUnauthorized }: Props) {
   const [about, setAbout] = useState<Tool | null>(null);
   const [menu, setMenu] = useState<{ tool: Tool; at: { top: number; left: number } } | null>(null);
   const [editing, setEditing] = useState<Tool | "new" | null>(null);
+  const [view, setView] = useToolsView();
+  // Off by default: the page is a shelf of icons until someone wants to rearrange it.
+  const [arranging, setArranging] = useState(false);
 
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -79,17 +100,59 @@ export default function ToolsPage({ isAdmin, onUnauthorized }: Props) {
   }, [openId, state, setSearchParams]);
 
   const canCreate = state?.access.canCreate ?? false;
-  const installed = useMemo(() => state?.tools.filter((tool) => tool.source === "repo") ?? [], [state]);
-  const mine = useMemo(() => state?.tools.filter((tool) => tool.source === "own") ?? [], [state]);
+  const sort = view?.sort ?? "name";
+  const layout = view?.layout ?? "flat";
 
+  /** The tools in the order the user chose. Name is the one that doesn't move about under them. */
+  const ordered = useMemo(() => {
+    const tools = state?.tools ?? [];
+    const byName = (a: Tool, b: Tool) => a.manifest.name.localeCompare(b.manifest.name);
+    if (sort === "newest") return tools.toSorted((a, b) => b.updatedAt.localeCompare(a.updatedAt) || byName(a, b));
+    if (sort === "author")
+      return tools.toSorted((a, b) => (a.manifest.author ?? "").localeCompare(b.manifest.author ?? "") || byName(a, b));
+    return tools.toSorted(byName);
+  }, [state, sort]);
+
+  const installed = useMemo(() => ordered.filter((tool) => tool.source === "repo"), [ordered]);
+  const mine = useMemo(() => ordered.filter((tool) => tool.source === "own"), [ordered]);
+
+  /** The shelves that have anything on them, in the order the categories are listed. */
+  const shelves = useMemo(() => {
+    const moved = view?.categories ?? {};
+    return TOOL_CATEGORIES.map((category) => ({
+      category,
+      tools: ordered.filter((tool) => shelfOf(tool, moved) === category),
+    })).filter((shelf) => shelf.tools.length > 0);
+  }, [ordered, view]);
+
+  const hasTools = Boolean(state?.tools.length);
   usePageHeader({
     title: t("tools.page.title"),
     subtitle: t("tools.page.subtitle"),
-    actions: canCreate ? (
-      <Button size="small" variant="contained" startIcon={<AddIcon />} onClick={() => setEditing("new")}>
-        {t("tools.page.new")}
-      </Button>
-    ) : undefined,
+    // Nothing to show while there are no tools and none may be made: an empty block would still take room.
+    actions:
+      !hasTools && !canCreate ? undefined : (
+        <Stack direction="row" spacing={1} alignItems="center">
+          {hasTools && (
+            <Tooltip title={t(arranging ? "tools.page.arrangeDone" : "tools.page.arrange")}>
+              <IconButton
+                size="small"
+                aria-label={t(arranging ? "tools.page.arrangeDone" : "tools.page.arrange")}
+                aria-pressed={arranging}
+                color={arranging ? "primary" : "default"}
+                onClick={() => setArranging((on) => !on)}
+              >
+                <TuneIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          {canCreate && (
+            <Button size="small" variant="contained" startIcon={<AddIcon />} onClick={() => setEditing("new")}>
+              {t("tools.page.new")}
+            </Button>
+          )}
+        </Stack>
+      ),
   });
 
   const remove = async (tool: Tool) => {
@@ -124,7 +187,13 @@ export default function ToolsPage({ isAdmin, onUnauthorized }: Props) {
         >
           <AppTile
             name={tool.manifest.name}
-            subtitle={tool.source === "own" ? t("tools.page.yours") : undefined}
+            subtitle={
+              arranging
+                ? t(`tools.categories.${shelfOf(tool, view?.categories ?? {})}`)
+                : tool.source === "own"
+                  ? t("tools.page.yours")
+                  : undefined
+            }
             logo={
               <Box sx={{ display: "flex", color: "primary.main" }}>
                 <ToolIcon iconUrl={tool.manifest.iconUrl} size={Math.round(ICON * 0.6)} />
@@ -181,18 +250,68 @@ export default function ToolsPage({ isAdmin, onUnauthorized }: Props) {
         />
       ) : (
         <>
-          {installed.length > 0 && (
-            <Stack spacing={1}>
-              {mine.length > 0 && <GroupLabel>{t("tools.page.installed")}</GroupLabel>}
-              {tiles(installed, 0)}
+          {arranging && (
+            <Stack
+              direction="row"
+              spacing={2}
+              rowGap={1}
+              alignItems="center"
+              flexWrap="wrap"
+              sx={{
+                px: 1.5,
+                py: 1.25,
+                borderRadius: "12px",
+                border: 1,
+                borderColor: "divider",
+                bgcolor: "action.hover",
+                animation: `${appear} 200ms ease-out both`,
+                "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+              }}
+            >
+              <Segmented
+                label={t("tools.page.layout")}
+                value={layout}
+                onChange={(next) => setView({ layout: next })}
+                options={[
+                  { value: "flat", label: t("tools.page.layoutFlat") },
+                  { value: "categories", label: t("tools.page.layoutCategories") },
+                ]}
+              />
+              <Box sx={{ ml: { sm: "auto" } }}>
+                <SortTools value={sort} onChange={(next) => setView({ sort: next })} />
+              </Box>
             </Stack>
           )}
-          {mine.length > 0 && (
-            <Stack spacing={1}>
-              <GroupLabel>{t("tools.page.mine")}</GroupLabel>
-              {tiles(mine, installed.length)}
-            </Stack>
+          {arranging && (
+            <Typography variant="caption" color="text.secondary">
+              {t(layout === "categories" ? "tools.page.arrangeHintCategories" : "tools.page.arrangeHintFlat")}
+            </Typography>
           )}
+
+          {layout === "categories"
+            ? shelves.map((shelf, index) => (
+                <Stack key={shelf.category} spacing={1}>
+                  <GroupLabel>{t(`tools.categories.${shelf.category}`)}</GroupLabel>
+                  {tiles(
+                    shelf.tools,
+                    shelves.slice(0, index).reduce((count, before) => count + before.tools.length, 0),
+                  )}
+                </Stack>
+              ))
+            : [
+                installed.length > 0 && (
+                  <Stack key="installed" spacing={1}>
+                    {mine.length > 0 && <GroupLabel>{t("tools.page.installed")}</GroupLabel>}
+                    {tiles(installed, 0)}
+                  </Stack>
+                ),
+                mine.length > 0 && (
+                  <Stack key="mine" spacing={1}>
+                    <GroupLabel>{t("tools.page.mine")}</GroupLabel>
+                    {tiles(mine, installed.length)}
+                  </Stack>
+                ),
+              ]}
         </>
       )}
 
@@ -242,6 +361,33 @@ export default function ToolsPage({ isAdmin, onUnauthorized }: Props) {
             </ListItemIcon>
             <ListItemText>{t("tools.page.about")}</ListItemText>
           </MenuItem>,
+          arranging && <Divider key="shelves-divider" />,
+          ...(arranging
+            ? [
+                <ListSubheader key="shelves-heading" sx={{ bgcolor: "transparent", lineHeight: "32px" }}>
+                  {t("tools.page.moveTo")}
+                </ListSubheader>,
+                ...TOOL_CATEGORIES.map((category) => {
+                  const here = shelfOf(menuTool, view?.categories ?? {}) === category;
+                  return (
+                    <MenuItem
+                      key={`shelf-${category}`}
+                      selected={here}
+                      onClick={() => {
+                        closeMenu();
+                        // Moving a tool is only visible on the shelves, so showing them comes with the move.
+                        setView({ categories: { [menuTool.id]: category }, layout: "categories" });
+                      }}
+                    >
+                      <ListItemIcon>{here ? <CheckIcon fontSize="small" /> : null}</ListItemIcon>
+                      <ListItemText>{t(`tools.categories.${category}`)}</ListItemText>
+                    </MenuItem>
+                  );
+                }),
+                // Only where something follows it, so the menu never ends on a line.
+                (menuTool.collectionId || (menuTool.source === "own" && canCreate)) && <Divider key="shelves-end" />,
+              ]
+            : []),
           menuTool.collectionId && (
             <MenuItem
               key="models"
@@ -315,6 +461,37 @@ export default function ToolsPage({ isAdmin, onUnauthorized }: Props) {
         }}
         onUnauthorized={onUnauthorized}
       />
+    </Stack>
+  );
+}
+
+/** The order the tools are in, as the models page's grid offers its own: plain words, the chosen one in the accent. */
+function SortTools({ value, onChange }: { value: ToolSort; onChange: (sort: ToolSort) => void }) {
+  const { t } = useTranslation("app");
+  return (
+    <Stack direction="row" spacing={3} component="fieldset" sx={{ border: 0, m: 0, p: 0 }}>
+      {SORTS.map((mode) => (
+        <Typography
+          key={mode}
+          component="button"
+          type="button"
+          variant="body2"
+          aria-pressed={value === mode}
+          onClick={() => onChange(mode)}
+          sx={{
+            border: 0,
+            p: 0,
+            bgcolor: "transparent",
+            cursor: "pointer",
+            fontSize: 14,
+            fontWeight: value === mode ? 700 : 500,
+            color: value === mode ? "primary.main" : "text.secondary",
+            "&:hover": { color: "primary.main" },
+          }}
+        >
+          {t(`tools.page.sort.${mode}`)}
+        </Typography>
+      ))}
     </Stack>
   );
 }
