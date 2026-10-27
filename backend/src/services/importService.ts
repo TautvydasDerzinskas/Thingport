@@ -963,6 +963,25 @@ export async function parametricSourcesFromZip(zipPath: string): Promise<NewPlat
 }
 
 /**
+ * A zip read twice over: the files to print, and the scripts beside them.
+ *
+ * Each half writes a temp file per entry and cleans up only its own if it throws. So the plates are removed here
+ * when reading the scripts fails -- the caller is handed both halves or neither, and never a set of temp files it
+ * doesn't know it has to clean up.
+ */
+async function platesAndSourcesFromZip(
+  zipPath: string,
+): Promise<{ plates: NewPlateInput[]; sources: NewPlateInput[] }> {
+  const plates = await modelFilesFromZip(zipPath);
+  try {
+    return { plates, sources: await parametricSourcesFromZip(zipPath) };
+  } catch (err) {
+    await Promise.all(plates.map((plate) => fs.rm(plate.tempFilePath!, { force: true }).catch(() => undefined)));
+    throw err;
+  }
+}
+
+/**
  * The generator scripts of a model whose own download didn't carry them, from the zip its metadata points at.
  *
  * Best-effort throughout: this is an extra download on top of the one the user asked for, and a model with its
@@ -1042,10 +1061,8 @@ async function downloadSignedFile(
   if (ext === ".zip") {
     try {
       // The scripts come along with the model files; createPrint keeps each as what it is.
-      return [
-        ...(await modelFilesFromZip(result.input.tempFilePath!)),
-        ...(await parametricSourcesFromZip(result.input.tempFilePath!)),
-      ];
+      const { plates, sources } = await platesAndSourcesFromZip(result.input.tempFilePath!);
+      return [...plates, ...sources];
     } finally {
       await fs.rm(result.input.tempFilePath!, { force: true }).catch(() => undefined);
     }
@@ -1378,8 +1395,7 @@ async function rawFilesZipContents(
 ): Promise<{ plates: NewPlateInput[]; sources: NewPlateInput[] }> {
   const zipOfFiles = source && isProviderId(source.provider) && manifestOf(source.provider).capabilities.rawFilesZip;
   if (!zipOfFiles || path.extname(filename).toLowerCase() !== ".zip") return { plates: [], sources: [] };
-  const plates = await modelFilesFromZip(tempPath);
-  const sources = await parametricSourcesFromZip(tempPath);
+  const { plates, sources } = await platesAndSourcesFromZip(tempPath);
   // Only once it has given up something to print. A zip of nothing but scripts has no geometry in it, so the
   // zip itself stands in as the model's file, and removing it would leave that pointing at nothing.
   if (plates.length) await fs.rm(tempPath, { force: true }).catch(() => undefined);
