@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import path from "node:path";
 import { prisma } from "../db";
-import { STORAGE, IMPORT_MAX_BYTES } from "../config";
+import { STORAGE, IMPORT_MAX_BYTES, PARAMETRIC_SOURCE_EXTS } from "../config";
 import { withStorageLock } from "../utils/storageLock";
 import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
 import { isPreparedPrintFilename, inspectPreparedPrint } from "./preparedPrint";
@@ -53,6 +53,26 @@ async function linkOrCopy(tempPath: string, destination: string): Promise<void> 
 }
 
 /**
+ * A generator script is stored with Unix line endings, whichever way it arrived.
+ *
+ * OpenSCAD reads a parameter's widget out of the comment after it and misses every one whose line ends in CRLF:
+ * a script written on Windows opens with none of its dropdowns or sliders, in Thingport's customizer and in
+ * OpenSCAD itself, with nothing said about why. Here rather than in the importer because a script reaches a
+ * model four ways -- imported, uploaded with it, attached afterwards, or brought by a folder -- and all four
+ * come through this.
+ */
+async function normalizeGeneratorScript(tempPath: string, filename: string): Promise<void> {
+  if (!PARAMETRIC_SOURCE_EXTS.has(path.extname(filename).toLowerCase())) return;
+  try {
+    const text = await fs.readFile(tempPath, "utf8");
+    if (!text.includes("\r\n")) return;
+    await fs.writeFile(tempPath, text.replace(/\r\n/g, "\n"));
+  } catch {
+    // Unreadable as text, so it isn't a script Thingport can do anything with; stored as it came.
+  }
+}
+
+/**
  * Saves an uploaded file onto a print, beside its plates where the storage structure puts them. The role comes
  * from the filename (a .3mf containing gcode becomes PREPARED); a new PREPARED file replaces the existing one.
  */
@@ -82,6 +102,7 @@ export async function saveFileFromTemp(
   let destination: string | null = null;
 
   try {
+    await normalizeGeneratorScript(tempPath, safeName);
     const stat = await fs.stat(tempPath);
     if (stat.size > IMPORT_MAX_BYTES) throw new HttpError(413, "Related file exceeds size limit");
     // Claimed in the database first, so two uploads of one name can't both pick the same place.

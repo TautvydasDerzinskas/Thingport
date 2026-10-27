@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import JSZip from "jszip";
 import { afterEach, describe, expect, it } from "vitest";
-import { modelFilesFromZip, parametricSourcesFromZip, withUnixLineEndings } from "../src/services/importService";
+import { modelFilesFromZip, parametricSourcesFromZip } from "../src/services/importService";
 import { PARAMETRIC_SOURCE_EXTS, RENDERABLE_MODEL_EXTS, IMPORT_EXT_PRIORITY } from "../src/config";
 
 // A MakerWorld model built with Parametric Model Maker downloads as a zip of its .scad sources, sometimes with
@@ -61,25 +61,5 @@ describe("parametric sources in a raw-files zip", () => {
 
   it("finds nothing in the empty zip a withheld source downloads as", async () => {
     expect(await parametricSourcesFromZip(await zipOf({}))).toEqual([]);
-  });
-});
-
-describe("withUnixLineEndings", () => {
-  // OpenSCAD's customizer misses every widget whose line ends in CRLF, so a Windows-written model would open
-  // with none of its dropdowns or sliders and nothing to say why.
-  it("rewrites CRLF so the customizer still sees each parameter's widget", () => {
-    const windows = 'text_color = "green"; // [white, red, green]\r\nbase_width = 80; // [40:120]\r\n';
-    expect(withUnixLineEndings(windows)).toBe(
-      'text_color = "green"; // [white, red, green]\nbase_width = 80; // [40:120]\n',
-    );
-  });
-
-  it("leaves a file that is already Unix alone", () => {
-    const unix = 'TEXT = "Thingport";\nfont = "Shrikhand";\n';
-    expect(withUnixLineEndings(unix)).toBe(unix);
-  });
-
-  it("leaves a lone CR alone, which inside a string is the author's", () => {
-    expect(withUnixLineEndings('label = "a\rb";\n')).toBe('label = "a\rb";\n');
   });
 });

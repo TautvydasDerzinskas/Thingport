@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import path from "node:path";
 import { prisma } from "../db";
-import { STORAGE } from "../config";
+import { STORAGE, PARAMETRIC_SOURCE_EXTS } from "../config";
 import { withStorageLock } from "../utils/storageLock";
 import { HttpError, sanitizeFilename, guessMimeFromPath, mimeFromContentType } from "../utils/fileUtils";
 import { normalizeTags } from "../utils/tagNormalization";
@@ -32,7 +32,7 @@ import { Prisma } from "@prisma/client";
 import type { CategorySource, Plate, Print } from "@prisma/client";
 import { enqueueAiCategorization } from "./aiCategorizationService";
 import { enqueueAiDescription } from "./aiDescriptionService";
-import { deleteAllPrintFiles } from "./printFileService";
+import { deleteAllPrintFiles, saveFileFromTemp } from "./printFileService";
 import { importingQuietly } from "../utils/quietImport";
 
 const IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".webp", ".bmp"]);
@@ -48,6 +48,11 @@ export type NewPlateInput = {
   sourcePath?: string; // no-copy: file stays at this path, storagePath is still rendered/recorded
   sourceInstanceId?: string | null;
 };
+
+/** A file that is a script a model can be generated from, rather than geometry to print. */
+export function isGeneratorScript(filename: string): boolean {
+  return PARAMETRIC_SOURCE_EXTS.has(path.extname(filename).toLowerCase());
+}
 
 export type PrintMetaInput = {
   title?: string | null;
@@ -212,7 +217,18 @@ export async function createPrint(
   plateInputs: NewPlateInput[],
   { describe = true, classify = true } = {},
 ): Promise<{ print: Print; plates: Plate[] }> {
-  if (!plateInputs.length) throw new Error("createPrint requires at least one plate");
+  // A generator script holds no geometry until something runs it, so it is never a plate: it comes along as a
+  // SUPPORTING file instead. Split here rather than in each caller, so a script reaches a model the same way
+  // whether it was imported, uploaded beside it, or unpacked from a provider's zip.
+  const sourceInputs = plateInputs.filter((input) => isGeneratorScript(input.filename));
+  const plateInputs2 = plateInputs.filter((input) => !isGeneratorScript(input.filename));
+  if (!plateInputs2.length) {
+    // A script on its own is answerable, not a bug: it describes a model but holds none, so there is nothing to
+    // show, print or render until something runs it. Attach it to a model instead.
+    if (sourceInputs.length)
+      throw new HttpError(400, "A generator script needs a model to go with: it holds no shape of its own");
+    throw new Error("createPrint requires at least one plate");
+  }
   // categoryId may come straight from a request body, so verify ownership here.
   if (meta.categoryId) {
     const category = await prisma.category.findFirst({ where: { id: meta.categoryId, userId } });
@@ -246,8 +262,8 @@ export async function createPrint(
     const plates: Plate[] = [];
     let firstEffectivePath: string | null = null;
     let firstFilename = "";
-    for (let i = 0; i < plateInputs.length; i++) {
-      const { record, effectivePath } = await createPlateAtPosition(print, plateInputs[i], i);
+    for (let i = 0; i < plateInputs2.length; i++) {
+      const { record, effectivePath } = await createPlateAtPosition(print, plateInputs2[i], i);
       plates.push(record);
       if (i === 0) {
         firstEffectivePath = effectivePath;
@@ -262,6 +278,18 @@ export async function createPrint(
           where: { id: print.id },
           data: { preparedMetadata: sniffed as unknown as Prisma.InputJsonValue },
         });
+      }
+    }
+
+    // Best-effort: a script that won't store leaves the model itself made, since its plates are what the user
+    // asked for. Line endings are put right by saveFileFromTemp, wherever a script comes from.
+    for (const input of sourceInputs) {
+      if (!input.tempFilePath) continue;
+      try {
+        // Plain text, which no mime table knows .scad for, so it is given rather than guessed.
+        await saveFileFromTemp(userId, print.id, input.tempFilePath, input.filename, "text/plain");
+      } catch (err) {
+        console.warn(`Couldn't keep the generator script ${input.filename}:`, err);
       }
     }
 

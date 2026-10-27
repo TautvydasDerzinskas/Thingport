@@ -75,12 +75,62 @@ describe("models that came with a generator script", () => {
     // The listing is the array itself; its paging is in X- headers.
     const ids = (body: { id: string }[]) => body.map((item) => item.id);
     expect(ids(all.body)).toEqual(expect.arrayContaining([plain, generated, withNotes]));
-    expect(ids(only.body)).toEqual([generated]);
+    expect(ids(only.body)).toContain(generated);
+    expect(ids(only.body)).not.toContain(plain);
+    expect(ids(only.body)).not.toContain(withNotes);
+  });
+
+  // OpenSCAD misses every widget on a CRLF line, so a script written on Windows would open with none of its
+  // dropdowns or sliders. The importer isn't the only way one arrives: this is the attach-it-afterwards way.
+  it("puts a script's line endings right however it reached the model", async () => {
+    const windows = 'base_width = 80;\r\ntext_color = "green"; // [white, red, green]\r\n';
+    const model = await makeModel(`Attached ${stamp}`);
+    await attachFile(model, "windows.scad", windows);
+
+    const print = (await request(app).get(`/api/print/${model}`).set(auth())).body;
+    const file = await request(app).get(`/api/print/${model}/files/${print.generator_scripts[0].id}`).set(auth());
+    expect(file.text).toBe('base_width = 80;\ntext_color = "green"; // [white, red, green]\n');
+  });
+
+  it("leaves a file that isn't a script exactly as it came", async () => {
+    const model = await makeModel(`Notes CRLF ${stamp}`);
+    await attachFile(model, "notes.txt", "one\r\ntwo\r\n");
+
+    const print = (await request(app).get(`/api/print/${model}`).set(auth())).body;
+    const files = (await request(app).get(`/api/print/${model}/files`).set(auth())).body;
+    expect(print.generator_scripts).toEqual([]);
+    const notes = await request(app).get(`/api/print/${model}/files/${files[0].id}`).set(auth());
+    expect(notes.text).toBe("one\r\ntwo\r\n");
   });
 
   it("starts as not withheld, which is what an uploaded model is", async () => {
     const res = await request(app).get(`/api/print/${plain}`).set(auth());
     expect(res.body.generator_script_withheld).toBe(false);
+  });
+
+  it("keeps a script uploaded beside the model's files, as a file rather than a plate", async () => {
+    const res = await request(app)
+      .post("/api/upload")
+      .set(auth())
+      .field("title", `Uploaded pair ${stamp}`)
+      .field("mode", "multiplate")
+      .attach("files", Buffer.from(STL), { filename: "part.stl", contentType: "model/stl" })
+      .attach("files", Buffer.from("size = 10;\r\n"), { filename: "part.scad", contentType: "text/plain" });
+    expect(res.status).toBe(200);
+
+    const print = (await request(app).get(`/api/print/${res.body.prints[0].id}`).set(auth())).body;
+    expect(print.plates.map((plate: { filename: string }) => plate.filename)).toEqual(["part.stl"]);
+    expect(print.generator_scripts).toEqual([{ id: expect.any(String), filename: "part.scad" }]);
+  });
+
+  it("turns down a script with nothing to go with, rather than making a model of it", async () => {
+    const res = await request(app)
+      .post("/api/upload")
+      .set(auth())
+      .field("title", `Script only ${stamp}`)
+      .attach("files", Buffer.from("size = 10;\n"), { filename: "lonely.scad", contentType: "text/plain" });
+
+    expect(res.status).toBe(400);
   });
 
   it("goes by the file beside the model, not by its plates", async () => {
@@ -90,6 +140,6 @@ describe("models that came with a generator script", () => {
     expect(res.body.generator_scripts).toEqual([]);
 
     const only = await request(app).get("/api/prints?limit=100&generative=1").set(auth());
-    expect(only.body.map((item: { id: string }) => item.id)).toEqual([generated]);
+    expect(only.body.map((item: { id: string }) => item.id)).not.toContain(odd);
   });
 });

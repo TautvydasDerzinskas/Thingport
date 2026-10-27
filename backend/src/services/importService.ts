@@ -90,7 +90,6 @@ import {
   type PrintMetaInput,
 } from "./printCreation";
 import { availablePlateFilename, relocatePrint, saveThumbFromBytes } from "./printService";
-import { saveFileFromTemp } from "./printFileService";
 import { addPreviewImage, preferImageOverRenders } from "./previewImageService";
 import { localizeDescriptionImages } from "./descriptionImageService";
 import { sha256OfFile } from "./fileReuse";
@@ -964,17 +963,6 @@ export async function parametricSourcesFromZip(zipPath: string): Promise<NewPlat
 }
 
 /**
- * A generator script as it is stored: Unix line endings.
- *
- * OpenSCAD's customizer reads a parameter's widget out of the comment after it, and a trailing CR makes it miss
- * every one -- a model written on Windows opens with none of its dropdowns or sliders, in Thingport and in
- * OpenSCAD itself, with nothing said about why. A lone CR is left alone: inside a string it is the author's.
- */
-export function withUnixLineEndings(text: string): string {
-  return text.replace(/\r\n/g, "\n");
-}
-
-/**
  * The generator scripts of a model whose own download didn't carry them, from the zip its metadata points at.
  *
  * Best-effort throughout: this is an extra download on top of the one the user asked for, and a model with its
@@ -991,23 +979,6 @@ async function fetchParametricSources(source: ParametricSourceInfo | undefined):
     return [];
   } finally {
     await fs.rm(result.input.tempFilePath, { force: true }).catch(() => undefined);
-  }
-}
-
-/** Saves a model's generator scripts onto it. Best-effort: one that won't store leaves the model itself imported,
- *  since the plates are what the user asked for. */
-async function attachParametricSources(userId: string, printId: string, sources: NewPlateInput[]): Promise<void> {
-  for (const source of sources) {
-    if (!source.tempFilePath) continue;
-    try {
-      const text = await fs.readFile(source.tempFilePath, "utf8");
-      const normalized = withUnixLineEndings(text);
-      if (normalized !== text) await fs.writeFile(source.tempFilePath, normalized);
-      // Plain text, which no mime table knows .scad for, so it is given rather than guessed.
-      await saveFileFromTemp(userId, printId, source.tempFilePath, source.filename, "text/plain");
-    } catch (err) {
-      console.warn(`Couldn't keep the generator script ${source.filename}:`, err);
-    }
   }
 }
 
@@ -1070,12 +1041,18 @@ async function downloadSignedFile(
   const ext = path.extname(result.input.filename).toLowerCase();
   if (ext === ".zip") {
     try {
-      return await modelFilesFromZip(result.input.tempFilePath!);
+      // The scripts come along with the model files; createPrint keeps each as what it is.
+      return [
+        ...(await modelFilesFromZip(result.input.tempFilePath!)),
+        ...(await parametricSourcesFromZip(result.input.tempFilePath!)),
+      ];
     } finally {
       await fs.rm(result.input.tempFilePath!, { force: true }).catch(() => undefined);
     }
   }
-  if (MULTI_FILE_PLATE_EXTS.has(ext)) return [result.input];
+  // A site that lists a model's files one by one -- Thingiverse's customizable models, Printables' sources --
+  // offers the script as a file of its own rather than inside a zip.
+  if (MULTI_FILE_PLATE_EXTS.has(ext) || PARAMETRIC_SOURCE_EXTS.has(ext)) return [result.input];
   await fs.rm(result.input.tempFilePath!, { force: true }).catch(() => undefined);
   return [];
 }
@@ -1360,7 +1337,7 @@ async function importLinkedFile(
   try {
     let result: { print: Print; plates: Plate[] };
     try {
-      result = await createPrint(userId, printMeta, path.parse(filename).name, plates, IMPORTED);
+      result = await createPrint(userId, printMeta, path.parse(filename).name, [...plates, ...sources], IMPORTED);
     } catch (err) {
       // Race guard: a concurrent import of the same source model won.
       if (source && isUniqueConstraintError(err)) {
@@ -1369,7 +1346,6 @@ async function importLinkedFile(
       }
       throw err;
     }
-    await attachParametricSources(userId, result.print.id, sources);
     await attachImportedPreviewImages(
       result.print.id,
       result.plates[0]?.id,
@@ -1404,6 +1380,8 @@ async function rawFilesZipContents(
   if (!zipOfFiles || path.extname(filename).toLowerCase() !== ".zip") return { plates: [], sources: [] };
   const plates = await modelFilesFromZip(tempPath);
   const sources = await parametricSourcesFromZip(tempPath);
-  if (plates.length || sources.length) await fs.rm(tempPath, { force: true }).catch(() => undefined);
+  // Only once it has given up something to print. A zip of nothing but scripts has no geometry in it, so the
+  // zip itself stands in as the model's file, and removing it would leave that pointing at nothing.
+  if (plates.length) await fs.rm(tempPath, { force: true }).catch(() => undefined);
   return { plates, sources };
 }
