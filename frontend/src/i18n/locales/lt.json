@@ -3731,7 +3731,10 @@
       "openActions": "Atverti arba atsisiųsti",
       "openInHeading": "Atverti su",
       "toolOwned": "Priklauso įrankiui",
-      "toolOwnedHint": "Jo negalima redaguoti ar ištrinti"
+      "toolOwnedHint": "Jo negalima redaguoti ar ištrinti",
+      "customize": "Keisti…",
+      "generatedFromScript": "Sugeneruota iš scenarijaus",
+      "generatedFromScriptHint": "Šis modelis atkeliavo kartu su jį sugeneravusiu OpenSCAD scenarijumi, tad jį galima sugeneruoti iš naujo su kitomis reikšmėmis."
     },
     "edit": {
       "title": "Redaguoti modelį",
@@ -4273,6 +4276,10 @@
         "othersGo_other": "{{names}} bus pašalintos. Jų modeliai bus pažymėti „{{name}}“.",
         "keepsOwn": "Modeliai, jau pažymėti „{{name}}“, nesikeičia."
       }
+    },
+    "filters": {
+      "generative": "Generuojami",
+      "generativeHint": "Tik modeliai, atkeliavę su juos sugeneravusiu scenarijumi"
     }
   },
   "providers": {

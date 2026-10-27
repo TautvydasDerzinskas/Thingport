@@ -3661,7 +3661,10 @@
       "openActions": "Ouvrir ou télécharger",
       "openInHeading": "Ouvrir dans",
       "toolOwned": "Appartient à un outil",
-      "toolOwnedHint": "Il ne peut être ni modifié ni supprimé"
+      "toolOwnedHint": "Il ne peut être ni modifié ni supprimé",
+      "customize": "Personnaliser…",
+      "generatedFromScript": "Généré à partir d'un script",
+      "generatedFromScriptHint": "Ce modèle est arrivé avec le script OpenSCAD qui l'a généré, il peut donc être généré à nouveau avec d'autres valeurs."
     },
     "edit": {
       "title": "Modifier le modèle",
@@ -4121,6 +4124,10 @@
         "othersGo_other": "{{names}} sont retirées. Leurs modèles reçoivent « {{name}} » à la place.",
         "keepsOwn": "Les modèles qui ont déjà « {{name}} » ne changent pas."
       }
+    },
+    "filters": {
+      "generative": "Génératifs",
+      "generativeHint": "Seulement les modèles arrivés avec le script qui les a générés"
     }
   },
   "providers": {

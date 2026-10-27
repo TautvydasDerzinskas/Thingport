@@ -6,6 +6,8 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import Collapse from "@mui/material/Collapse";
+import Chip from "@mui/material/Chip";
+import Tooltip from "@mui/material/Tooltip";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import type { Theme } from "@mui/material/styles";
 import FilterListIcon from "@mui/icons-material/FilterList";
@@ -25,6 +27,7 @@ import CategoriesPanel from "./CategoriesPanel";
 import CategoriesViewToggle from "./CategoriesViewToggle";
 import CategoryBanner from "./CategoryBanner";
 import ModelCard from "./ModelCard";
+import TuneIcon from "@mui/icons-material/Tune";
 import SortTabs from "./SortTabs";
 import ModelsManagerDialog, { type ModelsManagerSection } from "./ModelsManagerDialog";
 import { CardSkeletons } from "../../components/media/CardSkeleton";
@@ -81,6 +84,18 @@ export default function ModelsPage({
   const sortModeParam = searchParams.get("orderBy");
   const sortMode: PrintSortMode =
     sortModeParam === "popular" || sortModeParam === "downloads" ? sortModeParam : "newest";
+
+  // Only the models that came with the script they were generated from. In the URL, so the narrowed library
+  // can be linked to and comes back on reload, as the sort order does.
+  const generative = searchParams.get("generative") === "1";
+  const setGenerative = (on: boolean) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (on) next.set("generative", "1");
+      else next.delete("generative");
+      return next;
+    });
+  };
 
   const setSortMode = (mode: PrintSortMode) => {
     setSearchParams((prev) => {
@@ -166,6 +181,7 @@ export default function ModelsPage({
       try {
         const result = await printsApi.list({
           category_id: categoryIdFilter,
+          generative: generative || undefined,
           order_by: sortMode,
           limit: PAGE_SIZE,
           offset: 0,
@@ -180,7 +196,7 @@ export default function ModelsPage({
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryIdFilter, printsVersion, libraryVersion, sortMode]);
+  }, [categoryIdFilter, printsVersion, libraryVersion, sortMode, generative]);
 
   const loadMore = async () => {
     if (loadingMore || !hasMore) return;
@@ -188,6 +204,7 @@ export default function ModelsPage({
     try {
       const result = await printsApi.list({
         category_id: categoryIdFilter,
+        generative: generative || undefined,
         order_by: sortMode,
         limit: PAGE_SIZE,
         offset,
@@ -299,8 +316,22 @@ export default function ModelsPage({
           onUpdated={(updated) => setItems((prev) => replacePrints(prev, updated))}
           onUnauthorized={onUnauthorized}
         />
-        <Box sx={{ ml: "auto", width: { xs: "100%", md: "auto" }, overflowX: "auto" }}>
-          <SortTabs value={sortMode} onChange={setSortMode} />
+        <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1, width: { xs: "100%", md: "auto" } }}>
+          <Tooltip title={t("models:filters.generativeHint")}>
+            <Chip
+              size="small"
+              icon={<TuneIcon />}
+              label={t("models:filters.generative")}
+              variant={generative ? "filled" : "outlined"}
+              color={generative ? "primary" : "default"}
+              onClick={() => setGenerative(!generative)}
+              aria-pressed={generative}
+              sx={{ flex: "0 0 auto" }}
+            />
+          </Tooltip>
+          <Box sx={{ overflowX: "auto" }}>
+            <SortTabs value={sortMode} onChange={setSortMode} />
+          </Box>
         </Box>
       </Box>
       <ModelsManagerDialog

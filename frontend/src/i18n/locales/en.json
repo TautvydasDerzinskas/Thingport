@@ -3632,7 +3632,10 @@
       "openActions": "Open or download",
       "openInHeading": "Open in",
       "toolOwned": "Belongs to a tool",
-      "toolOwnedHint": "It can't be edited or deleted"
+      "toolOwnedHint": "It can't be edited or deleted",
+      "customize": "Customize…",
+      "generatedFromScript": "Generated from a script",
+      "generatedFromScriptHint": "This model came with the OpenSCAD script it was generated from, so it can be generated again with other values."
     },
     "edit": {
       "title": "Edit model",
@@ -4090,6 +4093,10 @@
         "othersGo_other": "{{names}} are removed. Their models are tagged “{{name}}” instead.",
         "keepsOwn": "Models already tagged “{{name}}” stay as they are."
       }
+    },
+    "filters": {
+      "generative": "Generative",
+      "generativeHint": "Only the models that came with the script they were generated from"
     }
   },
   "providers": {

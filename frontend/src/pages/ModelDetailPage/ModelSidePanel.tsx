@@ -8,8 +8,10 @@ import Typography from "@mui/material/Typography";
 import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
+import Tooltip from "@mui/material/Tooltip";
 import ButtonBase from "@mui/material/ButtonBase";
 import FolderIcon from "@mui/icons-material/Folder";
+import TuneIcon from "@mui/icons-material/Tune";
 import StorageIcon from "@mui/icons-material/Storage";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PrintIcon from "@mui/icons-material/Print";
@@ -24,6 +26,7 @@ import { dividerBorderColor } from "../../theme";
 import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
 import { useDownloadPrint } from "./useDownloadPrint";
 import { useOpenInSlicer } from "./useOpenInSlicer";
+import { hasGeneratorScript } from "./useCustomize";
 import NormalizedOpenButton from "./NormalizedOpenButton";
 import ModelFileSelect from "./ModelFileSelect";
 import OpenInSlicerButton from "./OpenInSlicerButton";
@@ -163,6 +166,18 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
               )}
             </ButtonBase>
           </Box>
+        )}
+
+        {hasGeneratorScript(print) && (
+          <Tooltip title={t("models:detail.generatedFromScriptHint")}>
+            <Chip
+              size="small"
+              icon={<TuneIcon />}
+              label={t("models:detail.generatedFromScript")}
+              variant="outlined"
+              sx={{ alignSelf: "flex-start" }}
+            />
+          </Tooltip>
         )}
 
         {print.ai_suggestion && (

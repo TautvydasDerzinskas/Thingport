@@ -93,6 +93,8 @@ export type Print = {
   thumb_generated?: boolean; // denormalized = plates[0].thumb_generated
   render_url?: string | null; // the first plate's render_url that isn't null
   supporting_file_count: number;
+  /** The scripts it can be generated again from, out of the files kept beside it; empty for an ordinary model. */
+  generator_scripts?: { id: string; filename: string }[];
   // Optional: an older backend (published separately) doesn't send it.
   total_size?: number;
   prepared_print?: PreparedPrint | null;
@@ -217,6 +219,8 @@ export const printsApi = {
       category_id?: string | string[];
       collection_id?: string;
       author_id?: string;
+      /** Only the models that came with a script they can be generated from again. */
+      generative?: boolean;
       order_by?: PrintSortMode;
       limit?: number;
       offset?: number;
@@ -225,6 +229,7 @@ export const printsApi = {
     const qs = new URLSearchParams();
     if (params.q) qs.set("q", params.q);
     if (params.tags && params.tags.length) qs.set("tags", params.tags.join(","));
+    if (params.generative) qs.set("generative", "1");
     if (params.category_id && params.category_id.length) {
       qs.set("category_id", Array.isArray(params.category_id) ? params.category_id.join(",") : params.category_id);
     }
