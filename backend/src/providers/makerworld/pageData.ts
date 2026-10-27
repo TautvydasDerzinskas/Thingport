@@ -14,6 +14,7 @@ import {
   type ImportCookies,
   type ImportedAuthorInfo,
   type ImportedPageMetadata,
+  type ParametricSourceInfo,
   isRecord,
 } from "../../services/importResolvers";
 import { decodeHtmlEntities } from "../../utils/htmlEntities";
@@ -104,6 +105,35 @@ function makerworldGalleryImages(design: Record<string, unknown>): { url: string
   return images;
 }
 
+/**
+ * The OpenSCAD scripts a design is generated from, as its file list gives them.
+ *
+ * A model made with Parametric Model Maker carries .scad files instead of, or beside, its meshes; `protected` is
+ * the creator's choice not to share one. Asking for a design whose sources are all protected still answers 200
+ * with a signed URL, and that URL downloads an empty zip -- so this is read from the design itself, before
+ * anything is fetched, rather than inferred from what came back.
+ *
+ * `categoryByMakerLab` names the generator ("Parametric Model Maker") but is empty on plenty of designs that do
+ * carry a .scad, so the files are what decides.
+ */
+function makerworldParametricSource(design: Record<string, unknown>): ParametricSourceInfo | undefined {
+  const extension = design.designExtension;
+  if (!isRecord(extension) || !Array.isArray(extension.model_files)) return undefined;
+  const sources = extension.model_files.filter(
+    (file): file is Record<string, unknown> =>
+      isRecord(file) &&
+      (String(file.modelType ?? "").toLowerCase() === "scad" ||
+        String(file.modelName ?? "")
+          .toLowerCase()
+          .endsWith(".scad")),
+  );
+  if (!sources.length) return undefined;
+  const filenames = sources
+    .map((file) => (typeof file.modelName === "string" ? file.modelName.trim() : ""))
+    .filter((name) => name.length > 0);
+  return { filenames, withheld: sources.every((file) => file.protected === true) };
+}
+
 /** Most-specific first. All ids are kept so a category configured for a parent still matches. */
 function makerworldCategoryIds(design: Record<string, unknown>): number[] {
   const categories = design.categories;
@@ -139,6 +169,7 @@ export function makerworldMetaFromDesign(design: unknown): ImportedPageMetadata 
   meta.galleryImages = makerworldGalleryImages(design);
   meta.siteCategoryIds = makerworldCategoryIds(design);
   meta.categorySite = meta.siteCategoryIds.length ? manifest.id : null;
+  meta.parametricSource = makerworldParametricSource(design);
   return meta;
 }
 

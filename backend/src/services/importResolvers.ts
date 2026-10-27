@@ -349,6 +349,17 @@ export type ImportedPageMetadata = {
   categorySite: ProviderId | null;
   /** Lets a second profile of an imported design be added as its own plate. MakerWorld only. */
   makerworldProfile?: MakerworldProfileRef;
+  /** The scripts the model is generated from, where the site says it has them. Absent for an ordinary model. */
+  parametricSource?: ParametricSourceInfo;
+};
+
+/** What a site says about a model's generator scripts, read from its metadata before anything is downloaded. */
+export type ParametricSourceInfo = {
+  /** Their names on the site, withheld ones included, in the order it lists them. */
+  filenames: string[];
+  /** The creator chose not to share them. MakerWorld answers such a request with an empty zip rather than a
+   *  refusal, so without this an import looks like it worked and quietly brings nothing. */
+  withheld: boolean;
 };
 
 export type ImportedAuthorInfo = {
