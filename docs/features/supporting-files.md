@@ -20,15 +20,18 @@ and notes are attached automatically.
 Some sites let a creator publish the script a model is built from rather than only the finished mesh —
 MakerWorld's Parametric Model Maker is one, and Thingiverse's customizable models are another. Any `.scad`
 that comes with a model is kept beside it, however it arrived: imported from any site, uploaded in the same
-folder as the model, dropped in the consume folder with it, or attached to a model you already have. The
-model is then marked **Generated from a script**.
+folder as the model, dropped in the consume folder with it, or attached to a model you already have.
 
 A script on its own isn't a model — it describes one but holds no shape until something runs it — so it can't
 be uploaded by itself. Upload it with the model it belongs to, or attach it to one from the model's page.
 
-**Customize**, under **Open** on the model's page and in its ⋮ menu, opens the customizer: the same sliders,
-choices and text boxes the creator set up, read from the script by OpenSCAD itself. A model that came with
-several scripts asks which one first, and you can switch between them without leaving.
+Such a model leads with **Customize** where it would otherwise lead with **Open**: generating it again is the
+thing to do with it, and what you'd slice or download is only one of the shapes it can make. Opening it in a
+slicer and the downloads move under the arrow beside it, and **Customize…** is in the ⋮ menu as well.
+
+It opens the customizer: the same sliders, choices and text boxes the creator set up, read from the script by
+OpenSCAD itself. A model that came with several scripts asks which one first, and you can switch between them
+without leaving.
 
 The **Model** pane keeps the model's picture, title and description in view, and folds away when you want the
 room. Under it, **Customize** holds the script's own parameters, grouped as the creator grouped them, with

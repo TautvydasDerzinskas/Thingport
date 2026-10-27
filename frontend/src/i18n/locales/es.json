@@ -3650,8 +3650,6 @@
       "toolOwned": "Pertenece a una herramienta",
       "toolOwnedHint": "No se puede editar ni eliminar",
       "customize": "Personalizar…",
-      "generatedFromScript": "Generado a partir de un script",
-      "generatedFromScriptHint": "Este modelo vino con el script de OpenSCAD que lo generó, así que puede generarse de nuevo con otros valores.",
       "scriptWithheld": "Script no compartido",
       "scriptWithheldHint": "Este modelo se creó a partir de un script, pero su autor decidió no compartirlo, así que aquí no hay nada que personalizar. Solo él puede cambiarlo."
     },

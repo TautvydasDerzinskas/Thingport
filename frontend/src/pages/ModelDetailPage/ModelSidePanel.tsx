@@ -11,7 +11,6 @@ import Chip from "@mui/material/Chip";
 import Tooltip from "@mui/material/Tooltip";
 import ButtonBase from "@mui/material/ButtonBase";
 import FolderIcon from "@mui/icons-material/Folder";
-import TuneIcon from "@mui/icons-material/Tune";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import StorageIcon from "@mui/icons-material/Storage";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -171,19 +170,8 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
           </Box>
         )}
 
-        {hasGeneratorScript(print) && (
-          <Tooltip title={t("models:detail.generatedFromScriptHint")}>
-            <Chip
-              size="small"
-              icon={<TuneIcon />}
-              label={t("models:detail.generatedFromScript")}
-              variant="outlined"
-              sx={{ alignSelf: "flex-start" }}
-            />
-          </Tooltip>
-        )}
-
-        {/* Why there is nothing to customise here, which otherwise looks like a model that never had a script. */}
+        {/* Why there is nothing to customise here, which otherwise looks like a model that never had a script.
+            A model that does have one needs no chip: it leads with Customize. */}
         {print.generator_script_withheld && !hasGeneratorScript(print) && (
           <Tooltip title={t("models:detail.scriptWithheldHint")}>
             <Chip
@@ -300,6 +288,7 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
             // The zip holds the plates and supporting files, not the prepared print.
             zipCount={files.filter((file) => file.plate).length}
             onDownloadZip={() => void downloadAllZip()}
+            onCustomize={customize.available ? customize.start : undefined}
           />
         )}
         {slicerOption && normalizedTarget && (
@@ -310,14 +299,6 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
             open={normalized.open}
             onPick={() => {}}
           />
-        )}
-
-        {/* Under Open: a model that came with its script can be generated again, which is the other thing to
-            do with it besides printing what is already here. */}
-        {customize.available && (
-          <Button fullWidth variant="outlined" startIcon={<TuneIcon fontSize="small" />} onClick={customize.start}>
-            {t("models:detail.customize")}
-          </Button>
         )}
 
         <Stack direction="row" spacing={1.5}>

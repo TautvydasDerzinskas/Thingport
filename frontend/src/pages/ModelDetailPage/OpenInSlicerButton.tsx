@@ -14,6 +14,7 @@ import Tooltip from "@mui/material/Tooltip";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import DownloadIcon from "@mui/icons-material/Download";
 import FolderZipIcon from "@mui/icons-material/FolderZip";
+import TuneIcon from "@mui/icons-material/Tune";
 import type { SlicerOption } from "../../constants/settingsOptions";
 import { SlicerLogo } from "../../components/Layout/ConfigurationDialog/slicerLogos";
 import { slicerHref, type ModelFile } from "./useOpenInSlicer";
@@ -31,6 +32,8 @@ type Props = {
   /** Offered with more than one file. */
   zipCount: number;
   onDownloadZip: () => void;
+  /** Set for a model that came with its generator script, which then takes the main action. */
+  onCustomize?: () => void;
 };
 
 /** A slicer's logo on the white tile it's drawn for, so the dark parts stay visible in dark mode. */
@@ -53,8 +56,14 @@ function LogoTile({ id, size }: { id: string; size: number }) {
   );
 }
 
-/** The side panel's main action: open the file in the last slicer used, with the other installed slicers and the
- *  downloads behind the arrow. Without a slicer to open it in, the main action is the download. */
+/**
+ * The side panel's main action: open the file in the last slicer used, with the other installed slicers and the
+ * downloads behind the arrow. Without a slicer to open it in, the main action is the download.
+ *
+ * A model that came with its generator script leads with Customize instead -- generating it again is the thing
+ * to do with it, and what you'd slice or download is only one of the shapes it can make. Whatever Customize
+ * displaces moves into the menu, so nothing becomes unreachable.
+ */
 export default function OpenInSlicerButton({
   file,
   canOpen,
@@ -65,20 +74,31 @@ export default function OpenInSlicerButton({
   onDownload,
   zipCount,
   onDownloadZip,
+  onCustomize,
 }: Props) {
   const { t } = useTranslation(["models"]);
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const group = anchor?.parentElement ?? null;
+  const customizes = Boolean(onCustomize);
   const opensSlicer = canOpen && Boolean(slicerOption);
-  const offersSlicers = canOpen && slicerOptions.length > (opensSlicer ? 1 : 0);
-  const hasMenu = offersSlicers || opensSlicer || zipCount > 1;
+  // The preferred slicer is only left out of the list when it is the main button itself.
+  const offersSlicers = canOpen && slicerOptions.length > (opensSlicer && !customizes ? 1 : 0);
+  // Likewise the download: in the menu unless it is the main button.
+  const offersDownload = customizes || opensSlicer;
+  const hasMenu = offersSlicers || offersDownload || zipCount > 1;
   const close = () => setAnchor(null);
   const downloadIcon = downloading ? <CircularProgress size={16} color="inherit" /> : <DownloadIcon fontSize="small" />;
 
   return (
     <>
       <ButtonGroup variant="contained" disableElevation fullWidth aria-label={t("models:detail.openActions")}>
-        {opensSlicer && slicerOption ? (
+        {customizes ? (
+          <Button onClick={onCustomize} startIcon={<TuneIcon fontSize="small" />} sx={{ flex: 1, minWidth: 0 }}>
+            <Box component="span" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {t("models:detail.customize")}
+            </Box>
+          </Button>
+        ) : opensSlicer && slicerOption ? (
           <Button
             component="a"
             href={slicerHref(slicerOption.id, file)}
@@ -144,7 +164,7 @@ export default function OpenInSlicerButton({
             </MenuItem>
           ))}
         {offersSlicers && <Divider />}
-        {opensSlicer && (
+        {offersDownload && (
           <MenuItem
             disabled={downloading}
             onClick={() => {
