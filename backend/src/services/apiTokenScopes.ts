@@ -113,6 +113,7 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
       "/import/status",
       "/import/tasks/:id",
       "/import/jobs/active",
+      "/import/jobs/active-list",
       "/import/jobs/:id",
       "/import/jobs/:id/items",
       // MakerOnline's imports waiting for Grab (providers/makeronline/routes.ts). Scopes are listed here, one place for

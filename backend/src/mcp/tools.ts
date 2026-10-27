@@ -23,8 +23,9 @@ import { getDashboardSummary } from "../services/dashboardService";
 import { printOutById } from "../services/printLoader";
 import { listPrints, PRINT_SORT_MODES, SELF_AUTHOR_ID, type PrintListPage } from "../services/printQuery";
 import { search } from "../services/searchService";
-import { getImportTask, startImportTask, type ImportTaskState } from "../services/importTaskService";
-import { importAndDescribe, prepareSingleImport } from "../services/singleImport";
+import { getPersistentImportTask, type DurableImportTaskState } from "../services/importTaskService";
+import { enqueueSingleImport } from "../services/importScheduler";
+import { prepareSingleImport } from "../services/singleImport";
 import {
   assertWidgetSourceEnabled,
   enabledWidgetSources,
@@ -440,8 +441,8 @@ export const mcpImportTiming = { waitMs: 25_000, pollMs: 250 };
 type ImportedModel = PrintOut & { import_outcome: "created" | "already_imported" | "profile_added" };
 
 /** What a finished, failed or still running import looks like to the assistant. */
-function importStateOut(ctx: McpToolContext, taskId: string, state: ImportTaskState) {
-  if (state.status === "running") {
+function importStateOut(ctx: McpToolContext, taskId: string, state: DurableImportTaskState) {
+  if (state.status === "running" || state.status === "queued") {
     return {
       status: "running",
       task_id: taskId,
@@ -496,16 +497,13 @@ const importModel: McpToolDefinition = {
       tags: (args.tags as string[] | undefined) ?? [],
       category_id: (args.category_id as string | undefined) ?? null,
     });
-    const taskId = startImportTask(userId, async () => {
-      const model = (await importAndDescribe(userId, url, body)) as ImportedModel;
-      const filed = collectionId ? (await addModelsToCollection(userId, collectionId, [model.id])).collection : null;
-      return { model, collection: filed ? { id: filed.id, name: filed.name } : null };
-    });
+    const job = await enqueueSingleImport(userId, { ...body, url }, { collectionId });
+    const taskId = job.id;
     const deadline = Date.now() + mcpImportTiming.waitMs;
-    let state = getImportTask(taskId, userId)!;
-    while (state.status === "running" && Date.now() < deadline) {
+    let state = (await getPersistentImportTask(taskId, userId))!;
+    while ((state.status === "running" || state.status === "queued") && Date.now() < deadline) {
       await new Promise((resolve) => setTimeout(resolve, mcpImportTiming.pollMs));
-      state = getImportTask(taskId, userId)!;
+      state = (await getPersistentImportTask(taskId, userId))!;
     }
     return importStateOut(ctx, taskId, state);
   },
@@ -520,9 +518,9 @@ const getImportStatus: McpToolDefinition = {
   async run(ctx, args) {
     const { userId } = ctx;
     const taskId = args.task_id as string;
-    const state = getImportTask(taskId, userId);
-    // Tasks live in memory for a while after they finish; a restart forgets them.
-    if (!state) throw new HttpError(404, "No such import: it may have finished a while ago, or the server restarted");
+    const state = await getPersistentImportTask(taskId, userId);
+    // Durable tasks remain available across server restarts.
+    if (!state) throw new HttpError(404, "No such import");
     return importStateOut(ctx, taskId, state);
   },
 };

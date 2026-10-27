@@ -6,7 +6,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { requireAuth } from "../../auth";
 import { prisma } from "../../db";
-import { enabledImportUrl, importRequestSchema } from "../../routes/importRequest";
+import { enabledImportUrl, importRequestSchema } from "../../services/importRequest";
 import { requireCaptcha } from "../../services/captchaService";
 import { addPrintsToCollection } from "../../services/collectionService";
 import { startImportTask } from "../../services/importTaskService";

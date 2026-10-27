@@ -39,7 +39,6 @@ type AppLayoutProps = {
   isAdmin: boolean;
   onOpenProfile: () => void;
   onLogout: () => Promise<void>;
-  makerworldCookie: string;
   onUpdateMakerWorld: (patch: Partial<MakerWorldSettings>) => void;
   user: AuthUser | null;
   onThemeChange: (theme: ThemeSelection) => Promise<boolean>;
@@ -102,6 +101,9 @@ function useRouteChrome() {
     onBack = goBack;
   } else if (path === "/connect-grab") {
     title = "Thingport Grab";
+  } else if (path === "/import-queue") {
+    title = t("importQueue.title");
+    onBack = goBack;
   } else if (path === "/downloads") {
     title = t("sidebar.downloads");
     onBack = () => navigate("/");
@@ -160,7 +162,6 @@ function AppLayoutShell({
   isAdmin,
   onOpenProfile,
   onLogout,
-  makerworldCookie,
   onUpdateMakerWorld,
   user,
   onThemeChange,
@@ -206,7 +207,6 @@ function AppLayoutShell({
                 onBack={pageHeader?.onBack ?? routeOnBack}
                 actions={pageHeader?.actions}
                 categoryId={categoryId}
-                makerworldCookie={makerworldCookie}
                 onUpdateMakerWorld={onUpdateMakerWorld}
                 onUploaded={onPrintsChanged}
                 onUnauthorized={onUnauthorized}

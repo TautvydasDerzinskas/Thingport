@@ -536,6 +536,25 @@ describe("the tools that write", () => {
     }
   });
 
+  it("reports an administratively paused import as interrupted rather than running", async () => {
+    const job = await prisma.importJob.create({
+      data: {
+        userId: writer.userId,
+        type: "SINGLE",
+        status: "PAUSED",
+        sourceUrl: FILE_URL,
+        payload: { mcp: {} },
+      },
+    });
+    try {
+      const result = await callTool(writer.token, "get_import_status", { task_id: job.id });
+      expect(result.isError).toBe(true);
+      expect(JSON.stringify(result)).toContain("Import was paused");
+    } finally {
+      await prisma.importJob.delete({ where: { id: job.id } });
+    }
+  });
+
   it("hands a slow import over to get_import_status, which only its user can read", async () => {
     const slowUrl = "https://93.184.215.14/files/mcp-slow-widget.stl";
     let release!: () => void;
@@ -552,6 +571,10 @@ describe("the tools that write", () => {
       const started = await callTool(writer.token, "import_model", { url: slowUrl });
       expect(started.data.status).toBe("running");
       const taskId = started.data.task_id as string;
+      const job = await prisma.importJob.findUniqueOrThrow({ where: { id: taskId } });
+      expect(job.type).toBe("SINGLE");
+      expect(job.userId).toBe(writer.userId);
+      expect(job.payload).toMatchObject({ mcp: {} });
 
       // Someone else's token can't follow it, even with the id.
       const peek = await callTool(alice.token, "get_import_status", { task_id: taskId });
@@ -565,6 +588,9 @@ describe("the tools that write", () => {
       }
       expect(state.status).toBe("created");
       expect(state.model.id).toBeTruthy();
+      const finished = await prisma.importJob.findUniqueOrThrow({ where: { id: taskId } });
+      expect(finished.status).toBe("DONE");
+      expect(finished.result).toMatchObject({ model: { id: state.model.id }, collection: null });
     } finally {
       Object.assign(mcpImportTiming, saved);
       global.fetch = originalFetch;
@@ -597,7 +623,7 @@ describe("the tools that write", () => {
       await new Promise((resolve) => setTimeout(resolve, 300));
       const result = await callTool(writer.token, "get_import_status", { task_id: started.body.task_id });
       expect(result.isError).toBe(true);
-      expect(result.text).toMatch(/import_model/);
+      expect(result.text).toMatch(/no such import/i);
     } finally {
       global.fetch = originalFetch;
     }

@@ -43,6 +43,8 @@ export type NewPlateInput = {
   size?: number;
   /** Exactly one of tempFilePath / copyFromPath / sourcePath should be set. */
   tempFilePath?: string; // moved (renamed) into managed storage, source is deleted
+  /** Final permissions for a private download; applied only after removing its temporary name. */
+  storageMode?: number;
   copyFromPath?: string; // copied into managed storage, source left intact
   sourcePath?: string; // no-copy: file stays at this path, storagePath is still rendered/recorded
   sourceInstanceId?: string | null;
@@ -79,6 +81,14 @@ async function placeFile(input: NewPlateInput, destAbsPath: string): Promise<str
         }
       });
       await fs.rm(tempFilePath, { force: true });
+      if (input.storageMode !== undefined) {
+        try {
+          await fs.chmod(destAbsPath, input.storageMode);
+        } catch (err) {
+          await fs.rm(destAbsPath, { force: true });
+          throw err;
+        }
+      }
       return destAbsPath;
     }
     if (input.copyFromPath) {
@@ -101,7 +111,7 @@ async function placePlateFile(
 ): Promise<{ effectivePath: string | null; contentSha256: string | null; marker: ReuseMarker }> {
   const fromPath = input.tempFilePath ?? input.copyFromPath;
   if (!fromPath) return { effectivePath: await placeFile(input, destAbsPath), contentSha256: null, marker: {} };
-  const { contentSha256, shared } = await shareStoredCopy(fromPath, destAbsPath, findStoredCopies);
+  const { contentSha256, shared } = await shareStoredCopy(fromPath, destAbsPath, findStoredCopies, input.storageMode);
   if (!shared) return { effectivePath: await placeFile(input, destAbsPath), contentSha256, marker: {} };
   // The clone is in place: a temp file left behind is only clutter, not a reason to fail the import.
   if (input.tempFilePath) await fs.rm(input.tempFilePath, { force: true }).catch(() => undefined);

@@ -4,6 +4,8 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import JSZip from "jszip";
+import { Client } from "pg";
+import { IMPORT_WORKER_LOCK } from "../src/services/importScheduler";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { checkImportStatus, identifySourceModel, importPrintFromUrl } from "../src/services/importService";
@@ -215,6 +217,11 @@ describe("MakerWorld print profiles", () => {
     const res = await request(app).post("/api/import").set(auth()).send({ url: pageUrl });
     expect(res.status).toBe(429);
     expect(res.body.detail).toMatch(/CAPTCHA/);
+    const queued = await prisma.importJob.findFirstOrThrow({
+      where: { userId, type: "SINGLE", sourceUrl: pageUrl },
+      orderBy: { createdAt: "desc" },
+    });
+    expect(queued).toMatchObject({ status: "ERROR", errorHttpStatus: 429 });
     // None of the generic API fallbacks ran after the CAPTCHA.
     expect(fetchMock.mock.calls.map(([input]) => String(input)).filter((u) => u.includes("/api/v1/"))).toEqual([
       `https://makerworld.com/api/v1/models/${designId}/download`,
@@ -322,36 +329,89 @@ describe("MakerWorld print profiles", () => {
 });
 
 describe("import job lock", () => {
-  it("blocks a new batch import while one is already running, and reports it via the active/job endpoints", async () => {
-    const job = await createJob(userId, "COLLECTION", {
-      sourceUrl: "https://makerworld.com/en/collections/1-test",
-      provider: "makerworld",
-      total: 5,
+  it("queues new batches while one is running and reports progress through the existing endpoints", async () => {
+    const lock = new Client({ connectionString: process.env.DATABASE_URL });
+    await lock.connect();
+    await lock.query("SELECT pg_advisory_lock($1)", [IMPORT_WORKER_LOCK]);
+    try {
+      const job = await createJob(userId, "COLLECTION", {
+        sourceUrl: "https://makerworld.com/en/collections/1-test",
+        provider: "makerworld",
+        total: 5,
+      });
+
+      const collectionRes = await request(app)
+        .post("/api/import/collection")
+        .set(auth())
+        .send({ url: "https://makerworld.com/en/collections/1-test", design_ids: ["1"] });
+      expect(collectionRes.status).toBe(202);
+      expect((await prisma.importJob.findUniqueOrThrow({ where: { id: collectionRes.body.job_id } })).status).toBe(
+        "QUEUED",
+      );
+
+      const zipRes = await request(app)
+        .post("/api/import/zip")
+        .set(auth())
+        .send({ url: "https://example.com/some.zip", entries: ["a.stl"] });
+      expect(zipRes.status).toBe(202);
+      await prisma.importJob.deleteMany({ where: { id: { in: [collectionRes.body.job_id, zipRes.body.job_id] } } });
+
+      const activeRes = await request(app).get("/api/import/jobs/active").set(auth());
+      expect(activeRes.status).toBe(200);
+      expect(activeRes.body.id).toBe(job.id);
+      expect(activeRes.body.status).toBe("RUNNING");
+
+      const jobRes = await request(app).get(`/api/import/jobs/${job.id}`).set(auth());
+      expect(jobRes.status).toBe(200);
+      expect(jobRes.body.total).toBe(5);
+
+      await updateJob(job.id, { status: "DONE" });
+      expect(await getActiveJob(userId)).toBeNull();
+    } finally {
+      await lock.end();
+    }
+  });
+});
+
+describe("active import jobs", () => {
+  it("returns only the owner's queued and running jobs in creation order", async () => {
+    const other = await prisma.user.create({
+      data: { email: `other-import-${Date.now()}@example.com`, displayName: "Other", passwordHash: "unused" },
     });
+    const ids: string[] = [];
+    try {
+      for (const [owner, status, timestamp] of [
+        [userId, "QUEUED", 3000],
+        [userId, "RUNNING", 1000],
+        [other.id, "RUNNING", 500],
+        [userId, "DONE", 2000],
+        [userId, "ERROR", 2000],
+        [userId, "PAUSED", 2000],
+      ] as const) {
+        const job = await prisma.importJob.create({
+          data: {
+            userId: owner,
+            type: "SINGLE",
+            sourceUrl: "https://example.com/model",
+            status,
+            createdAt: new Date(timestamp),
+          },
+        });
+        ids.push(job.id);
+      }
+      const response = await request(app).get("/api/import/jobs/active-list").set(auth());
+      expect(response.status).toBe(200);
+      expect(response.body.map((job: { id: string }) => job.id)).toEqual([ids[1], ids[0]]);
+      expect(response.body[0]).toMatchObject({ status: "RUNNING", source_url: "https://example.com/model" });
+      expect(response.body[0]).not.toHaveProperty("userId");
+    } finally {
+      await prisma.importJob.deleteMany({ where: { id: { in: ids } } });
+      await prisma.user.delete({ where: { id: other.id } });
+    }
+  });
 
-    const collectionRes = await request(app)
-      .post("/api/import/collection")
-      .set(auth())
-      .send({ url: "https://makerworld.com/en/collections/1-test", design_ids: ["1"] });
-    expect(collectionRes.status).toBe(409);
-
-    const zipRes = await request(app)
-      .post("/api/import/zip")
-      .set(auth())
-      .send({ url: "https://example.com/some.zip", entries: ["a.stl"] });
-    expect(zipRes.status).toBe(409);
-
-    const activeRes = await request(app).get("/api/import/jobs/active").set(auth());
-    expect(activeRes.status).toBe(200);
-    expect(activeRes.body.id).toBe(job.id);
-    expect(activeRes.body.status).toBe("RUNNING");
-
-    const jobRes = await request(app).get(`/api/import/jobs/${job.id}`).set(auth());
-    expect(jobRes.status).toBe(200);
-    expect(jobRes.body.total).toBe(5);
-
-    await updateJob(job.id, { status: "DONE" });
-    expect(await getActiveJob(userId)).toBeNull();
+  it("requires authentication", async () => {
+    expect((await request(app).get("/api/import/jobs/active-list")).status).toBe(401);
   });
 });
 

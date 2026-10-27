@@ -2,7 +2,17 @@ import { prisma } from "../db";
 import type { ImportJob, ImportJobItem, ImportJobType, Prisma } from "@prisma/client";
 
 export async function getActiveJob(userId: string): Promise<ImportJob | null> {
-  return prisma.importJob.findFirst({ where: { userId, status: "RUNNING" } });
+  return prisma.importJob.findFirst({
+    where: { userId, status: { in: ["RUNNING", "QUEUED"] } },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
+export async function getActiveJobs(userId: string): Promise<ImportJob[]> {
+  return prisma.importJob.findMany({
+    where: { userId, status: { in: ["RUNNING", "QUEUED"] } },
+    orderBy: { createdAt: "asc" },
+  });
 }
 
 /** Read fresh on every link, so a runner sees a pause made while it works. */

@@ -8,13 +8,15 @@ const JOB_POLL_INTERVAL_MS = 1000;
 export async function pollJobToCompletion(jobId: string): Promise<ImportJob> {
   for (;;) {
     const job = await apiCall<ImportJob>("GET", `/import/jobs/${jobId}`);
-    if (job.status !== "RUNNING") return job;
+    if (job.status !== "RUNNING" && job.status !== "QUEUED") return job;
     await new Promise((resolve) => setTimeout(resolve, JOB_POLL_INTERVAL_MS));
   }
 }
 
 type ImportTaskState =
-  { status: "running" } | { status: "done"; result: Print } | { status: "error"; detail: string; http_status: number };
+  | { status: "queued" | "running" }
+  | { status: "done"; result: Print }
+  | { status: "error"; detail: string; http_status: number };
 
 /** Each poll is an extension API call (chrome.storage in apiCall), which keeps the worker alive. */
 async function pollImportTask(taskId: string): Promise<Print> {
@@ -49,6 +51,7 @@ export async function importSingle(
   if (entries) {
     const { job_id } = await apiCall<{ job_id: string }>("POST", "/import/zip", { url, entries, ...extra });
     const job = await pollJobToCompletion(job_id);
+    if (job.status === "PAUSED") throw new Error("Import was paused; resume it from the import queue");
     if (job.status === "ERROR") throw new Error(job.error_message || "Import failed");
     print = job.result_print_id ? { id: job.result_print_id } : null;
   } else {

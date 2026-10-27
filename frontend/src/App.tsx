@@ -107,7 +107,6 @@ function AppShell({
   isAdmin,
   user,
   apiUp,
-  settings,
   setSettings,
   previewMode,
   setPreviewMode,
@@ -174,7 +173,6 @@ function AppShell({
       isAdmin={isAdmin}
       onOpenProfile={() => navigate("/profile")}
       onLogout={onLogout}
-      makerworldCookie={settings.makerworld.cookie}
       onUpdateMakerWorld={updateMakerWorld}
       user={user}
       onThemeChange={onThemeChange}
@@ -333,6 +331,7 @@ function AppShell({
           path="/admin-connections"
           element={isAdmin ? <ConnectionsPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
         />
+        <Route path="/import-queue" element={<ImportQueuePage own onUnauthorized={onUnauthorized} />} />
         <Route
           path="/admin-queue"
           element={isAdmin ? <ImportQueuePage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}

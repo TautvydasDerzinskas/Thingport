@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
+import { Client } from "pg";
 
 // No pacing or DNS here. config.ts reads the pace on load, so it's hoisted.
 vi.hoisted(() => {
@@ -30,6 +31,9 @@ vi.mock("../src/services/notificationService", async (importOriginal) => {
 
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
+import { withDatabaseSwitchGate } from "../src/services/databaseSwitchGate";
+import { acquireImmediateImportLock } from "../src/services/immediateImport";
+import { drainImportQueue } from "../src/services/importScheduler";
 import { makerworldCaptchaCooloffActive, resetCaptchaCooloffForTest } from "../src/providers/makerworld/captcha";
 
 const app = createApp();
@@ -212,6 +216,209 @@ describe("the import queue", () => {
     await prisma.user.deleteMany({ where: { id: { in: [admin.id, member.id, other.id] } } });
   });
 
+  describe("the owner's queue", () => {
+    it("retains old unfinished and failed jobs beyond bounded completed history", async () => {
+      const old = new Date("2019-01-01T00:00:00Z");
+      const retained = [];
+      for (const status of ["QUEUED", "PAUSED", "RUNNING", "ERROR", "DONE"] as const) {
+        retained.push(
+          await prisma.importJob.create({
+            data: {
+              userId: member.id,
+              type: "LINKS",
+              sourceUrl: "https://example.com/old",
+              status,
+              payload: {},
+              createdAt: old,
+              failedCount: status === "DONE" ? 1 : 0,
+              items: { create: { url: "https://example.com/old", status: "FAILED", errorMessage: "old failure" } },
+            },
+          }),
+        );
+      }
+      await prisma.importJob.createMany({
+        data: Array.from({ length: 205 }, () => ({
+          userId: member.id,
+          type: "LINKS" as const,
+          sourceUrl: "https://example.com/done",
+          status: "DONE" as const,
+          payload: {},
+        })),
+      });
+      const listed = await request(app).get("/api/import/jobs").set(auth(member));
+      expect(listed.status).toBe(200);
+      expect(listed.body.jobs).toHaveLength(205);
+      for (const retainedJob of retained)
+        expect(listed.body.jobs.some((row: { id: string }) => row.id === retainedJob.id)).toBe(true);
+      expect(listed.body.jobs.find((row: { id: string }) => row.id === retained[0].id)).toMatchObject({
+        queue_position: 1,
+      });
+      const errors = await request(app).get(`/api/import/jobs/${retained[3].id}/items`).set(auth(member));
+      expect(errors.body[0].error_message).toBe("old failure");
+      expect((await request(app).delete(`/api/import/jobs/${retained[3].id}`).set(auth(member))).status).toBe(200);
+      const adminList = await request(app).get("/api/admin/import-queue").set(auth(admin));
+      expect(adminList.body.jobs).toHaveLength(200);
+    });
+
+    it("rejects deletion during a database switch without removing the job", async () => {
+      const waiting = await prisma.importJob.create({
+        data: {
+          userId: member.id,
+          type: "LINKS",
+          sourceUrl: "https://example.com/waiting",
+          status: "QUEUED",
+          payload: {},
+        },
+      });
+      await withDatabaseSwitchGate(async () => {
+        expect((await request(app).get("/api/import/jobs").set(auth(member))).status).toBe(409);
+        expect((await request(app).get(`/api/import/jobs/${waiting.id}/items`).set(auth(member))).status).toBe(409);
+        const response = await request(app).delete(`/api/import/jobs/${waiting.id}`).set(auth(member));
+        expect(response.status).toBe(409);
+        expect(await prisma.importJob.findUnique({ where: { id: waiting.id } })).not.toBeNull();
+      });
+      expect((await request(app).delete(`/api/import/jobs/${waiting.id}`).set(auth(member))).status).toBe(200);
+    });
+
+    it("requires authentication and never exposes another owner's jobs or errors", async () => {
+      const foreign = await prisma.importJob.create({
+        data: {
+          sourceUrl: "https://example.com/other",
+          userId: other.id,
+          type: "LINKS",
+          status: "ERROR",
+
+          payload: {},
+          items: { create: { url: "https://example.com/private", status: "FAILED", errorMessage: "private error" } },
+        },
+      });
+      const own = await prisma.importJob.create({
+        data: {
+          sourceUrl: "https://example.com/own",
+          userId: member.id,
+          type: "LINKS",
+          status: "ERROR",
+          payload: {},
+          items: { create: { url: "https://example.com/own", status: "FAILED", errorMessage: "own error" } },
+        },
+      });
+      expect((await request(app).get("/api/import/jobs")).status).toBe(401);
+      const listed = await request(app).get("/api/import/jobs").set(auth(member));
+      expect(listed.status).toBe(200);
+      expect(listed.body.jobs.map((j: { id: string }) => j.id)).toEqual([own.id]);
+      expect(listed.body.jobs[0]).not.toHaveProperty("owner");
+      expect(JSON.stringify(listed.body)).not.toContain("private");
+      expect((await request(app).get(`/api/import/jobs/${foreign.id}/items`).set(auth(member))).status).toBe(404);
+      expect((await request(app).delete(`/api/import/jobs/${foreign.id}`).set(auth(member))).status).toBe(404);
+      const ownItems = await request(app).get(`/api/import/jobs/${own.id}/items`).set(auth(member));
+      expect(ownItems.body[0].error_message).toBe("own error");
+      expect(await prisma.importJob.findUnique({ where: { id: foreign.id } })).not.toBeNull();
+    });
+
+    it("ranks globally before the display limit with scheduler eligibility and tie ordering", async () => {
+      const createdAt = new Date("2020-01-01T00:00:00Z");
+      await prisma.importJob.createMany({
+        data: Array.from({ length: 205 }, (_, i) => ({
+          id: `rank-${stamp}-${String(i).padStart(3, "0")}`,
+          sourceUrl: "https://example.com/other",
+          userId: other.id,
+          type: "LINKS" as const,
+          status: "QUEUED" as const,
+          payload: {},
+          createdAt,
+        })),
+      });
+      await prisma.importJob.createMany({
+        data: [
+          {
+            sourceUrl: "https://example.com/other",
+            userId: other.id,
+            type: "LINKS",
+            status: "PAUSED",
+            payload: {},
+            createdAt,
+          },
+          {
+            sourceUrl: "https://example.com/other",
+            userId: other.id,
+            type: "LINKS",
+            status: "RUNNING",
+            payload: {},
+            createdAt,
+          },
+          {
+            sourceUrl: "https://example.com/other",
+            userId: other.id,
+            type: "LINKS",
+            status: "QUEUED",
+            payload: { immediate: true },
+            createdAt,
+          },
+          { sourceUrl: "https://example.com/other", userId: other.id, type: "LINKS", status: "QUEUED", createdAt },
+        ],
+      });
+      const own = await prisma.importJob.create({
+        data: {
+          id: `rank-${stamp}-999`,
+          sourceUrl: "https://example.com/own",
+          userId: member.id,
+          type: "LINKS",
+          status: "QUEUED",
+          payload: {},
+          createdAt,
+        },
+      });
+      const paused = await prisma.importJob.create({
+        data: { sourceUrl: "https://example.com/own", userId: member.id, type: "LINKS", status: "PAUSED", payload: {} },
+      });
+      const listed = await request(app).get("/api/import/jobs").set(auth(member));
+      expect(listed.body.jobs.find((j: { id: string }) => j.id === own.id)).toMatchObject({
+        queue_position: 206,
+      });
+      expect(listed.body.jobs.find((j: { id: string }) => j.id === paused.id)).toMatchObject({
+        queue_position: null,
+      });
+    });
+
+    it("deletes own idle and queued jobs while protecting running and finishing jobs", async () => {
+      for (const status of ["QUEUED", "PAUSED", "ERROR", "DONE"] as const) {
+        const ownedJob = await prisma.importJob.create({
+          data: {
+            sourceUrl: "https://example.com/own",
+            userId: member.id,
+            type: "LINKS",
+            status,
+            payload: {},
+            items: { create: { url: "https://example.com/link" } },
+          },
+        });
+        expect((await request(app).delete(`/api/import/jobs/${ownedJob.id}`).set(auth(member))).status).toBe(200);
+        expect(await prisma.importJobItem.count({ where: { jobId: ownedJob.id } })).toBe(0);
+      }
+      const running = await prisma.importJob.create({
+        data: {
+          sourceUrl: "https://example.com/own",
+          userId: member.id,
+          type: "LINKS",
+          status: "RUNNING",
+          payload: {},
+        },
+      });
+      expect((await request(app).delete(`/api/import/jobs/${running.id}`).set(auth(member))).status).toBe(409);
+      const finishing = await prisma.importJob.create({
+        data: { sourceUrl: "https://example.com/own", userId: member.id, type: "LINKS", status: "PAUSED", payload: {} },
+      });
+      const release = await acquireImmediateImportLock(finishing.id);
+      expect(release).not.toBeNull();
+      try {
+        expect((await request(app).delete(`/api/import/jobs/${finishing.id}`).set(auth(member))).status).toBe(409);
+        expect((await request(app).delete(`/api/import/jobs/${finishing.id}`).set(auth(other))).status).toBe(404);
+      } finally {
+        await release?.();
+      }
+    });
+  });
+
   describe("sending links from the extension", () => {
     it("parks links in one paused job without fetching anything", async () => {
       const first = await queue(member, { url: modelUrl(base), title: "Phoenix A" });
@@ -381,7 +588,7 @@ describe("the import queue", () => {
       await waitStatus(first.body.job_id, "DONE");
     });
 
-    it("refuses to start a job that isn't paused, or while the owner has another import running", async () => {
+    it("refuses duplicate starts and queues a second job behind the running one", async () => {
       const release = gate(String(base + 50));
       const a = await queue(member, { url: modelUrl(base + 50) });
       await request(app).post(`/api/admin/import-queue/jobs/${a.body.job_id}/start`).set(auth(admin));
@@ -393,11 +600,12 @@ describe("the import queue", () => {
       const again = await request(app).post(`/api/admin/import-queue/jobs/${a.body.job_id}/start`).set(auth(admin));
       expect(again.status).toBe(409);
 
-      // A second queue of the same owner can't run next to the first.
+      // A second queue of the same owner waits durably behind the first.
       const b = await queue(member, { url: modelUrl(base + 51) });
       const blocked = await request(app).post(`/api/admin/import-queue/jobs/${b.body.job_id}/start`).set(auth(admin));
-      expect(blocked.status).toBe(409);
-      expect((await job(b.body.job_id)).status).toBe("PAUSED");
+      expect(blocked.status).toBe(202);
+      expect((await job(b.body.job_id)).status).toBe("QUEUED");
+      expect(designCalls.get(String(base + 51))).toBeUndefined();
 
       release();
       await waitStatus(a.body.job_id, "DONE");
@@ -442,7 +650,7 @@ describe("the import queue", () => {
       for (const id of ids) expect(designCalls.get(String(id))).toBe(1);
     });
 
-    it("recovers a job left RUNNING by a restart: pause, then start", async () => {
+    it("requires worker recovery and explicit retry after pausing an interrupted job", async () => {
       const res = await queue(member, { url: modelUrl(base + 70) });
       const jobId = res.body.job_id;
       // What a crash mid-link leaves behind: no runner, the job and its link still RUNNING.
@@ -453,19 +661,25 @@ describe("the import queue", () => {
       expect(listed.body.jobs.find((j: { id: string }) => j.id === jobId).runner_live).toBe(false);
 
       expect((await request(app).post(`/api/admin/import-queue/jobs/${jobId}/start`).set(auth(admin))).status).toBe(
-        400,
+        409,
       );
       expect((await request(app).post(`/api/admin/import-queue/jobs/${jobId}/pause`).set(auth(admin))).status).toBe(
         200,
       );
       expect((await request(app).post(`/api/admin/import-queue/jobs/${jobId}/start`).set(auth(admin))).status).toBe(
+        409,
+      );
+      await drainImportQueue();
+      expect((await items(jobId))[0].status).toBe("FAILED");
+      expect((await items(jobId))[0].errorMessage).toContain("Check your library");
+      expect((await request(app).post(`/api/admin/import-queue/jobs/${jobId}/retry`).set(auth(admin))).status).toBe(
         202,
       );
       const finished = await waitStatus(jobId, "DONE");
       expect(finished.imported).toBe(1);
     });
 
-    it("starts a job a restart cut off, which has links waiting but none failed", async () => {
+    it("starts untouched links of a legacy interrupted job without replaying its interrupted link", async () => {
       const res = await queue(member, { url: modelUrl(base + 86) });
       await queue(member, { url: modelUrl(base + 87) });
       const jobId = res.body.job_id;
@@ -480,9 +694,12 @@ describe("the import queue", () => {
       const start = await request(app).post(`/api/admin/import-queue/jobs/${jobId}/start`).set(auth(admin));
       expect(start.status).toBe(202);
       const finished = await waitStatus(jobId, "DONE");
-      expect(finished.imported).toBe(2);
+      expect(finished.imported).toBe(1);
+      expect(finished.failedCount).toBe(1);
       expect(finished.errorMessage).toBeNull();
-      expect((await items(jobId)).map((item) => item.status)).toEqual(["DONE", "DONE"]);
+      expect((await items(jobId)).map((item) => item.status)).toEqual(["FAILED", "DONE"]);
+      expect((await items(jobId))[0].errorMessage).toContain("Check your library");
+      expect(designCalls.get(String(base + 86))).toBeUndefined();
     });
 
     it("lets a retry finish a job a restart cut off, too, though none of its links failed", async () => {
@@ -573,7 +790,7 @@ describe("the import queue", () => {
       expect(makerworldCaptchaCooloffActive()).toBe(false);
     });
 
-    it("retries a finished job right away, while its runner is still writing the notification", async () => {
+    it("allows retry only after the finished runner has written its notification", async () => {
       gone.add(String(base + 85));
       const res = await queue(member, { url: modelUrl(base + 85) });
       const jobId = res.body.job_id;
@@ -592,7 +809,11 @@ describe("the import queue", () => {
       notifyDelay.ms = 0;
       gone.clear();
       const retry = await request(app).post(`/api/admin/import-queue/jobs/${jobId}/retry`).set(auth(admin));
-      expect(retry.status).toBe(202);
+      expect(retry.status).toBe(409);
+      await waitFor(
+        () => request(app).post(`/api/admin/import-queue/jobs/${jobId}/retry`).set(auth(admin)),
+        (response) => response.status === 202,
+      );
       const finished = await waitFor(
         () => job(jobId),
         (j) => j.status === "DONE" && j.failedCount === 0,
@@ -657,7 +878,7 @@ describe("the import queue", () => {
       );
 
       const res = await request(app).post("/api/admin/import-queue/pause-all").set(auth(admin));
-      expect(res.body.paused).toBe(1);
+      expect(res.body.paused).toBe(2);
       release();
       await waitFor(
         async () => (await request(app).get("/api/admin/import-queue").set(auth(admin))).body,
@@ -710,6 +931,42 @@ describe("the import queue", () => {
       await waitStatus(jobId, "DONE");
       expect((await request(app).delete(`/api/admin/import-queue/jobs/${jobId}`).set(auth(admin))).status).toBe(200);
       expect(await prisma.importJobItem.count({ where: { jobId } })).toBe(0);
+    });
+
+    it("keeps a paused job while another process owns its runner lock", async () => {
+      const queued = await queue(member, { url: modelUrl(base + 135) });
+      const jobId = queued.body.job_id;
+      const [item] = await items(jobId);
+      const owner = new Client({ connectionString: process.env.DATABASE_URL });
+      await owner.connect();
+      try {
+        await owner.query("SELECT pg_advisory_lock(174830220, hashtext($1))", [jobId]);
+        expect((await request(app).delete(`/api/admin/import-queue/items/${item.id}`).set(auth(admin))).status).toBe(
+          409,
+        );
+        expect((await request(app).delete(`/api/admin/import-queue/jobs/${jobId}`).set(auth(admin))).status).toBe(409);
+        expect(await prisma.importJobItem.count({ where: { jobId } })).toBe(1);
+      } finally {
+        await owner.end();
+      }
+      expect((await request(app).delete(`/api/admin/import-queue/jobs/${jobId}`).set(auth(admin))).status).toBe(200);
+    });
+
+    it("skips a finished job whose runner still holds its lock during bulk cleanup", async () => {
+      const queued = await queue(member, { url: modelUrl(base + 136) });
+      const jobId = queued.body.job_id;
+      await prisma.importJob.update({ where: { id: jobId }, data: { status: "DONE" } });
+      const owner = new Client({ connectionString: process.env.DATABASE_URL });
+      await owner.connect();
+      try {
+        await owner.query("SELECT pg_advisory_lock(174830220, hashtext($1))", [jobId]);
+        await request(app).post("/api/admin/import-queue/clear-finished").set(auth(admin));
+        expect(await prisma.importJob.findUnique({ where: { id: jobId } })).not.toBeNull();
+      } finally {
+        await owner.end();
+      }
+      await request(app).post("/api/admin/import-queue/clear-finished").set(auth(admin));
+      expect(await prisma.importJob.findUnique({ where: { id: jobId } })).toBeNull();
     });
 
     it("clears finished jobs but keeps ones with failed links to retry", async () => {

@@ -1,5 +1,9 @@
 {
   "app": {
+    "importQueue": {
+      "title": "Ma file d’importation",
+      "position": "Position d’attente {{position}}"
+    },
     "shell": {
       "apiUnreachable": "API injoignable. Vérifiez que le conteneur de l’API est en cours d’exécution et accessible.",
       "backToLibrary": "Retour à la bibliothèque",
@@ -591,6 +595,8 @@
       }
     },
     "importProgress": {
+      "queued": "En attente dans la file d’importation…",
+      "singleFailed": "Échec de l’importation. Réessayez avec le lien.",
       "starting": "Lancement de l’importation…",
       "label": "{{phrase}} {{processed}} sur {{total}}",
       "phrases": [
@@ -1918,12 +1924,14 @@
         "columnActions": "Actions",
         "progress": "{{processed}} sur {{total}}, {{imported}} importés, {{failed}} en échec",
         "type": {
+          "SINGLE": "Modèle",
           "LINKS": "Liens",
           "COLLECTION": "Collection",
           "ZIP": "ZIP",
           "PROFILES": "Profils d’impression"
         },
         "status": {
+          "queued": "En attente",
           "paused": "En pause",
           "pausing": "Mise en pause en cours",
           "running": "En cours",
@@ -1933,6 +1941,7 @@
           "doneWithFailures": "Terminée, avec échecs"
         },
         "statusHint": {
+          "queued": "En attente du téléchargeur.",
           "paused": "En attente de démarrage.",
           "pausing": "Fin du lien en cours, puis arrêt.",
           "running": "Importation en cours.",

@@ -1,9 +1,10 @@
-// A single-URL import run in the background so the caller can poll instead of holding one request
-// open. The extension needs this: Chromium kills an extension service worker whose fetch() takes
-// over 30s to answer, which cut long MakerWorld imports off mid-request (nginx logged a 499).
-// In memory on purpose: a task lives for one import, and a lost one just reads as "not found".
+// Browser-bound imports still use a request-local background task when their short-lived
+// credentials cannot be persisted. Other single imports are queued as durable ImportJobs.
+// The extension polls either kind instead of holding a request open: Chromium kills a
+// service worker whose fetch() takes over 30s to answer.
 
 import crypto from "node:crypto";
+import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 
 export type ImportTaskState =
@@ -52,4 +53,29 @@ export function getImportTask(id: string, userId: string): ImportTaskState | nul
   pruneFinished();
   const task = tasks.get(id);
   return task && task.userId === userId ? task.state : null;
+}
+
+export type DurableImportTaskState =
+  | { status: "queued" }
+  | { status: "running" }
+  | { status: "done"; result: unknown }
+  | { status: "error"; detail: string; http_status: number };
+
+/** Persistent compatibility endpoint for the extension's task polling. */
+export async function getPersistentImportTask(
+  id: string,
+  userId: string,
+): Promise<DurableImportTaskState | ImportTaskState | null> {
+  const job = await prisma.importJob.findFirst({ where: { id, userId, type: "SINGLE" } });
+  if (!job) return getImportTask(id, userId);
+  if (job.status === "DONE") return { status: "done", result: job.result };
+  if (job.status === "PAUSED")
+    return { status: "error", detail: "Import was paused; resume it from the import queue", http_status: 409 };
+  if (job.status === "ERROR")
+    return {
+      status: "error",
+      detail: job.errorMessage ?? "Internal server error",
+      http_status: job.errorHttpStatus ?? 500,
+    };
+  return { status: job.status === "QUEUED" ? "queued" : "running" };
 }

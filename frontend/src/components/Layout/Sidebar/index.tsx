@@ -408,6 +408,26 @@ export default function Sidebar({ isAdmin, onSelectCategory, bookmarksVersion }:
             </ListItemButton>
           )}
 
+          {collapsed ? (
+            <CollapsedNavIcon
+              icon={<DownloadIcon fontSize="small" />}
+              label={t("importQueue.title")}
+              selected={location.pathname === "/import-queue"}
+              onClick={() => navigate("/import-queue")}
+            />
+          ) : (
+            <ListItemButton
+              selected={location.pathname === "/import-queue"}
+              onClick={() => navigate("/import-queue")}
+              sx={{ borderRadius: 1, mb: 0.5, ...navRowSx(location.pathname === "/import-queue") }}
+            >
+              <ListItemIcon sx={{ minWidth: 30 }}>
+                <DownloadIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary={t("importQueue.title")} primaryTypographyProps={{ variant: "body2" }} />
+            </ListItemButton>
+          )}
+
           {/* Bookmarked tags + collections, interleaved in the user's own manual order -- only
               once any exist, so an empty section never shows just a bare divider with nothing
               under it. The "Bookmarks" label is a plain heading (nothing to click), so it's

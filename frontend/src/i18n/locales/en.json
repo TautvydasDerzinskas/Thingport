@@ -1,5 +1,9 @@
 {
   "app": {
+    "importQueue": {
+      "title": "My import queue",
+      "position": "Waiting position {{position}}"
+    },
     "shell": {
       "apiUnreachable": "API unreachable. Ensure the API container is running and reachable.",
       "backToLibrary": "Back to library",
@@ -591,6 +595,8 @@
       }
     },
     "importProgress": {
+      "queued": "Waiting in the import queue…",
+      "singleFailed": "Import failed. Try the link again.",
       "starting": "Starting import…",
       "label": "{{phrase}} {{processed}} of {{total}}",
       "phrases": [
@@ -1886,16 +1892,16 @@
       "importQueue": {
         "heading": "Import queue",
         "loadFailed": "Unable to load the import queue.",
-        "empty": "Nothing in the queue. Links sent from Thingport Grab with \"Add to the queue\" wait here until you start them.",
+        "empty": "Nothing in the queue. Imports from the app and Thingport Grab appear here.",
         "emptyFilter": "No imports match this filter.",
         "startAll": "Start all ({{count}})",
         "retryAll": "Retry all failed ({{count}})",
         "pauseAll": "Pause all",
         "clearFinished": "Clear finished",
-        "startedAll": "Started {{count}} import(s). They run one at a time.",
-        "retriedAll": "Retrying {{count}} import(s), one at a time.",
+        "startedAll": "Queued {{count}} import(s) for the downloader.",
+        "retriedAll": "Queued {{count}} import(s) for retry.",
         "cleared": "Cleared {{count}} finished import(s).",
-        "bulkRunning": "Running imports one at a time, {{count}} more waiting.",
+        "bulkRunning": "Downloader active, {{count}} more waiting.",
         "filter": {
           "all": "All",
           "paused": "Paused",
@@ -1911,12 +1917,14 @@
         "columnActions": "Actions",
         "progress": "{{processed}} of {{total}}, {{imported}} imported, {{failed}} failed",
         "type": {
+          "SINGLE": "Model",
           "LINKS": "Links",
           "COLLECTION": "Collection",
           "ZIP": "ZIP",
           "PROFILES": "Print profiles"
         },
         "status": {
+          "queued": "Queued",
           "paused": "Paused",
           "pausing": "Pausing",
           "running": "Running",
@@ -1926,6 +1934,7 @@
           "doneWithFailures": "Done, with failures"
         },
         "statusHint": {
+          "queued": "Waiting for the downloader.",
           "paused": "Waiting to be started.",
           "pausing": "Finishing the link it's on, then it stops.",
           "running": "Importing now.",

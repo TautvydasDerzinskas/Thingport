@@ -20,7 +20,7 @@ function scrollToTop() {
 export default function BackToTopButton() {
   const { t } = useTranslation("app");
   const [visible, setVisible] = useState(false);
-  const { activeJob } = useImportJob();
+  const { jobs } = useImportJob();
   const { running: aiRunning } = useAiRun();
   const { running: descriptionsRunning } = useAiDescriptionRun();
   const { running: filesMoving } = useStorageMove();
@@ -42,7 +42,11 @@ export default function BackToTopButton() {
           position: "fixed",
           right: 24,
           bottom:
-            24 + (activeJob ? 64 : 0) + (aiRunning ? 64 : 0) + (descriptionsRunning ? 64 : 0) + (filesMoving ? 64 : 0),
+            24 +
+            Math.min(jobs.length * 64, 192) +
+            (aiRunning ? 64 : 0) +
+            (descriptionsRunning ? 64 : 0) +
+            (filesMoving ? 64 : 0),
           zIndex: (theme) => theme.zIndex.fab,
           transition: (theme) => theme.transitions.create("bottom"),
         }}

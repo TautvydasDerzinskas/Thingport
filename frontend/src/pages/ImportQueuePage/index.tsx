@@ -1,3 +1,4 @@
+import { queueJobActions } from "./queueJobActions";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import Stack from "@mui/material/Stack";
@@ -31,12 +32,17 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import { UnauthorizedError } from "../../api/client";
 import { adminApi, type AdminImportJob, type ImportQueue } from "../../api/admin";
-import type { ImportJobItem } from "../../api/imports";
+import { importsApi, type ImportJobItem, type UserImportJob } from "../../api/imports";
+
 import { useConfirm } from "../../components/ConfirmProvider";
 import { useToast } from "../../components/ToastProvider";
 
+type QueueJob = UserImportJob | AdminImportJob;
+type Queue = { jobs: QueueJob[]; bulk?: ImportQueue["bulk"] };
+
 type Props = {
   onUnauthorized?: () => void;
+  own?: boolean;
 };
 
 type Filter = "all" | "paused" | "running" | "failed" | "done";
@@ -48,25 +54,21 @@ const POLL_IDLE_MS = 8000;
 
 type StatusColor = "default" | "success" | "warning" | "error" | "info";
 
-/** A RUNNING job without a live runner was cut off by a restart. */
-function isStalled(job: AdminImportJob): boolean {
-  return job.status === "RUNNING" && !job.runner_live;
-}
-
-function jobStatus(job: AdminImportJob): { key: string; color: StatusColor } {
-  if (isStalled(job)) return { key: "stalled", color: "error" };
+function jobStatus(job: QueueJob): { key: string; color: StatusColor } {
+  // runner_live is process-local, so it cannot classify a job running on another API node.
+  if (job.status === "QUEUED") return { key: "queued", color: "info" };
   if (job.status === "PAUSED") return { key: job.runner_live ? "pausing" : "paused", color: "info" };
   if (job.status === "RUNNING") return { key: "running", color: "warning" };
   if (job.status === "ERROR") return { key: "error", color: "error" };
   return job.failed_count > 0 ? { key: "doneWithFailures", color: "warning" } : { key: "done", color: "success" };
 }
 
-function matchesFilter(job: AdminImportJob, filter: Filter): boolean {
+function matchesFilter(job: QueueJob, filter: Filter): boolean {
   switch (filter) {
     case "paused":
       return job.status === "PAUSED";
     case "running":
-      return job.status === "RUNNING";
+      return job.status === "RUNNING" || job.status === "QUEUED";
     case "failed":
       return job.status === "ERROR" || job.failed_items_count > 0 || job.failed_count > 0;
     case "done":
@@ -83,13 +85,12 @@ const ITEM_COLOR: Record<ImportJobItem["status"], StatusColor> = {
   FAILED: "error",
 };
 
-/** Every user's batch imports. Links sent from the extension's "Add to the queue" wait here, paused,
- *  until started; "Start all" and "Retry all failed" run the jobs one after another. */
-export default function ImportQueuePage({ onUnauthorized }: Props) {
+/** Shared queue detail; administrative actions remain exclusive to the admin view. */
+export default function ImportQueuePage({ onUnauthorized, own = false }: Props) {
   const { t, i18n } = useTranslation(["app", "common"]);
   const confirm = useConfirm();
   const showToast = useToast();
-  const [queue, setQueue] = React.useState<ImportQueue | null>(null);
+  const [queue, setQueue] = React.useState<Queue | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [filter, setFilter] = React.useState<Filter>("all");
   const [expanded, setExpanded] = React.useState<string | null>(null);
@@ -102,8 +103,10 @@ export default function ImportQueuePage({ onUnauthorized }: Props) {
     try {
       const jobId = expandedRef.current;
       const [loaded, loadedItems] = await Promise.all([
-        adminApi.getImportQueue(),
-        jobId ? adminApi.getImportQueueItems(jobId).catch(() => null) : Promise.resolve(null),
+        own ? importsApi.getImportQueue() : adminApi.getImportQueue(),
+        jobId
+          ? (own ? importsApi.getImportJobItems(jobId) : adminApi.getImportQueueItems(jobId)).catch(() => null)
+          : Promise.resolve(null),
       ]);
       setQueue(loaded);
       if (jobId && expandedRef.current === jobId) setItems(loadedItems ? { jobId, items: loadedItems } : null);
@@ -112,7 +115,7 @@ export default function ImportQueuePage({ onUnauthorized }: Props) {
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       else setError(t("adminSettings.importQueue.loadFailed"));
     }
-  }, [onUnauthorized, t]);
+  }, [onUnauthorized, own, t]);
 
   // Opening a job loads its links right away instead of on the next poll.
   React.useEffect(() => {
@@ -121,7 +124,9 @@ export default function ImportQueuePage({ onUnauthorized }: Props) {
   }, [expanded, load]);
 
   const active = Boolean(
-    queue && (queue.bulk.running || queue.jobs.some((job) => job.status === "RUNNING" || job.runner_live)),
+    queue &&
+    (queue.bulk?.running ||
+      queue.jobs.some((job) => job.status === "RUNNING" || job.status === "QUEUED" || job.runner_live)),
   );
 
   React.useEffect(() => {
@@ -148,80 +153,81 @@ export default function ImportQueuePage({ onUnauthorized }: Props) {
 
   const jobs = queue?.jobs ?? [];
   const visible = jobs.filter((job) => matchesFilter(job, filter));
-  const pausedCount = jobs.filter((job) => job.status === "PAUSED" && job.type === "LINKS").length;
-  const failedCount = jobs.filter(
-    (job) => job.type === "LINKS" && job.status !== "RUNNING" && job.status !== "PAUSED" && job.failed_items_count > 0,
-  ).length;
-  const runningCount = jobs.filter((job) => job.status === "RUNNING" && job.type === "LINKS").length;
+  const pausedCount = jobs.filter((job) => job.status === "PAUSED" && queueJobActions(job).canStart).length;
+  const failedCount = jobs.filter((job) => job.status !== "PAUSED" && queueJobActions(job).canRetry).length;
+  const runningCount = jobs.filter((job) => queueJobActions(job).canPause).length;
   const finishedCount = jobs.filter((job) => job.status === "DONE" && job.failed_count === 0).length;
 
-  const deleteJob = async (job: AdminImportJob) => {
+  const deleteJob = async (job: QueueJob) => {
     const ok = await confirm({
       title: t("adminSettings.importQueue.deleteTitle"),
       message: t("adminSettings.importQueue.deleteMessage", { count: job.total }),
       confirmLabel: t("adminSettings.importQueue.delete"),
       destructive: true,
     });
-    if (ok) await run(`delete:${job.id}`, () => adminApi.deleteQueueJob(job.id));
+    if (ok)
+      await run(`delete:${job.id}`, () => (own ? importsApi.deleteImportJob(job.id) : adminApi.deleteQueueJob(job.id)));
   };
 
   return (
     <Stack spacing={2}>
       <Paper variant="outlined" sx={{ p: 2 }}>
         <Stack spacing={1.5}>
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<PlayArrowIcon />}
-              disabled={!pausedCount || busy !== null}
-              onClick={() =>
-                void run("startAll", adminApi.startAllQueued, (r) =>
-                  t("adminSettings.importQueue.startedAll", { count: (r as { queued: number }).queued }),
-                )
-              }
-            >
-              {t("adminSettings.importQueue.startAll", { count: pausedCount })}
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<ReplayIcon />}
-              disabled={!failedCount || busy !== null}
-              onClick={() =>
-                void run("retryAll", adminApi.retryAllFailed, (r) =>
-                  t("adminSettings.importQueue.retriedAll", { count: (r as { queued: number }).queued }),
-                )
-              }
-            >
-              {t("adminSettings.importQueue.retryAll", { count: failedCount })}
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<PauseIcon />}
-              disabled={(!runningCount && !queue?.bulk.running) || busy !== null}
-              onClick={() => void run("pauseAll", adminApi.pauseAllQueued)}
-            >
-              {t("adminSettings.importQueue.pauseAll")}
-            </Button>
-            <Button
-              variant="text"
-              size="small"
-              startIcon={<DeleteSweepIcon />}
-              disabled={!finishedCount || busy !== null}
-              onClick={() =>
-                void run("clear", adminApi.clearFinishedQueued, (r) =>
-                  t("adminSettings.importQueue.cleared", { count: (r as { deleted: number }).deleted }),
-                )
-              }
-            >
-              {t("adminSettings.importQueue.clearFinished")}
-            </Button>
-          </Stack>
-          {queue?.bulk.running && (
+          {!own && (
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<PlayArrowIcon />}
+                disabled={!pausedCount || busy !== null}
+                onClick={() =>
+                  void run("startAll", adminApi.startAllQueued, (r) =>
+                    t("adminSettings.importQueue.startedAll", { count: (r as { queued: number }).queued }),
+                  )
+                }
+              >
+                {t("adminSettings.importQueue.startAll", { count: pausedCount })}
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<ReplayIcon />}
+                disabled={!failedCount || busy !== null}
+                onClick={() =>
+                  void run("retryAll", adminApi.retryAllFailed, (r) =>
+                    t("adminSettings.importQueue.retriedAll", { count: (r as { queued: number }).queued }),
+                  )
+                }
+              >
+                {t("adminSettings.importQueue.retryAll", { count: failedCount })}
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<PauseIcon />}
+                disabled={!runningCount || busy !== null}
+                onClick={() => void run("pauseAll", adminApi.pauseAllQueued)}
+              >
+                {t("adminSettings.importQueue.pauseAll")}
+              </Button>
+              <Button
+                variant="text"
+                size="small"
+                startIcon={<DeleteSweepIcon />}
+                disabled={!finishedCount || busy !== null}
+                onClick={() =>
+                  void run("clear", adminApi.clearFinishedQueued, (r) =>
+                    t("adminSettings.importQueue.cleared", { count: (r as { deleted: number }).deleted }),
+                  )
+                }
+              >
+                {t("adminSettings.importQueue.clearFinished")}
+              </Button>
+            </Stack>
+          )}
+          {queue?.bulk?.running && (
             <Typography variant="body2" color="text.secondary">
-              {t("adminSettings.importQueue.bulkRunning", { count: queue.bulk.remaining })}
+              {t("adminSettings.importQueue.bulkRunning", { count: queue.bulk?.remaining })}
             </Typography>
           )}
           <ToggleButtonGroup
@@ -243,9 +249,11 @@ export default function ImportQueuePage({ onUnauthorized }: Props) {
       {error && <Alert severity="error">{error}</Alert>}
 
       {!queue ? (
-        <Stack alignItems="center" sx={{ py: 2 }}>
-          <CircularProgress size={20} />
-        </Stack>
+        !error && (
+          <Stack alignItems="center" sx={{ py: 2 }}>
+            <CircularProgress size={20} />
+          </Stack>
+        )
       ) : visible.length === 0 ? (
         <Paper variant="outlined" sx={{ p: 3 }}>
           <Typography variant="body2" color="text.secondary">
@@ -260,7 +268,7 @@ export default function ImportQueuePage({ onUnauthorized }: Props) {
                 <TableRow>
                   <TableCell padding="checkbox" />
                   <TableCell>{t("adminSettings.importQueue.columnSource")}</TableCell>
-                  <TableCell>{t("adminSettings.importQueue.columnUser")}</TableCell>
+                  {!own && <TableCell>{t("adminSettings.importQueue.columnUser")}</TableCell>}
                   <TableCell>{t("adminSettings.importQueue.columnStatus")}</TableCell>
                   <TableCell sx={{ minWidth: 140 }}>{t("adminSettings.importQueue.columnProgress")}</TableCell>
                   <TableCell>{t("adminSettings.importQueue.columnCreated")}</TableCell>
@@ -272,6 +280,7 @@ export default function ImportQueuePage({ onUnauthorized }: Props) {
                   <JobRow
                     key={job.id}
                     job={job}
+                    own={own}
                     expanded={expanded === job.id}
                     onToggle={() => setExpanded((id) => (id === job.id ? null : job.id))}
                     busy={busy}
@@ -294,7 +303,8 @@ export default function ImportQueuePage({ onUnauthorized }: Props) {
 }
 
 type JobRowProps = {
-  job: AdminImportJob;
+  job: QueueJob;
+  own: boolean;
   expanded: boolean;
   onToggle: () => void;
   busy: string | null;
@@ -309,6 +319,7 @@ type JobRowProps = {
 
 function JobRow({
   job,
+  own,
   expanded,
   onToggle,
   busy,
@@ -323,15 +334,7 @@ function JobRow({
   const { t } = useTranslation("app");
   const isLinks = job.type === "LINKS";
   const status = jobStatus(job);
-  const idle = job.status !== "RUNNING" && !job.runner_live;
-  // An ERROR job was cut off with links still waiting (a restart, say), and starts like a paused one.
-  const canStart =
-    isLinks &&
-    (job.status === "PAUSED" || job.status === "ERROR") &&
-    !job.runner_live &&
-    job.pending_count + job.running_count > 0;
-  const canPause = isLinks && job.status === "RUNNING";
-  const canRetry = isLinks && idle && job.failed_items_count > 0;
+  const { idle, canStart, canPause, canRetry } = queueJobActions(job);
   const progress = job.total > 0 ? Math.min(100, (job.processed / job.total) * 100) : 0;
   const disabled = busy !== null;
 
@@ -359,16 +362,28 @@ function JobRow({
             {job.provider ? ` · ${job.provider}` : ""}
           </Typography>
         </TableCell>
+        {"owner" in job && (
+          <TableCell>
+            <Typography variant="body2">{job.owner.display_name}</Typography>
+            <Typography variant="caption" color="text.secondary">
+              {job.owner.email}
+            </Typography>
+          </TableCell>
+        )}
         <TableCell>
-          <Typography variant="body2">{job.owner.display_name}</Typography>
-          <Typography variant="caption" color="text.secondary">
-            {job.owner.email}
-          </Typography>
-        </TableCell>
-        <TableCell>
+          {"queue_position" in job && job.queue_position !== null && (
+            <Typography variant="caption" component="div">
+              {t("importQueue.position", { position: job.queue_position })}
+            </Typography>
+          )}
           <Tooltip title={job.error_message ?? t(`adminSettings.importQueue.statusHint.${status.key}`)}>
             <Chip size="small" color={status.color} label={t(`adminSettings.importQueue.status.${status.key}`)} />
           </Tooltip>
+          {job.error_message && (
+            <Typography variant="caption" color="error" component="div">
+              {job.error_message}
+            </Typography>
+          )}
         </TableCell>
         <TableCell>
           <Typography variant="caption" component="div">
@@ -392,7 +407,7 @@ function JobRow({
           </Typography>
         </TableCell>
         <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
-          {canStart && (
+          {!own && canStart && (
             <Tooltip title={t("adminSettings.importQueue.start")}>
               <span>
                 <IconButton
@@ -407,7 +422,7 @@ function JobRow({
               </span>
             </Tooltip>
           )}
-          {canPause && (
+          {!own && canPause && (
             <Tooltip title={t("adminSettings.importQueue.pause")}>
               <span>
                 <IconButton
@@ -421,7 +436,7 @@ function JobRow({
               </span>
             </Tooltip>
           )}
-          {canRetry && (
+          {!own && canRetry && (
             <Tooltip title={t("adminSettings.importQueue.retry", { count: job.failed_items_count })}>
               <span>
                 <IconButton
@@ -435,7 +450,7 @@ function JobRow({
               </span>
             </Tooltip>
           )}
-          {idle && (
+          {(own ? job.status !== "RUNNING" && !job.runner_live : idle) && (
             <Tooltip title={t("adminSettings.importQueue.delete")}>
               <span>
                 <IconButton
@@ -453,9 +468,9 @@ function JobRow({
       </TableRow>
       {isLinks && (
         <TableRow>
-          <TableCell colSpan={7} sx={{ py: 0, borderBottom: expanded ? undefined : "none" }}>
+          <TableCell colSpan={own ? 6 : 7} sx={{ py: 0, borderBottom: expanded ? undefined : "none" }}>
             <Collapse in={expanded} timeout="auto" unmountOnExit>
-              <JobItems items={items} canRemove={idle} disabled={disabled} onRemove={onRemoveItem} />
+              <JobItems items={items} canRemove={!own && idle} disabled={disabled} onRemove={onRemoveItem} />
             </Collapse>
           </TableCell>
         </TableRow>

@@ -358,10 +358,16 @@ export async function shareStoredCopy(
   fromPath: string,
   destAbsPath: string,
   findStored: StoredCopyFinder,
+  mode?: number,
 ): Promise<{ contentSha256: string | null; shared: boolean }> {
   if ((await getFileReuse()) !== "reflink") return { contentSha256: null, shared: false };
   const [contentSha256, stat] = await Promise.all([sha256OfFile(fromPath), fs.stat(fromPath)]);
-  const shared = await shareContent({ contentSha256, size: stat.size }, stat.mode & 0o7777, destAbsPath, findStored);
+  const shared = await shareContent(
+    { contentSha256, size: stat.size },
+    mode ?? stat.mode & 0o7777,
+    destAbsPath,
+    findStored,
+  );
   return { contentSha256, shared };
 }
 

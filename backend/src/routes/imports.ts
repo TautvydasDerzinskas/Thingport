@@ -8,7 +8,14 @@ import { prisma } from "../db";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { requireCaptcha } from "../services/captchaService";
-import { enabledImportUrl, importRequestSchema } from "./importRequest";
+import {
+  enabledImportUrl,
+  importRequestSchema,
+  listImportSchema,
+  profilesImportSchema,
+  zipExtractRequestSchema,
+  needsImmediateImport,
+} from "../services/importRequest";
 import {
   checkImportStatus,
   downloadImportToTemp,
@@ -17,14 +24,22 @@ import {
 } from "../services/importService";
 import { findLibraryPrints } from "../services/collectionSyncService";
 import { listZipEntries } from "../services/zipService";
-import { createJob, createJobItems, getActiveJob, getJob, listJobItems } from "../services/importJobService";
-import { queueLink, startLinksJob } from "../services/importQueueService";
-import { getImportTask, startImportTask } from "../services/importTaskService";
+import { getActiveJob, getActiveJobs, getJob, listJobItems } from "../services/importJobService";
+import { deleteQueueJob, listQueueJobs, queueLink, startLinksJob } from "../services/importQueueService";
+import { startDirectBatchImport, startImmediateImport } from "../services/immediateImport";
+import { getPersistentImportTask, startImportTask } from "../services/importTaskService";
+import {
+  enqueueSingleImport,
+  enqueueLinksImport,
+  enqueueBatchImport,
+  waitForScheduledImport,
+} from "../services/importScheduler";
 import { profilesImportJob, runLinksImportJob, runListImportJob, runZipImportJob } from "../services/importJobRunner";
 import { notifyImportRun } from "../services/modelNotifications";
-import { toImportJobItemOut, toImportJobOut } from "../dto";
+import { toImportJobItemOut, toImportJobOut, toUserImportJobOut } from "../dto";
 import type { Prisma } from "@prisma/client";
 import { importAndDescribe, prepareSingleImport } from "../services/singleImport";
+import { reserveDatabaseOperation, withDatabaseOperation } from "../services/databaseSwitchGate";
 import {
   isProviderId,
   type LegacyIdsField,
@@ -41,19 +56,68 @@ import type { ProviderLists } from "../providers/types";
 
 const router = Router();
 router.use(requireAuth);
+// A request that has already read credentials or categories must finish against the same database.
+router.use((req, res, next) => {
+  if (req.method !== "POST") return next();
+  const release = reserveDatabaseOperation();
+  res.once("finish", release);
+  res.once("close", release);
+  next();
+});
 
 // `?async=1` answers 202 with a task id to poll at /import/tasks/:id (see importTaskService.ts).
 router.post(
   "/import",
   requireCaptcha("import"),
   asyncHandler(async (req, res) => {
-    const { url, body } = await prepareSingleImport(req.userId!, parseBody(importRequestSchema, req.body));
+    const parsedRequest = parseBody(importRequestSchema, req.body);
+    const { url, body } = await prepareSingleImport(req.userId!, parsedRequest);
+    // A signed browser URL or an explicit session cannot wait in the durable queue.
+    const immediate = needsImmediateImport({ ...body, makerworld_cookie: parsedRequest.makerworld_cookie, url });
     if (req.query.async === "1") {
-      const taskId = startImportTask(req.userId!, () => importAndDescribe(req.userId!, url, body));
-      res.status(202).json({ task_id: taskId });
+      // Browser-signed links and an explicitly supplied session belong to this immediate request.
+      // Keep Grab's short-lived task path until these providers can resolve fresh links in a worker.
+      if (immediate) {
+        const taskId = startImportTask(req.userId!, () =>
+          withDatabaseOperation(() => importAndDescribe(req.userId!, url, body)),
+        );
+        res.status(202).json({ task_id: taskId });
+        return;
+      }
+      const job = await enqueueSingleImport(req.userId!, { ...body, url });
+      res.status(202).json({ task_id: job.id, job_id: job.id, status: "QUEUED" });
       return;
     }
-    res.json(await importAndDescribe(req.userId!, url, body));
+    if (immediate) {
+      res.json(await withDatabaseOperation(() => importAndDescribe(req.userId!, url, body)));
+      return;
+    }
+    // Preserve the synchronous API response while using the same persisted worker as async callers.
+    const job = await enqueueSingleImport(req.userId!, { ...body, url });
+    const disconnected = new AbortController();
+    const onClose = () => disconnected.abort();
+    res.once("close", onClose);
+    if (res.destroyed) disconnected.abort();
+    let settled: boolean;
+    try {
+      settled = await waitForScheduledImport(job.id, { signal: disconnected.signal, timeoutMs: 25_000 });
+    } finally {
+      res.off("close", onClose);
+    }
+    if (!settled) {
+      if (!disconnected.signal.aborted) res.status(202).json({ task_id: job.id, job_id: job.id, status: "QUEUED" });
+      return;
+    }
+    const finished = await prisma.importJob.findUniqueOrThrow({ where: { id: job.id } });
+    if (finished.status === "ERROR")
+      throw new HttpError(
+        finished.errorHttpStatus ?? 500,
+        finished.errorMessage ?? "Import failed",
+        finished.errorCode ?? undefined,
+      );
+    if (finished.status === "PAUSED") throw new HttpError(409, "Import was paused");
+    if (finished.status !== "DONE" || !finished.result) throw new HttpError(500, "Import did not finish");
+    res.json(finished.result);
   }),
 );
 
@@ -94,7 +158,7 @@ router.post(
 router.get(
   "/import/tasks/:id",
   asyncHandler(async (req, res) => {
-    const task = getImportTask(req.params.id, req.userId!);
+    const task = await getPersistentImportTask(req.params.id, req.userId!);
     if (!task) throw new HttpError(404, "Import task not found -- it may have expired or the server restarted");
     res.json(task);
   }),
@@ -157,14 +221,6 @@ router.post(
 // /import/<provider>/list/entries reads a collection, likes or bookmarks to pick from, /import/<provider>/list imports
 // the picked models, and /import/<provider>/profiles a model's print profiles as one model. The endpoints each
 // provider had before them stay as aliases (its manifest's `legacy`), for clients that still call them.
-
-const listImportSchema = importRequestSchema.extend({
-  model_ids: z.array(z.string()).min(1),
-  // As Thingport Grab read it: the instance can't read a private Printables collection's name itself.
-  collection_title: z.string().max(300).nullable().optional(),
-});
-
-const profilesImportSchema = importRequestSchema.extend({ scope: z.enum(["designer", "all"]) });
 
 function providerParam(req: Request): ProviderId {
   if (!isProviderId(req.params.provider)) throw new HttpError(404, "Unknown provider");
@@ -229,19 +285,31 @@ async function importList(
     listImportSchema.extend({ model_ids: lists.modelIds ?? listImportSchema.shape.model_ids }),
     renamed,
   );
-  if (!lists.waitsForGrab) await assertNoActiveJob(userId);
   const url = await listUrlOf(provider, body.url, kinds);
-  const start = await lists.start(userId, url, { ...body, url });
-  if ("waitForGrab" in start) {
-    const grabQueue = PROVIDERS[provider].grabQueue;
-    if (!grabQueue) throw new Error(`${provider} waits for Grab without a queue for it`);
-    const { queued, collectionId } = await grabQueue.queueList(userId, start.waitForGrab.title, { ...body, url });
-    res.status(202).json({ queued, collection_id: collectionId });
+  // Grab handoffs and request-only browser inputs retain their immediate compatibility path.
+  if (!lists.waitsForGrab && !needsImmediateImport(body)) {
+    const job = await enqueueBatchImport(userId, "COLLECTION", { ...body, url }, provider);
+    res.status(202).json({ job_id: job.id });
     return;
   }
-  const job = await createJob(userId, "COLLECTION", { sourceUrl: url, provider, total: body.model_ids.length });
-  void ("run" in start ? start.run(job.id) : runListImportJob(job.id, userId, provider, start.batch, { ...body, url }));
-  res.status(202).json({ job_id: job.id });
+  await withDatabaseOperation(async () => {
+    const start = await lists.start(userId, url, { ...body, url });
+    if ("waitForGrab" in start) {
+      const grabQueue = PROVIDERS[provider].grabQueue;
+      if (!grabQueue) throw new Error(`${provider} waits for Grab without a queue for it`);
+      const { queued, collectionId } = await grabQueue.queueList(userId, start.waitForGrab.title, { ...body, url });
+      res.status(202).json({ queued, collection_id: collectionId });
+      return;
+    }
+    const job = await startDirectBatchImport(
+      userId,
+      "COLLECTION",
+      { sourceUrl: url, provider, total: body.model_ids.length },
+      (jobId) =>
+        "run" in start ? start.run(jobId) : runListImportJob(jobId, userId, provider, start.batch, { ...body, url }),
+    );
+    res.status(202).json({ job_id: job.id });
+  });
 }
 
 async function importProfiles(req: Request, res: Response, provider: ProviderId) {
@@ -250,11 +318,16 @@ async function importProfiles(req: Request, res: Response, provider: ProviderId)
   const run = profilesImportJob(provider);
   if (!run) throw new HttpError(404, `${name} has no print profiles to import together`);
   const body = parseBody(profilesImportSchema, req.body);
-  await assertNoActiveJob(userId);
   const url = await enabledImportUrl(body.url);
   if (parseModelUrl(url)?.provider !== provider) throw new HttpError(400, `Not a ${name} model link`);
-  const job = await createJob(userId, "PROFILES", { sourceUrl: url, provider });
-  void run(job.id, userId, { ...body, url });
+  if (!needsImmediateImport(body)) {
+    const job = await enqueueBatchImport(userId, "PROFILES", { ...body, url }, provider);
+    res.status(202).json({ job_id: job.id });
+    return;
+  }
+  const job = await startDirectBatchImport(userId, "PROFILES", { sourceUrl: url, provider }, (jobId) =>
+    run(jobId, userId, { ...body, url }),
+  );
   res.status(202).json({ job_id: job.id });
 }
 
@@ -296,29 +369,41 @@ for (const provider of PROVIDER_IDS) {
   }
 }
 
-// Batch imports run in the background and are polled via GET /import/jobs/:id. One RUNNING job
-// per user doubles as the "already in progress" lock.
-
-async function assertNoActiveJob(userId: string): Promise<void> {
-  const active = await getActiveJob(userId);
-  if (active) throw new HttpError(409, "An import is already in progress");
-}
-
-const zipExtractRequestSchema = importRequestSchema.extend({ entries: z.array(z.string()) });
-
 router.post(
   "/import/zip",
   requireCaptcha("import"),
   asyncHandler(async (req, res) => {
     const body = parseBody(zipExtractRequestSchema, req.body);
-    await assertNoActiveJob(req.userId!);
     const url = await enabledImportUrl(body.url);
-    const job = await createJob(req.userId!, "ZIP", {
-      sourceUrl: url,
-      total: body.entries.length,
-    });
-    void runZipImportJob(job.id, req.userId!, { ...body, url });
+    if (!needsImmediateImport(body)) {
+      const job = await enqueueBatchImport(req.userId!, "ZIP", { ...body, url });
+      res.status(202).json({ job_id: job.id });
+      return;
+    }
+    const job = await startDirectBatchImport(
+      req.userId!,
+      "ZIP",
+      { sourceUrl: url, total: body.entries.length },
+      (jobId) => runZipImportJob(jobId, req.userId!, { ...body, url }),
+    );
     res.status(202).json({ job_id: job.id });
+  }),
+);
+
+router.get(
+  "/import/jobs",
+  asyncHandler(async (req, res) => {
+    res.json(
+      await withDatabaseOperation(async () => ({ jobs: (await listQueueJobs(req.userId!)).map(toUserImportJobOut) })),
+    );
+  }),
+);
+
+router.delete(
+  "/import/jobs/:id",
+  asyncHandler(async (req, res) => {
+    await withDatabaseOperation(() => deleteQueueJob(req.params.id, req.userId!));
+    res.json({ ok: true });
   }),
 );
 
@@ -327,6 +412,13 @@ router.get(
   asyncHandler(async (req, res) => {
     const job = await getActiveJob(req.userId!);
     res.json(job ? toImportJobOut(job) : null);
+  }),
+);
+
+router.get(
+  "/import/jobs/active-list",
+  asyncHandler(async (req, res) => {
+    res.json((await getActiveJobs(req.userId!)).map(toImportJobOut));
   }),
 );
 
@@ -351,21 +443,34 @@ router.post(
   "/import/links",
   requireCaptcha("import"),
   asyncHandler(async (req, res) => {
-    const body = await withLinkAuth(req.userId!, parseBody(linksImportRequestSchema, req.body));
-    await assertNoActiveJob(req.userId!);
+    const parsedRequest = parseBody(linksImportRequestSchema, req.body);
+    const body = await withLinkAuth(req.userId!, parsedRequest);
     const urls: string[] = [];
     for (const raw of body.urls) {
       const url = await enabledImportUrl(raw.trim());
       if (url && !urls.includes(url)) urls.push(url);
     }
     if (!urls.length) throw new HttpError(400, "No links to import");
-    const job = await createJob(req.userId!, "LINKS", {
-      sourceUrl: urls[0],
-      total: urls.length,
-      payload: linksJobPayload(body),
-    });
-    await createJobItems(job.id, urls);
-    void runLinksImportJob(job.id, req.userId!, { ...body, url: urls[0] });
+    if (urls.some((url) => needsImmediateImport({ ...parsedRequest, url }))) {
+      // Signed links and request sessions cannot wait for the durable queue.
+      if (await getActiveJob(req.userId!))
+        throw new HttpError(409, "An import is already running; try again when it finishes");
+      const job = await startImmediateImport(
+        {
+          userId: req.userId!,
+          type: "LINKS",
+          status: "RUNNING",
+          sourceUrl: urls[0],
+          total: urls.length,
+          payload: { ...(linksJobPayload(body) as Prisma.InputJsonObject), immediate: true },
+          items: { create: urls.map((url) => ({ url })) },
+        },
+        (jobId) => runLinksImportJob(jobId, req.userId!, { ...body, url: urls[0] }),
+      );
+      res.status(202).json({ job_id: job.id });
+      return;
+    }
+    const job = await enqueueLinksImport(req.userId!, urls, linksJobPayload(body));
     res.status(202).json({ job_id: job.id });
   }),
 );
@@ -416,9 +521,13 @@ router.post(
 router.get(
   "/import/jobs/:id/items",
   asyncHandler(async (req, res) => {
-    const job = await getJob(req.params.id, req.userId!);
-    if (!job) throw new HttpError(404, "Import job not found");
-    res.json((await listJobItems(job.id)).map(toImportJobItemOut));
+    res.json(
+      await withDatabaseOperation(async () => {
+        const job = await getJob(req.params.id, req.userId!);
+        if (!job) throw new HttpError(404, "Import job not found");
+        return (await listJobItems(job.id)).map(toImportJobItemOut);
+      }),
+    );
   }),
 );
 

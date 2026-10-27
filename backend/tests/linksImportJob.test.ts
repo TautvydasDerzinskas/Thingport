@@ -16,6 +16,7 @@ vi.mock("node:dns/promises", () => ({
 
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
+import { runLinksImportJob } from "../src/services/importJobRunner";
 
 const app = createApp();
 const stamp = Date.now();
@@ -70,7 +71,7 @@ function mockFetch() {
         url: `https://s3.example.com/phoenix-${profile[1]}.stl`,
         filename: `phoenix-${profile[1]}.stl`,
       });
-    const file = url.match(/^https:\/\/s3\.example\.com\/phoenix-(\d+)\.stl$/);
+    const file = url.match(/^https:\/\/s3\.example\.com\/phoenix-(\d+)\.stl(?:\?.*)?$/);
     if (file)
       return new Response(`solid phoenix-${file[1]}\nendsolid\n`, {
         headers: { "content-type": "application/octet-stream" },
@@ -90,7 +91,7 @@ function mockFetch() {
 
 async function waitJob(jobId: string) {
   let job = (await request(app).get(`/api/import/jobs/${jobId}`).set(auth())).body;
-  for (let i = 0; i < 150 && job.status === "RUNNING"; i++) {
+  for (let i = 0; i < 150 && (job.status === "QUEUED" || job.status === "RUNNING"); i++) {
     await new Promise((resolve) => setTimeout(resolve, 100));
     job = (await request(app).get(`/api/import/jobs/${jobId}`).set(auth())).body;
   }
@@ -101,7 +102,7 @@ function startLinks(urls: string[], extra: Record<string, unknown> = {}) {
   return request(app)
     .post("/api/import/links")
     .set(auth())
-    .send({ urls, makerworld_cookie: "token=test-bearer", ...extra });
+    .send({ urls, ...extra });
 }
 
 describe("the links import queue", () => {
@@ -177,7 +178,7 @@ describe("the links import queue", () => {
     expect(job.imported).toBe(1);
     expect(job.failed_count).toBe(1);
 
-    let items = await prisma.importJobItem.findMany({ where: { jobId: job.id }, orderBy: { createdAt: "asc" } });
+    let items = await prisma.importJobItem.findMany({ where: { jobId: job.id }, orderBy: { url: "asc" } });
     expect(items.map((i) => i.status)).toEqual(["DONE", "FAILED"]);
     expect(items[1].errorMessage).toBeTruthy();
     expect(items[1].attempts).toBe(1);
@@ -192,7 +193,7 @@ describe("the links import queue", () => {
     expect(rerun.imported).toBe(2);
     expect(rerun.failed_count).toBe(0);
 
-    items = await prisma.importJobItem.findMany({ where: { jobId: job.id }, orderBy: { createdAt: "asc" } });
+    items = await prisma.importJobItem.findMany({ where: { jobId: job.id }, orderBy: { url: "asc" } });
     expect(items.map((i) => i.status)).toEqual(["DONE", "DONE"]);
     expect(designCalls.get(goodId)).toBeUndefined(); // the good link wasn't downloaded again
   });
@@ -265,10 +266,11 @@ describe("the links import queue", () => {
     const res = await request(app).get(`/api/import/jobs/${job.id}/items`).set(auth());
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(2);
-    expect(res.body[0]).toMatchObject({ status: "DONE", attempts: 1, error_message: null });
-    expect(res.body[1].status).toBe("FAILED");
-    expect(res.body[1].error_message).toBeTruthy();
-    expect(res.body[1].url).toContain(badId);
+    const good = res.body.find((item: { url: string }) => item.url.includes(goodId));
+    const bad = res.body.find((item: { url: string }) => item.url.includes(badId));
+    expect(good).toMatchObject({ status: "DONE", attempts: 1, error_message: null });
+    expect(bad).toMatchObject({ status: "FAILED", attempts: 1 });
+    expect(bad.error_message).toBeTruthy();
   });
 
   it("refuses a retry with nothing failed", async () => {
@@ -279,5 +281,108 @@ describe("the links import queue", () => {
 
     const retry = await request(app).post(`/api/import/jobs/${job.id}/retry`).set(auth()).send({});
     expect(retry.status).toBe(400);
+  });
+  it("keeps a single import queued when its session comes from saved settings", async () => {
+    const id = String((stamp % 1_000_000_000) + 12);
+    const response = await request(app)
+      .post("/api/import?async=1")
+      .set(auth())
+      .send({ url: `https://makerworld.com/en/models/${id}-phoenix` });
+    expect(response.status).toBe(202);
+    expect(response.body.job_id).toBe(response.body.task_id);
+    expect(typeof response.body.job_id).toBe("string");
+    expect((await waitJob(response.body.job_id)).status).toBe("DONE");
+  });
+
+  it.each(["X-Amz-Signature=test", "Expires=1893456000"])(
+    "imports a LINKS batch immediately when a later URL is signed with %s",
+    async (signature) => {
+      const id = String((stamp % 1_000_000_000) + 20 + (signature.startsWith("Expires") ? 1 : 0));
+      const response = await startLinks([
+        `https://makerworld.com/en/models/${id}-phoenix`,
+        `https://s3.example.com/phoenix-${id}.stl?${signature}`,
+      ]);
+      expect(response.status).toBe(202);
+      const finished = await waitJob(response.body.job_id);
+      expect(finished).toMatchObject({ status: "DONE", imported: 2 });
+      const job = await prisma.importJob.findUniqueOrThrow({ where: { id: response.body.job_id } });
+      expect(job.payload).toMatchObject({ immediate: true });
+    },
+  );
+
+  it("imports immediately with an explicit session without retaining its cookie", async () => {
+    const id = String((stamp % 1_000_000_000) + 11);
+    const response = await startLinks([`https://makerworld.com/en/models/${id}-phoenix`], {
+      makerworld_cookie: "token=test-bearer",
+    });
+    expect(response.status).toBe(202);
+    const finished = await waitJob(response.body.job_id);
+    expect(finished).toMatchObject({ status: "DONE", imported: 1 });
+    const job = await prisma.importJob.findUniqueOrThrow({ where: { id: response.body.job_id } });
+    expect(job.payload).toMatchObject({ immediate: true });
+    expect(JSON.stringify(job.payload)).not.toContain("test-bearer");
+    expect(designCalls.get(id)).toBe(1);
+  });
+
+  it.each(["DONE", "PENDING"] as const)("reconstructs sync results after a crash with the item %s", async (status) => {
+    const user = await prisma.user.findFirstOrThrow({ where: { email: `links-${stamp}@example.com` } });
+    const print = await prisma.print.create({
+      data: { userId: user.id, name: `Recovered ${status}`, nameNormalized: `recovered ${status}` },
+    });
+    const collection = await prisma.collection.create({
+      data: { userId: user.id, name: `Recovered ${status}`, nameNormalized: `recovered ${status}` },
+    });
+    const sync = await prisma.collectionSync.create({
+      data: {
+        userId: user.id,
+        collectionId: collection.id,
+        provider: "makerworld",
+        externalId: `recovered-${status}`,
+        sourceUrl: "https://makerworld.com/en/collections/123",
+      },
+    });
+    const job = await prisma.importJob.create({
+      data: {
+        userId: user.id,
+        type: "LINKS",
+        status: "RUNNING",
+        total: 1,
+        sourceUrl: sync.sourceUrl,
+        collectionSyncId: sync.id,
+        items: {
+          create: [
+            {
+              url: "https://makerworld.com/en/models/123",
+              status,
+              result: {
+                processed: 1,
+                imported: 1,
+                alreadyInLibrary: 0,
+                failed: 0,
+                printId: print.id,
+                stopReason: null,
+                profiles: false,
+              },
+            },
+          ],
+        },
+      },
+    });
+    await runLinksImportJob(job.id, user.id, { url: sync.sourceUrl });
+    const recovered = await prisma.importJob.findUniqueOrThrow({ where: { id: job.id } });
+    expect(recovered).toMatchObject({
+      status: "DONE",
+      processed: 1,
+      imported: 1,
+      alreadyInLibrary: 0,
+      resultPrintId: print.id,
+    });
+    expect(designCalls.size).toBe(0);
+    const notification = await prisma.notification.findFirstOrThrow({
+      where: { userId: user.id, type: "sync" },
+      orderBy: { createdAt: "desc" },
+    });
+    expect(notification.title).toBe(`1 new model synced into "Recovered ${status}"`);
+    expect(notification.body).toContain(`"Recovered ${status}"`);
   });
 });

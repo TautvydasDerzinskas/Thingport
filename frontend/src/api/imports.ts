@@ -2,6 +2,7 @@ import { authHeaders } from "../utils/auth";
 import { apiBase, readErrorMessage, UnauthorizedError } from "./client";
 import { MANIFESTS, type ProviderId } from "../providers/index.generated";
 import type { Print } from "./prints";
+import type { AdminImportJob } from "./admin";
 
 export type ImportInspectInfo = {
   filename: string;
@@ -28,13 +29,13 @@ export type ImportCollectionEntriesResult = {
   entries: ImportCollectionEntry[];
 };
 
-export type ImportJobType = "COLLECTION" | "ZIP" | "PROFILES" | "LINKS";
+export type ImportJobType = "SINGLE" | "COLLECTION" | "ZIP" | "PROFILES" | "LINKS";
 
 export type MakerworldProfileScope = "url" | "designer" | "all";
 // PAUSED: a link queue waiting to be started from the admin import queue.
-export type ImportJobStatus = "RUNNING" | "DONE" | "ERROR" | "PAUSED";
+export type ImportJobStatus = "QUEUED" | "RUNNING" | "DONE" | "ERROR" | "PAUSED";
 
-/** Polled by ImportJobContext until status leaves RUNNING. */
+/** Polled by ImportJobContext while QUEUED or RUNNING. */
 export type ImportJob = {
   id: string;
   type: ImportJobType;
@@ -66,6 +67,10 @@ export type ImportJobItem = {
   scope: MakerworldProfileScope | null;
 };
 
+export type UserImportJob = Omit<AdminImportJob, "owner"> & {
+  queue_position: number | null;
+};
+
 type ImportLinkPayload = {
   url: string;
   title?: string;
@@ -81,9 +86,68 @@ type ImportLinkPayload = {
 
 /** "profile_added": an existing MakerWorld model gained another profile's file. */
 export type ImportOutcome = "created" | "profile_added" | "already_imported";
+type ImportTaskResponse =
+  | { status: "queued" | "running" }
+  | { status: "done"; result: { id?: string; import_outcome?: ImportOutcome } | null }
+  | { status: "error"; detail: string; http_status: number };
+export type SingleImportResponse =
+  (Print & { import_outcome?: ImportOutcome }) | { task_id: string; job_id: string; status: "QUEUED" };
 
 export const importsApi = {
-  fromLink: async (payload: ImportLinkPayload): Promise<Print & { import_outcome?: ImportOutcome }> => {
+  getImportQueue: async (): Promise<{ jobs: UserImportJob[] }> => {
+    const res = await fetch(`${apiBase()}/import/jobs`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to load the import queue"));
+    return res.json();
+  },
+
+  deleteImportJob: async (jobId: string): Promise<{ ok: true }> => {
+    const res = await fetch(`${apiBase()}/import/jobs/${jobId}`, { method: "DELETE", headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to delete the import"));
+    return res.json();
+  },
+
+  queueFromLink: async (payload: ImportLinkPayload): Promise<{ job_id?: string; task_id: string }> => {
+    const res = await fetch(`${apiBase()}/import?async=1`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Import failed"));
+    return res.json();
+  },
+
+  /** Browser-signed imports use the short-lived task endpoint instead of a durable job. */
+  getImportTaskJob: async (taskId: string, sourceUrl: string): Promise<ImportJob> => {
+    const res = await fetch(`${apiBase()}/import/tasks/${taskId}`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to load import progress"));
+    const task: ImportTaskResponse = await res.json();
+    const done = task.status === "done";
+    const failed = task.status === "error";
+    const existing = done && task.result?.import_outcome === "already_imported";
+    return {
+      id: taskId,
+      type: "SINGLE",
+      source_url: sourceUrl,
+      source_label: null,
+      provider: null,
+      status: done ? "DONE" : failed ? "ERROR" : task.status === "queued" ? "QUEUED" : "RUNNING",
+      total: 1,
+      processed: done || failed ? 1 : 0,
+      imported: done && !existing ? 1 : 0,
+      already_in_library: existing ? 1 : 0,
+      failed_count: failed ? 1 : 0,
+      error_message: failed ? task.detail : null,
+      result_collection_id: null,
+      result_print_id: done ? (task.result?.id ?? null) : null,
+    };
+  },
+
+  /** Long queued imports return task identifiers after the synchronous wait expires. */
+  fromLink: async (payload: ImportLinkPayload): Promise<SingleImportResponse> => {
     const res = await fetch(`${apiBase()}/import`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),
@@ -240,6 +304,13 @@ export const importsApi = {
     const res = await fetch(`${apiBase()}/import/jobs/active`, { headers: authHeaders() });
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to check for an active import"));
+    return res.json();
+  },
+
+  getActiveImportJobs: async (): Promise<ImportJob[]> => {
+    const res = await fetch(`${apiBase()}/import/jobs/active-list`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to check for active imports"));
     return res.json();
   },
 

@@ -66,9 +66,13 @@ export async function addPreviewImage(
   buffer: Buffer,
   { generated = false, keepExif = false }: { generated?: boolean; keepExif?: boolean } = {},
 ): Promise<PreviewImage | null> {
-  const last = await prisma.previewImage.findFirst({ where: { printId }, orderBy: { position: "desc" } });
-  const position = last ? last.position + 1 : 0;
-  const row = await prisma.previewImage.create({ data: { printId, position, generated } });
+  // Imports and background renders can add images together. Reserve each position under the print's row lock.
+  const row = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "Print" WHERE id = ${printId} FOR UPDATE`;
+    const last = await tx.previewImage.findFirst({ where: { printId }, orderBy: { position: "desc" } });
+    const position = last ? last.position + 1 : 0;
+    return tx.previewImage.create({ data: { printId, position, generated } });
+  });
   const saved = await saveBuffer(printId, row.id, buffer, keepExif);
   if (!saved) {
     await prisma.previewImage.delete({ where: { id: row.id } }).catch(() => undefined);

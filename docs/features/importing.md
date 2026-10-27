@@ -36,10 +36,19 @@ again.
 
 ## Big imports
 
-Collections and lists of links run as background jobs. A progress bar shows how far along they are, and a notification
+Model links, collections, ZIP imports and lists of links run as background jobs in a shared downloader queue.
+You can submit another import while a job is waiting or running; closing or reloading the app does not cancel queued work.
+Imports that need browser-signed links or an explicitly supplied session run immediately instead; their progress is
+only available until the server restarts or the finished task expires.
+The footer shows each active job in its own progress row. Open **My import queue** from the sidebar or footer to see
+your jobs and their waiting position in the shared queue. Use the **Failed** filter to find errors, and expand a list
+of links to see individual link errors. You can delete your queued or idle jobs; running imports cannot be deleted.
+**Administration → Import queue** shows all users’ jobs and lets admins pause, resume and retry them.
+
+Collections and lists of links track progress per model. A progress bar shows how far along they are, and a notification
 says what came in when they finish. A model you already have is never imported twice, so importing the same collection
 again only brings in what's new. Failed links can be retried once the cause is fixed, and imports sent to the queue
-from Thingport Grab wait in **Administration → Import queue** until they're started.
+from Thingport Grab appear paused in your queue until an admin starts them in **Administration → Import queue**.
 
 ## Before you start
 
@@ -51,3 +60,18 @@ then nothing is imported from it.
 
 Imported models can be categorized and their descriptions cleaned up on the way in with the optional
 [AI features](../guides/ai.md).
+
+## Asynchronous API
+
+`POST /api/import?async=1` returns HTTP 202. Durable downloads return both `job_id` and `task_id`
+(the same identifier), with `status: "QUEUED"`. Poll `GET /api/import/jobs/:job_id` for uppercase job
+statuses (`QUEUED`, `RUNNING`, `DONE`, `ERROR`, `PAUSED`). `GET /api/import/jobs/active` returns the
+oldest queued or running job owned by the signed-in user, or `null`.
+
+Imports that need browser-signed links or an explicitly supplied session return only `task_id`.
+Poll `GET /api/import/tasks/:task_id`, which supports both immediate tasks and durable single imports:
+`queued` or `running` means keep polling, `done` includes the model in `result`, and `error` includes
+`detail` and `http_status`. These task statuses are lowercase. Immediate tasks are held in memory;
+HTTP 404 means the task is unknown, expired, or lost after a server restart. Without `async=1`, the
+single-import endpoint waits up to 25 seconds in the same queue and returns the model if it finishes.
+If it is still pending, HTTP 202 returns `task_id` and `job_id`; poll either endpoint above for its result.

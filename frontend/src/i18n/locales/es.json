@@ -1,5 +1,9 @@
 {
   "app": {
+    "importQueue": {
+      "title": "Mi cola de importación",
+      "position": "Posición de espera {{position}}"
+    },
     "shell": {
       "apiUnreachable": "No se puede acceder a la API. Asegúrate de que el contenedor de la API esté en marcha y sea accesible.",
       "backToLibrary": "Volver a la biblioteca",
@@ -591,6 +595,8 @@
       }
     },
     "importProgress": {
+      "queued": "Esperando en la cola de importación…",
+      "singleFailed": "Error de importación. Vuelve a probar el enlace.",
       "starting": "Iniciando importación…",
       "label": "{{phrase}} {{processed}} de {{total}}",
       "phrases": [
@@ -1918,12 +1924,14 @@
         "columnActions": "Acciones",
         "progress": "{{processed}} de {{total}}, {{imported}} importados, {{failed}} con error",
         "type": {
+          "SINGLE": "Modelo",
           "LINKS": "Enlaces",
           "COLLECTION": "Colección",
           "ZIP": "ZIP",
           "PROFILES": "Perfiles de impresión"
         },
         "status": {
+          "queued": "En cola",
           "paused": "En pausa",
           "pausing": "Pausando",
           "running": "En curso",
@@ -1933,6 +1941,7 @@
           "doneWithFailures": "Terminada, con errores"
         },
         "statusHint": {
+          "queued": "Esperando al descargador.",
           "paused": "Esperando a que se inicie.",
           "pausing": "Terminando el enlace en curso y después se detiene.",
           "running": "Importando ahora.",

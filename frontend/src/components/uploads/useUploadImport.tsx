@@ -3,7 +3,7 @@ import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { UnauthorizedError } from "../../api/client";
-import { importsApi, type ImportOutcome, type MakerworldProfileScope } from "../../api/imports";
+import { importsApi, type MakerworldProfileScope } from "../../api/imports";
 import { printsApi, type Print } from "../../api/prints";
 import { useNotifications } from "../Layout/NotificationsContext";
 import {
@@ -37,12 +37,11 @@ function isFlatFileSet(entries: { file: File; relativePath: string }[]) {
 type Props = {
   onUploaded: () => void;
   categoryId?: string | null;
-  makerworldCookie?: string | null;
   onUnauthorized?: () => void;
 };
 
 /** `modals` must be rendered by the caller alongside the menu. */
-export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUnauthorized }: Props) {
+export function useUploadImport({ onUploaded, categoryId, onUnauthorized }: Props) {
   const { t } = useTranslation("app");
   const showToast = useToast();
   const { refresh: refreshNotifications } = useNotifications();
@@ -50,20 +49,27 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
   const inputRef = useRef<HTMLInputElement | null>(null);
   const folderInputRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [importing, setImporting] = useState(false);
   const zipPrompt = useZipImportPrompt();
   const collectionPrompt = useCollectionImportPrompt();
   const importModePrompt = useImportModePrompt();
-  const { startZipImport, startListImport, startProfilesImport, startLinksImport } = useImportJob();
-  const isBusy = uploading || importing || zipPrompt.isOpen || collectionPrompt.isOpen || importModePrompt.isOpen;
+  // Page inspections can finish together, but each picker holds only one pending choice.
+  const promptTail = useRef<Promise<void>>(Promise.resolve());
+  const showPrompt = (prompt: () => Promise<void>) => {
+    const next = promptTail.current.then(prompt);
+    promptTail.current = next.catch(() => undefined);
+    return next;
+  };
+  const showZipPrompt = (config: Parameters<typeof zipPrompt.prompt>[0]) => showPrompt(() => zipPrompt.prompt(config));
+  const showCollectionPrompt = (config: Parameters<typeof collectionPrompt.prompt>[0]) =>
+    showPrompt(() => collectionPrompt.prompt(config));
+  const showImportModePrompt = (config: Parameters<typeof importModePrompt.prompt>[0]) =>
+    showPrompt(() => importModePrompt.prompt(config));
+  const { startSingleImport, startZipImport, startListImport, startProfilesImport, startLinksImport } = useImportJob();
+  const isBusy = uploading || zipPrompt.isOpen || collectionPrompt.isOpen || importModePrompt.isOpen;
 
   // A plain upload has no metadata yet, so open it straight in edit mode.
   const openForEditing = (print: Print) => {
     navigate(`/models/${print.id}?edit=${print.id}`);
-  };
-
-  const openForViewing = (print: Print) => {
-    navigate(`/models/${print.id}`);
   };
 
   const uploadFlatAsMultiplate = async (files: File[]) => {
@@ -112,7 +118,7 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
     };
     if (normalEntries.length) {
       if (isFlatFileSet(normalEntries)) {
-        await importModePrompt.prompt({
+        await showImportModePrompt({
           label: normalEntries.map((entry) => entry.file.name).join(", "),
           count: normalEntries.length,
           onChoose: async (mode: ImportMode) => {
@@ -126,7 +132,7 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
       } else if (hasModelFolders(normalEntries)) {
         // Libraries often keep one model per folder, split into several files with its photos alongside.
         const roots = [...new Set(normalEntries.map((entry) => entry.relativePath.split("/")[0]))];
-        await importModePrompt.prompt({
+        await showImportModePrompt({
           label: roots.join(", "),
           count: normalEntries.length,
           variant: "folders",
@@ -145,7 +151,7 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
       const baseParts = entry.relativePath.split("/").filter(Boolean);
       baseParts.pop();
       const basePath = baseParts.join("/");
-      await zipPrompt.prompt({
+      await showZipPrompt({
         label: entry.file.name,
         onImportAsZip: async () => {
           const result = await uploadEntriesToCategory([entry], categoryId || null, onUnauthorized);
@@ -229,17 +235,6 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
     />
   );
 
-  const showImportedToast = (imported: Print & { import_outcome?: ImportOutcome }) => {
-    const name = imported.title || imported.name;
-    const key =
-      imported.import_outcome === "profile_added"
-        ? "uploadBar.profileAdded"
-        : imported.import_outcome === "already_imported"
-          ? "uploadBar.alreadyInLibrary"
-          : "uploadBar.imported";
-    showToast({ message: t(key, { name }) });
-  };
-
   /** `profileScope`: which print profiles to import, for a provider with them; more than the link's runs as a job,
    *  and MakerOnline's wait for Thingport Grab. */
   const submitImport = async (
@@ -249,13 +244,10 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
   ) => {
     const url = rawUrl.trim();
     if (!url) return;
-    setImporting(true);
     try {
-      const cookie = (makerworldCookie || "").trim();
       const payload = {
         url,
         category_id: categoryId || undefined,
-        makerworld_cookie: cookie || undefined,
         ...captcha,
       };
 
@@ -282,8 +274,7 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
 
       if (list) {
         const { provider } = list;
-        setImporting(false);
-        await collectionPrompt.prompt({
+        await showCollectionPrompt({
           label: url,
           loadEntries: async () => {
             try {
@@ -312,30 +303,20 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
       // A model whose link may be a zip of its raw files imports as any other link does, asking what to do with a zip;
       // the backend splits the rest into plates itself.
       if (model && !mayBeRawFilesZip(model.provider)) {
-        const imported = await importsApi.fromLink(payload);
-        showImportedToast(imported);
-        onUploaded();
-        openForViewing(imported);
+        await startSingleImport(payload);
         return;
       }
 
       const inspect = await importsApi.inspectLink(payload);
       if (!inspect.is_zip) {
-        const imported = await importsApi.fromLink(payload);
-        showImportedToast(imported);
-        onUploaded();
-        openForViewing(imported);
+        await startSingleImport(payload);
         return;
       }
-      setImporting(false);
-      await zipPrompt.prompt({
+      await showZipPrompt({
         label: inspect.filename,
         onImportAsZip: async () => {
           try {
-            const imported = await importsApi.fromLink(payload);
-            showImportedToast(imported);
-            onUploaded();
-            openForViewing(imported);
+            await startSingleImport(payload);
           } catch (err) {
             if (err instanceof UnauthorizedError) {
               onUnauthorized?.();
@@ -376,8 +357,7 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
       const message = err instanceof Error ? err.message : t("uploadBar.importFailed");
       alert(message);
     } finally {
-      setImporting(false);
-      // The import's notification is already written; show it on the bell now, not at the next poll.
+      // Refresh any notification from preparing this request; completed jobs refresh again through the provider.
       void refreshNotifications();
     }
   };
@@ -389,13 +369,11 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
     profileScope: MakerworldProfileScope = "url",
   ) => {
     if (!urls.length) return;
-    setImporting(true);
     try {
       await startLinksImport({
         urls,
         scope: profileScope,
         category_id: categoryId || undefined,
-        makerworld_cookie: (makerworldCookie || "").trim() || undefined,
         ...captcha,
       });
     } catch (err) {
@@ -405,8 +383,6 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
       }
       console.error("Import failed for", urls, err);
       alert(err instanceof Error ? err.message : t("uploadBar.importFailed"));
-    } finally {
-      setImporting(false);
     }
   };
 
@@ -414,7 +390,6 @@ export function useUploadImport({ onUploaded, categoryId, makerworldCookie, onUn
     fileInput,
     folderInput,
     uploading,
-    importing,
     isBusy,
     triggerUpload,
     triggerFolderUpload,

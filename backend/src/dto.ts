@@ -510,8 +510,8 @@ export function toCategoryOut(
 
 export type ImportJobOut = {
   id: string;
-  type: "COLLECTION" | "ZIP" | "PROFILES" | "LINKS";
-  status: "RUNNING" | "DONE" | "ERROR" | "PAUSED";
+  type: "SINGLE" | "COLLECTION" | "ZIP" | "PROFILES" | "LINKS";
+  status: "QUEUED" | "RUNNING" | "DONE" | "ERROR" | "PAUSED";
   source_url: string;
   source_label: string | null;
   provider: string | null;
@@ -568,6 +568,18 @@ export function toImportJobOut(job: ImportJob): ImportJobOut {
     error_message: job.errorMessage,
     result_collection_id: job.resultCollectionId,
     result_print_id: job.resultPrintId,
+  };
+}
+
+export type UserImportJobOut = Omit<AdminImportJobOut, "owner"> & {
+  queue_position: number | null;
+};
+
+export function toUserImportJobOut(row: QueueJobRow): UserImportJobOut {
+  const { owner: _owner, ...job } = toAdminImportJobOut(row);
+  return {
+    ...job,
+    queue_position: row.queuePosition,
   };
 }
 

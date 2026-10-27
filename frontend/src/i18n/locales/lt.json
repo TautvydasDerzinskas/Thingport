@@ -1,5 +1,9 @@
 {
   "app": {
+    "importQueue": {
+      "title": "Mano importavimo eilė",
+      "position": "Laukimo vieta {{position}}"
+    },
     "shell": {
       "apiUnreachable": "API nepasiekiamas. Įsitikinkite, kad API konteineris veikia ir pasiekiamas.",
       "backToLibrary": "Grįžti į biblioteką",
@@ -596,6 +600,8 @@
       }
     },
     "importProgress": {
+      "queued": "Laukiama importavimo eilėje…",
+      "singleFailed": "Importuoti nepavyko. Bandykite nuorodą dar kartą.",
       "starting": "Pradedamas importas…",
       "label": "{{phrase}} {{processed}} iš {{total}}",
       "phrases": [
@@ -1953,12 +1959,14 @@
         "columnActions": "Veiksmai",
         "progress": "{{processed}} iš {{total}}, importuota {{imported}}, nepavyko {{failed}}",
         "type": {
+          "SINGLE": "Modelis",
           "LINKS": "Nuorodos",
           "COLLECTION": "Kolekcija",
           "ZIP": "ZIP",
           "PROFILES": "Spausdinimo profiliai"
         },
         "status": {
+          "queued": "Eilėje",
           "paused": "Pristabdytas",
           "pausing": "Stabdomas",
           "running": "Vykdomas",
@@ -1968,6 +1976,7 @@
           "doneWithFailures": "Baigtas su klaidomis"
         },
         "statusHint": {
+          "queued": "Laukiama atsisiuntimo.",
           "paused": "Laukia paleidimo.",
           "pausing": "Baigia dabartinę nuorodą ir sustoja.",
           "running": "Dabar importuojama.",

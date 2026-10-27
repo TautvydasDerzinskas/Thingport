@@ -9,11 +9,11 @@ type StartZipImportPayload = Parameters<typeof importsApi.zipFromLink>[0];
 type StartListImportPayload = Parameters<typeof importsApi.startList>[1];
 type StartProfilesImportPayload = Parameters<typeof importsApi.startProfiles>[1];
 type StartLinksImportPayload = Parameters<typeof importsApi.fromLinks>[0];
+type StartSingleImportPayload = Parameters<typeof importsApi.queueFromLink>[0];
 
 type ImportJobContextValue = {
-  /** Non-null while a batch import runs; drives the progress bar and disables importing. */
-  activeJob: ImportJob | null;
-  isImporting: boolean;
+  jobs: ImportJob[];
+  startSingleImport: (payload: StartSingleImportPayload) => Promise<void>;
   startZipImport: (payload: StartZipImportPayload) => Promise<void>;
   /** The models queued for Thingport Grab where the provider's files come through it, else null: a job runs. */
   startListImport: (
@@ -23,8 +23,8 @@ type ImportJobContextValue = {
   startProfilesImport: (provider: ProviderId, payload: StartProfilesImportPayload) => Promise<void>;
   startLinksImport: (payload: StartLinksImportPayload) => Promise<void>;
   /** Reruns the links that failed on the finished job shown in the progress bar. */
-  retryJob: () => Promise<void>;
-  dismissJob: () => void;
+  retryJob: (jobId: string) => Promise<void>;
+  dismissJob: (jobId: string) => void;
 };
 
 const ImportJobContext = createContext<ImportJobContextValue | null>(null);
@@ -41,89 +41,109 @@ export function ImportJobProvider({
   children: React.ReactNode;
 }) {
   const navigate = useNavigate();
-  const [activeJob, setActiveJob] = useState<ImportJob | null>(null);
-  const pollRef = useRef<number | null>(null);
+  const [jobs, setJobs] = useState<ImportJob[]>([]);
+  const tracked = useRef(new Map<string, { timer: number | null; polling: boolean; running: boolean }>());
+  const mounted = useRef(true);
   const onJobCompletedRef = useRef(onJobCompleted);
   onJobCompletedRef.current = onJobCompleted;
 
-  const stopPolling = useCallback(() => {
-    if (pollRef.current !== null) {
-      window.clearInterval(pollRef.current);
-      pollRef.current = null;
-    }
-  }, []);
-
-  const pollJob = useCallback(
-    async (jobId: string) => {
-      try {
-        const job = await importsApi.getImportJob(jobId);
-        if (job.status === "RUNNING") {
-          setActiveJob(job);
-          return;
-        }
-        stopPolling();
-        // Paused from the admin import queue: nothing finished, so don't navigate anywhere.
-        if (job.status === "PAUSED") {
-          setActiveJob(null);
-          return;
-        }
-        onJobCompletedRef.current?.();
-        // A link queue with failures stays on screen so they can be retried or dismissed.
-        if (job.type === "LINKS" && (job.failed_count > 0 || job.status === "ERROR")) {
-          setActiveJob(job);
-          return;
-        }
-        setActiveJob(null);
-        // One resulting print opens its details page; more go to the models grid; none stays put.
-        if (job.status === "DONE") {
-          if (job.result_print_id) {
-            navigate(`/models/${job.result_print_id}`);
-          } else if (job.imported + job.already_in_library > 1) {
-            // Dedup hits count as results too.
-            navigate("/models");
-          }
-        }
-      } catch (err) {
-        stopPolling();
-        setActiveJob(null);
-        if (err instanceof UnauthorizedError) onUnauthorized?.();
-      }
-    },
-    [onUnauthorized, stopPolling, navigate],
-  );
-
-  const startPolling = useCallback(
-    (jobId: string) => {
-      stopPolling();
-      pollRef.current = window.setInterval(() => {
-        void pollJob(jobId);
-      }, POLL_INTERVAL_MS);
-    },
-    [pollJob, stopPolling],
-  );
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const job = await importsApi.getActiveImportJob();
-        if (job && job.status === "RUNNING") {
-          setActiveJob(job);
-          startPolling(job.id);
-        }
-      } catch (err) {
-        if (err instanceof UnauthorizedError) onUnauthorized?.();
-      }
-    })();
-    return () => stopPolling();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  const removeJob = useCallback((jobId: string) => {
+    const entry = tracked.current.get(jobId);
+    if (entry?.timer != null) window.clearInterval(entry.timer);
+    tracked.current.delete(jobId);
+    setJobs((current) => current.filter((job) => job.id !== jobId));
   }, []);
 
   const followJob = useCallback(
-    async (jobId: string) => {
-      setActiveJob(await importsApi.getImportJob(jobId));
-      startPolling(jobId);
+    async (jobId: string, taskSource: string | null = null, recovered?: ImportJob) => {
+      if (!mounted.current || tracked.current.has(jobId)) return;
+      const entry = { timer: null as number | null, polling: false, running: false };
+      tracked.current.set(jobId, entry);
+      const update = async (initial?: ImportJob) => {
+        if (entry.polling) return;
+        entry.polling = true;
+        try {
+          const job =
+            initial ??
+            (taskSource !== null
+              ? await importsApi.getImportTaskJob(jobId, taskSource)
+              : await importsApi.getImportJob(jobId));
+          if (!mounted.current || tracked.current.get(jobId) !== entry) return;
+          const running = job.status === "RUNNING" || job.status === "QUEUED";
+          entry.running = running;
+          if (!running && entry.timer !== null) window.clearInterval(entry.timer);
+          if (job.status === "PAUSED") {
+            removeJob(jobId);
+            return;
+          }
+          if (running || job.failed_count > 0 || job.status === "ERROR") {
+            setJobs((current) =>
+              current.some((item) => item.id === jobId)
+                ? current.map((item) => (item.id === jobId ? job : item))
+                : [...current, job],
+            );
+          } else {
+            removeJob(jobId);
+          }
+          if (!running) {
+            onJobCompletedRef.current?.();
+            if (
+              job.status === "DONE" &&
+              job.failed_count === 0 &&
+              !Array.from(tracked.current.values()).some((other) => other.running)
+            ) {
+              if (job.result_print_id) navigate(`/models/${job.result_print_id}`);
+              else if (job.imported + job.already_in_library > 1) navigate("/models");
+            }
+          }
+        } catch (err) {
+          if (!mounted.current || tracked.current.get(jobId) !== entry) return;
+          removeJob(jobId);
+          if (err instanceof UnauthorizedError) onUnauthorized?.();
+          // Initial follow failures must reach the submitting dialog.
+          if (entry.timer === null) throw err;
+        } finally {
+          entry.polling = false;
+        }
+      };
+      await update(recovered);
+      if (tracked.current.get(jobId) === entry && entry.running) {
+        entry.timer = window.setInterval(() => {
+          void update();
+        }, POLL_INTERVAL_MS);
+      }
     },
-    [startPolling],
+    [navigate, onUnauthorized, removeJob],
+  );
+
+  useEffect(() => {
+    mounted.current = true;
+    const entries = tracked.current;
+    void importsApi
+      .getActiveImportJobs()
+      .then((active) => {
+        if (!mounted.current) return;
+        for (const job of active) void followJob(job.id, null, job);
+      })
+      .catch((err) => {
+        if (mounted.current && err instanceof UnauthorizedError) onUnauthorized?.();
+      });
+    return () => {
+      mounted.current = false;
+      for (const entry of entries.values()) {
+        if (entry.timer !== null) window.clearInterval(entry.timer);
+      }
+      entries.clear();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const startSingleImport = useCallback(
+    async (payload: StartSingleImportPayload) => {
+      const started = await importsApi.queueFromLink(payload);
+      return followJob(started.job_id ?? started.task_id, started.job_id ? null : payload.url);
+    },
+    [followJob],
   );
 
   const startZipImport = useCallback(
@@ -152,28 +172,36 @@ export function ImportJobProvider({
     [followJob],
   );
 
-  const retryJob = useCallback(async () => {
-    if (!activeJob) return;
-    await followJob((await importsApi.retryImportJob(activeJob.id)).job_id);
-  }, [activeJob, followJob]);
-
-  const dismissJob = useCallback(() => {
-    stopPolling();
-    setActiveJob(null);
-  }, [stopPolling]);
+  const retryJob = useCallback(
+    async (jobId: string) => {
+      const started = await importsApi.retryImportJob(jobId);
+      removeJob(jobId);
+      await followJob(started.job_id);
+    },
+    [followJob, removeJob],
+  );
 
   const value = useMemo(
     () => ({
-      activeJob,
-      isImporting: activeJob !== null,
+      jobs,
+      startSingleImport,
       startZipImport,
       startListImport,
       startProfilesImport,
       startLinksImport,
       retryJob,
-      dismissJob,
+      dismissJob: removeJob,
     }),
-    [activeJob, startZipImport, startListImport, startProfilesImport, startLinksImport, retryJob, dismissJob],
+    [
+      jobs,
+      startSingleImport,
+      startZipImport,
+      startListImport,
+      startProfilesImport,
+      startLinksImport,
+      retryJob,
+      removeJob,
+    ],
   );
 
   return <ImportJobContext.Provider value={value}>{children}</ImportJobContext.Provider>;

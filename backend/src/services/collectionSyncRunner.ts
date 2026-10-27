@@ -6,6 +6,7 @@
 
 import type { Collection, CollectionSync, Prisma } from "@prisma/client";
 import { prisma } from "../db";
+import { isDatabaseSwitching } from "./databaseSwitchGate";
 import {
   isSyncDue,
   markSchedulerStarted,
@@ -14,14 +15,15 @@ import {
   syncSchedulerEnabled,
 } from "./collectionSyncSchedule";
 import { COLLECTION_SYNC_ITEM_DELAY_MS, IMPORT_COLLECTION_DELAY_MS } from "../config";
+import { wakeImportScheduler, waitForScheduledImport } from "./importScheduler";
 import { sleep } from "../utils/concurrency";
 import { addPrintsToCollection } from "./collectionService";
 import { findLibraryPrints, hasProfiles, modelUrlFor, providerName, sourceDescription } from "./collectionSyncService";
 import { getActiveJob } from "./importJobService";
-import { type LinksImportJobBody, runLinksImportJob, SYNC_JOB_INTERRUPTED } from "./importJobRunner";
+import { SYNC_JOB_INTERRUPTED } from "./importJobRunner";
 import { startLinksJob } from "./importQueueService";
 import { isProviderId } from "../providers/index.generated";
-import { PROVIDERS, withLinkAuth } from "../providers/registry";
+import { PROVIDERS } from "../providers/registry";
 import { SyncHeldError, type SyncProblem } from "../providers/syncProblem";
 import type { ProviderSync, SyncedList } from "../providers/types";
 import { syncLikesUsername } from "../providers/names";
@@ -73,7 +75,7 @@ let lane: Promise<unknown> = Promise.resolve();
 /** Claims the collection's place, synchronously, so two requests checking at once can't both get
  *  it. False when it's already taken. Pass `reserved` to syncCollection, or release it. */
 export function reserveSync(syncId: string): boolean {
-  if (syncing.has(syncId)) return false;
+  if (isDatabaseSwitching() || syncing.has(syncId)) return false;
   syncing.add(syncId);
   return true;
 }
@@ -159,18 +161,18 @@ async function runSync(syncId: string): Promise<SyncOutcome> {
   }
 
   let openJob = await prisma.importJob.findFirst({
-    where: { collectionSyncId: sync.id, status: { in: ["RUNNING", "PAUSED"] } },
+    where: { collectionSyncId: sync.id, status: { in: ["RUNNING", "QUEUED", "PAUSED"] } },
     orderBy: { createdAt: "asc" },
   });
-  if (openJob?.status === "RUNNING") return "busy";
+  if (openJob?.status === "RUNNING" || openJob?.status === "QUEUED") return "busy";
   if (await getActiveJob(userId)) return "busy";
   if (openJob?.errorMessage === SYNC_JOB_INTERRUPTED) {
     const left = await prisma.importJobItem.count({
       where: { jobId: openJob.id, status: { in: ["PENDING", "RUNNING"] } },
     });
     if (left) {
-      const { run } = await startLinksJob(openJob);
-      await run;
+      await startLinksJob(openJob);
+      await waitForScheduledImport(openJob.id);
       return "resumed";
     }
     // Cut off after its last link: nothing to pick up again.
@@ -285,12 +287,13 @@ async function runSync(syncId: string): Promise<SyncOutcome> {
       data: {
         userId,
         type: "LINKS",
-        status: "RUNNING",
+        status: "QUEUED",
         sourceUrl: sync.sourceUrl,
         sourceLabel: `Sync: ${sync.collection.name}`,
         provider: sync.provider,
         total: toImport.length,
         collectionSyncId: sync.id,
+        items: { create: toImport.map((id) => ({ url: modelUrlFor(sync.provider, id), payload: itemPayload })) },
         payload: {
           notes: null,
           tags: [],
@@ -301,24 +304,10 @@ async function runSync(syncId: string): Promise<SyncOutcome> {
         },
       },
     });
-    await prisma.importJobItem.createMany({
-      data: toImport.map((id) => ({ jobId: job.id, url: modelUrlFor(sync.provider, id), payload: itemPayload })),
-    });
     await addPrintsToCollection(sync.collectionId, [...inLibrary.values()]);
     await markChecked();
-    // As every LINKS job runs, with LINK_PROVIDER's stored sign-in (see importQueueService.ts).
-    await runLinksImportJob(
-      job.id,
-      userId,
-      await withLinkAuth<LinksImportJobBody>(userId, {
-        url: sync.sourceUrl,
-        notes: null,
-        tags: [],
-        category_id: null,
-        scope: "url",
-        itemDelayMs: COLLECTION_SYNC_ITEM_DELAY_MS,
-      }),
-    );
+    wakeImportScheduler();
+    await waitForScheduledImport(job.id);
     return "queued";
   }
 
@@ -362,11 +351,26 @@ async function unsyncGone(sync: SyncWithCollection): Promise<void> {
   });
 }
 
+let manualSyncs = 0;
+
 /** "Sync now" from the collection's menu. The outcomes that don't send a notification of their own
  *  get one here, so a manual sync always answers, "nothing new" included. Never rejects: the route
  *  starts it without waiting, so failures are logged and answered with "error". With `reserved`,
  *  the collection's place is released however it ends. */
-export async function runManualSync(syncId: string, { reserved = false } = {}): Promise<SyncOutcome> {
+export async function runManualSync(syncId: string, options: { reserved?: boolean } = {}): Promise<SyncOutcome> {
+  if (isDatabaseSwitching()) {
+    if (options.reserved) releaseSync(syncId);
+    return "busy";
+  }
+  manualSyncs++;
+  try {
+    return await runManualSyncNow(syncId, options);
+  } finally {
+    manualSyncs--;
+  }
+}
+
+async function runManualSyncNow(syncId: string, { reserved = false } = {}): Promise<SyncOutcome> {
   // Once syncCollection has the reservation, it releases it; until then, it's this function's.
   let handedOver = !reserved;
   try {
@@ -434,9 +438,14 @@ async function notifyManualOutcome(before: SyncWithCollection, outcome: SyncOutc
 
 let currentRound: Promise<void> | null = null;
 
+export function hasActiveCollectionSync(): boolean {
+  return syncing.size > 0 || manualSyncs > 0 || currentRound !== null;
+}
+
 /** The synced collections that are due, the longest unchecked first. A round still going when the
  *  next tick comes is left to finish instead. */
 export function runSyncRound(): Promise<void> {
+  if (isDatabaseSwitching()) return Promise.resolve();
   if (currentRound) return currentRound;
   currentRound = (async () => {
     const syncs = await prisma.collectionSync.findMany({

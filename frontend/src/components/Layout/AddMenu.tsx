@@ -15,7 +15,6 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import TextField from "@mui/material/TextField";
-import CircularProgress from "@mui/material/CircularProgress";
 import Tooltip from "@mui/material/Tooltip";
 import Stack from "@mui/material/Stack";
 import IconButton from "@mui/material/IconButton";
@@ -28,7 +27,6 @@ import LinkIcon from "@mui/icons-material/Link";
 import BookmarkAddOutlinedIcon from "@mui/icons-material/BookmarkAddOutlined";
 import BookmarkletGuideDialog from "../BookmarkletGuideDialog";
 import { useUploadImport } from "../uploads/useUploadImport";
-import { useImportJob } from "./ImportJobContext";
 import { useToast } from "../ToastProvider";
 import { IMPORT_PROVIDER_INFO } from "../../constants/importProviders";
 import { COMING_SOON_PROVIDERS, ProviderLogo } from "./ConfigurationDialog/providerLogos";
@@ -56,14 +54,13 @@ export type AddMenuHandle = {
 
 type Props = {
   categoryId?: string | null;
-  makerworldCookie?: string | null;
   onUploaded: () => void;
   onUnauthorized?: () => void;
 };
 
 /** The top bar's "+ Add" button. Lists of a provider that imports them through Thingport Grab only are blocked here. */
 const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
-  { categoryId, makerworldCookie, onUploaded, onUnauthorized },
+  { categoryId, onUploaded, onUnauthorized },
   ref,
 ) {
   const { t } = useTranslation(["app", "common"]);
@@ -76,14 +73,13 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
   const [exampleProvider, setExampleProvider] = React.useState<ImportProviderKey | null>(null);
   const [profileScope, setProfileScope] = React.useState<MakerworldProfileScope>("url");
   const [bookmarkletGuideOpen, setBookmarkletGuideOpen] = React.useState(false);
-  const { isImporting } = useImportJob();
-  const upload = useUploadImport({ categoryId, makerworldCookie, onUploaded, onUnauthorized });
+  const upload = useUploadImport({ categoryId, onUploaded, onUnauthorized });
   const captchaSettings = useCaptchaSettings();
   const [captcha, setCaptcha] = React.useState<CaptchaAnswer | null>(null);
   const needsCaptcha = Boolean(captchaSettings?.import);
 
   // A pasted block of links becomes one queue job; a single link keeps the existing flows
-  // (collection pickers, zip inspection, immediate import).
+  // (collection pickers, zip inspection, queued import).
   const links = React.useMemo(
     () =>
       linkValue
@@ -128,7 +124,7 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
   React.useImperativeHandle(ref, () => ({
     importFromCommand: (link) => {
       // The same rule as the Add button, which is disabled meanwhile.
-      if (upload.isBusy || isImporting) {
+      if (upload.isBusy) {
         showToast({ message: t("addMenu.disabledWhileImporting"), severity: "info" });
         return;
       }
@@ -146,40 +142,39 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
     const link = readImportLink(location.pathname, location.search);
     if (link === null) return;
     navigate("/", { replace: true });
-    if (upload.isBusy || isImporting) showToast({ message: t("addMenu.disabledWhileImporting"), severity: "info" });
+    if (upload.isBusy) showToast({ message: t("addMenu.disabledWhileImporting"), severity: "info" });
     else openImport(link);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname, location.search]);
 
-  const closeImport = () => {
-    if (upload.importing) return;
-    setImportOpen(false);
-  };
+  const closeImport = () => setImportOpen(false);
 
-  const submitImport = async () => {
+  const submitImport = () => {
     if (!links.length || isBlockedCollection) return;
     if (needsCaptcha && !captcha?.captcha_answer.trim()) return;
-    // Each captcha works once; reopening shows a fresh one.
+    // The request may inspect a provider page before enqueueing. Release the dialog now so
+    // another link can be added while that work and the queued import continue.
+    setImportOpen(false);
+    setLinkValue("");
+    setCaptcha(null);
     if (isBatch) {
-      await upload.submitImportMany(links, needsCaptcha ? captcha : null, hasProfiles ? profileScope : "url");
-      setImportOpen(false);
+      void upload.submitImportMany(links, needsCaptcha ? captcha : null, hasProfiles ? profileScope : "url");
       return;
     }
-    await upload.submitImport(linkValue, needsCaptcha ? captcha : null, hasProfiles ? profileScope : "url");
-    setImportOpen(false);
+    void upload.submitImport(linkValue, needsCaptcha ? captcha : null, hasProfiles ? profileScope : "url");
   };
 
   return (
     <>
       {upload.fileInput}
       {upload.folderInput}
-      <Tooltip title={isImporting ? t("addMenu.disabledWhileImporting") : ""}>
+      <Tooltip title={upload.isBusy ? t("addMenu.disabledWhileImporting") : ""}>
         <span>
           <Button
             variant="contained"
             size="small"
             startIcon={<AddIcon fontSize="small" />}
-            disabled={upload.isBusy || isImporting}
+            disabled={upload.isBusy}
             onClick={(e) => setAnchorEl(e.currentTarget)}
           >
             {upload.uploading ? t("uploadBar.uploading") : t("common:add")}
@@ -302,7 +297,6 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
               }
             }}
             placeholder={t("addMenu.linksPlaceholder") ?? undefined}
-            disabled={upload.importing}
           />
           {isBatch && (
             <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 0.5 }}>
@@ -318,7 +312,6 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
               label={t("addMenu.profilesLabel")}
               value={profileScope}
               onChange={(e) => setProfileScope(e.target.value as MakerworldProfileScope)}
-              disabled={upload.importing}
               helperText={profileScope === "url" ? t("addMenu.profilesHelpUrl") : t("addMenu.profilesHelpMany")}
               sx={{ mt: 1.5 }}
             >
@@ -329,7 +322,7 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
           )}
           {needsCaptcha && (
             <Box sx={{ mt: 2 }}>
-              <CaptchaField onChange={setCaptcha} disabled={upload.importing} />
+              <CaptchaField onChange={setCaptcha} />
             </Box>
           )}
         </DialogContent>
@@ -342,21 +335,13 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
           >
             {t("bookmarklet.guide.open")}
           </Button>
-          <Button onClick={closeImport} disabled={upload.importing}>
-            {t("common:cancel")}
-          </Button>
+          <Button onClick={closeImport}>{t("common:cancel")}</Button>
           <Button
             variant="contained"
             onClick={submitImport}
-            disabled={
-              upload.importing ||
-              !links.length ||
-              isBlockedCollection ||
-              (needsCaptcha && !captcha?.captcha_answer.trim())
-            }
-            startIcon={upload.importing ? <CircularProgress size={14} /> : undefined}
+            disabled={!links.length || isBlockedCollection || (needsCaptcha && !captcha?.captcha_answer.trim())}
           >
-            {upload.importing ? t("uploadBar.importing") : t("common:import")}
+            {t("common:import")}
           </Button>
         </DialogActions>
       </Dialog>
