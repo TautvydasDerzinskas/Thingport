@@ -217,11 +217,23 @@ export function stl(model, { title = "QR code" } = {}) {
 export const projectFile = (state, version) =>
   `${JSON.stringify({ tool: "thingport-qr-code-generator", version, saved: new Date().toISOString(), state }, null, 2)}\n`;
 
+/** The shapes a project may have been saved with, and what each is now called. */
+const RETIRED = {
+  body: { connected: "rounded", diamond: "bevel", leaf: "rounded", plus: "square", bar: "roundBars" },
+  eyeFrame: { leaf: "rounded" },
+  eyeCentre: { dot: "circle" },
+};
+
 /** Settings read back from such a file. Throws where the file is something else. */
 export function readProject(text) {
   const parsed = JSON.parse(text);
   if (parsed?.tool !== "thingport-qr-code-generator" || typeof parsed.state !== "object") {
     throw new Error("That isn't a QR code project saved by this tool.");
   }
-  return parsed.state;
+  const state = parsed.state;
+  for (const [setting, renamed] of Object.entries(RETIRED)) {
+    const was = state[setting];
+    if (typeof was === "string" && renamed[was]) state[setting] = renamed[was];
+  }
+  return state;
 }

@@ -12,7 +12,7 @@
 
 import { LEVELS, LEVEL_RECOVERY, MAX_VERSION, capacity, smallestVersion } from "./qr.js";
 import { DEFAULT_CONTENT, FIELDS, KINDS, carriesSecret, missing, nameFor } from "./content.js";
-import { DEFAULTS, QUIET } from "./layout.js";
+import { DEFAULTS, QUIET, TAB_SIDES } from "./layout.js";
 import {
   BODIES,
   EYE_CENTRES,
@@ -41,8 +41,9 @@ const RANGES = {
   borderMm: [0.6, 20, 0.5],
   borderHeightMm: [0.2, 8, 0.1],
   borderCornerMm: [0, 20, 0.5],
-  tabMm: [6, 60, 0.5],
-  holeMm: [2, 20, 0.5],
+  tabMm: [5, 60, 0.5],
+  holeMm: [1.6, 20, 0.5],
+  tabOffset: [-100, 100, 1],
   fill: [60, 115, 1],
   captionSize: [2, 20, 0.5],
   captionRaise: [0.2, 4, 0.1],
@@ -50,6 +51,12 @@ const RANGES = {
   patchScale: [20, 100, 1],
   patchRaise: [0.2, 4, 0.1],
 };
+
+/** A build quicker than this needs no spinner: showing one would be a flash, not a wait. */
+const QUICK_MS = 120;
+
+/** The reliefs that stand the modules at different heights, where the height asked for is the tallest of them. */
+const ACROSS_THE_CODE = new Set(["ripple", "ramp", "terraces", "saddle"]);
 
 /** The settings panels, in the order the chooser lists them. */
 const SECTIONS = ["content", "shape", "style", "colour", "extras", "check"];
@@ -93,6 +100,7 @@ export default async function mount(thingport) {
 
   let state = { ...clone(DEFAULTS), content: clone(DEFAULT_CONTENT) };
   let model = null; // the last build that worked
+  let lastBuild = Infinity; // how long the last one took, which says whether this one needs a spinner
   let fresh = false;
   let failure = null;
   let busy = false;
@@ -198,11 +206,18 @@ export default async function mount(thingport) {
 
     const doing = model ? t("state.working") : t("state.buildingFirst");
     setState("working", doing);
-    showBusy(true, doing);
-    await new Promise((resolve) => requestAnimationFrame(resolve)); // let the spinner paint
-    if (mine !== revision || dead) return;
+    // A code that built quickly last time builds quickly this time: showing a spinner for it would be a flash of
+    // one, which reads as the window reloading rather than the tile changing.
+    const slow = !model || lastBuild > QUICK_MS;
+    if (slow) {
+      showBusy(true, doing);
+      await new Promise((resolve) => requestAnimationFrame(resolve)); // let the spinner paint
+      if (mine !== revision || dead) return;
+    }
     try {
+      const began = performance.now();
       const built = buildModel(state, { font, logo });
+      lastBuild = performance.now() - began;
       if (mine !== revision || dead) return;
       model = built;
       failure = null;
@@ -221,7 +236,7 @@ export default async function mount(thingport) {
       showChips(null);
       onBuilt?.();
     } finally {
-      if (mine === revision && !dead) showBusy(false);
+      if (mine === revision && !dead && slow) showBusy(false);
     }
   }
 
@@ -542,7 +557,7 @@ export default async function mount(thingport) {
     ctx.fillStyle = state.colours.base;
     ctx.fillRect(0, 0, side, side);
     const cell = side / 8;
-    const rings = eyeRings(frame, centre, side / 2, side / 2, cell, [1, 1], 48);
+    const rings = eyeRings(frame, centre, side / 2, side / 2, cell, state.body, 48);
     ctx.fillStyle = state.colours.code;
     ctx.beginPath();
     rings.frameOuter.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
@@ -579,7 +594,7 @@ export default async function mount(thingport) {
     ctx.stroke();
     ctx.fillStyle = state.colours.code;
     for (let i = 0; i < cells; i++) {
-      const tall = reliefHeight(relief, cell * 1.5, i, i, cells * 2);
+      const tall = reliefHeight(relief, cell * 1.5, i, cells, cells * 2);
       const { levels, apex } = reliefLevels(relief, tall, cell);
       const x = cell * 0.6 + i * cell;
       ctx.beginPath();
@@ -595,6 +610,7 @@ export default async function mount(thingport) {
     }
   }
 
+  /** The reliefs that stand the modules at different heights, where the height set is the tallest of them. */
   /** A row of pickers, each with its own little picture. */
   function pickers(host, options, current, choose, paint) {
     const grid = document.createElement("div");
@@ -821,9 +837,17 @@ export default async function mount(thingport) {
 
     if (state.shape === "keychain") {
       const tab = group(host, t("shape.tab"));
+      segmented(
+        tab,
+        t("shape.tabSide"),
+        TAB_SIDES.map((value) => ({ value, label: t(`shape.tabSide.${value}`) })),
+        TAB_SIDES.includes(state.tabSide) ? state.tabSide : "top",
+        (value) => (state.tabSide = value),
+      );
       const row = fields(tab);
       control(row, "tabMm", t("shape.tabWidth"));
       control(row, "holeMm", t("shape.hole"));
+      control(row, "tabOffset", t("shape.tabPosition"), { unit: "%", hint: t("shape.tabPositionHint") });
       note(tab, escapeHtml(t("shape.tabNote")));
     }
   }
@@ -844,7 +868,6 @@ export default async function mount(thingport) {
     );
     const row = fields(how);
     if (state.modules === "flush") control(row, "inlayMm", t("style.inlay"), { hint: t("style.inlayHint") });
-    else control(row, "codeMm", t("style.codeHeight"));
     control(row, "fill", t("style.fill"), {
       unit: "%",
       get: () => Math.round(state.fill * 100),
@@ -852,6 +875,25 @@ export default async function mount(thingport) {
       hint: t("style.fillHint"),
     });
     note(how, escapeHtml(state.modules === "flush" ? t("style.flushNote") : t("style.raisedNote")));
+
+    const relief = group(host, t("style.relief"), t("style.reliefHint"));
+    if (state.modules === "flush") {
+      note(relief, escapeHtml(t("style.reliefFlush")), "warn");
+    } else {
+      pickers(
+        relief,
+        RELIEFS.map((value) => ({ value, label: t(`style.relief.${value}`) })),
+        state.relief,
+        (value) => (state.relief = value),
+        drawReliefSample,
+      );
+      // Where the relief stands the modules at different heights, this is the tallest of them, not all of them.
+      control(
+        fields(relief),
+        "codeMm",
+        t(ACROSS_THE_CODE.has(state.relief) ? "style.codeTallest" : "style.codeHeight"),
+      );
+    }
 
     const body = group(host, t("style.body"), t("style.bodyHint"));
     pickers(
@@ -879,16 +921,6 @@ export default async function mount(thingport) {
       (value) => (state.eyeCentre = value),
       (canvas, value) => drawEyeSample(canvas, { frame: state.eyeFrame, centre: value }),
     );
-
-    const relief = group(host, t("style.relief"), t("style.reliefHint"));
-    pickers(
-      relief,
-      RELIEFS.map((value) => ({ value, label: t(`style.relief.${value}`) })),
-      state.relief,
-      (value) => (state.relief = value),
-      drawReliefSample,
-    );
-    if (state.modules === "flush") note(relief, escapeHtml(t("style.reliefFlush")), "warn");
   }
 
   // ---- Colours -------------------------------------------------------------------------------------------------

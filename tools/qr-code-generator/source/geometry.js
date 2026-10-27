@@ -90,7 +90,7 @@ export function buildParts(code, state, plan, { font = null, logo = null, single
       eye.x,
       eye.y,
       plan.cell,
-      eye.towards,
+      state.body,
       Math.max(24, plan.points * 3),
     );
     const height = raised ? reliefHeight(state.relief, codeHeight, eye.column, eye.row, plan.size) : codeHeight;

@@ -95,7 +95,7 @@ export function drawPlan(ctx, plan, state, { colours, background = "transparent"
 
   // The eyes: the frame is a ring, so it is drawn with a hole in it.
   for (const eye of plan.eyes) {
-    const rings = eyeRings(state.eyeFrame, state.eyeCentre, eye.x, eye.y, plan.cell, eye.towards, 64);
+    const rings = eyeRings(state.eyeFrame, state.eyeCentre, eye.x, eye.y, plan.cell, state.body, 64);
     ctx.beginPath();
     path(ctx, rings.frameOuter, toPixels);
     path(ctx, rings.frameInner, toPixels);

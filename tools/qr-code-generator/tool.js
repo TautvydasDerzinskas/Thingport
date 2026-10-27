@@ -733,15 +733,34 @@ export const carriesSecret = (content) =>
 // A shape is always inside its cell and always star-shaped about the middle, which is what makes the fan and the
 // band sound. Where a shape has corners, the directions of those corners are always among the ones sampled, so a
 // square comes out square and not as an eight-sided approximation of one.
+//
+// A shape also sees which of its sides have a neighbour, and that is what joins modules up: a bar reaches the full
+// width of its cell along its run, so the next cell's bar meets it exactly, and is only shaped at the end where
+// the run stops. Nothing is ever cut against anything else.
 
 /** The eight module shapes, in the order the window offers them. */
-export const BODIES = ["square", "rounded", "connected", "dot", "diamond", "leaf", "plus", "bar"];
-/** The outer ring of the three big eyes. */
-export const EYE_FRAMES = ["square", "rounded", "circle", "leaf"];
+export const BODIES = ["square", "rounded", "dot", "bevel", "bars", "columns", "roundBars", "roundColumns"];
+/** The outer ring of the three big eyes. `default` is whichever suits the module shape. */
+export const EYE_FRAMES = ["default", "square", "rounded", "soft", "circle"];
 /** The pupil inside them. */
-export const EYE_CENTRES = ["square", "rounded", "circle", "dot"];
+export const EYE_CENTRES = ["default", "square", "rounded", "soft", "circle"];
 /** How the tops are shaped, across the code. */
-export const RELIEFS = ["flat", "bevel", "dome", "pyramid", "ripple", "ramp"];
+export const RELIEFS = ["flat", "bevel", "dome", "pyramid", "ripple", "ramp", "terraces", "saddle"];
+
+/** What `default` means for an eye: the shape that belongs with the modules around it. */
+const EYES_FOR_BODY = {
+  square: "square",
+  bars: "square",
+  columns: "square",
+  rounded: "rounded",
+  bevel: "rounded",
+  roundBars: "soft",
+  roundColumns: "soft",
+  dot: "circle",
+};
+
+/** The eye shape a body asks for, where the window is left on `default`. */
+export const eyesFor = (body) => EYES_FOR_BODY[body] ?? "square";
 
 /** Which way each neighbour lies, as bits, so a shape can round only the corners that stand free. */
 export const N = 1;
@@ -763,62 +782,82 @@ const toRect = (cos, sin, halfX, halfY) =>
     Math.abs(sin) < 1e-12 ? Infinity : halfY / Math.abs(sin),
   );
 
+/** How much of its cell a bar fills across its run: the gap left over is what makes a row read as a row. */
+const BAR = 0.86;
+/** How much of a cell a rounded corner takes. */
+const ROUND = 0.32;
+/** How much a bevelled corner cuts off. */
+const BEVEL = 0.34;
+
 /**
- * How far the edge of a square with rounded corners is, in a direction.
+ * A module as a rectangle in its cell, each corner either square, rounded by a radius or cut off at 45°.
  *
- * The ray leaves either through a flat side or through a corner's arc; which one is settled by where the flat
- * side would be met. `corners` is each corner's radius, anticlockwise from the one at +x +y, so a shape can round
- * one corner and leave the next square.
+ * Corners are listed anticlockwise from the one at +x +y, so a shape can round one and leave the next square.
+ * Only a corner that stands free is ever shaped: a run of modules is then smooth on the outside and solid where
+ * one meets the next.
  */
-function toRounded(cos, sin, half, corners) {
-  const quadrant = cos >= 0 ? (sin >= 0 ? 0 : 3) : sin >= 0 ? 1 : 2;
-  const radius = Math.max(0, Math.min(half, corners[quadrant]));
-  if (radius < 1e-9) return toSquare(cos, sin, half);
-  const inner = half - radius;
-  if (Math.abs(cos) > 1e-12) {
-    const t = half / Math.abs(cos);
-    if (Math.abs(t * sin) <= inner + 1e-12) return t;
+function profileOf(kind, cell, neighbours) {
+  const shape = BODIES.includes(kind) ? kind : "square";
+  const half = cell / 2;
+  const square = [0, 0, 0, 0];
+  const free = (a, b) => ((neighbours & a) === 0 && (neighbours & b) === 0 ? 1 : 0);
+  const corners = [free(N, E), free(N, W), free(S, W), free(S, E)];
+
+  if (shape === "dot") return { halfX: half, halfY: half, radii: [half, half, half, half], cuts: square };
+  if (shape === "rounded")
+    return { halfX: half, halfY: half, radii: corners.map((on) => on * cell * ROUND), cuts: square };
+  if (shape === "bevel")
+    return { halfX: half, halfY: half, radii: square, cuts: corners.map((on) => on * cell * BEVEL) };
+  if (shape === "bars" || shape === "roundBars") {
+    // Full width, so the next cell's bar meets this one; thinner than its cell, so the row above stays a row of
+    // its own. A round bar closes with a half-circle where the run ends.
+    const halfY = half * BAR;
+    const end = (side) => (shape === "roundBars" && (neighbours & side) === 0 ? halfY : 0);
+    return { halfX: half, halfY, radii: [end(E), end(W), end(W), end(E)], cuts: square };
   }
-  if (Math.abs(sin) > 1e-12) {
-    const t = half / Math.abs(sin);
-    if (Math.abs(t * cos) <= inner + 1e-12) return t;
+  if (shape === "columns" || shape === "roundColumns") {
+    const halfX = half * BAR;
+    const end = (side) => (shape === "roundColumns" && (neighbours & side) === 0 ? halfX : 0);
+    return { halfX, halfY: half, radii: [end(N), end(N), end(S), end(S)], cuts: square };
   }
-  const cx = Math.sign(cos || 1) * inner;
-  const cy = Math.sign(sin || 1) * inner;
-  const along = cos * cx + sin * cy;
-  return along + Math.sqrt(Math.max(0, along * along - (cx * cx + cy * cy) + radius * radius));
+  return { halfX: half, halfY: half, radii: square, cuts: square };
 }
 
-/** How wide a plus's arms are, as a share of its cell. */
-const ARM = 0.52;
+/** Which quadrant a direction is in, numbered anticlockwise from +x +y. */
+const quadrantOf = (cos, sin) => (cos >= 0 ? (sin >= 0 ? 0 : 3) : sin >= 0 ? 1 : 2);
 
-/** Each corner's radius, anticlockwise from +x +y. */
-function cornersFor(kind, cell, neighbours) {
-  const half = cell / 2;
-  if (kind === "rounded") return [0.34, 0.34, 0.34, 0.34].map((share) => share * cell);
-  if (kind === "leaf") return [half, 0, half, 0];
-  if (kind === "connected") {
-    // A corner is rounded only where both the sides meeting there stand free, so a run of modules reads as one
-    // smooth band and a lone module as a rounded square.
-    const free = (a, b) => (neighbours & a) === 0 && (neighbours & b) === 0;
-    return [free(N, E) ? half : 0, free(N, W) ? half : 0, free(S, W) ? half : 0, free(S, E) ? half : 0];
+/**
+ * How far a profile's edge lies in a direction.
+ *
+ * The ray leaves through a flat side, through a corner's arc, or across a corner's cut; which one is settled by
+ * where the flat sides would be met.
+ */
+function edgeOf(cos, sin, shape) {
+  const { halfX, halfY } = shape;
+  const quadrant = quadrantOf(cos, sin);
+  const radius = Math.max(0, Math.min(halfX, halfY, shape.radii[quadrant]));
+  const cut = Math.max(0, Math.min(halfX, halfY, shape.cuts[quadrant]));
+  if (radius > 1e-9) {
+    const innerX = halfX - radius;
+    const innerY = halfY - radius;
+    if (Math.abs(cos) > 1e-12) {
+      const t = halfX / Math.abs(cos);
+      if (Math.abs(t * sin) <= innerY + 1e-12) return t;
+    }
+    if (Math.abs(sin) > 1e-12) {
+      const t = halfY / Math.abs(sin);
+      if (Math.abs(t * cos) <= innerX + 1e-12) return t;
+    }
+    const cx = Math.sign(cos || 1) * innerX;
+    const cy = Math.sign(sin || 1) * innerY;
+    const along = cos * cx + sin * cy;
+    return along + Math.sqrt(Math.max(0, along * along - (cx * cx + cy * cy) + radius * radius));
   }
-  if (kind === "bar") {
-    // Rounded at the ends of a horizontal run, square where the run carries on.
-    const right = (neighbours & E) !== 0;
-    const left = (neighbours & W) !== 0;
-    return [right ? 0 : half, left ? 0 : half, left ? 0 : half, right ? 0 : half];
-  }
-  return [0, 0, 0, 0];
-}
-
-/** How far a module's edge is from the middle of its cell, in a direction. */
-function moduleRadius(kind, cos, sin, cell, neighbours) {
-  const half = cell / 2;
-  if (kind === "dot") return half;
-  if (kind === "diamond") return half / (Math.abs(cos) + Math.abs(sin) || 1);
-  if (kind === "plus") return Math.max(toRect(cos, sin, half, half * ARM), toRect(cos, sin, half * ARM, half));
-  return toRounded(cos, sin, half, cornersFor(kind, cell, neighbours));
+  const flat = toRect(cos, sin, halfX, halfY);
+  // The cut is the line through (halfX - cut, halfY) and (halfX, halfY - cut), which is |x| + |y| = the sum less
+  // the cut; whichever of it and the sides is met first is the edge.
+  if (cut > 1e-9) return Math.min(flat, (halfX + halfY - cut) / (Math.abs(cos) + Math.abs(sin)));
+  return flat;
 }
 
 const turnOf = (x, y) => {
@@ -839,36 +878,40 @@ function arcAngles(from, to, steps) {
   return out;
 }
 
+/** A direction in the first quadrant, which is where every corner is worked out before being put back in place. */
+const cornerTurn = (x, y) => Math.atan2(Math.abs(y), Math.abs(x));
+
+/** That direction, mirrored into the quadrant it belongs to. */
+const inQuadrant = (quadrant, turn) =>
+  quadrant === 0 ? turn : quadrant === 1 ? Math.PI - turn : quadrant === 2 ? Math.PI + turn : TAU - turn;
+
+/** Which directions a profile has to be sampled in: its corners, and enough points along any arc. */
+function profileAngles(shape, points) {
+  const { halfX, halfY } = shape;
+  const steps = Math.max(2, Math.round(points / 4));
+  const angles = [];
+  for (let quadrant = 0; quadrant < 4; quadrant++) {
+    const radius = Math.max(0, Math.min(halfX, halfY, shape.radii[quadrant]));
+    const cut = Math.max(0, Math.min(halfX, halfY, shape.cuts[quadrant]));
+    const at = (x, y) => inQuadrant(quadrant, cornerTurn(x, y));
+    if (radius > 1e-9) {
+      angles.push(...arcAngles(at(halfX, halfY - radius), at(halfX - radius, halfY), steps));
+    } else if (cut > 1e-9) {
+      angles.push(at(halfX, halfY - cut), at(halfX - cut, halfY));
+    } else {
+      angles.push(at(halfX, halfY));
+    }
+  }
+  return tidyAngles(angles);
+}
+
 /**
- * Which directions a shape has to be sampled in: its corners, and enough points along its curves.
+ * Which directions a module of this shape, with these neighbours, is sampled in.
  *
  * `points` is how finely a whole circle would be drawn; a corner's arc gets its share of that.
  */
 export function moduleAngles(kind, cell, neighbours = 0, points = 24) {
-  const shape = BODIES.includes(kind) ? kind : "square";
-  if (shape === "dot") return tidyAngles(arcAngles(0, TAU, Math.max(8, points)).slice(0, -1));
-  if (shape === "diamond") return [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2];
-  if (shape === "plus") {
-    const half = cell / 2;
-    const arm = half * ARM;
-    return tidyAngles([
-      ...[
-        [half, arm],
-        [arm, arm],
-        [arm, half],
-      ].flatMap(([x, y]) => [turnOf(x, y), turnOf(-x, y), turnOf(-x, -y), turnOf(x, -y)]),
-    ]);
-  }
-  const corners = cornersFor(shape, cell, neighbours);
-  const steps = Math.max(2, Math.round(points / 4));
-  const angles = [];
-  for (let quadrant = 0; quadrant < 4; quadrant++) {
-    const from = (quadrant * Math.PI) / 2;
-    const corner = from + Math.PI / 4;
-    if (corners[quadrant] < 1e-9) angles.push(corner);
-    else angles.push(...arcAngles(corner - Math.PI / 4 + 1e-6, corner + Math.PI / 4 - 1e-6, steps));
-  }
-  return tidyAngles(angles);
+  return profileAngles(profileOf(kind, cell, neighbours), points);
 }
 
 /** A closed ring, anticlockwise, from a radial function sampled in the directions given. */
@@ -883,62 +926,50 @@ function radialRing(radius, cx, cy, angles) {
 
 /** One module as a ring. `fill` shrinks or swells the shape within its cell. */
 export function moduleRing(kind, cx, cy, cell, neighbours = 0, angles = null, fill = 1) {
-  const shape = BODIES.includes(kind) ? kind : "square";
-  const directions = angles ?? moduleAngles(shape, cell, neighbours);
-  return radialRing((cos, sin) => moduleRadius(shape, cos, sin, cell, neighbours) * fill, cx, cy, directions);
+  const shape = profileOf(kind, cell, neighbours);
+  const directions = angles ?? profileAngles(shape, 24);
+  return radialRing((cos, sin) => edgeOf(cos, sin, shape) * fill, cx, cy, directions);
 }
 
 /** A whole cell as a ring, sampled in the same directions as the shape it surrounds. */
 export const cellRing = (cx, cy, cell, angles = CELL_CORNERS) =>
   radialRing((cos, sin) => toSquare(cos, sin, cell / 2), cx, cy, angles);
 
+/** How round each eye shape is, as a share of half the ring it is drawn on. */
+const EYE_ROUNDING = { square: 0, rounded: 0.45, soft: 0.75, circle: 1 };
+
 /**
  * The rings one of the three big eyes is drawn from: the block of cells it fills, the outside and inside of its
  * frame, and its pupil — all sampled in the same directions, so the light between any two of them is a band.
  *
- * `towards` says which way the middle of the code lies, so a leaf keeps the corner that points outwards square.
+ * `body` is the module shape, which is what `default` follows.
  */
-export function eyeRings(frame, centre, cx, cy, cell, towards, points = 64) {
-  const style = EYE_FRAMES.includes(frame) ? frame : "square";
-  const pupilStyle = EYE_CENTRES.includes(centre) ? centre : "square";
+export function eyeRings(frame, centre, cx, cy, cell, body = "square", points = 64) {
+  const pick = (kinds, kind) => {
+    const wanted = kinds.includes(kind) ? kind : "default";
+    return wanted === "default" ? eyesFor(body) : wanted;
+  };
+  const style = pick(EYE_FRAMES, frame);
+  const pupilStyle = pick(EYE_CENTRES, centre);
   const angles = tidyAngles([...arcAngles(0, TAU, points).slice(0, -1), ...CELL_CORNERS]);
   const outer = cell * 3.5;
   const inner = cell * 2.5;
   const pupil = cell * 1.5;
 
-  // Which quadrant faces away from the middle of the code: the one a leaf leaves square.
-  const away = turnOf(-towards[0], -towards[1]);
-  const squareQuadrant = Math.floor(((away + TAU - Math.PI / 4) % TAU) / (Math.PI / 2));
-  const leafRadii = (radius) => [0, 1, 2, 3].map((quadrant) => (quadrant === squareQuadrant ? 0 : radius));
-
-  const shape = (half, radius, kind) => {
-    if (kind === "circle") return radialRing(() => half, cx, cy, angles);
-    if (kind === "square") return radialRing((cos, sin) => toSquare(cos, sin, half), cx, cy, angles);
-    if (kind === "leaf") {
-      const radii = leafRadii(radius);
-      return radialRing((cos, sin) => toRounded(cos, sin, half, radii), cx, cy, angles);
-    }
-    const radii = [radius, radius, radius, radius];
-    return radialRing((cos, sin) => toRounded(cos, sin, half, radii), cx, cy, angles);
+  const shape = (half, kind) => {
+    const share = EYE_ROUNDING[kind] ?? 0;
+    if (share >= 1) return radialRing(() => half, cx, cy, angles);
+    if (share <= 0) return radialRing((cos, sin) => toSquare(cos, sin, half), cx, cy, angles);
+    const radius = half * share;
+    const profile = { halfX: half, halfY: half, radii: [radius, radius, radius, radius], cuts: [0, 0, 0, 0] };
+    return radialRing((cos, sin) => edgeOf(cos, sin, profile), cx, cy, angles);
   };
 
   return {
     block: radialRing((cos, sin) => toSquare(cos, sin, outer), cx, cy, angles),
-    frameOuter: shape(
-      outer,
-      cell * 1.8,
-      style === "circle" ? "circle" : style === "square" ? "square" : style === "leaf" ? "leaf" : "rounded",
-    ),
-    frameInner: shape(
-      inner,
-      cell * 1.3,
-      style === "circle" ? "circle" : style === "square" ? "square" : style === "leaf" ? "leaf" : "rounded",
-    ),
-    pupilOuter: shape(
-      pupilStyle === "dot" ? pupil * 0.82 : pupil,
-      cell * 0.5,
-      pupilStyle === "circle" || pupilStyle === "dot" ? "circle" : pupilStyle === "square" ? "square" : "rounded",
-    ),
+    frameOuter: shape(outer, style),
+    frameInner: shape(inner, style),
+    pupilOuter: shape(pupil, pupilStyle),
   };
 }
 
@@ -947,15 +978,24 @@ export function eyeRings(frame, centre, cx, cy, cell, towards, points = 64) {
 /**
  * How tall a module stands, where the relief varies across the code rather than within a module.
  *
- * `ripple` runs rings of height out from the middle and `ramp` climbs from one corner to the other; the rest
- * stand the same height everywhere and are shaped at the top instead.
+ * `ripple` runs rings of height out from the middle, `terraces` steps those rings flat, `ramp` climbs from one
+ * corner to the other and `saddle` falls away one way while it rises the other; the rest stand the same height
+ * everywhere and are shaped at the top instead.
  */
 export function reliefHeight(style, height, column, row, size) {
-  if (style === "ripple") {
-    const dx = column - (size - 1) / 2;
-    const dy = row - (size - 1) / 2;
-    const away = Math.hypot(dx, dy) / Math.max(1, size / 2);
-    return height * (0.55 + 0.45 * Math.cos(away * Math.PI * 2.2));
+  const reach = Math.max(1, size / 2);
+  const dx = (column - (size - 1) / 2) / reach;
+  const dy = (row - (size - 1) / 2) / reach;
+  if (style === "ripple") return height * (0.55 + 0.45 * Math.cos(Math.hypot(dx, dy) * Math.PI * 2.2));
+  if (style === "terraces") {
+    // Layered contours: the same rings as a ripple, flattened into steps a printer lays down cleanly.
+    const steps = 4;
+    const level = Math.min(steps - 1, Math.floor(Math.min(1, Math.hypot(dx, dy)) * steps));
+    return height * (1 - (0.55 * level) / (steps - 1));
+  }
+  if (style === "saddle") {
+    // A valley across the middle one way and a rise the other, as a saddle does.
+    return height * (0.42 + 0.58 * Math.min(1, Math.max(0, (dx * dx - dy * dy + 1) / 2)));
   }
   if (style === "ramp") return height * (0.4 + (0.6 * (column + row)) / Math.max(1, 2 * (size - 1)));
   return height;
@@ -1246,6 +1286,9 @@ function joinHoles(outer, holes) {
   return ring;
 }
 
+/** Two corners in the same place, which a bridge to a hole puts in the ring on purpose. */
+const samePoint = (p, q) => Math.abs(p[0] - q[0]) < 1e-9 && Math.abs(p[1] - q[1]) < 1e-9;
+
 /** A ring cut into triangles by clipping its ears. Returns index triples into the ring. */
 function earClip(ring) {
   const indices = ring.map((_, i) => i);
@@ -1263,7 +1306,12 @@ function earClip(ring) {
       if (cross(a, b, c) <= 0) continue; // a reflex corner, or three points in a line
       const blocked = indices.some((other) => {
         if (other === previous || other === current || other === next) return false;
-        return inTriangle(a, b, c, ring[other]);
+        // Tying a hole into the ring puts the corner it was tied at into the ring twice. A copy of one of this
+        // ear's own corners sits exactly on it, so taking it for something in the way would block every ear
+        // around the hole and leave that part of the face untriangulated — a wedge of tile simply missing.
+        const point = ring[other];
+        if (samePoint(point, a) || samePoint(point, b) || samePoint(point, c)) return false;
+        return inTriangle(a, b, c, point);
       });
       if (blocked) continue;
       triangles.push([previous, current, next]);
@@ -1806,8 +1854,8 @@ export const DEFAULTS = {
   codeMm: 1.2,
   inlayMm: 0.6,
   body: "rounded",
-  eyeFrame: "rounded",
-  eyeCentre: "rounded",
+  eyeFrame: "default",
+  eyeCentre: "default",
   fill: 1,
   relief: "flat",
   shape: "tile",
@@ -1818,6 +1866,8 @@ export const DEFAULTS = {
   borderCornerMm: 2,
   tabMm: 14,
   holeMm: 4,
+  tabSide: "top",
+  tabOffset: 0,
   caption: { text: "", where: "bottom", sizeMm: 6, raiseMm: 0.8, fontId: "pt-sans" },
   patch: { shape: "none", across: 7, scale: 0.8 },
   colours: { base: "#eceff1", code: "#101418", border: "#1e88e5", caption: "#101418", patch: "#1e88e5" },
@@ -1895,9 +1945,9 @@ export function planFor(code, state) {
 
   // The three eyes, each drawn as one piece rather than as forty-nine modules.
   const eyes = [
-    { column: 3, row: 3, towards: [1, -1] },
-    { column: size - 4, row: 3, towards: [-1, -1] },
-    { column: 3, row: size - 4, towards: [1, 1] },
+    { column: 3, row: 3 },
+    { column: size - 4, row: 3 },
+    { column: 3, row: size - 4 },
   ].map((eye) => {
     const [x, y] = centreOf(eye.column, eye.row);
     return { ...eye, x, y };
@@ -1983,7 +2033,17 @@ export function planFor(code, state) {
   };
 }
 
-/** The plate's outline, with the keyring lug where one was asked for, and the hole that goes in it. */
+/** Where a keyring loop can sit, in the order the window offers them. */
+export const TAB_SIDES = ["top", "right", "bottom", "left"];
+
+/**
+ * The plate's outline, with the keyring loop where one was asked for, and the hole that goes in it.
+ *
+ * The loop is a circle standing proud of one edge, spliced into the outline where it crosses that edge: the arc
+ * outside the plate stands in for the stretch of edge it covers, so the two are one piece of material with no
+ * seam and no corner to catch. It is kept clear of the plate's rounded corners, so the neck always has the full
+ * thickness of the edge behind it.
+ */
 export function plateOutline(plan, state) {
   const radius = Math.max(
     MIN_RADIUS,
@@ -1992,53 +2052,75 @@ export function plateOutline(plan, state) {
   const ring = roundedRectRing(plan.plate.x0, plan.plate.y0, plan.plate.x1, plan.plate.y1, radius, 8);
   if (state.shape !== "keychain") return { ring, holes: [] };
 
-  const tabWidth = Math.max(6, Math.min(state.tabMm, plan.plate.width * 0.6));
-  const holeRadius = Math.max(1, Math.min(state.holeMm / 2, tabWidth / 2 - 1.2));
-  const out = holeRadius * 2 + 2.4;
-  const top = plan.plate.y1;
-  const half = tabWidth / 2;
-  const centre = [0, top + out - holeRadius - 1.2];
+  const side = TAB_SIDES.includes(state.tabSide) ? state.tabSide : "top";
+  const along = side === "top" || side === "bottom" ? plan.plate.width : plan.plate.height;
+  const loop = Math.max(5, Math.min(state.tabMm, along * 0.8)) / 2;
+  // Enough wall left round the hole to take a split ring without tearing.
+  const holeRadius = Math.max(0.8, Math.min(state.holeMm / 2, loop - 1.2));
+  // How far the loop's middle stands outside the edge. Less than its own radius, so the two always overlap and
+  // the neck is as wide as the overlap makes it.
+  const stand = loop * 0.55;
+  const halfChord = Math.sqrt(Math.max(0.01, loop * loop - stand * stand));
 
-  // The lug is a half-round end on a short neck, spliced into the top edge of the plate.
-  const lug = [];
-  const steps = 18;
-  for (let i = 0; i <= steps; i++) {
-    const angle = Math.PI * (i / steps);
-    lug.push([centre[0] - half * Math.cos(angle), Math.max(top, centre[1] + half * Math.sin(angle))]);
-  }
+  // How far the middle of the loop sits along the edge, kept clear of the corners at either end.
+  const room = Math.max(0, along / 2 - radius - halfChord - 0.2);
+  const offset = (Math.max(-100, Math.min(100, state.tabOffset ?? 0)) / 100) * room;
 
-  // Walk the plate's ring and let the lug stand in for the stretch of top edge it covers.
-  const kept = ring.filter(([x, y]) => !(y > top - 0.001 && Math.abs(x) <= half + 0.001));
-  const at = kept.findIndex(([x, y], i) => {
-    const next = kept[(i + 1) % kept.length];
-    return y > top - 0.001 && next[1] > top - 0.001 && x > next[0];
+  // The edge the loop stands on, as a point on it and the two directions: out of the plate, and along it.
+  const edges = {
+    top: { at: [0, plan.plate.y1], out: [0, 1], run: [1, 0] },
+    bottom: { at: [0, plan.plate.y0], out: [0, -1], run: [-1, 0] },
+    right: { at: [plan.plate.x1, 0], out: [1, 0], run: [0, -1] },
+    left: { at: [plan.plate.x0, 0], out: [-1, 0], run: [0, 1] },
+  };
+  const { at, out, run } = edges[side];
+  const centre = [at[0] + out[0] * stand + run[0] * offset, at[1] + out[1] * stand + run[1] * offset];
+
+  // The arc of the loop that stands outside the plate. The short way round the circle is the part buried in the
+  // plate, so the long way is the one to walk, and it is walked the way the ring is: anticlockwise.
+  const buried = Math.atan2(-out[1], -out[0]);
+  const openAngle = Math.acos(Math.max(-1, Math.min(1, stand / loop)));
+  const steps = 28;
+  const sweep = Math.PI * 2 - 2 * openAngle;
+  const outside = Array.from({ length: steps + 1 }, (_, i) => {
+    const angle = buried + openAngle + (sweep * i) / steps;
+    return [centre[0] + loop * Math.cos(angle), centre[1] + loop * Math.sin(angle)];
   });
-  const cut = at >= 0 ? at + 1 : kept.length;
+
+  // The outline is built from its four corners, so the loop's arc simply takes the place of the edge it stands on
+  // and can never be spliced in the wrong way round.
+  const corners = roundedRectCorners(plan.plate.x0, plan.plate.y0, plan.plate.x1, plan.plate.y1, radius, 8);
+  const after = { right: 0, top: 1, left: 2, bottom: 3 }[side];
   return {
-    ring: [...kept.slice(0, cut), ...lug, ...kept.slice(cut)],
-    holes: [circleAt(centre[0], centre[1], holeRadius, 24)],
-    tab: { width: tabWidth, holeRadius, centre },
+    ring: corners.flatMap((corner, i) => (i === after ? [...corner, ...outside] : corner)),
+    holes: [circleAt(centre[0], centre[1], holeRadius, 32)],
+    tab: { loop, holeRadius, centre, side, stands: loop + stand },
   };
 }
 
-/** A rectangle with rounded corners, anticlockwise, with the same number of points whatever its size. */
-export function roundedRectRing(x0, y0, x1, y1, radius, steps = 8) {
+/**
+ * A rectangle's four rounded corners, anticlockwise from the bottom right, each as its own arc.
+ *
+ * Kept apart because what lies between two of them is one straight edge, which is where a keyring loop goes.
+ */
+export function roundedRectCorners(x0, y0, x1, y1, radius, steps = 8) {
   const r = Math.max(MIN_RADIUS, Math.min(radius, (x1 - x0) / 2 - 1e-6, (y1 - y0) / 2 - 1e-6));
-  const corners = [
+  return [
     [x1 - r, y0 + r, -Math.PI / 2],
     [x1 - r, y1 - r, 0],
     [x0 + r, y1 - r, Math.PI / 2],
     [x0 + r, y0 + r, Math.PI],
-  ];
-  const ring = [];
-  for (const [cx, cy, from] of corners) {
-    for (let i = 0; i <= steps; i++) {
+  ].map(([cx, cy, from]) =>
+    Array.from({ length: steps + 1 }, (_, i) => {
       const angle = from + (Math.PI / 2) * (i / steps);
-      ring.push([cx + r * Math.cos(angle), cy + r * Math.sin(angle)]);
-    }
-  }
-  return ring;
+      return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
+    }),
+  );
 }
+
+/** A rectangle with rounded corners, anticlockwise, with the same number of points whatever its size. */
+export const roundedRectRing = (x0, y0, x1, y1, radius, steps = 8) =>
+  roundedRectCorners(x0, y0, x1, y1, radius, steps).flat();
 
 /** A circle, anticlockwise. */
 export const circleAt = (cx, cy, radius, points = 32) =>
@@ -2234,7 +2316,7 @@ export function buildParts(code, state, plan, { font = null, logo = null, single
       eye.x,
       eye.y,
       plan.cell,
-      eye.towards,
+      state.body,
       Math.max(24, plan.points * 3),
     );
     const height = raised ? reliefHeight(state.relief, codeHeight, eye.column, eye.row, plan.size) : codeHeight;
@@ -2591,7 +2673,7 @@ export function drawPlan(ctx, plan, state, { colours, background = "transparent"
 
   // The eyes: the frame is a ring, so it is drawn with a hole in it.
   for (const eye of plan.eyes) {
-    const rings = eyeRings(state.eyeFrame, state.eyeCentre, eye.x, eye.y, plan.cell, eye.towards, 64);
+    const rings = eyeRings(state.eyeFrame, state.eyeCentre, eye.x, eye.y, plan.cell, state.body, 64);
     ctx.beginPath();
     path(ctx, rings.frameOuter, toPixels);
     path(ctx, rings.frameInner, toPixels);
@@ -2880,13 +2962,25 @@ export function stl(model, { title = "QR code" } = {}) {
 export const projectFile = (state, version) =>
   `${JSON.stringify({ tool: "thingport-qr-code-generator", version, saved: new Date().toISOString(), state }, null, 2)}\n`;
 
+/** The shapes a project may have been saved with, and what each is now called. */
+const RETIRED = {
+  body: { connected: "rounded", diamond: "bevel", leaf: "rounded", plus: "square", bar: "roundBars" },
+  eyeFrame: { leaf: "rounded" },
+  eyeCentre: { dot: "circle" },
+};
+
 /** Settings read back from such a file. Throws where the file is something else. */
 export function readProject(text) {
   const parsed = JSON.parse(text);
   if (parsed?.tool !== "thingport-qr-code-generator" || typeof parsed.state !== "object") {
     throw new Error("That isn't a QR code project saved by this tool.");
   }
-  return parsed.state;
+  const state = parsed.state;
+  for (const [setting, renamed] of Object.entries(RETIRED)) {
+    const was = state[setting];
+    if (typeof was === "string" && renamed[was]) state[setting] = renamed[was];
+  }
+  return state;
 }
 
 // ---- viewer.js ----
@@ -2907,6 +3001,14 @@ export const VIEWS = {
   angle: { around: -60, up: 24, zoom: 1 },
   back: { around: -90, up: -89.9, zoom: 1.05 },
 };
+
+/** How long a tile takes to walk from one set of settings to the next. */
+const MOVE_MS = 220;
+/** Past this many numbers a walk costs more than it is worth, and the tile is simply replaced. */
+const MOST_TO_MOVE = 900_000;
+/** Someone who asked for less movement gets none: the tile is replaced instead of walked. */
+const stillness =
+  typeof matchMedia === "function" ? matchMedia("(prefers-reduced-motion: reduce)") : { matches: false };
 
 /** Where two triangles meeting at a shallower angle than this are smoothed over. */
 const CREASE = Math.cos((38 * Math.PI) / 180);
@@ -3009,6 +3111,10 @@ export function createViewer(three, canvas, { onPick } = {}) {
   let radius = 40;
   let frame = 0;
   let disposed = false;
+  // The meshes on screen, so a change that keeps the shape can move them rather than replace them.
+  let showing = [];
+  let morph = 0;
+  let firstTime = true;
 
   function place() {
     const upright = (camera.fov * Math.PI) / 180;
@@ -3115,6 +3221,8 @@ export function createViewer(three, canvas, { onPick } = {}) {
   resize.observe(canvas);
 
   const empty = () => {
+    cancelAnimationFrame(morph);
+    morph = 0;
     for (const child of [...group.children]) {
       group.remove(child);
       child.geometry?.dispose?.();
@@ -3122,37 +3230,102 @@ export function createViewer(three, canvas, { onPick } = {}) {
     }
   };
 
+  /**
+   * Walks what is on screen over to the model just built, over a fifth of a second.
+   *
+   * Only ever called where the two have corner for corner the same shape, so every corner has somewhere to walk
+   * to: the tile thickens, the modules stand taller, the loop slides along its edge.
+   */
+  function moveTo(built) {
+    cancelAnimationFrame(morph);
+    const walks = showing.map((mesh, i) => {
+      const position = mesh.geometry.getAttribute("position");
+      const normal = mesh.geometry.getAttribute("normal");
+      mesh.material.color.set(built[i].part.colour ?? "#b9c2cf");
+      mesh.userData.pick = {
+        name: built[i].part.name,
+        kind: built[i].part.kind,
+        slot: built[i].part.slot,
+        colour: built[i].part.colour,
+      };
+      return { position, normal, from: position.array.slice(), to: built[i].positions, toNormals: built[i].normals };
+    });
+
+    const started = performance.now();
+    const step = () => {
+      const share = Math.min(1, (performance.now() - started) / MOVE_MS);
+      // Out fast and in gently, which is how a thing that was already moving comes to rest.
+      const eased = 1 - (1 - share) ** 3;
+      for (const walk of walks) {
+        const { array } = walk.position;
+        for (let i = 0; i < array.length; i++) array[i] = walk.from[i] + (walk.to[i] - walk.from[i]) * eased;
+        walk.position.needsUpdate = true;
+        if (share >= 1) {
+          walk.normal.array.set(walk.toNormals);
+          walk.normal.needsUpdate = true;
+          walk.position.array.set(walk.to);
+        }
+      }
+      draw();
+      morph = share < 1 ? requestAnimationFrame(step) : 0;
+    };
+    step();
+  }
+
   return {
     /** Shows the model's parts, each in its filament's colour. */
     show(parts, { fit = true } = {}) {
-      empty();
+      const built = parts.map((part) => ({ part, ...creasedNormals(part.vertices, part.triangles) }));
+
+      // A change that leaves the shape alone — a slider, a colour — moves what is already there instead of
+      // throwing it away, so the tile grows or stands taller in front of you rather than blinking.
+      const canMove =
+        !firstTime &&
+        !stillness.matches &&
+        showing.length === built.length &&
+        showing.every((mesh, i) => mesh.geometry.getAttribute("position").array.length === built[i].positions.length) &&
+        built.reduce((sum, one) => sum + one.positions.length, 0) <= MOST_TO_MOVE;
+
+      if (canMove) {
+        moveTo(built);
+      } else {
+        empty();
+        showing = built.map(({ part, positions, normals }) => {
+          const geometry = new three.BufferGeometry();
+          geometry.setAttribute("position", new three.BufferAttribute(positions, 3));
+          geometry.setAttribute("normal", new three.BufferAttribute(normals, 3));
+          const mesh = new three.Mesh(
+            geometry,
+            new three.MeshStandardMaterial({
+              color: new three.Color(part.colour ?? "#b9c2cf"),
+              roughness: 0.62,
+              metalness: 0.02,
+            }),
+          );
+          mesh.userData.pick = { name: part.name, kind: part.kind, slot: part.slot, colour: part.colour };
+          group.add(mesh);
+          return mesh;
+        });
+      }
+
       const box = new three.Box3();
-      for (const part of parts) {
-        const { positions, normals } = creasedNormals(part.vertices, part.triangles);
-        const geometry = new three.BufferGeometry();
-        geometry.setAttribute("position", new three.BufferAttribute(positions, 3));
-        geometry.setAttribute("normal", new three.BufferAttribute(normals, 3));
-        const mesh = new three.Mesh(
-          geometry,
-          new three.MeshStandardMaterial({
-            color: new three.Color(part.colour ?? "#b9c2cf"),
-            roughness: 0.62,
-            metalness: 0.02,
-          }),
-        );
-        mesh.userData.pick = { name: part.name, kind: part.kind, slot: part.slot, colour: part.colour };
-        group.add(mesh);
-        geometry.computeBoundingBox();
-        box.union(geometry.boundingBox);
+      for (const mesh of showing) {
+        mesh.geometry.computeBoundingBox();
+        box.union(mesh.geometry.boundingBox);
       }
       if (!box.isEmpty() && fit) {
         box.getCenter(centre);
         radius = Math.max(6, box.getSize(new three.Vector3()).length() / 2);
-        look("home");
+        // Only the first tile swings the camera home: after that the view you set is yours to keep.
+        if (firstTime) look("home");
+        else redraw();
+        firstTime = false;
       } else redraw();
     },
     clear() {
       empty();
+      showing = [];
+      firstTime = true;
       redraw();
     },
     look,
@@ -3166,6 +3339,7 @@ export function createViewer(three, canvas, { onPick } = {}) {
     dispose() {
       disposed = true;
       cancelAnimationFrame(frame);
+      cancelAnimationFrame(morph);
       resize.disconnect();
       for (const [type, fn] of listeners) canvas.removeEventListener(type, fn);
       canvas.removeEventListener("wheel", wheel);
@@ -3201,8 +3375,9 @@ const RANGES = {
   borderMm: [0.6, 20, 0.5],
   borderHeightMm: [0.2, 8, 0.1],
   borderCornerMm: [0, 20, 0.5],
-  tabMm: [6, 60, 0.5],
-  holeMm: [2, 20, 0.5],
+  tabMm: [5, 60, 0.5],
+  holeMm: [1.6, 20, 0.5],
+  tabOffset: [-100, 100, 1],
   fill: [60, 115, 1],
   captionSize: [2, 20, 0.5],
   captionRaise: [0.2, 4, 0.1],
@@ -3210,6 +3385,12 @@ const RANGES = {
   patchScale: [20, 100, 1],
   patchRaise: [0.2, 4, 0.1],
 };
+
+/** A build quicker than this needs no spinner: showing one would be a flash, not a wait. */
+const QUICK_MS = 120;
+
+/** The reliefs that stand the modules at different heights, where the height asked for is the tallest of them. */
+const ACROSS_THE_CODE = new Set(["ripple", "ramp", "terraces", "saddle"]);
 
 /** The settings panels, in the order the chooser lists them. */
 const SECTIONS = ["content", "shape", "style", "colour", "extras", "check"];
@@ -3253,6 +3434,7 @@ export default async function mount(thingport) {
 
   let state = { ...clone(DEFAULTS), content: clone(DEFAULT_CONTENT) };
   let model = null; // the last build that worked
+  let lastBuild = Infinity; // how long the last one took, which says whether this one needs a spinner
   let fresh = false;
   let failure = null;
   let busy = false;
@@ -3358,11 +3540,18 @@ export default async function mount(thingport) {
 
     const doing = model ? t("state.working") : t("state.buildingFirst");
     setState("working", doing);
-    showBusy(true, doing);
-    await new Promise((resolve) => requestAnimationFrame(resolve)); // let the spinner paint
-    if (mine !== revision || dead) return;
+    // A code that built quickly last time builds quickly this time: showing a spinner for it would be a flash of
+    // one, which reads as the window reloading rather than the tile changing.
+    const slow = !model || lastBuild > QUICK_MS;
+    if (slow) {
+      showBusy(true, doing);
+      await new Promise((resolve) => requestAnimationFrame(resolve)); // let the spinner paint
+      if (mine !== revision || dead) return;
+    }
     try {
+      const began = performance.now();
       const built = buildModel(state, { font, logo });
+      lastBuild = performance.now() - began;
       if (mine !== revision || dead) return;
       model = built;
       failure = null;
@@ -3381,7 +3570,7 @@ export default async function mount(thingport) {
       showChips(null);
       onBuilt?.();
     } finally {
-      if (mine === revision && !dead) showBusy(false);
+      if (mine === revision && !dead && slow) showBusy(false);
     }
   }
 
@@ -3702,7 +3891,7 @@ export default async function mount(thingport) {
     ctx.fillStyle = state.colours.base;
     ctx.fillRect(0, 0, side, side);
     const cell = side / 8;
-    const rings = eyeRings(frame, centre, side / 2, side / 2, cell, [1, 1], 48);
+    const rings = eyeRings(frame, centre, side / 2, side / 2, cell, state.body, 48);
     ctx.fillStyle = state.colours.code;
     ctx.beginPath();
     rings.frameOuter.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
@@ -3739,7 +3928,7 @@ export default async function mount(thingport) {
     ctx.stroke();
     ctx.fillStyle = state.colours.code;
     for (let i = 0; i < cells; i++) {
-      const tall = reliefHeight(relief, cell * 1.5, i, i, cells * 2);
+      const tall = reliefHeight(relief, cell * 1.5, i, cells, cells * 2);
       const { levels, apex } = reliefLevels(relief, tall, cell);
       const x = cell * 0.6 + i * cell;
       ctx.beginPath();
@@ -3755,6 +3944,7 @@ export default async function mount(thingport) {
     }
   }
 
+  /** The reliefs that stand the modules at different heights, where the height set is the tallest of them. */
   /** A row of pickers, each with its own little picture. */
   function pickers(host, options, current, choose, paint) {
     const grid = document.createElement("div");
@@ -3981,9 +4171,17 @@ export default async function mount(thingport) {
 
     if (state.shape === "keychain") {
       const tab = group(host, t("shape.tab"));
+      segmented(
+        tab,
+        t("shape.tabSide"),
+        TAB_SIDES.map((value) => ({ value, label: t(`shape.tabSide.${value}`) })),
+        TAB_SIDES.includes(state.tabSide) ? state.tabSide : "top",
+        (value) => (state.tabSide = value),
+      );
       const row = fields(tab);
       control(row, "tabMm", t("shape.tabWidth"));
       control(row, "holeMm", t("shape.hole"));
+      control(row, "tabOffset", t("shape.tabPosition"), { unit: "%", hint: t("shape.tabPositionHint") });
       note(tab, escapeHtml(t("shape.tabNote")));
     }
   }
@@ -4004,7 +4202,6 @@ export default async function mount(thingport) {
     );
     const row = fields(how);
     if (state.modules === "flush") control(row, "inlayMm", t("style.inlay"), { hint: t("style.inlayHint") });
-    else control(row, "codeMm", t("style.codeHeight"));
     control(row, "fill", t("style.fill"), {
       unit: "%",
       get: () => Math.round(state.fill * 100),
@@ -4012,6 +4209,25 @@ export default async function mount(thingport) {
       hint: t("style.fillHint"),
     });
     note(how, escapeHtml(state.modules === "flush" ? t("style.flushNote") : t("style.raisedNote")));
+
+    const relief = group(host, t("style.relief"), t("style.reliefHint"));
+    if (state.modules === "flush") {
+      note(relief, escapeHtml(t("style.reliefFlush")), "warn");
+    } else {
+      pickers(
+        relief,
+        RELIEFS.map((value) => ({ value, label: t(`style.relief.${value}`) })),
+        state.relief,
+        (value) => (state.relief = value),
+        drawReliefSample,
+      );
+      // Where the relief stands the modules at different heights, this is the tallest of them, not all of them.
+      control(
+        fields(relief),
+        "codeMm",
+        t(ACROSS_THE_CODE.has(state.relief) ? "style.codeTallest" : "style.codeHeight"),
+      );
+    }
 
     const body = group(host, t("style.body"), t("style.bodyHint"));
     pickers(
@@ -4039,16 +4255,6 @@ export default async function mount(thingport) {
       (value) => (state.eyeCentre = value),
       (canvas, value) => drawEyeSample(canvas, { frame: state.eyeFrame, centre: value }),
     );
-
-    const relief = group(host, t("style.relief"), t("style.reliefHint"));
-    pickers(
-      relief,
-      RELIEFS.map((value) => ({ value, label: t(`style.relief.${value}`) })),
-      state.relief,
-      (value) => (state.relief = value),
-      drawReliefSample,
-    );
-    if (state.modules === "flush") note(relief, escapeHtml(t("style.reliefFlush")), "warn");
   }
 
   // ---- Colours -------------------------------------------------------------------------------------------------

@@ -9,10 +9,12 @@ it as a 3MF with a part per filament, ready to slice.
 - **Shape**: a tile or a keyring fob with a hole, sized either by how big one module should be or by how wide the
   whole tile should be, with a quiet zone of four modules, two or none, rounded corners, and an optional raised
   border in its own colour.
-- **Style**: modules **raised** above the tile or **flush** with it in two colours; eight module shapes, four frames
-  and four pupils for the three big eyes, a module fill between 60% and 115%, and six reliefs — flat, bevelled,
-  domed, pyramid, ripple and ramp. The first three shape each module's top; the last two stand the modules at
-  different heights across the code.
+- **Style**: modules **raised** above the tile or **flush** with it in two colours; eight module shapes — squares,
+  rounded, dots, bevelled, and bars, columns, round bars and round columns, which join a run of modules into one
+  piece — five frames and five pupils for the three big eyes, which follow the module shape unless you pick one, a
+  module fill between 60% and 115%, and eight reliefs — flat, bevelled, domed, pyramid, ripple, ramp, terraces and
+  saddle. Bevelled, domed and pyramid shape each module's top; the other four stand the modules at different
+  heights across the code.
 - **Caption and logo**: words above or below the code, set in one of the typefaces Thingport carries, and a round or
   square patch in the middle for a logo, which may be an SVG you bring. Every module the patch touches is cleared,
   and the tool says how much of the error correction that used up.
@@ -45,13 +47,11 @@ version would hold what you typed.
 The geometry never subtracts one shape from another, which is what keeps a code of ten thousand modules quick.
 Every module shape is written as a radial function — how far its edge is from the middle of its cell in a given
 direction — so the same description gives the ring for the mesh, the path for the picture on screen, and, sampled in
-the same directions as the cell around it, the band of light between a dark dot and the edge of its cell. That band
+the same directions as the cell around it, the band of light between a dark dot and the edge of its cell. A shape
+also sees which of its sides have a neighbour, which is how a run of modules joins up without anything being
+merged: each cell draws out to the sides it shares, and is only shaped where the run stops. That band
 is what makes a flush code exact: its two filaments meet with no overlap and no gap, which the tests check by
 measuring the top layer against the area it has to fill.
-
-Inspired by [MiniForge's QR code tool](https://tools.miniforge.io/qr-code), whose option set is a good one; none of
-its code is used, and none could be — it isn't published under a licence that allows it. Everything here, the
-encoder included, is this repository's own.
 
 ## Changing it
 

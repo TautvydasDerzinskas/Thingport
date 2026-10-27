@@ -23,8 +23,8 @@ export const DEFAULTS = {
   codeMm: 1.2,
   inlayMm: 0.6,
   body: "rounded",
-  eyeFrame: "rounded",
-  eyeCentre: "rounded",
+  eyeFrame: "default",
+  eyeCentre: "default",
   fill: 1,
   relief: "flat",
   shape: "tile",
@@ -35,6 +35,8 @@ export const DEFAULTS = {
   borderCornerMm: 2,
   tabMm: 14,
   holeMm: 4,
+  tabSide: "top",
+  tabOffset: 0,
   caption: { text: "", where: "bottom", sizeMm: 6, raiseMm: 0.8, fontId: "pt-sans" },
   patch: { shape: "none", across: 7, scale: 0.8 },
   colours: { base: "#eceff1", code: "#101418", border: "#1e88e5", caption: "#101418", patch: "#1e88e5" },
@@ -112,9 +114,9 @@ export function planFor(code, state) {
 
   // The three eyes, each drawn as one piece rather than as forty-nine modules.
   const eyes = [
-    { column: 3, row: 3, towards: [1, -1] },
-    { column: size - 4, row: 3, towards: [-1, -1] },
-    { column: 3, row: size - 4, towards: [1, 1] },
+    { column: 3, row: 3 },
+    { column: size - 4, row: 3 },
+    { column: 3, row: size - 4 },
   ].map((eye) => {
     const [x, y] = centreOf(eye.column, eye.row);
     return { ...eye, x, y };
@@ -200,7 +202,17 @@ export function planFor(code, state) {
   };
 }
 
-/** The plate's outline, with the keyring lug where one was asked for, and the hole that goes in it. */
+/** Where a keyring loop can sit, in the order the window offers them. */
+export const TAB_SIDES = ["top", "right", "bottom", "left"];
+
+/**
+ * The plate's outline, with the keyring loop where one was asked for, and the hole that goes in it.
+ *
+ * The loop is a circle standing proud of one edge, spliced into the outline where it crosses that edge: the arc
+ * outside the plate stands in for the stretch of edge it covers, so the two are one piece of material with no
+ * seam and no corner to catch. It is kept clear of the plate's rounded corners, so the neck always has the full
+ * thickness of the edge behind it.
+ */
 export function plateOutline(plan, state) {
   const radius = Math.max(
     MIN_RADIUS,
@@ -209,53 +221,75 @@ export function plateOutline(plan, state) {
   const ring = roundedRectRing(plan.plate.x0, plan.plate.y0, plan.plate.x1, plan.plate.y1, radius, 8);
   if (state.shape !== "keychain") return { ring, holes: [] };
 
-  const tabWidth = Math.max(6, Math.min(state.tabMm, plan.plate.width * 0.6));
-  const holeRadius = Math.max(1, Math.min(state.holeMm / 2, tabWidth / 2 - 1.2));
-  const out = holeRadius * 2 + 2.4;
-  const top = plan.plate.y1;
-  const half = tabWidth / 2;
-  const centre = [0, top + out - holeRadius - 1.2];
+  const side = TAB_SIDES.includes(state.tabSide) ? state.tabSide : "top";
+  const along = side === "top" || side === "bottom" ? plan.plate.width : plan.plate.height;
+  const loop = Math.max(5, Math.min(state.tabMm, along * 0.8)) / 2;
+  // Enough wall left round the hole to take a split ring without tearing.
+  const holeRadius = Math.max(0.8, Math.min(state.holeMm / 2, loop - 1.2));
+  // How far the loop's middle stands outside the edge. Less than its own radius, so the two always overlap and
+  // the neck is as wide as the overlap makes it.
+  const stand = loop * 0.55;
+  const halfChord = Math.sqrt(Math.max(0.01, loop * loop - stand * stand));
 
-  // The lug is a half-round end on a short neck, spliced into the top edge of the plate.
-  const lug = [];
-  const steps = 18;
-  for (let i = 0; i <= steps; i++) {
-    const angle = Math.PI * (i / steps);
-    lug.push([centre[0] - half * Math.cos(angle), Math.max(top, centre[1] + half * Math.sin(angle))]);
-  }
+  // How far the middle of the loop sits along the edge, kept clear of the corners at either end.
+  const room = Math.max(0, along / 2 - radius - halfChord - 0.2);
+  const offset = (Math.max(-100, Math.min(100, state.tabOffset ?? 0)) / 100) * room;
 
-  // Walk the plate's ring and let the lug stand in for the stretch of top edge it covers.
-  const kept = ring.filter(([x, y]) => !(y > top - 0.001 && Math.abs(x) <= half + 0.001));
-  const at = kept.findIndex(([x, y], i) => {
-    const next = kept[(i + 1) % kept.length];
-    return y > top - 0.001 && next[1] > top - 0.001 && x > next[0];
+  // The edge the loop stands on, as a point on it and the two directions: out of the plate, and along it.
+  const edges = {
+    top: { at: [0, plan.plate.y1], out: [0, 1], run: [1, 0] },
+    bottom: { at: [0, plan.plate.y0], out: [0, -1], run: [-1, 0] },
+    right: { at: [plan.plate.x1, 0], out: [1, 0], run: [0, -1] },
+    left: { at: [plan.plate.x0, 0], out: [-1, 0], run: [0, 1] },
+  };
+  const { at, out, run } = edges[side];
+  const centre = [at[0] + out[0] * stand + run[0] * offset, at[1] + out[1] * stand + run[1] * offset];
+
+  // The arc of the loop that stands outside the plate. The short way round the circle is the part buried in the
+  // plate, so the long way is the one to walk, and it is walked the way the ring is: anticlockwise.
+  const buried = Math.atan2(-out[1], -out[0]);
+  const openAngle = Math.acos(Math.max(-1, Math.min(1, stand / loop)));
+  const steps = 28;
+  const sweep = Math.PI * 2 - 2 * openAngle;
+  const outside = Array.from({ length: steps + 1 }, (_, i) => {
+    const angle = buried + openAngle + (sweep * i) / steps;
+    return [centre[0] + loop * Math.cos(angle), centre[1] + loop * Math.sin(angle)];
   });
-  const cut = at >= 0 ? at + 1 : kept.length;
+
+  // The outline is built from its four corners, so the loop's arc simply takes the place of the edge it stands on
+  // and can never be spliced in the wrong way round.
+  const corners = roundedRectCorners(plan.plate.x0, plan.plate.y0, plan.plate.x1, plan.plate.y1, radius, 8);
+  const after = { right: 0, top: 1, left: 2, bottom: 3 }[side];
   return {
-    ring: [...kept.slice(0, cut), ...lug, ...kept.slice(cut)],
-    holes: [circleAt(centre[0], centre[1], holeRadius, 24)],
-    tab: { width: tabWidth, holeRadius, centre },
+    ring: corners.flatMap((corner, i) => (i === after ? [...corner, ...outside] : corner)),
+    holes: [circleAt(centre[0], centre[1], holeRadius, 32)],
+    tab: { loop, holeRadius, centre, side, stands: loop + stand },
   };
 }
 
-/** A rectangle with rounded corners, anticlockwise, with the same number of points whatever its size. */
-export function roundedRectRing(x0, y0, x1, y1, radius, steps = 8) {
+/**
+ * A rectangle's four rounded corners, anticlockwise from the bottom right, each as its own arc.
+ *
+ * Kept apart because what lies between two of them is one straight edge, which is where a keyring loop goes.
+ */
+export function roundedRectCorners(x0, y0, x1, y1, radius, steps = 8) {
   const r = Math.max(MIN_RADIUS, Math.min(radius, (x1 - x0) / 2 - 1e-6, (y1 - y0) / 2 - 1e-6));
-  const corners = [
+  return [
     [x1 - r, y0 + r, -Math.PI / 2],
     [x1 - r, y1 - r, 0],
     [x0 + r, y1 - r, Math.PI / 2],
     [x0 + r, y0 + r, Math.PI],
-  ];
-  const ring = [];
-  for (const [cx, cy, from] of corners) {
-    for (let i = 0; i <= steps; i++) {
+  ].map(([cx, cy, from]) =>
+    Array.from({ length: steps + 1 }, (_, i) => {
       const angle = from + (Math.PI / 2) * (i / steps);
-      ring.push([cx + r * Math.cos(angle), cy + r * Math.sin(angle)]);
-    }
-  }
-  return ring;
+      return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
+    }),
+  );
 }
+
+/** A rectangle with rounded corners, anticlockwise, with the same number of points whatever its size. */
+export const roundedRectRing = (x0, y0, x1, y1, radius, steps = 8) =>
+  roundedRectCorners(x0, y0, x1, y1, radius, steps).flat();
 
 /** A circle, anticlockwise. */
 export const circleAt = (cx, cy, radius, points = 32) =>

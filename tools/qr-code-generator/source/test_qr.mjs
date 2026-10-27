@@ -30,7 +30,8 @@ import {
   totalCodewords,
 } from "./qr.js";
 import { DEFAULT_CONTENT, FIELDS, KINDS, normalizeUrl, textFor } from "./content.js";
-import { DEFAULTS, QUIET } from "./layout.js";
+import { DEFAULTS, QUIET, TAB_SIDES, planFor, plateOutline } from "./layout.js";
+import { triangulate } from "./mesh.js";
 import { BODIES, EYE_CENTRES, EYE_FRAMES, RELIEFS } from "./shapes.js";
 import { buildModel } from "./model.js";
 
@@ -343,6 +344,47 @@ for (const shape of ["tile", "keychain"]) {
       checkSolids(`${shape}/border:${border}/quiet:${quiet}`, settings({ shape, border, quiet }));
   }
 }
+// A face with a hole in it has to come out whole. Tying the hole into the outline puts one corner in the ring
+// twice, and an ear test that takes that copy for something in the way stops clipping early and leaves a wedge of
+// the tile missing — which looks like a dark ribbon across the model and prints as a hole.
+{
+  const ringArea = (ring) =>
+    Math.abs(
+      ring.reduce((sum, [x, y], i) => {
+        const [nx, ny] = ring[(i + 1) % ring.length];
+        return sum + (x * ny - nx * y);
+      }, 0) / 2,
+    );
+  for (const tabSide of TAB_SIDES) {
+    for (const tabOffset of [-100, 0, 100]) {
+      const state = settings({ shape: "keychain", tabSide, tabOffset });
+      const plan = planFor(encode(textFor(state.content), { level: state.level }), state, null);
+      const outline = plateOutline(plan, state);
+      const { points, triangles } = triangulate(outline.ring, outline.holes);
+      const covered = triangles.reduce((sum, [a, b, c]) => {
+        const [p, q, r] = [points[a], points[b], points[c]];
+        return sum + ((q[0] - p[0]) * (r[1] - p[1]) - (r[0] - p[0]) * (q[1] - p[1])) / 2;
+      }, 0);
+      const wanted = ringArea(outline.ring) - outline.holes.reduce((sum, hole) => sum + ringArea(hole), 0);
+      ok(
+        Math.abs(covered - wanted) < 0.01,
+        `the tile's face is cut whole with the loop on the ${tabSide} at ${tabOffset}% ` +
+          `(${covered.toFixed(2)} of ${wanted.toFixed(2)} mm²)`,
+      );
+    }
+  }
+}
+
+// The keyring loop is spliced into whichever edge it stands on: every side, both ends of its travel, and a loop
+// wide enough to crowd the corners.
+for (const tabSide of TAB_SIDES) {
+  for (const tabOffset of [-100, 0, 100]) {
+    checkSolids(`loop ${tabSide}@${tabOffset}`, settings({ shape: "keychain", tabSide, tabOffset }));
+  }
+  checkSolids(`loop ${tabSide} wide`, settings({ shape: "keychain", tabSide, tabMm: 40, holeMm: 12 }));
+  checkSolids(`loop ${tabSide} square corners`, settings({ shape: "keychain", tabSide, tabOffset: 100, cornerMm: 0 }));
+}
+
 for (const patch of ["square", "circle"]) {
   for (const modules of ["raised", "flush"]) {
     checkSolids(`patch ${patch}/${modules}`, settings({ modules, patch: { ...DEFAULTS.patch, shape: patch } }));
@@ -382,8 +424,9 @@ checkSolids("thin modules", settings({ body: "dot", fill: 0.7 }));
 }
 
 // The flush top layer has to tile its opening exactly: the two filaments meet, and neither overlaps the other.
-{
-  const state = settings({ modules: "flush", body: "dot", border: false, cornerMm: 0, shape: "tile" });
+// A dot stands alone in its cell; a round bar runs through several of them, which is the harder band to get right.
+for (const body of ["dot", "roundBars", "bevel"]) {
+  const state = settings({ modules: "flush", body, border: false, cornerMm: 0, shape: "tile" });
   const model = buildModel(state);
   const total = model.parts.reduce((sum, part) => sum + measure(part).volume, 0);
   const plate = model.plan.plate.width * model.plan.plate.height * model.plan.thickness.base;
@@ -391,7 +434,7 @@ checkSolids("thin modules", settings({ body: "dot", fill: 0.7 }));
   // The only slack is the plate's own rounded corners, which are a fifth of a millimetre.
   ok(
     Math.abs(total - (plate + layer)) < 0.25,
-    `a flush code tiles its opening exactly (off by ${(total - plate - layer).toFixed(3)} mm³)`,
+    `a flush ${body} code tiles its opening exactly (off by ${(total - plate - layer).toFixed(3)} mm³)`,
   );
 }
 

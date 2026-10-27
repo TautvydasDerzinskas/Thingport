@@ -15,6 +15,14 @@ export const VIEWS = {
   back: { around: -90, up: -89.9, zoom: 1.05 },
 };
 
+/** How long a tile takes to walk from one set of settings to the next. */
+const MOVE_MS = 220;
+/** Past this many numbers a walk costs more than it is worth, and the tile is simply replaced. */
+const MOST_TO_MOVE = 900_000;
+/** Someone who asked for less movement gets none: the tile is replaced instead of walked. */
+const stillness =
+  typeof matchMedia === "function" ? matchMedia("(prefers-reduced-motion: reduce)") : { matches: false };
+
 /** Where two triangles meeting at a shallower angle than this are smoothed over. */
 const CREASE = Math.cos((38 * Math.PI) / 180);
 
@@ -116,6 +124,10 @@ export function createViewer(three, canvas, { onPick } = {}) {
   let radius = 40;
   let frame = 0;
   let disposed = false;
+  // The meshes on screen, so a change that keeps the shape can move them rather than replace them.
+  let showing = [];
+  let morph = 0;
+  let firstTime = true;
 
   function place() {
     const upright = (camera.fov * Math.PI) / 180;
@@ -222,6 +234,8 @@ export function createViewer(three, canvas, { onPick } = {}) {
   resize.observe(canvas);
 
   const empty = () => {
+    cancelAnimationFrame(morph);
+    morph = 0;
     for (const child of [...group.children]) {
       group.remove(child);
       child.geometry?.dispose?.();
@@ -229,37 +243,102 @@ export function createViewer(three, canvas, { onPick } = {}) {
     }
   };
 
+  /**
+   * Walks what is on screen over to the model just built, over a fifth of a second.
+   *
+   * Only ever called where the two have corner for corner the same shape, so every corner has somewhere to walk
+   * to: the tile thickens, the modules stand taller, the loop slides along its edge.
+   */
+  function moveTo(built) {
+    cancelAnimationFrame(morph);
+    const walks = showing.map((mesh, i) => {
+      const position = mesh.geometry.getAttribute("position");
+      const normal = mesh.geometry.getAttribute("normal");
+      mesh.material.color.set(built[i].part.colour ?? "#b9c2cf");
+      mesh.userData.pick = {
+        name: built[i].part.name,
+        kind: built[i].part.kind,
+        slot: built[i].part.slot,
+        colour: built[i].part.colour,
+      };
+      return { position, normal, from: position.array.slice(), to: built[i].positions, toNormals: built[i].normals };
+    });
+
+    const started = performance.now();
+    const step = () => {
+      const share = Math.min(1, (performance.now() - started) / MOVE_MS);
+      // Out fast and in gently, which is how a thing that was already moving comes to rest.
+      const eased = 1 - (1 - share) ** 3;
+      for (const walk of walks) {
+        const { array } = walk.position;
+        for (let i = 0; i < array.length; i++) array[i] = walk.from[i] + (walk.to[i] - walk.from[i]) * eased;
+        walk.position.needsUpdate = true;
+        if (share >= 1) {
+          walk.normal.array.set(walk.toNormals);
+          walk.normal.needsUpdate = true;
+          walk.position.array.set(walk.to);
+        }
+      }
+      draw();
+      morph = share < 1 ? requestAnimationFrame(step) : 0;
+    };
+    step();
+  }
+
   return {
     /** Shows the model's parts, each in its filament's colour. */
     show(parts, { fit = true } = {}) {
-      empty();
+      const built = parts.map((part) => ({ part, ...creasedNormals(part.vertices, part.triangles) }));
+
+      // A change that leaves the shape alone — a slider, a colour — moves what is already there instead of
+      // throwing it away, so the tile grows or stands taller in front of you rather than blinking.
+      const canMove =
+        !firstTime &&
+        !stillness.matches &&
+        showing.length === built.length &&
+        showing.every((mesh, i) => mesh.geometry.getAttribute("position").array.length === built[i].positions.length) &&
+        built.reduce((sum, one) => sum + one.positions.length, 0) <= MOST_TO_MOVE;
+
+      if (canMove) {
+        moveTo(built);
+      } else {
+        empty();
+        showing = built.map(({ part, positions, normals }) => {
+          const geometry = new three.BufferGeometry();
+          geometry.setAttribute("position", new three.BufferAttribute(positions, 3));
+          geometry.setAttribute("normal", new three.BufferAttribute(normals, 3));
+          const mesh = new three.Mesh(
+            geometry,
+            new three.MeshStandardMaterial({
+              color: new three.Color(part.colour ?? "#b9c2cf"),
+              roughness: 0.62,
+              metalness: 0.02,
+            }),
+          );
+          mesh.userData.pick = { name: part.name, kind: part.kind, slot: part.slot, colour: part.colour };
+          group.add(mesh);
+          return mesh;
+        });
+      }
+
       const box = new three.Box3();
-      for (const part of parts) {
-        const { positions, normals } = creasedNormals(part.vertices, part.triangles);
-        const geometry = new three.BufferGeometry();
-        geometry.setAttribute("position", new three.BufferAttribute(positions, 3));
-        geometry.setAttribute("normal", new three.BufferAttribute(normals, 3));
-        const mesh = new three.Mesh(
-          geometry,
-          new three.MeshStandardMaterial({
-            color: new three.Color(part.colour ?? "#b9c2cf"),
-            roughness: 0.62,
-            metalness: 0.02,
-          }),
-        );
-        mesh.userData.pick = { name: part.name, kind: part.kind, slot: part.slot, colour: part.colour };
-        group.add(mesh);
-        geometry.computeBoundingBox();
-        box.union(geometry.boundingBox);
+      for (const mesh of showing) {
+        mesh.geometry.computeBoundingBox();
+        box.union(mesh.geometry.boundingBox);
       }
       if (!box.isEmpty() && fit) {
         box.getCenter(centre);
         radius = Math.max(6, box.getSize(new three.Vector3()).length() / 2);
-        look("home");
+        // Only the first tile swings the camera home: after that the view you set is yours to keep.
+        if (firstTime) look("home");
+        else redraw();
+        firstTime = false;
       } else redraw();
     },
     clear() {
       empty();
+      showing = [];
+      firstTime = true;
       redraw();
     },
     look,
@@ -273,6 +352,7 @@ export function createViewer(three, canvas, { onPick } = {}) {
     dispose() {
       disposed = true;
       cancelAnimationFrame(frame);
+      cancelAnimationFrame(morph);
       resize.disconnect();
       for (const [type, fn] of listeners) canvas.removeEventListener(type, fn);
       canvas.removeEventListener("wheel", wheel);

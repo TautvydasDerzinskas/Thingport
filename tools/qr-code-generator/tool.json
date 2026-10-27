@@ -1,7 +1,7 @@
 {
   "name": "QR code generator",
   "description": "Makes a printable QR code: a link, a Wi-Fi network or a contact, styled, and saved as a 3MF with a part per filament.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "Thingport contributors",
   "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
   "window": {

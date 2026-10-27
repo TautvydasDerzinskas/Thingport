@@ -231,6 +231,9 @@ function joinHoles(outer, holes) {
   return ring;
 }
 
+/** Two corners in the same place, which a bridge to a hole puts in the ring on purpose. */
+const samePoint = (p, q) => Math.abs(p[0] - q[0]) < 1e-9 && Math.abs(p[1] - q[1]) < 1e-9;
+
 /** A ring cut into triangles by clipping its ears. Returns index triples into the ring. */
 function earClip(ring) {
   const indices = ring.map((_, i) => i);
@@ -248,7 +251,12 @@ function earClip(ring) {
       if (cross(a, b, c) <= 0) continue; // a reflex corner, or three points in a line
       const blocked = indices.some((other) => {
         if (other === previous || other === current || other === next) return false;
-        return inTriangle(a, b, c, ring[other]);
+        // Tying a hole into the ring puts the corner it was tied at into the ring twice. A copy of one of this
+        // ear's own corners sits exactly on it, so taking it for something in the way would block every ear
+        // around the hole and leave that part of the face untriangulated — a wedge of tile simply missing.
+        const point = ring[other];
+        if (samePoint(point, a) || samePoint(point, b) || samePoint(point, c)) return false;
+        return inTriangle(a, b, c, point);
       });
       if (blocked) continue;
       triangles.push([previous, current, next]);
