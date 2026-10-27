@@ -81,7 +81,9 @@ export default function OpenInSlicerButton({
   const group = anchor?.parentElement ?? null;
   const customizes = Boolean(onCustomize);
   const opensSlicer = canOpen && Boolean(slicerOption);
-  // The preferred slicer is only left out of the list when it is the main button itself.
+  // The list, when it appears, holds every installed slicer. It is skipped only where it would say nothing the
+  // main button doesn't: one slicer, already on that button. With Customize there instead, even one is worth
+  // listing, since the button no longer opens anything.
   const offersSlicers = canOpen && slicerOptions.length > (opensSlicer && !customizes ? 1 : 0);
   // Likewise the download: in the menu unless it is the main button.
   const offersDownload = customizes || opensSlicer;
