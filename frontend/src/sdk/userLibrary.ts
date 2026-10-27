@@ -30,6 +30,9 @@ export type SdkCollection = {
   toolOwned: boolean;
 };
 
+/** A file kept beside a model rather than being one of its plates. */
+export type SdkRelatedFile = { id: string; name: string; type: string; size: number; url: string };
+
 /** A file to save: its name (with the extension, e.g. "bin-2x3.stl") and its content. */
 export type SdkFileInput = { name: string; data: Blob | ArrayBuffer | ArrayBufferView | string; type?: string };
 
@@ -118,6 +121,28 @@ export function buildUserLibrary({
       if (res.status === 404) throw new Error(`${file.name} is missing from Thingport's storage`);
       if (!res.ok) throw new Error(`Couldn't read ${file.name} (HTTP ${res.status})`);
       return res.arrayBuffer();
+    },
+    /**
+     * The files kept beside a model that aren't plates: the script it was generated from, a wiring diagram, a
+     * readme. Separate from `files` because they are not geometry and nothing renders them.
+     */
+    relatedFiles: async (id: string): Promise<SdkRelatedFile[]> =>
+      (await printsApi.listFiles(id)).map((file) => ({
+        id: file.id,
+        name: file.filename,
+        type: file.mime,
+        size: file.size,
+        url: printsApi.fileUrl(file.url),
+      })),
+    /** One of them as text, for the ones that are: a generator script, a readme. */
+    relatedText: async (id: string, fileId: string): Promise<string> => {
+      const files = await models.relatedFiles(id);
+      const file = files.find((f) => f.id === fileId);
+      if (!file) throw new Error("The model has no such related file");
+      const res = await fetch(file.url);
+      if (res.status === 404) throw new Error(`${file.name} is missing from Thingport's storage`);
+      if (!res.ok) throw new Error(`Couldn't read ${file.name} (HTTP ${res.status})`);
+      return res.text();
     },
     /** A new model of the files given, each a plate, saved into a collection when one is given. */
     create: async (input: {
