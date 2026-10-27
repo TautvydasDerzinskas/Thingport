@@ -337,7 +337,9 @@ MakerWorld needs each user's session cookie, Printables works with no setup, and
 
 Bug reports and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the branch,
 commit and pull request workflow, and [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for how to run
-Thingport locally with hot reload.
+Thingport locally with hot reload. Adding a model site is in
+[docs/PROVIDER_DEVELOPMENT.md](docs/PROVIDER_DEVELOPMENT.md), and writing a tool for the Tools page in
+[docs/TOOL_DEVELOPMENT.md](docs/TOOL_DEVELOPMENT.md).
 
 ### Honourable contributors
 

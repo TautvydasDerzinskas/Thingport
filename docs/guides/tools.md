@@ -32,11 +32,13 @@ every device:
 
 **Administration → Tools** has three parts.
 
-- **Who sees tools**: admins only, everyone, or admins and the users you pick. Only they see **Tools** in the sidebar and
-  get the models tools bring. **Users' own tools** lets them also make their own, in the editor below; it's off at first.
-- **From the repository**: the tools in the Thingport repository's [`tools`](../../tools) folder, with screenshots
-  to look through first: click one to see them large, and the arrow keys move between them. **Install** makes one
-  available to everyone who sees tools; **Update** appears when its author changes it. Its ⋮ menu uninstalls it.
+- **Who sees tools**: admins only, everyone, or admins and the users you pick; a new Thingport starts on everyone. Only
+  they see **Tools** in the sidebar and get the models tools bring. **Users' own tools** lets them also make their own,
+  in the editor below; it's off at first.
+- **From the repository**: the tools in the Thingport repository's [`tools`](../../tools) folder, none of them installed
+  until you install it, with screenshots to look through first: click one to see them large, and the arrow keys move
+  between them. **Install** makes one available to everyone who sees tools; **Update** appears when its author changes
+  it. Its ⋮ menu uninstalls it.
 - **Users' own tools**: the tools users made, and whose they are.
 
 ### Tools that bring models
@@ -230,7 +232,9 @@ back collapsed and a counter that has lost its winding fills in when it's made s
 
 ## Sharing a tool
 
-A tool in the repository is a folder under [`tools/`](../../tools), listed in its `index.json`:
+A tool in the repository is a folder under [`tools/`](../../tools), listed in its `index.json`.
+[Tool development](../TOOL_DEVELOPMENT.md) covers all of it — the fields and their limits, the models, the
+screenshots and the checks — and this is the shape of it:
 
 - `tool.json` (or `tool.yml`): the metadata, as the editor's **Details** make it, plus `author`, and the models it
   brings, if any:

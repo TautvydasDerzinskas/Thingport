@@ -3,7 +3,8 @@
 Tools an admin can install from **Administration → Tools** in Thingport. Each folder here is one tool; [`index.json`](index.json)
 lists the ones Thingport offers. An installed tool opens from the **Tools** page, for the users the admin allows.
 
-To write one, see the [tools guide](../docs/guides/tools.md).
+To write one, see [tool development](../docs/TOOL_DEVELOPMENT.md) for the format and the steps, and the
+[tools guide](../docs/guides/tools.md) for the SDK a tool's script gets.
 
 ## A tool's folder
 
