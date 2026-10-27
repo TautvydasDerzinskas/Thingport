@@ -1,7 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { keyframes } from "@mui/material/styles";
+import {
+  DndContext,
+  MouseSensor,
+  TouchSensor,
+  pointerWithin,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
+import { alpha, keyframes } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
@@ -21,9 +33,6 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import LaunchIcon from "@mui/icons-material/Launch";
-import TuneIcon from "@mui/icons-material/Tune";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
 import { toolsApi, TOOL_CATEGORIES, type Tool, type ToolCategory } from "../../api/tools";
 import type { ToolSort } from "../../api/settings";
 import { UnauthorizedError } from "../../api/client";
@@ -78,8 +87,7 @@ export default function ToolsPage({ isAdmin, onUnauthorized }: Props) {
   const [menu, setMenu] = useState<{ tool: Tool; at: { top: number; left: number } } | null>(null);
   const [editing, setEditing] = useState<Tool | "new" | null>(null);
   const [view, setView] = useToolsView();
-  // Off by default: the page is a shelf of icons until someone wants to rearrange it.
-  const [arranging, setArranging] = useState(false);
+  const [dragging, setDragging] = useState<Tool | null>(null);
 
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -100,8 +108,8 @@ export default function ToolsPage({ isAdmin, onUnauthorized }: Props) {
   }, [openId, state, setSearchParams]);
 
   const canCreate = state?.access.canCreate ?? false;
-  const sort = view?.sort ?? "name";
-  const layout = view?.layout ?? "flat";
+  const sort = view?.sort ?? "newest";
+  const layout = view?.layout ?? "categories";
 
   /** The tools in the order the user chose. Name is the one that doesn't move about under them. */
   const ordered = useMemo(() => {
@@ -116,44 +124,34 @@ export default function ToolsPage({ isAdmin, onUnauthorized }: Props) {
   const installed = useMemo(() => ordered.filter((tool) => tool.source === "repo"), [ordered]);
   const mine = useMemo(() => ordered.filter((tool) => tool.source === "own"), [ordered]);
 
-  /** The shelves that have anything on them, in the order the categories are listed. */
+  /** The shelves, in the order the categories are listed. */
   const shelves = useMemo(() => {
     const moved = view?.categories ?? {};
     return TOOL_CATEGORIES.map((category) => ({
       category,
       tools: ordered.filter((tool) => shelfOf(tool, moved) === category),
-    })).filter((shelf) => shelf.tools.length > 0);
+    }));
   }, [ordered, view]);
 
-  const hasTools = Boolean(state?.tools.length);
-  usePageHeader({
-    title: t("tools.page.title"),
-    subtitle: t("tools.page.subtitle"),
-    // Nothing to show while there are no tools and none may be made: an empty block would still take room.
-    actions:
-      !hasTools && !canCreate ? undefined : (
-        <Stack direction="row" spacing={1} alignItems="center">
-          {hasTools && (
-            <Tooltip title={t(arranging ? "tools.page.arrangeDone" : "tools.page.arrange")}>
-              <IconButton
-                size="small"
-                aria-label={t(arranging ? "tools.page.arrangeDone" : "tools.page.arrange")}
-                aria-pressed={arranging}
-                color={arranging ? "primary" : "default"}
-                onClick={() => setArranging((on) => !on)}
-              >
-                <TuneIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
-          {canCreate && (
-            <Button size="small" variant="contained" startIcon={<AddIcon />} onClick={() => setEditing("new")}>
-              {t("tools.page.new")}
-            </Button>
-          )}
-        </Stack>
-      ),
-  });
+  // An empty shelf is hidden, until a tool is in the air and wants somewhere to land.
+  const shown = dragging ? shelves : shelves.filter((shelf) => shelf.tools.length > 0);
+
+  const sensors = useSensors(
+    // A few pixels of travel before a drag starts, so a double-click still opens the tool.
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    // A press and hold on a touchscreen, so a tap opens the tool and a swipe scrolls the page.
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
+  );
+
+  const dropped = ({ active, over }: DragEndEvent) => {
+    setDragging(null);
+    const category = TOOL_CATEGORIES.find((candidate) => candidate === over?.id);
+    const tool = ordered.find((candidate) => candidate.id === active.id);
+    if (!category || !tool || shelfOf(tool, view?.categories ?? {}) === category) return;
+    setView({ categories: { [tool.id]: category } });
+  };
+
+  usePageHeader({ title: t("tools.page.title"), subtitle: t("tools.page.subtitle") });
 
   const remove = async (tool: Tool) => {
     const ok = await confirm({
@@ -173,27 +171,13 @@ export default function ToolsPage({ isAdmin, onUnauthorized }: Props) {
     }
   };
 
-  const tiles = (tools: Tool[], offset: number) => (
+  const tiles = (tools: Tool[], offset: number, movable = false) => (
     <AppGrid column={COLUMN}>
       {tools.map((tool, index) => (
-        <Box
-          key={tool.id}
-          sx={{
-            display: "grid",
-            animation: `${appear} 240ms ease-out both`,
-            animationDelay: `${Math.min((offset + index) * 35, 350)}ms`,
-            "@media (prefers-reduced-motion: reduce)": { animation: "none" },
-          }}
-        >
+        <TileSlot key={tool.id} id={tool.id} movable={movable} delay={Math.min((offset + index) * 35, 350)}>
           <AppTile
             name={tool.manifest.name}
-            subtitle={
-              arranging
-                ? t(`tools.categories.${shelfOf(tool, view?.categories ?? {})}`)
-                : tool.source === "own"
-                  ? t("tools.page.yours")
-                  : undefined
-            }
+            subtitle={tool.source === "own" ? t("tools.page.yours") : undefined}
             logo={
               <Box sx={{ display: "flex", color: "primary.main" }}>
                 <ToolIcon iconUrl={tool.manifest.iconUrl} size={Math.round(ICON * 0.6)} />
@@ -212,7 +196,7 @@ export default function ToolsPage({ isAdmin, onUnauthorized }: Props) {
             }}
             onContextMenu={(event) => setMenu({ tool, at: menuPosition(event) })}
           />
-        </Box>
+        </TileSlot>
       ))}
     </AppGrid>
   );
@@ -250,68 +234,72 @@ export default function ToolsPage({ isAdmin, onUnauthorized }: Props) {
         />
       ) : (
         <>
-          {arranging && (
-            <Stack
-              direction="row"
-              spacing={2}
-              rowGap={1}
-              alignItems="center"
-              flexWrap="wrap"
-              sx={{
-                px: 1.5,
-                py: 1.25,
-                borderRadius: "12px",
-                border: 1,
-                borderColor: "divider",
-                bgcolor: "action.hover",
-                animation: `${appear} 200ms ease-out both`,
-                "@media (prefers-reduced-motion: reduce)": { animation: "none" },
-              }}
-            >
-              <Segmented
-                label={t("tools.page.layout")}
-                value={layout}
-                onChange={(next) => setView({ layout: next })}
-                options={[
-                  { value: "flat", label: t("tools.page.layoutFlat") },
-                  { value: "categories", label: t("tools.page.layoutCategories") },
-                ]}
-              />
-              <Box sx={{ ml: { sm: "auto" } }}>
-                <SortTools value={sort} onChange={(next) => setView({ sort: next })} />
-              </Box>
-            </Stack>
-          )}
-          {arranging && (
-            <Typography variant="caption" color="text.secondary">
-              {t(layout === "categories" ? "tools.page.arrangeHintCategories" : "tools.page.arrangeHintFlat")}
-            </Typography>
-          )}
-
-          {layout === "categories"
-            ? shelves.map((shelf, index) => (
-                <Stack key={shelf.category} spacing={1}>
-                  <GroupLabel>{t(`tools.categories.${shelf.category}`)}</GroupLabel>
-                  {tiles(
-                    shelf.tools,
-                    shelves.slice(0, index).reduce((count, before) => count + before.tools.length, 0),
-                  )}
-                </Stack>
-              ))
-            : [
-                installed.length > 0 && (
-                  <Stack key="installed" spacing={1}>
-                    {mine.length > 0 && <GroupLabel>{t("tools.page.installed")}</GroupLabel>}
-                    {tiles(installed, 0)}
-                  </Stack>
-                ),
-                mine.length > 0 && (
-                  <Stack key="mine" spacing={1}>
-                    <GroupLabel>{t("tools.page.mine")}</GroupLabel>
-                    {tiles(mine, installed.length)}
-                  </Stack>
-                ),
+          {/* `useFlexGap` spaces the row with `gap`: Stack's own spacing is a margin on the second child, which
+              would beat the `auto` that holds the order at the right-hand end. */}
+          <Stack direction="row" useFlexGap spacing={2} alignItems="center" flexWrap="wrap">
+            <Segmented
+              label={t("tools.page.layout")}
+              value={layout}
+              onChange={(next) => setView({ layout: next })}
+              options={[
+                { value: "flat", label: t("tools.page.layoutFlat") },
+                { value: "categories", label: t("tools.page.layoutCategories") },
               ]}
+            />
+            {canCreate && (
+              <Button size="small" variant="contained" startIcon={<AddIcon />} onClick={() => setEditing("new")}>
+                {t("tools.page.new")}
+              </Button>
+            )}
+            <Box sx={{ ml: "auto" }}>
+              <SortTools value={sort} onChange={(next) => setView({ sort: next })} />
+            </Box>
+          </Stack>
+
+          {layout === "categories" ? (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={pointerWithin}
+              onDragStart={({ active }: DragStartEvent) =>
+                setDragging(ordered.find((tool) => tool.id === active.id) ?? null)
+              }
+              onDragEnd={dropped}
+              onDragCancel={() => setDragging(null)}
+            >
+              <Stack spacing={2}>
+                {shown.map((shelf, index) => (
+                  <Shelf
+                    key={shelf.category}
+                    category={shelf.category}
+                    label={t(`tools.categories.${shelf.category}`)}
+                    hint={t("tools.page.dropHere")}
+                  >
+                    {shelf.tools.length > 0 &&
+                      tiles(
+                        shelf.tools,
+                        shown.slice(0, index).reduce((count, before) => count + before.tools.length, 0),
+                        true,
+                      )}
+                  </Shelf>
+                ))}
+              </Stack>
+            </DndContext>
+          ) : (
+            [
+              installed.length > 0 && (
+                <Stack key="installed" spacing={1}>
+                  {mine.length > 0 && <GroupLabel>{t("tools.page.installed")}</GroupLabel>}
+                  {tiles(installed, 0)}
+                </Stack>
+              ),
+              mine.length > 0 && (
+                <Stack key="mine" spacing={1}>
+                  <GroupLabel>{t("tools.page.mine")}</GroupLabel>
+                  {tiles(mine, installed.length)}
+                </Stack>
+              ),
+            ]
+          )}
         </>
       )}
 
@@ -361,33 +349,29 @@ export default function ToolsPage({ isAdmin, onUnauthorized }: Props) {
             </ListItemIcon>
             <ListItemText>{t("tools.page.about")}</ListItemText>
           </MenuItem>,
-          arranging && <Divider key="shelves-divider" />,
-          ...(arranging
-            ? [
-                <ListSubheader key="shelves-heading" sx={{ bgcolor: "transparent", lineHeight: "32px" }}>
-                  {t("tools.page.moveTo")}
-                </ListSubheader>,
-                ...TOOL_CATEGORIES.map((category) => {
-                  const here = shelfOf(menuTool, view?.categories ?? {}) === category;
-                  return (
-                    <MenuItem
-                      key={`shelf-${category}`}
-                      selected={here}
-                      onClick={() => {
-                        closeMenu();
-                        // Moving a tool is only visible on the shelves, so showing them comes with the move.
-                        setView({ categories: { [menuTool.id]: category }, layout: "categories" });
-                      }}
-                    >
-                      <ListItemIcon>{here ? <CheckIcon fontSize="small" /> : null}</ListItemIcon>
-                      <ListItemText>{t(`tools.categories.${category}`)}</ListItemText>
-                    </MenuItem>
-                  );
-                }),
-                // Only where something follows it, so the menu never ends on a line.
-                (menuTool.collectionId || (menuTool.source === "own" && canCreate)) && <Divider key="shelves-end" />,
-              ]
-            : []),
+          <Divider key="shelves-divider" />,
+          <ListSubheader key="shelves-heading" sx={{ bgcolor: "transparent", lineHeight: "32px" }}>
+            {t("tools.page.moveTo")}
+          </ListSubheader>,
+          ...TOOL_CATEGORIES.map((category) => {
+            const here = shelfOf(menuTool, view?.categories ?? {}) === category;
+            return (
+              <MenuItem
+                key={`shelf-${category}`}
+                selected={here}
+                onClick={() => {
+                  closeMenu();
+                  // Moving a tool is only visible on the shelves, so showing them comes with the move.
+                  setView({ categories: { [menuTool.id]: category }, layout: "categories" });
+                }}
+              >
+                <ListItemIcon>{here ? <CheckIcon fontSize="small" /> : null}</ListItemIcon>
+                <ListItemText>{t(`tools.categories.${category}`)}</ListItemText>
+              </MenuItem>
+            );
+          }),
+          // Only where something follows it, so the menu never ends on a line.
+          (menuTool.collectionId || (menuTool.source === "own" && canCreate)) && <Divider key="shelves-end" />,
           menuTool.collectionId && (
             <MenuItem
               key="models"
@@ -492,6 +476,86 @@ function SortTools({ value, onChange }: { value: ToolSort; onChange: (sort: Tool
           {t(`tools.page.sort.${mode}`)}
         </Typography>
       ))}
+    </Stack>
+  );
+}
+
+/** One icon's place in the grid: it settles in as the page opens, and on the shelves it can be picked up. */
+function TileSlot({
+  id,
+  movable,
+  delay,
+  children,
+}: {
+  id: string;
+  movable: boolean;
+  delay: number;
+  children: React.ReactNode;
+}) {
+  const { setNodeRef, listeners, transform, isDragging } = useDraggable({ id, disabled: !movable });
+  return (
+    // Two boxes: the outer one follows the pointer, the inner one settles in. One element can't do both, since the
+    // animation holds `transform` after it ends.
+    <Box
+      ref={setNodeRef}
+      {...listeners}
+      sx={{
+        display: "grid",
+        transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+        zIndex: isDragging ? 2 : undefined,
+        opacity: isDragging ? 0.85 : undefined,
+        cursor: isDragging ? "grabbing" : undefined,
+      }}
+    >
+      <Box
+        sx={{
+          display: "grid",
+          animation: `${appear} 240ms ease-out both`,
+          animationDelay: `${delay}ms`,
+          "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+        }}
+      >
+        {children}
+      </Box>
+    </Box>
+  );
+}
+
+/** A shelf and its heading, lit up while a tool is held over it. */
+function Shelf({
+  category,
+  label,
+  hint,
+  children,
+}: {
+  category: ToolCategory;
+  label: string;
+  hint: string;
+  children: React.ReactNode;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: category });
+  return (
+    <Stack
+      ref={setNodeRef}
+      spacing={1}
+      sx={{
+        // The padding is taken back off at the sides, so the icons stay in line with the rest of the page.
+        p: 1,
+        mx: -1,
+        borderRadius: "12px",
+        border: 1,
+        borderStyle: "dashed",
+        borderColor: isOver ? "primary.main" : "transparent",
+        bgcolor: isOver ? (theme) => alpha(theme.palette.primary.main, 0.06) : "transparent",
+        transition: "border-color 160ms, background-color 160ms",
+      }}
+    >
+      <GroupLabel>{label}</GroupLabel>
+      {children || (
+        <Typography variant="caption" color="text.secondary" sx={{ py: 1.5 }}>
+          {hint}
+        </Typography>
+      )}
     </Stack>
   );
 }

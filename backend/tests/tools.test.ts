@@ -132,19 +132,19 @@ describe("metadata", () => {
 });
 
 describe("the Tools page's arrangement", () => {
-  it("starts with none, keeps what's changed, and leaves the rest alone", async () => {
+  it("starts on the shelves with the newest first, keeps what's changed, and leaves the rest alone", async () => {
     const view = await request(app).get("/api/settings/tools-view").set(auth(memberToken));
-    expect(view.body).toEqual({ layout: "flat", sort: "name", categories: {} });
+    expect(view.body).toEqual({ layout: "categories", sort: "newest", categories: {} });
 
     const shelved = await request(app)
       .patch("/api/settings/tools-view")
       .set(auth(memberToken))
-      .send({ layout: "categories", categories: { abc: "files" } });
-    expect(shelved.body).toMatchObject({ layout: "categories", sort: "name", categories: { abc: "files" } });
+      .send({ layout: "flat", categories: { abc: "files" } });
+    expect(shelved.body).toMatchObject({ layout: "flat", sort: "newest", categories: { abc: "files" } });
 
     // Changing the order mustn't forget where a tool was put.
-    const sorted = await request(app).patch("/api/settings/tools-view").set(auth(memberToken)).send({ sort: "newest" });
-    expect(sorted.body).toEqual({ layout: "categories", sort: "newest", categories: { abc: "files" } });
+    const sorted = await request(app).patch("/api/settings/tools-view").set(auth(memberToken)).send({ sort: "name" });
+    expect(sorted.body).toEqual({ layout: "flat", sort: "name", categories: { abc: "files" } });
 
     expect(
       (await request(app).patch("/api/settings/tools-view").set(auth(memberToken)).send({ layout: "sideways" })).status,

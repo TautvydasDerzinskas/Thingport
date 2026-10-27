@@ -5,7 +5,7 @@ import { settingsApi, type ToolsView } from "../api/settings";
 // own. Saved on the account, so the page opens the same way on every device, and shared by every user of the hook
 // so a change shows everywhere at once — the same shape as useCategoriesView.
 
-const NEVER_CHOSEN: ToolsView = { layout: "flat", sort: "name", categories: {} };
+const NEVER_CHOSEN: ToolsView = { layout: "categories", sort: "newest", categories: {} };
 
 let cached: ToolsView | undefined;
 let inFlight: Promise<ToolsView> | null = null;

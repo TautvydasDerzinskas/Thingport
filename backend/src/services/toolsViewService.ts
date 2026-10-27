@@ -17,14 +17,14 @@ export const TOOL_SORTS = ["name", "newest", "author"] as const;
 export type ToolSort = (typeof TOOL_SORTS)[number];
 
 export const toolsViewSchema = z.object({
-  layout: z.enum(TOOL_LAYOUTS).default("flat"),
-  sort: z.enum(TOOL_SORTS).default("name"),
+  layout: z.enum(TOOL_LAYOUTS).default("categories"),
+  sort: z.enum(TOOL_SORTS).default("newest"),
   /** Where the user moved a tool, by its id; anything else sits where its metadata says. */
   categories: z.record(z.string().max(60), z.enum(TOOL_CATEGORIES)).default({}),
 });
 export type ToolsView = z.infer<typeof toolsViewSchema>;
 
-export const DEFAULT_TOOLS_VIEW: ToolsView = { layout: "flat", sort: "name", categories: {} };
+export const DEFAULT_TOOLS_VIEW: ToolsView = { layout: "categories", sort: "newest", categories: {} };
 
 export async function getToolsView(userId: string): Promise<ToolsView> {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { toolsView: true } });

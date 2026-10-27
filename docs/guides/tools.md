@@ -12,14 +12,17 @@ icon or choosing **Open** from its ⋮ menu.
 
 ### Arranging them
 
-**Arrange** (the sliders in the page's corner) is where the page itself is set up, and what you choose is kept on your
-account, so it opens the same way on every device:
+The row above the icons sets the page up, and what you choose is kept on your account, so it opens the same way on
+every device:
 
-- **Show as** — **One grid**, which is the installed tools and then your own, or **Shelves**, which splits them into
-  Generators, Planners, Calculators, Files, Library and Other, with a heading each. Empty shelves aren't shown.
-- The order: by **Name**, **Newest** or **Author**, as the models page orders its grid.
-- Where each tool sits: right-click one while arranging and pick a shelf under **Move to**. A tool starts on the shelf
-  its own metadata names, and moving it is yours alone — an update to the tool won't move it back.
+- **Show as** — **Shelves**, which the page starts on, splits the tools into Generators, Planners, Calculators, Files,
+  Library and Other, with a heading each and empty shelves left out; **One grid** puts the installed tools first and
+  then your own.
+- The order, on the right: by **Name**, **Newest** — where the page starts — or **Author**, as the models page orders
+  its grid.
+- Where each tool sits: drag its icon onto another shelf, or right-click it and pick one under **Move to**. While a
+  tool is in the air the empty shelves appear too, so it can be dropped on one. A tool starts on the shelf its own
+  metadata names, and moving it is yours alone — an update to the tool won't move it back.
 
 > [!WARNING]
 > A tool's script runs in your browser with your access to Thingport, like code you paste into the browser console. The
