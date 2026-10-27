@@ -29,12 +29,12 @@ const json = (body: unknown) => new Response(JSON.stringify(body), { headers: { 
 
 const SCRIPT = 'base_width = 80;\r\ntext_color = "green"; // [white, red, green]\r\n';
 
-function design(designId: string, scriptsProtected: boolean) {
+function design(designId: string, scriptsProtected: boolean, profiles = true) {
   return {
     id: Number(designId),
     title: "Keychain Creator",
     modelId: `model-${designId}`,
-    instances: [{ id: "1", profileId: "9001", instanceCreator: { uid: 42 } }],
+    instances: profiles ? [{ id: "1", profileId: "9001", instanceCreator: { uid: 42 } }] : [],
     defaultInstanceId: "1",
     designCreator: { uid: 42, name: "A Creator" },
     designExtension: {
@@ -53,13 +53,13 @@ async function zipOf(entries: Record<string, string>): Promise<Buffer> {
   return zip.generateAsync({ type: "nodebuffer" });
 }
 
-function mockMakerworld(designId: string, scriptsProtected: boolean, zip: Buffer) {
+function mockMakerworld(designId: string, scriptsProtected: boolean, zip: Buffer, profiles = true) {
   const fetched: string[] = [];
   global.fetch = vi.fn<(input: RequestInfo | URL) => Promise<Response>>(async (input) => {
     const url = String(input);
     fetched.push(url);
     if (url === `https://api.bambulab.com/v1/design-service/design/${designId}`) {
-      return json(design(designId, scriptsProtected));
+      return json(design(designId, scriptsProtected, profiles));
     }
     if (url.includes(`/design/${designId}/model?modelType=all&type=download`)) {
       return json({ name: "", url: `https://s3.example.com/${designId}-all.zip` });
@@ -118,6 +118,20 @@ describe("importing a model built from a script", () => {
     expect(file.status).toBe(200);
     // Stored as Unix, or OpenSCAD's customizer would show none of the script's widgets.
     expect(file.text).toBe('base_width = 80;\ntext_color = "green"; // [white, red, green]\n');
+  }, 120000);
+
+  // A design with no print profiles downloads as the zip of its raw files, and a script-only model's zip holds
+  // nothing to print. Removing that zip once it had given up its scripts left the model's own file pointing at
+  // a file that was gone, and the import failed on a model that is otherwise perfectly importable.
+  it("imports a model whose raw files are nothing but scripts", async () => {
+    const designId = String((stamp % 1_000_000_000) + 3);
+    mockMakerworld(designId, false, await zipOf({ "generator.scad": SCRIPT }), false);
+    const printId = await importDesign(designId);
+
+    const print = (await request(app).get(`/api/print/${printId}`).set(auth())).body;
+    expect(print.generator_scripts).toEqual([{ id: expect.any(String), filename: "generator.scad" }]);
+    // Nothing printable came in the zip, so the zip itself is the model's file.
+    expect(print.plates.length).toBe(1);
   }, 120000);
 
   it("records why there is no script when the creator withheld it, and asks for nothing", async () => {

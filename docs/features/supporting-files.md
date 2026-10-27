@@ -18,8 +18,13 @@ and notes are attached automatically.
 ## Models you can generate again
 
 Some sites let a creator publish the script a model is built from rather than only the finished mesh —
-MakerWorld's Parametric Model Maker is one. Where Thingport imported one, the script is kept beside the model
-and the model is marked **Generated from a script**.
+MakerWorld's Parametric Model Maker is one, and Thingiverse's customizable models are another. Any `.scad`
+that comes with a model is kept beside it, however it arrived: imported from any site, uploaded in the same
+folder as the model, dropped in the consume folder with it, or attached to a model you already have. The
+model is then marked **Generated from a script**.
+
+A script on its own isn't a model — it describes one but holds no shape until something runs it — so it can't
+be uploaded by itself. Upload it with the model it belongs to, or attach it to one from the model's page.
 
 **Customize…**, in the model's ⋮ menu, opens it in the [Script customizer](../../tools/openscad-customizer)
 tool: the same sliders, choices and text boxes the creator set up, read from the script by OpenSCAD itself. What
