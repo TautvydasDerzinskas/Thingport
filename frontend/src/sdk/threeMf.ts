@@ -21,29 +21,51 @@ export type Mesh = {
  * first vertex. Convex faces are all OpenSCAD emits, which is what makes a fan safe.
  */
 export function parseOff(text: string): Mesh {
-  const tokens: string[] = [];
+  // Line by line, because a face line may carry more than its corners: a script that uses `color()` makes the
+  // engine write that face's red, green and blue after the indices. Read as one long run of numbers, the first
+  // such colour is taken for the next face's corner count and everything after it is nonsense -- quietly, since
+  // the numbers still parse. Lines are what tells a corner from a colour.
+  const lines: string[] = [];
   for (const line of text.split("\n")) {
     const stripped = line.indexOf("#") >= 0 ? line.slice(0, line.indexOf("#")) : line;
-    for (const token of stripped.trim().split(/\s+/)) if (token) tokens.push(token);
+    if (stripped.trim()) lines.push(stripped.trim());
   }
-  if (tokens[0] !== "OFF") throw new Error("That isn't OFF: the engine wrote something else.");
 
-  const vertexCount = Number(tokens[1]);
-  const faceCount = Number(tokens[2]);
+  let at = 0;
+  const words = (index: number) => lines[index].split(/\s+/);
+  // The header is "OFF", sometimes with the counts on the same line.
+  const first = words(at);
+  if (first[0] !== "OFF") throw new Error("That isn't OFF: the engine wrote something else.");
+  let counts = first.slice(1);
+  at += 1;
+  if (counts.length < 3) {
+    counts = words(at);
+    at += 1;
+  }
+
+  const vertexCount = Number(counts[0]);
+  const faceCount = Number(counts[1]);
   if (!Number.isInteger(vertexCount) || !Number.isInteger(faceCount)) {
     throw new Error("The OFF header doesn't say how big the mesh is.");
   }
 
   const vertices = new Float64Array(vertexCount * 3);
-  let at = 4; // "OFF", three counts.
-  for (let i = 0; i < vertexCount * 3; i++) vertices[i] = Number(tokens[at++]);
+  for (let i = 0; i < vertexCount; i++, at++) {
+    const parts = words(at);
+    vertices[i * 3] = Number(parts[0]);
+    vertices[i * 3 + 1] = Number(parts[1]);
+    vertices[i * 3 + 2] = Number(parts[2]);
+  }
 
   const triangles: number[] = [];
-  for (let face = 0; face < faceCount; face++) {
-    const corners = Number(tokens[at++]);
-    const indices: number[] = [];
-    for (let i = 0; i < corners; i++) indices.push(Number(tokens[at++]));
-    for (let i = 2; i < corners; i++) triangles.push(indices[0], indices[i - 1], indices[i]);
+  for (let face = 0; face < faceCount; face++, at++) {
+    const parts = words(at);
+    const corners = Number(parts[0]);
+    // A polygon is fanned from its first corner. The engine merges coplanar triangles into one face, and the
+    // shapes it merges them into are convex, so a fan covers them exactly.
+    for (let i = 2; i < corners; i++) {
+      triangles.push(Number(parts[1]), Number(parts[i]), Number(parts[i + 1]));
+    }
   }
   return { vertices, triangles: Uint32Array.from(triangles) };
 }

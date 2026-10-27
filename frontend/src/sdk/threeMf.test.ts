@@ -41,6 +41,29 @@ describe("parseOff", () => {
     expect(mesh.triangles.length).toBe(3);
   });
 
+  // A script that uses color() makes the engine write each face's red, green and blue after its corners. Read
+  // as one run of numbers rather than line by line, the first colour is taken for the next face's corner count
+  // and every triangle after it is nonsense -- without anything failing, since the numbers still parse.
+  it("ignores the colour the engine writes after a face's corners", () => {
+    const coloured = `OFF
+4 2 0
+0 0 0
+1 0 0
+0 1 0
+1 1 0
+3 0 1 2 255 255 255
+3 1 3 2 0 128 64
+`;
+    const mesh = parseOff(coloured);
+
+    expect(Array.from(mesh.triangles)).toEqual([0, 1, 2, 1, 3, 2]);
+    expect(mesh.vertices.length).toBe(12);
+  });
+
+  it("reads a header that keeps its counts on the same line", () => {
+    expect(parseOff("OFF 3 1 0\n0 0 0\n1 0 0\n0 1 0\n3 0 1 2\n").triangles.length).toBe(3);
+  });
+
   it("says so when handed something that isn't OFF", () => {
     expect(() => parseOff("solid thing\nendsolid thing\n")).toThrow(/isn't OFF/);
   });
