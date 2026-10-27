@@ -5,6 +5,7 @@
     "makerworld-3mf-normalizer",
     "enclosure-generator",
     "print-cost-estimator",
-    "skadis-planner"
+    "skadis-planner",
+    "keyring-generator"
   ]
 }
