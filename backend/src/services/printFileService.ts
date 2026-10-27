@@ -64,11 +64,15 @@ async function linkOrCopy(tempPath: string, destination: string): Promise<void> 
 async function normalizeGeneratorScript(tempPath: string, filename: string): Promise<void> {
   if (!PARAMETRIC_SOURCE_EXTS.has(path.extname(filename).toLowerCase())) return;
   try {
-    const text = await fs.readFile(tempPath, "utf8");
-    if (!text.includes("\r\n")) return;
-    await fs.writeFile(tempPath, text.replace(/\r\n/g, "\n"));
-  } catch {
-    // Unreadable as text, so it isn't a script Thingport can do anything with; stored as it came.
+    const bytes = await fs.readFile(tempPath);
+    if (!bytes.includes("\r\n")) return;
+    // Through latin1, which maps every byte to one code unit and back again: reading as UTF-8 would replace
+    // any byte that isn't valid UTF-8 with U+FFFD and write that back, losing it. A script in some other
+    // encoding -- a Latin-1 "é" in a comment -- then survives, since CR and LF are the only bytes touched.
+    await fs.writeFile(tempPath, Buffer.from(bytes.toString("latin1").replace(/\r\n/g, "\n"), "latin1"));
+  } catch (err) {
+    // Best-effort: on a failure to read or write it, the script is stored exactly as it came.
+    console.warn(`Couldn't normalize the line endings of ${filename}:`, err);
   }
 }
 
