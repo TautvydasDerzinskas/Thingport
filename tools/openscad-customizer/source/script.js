@@ -33,10 +33,15 @@ export function controlFor(parameter) {
   const options = parameter.options ?? [];
   if (options.length) {
     const yesNo = options.length === 2 && options.every((o) => /^(yes|no|true|false|on|off)$/i.test(String(o.value)));
-    if (yesNo) return { kind: "switch", options };
+    if (yesNo) {
+      // By what each choice means, not by where it was declared: `// [No, Yes]` is as legal as `// [Yes, No]`,
+      // and taking the first for "on" would set the opposite of whatever the switch was moved to.
+      const on = options.find(isOnChoice) ?? options[0];
+      return { kind: "switch", on, off: options.find((o) => o !== on) ?? options[1] };
+    }
     return options.length <= 4 ? { kind: "segmented", options } : { kind: "select", options };
   }
-  if (parameter.type === "boolean") return { kind: "switch", options: BOOLEAN_OPTIONS };
+  if (parameter.type === "boolean") return { kind: "switch", on: BOOLEAN_ON, off: BOOLEAN_OFF };
   if (parameter.type === "number") {
     const { min, max } = parameter;
     if (Number.isFinite(min) && Number.isFinite(max)) {
@@ -48,10 +53,11 @@ export function controlFor(parameter) {
   return { kind: "text" };
 }
 
-const BOOLEAN_OPTIONS = [
-  { name: "true", value: true },
-  { name: "false", value: false },
-];
+/** Which of a two-way choice means "on", whichever order the script declared the pair in. */
+const isOnChoice = (choice) => choice.value === true || /^(yes|true|on)$/i.test(String(choice.value));
+
+const BOOLEAN_ON = { name: "true", value: true };
+const BOOLEAN_OFF = { name: "false", value: false };
 
 /** A step fine enough to reach the values in between, without a slider of ten thousand positions. */
 function stepFor(min, max) {

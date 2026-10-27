@@ -71,6 +71,27 @@ test("a yes/no pair becomes a switch rather than two buttons", () => {
   assert.equal(controlFor(yesNo).kind, "switch");
 });
 
+test("the switch points at what each choice means, not at the order it was declared", () => {
+  // A script is as free to write `// [No, Yes]` as `// [Yes, No]`; taking the first for "on" would set the
+  // opposite of whatever the switch was moved to.
+  const lid = (options) => ({ name: "lid", type: "string", initial: options[0].value, options });
+  const yes = { name: "Yes", value: "Yes" };
+  const no = { name: "No", value: "No" };
+
+  for (const options of [
+    [yes, no],
+    [no, yes],
+  ]) {
+    const control = controlFor(lid(options));
+    assert.equal(control.on.value, "Yes");
+    assert.equal(control.off.value, "No");
+  }
+
+  const declared = controlFor({ name: "lid", type: "boolean", initial: true });
+  assert.equal(declared.on.value, true);
+  assert.equal(declared.off.value, false);
+});
+
 test("a number with both ends becomes a slider, one without stays a field", () => {
   assert.equal(controlFor({ name: "w", type: "number", initial: 10, min: 1, max: 50 }).kind, "slider");
   assert.equal(controlFor({ name: "w", type: "number", initial: 10 }).kind, "number");

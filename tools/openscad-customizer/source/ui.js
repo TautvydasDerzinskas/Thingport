@@ -45,6 +45,9 @@ export default async function mount(thingport) {
 
   // ---- loading a script --------------------------------------------------------------------------------------
 
+  /** Whatever went wrong reading a model's files, said in the window rather than only in the console. */
+  const unreadable = (err) => ui.toast(t("error.unreadable", { reason: err.message }), "error");
+
   async function loadScript({ text: raw, name, from }) {
     setBusy(true, t("busy.reading"));
     try {
@@ -59,7 +62,7 @@ export default async function mount(thingport) {
       enable(true);
       await generate();
     } catch (err) {
-      ui.toast(t("error.unreadable", { reason: err.message }), "error");
+      unreadable(err);
       setBusy(false);
     }
   }
@@ -86,7 +89,9 @@ export default async function mount(thingport) {
       const text = await models.relatedText(model.id, file.id);
       await loadScript({ text, name: file.name, from: model });
     };
-    picker.onchange = () => void choose(picker.value);
+    // Reading a file can fail on a network error or a file that went: said out loud rather than left as an
+    // unhandled rejection with the window looking as though nothing happened.
+    picker.onchange = () => void choose(picker.value).catch(unreadable);
     await choose(scripts[0].id);
   }
 
@@ -203,10 +208,10 @@ export default async function mount(thingport) {
       wrap.className = "osc-switch";
       const input = document.createElement("input");
       input.type = "checkbox";
-      input.checked = value === true || /^(yes|true|on)$/i.test(String(value));
-      const onValue = control.options[0].value;
-      const offValue = control.options[1].value;
-      input.onchange = () => set(input.checked ? onValue : offValue);
+      // Compared as text so a boolean value still matches a "true"/"false" choice; anything matching neither
+      // reads as off rather than guessing.
+      input.checked = String(value) === String(control.on.value);
+      input.onchange = () => set(input.checked ? control.on.value : control.off.value);
       wrap.append(input, document.createTextNode(parameter.name));
       wrap.querySelector("input").setAttribute("aria-label", parameter.name);
       return wrap;
@@ -343,10 +348,11 @@ export default async function mount(thingport) {
   $("download").onclick = () => {
     if (generated) thingport.download({ name: `${generated.name}.3mf`, data: generated.bytes, type: "model/3mf" });
   };
-  $("pick").onclick = async () => {
-    const model = await pickModel();
-    if (model) await loadFromModel(model);
-  };
+  $("pick").onclick = () =>
+    void (async () => {
+      const model = await pickModel();
+      if (model) await loadFromModel(model);
+    })().catch(unreadable);
   $("open").onclick = () => {
     const input = document.createElement("input");
     input.type = "file";
@@ -435,7 +441,7 @@ export default async function mount(thingport) {
     try {
       await loadFromModel(await models.get(context.modelId));
     } catch (err) {
-      ui.toast(t("error.unreadable", { reason: err.message }), "error");
+      unreadable(err);
     }
   }
 
