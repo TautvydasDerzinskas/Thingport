@@ -321,9 +321,10 @@ export default function ModelsPage({
       <Button
         variant="outlined"
         startIcon={<FilterListIcon />}
-        endIcon={<ExpandMoreIcon sx={{ transform: filtersOpen ? "rotate(180deg)" : "none" }} />}
+        endIcon={
+          <ExpandMoreIcon sx={{ transform: filtersOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
+        }
         aria-expanded={filtersOpen}
-        aria-controls="model-category-filters"
         onClick={() => setFiltersOpen((open) => !open)}
         sx={{ display: { xs: "flex", md: "none" }, minHeight: 44, justifyContent: "flex-start", textTransform: "none" }}
       >

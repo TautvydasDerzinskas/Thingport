@@ -90,7 +90,7 @@ export default function AdminSubnav({ mobile = false }: { mobile?: boolean }) {
             {t("sidebar.administration")}
           </Typography>
         )}
-        {!narrow && !mobile && (
+        {!narrow && (
           <Tooltip title={collapsed ? t("sidebar.expandAdminMenu") : t("sidebar.collapseAdminMenu")}>
             <IconButton size="small" onClick={toggle} aria-expanded={!collapsed}>
               {collapsed ? <ChevronRightIcon fontSize="small" /> : <ChevronLeftIcon fontSize="small" />}
