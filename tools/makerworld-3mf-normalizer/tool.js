@@ -1159,7 +1159,7 @@ const ThreeMFSanitizer = (function (factory) {
     function buildFlattenedModel({ parsedModels, rootPath, modelSettings, bambuSettings, mappedSettings, plates }) {
         const root = parsedModels[pathKey(rootPath)];
         if (!root) {
-            throw new Error("No valid 3D model found inside the 3MF file.");
+            throw new Error("error.noModel");
         }
 
         const colors = asArray(bambuSettings.filament_colour);
@@ -1263,7 +1263,7 @@ const ThreeMFSanitizer = (function (factory) {
             const wrapper = modelSettings[String(item.objectid)] || {};
             const resolved = resolveTarget(parsedModels, rootPath, item.objectid, item.transform, new Set());
             if (!resolved) {
-                logs.push("Skipped unresolved build item objectid=" + item.objectid);
+                logs.push({ key: "log.skippedItem", vars: { id: item.objectid } });
                 continue;
             }
             const printable = item.printable != null ? item.printable : "1";
@@ -1303,9 +1303,10 @@ const ThreeMFSanitizer = (function (factory) {
                 wrapper.extruder || parts[0].extruder,
                 merged.volumes
             );
-            logs.push(
-                `Kept merged assembly "${wrapper.name || "object"}" with ${parts.length} colored parts as one object.`
-            );
+            logs.push({
+                key: "log.keptAssembly",
+                vars: { name: wrapper.name || "object", parts: parts.length },
+            });
         }
 
         if (!emittedMeshes.length && !emittedAssemblies.length) {
@@ -1394,9 +1395,9 @@ const ThreeMFSanitizer = (function (factory) {
         }
         const assignedPlates = assignInstancesToPlates(plates, buildItems);
         if (assignedPlates.length > 1) {
-            logs.push(`Preserved ${assignedPlates.length} plates with ${buildItems.length} object instance(s).`);
+            logs.push({ key: "log.preservedPlates", vars: { plates: assignedPlates.length, items: buildItems.length } });
         } else if (assignedPlates.length === 1) {
-            logs.push(`Assigned ${buildItems.length} object instance(s) to plate 1.`);
+            logs.push({ key: "log.assignedPlate1", vars: { items: buildItems.length } });
         }
 
         return {
@@ -1698,7 +1699,7 @@ const ThreeMFSanitizer = (function (factory) {
         let bambuSettings = {};
         const projectRec = findZipFile(filesByKey, "Metadata/project_settings.config");
         if (projectRec) {
-            logLine(log, "Found Bambu/Orca print settings. Extracting designer process settings...");
+            logLine(log, { key: "log.foundBambu" });
             try {
                 const parsed = JSON.parse(await projectRec.entry.async("string"));
                 bambuSettings = extractBambuSettings(parsed);
@@ -1707,7 +1708,7 @@ const ThreeMFSanitizer = (function (factory) {
                     `Extracted walls=${bambuSettings.wall_loops || "default"}, layer=${bambuSettings.layer_height || "default"}, line width=${bambuSettings.line_width || "default"}, infill=${bambuSettings.sparse_infill_density || "default"}`
                 );
             } catch (e) {
-                logLine(log, "Warning: Could not parse project_settings.config JSON.");
+                logLine(log, { key: "log.badProjectSettings" });
             }
         }
 
@@ -1719,12 +1720,12 @@ const ThreeMFSanitizer = (function (factory) {
                 const modelXml = await modelSetRec.entry.async("string");
                 modelSettings = parseModelSettings(modelXml);
                 plates = parsePlates(modelXml);
-                logLine(log, `Read per-object extruder/color assignments for ${Object.keys(modelSettings).length} object(s).`);
+                logLine(log, { key: "log.readAssignments", vars: { objects: Object.keys(modelSettings).length } });
                 if (plates.length) {
-                    logLine(log, `Read ${plates.length} plate(s) from the original project.`);
+                    logLine(log, { key: "log.readPlates", vars: { plates: plates.length } });
                 }
             } catch (e) {
-                logLine(log, "Warning: Could not parse model_settings.config.");
+                logLine(log, { key: "log.badModelSettings" });
             }
         }
 
@@ -1748,10 +1749,10 @@ const ThreeMFSanitizer = (function (factory) {
         const hadProduction = Object.keys(modelXmlByPath).some((p) => /objects\/object_/i.test(p)) ||
             /requiredextensions\s*=\s*"p"/i.test(modelXmlByPath[normalizePath(rootRec.relativePath)] || "");
         if (hadProduction) {
-            logLine(log, "Flattened 3MF Production Extension into a single core 3dmodel.model (required for Cura/Prusa/Anycubic).");
+            logLine(log, { key: "log.flattened" });
         }
-        logLine(log, `Preserved geometry: ${flattened.stats.vertices} vertices, ${flattened.stats.triangles} triangles, ${flattened.stats.paintColors} painted faces.`);
-        logLine(log, `Preserved ${flattened.stats.materials} filament color(s) and painted faces as 3MF materials + paint_color.`);
+        logLine(log, { key: "log.preservedGeometry", vars: { vertices: flattened.stats.vertices, triangles: flattened.stats.triangles, painted: flattened.stats.paintColors } });
+        logLine(log, { key: "log.preservedMaterials", vars: { materials: flattened.stats.materials } });
 
         const newZip = new JSZip();
         newZip.file("[Content_Types].xml", contentTypesXml());
@@ -1771,11 +1772,11 @@ const ThreeMFSanitizer = (function (factory) {
         const cleanedProject = sanitizeProjectSettings(bambuSettings);
         if (Object.keys(cleanedProject).length) {
             newZip.file("Metadata/project_settings.config", JSON.stringify(cleanedProject, null, 2));
-            logLine(log, `Wrote sanitized process/filament settings (${Object.keys(cleanedProject).length} keys). Printer/machine profile stripped.`);
+            logLine(log, { key: "log.wroteSettings", vars: { keys: Object.keys(cleanedProject).length } });
         }
         if (Object.keys(mappedSettings).length) {
             newZip.file("Metadata/Slic3r_PE.config", buildSlic3rConfig(mappedSettings));
-            logLine(log, "Wrote PrusaSlicer/Anycubic Slic3r_PE.config (walls, line width, infill, supports, colors).");
+            logLine(log, { key: "log.wroteSlic3r" });
         }
         if (flattened.objectMeta.length) {
             newZip.file("Metadata/Slic3r_PE_model.config", buildSlic3rModelConfig(flattened.objectMeta));
@@ -1797,12 +1798,12 @@ const ThreeMFSanitizer = (function (factory) {
                     pathKey(relativePath).includes("slice_info") ||
                     pathKey(relativePath).includes("project_settings")
                 ) {
-                    logLine(log, "Stripping proprietary/cached data: " + relativePath);
+                    logLine(log, { key: "log.stripping", vars: { file: relativePath } });
                 }
                 continue;
             }
             if (pathKey(relativePath) === "metadata/thumbnail.png" && hasThumbnail) continue;
-            logLine(log, "Preserving asset: " + relativePath);
+            logLine(log, { key: "log.preservingAsset", vars: { file: relativePath } });
             newZip.file(relativePath, await entry.async("uint8array"));
         }
 
@@ -2173,18 +2174,18 @@ const ICONS = {
 
 /** The designer's settings worth showing, by their PrusaSlicer names, as the sanitizer maps them. */
 const SETTINGS = [
-  ["layer_height", "Layer height", (v) => `${v} mm`],
-  ["first_layer_height", "First layer", (v) => `${v} mm`],
-  ["perimeters", "Walls", (v) => v],
-  ["top_solid_layers", "Top layers", (v) => v],
-  ["bottom_solid_layers", "Bottom layers", (v) => v],
-  ["fill_density", "Infill", (v) => (String(v).includes("%") ? v : `${Math.round(Number(v) * 100)}%`)],
-  ["fill_pattern", "Infill pattern", (v) => String(v).replace(/^\w/, (c) => c.toUpperCase())],
-  ["extrusion_width", "Line width", (v) => `${v} mm`],
-  ["support_material", "Supports", (v) => (String(v) === "1" ? "On" : "Off")],
-  ["brim_width", "Brim", (v) => (Number(v) > 0 ? `${v} mm` : "None")],
-  ["temperature", "Nozzle", (v) => `${v} °C`],
-  ["bed_temperature", "Bed", (v) => `${v} °C`],
+  ["layer_height", "stat.layerHeight", (v) => `${v} mm`],
+  ["first_layer_height", "stat.firstLayer", (v) => `${v} mm`],
+  ["perimeters", "stat.walls", (v) => v],
+  ["top_solid_layers", "stat.topLayers", (v) => v],
+  ["bottom_solid_layers", "stat.bottomLayers", (v) => v],
+  ["fill_density", "stat.infill", (v) => (String(v).includes("%") ? v : `${Math.round(Number(v) * 100)}%`)],
+  ["fill_pattern", "stat.infillPattern", (v) => String(v).replace(/^\w/, (c) => c.toUpperCase())],
+  ["extrusion_width", "stat.lineWidth", (v) => `${v} mm`],
+  ["support_material", "stat.supports", (v) => (String(v) === "1" ? "On" : "stat.off")],
+  ["brim_width", "stat.brim", (v) => (Number(v) > 0 ? `${v} mm` : "stat.none")],
+  ["temperature", "stat.nozzle", (v) => `${v} °C`],
+  ["bed_temperature", "stat.bed", (v) => `${v} °C`],
 ];
 
 const isThreeMf = (name) => /\.3mf$/i.test(name);
@@ -2212,7 +2213,7 @@ const cssColour = (hex) =>
   /^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(String(hex).trim()) ? String(hex).trim().slice(0, 7) : "#b0b0b0";
 
 export default async function mount(thingport) {
-  const { root, theme, models, ui } = thingport;
+  const { root, theme, models, ui, t, labels } = thingport;
   // sanitizer.js's, joined into this module by build.mjs.
   const sanitizer = ThreeMFSanitizer;
   const shell = root.querySelector(".mwn");
@@ -2303,7 +2304,7 @@ export default async function mount(thingport) {
   // Files dropped anywhere on the window.
   const veil = $("veil");
   let dragDepth = 0;
-  const hasFiles = (event) => [...(event.dataTransfer?.types ?? [])].includes("Files");
+  const hasFiles = (event) => [...(event.dataTransfer?.types ?? [])].includes(t("files.title"));
   const onDragEnter = (event) => {
     if (!hasFiles(event)) return;
     event.preventDefault();
@@ -2361,13 +2362,14 @@ export default async function mount(thingport) {
   // ---- the list ----------------------------------------------------------------------------------------------
   const list = $("list");
   function statusIcon(item) {
-    if (item.status === "working") return '<span class="mwn-spinner" role="img" aria-label="Normalizing"></span>';
-    const labels = { queued: "Waiting", done: "Normalized", failed: "Failed" };
+    if (item.status === "working")
+      return '<span class="mwn-spinner" role="img" aria-label="${escapeHtml(t("status.normalizing"))}"></span>';
+    const labels = { queued: t("status.waiting"), done: t("status.normalized"), failed: t("status.failed") };
     return `<span role="img" aria-label="${labels[item.status]}">${ICONS[item.status]}</span>`;
   }
   function statusLine(item) {
     if (item.status === "queued") return `Waiting · ${size(item.size)}`;
-    if (item.status === "working") return "Normalizing…";
+    if (item.status === "working") return t("status.normalizingDots");
     if (item.status === "failed") return item.error;
     const sizes = `${size(item.size)} → ${size(item.result.bytes.length)}`;
     return item.saved ? `${sizes} · saved` : sizes;
@@ -2392,7 +2394,7 @@ export default async function mount(thingport) {
         if (item.source) row.title = `From ${item.source.modelName}`;
         row.innerHTML = `<span class="mwn-state mwn-${item.status}">${statusIcon(item)}</span>
           <span class="mwn-file-name"><b>${escapeHtml(item.name)}</b><small class="${item.status === "failed" ? "mwn-error" : ""}">${escapeHtml(statusLine(item))}</small></span>
-          <button class="mwn-icon-btn" type="button" title="More" aria-label="More for ${escapeHtml(item.name)}" aria-haspopup="menu">${ICONS.more}</button>`;
+          <button class="mwn-icon-btn" type="button" title="${escapeHtml(t("file.more"))}" aria-label="More for ${escapeHtml(item.name)}" aria-haspopup="menu">${ICONS.more}</button>`;
         row.addEventListener("click", () => select(item.id));
         row.querySelector("button").addEventListener("click", (event) => {
           event.stopPropagation();
@@ -2410,7 +2412,7 @@ export default async function mount(thingport) {
     if (!items.length) {
       const empty = document.createElement("li");
       empty.className = "mwn-list-empty";
-      empty.textContent = "No files yet";
+      empty.textContent = t("files.none");
       list.append(empty);
     }
     if (focused) list.querySelector(`[data-id="${focused}"]`)?.focus();
@@ -2446,7 +2448,7 @@ export default async function mount(thingport) {
   }
 
   function remove(item) {
-    if (item.status === "working") return ui.toast("It's being normalized: remove it once it's done", "info");
+    if (item.status === "working") return ui.toast(t("file.busyRemove"), "info");
     const row = list.querySelector(`[data-id="${item.id}"]`);
     const index = items.indexOf(item);
     const finish = () => {
@@ -2466,17 +2468,18 @@ export default async function mount(thingport) {
   function fileActions(item) {
     const actions = [];
     if (item.status === "done") {
-      actions.push({ label: "Download", icon: ICONS.download, run: () => download(item) });
+      actions.push({ label: t("file.download"), icon: ICONS.download, run: () => download(item) });
       if (item.source)
         actions.push({ label: `Add to ${item.source.modelName}`, icon: ICONS.add, run: () => save(item, "add") });
-      actions.push({ label: "Save as a new model", icon: ICONS.save, run: () => save(item, "new") });
+      actions.push({ label: t("file.saveAsNew"), icon: ICONS.save, run: () => save(item, "new") });
       if (item.saved)
-        actions.push({ label: "Open in Thingport", icon: ICONS.open, run: () => models.open(item.saved.modelId) });
+        actions.push({ label: t("file.open"), icon: ICONS.open, run: () => models.open(item.saved.modelId) });
     }
-    if (item.status === "failed") actions.push({ label: "Try again", icon: ICONS.retry, run: () => retry(item) });
+    if (item.status === "failed")
+      actions.push({ label: t("file.tryAgain"), icon: ICONS.retry, run: () => retry(item) });
     if (actions.length) actions.push("divider");
     actions.push({
-      label: "Remove from the list",
+      label: t("file.remove"),
       icon: ICONS.remove,
       danger: true,
       run: () => remove(item),
@@ -2498,7 +2501,7 @@ export default async function mount(thingport) {
       const unsaved = items.filter((item) => item.status === "done" && !item.saved).length;
       if (unsaved) {
         const ok = await ui.confirm({
-          title: "Clear the list?",
+          title: t("files.clearTitle"),
           message: `${plural(unsaved, "normalized file")} ${unsaved === 1 ? "hasn't" : "haven't"} been downloaded or saved from here. Clearing lets ${unsaved === 1 ? "it" : "them"} go.`,
         });
         if (!ok) return;
@@ -2581,16 +2584,16 @@ export default async function mount(thingport) {
     const head = (extra = "") =>
       `<div class="mwn-head"><h2 title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</h2>${extra}</div>`;
     if (item.status === "queued" || item.status === "working") {
-      detail.innerHTML = `${head(`<span class="mwn-hint">${item.status === "working" ? "Normalizing…" : "Waiting its turn"}</span>`)}
+      detail.innerHTML = `${head(`<span class="mwn-hint">${item.status === "working" ? t("status.normalizingDots") : t("status.waitingTurn")}</span>`)}
         <div class="mwn-views" aria-hidden="true"><div class="mwn-skeleton" style="height:290px"></div><div class="mwn-skeleton" style="height:290px"></div></div>
         <div class="mwn-facts" aria-hidden="true"><div class="mwn-skeleton" style="height:150px"></div><div class="mwn-skeleton" style="height:150px"></div><div class="mwn-skeleton" style="height:150px"></div></div>`;
       return;
     }
     if (item.status === "failed") {
       detail.innerHTML = `${head()}
-        <div class="mwn-problem" role="alert"><b>This file couldn't be normalized</b>${escapeHtml(item.error)}</div>
-        <p class="mwn-hint" style="margin:0">A 3MF from Bambu Studio, Orca Slicer or MakerWorld is a ZIP with a 3D/3dmodel.model inside. A damaged or partly downloaded file won't open: download it again and try once more.</p>
-        <div><button class="mwn-btn" type="button" id="mwn-retry">${ICONS.retry} Try again</button></div>`;
+        <div class="mwn-problem" role="alert"><b>${escapeHtml(t("error.title"))}</b>${escapeHtml(t(item.error) === item.error ? item.error : t(item.error))}</div>
+        <p class="mwn-hint" style="margin:0">${escapeHtml(t("error.hint"))}</p>
+        <div><button class="mwn-btn" type="button" id="mwn-retry">${ICONS.retry} ${escapeHtml(t("file.tryAgain"))}</button></div>`;
       $("retry").addEventListener("click", () => retry(item));
       return;
     }
@@ -2599,14 +2602,14 @@ export default async function mount(thingport) {
 
   function renderIntro() {
     detail.innerHTML = `<div class="mwn-intro">
-      <h2>Open MakerWorld models in any slicer</h2>
-      <p>Bambu Studio's 3MF projects hide their parts in a way Cura, PrusaSlicer and others can't read. Drop one here and get a 3MF they open, with nothing lost.</p>
+      <h2>${escapeHtml(t("intro.title"))}</h2>
+      <p>${escapeHtml(t("intro.body"))}</p>
       <div class="mwn-flow"><span class="mwn-chip">Bambu Studio · MakerWorld</span><span aria-hidden="true">→</span>
         <span class="mwn-chip mwn-to">Cura</span><span class="mwn-chip mwn-to">PrusaSlicer</span><span class="mwn-chip mwn-to">Anycubic</span><span class="mwn-chip mwn-to">Orca</span></div>
       <div class="mwn-keeps">
-        <div class="mwn-keep">${ICONS.palette}<b>Colours stay</b><span>Painted faces and every filament</span></div>
-        <div class="mwn-keep">${ICONS.cube}<b>Assemblies stay</b><span>One object, plates as they were</span></div>
-        <div class="mwn-keep">${ICONS.sliders}<b>Settings stay</b><span>Layers, walls, infill, supports</span></div>
+        <div class="mwn-keep">${ICONS.palette}<b>${escapeHtml(t("intro.coloursStay"))}</b><span>${escapeHtml(t("intro.coloursStayBody"))}</span></div>
+        <div class="mwn-keep">${ICONS.cube}<b>${escapeHtml(t("intro.assembliesStay"))}</b><span>${escapeHtml(t("intro.assembliesStayBody"))}</span></div>
+        <div class="mwn-keep">${ICONS.sliders}<b>${escapeHtml(t("intro.settingsStay"))}</b><span>${escapeHtml(t("intro.settingsStayBody"))}</span></div>
       </div>
     </div>`;
   }
@@ -2619,59 +2622,59 @@ export default async function mount(thingport) {
     const swatches = (colours) =>
       `<span class="mwn-swatches">${colours.map((c) => `<span class="mwn-swatch" style="background:${cssColour(c)}"></span>`).join("")}</span>`;
     const kept = [
-      ["Objects", report.objects.toLocaleString()],
-      ["Plates", (report.plates || 1).toLocaleString()],
-      ["Triangles", report.triangles.toLocaleString()],
-      ["Painted faces", report.paintColors.toLocaleString()],
-      ["Part files", report.flattened ? "Joined into one" : "Already one"],
-      ["Size", `${size(item.size)} → ${size(item.result.bytes.length)}`],
+      [t("stat.objects"), report.objects.toLocaleString()],
+      [t("stat.plates"), (report.plates || 1).toLocaleString()],
+      [t("stat.triangles"), report.triangles.toLocaleString()],
+      [t("stat.paintedFaces"), report.paintColors.toLocaleString()],
+      [t("stat.partFiles"), report.flattened ? t("stat.joinedIntoOne") : t("stat.alreadyOne")],
+      [t("stat.size"), `${size(item.size)} → ${size(item.result.bytes.length)}`],
     ];
     const shownSettings = SETTINGS.filter(([key]) => settings[key] != null && settings[key] !== "");
     const savedLine = item.saved
       ? `<div class="mwn-status" role="status">${ICONS.done} ${
           item.source && item.saved.modelId === item.source.modelId
-            ? `Added to ${escapeHtml(item.saved.name)}.`
-            : `Saved as ${escapeHtml(item.saved.name)}.`
-        } <button class="mwn-link" type="button" id="mwn-open">Open it</button>${
+            ? escapeHtml(t("saved.addedTo", { name: item.saved.name }))
+            : escapeHtml(t("saved.savedAs", { name: item.saved.name }))
+        } <button class="mwn-link" type="button" id="mwn-open">${escapeHtml(t("saved.openIt"))}</button>${
           item.source && item.saved.modelId === item.source.modelId
             ? ""
-            : '<button class="mwn-link" type="button" id="mwn-collect">Add to a collection</button>'
+            : `<button class="mwn-link" type="button" id="mwn-collect">${escapeHtml(t("saved.addToCollection"))}</button>`
         }</div>`
       : "";
 
     detail.innerHTML = `<div class="mwn-head">
         <h2 title="${escapeHtml(item.name)}">${escapeHtml(outName(item.name))}</h2>
         <span class="mwn-spacer"></span>
-        <button class="mwn-btn" type="button" id="mwn-download">${ICONS.download} Download</button>
-        <button class="mwn-btn mwn-primary" type="button" id="mwn-save" ${item.source ? 'aria-haspopup="menu"' : ""}>${ICONS.save} Save to Thingport</button>
+        <button class="mwn-btn" type="button" id="mwn-download">${ICONS.download} ${escapeHtml(t("file.download"))}</button>
+        <button class="mwn-btn mwn-primary" type="button" id="mwn-save" ${item.source ? 'aria-haspopup="menu"' : ""}>${ICONS.save} ${escapeHtml(t("bar.save"))}</button>
       </div>
       ${savedLine}
       <div class="mwn-views">
-        <figure class="mwn-view"><figcaption>Original <span id="mwn-beforeMeta"></span></figcaption>
-          <canvas id="mwn-before" tabindex="0" aria-label="The original file in 3D. Drag or use the arrow keys to turn it, the wheel or + and − to zoom, 0 to start again."></canvas></figure>
-        <figure class="mwn-view"><figcaption>Normalized <span id="mwn-afterMeta"></span></figcaption>
-          <canvas id="mwn-after" tabindex="0" aria-label="The normalized file in 3D. Drag or use the arrow keys to turn it, the wheel or + and − to zoom, 0 to start again."></canvas></figure>
+        <figure class="mwn-view"><figcaption>${escapeHtml(t("view.original"))} <span id="mwn-beforeMeta"></span></figcaption>
+          <canvas id="mwn-before" tabindex="0" aria-label="${escapeHtml(t("preview.aria"))}"></canvas></figure>
+        <figure class="mwn-view"><figcaption>${escapeHtml(t("view.normalized"))} <span id="mwn-afterMeta"></span></figcaption>
+          <canvas id="mwn-after" tabindex="0" aria-label="${escapeHtml(t("preview.ariaAfter"))}"></canvas></figure>
       </div>
       <div class="mwn-facts">
-        <div class="mwn-box"><h3>Kept</h3><dl class="mwn-dl">${kept.map(([k, v]) => `<dt>${k}</dt><dd>${escapeHtml(v)}</dd>`).join("")}</dl></div>
-        <div class="mwn-box"><h3>Filaments</h3>${
+        <div class="mwn-box"><h3>${escapeHtml(t("facts.kept"))}</h3><dl class="mwn-dl">${kept.map(([k, v]) => `<dt>${k}</dt><dd>${escapeHtml(v)}</dd>`).join("")}</dl></div>
+        <div class="mwn-box"><h3>${escapeHtml(t("facts.filaments"))}</h3>${
           filamentColours.length
             ? `<div class="mwn-filaments">${filamentColours
                 .map(
                   (c, i) =>
-                    `<div class="mwn-filament"><span class="mwn-swatch" style="background:${cssColour(c)}"></span>${i + 1} · ${escapeHtml(filamentTypes[i] ?? "Filament")}<code>${escapeHtml(cssColour(c).toUpperCase())}</code></div>`,
+                    `<div class="mwn-filament"><span class="mwn-swatch" style="background:${cssColour(c)}"></span>${i + 1} · ${escapeHtml(filamentTypes[i] ?? t("stat.filament"))}<code>${escapeHtml(cssColour(c).toUpperCase())}</code></div>`,
                 )
                 .join("")}</div>`
-            : '<p class="mwn-hint" style="margin:0">None named: your slicer\'s own filament applies.</p>'
+            : `<p class="mwn-hint" style="margin:0">${escapeHtml(t("facts.noFilaments"))}</p>`
         }</div>
-        <div class="mwn-box"><h3>Print settings</h3>${
+        <div class="mwn-box"><h3>${escapeHtml(t("facts.printSettings"))}</h3>${
           shownSettings.length
-            ? `<dl class="mwn-dl">${shownSettings.map(([key, label, show]) => `<dt>${label}</dt><dd>${escapeHtml(show(first(settings[key])))}</dd>`).join("")}</dl>`
-            : '<p class="mwn-hint" style="margin:0">None in this file: your slicer\'s own apply.</p>'
+            ? `<dl class="mwn-dl">${shownSettings.map(([key, label, show]) => `<dt>${escapeHtml(t(label))}</dt><dd>${escapeHtml(show(first(settings[key])))}</dd>`).join("")}</dl>`
+            : `<p class="mwn-hint" style="margin:0">${escapeHtml(t("facts.noSettings"))}</p>`
         }</div>
       </div>
-      <details class="mwn-log"><summary>${ICONS.chevron} What changed <span class="mwn-hint">${plural(item.log.length, "step")}</span></summary>
-        <ol>${item.log.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ol></details>`;
+      <details class="mwn-log"><summary>${ICONS.chevron} ${escapeHtml(t("file.whatChanged"))} <span class="mwn-hint">${escapeHtml(t(item.log.length === 1 ? "file.step.one" : "file.step.many", { count: item.log.length }))}</span></summary>
+        <ol>${item.log.map((line) => `<li>${escapeHtml(t(line.key, line.vars))}</li>`).join("")}</ol></details>`;
 
     $("download").addEventListener("click", () => download(item));
     const saveButton = $("save");
@@ -2679,7 +2682,7 @@ export default async function mount(thingport) {
       if (!item.source) return void save(item, "new");
       openMenu(saveButton, [
         { label: `Add to ${item.source.modelName}`, icon: ICONS.add, run: () => save(item, "add") },
-        { label: "Save as a new model", icon: ICONS.save, run: () => save(item, "new") },
+        { label: t("file.saveAsNew"), icon: ICONS.save, run: () => save(item, "new") },
       ]);
     });
     $("open")?.addEventListener("click", () => models.open(item.saved.modelId));
@@ -2796,7 +2799,7 @@ export default async function mount(thingport) {
         .map((model) => ({ model, files: model.files.filter((file) => isThreeMf(file.name)) }))
         .filter((entry) => entry.files.length);
       if (!withFiles.length) {
-        found.innerHTML = `<li class="mwn-list-empty">${q ? `No 3MF files match “${escapeHtml(q)}”.` : "No models with a 3MF file yet."}</li>`;
+        found.innerHTML = `<li class="mwn-list-empty">${q ? `No 3MF files match “${escapeHtml(q)}”.` : t("library.none")}</li>`;
         return;
       }
       found.replaceChildren(
@@ -2859,6 +2862,8 @@ export default async function mount(thingport) {
   });
 
   renderList();
+  // The window's own words, before the first render.
+  labels();
   renderDetail();
 
   return () => {

@@ -947,7 +947,7 @@
     function buildFlattenedModel({ parsedModels, rootPath, modelSettings, bambuSettings, mappedSettings, plates }) {
         const root = parsedModels[pathKey(rootPath)];
         if (!root) {
-            throw new Error("No valid 3D model found inside the 3MF file.");
+            throw new Error("error.noModel");
         }
 
         const colors = asArray(bambuSettings.filament_colour);
@@ -1051,7 +1051,7 @@
             const wrapper = modelSettings[String(item.objectid)] || {};
             const resolved = resolveTarget(parsedModels, rootPath, item.objectid, item.transform, new Set());
             if (!resolved) {
-                logs.push("Skipped unresolved build item objectid=" + item.objectid);
+                logs.push({ key: "log.skippedItem", vars: { id: item.objectid } });
                 continue;
             }
             const printable = item.printable != null ? item.printable : "1";
@@ -1091,9 +1091,10 @@
                 wrapper.extruder || parts[0].extruder,
                 merged.volumes
             );
-            logs.push(
-                `Kept merged assembly "${wrapper.name || "object"}" with ${parts.length} colored parts as one object.`
-            );
+            logs.push({
+                key: "log.keptAssembly",
+                vars: { name: wrapper.name || "object", parts: parts.length },
+            });
         }
 
         if (!emittedMeshes.length && !emittedAssemblies.length) {
@@ -1182,9 +1183,9 @@
         }
         const assignedPlates = assignInstancesToPlates(plates, buildItems);
         if (assignedPlates.length > 1) {
-            logs.push(`Preserved ${assignedPlates.length} plates with ${buildItems.length} object instance(s).`);
+            logs.push({ key: "log.preservedPlates", vars: { plates: assignedPlates.length, items: buildItems.length } });
         } else if (assignedPlates.length === 1) {
-            logs.push(`Assigned ${buildItems.length} object instance(s) to plate 1.`);
+            logs.push({ key: "log.assignedPlate1", vars: { items: buildItems.length } });
         }
 
         return {
@@ -1486,7 +1487,7 @@
         let bambuSettings = {};
         const projectRec = findZipFile(filesByKey, "Metadata/project_settings.config");
         if (projectRec) {
-            logLine(log, "Found Bambu/Orca print settings. Extracting designer process settings...");
+            logLine(log, { key: "log.foundBambu" });
             try {
                 const parsed = JSON.parse(await projectRec.entry.async("string"));
                 bambuSettings = extractBambuSettings(parsed);
@@ -1495,7 +1496,7 @@
                     `Extracted walls=${bambuSettings.wall_loops || "default"}, layer=${bambuSettings.layer_height || "default"}, line width=${bambuSettings.line_width || "default"}, infill=${bambuSettings.sparse_infill_density || "default"}`
                 );
             } catch (e) {
-                logLine(log, "Warning: Could not parse project_settings.config JSON.");
+                logLine(log, { key: "log.badProjectSettings" });
             }
         }
 
@@ -1507,12 +1508,12 @@
                 const modelXml = await modelSetRec.entry.async("string");
                 modelSettings = parseModelSettings(modelXml);
                 plates = parsePlates(modelXml);
-                logLine(log, `Read per-object extruder/color assignments for ${Object.keys(modelSettings).length} object(s).`);
+                logLine(log, { key: "log.readAssignments", vars: { objects: Object.keys(modelSettings).length } });
                 if (plates.length) {
-                    logLine(log, `Read ${plates.length} plate(s) from the original project.`);
+                    logLine(log, { key: "log.readPlates", vars: { plates: plates.length } });
                 }
             } catch (e) {
-                logLine(log, "Warning: Could not parse model_settings.config.");
+                logLine(log, { key: "log.badModelSettings" });
             }
         }
 
@@ -1536,10 +1537,10 @@
         const hadProduction = Object.keys(modelXmlByPath).some((p) => /objects\/object_/i.test(p)) ||
             /requiredextensions\s*=\s*"p"/i.test(modelXmlByPath[normalizePath(rootRec.relativePath)] || "");
         if (hadProduction) {
-            logLine(log, "Flattened 3MF Production Extension into a single core 3dmodel.model (required for Cura/Prusa/Anycubic).");
+            logLine(log, { key: "log.flattened" });
         }
-        logLine(log, `Preserved geometry: ${flattened.stats.vertices} vertices, ${flattened.stats.triangles} triangles, ${flattened.stats.paintColors} painted faces.`);
-        logLine(log, `Preserved ${flattened.stats.materials} filament color(s) and painted faces as 3MF materials + paint_color.`);
+        logLine(log, { key: "log.preservedGeometry", vars: { vertices: flattened.stats.vertices, triangles: flattened.stats.triangles, painted: flattened.stats.paintColors } });
+        logLine(log, { key: "log.preservedMaterials", vars: { materials: flattened.stats.materials } });
 
         const newZip = new JSZip();
         newZip.file("[Content_Types].xml", contentTypesXml());
@@ -1559,11 +1560,11 @@
         const cleanedProject = sanitizeProjectSettings(bambuSettings);
         if (Object.keys(cleanedProject).length) {
             newZip.file("Metadata/project_settings.config", JSON.stringify(cleanedProject, null, 2));
-            logLine(log, `Wrote sanitized process/filament settings (${Object.keys(cleanedProject).length} keys). Printer/machine profile stripped.`);
+            logLine(log, { key: "log.wroteSettings", vars: { keys: Object.keys(cleanedProject).length } });
         }
         if (Object.keys(mappedSettings).length) {
             newZip.file("Metadata/Slic3r_PE.config", buildSlic3rConfig(mappedSettings));
-            logLine(log, "Wrote PrusaSlicer/Anycubic Slic3r_PE.config (walls, line width, infill, supports, colors).");
+            logLine(log, { key: "log.wroteSlic3r" });
         }
         if (flattened.objectMeta.length) {
             newZip.file("Metadata/Slic3r_PE_model.config", buildSlic3rModelConfig(flattened.objectMeta));
@@ -1585,12 +1586,12 @@
                     pathKey(relativePath).includes("slice_info") ||
                     pathKey(relativePath).includes("project_settings")
                 ) {
-                    logLine(log, "Stripping proprietary/cached data: " + relativePath);
+                    logLine(log, { key: "log.stripping", vars: { file: relativePath } });
                 }
                 continue;
             }
             if (pathKey(relativePath) === "metadata/thumbnail.png" && hasThumbnail) continue;
-            logLine(log, "Preserving asset: " + relativePath);
+            logLine(log, { key: "log.preservingAsset", vars: { file: relativePath } });
             newZip.file(relativePath, await entry.async("uint8array"));
         }
 

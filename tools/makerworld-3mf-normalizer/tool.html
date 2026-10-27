@@ -785,16 +785,32 @@
 
 <div class="mwn">
   <div class="mwn-main">
-    <section class="mwn-panel mwn-files" aria-label="Files">
+    <section class="mwn-panel mwn-files" data-t-aria="files.title" aria-label="Files">
       <div class="mwn-head">
         <h2>Files <span class="mwn-hint" id="mwn-count"></span></h2>
         <span class="mwn-spacer"></span>
-        <button class="mwn-icon-btn" id="mwn-downloadAll" title="Download all" aria-label="Download all" hidden>
+        <button
+          class="mwn-icon-btn"
+          id="mwn-downloadAll"
+          data-t-title="files.downloadAll"
+          title="Download all"
+          data-t-aria="files.downloadAll"
+          aria-label="Download all"
+          hidden
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
           </svg>
         </button>
-        <button class="mwn-icon-btn" id="mwn-clear" title="Clear the list" aria-label="Clear the list" hidden>
+        <button
+          class="mwn-icon-btn"
+          id="mwn-clear"
+          data-t-title="files.clear"
+          title="Clear the list"
+          data-t-aria="files.clear"
+          aria-label="Clear the list"
+          hidden
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
           </svg>
@@ -805,6 +821,7 @@
         id="mwn-drop"
         role="button"
         tabindex="0"
+        data-t-aria="drop.aria"
         aria-label="Add 3MF files: drop them here, or press Enter to choose them"
       >
         <div class="mwn-drop-icon">
@@ -812,37 +829,51 @@
             <path d="M12 16V4m0 0-4 4m4-4 4 4M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
           </svg>
         </div>
-        <strong>Drop 3MF files</strong>
-        <span>or <u>choose files</u> · they stay in your browser</span>
+        <strong><span data-t="drop.title">Drop 3MF files</span></strong>
+        <span
+          >or <u><span data-t="drop.choose">choose files</span></u> · they stay in your browser</span
+        >
       </div>
       <input type="file" id="mwn-input" accept=".3mf" multiple hidden />
       <button class="mwn-btn" id="mwn-library">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path d="M4 5a1 1 0 0 1 1-1h4l2 2h8a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
         </svg>
-        From your library
+        <span data-t="drop.fromLibrary">From your library</span>
       </button>
-      <ul class="mwn-list" id="mwn-list" aria-label="Files to normalize"></ul>
+      <ul class="mwn-list" id="mwn-list" data-t-aria="aria.filesList" aria-label="Files to normalize"></ul>
     </section>
 
-    <section class="mwn-panel mwn-detail" id="mwn-detail" aria-label="Selected file" aria-live="polite"></section>
+    <section
+      class="mwn-panel mwn-detail"
+      id="mwn-detail"
+      data-t-aria="aria.selectedFile"
+      aria-label="Selected file"
+      aria-live="polite"
+    ></section>
   </div>
 
   <div class="mwn-veil" id="mwn-veil" hidden>
     <div>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-        <path d="M12 16V4m0 0-4 4m4-4 4 4M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
-      </svg>
-      Drop to normalize
+        <path d="M12 16V4m0 0-4 4m4-4 4 4M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" /></svg
+      ><span data-t="drop.over">Drop to normalize</span>
     </div>
   </div>
 
   <div class="mwn-library" id="mwn-picker" role="dialog" aria-modal="true" aria-labelledby="mwn-pickerTitle" hidden>
     <div class="mwn-library-card">
       <div class="mwn-head">
-        <h2 id="mwn-pickerTitle">3MF files in your library</h2>
+        <h2 id="mwn-pickerTitle"><span data-t="library.title">3MF files in your library</span></h2>
         <span class="mwn-spacer"></span>
-        <button class="mwn-icon-btn" id="mwn-pickerClose" title="Close" aria-label="Close">
+        <button
+          class="mwn-icon-btn"
+          id="mwn-pickerClose"
+          data-t-title="common.close"
+          title="Close"
+          data-t-aria="common.close"
+          aria-label="Close"
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M6 6l12 12M18 6 6 18" />
           </svg>
@@ -852,11 +883,13 @@
         class="mwn-search"
         id="mwn-pickerSearch"
         type="search"
+        data-t-placeholder="library.search"
         placeholder="Search your models"
+        data-t-aria="library.search"
         aria-label="Search your models"
         autocomplete="off"
       />
-      <ul class="mwn-models" id="mwn-pickerList" aria-label="Models with 3MF files"></ul>
+      <ul class="mwn-models" id="mwn-pickerList" data-t-aria="library.aria" aria-label="Models with 3MF files"></ul>
     </div>
   </div>
 
