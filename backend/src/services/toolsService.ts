@@ -35,11 +35,17 @@ import {
   SLUG,
   TOOL_FILE_MAX_BYTES,
   TOOL_FILES_MAX_BYTES,
+  TOOL_LOCALE_MAX_BYTES,
+  TOOL_LOCALES_MAX_BYTES,
   TOOL_SCREENSHOT_EXTS,
   TOOL_SCREENSHOT_MAX_BYTES,
+  toolLocaleFile,
+  toolLocalesSchema,
   toolManifestSchema,
   toolModelFiles,
   validateCode,
+  validateToolLocale,
+  type ToolLocales,
   type ToolManifest,
   type ToolModelSpec,
 } from "./toolFormat";
@@ -80,13 +86,22 @@ async function toolUsers(): Promise<string[]> {
 
 // --- What the frontend gets -----------------------------------------------------------------------------------------
 
-const shaOf = (manifest: ToolManifest, script: string, html: string | null) =>
+// The labels are part of it: a tool whose words changed has changed, and the window runs it again.
+const shaOf = (manifest: ToolManifest, script: string, html: string | null, locales: ToolLocales = {}) =>
   createHash("sha256")
     .update(JSON.stringify(manifest))
     .update("\0")
     .update(script)
     .update("\0")
     .update(html ?? "")
+    .update("\0")
+    .update(
+      JSON.stringify(
+        Object.keys(locales)
+          .toSorted()
+          .map((code) => [code, locales[code]]),
+      ),
+    )
     .digest("hex");
 
 /** Of the models a tool brings: the same spec is the same models, so an update that leaves it alone keeps them. */
@@ -100,11 +115,20 @@ export type ToolOut = {
   manifest: ToolManifest;
   script: string;
   html: string | null;
+  /** Its labels by language; `{}` for a tool that ships none. */
+  locales: ToolLocales;
   sha: string;
   updatedAt: string;
   /** This user's collection of the models the tool brings, once it has one. */
   collectionId: string | null;
 };
+
+/** The stored labels, ignoring anything that no longer fits the shape rather than refusing the whole tool. */
+function localesOf(tool: Pick<Tool, "locales">): ToolLocales {
+  if (!tool.locales) return {};
+  const parsed = toolLocalesSchema.safeParse(tool.locales);
+  return parsed.success ? parsed.data : {};
+}
 
 function manifestOf(tool: Pick<Tool, "manifest">): ToolManifest | null {
   const parsed = toolManifestSchema.safeParse(tool.manifest);
@@ -121,6 +145,7 @@ function out(tool: Tool, collectionId: string | null = null): ToolOut | null {
     manifest,
     script: tool.script,
     html: tool.html,
+    locales: localesOf(tool),
     sha: tool.sha,
     updatedAt: tool.updatedAt.toISOString(),
     collectionId,
@@ -161,7 +186,7 @@ export async function usableTool(user: ToolUser, toolId: string): Promise<Tool &
 
 export async function saveOwnTool(
   user: ToolUser,
-  input: { slug: string; manifest: ToolManifest; script: string; html?: string | null },
+  input: { slug: string; manifest: ToolManifest; script: string; html?: string | null; locales?: ToolLocales },
 ): Promise<ToolOut> {
   const access = await assertCanUseTools(user);
   if (!access.canCreate)
@@ -178,13 +203,37 @@ export async function saveOwnTool(
         ...input.manifest,
         author: (await prisma.user.findUnique({ where: { id: user.id } }))?.displayName.slice(0, 60),
       };
-  const data = { manifest, script: input.script, html, sha: shaOf(manifest, input.script, html) };
+  const locales = ownLocales(input.locales);
+  const data = {
+    manifest: { ...manifest, locales: Object.keys(locales) },
+    script: input.script,
+    html,
+    locales: locales as Prisma.InputJsonValue,
+    sha: shaOf(manifest, input.script, html, locales),
+  };
   const tool = await prisma.tool.upsert({
     where: { scope_slug: { scope: user.id, slug: input.slug } },
     create: { source: "own", scope: user.id, userId: user.id, slug: input.slug, ...data },
     update: data,
   });
   return out(tool)!;
+}
+
+/** A user's own labels, checked the way a repository tool's files are, and held to the same total size. */
+function ownLocales(raw: ToolLocales | undefined): ToolLocales {
+  if (!raw) return {};
+  const parsed = toolLocalesSchema.safeParse(raw);
+  if (!parsed.success) throw new HttpError(400, "Those labels aren't right");
+  const size = JSON.stringify(parsed.data).length;
+  if (size > TOOL_LOCALES_MAX_BYTES) {
+    throw new HttpError(400, `The labels are larger than ${Math.round(TOOL_LOCALES_MAX_BYTES / 1024)} KB`);
+  }
+  for (const [code, words] of Object.entries(parsed.data)) {
+    if (JSON.stringify(words).length > TOOL_LOCALE_MAX_BYTES) {
+      throw new HttpError(400, `The ${code} labels are larger than ${Math.round(TOOL_LOCALE_MAX_BYTES / 1024)} KB`);
+    }
+  }
+  return parsed.data;
 }
 
 export async function deleteOwnTool(userId: string, id: string): Promise<void> {
@@ -219,7 +268,14 @@ export function toolsSource(): { kind: "folder" | "repository"; location: string
 }
 const TEXT_MAX_BYTES = 1024 * 1024;
 
-type RepoTool = { slug: string; manifest: ToolManifest; script: string; html: string | null; sha: string };
+type RepoTool = {
+  slug: string;
+  manifest: ToolManifest;
+  script: string;
+  html: string | null;
+  locales: ToolLocales;
+  sha: string;
+};
 const repoCache = new TtlCache<RepoTool[] | RepoTool>(REPO_TTL_MS);
 
 let fetchImpl: typeof fetch = (...args) => fetch(...args);
@@ -252,6 +308,31 @@ async function repoFile(file: string, maxBytes: number): Promise<Buffer | null> 
 
 const repoText = async (file: string) => (await repoFile(file, TEXT_MAX_BYTES))?.toString("utf8") ?? null;
 
+/**
+ * The label files a tool's metadata declares, read as its other files are. One that is missing or malformed is
+ * left out with a note rather than failing the whole tool, so a half-translated tool still installs in the
+ * languages it does have.
+ */
+async function fetchRepoLocales(slug: string, manifest: ToolManifest): Promise<ToolLocales> {
+  const locales: ToolLocales = {};
+  let total = 0;
+  for (const code of manifest.locales) {
+    const file = toolLocaleFile(code);
+    const buffer = await repoFile(`${slug}/${file}`, TOOL_LOCALE_MAX_BYTES).catch(() => null);
+    if (!buffer) continue;
+    total += buffer.byteLength;
+    if (total > TOOL_LOCALES_MAX_BYTES) {
+      throw new HttpError(502, `${slug}'s labels are larger than ${Math.round(TOOL_LOCALES_MAX_BYTES / 1024)} KB`);
+    }
+    try {
+      locales[code] = validateToolLocale(code, JSON.parse(buffer.toString("utf8")));
+    } catch {
+      // A language that won't read is simply one the tool doesn't have.
+    }
+  }
+  return locales;
+}
+
 /** `fresh` for an install, which takes the repository's files as they are now, not as they were an hour ago. */
 async function fetchRepoTool(slug: string, fresh = false): Promise<RepoTool> {
   // A folder on disk is read afresh each time, so a tool being worked on shows its changes at once.
@@ -263,7 +344,8 @@ async function fetchRepoTool(slug: string, fresh = false): Promise<RepoTool> {
   const html = await repoText(`${slug}/tool.html`);
   const manifest = parseToolManifest(metadata);
   validateCode(script, html);
-  const tool = { slug, manifest, script, html, sha: shaOf(manifest, script, html) };
+  const locales = await fetchRepoLocales(slug, manifest);
+  const tool = { slug, manifest, script, html, locales, sha: shaOf(manifest, script, html, locales) };
   repoCache.set(`tool:${slug}`, tool);
   return tool;
 }
@@ -444,6 +526,7 @@ export async function installRepoTool(slug: string, adminId: string): Promise<Ad
     manifest: repo.manifest as Prisma.InputJsonValue,
     script: repo.script,
     html: repo.html,
+    locales: repo.locales as Prisma.InputJsonValue,
     sha: repo.sha,
     modelsSha,
     ...(modelsChanged ? { modelsFailed: {} } : {}),

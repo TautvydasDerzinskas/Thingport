@@ -2779,7 +2779,27 @@
           "fetch": "Užklausa įrankio nurodytam serveriui, kurią atlieka Thingport.",
           "api": "Paties Thingport API naudotojo vardu.",
           "download": "Duoda naudotojui failą pasilikti.",
-          "ui": "Pranešimas, patvirtinimas arba lango uždarymas."
+          "ui": "Pranešimas, patvirtinimas arba lango uždarymas.",
+          "translate": "Jūsų įrankio žodžiai iš jo užrašų, vartotojo kalba.",
+          "language": "Kalba, kuria rodomas Thingport, ir visos jo turimos kalbos.",
+          "library": "Sunki biblioteka, kurią turi Thingport: Three.js, opentype, Manifold, jo šriftai."
+        },
+        "labels": {
+          "tab": "Užrašai",
+          "help": "Žodžiai, kuriuos rodo jūsų įrankis — po failą kiekvienai kalbai. Scenarijus jų prašo pagal raktą su t(\"raktas\"), tad jie lieka atskirai nuo logikos ir verčiami jos neliečiant.",
+          "empty": "Jūsų įrankis dar neturi užrašų. Laikykite rodomus žodžius po failą kiekvienai kalbai, o scenarijus jų prašys pagal raktą su t(\"raktas\") — tad vertėjui niekada nereikės atverti scenarijaus.",
+          "start": "Pradėti nuo anglų kalbos",
+          "add": "Pridėti kalbą",
+          "file": "{{code}} užrašai JSON formatu",
+          "fallbackNote": "Anglų kalba yra atsarginė: ko trūksta kitoje kalboje, rodoma iš čia.",
+          "untranslated_one": "{{count}} užrašas šia kalba dar neturi teksto.",
+          "untranslated_few": "{{count}} užrašai šia kalba dar neturi teksto.",
+          "untranslated_many": "{{count}} užrašo šia kalba dar neturi teksto.",
+          "untranslated_other": "{{count}} užrašų šia kalba dar neturi teksto.",
+          "badJson": "Tai dar nėra taisyklingas JSON, tad nebus įrašyta.",
+          "badShape": "Užrašai — tai paprastas objektas, siejantis raktus su tekstu, pvz. { \"save\": \"Įrašyti\" }.",
+          "removeTitle": "Pašalinti {{name}} užrašus?",
+          "removeBody": "Failas ir jo žodžiai dings. Kitos kalbos liks."
         }
       },
       "screenshots": {

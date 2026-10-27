@@ -9,6 +9,7 @@ import { useConfirm } from "../ConfirmProvider";
 import { useToast } from "../ToastProvider";
 import CollectionPickerDialog from "./CollectionPickerDialog";
 import { buildToolSdk, type RunnableTool, type ToolCollection, type ToolTheme } from "./toolSdk";
+import { SUPPORTED_LANGUAGES, matchLanguage } from "../../constants/languages";
 
 type Mount = (thingport: Record<string, unknown>) => unknown;
 
@@ -39,7 +40,7 @@ type Props = {
  * closes, the theme changes or the script does.
  */
 export default function ToolRunner({ tool, onClose }: Props) {
-  const { t } = useTranslation("app");
+  const { t, i18n } = useTranslation("app");
   const muiTheme = useTheme();
   const navigate = useNavigate();
   const toast = useToast();
@@ -65,6 +66,8 @@ export default function ToolRunner({ tool, onClose }: Props) {
     fontFamily: String(muiTheme.typography.fontFamily),
   };
   const themeKey = JSON.stringify(theme);
+  // The language a tool is handed, matched to one Thingport has; changing it runs the tool again, as the theme does.
+  const language = matchLanguage(i18n.language);
   // Read through refs, so the script isn't run again when the window's own callbacks change.
   const latest = useRef({ onClose, navigate, toast, confirm, t });
   useEffect(() => {
@@ -111,6 +114,8 @@ export default function ToolRunner({ tool, onClose }: Props) {
       root,
       selector: `#${rootId}`,
       theme: JSON.parse(themeKey) as ToolTheme,
+      language,
+      languages: SUPPORTED_LANGUAGES,
       size: () => size,
       onResize: (listener) => {
         listeners.add(listener);
@@ -161,9 +166,10 @@ export default function ToolRunner({ tool, onClose }: Props) {
       }
       root.innerHTML = "";
     };
-    // The tool runs again when its code or the theme changes; the objects themselves are rebuilt each render.
+    // The tool runs again when its code, the theme or the language changes; the objects themselves are rebuilt
+    // each render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tool.sha, tool.id, themeKey, rootId]);
+  }, [tool.sha, tool.id, themeKey, language, rootId]);
 
   return (
     <Box sx={{ position: "relative", height: "100%", minHeight: 0 }}>

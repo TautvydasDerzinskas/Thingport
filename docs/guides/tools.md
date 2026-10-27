@@ -42,6 +42,10 @@ With **Users' own tools** on, **New tool** on the Tools page opens the editor:
 - **Details**: its name, icon, version, author, the size its window opens at, and the hosts it may reach.
 - **Script**: an ES module. The editor starts with a working tool, _Cube maker_, that uses most of what a tool can do;
   the **SDK reference** beside it lists the rest.
+- **Labels**: the words the tool shows, one file per language, so they aren't buried in the script. The script asks
+  for them by key with `t("key")`. English is the fallback, key by key, so a half-finished translation shows its own
+  words where it has them and English where it doesn't. **＋** adds a language, starting from English's keys with the
+  words blanked.
 - **HTML & CSS**: markup and a `<style>` block, put into the window before the script runs. Scope the styles to a class
   of your own so they stay in the tool. The theme is already on the window as CSS variables — `--tp-accent`,
   `--tp-accent-ink`, `--tp-background`, `--tp-paper`, `--tp-text`, `--tp-text-muted`, `--tp-divider`, `--tp-error`,
@@ -72,28 +76,91 @@ export default async function mount(thingport) {
 }
 ```
 
-| `thingport.`                                                                                                                      | What it is                                                                                                                 |
-| --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `root`, `selector`                                                                                                                | The window's element, with the tool's HTML in it, and a CSS selector for it                                                |
-| `theme`                                                                                                                           | `{ mode, primary, primaryContrast, background, paper, text, textSecondary, divider, error, warning, success, fontFamily }` |
-| `size`, `onResize(fn)`                                                                                                            | The window's size in pixels, and a way to hear when it changes                                                             |
-| `tool`                                                                                                                            | `{ id, slug, name, version, source }`                                                                                      |
-| `storage.get(key)`, `set(key, value)`, `remove(key)`, `keys()`                                                                    | JSON kept for the user, by key: up to 1 MB a value and 20 MB a tool                                                        |
-| `collections.list()`, `get(id)`, `create({ name, description, tags })`                                                            | The user's collections                                                                                                     |
-| `collections.models(id)`, `add(id, modelIds)`, `remove(id, modelIds)`                                                             | A collection's models                                                                                                      |
-| `collections.pick({ title })`                                                                                                     | Asks the user for one of their collections, or a new one; `null` when they cancel                                          |
-| `models.list({ q, tags, collectionId, limit, offset })`, `search(q)`, `get(id)`                                                   | Models in the library                                                                                                      |
-| `models.file(id, fileId?)`                                                                                                        | One of a model's files, as an `ArrayBuffer`                                                                                |
-| `models.create({ name, description, tags, collectionId, files })`                                                                 | A new model; each file `{ name, data }`, data a `Blob`, `ArrayBuffer` or string                                            |
-| `models.addFiles(id, files)`, `addImages(id, images)`, `replaceFile(id, fileId, file)`, `update(id, { name, description, tags })` | Changing a model the user owns: its files, gallery pictures (the first is its cover), name, description and tags           |
-| `models.open(id)`                                                                                                                 | Closes the tool and opens the model's page                                                                                 |
-| `toolModels()`                                                                                                                    | The models a repository tool brings: `{ key, name, source, printId }`, `printId` null until it's come in                   |
-| `fetch(url, init)`                                                                                                                | A request through Thingport to one of the tool's declared hosts, answered like `fetch`                                     |
-| `api(path, init)`                                                                                                                 | Thingport's own API, as the user                                                                                           |
-| `download({ name, data })`                                                                                                        | Hands the user a file                                                                                                      |
-| `ui.toast(message, severity)`, `ui.confirm({ title, message })`, `ui.close()`                                                     | Thingport's own toast, confirmation and closing the window                                                                 |
+| `thingport.`                                                                                                                      | What it is                                                                                                                                                                                                                                                                |
+| --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `root`, `selector`                                                                                                                | The window's element, with the tool's HTML in it, and a CSS selector for it                                                                                                                                                                                               |
+| `theme`                                                                                                                           | `{ mode, primary, primaryContrast, background, paper, text, textSecondary, divider, error, warning, success, fontFamily }`                                                                                                                                                |
+| `size`, `onResize(fn)`                                                                                                            | The window's size in pixels, and a way to hear when it changes                                                                                                                                                                                                            |
+| `tool`                                                                                                                            | `{ id, slug, name, version, source }`                                                                                                                                                                                                                                     |
+| `storage.get(key)`, `set(key, value)`, `remove(key)`, `keys()`                                                                    | JSON kept for the user, by key: up to 1 MB a value and 20 MB a tool                                                                                                                                                                                                       |
+| `collections.list()`, `get(id)`, `create({ name, description, tags })`                                                            | The user's collections                                                                                                                                                                                                                                                    |
+| `collections.models(id)`, `add(id, modelIds)`, `remove(id, modelIds)`                                                             | A collection's models                                                                                                                                                                                                                                                     |
+| `collections.pick({ title })`                                                                                                     | Asks the user for one of their collections, or a new one; `null` when they cancel                                                                                                                                                                                         |
+| `models.list({ q, tags, collectionId, limit, offset })`, `search(q)`, `get(id)`                                                   | Models in the library                                                                                                                                                                                                                                                     |
+| `models.file(id, fileId?)`                                                                                                        | One of a model's files, as an `ArrayBuffer`                                                                                                                                                                                                                               |
+| `models.create({ name, description, tags, collectionId, files })`                                                                 | A new model; each file `{ name, data }`, data a `Blob`, `ArrayBuffer` or string                                                                                                                                                                                           |
+| `models.addFiles(id, files)`, `addImages(id, images)`, `replaceFile(id, fileId, file)`, `update(id, { name, description, tags })` | Changing a model the user owns: its files, gallery pictures (the first is its cover), name, description and tags                                                                                                                                                          |
+| `models.open(id)`                                                                                                                 | Closes the tool and opens the model's page                                                                                                                                                                                                                                |
+| `toolModels()`                                                                                                                    | The models a repository tool brings: `{ key, name, source, printId }`, `printId` null until it's come in                                                                                                                                                                  |
+| `library(name)`, `libraries`                                                                                                      | A library Thingport carries, so a tool needn't: `"three"` to build or draw geometry, `"opentype"` for a font's real outlines, `"manifold"` for watertight solid modelling, `"fonts"` for the typefaces it ships. Loaded when the first tool asks and shared with the rest |
+| `fetch(url, init)`                                                                                                                | A request through Thingport to one of the tool's declared hosts, answered like `fetch`                                                                                                                                                                                    |
+| `api(path, init)`                                                                                                                 | Thingport's own API, as the user                                                                                                                                                                                                                                          |
+| `download({ name, data })`                                                                                                        | Hands the user a file                                                                                                                                                                                                                                                     |
+| `ui.toast(message, severity)`, `ui.confirm({ title, message })`, `ui.close()`                                                     | Thingport's own toast, confirmation and closing the window                                                                                                                                                                                                                |
+| `t(key, vars)`                                                                                                                    | The tool's own words, in the user's language: `t("rings.ring", { n: 2 })`                                                                                                                                                                                                 |
+| `language`, `languages`                                                                                                           | The language Thingport is in (`"lt"`), and every language it has: `{ code, label, englishName }`                                                                                                                                                                          |
 
 A model's files are `{ id, name, size, url }`; a model a tool brought has `toolOwned: true` and can't be changed.
+
+### The words a tool shows
+
+A tool's labels don't belong in its script. Buried there they can't be read as text, handed to a translator, or
+added to without touching the logic. So they sit beside it, one file per language:
+
+```
+tools/bin-planner/
+  tool.json          "locales": ["en", "lt"]
+  tool.js            t("save.title")
+  locales/en.json    { "save.title": "Save to Thingport", "rings.ring": "Ring {n}" }
+  locales/lt.json    { "save.title": "Įrašyti į Thingport", "rings.ring": "Žiedas {n}" }
+```
+
+Each file is a flat map of key to sentence — flat, because a tool looks a label up by its whole key, and because
+nesting invites a file that is really a program. `{name}` in a sentence is filled in from what `t` is given.
+Thingport reads the file matching the user's language, and hands the tool `t`:
+
+```js
+export default async function mount({ t, language }) {
+  heading.textContent = t("save.title");
+  badge.textContent = t("rings.ring", { n: 2 }); // "Žiedas 2"
+}
+```
+
+- The metadata's `locales` lists the languages the folder has; a language it names without a file is an error, not
+  a shrug, so a missing translation can't install quietly.
+- **English is the fallback, key by key**: a language that is half done shows its own words where it has them and
+  English where it doesn't. A tool with labels needs `en`.
+- A key with no words anywhere comes back as itself, so a label nobody wrote shows up in the window.
+- The user changing language runs the tool again, as changing the theme does, so `t` is read once at the top of
+  `mount` rather than watched.
+- A language Thingport doesn't have is simply never asked for; a language the tool doesn't have falls back to
+  English. `languages` lists what Thingport has, if a tool wants to say so itself.
+- At most 128 KB a language and 1 MB in all.
+
+### The libraries a tool can borrow
+
+A tool is one script with a size limit, and a reviewer reads it before it's merged, so the big machinery lives in
+Thingport rather than in the tool: a font parser or a solid modelling kernel is most of a tool's budget on its own,
+and one of them is a WebAssembly binary nobody could read. `library(name)` hands over Thingport's own copy. Nothing
+is fetched until a tool asks, and every tool after that gets the same instance from the same promise, so two tools
+open at once share one download.
+
+| `library(…)` | What comes back                                                                                                 |
+| ------------ | --------------------------------------------------------------------------------------------------------------- |
+| `"three"`    | Three.js, the one Thingport draws models with, plus `mergeGeometries` and `mergeVertices`                       |
+| `"opentype"` | opentype.js: a glyph's real outline, counters and all                                                           |
+| `"manifold"` | Manifold, started and ready: watertight booleans, and the 2D cross-sections and offsetting that go with them    |
+| `"fonts"`    | `{ list, bytes(id), load(id) }` — the typefaces Thingport ships, `load` giving one parsed by the opentype above |
+
+```js
+const [{ CrossSection }, fonts] = await Promise.all([thingport.library("manifold"), thingport.library("fonts")]);
+const font = await fonts.load(fonts.list[0].id); // or fonts.bytes(id) for the file itself
+```
+
+The fonts are all static faces, under the Open Font License, listed in
+[`frontend/src/assets/toolFonts`](../../frontend/src/assets/toolFonts). A variable font is deliberately not among
+them: its outlines are only right once its deltas have been applied, which the parser doesn't do, so letters come
+back collapsed and a counter that has lost its winding fills in when it's made solid.
 
 ## Sharing a tool
 
@@ -109,6 +176,7 @@ A tool in the repository is a folder under [`tools/`](../../tools), listed in it
     "author": "Your Name",
     "window": { "width": 1100, "height": 720 },
     "hosts": [],
+    "locales": ["en", "lt"],
     "collection": {
       "name": "Bin parts",
       "models": [
@@ -125,6 +193,8 @@ A tool in the repository is a folder under [`tools/`](../../tools), listed in it
 "caption" }`, which admins look through before installing it. The `iconUrl` may also be an SVG as a `data:image/svg+xml` address, so the icon comes with the tool.
 
 - `tool.js` and, optionally, `tool.html`.
+- `locales/<code>.json`: the words it shows, for each language its metadata's `locales` names. See
+  [the words a tool shows](#the-words-a-tool-shows).
 - `README.md`: what it does, what it reaches, and where its models come from.
 
 Open a pull request; a check validates the folder (`npx tsx scripts/validateTools.ts` in `backend/` runs it locally), and

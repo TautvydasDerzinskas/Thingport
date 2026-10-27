@@ -42,6 +42,8 @@ const saveSchema = z.object({
   metadata: z.string().max(200_000),
   script: z.string(),
   html: z.string().nullable().optional(),
+  /** Its labels by language, as the editor's Labels panel keeps them; checked in the service. */
+  locales: z.record(z.string(), z.record(z.string(), z.string())).optional(),
 });
 router.put(
   "/tools",
@@ -53,6 +55,7 @@ router.put(
         manifest: parseToolManifest(body.metadata),
         script: body.script,
         html: body.html,
+        locales: body.locales,
       }),
     );
   }),

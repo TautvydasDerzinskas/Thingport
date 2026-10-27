@@ -32,7 +32,14 @@ export type ToolManifest = {
   screenshots?: ToolScreenshot[];
   /** The models it brings, in a collection of their own; only a repository tool has them. */
   collection?: { name: string; description?: string; models: ToolModelSpec[] };
+  /** The languages it has labels for, as `locales/<code>.json` beside tool.json. */
+  locales?: string[];
 };
+
+/** One language's labels: a flat map of key to sentence, as `locales/<code>.json` holds it. */
+export type ToolLocale = Record<string, string>;
+/** A tool's labels, by language code. */
+export type ToolLocales = Record<string, ToolLocale>;
 
 export type Tool = {
   id: string;
@@ -42,6 +49,8 @@ export type Tool = {
   manifest: ToolManifest;
   script: string;
   html: string | null;
+  /** Its labels by language; empty for a tool that ships none. */
+  locales: ToolLocales;
   sha: string;
   updatedAt: string;
   /** The user's collection of the models the tool brings, once they have it. */
@@ -109,7 +118,13 @@ export const toolsApi = {
   },
 
   /** Creates or replaces one of the user's own tools, by its slug. The metadata is JSON or YAML text. */
-  save: async (tool: { slug: string; metadata: string; script: string; html: string | null }): Promise<Tool> => {
+  save: async (tool: {
+    slug: string;
+    metadata: string;
+    script: string;
+    html: string | null;
+    locales?: ToolLocales;
+  }): Promise<Tool> => {
     const res = await fetch(`${apiBase()}/tools`, { method: "PUT", ...json(tool) });
     if (!res.ok) return failed(res, "Failed to save the tool");
     return res.json();

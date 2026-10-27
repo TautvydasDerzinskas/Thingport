@@ -1,5 +1,6 @@
-// The format of a tool: its metadata, script and HTML, and for one from the repository the models it brings. Kept
-// apart from the service so scripts/validateTools.ts can check the repository's tools folder without a database.
+// The format of a tool: its metadata, script and HTML, its labels, and for one from the repository the models it
+// brings. Kept apart from the service so scripts/validateTools.ts can check the repository's tools folder without a
+// database.
 
 import path from "node:path";
 import { parse as parseYaml } from "yaml";
@@ -21,6 +22,9 @@ export const TOOL_SCREENSHOT_EXTS = new Map([
   [".webp", "image/webp"],
 ]);
 export const TOOL_SCREENSHOT_MAX_BYTES = 5 * 1024 * 1024;
+/** One language's labels, as a file and as the lot of them: enough for a wordy tool, not enough to hide a payload. */
+export const TOOL_LOCALE_MAX_BYTES = 128 * 1024;
+export const TOOL_LOCALES_MAX_BYTES = 1024 * 1024;
 export const TOOL_FILE_MAX_BYTES = 50 * 1024 * 1024;
 export const TOOL_FILES_MAX_BYTES = 250 * 1024 * 1024;
 
@@ -42,6 +46,35 @@ const modelFile = z
     (file) => TOOL_MODEL_EXTS.has(path.extname(file).toLowerCase()),
     "Not a 3D model file (.stl, .3mf, .step, .obj)",
   );
+
+/** A language code as Thingport writes them: "en", "lt", "pt-BR". */
+export const LANGUAGE = /^[a-z]{2,3}(-[A-Za-z0-9]{2,8})?$/;
+
+/**
+ * One language's labels: a flat map of key to sentence. Flat because a tool looks a label up by its whole key
+ * ("rings.ring"), and because nesting invites a file that is really a program.
+ */
+export const toolLocaleSchema = z.record(
+  z
+    .string()
+    .trim()
+    .min(1)
+    .max(200)
+    .regex(/^[A-Za-z0-9][\w.-]*$/, "Not a label key"),
+  z.string().max(2000),
+);
+export type ToolLocale = z.infer<typeof toolLocaleSchema>;
+
+/** Every language a tool has, by code. */
+export const toolLocalesSchema = z.record(z.string().trim().regex(LANGUAGE, "Not a language code"), toolLocaleSchema);
+export type ToolLocales = z.infer<typeof toolLocalesSchema>;
+
+export function validateToolLocale(code: string, raw: unknown): ToolLocale {
+  if (!LANGUAGE.test(code)) throw new HttpError(400, `"${code}" isn't a language code`);
+  const parsed = toolLocaleSchema.safeParse(raw);
+  if (!parsed.success) throw new HttpError(400, `The ${code} labels aren't right: ${describeIssues(parsed.error)}`);
+  return parsed.data;
+}
 
 const screenshotSchema = z.object({
   /** An image beside tool.json, e.g. "screenshots/plan.png". */
@@ -96,6 +129,11 @@ export const toolManifestSchema = z.object({
   hosts: z.array(z.string().trim().toLowerCase().regex(HOST, "Not a host name")).max(20).default([]),
   /** Pictures of it at work, for an admin to look at before installing it. */
   screenshots: z.array(screenshotSchema).max(8).default([]),
+  /**
+   * The languages it has labels for, as `locales/<code>.json` beside tool.json. Thingport reads the one matching
+   * the user's language and hands the tool `t()`; "en" is the fallback, so a tool with labels wants one.
+   */
+  locales: z.array(z.string().trim().regex(LANGUAGE, "Not a language code")).max(40).default([]),
   /** The models it needs, kept in a collection of their own in every user's library that can use tools: only a
    *  repository tool brings them, as its files are what the review reads. */
   collection: collectionSchema.optional(),
@@ -118,6 +156,9 @@ export function validateToolManifest(raw: unknown): ToolManifest {
   if (!parsed.success) throw new HttpError(400, `The metadata isn't right: ${describeIssues(parsed.error)}`);
   return parsed.data;
 }
+
+/** Where a language's labels live in the tool's folder. */
+export const toolLocaleFile = (code: string): string => `locales/${code}.json`;
 
 /** Every file its models name, once. */
 export function toolModelFiles(manifest: ToolManifest): string[] {

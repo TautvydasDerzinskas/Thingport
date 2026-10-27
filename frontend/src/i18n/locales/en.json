@@ -2694,7 +2694,25 @@
           "fetch": "A request to a host the tool declares, made by Thingport.",
           "api": "Thingport's own API, as the user.",
           "download": "Hands the user a file to keep.",
-          "ui": "A toast, a confirmation, or closing the window."
+          "ui": "A toast, a confirmation, or closing the window.",
+          "translate": "Your tool's own words, from its Labels, in the user's language.",
+          "language": "The language Thingport is in, and every language it has.",
+          "library": "A heavy library Thingport carries: Three.js, opentype, Manifold, its fonts."
+        },
+        "labels": {
+          "tab": "Labels",
+          "help": "The words your tool shows, one file per language. The script asks for them by key with t(\"key\"), so they stay out of the logic and can be translated without touching it.",
+          "empty": "Your tool has no labels yet. Keep the words it shows in a file per language, and the script asks for them by key with t(\"key\") — so a translator never has to open the script.",
+          "start": "Start with English",
+          "add": "Add a language",
+          "file": "The {{code}} labels, as JSON",
+          "fallbackNote": "English is the fallback: anything another language is missing is shown from here.",
+          "untranslated_one": "{{count}} label still has no words in this language.",
+          "untranslated_other": "{{count}} labels still have no words in this language.",
+          "badJson": "This isn't valid JSON yet, so it won't be saved.",
+          "badShape": "Labels are a flat object of keys to text, like { \"save\": \"Save\" }.",
+          "removeTitle": "Remove the {{name}} labels?",
+          "removeBody": "The file and its words go. The other languages stay."
         }
       },
       "screenshots": {

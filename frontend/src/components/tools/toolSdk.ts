@@ -2,8 +2,10 @@ import { apiBase } from "../../api/client";
 import { collectionsApi, type Collection } from "../../api/collections";
 import { printsApi, type Print } from "../../api/prints";
 import { searchApi } from "../../api/search";
-import { toolsApi, type ToolManifest, type ToolModelCopy } from "../../api/tools";
+import { toolsApi, type ToolLocales, type ToolManifest, type ToolModelCopy } from "../../api/tools";
 import { headerRecord } from "../../api/widgets";
+import { TOOL_LIBRARIES, toolLibrary } from "./toolLibraries";
+import { toolTranslator } from "./toolTranslate";
 import { authHeaders } from "../../utils/auth";
 
 // The `thingport` object a tool's script gets: what it may do with the user's library, through the same API the app
@@ -19,6 +21,8 @@ export type RunnableTool = {
   manifest: ToolManifest;
   script: string;
   html: string | null;
+  /** Its labels by language, which `t()` reads. */
+  locales?: ToolLocales;
   sha: string;
 };
 
@@ -40,6 +44,15 @@ export type ToolTheme = {
 };
 
 /** A model as a tool sees it. */
+/** A language Thingport has, as a tool sees it. */
+export type ToolLanguage = {
+  code: string;
+  /** Named in itself ("Lietuvių"), so it reads from any UI language. */
+  label: string;
+  /** Named in English. */
+  englishName: string;
+};
+
 export type ToolModel = {
   id: string;
   name: string;
@@ -122,13 +135,15 @@ type Build = {
   root: HTMLElement;
   selector: string;
   theme: ToolTheme;
+  language: string;
+  languages: ToolLanguage[];
   size: () => { width: number; height: number };
   onResize: (listener: (size: { width: number; height: number }) => void) => () => void;
   ui: ToolUi;
 };
 
 /** The object a tool's default export is called with. */
-export function buildToolSdk({ tool, root, selector, theme, size, onResize, ui }: Build) {
+export function buildToolSdk({ tool, root, selector, theme, language, languages, size, onResize, ui }: Build) {
   // An unsaved tool's data lasts as long as its preview does.
   const draftData = new Map<string, unknown>();
   const saved = (what: string) => {
@@ -254,7 +269,33 @@ export function buildToolSdk({ tool, root, selector, theme, size, onResize, ui }
     root,
     /** A CSS selector for `root`, to scope the tool's styles. */
     selector,
+    /**
+     * A library Thingport carries, for the jobs a tool can't fit inside its own script: `"three"` to build or draw
+     * geometry, `"opentype"` to read a font's real outlines, `"manifold"` for solid modelling that stays
+     * watertight, `"fonts"` for the typefaces Thingport carries. Fetched the first time any tool asks and shared
+     * with every tool after that.
+     */
+    library: (name: string) => toolLibrary(name),
+    /** Which libraries `library()` knows. */
+    libraries: TOOL_LIBRARIES,
     theme,
+    /**
+     * The language Thingport is in, as a code like `"en"` or `"lt"`, already matched to one it has (a browser
+     * asking for `"pt-BR"` gets `"pt"` where that exists, else `"en"`). A tool that shows words of its own should
+     * carry its own translations and pick by this, falling back to English for anything it hasn't got.
+     *
+     * The tool is started again when the user changes language, the same as when they change theme, so this is
+     * read once at the top of `mount` rather than watched.
+     */
+    language,
+    /** Every language Thingport has, English first: `{ code, label, englishName }`. */
+    languages,
+    /**
+     * The tool's own words, from its `locales/<code>.json` files, in the language above. `t("save.title")`, and
+     * `t("rings.ring", { n: 2 })` to fill `{n}` in. Missing words fall back to the tool's English key by key, and
+     * a key with no words anywhere comes back as itself so the gap shows.
+     */
+    t: toolTranslator(tool.locales ?? {}, language),
     get size() {
       return size();
     },

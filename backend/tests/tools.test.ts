@@ -30,7 +30,7 @@ async function register(name: string) {
 }
 
 /** A tools folder as the repository holds it, with one tool that brings two models. */
-function writeRepo(version = "1.0.0", models = ["tile", "clip"]) {
+function writeRepo(version = "1.0.0", models = ["tile", "clip"], locales?: Record<string, Record<string, string>>) {
   fs.rmSync(repo, { recursive: true, force: true });
   fs.mkdirSync(path.join(repo, "planner", "models"), { recursive: true });
   fs.writeFileSync(path.join(repo, "index.json"), JSON.stringify({ tools: ["planner", "missing"] }));
@@ -39,6 +39,7 @@ function writeRepo(version = "1.0.0", models = ["tile", "clip"]) {
     JSON.stringify({
       name: "Planner",
       version,
+      locales: Object.keys(locales ?? {}),
       collection: {
         name: "Planner parts",
         models: models.map((key) => ({ key, name: `Part ${key}`, files: [`models/${key}.stl`] })),
@@ -47,6 +48,12 @@ function writeRepo(version = "1.0.0", models = ["tile", "clip"]) {
   );
   fs.writeFileSync(path.join(repo, "planner", "tool.js"), SCRIPT);
   for (const key of models) fs.writeFileSync(path.join(repo, "planner", "models", `${key}.stl`), STL(key));
+  if (locales) {
+    fs.mkdirSync(path.join(repo, "planner", "locales"), { recursive: true });
+    for (const [code, words] of Object.entries(locales)) {
+      fs.writeFileSync(path.join(repo, "planner", "locales", `${code}.json`), JSON.stringify(words));
+    }
+  }
 }
 
 async function install() {
@@ -109,6 +116,83 @@ describe("metadata", () => {
       '{"name":"x","collection":{"name":"c","models":[{"key":"a","name":"A","source":"https://thangs.com/m/1"}]}}',
     );
     expect(sourced.collection?.models[0].source).toBe("https://thangs.com/m/1");
+  });
+
+  it("takes a list of languages, and refuses one that isn't a language code", () => {
+    expect(parseToolManifest('{"name":"x"}').locales).toEqual([]);
+    expect(parseToolManifest('{"name":"x","locales":["en","lt","pt-BR"]}').locales).toEqual(["en", "lt", "pt-BR"]);
+    expect(() => parseToolManifest('{"name":"x","locales":["english"]}')).toThrow(/language code/);
+  });
+});
+
+describe("labels", () => {
+  it("installs the languages the metadata names, and hands them to the window", async () => {
+    writeRepo("1.0.0", ["tile"], {
+      en: { greeting: "Hello", "rings.ring": "Ring {n}" },
+      lt: { greeting: "Labas" },
+    });
+    await install();
+    const res = await request(app).get("/api/tools").set(auth(memberToken));
+    expect(res.status).toBe(200);
+    const tool = res.body.tools.find((one: { slug: string }) => one.slug === "planner");
+    expect(tool.locales).toEqual({ en: { greeting: "Hello", "rings.ring": "Ring {n}" }, lt: { greeting: "Labas" } });
+    expect(tool.manifest.locales).toEqual(["en", "lt"]);
+  });
+
+  it("leaves out a language whose file is missing or won't read, and keeps the rest", async () => {
+    writeRepo("1.1.0", ["tile"], { en: { greeting: "Hello" } });
+    // Named in the metadata, but the file is nonsense; and "fr" is named with no file at all.
+    const folder = path.join(repo, "planner");
+    fs.writeFileSync(
+      path.join(folder, "tool.json"),
+      JSON.stringify({ name: "Planner", version: "1.1.0", locales: ["en", "lt", "fr"] }),
+    );
+    fs.writeFileSync(path.join(folder, "locales", "lt.json"), "{not json");
+    await install();
+    const res = await request(app).get("/api/tools").set(auth(memberToken));
+    const tool = res.body.tools.find((one: { slug: string }) => one.slug === "planner");
+    expect(Object.keys(tool.locales)).toEqual(["en"]);
+  });
+
+  it("keeps a user's own labels, and refuses ones that aren't text", async () => {
+    await setToolsAccess({ userTools: true });
+    const good = await request(app)
+      .put("/api/tools")
+      .set(auth(memberToken))
+      .send({
+        slug: "labelled",
+        metadata: JSON.stringify({ name: "Labelled" }),
+        script: SCRIPT,
+        locales: { en: { hello: "Hello" }, lt: { hello: "Labas" } },
+      });
+    expect(good.status).toBe(200);
+    expect(good.body.locales).toEqual({ en: { hello: "Hello" }, lt: { hello: "Labas" } });
+    // The metadata is filled in from what was actually saved, so the two can't drift apart.
+    expect(good.body.manifest.locales.toSorted()).toEqual(["en", "lt"]);
+
+    const bad = await request(app)
+      .put("/api/tools")
+      .set(auth(memberToken))
+      .send({
+        slug: "labelled",
+        metadata: JSON.stringify({ name: "Labelled" }),
+        script: SCRIPT,
+        locales: { en: { hello: { nested: "no" } } },
+      });
+    expect(bad.status).toBe(400);
+  });
+
+  it("changes the tool's sha when only its words change, so the window runs it again", async () => {
+    writeRepo("2.0.0", ["tile"], { en: { greeting: "Hello" } });
+    await install();
+    const first = await request(app).get("/api/tools").set(auth(memberToken));
+    const before = first.body.tools.find((one: { slug: string }) => one.slug === "planner").sha;
+
+    writeRepo("2.0.0", ["tile"], { en: { greeting: "Good morning" } });
+    await install();
+    const second = await request(app).get("/api/tools").set(auth(memberToken));
+    const after = second.body.tools.find((one: { slug: string }) => one.slug === "planner").sha;
+    expect(after).not.toBe(before);
   });
 });
 

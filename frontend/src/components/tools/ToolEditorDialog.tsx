@@ -20,13 +20,14 @@ import HelpTip from "../HelpTip";
 import ToolDetailsForm, { fromManifest, problems, toManifest, type ToolDraft } from "./ToolDetailsForm";
 import ToolIcon from "./ToolIcon";
 import ToolRunner from "./ToolRunner";
+import ToolLabelsPanel, { FALLBACK_LANGUAGE, labelProblem, labelsOf, type LabelDrafts } from "./ToolLabelsPanel";
 import { STARTER_HTML, STARTER_MANIFEST, STARTER_SCRIPT } from "./toolStarter";
 import type { RunnableTool } from "./toolSdk";
 
 // Loaded with the editor only, so the Tools page doesn't carry CodeMirror.
 const CodeEditor = lazy(() => import("../CodeEditor"));
 
-type Part = "details" | "script" | "html" | "preview";
+type Part = "details" | "script" | "html" | "labels" | "preview";
 
 // What a tool's script can reach, beside the script: the starter shows each in use.
 const SDK: { name: string; key: string }[] = [
@@ -47,6 +48,9 @@ const SDK: { name: string; key: string }[] = [
   { name: "api(path, init)", key: "api" },
   { name: "download({ name, data })", key: "download" },
   { name: "ui.toast / confirm / close", key: "ui" },
+  { name: "t(key, vars)", key: "translate" },
+  { name: "language, languages", key: "language" },
+  { name: "library(name), libraries", key: "library" },
 ];
 
 // A cheap fingerprint of the code, so the preview runs it again only when it changed.
@@ -104,14 +108,22 @@ function Editor({ tool, onClose, onSaved, onUnauthorized }: Omit<Props, "open">)
   );
   const [script, setScript] = useState(tool?.script ?? STARTER_SCRIPT);
   const [html, setHtml] = useState(tool?.html ?? STARTER_HTML);
+  // Each language's file as text, so a half-typed one can sit there without being thrown away.
+  const [labels, setLabels] = useState<LabelDrafts>(() =>
+    Object.fromEntries(
+      Object.entries(tool?.locales ?? {}).map(([code, words]) => [code, JSON.stringify(words, null, 2)]),
+    ),
+  );
+  const [labelCode, setLabelCode] = useState(FALLBACK_LANGUAGE);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [reference, setReference] = useState(true);
   const [run, setRun] = useState(0);
 
   const errors = useMemo(() => problems(draft), [draft]);
+  const badLabels = useMemo(() => Object.keys(labels).filter((code) => labelProblem(labels[code])), [labels]);
   const manifest = useMemo(() => toManifest(draft), [draft]);
-  const invalid = Object.keys(errors).length > 0 || !script.trim();
+  const invalid = Object.keys(errors).length > 0 || !script.trim() || badLabels.length > 0;
 
   // The preview: built when its tab opens, and again on "Run again".
   const preview = useMemo((): RunnableTool | null => {
@@ -123,11 +135,12 @@ function Editor({ tool, onClose, onSaved, onUnauthorized }: Omit<Props, "open">)
       manifest,
       script,
       html: html.trim() ? html : null,
-      sha: `draft-${fingerprint(`${script}\0${html}\0${run}`)}`,
+      locales: labelsOf(labels),
+      sha: `draft-${fingerprint(`${script}\0${html}\0${JSON.stringify(labels)}\0${run}`)}`,
     };
     // Only what it runs; the details it shows come along with it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [part, script, html, run, tool?.id]);
+  }, [part, script, html, labels, run, tool?.id]);
 
   const save = async () => {
     setSaving(true);
@@ -136,9 +149,10 @@ function Editor({ tool, onClose, onSaved, onUnauthorized }: Omit<Props, "open">)
       onSaved(
         await toolsApi.save({
           slug: draft.slug.trim(),
-          metadata: JSON.stringify(manifest),
+          metadata: JSON.stringify({ ...manifest, locales: Object.keys(labelsOf(labels)) }),
           script,
           html: html.trim() ? html : null,
+          locales: labelsOf(labels),
         }),
       );
     } catch (err) {
@@ -196,6 +210,10 @@ function Editor({ tool, onClose, onSaved, onUnauthorized }: Omit<Props, "open">)
             { value: "details", label: detailErrors ? `${t("tools.editor.details")} •` : t("tools.editor.details") },
             { value: "script", label: t("tools.editor.script") },
             { value: "html", label: t("tools.editor.html") },
+            {
+              value: "labels",
+              label: badLabels.length ? `${t("tools.editor.labels.tab")} •` : t("tools.editor.labels.tab"),
+            },
             { value: "preview", label: t("tools.editor.preview") },
           ]}
         />
@@ -236,6 +254,11 @@ function Editor({ tool, onClose, onSaved, onUnauthorized }: Omit<Props, "open">)
                 onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
               />
             </Box>
+          </Box>
+        )}
+        {part === "labels" && (
+          <Box sx={{ flex: 1, minHeight: 0, mx: 2.5, mb: 2 }}>
+            <ToolLabelsPanel drafts={labels} onChange={setLabels} code={labelCode} onCode={setLabelCode} />
           </Box>
         )}
         {(part === "script" || part === "html") && (

@@ -10,7 +10,8 @@ import { Compartment, EditorState } from "@codemirror/state";
 import { EditorView, keymap, placeholder as placeholderText } from "@codemirror/view";
 import { tags } from "@lezer/highlight";
 
-export type CodeLanguage = "javascript" | "html";
+// JSON is highlighted by the JavaScript grammar, which reads it exactly: no separate mode to carry.
+export type CodeLanguage = "javascript" | "html" | "json";
 
 type Props = {
   value: string;

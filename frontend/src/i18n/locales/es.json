@@ -2708,7 +2708,25 @@
           "fetch": "Una petición a un host que declara la herramienta, hecha por Thingport.",
           "api": "La API propia de Thingport, como el usuario.",
           "download": "Entrega al usuario un archivo para guardar.",
-          "ui": "Un aviso, una confirmación o cerrar la ventana."
+          "ui": "Un aviso, una confirmación o cerrar la ventana.",
+          "translate": "Las palabras de tu herramienta, de sus Etiquetas, en el idioma del usuario.",
+          "language": "El idioma en que está Thingport, y todos los que tiene.",
+          "library": "Una biblioteca pesada que trae Thingport: Three.js, opentype, Manifold, sus tipografías."
+        },
+        "labels": {
+          "tab": "Etiquetas",
+          "help": "Las palabras que muestra tu herramienta, un archivo por idioma. El script las pide por clave con t(\"clave\"), así que quedan fuera de la lógica y se pueden traducir sin tocarla.",
+          "empty": "Tu herramienta aún no tiene etiquetas. Guarda las palabras que muestra en un archivo por idioma, y el script las pedirá por clave con t(\"clave\"): así quien traduzca nunca tendrá que abrir el script.",
+          "start": "Empezar por el inglés",
+          "add": "Añadir un idioma",
+          "file": "Las etiquetas en {{code}}, como JSON",
+          "fallbackNote": "El inglés es el recurso de reserva: lo que falte en otro idioma se muestra desde aquí.",
+          "untranslated_one": "{{count}} etiqueta sigue sin texto en este idioma.",
+          "untranslated_other": "{{count}} etiquetas siguen sin texto en este idioma.",
+          "badJson": "Esto todavía no es JSON válido, así que no se guardará.",
+          "badShape": "Las etiquetas son un objeto plano de claves a texto, como { \"save\": \"Guardar\" }.",
+          "removeTitle": "¿Quitar las etiquetas en {{name}}?",
+          "removeBody": "El archivo y sus palabras desaparecen. Los demás idiomas se quedan."
         }
       },
       "screenshots": {

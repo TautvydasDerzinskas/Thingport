@@ -53,6 +53,10 @@ export const STARTER_SCRIPT = `// A tool is an ES module. When its window opens,
 // thingport.root               the window's element, with tool.html already in it
 // thingport.theme              { mode, primary, primaryContrast, background, paper, text, textSecondary, divider,
 //                              error, warning, success, fontFamily }
+// thingport.library(name)      a library Thingport carries, loaded when first asked for and shared with every
+//                              other tool: "three", "opentype", "manifold", "fonts". thingport.libraries lists them
+// thingport.t(key, vars)       your tool's own words, from its Labels, in the user's language: t("hello"),
+//                              t("rings.ring", { n: 2 }). thingport.language is the code, languages lists them all
 // thingport.size, onResize(fn) the window's size in pixels, and a way to hear when it changes
 // thingport.tool               { id, slug, name, version, source }
 // thingport.storage            get(key), set(key, value), remove(key), keys(): JSON kept for this user, up to 20 MB

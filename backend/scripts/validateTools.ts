@@ -1,6 +1,6 @@
 // Checks tools/ the way Thingport reads it when an admin installs a tool: every slug in index.json has a folder with
 // valid metadata naming its author, a script with a default export and a README, every model file its metadata names
-// and screenshot is there, and every folder is listed.
+// and screenshot is there, every language its metadata names has labels that read, and every folder is listed.
 // Run with: npx tsx scripts/validateTools.ts [path to tools]
 
 import fs from "node:fs";
@@ -9,10 +9,14 @@ import {
   SLUG,
   TOOL_FILE_MAX_BYTES,
   TOOL_FILES_MAX_BYTES,
+  TOOL_LOCALE_MAX_BYTES,
+  TOOL_LOCALES_MAX_BYTES,
   TOOL_SCREENSHOT_MAX_BYTES,
   parseToolManifest,
+  toolLocaleFile,
   toolModelFiles,
   validateCode,
+  validateToolLocale,
 } from "../src/services/toolFormat";
 
 const root = path.resolve(process.argv[2] ?? path.join(__dirname, "../../tools"));
@@ -60,6 +64,38 @@ for (const slug of slugs) {
     }
     if (total > TOOL_FILES_MAX_BYTES)
       throw new Error(`its model files are larger than ${TOOL_FILES_MAX_BYTES / 1048576} MB`);
+
+    // The labels, which Thingport reads itself rather than from the script: a language its metadata names but
+    // whose file is missing or malformed would quietly not install, so it fails here instead.
+    let labels = 0;
+    const english: Record<string, string> | null = manifest.locales.includes("en")
+      ? JSON.parse(read(path.join(dir, toolLocaleFile("en"))) ?? "null")
+      : null;
+    for (const code of manifest.locales) {
+      const file = toolLocaleFile(code);
+      const text = read(path.join(dir, file));
+      if (text === null) throw new Error(`its metadata names the ${code} labels, and ${file} isn't there`);
+      const size = Buffer.byteLength(text);
+      if (size > TOOL_LOCALE_MAX_BYTES) throw new Error(`${file} is larger than ${TOOL_LOCALE_MAX_BYTES / 1024} KB`);
+      labels += size;
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(text);
+      } catch (err) {
+        throw new Error(`${file} isn't valid JSON: ${err instanceof Error ? err.message : err}`, { cause: err });
+      }
+      const words = validateToolLocale(code, parsed);
+      // English is the fallback, so a key only another language has can never be reached.
+      if (english && code !== "en") {
+        const stray = Object.keys(words).filter((key) => !(key in english));
+        if (stray.length)
+          throw new Error(`${file} has ${stray.length} label(s) English hasn't, starting with ${stray[0]}`);
+      }
+    }
+    if (manifest.locales.length && !manifest.locales.includes("en"))
+      throw new Error("it has labels but no English ones, which is what every other language falls back to");
+    if (labels > TOOL_LOCALES_MAX_BYTES)
+      throw new Error(`its labels are larger than ${TOOL_LOCALES_MAX_BYTES / 1024} KB`);
   } catch (err) {
     problems.push(`${slug}: ${err instanceof Error ? err.message : err}`);
   }

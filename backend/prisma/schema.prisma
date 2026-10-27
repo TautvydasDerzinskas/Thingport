@@ -650,6 +650,8 @@ model Tool {
   manifest     Json
   script       String
   html         String?
+  /// Its labels by language, as { "en": { "key": "text" } }: what `thingport.t()` reads.
+  locales      Json?
   /// Of the installed files, to tell when the repository's copy has changed.
   sha          String
   /// Of the models it brings, so an update that leaves them alone doesn't make everyone's copies again.
