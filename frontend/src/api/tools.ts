@@ -156,8 +156,7 @@ export const toolsApi = {
   fetchNeededModels: async (id: string, keys: string[]): Promise<ToolModelsFetched> => {
     const res = await fetch(`${apiBase()}/tools/${id}/models`, {
       method: "POST",
-      headers: { ...authHeaders(), "Content-Type": "application/json" },
-      body: JSON.stringify({ keys }),
+      ...json({ keys }),
     });
     if (!res.ok) return failed(res, "Failed to fetch the tool's models");
     return res.json();
@@ -225,8 +224,7 @@ export const toolsApi = {
   install: async (slug: string, models = true): Promise<AdminTool["installed"]> => {
     const res = await fetch(`${apiBase()}/admin/tools/${encodeURIComponent(slug)}/install`, {
       method: "POST",
-      headers: { ...authHeaders(), "Content-Type": "application/json" },
-      body: JSON.stringify({ models }),
+      ...json({ models }),
     });
     if (!res.ok) return failed(res, "Failed to install the tool");
     return res.json();
