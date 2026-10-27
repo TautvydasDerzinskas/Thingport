@@ -101,7 +101,9 @@ export function changedValues(parameters, values) {
 /** A filename for the generated model: the script's name, and what was changed, where that is short enough. */
 export function generatedName(scriptName, modelName, values) {
   const base = (modelName || scriptName.replace(/\.scad$/i, "")).trim() || "model";
-  const text = Object.values(values).find((value) => typeof value === "string" && /\S/.test(value) && value.length < 24);
+  const text = Object.values(values).find(
+    (value) => typeof value === "string" && /\S/.test(value) && value.length < 24,
+  );
   return text ? `${base} - ${text}` : base;
 }
 
