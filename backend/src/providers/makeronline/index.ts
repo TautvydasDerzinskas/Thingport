@@ -56,11 +56,16 @@ async function downloadFiles(
         downloaded.push(...inputs);
         continue;
       }
-      // A profile is one 3MF; anything else it unpacked to is dropped.
+      // A profile is one model file; anything else it unpacked to is dropped. Picked by what it is rather than
+      // by coming first: a zip of nothing but generator scripts would otherwise put a .scad in as the plate,
+      // and a script holds no shape to print.
+      const plate = inputs.find((input) => kit.isModelFile(input.filename));
       await Promise.all(
-        inputs.slice(1).map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)),
+        inputs
+          .filter((input) => input !== plate)
+          .map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)),
       );
-      if (inputs[0]) downloaded.push({ ...inputs[0], sourceInstanceId: file.profile_id });
+      if (plate) downloaded.push({ ...plate, sourceInstanceId: file.profile_id });
     }
   } catch (err) {
     await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));

@@ -284,7 +284,12 @@ export async function createPrint(
     // Best-effort: a script that won't store leaves the model itself made, since its plates are what the user
     // asked for. Line endings are put right by saveFileFromTemp, wherever a script comes from.
     for (const input of sourceInputs) {
-      if (!input.tempFilePath) continue;
+      if (!input.tempFilePath) {
+        // Nothing reaches here today -- every caller that passes a script passes a temp file, and the ones that
+        // build inputs another way can't carry a script at all -- so a skip means a new caller needs handling.
+        console.warn(`Couldn't keep the generator script ${input.filename}: it came with no temporary file.`);
+        continue;
+      }
       try {
         // Plain text, which no mime table knows .scad for, so it is given rather than guessed.
         await saveFileFromTemp(userId, print.id, input.tempFilePath, input.filename, "text/plain");
