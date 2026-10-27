@@ -171,6 +171,25 @@ export default function ToolsPage({ isAdmin, onUnauthorized }: Props) {
     }
   };
 
+  /** Takes a repository tool off the whole instance, as Administration does: everyone's, not just the admin's. */
+  const uninstall = async (tool: Tool) => {
+    const ok = await confirm({
+      title: t("tools.page.uninstallTitle", { name: tool.manifest.name }),
+      message: t("tools.page.uninstallMessage", { name: tool.manifest.name }),
+      confirmLabel: t("tools.page.uninstall"),
+      destructive: true,
+    });
+    if (!ok) return;
+    try {
+      await toolsApi.uninstall(tool.slug);
+      await state?.reload();
+      toast({ message: t("tools.page.uninstalled", { name: tool.manifest.name }), severity: "success" });
+    } catch (err) {
+      if (err instanceof UnauthorizedError) onUnauthorized?.();
+      else toast({ message: err instanceof Error ? err.message : String(err), severity: "error" });
+    }
+  };
+
   const tiles = (tools: Tool[], offset: number, movable = false) => (
     <AppGrid column={COLUMN}>
       {tools.map((tool, index) => (
@@ -386,6 +405,22 @@ export default function ToolsPage({ isAdmin, onUnauthorized }: Props) {
               <ListItemText>{t("tools.page.models")}</ListItemText>
             </MenuItem>
           ),
+          isAdmin &&
+            menuTool.source === "repo" && [
+              <Divider key="admin-divider" />,
+              <MenuItem
+                key="uninstall"
+                onClick={() => {
+                  closeMenu();
+                  void uninstall(menuTool);
+                }}
+              >
+                <ListItemIcon>
+                  <DeleteOutlineIcon fontSize="small" color="error" />
+                </ListItemIcon>
+                <ListItemText sx={{ color: "error.main" }}>{t("tools.page.uninstall")}</ListItemText>
+              </MenuItem>,
+            ],
           menuTool.source === "own" &&
             canCreate && [
               <MenuItem

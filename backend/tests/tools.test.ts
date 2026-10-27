@@ -371,6 +371,33 @@ describe("installing", () => {
     expect(pickers.body.some((c: { id: string }) => c.id === collection.id)).toBe(false);
   });
 
+  it("installs without the models when the admin says so, and imports them when asked later", async () => {
+    writeRepo();
+    const without = await request(app)
+      .post("/api/admin/tools/planner/install")
+      .set(auth(adminToken))
+      .send({ models: false });
+    expect(without.status).toBe(200);
+    expect(without.body.models).toMatchObject({ total: 2, ready: 0, imported: false });
+
+    // The tool is there and usable; what it brings simply isn't, and nobody has a collection of it.
+    await syncToolModels({ id: memberId, role: "MEMBER" });
+    const listed = await request(app).get("/api/tools").set(auth(memberToken));
+    expect(listed.body.tools.map((one: { slug: string }) => one.slug)).toEqual(["planner"]);
+    expect(await prisma.print.count({ where: { userId: memberId } })).toBe(0);
+    expect(await prisma.collection.count({ where: { userId: memberId } })).toBe(0);
+
+    const imported = await request(app).post("/api/admin/tools/planner/import-models").set(auth(adminToken));
+    expect(imported.status).toBe(200);
+    await toolFetchSettled(imported.body.id);
+    await syncToolModels({ id: memberId, role: "MEMBER" });
+    expect(await prisma.print.count({ where: { userId: memberId, toolId: imported.body.id } })).toBe(2);
+
+    // Asking twice is a mistake, not a second import.
+    expect((await request(app).post("/api/admin/tools/planner/import-models").set(auth(adminToken))).status).toBe(400);
+    expect((await request(app).post("/api/admin/tools/planner/import-models").set(auth(memberToken))).status).toBe(403);
+  });
+
   it("leaves a tool's models where the admin wipes a user's own", async () => {
     writeRepo();
     const toolId = await install();

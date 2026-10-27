@@ -4,12 +4,9 @@ import { keyframes } from "@mui/material/styles";
 import Alert from "@mui/material/Alert";
 import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
-import LinearProgress from "@mui/material/LinearProgress";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
@@ -18,15 +15,12 @@ import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
-import ButtonBase from "@mui/material/ButtonBase";
 import LaunchIcon from "@mui/icons-material/Launch";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DownloadIcon from "@mui/icons-material/Download";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import SystemUpdateAltIcon from "@mui/icons-material/SystemUpdateAlt";
 import { adminApi, type AdminUser } from "../../api/admin";
 import { UnauthorizedError } from "../../api/client";
 import {
@@ -44,10 +38,11 @@ import { ListRowSkeletons } from "../../components/ListSkeleton";
 import SectionHeader from "../../components/SectionHeader";
 import { useToast } from "../../components/ToastProvider";
 import ToolIcon from "../../components/tools/ToolIcon";
-import { printsApi } from "../../api/prints";
-import Screenshots from "../../components/Screenshots";
 import { reloadTools, useTools } from "../../hooks/useTools";
 import ToolWindow from "../../components/tools/ToolWindow";
+import { AppGrid, AppTile } from "../../components/Layout/ConfigurationDialog/AppTiles";
+import InstallToolDialog from "./InstallToolDialog";
+import ToolDetailsDialog from "./ToolDetailsDialog";
 
 // While a tool's models are being fetched, the page asks how far it's got this often.
 const POLL_MS = 3000;
@@ -79,6 +74,9 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
   // The admin's own copies of the installed tools, so one can be opened from here rather than from the Tools page.
   const mine = useTools();
   const [running, setRunning] = useState<Tool | null>(null);
+  // The tool whose details are open, and the one being installed: a tool that brings models asks first.
+  const [details, setDetails] = useState<AdminTool | null>(null);
+  const [installing, setInstalling] = useState<AdminTool | null>(null);
   const openable = (tool: AdminTool) =>
     tool.installed ? (mine?.tools.find((ours) => ours.source === "repo" && ours.slug === tool.slug) ?? null) : null;
 
@@ -127,10 +125,16 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
     }
   };
 
-  const install = async (tool: AdminTool) => {
+  /** A tool that brings models asks whether they are wanted; one that brings none just installs. */
+  const startInstall = (tool: AdminTool) => {
+    if (tool.manifest.collection?.models.length && !tool.installed) setInstalling(tool);
+    else void install(tool, true);
+  };
+
+  const install = async (tool: AdminTool, withModels: boolean) => {
     setBusy(tool.slug);
     try {
-      await toolsApi.install(tool.slug);
+      await toolsApi.install(tool.slug, withModels);
       toast({
         message: t(tool.installed ? "adminSettings.tools.repo.updated" : "adminSettings.tools.repo.installed", {
           name: tool.manifest.name,
@@ -138,6 +142,7 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
         severity: "success",
       });
       await Promise.all([loadCatalog(), reloadTools().catch(() => undefined)]);
+      setInstalling(null);
     } catch (err) {
       fail(err, t("adminSettings.tools.repo.installFailed"));
     } finally {
@@ -158,10 +163,27 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
     setBusy(tool.slug);
     try {
       await toolsApi.uninstall(tool.slug);
+      setDetails(null);
       toast({ message: t("adminSettings.tools.repo.uninstalled", { name: tool.manifest.name }), severity: "success" });
       await Promise.all([loadCatalog(), reloadTools().catch(() => undefined)]);
     } catch (err) {
       fail(err, t("adminSettings.tools.repo.uninstallFailed"));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const importModels = async (tool: AdminTool) => {
+    setBusy(tool.slug);
+    try {
+      await toolsApi.importModels(tool.slug);
+      toast({
+        message: t("adminSettings.tools.repo.importingModels", { name: tool.manifest.name }),
+        severity: "success",
+      });
+      await Promise.all([loadCatalog(), reloadTools().catch(() => undefined)]);
+    } catch (err) {
+      fail(err, t("adminSettings.tools.repo.installFailed"));
     } finally {
       setBusy(null);
     }
@@ -295,20 +317,60 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
             {t("adminSettings.tools.repo.empty")}
           </Typography>
         ) : (
-          <Stack spacing={1.25}>
-            {catalog.tools.map((tool, index) => (
-              <RepoToolRow
-                key={tool.slug}
-                tool={tool}
-                index={index}
-                busy={busy === tool.slug}
-                onInstall={() => void install(tool)}
-                onRetry={() => void retry(tool)}
-                onMenu={(anchor) => setMenu({ anchor, tool })}
-                onOpen={openable(tool) ? () => setRunning(openable(tool)) : undefined}
-              />
-            ))}
-          </Stack>
+          <>
+            <AppGrid column={104}>
+              {catalog.tools.map((tool, index) => (
+                <Box
+                  key={tool.slug}
+                  sx={{
+                    display: "grid",
+                    animation: `${appear} 220ms ease-out both`,
+                    animationDelay: `${Math.min(index * 40, 240)}ms`,
+                    "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+                  }}
+                >
+                  <AppTile
+                    name={tool.manifest.name}
+                    subtitle={
+                      tool.installed
+                        ? t("adminSettings.tools.repo.version", { version: tool.installed.version })
+                        : undefined
+                    }
+                    logo={
+                      <Box sx={{ display: "flex", color: "primary.main" }}>
+                        <ToolIcon iconUrl={tool.manifest.iconUrl} size={36} />
+                      </Box>
+                    }
+                    size={60}
+                    tileBg="background.paper"
+                    on={Boolean(tool.installed)}
+                    badge={Boolean(tool.installed)}
+                    highlighted={details?.slug === tool.slug || menu?.tool.slug === tool.slug}
+                    tooltip={tool.manifest.description || undefined}
+                    ariaLabel={t("adminSettings.tools.repo.tileLabel", {
+                      name: tool.manifest.name,
+                      state: t(
+                        tool.installed
+                          ? "adminSettings.tools.repo.isInstalled"
+                          : "adminSettings.tools.repo.notInstalled",
+                      ),
+                    })}
+                    onActivate={() => setDetails(tool)}
+                    onClick={(event) => {
+                      if ((event.nativeEvent as PointerEvent).pointerType === "touch") setDetails(tool);
+                    }}
+                    onContextMenu={(event) => {
+                      event.preventDefault();
+                      if (tool.installed) setMenu({ anchor: event.currentTarget, tool });
+                    }}
+                  />
+                </Box>
+              ))}
+            </AppGrid>
+            <Typography variant="caption" color="text.secondary">
+              {t("adminSettings.tools.repo.shelfHint")}
+            </Typography>
+          </>
         )}
       </Stack>
 
@@ -387,183 +449,23 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
         </MenuItem>
       </Menu>
 
+      <InstallToolDialog
+        tool={installing}
+        busy={busy === installing?.slug}
+        onClose={() => setInstalling(null)}
+        onInstall={(withModels) => void install(installing!, withModels)}
+      />
+      <ToolDetailsDialog
+        tool={details && (catalog?.tools.find((one) => one.slug === details.slug) ?? details)}
+        busy={busy === details?.slug}
+        onClose={() => setDetails(null)}
+        onInstall={() => details && startInstall(details)}
+        onImportModels={() => details && void importModels(details)}
+        onRetry={() => details && void retry(details)}
+        onUninstall={() => details && void uninstall(details)}
+        onOpen={details && openable(details) ? () => setRunning(openable(details)) : undefined}
+      />
       <ToolWindow tool={running} onClose={() => setRunning(null)} />
     </Stack>
-  );
-}
-
-type RowProps = {
-  tool: AdminTool;
-  index: number;
-  busy: boolean;
-  onInstall: () => void;
-  onRetry: () => void;
-  onMenu: (anchor: HTMLElement) => void;
-  /** Opens the admin's own copy, where the tool is installed; absent while it isn't. */
-  onOpen?: () => void;
-};
-
-/** One of the repository's tools: what it is, whether it's installed, and how far its models have come. */
-function RepoToolRow({ tool, index, busy, onInstall, onRetry, onMenu, onOpen }: RowProps) {
-  const { t } = useTranslation("app");
-  const { manifest, installed } = tool;
-  const models = installed?.models ?? null;
-  const missing = models ? models.total - models.ready : 0;
-
-  const status = !installed
-    ? null
-    : !tool.inRepo
-      ? { label: t("adminSettings.tools.repo.gone"), color: "warning" as const }
-      : installed.updateAvailable
-        ? {
-            // Its files changed without a new version number: there's still an update to take.
-            label:
-              installed.version === manifest.version
-                ? t("adminSettings.tools.repo.updateAvailable")
-                : t("adminSettings.tools.repo.updateTo", { version: manifest.version }),
-            color: "info" as const,
-          }
-        : {
-            label: t("adminSettings.tools.repo.installedVersion", { version: installed.version }),
-            color: "success" as const,
-          };
-
-  return (
-    <Paper
-      variant="outlined"
-      sx={{
-        p: 1.75,
-        borderRadius: 2,
-        maxWidth: 720,
-        animation: `${appear} 220ms ease-out both`,
-        animationDelay: `${Math.min(index * 40, 240)}ms`,
-        "@media (prefers-reduced-motion: reduce)": { animation: "none" },
-      }}
-    >
-      <Stack direction="row" spacing={1.5} alignItems="flex-start">
-        <Tooltip title={onOpen ? t("adminSettings.tools.repo.openHint", { name: manifest.name }) : ""}>
-          <Box
-            component={onOpen ? ButtonBase : "div"}
-            onDoubleClick={onOpen}
-            onKeyDown={
-              onOpen
-                ? (event: React.KeyboardEvent) => {
-                    if (event.key === "Enter") onOpen();
-                  }
-                : undefined
-            }
-            aria-label={onOpen ? t("adminSettings.tools.repo.openHint", { name: manifest.name }) : undefined}
-            sx={{
-              width: 44,
-              height: 44,
-              flexShrink: 0,
-              borderRadius: "12px",
-              border: 1,
-              borderColor: "divider",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "primary.main",
-              cursor: onOpen ? "pointer" : "default",
-              transition: "border-color 160ms, transform 160ms",
-              ...(onOpen
-                ? {
-                    "&:hover": { borderColor: "primary.main" },
-                    "&:active": { transform: "scale(0.96)" },
-                    "@media (prefers-reduced-motion: reduce)": { transition: "none" },
-                  }
-                : {}),
-            }}
-          >
-            <ToolIcon iconUrl={manifest.iconUrl} size={26} />
-          </Box>
-        </Tooltip>
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Stack direction="row" alignItems="center" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
-            <Typography variant="body2" fontWeight={600}>
-              {manifest.name}
-            </Typography>
-            {status && <Chip size="small" variant="outlined" color={status.color} label={status.label} />}
-          </Stack>
-          {manifest.description && (
-            <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 0.25 }}>
-              {manifest.description}
-            </Typography>
-          )}
-          <Typography variant="caption" color="text.disabled" component="div">
-            {[
-              manifest.author && t("adminSettings.tools.repo.by", { name: manifest.author }),
-              manifest.collection && t("adminSettings.tools.repo.brings", { count: manifest.collection.models.length }),
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </Typography>
-          <Screenshots
-            name={manifest.name}
-            screenshots={manifest.screenshots ?? []}
-            urlFor={(shot) => printsApi.fileUrl(`/admin/tools/${encodeURIComponent(tool.slug)}/screenshots/${shot}`)}
-          />
-          {models && (missing > 0 || models.fetching) && (
-            <Box sx={{ mt: 1.25 }} aria-live="polite">
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>
-                  {models.fetching
-                    ? t("adminSettings.tools.repo.fetching", { ready: models.ready, total: models.total })
-                    : t("adminSettings.tools.repo.missing", { count: missing, total: models.total })}
-                </Typography>
-                {!models.fetching && (
-                  <Button size="small" startIcon={<DownloadIcon fontSize="small" />} onClick={onRetry}>
-                    {t("adminSettings.tools.repo.retry")}
-                  </Button>
-                )}
-              </Stack>
-              <LinearProgress
-                variant="determinate"
-                value={models.total ? (models.ready / models.total) * 100 : 0}
-                sx={{ mt: 0.5, borderRadius: 1, height: 6 }}
-              />
-              {!models.fetching && models.failed.length > 0 && (
-                <Typography variant="caption" color="error" component="div" sx={{ mt: 0.5 }}>
-                  {t("adminSettings.tools.repo.lastError", { error: models.failed[0].reason })}
-                </Typography>
-              )}
-            </Box>
-          )}
-        </Box>
-        <Stack direction="row" alignItems="center" spacing={0.5} sx={{ flexShrink: 0 }}>
-          {(!installed || (installed.updateAvailable && tool.inRepo)) && (
-            <Button
-              size="small"
-              variant={installed ? "outlined" : "contained"}
-              startIcon={
-                busy ? (
-                  <CircularProgress size={14} color="inherit" />
-                ) : installed ? (
-                  <SystemUpdateAltIcon fontSize="small" />
-                ) : (
-                  <DownloadIcon fontSize="small" />
-                )
-              }
-              disabled={busy || !tool.inRepo}
-              onClick={onInstall}
-            >
-              {installed ? t("adminSettings.tools.repo.update") : t("adminSettings.tools.repo.install")}
-            </Button>
-          )}
-          {installed && (
-            <Tooltip title={t("adminSettings.tools.repo.more")}>
-              <IconButton
-                size="small"
-                aria-label={t("adminSettings.tools.repo.moreFor", { name: manifest.name })}
-                disabled={busy}
-                onClick={(event) => onMenu(event.currentTarget)}
-              >
-                <MoreVertIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
-        </Stack>
-      </Stack>
-    </Paper>
   );
 }

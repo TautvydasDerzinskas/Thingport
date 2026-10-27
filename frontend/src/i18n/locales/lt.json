@@ -2262,7 +2262,26 @@
           "fromFolder": "Siūloma iš aplanko {{location}}",
           "fromRepository": "Siūloma iš {{location}}",
           "open": "Atverti",
-          "openHint": "Atverti „{{name}}“ — dukart spustelėk"
+          "openHint": "Atverti „{{name}}“ — dukart spustelėk",
+          "notInstalled": "Neįdiegta",
+          "isInstalled": "įdiegta",
+          "version": "v{{version}}",
+          "tileLabel": "{{name}}, {{state}}: spausk Enter, kad pamatytum, kas tai, kontekstinio meniu klavišą – daugiau",
+          "shelfHint": "Dukart spustelėk įrankį, kad pamatytum, kas tai ir ką galima padaryti; įdiegtą spustelėk dešiniuoju, kad atvertum meniu.",
+          "installTitle": "Įdiegti „{{name}}“?",
+          "installBody_one": "Jis atsineša {{count}} savo modelį – detalę, su kuria dirba; ji parsiunčiama vieną kartą visam serveriui.",
+          "installBody_few": "Jis atsineša {{count}} savo modelius – detales, su kuriomis dirba; jos parsiunčiamos vieną kartą visam serveriui.",
+          "installBody_many": "Jis atsineša {{count}} savo modelio – detales, su kuriomis dirba; jos parsiunčiamos vieną kartą visam serveriui.",
+          "installBody_other": "Jis atsineša {{count}} savo modelių – detales, su kuriomis dirba; jos parsiunčiamos vieną kartą visam serveriui.",
+          "withModels": "Parsisiųsti jo modelius",
+          "modelsRoom": "{{count}} modelių – didelis rinkinys; serveryje jie užims gigabaitus, o parsiuntimas užtruks.",
+          "modelsLater": "Be jų įrankis veiks tik tol, kol svetainė, iš kurios jis siunčia, pasiekiama ir serveris prijungtas prie interneto, o iš detalių sudėto darbo išsaugoti nepavyks. Modelius galėsi parsisiųsti vėliau.",
+          "modelsSkipped_one": "Įdiegta be jo {{count}} modelio.",
+          "modelsSkipped_few": "Įdiegta be jo {{count}} modelių.",
+          "modelsSkipped_many": "Įdiegta be jo {{count}} modelio.",
+          "modelsSkipped_other": "Įdiegta be jo {{count}} modelių.",
+          "importModels": "Parsisiųsti modelius",
+          "importingModels": "Parsiunčiami „{{name}}“ modeliai"
         },
         "own": {
           "heading": "Naudotojų įrankiai",
@@ -2701,7 +2720,11 @@
           "name": "Pavadinimas",
           "newest": "Naujausi",
           "author": "Autorius"
-        }
+        },
+        "uninstall": "Pašalinti",
+        "uninstallTitle": "Pašalinti šį įrankį?",
+        "uninstallMessage": "„{{name}}“ dings iš visų įrankių puslapio kartu su jų duomenimis ir jo modelių kolekcija iš kiekvienos bibliotekos. Juo išsaugoti modeliai lieka.",
+        "uninstalled": "„{{name}}“ pašalintas"
       },
       "categories": {
         "generators": "Generatoriai",

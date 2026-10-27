@@ -2204,7 +2204,22 @@
           "fromFolder": "Offered from the folder {{location}}",
           "fromRepository": "Offered from {{location}}",
           "open": "Open",
-          "openHint": "Open {{name}} — double-click"
+          "openHint": "Open {{name}} — double-click",
+          "notInstalled": "Not installed",
+          "isInstalled": "installed",
+          "version": "v{{version}}",
+          "tileLabel": "{{name}}, {{state}}: press Enter for what it is, the context menu key for more",
+          "shelfHint": "Double-click a tool for what it is and what can be done with it; right-click an installed one for its menu.",
+          "installTitle": "Install {{name}}?",
+          "installBody_one": "It brings {{count}} model of its own: a part it works with, imported once for the whole instance.",
+          "installBody_other": "It brings {{count}} models of its own: the parts it works with, imported once for the whole instance.",
+          "withModels": "Import its models",
+          "modelsRoom": "{{count}} models is a large set; expect it to take gigabytes on this server, and a while to come in.",
+          "modelsLater": "Without them the tool only works while the site it fetches from is up and this server is online, and anything it builds from its parts can't be saved. You can import them later.",
+          "modelsSkipped_one": "Installed without its {{count}} model.",
+          "modelsSkipped_other": "Installed without its {{count}} models.",
+          "importModels": "Import its models",
+          "importingModels": "Importing the models of {{name}}"
         },
         "own": {
           "heading": "Users' own tools",
@@ -2618,7 +2633,11 @@
           "name": "Name",
           "newest": "Newest",
           "author": "Author"
-        }
+        },
+        "uninstall": "Uninstall",
+        "uninstallTitle": "Uninstall this tool?",
+        "uninstallMessage": "{{name}} goes from everyone's Tools page, with the data it kept for them and its collection of models from every library. Models saved from it stay.",
+        "uninstalled": "Uninstalled {{name}}"
       },
       "categories": {
         "generators": "Generators",

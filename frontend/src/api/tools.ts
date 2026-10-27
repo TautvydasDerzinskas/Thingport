@@ -76,6 +76,8 @@ export type ToolModelsState = {
   ready: number;
   failed: { key: string; name: string; reason: string }[];
   fetching: boolean;
+  /** False where the tool was installed without its models; they can be asked for at any time. */
+  imported: boolean;
 };
 
 /** A repository tool, with what's installed of it. `inRepo` false for one the repository no longer lists. */
@@ -205,13 +207,24 @@ export const toolsApi = {
     return res.json();
   },
 
-  /** Installs a repository tool, or takes its update. */
-  install: async (slug: string): Promise<AdminTool["installed"]> => {
+  /** Installs a repository tool, or takes its update. `models` false leaves the models it brings for later. */
+  install: async (slug: string, models = true): Promise<AdminTool["installed"]> => {
     const res = await fetch(`${apiBase()}/admin/tools/${encodeURIComponent(slug)}/install`, {
+      method: "POST",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ models }),
+    });
+    if (!res.ok) return failed(res, "Failed to install the tool");
+    return res.json();
+  },
+
+  /** The models of a tool installed without them. */
+  importModels: async (slug: string): Promise<AdminTool["installed"]> => {
+    const res = await fetch(`${apiBase()}/admin/tools/${encodeURIComponent(slug)}/import-models`, {
       method: "POST",
       headers: authHeaders(),
     });
-    if (!res.ok) return failed(res, "Failed to install the tool");
+    if (!res.ok) return failed(res, "Failed to import the tool's models");
     return res.json();
   },
 

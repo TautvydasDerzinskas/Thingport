@@ -417,6 +417,8 @@ export type ToolModelsState = {
   /** Models that didn't come at the last try, with why. */
   failed: { key: string; name: string; reason: string }[];
   fetching: boolean;
+  /** False where the tool was installed without them: they can be asked for at any time after. */
+  imported: boolean;
 };
 
 export type AdminTool = {
@@ -457,6 +459,7 @@ async function modelsState(tool: Tool, manifest: ToolManifest): Promise<ToolMode
     ready,
     failed: models.filter((m) => failed[m.key]).map((m) => ({ key: m.key, name: m.name, reason: failed[m.key] })),
     fetching: fetches.has(tool.id),
+    imported: tool.modelsSha !== null,
   };
 }
 
@@ -513,15 +516,29 @@ export async function adminToolCatalog(): Promise<{
 
 /** Installs a repository tool for the instance, or takes its update, then fetches the models it brings in the
  *  background, as `adminId`. */
-export async function installRepoTool(slug: string, adminId: string): Promise<AdminTool["installed"]> {
+/**
+ * Installs a tool from the repository, or takes its update.
+ *
+ * `withModels` is what the admin was asked on the way in: a tool's models are most of what it weighs, and a
+ * planner's parts run to gigabytes, so an instance short of room can have the tool without them. It works either
+ * way -- what it can't do without them is work offline -- and they can be asked for later (`importToolModels`),
+ * which is the same as installing again with them.
+ */
+export async function installRepoTool(
+  slug: string,
+  adminId: string,
+  { withModels = true }: { withModels?: boolean } = {},
+): Promise<AdminTool["installed"]> {
   if (!SLUG.test(slug)) throw new HttpError(400, "Not a tool name");
   const repo = await fetchRepoTool(slug, true);
   const files = toolModelFiles(repo.manifest);
   const existing = await prisma.tool.findUnique({ where: { scope_slug: { scope: "repo", slug } } });
-  const modelsSha = modelsShaOf(repo.manifest);
+  // Without them the tool is installed as one that brings nothing, which is what having no spec recorded means.
+  const modelsSha = withModels ? modelsShaOf(repo.manifest) : null;
   const modelsChanged = existing?.modelsSha !== modelsSha;
-  // Its own files first, so a tool whose files can't be had isn't half installed.
-  if (modelsChanged && files.length) await downloadRepoFiles(slug, modelsSha!, repo.manifest);
+  // Its own files first, so a tool whose files can't be had isn't half installed. None are fetched where the
+  // models weren't asked for: there is no folder to put them in, and nothing to give out.
+  if (withModels && modelsChanged && files.length) await downloadRepoFiles(slug, modelsSha!, repo.manifest);
   const data = {
     manifest: repo.manifest as Prisma.InputJsonValue,
     script: repo.script,
@@ -550,7 +567,7 @@ export async function installRepoTool(slug: string, adminId: string): Promise<Ad
     targetId: tool.id,
     details: { slug, version: repo.manifest.version, update: Boolean(existing) },
   });
-  if (repo.manifest.collection) startModelFetch(tool, adminId);
+  if (repo.manifest.collection && withModels) startModelFetch(tool, adminId);
   const manifest = manifestOf(tool)!;
   return {
     id: tool.id,
@@ -560,6 +577,14 @@ export async function installRepoTool(slug: string, adminId: string): Promise<Ad
     updateAvailable: false,
     models: await modelsState(tool, manifest),
   };
+}
+
+/** The models of a tool installed without them, fetched and given out now. */
+export async function importToolModels(slug: string, adminId: string): Promise<AdminTool["installed"]> {
+  const tool = await prisma.tool.findUnique({ where: { scope_slug: { scope: "repo", slug } } });
+  if (!tool) throw new HttpError(404, "That tool isn't installed");
+  if (tool.modelsSha) throw new HttpError(400, "Its models are already here");
+  return installRepoTool(slug, adminId, { withModels: true });
 }
 
 /** The tool's own model files, from the repository into the folder each user's copy is made from. All or none. */

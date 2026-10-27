@@ -2216,7 +2216,24 @@
           "fromFolder": "Proposés depuis le dossier {{location}}",
           "fromRepository": "Proposés depuis {{location}}",
           "open": "Ouvrir",
-          "openHint": "Ouvrir {{name}} — double-clic"
+          "openHint": "Ouvrir {{name}} — double-clic",
+          "notInstalled": "Non installé",
+          "isInstalled": "installé",
+          "version": "v{{version}}",
+          "tileLabel": "{{name}}, {{state}} : Entrée pour voir ce que c'est, la touche de menu contextuel pour le reste",
+          "shelfHint": "Double-cliquez sur un outil pour voir ce qu'il est et ce qu'on peut en faire ; clic droit sur un outil installé pour son menu.",
+          "installTitle": "Installer {{name}} ?",
+          "installBody_one": "Il apporte {{count}} modèle à lui : une pièce avec laquelle il travaille, importée une fois pour tout le serveur.",
+          "installBody_other": "Il apporte {{count}} modèles à lui : les pièces avec lesquelles il travaille, importées une fois pour tout le serveur.",
+          "withModels": "Importer ses modèles",
+          "modelsRoom": "{{count}} modèles, c'est un grand ensemble : comptez des gigaoctets sur ce serveur, et un moment pour qu'ils arrivent.",
+          "modelsLater": "Sans eux, l'outil ne fonctionne que tant que le site d'où il télécharge est joignable et ce serveur en ligne, et ce qu'il assemble avec ses pièces ne pourra pas être enregistré. Vous pourrez les importer plus tard.",
+          "modelsSkipped_one": "Installé sans son {{count}} modèle.",
+          "modelsSkipped_other": "Installé sans ses {{count}} modèles.",
+          "importModels": "Importer ses modèles",
+          "importingModels": "Importation des modèles de {{name}}",
+          "installBody_many": "Il apporte {{count}} modèles à lui : les pièces avec lesquelles il travaille, importées une fois pour tout le serveur.",
+          "modelsSkipped_many": "Installé sans ses {{count}} modèles."
         },
         "own": {
           "heading": "Outils des utilisateurs",
@@ -2643,7 +2660,11 @@
           "name": "Nom",
           "newest": "Plus récents",
           "author": "Auteur"
-        }
+        },
+        "uninstall": "Désinstaller",
+        "uninstallTitle": "Désinstaller cet outil ?",
+        "uninstallMessage": "{{name}} disparaît de la page Outils de tout le monde, avec les données qu'il gardait pour eux et sa collection de modèles de chaque bibliothèque. Les modèles enregistrés depuis l'outil restent.",
+        "uninstalled": "{{name}} désinstallé"
       },
       "categories": {
         "generators": "Générateurs",

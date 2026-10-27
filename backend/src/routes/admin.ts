@@ -11,6 +11,7 @@ import { communityWidgetUsage, widgetsInUse } from "../services/customWidgetsSer
 import { getToolsAccess, setToolsAccess, TOOLS_AUDIENCES } from "../services/settingsService";
 import {
   adminToolCatalog,
+  importToolModels,
   installRepoTool,
   ownToolsInUse,
   provisionEveryoneSoon,
@@ -389,11 +390,22 @@ router.get(
   }),
 );
 
-// Installs a tool from the repository, or takes its update; the models it brings are fetched in the background.
+// Installs a tool from the repository, or takes its update; the models it brings are fetched in the background,
+// unless the admin asked for the tool without them.
+const installSchema = z.object({ models: z.boolean().optional() });
 router.post(
   "/tools/:slug/install",
   asyncHandler(async (req, res) => {
-    res.json(await installRepoTool(String(req.params.slug), req.userId!));
+    const { models } = parseBody(installSchema, req.body ?? {});
+    res.json(await installRepoTool(String(req.params.slug), req.userId!, { withModels: models ?? true }));
+  }),
+);
+
+// The models of a tool installed without them.
+router.post(
+  "/tools/:slug/import-models",
+  asyncHandler(async (req, res) => {
+    res.json(await importToolModels(String(req.params.slug), req.userId!));
   }),
 );
 

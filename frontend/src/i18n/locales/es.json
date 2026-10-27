@@ -2216,7 +2216,24 @@
           "fromFolder": "Se ofrecen desde la carpeta {{location}}",
           "fromRepository": "Se ofrecen desde {{location}}",
           "open": "Abrir",
-          "openHint": "Abrir {{name}}: doble clic"
+          "openHint": "Abrir {{name}}: doble clic",
+          "notInstalled": "No instalada",
+          "isInstalled": "instalada",
+          "version": "v{{version}}",
+          "tileLabel": "{{name}}, {{state}}: pulsa Intro para ver qué es, la tecla de menú contextual para más",
+          "shelfHint": "Haz doble clic en una herramienta para ver qué es y qué puedes hacer con ella; clic derecho en una instalada para su menú.",
+          "installTitle": "¿Instalar {{name}}?",
+          "installBody_one": "Trae {{count}} modelo propio: una pieza con la que trabaja, importada una vez para todo el servidor.",
+          "installBody_other": "Trae {{count}} modelos propios: las piezas con las que trabaja, importadas una vez para todo el servidor.",
+          "withModels": "Importar sus modelos",
+          "modelsRoom": "{{count}} modelos es un conjunto grande: ocupará gigabytes en este servidor y tardará en llegar.",
+          "modelsLater": "Sin ellos la herramienta solo funciona mientras el sitio del que descarga esté disponible y este servidor en línea, y lo que arme con sus piezas no se podrá guardar. Puedes importarlos más tarde.",
+          "modelsSkipped_one": "Instalada sin su {{count}} modelo.",
+          "modelsSkipped_other": "Instalada sin sus {{count}} modelos.",
+          "importModels": "Importar sus modelos",
+          "importingModels": "Importando los modelos de {{name}}",
+          "installBody_many": "Trae {{count}} modelos propios: las piezas con las que trabaja, importadas una vez para todo el servidor.",
+          "modelsSkipped_many": "Instalada sin sus {{count}} modelos."
         },
         "own": {
           "heading": "Herramientas propias de los usuarios",
@@ -2630,7 +2647,11 @@
           "name": "Nombre",
           "newest": "Más nuevas",
           "author": "Autor"
-        }
+        },
+        "uninstall": "Desinstalar",
+        "uninstallTitle": "¿Desinstalar esta herramienta?",
+        "uninstallMessage": "{{name}} desaparece de la página Herramientas de todos, con los datos que guardó para ellos y su colección de modelos de todas las bibliotecas. Los modelos guardados con ella se quedan.",
+        "uninstalled": "{{name}} desinstalada"
       },
       "categories": {
         "generators": "Generadores",
