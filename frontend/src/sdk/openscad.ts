@@ -1,242 +1,133 @@
-// Running OpenSCAD in the browser: the engine in `assets/openscad`, wrapped in the two things a customizer
-// actually needs -- what parameters a script offers, and the model that comes out of a given set of them.
+// What a tool calls to run OpenSCAD.
 //
-// Nothing here leaves the instance. The script, the parameters and the result all stay in the tab.
+// The engine itself is in openscadEngine.ts and runs in workers: a render holds its thread until it is done,
+// and on a real generator that is seconds. Held on the thread drawing the page, the window stops responding --
+// no progress bar moves, no Cancel is noticed, and the browser offers to close the tab.
+//
+// There is a small pool of them rather than one, because the parts of a plan don't depend on each other: a wall
+// of a dozen plates is a dozen renders that can go at once, and a machine with cores to spare finishes in a
+// fraction of the time. The pool is deliberately smaller than the machine, so the browser keeps a core to draw
+// with and the page stays smooth while it all happens.
 
-import OpenSCAD from "../assets/openscad/openscad.js";
-import { TOOL_FONT_URLS } from "./fonts";
-// Type only, so the writer itself stays behind the dynamic import at the bottom of this file.
-import type { Mesh } from "./threeMf";
+import { SCAD_LIBRARIES } from "./scadLibraries";
+import type { ScadParameters, ScadRender, ScadRenderOptions, ScadFormat, ScadParameter } from "./openscadEngine";
 
-/** A parameter as OpenSCAD's own customizer describes it: enough to build the control for it without guessing. */
-export type ScadParameter = {
-  name: string;
-  /** The `/* [Group] *\/` heading it was declared under; "Parameters" for the ones before any heading. */
-  group: string;
-  type: "number" | "string" | "boolean" | "vector" | string;
-  initial: unknown;
-  /** The comment above the declaration, which the site shows as the parameter's explanation. */
-  caption?: string;
-  min?: number;
-  max?: number;
-  step?: number;
-  /** Set where the declaration ends in `// [a, b, c]`, which makes it a choice rather than free entry. */
-  options?: { name: string; value: unknown }[];
-};
-
-export type ScadParameters = { title: string; parameters: ScadParameter[] };
-
-/** What a run produced: the file, and everything the engine said while making it. */
-export type ScadRender = {
-  bytes: Uint8Array;
-  /** Warnings and errors, in the order they were printed. A missing font is in here and nowhere else. */
-  log: string[];
-  /** Seconds the engine spent, for a UI that wants to say why it took a moment. */
-  seconds: number;
-  /** The geometry behind the bytes, when the format is one made here: it is already parsed, so a tool that
-   *  wants to draw what it just generated needn't render a second time to get at it. */
-  mesh?: Mesh;
-};
+export type { ScadParameters, ScadRender, ScadRenderOptions, ScadFormat, ScadParameter };
+export { SCAD_LIBRARIES };
 
 /**
- * The formats a render can come back as.
+ * How many renders may run at once.
  *
- * 3MF is the default and is Thingport's own: the WebAssembly build is made without lib3mf, and asked for one
- * directly it renders, writes nothing and exits as though it had worked. So the engine is asked for OFF, which
- * lists each vertex once, and that is turned into a 3MF here. The difference is not small -- a generator's
- * output is tens of megabytes as the ASCII STL the engine writes, against a couple as a 3MF.
- *
- * The rest are the engine's own, for a tool that wants what it writes untouched.
+ * One fewer than the machine has, so there is always a core left for the page, and never more than four: each
+ * worker holds its own copy of the engine, and past a handful the memory costs more than the time saves.
  */
-export type ScadFormat = "3mf" | "stl" | "obj" | "off" | "amf";
+export const SCAD_CONCURRENCY = Math.max(1, Math.min(4, (globalThis.navigator?.hardwareConcurrency ?? 4) - 1));
 
-export type ScadRenderOptions = {
-  /** By parameter name, as `parameters()` gives them. Anything left out keeps the script's own value. */
-  parameters?: Record<string, unknown>;
-  format?: ScadFormat;
-  /** The title written into a 3MF, which slicers show. Ignored by the engine's own formats. */
-  name?: string;
+type Answer = { id: number; ok: true; value: unknown } | { id: number; ok: false; error: string };
+type Job = {
+  message: Record<string, unknown>;
+  signal?: AbortSignal;
+  resolve: (value: never) => void;
+  reject: (reason: Error) => void;
 };
+type Slot = { worker: Worker; job: (Job & { id: number }) | null };
 
-type Instance = {
-  FS: {
-    mkdir(path: string): void;
-    writeFile(path: string, data: string | Uint8Array): void;
-    readFile(path: string): Uint8Array;
-    chdir(path: string): void;
+const pool: Slot[] = [];
+const queue: Job[] = [];
+let nextId = 1;
+
+/** The reason everything waiting on a worker is told, when that worker goes away under it. */
+function fail(slot: Slot, reason: Error): void {
+  slot.job?.reject(reason);
+  slot.job = null;
+}
+
+function hire(): Slot {
+  const slot: Slot = {
+    worker: new Worker(new URL("./openscad.worker.ts", import.meta.url), { type: "module" }),
+    job: null,
   };
-  callMain(args: string[]): number;
-};
-
-/** Compiled once and instantiated per run: `callMain` can't be trusted to run twice in one instance, but the
- *  compile is the slow part and a WebAssembly.Module is reusable. */
-let compiled: Promise<WebAssembly.Module> | null = null;
-
-function compiledEngine(): Promise<WebAssembly.Module> {
-  if (!compiled) {
-    compiled = (async () => {
-      const wasm = await import("../assets/openscad/openscad.wasm?url");
-      const res = await fetch(wasm.default);
-      if (!res.ok) throw new Error(`The OpenSCAD engine didn't load (HTTP ${res.status})`);
-      return WebAssembly.compile(await res.arrayBuffer());
-    })();
-    compiled.catch(() => (compiled = null));
-  }
-  return compiled;
+  slot.worker.addEventListener("message", (event: MessageEvent<Answer>) => {
+    const answer = event.data;
+    if (!slot.job || slot.job.id !== answer.id) return;
+    const job = slot.job;
+    slot.job = null;
+    if (answer.ok) job.resolve(answer.value as never);
+    else job.reject(new Error(answer.error));
+    take(slot);
+  });
+  slot.worker.addEventListener("error", (event) => {
+    fail(slot, new Error(event.message || "The OpenSCAD engine stopped"));
+    retire(slot);
+  });
+  pool.push(slot);
+  return slot;
 }
 
-/** The library scripts Thingport carries, by the path a script includes them at ("BOSL2/std.scad"). */
-const LIBRARY_FILES = import.meta.glob("../assets/scadLibraries/**/*.scad", {
-  query: "?url",
-  import: "default",
-}) as Record<string, () => Promise<string>>;
+/** A worker that is gone, or has to go: the next call hires a fresh one in its place. */
+function retire(slot: Slot): void {
+  slot.worker.terminate();
+  const at = pool.indexOf(slot);
+  if (at >= 0) pool.splice(at, 1);
+  // Whatever was waiting its turn still can be, on whoever is free.
+  for (const free of pool) take(free);
+  if (queue.length && pool.length < SCAD_CONCURRENCY) take(hire());
+}
 
-const libraryPath = (key: string) => key.replace("../assets/scadLibraries/", "");
-
-/** The library folders carried here, as a script would name them: "BOSL2". */
-export const SCAD_LIBRARIES = [...new Set(Object.keys(LIBRARY_FILES).map((key) => libraryPath(key).split("/")[0]))];
-
-async function newInstance(log: string[]): Promise<Instance> {
-  const engine = await compiledEngine();
-  const instance = (await OpenSCAD({
-    noInitialRun: true,
-    print: (line: string) => log.push(line),
-    printErr: (line: string) => log.push(line),
-    instantiateWasm: (
-      imports: WebAssembly.Imports,
-      success: (inst: WebAssembly.Instance, mod: WebAssembly.Module) => void,
-    ) => {
-      WebAssembly.instantiate(engine, imports).then((inst) => success(inst, engine));
-      return {};
+/** Gives a waiting job to a free worker, if there is one of each. */
+function take(slot: Slot): void {
+  if (slot.job) return;
+  const job = queue.shift();
+  if (!job) return;
+  if (job.signal?.aborted) {
+    job.reject(new Error("cancelled"));
+    take(slot);
+    return;
+  }
+  const id = nextId++;
+  slot.job = { ...job, id };
+  // Stopping a render means stopping the thread it is on: the engine is inside a call that does not come back
+  // until it is finished, so the only way to be rid of it at once is to let the worker go.
+  job.signal?.addEventListener(
+    "abort",
+    () => {
+      if (slot.job?.id !== id) return;
+      fail(slot, new Error("cancelled"));
+      retire(slot);
     },
-  })) as Instance;
-  // The engine looks for both beside the working directory, and says so only in passing if they're missing.
-  instance.FS.chdir("/");
-  mkdirp(instance, "/locale");
-  return instance;
+    { once: true },
+  );
+  // A worker's postMessage takes a transfer list, not a target origin: passing one would be
+  // read as the transfer list and throw.
+  // eslint-disable-next-line unicorn/require-post-message-target-origin
+  slot.worker.postMessage({ ...job.message, id });
 }
 
-function mkdirp(instance: Instance, path: string): void {
-  let built = "";
-  for (const part of path.split("/").filter(Boolean)) {
-    built += `/${part}`;
-    try {
-      instance.FS.mkdir(built);
-    } catch {
-      // Already there, which is the common case once fonts and libraries share a parent.
+function ask<T>(message: Record<string, unknown>, signal?: AbortSignal): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new Error("cancelled"));
+      return;
     }
-  }
+    queue.push({ message, signal, resolve: resolve as (value: never) => void, reject });
+    const free = pool.find((slot) => !slot.job);
+    if (free) take(free);
+    else if (pool.length < SCAD_CONCURRENCY) take(hire());
+  });
 }
 
-async function fetchText(url: string): Promise<string> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Couldn't read ${url} (HTTP ${res.status})`);
-  return res.text();
+/** What parameters a script offers, as OpenSCAD's own customizer describes them. */
+export function scadParameters(source: string): Promise<ScadParameters> {
+  return ask<ScadParameters>({ kind: "parameters", source });
 }
 
-/** Mounts only what the script asks for: an ordinary script pays for neither. */
-async function mountDependencies(instance: Instance, source: string, log: string[]): Promise<void> {
-  const wanted = SCAD_LIBRARIES.filter((name) => source.includes(name));
-  if (wanted.length) {
-    mkdirp(instance, "/libraries");
-    const files = Object.entries(LIBRARY_FILES).filter(([key]) =>
-      wanted.some((name) => libraryPath(key).startsWith(`${name}/`)),
-    );
-    await Promise.all(
-      files.map(async ([key, load]) => {
-        const path = `/libraries/${libraryPath(key)}`;
-        mkdirp(instance, path.slice(0, path.lastIndexOf("/")));
-        instance.FS.writeFile(path, await fetchText(await load()));
-      }),
-    );
-  }
-
-  if (!/\btext\s*\(|\bfont\b/i.test(source)) return;
-  mkdirp(instance, "/fonts");
-  // An empty config is what the engine's own playground mounts: fontconfig only has to find the folder.
-  instance.FS.writeFile(
-    "/fonts/fonts.conf",
-    '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">\n<fontconfig>\n</fontconfig>\n',
-  );
-  await Promise.all(
-    [...TOOL_FONT_URLS].map(async ([id, url]) => {
-      try {
-        const res = await fetch(url);
-        instance.FS.writeFile(`/fonts/${id}.ttf`, new Uint8Array(await res.arrayBuffer()));
-      } catch {
-        log.push(`WARNING: the typeface ${id} didn't load, so a script asking for it will fall back.`);
-      }
-    }),
-  );
-}
-
-/** A value as the customizer's parameter file writes it: every one a string, vectors in brackets. */
-function parameterValue(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.join(",")}]`;
-  if (typeof value === "boolean") return value ? "true" : "false";
-  return String(value);
-}
-
-async function run(
-  source: string,
-  args: string[],
-  outputPath: string,
-  extraFiles: Record<string, string> = {},
-): Promise<ScadRender> {
-  const log: string[] = [];
-  const instance = await newInstance(log);
-  await mountDependencies(instance, source, log);
-  instance.FS.writeFile("/model.scad", source);
-  for (const [path, content] of Object.entries(extraFiles)) instance.FS.writeFile(path, content);
-
-  const started = Date.now();
-  // Manifold, not the CGAL the engine still falls back to: the same script is minutes against seconds, and on
-  // anything the size of a real generator the difference is the feature working or not.
-  instance.callMain(["/model.scad", "--backend=Manifold", "-o", outputPath, ...args]);
-  const seconds = (Date.now() - started) / 1000;
-
-  let bytes: Uint8Array | null = null;
-  try {
-    bytes = instance.FS.readFile(outputPath);
-  } catch {
-    // No file at all, which is what a script that failed to parse leaves behind.
-  }
-  // An empty file counts as a failure: asked for a format the engine wasn't built with, it renders the model,
-  // writes nothing and exits as though it had worked.
-  if (!bytes?.length) {
-    const said = log.filter((line) => /error|not enabled|warning: (?:unknown|ignoring)/i.test(line));
-    throw new Error(said.length ? said.join("\n") : "OpenSCAD produced nothing, and didn't say why.");
-  }
-  return { bytes, log, seconds };
-}
-
-/** What the script offers to change, as OpenSCAD itself reads it -- groups, ranges, captions and choices. */
-export async function scadParameters(source: string): Promise<ScadParameters> {
-  const { bytes } = await run(source, ["--export-format", "param"], "/parameters.json");
-  const parsed = JSON.parse(new TextDecoder().decode(bytes)) as Partial<ScadParameters>;
-  return { title: parsed.title ?? "", parameters: parsed.parameters ?? [] };
-}
-
-/** The model the script makes with the parameters given. */
-export async function scadRender(source: string, options: ScadRenderOptions = {}): Promise<ScadRender> {
-  const wanted = options.format ?? "3mf";
-  // A 3MF is made here from the engine's OFF; everything else it writes itself.
-  const asked = wanted === "3mf" ? "off" : wanted;
-  const entries = Object.entries(options.parameters ?? {});
-
-  let args: string[] = [];
-  let extra: Record<string, string> = {};
-  if (entries.length) {
-    // Through a parameter set rather than -D: the engine does its own typing, so a value holding a bracket or a
-    // quote can't turn into something else on the way through a command line.
-    const set = Object.fromEntries(entries.map(([name, value]) => [name, parameterValue(value)]));
-    args = ["-p", "/parameters.json", "-P", "thingport"];
-    extra = { "/parameters.json": JSON.stringify({ parameterSets: { thingport: set }, fileFormatVersion: "1" }) };
-  }
-
-  const rendered = await run(source, args, `/model.${asked}`, extra);
-  if (wanted !== "3mf") return rendered;
-  const { parseOff, writeThreeMf } = await import("./threeMf");
-  const mesh = parseOff(new TextDecoder().decode(rendered.bytes));
-  return { ...rendered, bytes: writeThreeMf(mesh, { name: options.name }), mesh };
+/**
+ * The model a script makes of a given set of parameters.
+ *
+ * Given a `signal`, cancelling really does stop it: the worker running it is let go there and then, rather
+ * than the call being left to finish into nothing.
+ */
+export function scadRender(source: string, options: ScadRenderOptions = {}): Promise<ScadRender> {
+  const { signal, ...rest } = options;
+  return ask<ScadRender>({ kind: "render", source, options: rest }, signal);
 }

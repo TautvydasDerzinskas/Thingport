@@ -50,10 +50,24 @@ const loaders: Record<string, () => Promise<unknown>> = {
    * OpenSCAD, for the models that came with the script they were generated from: what parameters a script
    * offers, and the model a given set of them makes. The engine is WebAssembly and several megabytes, so it is
    * compiled the first time something asks and shared from then on.
+   *
+   * The 3MF writer comes with it, because a render already hands back the geometry it drew and the next thing
+   * to want is a file holding several of them: a planner that works out a dozen parts saves one 3MF with each
+   * named inside it, rather than a dozen downloads.
    */
   openscad: async () => {
-    const { scadParameters, scadRender, SCAD_LIBRARIES } = await import("./openscad");
-    return { parameters: scadParameters, render: scadRender, libraries: SCAD_LIBRARIES };
+    const { scadParameters, scadRender, SCAD_LIBRARIES, SCAD_CONCURRENCY } = await import("./openscad");
+    const { writeThreeMf, layoutRow, meshBounds } = await import("./threeMf");
+    return {
+      parameters: scadParameters,
+      render: scadRender,
+      libraries: SCAD_LIBRARIES,
+      /** How many renders a tool may have in flight at once without crowding the machine out. */
+      concurrency: SCAD_CONCURRENCY,
+      writeThreeMf,
+      layoutRow,
+      meshBounds,
+    };
   },
 };
 

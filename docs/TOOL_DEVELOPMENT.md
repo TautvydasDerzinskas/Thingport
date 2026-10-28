@@ -79,8 +79,15 @@ review does:
 - No minified or obfuscated code, and nothing loaded at run time the review can't see. A built `tool.js` comes with its
   `source/` and a header saying what built it.
 
-A heavy library doesn't have to be bundled: `thingport.library("three" | "opentype" | "manifold" | "fonts")` hands over
-the copy Thingport already ships, loaded once and shared between tools.
+A heavy library doesn't have to be bundled: `thingport.library("three" | "opentype" | "manifold" | "fonts" |
+"openscad")` hands over the copy Thingport already ships, loaded once and shared between tools.
+
+`"openscad"` is the engine for a tool that draws rather than reads: `parameters(script)` says what settings a script
+offers and `render(script, { parameters, format })` gives the model those settings make, as the file's bytes and as
+the geometry behind them. The 3MF writer comes with it — `writeThreeMf(parts, { name })`, `layoutRow(parts)` and
+`meshBounds(mesh)` — so a tool that works out a dozen parts saves one 3MF with each of them named inside, rather
+than handing over a dozen downloads. A 3MF carries one copy of a shape however many are wanted, so a part's name is
+where its count belongs: `"8x8 Core Tile x4"`.
 
 ### The words it shows
 

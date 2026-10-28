@@ -2231,6 +2231,7 @@
           "withModels": "Importar sus modelos",
           "modelsRoom": "{{count}} modelos es un conjunto grande: ocupará gigabytes en este servidor y tardará en llegar.",
           "modelsLater": "Sin ellos la herramienta solo funciona mientras el sitio del que descarga esté disponible y este servidor en línea, y lo que arme con sus piezas no se podrá guardar. Puedes importarlos más tarde.",
+          "modelsLaterOwn": "La herramienta no podrá guardar nada que use esas piezas hasta que se importen. Vienen con la propia herramienta, así que no interviene ningún otro sitio. Puedes importarlos más tarde.",
           "modelsSkipped_one": "Instalada sin su {{count}} modelo.",
           "modelsSkipped_other": "Instalada sin sus {{count}} modelos.",
           "importModels": "Importar sus modelos",

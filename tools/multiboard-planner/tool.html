@@ -297,6 +297,12 @@
   .mbp-legend i.mbp-dot {
     border-radius: 50%;
   }
+  .mbp-legend .mbp-key {
+    width: 14px;
+    height: 14px;
+    display: inline-block;
+    flex: none;
+  }
   .mbp-stage {
     position: relative;
     flex: 1;
@@ -392,6 +398,79 @@
   .mbp-note {
     font-size: 12px;
     color: var(--muted);
+  }
+
+  /* ---- taking the board apart to see what is in it ---- */
+  .mbp-spread {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-top: 1px solid var(--divider);
+  }
+  .mbp-spread input {
+    flex: 1;
+    accent-color: var(--accent);
+  }
+
+  /* ---- drawing a wall, which takes a moment a person should see the shape of ---- */
+  .mbp-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--line);
+    overflow: hidden;
+  }
+  .mbp-bar-fill {
+    height: 100%;
+    width: 0;
+    border-radius: 3px;
+    background: var(--accent);
+    transition: width 200ms ease;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mbp-bar-fill {
+      transition: none;
+    }
+  }
+  .mbp-build-phrase {
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  /* ---- the moment a part is being got ready ---- */
+  .mbp-loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 22px;
+    border-radius: 12px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    box-shadow: 0 10px 30px rgb(0 0 0 / 18%);
+  }
+  .mbp-spin {
+    width: 16px;
+    height: 16px;
+    flex: none;
+    border-radius: 50%;
+    border: 2px solid var(--line);
+    border-top-color: var(--accent);
+    animation: mbp-spin 700ms linear infinite;
+  }
+  @keyframes mbp-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mbp-spin {
+      animation: none;
+    }
+  }
+  .mbp-ico-dl {
+    width: 15px;
+    height: 15px;
+    display: block;
   }
 
   /* ---- naming the wall before it's saved ---- */
@@ -687,6 +766,19 @@
         <div class="mbp-legend" id="mbp-legend"></div>
       </div>
       <div class="mbp-stage" id="mbp-stage"></div>
+      <div class="mbp-spread">
+        <span class="mbp-label" data-t="preview.spread">Spread</span>
+        <input
+          type="range"
+          id="mbp-spread"
+          min="0"
+          max="100"
+          step="1"
+          value="0"
+          data-t-aria="preview.spreadAria"
+          aria-label="Spread the parts apart to see what the board is made of"
+        />
+      </div>
     </section>
 
     <section class="mbp-panel mbp-results" data-t-aria="aria.parts" aria-label="Parts list">
@@ -696,24 +788,15 @@
         <span class="mbp-spacer"></span>
         <button
           class="mbp-btn"
-          id="mbp-copyBtn"
-          data-t-title="parts.copyHint"
-          title="Copy the list as tab-separated text"
+          id="mbp-filesBtn"
+          data-t-title="parts.filesHint"
+          title="Download every part, one file each, in a zip"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <rect x="9" y="9" width="11" height="11" rx="2" />
-            <path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg
-          ><span data-t="parts.copy">Copy</span>
-        </button>
-        <button
-          class="mbp-btn"
-          id="mbp-downloadBtn"
-          data-t-title="parts.listHint"
-          title="Download the list with the layout as an HTML page"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" /></svg
-          ><span data-t="parts.list">List</span>
+            <path d="M12 3v12m0 0-4-4m4 4 4-4" />
+            <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+            <path d="M8 7h8" /></svg
+          ><span data-t="parts.files">Files</span>
         </button>
         <button
           class="mbp-btn mbp-primary"
@@ -732,15 +815,35 @@
     </section>
   </main>
 
+  <div class="mbp-cover" id="mbp-loadCover" hidden>
+    <div class="mbp-loading" role="status" aria-live="polite">
+      <span class="mbp-spin" aria-hidden="true"></span>
+      <span data-t="part.loading">Loading…</span>
+    </div>
+  </div>
   <div class="mbp-cover" id="mbp-saveCover" hidden>
     <div class="mbp-dialog" role="dialog" aria-modal="true" aria-labelledby="mbp-saveTitle">
       <h2 id="mbp-saveTitle" data-t="save.title">Save this wall to Thingport</h2>
       <p class="mbp-note" id="mbp-saveNote"></p>
-      <div class="mbp-group">
+      <div class="mbp-group" id="mbp-saveNameBox">
         <div class="mbp-label" data-t="save.name">What to call it</div>
         <div class="mbp-field">
           <input id="mbp-saveName" autocomplete="off" data-t-aria="save.name" aria-label="What to call it" />
         </div>
+      </div>
+      <div class="mbp-group" id="mbp-buildBox" hidden>
+        <div class="mbp-build-phrase" id="mbp-buildPhrase" role="status" aria-live="polite"></div>
+        <div
+          class="mbp-bar"
+          role="progressbar"
+          id="mbp-buildBar"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+        >
+          <div class="mbp-bar-fill" id="mbp-buildFill"></div>
+        </div>
+        <div class="mbp-note" id="mbp-buildCount"></div>
       </div>
       <div class="mbp-dialog-foot">
         <button type="button" class="mbp-btn" id="mbp-saveCancel" data-t="save.cancel">Cancel</button>

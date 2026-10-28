@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { unzipSync, strFromU8 } from "fflate";
-import { isColored, offToThreeMf, parseOff, writeThreeMf } from "./threeMf";
+import { isColored, layoutRow, meshBounds, offToThreeMf, parseOff, writeThreeMf } from "./threeMf";
 
 // The OFF below is exactly what the engine writes for `cube([10,20,30]);` -- six quads, not twelve triangles,
 // which is the whole reason this has to triangulate rather than copy.
@@ -164,11 +164,15 @@ describe("writeThreeMf", () => {
     const off = "OFF\n4 2 0\n0 0 0\n1 0 0\n0 1 0\n1 1 0\n3 0 1 2 255 0 0\n3 1 3 2 0 128 64\n";
     const xml = model(offToThreeMf(off));
 
-    expect(xml).toContain('<basematerials id="2">');
     expect(xml).toContain('<base name="Colour 1" displaycolor="#FF0000FF"/>');
     expect(xml).toContain('<base name="Colour 2" displaycolor="#008040FF"/>');
-    // The object points at the group, and each triangle at its own material in it.
-    expect(xml).toContain('<object id="1" type="model" pid="2" pindex="0">');
+    // The object points at the group, and each triangle at its own material in it. Which ids those are is
+    // the writer's own business -- what matters is that they agree, and that the group comes first, since
+    // 3MF wants a resource defined before anything names it.
+    const group = xml.match(/<basematerials id="(\d+)">/)?.[1];
+    expect(group).toBeDefined();
+    expect(xml).toContain(`pid="${group}" pindex="0"`);
+    expect(xml.indexOf("<basematerials")).toBeLessThan(xml.indexOf("<object"));
     expect(xml).toContain('<triangle v1="0" v2="1" v3="2" p1="0"/>');
     expect(xml).toContain('<triangle v1="1" v2="3" v3="2" p1="1"/>');
   });
@@ -177,7 +181,7 @@ describe("writeThreeMf", () => {
     const xml = model(offToThreeMf(CUBE_OFF));
     expect(xml).not.toContain("basematerials");
     expect(xml).not.toContain("p1=");
-    expect(xml).toContain('<object id="1" type="model">');
+    expect(xml).toMatch(/<object id="\d+" type="model">/);
   });
 
   it("writes one explicit colour as the object's own material rather than per triangle", () => {
@@ -185,7 +189,8 @@ describe("writeThreeMf", () => {
     const xml = model(offToThreeMf(off));
 
     expect(xml).toContain('<base name="Colour 1" displaycolor="#FF0000FF"/>');
-    expect(xml).toContain('<object id="1" type="model" pid="2" pindex="0">');
+    const only = xml.match(/<basematerials id="(\d+)">/)?.[1];
+    expect(xml).toContain(`pid="${only}" pindex="0"`);
     // `pindex` already names it for every triangle, so repeating it on each would only grow the file.
     expect(xml).not.toContain("p1=");
   });
@@ -203,5 +208,98 @@ describe("writeThreeMf", () => {
 
   it("refuses to write a model with nothing in it", () => {
     expect(() => writeThreeMf({ vertices: new Float64Array(), triangles: new Uint32Array() })).toThrow(/nothing/);
+  });
+});
+
+describe("writeThreeMf, several parts", () => {
+  const cube = () => parseOff(CUBE_OFF);
+  const red = () => parseOff("OFF\n3 1 0\n0 0 0\n1 0 0\n0 1 0\n3 0 1 2 255 0 0\n");
+  const blue = () => parseOff("OFF\n3 1 0\n0 0 0\n1 0 0\n0 1 0\n3 0 1 2 0 0 255\n");
+
+  it("writes an object and a build item for each part", () => {
+    const xml = model(writeThreeMf([{ mesh: cube() }, { mesh: cube() }, { mesh: cube() }]));
+    expect(xml.match(/<object /g)).toHaveLength(3);
+    expect(xml.match(/<item /g)).toHaveLength(3);
+  });
+
+  it("gives every object its own id, and points each build item at one", () => {
+    const xml = model(writeThreeMf([{ mesh: cube() }, { mesh: cube() }]));
+    const ids = [...xml.matchAll(/<object id="(\d+)"/g)].map((m) => m[1]);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const id of ids) expect(xml).toContain(`<item objectid="${id}"`);
+  });
+
+  it("names an object, so a slicer's list can say how many of it to print", () => {
+    const xml = model(writeThreeMf([{ mesh: cube(), name: "8x8 Core Tile x4" }]));
+    expect(xml).toContain('name="8x8 Core Tile x4"');
+  });
+
+  it("escapes a name that would otherwise break the XML", () => {
+    const xml = model(writeThreeMf([{ mesh: cube(), name: 'Tile <"4">' }]));
+    expect(xml).toContain("Tile &lt;&quot;4&quot;&gt;");
+    expect(xml).not.toContain('<"4">');
+  });
+
+  it("places a part with a move, and leaves one without `at` where its mesh already is", () => {
+    const xml = model(writeThreeMf([{ mesh: cube(), at: { x: 10, y: 20 } }, { mesh: cube() }]));
+    expect(xml).toContain('transform="1 0 0 0 1 0 0 0 1 10 20 0"');
+    expect(xml.match(/<item objectid="\d+"\/>/g)).toHaveLength(1);
+  });
+
+  it("keeps each part's colours to itself, in its own group", () => {
+    const xml = model(writeThreeMf([{ mesh: red() }, { mesh: blue() }]));
+    const groups = [...xml.matchAll(/<basematerials id="(\d+)">/g)].map((m) => m[1]);
+    expect(groups).toHaveLength(2);
+    expect(new Set(groups).size).toBe(2);
+    expect(xml).toContain('displaycolor="#FF0000FF"');
+    expect(xml).toContain('displaycolor="#0000FFFF"');
+    for (const id of groups) expect(xml).toContain(`pid="${id}" pindex="0"`);
+  });
+
+  it("writes an uncoloured part beside a coloured one without giving it a material", () => {
+    const xml = model(writeThreeMf([{ mesh: cube() }, { mesh: red() }]));
+    expect(xml.match(/<basematerials /g)).toHaveLength(1);
+    expect(xml.match(/<object /g)).toHaveLength(2);
+    expect(xml.match(/pid="/g)).toHaveLength(1);
+  });
+
+  it("still takes a single mesh, as everything that saves one model does", () => {
+    const xml = model(writeThreeMf(cube(), { name: "One" }));
+    expect(xml.match(/<object /g)).toHaveLength(1);
+    expect(xml).toContain('<metadata name="Title">One</metadata>');
+  });
+
+  it("says so when there is nothing to save", () => {
+    expect(() => writeThreeMf([])).toThrow(/nothing in the model/i);
+    const empty = { vertices: new Float64Array(), triangles: new Uint32Array() };
+    expect(() => writeThreeMf([{ mesh: empty }])).toThrow(/nothing in the model/i);
+  });
+});
+
+describe("layoutRow", () => {
+  const cube = () => parseOff(CUBE_OFF); // 10 x 20 x 30, with a corner on the origin
+
+  it("stands each part on z = 0 and sets it down beside the one before", () => {
+    const [first, second] = layoutRow([{ mesh: cube() }, { mesh: cube() }], { gap: 5 });
+    expect(first.at).toEqual({ x: 0, y: 0, z: 0 });
+    // the cube is 10 wide, so the next starts at 10 + the gap
+    expect(second.at).toEqual({ x: 15, y: 0, z: 0 });
+  });
+
+  it("moves a part that sits away from the origin back onto it", () => {
+    const mesh = parseOff("OFF\n3 1 0\n100 50 7\n110 50 7\n100 60 7\n3 0 1 2\n");
+    const [only] = layoutRow([{ mesh }]);
+    expect(only.at).toEqual({ x: -100, y: -50, z: -7 });
+  });
+
+  it("keeps what each part already said about itself", () => {
+    const [only] = layoutRow([{ mesh: cube(), name: "Tile" }]);
+    expect(only.name).toBe("Tile");
+  });
+});
+
+describe("meshBounds", () => {
+  it("measures a mesh in millimetres", () => {
+    expect(meshBounds(parseOff(CUBE_OFF))).toEqual({ min: [0, 0, 0], max: [10, 20, 30] });
   });
 });

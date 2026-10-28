@@ -43,6 +43,9 @@ const resolvedAllowedHosts = parseAllowedHosts(
 const { version } = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8"));
 
 export default defineConfig({
+  // The OpenSCAD worker reaches the engine through dynamic imports, so its bundle has to be splittable.
+  // Vite's default worker format is IIFE, which cannot be.
+  worker: { format: "es" },
   define: {
     "import.meta.env.VITE_APP_VERSION": JSON.stringify(version),
   },

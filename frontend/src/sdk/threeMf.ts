@@ -177,23 +177,73 @@ const RELS = `<?xml version="1.0" encoding="UTF-8"?>
 `;
 
 /** The id of the base-material group a coloured mesh's triangles point at; the object itself is 1. */
-const MATERIALS_ID = 2;
+/** One of the things a 3MF holds: a mesh, what a slicer should call it, and where it sits on the plate. */
+export type ThreeMfPart = {
+  mesh: Mesh;
+  /** Shown in the slicer's object list. A count belongs here -- "8x8 Core Tile x4" -- since 3MF carries one
+   *  copy of a shape however many are wanted, and the name is where a person reads how many to print. */
+  name?: string;
+  /** Millimetres from the origin. Left out, the part sits where its mesh already is, which is only what you
+   *  want for a single part: several of them would land on top of each other. See `layoutRow`. */
+  at?: { x: number; y: number; z?: number };
+};
+
+/** The bounding box of a mesh, in millimetres. */
+export function meshBounds(mesh: Mesh): { min: [number, number, number]; max: [number, number, number] } {
+  const min: [number, number, number] = [Infinity, Infinity, Infinity];
+  const max: [number, number, number] = [-Infinity, -Infinity, -Infinity];
+  for (let i = 0; i < mesh.vertices.length; i += 3)
+    for (let c = 0; c < 3; c++) {
+      const v = mesh.vertices[i + c];
+      if (v < min[c]) min[c] = v;
+      if (v > max[c]) max[c] = v;
+    }
+  return { min, max };
+}
 
 /**
- * The 3MF package for one mesh, as the bytes of a .3mf file.
+ * Lays parts out in a row, in the order given, with `gap` between them, each sitting on z = 0.
+ *
+ * A 3MF says where each object goes and nothing checks that they do not overlap, so parts written without
+ * somewhere to be all land on the origin, inside one another. This is the simple arrangement that avoids
+ * that; a planner wanting a tidier packing can set `at` itself.
+ */
+export function layoutRow(parts: ThreeMfPart[], { gap = 5 }: { gap?: number } = {}): ThreeMfPart[] {
+  // Negating a zero gives -0, which is a real number to write into a transform and a surprise to compare
+  // against, so it is flattened here rather than left for a reader to wonder at.
+  const flat = (v: number) => (v === 0 ? 0 : v);
+  let x = 0;
+  return parts.map((part) => {
+    const { min, max } = meshBounds(part.mesh);
+    const placed = { ...part, at: { x: flat(x - min[0]), y: flat(-min[1]), z: flat(-min[2]) } };
+    x += max[0] - min[0] + gap;
+    return placed;
+  });
+}
+
+/**
+ * The 3MF package for one mesh or several, as the bytes of a .3mf file.
  *
  * A mesh with a palette is written as a base-material group, one material per colour, with each triangle
  * naming the one it belongs to. That is the core spec's own way of colouring a model, and it is what a slicer
  * reads to put each part on a filament.
+ *
+ * Several parts become several objects in the one file, each named and placed by its own build item, which is
+ * how a whole wall's worth of plates arrives as one download rather than a folder of them.
  */
-export function writeThreeMf(mesh: Mesh, { name = "model" }: { name?: string } = {}): Uint8Array {
-  if (!mesh.triangles.length) throw new Error("There is nothing in the model to save.");
-  const palette = mesh.palette ?? [];
-  const faceColors = mesh.colors;
-  const colored = palette.length > 0 && faceColors?.length === mesh.triangles.length / 3;
-  // One colour over the whole model is the object's own material, which `pindex` already names: saying it
-  // again on each triangle would only repeat it a hundred thousand times.
-  const perTriangle = colored && palette.length > 1;
+export function writeThreeMf(input: Mesh | ThreeMfPart[], { name = "model" }: { name?: string } = {}): Uint8Array {
+  const given = Array.isArray(input) ? input : [{ mesh: input }];
+  if (!given.length) throw new Error("There is nothing in the model to save.");
+  if (given.some((part) => !part.mesh.triangles.length)) throw new Error("There is nothing in the model to save.");
+
+  // Every object and every material group shares one pool of resource ids.
+  let nextId = 1;
+  const planned = given.map((part) => {
+    const palette = part.mesh.palette ?? [];
+    const colored = palette.length > 0 && part.mesh.colors?.length === part.mesh.triangles.length / 3;
+    return { part, palette, colored, materialsId: colored ? nextId++ : 0, objectId: 0 };
+  });
+  for (const entry of planned) entry.objectId = nextId++;
 
   const parts: string[] = [
     '<?xml version="1.0" encoding="UTF-8"?>\n',
@@ -203,36 +253,55 @@ export function writeThreeMf(mesh: Mesh, { name = "model" }: { name?: string } =
     ' <metadata name="Application">Thingport</metadata>\n',
     " <resources>\n",
   ];
-  if (colored) {
-    parts.push(`  <basematerials id="${MATERIALS_ID}">\n`);
+  // Material groups first: an object names one, so it has to exist by the time it does.
+  for (const { palette, colored, materialsId } of planned) {
+    if (!colored) continue;
+    parts.push(`  <basematerials id="${materialsId}">\n`);
     for (const [index, color] of palette.entries()) {
       // Opaque: OFF carries no alpha that OpenSCAD writes, and a slicer reads these as filament slots.
       parts.push(`   <base name="Colour ${index + 1}" displaycolor="${displayColor(color)}"/>\n`);
     }
     parts.push("  </basematerials>\n");
   }
-  parts.push(
-    colored
-      ? `  <object id="1" type="model" pid="${MATERIALS_ID}" pindex="0">\n   <mesh>\n    <vertices>\n`
-      : '  <object id="1" type="model">\n   <mesh>\n    <vertices>\n',
-  );
-  for (let i = 0; i < mesh.vertices.length; i += 3) {
+  for (const { part, palette, colored, materialsId, objectId } of planned) {
+    const { mesh } = part;
+    const faceColors = mesh.colors;
+    // One colour over the whole model is the object's own material, which `pindex` already names: saying it
+    // again on each triangle would only repeat it a hundred thousand times.
+    const perTriangle = colored && palette.length > 1;
+    const named = part.name ? ` name="${escapeXml(part.name)}"` : "";
     parts.push(
-      `     <vertex x="${coordinate(mesh.vertices[i])}" y="${coordinate(mesh.vertices[i + 1])}" z="${coordinate(
-        mesh.vertices[i + 2],
-      )}"/>\n`,
+      colored
+        ? `  <object id="${objectId}"${named} type="model" pid="${materialsId}" pindex="0">\n   <mesh>\n    <vertices>\n`
+        : `  <object id="${objectId}"${named} type="model">\n   <mesh>\n    <vertices>\n`,
     );
+    for (let i = 0; i < mesh.vertices.length; i += 3) {
+      parts.push(
+        `     <vertex x="${coordinate(mesh.vertices[i])}" y="${coordinate(mesh.vertices[i + 1])}" z="${coordinate(
+          mesh.vertices[i + 2],
+        )}"/>\n`,
+      );
+    }
+    parts.push("    </vertices>\n    <triangles>\n");
+    for (let i = 0; i < mesh.triangles.length; i += 3) {
+      // p1 alone colours the whole triangle; p2 and p3 would blend it across the corners.
+      const material = perTriangle && faceColors ? ` p1="${faceColors[i / 3]}"` : "";
+      parts.push(
+        `     <triangle v1="${mesh.triangles[i]}" v2="${mesh.triangles[i + 1]}" v3="${mesh.triangles[i + 2]}"${material}/>\n`,
+      );
+    }
+    parts.push("    </triangles>\n   </mesh>\n  </object>\n");
   }
-  parts.push("    </vertices>\n    <triangles>\n");
-  for (let i = 0; i < mesh.triangles.length; i += 3) {
-    // p1 alone colours the whole triangle; p2 and p3 would blend it across the corners.
-    const material = perTriangle && faceColors ? ` p1="${faceColors[i / 3]}"` : "";
-    parts.push(
-      `     <triangle v1="${mesh.triangles[i]}" v2="${mesh.triangles[i + 1]}" v3="${mesh.triangles[i + 2]}"${material}/>\n`,
-    );
+  parts.push(" </resources>\n <build>\n");
+  for (const { part, objectId } of planned) {
+    // 3MF places an object with a 4x3 matrix, the rotation first and the move last. Ours only ever move.
+    const at = part.at;
+    const move = at
+      ? ` transform="1 0 0 0 1 0 0 0 1 ${coordinate(at.x)} ${coordinate(at.y)} ${coordinate(at.z ?? 0)}"`
+      : "";
+    parts.push(`  <item objectid="${objectId}"${move}/>\n`);
   }
-  parts.push("    </triangles>\n   </mesh>\n  </object>\n </resources>\n");
-  parts.push(' <build>\n  <item objectid="1"/>\n </build>\n</model>\n');
+  parts.push(" </build>\n</model>\n");
 
   return zipSync({
     "[Content_Types].xml": strToU8(CONTENT_TYPES),
