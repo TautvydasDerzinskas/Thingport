@@ -38,6 +38,7 @@ PEG_FACE    = 4.000;   // radius at the face, before the chamfer; the bore measu
 PEG_CHAMFER = 0.5;     // depth of the 45-degree chamfer at each face
 PEG_PITCH   = 3.125;   // thread lead, mm per turn
 PEG_CREST   = 0.228;   // share of one turn spent at the crest, measured as 82 degrees of 360
+PEG_PHASE   = 116.6;   // where the helix starts, set from the order-1 phase of the plates
 
 // The interfit slot at each edge wall junction, which is what the Interfitted variants' tabs reach into.
 // It is a dovetail, not a plain slot: tracing the void across its depth, the cavity flares from 5.10 mm wide
@@ -111,6 +112,7 @@ function peg_profile(phase) =
 
 /** The pegboard bore's cross-section: a circle with one thread ridge, so twisting it sweeps a single-start helix. */
 module peg_section() {
+  rotate(PEG_PHASE)
   polygon([for (i = [0:SIDES-1])
     let (a = 360 * i / SIDES, r = peg_profile(i / SIDES)) [r * cos(a), r * sin(a)]]);
 }
