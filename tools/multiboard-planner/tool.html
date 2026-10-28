@@ -394,6 +394,30 @@
     color: var(--muted);
   }
 
+  /* ---- drawing a wall, which takes a moment a person should see the shape of ---- */
+  .mbp-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--line);
+    overflow: hidden;
+  }
+  .mbp-bar-fill {
+    height: 100%;
+    width: 0;
+    border-radius: 3px;
+    background: var(--accent);
+    transition: width 200ms ease;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mbp-bar-fill {
+      transition: none;
+    }
+  }
+  .mbp-build-phrase {
+    font-size: 13px;
+    color: var(--text);
+  }
+
   /* ---- naming the wall before it's saved ---- */
   .mbp-cover {
     position: fixed;
@@ -741,6 +765,20 @@
         <div class="mbp-field">
           <input id="mbp-saveName" autocomplete="off" data-t-aria="save.name" aria-label="What to call it" />
         </div>
+      </div>
+      <div class="mbp-group" id="mbp-buildBox" hidden>
+        <div class="mbp-build-phrase" id="mbp-buildPhrase" role="status" aria-live="polite"></div>
+        <div
+          class="mbp-bar"
+          role="progressbar"
+          id="mbp-buildBar"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+        >
+          <div class="mbp-bar-fill" id="mbp-buildFill"></div>
+        </div>
+        <div class="mbp-note" id="mbp-buildCount"></div>
       </div>
       <div class="mbp-dialog-foot">
         <button type="button" class="mbp-btn" id="mbp-saveCancel" data-t="save.cancel">Cancel</button>

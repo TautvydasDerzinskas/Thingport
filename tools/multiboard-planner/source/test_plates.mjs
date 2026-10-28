@@ -57,7 +57,7 @@ const one = plateLabel("C1", "8x8", 1, data.tileNames);
 check(one.name === "8x8 Core Multiboard", `label for one reads "${one.name}"`);
 
 // --- what a wall asks for, and the drawing of it ------------------------------------------------------
-const { plateIndex, buildPlates } = await import("./plates.js");
+const { plateIndex, buildWall, partName } = await import("./plates.js");
 
 const index = plateIndex(data.tiles);
 check(index.size === data.tiles.filter((t) => t.link).length, "every linked tile should be in the index");
@@ -80,9 +80,30 @@ const wanted = [
   { type: "CR2", size: "4x4", name: "4x4 Top Right Corner" },
 ];
 const seen = [];
-const built = await buildPlates(fakeScad, "// script", wanted, { onProgress: (p) => seen.push(p) });
+const plan = { plates: wanted, joints: [] };
+const built = await buildWall(fakeScad, "// script", plan, { onProgress: (p) => seen.push(p) });
 check(built.length === 2, `two plates wanted, ${built.length} drawn`);
 check(built[0].name === wanted[0].name, "a part should keep the name it was given, count and all");
+
+// Joints come through whatever reads them, counted in the same progress.
+const jointPlan = { plates: [wanted[0]], joints: [{ name: "Dual Clip", quantity: 2 }] };
+const jointSeen = [];
+const withJoints = await buildWall(fakeScad, "// script", jointPlan, {
+  readJoint: async (joint) => [{ mesh: fakeMesh, name: partName(joint) }],
+  onProgress: (p) => jointSeen.push(p),
+});
+check(withJoints.length === 2, `a plate and a joint should give two pieces, got ${withJoints.length}`);
+check(withJoints[1].name === "Dual Clip x2", `a joint should carry its count, got "${withJoints[1].name}"`);
+check(jointSeen[jointSeen.length - 1].total === 2, "progress should count the joint too");
+
+// A joint with nothing to read it is said so rather than quietly dropped.
+let unread = "";
+await buildWall(fakeScad, "// script", { plates: [], joints: [{ name: "Snap", quantity: 1 }] }).catch(
+  (e) => (unread = e.message),
+);
+check(/Snap/.test(unread), `a joint with no reader should say which, got "${unread}"`);
+
+check(partName({ name: "Tile", quantity: 1 }) === "Tile", "one of a thing carries no count");
 check(asked[0].cells === 8 && asked[0].neighbour_px === true, "a core tile should be drawn surrounded");
 check(asked[1].cells === 4 && asked[1].neighbour_py === false, "a top-right corner should have nothing above it");
 check(seen.length === 3, `progress should be told before each and at the end, got ${seen.length}`);
@@ -91,12 +112,12 @@ check(seen[0].total === 2 && seen[2].done === 2, "progress should count towards 
 // Stopping between plates.
 const stop = { aborted: true };
 let stopped = false;
-await buildPlates(fakeScad, "// script", wanted, { signal: stop }).catch(() => (stopped = true));
+await buildWall(fakeScad, "// script", plan, { signal: stop }).catch(() => (stopped = true));
 check(stopped, "an aborted signal should stop it");
 
 // A tile it cannot draw is said so by name rather than drawn wrong.
 let refused = "";
-await buildPlates(fakeScad, "// script", [{ type: "C1", size: "4x6", name: "odd" }]).catch(
+await buildWall(fakeScad, "// script", { plates: [{ type: "C1", size: "4x6", name: "odd" }], joints: [] }).catch(
   (e) => (refused = e.message),
 );
 check(/4x6/.test(refused), `a size it cannot draw should say which, got "${refused}"`);

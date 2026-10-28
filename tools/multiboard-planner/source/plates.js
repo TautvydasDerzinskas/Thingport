@@ -80,22 +80,41 @@ export function plateIndex(tiles) {
   return byLink;
 }
 
+/** A piece's name with how many to print, which is where a count belongs in a 3MF. */
+export function partName(part) {
+  return part.quantity > 1 ? `${part.name} x${part.quantity}` : part.name;
+}
+
 /**
- * Every distinct plate a wall wants, drawn once each.
+ * Every piece of a wall as geometry: the plates drawn, the joints read.
  *
- * Once each is the point: a wall of forty tiles is a handful of shapes repeated, and a 3MF holds one copy of a
- * shape however many are wanted. `onProgress` is called before each with how far along it is, since a plate
- * takes a second or three and a dozen of them is a wait a person needs to see the shape of.
+ * Once each is the point. A wall of forty tiles is a handful of shapes repeated, and a 3MF holds one copy of
+ * a shape however many are wanted, which is why the count lives in the name rather than in the file.
  *
- * `signal` stops it between plates -- the engine itself cannot be interrupted once it has started one.
+ * `readJoint` is given a joint and hands back its pieces, since where a joint's bytes come from is the
+ * planner's business and not this file's. `onProgress` is told before each piece and once at the end, and
+ * `signal` stops it between pieces -- the engine cannot be interrupted part way through drawing one.
  */
-export async function buildPlates(scad, script, wanted, { onProgress, signal } = {}) {
+export async function buildWall(scad, script, plan, { readJoint, onProgress, signal } = {}) {
+  const total = plan.plates.length + plan.joints.length;
   const parts = [];
-  for (const [index, item] of wanted.entries()) {
+  let done = 0;
+  const stopIfAsked = () => {
     if (signal?.aborted) throw new Error("cancelled");
-    onProgress?.({ done: index, total: wanted.length, name: item.name });
-    parts.push({ mesh: await renderPlate(scad, script, item), name: item.name });
+  };
+  for (const plate of plan.plates) {
+    stopIfAsked();
+    onProgress?.({ done, total, name: plate.name });
+    parts.push({ mesh: await renderPlate(scad, script, plate), name: partName(plate) });
+    done++;
   }
-  onProgress?.({ done: wanted.length, total: wanted.length });
+  for (const joint of plan.joints) {
+    stopIfAsked();
+    onProgress?.({ done, total, name: joint.name });
+    if (!readJoint) throw new Error(`Nothing to read ${joint.name} with`);
+    for (const piece of await readJoint(joint)) parts.push(piece);
+    done++;
+  }
+  onProgress?.({ done: total, total });
   return parts;
 }

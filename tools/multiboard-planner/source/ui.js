@@ -676,6 +676,94 @@ ${rows}
   }
 
   /** What to print and in what order, for the saved model's description. */
+  // --- drawing a wall -----------------------------------------------------------------------------
+  //
+  // A wall is plates and joints, and they arrive differently: a plate is drawn here from plate.scad, a
+  // joint is read from the files the tool carries. Both end up as geometry so the whole wall can be one
+  // 3MF, each piece named with how many to print -- a 3MF holds one copy of a shape however many are
+  // wanted, so the name is where a person reads the count.
+
+  const PLATE_BY_LINK = plateIndex(PLANNER_DATA.tiles);
+  let scadLibrary = null;
+  const openscad = async () => (scadLibrary ??= await thingport.library("openscad"));
+
+  /** What a wall is made of, each distinct piece once with how many of it are wanted. */
+  function wallPlan(result) {
+    const plates = new Map();
+    const joints = new Map();
+    for (const row of saveRows(result)) {
+      const quantity = Number(row[1]) || 0;
+      const name = String(row[0]).replace(/\n/g, " ").trim();
+      for (const link of row[2] || []) {
+        const tile = PLATE_BY_LINK.get(link);
+        if (tile) {
+          const id = `${tile.type}:${tile.size}`;
+          const seen = plates.get(id);
+          if (seen) seen.quantity += quantity;
+          else plates.set(id, { type: tile.type, size: tile.size, name, quantity });
+          continue;
+        }
+        const key = modelKey(link);
+        if (!key) continue;
+        const seen = joints.get(key);
+        if (seen) seen.quantity += quantity;
+        else joints.set(key, { key, link, name, quantity });
+      }
+    }
+    return { plates: [...plates.values()], joints: [...joints.values()] };
+  }
+
+  /** A joint's pieces, read from the files the tool carries. */
+  async function readJoint(joint) {
+    const copy = localCopy(joint.link);
+    if (!copy) throw new Error(t("build.missing", { part: joint.name }));
+    const model = await models.get(copy.printId);
+    const pieces = [];
+    for (const [index, file] of model.files.entries()) {
+      const bytes = await models.file(copy.printId, file.id);
+      // A joint of several files keeps them apart rather than losing all but one.
+      const name = model.files.length > 1 ? `${partName(joint)} (${index + 1})` : partName(joint);
+      pieces.push({ mesh: readBinaryStl(bytes), name });
+    }
+    return pieces;
+  }
+
+  /** The whole wall as one 3MF, laid out so it opens ready rather than piled on the origin. */
+  async function wallFile(result, title, options) {
+    const scad = await openscad();
+    const parts = await buildWall(scad, PLATE_SCAD, wallPlan(result), { readJoint, ...options });
+    if (!parts.length) throw new Error(t("build.nothing"));
+    const bytes = scad.writeThreeMf(scad.layoutRow(parts), { name: title });
+    const stem = title.replace(/[^\w.-]+/g, "-").replace(/^-+|-+$/g, "") || "multiboard-wall";
+    return { name: `${stem}.3mf`, data: bytes, type: "model/3mf" };
+  }
+
+  // Drawing a wall takes a while, so it is shown rather than guessed at: a bar that really does count the
+  // pieces, and a phrase that changes while it works, the way Thingport's own progress bars do.
+  const BUILD_PHRASES = 6;
+  let buildTimer = 0;
+  let building = null;
+
+  function showBuilding(on) {
+    $("buildBox").hidden = !on;
+    if (buildTimer) clearInterval(buildTimer);
+    buildTimer = 0;
+    if (!on) return;
+    let n = Math.floor(Math.random() * BUILD_PHRASES);
+    const say = () => {
+      $("buildPhrase").textContent = t(`build.phrase${(n++ % BUILD_PHRASES) + 1}`);
+    };
+    say();
+    buildTimer = setInterval(say, 3000);
+  }
+
+  function buildProgress({ done, total }) {
+    const percent = total ? Math.round((done / total) * 100) : 0;
+    $("buildFill").style.width = `${percent}%`;
+    $("buildBar").setAttribute("aria-valuenow", String(percent));
+    $("buildCount").textContent = t("build.count", { done, total });
+  }
+
   function printNotes(result, title, parts) {
     const d = result.data;
     const total = parts.reduce((sum, part) => sum + part.quantity, 0);
@@ -693,6 +781,9 @@ ${rows}
     // order the note below gives, and the order you want to print in.
     for (const part of parts) lines.push(`  ${part.quantity} × ${part.name}`);
     lines.push("", t("notes.order"), `  1. ${t("notes.orderTiles")}`, `  2. ${t("notes.orderMounts")}`);
+    lines.push("", t("notes.howTitle"));
+    for (const key of ["howLayer", "howWalls", "howInfill", "howSupports", "howTolerance"])
+      lines.push(`  ${t(`notes.${key}`)}`);
     lines.push("", t("notes.files"));
     lines.push("", t("notes.madeWith", { version: thingport.tool.version }));
     return lines.join("\n");
@@ -706,8 +797,8 @@ ${rows}
    * parts, and without the parts there is nothing to save. What didn't come says why, which is how a daily
    * download limit at the other end reaches the person waiting for it.
    */
-  async function haveTheParts(result) {
-    const missing = wallKeys(result).filter((key) => !local.has(key));
+  async function haveTheParts(result, keys = wallKeys(result)) {
+    const missing = keys.filter((key) => !local.has(key));
     if (!missing.length) return true;
     const ok = await ui.confirm({
       title: t("fetch.title"),
@@ -737,6 +828,10 @@ ${rows}
 
   const saveCover = $("saveCover");
   const closeSave = () => {
+    // Closing while it draws stops it, at the next plate: the engine cannot be interrupted part way
+    // through one, so this is not quite instant.
+    building?.abort();
+    showBuilding(false);
     saveCover.hidden = true;
   };
   $("saveCancel").addEventListener("click", closeSave);
@@ -773,48 +868,44 @@ ${rows}
   $("saveGo").addEventListener("click", async () => {
     if (!current) return;
     const go = $("saveGo");
-    const parts = wallParts(current);
     const title = $("saveName").value.trim() || t("save.untitled");
+    const plan = wallPlan(current);
+    const pieces = [...plan.plates, ...plan.joints];
     go.disabled = true;
     go.textContent = t("save.saving");
+    building = new AbortController();
     try {
-      if (!(await haveTheParts(current))) return;
+      // Only the joints come from files; the plates are drawn here and need nothing fetched.
+      if (
+        plan.joints.length &&
+        !(await haveTheParts(
+          current,
+          plan.joints.map((joint) => joint.key),
+        ))
+      )
+        return;
       const collection = await collections.pick({ title: t("save.pickCollection") });
       if (!collection) return;
-      // Every part as its own file, named so the list reads in print order with its count.
-      const files = [];
-      const used = new Set();
-      for (const part of parts) {
-        try {
-          const model = await models.get(part.copy.printId);
-          for (const file of model.files) {
-            const dot = file.name.lastIndexOf(".");
-            const stem = dot > 0 ? file.name.slice(0, dot) : file.name;
-            const extension = dot > 0 ? file.name.slice(dot) : "";
-            let name = `${part.quantity}x ${stem}${extension}`;
-            // Two parts can ship a file of the same name; keep both rather than losing one.
-            for (let n = 2; used.has(name); n++) name = `${part.quantity}x ${stem} (${n})${extension}`;
-            used.add(name);
-            files.push({ name, data: await models.file(part.copy.printId, file.id) });
-          }
-        } catch (err) {
-          // A wall has dozens of parts, so which one failed matters more than which file inside it.
-          throw new Error(t("toast.partFailed", { part: part.name, reason: err.message }), { cause: err });
-        }
-      }
-      const saved = await models.create({
+      showBuilding(true);
+      const file = await wallFile(current, title, {
+        onProgress: buildProgress,
+        signal: building.signal,
+      });
+      await models.create({
         name: title,
-        description: printNotes(current, title, parts),
+        description: printNotes(current, title, pieces),
         tags: ["multiboard", "generated"],
         collectionId: collection.id,
-        files,
+        files: [file],
       });
       closeSave();
       ui.toast(t("toast.saved", { name: title, collection: collection.name }), "success");
-      void saved;
     } catch (err) {
-      ui.toast(err.message || t("toast.saveFailed"), "error");
+      const stopped = building?.signal.aborted;
+      ui.toast(stopped ? t("build.cancelled") : err.message || t("toast.saveFailed"), stopped ? "info" : "error");
     } finally {
+      showBuilding(false);
+      building = null;
       go.disabled = false;
       go.textContent = t("save.go");
     }
