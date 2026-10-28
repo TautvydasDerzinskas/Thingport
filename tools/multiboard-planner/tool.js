@@ -647,6 +647,9 @@ export function writeBinaryStl(mesh, { name = "model" } = {}) {
 // A side with a plate against it on +X or +Y carries the pads that reach into that plate; on -X or -Y it
 // carries the notches its neighbour's pads reach into. So a core tile, surrounded, has all four; a single
 // standalone tile has none; an edge tile has three.
+//
+// `writeBinaryStl` below is stlout.js's: source/ is concatenated into one module by build.mjs, so the files
+// share a scope rather than importing each other.
 
 /** Planner tile type to the sides that have a plate against them, and the plate that confirmed it. */
 export const PLATE_SIDES = {
@@ -796,7 +799,7 @@ export async function buildWall(scad, script, plan, { readJoint, onProgress, sig
     stopIfAsked();
     await report({ done, total, name: joint.name });
     if (!readJoint) throw new Error(`Nothing to read ${joint.name} with`);
-    for (const piece of await readJoint(joint)) files.push({ ...piece, extension: piece.extension });
+    for (const piece of await readJoint(joint)) files.push(piece);
     done++;
   }
   await report({ done: total, total });
@@ -818,11 +821,10 @@ export async function buildWall(scad, script, plan, { readJoint, onProgress, sig
 
 const SVGNS = "http://www.w3.org/2000/svg";
 
-// Board colours follow the original planner: core red, edge green, corner yellow; snaps yellow (single), orange
-// (dual), red (quad). Fixed so exports look the same.
-// What a tile's kind and its snaps are drawn in. These stay the same in both themes on purpose: they are the
-// legend's identity, read against the legend rather than against the page, and a core plate that changed colour
-// with the theme would be harder to learn, not easier.
+// What a tile's kind is drawn in, following the original planner: core red, edge green, corner yellow. These
+// stay the same in both themes on purpose: they are the legend's identity, read against the legend rather than
+// against the page, and a core plate that changed colour with the theme would be harder to learn, not easier.
+// The fittings have no tint of their own -- they are drawn from their own outlines, in PAL.fitting.
 const TINTS = {
   core: "#d8574a",
   edge: "#57a85a",
@@ -890,6 +892,19 @@ const FRONT_PIECE = {
 export function frontOutline(mount) {
   const pick = FRONT_PIECE[mount];
   return pick ? (JOINT_OUTLINES[pick[0]]?.[pick[1]] ?? null) : null;
+}
+
+/**
+ * One part's outline from its own model, for a list that names the part rather than a corner of the board.
+ *
+ * Multiboard ships a snap in four fits of the same shape, so any of them draws it; the standard fit is the one
+ * the planner counts, which makes it the one to show.
+ */
+export function partOutline(link) {
+  const shapes = JOINT_OUTLINES[modelKey(link)];
+  if (!shapes) return null;
+  const names = Object.keys(shapes);
+  return shapes[names.find((name) => name.endsWith("Standard")) ?? names[0]] ?? null;
 }
 /** A plate takes its kind's colour where it has one; a lone tile is Thingport's own accent. */
 export const plateColour = (type, colours) => colours[tileKind(type)] ?? colours.plate;
@@ -1591,35 +1606,40 @@ export default async function mount(thingport) {
   }
 
   // ---- parts list ---------------------------------------------------------------
+  /**
+   * A row's icon: the plate's own outline, or the fitting's.
+   *
+   * Every fitting the planner counts carries an outline taken from its model, so the row shows the part itself
+   * -- the same shape the board and the legend do -- rather than a disc standing in for it. A screw is the one
+   * without a model to take an outline from, and is drawn as the board draws it.
+   */
   function partIcon(row, isTile) {
     const svg = el("svg", { viewBox: "0 0 34 34", class: "mbp-ico", "aria-hidden": "true" });
     if (isTile) {
-      el("rect", { x: 1, y: 1, width: 32, height: 32, rx: 5, fill: PAL.tileBg }, svg);
+      el("rect", { x: 1, y: 1, width: 32, height: 32, rx: 5, fill: PAL.room }, svg);
       tileGlyph(svg, 3, 3, 28, 28, row[3], 7, `mbp-ico-cut-${row[0]}`.replace(/[^\w-]+/g, "-"), false, PAL);
       return svg;
     }
-    const name = row[0];
-    if (name.includes("Foot") || name === "Snap (DS Part B)" || name === "Dual Clip") {
-      el(
-        "rect",
-        {
-          x: 5,
-          y: 12,
-          width: 24,
-          height: 10,
-          rx: 5,
-          fill: "none",
-          stroke: "currentColor",
-          "stroke-width": 2,
-          opacity: 0.7,
-        },
-        svg,
-      );
+    const outline = (Array.isArray(row[2]) ? row[2] : [row[2]]).map((link) => partOutline(link)).find(Boolean);
+    if (!outline) {
+      screwGlyph(svg, 17, 17, 11, PAL);
       return svg;
     }
-    const color = name.includes("Dual") ? PAL.dual : name.includes("Quad") ? PAL.quad : PAL.single;
-    const small = state.mount === "Simple Flush" || state.mount === "Offset Pillar";
-    el("circle", { cx: 17, cy: 17, r: small ? 6 : 11, fill: color, stroke: "#000", "stroke-width": 2 }, svg);
+    // Each at its own size rather than all at one: a quad snap spans two grid cells where a clip is a few
+    // millimetres, so one scale for both would leave the clip a speck.
+    const side = Math.max(outline.w, outline.h) * 1.12;
+    svg.setAttribute("viewBox", `${-side / 2} ${-side / 2} ${side} ${side}`);
+    el(
+      "path",
+      {
+        d: outline.d,
+        fill: "none",
+        stroke: PAL.fitting,
+        "stroke-width": (side / 18).toFixed(2),
+        "stroke-linejoin": "round",
+      },
+      svg,
+    );
     return svg;
   }
 

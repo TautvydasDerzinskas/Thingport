@@ -8,6 +8,9 @@
 // A side with a plate against it on +X or +Y carries the pads that reach into that plate; on -X or -Y it
 // carries the notches its neighbour's pads reach into. So a core tile, surrounded, has all four; a single
 // standalone tile has none; an edge tile has three.
+//
+// `writeBinaryStl` below is stlout.js's: source/ is concatenated into one module by build.mjs, so the files
+// share a scope rather than importing each other.
 
 /** Planner tile type to the sides that have a plate against them, and the plate that confirmed it. */
 export const PLATE_SIDES = {
@@ -157,7 +160,7 @@ export async function buildWall(scad, script, plan, { readJoint, onProgress, sig
     stopIfAsked();
     await report({ done, total, name: joint.name });
     if (!readJoint) throw new Error(`Nothing to read ${joint.name} with`);
-    for (const piece of await readJoint(joint)) files.push({ ...piece, extension: piece.extension });
+    for (const piece of await readJoint(joint)) files.push(piece);
     done++;
   }
   await report({ done: total, total });
