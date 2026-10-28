@@ -7,6 +7,8 @@
 :host {
   all: initial;
   @include t.themed;
+  // Square on the dark theme, as the rest of the in-page UI is.
+  @include t.squared-in-dark;
   display: inline-flex;
   vertical-align: middle;
   margin-left: t.$space-2;
@@ -109,7 +111,7 @@
 
 .tg-nd-bubble {
   @include m.isolated;
-  @include m.card(t.$radius-md);
+  @include m.card(t.r("md"));
   position: fixed;
   z-index: t.$z-top;
   max-width: 320px;

@@ -19,6 +19,53 @@
   &[hidden] {
     display: none;
   }
+
+  // The floating icon's centre: 28px in from this column's right edge (both sit 24px from the window's, and the
+  // icon is 56px wide) and 38px below its bottom (the column stands at 90px, the icon's centre at 52px). Scaling
+  // from there makes the panel come out of the icon and go back into it.
+  transform-origin: calc(100% - 28px) calc(100% + 38px);
+
+  &--opening {
+    animation: tg-panel-spit 0.36s cubic-bezier(0.22, 1.4, 0.4, 1) both;
+  }
+
+  &--closing {
+    animation: tg-panel-suck 0.2s cubic-bezier(0.55, 0, 0.85, 0.3) both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &--opening,
+    &--closing {
+      animation: none;
+    }
+  }
+}
+
+// Spat out of the icon: small and at the icon, then up to size, overshooting a touch on the way.
+@keyframes tg-panel-spit {
+  from {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  55% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+// And sucked back into it.
+@keyframes tg-panel-suck {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.18);
+  }
 }
 
 // A card of its own over the panel: what is true of this model, as against what the panel does with it.
@@ -80,8 +127,72 @@
     box-sizing: border-box;
   }
 
-  &__content {
-    padding-right: t.$space-5;
+  // Only the first row clears the close button; the rest of the panel uses the full width, so nothing is left
+  // standing in an empty column down the right-hand side.
+  &__content > :first-child {
+    padding-right: 26px;
+  }
+}
+
+// What the panel is about to do, and which model: the model's own picture and name, read from the page
+// (panels/modelHead.ts).
+.tg-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: t.$space-3;
+
+  &__thumb {
+    position: relative;
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    overflow: hidden;
+    border-radius: t.r("md");
+    background: t.c("surface-sunken");
+  }
+
+  // Under the picture, so one that won't load uncovers it.
+  &__mark {
+    width: 22px;
+    height: 22px;
+  }
+
+  &__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &__text {
+    min-width: 0;
+    flex: 1;
+  }
+
+  &__eyebrow {
+    display: block;
+    font-size: t.$font-size-xs;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: t.c("text-muted");
+  }
+
+  // Two lines of a long model name, and no more.
+  &__title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    margin-top: 1px;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.3;
   }
 }
 
