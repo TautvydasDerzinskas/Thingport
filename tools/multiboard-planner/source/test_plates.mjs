@@ -56,6 +56,51 @@ check(!/[^\w.-]/.test(four.file), `file name should be safe, got "${four.file}"`
 const one = plateLabel("C1", "8x8", 1, data.tileNames);
 check(one.name === "8x8 Core Multiboard", `label for one reads "${one.name}"`);
 
+// --- what a wall asks for, and the drawing of it ------------------------------------------------------
+const { plateIndex, buildPlates } = await import("./plates.js");
+
+const index = plateIndex(data.tiles);
+check(index.size === data.tiles.filter((t) => t.link).length, "every linked tile should be in the index");
+const first = data.tiles.find((t) => t.link);
+check(index.get(first.link)?.type === first.type, "a link should give back its own type");
+check(index.get("https://than.gs/m/nope") === undefined, "an unknown link should give back nothing");
+
+// A stand-in engine: it records what it was asked for and hands back a mesh of the right shape.
+const fakeMesh = { vertices: new Float64Array([0, 0, 0, 1, 0, 0, 0, 1, 0]), triangles: new Uint32Array([0, 1, 2]) };
+const asked = [];
+const fakeScad = {
+  render: async (script_, options) => {
+    asked.push(options.parameters);
+    return { bytes: new Uint8Array(), mesh: fakeMesh, log: [], seconds: 0 };
+  },
+};
+
+const wanted = [
+  { type: "C1", size: "8x8", name: "8x8 Core Multiboard x4" },
+  { type: "CR2", size: "4x4", name: "4x4 Top Right Corner" },
+];
+const seen = [];
+const built = await buildPlates(fakeScad, "// script", wanted, { onProgress: (p) => seen.push(p) });
+check(built.length === 2, `two plates wanted, ${built.length} drawn`);
+check(built[0].name === wanted[0].name, "a part should keep the name it was given, count and all");
+check(asked[0].cells === 8 && asked[0].neighbour_px === true, "a core tile should be drawn surrounded");
+check(asked[1].cells === 4 && asked[1].neighbour_py === false, "a top-right corner should have nothing above it");
+check(seen.length === 3, `progress should be told before each and at the end, got ${seen.length}`);
+check(seen[0].total === 2 && seen[2].done === 2, "progress should count towards the total and reach it");
+
+// Stopping between plates.
+const stop = { aborted: true };
+let stopped = false;
+await buildPlates(fakeScad, "// script", wanted, { signal: stop }).catch(() => (stopped = true));
+check(stopped, "an aborted signal should stop it");
+
+// A tile it cannot draw is said so by name rather than drawn wrong.
+let refused = "";
+await buildPlates(fakeScad, "// script", [{ type: "C1", size: "4x6", name: "odd" }]).catch(
+  (e) => (refused = e.message),
+);
+check(/4x6/.test(refused), `a size it cannot draw should say which, got "${refused}"`);
+
 console.log(`tile types: ${types.length}, all mapped and sized`);
 console.log(`tiles: ${data.tiles.length}, every one draws`);
 console.log(`types checked against the plate they link to: ${checked}${checked ? "" : " (no installed copy given)"}`);

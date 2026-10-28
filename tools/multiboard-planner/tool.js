@@ -568,6 +568,33 @@ export async function renderPlate(scad, script, { type, size }) {
   return mesh;
 }
 
+/** The planner's rows carry Thangs links; this says which tile each link is, for the ones that are tiles. */
+export function plateIndex(tiles) {
+  const byLink = new Map();
+  for (const tile of tiles ?? []) if (tile.link) byLink.set(tile.link, { type: tile.type, size: tile.size });
+  return byLink;
+}
+
+/**
+ * Every distinct plate a wall wants, drawn once each.
+ *
+ * Once each is the point: a wall of forty tiles is a handful of shapes repeated, and a 3MF holds one copy of a
+ * shape however many are wanted. `onProgress` is called before each with how far along it is, since a plate
+ * takes a second or three and a dozen of them is a wait a person needs to see the shape of.
+ *
+ * `signal` stops it between plates -- the engine itself cannot be interrupted once it has started one.
+ */
+export async function buildPlates(scad, script, wanted, { onProgress, signal } = {}) {
+  const parts = [];
+  for (const [index, item] of wanted.entries()) {
+    if (signal?.aborted) throw new Error("cancelled");
+    onProgress?.({ done: index, total: wanted.length, name: item.name });
+    parts.push({ mesh: await renderPlate(scad, script, item), name: item.name });
+  }
+  onProgress?.({ done: wanted.length, total: wanted.length });
+  return parts;
+}
+
 
 // The planner's window: the original planner's page, run as a Thingport tool. Its settings are kept with
 // thingport.storage, and each part opens from the user's "Tool: Multiboard models" collection once Thingport has
