@@ -1721,7 +1721,6 @@ export default async function mount(thingport) {
     return wrap;
   }
 
-  /** One plate, drawn and handed over. It takes a second or three, so the button says so while it works. */
   /**
    * Holds the "Loading…" popup up while `run` works, whatever happens to it.
    *
@@ -1744,6 +1743,7 @@ export default async function mount(thingport) {
     }
   }
 
+  /** One plate, drawn and handed over. It takes a second or three, so the button says so while it works. */
   async function downloadPlate(tile, label) {
     await whileLoading(async () => {
       const scad = await openscad();
@@ -1967,9 +1967,6 @@ export default async function mount(thingport) {
     return [...keys];
   }
 
-  // ---- saving the wall as a model of its own -------------------------------------
-  /** Every part of the wall Thingport has a copy of, with how many are needed. */
-  /** What to print and in what order, for the saved model's description. */
   // --- drawing a wall -----------------------------------------------------------------------------
   //
   // A wall is plates and joints, and they arrive differently: a plate is drawn here from plate.scad, a
@@ -2007,7 +2004,6 @@ export default async function mount(thingport) {
     return { plates: [...plates.values()], joints: [...joints.values()] };
   }
 
-  /** A joint's pieces, read from the files the tool carries. */
   // Multiboard ships its snaps in four fits of the same part. You print one of them, not all four, so only one
   // goes in the wall -- the standard fit, which is what the planner's counts assume.
   const FITS = ["Standard", "Permanent", "Tight", "Loose"];
@@ -2137,6 +2133,8 @@ export default async function mount(thingport) {
     return painted();
   }
 
+  // ---- saving the wall as a model of its own -------------------------------------
+  /** What to print and in what order, for the saved model's description. */
   function printNotes(result, title, parts) {
     const d = result.data;
     const total = parts.reduce((sum, part) => sum + part.quantity, 0);
@@ -2162,14 +2160,6 @@ export default async function mount(thingport) {
     return lines.join("\n");
   }
 
-  /**
-   * The wall's parts, in Thingport, ready to be put in the saved model.
-   *
-   * The tool may have been installed without its parts -- there are hundreds, and they are gigabytes -- so the
-   * ones this wall uses are offered now rather than all of them. Saying no is an answer: the wall is a list of
-   * parts, and without the parts there is nothing to save. What didn't come says why, which is how a daily
-   * download limit at the other end reaches the person waiting for it.
-   */
   /**
    * The user's own copies of the joints a wall is made of, made if they aren't there yet.
    *
@@ -2201,8 +2191,7 @@ export default async function mount(thingport) {
 
   const saveCover = $("saveCover");
   const closeSave = () => {
-    // Closing while it draws stops it, at the next plate: the engine cannot be interrupted part way
-    // through one, so this is not quite instant.
+    // Closing while it draws stops it there and then: a render under way goes with the worker running it.
     building?.abort();
     showBuilding(false);
     saveCover.hidden = true;
