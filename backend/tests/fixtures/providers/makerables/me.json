@@ -1,0 +1,61 @@
+{
+  "code": 200,
+  "success": true,
+  "message": "Success",
+  "data": {
+    "id": "G1234567890",
+    "auth0_id": "google-oauth2|000000000000000000000",
+    "full_name": "Maker One",
+    "nick_name": "maker-one",
+    "user_name": "G1234567890",
+    "picture": "https://cdn.makerables.com/u/user-maker-one.jpg",
+    "email": "maker-one@example.com",
+    "email_verified": true,
+    "bio": null,
+    "gender": null,
+    "birthday": null,
+    "country": null,
+    "language": "en",
+    "status": "active",
+    "is_deleted": false,
+    "follower_count": 0,
+    "following_count": 0,
+    "last_login_at": "2026-10-28T19:01:56.274Z",
+    "created_at": "2026-10-28T19:01:56.275Z",
+    "updated_at": "2026-10-28T19:01:56.275Z",
+    "roles": [
+      {
+        "id": 3,
+        "name": "user",
+        "description": "普通用户，基础访问权限",
+        "is_system": true,
+        "created_at": "2026-04-17T07:31:51.519Z",
+        "updated_at": "2026-07-17T06:57:57.611Z",
+        "role_permissions": []
+      }
+    ],
+    "permissions": [],
+    "should_prompt_interest_tags": true,
+    "community_role_id": null,
+    "cnc_experience_level_id": null,
+    "interest_tag_ids": [],
+    "machine_option_ids": [],
+    "software_option_ids": [],
+    "profile_links": {
+      "youtube": null,
+      "instagram": null,
+      "github": null,
+      "x": null
+    },
+    "profile_onboarding": {
+      "status": "skipped",
+      "version": 1,
+      "completed_step": 0,
+      "current_step": 1,
+      "should_show": false,
+      "completed_at": null,
+      "skipped_at": "2026-10-28T19:02:05.607Z"
+    }
+  },
+  "timestamp": 1793216375724
+}

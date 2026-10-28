@@ -1,0 +1,32 @@
+{
+  "code": 200,
+  "success": true,
+  "message": "Success",
+  "data": [
+    {
+      "id": "8329232e-d599-4bec-afd8-bc63a2018265",
+      "version_id": "66632368-9ee3-42f9-ab1c-ac5ecd80f6f1",
+      "name": "Fixture Plate - Final STEP FILE",
+      "description": null,
+      "file_path": "https://cdn.makerables.com/projects/original-files/Fixture_Plate_-_Final_STEP_FILE-mv3b0yon.x-zip-compressed",
+      "file_size": 21750,
+      "file_type": ".zip",
+      "thumbnail": null,
+      "created_at": "2026-10-21T22:33:10.242Z",
+      "updated_at": "2026-10-21T22:33:10.242Z"
+    },
+    {
+      "id": "735d5e3b-c4c1-47e4-add4-0324d1f15cdf",
+      "version_id": "66632368-9ee3-42f9-ab1c-ac5ecd80f6f1",
+      "name": "Vise Components - Final STEP FILE",
+      "description": null,
+      "file_path": "https://cdn.makerables.com/projects/original-files/Vise_Components_-_Final_STEP_FILE-mv3b0yoo.x-zip-compressed",
+      "file_size": 30595,
+      "file_type": ".zip",
+      "thumbnail": null,
+      "created_at": "2026-10-21T22:33:10.242Z",
+      "updated_at": "2026-10-21T22:33:10.242Z"
+    }
+  ],
+  "timestamp": 1793216490922
+}

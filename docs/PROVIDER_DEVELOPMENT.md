@@ -69,7 +69,7 @@ how lists are read. When a new site resembles one of these, copy that provider's
 | Official API with an instance key                | Thingiverse (an admin's App Token), MyMiniFactory (an admin's API key as `?key=`)                                                                                                                                                                                                                                                             |
 | Official API with the user's key                 | Cults3D's GraphQL API (nickname + API key) for models, likes, printlists and orders, though never files                                                                                                                                                                                                                                       |
 | Public GraphQL API, no sign-in                   | Printables (`api.printables.com` answers unauthenticated, unlike the Cloudflare-gated site)                                                                                                                                                                                                                                                   |
-| The site's own private API (what its pages call) | Snapmaker, MakerOnline, Creality Cloud, NexPrint, Thangs. Each wraps answers in a `code` of its own, so check that, not the HTTP status. Creality Cloud refuses any call without its full set of `__cxy_*` headers                                                                                                                            |
+| The site's own private API (what its pages call) | Snapmaker, MakerOnline, Creality Cloud, NexPrint, Thangs, Makerables. Each wraps answers in a `code` of its own, so check that, not the HTTP status. Creality Cloud refuses any call without its full set of `__cxy_*` headers                                                                                                                |
 | Model pages plus the maker's cloud API           | MakerWorld (page data, and `api.bambulab.com` with the user's cookie)                                                                                                                                                                                                                                                                         |
 | Its pages' HTML, rendered on the server          | Pinshape and Toymakr3D, read with cheerio. Pinshape's own calls answer with more HTML (`{success, html, pagination}`), and both sites' redirects are their answers: Pinshape's `/index` for a missing model, `/auth/login` for a refused sign-in; Toymakr3D's `/login` for one, and its canonical product page for a link whose name is wrong |
 
@@ -102,6 +102,7 @@ how lists are read. When a new site resembles one of these, copy that provider's
 | Cults3D        | API key (`default` slot) and the browser's session + clearance (`browser` slot) | The 20-day session slides with use, the backend's own use included                                                 |
 | Pinshape       | Flask-Login's year-long `remember_token`, and the `session` cookie              | Grab sends each new pair, only from a signed-in page: a visitor gets a `session` cookie too                        |
 | Toymakr3D      | Laravel's session cookie and its `remember_web_…` one beside it                 | Grab sends each new pair, only from a signed-in page: a visitor gets a session cookie too                          |
+| Makerables     | Auth0's `__session` cookie, split across `__session__0`, `__session__1`, …      | Grab sends each new set; the backend turns it into the Bearer token the API takes, as the site's own pages do      |
 
 Rules of thumb:
 
@@ -135,6 +136,10 @@ Rules of thumb:
   signed-in user to a signed CloudFront link and anyone else to its sign-in page. A bought model's zip is
   watermarked per buyer and built when it's first asked for, so until it's ready that page shows the progress
   instead, which the provider reports as "come back in a minute" rather than a failure.
+- **Makerables** keeps a project's files on its CDN unsigned, so an import needs no sign-in at all. They sit on three
+  tabs -- NC programs, CAM projects and the model files the other two were cut from -- and only the model files are
+  worth importing, so the other two tabs are never asked for. A project named by its id is kept under the slug its
+  page gives as canonical (`canonicalId` and `keptId`, as Creality Cloud's alias is).
 
 ### Lists, trending and categories
 
@@ -150,6 +155,11 @@ Rules of thumb:
 - **Category ids** are numbers for most sites. Thangs has no ids, so its are paths (`categoryIds: "path"`). Pinshape's
   model pages don't say their category at all (`categoryIds: "none"`): its imports come uncategorized, its
   `categories.json` is empty, and the category mapping shows no row for it.
+- **A list with no address of its own.** Snapmaker's likes and bookmarks share one page, whose own address
+  (`?tab=interactions`) doesn't say which of the two is shown, so Thingport adds `&list=likes` or `&list=bookmarks`
+  to tell them apart. Makerables' saved projects are a tab of a profile that the site keeps in React state rather
+  than in the URL at all, so Thingport adds `?tab=saved`. Each provider's `examples.list` shows the form it keeps,
+  which is what a sync holds the list by.
 - **Categories a model's page doesn't say.** Toymakr3D's pages name no category either, but its category listings do,
   so its provider reads those once and keeps the model-to-category index for a few hours. Its "All Products",
   "Free Download" and "Premium" menu entries are price buckets rather than subjects, and are left out.

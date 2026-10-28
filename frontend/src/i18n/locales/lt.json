@@ -4808,6 +4808,37 @@
         "notConnected": "Prijunkite Toymakr3D skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte pamėgtus modelius."
       }
     },
+    "makerables": {
+      "connect": {
+        "steps": [
+          "Paprasčiausia: su Thingport Grab tiesiog atverkite makerables.com prisijungę. Jis prijungs jūsų paskyrą ir atsiųs naują prisijungimą kaskart, kai ten vėl prisijungsite.",
+          "Arba rankiniu būdu: prisijunkite prie makerables.com ir atverkite naršyklės kūrėjo įrankius (F12).",
+          "Eikite į skiltį Network, perkraukite puslapį, spustelėkite bet kurią makerables.com užklausą, nukopijuokite jos Cookie antraštę ir įklijuokite žemiau."
+        ],
+        "placeholder": "Prisijungusio makerables.com užklausos Cookie antraštė"
+      },
+      "status": {
+        "notConnected": "Prijunkite paskyrą, kad Thingport matytų jūsų Makerables išsaugotus projektus. Projektai importuojami ir be jos.",
+        "expired": "Prisijungimo galiojimas baigėsi. Prisijunkite makerables.com su Thingport Grab arba vėl prijunkite Makerables skiltyje Konfigūracija → Šaltiniai.",
+        "expiredStatus": "Prisijungimas nebegalioja",
+        "disabledReason": "Makerables: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai"
+      },
+      "about": {
+        "summary": "Makera projektų svetainė, jungianti CNC ir 3D spausdinimą: visi projektai nemokami, o šalia modelių failų, kuriuos importuoja Thingport, turi NC ir CAM failus.",
+        "signIn": "Importuoti nereikia; prisijungimas prideda jūsų išsaugotus projektus.",
+        "grab": "Atsiunčia jūsų prisijungimą, kai lankotės makerables.com.",
+        "setup": [
+          "Importuokite bet kurio projekto nuorodą; prisijungti nereikia.",
+          "Išsaugotiems projektams: įdiekite Thingport Grab, įjunkite jį Makerables ir atverkite makerables.com prisijungę."
+        ]
+      },
+      "admin": {
+        "description": "Projektai ir kiekvieno naudotojo išsaugoti projektai. Projektai importuojami be prisijungimo; išsaugotiems reikia naudotojo paties."
+      },
+      "sync": {
+        "notConnected": "Prijunkite Makerables skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte išsaugotus projektus."
+      }
+    },
     "owlcad": {
       "status": {
         "alwaysConnected": "OwlCAD prijungtas iš karto: jam nereikia nei paskyros, nei rakto."

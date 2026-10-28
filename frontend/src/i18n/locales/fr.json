@@ -4656,6 +4656,37 @@
         "notConnected": "Connectez Toymakr3D dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir ici vos produits aimés."
       }
     },
+    "makerables": {
+      "connect": {
+        "steps": [
+          "Le plus simple : avec Thingport Grab, il suffit d’ouvrir makerables.com en étant connecté. Votre compte est relié, et une nouvelle connexion est envoyée chaque fois que vous vous y reconnectez.",
+          "Ou manuellement : connectez-vous à makerables.com et ouvrez les outils de développement de votre navigateur (F12).",
+          "Allez dans l’onglet Network, rechargez la page, cliquez sur n’importe quelle requête makerables.com, copiez son en-tête Cookie et collez-le ci-dessous."
+        ],
+        "placeholder": "L’en-tête Cookie d’une requête makerables.com connectée"
+      },
+      "status": {
+        "notConnected": "Reliez votre compte pour lire les projets que vous avez enregistrés sur Makerables. Ses projets s’importent sans lui.",
+        "expired": "La connexion a expiré. Connectez-vous à makerables.com avec Thingport Grab, ou reconnectez Makerables dans Configuration → Fournisseurs.",
+        "expiredStatus": "Connexion expirée",
+        "disabledReason": "Makerables : connectez votre compte dans Configuration → Fournisseurs"
+      },
+      "about": {
+        "summary": "Le site de projets de Makera, entre CNC et impression 3D : tous les projets sont gratuits et portent leurs fichiers NC et CAM à côté des fichiers de modèle qu’importe Thingport.",
+        "signIn": "Aucune pour importer ; votre connexion ajoute vos projets enregistrés.",
+        "grab": "Envoie votre connexion lorsque vous visitez makerables.com.",
+        "setup": [
+          "Importez n’importe quel lien de projet ; aucune connexion n’est nécessaire.",
+          "Pour vos projets enregistrés : installez Thingport Grab, activez-le sur Makerables et ouvrez makerables.com en étant connecté."
+        ]
+      },
+      "admin": {
+        "description": "Les projets et ceux que chaque utilisateur a enregistrés. Les projets s’importent sans connexion ; les projets enregistrés demandent celle de l’utilisateur."
+      },
+      "sync": {
+        "notConnected": "Connectez Makerables dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir ici vos projets enregistrés."
+      }
+    },
     "owlcad": {
       "status": {
         "alwaysConnected": "OwlCAD est connecté par défaut : il ne demande ni compte ni clé."

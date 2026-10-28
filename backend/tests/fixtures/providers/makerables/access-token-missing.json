@@ -1,0 +1,6 @@
+{
+  "error": {
+    "message": "The user does not have an active session.",
+    "code": "missing_session"
+  }
+}

@@ -102,6 +102,11 @@
     "group": "providers"
   },
   {
+    "value": "builtin:providers/makerables",
+    "name": "Makerables",
+    "group": "providers"
+  },
+  {
     "value": "builtin:ai/ai21",
     "name": "AI21",
     "group": "ai"

@@ -120,4 +120,13 @@ export const PROVIDER_DOCS = [
     description:
       "Import Toymakr3D's articulated robot and mecha models, and the ones you liked, with your own sign-in for the files.",
   },
+  {
+    slug: "providers/makerables",
+    source: "docs/providers/makerables.md",
+    group: "Providers",
+    title: "Makerables",
+    nav: "Makerables",
+    description:
+      "Import the model files of Makerables' CNC and 3D printing projects, and the ones you saved with your own sign-in.",
+  },
 ];

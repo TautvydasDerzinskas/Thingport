@@ -4625,6 +4625,37 @@
         "notConnected": "Connect Toymakr3D in Configuration > Providers, or visit it with Thingport Grab, to see your liked products here."
       }
     },
+    "makerables": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open makerables.com while signed in. It connects your account, and sends a new sign-in whenever you sign in there again.",
+          "Or by hand: sign in at makerables.com and open your browser's developer tools (F12).",
+          "Go to the Network tab, reload the page, click any makerables.com request and copy its Cookie header, then paste it below."
+        ],
+        "placeholder": "The Cookie header of a signed-in makerables.com request"
+      },
+      "status": {
+        "notConnected": "Connect your account to read the projects you saved on Makerables. Its projects import without it.",
+        "expired": "Sign-in expired. Sign in on makerables.com with Thingport Grab, or connect Makerables again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "Makerables: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "Makera's project site, mixing CNC and 3D printing: every project is free and carries its NC and CAM files beside the model files Thingport imports.",
+        "signIn": "None to import; your sign-in adds your saved projects.",
+        "grab": "Sends your sign-in as you visit makerables.com.",
+        "setup": [
+          "Import any project link; no sign-in is needed.",
+          "For your saved projects: install Thingport Grab, enable it on Makerables and open makerables.com signed in."
+        ]
+      },
+      "admin": {
+        "description": "Projects and each user's saved ones. Projects import without a sign-in; saved projects need the user's own."
+      },
+      "sync": {
+        "notConnected": "Connect Makerables in Configuration > Providers, or visit it with Thingport Grab, to see your saved projects here."
+      }
+    },
     "owlcad": {
       "status": {
         "alwaysConnected": "OwlCAD is connected by default: it needs no account or key."
