@@ -169,6 +169,13 @@ export type PrintOut = {
   thumb_generated: boolean;
   render_url: string | null;
   supporting_file_count: number;
+  /** The scripts it can be generated again from, as `{ id, filename }`, out of the files kept beside it. Empty
+   *  for an ordinary model. Here rather than behind a request of its own because the files are already loaded,
+   *  and because a list of models needs it too: it is what marks one as generated rather than only printed. */
+  generator_scripts: { id: string; filename: string }[];
+  /** The source had a script for this model but its creator chose not to share it, so there is none to open.
+   *  Without it, that is indistinguishable from a model that never had one. */
+  generator_script_withheld: boolean;
   /** All plates plus supporting and prepared files; gallery images aren't counted. */
   total_size: number;
   prepared_print: PreparedPrintOut | null;
@@ -304,7 +311,11 @@ export function toPrintOut(
 ): PrintOut {
   const sortedPlates = plates.toSorted((a, b) => a.position - b.position);
   const plateOuts = sortedPlates.map((p) => toPlateOut(print.id, p, print.assetsPath));
-  const supportingCount = files.filter((f) => f.role === "SUPPORTING").length;
+  const supporting = files.filter((f) => f.role === "SUPPORTING");
+  const supportingCount = supporting.length;
+  const generatorScripts = supporting
+    .filter((f) => f.filename.toLowerCase().endsWith(".scad"))
+    .map((f) => ({ id: f.id, filename: f.filename }));
   const totalSize = plates.reduce((sum, p) => sum + p.size, 0) + files.reduce((sum, f) => sum + f.size, 0);
   const previewImageOuts = (previewImages ?? [])
     .toSorted((a, b) => a.position - b.position)
@@ -374,6 +385,8 @@ export function toPrintOut(
     // The first file the server can draw: a STEP first plate mustn't leave the card without one.
     render_url: plateOuts.find((plate) => plate.render_url)?.render_url ?? null,
     supporting_file_count: supportingCount,
+    generator_scripts: generatorScripts,
+    generator_script_withheld: print.generatorScriptWithheld,
     total_size: totalSize,
     prepared_print: prepared,
     slicer_url: slicerUrl,

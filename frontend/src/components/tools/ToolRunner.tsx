@@ -9,7 +9,7 @@ import { useConfirm } from "../ConfirmProvider";
 import { useToast } from "../ToastProvider";
 import CollectionPickerDialog from "./CollectionPickerDialog";
 import { sdkTheme, setThemeVariables } from "../../sdk/theme";
-import { buildToolSdk, type RunnableTool, type ToolCollection, type ToolTheme } from "./toolSdk";
+import { buildToolSdk, type RunnableTool, type ToolCollection, type ToolContext, type ToolTheme } from "./toolSdk";
 import { SUPPORTED_LANGUAGES, matchLanguage } from "../../constants/languages";
 
 type Mount = (thingport: Record<string, unknown>) => unknown;
@@ -31,6 +31,8 @@ function loadModule(tool: RunnableTool): Promise<{ default?: Mount }> {
 
 type Props = {
   tool: RunnableTool;
+  /** What it was opened on, where it was opened from something rather than from the Tools page. */
+  context?: ToolContext;
   /** Closes the window it runs in; the tool's `thingport.close()`. */
   onClose: () => void;
 };
@@ -40,7 +42,7 @@ type Props = {
  * default export is called with `thingport` (toolSdk.ts), and what it returns is called as its cleanup when the window
  * closes, the theme changes or the script does.
  */
-export default function ToolRunner({ tool, onClose }: Props) {
+export default function ToolRunner({ tool, context, onClose }: Props) {
   const { t, i18n } = useTranslation("app");
   const muiTheme = useTheme();
   const navigate = useNavigate();
@@ -85,6 +87,7 @@ export default function ToolRunner({ tool, onClose }: Props) {
     root.innerHTML = tool.html ?? "";
     const thingport = buildToolSdk({
       tool,
+      context,
       root,
       selector: `#${rootId}`,
       theme: JSON.parse(themeKey) as ToolTheme,

@@ -6,6 +6,8 @@ import occtWorkerUrl from "occt-import-js/dist/occt-import-js-worker.js?url";
 import type { ResolvedTheme } from "../constants/settingsOptions";
 import { buildTheme } from "../theme";
 import { buildBambuModelGroup, parseBambuThreeMF, type Parsed3MFData, type PlateSummary } from "./bambuThreeMf";
+import type { Mesh as SdkMesh } from "../sdk/threeMf";
+import { hasOwnColor, keepsOwnColor } from "./ownColor";
 
 export type ModelPalette = {
   color: THREE.Color;
@@ -36,6 +38,7 @@ export function applyThemeToObject(obj: THREE.Object3D, palette: ModelPalette) {
     if (!(child instanceof THREE.Mesh)) return;
     const materials = Array.isArray(child.material) ? child.material : [child.material];
     materials.forEach((mat) => {
+      if (hasOwnColor(mat)) return;
       const typed = mat as THREE.MeshStandardMaterial;
       if (typed.color) typed.color.copy(palette.color);
       if (typed.emissive) {
@@ -47,6 +50,110 @@ export function applyThemeToObject(obj: THREE.Object3D, palette: ModelPalette) {
       mat.needsUpdate = true;
     });
   });
+}
+
+/**
+ * The triangles of a mesh whose script coloured only part of it, the uncoloured ones first, and how many those are.
+ *
+ * Null where there is nothing to separate -- no uncoloured faces, or no painted ones -- which is the usual mesh and
+ * is left in the order it came in.
+ */
+function uncoloredFirst(
+  faceColors: Uint16Array,
+  uncolored: number | undefined,
+): { order: Uint32Array; count: number } | null {
+  if (uncolored === undefined) return null;
+  const plain: number[] = [];
+  const painted: number[] = [];
+  for (let triangle = 0; triangle < faceColors.length; triangle++) {
+    (faceColors[triangle] === uncolored ? plain : painted).push(triangle);
+  }
+  if (!plain.length || !painted.length) return null;
+  return { order: Uint32Array.from([...plain, ...painted]), count: plain.length };
+}
+
+/** The mesh's corner indices, taken in `order` where the triangles are being regrouped. */
+function trianglesInOrder(triangles: Uint32Array, order: Uint32Array | undefined): Uint32Array {
+  if (!order) return Uint32Array.from(triangles);
+  const indices = new Uint32Array(triangles.length);
+  for (let slot = 0; slot < order.length; slot++) {
+    indices.set(triangles.subarray(order[slot] * 3, order[slot] * 3 + 3), slot * 3);
+  }
+  return indices;
+}
+
+/**
+ * A mesh already in memory, as something to draw.
+ *
+ * For geometry the tab made itself -- the customizer's engine hands back the mesh behind the file it wrote --
+ * so nothing is written out and parsed again just to look at it.
+ *
+ * The triangles are given their own corners before the normals are worked out. A solid shares a vertex between
+ * the faces meeting at an edge, and averaging across them rounds every hard edge off, which on lettering reads
+ * as a smear. It is also what lets each face carry its own colour, since the corners are no longer shared.
+ */
+export function objectFromMesh(mesh: SdkMesh): THREE.Object3D {
+  const palette = mesh.palette ?? [];
+  const faceColors = mesh.colors;
+  const colored = palette.length > 0 && faceColors?.length === mesh.triangles.length / 3;
+  // One colour over the whole model is the material's own; an attribute would only repeat it per corner.
+  const perFace = colored && palette.length > 1;
+  // The faces a script left uncoloured are not a colour of the model's: they are a shape, and the theme's colour
+  // -- or the one the reader picked -- is theirs, as on a model that was never coloured at all. They go first and
+  // get a group of their own, which is what lets them have a material the recolouring reaches.
+  const plain = perFace && faceColors ? uncoloredFirst(faceColors, mesh.uncolored) : null;
+
+  const indexed = new THREE.BufferGeometry();
+  indexed.setAttribute("position", new THREE.BufferAttribute(Float32Array.from(mesh.vertices), 3));
+  indexed.setIndex(new THREE.BufferAttribute(trianglesInOrder(mesh.triangles, plain?.order), 1));
+  const geometry = indexed.toNonIndexed();
+  indexed.dispose();
+
+  if (perFace && faceColors) {
+    // One colour per corner, the same for all three of a triangle, so each face reads flat rather than
+    // blending into its neighbours. Three converts a hex string out of sRGB on its own, so these are
+    // already in the working space; converting again would darken every mid-tone.
+    const colors = new Float32Array(geometry.getAttribute("position").count * 3);
+    const swatches = palette.map((entry) => new THREE.Color(entry));
+    for (let slot = 0; slot < faceColors.length; slot++) {
+      const swatch = swatches[faceColors[plain ? plain.order[slot] : slot]] ?? swatches[0];
+      for (let corner = 0; corner < 3; corner++) {
+        const at = (slot * 3 + corner) * 3;
+        colors[at] = swatch.r;
+        colors[at + 1] = swatch.g;
+        colors[at + 2] = swatch.b;
+      }
+    }
+    geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  }
+  geometry.computeVertexNormals();
+
+  const own = new THREE.MeshStandardMaterial({
+    // White where the colours come through the attribute, so it multiplies them unchanged.
+    color: colored && !perFace ? new THREE.Color(palette[0]) : 0xffffff,
+    metalness: 0.2,
+    roughness: 0.8,
+    vertexColors: perFace,
+  });
+  if (colored) keepsOwnColor(own);
+  let material: THREE.Material | THREE.Material[] = own;
+  if (plain) {
+    // The stand-in grey the mesh carries for them, so a viewer that recolours nothing shows what it always did.
+    // No colour attribute on this one: its own colour is the whole of it, which is what recolouring sets.
+    const shape = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(palette[mesh.uncolored!]),
+      metalness: 0.2,
+      roughness: 0.8,
+    });
+    geometry.clearGroups();
+    geometry.addGroup(0, plain.count * 3, 0);
+    geometry.addGroup(plain.count * 3, (faceColors!.length - plain.count) * 3, 1);
+    material = [shape, own];
+  }
+  const object = new THREE.Mesh(geometry, material);
+  // Generated geometry is Z-up, as print files are; three.js is Y-up.
+  object.rotateX(-Math.PI / 2);
+  return object;
 }
 
 export async function loadObjectFromAsset(ext: string, url: string): Promise<THREE.Object3D | null> {

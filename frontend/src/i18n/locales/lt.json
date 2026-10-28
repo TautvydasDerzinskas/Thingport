@@ -3583,7 +3583,8 @@
         "spin": "Sukimas",
         "zoomIn": "Priartinti",
         "zoomOut": "Nutolinti",
-        "color": "Modelio spalva"
+        "color": "Modelio spalva",
+        "colorOwn": "Šis modelis atsiuntė su savo spalvomis, tad nėra ką rinktis"
       },
       "downloadFailed": "Nepavyko atsisiųsti. Bandykite dar kartą.",
       "deleteFailed": "Nepavyko ištrinti modelio.",
@@ -3731,7 +3732,67 @@
       "openActions": "Atverti arba atsisiųsti",
       "openInHeading": "Atverti su",
       "toolOwned": "Priklauso įrankiui",
-      "toolOwnedHint": "Jo negalima redaguoti ar ištrinti"
+      "toolOwnedHint": "Jo negalima redaguoti ar ištrinti",
+      "customize": "Keisti…",
+      "scriptWithheld": "Scenarijus nepateiktas",
+      "scriptWithheldHint": "Šis modelis sukurtas iš scenarijaus, bet jo autorius nusprendė juo nesidalinti, tad čia nėra ko keisti. Tai pakeisti gali tik jis."
+    },
+    "customizer": {
+      "title": "Keičiamas {{model}}",
+      "model": {
+        "title": "Modelis",
+        "script": "Scenarijus"
+      },
+      "pane": {
+        "minimize": "Sutraukti",
+        "expand": "Išskleisti"
+      },
+      "pick": {
+        "title": "Kuris scenarijus?",
+        "body": "Su šiuo modeliu atsiuntė {{count}} scenarijus. Pasirinkite, kurį keisti."
+      },
+      "form": {
+        "title": "Keitimas",
+        "generate": "Generuoti",
+        "generating": "Generuojama…",
+        "noParameters": "Šis scenarijus neturi ką keisti.",
+        "undo": "Atšaukti",
+        "redo": "Pakartoti",
+        "reset": "Atstatyti scenarijaus reikšmes",
+        "code": "Rodyti {{name}} kodą"
+      },
+      "busy": {
+        "reading": "Skaitomas scenarijus…",
+        "generating": "Generuojama…"
+      },
+      "stage": {
+        "empty": "Kol kas nieko nesugeneruota."
+      },
+      "status": {
+        "generated": "Sugeneruota per {{seconds}} s · {{size}} kB"
+      },
+      "download": {
+        "threeMf": "Atsisiųsti kaip 3MF",
+        "stl": "Atsisiųsti kaip STL",
+        "stlNoColors": "Išlaiko formą, bet ne spalvas"
+      },
+      "save": {
+        "action": "Išsaugoti į Thingport",
+        "done": "Išsaugota {{name}}",
+        "open": "Atidaryti modelį",
+        "description": "Sugeneruota iš {{script}}, kuris atsiuntė su {{model}}."
+      },
+      "code": {
+        "label": "{{name}} kodas",
+        "lines": "{{count}} eilutės · tik skaitymui",
+        "copy": "Kopijuoti",
+        "copied": "Nukopijuota",
+        "download": "Atsisiųsti scenarijų"
+      },
+      "error": {
+        "failed": "Scenarijus nesugeneravo modelio.",
+        "noGeometry": "Scenarijus įvykdytas, bet nesukūrė jokios formos."
+      }
     },
     "edit": {
       "title": "Redaguoti modelį",
@@ -4273,6 +4334,10 @@
         "othersGo_other": "{{names}} bus pašalintos. Jų modeliai bus pažymėti „{{name}}“.",
         "keepsOwn": "Modeliai, jau pažymėti „{{name}}“, nesikeičia."
       }
+    },
+    "filters": {
+      "generative": "Generuojami",
+      "generativeHint": "Tik modeliai, atkeliavę su juos sugeneravusiu scenarijumi"
     }
   },
   "providers": {

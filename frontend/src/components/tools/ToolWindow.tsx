@@ -12,19 +12,21 @@ import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import OpenInFullIcon from "@mui/icons-material/OpenInFull";
 import ToolIcon from "./ToolIcon";
 import ToolRunner from "./ToolRunner";
-import type { RunnableTool } from "./toolSdk";
+import type { RunnableTool, ToolContext } from "./toolSdk";
 
 // Opens out of the page a little, as a window does.
 const open = keyframes`from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; }`;
 
 type Props = {
   tool: RunnableTool | null;
+  /** What it was opened on: a model, where the window was opened from one. */
+  context?: ToolContext;
   onClose: () => void;
   onAbout?: () => void;
 };
 
 /** A tool running in a window of its own: the size its metadata asks for, or the whole screen. */
-export default function ToolWindow({ tool, onClose, onAbout }: Props) {
+export default function ToolWindow({ tool, context, onClose, onAbout }: Props) {
   const { t } = useTranslation("app");
   const [full, setFull] = useState(false);
   // Each tool opens at its own size, whatever the last one was left at.
@@ -108,7 +110,7 @@ export default function ToolWindow({ tool, onClose, onAbout }: Props) {
             </Tooltip>
           </Box>
           <Box sx={{ flex: 1, minHeight: 0, bgcolor: (theme) => theme.thingport.pageBackground }}>
-            <ToolRunner tool={tool} onClose={onClose} />
+            <ToolRunner tool={tool} context={context} onClose={onClose} />
           </Box>
         </>
       )}

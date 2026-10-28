@@ -9,8 +9,10 @@ import css from "./styles/content.scss?inline";
 const HOST_ID = "thingport-grab-host";
 
 let shadowRoot: ShadowRoot | null = null;
+let stackEl: HTMLDivElement | null = null;
 let panelEl: HTMLDivElement | null = null;
 let contentEl: HTMLDivElement | null = null;
+let noteEl: HTMLDivElement | null = null;
 
 export function mountHost(): ShadowRoot {
   const host = document.createElement("div");
@@ -30,8 +32,10 @@ export function getShadowRoot(): ShadowRoot | null {
 export function unmountHost(): void {
   document.getElementById(HOST_ID)?.remove();
   shadowRoot = null;
+  stackEl = null;
   panelEl = null;
   contentEl = null;
+  noteEl = null;
 }
 
 type FabOptions = {
@@ -68,16 +72,40 @@ export function mountFab(root: ShadowRoot, { variant, label, title, onClick }: F
   button.addEventListener("click", onClick);
   root.appendChild(button);
   attachMagnet(button, body, {
-    paused: () => Boolean(panelEl && !panelEl.hidden),
+    // The stack, not the panel: the panel itself is never hidden, its column is (see mountPanel).
+    paused: () => Boolean(stackEl && !stackEl.hidden),
     dodges: () => "dodge" in mark.dataset,
   });
 }
 
-/** `onFirstOpen` runs once. Returns the toggle for the icon's click handler. */
+/**
+ * A tag beside the floating icon, for something about this page the icon itself can't say.
+ *
+ * Beside rather than on it: the icon is a button with a magnet effect and a seasonal mark of its own, and the
+ * tag has to stay still to be read and pointed at. It sits to the icon's left, level with its middle, and is
+ * only ever there when there is something to say.
+ */
+export function mountFabNote(root: ShadowRoot, html: string, tooltip: string): void {
+  const note = document.createElement("div");
+  note.className = "tg-fab-note";
+  note.title = tooltip;
+  note.innerHTML = html;
+  root.appendChild(note);
+}
+
+/**
+ * `onFirstOpen` runs once. Returns the toggle for the icon's click handler.
+ *
+ * The panel sits in a column anchored above the icon, so anything put over it -- a note about the model, from
+ * setPanelNote -- stacks there and the pair grows upward together, whatever height the panel happens to be.
+ */
 export function mountPanel(root: ShadowRoot, onFirstOpen: () => void): () => void {
+  const stack = document.createElement("div");
+  stack.className = "tg-panel-stack";
+  stack.hidden = true;
+
   const panel = document.createElement("div");
   panel.className = "tg-panel";
-  panel.hidden = true;
 
   // Outside contentEl so it survives re-renders.
   const closeBtn = document.createElement("button");
@@ -91,13 +119,15 @@ export function mountPanel(root: ShadowRoot, onFirstOpen: () => void): () => voi
   const content = document.createElement("div");
   content.className = "tg-panel__content";
   panel.appendChild(content);
-  root.appendChild(panel);
+  stack.appendChild(panel);
+  root.appendChild(stack);
 
+  stackEl = stack;
   panelEl = panel;
   contentEl = content;
   let loaded = false;
   return () => {
-    const open = panel.hidden;
+    const open = stack.hidden;
     setPanelOpen(open);
     if (open && !loaded) {
       loaded = true;
@@ -107,7 +137,29 @@ export function mountPanel(root: ShadowRoot, onFirstOpen: () => void): () => voi
 }
 
 export function setPanelOpen(open: boolean): void {
-  if (panelEl) panelEl.hidden = !open;
+  if (stackEl) stackEl.hidden = !open;
+}
+
+/**
+ * A small card of its own above the panel, for something true of this model rather than of the import: whether
+ * the script it was generated from comes with it. Separate from the panel so it reads as a remark about what
+ * is being imported, not as another of the panel's own rows. Null takes it away again.
+ */
+export function setPanelNote(html: string | null, tone?: "shared" | "withheld"): void {
+  if (!stackEl) return;
+  if (!html) {
+    noteEl?.remove();
+    noteEl = null;
+    return;
+  }
+  if (!noteEl) {
+    noteEl = document.createElement("div");
+    // Before the panel in the column, which puts it above.
+    noteEl.className = "tg-panel-note";
+    stackEl.prepend(noteEl);
+  }
+  noteEl.className = tone ? `tg-panel-note tg-panel-note--${tone}` : "tg-panel-note";
+  noteEl.innerHTML = html;
 }
 
 export function isPanelMounted(): boolean {

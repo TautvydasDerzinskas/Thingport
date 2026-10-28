@@ -41,6 +41,14 @@ export type ImportKit = {
   downloadFile(url: string, name: string): Promise<PlainDownloadResult>;
   /** Whether a file is one a plate takes (a zip is unpacked instead). */
   isModelFile(name: string): boolean;
+  /**
+   * Whether a file is worth downloading at all: one a plate takes, or the script the model was generated
+   * from, which comes along as a SUPPORTING file so the model can be generated again.
+   *
+   * Separate from `isModelFile`, which answers the narrower question of what may become a plate -- a script
+   * holds no geometry, so it must never be one.
+   */
+  isImportableFile(name: string): boolean;
 };
 
 /** Whose import it is, and of which model, by the id it's kept under. */

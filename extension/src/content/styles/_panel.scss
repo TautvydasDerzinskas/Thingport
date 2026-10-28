@@ -1,23 +1,80 @@
 @use "../../styles/tokens" as t;
 @use "../../styles/mixins" as m;
 
-.tg-panel {
+// The panel and anything stacked over it, anchored above the floating icon. The column grows upward from its
+// bottom edge, so a note added above the panel needs no measuring of how tall the panel happens to be.
+.tg-panel-stack {
   @include m.isolated;
-  @include m.card;
   position: fixed;
   right: 24px;
   bottom: 90px;
   z-index: t.$z-top;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   width: 300px;
-  max-height: 70vh;
-  overflow-y: auto;
-  padding: t.$space-4;
 
   // `all: initial` above is an author rule, which beats the UA stylesheet's
   // `[hidden] { display: none }` -- this restores `hidden` actually hiding it.
   &[hidden] {
     display: none;
   }
+}
+
+// A card of its own over the panel: what is true of this model, as against what the panel does with it.
+.tg-panel-note {
+  @include m.card;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px t.$space-3;
+  font-size: t.$font-size-sm;
+  line-height: 1.35;
+  animation: tg-panel-note-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+
+  &__text {
+    color: t.c("text");
+  }
+
+  // The same word the line under the icon leads with, in the same colour.
+  &__lead {
+    font-weight: 800;
+  }
+
+  &--shared &__lead {
+    color: t.c("accent");
+  }
+
+  &--withheld &__lead {
+    color: t.c("danger");
+  }
+}
+
+@keyframes tg-panel-note-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tg-panel-note {
+    animation: none;
+  }
+}
+
+.tg-panel {
+  @include m.isolated;
+  @include m.card;
+  position: relative;
+  width: 100%;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: t.$space-4;
 
   * {
     box-sizing: border-box;

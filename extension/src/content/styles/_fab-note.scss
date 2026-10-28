@@ -1,0 +1,299 @@
+@use "sass:math";
+@use "../../styles/tokens" as t;
+@use "../../styles/mixins" as m;
+
+// A line under the floating icon, for something about this page the icon can't say. Only one so far: the
+// generator script a creator held back, which the model therefore can't bring with it.
+//
+// Bare -- a face and two words, no card around them. The icon below the fold of a page is busy enough on its
+// own, and a second pill beside it reads as a second button. It sits under the icon and a little behind it:
+// the icon leans toward the pointer and swells on its seasonal days, and when it does it passes over this
+// rather than being pushed about by it.
+$icon-size: 56px;
+$icon-right: 24px;
+$icon-bottom: 24px;
+
+.tg-fab-note {
+  @include m.isolated(flex);
+  position: fixed;
+  // Centred on the icon, however much wider than it this turns out to be.
+  right: $icon-right + math.div($icon-size, 2);
+  transform: translateX(50%);
+  bottom: 4px;
+  // Under the icon, which keeps $z-top: its stretch and its seasonal mark pass over this.
+  z-index: t.$z-top - 1;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  letter-spacing: 0.2px;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: auto;
+  // It explains itself on hover, so say that it can be pointed at.
+  cursor: help;
+  // Nothing behind it but the page, so each glyph carries its own backing, and the drawing its own halo.
+  .tg-face {
+    filter: drop-shadow(0 0 2px t.c("surface"));
+  }
+
+  text-shadow:
+    0 1px 2px t.c("surface"),
+    0 -1px 2px t.c("surface"),
+    1px 0 2px t.c("surface"),
+    -1px 0 2px t.c("surface");
+  // Arrives with the icon rather than appearing out of nothing.
+  animation: tg-note-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+
+  // "No" carries the colour, so the line says its piece without a mark to read.
+  &__no {
+    color: t.c("danger");
+    font-weight: 800;
+  }
+
+  // The good news is the name itself: all of it green, the mark doing what the "No" does on the other line.
+  &__yes {
+    color: t.c("accent");
+    font-weight: 800;
+  }
+
+  &__label {
+    color: t.c("text");
+    font-weight: 700;
+  }
+}
+
+// The faces (content/scriptNote.ts). Their parts move here, with the rest of the line's movement, so the one
+// reduced-motion rule at the foot covers all of it.
+.tg-face {
+  display: block;
+  flex: 0 0 auto;
+  overflow: visible;
+
+  // Tips its head slowly, the way you do when something is a bit of a let-down.
+  &__head {
+    transform-box: view-box;
+    transform-origin: 12px 13px;
+    animation: tg-face-tilt 5s ease-in-out infinite;
+  }
+
+  // Both eyes close together, from the middle of the eye rather than the top of the picture.
+  &__eyes {
+    transform-box: view-box;
+    transform-origin: 12px 12.3px;
+    animation: tg-face-blink 5s ease-in-out infinite;
+  }
+
+  // Wells at the lid, runs down the cheek, and is gone again for most of the cycle.
+  &__tear {
+    transform-box: view-box;
+    transform-origin: 8.9px 14.4px;
+    animation: tg-face-tear 5s ease-in-out infinite;
+  }
+
+  // The glad one: a bounce with the squash and stretch that makes it read as delight rather than a nod, and
+  // at the top of it the eyes squeeze shut, the smile widens and a spark goes off.
+  &--happy &__head {
+    animation: tg-face-bounce 3.2s cubic-bezier(0.4, 0, 0.3, 1) infinite;
+  }
+
+  // Open eyes and squeezed ones, one hidden while the other shows. Stepped, so the expression changes rather
+  // than melts from one into the other.
+  &--happy &__eyes {
+    animation: tg-eyes-open 3.2s steps(1, end) infinite;
+  }
+
+  &__squint {
+    opacity: 0;
+    animation: tg-eyes-squint 3.2s steps(1, end) infinite;
+  }
+
+  &__smile {
+    transform-box: view-box;
+    transform-origin: 12px 14.4px;
+    animation: tg-face-grin 3.2s ease-in-out infinite;
+  }
+
+  &__spark {
+    transform-box: view-box;
+    transform-origin: 20px 5.8px;
+    opacity: 0;
+    animation: tg-face-spark 3.2s ease-out infinite;
+  }
+}
+
+// Carries the line's meaning for a screen reader, which can't hover a tooltip or see the face.
+.tg-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  border: 0;
+  clip-path: inset(50%);
+}
+
+@keyframes tg-note-in {
+  from {
+    opacity: 0;
+    transform: translateX(50%) translateY(-6px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(50%);
+  }
+}
+
+@keyframes tg-face-tilt {
+  0%,
+  55%,
+  100% {
+    transform: rotate(0deg);
+  }
+  72%,
+  86% {
+    transform: rotate(-9deg);
+  }
+}
+
+@keyframes tg-face-blink {
+  0%,
+  40%,
+  100% {
+    transform: scaleY(1);
+  }
+  44%,
+  46% {
+    transform: scaleY(0.15);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes tg-face-tear {
+  0%,
+  58% {
+    opacity: 0;
+    transform: translateY(-1px) scale(0.3);
+  }
+  // Gathers at the lid.
+  66% {
+    opacity: 0.6;
+    transform: translateY(0) scale(1);
+  }
+  // Then runs, thinning as it goes.
+  88% {
+    opacity: 0.45;
+    transform: translateY(4.5px) scale(0.85);
+  }
+  96%,
+  100% {
+    opacity: 0;
+    transform: translateY(6.5px) scale(0.7);
+  }
+}
+
+@keyframes tg-face-bounce {
+  0%,
+  58%,
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+  // Gathers itself: squat and wide.
+  64% {
+    transform: translateY(0.6px) scale(1.06, 0.92);
+  }
+  // Up, stretched.
+  72% {
+    transform: translateY(-2.2px) scale(0.96, 1.06);
+  }
+  // Lands, and settles.
+  82% {
+    transform: translateY(0.4px) scale(1.04, 0.95);
+  }
+  90% {
+    transform: translateY(0) scale(1, 1);
+  }
+}
+
+@keyframes tg-eyes-open {
+  0%,
+  66% {
+    opacity: 1;
+  }
+  67%,
+  84% {
+    opacity: 0;
+  }
+  85%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes tg-eyes-squint {
+  0%,
+  66% {
+    opacity: 0;
+  }
+  67%,
+  84% {
+    opacity: 1;
+  }
+  85%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes tg-face-grin {
+  0%,
+  60%,
+  100% {
+    transform: scale(1, 1);
+  }
+  72%,
+  80% {
+    transform: scale(1.12, 1.18);
+  }
+}
+
+@keyframes tg-face-spark {
+  0%,
+  64% {
+    opacity: 0;
+    transform: scale(0.2) rotate(-40deg);
+  }
+  74% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  88%,
+  100% {
+    opacity: 0;
+    transform: scale(0.7) rotate(25deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tg-fab-note {
+    animation: none;
+    transform: translateX(50%);
+  }
+
+  .tg-face__head,
+  .tg-face__eyes,
+  .tg-face__smile {
+    animation: none;
+  }
+
+  // Standing still, the face keeps its open eyes; the rest is movement with nothing to say without it.
+  .tg-face__squint,
+  .tg-face__tear,
+  .tg-face__spark {
+    animation: none;
+    display: none;
+  }
+}

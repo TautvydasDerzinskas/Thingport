@@ -39,6 +39,7 @@ function printFiltersFromQuery(req: Request): PrintFilters {
     collectionId: str(req.query.collection_id),
     authorId: str(req.query.author_id),
     tags: splitList(req.query.tags),
+    generative: req.query.generative === "1" || req.query.generative === "true",
   };
 }
 

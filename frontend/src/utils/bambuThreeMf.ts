@@ -4,6 +4,7 @@
 // Adapted (with modifications) from github.com/maziggy/bambuddy, AGPL-3.0-only.
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { keepsOwnColor } from "./ownColor";
 
 type MeshData = {
   vertices: number[];
@@ -45,6 +46,55 @@ export type ParsedBambuThreeMF = {
   /** Reads from the already-unzipped archive. */
   getPlateThumbnail: (plateIndex: number) => Promise<string | null>;
 };
+
+/**
+ * Which filament a painted triangle belongs to, from Bambu Studio's `paint_color`.
+ *
+ * The attribute is a bitstream in hex, as PrusaSlicer's triangle selector writes it: two bits saying into how
+ * many pieces the triangle was split, then two bits of state, and where that state reads 3 it is an escape and
+ * the next four bits hold the rest of it. State 0 means unpainted -- the object's own filament -- and state N
+ * means the Nth, so the filament list is indexed by N - 1.
+ *
+ * A split triangle is one painted part of the way across, and its pieces can belong to different filaments.
+ * Only the first is read here, so such a triangle takes one of its two colours whole. They lie along the
+ * boundary between painted regions, so the seam moves by a triangle; splitting the geometry to follow it
+ * exactly would cost more than it shows.
+ */
+function paintedExtruder(code: string | null): number | null {
+  if (!code) return null;
+  // Only the last two nibbles are read -- two bits of split count, two of state and four of escape is eight
+  // bits, and they sit at the low end. A deeply split triangle's stream is far longer than a number can hold
+  // exactly, and taking all of it would shift rubbish into those bits and name the wrong filament.
+  const bits = Number.parseInt(code.slice(-2), 16);
+  if (!Number.isFinite(bits)) return null;
+  let state = (bits >> 2) & 0b11;
+  if (state === 0b11) state = 3 + ((bits >> 4) & 0b1111);
+  return state > 0 ? state - 1 : null;
+}
+
+/** One mesh per filament, keeping only the vertices each one actually uses. */
+function byExtruder(vertices: number[], triangles: number[], painted: number[]): MeshData[] {
+  const parts = new Map<number, { triangles: number[]; remap: Map<number, number>; vertices: number[] }>();
+  for (let face = 0; face < painted.length; face++) {
+    const extruder = painted[face];
+    let part = parts.get(extruder);
+    if (!part) {
+      part = { triangles: [], remap: new Map(), vertices: [] };
+      parts.set(extruder, part);
+    }
+    for (let corner = 0; corner < 3; corner++) {
+      const original = triangles[face * 3 + corner];
+      let moved = part.remap.get(original);
+      if (moved === undefined) {
+        moved = part.vertices.length / 3;
+        part.remap.set(original, moved);
+        part.vertices.push(vertices[original * 3], vertices[original * 3 + 1], vertices[original * 3 + 2]);
+      }
+      part.triangles.push(moved);
+    }
+  }
+  return [...parts].map(([extruder, part]) => ({ vertices: part.vertices, triangles: part.triangles, extruder }));
+}
 
 function bytesToDataUrl(bytes: Uint8Array, mime: string): Promise<string> {
   const blob = new Blob([bytes as unknown as BlobPart], { type: mime });
@@ -103,7 +153,65 @@ function parseTransform3MF(transformStr: string | null): THREE.Matrix4 {
 
 type ElementSource = { getElementsByTagName(tag: string): HTMLCollectionOf<Element> };
 
-async function parseMeshFromDoc(doc: ElementSource, defaultExtruder = 0): Promise<MeshData[]> {
+/** A `displaycolor` as the 3MF spec writes it -- `#RRGGBB` or `#RRGGBBAA` -- as a CSS colour, alpha dropped:
+ *  how see-through a material is says nothing about what colour it was printed in. */
+function displayColor(value: string | null): string | null {
+  const hex = value?.trim().replace(/^#/, "") ?? "";
+  if (!/^[0-9a-f]{6}([0-9a-f]{2})?$/i.test(hex)) return null;
+  return `#${hex.slice(0, 6).toLowerCase()}`;
+}
+
+/** The colours of a 3MF's own material groups, flattened, and which of them a `pid` and index name. */
+export type BaseMaterials = {
+  colors: string[];
+  /** The slot a group's `index`th entry landed in, or null for a group or index the file hasn't got. */
+  slotOf: (pid: string | null, index: number) => number | null;
+};
+
+/**
+ * The colours a 3MF carries in its own right: a `<basematerials>` group of `<base>` entries, pointed into by
+ * `pid` and `p1`. That is the spec's own way to colour a mesh, and what the customizer writes (sdk/threeMf.ts);
+ * Bambu's `paint_color` is a separate thing layered over a sliced project's filaments.
+ *
+ * Both say the same thing -- a colour per index, an index per triangle -- so the entries are flattened into one
+ * list the painted path's indexes can share, and everything downstream colours the two alike. Null for a file
+ * with no materials, so a caller can tell that from a group holding nothing readable.
+ */
+export function readBaseMaterials(doc: ElementSource): BaseMaterials | null {
+  const colors: string[] = [];
+  const slots = new Map<string, number>();
+  const groups = doc.getElementsByTagName("basematerials");
+  for (let i = 0; i < groups.length; i++) {
+    const groupId = groups[i].getAttribute("id");
+    if (!groupId) continue;
+    const bases = groups[i].getElementsByTagName("base");
+    for (let j = 0; j < bases.length; j++) {
+      const color = displayColor(bases[j].getAttribute("displaycolor"));
+      // Keyed by where it actually sits, so an entry with no readable colour doesn't shift the ones after it.
+      if (!color) continue;
+      slots.set(`${groupId}:${j}`, colors.length);
+      colors.push(color);
+    }
+  }
+  if (!colors.length) return null;
+  return { colors, slotOf: (pid, index) => (pid === null ? null : (slots.get(`${pid}:${index}`) ?? null)) };
+}
+
+/** Which colour a triangle's `p1` names, in the group the triangle itself points at or else its object's. */
+export function readTriangleMaterial(
+  materials: BaseMaterials,
+  objectPid: string | null,
+): (triangle: Element) => number | null {
+  return (triangle) =>
+    materials.slotOf(triangle.getAttribute("pid") ?? objectPid, Number.parseInt(triangle.getAttribute("p1") ?? "", 10));
+}
+
+/** `materialSlot` reads a triangle's colour from the file's own materials, for a 3MF coloured the spec's way. */
+async function parseMeshFromDoc(
+  doc: ElementSource,
+  defaultExtruder = 0,
+  materialSlot?: (triangle: Element) => number | null,
+): Promise<MeshData[]> {
   const meshes: MeshData[] = [];
   const meshElements = doc.getElementsByTagName("mesh");
   for (let j = 0; j < meshElements.length; j++) {
@@ -122,6 +230,8 @@ async function parseMeshFromDoc(doc: ElementSource, defaultExtruder = 0): Promis
       if (k > 0 && k % YIELD_EVERY_N_VERTICES === 0) await nextTick();
     }
 
+    // A painted model says which filament each triangle belongs to; null until one actually does.
+    let painted: number[] | null = null;
     const triangleElements = meshEl.getElementsByTagName("triangle");
     for (let k = 0; k < triangleElements.length; k++) {
       const t = triangleElements[k];
@@ -130,11 +240,22 @@ async function parseMeshFromDoc(doc: ElementSource, defaultExtruder = 0): Promis
         parseInt(t.getAttribute("v2") || "0", 10),
         parseInt(t.getAttribute("v3") || "0", 10),
       );
+      // paint_color first: where a slicer painted a model, that is the later word on its colours.
+      const paint = paintedExtruder(t.getAttribute("paint_color")) ?? materialSlot?.(t) ?? null;
+      if (paint !== null) {
+        painted ??= Array.from<number>({ length: triangleElements.length }).fill(defaultExtruder);
+        painted[k] = paint;
+      }
       if (k > 0 && k % YIELD_EVERY_N_TRIANGLES === 0) await nextTick();
     }
 
     if (vertices.length > 0 && triangles.length > 0) {
-      meshes.push({ vertices, triangles, extruder: defaultExtruder });
+      // A painted mesh becomes one mesh per filament, which is how the builder already colours them.
+      for (const part of painted
+        ? byExtruder(vertices, triangles, painted)
+        : [{ vertices, triangles, extruder: defaultExtruder }]) {
+        meshes.push(part);
+      }
     }
   }
   return meshes;
@@ -355,6 +476,11 @@ async function parse3MF(zipEntries: Record<string, Uint8Array>): Promise<ParsedB
     };
   }
 
+  // Only where the project named no filaments of its own: a slicer's list is the better word on a project it
+  // sliced, and a plain 3MF -- the customizer's own output among them -- has nothing but these.
+  const baseMaterials = filamentColors.length ? null : readBaseMaterials(mainDoc);
+  if (baseMaterials) filamentColors = baseMaterials.colors;
+
   const objectElements = mainDoc.getElementsByTagName("object");
   for (let i = 0; i < objectElements.length; i++) {
     if (i > 0) await nextTick();
@@ -372,7 +498,20 @@ async function parse3MF(zipEntries: Record<string, Uint8Array>): Promise<ParsedB
       defaultExtruder = Math.max(0, parseInt(extruderAttr, 10) - 1);
     }
 
-    const meshes: MeshData[] = await parseMeshFromDoc(objEl, defaultExtruder);
+    // An object pointing at a material is that colour, bar the triangles naming another. Only this document's
+    // objects: resource ids are each model file's own, so reading a part file's triangles against these would
+    // colour them by whatever happened to share an id.
+    const objectSlot = baseMaterials?.slotOf(
+      objEl.getAttribute("pid"),
+      Number.parseInt(objEl.getAttribute("pindex") ?? "", 10),
+    );
+    if (objectSlot != null) defaultExtruder = objectSlot;
+
+    const meshes: MeshData[] = await parseMeshFromDoc(
+      objEl,
+      defaultExtruder,
+      baseMaterials ? readTriangleMaterial(baseMaterials, objEl.getAttribute("pid")) : undefined,
+    );
 
     const componentElements = objEl.getElementsByTagName("component");
     for (let j = 0; j < componentElements.length; j++) {
@@ -550,10 +689,21 @@ export function buildBambuModelGroup(
   const { objects, buildItems } = parsedData;
   const group = new THREE.Group();
 
-  const getMaterial = (extruder: number, fallbackColor: THREE.Color): THREE.MeshStandardMaterial => {
+  const getMaterial = (
+    extruder: number,
+    fallbackColor: THREE.Color,
+    multicolour: boolean,
+  ): THREE.MeshStandardMaterial => {
     const colorStr = filamentColors[extruder];
     const color = colorStr ? new THREE.Color(colorStr) : fallbackColor;
-    return new THREE.MeshStandardMaterial({ color, roughness: 0.62, metalness: 0.0, envMapIntensity: 0.55 });
+    const material = new THREE.MeshStandardMaterial({
+      color,
+      roughness: 0.62,
+      metalness: 0.0,
+      envMapIntensity: 0.55,
+    });
+    if (colorStr && multicolour) keepsOwnColor(material);
+    return material;
   };
 
   const geometriesByExtruder = new Map<number, THREE.BufferGeometry[]>();
@@ -585,11 +735,21 @@ export function buildBambuModelGroup(
   }
 
   const fallbackColor = new THREE.Color(0xdddddd);
+  // Only what is actually on screen counts as the model's own colour. A project may list three filaments
+  // while the plate being shown uses one, and that one is a shape in whatever colour the slicer happened to
+  // be set to -- the reader should still be able to change it.
+  const shown = new Set(
+    [...geometriesByExtruder]
+      .filter(([, geometries]) => geometries.length > 0)
+      .map(([extruder]) => filamentColors[extruder])
+      .filter((color): color is string => Boolean(color)),
+  );
+  const multicolour = shown.size > 1;
   for (const [extruder, geometries] of geometriesByExtruder) {
     if (geometries.length === 0) continue;
     const mergedGeometry = geometries.length === 1 ? geometries[0] : mergeGeometries(geometries, false);
     if (mergedGeometry) {
-      const mesh = new THREE.Mesh(mergedGeometry, getMaterial(extruder, fallbackColor));
+      const mesh = new THREE.Mesh(mergedGeometry, getMaterial(extruder, fallbackColor, multicolour));
       mesh.castShadow = true;
       group.add(mesh);
     }

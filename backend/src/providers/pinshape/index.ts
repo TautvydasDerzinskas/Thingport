@@ -68,7 +68,7 @@ export const pinshapeImport: SourcedImport<string, PinshapeModelResolution> = {
       throw new HttpError(403, `This is a paid Pinshape model (${resolved.price}): Thingport can't download it.`);
     }
     // Only what a plate takes, or a zip to unpack: no point asking for the rest.
-    const wanted = resolved.files.filter((file) => kit.isModelFile(file.name) || /\.zip$/i.test(file.name));
+    const wanted = resolved.files.filter((file) => kit.isImportableFile(file.name) || /\.zip$/i.test(file.name));
     const files =
       resolved.files.length || !resolved.zipPath
         ? wanted

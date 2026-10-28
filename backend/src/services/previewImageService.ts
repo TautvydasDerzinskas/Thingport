@@ -17,7 +17,7 @@ import {
 import { plainWriteMode, reuseMarker, shareStoredBytes, type ReuseMarker } from "./fileReuse";
 import { findStoredCopies } from "./storedContent";
 import { ensureAssetHome, plateThumbExists, plateThumbReplaceable, saveThumbFromBytes } from "./printService";
-import type { PreviewImage } from "@prisma/client";
+import { Prisma, type PreviewImage } from "@prisma/client";
 
 /** `home` is the image's model's Print.assetsPath. */
 export function previewImagePath(id: string, home: AssetHome): string {
@@ -60,15 +60,36 @@ async function saveBuffer(
   }
 }
 
+/**
+ * A row at the end of the model's gallery, or null where the place it wanted was taken as it wrote.
+ *
+ * The position is read and then claimed, so two pictures arriving at once can pick the same one and the gallery's
+ * (printId, position) index refuses the second. They do arrive at once: an import adds its gallery pictures while
+ * our own card render of the first plate finishes and takes the cover (see adoptRenderAsThumb), and an upload is
+ * the same. The loser reads the position again rather than failing the import that was only adding a picture.
+ */
+async function createPreviewImageRow(printId: string, generated: boolean): Promise<PreviewImage | null> {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const last = await prisma.previewImage.findFirst({ where: { printId }, orderBy: { position: "desc" } });
+    const position = last ? last.position + 1 : 0;
+    try {
+      return await prisma.previewImage.create({ data: { printId, position, generated } });
+    } catch (err) {
+      if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002")) throw err;
+    }
+  }
+  console.error(`Couldn't find a free gallery position for print ${printId}`);
+  return null;
+}
+
 /** Null if the buffer isn't a decodable image; never throws. */
 export async function addPreviewImage(
   printId: string,
   buffer: Buffer,
   { generated = false, keepExif = false }: { generated?: boolean; keepExif?: boolean } = {},
 ): Promise<PreviewImage | null> {
-  const last = await prisma.previewImage.findFirst({ where: { printId }, orderBy: { position: "desc" } });
-  const position = last ? last.position + 1 : 0;
-  const row = await prisma.previewImage.create({ data: { printId, position, generated } });
+  const row = await createPreviewImageRow(printId, generated);
+  if (!row) return null;
   const saved = await saveBuffer(printId, row.id, buffer, keepExif);
   if (!saved) {
     await prisma.previewImage.delete({ where: { id: row.id } }).catch(() => undefined);
@@ -97,7 +118,10 @@ export async function addPreviewImage(
 export async function addGeneratedPreviewImageIfNone(printId: string, buffer: Buffer): Promise<void> {
   const count = await prisma.previewImage.count({ where: { printId } });
   if (count > 0) return;
-  await addPreviewImage(printId, buffer, { generated: true });
+  const added = await addPreviewImage(printId, buffer, { generated: true });
+  // Something landed while this render was being written -- another plate's, or a picture. Anywhere but the
+  // front of the gallery means it wasn't first after all, and only the first render stands in for a picture.
+  if (added && added.position > 0) await removePreviewImage(printId, added.id).catch(() => undefined);
 }
 
 /** Drops our own renders, so the images that replace them start at position 0. */

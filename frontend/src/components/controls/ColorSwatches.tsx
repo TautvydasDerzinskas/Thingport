@@ -14,10 +14,12 @@ type Props<T extends string> = {
   label: string;
   /** Without Segmented's track, for a toolbar that's already a surface of its own. */
   bare?: boolean;
+  /** Shown but not choosable, for where the colour isn't the reader's to pick. */
+  disabled?: boolean;
 };
 
 /** Round colour swatches on Segmented's track, or bare; the chosen one is ringed and ticked. */
-export default function ColorSwatches<T extends string>({ value, options, onChange, label, bare }: Props<T>) {
+export default function ColorSwatches<T extends string>({ value, options, onChange, label, bare, disabled }: Props<T>) {
   return (
     <Box
       component="fieldset"
@@ -43,6 +45,7 @@ export default function ColorSwatches<T extends string>({ value, options, onChan
               type="button"
               aria-pressed={chosen}
               aria-label={option.label}
+              disabled={disabled}
               onClick={() => onChange(option.value)}
               sx={{
                 width: SIZE,

@@ -7,6 +7,7 @@
     "print-cost-estimator",
     "skadis-planner",
     "keyring-generator",
-    "qr-code-generator"
+    "qr-code-generator",
+    "openscad-customizer"
   ]
 }

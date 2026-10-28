@@ -56,11 +56,24 @@ async function downloadFiles(
         downloaded.push(...inputs);
         continue;
       }
-      // A profile is one 3MF; anything else it unpacked to is dropped.
-      await Promise.all(
-        inputs.slice(1).map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)),
+      // A profile is one model file; the rest of what it unpacked to is dropped, bar the script the model was
+      // generated from, which the pipeline keeps beside the model as a supporting file. Picked by what it is
+      // rather than by coming first: a zip of nothing but generator scripts would otherwise put a .scad in as
+      // the plate, and a script holds no shape to print.
+      const plate = inputs.find((input) => kit.isModelFile(input.filename));
+      // Worth downloading but never a plate: the script is the only file the pipeline describes that way.
+      const scripts = inputs.filter(
+        (input) => kit.isImportableFile(input.filename) && !kit.isModelFile(input.filename),
       );
-      if (inputs[0]) downloaded.push({ ...inputs[0], sourceInstanceId: file.profile_id });
+      const kept = new Set<NewPlateInput>(plate ? [plate, ...scripts] : scripts);
+      await Promise.all(
+        inputs
+          .filter((input) => !kept.has(input))
+          .map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)),
+      );
+      if (plate) downloaded.push({ ...plate, sourceInstanceId: file.profile_id });
+      // Untagged, so it goes to the model rather than being taken for another of this profile's plates.
+      downloaded.push(...scripts);
     }
   } catch (err) {
     await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));

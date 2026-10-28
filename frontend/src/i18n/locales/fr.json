@@ -3520,7 +3520,8 @@
         "spin": "Rotation",
         "zoomIn": "Zoomer",
         "zoomOut": "Dézoomer",
-        "color": "Couleur du modèle"
+        "color": "Couleur du modèle",
+        "colorOwn": "Ce modèle a ses propres couleurs ; il n’y en a aucune à choisir"
       },
       "downloadFailed": "Échec du téléchargement. Veuillez réessayer.",
       "deleteFailed": "Échec de la suppression du modèle.",
@@ -3661,7 +3662,67 @@
       "openActions": "Ouvrir ou télécharger",
       "openInHeading": "Ouvrir dans",
       "toolOwned": "Appartient à un outil",
-      "toolOwnedHint": "Il ne peut être ni modifié ni supprimé"
+      "toolOwnedHint": "Il ne peut être ni modifié ni supprimé",
+      "customize": "Personnaliser…",
+      "scriptWithheld": "Script non partagé",
+      "scriptWithheldHint": "Ce modèle a été créé à partir d'un script, mais son auteur a choisi de ne pas le partager : il n'y a donc rien à personnaliser ici. Lui seul peut changer cela."
+    },
+    "customizer": {
+      "title": "Personnalisation de {{model}}",
+      "model": {
+        "title": "Modèle",
+        "script": "Script"
+      },
+      "pane": {
+        "minimize": "Réduire",
+        "expand": "Développer"
+      },
+      "pick": {
+        "title": "Quel script ?",
+        "body": "Ce modèle est accompagné de {{count}} scripts. Choisissez celui à personnaliser."
+      },
+      "form": {
+        "title": "Personnaliser",
+        "generate": "Générer",
+        "generating": "Génération…",
+        "noParameters": "Ce script n'a rien à modifier.",
+        "undo": "Annuler",
+        "redo": "Rétablir",
+        "reset": "Revenir aux valeurs du script",
+        "code": "Afficher le code de {{name}}"
+      },
+      "busy": {
+        "reading": "Lecture du script…",
+        "generating": "Génération…"
+      },
+      "stage": {
+        "empty": "Rien n'a encore été généré."
+      },
+      "status": {
+        "generated": "Généré en {{seconds}} s · {{size}} ko"
+      },
+      "download": {
+        "threeMf": "Télécharger en 3MF",
+        "stl": "Télécharger en STL",
+        "stlNoColors": "Conserve la forme, pas les couleurs"
+      },
+      "save": {
+        "action": "Enregistrer dans Thingport",
+        "done": "{{name}} enregistré",
+        "open": "Ouvrir le modèle",
+        "description": "Généré à partir de {{script}}, fourni avec {{model}}."
+      },
+      "code": {
+        "label": "Le code de {{name}}",
+        "lines": "{{count}} lignes · lecture seule",
+        "copy": "Copier",
+        "copied": "Copié",
+        "download": "Télécharger le script"
+      },
+      "error": {
+        "failed": "Le script n'a généré aucun modèle.",
+        "noGeometry": "Le script s’est exécuté mais n’a produit aucune forme à afficher."
+      }
     },
     "edit": {
       "title": "Modifier le modèle",
@@ -4121,6 +4182,10 @@
         "othersGo_other": "{{names}} sont retirées. Leurs modèles reçoivent « {{name}} » à la place.",
         "keepsOwn": "Les modèles qui ont déjà « {{name}} » ne changent pas."
       }
+    },
+    "filters": {
+      "generative": "Génératifs",
+      "generativeHint": "Seulement les modèles arrivés avec le script qui les a générés"
     }
   },
   "providers": {

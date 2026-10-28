@@ -41,6 +41,7 @@ import AddToCollectionModal from "./AddToCollectionModal";
 import EditModelModal from "./EditModelModal";
 import FillGapsDialog from "./FillGapsDialog";
 import { useAiOutcomeWatch } from "./useAiOutcomeWatch";
+import { useCustomize } from "./useCustomize";
 import { reopenContextMenuBelow } from "../../components/Layout/ConfigurationDialog/AppTiles";
 
 type Props = {
@@ -136,6 +137,8 @@ export default function ModelActionsMenu({
     setAnchorEl(null);
     onContextMenuClose?.();
   };
+
+  const customize = useCustomize(print, closeMenu, onUnauthorized);
 
   const openEdit = () => {
     closeMenu();
@@ -311,6 +314,7 @@ export default function ModelActionsMenu({
           </ListItemIcon>
           <ListItemText>{t("common:download")}</ListItemText>
         </MenuItem>
+        {customize.item}
         {toolOwned ? (
           // Kept as the tool needs it: it goes when the tool is uninstalled.
           <MenuItem disabled>
@@ -454,6 +458,8 @@ export default function ModelActionsMenu({
           onOpen={recordUse}
         />
       )}
+
+      {customize.window}
 
       <DownloadPickerDialog
         open={pickerOpen}
