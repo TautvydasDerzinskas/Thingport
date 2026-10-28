@@ -6,10 +6,13 @@
 //   node source/test_plates.mjs [<storage>/tools/multiboard-planner/<sha>]
 //
 // Without that folder the link check is skipped and the rest still runs.
+//
+// Read from the built tool.js rather than from plates.js: source/ is concatenated into one module, so
+// plates.js takes the STL writer from that shared scope and on its own has no such name.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { PLATE_SIDES, cellsOf, plateLabel, plateParameters } from "./plates.js";
+import { PLATE_SIDES, buildWall, cellsOf, partName, plateIndex, plateLabel, plateParameters } from "../tool.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const data = JSON.parse(fs.readFileSync(path.join(here, "data", "parts.json"), "utf8"));
@@ -57,8 +60,6 @@ const one = plateLabel("C1", "8x8", 1, data.tileNames);
 check(one.name === "8x8 Core Multiboard", `label for one reads "${one.name}"`);
 
 // --- what a wall asks for, and the drawing of it ------------------------------------------------------
-const { plateIndex, buildWall, partName } = await import("./plates.js");
-
 const index = plateIndex(data.tiles);
 check(index.size === data.tiles.filter((t) => t.link).length, "every linked tile should be in the index");
 const first = data.tiles.find((t) => t.link);
@@ -83,18 +84,25 @@ const seen = [];
 const plan = { plates: wanted, joints: [] };
 const built = await buildWall(fakeScad, "// script", plan, { onProgress: (p) => seen.push(p) });
 check(built.length === 2, `two plates wanted, ${built.length} drawn`);
-check(built[0].name === wanted[0].name, "a part should keep the name it was given, count and all");
+// Numbered in plan order and written as STL, with the name it was given, count and all, in between.
+check(built[0].name === `01 - ${wanted[0].name}.stl`, `the first plate's file reads "${built[0].name}"`);
+check(built[1].name === `02 - ${wanted[1].name}.stl`, `the second plate's file reads "${built[1].name}"`);
+// One triangle makes an 84-byte header and one 50-byte facet, so the bytes are the mesh rather than a stub.
+check(built[0].data?.length === 134, `a plate should come back as STL bytes, got ${built[0].data?.length}`);
 
-// Joints come through whatever reads them, counted in the same progress.
+// Joints come through whatever reads them, counted in the same progress and kept byte for byte.
 const jointPlan = { plates: [wanted[0]], joints: [{ name: "Dual Clip", quantity: 2 }] };
 const jointSeen = [];
+const packed = new Uint8Array([1, 2, 3]);
 const withJoints = await buildWall(fakeScad, "// script", jointPlan, {
-  readJoint: async (joint) => [{ mesh: fakeMesh, name: partName(joint) }],
+  readJoint: async (joint) => [{ name: partName(joint), data: packed, extension: ".3mf" }],
   onProgress: (p) => jointSeen.push(p),
 });
 check(withJoints.length === 2, `a plate and a joint should give two pieces, got ${withJoints.length}`);
-check(withJoints[1].name === "Dual Clip x2", `a joint should carry its count, got "${withJoints[1].name}"`);
-check(jointSeen[jointSeen.length - 1].total === 2, "progress should count the joint too");
+// A joint keeps its count and its own extension: it is handed over as it was packed, not re-written.
+check(withJoints[1].name === "02 - Dual Clip x2.3mf", `a joint's file reads "${withJoints[1].name}"`);
+check(withJoints[1].data === packed, "a joint's bytes should be the ones it was read as");
+check(jointSeen.at(-1).done === 2 && jointSeen.at(-1).total === 2, "progress should count the joint too");
 
 // A joint with nothing to read it is said so rather than quietly dropped.
 let unread = "";
@@ -106,8 +114,9 @@ check(/Snap/.test(unread), `a joint with no reader should say which, got "${unre
 check(partName({ name: "Tile", quantity: 1 }) === "Tile", "one of a thing carries no count");
 check(asked[0].cells === 8 && asked[0].neighbour_px === true, "a core tile should be drawn surrounded");
 check(asked[1].cells === 4 && asked[1].neighbour_py === false, "a top-right corner should have nothing above it");
-check(seen.length === 3, `progress should be told before each and at the end, got ${seen.length}`);
-check(seen[0].total === 2 && seen[2].done === 2, "progress should count towards the total and reach it");
+// Said once per piece: the report at the end repeats the last one's count, and a repeat is dropped.
+check(seen.length === 2, `progress should be told once per piece, got ${seen.length}`);
+check(seen[0].total === 2 && seen.at(-1).done === 2, "progress should count towards the total and reach it");
 
 // Stopping between plates.
 const stop = { aborted: true };
@@ -141,7 +150,7 @@ check(pegThin === 7.9, `plate.scad's face hole should be 7.9 across, reads ${peg
 check(drawnHole === pegThin / 2, `the preview draws a hole of ${drawnHole} where the plate's is ${pegThin / 2}`);
 
 // And the cell the pattern repeats on is the lattice the plates sit on.
-check(/width: C\.TILE_CELL_OFFSET/.test(ui), "the lattice should repeat on the planner's own cell pitch");
+check(/width: PlannerCore\.TILE_CELL_OFFSET/.test(ui), "the lattice should repeat on the planner's own cell pitch");
 
 console.log(`tile types: ${types.length}, all mapped and sized`);
 console.log(`tiles: ${data.tiles.length}, every one draws`);
