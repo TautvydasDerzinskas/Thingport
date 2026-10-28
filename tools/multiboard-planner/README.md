@@ -7,15 +7,21 @@ the official [Multiboard Planner](https://multiboard.itch.io/planner); its own c
 
 ## Its models
 
-The planner brings the 221 Multiboard parts it can list, as **Tool: Multiboard models** in every library that can use
-tools. Each part opens from there, to view, download or send to a slicer, and **Collection** puts a wall's parts into a
-collection of your own.
+The planner needs 221 Multiboard parts and carries 13 of them. The other 208 are the Octagon Plates, and those are
+not kept anywhere: `plate.scad` draws the one a wall asks for, when it asks, in the tab. A wall saved or downloaded
+comes out as a single 3MF with every piece in it, named with how many to print.
 
-The parts aren't in this repository: Multiboard's licence lets people download and print its designs but not pass copies
-on. Its `tool.json` lists each part's Thangs page instead, and when an admin installs the tool Thingport imports them, as
-that admin, from Thangs: the admin needs Thangs connected (**Configuration → Providers → Thangs**). A free Thangs account
-downloads a limited number of models a day; the parts that don't come in are listed under the tool in
-**Administration → Tools**, to fetch again the next day, and open on Thangs until then.
+That is why there is nothing to install and no account to connect. The plates used to be fetched from Thangs as the
+installing admin, 208 models and about twelve gigabytes for every instance, with a free account's daily limit
+deciding how much of it arrived.
+
+The 13 it does carry are the joints -- the snaps, the clip, the pillar and the foot. They are not a pattern, so
+they cannot be drawn, and they come to 50 MB kept once for the whole instance. They sit in `models/`, and
+**MultiBuild have agreed to this repository carrying them**; without that agreement they would have to be fetched,
+since Multiboard's licence otherwise lets people download and print its designs but not pass copies on.
+
+They appear as **Tool: Multiboard models** in every library that can use tools, to view, download or send to a
+slicer.
 
 ## What it reaches
 

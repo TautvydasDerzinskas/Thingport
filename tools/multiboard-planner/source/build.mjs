@@ -46,22 +46,30 @@ ${read("plates.js")}
 ${read("ui.js")}`;
 fs.writeFileSync(path.join(tool, "tool.js"), script);
 
-// The models it brings: each part the planner links to, once, fetched from Thangs when an admin installs the tool.
+// The models it brings. The plates are not among them: the planner draws those from plate.scad when a wall is
+// saved, so the 208 that used to be fetched from Thangs and kept for every instance are gone, and with them the
+// twelve gigabytes they took and the Thangs account an admin needed to install the tool.
+//
+// The joints cannot be drawn -- they are snaps and clips, not a pattern -- so the tool carries their files, which
+// Multiboard have agreed to (see the README).
 const { modelKey } = await import(pathToFileURL(path.join(tool, "tool.js")).href);
 const models = new Map();
-const add = (link, name, tags) => {
-  const key = modelKey(link);
-  if (!key || models.has(key)) return;
-  const source = `https://thangs.com/m/${key.slice("thangs-".length)}`;
-  models.set(key, { key, name: name.slice(0, 200), tags: ["multiboard", ...tags], source });
-};
-for (const { size, type, link } of data.tiles) {
-  if (!link) continue;
-  add(link, `${size} ${data.tileNames[type] ?? type} Tile`, ["tile"]);
-}
 for (const snap of data.snaps) {
+  const key = modelKey(snap.link);
+  if (!key || models.has(key)) continue;
+  const dir = path.join(tool, "models", key);
+  if (!fs.existsSync(dir)) throw new Error(`${key} has no files in models/: copy them in before building`);
+  // In plate order, which for a snap of several is its variants: Loose, Permanent, Standard, Tight.
+  const files = fs
+    .readdirSync(dir)
+    .filter((file) => file.toLowerCase().endsWith(".stl"))
+    .sort()
+    .map((file) => `models/${key}/${file}`);
+  if (!files.length) throw new Error(`${key} has no STL in models/`);
+  if (files.length > 20) throw new Error(`${key} has ${files.length} files, and a model may have 20`);
   // As the planner names it: its line breaks are written "\\n" in the data, and other backslashes dropped.
-  add(snap.link, snap.name.replace(/\\n/g, " ").replace(/\\/g, "").replace(/\s+/g, " ").trim(), ["mount"]);
+  const name = snap.name.replace(/\\n/g, " ").replace(/\\/g, "").replace(/\s+/g, " ").trim();
+  models.set(key, { key, name: name.slice(0, 200), tags: ["multiboard", "mount"], files });
 }
 
 const base = JSON.parse(read("tool.base.json"));
