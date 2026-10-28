@@ -70,8 +70,15 @@ SLOT_FACE_D   = 0.40;    // over how much of the depth that flare runs
 // The cavity does reach a little past the mouth, which is why a plain plate shows a closed pocket per slot
 // just below and above it, but those pockets measure under 5 mm2 and are left out here: modelling the cavity
 // as starting with the mouth is both closer on area and right on the cross-section count.
-SLOT_Z0       = 1.50;    // where it starts
-SLOT_Z1       = 4.85;    // where it ends
+SLOT_Z0       = 1.40;    // where it starts
+SLOT_Z1       = 4.80;    // where it ends, keeping it square about mid-thickness
+
+// A narrow groove across the slot, cut a little above and below it, which is what gives the cavity its
+// step: look into a latch from a low angle and the ceiling is flat but for this.
+NOTCH_INSET   = 3.25;    // from the edge to its outer side
+NOTCH_D       = 0.40;    // across it
+NOTCH_Z0      = 1.20;    // where it starts, 0.2 below the slot
+NOTCH_Z1      = 5.00;    //   and ends, 0.2 above
 
 // The relief channel that runs right round the plate just inside its rim, over the same heights as the
 // multiholes' threaded middles. Near a cell centre the octagon already reaches past it, so it is invisible
@@ -185,6 +192,8 @@ module slot() {
       [e - SLOT_D + SLOT_FLARE, -SLOT_CAVITY_W / 2],
       [e - SLOT_D,              -SLOT_INNER_W / 2],
     ]);
+  translate([e - NOTCH_INSET - NOTCH_D, -SLOT_CAVITY_W / 2, NOTCH_Z0])
+    cube([NOTCH_D, SLOT_CAVITY_W, NOTCH_Z1 - NOTCH_Z0]);
 }
 
 /** The channel's cross-section, in X and Z. */
