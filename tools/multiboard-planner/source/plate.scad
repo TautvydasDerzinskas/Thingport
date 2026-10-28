@@ -50,12 +50,14 @@ SLOT_FLARE    = 1.40;    // length of the 45-degree flare out of that inner end
 SLOT_CAVITY_W = 6.94;    // width once the flare is done, held to the mouth
 SLOT_TAPER_D  = 2.40;    // where the cavity starts narrowing towards the mouth
 SLOT_MOUTH_D  = 1.60;    // where it has finished narrowing, and the mouth runs out to the edge
-SLOT_W        = 5.94;    // mouth width
+SLOT_W        = 6.00;    // mouth width
+SLOT_FACE_W   = 6.80;    // and at the face, where it flares again as a lead-in, each side at 45 degrees
+SLOT_FACE_D   = 0.40;    // over how much of the depth that flare runs
 // The cavity does reach a little past the mouth, which is why a plain plate shows a closed pocket per slot
 // just below and above it, but those pockets measure under 5 mm2 and are left out here: modelling the cavity
 // as starting with the mouth is both closer on area and right on the cross-section count.
 SLOT_Z0       = 1.50;    // where it starts
-SLOT_Z1       = 4.90;    // where it ends
+SLOT_Z1       = 4.85;    // where it ends
 
 // The relief channel that runs right round the plate just inside its rim, over the same heights as the
 // multiholes' threaded middles. Near a cell centre the octagon already reaches past it, so it is invisible
@@ -147,8 +149,12 @@ module slot() {
       [e - SLOT_D + SLOT_FLARE,  SLOT_CAVITY_W / 2],
       [e - SLOT_TAPER_D,         SLOT_CAVITY_W / 2],
       [e - SLOT_MOUTH_D,         SLOT_W / 2],
-      [e + 1,                    SLOT_W / 2],
-      [e + 1,                   -SLOT_W / 2],
+      [e - SLOT_FACE_D,          SLOT_W / 2],
+      [e,                        SLOT_FACE_W / 2],
+      [e + 1,                    SLOT_FACE_W / 2],
+      [e + 1,                   -SLOT_FACE_W / 2],
+      [e,                       -SLOT_FACE_W / 2],
+      [e - SLOT_FACE_D,         -SLOT_W / 2],
       [e - SLOT_MOUTH_D,        -SLOT_W / 2],
       [e - SLOT_TAPER_D,        -SLOT_CAVITY_W / 2],
       [e - SLOT_D + SLOT_FLARE, -SLOT_CAVITY_W / 2],
@@ -182,11 +188,17 @@ module channel() {
       linear_extrude(height = 1 + CH_CORNER - CH_RIB, convexity = 6) channel_profile();
 }
 
-/** The wedge taken off the +X+Y corner, so the outline is chamfered rather than square. */
+/** The wedge taken off the +X+Y corner, so the outline is chamfered rather than square.
+ *
+ *  Everything past the line x + y = 2s - CORNER_CHAMFER goes, which is a half-plane: taken as a box
+ *  turned 45 degrees and set back from the corner by the chamfer's own perpendicular distance. Built as
+ *  a triangle through overshot points instead, the overshoot moves the line and the chamfer comes out
+ *  shallow -- by exactly the overshoot, which is a millimetre of plate down every edge of every corner. */
 module corner_cut() {
   s = side / 2;
-  translate([0, 0, -1]) linear_extrude(height = TH + 2)
-    polygon([[s - CORNER_CHAMFER, s + 1], [s + 1, s - CORNER_CHAMFER], [s + 1, s + 1]]);
+  back = CORNER_CHAMFER / sqrt(2);
+  translate([s, s, 0]) rotate([0, 0, 45])
+    translate([-back, -side, -1]) cube([side, 2 * side, TH + 2]);
 }
 
 module plate() {
