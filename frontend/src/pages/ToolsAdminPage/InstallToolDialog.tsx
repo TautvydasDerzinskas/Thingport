@@ -26,13 +26,17 @@ type Props = {
  * Asked before a tool that brings models is installed: are its models wanted now?
  *
  * They are by default, because a tool that needs them doesn't work without them. The two things an admin can't
- * see for themselves are said here: without the models the tool only works while the models' site is up and
- * reachable, and a big set costs real room on the server.
+ * see for themselves are said here: what the tool loses without them -- which differs between a tool that
+ * imports its models from a site and one that carries them itself -- and that a big set costs real room.
  */
 export default function InstallToolDialog({ tool, busy, onClose, onInstall }: Props) {
   const { t } = useTranslation("app");
   const [withModels, setWithModels] = useState(true);
-  const count = tool?.manifest.collection?.models.length ?? 0;
+  const models = tool?.manifest.collection?.models ?? [];
+  const count = models.length;
+  // A tool whose models are its own packed files fetches nothing, so the warning about the site it imports
+  // from would be untrue of it.
+  const ownFiles = count > 0 && models.every((model) => model.files?.length);
 
   // Every tool is asked afresh, so one installed without its models doesn't leave the switch off for the next.
   useEffect(() => {
@@ -58,7 +62,7 @@ export default function InstallToolDialog({ tool, busy, onClose, onInstall }: Pr
           )}
           {!withModels && (
             <Alert severity="warning" sx={{ py: 0.5 }}>
-              {t("adminSettings.tools.repo.modelsLater")}
+              {t(`adminSettings.tools.repo.${ownFiles ? "modelsLaterOwn" : "modelsLater"}`)}
             </Alert>
           )}
         </Stack>

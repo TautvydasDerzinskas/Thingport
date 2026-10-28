@@ -53,6 +53,8 @@ fs.writeFileSync(path.join(tool, "tool.js"), script);
 // The joints cannot be drawn -- they are snaps and clips, not a pattern -- so the tool carries their files, which
 // Multiboard have agreed to (see the README).
 const { modelKey } = await import(pathToFileURL(path.join(tool, "tool.js")).href);
+const PACKED_CHARS = "letters, digits, underscore, dot, space and hyphen, each part starting with one of the first two";
+const PACKED_FILE = /^[A-Za-z0-9_][A-Za-z0-9_. -]*(\/[A-Za-z0-9_][A-Za-z0-9_. -]*)*$/;
 const models = new Map();
 for (const snap of data.snaps) {
   const key = modelKey(snap.link);
@@ -67,6 +69,11 @@ for (const snap of data.snaps) {
     .map((file) => `models/${key}/${file}`);
   if (!files.length) throw new Error(`${key} has no STL in models/`);
   if (files.length > 20) throw new Error(`${key} has ${files.length} files, and a model may have 20`);
+  // The names the backend accepts beside tool.json: a file it rejects would make the whole manifest unreadable,
+  // and a tool whose manifest won't parse is left out of the repository listing rather than shown as broken.
+  for (const file of files) {
+    if (!PACKED_FILE.test(file)) throw new Error(`${file} is not a name a tool may pack: ${PACKED_CHARS}`);
+  }
   // As the planner names it: its line breaks are written "\\n" in the data, and other backslashes dropped.
   const name = snap.name.replace(/\\n/g, " ").replace(/\\/g, "").replace(/\s+/g, " ").trim();
   models.set(key, { key, name: name.slice(0, 200), tags: ["multiboard", "mount"], files });

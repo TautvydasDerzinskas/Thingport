@@ -739,18 +739,6 @@ export default async function mount(thingport) {
   const esc = (s) =>
     String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
-  /** The wall's parts Thingport has, once each. */
-  function partsInThingport(result) {
-    const ids = new Set();
-    for (const row of saveRows(result))
-      for (const link of row[2] || []) {
-        const copy = localCopy(link);
-        if (copy) ids.add(copy.printId);
-      }
-    return [...ids];
-  }
-
-  /** Every part the wall is made of, by the key the tool's metadata gives it. */
   /** Every link in a wall, as model keys: what it is made of, whether or not any of it is kept. */
   function wallKeys(result) {
     const keys = new Set();

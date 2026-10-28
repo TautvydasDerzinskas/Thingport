@@ -921,8 +921,14 @@ export default async function mount(thingport) {
       "polygon",
       {
         points: [
-          [edge + cut, edge], [far - cut, edge], [far, edge + cut], [far, far - cut],
-          [far - cut, far], [edge + cut, far], [edge, far - cut], [edge, edge + cut],
+          [edge + cut, edge],
+          [far - cut, edge],
+          [far, edge + cut],
+          [far, far - cut],
+          [far - cut, far],
+          [edge + cut, far],
+          [edge, far - cut],
+          [edge, edge + cut],
         ]
           .map(([px, py]) => `${px.toFixed(2)},${py.toFixed(2)}`)
           .join(" "),
@@ -931,7 +937,12 @@ export default async function mount(thingport) {
       pattern,
     );
     // The pegboard hole sits on a cell's corner, so each cell carries a quarter of four of them.
-    for (const [cx, cy] of [[0, 0], [cell, 0], [0, cell], [cell, cell]])
+    for (const [cx, cy] of [
+      [0, 0],
+      [cell, 0],
+      [0, cell],
+      [cell, cell],
+    ])
       el("circle", { cx, cy, r: 3.95, fill: PAL.hole }, pattern);
   }
 
@@ -1411,18 +1422,6 @@ export default async function mount(thingport) {
   const esc = (s) =>
     String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
-  /** The wall's parts Thingport has, once each. */
-  function partsInThingport(result) {
-    const ids = new Set();
-    for (const row of saveRows(result))
-      for (const link of row[2] || []) {
-        const copy = localCopy(link);
-        if (copy) ids.add(copy.printId);
-      }
-    return [...ids];
-  }
-
-  /** Every part the wall is made of, by the key the tool's metadata gives it. */
   /** Every link in a wall, as model keys: what it is made of, whether or not any of it is kept. */
   function wallKeys(result) {
     const keys = new Set();

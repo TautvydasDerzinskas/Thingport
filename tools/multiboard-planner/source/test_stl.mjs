@@ -1,5 +1,6 @@
 // The binary STL reader, against files it should read and files it should refuse.
-//   node source/test_stl.mjs [<storage>/tools/multiboard-planner/<sha>]
+//   node source/test_stl.mjs            reads the joints in models/
+//   node source/test_stl.mjs DIR        reads an installed copy instead, the folder named by its models sha
 import fs from "node:fs";
 import path from "node:path";
 import { isBinaryStl, readBinaryStl } from "./stl.js";
@@ -105,13 +106,15 @@ check(
   "a real one should be recognised",
 );
 
-// A joint the tool carries, where one is at hand.
-const installed = process.argv[2];
+// The joints the tool carries. Its own models/ folder by default, so the check holds whether or not the tool
+// happens to be installed; a storage path may be given to read an installed copy instead, where the two layouts
+// differ only by the files/ folder an install adds.
+const installed = process.argv[2] ?? path.join(import.meta.dirname, "..", "models");
 let real = 0;
-if (installed && fs.existsSync(installed)) {
+if (fs.existsSync(installed)) {
   for (const key of fs.readdirSync(installed)) {
-    const dir = path.join(installed, key, "files");
-    if (!fs.existsSync(dir)) continue;
+    const dir = [path.join(installed, key, "files"), path.join(installed, key)].find((d) => fs.existsSync(d));
+    if (!dir || !fs.statSync(dir).isDirectory()) continue;
     const file = fs.readdirSync(dir).find((f) => f.toLowerCase().endsWith(".stl"));
     if (!file || /Octagon Plate/i.test(file)) continue;
     const bytes = fs.readFileSync(path.join(dir, file));
@@ -126,7 +129,7 @@ if (installed && fs.existsSync(installed)) {
 }
 
 console.log(`made-up files: read, shared and refused as they should be`);
-console.log(`joints read whole: ${real}${real ? "" : " (no installed copy given)"}`);
+console.log(`joints read whole: ${real}${real ? "" : " (none found -- is models/ there?)"}`);
 failures.forEach((f) => console.log("  FAIL " + f));
 console.log(failures.length ? `${failures.length} failed` : "all passed");
 process.exitCode = failures.length ? 1 : 0;

@@ -303,8 +303,6 @@ function main() {
   }
 
   console.log(`\nbores (radius mm, thread lead mm/turn)`);
-  const cx = (ba.mn[0] + ba.mx[0]) / 2,
-    cy = (ba.mn[1] + ba.mx[1]) / 2;
   // The cell lattice always starts at the -X-Y corner, whatever the cell count's parity and whatever
   // interfit pads do to the bounding box, so both probes are placed from there: a cell centre sits 37.5 mm
   // in and a wall junction 50 mm in.
@@ -339,10 +337,6 @@ function main() {
   // radii, its lead and its profile across a turn all right and still be started in the wrong place, and
   // then nothing screws into it: only sampling by angle AND height sees that.
   console.log(`\nbore surfaces (radius by angle and height, against the ${TOL} mm these parts are designed to)`);
-  const cxa = (ba.mn[0] + ba.mx[0]) / 2,
-    cya = (ba.mn[1] + ba.mx[1]) / 2;
-  const cxb = (bb.mn[0] + bb.mx[0]) / 2,
-    cyb = (bb.mn[1] + bb.mx[1]) / 2;
   for (const [ox, oy, rmax, label] of [
     [50, 50, 6, "pegboard hole"],
     [37.5, 37.5, 14, "multihole"],
