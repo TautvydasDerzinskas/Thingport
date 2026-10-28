@@ -1102,6 +1102,27 @@ export default async function mount(thingport) {
     const label = row[0].replace(/\n/g, " ");
     const links = (Array.isArray(row[2]) ? row[2] : [row[2]]).filter(Boolean);
     for (const href of links) {
+      const tile = PLATE_BY_LINK.get(href);
+      if (tile) {
+        // A plate is not kept anywhere: it is drawn when asked for. Its page on Thangs is still a click
+        // away, since that is where its pictures and its licence are.
+        const draw = document.createElement("button");
+        draw.type = "button";
+        draw.className = "mbp-link";
+        draw.textContent = "↓";
+        draw.title = t("part.draw");
+        draw.setAttribute("aria-label", t("part.drawAria", { name: label }));
+        draw.addEventListener("click", () => void downloadPlate(tile, label, draw));
+        const page = document.createElement("a");
+        page.className = "mbp-link";
+        page.href = href;
+        page.target = "_blank";
+        page.rel = "noopener";
+        page.textContent = t("part.thangs");
+        page.setAttribute("aria-label", t("part.thangsAria", { name: label }));
+        wrap.append(draw, page);
+        continue;
+      }
       const copy = localCopy(href);
       if (copy) {
         const open = document.createElement("button");
@@ -1130,6 +1151,25 @@ export default async function mount(thingport) {
       }
     }
     return wrap;
+  }
+
+  /** One plate, drawn and handed over. It takes a second or three, so the button says so while it works. */
+  async function downloadPlate(tile, label, button) {
+    const was = button.textContent;
+    button.disabled = true;
+    button.textContent = "…";
+    try {
+      const scad = await openscad();
+      const mesh = await renderPlate(scad, PLATE_SCAD, tile);
+      const bytes = scad.writeThreeMf([{ mesh, name: label }], { name: label });
+      const stem = label.replace(/[^\w.-]+/g, "-").replace(/^-+|-+$/g, "") || "multiboard-plate";
+      thingport.download({ name: `${stem}.3mf`, data: bytes, type: "model/3mf" });
+    } catch (err) {
+      ui.toast(err.message || String(err), "error");
+    } finally {
+      button.disabled = false;
+      button.textContent = was;
+    }
   }
 
   async function downloadModel(id) {
@@ -1289,6 +1329,7 @@ export default async function mount(thingport) {
   }
 
   /** Every part the wall is made of, by the key the tool's metadata gives it. */
+  /** Every link in a wall, as model keys: what it is made of, whether or not any of it is kept. */
   function wallKeys(result) {
     const keys = new Set();
     for (const row of saveRows(result))
@@ -1480,7 +1521,9 @@ ${rows}
    * parts, and without the parts there is nothing to save. What didn't come says why, which is how a daily
    * download limit at the other end reaches the person waiting for it.
    */
-  async function haveTheParts(result, keys = wallKeys(result)) {
+  // The keys are always said outright: the plates in a wall have no model to fetch, so a default taken from
+  // every link in it would ask for things that were never there.
+  async function haveTheParts(result, keys) {
     const missing = keys.filter((key) => !local.has(key));
     if (!missing.length) return true;
     const ok = await ui.confirm({
