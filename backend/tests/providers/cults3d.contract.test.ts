@@ -55,6 +55,7 @@ const SIGNED_ZIP = `https://download.cults3d.com/uploads/creation_zip/file/26323
  *  - "no-form": the model's page has no Download form;
  *  - "file-blocked": the signed link answers 429;
  *  - "nested-zip": the archive's only entry is the designer's own zip, which holds the model files;
+ *  - "nested-zip-broken": and beside it an entry named like a zip that isn't one;
  *  - "other-account": the site shows the sign-in as somebody other than the API key's account;
  *  - "missing": no such model. */
 function handlerFor(scenario: string): FetchHandler {
@@ -64,16 +65,21 @@ function handlerFor(scenario: string): FetchHandler {
     if (url.hostname === "download.cults3d.com") {
       if (scenario === "file-blocked") return new Response("slow down", { status: 429 });
       // What the site builds around an archive the designer uploaded: a zip whose only entry is their own zip.
-      if (scenario === "nested-zip") {
-        return binary(
-          await zip("cults3d-nested", {
-            [`3rdesignworks/${SLUG}/${SLUG}-v1.1.zip`]: await zip("cults3d-inner", {
-              "H501/Top.stl": stl("h501-top"),
-              "H501/base.stl": stl("h501-base"),
-              "H502/Top.stl": stl("h502-top"),
+      if (scenario === "nested-zip" || scenario === "nested-zip-broken") {
+        const inner = await zip("cults3d-inner", {
+          "H501/Top.stl": stl("h501-top"),
+          "H501/base.stl": stl("h501-base"),
+          "H502/Top.stl": stl("h502-top"),
+        });
+        if (scenario === "nested-zip-broken") {
+          return binary(
+            await zip("cults3d-nested-broken", {
+              [`3rdesignworks/${SLUG}/${SLUG}-v1.1.zip`]: inner,
+              [`3rdesignworks/${SLUG}/${SLUG}-cut-short.zip`]: Buffer.from("PK\u0003\u0004 and nothing else"),
             }),
-          }),
-        );
+          );
+        }
+        return binary(await zip("cults3d-nested", { [`3rdesignworks/${SLUG}/${SLUG}-v1.1.zip`]: inner }));
       }
       return binary(
         await zip("cults3d-model", { [`${SLUG}.stl`]: stl("benchy"), [`${SLUG}-base.stl`]: stl("benchy-base") }),
@@ -208,6 +214,19 @@ describe("Cults3D specifics", () => {
       const res = await ctx.importUrl();
       expectStatus(res, 200);
       // Named apart by their folder where the inner zip has them twice, as a flat archive's are.
+      expect(res.body.plates.map((plate: { filename: string }) => plate.filename).toSorted()).toEqual([
+        "H501 - Top.stl",
+        "H502 - Top.stl",
+        "base.stl",
+      ]);
+    });
+
+    // A sibling entry named like a zip that isn't one: it's skipped, and the files already out of the good one stay.
+    it("imports the files out of the archives it can read, past one it can't", async () => {
+      await spec.connect(ctx.userId);
+      ctx.stub("nested-zip-broken");
+      const res = await ctx.importUrl();
+      expectStatus(res, 200);
       expect(res.body.plates.map((plate: { filename: string }) => plate.filename).toSorted()).toEqual([
         "H501 - Top.stl",
         "H502 - Top.stl",
