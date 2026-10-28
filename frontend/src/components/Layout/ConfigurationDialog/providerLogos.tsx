@@ -20,7 +20,10 @@ export function providerLogoSvg(id: ProviderId): string {
   const fill = (value: string) => (value === "currentColor" ? "#000" : value);
   const paths = [
     `<path d="${path}" fill="${fill(color)}"${fillRule ? ` fill-rule="${fillRule}"` : ""}/>`,
-    ...(layers ?? []).map((layer) => `<path d="${layer.d}" fill="${fill(layer.color)}"/>`),
+    ...(layers ?? []).map(
+      (layer) =>
+        `<path d="${layer.d}" fill="${fill(layer.color)}"${layer.fillRule ? ` fill-rule="${layer.fillRule}"` : ""}/>`,
+    ),
   ];
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}">${paths.join("")}</svg>`;
 }
@@ -33,7 +36,7 @@ export function ProviderLogo({ id, size }: { id: ProviderId; size: number }) {
     <svg width={size} height={size} viewBox={viewBox} aria-hidden="true" style={{ display: "block" }}>
       <path d={path} fill={color} fillRule={fillRule} />
       {layers?.map((layer) => (
-        <path key={layer.d} d={layer.d} fill={layer.color} />
+        <path key={layer.d} d={layer.d} fill={layer.color} fillRule={layer.fillRule} />
       ))}
     </svg>
   );

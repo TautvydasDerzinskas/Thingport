@@ -15,6 +15,7 @@ import * as thangs from "./thangs/CollectionTile";
 import * as cults3d from "./cults3d/CollectionTile";
 import * as eufymake from "./eufymake/CollectionTile";
 import * as pinshape from "./pinshape/CollectionTile";
+import * as toymakr3d from "./toymakr3d/CollectionTile";
 
 type Own = { Tile: (props: TileProps) => JSX.Element; TileSkeleton: (props: SkeletonProps) => JSX.Element };
 
@@ -31,4 +32,5 @@ export const COLLECTION_TILES: Partial<Record<BrowsableProvider, Own>> = {
   cults3d,
   eufymake,
   pinshape,
+  toymakr3d,
 };

@@ -615,6 +615,7 @@ describe("a sync's model links", () => {
       eufymake: "be7c829023dd11f19919128e55eac07e",
       pinshape: "111504",
       owlcad: "0f7d8172-a9b7-4de1-9b1b-5a8c255ac274",
+      toymakr3d: "8",
     };
     const readBack = Object.fromEntries(
       PROVIDER_IDS.map((provider) => [provider, modelIdFromUrl(provider, modelUrlFor(provider, ids[provider]))]),

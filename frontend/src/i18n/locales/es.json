@@ -4612,6 +4612,37 @@
         "notConnected": "Conecta Pinshape en Configuración > Proveedores, o visítalo con Thingport Grab, para ver aquí tus me gusta y colecciones."
       }
     },
+    "toymakr3d": {
+      "connect": {
+        "steps": [
+          "Lo más fácil: con Thingport Grab, basta con abrir toymakr3d.com con la sesión iniciada. Conecta tu cuenta y envía un nuevo inicio de sesión cada vez que vuelvas a iniciarla allí.",
+          "O manualmente: inicia sesión en toymakr3d.com y abre las herramientas de desarrollador de tu navegador (F12).",
+          "En la pestaña Red, recarga la página, haz clic en cualquier petición a toymakr3d.com, copia su cabecera Cookie y pégala abajo."
+        ],
+        "placeholder": "La cabecera Cookie de una petición a toymakr3d.com con la sesión iniciada"
+      },
+      "status": {
+        "notConnected": "Toymakr3D solo entrega sus archivos a usuarios con sesión iniciada, también los modelos gratuitos. Conecta tu cuenta para importarlos y ver tus productos favoritos.",
+        "expired": "El inicio de sesión ha caducado. Inicia sesión en toymakr3d.com con Thingport Grab o vuelve a conectar Toymakr3D en Configuración → Proveedores.",
+        "expiredStatus": "Inicio de sesión caducado",
+        "disabledReason": "Toymakr3D: conecta tu cuenta en Configuración → Proveedores"
+      },
+      "about": {
+        "summary": "Un sitio de un solo diseñador con modelos articulados de robots y mechas, en su mayoría gratuitos: Transformers, Megazords, Gundams y similares.",
+        "signIn": "Tu propio inicio de sesión, para los archivos y tus favoritos.",
+        "grab": "Envía tu inicio de sesión cuando visitas toymakr3d.com.",
+        "setup": [
+          "Instala Thingport Grab, actívalo en Toymakr3D y abre toymakr3d.com con la sesión iniciada.",
+          "Manualmente: copia la cabecera Cookie de una petición a toymakr3d.com con la sesión iniciada y pégala en Configuración → Proveedores."
+        ]
+      },
+      "admin": {
+        "description": "Modelos y los productos favoritos de cada usuario. Ambos necesitan el inicio de sesión del propio usuario; solo las páginas de los modelos se leen sin él."
+      },
+      "sync": {
+        "notConnected": "Conecta Toymakr3D en Configuración > Proveedores, o visítalo con Thingport Grab, para ver aquí tus productos favoritos."
+      }
+    },
     "owlcad": {
       "status": {
         "alwaysConnected": "OwlCAD está conectado de forma predeterminada: no necesita cuenta ni clave."

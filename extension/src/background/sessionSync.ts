@@ -18,11 +18,13 @@ export type SessionSource = {
   slot?: AuthSlot["slot"];
 };
 
-/** The endpoint every backend has, older ones included. */
+/** Where a sign-in is sent: the endpoint a provider had before the generic one, which older backends only have, or
+ *  else the generic one, which every backend that knows the provider at all has. */
 function endpointOf(provider: ProviderId, slot: AuthSlot["slot"]) {
   const auth = (MANIFESTS[provider].auth as readonly AuthSlot[]).find((a) => a.slot === slot);
-  if (!auth?.legacyEndpoint) throw new Error(`${provider} has no ${slot} sign-in to send`);
-  return { method: auth.legacyEndpoint.method, path: `/settings/${auth.legacyEndpoint.path}` };
+  if (!auth) throw new Error(`${provider} has no ${slot} sign-in to send`);
+  if (auth.legacyEndpoint) return { method: auth.legacyEndpoint.method, path: `/settings/${auth.legacyEndpoint.path}` };
+  return { method: "PATCH", path: `/providers/${provider}/connection${slot === "default" ? "" : `/${slot}`}` };
 }
 
 // One write at a time, so two providers syncing at once don't each drop the other's entry.

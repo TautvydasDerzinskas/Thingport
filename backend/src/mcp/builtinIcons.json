@@ -97,6 +97,11 @@
     "group": "providers"
   },
   {
+    "value": "builtin:providers/toymakr3d",
+    "name": "Toymakr3D",
+    "group": "providers"
+  },
+  {
     "value": "builtin:ai/ai21",
     "name": "AI21",
     "group": "ai"

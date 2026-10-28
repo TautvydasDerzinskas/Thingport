@@ -8,6 +8,7 @@ import { syncMakeronline } from "./makeronline/content";
 import { syncOwlcad } from "./owlcad/content";
 import { captureMyminifactoryAccount } from "./myminifactory/account";
 import { pinshapeSignedIn } from "./pinshape/content";
+import { toymakr3dSignedIn } from "./toymakr3d/content";
 import { syncPrintables } from "./printables/content";
 import { captureThingiverseAccount } from "./thingiverse/account";
 
@@ -38,6 +39,10 @@ export const CAPTURE: Partial<Record<ProviderId, (id: ProviderId) => void>> = {
   // Its sign-in downloads the files; sent once it changes, and only from a signed-in page.
   pinshape: (id) => {
     if (pinshapeSignedIn()) syncSession(id);
+  },
+  // Its sign-in downloads the files and reads the liked products; sent once it changes, and only from a signed-in page.
+  toymakr3d: (id) => {
+    if (toymakr3dSignedIn()) syncSession(id);
   },
   printables: () => void syncPrintables(),
   myminifactory: captureMyminifactoryAccount,

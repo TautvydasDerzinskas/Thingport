@@ -4625,6 +4625,37 @@
         "notConnected": "Connectez Pinshape dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir vos « J’aime » et collections ici."
       }
     },
+    "toymakr3d": {
+      "connect": {
+        "steps": [
+          "Le plus simple : avec Thingport Grab, il suffit d’ouvrir toymakr3d.com en étant connecté. Votre compte est relié, et une nouvelle connexion est envoyée chaque fois que vous vous y reconnectez.",
+          "Ou manuellement : connectez-vous à toymakr3d.com et ouvrez les outils de développement de votre navigateur (F12).",
+          "Dans l’onglet Réseau, rechargez la page, cliquez sur n’importe quelle requête vers toymakr3d.com, copiez son en-tête Cookie et collez-le ci-dessous."
+        ],
+        "placeholder": "L’en-tête Cookie d’une requête à toymakr3d.com faite en étant connecté"
+      },
+      "status": {
+        "notConnected": "Toymakr3D ne remet ses fichiers qu’aux utilisateurs connectés, modèles gratuits compris. Reliez votre compte pour les importer et pour lire vos produits aimés.",
+        "expired": "La connexion a expiré. Connectez-vous à toymakr3d.com avec Thingport Grab, ou reconnectez Toymakr3D dans Configuration → Fournisseurs.",
+        "expiredStatus": "Connexion expirée",
+        "disabledReason": "Toymakr3D : connectez votre compte dans Configuration → Fournisseurs"
+      },
+      "about": {
+        "summary": "Le site d’un seul créateur, consacré aux robots et mechas articulés, la plupart gratuits : Transformers, Megazords, Gundams et compagnie.",
+        "signIn": "Votre propre connexion, pour les fichiers et vos « J’aime ».",
+        "grab": "Envoie votre connexion lorsque vous visitez toymakr3d.com.",
+        "setup": [
+          "Installez Thingport Grab, activez-le sur Toymakr3D et ouvrez toymakr3d.com en étant connecté.",
+          "Manuellement : copiez l’en-tête Cookie d’une requête à toymakr3d.com faite en étant connecté et collez-le dans Configuration → Fournisseurs."
+        ]
+      },
+      "admin": {
+        "description": "Les modèles et les produits aimés de chaque utilisateur. Les deux demandent la connexion de l’utilisateur ; seules les pages des modèles se lisent sans elle."
+      },
+      "sync": {
+        "notConnected": "Connectez Toymakr3D dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir ici vos produits aimés."
+      }
+    },
     "owlcad": {
       "status": {
         "alwaysConnected": "OwlCAD est connecté par défaut : il ne demande ni compte ni clé."
