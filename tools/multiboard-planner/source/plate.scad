@@ -71,7 +71,16 @@ CH_CHAMFER_X = 0.50;   // corner chamfer, across
 CH_CHAMFER_Z = 0.60;   // corner chamfer, up
 CH_CORNER    = 6.20;   // how far short of each corner the main run stops: the plates close it off with a rib
                        // there, where the corner cell's octagon runs out, rather than letting it cross
-CH_RIB       = 1.00;   // how wide that rib is, past which the channel opens out again
+CH_RIB       = 1.00;   // how wide that rib is
+
+// The socket in each corner's chamfer face. Measured along that face and straight into it, it is a blind
+// recess: open across its middle, walled off 1.00 mm back, with the plate's interior starting separately
+// behind that wall. It is not the relief channel reaching the corner -- the channel stops at its rib well
+// before here -- so it is cut as its own box, square to the chamfer.
+SOCKET_W  = 6.20;      // along the chamfer face
+SOCKET_D  = 0.90;      // into the plate from it
+SOCKET_Z0 = 1.95;      // where it starts
+SOCKET_Z1 = 4.35;      // where it ends
 
 // The corner chamfer. A plate's two edge walls do not meet at its corner: the outline is cut at 45 degrees,
 // leaving a diagonal wall as thick as the straight ones. Asking for that gives the leg outright, and the
@@ -178,14 +187,20 @@ module channel_profile() {
   ]);
 }
 
-/** The relief channel along the +X edge: its cross-section swept the length of the edge, stopping short of
- *  each corner at a rib, and opening out again past that rib into a pocket the corner chamfer then cuts. */
+/** The relief channel along the +X edge: its cross-section swept the length of the edge, stopping at a rib
+ *  short of each corner. Past that rib the plates carry a socket in the chamfer itself, not more channel. */
 module channel() {
   translate([0, side/2 - CH_CORNER, 0]) rotate([90, 0, 0])
     linear_extrude(height = side - 2 * CH_CORNER, convexity = 6) channel_profile();
-  for (m = [0, 1]) mirror([0, m, 0])
-    translate([0, side/2 + 1, 0]) rotate([90, 0, 0])
-      linear_extrude(height = 1 + CH_CORNER - CH_RIB, convexity = 6) channel_profile();
+}
+
+/** The socket recessed into the +X+Y corner's chamfer face. */
+module corner_socket() {
+  s = side / 2;
+  back = CORNER_CHAMFER / sqrt(2);
+  translate([s, s, 0]) rotate([0, 0, 45])
+    translate([-back - SOCKET_D, -SOCKET_W / 2, SOCKET_Z0])
+      cube([SOCKET_D + 1, SOCKET_W, SOCKET_Z1 - SOCKET_Z0]);
 }
 
 /** The wedge taken off the +X+Y corner, so the outline is chamfered rather than square.
@@ -214,6 +229,7 @@ module plate() {
       for (i = [1:cells-1]) translate([0, i * GRID - side/2, 0]) slot();
       channel();
       corner_cut();
+      corner_socket();
     }
   }
 }
