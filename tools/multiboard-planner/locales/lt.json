@@ -106,6 +106,7 @@
   "toast.copyFailed": "Nukopijuoti nepavyko: naršyklė užblokavo iškarpinę",
   "toast.downloaded": "{name} jau keliauja pas jus.",
   "toast.listDownloaded": "Dalių sąrašas atsisiųstas",
+  "toast.noPicture": "Siena išsaugota, bet jos paveikslėlio nepavyko nupiešti.",
   "toast.nothingToSave": "Nė vienos šios sienos dalies dar nėra Thingport, tad nėra ko įrašyti.",
   "toast.saveFailed": "Įrašyti nepavyko.",
   "toast.saved": "„{name}“ įrašyta į {collection}",

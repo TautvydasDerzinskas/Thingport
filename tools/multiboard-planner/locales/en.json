@@ -106,6 +106,7 @@
   "toast.copyFailed": "Copy failed: the browser blocked the clipboard",
   "toast.downloaded": "{name} is on its way down.",
   "toast.listDownloaded": "Parts list downloaded",
+  "toast.noPicture": "The wall was saved, but its picture couldn't be drawn.",
   "toast.nothingToSave": "None of this wall's parts are in Thingport yet, so there's nothing to save.",
   "toast.saveFailed": "That wouldn't save.",
   "toast.saved": "Saved \"{name}\" to {collection}",

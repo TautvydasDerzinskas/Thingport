@@ -1227,6 +1227,47 @@ ${rows}
     return files;
   }
 
+  /**
+   * The plan as a picture, for the saved model's cover.
+   *
+   * Drawn afresh rather than taken off the page, so the slider's position doesn't end up in it, and painted
+   * onto the wall's own colour first: the holes are drawn in that colour because that is what you see through
+   * them, and on a transparent background they would not read as holes at all.
+   */
+  async function wallImage(result, title) {
+    const svg = buildSvg(result).svg;
+    const [, , boxWidth, boxHeight] = svg.getAttribute("viewBox").split(/\s+/).map(Number);
+    const scale = 1400 / Math.max(boxWidth, boxHeight);
+    const width = Math.max(1, Math.round(boxWidth * scale));
+    const height = Math.max(1, Math.round(boxHeight * scale));
+    svg.setAttribute("width", String(width));
+    svg.setAttribute("height", String(height));
+    // Standalone, so it can be loaded as an image: on the page it inherited this from the document.
+    svg.setAttribute("xmlns", SVGNS);
+    const markup = new XMLSerializer().serializeToString(svg);
+    const drawn = await new Promise((done, fail) => {
+      const image = new Image();
+      image.onload = () => done(image);
+      image.onerror = () => fail(new Error(t("toast.noPicture")));
+      image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    context.fillStyle = PAL.room;
+    context.fillRect(0, 0, width, height);
+    context.drawImage(drawn, 0, 0, width, height);
+    const blob = await new Promise((done) => canvas.toBlob(done, "image/png"));
+    if (!blob) throw new Error(t("toast.noPicture"));
+    const stem =
+      title
+        .replace(/[\\/:*?"<>|]+/g, "-")
+        .replace(/\s+/g, " ")
+        .trim() || "multiboard-wall";
+    return { name: `${stem}.png`, data: new Uint8Array(await blob.arrayBuffer()), type: "image/png" };
+  }
+
   /** The same set as one download, since a browser will only hand over a single file. */
   function wallZip(title, files) {
     const stem =
@@ -1435,13 +1476,20 @@ ${rows}
       });
       if (wallMode === "save") {
         // Each piece is its own file, so the model's page lists one plate per thing to print.
-        await models.create({
+        const model = await models.create({
           name: title,
           description: printNotes(current, title, pieces),
           tags: ["multiboard", "generated"],
           collectionId: collection.id,
           files,
         });
+        // The plan becomes the model's cover. The parts are already saved by here, so a picture that won't
+        // draw is worth saying out loud but not worth losing the wall over.
+        try {
+          await models.addImages(model.id, [await wallImage(current, title)]);
+        } catch (err) {
+          ui.toast(err.message || t("toast.noPicture"), "warning");
+        }
         closeSave();
         ui.toast(t("toast.saved", { name: title, collection: collection.name }), "success");
       } else {

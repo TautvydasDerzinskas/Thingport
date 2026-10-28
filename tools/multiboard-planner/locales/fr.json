@@ -106,6 +106,7 @@
   "toast.copyFailed": "Copie impossible : le navigateur a bloqué le presse-papiers",
   "toast.downloaded": "{name} est en route.",
   "toast.listDownloaded": "Liste des pièces téléchargée",
+  "toast.noPicture": "Le mur est enregistré, mais son image n'a pas pu être dessinée.",
   "toast.nothingToSave": "Aucune pièce de ce mur n'est encore dans Thingport, il n'y a donc rien à enregistrer.",
   "toast.saveFailed": "L'enregistrement a échoué.",
   "toast.saved": "« {name} » enregistré dans {collection}",
