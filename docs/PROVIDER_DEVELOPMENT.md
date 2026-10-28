@@ -155,9 +155,11 @@ Rules of thumb:
 - **Category ids** are numbers for most sites. Thangs has no ids, so its are paths (`categoryIds: "path"`). Pinshape's
   model pages don't say their category at all (`categoryIds: "none"`): its imports come uncategorized, its
   `categories.json` is empty, and the category mapping shows no row for it.
-- **A list with no address of its own.** Snapmaker's likes and bookmarks share one page, and Makerables' saved
-  projects are a tab of a profile the site keeps in React state rather than the URL. Both invent the query their
-  manifests' `examples.list` shows (`?tab=saved`), so a sync has something to keep the list by.
+- **A list with no address of its own.** Snapmaker's likes and bookmarks share one page, whose own address
+  (`?tab=interactions`) doesn't say which of the two is shown, so Thingport adds `&list=likes` or `&list=bookmarks`
+  to tell them apart. Makerables' saved projects are a tab of a profile that the site keeps in React state rather
+  than in the URL at all, so Thingport adds `?tab=saved`. Each provider's `examples.list` shows the form it keeps,
+  which is what a sync holds the list by.
 - **Categories a model's page doesn't say.** Toymakr3D's pages name no category either, but its category listings do,
   so its provider reads those once and keeps the model-to-category index for a few hours. Its "All Products",
   "Free Download" and "Premium" menu entries are price buckets rather than subjects, and are left out.
