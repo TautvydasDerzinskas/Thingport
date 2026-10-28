@@ -27,8 +27,27 @@ tool's models and, when you ask it to, a collection you pick.
 Edit `source/` and build:
 
 ```bash
-node source/build.mjs     # tool.js and tool.json, from core.js, data/, ui.js, icon.svg and tool.base.json
+node source/build.mjs # tool.js and tool.json, from core.js, data/, plates.js, plate.scad, ui.js,
+#   icon.svg and tool.base.json
 node source/test_core.mjs # the original planner's tests
+node source/test_plates.mjs [ < storage > /tools/multiboard-planner/ < sha > ]
+# the tile types against plate.scad, and against the plates they link to when
+#   an installed copy is given
 ```
 
 `core.js` and `data/` are kept as the original planner has them, so its tests keep applying; `ui.js` is the window.
+
+## Its plates
+
+`plate.scad` draws any of the 208 Multiboard Octagon Plates from five settings: how many cells across, and
+which of the four sides has another plate against it. `plates.js` is the translation from the planner's own
+tile types -- "C1", "S2", "Middle Vertical" -- into those settings. Every dimension in it was measured off
+the plates themselves with `source/fidelity.mjs`, which compares a drawn plate against a fetched one:
+
+```bash
+node source/fidelity.mjs < fetched > .stl < drawn > .stl
+```
+
+It reports the bounding box, agreement by cross-section, and both bores over their whole surface -- the
+last being what a bolt or a snap actually meets, and the only one of the three that catches a thread
+started in the wrong place.
