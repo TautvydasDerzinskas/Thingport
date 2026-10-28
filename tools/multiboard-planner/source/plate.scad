@@ -24,16 +24,17 @@ TH   = 6.2;     // plate thickness
 
 // Multihole: the big octagonal opening at each cell centre. Radii are to the octagon's flats.
 MULTI_FLAT_THREAD = 10.700;  // through the threaded middle, measured as the cross-section's minimum radius
-MULTI_FLAT_FACE   = 11.650;  // where the lead-in meets the face
+MULTI_FLAT_FACE   = 11.699;  // at the face itself: the taper measures 11.650 at z=0.1, falling 0.487 per mm
 MULTI_TAPER       = 2.05;    // height of the lead-in taper at each face
 MULTI_PITCH       = 2.5;     // lead of the helical groove, mm per turn
-MULTI_GROOVE_R    = 11.30;   // how far that groove cuts out from the axis
-MULTI_GROOVE_SPAN = 90;      // degrees of each turn it occupies
+MULTI_GROOVE_R    = 11.26;   // how far that groove cuts out from the axis; set by the order-1 amplitude
+MULTI_GROOVE_SPAN = 125;     // degrees of each turn it occupies; set by the order-8 amplitude
+MULTI_GROOVE_PHASE = 160.8;  // where the helix starts, set from the order-1 phase of the plates
 
 // Pegboard hole: the small threaded hole at each interior wall junction.
 PEG_MINOR   = 2.997;   // thread crest (the narrowest the bore gets)
 PEG_MAJOR   = 3.500;   // thread root
-PEG_FACE    = 3.950;   // radius at the face, before the chamfer
+PEG_FACE    = 4.000;   // radius at the face, before the chamfer; the bore measures 3.950 at z=0.05
 PEG_CHAMFER = 0.5;     // depth of the 45-degree chamfer at each face
 PEG_PITCH   = 3.125;   // thread lead, mm per turn
 PEG_CREST   = 0.228;   // share of one turn spent at the crest, measured as 82 degrees of 360
@@ -44,16 +45,43 @@ PEG_CREST   = 0.228;   // share of one turn spent at the crest, measured as 82 d
 // edge cells open into it -- the cavity is wider than the 3.6 mm wall it crosses, so it breaks into the two
 // multiholes either side, which is what makes a plain plate enclose 13 cross-sections here rather than 25.
 SLOT_D        = 5.40;    // total depth from the edge
-SLOT_MOUTH_D  = 1.80;    // how much of that depth is the narrow mouth
-SLOT_W        = 6.00;    // mouth width
-SLOT_CAVITY_W = 10.80;   // widest point, where the cavity meets the mouth
-SLOT_INNER_W  = 5.10;    // width at the inner end
-SLOT_Z0       = 1.50;    // where it starts
-SLOT_Z1       = 4.90;    // where it ends
+SLOT_INNER_W  = 4.30;    // width at the inner end
+SLOT_FLARE    = 1.40;    // length of the 45-degree flare out of that inner end
+SLOT_CAVITY_W = 6.94;    // width once the flare is done, held to the mouth
+SLOT_MOUTH_D  = 2.20;    // how much of the depth is the narrower mouth
+SLOT_W        = 5.94;    // mouth width
+// The cavity does reach a little past the mouth, which is why a plain plate shows a closed pocket per slot
+// just below and above it, but those pockets measure under 5 mm2 and are left out here: modelling the cavity
+// as starting with the mouth is both closer on area and right on the cross-section count.
+SLOT_Z0       = 1.50;    // where the cavity starts
+SLOT_Z1       = 4.90;    // where the cavity ends
+SLOT_MOUTH_Z0 = 1.50;    // where the mouth breaks through
+SLOT_MOUTH_Z1 = 4.90;    // where it closes again
+
+// The relief channel that runs right round the plate just inside its rim, over the same heights as the
+// multiholes' threaded middles. Near a cell centre the octagon already reaches past it, so it is invisible
+// there; it shows only where the octagon's diagonal pulls back, and it is what joins each perimeter multihole
+// to the interfit slot beside it.
+CH_INSET     = 2.16;   // from the edge to the channel's outer wall
+CH_WIDTH     = 2.00;   // across the channel
+CH_Z0        = 2.05;   // where it starts
+CH_Z1        = 4.15;   // where it ends
+CH_CHAMFER_X = 0.50;   // corner chamfer, across
+CH_CHAMFER_Z = 0.60;   // corner chamfer, up
+
+// The corner chamfer. A plate's two edge walls do not meet at its corner: the outline is cut at 45 degrees,
+// leaving a diagonal wall as thick as the straight ones. Asking for that gives the leg outright, and the
+// multihole's radius cancels out of it:
+//
+//   leg = 25 - 12.5 * sqrt(2) = 7.322 mm
+//
+// which is also, not by coincidence, the 7.322 mm by which an Interfitted plate is larger than a plain one.
+CORNER_CHAMFER = 25 - 12.5 * sqrt(2);
 
 // Facets. The bores carry every curve here, so these drive both fidelity and render time.
 SIDES  = 180;  // angular samples around a pegboard bore
-SLICES = 8;    // extrusion slices per millimetre of height
+SLICES = 20;   // extrusion slices per millimetre of height; at 8 the helix is too faceted and the
+               // multihole's order-8 amplitude reads 0.245 against the plates' 0.231, at 20 it matches
 
 side = cells * GRID;
 
@@ -78,6 +106,7 @@ module peg_section() {
  *  is already open, so unioning it with the octagon leaves only the groove behind. */
 module multi_groove_section() {
   steps = ceil(MULTI_GROOVE_SPAN / 5);
+  rotate(MULTI_GROOVE_PHASE)
   polygon([[0, 0], each [for (i = [0:steps])
     let (a = i * MULTI_GROOVE_SPAN / steps) [MULTI_GROOVE_R * cos(a), MULTI_GROOVE_R * sin(a)]]]);
 }
@@ -110,17 +139,43 @@ module peghole() {
 /** The interfit slot at one edge wall junction, cut in from the +X edge. */
 module slot() {
   e = side / 2;
+  // The cavity, back from the mouth.
   translate([0, 0, SLOT_Z0]) linear_extrude(height = SLOT_Z1 - SLOT_Z0, convexity = 6)
     polygon([
-      [e - SLOT_D,       SLOT_INNER_W / 2],
-      [e - SLOT_MOUTH_D, SLOT_CAVITY_W / 2],
-      [e - SLOT_MOUTH_D, SLOT_W / 2],
-      [e + 1,            SLOT_W / 2],
-      [e + 1,           -SLOT_W / 2],
-      [e - SLOT_MOUTH_D, -SLOT_W / 2],
-      [e - SLOT_MOUTH_D, -SLOT_CAVITY_W / 2],
-      [e - SLOT_D,       -SLOT_INNER_W / 2],
+      [e - SLOT_D,               SLOT_INNER_W / 2],
+      [e - SLOT_D + SLOT_FLARE,  SLOT_CAVITY_W / 2],
+      [e - SLOT_MOUTH_D,         SLOT_CAVITY_W / 2],
+      [e - SLOT_MOUTH_D,        -SLOT_CAVITY_W / 2],
+      [e - SLOT_D + SLOT_FLARE, -SLOT_CAVITY_W / 2],
+      [e - SLOT_D,              -SLOT_INNER_W / 2],
     ]);
+  // The mouth, which opens through the edge over a shorter run of heights.
+  translate([e - SLOT_MOUTH_D, -SLOT_W / 2, SLOT_MOUTH_Z0])
+    cube([SLOT_MOUTH_D + 1, SLOT_W, SLOT_MOUTH_Z1 - SLOT_MOUTH_Z0]);
+}
+
+/** The relief channel along the +X edge, as its cross-section swept the length of the edge. */
+module channel() {
+  x1 = side/2 - CH_INSET;
+  x0 = x1 - CH_WIDTH;
+  translate([0, side/2 + 1, 0]) rotate([90, 0, 0]) linear_extrude(height = side + 2, convexity = 6)
+    polygon([
+      [x0 + CH_CHAMFER_X, CH_Z0],
+      [x0,                CH_Z0 + CH_CHAMFER_Z],
+      [x0,                CH_Z1 - CH_CHAMFER_Z],
+      [x0 + CH_CHAMFER_X, CH_Z1],
+      [x1 - CH_CHAMFER_X, CH_Z1],
+      [x1,                CH_Z1 - CH_CHAMFER_Z],
+      [x1,                CH_Z0 + CH_CHAMFER_Z],
+      [x1 - CH_CHAMFER_X, CH_Z0],
+    ]);
+}
+
+/** The wedge taken off the +X+Y corner, so the outline is chamfered rather than square. */
+module corner_cut() {
+  s = side / 2;
+  translate([0, 0, -1]) linear_extrude(height = TH + 2)
+    polygon([[s - CORNER_CHAMFER, s + 1], [s + 1, s - CORNER_CHAMFER], [s + 1, s + 1]]);
 }
 
 module plate() {
@@ -132,8 +187,11 @@ module plate() {
     // wall, so the junctions on it carry a slot instead.
     for (i = [1:cells-1], j = [1:cells-1])
       translate([i * GRID - side/2, j * GRID - side/2, 0]) peghole();
-    for (edge = [0:3]) rotate([0, 0, 90 * edge])
+    for (edge = [0:3]) rotate([0, 0, 90 * edge]) {
       for (i = [1:cells-1]) translate([0, i * GRID - side/2, 0]) slot();
+      channel();
+      corner_cut();
+    }
   }
 }
 

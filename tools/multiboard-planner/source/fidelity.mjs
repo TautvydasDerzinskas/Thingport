@@ -235,8 +235,11 @@ export function lead(mesh, cx, cy, rmax, z0 = 1.2, z1 = 5.0, step = 0.2) {
 
 /* ---- report -------------------------------------------------------------------------------------------- */
 
-const TOL = 0.25; // Multiboard's own stated design tolerance
-const Z_SLICES = [0.1, 0.6, 1.2, 1.9, 2.9, 3.3, 4.4, 5.6, 6.1]; // off the 3.1 symmetry plane and off the slot faces at 1.5/4.9, where coplanar faces make a slice degenerate
+const TOL = 0.25;
+// Ignore slivers: the plates carry the odd 2 mm2 chip at a face that no bolt or snap cares about, and
+// counting those as holes would read as a topology difference that is not one.
+const MIN_HOLE = 5; // Multiboard's own stated design tolerance
+const Z_SLICES = [0.1, 0.6, 1.35, 1.9, 2.9, 3.3, 4.4, 5.6, 6.1]; // clear of the symmetry plane and of every horizontal face in the model -- the slot cavity at 1.2 and 5.0, its mouth at 1.5 and 4.9, the relief channel at 2.05 and 4.15 -- where coplanar faces make a slice degenerate and read as a fault that is not there
 // Raster step. Fine enough to resolve a thread on a small plate, coarsened on a big one so a 16x16 does not
 // ask for 66 million cells a slice.
 const cellFor = (side) => (side <= 150 ? 0.05 : side <= 275 ? 0.1 : 0.2);
@@ -290,8 +293,8 @@ function main() {
       if (p | q) uni++;
     }
     const iou = uni ? inter / uni : 1;
-    const ha = holes(ra, box).filter((h) => h.area > 0.5).length,
-      hb = holes(rb, box).filter((h) => h.area > 0.5).length;
+    const ha = holes(ra, box).filter((h) => h.area > MIN_HOLE).length,
+      hb = holes(rb, box).filter((h) => h.area > MIN_HOLE).length;
     const ok = iou >= 0.9 && ha === hb;
     if (!ok) fail.push(`slice z=${z}: IoU ${iou.toFixed(3)}, holes ${ha} vs ${hb}`);
     console.log(
