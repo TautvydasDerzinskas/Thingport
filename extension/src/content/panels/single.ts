@@ -12,7 +12,7 @@ import {
   resolveMakerworldProfileDownload,
 } from "../../providers/makerworld/downloadResolver";
 import { currentMakerworldProfileTitle } from "../../providers/makerworld/pageData";
-import { CONTENT_MODULES, type ProfileScope } from "../../providers/content";
+import { CONTENT_MODULES, type ProfileScope, type ScriptState } from "../../providers/content";
 import { api, escapeHtml } from "../runtime";
 import { onPanelAction, panelQuery, panelQueryAll, renderPanel, setPanelNote } from "../shell";
 import { collectionIdFor, collectionPickerHtml, readCollectionChoice, wireCollectionPicker } from "./collectionPicker";
@@ -80,12 +80,27 @@ function importHeading(): string {
 }
 
 /** A card of its own above the panel, since it is about the model rather than about the import. */
-function showScriptNote(script: { filenames: string[]; withheld: boolean } | null): void {
+function showScriptNote(script: ScriptState | null): void {
   if (!script) return setPanelNote(null);
   setPanelNote(
     script.withheld ? WITHHELD_SCRIPT_PANEL_NOTE_HTML : SHARED_SCRIPT_PANEL_NOTE_HTML,
     script.withheld ? "withheld" : "shared",
   );
+}
+
+/**
+ * Asks whether the model's script comes with it and puts the card up whenever the answer lands.
+ *
+ * Started rather than awaited: on MakerWorld the answer may need the page's own data fetched, which takes
+ * seconds, and the import has nothing to wait for -- the note is a remark about the model, and most models
+ * have none. Ahead of the panel's branches rather than inside one, so it reaches the add-a-profile panel too,
+ * which imports a profile and so has the same question about the script. Dropping it onto whatever is mounted
+ * by then is safe: setPanelNote does nothing once the panel is gone.
+ */
+function startScriptNote(): void {
+  const { provider } = ctx().classification;
+  // Best-effort: a page that won't say whether its script is shared is treated as any other model.
+  void CONTENT_MODULES[provider].scriptState?.(ctx().url).then(showScriptNote, () => undefined);
 }
 
 /** Admins only: the same import, but waiting paused in the instance's import queue. Not where only Grab gets the files:
@@ -109,6 +124,7 @@ function onQueueAction(): void {
 
 export async function loadSingleItem(): Promise<void> {
   const { library } = ctx();
+  startScriptNote();
   if (library?.state === "imported") {
     renderPanel(fillGapsHtml());
     onPanelAction("fill-gaps", () => void runFillGaps());
@@ -132,9 +148,6 @@ export async function loadSingleItem(): Promise<void> {
     `);
     return;
   }
-  // Best-effort: a page that won't say whether its script is shared is treated as any other model.
-  const script = await CONTENT_MODULES[provider].scriptState?.(ctx().url).catch(() => null);
-  showScriptNote(script ?? null);
   // A link that may be a zip of raw files is looked at first; every other site's is a model page the instance reads.
   const skipInspect = !manifestOf(provider).capabilities.rawFilesZip;
 

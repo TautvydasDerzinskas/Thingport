@@ -72,7 +72,8 @@ export function mountFab(root: ShadowRoot, { variant, label, title, onClick }: F
   button.addEventListener("click", onClick);
   root.appendChild(button);
   attachMagnet(button, body, {
-    paused: () => Boolean(panelEl && !panelEl.hidden),
+    // The stack, not the panel: the panel itself is never hidden, its column is (see mountPanel).
+    paused: () => Boolean(stackEl && !stackEl.hidden),
     dodges: () => "dodge" in mark.dataset,
   });
 }

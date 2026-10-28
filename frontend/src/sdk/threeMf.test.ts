@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { unzipSync, strFromU8 } from "fflate";
-import { offToThreeMf, parseOff, writeThreeMf } from "./threeMf";
+import { isColored, offToThreeMf, parseOff, writeThreeMf } from "./threeMf";
 
 // The OFF below is exactly what the engine writes for `cube([10,20,30]);` -- six quads, not twelve triangles,
 // which is the whole reason this has to triangulate rather than copy.
@@ -63,20 +63,26 @@ describe("parseOff", () => {
     expect(Array.from(mesh.colors!)).toEqual([0, 1]);
   });
 
-  it("carries no palette for a model that is all one colour", () => {
+  it("carries no palette for a model the script never coloured", () => {
     const plain = parseOff("OFF 3 1 0\n0 0 0\n1 0 0\n0 1 0\n3 0 1 2\n");
     expect(plain.palette).toBeUndefined();
     expect(plain.colors).toBeUndefined();
-    // One colour repeated is still one colour, so still no palette.
+  });
+
+  it("keeps the one colour a script painted the whole model in", () => {
+    // `color("red") cube();` -- one entry, but a colour the script asked for, and the only thing that says the
+    // model isn't meant to be drawn in the theme's own.
     const same = parseOff("OFF\n4 2 0\n0 0 0\n1 0 0\n0 1 0\n1 1 0\n3 0 1 2 255 0 0\n3 1 3 2 255 0 0\n");
-    expect(same.palette).toBeUndefined();
+    expect(same.palette).toEqual(["#ff0000"]);
+    expect(Array.from(same.colors!)).toEqual([0, 0]);
+    expect(isColored(same)).toBe(true);
   });
 
   it("gives every piece of a fanned polygon the face's own colour", () => {
     // One quad, one colour, fanned into two triangles.
     const quad = parseOff("OFF\n4 1 0\n0 0 0\n1 0 0\n1 1 0\n0 1 0\n4 0 1 2 3 10 20 30\n");
     expect(quad.triangles.length).toBe(6);
-    expect(quad.palette).toBeUndefined();
+    expect(Array.from(quad.colors!)).toEqual([0, 0]);
     // With a second, differently coloured face the palette appears and both halves of the quad share entry 0.
     const two = parseOff("OFF\n5 2 0\n0 0 0\n1 0 0\n1 1 0\n0 1 0\n2 2 0\n4 0 1 2 3 10 20 30\n3 1 4 2 200 100 50\n");
     expect(two.palette).toEqual(["#0a141e", "#c86432"]);
@@ -149,11 +155,21 @@ describe("writeThreeMf", () => {
     expect(xml).toContain('<triangle v1="1" v2="3" v3="2" p1="1"/>');
   });
 
-  it("leaves a single-colour mesh exactly as it was, with no materials at all", () => {
+  it("leaves a mesh the script never coloured exactly as it was, with no materials at all", () => {
     const xml = model(offToThreeMf(CUBE_OFF));
     expect(xml).not.toContain("basematerials");
     expect(xml).not.toContain("p1=");
     expect(xml).toContain('<object id="1" type="model">');
+  });
+
+  it("writes one explicit colour as the object's own material rather than per triangle", () => {
+    const off = "OFF\n4 2 0\n0 0 0\n1 0 0\n0 1 0\n1 1 0\n3 0 1 2 255 0 0\n3 1 3 2 255 0 0\n";
+    const xml = model(offToThreeMf(off));
+
+    expect(xml).toContain('<base name="Colour 1" displaycolor="#FF0000FF"/>');
+    expect(xml).toContain('<object id="1" type="model" pid="2" pindex="0">');
+    // `pindex` already names it for every triangle, so repeating it on each would only grow the file.
+    expect(xml).not.toContain("p1=");
   });
 
   it("escapes a name that would otherwise break the XML", () => {

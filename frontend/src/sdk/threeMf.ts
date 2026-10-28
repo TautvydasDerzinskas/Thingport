@@ -13,7 +13,7 @@ export type Mesh = {
   /** Flat vertex-index triples. */
   triangles: Uint32Array;
   /**
-   * The distinct colours the model is made of, as "#rrggbb", or absent where it is all one colour.
+   * The distinct colours the script gave the model, as "#rrggbb", or absent where it never coloured it.
    *
    * A palette with an index per triangle rather than a colour per triangle: colour arrives a region at a time
    * -- one `color()` call, one painted part -- so a model of a hundred thousand triangles has a handful of
@@ -24,8 +24,8 @@ export type Mesh = {
   colors?: Uint16Array;
 };
 
-/** The mesh's colours, in the form a caller that only wants to know "is this multicoloured" can ask. */
-export const isColored = (mesh: Mesh): boolean => (mesh.palette?.length ?? 0) > 1;
+/** The mesh's colours, in the form a caller that only wants to know "did the script colour this" can ask. */
+export const isColored = (mesh: Mesh): boolean => (mesh.palette?.length ?? 0) > 0;
 
 /** What a face the script never coloured is shown and saved as: OFF states no default, so a plain grey it is. */
 const UNCOLORED = "#cccccc";
@@ -76,6 +76,10 @@ export function parseOff(text: string): Mesh {
   const triangles: number[] = [];
   // Built as the faces are read: a model has a colour per `color()` call, not per face.
   const palette: string[] = [];
+  // Whether any face carried a colour at all, which is what decides if there is a palette to keep: a palette
+  // of one is a real colour where the script named it and a stand-in where it didn't, and the two can't be
+  // told apart afterwards.
+  let painted = false;
   const indexOfColor = new Map<string, number>();
   const colors: number[] = [];
   // A script can colour part of what it makes and leave the rest -- `cube(); color("red") sphere();` -- and
@@ -87,6 +91,7 @@ export function parseOff(text: string): Mesh {
     const corners = Number(parts[0]);
     // Anything past the corner count and its corners is that face's colour.
     const color = faceColor(parts.slice(corners + 1));
+    if (color) painted = true;
     const index = color ? (indexOfColor.get(color) ?? palette.push(color) - 1) : indexOfUncolored();
     indexOfColor.set(color ?? UNCOLORED, index);
     // A polygon is fanned from its first corner. The engine merges coplanar triangles into one face, and the
@@ -97,8 +102,10 @@ export function parseOff(text: string): Mesh {
     }
   }
   const mesh: Mesh = { vertices, triangles: Uint32Array.from(triangles) };
-  // A model of one colour carries none: it is the default everywhere, and a palette of one says nothing.
-  if (palette.length > 1) {
+  // A model the script never coloured carries no palette: its faces are a shape, and Thingport draws those in
+  // the theme's colour (see utils/ownColor.ts). One `color()` over the whole of it is still a colour the script
+  // asked for, so a palette of one is kept -- dropped, the model would be shown and saved as uncoloured.
+  if (painted) {
     mesh.palette = palette;
     mesh.colors = Uint16Array.from(colors);
   }
@@ -158,7 +165,10 @@ export function writeThreeMf(mesh: Mesh, { name = "model" }: { name?: string } =
   if (!mesh.triangles.length) throw new Error("There is nothing in the model to save.");
   const palette = mesh.palette ?? [];
   const faceColors = mesh.colors;
-  const colored = palette.length > 1 && faceColors?.length === mesh.triangles.length / 3;
+  const colored = palette.length > 0 && faceColors?.length === mesh.triangles.length / 3;
+  // One colour over the whole model is the object's own material, which `pindex` already names: saying it
+  // again on each triangle would only repeat it a hundred thousand times.
+  const perTriangle = colored && palette.length > 1;
 
   const parts: string[] = [
     '<?xml version="1.0" encoding="UTF-8"?>\n',
@@ -191,7 +201,7 @@ export function writeThreeMf(mesh: Mesh, { name = "model" }: { name?: string } =
   parts.push("    </vertices>\n    <triangles>\n");
   for (let i = 0; i < mesh.triangles.length; i += 3) {
     // p1 alone colours the whole triangle; p2 and p3 would blend it across the corners.
-    const material = colored && faceColors ? ` p1="${faceColors[i / 3]}"` : "";
+    const material = perTriangle && faceColors ? ` p1="${faceColors[i / 3]}"` : "";
     parts.push(
       `     <triangle v1="${mesh.triangles[i]}" v2="${mesh.triangles[i + 1]}" v3="${mesh.triangles[i + 2]}"${material}/>\n`,
     );

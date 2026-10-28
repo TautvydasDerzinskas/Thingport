@@ -71,8 +71,10 @@ export function objectFromMesh(mesh: SdkMesh): THREE.Object3D {
 
   const palette = mesh.palette ?? [];
   const faceColors = mesh.colors;
-  const colored = palette.length > 1 && faceColors?.length === mesh.triangles.length / 3;
-  if (colored && faceColors) {
+  const colored = palette.length > 0 && faceColors?.length === mesh.triangles.length / 3;
+  // One colour over the whole model is the material's own; an attribute would only repeat it per corner.
+  const perFace = colored && palette.length > 1;
+  if (perFace && faceColors) {
     // One colour per corner, the same for all three of a triangle, so each face reads flat rather than
     // blending into its neighbours. Three converts a hex string out of sRGB on its own, so these are
     // already in the working space; converting again would darken every mid-tone.
@@ -92,10 +94,11 @@ export function objectFromMesh(mesh: SdkMesh): THREE.Object3D {
   geometry.computeVertexNormals();
 
   const material = new THREE.MeshStandardMaterial({
-    color: 0xffffff,
+    // White where the colours come through the attribute, so it multiplies them unchanged.
+    color: colored && !perFace ? new THREE.Color(palette[0]) : 0xffffff,
     metalness: 0.2,
     roughness: 0.8,
-    vertexColors: colored,
+    vertexColors: perFace,
   });
   if (colored) keepsOwnColor(material);
   const object = new THREE.Mesh(geometry, material);
