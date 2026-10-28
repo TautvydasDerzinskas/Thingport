@@ -12,6 +12,10 @@ extension's developer never receives any of your data, and nothing is shared wit
 Everything below is kept in your browser's local extension storage, on your device only, except
 the list of recent imports, which is synced between your browsers as described below.
 
+Where an entry says a sign-in is sent again only when it changes, it is also sent again when you point the extension
+at a different Thingport instance, or sign in to it as someone else: what was sent before went to that other
+instance or account, so the new one has to be told.
+
 - **Your Thingport connection:** the address of your Thingport instance, and the email and password
   you sign in to it with. They're stored as you entered them, so the extension can sign in again
   when its session expires.
