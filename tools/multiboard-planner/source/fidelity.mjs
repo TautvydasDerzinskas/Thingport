@@ -332,6 +332,58 @@ function main() {
     console.log(`     helix fit R2  original ${la.r2.toFixed(3)}   generated ${lb.r2.toFixed(3)}`);
   }
 
+  // The bores over their whole surface, rather than at their radii. A thread can have its crest and root
+  // radii, its lead and its profile across a turn all right and still be started in the wrong place, and
+  // then nothing screws into it: only sampling by angle AND height sees that.
+  console.log(`\nbore surfaces (radius by angle and height, against the ${TOL} mm these parts are designed to)`);
+  const cxa = (ba.mn[0] + ba.mx[0]) / 2,
+    cya = (ba.mn[1] + ba.mx[1]) / 2;
+  const cxb = (bb.mn[0] + bb.mx[0]) / 2,
+    cyb = (bb.mn[1] + bb.mx[1]) / 2;
+  for (const [ox, oy, rmax, label] of [
+    [0, 0, 6, "pegboard hole"],
+    [12.5, 12.5, 14, "multihole"],
+  ]) {
+    let n = 0,
+      sum = 0,
+      sq = 0,
+      worst = 0,
+      worstZ = 0,
+      ok25 = 0,
+      ok10 = 0;
+    for (let z = 0.6; z <= 5.6 + 1e-9; z += 0.1) {
+      const ra = bore(A, cxa + ox, cya + oy, z, 360, rmax);
+      const rb = bore(B, cxb + ox, cyb + oy, z, 360, rmax);
+      for (let k = 0; k < 360; k++) {
+        const u = ra[k],
+          v = rb[k];
+        if (Number.isNaN(u) || Number.isNaN(v)) continue;
+        const d = v - u;
+        n++;
+        sum += d;
+        sq += d * d;
+        if (Math.abs(d) <= TOL) ok25++;
+        if (Math.abs(d) <= 0.1) ok10++;
+        if (Math.abs(d) > Math.abs(worst)) {
+          worst = d;
+          worstZ = z;
+        }
+      }
+    }
+    if (!n) {
+      console.log(`  ${label}: not measurable`);
+      fail.push(`${label} surface not measurable`);
+      continue;
+    }
+    const within = (100 * ok25) / n;
+    if (within < 95) fail.push(`${label}: only ${within.toFixed(1)}% of its surface within ${TOL} mm`);
+    console.log(
+      `  ${label.padEnd(14)} within ${TOL} mm ${within.toFixed(1)}%   within 0.10 mm ${((100 * ok10) / n).toFixed(1)}%   ` +
+        `RMS ${Math.sqrt(sq / n).toFixed(3)}   mean ${sum / n >= 0 ? "+" : ""}${(sum / n).toFixed(3)}   ` +
+        `worst ${worst >= 0 ? "+" : ""}${worst.toFixed(3)} at z=${worstZ.toFixed(2)}   ${within >= 95 ? "ok" : "FAIL"}`,
+    );
+  }
+
   console.log(
     `\n${fail.length ? `FAIL -- ${fail.length} check(s) outside ${TOL} mm:\n  ` + fail.join("\n  ") : `PASS -- every check within ${TOL} mm`}`,
   );
