@@ -2279,7 +2279,7 @@
           "withModels": "Parsisiųsti jo modelius",
           "modelsRoom": "{{count}} modelių – didelis rinkinys; serveryje jie užims gigabaitus, o parsiuntimas užtruks.",
           "modelsLater": "Be jų įrankis veiks tik tol, kol svetainė, iš kurios jis siunčia, pasiekiama ir serveris prijungtas prie interneto, o iš detalių sudėto darbo išsaugoti nepavyks. Modelius galėsi parsisiųsti vėliau.",
-          "modelsLaterOwn": "Be jų iš detalių sudėto darbo išsaugoti nepavyks. Modeliai ateina su pačiu įrankiu, todėl jokia kita svetainė nedalyvauja. Modelius galėsi parsisiųsti vėliau.",
+          "modelsLaterOwn": "Kol modeliai neparsisiųsti, įrankis neišsaugos nieko, kam reikia tų detalių. Modeliai ateina su pačiu įrankiu, todėl jokia kita svetainė nedalyvauja. Modelius galėsi parsisiųsti vėliau.",
           "modelsSkipped_one": "Įdiegta be jo {{count}} modelio.",
           "modelsSkipped_few": "Įdiegta be jo {{count}} modelių.",
           "modelsSkipped_many": "Įdiegta be jo {{count}} modelio.",

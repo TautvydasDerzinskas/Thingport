@@ -8,8 +8,9 @@ the official [Multiboard Planner](https://multiboard.itch.io/planner); its own c
 ## Its models
 
 The planner needs 221 Multiboard parts and carries 13 of them. The other 208 are the Octagon Plates, and those are
-not kept anywhere: `plate.scad` draws the one a wall asks for, when it asks, in the tab. A wall saved or downloaded
-comes out as a single 3MF with every piece in it, named with how many to print.
+not kept anywhere: `plate.scad` draws the one a wall asks for, when it asks, in the tab. A wall comes out as one
+file per thing to print -- each named with how many of it you need -- saved as a model with a plate each, or
+downloaded as a zip of the same files.
 
 That is why there is nothing to install and no account to connect. The plates used to be fetched from Thangs as the
 installing admin, 208 models and about twelve gigabytes for every instance, with a free account's daily limit
@@ -36,12 +37,16 @@ Edit `source/` and build:
 node source/build.mjs                          # tool.js and tool.json
 node source/test_core.mjs                      # the original planner's calculator tests
 node source/test_plates.mjs INSTALLED          # the tile types, and the plates they link to
-node source/test_stl.mjs INSTALLED             # the STL reader, and the joints read whole
+node source/test_wall.mjs                      # a wall's files, in print order however the renders finish
+node source/test_outline.mjs                   # the preview's outline against OpenSCAD's own projection
 node source/fidelity.mjs FETCHED.stl DRAWN.stl # a drawn plate against a fetched one
+node source/make_outlines.mjs                  # data/outlines.json, from the joints in models/
 ```
 
 `INSTALLED` is a folder of an installed copy's models, `storage/tools/multiboard-planner/SHA`; leave it out and
-those two run everything that needs no copy and say which checks were skipped.
+`test_plates.mjs` runs everything that needs no copy and says which checks were skipped. `test_outline.mjs` wants
+the `openscad` binary and skips with a note without it; `make_outlines.mjs` needs it, and is only run after
+`models/` changes.
 
 `core.js` and `data/` are kept as the original planner has them, so its tests keep applying; `ui.js` is the window.
 
@@ -49,8 +54,8 @@ those two run everything that needs no copy and say which checks were skipped.
 
 `plate.scad` draws any of the 208 Multiboard Octagon Plates from five settings: how many cells across, and which
 of the four sides has another plate against it. `plates.js` is the translation from the planner's own tile types
--- "C1", "S2", "Middle Vertical" -- into those settings, and `stl.js` reads the joints it carries, so a wall's
-plates and joints end up in one 3MF together.
+-- "C1", "S2", "Middle Vertical" -- into those settings, and puts a wall's pieces in print order: each plate
+written as binary STL by `stlout.js`, each joint handed over exactly as the tool packed it.
 
 Every dimension in `plate.scad` was measured off the plates themselves with `fidelity.mjs`, which compares a
 drawn plate against a fetched one: the bounding box, agreement by cross-section, and both bores over their whole

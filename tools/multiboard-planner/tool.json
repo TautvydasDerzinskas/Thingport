@@ -32,7 +32,7 @@
   ],
   "collection": {
     "name": "Multiboard models",
-    "description": "The Multiboard tiles and mounts the Multiboard planner lists, fetched from Thangs when the tool was installed. Multiboard is MultiBuild's design: see multibuild.io/license.",
+    "description": "The Multiboard joints the planner mounts a wall with -- the snaps, the clip, the pillar and the foot -- which come with the tool itself. Its plates aren't here: those are drawn when a wall asks for one. Multiboard is MultiBuild's design: see multibuild.io/license.",
     "models": [
       {
         "key": "thangs-1380149",

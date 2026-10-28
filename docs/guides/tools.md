@@ -215,13 +215,13 @@ and one of them is a WebAssembly binary nobody could read. `library(name)` hands
 is fetched until a tool asks, and every tool after that gets the same instance from the same promise, so two tools
 open at once share one download.
 
-| `library(…)` | What comes back                                                                                                           |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| `"three"`    | Three.js, the one Thingport draws models with, plus `mergeGeometries` and `mergeVertices`                                 |
-| `"opentype"` | opentype.js: a glyph's real outline, counters and all                                                                     |
-| `"manifold"` | Manifold, started and ready: watertight booleans, and the 2D cross-sections and offsetting that go with them              |
-| `"fonts"`    | `{ list, bytes(id), load(id) }` — the typefaces Thingport ships, `load` giving one parsed by the opentype above           |
-| `"openscad"` | `{ parameters(source), render(source, opts), libraries }` — OpenSCAD itself: what a script offers, and the model it makes |
+| `library(…)` | What comes back                                                                                                     |
+| ------------ | ------------------------------------------------------------------------------------------------------------------- |
+| `"three"`    | Three.js, the one Thingport draws models with, plus `mergeGeometries` and `mergeVertices`                           |
+| `"opentype"` | opentype.js: a glyph's real outline, counters and all                                                               |
+| `"manifold"` | Manifold, started and ready: watertight booleans, and the 2D cross-sections and offsetting that go with them        |
+| `"fonts"`    | `{ list, bytes(id), load(id) }` — the typefaces Thingport ships, `load` giving one parsed by the opentype above     |
+| `"openscad"` | `{ parameters, render, libraries, concurrency, writeThreeMf, layoutRow, meshBounds }` — OpenSCAD and its 3MF writer |
 
 ```js
 const [{ CrossSection }, fonts] = await Promise.all([thingport.library("manifold"), thingport.library("fonts")]);
@@ -231,15 +231,26 @@ const font = await fonts.load(fonts.list[0].id); // or fonts.bytes(id) for the f
 `library("openscad")` is OpenSCAD itself, built for the browser. `parameters(source)` gives what the script
 offers -- its groups, ranges, captions and the choices behind `// [a, b, c]` -- read by OpenSCAD rather than by
 anything of Thingport's, so it is the same list the script's author saw. `render(source, { parameters, format,
-name })` gives the model back as a 3MF by default, or as `stl`, `obj`, `off` or `amf`. The libraries a script may
-include are in [`frontend/src/assets/scadLibraries`](../../frontend/src/assets/scadLibraries) and are mounted only
-when the script mentions one.
+name, signal })` gives the model back as a 3MF by default, or as `stl`, `obj`, `off` or `amf`; `format: "mesh"`
+hands back the geometry without building a 3MF from it, which is seconds of held thread on a big model and wasted
+on a tool that writes its own file. The libraries a script may include are in
+[`frontend/src/assets/scadLibraries`](../../frontend/src/assets/scadLibraries) and are mounted only when the
+script mentions one.
 
 ```js
 const openscad = await thingport.library("openscad");
 const { parameters } = await openscad.parameters(source);
 const { bytes, log, seconds } = await openscad.render(source, { parameters: { TEXT: "Hello", size: 40 } });
 ```
+
+A render runs in a worker, so the window keeps drawing while it works, and `signal` really stops one: the worker
+running it is let go there and then rather than the call being left to finish into nothing. `concurrency` says how
+many a tool may have in flight at once -- one fewer than the machine has cores, up to four -- so a planner whose
+parts don't depend on each other can draw that many at a time instead of one.
+
+`writeThreeMf(mesh | parts, { name })` writes one mesh, or a list of `{ mesh, name }` parts, into a single 3MF,
+with `layoutRow(parts)` to stand them side by side and `meshBounds(mesh)` for one's extents. A 3MF holds one copy
+of a shape however many are wanted, so a part's name is where its count belongs: `"8x8 Core Tile x4"`.
 
 Generating happens entirely in the browser: the script, the parameters and the result go nowhere on their own.
 Saving the result is a separate step — `models.create` uploads it to the instance like any other model.

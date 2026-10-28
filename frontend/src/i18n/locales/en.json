@@ -2219,7 +2219,7 @@
           "withModels": "Import its models",
           "modelsRoom": "{{count}} models is a large set; expect it to take gigabytes on this server, and a while to come in.",
           "modelsLater": "Without them the tool only works while the site it fetches from is up and this server is online, and anything it builds from its parts can't be saved. You can import them later.",
-          "modelsLaterOwn": "Without them, nothing the tool builds from its parts can be saved. They come with the tool itself, so no other site is involved. You can import them later.",
+          "modelsLaterOwn": "The tool can't save anything that uses those parts until they're imported. They come with the tool itself, so no other site is involved. You can import them later.",
           "modelsSkipped_one": "Installed without its {{count}} model.",
           "modelsSkipped_other": "Installed without its {{count}} models.",
           "importModels": "Import its models",
