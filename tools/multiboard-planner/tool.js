@@ -2255,6 +2255,7 @@ export default async function mount(thingport) {
 
   async function runWall(title) {
     if (!current) return;
+    let saved = null;
     const go = $("saveGo");
     const plan = wallPlan(current);
     const pieces = [...plan.plates, ...plan.joints];
@@ -2297,6 +2298,9 @@ export default async function mount(thingport) {
         }
         closeSave();
         ui.toast(t("toast.saved", { name: title, collection: collection.name }), "success");
+        // Left for the end: opening the model takes the tool's window down with it, and the tidying up below
+        // still has the window's own controls to put back.
+        saved = model.id;
       } else {
         const zip = wallZip(title, files);
         thingport.download(zip);
@@ -2312,6 +2316,9 @@ export default async function mount(thingport) {
       go.disabled = false;
       go.textContent = t(wallMode === "save" ? "save.go" : "download.go");
     }
+    // The wall is the point of the exercise, so it is what the person is left looking at. The cover is on it
+    // by now, so the page they land on is the finished model rather than one still being filled in.
+    if (saved) models.open(saved);
   }
 
   labels();
