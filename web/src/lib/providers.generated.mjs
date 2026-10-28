@@ -111,4 +111,13 @@ export const PROVIDER_DOCS = [
     description:
       "Import OwlCAD's library parts and community CAD models. Nothing needs a sign-in, though a CAD project's file is built by OwlCAD's own editor, so it comes through Thingport Grab.",
   },
+  {
+    slug: "providers/toymakr3d",
+    source: "docs/providers/toymakr3d.md",
+    group: "Providers",
+    title: "Toymakr3D",
+    nav: "Toymakr3D",
+    description:
+      "Import Toymakr3D's articulated robot and mecha models, and the ones you liked, with your own sign-in for the files.",
+  },
 ];

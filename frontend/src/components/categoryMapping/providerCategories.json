@@ -9040,5 +9040,52 @@
       "name": "Others",
       "parent": "2000"
     }
+  ],
+  "toymakr3d": [
+    {
+      "id": "5",
+      "name": "G1 Robots",
+      "parent": null
+    },
+    {
+      "id": "6",
+      "name": "Giant Robots",
+      "parent": null
+    },
+    {
+      "id": "14",
+      "name": "Mecha Monsters",
+      "parent": null
+    },
+    {
+      "id": "7",
+      "name": "Vehicles",
+      "parent": null
+    },
+    {
+      "id": "11",
+      "name": "Transforming Robots",
+      "parent": null
+    },
+    {
+      "id": "13",
+      "name": "Upgrade Kit",
+      "parent": null
+    },
+    {
+      "id": "9",
+      "name": "Exclusive Item",
+      "parent": null
+    },
+    {
+      "id": "8",
+      "name": "Other",
+      "parent": null
+    },
+    {
+      "id": "15",
+      "name": "Power Robots",
+      "parent": null
+    }
   ]
 }

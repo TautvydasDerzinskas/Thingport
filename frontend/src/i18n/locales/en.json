@@ -4594,6 +4594,37 @@
         "notConnected": "Connect Pinshape in Configuration > Providers, or visit it with Thingport Grab, to see your likes and collections here."
       }
     },
+    "toymakr3d": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open toymakr3d.com while signed in. It connects your account, and sends a new sign-in whenever you sign in there again.",
+          "Or by hand: sign in at toymakr3d.com and open your browser's developer tools (F12).",
+          "Go to the Network tab, reload the page, click any toymakr3d.com request and copy its Cookie header, then paste it below."
+        ],
+        "placeholder": "The Cookie header of a signed-in toymakr3d.com request"
+      },
+      "status": {
+        "notConnected": "Toymakr3D gives its files to signed-in users only, the free models included. Connect your account to import them and to read your liked products.",
+        "expired": "Sign-in expired. Sign in on toymakr3d.com with Thingport Grab, or connect Toymakr3D again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "Toymakr3D: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "A one-designer site of articulated robot and mecha models, most of them free: Transformers, Megazords, Gundams and the like.",
+        "signIn": "Your own sign-in, for the files and your likes.",
+        "grab": "Sends your sign-in as you visit toymakr3d.com.",
+        "setup": [
+          "Install Thingport Grab, enable it on Toymakr3D and open toymakr3d.com signed in.",
+          "By hand: copy the Cookie header of a signed-in toymakr3d.com request and paste it in Configuration → Providers."
+        ]
+      },
+      "admin": {
+        "description": "Models and each user's liked products. Both need the user's own sign-in; only the model pages read without one."
+      },
+      "sync": {
+        "notConnected": "Connect Toymakr3D in Configuration > Providers, or visit it with Thingport Grab, to see your liked products here."
+      }
+    },
     "owlcad": {
       "status": {
         "alwaysConnected": "OwlCAD is connected by default: it needs no account or key."

@@ -166,7 +166,10 @@ function docsLogo({ logo }) {
   const fill = (color) => (color === "currentColor" ? "#111111" : color);
   const paths = [
     `<path d="${logo.path}" fill="${fill(logo.color)}"${logo.fillRule ? ` fill-rule="${logo.fillRule}"` : ""}/>`,
-    ...(logo.layers ?? []).map((layer) => `<path d="${layer.d}" fill="${layer.color}"/>`),
+    ...(logo.layers ?? []).map(
+      (layer) =>
+        `<path d="${layer.d}" fill="${layer.color}"${layer.fillRule ? ` fill-rule="${layer.fillRule}"` : ""}/>`,
+    ),
   ];
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="${left} ${top} ${size} ${size}">` +

@@ -4777,6 +4777,37 @@
         "notConnected": "Prijunkite Pinshape skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte pamėgtus modelius ir kolekcijas."
       }
     },
+    "toymakr3d": {
+      "connect": {
+        "steps": [
+          "Paprasčiausia: su Thingport Grab tiesiog atverkite toymakr3d.com prisijungę. Jis prijungs jūsų paskyrą ir atsiųs naują prisijungimą kaskart, kai ten vėl prisijungsite.",
+          "Arba rankiniu būdu: prisijunkite prie toymakr3d.com ir atverkite naršyklės kūrėjo įrankius (F12).",
+          "Skiltyje Network iš naujo įkelkite puslapį, spustelėkite bet kurią toymakr3d.com užklausą, nukopijuokite jos Cookie antraštę ir įklijuokite ją žemiau."
+        ],
+        "placeholder": "Prisijungus siųstos toymakr3d.com užklausos Cookie antraštė"
+      },
+      "status": {
+        "notConnected": "Toymakr3D failus duoda tik prisijungusiems naudotojams, įskaitant ir nemokamus modelius. Prijunkite paskyrą, kad galėtumėte juos importuoti ir matyti pamėgtus modelius.",
+        "expired": "Prisijungimo galiojimas baigėsi. Prisijunkite toymakr3d.com su Thingport Grab arba vėl prijunkite Toymakr3D skiltyje Konfigūracija → Šaltiniai.",
+        "expiredStatus": "Prisijungimas nebegalioja",
+        "disabledReason": "Toymakr3D: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai"
+      },
+      "about": {
+        "summary": "Vieno kūrėjo svetainė su judančių robotų ir mechų modeliais, dauguma jų nemokami: transformeriai, megazordai, gundamai ir panašiai.",
+        "signIn": "Jūsų pačių prisijungimas, failams ir pamėgtiems modeliams.",
+        "grab": "Atsiunčia jūsų prisijungimą, kai lankotės toymakr3d.com.",
+        "setup": [
+          "Įdiekite Thingport Grab, įjunkite jį Toymakr3D ir atverkite toymakr3d.com prisijungę.",
+          "Rankiniu būdu: nukopijuokite prisijungus siųstos toymakr3d.com užklausos Cookie antraštę ir įklijuokite ją skiltyje Konfigūracija → Šaltiniai."
+        ]
+      },
+      "admin": {
+        "description": "Modeliai ir kiekvieno naudotojo pamėgti modeliai. Abiem reikia paties naudotojo prisijungimo; be jo skaitomi tik modelių puslapiai."
+      },
+      "sync": {
+        "notConnected": "Prijunkite Toymakr3D skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte pamėgtus modelius."
+      }
+    },
     "owlcad": {
       "status": {
         "alwaysConnected": "OwlCAD prijungtas iš karto: jam nereikia nei paskyros, nei rakto."

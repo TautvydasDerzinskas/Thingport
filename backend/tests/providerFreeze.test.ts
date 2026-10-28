@@ -36,6 +36,7 @@ describe("provider-module freeze", () => {
         "https://cults3d.com/en/3d-model/art/example",
         "https://makeitreal.eufymake.com/models/be7c829023dd11f19919128e55eac07e/",
         "https://pinshape.com/items/111504-articulated-dragon",
+        "https://www.toymakr3d.com/product/8-transformable-sofa-robot",
       ].map((url) => identifySourceModel(url)?.provider),
     ).toEqual([
       "makerworld",
@@ -50,6 +51,7 @@ describe("provider-module freeze", () => {
       "cults3d",
       "eufymake",
       "pinshape",
+      "toymakr3d",
     ]);
   });
 
@@ -68,6 +70,7 @@ describe("provider-module freeze", () => {
       "eufymake",
       "pinshape",
       "owlcad",
+      "toymakr3d",
     ]);
   });
 
@@ -85,6 +88,7 @@ describe("provider-module freeze", () => {
       "cults3d",
       "eufymake",
       "pinshape",
+      "toymakr3d",
     ]);
   });
 
@@ -103,6 +107,7 @@ describe("provider-module freeze", () => {
       "eufymake",
       "pinshape",
       "owlcad",
+      "toymakr3d",
     ]);
   });
 
@@ -120,6 +125,7 @@ describe("provider-module freeze", () => {
       "snapmaker",
       "eufymake",
       "pinshape",
+      "toymakr3d",
     ]);
   });
 
@@ -138,6 +144,7 @@ describe("provider-module freeze", () => {
       "eufymake",
       "pinshape",
       "owlcad",
+      "toymakr3d",
     ]);
   });
 
@@ -170,6 +177,7 @@ describe("provider-module freeze", () => {
         "provider_disabled",
         "snapmaker_session",
         "thangs_session",
+        "toymakr3d_session",
       ].toSorted(),
     );
     // The dashboard's provider failure is a route-local literal, not a *_CODE constant.
@@ -308,6 +316,7 @@ describe("provider-module freeze", () => {
           "eufymake_cat_ids",
           "pinshape_cat_ids",
           "owlcad_cat_ids",
+          "toymakr3d_cat_ids",
         ].toSorted(),
       );
     } finally {

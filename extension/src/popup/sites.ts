@@ -54,6 +54,7 @@ function svg(
     const extra = document.createElementNS(SVG_NS, "path");
     extra.setAttribute("d", layer.d);
     extra.setAttribute("fill", layer.color);
+    if (layer.fillRule) extra.setAttribute("fill-rule", layer.fillRule);
     el.append(extra);
   }
   return el;

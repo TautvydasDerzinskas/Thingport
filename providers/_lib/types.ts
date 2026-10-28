@@ -16,8 +16,8 @@ export type Logo = {
   color: `#${string}` | "currentColor";
   path: string;
   fillRule?: "evenodd";
-  /** Shapes in colours of their own, drawn after `path`. */
-  layers?: readonly { d: string; color: `#${string}` }[];
+  /** Shapes in colours of their own, drawn after `path`; `fillRule` as on the mark itself, for one with holes. */
+  layers?: readonly { d: string; color: `#${string}`; fillRule?: "evenodd" }[];
 };
 
 export type ProviderManifest = {
