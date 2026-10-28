@@ -297,6 +297,12 @@
   .mbp-legend i.mbp-dot {
     border-radius: 50%;
   }
+  .mbp-legend .mbp-key {
+    width: 14px;
+    height: 14px;
+    display: inline-block;
+    flex: none;
+  }
   .mbp-stage {
     position: relative;
     flex: 1;
@@ -429,6 +435,42 @@
   .mbp-build-phrase {
     font-size: 13px;
     color: var(--text);
+  }
+
+  /* ---- the moment a part is being got ready ---- */
+  .mbp-loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 22px;
+    border-radius: 12px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    box-shadow: 0 10px 30px rgb(0 0 0 / 18%);
+  }
+  .mbp-spin {
+    width: 16px;
+    height: 16px;
+    flex: none;
+    border-radius: 50%;
+    border: 2px solid var(--line);
+    border-top-color: var(--accent);
+    animation: mbp-spin 700ms linear infinite;
+  }
+  @keyframes mbp-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mbp-spin {
+      animation: none;
+    }
+  }
+  .mbp-ico-dl {
+    width: 15px;
+    height: 15px;
+    display: block;
   }
 
   /* ---- naming the wall before it's saved ---- */
@@ -765,12 +807,17 @@
             <path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" /></svg
           ><span data-t="parts.list">List</span>
         </button>
-        <button class="mbp-btn" id="mbp-filesBtn" data-t-title="parts.filesHint" title="Download every part as one 3MF">
+        <button
+          class="mbp-btn"
+          id="mbp-filesBtn"
+          data-t-title="parts.filesHint"
+          title="Download every part, one file each, in a zip"
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M12 3v12m0 0-4-4m4 4 4-4" />
             <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
             <path d="M8 7h8" /></svg
-          ><span data-t="parts.files">3MF</span>
+          ><span data-t="parts.files">Files</span>
         </button>
         <button
           class="mbp-btn mbp-primary"
@@ -789,11 +836,17 @@
     </section>
   </main>
 
+  <div class="mbp-cover" id="mbp-loadCover" hidden>
+    <div class="mbp-loading" role="status" aria-live="polite">
+      <span class="mbp-spin" aria-hidden="true"></span>
+      <span data-t="part.loading">Loading…</span>
+    </div>
+  </div>
   <div class="mbp-cover" id="mbp-saveCover" hidden>
     <div class="mbp-dialog" role="dialog" aria-modal="true" aria-labelledby="mbp-saveTitle">
       <h2 id="mbp-saveTitle" data-t="save.title">Save this wall to Thingport</h2>
       <p class="mbp-note" id="mbp-saveNote"></p>
-      <div class="mbp-group">
+      <div class="mbp-group" id="mbp-saveNameBox">
         <div class="mbp-label" data-t="save.name">What to call it</div>
         <div class="mbp-field">
           <input id="mbp-saveName" autocomplete="off" data-t-aria="save.name" aria-label="What to call it" />

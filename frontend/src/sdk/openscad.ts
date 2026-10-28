@@ -48,7 +48,7 @@ export type ScadRender = {
  *
  * The rest are the engine's own, for a tool that wants what it writes untouched.
  */
-export type ScadFormat = "3mf" | "stl" | "obj" | "off" | "amf";
+export type ScadFormat = "3mf" | "mesh" | "stl" | "obj" | "off" | "amf";
 
 export type ScadRenderOptions = {
   /** By parameter name, as `parameters()` gives them. Anything left out keeps the script's own value. */
@@ -220,8 +220,10 @@ export async function scadParameters(source: string): Promise<ScadParameters> {
 /** The model the script makes with the parameters given. */
 export async function scadRender(source: string, options: ScadRenderOptions = {}): Promise<ScadRender> {
   const wanted = options.format ?? "3mf";
-  // A 3MF is made here from the engine's OFF; everything else it writes itself.
-  const asked = wanted === "3mf" ? "off" : wanted;
+  // A 3MF is made here from the engine's OFF, and "mesh" is the same read without writing anything: both come
+  // back from the engine as OFF. Everything else it writes itself.
+  const made = wanted === "3mf" || wanted === "mesh";
+  const asked = made ? "off" : wanted;
   const entries = Object.entries(options.parameters ?? {});
 
   let args: string[] = [];
@@ -235,8 +237,11 @@ export async function scadRender(source: string, options: ScadRenderOptions = {}
   }
 
   const rendered = await run(source, args, `/model.${asked}`, extra);
-  if (wanted !== "3mf") return rendered;
+  if (!made) return rendered;
   const { parseOff, writeThreeMf } = await import("./threeMf");
   const mesh = parseOff(new TextDecoder().decode(rendered.bytes));
+  // Asked for the geometry alone, nothing is written: building a 3MF of a big model is seconds of held thread,
+  // and a tool that only wants the mesh was paying that for bytes it threw away.
+  if (wanted === "mesh") return { ...rendered, mesh };
   return { ...rendered, bytes: writeThreeMf(mesh, { name: options.name }), mesh };
 }

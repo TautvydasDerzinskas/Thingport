@@ -68,7 +68,7 @@ export function plateLabel(type, size, count, tileNames = {}) {
 export async function renderPlate(scad, script, { type, size }) {
   const parameters = plateParameters(type, size);
   if (!parameters) throw new Error(`No plate for a ${size} ${type}`);
-  const { mesh, log } = await scad.render(script, { parameters, format: "3mf" });
+  const { mesh, log } = await scad.render(script, { parameters, format: "mesh" });
   if (!mesh) throw new Error(`The engine drew no ${size} ${type}${log?.length ? `: ${log.join(" ")}` : ""}`);
   return mesh;
 }
@@ -95,26 +95,52 @@ export function partName(part) {
  * planner's business and not this file's. `onProgress` is told before each piece and once at the end, and
  * `signal` stops it between pieces -- the engine cannot be interrupted part way through drawing one.
  */
+/** A name that sorts in print order and is safe as a file name on any machine. */
+function fileStem(order, label) {
+  const clean = label
+    .replace(/[\\/:*?"<>|]+/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+  return `${String(order).padStart(2, "0")} - ${clean}`.slice(0, 120);
+}
+
+/**
+ * Every piece of a wall as its own file, in print order.
+ *
+ * One file per thing to print, rather than one model holding them all: Thingport lists each as its own plate
+ * on the model's page, and a slicer opens one at a time instead of piling the lot onto one bed. A plate is
+ * drawn here and written as its own 3MF; a joint is handed over exactly as it was packed, bytes and all, so
+ * nothing is re-read, re-meshed or lost on the way.
+ *
+ * `onProgress` is awaited: drawing a plate holds the thread, so the page needs a chance to paint first.
+ */
 export async function buildWall(scad, script, plan, { readJoint, onProgress, signal } = {}) {
   const total = plan.plates.length + plan.joints.length;
-  const parts = [];
+  const files = [];
   let done = 0;
   const stopIfAsked = () => {
     if (signal?.aborted) throw new Error("cancelled");
   };
   for (const plate of plan.plates) {
     stopIfAsked();
-    onProgress?.({ done, total, name: plate.name });
-    parts.push({ mesh: await renderPlate(scad, script, plate), name: partName(plate) });
+    await onProgress?.({ done, total, name: plate.name });
+    const name = partName(plate);
+    const mesh = await renderPlate(scad, script, plate);
+    files.push({
+      name: `${fileStem(files.length + 1, name)}.stl`,
+      data: writeBinaryStl(mesh, { name }),
+      type: "model/stl",
+    });
     done++;
   }
   for (const joint of plan.joints) {
     stopIfAsked();
-    onProgress?.({ done, total, name: joint.name });
+    await onProgress?.({ done, total, name: joint.name });
     if (!readJoint) throw new Error(`Nothing to read ${joint.name} with`);
-    for (const piece of await readJoint(joint)) parts.push(piece);
+    for (const piece of await readJoint(joint))
+      files.push({ ...piece, name: `${fileStem(files.length + 1, piece.name)}${piece.extension}` });
     done++;
   }
-  onProgress?.({ done: total, total });
-  return parts;
+  await onProgress?.({ done: total, total });
+  return files;
 }
