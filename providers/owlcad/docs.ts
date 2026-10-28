@@ -2,6 +2,8 @@ import type { ProviderDocs } from "../_lib/types";
 
 export default {
   summary: "no sign-in at all; its CAD projects need Thingport Grab.",
+  about:
+    "A parametric CAD app that runs in the browser, with a gallery of two halves: a library of CC0 and CC-BY parts to build from, and the projects its users share. Those are CAD, not meshes, so its editor builds the files.",
   description:
     "Import OwlCAD's library parts and community CAD models. Nothing needs a sign-in, though a CAD project's file " +
     "is built by OwlCAD's own editor, so it comes through Thingport Grab.",
