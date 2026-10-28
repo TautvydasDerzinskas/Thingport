@@ -67,6 +67,7 @@ describe("provider-module freeze", () => {
       "cults3d",
       "eufymake",
       "pinshape",
+      "owlcad",
     ]);
   });
 
@@ -101,6 +102,7 @@ describe("provider-module freeze", () => {
       "cults3d",
       "eufymake",
       "pinshape",
+      "owlcad",
     ]);
   });
 
@@ -135,6 +137,7 @@ describe("provider-module freeze", () => {
       "cults3d",
       "eufymake",
       "pinshape",
+      "owlcad",
     ]);
   });
 
@@ -163,6 +166,7 @@ describe("provider-module freeze", () => {
         "makeronline_grab",
         "myminifactory_session",
         "nexprint_session",
+        "owlcad_needs_grab",
         "provider_disabled",
         "snapmaker_session",
         "thangs_session",
@@ -303,6 +307,7 @@ describe("provider-module freeze", () => {
           "cults3d_cat_ids",
           "eufymake_cat_ids",
           "pinshape_cat_ids",
+          "owlcad_cat_ids",
         ].toSorted(),
       );
     } finally {

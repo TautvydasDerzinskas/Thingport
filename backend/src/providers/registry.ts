@@ -15,6 +15,7 @@ import thangsCategories from "./thangs/categories.json";
 import cults3dCategories from "./cults3d/categories.json";
 import eufymakeCategories from "./eufymake/categories.json";
 import pinshapeCategories from "./pinshape/categories.json";
+import owlcadCategories from "./owlcad/categories.json";
 import {
   crealitycloudImport,
   crealitycloudTrending,
@@ -34,6 +35,7 @@ import {
   myminifactoryInstanceHealth,
 } from "./myminifactory";
 import { nexprintImport, nexprintTrending, nexprintLists, nexprintDetails } from "./nexprint";
+import { owlcadImport, owlcadDetails } from "./owlcad";
 import { pinshapeImport, pinshapeTrending, pinshapeLists, pinshapeDetails } from "./pinshape";
 import { printablesImport, printablesTrending, printablesLists, printablesDetails } from "./printables";
 import { snapmakerImport, snapmakerTrending, snapmakerLists, snapmakerDetails } from "./snapmaker";
@@ -185,8 +187,9 @@ export function liftProviderHolds(): void {
   for (const id of PROVIDER_IDS) PROVIDERS[id].liftHolds?.();
 }
 
-// Loaded when used: its waiting imports reach the services that read this registry.
+// Loaded when used: their waiting imports reach the services that read this registry.
 const grabImports = () => import("./makeronline/grabImports");
+const owlcadExports = () => import("./owlcad/grabExports");
 
 type Manifests = typeof MANIFESTS;
 /** What a provider with collections or likes has for them. */
@@ -370,6 +373,23 @@ export const PROVIDERS = {
     browse: pinshapeBrowse,
     trending: pinshapeTrending,
     details: pinshapeDetails,
+  },
+  owlcad: {
+    starterCategories: owlcadCategories,
+    // Nothing is kept for it: everything it serves answers without a sign-in.
+    connection: {},
+    // It turns no sign-in down, having none to turn down; a batch only stops on a model its editor has to build.
+    authStopText: `only ${siteHost("owlcad")}'s own editor can build it`,
+    customImport: owlcadImport,
+    grabQueue: {
+      queue: async (userId, url, options) => (await owlcadExports()).queueOwlcadExport(userId, url, options),
+      // Its gallery is one list, so there is no list import to park -- only single models.
+      queueList: () => Promise.reject(new Error("OwlCAD has no lists")),
+      notifyQueued: async (userId, count, opts) =>
+        (await owlcadExports()).notifyOwlcadExportsQueued(userId, count, opts),
+      clear: async (userId, modelId) => (await owlcadExports()).clearOwlcadExports(userId, modelId),
+    },
+    details: owlcadDetails,
   },
 } satisfies { [K in ProviderId]: Entry<K> } as { readonly [K in ProviderId]: ProviderBackend };
 

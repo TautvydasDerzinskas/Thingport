@@ -5,12 +5,14 @@ import type { BackgroundMessages, Handlers } from "../shared/messages";
 import { MANIFESTS } from "./index.generated";
 import { syncSession } from "../background/sessionSync";
 import { makeronlineHandlers } from "./makeronline/background";
+import { owlcadHandlers } from "./owlcad/background";
 import { advanceJob, dropJobIfForTab, makerworldHandlers } from "./makerworld/job";
 import { printablesHandlers } from "./printables/background";
 import { scheduleSnapmakerRenewal, SNAPMAKER_ALARM } from "./snapmaker/session";
 
 export const PROVIDER_HANDLERS: Partial<Handlers<BackgroundMessages>> = {
   ...makeronlineHandlers,
+  ...owlcadHandlers,
   ...makerworldHandlers,
   ...printablesHandlers,
 };

@@ -3,7 +3,7 @@ import cors from "cors";
 import { resolveCorsOrigins } from "./cors";
 import { HttpError } from "./utils/fileUtils";
 import { trackClients } from "./services/clientActivityService";
-import { pathToken } from "./auth";
+import { pathToken, requireAuth } from "./auth";
 
 import healthRoutes from "./routes/health";
 import mcpRoutes from "./routes/mcp";
@@ -21,7 +21,7 @@ import printFilesRoutes from "./routes/printFiles";
 import tagsRoutes from "./routes/tags";
 import settingsRoutes from "./routes/settings";
 import importsRoutes from "./routes/imports";
-import providerRoutes from "./providers/routes";
+import providerRoutes, { providerBodyLimits } from "./providers/routes";
 import collectionsRoutes from "./routes/collections";
 import collectionSyncsRoutes from "./routes/collectionSyncs";
 import providerCollectionsRoutes from "./routes/providerCollections";
@@ -57,6 +57,10 @@ export function createApp(): Express {
   app.use("/api/tools", express.json({ limit: "8mb" }));
   // upload_model's files come as base64 in the call: MCP_UPLOAD_MAX_BYTES, a third bigger, and some room.
   app.use("/api/mcp", express.json({ limit: "40mb" }));
+  // A provider with no file to link sends the file itself in the body; each one states its own size. Signed in
+  // first: a limit this far above the global one would otherwise buffer and parse anyone's hundreds of megabytes
+  // before the route behind it turned the request away.
+  for (const { paths, limit } of providerBodyLimits) app.use(paths, requireAuth, express.json({ limit }));
   app.use(express.json());
   app.use("/api", trackClients);
   // Refuses changes to the models and collections tools bring, whichever router would make them.

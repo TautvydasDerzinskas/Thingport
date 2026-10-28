@@ -4623,6 +4623,26 @@
       "sync": {
         "notConnected": "Connectez Pinshape dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir vos « J’aime » et collections ici."
       }
+    },
+    "owlcad": {
+      "status": {
+        "alwaysConnected": "OwlCAD est connecté par défaut : il ne demande ni compte ni clé."
+      },
+      "about": {
+        "summary": "Une application de CAO qui tourne dans le navigateur. Sa galerie rassemble une vaste bibliothèque de pièces CC0 et CC-BY, et les modèles CAO que partagent ses utilisateurs.",
+        "signIn": "Rien à connecter.",
+        "grab": "Nécessaire pour ses projets CAO : OwlCAD n'en stocke aucun fichier, c'est son éditeur qui le construit.",
+        "setup": [
+          "Rien à configurer : collez un lien OwlCAD, ou importez depuis sa page avec Thingport Grab.",
+          "Une pièce de la bibliothèque s'importe aussitôt. Un projet CAO attend que Thingport Grab l'ouvre sur owlcad.com, où l'éditeur d'OwlCAD l'exporte."
+        ]
+      },
+      "admin": {
+        "description": "Une application de CAO dans le navigateur : ses pièces de bibliothèque s'importent seules, ses projets CAO via Thingport Grab."
+      },
+      "sync": {
+        "notConnected": "OwlCAD est injoignable pour le moment."
+      }
     }
   }
 }

@@ -74,6 +74,9 @@ export type ProviderContractSpec = {
     category: { name: string; parent: string | null } | null;
     /** Pictures kept as the model's gallery (the cover included). */
     galleryImages: number;
+    /** False where the provider's models carry no description at all (OwlCAD's library parts), so fill-gaps has
+     *  nothing to fill one from and leaves it among the gaps that remain. */
+    description?: false;
     /** The profile each plate belongs to, in order; null for a plate that isn't a profile's. */
     plateInstanceIds: (string | null)[];
     plateFilenames?: string[];
@@ -251,7 +254,8 @@ export function describeProviderContract(spec: ProviderContractSpec): ContractCo
         expect(print.sourceProvider).toBe(spec.id);
         expect(print.sourceExternalId).toBe(spec.expected.externalId);
         expect(print.title).toBe(spec.expected.title);
-        expect(print.notes).toContain(spec.expected.notesIncludes);
+        if (spec.expected.description === false) expect(print.notes).toBeNull();
+        else expect(print.notes).toContain(spec.expected.notesIncludes);
         expect(print.tags.toSorted()).toEqual(spec.expected.tags);
         expect(print.creator).toBe(spec.expected.author);
         expect(print.categoryId).toBe(category?.id ?? null);
@@ -432,20 +436,25 @@ export function describeProviderContract(spec: ProviderContractSpec): ContractCo
         ctx.stub("ok");
         const res = await fill();
         expectStatus(res, 200);
+        const describes = spec.expected.description !== false;
         expect(res.body.filled.toSorted()).toEqual([
           "author",
           ...(category ? ["category"] : []),
           "creator",
-          "description",
+          ...(describes ? ["description"] : []),
           "images",
           "tags",
           "title",
         ]);
-        // A provider whose models don't say their category leaves it: there's nothing to fill it from.
-        expect(res.body.remaining).toEqual(category ? [] : ["category"]);
+        // A provider whose models don't say their category, or carry no description, leaves that gap: there's
+        // nothing to fill it from.
+        expect(res.body.remaining.toSorted()).toEqual(
+          [...(category ? [] : ["category"]), ...(describes ? [] : ["description"])].toSorted(),
+        );
         const filled = await prisma.print.findUniqueOrThrow({ where: { id: print.id }, include: { author: true } });
         expect(filled.title).toBe(spec.expected.title);
-        expect(filled.notes).toContain(spec.expected.notesIncludes);
+        if (spec.expected.description === false) expect(filled.notes).toBeNull();
+        else expect(filled.notes).toContain(spec.expected.notesIncludes);
         expect(filled.tags.toSorted()).toEqual(spec.expected.tags);
         expect(filled.creator).toBe(spec.expected.author);
         expect(filled.author?.name).toBe(spec.expected.author);

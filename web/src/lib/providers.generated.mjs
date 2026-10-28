@@ -102,4 +102,13 @@ export const PROVIDER_DOCS = [
     nav: "Pinshape",
     description: "Import Pinshape models, and anyone's collections and likes, with your own sign-in for the files.",
   },
+  {
+    slug: "providers/owlcad",
+    source: "docs/providers/owlcad.md",
+    group: "Providers",
+    title: "OwlCAD",
+    nav: "OwlCAD",
+    description:
+      "Import OwlCAD's library parts and community CAD models. Nothing needs a sign-in, though a CAD project's file is built by OwlCAD's own editor, so it comes through Thingport Grab.",
+  },
 ];

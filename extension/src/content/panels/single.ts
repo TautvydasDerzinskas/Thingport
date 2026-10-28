@@ -314,6 +314,10 @@ async function runDirectImport(opts?: { entries?: string[] }): Promise<void> {
     await runMakeronlineImport(scope, await collectionIdFor(choice));
     return;
   }
+  if (ctx().classification.provider === MANIFESTS.owlcad.id) {
+    await runOwlcadImport(await collectionIdFor(choice));
+    return;
+  }
   if (scope !== "url") {
     await runProfilesImport(scope, await collectionIdFor(choice));
     return;
@@ -361,6 +365,24 @@ async function runMakeronlineImport(scope: ProfileScope, collectionId: string | 
       renderPanel(
         successHtml(link, "These files were already on the model -- nothing new was added.", "Already in your library"),
       );
+    } else {
+      renderPanel(successHtml(link));
+    }
+  } catch (err) {
+    renderPanel(errorHtml(err));
+  }
+}
+
+/** OwlCAD keeps no file for a CAD project: its editor builds one. Grab opens the model there, exports it and hands
+ *  the bytes to the instance; a library part, whose mesh is stored, is imported by the instance itself. */
+async function runOwlcadImport(collectionId: string | null): Promise<void> {
+  const { url, instanceUrl, title } = ctx();
+  renderFunStatus(importingPhrases(MANIFESTS.owlcad.id));
+  try {
+    const print = await request("IMPORT_OWLCAD_MODEL", { url, collectionId, title: title ?? null });
+    const link = print ? `${instanceUrl}/models/${print.id}` : `${instanceUrl}/models`;
+    if (print?.import_outcome === "already_imported") {
+      renderPanel(successHtml(link, "This model was already in your library.", "Already in your library"));
     } else {
       renderPanel(successHtml(link));
     }

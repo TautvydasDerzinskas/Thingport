@@ -301,13 +301,16 @@ model ProviderListing {
   @@unique([userId, provider, key])
 }
 
-/// An import waiting for Thingport Grab. MakerOnline signs its download links only for a page its own anti-bot script
-/// runs on, so a MakerOnline import started in the app, the queue or a sync waits here until Grab, on the next
-/// makeronline.com page it sees, signs the files and imports it.
+/// An import waiting for Thingport Grab, because its files only a page of the site's own can get: MakerOnline signs
+/// its download links solely for a page its anti-bot script runs on, and an OwlCAD CAD project has no stored mesh at
+/// all -- its editor builds the file. An import started in the app, the queue or a sync waits here until Grab, on the
+/// next page it sees of that site, fetches the files and imports it.
 model GrabImport {
   id           String   @id @default(cuid())
   userId       String
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Whose row it is: Grab asks for one provider's at a time, on that provider's own pages.
+  provider     String   @default("makeronline")
   /// The model's page, with `#profileId-<id>` when it names a print profile.
   url          String
   /// "url" | "designer" | "all", as for MakerWorld.
@@ -322,6 +325,7 @@ model GrabImport {
   updatedAt    DateTime @updatedAt
 
   @@unique([userId, url])
+  @@index([userId, provider])
 }
 
 enum BookmarkType {

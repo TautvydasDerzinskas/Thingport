@@ -155,6 +155,14 @@ export type BackgroundMessages = {
   };
   /** On any MakerOnline page: import what waits on the instance for Grab. How many came in. */
   RUN_MAKERONLINE_WAITING: { payload: void; result: number };
+  /** On an OwlCAD model page: export it in OwlCAD's editor, then import it. A library part needs no export, and is
+   *  imported as any link is. */
+  IMPORT_OWLCAD_MODEL: {
+    payload: { url: string; collectionId: string | null; title: string | null };
+    result: Print | null;
+  };
+  /** On any OwlCAD page: export and import the CAD projects waiting on the instance. How many came in. */
+  RUN_OWLCAD_WAITING: { payload: void; result: number };
   /** What to read on Printables now, or null when it isn't time to read anything. */
   /** `now`: skip the hourly wait, e.g. right after a private collection's sync was turned on. */
   PRINTABLES_PUSH_DUE: { payload: { now?: boolean }; result: PrintablesPushPlan | null };

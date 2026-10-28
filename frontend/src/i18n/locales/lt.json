@@ -4775,6 +4775,26 @@
       "sync": {
         "notConnected": "Prijunkite Pinshape skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte pamėgtus modelius ir kolekcijas."
       }
+    },
+    "owlcad": {
+      "status": {
+        "alwaysConnected": "OwlCAD prijungtas iš karto: jam nereikia nei paskyros, nei rakto."
+      },
+      "about": {
+        "summary": "Naršyklėje veikianti CAD programa. Jos galerijoje – didelė CC0 ir CC-BY dalių biblioteka bei naudotojų pasidalyti CAD modeliai.",
+        "signIn": "Nieko jungti nereikia.",
+        "grab": "Reikalingas jos CAD projektams: OwlCAD nelaiko jų failo, todėl jį sukuria pati redaktorė.",
+        "setup": [
+          "Nieko nustatyti nereikia: įklijuok OwlCAD nuorodą arba importuok iš jo puslapio su Thingport Grab.",
+          "Bibliotekos dalis importuojama iš karto. CAD projektas laukia, kol Thingport Grab atvers jį owlcad.com, kur OwlCAD redaktorė jį eksportuoja."
+        ]
+      },
+      "admin": {
+        "description": "Naršyklės CAD programa: bibliotekos dalys importuojamos pačios, CAD projektai – per Thingport Grab."
+      },
+      "sync": {
+        "notConnected": "Šiuo metu OwlCAD nepasiekiamas."
+      }
     }
   }
 }

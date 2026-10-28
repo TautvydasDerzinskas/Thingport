@@ -1,0 +1,62 @@
+[
+  {
+    "url": "https://owlcad.com/gallery/0f7d8172-a9b7-4de1-9b1b-5a8c255ac274/apex-evo-hd-gopro-mount",
+    "expect": {
+      "provider": "owlcad",
+      "kind": "model",
+      "externalId": "0f7d8172-a9b7-4de1-9b1b-5a8c255ac274"
+    }
+  },
+  {
+    "url": "https://owlcad.com/gallery/aeac7676-9243-49a2-8ebe-e8df226db6ed",
+    "expect": {
+      "provider": "owlcad",
+      "kind": "model",
+      "externalId": "aeac7676-9243-49a2-8ebe-e8df226db6ed"
+    }
+  },
+  {
+    "url": "https://owlcad.com/app?shared=0f7d8172-a9b7-4de1-9b1b-5a8c255ac274",
+    "expect": {
+      "provider": "owlcad",
+      "kind": "model",
+      "externalId": "0f7d8172-a9b7-4de1-9b1b-5a8c255ac274"
+    }
+  },
+  {
+    "url": "https://owlcad.com/app?embed=1&shared=AEAC7676-9243-49A2-8EBE-E8DF226DB6ED",
+    "expect": {
+      "provider": "owlcad",
+      "kind": "model",
+      "externalId": "aeac7676-9243-49a2-8ebe-e8df226db6ed"
+    }
+  },
+  {
+    "url": "https://owlcad.com/gallery/category/printer-parts",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  },
+  {
+    "url": "https://owlcad.com/gallery/ai-generated",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  },
+  {
+    "url": "https://owlcad.com/gallery",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  },
+  {
+    "url": "https://owlcad.com/app?customize=0f7d8172-a9b7-4de1-9b1b-5a8c255ac274",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  }
+]
