@@ -83,9 +83,9 @@ CH_Z0        = 2.05;   // where it starts
 CH_Z1        = 4.15;   // where it ends
 CH_CHAMFER_X = 0.50;   // corner chamfer, across
 CH_CHAMFER_Z = 0.60;   // corner chamfer, up
-CH_CORNER    = 6.20;   // how far short of each corner the main run stops: the plates close it off with a rib
-                       // there, where the corner cell's octagon runs out, rather than letting it cross
-CH_RIB       = 1.00;   // how wide that rib is
+CH_END       = 10.00;   // how far back from each corner the channel is cut off, on the same 45 degrees as
+                       // the chamfer. Ended square instead it runs out through the chamfer at the corner,
+                       // leaving a gash there where the plates are walled.
 
 // The socket in each corner's chamfer face. Measured along that face and straight into it, it is a blind
 // recess: open across its middle, walled off 1.00 mm back, with the plate's interior starting separately
@@ -203,11 +203,24 @@ module channel_profile() {
   ]);
 }
 
-/** The relief channel along the +X edge: its cross-section swept the length of the edge, stopping at a rib
- *  short of each corner. Past that rib the plates carry a socket in the chamfer itself, not more channel. */
+/** The plate's outline drawn back at the corners by `c`, which is what the relief channel is cut to. */
+module channel_limit(c) {
+  s = side / 2;
+  polygon([
+    [s - c, s], [-s + c, s], [-s, s - c], [-s, -s + c],
+    [-s + c, -s], [s - c, -s], [s, -s + c], [s, s - c],
+  ]);
+}
+
+/** The relief channel along the +X edge: its cross-section swept the length of the edge, then cut back at
+ *  each corner on the chamfer's own 45 degrees. Past that cut the plates carry a socket in the chamfer
+ *  face itself, not more channel. */
 module channel() {
-  translate([0, side/2 - CH_CORNER, 0]) rotate([90, 0, 0])
-    linear_extrude(height = side - 2 * CH_CORNER, convexity = 6) channel_profile();
+  intersection() {
+    translate([0, side/2 + 1, 0]) rotate([90, 0, 0])
+      linear_extrude(height = side + 2, convexity = 6) channel_profile();
+    translate([0, 0, -1]) linear_extrude(height = TH + 2, convexity = 4) channel_limit(CH_END);
+  }
 }
 
 /** The socket recessed into the +X+Y corner's chamfer face. */
