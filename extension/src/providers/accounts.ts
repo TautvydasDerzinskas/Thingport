@@ -5,6 +5,7 @@ import { send } from "../shared/messages";
 import type { ProviderId } from "./index.generated";
 import { cults3dSignedIn } from "./cults3d/content";
 import { syncMakeronline } from "./makeronline/content";
+import { syncOwlcad } from "./owlcad/content";
 import { captureMyminifactoryAccount } from "./myminifactory/account";
 import { pinshapeSignedIn } from "./pinshape/content";
 import { syncPrintables } from "./printables/content";
@@ -17,6 +18,8 @@ function syncSession(provider: ProviderId): void {
 /** What a page of each provider's sends on, once per tab. */
 export const CAPTURE: Partial<Record<ProviderId, (id: ProviderId) => void>> = {
   makeronline: () => void syncMakeronline(),
+  // It has no sign-in to send on: a visit is only the cue to export the CAD projects waiting for Grab.
+  owlcad: () => void syncOwlcad(),
   // Its sign-in downloads the files and reads the likes; a new one comes with each sign-in there.
   crealitycloud: syncSession,
   // Its sign-in downloads the files; the site renews it as it refreshes the token, and each new one is sent on.

@@ -4545,6 +4545,26 @@
       "sync": {
         "notConnected": "Conecta Pinshape en Configuración > Proveedores, o visítalo con Thingport Grab, para ver aquí tus me gusta y colecciones."
       }
+    },
+    "owlcad": {
+      "status": {
+        "alwaysConnected": "OwlCAD está conectado de forma predeterminada: no necesita cuenta ni clave."
+      },
+      "about": {
+        "summary": "Una aplicación CAD que funciona en el navegador. Su galería reúne una amplia biblioteca de piezas CC0 y CC-BY, y los modelos CAD que comparten sus usuarios.",
+        "signIn": "No hay nada que conectar.",
+        "grab": "Necesario para sus proyectos CAD: OwlCAD no guarda ningún archivo de ellos, así que lo crea su propio editor.",
+        "setup": [
+          "No hay nada que configurar: pega un enlace de OwlCAD, o importa desde su página con Thingport Grab.",
+          "Una pieza de la biblioteca se importa al momento. Un proyecto CAD espera a que Thingport Grab lo abra en owlcad.com, donde el editor de OwlCAD lo exporta."
+        ]
+      },
+      "admin": {
+        "description": "Una aplicación CAD de navegador: sus piezas de biblioteca se importan solas; sus proyectos CAD, mediante Thingport Grab."
+      },
+      "sync": {
+        "notConnected": "Ahora mismo no se puede acceder a OwlCAD."
+      }
     }
   }
 }

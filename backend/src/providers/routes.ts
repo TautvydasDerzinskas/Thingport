@@ -3,10 +3,12 @@
 
 import { Router } from "express";
 import makeronlineRoutes from "./makeronline/routes";
+import owlcadRoutes from "./owlcad/routes";
 import printablesRoutes from "./printables/routes";
 
 const router = Router();
 router.use(makeronlineRoutes);
+router.use(owlcadRoutes);
 router.use(printablesRoutes);
 
 export default router;

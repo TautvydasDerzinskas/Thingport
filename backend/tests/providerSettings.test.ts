@@ -64,6 +64,7 @@ describe("turning providers off", () => {
       cults3d: true,
       eufymake: true,
       pinshape: true,
+      owlcad: true,
     });
 
     expect(
@@ -88,6 +89,7 @@ describe("turning providers off", () => {
       cults3d: true,
       eufymake: true,
       pinshape: true,
+      owlcad: true,
     });
   });
 

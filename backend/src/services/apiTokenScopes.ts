@@ -115,9 +115,12 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
       "/import/jobs/active",
       "/import/jobs/:id",
       "/import/jobs/:id/items",
-      // MakerOnline's imports waiting for Grab (providers/makeronline/routes.ts). Scopes are listed here, one place for
-      // every app that reads with a token, rather than by each provider.
+      // The imports waiting for Thingport Grab (providers/makeronline/routes.ts, providers/owlcad/routes.ts), and
+      // what OwlCAD's Grab asks before opening one. Scopes are listed here, one place for every app that reads with
+      // a token, rather than by each provider.
       "/import/makeronline/waiting",
+      "/import/owlcad/waiting",
+      "/import/owlcad/plan",
     ],
   },
   {

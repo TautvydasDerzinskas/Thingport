@@ -19,6 +19,7 @@ how to connect it:
 - <img src="assets/providers/cults3d.svg" alt="" width="18" height="18" align="absmiddle"> [Cults3D](providers/cults3d.md) -- your own API key, and your browser's sign-in for files.
 - <img src="assets/providers/eufymake.svg" alt="" width="18" height="18" align="absmiddle"> [eufyMake](providers/eufymake.md) -- no sign-in to import; yours adds your likes.
 - <img src="assets/providers/pinshape.svg" alt="" width="18" height="18" align="absmiddle"> [Pinshape](providers/pinshape.md) -- your own sign-in, for the files; collections and likes read without it.
+- <img src="assets/providers/owlcad.svg" alt="" width="18" height="18" align="absmiddle"> [OwlCAD](providers/owlcad.md) -- no sign-in at all; its CAD projects need Thingport Grab.
 
 <!-- /providers:list -->
 
@@ -44,10 +45,12 @@ badge, shows the same in short.
 | <img src="assets/providers/cults3d.svg" alt="" width="18" height="18" align="absmiddle"> [Cults3D](providers/cults3d.md)                         | Your API key + browser sign-in  | Recommended³   |              | Printlists  | ✓     | ✓    |                |
 | <img src="assets/providers/eufymake.svg" alt="" width="18" height="18" align="absmiddle"> [eufyMake](providers/eufymake.md)                      | Yours, for likes only           | Recommended    |              |             | ✓     | ✓    |                |
 | <img src="assets/providers/pinshape.svg" alt="" width="18" height="18" align="absmiddle"> [Pinshape](providers/pinshape.md)                      | Yours, for the files            | Recommended    |              | ✓           | ✓     | ✓    |                |
+| <img src="assets/providers/owlcad.svg" alt="" width="18" height="18" align="absmiddle"> [OwlCAD](providers/owlcad.md)                            | None                            | Recommended⁴   |              |             |       |      |                |
 
 1. Your private Printables collections and your likes are read by Grab, while you're on Printables.
 2. Snapmaker's sign-in lasts a day and only Grab renews it; without Grab you paste a new one every day.
 3. Cults3D's files need your browser's Cloudflare clearance, and Thingport on the same IP address as that browser.
+4. A gallery item that is a CAD project, rather than a library part, has no stored mesh: OwlCAD's editor builds its file, so Thingport Grab exports it on owlcad.com.
 
 <!-- /providers:table -->
 

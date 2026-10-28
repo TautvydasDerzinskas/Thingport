@@ -1,15 +1,19 @@
 import { authHeaders } from "../utils/auth";
 import { apiBase, readErrorMessage, UnauthorizedError } from "./client";
-import { PROVIDER_IDS, type ProviderId } from "../providers/index.generated";
+import { MANIFESTS, PROVIDER_IDS, type ProviderId } from "../providers/index.generated";
 
-/** The providers a collection can be synced with from the app. */
-export const BROWSABLE_PROVIDERS = PROVIDER_IDS;
+/** The providers a collection can be synced with from the app: those with collections or likes. OwlCAD has
+ *  neither -- its gallery is one list, filtered by category. Mirrors the backend's BROWSABLE_PROVIDERS. */
+export const BROWSABLE_PROVIDERS = PROVIDER_IDS.filter(
+  (id) => MANIFESTS[id].capabilities.collections || MANIFESTS[id].capabilities.likes,
+);
 export type BrowsableProvider = ProviderId;
 
 /** `connected`: the instance can reach the provider for this user. `account`: who they are there,
  *  for providers without a per-user login; MakerWorld's cookie already says, so it's always null. */
 export type ProviderAccount = { connected: boolean; account: string | null };
-export type ProviderAccounts = Record<BrowsableProvider, ProviderAccount>;
+/** Only the browsable providers have a row. */
+export type ProviderAccounts = Partial<Record<BrowsableProvider, ProviderAccount>>;
 
 export type ProviderCollection = {
   id: string;

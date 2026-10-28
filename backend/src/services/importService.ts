@@ -126,6 +126,10 @@ export type ImportRequestBody = ImportCookies & {
   makerworld_design?: Record<string, unknown> | null;
   /** Internal only: per-request delay for MakerWorld collection imports. Never from the body. */
   makerworldPaceMs?: number;
+  /** Internal only: the 3MF Thingport Grab exported from OwlCAD's editor, already written to a temp file by its
+   *  route. OwlCAD hands out no link for a CAD project's geometry -- the editor builds the file in the page -- so
+   *  unlike `resolved_files` this is the file itself. Never from the body. */
+  owlcadExportPath?: string | null;
 };
 
 function parseCharset(contentType: string | null): string {
