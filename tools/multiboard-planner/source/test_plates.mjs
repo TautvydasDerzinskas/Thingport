@@ -131,6 +131,38 @@ await buildWall(fakeScad, "// script", { plates: [{ type: "C1", size: "4x6", nam
 );
 check(/4x6/.test(refused), `a size it cannot draw should say which, got "${refused}"`);
 
+// And the lanes still drawing stop with it, rather than holding the engine's workers for a wall that has
+// already been refused. The second plate here is the one that cannot be drawn, so it fails while the first is
+// still in the engine: the plates after it are the ones that must not be asked for. The renders are held open
+// until the failure has landed, which is what a lane drawing a real plate through it would be doing.
+const lanesAsked = [];
+let release = () => {};
+const held = new Promise((done) => (release = done));
+const heldScad = {
+  concurrency: 2,
+  render: async (script_, options) => {
+    lanesAsked.push(options.parameters);
+    await held;
+    return { bytes: new Uint8Array(), mesh: fakeMesh, log: [], seconds: 0 };
+  },
+};
+const oneBad = [
+  { type: "C1", size: "8x8", name: "first" },
+  { type: "C1", size: "4x6", name: "odd" },
+  { type: "C1", size: "8x8", name: "third" },
+  { type: "C1", size: "8x8", name: "fourth" },
+];
+let abandoned = "";
+const refusedWall = buildWall(heldScad, "// script", { plates: oneBad, joints: [] }).catch(
+  (e) => (abandoned = e.message),
+);
+await refusedWall;
+check(/4x6/.test(abandoned), `the wall should be refused for the plate it cannot draw, got "${abandoned}"`);
+release();
+// A tick is enough for the freed lane to take another plate, since nothing it does from here waits on a timer.
+await new Promise((done) => setTimeout(done, 0));
+check(lanesAsked.length === 1, `drawing should stop at a failed plate, engine asked ${lanesAsked.length} times`);
+
 // --- the preview draws the plate the generator draws ---------------------------------------------------
 // The preview's lattice is the plate seen from above, so its numbers have to be plate.scad's. Drawn from
 // memory they would drift, and a picture that quietly stops matching the thing it shows is worse than none.
