@@ -727,16 +727,6 @@ export function partName(part) {
   return part.quantity > 1 ? `${part.name} x${part.quantity}` : part.name;
 }
 
-/**
- * Every piece of a wall as geometry: the plates drawn, the joints read.
- *
- * Once each is the point. A wall of forty tiles is a handful of shapes repeated, and a 3MF holds one copy of
- * a shape however many are wanted, which is why the count lives in the name rather than in the file.
- *
- * `readJoint` is given a joint and hands back its pieces, since where a joint's bytes come from is the
- * planner's business and not this file's. `onProgress` is told before each piece and once at the end, and
- * `signal` stops it between pieces -- the engine cannot be interrupted part way through drawing one.
- */
 /** A name that sorts in print order and is safe as a file name on any machine. */
 function fileStem(order, label) {
   const clean = label
@@ -754,7 +744,10 @@ function fileStem(order, label) {
  * drawn here and written as its own 3MF; a joint is handed over exactly as it was packed, bytes and all, so
  * nothing is re-read, re-meshed or lost on the way.
  *
- * `onProgress` is awaited: drawing a plate holds the thread, so the page needs a chance to paint first.
+ * `readJoint` is given a joint and hands back its pieces, since where a joint's bytes come from is the
+ * planner's business and not this file's. `onProgress` is awaited: drawing a plate holds the thread, so the
+ * page needs a chance to paint first. `signal` stops it at once, a plate half drawn included: the engine lets
+ * go of the worker that is drawing it.
  */
 export async function buildWall(scad, script, plan, { readJoint, onProgress, signal } = {}) {
   const total = plan.plates.length + plan.joints.length;
@@ -777,21 +770,29 @@ export async function buildWall(scad, script, plan, { readJoint, onProgress, sig
   const at = plan.plates.map((plate, index) => ({ plate, index }));
   const lanes = Math.max(1, Math.min(scad.concurrency ?? 1, at.length));
   let next = 0;
+  // A plate that cannot be drawn stops the rest: Promise.all rejects on the first lane to fail, and a lane that
+  // kept taking jobs would hold an engine worker for a wall nobody is waiting for any more.
+  let failed = false;
   await Promise.all(
     Array.from({ length: lanes }, async () => {
-      for (;;) {
-        const job = at[next++];
-        if (!job) return;
-        stopIfAsked();
-        const name = partName(job.plate);
-        const mesh = await renderPlate(scad, script, job.plate, { signal });
-        files[job.index] = {
-          name,
-          data: writeBinaryStl(mesh, { name }),
-          type: "model/stl",
-        };
-        done++;
-        await report({ done, total, name: job.plate.name });
+      try {
+        for (;;) {
+          const job = at[next++];
+          if (!job || failed) return;
+          stopIfAsked();
+          const name = partName(job.plate);
+          const mesh = await renderPlate(scad, script, job.plate, { signal });
+          files[job.index] = {
+            name,
+            data: writeBinaryStl(mesh, { name }),
+            type: "model/stl",
+          };
+          done++;
+          await report({ done, total, name: job.plate.name });
+        }
+      } catch (err) {
+        failed = true;
+        throw err;
       }
     }),
   );
@@ -1720,7 +1721,6 @@ export default async function mount(thingport) {
     return wrap;
   }
 
-  /** One plate, drawn and handed over. It takes a second or three, so the button says so while it works. */
   /**
    * Holds the "Loading…" popup up while `run` works, whatever happens to it.
    *
@@ -1743,6 +1743,7 @@ export default async function mount(thingport) {
     }
   }
 
+  /** One plate, drawn and handed over. It takes a second or three, so the button says so while it works. */
   async function downloadPlate(tile, label) {
     await whileLoading(async () => {
       const scad = await openscad();
@@ -1966,9 +1967,6 @@ export default async function mount(thingport) {
     return [...keys];
   }
 
-  // ---- saving the wall as a model of its own -------------------------------------
-  /** Every part of the wall Thingport has a copy of, with how many are needed. */
-  /** What to print and in what order, for the saved model's description. */
   // --- drawing a wall -----------------------------------------------------------------------------
   //
   // A wall is plates and joints, and they arrive differently: a plate is drawn here from plate.scad, a
@@ -2006,7 +2004,6 @@ export default async function mount(thingport) {
     return { plates: [...plates.values()], joints: [...joints.values()] };
   }
 
-  /** A joint's pieces, read from the files the tool carries. */
   // Multiboard ships its snaps in four fits of the same part. You print one of them, not all four, so only one
   // goes in the wall -- the standard fit, which is what the planner's counts assume.
   const FITS = ["Standard", "Permanent", "Tight", "Loose"];
@@ -2136,6 +2133,8 @@ export default async function mount(thingport) {
     return painted();
   }
 
+  // ---- saving the wall as a model of its own -------------------------------------
+  /** What to print and in what order, for the saved model's description. */
   function printNotes(result, title, parts) {
     const d = result.data;
     const total = parts.reduce((sum, part) => sum + part.quantity, 0);
@@ -2161,14 +2160,6 @@ export default async function mount(thingport) {
     return lines.join("\n");
   }
 
-  /**
-   * The wall's parts, in Thingport, ready to be put in the saved model.
-   *
-   * The tool may have been installed without its parts -- there are hundreds, and they are gigabytes -- so the
-   * ones this wall uses are offered now rather than all of them. Saying no is an answer: the wall is a list of
-   * parts, and without the parts there is nothing to save. What didn't come says why, which is how a daily
-   * download limit at the other end reaches the person waiting for it.
-   */
   /**
    * The user's own copies of the joints a wall is made of, made if they aren't there yet.
    *
@@ -2200,8 +2191,7 @@ export default async function mount(thingport) {
 
   const saveCover = $("saveCover");
   const closeSave = () => {
-    // Closing while it draws stops it, at the next plate: the engine cannot be interrupted part way
-    // through one, so this is not quite instant.
+    // Closing while it draws stops it there and then: a render under way goes with the worker running it.
     building?.abort();
     showBuilding(false);
     saveCover.hidden = true;

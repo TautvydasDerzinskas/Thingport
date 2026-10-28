@@ -88,16 +88,6 @@ export function partName(part) {
   return part.quantity > 1 ? `${part.name} x${part.quantity}` : part.name;
 }
 
-/**
- * Every piece of a wall as geometry: the plates drawn, the joints read.
- *
- * Once each is the point. A wall of forty tiles is a handful of shapes repeated, and a 3MF holds one copy of
- * a shape however many are wanted, which is why the count lives in the name rather than in the file.
- *
- * `readJoint` is given a joint and hands back its pieces, since where a joint's bytes come from is the
- * planner's business and not this file's. `onProgress` is told before each piece and once at the end, and
- * `signal` stops it between pieces -- the engine cannot be interrupted part way through drawing one.
- */
 /** A name that sorts in print order and is safe as a file name on any machine. */
 function fileStem(order, label) {
   const clean = label
@@ -115,7 +105,10 @@ function fileStem(order, label) {
  * drawn here and written as its own 3MF; a joint is handed over exactly as it was packed, bytes and all, so
  * nothing is re-read, re-meshed or lost on the way.
  *
- * `onProgress` is awaited: drawing a plate holds the thread, so the page needs a chance to paint first.
+ * `readJoint` is given a joint and hands back its pieces, since where a joint's bytes come from is the
+ * planner's business and not this file's. `onProgress` is awaited: drawing a plate holds the thread, so the
+ * page needs a chance to paint first. `signal` stops it at once, a plate half drawn included: the engine lets
+ * go of the worker that is drawing it.
  */
 export async function buildWall(scad, script, plan, { readJoint, onProgress, signal } = {}) {
   const total = plan.plates.length + plan.joints.length;
@@ -138,21 +131,29 @@ export async function buildWall(scad, script, plan, { readJoint, onProgress, sig
   const at = plan.plates.map((plate, index) => ({ plate, index }));
   const lanes = Math.max(1, Math.min(scad.concurrency ?? 1, at.length));
   let next = 0;
+  // A plate that cannot be drawn stops the rest: Promise.all rejects on the first lane to fail, and a lane that
+  // kept taking jobs would hold an engine worker for a wall nobody is waiting for any more.
+  let failed = false;
   await Promise.all(
     Array.from({ length: lanes }, async () => {
-      for (;;) {
-        const job = at[next++];
-        if (!job) return;
-        stopIfAsked();
-        const name = partName(job.plate);
-        const mesh = await renderPlate(scad, script, job.plate, { signal });
-        files[job.index] = {
-          name,
-          data: writeBinaryStl(mesh, { name }),
-          type: "model/stl",
-        };
-        done++;
-        await report({ done, total, name: job.plate.name });
+      try {
+        for (;;) {
+          const job = at[next++];
+          if (!job || failed) return;
+          stopIfAsked();
+          const name = partName(job.plate);
+          const mesh = await renderPlate(scad, script, job.plate, { signal });
+          files[job.index] = {
+            name,
+            data: writeBinaryStl(mesh, { name }),
+            type: "model/stl",
+          };
+          done++;
+          await report({ done, total, name: job.plate.name });
+        }
+      } catch (err) {
+        failed = true;
+        throw err;
       }
     }),
   );
