@@ -48,15 +48,14 @@ SLOT_D        = 5.40;    // total depth from the edge
 SLOT_INNER_W  = 4.30;    // width at the inner end
 SLOT_FLARE    = 1.40;    // length of the 45-degree flare out of that inner end
 SLOT_CAVITY_W = 6.94;    // width once the flare is done, held to the mouth
-SLOT_MOUTH_D  = 2.20;    // how much of the depth is the narrower mouth
+SLOT_TAPER_D  = 2.40;    // where the cavity starts narrowing towards the mouth
+SLOT_MOUTH_D  = 1.60;    // where it has finished narrowing, and the mouth runs out to the edge
 SLOT_W        = 5.94;    // mouth width
 // The cavity does reach a little past the mouth, which is why a plain plate shows a closed pocket per slot
 // just below and above it, but those pockets measure under 5 mm2 and are left out here: modelling the cavity
 // as starting with the mouth is both closer on area and right on the cross-section count.
-SLOT_Z0       = 1.50;    // where the cavity starts
-SLOT_Z1       = 4.90;    // where the cavity ends
-SLOT_MOUTH_Z0 = 1.50;    // where the mouth breaks through
-SLOT_MOUTH_Z1 = 4.90;    // where it closes again
+SLOT_Z0       = 1.50;    // where it starts
+SLOT_Z1       = 4.90;    // where it ends
 
 // The relief channel that runs right round the plate just inside its rim, over the same heights as the
 // multiholes' threaded middles. Near a cell centre the octagon already reaches past it, so it is invisible
@@ -68,6 +67,9 @@ CH_Z0        = 2.05;   // where it starts
 CH_Z1        = 4.15;   // where it ends
 CH_CHAMFER_X = 0.50;   // corner chamfer, across
 CH_CHAMFER_Z = 0.60;   // corner chamfer, up
+CH_CORNER    = 6.20;   // how far short of each corner the main run stops: the plates close it off with a rib
+                       // there, where the corner cell's octagon runs out, rather than letting it cross
+CH_RIB       = 1.00;   // how wide that rib is, past which the channel opens out again
 
 // The corner chamfer. A plate's two edge walls do not meet at its corner: the outline is cut at 45 degrees,
 // leaving a diagonal wall as thick as the straight ones. Asking for that gives the leg outright, and the
@@ -105,7 +107,7 @@ module peg_section() {
 /** The sector the multihole's helical groove sweeps. Twisting it cuts the groove; it reaches the axis, which
  *  is already open, so unioning it with the octagon leaves only the groove behind. */
 module multi_groove_section() {
-  steps = ceil(MULTI_GROOVE_SPAN / 5);
+  steps = max(8, ceil(MULTI_GROOVE_SPAN / 2));
   rotate(MULTI_GROOVE_PHASE)
   polygon([[0, 0], each [for (i = [0:steps])
     let (a = i * MULTI_GROOVE_SPAN / steps) [MULTI_GROOVE_R * cos(a), MULTI_GROOVE_R * sin(a)]]]);
@@ -139,36 +141,45 @@ module peghole() {
 /** The interfit slot at one edge wall junction, cut in from the +X edge. */
 module slot() {
   e = side / 2;
-  // The cavity, back from the mouth.
   translate([0, 0, SLOT_Z0]) linear_extrude(height = SLOT_Z1 - SLOT_Z0, convexity = 6)
     polygon([
       [e - SLOT_D,               SLOT_INNER_W / 2],
       [e - SLOT_D + SLOT_FLARE,  SLOT_CAVITY_W / 2],
-      [e - SLOT_MOUTH_D,         SLOT_CAVITY_W / 2],
-      [e - SLOT_MOUTH_D,        -SLOT_CAVITY_W / 2],
+      [e - SLOT_TAPER_D,         SLOT_CAVITY_W / 2],
+      [e - SLOT_MOUTH_D,         SLOT_W / 2],
+      [e + 1,                    SLOT_W / 2],
+      [e + 1,                   -SLOT_W / 2],
+      [e - SLOT_MOUTH_D,        -SLOT_W / 2],
+      [e - SLOT_TAPER_D,        -SLOT_CAVITY_W / 2],
       [e - SLOT_D + SLOT_FLARE, -SLOT_CAVITY_W / 2],
       [e - SLOT_D,              -SLOT_INNER_W / 2],
     ]);
-  // The mouth, which opens through the edge over a shorter run of heights.
-  translate([e - SLOT_MOUTH_D, -SLOT_W / 2, SLOT_MOUTH_Z0])
-    cube([SLOT_MOUTH_D + 1, SLOT_W, SLOT_MOUTH_Z1 - SLOT_MOUTH_Z0]);
 }
 
-/** The relief channel along the +X edge, as its cross-section swept the length of the edge. */
-module channel() {
+/** The channel's cross-section, in X and Z. */
+module channel_profile() {
   x1 = side/2 - CH_INSET;
   x0 = x1 - CH_WIDTH;
-  translate([0, side/2 + 1, 0]) rotate([90, 0, 0]) linear_extrude(height = side + 2, convexity = 6)
-    polygon([
-      [x0 + CH_CHAMFER_X, CH_Z0],
-      [x0,                CH_Z0 + CH_CHAMFER_Z],
-      [x0,                CH_Z1 - CH_CHAMFER_Z],
-      [x0 + CH_CHAMFER_X, CH_Z1],
-      [x1 - CH_CHAMFER_X, CH_Z1],
-      [x1,                CH_Z1 - CH_CHAMFER_Z],
-      [x1,                CH_Z0 + CH_CHAMFER_Z],
-      [x1 - CH_CHAMFER_X, CH_Z0],
-    ]);
+  polygon([
+    [x0 + CH_CHAMFER_X, CH_Z0],
+    [x0,                CH_Z0 + CH_CHAMFER_Z],
+    [x0,                CH_Z1 - CH_CHAMFER_Z],
+    [x0 + CH_CHAMFER_X, CH_Z1],
+    [x1 - CH_CHAMFER_X, CH_Z1],
+    [x1,                CH_Z1 - CH_CHAMFER_Z],
+    [x1,                CH_Z0 + CH_CHAMFER_Z],
+    [x1 - CH_CHAMFER_X, CH_Z0],
+  ]);
+}
+
+/** The relief channel along the +X edge: its cross-section swept the length of the edge, stopping short of
+ *  each corner at a rib, and opening out again past that rib into a pocket the corner chamfer then cuts. */
+module channel() {
+  translate([0, side/2 - CH_CORNER, 0]) rotate([90, 0, 0])
+    linear_extrude(height = side - 2 * CH_CORNER, convexity = 6) channel_profile();
+  for (m = [0, 1]) mirror([0, m, 0])
+    translate([0, side/2 + 1, 0]) rotate([90, 0, 0])
+      linear_extrude(height = 1 + CH_CORNER - CH_RIB, convexity = 6) channel_profile();
 }
 
 /** The wedge taken off the +X+Y corner, so the outline is chamfered rather than square. */
