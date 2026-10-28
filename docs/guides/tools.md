@@ -245,8 +245,8 @@ const { bytes, log, seconds } = await openscad.render(source, { parameters: { TE
 
 A render runs in a worker, so the window keeps drawing while it works, and `signal` really stops one: the worker
 running it is let go there and then rather than the call being left to finish into nothing. `concurrency` says how
-many a tool may have in flight at once -- one fewer than the machine has cores, up to four -- so a planner whose
-parts don't depend on each other can draw that many at a time instead of one.
+many a tool may have in flight at once -- one fewer than the machine has cores, at least one and at most four --
+so a planner whose parts don't depend on each other can draw that many at a time instead of one.
 
 `writeThreeMf(mesh | parts, { name })` writes one mesh, or a list of `{ mesh, name }` parts, into a single 3MF,
 with `layoutRow(parts)` to stand them side by side and `meshBounds(mesh)` for one's extents. A 3MF holds one copy
