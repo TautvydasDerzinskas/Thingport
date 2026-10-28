@@ -22,6 +22,15 @@ export type Mesh = {
   palette?: string[];
   /** One entry per triangle, indexing `palette`. Present whenever `palette` is. */
   colors?: Uint16Array;
+  /**
+   * The palette entry standing in for the faces the script never coloured, where it coloured some of them.
+   *
+   * Those faces have no colour of the model's own: they are a shape, like an uncoloured model's, so they are
+   * drawn in the theme's colour or the reader's. The entry holds a plain grey for the formats that need every
+   * face to name a colour, and this says which entry it is, which the colour alone can't (a script may name
+   * that grey itself).
+   */
+  uncolored?: number;
 };
 
 /** The mesh's colours, in the form a caller that only wants to know "did the script colour this" can ask. */
@@ -76,24 +85,39 @@ export function parseOff(text: string): Mesh {
   const triangles: number[] = [];
   // Built as the faces are read: a model has a colour per `color()` call, not per face.
   const palette: string[] = [];
-  // Whether any face carried a colour at all, which is what decides if there is a palette to keep: a palette
-  // of one is a real colour where the script named it and a stand-in where it didn't, and the two can't be
-  // told apart afterwards.
+  // Whether any face carried a colour at all, which is what decides if there is a palette to keep: a model the
+  // script never coloured is a shape, and a palette of nothing but the stand-in would read as a colour it asked
+  // for.
   let painted = false;
   const indexOfColor = new Map<string, number>();
   const colors: number[] = [];
-  // A script can colour part of what it makes and leave the rest -- `cube(); color("red") sphere();` -- and
-  // the faces it left have no colour on them at all. They get an entry of their own rather than falling to
-  // index 0, which is whichever colour happened to be named first and has nothing to do with them.
-  const indexOfUncolored = () => indexOfColor.get(UNCOLORED) ?? (palette.push(UNCOLORED), palette.length - 1);
+  const indexOf = (color: string) => {
+    const known = indexOfColor.get(color);
+    if (known !== undefined) return known;
+    palette.push(color);
+    indexOfColor.set(color, palette.length - 1);
+    return palette.length - 1;
+  };
+  // A script can colour part of what it makes and leave the rest -- `cube(); color("red") sphere();` -- and the
+  // faces it left have no colour on them at all. They get an entry of their own rather than falling to index 0,
+  // which is whichever colour happened to be named first and has nothing to do with them. Kept out of
+  // indexOfColor, so a script that names this very grey itself means that colour where it named it, and the
+  // faces it left are still told apart from the ones it painted.
+  let uncolored: number | null = null;
+  const indexOfUncolored = () => {
+    if (uncolored === null) {
+      palette.push(UNCOLORED);
+      uncolored = palette.length - 1;
+    }
+    return uncolored;
+  };
   for (let face = 0; face < faceCount; face++, at++) {
     const parts = words(at);
     const corners = Number(parts[0]);
     // Anything past the corner count and its corners is that face's colour.
     const color = faceColor(parts.slice(corners + 1));
     if (color) painted = true;
-    const index = color ? (indexOfColor.get(color) ?? palette.push(color) - 1) : indexOfUncolored();
-    indexOfColor.set(color ?? UNCOLORED, index);
+    const index = color ? indexOf(color) : indexOfUncolored();
     // A polygon is fanned from its first corner. The engine merges coplanar triangles into one face, and the
     // shapes it merges them into are convex, so a fan covers them exactly. Each piece keeps the face's colour.
     for (let i = 2; i < corners; i++) {
@@ -108,6 +132,7 @@ export function parseOff(text: string): Mesh {
   if (painted) {
     mesh.palette = palette;
     mesh.colors = Uint16Array.from(colors);
+    if (uncolored !== null) mesh.uncolored = uncolored;
   }
   return mesh;
 }

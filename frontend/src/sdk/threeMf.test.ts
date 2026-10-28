@@ -98,6 +98,24 @@ describe("parseOff", () => {
     const [uncolored, red] = Array.from(mixed.colors!);
     expect(uncolored).not.toBe(red);
     expect(mixed.palette![red]).toBe("#ff0000");
+    // Named, so what is drawn in the reader's colour can be told from what the script painted: the stand-in's
+    // own grey can't say it, since a script may ask for that grey.
+    expect(mixed.uncolored).toBe(uncolored);
+  });
+
+  it("tells the stand-in for uncoloured faces from the same grey a script asked for", () => {
+    const grey = parseOff("OFF\n4 2 0\n0 0 0\n1 0 0\n0 1 0\n1 1 0\n3 0 1 2 204 204 204\n3 1 3 2\n");
+    const [painted, left] = Array.from(grey.colors!);
+    expect(grey.palette![painted]).toBe("#cccccc");
+    expect(grey.palette![left]).toBe("#cccccc");
+    // Two entries of one colour: the script's, and the one the faces it left fall to.
+    expect(painted).not.toBe(left);
+    expect(grey.uncolored).toBe(left);
+  });
+
+  it("names no stand-in for a model whose every face the script coloured", () => {
+    const all = parseOff("OFF\n4 2 0\n0 0 0\n1 0 0\n0 1 0\n1 1 0\n3 0 1 2 255 0 0\n3 1 3 2 0 255 0\n");
+    expect(all.uncolored).toBeUndefined();
   });
 
   it("reads 0-1 colour channels as well as 0-255 ones", () => {
