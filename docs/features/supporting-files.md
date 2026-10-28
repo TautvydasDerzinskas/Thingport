@@ -39,7 +39,8 @@ room. Under it, **Customize** holds the script's own parameters, grouped as the 
 `<>` button shows the script itself.
 
 What comes out can be downloaded as a 3MF or an STL, or saved back into your library as a model of its own.
-A saved one keeps a copy of the script beside it, so it can be customised again in turn.
+A saved one keeps a copy of the script beside it, so it can be customised again in turn, and a script that
+colours what it builds is saved in those colours and opens again in them.
 
 The engine runs in your browser, so generating sends nothing anywhere: the script, the values you choose and
 the result stay in the tab. Downloading writes the file straight to your disk, and saving uploads it to your
