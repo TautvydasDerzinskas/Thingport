@@ -87,6 +87,9 @@ function board(mode, accent) {
     outline: dark ? "#8891ad" : "#555b63", // the line round a plate, which has to read against the wall
     metal: dark ? "#aab3c6" : "#8d949c", // screws, snaps and clips: hardware, not plate
     metalEdge: dark ? "#1a2038" : "#3f444b",
+    // A snap is drawn as an outline with nothing filled, so unlike a screw it has only its line to be seen by.
+    // On the dark theme that line has to carry itself against a dark board, hence the orange.
+    fitting: dark ? "#ff8a1f" : "#3f444b",
   };
 }
 const MOUNT_TYPES = ["Simple Flush", "Offset Pillar", "Offset Snap", "Free Standing"];
@@ -349,7 +352,7 @@ export function snapGlyph(g, cx, cy, r, dirs, colours, outlines, cell) {
           y1: cy,
           x2: cx + dx * r * 1.55,
           y2: cy + dy * r * 1.55,
-          stroke: colours.metal,
+          stroke: colours.fitting,
           "stroke-width": r * 0.74,
           "stroke-linecap": "round",
         },
@@ -380,7 +383,7 @@ export function snapGlyph(g, cx, cy, r, dirs, colours, outlines, cell) {
         d: outline.d,
         transform: `translate(${(cx + ox).toFixed(2)} ${(cy + oy).toFixed(2)}) rotate(${turn.toFixed(1)})`,
         fill: "none",
-        stroke: colours.metalEdge,
+        stroke: colours.fitting,
         "stroke-width": 1.2,
         "stroke-linejoin": "round",
       },
@@ -721,7 +724,7 @@ export default async function mount(thingport) {
       const [outline] = jointOutlines(state.mount, plates);
       if (!outline) return "";
       const side = Math.max(outline.w, outline.h) * 1.12;
-      const art = `<path d="${outline.d}" fill="none" stroke="${PAL.metalEdge}" stroke-width="${(side / 18).toFixed(2)}" stroke-linejoin="round"/>`;
+      const art = `<path d="${outline.d}" fill="none" stroke="${PAL.fitting}" stroke-width="${(side / 18).toFixed(2)}" stroke-linejoin="round"/>`;
       return `<span>${key(art, `${-side / 2} ${-side / 2} ${side} ${side}`)}${esc(t(`legend.${label}`))}</span>`;
     };
     if (snapped) {
