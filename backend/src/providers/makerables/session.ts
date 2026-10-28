@@ -8,7 +8,7 @@ import {
 } from "../connections";
 import { createLogger } from "../../logger";
 import manifest from "./manifest.generated";
-import { MakerablesAuthError, mintMakerablesToken, type MakerablesAccount } from "./api";
+import { fetchMakerablesAccount, MakerablesAuthError, mintMakerablesToken, type MakerablesAccount } from "./api";
 
 // Per-user: the Makerables sign-in, which only the saved projects need. The site signs in with Auth0's Next.js SDK,
 // which keeps the whole session -- the access token among it -- in a `__session` cookie, split across `__session__0`,
@@ -92,15 +92,42 @@ export async function getMakerablesConnection(
   };
 }
 
+// One lookup at a time per user, however many calls ask at once.
+const resolving = new Map<string, Promise<MakerablesAccount | null>>();
+
+/** Who a stored cookie signs in, asked of Makerables and kept, so it is asked once. Null when it couldn't be asked,
+ *  which the next call tries again; a cookie Makerables turns down throws, as everything else reading one does. */
+function resolveAccount(userId: string, cookie: string): Promise<MakerablesAccount | null> {
+  const running = resolving.get(userId);
+  if (running) return running;
+  const run = (async () => {
+    const token = await makerablesToken(userId, cookie);
+    const account = await fetchMakerablesAccount(token).catch((err: unknown) => {
+      if (err instanceof MakerablesAuthError) throw err;
+      return null; // The site being unwell says nothing about whose the cookie is: asked again next time.
+    });
+    if (account) await writeConnection(userId, ID, { accountId: account.userId, accountName: account.name });
+    return account;
+  })().finally(() => resolving.delete(userId));
+  resolving.set(userId, run);
+  return run;
+}
+
 /** The Makerables account whose saved projects are theirs, with the cookie to read them by; null when they haven't
- *  connected it, or it was turned down, or no check has said who it is yet. */
+ *  connected it, or it was turned down. A cookie stored without a check -- Grab's, or one saved while Makerables
+ *  couldn't be reached -- doesn't say whose it is, and the saved projects can't be read without that, so it is
+ *  asked for here rather than leaving the connection useless until the cookie next changes. */
 export async function getUserMakerablesAccount(
   userId: string,
 ): Promise<{ account: MakerablesAccount; cookie: string } | null> {
   const connection = await readConnection<Secret>(userId, ID);
   const cookie = usableSecret<Secret>(connection)?.cookie;
-  const accountId = connection?.accountId;
-  return cookie && accountId ? { account: { userId: accountId, name: connection.accountName }, cookie } : null;
+  if (!cookie) return null;
+  if (connection?.accountId) {
+    return { account: { userId: connection.accountId, name: connection.accountName }, cookie };
+  }
+  const account = await resolveAccount(userId, cookie);
+  return account && { account, cookie };
 }
 
 // The minted token, per Thingport user: it is the same one the browser holds, good for a day, and minting it again

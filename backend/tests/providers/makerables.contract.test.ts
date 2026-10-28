@@ -10,7 +10,7 @@ import {
 import { fetchListing } from "../../src/services/collectionSyncRunner";
 import { SyncHeldError } from "../../src/providers/syncProblem";
 import { describeProviderContract, type ProviderContractSpec } from "./contract";
-import { assertThat, binary, expectStatus, json, loadFixture, stl, zip, type FetchHandler } from "./support";
+import { assertThat, binary, expectStatus, html, json, loadFixture, stl, zip, type FetchHandler } from "./support";
 
 vi.mock("node:dns/promises", () => ({
   default: {
@@ -231,6 +231,30 @@ describe("Makerables specifics", () => {
     expect(rejected.status).toBe(400);
     expect(rejected.body.code).toBe("makerables_session");
     expect((await getMakerablesConnection(ctx.userId)).state).toBe("expired");
+  });
+
+  it("leaves the sign-in alone when Makerables can't mint a token, rather than marking it expired", async () => {
+    await connect(ctx.userId);
+    ctx.install(async (call) => {
+      // The site being unwell says nothing about the cookie: an outage must not sign every user out.
+      if (call.url.pathname === "/auth/access-token") return html("<title>502 Bad Gateway</title>", 502);
+      return handlerFor("ok")(call);
+    });
+    const res = await ctx.post(spec.list!.endpoint, { url: SAVED_URL });
+    expect(res.status).not.toBe(400);
+    expect(res.body.code).not.toBe("makerables_session");
+    expect((await getMakerablesConnection(ctx.userId)).state).toBe("connected");
+  });
+
+  it("asks Makerables whose a cookie is when it was stored without a check", async () => {
+    // What Grab's send leaves behind, and what a save made while the site was unwell leaves behind.
+    await setUserMakerablesSession(ctx.userId, SESSION, null);
+    expect((await getMakerablesConnection(ctx.userId)).account).toBeNull();
+    const stub = ctx.stub("ok");
+    expectStatus(await ctx.post(spec.list!.endpoint, { url: SAVED_URL }), 200);
+    // Asked once and kept, so the connection knows whose it is from then on.
+    expect((await getMakerablesConnection(ctx.userId)).account).toEqual(ACCOUNT);
+    expect(stub.calls.filter((call) => call.url.pathname === "/api/users/me")).toHaveLength(1);
   });
 
   it("shows the saved projects in the Browse tab, and asks for a sign-in without one", async () => {

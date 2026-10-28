@@ -382,20 +382,27 @@ export async function mintMakerablesToken(cookie: string): Promise<MakerablesTok
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
   let res: Response;
+  let body: Record<string, unknown> | null;
   try {
     res = await fetch(`${SITE_ORIGIN}/auth/access-token`, {
       headers: { Accept: "application/json", "User-Agent": USER_AGENT, Cookie: cookie },
+      // Its redirect to the sign-in page is an answer, not a hop to follow: followed, it would come back as the
+      // page's HTML and read as a sign-in it won't take.
+      redirect: "manual",
       signal: controller.signal,
     });
+    // Inside the timeout: a body that never arrives would otherwise hang past it.
+    body = (await res.json().catch(() => null)) as Record<string, unknown> | null;
   } finally {
     clearTimeout(timeout);
   }
   if (res.status === 429) throw new MakerablesRateLimitError();
-  // It answers a cookie it won't take with a 401, and one it can't read at all with a redirect to its sign-in.
+  // Only these say the cookie itself is no good: it answers one it won't take with a 401, and one it can't read at
+  // all with a redirect to its sign-in. Anything else -- a 5xx, a block, an error page -- is the site being unwell,
+  // and must not be read as a refusal, or an outage would mark every user's sign-in expired.
   if (res.status === 401 || (res.status >= 300 && res.status < 400)) throw new MakerablesAuthError();
-  const body = (await res.json().catch(() => null)) as Record<string, unknown> | null;
   const token = body && asText(body.token);
-  if (!token) throw new MakerablesAuthError();
+  if (!token) throw new Error(`Makerables didn't hand over an access token (HTTP ${res.status})`);
   const expires = asCount(body!.expires_at);
   return {
     token,
