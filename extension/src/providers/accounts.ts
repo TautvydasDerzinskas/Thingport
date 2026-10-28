@@ -44,6 +44,8 @@ export const CAPTURE: Partial<Record<ProviderId, (id: ProviderId) => void>> = {
   toymakr3d: (id) => {
     if (toymakr3dSignedIn()) syncSession(id);
   },
+  // Its sign-in reads the saved projects; only a signed-in visitor has the cookie at all, so each new one is sent on.
+  makerables: syncSession,
   printables: () => void syncPrintables(),
   myminifactory: captureMyminifactoryAccount,
   thingiverse: captureThingiverseAccount,

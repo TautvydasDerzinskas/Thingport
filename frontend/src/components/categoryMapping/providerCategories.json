@@ -9087,5 +9087,192 @@
       "name": "Power Robots",
       "parent": null
     }
+  ],
+  "makerables": [
+    {
+      "id": "1",
+      "name": "Workshop Tools",
+      "parent": null
+    },
+    {
+      "id": "6",
+      "name": "Machine Upgrades",
+      "parent": "1"
+    },
+    {
+      "id": "7",
+      "name": "Clamps & Jigs",
+      "parent": "1"
+    },
+    {
+      "id": "8",
+      "name": "Tool Storage",
+      "parent": "1"
+    },
+    {
+      "id": "9",
+      "name": "Dust & Safety",
+      "parent": "1"
+    },
+    {
+      "id": "10",
+      "name": "Workshop Storage",
+      "parent": "1"
+    },
+    {
+      "id": "2",
+      "name": "Maker Projects",
+      "parent": null
+    },
+    {
+      "id": "11",
+      "name": "Electronics",
+      "parent": "2"
+    },
+    {
+      "id": "12",
+      "name": "Robotics",
+      "parent": "2"
+    },
+    {
+      "id": "13",
+      "name": "RC Models",
+      "parent": "2"
+    },
+    {
+      "id": "14",
+      "name": "Auto Mods",
+      "parent": "2"
+    },
+    {
+      "id": "15",
+      "name": "Photo Gear",
+      "parent": "2"
+    },
+    {
+      "id": "16",
+      "name": "Mechanical Parts",
+      "parent": "2"
+    },
+    {
+      "id": "17",
+      "name": "Outdoor Gear",
+      "parent": "2"
+    },
+    {
+      "id": "18",
+      "name": "Other Projects",
+      "parent": "2"
+    },
+    {
+      "id": "3",
+      "name": "Home & Living",
+      "parent": null
+    },
+    {
+      "id": "19",
+      "name": "Home Decor",
+      "parent": "3"
+    },
+    {
+      "id": "20",
+      "name": "Organization",
+      "parent": "3"
+    },
+    {
+      "id": "21",
+      "name": "Kitchen Tools",
+      "parent": "3"
+    },
+    {
+      "id": "22",
+      "name": "Furniture Parts",
+      "parent": "3"
+    },
+    {
+      "id": "23",
+      "name": "Desk Setup",
+      "parent": "3"
+    },
+    {
+      "id": "24",
+      "name": "Everyday Tools",
+      "parent": "3"
+    },
+    {
+      "id": "25",
+      "name": "Signs & Labels",
+      "parent": "3"
+    },
+    {
+      "id": "26",
+      "name": "Molds & Forms",
+      "parent": "3"
+    },
+    {
+      "id": "4",
+      "name": "Art & Gifts",
+      "parent": null
+    },
+    {
+      "id": "27",
+      "name": "Relief Art",
+      "parent": "4"
+    },
+    {
+      "id": "28",
+      "name": "Sculptures",
+      "parent": "4"
+    },
+    {
+      "id": "29",
+      "name": "Jewelry",
+      "parent": "4"
+    },
+    {
+      "id": "30",
+      "name": "Awards & Badges",
+      "parent": "4"
+    },
+    {
+      "id": "31",
+      "name": "Personalized Gifts",
+      "parent": "4"
+    },
+    {
+      "id": "32",
+      "name": "Props & Decor",
+      "parent": "4"
+    },
+    {
+      "id": "5",
+      "name": "Models & Toys",
+      "parent": null
+    },
+    {
+      "id": "33",
+      "name": "Board Game",
+      "parent": "5"
+    },
+    {
+      "id": "34",
+      "name": "Toys & Puzzles",
+      "parent": "5"
+    },
+    {
+      "id": "35",
+      "name": "Miniatures",
+      "parent": "5"
+    },
+    {
+      "id": "36",
+      "name": "Vehicle Models",
+      "parent": "5"
+    },
+    {
+      "id": "37",
+      "name": "STEM Models",
+      "parent": "5"
+    }
   ]
 }

@@ -1,0 +1,54 @@
+{
+  "code": 200,
+  "success": true,
+  "message": "Success",
+  "data": {
+    "data": [
+      {
+        "id": "40afbaa7-0bf2-48db-b15d-6d5f05b82616",
+        "slug": "wild-spirit-3d-relief",
+        "name": "Wild Spirit - 3D Relief",
+        "cover_web": "https://cdn.makerables.com/cdn-cgi/image/format=auto/projects/gallery/MainPic-mqqlafzs.png?f=auto",
+        "cover_mobile": null,
+        "is_visible": true,
+        "likes_count": 27,
+        "downloads_count": 982,
+        "downloads_total_count": 2478,
+        "created_at": "2026-10-28T19:05:55.623Z",
+        "updated_at": "2026-09-20T21:52:52.820Z",
+        "published_at": "2026-06-23T12:02:33.456Z",
+        "favorited_at": "2026-10-28T19:05:55.623Z",
+        "author_id": "U2578095104",
+        "author_nickname": "Makerables",
+        "author_portrait": "https://cdn.makerables.com/cdn-cgi/image/format=auto/u/user-mo8dqow5.jpg?f=auto",
+        "author_is_deleted": false
+      },
+      {
+        "id": "9f948164-3e14-4b73-9c1d-2c8e94926937",
+        "slug": "top-clamp-3d-feature",
+        "name": "Top Clamp - 3D Feature",
+        "cover_web": "https://cdn.makerables.com/cdn-cgi/image/format=auto/projects/gallery/MainPic-mqqlzg9n.png?f=auto",
+        "cover_mobile": null,
+        "is_visible": true,
+        "likes_count": 58,
+        "downloads_count": 1587,
+        "downloads_total_count": 4581,
+        "created_at": "2026-10-28T19:04:53.910Z",
+        "updated_at": "2026-10-04T01:13:53.052Z",
+        "published_at": "2026-07-16T03:57:07.032Z",
+        "favorited_at": "2026-10-28T19:04:53.910Z",
+        "author_id": "U2578095104",
+        "author_nickname": "Makerables",
+        "author_portrait": "https://cdn.makerables.com/cdn-cgi/image/format=auto/u/user-mo8dqow5.jpg?f=auto",
+        "author_is_deleted": false
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "pageSize": 100,
+      "total": 2,
+      "totalPages": 1
+    }
+  },
+  "timestamp": 1793216374840
+}

@@ -16,6 +16,7 @@ import cults3dCategories from "./cults3d/categories.json";
 import eufymakeCategories from "./eufymake/categories.json";
 import pinshapeCategories from "./pinshape/categories.json";
 import toymakr3dCategories from "./toymakr3d/categories.json";
+import makerablesCategories from "./makerables/categories.json";
 import owlcadCategories from "./owlcad/categories.json";
 import {
   crealitycloudImport,
@@ -39,6 +40,13 @@ import { nexprintImport, nexprintTrending, nexprintLists, nexprintDetails } from
 import { owlcadImport, owlcadDetails } from "./owlcad";
 import { pinshapeImport, pinshapeTrending, pinshapeLists, pinshapeDetails } from "./pinshape";
 import { toymakr3dImport, toymakr3dTrending, toymakr3dLists, toymakr3dDetails } from "./toymakr3d";
+import {
+  makerablesImport,
+  makerablesTrending,
+  makerablesLists,
+  makerablesDetails,
+  makerablesKeptId,
+} from "./makerables";
 import { printablesImport, printablesTrending, printablesLists, printablesDetails } from "./printables";
 import { snapmakerImport, snapmakerTrending, snapmakerLists, snapmakerDetails } from "./snapmaker";
 import { thangsImport, thangsTrending, thangsLists, thangsDetails } from "./thangs";
@@ -58,6 +66,7 @@ import { myminifactoryKeyConnection, myminifactorySessionConnection } from "./my
 import { nexprintConnection } from "./nexprint/connection";
 import { pinshapeConnection } from "./pinshape/connection";
 import { toymakr3dConnection } from "./toymakr3d/connection";
+import { makerablesConnection } from "./makerables/connection";
 import { snapmakerConnection } from "./snapmaker/connection";
 import { thangsConnection } from "./thangs/connection";
 import { thingiverseConnection } from "./thingiverse/connection";
@@ -74,6 +83,7 @@ import { cults3dSync } from "./cults3d/sync";
 import { eufymakeSync } from "./eufymake/sync";
 import { pinshapeSync } from "./pinshape/sync";
 import { toymakr3dSync } from "./toymakr3d/sync";
+import { makerablesSync } from "./makerables/sync";
 import { makerworldBrowse } from "./makerworld/browse";
 import { printablesBrowse } from "./printables/browse";
 import { thingiverseBrowse } from "./thingiverse/browse";
@@ -87,6 +97,7 @@ import { cults3dBrowse } from "./cults3d/browse";
 import { eufymakeBrowse } from "./eufymake/browse";
 import { pinshapeBrowse } from "./pinshape/browse";
 import { toymakr3dBrowse } from "./toymakr3d/browse";
+import { makerablesBrowse } from "./makerables/browse";
 import type { AuthSlot } from "./index.generated";
 import type {
   ConnectionSlot,
@@ -390,6 +401,20 @@ export const PROVIDERS = {
     browse: toymakr3dBrowse,
     trending: toymakr3dTrending,
     details: toymakr3dDetails,
+  },
+  makerables: {
+    starterCategories: makerablesCategories,
+    connection: { default: makerablesConnection },
+    // Only the saved projects are read with the sign-in; its projects and their files need none.
+    authStopText: grabSignInStop("makerables"),
+    sourcedImport: makerablesImport,
+    lists: makerablesLists,
+    sync: makerablesSync,
+    browse: makerablesBrowse,
+    trending: makerablesTrending,
+    details: makerablesDetails,
+    // A link may name a project by its id, where it is kept under the slug its page gives as canonical.
+    keptId: makerablesKeptId,
   },
   owlcad: {
     starterCategories: owlcadCategories,

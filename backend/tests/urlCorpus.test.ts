@@ -16,6 +16,7 @@ import { parseSnapmakerListUrl } from "../src/providers/snapmaker/api";
 import { isEufymakeLikesUrl } from "../src/providers/eufymake/api";
 import { parsePinshapeLikesUrl } from "../src/providers/pinshape/api";
 import { isToymakr3dLikesUrl } from "../src/providers/toymakr3d/api";
+import { parseMakerablesSavedUrl } from "../src/providers/makerables/api";
 
 type Expected = {
   provider: string | null;
@@ -47,6 +48,7 @@ function profileOf(provider: string, url: string): string | null {
 
 function listKindOf(provider: string, url: string): Expected["listKind"] {
   if (provider === "snapmaker") return parseSnapmakerListUrl(url)?.list ?? "collection";
+  if (provider === "makerables" && parseMakerablesSavedUrl(url)) return "bookmarks";
   if (
     (provider === "thingiverse" && parseThingiverseLikesUrl(url)) ||
     (provider === "printables" && parsePrintablesLikesUrl(url)) ||
@@ -64,8 +66,8 @@ function listKindOf(provider: string, url: string): Expected["listKind"] {
 
 describe("provider URL corpus (backend)", () => {
   it("contains every provider and both positive and negative cases", () => {
-    expect(cases).toHaveLength(85);
-    expect(new Set(cases.map((item) => item.expect.provider).filter(Boolean)).size).toBe(14);
+    expect(cases).toHaveLength(93);
+    expect(new Set(cases.map((item) => item.expect.provider).filter(Boolean)).size).toBe(15);
   });
 
   it.each(cases)("$url", ({ url, expect: common, divergent }) => {

@@ -1,0 +1,5 @@
+{
+  "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJtYWtlci1vbmUifQ.c2lnbmF0dXJl",
+  "scope": "openid profile email offline_access",
+  "expires_at": 2000000000
+}

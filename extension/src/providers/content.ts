@@ -96,6 +96,9 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
   pinshape: {},
   // Its only list, the liked products, is the user's own page (/like-product), which names no one else.
   toymakr3d: {},
+  // Its only list, the saved projects, is a tab of the user's own profile, which the instance matches to its
+  // sign-in: a link to anyone else's is turned away there.
+  makerables: {},
   // Its own pages need nothing special: a CAD project's export runs in a tab Grab opens on the editor
   // (owlcad/background.ts), not on the page the panel is shown on.
   owlcad: {},

@@ -1,0 +1,20 @@
+{
+  "code": 200,
+  "success": true,
+  "message": "Success",
+  "data": [
+    {
+      "id": "1275bc29-3337-43e2-b6b3-840e82f2dd65",
+      "version_id": "97ce096a-daed-43cf-8c20-249546a97773",
+      "name": "tuoluo1",
+      "description": null,
+      "file_path": "https://cdn.makerables.com/cdn-cgi/image/format=auto/projects/original-files/tuoluo1-mvsbm8tv.jpg?f=auto",
+      "file_size": 2845550,
+      "file_type": ".jpg",
+      "thumbnail": null,
+      "created_at": "2026-10-28T16:37:31.239Z",
+      "updated_at": "2026-10-28T16:37:31.239Z"
+    }
+  ],
+  "timestamp": 1793216489922
+}

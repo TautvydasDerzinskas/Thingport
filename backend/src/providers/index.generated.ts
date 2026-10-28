@@ -31,6 +31,8 @@ import owlcad from "./owlcad/manifest.generated";
 import { urls as owlcadUrls } from "./owlcad/urls.generated";
 import toymakr3d from "./toymakr3d/manifest.generated";
 import { urls as toymakr3dUrls } from "./toymakr3d/urls.generated";
+import makerables from "./makerables/manifest.generated";
+import { urls as makerablesUrls } from "./makerables/urls.generated";
 
 export type {
   AuthField,
@@ -64,6 +66,7 @@ export const PROVIDER_IDS = [
   "pinshape",
   "owlcad",
   "toymakr3d",
+  "makerables",
 ] as const;
 export type ProviderId = (typeof PROVIDER_IDS)[number];
 
@@ -82,6 +85,7 @@ export const MANIFESTS = {
   pinshape,
   owlcad,
   toymakr3d,
+  makerables,
 } as const;
 
 /** The providers with a list for the dashboard's trending panel, in the panel's order. */
@@ -99,6 +103,7 @@ export const TRENDING_PROVIDER_IDS = [
   "eufymake",
   "pinshape",
   "toymakr3d",
+  "makerables",
 ] as const;
 export type TrendingProviderId = (typeof TRENDING_PROVIDER_IDS)[number];
 
@@ -117,6 +122,7 @@ export const URLS: { readonly [K in ProviderId]: ProviderUrls } = {
   pinshape: pinshapeUrls,
   owlcad: owlcadUrls,
   toymakr3d: toymakr3dUrls,
+  makerables: makerablesUrls,
 };
 
 export function isProviderId(value: unknown): value is ProviderId {
