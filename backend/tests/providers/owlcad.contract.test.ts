@@ -216,10 +216,10 @@ describe("OwlCAD specifics", () => {
     ctx.stub("ok");
     await queueOwlcadExport(ctx.userId, PROJECT_URL);
     const [waiting] = await listOwlcadExports(ctx.userId);
-    // The file travels in the JSON itself, so the global parser's 100 kB would turn away every real export: a 3MF
-    // of the 250k triangles OwlCAD's bridge allows is far past it. The same export stored rather than deflated is
-    // past it too, and still the 3MF the import reads -- so only a body that reached the route can answer with a
-    // model, where a parser's 413 or a route that never ran could not.
+    // The file travels in the JSON itself, and an export outgrows the global parser's 100 kB as soon as the model
+    // has any detail to it: a 3MF of the 250k triangles OwlCAD's bridge allows is far past it. This fixture is a
+    // small one, so it goes stored rather than deflated -- past the limit, and still the 3MF the import reads, so
+    // only a body that reached the route can answer with a model, where a 413 or a route that never ran could not.
     const stored = await JSZip.loadAsync(grabExport());
     const file = (await stored.generateAsync({ type: "nodebuffer", compression: "STORE" })).toString("base64");
     expect(file.length).toBeGreaterThan(100 * 1024);
