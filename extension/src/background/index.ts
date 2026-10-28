@@ -21,6 +21,7 @@ import { clearRecentlyViewed, getRecentlyViewed, recordViewedModel } from "./rec
 import { syncSession } from "./sessionSync";
 import { onPairingTabClosed, onPairingTabUrl, startPairing } from "./pairing";
 import { openSetup } from "./setup";
+import { forgetProviderTab, getTabProvider, noteProviderTab } from "./providerTab";
 import { setTabIconState } from "./tabIcon";
 import { injectIntoOpenTabs, OPTIONAL_SITES, siteEnabled, syncSiteScripts } from "../shared/optionalSites";
 
@@ -41,6 +42,8 @@ listen<BackgroundMessages>({
   SYNC_PROVIDER_SESSION: ({ provider }) => syncSession(provider),
   OPEN_SETUP: (_payload, sender) => openSetup(sender.tab?.id),
   SET_TAB_ICON_STATE: ({ active }, sender) => setTabIconState(senderTabId(sender), active),
+  NOTE_PROVIDER_TAB: ({ provider }, sender) => noteProviderTab(provider, senderTabId(sender)),
+  GET_TAB_PROVIDER: ({ tabId }) => getTabProvider(tabId),
   API_CALL: ({ method, path, body }) => apiCall(method, path, body),
   IMPORT_SINGLE: (payload) => importSingle(payload),
   QUEUE_IMPORT: (payload) => queueImport(payload),
@@ -87,4 +90,5 @@ chrome.alarms.onAlarm.addListener((alarm) => onProviderAlarm(alarm.name));
 chrome.tabs.onRemoved.addListener((tabId) => {
   onProviderTabClosed(tabId);
   void onPairingTabClosed(tabId);
+  void forgetProviderTab(tabId);
 });

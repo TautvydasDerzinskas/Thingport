@@ -169,6 +169,10 @@ export type BackgroundMessages = {
   PUSH_PRINTABLES: { payload: PrintablesPush; result: null };
   OPEN_SETUP: { payload: void; result: "popup" | "tab" };
   SET_TAB_ICON_STATE: { payload: { active: boolean }; result: null };
+  /** From a provider's page: this tab is on that provider's site (see background/providerTab.ts). */
+  NOTE_PROVIDER_TAB: { payload: { provider: Provider }; result: null };
+  /** The provider whose site a tab is on, as its page reported; the popup asks for the active tab's. */
+  GET_TAB_PROVIDER: { payload: { tabId: number }; result: Provider | null };
   API_CALL: { payload: ApiCallPayload; result: unknown };
   IMPORT_SINGLE: { payload: ImportSinglePayload; result: Print | null };
   QUEUE_IMPORT: { payload: QueueImportPayload; result: QueueImportResult };
