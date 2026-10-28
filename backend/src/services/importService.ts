@@ -896,9 +896,54 @@ export async function downloadPlainFileToTemp(url: string, suggestedName: string
   }
 }
 
+/** How far into a zip holding a zip to keep looking. Sites that build the download archive themselves wrap whatever the
+ *  designer uploaded, which is often an archive of their own ("Designer/model/model-v1.1.zip"), and a plate can't be
+ *  made of a zip. A couple of levels covers that. */
+const NESTED_ZIP_DEPTH = 3;
+/** How many nested archives one download may be opened into, over the whole descent. Each read is capped at
+ *  IMPORT_MAX_BYTES on its own, so this bounds the work an archive of nothing but archives can ask for. */
+const NESTED_ZIP_BUDGET = 32;
+
+/** The model files in the zips a zip holds, for an archive that wraps the model's own instead of its files. Each nested
+ *  zip is unpacked on its own, so files named alike within it are still told apart by their folder. */
+async function modelFilesFromNestedZips(
+  zipPath: string,
+  depth: number,
+  budget: { left: number },
+): Promise<NewPlateInput[]> {
+  const nested = (await listZipEntries(zipPath)).filter(
+    (entry) => !entry.isDirectory && path.extname(entry.name).toLowerCase() === ".zip",
+  );
+  const inputs: NewPlateInput[] = [];
+  try {
+    for (const entry of nested) {
+      if (budget.left <= 0) break;
+      budget.left -= 1;
+      const buffer = await readZipEntry(zipPath, entry.name, IMPORT_MAX_BYTES);
+      if (!buffer) continue;
+      const tempZipPath = path.join(os.tmpdir(), `thingport-zip-${crypto.randomBytes(8).toString("hex")}.zip`);
+      await fs.writeFile(tempZipPath, buffer);
+      try {
+        inputs.push(...(await modelFilesFromZip(tempZipPath, depth + 1, budget)));
+      } finally {
+        await fs.rm(tempZipPath, { force: true }).catch(() => undefined);
+      }
+    }
+  } catch (err) {
+    await Promise.all(inputs.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
+    throw err;
+  }
+  return inputs;
+}
+
 /** The model files in a downloaded zip, each as its own plate; the zip itself is left for the caller. Plates have no
- *  folders, so files named alike in different folders are named after their folder too: "2x2 - Top.stl". */
-async function modelFilesFromZip(zipPath: string): Promise<NewPlateInput[]> {
+ *  folders, so files named alike in different folders are named after their folder too: "2x2 - Top.stl". An archive
+ *  with no model files of its own is opened a level deeper, where the ones wrapping another zip keep them. */
+async function modelFilesFromZip(
+  zipPath: string,
+  depth = 0,
+  budget = { left: NESTED_ZIP_BUDGET },
+): Promise<NewPlateInput[]> {
   const inputs: NewPlateInput[] = [];
   try {
     const entries = (await listZipEntries(zipPath))
@@ -924,6 +969,8 @@ async function modelFilesFromZip(zipPath: string): Promise<NewPlateInput[]> {
     await Promise.all(inputs.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
     throw err;
   }
+  // Nothing a plate takes here, so the model's files are in an archive this one only wraps.
+  if (!inputs.length && depth < NESTED_ZIP_DEPTH) return modelFilesFromNestedZips(zipPath, depth, budget);
   return inputs;
 }
 

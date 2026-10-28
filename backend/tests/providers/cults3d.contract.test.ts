@@ -54,6 +54,7 @@ const SIGNED_ZIP = `https://download.cults3d.com/uploads/creation_zip/file/26323
  *  - "order-missing": the free order is taken, and still not in the orders;
  *  - "no-form": the model's page has no Download form;
  *  - "file-blocked": the signed link answers 429;
+ *  - "nested-zip": the archive's only entry is the designer's own zip, which holds the model files;
  *  - "missing": no such model. */
 function handlerFor(scenario: string): FetchHandler {
   let ordered = scenario === "owned" || scenario === "paid-owned";
@@ -61,6 +62,18 @@ function handlerFor(scenario: string): FetchHandler {
   return async ({ url, method, body, headers }) => {
     if (url.hostname === "download.cults3d.com") {
       if (scenario === "file-blocked") return new Response("slow down", { status: 429 });
+      // What the site builds around an archive the designer uploaded: a zip whose only entry is their own zip.
+      if (scenario === "nested-zip") {
+        return binary(
+          await zip("cults3d-nested", {
+            [`3rdesignworks/${SLUG}/${SLUG}-v1.1.zip`]: await zip("cults3d-inner", {
+              "H501/Top.stl": stl("h501-top"),
+              "H501/base.stl": stl("h501-base"),
+              "H502/Top.stl": stl("h502-top"),
+            }),
+          }),
+        );
+      }
       return binary(
         await zip("cults3d-model", { [`${SLUG}.stl`]: stl("benchy"), [`${SLUG}-base.stl`]: stl("benchy-base") }),
       );
@@ -179,6 +192,21 @@ describe("Cults3D specifics", () => {
       ]);
       // The orders were read twice: before the order (to see it isn't there) and after it (for the download page).
       expect(graphqlQueries(stub.calls).filter((query) => query.includes("ordersBatch"))).toHaveLength(2);
+    });
+
+    // Cults3D wraps whatever the designer uploaded, so an archive of theirs arrives as a zip inside the zip; a plate
+    // can't be made of a zip, and stopping at the outer one left the model with nothing to import.
+    it("imports the model files out of a zip the archive only wraps", async () => {
+      await spec.connect(ctx.userId);
+      ctx.stub("nested-zip");
+      const res = await ctx.importUrl();
+      expectStatus(res, 200);
+      // Named apart by their folder where the inner zip has them twice, as a flat archive's are.
+      expect(res.body.plates.map((plate: { filename: string }) => plate.filename).toSorted()).toEqual([
+        "H501 - Top.stl",
+        "H502 - Top.stl",
+        "base.stl",
+      ]);
     });
 
     it("downloads a model already in the user's orders without ordering it", async () => {
