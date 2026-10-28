@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import JSZip from "jszip";
 import { describe, expect, it, vi } from "vitest";
 import { prisma } from "../../src/db";
 import { listOwlcadExports, queueOwlcadExport } from "../../src/providers/owlcad/grabExports";
@@ -31,6 +32,8 @@ const PROJECT_URL = `https://owlcad.com/gallery/${PROJECT_ID}`;
 const PART_PATH = `parts/${PART_ID}/model.glb`;
 
 const partGlb = () => fs.readFileSync(path.join(__dirname, "../fixtures/providers/owlcad/part-model.glb"));
+/** A real 3MF of its editor's, exported from the project above through the page's bridge. */
+const grabExport = () => fs.readFileSync(path.join(__dirname, "../fixtures/providers/owlcad/grab-export.3mf"));
 
 /** What Firestore really answers for a document that isn't there: its rules have nothing to grant a read on, so a
  *  model that is gone and one we may not read are the same 403. */
@@ -166,7 +169,7 @@ describe("OwlCAD specifics", () => {
     // Grab is told where to export it: the model open in OwlCAD's editor.
     expect(listed[0].editor_url).toBe(`https://owlcad.com/app?shared=${PROJECT_ID}`);
 
-    const threeMf = fs.readFileSync(path.join(__dirname, "../fixtures/providers/owlcad/grab-export.3mf"));
+    const threeMf = grabExport();
     const res = await ctx.post(`/api/import/owlcad/waiting/${listed[0].id}`, {
       file: threeMf.toString("base64"),
     });
@@ -190,7 +193,7 @@ describe("OwlCAD specifics", () => {
   it("clears what waited for a model Grab exported on the page itself", async () => {
     ctx.stub("ok");
     await queueOwlcadExport(ctx.userId, PROJECT_URL);
-    const threeMf = fs.readFileSync(path.join(__dirname, "../fixtures/providers/owlcad/grab-export.3mf"));
+    const threeMf = grabExport();
     const collection = await prisma.collection.create({
       data: { userId: ctx.userId, name: "Bins", nameNormalized: "bins" },
     });
@@ -214,10 +217,17 @@ describe("OwlCAD specifics", () => {
     await queueOwlcadExport(ctx.userId, PROJECT_URL);
     const [waiting] = await listOwlcadExports(ctx.userId);
     // The file travels in the JSON itself, so the global parser's 100 kB would turn away every real export: a 3MF
-    // of the 250k triangles OwlCAD's bridge allows is far past it. What the bytes then turn out to be is the
-    // import's business -- the body reaching the route at all is this one's.
-    const res = await ctx.post(`/api/import/owlcad/waiting/${waiting.id}`, { file: "A".repeat(400_000) });
-    expect(res.status).not.toBe(413);
+    // of the 250k triangles OwlCAD's bridge allows is far past it. The same export stored rather than deflated is
+    // past it too, and still the 3MF the import reads -- so only a body that reached the route can answer with a
+    // model, where a parser's 413 or a route that never ran could not.
+    const stored = await JSZip.loadAsync(grabExport());
+    const file = (await stored.generateAsync({ type: "nodebuffer", compression: "STORE" })).toString("base64");
+    expect(file.length).toBeGreaterThan(100 * 1024);
+    const res = await ctx.post(`/api/import/owlcad/waiting/${waiting.id}`, { file });
+    expectStatus(res, 200);
+    const [print] = await ctx.prints();
+    expect(print.sourceExternalId).toBe(PROJECT_ID);
+    expect(print.name).toBe("Gridfinity 2×3 bin");
   });
 
   it("keeps its waiting exports apart from MakerOnline's", async () => {
