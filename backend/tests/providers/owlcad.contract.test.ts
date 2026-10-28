@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { prisma } from "../../src/db";
 import { listOwlcadExports, queueOwlcadExport } from "../../src/providers/owlcad/grabExports";
+import { owlcadNeedsGrab } from "../../src/providers/owlcad/index";
 import { describeProviderContract, type ProviderContractSpec } from "./contract";
 import { assertThat, binary, expectStatus, json, loadFixture, ONE_PIXEL_PNG, type FetchHandler } from "./support";
 
@@ -58,6 +59,17 @@ function handlerFor(scenario: string): FetchHandler {
         typeof body === "string" && body.includes("resolveProject"),
         "a CAD project's document is asked for by its own action",
       );
+      // A document that is nothing but imported meshes, which would be ours to build -- except that resolveProject
+      // gave no link for the one mesh it names, so there is nothing to fetch.
+      if (scenario === "meshes-without-links") {
+        return json({
+          result: {
+            name: "An imported mesh with no link",
+            document: { nodes: [{ kind: "mesh", id: "n1", meshRef: "m1" }] },
+            meshUrls: {},
+          },
+        });
+      }
       return json(loadFixture("owlcad", "resolve-project"));
     }
     return undefined;
@@ -163,6 +175,49 @@ describe("OwlCAD specifics", () => {
     expect(print.sourceExternalId).toBe(PROJECT_ID);
     expect(print.name).toBe("Gridfinity 2×3 bin");
     expect(await prisma.grabImport.findMany({ where: { userId: ctx.userId, provider: "owlcad" } })).toHaveLength(0);
+  });
+
+  it("sends a project whose meshes have no links to Grab, as the import does", async () => {
+    ctx.stub("meshes-without-links");
+    // The plan Grab asks for and the import itself have to answer alike. Saying no export was needed here would
+    // leave the import refusing the model with 409 and the export never running at all.
+    expect((await owlcadNeedsGrab(PROJECT_ID)).needsGrab).toBe(true);
+    const res = await ctx.importUrl(PROJECT_URL);
+    expectStatus(res, 409);
+    expect(res.body.code).toBe("owlcad_needs_grab");
+  });
+
+  it("clears what waited for a model Grab exported on the page itself", async () => {
+    ctx.stub("ok");
+    await queueOwlcadExport(ctx.userId, PROJECT_URL);
+    const threeMf = fs.readFileSync(path.join(__dirname, "../fixtures/providers/owlcad/grab-export.3mf"));
+    const collection = await prisma.collection.create({
+      data: { userId: ctx.userId, name: "Bins", nameNormalized: "bins" },
+    });
+    const res = await ctx.post("/api/import/owlcad/export", {
+      url: PROJECT_URL,
+      tags: [],
+      collection_id: collection.id,
+      file: threeMf.toString("base64"),
+    });
+    expectStatus(res, 200);
+    // Nothing is left waiting: Grab's next visit would otherwise export this model a second time, for an import
+    // that could only answer `already_imported`.
+    expect(await prisma.grabImport.findMany({ where: { userId: ctx.userId, provider: "owlcad" } })).toHaveLength(0);
+    // And it is filed where the import asked for it, as a waiting export's own collection is.
+    const items = await prisma.collectionItem.findMany({ where: { collectionId: collection.id } });
+    expect(items.map((item) => item.printId)).toEqual([res.body.id]);
+  });
+
+  it("takes an export larger than the global body limit", async () => {
+    ctx.stub("ok");
+    await queueOwlcadExport(ctx.userId, PROJECT_URL);
+    const [waiting] = await listOwlcadExports(ctx.userId);
+    // The file travels in the JSON itself, so the global parser's 100 kB would turn away every real export: a 3MF
+    // of the 250k triangles OwlCAD's bridge allows is far past it. What the bytes then turn out to be is the
+    // import's business -- the body reaching the route at all is this one's.
+    const res = await ctx.post(`/api/import/owlcad/waiting/${waiting.id}`, { file: "A".repeat(400_000) });
+    expect(res.status).not.toBe(413);
   });
 
   it("keeps its waiting exports apart from MakerOnline's", async () => {

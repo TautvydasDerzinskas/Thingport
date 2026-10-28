@@ -90,13 +90,18 @@ export type OwlcadModel = ResolvedModel & {
   kind: OwlcadKind;
 };
 
-/** Plain fetch: none of its hosts is behind Cloudflare, and none of the calls carries a credential. */
-async function call(url: string, init?: RequestInit): Promise<Response> {
+/** Plain fetch: none of its hosts is behind Cloudflare, and none of the calls carries a credential.
+ *
+ *  `read` runs while the timeout still stands, so it covers the body as well as the headers -- a download that
+ *  stalls halfway is cut off rather than held open for as long as the other end likes. */
+async function call<T>(url: string, init: RequestInit | undefined, read: (res: Response) => Promise<T>): Promise<T> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    return await fetch(url, { ...init, redirect: "follow", signal: controller.signal });
+    return await read(await fetch(url, { ...init, redirect: "follow", signal: controller.signal }));
   } catch (err) {
+    // What `read` made of the answer is the answer; only reaching OwlCAD at all failed here.
+    if (err instanceof OwlcadError || err instanceof HttpError) throw err;
     throw new OwlcadError(`Could not reach ${NAME}: ${err instanceof Error ? err.message : String(err)}`);
   } finally {
     clearTimeout(timeout);
@@ -104,10 +109,11 @@ async function call(url: string, init?: RequestInit): Promise<Response> {
 }
 
 async function getJson(url: string, init?: RequestInit): Promise<unknown> {
-  const res = await call(url, init);
-  if (res.status === 404) return null;
-  if (!res.ok) throw new OwlcadError(`${NAME} answered ${res.status}`);
-  return res.json().catch(() => null);
+  return call(url, init, async (res) => {
+    if (res.status === 404) return null;
+    if (!res.ok) throw new OwlcadError(`${NAME} answered ${res.status}`);
+    return res.json().catch(() => null);
+  });
 }
 
 /** One gallery item by its id, or null when it isn't there or isn't shown.
@@ -116,10 +122,11 @@ async function getJson(url: string, init?: RequestInit): Promise<unknown> {
  *  rules have nothing to grant a read on. So a missing model and one we may not read are the same answer, and for a
  *  gallery anyone can read it means the model is gone. */
 export async function fetchOwlcadItem(id: string): Promise<OwlcadGalleryItem | null> {
-  const res = await call(`${FIRESTORE}/${GALLERY}/${encodeURIComponent(id)}`);
-  if (res.status === 403 || res.status === 404) return null;
-  if (!res.ok) throw new OwlcadError(`${NAME} answered ${res.status}`);
-  const fields = documentFields(await res.json().catch(() => null));
+  const fields = await call(`${FIRESTORE}/${GALLERY}/${encodeURIComponent(id)}`, undefined, async (res) => {
+    if (res.status === 403 || res.status === 404) return null;
+    if (!res.ok) throw new OwlcadError(`${NAME} answered ${res.status}`);
+    return documentFields(await res.json().catch(() => null));
+  });
   if (!fields) return null;
   const parsed = galleryItemSchema.safeParse(fields);
   if (!parsed.success) return null;
@@ -191,13 +198,34 @@ export async function resolveOwlcadModel(id: string): Promise<OwlcadModel | null
 }
 
 async function getBytes(url: string, what: string): Promise<Uint8Array> {
-  const res = await call(url);
-  if (!res.ok) throw new OwlcadError(`${NAME} answered ${res.status} for ${what}`);
-  const length = Number(res.headers.get("content-length") ?? 0);
-  if (length > MAX_FILE_BYTES) throw new HttpError(413, `This ${NAME} model's file is too large to import.`);
-  const bytes = new Uint8Array(await res.arrayBuffer());
-  if (bytes.byteLength > MAX_FILE_BYTES) throw new HttpError(413, `This ${NAME} model's file is too large to import.`);
-  return bytes;
+  return call(url, undefined, async (res) => {
+    if (!res.ok) throw new OwlcadError(`${NAME} answered ${res.status} for ${what}`);
+    const tooLarge = () => new HttpError(413, `This ${NAME} model's file is too large to import.`);
+    if (Number(res.headers.get("content-length") ?? 0) > MAX_FILE_BYTES) throw tooLarge();
+    const reader = res.body?.getReader();
+    if (!reader) throw new OwlcadError(`${NAME} sent no file for ${what}`);
+    // Read the body chunk by chunk and stop at the limit, rather than buffering it whole and measuring after: an
+    // answer that doesn't declare its length, or declares one it then exceeds, is held to the same cap.
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > MAX_FILE_BYTES) {
+        await reader.cancel().catch(() => undefined);
+        throw tooLarge();
+      }
+      chunks.push(value);
+    }
+    const bytes = new Uint8Array(total);
+    let at = 0;
+    for (const chunk of chunks) {
+      bytes.set(chunk, at);
+      at += chunk.byteLength;
+    }
+    return bytes;
+  });
 }
 
 /** A library part's mesh, by the storage path its gallery doc names. */
@@ -255,6 +283,16 @@ export function owlcadMeshOnlyRefs(nodes: unknown[]): string[] | null {
   };
   for (const node of nodes) if (!walk(node)) return null;
   return refs.length ? refs : null;
+}
+
+/** The mesh links of a project Thingport can build by itself: a document that is nothing but imported meshes, every
+ *  one of them with a link to fetch. Null for anything else, which is what sends a project through Grab -- so the
+ *  import and the plan Grab asks for agree on which projects those are. */
+export function owlcadProjectMeshUrls(project: OwlcadProjectDocument): string[] | null {
+  const refs = owlcadMeshOnlyRefs(project.nodes);
+  if (!refs) return null;
+  const urls = refs.map((ref) => project.meshUrls[ref]);
+  return urls.every((url) => !!url) ? urls : null;
 }
 
 export async function fetchOwlcadMesh(url: string): Promise<Uint8Array> {

@@ -32,6 +32,39 @@ function packed(positions: number[], indices: number[], colours?: number[]): Uin
   return out;
 }
 
+/** A GLB around a JSON chunk and a binary one, so a test can state the numbers a file's own JSON claims. */
+function glb(gltf: unknown, bin = new Uint8Array(0)): Uint8Array {
+  const pad = (bytes: Uint8Array, filler: number) => {
+    const out = new Uint8Array(Math.ceil(bytes.length / 4) * 4).fill(filler);
+    out.set(bytes);
+    return out;
+  };
+  const json = pad(new TextEncoder().encode(JSON.stringify(gltf)), 0x20);
+  const chunk = pad(bin, 0);
+  const out = new Uint8Array(28 + json.length + chunk.length);
+  const view = new DataView(out.buffer);
+  view.setUint32(0, 0x46546c67, true);
+  view.setUint32(4, 2, true);
+  view.setUint32(8, out.length, true);
+  view.setUint32(12, json.length, true);
+  view.setUint32(16, 0x4e4f534a, true);
+  out.set(json, 20);
+  view.setUint32(20 + json.length, chunk.length, true);
+  view.setUint32(24 + json.length, 0x004e4942, true);
+  out.set(chunk, 28 + json.length);
+  return out;
+}
+
+/** One triangle mesh read through one accessor, whose claims about the data each test sets. */
+const scene = (accessor: Record<string, unknown>, view: Record<string, unknown> = {}) => ({
+  scene: 0,
+  scenes: [{ nodes: [0] }],
+  nodes: [{ mesh: 0 }],
+  meshes: [{ primitives: [{ mode: 4, attributes: { POSITION: 0 } }] }],
+  accessors: [{ type: "VEC3", componentType: 5126, bufferView: 0, ...accessor }],
+  bufferViews: [{ buffer: 0, byteOffset: 0, ...view }],
+});
+
 const extents = (triangles: number[]) =>
   [0, 1, 2].map((axis) => {
     let lo = Infinity;
@@ -99,6 +132,25 @@ describe("OwlCAD geometry", () => {
   it("gives a degenerate triangle a zero normal rather than NaN", () => {
     const stl = trianglesToStl([0, 0, 0, 0, 0, 0, 0, 0, 0]);
     expect([stl.readFloatLE(84), stl.readFloatLE(88), stl.readFloatLE(92)]).toEqual([0, 0, 0]);
+  });
+
+  it("refuses a GLB accessor claiming more elements than its data holds", () => {
+    // Three VEC3 floats of data behind a count of ninety million. The output array is sized from that count, so the
+    // claim has to be turned down before anything is allocated for it, not by the read that would run into the end.
+    const bin = new Uint8Array(36);
+    expect(() => glbTriangles(glb(scene({ count: 90_000_000 }, { byteLength: bin.length }), bin))).toThrow(
+      /past the end/i,
+    );
+    expect(glbTriangles(glb(scene({ count: 3 }, { byteLength: bin.length }), bin))).toHaveLength(9);
+  });
+
+  it("refuses a GLB that interleaves its geometry tighter than one element", () => {
+    // A VEC3 of floats is 12 bytes, so a stride of 4 reads each element over the two that follow -- within the
+    // chunk, and so past no end, but overlapping nonsense all the same.
+    const bin = new Uint8Array(36);
+    expect(() => glbTriangles(glb(scene({ count: 3 }, { byteLength: bin.length, byteStride: 4 }), bin))).toThrow(
+      /tighter than it fits/i,
+    );
   });
 
   it("refuses something that isn't a GLB", () => {

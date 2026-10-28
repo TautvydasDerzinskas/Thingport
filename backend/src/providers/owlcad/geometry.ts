@@ -142,14 +142,19 @@ function readAccessor(gltf: Gltf, bin: Uint8Array, index: number, want: number[]
 
   const size = { [FLOAT]: 4, [UNSIGNED_INT]: 4, [UNSIGNED_SHORT]: 2, [UNSIGNED_BYTE]: 1 }[componentType]!;
   const start = num(view.byteOffset) + num(accessor.byteOffset);
-  const stride = num(view.byteStride) || perElement * size;
+  const element = perElement * size;
+  const stride = num(view.byteStride) || element;
+  // `count` and `byteStride` are the file's own numbers, and the output array is sized from them. Both are checked
+  // against the binary chunk first: otherwise a few hundred bytes of GLB claiming millions of elements, or a stride
+  // too short to hold one, would be allocated for before anything noticed.
+  if (stride < element) throw new HttpError(502, "OwlCAD's GLB file packs its geometry tighter than it fits.");
+  if (start < 0 || (count > 0 && start + (count - 1) * stride + element > bin.byteLength)) {
+    throw new HttpError(502, "OwlCAD's GLB file points past the end of its data.");
+  }
   const data = new DataView(bin.buffer, bin.byteOffset, bin.byteLength);
   const out: number[] = Array.from({ length: count * perElement });
   for (let i = 0; i < count; i++) {
     const base = start + i * stride;
-    if (base + perElement * size > bin.byteLength) {
-      throw new HttpError(502, "OwlCAD's GLB file points past the end of its data.");
-    }
     for (let c = 0; c < perElement; c++) {
       const at = base + c * size;
       out[i * perElement + c] =

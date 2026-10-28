@@ -30,7 +30,7 @@ import {
   fetchOwlcadPart,
   fetchOwlcadProject,
   owlcadImportsServerSide,
-  owlcadMeshOnlyRefs,
+  owlcadProjectMeshUrls,
   OwlcadError,
   resolveOwlcadModel,
   resolvedOwlcadModel,
@@ -83,17 +83,14 @@ async function partPlates(item: OwlcadGalleryItem): Promise<NewPlateInput[]> {
  *  document is a real script -- booleans, generators, modifiers -- has to go through Grab. */
 async function projectPlates(item: OwlcadGalleryItem): Promise<NewPlateInput[] | null> {
   const project = await fetchOwlcadProject(item.id);
-  if (!project) return null;
-  const refs = owlcadMeshOnlyRefs(project.nodes);
-  if (!refs) return null;
+  const urls = project && owlcadProjectMeshUrls(project);
+  if (!urls) return null;
   const inputs: NewPlateInput[] = [];
   try {
-    for (const [index, ref] of refs.entries()) {
-      const url = project.meshUrls[ref];
-      if (!url) return null;
+    for (const [index, url] of urls.entries()) {
       const triangles = packedMeshTriangles(await fetchOwlcadMesh(url));
       if (!triangles.length) continue;
-      const suffix = refs.length > 1 ? `-${index + 1}` : "";
+      const suffix = urls.length > 1 ? `-${index + 1}` : "";
       inputs.push(await writeTemp(trianglesToStl(triangles), `${fileBase(item)}${suffix}.stl`));
     }
   } catch (err) {
@@ -143,7 +140,9 @@ export async function owlcadNeedsGrab(modelId: string): Promise<{ item: OwlcadGa
   if (!item) throw new HttpError(404, MISSING);
   if (owlcadImportsServerSide(item)) return { item, needsGrab: false };
   const project = await fetchOwlcadProject(modelId);
-  return { item, needsGrab: !project || !owlcadMeshOnlyRefs(project.nodes) };
+  // The same predicate the import itself uses, so Grab is never told an export is needless for a project the
+  // import would then refuse with 409.
+  return { item, needsGrab: !project || !owlcadProjectMeshUrls(project) };
 }
 
 export const owlcadDetails: ProviderDetails = {

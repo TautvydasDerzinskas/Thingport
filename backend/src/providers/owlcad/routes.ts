@@ -36,6 +36,14 @@ const MAX_EXPORT_BYTES = 128 * 1024 * 1024;
 /** Base64 is about a third larger than the bytes it carries. */
 const MAX_EXPORT_BASE64 = Math.ceil((MAX_EXPORT_BYTES * 4) / 3) + 1024;
 
+/** The two routes an export's file travels in the JSON of, and the body limit they need. The global parser's
+ *  100 kB would turn away every real export, so app.ts gives these paths their own -- the base64 above, and room
+ *  for the handful of fields beside it. */
+export const bodyLimit = {
+  paths: [`/api/import/${OWLCAD}/export`, `/api/import/${OWLCAD}/waiting`],
+  limit: MAX_EXPORT_BASE64 + 64 * 1024,
+};
+
 const router = Router();
 router.use(requireAuth);
 
@@ -84,12 +92,20 @@ const exportSchema = z.object({
   filename: z.string().max(200).nullable().optional(),
 });
 
+/** Files an imported model where its import asked for it, as long as that collection is still the user's. */
+async function fileInCollection(userId: string, collectionId: string | null, printId: string): Promise<void> {
+  if (!collectionId) return;
+  const collection = await prisma.collection.findFirst({ where: { id: collectionId, userId } });
+  if (collection) await addPrintsToCollection(collection.id, [printId]);
+}
+
 /** Writes Grab's export where the import can read it, and runs the import with it. */
 async function importExported(
   userId: string,
   url: string,
   base64: string,
   extras: { tags?: string[]; notes?: string | null; categoryId?: string | null },
+  options: { keepGrabImports?: boolean } = {},
 ) {
   const bytes = Buffer.from(base64, "base64");
   if (!bytes.length) throw new HttpError(400, "That export was empty.");
@@ -109,7 +125,7 @@ async function importExported(
         owlcadExportPath: file,
         notify: false,
       },
-      { keepGrabImports: true },
+      options,
     );
   } finally {
     await fs.rm(dir, { recursive: true, force: true }).catch(() => undefined);
@@ -127,22 +143,22 @@ router.post(
     const run = async () => {
       let described;
       try {
-        described = await importExported(userId, row.url, body.file, {
-          tags: row.tags,
-          notes: row.notes,
-          categoryId: row.categoryId,
-        });
-        if (row.collectionId) {
-          const collection = await prisma.collection.findFirst({ where: { id: row.collectionId, userId } });
-          if (collection) await addPrintsToCollection(collection.id, [described.id]);
-        }
+        described = await importExported(
+          userId,
+          row.url,
+          body.file,
+          { tags: row.tags, notes: row.notes, categoryId: row.categoryId },
+          // This row is cleared below, once it's filed, rather than by the import: a failed filing keeps the
+          // collection to try again with.
+          { keepGrabImports: true },
+        );
+        await fileInCollection(userId, row.collectionId, described.id);
       } catch (err) {
         await recordOwlcadExportFailure(row, err instanceof Error ? err.message : "Import failed").catch(
           () => undefined,
         );
         throw err;
       }
-      // Only this row is cleared, once it's filed, so a failed filing keeps the collection to try again with.
       await clearOwlcadExport(row).catch(() => undefined);
       return described;
     };
@@ -158,18 +174,27 @@ router.post(
 router.post(
   `/import/${OWLCAD}/export`,
   asyncHandler(async (req, res) => {
-    const body = parseBody(importRequestSchema.merge(exportSchema), req.body);
+    const userId = req.userId!;
+    const body = parseBody(
+      importRequestSchema.merge(exportSchema).extend({ collection_id: z.string().nullable().optional() }),
+      req.body,
+    );
     const url = await enabledImportUrl(body.url);
     const parsed = parseOwlcadModelUrl(url);
     if (!parsed) throw new HttpError(400, `Not an ${manifest.name} model link`);
-    const run = () =>
-      importExported(req.userId!, owlcadModelUrl(parsed.modelId), body.file, {
+    // No row of its own to keep: the import clears whatever waited for this model, so Grab's next visit doesn't
+    // export it a second time.
+    const run = async () => {
+      const described = await importExported(userId, owlcadModelUrl(parsed.modelId), body.file, {
         tags: body.tags,
         notes: body.notes ?? null,
         categoryId: body.category_id ?? null,
       });
+      await fileInCollection(userId, body.collection_id ?? null, described.id);
+      return described;
+    };
     if (req.query.async === "1") {
-      res.status(202).json({ task_id: startImportTask(req.userId!, run) });
+      res.status(202).json({ task_id: startImportTask(userId, run) });
       return;
     }
     res.json(await run());
