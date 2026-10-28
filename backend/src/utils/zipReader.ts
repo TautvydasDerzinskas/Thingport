@@ -1,3 +1,7 @@
+import { createWriteStream } from "node:fs";
+import fs from "node:fs/promises";
+import { Transform } from "node:stream";
+import { pipeline } from "node:stream/promises";
 import yauzl from "yauzl";
 
 export type ZipEntryInfo = { name: string; size: number; isDirectory: boolean };
@@ -79,6 +83,69 @@ export async function readZipEntry(filePath: string, entryName: string, maxBytes
     zipfile.on("error", (err) => finish(null, err));
     zipfile.readEntry();
   });
+}
+
+/** An entry whose bytes run past the cap -- including one whose own directory entry understated its size. */
+class EntryOverCapError extends Error {}
+
+/**
+ * Writes one entry straight to destPath, holding none of it in memory, for the files too big to read the way
+ * readZipEntry does. The bytes written, or null -- with no file left behind -- if the entry is missing, a directory,
+ * or over maxBytes.
+ */
+export async function extractZipEntryToFile(
+  filePath: string,
+  entryName: string,
+  destPath: string,
+  maxBytes: number,
+): Promise<number | null> {
+  const zipfile = await openZip(filePath);
+  let written: number | null = null;
+  try {
+    written = await new Promise<number | null>((resolve, reject) => {
+      let settled = false;
+      const finish = (value: number | null, err?: Error) => {
+        if (settled) return;
+        settled = true;
+        zipfile.close();
+        if (err) reject(err);
+        else resolve(value);
+      };
+      zipfile.on("entry", (entry) => {
+        if (entry.fileName !== entryName || entry.fileName.endsWith("/")) {
+          zipfile.readEntry();
+          return;
+        }
+        if (entry.uncompressedSize > maxBytes) {
+          finish(null);
+          return;
+        }
+        zipfile.openReadStream(entry, (err, stream) => {
+          if (err || !stream) {
+            finish(null, err ?? undefined);
+            return;
+          }
+          let total = 0;
+          const capped = new Transform({
+            transform(chunk: Buffer, _encoding, done) {
+              total += chunk.length;
+              done(total > maxBytes ? new EntryOverCapError() : null, chunk);
+            },
+          });
+          pipeline(stream, capped, createWriteStream(destPath)).then(
+            () => finish(total),
+            (pipeErr: Error) => finish(null, pipeErr instanceof EntryOverCapError ? undefined : pipeErr),
+          );
+        });
+      });
+      zipfile.on("end", () => finish(null));
+      zipfile.on("error", (err) => finish(null, err));
+      zipfile.readEntry();
+    });
+  } finally {
+    if (written === null) await fs.rm(destPath, { force: true }).catch(() => undefined);
+  }
+  return written;
 }
 
 /**

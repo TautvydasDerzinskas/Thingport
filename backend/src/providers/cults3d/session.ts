@@ -47,9 +47,26 @@ export async function setUserCults3dCredentials(userId: string, credentials: Cul
   });
 }
 
-/** A new sign-in clears an earlier rejection; null forgets it. */
-export async function setUserCults3dBrowser(userId: string, browser: Cults3dBrowser | null): Promise<void> {
-  await writeConnection<Cults3dBrowser>(userId, ID, { secret: browser, rejectedAt: null }, BROWSER);
+/** A new sign-in clears an earlier rejection; null forgets it. `nick` is the account the site showed it signed in as,
+ *  which the downloads need to match the API key's; it's always written, as a new sign-in may be another account's and
+ *  a stale nickname would be worse than none. */
+export async function setUserCults3dBrowser(
+  userId: string,
+  browser: Cults3dBrowser | null,
+  nick: string | null = null,
+): Promise<void> {
+  await writeConnection<Cults3dBrowser>(
+    userId,
+    ID,
+    { secret: browser, rejectedAt: null, accountName: browser ? nick : null },
+    BROWSER,
+  );
+}
+
+/** Keeps whose account the browser's sign-in is, for one stored before Thingport read it; the sign-in itself is left
+ *  as it is, so a newer one Grab pushed meanwhile isn't written over. */
+export async function setUserCults3dBrowserAccount(userId: string, nick: string): Promise<void> {
+  await writeConnection(userId, ID, { accountName: nick }, BROWSER);
 }
 
 export async function markCults3dApiRejected(userId: string): Promise<void> {
@@ -60,14 +77,25 @@ export async function markCults3dSessionRejected(userId: string): Promise<void> 
   await rejectConnection(userId, ID, BROWSER);
 }
 
-export type Cults3dConnection = { api: ConnectionState; site: ConnectionState; nick: string | null };
+export type Cults3dConnection = {
+  api: ConnectionState;
+  site: ConnectionState;
+  nick: string | null;
+  /** Who the browser's sign-in is, where the site told Thingport; null when it couldn't be read. */
+  siteNick: string | null;
+};
 
 export async function getCults3dConnection(userId: string): Promise<Cults3dConnection> {
   const [api, site] = await Promise.all([
     readConnection<Cults3dCredentials>(userId, ID),
     readConnection(userId, ID, BROWSER),
   ]);
-  return { api: connectionState(api), site: connectionState(site), nick: api?.secret?.nick ?? null };
+  return {
+    api: connectionState(api),
+    site: connectionState(site),
+    nick: api?.secret?.nick ?? null,
+    siteNick: site?.accountName ?? null,
+  };
 }
 
 /** The user's API credentials; null when they haven't given them, or Cults3D turned them down. */
@@ -75,9 +103,14 @@ export async function getUserCults3dCredentials(userId: string): Promise<Cults3d
   return usableSecret(await readConnection<Cults3dCredentials>(userId, ID));
 }
 
-/** The browser's sign-in; null when Grab hasn't sent one, or the site turned it down since. */
-export async function getUserCults3dBrowser(userId: string): Promise<Cults3dBrowser | null> {
-  return usableSecret(await readConnection<Cults3dBrowser>(userId, ID, BROWSER));
+/** The browser's sign-in with the account the site last showed it signed in as, which a download has to be ordered by;
+ *  null when Grab hasn't sent one, or the site turned it down since. */
+export async function getUserCults3dBrowserAccount(
+  userId: string,
+): Promise<{ browser: Cults3dBrowser; nick: string | null } | null> {
+  const connection = await readConnection<Cults3dBrowser>(userId, ID, BROWSER);
+  const browser = usableSecret(connection);
+  return browser ? { browser, nick: connection!.accountName } : null;
 }
 
 /** Shown wherever Cults3D's API is needed and the user hasn't given their credentials, or they were turned down. */

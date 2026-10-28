@@ -76,7 +76,7 @@ export const THANGS_DOWNLOAD_LIMIT_CODE = MANIFESTS.thangs.errorCodes.downloadLi
 /** A Cults3D import refused for want of the user's API key, or of the browser's sign-in, or because one was turned
  *  down. */
 export const CULTS3D_SESSION_CODE = MANIFESTS.cults3d.errorCodes.session;
-import { listZipEntries, readZipEntry } from "../utils/zipReader";
+import { extractZipEntryToFile, listZipEntries } from "../utils/zipReader";
 import { enqueueAiDescription } from "./aiDescriptionService";
 import { upsertAuthorFromImport } from "./authorService";
 import {
@@ -896,9 +896,67 @@ export async function downloadPlainFileToTemp(url: string, suggestedName: string
   }
 }
 
+/** How far into a zip holding a zip to keep looking. Sites that build the download archive themselves wrap whatever the
+ *  designer uploaded, which is often an archive of their own ("Designer/model/model-v1.1.zip"), and a plate can't be
+ *  made of a zip. A couple of levels covers that. */
+const NESTED_ZIP_DEPTH = 3;
+/** What one download may be opened into over the whole descent: this many nested archives, and IMPORT_MAX_BYTES of them
+ *  in all -- the same budget the download itself had, shared by every level, since a nested zip is inside the one above
+ *  it. An archive of nothing but archives can't ask for more than one import's worth either way. */
+const NESTED_ZIP_BUDGET = 32;
+
+type NestedZipBudget = { archives: number; bytes: number };
+
+/** A zip whose bytes aren't a zip at all, as against the filesystem or the import failing underneath it: those carry an
+ *  errno code, or are ours. */
+function isUnreadableZip(err: unknown): boolean {
+  if (err instanceof HttpError) return false;
+  return err instanceof Error && typeof (err as NodeJS.ErrnoException).code !== "string";
+}
+
+/** The model files in the zips a zip holds, for an archive that wraps the model's own instead of its files. Each nested
+ *  zip is unpacked on its own, so files named alike within it are still told apart by their folder. */
+async function modelFilesFromNestedZips(
+  zipPath: string,
+  depth: number,
+  budget: NestedZipBudget,
+): Promise<NewPlateInput[]> {
+  const nested = (await listZipEntries(zipPath)).filter(
+    (entry) => !entry.isDirectory && path.extname(entry.name).toLowerCase() === ".zip",
+  );
+  const inputs: NewPlateInput[] = [];
+  try {
+    for (const entry of nested) {
+      if (budget.archives <= 0 || budget.bytes <= 0) break;
+      budget.archives -= 1;
+      const tempZipPath = path.join(os.tmpdir(), `thingport-zip-${crypto.randomBytes(8).toString("hex")}.zip`);
+      try {
+        const written = await extractZipEntryToFile(zipPath, entry.name, tempZipPath, budget.bytes);
+        if (written === null) continue;
+        budget.bytes -= written;
+        inputs.push(...(await modelFilesFromZip(tempZipPath, depth + 1, budget)));
+      } catch (err) {
+        // One entry that isn't the zip it's named like doesn't make the files out of its siblings unimportable.
+        if (!isUnreadableZip(err)) throw err;
+      } finally {
+        await fs.rm(tempZipPath, { force: true }).catch(() => undefined);
+      }
+    }
+  } catch (err) {
+    await Promise.all(inputs.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
+    throw err;
+  }
+  return inputs;
+}
+
 /** The model files in a downloaded zip, each as its own plate; the zip itself is left for the caller. Plates have no
- *  folders, so files named alike in different folders are named after their folder too: "2x2 - Top.stl". */
-async function modelFilesFromZip(zipPath: string): Promise<NewPlateInput[]> {
+ *  folders, so files named alike in different folders are named after their folder too: "2x2 - Top.stl". An archive
+ *  with no model files of its own is opened a level deeper, where the ones wrapping another zip keep them. */
+async function modelFilesFromZip(
+  zipPath: string,
+  depth = 0,
+  budget: NestedZipBudget = { archives: NESTED_ZIP_BUDGET, bytes: IMPORT_MAX_BYTES },
+): Promise<NewPlateInput[]> {
   const inputs: NewPlateInput[] = [];
   try {
     const entries = (await listZipEntries(zipPath))
@@ -911,19 +969,20 @@ async function modelFilesFromZip(zipPath: string): Promise<NewPlateInput[]> {
       const name = parts.at(-1)!;
       const folder = parts.at(-2);
       const filename = sanitizeFilename(sameName.get(name)! > 1 && folder ? `${folder} - ${name}` : name);
-      const buffer = await readZipEntry(zipPath, entry.name, IMPORT_MAX_BYTES);
-      if (!buffer) continue;
       const tempFilePath = path.join(
         os.tmpdir(),
         `thingport-zip-${crypto.randomBytes(8).toString("hex")}${path.extname(filename)}`,
       );
-      await fs.writeFile(tempFilePath, buffer);
+      // Straight to the file: a model file is as big as an import is allowed to be, and holding it is pointless.
+      if ((await extractZipEntryToFile(zipPath, entry.name, tempFilePath, IMPORT_MAX_BYTES)) === null) continue;
       inputs.push({ filename, mime: guessMimeFromPath(filename), tempFilePath });
     }
   } catch (err) {
     await Promise.all(inputs.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
     throw err;
   }
+  // Nothing a plate takes here, so the model's files are in an archive this one only wraps.
+  if (!inputs.length && depth < NESTED_ZIP_DEPTH) return modelFilesFromNestedZips(zipPath, depth, budget);
   return inputs;
 }
 
