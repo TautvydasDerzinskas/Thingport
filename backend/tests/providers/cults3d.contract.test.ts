@@ -55,6 +55,7 @@ const SIGNED_ZIP = `https://download.cults3d.com/uploads/creation_zip/file/26323
  *  - "no-form": the model's page has no Download form;
  *  - "file-blocked": the signed link answers 429;
  *  - "nested-zip": the archive's only entry is the designer's own zip, which holds the model files;
+ *  - "other-account": the site shows the sign-in as somebody other than the API key's account;
  *  - "missing": no such model. */
 function handlerFor(scenario: string): FetchHandler {
   let ordered = scenario === "owned" || scenario === "paid-owned";
@@ -106,6 +107,10 @@ function handlerFor(scenario: string): FetchHandler {
     expect(headers.cookie).toContain(`_session_id=${BROWSER.session}`);
     expect(headers["user-agent"]).toBe(BROWSER.userAgent);
     if (scenario === "challenge") return cloudflareChallenge();
+    // The header's own menu, the one place a signed-in page names the user; read off the orders page.
+    if (url.pathname === "/en/orders") {
+      return html(`<img alt="${scenario === "other-account" ? "SomeoneElse" : NICK}" class="drop-toggle-avatar">`);
+    }
     if (url.pathname === `/en/creations/${SLUG}`) return redirect(`https://cults3d.com/en/3d-model/art/${SLUG}`, 301);
     if (url.pathname === `/en/3d-model/art/${SLUG}`) {
       if (scenario === "session-ended") return redirect("https://cults3d.com/en/log-in-choice");
@@ -142,7 +147,8 @@ const spec: ProviderContractSpec = {
   },
   connect: async (userId) => {
     await setUserCults3dCredentials(userId, CREDENTIALS);
-    await setUserCults3dBrowser(userId, BROWSER);
+    // Saving a sign-in reads whose account it is, as cults3dBrowserConnection does.
+    await setUserCults3dBrowser(userId, BROWSER, NICK);
   },
   disconnect: async (userId) => {
     await setUserCults3dCredentials(userId, null);
@@ -302,6 +308,41 @@ describe("Cults3D specifics", () => {
       const res = await ctx.importUrl();
       expectStatus(res, 200);
       expect(res.body.source_provider).toBe("cults3d");
+    });
+
+    // A sign-in stored before Thingport read whose it is. The free order below goes on that account while only the API
+    // key's orders are read after it, and an order can't be taken back, so the site is asked who it is first.
+    it("asks the site whose a sign-in it hasn't read is before ordering, and keeps the answer", async () => {
+      await setUserCults3dCredentials(ctx.userId, CREDENTIALS);
+      await setUserCults3dBrowser(ctx.userId, BROWSER);
+      const stub = ctx.stub("ok");
+      const res = await ctx.importUrl();
+      expectStatus(res, 200);
+      expect(siteCalls(stub.calls).map((call) => `${call.method} ${call.url.pathname}`)).toEqual([
+        "GET /en/orders",
+        `GET /en/creations/${SLUG}`,
+        `GET /en/3d-model/art/${SLUG}`,
+        "POST /en/free_orders",
+        "GET /en/downloads/1",
+      ]);
+      expect((await getCults3dConnection(ctx.userId)).siteNick).toBe(NICK);
+    });
+
+    it("refuses once that sign-in turns out to be another account, ordering nothing", async () => {
+      await setUserCults3dCredentials(ctx.userId, CREDENTIALS);
+      await setUserCults3dBrowser(ctx.userId, BROWSER);
+      const stub = ctx.stub("other-account");
+      const res = await ctx.importUrl();
+      expectStatus(res, 400);
+      expect(res.body.code).toBe("cults3d_session");
+      expect(res.body.detail).toMatch(new RegExp(`${NICK}.*SomeoneElse`, "s"));
+      expect(siteCalls(stub.calls).map((call) => `${call.method} ${call.url.pathname}`)).toEqual(["GET /en/orders"]);
+      // Kept, so the next import says so without asking the site again; neither credential is rejected for it.
+      expect(await getCults3dConnection(ctx.userId)).toMatchObject({
+        api: "connected",
+        site: "connected",
+        siteNick: "SomeoneElse",
+      });
     });
 
     it("needs the API key first, and asks nothing without it", async () => {

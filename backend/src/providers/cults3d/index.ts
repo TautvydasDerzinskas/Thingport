@@ -15,6 +15,7 @@ import { MANIFESTS } from "../index.generated";
 import {
   Cults3dAuthError,
   Cults3dBlockedError,
+  type Cults3dBrowser,
   type Cults3dCredentials,
   type Cults3dModelResolution,
   Cults3dNoFreeDownloadError,
@@ -22,6 +23,7 @@ import {
   Cults3dSessionError,
   Cults3dWrongAccountError,
   fetchCults3dOrders,
+  fetchCults3dSignedInNick,
   isCults3dFileHost,
   placeCults3dFreeOrder,
   resolveCults3dDownload,
@@ -41,6 +43,7 @@ import {
   getUserCults3dCredentials,
   markCults3dApiRejected,
   markCults3dSessionRejected,
+  setUserCults3dBrowserAccount,
 } from "./session";
 import { z } from "zod";
 import { hasUsableSecretSql } from "../connections";
@@ -54,6 +57,34 @@ function cults3dPaid(resolved: Cults3dModelResolution): HttpError {
     `This is a paid Cults3D model (${resolved.priceText}), so it downloads only once bought. Buy it on Cults3D with ` +
       "the account connected to Thingport, then import it again.",
   );
+}
+
+/** Cults3D opens an order's download page only for the account that placed it, and the orders are the API key's own, so
+ *  the sign-in has to be the same account. Neither credential is wrong on its own: it's the pair to put right. */
+function requireSameCults3dAccount(apiNick: string, siteNick: string): void {
+  if (siteNick.toLowerCase() !== apiNick.toLowerCase()) {
+    throw new Cults3dWrongAccountError({ api: apiNick, site: siteNick });
+  }
+}
+
+/** Whose account the sign-in is, asked of the site and kept on the connection -- for a sign-in stored before Thingport
+ *  read it. */
+async function cults3dSignedInAs(userId: string, browser: Cults3dBrowser): Promise<string> {
+  let nick: string;
+  try {
+    nick = await fetchCults3dSignedInNick(browser);
+  } catch (err) {
+    // A sign-in the site turned down, or Cloudflare in the way: mapError has a message for each. Anything else
+    // would reach the user as a bare 500.
+    if (err instanceof Cults3dSessionError || err instanceof Cults3dBlockedError) throw err;
+    throw new HttpError(
+      502,
+      "Thingport couldn't ask Cults3D which account its sign-in is, and it has to know before ordering this model " +
+        "for you, since the download then comes from the API key's own orders. Try the import again in a moment.",
+    );
+  }
+  await setUserCults3dBrowserAccount(userId, nick);
+  return nick;
 }
 
 /** Metadata from the API; the files from the user's Cults3D library, where every model they ordered, bought or free,
@@ -93,9 +124,7 @@ export const cults3dImport: SourcedImport<Cults3dCredentials, Cults3dModelResolu
       const account = await getUserCults3dBrowserAccount(userId);
       // The orders below are the API key's, and Cults3D opens an order's download page only for the account that
       // placed it. Two accounts can't be made to work, so it's said here rather than left to the site's own refusal.
-      if (account?.nick && account.nick.toLowerCase() !== credentials.nick.toLowerCase()) {
-        throw new Cults3dWrongAccountError({ api: credentials.nick, site: account.nick });
-      }
+      if (account?.nick) requireSameCults3dAccount(credentials.nick, account.nick);
       let downloadUrl = (await fetchCults3dOrders(credentials)).get(resolved.slug) ?? null;
       if (!downloadUrl && resolved.priceCents > 0) throw cults3dPaid(resolved);
       const browser = account?.browser;
@@ -103,6 +132,10 @@ export const cults3dImport: SourcedImport<Cults3dCredentials, Cults3dModelResolu
       // Without it every site page is a Cloudflare challenge.
       if (!browser.clearance) throw new HttpError(400, CULTS3D_NO_CLEARANCE, SESSION_CODE);
       if (!downloadUrl) {
+        // The order goes on the sign-in's account while only the API key's orders are read after it, and an order
+        // can't be taken back, so a sign-in whose account Thingport doesn't know yet is asked about before one is
+        // placed -- otherwise the order lands on the other account and only "it isn't in your downloads" is left.
+        requireSameCults3dAccount(credentials.nick, account.nick ?? (await cults3dSignedInAs(userId, browser)));
         await placeCults3dFreeOrder(resolved.slug, browser);
         downloadUrl = (await fetchCults3dOrders(credentials)).get(resolved.slug) ?? null;
         if (!downloadUrl) throw new HttpError(502, "Cults3D took the free order, but it isn't in your downloads yet.");

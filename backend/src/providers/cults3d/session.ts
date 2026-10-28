@@ -63,6 +63,12 @@ export async function setUserCults3dBrowser(
   );
 }
 
+/** Keeps whose account the browser's sign-in is, for one stored before Thingport read it; the sign-in itself is left
+ *  as it is, so a newer one Grab pushed meanwhile isn't written over. */
+export async function setUserCults3dBrowserAccount(userId: string, nick: string): Promise<void> {
+  await writeConnection(userId, ID, { accountName: nick }, BROWSER);
+}
+
 export async function markCults3dApiRejected(userId: string): Promise<void> {
   await rejectConnection(userId, ID);
 }
