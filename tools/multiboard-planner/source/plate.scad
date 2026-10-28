@@ -18,6 +18,17 @@
 // Cells across, which also sets the plate's size: a plain plate is exactly this many 25 mm cells.
 cells = 4; // [2:16]
 
+/* [Interfit] */
+// Whether a plate sits alongside this one on each side. Where one does on +X or +Y this plate carries the
+// pads that reach into it; where one does on -X or -Y it carries the notches its neighbour's pads reach
+// into. A side facing nothing is left plain. Every one of the sixteen plates the planner lists is one of
+// these sixteen combinations: "Center" has neighbours all round, "Top Left" none above or to the left,
+// "Center Horizontal Strip" none above or below, and the plain plate none at all.
+neighbour_px = false;
+neighbour_py = false;
+neighbour_mx = false;
+neighbour_my = false;
+
 /* [Hidden] */
 GRID = 25;      // cell pitch, both lattices
 TH   = 6.2;     // plate thickness
@@ -111,6 +122,11 @@ SOCKET_Z1 = 4.35;      // where it ends
 //
 // which is also, not by coincidence, the 7.322 mm by which an Interfitted plate is larger than a plain one.
 CORNER_CHAMFER = 25 - 12.5 * sqrt(2);
+
+// An interfit pad is a diamond on a junction, reaching this far from it, with a pegboard hole through the
+// middle. The notch that receives one is the same diamond taken out of the facing edge. It is the same
+// 7.322 mm again -- the plate's outline is drawn on the same octagonal lattice as its cells.
+PAD = 25 - 12.5 * sqrt(2);
 
 // Facets. The bores carry every curve here, so these drive both fidelity and render time.
 SIDES  = 180;  // angular samples around a pegboard bore
@@ -254,21 +270,65 @@ module corner_cut() {
     translate([-back, -side, -1]) cube([side, 2 * side, TH + 2]);
 }
 
+/** A diamond on a junction: the shape of a pad, and of the notch that receives one. */
+module diamond() {
+  polygon([[PAD, 0], [0, PAD], [-PAD, 0], [0, -PAD]]);
+}
+
+/** Where the pads sit along one edge, as offsets from the plate's near corner. The run always reaches the
+ *  far corner; it starts at the near one only when no neighbour on that side would supply it. */
+function pad_steps(near_neighbour) = [for (i = [near_neighbour ? 1 : 0 : cells]) i * GRID - side / 2];
+
 module plate() {
   difference() {
-    translate([-side/2, -side/2, 0]) cube([side, side, TH]);
+    union() {
+      translate([-side/2, -side/2, 0]) cube([side, side, TH]);
+      // Pads, where a plate sits alongside. A pad on a corner belongs to both its edges, so it is cut back
+      // to the plate's own outline on any side with nothing beyond: a plate reaches past its edge only
+      // where a neighbour is there to receive it, never backwards and never into open air.
+      intersection() {
+        union() {
+          if (neighbour_px)
+            for (y = pad_steps(neighbour_my)) translate([side/2, y, 0]) linear_extrude(TH) diamond();
+          if (neighbour_py)
+            for (x = pad_steps(neighbour_mx)) translate([x, side/2, 0]) linear_extrude(TH) diamond();
+        }
+        translate([-side/2, -side/2, -1])
+          cube([side + (neighbour_px ? PAD + 1 : 0), side + (neighbour_py ? PAD + 1 : 0), TH + 2]);
+      }
+    }
     for (i = [0:cells-1], j = [0:cells-1])
       translate([(i + 0.5) * GRID - side/2, (j + 0.5) * GRID - side/2, 0]) multihole();
     // A pegboard hole at every interior wall junction. The plate's edge runs down the middle of an edge
     // wall, so the junctions on it carry a slot instead.
     for (i = [1:cells-1], j = [1:cells-1])
       translate([i * GRID - side/2, j * GRID - side/2, 0]) peghole();
+    // A corner carrying a pad is not chamfered and has no socket: the pad is what is there instead. The
+    // four are taken in the order the rotation visits them: +X+Y, -X+Y, -X-Y, +X-Y.
+    padded = [
+      neighbour_px || neighbour_py,
+      neighbour_py && !neighbour_mx,
+      false,
+      neighbour_px && !neighbour_my,
+    ];
+    // The relief channel runs only along a side facing nothing: where a plate sits alongside, the pads or
+    // notches are what is at the rim instead. The rotation visits the sides as +X, +Y, -X, -Y.
+    facing = [neighbour_px, neighbour_py, neighbour_mx, neighbour_my];
     for (edge = [0:3]) rotate([0, 0, 90 * edge]) {
       for (i = [1:cells-1]) translate([0, i * GRID - side/2, 0]) slot();
-      channel();
-      corner_cut();
-      corner_socket();
+      if (!facing[edge]) channel();
+      if (!padded[edge]) {
+        corner_cut();
+        corner_socket();
+      }
     }
+    // A pegboard hole through every pad, and a notch wherever a neighbour's pad reaches in.
+    if (neighbour_px) for (y = pad_steps(neighbour_my)) translate([side/2, y, 0]) peghole();
+    if (neighbour_py) for (x = pad_steps(neighbour_mx)) translate([x, side/2, 0]) peghole();
+    if (neighbour_mx)
+      for (i = [1:cells]) translate([-side/2, i * GRID - side/2, -1]) linear_extrude(TH + 2) diamond();
+    if (neighbour_my)
+      for (i = [1:cells]) translate([i * GRID - side/2, -side/2, -1]) linear_extrude(TH + 2) diamond();
   }
 }
 

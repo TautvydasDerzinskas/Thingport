@@ -305,13 +305,12 @@ function main() {
   console.log(`\nbores (radius mm, thread lead mm/turn)`);
   const cx = (ba.mn[0] + ba.mx[0]) / 2,
     cy = (ba.mn[1] + ba.mx[1]) / 2;
-  // Same parity point as below: which lattice falls on the plate's centre depends on the cell count.
-  const n0 = Math.round(ba.size[0] / 25);
-  const offMulti = n0 % 2 === 0 ? 12.5 : 0;
-  const offPeg = n0 % 2 === 0 ? 0 : 12.5;
+  // The cell lattice always starts at the -X-Y corner, whatever the cell count's parity and whatever
+  // interfit pads do to the bounding box, so both probes are placed from there: a cell centre sits 37.5 mm
+  // in and a wall junction 50 mm in.
   for (const [px, py, rmax, label] of [
-    [cx + offPeg, cy + offPeg, 6, "pegboard hole (wall junction)"],
-    [cx + offMulti, cy + offMulti, 14, "multihole (cell centre)"],
+    [ba.mn[0] + 50, ba.mn[1] + 50, 6, "pegboard hole (wall junction)"],
+    [ba.mn[0] + 37.5, ba.mn[1] + 37.5, 14, "multihole (cell centre)"],
   ]) {
     const la = lead(A, px, py, rmax),
       lb = lead(B, px, py, rmax);
@@ -344,15 +343,9 @@ function main() {
     cya = (ba.mn[1] + ba.mx[1]) / 2;
   const cxb = (bb.mn[0] + bb.mx[0]) / 2,
     cyb = (bb.mn[1] + bb.mx[1]) / 2;
-  // Which lattice sits on the plate's centre depends on how many cells across it is: with an even count a
-  // cell centre lands on 12.5 and a wall junction on 0, with an odd count the other way about. Probing the
-  // wrong one finds no bore at all, and the run fails for a reason that is not the plate's.
-  const cells = Math.round(ba.size[0] / 25);
-  const atMulti = cells % 2 === 0 ? 12.5 : 0;
-  const atPeg = cells % 2 === 0 ? 0 : 12.5;
   for (const [ox, oy, rmax, label] of [
-    [atPeg, atPeg, 6, "pegboard hole"],
-    [atMulti, atMulti, 14, "multihole"],
+    [50, 50, 6, "pegboard hole"],
+    [37.5, 37.5, 14, "multihole"],
   ]) {
     let n = 0,
       sum = 0,
@@ -362,8 +355,8 @@ function main() {
       ok25 = 0,
       ok10 = 0;
     for (let z = 0.6; z <= 5.6 + 1e-9; z += 0.1) {
-      const ra = bore(A, cxa + ox, cya + oy, z, 360, rmax);
-      const rb = bore(B, cxb + ox, cyb + oy, z, 360, rmax);
+      const ra = bore(A, ba.mn[0] + ox, ba.mn[1] + oy, z, 360, rmax);
+      const rb = bore(B, bb.mn[0] + ox, bb.mn[1] + oy, z, 360, rmax);
       for (let k = 0; k < 360; k++) {
         const u = ra[k],
           v = rb[k];
