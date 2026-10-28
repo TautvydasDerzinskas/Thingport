@@ -250,6 +250,32 @@ describe("Cults3D specifics", () => {
       expect(res.body.detail).toMatch(/not Cloudflare's clearance/);
     });
 
+    // A download link comes from the API key's own orders, and the site opens one only for the account that placed it,
+    // so two accounts can't be made to work: it's said up front, before anything is asked of either door.
+    it("refuses when the sign-in is another account than the API key, naming both and asking nothing", async () => {
+      await setUserCults3dCredentials(ctx.userId, CREDENTIALS);
+      await setUserCults3dBrowser(ctx.userId, BROWSER, "SomeoneElse");
+      const stub = ctx.stub("ok");
+      const res = await ctx.importUrl();
+      expectStatus(res, 400);
+      expect(res.body.code).toBe("cults3d_session");
+      expect(res.body.detail).toMatch(new RegExp(`${NICK}.*SomeoneElse`, "s"));
+      // Nothing is ordered or downloaded, and the orders aren't even read: only the metadata was already in hand.
+      expect(siteCalls(stub.calls)).toHaveLength(0);
+      expect(graphqlQueries(stub.calls).join()).not.toMatch(/ordersBatch/);
+      // Neither credential is wrong on its own: it's the pair to put right, so neither is marked rejected.
+      expect(await getCults3dConnection(ctx.userId)).toMatchObject({ api: "connected", site: "connected" });
+    });
+
+    it("imports when the sign-in is the API key's own account, whatever its capitals", async () => {
+      await setUserCults3dCredentials(ctx.userId, CREDENTIALS);
+      await setUserCults3dBrowser(ctx.userId, BROWSER, NICK.toLowerCase());
+      ctx.stub("owned");
+      const res = await ctx.importUrl();
+      expectStatus(res, 200);
+      expect(res.body.source_provider).toBe("cults3d");
+    });
+
     it("needs the API key first, and asks nothing without it", async () => {
       await setUserCults3dBrowser(ctx.userId, BROWSER);
       const stub = ctx.stub("ok");

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { HttpError } from "../../utils/fileUtils";
 import { parseBody } from "../../utils/validate";
 import type { ConnectionSlot } from "../types";
-import { checkCults3dCredentials } from "./api";
+import { checkCults3dCredentials, fetchCults3dSignedInNick } from "./api";
 import {
   getCults3dConnection,
   normalizeCults3dBrowser,
@@ -70,7 +70,10 @@ const browserSchema = z.object({
 /** The browser's sign-in, which the downloads need besides the API key, and which Thingport Grab sends whenever it
  *  changes. */
 export const cults3dBrowserConnection: ConnectionSlot = {
-  status: async (userId) => ({ status: (await getCults3dConnection(userId)).site }),
+  async status(userId) {
+    const connection = await getCults3dConnection(userId);
+    return { status: connection.site, account: connection.siteNick };
+  },
   async save(userId, raw) {
     const body = parseBody(browserSchema, raw);
     const browser = normalizeCults3dBrowser(body.session, body.user_agent);
@@ -80,7 +83,11 @@ export const cults3dBrowserConnection: ConnectionSlot = {
         "That doesn't look like a Cults3D sign-in: paste the request headers of a signed-in cults3d.com page, with its _session_id cookie.",
       );
     }
-    await setUserCults3dBrowser(userId, browser);
-    return { configured: !!browser };
+    // Which account it is decides whether the downloads work at all, so it's read now rather than at the first import.
+    // Best effort: a sign-in the site won't say anything about is still kept, and an import tells the user if it turns
+    // out to be another account's. Grab sends a sign-in whenever the browser's changes, so this keeps up with it.
+    const nick = browser ? await fetchCults3dSignedInNick(browser).catch(() => null) : null;
+    await setUserCults3dBrowser(userId, browser, nick);
+    return { configured: !!browser, account: nick };
   },
 };

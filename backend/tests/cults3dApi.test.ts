@@ -9,8 +9,11 @@ import {
   cults3dNumericId,
   cults3dOriginalImage,
   Cults3dSessionError,
+  cults3dSignedInNick,
+  Cults3dWrongAccountError,
   fetchCults3dLikes,
   fetchCults3dOrders,
+  fetchCults3dSignedInNick,
   isCults3dFileHost,
   parseCults3dLikesUrl,
   parseCults3dModelUrl,
@@ -152,6 +155,31 @@ describe("Cults3D sign-in", () => {
       userAgent: "Mozilla/5.0 Y",
     });
     expect(normalizeCults3dBrowser(`cf_clearance=${BROWSER.clearance}`)).toBeNull();
+  });
+
+  // The header's own menu, as a signed-in page carries it: the avatar is the one place it names the user.
+  const header =
+    '<img alt="TautvydasUk" width="22" height="22" class="drop-toggle-avatar" title="Manage my profile" ' +
+    'src="https://assets.cults3d.com/assets/avatars/cults-avatar-69.webp" />' +
+    '<a class="drop-option icon-and-text" href="/en/users/TautvydasUk">Profile</a>';
+
+  it("reads whose sign-in it is from the header's avatar, and nothing from a signed-out page", () => {
+    expect(cults3dSignedInNick(header)).toBe("TautvydasUk");
+    expect(cults3dSignedInNick('<img alt="Maker &amp; Co" class="x drop-toggle-avatar y">')).toBe("Maker & Co");
+    // Another avatar on the page, a designer's, isn't the one signed in.
+    expect(cults3dSignedInNick('<img alt="SomeDesigner" class="avatar-image">')).toBeNull();
+    expect(cults3dSignedInNick("<html><body>Sign in</body></html>")).toBeNull();
+  });
+
+  it("asks the site who the sign-in is, and calls one it shows no user for ended", async () => {
+    const calls = stubFetch(() => new Response(header, { status: 200 }));
+    expect(await fetchCults3dSignedInNick(BROWSER)).toBe("TautvydasUk");
+    expect(calls[0].url.toString()).toBe("https://cults3d.com/en/orders");
+    expect(calls[0].headers.Cookie).toBe(`_session_id=${BROWSER.session}; cf_clearance=${BROWSER.clearance}`);
+    stubFetch(() => new Response("<html></html>", { status: 200 }));
+    await expect(fetchCults3dSignedInNick(BROWSER)).rejects.toBeInstanceOf(Cults3dSessionError);
+    stubFetch(() => redirect("https://cults3d.com/en/log-in-choice"));
+    await expect(fetchCults3dSignedInNick(BROWSER)).rejects.toBeInstanceOf(Cults3dSessionError);
   });
 });
 
@@ -366,5 +394,22 @@ describe("Cults3D downloads", () => {
     await expect(resolveCults3dDownload("https://elsewhere.test/en/downloads/1", BROWSER)).rejects.toThrow(
       /Not a Cults3D/,
     );
+  });
+
+  // The site bounces the download page back where it came from -- to itself, without a Referer -- rather than saying
+  // so, which is what it does when the sign-in isn't the account that ordered the model.
+  it("tells a download the site kept on its own pages from one it sent to the files", async () => {
+    const url = "https://cults3d.com/en/downloads/195676545?creation=htek-cable-box-h501-h502";
+    stubFetch(() => redirect(url));
+    await expect(resolveCults3dDownload(url, BROWSER)).rejects.toBeInstanceOf(Cults3dWrongAccountError);
+    stubFetch(() => redirect("https://cults3d.com/en/orders"));
+    await expect(resolveCults3dDownload(url, BROWSER)).rejects.toBeInstanceOf(Cults3dWrongAccountError);
+  });
+
+  it("names both accounts when it knows them, and says what to do either way", () => {
+    expect(new Cults3dWrongAccountError({ api: "SlimDogs", site: "TautvydasUk" }).message).toMatch(
+      /SlimDogs.*TautvydasUk.*Configuration > Providers/s,
+    );
+    expect(new Cults3dWrongAccountError().message).toMatch(/same Cults3D account/);
   });
 });

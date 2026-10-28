@@ -20,6 +20,7 @@ import {
   Cults3dNoFreeDownloadError,
   Cults3dRateLimitError,
   Cults3dSessionError,
+  Cults3dWrongAccountError,
   fetchCults3dOrders,
   isCults3dFileHost,
   placeCults3dFreeOrder,
@@ -36,7 +37,7 @@ import {
   CULTS3D_CONNECT,
   CULTS3D_NO_CLEARANCE,
   CULTS3D_SIGN_IN,
-  getUserCults3dBrowser,
+  getUserCults3dBrowserAccount,
   getUserCults3dCredentials,
   markCults3dApiRejected,
   markCults3dSessionRejected,
@@ -80,6 +81,8 @@ export const cults3dImport: SourcedImport<Cults3dCredentials, Cults3dModelResolu
     if (err instanceof Cults3dBlockedError) return new HttpError(403, err.message, CLOUDFLARE_BLOCKED_CODE);
     if (err instanceof Cults3dRateLimitError) return new HttpError(429, err.message);
     if (err instanceof Cults3dNoFreeDownloadError) return new HttpError(403, err.message);
+    // Neither credential is wrong on its own, so nothing is marked rejected: it's the pair that has to be put right.
+    if (err instanceof Cults3dWrongAccountError) return new HttpError(400, err.message, SESSION_CODE);
     return err;
   },
   missingMessage: "This Cults3D model could not be found, or isn't public.",
@@ -87,9 +90,15 @@ export const cults3dImport: SourcedImport<Cults3dCredentials, Cults3dModelResolu
   async downloadModel({ userId }, resolved, credentials, _requested, kit) {
     const downloaded: NewPlateInput[] = [];
     try {
+      const account = await getUserCults3dBrowserAccount(userId);
+      // The orders below are the API key's, and Cults3D opens an order's download page only for the account that
+      // placed it. Two accounts can't be made to work, so it's said here rather than left to the site's own refusal.
+      if (account?.nick && account.nick.toLowerCase() !== credentials.nick.toLowerCase()) {
+        throw new Cults3dWrongAccountError({ api: credentials.nick, site: account.nick });
+      }
       let downloadUrl = (await fetchCults3dOrders(credentials)).get(resolved.slug) ?? null;
       if (!downloadUrl && resolved.priceCents > 0) throw cults3dPaid(resolved);
-      const browser = await getUserCults3dBrowser(userId);
+      const browser = account?.browser;
       if (!browser) throw new HttpError(400, CULTS3D_SIGN_IN, SESSION_CODE);
       // Without it every site page is a Cloudflare challenge.
       if (!browser.clearance) throw new HttpError(400, CULTS3D_NO_CLEARANCE, SESSION_CODE);
