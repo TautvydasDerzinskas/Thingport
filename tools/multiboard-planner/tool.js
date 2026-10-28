@@ -1247,7 +1247,7 @@ export default async function mount(thingport) {
     $("count").textContent = "";
     $("legend").innerHTML = "";
     $("unused").classList.remove("mbp-show");
-    $("copyBtn").disabled = $("downloadBtn").disabled = $("saveBtn").disabled = true;
+    $("copyBtn").disabled = $("downloadBtn").disabled = $("saveBtn").disabled = $("filesBtn").disabled = true;
   }
 
   // ---- main update ----------------------------------------------------------------
@@ -1297,7 +1297,7 @@ export default async function mount(thingport) {
     renderLegend(colored, result.data.tiles.values());
     renderParts(result);
     $("copyBtn").disabled = $("downloadBtn").disabled = false;
-    $("saveBtn").disabled = !wallKeys(result).length;
+    $("saveBtn").disabled = $("filesBtn").disabled = !wallKeys(result).length;
     const [uw, uh] = C.unusedSpace(result.data);
     const show = uw > 1e-9 || uh > 1e-9;
     $("unused").classList.toggle("mbp-show", show);
@@ -1384,21 +1384,6 @@ ${rows}
 
   // ---- saving the wall as a model of its own -------------------------------------
   /** Every part of the wall Thingport has a copy of, with how many are needed. */
-  function wallParts(result) {
-    const parts = new Map();
-    for (const row of saveRows(result)) {
-      const quantity = Number(row[1]) || 0;
-      for (const link of row[2] || []) {
-        const copy = localCopy(link);
-        if (!copy) continue;
-        const already = parts.get(copy.printId);
-        if (already) already.quantity += quantity;
-        else parts.set(copy.printId, { copy, name: row[0].replace(/\n/g, " "), quantity });
-      }
-    }
-    return [...parts.values()];
-  }
-
   /** What to print and in what order, for the saved model's description. */
   // --- drawing a wall -----------------------------------------------------------------------------
   //
@@ -1569,17 +1554,25 @@ ${rows}
     if (event.key === "Enter" && event.target === $("saveName")) $("saveGo").click();
   });
 
-  $("saveBtn").addEventListener("click", () => {
+  // Keeping the wall and saving it ask the same two things -- what to call it, and a moment to draw it --
+  // so they are the one dialog with two endings rather than two dialogs that drift apart.
+  let wallMode = "save";
+
+  function openWallDialog(mode) {
     if (!current) return;
-    const parts = wallParts(current);
-    if (!parts.length) {
+    const plan = wallPlan(current);
+    const pieces = [...plan.plates, ...plan.joints];
+    if (!pieces.length) {
       ui.toast(t("toast.nothingToSave"), "error");
       return;
     }
+    wallMode = mode;
     const d = current.data;
+    $("saveTitle").textContent = t(mode === "save" ? "save.title" : "download.title");
+    $("saveGo").textContent = t(mode === "save" ? "save.go" : "download.go");
     $("saveNote").textContent = t("save.note", {
-      parts: parts.length,
-      files: parts.reduce((sum, part) => sum + part.quantity, 0),
+      parts: pieces.length,
+      files: pieces.reduce((sum, piece) => sum + piece.quantity, 0),
     });
     $("saveName").value = t("save.suggested", {
       width: fmt(d.width),
@@ -1589,7 +1582,10 @@ ${rows}
     saveCover.hidden = false;
     $("saveName").focus();
     $("saveName").select();
-  });
+  }
+
+  $("saveBtn").addEventListener("click", () => openWallDialog("save"));
+  $("filesBtn").addEventListener("click", () => openWallDialog("download"));
 
   $("saveGo").addEventListener("click", async () => {
     if (!current) return;
@@ -1598,7 +1594,7 @@ ${rows}
     const plan = wallPlan(current);
     const pieces = [...plan.plates, ...plan.joints];
     go.disabled = true;
-    go.textContent = t("save.saving");
+    go.textContent = t(wallMode === "save" ? "save.saving" : "download.working");
     building = new AbortController();
     try {
       // Only the joints come from files; the plates are drawn here and need nothing fetched.
@@ -1610,22 +1606,29 @@ ${rows}
         ))
       )
         return;
-      const collection = await collections.pick({ title: t("save.pickCollection") });
-      if (!collection) return;
+      // Where it is going is asked before it is drawn, so a change of mind costs nothing.
+      const collection = wallMode === "save" ? await collections.pick({ title: t("save.pickCollection") }) : null;
+      if (wallMode === "save" && !collection) return;
       showBuilding(true);
       const file = await wallFile(current, title, {
         onProgress: buildProgress,
         signal: building.signal,
       });
-      await models.create({
-        name: title,
-        description: printNotes(current, title, pieces),
-        tags: ["multiboard", "generated"],
-        collectionId: collection.id,
-        files: [file],
-      });
-      closeSave();
-      ui.toast(t("toast.saved", { name: title, collection: collection.name }), "success");
+      if (wallMode === "save") {
+        await models.create({
+          name: title,
+          description: printNotes(current, title, pieces),
+          tags: ["multiboard", "generated"],
+          collectionId: collection.id,
+          files: [file],
+        });
+        closeSave();
+        ui.toast(t("toast.saved", { name: title, collection: collection.name }), "success");
+      } else {
+        thingport.download(file);
+        closeSave();
+        ui.toast(t("toast.downloaded", { name: file.name }), "success");
+      }
     } catch (err) {
       const stopped = building?.signal.aborted;
       ui.toast(stopped ? t("build.cancelled") : err.message || t("toast.saveFailed"), stopped ? "info" : "error");
@@ -1633,7 +1636,7 @@ ${rows}
       showBuilding(false);
       building = null;
       go.disabled = false;
-      go.textContent = t("save.go");
+      go.textContent = t(wallMode === "save" ? "save.go" : "download.go");
     }
   });
 
