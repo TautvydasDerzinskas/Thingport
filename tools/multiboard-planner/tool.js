@@ -1813,7 +1813,7 @@ export default async function mount(thingport) {
     $("count").textContent = "";
     $("legend").innerHTML = "";
     $("unused").classList.remove("mbp-show");
-    $("copyBtn").disabled = $("downloadBtn").disabled = $("saveBtn").disabled = $("filesBtn").disabled = true;
+    $("saveBtn").disabled = $("filesBtn").disabled = true;
   }
 
   /**
@@ -1915,7 +1915,6 @@ export default async function mount(thingport) {
     $("stage").replaceChildren(svg);
     applySpread(Number($("spread").value) || 0);
     renderParts(result);
-    $("copyBtn").disabled = $("downloadBtn").disabled = false;
     $("saveBtn").disabled = $("filesBtn").disabled = !wallKeys(result).length;
     const [uw, uh] = C.unusedSpace(result.data);
     const show = uw > 1e-9 || uh > 1e-9;
@@ -1946,48 +1945,6 @@ export default async function mount(thingport) {
       }
     return [...keys];
   }
-
-  $("downloadBtn").addEventListener("click", () => {
-    if (!current) return;
-    const d = current.data;
-    const svg = buildSvg(current).svg;
-    svg.setAttribute("width", "100%");
-    svg.querySelectorAll(".enter").forEach((node) => node.classList.remove("enter"));
-    const rows = saveRows(current)
-      .map(
-        (r) =>
-          `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${(r[2] || [])
-            .filter(Boolean)
-            .map((l) => `<a class="link" href="${esc(l)}" target="_blank">Link</a>`)
-            .join(" / ")}</td></tr>`,
-      )
-      .join("\n");
-    const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Parts List</title>
-<style>body{font-family:Arial,sans-serif;background:#2c2c2c;color:#fff;margin:0;padding:20px}table{width:100%;border-collapse:collapse}th,td{padding:10px;text-align:left;border-bottom:1px solid #444}th{background:#1c1c1c}.link{color:#ff6600;text-decoration:none}.link:hover{text-decoration:underline}.layout{max-width:900px;margin:20px 0}</style></head><body>
-<h1>Results:</h1>
-<div class="info-section"><p><strong>Wall size:</strong> ${esc(fmt(d.width))} x ${esc(fmt(d.height))} ${d.unitsLabel()}</p><p><strong>Tile Size:</strong> ${d.tileSize} x ${d.tileSize}</p><p><strong>Tile Setup:</strong> ${state.setup === 1 ? "Grid Tiles (Advanced)" : "Single Tiles (Simple)"}</p><p><strong>Mount Type:</strong> ${esc(d.mountingType)}</p></div>
-<table><thead><tr><th>Part Name</th><th>Quantity</th><th>Link</th></tr></thead><tbody>
-${rows}
-</tbody></table>
-<div class="layout">${new XMLSerializer().serializeToString(svg)}</div>
-</body></html>`;
-    const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, "_");
-    thingport.download({ name: `Multiboard-Design-${stamp}.html`, data: html, type: "text/html" });
-    ui.toast(t("toast.listDownloaded"), "success");
-  });
-
-  $("copyBtn").addEventListener("click", async () => {
-    if (!current) return;
-    const text = [`${t("list.part")}\t${t("list.quantity")}\t${t("list.link")}`]
-      .concat(saveRows(current).map((r) => `${r[0]}\t${r[1]}\t${(r[2] || []).filter(Boolean).join(" ")}`))
-      .join("\n");
-    try {
-      await navigator.clipboard.writeText(text);
-      ui.toast(t("toast.copied"), "success");
-    } catch {
-      ui.toast(t("toast.copyFailed"), "error");
-    }
-  });
 
   // ---- saving the wall as a model of its own -------------------------------------
   /** Every part of the wall Thingport has a copy of, with how many are needed. */
