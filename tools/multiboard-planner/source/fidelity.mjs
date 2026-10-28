@@ -305,9 +305,13 @@ function main() {
   console.log(`\nbores (radius mm, thread lead mm/turn)`);
   const cx = (ba.mn[0] + ba.mx[0]) / 2,
     cy = (ba.mn[1] + ba.mx[1]) / 2;
+  // Same parity point as below: which lattice falls on the plate's centre depends on the cell count.
+  const n0 = Math.round(ba.size[0] / 25);
+  const offMulti = n0 % 2 === 0 ? 12.5 : 0;
+  const offPeg = n0 % 2 === 0 ? 0 : 12.5;
   for (const [px, py, rmax, label] of [
-    [cx, cy, 6, "pegboard hole (wall junction)"],
-    [cx + 12.5, cy + 12.5, 14, "multihole (cell centre)"],
+    [cx + offPeg, cy + offPeg, 6, "pegboard hole (wall junction)"],
+    [cx + offMulti, cy + offMulti, 14, "multihole (cell centre)"],
   ]) {
     const la = lead(A, px, py, rmax),
       lb = lead(B, px, py, rmax);
@@ -340,9 +344,15 @@ function main() {
     cya = (ba.mn[1] + ba.mx[1]) / 2;
   const cxb = (bb.mn[0] + bb.mx[0]) / 2,
     cyb = (bb.mn[1] + bb.mx[1]) / 2;
+  // Which lattice sits on the plate's centre depends on how many cells across it is: with an even count a
+  // cell centre lands on 12.5 and a wall junction on 0, with an odd count the other way about. Probing the
+  // wrong one finds no bore at all, and the run fails for a reason that is not the plate's.
+  const cells = Math.round(ba.size[0] / 25);
+  const atMulti = cells % 2 === 0 ? 12.5 : 0;
+  const atPeg = cells % 2 === 0 ? 0 : 12.5;
   for (const [ox, oy, rmax, label] of [
-    [0, 0, 6, "pegboard hole"],
-    [12.5, 12.5, 14, "multihole"],
+    [atPeg, atPeg, 6, "pegboard hole"],
+    [atMulti, atMulti, 14, "multihole"],
   ]) {
     let n = 0,
       sum = 0,
