@@ -236,8 +236,10 @@ export function lead(mesh, cx, cy, rmax, z0 = 1.2, z1 = 5.0, step = 0.2) {
 /* ---- report -------------------------------------------------------------------------------------------- */
 
 const TOL = 0.25; // Multiboard's own stated design tolerance
-const Z_SLICES = [0.1, 0.6, 1.5, 2.9, 3.3, 4.7, 5.6, 6.1]; // never the 3.1 symmetry plane: the halves meet there in coplanar faces
-const CELL = 0.05;
+const Z_SLICES = [0.1, 0.6, 1.2, 1.9, 2.9, 3.3, 4.4, 5.6, 6.1]; // off the 3.1 symmetry plane and off the slot faces at 1.5/4.9, where coplanar faces make a slice degenerate
+// Raster step. Fine enough to resolve a thread on a small plate, coarsened on a big one so a 16x16 does not
+// ask for 66 million cells a slice.
+const cellFor = (side) => (side <= 150 ? 0.05 : side <= 275 ? 0.1 : 0.2);
 
 function main() {
   const [a, b] = process.argv.slice(2);
@@ -269,6 +271,7 @@ function main() {
     w: Math.max(ba.size[0], bb.size[0]) + 1,
     h: Math.max(ba.size[1], bb.size[1]) + 1,
   };
+  const CELL = cellFor(Math.max(ba.size[0], ba.size[1]));
   console.log(`\ncross-sections (${CELL} mm raster)`);
   console.log(`     z    solid mm2 orig / gen      IoU    holes orig / gen`);
   for (const z of Z_SLICES) {
