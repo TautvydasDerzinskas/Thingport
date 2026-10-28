@@ -22,6 +22,18 @@ async function zipOf(entries: Record<string, string>): Promise<string> {
   return zipPath;
 }
 
+/** What a site that builds the download itself hands over when the designer uploaded an archive: a zip whose only
+ *  entry is their own zip. */
+async function wrapperZipOf(inner: Record<string, string>): Promise<string> {
+  const zip = new JSZip();
+  zip.file("Designer/model/model-v1.1.zip", await fs.readFile(await zipOf(inner)));
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "thingport-scad-test-"));
+  const zipPath = path.join(dir, "download.zip");
+  await fs.writeFile(zipPath, await zip.generateAsync({ type: "nodebuffer" }));
+  made.push(dir);
+  return zipPath;
+}
+
 afterEach(async () => {
   for (const dir of made.splice(0)) await fs.rm(dir, { recursive: true, force: true });
 });
@@ -57,6 +69,15 @@ describe("parametric sources in a raw-files zip", () => {
 
     const sources = await parametricSourcesFromZip(zipPath);
     expect(sources.map((s) => s.filename).toSorted()).toEqual(["v1 - box.scad", "v2 - box.scad"]);
+  });
+
+  // The plates of an archive that only wraps the designer's own are a level deeper, and so is the script beside
+  // them: each kind of file is looked for as deep as it takes.
+  it("takes the script out of an archive the download only wraps, as it does the plates", async () => {
+    const zipPath = await wrapperZipOf({ "box.scad": "a = 1;\n", "box.stl": "solid box\nendsolid box\n" });
+
+    expect((await modelFilesFromZip(zipPath)).map((p) => p.filename)).toEqual(["box.stl"]);
+    expect((await parametricSourcesFromZip(zipPath)).map((s) => s.filename)).toEqual(["box.scad"]);
   });
 
   it("finds nothing in the empty zip a withheld source downloads as", async () => {
