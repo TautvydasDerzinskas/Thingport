@@ -75,6 +75,8 @@
   "parts.list": "Liste",
   "parts.listHint": "Télécharger la liste avec le calepinage en page HTML",
   "parts.title": "Pièces",
+  "preview.spread": "Écarter",
+  "preview.spreadAria": "Écartez les pièces pour voir de quoi le panneau est fait",
   "save.button": "Enregistrer dans Thingport",
   "save.cancel": "Annuler",
   "save.go": "Enregistrer",

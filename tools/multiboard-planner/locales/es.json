@@ -75,6 +75,8 @@
   "parts.list": "Lista",
   "parts.listHint": "Descargar la lista con el trazado como página HTML",
   "parts.title": "Piezas",
+  "preview.spread": "Separar",
+  "preview.spreadAria": "Separa las piezas para ver de qué está hecho el tablero",
   "save.button": "Guardar en Thingport",
   "save.cancel": "Cancelar",
   "save.go": "Guardar",

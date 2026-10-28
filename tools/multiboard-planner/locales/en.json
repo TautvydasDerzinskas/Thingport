@@ -75,6 +75,8 @@
   "parts.list": "List",
   "parts.listHint": "Download the list with the layout as an HTML page",
   "parts.title": "Parts",
+  "preview.spread": "Spread",
+  "preview.spreadAria": "Spread the parts apart to see what the board is made of",
   "save.button": "Save to Thingport",
   "save.cancel": "Cancel",
   "save.go": "Save",

@@ -394,6 +394,19 @@
     color: var(--muted);
   }
 
+  /* ---- taking the board apart to see what is in it ---- */
+  .mbp-spread {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-top: 1px solid var(--divider);
+  }
+  .mbp-spread input {
+    flex: 1;
+    accent-color: var(--accent);
+  }
+
   /* ---- drawing a wall, which takes a moment a person should see the shape of ---- */
   .mbp-bar {
     height: 6px;
@@ -711,6 +724,19 @@
         <div class="mbp-legend" id="mbp-legend"></div>
       </div>
       <div class="mbp-stage" id="mbp-stage"></div>
+      <div class="mbp-spread">
+        <span class="mbp-label" data-t="preview.spread">Spread</span>
+        <input
+          type="range"
+          id="mbp-spread"
+          min="0"
+          max="100"
+          step="1"
+          value="0"
+          data-t-aria="preview.spreadAria"
+          aria-label="Spread the parts apart to see what the board is made of"
+        />
+      </div>
     </section>
 
     <section class="mbp-panel mbp-results" data-t-aria="aria.parts" aria-label="Parts list">

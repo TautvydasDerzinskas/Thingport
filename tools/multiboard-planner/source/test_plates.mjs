@@ -122,6 +122,27 @@ await buildWall(fakeScad, "// script", { plates: [{ type: "C1", size: "4x6", nam
 );
 check(/4x6/.test(refused), `a size it cannot draw should say which, got "${refused}"`);
 
+// --- the preview draws the plate the generator draws ---------------------------------------------------
+// The preview's lattice is the plate seen from above, so its numbers have to be plate.scad's. Drawn from
+// memory they would drift, and a picture that quietly stops matching the thing it shows is worse than none.
+const scad = fs.readFileSync(path.join(here, "plate.scad"), "utf8");
+const ui = fs.readFileSync(path.join(here, "ui.js"), "utf8");
+const scadValue = (name) => Number(new RegExp(`^${name}\\s*=\\s*([\\d.]+)`, "m").exec(scad)?.[1]);
+const uiValue = (name) => Number(new RegExp(`${name}\\s*=\\s*([\\d.]+)`).exec(ui)?.[1]);
+
+const thin = scadValue("MULTI_THIN");
+const drawnFlats = uiValue("const flats");
+check(thin === 23.4, `plate.scad's face octagon should be 23.4 across, reads ${thin}`);
+check(drawnFlats === thin, `the preview draws ${drawnFlats} across where the plate is ${thin}`);
+
+const pegThin = scadValue("PEG_THIN");
+const drawnHole = Number(/el\("circle", \{ cx, cy, r: ([\d.]+)/.exec(ui)?.[1]);
+check(pegThin === 7.9, `plate.scad's face hole should be 7.9 across, reads ${pegThin}`);
+check(drawnHole === pegThin / 2, `the preview draws a hole of ${drawnHole} where the plate's is ${pegThin / 2}`);
+
+// And the cell the pattern repeats on is the lattice the plates sit on.
+check(/width: C\.TILE_CELL_OFFSET/.test(ui), "the lattice should repeat on the planner's own cell pitch");
+
 console.log(`tile types: ${types.length}, all mapped and sized`);
 console.log(`tiles: ${data.tiles.length}, every one draws`);
 console.log(`types checked against the plate they link to: ${checked}${checked ? "" : " (no installed copy given)"}`);

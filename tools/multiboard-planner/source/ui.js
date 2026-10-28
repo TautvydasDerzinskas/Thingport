@@ -15,6 +15,8 @@ const PAL = {
   tileBg: "#111111",
   line: "#5b616b",
   label: "#ffffff",
+  plate: "#2a2f37",
+  hole: "#14171c",
   C: "#d8574a",
   S: "#57a85a",
   CR: "#e0c341",
@@ -26,6 +28,8 @@ const MOUNT_TYPES = ["Simple Flush", "Offset Pillar", "Offset Snap", "Free Stand
 const TILE_SIZES = [16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4];
 const MAX_TILES = 10000; // ~10 x 10 m of 4x4 tiles; beyond that the input is almost surely a typo
 const DETAIL_LIMIT = 1500; // above this, no labels or snap markers in the preview
+const LATTICE_ID = "mbp-lattice"; // the one cell every plate is drawn with
+const SPREAD_ROOT = "mbp-spread-root"; // everything the spread slider moves
 const ANIMATE_LIMIT = 300; // above this, tiles appear without the entrance animation
 const TYPING_DELAY = 200; // ms to wait after the last keystroke before recalculating
 
@@ -208,8 +212,62 @@ export default async function mount(thingport) {
     if (parent) parent.appendChild(node);
     return node;
   }
+  /**
+   * The plate's own face, as a pattern: one 25 mm cell drawn once and tiled over every plate.
+   *
+   * It is the real thing rather than a sketch of one -- an octagon 23.4 mm across its flats with a 7.9 mm
+   * hole at each corner, which is what a plate looks like from above. Done as a pattern because a 16x16
+   * plate is 256 octagons and 225 holes, and a wall is dozens of plates: drawn out, a large board would be
+   * a hundred thousand nodes, and this is one node a plate however big the board.
+   */
+  function latticePattern(svg) {
+    const defs = el("defs", {}, svg);
+    const pattern = el(
+      "pattern",
+      { id: LATTICE_ID, width: C.TILE_CELL_OFFSET, height: C.TILE_CELL_OFFSET, patternUnits: "userSpaceOnUse" },
+      defs,
+    );
+    const cell = C.TILE_CELL_OFFSET;
+    const flats = 23.4;
+    const edge = (cell - flats) / 2;
+    const far = cell - edge;
+    // An octagon's corner cut, for a given distance across its flats.
+    const cut = (flats - flats / (1 + 2 * Math.cos(Math.PI / 4))) / 2;
+    el("rect", { width: cell, height: cell, fill: PAL.plate }, pattern);
+    el(
+      "polygon",
+      {
+        points: [
+          [edge + cut, edge],
+          [far - cut, edge],
+          [far, edge + cut],
+          [far, far - cut],
+          [far - cut, far],
+          [edge + cut, far],
+          [edge, far - cut],
+          [edge, edge + cut],
+        ]
+          .map(([px, py]) => `${px.toFixed(2)},${py.toFixed(2)}`)
+          .join(" "),
+        fill: PAL.hole,
+      },
+      pattern,
+    );
+    // The pegboard hole sits on a cell's corner, so each cell carries a quarter of four of them.
+    for (const [cx, cy] of [
+      [0, 0],
+      [cell, 0],
+      [0, cell],
+      [cell, cell],
+    ])
+      el("circle", { cx, cy, r: 3.95, fill: PAL.hole }, pattern);
+  }
+
   function tileGlyph(g, x, y, w, h, type, inset) {
-    el("rect", { x, y, width: w, height: h, fill: PAL[tileCategory(type)], rx: Math.min(w, h) * 0.04 }, g);
+    const rx = Math.min(w, h) * 0.04;
+    el("rect", { x, y, width: w, height: h, fill: PAL[tileCategory(type)], rx }, g);
+    // The lattice over the tint, so a plate reads as a plate and its kind still reads at a glance.
+    el("rect", { x, y, width: w, height: h, rx, fill: `url(#${LATTICE_ID})`, opacity: 0.85 }, g);
     const ed = borderEdges(type);
     const x0 = x + inset,
       y0 = y + inset,
@@ -270,6 +328,7 @@ export default async function mount(thingport) {
       role: "img",
       "aria-label": `Layout of ${data.tiles.map.size} tiles`,
     });
+    latticePattern(svg);
     el("rect", { x: 0, y: 0, width: W, height: H, fill: PAL.room, rx: Math.min(W, H) * 0.004 }, svg);
     const tiles = data.tiles.values();
     const def = data.tileSize * C.TILE_CELL_OFFSET;
@@ -284,9 +343,13 @@ export default async function mount(thingport) {
     const colored = mountRows[0].length > 1;
     const first = tiles[0];
     const snapBox = (Math.min(first.sizeX, first.sizeY) * C.TILE_CELL_OFFSET) / 10;
-    const tileLayer = el("g", {}, svg),
-      snapLayer = el("g", {}, svg),
-      labelLayer = el("g", {}, svg);
+    // The wall's outline stays put as a backdrop; everything on it moves when the parts are spread.
+    const root = el("g", { id: SPREAD_ROOT }, svg);
+    root.dataset.cx = String(W / 2);
+    root.dataset.cy = String(H / 2);
+    const tileLayer = el("g", {}, root),
+      snapLayer = el("g", {}, root),
+      labelLayer = el("g", {}, root);
     const gap = Math.max(W, H) * 0.0015;
     tiles.forEach((t, i) => {
       const w = t.sizeX * C.TILE_CELL_OFFSET,
@@ -294,15 +357,20 @@ export default async function mount(thingport) {
       const x = t.x * def,
         y = H - t.y * def - h;
       const name = tileName(t);
+      // Which way this piece moves when the parts are spread: out from the middle, by how far off it is.
+      const ox = (x + w / 2 - W / 2).toFixed(2),
+        oy = (y + h / 2 - H / 2).toFixed(2);
       const g = el(
         "g",
         animate
           ? {
               class: "tile enter",
               "data-name": name,
+              "data-ox": ox,
+              "data-oy": oy,
               style: `animation-delay:${Math.min(i * 12, 300)}ms;transform-origin:${x + w / 2}px ${y + h / 2}px`,
             }
-          : { class: "tile", "data-name": name },
+          : { class: "tile", "data-name": name, "data-ox": ox, "data-oy": oy },
         tileLayer,
       );
       el("rect", { x, y, width: w, height: h, fill: PAL.tileBg }, g);
@@ -322,6 +390,8 @@ export default async function mount(thingport) {
           stroke: "#000",
           "stroke-width": fs / 6,
           "paint-order": "stroke",
+          "data-ox": ox,
+          "data-oy": oy,
           "font-weight": 700,
           "font-family": "system-ui, sans-serif",
           "pointer-events": "none",
@@ -342,6 +412,8 @@ export default async function mount(thingport) {
           "circle",
           {
             class: animate ? "snap enter" : "snap",
+            "data-ox": ox,
+            "data-oy": oy,
             cx: sx + snapBox / 2,
             cy: sy + snapBox / 2,
             r,
@@ -567,6 +639,38 @@ export default async function mount(thingport) {
     $("copyBtn").disabled = $("downloadBtn").disabled = $("saveBtn").disabled = $("filesBtn").disabled = true;
   }
 
+  /**
+   * Spreading the parts apart, to see what a board is made of.
+   *
+   * Each piece moves out from the middle by how far off it already is, so the board comes apart evenly, and
+   * the whole lot is scaled back by the same amount so it stays in frame rather than growing off the edge.
+   */
+  function applySpread(amount) {
+    const root = document.getElementById(SPREAD_ROOT);
+    if (!root) return;
+    const k = amount / 100;
+    const cx = Number(root.dataset.cx || 0),
+      cy = Number(root.dataset.cy || 0);
+    const shrink = 1 / (1 + k);
+    root.setAttribute("transform", k ? `translate(${cx} ${cy}) scale(${shrink}) translate(${-cx} ${-cy})` : "");
+    for (const piece of root.querySelectorAll("[data-ox]")) {
+      const ox = Number(piece.dataset.ox) * k,
+        oy = Number(piece.dataset.oy) * k;
+      if (k) piece.setAttribute("transform", `translate(${ox.toFixed(2)} ${oy.toFixed(2)})`);
+      else piece.removeAttribute("transform");
+    }
+  }
+
+  // A drag fires faster than a board can be redrawn, so only the last one in a frame is acted on.
+  let spreadFrame = 0;
+  $("spread").addEventListener("input", () => {
+    if (spreadFrame) return;
+    spreadFrame = requestAnimationFrame(() => {
+      spreadFrame = 0;
+      applySpread(Number($("spread").value) || 0);
+    });
+  });
+
   // ---- main update ----------------------------------------------------------------
   let current = null;
   function update() {
@@ -611,6 +715,7 @@ export default async function mount(thingport) {
     current = result;
     const { svg, colored } = buildSvg(result);
     $("stage").replaceChildren(svg);
+    applySpread(Number($("spread").value) || 0);
     renderLegend(colored, result.data.tiles.values());
     renderParts(result);
     $("copyBtn").disabled = $("downloadBtn").disabled = false;
