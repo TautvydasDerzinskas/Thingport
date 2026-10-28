@@ -875,6 +875,22 @@ const JOINT_FOR = {
 export function jointOutlines(mount, plates) {
   return (JOINT_FOR[mount]?.[plates] ?? []).map(([key, name]) => JOINT_OUTLINES[key]?.[name]).filter(Boolean);
 }
+
+/**
+ * The piece of a mounting you actually see, where that isn't the one holding the plates together.
+ *
+ * An offset snap is two pieces: part A reaches behind the board and holds the plates to each other, and part B
+ * drops into a multihole from the front. So a board mounted that way shows part B -- one in every plate at
+ * every corner, which is what the parts list counts -- and part A not at all. The raised snaps are the other
+ * way round, with the piece on this side being the one in JOINT_FOR.
+ */
+const FRONT_PIECE = {
+  "Offset Snap": ["thangs-1323061", "Snap DS Part B - Standard"],
+};
+export function frontOutline(mount) {
+  const pick = FRONT_PIECE[mount];
+  return pick ? (JOINT_OUTLINES[pick[0]]?.[pick[1]] ?? null) : null;
+}
 /** A plate takes its kind's colour where it has one; a lone tile is Thingport's own accent. */
 export const plateColour = (type, colours) => colours[tileKind(type)] ?? colours.plate;
 
@@ -1182,11 +1198,16 @@ export function snapGlyph(g, cx, cy, r, dirs, colours, outlines, cell) {
   // into it. Four: the bars cross the corner diagonally, and a cluster needs no turning at all.
   const deg = (angle) => (angle * 180) / Math.PI;
   outlines.forEach((outline, i) => {
-    let aim;
-    if (dirs.length === 4) aim = outline.axis === null ? 0 : 45 + i * 90;
-    else if (dirs.length === 2) aim = deg(Math.atan2(dirs[0][1] - dirs[1][1], dirs[0][0] - dirs[1][0]));
-    else aim = deg(Math.atan2(dirs[0][1], dirs[0][0]));
-    const turn = outline.axis === null ? 0 : aim - outline.axis;
+    let turn = 0;
+    if (outline.axis !== null && dirs.length) {
+      const aim =
+        dirs.length === 4
+          ? 45 + i * 90
+          : dirs.length === 2
+            ? deg(Math.atan2(dirs[0][1] - dirs[1][1], dirs[0][0] - dirs[1][0]))
+            : deg(Math.atan2(dirs[0][1], dirs[0][0]));
+      turn = aim - outline.axis;
+    }
     el(
       "path",
       {
@@ -1507,7 +1528,16 @@ export default async function mount(thingport) {
     });
     // Snaps are per corner, shared: the 36 junctions of a 5x5 wall take 16 quad, 16 dual and 4 single snaps,
     // which is what the parts list asks for, and the arms follow the plates that actually meet there.
-    if (colored)
+    const front = frontOutline(state.mount);
+    if (colored && front)
+      // One in each plate that meets here, sitting in the multihole half a cell into it.
+      for (const met of corners.values())
+        for (const [dx, dy] of met.dirs) {
+          const fx = met.x + Math.sign(dx) * (cell / 2);
+          const fy = met.y + Math.sign(dy) * (cell / 2);
+          hardware(fx, fy, (grp) => snapGlyph(grp, fx, fy, r, [], PAL, [front], cell));
+        }
+    else if (colored)
       for (const met of corners.values())
         hardware(met.x, met.y, (grp) =>
           snapGlyph(grp, met.x, met.y, r, met.dirs, PAL, jointOutlines(state.mount, met.dirs.length), cell),
@@ -1537,7 +1567,12 @@ export default async function mount(thingport) {
       const art = `<path d="${outline.d}" fill="none" stroke="${PAL.fitting}" stroke-width="${(side / 18).toFixed(2)}" stroke-linejoin="round"/>`;
       return `<span>${key(art, `${-side / 2} ${-side / 2} ${side} ${side}`)}${esc(t(`legend.${label}`))}</span>`;
     };
-    if (snapped) {
+    const front = frontOutline(state.mount);
+    if (snapped && front) {
+      const side = Math.max(front.w, front.h) * 1.12;
+      const art = `<path d="${front.d}" fill="none" stroke="${PAL.fitting}" stroke-width="${(side / 18).toFixed(2)}" stroke-linejoin="round"/>`;
+      parts.push(`<span>${key(art, `${-side / 2} ${-side / 2} ${side} ${side}`)}${esc(t("legend.snap"))}</span>`);
+    } else if (snapped) {
       parts.push(joint(4, "quad"), joint(2, "dual"), joint(1, "single"));
     } else {
       const head =
