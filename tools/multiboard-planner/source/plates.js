@@ -65,10 +65,10 @@ export function plateLabel(type, size, count, tileNames = {}) {
  * `scad` is what `thingport.library("openscad")` hands back and `script` the text of plate.scad, which the
  * tool carries rather than fetching: a plate is drawn here, in the tab, and nothing leaves it.
  */
-export async function renderPlate(scad, script, { type, size }) {
+export async function renderPlate(scad, script, { type, size }, { signal } = {}) {
   const parameters = plateParameters(type, size);
   if (!parameters) throw new Error(`No plate for a ${size} ${type}`);
-  const { mesh, log } = await scad.render(script, { parameters, format: "mesh" });
+  const { mesh, log } = await scad.render(script, { parameters, format: "mesh", signal });
   if (!mesh) throw new Error(`The engine drew no ${size} ${type}${log?.length ? `: ${log.join(" ")}` : ""}`);
   return mesh;
 }
@@ -116,31 +116,54 @@ function fileStem(order, label) {
  */
 export async function buildWall(scad, script, plan, { readJoint, onProgress, signal } = {}) {
   const total = plan.plates.length + plan.joints.length;
-  const files = [];
+  const files = Array.from({ length: plan.plates.length });
   let done = 0;
   const stopIfAsked = () => {
     if (signal?.aborted) throw new Error("cancelled");
   };
-  for (const plate of plan.plates) {
-    stopIfAsked();
-    await onProgress?.({ done, total, name: plate.name });
-    const name = partName(plate);
-    const mesh = await renderPlate(scad, script, plate);
-    files.push({
-      name: `${fileStem(files.length + 1, name)}.stl`,
-      data: writeBinaryStl(mesh, { name }),
-      type: "model/stl",
-    });
-    done++;
-  }
+  // Each step said once. Every report waits for the bar to be painted before the next render takes the thread,
+  // so repeating one costs a frame for nothing.
+  let said = -1;
+  const report = async (payload) => {
+    if (payload.done === said) return;
+    said = payload.done;
+    await onProgress?.(payload);
+  };
+  // The plates don't depend on each other, so several are drawn at once -- the engine keeps a worker a core,
+  // and a wall that took a minute one at a time takes a fraction of it. They are put back in plan order
+  // afterwards, so what comes out doesn't depend on which finished first.
+  const at = plan.plates.map((plate, index) => ({ plate, index }));
+  const lanes = Math.max(1, Math.min(scad.concurrency ?? 1, at.length));
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: lanes }, async () => {
+      for (;;) {
+        const job = at[next++];
+        if (!job) return;
+        stopIfAsked();
+        const name = partName(job.plate);
+        const mesh = await renderPlate(scad, script, job.plate, { signal });
+        files[job.index] = {
+          name,
+          data: writeBinaryStl(mesh, { name }),
+          type: "model/stl",
+        };
+        done++;
+        await report({ done, total, name: job.plate.name });
+      }
+    }),
+  );
   for (const joint of plan.joints) {
     stopIfAsked();
-    await onProgress?.({ done, total, name: joint.name });
+    await report({ done, total, name: joint.name });
     if (!readJoint) throw new Error(`Nothing to read ${joint.name} with`);
-    for (const piece of await readJoint(joint))
-      files.push({ ...piece, name: `${fileStem(files.length + 1, piece.name)}${piece.extension}` });
+    for (const piece of await readJoint(joint)) files.push({ ...piece, extension: piece.extension });
     done++;
   }
-  await onProgress?.({ done: total, total });
-  return files;
+  await report({ done: total, total });
+  // Numbered once everything is here, so the order on the model's page is the order it is printed in.
+  return files.map(({ extension = ".stl", ...file }, index) => ({
+    ...file,
+    name: `${fileStem(index + 1, file.name)}${extension}`,
+  }));
 }

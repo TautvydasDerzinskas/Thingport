@@ -594,12 +594,22 @@ export function writeBinaryStl(mesh, { name = "model" } = {}) {
     const a = triangles[i] * 3,
       b = triangles[i + 1] * 3,
       c = triangles[i + 2] * 3;
-    const ax = vertices[a], ay = vertices[a + 1], az = vertices[a + 2];
-    const bx = vertices[b], by = vertices[b + 1], bz = vertices[b + 2];
-    const cx = vertices[c], cy = vertices[c + 1], cz = vertices[c + 2];
+    const ax = vertices[a],
+      ay = vertices[a + 1],
+      az = vertices[a + 2];
+    const bx = vertices[b],
+      by = vertices[b + 1],
+      bz = vertices[b + 2];
+    const cx = vertices[c],
+      cy = vertices[c + 1],
+      cz = vertices[c + 2];
     // The facet normal, which slicers use to tell inside from outside.
-    const ux = bx - ax, uy = by - ay, uz = bz - az;
-    const vx = cx - ax, vy = cy - ay, vz = cz - az;
+    const ux = bx - ax,
+      uy = by - ay,
+      uz = bz - az;
+    const vx = cx - ax,
+      vy = cy - ay,
+      vz = cz - az;
     let nx = uy * vz - uz * vy,
       ny = uz * vx - ux * vz,
       nz = ux * vy - uy * vx;
@@ -694,10 +704,10 @@ export function plateLabel(type, size, count, tileNames = {}) {
  * `scad` is what `thingport.library("openscad")` hands back and `script` the text of plate.scad, which the
  * tool carries rather than fetching: a plate is drawn here, in the tab, and nothing leaves it.
  */
-export async function renderPlate(scad, script, { type, size }) {
+export async function renderPlate(scad, script, { type, size }, { signal } = {}) {
   const parameters = plateParameters(type, size);
   if (!parameters) throw new Error(`No plate for a ${size} ${type}`);
-  const { mesh, log } = await scad.render(script, { parameters, format: "mesh" });
+  const { mesh, log } = await scad.render(script, { parameters, format: "mesh", signal });
   if (!mesh) throw new Error(`The engine drew no ${size} ${type}${log?.length ? `: ${log.join(" ")}` : ""}`);
   return mesh;
 }
@@ -726,7 +736,10 @@ export function partName(part) {
  */
 /** A name that sorts in print order and is safe as a file name on any machine. */
 function fileStem(order, label) {
-  const clean = label.replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, " ").trim();
+  const clean = label
+    .replace(/[\\/:*?"<>|]+/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
   return `${String(order).padStart(2, "0")} - ${clean}`.slice(0, 120);
 }
 
@@ -742,33 +755,56 @@ function fileStem(order, label) {
  */
 export async function buildWall(scad, script, plan, { readJoint, onProgress, signal } = {}) {
   const total = plan.plates.length + plan.joints.length;
-  const files = [];
+  const files = Array.from({ length: plan.plates.length });
   let done = 0;
   const stopIfAsked = () => {
     if (signal?.aborted) throw new Error("cancelled");
   };
-  for (const plate of plan.plates) {
-    stopIfAsked();
-    await onProgress?.({ done, total, name: plate.name });
-    const name = partName(plate);
-    const mesh = await renderPlate(scad, script, plate);
-    files.push({
-      name: `${fileStem(files.length + 1, name)}.stl`,
-      data: writeBinaryStl(mesh, { name }),
-      type: "model/stl",
-    });
-    done++;
-  }
+  // Each step said once. Every report waits for the bar to be painted before the next render takes the thread,
+  // so repeating one costs a frame for nothing.
+  let said = -1;
+  const report = async (payload) => {
+    if (payload.done === said) return;
+    said = payload.done;
+    await onProgress?.(payload);
+  };
+  // The plates don't depend on each other, so several are drawn at once -- the engine keeps a worker a core,
+  // and a wall that took a minute one at a time takes a fraction of it. They are put back in plan order
+  // afterwards, so what comes out doesn't depend on which finished first.
+  const at = plan.plates.map((plate, index) => ({ plate, index }));
+  const lanes = Math.max(1, Math.min(scad.concurrency ?? 1, at.length));
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: lanes }, async () => {
+      for (;;) {
+        const job = at[next++];
+        if (!job) return;
+        stopIfAsked();
+        const name = partName(job.plate);
+        const mesh = await renderPlate(scad, script, job.plate, { signal });
+        files[job.index] = {
+          name,
+          data: writeBinaryStl(mesh, { name }),
+          type: "model/stl",
+        };
+        done++;
+        await report({ done, total, name: job.plate.name });
+      }
+    }),
+  );
   for (const joint of plan.joints) {
     stopIfAsked();
-    await onProgress?.({ done, total, name: joint.name });
+    await report({ done, total, name: joint.name });
     if (!readJoint) throw new Error(`Nothing to read ${joint.name} with`);
-    for (const piece of await readJoint(joint))
-      files.push({ ...piece, name: `${fileStem(files.length + 1, piece.name)}${piece.extension}` });
+    for (const piece of await readJoint(joint)) files.push({ ...piece, extension: piece.extension });
     done++;
   }
-  await onProgress?.({ done: total, total });
-  return files;
+  await report({ done: total, total });
+  // Numbered once everything is here, so the order on the model's page is the order it is printed in.
+  return files.map(({ extension = ".stl", ...file }, index) => ({
+    ...file,
+    name: `${fileStem(index + 1, file.name)}${extension}`,
+  }));
 }
 
 
@@ -837,9 +873,7 @@ const JOINT_FOR = {
 };
 /** The outlines for one corner, or an empty list where the mounting has no model (a screw is just a screw). */
 export function jointOutlines(mount, plates) {
-  return (JOINT_FOR[mount]?.[plates] ?? [])
-    .map(([key, name]) => JOINT_OUTLINES[key]?.[name])
-    .filter(Boolean);
+  return (JOINT_FOR[mount]?.[plates] ?? []).map(([key, name]) => JOINT_OUTLINES[key]?.[name]).filter(Boolean);
 }
 /** A plate takes its kind's colour where it has one; a lone tile is Thingport's own accent. */
 export const plateColour = (type, colours) => colours[tileKind(type)] ?? colours.plate;
@@ -905,8 +939,16 @@ function padSteps(cells, nearNeighbour, cell) {
  */
 function cornerPoints(corner, x, y, X, Y, reach, sides) {
   if (corner === "tl") {
-    if (sides.py && !sides.mx) return [[x, y], [x, y - reach], [x + reach, y]];
-    return [[x, y + reach], [x + reach, y]];
+    if (sides.py && !sides.mx)
+      return [
+        [x, y],
+        [x, y - reach],
+        [x + reach, y],
+      ];
+    return [
+      [x, y + reach],
+      [x + reach, y],
+    ];
   }
   if (corner === "tr") {
     if (sides.px || sides.py) {
@@ -916,13 +958,27 @@ function cornerPoints(corner, x, y, X, Y, reach, sides) {
       pts.push(sides.px ? [X, y + reach] : [X, y]);
       return pts;
     }
-    return [[X - reach, y], [X, y + reach]];
+    return [
+      [X - reach, y],
+      [X, y + reach],
+    ];
   }
   if (corner === "br") {
-    if (sides.px && !sides.my) return [[X, Y - reach], [X + reach, Y], [X, Y]];
-    return [[X, Y - reach], [X - reach, Y]];
+    if (sides.px && !sides.my)
+      return [
+        [X, Y - reach],
+        [X + reach, Y],
+        [X, Y],
+      ];
+    return [
+      [X, Y - reach],
+      [X - reach, Y],
+    ];
   }
-  return [[x + reach, Y], [x, Y - reach]];
+  return [
+    [x + reach, Y],
+    [x, Y - reach],
+  ];
 }
 
 /**
@@ -975,7 +1031,12 @@ export function latticePattern(svg, colours) {
   const defs = el("defs", {}, svg);
   const pattern = el(
     "pattern",
-    { id: LATTICE_ID, width: PlannerCore.TILE_CELL_OFFSET, height: PlannerCore.TILE_CELL_OFFSET, patternUnits: "userSpaceOnUse" },
+    {
+      id: LATTICE_ID,
+      width: PlannerCore.TILE_CELL_OFFSET,
+      height: PlannerCore.TILE_CELL_OFFSET,
+      patternUnits: "userSpaceOnUse",
+    },
     defs,
   );
   const cell = PlannerCore.TILE_CELL_OFFSET;
@@ -1063,8 +1124,13 @@ export function screwGlyph(g, cx, cy, r, colours) {
     el(
       "line",
       {
-        x1: cx - dx * a, y1: cy - dy * a, x2: cx + dx * a, y2: cy + dy * a,
-        stroke: colours.metalEdge, "stroke-width": w, "stroke-linecap": "round",
+        x1: cx - dx * a,
+        y1: cy - dy * a,
+        x2: cx + dx * a,
+        y2: cy + dy * a,
+        stroke: colours.metalEdge,
+        "stroke-width": w,
+        "stroke-linecap": "round",
       },
       g,
     );
@@ -1089,8 +1155,13 @@ export function snapGlyph(g, cx, cy, r, dirs, colours, outlines, cell) {
       el(
         "line",
         {
-          x1: cx, y1: cy, x2: cx + dx * r * 1.55, y2: cy + dy * r * 1.55,
-          stroke: colours.metal, "stroke-width": r * 0.74, "stroke-linecap": "round",
+          x1: cx,
+          y1: cy,
+          x2: cx + dx * r * 1.55,
+          y2: cy + dy * r * 1.55,
+          stroke: colours.metal,
+          "stroke-width": r * 0.74,
+          "stroke-linecap": "round",
         },
         g,
       );
@@ -1367,7 +1438,18 @@ export default async function mount(thingport) {
           : { class: "tile", "data-name": name },
         slot,
       );
-      tileGlyph(g, x + gap, y + gap, w - 2 * gap, h - 2 * gap, t.type, C.TILE_CELL_OFFSET, `mbp-cut-${i}`, !detailed, PAL);
+      tileGlyph(
+        g,
+        x + gap,
+        y + gap,
+        w - 2 * gap,
+        h - 2 * gap,
+        t.type,
+        C.TILE_CELL_OFFSET,
+        `mbp-cut-${i}`,
+        !detailed,
+        PAL,
+      );
       // Not drawn on the plate: its size and where its snaps go. Both are in the parts list, and over a wall of
       // plates they hid the thing they were labelling.
       if (detailed) el("title", {}, g).textContent = name;
@@ -1565,7 +1647,10 @@ export default async function mount(thingport) {
         open.textContent = t("part.open");
         open.setAttribute("aria-label", t("part.openAria", { name: label }));
         open.addEventListener("click", () => models.open(copy.printId));
-        wrap.append(open, downloadButton(label, () => downloadModel(copy.printId)));
+        wrap.append(
+          open,
+          downloadButton(label, () => downloadModel(copy.printId)),
+        );
       } else {
         const missing = downloadButton(label, () => {});
         missing.disabled = true;
@@ -1576,7 +1661,6 @@ export default async function mount(thingport) {
     }
     return wrap;
   }
-
 
   /** One plate, drawn and handed over. It takes a second or three, so the button says so while it works. */
   /**
@@ -1605,7 +1689,11 @@ export default async function mount(thingport) {
     await whileLoading(async () => {
       const scad = await openscad();
       const mesh = await renderPlate(scad, PLATE_SCAD, tile);
-      const stem = label.replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, " ").trim() || "multiboard-plate";
+      const stem =
+        label
+          .replace(/[\\/:*?"<>|]+/g, "-")
+          .replace(/\s+/g, " ")
+          .trim() || "multiboard-plate";
       thingport.download({
         name: `${stem}.stl`,
         data: writeBinaryStl(mesh, { name: label }),
@@ -1941,8 +2029,6 @@ ${rows}
     return pieces;
   }
 
-
-
   /** Every piece of the wall as its own file, in print order. */
   async function wallFiles(result, options) {
     const scad = await openscad();
@@ -1953,14 +2039,17 @@ ${rows}
 
   /** The same set as one download, since a browser will only hand over a single file. */
   function wallZip(title, files) {
-    const stem = title.replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, " ").trim() || "multiboard-wall";
+    const stem =
+      title
+        .replace(/[\\/:*?"<>|]+/g, "-")
+        .replace(/\s+/g, " ")
+        .trim() || "multiboard-wall";
     return {
       name: `${stem}.zip`,
       data: zipStore(files.map((file) => [file.name, file.data])),
       type: "application/zip",
     };
   }
-
 
   // Drawing a wall takes a while, so it is shown rather than guessed at: a bar that really does count the
   // pieces, and a phrase that changes while it works, the way Thingport's own progress bars do.
@@ -2052,7 +2141,6 @@ ${rows}
     }
     return true;
   }
-
 
   const saveCover = $("saveCover");
   const closeSave = () => {

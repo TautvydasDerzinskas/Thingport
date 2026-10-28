@@ -60,6 +60,8 @@ export type ScadRenderOptions = {
   format?: ScadFormat;
   /** The title written into a 3MF, which slicers show. Ignored by the engine's own formats. */
   name?: string;
+  /** Cancels the render. The worker running it is let go, which is the only way to stop one part way. */
+  signal?: AbortSignal;
 };
 
 type Instance = {
