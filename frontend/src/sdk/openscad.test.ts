@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { SCAD_LIBRARIES, scadParameters, scadRender } from "./openscad";
+import { scadParameters, scadRender } from "./openscadEngine";
+import { SCAD_LIBRARIES } from "./scadLibraries";
 
 // These run the real engine. It is several megabytes of WebAssembly and each case compiles geometry, so the
 // timeouts are generous -- but a run that takes minutes means the Manifold backend isn't being used, which is
 // the one mistake here that would make the feature unusable rather than merely slow.
+//
+// The engine is called directly rather than through openscad.ts, which is the worker in front of it: a worker
+// is a browser thing and there isn't one here. What that file adds is the message passing, and the thing worth
+// testing -- that the engine renders what it is asked for -- is all on this side of it.
 
 const KEYCHAIN = `
 $fn=50;
