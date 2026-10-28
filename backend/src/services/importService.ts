@@ -84,6 +84,8 @@ import { upsertAuthorFromImport } from "./authorService";
 import {
   addPlatesToPrint,
   createPrint,
+  isGeneratorScript,
+  keepGeneratorScripts,
   refreshAutoPreparedMetadata,
   resolvePlateFilePath,
   type NewPlateInput,
@@ -1152,14 +1154,22 @@ const IMPORT_KIT: PipelineKit = {
   createPrint: (userId, source, body, resolved, downloaded, details) =>
     createSourcedPrint(userId, source, body, resolved, downloaded, `${source.provider}-${source.externalId}`, details),
   async addProfiles(existing, inputs, details) {
+    // A generator script is never a plate, however it arrives (see createPrint), so one that came down beside a
+    // profile is kept beside the model instead -- addProfilePlateWithDetails would make a plate of it, and the
+    // script belongs to the model rather than to the profile that happened to bring it.
+    const scripts = inputs.filter((input) => isGeneratorScript(input.filename));
+    const plateInputs = inputs.filter((input) => !isGeneratorScript(input.filename));
     let current: ExistingImportedPrint = existing;
     let profileAdded = false;
     try {
-      for (const input of inputs) {
+      for (const input of plateInputs) {
         const result = await addProfilePlateWithDetails(current, input, input.sourceInstanceId!, details);
         profileAdded ||= Boolean(result.profileAdded);
         current = result;
       }
+      // Deliberately not counted as something imported: whether the import found a profile the library hadn't
+      // got is what `alreadyImported` answers, and a script picked up along the way doesn't change that answer.
+      await keepGeneratorScripts(existing.print.userId, existing.print.id, scripts);
     } finally {
       for (const input of inputs) {
         if (input.tempFilePath && fsSync.existsSync(input.tempFilePath)) {

@@ -207,6 +207,42 @@ async function createPlateAtPosition(
   return { record, effectivePath };
 }
 
+/**
+ * Generator scripts kept beside a model as supporting files, which is the only way one ever reaches a model: it
+ * describes a shape but holds none, so it is never a plate.
+ *
+ * Best-effort -- a script that won't store leaves the model itself there, since its plates are what the user asked
+ * for. Line endings are put right by saveFileFromTemp, wherever a script comes from.
+ */
+export async function keepGeneratorScripts(userId: string, printId: string, inputs: NewPlateInput[]): Promise<void> {
+  if (!inputs.length) return;
+  // A model's own script comes down again with every profile imported after the first (see importService's
+  // addProfiles), and storing it each time would leave the model holding "model.scad", "model (1).scad" and on.
+  const stored = new Set(
+    (await prisma.printFile.findMany({ where: { printId }, select: { filename: true } })).map((file) =>
+      file.filename.toLowerCase(),
+    ),
+  );
+  for (const input of inputs) {
+    if (!input.tempFilePath) {
+      // Nothing reaches here today -- every caller that passes a script passes a temp file, and the ones that
+      // build inputs another way can't carry a script at all -- so a skip means a new caller needs handling.
+      console.warn(`Couldn't keep the generator script ${input.filename}: it came with no temporary file.`);
+      continue;
+    }
+    // Compared as it will be stored, since that is the name a second copy would collide with.
+    const safeName = sanitizeFilename(input.filename).toLowerCase();
+    if (stored.has(safeName)) continue;
+    try {
+      // Plain text, which no mime table knows .scad for, so it is given rather than guessed.
+      await saveFileFromTemp(userId, printId, input.tempFilePath, input.filename, "text/plain");
+      stored.add(safeName);
+    } catch (err) {
+      console.warn(`Couldn't keep the generator script ${input.filename}:`, err);
+    }
+  }
+}
+
 /** `describe: false` leaves the AI description check to the caller: an import's description is rewritten after this,
  *  when its images are stored locally, and a check started before then would come back to a changed description.
  *  `classify: false` keeps it out of AI categorization too, as for a tool's own models, which no one may change. */
@@ -281,22 +317,7 @@ export async function createPrint(
       }
     }
 
-    // Best-effort: a script that won't store leaves the model itself made, since its plates are what the user
-    // asked for. Line endings are put right by saveFileFromTemp, wherever a script comes from.
-    for (const input of sourceInputs) {
-      if (!input.tempFilePath) {
-        // Nothing reaches here today -- every caller that passes a script passes a temp file, and the ones that
-        // build inputs another way can't carry a script at all -- so a skip means a new caller needs handling.
-        console.warn(`Couldn't keep the generator script ${input.filename}: it came with no temporary file.`);
-        continue;
-      }
-      try {
-        // Plain text, which no mime table knows .scad for, so it is given rather than guessed.
-        await saveFileFromTemp(userId, print.id, input.tempFilePath, input.filename, "text/plain");
-      } catch (err) {
-        console.warn(`Couldn't keep the generator script ${input.filename}:`, err);
-      }
-    }
+    await keepGeneratorScripts(userId, print.id, sourceInputs);
 
     // Background classification is intentionally detached: importing a model must not wait for,
     // or fail because of, a third-party AI provider.
