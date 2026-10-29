@@ -153,8 +153,10 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
 
   // The tinted render stands in for our own older renders, which are grey whatever the theme and accent.
   const showRender = Boolean(print.render_url) && !renderUnavailable;
+  // Unless the model carries its own colours: then our own picture of it is a render in those, which is the
+  // thing to show large. The grey one is still what the card and the thumbnail use, so a list stays one colour.
   const images = print.preview_images
-    .filter((image) => !(showRender && image.generated))
+    .filter((image) => !(showRender && image.generated && !print.own_colors))
     .toSorted((a, b) => a.position - b.position);
   const hasImages = images.length > 0;
   const activeImage = images[activeImageIndex] || images[0];

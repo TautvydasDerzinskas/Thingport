@@ -192,21 +192,60 @@ export async function reorderPreviewImages(printId: string, ids: string[]): Prom
 // slate, like the live viewer's model.
 const RENDER_THUMB_SHADE = [0.58, 0.64, 0.72, 1];
 
-/** Our own render stands in as the plate's thumb, and the model's cover, while it has no picture at all, so mosaics
- *  and lists that show thumbs have one without the model being opened. */
-async function adoptRenderAsThumb(plateId: string, renderPath: string): Promise<void> {
+/**
+ * Our own render stands in as the plate's thumb, and the model's cover, while it has no picture at all, so
+ * mosaics and lists that show thumbs have one without the model being opened.
+ *
+ * The thumb is always the one-colour render, tinted: a list of models reads as one set in whatever colour the
+ * reader picked, and the Appearance panel's render colour goes on working. The cover is the picture in the
+ * model's own colours where the file carried any -- that one is the model's page shown large, where the thing
+ * as it would be printed is what someone is looking for.
+ */
+async function adoptRenderAsThumb(plateId: string, renderPath: string, colorPath: string | null): Promise<void> {
   if (plateThumbExists(plateId, await plateAssetHome(plateId))) return;
   const plate = await prisma.plate.findUnique({ where: { id: plateId }, select: { printId: true } });
   if (!plate) return;
   const buffer = await renderThumbShade(renderPath, RENDER_THUMB_SHADE);
   if (!(await saveThumbFromBytes(plateId, buffer))) return;
   await prisma.plate.update({ where: { id: plateId }, data: { thumbGenerated: true } });
-  await addGeneratedPreviewImageIfNone(plate.printId, buffer);
+  const cover = colorPath ? await fs.readFile(colorPath).catch(() => buffer) : buffer;
+  await addGeneratedPreviewImageIfNone(plate.printId, cover);
+}
+
+/**
+ * Puts a newly drawn colour picture in place of the grey render that was standing in as the cover.
+ *
+ * For a model whose cover was made before Thingport could draw its colours, or one whose file gained them. Only
+ * our own render is replaced (`generated`), and only right after a render, so a model's cover isn't taken apart
+ * and rebuilt every time someone looks at it.
+ */
+async function replaceRenderCoverWithColor(plateId: string, colorPath: string): Promise<void> {
+  const plate = await prisma.plate.findUnique({ where: { id: plateId }, select: { printId: true } });
+  if (!plate) return;
+  // The model's first plate, whichever finished rendering first: with several, each would otherwise take the
+  // cover from the last in turn, and which one a model leads with shouldn't depend on the order they drew in.
+  const first = await prisma.plate.findFirst({
+    where: { printId: plate.printId },
+    orderBy: { position: "asc" },
+    select: { id: true },
+  });
+  if (first?.id !== plateId) return;
+  const images = await prisma.previewImage.findMany({ where: { printId: plate.printId } });
+  if (images.length !== 1 || !images[0].generated) return;
+  const added = await addPreviewImage(plate.printId, await fs.readFile(colorPath), { generated: true });
+  if (added) await removePreviewImage(plate.printId, images[0].id);
 }
 
 /** Queues the model card's render. Never throws. */
 export function generateCardRender(plateId: string, srcPath: string, filename: string): Promise<void> {
-  return generateModelImage(plateId, srcPath, filename, "render", (renderPath) =>
-    adoptRenderAsThumb(plateId, renderPath).catch((err) => console.error(`Render thumb failed for ${plateId}:`, err)),
-  );
+  return generateModelImage(plateId, srcPath, filename, "render", async (renderPath, colorPath, drawn) => {
+    await adoptRenderAsThumb(plateId, renderPath, colorPath).catch((err) =>
+      console.error(`Render thumb failed for ${plateId}:`, err),
+    );
+    if (drawn && colorPath) {
+      await replaceRenderCoverWithColor(plateId, colorPath).catch((err) =>
+        console.error(`Colour cover failed for ${plateId}:`, err),
+      );
+    }
+  });
 }

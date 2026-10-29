@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import * as cheerio from "cheerio";
 import { listZipEntries, readZipEntry, walkZipEntries } from "../utils/zipReader";
+import { decodePaintState, readColor, readColorGroups, type ThreeMfColors } from "./threeMfColors";
 
 // Builds the cached GLB the 3D preview loads instead of parsing a raw .3mf in the browser. It
 // follows the same rules as frontend/src/utils/bambuThreeMf.ts but scans the XML with regexes
@@ -84,14 +85,32 @@ function applyAffineToVertices(vertices: Float32Array, t: number[]): Float32Arra
   return out;
 }
 
-type FastMesh = { vertices: Float32Array; triangles: Uint32Array; extruder: number };
+type FastMesh = {
+  vertices: Float32Array;
+  triangles: Uint32Array;
+  extruder: number;
+  /** The file said what colour this is -- its faces did, or the object they belong to -- so nothing placing
+   *  the mesh may say otherwise. */
+  ownColor?: boolean;
+};
 
 const MESH_RE = /<mesh\b[^>]*>([\s\S]*?)<\/mesh>/g;
 const VERTEX_RE = /<vertex\s+x="([^"]*)"\s+y="([^"]*)"\s+z="([^"]*)"/g;
 const TRIANGLE_RE = /<triangle\s+v1="(\d+)"\s+v2="(\d+)"\s+v3="(\d+)"/g;
+// The same, keeping whatever else the triangle carries, for a file that colours its faces one by one. Apart so
+// the common case doesn't allocate a string per triangle on a model of millions of them.
+const COLORED_TRIANGLE_RE = /<triangle\s+v1="(\d+)"\s+v2="(\d+)"\s+v3="(\d+)"([^>]*)>/g;
 
-/** Extracts every <mesh>'s vertices/triangles via regex, without building a DOM. */
-function extractMeshesFast(xml: string, extruder: number): FastMesh[] {
+/** Which colour slot a triangle belongs to, from its attributes; null where it says nothing. */
+type TriangleSlot = (attributes: string) => number | null;
+
+/**
+ * Extracts every <mesh>'s vertices/triangles via regex, without building a DOM.
+ *
+ * With `slotOf`, a mesh whose faces aren't all one colour comes back split -- one mesh per colour, as a painted
+ * Bambu project's parts already arrive -- since that is what the builder downstream colours.
+ */
+function extractMeshesFast(xml: string, extruder: number, slotOf?: TriangleSlot): FastMesh[] {
   const meshes: FastMesh[] = [];
   MESH_RE.lastIndex = 0;
   let meshMatch: RegExpExecArray | null;
@@ -104,16 +123,60 @@ function extractMeshesFast(xml: string, extruder: number): FastMesh[] {
       vertices.push(parseFloat(vm[1]), parseFloat(vm[2]), parseFloat(vm[3]));
     }
     const triangles: number[] = [];
-    TRIANGLE_RE.lastIndex = 0;
+    // One entry per triangle, filled in only once a face names a colour of its own; -1 is a face that didn't,
+    // which keeps whatever colour the object -- or whatever places it -- gives the rest of the mesh.
+    let slots: number[] | null = null;
+    const triangleRe = slotOf ? COLORED_TRIANGLE_RE : TRIANGLE_RE;
+    triangleRe.lastIndex = 0;
     let tm: RegExpExecArray | null;
-    while ((tm = TRIANGLE_RE.exec(inner))) {
+    while ((tm = triangleRe.exec(inner))) {
       triangles.push(parseInt(tm[1], 10), parseInt(tm[2], 10), parseInt(tm[3], 10));
+      if (!slotOf) continue;
+      const slot = slotOf(tm[4]);
+      if (slot === null) continue;
+      slots ??= Array.from<number>({ length: triangles.length / 3 }).fill(-1);
+      slots[triangles.length / 3 - 1] = slot;
     }
-    if (vertices.length > 0 && triangles.length > 0) {
+    if (vertices.length === 0 || triangles.length === 0) continue;
+    if (slots) {
+      // Faces after the last coloured one were never reached by the fill above.
+      while (slots.length < triangles.length / 3) slots.push(-1);
+      for (const part of splitBySlot(vertices, triangles, slots, extruder)) meshes.push(part);
+    } else {
       meshes.push({ vertices: Float32Array.from(vertices), triangles: Uint32Array.from(triangles), extruder });
     }
   }
   return meshes;
+}
+
+/** One mesh per colour slot, each keeping only the vertices its own faces use; slot -1 is the faces that named
+ *  no colour, which stay `extruder` and stay open to being given another. */
+function splitBySlot(vertices: number[], triangles: number[], slots: number[], extruder: number): FastMesh[] {
+  const parts = new Map<number, { vertices: number[]; triangles: number[]; moved: Map<number, number> }>();
+  for (let face = 0; face < slots.length; face++) {
+    const slot = slots[face];
+    let part = parts.get(slot);
+    if (!part) {
+      part = { vertices: [], triangles: [], moved: new Map() };
+      parts.set(slot, part);
+    }
+    for (let corner = 0; corner < 3; corner++) {
+      const original = triangles[face * 3 + corner];
+      let moved = part.moved.get(original);
+      if (moved === undefined) {
+        moved = part.vertices.length / 3;
+        part.moved.set(original, moved);
+        part.vertices.push(vertices[original * 3], vertices[original * 3 + 1], vertices[original * 3 + 2]);
+      }
+      part.triangles.push(moved);
+    }
+  }
+  return [...parts].map(([slot, part]) => ({
+    vertices: Float32Array.from(part.vertices),
+    triangles: Uint32Array.from(part.triangles),
+    extruder: slot < 0 ? extruder : slot,
+    ownColor: slot >= 0,
+  }));
 }
 
 type ObjectData = { id: string; meshes: FastMesh[]; plateId: number | null };
@@ -210,7 +273,7 @@ function parseProjectSettingsJson(text: string): {
   try {
     const json = JSON.parse(text) as Record<string, unknown>;
     const filamentColors = Array.isArray(json.filament_colour)
-      ? json.filament_colour.filter((c): c is string => typeof c === "string")
+      ? json.filament_colour.map((c) => (typeof c === "string" ? readColor(c) : null)).filter((c) => c !== null)
       : [];
     let buildVolume: { x: number; y: number } | null = null;
     const area = json.printable_area;
@@ -253,26 +316,35 @@ function partFileTargetIds(objects: Map<string, string>, objectId: string | null
  * objectid, so a component takes only the object it names.
  *
  * Uses its own regex instances: callers are mid-way through a global OBJECT_RE/COMPONENT_RE scan. */
+/** One part file's objects, by id: what is inside each, what it declares, and the file's own colour groups. */
+type PartFile = {
+  objects: Map<string, string>;
+  attributes: Map<string, string>;
+  colors: ThreeMfColors | null;
+};
+
 function createPartFileResolver(loadExternalModel: (path: string) => Promise<string | null>) {
-  const objectsByPath = new Map<string, Map<string, string> | null>();
+  const objectsByPath = new Map<string, PartFile | null>();
   const meshCache = new Map<string, FastMesh[]>();
   const countCache = new Map<string, number>();
 
-  const objectsIn = async (path: string): Promise<Map<string, string> | null> => {
+  const objectsIn = async (path: string): Promise<PartFile | null> => {
     if (objectsByPath.has(path)) return objectsByPath.get(path)!;
     const xml = await loadExternalModel(path);
-    let objects: Map<string, string> | null = null;
+    let file: PartFile | null = null;
     if (xml) {
-      objects = new Map();
+      file = { objects: new Map(), attributes: new Map(), colors: readColorGroups(xml) };
       const objectRe = new RegExp(OBJECT_RE.source, "g");
       let om: RegExpExecArray | null;
       while ((om = objectRe.exec(xml))) {
         const id = getAttr(om[1], "id");
-        if (id) objects.set(id, om[2]);
+        if (!id) continue;
+        file.objects.set(id, om[2]);
+        file.attributes.set(id, om[1]);
       }
     }
-    objectsByPath.set(path, objects);
-    return objects;
+    objectsByPath.set(path, file);
+    return file;
   };
 
   const innerRefs = (inner: string, objects: Map<string, string>) => {
@@ -289,20 +361,21 @@ function createPartFileResolver(loadExternalModel: (path: string) => Promise<str
   };
 
   /** Parsed once however many times it's placed. */
-  const objectMeshes = async (
-    path: string,
-    objects: Map<string, string>,
-    id: string,
-    depth: number,
-  ): Promise<FastMesh[]> => {
+  const objectMeshes = async (path: string, file: PartFile, id: string, depth: number): Promise<FastMesh[]> => {
     const key = `${path}#${id}`;
     const cached = meshCache.get(key);
     if (cached) return cached;
-    const inner = objects.get(id) ?? "";
-    const meshes = extractMeshesFast(inner, 0);
+    const inner = file.objects.get(id) ?? "";
+    const attrs = file.attributes.get(id) ?? "";
+    // The part file's own colour groups: resource ids are each model file's own, so reading these triangles
+    // against the main model's would colour them by whatever happened to share an id.
+    const slot = objectTriangleSlot(attrs, inner, file.colors);
+    const objectSlot = file.colors?.slotOf(getAttr(attrs, "pid"), Number.parseInt(getAttr(attrs, "pindex") ?? "", 10));
+    const meshes = extractMeshesFast(inner, objectSlot ?? 0, slot ?? undefined);
+    if (objectSlot != null) for (const mesh of meshes) mesh.ownColor = true;
     if (depth < MAX_COMPONENT_DEPTH) {
-      for (const ref of innerRefs(inner, objects)) {
-        for (const mesh of await objectMeshes(path, objects, ref.refId, depth + 1)) {
+      for (const ref of innerRefs(inner, file.objects)) {
+        for (const mesh of await objectMeshes(path, file, ref.refId, depth + 1)) {
           meshes.push(
             ref.transform ? { ...mesh, vertices: applyAffineToVertices(mesh.vertices, ref.transform) } : mesh,
           );
@@ -313,14 +386,14 @@ function createPartFileResolver(loadExternalModel: (path: string) => Promise<str
     return meshes;
   };
 
-  const objectTriangles = (path: string, objects: Map<string, string>, id: string, depth: number): number => {
+  const objectTriangles = (path: string, file: PartFile, id: string, depth: number): number => {
     const key = `${path}#${id}`;
     const cached = countCache.get(key);
     if (cached !== undefined) return cached;
-    const inner = objects.get(id) ?? "";
+    const inner = file.objects.get(id) ?? "";
     let count = countTriangleTags(inner);
     if (depth < MAX_COMPONENT_DEPTH) {
-      for (const ref of innerRefs(inner, objects)) count += objectTriangles(path, objects, ref.refId, depth + 1);
+      for (const ref of innerRefs(inner, file.objects)) count += objectTriangles(path, file, ref.refId, depth + 1);
     }
     countCache.set(key, count);
     return count;
@@ -328,16 +401,16 @@ function createPartFileResolver(loadExternalModel: (path: string) => Promise<str
 
   return {
     async meshes(path: string, objectId: string | null): Promise<FastMesh[]> {
-      const objects = await objectsIn(path);
-      if (!objects) return [];
+      const file = await objectsIn(path);
+      if (!file) return [];
       const out: FastMesh[] = [];
-      for (const id of partFileTargetIds(objects, objectId)) out.push(...(await objectMeshes(path, objects, id, 0)));
+      for (const id of partFileTargetIds(file.objects, objectId)) out.push(...(await objectMeshes(path, file, id, 0)));
       return out;
     },
     async triangles(path: string, objectId: string | null): Promise<number> {
-      const objects = await objectsIn(path);
-      if (!objects) return 0;
-      return partFileTargetIds(objects, objectId).reduce((sum, id) => sum + objectTriangles(path, objects, id, 0), 0);
+      const file = await objectsIn(path);
+      if (!file) return 0;
+      return partFileTargetIds(file.objects, objectId).reduce((sum, id) => sum + objectTriangles(path, file, id, 0), 0);
     },
   };
 }
@@ -401,11 +474,50 @@ async function countRenderedTriangles(xml: string, partFiles: PartFileResolver):
   return rendered;
 }
 
+const PAINT_ATTR_RE = /(?:^|\s)paint_color="([^"]*)"/;
+const P1_ATTR_RE = /(?:^|\s)p1="(\d+)"/;
+const PID_ATTR_RE = /(?:^|\s)pid="([^"]*)"/;
+
+/**
+ * How an object's triangles say which colour they are, or null where none of them can.
+ *
+ * Two ways, and a file may carry both: `paint_color`, which a slicer writes when someone paints a model, and
+ * `p1` into the colour group the object or the triangle points at, which is the 3MF spec's own way and what
+ * Thingport's customizer writes. The painting wins where there is both, as it is the later word -- and the
+ * two agree anyway in a file we wrote.
+ */
+function objectTriangleSlot(objectAttrs: string, inner: string, colors: ThreeMfColors | null): TriangleSlot | null {
+  const objectPid = getAttr(objectAttrs, "pid");
+  const byIndex = colors && (objectPid !== null || inner.includes(" p1=")) ? colors : null;
+  const painted = inner.includes("paint_color=");
+  if (!byIndex && !painted) return null;
+  // A model asks for the same handful of paint strings over and over; decoding is a bitstream walk each time.
+  const decoded = new Map<string, number>();
+  return (attributes) => {
+    if (painted) {
+      const paint = attributes.match(PAINT_ATTR_RE)?.[1];
+      if (paint) {
+        let state = decoded.get(paint);
+        if (state === undefined) {
+          state = decodePaintState(paint);
+          decoded.set(paint, state);
+        }
+        if (state > 0) return state - 1;
+      }
+    }
+    if (!byIndex) return null;
+    const p1 = attributes.match(P1_ATTR_RE)?.[1];
+    if (p1 === undefined) return null;
+    return byIndex.slotOf(attributes.match(PID_ATTR_RE)?.[1] ?? objectPid, Number.parseInt(p1, 10));
+  };
+}
+
 async function parseMainModel(
   xml: string,
   structural: StructuralData,
   plateAssignmentsByName: Map<string, number>,
   partFiles: PartFileResolver,
+  colors: ThreeMfColors | null,
 ): Promise<{ objects: Map<string, ObjectData>; buildItems: BuildItem[] }> {
   const objects = new Map<string, ObjectData>();
   // A <component> without p:path references another <object> in this document. Order isn't
@@ -426,8 +538,12 @@ async function parseMainModel(
       const extruderAttr = getAttr(attrs, "p:extruder") ?? getAttr(attrs, "extruder") ?? "1";
       defaultExtruder = Math.max(0, parseInt(extruderAttr, 10) - 1);
     }
+    // An object pointing at a colour group is that colour, bar the triangles naming another.
+    const objectSlot = colors?.slotOf(getAttr(attrs, "pid"), Number.parseInt(getAttr(attrs, "pindex") ?? "", 10));
+    if (objectSlot != null) defaultExtruder = objectSlot;
 
-    const meshes = extractMeshesFast(inner, defaultExtruder);
+    const meshes = extractMeshesFast(inner, defaultExtruder, objectTriangleSlot(attrs, inner, colors) ?? undefined);
+    if (objectSlot != null) for (const mesh of meshes) mesh.ownColor = true;
 
     COMPONENT_RE.lastIndex = 0;
     let cm: RegExpExecArray | null;
@@ -442,9 +558,10 @@ async function parseMainModel(
       if (extPath) {
         for (const mesh of await partFiles.meshes(extPath, compObjectId)) {
           meshes.push({
+            ...mesh,
             vertices: transform ? applyAffineToVertices(mesh.vertices, transform) : mesh.vertices,
-            triangles: mesh.triangles,
-            extruder: compExtruder,
+            // A mesh whose own faces named their colours keeps them; the part's filament is for the rest.
+            extruder: mesh.ownColor ? mesh.extruder : compExtruder,
           });
         }
       } else if (compObjectId) {
@@ -470,9 +587,9 @@ async function parseMainModel(
       const targetMeshes = [...target.meshes, ...resolveInternalRefs(ref.refId, depth + 1)];
       for (const mesh of targetMeshes) {
         resolved.push({
+          ...mesh,
           vertices: ref.transform ? applyAffineToVertices(mesh.vertices, ref.transform) : mesh.vertices,
-          triangles: mesh.triangles,
-          extruder: ref.extruder,
+          extruder: mesh.ownColor ? mesh.extruder : ref.extruder,
         });
       }
     }
@@ -582,9 +699,15 @@ async function parseThreeMfFast(srcPath: string): Promise<ParsedModel | PreviewR
   const mainModelXml: string = mainModelText;
 
   const structural = modelSettingsText ? parseModelSettingsConfig(modelSettingsText) : parseModelSettingsConfig("");
-  const { filamentColors, buildVolume } = projectSettingsText
+  const project = projectSettingsText
     ? parseProjectSettingsJson(projectSettingsText)
     : { filamentColors: [], buildVolume: null };
+  const { buildVolume } = project;
+
+  // Only where the project named no filaments of its own: a slicer's list is the better word on a project it
+  // sliced, and a plain 3MF -- the customizer's own output among them -- has nothing but these.
+  const colors = project.filamentColors.length ? null : readColorGroups(mainModelXml);
+  const filamentColors = colors ? colors.colors : project.filamentColors;
 
   // Fallback for files MakerWorld didn't slice: plate_N.json keyed by object name.
   const plateAssignmentsByName = new Map<string, number>();
@@ -613,7 +736,13 @@ async function parseThreeMfFast(srcPath: string): Promise<ParsedModel | PreviewR
   const partFiles = createPartFileResolver(loadExternalModel);
   if ((await countRenderedTriangles(mainModelXml, partFiles)) > MAX_TRIANGLES) return "too-complex";
 
-  const { objects, buildItems } = await parseMainModel(mainModelXml, structural, plateAssignmentsByName, partFiles);
+  const { objects, buildItems } = await parseMainModel(
+    mainModelXml,
+    structural,
+    plateAssignmentsByName,
+    partFiles,
+    colors,
+  );
   if (objects.size === 0) return "unsupported";
 
   const plateThumbnails = new Map<number, string>();

@@ -9,10 +9,18 @@ import type { QualityReport } from "./meshQuality";
 
 export type ModelPreviewWorkerInput =
   | { kind: "glb"; srcPath: string; destPath: string; options: RenderOptions }
-  | { kind: "image"; srcPath: string; destPath: string; ext: string; image: ModelImageOptions }
+  | {
+      kind: "image";
+      srcPath: string;
+      destPath: string;
+      /** Where the picture in the model's own colours goes, for a model that carries any. */
+      colorDestPath?: string;
+      ext: string;
+      image: ModelImageOptions;
+    }
   | { kind: "quality"; srcPath: string; ext: string };
 export type ModelPreviewWorkerResult =
-  | { status: "ok" }
+  | { status: "ok"; colored?: boolean }
   | { status: "checked"; report: QualityReport }
   | { status: "too-complex" }
   | { status: "unsupported" }
@@ -25,13 +33,11 @@ async function run(): Promise<void> {
     if (input.kind === "quality") {
       const report = await checkModelQuality(input.srcPath, input.ext);
       result = typeof report === "string" ? { status: report } : { status: "checked", report };
+    } else if (input.kind === "glb") {
+      result = { status: await renderModelPreviewGlb(input.srcPath, input.destPath, input.options) };
     } else {
-      result = {
-        status:
-          input.kind === "glb"
-            ? await renderModelPreviewGlb(input.srcPath, input.destPath, input.options)
-            : await renderModelImage(input.srcPath, input.destPath, input.ext, input.image),
-      };
+      const drawn = await renderModelImage(input.srcPath, input.destPath, input.ext, input.image, input.colorDestPath);
+      result = typeof drawn === "string" ? { status: drawn } : drawn;
     }
   } catch (err) {
     result = { status: "error", error: err instanceof Error ? (err.stack ?? err.message) : String(err) };

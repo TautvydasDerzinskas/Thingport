@@ -159,40 +159,59 @@ describe("writeThreeMf", () => {
     expect(xml).toContain("<build>");
   });
 
-  it("writes a coloured mesh as base materials each triangle points at", () => {
+  it("writes a coloured mesh as a colour group each triangle points at", () => {
     // Two triangles, two colours.
     const off = "OFF\n4 2 0\n0 0 0\n1 0 0\n0 1 0\n1 1 0\n3 0 1 2 255 0 0\n3 1 3 2 0 128 64\n";
     const xml = model(offToThreeMf(off));
 
-    expect(xml).toContain('<base name="Colour 1" displaycolor="#FF0000FF"/>');
-    expect(xml).toContain('<base name="Colour 2" displaycolor="#008040FF"/>');
-    // The object points at the group, and each triangle at its own material in it. Which ids those are is
+    expect(xml).toContain('<m:color color="#FF0000FF"/>');
+    expect(xml).toContain('<m:color color="#008040FF"/>');
+    // The Materials extension has to be declared, and Bambu Studio -- which is the reason the colours are
+    // written as a colorgroup rather than as base materials -- matches on the `m:` prefix itself.
+    expect(xml).toContain('xmlns:m="http://schemas.microsoft.com/3dmanufacturing/material/2015/02"');
+    // The object points at the group, and each triangle at its own colour in it. Which ids those are is
     // the writer's own business -- what matters is that they agree, and that the group comes first, since
     // 3MF wants a resource defined before anything names it.
-    const group = xml.match(/<basematerials id="(\d+)">/)?.[1];
+    const group = xml.match(/<m:colorgroup id="(\d+)">/)?.[1];
     expect(group).toBeDefined();
     expect(xml).toContain(`pid="${group}" pindex="0"`);
-    expect(xml.indexOf("<basematerials")).toBeLessThan(xml.indexOf("<object"));
-    expect(xml).toContain('<triangle v1="0" v2="1" v3="2" p1="0"/>');
-    expect(xml).toContain('<triangle v1="1" v2="3" v3="2" p1="1"/>');
+    expect(xml.indexOf("<m:colorgroup")).toBeLessThan(xml.indexOf("<object"));
+    expect(xml).toContain('<triangle v1="0" v2="1" v3="2" p1="0"');
+    expect(xml).toContain('<triangle v1="1" v2="3" v3="2" p1="1"');
   });
 
-  it("leaves a mesh the script never coloured exactly as it was, with no materials at all", () => {
+  // Bambu Studio and PrusaSlicer both ignore `pid`/`p1`; painting is the only colour either reads off a
+  // triangle, so the same assignment goes out a second time in their spelling.
+  it("paints each triangle with the filament its colour is, for the slicers that read only that", () => {
+    const off = "OFF\n5 3 0\n0 0 0\n1 0 0\n0 1 0\n1 1 0\n2 2 0\n3 0 1 2 255 0 0\n3 1 3 2 0 128 64\n3 2 3 4 0 0 255\n";
+    const xml = model(offToThreeMf(off));
+
+    expect(xml).toContain('xmlns:slic3rpe="http://schemas.slic3r.org/3mf/2017/06"');
+    // "4", "8" and "0C" are filaments 1, 2 and 3 in the triangle-selector code both slicers use.
+    expect(xml).toContain('p1="0" paint_color="4" slic3rpe:mmu_segmentation="4"');
+    expect(xml).toContain('p1="1" paint_color="8" slic3rpe:mmu_segmentation="8"');
+    expect(xml).toContain('p1="2" paint_color="0C" slic3rpe:mmu_segmentation="0C"');
+  });
+
+  it("leaves a mesh the script never coloured exactly as it was, with no colours at all", () => {
     const xml = model(offToThreeMf(CUBE_OFF));
-    expect(xml).not.toContain("basematerials");
+    expect(xml).not.toContain("colorgroup");
+    expect(xml).not.toContain("xmlns:m=");
     expect(xml).not.toContain("p1=");
+    expect(xml).not.toContain("paint_color");
     expect(xml).toMatch(/<object id="\d+" type="model">/);
   });
 
-  it("writes one explicit colour as the object's own material rather than per triangle", () => {
+  it("writes one explicit colour as the object's own rather than per triangle", () => {
     const off = "OFF\n4 2 0\n0 0 0\n1 0 0\n0 1 0\n1 1 0\n3 0 1 2 255 0 0\n3 1 3 2 255 0 0\n";
     const xml = model(offToThreeMf(off));
 
-    expect(xml).toContain('<base name="Colour 1" displaycolor="#FF0000FF"/>');
-    const only = xml.match(/<basematerials id="(\d+)">/)?.[1];
+    expect(xml).toContain('<m:color color="#FF0000FF"/>');
+    const only = xml.match(/<m:colorgroup id="(\d+)">/)?.[1];
     expect(xml).toContain(`pid="${only}" pindex="0"`);
     // `pindex` already names it for every triangle, so repeating it on each would only grow the file.
     expect(xml).not.toContain("p1=");
+    expect(xml).not.toContain("paint_color");
   });
 
   it("escapes a name that would otherwise break the XML", () => {
@@ -248,17 +267,17 @@ describe("writeThreeMf, several parts", () => {
 
   it("keeps each part's colours to itself, in its own group", () => {
     const xml = model(writeThreeMf([{ mesh: red() }, { mesh: blue() }]));
-    const groups = [...xml.matchAll(/<basematerials id="(\d+)">/g)].map((m) => m[1]);
+    const groups = [...xml.matchAll(/<m:colorgroup id="(\d+)">/g)].map((m) => m[1]);
     expect(groups).toHaveLength(2);
     expect(new Set(groups).size).toBe(2);
-    expect(xml).toContain('displaycolor="#FF0000FF"');
-    expect(xml).toContain('displaycolor="#0000FFFF"');
+    expect(xml).toContain('<m:color color="#FF0000FF"/>');
+    expect(xml).toContain('<m:color color="#0000FFFF"/>');
     for (const id of groups) expect(xml).toContain(`pid="${id}" pindex="0"`);
   });
 
-  it("writes an uncoloured part beside a coloured one without giving it a material", () => {
+  it("writes an uncoloured part beside a coloured one without giving it a colour", () => {
     const xml = model(writeThreeMf([{ mesh: cube() }, { mesh: red() }]));
-    expect(xml.match(/<basematerials /g)).toHaveLength(1);
+    expect(xml.match(/<m:colorgroup /g)).toHaveLength(1);
     expect(xml.match(/<object /g)).toHaveLength(2);
     expect(xml.match(/pid="/g)).toHaveLength(1);
   });

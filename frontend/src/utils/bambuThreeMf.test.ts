@@ -16,8 +16,15 @@ const node = (attrs: Record<string, string>, children: Record<string, Stub[]> = 
 const group = (id: string, colors: (string | null)[]): Stub =>
   node({ id }, { base: colors.map((color) => node(color === null ? {} : { displaycolor: color })) });
 
+/** An `<m:colorgroup id>` holding one `<m:color color>` per colour, which is what Thingport writes. */
+const colorGroup = (id: string, colors: (string | null)[]): Stub =>
+  node({ id }, { "m:color": colors.map((color) => node(color === null ? {} : { color })) });
+
 const docOf = (...groups: Stub[]) =>
   node({}, { basematerials: groups }) as unknown as Parameters<typeof readBaseMaterials>[0];
+
+const colorDocOf = (...groups: Stub[]) =>
+  node({}, { "m:colorgroup": groups }) as unknown as Parameters<typeof readBaseMaterials>[0];
 
 const triangle = (attrs: Record<string, string>) => node(attrs) as unknown as Element;
 
@@ -72,6 +79,16 @@ describe("readBaseMaterials", () => {
   it("ignores a group with no id, which nothing could point at anyway", () => {
     expect(readBaseMaterials(docOf(node({}, { base: [node({ displaycolor: "#ff0000" })] })))).toBeNull();
   });
+
+  // The Materials extension's group, which is the one slicers read and so the one Thingport writes; a 3MF from
+  // elsewhere may still use base materials, so both are taken.
+  it("reads a colour group the same way as base materials", () => {
+    const materials = readBaseMaterials(colorDocOf(colorGroup("1", ["#FF0000", "#008040FF"])))!;
+
+    expect(materials.colors).toEqual(["#ff0000", "#008040"]);
+    expect(materials.slotOf("1", 0)).toBe(0);
+    expect(materials.slotOf("1", 1)).toBe(1);
+  });
 });
 
 describe("readTriangleMaterial", () => {
@@ -108,8 +125,8 @@ describe("the customizer's own files", () => {
     const xml = strFromU8(unzipSync(offToThreeMf(off))["3D/3dmodel.model"]);
 
     const pid = xml.match(/<object [^>]*\bpid="([^"]+)"/)![1];
-    const written = [...xml.matchAll(/displaycolor="([^"]+)"/g)].map((m) => m[1]);
-    const materials = readBaseMaterials(docOf(group(pid, written)))!;
+    const written = [...xml.matchAll(/<m:color color="([^"]+)"/g)].map((m) => m[1]);
+    const materials = readBaseMaterials(colorDocOf(colorGroup(pid, written)))!;
 
     expect(materials.colors).toEqual(["#ff0000", "#008040"]);
     // Each triangle's p1, as written, names its own colour.

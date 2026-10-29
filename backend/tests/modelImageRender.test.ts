@@ -82,7 +82,10 @@ async function render(name: string, stl: string) {
   const src = path.join(dir, `${name}.stl`);
   const dest = path.join(dir, `${name}.png`);
   await fs.writeFile(src, stl);
-  expect(await renderModelImage(src, dest, ".stl", { size: 64, color: "#00b800" })).toBe("ok");
+  expect(await renderModelImage(src, dest, ".stl", { size: 64, color: "#00b800" })).toEqual({
+    status: "ok",
+    colored: false,
+  });
   const { data, info } = await sharp(dest).raw().toBuffer({ resolveWithObject: true });
   return { data, info };
 }

@@ -15,6 +15,7 @@ import {
   plateAssetHome,
   plateRenderFile,
   removeAsset,
+  COLOR_RENDER_FILE_TAG,
   RENDER_FILE_TAG,
   type AssetHome,
 } from "./modelAssets";
@@ -26,7 +27,7 @@ import { workerBootstrap } from "../utils/workerBootstrap";
 
 // Part of the cache filename, so bumping it regenerates older GLBs on next view. Failure markers
 // carry it too, so a file an older renderer refused gets another attempt.
-const PREVIEW_FORMAT_VERSION = 3;
+const PREVIEW_FORMAT_VERSION = 4;
 
 export function modelPreviewGlbPath(plateId: string): string {
   return path.join(MODEL_PREVIEWS, `${plateId}.v${PREVIEW_FORMAT_VERSION}.glb`);
@@ -79,7 +80,7 @@ const MEMORY_POLL_MS = 250;
 export const SIMPLIFY_TARGET_TRIANGLES = 1_000_000;
 
 type RenderOutcome =
-  | { status: "ok" }
+  | { status: "ok"; colored?: boolean }
   | { status: "checked"; report: QualityReport }
   | { status: "too-complex" }
   | { status: "unsupported" }
@@ -293,8 +294,10 @@ async function renderPlateFile<T extends { status: string }>(
   return moved !== srcPath && fsSync.existsSync(moved) ? render(moved) : outcome;
 }
 
-// Pictures of a model, drawn on the server in one colour on transparent: a "render" for model cards, the dashboard
-// lists and tag mosaics. They share the GLB queue and memory limit, so they wait behind GLBs.
+// Pictures of a model, drawn on the server on transparent: a "render" for model cards, the dashboard lists and
+// tag mosaics, in one colour the browser tints, and -- for a model that carries colours of its own -- a second
+// one in those, which the model's page shows as its cover. Both come out of one render, since the cost is
+// loading the model rather than drawing it. They share the GLB queue and memory limit, so they wait behind GLBs.
 
 /** Server-side picture formats; STEP needs a CAD kernel the server doesn't have. */
 export const MODEL_IMAGE_EXTS = new Set([".stl", ".obj", ".3mf"]);
@@ -329,14 +332,21 @@ export function canRenderModelImage(filename: string): boolean {
 
 const imagesInFlight = new Set<string>();
 
+/** The picture of a model in its own colours, where it had any to draw; null for one that didn't. */
+export function modelColorImagePath(plateId: string, home: AssetHome): string | null {
+  const file = plateRenderFile(plateId, COLOR_RENDER_FILE_TAG);
+  return assetExists(home, file) ? assetPath(home, file) : null;
+}
+
 /** Never throws. Concurrent calls for the same picture no-op; a failure isn't retried for a while. `onReady` runs
- *  with the finished picture's path. */
+ *  with the finished picture's path, the colour one beside it where the model carried colours, and whether this
+ *  call is what drew them -- a step that should happen once per render, rather than on every view, asks that. */
 export async function generateModelImage(
   plateId: string,
   srcPath: string,
   filename: string,
   kind: ModelImageKind = "render",
-  onReady?: (imagePath: string) => Promise<void>,
+  onReady?: (imagePath: string, colorPath: string | null, drawn: boolean) => Promise<void>,
 ): Promise<void> {
   const errorPath = modelImageErrorPath(plateId, kind);
   const key = `${kind}:${plateId}`;
@@ -344,13 +354,15 @@ export async function generateModelImage(
   // Claimed before looking up where the picture is, so a second call meanwhile doesn't draw it again.
   imagesInFlight.add(key);
   const file = plateRenderFile(plateId, MODEL_IMAGE_KINDS[kind].file);
-  const cachedPath = assetPath(await plateAssetHome(plateId).catch(() => null), file);
+  const colorFile = plateRenderFile(plateId, COLOR_RENDER_FILE_TAG);
+  const home = await plateAssetHome(plateId).catch(() => null);
+  const cachedPath = assetPath(home, file);
   if (fsSync.existsSync(cachedPath) || recentlyFailed(plateId, errorPath)) {
     imagesInFlight.delete(key);
     if (!fsSync.existsSync(cachedPath)) return;
     // Still run onReady, so a step that failed after an earlier render gets another go.
     try {
-      await onReady?.(cachedPath);
+      await onReady?.(cachedPath, modelColorImagePath(plateId, home), false);
     } catch (err) {
       console.error(`Model picture post-processing failed for plate ${plateId}:`, err);
     }
@@ -358,10 +370,9 @@ export async function generateModelImage(
   }
   await scheduleRender("image", async () => {
     // Drawn beside the GLBs, and only then put in the model's folder: the model may move while it waits.
-    const tmp = path.join(
-      MODEL_PREVIEWS,
-      `${plateId}.${MODEL_IMAGE_KINDS[kind].file}.${process.pid}.${Date.now()}.tmp`,
-    );
+    const stem = path.join(MODEL_PREVIEWS, `${plateId}.${MODEL_IMAGE_KINDS[kind].file}.${process.pid}.${Date.now()}`);
+    const tmp = `${stem}.tmp`;
+    const colorTmp = `${stem}.color.tmp`;
     try {
       const outcome = await renderPlateFile(plateId, srcPath, (from) =>
         renderInWorker(
@@ -369,6 +380,7 @@ export async function generateModelImage(
             kind: "image",
             srcPath: from,
             destPath: tmp,
+            colorDestPath: colorTmp,
             ext: path.extname(filename).toLowerCase(),
             image: MODEL_IMAGE_KINDS[kind].options,
           },
@@ -379,12 +391,18 @@ export async function generateModelImage(
         const plate = await prisma.plate.findUnique({ where: { id: plateId }, select: { printId: true } });
         // Deleted while it was drawn.
         if (!plate) return;
-        const dest = assetTarget(await ensureAssetHome(plate.printId), file);
+        const assetsPath = await ensureAssetHome(plate.printId);
+        const dest = assetTarget(assetsPath, file);
         await fs.mkdir(path.dirname(dest), { recursive: true });
         await fs.rename(tmp, dest);
         await removeAsset(null, file);
+        let colorDest: string | null = null;
+        if (outcome.colored) {
+          colorDest = assetTarget(assetsPath, colorFile);
+          await fs.rename(colorTmp, colorDest);
+        }
         await fs.rm(errorPath, { force: true });
-        await onReady?.(dest);
+        await onReady?.(dest, colorDest, true);
       } else {
         const reason =
           outcome.status === "error" ? outcome.error : outcome.status === "limit" ? outcome.reason : outcome.status;
@@ -397,6 +415,7 @@ export async function generateModelImage(
       await fs.writeFile(errorPath, String(err)).catch(() => undefined);
     } finally {
       await fs.rm(tmp, { force: true }).catch(() => undefined);
+      await fs.rm(colorTmp, { force: true }).catch(() => undefined);
       imagesInFlight.delete(key);
     }
   });

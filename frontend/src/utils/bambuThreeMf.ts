@@ -169,30 +169,43 @@ export type BaseMaterials = {
 };
 
 /**
- * The colours a 3MF carries in its own right: a `<basematerials>` group of `<base>` entries, pointed into by
- * `pid` and `p1`. That is the spec's own way to colour a mesh, and what the customizer writes (sdk/threeMf.ts);
- * Bambu's `paint_color` is a separate thing layered over a sliced project's filaments.
+ * The colours a 3MF carries in its own right: a property group in `<resources>`, pointed into by `pid` and `p1`.
+ * That is the spec's own way to colour a mesh, and what the customizer writes (sdk/threeMf.ts); Bambu's
+ * `paint_color` is a separate thing layered over a sliced project's filaments.
  *
- * Both say the same thing -- a colour per index, an index per triangle -- so the entries are flattened into one
- * list the painted path's indexes can share, and everything downstream colours the two alike. Null for a file
- * with no materials, so a caller can tell that from a group holding nothing readable.
+ * Two groups say it: the core spec's `<basematerials>` of `<base displaycolor>`, and the Materials extension's
+ * `<m:colorgroup>` of `<m:color color>`, which is the one slicers read and so the one Thingport writes. Both
+ * are taken, since a 3MF from anywhere may use either.
+ *
+ * All of these say the same thing -- a colour per index, an index per triangle -- so the entries are flattened
+ * into one list the painted path's indexes can share, and everything downstream colours them alike. Null for a
+ * file with no materials, so a caller can tell that from a group holding nothing readable.
  */
 export function readBaseMaterials(doc: ElementSource): BaseMaterials | null {
   const colors: string[] = [];
   const slots = new Map<string, number>();
-  const groups = doc.getElementsByTagName("basematerials");
-  for (let i = 0; i < groups.length; i++) {
-    const groupId = groups[i].getAttribute("id");
-    if (!groupId) continue;
-    const bases = groups[i].getElementsByTagName("base");
-    for (let j = 0; j < bases.length; j++) {
-      const color = displayColor(bases[j].getAttribute("displaycolor"));
-      // Keyed by where it actually sits, so an entry with no readable colour doesn't shift the ones after it.
-      if (!color) continue;
-      slots.set(`${groupId}:${j}`, colors.length);
-      colors.push(color);
+  const readGroups = (groupTag: string, entryTag: string, attr: string): boolean => {
+    const before = colors.length;
+    const groups = doc.getElementsByTagName(groupTag);
+    for (let i = 0; i < groups.length; i++) {
+      const groupId = groups[i].getAttribute("id");
+      if (!groupId) continue;
+      const entries = groups[i].getElementsByTagName(entryTag);
+      for (let j = 0; j < entries.length; j++) {
+        const color = displayColor(entries[j].getAttribute(attr));
+        // Keyed by where it actually sits, so an entry with no readable colour doesn't shift the ones after it.
+        if (!color) continue;
+        slots.set(`${groupId}:${j}`, colors.length);
+        colors.push(color);
+      }
     }
-  }
+    return colors.length > before;
+  };
+  readGroups("basematerials", "base", "displaycolor");
+  // The extension's elements are namespaced, and the prefix is part of the tag name an XML DOM matches on.
+  // Bambu Studio only ever writes and reads `m:`, so that is what files carry; the bare name is tried only
+  // when that found nothing, for a writer that made the material namespace the document's default.
+  if (!readGroups("m:colorgroup", "m:color", "color")) readGroups("colorgroup", "color", "color");
   if (!colors.length) return null;
   return { colors, slotOf: (pid, index) => (pid === null ? null : (slots.get(`${pid}:${index}`) ?? null)) };
 }
@@ -288,7 +301,11 @@ function parseProjectSettings(text: string): {
   try {
     const json = JSON.parse(text) as Record<string, unknown>;
     if (Array.isArray(json.filament_colour)) {
-      filamentColors = json.filament_colour.filter((c): c is string => typeof c === "string");
+      // Bambu Studio usually writes these as #RRGGBBAA, and three.js reads only the six-digit spelling, so
+      // the alpha comes off here rather than every filament falling back to white where it's there.
+      filamentColors = json.filament_colour
+        .map((c) => (typeof c === "string" ? displayColor(c) : null))
+        .filter((c): c is string => c !== null);
     }
     const area = json.printable_area;
     if (Array.isArray(area) && area.length >= 3 && typeof area[2] === "string") {
@@ -647,6 +664,7 @@ export async function loadCachedBambuGlb(url: string): Promise<CachedGlbOutcome>
       filamentColors: string[];
       buildVolume: { x: number; y: number };
     };
+    markOwnColors(root as THREE.Object3D);
 
     return {
       status: "ready",
@@ -661,6 +679,30 @@ export async function loadCachedBambuGlb(url: string): Promise<CachedGlbOutcome>
   } catch (err) {
     console.warn("Cached GLB preview load failed, falling back to live 3MF parse", err);
     return { status: "fallback" };
+  }
+}
+
+/**
+ * Marks the colours a cached GLB brought with it, so the reader's colour leaves them alone.
+ *
+ * The server writes one mesh per filament or colour group per plate (modelPreviewRender.ts), so a plate
+ * showing more than one of them is a model with colours of its own -- a painted project, or a generated model
+ * the script coloured. A plate of one colour is a shape in whatever colour it happened to be saved in, and
+ * stays recolourable, which is the same rule buildBambuModelGroup follows for a 3MF parsed here.
+ */
+function markOwnColors(root: THREE.Object3D): void {
+  for (const plate of root.children) {
+    const materials: THREE.Material[] = [];
+    const shown = new Set<string>();
+    plate.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) return;
+      for (const material of Array.isArray(child.material) ? child.material : [child.material]) {
+        materials.push(material);
+        const color = (material as THREE.MeshStandardMaterial).color;
+        if (color) shown.add(color.getHexString());
+      }
+    });
+    if (shown.size > 1) materials.forEach(keepsOwnColor);
   }
 }
 

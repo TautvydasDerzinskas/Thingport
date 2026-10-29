@@ -31,7 +31,9 @@ const LEGACY_DIRS: Record<AssetKind, string> = {
 };
 
 // Part of a render's name, so changing its look (modelPreviewCache's MODEL_IMAGE_KINDS) draws older ones again.
-export const RENDER_FILE_TAG = "render.v2";
+export const RENDER_FILE_TAG = "render.v3";
+// The same, for the picture drawn in a model's own colours rather than in one the app tints.
+export const COLOR_RENDER_FILE_TAG = "color.v1";
 
 const DESCRIPTION_EXTS: Record<string, string> = {
   "image/jpeg": ".jpg",
@@ -55,7 +57,7 @@ export function plateThumbFile(plateId: string): AssetFile {
 
 /** A render in the shared 3D previews folder, of this look or an older one. */
 export function isLegacyRender(name: string): boolean {
-  return /\.render(\.v\d+)?\.png$/.test(name);
+  return /\.(?:render|color)(\.v\d+)?\.png$/.test(name);
 }
 
 export function plateRenderFile(plateId: string, tag = RENDER_FILE_TAG): AssetFile {

@@ -23,6 +23,7 @@ export type Plate = {
   thumb_generated?: boolean; // the thumb is our own render, not a picture from an import or upload
   preview_glb_url?: string | null; // /plate/{plateId}/preview.glb?v=... once background pre-render finishes
   render_url?: string | null; // /plate/{plateId}/render.png[?v=...]: grey shading for cards to tint; null if undrawable
+  own_colors?: boolean; // the file carries colours of its own, so our picture of it is a colour render
 };
 
 export type PrintFile = {
@@ -92,6 +93,7 @@ export type Print = {
   thumb_url?: string | null; // denormalized = plates[0].thumb_url
   thumb_generated?: boolean; // denormalized = plates[0].thumb_generated
   render_url?: string | null; // the first plate's render_url that isn't null
+  own_colors?: boolean; // any plate carries colours of its own
   supporting_file_count: number;
   /** The scripts it can be generated again from, out of the files kept beside it; empty for an ordinary model. */
   generator_scripts?: { id: string; filename: string }[];
