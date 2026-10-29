@@ -23,6 +23,7 @@ export type Plate = {
   thumb_generated?: boolean; // the thumb is our own render, not a picture from an import or upload
   preview_glb_url?: string | null; // /plate/{plateId}/preview.glb?v=... once background pre-render finishes
   render_url?: string | null; // /plate/{plateId}/render.png[?v=...]: grey shading for cards to tint; null if undrawable
+  own_colors?: boolean; // the file carries colours of its own, so our picture of it is a colour render
 };
 
 export type PrintFile = {
@@ -92,6 +93,7 @@ export type Print = {
   thumb_url?: string | null; // denormalized = plates[0].thumb_url
   thumb_generated?: boolean; // denormalized = plates[0].thumb_generated
   render_url?: string | null; // the first plate's render_url that isn't null
+  own_colors?: boolean; // any plate carries colours of its own
   supporting_file_count: number;
   /** The scripts it can be generated again from, out of the files kept beside it; empty for an ordinary model. */
   generator_scripts?: { id: string; filename: string }[];
@@ -318,6 +320,9 @@ export const printsApi = {
       mode?: "separate" | "multiplate";
       /** False for each request of a batch; the batch sends one summary (uploadSummary) instead. */
       notify?: boolean;
+      /** What the notification calls it: a model the customizer generated, or one a tool built. Left out for
+       *  files the user picked, which is what "uploaded" describes. */
+      origin?: "generated" | "created";
     } = {},
   ): Promise<UploadPrintsResult> => {
     const fd = new FormData();
@@ -330,6 +335,7 @@ export const printsApi = {
     if (opts.category_id) fd.set("category_id", opts.category_id);
     if (opts.mode && files.length > 1) fd.set("mode", opts.mode);
     if (opts.notify === false) fd.set("notify", "false");
+    if (opts.origin) fd.set("origin", opts.origin);
     const res = await fetch(`${apiBase()}/upload`, {
       method: "POST",
       body: fd,

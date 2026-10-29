@@ -19,6 +19,7 @@ import {
   ownedAssetFiles,
   plateAssetHome,
   plateRenderFile,
+  COLOR_RENDER_FILE_TAG,
   plateThumbFile,
   removeAsset,
   type AssetFile,
@@ -489,7 +490,11 @@ async function modelAssetFiles(printId: string, plateIds: string[]): Promise<Ass
   return [
     ...images.map((image) => galleryImageFile(image.id)),
     ...descriptions.map(descriptionImageFile),
-    ...plateIds.flatMap((plateId) => [plateThumbFile(plateId), plateRenderFile(plateId)]),
+    ...plateIds.flatMap((plateId) => [
+      plateThumbFile(plateId),
+      plateRenderFile(plateId),
+      plateRenderFile(plateId, COLOR_RENDER_FILE_TAG),
+    ]),
   ];
 }
 
@@ -792,6 +797,7 @@ export function plateThumbExists(plateId: string, home: AssetHome): boolean {
 export async function removePlatePictures(plateId: string, home: AssetHome): Promise<void> {
   await removeAsset(home, plateThumbFile(plateId));
   await removeAsset(home, plateRenderFile(plateId));
+  await removeAsset(home, plateRenderFile(plateId, COLOR_RENDER_FILE_TAG));
 }
 
 /** True when the plate has no thumb or only our own 3D render, which an imported image beats. */

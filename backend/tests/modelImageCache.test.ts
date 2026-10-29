@@ -6,7 +6,7 @@ import path from "node:path";
 import { MODEL_PREVIEWS, STORAGE } from "../src/config";
 import { prisma } from "../src/db";
 import { writeZip } from "../src/utils/zipWriter";
-import { plateAssetHome } from "../src/services/modelAssets";
+import { plateAssetHome, RENDER_FILE_TAG } from "../src/services/modelAssets";
 import {
   generateModelImage,
   generateModelPreviewGlb,
@@ -140,7 +140,7 @@ describe("model picture cache", () => {
     await writeZip(src, [{ arcname: "3D/model.model", filePath: modelPath }]);
     await generateModelImage(plateId, src, "elsewhere.3mf");
     expect(await modelImageState(plateId)).toBe("unsupported");
-    const marker = path.join(cacheDir(), `${plateId}.render.v2.error`);
+    const marker = path.join(cacheDir(), `${plateId}.${RENDER_FILE_TAG}.error`);
     const markedAt = (await fs.stat(marker)).mtimeMs;
     await generateModelImage(plateId, src, "elsewhere.3mf");
     expect((await fs.stat(marker)).mtimeMs).toBe(markedAt);

@@ -42,6 +42,12 @@ What comes out can be downloaded as a 3MF or an STL, or saved back into your lib
 A saved one keeps a copy of the script beside it, so it can be customised again in turn, and a script that
 colours what it builds is saved in those colours and opens again in them.
 
+The 3MF carries those colours two ways over, because slicers disagree about where to look: as the colours
+themselves, which Bambu Studio and OrcaSlicer offer to put on filaments when the file is opened, and as
+per-face painting, which Bambu Studio, OrcaSlicer and PrusaSlicer apply to filament slots straight away. The
+mesh stays in one piece either way, so nothing is split into open shells on the way to the plate. An STL has
+nowhere to keep a colour at all, which is why that download says so.
+
 The engine runs in your browser, so generating sends nothing anywhere: the script, the values you choose and
 the result stay in the tab. Downloading writes the file straight to your disk, and saving uploads it to your
 own instance like any other model — neither goes anywhere else. There is nothing to install.

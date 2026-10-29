@@ -23,6 +23,7 @@ import { previewImagePath } from "./services/previewImageService";
 import { preparedFilename } from "./services/preparedPrint";
 import {
   canRenderModelImage,
+  modelColorImagePath,
   modelImagePath,
   modelPreviewGlbExists,
   modelPreviewGlbPath,
@@ -111,6 +112,9 @@ export type PlateOut = {
   /** The server's grey render for model cards to tint; unversioned until it exists (asking for it queues it), null for
    *  files the server can't draw. */
   render_url: string | null;
+  /** The file carries colours of its own -- a painted project, or a script's `color()` calls. True once the
+   *  render found them, so its picture of the model is a colour one rather than the grey cards tint. */
+  own_colors: boolean;
 };
 
 export type PrintFileOut = {
@@ -168,6 +172,8 @@ export type PrintOut = {
   thumb_url: string | null;
   thumb_generated: boolean;
   render_url: string | null;
+  /** Any plate carries colours of its own; see PlateOut.own_colors. */
+  own_colors: boolean;
   supporting_file_count: number;
   /** The scripts it can be generated again from, as `{ id, filename }`, out of the files kept beside it. Empty
    *  for an ordinary model. Here rather than behind a request of its own because the files are already loaded,
@@ -251,6 +257,7 @@ export function toPlateOut(printId: string, plate: Plate, home: AssetHome): Plat
     thumb_generated: plate.thumbGenerated,
     preview_glb_url: previewGlbUrl(plate),
     render_url: renderUrl(plate, home),
+    own_colors: modelColorImagePath(plate.id, home) !== null,
   };
 }
 
@@ -384,6 +391,7 @@ export function toPrintOut(
     thumb_generated: plateOuts[0]?.thumb_generated ?? false,
     // The first file the server can draw: a STEP first plate mustn't leave the card without one.
     render_url: plateOuts.find((plate) => plate.render_url)?.render_url ?? null,
+    own_colors: plateOuts.some((plate) => plate.own_colors),
     supporting_file_count: supportingCount,
     generator_scripts: generatorScripts,
     generator_script_withheld: print.generatorScriptWithheld,

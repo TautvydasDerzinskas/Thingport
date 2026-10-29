@@ -20,7 +20,7 @@ import { printOutById, printOutsByIds } from "../services/printLoader";
 import { estimateDownloadSize, resolvePrintsForDownload, sendPrintsZip } from "../services/downloadZip";
 import { createLog } from "../services/auditLog";
 import { recordActivity } from "../services/activityService";
-import { notifyUpload } from "../services/modelNotifications";
+import { notifyUpload, type UploadOrigin } from "../services/modelNotifications";
 import { fillSourceGaps } from "../services/fillGapsService";
 import { deletePrint, setPrintTags, updatePrintMeta } from "../services/printEditService";
 import { isNormalizable3mf, normalize3mfStatus, normalized3mfFor } from "../services/normalized3mfCache";
@@ -59,12 +59,15 @@ router.post(
     const body = req.body as Record<string, string | undefined>;
     // A browser uploading a batch one request at a time sends notify=false, then one summary at the end.
     const notify = body.notify !== "false";
+    // What the model is, for the notification: the customizer and the tools say so, since nothing in the
+    // request itself tells a generated model from a file someone picked.
+    const origin: UploadOrigin = body.origin === "generated" || body.origin === "created" ? body.origin : "upload";
     // What made it in before any failure, so a partly failed request reports both halves truthfully.
     const created: { id: string; name: string }[] = [];
     const pending = new Set(files);
+    const mode = body.mode === "multiplate" ? "multiplate" : "separate";
     try {
       if (!files.length) throw new HttpError(400, "No files uploaded");
-      const mode = body.mode === "multiplate" ? "multiplate" : "separate";
       if (files.length > 1 && body.mode !== "separate" && body.mode !== "multiplate") {
         throw new HttpError(400, "mode is required when uploading more than one file");
       }
@@ -90,15 +93,26 @@ router.post(
         printsOut.push(await printOutById(req.userId!, print.id));
       }
       if (notify) {
-        await notifyUpload(req.userId!, created).catch((err) => console.error("Upload notification failed:", err));
+        await notifyUpload(req.userId!, created, { names: [] }, origin).catch((err) =>
+          console.error("Upload notification failed:", err),
+        );
       }
       res.json({ prints: printsOut });
     } catch (err) {
       if (notify && files.length) {
-        await notifyUpload(req.userId!, created, {
-          names: [...pending].map((f) => sanitizeFilename(f.originalname)),
-          reason: err instanceof HttpError ? err.message : undefined,
-        }).catch((e) => console.error("Upload notification failed:", e));
+        const names = [...pending].map((f) => sanitizeFilename(f.originalname));
+        await notifyUpload(
+          req.userId!,
+          created,
+          {
+            names,
+            // Multiplate is one model holding every file, so a failure there lost one model however many of
+            // its files are named -- the customizer's save sends a 3MF and the script that made it.
+            count: mode === "multiplate" ? (names.length ? 1 : 0) : names.length,
+            reason: err instanceof HttpError ? err.message : undefined,
+          },
+          origin,
+        ).catch((e) => console.error("Upload notification failed:", e));
       }
       throw err;
     } finally {

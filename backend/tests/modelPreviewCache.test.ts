@@ -192,7 +192,8 @@ describe("modelPreviewCache", () => {
       { index: 1, name: "First plate", objectCount: 1 },
       { index: 2, name: "Second plate", objectCount: 1 },
     ]);
-    expect(meta.filamentColors).toEqual(["#00B800", "#FF0000"]);
+    // Normalized on the way in: Bambu writes these in either case and often with an alpha three.js can't read.
+    expect(meta.filamentColors).toEqual(["#00b800", "#ff0000"]);
     expect(meta.buildVolume).toEqual({ x: 256, y: 256 });
 
     const meshes: Record<string, { color: string; positions: number[] }> = {};
@@ -310,7 +311,7 @@ describe("modelPreviewCache -- memory safety", () => {
 
   afterAll(async () => {
     for (const id of plateIds) {
-      for (const ext of [".v3.glb", ".v3.error", ".pending"]) {
+      for (const ext of [".v4.glb", ".v4.error", ".pending"]) {
         await fs.rm(path.join(path.dirname(modelPreviewGlbPath("x")), `${id}${ext}`), { force: true });
       }
     }
@@ -326,7 +327,7 @@ describe("modelPreviewCache -- memory safety", () => {
     const plateId = newPlateId("fanout");
     await generateModelPreviewGlb(plateId, fixture);
     expect(modelPreviewGlbExists(plateId)).toBe(false);
-    const errorPath = path.join(path.dirname(modelPreviewGlbPath("x")), `${plateId}.v3.error`);
+    const errorPath = path.join(path.dirname(modelPreviewGlbPath("x")), `${plateId}.v4.error`);
     expect(fsSync.readFileSync(errorPath, "utf-8")).toBe("permanent: too-complex");
   });
 
@@ -413,7 +414,7 @@ describe("modelPreviewCache -- multi-part objects sharing one part file", () => 
 
   afterAll(async () => {
     for (const id of plateIds) {
-      for (const ext of [".v3.glb", ".v3.error", ".pending"])
+      for (const ext of [".v4.glb", ".v4.error", ".pending"])
         await fs.rm(path.join(cacheDir(), `${id}${ext}`), { force: true });
     }
   });
@@ -483,7 +484,7 @@ describe("modelPreviewState", () => {
 
   afterAll(async () => {
     for (const id of plateIds) {
-      for (const ext of [".v3.glb", ".v3.error", ".pending"])
+      for (const ext of [".v4.glb", ".v4.error", ".pending"])
         await fs.rm(path.join(cacheDir(), `${id}${ext}`), { force: true });
     }
   });

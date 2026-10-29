@@ -46,8 +46,11 @@ const normalize = (a: Vec): Vec => {
   return [a[0] / length, a[1] / length, a[2] / length];
 };
 
-/** Every triangle as 9 floats, in a Y-up world. */
-async function loadTriangles(srcPath: string, ext: string): Promise<Float32Array | PreviewRefusal> {
+/** Every triangle as 9 floats in a Y-up world, and the colour each was drawn in where the file gave it one. */
+type Geometry = { triangles: Float32Array; colors: Uint8Array | null };
+
+/** Every triangle as 9 floats, in a Y-up world; `wantColors` also reads the colour each was drawn in. */
+async function loadTriangles(srcPath: string, ext: string, wantColors: boolean): Promise<Geometry | PreviewRefusal> {
   const THREE = await import("three");
   let root: import("three").Object3D;
   if (ext === ".3mf") {
@@ -105,13 +108,28 @@ async function loadTriangles(srcPath: string, ext: string): Promise<Float32Array
   }
   holder.updateMatrixWorld(true);
 
+  // One mesh per filament or colour group is how the 3MF reader hands a model over, so a model drawn in more
+  // than one of them is one that carries its own colours. With a single colour there is nothing to keep: it is
+  // a shape in whatever colour it happened to be saved in, which the one-colour picture already stands for.
+  const meshColor = (mesh: import("three").Mesh): import("three").Color | null => {
+    const material = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+    return (material as import("three").MeshStandardMaterial | undefined)?.color ?? null;
+  };
+  const distinct = wantColors ? new Set(meshes.map((mesh) => meshColor(mesh)?.getHexString()).filter(Boolean)) : null;
+  const colored = (distinct?.size ?? 0) > 1;
+
   const out = new Float32Array(Math.floor(count) * 9);
+  const colors = colored ? new Uint8Array(Math.floor(count) * 3) : null;
   const vertex = new THREE.Vector3();
   let offset = 0;
+  let colorOffset = 0;
   for (const mesh of meshes) {
     const position = mesh.geometry.getAttribute("position");
     const index = mesh.geometry.getIndex();
     const total = index ? index.count : position.count;
+    // Out of the working space and back to the sRGB bytes a picture is written in, the way three does it for a
+    // screen: left linear, every mid-tone comes out darker than the model is.
+    const rgb = colors ? (meshColor(mesh)?.clone().convertLinearToSRGB() ?? null) : null;
     for (let i = 0; i + 2 < total; i += 3) {
       for (let corner = 0; corner < 3; corner++) {
         vertex
@@ -121,9 +139,14 @@ async function loadTriangles(srcPath: string, ext: string): Promise<Float32Array
         out[offset++] = vertex.y;
         out[offset++] = vertex.z;
       }
+      if (colors) {
+        colors[colorOffset++] = Math.round((rgb?.r ?? 1) * 255);
+        colors[colorOffset++] = Math.round((rgb?.g ?? 1) * 255);
+        colors[colorOffset++] = Math.round((rgb?.b ?? 1) * 255);
+      }
     }
   }
-  return out.subarray(0, offset);
+  return { triangles: out.subarray(0, offset), colors: colors ? colors.subarray(0, colorOffset) : null };
 }
 
 function parseHex(color: string): Vec {
@@ -131,16 +154,27 @@ function parseHex(color: string): Vec {
   return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
 }
 
-/** Draws the model to a square PNG at `destPath`. */
+export type ModelImageOutcome = { status: "ok"; colored: boolean } | PreviewRefusal;
+
+/**
+ * Draws the model to a square PNG at `destPath`, and, with `colorDestPath`, a second one in the colours the
+ * file carries where it has any.
+ *
+ * Both come out of one pass: the model is loaded, projected and rasterized once, and only the averaging at the
+ * end differs. `colored` in the outcome says whether the second picture was written.
+ */
 export async function renderModelImage(
   srcPath: string,
   destPath: string,
   ext: string,
   { size, color, view = "front", ambient = 0.3, fill = 0 }: ModelImageOptions,
-): Promise<"ok" | PreviewRefusal> {
-  const triangles = await loadTriangles(srcPath, ext);
-  if (typeof triangles === "string") return triangles;
+  colorDestPath?: string | null,
+): Promise<ModelImageOutcome> {
+  const geometry = await loadTriangles(srcPath, ext, Boolean(colorDestPath));
+  if (typeof geometry === "string") return geometry;
+  const { triangles } = geometry;
   if (triangles.length === 0) return "unsupported";
+  const faceColors = colorDestPath ? geometry.colors : null;
 
   const min: Vec = [Infinity, Infinity, Infinity];
   const max: Vec = [-Infinity, -Infinity, -Infinity];
@@ -182,6 +216,8 @@ export async function renderModelImage(
   const scale = ((width / 2) * FILL) / (extent || 1);
   const depth = new Float32Array(width * width).fill(-Infinity);
   const shade = new Float32Array(width * width);
+  // Only for a coloured picture: the nearest face's colour at each sample, packed as 0xRRGGBB.
+  const sampleColor = faceColors ? new Uint32Array(width * width) : null;
   for (let t = 0; t < triangles.length; t += 9) {
     const a: Vec = [triangles[t], triangles[t + 1], triangles[t + 2]];
     let normal = normalize(
@@ -205,6 +241,9 @@ export async function renderModelImage(
       z2 = projected[t + 8];
     const area = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0);
     if (area === 0) continue;
+    const packed = faceColors
+      ? (faceColors[(t / 9) * 3] << 16) | (faceColors[(t / 9) * 3 + 1] << 8) | faceColors[(t / 9) * 3 + 2]
+      : 0;
     const minX = Math.max(0, Math.floor(Math.min(x0, x1, x2)));
     const maxX = Math.min(width - 1, Math.ceil(Math.max(x0, x1, x2)));
     const minY = Math.max(0, Math.floor(Math.min(y0, y1, y2)));
@@ -222,35 +261,50 @@ export async function renderModelImage(
         if (z <= depth[at]) continue;
         depth[at] = z;
         shade[at] = brightness;
+        if (sampleColor) sampleColor[at] = packed;
       }
     }
   }
 
-  // Averages each block of samples: covered ones give colour and opacity, empty ones only transparency.
+  // Averages each block of samples: covered ones give colour and opacity, empty ones only transparency. The
+  // coloured picture averages the lit colours themselves, since neighbouring samples may be different parts.
   const [r, g, b] = parseHex(color);
-  const pixels = Buffer.alloc(size * size * 4);
   const samples = SUPERSAMPLE * SUPERSAMPLE;
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      let covered = 0;
-      let lit = 0;
-      for (let sy = 0; sy < SUPERSAMPLE; sy++) {
-        for (let sx = 0; sx < SUPERSAMPLE; sx++) {
-          const at = (y * SUPERSAMPLE + sy) * width + x * SUPERSAMPLE + sx;
-          if (depth[at] === -Infinity) continue;
-          covered++;
-          lit += shade[at];
+  const compose = (useColor: boolean): Buffer => {
+    const pixels = Buffer.alloc(size * size * 4);
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        let covered = 0;
+        let lit = 0;
+        let red = 0;
+        let green = 0;
+        let blue = 0;
+        for (let sy = 0; sy < SUPERSAMPLE; sy++) {
+          for (let sx = 0; sx < SUPERSAMPLE; sx++) {
+            const at = (y * SUPERSAMPLE + sy) * width + x * SUPERSAMPLE + sx;
+            if (depth[at] === -Infinity) continue;
+            covered++;
+            lit += shade[at];
+            if (!useColor || !sampleColor) continue;
+            const packed = sampleColor[at];
+            red += ((packed >> 16) & 255) * shade[at];
+            green += ((packed >> 8) & 255) * shade[at];
+            blue += (packed & 255) * shade[at];
+          }
         }
+        if (!covered) continue;
+        const brightness = lit / covered;
+        const out = (y * size + x) * 4;
+        pixels[out] = Math.min(255, Math.round(useColor ? red / covered : r * brightness));
+        pixels[out + 1] = Math.min(255, Math.round(useColor ? green / covered : g * brightness));
+        pixels[out + 2] = Math.min(255, Math.round(useColor ? blue / covered : b * brightness));
+        pixels[out + 3] = Math.round((covered / samples) * 255);
       }
-      if (!covered) continue;
-      const brightness = lit / covered;
-      const out = (y * size + x) * 4;
-      pixels[out] = Math.min(255, Math.round(r * brightness));
-      pixels[out + 1] = Math.min(255, Math.round(g * brightness));
-      pixels[out + 2] = Math.min(255, Math.round(b * brightness));
-      pixels[out + 3] = Math.round((covered / samples) * 255);
     }
-  }
-  await writeRgbaPng(pixels, size, destPath);
-  return "ok";
+    return pixels;
+  };
+
+  await writeRgbaPng(compose(false), size, destPath);
+  if (sampleColor && colorDestPath) await writeRgbaPng(compose(true), size, colorDestPath);
+  return { status: "ok", colored: Boolean(sampleColor && colorDestPath) };
 }
