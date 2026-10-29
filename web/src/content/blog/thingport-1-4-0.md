@@ -1,6 +1,6 @@
 ---
 title: "Thingport 1.4.0: tools that build models, and models you can change"
-description: "Thingport now runs small apps of its own — planners, generators and calculators that read your library and save back into it, nine to install and an editor to write your own. A model that came with its script opens the creator's own sliders and generates again in your browser, in colour. Plus pairing for Thingport Grab instead of a saved password, three new sites, and a way to find the models whose files have gone."
+description: "Thingport now runs small apps of its own — planners, generators and calculators that read your library and save back into it, nine to install and an editor to write your own. A model that came with its script opens the creator's own sliders and generates again in your browser, in colour. Plus pairing for Thingport Grab instead of a saved password, five new sites with CGTrader and GrabCAD among them, and a way to find the models whose files have gone."
 pubDate: 2026-10-29
 tags: ["release", "tools", "generative", "multicolor", "grab", "providers"]
 ---
@@ -13,8 +13,8 @@ actually needs.
 calculators that read your library and save back into it, nine of them to install, with an editor and an AI route for
 writing your own. A model that arrived with the script it was generated from opens the creator's own sliders and
 generates again in your browser. Models painted in several filaments keep their colours all the way to the plate.
-Thingport Grab pairs with your instance instead of keeping a password, three more sites import, and a new check finds
-the models whose files have gone missing.
+Thingport Grab pairs with your instance instead of keeping a password, five more sites import — CGTrader and GrabCAD
+among them — and a new check finds the models whose files have gone missing.
 
 ## Tools: small apps that work with your library
 
@@ -116,11 +116,23 @@ out of its floating icon and shows what you're importing: the model's picture an
 that searches your collections and creates a new one as you type. On MakerWorld it also says, before you commit,
 whether the model's generator script comes with it. See [Thingport Grab](/docs/grab/).
 
-## Three new sites: OwlCAD, Toymakr3D and Makerables
+## Five new sites: CGTrader, GrabCAD, OwlCAD, Toymakr3D and Makerables
 
-Thingport now imports from fifteen sites.
+Thingport now imports from seventeen sites, two of them among the largest model libraries there are.
 
-![The newest three, at the foot of fifteen sites](../../../../release-notes/screenshots/1.4.0-providers.webp)
+![The newest five, at the foot of seventeen sites](../../../../release-notes/screenshots/1.4.0-providers.webp)
+
+[CGTrader](/docs/providers/cgtrader/) is a marketplace of over three million models, with a large 3D printing
+catalogue beside its game and film assets. Its free models import with your sign-in, and so do your liked models and
+your wishlist, in one go or synced. A paid model you haven't bought is refused before anything downloads; Thingport
+never buys anything. AWS's bot check stands in front of its downloads, and Thingport gets past it
+with your browser's token, which Thingport Grab sends along with your sign-in, or with one FlareSolverr gets for it.
+
+[GrabCAD](/docs/providers/grabcad/) is Stratasys's free library of engineers' CAD models, from single parts to whole
+machines, shared mostly as STEP files that a slicer opens as they are. Thingport takes the files a slicer opens and
+leaves each CAD system's own formats behind. Downloading needs your sign-in, which lasts two days from its last use:
+visiting GrabCAD now and then keeps it alive, and Grab sends a new one whenever it changes. Anyone's likes import, or
+sync, not just your own.
 
 [OwlCAD](/docs/providers/owlcad/) is a parametric CAD app that runs in the browser and needs no sign-in at all. Its
 library parts convert here, and its CAD projects — which have no file anywhere, only a script OwlCAD's own kernel
@@ -128,7 +140,7 @@ builds into geometry — are exported by Thingport Grab from an editor tab.
 [Toymakr3D](/docs/providers/toymakr3d/) is one designer's articulated robot and mecha models, most of them free, and
 asks for your sign-in even for those. [Makerables](/docs/providers/makerables/) is Makera's project site, where
 desktop CNC and 3D printing meet; its projects and their files import without a sign-in, and only the ones you saved
-need one. All three are on for everyone under **Administration → Providers**.
+need one. All five are on for everyone under **Administration → Providers**.
 
 ## Find the models whose files have gone
 

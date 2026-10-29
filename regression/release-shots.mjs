@@ -274,8 +274,8 @@ const SHOTS = [
     run: async (page) => {
       await open(page, "/admin-providers");
       await settle(page);
-      // The newest sites are at the foot of a list of fifteen, which is what this shot is about.
-      await page.getByText("Makerables", { exact: true }).scrollIntoViewIfNeeded();
+      // The newest sites are at the foot of a list of seventeen, which is what this shot is about.
+      await page.getByText("GrabCAD", { exact: true }).scrollIntoViewIfNeeded();
       await settle(page, 400);
     },
   },

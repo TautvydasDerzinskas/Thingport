@@ -1,7 +1,7 @@
 {
   "version": "1.4.0",
   "title": "Tools that build models, and models you can change",
-  "summary": "Thingport now runs small apps of its own — planners, generators and calculators that work with your library, with nine to install and an editor to write your own. A model that came with the script it was generated from can be customized and generated again in your browser, in colour, and multicolour models finally reach your slicer in the colours they were painted in. There's also pairing for Thingport Grab instead of a saved password, three new sites to import from, and a way to find the models whose files have gone missing.",
+  "summary": "Thingport now runs small apps of its own — planners, generators and calculators that work with your library, with nine to install and an editor to write your own. A model that came with the script it was generated from can be customized and generated again in your browser, in colour, and multicolour models finally reach your slicer in the colours they were painted in. There's also pairing for Thingport Grab instead of a saved password, five new sites to import from, CGTrader and GrabCAD among them, and a way to find the models whose files have gone missing.",
   "items": [
     {
       "type": "feature",
@@ -91,13 +91,13 @@
     {
       "type": "feature",
       "highlight": true,
-      "title": "Three new sites: OwlCAD, Toymakr3D and Makerables",
-      "description": "Thingport now imports from fifteen sites. OwlCAD is a parametric CAD app that runs in the browser and needs no sign-in at all: its library parts convert here, and its CAD projects — which have no file anywhere, only a script OwlCAD's own kernel builds into geometry — are exported by Thingport Grab from an editor tab. Toymakr3D is one designer's articulated robot and mecha models, most of them free, and asks for your sign-in even for those. Makerables is Makera's project site, where desktop CNC and 3D printing meet; its projects and their files import without a sign-in, and only the ones you saved need one. All three are on for everyone under Administration → Providers.",
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/providers/owlcad.md",
+      "title": "Five new sites: CGTrader, GrabCAD, OwlCAD, Toymakr3D and Makerables",
+      "description": "Thingport now imports from seventeen sites. CGTrader is a marketplace of over three million models with a large 3D printing catalogue: its free models import with your sign-in, and so do your liked models and your wishlist, in one go or synced. A paid one you haven't bought is refused before anything downloads. AWS's bot check stands in front of its downloads, and Thingport gets past it with your browser's token, which Thingport Grab sends, or one FlareSolverr gets for it. GrabCAD is Stratasys's free library of engineers' CAD models, from single parts to whole machines, shared mostly as STEP files a slicer opens as they are. Its files need your sign-in, which lasts two days from its last use: visiting the site now and then keeps it alive, and Grab sends a new one whenever it changes. Anyone's likes import, or sync, not just your own. OwlCAD is a parametric CAD app that runs in the browser and needs no sign-in at all: its library parts convert here, and its CAD projects — which have no file anywhere, only a script OwlCAD's own kernel builds into geometry — are exported by Thingport Grab from an editor tab. Toymakr3D is one designer's articulated robot and mecha models, most of them free, and asks for your sign-in even for those. Makerables is Makera's project site, where desktop CNC and 3D printing meet; its projects and their files import without a sign-in, and only the ones you saved need one. All five are on for everyone under Administration → Providers.",
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/PROVIDER_SETUP.md",
       "images": [
         {
           "src": "screenshots/1.4.0-providers.webp",
-          "caption": "The newest three, at the foot of fifteen sites"
+          "caption": "The newest five, at the foot of seventeen sites"
         }
       ]
     },
