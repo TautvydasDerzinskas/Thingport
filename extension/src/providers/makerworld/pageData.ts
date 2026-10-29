@@ -122,10 +122,10 @@ export function pickMakerworldInstanceId(design: MakerworldDesign, requestedInst
  * creator can mark a .scad `protected`, and MakerWorld then hands out the models it makes but never the
  * script itself. Null where the design has no script at all, which is most of them.
  */
-export function makerworldScripts(design: MakerworldDesign): { filenames: string[]; withheld: boolean } | null {
+function scadEntries(design: MakerworldDesign): Record<string, unknown>[] {
   const files = design.designExtension?.model_files;
-  if (!Array.isArray(files)) return null;
-  const scripts = files.filter((file): file is Record<string, unknown> => {
+  if (!Array.isArray(files)) return [];
+  return files.filter((file): file is Record<string, unknown> => {
     if (!file || typeof file !== "object") return false;
     const entry = file as Record<string, unknown>;
     return (
@@ -135,6 +135,10 @@ export function makerworldScripts(design: MakerworldDesign): { filenames: string
         .endsWith(".scad")
     );
   });
+}
+
+export function makerworldScripts(design: MakerworldDesign): { filenames: string[]; withheld: boolean } | null {
+  const scripts = scadEntries(design);
   if (!scripts.length) return null;
   const filenames = scripts
     .map((file) => (typeof file.modelName === "string" ? file.modelName.trim() : ""))
@@ -183,9 +187,25 @@ export function makerworldDesignForImport(design: MakerworldDesign): Record<stri
     if (source[key] !== undefined) out[key] = source[key];
   }
   const pictures = getPath(source, "designExtension", "design_pictures");
-  if (Array.isArray(pictures)) {
+  // Only the .scad entries, and only the three fields the backend reads off them: it decides from these whether
+  // the model came with the script it was generated from, and whether its creator shared it. Sending the whole
+  // model_files list would spend the budget below on files the import already gets another way.
+  const scripts = scadEntries(design).map((file) => ({
+    modelType: file.modelType,
+    modelName: file.modelName,
+    protected: file.protected,
+  }));
+  if (Array.isArray(pictures) || scripts.length) {
     out.designExtension = {
-      design_pictures: pictures.map((picture) => ({ name: getPath(picture, "name"), url: getPath(picture, "url") })),
+      ...(Array.isArray(pictures)
+        ? {
+            design_pictures: pictures.map((picture) => ({
+              name: getPath(picture, "name"),
+              url: getPath(picture, "url"),
+            })),
+          }
+        : {}),
+      ...(scripts.length ? { model_files: scripts } : {}),
     };
   }
   if (Array.isArray(source.categories))

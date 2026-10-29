@@ -58,6 +58,7 @@ import {
   MAKERWORLD_DOWNLOAD_LIMIT_CODE,
   MakerworldDownloadLimitError,
   parseMakerworldModelUrl,
+  resolveMakerworldSourcesUrl,
   resolveMakerworldViaCloudApi,
   completeMakerworldAuthor,
 } from "../providers/makerworld/api";
@@ -172,10 +173,22 @@ async function makerworldMetaFromExtension(url: string, body: ImportRequestBody)
     unverified: true,
   };
   const author = await completeMakerworldAuthor(basicAuthor, body.makerworldPaceMs);
+  // What Grab resolved is one profile's 3MF, as the cloud API's download is, so the scripts the design is
+  // generated from need fetching of their own. Without this an import through Grab brought no script at all,
+  // while the same model pasted as a link did. Best-effort: no token, or a refusal, leaves the model's plates.
+  const bearerToken = extractMakerworldBearerToken(resolveMakerworldCookie(body));
+  const parametricSource =
+    meta.parametricSource && !meta.parametricSource.withheld && bearerToken
+      ? {
+          ...meta.parametricSource,
+          zipUrl: await resolveMakerworldSourcesUrl(parsed.designId, bearerToken, body.makerworldPaceMs),
+        }
+      : meta.parametricSource;
   return {
     ...meta,
     author,
     creator: author?.name ?? meta.creator,
+    parametricSource,
     makerworldProfile: extensionProfile(url, body),
   };
 }

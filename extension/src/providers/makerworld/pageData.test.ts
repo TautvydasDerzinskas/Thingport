@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { makerworldScripts, type MakerworldDesign } from "./pageData";
+import { makerworldDesignForImport, makerworldScripts, type MakerworldDesign } from "./pageData";
 
 // The shape MakerWorld's own page data uses: designExtension.model_files, one entry per file, a .scad among
 // them where the model was generated from one, and `protected` set on the ones its creator holds back.
@@ -49,5 +49,29 @@ describe("makerworldScripts", () => {
   it("survives page data that isn't shaped as expected", () => {
     expect(makerworldScripts(design([null, 7, "x"]))).toBeNull();
     expect(makerworldScripts({ id: 1, designExtension: { model_files: undefined } })).toBeNull();
+  });
+});
+
+describe("makerworldDesignForImport", () => {
+  // The backend reads the script off the design the extension sends, and until it did, a Grab import of a
+  // generated model brought its plates and no script -- while the same model pasted as a link brought both.
+  it("carries the .scad entries the backend decides from", () => {
+    const sent = makerworldDesignForImport(
+      design([
+        { modelName: "connector.scad", modelType: "scad", protected: false, url: "https://example.test/a.scad" },
+        { modelName: "connector.3mf", modelType: "3mf" },
+      ]),
+    );
+    expect(makerworldScripts(sent as MakerworldDesign)).toEqual({ filenames: ["connector.scad"], withheld: false });
+  });
+
+  it("keeps a withheld script withheld, so the import doesn't promise one it can't fetch", () => {
+    const sent = makerworldDesignForImport(design([{ modelName: "box.scad", modelType: "scad", protected: true }]));
+    expect(makerworldScripts(sent as MakerworldDesign)?.withheld).toBe(true);
+  });
+
+  it("sends no model_files for a design with no script", () => {
+    const sent = makerworldDesignForImport(design([{ modelName: "bauble.3mf", modelType: "3mf" }]));
+    expect(makerworldScripts(sent as MakerworldDesign)).toBeNull();
   });
 });
