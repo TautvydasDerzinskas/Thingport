@@ -186,6 +186,24 @@ npm run screenshots -- --url … --email … --model "Benchy" # model for the de
 `--out` writes somewhere else instead, e.g. to compare before replacing. Self-signed certificates
 are accepted.
 
+### Release notes pictures
+
+The What's new pictures are a different set: cropped to the thing each one is about, WebP, and named after the
+release. `regression/release-shots.mjs` captures them from a running instance into `release-notes/screenshots/`,
+the same way, and skips the shots whose tool isn't installed or whose model wasn't named rather than failing the
+run.
+
+```bash
+cd regression
+THINGPORT_PASSWORD='…' npm run release-shots -- --url https://thingport.example --email you@example.com \
+  --model <a multicolour model> --generative-model <a model that came with its script>
+npm run release-shots -- --url … --email … --only tools,admin-tools   # just some shots
+```
+
+A shot's file is what an item's `images` then names, so the two are written together -- an item naming a picture
+nothing captures leaves a gap in the dialog. Thingport Grab's own pictures come from
+`npm --prefix extension run screenshots` instead, and are converted to WebP by hand.
+
 ## Quality checks
 
 | Command                               | What it runs                     |
@@ -264,6 +282,11 @@ ordinary notification (the System tab). To post one, add an entry to `entries` a
 - Entries older than 90 days aren't sent, so old ones can stay in the file or be removed.
 - `SYSTEM_NOTIFICATIONS_URL` points a backend at another file; an empty value turns fetching off.
 
+An entry past those 90 days is spent: no instance will ever be sent it again. Move it to
+[`system-notifications-archive.json`](../system-notifications-archive.json), which nothing fetches, rather than
+deleting it -- the record of what was announced is worth keeping, and an `id` must never be reused. Until an entry
+is that old, leave it where it is: an instance that has been off for a month still has it coming.
+
 ## Release notes (What's new)
 
 The first time a backend starts on a newer version than it last ran, every user gets a notification that opens
@@ -277,7 +300,17 @@ The dialog fetches its content from `main`, so it can be written after the relea
 2. Otherwise `backend/CHANGELOG.md` for that version, with the `frontend/CHANGELOG.md` release that went out with
    it. An instance that skipped versions gets every release since the one it ran before, up to five.
 
-To write the notes for a release, replace the file's contents:
+To write the notes for a release, first copy the current file into
+[`release-notes/archive/`](../release-notes/archive) under the version it names, so the release it describes isn't
+lost when the file is overwritten:
+
+```bash
+cp release-notes/latest-release-notes.json "release-notes/archive/$(node -p 'require("./release-notes/latest-release-notes.json").version').json"
+```
+
+Nothing reads the archive -- an instance that skipped a release still falls back to `CHANGELOG.md` for the ones in
+between -- and an archived file's `images` stay relative to `release-notes/`, where they were read from. Then
+replace the file's contents:
 
 ```json
 {

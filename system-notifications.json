@@ -36,6 +36,15 @@
       "published_at": "2026-10-20T12:00:00Z",
       "audience": "all",
       "version": "1.1.0"
+    },
+    {
+      "id": "2026-10-update-to-1.4.0",
+      "title": "Thingport 1.4.0 is out",
+      "body": "Tools — small apps that work with your library, with nine to install and an editor to write your own. Models that came with their script can be customized and generated again in your browser, multicolour models reach your slicer in their own colours, Thingport Grab pairs instead of saving a password, and OwlCAD, Toymakr3D and Makerables join the sites you can import from.",
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/releases",
+      "published_at": "2026-10-29T12:00:00Z",
+      "audience": "admins",
+      "version": "<1.4.0"
     }
   ]
 }
