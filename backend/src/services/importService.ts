@@ -95,7 +95,7 @@ import {
   type PrintMetaInput,
 } from "./printCreation";
 import { availablePlateFilename, relocatePrint, saveThumbFromBytes } from "./printService";
-import { addPreviewImage, deleteAllPreviewImages, preferImageOverRenders } from "./previewImageService";
+import { addPreviewImage, preferImageOverRenders, removePreviewImage } from "./previewImageService";
 import { localizeDescriptionImages } from "./descriptionImageService";
 import { sha256OfFile } from "./fileReuse";
 import { DROP } from "./storedContent";
@@ -594,15 +594,18 @@ async function fetchImageBytes(url: string): Promise<Buffer | null> {
 
 /** Best-effort: stores the page's cover (at position 0) and gallery as preview images, and seeds
  * the plate thumbnail from the cover when nothing better exists. A 3D render the app made while
- * the import ran (the model is browsable from creation) gives way to them. Never throws. */
+ * the import ran (the model is browsable from creation) gives way to them. Never throws.
+ *
+ * Answers with how many of them are stored, a picture whose fetch came back with nothing being skipped as it
+ * always was: a gallery being replaced goes only once this is more than none (replaceModelFiles). */
 export async function attachImportedPreviewImages(
   printId: string | undefined,
   plateId: string | undefined,
   coverImageUrl: string | null | undefined,
   galleryImages: { url: string; filename: string }[],
   paceMs?: number,
-): Promise<void> {
-  if (!printId) return;
+): Promise<number> {
+  if (!printId) return 0;
   const seen = new Set<string>();
   const orderedUrls: string[] = [];
   if (coverImageUrl) {
@@ -616,6 +619,7 @@ export async function attachImportedPreviewImages(
   }
 
   let firstAdded = false;
+  let stored = 0;
   const urls = orderedUrls.slice(0, PREVIEW_IMAGE_MAX_COUNT);
   const delayMs = paceMs ?? IMPORT_PREVIEW_IMAGE_DELAY_MS;
   for (let i = 0; i < urls.length; i++) {
@@ -623,11 +627,14 @@ export async function attachImportedPreviewImages(
     const buf = await fetchImageBytes(urls[i]);
     if (!buf) continue;
     const added = await addPreviewImage(printId, buf);
-    if (added && !firstAdded) {
+    if (!added) continue;
+    stored++;
+    if (!firstAdded) {
       firstAdded = true;
       await preferImageOverRenders(printId, plateId, buf);
     }
   }
+  return stored;
 }
 
 /** Auto-categorizes an import when a category's ids for this site (CategorySiteId) overlap the model's own category
@@ -1530,14 +1537,23 @@ export async function replaceModelFiles(
 
       const { plates, galleryWhole } = await replaceModelPlates(userId, printId, inputs);
       // A gallery that survived the accident is the one the owner has been looking at, so it stays. One missing any
-      // of its pictures is taken from the source afresh instead of left half there.
+      // of its pictures is taken from the source afresh instead of left half there -- but what the model has goes
+      // only once a picture is in to replace it: some of them may be the owner's own photographs, and a source
+      // whose pictures can't be fetched would otherwise leave the gallery empty with nothing to bring it back.
+      // The new ones land beside the old, which is why they take their places only here, renumbered as they go.
       if (!galleryWhole) {
-        await deleteAllPreviewImages(printId);
+        const had = await prisma.previewImage.findMany({ where: { printId }, select: { id: true } });
         // The files are in place by now, so a picture that won't come is no reason to call the repair a failure and
         // leave the model out of the next one -- the look only ever reads the plates.
-        await attachImportedPreviewImages(printId, plates[0]?.id, coverImageUrl, galleryImages).catch((error) =>
-          log.warn("couldn't bring a repaired model's gallery back", { print: printId, error }),
+        const stored = await attachImportedPreviewImages(printId, plates[0]?.id, coverImageUrl, galleryImages).catch(
+          (error: unknown) => {
+            log.warn("couldn't bring a repaired model's gallery back", { print: printId, error });
+            return 0;
+          },
         );
+        if (stored > 0) {
+          for (const image of had) await removePreviewImage(printId, image.id).catch(() => undefined);
+        }
       }
       await applyProfileCovers(printId, profiles.covers);
       const [print, previewImages] = await Promise.all([

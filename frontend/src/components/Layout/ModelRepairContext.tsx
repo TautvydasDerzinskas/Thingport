@@ -181,9 +181,11 @@ export function ModelRepairProvider({
     }
   }, [summary]);
 
-  // Up on its own once the first look is in, unless a repair is already going or this breakage was waved off.
+  // Up on its own once the first look is in, unless a repair is already going or this breakage was waved off. Never
+  // on a look that failed: what it then holds is the answer from before, which a finished repair has moved on from.
   const promptOpen =
-    dialogOpen || Boolean(looked && !running && summary?.prompt && summary.broken > dismissed && summary.broken > 0);
+    dialogOpen ||
+    Boolean(looked && !running && !checkFailed && summary?.prompt && summary.broken > dismissed && summary.broken > 0);
 
   const value = useMemo(
     () => ({

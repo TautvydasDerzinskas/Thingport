@@ -6,10 +6,11 @@ import request from "supertest";
 import { createApp } from "../src/app";
 import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
-import { makePrint, register, tempFile, upload } from "./helpers/fileReuse";
+import { makePrint, register, tempFile, uniqueImage, upload } from "./helpers/fileReuse";
 import { modelFilesMissing, scanMissingFiles } from "../src/services/missingFilesService";
 import { replaceModelPlates } from "../src/services/modelFilesReplace";
 import { replaceModelFiles } from "../src/services/importService";
+import { addPreviewImage } from "../src/services/previewImageService";
 
 // Finding the models whose files are gone, and the repair that deletes them. Re-importing is not covered here: it
 // talks to the providers, which the import suites stand up their own servers for.
@@ -122,6 +123,26 @@ describe("models whose files are gone", () => {
     const plates = await prisma.plate.findMany({ where: { printId: model.print.id } });
     expect(plates.map((plate) => plate.id)).toEqual([model.plate.id]);
     expect(fs.existsSync(path.join(STORAGE, model.plate.storagePath))).toBe(true);
+  });
+
+  it("keeps the pictures the model has when the source's can't be fetched", async () => {
+    const model = await makePrint(dir, owner.id, "Pictures");
+    // The owner's own photograph of the printed model, which the source has no copy of.
+    const photo = await addPreviewImage(model.print.id, await uniqueImage("jpeg"));
+    expect(photo).not.toBeNull();
+    fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
+
+    const replaced = await replaceModelFiles(owner.id, model.print.id, {
+      inputs: [{ filename: "fetched.stl", tempFilePath: tempFile(dir, "solid fetched\nendsolid\n") }],
+      coverImageUrl: "http://127.0.0.1:1/cover.jpg",
+      galleryImages: [{ url: "http://127.0.0.1:1/one.jpg", filename: "one.jpg" }],
+      profiles: {},
+    });
+
+    expect(replaced).not.toBeNull();
+    // Nothing answered on either address, so the gallery is the one the owner has been looking at.
+    const images = await prisma.previewImage.findMany({ where: { printId: model.print.id } });
+    expect(images.map((image) => image.id)).toEqual([photo!.id]);
   });
 
   it("refuses an action it doesn't know, and a request with no sign-in", async () => {
