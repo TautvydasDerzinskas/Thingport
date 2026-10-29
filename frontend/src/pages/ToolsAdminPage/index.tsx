@@ -129,9 +129,10 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
   /** A tool that brings models asks whether they are wanted; one that brings none just installs. */
   const startInstall = (tool: AdminTool) => {
     if (tool.manifest.collection?.models.length && !tool.installed) setInstalling(tool);
-    // An update takes the models only where the instance has them: one installed without them, to save the room,
-    // isn't handed gigabytes by an update it didn't ask that of. The details dialog still offers to import them.
-    else void install(tool, tool.installed?.models?.imported !== false);
+    // An update takes the models only where the instance already has them: one installed without them, to save the
+    // room, isn't handed gigabytes by an update it didn't ask that of, and neither is one whose installed version
+    // brought none and whose new one does. The details dialog still offers to import them.
+    else void install(tool, tool.installed?.models?.imported === true);
   };
 
   const install = async (tool: AdminTool, withModels: boolean) => {
@@ -369,7 +370,12 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
                       if (tool.installed) setMenu({ anchor: event.currentTarget, tool });
                     }}
                   />
-                  <ToolUpdateBadge tool={tool} busy={busy === tool.slug} onUpdate={() => startInstall(tool)} />
+                  <ToolUpdateBadge
+                    tool={tool}
+                    busy={busy === tool.slug}
+                    repoError={catalog.repoError}
+                    onUpdate={() => startInstall(tool)}
+                  />
                 </Box>
               ))}
             </AppGrid>

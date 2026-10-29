@@ -10,16 +10,17 @@ import type { AdminTool } from "../../api/tools";
 
 const appear = keyframes`from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: none; }`;
 
-type Props = { tool: AdminTool; busy: boolean; onUpdate: () => void };
+type Props = { tool: AdminTool; busy: boolean; repoError: string | null; onUpdate: () => void };
 
 /** Under an installed tool's tile: its update in one click, or that it's already the newest the repository has.
  *  A sibling of the tile rather than part of it, because the tile is itself a button. */
-export default function ToolUpdateBadge({ tool, busy, onUpdate }: Props) {
+export default function ToolUpdateBadge({ tool, busy, repoError, onUpdate }: Props) {
   const { t } = useTranslation("app");
   const { installed, manifest } = tool;
   // A tool that isn't installed has nothing to update, and one the repository has dropped has nowhere to update
-  // from -- the details dialog is where that is said.
-  if (!installed || !tool.inRepo) return null;
+  // from -- the details dialog is where that is said. While the repository can't be read nothing was compared
+  // against it, so neither state can be claimed: an unreachable repository is already said above the grid.
+  if (!installed || !tool.inRepo || repoError) return null;
   const update = installed.updateAvailable;
 
   return (
