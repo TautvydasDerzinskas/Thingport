@@ -6,6 +6,10 @@ import fs from "node:fs/promises";
 //
 // Runs in a worker thread (modelPreviewWorker.ts); keep it free of config/db imports.
 
+// The kernel writes a line per problem it finds, so a garbled file can produce thousands; the first few say enough.
+const MAX_KERNEL_NOTES = 5;
+const MAX_KERNEL_NOTES_CHARS = 500;
+
 export type StepMesh = {
   positions: Float32Array;
   /** Null for a part the kernel handed over as loose triangles. */
@@ -34,11 +38,15 @@ export async function loadStepMeshes(srcPath: string): Promise<StepMesh[]> {
   // The kernel narrates a file it dislikes straight to stdout/stderr ("**** ERR StepFile ..."), which would reach
   // the server log with nothing to say which model it was about. The thrown error below carries that instead.
   const notes: string[] = [];
-  const occt = await initOcct({ print: (line) => notes.push(line), printErr: (line) => notes.push(line) });
+  const note = (line: string) => {
+    if (notes.length < MAX_KERNEL_NOTES) notes.push(line);
+  };
+  const occt = await initOcct({ print: note, printErr: note });
   const file = await fs.readFile(srcPath);
   const result = occt.ReadStepFile(new Uint8Array(file.buffer, file.byteOffset, file.byteLength), null);
   if (!result.success) {
-    throw new Error(`the CAD kernel couldn't read this STEP file${notes.length ? `: ${notes.join(" ").trim()}` : ""}`);
+    const said = notes.join(" ").trim().slice(0, MAX_KERNEL_NOTES_CHARS);
+    throw new Error(`the CAD kernel couldn't read this STEP file${said ? `: ${said}` : ""}`);
   }
   const meshes: StepMesh[] = [];
   for (const mesh of result.meshes) {
