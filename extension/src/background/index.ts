@@ -21,7 +21,13 @@ import { clearRecentlyViewed, getRecentlyViewed, recordViewedModel } from "./rec
 import { syncSession } from "./sessionSync";
 import { onPairingTabClosed, onPairingTabUrl, startPairing } from "./pairing";
 import { openSetup } from "./setup";
-import { forgetProviderTab, forgetProviderTabs, getTabProvider, noteProviderTab } from "./providerTab";
+import {
+  forgetProviderTab,
+  forgetProviderTabs,
+  getTabProvider,
+  noteProviderTab,
+  onProviderTabUrl,
+} from "./providerTab";
 import { setTabIconState } from "./tabIcon";
 import { injectIntoOpenTabs, OPTIONAL_SITES, siteEnabled, syncSiteScripts } from "../shared/optionalSites";
 
@@ -57,11 +63,12 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   // The approval tab's #fragment changing is how Thingport hands back the code; the url is visible because the
   // instance's host permission was granted first.
   void onPairingTabUrl(tabId, changeInfo.url ?? (changeInfo.status === "complete" ? tab.url : undefined));
-  // Per-tab icon overrides persist, so reset on every new navigation; the content script re-asserts it. The same
-  // for the tab's provider note: the page that reported it is on its way out, and the next one speaks for itself.
+  // Per-tab icon overrides persist, so reset on every new navigation; the content script re-asserts it. The tab's
+  // provider note goes by the new address instead: a site's own links fire this without loading a document, so no
+  // content script runs afterwards to report the site again (see providerTab.ts).
   if (changeInfo.status === "loading") {
     void setTabIconState(tabId, false);
-    void forgetProviderTab(tabId);
+    void onProviderTabUrl(tabId, changeInfo.url);
   }
   if (changeInfo.status === "complete") onProviderTabLoaded(tabId);
 });

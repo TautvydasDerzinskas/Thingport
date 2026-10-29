@@ -12,7 +12,8 @@ vi.stubGlobal("chrome", {
   },
 });
 
-const { forgetProviderTab, forgetProviderTabs, getTabProvider, noteProviderTab } = await import("./providerTab");
+const { forgetProviderTab, forgetProviderTabs, getTabProvider, noteProviderTab, onProviderTabUrl } =
+  await import("./providerTab");
 
 describe("providerTab", () => {
   beforeEach(() => {
@@ -53,6 +54,35 @@ describe("providerTab", () => {
     await forgetProviderTab(1);
     expect(await getTabProvider(1)).toBeNull();
     expect(await getTabProvider(2)).toBe("thingiverse");
+  });
+
+  // The site's own links navigate without loading a document, so the page never reports again: the note has to
+  // follow the address the browser gives instead, or the popup stops featuring the site after the first click.
+  it("keeps the note when the site's own links move the tab", async () => {
+    await noteProviderTab("makerworld", 1);
+    await onProviderTabUrl(1, "https://makerworld.com/en/3d-models");
+    expect(await getTabProvider(1)).toBe("makerworld");
+  });
+
+  it("takes the provider from the address, for a tab that hasn't reported yet", async () => {
+    await onProviderTabUrl(1, "https://www.printables.com/model/123");
+    expect(await getTabProvider(1)).toBe("printables");
+  });
+
+  it("follows the tab from one provider to another", async () => {
+    await noteProviderTab("makerworld", 1);
+    await onProviderTabUrl(1, "https://www.thingiverse.com/thing:1");
+    expect(await getTabProvider(1)).toBe("thingiverse");
+  });
+
+  it("forgets the note for an address off the provider sites, and for one Grab can't read", async () => {
+    await noteProviderTab("makerworld", 1);
+    await onProviderTabUrl(1, "https://example.com/");
+    expect(await getTabProvider(1)).toBeNull();
+
+    await noteProviderTab("makerworld", 1);
+    await onProviderTabUrl(1, undefined);
+    expect(await getTabProvider(1)).toBeNull();
   });
 
   it("clears the key once the last note goes, and on a new browser session", async () => {

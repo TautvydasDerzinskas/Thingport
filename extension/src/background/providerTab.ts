@@ -7,6 +7,10 @@
 // for a tab that never reported. So it works on the sites Grab runs on (the built-in three, and the optional ones
 // once enabled) and nowhere else, which is where there's something to say anyway.
 //
+// The browser tops that up with where each tab is going (onProviderTabUrl below), because the page only speaks when
+// it loads: an SPA's own links, which is most of the clicking on these sites, change the address under a page that
+// has already said its piece.
+//
 // A note per tab, not one for the last site seen: provider tabs come in handfuls, and the popup is asked about
 // whichever of them is in front. A note goes when its tab navigates away or closes, and they all go when the
 // browser starts, so none outlives the page it describes or lands on a tab that reused its id.
@@ -14,6 +18,7 @@
 // It lives in storage rather than a variable because the service worker sleeps between the page loading and the
 // popup opening.
 
+import { providerOfHost } from "../providers/index.generated";
 import { STORAGE_KEYS, type ProviderTabs } from "../shared/storage";
 import type { Provider } from "../shared/urls";
 
@@ -49,6 +54,24 @@ export async function noteProviderTab(provider: Provider, tabId: number): Promis
 /** The provider whose site tab `tabId` is on; null for a tab on anything else, and for one that never reported. */
 export async function getTabProvider(tabId: number): Promise<Provider | null> {
   return (await noted())[tabId] ?? null;
+}
+
+/** The tab is loading `url`, as the browser tells it -- undefined where Grab has no access to read it, which is
+ *  every site it doesn't run on. So the address decides: a note for the provider it belongs to, and none at all
+ *  otherwise. Taking it from here rather than waiting for the page to report again is what keeps a site's own links
+ *  from losing the note, as they navigate without loading a document and so without running the content script. */
+export async function onProviderTabUrl(tabId: number, url: string | undefined): Promise<void> {
+  const provider = url ? providerOfHost(hostOf(url)) : null;
+  if (provider) await noteProviderTab(provider, tabId);
+  else await forgetProviderTab(tabId);
+}
+
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return "";
+  }
 }
 
 /** The tab has gone or moved on, so nothing will correct its note: drop it rather than leave it describing a page

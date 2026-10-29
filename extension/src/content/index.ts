@@ -222,24 +222,21 @@ async function init(): Promise<void> {
   }
 }
 
-// All three sites are SPAs, so this script runs once per tab. Patch pushState/replaceState, listen
-// for popstate, and poll as a safety net.
+// The sites are SPAs, so this script runs once per tab and has to notice the address changing under it. A content
+// script can't hook the page's own history.pushState -- it runs in a JavaScript world of its own, so replacing
+// History's methods there only catches calls made from this script, of which there are none -- so popstate covers
+// going back and forward, and a poll covers the links.
 function installNavigationWatcher(): void {
   let lastHref = location.href;
   const onLocationChange = () => {
     if (location.href === lastHref) return;
     lastHref = location.href;
+    // Said again because the browser treats this as a navigation and drops what it knows about the tab, the note
+    // the popup features the site from included (background/providerTab.ts).
+    reportProviderSite();
     unmount();
     void init();
   };
-  for (const method of ["pushState", "replaceState"] as const) {
-    const original = history[method];
-    history[method] = function (this: History, ...args: Parameters<History["pushState"]>) {
-      const result = original.apply(this, args);
-      onLocationChange();
-      return result;
-    };
-  }
   window.addEventListener("popstate", onLocationChange);
   setInterval(onLocationChange, 1000);
 }
