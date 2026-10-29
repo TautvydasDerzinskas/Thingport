@@ -76,7 +76,7 @@ test("each file becomes a model and each directory a folder, leaving the folder 
 });
 
 test("in folder mode, set from the admin settings, each folder of model files is one model", async ({ page, api }) => {
-  await page.goto("/admin-settings");
+  await page.goto("/admin-storage");
   await expect(page.getByText("Watching /app/consume.", { exact: false })).toBeVisible();
   await page.getByRole("radio", { name: /^Each folder is one model/ }).check();
   await page.getByRole("button", { name: "Save consume settings" }).click();
