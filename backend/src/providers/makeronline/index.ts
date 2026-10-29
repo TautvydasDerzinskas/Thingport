@@ -100,15 +100,20 @@ export const makeronlineImport: CustomImport = {
     return kit.createPrint(userId, source, body, resolved, downloaded, kit.profileDetails(resolved.profiles));
   },
   /** Each print profile the request brings that the print hasn't got becomes another plate; anything else is
-   *  already in the library, and needs no download. */
+   *  already in the library, and needs no download. A model whose files are gone is the exception: its own are
+   *  what the request brings back, so every file comes in and replaces them (services/modelRepairService.ts). */
   async addToExisting(existing, body, kit) {
+    const repairing = await kit.filesMissing(existing);
     const have = new Set(existing.plates.map((plate) => plate.sourceInstanceId));
-    const wanted = (body.resolved_files ?? []).filter((file) => file.profile_id && !have.has(file.profile_id));
+    const brought = body.resolved_files ?? [];
+    const wanted = repairing ? brought : brought.filter((file) => file.profile_id && !have.has(file.profile_id));
     if (!wanted.length) return { ...existing, alreadyImported: true };
     const inputs = await downloadFiles(wanted, kit);
     // Its public details name and picture the profiles; without them the files still come in.
     const model = await resolveMakeronlineModel(existing.print.sourceExternalId!).catch(() => null);
-    return kit.addProfiles(existing, inputs, model ? kit.profileDetails(model.profiles) : {});
+    const details = model ? kit.profileDetails(model.profiles) : {};
+    if (repairing) return kit.replaceFiles(existing, inputs, model, details);
+    return kit.addProfiles(existing, inputs, details);
   },
 };
 

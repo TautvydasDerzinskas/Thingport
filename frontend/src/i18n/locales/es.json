@@ -1797,6 +1797,7 @@
           "model_edited": "Modelo editado",
           "model_reimported": "Detalles que faltaban obtenidos",
           "model_deleted": "Modelo eliminado",
+          "models_repaired": "Modelos reparados",
           "collection_created": "Colección creada",
           "collection_edited": "Colección editada",
           "collection_deleted": "Colección eliminada",
@@ -1838,7 +1839,8 @@
         "aiRunSummary": "{{done}} de {{total}} revisados — {{suggested}} sugeridos, {{applied}} aplicados, {{failed}} con error",
         "aiRunStopped": "(detenida)",
         "viaProvider": "mediante {{provider}}",
-        "merged": "{{merged}} → {{name}}"
+        "merged": "{{merged}} → {{name}}",
+        "repairSummary": "{{action}}: {{repaired}} reparados, {{deleted}} eliminados, {{failed}} fallidos"
       },
       "rendering": {
         "heading": "Renderizado",
@@ -2831,6 +2833,99 @@
       "badShape": "Las etiquetas son un objeto plano de claves a texto, como { \"save\": \"Guardar\" }.",
       "removeTitle": "¿Quitar las etiquetas en {{name}}?",
       "removeBody": "El archivo y sus palabras desaparecen. Los demás idiomas se quedan."
+    },
+    "missingFiles": {
+      "title": "Algunos modelos han perdido sus archivos",
+      "lead_one": "1 modelo de tu biblioteca ya no tiene archivos en el disco: ni los archivos del modelo ni las imágenes. No se puede abrir, imprimir ni descargar hasta que vuelvan.",
+      "lead_other": "{{count}} modelos de tu biblioteca ya no tienen archivos en el disco: ni los archivos del modelo ni las imágenes. No se pueden abrir, imprimir ni descargar hasta que vuelvan.",
+      "leadHelp": "Thingport guarda los archivos de un modelo en su carpeta de almacenamiento y solo los datos del modelo en la base de datos. Si mueves una instancia sin esa carpeta, o si se borra por accidente, los datos quedan sin nada detrás. Volver a descargar los archivos del sitio del que vino cada modelo los repone y deja todo lo demás —nombres, etiquetas, colecciones y favoritos— tal como está.",
+      "notNow": "Ahora no",
+      "checking": "Revisando tus modelos…",
+      "checkFailed": "No se pudieron revisar tus modelos. Inténtalo de nuevo y, si sigue fallando, comprueba que la carpeta de almacenamiento esté ahí.",
+      "checkFailedStale": "La última comprobación no se pudo hacer, así que esto es lo que encontró la anterior.",
+      "allWell": "Todos los modelos tienen sus archivos",
+      "allWellDetail_one": "Se revisó 1 modelo.",
+      "allWellDetail_other": "Se revisaron {{count}} modelos.",
+      "checkAgain": "Volver a comprobar",
+      "stats": {
+        "broken": "Sin archivos",
+        "server": "Thingport puede descargar",
+        "grab": "Necesitan Grab",
+        "noSource": "Subidos"
+      },
+      "fromSites": "De dónde vinieron",
+      "whatNow": "Qué hacer",
+      "manyWarning_one": "Es un solo modelo: cosa de un momento.",
+      "manyWarning_other": "{{count}} modelos de una vez son muchos: los sitios pueden pedir a Thingport que vaya más despacio o que espere, así que puede tardar. Se ejecuta en segundo plano y puedes detenerlo cuando quieras.",
+      "alreadyRunning": "Ya hay una reparación en marcha.",
+      "startFailed": "No se pudo iniciar la reparación.",
+      "actions": {
+        "reimport": {
+          "title": "Descargar los archivos que faltan",
+          "detail_one": "Vuelve a descargar los archivos de 1 modelo del sitio del que vino. Su nombre, etiquetas, colecciones y favorito se mantienen.",
+          "detail_other": "Vuelve a descargar los archivos de {{count}} modelos de los sitios de los que vinieron. Nombres, etiquetas, colecciones y favoritos se mantienen.",
+          "grabOnly_one": "Solo Thingport Grab puede descargar los archivos de este modelo. Esperará a su próxima visita al sitio.",
+          "grabOnly_other": "Solo Thingport Grab puede descargar estos archivos. {{count}} modelos esperarán a su próxima visita a los sitios de los que vinieron.",
+          "none": "Ninguno de estos modelos tiene un sitio del que descargar."
+        },
+        "delete": {
+          "title": "Eliminar estos modelos",
+          "detail_one": "Elimina 1 modelo de la biblioteca para siempre, con sus datos, etiquetas y entradas en colecciones.",
+          "detail_other": "Elimina {{count}} modelos de la biblioteca para siempre, con sus datos, etiquetas y entradas en colecciones."
+        }
+      },
+      "confirm": {
+        "reimport": {
+          "title_one": "¿Descargar los archivos de 1 modelo?",
+          "title_other": "¿Descargar los archivos de {{count}} modelos?",
+          "message_one": "Thingport descargará los archivos del modelo del sitio del que vino. No cambia nada más y, si no se puede acceder al sitio, el modelo queda exactamente como está ahora.",
+          "message_other": "Thingport descargará los archivos de cada modelo del sitio del que vino, uno a uno. No cambia nada más, y cualquier modelo cuyo sitio no se pueda alcanzar queda exactamente como está ahora.",
+          "queued_one": "1 modelo más esperará a que Thingport Grab visite el sitio del que vienen sus archivos.",
+          "queued_other": "{{count}} modelos más esperarán a que Thingport Grab visite los sitios de los que vienen sus archivos.",
+          "confirm": "Descargar los archivos",
+          "grabTitle": "¿Dejarlo en manos de Thingport Grab?",
+          "grabMessage_one": "Thingport no puede descargar los archivos de este modelo por sí mismo: solo Thingport Grab puede, en las propias páginas del sitio. El modelo esperará a la próxima visita de Grab, y los archivos que traiga ocuparán el lugar de los que faltan.",
+          "grabMessage_other": "Thingport no puede descargar estos archivos por sí mismo: solo Thingport Grab puede, en las propias páginas de los sitios. Los {{count}} modelos esperarán a la próxima visita de Grab, y los archivos que traiga ocuparán el lugar de los que faltan.",
+          "grabConfirm": "Esperar a Grab"
+        },
+        "delete": {
+          "title_one": "¿Eliminar 1 modelo?",
+          "title_other": "¿Eliminar {{count}} modelos?",
+          "message_one": "Esto no se puede deshacer. El modelo, sus datos, etiquetas y entradas en colecciones se eliminan para siempre. Solo se toca el modelo sin archivos.",
+          "message_other": "Esto no se puede deshacer. Los {{count}} modelos, sus datos, etiquetas y entradas en colecciones se eliminan para siempre. Solo se tocan los modelos sin archivos.",
+          "confirm": "Eliminar los modelos"
+        }
+      }
+    },
+    "modelRepairProgress": {
+      "stop": "Detener la reparación",
+      "stopping": "Se detendrá tras el modelo actual…",
+      "reimport": {
+        "starting": "Preparando la descarga de los archivos que faltan…",
+        "label": "{{phrase}} {{done}} de {{total}}",
+        "phrases": [
+          "Descargando los archivos que faltan…",
+          "Pidiendo ese STL de vuelta…",
+          "Volviendo a thingportear tus modelos…",
+          "Recogiendo 3MF del origen…",
+          "Devolviendo los archivos junto a sus modelos…",
+          "Buscando lo que quedó atrás en la mudanza…",
+          "Llenando otra vez las estanterías vacías…",
+          "Llamando a la puerta del diseñador…"
+        ]
+      },
+      "delete": {
+        "starting": "Preparando la eliminación de modelos…",
+        "label": "{{phrase}} {{done}} de {{total}}",
+        "phrases": [
+          "Eliminando modelos sin archivos…",
+          "Sacando las cajas vacías…",
+          "Recogiendo lo que ya no está…",
+          "Llevando el reciclaje…",
+          "Quitando el polvo del estante vacío…",
+          "Despidiendo a los fantasmas…"
+        ]
+      }
     }
   },
   "common": {
@@ -4064,7 +4159,8 @@
       }
     },
     "manager": {
-      "title": "Gestionar categorías y carpetas"
+      "title": "Gestionar categorías y carpetas",
+      "repair": "Reparar"
     },
     "selection": {
       "enter": "Seleccionar modelos",

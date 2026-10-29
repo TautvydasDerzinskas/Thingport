@@ -120,6 +120,18 @@ export type PipelineKit = ImportKit & {
     profiles: { id: string; title: string; coverUrl?: string | null }[],
     options?: { names?: boolean },
   ): ProfileDetails;
+  /** Whether this model's files are gone -- every one of them (services/missingFilesService.ts). A provider whose
+   *  files only Thingport Grab can fetch asks before it decides what to fetch: a re-import of such a model is a
+   *  repair of its files rather than an addition to them. */
+  filesMissing(existing: ExistingImportedPrint): Promise<boolean>;
+  /** The downloaded files in place of the model's missing ones, and its pictures again where they went too.
+   *  Everything else about the model stays as its owner left it. Removes the files either way. */
+  replaceFiles(
+    existing: ExistingImportedPrint,
+    inputs: NewPlateInput[],
+    resolved: ResolvedModel | null,
+    details: ProfileDetails,
+  ): Promise<ImportResult>;
 };
 
 /** The escape hatch for a provider whose imports don't go the shared way (MakerOnline's files come from Grab). */

@@ -13,6 +13,7 @@ import authRoutes from "./routes/auth";
 import oidcRoutes from "./routes/oidc";
 import grabRoutes from "./routes/grab";
 import printsRoutes from "./routes/prints";
+import modelRepairRoutes from "./routes/modelRepair";
 import authorsRoutes from "./routes/authors";
 import platesRoutes from "./routes/plates";
 import previewImagesRoutes from "./routes/previewImages";
@@ -78,6 +79,7 @@ export function createApp(): Express {
   app.use("/api", grabRoutes);
   app.use("/api", settingsRoutes);
   app.use("/api", printsRoutes);
+  app.use("/api", modelRepairRoutes);
   app.use("/api", aiCategorizationRoutes);
   app.use("/api", aiDescriptionRoutes);
   app.use("/api", authorsRoutes);

@@ -8,6 +8,7 @@ import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { useImportJob } from "./ImportJobContext";
 import { useAiDescriptionRun, useAiRun } from "./AiRunContext";
 import { useStorageMove } from "./StorageMoveContext";
+import { useModelRepair } from "./ModelRepairContext";
 
 const SCROLL_SHOW_THRESHOLD = 200;
 
@@ -16,7 +17,7 @@ function scrollToTop() {
 }
 
 /** The app scrolls at the window level, so one listener covers every route. Shifts up while
- *  ImportProgressBar, AiRunProgressBar or StorageMoveProgressBar shows. */
+ *  ImportProgressBar, AiRunProgressBar, StorageMoveProgressBar or ModelRepairProgressBar shows. */
 export default function BackToTopButton() {
   const { t } = useTranslation("app");
   const [visible, setVisible] = useState(false);
@@ -24,6 +25,7 @@ export default function BackToTopButton() {
   const { running: aiRunning } = useAiRun();
   const { running: descriptionsRunning } = useAiDescriptionRun();
   const { running: filesMoving } = useStorageMove();
+  const { running: repairing } = useModelRepair();
 
   useEffect(() => {
     const onScroll = () => setVisible(window.scrollY > SCROLL_SHOW_THRESHOLD);
@@ -42,7 +44,12 @@ export default function BackToTopButton() {
           position: "fixed",
           right: 24,
           bottom:
-            24 + (activeJob ? 64 : 0) + (aiRunning ? 64 : 0) + (descriptionsRunning ? 64 : 0) + (filesMoving ? 64 : 0),
+            24 +
+            (activeJob ? 64 : 0) +
+            (aiRunning ? 64 : 0) +
+            (descriptionsRunning ? 64 : 0) +
+            (filesMoving ? 64 : 0) +
+            (repairing ? 64 : 0),
           zIndex: (theme) => theme.zIndex.fab,
           transition: (theme) => theme.transitions.create("bottom"),
         }}

@@ -1792,6 +1792,7 @@
           "model_edited": "Model edited",
           "model_reimported": "Missing details fetched",
           "model_deleted": "Model deleted",
+          "models_repaired": "Models repaired",
           "collection_created": "Collection created",
           "collection_edited": "Collection edited",
           "collection_deleted": "Collection deleted",
@@ -1831,7 +1832,8 @@
         "aiRunSummary": "{{done}} of {{total}} checked — {{suggested}} suggested, {{applied}} applied, {{failed}} failed",
         "aiRunStopped": "(stopped)",
         "viaProvider": "via {{provider}}",
-        "merged": "{{merged}} → {{name}}"
+        "merged": "{{merged}} → {{name}}",
+        "repairSummary": "{{action}}: {{repaired}} repaired, {{deleted}} deleted, {{failed}} failed"
       },
       "rendering": {
         "heading": "Rendering",
@@ -2815,6 +2817,99 @@
       "badShape": "Labels are a flat object of keys to text, like { \"save\": \"Save\" }.",
       "removeTitle": "Remove the {{name}} labels?",
       "removeBody": "The file and its words go. The other languages stay."
+    },
+    "missingFiles": {
+      "title": "Some models have lost their files",
+      "lead_one": "1 model in your library has no files left on disk — neither the model files nor the pictures. It can't be opened, printed or downloaded until they are back.",
+      "lead_other": "{{count}} models in your library have no files left on disk — neither the model files nor the pictures. They can't be opened, printed or downloaded until the files are back.",
+      "leadHelp": "Thingport keeps a model's files in its storage folder and only the model's details in the database. An instance moved without that folder, or a folder deleted by accident, leaves the details with nothing behind them. Fetching the files again from the site each model came from puts them back and leaves everything else — names, tags, collections, favourites — as it is.",
+      "notNow": "Not now",
+      "checking": "Looking through your models…",
+      "checkFailed": "Couldn't look through your models. Try again — and if it keeps failing, check that the storage folder is there.",
+      "checkFailedStale": "The latest check couldn't be made, so this is what the last one found.",
+      "allWell": "Every model has its files",
+      "allWellDetail_one": "Checked 1 model.",
+      "allWellDetail_other": "Checked {{count}} models.",
+      "checkAgain": "Check again",
+      "stats": {
+        "broken": "No files",
+        "server": "Thingport can fetch",
+        "grab": "Need Grab",
+        "noSource": "Uploads"
+      },
+      "fromSites": "Where they came from",
+      "whatNow": "What to do",
+      "manyWarning_one": "That is one model to fetch — quick work.",
+      "manyWarning_other": "{{count}} models is a lot to fetch at once: the sites may ask Thingport to slow down or wait, so it can take a while. It runs in the background and you can stop it at any time.",
+      "alreadyRunning": "A repair is already running.",
+      "startFailed": "Couldn't start the repair.",
+      "actions": {
+        "reimport": {
+          "title": "Fetch the missing files",
+          "detail_one": "Downloads 1 model's files again from the site it came from. Its name, tags, collections and favourite stay as they are.",
+          "detail_other": "Downloads {{count}} models' files again from the sites they came from. Names, tags, collections and favourites stay as they are.",
+          "grabOnly_one": "Only Thingport Grab can fetch this one's files. It waits for Grab's next visit to the site.",
+          "grabOnly_other": "Only Thingport Grab can fetch these files. {{count}} models wait for its next visit to the sites they came from.",
+          "none": "None of these models has a site to fetch from."
+        },
+        "delete": {
+          "title": "Delete these models",
+          "detail_one": "Removes 1 model from the library for good, with its details, tags and collection entries.",
+          "detail_other": "Removes {{count}} models from the library for good, with their details, tags and collection entries."
+        }
+      },
+      "confirm": {
+        "reimport": {
+          "title_one": "Fetch the files of 1 model?",
+          "title_other": "Fetch the files of {{count}} models?",
+          "message_one": "Thingport downloads the model's files from the site it came from. Nothing else about it changes, and if the site can't be reached the model is left exactly as it is now.",
+          "message_other": "Thingport downloads each model's files from the site it came from, one at a time. Nothing else about them changes, and any model whose site can't be reached is left exactly as it is now.",
+          "queued_one": "1 more model waits for Thingport Grab to visit the site its files come from.",
+          "queued_other": "{{count}} more models wait for Thingport Grab to visit the sites their files come from.",
+          "confirm": "Fetch the files",
+          "grabTitle": "Wait for Thingport Grab?",
+          "grabMessage_one": "Thingport can't fetch this model's files itself — only Thingport Grab can, on the site's own pages. The model waits for Grab's next visit there, and the files it brings take the place of the missing ones.",
+          "grabMessage_other": "Thingport can't fetch these files itself — only Thingport Grab can, on the sites' own pages. The {{count}} models wait for Grab's next visit, and the files it brings take the place of the missing ones.",
+          "grabConfirm": "Wait for Grab"
+        },
+        "delete": {
+          "title_one": "Delete 1 model?",
+          "title_other": "Delete {{count}} models?",
+          "message_one": "This can't be undone. The model, its details, tags and collection entries are removed for good. Only the model with no files is touched.",
+          "message_other": "This can't be undone. All {{count}} models, their details, tags and collection entries are removed for good. Only models with no files are touched.",
+          "confirm": "Delete the models"
+        }
+      }
+    },
+    "modelRepairProgress": {
+      "stop": "Stop the repair",
+      "stopping": "Stopping after the current model…",
+      "reimport": {
+        "starting": "Getting ready to fetch missing files…",
+        "label": "{{phrase}} {{done}} of {{total}}",
+        "phrases": [
+          "Fetching missing files…",
+          "Asking the site for that STL back…",
+          "Re-Thingporting your models…",
+          "Collecting 3MFs from the source…",
+          "Putting files back beside their models…",
+          "Finding what the move left behind…",
+          "Filling the empty shelves again…",
+          "Knocking on the designer's door…"
+        ]
+      },
+      "delete": {
+        "starting": "Getting ready to delete models…",
+        "label": "{{phrase}} {{done}} of {{total}}",
+        "phrases": [
+          "Deleting models with no files…",
+          "Clearing out the empty boxes…",
+          "Tidying away what's gone…",
+          "Taking out the recycling…",
+          "Dusting the empty shelf…",
+          "Saying goodbye to the ghosts…"
+        ]
+      }
     }
   },
   "common": {
@@ -4048,7 +4143,8 @@
       }
     },
     "manager": {
-      "title": "Manage categories & folders"
+      "title": "Manage categories & folders",
+      "repair": "Repair"
     },
     "selection": {
       "enter": "Select models",
