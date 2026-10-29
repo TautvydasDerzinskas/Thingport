@@ -18,9 +18,17 @@ export async function authToken(page: Page): Promise<string> {
   return token;
 }
 
+/** A 401 here is nearly always the one cause, and it surfaces in a spec far from the one that caused it. */
+function why(status: number): string {
+  return status === 401
+    ? ". The shared admin session is gone: a test that signs out, changes the password or deletes the account" +
+        " needs its own storage state, or it revokes the token every later spec replays (see DEVELOPMENT.md)."
+    : "";
+}
+
 export async function apiGet(request: APIRequestContext, token: string, url: string) {
   const res = await request.get(url, { headers: { Authorization: `Bearer ${token}` } });
-  if (!res.ok()) throw new Error(`GET ${url} -> ${res.status()}`);
+  if (!res.ok()) throw new Error(`GET ${url} -> ${res.status()}${why(res.status())}`);
   return res.json();
 }
 
@@ -82,7 +90,7 @@ export class Api {
 
   private async get<T>(url: string): Promise<T> {
     const res = await this.request.get(url, { headers: { Authorization: `Bearer ${this.token}` } });
-    if (!res.ok()) throw new Error(`GET ${url} -> ${res.status()}`);
+    if (!res.ok()) throw new Error(`GET ${url} -> ${res.status()}${why(res.status())}`);
     return res.json();
   }
 
@@ -92,7 +100,7 @@ export class Api {
       headers: { Authorization: `Bearer ${this.token}` },
       data: patch,
     });
-    if (!res.ok()) throw new Error(`PATCH /api/settings/consume -> ${res.status()}`);
+    if (!res.ok()) throw new Error(`PATCH /api/settings/consume -> ${res.status()}${why(res.status())}`);
     return (await res.json()) as ConsumeSettings;
   }
 

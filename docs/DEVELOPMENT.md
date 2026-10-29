@@ -169,6 +169,15 @@ CI runs it every Saturday at 00:00 UTC (`.github/workflows/regression.yml`). You
 from the Actions tab. When it fails, the HTML report, traces and container logs are uploaded as the
 `regression-report` artifact.
 
+> [!IMPORTANT]
+> **A test that ends a session needs its own storage state.** The pack signs in once, in
+> `tests/admin.setup.ts`, and every spec replays that one token -- so signing out, changing the password or
+> deleting the account doesn't just affect the test doing it. The backend reads the session row on every request
+> (`backend/src/auth.ts`), so ending it revokes that token for good, and each spec that runs later -- files go in
+> alphabetical order, one at a time -- fails with a 401 or sits waiting for a page that has bounced to the sign-in
+> form. `logs out` in `tests/auth.spec.ts` is the worked example: it sits in the `signed out` describe, which
+> starts from an empty storage state, and signs in first so it has a session of its own to end.
+
 ### App screenshots
 
 The README and website screenshots in `frontend/src/assets/screenshots/` are captured from a running
