@@ -39,7 +39,7 @@ export async function loadStepMeshes(srcPath: string): Promise<StepMesh[]> {
   // the server log with nothing to say which model it was about. The thrown error below carries that instead.
   const notes: string[] = [];
   const note = (line: string) => {
-    if (notes.length < MAX_KERNEL_NOTES) notes.push(line);
+    if (notes.length < MAX_KERNEL_NOTES) notes.push(line.slice(0, MAX_KERNEL_NOTES_CHARS));
   };
   const occt = await initOcct({ print: note, printErr: note });
   const file = await fs.readFile(srcPath);
