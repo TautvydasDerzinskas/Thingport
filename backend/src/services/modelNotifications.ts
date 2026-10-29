@@ -95,32 +95,50 @@ export async function notifySingleImport(
 }
 
 /** One notification for a whole upload: a single request's, or a browser batch's summary. */
+/**
+ * How a model came to be, which is what its notification calls it.
+ *
+ * A model generated from a script, or built by a tool, was never a file anyone had: calling that "uploaded"
+ * describes the one step the person didn't take. The notification's `type` stays "upload" either way -- that
+ * is the feed's category, and these do arrive the same way.
+ */
+export type UploadOrigin = "upload" | "generated" | "created";
+
+const ORIGIN_WORDS: Record<UploadOrigin, { done: string; failed: string }> = {
+  upload: { done: "Uploaded", failed: "upload" },
+  // Generating and building happen in the browser; what can fail by the time this is written is the saving.
+  generated: { done: "Generated", failed: "save" },
+  created: { done: "Created", failed: "save" },
+};
+
 export async function notifyUpload(
   userId: string,
   uploaded: { id: string; name: string }[],
   failed: { names: string[]; reason?: string } = { names: [] },
+  origin: UploadOrigin = "upload",
 ): Promise<void> {
   const total = uploaded.length + failed.names.length;
   if (!total) return;
+  const words = ORIGIN_WORDS[origin] ?? ORIGIN_WORDS.upload;
   if (!uploaded.length) {
     await createNotification(userId, {
       type: "upload",
-      title: total === 1 ? "Couldn't upload a model" : `Couldn't upload ${total} models`,
+      title: total === 1 ? `Couldn't ${words.failed} a model` : `Couldn't ${words.failed} ${total} models`,
       body: [nameList(failed.names), failed.reason].filter(Boolean).join(": "),
     });
     return;
   }
   const title =
     uploaded.length === 1 && !failed.names.length
-      ? `Uploaded "${uploaded[0].name}"`
+      ? `${words.done} "${uploaded[0].name}"`
       : failed.names.length
-        ? `Uploaded ${uploaded.length} of ${total} models`
-        : `Uploaded ${uploaded.length} models`;
+        ? `${words.done} ${uploaded.length} of ${total} models`
+        : `${words.done} ${uploaded.length} models`;
   const parts: string[] = [];
   if (uploaded.length > 1) parts.push(`${nameList(uploaded.map((p) => p.name))}.`);
   if (failed.names.length) {
     const reason = failed.reason ? `: ${failed.reason.replace(/\.$/, "")}` : "";
-    parts.push(`Couldn't upload ${nameList(failed.names)}${reason}.`);
+    parts.push(`Couldn't ${words.failed} ${nameList(failed.names)}${reason}.`);
   }
   await createNotification(userId, {
     type: "upload",

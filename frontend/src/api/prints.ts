@@ -320,6 +320,9 @@ export const printsApi = {
       mode?: "separate" | "multiplate";
       /** False for each request of a batch; the batch sends one summary (uploadSummary) instead. */
       notify?: boolean;
+      /** What the notification calls it: a model the customizer generated, or one a tool built. Left out for
+       *  files the user picked, which is what "uploaded" describes. */
+      origin?: "generated" | "created";
     } = {},
   ): Promise<UploadPrintsResult> => {
     const fd = new FormData();
@@ -332,6 +335,7 @@ export const printsApi = {
     if (opts.category_id) fd.set("category_id", opts.category_id);
     if (opts.mode && files.length > 1) fd.set("mode", opts.mode);
     if (opts.notify === false) fd.set("notify", "false");
+    if (opts.origin) fd.set("origin", opts.origin);
     const res = await fetch(`${apiBase()}/upload`, {
       method: "POST",
       body: fd,

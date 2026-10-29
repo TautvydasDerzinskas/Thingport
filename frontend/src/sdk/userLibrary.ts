@@ -161,6 +161,7 @@ export function buildUserLibrary({
         notes: input.description,
         tags: input.tags,
         mode: "multiplate",
+        origin: "created",
       });
       const print = prints[0];
       if (input.collectionId) await collectionsApi.addItems(input.collectionId, [print.id]);

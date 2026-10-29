@@ -268,6 +268,7 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
         }),
         // One model holding both, rather than one per file.
         mode: "multiplate",
+        origin: "generated",
       });
       const created = result.prints[0];
       if (created) setSaved({ id: created.id, name: created.title || created.name });
