@@ -84,7 +84,9 @@ export function UserMenu({ user, onOpenConfiguration, onOpenProfile, onLogout }:
 
   return (
     <>
-      <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} size="small">
+      {/* Named here, not left to the Avatar's alt: without a Gravatar the image is dropped for the initial, and
+          the button would be called "R". */}
+      <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} size="small" aria-label={user?.display_name}>
         <Avatar
           alt={user?.display_name}
           src={avatarUrl}
