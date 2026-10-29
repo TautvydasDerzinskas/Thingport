@@ -175,8 +175,8 @@ from the Actions tab. When it fails, the HTML report, traces and container logs 
 > that one token. The backend reads the session row on every request (`backend/src/auth.ts`), so a revoked token
 > stays revoked, and each spec that runs later -- files go in alphabetical order, one at a time -- fails with a 401
 > or sits waiting for a page that has bounced to the sign-in form. Signing out ends only the session it's done in:
-> `logs out` in `tests/auth.spec.ts` is the worked example, in the `signed out` describe, which starts from an
-> empty storage state, and signing in first so it has a session to end. A separate storage state isn't enough for
+> `logs out` in `tests/auth.spec.ts` is the worked example: it sits in the `signed out` group, which starts from an
+> empty storage state, and signs in first so it has a session to end. A separate storage state isn't enough for
 > the other two, though: changing the password signs the account out everywhere else, and deleting it takes every
 > session with it. Register an account for those, as `tests/consume.spec.ts` does.
 
