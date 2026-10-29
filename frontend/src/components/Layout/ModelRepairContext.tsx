@@ -94,16 +94,26 @@ export function ModelRepairProvider({
     [onUnauthorized],
   );
 
-  // Once per visit: the look, and a run already going picked up after a reload.
+  // Once per visit: the look, and a run already going picked up after a reload. The look runs the once, so what it
+  // needs is held in a ref rather than taken as a dependency.
+  const unauthorized = useRef(onUnauthorized);
+  useEffect(() => {
+    unauthorized.current = onUnauthorized;
+  }, [onUnauthorized]);
   useEffect(() => {
     let active = true;
     void (async () => {
-      const [found, state] = await Promise.all([
-        modelRepairApi.missingFiles().catch(() => null),
+      const [look, state] = await Promise.all([
+        modelRepairApi.missingFiles().then(
+          (found) => ({ found, error: null as unknown }),
+          (error: unknown) => ({ found: null, error }),
+        ),
         modelRepairApi.runState().catch(() => null),
       ]);
       if (!active) return;
-      if (found) setSummary(found);
+      if (look.found) setSummary(look.found);
+      // A sign-in that has run out is the app's to answer, and says nothing about the library.
+      else if (look.error instanceof UnauthorizedError) unauthorized.current?.();
       else setCheckFailed(true);
       if (state) setRun(state.run);
       setAsked(true);

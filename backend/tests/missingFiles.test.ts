@@ -6,7 +6,7 @@ import request from "supertest";
 import { createApp } from "../src/app";
 import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
-import { makePrint, register, tempFile } from "./helpers/fileReuse";
+import { makePrint, register, tempFile, upload } from "./helpers/fileReuse";
 import { modelFilesMissing, scanMissingFiles } from "../src/services/missingFilesService";
 import { replaceModelPlates } from "../src/services/modelFilesReplace";
 
@@ -82,6 +82,8 @@ describe("models whose files are gone", () => {
 
   it("puts the plates back when a replacement fails halfway, so the model is still found", async () => {
     const model = await makePrint(dir, owner.id, "Halfway");
+    // A model can lose its plate files alone: its supporting files are still there, and still its own afterwards.
+    const note = await upload(dir, owner.id, model.print.id, "notes.txt", "keep me");
     fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
 
     await expect(
@@ -95,6 +97,8 @@ describe("models whose files are gone", () => {
     const plates = await prisma.plate.findMany({ where: { printId: model.print.id } });
     expect(plates.map((plate) => plate.id)).toEqual([model.plate.id]);
     expect(plates[0].storagePath).toBe(model.plate.storagePath);
+    expect(await prisma.printFile.findUnique({ where: { id: note.id } })).not.toBeNull();
+    expect(fs.existsSync(path.join(STORAGE, note.storagePath))).toBe(true);
     // As broken as it was, rather than a model with no plates at all -- which the scan passes over, leaving it
     // beyond repair.
     const scan = await scanMissingFiles(owner.id);

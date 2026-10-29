@@ -162,21 +162,29 @@ export default function MissingFilesPanel({ onStarted }: { onStarted?: () => voi
     }
   };
 
-  // A look that couldn't be made says so, rather than spinning: an unreadable storage folder answers neither way
-  // (services/missingFilesService.ts).
+  const retry = (
+    <Button
+      size="small"
+      startIcon={busy === "scan" ? <CircularProgress size={14} /> : <RefreshIcon fontSize="small" />}
+      disabled={busy !== null}
+      onClick={() => void rescan()}
+    >
+      {t("missingFiles.checkAgain")}
+    </Button>
+  );
+
+  // A look that couldn't be made says so, rather than spinning or passing an older answer off as this one's: an
+  // unreadable storage folder answers neither way (services/missingFilesService.ts).
+  const failed = checkFailed ? (
+    <Alert severity="warning">{t(summary ? "missingFiles.checkFailedStale" : "missingFiles.checkFailed")}</Alert>
+  ) : null;
+
   if (!summary && checkFailed) {
     return (
       <Stack spacing={1.5} sx={{ py: 2 }}>
-        <Alert severity="warning">{t("missingFiles.checkFailed")}</Alert>
+        {failed}
         <Stack direction="row" justifyContent="center">
-          <Button
-            size="small"
-            startIcon={busy === "scan" ? <CircularProgress size={14} /> : <RefreshIcon fontSize="small" />}
-            disabled={busy !== null}
-            onClick={() => void rescan()}
-          >
-            {t("missingFiles.checkAgain")}
-          </Button>
+          {retry}
         </Stack>
       </Stack>
     );
@@ -195,15 +203,16 @@ export default function MissingFilesPanel({ onStarted }: { onStarted?: () => voi
 
   if (!broken) {
     return (
-      <Stack alignItems="center" spacing={1.25} sx={{ py: 4, textAlign: "center" }}>
-        <TaskAltIcon sx={{ fontSize: 34, color: "success.main" }} />
-        <Typography variant="subtitle2">{t("missingFiles.allWell")}</Typography>
-        <Typography variant="caption" color="text.secondary">
-          {t("missingFiles.allWellDetail", { count: summary.total })}
-        </Typography>
-        <Button size="small" startIcon={<RefreshIcon fontSize="small" />} onClick={() => void rescan()}>
-          {t("missingFiles.checkAgain")}
-        </Button>
+      <Stack spacing={1.5}>
+        {failed}
+        <Stack alignItems="center" spacing={1.25} sx={{ py: failed ? 2 : 4, textAlign: "center" }}>
+          <TaskAltIcon sx={{ fontSize: 34, color: "success.main" }} />
+          <Typography variant="subtitle2">{t("missingFiles.allWell")}</Typography>
+          <Typography variant="caption" color="text.secondary">
+            {t("missingFiles.allWellDetail", { count: summary.total })}
+          </Typography>
+          {retry}
+        </Stack>
       </Stack>
     );
   }
@@ -217,6 +226,7 @@ export default function MissingFilesPanel({ onStarted }: { onStarted?: () => voi
 
   return (
     <Stack spacing={2}>
+      {failed}
       <Typography variant="body2">
         {t("missingFiles.lead", { count: broken })}
         <HelpTip text={t("missingFiles.leadHelp")} />
@@ -272,14 +282,7 @@ export default function MissingFilesPanel({ onStarted }: { onStarted?: () => voi
       </Box>
 
       <Stack direction="row" justifyContent="flex-end">
-        <Button
-          size="small"
-          startIcon={busy === "scan" ? <CircularProgress size={14} /> : <RefreshIcon fontSize="small" />}
-          disabled={busy !== null}
-          onClick={() => void rescan()}
-        >
-          {t("missingFiles.checkAgain")}
-        </Button>
+        {retry}
       </Stack>
     </Stack>
   );
