@@ -114,6 +114,9 @@ export default function ModelsPage({
   };
   const [filtersAnchor, setFiltersAnchor] = useState<HTMLElement | null>(null);
   const [sources, setSources] = useState<PrintSource[]>([]);
+  // Bumped when a model is removed from the list here, so the site it came from loses its chip once it holds nothing.
+  const [sourcesVersion, setSourcesVersion] = useState(0);
+  const refreshSources = useCallback(() => setSourcesVersion((version) => version + 1), []);
   const activeFilters = (generative ? 1 : 0) + (hiddenProviders.length ? 1 : 0);
   // Every site the library has is off, so the grid says so rather than looking empty for no visible reason.
   const noSources = sources.length > 0 && sources.every((source) => hiddenProviders.includes(source.provider));
@@ -197,16 +200,23 @@ export default function ModelsPage({
   }, [categoriesVersion]);
 
   useEffect(() => {
+    // An answer belonging to an older library is dropped rather than written over the newer list of sites:
+    // two requests a refresh apart can land out of order.
+    let current = true;
     (async () => {
       try {
-        setSources(await printsApi.sources());
+        const next = await printsApi.sources();
+        if (current) setSources(next);
       } catch (err) {
         // The filter falls back to listing no sites; the grid itself is unaffected.
-        handleError(err);
+        if (current) handleError(err);
       }
     })();
+    return () => {
+      current = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [printsVersion, libraryVersion]);
+  }, [printsVersion, libraryVersion, sourcesVersion]);
 
   // Which set of filters the list on screen belongs to. Changing one -- a category, the sort, or anything behind
   // the filter button -- starts a new set, and an answer belonging to an older one is dropped rather than written over the newer
@@ -361,7 +371,10 @@ export default function ModelsPage({
           selection={selection}
           total={items.length}
           hasMore={hasMore}
-          onDeleted={(ids) => setItems((prev) => prev.filter((i) => !ids.includes(i.id)))}
+          onDeleted={(ids) => {
+            setItems((prev) => prev.filter((i) => !ids.includes(i.id)));
+            refreshSources();
+          }}
           onUpdated={(updated) => setItems((prev) => replacePrints(prev, updated))}
           onUnauthorized={onUnauthorized}
         />
@@ -479,7 +492,10 @@ export default function ModelsPage({
                     item={item}
                     theme={theme}
                     previewMode={previewMode}
-                    onDeleted={(deletedId) => setItems((prev) => prev.filter((i) => i.id !== deletedId))}
+                    onDeleted={(deletedId) => {
+                      setItems((prev) => prev.filter((i) => i.id !== deletedId));
+                      refreshSources();
+                    }}
                     onFavoriteChange={(updated) =>
                       setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)))
                     }
