@@ -341,13 +341,15 @@ async function fetchMakerworldRawFiles(
  * own download is a profile's 3MF, which carries none of them.
  *
  * Best-effort on purpose. It spends one of the account's daily downloads and may meet the CAPTCHA or the daily
- * limit, and none of that is worth failing an import that already has the model's plates.
+ * limit, and none of that is worth failing an import that already has the model's plates. Skipped during the
+ * CAPTCHA cooloff, as a request into the block would only extend it for every other MakerWorld import.
  */
 export async function resolveMakerworldSourcesUrl(
   designId: string,
   bearerToken: string,
   paceMs?: number,
 ): Promise<string | null> {
+  if (makerworldCaptchaCooloffActive()) return null;
   try {
     return (await fetchMakerworldRawFiles(designId, bearerToken, paceMs))?.url ?? null;
   } catch {
