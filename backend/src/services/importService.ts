@@ -899,6 +899,7 @@ function isDownloadBlocked(res: Response): boolean {
 /** Best-effort: null on failure so one bad file doesn't fail the whole import, except a block,
  * which is retried once and then reported so the caller can say why. */
 export async function downloadPlainFileToTemp(url: string, suggestedName: string): Promise<PlainDownloadResult> {
+  let tempFilePath: string | null = null;
   try {
     const headers = { "User-Agent": IMPORT_BROWSER_USER_AGENT, Accept: "*/*" };
     let res = await rawFetch(url, headers);
@@ -916,13 +917,15 @@ export async function downloadPlainFileToTemp(url: string, suggestedName: string
       return null;
     }
     const filename = sanitizeFilename(suggestedName);
-    const tempFilePath = path.join(
+    tempFilePath = path.join(
       os.tmpdir(),
       `thingport-thingiverse-${crypto.randomBytes(8).toString("hex")}${path.extname(filename)}`,
     );
     await streamToFileCapped(res, tempFilePath, IMPORT_MAX_BYTES);
     return { input: { filename, mime: guessMimeFromPath(filename), tempFilePath } };
   } catch {
+    // A stream that broke off or ran over the cap leaves what it had written.
+    if (tempFilePath) await fs.rm(tempFilePath, { force: true }).catch(() => undefined);
     return null;
   }
 }
