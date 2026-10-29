@@ -6,7 +6,9 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import Collapse from "@mui/material/Collapse";
-import Chip from "@mui/material/Chip";
+import Badge from "@mui/material/Badge";
+import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import type { Theme } from "@mui/material/styles";
@@ -14,7 +16,7 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { translateCategoryDisplay } from "../../utils/translateCategoryDisplay";
 import { UnauthorizedError } from "../../api/client";
-import { type Print, type PrintSortMode, printsApi } from "../../api/prints";
+import { type Print, type PrintSortMode, type PrintSource, printsApi } from "../../api/prints";
 import { type Category, type CategoryKind, type CategoryMetaInput, categoriesApi } from "../../api/categories";
 import { type CategoriesView, type PreviewMode } from "../../api/settings";
 import type { AuthUser } from "../../api/auth";
@@ -29,6 +31,7 @@ import CategoryBanner from "./CategoryBanner";
 import ModelCard from "./ModelCard";
 import TuneIcon from "@mui/icons-material/Tune";
 import SortTabs from "./SortTabs";
+import ModelFiltersPopover from "./ModelFiltersPopover";
 import ModelsManagerDialog, { type ModelsManagerSection } from "./ModelsManagerDialog";
 import { CardSkeletons } from "../../components/media/CardSkeleton";
 import { cardGridSx } from "../../components/media/cardGrid";
@@ -85,8 +88,8 @@ export default function ModelsPage({
   const sortMode: PrintSortMode =
     sortModeParam === "popular" || sortModeParam === "downloads" ? sortModeParam : "newest";
 
-  // Only the models that came with the script they were generated from. In the URL, so the narrowed library
-  // can be linked to and comes back on reload, as the sort order does.
+  // Only the models that came with the script they were generated from -- "Generative models" in the filters.
+  // In the URL, so the narrowed library can be linked to and comes back on reload, as the sort order does.
   const generative = searchParams.get("generative") === "1";
   const setGenerative = (on: boolean) => {
     setSearchParams((prev) => {
@@ -96,6 +99,24 @@ export default function ModelsPage({
       return next;
     });
   };
+
+  // The sites turned off in the filters. What to hide rather than what to show, so a site the library gains later
+  // is listed from the start rather than arriving already filtered out.
+  const hiddenParam = searchParams.get("hideProviders") ?? "";
+  const hiddenProviders = useMemo(() => hiddenParam.split(",").filter(Boolean), [hiddenParam]);
+  const setHiddenProviders = (next: string[]) => {
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+      if (next.length) params.set("hideProviders", next.join(","));
+      else params.delete("hideProviders");
+      return params;
+    });
+  };
+  const [filtersAnchor, setFiltersAnchor] = useState<HTMLElement | null>(null);
+  const [sources, setSources] = useState<PrintSource[]>([]);
+  const activeFilters = (generative ? 1 : 0) + (hiddenProviders.length ? 1 : 0);
+  // Every site the library has is off, so the grid says so rather than looking empty for no visible reason.
+  const noSources = sources.length > 0 && sources.every((source) => hiddenProviders.includes(source.provider));
 
   const setSortMode = (mode: PrintSortMode) => {
     setSearchParams((prev) => {
@@ -175,8 +196,20 @@ export default function ModelsPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoriesVersion]);
 
-  // Which set of filters the list on screen belongs to. Changing one -- Generative, a category, the sort --
-  // starts a new set, and an answer belonging to an older one is dropped rather than written over the newer
+  useEffect(() => {
+    (async () => {
+      try {
+        setSources(await printsApi.sources());
+      } catch (err) {
+        // The filter falls back to listing no sites; the grid itself is unaffected.
+        handleError(err);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [printsVersion, libraryVersion]);
+
+  // Which set of filters the list on screen belongs to. Changing one -- a category, the sort, or anything behind
+  // the filter button -- starts a new set, and an answer belonging to an older one is dropped rather than written over the newer
   // list: the two requests are a page apart and the slower one can land last.
   const listRun = useRef(0);
 
@@ -188,6 +221,7 @@ export default function ModelsPage({
         const result = await printsApi.list({
           category_id: categoryIdFilter,
           generative: generative || undefined,
+          hide_providers: hiddenProviders,
           order_by: sortMode,
           limit: PAGE_SIZE,
           offset: 0,
@@ -204,7 +238,7 @@ export default function ModelsPage({
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryIdFilter, printsVersion, libraryVersion, sortMode, generative]);
+  }, [categoryIdFilter, printsVersion, libraryVersion, sortMode, generative, hiddenProviders]);
 
   const loadMore = async () => {
     if (loadingMore || !hasMore) return;
@@ -214,6 +248,7 @@ export default function ModelsPage({
       const result = await printsApi.list({
         category_id: categoryIdFilter,
         generative: generative || undefined,
+        hide_providers: hiddenProviders,
         order_by: sortMode,
         limit: PAGE_SIZE,
         offset,
@@ -330,24 +365,36 @@ export default function ModelsPage({
           onUpdated={(updated) => setItems((prev) => replacePrints(prev, updated))}
           onUnauthorized={onUnauthorized}
         />
-        <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1, width: { xs: "100%", md: "auto" } }}>
-          <Tooltip title={t("models:filters.generativeHint")}>
-            <Chip
-              size="small"
-              icon={<TuneIcon />}
-              label={t("models:filters.generative")}
-              variant={generative ? "filled" : "outlined"}
-              color={generative ? "primary" : "default"}
-              onClick={() => setGenerative(!generative)}
-              aria-pressed={generative}
-              sx={{ flex: "0 0 auto" }}
-            />
-          </Tooltip>
+        <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1.5, width: { xs: "100%", md: "auto" } }}>
           <Box sx={{ overflowX: "auto" }}>
             <SortTabs value={sortMode} onChange={setSortMode} />
           </Box>
+          <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
+          <Tooltip title={t("models:filters.title")}>
+            <Badge color="primary" badgeContent={activeFilters} overlap="circular">
+              <IconButton
+                size="small"
+                aria-label={t("models:filters.title")}
+                aria-haspopup="dialog"
+                aria-expanded={Boolean(filtersAnchor)}
+                onClick={(event) => setFiltersAnchor(event.currentTarget)}
+                color={activeFilters ? "primary" : "default"}
+              >
+                <TuneIcon fontSize="small" />
+              </IconButton>
+            </Badge>
+          </Tooltip>
         </Box>
       </Box>
+      <ModelFiltersPopover
+        anchorEl={filtersAnchor}
+        onClose={() => setFiltersAnchor(null)}
+        sources={sources}
+        hidden={hiddenProviders}
+        onHiddenChange={setHiddenProviders}
+        generative={generative}
+        onGenerativeChange={setGenerative}
+      />
       <ModelsManagerDialog
         open={managerSection}
         onClose={() => setManagerSection(null)}
@@ -450,7 +497,14 @@ export default function ModelsPage({
             </Stack>
           ) : (
             <Stack alignItems="center" spacing={1} sx={{ py: 8, color: "text.secondary" }}>
-              <Typography variant="body2">{t("models:grid.empty")}</Typography>
+              <Typography variant="body2">
+                {t(noSources ? "models:filters.noneSelected" : "models:grid.empty")}
+              </Typography>
+              {noSources && (
+                <Button size="small" onClick={() => setHiddenProviders([])}>
+                  {t("models:filters.allSources")}
+                </Button>
+              )}
             </Stack>
           )}
         </Box>

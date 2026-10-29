@@ -22,7 +22,14 @@ export type PrintFilters = {
   tags?: string[];
   /** Only the models that came with a script they can be generated from again. */
   generative?: boolean;
+  /** Sites to leave out, by provider id; UPLOADED_PROVIDER for the ones uploaded here rather than imported. Kept
+   *  as what to hide rather than what to show, so a site the library gains later is listed from the start. */
+  excludeProviders?: string[];
 };
+
+/** What a model with no source provider -- uploaded here rather than imported -- is listed under. The dashboard's
+ *  sources count them the same way. */
+export const UPLOADED_PROVIDER = "thingport";
 
 export const PRINT_SORT_MODES = ["newest", "popular", "downloads", "relevance"] as const;
 export type PrintSortMode = (typeof PRINT_SORT_MODES)[number];
@@ -85,6 +92,15 @@ export async function buildPrintWhere(
     // otherwise bury everything the user put there under it. They are listed where they belong -- in the tool's
     // own collection -- and in Favourites or Browsing History, where the user put them.
     where.toolId = null;
+  }
+  const hidden = filters.excludeProviders ?? [];
+  if (hidden.length) {
+    const imported = hidden.filter((id) => id !== UPLOADED_PROVIDER);
+    // `notIn` alone would drop the models with no provider too: in SQL, NULL is neither in a list nor out of it.
+    if (imported.length) {
+      andClauses.push({ OR: [{ sourceProvider: null }, { sourceProvider: { notIn: imported } }] });
+    }
+    if (hidden.includes(UPLOADED_PROVIDER)) andClauses.push({ NOT: { sourceProvider: null } });
   }
   if (filters.generative) {
     // A generator script is kept beside a model, never as one of its plates, so this is what marks one as
@@ -170,6 +186,27 @@ export async function listPrints(
     hasMore: sorted.length > start + paged.length,
     nextOffset: start + paged.length,
   };
+}
+
+export type PrintSource = { provider: string; modelCount: number };
+
+/** The sites the user's models came from and how many came from each, most first, so a filter can offer the ones
+ *  the library actually holds rather than every provider there is. */
+export async function listPrintSources(userId: string): Promise<PrintSource[]> {
+  const grouped = await prisma.print.groupBy({
+    by: ["sourceProvider"],
+    // As the listing counts them: a tool's own parts belong to the tool, not to the library.
+    where: { userId, toolId: null },
+    _count: true,
+  });
+  const counts = new Map<string, number>();
+  for (const row of grouped) {
+    const key = row.sourceProvider ?? UPLOADED_PROVIDER;
+    counts.set(key, (counts.get(key) ?? 0) + row._count);
+  }
+  return [...counts.entries()]
+    .map(([provider, modelCount]) => ({ provider, modelCount }))
+    .toSorted((a, b) => b.modelCount - a.modelCount || a.provider.localeCompare(b.provider));
 }
 
 /** Every tag on the models these filters match, case-insensitively sorted. */

@@ -4185,8 +4185,13 @@
       }
     },
     "filters": {
-      "generative": "Génératifs",
-      "generativeHint": "Seulement les modèles arrivés avec le script qui les a générés"
+      "title": "Filtres",
+      "generative": "Modèles génératifs",
+      "generativeHint": "Seulement les modèles arrivés avec le script qui les a générés, que vous pouvez modifier et regénérer",
+      "sources": "Sources",
+      "allSources": "Tous les sites",
+      "noSources": "Rien d'importé pour l'instant, il n'y a donc aucun site parmi lesquels choisir.",
+      "noneSelected": "Aucun site n'est activé, il n'y a donc rien à afficher."
     }
   },
   "providers": {

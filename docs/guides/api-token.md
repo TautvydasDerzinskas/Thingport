@@ -47,7 +47,7 @@ and under **Permissions** set each kind of data to **Allow** or **Deny**:
 | Permission      | What it reads                                                                     |
 | --------------- | --------------------------------------------------------------------------------- |
 | Search          | `/api/search`                                                                     |
-| Models          | `/api/prints` and `/api/print/{id}`                                               |
+| Models          | `/api/prints`, the sites they came from, and `/api/print/{id}`                    |
 | Dashboard       | `/api/dashboard/...`: library totals, most viewed and printed, the featured model |
 | Activity        | `/api/activity` and `/api/activity/feed`                                          |
 | Collections     | `/api/collections`, `/api/collection/{id}` and a model's collections              |

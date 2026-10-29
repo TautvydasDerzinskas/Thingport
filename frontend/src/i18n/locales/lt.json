@@ -4337,8 +4337,13 @@
       }
     },
     "filters": {
-      "generative": "Generuojami",
-      "generativeHint": "Tik modeliai, atkeliavę su juos sugeneravusiu scenarijumi"
+      "title": "Filtrai",
+      "generative": "Generuojami modeliai",
+      "generativeHint": "Tik modeliai, atkeliavę su juos sugeneravusiu scenarijumi, kurį galite pakeisti ir sugeneruoti iš naujo",
+      "sources": "Šaltiniai",
+      "allSources": "Visos svetainės",
+      "noSources": "Dar nieko neimportuota, tad nėra iš ko rinktis.",
+      "noneSelected": "Neįjungta nė viena svetainė, tad nėra ko rodyti."
     }
   },
   "providers": {

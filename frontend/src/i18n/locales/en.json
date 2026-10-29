@@ -4154,8 +4154,13 @@
       }
     },
     "filters": {
-      "generative": "Generative",
-      "generativeHint": "Only the models that came with the script they were generated from"
+      "title": "Filters",
+      "generative": "Generative models",
+      "generativeHint": "Only the models that came with the script they were generated from, which you can change and generate again",
+      "sources": "Sources",
+      "allSources": "All sites",
+      "noSources": "Nothing imported yet, so there are no sites to choose between.",
+      "noneSelected": "No sites are turned on, so there is nothing to list."
     }
   },
   "providers": {

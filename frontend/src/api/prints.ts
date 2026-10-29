@@ -137,6 +137,9 @@ export type FillGapsResult = {
 /** "relevance" ranks by how well a model matches `q`, as the search palette does. */
 export type PrintSortMode = "newest" | "popular" | "downloads" | "relevance";
 
+/** A site the library's models came from; `provider` is "thingport" for the ones uploaded here. */
+export type PrintSource = { provider: string; model_count: number };
+
 export class PrintApiError extends Error {
   constructor(
     message: string,
@@ -224,6 +227,9 @@ export const printsApi = {
       author_id?: string;
       /** Only the models that came with a script they can be generated from again. */
       generative?: boolean;
+      /** Sites to leave out, by provider id ("thingport" for the ones uploaded here). Named as what to hide, so a
+       *  site the library gains later is listed from the start. */
+      hide_providers?: string[];
       order_by?: PrintSortMode;
       limit?: number;
       offset?: number;
@@ -233,6 +239,7 @@ export const printsApi = {
     if (params.q) qs.set("q", params.q);
     if (params.tags && params.tags.length) qs.set("tags", params.tags.join(","));
     if (params.generative) qs.set("generative", "1");
+    if (params.hide_providers?.length) qs.set("hide_providers", params.hide_providers.join(","));
     if (params.category_id && params.category_id.length) {
       qs.set("category_id", Array.isArray(params.category_id) ? params.category_id.join(",") : params.category_id);
     }
@@ -252,6 +259,13 @@ export const printsApi = {
     const totalRaw = res.headers.get("X-Total-Count");
     const total = totalRaw ? Number(totalRaw) : undefined;
     return { items, hasMore, nextOffset, total };
+  },
+
+  /** The sites the library's models came from, most models first, for the listing's source filter. */
+  sources: async (): Promise<PrintSource[]> => {
+    const res = await fetch(`${apiBase()}/prints/sources`, { headers: authHeaders() });
+    assertOk(res, "Failed to list sources");
+    return res.json();
   },
 
   get: async (id: string): Promise<Print> => {
