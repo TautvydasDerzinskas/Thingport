@@ -42,9 +42,9 @@ function reportTabIconState(active: boolean): void {
 }
 
 // Which provider's site this is, so the popup can put it above the rest -- it has no way to read the address itself
-// (background/providerTab.ts). Said again whenever the tab comes back to the front, as only the latest is kept and
-// another provider tab may have spoken since. Not part of init(): it holds for every page of the site, importable or
-// not, whether or not Grab is set up.
+// (background/providerTab.ts). Said again whenever the tab comes back to the front, so the note is there even if
+// something cleared it meanwhile. Not part of init(): it holds for every page of the site, importable or not,
+// whether or not Grab is set up.
 function reportProviderSite(): void {
   const provider = providerOfHost(location.hostname);
   if (provider) void send("NOTE_PROVIDER_TAB", { provider });

@@ -21,7 +21,7 @@ import { clearRecentlyViewed, getRecentlyViewed, recordViewedModel } from "./rec
 import { syncSession } from "./sessionSync";
 import { onPairingTabClosed, onPairingTabUrl, startPairing } from "./pairing";
 import { openSetup } from "./setup";
-import { forgetProviderTab, getTabProvider, noteProviderTab } from "./providerTab";
+import { forgetProviderTab, forgetProviderTabs, getTabProvider, noteProviderTab } from "./providerTab";
 import { setTabIconState } from "./tabIcon";
 import { injectIntoOpenTabs, OPTIONAL_SITES, siteEnabled, syncSiteScripts } from "../shared/optionalSites";
 
@@ -57,13 +57,20 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   // The approval tab's #fragment changing is how Thingport hands back the code; the url is visible because the
   // instance's host permission was granted first.
   void onPairingTabUrl(tabId, changeInfo.url ?? (changeInfo.status === "complete" ? tab.url : undefined));
-  // Per-tab icon overrides persist, so reset on every new navigation; the content script re-asserts it.
-  if (changeInfo.status === "loading") void setTabIconState(tabId, false);
+  // Per-tab icon overrides persist, so reset on every new navigation; the content script re-asserts it. The same
+  // for the tab's provider note: the page that reported it is on its way out, and the next one speaks for itself.
+  if (changeInfo.status === "loading") {
+    void setTabIconState(tabId, false);
+    void forgetProviderTab(tabId);
+  }
   if (changeInfo.status === "complete") onProviderTabLoaded(tabId);
 });
 
 // Before the user reaches a provider page, so the toolbar badge already shows a broken connection.
-chrome.runtime.onStartup.addListener(() => void checkConnection());
+chrome.runtime.onStartup.addListener(() => {
+  void checkConnection();
+  void forgetProviderTabs();
+});
 chrome.runtime.onInstalled.addListener(() => {
   void checkConnection();
   void chrome.storage.local.remove(LEGACY_SESSION_KEYS);
