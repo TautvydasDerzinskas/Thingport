@@ -14,6 +14,7 @@ import {
   normalizeGrabcadSession,
   setUserGrabcadSession,
 } from "../../src/providers/grabcad/session";
+import { fetchListing } from "../../src/services/collectionSyncRunner";
 import { describeProviderContract, type ProviderContractSpec } from "./contract";
 import { binary, expectStatus, html, json, loadFixture, loadFixtureHtml, stl, zip, type FetchHandler } from "./support";
 
@@ -112,7 +113,8 @@ function handlerFor(scenario: string, variant: Variant = {}): FetchHandler {
     if (p === `${API}/members/me`)
       return signedIn ? json(loadFixture("grabcad", "me")) : new Response(null, { status: 204 });
     if (p === `/${MEMBER}/likes` && scenario !== "gone") {
-      return html(loadFixtureHtml("grabcad", url.searchParams.get("page") === "2" ? "likes-2" : "likes"));
+      if (url.searchParams.get("page") !== "2") return html(loadFixtureHtml("grabcad", "likes"));
+      if (scenario !== "gone-mid-read") return html(loadFixtureHtml("grabcad", "likes-2"));
     }
     if (/^\/[^/]+\/likes$/.test(p)) return html("<h1>Not found</h1>", 404);
     return undefined;
@@ -236,6 +238,14 @@ describe("GrabCAD specifics", () => {
     ctx.stub("ok");
     const nobody = await ctx.post(spec.list!.endpoint, { url: "https://grabcad.com/no.one-1/likes" });
     expect(nobody.status).toBe(404);
+  });
+
+  // A page past the last is answered empty, so a later one's 404 is no answer: not a shorter list.
+  it("doesn't sync a member's likes short when one goes away while their pages are read", async () => {
+    ctx.stub("gone-mid-read");
+    await expect(fetchListing({ provider: "grabcad", userId: ctx.userId, ...spec.listing!.sync })).rejects.toThrow(
+      "HTTP 404",
+    );
   });
 
   it("shows the user's own likes in the Browse tab, by whom their sign-in says they are", async () => {

@@ -37,7 +37,8 @@ const { session: SESSION_COOKIE } = manifest.sessionCookies;
 const LIKES_PAGE_SIZE = 24;
 const LISTING_MAX_ENTRIES = 600;
 const PAGE_CONCURRENCY = 3;
-const MAX_LIKES_PAGES = 200;
+// Past these there are surely no more, and a sync reads every page: members who like a lot run to 150 pages and more.
+const MAX_LIKES_PAGES = 2000;
 // Folders a model's files are looked for in; an assembly's parts can be spread over a few levels of them.
 const MAX_FOLDERS = 40;
 const CARD_THUMBNAILS = 4;
@@ -451,7 +452,9 @@ export function grabcadLikesFromPage(html: string, member: string): LikesPage {
 
 async function likesPage(member: string, page: number): Promise<LikesPage | null> {
   const res = await requestPaced(`${grabcadLikesUrl(member)}${page > 1 ? `?page=${page}` : ""}`, { accept: HTML });
-  if (res.status === 404) return null;
+  // Only the first page says there's no such member: one past the last is answered empty, so a later 404 is the
+  // member gone mid-read, and no answer either way.
+  if (res.status === 404 && page === 1) return null;
   if (res.status !== 200) throw failure("these likes", res);
   return grabcadLikesFromPage(res.body, member);
 }
