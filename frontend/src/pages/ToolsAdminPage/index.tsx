@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { keyframes } from "@mui/material/styles";
 import Alert from "@mui/material/Alert";
@@ -70,7 +70,11 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [catalog, setCatalog] = useState<ToolCatalog | null>(null);
   const [own, setOwn] = useState<OwnToolInUse[] | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
+  // The tools whose install, update or uninstall is in flight, by slug: finishing one tile's work mustn't free
+  // another's, now that each tile has an update of its own a click away.
+  const [busy, setBusy] = useState<ReadonlySet<string>>(new Set());
+  // Kept in a ref as well, so a second click in the same tick is turned away before the state has landed.
+  const inFlight = useRef(new Set<string>());
   const [menu, setMenu] = useState<{ anchor: HTMLElement; tool: AdminTool } | null>(null);
   // The admin's own copies of the installed tools, so one can be opened from here rather than from the Tools page.
   const mine = useTools();
@@ -135,8 +139,21 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
     else void install(tool, tool.installed?.models?.imported === true);
   };
 
+  /** Takes the tool for the work about to start, or says no because that same work is already running. */
+  const claim = (slug: string) => {
+    if (inFlight.current.has(slug)) return false;
+    inFlight.current.add(slug);
+    setBusy(new Set(inFlight.current));
+    return true;
+  };
+
+  const release = (slug: string) => {
+    inFlight.current.delete(slug);
+    setBusy(new Set(inFlight.current));
+  };
+
   const install = async (tool: AdminTool, withModels: boolean) => {
-    setBusy(tool.slug);
+    if (!claim(tool.slug)) return;
     try {
       await toolsApi.install(tool.slug, withModels);
       toast({
@@ -150,7 +167,7 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
     } catch (err) {
       fail(err, t("adminSettings.tools.repo.installFailed"));
     } finally {
-      setBusy(null);
+      release(tool.slug);
     }
   };
 
@@ -164,7 +181,7 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
       destructive: true,
     });
     if (!ok) return;
-    setBusy(tool.slug);
+    if (!claim(tool.slug)) return;
     try {
       await toolsApi.uninstall(tool.slug);
       setDetails(null);
@@ -173,12 +190,12 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
     } catch (err) {
       fail(err, t("adminSettings.tools.repo.uninstallFailed"));
     } finally {
-      setBusy(null);
+      release(tool.slug);
     }
   };
 
   const importModels = async (tool: AdminTool) => {
-    setBusy(tool.slug);
+    if (!claim(tool.slug)) return;
     try {
       await toolsApi.importModels(tool.slug);
       toast({
@@ -189,7 +206,7 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
     } catch (err) {
       fail(err, t("adminSettings.tools.repo.installFailed"));
     } finally {
-      setBusy(null);
+      release(tool.slug);
     }
   };
 
@@ -203,6 +220,10 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
   };
 
   const selected = users.filter((user) => access?.userIds.includes(user.id));
+  // The open tool as the latest catalogue load has it, not as it was when its tile was opened: the dialog shows
+  // that entry, so its buttons act on it too -- models imported while it stood open are in it, and an update
+  // mustn't then be taken as one that wants none, which would throw them away again.
+  const current = details && (catalog?.tools.find((one) => one.slug === details.slug) ?? details);
 
   return (
     <Stack spacing={4}>
@@ -372,7 +393,7 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
                   />
                   <ToolUpdateBadge
                     tool={tool}
-                    busy={busy === tool.slug}
+                    busy={busy.has(tool.slug)}
                     repoError={catalog.repoError}
                     onUpdate={() => startInstall(tool)}
                   />
@@ -463,19 +484,19 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
 
       <InstallToolDialog
         tool={installing}
-        busy={busy === installing?.slug}
+        busy={Boolean(installing && busy.has(installing.slug))}
         onClose={() => setInstalling(null)}
         onInstall={(withModels) => void install(installing!, withModels)}
       />
       <ToolDetailsDialog
-        tool={details && (catalog?.tools.find((one) => one.slug === details.slug) ?? details)}
-        busy={busy === details?.slug}
+        tool={current}
+        busy={Boolean(current && busy.has(current.slug))}
         onClose={() => setDetails(null)}
-        onInstall={() => details && startInstall(details)}
-        onImportModels={() => details && void importModels(details)}
-        onRetry={() => details && void retry(details)}
-        onUninstall={() => details && void uninstall(details)}
-        onOpen={details && openable(details) ? () => setRunning(openable(details)) : undefined}
+        onInstall={() => current && startInstall(current)}
+        onImportModels={() => current && void importModels(current)}
+        onRetry={() => current && void retry(current)}
+        onUninstall={() => current && void uninstall(current)}
+        onOpen={current && openable(current) ? () => setRunning(openable(current)) : undefined}
       />
       <ToolWindow tool={running} onClose={() => setRunning(null)} />
     </Stack>
