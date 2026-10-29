@@ -24,7 +24,14 @@ import { notifyUpload } from "../services/modelNotifications";
 import { fillSourceGaps } from "../services/fillGapsService";
 import { deletePrint, setPrintTags, updatePrintMeta } from "../services/printEditService";
 import { isNormalizable3mf, normalize3mfStatus, normalized3mfFor } from "../services/normalized3mfCache";
-import { listPrints, listTagsOf, parseSortMode, splitList, type PrintFilters } from "../services/printQuery";
+import {
+  listPrints,
+  listPrintSources,
+  listTagsOf,
+  parseSortMode,
+  splitList,
+  type PrintFilters,
+} from "../services/printQuery";
 import { printQuality, startPrintQualityCheck } from "../services/modelQualityService";
 
 const router = Router();
@@ -40,6 +47,7 @@ function printFiltersFromQuery(req: Request): PrintFilters {
     authorId: str(req.query.author_id),
     tags: splitList(req.query.tags),
     generative: req.query.generative === "1" || req.query.generative === "true",
+    excludeProviders: splitList(req.query.hide_providers),
   };
 }
 
@@ -153,6 +161,15 @@ router.get(
       res.setHeader("X-Total-Count", String(page.total));
     }
     res.json(page.prints);
+  }),
+);
+
+/** The sites the library's models came from, for the listing's source filter. */
+router.get(
+  "/prints/sources",
+  asyncHandler(async (req, res) => {
+    const sources = await listPrintSources(req.userId!);
+    res.json(sources.map((s) => ({ provider: s.provider, model_count: s.modelCount })));
   }),
 );
 

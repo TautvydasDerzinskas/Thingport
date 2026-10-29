@@ -26,7 +26,7 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
     id: "models",
     title: "Models",
     description: "List models and read their details.",
-    paths: ["/prints", "/print/:id", "/print/:id/quality"],
+    paths: ["/prints", "/prints/sources", "/print/:id", "/print/:id/quality"],
   },
   {
     id: "dashboard",
