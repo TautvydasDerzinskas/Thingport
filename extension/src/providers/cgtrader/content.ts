@@ -9,8 +9,10 @@ export async function isUnboughtCgtraderModel(url: string): Promise<boolean> {
   const slug = parseCgtraderModelUrl(url)?.slug;
   if (!slug) return false;
   try {
+    // The panel waits on this to show the import button, so an answer that stalls, its body too, doesn't block either.
     const res = await fetch(`${location.origin}/products/${encodeURIComponent(slug)}.js`, {
       headers: { Accept: "text/javascript, application/javascript", "X-Requested-With": "XMLHttpRequest" },
+      signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) return false;
     const script = await res.text();
