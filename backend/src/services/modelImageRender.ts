@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import { loadThreeMfGroup, simplifyGroupMeshes, type PreviewRefusal } from "./modelPreviewRender";
+import { loadStepMeshes } from "./stepLoader";
 import { writeRgbaPng } from "./imageProcessing";
 
 // A small picture of a model: one colour, simple light, transparent background. A software
@@ -70,6 +71,23 @@ async function loadTriangles(srcPath: string, ext: string, wantColors: boolean):
   } else if (ext === ".obj") {
     const { OBJLoader } = await import("three/examples/jsm/loaders/OBJLoader.js");
     root = new OBJLoader().parse(await fs.readFile(srcPath, "utf8"));
+    root.rotateX(-Math.PI / 2);
+  } else if (ext === ".step" || ext === ".stp") {
+    const parts = await loadStepMeshes(srcPath);
+    if (parts.length === 0) return "unsupported";
+    const group = new THREE.Group();
+    for (const part of parts) {
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute("position", new THREE.BufferAttribute(part.positions, 3));
+      if (part.indices) geometry.setIndex(new THREE.BufferAttribute(part.indices, 1));
+      // One mesh per part carrying its own colour, so a coloured assembly reads here the way a multi-filament
+      // 3MF does. setRGB leaves the kernel's linear values alone: three works in the same space.
+      const material = new THREE.MeshStandardMaterial();
+      if (part.color) material.color.setRGB(...part.color);
+      group.add(new THREE.Mesh(geometry, material));
+    }
+    root = group;
+    // CAD files are Z-up, as print files are.
     root.rotateX(-Math.PI / 2);
   } else {
     return "unsupported";

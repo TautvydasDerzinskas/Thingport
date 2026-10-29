@@ -122,12 +122,26 @@ describe("model pictures", () => {
     expect(await coverage("plate", boxStl(60, 60, 1))).toBeGreaterThan(0.2);
   });
 
-  it("refuses a format it can't read", async () => {
+  it("draws a STEP file, which the CAD kernel has to tessellate first", async () => {
+    const dest = path.join(dir, "box-step.png");
     expect(
-      await renderModelImage(path.join(dir, "x.step"), path.join(dir, "x.png"), ".step", {
+      await renderModelImage(path.join(__dirname, "fixtures", "box.step"), dest, ".step", {
         size: 64,
         color: "#00b800",
       }),
-    ).toBe("unsupported");
+    ).toEqual({ status: "ok", colored: false });
+    const { data } = await sharp(dest).raw().toBuffer({ resolveWithObject: true });
+    let covered = 0;
+    for (let i = 3; i < data.length; i += 4) if (data[i] > 0) covered++;
+    // A 20 mm cube seen straight on fills most of the frame.
+    expect(covered / (data.length / 4)).toBeGreaterThan(0.5);
+  });
+
+  it("refuses a format it can't read", async () => {
+    const src = path.join(dir, "x.lbrn");
+    await fs.writeFile(src, "<LightBurnProject/>");
+    expect(await renderModelImage(src, path.join(dir, "x.png"), ".lbrn", { size: 64, color: "#00b800" })).toBe(
+      "unsupported",
+    );
   });
 });
