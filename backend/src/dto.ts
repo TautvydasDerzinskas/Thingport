@@ -275,7 +275,7 @@ export function printCover(
   return null;
 }
 
-function previewImageUrl(id: string, home: AssetHome): string | null {
+export function previewImageUrl(id: string, home: AssetHome): string | null {
   return versionedUrl(previewImagePath(id, home), `/preview-image/${id}/file.jpg`);
 }
 

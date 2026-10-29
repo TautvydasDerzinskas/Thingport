@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
 import { prisma } from "../db";
 import { RENDERABLE_MODEL_EXTS } from "../config";
-import { plateThumbUrl, renderUrl } from "../dto";
+import { plateThumbUrl, previewImageUrl, renderUrl } from "../dto";
+import { modelColorImagePath } from "./modelPreviewCache";
 
 const TOP_MODELS_PREVIEW = 3;
 const TOP_MODELS_LIST_MAX = 50;
@@ -14,6 +15,9 @@ export type DashboardModel = {
   id: string;
   name: string;
   thumbUrl: string | null;
+  /** The model's own picture, where it has one; null for a model we have nothing but our own render of, which the
+   *  row then tints instead. */
+  photoUrl: string | null;
   /** The first plate's render for the browser to tint. Unversioned until it exists: asking for it queues it. */
   renderUrl: string | null;
   viewCount: number;
@@ -53,8 +57,22 @@ type PrintForModelSummary = {
   printCount: number;
   createdAt: Date;
   assetsPath: string | null;
-  plates: { id: string; filename: string }[];
+  plates: { id: string; filename: string; thumbGenerated: boolean }[];
+  previewImages: { id: string; generated: boolean }[];
 };
+
+/** By the same rule the model cards follow (frontend components/media/modelPicture.ts): the plate's thumbnail
+ *  unless that thumbnail is one we drew, and then the cover, which is the model in its own colours wherever the
+ *  render found any. */
+function ownPictureUrl(print: PrintForModelSummary): string | null {
+  const plate = print.plates[0];
+  if (!plate) return null;
+  const thumb = plateThumbUrl(plate.id, print.assetsPath);
+  if (thumb && !plate.thumbGenerated) return thumb;
+  const cover = print.previewImages[0];
+  if (!cover?.generated || !modelColorImagePath(plate.id, print.assetsPath)) return null;
+  return previewImageUrl(cover.id, print.assetsPath);
+}
 
 export function toModelSummary(print: PrintForModelSummary): DashboardModel {
   const first = print.plates[0];
@@ -63,6 +81,7 @@ export function toModelSummary(print: PrintForModelSummary): DashboardModel {
     id: print.id,
     name: print.name,
     thumbUrl: plateId ? plateThumbUrl(plateId, print.assetsPath) : null,
+    photoUrl: ownPictureUrl(print),
     renderUrl: first ? renderUrl(first, print.assetsPath) : null,
     viewCount: print.viewCount,
     printCount: print.printCount,
@@ -77,7 +96,12 @@ export const MODEL_SUMMARY_SELECT = {
   printCount: true,
   createdAt: true,
   assetsPath: true,
-  plates: { take: 1, orderBy: { position: "asc" as const }, select: { id: true, filename: true } },
+  plates: {
+    take: 1,
+    orderBy: { position: "asc" as const },
+    select: { id: true, filename: true, thumbGenerated: true },
+  },
+  previewImages: { take: 1, orderBy: { position: "asc" as const }, select: { id: true, generated: true } },
 };
 
 async function fetchTopViewed(userId: string, limit: number): Promise<DashboardModel[]> {
