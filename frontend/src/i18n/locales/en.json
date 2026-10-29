@@ -2825,6 +2825,7 @@
       "leadHelp": "Thingport keeps a model's files in its storage folder and only the model's details in the database. An instance moved without that folder, or a folder deleted by accident, leaves the details with nothing behind them. Fetching the files again from the site each model came from puts them back and leaves everything else — names, tags, collections, favourites — as it is.",
       "notNow": "Not now",
       "checking": "Looking through your models…",
+      "checkFailed": "Couldn't look through your models — the storage folder couldn't be read. Check that it is there, then try again.",
       "allWell": "Every model has its files",
       "allWellDetail_one": "Checked 1 model.",
       "allWellDetail_other": "Checked {{count}} models.",
@@ -2846,6 +2847,8 @@
           "title": "Fetch the missing files",
           "detail_one": "Downloads 1 model's files again from the site it came from. Its name, tags, collections and favourite stay as they are.",
           "detail_other": "Downloads {{count}} models' files again from the sites they came from. Names, tags, collections and favourites stay as they are.",
+          "grabOnly_one": "Only Thingport Grab can fetch this one's files. It waits for Grab's next visit to the site.",
+          "grabOnly_other": "Only Thingport Grab can fetch these files. {{count}} models wait for its next visit to the sites they came from.",
           "none": "None of these models has a site to fetch from."
         },
         "delete": {
@@ -2862,7 +2865,11 @@
           "message_other": "Thingport downloads each model's files from the site it came from, one at a time. Nothing else about them changes, and any model whose site can't be reached is left exactly as it is now.",
           "queued_one": "1 more model waits for Thingport Grab to visit the site its files come from.",
           "queued_other": "{{count}} more models wait for Thingport Grab to visit the sites their files come from.",
-          "confirm": "Fetch the files"
+          "confirm": "Fetch the files",
+          "grabTitle": "Wait for Thingport Grab?",
+          "grabMessage_one": "Thingport can't fetch this model's files itself — only Thingport Grab can, on the site's own pages. The model waits for Grab's next visit there, and the files it brings take the place of the missing ones.",
+          "grabMessage_other": "Thingport can't fetch these files itself — only Thingport Grab can, on the sites' own pages. The {{count}} models wait for Grab's next visit, and the files it brings take the place of the missing ones.",
+          "grabConfirm": "Wait for Grab"
         },
         "delete": {
           "title_one": "Delete 1 model?",

@@ -21,6 +21,8 @@ const DISMISSED_KEY = "thingport.missingFiles.dismissedAt";
 type ModelRepairContextValue = {
   /** What the last look found; null until one has been made (or for a library with nothing wrong). */
   summary: MissingFilesSummary | null;
+  /** Whether the last look couldn't be made -- an unreadable storage folder answers neither way. */
+  checkFailed: boolean;
   /** Looks again; `rescan` walks the files afresh instead of taking the server's last answer. */
   refresh: (rescan?: boolean) => Promise<MissingFilesSummary | null>;
   /** The latest run, finished or not. */
@@ -66,9 +68,13 @@ export function ModelRepairProvider({
   children: React.ReactNode;
 }) {
   const [summary, setSummary] = useState<MissingFilesSummary | null>(null);
+  const [checkFailed, setCheckFailed] = useState(false);
   const [run, setRun] = useState<ModelRepairRun | null>(null);
   const [asked, setAsked] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  // Read once, and kept here rather than read back on each render: the dialog that came up on its own closes
+  // because this changes, not because of the store behind it.
+  const [dismissed, setDismissed] = useState(dismissedAt);
   const [finishedCount, setFinishedCount] = useState(0);
   const running = Boolean(run?.running);
 
@@ -77,9 +83,11 @@ export function ModelRepairProvider({
       try {
         const next = await modelRepairApi.missingFiles(rescan);
         setSummary(next);
+        setCheckFailed(false);
         return next;
       } catch (err) {
         if (err instanceof UnauthorizedError) onUnauthorized?.();
+        else setCheckFailed(true);
         return null;
       }
     },
@@ -96,6 +104,7 @@ export function ModelRepairProvider({
       ]);
       if (!active) return;
       if (found) setSummary(found);
+      else setCheckFailed(true);
       if (state) setRun(state.run);
       setAsked(true);
     })();
@@ -145,16 +154,20 @@ export function ModelRepairProvider({
 
   const closePrompt = useCallback(() => {
     setDialogOpen(false);
-    if (summary?.broken) remember(summary.broken);
+    if (summary?.broken) {
+      remember(summary.broken);
+      setDismissed(summary.broken);
+    }
   }, [summary]);
 
   // Up on its own once the first look is in, unless a repair is already going or this breakage was waved off.
   const promptOpen =
-    dialogOpen || Boolean(asked && !running && summary?.prompt && summary.broken > dismissedAt() && summary.broken > 0);
+    dialogOpen || Boolean(asked && !running && summary?.prompt && summary.broken > dismissed && summary.broken > 0);
 
   const value = useMemo(
     () => ({
       summary,
+      checkFailed,
       refresh,
       run,
       running,
@@ -165,7 +178,7 @@ export function ModelRepairProvider({
       closePrompt,
       finishedCount,
     }),
-    [summary, refresh, run, running, start, cancel, promptOpen, closePrompt, finishedCount],
+    [summary, checkFailed, refresh, run, running, start, cancel, promptOpen, closePrompt, finishedCount],
   );
   return <ModelRepairContext.Provider value={value}>{children}</ModelRepairContext.Provider>;
 }

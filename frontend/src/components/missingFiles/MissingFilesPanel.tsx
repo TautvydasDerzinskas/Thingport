@@ -104,7 +104,7 @@ function ActionTile({
 /** `onStarted` lets the host (the dialog) close itself once a run is going. */
 export default function MissingFilesPanel({ onStarted }: { onStarted?: () => void }) {
   const { t } = useTranslation(["app", "common"]);
-  const { summary, refresh, running, start } = useModelRepair();
+  const { summary, checkFailed, refresh, running, start } = useModelRepair();
   const confirm = useConfirm();
   const showToast = useToast();
   const [busy, setBusy] = useState<ModelRepairAction | "scan" | null>(null);
@@ -116,17 +116,29 @@ export default function MissingFilesPanel({ onStarted }: { onStarted?: () => voi
     const waiting = summary?.grab ?? 0;
     // A re-import only speaks for the models this Thingport can fetch itself; the rest are parked for Grab.
     const count = reimport ? (summary?.server ?? 0) : broken;
+    // With nothing to fetch here, all the run does is park what's left for Grab, so that is what it asks about
+    // rather than offering to download none of them.
+    const grabOnly = reimport && count === 0 && waiting > 0;
+    const prompt = grabOnly
+      ? {
+          title: t("missingFiles.confirm.reimport.grabTitle"),
+          message: t("missingFiles.confirm.reimport.grabMessage", { count: waiting }),
+          confirmLabel: t("missingFiles.confirm.reimport.grabConfirm"),
+        }
+      : {
+          title: t(`missingFiles.confirm.${action}.title`, { count }),
+          message: reimport ? (
+            <>
+              {t("missingFiles.confirm.reimport.message", { count })}
+              {waiting > 0 && ` ${t("missingFiles.confirm.reimport.queued", { count: waiting })}`}
+            </>
+          ) : (
+            t("missingFiles.confirm.delete.message", { count })
+          ),
+          confirmLabel: t(`missingFiles.confirm.${action}.confirm`),
+        };
     const confirmed = await confirm({
-      title: t(`missingFiles.confirm.${action}.title`, { count }),
-      message: reimport ? (
-        <>
-          {t("missingFiles.confirm.reimport.message", { count })}
-          {waiting > 0 && ` ${t("missingFiles.confirm.reimport.queued", { count: waiting })}`}
-        </>
-      ) : (
-        t("missingFiles.confirm.delete.message", { count })
-      ),
-      confirmLabel: t(`missingFiles.confirm.${action}.confirm`),
+      ...prompt,
       destructive: !reimport,
     });
     if (!confirmed) return;
@@ -149,6 +161,26 @@ export default function MissingFilesPanel({ onStarted }: { onStarted?: () => voi
       setBusy(null);
     }
   };
+
+  // A look that couldn't be made says so, rather than spinning: an unreadable storage folder answers neither way
+  // (services/missingFilesService.ts).
+  if (!summary && checkFailed) {
+    return (
+      <Stack spacing={1.5} sx={{ py: 2 }}>
+        <Alert severity="warning">{t("missingFiles.checkFailed")}</Alert>
+        <Stack direction="row" justifyContent="center">
+          <Button
+            size="small"
+            startIcon={busy === "scan" ? <CircularProgress size={14} /> : <RefreshIcon fontSize="small" />}
+            disabled={busy !== null}
+            onClick={() => void rescan()}
+          >
+            {t("missingFiles.checkAgain")}
+          </Button>
+        </Stack>
+      </Stack>
+    );
+  }
 
   if (!summary) {
     return (
@@ -175,6 +207,13 @@ export default function MissingFilesPanel({ onStarted }: { onStarted?: () => voi
       </Stack>
     );
   }
+
+  // Thingport's own fetch first; failing that, what Grab will bring; failing that, there is nothing to fetch.
+  const reimportDetail = summary.server
+    ? t("missingFiles.actions.reimport.detail", { count: summary.server })
+    : summary.grab
+      ? t("missingFiles.actions.reimport.grabOnly", { count: summary.grab })
+      : t("missingFiles.actions.reimport.none");
 
   return (
     <Stack spacing={2}>
@@ -217,11 +256,7 @@ export default function MissingFilesPanel({ onStarted }: { onStarted?: () => voi
           <ActionTile
             icon={<CloudDownloadOutlinedIcon />}
             title={t("missingFiles.actions.reimport.title")}
-            detail={
-              summary.server
-                ? t("missingFiles.actions.reimport.detail", { count: summary.server })
-                : t("missingFiles.actions.reimport.none")
-            }
+            detail={reimportDetail}
             disabled={running || busy !== null || summary.server + summary.grab === 0}
             onClick={() => void begin("reimport")}
           />

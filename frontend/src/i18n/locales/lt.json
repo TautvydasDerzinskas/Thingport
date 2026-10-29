@@ -2912,10 +2912,12 @@
     "missingFiles": {
       "title": "Kai kurie modeliai neberanda savo failų",
       "lead_one": "1 bibliotekos modelis diske nebeturi nė vieno failo — nei modelio failų, nei paveikslėlių. Kol failai negrįš, jo nebus galima atverti, spausdinti ar atsisiųsti.",
+      "lead_few": "{{count}} bibliotekos modeliai diske nebeturi nė vieno failo — nei modelio failų, nei paveikslėlių. Kol failai negrįš, jų nebus galima atverti, spausdinti ar atsisiųsti.",
       "lead_other": "{{count}} bibliotekos modelių diske nebeturi nė vieno failo — nei modelio failų, nei paveikslėlių. Kol failai negrįš, jų nebus galima atverti, spausdinti ar atsisiųsti.",
       "leadHelp": "Thingport modelio failus laiko saugyklos kataloge, o duomenų bazėje — tik modelio aprašą. Perkėlus kopiją be to katalogo arba netyčia jį ištrynus, aprašai lieka be failų. Failus iš svetainės, iš kurios modelis atkeliavo, galima atsisiųsti iš naujo: visa kita — pavadinimai, žymos, kolekcijos, mėgstami — lieka kaip buvo.",
       "notNow": "Ne dabar",
       "checking": "Peržiūrimi modeliai…",
+      "checkFailed": "Nepavyko peržiūrėti modelių — nepavyko perskaityti saugyklos katalogo. Patikrinkite, ar jis vietoje, ir bandykite dar kartą.",
       "allWell": "Visi modeliai turi savo failus",
       "allWellDetail_one": "Patikrintas 1 modelis.",
       "allWellDetail_few": "Patikrinti {{count}} modeliai.",
@@ -2940,6 +2942,9 @@
           "detail_one": "Iš naujo atsiunčia 1 modelio failus iš svetainės, iš kurios jis atkeliavo. Pavadinimas, žymos, kolekcijos ir mėgstamų žymė lieka kaip buvo.",
           "detail_few": "Iš naujo atsiunčia {{count}} modelių failus iš svetainių, iš kurių jie atkeliavo. Pavadinimai, žymos, kolekcijos ir mėgstamų žymės lieka kaip buvo.",
           "detail_other": "Iš naujo atsiunčia {{count}} modelių failus iš svetainių, iš kurių jie atkeliavo. Pavadinimai, žymos, kolekcijos ir mėgstamų žymės lieka kaip buvo.",
+          "grabOnly_one": "Šio modelio failus atsiųsti gali tik Thingport Grab. Jis lauks, kol Grab apsilankys svetainėje.",
+          "grabOnly_few": "Šiuos failus atsiųsti gali tik Thingport Grab. {{count}} modeliai lauks, kol jis apsilankys svetainėse, iš kurių jie atkeliavo.",
+          "grabOnly_other": "Šiuos failus atsiųsti gali tik Thingport Grab. {{count}} modelių lauks, kol jis apsilankys svetainėse, iš kurių jie atkeliavo.",
           "none": "Nė vienas iš šių modelių neturi svetainės, iš kurios būtų galima atsiųsti."
         },
         "delete": {
@@ -2960,7 +2965,12 @@
           "queued_one": "Dar 1 modelis lauks, kol Thingport Grab apsilankys svetainėje, iš kurios jo failai.",
           "queued_few": "Dar {{count}} modeliai lauks, kol Thingport Grab apsilankys svetainėse, iš kurių jų failai.",
           "queued_other": "Dar {{count}} modelių lauks, kol Thingport Grab apsilankys svetainėse, iš kurių jų failai.",
-          "confirm": "Atsiųsti failus"
+          "confirm": "Atsiųsti failus",
+          "grabTitle": "Palikti Thingport Grab?",
+          "grabMessage_one": "Thingport pats šio modelio failų atsiųsti negali — tai gali tik Thingport Grab, pačios svetainės puslapiuose. Modelis lauks, kol Grab ten apsilankys, ir jo atnešti failai užims trūkstamųjų vietą.",
+          "grabMessage_few": "Thingport pats šių failų atsiųsti negali — tai gali tik Thingport Grab, pačių svetainių puslapiuose. {{count}} modeliai lauks, kol Grab apsilankys, ir jo atnešti failai užims trūkstamųjų vietą.",
+          "grabMessage_other": "Thingport pats šių failų atsiųsti negali — tai gali tik Thingport Grab, pačių svetainių puslapiuose. {{count}} modelių lauks, kol Grab apsilankys, ir jo atnešti failai užims trūkstamųjų vietą.",
+          "grabConfirm": "Palikti Grab"
         },
         "delete": {
           "title_one": "Ištrinti 1 modelį?",
