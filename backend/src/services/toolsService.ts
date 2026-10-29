@@ -347,6 +347,9 @@ async function fetchRepoTool(slug: string, fresh = false): Promise<RepoTool> {
   const locales = await fetchRepoLocales(slug, manifest);
   const tool = { slug, manifest, script, html, locales, sha: shaOf(manifest, script, html, locales) };
   repoCache.set(`tool:${slug}`, tool);
+  // The cached index still holds this tool as it was an hour ago, so dropping it keeps the next catalogue from
+  // comparing a tool just installed against that older copy and offering the same update again.
+  if (fresh) repoCache.delete("index");
   return tool;
 }
 
