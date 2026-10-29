@@ -4791,6 +4791,39 @@
         "notConnected": "Connectez Makerables dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir ici vos projets enregistrés."
       }
     },
+    "cgtrader": {
+      "connect": {
+        "steps": [
+          "Le plus simple : avec Thingport Grab, il suffit d’ouvrir cgtrader.com en étant connecté. Votre compte est relié, et une nouvelle connexion est envoyée chaque fois qu’elle change là-bas.",
+          "Ou manuellement : connectez-vous à cgtrader.com et ouvrez les outils de développement de votre navigateur (F12).",
+          "Dans l’onglet Réseau, rechargez la page, cliquez sur n’importe quelle requête vers cgtrader.com, copiez son en-tête Cookie et collez-le ci-dessous."
+        ],
+        "placeholder": "L’en-tête Cookie d’une requête à cgtrader.com faite en étant connecté"
+      },
+      "status": {
+        "notConnected": "CGTrader ne remet ses fichiers qu’aux utilisateurs connectés, modèles gratuits compris. Reliez votre compte pour les importer et pour lire vos modèles aimés et votre liste de souhaits.",
+        "expired": "La connexion a expiré. Connectez-vous à cgtrader.com avec Thingport Grab, ou reconnectez CGTrader dans Configuration → Fournisseurs.",
+        "expiredStatus": "Connexion expirée",
+        "disabledReason": "CGTrader : connectez votre compte dans Configuration → Fournisseurs"
+      },
+      "about": {
+        "summary": "Une place de marché fondée à Vilnius, riche de plus de trois millions de modèles 3D : ressources pour le jeu et le cinéma, rendus et un vaste catalogue d’impression 3D, dont beaucoup gratuits.",
+        "signIn": "Votre propre connexion, pour les fichiers, vos « J’aime » et votre liste de souhaits.",
+        "grab": "Envoie votre connexion lorsque vous visitez cgtrader.com, avec le jeton que votre navigateur a obtenu en passant son contrôle anti-robots.",
+        "flaresolverr": "Obtient pour Thingport son propre jeton du contrôle anti-robots, pour que les téléchargements n’attendent pas celui de Grab.",
+        "setup": [
+          "Installez Thingport Grab, activez-le sur CGTrader et ouvrez cgtrader.com en étant connecté.",
+          "Manuellement : copiez l’en-tête Cookie d’une requête à cgtrader.com faite en étant connecté et collez-le dans Configuration → Fournisseurs.",
+          "Ses téléchargements sont derrière le contrôle anti-robots d’AWS : configurez FlareSolverr, ou laissez Grab transmettre le jeton de votre navigateur."
+        ]
+      },
+      "admin": {
+        "description": "Les modèles, et les modèles aimés et la liste de souhaits de chaque utilisateur. Tout demande la connexion de l’utilisateur, et les téléchargements aussi un jeton du contrôle anti-robots venant de Grab ou de FlareSolverr ; seules les pages des modèles se lisent sans elle."
+      },
+      "sync": {
+        "notConnected": "Connectez CGTrader dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir ici vos modèles aimés et votre liste de souhaits."
+      }
+    },
     "owlcad": {
       "status": {
         "alwaysConnected": "OwlCAD est connecté par défaut : il ne demande ni compte ni clé."

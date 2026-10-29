@@ -17,6 +17,7 @@ import eufymakeCategories from "./eufymake/categories.json";
 import pinshapeCategories from "./pinshape/categories.json";
 import toymakr3dCategories from "./toymakr3d/categories.json";
 import makerablesCategories from "./makerables/categories.json";
+import cgtraderCategories from "./cgtrader/categories.json";
 import owlcadCategories from "./owlcad/categories.json";
 import {
   crealitycloudImport,
@@ -47,6 +48,7 @@ import {
   makerablesDetails,
   makerablesKeptId,
 } from "./makerables";
+import { cgtraderImport, cgtraderTrending, cgtraderLists, cgtraderDetails, cgtraderKeptId } from "./cgtrader";
 import { printablesImport, printablesTrending, printablesLists, printablesDetails } from "./printables";
 import { snapmakerImport, snapmakerTrending, snapmakerLists, snapmakerDetails } from "./snapmaker";
 import { thangsImport, thangsTrending, thangsLists, thangsDetails } from "./thangs";
@@ -67,6 +69,7 @@ import { nexprintConnection } from "./nexprint/connection";
 import { pinshapeConnection } from "./pinshape/connection";
 import { toymakr3dConnection } from "./toymakr3d/connection";
 import { makerablesConnection } from "./makerables/connection";
+import { cgtraderConnection } from "./cgtrader/connection";
 import { snapmakerConnection } from "./snapmaker/connection";
 import { thangsConnection } from "./thangs/connection";
 import { thingiverseConnection } from "./thingiverse/connection";
@@ -84,6 +87,7 @@ import { eufymakeSync } from "./eufymake/sync";
 import { pinshapeSync } from "./pinshape/sync";
 import { toymakr3dSync } from "./toymakr3d/sync";
 import { makerablesSync } from "./makerables/sync";
+import { cgtraderSync } from "./cgtrader/sync";
 import { makerworldBrowse } from "./makerworld/browse";
 import { printablesBrowse } from "./printables/browse";
 import { thingiverseBrowse } from "./thingiverse/browse";
@@ -98,6 +102,7 @@ import { eufymakeBrowse } from "./eufymake/browse";
 import { pinshapeBrowse } from "./pinshape/browse";
 import { toymakr3dBrowse } from "./toymakr3d/browse";
 import { makerablesBrowse } from "./makerables/browse";
+import { cgtraderBrowse } from "./cgtrader/browse";
 import type { AuthSlot } from "./index.generated";
 import type {
   ConnectionSlot,
@@ -415,6 +420,24 @@ export const PROVIDERS = {
     details: makerablesDetails,
     // A link may name a project by its id, where it is kept under the slug its page gives as canonical.
     keptId: makerablesKeptId,
+  },
+  cgtrader: {
+    starterCategories: cgtraderCategories,
+    connection: { default: cgtraderConnection },
+    // Its files and the user's own lists are read with the sign-in; its model pages read without one.
+    authStopText: grabSignInStop("cgtrader"),
+    sourcedImport: cgtraderImport,
+    lists: cgtraderLists,
+    sync: cgtraderSync,
+    browse: cgtraderBrowse,
+    trending: cgtraderTrending,
+    details: cgtraderDetails,
+    // A link may name a model by its number, where it is kept under its slug.
+    keptId: cgtraderKeptId,
+    // AWS's bot check rather than Cloudflare's, which FlareSolverr gets a token past -- or the browser's, from Grab.
+    stopTexts: {
+      blocked: `${name("cgtrader")}'s bot check turned Thingport away — set up FlareSolverr in Administration → Connections, or download something on ${siteHost("cgtrader")} with Thingport Grab`,
+    },
   },
   owlcad: {
     starterCategories: owlcadCategories,

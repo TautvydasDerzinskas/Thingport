@@ -4955,6 +4955,39 @@
         "notConnected": "Prijunkite Makerables skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte išsaugotus projektus."
       }
     },
+    "cgtrader": {
+      "connect": {
+        "steps": [
+          "Paprasčiausia: su Thingport Grab tiesiog atverkite cgtrader.com prisijungę. Jis prijungs jūsų paskyrą ir atsiųs naują prisijungimą kaskart, kai jis ten pasikeis.",
+          "Arba rankiniu būdu: prisijunkite prie cgtrader.com ir atverkite naršyklės kūrėjo įrankius (F12).",
+          "Skiltyje Network iš naujo įkelkite puslapį, spustelėkite bet kurią cgtrader.com užklausą, nukopijuokite jos Cookie antraštę ir įklijuokite ją žemiau."
+        ],
+        "placeholder": "Prisijungus siųstos cgtrader.com užklausos Cookie antraštė"
+      },
+      "status": {
+        "notConnected": "CGTrader failus duoda tik prisijungusiems naudotojams, įskaitant ir nemokamus modelius. Prijunkite paskyrą, kad galėtumėte juos importuoti ir matyti pamėgtus modelius bei norų sąrašą.",
+        "expired": "Prisijungimo galiojimas baigėsi. Prisijunkite cgtrader.com su Thingport Grab arba vėl prijunkite CGTrader skiltyje Konfigūracija → Šaltiniai.",
+        "expiredStatus": "Prisijungimas nebegalioja",
+        "disabledReason": "CGTrader: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai"
+      },
+      "about": {
+        "summary": "Vilniuje įkurta daugiau nei trijų milijonų 3D modelių prekyvietė: žaidimų ir kino objektai, vizualizacijos ir didelis 3D spausdinimo katalogas, daug modelių nemokami.",
+        "signIn": "Jūsų pačių prisijungimas, failams, pamėgtiems modeliams ir norų sąrašui.",
+        "grab": "Atsiunčia jūsų prisijungimą, kai lankotės cgtrader.com, kartu su žetonu, kurį naršyklė gavo praėjusi jos robotų patikrą.",
+        "flaresolverr": "Gauna Thingport savą robotų patikros žetoną, kad atsisiuntimams nereikėtų laukti Grab žetono.",
+        "setup": [
+          "Įdiekite Thingport Grab, įjunkite jį CGTrader ir atverkite cgtrader.com prisijungę.",
+          "Rankiniu būdu: nukopijuokite prisijungus siųstos cgtrader.com užklausos Cookie antraštę ir įklijuokite ją skiltyje Konfigūracija → Šaltiniai.",
+          "Jos atsisiuntimus saugo AWS robotų patikra: nustatykite FlareSolverr arba leiskite Grab perduoti jūsų naršyklės žetoną."
+        ]
+      },
+      "admin": {
+        "description": "Modeliai ir kiekvieno naudotojo pamėgti modeliai bei norų sąrašas. Visiems reikia paties naudotojo prisijungimo, o atsisiuntimams – dar ir robotų patikros žetono iš Grab arba FlareSolverr; be prisijungimo skaitomi tik modelių puslapiai."
+      },
+      "sync": {
+        "notConnected": "Prijunkite CGTrader skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte pamėgtus modelius ir norų sąrašą."
+      }
+    },
     "owlcad": {
       "status": {
         "alwaysConnected": "OwlCAD prijungtas iš karto: jam nereikia nei paskyros, nei rakto."

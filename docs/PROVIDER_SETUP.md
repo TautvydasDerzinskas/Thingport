@@ -22,6 +22,7 @@ how to connect it:
 - <img src="assets/providers/owlcad.svg" alt="" width="18" height="18" align="absmiddle"> [OwlCAD](providers/owlcad.md) -- no sign-in at all; its CAD projects need Thingport Grab.
 - <img src="assets/providers/toymakr3d.svg" alt="" width="18" height="18" align="absmiddle"> [Toymakr3D](providers/toymakr3d.md) -- your own sign-in, for the files and your likes; its models read without one.
 - <img src="assets/providers/makerables.svg" alt="" width="18" height="18" align="absmiddle"> [Makerables](providers/makerables.md) -- no sign-in to import; yours adds your saved projects.
+- <img src="assets/providers/cgtrader.svg" alt="" width="18" height="18" align="absmiddle"> [CGTrader](providers/cgtrader.md) -- your own sign-in, for the files, your likes and your wishlist; Grab or FlareSolverr for its bot check.
 
 <!-- /providers:list -->
 
@@ -50,12 +51,14 @@ badge, shows the same in short.
 | <img src="assets/providers/owlcad.svg" alt="" width="18" height="18" align="absmiddle"> [OwlCAD](providers/owlcad.md)                            | None                            | Recommended⁴   |              |             |       |      |                |
 | <img src="assets/providers/toymakr3d.svg" alt="" width="18" height="18" align="absmiddle"> [Toymakr3D](providers/toymakr3d.md)                   | Yours, for the files            | Recommended    |              |             | ✓⁵    | ✓    |                |
 | <img src="assets/providers/makerables.svg" alt="" width="18" height="18" align="absmiddle"> [Makerables](providers/makerables.md)                | Yours, for saved projects only  | Recommended    |              | Saved       |       | ✓    |                |
+| <img src="assets/providers/cgtrader.svg" alt="" width="18" height="18" align="absmiddle"> [CGTrader](providers/cgtrader.md)                      | Yours, for the files            | Recommended⁶   | Recommended  | Wishlist    | ✓⁶    | ✓    |                |
 
 1. Your private Printables collections and your likes are read by Grab, while you're on Printables.
 2. Snapmaker's sign-in lasts a day and only Grab renews it; without Grab you paste a new one every day.
 3. Cults3D's files need your browser's Cloudflare clearance, and Thingport on the same IP address as that browser.
 4. A gallery item that is a CAD project, rather than a library part, has no stored mesh: OwlCAD's editor builds its file, so Thingport Grab exports it on owlcad.com.
 5. Toymakr3D hands a model's files to signed-in users only, the free ones included, and shows your likes to you alone.
+6. CGTrader shows your likes and wishlist to you alone, and its downloads sit behind AWS's bot check, which Thingport passes with Grab's token from your browser or FlareSolverr's own.
 
 <!-- /providers:table -->
 

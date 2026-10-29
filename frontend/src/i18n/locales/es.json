@@ -4778,6 +4778,39 @@
         "notConnected": "Conecta Makerables en Configuración > Proveedores, o visítalo con Thingport Grab, para ver aquí tus proyectos guardados."
       }
     },
+    "cgtrader": {
+      "connect": {
+        "steps": [
+          "Lo más fácil: con Thingport Grab, basta con abrir cgtrader.com con la sesión iniciada. Conecta tu cuenta y envía un nuevo inicio de sesión cada vez que cambie allí.",
+          "O manualmente: inicia sesión en cgtrader.com y abre las herramientas de desarrollador de tu navegador (F12).",
+          "En la pestaña Red, recarga la página, haz clic en cualquier petición a cgtrader.com, copia su cabecera Cookie y pégala abajo."
+        ],
+        "placeholder": "La cabecera Cookie de una petición a cgtrader.com con la sesión iniciada"
+      },
+      "status": {
+        "notConnected": "CGTrader solo entrega sus archivos a usuarios con sesión iniciada, también los modelos gratuitos. Conecta tu cuenta para importarlos y ver tus modelos favoritos y tu lista de deseos.",
+        "expired": "El inicio de sesión ha caducado. Inicia sesión en cgtrader.com con Thingport Grab o vuelve a conectar CGTrader en Configuración → Proveedores.",
+        "expiredStatus": "Inicio de sesión caducado",
+        "disabledReason": "CGTrader: conecta tu cuenta en Configuración → Proveedores"
+      },
+      "about": {
+        "summary": "Un mercado fundado en Vilna con más de tres millones de modelos 3D: recursos para juegos y cine, renders y un amplio catálogo para impresión 3D, muchos de ellos gratuitos.",
+        "signIn": "Tu propio inicio de sesión, para los archivos, tus favoritos y tu lista de deseos.",
+        "grab": "Envía tu inicio de sesión cuando visitas cgtrader.com, con el token que tu navegador obtuvo al superar su control antibots.",
+        "flaresolverr": "Consigue para Thingport su propio token del control antibots, para que las descargas no esperen al de Grab.",
+        "setup": [
+          "Instala Thingport Grab, actívalo en CGTrader y abre cgtrader.com con la sesión iniciada.",
+          "Manualmente: copia la cabecera Cookie de una petición a cgtrader.com con la sesión iniciada y pégala en Configuración → Proveedores.",
+          "Sus descargas están tras el control antibots de AWS: configura FlareSolverr o deja que Grab entregue el token de tu navegador."
+        ]
+      },
+      "admin": {
+        "description": "Modelos, y los modelos favoritos y la lista de deseos de cada usuario. Todo necesita el inicio de sesión del propio usuario, y las descargas además un token del control antibots de Grab o FlareSolverr; solo las páginas de los modelos se leen sin él."
+      },
+      "sync": {
+        "notConnected": "Conecta CGTrader en Configuración > Proveedores, o visítalo con Thingport Grab, para ver aquí tus modelos favoritos y tu lista de deseos."
+      }
+    },
     "owlcad": {
       "status": {
         "alwaysConnected": "OwlCAD está conectado de forma predeterminada: no necesita cuenta ni clave."

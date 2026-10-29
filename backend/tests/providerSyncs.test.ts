@@ -617,6 +617,7 @@ describe("a sync's model links", () => {
       owlcad: "0f7d8172-a9b7-4de1-9b1b-5a8c255ac274",
       toymakr3d: "8",
       makerables: "acrylic-knife",
+      cgtrader: "lotus-ring-with-opening-and-closing-mechanism",
     };
     const readBack = Object.fromEntries(
       PROVIDER_IDS.map((provider) => [provider, modelIdFromUrl(provider, modelUrlFor(provider, ids[provider]))]),

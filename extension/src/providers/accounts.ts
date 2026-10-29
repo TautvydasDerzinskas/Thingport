@@ -46,6 +46,9 @@ export const CAPTURE: Partial<Record<ProviderId, (id: ProviderId) => void>> = {
   },
   // Its sign-in reads the saved projects; only a signed-in visitor has the cookie at all, so each new one is sent on.
   makerables: syncSession,
+  // Its sign-in downloads the files and reads the likes and wishlist; sent once it or the bot-check token beside it
+  // changes, and only while the browser is signed in (cgtrader/session.ts).
+  cgtrader: syncSession,
   printables: () => void syncPrintables(),
   myminifactory: captureMyminifactoryAccount,
   thingiverse: captureThingiverseAccount,

@@ -129,4 +129,13 @@ export const PROVIDER_DOCS = [
     description:
       "Import the model files of Makerables' CNC and 3D printing projects, and the ones you saved with your own sign-in.",
   },
+  {
+    slug: "providers/cgtrader",
+    source: "docs/providers/cgtrader.md",
+    group: "Providers",
+    title: "CGTrader",
+    nav: "CGTrader",
+    description:
+      "Import CGTrader's 3D print models, free or bought, and the ones you liked or wishlisted, with your own sign-in.",
+  },
 ];

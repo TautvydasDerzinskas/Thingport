@@ -1,0 +1,31 @@
+{
+  "data": {
+    "id": "10000001",
+    "type": "users",
+    "attributes": {
+      "id": 10000001,
+      "username": "maker-one",
+      "segment": "seller_buyer",
+      "level": "Beginner",
+      "productAnalyticsParticipation": false,
+      "activeJobs": false,
+      "gdprConsent": "opt_in",
+      "online": false,
+      "isSeller": true,
+      "donationEnabled": null,
+      "avatar": {
+        "small_url": "",
+        "large_url": ""
+      },
+      "sellerTip": null,
+      "paymentAgreementRequired": null,
+      "adminDashboard": {
+        "url": ""
+      },
+      "wildcatVerified": false
+    }
+  },
+  "jsonapi": {
+    "version": "1.0"
+  }
+}

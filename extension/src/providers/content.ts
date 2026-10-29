@@ -5,6 +5,7 @@ import type { ListKind, ProviderId } from "./index.generated";
 import { parseCrealitycloudLikesUrl } from "./crealitycloud/urls.generated";
 import { parseSnapmakerListUrl, snapmakerListUrl } from "../shared/urls";
 import { crealitycloudUserId, loadCrealitycloudProfiles } from "./crealitycloud/content";
+import { isUnboughtCgtraderModel } from "./cgtrader/content";
 import { isUnboughtCults3dModel } from "./cults3d/content";
 import { loadMakeronlineProfiles } from "./makeronline/content";
 import { loadMakerworldDesignForPage, makerworldProfileIds, makerworldScripts } from "./makerworld/pageData";
@@ -99,6 +100,18 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
   // Its only list, the saved projects, is a tab of the user's own profile, which the instance matches to its
   // sign-in: a link to anyone else's is turned away there.
   makerables: {},
+  // Its lists, the liked models and the wishlist, are the user's own pages (/profile/…), which name no one else. A
+  // paid model is imported from the user's own purchases, so one they haven't bought isn't tried.
+  cgtrader: {
+    async blockReason(url) {
+      return (await isUnboughtCgtraderModel(url))
+        ? {
+            title: "Paid model",
+            hint: "Buy it on CGTrader first. Once it's in your purchases, Thingport imports it from there.",
+          }
+        : null;
+    },
+  },
   // Its own pages need nothing special: a CAD project's export runs in a tab Grab opens on the editor
   // (owlcad/background.ts), not on the page the panel is shown on.
   owlcad: {},

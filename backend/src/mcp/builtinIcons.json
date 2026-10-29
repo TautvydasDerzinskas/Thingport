@@ -107,6 +107,11 @@
     "group": "providers"
   },
   {
+    "value": "builtin:providers/cgtrader",
+    "name": "CGTrader",
+    "group": "providers"
+  },
+  {
     "value": "builtin:ai/ai21",
     "name": "AI21",
     "group": "ai"
