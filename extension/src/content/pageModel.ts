@@ -20,10 +20,19 @@ function ogIsFor(key: string): boolean {
 }
 
 /** Its og:image when that's this model's, else the biggest picture showing, which on every provider is the model's
- *  gallery. */
+ *  gallery. Either way it has to be https, as the largest-picture search already insisted: the panel shows it on
+ *  an https page, where the browser blocks anything else. */
 export function pageImage(key: string): string | null {
   const ogImage = meta('meta[property="og:image"]');
-  if (ogImage && ogIsFor(key)) return new URL(ogImage, location.href).href;
+  if (ogImage && ogIsFor(key)) {
+    // A meta tag holds whatever the site put there, and "https://" on its own is enough to throw.
+    try {
+      const href = new URL(ogImage, location.href).href;
+      if (/^https:/i.test(href)) return href;
+    } catch {
+      // Fall through to the page's own pictures.
+    }
+  }
   let best: string | null = null;
   let bestArea = 0;
   for (const img of document.images) {

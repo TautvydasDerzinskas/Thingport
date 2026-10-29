@@ -173,6 +173,9 @@ export function wireCollectionPicker(): void {
     open();
     render();
   });
+  // Where a browser doesn't focus a button that's clicked, the field would lose focus instead, and the focusout
+  // below would close the list before the click could tell it had been open.
+  toggle.addEventListener("mousedown", (event) => event.preventDefault());
   toggle.addEventListener("click", () => (list.hidden ? (input.focus(), open()) : close()));
 
   input.addEventListener("keydown", (event) => {
