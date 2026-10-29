@@ -18,6 +18,7 @@ import * as pinshape from "./pinshape/CollectionTile";
 import * as toymakr3d from "./toymakr3d/CollectionTile";
 import * as makerables from "./makerables/CollectionTile";
 import * as cgtrader from "./cgtrader/CollectionTile";
+import * as grabcad from "./grabcad/CollectionTile";
 
 type Own = { Tile: (props: TileProps) => JSX.Element; TileSkeleton: (props: SkeletonProps) => JSX.Element };
 
@@ -37,4 +38,5 @@ export const COLLECTION_TILES: Partial<Record<BrowsableProvider, Own>> = {
   toymakr3d,
   makerables,
   cgtrader,
+  grabcad,
 };

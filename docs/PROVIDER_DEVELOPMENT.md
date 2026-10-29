@@ -69,7 +69,7 @@ how lists are read. When a new site resembles one of these, copy that provider's
 | Official API with an instance key                 | Thingiverse (an admin's App Token), MyMiniFactory (an admin's API key as `?key=`)                                                                                                                                                                                                                                                             |
 | Official API with the user's key                  | Cults3D's GraphQL API (nickname + API key) for models, likes, printlists and orders, though never files                                                                                                                                                                                                                                       |
 | Public GraphQL API, no sign-in                    | Printables (`api.printables.com` answers unauthenticated, unlike the Cloudflare-gated site)                                                                                                                                                                                                                                                   |
-| The site's own private API (what its pages call)  | Snapmaker, MakerOnline, Creality Cloud, NexPrint, Thangs, Makerables. Each wraps answers in a `code` of its own, so check that, not the HTTP status. Creality Cloud refuses any call without its full set of `__cxy_*` headers                                                                                                                |
+| The site's own private API (what its pages call)  | Snapmaker, MakerOnline, Creality Cloud, NexPrint, Thangs, Makerables, GrabCAD. Most wrap answers in a `code` of their own, so check that, not the HTTP status; GrabCAD's answers with plain statuses, a visitor's `/members/me` with a 204. Creality Cloud refuses any call without its full set of `__cxy_*` headers                         |
 | Model pages plus the maker's cloud API            | MakerWorld (page data, and `api.bambulab.com` with the user's cookie)                                                                                                                                                                                                                                                                         |
 | Its pages' HTML, rendered on the server           | Pinshape and Toymakr3D, read with cheerio. Pinshape's own calls answer with more HTML (`{success, html, pagination}`), and both sites' redirects are their answers: Pinshape's `/index` for a missing model, `/auth/login` for a refused sign-in; Toymakr3D's `/login` for one, and its canonical product page for a link whose name is wrong |
 | Its pages' data, as the JSON they hold or ask for | CGTrader: its listings answer JSON to a page's own script, a model page hands its React components their data as `data-react-props`, and `/products/<slug>.js`, the script the page loads to learn who's looking, says whether the user bought the model. Its redirect to `/not_found` is its 404                                             |
@@ -81,7 +81,8 @@ how lists are read. When a new site resembles one of these, copy that provider's
   Thingiverse, MyMiniFactory and Thangs. Headers and cookies don't help there.
 - FlareSolverr is a fallback for challenge pages (`services/flaresolverr.ts`), used by MakerWorld, Thingiverse,
   MyMiniFactory and Thangs. `helpers.flaresolverr` in the manifest says how much the provider leans on it.
-- Creality Cloud only needs a browser's User-Agent.
+- Creality Cloud only needs a browser's User-Agent. So does GrabCAD's CloudFront, which turns away a request without
+  one, its pictures and files included; the import pipeline's own downloads send one.
 - Cults3D's site gets past no challenge at all. Its downloads use the browser's own `cf_clearance`, sent with the
   User-Agent it was issued to and from the browser's IP address, which Grab hands over.
 
@@ -111,6 +112,7 @@ script, as FlareSolverr doesn't know to). A challenge is answered once with a fr
 | Toymakr3D      | Laravel's session cookie and its `remember_web_…` one beside it                 | Grab sends each new pair, only from a signed-in page: a visitor gets a session cookie too                          |
 | Makerables     | Auth0's `__session` cookie, split across `__session__0`, `__session__1`, …      | Grab sends each new set; the backend turns it into the Bearer token the API takes, as the site's own pages do      |
 | CGTrader       | Rails' `_cgtrader_session_id`, and the browser's `aws-waf-token` beside it      | Grab sends each new pair, only while the browser has the signed-in `user_id` cookie: a visitor gets a session too  |
+| GrabCAD        | Rails' `_grabcad_session`, with no remember-me cookie beside it                 | Grab sends each new one, only from a signed-in page. It lasts two days from its last use, Thingport's included     |
 
 Rules of thumb:
 
@@ -153,6 +155,10 @@ Rules of thumb:
   a plate takes and the zips that may hold some are fetched first, its OBJs only when those brought nothing. Free
   downloads are limited per account, which `/items/<id>/can-download-item-files` answers 403 for, as the site asks
   before each (`errorCodes.downloadLimit`).
+- **GrabCAD** lists a model's files folder by folder, anyone's to read, each with its API's download link, which
+  answers a signed-in user with where the file is on the site's own host. Its models are mostly CAD parts, the same part
+  in several formats, so only what a plate takes and the zips its `system` says are of one are fetched first, its OBJs
+  and zips of a CAD system's own files only when those brought nothing.
 
 ### Lists, trending and categories
 
@@ -166,7 +172,8 @@ Rules of thumb:
 - **Trending** declares its list's `kind` (trending, popular, featured or recommended) and its `rank` on the
   dashboard panel, or `false` where the site has no such list.
 - **Category ids** are numbers for most sites. Thangs has no ids, so its are paths (`categoryIds: "path"`), and so are
-  CGTrader's: the `<category>/<subcategory>` a model's address names. Pinshape's model pages don't say their category
+  CGTrader's: the `<category>/<subcategory>` a model's address names, and GrabCAD's, its categories' slugs. A GrabCAD
+  model is in several, which it lists alphabetically, so the broad ones are put last. Pinshape's model pages don't say their category
   at all (`categoryIds: "none"`): its imports come uncategorized, its `categories.json` is empty, and the category
   mapping shows no row for it.
 - **A list with no address of its own.** Snapmaker's likes and bookmarks share one page, whose own address

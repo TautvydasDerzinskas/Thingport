@@ -138,4 +138,12 @@ export const PROVIDER_DOCS = [
     description:
       "Import CGTrader's 3D print models, free or bought, and the ones you liked or wishlisted, with your own sign-in.",
   },
+  {
+    slug: "providers/grabcad",
+    source: "docs/providers/grabcad.md",
+    group: "Providers",
+    title: "GrabCAD",
+    nav: "GrabCAD",
+    description: "Import GrabCAD's free CAD models, and anyone's likes, with your own sign-in for the files.",
+  },
 ];

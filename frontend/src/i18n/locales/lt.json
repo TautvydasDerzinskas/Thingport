@@ -4988,6 +4988,37 @@
         "notConnected": "Prijunkite CGTrader skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte pamėgtus modelius ir norų sąrašą."
       }
     },
+    "grabcad": {
+      "connect": {
+        "steps": [
+          "Paprasčiausia: su Thingport Grab tiesiog atverkite grabcad.com prisijungę. Jis prijungs jūsų paskyrą ir atsiųs naują prisijungimą kaskart, kai jis ten pasikeis.",
+          "Arba rankiniu būdu: prisijunkite prie grabcad.com ir atverkite naršyklės kūrėjo įrankius (F12).",
+          "Skiltyje Application (Chrome, Edge) arba Storage (Firefox) → Cookies → grabcad.com nukopijuokite _grabcad_session reikšmę ir įklijuokite ją žemiau. Tiks ir prisijungus siųstos grabcad.com užklausos Cookie antraštė."
+        ],
+        "placeholder": "_grabcad_session slapukas arba prisijungus siųstos užklausos Cookie antraštė"
+      },
+      "status": {
+        "notConnected": "GrabCAD failus duoda tik prisijungusiems naudotojams. Prijunkite paskyrą, kad galėtumėte importuoti jo modelius; bet kieno pamėgti modeliai skaitomi ir be jos.",
+        "expired": "Prisijungimo galiojimas baigėsi. Prisijunkite grabcad.com su Thingport Grab arba vėl prijunkite GrabCAD skiltyje Konfigūracija → Šaltiniai.",
+        "expiredStatus": "Prisijungimas nebegalioja",
+        "disabledReason": "GrabCAD: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai"
+      },
+      "about": {
+        "summary": "Stratasys inžinierių bendruomenė: nemokama milijonų CAD modelių biblioteka – nuo mašinų detalių iki ištisų mazgų, dažniausiai STEP failais.",
+        "signIn": "Jūsų pačių prisijungimas, failams; bet kieno pamėgti modeliai skaitomi ir be jo.",
+        "grab": "Atsiunčia jūsų prisijungimą, kai lankotės grabcad.com. Jis galioja dvi dienas nuo paskutinio naudojimo ten, tad retkarčiais apsilankius jis išlieka.",
+        "setup": [
+          "Įdiekite Thingport Grab, įjunkite jį GrabCAD ir atverkite grabcad.com prisijungę.",
+          "Rankiniu būdu: nukopijuokite prisijungusio grabcad.com skirtuko _grabcad_session slapuką ir įklijuokite jį skiltyje Konfigūracija → Šaltiniai."
+        ]
+      },
+      "admin": {
+        "description": "Modeliai ir bet kieno pamėgti modeliai. Pamėgti modeliai skaitomi be prisijungimo; failams reikia paties naudotojo prisijungimo. Thingport importuoja jų STEP, STL, 3MF ir OBJ failus, o ne pačių CAD sistemų formatus."
+      },
+      "sync": {
+        "notConnected": "Prijunkite GrabCAD skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte pamėgtus modelius."
+      }
+    },
     "owlcad": {
       "status": {
         "alwaysConnected": "OwlCAD prijungtas iš karto: jam nereikia nei paskyros, nei rakto."

@@ -4,6 +4,7 @@
 import { send } from "../shared/messages";
 import type { ProviderId } from "./index.generated";
 import { cults3dSignedIn } from "./cults3d/content";
+import { grabcadSignedIn } from "./grabcad/content";
 import { syncMakeronline } from "./makeronline/content";
 import { syncOwlcad } from "./owlcad/content";
 import { captureMyminifactoryAccount } from "./myminifactory/account";
@@ -49,6 +50,10 @@ export const CAPTURE: Partial<Record<ProviderId, (id: ProviderId) => void>> = {
   // Its sign-in downloads the files and reads the likes and wishlist; sent once it or the bot-check token beside it
   // changes, and only while the browser is signed in (cgtrader/session.ts).
   cgtrader: syncSession,
+  // Its sign-in downloads the files; sent once it changes, and only from a signed-in page.
+  grabcad: (id) => {
+    if (grabcadSignedIn()) syncSession(id);
+  },
   printables: () => void syncPrintables(),
   myminifactory: captureMyminifactoryAccount,
   thingiverse: captureThingiverseAccount,

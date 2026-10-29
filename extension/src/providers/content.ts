@@ -112,6 +112,8 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
         : null;
     },
   },
+  // Anyone's likes are anyone's to read, and every model is free.
+  grabcad: {},
   // Its own pages need nothing special: a CAD project's export runs in a tab Grab opens on the editor
   // (owlcad/background.ts), not on the page the panel is shown on.
   owlcad: {},

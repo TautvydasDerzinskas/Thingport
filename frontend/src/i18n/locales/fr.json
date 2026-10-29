@@ -4824,6 +4824,37 @@
         "notConnected": "Connectez CGTrader dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir ici vos modèles aimés et votre liste de souhaits."
       }
     },
+    "grabcad": {
+      "connect": {
+        "steps": [
+          "Le plus simple : avec Thingport Grab, il suffit d’ouvrir grabcad.com en étant connecté. Votre compte est relié, et une nouvelle connexion est envoyée chaque fois que la vôtre y change.",
+          "Ou manuellement : connectez-vous à grabcad.com et ouvrez les outils de développement de votre navigateur (F12).",
+          "Sous Application (Chrome, Edge) ou Stockage (Firefox) → Cookies → grabcad.com, copiez la valeur de _grabcad_session et collez-la ci-dessous. L’en-tête Cookie d’une requête à grabcad.com faite en étant connecté convient aussi."
+        ],
+        "placeholder": "Le cookie _grabcad_session, ou l’en-tête Cookie d’une requête faite en étant connecté"
+      },
+      "status": {
+        "notConnected": "GrabCAD ne remet ses fichiers qu’aux utilisateurs connectés. Reliez votre compte pour importer ses modèles ; les « J’aime » de chacun se lisent sans lui.",
+        "expired": "La connexion a expiré. Connectez-vous à grabcad.com avec Thingport Grab, ou reconnectez GrabCAD dans Configuration → Fournisseurs.",
+        "expiredStatus": "Connexion expirée",
+        "disabledReason": "GrabCAD : connectez votre compte dans Configuration → Fournisseurs"
+      },
+      "about": {
+        "summary": "La communauté d’ingénieurs de Stratasys : une bibliothèque gratuite de millions de modèles CAO, des pièces de machines aux assemblages complets, surtout en STEP.",
+        "signIn": "Votre propre connexion, pour les fichiers ; les « J’aime » de chacun se lisent sans elle.",
+        "grab": "Envoie votre connexion lorsque vous visitez grabcad.com. Elle dure deux jours après sa dernière utilisation sur le site : une visite de temps en temps suffit à la garder.",
+        "setup": [
+          "Installez Thingport Grab, activez-le sur GrabCAD et ouvrez grabcad.com en étant connecté.",
+          "Manuellement : copiez le cookie _grabcad_session d’un onglet grabcad.com connecté et collez-le dans Configuration → Fournisseurs."
+        ]
+      },
+      "admin": {
+        "description": "Les modèles, et les « J’aime » de chacun. Les « J’aime » se lisent sans connexion ; les fichiers demandent celle de l’utilisateur. Thingport importe leurs fichiers STEP, STL, 3MF et OBJ, pas les formats propres aux logiciels de CAO."
+      },
+      "sync": {
+        "notConnected": "Connectez GrabCAD dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir vos « J’aime » ici."
+      }
+    },
     "owlcad": {
       "status": {
         "alwaysConnected": "OwlCAD est connecté par défaut : il ne demande ni compte ni clé."
