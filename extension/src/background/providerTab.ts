@@ -2,14 +2,15 @@
 //
 // The popup can't read the tab's address itself: that needs "tabs" or activeTab, and a new permission in the
 // manifest has browsers disable Grab until every user approves the update. Grab's content script is already on the
-// site, though, so it says which provider it is -- on load and whenever its tab comes back to the front -- and the
-// background notes it against the tab the message came from. The popup asks for the active tab's, and gets nothing
+// site, though, so it says which provider it is -- on load, when its address changes and whenever its tab comes
+// back to the front -- and the background notes it against the tab the message came from. The popup asks for the active tab's, and gets nothing
 // for a tab that never reported. So it works on the sites Grab runs on (the built-in three, and the optional ones
 // once enabled) and nowhere else, which is where there's something to say anyway.
 //
-// The browser tops that up with where each tab is going (onProviderTabUrl below), because the page only speaks when
-// it loads: an SPA's own links, which is most of the clicking on these sites, change the address under a page that
-// has already said its piece.
+// The browser tops that up with where each tab is going (onProviderTabUrl below). An SPA's own links, which is most
+// of the clicking on these sites, change the address without loading a document: the browser reports that as the
+// tab loading, but the page only notices on its next poll, up to a second later. Going by the address keeps the
+// note right in between, rather than dropping it until the page speaks again.
 //
 // A note per tab, not one for the last site seen: provider tabs come in handfuls, and the popup is asked about
 // whichever of them is in front. A note goes when its tab navigates away or closes, and they all go when the
