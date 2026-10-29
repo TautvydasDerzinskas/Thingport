@@ -114,10 +114,13 @@ const ORIGIN_WORDS: Record<UploadOrigin, { done: string; failed: string }> = {
 export async function notifyUpload(
   userId: string,
   uploaded: { id: string; name: string }[],
-  failed: { names: string[]; reason?: string } = { names: [] },
+  /** `count` where the files that didn't make it are fewer models than they are files -- several of them can
+   *  belong to one model -- and the names are still what the body lists. */
+  failed: { names: string[]; count?: number; reason?: string } = { names: [] },
   origin: UploadOrigin = "upload",
 ): Promise<void> {
-  const total = uploaded.length + failed.names.length;
+  const lost = failed.count ?? failed.names.length;
+  const total = uploaded.length + lost;
   if (!total) return;
   const words = ORIGIN_WORDS[origin] ?? ORIGIN_WORDS.upload;
   if (!uploaded.length) {
@@ -129,14 +132,14 @@ export async function notifyUpload(
     return;
   }
   const title =
-    uploaded.length === 1 && !failed.names.length
+    uploaded.length === 1 && !lost
       ? `${words.done} "${uploaded[0].name}"`
-      : failed.names.length
+      : lost
         ? `${words.done} ${uploaded.length} of ${total} models`
         : `${words.done} ${uploaded.length} models`;
   const parts: string[] = [];
   if (uploaded.length > 1) parts.push(`${nameList(uploaded.map((p) => p.name))}.`);
-  if (failed.names.length) {
+  if (lost) {
     const reason = failed.reason ? `: ${failed.reason.replace(/\.$/, "")}` : "";
     parts.push(`Couldn't ${words.failed} ${nameList(failed.names)}${reason}.`);
   }

@@ -135,3 +135,26 @@ export function readColorGroups(xml: string): ThreeMfColors | null {
   if (!colors.length) return null;
   return { colors, slotOf: (pid, index) => (pid === null ? null : (slots.get(`${pid}:${index}`) ?? null)) };
 }
+
+/**
+ * One file's colour groups re-based into a palette the whole model shares, or null where it declares none.
+ *
+ * A slot number has to mean one colour by the time anything is drawn, and the two ways a 3MF names one don't
+ * agree on that: `paint_color` names a filament of the project's, while a `p1` index is into the groups of
+ * whichever model file the triangle sits in -- the main one, or any of the part files a multi-part object is
+ * split across, each numbering its own resources from scratch. Appending every file's colours to one list,
+ * the project's filaments first, keeps them apart: each gets its own stretch of the palette, and a slot from
+ * anywhere indexes the colour that file meant. `palette` is extended in place.
+ */
+export function sharePalette(palette: string[], colors: ThreeMfColors | null): ThreeMfColors | null {
+  if (!colors) return null;
+  const base = palette.length;
+  palette.push(...colors.colors);
+  return {
+    colors: palette,
+    slotOf: (pid, index) => {
+      const slot = colors.slotOf(pid, index);
+      return slot === null ? null : base + slot;
+    },
+  };
+}

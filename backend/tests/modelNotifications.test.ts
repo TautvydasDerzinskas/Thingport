@@ -211,6 +211,15 @@ describe("uploads", () => {
     expect(failed).toMatchObject({ title: "Couldn't save 2 models" });
   });
 
+  it("counts a failed multi-file model as one model, not one per file", async () => {
+    // The customizer saves a 3MF and the script that made it as one model; both names belong in the body, but
+    // one model was lost.
+    expect((await upload(["corrupt.stl", "wreath.py"], { mode: "multiplate", origin: "generated" })).status).toBe(422);
+    const [failed] = await notifications();
+    expect(failed).toMatchObject({ title: "Couldn't save a model" });
+    expect(failed.body).toBe('"corrupt.stl", "wreath.py": Unreadable model file.');
+  });
+
   it("ignores an origin it doesn't know, rather than putting it in the title", async () => {
     await upload(["plain.stl"], { origin: "smuggled" });
     const [plain] = await notifications();

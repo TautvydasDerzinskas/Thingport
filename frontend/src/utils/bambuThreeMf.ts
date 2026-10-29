@@ -493,10 +493,22 @@ async function parse3MF(zipEntries: Record<string, Uint8Array>): Promise<ParsedB
     };
   }
 
-  // Only where the project named no filaments of its own: a slicer's list is the better word on a project it
-  // sliced, and a plain 3MF -- the customizer's own output among them -- has nothing but these.
-  const baseMaterials = filamentColors.length ? null : readBaseMaterials(mainDoc);
-  if (baseMaterials) filamentColors = baseMaterials.colors;
+  // One palette for the whole model: the project's filaments first, where a slicer wrote any, then the colours
+  // the model declares in its own right. A file may carry both, and they mean different things -- a painted
+  // triangle names a filament, an indexed one an entry in its own group -- so each gets its own stretch of the
+  // palette rather than one being read against the other. Mirrors modelPreviewRender.ts's sharePalette.
+  const declared = readBaseMaterials(mainDoc);
+  const declaredFrom = filamentColors.length;
+  if (declared) filamentColors = [...filamentColors, ...declared.colors];
+  const baseMaterials: BaseMaterials | null = declared
+    ? {
+        colors: filamentColors,
+        slotOf: (pid, index) => {
+          const slot = declared.slotOf(pid, index);
+          return slot === null ? null : declaredFrom + slot;
+        },
+      }
+    : null;
 
   const objectElements = mainDoc.getElementsByTagName("object");
   for (let i = 0; i < objectElements.length; i++) {

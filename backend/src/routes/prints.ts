@@ -65,9 +65,9 @@ router.post(
     // What made it in before any failure, so a partly failed request reports both halves truthfully.
     const created: { id: string; name: string }[] = [];
     const pending = new Set(files);
+    const mode = body.mode === "multiplate" ? "multiplate" : "separate";
     try {
       if (!files.length) throw new HttpError(400, "No files uploaded");
-      const mode = body.mode === "multiplate" ? "multiplate" : "separate";
       if (files.length > 1 && body.mode !== "separate" && body.mode !== "multiplate") {
         throw new HttpError(400, "mode is required when uploading more than one file");
       }
@@ -100,11 +100,15 @@ router.post(
       res.json({ prints: printsOut });
     } catch (err) {
       if (notify && files.length) {
+        const names = [...pending].map((f) => sanitizeFilename(f.originalname));
         await notifyUpload(
           req.userId!,
           created,
           {
-            names: [...pending].map((f) => sanitizeFilename(f.originalname)),
+            names,
+            // Multiplate is one model holding every file, so a failure there lost one model however many of
+            // its files are named -- the customizer's save sends a 3MF and the script that made it.
+            count: mode === "multiplate" ? (names.length ? 1 : 0) : names.length,
             reason: err instanceof HttpError ? err.message : undefined,
           },
           origin,

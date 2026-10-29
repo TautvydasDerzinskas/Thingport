@@ -196,7 +196,7 @@ const MAX_PAINTED_COLORS = 16;
  * the triangle was split (0 for a whole one), then two bits of state, and where that state reads 3 it is an
  * escape and the next four bits hold the rest. State 0 is unpainted, state N the Nth filament. Ours are always
  * whole triangles, so only the state varies -- "4", "8", "0C", "1C" and so on. The reading half of this lives
- * in backend/src/services/threeMfNormalizer.ts (decodePaintState).
+ * in backend/src/services/threeMfColors.ts (decodePaintState).
  */
 function paintState(slot: number): string {
   const state = slot + 1;

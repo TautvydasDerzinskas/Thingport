@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import * as cheerio from "cheerio";
 import { listZipEntries, readZipEntry, walkZipEntries } from "../utils/zipReader";
-import { decodePaintState, readColor, readColorGroups, type ThreeMfColors } from "./threeMfColors";
+import { decodePaintState, readColor, readColorGroups, sharePalette, type ThreeMfColors } from "./threeMfColors";
 
 // Builds the cached GLB the 3D preview loads instead of parsing a raw .3mf in the browser. It
 // follows the same rules as frontend/src/utils/bambuThreeMf.ts but scans the XML with regexes
@@ -323,7 +323,7 @@ type PartFile = {
   colors: ThreeMfColors | null;
 };
 
-function createPartFileResolver(loadExternalModel: (path: string) => Promise<string | null>) {
+function createPartFileResolver(loadExternalModel: (path: string) => Promise<string | null>, palette: string[]) {
   const objectsByPath = new Map<string, PartFile | null>();
   const meshCache = new Map<string, FastMesh[]>();
   const countCache = new Map<string, number>();
@@ -333,7 +333,7 @@ function createPartFileResolver(loadExternalModel: (path: string) => Promise<str
     const xml = await loadExternalModel(path);
     let file: PartFile | null = null;
     if (xml) {
-      file = { objects: new Map(), attributes: new Map(), colors: readColorGroups(xml) };
+      file = { objects: new Map(), attributes: new Map(), colors: sharePalette(palette, readColorGroups(xml)) };
       const objectRe = new RegExp(OBJECT_RE.source, "g");
       let om: RegExpExecArray | null;
       while ((om = objectRe.exec(xml))) {
@@ -367,8 +367,9 @@ function createPartFileResolver(loadExternalModel: (path: string) => Promise<str
     if (cached) return cached;
     const inner = file.objects.get(id) ?? "";
     const attrs = file.attributes.get(id) ?? "";
-    // The part file's own colour groups: resource ids are each model file's own, so reading these triangles
-    // against the main model's would colour them by whatever happened to share an id.
+    // The part file's own colour groups, in their own stretch of the shared palette: resource ids are each
+    // model file's own, so reading these triangles against the main model's would colour them by whatever
+    // happened to share an id.
     const slot = objectTriangleSlot(attrs, inner, file.colors);
     const objectSlot = file.colors?.slotOf(getAttr(attrs, "pid"), Number.parseInt(getAttr(attrs, "pindex") ?? "", 10));
     const meshes = extractMeshesFast(inner, objectSlot ?? 0, slot ?? undefined);
@@ -704,10 +705,11 @@ async function parseThreeMfFast(srcPath: string): Promise<ParsedModel | PreviewR
     : { filamentColors: [], buildVolume: null };
   const { buildVolume } = project;
 
-  // Only where the project named no filaments of its own: a slicer's list is the better word on a project it
-  // sliced, and a plain 3MF -- the customizer's own output among them -- has nothing but these.
-  const colors = project.filamentColors.length ? null : readColorGroups(mainModelXml);
-  const filamentColors = colors ? colors.colors : project.filamentColors;
+  // One palette for the whole model: the project's filaments first, where a slicer wrote any, then the colours
+  // each model file declares in its own right -- the main one here, every part file as it is read. A painted
+  // triangle names a filament and an indexed one names its file's group, and both land in this one list.
+  const filamentColors = [...project.filamentColors];
+  const colors = sharePalette(filamentColors, readColorGroups(mainModelXml));
 
   // Fallback for files MakerWorld didn't slice: plate_N.json keyed by object name.
   const plateAssignmentsByName = new Map<string, number>();
@@ -733,7 +735,7 @@ async function parseThreeMfFast(srcPath: string): Promise<ParsedModel | PreviewR
   };
 
   // Before any geometry is allocated, so an over-budget file fails cheaply.
-  const partFiles = createPartFileResolver(loadExternalModel);
+  const partFiles = createPartFileResolver(loadExternalModel, filamentColors);
   if ((await countRenderedTriangles(mainModelXml, partFiles)) > MAX_TRIANGLES) return "too-complex";
 
   const { objects, buildItems } = await parseMainModel(
