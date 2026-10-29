@@ -43,6 +43,7 @@ import ToolWindow from "../../components/tools/ToolWindow";
 import { AppGrid, AppTile } from "../../components/Layout/ConfigurationDialog/AppTiles";
 import InstallToolDialog from "./InstallToolDialog";
 import ToolDetailsDialog from "./ToolDetailsDialog";
+import ToolUpdateBadge from "./ToolUpdateBadge";
 
 // While a tool's models are being fetched, the page asks how far it's got this often.
 const POLL_MS = 3000;
@@ -128,7 +129,9 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
   /** A tool that brings models asks whether they are wanted; one that brings none just installs. */
   const startInstall = (tool: AdminTool) => {
     if (tool.manifest.collection?.models.length && !tool.installed) setInstalling(tool);
-    else void install(tool, true);
+    // An update takes the models only where the instance has them: one installed without them, to save the room,
+    // isn't handed gigabytes by an update it didn't ask that of. The details dialog still offers to import them.
+    else void install(tool, tool.installed?.models?.imported !== false);
   };
 
   const install = async (tool: AdminTool, withModels: boolean) => {
@@ -324,6 +327,8 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
                   key={tool.slug}
                   sx={{
                     display: "grid",
+                    // The tile takes the row's spare height, so the badges under a row of tiles line up.
+                    gridTemplateRows: "1fr auto",
                     animation: `${appear} 220ms ease-out both`,
                     animationDelay: `${Math.min(index * 40, 240)}ms`,
                     "@media (prefers-reduced-motion: reduce)": { animation: "none" },
@@ -364,6 +369,7 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
                       if (tool.installed) setMenu({ anchor: event.currentTarget, tool });
                     }}
                   />
+                  <ToolUpdateBadge tool={tool} busy={busy === tool.slug} onUpdate={() => startInstall(tool)} />
                 </Box>
               ))}
             </AppGrid>
