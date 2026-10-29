@@ -25,6 +25,7 @@ from the places where you discover them.
   <img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/backend-image.yml/badge.svg" alt="Backend">
   <img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/bridge-release.yml/badge.svg" alt="Slicer Bridge">
   <img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/extension-release.yml/badge.svg" alt="Thingport Grab">
+  <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/regression.yml"><img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/regression.yml/badge.svg" alt="Regression pack"></a>
 </p>
 
 </div>

@@ -153,9 +153,16 @@ describe("model picture cache", () => {
   });
 
   it("ignores formats it can't draw", async () => {
-    const plateId = await newPlateId("step");
-    await generateModelImage(plateId, await file("part.step", "ISO-10303-21;"), "part.step");
+    const plateId = await newPlateId("lightburn");
+    await generateModelImage(plateId, await file("sign.lbrn", "<LightBurnProject/>"), "sign.lbrn");
     expect(fsSync.existsSync(await modelImagePath(plateId))).toBe(false);
+  });
+
+  it("draws a STEP file, which the CAD kernel has to tessellate first", async () => {
+    const plateId = await newPlateId("cad");
+    const src = path.join(__dirname, "fixtures", "box.step");
+    await generateModelImage(plateId, src, "box.step");
+    expect(await modelImageState(plateId)).toBe("ready");
   });
 
   it("lets a 3D preview go ahead of pictures already waiting", async () => {

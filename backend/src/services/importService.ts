@@ -58,6 +58,7 @@ import {
   MAKERWORLD_DOWNLOAD_LIMIT_CODE,
   MakerworldDownloadLimitError,
   parseMakerworldModelUrl,
+  resolveMakerworldSourcesUrl,
   resolveMakerworldViaCloudApi,
   completeMakerworldAuthor,
 } from "../providers/makerworld/api";
@@ -172,10 +173,22 @@ async function makerworldMetaFromExtension(url: string, body: ImportRequestBody)
     unverified: true,
   };
   const author = await completeMakerworldAuthor(basicAuthor, body.makerworldPaceMs);
+  // What Grab resolved is one profile's 3MF, as the cloud API's download is, so the scripts the design is
+  // generated from need fetching of their own. Without this an import through Grab brought no script at all,
+  // while the same model pasted as a link did. Best-effort: no token, or a refusal, leaves the model's plates.
+  const bearerToken = extractMakerworldBearerToken(resolveMakerworldCookie(body));
+  const parametricSource =
+    meta.parametricSource && !meta.parametricSource.withheld && bearerToken
+      ? {
+          ...meta.parametricSource,
+          zipUrl: await resolveMakerworldSourcesUrl(parsed.designId, bearerToken, body.makerworldPaceMs),
+        }
+      : meta.parametricSource;
   return {
     ...meta,
     author,
     creator: author?.name ?? meta.creator,
+    parametricSource,
     makerworldProfile: extensionProfile(url, body),
   };
 }
@@ -886,6 +899,7 @@ function isDownloadBlocked(res: Response): boolean {
 /** Best-effort: null on failure so one bad file doesn't fail the whole import, except a block,
  * which is retried once and then reported so the caller can say why. */
 export async function downloadPlainFileToTemp(url: string, suggestedName: string): Promise<PlainDownloadResult> {
+  let tempFilePath: string | null = null;
   try {
     const headers = { "User-Agent": IMPORT_BROWSER_USER_AGENT, Accept: "*/*" };
     let res = await rawFetch(url, headers);
@@ -903,13 +917,15 @@ export async function downloadPlainFileToTemp(url: string, suggestedName: string
       return null;
     }
     const filename = sanitizeFilename(suggestedName);
-    const tempFilePath = path.join(
+    tempFilePath = path.join(
       os.tmpdir(),
       `thingport-thingiverse-${crypto.randomBytes(8).toString("hex")}${path.extname(filename)}`,
     );
     await streamToFileCapped(res, tempFilePath, IMPORT_MAX_BYTES);
     return { input: { filename, mime: guessMimeFromPath(filename), tempFilePath } };
   } catch {
+    // A stream that broke off or ran over the cap leaves what it had written.
+    if (tempFilePath) await fs.rm(tempFilePath, { force: true }).catch(() => undefined);
     return null;
   }
 }

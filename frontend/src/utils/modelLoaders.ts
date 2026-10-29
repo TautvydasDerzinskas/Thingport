@@ -580,9 +580,9 @@ async function loadStepGroup(url: string) {
     }
     geom.computeBoundingSphere();
 
-    const color = m.color
-      ? new THREE.Color(m.color[0] / 255, m.color[1] / 255, m.color[2] / 255)
-      : new THREE.Color(0xf1f5f9);
+    // The kernel gives linear RGB in 0..1, which is the space three works in, so the values pass through as they
+    // are -- scaling them to bytes left every coloured part all but black.
+    const color = m.color ? new THREE.Color().setRGB(m.color[0], m.color[1], m.color[2]) : new THREE.Color(0xf1f5f9);
     const mesh = new THREE.Mesh(geom, new THREE.MeshStandardMaterial({ color, metalness: 0.2, roughness: 0.8 }));
     group.add(mesh);
   }

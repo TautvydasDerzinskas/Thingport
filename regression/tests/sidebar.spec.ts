@@ -77,7 +77,7 @@ test.describe("as a member", () => {
     await expect(models.getByRole("heading", { level: 3 })).toHaveText("0");
     await expect(page.getByText("Failed to load your dashboard.")).toHaveCount(0);
 
-    for (const path of ["/admin", "/admin-users", "/admin-settings", "/admin-ai"]) {
+    for (const path of ["/admin", "/admin-users", "/admin-storage", "/admin-ai"]) {
       await page.goto(path);
       await expect(page).toHaveURL(/\/$/);
       await expect(pageTitle(page)).toHaveText("Dashboard");

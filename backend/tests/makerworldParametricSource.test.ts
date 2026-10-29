@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { makerworldMetaFromDesign } from "../src/providers/makerworld/pageData";
-import { resolveMakerworldViaCloudApi } from "../src/providers/makerworld/api";
+import { resolveMakerworldSourcesUrl, resolveMakerworldViaCloudApi } from "../src/providers/makerworld/api";
+import { noteCaptchaChallenge, resetCaptchaCooloffForTest } from "../src/providers/makerworld/captcha";
 
 // The shapes here are MakerWorld's own, taken from design-service answers: 831106 (a Parametric Model Maker
 // keychain whose source is shared), 3082544 (five protected sources) and an ordinary model with no .scad.
@@ -163,5 +164,26 @@ describe("resolveMakerworldViaCloudApi: generator scripts of a design with print
 
     expect(result?.meta.parametricSource).toBeUndefined();
     expect(fetched.some((url) => url.includes(SOURCES_PATH))).toBe(false);
+  });
+});
+
+describe("resolveMakerworldSourcesUrl", () => {
+  const originalFetch = global.fetch;
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    resetCaptchaCooloffForTest();
+    vi.restoreAllMocks();
+  });
+
+  // An import through Grab asks for the sources without going through the cloud API's own cooloff check.
+  it("asks for nothing during the CAPTCHA cooloff, which a request would only extend", async () => {
+    const fetched = mockCloud(designWithProfiles([]), () => {
+      throw new Error("no request may reach MakerWorld during the cooloff");
+    });
+    noteCaptchaChallenge();
+
+    expect(await resolveMakerworldSourcesUrl("831106", "test-token")).toBeNull();
+    expect(fetched).toHaveLength(0);
   });
 });

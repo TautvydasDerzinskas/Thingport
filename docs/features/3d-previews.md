@@ -6,9 +6,10 @@ browser, so there's nothing to install.
 - **Formats:** STL, 3MF, OBJ and STEP. LightBurn projects get a picture of their design.
 - **Multi-plate 3MF projects** show a thumbnail for every plate, with how many objects each one holds.
 - **Model colour:** pick the colour the preview is shown in.
-- **Multicolour models** -- a painted 3MF project, or one the [customizer](../guides/tools.md) coloured -- are shown in
-  their own colours instead, and the model's first picture is a render in those colours. Card thumbnails stay in your
-  [render colour](appearance.md), so the library still reads as one set.
+- **Multicolour models** -- a painted 3MF project, one the [customizer](../guides/tools.md) coloured, or a STEP
+  assembly whose parts carry colours -- are shown in their own colours instead, and the model's first picture is a
+  render in those colours. Cards show that picture when [**Model cards**](appearance.md) is set to **Images**; set to
+  **3D renders**, they stay in your render colour, so the library still reads as one set.
 - **Photos** sit in their own gallery, separate from the printable files.
 - **Print quality:** a tick or a warning next to **3D Preview** says whether the files have problems that could spoil
   a print. See [print quality checks](print-quality.md).

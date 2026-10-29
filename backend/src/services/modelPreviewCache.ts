@@ -75,6 +75,18 @@ const WORKER_BOOTSTRAP = workerBootstrap(__dirname, "modelPreviewWorker");
 
 const MEMORY_POLL_MS = 250;
 
+// The CAD kernel a STEP file needs (services/stepLoader.ts) claims around 300 MB of wasm heap however small the
+// file is, so a STEP render needs headroom the mesh formats don't: on a small host the watchdog below would
+// otherwise kill every one of them for the kernel's fixed cost alone, and no STEP model would get a picture.
+const STEP_MEMORY_FLOOR_MB = 640;
+const STEP_EXTS = new Set([".step", ".stp"]);
+
+function memoryLimitMb(input: ModelPreviewWorkerInput): number {
+  // A GLB render reads 3MF only, so it never reaches the kernel and carries no extension to check.
+  const step = "ext" in input && STEP_EXTS.has(input.ext);
+  return step ? Math.max(MODEL_PREVIEW_MAX_MEMORY_MB, STEP_MEMORY_FLOOR_MB) : MODEL_PREVIEW_MAX_MEMORY_MB;
+}
+
 // Models rarely look different above 1M triangles on screen. Defined here so the server thread
 // never loads the renderer.
 export const SIMPLIFY_TARGET_TRIANGLES = 1_000_000;
@@ -94,12 +106,13 @@ function renderInWorker(
   timeoutSeconds = MODEL_PREVIEW_TIMEOUT_SECONDS,
 ): Promise<RenderOutcome> {
   return new Promise((resolve) => {
-    const maxGrowthBytes = MODEL_PREVIEW_MAX_MEMORY_MB * 1024 * 1024;
+    const limitMb = memoryLimitMb(input);
+    const maxGrowthBytes = limitMb * 1024 * 1024;
     const baselineRss = process.memoryUsage.rss();
     const worker = new Worker(WORKER_BOOTSTRAP, {
       eval: true,
       workerData: input,
-      resourceLimits: { maxOldGenerationSizeMb: MODEL_PREVIEW_MAX_MEMORY_MB },
+      resourceLimits: { maxOldGenerationSizeMb: limitMb },
     });
 
     let settled = false;
@@ -119,7 +132,7 @@ function renderInWorker(
       if (grown > maxGrowthBytes) {
         finish({
           status: "limit",
-          reason: `memory grew by ${Math.round(grown / 1024 / 1024)} MB (limit ${MODEL_PREVIEW_MAX_MEMORY_MB} MB)`,
+          reason: `memory grew by ${Math.round(grown / 1024 / 1024)} MB (limit ${limitMb} MB)`,
         });
       }
     }, MEMORY_POLL_MS);
@@ -132,7 +145,7 @@ function renderInWorker(
     worker.once("error", (err: NodeJS.ErrnoException) => {
       finish(
         err.code === "ERR_WORKER_OUT_OF_MEMORY"
-          ? { status: "limit", reason: `worker heap exceeded ${MODEL_PREVIEW_MAX_MEMORY_MB} MB` }
+          ? { status: "limit", reason: `worker heap exceeded ${limitMb} MB` }
           : { status: "error", error: err.stack ?? String(err) },
       );
     });
@@ -299,8 +312,8 @@ async function renderPlateFile<T extends { status: string }>(
 // one in those, which the model's page shows as its cover. Both come out of one render, since the cost is
 // loading the model rather than drawing it. They share the GLB queue and memory limit, so they wait behind GLBs.
 
-/** Server-side picture formats; STEP needs a CAD kernel the server doesn't have. */
-export const MODEL_IMAGE_EXTS = new Set([".stl", ".obj", ".3mf"]);
+/** Server-side picture formats; a STEP file goes through the CAD kernel first (services/stepLoader.ts). */
+export const MODEL_IMAGE_EXTS = new Set([".stl", ".obj", ".3mf", ".step", ".stp"]);
 export type ModelImageKind = "render";
 type ModelImageKindDef = {
   /** Part of the filename, with a version, so changing a look regenerates older pictures on next request. */

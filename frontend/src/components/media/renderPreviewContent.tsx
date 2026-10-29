@@ -11,6 +11,7 @@ import ModelViewer from "./ModelViewer";
 import { ModelSnapshot } from "./ModelViewer/ModelSnapshot";
 import LightBurnPreview from "./LightBurnPreview";
 import ModelRender from "./ModelRender";
+import { ownPictureUrl } from "./modelPicture";
 import { useCardPreview } from "../../hooks/useCardPreview";
 
 export type PreviewVariant = "card" | "modal";
@@ -45,7 +46,7 @@ function CardPicture({
   // Hidden until the choice is known, so cards don't flash the wrong picture.
   if (preference === null) return null;
   const canRender = Boolean(print.render_url) && previewMode !== "disabled" && !renderUnavailable;
-  const hasOwnImage = Boolean(print.thumb_url) && !print.thumb_generated;
+  const hasOwnImage = ownPictureUrl(print) !== null;
   if (canRender && (preference === "renders" || !hasOwnImage)) {
     // The model's own picture holds the place while the render is made; a render to come can't stand in for itself.
     const placeholder = print.thumb_url ? (
@@ -89,10 +90,13 @@ export function renderPreviewContent(
 
   const ext = extOf(plate.filename);
   const plateUrl = printsApi.fileUrl(plate.url);
+  // The model's own picture where it has one, so a model drawn in colours of its own leads with those rather than
+  // with the grey thumbnail made beside them; the thumbnail still stands in where there is no picture at all.
+  const cardPicture = ownPictureUrl(print) ?? print.thumb_url;
   const thumbUrl =
     variant === "card"
-      ? print.thumb_url
-        ? printsApi.fileUrl(print.thumb_url)
+      ? cardPicture
+        ? printsApi.fileUrl(cardPicture)
         : null
       : plate.thumb_url
         ? printsApi.fileUrl(plate.thumb_url)
