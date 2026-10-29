@@ -14,7 +14,7 @@ import {
   type ImportRequestBody,
 } from "./importService";
 import { classifyImportFailure, type ImportFailureReason, type StopReason } from "./importJobRunner";
-import { forgetMissingFilesScan, missingFilesScan, type BrokenModel } from "./missingFilesService";
+import { forgetMissingFilesScan, missingFilesScan, modelFilesMissing, type BrokenModel } from "./missingFilesService";
 import { deletePrint, pruneWhatModelsLeft } from "./printEditService";
 import { assertUrlProviderEnabled } from "./providerSettingsService";
 
@@ -134,9 +134,13 @@ async function deleteBroken(userId: string, run: ModelRepairRun): Promise<void> 
     try {
       const print = await prisma.print.findFirst({
         where: { id: model.id, userId },
-        select: { authorId: true, tags: true },
+        select: { authorId: true, tags: true, plates: { select: { storagePath: true, sourcePath: true } } },
       });
       if (!print) {
+        run.skipped++;
+      } else if (!(await modelFilesMissing(print.plates))) {
+        // Its files came back while the run worked through the rest -- the volume mounted again, or they were
+        // uploaded. A model that is whole again is not this run's to delete.
         run.skipped++;
       } else {
         await deletePrint(userId, model.id, { quiet: true, prune: false });

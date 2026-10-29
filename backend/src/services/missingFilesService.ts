@@ -71,10 +71,16 @@ export type MissingFilesSummary = {
 type CacheEntry = { scan: MissingFilesScan; at: number };
 const cache = new Map<string, CacheEntry>();
 
+/** Absent, rather than unreadable: a flaky or unmounted network volume answers EIO or EACCES for a file that is
+ *  very much there, and taking that for "gone" would offer to fetch or delete a whole library that is fine. Those
+ *  throw instead, so the scan fails and nothing is offered. */
 const exists = (absolute: string) =>
   fs.access(absolute).then(
     () => true,
-    () => false,
+    (err: NodeJS.ErrnoException) => {
+      if (err?.code === "ENOENT" || err?.code === "ENOTDIR") return false;
+      throw err;
+    },
   );
 
 type PlateFile = { storagePath: string; sourcePath: string | null };

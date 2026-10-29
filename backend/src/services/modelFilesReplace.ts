@@ -1,8 +1,10 @@
 import { prisma } from "../db";
+import { createLogger } from "../logger";
 import { HttpError } from "../utils/fileUtils";
 import { assetExists, galleryImageFile } from "./modelAssets";
 import {
   addPlatesToPrint,
+  deletePlateFiles,
   isGeneratorScript,
   keepGeneratorScripts,
   refreshAutoPreparedMetadata,
@@ -10,7 +12,9 @@ import {
 } from "./printCreation";
 import { deleteAllPrintFiles } from "./printFileService";
 import { removePlatePictures } from "./printService";
-import type { Plate } from "@prisma/client";
+import { Prisma, type Plate } from "@prisma/client";
+
+const log = createLogger("model-files");
 
 // Swapping a model's files for freshly downloaded ones, for a model whose own are gone (see
 // services/missingFilesService.ts). The rows that pointed at the missing files go and the new files take their
@@ -25,7 +29,9 @@ export type ReplacedPlates = {
 };
 
 /** Replaces every plate and supporting file of the model with `inputs`. Throws when the download holds nothing to
- *  print, before anything is removed, so a model is never left with less than it had. */
+ *  print, before anything is removed, so a model is never left with less than it had -- and a replacement that
+ *  fails halfway puts the plate rows back, since a model with no plates at all is one the scan passes over and
+ *  could never offer a repair again. */
 export async function replaceModelPlates(
   userId: string,
   printId: string,
@@ -49,7 +55,17 @@ export async function replaceModelPlates(
   for (const plate of print.plates) await removePlatePictures(plate.id, print.assetsPath);
   await prisma.plate.deleteMany({ where: { printId } });
 
-  const plates = await addPlatesToPrint(userId, printId, plateInputs);
+  let plates: Plate[];
+  try {
+    plates = await addPlatesToPrint(userId, printId, plateInputs);
+  } catch (error) {
+    // The rows go back pointing at the files that are gone, so the model is left exactly as broken as it was found
+    // -- and found again by the next scan.
+    await restorePlates(printId, print.plates).catch((failure: unknown) =>
+      log.error("couldn't put a model's plates back", { print: printId, error: failure }),
+    );
+    throw error;
+  }
   await keepGeneratorScripts(userId, printId, scripts);
   await refreshAutoPreparedMetadata(printId);
 
@@ -57,4 +73,20 @@ export async function replaceModelPlates(
     print.previewImages.length > 0 &&
     print.previewImages.every((image) => assetExists(print.assetsPath, galleryImageFile(image.id)));
   return { plates, galleryWhole };
+}
+
+/** The plates as they were before a replacement that didn't finish: whatever it managed to store goes, files and
+ *  all, and the rows taken down at the start take their place. The supporting files and plate pictures removed
+ *  with them were the missing files' own, and don't come back. */
+async function restorePlates(printId: string, previous: Plate[]): Promise<void> {
+  const half = await prisma.plate.findMany({ where: { printId } });
+  for (const plate of half) await deletePlateFiles(plate);
+  await prisma.plate.deleteMany({ where: { printId } });
+  await prisma.plate.createMany({
+    // The printability check is nullable Json, which Prisma writes with a null of its own (providers/connections).
+    data: previous.map((plate) => ({
+      ...plate,
+      qualityCheck: plate.qualityCheck === null ? Prisma.DbNull : (plate.qualityCheck as Prisma.InputJsonValue),
+    })),
+  });
 }

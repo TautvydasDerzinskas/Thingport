@@ -6,8 +6,9 @@ import request from "supertest";
 import { createApp } from "../src/app";
 import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
-import { makePrint, register } from "./helpers/fileReuse";
+import { makePrint, register, tempFile } from "./helpers/fileReuse";
 import { modelFilesMissing, scanMissingFiles } from "../src/services/missingFilesService";
+import { replaceModelPlates } from "../src/services/modelFilesReplace";
 
 // Finding the models whose files are gone, and the repair that deletes them. Re-importing is not covered here: it
 // talks to the providers, which the import suites stand up their own servers for.
@@ -77,6 +78,27 @@ describe("models whose files are gone", () => {
 
     const after = await request(app).get("/api/prints/missing-files").set(auth(owner.token));
     expect(after.body.broken).toBe(0);
+  });
+
+  it("puts the plates back when a replacement fails halfway, so the model is still found", async () => {
+    const model = await makePrint(dir, owner.id, "Halfway");
+    fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
+
+    await expect(
+      replaceModelPlates(owner.id, model.print.id, [
+        { filename: "first.stl", tempFilePath: tempFile(dir, "solid first\nendsolid\n") },
+        // Nothing at this path, so the second plate throws where the first has already been stored.
+        { filename: "second.stl", tempFilePath: path.join(dir, "not-here.stl") },
+      ]),
+    ).rejects.toThrow(/ENOENT/);
+
+    const plates = await prisma.plate.findMany({ where: { printId: model.print.id } });
+    expect(plates.map((plate) => plate.id)).toEqual([model.plate.id]);
+    expect(plates[0].storagePath).toBe(model.plate.storagePath);
+    // As broken as it was, rather than a model with no plates at all -- which the scan passes over, leaving it
+    // beyond repair.
+    const scan = await scanMissingFiles(owner.id);
+    expect(scan.broken.map((broken) => broken.id)).toContain(model.print.id);
   });
 
   it("refuses an action it doesn't know, and a request with no sign-in", async () => {
