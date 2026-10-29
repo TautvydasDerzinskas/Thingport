@@ -108,7 +108,7 @@ function showSetupForm(prefillUrl = "", prefillEmail = "", { credentials = false
   els.instanceUrlInput.value = prefillUrl;
   els.emailInput.value = prefillEmail;
   els.passwordInput.value = "";
-  els.pairPending.hidden = true;
+  setPairing(false);
   els.disconnectedNote.hidden = true;
   clearError();
   if (credentials) showCredentials();
@@ -145,10 +145,27 @@ const PAIR_UNSUPPORTED = "This Thingport is too old to pair with -- connect it w
 // says so for itself in the tab it opens.
 let instanceProbe = 0;
 let instanceProbeTimer: number | undefined;
+let pairable = false;
+let pairing = false;
+
+// Pair wants an address that looks like one, and one pairing at a time: a second start opens a second tab and
+// overwrites the first one's secret, leaving the approval the user is looking at with nothing to finish.
+function updatePairBtn(): void {
+  els.pairBtn.disabled = !pairable || pairing;
+}
 
 function setPairable(enabled: boolean, note = PAIR_NOTE): void {
-  els.pairBtn.disabled = !enabled;
+  pairable = enabled;
   els.pairNote.textContent = note;
+  updatePairBtn();
+}
+
+/** Off again as soon as the background drops the pending pairing -- cancelled, its tab closed, or its code
+ *  taken -- so one that didn't finish can be started over. */
+function setPairing(inFlight: boolean): void {
+  pairing = inFlight;
+  if (!inFlight) els.pairPending.hidden = true;
+  updatePairBtn();
 }
 
 async function probeInstance(rawUrl: string): Promise<void> {
@@ -261,6 +278,8 @@ els.cancelBtn.addEventListener("click", () => void refresh({ checkConnection: fa
 
 els.instanceUrlInput.addEventListener("input", () => {
   window.clearTimeout(instanceProbeTimer);
+  // The address changed, so an answer still on its way is about the old one.
+  instanceProbe++;
   // The button follows the address as it's typed; the instance gets asked once the typing settles.
   setPairable(/^https?:\/\/[^/]+/i.test(normalizeInstanceUrl(els.instanceUrlInput.value)));
   instanceProbeTimer = window.setTimeout(() => void probeInstance(els.instanceUrlInput.value), 400);
@@ -270,6 +289,7 @@ els.credentialsBtn.addEventListener("click", () => showCredentials({ focus: true
 
 /** Must be called straight from a click or a submit: `permissions.request()` needs that gesture. */
 async function pairWithInstance(): Promise<void> {
+  if (pairing) return;
   clearError();
   const instanceUrl = normalizeInstanceUrl(els.instanceUrlInput.value);
   let origin: string;
@@ -279,17 +299,21 @@ async function pairWithInstance(): Promise<void> {
     showError("Enter a valid instance URL, e.g. https://thingport.example.com");
     return;
   }
+  setPairing(true);
   // First, while this still counts as the user's gesture: it's what lets Grab read the approval tab.
   const granted = await chrome.permissions.request({ origins: [`${origin}/*`] });
   if (!granted) {
+    setPairing(false);
     showError("Thingport Grab needs permission to reach this instance to work.");
     return;
   }
   const res = await send("START_PAIRING", { instanceUrl });
   if (!res?.ok) {
+    setPairing(false);
     showError(res?.error ?? "Couldn't open Thingport");
     return;
   }
+  // Only now is there a tab to finish it in.
   els.pairPending.hidden = false;
 }
 
@@ -297,7 +321,13 @@ els.pairBtn.addEventListener("click", () => void pairWithInstance());
 
 // Connecting by approval finishes in the background, maybe while this is open as a tab.
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area !== "local" || !changes[STORAGE_KEYS.connectionToken]?.newValue) return;
+  if (area !== "local") return;
+  if (!changes[STORAGE_KEYS.connectionToken]?.newValue) {
+    if (STORAGE_KEYS.pendingPairing in changes && !changes[STORAGE_KEYS.pendingPairing].newValue) {
+      setPairing(false);
+    }
+    return;
+  }
   if (Number.isInteger(returnTabId)) {
     void chrome.tabs.update(returnTabId, { active: true }).catch(() => undefined);
     void chrome.tabs.getCurrent().then((self) => (self?.id != null ? chrome.tabs.remove(self.id) : undefined));

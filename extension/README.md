@@ -168,7 +168,9 @@ credentials** opens the older email/password form, for instances too old to pair
 rather save a password. Until one of those is done, importable pages show a grayed-out Thingport icon;
 clicking it explains what's needed and opens that same setup form (the toolbar popup, or the same form
 in a tab where the browser won't let the extension open its popup itself). Either way, connecting
-requests permission to reach that one origin first, and nothing is stored until the instance accepts. After that, the toolbar icon
+requests permission to reach that one origin first, and no password or connection is saved until the
+instance accepts -- a pairing on its way keeps only the one-time secret it needs to finish, dropped
+the moment it does or the approval is cancelled. After that, the toolbar icon
 turns from the dark/inactive icon to the color/active one, and the floating icon becomes the normal
 import button. Reopen the popup any time to change the instance (the pencil next to its address), disconnect from it
 (the button beside the pencil, after a confirmation; offline features and recently viewed models stay), or flip
