@@ -1,6 +1,6 @@
 // The grayed-out icon's dialog: not set up yet, or set up but unable to sign in. Setup happens in an
-// extension page: saving needs a host-permission prompt, and the password never enters this page's
-// DOM.
+// extension page: pairing needs a host-permission prompt, and a password, for anyone who gives one
+// instead, never enters this page's DOM.
 
 import { send, type Connection } from "../shared/messages";
 import { fillIcons } from "../shared/icon";
@@ -11,16 +11,17 @@ type Disconnected = Extract<Connection, { connected: false }>;
 function setupBodyHtml(): string {
   return `
       <div class="tg-hint">
-        To import from this page, Thingport Grab needs to know where your Thingport instance is
-        and how to sign in to it:
+        To import from this page, Thingport Grab needs to know where your Thingport instance is, and
+        that instance needs to know this browser:
       </div>
       <ul class="tg-modal__list">
         <li><strong>Instance URL</strong>, e.g. https://thingport.example.com</li>
-        <li><strong>Email</strong> and <strong>password</strong> of your Thingport account</li>
+        <li><strong>Pair</strong> -- Thingport opens in a tab and asks you to approve this browser</li>
       </ul>
       <div class="tg-hint">
-        They're stored only in this browser's extension storage and sent only to your own
-        instance. You can also open this any time from the Thingport Grab icon in your browser
+        Pairing keeps no password in the extension; the setup page still takes an email and password if
+        you'd rather. Either way it's stored only in this browser's extension storage and sent only to
+        your own instance. You can also open this any time from the Thingport Grab icon in your browser
         toolbar.
       </div>`;
 }
@@ -30,7 +31,7 @@ function disconnectedBodyHtml(problem: Disconnected, instanceUrl: string): strin
   const cause =
     problem.reason === "credentials" && problem.byApproval
       ? `${instance} no longer accepts this browser's Thingport Grab. It was probably removed from
-         your profile there -- connect again.`
+         your profile there -- pair again.`
       : problem.reason === "credentials"
         ? `${instance} turned down the email and password saved in Thingport Grab. They were probably
          changed in Thingport since -- sign in again with the current ones.`
