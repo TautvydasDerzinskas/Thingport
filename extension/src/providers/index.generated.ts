@@ -33,6 +33,8 @@ import toymakr3d from "./toymakr3d/manifest.generated";
 import { urls as toymakr3dUrls } from "./toymakr3d/urls.generated";
 import makerables from "./makerables/manifest.generated";
 import { urls as makerablesUrls } from "./makerables/urls.generated";
+import cgtrader from "./cgtrader/manifest.generated";
+import { urls as cgtraderUrls } from "./cgtrader/urls.generated";
 
 export type {
   AuthField,
@@ -67,6 +69,7 @@ export const PROVIDER_IDS = [
   "owlcad",
   "toymakr3d",
   "makerables",
+  "cgtrader",
 ] as const;
 export type ProviderId = (typeof PROVIDER_IDS)[number];
 
@@ -86,6 +89,7 @@ export const MANIFESTS = {
   owlcad,
   toymakr3d,
   makerables,
+  cgtrader,
 } as const;
 
 /** What each site is, in two or three sentences (providers/<id>/docs.ts), for the UI that introduces a provider
@@ -121,6 +125,8 @@ export const ABOUT: { readonly [K in ProviderId]: string } = {
     "One designer's shop of articulated robot and mecha models — Transformers, Megazords, Gundams and the like, printed in place with joints that already move. Most are free to download, the rest are sold.",
   makerables:
     "Makera's project site, where desktop CNC meets 3D printing. Makera makes the Carvera mills, and every project here is free and carries its CAM files and machining programs beside the models they cut.",
+  cgtrader:
+    "A Vilnius-born marketplace of over three million 3D models, started in 2011: game and film assets, renders and a large 3D printing catalogue, sold by their designers and many of them free.",
 };
 
 /** The providers with a list for the dashboard's trending panel, in the panel's order. */
@@ -139,6 +145,7 @@ export const TRENDING_PROVIDER_IDS = [
   "pinshape",
   "toymakr3d",
   "makerables",
+  "cgtrader",
 ] as const;
 export type TrendingProviderId = (typeof TRENDING_PROVIDER_IDS)[number];
 
@@ -158,6 +165,7 @@ export const URLS: { readonly [K in ProviderId]: ProviderUrls } = {
   owlcad: owlcadUrls,
   toymakr3d: toymakr3dUrls,
   makerables: makerablesUrls,
+  cgtrader: cgtraderUrls,
 };
 
 export function isProviderId(value: unknown): value is ProviderId {

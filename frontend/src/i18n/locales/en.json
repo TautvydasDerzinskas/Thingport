@@ -4760,6 +4760,39 @@
         "notConnected": "Connect Makerables in Configuration > Providers, or visit it with Thingport Grab, to see your saved projects here."
       }
     },
+    "cgtrader": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open cgtrader.com while signed in. It connects your account, and sends a new sign-in whenever yours changes there.",
+          "Or by hand: sign in at cgtrader.com and open your browser's developer tools (F12).",
+          "Go to the Network tab, reload the page, click any cgtrader.com request and copy its Cookie header, then paste it below."
+        ],
+        "placeholder": "The Cookie header of a signed-in cgtrader.com request"
+      },
+      "status": {
+        "notConnected": "CGTrader gives its files to signed-in users only, the free models included. Connect your account to import them and to read your liked models and wishlist.",
+        "expired": "Sign-in expired. Sign in on cgtrader.com with Thingport Grab, or connect CGTrader again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "CGTrader: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "A marketplace of over three million 3D models, founded in Vilnius: game and film assets, renders and a large 3D printing catalogue, many of its models free.",
+        "signIn": "Your own sign-in, for the files, your likes and your wishlist.",
+        "grab": "Sends your sign-in as you visit cgtrader.com, with the token your browser got for passing its bot check.",
+        "flaresolverr": "Gets Thingport a bot-check token of its own, so downloads don't wait for Grab's.",
+        "setup": [
+          "Install Thingport Grab, enable it on CGTrader and open cgtrader.com signed in.",
+          "By hand: copy the Cookie header of a signed-in cgtrader.com request and paste it in Configuration → Providers.",
+          "Its downloads sit behind AWS's bot check: set up FlareSolverr, or let Grab hand over your browser's token."
+        ]
+      },
+      "admin": {
+        "description": "Models, and each user's liked models and wishlist. All need the user's own sign-in, the downloads a bot-check token from Grab or FlareSolverr too; only the model pages read without one."
+      },
+      "sync": {
+        "notConnected": "Connect CGTrader in Configuration > Providers, or visit it with Thingport Grab, to see your liked models and wishlist here."
+      }
+    },
     "owlcad": {
       "status": {
         "alwaysConnected": "OwlCAD is connected by default: it needs no account or key."

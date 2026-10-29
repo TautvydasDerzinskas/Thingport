@@ -1,0 +1,111 @@
+{
+  "listingPage": true,
+  "params": {
+    "sort_by": "trending",
+    "locale": "en",
+    "controller": "listing_page",
+    "action": "index",
+    "print_ready": "1",
+    "file_types": null,
+    "printable": true
+  },
+  "data": [
+    {
+      "id": "7702622",
+      "type": "listingItem",
+      "attributes": {
+        "id": 7702622,
+        "title": "Jewelry CAD LMD 26100001",
+        "price": 3.0,
+        "imageAlt": "Jewelry CAD LMD 26100001",
+        "url": "https://www.cgtrader.com/3d-print-models/jewelry/ring/jewelry-cad-lmd-26100001",
+        "primaryImage": {
+          "gridFallbackUrl": "https://media.cgtrader.com/variants/dqd333zrc0hja8f0p3qmx2gfx7gw/a26e47dab5f2d22c43d6c5ce4b4b46ecc30c70918878397cba1a10c1e35d7bfc/Jewelry%20CAD_LMD%2026100001%20H3A.jpg",
+          "gridUrl": "https://media.cgtrader.com/variants/dqd333zrc0hja8f0p3qmx2gfx7gw/78add9c2f02fbd73a43ffb3970be38683c5f15eff6ca849dc78c644f4ff9ce1b/Jewelry%20CAD_LMD%2026100001%20H3A.webp"
+        },
+        "modelInfo": {
+          "modelUrl": "https://www.cgtrader.com/3d-print-models/jewelry/ring/jewelry-cad-lmd-26100001",
+          "isCgtVerified": false,
+          "types": {
+            "printReady": true,
+            "animated": false,
+            "pbr": false,
+            "rigged": false,
+            "lowPoly": false
+          }
+        },
+        "categorySlug": "jewelry",
+        "subcategorySlug": "ring",
+        "categoryTitle": "Jewelry",
+        "subcategoryTitle": "Rings"
+      }
+    },
+    {
+      "id": "3729582",
+      "type": "listingItem",
+      "attributes": {
+        "id": 3729582,
+        "title": "Astrid Armor Kit",
+        "price": 20.0,
+        "imageAlt": "3D print model Astrid Armor Kit",
+        "url": "https://www.cgtrader.com/3d-print-models/art/other/astrid-armor-kit",
+        "primaryImage": {
+          "gridFallbackUrl": "https://media.cgtrader.com/variants/Zmn13TbAasZBitNhSTibM5Sv/a26e47dab5f2d22c43d6c5ce4b4b46ecc30c70918878397cba1a10c1e35d7bfc/AstridArmor%202.jpg",
+          "gridUrl": "https://media.cgtrader.com/variants/Zmn13TbAasZBitNhSTibM5Sv/78add9c2f02fbd73a43ffb3970be38683c5f15eff6ca849dc78c644f4ff9ce1b/AstridArmor%202.webp"
+        },
+        "modelInfo": {
+          "modelUrl": "https://www.cgtrader.com/3d-print-models/art/other/astrid-armor-kit",
+          "isCgtVerified": false,
+          "types": {
+            "printReady": true,
+            "animated": false,
+            "pbr": false,
+            "rigged": false,
+            "lowPoly": false
+          }
+        },
+        "categorySlug": "art",
+        "subcategorySlug": "other",
+        "categoryTitle": "Art & Design",
+        "subcategoryTitle": "Other"
+      }
+    },
+    {
+      "id": "3890843",
+      "type": "listingItem",
+      "attributes": {
+        "id": 3890843,
+        "title": "Daft Punk Gloves",
+        "price": 6.99,
+        "imageAlt": "3D print model Daft Punk Gloves",
+        "url": "https://www.cgtrader.com/3d-print-models/fashion/other/daft-punk-gloves",
+        "primaryImage": {
+          "gridFallbackUrl": "https://media.cgtrader.com/variants/apiwrmls541flwzy4w06k1q0ft0p/a26e47dab5f2d22c43d6c5ce4b4b46ecc30c70918878397cba1a10c1e35d7bfc/daft-punk-gloves-3d-model-8a3f4df7a4.jpg",
+          "gridUrl": "https://media.cgtrader.com/variants/apiwrmls541flwzy4w06k1q0ft0p/78add9c2f02fbd73a43ffb3970be38683c5f15eff6ca849dc78c644f4ff9ce1b/daft-punk-gloves-3d-model-8a3f4df7a4.webp"
+        },
+        "modelInfo": {
+          "modelUrl": "https://www.cgtrader.com/3d-print-models/fashion/other/daft-punk-gloves",
+          "isCgtVerified": false,
+          "types": {
+            "printReady": true,
+            "animated": false,
+            "pbr": false,
+            "rigged": false,
+            "lowPoly": false
+          }
+        },
+        "categorySlug": "fashion",
+        "subcategorySlug": "other",
+        "categoryTitle": "Fashion",
+        "subcategoryTitle": "Other"
+      }
+    }
+  ],
+  "meta": {
+    "totalCount": 986751,
+    "currentPage": 1,
+    "totalPages": 83,
+    "perPage": 120
+  },
+  "sortByValue": "trending"
+}

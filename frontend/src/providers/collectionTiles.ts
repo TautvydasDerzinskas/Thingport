@@ -17,6 +17,7 @@ import * as eufymake from "./eufymake/CollectionTile";
 import * as pinshape from "./pinshape/CollectionTile";
 import * as toymakr3d from "./toymakr3d/CollectionTile";
 import * as makerables from "./makerables/CollectionTile";
+import * as cgtrader from "./cgtrader/CollectionTile";
 
 type Own = { Tile: (props: TileProps) => JSX.Element; TileSkeleton: (props: SkeletonProps) => JSX.Element };
 
@@ -35,4 +36,5 @@ export const COLLECTION_TILES: Partial<Record<BrowsableProvider, Own>> = {
   pinshape,
   toymakr3d,
   makerables,
+  cgtrader,
 };

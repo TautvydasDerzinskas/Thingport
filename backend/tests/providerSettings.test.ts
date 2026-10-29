@@ -45,6 +45,7 @@ afterAll(async () => {
     "pinshape",
     "toymakr3d",
     "makerables",
+    "cgtrader",
   ] as const)
     await setProviderEnabled(provider, true);
 });
@@ -69,6 +70,7 @@ describe("turning providers off", () => {
       owlcad: true,
       toymakr3d: true,
       makerables: true,
+      cgtrader: true,
     });
 
     expect(
@@ -96,6 +98,7 @@ describe("turning providers off", () => {
       owlcad: true,
       toymakr3d: true,
       makerables: true,
+      cgtrader: true,
     });
   });
 

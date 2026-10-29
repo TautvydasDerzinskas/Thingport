@@ -17,6 +17,7 @@ import { isEufymakeLikesUrl } from "../src/providers/eufymake/api";
 import { parsePinshapeLikesUrl } from "../src/providers/pinshape/api";
 import { isToymakr3dLikesUrl } from "../src/providers/toymakr3d/api";
 import { parseMakerablesSavedUrl } from "../src/providers/makerables/api";
+import { parseCgtraderListUrl } from "../src/providers/cgtrader/api";
 
 type Expected = {
   provider: string | null;
@@ -49,6 +50,7 @@ function profileOf(provider: string, url: string): string | null {
 function listKindOf(provider: string, url: string): Expected["listKind"] {
   if (provider === "snapmaker") return parseSnapmakerListUrl(url)?.list ?? "collection";
   if (provider === "makerables" && parseMakerablesSavedUrl(url)) return "bookmarks";
+  if (provider === "cgtrader" && parseCgtraderListUrl(url) === "wishlist") return "bookmarks";
   if (
     (provider === "thingiverse" && parseThingiverseLikesUrl(url)) ||
     (provider === "printables" && parsePrintablesLikesUrl(url)) ||
@@ -58,7 +60,8 @@ function listKindOf(provider: string, url: string): Expected["listKind"] {
     (provider === "cults3d" && parseCults3dLikesUrl(url)) ||
     (provider === "eufymake" && isEufymakeLikesUrl(url)) ||
     (provider === "pinshape" && parsePinshapeLikesUrl(url)) ||
-    (provider === "toymakr3d" && isToymakr3dLikesUrl(url))
+    (provider === "toymakr3d" && isToymakr3dLikesUrl(url)) ||
+    (provider === "cgtrader" && parseCgtraderListUrl(url) === "likes")
   )
     return "likes";
   return "collection";
@@ -66,8 +69,8 @@ function listKindOf(provider: string, url: string): Expected["listKind"] {
 
 describe("provider URL corpus (backend)", () => {
   it("contains every provider and both positive and negative cases", () => {
-    expect(cases).toHaveLength(93);
-    expect(new Set(cases.map((item) => item.expect.provider).filter(Boolean)).size).toBe(15);
+    expect(cases).toHaveLength(105);
+    expect(new Set(cases.map((item) => item.expect.provider).filter(Boolean)).size).toBe(16);
   });
 
   it.each(cases)("$url", ({ url, expect: common, divergent }) => {

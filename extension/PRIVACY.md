@@ -3,7 +3,7 @@
 _Effective 20 October 2026._
 
 Thingport Grab is a browser extension that imports 3D-printing models from MakerWorld, Printables,
-Thingiverse and, once you allow them, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, Toymakr3D, Makerables and OwlCAD into **your own self-hosted Thingport instance**, and converts MakerWorld files for
+Thingiverse and, once you allow them, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, Toymakr3D, Makerables, CGTrader and OwlCAD into **your own self-hosted Thingport instance**, and converts MakerWorld files for
 other slicers in your browser. It has no servers of its own: the
 extension's developer never receives any of your data, and nothing is shared with anyone else.
 
@@ -53,6 +53,8 @@ instance or account, so the new one has to be told.
   to your Thingport instance, so it's only sent again when it changes.
 - **Your Makerables sign-in (its `__session` cookie, which the site splits across `__session__0`, `__session__1`, …
   when it outgrows one),** as last sent to your Thingport instance, so it's only sent again when it changes.
+- **Your CGTrader sign-in (its `_cgtrader_session_id` cookie, and the `aws-waf-token` cookie AWS's bot check gave this
+  browser for the site),** as last sent to your Thingport instance, so it's only sent again when it changes.
 - **Which site each tab is on:** for every open tab showing one of the sites above, that site's name and the
   browser's number for the tab, so the popup can put the site you're looking at first -- it can't read the
   address of your tab itself. No address is kept, only which of the supported sites it is. A tab's entry is
@@ -76,7 +78,7 @@ from the image servers of the sites you viewed them on, without saying which pag
 
 - Your email and password, to sign in.
 - The address of each model page you open on MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space,
-  MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, Toymakr3D or Makerables, to check
+  MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, Toymakr3D, Makerables or CGTrader, to check
   whether you've already imported that model. This happens when the page opens, so the extension
   knows whether to show its button. On a MakerWorld collection page, the same check runs for each
   model in the collection when you open the extension's panel there.
@@ -133,6 +135,11 @@ from the image servers of the sites you viewed them on, without saying which pag
   (its `__session` cookie, split across `__session__0`, `__session__1`, … when it outgrows one), when you open a
   Makerables page and it changed since last sent. Your Thingport instance uses it to read the projects you saved
   there, which only you can see; its projects and their files need no sign-in at all.
+- If you're signed in to CGTrader in this browser, and have allowed the extension there: your CGTrader sign-in (its
+  `_cgtrader_session_id` cookie), and the `aws-waf-token` cookie AWS's bot check gave this browser for the site, when
+  you open a CGTrader page signed in and either changed since last sent. Your Thingport instance uses them to download
+  CGTrader models, the free ones included, and to read the models you liked and wishlisted there, which only you can
+  see.
 - On MakerOnline: the download links MakerOnline gives the page for the files of a model you import, or of the models
   waiting on your Thingport instance for the extension (it asks your instance for that list on each MakerOnline page).
   Your instance downloads the files from those links.
@@ -144,7 +151,7 @@ from the image servers of the sites you viewed them on, without saying which pag
   included), the models you liked there, and the models in the private collections you sync. Only
   you can see these on Printables, so this is how Thingport can sync them.
 
-**To MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, Toymakr3D, Makerables and OwlCAD:**
+**To MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, Toymakr3D, Makerables, CGTrader and OwlCAD:**
 
 - On MakerWorld, to find a model's download link, the extension asks MakerWorld's own website for
   it, the same way the page does when you click Download, using your existing MakerWorld session.
@@ -176,6 +183,9 @@ from the image servers of the sites you viewed them on, without saying which pag
 - On Thangs, once you've allowed it there: when you open the panel on a model page, the extension asks Thangs whether
   your account may download the model, with your existing Thangs sign-in, the same way the page's own Download button
   does. This doesn't download anything.
+- On CGTrader, once you've allowed it there: when you open the panel on a model page, the extension asks CGTrader for
+  the model's details the page itself loads, with your existing CGTrader sign-in, to see whether you've bought a paid
+  model. This doesn't download anything.
 
 **The extension reads, on supported pages only:** the model's title and main picture, MakerWorld's page data for the
 model, the model links listed on collection pages, and, on Thingiverse and MyMiniFactory, your username from the
@@ -191,16 +201,16 @@ page's header. It doesn't read any other websites.
 
 ## Permissions
 
-| Permission                                       | Why                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Storage                                          | Keeps the settings and data listed under "What the extension stores".                                                                                                                                                                                                                                                                                                                                                                                  |
-| Cookies                                          | Reads MakerWorld's, Printables', MyMiniFactory's, MakerOnline's, Creality Cloud's, NexPrint's, Thangs', Cults3D's, Pinshape's, Toymakr3D's and Makerables' session cookies, and reads and renews Snapmaker Space's sign-in cookies, only on their sites (see above).                                                                                                                                                                                   |
-| Downloads                                        | Reads the link from the MakerWorld download it starts, then cancels and removes that download.                                                                                                                                                                                                                                                                                                                                                         |
-| Scripting                                        | Adds the import button to MyMiniFactory's, Snapmaker Space's, MakerOnline's, Creality Cloud's, NexPrint's, Thangs', Cults3D's, eufyMake's, Pinshape's, Toymakr3D's and Makerables' pages, and those of sites added later, once you allow them; on MakerOnline it also asks for file links from within the page, on eufyMake it reads the sign-in from the page's own storage, and on OwlCAD it exports a waiting project in an editor tab (see above). |
-| Alarms                                           | Renews the Snapmaker Space sign-in every few hours, once you've allowed Snapmaker Space.                                                                                                                                                                                                                                                                                                                                                               |
-| Access to MakerWorld, Printables and Thingiverse | Shows the import button, and MakerWorld's Download normalized button, on their pages. On Thingiverse it also applies the dark theme and hides ads, while those Offline features are on.                                                                                                                                                                                                                                                                |
-| Access to newer model sites (optional)           | Asked for one site at a time, only when you click **Enable** next to it under **Providers** in the popup (MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, Toymakr3D, Makerables, OwlCAD, and sites added in later updates). You can take this access back in your browser's extension settings.                                                                                            |
-| Access to your Thingport instance                | Requested for that one address when you set the extension up, so it can talk to your instance.                                                                                                                                                                                                                                                                                                                                                         |
+| Permission                                       | Why                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Storage                                          | Keeps the settings and data listed under "What the extension stores".                                                                                                                                                                                                                                                                                                                                                                                              |
+| Cookies                                          | Reads MakerWorld's, Printables', MyMiniFactory's, MakerOnline's, Creality Cloud's, NexPrint's, Thangs', Cults3D's, Pinshape's, Toymakr3D's, Makerables' and CGTrader's session cookies (and CGTrader's bot-check token, and its `user_id` cookie, read only to tell whether you're signed in there and never sent to Thingport), and reads and renews Snapmaker Space's sign-in cookies, only on their sites (see above).                                          |
+| Downloads                                        | Reads the link from the MakerWorld download it starts, then cancels and removes that download.                                                                                                                                                                                                                                                                                                                                                                     |
+| Scripting                                        | Adds the import button to MyMiniFactory's, Snapmaker Space's, MakerOnline's, Creality Cloud's, NexPrint's, Thangs', Cults3D's, eufyMake's, Pinshape's, Toymakr3D's, Makerables' and CGTrader's pages, and those of sites added later, once you allow them; on MakerOnline it also asks for file links from within the page, on eufyMake it reads the sign-in from the page's own storage, and on OwlCAD it exports a waiting project in an editor tab (see above). |
+| Alarms                                           | Renews the Snapmaker Space sign-in every few hours, once you've allowed Snapmaker Space.                                                                                                                                                                                                                                                                                                                                                                           |
+| Access to MakerWorld, Printables and Thingiverse | Shows the import button, and MakerWorld's Download normalized button, on their pages. On Thingiverse it also applies the dark theme and hides ads, while those Offline features are on.                                                                                                                                                                                                                                                                            |
+| Access to newer model sites (optional)           | Asked for one site at a time, only when you click **Enable** next to it under **Providers** in the popup (MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, Toymakr3D, Makerables, CGTrader, OwlCAD, and sites added in later updates). You can take this access back in your browser's extension settings.                                                                                              |
+| Access to your Thingport instance                | Requested for that one address when you set the extension up, so it can talk to your instance.                                                                                                                                                                                                                                                                                                                                                                     |
 
 ## Your control over your data
 
