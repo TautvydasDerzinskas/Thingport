@@ -108,7 +108,9 @@ export function startModelRepairRun(userId: string, action: RepairAction): Model
 
 export function cancelModelRepairRun(userId: string): ModelRepairRun | null {
   const run = runs.get(userId);
-  if (!run) return null;
+  // The last run is kept for the bar to read, so a stop that arrives after it ended says what it did, rather than
+  // marking a finished run cancelled and disagreeing with what the log already recorded.
+  if (!run || !run.running) return run ?? null;
   run.cancelled = true;
   return run;
 }
@@ -175,11 +177,15 @@ async function reimportBroken(userId: string, run: ModelRepairRun): Promise<void
     }
     if (run.done) await sleep(ITEM_DELAY_MS);
     try {
-      if (await repairModel(userId, provider, model)) {
+      const outcome = await repairModel(userId, provider, model);
+      if (outcome === "repaired") {
         run.repaired++;
-      } else {
+      } else if (outcome === "queued") {
         run.queued++;
         parked.set(provider, (parked.get(provider) ?? 0) + 1);
+      } else {
+        // Whole again while the download was on its way: nothing of its own was taken away for these files.
+        run.skipped++;
       }
       consecutiveFailures = 0;
     } catch (error) {
@@ -223,23 +229,25 @@ function stopReasonOf(reason: ImportFailureReason): StopReason | null {
   return stopping.includes(reason) ? (reason as StopReason) : null;
 }
 
-/** One model's files, fetched and put in place of the missing ones. False when only Thingport Grab can fetch them
- *  and the import was parked for its next visit to the site. */
-async function repairModel(userId: string, provider: ProviderId, model: BrokenModel): Promise<boolean> {
+/** What became of one model: its files fetched and put in place of the missing ones, parked for Thingport Grab's
+ *  next visit to the site, or whole again by the time the files were in -- a Grab import of the same model, or an
+ *  upload, got there first, and importService leaves such a model exactly as it found it. */
+type RepairOutcome = "repaired" | "queued" | "whole";
+
+async function repairModel(userId: string, provider: ProviderId, model: BrokenModel): Promise<RepairOutcome> {
   const url = model.sourceUrl!;
   await assertUrlProviderEnabled(url);
   const backend = PROVIDERS[provider];
   if (backend.grabQueue) {
     await backend.grabQueue.queue(userId, url);
-    return false;
+    return "queued";
   }
   // The provider's own pick of files, as a fresh import of the model's page would get: a model that had several of
   // its print profiles comes back with that pick, and the others are added by importing their links again.
   const files = backend.sourcedImport
     ? await downloadSourcedModelFiles(userId, model.externalId!, backend.sourcedImport)
     : await downloadLinkedModelFiles(url, await withLinkAuth<ImportRequestBody>(userId, { url }));
-  await replaceModelFiles(userId, model.id, files);
-  return true;
+  return (await replaceModelFiles(userId, model.id, files)) ? "repaired" : "whole";
 }
 
 // ---- Telling the owner ----

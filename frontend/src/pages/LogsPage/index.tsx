@@ -156,13 +156,19 @@ export default function LogsPage({ onUnauthorized }: Props) {
         return typeof d.field === "string" ? t("adminSettings.logs.editedField", { field: d.field }) : "";
       case "model_reimported":
         return typeof d.source_url === "string" ? d.source_url : "";
-      case "models_repaired":
+      case "models_repaired": {
+        // The run's own word for what it did, rather than the action as it is stored.
+        const repairActions: Record<string, string> = {
+          reimport: t("missingFiles.actions.reimport.title"),
+          delete: t("missingFiles.actions.delete.title"),
+        };
         return t("adminSettings.logs.repairSummary", {
-          action: typeof d.action === "string" ? d.action : "",
+          action: typeof d.action === "string" ? (repairActions[d.action] ?? "") : "",
           repaired: typeof d.repaired === "number" ? d.repaired : 0,
           deleted: typeof d.deleted === "number" ? d.deleted : 0,
           failed: typeof d.failed === "number" ? d.failed : 0,
         });
+      }
       case "import_completed": {
         const provider = typeof d.provider === "string" ? d.provider : "";
         const label = typeof d.sourceLabel === "string" && d.sourceLabel ? d.sourceLabel : provider;

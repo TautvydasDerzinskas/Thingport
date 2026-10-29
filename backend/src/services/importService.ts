@@ -26,7 +26,7 @@ import {
 import { validateRemoteUrl } from "../utils/urlUtils";
 import { readCapped } from "../utils/readCapped";
 import { fetchWithGuard, rawFetch } from "./guardedFetch";
-import { maybeSleep, sleep } from "../utils/concurrency";
+import { createKeyedLock, maybeSleep, sleep } from "../utils/concurrency";
 import { isCloudflareChallenge } from "./flaresolverr";
 import {
   emptyImportedPageMetadata,
@@ -64,6 +64,7 @@ import {
 import { openSourceGaps, type SourceGap } from "./sourceGaps";
 import { replaceModelPlates } from "./modelFilesReplace";
 import { modelFilesMissing } from "./missingFilesService";
+import { createLogger } from "../logger";
 
 /** An import refused because the user's MyMiniFactory session has expired. */
 export const MYMINIFACTORY_SESSION_CODE = MANIFESTS.myminifactory.errorCodes.session;
@@ -1188,13 +1189,15 @@ const IMPORT_KIT: PipelineKit = {
   profileDetails: profileDetailsOf,
   filesMissing: (existing) => modelFilesMissing(existing.plates),
   async replaceFiles(existing, inputs, resolved, details) {
-    const { print, plates, previewImages } = await replaceModelFiles(existing.print.userId, existing.print.id, {
+    const replaced = await replaceModelFiles(existing.print.userId, existing.print.id, {
       inputs: nameInputsApart(inputs, details.titles),
       coverImageUrl: resolved?.meta.previewImageUrl ?? null,
       galleryImages: resolved?.galleryImages ?? [],
       profiles: details,
     });
-    return { print, plates, previewImages, author: existing.author, alreadyImported: false };
+    // Its files came back while these were being fetched, so there was nothing to put right.
+    if (!replaced) return { ...existing, alreadyImported: true };
+    return { ...replaced, author: existing.author, alreadyImported: false };
   },
 };
 
@@ -1498,29 +1501,51 @@ export async function downloadLinkedModelFiles(url: string, body: ImportRequestB
   };
 }
 
+const log = createLogger("import-files");
+
+/** One model's replacement at a time, with the look that says it needs one inside it: a repair's download takes
+ *  minutes, in which a Grab import of the same model, or an upload, can put the files back. */
+const withPrintLock = createKeyedLock();
+
 /** Puts downloaded files on a model whose own are gone, in place of them, and brings its pictures back when they
  *  went too: the repair of a model that is already in the library (services/modelRepairService.ts). Everything
- *  else about the model stays as the owner left it. Removes the temp files either way. */
+ *  else about the model stays as the owner left it. Removes the temp files either way.
+ *
+ *  Null when the model turned out to have its files after all, so nothing was touched: whoever asked for the
+ *  replacement read the library before the download, and by now someone else has put them back. */
 export async function replaceModelFiles(
   userId: string,
   printId: string,
   files: DownloadedModelFiles,
-): Promise<{ print: Print; plates: Plate[]; previewImages: PreviewImage[] }> {
+): Promise<{ print: Print; plates: Plate[]; previewImages: PreviewImage[] } | null> {
   const { inputs, coverImageUrl, galleryImages, profiles } = files;
   try {
-    const { plates, galleryWhole } = await replaceModelPlates(userId, printId, inputs);
-    // A gallery that survived the accident is the one the owner has been looking at, so it stays. One missing any
-    // of its pictures is taken from the source afresh instead of left half there.
-    if (!galleryWhole) {
-      await deleteAllPreviewImages(printId);
-      await attachImportedPreviewImages(printId, plates[0]?.id, coverImageUrl, galleryImages);
-    }
-    await applyProfileCovers(printId, profiles.covers);
-    const [print, previewImages] = await Promise.all([
-      prisma.print.findUniqueOrThrow({ where: { id: printId } }),
-      prisma.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } }),
-    ]);
-    return { print, plates, previewImages };
+    return await withPrintLock(printId, async () => {
+      const recorded = await prisma.plate.findMany({
+        where: { printId, print: { userId } },
+        select: { storagePath: true, sourcePath: true },
+      });
+      // A model with no plates at all has nothing to take away, so it is always worth the files.
+      if (recorded.length > 0 && !(await modelFilesMissing(recorded))) return null;
+
+      const { plates, galleryWhole } = await replaceModelPlates(userId, printId, inputs);
+      // A gallery that survived the accident is the one the owner has been looking at, so it stays. One missing any
+      // of its pictures is taken from the source afresh instead of left half there.
+      if (!galleryWhole) {
+        await deleteAllPreviewImages(printId);
+        // The files are in place by now, so a picture that won't come is no reason to call the repair a failure and
+        // leave the model out of the next one -- the look only ever reads the plates.
+        await attachImportedPreviewImages(printId, plates[0]?.id, coverImageUrl, galleryImages).catch((error) =>
+          log.warn("couldn't bring a repaired model's gallery back", { print: printId, error }),
+        );
+      }
+      await applyProfileCovers(printId, profiles.covers);
+      const [print, previewImages] = await Promise.all([
+        prisma.print.findUniqueOrThrow({ where: { id: printId } }),
+        prisma.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } }),
+      ]);
+      return { print, plates, previewImages };
+    });
   } finally {
     for (const input of inputs) {
       if (input.tempFilePath && fsSync.existsSync(input.tempFilePath)) {

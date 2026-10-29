@@ -68,10 +68,15 @@ export async function replaceModelPlates(
   // halfway would otherwise have taken with it for nothing. A new plate whose name one of those files holds lands
   // beside it rather than over it (printService's freePlatePath reads them too).
   for (const plate of print.plates) await removePlatePictures(plate.id, print.assetsPath);
-  // The prepared file is one of the supporting files about to go.
-  if (print.preparedFileId) {
-    await prisma.print.update({ where: { id: printId }, data: { preparedFile: { disconnect: true } } });
-  }
+  // The prepared file is one of the supporting files about to go, and its metadata describes plates that have gone
+  // too: emptied here rather than left for the refresh below, which would leave the old reading behind if it threw.
+  await prisma.print.update({
+    where: { id: printId },
+    data: {
+      preparedMetadata: Prisma.JsonNull,
+      ...(print.preparedFileId ? { preparedFile: { disconnect: true } } : {}),
+    },
+  });
   await deleteAllPrintFiles(printId);
   await keepGeneratorScripts(userId, printId, scripts);
   await refreshAutoPreparedMetadata(printId);

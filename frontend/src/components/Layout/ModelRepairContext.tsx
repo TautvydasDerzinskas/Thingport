@@ -70,13 +70,16 @@ export function ModelRepairProvider({
   const [summary, setSummary] = useState<MissingFilesSummary | null>(null);
   const [checkFailed, setCheckFailed] = useState(false);
   const [run, setRun] = useState<ModelRepairRun | null>(null);
-  const [asked, setAsked] = useState(false);
+  const [looked, setLooked] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   // Read once, and kept here rather than read back on each render: the dialog that came up on its own closes
   // because this changes, not because of the store behind it.
   const [dismissed, setDismissed] = useState(dismissedAt);
   const [finishedCount, setFinishedCount] = useState(0);
   const running = Boolean(run?.running);
+  // Each ask about the run takes a number, and only the newest may answer: a poll sent before a stop can land after
+  // it, and would set the run going again -- the bar back, and the end of it counted twice.
+  const asked = useRef(0);
 
   const refresh = useCallback(
     async (rescan = false) => {
@@ -115,8 +118,11 @@ export function ModelRepairProvider({
       // A sign-in that has run out is the app's to answer, and says nothing about the library.
       else if (look.error instanceof UnauthorizedError) unauthorized.current?.();
       else setCheckFailed(true);
-      if (state) setRun(state.run);
-      setAsked(true);
+      // Only what the run state actually said: taken for an idle run, a repair already going would have the dialog
+      // come up over it, with no bar to show for it. Nothing is assumed until it answers.
+      if (!state) return;
+      if (asked.current === 0) setRun(state.run);
+      setLooked(true);
     })();
     return () => {
       active = false;
@@ -126,9 +132,12 @@ export function ModelRepairProvider({
   useEffect(() => {
     if (!running) return;
     const timer = window.setInterval(() => {
+      const mine = ++asked.current;
       void modelRepairApi
         .runState()
-        .then(({ run: next }) => setRun(next))
+        .then(({ run: next }) => {
+          if (mine === asked.current) setRun(next);
+        })
         .catch((err: unknown) => {
           if (err instanceof UnauthorizedError) onUnauthorized?.();
         });
@@ -152,14 +161,16 @@ export function ModelRepairProvider({
   }, [running, refresh]);
 
   const start = useCallback(async (action: ModelRepairAction) => {
+    const mine = ++asked.current;
     const { run: started } = await modelRepairApi.startRun(action);
-    setRun(started);
+    if (mine === asked.current) setRun(started);
     setDialogOpen(false);
   }, []);
 
   const cancel = useCallback(async () => {
+    const mine = ++asked.current;
     const { run: next } = await modelRepairApi.cancelRun();
-    setRun(next);
+    if (mine === asked.current) setRun(next);
   }, []);
 
   const closePrompt = useCallback(() => {
@@ -172,7 +183,7 @@ export function ModelRepairProvider({
 
   // Up on its own once the first look is in, unless a repair is already going or this breakage was waved off.
   const promptOpen =
-    dialogOpen || Boolean(asked && !running && summary?.prompt && summary.broken > dismissed && summary.broken > 0);
+    dialogOpen || Boolean(looked && !running && summary?.prompt && summary.broken > dismissed && summary.broken > 0);
 
   const value = useMemo(
     () => ({

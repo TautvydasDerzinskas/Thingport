@@ -9,6 +9,7 @@ import { prisma } from "../src/db";
 import { makePrint, register, tempFile, upload } from "./helpers/fileReuse";
 import { modelFilesMissing, scanMissingFiles } from "../src/services/missingFilesService";
 import { replaceModelPlates } from "../src/services/modelFilesReplace";
+import { replaceModelFiles } from "../src/services/importService";
 
 // Finding the models whose files are gone, and the repair that deletes them. Re-importing is not covered here: it
 // talks to the providers, which the import suites stand up their own servers for.
@@ -103,6 +104,24 @@ describe("models whose files are gone", () => {
     // beyond repair.
     const scan = await scanMissingFiles(owner.id);
     expect(scan.broken.map((broken) => broken.id)).toContain(model.print.id);
+  });
+
+  it("touches nothing when the files came back while they were being fetched", async () => {
+    const model = await makePrint(dir, owner.id, "Came back");
+
+    // The repair read the library before the download, which takes minutes: by now a Grab import of the same model,
+    // or an upload, has put its files back, and taking them away for these would be the accident.
+    const replaced = await replaceModelFiles(owner.id, model.print.id, {
+      inputs: [{ filename: "fetched.stl", tempFilePath: tempFile(dir, "solid fetched\nendsolid\n") }],
+      coverImageUrl: null,
+      galleryImages: [],
+      profiles: {},
+    });
+
+    expect(replaced).toBeNull();
+    const plates = await prisma.plate.findMany({ where: { printId: model.print.id } });
+    expect(plates.map((plate) => plate.id)).toEqual([model.plate.id]);
+    expect(fs.existsSync(path.join(STORAGE, model.plate.storagePath))).toBe(true);
   });
 
   it("refuses an action it doesn't know, and a request with no sign-in", async () => {
