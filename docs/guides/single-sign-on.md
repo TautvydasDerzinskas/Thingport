@@ -77,7 +77,8 @@ On their **Profile** page, under the password, anyone can connect a provider to 
 or disconnect it again.
 
 Someone whose account was created through single sign-on has no password. They can set one from the same place, to
-also sign in with their email, and to use [Thingport Grab](../../extension/README.md), which signs in with a password.
+also sign in with their email. [Thingport Grab](../../extension/README.md) needs no password either way: it pairs by
+opening Thingport in a tab, where you approve the browser while signed in -- however you signed in.
 
 ![A profile with a connected sign-in provider](../../frontend/src/assets/screenshots/26_profile_sign_in.png)
 

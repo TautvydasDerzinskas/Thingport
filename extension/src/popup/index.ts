@@ -96,7 +96,8 @@ function showConfiguredView(state: ExtensionState): void {
   void loadSites();
 }
 
-function showSetupForm(prefillUrl = "", prefillEmail = ""): void {
+/** `credentials`: open with the password form already out, for someone coming back to fix one. */
+function showSetupForm(prefillUrl = "", prefillEmail = "", { credentials = false } = {}): void {
   labelTabs(false);
   els.recentSection.hidden = true;
   els.configuredView.hidden = true;
@@ -107,40 +108,70 @@ function showSetupForm(prefillUrl = "", prefillEmail = ""): void {
   els.instanceUrlInput.value = prefillUrl;
   els.emailInput.value = prefillEmail;
   els.passwordInput.value = "";
-  els.ssoPending.hidden = true;
+  els.pairPending.hidden = true;
   els.disconnectedNote.hidden = true;
   clearError();
+  if (credentials) showCredentials();
+  else hideCredentials();
   els.instanceUrlInput.focus();
-  void offerSingleSignOn(prefillUrl);
+  void probeInstance(prefillUrl);
 }
 
-// Asked of each instance typed in, so single sign-on only shows where it works: instances from before connecting
-// by approval existed, or without a provider set up, don't answer this and the form stays as it always was.
-let ssoProbe = 0;
-let ssoProbeTimer: number | undefined;
+/** The password form stays out of the way until it's asked for. Its fields are only `required` while they're
+ *  on screen: a hidden required field makes the form unsubmittable, with nothing to show for it. */
+function showCredentials({ focus = false } = {}): void {
+  els.credentialsBlock.hidden = false;
+  els.credentialsToggle.hidden = true;
+  els.credentialsBtn.setAttribute("aria-expanded", "true");
+  els.emailInput.required = true;
+  els.passwordInput.required = true;
+  if (focus) (els.emailInput.value ? els.passwordInput : els.emailInput).focus();
+}
 
-async function offerSingleSignOn(rawUrl: string): Promise<void> {
-  const probe = ++ssoProbe;
-  els.ssoBlock.hidden = true;
+function hideCredentials(): void {
+  els.credentialsBlock.hidden = true;
+  els.credentialsToggle.hidden = false;
+  els.credentialsBtn.setAttribute("aria-expanded", "false");
+  els.emailInput.required = false;
+  els.passwordInput.required = false;
+}
+
+const PAIR_NOTE =
+  "Opens Thingport in a tab to approve this browser. Nothing is saved here but the connection it hands back.";
+const PAIR_UNSUPPORTED = "This Thingport is too old to pair with -- connect it with your email and password instead.";
+
+// Asked of each instance typed in. Pairing leads, so the button follows the address alone and only an instance
+// that answers and says it can't pair takes it away -- one that simply doesn't answer may still be fine, and
+// says so for itself in the tab it opens.
+let instanceProbe = 0;
+let instanceProbeTimer: number | undefined;
+
+function setPairable(enabled: boolean, note = PAIR_NOTE): void {
+  els.pairBtn.disabled = !enabled;
+  els.pairNote.textContent = note;
+}
+
+async function probeInstance(rawUrl: string): Promise<void> {
+  const probe = ++instanceProbe;
   const instanceUrl = normalizeInstanceUrl(rawUrl);
-  if (!/^https?:\/\/[^/]+/i.test(instanceUrl)) return;
+  const looksLikeUrl = /^https?:\/\/[^/]+/i.test(instanceUrl);
+  setPairable(looksLikeUrl);
+  if (!looksLikeUrl) return;
   try {
     // Health answers any origin, so this works before the instance's permission is granted.
     const res = await fetch(apiUrl(instanceUrl, "/health"), { signal: AbortSignal.timeout(4000) });
-    const health = (await res.json()) as { grab_pairing?: boolean; oidc_providers?: { name: string }[] };
-    const providers = Array.isArray(health.oidc_providers) ? health.oidc_providers : [];
-    if (probe !== ssoProbe || health.grab_pairing !== true || providers.length === 0) return;
-    els.ssoBtn.textContent =
-      providers.length === 1 ? `Sign in with ${providers[0].name}` : "Sign in with single sign-on";
-    els.ssoBlock.hidden = false;
+    const health = (await res.json()) as { grab_pairing?: boolean };
+    if (probe !== instanceProbe || health.grab_pairing === true) return;
+    setPairable(false, PAIR_UNSUPPORTED);
+    showCredentials();
   } catch {
-    // Unreachable, or an older Thingport: the password form is all there is.
+    // Unreachable from here, or still being typed: leave pairing on offer rather than guess.
   }
 }
 
 function connectionProblem(connection: Extract<Connection, { connected: false }>): string {
   if (connection.reason === "credentials" && connection.byApproval) {
-    return "Your Thingport instance no longer accepts this browser's Thingport Grab -- it was probably removed from your profile there. Connect again, or sign in with your email and password.";
+    return "Your Thingport instance no longer accepts this browser's Thingport Grab -- it was probably removed from your profile there. Pair again, or sign in with your email and password.";
   }
   return connection.reason === "credentials"
     ? `Your Thingport instance turned down the saved email and password -- they were probably changed there. Sign in again with the current ones. (${connection.detail})`
@@ -169,10 +200,12 @@ async function refresh({ checkConnection = true } = {}): Promise<void> {
   if (checkConnection) {
     // A connection that stopped working is worth seeing whichever tab was open last.
     selectTab("connect");
-    showSetupForm(res.data.instanceUrl, res.data.email);
+    // Back in the way they came: a password that stopped working is retyped, a removed approval is paired again.
+    const byPassword = !connection.data.byApproval;
+    showSetupForm(res.data.instanceUrl, res.data.email, { credentials: byPassword });
     showError(connectionProblem(connection.data));
     // A removed connection has no password to fix: nothing to jump to.
-    if (!connection.data.byApproval) {
+    if (byPassword) {
       (connection.data.reason === "credentials" ? els.passwordInput : els.instanceUrlInput).focus();
     }
   } else {
@@ -183,7 +216,9 @@ async function refresh({ checkConnection = true } = {}): Promise<void> {
 els.editInstanceBtn.addEventListener("click", async () => {
   const res = await send("GET_STATE");
   selectTab("connect");
-  showSetupForm(res?.ok ? res.data.instanceUrl : "", res?.ok ? res.data.email : "");
+  showSetupForm(res?.ok ? res.data.instanceUrl : "", res?.ok ? res.data.email : "", {
+    credentials: res?.ok ? !res.data.connectedByApproval : false,
+  });
 });
 
 async function disconnect(): Promise<void> {
@@ -225,12 +260,16 @@ els.disconnectBtn.addEventListener("click", async () => {
 els.cancelBtn.addEventListener("click", () => void refresh({ checkConnection: false }));
 
 els.instanceUrlInput.addEventListener("input", () => {
-  window.clearTimeout(ssoProbeTimer);
-  els.ssoBlock.hidden = true;
-  ssoProbeTimer = window.setTimeout(() => void offerSingleSignOn(els.instanceUrlInput.value), 400);
+  window.clearTimeout(instanceProbeTimer);
+  // The button follows the address as it's typed; the instance gets asked once the typing settles.
+  setPairable(/^https?:\/\/[^/]+/i.test(normalizeInstanceUrl(els.instanceUrlInput.value)));
+  instanceProbeTimer = window.setTimeout(() => void probeInstance(els.instanceUrlInput.value), 400);
 });
 
-els.ssoBtn.addEventListener("click", async () => {
+els.credentialsBtn.addEventListener("click", () => showCredentials({ focus: true }));
+
+/** Must be called straight from a click or a submit: `permissions.request()` needs that gesture. */
+async function pairWithInstance(): Promise<void> {
   clearError();
   const instanceUrl = normalizeInstanceUrl(els.instanceUrlInput.value);
   let origin: string;
@@ -240,7 +279,7 @@ els.ssoBtn.addEventListener("click", async () => {
     showError("Enter a valid instance URL, e.g. https://thingport.example.com");
     return;
   }
-  // First, while this click still counts as the user's: it's what lets Grab read the approval tab.
+  // First, while this still counts as the user's gesture: it's what lets Grab read the approval tab.
   const granted = await chrome.permissions.request({ origins: [`${origin}/*`] });
   if (!granted) {
     showError("Thingport Grab needs permission to reach this instance to work.");
@@ -251,8 +290,10 @@ els.ssoBtn.addEventListener("click", async () => {
     showError(res?.error ?? "Couldn't open Thingport");
     return;
   }
-  els.ssoPending.hidden = false;
-});
+  els.pairPending.hidden = false;
+}
+
+els.pairBtn.addEventListener("click", () => void pairWithInstance());
 
 // Connecting by approval finishes in the background, maybe while this is open as a tab.
 chrome.storage.onChanged.addListener((changes, area) => {
@@ -307,6 +348,11 @@ for (const [feature, input] of Object.entries(FEATURE_SWITCHES) as [OfflineFeatu
 
 els.setupForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  // Enter in the address field runs the button beneath it, which is Pair until the password form is out.
+  if (els.credentialsBlock.hidden) {
+    if (!els.pairBtn.disabled) await pairWithInstance();
+    return;
+  }
   clearError();
 
   const normalized = normalizeInstanceUrl(els.instanceUrlInput.value);
