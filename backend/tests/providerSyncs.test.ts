@@ -618,6 +618,7 @@ describe("a sync's model links", () => {
       toymakr3d: "8",
       makerables: "acrylic-knife",
       cgtrader: "lotus-ring-with-opening-and-closing-mechanism",
+      grabcad: "arduino-uno-r3-1",
     };
     const readBack = Object.fromEntries(
       PROVIDER_IDS.map((provider) => [provider, modelIdFromUrl(provider, modelUrlFor(provider, ids[provider]))]),

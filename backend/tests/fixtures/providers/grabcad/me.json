@@ -1,0 +1,23 @@
+{
+  "member": {
+    "id": 1000001,
+    "name": "Maker One",
+    "email": "maker@example.com",
+    "avatar_url": "https://grabcad.com/members/avatars/missing_feed.png",
+    "profile_url": "/maker.one-1",
+    "cached_slug": "maker.one-1",
+    "needs_verification": true,
+    "unread_messages_count": 0,
+    "unread_notifications_count": 0,
+    "preferences": {
+      "model_tooltip_step": 0,
+      "library_tooltip_step": 0,
+      "show_wish_feedback_cta": false,
+      "new_community_registration": true,
+      "has_seen_new_community_landing": true,
+      "has_seen_gallery_edit_info_modal": false,
+      "has_seen_edit_model_tooltip": true,
+      "is_ula_compliance_certification_confirmed": true
+    }
+  }
+}

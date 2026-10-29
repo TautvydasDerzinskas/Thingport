@@ -4811,6 +4811,37 @@
         "notConnected": "Conecta CGTrader en Configuración > Proveedores, o visítalo con Thingport Grab, para ver aquí tus modelos favoritos y tu lista de deseos."
       }
     },
+    "grabcad": {
+      "connect": {
+        "steps": [
+          "Lo más fácil: con Thingport Grab, basta con abrir grabcad.com con la sesión iniciada. Conecta tu cuenta y envía un nuevo inicio de sesión cada vez que el tuyo cambie allí.",
+          "O manualmente: inicia sesión en grabcad.com y abre las herramientas de desarrollador de tu navegador (F12).",
+          "En Application (Chrome, Edge) o Storage (Firefox) → Cookies → grabcad.com, copia el valor de _grabcad_session y pégalo abajo. También sirve la cabecera Cookie de una petición a grabcad.com con la sesión iniciada."
+        ],
+        "placeholder": "La cookie _grabcad_session, o la cabecera Cookie de una petición con la sesión iniciada"
+      },
+      "status": {
+        "notConnected": "GrabCAD solo entrega sus archivos a usuarios con sesión iniciada. Conecta tu cuenta para importar sus modelos; los me gusta de cualquiera se leen sin ella.",
+        "expired": "El inicio de sesión ha caducado. Inicia sesión en grabcad.com con Thingport Grab o vuelve a conectar GrabCAD en Configuración → Proveedores.",
+        "expiredStatus": "Inicio de sesión caducado",
+        "disabledReason": "GrabCAD: conecta tu cuenta en Configuración → Proveedores"
+      },
+      "about": {
+        "summary": "La comunidad de ingenieros de Stratasys: una biblioteca gratuita de millones de modelos CAD, desde piezas de máquinas hasta conjuntos completos, sobre todo en STEP.",
+        "signIn": "Tu propio inicio de sesión, para los archivos; los me gusta de cualquiera se leen sin él.",
+        "grab": "Envía tu inicio de sesión cuando visitas grabcad.com. Dura dos días desde su último uso allí, así que basta una visita de vez en cuando para mantenerlo.",
+        "setup": [
+          "Instala Thingport Grab, actívalo en GrabCAD y abre grabcad.com con la sesión iniciada.",
+          "Manualmente: copia la cookie _grabcad_session de una pestaña de grabcad.com con la sesión iniciada y pégala en Configuración → Proveedores."
+        ]
+      },
+      "admin": {
+        "description": "Modelos, y los me gusta de cualquiera. Los me gusta se leen sin iniciar sesión; los archivos necesitan la del propio usuario. Thingport importa sus archivos STEP, STL, 3MF y OBJ, no los formatos propios de cada sistema CAD."
+      },
+      "sync": {
+        "notConnected": "Conecta GrabCAD en Configuración > Proveedores, o visítalo con Thingport Grab, para ver aquí tus me gusta."
+      }
+    },
     "owlcad": {
       "status": {
         "alwaysConnected": "OwlCAD está conectado de forma predeterminada: no necesita cuenta ni clave."

@@ -4793,6 +4793,37 @@
         "notConnected": "Connect CGTrader in Configuration > Providers, or visit it with Thingport Grab, to see your liked models and wishlist here."
       }
     },
+    "grabcad": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open grabcad.com while signed in. It connects your account, and sends a new sign-in whenever yours changes there.",
+          "Or by hand: sign in at grabcad.com and open your browser's developer tools (F12).",
+          "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → grabcad.com, copy the value of _grabcad_session and paste it below. The Cookie header of a signed-in grabcad.com request works too."
+        ],
+        "placeholder": "The _grabcad_session cookie, or a signed-in request's Cookie header"
+      },
+      "status": {
+        "notConnected": "GrabCAD gives its files to signed-in users only. Connect your account to import its models; anyone's likes read without it.",
+        "expired": "Sign-in expired. Sign in on grabcad.com with Thingport Grab, or connect GrabCAD again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "GrabCAD: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "Stratasys's community of engineers: a free library of millions of CAD models, from machine parts to whole assemblies, mostly as STEP files.",
+        "signIn": "Your own sign-in, for the files; anyone's likes read without it.",
+        "grab": "Sends your sign-in as you visit grabcad.com. It lasts two days from its last use there, so a visit now and then keeps it.",
+        "setup": [
+          "Install Thingport Grab, enable it on GrabCAD and open grabcad.com signed in.",
+          "By hand: copy the _grabcad_session cookie of a signed-in grabcad.com tab and paste it in Configuration → Providers."
+        ]
+      },
+      "admin": {
+        "description": "Models, and anyone's likes. Likes read without a sign-in; the files need each user's own. Thingport imports their STEP, STL, 3MF and OBJ files, not CAD systems' own formats."
+      },
+      "sync": {
+        "notConnected": "Connect GrabCAD in Configuration > Providers, or visit it with Thingport Grab, to see your likes here."
+      }
+    },
     "owlcad": {
       "status": {
         "alwaysConnected": "OwlCAD is connected by default: it needs no account or key."

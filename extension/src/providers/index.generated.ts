@@ -35,6 +35,8 @@ import makerables from "./makerables/manifest.generated";
 import { urls as makerablesUrls } from "./makerables/urls.generated";
 import cgtrader from "./cgtrader/manifest.generated";
 import { urls as cgtraderUrls } from "./cgtrader/urls.generated";
+import grabcad from "./grabcad/manifest.generated";
+import { urls as grabcadUrls } from "./grabcad/urls.generated";
 
 export type {
   AuthField,
@@ -70,6 +72,7 @@ export const PROVIDER_IDS = [
   "toymakr3d",
   "makerables",
   "cgtrader",
+  "grabcad",
 ] as const;
 export type ProviderId = (typeof PROVIDER_IDS)[number];
 
@@ -90,6 +93,7 @@ export const MANIFESTS = {
   toymakr3d,
   makerables,
   cgtrader,
+  grabcad,
 } as const;
 
 /** What each site is, in two or three sentences (providers/<id>/docs.ts), for the UI that introduces a provider
@@ -127,6 +131,8 @@ export const ABOUT: { readonly [K in ProviderId]: string } = {
     "Makera's project site, where desktop CNC meets 3D printing. Makera makes the Carvera mills, and every project here is free and carries its CAM files and machining programs beside the models they cut.",
   cgtrader:
     "A Vilnius-born marketplace of over three million 3D models, started in 2011: game and film assets, renders and a large 3D printing catalogue, sold by their designers and many of them free.",
+  grabcad:
+    "An engineers' community started in Estonia in 2009 and owned by Stratasys since 2014. Its free library holds millions of CAD models, from machine parts to whole assemblies, mostly as STEP files and native CAD formats.",
 };
 
 /** The providers with a list for the dashboard's trending panel, in the panel's order. */
@@ -146,6 +152,7 @@ export const TRENDING_PROVIDER_IDS = [
   "toymakr3d",
   "makerables",
   "cgtrader",
+  "grabcad",
 ] as const;
 export type TrendingProviderId = (typeof TRENDING_PROVIDER_IDS)[number];
 
@@ -166,6 +173,7 @@ export const URLS: { readonly [K in ProviderId]: ProviderUrls } = {
   toymakr3d: toymakr3dUrls,
   makerables: makerablesUrls,
   cgtrader: cgtraderUrls,
+  grabcad: grabcadUrls,
 };
 
 export function isProviderId(value: unknown): value is ProviderId {

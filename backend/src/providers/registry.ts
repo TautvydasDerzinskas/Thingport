@@ -18,6 +18,7 @@ import pinshapeCategories from "./pinshape/categories.json";
 import toymakr3dCategories from "./toymakr3d/categories.json";
 import makerablesCategories from "./makerables/categories.json";
 import cgtraderCategories from "./cgtrader/categories.json";
+import grabcadCategories from "./grabcad/categories.json";
 import owlcadCategories from "./owlcad/categories.json";
 import {
   crealitycloudImport,
@@ -49,6 +50,7 @@ import {
   makerablesKeptId,
 } from "./makerables";
 import { cgtraderImport, cgtraderTrending, cgtraderLists, cgtraderDetails, cgtraderKeptId } from "./cgtrader";
+import { grabcadImport, grabcadTrending, grabcadLists, grabcadDetails } from "./grabcad";
 import { printablesImport, printablesTrending, printablesLists, printablesDetails } from "./printables";
 import { snapmakerImport, snapmakerTrending, snapmakerLists, snapmakerDetails } from "./snapmaker";
 import { thangsImport, thangsTrending, thangsLists, thangsDetails } from "./thangs";
@@ -70,6 +72,7 @@ import { pinshapeConnection } from "./pinshape/connection";
 import { toymakr3dConnection } from "./toymakr3d/connection";
 import { makerablesConnection } from "./makerables/connection";
 import { cgtraderConnection } from "./cgtrader/connection";
+import { grabcadConnection } from "./grabcad/connection";
 import { snapmakerConnection } from "./snapmaker/connection";
 import { thangsConnection } from "./thangs/connection";
 import { thingiverseConnection } from "./thingiverse/connection";
@@ -88,6 +91,7 @@ import { pinshapeSync } from "./pinshape/sync";
 import { toymakr3dSync } from "./toymakr3d/sync";
 import { makerablesSync } from "./makerables/sync";
 import { cgtraderSync } from "./cgtrader/sync";
+import { grabcadSync } from "./grabcad/sync";
 import { makerworldBrowse } from "./makerworld/browse";
 import { printablesBrowse } from "./printables/browse";
 import { thingiverseBrowse } from "./thingiverse/browse";
@@ -103,6 +107,7 @@ import { pinshapeBrowse } from "./pinshape/browse";
 import { toymakr3dBrowse } from "./toymakr3d/browse";
 import { makerablesBrowse } from "./makerables/browse";
 import { cgtraderBrowse } from "./cgtrader/browse";
+import { grabcadBrowse } from "./grabcad/browse";
 import type { AuthSlot } from "./index.generated";
 import type {
   ConnectionSlot,
@@ -438,6 +443,18 @@ export const PROVIDERS = {
     stopTexts: {
       blocked: `${name("cgtrader")}'s bot check turned Thingport away — set up FlareSolverr in Administration → Connections, or download something on ${siteHost("cgtrader")} with Thingport Grab`,
     },
+  },
+  grabcad: {
+    starterCategories: grabcadCategories,
+    connection: { default: grabcadConnection },
+    // Only its files are read with the sign-in; its models and anyone's likes read without one.
+    authStopText: grabSignInStop("grabcad"),
+    sourcedImport: grabcadImport,
+    lists: grabcadLists,
+    sync: grabcadSync,
+    browse: grabcadBrowse,
+    trending: grabcadTrending,
+    details: grabcadDetails,
   },
   owlcad: {
     starterCategories: owlcadCategories,

@@ -10316,5 +10316,172 @@
       "name": "Recreational Watercraft",
       "parent": "watercraft"
     }
+  ],
+  "grabcad": [
+    {
+      "id": "3d-printing",
+      "name": "3D printing",
+      "parent": null
+    },
+    {
+      "id": "aerospace",
+      "name": "Aerospace",
+      "parent": null
+    },
+    {
+      "id": "agriculture",
+      "name": "Agriculture",
+      "parent": null
+    },
+    {
+      "id": "architecture",
+      "name": "Architecture",
+      "parent": null
+    },
+    {
+      "id": "automotive",
+      "name": "Automotive",
+      "parent": null
+    },
+    {
+      "id": "aviation",
+      "name": "Aviation",
+      "parent": null
+    },
+    {
+      "id": "components",
+      "name": "Components",
+      "parent": null
+    },
+    {
+      "id": "computer",
+      "name": "Computer",
+      "parent": null
+    },
+    {
+      "id": "construction",
+      "name": "Construction",
+      "parent": null
+    },
+    {
+      "id": "educational",
+      "name": "Educational",
+      "parent": null
+    },
+    {
+      "id": "electrical",
+      "name": "Electrical",
+      "parent": null
+    },
+    {
+      "id": "energy-and-power",
+      "name": "Energy and Power",
+      "parent": null
+    },
+    {
+      "id": "fixtures",
+      "name": "Fixtures",
+      "parent": null
+    },
+    {
+      "id": "furniture",
+      "name": "Furniture",
+      "parent": null
+    },
+    {
+      "id": "hobby",
+      "name": "Hobby",
+      "parent": null
+    },
+    {
+      "id": "household",
+      "name": "Household",
+      "parent": null
+    },
+    {
+      "id": "industrial-design",
+      "name": "Industrial design",
+      "parent": null
+    },
+    {
+      "id": "interior-design",
+      "name": "Interior design",
+      "parent": null
+    },
+    {
+      "id": "jewellery",
+      "name": "Jewellery",
+      "parent": null
+    },
+    {
+      "id": "just-for-fun",
+      "name": "Just for fun",
+      "parent": null
+    },
+    {
+      "id": "machine-design",
+      "name": "Machine design",
+      "parent": null
+    },
+    {
+      "id": "marine",
+      "name": "Marine",
+      "parent": null
+    },
+    {
+      "id": "medical",
+      "name": "Medical",
+      "parent": null
+    },
+    {
+      "id": "military",
+      "name": "Military",
+      "parent": null
+    },
+    {
+      "id": "miscellaneous",
+      "name": "Miscellaneous",
+      "parent": null
+    },
+    {
+      "id": "nature",
+      "name": "Nature",
+      "parent": null
+    },
+    {
+      "id": "piping",
+      "name": "Piping",
+      "parent": null
+    },
+    {
+      "id": "robotics",
+      "name": "Robotics",
+      "parent": null
+    },
+    {
+      "id": "speedrun",
+      "name": "Speedrun",
+      "parent": null
+    },
+    {
+      "id": "sport",
+      "name": "Sport",
+      "parent": null
+    },
+    {
+      "id": "tech",
+      "name": "Tech",
+      "parent": null
+    },
+    {
+      "id": "tools",
+      "name": "Tools",
+      "parent": null
+    },
+    {
+      "id": "toys",
+      "name": "Toys",
+      "parent": null
+    }
   ]
 }
