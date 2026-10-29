@@ -15,6 +15,7 @@ import { currentMakerworldProfileTitle } from "../../providers/makerworld/pageDa
 import { CONTENT_MODULES, type ProfileScope, type ScriptState } from "../../providers/content";
 import { api, escapeHtml } from "../runtime";
 import { onPanelAction, panelQuery, panelQueryAll, renderPanel, setPanelNote } from "../shell";
+import { modelHeadHtml, modelTitle } from "./modelHead";
 import { collectionIdFor, collectionPickerHtml, readCollectionChoice, wireCollectionPicker } from "./collectionPicker";
 import { errorHtml, statusHtml, successHtml } from "./results";
 import { SHARED_SCRIPT_PANEL_NOTE_HTML, WITHHELD_SCRIPT_PANEL_NOTE_HTML } from "../scriptNote";
@@ -27,15 +28,6 @@ import {
   zipFilesPhrases,
 } from "./funStatus";
 import { MANIFESTS, manifestOf } from "../../providers/index.generated";
-
-/** Model name for pages that skip /import/inspect. The <h1> first: Thingiverse's og:title goes
- *  stale on SPA navigation and Printables' has a suffix. */
-function guessPageTitle(): string | null {
-  const h1 = document.querySelector("h1")?.textContent?.trim();
-  if (h1) return h1;
-  const og = document.querySelector<HTMLMetaElement>('meta[property="og:title"]')?.content?.trim();
-  return og || document.title.trim() || null;
-}
 
 // Several profile resolutions in a quick burst still look automated to MakerWorld.
 const PROFILE_GAP_MS = 2000;
@@ -75,8 +67,7 @@ function profileUrl(url: string, instanceId: string): string {
 }
 
 function importHeading(): string {
-  const { title } = ctx();
-  return title ? `Import "${escapeHtml(title)}"` : "Import this model";
+  return modelHeadHtml("Import to Thingport");
 }
 
 /** A card of its own above the panel, since it is about the model rather than about the import. */
@@ -116,7 +107,6 @@ function queueButtonHtml(): string {
 function onQueueAction(): void {
   onPanelAction("queue", () => {
     const choice = readCollectionChoice();
-    if (choice === "missing-name") return;
     const scope = selectedProfileScope();
     void collectionIdFor(choice).then((collectionId) => runQueueImport(scope, collectionId));
   });
@@ -153,7 +143,7 @@ export async function loadSingleItem(): Promise<void> {
 
   let zipFilename: string | null = null;
   if (skipInspect) {
-    ctx().title = guessPageTitle();
+    ctx().title = modelTitle();
   } else {
     try {
       const inspect = await api<InspectResult>("POST", "/import/inspect", { url: ctx().url });
@@ -167,7 +157,7 @@ export async function loadSingleItem(): Promise<void> {
 
   if (zipFilename === null) {
     renderPanel(`
-      <div class="tg-title">${importHeading()}</div>
+      ${importHeading()}
       ${await profilesPickerHtml()}
       ${await collectionPickerHtml()}
       <button class="tg-btn" type="button" data-action="import">Import</button>
@@ -180,7 +170,7 @@ export async function loadSingleItem(): Promise<void> {
   }
 
   renderPanel(`
-    <div class="tg-title">${importHeading()}</div>
+    ${importHeading()}
     <div class="tg-hint">${escapeHtml(zipFilename)} contains multiple files.</div>
     ${await collectionPickerHtml()}
     <button class="tg-btn" type="button" data-action="import-as-zip">Import as one model</button>
@@ -203,7 +193,7 @@ function addProfileHtml(profilesPicker: string): string {
       ? `You already have this model. Add ${profileLabel} as another file on it?`
       : `This model is in your library. Add ${profileLabel} if you don't have it yet -- if one of the model's files already is this profile, nothing is downloaded twice.`;
   return `
-    <div class="tg-title">In your library</div>
+    ${modelHeadHtml("In your library")}
     <div class="tg-hint">${hint}</div>
     ${profilesPicker}
     <button class="tg-btn" type="button" data-action="import">Add profile</button>
@@ -241,7 +231,7 @@ function fillGapsHtml(): string {
   const { library, classification } = ctx();
   const gaps = library?.gaps ?? [];
   return `
-    <div class="tg-title">In your library</div>
+    ${modelHeadHtml("In your library")}
     <div class="tg-hint">This model is missing its ${escapeHtml(gapList(gaps))}. Fetch them from ${SITE_NAMES[classification.provider]}? Nothing you've already filled in is changed.</div>
     ${fillGapsButtonHtml()}
     <a class="tg-btn tg-btn--secondary" href="${escapeHtml(libraryModelLink())}" target="_blank" rel="noopener noreferrer">Open model in Thingport</a>
@@ -308,7 +298,6 @@ async function loadZipEntries(): Promise<void> {
 async function runDirectImport(opts?: { entries?: string[] }): Promise<void> {
   // Captured up front: SPA navigation clears the context mid-import.
   const choice = readCollectionChoice();
-  if (choice === "missing-name") return;
   const scope = selectedProfileScope();
   if (ctx().classification.provider === MANIFESTS.makeronline.id) {
     await runMakeronlineImport(scope, await collectionIdFor(choice));

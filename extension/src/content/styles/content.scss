@@ -13,6 +13,8 @@
 :host {
   color-scheme: light dark;
   @include t.themed;
+  // Square on the dark theme, as the app is; the floating icon and the other circles are drawn as 50%.
+  @include t.squared-in-dark;
 }
 
 // The icon's hexagon outline is near-black in the source SVG: follow the text color, so it shows on dark.

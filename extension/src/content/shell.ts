@@ -10,6 +10,7 @@ const HOST_ID = "thingport-grab-host";
 
 let shadowRoot: ShadowRoot | null = null;
 let stackEl: HTMLDivElement | null = null;
+let fabBodyEl: HTMLElement | null = null;
 let panelEl: HTMLDivElement | null = null;
 let contentEl: HTMLDivElement | null = null;
 let noteEl: HTMLDivElement | null = null;
@@ -33,6 +34,9 @@ export function unmountHost(): void {
   document.getElementById(HOST_ID)?.remove();
   shadowRoot = null;
   stackEl = null;
+  fabBodyEl = null;
+  panelOpen = false;
+  window.clearTimeout(closeTimer);
   panelEl = null;
   contentEl = null;
   noteEl = null;
@@ -69,6 +73,7 @@ export function mountFab(root: ShadowRoot, { variant, label, title, onClick }: F
     () => undefined,
   );
   button.appendChild(body);
+  fabBodyEl = body;
   button.addEventListener("click", onClick);
   root.appendChild(button);
   attachMagnet(button, body, {
@@ -127,7 +132,7 @@ export function mountPanel(root: ShadowRoot, onFirstOpen: () => void): () => voi
   contentEl = content;
   let loaded = false;
   return () => {
-    const open = stack.hidden;
+    const open = !panelOpen;
     setPanelOpen(open);
     if (open && !loaded) {
       loaded = true;
@@ -136,8 +141,51 @@ export function mountPanel(root: ShadowRoot, onFirstOpen: () => void): () => voi
   };
 }
 
+// Long enough for tg-panel-suck to finish; the panel is only hidden once it has.
+const CLOSE_MS = 200;
+
+let panelOpen = false;
+let closeTimer: number | undefined;
+
+const stillMotion = (): boolean => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** The icon reacts to the panel coming out of it and going back in: it squashes as it lets go, and swells as it
+ *  takes it back. A nudge to --tg-press rides the blob's own spring (see styles/_fab.scss), rather than animating
+ *  its transform, which the magnet is already driving. */
+function bumpFab(press: number): void {
+  const body = fabBodyEl;
+  if (!body || stillMotion()) return;
+  body.style.setProperty("--tg-press", String(press));
+  window.setTimeout(() => body.style.removeProperty("--tg-press"), 140);
+}
+
+/** The panel is spat out of the floating icon and sucked back into it, so it reads as the icon's own: the stack
+ *  scales out of the icon's centre (styles/_panel.scss sets the origin there). */
 export function setPanelOpen(open: boolean): void {
-  if (stackEl) stackEl.hidden = !open;
+  const stack = stackEl;
+  if (!stack || open === panelOpen) return;
+  panelOpen = open;
+  window.clearTimeout(closeTimer);
+  stack.classList.remove("tg-panel-stack--opening", "tg-panel-stack--closing");
+  if (open) {
+    stack.hidden = false;
+    // Reopened mid-close, the animation would otherwise carry on from where it was.
+    void stack.offsetWidth;
+    stack.classList.add("tg-panel-stack--opening");
+    bumpFab(0.88);
+    return;
+  }
+  if (stillMotion()) {
+    stack.hidden = true;
+    return;
+  }
+  void stack.offsetWidth;
+  stack.classList.add("tg-panel-stack--closing");
+  bumpFab(1.14);
+  closeTimer = window.setTimeout(() => {
+    stack.hidden = true;
+    stack.classList.remove("tg-panel-stack--closing");
+  }, CLOSE_MS);
 }
 
 /**

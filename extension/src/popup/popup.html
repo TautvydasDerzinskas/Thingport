@@ -74,6 +74,28 @@
       <div class="tab-panel" role="tabpanel" id="panel-connect" aria-labelledby="tab-connect">
         <section id="configured-view" hidden>
           <div class="section">
+            <div class="sites__head">
+              <span class="sites__count" id="sites-count"></span>
+              <button
+                type="button"
+                class="text-btn"
+                id="sites-enable-all"
+                title="Asks your browser for access to every site Grab can import from"
+                hidden
+              >
+                Enable all
+              </button>
+            </div>
+            <!-- The provider whose site the active tab is on, lifted out of the grid below (popup/sites.ts). -->
+            <div class="featured" id="featured" hidden>
+              <div class="featured__head">
+                <span class="featured__logo" id="featured-logo"></span>
+                <span class="featured__name" id="featured-name"></span>
+                <span class="featured__here">this site</span>
+                <span class="featured__status" id="featured-status"></span>
+              </div>
+              <p class="featured__desc" id="featured-desc"></p>
+            </div>
             <ul class="sites" id="sites-list" aria-label="Providers"></ul>
           </div>
           <div class="error" id="configured-error" role="alert"></div>

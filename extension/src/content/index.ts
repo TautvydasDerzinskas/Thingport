@@ -26,7 +26,7 @@ import {
   WITHHELD_SCRIPT_NOTE_HTML,
 } from "./scriptNote";
 import { mountFab, mountFabNote, mountHost, mountPanel, renderPanel, setPanelOpen, unmountHost } from "./shell";
-import { manifestOf } from "../providers/index.generated";
+import { manifestOf, providerOfHost } from "../providers/index.generated";
 
 declare global {
   interface Window {
@@ -39,6 +39,15 @@ let initToken = 0;
 
 function reportTabIconState(active: boolean): void {
   void send("SET_TAB_ICON_STATE", { active });
+}
+
+// Which provider's site this is, so the popup can put it above the rest -- it has no way to read the address itself
+// (background/providerTab.ts). Said again whenever the tab comes back to the front, so the note is there even if
+// something cleared it meanwhile. Not part of init(): it holds for every page of the site, importable or not,
+// whether or not Grab is set up.
+function reportProviderSite(): void {
+  const provider = providerOfHost(location.hostname);
+  if (provider) void send("NOTE_PROVIDER_TAB", { provider });
 }
 
 function unmount(): void {
@@ -259,6 +268,11 @@ if (!window.thingportGrabInjected) {
     },
   });
 
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) reportProviderSite();
+  });
+
   installNavigationWatcher();
+  reportProviderSite();
   void init();
 }

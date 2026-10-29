@@ -190,7 +190,9 @@ Open an issue first, then:
 1. **`providers/<id>/manifest.ts`**. The id is stored in the database and sent by clients, so it never changes. Its
    Grab site is `"optional"`: new built-in host access would switch Grab off for every user until they approve it.
 2. **`providers/<id>/urls.ts`**, with cases in `urls.fixtures.json`, and **`providers/<id>/docs.ts`**: the providers
-   page's list line and table cells, and the website description.
+   page's list line and table cells, the website description, and `about` -- two or three sentences on the site itself
+   (who runs it, where it came from, what it's known for, not what Thingport does with it), which Thingport Grab's
+   popup shows for the site you're on.
 3. **`npm run providers:sync`** writes the generated files listed above.
 4. **Backend**, `backend/src/providers/<id>/`: `api.ts`, `index.ts`, `session.ts` and `connection.ts` for a sign-in,
    `browse.ts` and `sync.ts` for its lists, and `categories.json`. Add its entry to `PROVIDERS` in

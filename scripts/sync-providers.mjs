@@ -26,6 +26,8 @@ const BUILTIN_SITES = ["makerworld", "printables", "thingiverse"];
 const PROVIDER_FILES = ["manifest.ts", "urls.ts"];
 const DOCS_LOGOS = "docs/assets/providers";
 const SETUP_PAGE = "docs/PROVIDER_SETUP.md";
+// docs.ts `about` is shown in a card in Grab's popup, which is 380px wide: longer than this and it stops fitting.
+const ABOUT_MAX_CHARS = 240;
 const WEB_DOCS = "web/src/lib/providers.generated.mjs";
 
 /** `file.ts` as its copy is named. */
@@ -62,6 +64,8 @@ async function loadManifests() {
   }
   const cookies = manifests.filter((m) => m.extension.cookies && m.extension.site !== "builtin").map((m) => m.id);
   if (cookies.length) throw new Error(`Only built-in sites take cookies in the manifest, not ${cookies.join(", ")}`);
+  const tooLong = manifests.filter((manifest) => manifest.docs.about.length > ABOUT_MAX_CHARS).map((m) => m.id);
+  if (tooLong.length) throw new Error(`docs.ts "about" is over ${ABOUT_MAX_CHARS} characters: ${tooLong.join(", ")}`);
   const ranks = manifests.flatMap((manifest) =>
     manifest.capabilities.trending ? [manifest.capabilities.trending.rank] : [],
   );
@@ -101,6 +105,14 @@ export const PROVIDER_IDS = [${ids.map((id) => JSON.stringify(id)).join(", ")}] 
 export type ProviderId = (typeof PROVIDER_IDS)[number];
 
 export const MANIFESTS = { ${ids.join(", ")} } as const;
+
+/** What each site is, in two or three sentences (providers/<id>/docs.ts), for the UI that introduces a provider
+ *  rather than listing it: Thingport Grab's popup, which shows it for the site the user is on. */
+export const ABOUT: { readonly [K in ProviderId]: string } = ${JSON.stringify(
+    Object.fromEntries(manifests.map((m) => [m.id, m.docs.about])),
+    null,
+    2,
+  )};
 
 /** The providers with a list for the dashboard's trending panel, in the panel's order. */
 export const TRENDING_PROVIDER_IDS = [${trending.map((id) => JSON.stringify(id)).join(", ")}] as const;

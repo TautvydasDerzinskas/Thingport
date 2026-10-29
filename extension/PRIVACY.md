@@ -53,6 +53,10 @@ instance or account, so the new one has to be told.
   to your Thingport instance, so it's only sent again when it changes.
 - **Your Makerables sign-in (its `__session` cookie, which the site splits across `__session__0`, `__session__1`, …
   when it outgrows one),** as last sent to your Thingport instance, so it's only sent again when it changes.
+- **Which site each tab is on:** for every open tab showing one of the sites above, that site's name and the
+  browser's number for the tab, so the popup can put the site you're looking at first -- it can't read the
+  address of your tab itself. No address is kept, only which of the supported sites it is. A tab's entry is
+  deleted as soon as it goes to another page or is closed, and all of them when the browser starts.
 - **Recently viewed:** the address, title and picture link of the last 10 model pages you opened on the sites the
   extension runs on, shown in its popup's **History** tab. They're kept in this browser only, never synced or sent
   anywhere; **Clear** in that tab deletes them.
