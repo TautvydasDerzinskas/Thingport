@@ -3,7 +3,7 @@ import type { PreviewImage } from "../../api/prints";
 type Pictured = {
   thumb_url?: string | null;
   thumb_generated?: boolean;
-  own_colors?: boolean;
+  plates?: { own_colors?: boolean }[];
   preview_images?: PreviewImage[];
 };
 
@@ -15,9 +15,12 @@ type Pictured = {
  * project, a script's `color()` calls -- is drawn in them too, and that picture, its cover, is the model as it
  * would come off the plate: the thing someone looking at pictures wants. The grey render beside it is what the
  * renders view tints, so a list of renders still reads as one set (see backend previewImageService.ts).
+ *
+ * The first plate's colours, not any plate's: the cover is made from whichever plate renders first, and only the
+ * first plate's colour picture replaces a grey one, so another plate's colours say nothing about the cover.
  */
 export function ownPictureUrl(print: Pictured): string | null {
   if (print.thumb_url && !print.thumb_generated) return print.thumb_url;
   const cover = print.preview_images?.[0];
-  return print.own_colors && cover?.generated ? cover.url : null;
+  return print.plates?.[0]?.own_colors && cover?.generated ? cover.url : null;
 }
