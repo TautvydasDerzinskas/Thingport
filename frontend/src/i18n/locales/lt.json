@@ -1830,6 +1830,7 @@
           "model_edited": "Modelis redaguotas",
           "model_reimported": "Gauta trūkstama informacija",
           "model_deleted": "Modelis ištrintas",
+          "models_repaired": "Modelių taisymas",
           "collection_created": "Kolekcija sukurta",
           "collection_edited": "Kolekcija redaguota",
           "collection_deleted": "Kolekcija ištrinta",
@@ -1873,7 +1874,8 @@
         "aiRunSummary": "Patikrinta {{done}} iš {{total}} — pasiūlyta {{suggested}}, pritaikyta {{applied}}, nepavyko {{failed}}",
         "aiRunStopped": "(sustabdyta)",
         "viaProvider": "per {{provider}}",
-        "merged": "{{merged}} → {{name}}"
+        "merged": "{{merged}} → {{name}}",
+        "repairSummary": "{{action}}: pataisyta {{repaired}}, ištrinta {{deleted}}, nepavyko {{failed}}"
       },
       "rendering": {
         "heading": "Atvaizdavimas",
@@ -2906,6 +2908,100 @@
       "badShape": "Užrašai — tai paprastas objektas, siejantis raktus su tekstu, pvz. { \"save\": \"Įrašyti\" }.",
       "removeTitle": "Pašalinti {{name}} užrašus?",
       "removeBody": "Failas ir jo žodžiai dings. Kitos kalbos liks."
+    },
+    "missingFiles": {
+      "title": "Kai kurie modeliai neberanda savo failų",
+      "lead_one": "1 bibliotekos modelis diske nebeturi nė vieno failo — nei modelio failų, nei paveikslėlių. Kol failai negrįš, jo nebus galima atverti, spausdinti ar atsisiųsti.",
+      "lead_other": "{{count}} bibliotekos modelių diske nebeturi nė vieno failo — nei modelio failų, nei paveikslėlių. Kol failai negrįš, jų nebus galima atverti, spausdinti ar atsisiųsti.",
+      "leadHelp": "Thingport modelio failus laiko saugyklos kataloge, o duomenų bazėje — tik modelio aprašą. Perkėlus kopiją be to katalogo arba netyčia jį ištrynus, aprašai lieka be failų. Failus iš svetainės, iš kurios modelis atkeliavo, galima atsisiųsti iš naujo: visa kita — pavadinimai, žymos, kolekcijos, mėgstami — lieka kaip buvo.",
+      "notNow": "Ne dabar",
+      "checking": "Peržiūrimi modeliai…",
+      "allWell": "Visi modeliai turi savo failus",
+      "allWellDetail_one": "Patikrintas 1 modelis.",
+      "allWellDetail_few": "Patikrinti {{count}} modeliai.",
+      "allWellDetail_other": "Patikrinta {{count}} modelių.",
+      "checkAgain": "Tikrinti dar kartą",
+      "stats": {
+        "broken": "Be failų",
+        "server": "Thingport gali atsiųsti",
+        "grab": "Reikia Grab",
+        "noSource": "Įkelti"
+      },
+      "fromSites": "Iš kur jie atkeliavo",
+      "whatNow": "Ką daryti",
+      "manyWarning_one": "Vienas modelis — greitas darbas.",
+      "manyWarning_few": "{{count}} modeliai iš karto — nemažai: svetainės gali paprašyti sulėtinti ar palūkėti, todėl gali užtrukti. Darbas vyksta fone, jį galima bet kada nutraukti.",
+      "manyWarning_other": "{{count}} modelių iš karto — nemažai: svetainės gali paprašyti sulėtinti ar palūkėti, todėl gali užtrukti. Darbas vyksta fone, jį galima bet kada nutraukti.",
+      "alreadyRunning": "Taisymas jau vyksta.",
+      "startFailed": "Nepavyko pradėti taisymo.",
+      "actions": {
+        "reimport": {
+          "title": "Atsiųsti trūkstamus failus",
+          "detail_one": "Iš naujo atsiunčia 1 modelio failus iš svetainės, iš kurios jis atkeliavo. Pavadinimas, žymos, kolekcijos ir mėgstamų žymė lieka kaip buvo.",
+          "detail_few": "Iš naujo atsiunčia {{count}} modelių failus iš svetainių, iš kurių jie atkeliavo. Pavadinimai, žymos, kolekcijos ir mėgstamų žymės lieka kaip buvo.",
+          "detail_other": "Iš naujo atsiunčia {{count}} modelių failus iš svetainių, iš kurių jie atkeliavo. Pavadinimai, žymos, kolekcijos ir mėgstamų žymės lieka kaip buvo.",
+          "none": "Nė vienas iš šių modelių neturi svetainės, iš kurios būtų galima atsiųsti."
+        },
+        "delete": {
+          "title": "Ištrinti šiuos modelius",
+          "detail_one": "Negrįžtamai pašalina 1 modelį su jo aprašu, žymomis ir įrašais kolekcijose.",
+          "detail_few": "Negrįžtamai pašalina {{count}} modelius su jų aprašais, žymomis ir įrašais kolekcijose.",
+          "detail_other": "Negrįžtamai pašalina {{count}} modelių su jų aprašais, žymomis ir įrašais kolekcijose."
+        }
+      },
+      "confirm": {
+        "reimport": {
+          "title_one": "Atsiųsti 1 modelio failus?",
+          "title_few": "Atsiųsti {{count}} modelių failus?",
+          "title_other": "Atsiųsti {{count}} modelių failus?",
+          "message_one": "Thingport atsiųs modelio failus iš svetainės, iš kurios jis atkeliavo. Daugiau nieko nepasikeis, o jei svetainės nepavyks pasiekti, modelis liks lygiai toks, koks yra dabar.",
+          "message_few": "Thingport po vieną atsiųs kiekvieno modelio failus iš svetainės, iš kurios jis atkeliavo. Daugiau nieko nepasikeis, o modeliai, kurių svetainės nepavyks pasiekti, liks lygiai tokie, kokie yra dabar.",
+          "message_other": "Thingport po vieną atsiųs kiekvieno modelio failus iš svetainės, iš kurios jis atkeliavo. Daugiau nieko nepasikeis, o modeliai, kurių svetainės nepavyks pasiekti, liks lygiai tokie, kokie yra dabar.",
+          "queued_one": "Dar 1 modelis lauks, kol Thingport Grab apsilankys svetainėje, iš kurios jo failai.",
+          "queued_few": "Dar {{count}} modeliai lauks, kol Thingport Grab apsilankys svetainėse, iš kurių jų failai.",
+          "queued_other": "Dar {{count}} modelių lauks, kol Thingport Grab apsilankys svetainėse, iš kurių jų failai.",
+          "confirm": "Atsiųsti failus"
+        },
+        "delete": {
+          "title_one": "Ištrinti 1 modelį?",
+          "title_few": "Ištrinti {{count}} modelius?",
+          "title_other": "Ištrinti {{count}} modelių?",
+          "message_one": "Veiksmo nebus galima atšaukti. Modelis, jo aprašas, žymos ir įrašai kolekcijose bus pašalinti negrįžtamai. Paliečiamas tik modelis be failų.",
+          "message_few": "Veiksmo nebus galima atšaukti. Visi {{count}} modeliai, jų aprašai, žymos ir įrašai kolekcijose bus pašalinti negrįžtamai. Paliečiami tik modeliai be failų.",
+          "message_other": "Veiksmo nebus galima atšaukti. Visi {{count}} modelių, jų aprašai, žymos ir įrašai kolekcijose bus pašalinti negrįžtamai. Paliečiami tik modeliai be failų.",
+          "confirm": "Ištrinti modelius"
+        }
+      }
+    },
+    "modelRepairProgress": {
+      "stop": "Nutraukti taisymą",
+      "stopping": "Baigiama su dabartiniu modeliu…",
+      "reimport": {
+        "starting": "Ruošiamasi atsiųsti trūkstamus failus…",
+        "label": "{{phrase}} {{done}} iš {{total}}",
+        "phrases": [
+          "Atsiunčiami trūkstami failai…",
+          "Prašoma to STL atgal…",
+          "Modeliai thingportinami iš naujo…",
+          "Renkami 3MF iš pirminio šaltinio…",
+          "Failai grąžinami prie savo modelių…",
+          "Ieškoma to, kas pasiliko po perkėlimo…",
+          "Tuščios lentynos pildomos vėl…",
+          "Beldžiama dizainerio durimis…"
+        ]
+      },
+      "delete": {
+        "starting": "Ruošiamasi trinti modelius…",
+        "label": "{{phrase}} {{done}} iš {{total}}",
+        "phrases": [
+          "Trinami modeliai be failų…",
+          "Išnešamos tuščios dėžės…",
+          "Tvarkoma tai, ko nebėra…",
+          "Išvežamos atliekos…",
+          "Nušluostoma tuščia lentyna…",
+          "Atsisveikinama su šmėklomis…"
+        ]
+      }
     }
   },
   "common": {
@@ -4198,7 +4294,8 @@
       }
     },
     "manager": {
-      "title": "Kategorijų ir aplankų tvarkymas"
+      "title": "Kategorijų ir aplankų tvarkymas",
+      "repair": "Taisymas"
     },
     "selection": {
       "enter": "Žymėti modelius",

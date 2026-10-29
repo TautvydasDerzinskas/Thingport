@@ -131,8 +131,14 @@ export async function updatePrintMeta(userId: string, printId: string, meta: Pri
 }
 
 /** Deletes the model with its files and pictures, for good. */
-/** `quiet` for a model the user never chose to delete, such as one a tool brought, which goes with the tool. */
-export async function deletePrint(userId: string, printId: string, { quiet = false } = {}): Promise<void> {
+/** `quiet` for a model the user never chose to delete, such as one a tool brought, which goes with the tool.
+ *  `prune: false` for a caller deleting many at once, which reads what's left over once at the end instead of
+ *  after every model. */
+export async function deletePrint(
+  userId: string,
+  printId: string,
+  { quiet = false, prune = true } = {},
+): Promise<void> {
   const full = await loadFullPrint(userId, printId);
   // Only the tool's uninstall, quietly, removes a model a tool brought.
   if (!quiet) assertNotToolModel(full.print);
@@ -146,7 +152,7 @@ export async function deletePrint(userId: string, printId: string, { quiet = fal
     await removePlatePictures(plate.id, full.print.assetsPath);
   }
   await removeAssetHome(full.print.assetsPath, assetOwners);
-  await pruneWhatModelsLeft(userId, [{ authorId: full.print.authorId, tags: full.print.tags }]);
+  if (prune) await pruneWhatModelsLeft(userId, [{ authorId: full.print.authorId, tags: full.print.tags }]);
   if (quiet) return;
   void recordActivity(userId, "delete", printId, full.print.name);
   void createLog({

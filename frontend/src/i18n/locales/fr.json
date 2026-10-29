@@ -1797,6 +1797,7 @@
           "model_edited": "Modèle modifié",
           "model_reimported": "Détails manquants récupérés",
           "model_deleted": "Modèle supprimé",
+          "models_repaired": "Modèles réparés",
           "collection_created": "Collection créée",
           "collection_edited": "Collection modifiée",
           "collection_deleted": "Collection supprimée",
@@ -1838,7 +1839,8 @@
         "aiRunSummary": "{{done}} sur {{total}} vérifiés — {{suggested}} suggérés, {{applied}} appliqués, {{failed}} en échec",
         "aiRunStopped": "(arrêtée)",
         "viaProvider": "via {{provider}}",
-        "merged": "{{merged}} → {{name}}"
+        "merged": "{{merged}} → {{name}}",
+        "repairSummary": "{{action}} : {{repaired}} réparés, {{deleted}} supprimés, {{failed}} en échec"
       },
       "rendering": {
         "heading": "Rendu",
@@ -2844,6 +2846,91 @@
       "badShape": "Les libellés sont un objet plat de clés vers du texte, comme { \"save\": \"Enregistrer\" }.",
       "removeTitle": "Retirer les libellés en {{name}} ?",
       "removeBody": "Le fichier et ses mots disparaissent. Les autres langues restent."
+    },
+    "missingFiles": {
+      "title": "Certains modèles ont perdu leurs fichiers",
+      "lead_one": "1 modèle de votre bibliothèque n'a plus aucun fichier sur le disque — ni les fichiers du modèle, ni les images. Il ne peut pas être ouvert, imprimé ni téléchargé avant leur retour.",
+      "lead_other": "{{count}} modèles de votre bibliothèque n'ont plus aucun fichier sur le disque — ni les fichiers des modèles, ni les images. Ils ne peuvent pas être ouverts, imprimés ni téléchargés avant le retour des fichiers.",
+      "leadHelp": "Thingport garde les fichiers d'un modèle dans son dossier de stockage et seulement les informations du modèle dans la base de données. Une instance déplacée sans ce dossier, ou un dossier supprimé par accident, laisse les informations sans rien derrière. Retélécharger les fichiers depuis le site d'origine de chaque modèle les remet en place et laisse tout le reste — noms, étiquettes, collections, favoris — tel quel.",
+      "notNow": "Pas maintenant",
+      "checking": "Examen de vos modèles…",
+      "allWell": "Chaque modèle a ses fichiers",
+      "allWellDetail_one": "1 modèle vérifié.",
+      "allWellDetail_other": "{{count}} modèles vérifiés.",
+      "checkAgain": "Vérifier à nouveau",
+      "stats": {
+        "broken": "Sans fichiers",
+        "server": "Thingport peut récupérer",
+        "grab": "Nécessitent Grab",
+        "noSource": "Téléversés"
+      },
+      "fromSites": "D'où ils viennent",
+      "whatNow": "Que faire",
+      "manyWarning_one": "Un seul modèle : l'affaire d'un instant.",
+      "manyWarning_other": "{{count}} modèles d'un coup, c'est beaucoup : les sites peuvent demander à Thingport de ralentir ou d'attendre, cela peut donc prendre du temps. L'opération tourne en arrière-plan et vous pouvez l'arrêter à tout moment.",
+      "alreadyRunning": "Une réparation est déjà en cours.",
+      "startFailed": "Impossible de lancer la réparation.",
+      "actions": {
+        "reimport": {
+          "title": "Récupérer les fichiers manquants",
+          "detail_one": "Retélécharge les fichiers de 1 modèle depuis le site dont il vient. Son nom, ses étiquettes, ses collections et son favori restent inchangés.",
+          "detail_other": "Retélécharge les fichiers de {{count}} modèles depuis les sites dont ils viennent. Noms, étiquettes, collections et favoris restent inchangés.",
+          "none": "Aucun de ces modèles n'a de site d'où récupérer les fichiers."
+        },
+        "delete": {
+          "title": "Supprimer ces modèles",
+          "detail_one": "Retire définitivement 1 modèle de la bibliothèque, avec ses informations, ses étiquettes et ses entrées de collection.",
+          "detail_other": "Retire définitivement {{count}} modèles de la bibliothèque, avec leurs informations, leurs étiquettes et leurs entrées de collection."
+        }
+      },
+      "confirm": {
+        "reimport": {
+          "title_one": "Récupérer les fichiers de 1 modèle ?",
+          "title_other": "Récupérer les fichiers de {{count}} modèles ?",
+          "message_one": "Thingport télécharge les fichiers du modèle depuis le site dont il vient. Rien d'autre ne change, et si le site est injoignable le modèle reste exactement tel qu'il est.",
+          "message_other": "Thingport télécharge les fichiers de chaque modèle depuis le site dont il vient, un par un. Rien d'autre ne change, et tout modèle dont le site est injoignable reste exactement tel qu'il est.",
+          "queued_one": "1 modèle de plus attendra que Thingport Grab passe sur le site dont viennent ses fichiers.",
+          "queued_other": "{{count}} modèles de plus attendront que Thingport Grab passe sur les sites dont viennent leurs fichiers.",
+          "confirm": "Récupérer les fichiers"
+        },
+        "delete": {
+          "title_one": "Supprimer 1 modèle ?",
+          "title_other": "Supprimer {{count}} modèles ?",
+          "message_one": "Cette action est irréversible. Le modèle, ses informations, ses étiquettes et ses entrées de collection sont supprimés définitivement. Seul le modèle sans fichiers est touché.",
+          "message_other": "Cette action est irréversible. Les {{count}} modèles, leurs informations, leurs étiquettes et leurs entrées de collection sont supprimés définitivement. Seuls les modèles sans fichiers sont touchés.",
+          "confirm": "Supprimer les modèles"
+        }
+      }
+    },
+    "modelRepairProgress": {
+      "stop": "Arrêter la réparation",
+      "stopping": "Arrêt après le modèle en cours…",
+      "reimport": {
+        "starting": "Préparation de la récupération des fichiers manquants…",
+        "label": "{{phrase}} {{done}} sur {{total}}",
+        "phrases": [
+          "Récupération des fichiers manquants…",
+          "On redemande ce STL…",
+          "Vos modèles repassent par le portail…",
+          "Collecte des 3MF à la source…",
+          "Les fichiers retrouvent leurs modèles…",
+          "Recherche de ce que le déménagement a laissé…",
+          "Les étagères vides se remplissent…",
+          "On frappe à la porte du créateur…"
+        ]
+      },
+      "delete": {
+        "starting": "Préparation de la suppression des modèles…",
+        "label": "{{phrase}} {{done}} sur {{total}}",
+        "phrases": [
+          "Suppression des modèles sans fichiers…",
+          "On sort les cartons vides…",
+          "On range ce qui n'est plus là…",
+          "On descend le recyclage…",
+          "On dépoussière l'étagère vide…",
+          "On dit au revoir aux fantômes…"
+        ]
+      }
     }
   },
   "common": {
@@ -4077,7 +4164,8 @@
       }
     },
     "manager": {
-      "title": "Gérer les catégories et les dossiers"
+      "title": "Gérer les catégories et les dossiers",
+      "repair": "Réparer"
     },
     "selection": {
       "enter": "Sélectionner des modèles",

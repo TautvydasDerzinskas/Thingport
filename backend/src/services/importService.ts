@@ -62,6 +62,8 @@ import {
   completeMakerworldAuthor,
 } from "../providers/makerworld/api";
 import { openSourceGaps, type SourceGap } from "./sourceGaps";
+import { replaceModelPlates } from "./modelFilesReplace";
+import { modelFilesMissing } from "./missingFilesService";
 
 /** An import refused because the user's MyMiniFactory session has expired. */
 export const MYMINIFACTORY_SESSION_CODE = MANIFESTS.myminifactory.errorCodes.session;
@@ -92,7 +94,7 @@ import {
   type PrintMetaInput,
 } from "./printCreation";
 import { availablePlateFilename, relocatePrint, saveThumbFromBytes } from "./printService";
-import { addPreviewImage, preferImageOverRenders } from "./previewImageService";
+import { addPreviewImage, deleteAllPreviewImages, preferImageOverRenders } from "./previewImageService";
 import { localizeDescriptionImages } from "./descriptionImageService";
 import { sha256OfFile } from "./fileReuse";
 import { DROP } from "./storedContent";
@@ -303,7 +305,7 @@ async function renameProfilePlates(printId: string, renames: { plate: Plate; fil
 /** Puts each profile's own picture on its plate, in place of the 3MF's embedded thumbnail: designers often ship every
  *  profile with the same one, so the profiles would all look alike. Only `instanceIds` when given. Best-effort; never
  *  throws. */
-async function applyProfileCovers(
+export async function applyProfileCovers(
   printId: string,
   covers: Record<string, string> | undefined,
   instanceIds?: string[],
@@ -1184,6 +1186,16 @@ const IMPORT_KIT: PipelineKit = {
     return profileAdded ? { ...current, alreadyImported: false, profileAdded } : { ...current, alreadyImported: true };
   },
   profileDetails: profileDetailsOf,
+  filesMissing: (existing) => modelFilesMissing(existing.plates),
+  async replaceFiles(existing, inputs, resolved, details) {
+    const { print, plates, previewImages } = await replaceModelFiles(existing.print.userId, existing.print.id, {
+      inputs: nameInputsApart(inputs, details.titles),
+      coverImageUrl: resolved?.meta.previewImageUrl ?? null,
+      galleryImages: resolved?.galleryImages ?? [],
+      profiles: details,
+    });
+    return { print, plates, previewImages, author: existing.author, alreadyImported: false };
+  },
 };
 
 /** A new print from a provider on the shared pipeline: its sign-in, the model, the profile the link names (or the
@@ -1417,4 +1429,103 @@ async function rawFilesZipContents(
   // zip itself stands in as the model's file, and removing it would leave that pointing at nothing.
   if (plates.length) await fs.rm(tempPath, { force: true }).catch(() => undefined);
   return { plates, sources };
+}
+
+/** A model's files, downloaded without a print to put them on: what a repair needs when the row is already there
+ *  and only its files are gone (services/modelRepairService.ts). The pictures come with them, since a model whose
+ *  files went usually lost its pictures to the same accident. The caller removes the temp files. */
+export type DownloadedModelFiles = {
+  inputs: NewPlateInput[];
+  coverImageUrl: string | null;
+  galleryImages: { url: string; filename: string }[];
+  /** Named apart by profile where the provider's files come alike, as a new print's would be. */
+  profiles: ProfileDetails;
+};
+
+/** For a provider on the shared pipeline: its sign-in, the model, then its own pick of files. */
+export async function downloadSourcedModelFiles(
+  userId: string,
+  externalId: string,
+  impl: SourcedImport,
+): Promise<DownloadedModelFiles> {
+  const auth = await impl.requireAuth(userId);
+  let resolved: ResolvedModel | null;
+  try {
+    resolved = await impl.resolveModel(externalId, auth);
+  } catch (err) {
+    throw await impl.mapError(userId, err);
+  }
+  if (!resolved) throw new HttpError(404, impl.missingMessage);
+  let downloaded: NewPlateInput[];
+  try {
+    downloaded = await impl.downloadModel({ userId, externalId }, resolved, auth, null, IMPORT_KIT);
+  } catch (err) {
+    throw await impl.mapError(userId, err);
+  }
+  if (!downloaded.length) throw new HttpError(400, impl.noFilesMessage);
+  const profiles = profileDetailsOf(resolved.profiles ?? [], { names: impl.profiles?.namedAlike ?? true });
+  return {
+    inputs: nameInputsApart(downloaded, profiles.titles),
+    coverImageUrl: resolved.meta.previewImageUrl ?? null,
+    galleryImages: resolved.galleryImages,
+    profiles,
+  };
+}
+
+/** For the link import (MakerWorld, and any other page or file link): whatever the link downloads to, unpacked the
+ *  same way a new import would unpack it. */
+export async function downloadLinkedModelFiles(url: string, body: ImportRequestBody): Promise<DownloadedModelFiles> {
+  const source = identifySourceModel(url);
+  const { tempPath, filename, mime, meta } = await downloadImportToTemp(url, body);
+  let plates: NewPlateInput[] = [];
+  let sources: NewPlateInput[] = [];
+  try {
+    ({ plates, sources } = await rawFilesZipContents(source, tempPath, filename));
+  } catch (err) {
+    await fs.rm(tempPath, { force: true }).catch(() => undefined);
+    throw err;
+  }
+  if (!plates.length) {
+    plates = [{ filename, mime, tempFilePath: tempPath, sourceInstanceId: meta.makerworldProfile?.instanceId ?? null }];
+  }
+  if (!sources.length) sources = await fetchParametricSources(meta.parametricSource);
+  const profiles = makerworldProfileDetails(meta.makerworldProfile);
+  return {
+    inputs: nameInputsApart([...plates, ...sources], profiles.titles),
+    coverImageUrl: meta.previewImageUrl ?? null,
+    galleryImages: meta.galleryImages,
+    profiles,
+  };
+}
+
+/** Puts downloaded files on a model whose own are gone, in place of them, and brings its pictures back when they
+ *  went too: the repair of a model that is already in the library (services/modelRepairService.ts). Everything
+ *  else about the model stays as the owner left it. Removes the temp files either way. */
+export async function replaceModelFiles(
+  userId: string,
+  printId: string,
+  files: DownloadedModelFiles,
+): Promise<{ print: Print; plates: Plate[]; previewImages: PreviewImage[] }> {
+  const { inputs, coverImageUrl, galleryImages, profiles } = files;
+  try {
+    const { plates, galleryWhole } = await replaceModelPlates(userId, printId, inputs);
+    // A gallery that survived the accident is the one the owner has been looking at, so it stays. One missing any
+    // of its pictures is taken from the source afresh instead of left half there.
+    if (!galleryWhole) {
+      await deleteAllPreviewImages(printId);
+      await attachImportedPreviewImages(printId, plates[0]?.id, coverImageUrl, galleryImages);
+    }
+    await applyProfileCovers(printId, profiles.covers);
+    const [print, previewImages] = await Promise.all([
+      prisma.print.findUniqueOrThrow({ where: { id: printId } }),
+      prisma.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } }),
+    ]);
+    return { print, plates, previewImages };
+  } finally {
+    for (const input of inputs) {
+      if (input.tempFilePath && fsSync.existsSync(input.tempFilePath)) {
+        await fs.rm(input.tempFilePath, { force: true }).catch(() => undefined);
+      }
+    }
+  }
 }

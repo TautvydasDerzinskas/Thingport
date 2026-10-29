@@ -128,9 +128,15 @@ export const owlcadImport: CustomImport = {
     const resolved = resolvedOwlcadModel(item);
     return kit.createPrint(userId, source, body, resolved, plates, {});
   },
-  /** Its models have no print profiles, so a model already in the library has nothing more to bring. */
-  async addToExisting(existing) {
-    return { ...existing, alreadyImported: true };
+  /** Its models have no print profiles, so a model already in the library has nothing more to bring -- unless its
+   *  files are gone, when what comes in puts them back (services/modelRepairService.ts). */
+  async addToExisting(existing, body, kit) {
+    if (!(await kit.filesMissing(existing))) return { ...existing, alreadyImported: true };
+    const item = await fetchOwlcadItem(existing.print.sourceExternalId!);
+    if (!item) throw new HttpError(404, MISSING);
+    const plates = await platesFor(item, body.owlcadExportPath ?? null);
+    if (!plates) throw new HttpError(409, NEEDS_GRAB, NEEDS_GRAB_CODE);
+    return kit.replaceFiles(existing, plates, resolvedOwlcadModel(item), {});
   },
 };
 

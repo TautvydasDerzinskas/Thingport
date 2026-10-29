@@ -26,9 +26,11 @@ const extOf = (name: string) => path.extname(name).toLowerCase();
  * A kit that unpacks each signed link into the names given, and records what it was asked to make a print of
  * instead of making one. The two predicates are the pipeline's own, so a file counts here as it would there.
  */
-function stubKit(unpacked: Record<string, string[]>) {
+/** `filesMissing`: whether the print's own files are gone, which turns a re-import into a repair of them. */
+function stubKit(unpacked: Record<string, string[]>, { filesMissing = false } = {}) {
   const createPrint = vi.fn<PipelineKit["createPrint"]>(async () => ({}) as ImportResult);
   const addProfiles = vi.fn<PipelineKit["addProfiles"]>(async () => ({}) as ImportResult);
+  const replaceFiles = vi.fn<PipelineKit["replaceFiles"]>(async () => ({}) as ImportResult);
   const kit = {
     downloadSignedFile: async (file: { url: string; name: string }): Promise<NewPlateInput[]> =>
       (unpacked[file.name] ?? []).map((filename) => ({ filename, tempFilePath: `/tmp/absent-${filename}` })),
@@ -37,9 +39,11 @@ function stubKit(unpacked: Record<string, string[]>) {
       MULTI_FILE_PLATE_EXTS.has(extOf(name)) || PARAMETRIC_SOURCE_EXTS.has(extOf(name)),
     createPrint,
     addProfiles,
+    replaceFiles,
+    filesMissing: async () => filesMissing,
     profileDetails: () => ({ titles: {}, covers: {} }),
   } as unknown as PipelineKit;
-  return { kit, createPrint, addProfiles };
+  return { kit, createPrint, addProfiles, replaceFiles };
 }
 
 const signed = (files: { name: string; profile_id: string | null }[]) => ({
@@ -121,6 +125,31 @@ describe("MakerOnline's signed files", () => {
       ["cable-box-draft.3mf", "78"],
       ["cable-box.scad", null],
     ]);
+  });
+
+  it("replaces the files of a model that has lost them, profile or not", async () => {
+    // The repair (services/modelRepairService.ts): the print still lists a plate, but its file is gone, so every
+    // file Grab brought comes in and takes its place rather than being skipped as a profile already there.
+    const { kit, replaceFiles, addProfiles } = stubKit(
+      { "files.zip": ["cable-box.stl"], "profile-77.zip": ["cable-box.3mf"] },
+      { filesMissing: true },
+    );
+    const existing = {
+      print: { id: "print-1", userId: "user-1", sourceExternalId: SOURCE.externalId },
+      plates: [{ sourceInstanceId: "77" }],
+    };
+
+    await makeronlineImport.addToExisting(
+      existing as never,
+      signed([
+        { name: "files.zip", profile_id: null },
+        { name: "profile-77.zip", profile_id: "77" },
+      ]) as never,
+      kit,
+    );
+
+    expect(addProfiles).not.toHaveBeenCalled();
+    expect(replaceFiles.mock.calls[0][1].map((input) => input.filename)).toEqual(["cable-box.stl", "cable-box.3mf"]);
   });
 
   it("keeps the script a profile brought even when the model's own files bring none", async () => {
