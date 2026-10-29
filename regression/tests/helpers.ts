@@ -18,11 +18,11 @@ export async function authToken(page: Page): Promise<string> {
   return token;
 }
 
-/** A 401 here is nearly always the one cause, and it surfaces in a spec far from the one that caused it. */
+/** The likeliest cause of a 401 here surfaces in a spec far from the one that caused it. */
 function why(status: number): string {
   return status === 401
-    ? ". The shared admin session is gone: a test that signs out, changes the password or deletes the account" +
-        " needs its own storage state, or it revokes the token every later spec replays (see DEVELOPMENT.md)."
+    ? ". If this is the shared admin token, an earlier test may have ended its session: signing out needs a session" +
+        " of its own, and changing the password or deleting the account an account of its own (see DEVELOPMENT.md)."
     : "";
 }
 
