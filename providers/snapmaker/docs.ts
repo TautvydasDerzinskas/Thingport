@@ -12,4 +12,9 @@ export default {
     text: "Snapmaker's sign-in lasts a day and only Grab renews it; without Grab you paste a new one every day.",
     on: ["grab"],
   },
+  highlight: {
+    title: "Only Grab keeps your sign-in alive",
+    text: "Snapmaker's sign-in lasts a day, and only Thingport Grab renews it, every few hours while your browser is open. Without Grab, you paste a new one every day.",
+    link: "grab#snapmaker-space-a-sign-in-grab-keeps-fresh",
+  },
 } satisfies ProviderDocs;

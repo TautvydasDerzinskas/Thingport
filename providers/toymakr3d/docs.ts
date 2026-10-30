@@ -11,4 +11,8 @@ export default {
     text: "Toymakr3D hands a model's files to signed-in users only, the free ones included, and shows your likes to you alone.",
     on: ["likes"],
   },
+  highlight: {
+    title: "A bought model's first import may need a retry",
+    text: "Toymakr3D watermarks the files of a model you bought and builds its zip the first time it's asked for. If an import says it's still being built, wait a minute and import it again.",
+  },
 } satisfies ProviderDocs;

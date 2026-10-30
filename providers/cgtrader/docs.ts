@@ -12,4 +12,9 @@ export default {
     text: "CGTrader shows your likes and wishlist to you alone, and its downloads sit behind AWS's bot check, which Thingport passes with Grab's token from your browser or FlareSolverr's own.",
     on: ["grab", "likes"],
   },
+  highlight: {
+    title: "Big imports run best with FlareSolverr",
+    text: "CGTrader's bot check steps in again after many downloads in a short time. FlareSolverr gets past it by itself; with Thingport Grab alone, a large import stops until your browser passes it again.",
+    link: "providers#flaresolverr",
+  },
 } satisfies ProviderDocs;

@@ -8,4 +8,8 @@ export default {
     "Import the model files of Makerables' CNC and 3D printing projects, and the ones you saved with your own sign-in.",
   signIn: "Yours, for saved projects only",
   collections: "Saved",
+  highlight: {
+    title: "Only a project's model files are imported",
+    text: "You get the STEP and STL files on a project's Model Files tab; its NC and CAM files stay on Makerables. A project with only pictures or native CAD files there has nothing to import.",
+  },
 } satisfies ProviderDocs;
