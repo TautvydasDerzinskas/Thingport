@@ -13,10 +13,10 @@ The dashboard is the first page you see after signing in: an overview of your li
   the machine it runs on have been up.
 - **CPU** (admins only): the server's CPU load with a short history, its load average and memory.
 - **Explore trending:** what's trending on the providers you pick, one at a time: click a provider's icon to see its
-  list, as a list or as cards. A model opens on the provider's site, and **More** opens its trending page there. Snapmaker
-  Space, NexPrint and Creality Cloud have no trending list, so their featured or recommended one shows instead.
-  Thingiverse and MyMiniFactory need the instance's token or key, which an admin adds in the provider settings, and
-  Cults3D needs your own Cults3D API key.
+  list, as a list or as cards. A model opens on the provider's site, and **More** opens its trending page there. A site
+  with no trending list shows its popular, featured or recommended models instead, and OwlCAD, with none of those, isn't
+  offered. Thingiverse and MyMiniFactory need the instance's token or key, which an admin adds in the provider settings,
+  and Cults3D needs your own Cults3D API key.
 - **Launcher:** your bookmarks as app icons, each opening in a new tab. Give an item an icon by its image address, or
   leave it empty for the site's own icon. Icons can show in their own colours, mono or grayed; a search box and a limit
   with **Show all** are optional. It starts with Thingport's website and repository, which you can remove.

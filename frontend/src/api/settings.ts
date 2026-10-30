@@ -299,7 +299,33 @@ export type ThemePreferences = {
   renderColor: RenderColor | null;
 };
 
+/** Tools as one grid, or split onto their shelves. */
+export type ToolLayout = "flat" | "categories";
+/** The orders the Tools page offers. */
+export type ToolSort = "name" | "newest" | "author";
+/** How the user arranged their Tools page; `categories` holds only the tools they moved themselves. */
+export type ToolsView = { layout: ToolLayout; sort: ToolSort; categories: Record<string, string> };
+
 export const settingsApi = {
+  getToolsView: async (): Promise<ToolsView> => {
+    const res = await fetch(`${apiBase()}/settings/tools-view`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    assertOk(res, "Failed to load the Tools page's layout");
+    return res.json();
+  },
+
+  /** Changes only what's given, so switching the layout keeps where the user put each tool. */
+  updateToolsView: async (patch: Partial<ToolsView>): Promise<ToolsView> => {
+    const res = await fetch(`${apiBase()}/settings/tools-view`, {
+      method: "PATCH",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(patch),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to save the Tools page's layout"));
+    return res.json();
+  },
+
   getAiCategorization: async (): Promise<AiCategorizationSettings> => {
     const res = await fetch(`${apiBase()}/settings/ai-categorization`, { headers: authHeaders() });
     if (res.status === 401) throw new UnauthorizedError();

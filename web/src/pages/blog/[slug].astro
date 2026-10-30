@@ -1,6 +1,8 @@
 ---
 import { getCollection, render } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import Comments from "../../components/Comments.astro";
+import { LINKS } from "../../lib/site.mjs";
 import { formatDate, url } from "../../lib/url";
 
 export async function getStaticPaths() {
@@ -35,12 +37,13 @@ const jsonLd = [
   ogType="article"
   article={{ published: pubDate, modified: updatedDate, tags }}
   jsonLd={jsonLd}
+  search
 >
   <article class="container post">
     <header>
-      <a class="back" href={url("blog/")}>← All posts</a>
+      <a class="back" href={url("blog/")} data-pagefind-ignore>← All posts</a>
       <h1>{title}</h1>
-      <p class="meta muted">
+      <p class="meta muted" data-pagefind-ignore>
         <time datetime={pubDate.toISOString()}>{formatDate(pubDate)}</time> · {author}
         {
           updatedDate && (
@@ -55,6 +58,9 @@ const jsonLd = [
     <div class="prose">
       <Content />
     </div>
+    <Comments category="blog" term={`blog/${post.id}`} heading="Comments">
+      Kept in the project's <a href={LINKS.discussions}>GitHub Discussions</a>: sign in with GitHub to join in.
+    </Comments>
   </article>
 </BaseLayout>
 

@@ -1,0 +1,32 @@
+{
+  "name": "Skadis planner",
+  "description": "Plans a wall of 3D-printed IKEA Skadis boards: the fewest boards that fill it, sized to your bed, with the mounts, the print order and the plan saved as a model.",
+  "version": "1.0.0",
+  "author": "Thingport contributors",
+  "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
+  "window": {
+    "width": 1240,
+    "height": 800
+  },
+  "hosts": [],
+  "category": "planners",
+  "locales": ["en", "lt", "es", "fr"],
+  "screenshots": [
+    {
+      "file": "screenshots/wall.webp",
+      "caption": "A 820 × 860 mm wall filled by 16 boards on an A1, with every mounting point marked and each part linked to the model it came from in your library."
+    },
+    {
+      "file": "screenshots/mini.webp",
+      "caption": "The same wall on an A1 mini in the dark theme: fifty small boards, and the four ways they have to be mirrored so the pattern carries across every seam."
+    },
+    {
+      "file": "screenshots/spacers.webp",
+      "caption": "Screw spacers instead of wall mounts: four to a board, 15 mm off the wall, with the slot pattern and the spans measured."
+    },
+    {
+      "file": "screenshots/save.webp",
+      "caption": "Saving the plan as one model: a plate for every part, in print order and at its true size, with a picture of the plan as its cover and the print order in its notes."
+    }
+  ]
+}

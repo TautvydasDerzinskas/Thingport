@@ -21,7 +21,7 @@ vi.mock("../src/utils/urlUtils", async (original) => ({
   validateRemoteUrl: async (url: string) => url,
 }));
 
-import { fetchViaFlaresolverr, shouldProxyHost } from "../src/services/flaresolverr";
+import { cookiesViaFlaresolverr, fetchViaFlaresolverr, shouldProxyHost } from "../src/services/flaresolverr";
 import { openImportResponse } from "../src/services/importService";
 import { fetchJsonFromUrl } from "../src/services/importResolvers";
 
@@ -128,6 +128,7 @@ describe("FlareSolverr credential boundary", () => {
     expect(await fetchViaFlaresolverr("https://makerworld.com/en/models/1", "token=secret")).toBeNull();
     expect(await fetchViaFlaresolverr("https://api.thingiverse.com/things/123?access_token=secret")).toBeNull();
     expect(await fetchViaFlaresolverr("https://www.myminifactory.com/api/v2/objects/123?key=secret")).toBeNull();
+    expect(await cookiesViaFlaresolverr("https://www.cgtrader.com/items/1/free-downloads/1", 0)).toBeNull();
     expect(sent).not.toHaveBeenCalled();
   });
 

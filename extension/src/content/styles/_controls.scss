@@ -27,6 +27,127 @@
   margin-bottom: 10px;
 }
 
+// The collection picker (panels/collectionPicker.ts): a field that searches the list it opens, and makes a
+// collection of whatever name isn't in it.
+.tg-combo {
+  margin-bottom: 10px;
+
+  &--open &__toggle svg {
+    transform: rotate(180deg);
+  }
+
+  // The field alone, so the chevron sits in it rather than beside the open list below.
+  &__field {
+    position: relative;
+  }
+
+  &__input {
+    @include m.text-input;
+    padding-right: 30px;
+  }
+
+  &__toggle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: t.c("text-muted");
+    cursor: pointer;
+
+    svg {
+      width: 16px;
+      height: 16px;
+      transition: transform 0.15s ease;
+    }
+  }
+
+  // In the flow rather than laid over the panel, which scrolls its own content and would clip it. The panel is
+  // anchored above the floating icon and grows upward, so the list opening simply makes it taller.
+  &__list {
+    max-height: 180px;
+    margin: 6px 0 0;
+    padding: t.$space-1;
+    overflow-y: auto;
+    list-style: none;
+    border: 1px solid t.c("border");
+    border-radius: t.r("md");
+    background: t.c("surface-sunken");
+    animation: tg-combo-in 0.14s ease-out;
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  &__option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px t.$space-2;
+    border-radius: t.r("sm");
+    line-height: 1.3;
+    cursor: pointer;
+
+    &--active {
+      background: t.c("hover");
+    }
+
+    // The one the field already names.
+    &--on {
+      font-weight: 700;
+    }
+
+    &--new {
+      color: t.c("accent");
+      font-weight: 600;
+    }
+  }
+
+  // Set apart from the names above it: it adds to the list rather than picking from it.
+  &__option--new {
+    margin-top: t.$space-1;
+    padding-top: 8px;
+    border-top: 1px solid t.c("border-soft");
+    border-radius: 0;
+  }
+
+  &__plus {
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  // Only while the field would make a collection rather than file into one.
+  &__note {
+    margin: -6px 0 10px;
+    font-size: t.$font-size-xs;
+    line-height: 1.4;
+    color: t.c("accent");
+  }
+}
+
+@keyframes tg-combo-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tg-combo__list {
+    animation: none;
+  }
+
+  .tg-combo__toggle svg {
+    transition: none;
+  }
+}
+
 // A checkbox with its label and an explanation under it, e.g. "Keep this collection in sync".
 .tg-toggle {
   display: flex;
@@ -61,7 +182,7 @@
   gap: 2px;
   padding: 2px;
   margin-bottom: t.$space-2;
-  border-radius: t.$radius-md;
+  border-radius: t.r("md");
   background: t.c("surface-sunken");
 
   &__option {
@@ -69,7 +190,7 @@
     flex: 1;
     padding: 5px t.$space-2;
     border: 0;
-    border-radius: t.$radius-sm;
+    border-radius: t.r("sm");
     background: transparent;
     color: t.c("text-muted");
     font: inherit;

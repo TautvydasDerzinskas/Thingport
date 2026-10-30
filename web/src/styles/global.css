@@ -1,103 +1,4 @@
-/* Tokens come from frontend/src/theme.ts (THEME_DEFS) so the site looks like the app. Two text
- * colours are nudged for readability of long-form text: light --text-muted and dark --text. Links
- * and buttons use a deeper green than the brand #00b800, which is too light for AA text contrast. */
-
-@font-face {
-  font-family: "Thingport";
-  src: url("../../../frontend/src/assets/fonts/thingport-500.woff") format("woff");
-  font-weight: 500;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Thingport";
-  src: url("../../../frontend/src/assets/fonts/thingport-700.woff") format("woff");
-  font-weight: 700;
-  font-display: swap;
-}
-
-:root {
-  color-scheme: light;
-  --bg: #f7f7f7;
-  --panel: #ffffff;
-  --panel-alt: #fbfbfb;
-  --border: #ebebeb;
-  --text: #1f1f1f;
-  --text-muted: #666666;
-  --heading: #1f1f1f;
-  --accent: #00b800;
-  --accent-light: #5be584;
-  --accent-soft: rgba(0, 184, 0, 0.12);
-  --link: #007a00;
-  --button: #008a00;
-  --button-hover: #007300;
-  --button-text: #ffffff;
-  --alt: rgb(255, 114, 32);
-  --radius: 10px;
-  --radius-sm: 8px;
-  --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.06);
-  --hero-glow: radial-gradient(60% 60% at 50% 0%, rgba(91, 229, 132, 0.28) 0%, rgba(91, 229, 132, 0) 70%);
-
-  --font-body: "Open Sans", system-ui, "Segoe UI", Roboto, Oxygen, Ubuntu, "Fira Sans", "Helvetica Neue", sans-serif;
-  --font-display: "Thingport", var(--font-body);
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-  --container: 72rem;
-  --gutter: 1.25rem;
-}
-
-/* Dark mode. The app goes square everywhere in dark mode, so the site does too. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --bg: #181f39;
-    --panel: #1e2746;
-    --panel-alt: #1b2340;
-    --border: #333a54;
-    --text: #b3b7c0;
-    --text-muted: #969ba0;
-    --heading: #ffffff;
-    --accent-soft: rgba(0, 184, 0, 0.16);
-    --link: #5be584;
-    --shadow: none;
-    --radius: 0;
-    --radius-sm: 0;
-    --hero-glow: radial-gradient(60% 60% at 50% 0%, rgba(0, 184, 0, 0.22) 0%, rgba(0, 184, 0, 0) 70%);
-  }
-}
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --bg: #181f39;
-  --panel: #1e2746;
-  --panel-alt: #1b2340;
-  --border: #333a54;
-  --text: #b3b7c0;
-  --text-muted: #969ba0;
-  --heading: #ffffff;
-  --accent-soft: rgba(0, 184, 0, 0.16);
-  --link: #5be584;
-  --shadow: none;
-  --radius: 0;
-  --radius-sm: 0;
-  --hero-glow: radial-gradient(60% 60% at 50% 0%, rgba(0, 184, 0, 0.22) 0%, rgba(0, 184, 0, 0) 70%);
-}
-
-/* Anything that has a light and a dark variant (logos, screenshots) carries one of these. */
-.only-dark {
-  display: none !important;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .only-light {
-    display: none !important;
-  }
-  :root:not([data-theme="light"]) .only-dark {
-    display: revert !important;
-  }
-}
-:root[data-theme="dark"] .only-light {
-  display: none !important;
-}
-:root[data-theme="dark"] .only-dark {
-  display: revert !important;
-}
+@import "./tokens.css";
 
 /* Base */
 *,
@@ -130,8 +31,9 @@ a {
 a:hover {
   text-decoration-thickness: 2px;
 }
+/* The link green: the brand green is too light for a focus ring on white. */
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--link);
   outline-offset: 2px;
 }
 h1,
@@ -149,9 +51,8 @@ h4 {
 p {
   margin: 0 0 1em;
 }
-code,
-kbd,
-pre {
+/* Not inside code blocks (Expressive Code): unlayered, this would beat their layered styles and shrink their text. */
+:is(code, kbd, pre):not(.expressive-code *) {
   font-family: var(--font-mono);
   font-size: 0.9em;
 }
@@ -360,36 +261,9 @@ pre {
   text-align: center;
 }
 
-/* Code blocks: Shiki emits both themes as CSS variables (see astro.config.mjs). */
-pre.astro-code {
-  margin: 1.25em 0;
-  padding: 1rem 1.1rem;
-  overflow-x: auto;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: 0.85rem;
-  line-height: 1.6;
-  background-color: var(--shiki-light-bg) !important;
-}
-pre.astro-code,
-pre.astro-code span {
-  color: var(--shiki-light);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) pre.astro-code {
-    background-color: #111731 !important;
-  }
-  :root:not([data-theme="light"]) pre.astro-code,
-  :root:not([data-theme="light"]) pre.astro-code span {
-    color: var(--shiki-dark);
-  }
-}
-:root[data-theme="dark"] pre.astro-code {
-  background-color: #111731 !important;
-}
-:root[data-theme="dark"] pre.astro-code,
-:root[data-theme="dark"] pre.astro-code span {
-  color: var(--shiki-dark);
+/* Code blocks: Expressive Code, as in the docs (ec.config.mjs, tokens.css), spaced like a post's other blocks. */
+.prose .expressive-code {
+  margin-block: 1.25rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

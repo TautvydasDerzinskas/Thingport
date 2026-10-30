@@ -13,6 +13,14 @@ describe("browser manifests", () => {
     expect(COOKIE_HOSTS.toSorted()).toEqual(["*://*.makerworld.com/*", "*://*.printables.com/*"]);
   });
 
+  // Instances on plain HTTP have to keep working, so no build may upgrade requests to https (issue #199).
+  it("never upgrades http requests", () => {
+    for (const target of TARGETS) {
+      expect(JSON.stringify(buildManifest(target, pkg))).not.toContain("upgrade-insecure-requests");
+    }
+    expect(buildManifest("firefox", pkg).content_security_policy).toEqual({ extension_pages: "script-src 'self'" });
+  });
+
   // Snapshotted at a fixed version, so a release bumping package.json doesn't break them.
   for (const target of TARGETS) {
     it(`${target} manifest`, () => {

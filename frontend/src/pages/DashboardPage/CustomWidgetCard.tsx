@@ -1,19 +1,22 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import ExtensionOutlinedIcon from "@mui/icons-material/ExtensionOutlined";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
-import { apiBase } from "../../api/client";
-import { headerRecord, widgetsApi, type CustomWidget } from "../../api/widgets";
-import { authHeaders } from "../../utils/auth";
+import type { CustomWidget } from "../../api/widgets";
+import { SUPPORTED_LANGUAGES, matchLanguage } from "../../constants/languages";
+import { buildWidgetSdk, type WidgetSize } from "../../sdk/widgetSdk";
+import { sdkTheme, setThemeVariables } from "../../sdk/theme";
+import { useConfirm } from "../../components/ConfirmProvider";
+import { useToast } from "../../components/ToastProvider";
 import { useIconSrc } from "../../components/IconPicker/iconCatalog";
 import { GRID_GAP, ROW_HEIGHT } from "./templates";
 import DashboardCard from "./DashboardCard";
 import type { ResolvedSettings } from "./widgets";
 
-type Size = { width: number; height: number; cols: number; rows: number };
 type Mount = (thingport: Record<string, unknown>) => unknown;
 
 // One module per version of a widget's script, shared by every panel showing it.
@@ -55,37 +58,39 @@ type Props = {
 };
 
 /**
- * Runs a custom widget's script in its panel. The script's default export gets a `thingport` object: the element to
- * draw into, its size (and a way to hear when it changes), the panel's settings, the theme, and `fetch` through the
- * server to the hosts the widget declares. It runs again when the settings or the theme change, after its cleanup.
+ * Runs a custom widget's script in its panel. The script's default export gets the `thingport` object from
+ * `sdk/widgetSdk.ts` — the element to draw into, its size, the panel's settings, the theme, the widget's own words
+ * in the user's language, the user's library and `fetch` through the server to the hosts the widget declares. It
+ * runs again when the settings, the theme or the language change, after its cleanup.
  */
 export default function CustomWidgetCard({ widget, instanceId, settings }: Props) {
-  const { t } = useTranslation("app");
+  const { t, i18n } = useTranslation("app");
   const muiTheme = useTheme();
+  const navigate = useNavigate();
+  const toast = useToast();
+  const confirm = useConfirm();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Unique on the page, and a valid CSS id, so a widget can scope its styles to `selector`.
   const rootId = `tp-widget-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const settingsKey = JSON.stringify(settings);
-  const theme = {
-    mode: muiTheme.palette.mode,
-    primary: muiTheme.palette.primary.main,
-    background: muiTheme.thingport.pageBackground,
-    paper: muiTheme.palette.background.paper,
-    text: muiTheme.palette.text.primary,
-    textSecondary: muiTheme.palette.text.secondary,
-    divider: muiTheme.palette.divider,
-    fontFamily: String(muiTheme.typography.fontFamily),
-  };
+  const theme = sdkTheme(muiTheme);
   const themeKey = JSON.stringify(theme);
+  // The language a widget is handed, matched to one Thingport has; changing it draws it again, as the theme does.
+  const language = matchLanguage(i18n.language);
+  // Read through refs, so the script isn't run again when the dashboard's own callbacks change.
+  const latest = useRef({ navigate, toast, confirm });
+  useEffect(() => {
+    latest.current = { navigate, toast, confirm };
+  });
 
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
     let cancelled = false;
     let cleanup: (() => void) | null = null;
-    const listeners = new Set<(size: Size) => void>();
-    const measure = (): Size => {
+    const listeners = new Set<(size: WidgetSize) => void>();
+    const measure = (): WidgetSize => {
       // Its layout size, not its drawn one, which the editor's preview scales down.
       const width = root.offsetWidth;
       const height = root.offsetHeight;
@@ -105,35 +110,43 @@ export default function CustomWidgetCard({ widget, instanceId, settings }: Props
     observer.observe(root);
 
     setError(null);
+    // The theme as CSS variables on the panel itself, before the widget's HTML goes in, so a widget's stylesheet
+    // can use `var(--tp-accent)` without copying the theme across in script first.
+    setThemeVariables(root, JSON.parse(themeKey) as typeof theme);
     root.innerHTML = widget.html ?? "";
-    const thingport = {
+    const thingport = buildWidgetSdk({
+      widget,
+      instanceId,
       root,
       selector: `#${rootId}`,
-      get size() {
-        return size;
-      },
-      onResize(listener: (next: Size) => void) {
+      settings: JSON.parse(settingsKey) as ResolvedSettings,
+      theme: JSON.parse(themeKey) as typeof theme,
+      language,
+      languages: SUPPORTED_LANGUAGES,
+      size: () => size,
+      onResize(listener: (next: WidgetSize) => void) {
         listeners.add(listener);
         return () => listeners.delete(listener);
       },
-      settings: JSON.parse(settingsKey) as ResolvedSettings,
-      theme: JSON.parse(themeKey) as typeof theme,
-      fetch: (url: string, init?: RequestInit) => widgetsApi.fetchVia(widget.id, url, init),
-      api: (path: string, init: RequestInit = {}) =>
-        fetch(`${apiBase()}${path.startsWith("/") ? path : `/${path}`}`, {
-          ...init,
-          headers: { ...authHeaders(), ...headerRecord(init.headers) },
-        }),
-      widgetId: widget.id,
-      instanceId,
-    };
+      ui: {
+        toast: (message, severity = "info") => latest.current.toast({ message: String(message), severity }),
+        confirm: async (options) =>
+          (await latest.current.confirm({
+            title: options.title,
+            message: options.message,
+            confirmLabel: options.confirmLabel,
+            destructive: options.destructive,
+          })) === true,
+        openModel: (id) => latest.current.navigate(`/models/${encodeURIComponent(id)}`),
+      },
+    });
 
     void (async () => {
       try {
         const module = await loadModule(widget);
         if (cancelled) return;
         if (typeof module.default !== "function") throw new Error(t("dashboard.custom.noExport"));
-        const returned = await module.default(thingport);
+        const returned = await module.default(thingport as unknown as Record<string, unknown>);
         if (cancelled) {
           if (typeof returned === "function") returned();
           return;
@@ -155,9 +168,10 @@ export default function CustomWidgetCard({ widget, instanceId, settings }: Props
       }
       root.innerHTML = "";
     };
-    // The widget redraws when its code, settings or the theme change; the objects themselves are rebuilt each render.
+    // The widget redraws when its code, settings, the theme or the language change; the objects themselves are
+    // rebuilt each render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [widget.sha, widget.id, instanceId, settingsKey, themeKey, rootId]);
+  }, [widget.sha, widget.id, instanceId, settingsKey, themeKey, language, rootId]);
 
   return (
     <DashboardCard scroll={false} sx={{ p: 0, position: "relative" }}>

@@ -118,6 +118,25 @@ export class Cults3dNoFreeDownloadError extends Error {
   }
 }
 
+/** The API key and the browser's sign-in are two different Cults3D accounts. A download link comes from the key's own
+ *  orders, and the site hands over an order's files only to the account that placed it, so the two have to match.
+ *  `nicks` names them where Thingport knows both. */
+export class Cults3dWrongAccountError extends Error {
+  constructor(nicks?: { api: string; site: string }) {
+    super(
+      nicks
+        ? `Thingport's Cults3D API key is ${nicks.api}'s, but the cults3d.com sign-in it has is signed in as ` +
+            `${nicks.site}, and Cults3D gives a download only to the account that ordered it. Sign in to cults3d.com ` +
+            `as ${nicks.api} and visit it with Thingport Grab, or enter ${nicks.site}'s nickname and API key in ` +
+            "Configuration > Providers."
+        : "Cults3D wouldn't hand over this download, which it does when the cults3d.com sign-in Thingport has isn't " +
+            "the account that ordered the model. Make sure the sign-in and the API key in Configuration > Providers " +
+            "are the same Cults3D account.",
+    );
+    this.name = "Cults3dWrongAccountError";
+  }
+}
+
 /** As likesCollectionName names Thingiverse's. */
 export function cults3dLikesName(nick: string): string {
   return `Cults3D likes (@${nick})`;
@@ -463,7 +482,11 @@ function isSignInUrl(url: string): boolean {
 
 /** A page of the site, its redirects followed while they stay on it; throws Cults3dSessionError when they lead to its
  *  sign-in. */
-async function fetchSitePage(url: string, browser: Cults3dBrowser): Promise<{ url: string; html: string }> {
+async function fetchSitePage(
+  url: string,
+  browser: Cults3dBrowser,
+  what = "the model's page",
+): Promise<{ url: string; html: string }> {
   let current = url;
   for (let hop = 0; hop < 5; hop++) {
     const res = await fetchSite(current, browser);
@@ -477,11 +500,11 @@ async function fetchSitePage(url: string, browser: Cults3dBrowser): Promise<{ ur
     }
     if (!res.ok) {
       await res.body?.cancel().catch(() => undefined);
-      throw new Error(`Couldn't open the model's page on Cults3D (HTTP ${res.status})`);
+      throw new Error(`Couldn't open ${what} on Cults3D (HTTP ${res.status})`);
     }
     return { url: current, html: await res.text() };
   }
-  throw new Error("Cults3D redirected the model's page too many times");
+  throw new Error(`Cults3D redirected ${what} too many times`);
 }
 
 function decodeEntities(value: string): string {
@@ -491,6 +514,23 @@ function decodeEntities(value: string): string {
     .replace(/&#39;/g, "'")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">");
+}
+
+/** The nickname a sign-in belongs to, from the avatar in the header's own menu, which every signed-in page carries once
+ *  and names the user in. Null on a page showing no one signed in. */
+export function cults3dSignedInNick(html: string): string | null {
+  const avatar = html.match(/<img\b[^>]*\bclass="[^"]*\bdrop-toggle-avatar\b[^"]*"[^>]*>/i)?.[0];
+  const nick = avatar?.match(/\balt="([^"]*)"/i)?.[1];
+  return nick ? decodeEntities(nick).trim() || null : null;
+}
+
+/** Who the browser's sign-in is, as the site itself shows it: read from the user's orders, the very pages a download
+ *  comes from. Throws Cults3dSessionError when the site shows no one signed in. */
+export async function fetchCults3dSignedInNick(browser: Cults3dBrowser): Promise<string> {
+  const page = await fetchSitePage(`${SITE_ORIGIN}/en/orders`, browser, "your Cults3D downloads");
+  const nick = cults3dSignedInNick(page.html);
+  if (!nick) throw new Cults3dSessionError();
+  return nick;
 }
 
 /** The free model's Download form: where it posts and its CSRF token. Null on a page without one -- a paid model, or
@@ -538,6 +578,9 @@ export async function resolveCults3dDownload(downloadUrl: string, browser: Cults
   } catch {
     throw new Error("Cults3D sent the download somewhere unexpected");
   }
+  // Kept on the site instead of sent to the files: the site bounces the download page back where it came from when the
+  // sign-in may not have the order, which is what a sign-in on another account than the API key's means.
+  if (urls.isHost(parsed.hostname)) throw new Cults3dWrongAccountError();
   if (!isCults3dFileUrl(parsed)) {
     throw new Error(`Cults3D sent the download somewhere unexpected (${parsed.hostname})`);
   }

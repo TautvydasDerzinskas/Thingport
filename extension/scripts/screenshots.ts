@@ -12,6 +12,10 @@
 // --makerworld-collection=<url> and --myminifactory-collection=<url>. --only=<names> refreshes just those shots, e.g.
 // --only=collection-printables,collection-makerworld.
 //
+// --corners[=<dir>] also visits a model page on every site Grab works on, for the store's mosaic
+// (scripts/store-assets.ts), and saves the page's bottom-right corner twice -- with Grab's button, and with its panel
+// open -- as <site>.jpg and <site>-panel.jpg in docs/store/corners/ or <dir>.
+//
 // Needs Playwright's Chromium once: `npx playwright install chromium`.
 
 import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
@@ -28,7 +32,7 @@ const EXTENSION_DIR = path.join(ROOT, "dist", "chrome");
 const OUT_DIR = path.join(ROOT, "docs", "screenshots");
 const PAGE_VIEWPORT = { width: 1280, height: 800 };
 const DEMO_HOST = "thingport.home.arpa";
-const POPUP_WIDTH = 320;
+const POPUP_WIDTH = 380;
 const NEW_COLLECTION_NAME = "Desk organizers";
 const PRINTABLES_COLLECTION = "https://www.printables.com/@Thinkable/collections/342542";
 const MAKERWORLD_COLLECTION = "https://makerworld.com/en/collections/15756490-little-coin";
@@ -120,6 +124,9 @@ function startMockInstance(state: MockState): Promise<{ url: string; close: () =
       // No slicer, so MakerWorld pages don't add their "Download normalized" button.
       case "GET /api/settings/slicer":
         return json({ slicer: null });
+      // Every provider on: one the instance doesn't list counts as on.
+      case "GET /api/settings/providers":
+        return json({ providers: [] });
       case "PATCH /api/settings/makerworld":
         return json({});
       default:
@@ -141,6 +148,16 @@ function argValue(name: string): string | undefined {
 }
 
 const ONLY = argValue("only")?.split(",").filter(Boolean) ?? [];
+// --os=light|dark: the scheme the browser reports as the OS's, whatever the Mac is set to, for the sites that follow
+// it rather than the emulated one.
+const OS_SCHEME_ARGS: Record<string, string[]> = {
+  light: ["--blink-settings=preferredColorScheme=1"],
+  dark: ["--force-dark-mode"],
+};
+const OS_SCHEME = OS_SCHEME_ARGS[argValue("os") ?? ""] ?? [];
+const CORNERS_DIR = process.argv.includes("--corners")
+  ? path.join(ROOT, "docs", "store", "corners")
+  : argValue("corners");
 
 function wanted(...files: string[]): boolean {
   return !ONLY.length || files.some((file) => ONLY.includes(file.replace(/\.\w+$/, "")));
@@ -172,6 +189,7 @@ async function launch(mockPort: number): Promise<{ context: BrowserContext; work
       // Otherwise Cloudflare (Printables) recognizes the automated browser.
       "--disable-blink-features=AutomationControlled",
       `--host-resolver-rules=MAP ${DEMO_HOST}:80 127.0.0.1:${mockPort}`,
+      ...OS_SCHEME,
     ],
   });
   const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
@@ -179,9 +197,14 @@ async function launch(mockPort: number): Promise<{ context: BrowserContext; work
   return { context, worker, extensionId };
 }
 
+const CONSENT =
+  /^(accept( all)?( cookies)?|allow all|agree|i agree|consent|got it!?|ok(, got it!?)?|i am ok with that)$/i;
+
 async function dismissBanners(page: Page): Promise<void> {
+  // Some sites make theirs a link.
   const button = page
-    .getByRole("button", { name: /^(accept( all)?( cookies)?|allow all|agree|i agree|got it|ok)$/i })
+    .getByRole("button", { name: CONSENT })
+    .or(page.getByRole("link", { name: CONSENT }))
     .first();
   // Through the DOM: Grab's own button can sit on top of it.
   if (await button.isVisible().catch(() => false)) {
@@ -278,23 +301,56 @@ async function readMyminifactoryCollection(page: Page): Promise<BatchEntriesResu
   return { title, entries };
 }
 
-async function toDataUrl(imageUrl: string | null): Promise<string | null> {
+/** Shrunk to about the size the popup shows, in `scratch` (a blank page, so no site's CSP is in the way): five
+ *  full-size pictures overrun chrome.storage.local's quota. */
+async function toDataUrl(scratch: Page, imageUrl: string | null): Promise<string | null> {
   if (!imageUrl) return null;
   try {
     const res = await fetch(imageUrl);
     if (!res.ok) return null;
     const type = res.headers.get("content-type") || "image/jpeg";
-    return `data:${type};base64,${Buffer.from(await res.arrayBuffer()).toString("base64")}`;
+    const full = `data:${type};base64,${Buffer.from(await res.arrayBuffer()).toString("base64")}`;
+    return await scratch.evaluate(async (src) => {
+      const bitmap = await createImageBitmap(await (await fetch(src)).blob());
+      const scale = Math.min(1, 160 / Math.max(bitmap.width, bitmap.height));
+      const canvas = new OffscreenCanvas(Math.round(bitmap.width * scale), Math.round(bitmap.height * scale));
+      canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      const bytes = new Uint8Array(
+        await (await canvas.convertToBlob({ type: "image/jpeg", quality: 0.85 })).arrayBuffer(),
+      );
+      let binary = "";
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+      return `data:image/jpeg;base64,${btoa(binary)}`;
+    }, full);
   } catch {
     return null;
   }
 }
 
+/** A screenshot outlives the season it was taken in, so the icon is shown in its everyday edition: what
+ *  dressMark (shared/seasonalMark.ts) added comes off again. */
+async function undressSeason(page: Page): Promise<void> {
+  await page.locator(".tg-fab__season, .header__season").evaluateAll((els) => {
+    for (const el of els) el.remove();
+  });
+  await page.locator("[data-season]").evaluateAll((els) => {
+    for (const el of els) {
+      el.removeAttribute("data-season");
+      el.removeAttribute("data-dodge");
+    }
+  });
+  await page.locator(".header--seasonal").evaluateAll((els) => {
+    for (const el of els) el.classList.remove("header--seasonal");
+  });
+}
+
+/** `tab`: the popup's tab to show, when not the first. */
 async function screenshotPopup(
   context: BrowserContext,
   extensionId: string,
   file: string,
   colorScheme: "light" | "dark",
+  tab?: string,
 ): Promise<void> {
   if (!wanted(file)) return;
   const page = await context.newPage();
@@ -302,8 +358,136 @@ async function screenshotPopup(
   await page.setViewportSize({ width: POPUP_WIDTH, height: 600 });
   await page.goto(`chrome-extension://${extensionId}/popup.html`);
   await page.waitForTimeout(800);
+  if (tab) {
+    await page.locator(tab).click();
+    // The tab's underline slides across.
+    await page.waitForTimeout(500);
+  }
+  await undressSeason(page);
   await page.locator("body").screenshot({ path: path.join(OUT_DIR, file) });
   await page.close();
+}
+
+// The other sites Grab works on, for --corners: a model linked from the front page, else `fixed`.
+const CORNER_SITES: { id: string; home?: string; modelLink?: RegExp; fixed?: string }[] = [
+  {
+    id: "snapmaker",
+    home: "https://space.snapmaker.com/en",
+    modelLink: /^https:\/\/space\.snapmaker\.com\/[a-z-]+\/model\/\d+/,
+  },
+  {
+    id: "makeronline",
+    home: "https://www.makeronline.com/en",
+    modelLink: /^https:\/\/www\.makeronline\.com\/[a-z-]+\/model\/[^/]+\/\d+\.html$/,
+  },
+  {
+    id: "nexprint",
+    home: "https://www.nexprint.com/en",
+    modelLink: /^https:\/\/www\.nexprint\.com\/[a-z-]+\/models\/G\d+$/,
+    fixed: "https://www.nexprint.com/en/models/G1215164",
+  },
+  {
+    id: "thangs",
+    home: "https://thangs.com",
+    modelLink: /^https:\/\/thangs\.com\/designer\/[^/]+\/3d-model\/[^/]+$/,
+    fixed: "https://thangs.com/designer/MultiBuild/3d-model/Tile-1320962",
+  },
+  { id: "cults3d", home: "https://cults3d.com/en", modelLink: /^https:\/\/cults3d\.com\/en\/3d-model\/[^/]+\/[^/]+$/ },
+  {
+    id: "eufymake",
+    home: "https://makeitreal.eufymake.com",
+    modelLink: /^https:\/\/makeitreal\.eufymake\.com\/models\/[0-9a-f]{32}/,
+  },
+  { id: "pinshape", fixed: "https://pinshape.com/items/111504-articulated-dragon" },
+  { id: "owlcad", fixed: "https://owlcad.com/gallery/0f7d8172-a9b7-4de1-9b1b-5a8c255ac274/apex-evo-hd-gopro-mount" },
+  { id: "toymakr3d", fixed: "https://www.toymakr3d.com/product/8-transformable-sofa-robot" },
+  { id: "makerables", fixed: "https://www.makerables.com/project/acrylic-knife" },
+  {
+    id: "cgtrader",
+    fixed: "https://www.cgtrader.com/3d-print-models/jewelry/ring/lotus-ring-with-opening-and-closing-mechanism",
+  },
+  { id: "grabcad", fixed: "https://grabcad.com/library/arduino-uno-r3-1" },
+];
+const CORNER = { width: 640, height: 512 };
+
+async function cornerUrl(page: Page, site: (typeof CORNER_SITES)[number]): Promise<string> {
+  if (site.home && site.modelLink) {
+    await openPage(page, site.home).catch(() => undefined);
+    const links = await page
+      .$$eval("a[href]", (as) => as.map((a) => (a as HTMLAnchorElement).href.split(/[?#]/)[0]))
+      .catch(() => [] as string[]);
+    const found = links.find((href) => site.modelLink!.test(href));
+    if (found) return found;
+  }
+  if (site.fixed) return site.fixed;
+  throw new Error(`no model link on ${site.home}`);
+}
+
+/** Hides the site's own fixed widgets -- chat buttons, cookie bars -- that sit over Grab's button, so they neither
+ *  cover it in the shot nor take its click. */
+async function clearCorner(page: Page): Promise<void> {
+  await page
+    .locator(".tg-fab")
+    .first()
+    .evaluate((fab) => {
+      const host = (fab.getRootNode() as ShadowRoot).host;
+      const box = fab.getBoundingClientRect();
+      for (const el of document.body.querySelectorAll<HTMLElement>("*")) {
+        if (el === host || el.contains(host)) continue;
+        const position = getComputedStyle(el).position;
+        if (position !== "fixed" && position !== "sticky") continue;
+        const r = el.getBoundingClientRect();
+        if (r.left < box.right && r.right > box.left && r.top < box.bottom && r.bottom > box.top) {
+          el.style.visibility = "hidden";
+        }
+      }
+    });
+}
+
+/** Each site's bottom-right corner, where Grab's button sits: once alone, once with the panel open. A site that
+ *  turns the browser away, or where the button doesn't come up, is reported and left out. --only=corner-<site>,...
+ *  takes just those. */
+async function captureCorners(page: Page, models: Map<ProviderName, ModelInfo>, mockState: MockState): Promise<void> {
+  const dir = CORNERS_DIR!;
+  await mkdir(dir, { recursive: true });
+  await page.emulateMedia({ colorScheme: "light" });
+  const clip = { x: PAGE_VIEWPORT.width - CORNER.width, y: PAGE_VIEWPORT.height - CORNER.height, ...CORNER };
+  const only = ONLY.filter((name) => name.startsWith("corner-"));
+  const sites = [
+    ...PROVIDERS.map((p) => ({ id: p.name as string, provider: p })),
+    ...CORNER_SITES.map((s) => ({ id: s.id, site: s })),
+  ].filter((entry) => !only.length || only.includes(`corner-${entry.id}`));
+  for (const entry of sites) {
+    try {
+      const url =
+        "provider" in entry
+          ? (models.get(entry.provider.name)?.url ?? (await findModelUrls(page, entry.provider, 1))[0])
+          : await cornerUrl(page, entry.site);
+      await openPage(page, url);
+      mockState.inspectTitle = (await readModelInfo(page)).title;
+      const fab = page.locator(".tg-fab:not(.tg-fab--inactive)");
+      await fab.waitFor({ timeout: 30000 });
+      // Far from the button, which leans toward the pointer.
+      await page.mouse.move(0, 0);
+      await dismissBanners(page);
+      await page.waitForTimeout(1500);
+      await clearCorner(page);
+      await undressSeason(page);
+      await page.screenshot({ path: path.join(dir, `${entry.id}.jpg`), type: "jpeg", quality: 85, clip });
+      await fab.click();
+      await page
+        .locator('.tg-panel [data-action="import"], .tg-panel [data-action="start"]')
+        .first()
+        .waitFor({ timeout: 20000 });
+      await page.mouse.move(0, 0);
+      await page.waitForTimeout(800);
+      await undressSeason(page);
+      await page.screenshot({ path: path.join(dir, `${entry.id}-panel.jpg`), type: "jpeg", quality: 85, clip });
+      console.log(`corner ${entry.id}: ${url}`);
+    } catch (err) {
+      console.warn(`corner ${entry.id}: left out -- ${(err as Error).message.split("\n")[0]}`);
+    }
+  }
 }
 
 async function screenshotViewport(page: Page, file: string): Promise<void> {
@@ -311,6 +495,7 @@ async function screenshotViewport(page: Page, file: string): Promise<void> {
   // Some cookie banners only show up after a while.
   await dismissBanners(page);
   await page.waitForTimeout(1500);
+  await undressSeason(page);
   await page.screenshot({ path: path.join(OUT_DIR, file), type: "jpeg", quality: 82 });
 }
 
@@ -329,7 +514,14 @@ async function main(): Promise<void> {
     await screenshotPopup(context, extensionId, "popup-setup-dark.png", "dark");
 
     const modelShots =
-      wanted("setup-dialog-makerworld", "popup-connected", "popup-connected-dark") ||
+      Boolean(CORNERS_DIR) ||
+      wanted(
+        "setup-dialog-makerworld",
+        "popup-connected",
+        "popup-connected-dark",
+        "popup-history",
+        "popup-history-dark",
+      ) ||
       PROVIDERS.some((p) => wanted(`panel-${p.name}`, `panel-${p.name}-dark`, `imported-${p.name}`));
     const models = new Map<ProviderName, ModelInfo>();
     const recentModels: ModelInfo[] = [];
@@ -351,28 +543,47 @@ async function main(): Promise<void> {
       await screenshotViewport(page, "setup-dialog-makerworld.jpg");
     }
 
-    const recent = await Promise.all(
-      recentModels.slice(0, 5).map(async (model, i) => ({
+    // Pictures as data: some sites' don't load outside their own pages, and a History of blank tiles shows nothing.
+    // Models whose picture can't be had are left out, of the imports and of what Grab noted as viewed alike.
+    const scratch = await context.newPage();
+    const thumbs = await Promise.all(recentModels.map((model) => toDataUrl(scratch, model.image)));
+    const recent = recentModels
+      .map((model, i) => ({ model, thumb: thumbs[i] }))
+      .filter((entry) => entry.thumb)
+      .slice(0, 5)
+      .map(({ model, thumb }, i) => ({
         printId: `demo-${i}`,
         title: model.title,
         url: `${instanceUrl}/models/demo-${i}`,
-        thumbDataUrl: await toDataUrl(model.image),
+        thumbDataUrl: thumb,
         instanceUrl,
         email: "maker@example.com",
-      })),
-    );
+      }));
+    const { recentlyViewed = [] } = (await worker.evaluate(() => chrome.storage.local.get("recentlyViewed"))) as {
+      recentlyViewed?: { image: string | null }[];
+    };
+    for (const entry of recentlyViewed) entry.image = await toDataUrl(scratch, entry.image);
+    const viewed = recentlyViewed.filter((entry) => entry.image);
+    await scratch.close();
     await worker.evaluate(
       (config) =>
         chrome.storage.local.set({ ...config, email: "maker@example.com", password: "screenshots", disabled: false }),
-      { instanceUrl, recentImports: recent },
+      { instanceUrl, recentImports: recent, recentlyViewed: viewed },
     );
     await screenshotPopup(context, extensionId, "popup-connected.png", "light");
     await screenshotPopup(context, extensionId, "popup-connected-dark.png", "dark");
+    await screenshotPopup(context, extensionId, "popup-features.png", "light", "#tab-offline");
+    await screenshotPopup(context, extensionId, "popup-features-dark.png", "dark", "#tab-offline");
+    await screenshotPopup(context, extensionId, "popup-history.png", "light", "#tab-history");
+    await screenshotPopup(context, extensionId, "popup-history-dark.png", "dark", "#tab-history");
+
+    if (CORNERS_DIR) await captureCorners(page, models, mockState);
 
     // Each shot again over the site's dark scheme, for the READMEs' <picture>; Grab's panel follows it too.
-    // Printables and Creality Cloud ignore the emulated scheme and follow the OS one, so take their shots of each
-    // scheme with the OS set to match (--only=panel-printables,collection-printables,panel-crealitycloud, then the
-    // -dark ones).
+    // Printables and Creality Cloud ignore the emulated scheme and follow the OS one, so their shots of each scheme are
+    // taken again with --os to match: --only=panel-printables,collection-printables,imported-printables,
+    // panel-crealitycloud --os=light, then --only=panel-printables-dark,collection-printables-dark,
+    // panel-crealitycloud-dark --os=dark.
     for (const scheme of ["light", "dark"] as const) {
       const suffix = scheme === "dark" ? "-dark" : "";
       await page.emulateMedia({ colorScheme: scheme });
@@ -385,9 +596,10 @@ async function main(): Promise<void> {
         await openPage(page, model.url);
         await page.locator(".tg-fab:not(.tg-fab--inactive)").click();
         await page.locator('.tg-panel [data-action="import"]').waitFor({ timeout: 20000 });
+        // A name that matches no collection is one Grab will create, which the box says under it.
         if (provider.name === "thingiverse") {
-          await page.locator("#tg-collection").selectOption("__new__");
-          await page.locator("#tg-new-collection").fill(NEW_COLLECTION_NAME);
+          await page.locator("#tg-collection").fill(NEW_COLLECTION_NAME);
+          await page.locator("#tg-collection-note").waitFor();
         }
         await screenshotViewport(page, `panel-${provider.name}${suffix}.jpg`);
 

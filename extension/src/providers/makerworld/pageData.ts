@@ -7,6 +7,8 @@ export type MakerworldDesign = {
   defaultInstanceId?: string | number;
   designCreator?: MakerworldCreator;
   instances?: MakerworldInstance[];
+  /** Holds the design's files, among them the script it was generated from, where it has one. */
+  designExtension?: { model_files?: unknown[] };
 };
 
 export type MakerworldProfileScope = "url" | "designer" | "all";
@@ -113,6 +115,46 @@ export function pickMakerworldInstanceId(design: MakerworldDesign, requestedInst
   return instances.length ? String(instances[0].id) : null;
 }
 
+/**
+ * The generator scripts a design lists, and whether every one of them is held back.
+ *
+ * Mirrors the backend's makerworldParametricSource, so the page says the same thing the import would: a
+ * creator can mark a .scad `protected`, and MakerWorld then hands out the models it makes but never the
+ * script itself. Null where the design has no script at all, which is most of them.
+ */
+function scadEntries(design: MakerworldDesign): Record<string, unknown>[] {
+  const files = design.designExtension?.model_files;
+  if (!Array.isArray(files)) return [];
+  return modelFiles(files).filter(
+    (entry) =>
+      String(entry.modelType ?? "").toLowerCase() === "scad" ||
+      String(entry.modelName ?? "")
+        .toLowerCase()
+        .endsWith(".scad"),
+  );
+}
+
+/** The files in the design's folders too: a folder is an entry of its own, with its files as `children`. */
+function modelFiles(files: unknown[]): Record<string, unknown>[] {
+  const flat: Record<string, unknown>[] = [];
+  for (const file of files) {
+    if (!file || typeof file !== "object") continue;
+    const entry = file as Record<string, unknown>;
+    flat.push(entry);
+    if (Array.isArray(entry.children)) flat.push(...modelFiles(entry.children));
+  }
+  return flat;
+}
+
+export function makerworldScripts(design: MakerworldDesign): { filenames: string[]; withheld: boolean } | null {
+  const scripts = scadEntries(design);
+  if (!scripts.length) return null;
+  const filenames = scripts
+    .map((file) => (typeof file.modelName === "string" ? file.modelName.trim() : ""))
+    .filter((name) => name.length > 0);
+  return { filenames, withheld: scripts.every((file) => file.protected === true) };
+}
+
 /** Mirrors the backend's selectMakerworldProfiles. */
 export function makerworldProfileIds(
   design: MakerworldDesign,
@@ -154,9 +196,27 @@ export function makerworldDesignForImport(design: MakerworldDesign): Record<stri
     if (source[key] !== undefined) out[key] = source[key];
   }
   const pictures = getPath(source, "designExtension", "design_pictures");
-  if (Array.isArray(pictures)) {
+  const hasFileList = Array.isArray(design.designExtension?.model_files);
+  // Only the .scad entries, and only the three fields the backend reads off them: it decides from these whether
+  // the model came with the script it was generated from, and whether its creator shared it. Sending the whole
+  // model_files list would spend the budget below on files the import already gets another way. Sent even when
+  // empty, as the design has no script then: without a list the backend reads the design from MakerWorld itself.
+  const scripts = scadEntries(design).map((file) => ({
+    modelType: file.modelType,
+    modelName: file.modelName,
+    protected: file.protected,
+  }));
+  if (Array.isArray(pictures) || hasFileList) {
     out.designExtension = {
-      design_pictures: pictures.map((picture) => ({ name: getPath(picture, "name"), url: getPath(picture, "url") })),
+      ...(Array.isArray(pictures)
+        ? {
+            design_pictures: pictures.map((picture) => ({
+              name: getPath(picture, "name"),
+              url: getPath(picture, "url"),
+            })),
+          }
+        : {}),
+      ...(hasFileList ? { model_files: scripts } : {}),
     };
   }
   if (Array.isArray(source.categories))

@@ -2,47 +2,50 @@
 import Icon from "./Icon.astro";
 ---
 
-<!-- Follows the OS setting by default; the button cycles system -> light -> dark. -->
-<button class="theme-toggle" type="button" data-theme-toggle aria-label="Colour theme: system">
-  <span data-mode="system"><Icon name="monitor" size={18} /></span>
-  <span data-mode="light" hidden><Icon name="sun" size={18} /></span>
-  <span data-mode="dark" hidden><Icon name="moon" size={18} /></span>
+<!-- Light by default; the button switches between light and dark, remembered across the site, docs included. -->
+<button
+  class="theme-toggle"
+  type="button"
+  data-theme-toggle
+  aria-label="Switch to the dark theme"
+  title="Switch to the dark theme"
+>
+  <span data-mode="light"><Icon name="moon" size={18} /></span>
+  <span data-mode="dark" hidden><Icon name="sun" size={18} /></span>
 </button>
 
 <script>
-  const KEY = "thingport-theme";
-  const ORDER = ["system", "light", "dark"] as const;
-  type Mode = (typeof ORDER)[number];
+  import { THEME_COLORS, THEME_KEY } from "../lib/theme.mjs";
 
-  const read = (): Mode => {
-    try {
-      const v = localStorage.getItem(KEY);
-      return v === "light" || v === "dark" ? v : "system";
-    } catch {
-      return "system";
+  type Theme = "light" | "dark";
+
+  const current = (): Theme => (document.documentElement.dataset.theme === "dark" ? "dark" : "light");
+
+  const render = () => {
+    const theme = current();
+    const label = theme === "dark" ? "Switch to the light theme" : "Switch to the dark theme";
+    for (const button of document.querySelectorAll<HTMLButtonElement>("[data-theme-toggle]")) {
+      button.setAttribute("aria-label", label);
+      button.title = label;
+      for (const icon of button.querySelectorAll<HTMLElement>("[data-mode]")) icon.hidden = icon.dataset.mode !== theme;
     }
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", THEME_COLORS[theme]);
   };
 
-  const apply = (mode: Mode) => {
-    const root = document.documentElement;
-    if (mode === "system") delete root.dataset.theme;
-    else root.dataset.theme = mode;
+  const apply = (theme: Theme) => {
+    document.documentElement.dataset.theme = theme;
     try {
-      if (mode === "system") localStorage.removeItem(KEY);
-      else localStorage.setItem(KEY, mode);
+      if (theme === "dark") localStorage.setItem(THEME_KEY, theme);
+      else localStorage.removeItem(THEME_KEY);
     } catch {
       /* storage blocked: the choice just won't persist */
     }
-    for (const button of document.querySelectorAll<HTMLButtonElement>("[data-theme-toggle]")) {
-      button.setAttribute("aria-label", `Colour theme: ${mode}`);
-      button.title = `Theme: ${mode}`;
-      for (const icon of button.querySelectorAll<HTMLElement>("[data-mode]")) icon.hidden = icon.dataset.mode !== mode;
-    }
+    render();
   };
 
-  apply(read());
+  render();
   for (const button of document.querySelectorAll("[data-theme-toggle]")) {
-    button.addEventListener("click", () => apply(ORDER[(ORDER.indexOf(read()) + 1) % ORDER.length]));
+    button.addEventListener("click", () => apply(current() === "dark" ? "light" : "dark"));
   }
 </script>
 
@@ -50,6 +53,7 @@ import Icon from "./Icon.astro";
   .theme-toggle {
     display: inline-grid;
     place-items: center;
+    flex: none;
     width: 2.4rem;
     height: 2.4rem;
     padding: 0;
@@ -58,6 +62,7 @@ import Icon from "./Icon.astro";
     background: var(--panel);
     color: var(--heading);
     cursor: pointer;
+    transition: border-color 0.15s;
   }
   .theme-toggle:hover {
     border-color: var(--accent);

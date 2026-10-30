@@ -1,0 +1,196 @@
+{
+  "name": "projects/webcad-66241/databases/(default)/documents/gallery/08ff2510-3f79-4169-8933-c0bf594f10e9",
+  "fields": {
+    "createdAt": {
+      "timestampValue": "2026-06-24T16:22:42.457Z"
+    },
+    "authorName": {
+      "stringValue": "Adafruit Industries"
+    },
+    "titleVariant": {
+      "nullValue": null
+    },
+    "pack": {
+      "mapValue": {
+        "fields": {
+          "url": {
+            "stringValue": "https://github.com/adafruit/Adafruit_CAD_Parts"
+          },
+          "name": {
+            "stringValue": "CAD Parts"
+          }
+        }
+      }
+    },
+    "publishedAt": {
+      "timestampValue": "2026-06-24T16:22:42.457Z"
+    },
+    "status": {
+      "stringValue": "live"
+    },
+    "tags": {
+      "arrayValue": {
+        "values": [
+          {
+            "stringValue": "oled"
+          },
+          {
+            "stringValue": "4in"
+          },
+          {
+            "stringValue": "display"
+          },
+          {
+            "stringValue": "electronics"
+          }
+        ]
+      }
+    },
+    "remixedFrom": {
+      "nullValue": null
+    },
+    "reviewed": {
+      "booleanValue": true
+    },
+    "description": {
+      "nullValue": null
+    },
+    "attribution": {
+      "mapValue": {
+        "fields": {
+          "author": {
+            "stringValue": "Adafruit Industries"
+          },
+          "sourceUrl": {
+            "stringValue": "https://github.com/adafruit/Adafruit_CAD_Parts"
+          }
+        }
+      }
+    },
+    "likeCount": {
+      "integerValue": "0"
+    },
+    "commentCount": {
+      "integerValue": "0"
+    },
+    "kind": {
+      "stringValue": "mesh"
+    },
+    "related": {
+      "arrayValue": {
+        "values": [
+          {
+            "stringValue": "1b156fde-f5b1-4fbb-ae8d-9d3719c623fb"
+          },
+          {
+            "stringValue": "4f3ee4cf-90a9-4ca9-815c-63c15ea0bd8b"
+          },
+          {
+            "stringValue": "18255965-786e-436b-9a13-5d8303416d7b"
+          },
+          {
+            "stringValue": "baa4ef5f-b2c6-4576-b0fe-a81e4431e0ca"
+          },
+          {
+            "stringValue": "d3b1490d-6481-45d2-8d61-b8bdd476f19f"
+          },
+          {
+            "stringValue": "5ef5cacc-d469-45bb-aba8-d9f6fc6a7f36"
+          },
+          {
+            "stringValue": "149c3adf-1d88-40f0-8dac-d0c255cd95fb"
+          },
+          {
+            "stringValue": "edad8f6b-5b81-45b7-b0d2-59142261cfcf"
+          },
+          {
+            "stringValue": "10fc5d0e-2c22-4df9-987f-b20c10a3d064"
+          },
+          {
+            "stringValue": "19828001-0bdd-424d-baf0-81d839da2413"
+          },
+          {
+            "stringValue": "df2a2fa6-3076-4253-9096-dc2c8f97fc6a"
+          },
+          {
+            "stringValue": "3a2c76a7-6552-4be8-b5e2-1ae5c8709a99"
+          }
+        ]
+      }
+    },
+    "refId": {
+      "stringValue": "08ff2510-3f79-4169-8933-c0bf594f10e9"
+    },
+    "slug": {
+      "stringValue": "oled-2-4-display"
+    },
+    "category": {
+      "stringValue": "Electronics"
+    },
+    "storagePath": {
+      "stringValue": "parts/08ff2510-3f79-4169-8933-c0bf594f10e9/model.glb"
+    },
+    "updatedAt": {
+      "timestampValue": "2026-09-18T13:34:50.397Z"
+    },
+    "remixCount": {
+      "integerValue": "0"
+    },
+    "type": {
+      "stringValue": "part"
+    },
+    "featured": {
+      "booleanValue": false
+    },
+    "customizable": {
+      "booleanValue": false
+    },
+    "thumbnailUrl": {
+      "stringValue": "https://firebasestorage.googleapis.com/v0/b/webcad-66241.firebasestorage.app/o/parts%2F08ff2510-3f79-4169-8933-c0bf594f10e9%2Fthumb.png?alt=media&token=8dc16956-fcbb-412f-91f2-7dc2368d75c2&v=1782479028430"
+    },
+    "meshStats": {
+      "mapValue": {
+        "fields": {
+          "triangles": {
+            "integerValue": "552"
+          },
+          "watertight": {
+            "booleanValue": true
+          },
+          "bodies": {
+            "integerValue": "2"
+          },
+          "sizeMm": {
+            "arrayValue": {
+              "values": [
+                {
+                  "integerValue": "40"
+                },
+                {
+                  "integerValue": "2"
+                },
+                {
+                  "doubleValue": 28.3
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "moderated": {
+      "booleanValue": false
+    },
+    "ownerId": {
+      "stringValue": "importer"
+    },
+    "license": {
+      "stringValue": "MIT"
+    },
+    "name": {
+      "stringValue": "OLED 2.4\" Display"
+    }
+  },
+  "createTime": "2026-06-24T16:22:42.489566Z",
+  "updateTime": "2026-09-18T13:34:50.420955Z"
+}

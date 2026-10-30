@@ -20,6 +20,7 @@ import CollectionSyncBadge from "../../components/CollectionSyncBadge";
 import CollectionSyncDialog from "../CollectionDetailPage/CollectionSyncDialog";
 import { useCardContextMenu } from "../../components/Layout/ConfigurationDialog/AppTiles";
 import SelectionCheck from "../../components/selection/SelectionCheck";
+import { ToolCollectionBadge, ToolCollectionMenu } from "../../components/tools/ToolCollectionBadge";
 
 type Props = {
   collection: Collection;
@@ -119,13 +120,21 @@ export default function CollectionCard({
   const openTarget = soleModelId ? `/models/${soleModelId}` : `/models/collections/${collection.id}`;
   const [syncOpen, setSyncOpen] = useState(false);
   const contextMenu = useCardContextMenu();
-  const system = Boolean(collection.system_key);
+  // A tool's collection is as fixed as a built-in one: no menu, and left out of merging and deleting.
+  const system = Boolean(collection.system_key || collection.tool_id);
   // Built-in ones can't be merged or deleted, so in select mode they step back and do nothing.
   const sittingOut = selectMode && system;
   const toggleSelect = (event: React.MouseEvent | React.KeyboardEvent) => onToggleSelect?.(event.shiftKey);
 
   return (
-    <Tooltip title={sittingOut ? t("models:collections.selection.builtIn") : ""} followCursor>
+    <Tooltip
+      title={
+        sittingOut
+          ? t(collection.tool_id ? "models:collections.tool.cantSelect" : "models:collections.selection.builtIn")
+          : ""
+      }
+      followCursor
+    >
       <Box
         sx={{
           position: "relative",
@@ -156,8 +165,8 @@ export default function CollectionCard({
         ))}
         <Paper
           variant="outlined"
-          // System collections have no menu, so they keep the browser's.
-          onContextMenu={system || selectMode ? undefined : contextMenu.onContextMenu}
+          // Built-in collections have no menu, so they keep the browser's; a tool's has one of its own.
+          onContextMenu={collection.system_key || selectMode ? undefined : contextMenu.onContextMenu}
           {...(selectMode &&
             !system && {
               onClick: toggleSelect,
@@ -298,6 +307,7 @@ export default function CollectionCard({
                   </Typography>
                 </Stack>
               </Box>
+              {collection.tool_id && <ToolCollectionBadge toolId={collection.tool_id} />}
               {collection.sync && (
                 <CollectionSyncBadge
                   sync={collection.sync}
@@ -307,6 +317,15 @@ export default function CollectionCard({
             </Stack>
           </Box>
         </Paper>
+        {collection.tool_id && (
+          <ToolCollectionMenu
+            toolId={collection.tool_id}
+            name={displayName}
+            at={contextMenu.at}
+            onClose={contextMenu.close}
+            onOpenCollection={() => navigate(`/models/collections/${collection.id}`)}
+          />
+        )}
         {syncOpen && collection.sync && (
           <CollectionSyncDialog
             collection={{ ...collection, sync: collection.sync }}

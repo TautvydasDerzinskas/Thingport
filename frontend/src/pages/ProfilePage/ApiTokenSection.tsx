@@ -15,6 +15,7 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import { authApi, type ApiTokenInfo } from "../../api/auth";
 import { UnauthorizedError } from "../../api/client";
 import { useConfirm } from "../../components/ConfirmProvider";
+import { copyText } from "../../utils/clipboard";
 import { relativeTime } from "../../utils/relativeTime";
 import ApiTokenPermissionsDialog from "./ApiTokenPermissionsDialog";
 
@@ -104,12 +105,11 @@ export default function ApiTokenSection({ onUnauthorized }: Props) {
     }
   };
 
-  // The clipboard API only exists on HTTPS or localhost, and self-hosted instances are often plain
-  // HTTP on a LAN address; there the token is selected so it can be copied by hand.
+  // Where the browser won't copy, the token is selected so it can be copied by hand.
   const copy = async () => {
     if (!newToken) return;
     try {
-      await navigator.clipboard.writeText(newToken);
+      await copyText(newToken);
       setCopied("token");
     } catch {
       tokenInput.current?.select();
@@ -121,7 +121,7 @@ export default function ApiTokenSection({ onUnauthorized }: Props) {
     : "";
   const copyCommand = async () => {
     try {
-      await navigator.clipboard.writeText(mcpCommand);
+      await copyText(mcpCommand);
       setCopied("command");
     } catch {
       // As with the token: selected, to copy by hand.

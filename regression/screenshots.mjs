@@ -6,18 +6,22 @@
 //     --model <id> --quality-model <id>
 //
 // The password comes from THINGPORT_PASSWORD (or --password). Options, also settable as env vars:
-//   --url            THINGPORT_URL              instance to capture (required)
-//   --email          THINGPORT_EMAIL            admin account to sign in with (required)
-//   --password       THINGPORT_PASSWORD
-//   --model          SCREENSHOT_MODEL           id of the model for the details and 3D preview shots
-//   --quality-model  SCREENSHOT_QUALITY_MODEL   id of a model whose print quality check found problems
-//   --themes         SCREENSHOT_THEMES          comma-separated, default light,dark
-//   --only           SCREENSHOT_ONLY            comma-separated shot names or numbers, e.g. 06,07
-//   --out            SCREENSHOT_OUT             output folder, holding one folder per theme
-//   --headed                                    show the browser
+//   --url                   THINGPORT_URL                    instance to capture (required)
+//   --email                 THINGPORT_EMAIL                  admin account to sign in with (required)
+//   --password              THINGPORT_PASSWORD
+//   --model                 SCREENSHOT_MODEL                 id of the model for the details and 3D preview shots
+//   --quality-model         SCREENSHOT_QUALITY_MODEL         id of a model whose print quality check found problems
+//   --generative-model      SCREENSHOT_GENERATIVE_MODEL      a model that came with its script; default the first one
+//   --synced-collection     SCREENSHOT_SYNCED_COLLECTION     a synced collection; default the first one
+//   --ai-description-model  SCREENSHOT_AI_DESCRIPTION_MODEL  a model whose description AI rewrote; skipped without one
+//   --themes                SCREENSHOT_THEMES                comma-separated, default light,dark
+//   --only                  SCREENSHOT_ONLY                  comma-separated shot names or numbers, e.g. 06,07
+//   --out                   SCREENSHOT_OUT                   output folder, holding one folder per theme
+//   --headed                                                 show the browser
 //
 // The account's theme and Categories/Folders choice are switched for the shots and restored afterwards. Nothing is
-// changed in the library: the merge and download dialogs are only opened. Email addresses on the page are blurred.
+// changed in the library: the merge and download dialogs are only opened, and System Health's full test only checks
+// connections. Email addresses on the page are blurred.
 //
 // The guide_* cut-outs replace the images in docs/guides/images, light only, and run only when named with --only;
 // guide_consume_settings needs the consume folder mounted.
@@ -35,6 +39,9 @@ const { values: args } = parseArgs({
     password: { type: "string" },
     model: { type: "string" },
     "quality-model": { type: "string" },
+    "generative-model": { type: "string" },
+    "synced-collection": { type: "string" },
+    "ai-description-model": { type: "string" },
     themes: { type: "string" },
     only: { type: "string" },
     out: { type: "string" },
@@ -52,6 +59,11 @@ const email = args.email || process.env.THINGPORT_EMAIL;
 const password = args.password || process.env.THINGPORT_PASSWORD;
 const modelId = args.model || process.env.SCREENSHOT_MODEL;
 const qualityModelId = args["quality-model"] || process.env.SCREENSHOT_QUALITY_MODEL;
+const optionalIds = {
+  generativeModel: args["generative-model"] || process.env.SCREENSHOT_GENERATIVE_MODEL,
+  syncedCollection: args["synced-collection"] || process.env.SCREENSHOT_SYNCED_COLLECTION,
+  aiDescriptionModel: args["ai-description-model"] || process.env.SCREENSHOT_AI_DESCRIPTION_MODEL,
+};
 const themes = list(args.themes || process.env.SCREENSHOT_THEMES || "light,dark");
 const outDir = path.resolve(
   args.out || process.env.SCREENSHOT_OUT || path.join(here, "../frontend/src/assets/screenshots"),
@@ -259,6 +271,123 @@ const SHOTS = [
       await page.getByRole("option").first().waitFor();
     },
   },
+  // The rest of Administration, for the website's page about it.
+  { name: "22_admin_auth", run: (page) => open(page, "/admin-auth") },
+  { name: "23_admin_users", run: (page) => open(page, "/admin-users") },
+  { name: "24_admin_queue", run: (page) => open(page, "/admin-queue") },
+  { name: "25_admin_logs", run: (page) => open(page, "/admin-logs") },
+  { name: "26_admin_triggers", run: (page) => open(page, "/admin-triggers") },
+  { name: "27_admin_connections", run: (page) => open(page, "/admin-connections") },
+  { name: "28_admin_rendering", run: (page) => open(page, "/admin-rendering") },
+  { name: "29_admin_captcha", run: (page) => open(page, "/admin-captcha") },
+  { name: "30_admin_tools", run: (page) => open(page, "/admin-tools") },
+  {
+    name: "31_tools",
+    run: async (page) => {
+      await open(page, "/tools");
+      await page.getByRole("heading", { name: "Tools", exact: true }).waitFor();
+    },
+  },
+  {
+    name: "32_tool_window",
+    run: async (page) => {
+      await open(page, "/tools");
+      await page.getByRole("button", { name: /^QR code generator:/ }).dblclick();
+      await page.getByRole("dialog").waitFor();
+      // The tool draws its first code once its script has loaded.
+      await settle(page, 1500);
+    },
+  },
+  { name: "33_my_models", run: (page) => open(page, "/authors/self") },
+  {
+    name: "34_models_filters",
+    run: async (page) => {
+      await open(page, "/models");
+      await page.getByRole("button", { name: "Filters" }).click();
+      await page.locator(".MuiPopover-paper, .MuiMenu-paper").first().waitFor();
+    },
+  },
+  {
+    name: "35_model_customize",
+    optional: "generativeModel",
+    run: async (page, ctx) => {
+      await open(page, `/models/${ctx.generativeModel}`);
+      // Named exactly: a model may also carry a tag called "Customize", whose chip is a button earlier in the page.
+      await page.getByRole("button", { name: "Customize…", exact: true }).click();
+      // A model that came with several scripts asks which one first.
+      const pick = page.getByRole("dialog").filter({ hasText: "Which script?" });
+      if (await pick.isVisible().catch(() => false)) await pick.getByRole("button").first().click();
+      // An empty stage says nothing about what the parameters do, so it is generated before the shot. The button reads
+      // "Generating…" until the model is on the stage; "Generated in" alone may be left over from an earlier run.
+      const generate = page.getByRole("button", { name: "Generate", exact: true });
+      await generate.waitFor({ timeout: 120000 });
+      await generate.click();
+      await page
+        .getByRole("button", { name: /^Generating/ })
+        .waitFor({ timeout: 5000 })
+        .catch(() => undefined);
+      await generate
+        .and(page.locator(":enabled"))
+        .waitFor({ timeout: 180000 })
+        .catch(() => console.warn("  nothing generated in time; the stage may be empty"));
+      await settle(page, 1500);
+    },
+  },
+  {
+    name: "36_collection_sync",
+    optional: "syncedCollection",
+    run: async (page, ctx) => {
+      await open(page, `/models/collections/${ctx.syncedCollection}`);
+      await page.getByRole("button", { name: /Sync configuration$/ }).click();
+      await page.getByRole("dialog").waitFor();
+    },
+  },
+  {
+    name: "37_ai_model",
+    run: async (page) => {
+      await open(page, "/admin-ai");
+      // A click only selects the card; a double click opens its editor, as in a file manager.
+      await page.getByRole("button", { name: /default AI$/ }).dblclick();
+      await page.getByRole("dialog").waitFor();
+    },
+  },
+  {
+    name: "38_ai_categorization",
+    run: async (page) => {
+      await open(page, "/admin-ai");
+      await page.getByRole("button", { name: "AI Categorization settings" }).click();
+      await page.getByRole("dialog").waitFor();
+    },
+  },
+  {
+    name: "39_ai_description_compare",
+    optional: "aiDescriptionModel",
+    run: async (page, ctx) => {
+      await open(page, `/models/${ctx.aiDescriptionModel}`);
+      await page.getByRole("button", { name: /^Description by AI/ }).click();
+      await page.getByRole("menuitem", { name: "Compare with the original" }).click();
+      await page.getByRole("dialog").waitFor();
+    },
+  },
+  {
+    name: "40_system_health",
+    run: async (page) => {
+      // Tall enough for every part of the check, as the System Health guide shows it.
+      await page.setViewportSize({ width: VIEWPORT.width, height: 1500 });
+      await open(page, "/admin");
+      const run = page.getByRole("button", { name: "Run full test" });
+      await run.click();
+      // Disabled while any part is still being tested; the slowest gives up after its own timeout.
+      await run
+        .and(page.locator(":disabled"))
+        .waitFor({ timeout: 5000 })
+        .catch(() => undefined);
+      await run
+        .and(page.locator(":enabled"))
+        .waitFor({ timeout: 90000 })
+        .catch(() => console.warn("  the full test was still running"));
+    },
+  },
   // The guides' cut-outs, saved next to the guides rather than with the README shots.
   {
     name: "guide_consume_settings",
@@ -350,12 +479,21 @@ const context = await browser.newContext({
 await context.addInitScript(() => {
   localStorage.setItem("thingport_language", "en");
   localStorage.setItem("thingport_sidebar_collapsed", "false");
+  // A library that has lost files greets every visit with a dialog, which hides the page behind it from role queries.
+  localStorage.setItem("thingport.missingFiles.dismissedAt", "999999");
+  // A screenshot outlives the season it was taken in, so the logo is shown without its seasonal edition.
+  document.addEventListener("DOMContentLoaded", () => {
+    const style = document.createElement("style");
+    style.textContent = 'img[alt="Thingport"] + img[aria-hidden="true"] { display: none !important; }';
+    document.head.append(style);
+  });
 });
 const page = await context.newPage();
 
 let token = null;
 let originalTheme;
 let originalView;
+let failed = 0;
 try {
   await page.goto("/");
   await page.getByLabel("Email").fill(email);
@@ -372,30 +510,45 @@ try {
   originalView = (await api(token, "GET", "/settings/categories-view")).view;
   await api(token, "PATCH", "/settings/categories-view", { view: "categories" });
 
-  const ctx = { displayName };
+  // Picked from the library when not given; there's no way to look up a model whose description AI rewrote.
+  optionalIds.generativeModel ??= (await api(token, "GET", "/prints?generative=1&limit=1"))[0]?.id;
+  optionalIds.syncedCollection ??= (await api(token, "GET", "/collections")).find((c) => c.sync)?.id;
+
+  const ctx = { displayName, ...optionalIds };
   for (const theme of themes) {
     await api(token, "PATCH", "/settings/theme", { theme });
     await page.emulateMedia({ colorScheme: theme });
     fs.mkdirSync(path.join(outDir, theme), { recursive: true });
     for (const shot of shots.filter((s) => !s.guide || theme === "light")) {
       process.stdout.write(`${theme}/${shot.name}... `);
-      await page.setViewportSize(VIEWPORT);
-      const result = await shot.run(page, ctx);
-      if (!result?.saved) {
-        // Off the page, so no tooltip shows up under the pointer.
-        await page.mouse.move(VIEWPORT.width - 1, VIEWPORT.height - 1);
-        await settle(page);
-        await blurEmails(page);
-        await blurLocation(page);
-        await page.screenshot({ path: path.join(outDir, theme, `${shot.name}.png`) });
+      if (shot.optional && !ctx[shot.optional]) {
+        console.log("skipped, nothing to show it with");
+        continue;
       }
-      console.log("done");
+      // One shot that can't be taken shouldn't cost the rest of a long run.
+      try {
+        await page.setViewportSize(VIEWPORT);
+        const result = await shot.run(page, ctx);
+        if (!result?.saved) {
+          // Off the page, so no tooltip shows up under the pointer.
+          await page.mouse.move(VIEWPORT.width - 1, VIEWPORT.height - 1);
+          await settle(page);
+          await blurEmails(page);
+          await blurLocation(page);
+          await page.screenshot({ path: path.join(outDir, theme, `${shot.name}.png`) });
+        }
+        console.log("done");
+      } catch (err) {
+        failed++;
+        console.log(`failed: ${err.message.split("\n")[0]}`);
+      }
       // Twice: a dialog can open over another one.
       await page.keyboard.press("Escape").catch(() => undefined);
       await page.keyboard.press("Escape").catch(() => undefined);
     }
   }
-  console.log(`Saved to ${outDir}`);
+  console.log(`Saved to ${outDir}${failed ? `; ${failed} failed` : ""}`);
+  if (failed) process.exitCode = 1;
 } finally {
   if (token && originalTheme !== undefined) {
     await api(token, "PATCH", "/settings/theme", { theme: originalTheme }).catch((err) =>
@@ -406,6 +559,12 @@ try {
     await api(token, "PATCH", "/settings/categories-view", { view: originalView }).catch((err) =>
       console.error(`Couldn't restore the Categories/Folders choice (${originalView}): ${err.message}`),
     );
+  }
+  // Each run signs in afresh, so without this every run would leave a session behind on the account.
+  if (token) {
+    await context.request
+      .post(`${baseUrl}/api/logout`, { headers: { Authorization: `Bearer ${token}` } })
+      .catch(() => undefined);
   }
   await browser.close();
 }

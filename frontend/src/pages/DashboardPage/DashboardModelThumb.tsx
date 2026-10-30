@@ -22,12 +22,16 @@ export default function DashboardModelThumb({ model }: { model: DashboardModel }
 
   // Hidden until the choice is known, so the lists don't flash the wrong picture.
   if (preference === null) return <ListItemAvatar sx={{ minWidth: 48 }} />;
-  const photo = model.thumb_url ? printsApi.fileUrl(model.thumb_url) : undefined;
-  const photoAvatar = (
-    <Avatar src={photo} variant="rounded" sx={{ width: SIZE, height: SIZE, color: "text.disabled" }}>
+  // The model's own picture -- which for one drawn in colours of its own is that drawing, not the grey thumbnail
+  // beside it. The thumbnail still holds the row while a render loads, picture of its own or not.
+  const photo = model.photo_url ? printsApi.fileUrl(model.photo_url) : undefined;
+  const standIn = model.thumb_url ? printsApi.fileUrl(model.thumb_url) : undefined;
+  const avatar = (src?: string) => (
+    <Avatar src={src} variant="rounded" sx={{ width: SIZE, height: SIZE, color: "text.disabled" }}>
       <ViewInArIcon fontSize="small" />
     </Avatar>
   );
+  const photoAvatar = avatar(photo);
   const renderUrl =
     model.render_url && model.render_url !== failedRender && (preference === "renders" || !photo)
       ? model.render_url
@@ -41,7 +45,7 @@ export default function DashboardModelThumb({ model }: { model: DashboardModel }
             url={renderUrl}
             alt={model.name}
             onUnavailable={onUnavailable}
-            placeholder={photo ? photoAvatar : undefined}
+            placeholder={standIn ? avatar(standIn) : undefined}
           />
         </Box>
       ) : (

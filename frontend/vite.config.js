@@ -43,6 +43,9 @@ const resolvedAllowedHosts = parseAllowedHosts(
 const { version } = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8"));
 
 export default defineConfig({
+  // The OpenSCAD worker reaches the engine through dynamic imports, so its bundle has to be splittable.
+  // Vite's default worker format is IIFE, which cannot be.
+  worker: { format: "es" },
   define: {
     "import.meta.env.VITE_APP_VERSION": JSON.stringify(version),
   },
@@ -59,5 +62,15 @@ export default defineConfig({
   },
   preview: {
     allowedHosts: resolvedAllowedHosts,
+  },
+  build: {
+    // The OpenSCAD libraries are mounted into the engine's filesystem by name, so they stay real files: left to
+    // the default, the few under 4 kB get inlined as data: URIs inside JS chunks instead, which still works but
+    // turns three of BOSL2's files -- std.scad among them -- into something quite different from the rest.
+    assetsInlineLimit: (filePath) => (filePath.endsWith(".scad") ? false : undefined),
+  },
+  test: {
+    // Serves the `?url` assets a test asks for, which in the browser the dev server would answer.
+    setupFiles: ["./test/setup.ts"],
   },
 });

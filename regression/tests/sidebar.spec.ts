@@ -77,7 +77,7 @@ test.describe("as a member", () => {
     await expect(models.getByRole("heading", { level: 3 })).toHaveText("0");
     await expect(page.getByText("Failed to load your dashboard.")).toHaveCount(0);
 
-    for (const path of ["/admin", "/admin-users", "/admin-settings", "/admin-ai"]) {
+    for (const path of ["/admin", "/admin-users", "/admin-storage", "/admin-ai"]) {
       await page.goto(path);
       await expect(page).toHaveURL(/\/$/);
       await expect(pageTitle(page)).toHaveText("Dashboard");
@@ -168,8 +168,11 @@ test("collapses to an icon rail and expands again", async ({ page }) => {
   await expect(pageTitle(page)).toHaveText(TAG_A);
   await nav.getByRole("button", { name: "Administration" }).click();
   await expect(page).toHaveURL(/\/admin$/);
+  // Administration always folds it, beside its own menu, so there's nothing to expand there.
+  await expect(nav.getByRole("button", { name: "Expand sidebar" })).toHaveCount(0);
 
   // The choice survives a reload.
+  await page.goto("/");
   await page.reload();
   await expect.poll(width).toBe(72);
 

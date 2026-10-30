@@ -1,0 +1,30 @@
+[
+  {
+    "url": "https://www.toymakr3d.com/product/8-transformable-sofa-robot",
+    "expect": { "provider": "toymakr3d", "kind": "model", "externalId": "8" }
+  },
+  {
+    "url": "https://toymakr3d.com/product/106-classic-big-o-robot",
+    "expect": { "provider": "toymakr3d", "kind": "model", "externalId": "106" }
+  },
+  {
+    "url": "https://www.toymakr3d.com/product/8-",
+    "expect": { "provider": "toymakr3d", "kind": "model", "externalId": "8" }
+  },
+  {
+    "url": "https://www.toymakr3d.com/like-product",
+    "expect": { "provider": "toymakr3d", "kind": "list", "externalId": "likes", "listKind": "likes" }
+  },
+  {
+    "url": "https://www.toymakr3d.com/by-category/g1-robots",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://www.toymakr3d.com/download/8-transformable-sofa-robot",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://cdn.toymakr3d.com/plupload/dgfile/download/free/8-transformable-sofa-robot-by_toymakr3d.zip",
+    "expect": { "provider": null, "kind": null }
+  }
+]

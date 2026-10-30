@@ -1,0 +1,13 @@
+{
+  "loading": "Asking the printer…",
+  "idle": "Nothing printing",
+  "left": "{state} · {percent}% · {minutes} min left",
+  "status": "OctoPrint answered {status}",
+  "failed": "Couldn't reach OctoPrint: {reason}",
+  "settings.address": "OctoPrint address",
+  "settings.apiKey": "API key",
+  "settings.refresh": "Refresh",
+  "settings.seconds5": "Every 5 s",
+  "settings.seconds10": "Every 10 s",
+  "settings.seconds30": "Every 30 s"
+}

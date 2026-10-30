@@ -1,0 +1,1008 @@
+<style>
+  /* Everything is under .krg, so none of it reaches the rest of Thingport. The colours are Thingport's own: tool.js
+     sets the variables below from the theme it's given, which is why there is no hex code in here. */
+  .krg {
+    --panel-2: color-mix(in srgb, var(--panel) 92%, var(--text));
+    --panel-3: color-mix(in srgb, var(--panel) 85%, var(--text));
+    --line: var(--divider);
+    --tint: color-mix(in srgb, var(--accent) 14%, transparent);
+    --ease: cubic-bezier(0.2, 0, 0.2, 1);
+    position: relative;
+    container-type: inline-size;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font: 13px/1.45 var(--font);
+  }
+  .krg *,
+  .krg *::before,
+  .krg *::after {
+    box-sizing: border-box;
+  }
+  /* `:where()` holds this reset at the specificity of the root class alone, so a button's own rule further down —
+     the accent-filled one, say — still decides its colour and its weight. Written as `.krg button`, the reset
+     outranks every single-class rule and quietly wins both. */
+  .krg :where(button, input, select, textarea) {
+    font: inherit;
+    color: inherit;
+  }
+  .krg :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .krg [hidden] {
+    display: none !important;
+  }
+  .krg svg {
+    flex-shrink: 0;
+  }
+  .krg h2,
+  .krg h3 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  /* ---- the bar across the top ---- */
+  .krg-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
+  }
+  .krg-spacer {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .krg-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel-2);
+    cursor: pointer;
+    white-space: nowrap;
+    transition:
+      background 140ms var(--ease),
+      border-color 140ms var(--ease),
+      transform 140ms var(--ease);
+  }
+  .krg-btn:hover:not(:disabled) {
+    background: var(--panel-3);
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  }
+  .krg-btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  .krg-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  .krg-btn-main {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+  }
+  .krg-btn-main:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 85%, var(--text));
+    border-color: color-mix(in srgb, var(--accent) 85%, var(--text));
+  }
+  .krg-btn-on {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+  .krg-icon {
+    width: 30px;
+    padding: 0;
+    justify-content: center;
+  }
+  .krg-danger {
+    color: var(--danger);
+  }
+  .krg-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel-2);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .krg-chip b {
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  /* The light that says whether what you are looking at is up to date. */
+  .krg-state {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel-2);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .krg-state::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+  }
+  .krg-state[data-state="ready"]::before {
+    background: var(--success);
+  }
+  .krg-state[data-state="working"]::before {
+    background: var(--accent);
+    animation: krg-pulse 900ms var(--ease) infinite;
+  }
+  .krg-state[data-state="error"]::before {
+    background: var(--danger);
+  }
+  @keyframes krg-pulse {
+    50% {
+      opacity: 0.25;
+      transform: scale(0.7);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .krg-state[data-state="working"]::before {
+      animation: none;
+    }
+  }
+
+  /* ---- the two columns ---- */
+  .krg-main {
+    flex: 1 1 auto;
+    display: grid;
+    gap: 10px;
+    padding: 10px;
+    min-height: 0;
+    grid-template-columns: 322px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+  }
+  @container (max-width: 859px) {
+    .krg-main {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: none;
+      align-content: start;
+    }
+    .krg {
+      overflow: auto;
+    }
+    .krg-form,
+    .krg-stage {
+      flex: 0 0 auto;
+      overflow: visible;
+    }
+    .krg-stage {
+      height: 420px;
+    }
+  }
+  .krg-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--panel);
+    animation: krg-rise 220ms var(--ease) both;
+  }
+  @keyframes krg-rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .krg-panel {
+      animation: none;
+    }
+  }
+  .krg-form {
+    gap: 0;
+    overflow: hidden;
+  }
+  /* Which settings are showing: a chooser rather than a row of tabs, so it stays one line however many there
+     are and the panel below keeps the height. */
+  .krg-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .krg-nav .krg-in {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 30px;
+    background: var(--panel-2);
+  }
+  .krg-nav select {
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .krg-sheet {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    padding: 12px;
+    overflow: auto;
+  }
+
+  /* ---- the form ---- */
+  .krg-group {
+    display: grid;
+    gap: 7px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .krg-group:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+  .krg-group > h3 {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--muted);
+    font-size: 11.5px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .krg-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+    gap: 7px;
+  }
+  .krg-field {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+  }
+  .krg-field > span,
+  .krg-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--muted);
+    font-size: 11.5px;
+  }
+  .krg-in {
+    display: flex;
+    align-items: center;
+    height: 28px;
+    padding: 0 7px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--bg);
+    transition: border-color 140ms var(--ease);
+  }
+  .krg-in:focus-within {
+    border-color: var(--accent);
+  }
+  .krg-in input,
+  .krg-in select {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    background: none;
+    outline: none;
+    font-variant-numeric: tabular-nums;
+  }
+  .krg-in select {
+    cursor: pointer;
+  }
+  .krg-in i {
+    color: var(--muted);
+    font-size: 11px;
+    font-style: normal;
+    white-space: nowrap;
+  }
+  /* A number with a slider under it: the slider for feel, the box for a figure you already know. */
+  .krg-slider {
+    display: grid;
+    gap: 4px;
+  }
+  .krg-slider input[type="range"] {
+    width: 100%;
+    height: 14px;
+    margin: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .krg-help {
+    width: 15px;
+    height: 15px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: var(--panel-2);
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1;
+    cursor: help;
+  }
+  .krg-help:hover {
+    color: var(--text);
+    border-color: var(--accent);
+  }
+  /* A choice between a few things, as a switchable bar rather than a dropdown. */
+  .krg-seg {
+    display: flex;
+    padding: 2px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--panel-2);
+  }
+  .krg-seg button {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 24px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 7px;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition:
+      background 140ms var(--ease),
+      color 140ms var(--ease);
+  }
+  .krg-seg button[aria-pressed="true"] {
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+  }
+  /* On or off, as a switch. */
+  .krg-switch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+  .krg-switch input {
+    appearance: none;
+    position: relative;
+    flex: 0 0 auto;
+    width: 32px;
+    height: 18px;
+    margin: 0;
+    border-radius: 99px;
+    background: var(--panel-3);
+    cursor: pointer;
+    transition: background 160ms var(--ease);
+  }
+  .krg-switch input::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--panel);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 35%);
+    transition: transform 160ms var(--ease);
+  }
+  .krg-switch input:checked {
+    background: var(--accent);
+  }
+  .krg-switch input:checked::after {
+    transform: translateX(14px);
+    background: var(--accent-ink);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .krg-switch input,
+    .krg-switch input::after {
+      transition: none;
+    }
+  }
+  .krg-note {
+    margin: 0;
+    color: var(--muted);
+    font-size: 11.5px;
+  }
+  .krg-note b {
+    color: var(--text);
+  }
+  .krg-warn,
+  .krg-bad {
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--warning);
+    border-radius: 8px;
+    background: var(--panel-2);
+    color: var(--text);
+    font-size: 12px;
+  }
+  .krg-bad {
+    border-left-color: var(--danger);
+  }
+  .krg-empty {
+    display: grid;
+    gap: 8px;
+    justify-items: start;
+    padding: 14px;
+    border: 1px dashed var(--line);
+    border-radius: 10px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  /* ---- the text box ---- */
+  .krg-text {
+    width: 100%;
+    min-height: 74px;
+    padding: 8px 9px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--bg);
+    outline: none;
+    resize: vertical;
+    font-size: 15px;
+    line-height: 1.35;
+    transition: border-color 140ms var(--ease);
+  }
+  .krg-text:focus {
+    border-color: var(--accent);
+  }
+
+  /* ---- the typefaces ---- */
+  .krg-fonts {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 6px;
+    max-height: 232px;
+    overflow: auto;
+  }
+  .krg-font {
+    display: grid;
+    gap: 2px;
+    padding: 7px 8px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--panel-2);
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+    transition:
+      border-color 140ms var(--ease),
+      background 140ms var(--ease),
+      transform 140ms var(--ease);
+  }
+  .krg-font:hover {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+    transform: translateY(-1px);
+  }
+  .krg-font[aria-pressed="true"] {
+    border-color: var(--accent);
+    background: var(--tint);
+  }
+  .krg-font em {
+    font-size: 17px;
+    font-style: normal;
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .krg-font span {
+    color: var(--muted);
+    font-size: 10.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .krg-font:hover {
+      transform: none;
+    }
+  }
+
+  /* ---- the colours ---- */
+  .krg-colour {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 9px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--panel-2);
+  }
+  .krg-colour > div {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .krg-colour strong {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .krg-colour span {
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .krg-swatch {
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: none;
+    cursor: pointer;
+    overflow: hidden;
+  }
+  .krg-swatch::-webkit-color-swatch-wrapper {
+    padding: 2px;
+  }
+  .krg-swatch::-webkit-color-swatch {
+    border: 0;
+    border-radius: 6px;
+  }
+  .krg-swatch::-moz-color-swatch {
+    border: 0;
+    border-radius: 6px;
+  }
+
+  /* ---- the rings and the magnets ---- */
+  .krg-card {
+    display: grid;
+    gap: 7px;
+    padding: 9px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--panel-2);
+    animation: krg-rise 180ms var(--ease) both;
+  }
+  .krg-card[data-active="true"] {
+    border-color: var(--accent);
+    background: var(--tint);
+  }
+  .krg-card-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .krg-card-top strong {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .krg-card-top em {
+    color: var(--muted);
+    font-size: 11px;
+    font-style: normal;
+    font-variant-numeric: tabular-nums;
+  }
+  .krg-x {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    line-height: 1;
+  }
+  .krg-x:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+
+  /* ---- the picture ---- */
+  .krg-stage {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .krg-canvas-wrap {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .krg-stage canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    outline: none;
+  }
+  .krg-tools {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    align-items: center;
+    max-width: calc(100% - 16px);
+  }
+  .krg-tools .krg-seg button {
+    flex: 0 0 auto;
+  }
+  .krg-tools .krg-btn,
+  .krg-tools .krg-in {
+    height: 27px;
+    background: color-mix(in srgb, var(--panel) 85%, transparent);
+    backdrop-filter: blur(6px);
+  }
+  .krg-readout {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    align-items: center;
+    max-width: calc(100% - 16px);
+  }
+  .krg-readout .krg-chip {
+    height: 26px;
+    background: color-mix(in srgb, var(--panel) 85%, transparent);
+    backdrop-filter: blur(6px);
+    font-size: 11.5px;
+  }
+  /* What the engine is doing, over the picture, so the last good one stays visible behind it. */
+  .krg-busy {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 10px;
+    background: color-mix(in srgb, var(--panel) 72%, transparent);
+    backdrop-filter: blur(3px);
+    animation: krg-fade 160ms var(--ease) both;
+  }
+  @keyframes krg-fade {
+    from {
+      opacity: 0;
+    }
+  }
+  .krg-spin {
+    width: 26px;
+    height: 26px;
+    border: 2.5px solid var(--line);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: krg-turn 700ms linear infinite;
+  }
+  @keyframes krg-turn {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .krg-busy {
+      animation: none;
+    }
+    .krg-spin {
+      animation-duration: 2.4s;
+    }
+  }
+  .krg-busy p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  /* The shape won't build: said over the picture, with what to change. */
+  .krg-stop {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 10px;
+    padding: 24px;
+    background: color-mix(in srgb, var(--panel) 88%, transparent);
+    text-align: center;
+  }
+  .krg-stop strong {
+    font-size: 13px;
+  }
+  .krg-stop p {
+    margin: 0;
+    max-width: 44ch;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  /* While a ring or a magnet is being dragged about on the picture. */
+  .krg-editing {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px 6px 10px;
+    border: 1px solid var(--accent);
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--panel) 90%, transparent);
+    backdrop-filter: blur(6px);
+    font-size: 12px;
+  }
+
+  /* ---- the menu under Download, and the saving sheet ---- */
+  .krg-menu {
+    position: absolute;
+    z-index: 6;
+    min-width: 212px;
+    padding: 5px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--panel);
+    box-shadow: 0 12px 32px rgb(0 0 0 / 28%);
+    animation: krg-pop 150ms var(--ease) both;
+    transform-origin: top right;
+  }
+  @keyframes krg-pop {
+    from {
+      opacity: 0;
+      transform: scale(0.96) translateY(-4px);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .krg-menu {
+      animation: none;
+    }
+  }
+  .krg-menu button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 9px;
+    border: 0;
+    border-radius: 7px;
+    background: none;
+    cursor: pointer;
+    text-align: left;
+  }
+  .krg-menu button:hover {
+    background: var(--panel-2);
+  }
+  .krg-menu button small {
+    display: block;
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .krg-menu hr {
+    margin: 4px 2px;
+    border: 0;
+    border-top: 1px solid var(--line);
+  }
+  .krg-cover {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: color-mix(in srgb, var(--bg) 70%, transparent);
+    backdrop-filter: blur(2px);
+    animation: krg-fade 150ms var(--ease) both;
+  }
+  .krg-dialog {
+    width: min(430px, 100%);
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--panel);
+    box-shadow: 0 20px 56px rgb(0 0 0 / 36%);
+    overflow: auto;
+    animation: krg-rise 200ms var(--ease) both;
+  }
+  .krg-dialog-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .krg-dialog-top h2 {
+    flex: 1 1 auto;
+    font-size: 14px;
+  }
+  .krg-dialog-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    overflow: auto;
+  }
+  .krg-dialog-foot {
+    display: flex;
+    gap: 7px;
+    justify-content: flex-end;
+    padding-top: 2px;
+  }
+  .krg-review {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 4px 10px;
+    margin: 0;
+    padding: 9px 10px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--panel-2);
+    font-size: 12px;
+  }
+  .krg-review dt {
+    color: var(--muted);
+  }
+  .krg-review dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .krg-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+</style>
+
+<div class="krg" id="krg-shell">
+  <div class="krg-bar">
+    <button class="krg-btn krg-icon" id="krg-undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo">
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        aria-hidden="true"
+      >
+        <path d="M3 10h11a5 5 0 1 1 0 10H8" />
+        <path d="M3 10l5-5M3 10l5 5" />
+      </svg>
+    </button>
+    <button class="krg-btn krg-icon" id="krg-redo" type="button" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        aria-hidden="true"
+      >
+        <path d="M21 10H10a5 5 0 1 0 0 10h6" />
+        <path d="M21 10l-5-5M21 10l-5 5" />
+      </svg>
+    </button>
+    <span class="krg-chip" id="krg-dims" title="Width × height × thickness"><b>—</b></span>
+    <span class="krg-chip" id="krg-parts" title="How many separate pieces it comes out as"><b>—</b></span>
+    <span class="krg-spacer"></span>
+    <span class="krg-state" id="krg-state" role="status" data-state="idle">Starting up</span>
+    <button class="krg-btn krg-icon" id="krg-more" type="button" aria-haspopup="menu" aria-expanded="false">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <circle cx="12" cy="5" r="1.7" />
+        <circle cx="12" cy="12" r="1.7" />
+        <circle cx="12" cy="19" r="1.7" />
+      </svg>
+    </button>
+    <button class="krg-btn" id="krg-download" type="button" aria-haspopup="menu" aria-expanded="false">
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        aria-hidden="true"
+      >
+        <path d="M12 3v12M7 11l5 5 5-5M4 20h16" />
+      </svg>
+      Download
+    </button>
+    <button class="krg-btn krg-btn-main" id="krg-save" type="button">
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        aria-hidden="true"
+      >
+        <path d="M5 4h11l4 4v12H5z" />
+        <path d="M9 4v5h6M9 15h6" />
+      </svg>
+      Save to Thingport
+    </button>
+  </div>
+
+  <div class="krg-main">
+    <section class="krg-panel krg-form">
+      <div class="krg-nav">
+        <label class="krg-in"><select id="krg-nav"></select></label>
+      </div>
+      <div class="krg-sheet" id="krg-sheet"></div>
+    </section>
+
+    <section class="krg-panel krg-stage" aria-label="The keyring">
+      <div class="krg-canvas-wrap">
+        <canvas id="krg-canvas" tabindex="0" aria-label="The keyring, drag to turn it, scroll to zoom"></canvas>
+        <div class="krg-tools">
+          <button class="krg-btn krg-icon" id="krg-fit" type="button" title="Fit the view" aria-label="Fit the view">
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+            </svg>
+          </button>
+          <div class="krg-seg" id="krg-views" role="group" aria-label="Which way to look at it">
+            <button type="button" data-view="home" aria-pressed="true">3D</button>
+            <button type="button" data-view="front" aria-pressed="false">Front</button>
+            <button type="button" data-view="top" aria-pressed="false">Top</button>
+            <button type="button" data-view="side" aria-pressed="false">Side</button>
+          </div>
+          <label class="krg-in">
+            <span class="krg-sr"></span>
+            <select id="krg-guide">
+              <option value="none">No comparison</option>
+              <option value="card">Bank card</option>
+              <option value="phone">Phone</option>
+            </select>
+          </label>
+        </div>
+        <div class="krg-editing" id="krg-editing" hidden>
+          <span id="krg-editing-text">Drag the ring where you want it</span>
+          <button class="krg-btn" id="krg-editing-done" type="button">Done</button>
+        </div>
+        <div class="krg-readout" id="krg-readout" hidden></div>
+        <div class="krg-busy" id="krg-busy" hidden>
+          <div class="krg-spin" aria-hidden="true"></div>
+          <p id="krg-busy-text" role="status">Working it out</p>
+        </div>
+        <div class="krg-stop" id="krg-stop" hidden>
+          <strong id="krg-stop-title">That won't build</strong>
+          <p id="krg-stop-text"></p>
+          <button class="krg-btn" id="krg-stop-retry" type="button">Try again</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

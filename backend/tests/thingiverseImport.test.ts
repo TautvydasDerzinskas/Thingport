@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import os from "node:os";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
@@ -147,6 +149,25 @@ describe("importPrintFromUrl -- Thingiverse", () => {
 
     expect(result && "input" in result ? result.input.filename : null).toBe("body.stl");
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("leaves no partial file behind when a download breaks off", async () => {
+    const leftovers = () => fs.readdirSync(os.tmpdir()).filter((name) => name.startsWith("thingport-thingiverse-"));
+    const before = new Set(leftovers());
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        controller.enqueue(new TextEncoder().encode("solid body\n"));
+        controller.error(new Error("connection reset"));
+      },
+    });
+    global.fetch = vi.fn<() => Promise<Response>>(
+      async () => new Response(body, { status: 200 }),
+    ) as unknown as typeof fetch;
+
+    const result = await downloadPlainFileToTemp("https://cdn.thingiverse.com/assets/test/body.stl", "body.stl");
+
+    expect(result).toBeNull();
+    expect(leftovers().filter((name) => !before.has(name))).toEqual([]);
   });
 
   it("imports a Thing's model files as plates, matches category, and attaches metadata + images", async () => {

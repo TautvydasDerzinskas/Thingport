@@ -1,0 +1,28 @@
+{
+  "name": "Gridfinity drawer builder",
+  "description": "Fits a Gridfinity baseplate and bins to a drawer, cut to your printer's bed, and saves the whole set as one model.",
+  "version": "1.0.1",
+  "author": "Thingport contributors",
+  "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
+  "window": {
+    "width": 1280,
+    "height": 800
+  },
+  "hosts": [],
+  "category": "planners",
+  "locales": ["en", "lt", "es", "fr"],
+  "screenshots": [
+    {
+      "file": "screenshots/workshop.webp",
+      "caption": "A 500 × 400 mm drawer: the baseplate cut into six tiles for a 256 mm bed, with bins of several sizes and heights, some with compartments."
+    },
+    {
+      "file": "screenshots/workshop-dark.webp",
+      "caption": "The same drawer in the dark theme, with a baseplate tile in the 3D view: drag it to turn it round."
+    },
+    {
+      "file": "screenshots/stretched.webp",
+      "caption": "Cells stretched to fill a small drawer exactly, and what's wrong flagged: a bin too big for the bed, another taller than the drawer."
+    }
+  ]
+}

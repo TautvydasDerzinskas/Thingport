@@ -54,15 +54,19 @@ default configuration points at your development database.
 
 ## What CI checks
 
-Formatting is checked on every pull request (`npm run format:check`). The other workflows are
-path-filtered, so only the parts you touched run:
+Formatting is checked on every pull request (`npm run format:check`), and so are the files written from `providers/`
+(`npm run providers:check`) and from the widget and tool SDK's types in `frontend/src/sdk/types.ts` (`npm run sdk:check`,
+which also type-checks the examples in `docs/developers/examples/`). The other workflows are path-filtered, so only the
+parts you touched run:
 
-| You changed    | CI runs                                                                                         |
-| -------------- | ----------------------------------------------------------------------------------------------- |
-| `backend/**`   | oxlint, then a multi-arch Docker image build (which runs `tsc`)                                 |
-| `frontend/**`  | oxlint, `tsc --noEmit`, then a Docker image build                                               |
-| `extension/**` | oxlint, `tsc --noEmit`, the Chrome/Edge/Firefox builds, and `web-ext lint` on the Firefox build |
-| `bridge/**`    | `go test ./...` and a build for Windows, Linux and macOS                                        |
+| You changed            | CI runs                                                                                         |
+| ---------------------- | ----------------------------------------------------------------------------------------------- |
+| `backend/**`           | oxlint, then a multi-arch Docker image build (which runs `tsc`)                                 |
+| `frontend/**`          | oxlint, `tsc --noEmit`, then a Docker image build                                               |
+| `extension/**`         | oxlint, `tsc --noEmit`, the Chrome/Edge/Firefox builds, and `web-ext lint` on the Firefox build |
+| `bridge/**`            | `go test ./...` and a build for Windows, Linux and macOS                                        |
+| `tools/**`             | `validateTools.ts`; tools built from `source/` rebuilt to match what's committed, and tested    |
+| `community-widgets/**` | `validateCommunityWidgets.ts`                                                                   |
 
 The [regression pack](docs/DEVELOPMENT.md#regression-pack), which runs end-to-end browser scenarios
 against the full stack, isn't run on pull requests. It runs weekly on `main`.
@@ -86,6 +90,12 @@ If you couldn't verify something end to end, say so. That's useful information, 
 
 A provider is a model site Thingport imports from. How they're built, the approaches the existing ones take and the
 checklist for a new one are in [docs/PROVIDER_DEVELOPMENT.md](docs/PROVIDER_DEVELOPMENT.md). Open an issue first.
+
+## Adding a tool
+
+A tool is a small app that opens in a window from the Tools page. The format, the rules its script follows and the
+steps to get one merged are in [docs/TOOL_DEVELOPMENT.md](docs/TOOL_DEVELOPMENT.md); a tool's script runs in its
+users' browsers, so it's read before it's merged.
 
 ## Code style
 

@@ -3,16 +3,18 @@ import { useTranslation } from "react-i18next";
 import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
+import HealingOutlinedIcon from "@mui/icons-material/HealingOutlined";
 import type { Category, CategoryKind, CategoryMetaInput } from "../../api/categories";
 import type { Print } from "../../api/prints";
 import { aiCategorizationApi } from "../../api/aiCategorization";
 import { categoriesApi, resetIsNoop } from "../../api/categories";
 import { UnauthorizedError } from "../../api/client";
 import SectionedDialog from "../../components/SectionedDialog";
+import MissingFilesPanel from "../../components/missingFiles/MissingFilesPanel";
 import CategoryManager from "./CategoryManager";
 import AiCategorizationPanel from "./AiCategorizationPanel";
 
-export type ModelsManagerSection = "categories" | "folders" | "ai";
+export type ModelsManagerSection = "categories" | "folders" | "ai" | "repair";
 
 type Props = {
   /** The section to open on, or null when closed. */
@@ -112,6 +114,8 @@ export default function ModelsManagerDialog({
           },
         ]
       : []),
+    // Always here, so a library that looks broken has a way back to the repair after the dialog was waved off.
+    { id: "repair" as const, label: t("models:manager.repair"), icon: <HealingOutlinedIcon fontSize="small" /> },
   ];
 
   const managerFor = (kind: CategoryKind) => (
@@ -148,6 +152,7 @@ export default function ModelsManagerDialog({
           onRunStarted={onClose}
         />
       )}
+      {section === "repair" && <MissingFilesPanel onStarted={onClose} />}
     </SectionedDialog>
   );
 }

@@ -19,6 +19,10 @@ It prepares a converted copy that keeps painted colours, filament colours, plate
 a form that slicer understands, then opens it. Your stored file is never changed. If a file can't be converted, use the
 regular **Open** instead.
 
+The [MakerWorld 3MF normalizer](../../tools/makerworld-3mf-normalizer) tool makes such a copy too, of a model's 3MF or
+one on your disk, to download, save as a new model or add to the model it came from. An admin installs it from
+**Administration → Tools**.
+
 ## Without Thingport
 
 [Thingport Grab](../../extension/README.md), the browser extension, does the same on MakerWorld itself: its

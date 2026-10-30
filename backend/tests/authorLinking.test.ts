@@ -314,6 +314,39 @@ describe("looking up authors no known author matches", () => {
   });
 });
 
+describe("what a deleted model leaves behind", () => {
+  it("takes its author and the pictures of its tags, and keeps ones another model still needs", async () => {
+    const author = (externalId: string, name: string) =>
+      prisma.author.create({
+        data: { id: `thingiverse:${externalId}`, provider: "thingiverse", externalId, name, links: [] },
+      });
+    const shared = await author(`shared-${stamp}`, "Shared Author");
+    const only = await author(`only-${stamp}`, "Only Author");
+
+    const make = (name: string, authorId: string, tags: string[]) =>
+      prisma.print.create({ data: { userId, name, nameNormalized: name.toLowerCase(), authorId, tags } });
+    const staying = await make(`staying-${stamp}`, shared.id, ["shared-tag"]);
+    const going = await make(`going-${stamp}`, only.id, ["Shared-Tag", "lonely-tag"]);
+    // A bookmark and a mosaic exist for both tags, as they would once the tags had been browsed.
+    await request(app).post("/api/tags/lonely-tag/bookmark").set(auth(memberToken));
+    await request(app).post("/api/tags/shared-tag/bookmark").set(auth(memberToken));
+
+    expect((await request(app).delete(`/api/print/${going.id}`).set(auth(memberToken))).status).toBe(200);
+
+    // The author nothing else is by goes; the one another model is by stays.
+    expect(await prisma.author.findUnique({ where: { id: only.id } })).toBeNull();
+    expect(await prisma.author.findUnique({ where: { id: shared.id } })).not.toBeNull();
+    // The same for the tags: one is still on the model that stayed, the other is on nothing.
+    const bookmarked = (await prisma.bookmark.findMany({ where: { userId, type: "TAG" } })).map((mark) =>
+      (mark.tag ?? "").toLowerCase(),
+    );
+    expect(bookmarked).toContain("shared-tag");
+    expect(bookmarked).not.toContain("lonely-tag");
+
+    await prisma.print.delete({ where: { id: staying.id } });
+  });
+});
+
 describe("Administration > Triggers > Link missing authors", () => {
   // Files share one database; leave the token as this file found it, even when a test fails.
   let previousToken: string | null;

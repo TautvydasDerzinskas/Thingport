@@ -3,7 +3,14 @@ import { DOCS, LINKS, TAGLINE } from "../lib/site.mjs";
 import { url } from "../lib/url";
 import Logo from "./Logo.astro";
 
+type Props = {
+  /** At the foot of a docs page: in its content column, under Starlight's own footer, rather than across the window. */
+  docs?: boolean;
+};
+const { docs } = Astro.props;
+
 const doc = (slug: string) => DOCS.find((d) => d.slug === slug)!;
+// One navigation landmark, "Footer", for all three: on a docs page the sidebar is the one named "Docs".
 const COLUMNS = [
   {
     title: "Product",
@@ -35,56 +42,84 @@ const COLUMNS = [
 ];
 ---
 
-<footer class="site-footer">
-  <div class="container grid">
+<footer class:list={["site-footer", { docs }]} data-pagefind-ignore>
+  <div class:list={["grid", { container: !docs }]}>
     <div class="about">
       <Logo height={26} />
-      <p class="muted">{TAGLINE}. Free, open source and self-hosted.</p>
-      <p class="muted small">
+      <p>{TAGLINE}. Free, open source and self-hosted.</p>
+      <p class="small">
         © 2026 Tautvydas Deržinskas · <a href={LINKS.license}>AGPL-3.0</a> · <a href={LINKS.coffee}>Buy me a coffee</a>
       </p>
     </div>
-    {
-      COLUMNS.map((col) => (
-        <nav aria-label={col.title}>
-          <h2>{col.title}</h2>
-          <ul>
-            {col.links.map((l) => (
-              <li>
-                <a href={l.href}>{l.label}</a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      ))
-    }
+    <nav class="columns" aria-label="Footer">
+      {
+        COLUMNS.map((col) => (
+          <div>
+            <h2>{col.title}</h2>
+            <ul>
+              {col.links.map((l) => (
+                <li>
+                  <a href={l.href}>{l.label}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+    </nav>
   </div>
 </footer>
 
 <style>
+  /* Styled here in full, as docs pages don't load the site pages' global.css. Its layout follows its own width: the
+   * window's on the site's pages, the content column's on a docs page. */
   .site-footer {
+    container-type: inline-size;
     margin-top: 4rem;
     padding-block: 3rem;
     background: var(--panel);
     border-top: 1px solid var(--border);
+  }
+  /* Under the docs' previous and next links, on the page's own background. */
+  .site-footer.docs {
+    margin-top: 2.5rem;
+    padding-block: 2rem 0;
+    background: none;
   }
   .grid {
     display: grid;
     grid-template-columns: 2fr repeat(3, 1fr);
     gap: 2rem;
   }
+  /* The columns sit on the grid's own tracks. */
+  .columns {
+    display: grid;
+    grid-column: span 3;
+    grid-template-columns: subgrid;
+    gap: inherit;
+  }
   .about p {
-    margin: 0.75rem 0 0;
     max-width: 22rem;
+    margin: 0.75rem 0 0;
+    color: var(--text-muted);
+  }
+  .about a {
+    color: var(--link);
+    text-underline-offset: 0.18em;
+  }
+  .about a:hover {
+    text-decoration-thickness: 2px;
   }
   .small {
     font-size: 0.875rem;
   }
   h2 {
+    margin: 0 0 0.6em;
     font-family: var(--font-body);
     font-size: 0.8rem;
     font-weight: 700;
     letter-spacing: 0.08em;
+    line-height: 1.2;
     text-transform: uppercase;
     color: var(--heading);
   }
@@ -105,12 +140,22 @@ const COLUMNS = [
     color: var(--link);
     text-decoration: underline;
   }
-  @media (max-width: 48rem) {
+  /* Narrower: the logo and its lines on a row of their own, then the links in three columns, or two. */
+  @container (max-width: 48rem) {
+    .grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .about,
+    .columns {
+      grid-column: 1 / -1;
+    }
+    .about p {
+      max-width: none;
+    }
+  }
+  @container (max-width: 32rem) {
     .grid {
       grid-template-columns: 1fr 1fr;
-    }
-    .about {
-      grid-column: 1 / -1;
     }
   }
 </style>

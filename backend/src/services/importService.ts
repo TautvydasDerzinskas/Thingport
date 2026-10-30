@@ -8,6 +8,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import {
   IMPORT_ALLOWED_EXTS,
+  PARAMETRIC_SOURCE_EXTS,
   IMPORT_BROWSER_USER_AGENT,
   IMPORT_DOWNLOAD_RETRY_DELAY_MS,
   IMPORT_HTML_MAX_BYTES,
@@ -25,14 +26,16 @@ import {
 import { validateRemoteUrl } from "../utils/urlUtils";
 import { readCapped } from "../utils/readCapped";
 import { fetchWithGuard, rawFetch } from "./guardedFetch";
-import { maybeSleep, sleep } from "../utils/concurrency";
+import { createKeyedLock, maybeSleep, sleep } from "../utils/concurrency";
 import { isCloudflareChallenge } from "./flaresolverr";
 import {
   emptyImportedPageMetadata,
   extractPageMetadata,
   findDownloadUrl,
+  getPath,
   type ImportCookies,
   type ImportedPageMetadata,
+  type ParametricSourceInfo,
 } from "./importResolvers";
 import {
   makerworldHtmlHeaders,
@@ -56,10 +59,14 @@ import {
   MAKERWORLD_DOWNLOAD_LIMIT_CODE,
   MakerworldDownloadLimitError,
   parseMakerworldModelUrl,
+  resolveMakerworldParametricSource,
   resolveMakerworldViaCloudApi,
   completeMakerworldAuthor,
 } from "../providers/makerworld/api";
 import { openSourceGaps, type SourceGap } from "./sourceGaps";
+import { replaceModelPlates } from "./modelFilesReplace";
+import { modelFilesMissing } from "./missingFilesService";
+import { createLogger } from "../logger";
 
 /** An import refused because the user's MyMiniFactory session has expired. */
 export const MYMINIFACTORY_SESSION_CODE = MANIFESTS.myminifactory.errorCodes.session;
@@ -76,24 +83,27 @@ export const THANGS_DOWNLOAD_LIMIT_CODE = MANIFESTS.thangs.errorCodes.downloadLi
 /** A Cults3D import refused for want of the user's API key, or of the browser's sign-in, or because one was turned
  *  down. */
 export const CULTS3D_SESSION_CODE = MANIFESTS.cults3d.errorCodes.session;
-import { listZipEntries, readZipEntry } from "../utils/zipReader";
+import { extractZipEntryToFile, listZipEntries } from "../utils/zipReader";
 import { enqueueAiDescription } from "./aiDescriptionService";
 import { upsertAuthorFromImport } from "./authorService";
 import {
   addPlatesToPrint,
   createPrint,
+  isGeneratorScript,
+  keepGeneratorScripts,
   refreshAutoPreparedMetadata,
   resolvePlateFilePath,
   type NewPlateInput,
   type PrintMetaInput,
 } from "./printCreation";
 import { availablePlateFilename, relocatePrint, saveThumbFromBytes } from "./printService";
-import { addPreviewImage, preferImageOverRenders } from "./previewImageService";
+import { addPreviewImage, preferImageOverRenders, removePreviewImage } from "./previewImageService";
 import { localizeDescriptionImages } from "./descriptionImageService";
 import { sha256OfFile } from "./fileReuse";
 import { DROP } from "./storedContent";
 import { prisma } from "../db";
 import { recordActivity } from "./activityService";
+import { importingQuietly } from "../utils/quietImport";
 import { Prisma } from "@prisma/client";
 import type { Author, Plate, PreviewImage, Print } from "@prisma/client";
 import { assertUrlProviderEnabled } from "./providerSettingsService";
@@ -125,6 +135,10 @@ export type ImportRequestBody = ImportCookies & {
   makerworld_design?: Record<string, unknown> | null;
   /** Internal only: per-request delay for MakerWorld collection imports. Never from the body. */
   makerworldPaceMs?: number;
+  /** Internal only: the 3MF Thingport Grab exported from OwlCAD's editor, already written to a temp file by its
+   *  route. OwlCAD hands out no link for a CAD project's geometry -- the editor builds the file in the page -- so
+   *  unlike `resolved_files` this is the file itself. Never from the body. */
+  owlcadExportPath?: string | null;
 };
 
 function parseCharset(contentType: string | null): string {
@@ -160,10 +174,28 @@ async function makerworldMetaFromExtension(url: string, body: ImportRequestBody)
     unverified: true,
   };
   const author = await completeMakerworldAuthor(basicAuthor, body.makerworldPaceMs);
+  // What Grab resolved is one profile's 3MF, as the cloud API's download is, so the scripts the design is
+  // generated from need fetching of their own. Without this an import through Grab brought no script at all,
+  // while the same model pasted as a link did. Best-effort: no token, or a refusal, leaves the model's plates.
+  //
+  // The design Grab sent is trimmed to fit the request, and a Grab from before it kept the file list (1.8.1 and
+  // older) sends none at all, which reads as a model with no script. So what it sent is taken at its word only
+  // where it has a file list; otherwise the design is read from MakerWorld.
+  const bearerToken = extractMakerworldBearerToken(resolveMakerworldCookie(body));
+  const sentFileList = Array.isArray(getPath(design, "designExtension", "model_files"));
+  const parametricSource = bearerToken
+    ? await resolveMakerworldParametricSource(
+        parsed.designId,
+        sentFileList ? meta.parametricSource : null,
+        bearerToken,
+        body.makerworldPaceMs,
+      )
+    : meta.parametricSource;
   return {
     ...meta,
     author,
     creator: author?.name ?? meta.creator,
+    parametricSource,
     makerworldProfile: extensionProfile(url, body),
   };
 }
@@ -294,7 +326,7 @@ async function renameProfilePlates(printId: string, renames: { plate: Plate; fil
 /** Puts each profile's own picture on its plate, in place of the 3MF's embedded thumbnail: designers often ship every
  *  profile with the same one, so the profiles would all look alike. Only `instanceIds` when given. Best-effort; never
  *  throws. */
-async function applyProfileCovers(
+export async function applyProfileCovers(
   printId: string,
   covers: Record<string, string> | undefined,
   instanceIds?: string[],
@@ -449,6 +481,8 @@ export async function openImportResponse(
       siteCategoryIds: extracted.siteCategoryIds.length ? extracted.siteCategoryIds : inheritedMeta.siteCategoryIds,
       categorySite: extracted.categorySite ?? inheritedMeta.categorySite,
       makerworldProfile: inheritedMeta.makerworldProfile,
+      // Whether the creator withheld the script is read off the design, before anything downloads.
+      parametricSource: extracted.parametricSource ?? inheritedMeta.parametricSource,
     };
     if (URLS.makerworld.isHost(pageHost) && extracted.author) {
       resolvedMeta.author = await completeMakerworldAuthor(extracted.author, body.makerworldPaceMs);
@@ -590,15 +624,18 @@ async function fetchImageBytes(url: string): Promise<Buffer | null> {
 
 /** Best-effort: stores the page's cover (at position 0) and gallery as preview images, and seeds
  * the plate thumbnail from the cover when nothing better exists. A 3D render the app made while
- * the import ran (the model is browsable from creation) gives way to them. Never throws. */
+ * the import ran (the model is browsable from creation) gives way to them. Never throws.
+ *
+ * Answers with how many of them are stored, a picture whose fetch came back with nothing being skipped as it
+ * always was: a gallery being replaced goes only once this is more than none (replaceModelFiles). */
 export async function attachImportedPreviewImages(
   printId: string | undefined,
   plateId: string | undefined,
   coverImageUrl: string | null | undefined,
   galleryImages: { url: string; filename: string }[],
   paceMs?: number,
-): Promise<void> {
-  if (!printId) return;
+): Promise<number> {
+  if (!printId) return 0;
   const seen = new Set<string>();
   const orderedUrls: string[] = [];
   if (coverImageUrl) {
@@ -612,6 +649,7 @@ export async function attachImportedPreviewImages(
   }
 
   let firstAdded = false;
+  let stored = 0;
   const urls = orderedUrls.slice(0, PREVIEW_IMAGE_MAX_COUNT);
   const delayMs = paceMs ?? IMPORT_PREVIEW_IMAGE_DELAY_MS;
   for (let i = 0; i < urls.length; i++) {
@@ -619,11 +657,14 @@ export async function attachImportedPreviewImages(
     const buf = await fetchImageBytes(urls[i]);
     if (!buf) continue;
     const added = await addPreviewImage(printId, buf);
-    if (added && !firstAdded) {
+    if (!added) continue;
+    stored++;
+    if (!firstAdded) {
       firstAdded = true;
       await preferImageOverRenders(printId, plateId, buf);
     }
   }
+  return stored;
 }
 
 /** Auto-categorizes an import when a category's ids for this site (CategorySiteId) overlap the model's own category
@@ -875,6 +916,7 @@ function isDownloadBlocked(res: Response): boolean {
 /** Best-effort: null on failure so one bad file doesn't fail the whole import, except a block,
  * which is retried once and then reported so the caller can say why. */
 export async function downloadPlainFileToTemp(url: string, suggestedName: string): Promise<PlainDownloadResult> {
+  let tempFilePath: string | null = null;
   try {
     const headers = { "User-Agent": IMPORT_BROWSER_USER_AGENT, Accept: "*/*" };
     let res = await rawFetch(url, headers);
@@ -892,45 +934,158 @@ export async function downloadPlainFileToTemp(url: string, suggestedName: string
       return null;
     }
     const filename = sanitizeFilename(suggestedName);
-    const tempFilePath = path.join(
+    tempFilePath = path.join(
       os.tmpdir(),
       `thingport-thingiverse-${crypto.randomBytes(8).toString("hex")}${path.extname(filename)}`,
     );
     await streamToFileCapped(res, tempFilePath, IMPORT_MAX_BYTES);
     return { input: { filename, mime: guessMimeFromPath(filename), tempFilePath } };
   } catch {
+    // A stream that broke off or ran over the cap leaves what it had written.
+    if (tempFilePath) await fs.rm(tempFilePath, { force: true }).catch(() => undefined);
     return null;
   }
 }
 
-/** The model files in a downloaded zip, each as its own plate; the zip itself is left for the caller. Plates have no
- *  folders, so files named alike in different folders are named after their folder too: "2x2 - Top.stl". */
-async function modelFilesFromZip(zipPath: string): Promise<NewPlateInput[]> {
+/** How far into a zip holding a zip to keep looking. Sites that build the download archive themselves wrap whatever the
+ *  designer uploaded, which is often an archive of their own ("Designer/model/model-v1.1.zip"), and a plate can't be
+ *  made of a zip. A couple of levels covers that. */
+const NESTED_ZIP_DEPTH = 3;
+/** What one download may be opened into over the whole descent: this many nested archives, and IMPORT_MAX_BYTES of them
+ *  in all -- the same budget the download itself had, shared by every level, since a nested zip is inside the one above
+ *  it. An archive of nothing but archives can't ask for more than one import's worth either way. */
+const NESTED_ZIP_BUDGET = 32;
+
+type NestedZipBudget = { archives: number; bytes: number };
+
+/** A zip whose bytes aren't a zip at all, as against the filesystem or the import failing underneath it: those carry an
+ *  errno code, or are ours. */
+function isUnreadableZip(err: unknown): boolean {
+  if (err instanceof HttpError) return false;
+  return err instanceof Error && typeof (err as NodeJS.ErrnoException).code !== "string";
+}
+
+/** The files wanted from the zips a zip holds, for an archive that wraps the model's own instead of its files. Each
+ *  nested zip is unpacked on its own, so files named alike within it are still told apart by their folder. */
+async function filesFromNestedZips(
+  zipPath: string,
+  exts: ReadonlySet<string>,
+  depth: number,
+  budget: NestedZipBudget,
+): Promise<NewPlateInput[]> {
+  const nested = (await listZipEntries(zipPath)).filter(
+    (entry) => !entry.isDirectory && path.extname(entry.name).toLowerCase() === ".zip",
+  );
+  const inputs: NewPlateInput[] = [];
+  try {
+    for (const entry of nested) {
+      if (budget.archives <= 0 || budget.bytes <= 0) break;
+      budget.archives -= 1;
+      const tempZipPath = path.join(os.tmpdir(), `thingport-zip-${crypto.randomBytes(8).toString("hex")}.zip`);
+      try {
+        const written = await extractZipEntryToFile(zipPath, entry.name, tempZipPath, budget.bytes);
+        if (written === null) continue;
+        budget.bytes -= written;
+        inputs.push(...(await filesFromZip(tempZipPath, exts, depth + 1, budget)));
+      } catch (err) {
+        // One entry that isn't the zip it's named like doesn't make the files out of its siblings unimportable.
+        if (!isUnreadableZip(err)) throw err;
+      } finally {
+        await fs.rm(tempZipPath, { force: true }).catch(() => undefined);
+      }
+    }
+  } catch (err) {
+    await Promise.all(inputs.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
+    throw err;
+  }
+  return inputs;
+}
+
+/** The model files in a downloaded zip, each as its own plate; the zip itself is left for the caller. */
+export async function modelFilesFromZip(zipPath: string): Promise<NewPlateInput[]> {
+  return filesFromZip(zipPath, MULTI_FILE_PLATE_EXTS);
+}
+
+/** The scripts a model can be generated from again, kept beside it as SUPPORTING files rather than plates. */
+export async function parametricSourcesFromZip(zipPath: string): Promise<NewPlateInput[]> {
+  return filesFromZip(zipPath, PARAMETRIC_SOURCE_EXTS);
+}
+
+/**
+ * A zip read twice over: the files to print, and the scripts beside them.
+ *
+ * Each half writes a temp file per entry and cleans up only its own if it throws. So the plates are removed here
+ * when reading the scripts fails -- the caller is handed both halves or neither, and never a set of temp files it
+ * doesn't know it has to clean up.
+ */
+async function platesAndSourcesFromZip(
+  zipPath: string,
+): Promise<{ plates: NewPlateInput[]; sources: NewPlateInput[] }> {
+  const plates = await modelFilesFromZip(zipPath);
+  try {
+    return { plates, sources: await parametricSourcesFromZip(zipPath) };
+  } catch (err) {
+    await Promise.all(plates.map((plate) => fs.rm(plate.tempFilePath!, { force: true }).catch(() => undefined)));
+    throw err;
+  }
+}
+
+/**
+ * The generator scripts of a model whose own download didn't carry them, from the zip its metadata points at.
+ *
+ * Best-effort throughout: this is an extra download on top of the one the user asked for, and a model with its
+ * plates is worth more than a failed import over the script it could also have been generated from.
+ */
+async function fetchParametricSources(source: ParametricSourceInfo | undefined): Promise<NewPlateInput[]> {
+  if (!source?.zipUrl || source.withheld) return [];
+  const result = await downloadPlainFileToTemp(source.zipUrl, "sources.zip");
+  if (!result || "rateLimited" in result || !result.input.tempFilePath) return [];
+  try {
+    return await parametricSourcesFromZip(result.input.tempFilePath);
+  } catch (err) {
+    console.warn("Couldn't read the generator scripts the model points at:", err);
+    return [];
+  } finally {
+    await fs.rm(result.input.tempFilePath, { force: true }).catch(() => undefined);
+  }
+}
+
+/** The entries of a downloaded zip whose extension is one of `exts`, each written to its own temp file; the zip itself
+ *  is left for the caller. Plates have no folders, so files named alike in different folders are named after their
+ *  folder too: "2x2 - Top.stl". An archive holding none of the files wanted is opened a level deeper, where the ones
+ *  that only wrap another zip keep them. */
+async function filesFromZip(
+  zipPath: string,
+  exts: ReadonlySet<string>,
+  depth = 0,
+  budget: NestedZipBudget = { archives: NESTED_ZIP_BUDGET, bytes: IMPORT_MAX_BYTES },
+): Promise<NewPlateInput[]> {
   const inputs: NewPlateInput[] = [];
   try {
     const entries = (await listZipEntries(zipPath))
       .filter((entry) => !entry.isDirectory)
       .map((entry) => ({ entry, parts: entry.name.replace(/\\/g, "/").split("/").filter(Boolean) }))
-      .filter(({ parts }) => parts.length && MULTI_FILE_PLATE_EXTS.has(path.extname(parts.at(-1)!).toLowerCase()));
+      .filter(({ parts }) => parts.length && exts.has(path.extname(parts.at(-1)!).toLowerCase()));
     const sameName = new Map<string, number>();
     for (const { parts } of entries) sameName.set(parts.at(-1)!, (sameName.get(parts.at(-1)!) ?? 0) + 1);
     for (const { entry, parts } of entries) {
       const name = parts.at(-1)!;
       const folder = parts.at(-2);
       const filename = sanitizeFilename(sameName.get(name)! > 1 && folder ? `${folder} - ${name}` : name);
-      const buffer = await readZipEntry(zipPath, entry.name, IMPORT_MAX_BYTES);
-      if (!buffer) continue;
       const tempFilePath = path.join(
         os.tmpdir(),
         `thingport-zip-${crypto.randomBytes(8).toString("hex")}${path.extname(filename)}`,
       );
-      await fs.writeFile(tempFilePath, buffer);
+      // Straight to the file: a model file is as big as an import is allowed to be, and holding it is pointless.
+      if ((await extractZipEntryToFile(zipPath, entry.name, tempFilePath, IMPORT_MAX_BYTES)) === null) continue;
       inputs.push({ filename, mime: guessMimeFromPath(filename), tempFilePath });
     }
   } catch (err) {
     await Promise.all(inputs.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
     throw err;
   }
+  // None of what was wanted here, so it is in an archive this one only wraps.
+  if (!inputs.length && depth < NESTED_ZIP_DEPTH) return filesFromNestedZips(zipPath, exts, depth, budget);
   return inputs;
 }
 
@@ -954,12 +1109,16 @@ async function downloadSignedFile(
   const ext = path.extname(result.input.filename).toLowerCase();
   if (ext === ".zip") {
     try {
-      return await modelFilesFromZip(result.input.tempFilePath!);
+      // The scripts come along with the model files; createPrint keeps each as what it is.
+      const { plates, sources } = await platesAndSourcesFromZip(result.input.tempFilePath!);
+      return [...plates, ...sources];
     } finally {
       await fs.rm(result.input.tempFilePath!, { force: true }).catch(() => undefined);
     }
   }
-  if (MULTI_FILE_PLATE_EXTS.has(ext)) return [result.input];
+  // A site that lists a model's files one by one -- Thingiverse's customizable models, Printables' sources --
+  // offers the script as a file of its own rather than inside a zip.
+  if (MULTI_FILE_PLATE_EXTS.has(ext) || PARAMETRIC_SOURCE_EXTS.has(ext)) return [result.input];
   await fs.rm(result.input.tempFilePath!, { force: true }).catch(() => undefined);
   return [];
 }
@@ -991,6 +1150,7 @@ async function createSourcedPrint(
       authorId: author?.id ?? null,
       sourceProvider: source.provider,
       sourceExternalId: source.externalId,
+      generatorScriptWithheld: meta.parametricSource?.withheld === true,
     };
     let created: { print: Print; plates: Plate[] };
     try {
@@ -1035,17 +1195,28 @@ const IMPORT_KIT: PipelineKit = {
   downloadSignedFile,
   downloadFile: downloadPlainFileToTemp,
   isModelFile: (name) => MULTI_FILE_PLATE_EXTS.has(path.extname(name).toLowerCase()),
+  isImportableFile: (name) =>
+    MULTI_FILE_PLATE_EXTS.has(path.extname(name).toLowerCase()) ||
+    PARAMETRIC_SOURCE_EXTS.has(path.extname(name).toLowerCase()),
   createPrint: (userId, source, body, resolved, downloaded, details) =>
     createSourcedPrint(userId, source, body, resolved, downloaded, `${source.provider}-${source.externalId}`, details),
   async addProfiles(existing, inputs, details) {
+    // A generator script is never a plate, however it arrives (see createPrint), so one that came down beside a
+    // profile is kept beside the model instead -- addProfilePlateWithDetails would make a plate of it, and the
+    // script belongs to the model rather than to the profile that happened to bring it.
+    const scripts = inputs.filter((input) => isGeneratorScript(input.filename));
+    const plateInputs = inputs.filter((input) => !isGeneratorScript(input.filename));
     let current: ExistingImportedPrint = existing;
     let profileAdded = false;
     try {
-      for (const input of inputs) {
+      for (const input of plateInputs) {
         const result = await addProfilePlateWithDetails(current, input, input.sourceInstanceId!, details);
         profileAdded ||= Boolean(result.profileAdded);
         current = result;
       }
+      // Deliberately not counted as something imported: whether the import found a profile the library hadn't
+      // got is what `alreadyImported` answers, and a script picked up along the way doesn't change that answer.
+      await keepGeneratorScripts(existing.print.userId, existing.print.id, scripts);
     } finally {
       for (const input of inputs) {
         if (input.tempFilePath && fsSync.existsSync(input.tempFilePath)) {
@@ -1056,6 +1227,18 @@ const IMPORT_KIT: PipelineKit = {
     return profileAdded ? { ...current, alreadyImported: false, profileAdded } : { ...current, alreadyImported: true };
   },
   profileDetails: profileDetailsOf,
+  filesMissing: (existing) => modelFilesMissing(existing.plates),
+  async replaceFiles(existing, inputs, resolved, details) {
+    const replaced = await replaceModelFiles(existing.print.userId, existing.print.id, {
+      inputs: nameInputsApart(inputs, details.titles),
+      coverImageUrl: resolved?.meta.previewImageUrl ?? null,
+      galleryImages: resolved?.galleryImages ?? [],
+      profiles: details,
+    });
+    // Its files came back while these were being fetched, so there was nothing to put right.
+    if (!replaced) return { ...existing, alreadyImported: true };
+    return { ...replaced, author: existing.author, alreadyImported: false };
+  },
 };
 
 /** A new print from a provider on the shared pipeline: its sign-in, the model, the profile the link names (or the
@@ -1168,7 +1351,7 @@ export async function importPrintFromUrl(
   if (!keepGrabImports && grabQueue && result.print.sourceExternalId) {
     await grabQueue.clear(userId, result.print.sourceExternalId).catch(() => undefined);
   }
-  if (!result.alreadyImported && !result.profileAdded) {
+  if (!result.alreadyImported && !result.profileAdded && !importingQuietly()) {
     void recordActivity(userId, "import", result.print.id, result.print.name);
     // Only now: the pictures it may write from are attached, and its description's images stored locally.
     enqueueAiDescription(userId, result.print.id);
@@ -1212,8 +1395,9 @@ async function importLinkedFile(
 ): Promise<ImportResult> {
   const { tempPath, filename, mime, meta } = await downloadImportToTemp(url, body);
   let plates: NewPlateInput[] = [];
+  let sources: NewPlateInput[] = [];
   try {
-    plates = await rawFilesZipPlates(source, tempPath, filename);
+    ({ plates, sources } = await rawFilesZipContents(source, tempPath, filename));
   } catch (err) {
     await fs.rm(tempPath, { force: true }).catch(() => undefined);
     throw err;
@@ -1221,6 +1405,8 @@ async function importLinkedFile(
   if (!plates.length) {
     plates = [{ filename, mime, tempFilePath: tempPath, sourceInstanceId: meta.makerworldProfile?.instanceId ?? null }];
   }
+  // A zip of raw files already gave up its scripts above; anything else has to fetch them separately.
+  if (!sources.length) sources = await fetchParametricSources(meta.parametricSource);
   const author = await upsertAuthorFromImport(meta.author);
   const categoryId =
     body.category_id ?? (await resolveCategoryIdByCategory(userId, meta.categorySite, meta.siteCategoryIds));
@@ -1234,12 +1420,13 @@ async function importLinkedFile(
     authorId: author?.id ?? null,
     sourceProvider: source?.provider ?? null,
     sourceExternalId: source?.externalId ?? null,
+    generatorScriptWithheld: meta.parametricSource?.withheld === true,
   };
 
   try {
     let result: { print: Print; plates: Plate[] };
     try {
-      result = await createPrint(userId, printMeta, path.parse(filename).name, plates, IMPORTED);
+      result = await createPrint(userId, printMeta, path.parse(filename).name, [...plates, ...sources], IMPORTED);
     } catch (err) {
       // Race guard: a concurrent import of the same source model won.
       if (source && isUniqueConstraintError(err)) {
@@ -1263,23 +1450,156 @@ async function importLinkedFile(
     });
     return { ...result, author, previewImages, alreadyImported: false };
   } finally {
-    for (const file of [tempPath, ...plates.map((plate) => plate.tempFilePath)]) {
+    for (const file of [tempPath, ...[...plates, ...sources].map((input) => input.tempFilePath)]) {
       if (file && fsSync.existsSync(file)) await fs.rm(file, { force: true }).catch(() => undefined);
     }
   }
 }
 
 /** A zip of a model's raw files, from a provider whose links download them so (MakerWorld's, for a model with no print
- *  profiles), as its model files, one plate each, the zip itself removed. Empty for anything else, or a zip with no
- *  model file in it, which is kept as it came. */
-async function rawFilesZipPlates(
+ *  profiles): its model files, one plate each, and the scripts it can be generated from again, which become SUPPORTING
+ *  files. The zip itself is removed once it gave up either. Empty for anything else, or a zip with neither in it,
+ *  which is kept as it came. */
+async function rawFilesZipContents(
   source: { provider: string } | null,
   tempPath: string,
   filename: string,
-): Promise<NewPlateInput[]> {
+): Promise<{ plates: NewPlateInput[]; sources: NewPlateInput[] }> {
   const zipOfFiles = source && isProviderId(source.provider) && manifestOf(source.provider).capabilities.rawFilesZip;
-  if (!zipOfFiles || path.extname(filename).toLowerCase() !== ".zip") return [];
-  const plates = await modelFilesFromZip(tempPath);
+  if (!zipOfFiles || path.extname(filename).toLowerCase() !== ".zip") return { plates: [], sources: [] };
+  const { plates, sources } = await platesAndSourcesFromZip(tempPath);
+  // Only once it has given up something to print. A zip of nothing but scripts has no geometry in it, so the
+  // zip itself stands in as the model's file, and removing it would leave that pointing at nothing.
   if (plates.length) await fs.rm(tempPath, { force: true }).catch(() => undefined);
-  return plates;
+  return { plates, sources };
+}
+
+/** A model's files, downloaded without a print to put them on: what a repair needs when the row is already there
+ *  and only its files are gone (services/modelRepairService.ts). The pictures come with them, since a model whose
+ *  files went usually lost its pictures to the same accident. The caller removes the temp files. */
+export type DownloadedModelFiles = {
+  inputs: NewPlateInput[];
+  coverImageUrl: string | null;
+  galleryImages: { url: string; filename: string }[];
+  /** Named apart by profile where the provider's files come alike, as a new print's would be. */
+  profiles: ProfileDetails;
+};
+
+/** For a provider on the shared pipeline: its sign-in, the model, then its own pick of files. */
+export async function downloadSourcedModelFiles(
+  userId: string,
+  externalId: string,
+  impl: SourcedImport,
+): Promise<DownloadedModelFiles> {
+  const auth = await impl.requireAuth(userId);
+  let resolved: ResolvedModel | null;
+  try {
+    resolved = await impl.resolveModel(externalId, auth);
+  } catch (err) {
+    throw await impl.mapError(userId, err);
+  }
+  if (!resolved) throw new HttpError(404, impl.missingMessage);
+  let downloaded: NewPlateInput[];
+  try {
+    downloaded = await impl.downloadModel({ userId, externalId }, resolved, auth, null, IMPORT_KIT);
+  } catch (err) {
+    throw await impl.mapError(userId, err);
+  }
+  if (!downloaded.length) throw new HttpError(400, impl.noFilesMessage);
+  const profiles = profileDetailsOf(resolved.profiles ?? [], { names: impl.profiles?.namedAlike ?? true });
+  return {
+    inputs: nameInputsApart(downloaded, profiles.titles),
+    coverImageUrl: resolved.meta.previewImageUrl ?? null,
+    galleryImages: resolved.galleryImages,
+    profiles,
+  };
+}
+
+/** For the link import (MakerWorld, and any other page or file link): whatever the link downloads to, unpacked the
+ *  same way a new import would unpack it. */
+export async function downloadLinkedModelFiles(url: string, body: ImportRequestBody): Promise<DownloadedModelFiles> {
+  const source = identifySourceModel(url);
+  const { tempPath, filename, mime, meta } = await downloadImportToTemp(url, body);
+  let plates: NewPlateInput[] = [];
+  let sources: NewPlateInput[] = [];
+  try {
+    ({ plates, sources } = await rawFilesZipContents(source, tempPath, filename));
+  } catch (err) {
+    await fs.rm(tempPath, { force: true }).catch(() => undefined);
+    throw err;
+  }
+  if (!plates.length) {
+    plates = [{ filename, mime, tempFilePath: tempPath, sourceInstanceId: meta.makerworldProfile?.instanceId ?? null }];
+  }
+  if (!sources.length) sources = await fetchParametricSources(meta.parametricSource);
+  const profiles = makerworldProfileDetails(meta.makerworldProfile);
+  return {
+    inputs: nameInputsApart([...plates, ...sources], profiles.titles),
+    coverImageUrl: meta.previewImageUrl ?? null,
+    galleryImages: meta.galleryImages,
+    profiles,
+  };
+}
+
+const log = createLogger("import-files");
+
+/** One model's replacement at a time, with the look that says it needs one inside it: a repair's download takes
+ *  minutes, in which a Grab import of the same model, or an upload, can put the files back. */
+const withPrintLock = createKeyedLock();
+
+/** Puts downloaded files on a model whose own are gone, in place of them, and brings its pictures back when they
+ *  went too: the repair of a model that is already in the library (services/modelRepairService.ts). Everything
+ *  else about the model stays as the owner left it. Removes the temp files either way.
+ *
+ *  Null when the model turned out to have its files after all, so nothing was touched: whoever asked for the
+ *  replacement read the library before the download, and by now someone else has put them back. */
+export async function replaceModelFiles(
+  userId: string,
+  printId: string,
+  files: DownloadedModelFiles,
+): Promise<{ print: Print; plates: Plate[]; previewImages: PreviewImage[] } | null> {
+  const { inputs, coverImageUrl, galleryImages, profiles } = files;
+  try {
+    return await withPrintLock(printId, async () => {
+      const recorded = await prisma.plate.findMany({
+        where: { printId, print: { userId } },
+        select: { storagePath: true, sourcePath: true },
+      });
+      // A model with no plates at all has nothing to take away, so it is always worth the files.
+      if (recorded.length > 0 && !(await modelFilesMissing(recorded))) return null;
+
+      const { plates, galleryWhole } = await replaceModelPlates(userId, printId, inputs);
+      // A gallery that survived the accident is the one the owner has been looking at, so it stays. One missing any
+      // of its pictures is taken from the source afresh instead of left half there -- but what the model has goes
+      // only once a picture is in to replace it: some of them may be the owner's own photographs, and a source
+      // whose pictures can't be fetched would otherwise leave the gallery empty with nothing to bring it back.
+      // The new ones land beside the old, which is why they take their places only here, renumbered as they go.
+      if (!galleryWhole) {
+        const had = await prisma.previewImage.findMany({ where: { printId }, select: { id: true } });
+        // The files are in place by now, so a picture that won't come is no reason to call the repair a failure and
+        // leave the model out of the next one -- the look only ever reads the plates.
+        const stored = await attachImportedPreviewImages(printId, plates[0]?.id, coverImageUrl, galleryImages).catch(
+          (error: unknown) => {
+            log.warn("couldn't bring a repaired model's gallery back", { print: printId, error });
+            return 0;
+          },
+        );
+        if (stored > 0) {
+          for (const image of had) await removePreviewImage(printId, image.id).catch(() => undefined);
+        }
+      }
+      await applyProfileCovers(printId, profiles.covers);
+      const [print, previewImages] = await Promise.all([
+        prisma.print.findUniqueOrThrow({ where: { id: printId } }),
+        prisma.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } }),
+      ]);
+      return { print, plates, previewImages };
+    });
+  } finally {
+    for (const input of inputs) {
+      if (input.tempFilePath && fsSync.existsSync(input.tempFilePath)) {
+        await fs.rm(input.tempFilePath, { force: true }).catch(() => undefined);
+      }
+    }
+  }
 }

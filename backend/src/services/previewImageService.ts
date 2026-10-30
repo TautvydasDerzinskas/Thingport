@@ -17,7 +17,7 @@ import {
 import { plainWriteMode, reuseMarker, shareStoredBytes, type ReuseMarker } from "./fileReuse";
 import { findStoredCopies } from "./storedContent";
 import { ensureAssetHome, plateThumbExists, plateThumbReplaceable, saveThumbFromBytes } from "./printService";
-import type { PreviewImage } from "@prisma/client";
+import { Prisma, type PreviewImage } from "@prisma/client";
 
 /** `home` is the image's model's Print.assetsPath. */
 export function previewImagePath(id: string, home: AssetHome): string {
@@ -60,15 +60,36 @@ async function saveBuffer(
   }
 }
 
+/**
+ * A row at the end of the model's gallery, or null where the place it wanted was taken as it wrote.
+ *
+ * The position is read and then claimed, so two pictures arriving at once can pick the same one and the gallery's
+ * (printId, position) index refuses the second. They do arrive at once: an import adds its gallery pictures while
+ * our own card render of the first plate finishes and takes the cover (see adoptRenderAsThumb), and an upload is
+ * the same. The loser reads the position again rather than failing the import that was only adding a picture.
+ */
+async function createPreviewImageRow(printId: string, generated: boolean): Promise<PreviewImage | null> {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const last = await prisma.previewImage.findFirst({ where: { printId }, orderBy: { position: "desc" } });
+    const position = last ? last.position + 1 : 0;
+    try {
+      return await prisma.previewImage.create({ data: { printId, position, generated } });
+    } catch (err) {
+      if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002")) throw err;
+    }
+  }
+  console.error(`Couldn't find a free gallery position for print ${printId}`);
+  return null;
+}
+
 /** Null if the buffer isn't a decodable image; never throws. */
 export async function addPreviewImage(
   printId: string,
   buffer: Buffer,
   { generated = false, keepExif = false }: { generated?: boolean; keepExif?: boolean } = {},
 ): Promise<PreviewImage | null> {
-  const last = await prisma.previewImage.findFirst({ where: { printId }, orderBy: { position: "desc" } });
-  const position = last ? last.position + 1 : 0;
-  const row = await prisma.previewImage.create({ data: { printId, position, generated } });
+  const row = await createPreviewImageRow(printId, generated);
+  if (!row) return null;
   const saved = await saveBuffer(printId, row.id, buffer, keepExif);
   if (!saved) {
     await prisma.previewImage.delete({ where: { id: row.id } }).catch(() => undefined);
@@ -97,7 +118,10 @@ export async function addPreviewImage(
 export async function addGeneratedPreviewImageIfNone(printId: string, buffer: Buffer): Promise<void> {
   const count = await prisma.previewImage.count({ where: { printId } });
   if (count > 0) return;
-  await addPreviewImage(printId, buffer, { generated: true });
+  const added = await addPreviewImage(printId, buffer, { generated: true });
+  // Something landed while this render was being written -- another plate's, or a picture. Anywhere but the
+  // front of the gallery means it wasn't first after all, and only the first render stands in for a picture.
+  if (added && added.position > 0) await removePreviewImage(printId, added.id).catch(() => undefined);
 }
 
 /** Drops our own renders, so the images that replace them start at position 0. */
@@ -168,21 +192,60 @@ export async function reorderPreviewImages(printId: string, ids: string[]): Prom
 // slate, like the live viewer's model.
 const RENDER_THUMB_SHADE = [0.58, 0.64, 0.72, 1];
 
-/** Our own render stands in as the plate's thumb, and the model's cover, while it has no picture at all, so mosaics
- *  and lists that show thumbs have one without the model being opened. */
-async function adoptRenderAsThumb(plateId: string, renderPath: string): Promise<void> {
+/**
+ * Our own render stands in as the plate's thumb, and the model's cover, while it has no picture at all, so
+ * mosaics and lists that show thumbs have one without the model being opened.
+ *
+ * The thumb is always the one-colour render, tinted: a list of models reads as one set in whatever colour the
+ * reader picked, and the Appearance panel's render colour goes on working. The cover is the picture in the
+ * model's own colours where the file carried any -- that one is the model's page shown large, where the thing
+ * as it would be printed is what someone is looking for.
+ */
+async function adoptRenderAsThumb(plateId: string, renderPath: string, colorPath: string | null): Promise<void> {
   if (plateThumbExists(plateId, await plateAssetHome(plateId))) return;
   const plate = await prisma.plate.findUnique({ where: { id: plateId }, select: { printId: true } });
   if (!plate) return;
   const buffer = await renderThumbShade(renderPath, RENDER_THUMB_SHADE);
   if (!(await saveThumbFromBytes(plateId, buffer))) return;
   await prisma.plate.update({ where: { id: plateId }, data: { thumbGenerated: true } });
-  await addGeneratedPreviewImageIfNone(plate.printId, buffer);
+  const cover = colorPath ? await fs.readFile(colorPath).catch(() => buffer) : buffer;
+  await addGeneratedPreviewImageIfNone(plate.printId, cover);
+}
+
+/**
+ * Puts a newly drawn colour picture in place of the grey render that was standing in as the cover.
+ *
+ * For a model whose cover was made before Thingport could draw its colours, or one whose file gained them. Only
+ * our own render is replaced (`generated`), and only right after a render, so a model's cover isn't taken apart
+ * and rebuilt every time someone looks at it.
+ */
+async function replaceRenderCoverWithColor(plateId: string, colorPath: string): Promise<void> {
+  const plate = await prisma.plate.findUnique({ where: { id: plateId }, select: { printId: true } });
+  if (!plate) return;
+  // The model's first plate, whichever finished rendering first: with several, each would otherwise take the
+  // cover from the last in turn, and which one a model leads with shouldn't depend on the order they drew in.
+  const first = await prisma.plate.findFirst({
+    where: { printId: plate.printId },
+    orderBy: { position: "asc" },
+    select: { id: true },
+  });
+  if (first?.id !== plateId) return;
+  const images = await prisma.previewImage.findMany({ where: { printId: plate.printId } });
+  if (images.length !== 1 || !images[0].generated) return;
+  const added = await addPreviewImage(plate.printId, await fs.readFile(colorPath), { generated: true });
+  if (added) await removePreviewImage(plate.printId, images[0].id);
 }
 
 /** Queues the model card's render. Never throws. */
 export function generateCardRender(plateId: string, srcPath: string, filename: string): Promise<void> {
-  return generateModelImage(plateId, srcPath, filename, "render", (renderPath) =>
-    adoptRenderAsThumb(plateId, renderPath).catch((err) => console.error(`Render thumb failed for ${plateId}:`, err)),
-  );
+  return generateModelImage(plateId, srcPath, filename, "render", async (renderPath, colorPath, drawn) => {
+    await adoptRenderAsThumb(plateId, renderPath, colorPath).catch((err) =>
+      console.error(`Render thumb failed for ${plateId}:`, err),
+    );
+    if (drawn && colorPath) {
+      await replaceRenderCoverWithColor(plateId, colorPath).catch((err) =>
+        console.error(`Colour cover failed for ${plateId}:`, err),
+      );
+    }
+  });
 }

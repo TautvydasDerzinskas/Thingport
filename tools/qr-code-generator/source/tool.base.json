@@ -1,0 +1,32 @@
+{
+  "name": "QR code generator",
+  "description": "Makes a printable QR code: a link, a Wi-Fi network or a contact, styled, and saved as a 3MF with a part per filament.",
+  "version": "1.1.0",
+  "author": "Thingport contributors",
+  "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
+  "window": {
+    "width": 1320,
+    "height": 840
+  },
+  "hosts": [],
+  "category": "generators",
+  "locales": ["en", "lt", "es", "fr"],
+  "screenshots": [
+    {
+      "file": "screenshots/link.webp",
+      "caption": "A link becomes a tile at the size it will print, with the code, the tile under it and the border each going to a filament of its own."
+    },
+    {
+      "file": "screenshots/shapes.webp",
+      "caption": "Dots instead of squares, and the three eyes drawn as circles. Every shape is picked from a row of pictures, and the tile redraws as you pick."
+    },
+    {
+      "file": "screenshots/check.webp",
+      "caption": "What to look at before printing: module size, quiet zone, contrast and the error correction left spare, with the code as a reader sees it."
+    },
+    {
+      "file": "screenshots/filaments-dark.webp",
+      "caption": "A Wi-Fi network, in the dark theme. Each part carries its filament into the 3MF, so a slicer opens it with the colours already assigned."
+    }
+  ]
+}

@@ -11,6 +11,7 @@ import Divider from "@mui/material/Divider";
 import CircularProgress from "@mui/material/CircularProgress";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import DownloadIcon from "@mui/icons-material/Download";
+import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PlaylistAddIcon from "@mui/icons-material/PlaylistAdd";
@@ -40,6 +41,7 @@ import AddToCollectionModal from "./AddToCollectionModal";
 import EditModelModal from "./EditModelModal";
 import FillGapsDialog from "./FillGapsDialog";
 import { useAiOutcomeWatch } from "./useAiOutcomeWatch";
+import { useCustomize } from "./useCustomize";
 import { reopenContextMenuBelow } from "../../components/Layout/ConfigurationDialog/AppTiles";
 
 type Props = {
@@ -74,6 +76,7 @@ export default function ModelActionsMenu({
   onContextMenuClose,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
+  const toolOwned = Boolean(print.tool_id);
   const confirmDialog = useConfirm();
   const showToast = useToast();
   const [aiEnabled, setAiEnabled] = useState(false);
@@ -134,6 +137,8 @@ export default function ModelActionsMenu({
     setAnchorEl(null);
     onContextMenuClose?.();
   };
+
+  const customize = useCustomize(print, closeMenu, onUnauthorized);
 
   const openEdit = () => {
     closeMenu();
@@ -309,19 +314,32 @@ export default function ModelActionsMenu({
           </ListItemIcon>
           <ListItemText>{t("common:download")}</ListItemText>
         </MenuItem>
-        <MenuItem onClick={openEdit}>
-          <ListItemIcon>
-            <EditIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>{t("common:edit")}</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={handleDelete}>
-          <ListItemIcon>
-            <DeleteIcon fontSize="small" color="error" />
-          </ListItemIcon>
-          <ListItemText sx={{ color: "error.main" }}>{t("common:delete")}</ListItemText>
-        </MenuItem>
-        {aiEnabled && (
+        {customize.item}
+        {toolOwned ? (
+          // Kept as the tool needs it: it goes when the tool is uninstalled.
+          <MenuItem disabled>
+            <ListItemIcon>
+              <HandymanOutlinedIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText secondary={t("models:detail.toolOwnedHint")}>{t("models:detail.toolOwned")}</ListItemText>
+          </MenuItem>
+        ) : (
+          [
+            <MenuItem key="edit" onClick={openEdit}>
+              <ListItemIcon>
+                <EditIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>{t("common:edit")}</ListItemText>
+            </MenuItem>,
+            <MenuItem key="delete" onClick={handleDelete}>
+              <ListItemIcon>
+                <DeleteIcon fontSize="small" color="error" />
+              </ListItemIcon>
+              <ListItemText sx={{ color: "error.main" }}>{t("common:delete")}</ListItemText>
+            </MenuItem>,
+          ]
+        )}
+        {aiEnabled && !toolOwned && (
           // One suggestion at a time: the next waits until this one is accepted or rejected.
           <MenuItem onClick={() => void recategorize()} disabled={recategorizing || Boolean(print.ai_suggestion)}>
             <ListItemIcon>
@@ -332,7 +350,7 @@ export default function ModelActionsMenu({
             </ListItemText>
           </MenuItem>
         )}
-        {descriptionsEnabled && (
+        {descriptionsEnabled && !toolOwned && (
           <MenuItem
             onClick={() => void improveDescription()}
             disabled={improving || Boolean(print.ai_description_pending)}
@@ -405,7 +423,7 @@ export default function ModelActionsMenu({
             <ListItemText>{t("models:detail.openInProvider", { provider: providerInfo.label })}</ListItemText>
           </MenuItem>
         )}
-        {providerInfo && print.source_url && sourceGaps.length > 0 && (
+        {providerInfo && print.source_url && sourceGaps.length > 0 && !toolOwned && (
           <MenuItem
             onClick={() => {
               closeMenu();
@@ -440,6 +458,8 @@ export default function ModelActionsMenu({
           onOpen={recordUse}
         />
       )}
+
+      {customize.window}
 
       <DownloadPickerDialog
         open={pickerOpen}

@@ -195,6 +195,37 @@ describe("uploads", () => {
     expect(partial.internalPath).toMatch(/^\/models\/.+/);
   });
 
+  // A model the customizer generated, or a tool built, was never a file anyone had: "uploaded" would name
+  // the one step the person didn't take.
+  it("calls a generated model generated and a tool's created, not uploaded", async () => {
+    const generated = await upload(["wreath.stl"], { origin: "generated" });
+    const built = await upload(["keyring.stl"], { origin: "created" });
+    const [gen, made] = await notifications();
+    expect(gen).toMatchObject({ type: "upload", title: `Generated "${generated.body.prints[0].name}"` });
+    expect(made).toMatchObject({ type: "upload", title: `Created "${built.body.prints[0].name}"` });
+  });
+
+  it("says a generated model couldn't be saved, since generating it already worked", async () => {
+    expect((await upload(["a.stl", "b.stl"], { origin: "generated" })).status).toBe(400);
+    const [failed] = await notifications();
+    expect(failed).toMatchObject({ title: "Couldn't save 2 models" });
+  });
+
+  it("counts a failed multi-file model as one model, not one per file", async () => {
+    // The customizer saves a 3MF and the script that made it as one model; both names belong in the body, but
+    // one model was lost.
+    expect((await upload(["corrupt.stl", "wreath.py"], { mode: "multiplate", origin: "generated" })).status).toBe(422);
+    const [failed] = await notifications();
+    expect(failed).toMatchObject({ title: "Couldn't save a model" });
+    expect(failed.body).toBe('"corrupt.stl", "wreath.py": Unreadable model file.');
+  });
+
+  it("ignores an origin it doesn't know, rather than putting it in the title", async () => {
+    await upload(["plain.stl"], { origin: "smuggled" });
+    const [plain] = await notifications();
+    expect(plain.title).toMatch(/^Uploaded "/);
+  });
+
   it("sends one summary for a batch uploaded one request at a time", async () => {
     const a = await upload(["one.stl"], { notify: "false" });
     const b = await upload(["two.stl"], { notify: "false" });

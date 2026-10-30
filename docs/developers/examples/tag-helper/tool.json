@@ -1,0 +1,9 @@
+{
+  "name": "Tag helper",
+  "description": "Finds the models in your library with no tags, and tags them a few at a time.",
+  "version": "1.0.0",
+  "window": { "width": 640, "height": 560 },
+  "hosts": [],
+  "category": "library",
+  "locales": ["en"]
+}

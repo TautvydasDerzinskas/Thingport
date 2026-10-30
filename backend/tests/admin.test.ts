@@ -128,6 +128,42 @@ describe("admin user management", () => {
     expect(member.print_count).toBe(0);
     expect(fs.existsSync(mosaics)).toBe(false);
   });
+
+  it("wipes models whose files are already gone", async () => {
+    // What a folder moved or restored from elsewhere leaves behind: the rows are all there, the files are not.
+    const name = `ghost-${Date.now()}`;
+    const print = await prisma.print.create({
+      data: { userId: memberUserId, name, nameNormalized: name, tags: ["ghost"] },
+    });
+    await prisma.plate.create({
+      data: {
+        printId: print.id,
+        position: 0,
+        filename: "part.stl",
+        mime: "model/stl",
+        storagePath: path.join(`u-${memberUserId}`, "Unassigned", name, "part.stl"),
+      },
+    });
+    await prisma.previewImage.create({ data: { printId: print.id, position: 0 } });
+    await prisma.descriptionImage.create({ data: { printId: print.id, mime: "image/png", size: 10 } });
+    await prisma.printFile.create({
+      data: {
+        printId: print.id,
+        role: "SUPPORTING",
+        filename: "guide.txt",
+        mime: "text/plain",
+        size: 5,
+        storagePath: path.join("bundles", print.id, "guide.txt"),
+      },
+    });
+
+    const res = await request(app).post(`/api/admin/users/${memberUserId}/delete-all-prints`).set(auth(adminToken));
+    expect(res.status).toBe(200);
+    expect(res.body.deleted).toBeGreaterThanOrEqual(1);
+    expect(await prisma.print.findUnique({ where: { id: print.id } })).toBeNull();
+    expect(await prisma.plate.count({ where: { printId: print.id } })).toBe(0);
+    expect(await prisma.printFile.count({ where: { printId: print.id } })).toBe(0);
+  });
 });
 
 describe("admin audit logs", () => {

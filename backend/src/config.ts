@@ -71,6 +71,9 @@ export const AUTH_ALGO = "HS256" as const;
 export const IMPORT_ALLOWED_EXTS = new Set([".stl", ".3mf", ".step", ".stp", ".obj", ".lbrn", ".lbrn2", ".zip"]);
 // Mirrors frontend's MODEL_EXTS. Other files in a multi-file upload become SUPPORTING files.
 export const RENDERABLE_MODEL_EXTS = new Set([".stl", ".3mf", ".step", ".stp", ".obj"]);
+// The script a model is generated from, kept so it can be generated again with other parameters. It holds no
+// geometry until something runs it, so it is never a plate: it comes along as a SUPPORTING file.
+export const PARAMETRIC_SOURCE_EXTS = new Set([".scad"]);
 // Mirrors frontend's UPLOAD_EXTS: what becomes a model on its own.
 export const UPLOADABLE_EXTS = new Set([
   ".png",

@@ -1,33 +1,40 @@
 ---
-import { Code } from "astro:components";
-import DocsLayout from "../../layouts/DocsLayout.astro";
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+import { Aside, Code } from "@astrojs/starlight/components";
+import { BRANCH, DOCS, REPO_URL } from "../../lib/site.mjs";
 import { url } from "../../lib/url";
 import compose from "../../../../docker-compose.deploy.yml?raw";
 import envExample from "../../../../.env.example?raw";
 
+const doc = DOCS.find((d) => d.slug === "install")!;
 const headings = [
   { depth: 2, slug: "requirements", text: "Requirements" },
   { depth: 2, slug: "1-create-the-files", text: "1. Create the files" },
   { depth: 2, slug: "2-start-thingport", text: "2. Start Thingport" },
   { depth: 2, slug: "3-sign-up", text: "3. Sign up" },
+  { depth: 2, slug: "4-check-system-health", text: "4. Check System Health" },
   { depth: 2, slug: "updating", text: "Updating" },
   { depth: 2, slug: "building-from-source", text: "Building from source" },
 ];
 ---
 
-<DocsLayout slug="install" headings={headings}>
-  <h1>Install with Docker Compose</h1>
+<StarlightPage
+  frontmatter={{
+    title: doc.title,
+    description: doc.description,
+    editUrl: `${REPO_URL}/blob/${BRANCH}/web/src/pages/docs/install.astro`,
+  }}
+  headings={headings}
+>
   <p>
     Thingport runs from pre-built images on the GitHub Container Registry, so there's no build step and no need to clone
     the repository. It works on any Docker host, including a NAS such as Synology, QNAP or Unraid.
   </p>
-  <blockquote>
-    <p>
-      On <a href={url("docs/install/unraid/")}>Unraid</a>, <a href={url("docs/install/truenas/")}>TrueNAS SCALE</a>
-      or <a href={url("docs/install/casaos/")}>CasaOS</a>? Follow the platform guide instead. They use each platform's
-      own app-data paths and setup screens.
-    </p>
-  </blockquote>
+  <Aside>
+    On <a href={url("docs/install/unraid/")}>Unraid</a>, <a href={url("docs/install/truenas/")}>TrueNAS SCALE</a> or <a
+      href={url("docs/install/casaos/")}>CasaOS</a
+    >? Follow the platform guide instead. They use each platform's own app-data paths and setup screens.
+  </Aside>
 
   <h2 id="requirements">Requirements</h2>
   <ul>
@@ -38,51 +45,37 @@ const headings = [
     </li>
   </ul>
 
-  <blockquote id="one-command-install">
-    <p>
-      <strong>Just want to try it?</strong> On Linux or macOS, one command creates a <code>thingport</code> folder with the
-      same two files as step 1, generates the secrets in <code>.env</code> and starts Thingport:
-    </p>
-    <Code
-      code="curl -fsSL https://thingport.net/install.sh | sh"
-      lang="bash"
-      themes={{ light: "github-light", dark: "github-dark" }}
-      defaultColor={false}
-    />
-    <p>It uses port 80 and a <code>thingport</code> folder where you run it. To pick both yourself:</p>
-    <Code
-      code={"curl -fsSL https://thingport.net/install.sh | WEB_PORT=8080 sh -s -- ~/thingport"}
-      lang="bash"
-      themes={{ light: "github-light", dark: "github-dark" }}
-      defaultColor={false}
-    />
-    <p>
-      To change other settings later, edit <code>.env</code> in that folder (see step 1) and run <code
-        >docker compose up -d</code
-      > there again. You can <a href={url("install.sh")}>read the script</a> before running it. Then continue at <a
-        href="#3-sign-up">3. Sign up</a
-      >.
-    </p>
-  </blockquote>
+  <div id="one-command-install">
+    <Aside type="tip" title="Just want to try it?">
+      <p>
+        On Linux or macOS, one command creates a <code>thingport</code> folder with the same two files as step 1, generates
+        the secrets in <code>.env</code> and starts Thingport:
+      </p>
+      <Code code="curl -fsSL https://thingport.net/install.sh | sh" lang="bash" />
+      <p>It uses port 80 and a <code>thingport</code> folder where you run it. To pick both yourself:</p>
+      <Code code={"curl -fsSL https://thingport.net/install.sh | WEB_PORT=8080 sh -s -- ~/thingport"} lang="bash" />
+      <p>
+        To change other settings later, edit <code>.env</code> in that folder (see step 1) and run <code
+          >docker compose up -d</code
+        > there again. You can <a href={url("install.sh")}>read the script</a> before running it. Then continue at <a
+          href="#3-sign-up">3. Sign up</a
+        >.
+      </p>
+    </Aside>
+  </div>
 
   <h2 id="1-create-the-files">1. Create the files</h2>
   <p>Create a folder for Thingport, for example <code>~/thingport</code>, and add these two files to it.</p>
-  <h3><code>docker-compose.yml</code></h3>
-  <Code code={compose} lang="yaml" themes={{ light: "github-light", dark: "github-dark" }} defaultColor={false} />
-  <h3><code>.env</code></h3>
+  <Code code={compose} lang="yaml" title="docker-compose.yml" />
   <p>
-    At minimum, set <code>AUTH_SECRET</code> (it signs login tokens; generate one with <code>openssl rand -hex 32</code
+    In <code>.env</code>, set at least <code>AUTH_SECRET</code> (it signs login tokens; generate one with <code
+      >openssl rand -hex 32</code
     >) and <code>POSTGRES_PASSWORD</code>. Everything else has sensible defaults.
   </p>
-  <Code code={envExample} lang="ini" themes={{ light: "github-light", dark: "github-dark" }} defaultColor={false} />
+  <Code code={envExample} lang="ini" title=".env" />
 
   <h2 id="2-start-thingport">2. Start Thingport</h2>
-  <Code
-    code="docker compose up -d"
-    lang="bash"
-    themes={{ light: "github-light", dark: "github-dark" }}
-    defaultColor={false}
-  />
+  <Code code="docker compose up -d" lang="bash" />
   <p>
     Thingport is then available at <code>http://&lt;host&gt;:&lt;WEB_PORT&gt;</code>. The default port is 80.
   </p>
@@ -91,7 +84,8 @@ const headings = [
   <p>
     Open Thingport in your browser and register. <strong>The first account you register becomes the admin.</strong> Then <a
       href={url("docs/providers/")}>set up your providers</a
-    > so you can import from MakerWorld, Thingiverse and MyMiniFactory. Printables works right away.
+    > so you can import from MakerWorld, Thingiverse and the other sites that need a key or your sign-in. Printables and a
+    few others work right away.
   </p>
 
   <h2 id="4-check-system-health">4. Check System Health</h2>
@@ -107,12 +101,7 @@ const headings = [
   <p>
     Pull the latest images and recreate the containers. Your database and files live in Docker volumes and are kept.
   </p>
-  <Code
-    code={"docker compose pull\ndocker compose up -d"}
-    lang="bash"
-    themes={{ light: "github-light", dark: "github-dark" }}
-    defaultColor={false}
-  />
+  <Code code={"docker compose pull\ndocker compose up -d"} lang="bash" />
   <p>
     To stay on a specific build, set <code>BACKEND_IMAGE</code> and <code>FRONTEND_IMAGE</code> in <code>.env</code> to a
     pinned tag, as shown in the comments in the compose file.
@@ -123,10 +112,8 @@ const headings = [
   <Code
     code={"git clone https://github.com/TautvydasDerzinskas/Thingport.git\ncd Thingport\ncp .env.example .env\ndocker compose up -d"}
     lang="bash"
-    themes={{ light: "github-light", dark: "github-dark" }}
-    defaultColor={false}
   />
   <p>
     For hot-reload development, see <a href={url("docs/development/")}>Development setup</a>.
   </p>
-</DocsLayout>
+</StarlightPage>

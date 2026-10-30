@@ -13,7 +13,9 @@
 }
 
 body {
-  width: 320px;
+  // Wide enough for two columns of providers, so the list of them doesn't run past the height a browser
+  // gives a popup (see popup/sites.ts).
+  width: 380px;
   margin: 0;
   padding: t.$space-4;
   font-family: t.$font-stack;
@@ -85,6 +87,29 @@ body {
   }
 }
 
+// A quiet action beside a heading, worded rather than drawn: "Enable all".
+.text-btn {
+  margin: -2px -4px;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  font: 600 t.$font-size-xs t.$font-stack;
+  color: t.c("accent");
+  cursor: pointer;
+  transition: background 0.15s ease;
+  @include m.focus-ring;
+
+  &:hover:not(:disabled) {
+    background: t.c("accent-soft");
+  }
+
+  &:disabled {
+    color: t.c("text-muted");
+    cursor: default;
+  }
+}
+
 .icon-btn {
   display: inline-flex;
   flex-shrink: 0;
@@ -137,30 +162,83 @@ body {
   }
 }
 
+// Two columns, so fifteen providers stay inside the popup's height.
 .sites {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: t.$space-2;
+  row-gap: 2px;
   margin: 0;
   padding: 0;
   list-style: none;
+
+  // The count on the left, Enable all on the right.
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: t.$space-2;
+    margin-bottom: t.$space-2;
+  }
+
+  &__count {
+    font-size: t.$font-size-xs;
+    color: t.c("text-muted");
+  }
 }
 
 .site {
-  display: flex;
-  align-items: center;
-  gap: t.$space-2;
-  min-height: 24px;
+  min-width: 0;
 
-  > svg {
-    flex-shrink: 0;
-    width: 16px;
-    height: 16px;
+  // A plain row when the site is on; the button that turns it on when it isn't.
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    min-height: 30px;
+    padding: 4px 6px;
+    border: 0;
+    border-radius: t.$radius-sm;
+    background: transparent;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+
+    > svg {
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  button.site__row {
+    cursor: pointer;
+    transition: background 0.15s ease;
+    @include m.focus-ring;
+
+    &:hover:not(:disabled),
+    &:focus-visible {
+      background: t.c("hover");
+
+      .site__plus {
+        border-color: t.c("accent");
+        color: t.c("accent");
+      }
+    }
   }
 
   &__name {
     flex: 1;
     min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  // Off until the browser allows it: the name steps back, and the row offers to turn it on.
+  &--off &__name {
+    color: t.c("text-muted");
   }
 
   &__tick {
@@ -168,20 +246,40 @@ body {
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
     background: t.c("accent");
     color: t.c("on-accent");
 
     svg {
-      width: 12px;
-      height: 12px;
+      width: 11px;
+      height: 11px;
     }
 
     // Just enabled: pops in where the button was.
     &--new {
       animation: site-tick-in 0.25s ease-out;
+    }
+  }
+
+  &__plus {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border: 1px solid t.c("border");
+    border-radius: 50%;
+    color: t.c("text-muted");
+    transition:
+      border-color 0.15s ease,
+      color 0.15s ease;
+
+    svg {
+      width: 11px;
+      height: 11px;
     }
   }
 
@@ -195,7 +293,7 @@ body {
   }
 
   // Not available yet: faded, with the button greyed out.
-  &--soon {
+  &--soon &__row {
     > svg,
     .site__name {
       opacity: 0.5;
@@ -216,6 +314,96 @@ body {
     &__tick--new {
       animation: none;
     }
+  }
+}
+
+// The provider whose site the active tab is on, above the grid: its logo, what it imports, and a tick once Grab
+// is allowed to run there. Tinted with the site's own colour, which sites.ts sets per provider.
+.featured {
+  margin-bottom: t.$space-3;
+  padding: 10px;
+  border: 1px solid var(--site-accent-line, #{t.c("border")});
+  border-radius: t.$radius-md;
+  background: linear-gradient(135deg, var(--site-accent-wash, transparent), transparent 72%), t.c("surface-sunken");
+  animation: featured-in 0.22s ease-out;
+
+  &__logo {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: t.$radius-sm;
+    background: t.c("surface");
+    box-shadow: 0 1px 3px t.c("shadow");
+    // Black-and-white logos take the text colour.
+    color: t.c("text");
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 26px;
+  }
+
+  &__name {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  // Says why this one is up here.
+  &__here {
+    flex-shrink: 0;
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+    color: t.c("text-muted");
+    background: t.c("hover");
+  }
+
+  &__status {
+    display: inline-flex;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  &__desc {
+    margin: 6px 0 0;
+    font-size: t.$font-size-xs;
+    line-height: 1.45;
+    color: t.c("text-muted");
+  }
+
+  &__enable {
+    padding: 4px 12px;
+    font-size: t.$font-size-sm;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@keyframes featured-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 

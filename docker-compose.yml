@@ -47,6 +47,8 @@ services:
       - SMTP_FROM=${SMTP_FROM:-Thingport <no-reply@localhost>}
       - FLARESOLVERR_URL=${FLARESOLVERR_URL:-http://flaresolverr:8191/v1}
       - FLARESOLVERR_REQUIRE_HTTPS=${FLARESOLVERR_REQUIRE_HTTPS:-false}
+      # Tools are offered from this checkout's tools folder (mounted below), not the repository on GitHub.
+      - TOOLS_DIR=/app/tools
     depends_on:
       db:
         condition: service_healthy
@@ -54,6 +56,7 @@ services:
         condition: service_started
     volumes:
       - ./data/storage:/app/storage
+      - ./tools:/app/tools:ro
       # Optional consume folder: files and folders dropped in it are imported automatically
       # (Administration -> Storage -> Consume Folder). Uncomment and point it at a host folder.
       # - ./data/consume:/app/consume

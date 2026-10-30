@@ -1,0 +1,897 @@
+<style>
+  /* Everything is under .mwn, so nothing reaches the rest of Thingport. Colours come from Thingport's theme; tool.js
+     sets the variables. */
+  .mwn {
+    --panel-2: color-mix(in srgb, var(--panel) 90%, var(--text));
+    --line: var(--divider);
+    --tint: color-mix(in srgb, var(--accent) 12%, transparent);
+    position: relative;
+    container-type: inline-size;
+    box-sizing: border-box;
+    height: 100%;
+    overflow: auto;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.4 var(--font);
+  }
+  .mwn *,
+  .mwn *::before,
+  .mwn *::after {
+    box-sizing: border-box;
+  }
+  /* `:where()` holds this reset at the specificity of the root class alone, so a button's own rule further down —
+     the accent-filled one, say — still decides its colour and its weight. Written as `.mwn button`, the reset
+     outranks every single-class rule and quietly wins both. */
+  .mwn :where(button, input) {
+    font: inherit;
+    color: inherit;
+  }
+  .mwn :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .mwn [hidden] {
+    display: none !important;
+  }
+  .mwn svg {
+    flex-shrink: 0;
+  }
+
+  .mwn-main {
+    display: grid;
+    gap: 12px;
+    padding: 12px;
+    grid-template-columns: 320px minmax(0, 1fr);
+    align-items: start;
+  }
+  /* Side by side, each panel scrolls on its own within the window. */
+  @container (min-width: 761px) {
+    .mwn-main {
+      height: 100%;
+      grid-template-rows: minmax(0, 1fr);
+    }
+    .mwn-panel {
+      max-height: 100%;
+      overflow: auto;
+    }
+  }
+  @container (max-width: 760px) {
+    .mwn-main {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .mwn-panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .mwn-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 30px;
+  }
+  .mwn-head h2 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .mwn-hint {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 400;
+  }
+  .mwn-spacer {
+    flex: 1;
+  }
+
+  .mwn-btn {
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    font-size: 13px;
+    white-space: nowrap;
+    transition:
+      border-color 0.15s,
+      background-color 0.15s;
+  }
+  .mwn-btn:hover:not(:disabled) {
+    border-color: var(--muted);
+  }
+  .mwn-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  .mwn-btn.mwn-primary {
+    background: var(--accent);
+    color: var(--accent-ink);
+    border-color: transparent;
+    font-weight: 600;
+  }
+  .mwn-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+  .mwn-icon-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    color: var(--muted);
+    display: grid;
+    place-items: center;
+    transition:
+      background-color 0.15s,
+      color 0.15s;
+  }
+  .mwn-icon-btn:hover {
+    background: var(--panel-2);
+    color: var(--text);
+  }
+  .mwn-icon-btn svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  /* Adding files. */
+  .mwn-drop {
+    border: 1.5px dashed color-mix(in srgb, var(--muted) 55%, transparent);
+    border-radius: 12px;
+    padding: 18px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
+    cursor: pointer;
+    background: var(--panel-2);
+    transition:
+      border-color 0.2s,
+      background-color 0.2s,
+      transform 0.2s;
+  }
+  .mwn-drop:hover {
+    border-color: var(--accent);
+  }
+  .mwn-drop .mwn-drop-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    background: var(--tint);
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .mwn-drop .mwn-drop-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+  .mwn-drop strong {
+    font-size: 14px;
+  }
+  .mwn-drop span {
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .mwn-drop u {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .mwn-veil {
+    position: absolute;
+    inset: 8px;
+    z-index: 5;
+    border: 2px dashed var(--accent);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+    animation: mwn-fade 0.15s ease-out;
+  }
+  .mwn-veil div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .mwn-veil svg {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* The files. */
+  .mwn-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .mwn-file {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 4px 7px 8px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: var(--panel-2);
+    cursor: pointer;
+    animation: mwn-rise 0.22s ease-out both;
+    transition: border-color 0.15s;
+  }
+  .mwn-file:hover {
+    border-color: var(--line);
+  }
+  .mwn-file[aria-current="true"] {
+    border-color: var(--accent);
+    background: var(--tint);
+  }
+  .mwn-file.mwn-leaving {
+    animation: mwn-leave 0.18s ease-in both;
+  }
+  .mwn-state {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+  }
+  .mwn-state svg {
+    width: 17px;
+    height: 17px;
+  }
+  .mwn-state.mwn-done {
+    color: var(--success);
+    background: color-mix(in srgb, var(--success) 14%, transparent);
+  }
+  .mwn-state.mwn-failed {
+    color: var(--danger);
+    background: color-mix(in srgb, var(--danger) 14%, transparent);
+  }
+  .mwn-state.mwn-done svg {
+    animation: mwn-pop 0.3s ease-out both;
+  }
+  .mwn-spinner {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid color-mix(in srgb, var(--accent) 25%, transparent);
+    border-top-color: var(--accent);
+    animation: mwn-spin 0.8s linear infinite;
+  }
+  .mwn-file-name {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .mwn-file-name b {
+    font-weight: 500;
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .mwn-file-name small {
+    color: var(--muted);
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .mwn-file-name small.mwn-error {
+    color: var(--danger);
+  }
+  .mwn-list-empty {
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+    padding: 6px 0;
+  }
+
+  /* The selected file. */
+  .mwn-intro {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+    padding: 36px 16px 28px;
+  }
+  .mwn-intro h2 {
+    margin: 0;
+    font-size: 18px;
+  }
+  .mwn-intro p {
+    margin: 0;
+    color: var(--muted);
+    max-width: 460px;
+    font-size: 13px;
+  }
+  .mwn-flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .mwn-chip {
+    border-radius: 999px;
+    padding: 3px 10px;
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+  }
+  .mwn-chip.mwn-to {
+    border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+    background: var(--tint);
+    color: var(--accent);
+  }
+  .mwn-keeps {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 150px));
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .mwn-keep {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  .mwn-keep svg {
+    width: 18px;
+    height: 18px;
+    color: var(--accent);
+  }
+  .mwn-keep b {
+    font-size: 13px;
+  }
+  .mwn-keep span {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .mwn-views {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  @container (max-width: 980px) {
+    .mwn-views {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  .mwn-view {
+    margin: 0;
+    border-radius: 10px;
+    background: var(--panel-2);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .mwn-view figcaption {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px 0;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+  .mwn-view figcaption span {
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .mwn-view canvas {
+    width: 100%;
+    height: 260px;
+    display: block;
+    cursor: grab;
+    touch-action: none;
+  }
+  .mwn-view-note {
+    height: 260px;
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+    font-size: 12px;
+    padding: 0 16px;
+    text-align: center;
+  }
+  .mwn-swatches {
+    display: inline-flex;
+    gap: 3px;
+  }
+  .mwn-swatch {
+    width: 11px;
+    height: 11px;
+    border-radius: 3px;
+    border: 1px solid color-mix(in srgb, var(--text) 25%, transparent);
+  }
+
+  .mwn-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 10px;
+    align-items: start;
+  }
+  .mwn-box {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .mwn-box h3 {
+    margin: 0 0 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+  .mwn-dl {
+    margin: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 3px 12px;
+    font-size: 12px;
+  }
+  .mwn-dl dt {
+    color: var(--muted);
+  }
+  .mwn-dl dd {
+    margin: 0;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .mwn-filaments {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+  }
+  .mwn-filament {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .mwn-filament .mwn-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+  }
+  .mwn-filament code {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .mwn-log summary {
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .mwn-log summary::-webkit-details-marker {
+    display: none;
+  }
+  .mwn-log summary svg {
+    width: 14px;
+    height: 14px;
+    transition: transform 0.15s;
+  }
+  .mwn-log[open] summary svg {
+    transform: rotate(90deg);
+  }
+  .mwn-log ol {
+    margin: 8px 0 0;
+    padding: 8px 10px 8px 28px;
+    border-radius: 8px;
+    background: var(--panel-2);
+    max-height: 180px;
+    overflow: auto;
+    font:
+      11.5px/1.55 ui-monospace,
+      SFMono-Regular,
+      Menlo,
+      Consolas,
+      monospace;
+    color: var(--muted);
+  }
+
+  .mwn-status {
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    align-items: center;
+    animation: mwn-fade 0.2s ease-out;
+  }
+  .mwn-status svg {
+    width: 14px;
+    height: 14px;
+    color: var(--success);
+  }
+  .mwn-link {
+    border: 0;
+    background: none;
+    padding: 0;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .mwn-problem {
+    border-radius: 10px;
+    padding: 12px 14px;
+    background: color-mix(in srgb, var(--danger) 10%, transparent);
+    color: var(--danger);
+    font-size: 13px;
+  }
+  .mwn-problem b {
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  /* Placeholders while a file is read. */
+  .mwn-skeleton {
+    border-radius: 10px;
+    background: linear-gradient(
+      90deg,
+      var(--panel-2) 0%,
+      color-mix(in srgb, var(--panel-2) 70%, var(--text) 8%) 50%,
+      var(--panel-2) 100%
+    );
+    background-size: 200% 100%;
+    animation: mwn-shimmer 1.2s linear infinite;
+  }
+
+  /* The library picker. */
+  .mwn-library {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    background: color-mix(in srgb, var(--bg) 60%, transparent);
+    display: grid;
+    place-items: start center;
+    padding: 48px 16px 16px;
+    animation: mwn-fade 0.15s ease-out;
+  }
+  .mwn-library-card {
+    width: min(560px, 100%);
+    max-height: 100%;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 18px 50px rgb(0 0 0 / 0.25);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    animation: mwn-rise 0.2s ease-out;
+  }
+  .mwn-search {
+    height: 36px;
+    width: 100%;
+    padding: 0 12px;
+    border-radius: 9px;
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    outline: none;
+  }
+  .mwn-search:focus {
+    border-color: var(--accent);
+  }
+  .mwn-models {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 120px;
+  }
+  .mwn-model {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+    padding: 6px;
+    border-radius: 10px;
+    background: var(--panel-2);
+  }
+  .mwn-model img,
+  .mwn-model .mwn-thumb {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    object-fit: cover;
+    background: color-mix(in srgb, var(--text) 8%, transparent);
+  }
+  .mwn-model b {
+    font-size: 13px;
+    font-weight: 500;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .mwn-model-files {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 3px;
+  }
+  .mwn-model-files button {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    border-radius: 999px;
+    padding: 1px 9px;
+    font-size: 11.5px;
+    cursor: pointer;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .mwn-model-files button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Menus. */
+  .mwn-menu {
+    position: absolute;
+    z-index: 20;
+    min-width: 200px;
+    padding: 4px;
+    border-radius: 10px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    box-shadow: 0 12px 32px rgb(0 0 0 / 0.22);
+    display: flex;
+    flex-direction: column;
+    transform-origin: top right;
+    animation: mwn-menu 0.14s ease-out;
+  }
+  .mwn-menu button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 0;
+    background: none;
+    border-radius: 7px;
+    padding: 7px 10px;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+  }
+  .mwn-menu button:hover,
+  .mwn-menu button:focus-visible {
+    background: var(--panel-2);
+    outline: none;
+  }
+  .mwn-menu button svg {
+    width: 16px;
+    height: 16px;
+    color: var(--muted);
+  }
+  .mwn-menu button.mwn-danger,
+  .mwn-menu button.mwn-danger svg {
+    color: var(--danger);
+  }
+  .mwn-menu hr {
+    border: 0;
+    border-top: 1px solid var(--line);
+    margin: 4px 2px;
+  }
+
+  @keyframes mwn-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes mwn-rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+  @keyframes mwn-leave {
+    to {
+      opacity: 0;
+      transform: translateX(-12px);
+    }
+  }
+  @keyframes mwn-fade {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes mwn-pop {
+    from {
+      opacity: 0;
+      transform: scale(0.4);
+    }
+  }
+  @keyframes mwn-menu {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+  }
+  @keyframes mwn-shimmer {
+    to {
+      background-position: -200% 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mwn *,
+    .mwn *::before,
+    .mwn *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition: none !important;
+    }
+  }
+</style>
+
+<div class="mwn">
+  <div class="mwn-main">
+    <section class="mwn-panel mwn-files" data-t-aria="files.title" aria-label="Files">
+      <div class="mwn-head">
+        <h2>Files <span class="mwn-hint" id="mwn-count"></span></h2>
+        <span class="mwn-spacer"></span>
+        <button
+          class="mwn-icon-btn"
+          id="mwn-downloadAll"
+          data-t-title="files.downloadAll"
+          title="Download all"
+          data-t-aria="files.downloadAll"
+          aria-label="Download all"
+          hidden
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+          </svg>
+        </button>
+        <button
+          class="mwn-icon-btn"
+          id="mwn-clear"
+          data-t-title="files.clear"
+          title="Clear the list"
+          data-t-aria="files.clear"
+          aria-label="Clear the list"
+          hidden
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
+          </svg>
+        </button>
+      </div>
+      <div
+        class="mwn-drop"
+        id="mwn-drop"
+        role="button"
+        tabindex="0"
+        data-t-aria="drop.aria"
+        aria-label="Add 3MF files: drop them here, or press Enter to choose them"
+      >
+        <div class="mwn-drop-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M12 16V4m0 0-4 4m4-4 4 4M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+          </svg>
+        </div>
+        <strong><span data-t="drop.title">Drop 3MF files</span></strong>
+        <span
+          >or <u><span data-t="drop.choose">choose files</span></u> · they stay in your browser</span
+        >
+      </div>
+      <input type="file" id="mwn-input" accept=".3mf" multiple hidden />
+      <button class="mwn-btn" id="mwn-library">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M4 5a1 1 0 0 1 1-1h4l2 2h8a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+        </svg>
+        <span data-t="drop.fromLibrary">From your library</span>
+      </button>
+      <ul class="mwn-list" id="mwn-list" data-t-aria="aria.filesList" aria-label="Files to normalize"></ul>
+    </section>
+
+    <section
+      class="mwn-panel mwn-detail"
+      id="mwn-detail"
+      data-t-aria="aria.selectedFile"
+      aria-label="Selected file"
+      aria-live="polite"
+    ></section>
+  </div>
+
+  <div class="mwn-veil" id="mwn-veil" hidden>
+    <div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+        <path d="M12 16V4m0 0-4 4m4-4 4 4M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" /></svg
+      ><span data-t="drop.over">Drop to normalize</span>
+    </div>
+  </div>
+
+  <div class="mwn-library" id="mwn-picker" role="dialog" aria-modal="true" aria-labelledby="mwn-pickerTitle" hidden>
+    <div class="mwn-library-card">
+      <div class="mwn-head">
+        <h2 id="mwn-pickerTitle"><span data-t="library.title">3MF files in your library</span></h2>
+        <span class="mwn-spacer"></span>
+        <button
+          class="mwn-icon-btn"
+          id="mwn-pickerClose"
+          data-t-title="common.close"
+          title="Close"
+          data-t-aria="common.close"
+          aria-label="Close"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </div>
+      <input
+        class="mwn-search"
+        id="mwn-pickerSearch"
+        type="search"
+        data-t-placeholder="library.search"
+        placeholder="Search your models"
+        data-t-aria="library.search"
+        aria-label="Search your models"
+        autocomplete="off"
+      />
+      <ul class="mwn-models" id="mwn-pickerList" data-t-aria="library.aria" aria-label="Models with 3MF files"></ul>
+    </div>
+  </div>
+
+  <div class="mwn-menu" id="mwn-menu" role="menu" hidden></div>
+</div>

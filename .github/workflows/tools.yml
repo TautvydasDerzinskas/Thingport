@@ -1,0 +1,40 @@
+name: Tools
+
+# Checks a pull request's tools the way Thingport reads them when an admin installs one.
+on:
+  pull_request:
+    paths:
+      - tools/**
+      - backend/src/services/toolFormat.ts
+      - backend/src/services/customWidgetFormat.ts
+      - backend/scripts/validateTools.ts
+  push:
+    branches: [main]
+    paths:
+      - tools/**
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx tsx scripts/validateTools.ts
+      # A tool built from source/ is checked in built: the built files have to match it, and its own tests pass.
+      - name: Built tools match their source, and their tests pass
+        working-directory: tools
+        run: |
+          for build in */source/build.mjs; do node "$build"; done
+          git diff --exit-code -- .
+          for test in */source/test_*.mjs; do node "$test"; done

@@ -194,6 +194,46 @@ export async function fetchViaFlaresolverr(
   }
 }
 
+/** The cookies FlareSolverr's browser holds after running a page for `waitSeconds`, by name: for a bot check that
+ *  hands out a token of its own rather than Cloudflare's clearance (AWS's WAF), which FlareSolverr doesn't recognise
+ *  and so wouldn't wait for. Such a token, unlike a clearance, may be replayed from Node. Null when FlareSolverr isn't
+ *  set up or didn't answer. */
+export async function cookiesViaFlaresolverr(url: string, waitSeconds: number): Promise<Record<string, string> | null> {
+  const endpoint = await getFlaresolverrUrl();
+  if (!endpoint || !isAllowedFlaresolverrUrl(endpoint)) return null;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FLARESOLVERR_TIMEOUT_MS + waitSeconds * 1000);
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        cmd: "request.get",
+        url,
+        maxTimeout: FLARESOLVERR_TIMEOUT_MS,
+        waitInSeconds: waitSeconds,
+      }),
+      redirect: "error",
+      signal: controller.signal,
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      status?: string;
+      solution?: { cookies?: { name?: unknown; value?: unknown }[] };
+    };
+    if (data.status !== "ok" || !data.solution) return null;
+    return Object.fromEntries(
+      (data.solution.cookies ?? []).flatMap((cookie) =>
+        typeof cookie.name === "string" && typeof cookie.value === "string" ? [[cookie.name, cookie.value]] : [],
+      ),
+    );
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 /** JSON comes back wrapped in Chrome's JSON-viewer HTML; unwrap and parse it. */
 export function extractJsonFromBrowserBody(body: string): unknown | null {
   const trimmed = body.trim();

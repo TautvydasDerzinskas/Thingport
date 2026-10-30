@@ -1,0 +1,14 @@
+{
+  "title": "Tray maker",
+  "width": "Width (mm)",
+  "depth": "Depth (mm)",
+  "height": "Height (mm)",
+  "wall": "Wall (mm)",
+  "save": "Save to a collection…",
+  "download": "Download STL",
+  "making": "Making the tray…",
+  "name": "Tray {width}x{depth}x{height}",
+  "saveTo": "Save the tray to",
+  "saved": "Saved {name} to {collection}",
+  "failed": "Couldn't make the tray: {reason}"
+}

@@ -23,6 +23,7 @@ import { previewImagePath } from "./services/previewImageService";
 import { preparedFilename } from "./services/preparedPrint";
 import {
   canRenderModelImage,
+  modelColorImagePath,
   modelImagePath,
   modelPreviewGlbExists,
   modelPreviewGlbPath,
@@ -111,6 +112,9 @@ export type PlateOut = {
   /** The server's grey render for model cards to tint; unversioned until it exists (asking for it queues it), null for
    *  files the server can't draw. */
   render_url: string | null;
+  /** The file carries colours of its own -- a painted project, or a script's `color()` calls. True once the
+   *  render found them, so its picture of the model is a colour one rather than the grey cards tint. */
+  own_colors: boolean;
 };
 
 export type PrintFileOut = {
@@ -131,6 +135,8 @@ export type PreviewImageOut = {
 
 export type PrintOut = {
   id: string;
+  /** Set on a model a tool brought: it can be opened and downloaded but not edited or deleted. */
+  tool_id: string | null;
   name: string;
   title: string | null;
   notes: string | null;
@@ -166,7 +172,16 @@ export type PrintOut = {
   thumb_url: string | null;
   thumb_generated: boolean;
   render_url: string | null;
+  /** Any plate carries colours of its own; see PlateOut.own_colors. */
+  own_colors: boolean;
   supporting_file_count: number;
+  /** The scripts it can be generated again from, as `{ id, filename }`, out of the files kept beside it. Empty
+   *  for an ordinary model. Here rather than behind a request of its own because the files are already loaded,
+   *  and because a list of models needs it too: it is what marks one as generated rather than only printed. */
+  generator_scripts: { id: string; filename: string }[];
+  /** The source had a script for this model but its creator chose not to share it, so there is none to open.
+   *  Without it, that is indistinguishable from a model that never had one. */
+  generator_script_withheld: boolean;
   /** All plates plus supporting and prepared files; gallery images aren't counted. */
   total_size: number;
   prepared_print: PreparedPrintOut | null;
@@ -242,6 +257,7 @@ export function toPlateOut(printId: string, plate: Plate, home: AssetHome): Plat
     thumb_generated: plate.thumbGenerated,
     preview_glb_url: previewGlbUrl(plate),
     render_url: renderUrl(plate, home),
+    own_colors: modelColorImagePath(plate.id, home) !== null,
   };
 }
 
@@ -259,7 +275,7 @@ export function printCover(
   return null;
 }
 
-function previewImageUrl(id: string, home: AssetHome): string | null {
+export function previewImageUrl(id: string, home: AssetHome): string | null {
   return versionedUrl(previewImagePath(id, home), `/preview-image/${id}/file.jpg`);
 }
 
@@ -302,7 +318,11 @@ export function toPrintOut(
 ): PrintOut {
   const sortedPlates = plates.toSorted((a, b) => a.position - b.position);
   const plateOuts = sortedPlates.map((p) => toPlateOut(print.id, p, print.assetsPath));
-  const supportingCount = files.filter((f) => f.role === "SUPPORTING").length;
+  const supporting = files.filter((f) => f.role === "SUPPORTING");
+  const supportingCount = supporting.length;
+  const generatorScripts = supporting
+    .filter((f) => f.filename.toLowerCase().endsWith(".scad"))
+    .map((f) => ({ id: f.id, filename: f.filename }));
   const totalSize = plates.reduce((sum, p) => sum + p.size, 0) + files.reduce((sum, f) => sum + f.size, 0);
   const previewImageOuts = (previewImages ?? [])
     .toSorted((a, b) => a.position - b.position)
@@ -346,6 +366,7 @@ export function toPrintOut(
 
   return {
     id: print.id,
+    tool_id: print.toolId ?? null,
     name: print.name,
     title: print.title,
     notes: print.notes,
@@ -370,7 +391,10 @@ export function toPrintOut(
     thumb_generated: plateOuts[0]?.thumb_generated ?? false,
     // The first file the server can draw: a STEP first plate mustn't leave the card without one.
     render_url: plateOuts.find((plate) => plate.render_url)?.render_url ?? null,
+    own_colors: plateOuts.some((plate) => plate.own_colors),
     supporting_file_count: supportingCount,
+    generator_scripts: generatorScripts,
+    generator_script_withheld: print.generatorScriptWithheld,
     total_size: totalSize,
     prepared_print: prepared,
     slicer_url: slicerUrl,
@@ -400,6 +424,8 @@ export type CollectionOut = {
   bookmarked: boolean;
   /** Set while the collection is synced with one on a provider. */
   sync: CollectionSyncOut | null;
+  /** Set on the collection of a tool's models: fixed, and gone when the tool is uninstalled. */
+  tool_id: string | null;
 };
 
 export type SyncProfileScope = "url" | "designer" | "all";
@@ -458,6 +484,7 @@ export function toCollectionOut(
     system_key: null,
     bookmarked,
     sync: sync ? toCollectionSyncOut(sync) : null,
+    tool_id: collection.toolId ?? null,
   };
 }
 
@@ -480,6 +507,7 @@ export function toSystemCollectionOut(
     system_key: key,
     bookmarked: false,
     sync: null,
+    tool_id: null,
   };
 }
 

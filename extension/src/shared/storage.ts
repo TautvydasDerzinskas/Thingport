@@ -35,6 +35,8 @@ export const STORAGE_KEYS = {
   lastPrintablesLikesAt: "lastPrintablesLikesAt",
   // When a tab was last told to read Printables, so others hold off meanwhile.
   printablesPlanHandedOutAt: "printablesPlanHandedOutAt",
+  // The provider site each open tab is on (see background/providerTab.ts).
+  providerTab: "providerTab",
 } as const;
 
 export type StoredConfig = {
@@ -59,7 +61,11 @@ export type StoredConfig = {
   lastPrintablesPushAt?: number;
   lastPrintablesLikesAt?: number;
   printablesPlanHandedOutAt?: number;
+  providerTab?: ProviderTabs;
 };
+
+/** Which provider's site each tab is on, by tab id, as their content scripts reported. */
+export type ProviderTabs = Partial<Record<number, ProviderId>>;
 
 /** What works without a Thingport instance, and whether each is on until the user says otherwise. */
 export const OFFLINE_FEATURE_DEFAULTS = {

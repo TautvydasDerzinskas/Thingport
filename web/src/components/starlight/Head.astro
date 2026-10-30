@@ -1,0 +1,64 @@
+---
+import { getImage } from "astro:assets";
+import Default from "@astrojs/starlight/components/Head.astro";
+import { structuredData } from "../../lib/head.mjs";
+import { SITE_DESCRIPTION, SITE_NAME } from "../../lib/site.mjs";
+import { url } from "../../lib/url";
+import ogSource from "../../assets/og-default.png";
+
+// Starlight's head plus what the site's own pages have (BaseLayout.astro): their title rule, the share image,
+// the Twitter tags and the JSON-LD graph. Site-wide tags are `head` in astro.config.mjs.
+const route = Astro.locals.starlightRoute;
+const { title, description = SITE_DESCRIPTION, head: pageHead } = route.entry.data;
+const isHome = route.id === "docs";
+// A page's own <title> wins; a title that already names the site isn't suffixed again.
+const fullTitle =
+  pageHead.find((tag) => tag.tag === "title")?.content ??
+  (title.includes(SITE_NAME) ? title : `${title} · ${SITE_NAME}`);
+const pageUrl = new URL(Astro.url.pathname, Astro.site).href;
+const home = new URL(url(), Astro.site).href;
+const ogImage = await getImage({ src: ogSource, width: 1200, height: 630, format: "png" });
+const ogImageUrl = new URL(ogImage.src, Astro.site).href;
+
+const article = isHome
+  ? []
+  : [
+      {
+        "@type": "TechArticle",
+        headline: title,
+        description,
+        url: pageUrl,
+        isPartOf: { "@id": home + "#website" },
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Docs", item: new URL(url("docs/"), Astro.site).href },
+          { "@type": "ListItem", position: 2, name: title, item: pageUrl },
+        ],
+      },
+    ];
+
+route.head = [
+  ...route.head
+    // Starlight's favicon link (rel="shortcut icon", after the others) gives way to the set in astro.config.mjs.
+    .filter((tag) => tag.attrs?.rel !== "shortcut icon")
+    .map((tag) => {
+      if (tag.tag === "title") return { ...tag, content: fullTitle };
+      if (tag.attrs?.property === "og:title") return { ...tag, attrs: { ...tag.attrs, content: fullTitle } };
+      // The docs home lists pages rather than being an article.
+      if (tag.attrs?.property === "og:type" && isHome) return { ...tag, attrs: { ...tag.attrs, content: "website" } };
+      return tag;
+    }),
+  { tag: "meta", attrs: { property: "og:image", content: ogImageUrl } },
+  { tag: "meta", attrs: { property: "og:image:width", content: "1200" } },
+  { tag: "meta", attrs: { property: "og:image:height", content: "630" } },
+  { tag: "meta", attrs: { property: "og:image:alt", content: "Thingport: your personal 3D model library" } },
+  { tag: "meta", attrs: { name: "twitter:title", content: fullTitle } },
+  { tag: "meta", attrs: { name: "twitter:description", content: description } },
+  { tag: "meta", attrs: { name: "twitter:image", content: ogImageUrl } },
+  { tag: "script", attrs: { type: "application/ld+json" }, content: structuredData(home, article) },
+];
+---
+
+<Default />

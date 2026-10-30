@@ -9040,5 +9040,1448 @@
       "name": "Others",
       "parent": "2000"
     }
+  ],
+  "toymakr3d": [
+    {
+      "id": "5",
+      "name": "G1 Robots",
+      "parent": null
+    },
+    {
+      "id": "6",
+      "name": "Giant Robots",
+      "parent": null
+    },
+    {
+      "id": "14",
+      "name": "Mecha Monsters",
+      "parent": null
+    },
+    {
+      "id": "7",
+      "name": "Vehicles",
+      "parent": null
+    },
+    {
+      "id": "11",
+      "name": "Transforming Robots",
+      "parent": null
+    },
+    {
+      "id": "13",
+      "name": "Upgrade Kit",
+      "parent": null
+    },
+    {
+      "id": "9",
+      "name": "Exclusive Item",
+      "parent": null
+    },
+    {
+      "id": "8",
+      "name": "Other",
+      "parent": null
+    },
+    {
+      "id": "15",
+      "name": "Power Robots",
+      "parent": null
+    }
+  ],
+  "makerables": [
+    {
+      "id": "1",
+      "name": "Workshop Tools",
+      "parent": null
+    },
+    {
+      "id": "6",
+      "name": "Machine Upgrades",
+      "parent": "1"
+    },
+    {
+      "id": "7",
+      "name": "Clamps & Jigs",
+      "parent": "1"
+    },
+    {
+      "id": "8",
+      "name": "Tool Storage",
+      "parent": "1"
+    },
+    {
+      "id": "9",
+      "name": "Dust & Safety",
+      "parent": "1"
+    },
+    {
+      "id": "10",
+      "name": "Workshop Storage",
+      "parent": "1"
+    },
+    {
+      "id": "2",
+      "name": "Maker Projects",
+      "parent": null
+    },
+    {
+      "id": "11",
+      "name": "Electronics",
+      "parent": "2"
+    },
+    {
+      "id": "12",
+      "name": "Robotics",
+      "parent": "2"
+    },
+    {
+      "id": "13",
+      "name": "RC Models",
+      "parent": "2"
+    },
+    {
+      "id": "14",
+      "name": "Auto Mods",
+      "parent": "2"
+    },
+    {
+      "id": "15",
+      "name": "Photo Gear",
+      "parent": "2"
+    },
+    {
+      "id": "16",
+      "name": "Mechanical Parts",
+      "parent": "2"
+    },
+    {
+      "id": "17",
+      "name": "Outdoor Gear",
+      "parent": "2"
+    },
+    {
+      "id": "18",
+      "name": "Other Projects",
+      "parent": "2"
+    },
+    {
+      "id": "3",
+      "name": "Home & Living",
+      "parent": null
+    },
+    {
+      "id": "19",
+      "name": "Home Decor",
+      "parent": "3"
+    },
+    {
+      "id": "20",
+      "name": "Organization",
+      "parent": "3"
+    },
+    {
+      "id": "21",
+      "name": "Kitchen Tools",
+      "parent": "3"
+    },
+    {
+      "id": "22",
+      "name": "Furniture Parts",
+      "parent": "3"
+    },
+    {
+      "id": "23",
+      "name": "Desk Setup",
+      "parent": "3"
+    },
+    {
+      "id": "24",
+      "name": "Everyday Tools",
+      "parent": "3"
+    },
+    {
+      "id": "25",
+      "name": "Signs & Labels",
+      "parent": "3"
+    },
+    {
+      "id": "26",
+      "name": "Molds & Forms",
+      "parent": "3"
+    },
+    {
+      "id": "4",
+      "name": "Art & Gifts",
+      "parent": null
+    },
+    {
+      "id": "27",
+      "name": "Relief Art",
+      "parent": "4"
+    },
+    {
+      "id": "28",
+      "name": "Sculptures",
+      "parent": "4"
+    },
+    {
+      "id": "29",
+      "name": "Jewelry",
+      "parent": "4"
+    },
+    {
+      "id": "30",
+      "name": "Awards & Badges",
+      "parent": "4"
+    },
+    {
+      "id": "31",
+      "name": "Personalized Gifts",
+      "parent": "4"
+    },
+    {
+      "id": "32",
+      "name": "Props & Decor",
+      "parent": "4"
+    },
+    {
+      "id": "5",
+      "name": "Models & Toys",
+      "parent": null
+    },
+    {
+      "id": "33",
+      "name": "Board Game",
+      "parent": "5"
+    },
+    {
+      "id": "34",
+      "name": "Toys & Puzzles",
+      "parent": "5"
+    },
+    {
+      "id": "35",
+      "name": "Miniatures",
+      "parent": "5"
+    },
+    {
+      "id": "36",
+      "name": "Vehicle Models",
+      "parent": "5"
+    },
+    {
+      "id": "37",
+      "name": "STEM Models",
+      "parent": "5"
+    }
+  ],
+  "cgtrader": [
+    {
+      "id": "art",
+      "name": "Art & Design",
+      "parent": null
+    },
+    {
+      "id": "art/coins-badges",
+      "name": "Coins & Badges",
+      "parent": "art"
+    },
+    {
+      "id": "art/mathematical-art",
+      "name": "Mathematical art",
+      "parent": "art"
+    },
+    {
+      "id": "art/scans-replicas",
+      "name": "Scans & Replicas",
+      "parent": "art"
+    },
+    {
+      "id": "art/sculpture",
+      "name": "Sculptures",
+      "parent": "art"
+    },
+    {
+      "id": "art/signs-logos",
+      "name": "Signs & Logos",
+      "parent": "art"
+    },
+    {
+      "id": "art/other",
+      "name": "Other",
+      "parent": "art"
+    },
+    {
+      "id": "fashion",
+      "name": "Fashion",
+      "parent": null
+    },
+    {
+      "id": "fashion/bags-purses",
+      "name": "Bags & Purses",
+      "parent": "fashion"
+    },
+    {
+      "id": "fashion/belts",
+      "name": "Belts",
+      "parent": "fashion"
+    },
+    {
+      "id": "fashion/glasses",
+      "name": "Glasses",
+      "parent": "fashion"
+    },
+    {
+      "id": "fashion/shoe",
+      "name": "Shoes",
+      "parent": "fashion"
+    },
+    {
+      "id": "fashion/other",
+      "name": "Other",
+      "parent": "fashion"
+    },
+    {
+      "id": "gadgets",
+      "name": "Gadgets",
+      "parent": null
+    },
+    {
+      "id": "gadgets/keychains",
+      "name": "Keychains",
+      "parent": "gadgets"
+    },
+    {
+      "id": "gadgets/audio",
+      "name": "Music & Audio",
+      "parent": "gadgets"
+    },
+    {
+      "id": "gadgets/office",
+      "name": "Office",
+      "parent": "gadgets"
+    },
+    {
+      "id": "gadgets/pc-laptop",
+      "name": "PC & Laptop",
+      "parent": "gadgets"
+    },
+    {
+      "id": "gadgets/phone-cases",
+      "name": "Phone cases",
+      "parent": "gadgets"
+    },
+    {
+      "id": "gadgets/tablets",
+      "name": "Tablets",
+      "parent": "gadgets"
+    },
+    {
+      "id": "gadgets/video",
+      "name": "Video",
+      "parent": "gadgets"
+    },
+    {
+      "id": "gadgets/other",
+      "name": "Other",
+      "parent": "gadgets"
+    },
+    {
+      "id": "games-toys",
+      "name": "Games & Toys",
+      "parent": null
+    },
+    {
+      "id": "games-toys/board-games",
+      "name": "Board Games",
+      "parent": "games-toys"
+    },
+    {
+      "id": "games-toys/dice",
+      "name": "Dice",
+      "parent": "games-toys"
+    },
+    {
+      "id": "games-toys/fidget-toys",
+      "name": "Fidget Toys",
+      "parent": "games-toys"
+    },
+    {
+      "id": "games-toys/game-accessories",
+      "name": "Game Accessories",
+      "parent": "games-toys"
+    },
+    {
+      "id": "games-toys/puzzle",
+      "name": "Puzzles & Brain-teasers",
+      "parent": "games-toys"
+    },
+    {
+      "id": "games-toys/toy",
+      "name": "Toys",
+      "parent": "games-toys"
+    },
+    {
+      "id": "games-toys/other",
+      "name": "Other",
+      "parent": "games-toys"
+    },
+    {
+      "id": "hobby-diy",
+      "name": "Hobby & DIY",
+      "parent": null
+    },
+    {
+      "id": "hobby-diy/automotive",
+      "name": "Automotive & Car parts",
+      "parent": "hobby-diy"
+    },
+    {
+      "id": "hobby-diy/electronics",
+      "name": "Electronics",
+      "parent": "hobby-diy"
+    },
+    {
+      "id": "hobby-diy/hand-tools",
+      "name": "Hand Tools",
+      "parent": "hobby-diy"
+    },
+    {
+      "id": "hobby-diy/hobby-accessories",
+      "name": "Hobby Accessories",
+      "parent": "hobby-diy"
+    },
+    {
+      "id": "hobby-diy/mechanical-parts",
+      "name": "Mechanical parts",
+      "parent": "hobby-diy"
+    },
+    {
+      "id": "hobby-diy/robotics",
+      "name": "RC & Robotics",
+      "parent": "hobby-diy"
+    },
+    {
+      "id": "hobby-diy/other",
+      "name": "Other",
+      "parent": "hobby-diy"
+    },
+    {
+      "id": "holidays",
+      "name": "Holidays",
+      "parent": null
+    },
+    {
+      "id": "holidays/christmas",
+      "name": "Christmas",
+      "parent": "holidays"
+    },
+    {
+      "id": "holidays/easter",
+      "name": "Easter",
+      "parent": "holidays"
+    },
+    {
+      "id": "holidays/halloween",
+      "name": "Halloween",
+      "parent": "holidays"
+    },
+    {
+      "id": "holidays/new-year",
+      "name": "New Year",
+      "parent": "holidays"
+    },
+    {
+      "id": "house",
+      "name": "Home & Living",
+      "parent": null
+    },
+    {
+      "id": "house/accessories",
+      "name": "Accessories",
+      "parent": "house"
+    },
+    {
+      "id": "house/bathroom",
+      "name": "Bathroom",
+      "parent": "house"
+    },
+    {
+      "id": "house/for-pets",
+      "name": "For Pets",
+      "parent": "house"
+    },
+    {
+      "id": "house/furniture",
+      "name": "Furniture",
+      "parent": "house"
+    },
+    {
+      "id": "house/decor",
+      "name": "Home decor",
+      "parent": "house"
+    },
+    {
+      "id": "house/kitchen-dining",
+      "name": "Kitchen & Dining",
+      "parent": "house"
+    },
+    {
+      "id": "house/lighting",
+      "name": "Lightings",
+      "parent": "house"
+    },
+    {
+      "id": "house/outdoor",
+      "name": "Outdoor & Garden",
+      "parent": "house"
+    },
+    {
+      "id": "house/other",
+      "name": "Other",
+      "parent": "house"
+    },
+    {
+      "id": "jewelry",
+      "name": "Jewelry",
+      "parent": null
+    },
+    {
+      "id": "jewelry/bracelet",
+      "name": "Bracelets",
+      "parent": "jewelry"
+    },
+    {
+      "id": "jewelry/brooches",
+      "name": "Brooches",
+      "parent": "jewelry"
+    },
+    {
+      "id": "jewelry/cufflink",
+      "name": "Cufflinks",
+      "parent": "jewelry"
+    },
+    {
+      "id": "jewelry/earring",
+      "name": "Earrings",
+      "parent": "jewelry"
+    },
+    {
+      "id": "jewelry/necklace",
+      "name": "Necklaces",
+      "parent": "jewelry"
+    },
+    {
+      "id": "jewelry/pendant",
+      "name": "Pendants",
+      "parent": "jewelry"
+    },
+    {
+      "id": "jewelry/ring",
+      "name": "Rings",
+      "parent": "jewelry"
+    },
+    {
+      "id": "jewelry/other",
+      "name": "Other",
+      "parent": "jewelry"
+    },
+    {
+      "id": "miniatures",
+      "name": "Miniatures",
+      "parent": null
+    },
+    {
+      "id": "miniatures/figurines",
+      "name": "Action Figures & Statues",
+      "parent": "miniatures"
+    },
+    {
+      "id": "miniatures/architectural",
+      "name": "Architecture",
+      "parent": "miniatures"
+    },
+    {
+      "id": "miniatures/vehicles",
+      "name": "Cars & Vehicles",
+      "parent": "miniatures"
+    },
+    {
+      "id": "miniatures/memes",
+      "name": "Memes",
+      "parent": "miniatures"
+    },
+    {
+      "id": "miniatures/memorabilia",
+      "name": "Memorabilia",
+      "parent": "miniatures"
+    },
+    {
+      "id": "miniatures/sci-fi",
+      "name": "Sci-Fi",
+      "parent": "miniatures"
+    },
+    {
+      "id": "miniatures/war",
+      "name": "War & Tactics",
+      "parent": "miniatures"
+    },
+    {
+      "id": "miniatures/other",
+      "name": "Other",
+      "parent": "miniatures"
+    },
+    {
+      "id": "science",
+      "name": "Science",
+      "parent": null
+    },
+    {
+      "id": "science/astronomy-physics",
+      "name": "Astronomy & Physics",
+      "parent": "science"
+    },
+    {
+      "id": "science/biology",
+      "name": "Biology",
+      "parent": "science"
+    },
+    {
+      "id": "science/engineering",
+      "name": "Engineering",
+      "parent": "science"
+    },
+    {
+      "id": "science/laboratory",
+      "name": "Laboratory",
+      "parent": "science"
+    },
+    {
+      "id": "science/math",
+      "name": "Math",
+      "parent": "science"
+    },
+    {
+      "id": "science/other",
+      "name": "Other",
+      "parent": "science"
+    },
+    {
+      "id": "tools-organizers",
+      "name": "Tools & Organizers",
+      "parent": null
+    },
+    {
+      "id": "tools-organizers/boxes",
+      "name": "Boxes",
+      "parent": "tools-organizers"
+    },
+    {
+      "id": "tools-organizers/cases",
+      "name": "Cases",
+      "parent": "tools-organizers"
+    },
+    {
+      "id": "tools-organizers/desk-organizer",
+      "name": "Desk organizers",
+      "parent": "tools-organizers"
+    },
+    {
+      "id": "tools-organizers/gridfinity",
+      "name": "Gridfinity",
+      "parent": "tools-organizers"
+    },
+    {
+      "id": "tools-organizers/hangers",
+      "name": "Hangers",
+      "parent": "tools-organizers"
+    },
+    {
+      "id": "tools-organizers/holders",
+      "name": "Holders",
+      "parent": "tools-organizers"
+    },
+    {
+      "id": "tools-organizers/socket-organizer",
+      "name": "Socket organizers",
+      "parent": "tools-organizers"
+    },
+    {
+      "id": "tools-organizers/stands",
+      "name": "Stands",
+      "parent": "tools-organizers"
+    },
+    {
+      "id": "tools-organizers/household-tools",
+      "name": "Tools",
+      "parent": "tools-organizers"
+    },
+    {
+      "id": "tools-organizers/tools",
+      "name": "Tools",
+      "parent": "tools-organizers"
+    },
+    {
+      "id": "various",
+      "name": "Various",
+      "parent": null
+    },
+    {
+      "id": "various/various-other",
+      "name": "Other",
+      "parent": "various"
+    },
+    {
+      "id": "aircraft",
+      "name": "Aircraft",
+      "parent": null
+    },
+    {
+      "id": "aircraft/aircraft-part",
+      "name": "Aircraft Part",
+      "parent": "aircraft"
+    },
+    {
+      "id": "aircraft/commercial-aircraft",
+      "name": "Commercial Aircraft",
+      "parent": "aircraft"
+    },
+    {
+      "id": "aircraft/helicopter",
+      "name": "Helicopter",
+      "parent": "aircraft"
+    },
+    {
+      "id": "aircraft/historic-aircraft",
+      "name": "Historic Aircraft",
+      "parent": "aircraft"
+    },
+    {
+      "id": "aircraft/jet",
+      "name": "Jet",
+      "parent": "aircraft"
+    },
+    {
+      "id": "aircraft/military-aircraft",
+      "name": "Military Aircraft",
+      "parent": "aircraft"
+    },
+    {
+      "id": "aircraft/private-aircraft",
+      "name": "Private Aircraft",
+      "parent": "aircraft"
+    },
+    {
+      "id": "animal",
+      "name": "Animals",
+      "parent": null
+    },
+    {
+      "id": "animal/bird",
+      "name": "Bird",
+      "parent": "animal"
+    },
+    {
+      "id": "animal/dinosaur",
+      "name": "Dinosaur",
+      "parent": "animal"
+    },
+    {
+      "id": "animal/fish",
+      "name": "Fish",
+      "parent": "animal"
+    },
+    {
+      "id": "animal/insect",
+      "name": "Insect",
+      "parent": "animal"
+    },
+    {
+      "id": "animal/mammal",
+      "name": "Mammal",
+      "parent": "animal"
+    },
+    {
+      "id": "animal/reptile",
+      "name": "Reptile",
+      "parent": "animal"
+    },
+    {
+      "id": "architectural",
+      "name": "Architectural",
+      "parent": null
+    },
+    {
+      "id": "architectural/engineering",
+      "name": "Engineering",
+      "parent": "architectural"
+    },
+    {
+      "id": "architectural/decoration",
+      "name": "Decoration",
+      "parent": "architectural"
+    },
+    {
+      "id": "architectural/door",
+      "name": "Door",
+      "parent": "architectural"
+    },
+    {
+      "id": "architectural/fixture",
+      "name": "Fixture",
+      "parent": "architectural"
+    },
+    {
+      "id": "architectural/floor",
+      "name": "Floor",
+      "parent": "architectural"
+    },
+    {
+      "id": "architectural/lighting",
+      "name": "Lighting",
+      "parent": "architectural"
+    },
+    {
+      "id": "architectural/architectural-street",
+      "name": "Architectural Street",
+      "parent": "architectural"
+    },
+    {
+      "id": "architectural/window",
+      "name": "Window",
+      "parent": "architectural"
+    },
+    {
+      "id": "car",
+      "name": "Car",
+      "parent": null
+    },
+    {
+      "id": "car/antique-car",
+      "name": "Antique Car",
+      "parent": "car"
+    },
+    {
+      "id": "car/concept-car",
+      "name": "Concept Car",
+      "parent": "car"
+    },
+    {
+      "id": "car/suv",
+      "name": "SUV",
+      "parent": "car"
+    },
+    {
+      "id": "car/luxury-car",
+      "name": "Luxury Car",
+      "parent": "car"
+    },
+    {
+      "id": "car/racing-car",
+      "name": "Racing Car",
+      "parent": "car"
+    },
+    {
+      "id": "car/sports-car",
+      "name": "Sport Car",
+      "parent": "car"
+    },
+    {
+      "id": "car/car",
+      "name": "Car",
+      "parent": "car"
+    },
+    {
+      "id": "character",
+      "name": "Character",
+      "parent": null
+    },
+    {
+      "id": "character/human-anatomy",
+      "name": "Human Anatomy",
+      "parent": "character"
+    },
+    {
+      "id": "character/child",
+      "name": "Child",
+      "parent": "character"
+    },
+    {
+      "id": "character/clothing",
+      "name": "Clothing",
+      "parent": "character"
+    },
+    {
+      "id": "character/fantasy-character",
+      "name": "Fantasy Character",
+      "parent": "character"
+    },
+    {
+      "id": "character/man",
+      "name": "Man",
+      "parent": "character"
+    },
+    {
+      "id": "character/sci-fi-character",
+      "name": "Sci-Fi Character",
+      "parent": "character"
+    },
+    {
+      "id": "character/woman",
+      "name": "Woman",
+      "parent": "character"
+    },
+    {
+      "id": "exterior",
+      "name": "Exterior",
+      "parent": null
+    },
+    {
+      "id": "exterior/stadium",
+      "name": "Stadium",
+      "parent": "exterior"
+    },
+    {
+      "id": "exterior/cityscape",
+      "name": "Cityscape",
+      "parent": "exterior"
+    },
+    {
+      "id": "exterior/office",
+      "name": "Office",
+      "parent": "exterior"
+    },
+    {
+      "id": "exterior/historic-exterior",
+      "name": "Historic Exterior",
+      "parent": "exterior"
+    },
+    {
+      "id": "exterior/house",
+      "name": "House",
+      "parent": "exterior"
+    },
+    {
+      "id": "exterior/industrial-exterior",
+      "name": "Industrial Exterior",
+      "parent": "exterior"
+    },
+    {
+      "id": "exterior/landmark",
+      "name": "Landmark",
+      "parent": "exterior"
+    },
+    {
+      "id": "exterior/landscape",
+      "name": "Landscape",
+      "parent": "exterior"
+    },
+    {
+      "id": "exterior/sci-fi-exterior",
+      "name": "Sci-Fi Exterior",
+      "parent": "exterior"
+    },
+    {
+      "id": "exterior/skyscraper",
+      "name": "Skyscraper",
+      "parent": "exterior"
+    },
+    {
+      "id": "exterior/street-exterior",
+      "name": "Street Exterior",
+      "parent": "exterior"
+    },
+    {
+      "id": "exterior/public",
+      "name": "Public",
+      "parent": "exterior"
+    },
+    {
+      "id": "food",
+      "name": "Food",
+      "parent": null
+    },
+    {
+      "id": "food/beverage",
+      "name": "Beverage",
+      "parent": "food"
+    },
+    {
+      "id": "food/fruit",
+      "name": "Fruit",
+      "parent": "food"
+    },
+    {
+      "id": "food/miscellaneous",
+      "name": "Miscellaneous",
+      "parent": "food"
+    },
+    {
+      "id": "food/vegetable",
+      "name": "Vegetable",
+      "parent": "food"
+    },
+    {
+      "id": "furniture",
+      "name": "Furniture",
+      "parent": null
+    },
+    {
+      "id": "furniture/appliance",
+      "name": "Appliance",
+      "parent": "furniture"
+    },
+    {
+      "id": "furniture/bed",
+      "name": "Bed",
+      "parent": "furniture"
+    },
+    {
+      "id": "furniture/kitchen-cabinet",
+      "name": "Kitchen Cabinet",
+      "parent": "furniture"
+    },
+    {
+      "id": "furniture/chair",
+      "name": "Chair",
+      "parent": "furniture"
+    },
+    {
+      "id": "furniture/outdoor-furniture",
+      "name": "Outdoor Furniture",
+      "parent": "furniture"
+    },
+    {
+      "id": "furniture/kitchen-furniture",
+      "name": "Kitchen Furniture",
+      "parent": "furniture"
+    },
+    {
+      "id": "furniture/lamp",
+      "name": "Lamp",
+      "parent": "furniture"
+    },
+    {
+      "id": "furniture/sofa",
+      "name": "Sofa",
+      "parent": "furniture"
+    },
+    {
+      "id": "furniture/table",
+      "name": "Table",
+      "parent": "furniture"
+    },
+    {
+      "id": "furniture/tableware",
+      "name": "Tableware",
+      "parent": "furniture"
+    },
+    {
+      "id": "furniture/furniture-set",
+      "name": "Furniture Set",
+      "parent": "furniture"
+    },
+    {
+      "id": "household",
+      "name": "Household",
+      "parent": null
+    },
+    {
+      "id": "household/kitchenware",
+      "name": "Kitchenware",
+      "parent": "household"
+    },
+    {
+      "id": "household/household-tools",
+      "name": "Household Tools",
+      "parent": "household"
+    },
+    {
+      "id": "industrial",
+      "name": "Industrial",
+      "parent": null
+    },
+    {
+      "id": "industrial/industrial-machine",
+      "name": "Industrial Machine",
+      "parent": "industrial"
+    },
+    {
+      "id": "industrial/industrial-part",
+      "name": "Industrial Part",
+      "parent": "industrial"
+    },
+    {
+      "id": "industrial/tool",
+      "name": "Tool",
+      "parent": "industrial"
+    },
+    {
+      "id": "interior",
+      "name": "Interior",
+      "parent": null
+    },
+    {
+      "id": "interior/bathroom",
+      "name": "Bathroom",
+      "parent": "interior"
+    },
+    {
+      "id": "interior/bedroom",
+      "name": "Bedroom",
+      "parent": "interior"
+    },
+    {
+      "id": "interior/hall",
+      "name": "Hall",
+      "parent": "interior"
+    },
+    {
+      "id": "interior/house-interior",
+      "name": "House Interior",
+      "parent": "interior"
+    },
+    {
+      "id": "interior/kitchen",
+      "name": "Kitchen",
+      "parent": "interior"
+    },
+    {
+      "id": "interior/living-room",
+      "name": "Living Room",
+      "parent": "interior"
+    },
+    {
+      "id": "interior/office-interior",
+      "name": "Office Interior",
+      "parent": "interior"
+    },
+    {
+      "id": "military",
+      "name": "Military",
+      "parent": null
+    },
+    {
+      "id": "military/armor",
+      "name": "Armor",
+      "parent": "military"
+    },
+    {
+      "id": "military/military-character",
+      "name": "Military Character",
+      "parent": "military"
+    },
+    {
+      "id": "military/gun",
+      "name": "Gun",
+      "parent": "military"
+    },
+    {
+      "id": "military/melee",
+      "name": "Melee",
+      "parent": "military"
+    },
+    {
+      "id": "military/rocketry",
+      "name": "Rocketry",
+      "parent": "military"
+    },
+    {
+      "id": "military/military-vehicle",
+      "name": "Military Vehicle",
+      "parent": "military"
+    },
+    {
+      "id": "plant",
+      "name": "Plant",
+      "parent": null
+    },
+    {
+      "id": "plant/conifer",
+      "name": "Conifer",
+      "parent": "plant"
+    },
+    {
+      "id": "plant/flower",
+      "name": "Flower",
+      "parent": "plant"
+    },
+    {
+      "id": "plant/grass",
+      "name": "Grass",
+      "parent": "plant"
+    },
+    {
+      "id": "plant/leaf",
+      "name": "Leaf",
+      "parent": "plant"
+    },
+    {
+      "id": "plant/pot-plant",
+      "name": "Pot Plant",
+      "parent": "plant"
+    },
+    {
+      "id": "plant/bush",
+      "name": "Bush",
+      "parent": "plant"
+    },
+    {
+      "id": "space",
+      "name": "Space",
+      "parent": null
+    },
+    {
+      "id": "space/planet",
+      "name": "Planet",
+      "parent": "space"
+    },
+    {
+      "id": "space/spaceship",
+      "name": "Spaceship",
+      "parent": "space"
+    },
+    {
+      "id": "vehicle",
+      "name": "Vehicle",
+      "parent": null
+    },
+    {
+      "id": "vehicle/bicycle",
+      "name": "Bicycle",
+      "parent": "vehicle"
+    },
+    {
+      "id": "vehicle/bus",
+      "name": "Bus",
+      "parent": "vehicle"
+    },
+    {
+      "id": "vehicle/industrial-vehicle",
+      "name": "Industrial Vehicle",
+      "parent": "vehicle"
+    },
+    {
+      "id": "vehicle/military-vehicle",
+      "name": "Military Vehicle",
+      "parent": "vehicle"
+    },
+    {
+      "id": "vehicle/motorcycle",
+      "name": "Motorcycle",
+      "parent": "vehicle"
+    },
+    {
+      "id": "vehicle/vehicle-part",
+      "name": "Vehicle Part",
+      "parent": "vehicle"
+    },
+    {
+      "id": "vehicle/sci-fi-vehicle",
+      "name": "Sci-Fi Vehicle",
+      "parent": "vehicle"
+    },
+    {
+      "id": "vehicle/train",
+      "name": "Train",
+      "parent": "vehicle"
+    },
+    {
+      "id": "vehicle/truck",
+      "name": "Truck",
+      "parent": "vehicle"
+    },
+    {
+      "id": "watercraft",
+      "name": "Watercraft",
+      "parent": null
+    },
+    {
+      "id": "watercraft/historic-watercraft",
+      "name": "Historic Watercraft",
+      "parent": "watercraft"
+    },
+    {
+      "id": "watercraft/industrial-watercraft",
+      "name": "Industrial Watercraft",
+      "parent": "watercraft"
+    },
+    {
+      "id": "watercraft/military-watercraft",
+      "name": "Military Watercraft",
+      "parent": "watercraft"
+    },
+    {
+      "id": "watercraft/recreational-watercraft",
+      "name": "Recreational Watercraft",
+      "parent": "watercraft"
+    }
+  ],
+  "grabcad": [
+    {
+      "id": "3d-printing",
+      "name": "3D printing",
+      "parent": null
+    },
+    {
+      "id": "aerospace",
+      "name": "Aerospace",
+      "parent": null
+    },
+    {
+      "id": "agriculture",
+      "name": "Agriculture",
+      "parent": null
+    },
+    {
+      "id": "architecture",
+      "name": "Architecture",
+      "parent": null
+    },
+    {
+      "id": "automotive",
+      "name": "Automotive",
+      "parent": null
+    },
+    {
+      "id": "aviation",
+      "name": "Aviation",
+      "parent": null
+    },
+    {
+      "id": "components",
+      "name": "Components",
+      "parent": null
+    },
+    {
+      "id": "computer",
+      "name": "Computer",
+      "parent": null
+    },
+    {
+      "id": "construction",
+      "name": "Construction",
+      "parent": null
+    },
+    {
+      "id": "educational",
+      "name": "Educational",
+      "parent": null
+    },
+    {
+      "id": "electrical",
+      "name": "Electrical",
+      "parent": null
+    },
+    {
+      "id": "energy-and-power",
+      "name": "Energy and Power",
+      "parent": null
+    },
+    {
+      "id": "fixtures",
+      "name": "Fixtures",
+      "parent": null
+    },
+    {
+      "id": "furniture",
+      "name": "Furniture",
+      "parent": null
+    },
+    {
+      "id": "hobby",
+      "name": "Hobby",
+      "parent": null
+    },
+    {
+      "id": "household",
+      "name": "Household",
+      "parent": null
+    },
+    {
+      "id": "industrial-design",
+      "name": "Industrial design",
+      "parent": null
+    },
+    {
+      "id": "interior-design",
+      "name": "Interior design",
+      "parent": null
+    },
+    {
+      "id": "jewellery",
+      "name": "Jewellery",
+      "parent": null
+    },
+    {
+      "id": "just-for-fun",
+      "name": "Just for fun",
+      "parent": null
+    },
+    {
+      "id": "machine-design",
+      "name": "Machine design",
+      "parent": null
+    },
+    {
+      "id": "marine",
+      "name": "Marine",
+      "parent": null
+    },
+    {
+      "id": "medical",
+      "name": "Medical",
+      "parent": null
+    },
+    {
+      "id": "military",
+      "name": "Military",
+      "parent": null
+    },
+    {
+      "id": "miscellaneous",
+      "name": "Miscellaneous",
+      "parent": null
+    },
+    {
+      "id": "nature",
+      "name": "Nature",
+      "parent": null
+    },
+    {
+      "id": "piping",
+      "name": "Piping",
+      "parent": null
+    },
+    {
+      "id": "robotics",
+      "name": "Robotics",
+      "parent": null
+    },
+    {
+      "id": "speedrun",
+      "name": "Speedrun",
+      "parent": null
+    },
+    {
+      "id": "sport",
+      "name": "Sport",
+      "parent": null
+    },
+    {
+      "id": "tech",
+      "name": "Tech",
+      "parent": null
+    },
+    {
+      "id": "tools",
+      "name": "Tools",
+      "parent": null
+    },
+    {
+      "id": "toys",
+      "name": "Toys",
+      "parent": null
+    }
   ]
 }

@@ -15,6 +15,11 @@ import thangsCategories from "./thangs/categories.json";
 import cults3dCategories from "./cults3d/categories.json";
 import eufymakeCategories from "./eufymake/categories.json";
 import pinshapeCategories from "./pinshape/categories.json";
+import toymakr3dCategories from "./toymakr3d/categories.json";
+import makerablesCategories from "./makerables/categories.json";
+import cgtraderCategories from "./cgtrader/categories.json";
+import grabcadCategories from "./grabcad/categories.json";
+import owlcadCategories from "./owlcad/categories.json";
 import {
   crealitycloudImport,
   crealitycloudTrending,
@@ -34,7 +39,18 @@ import {
   myminifactoryInstanceHealth,
 } from "./myminifactory";
 import { nexprintImport, nexprintTrending, nexprintLists, nexprintDetails } from "./nexprint";
+import { owlcadImport, owlcadDetails } from "./owlcad";
 import { pinshapeImport, pinshapeTrending, pinshapeLists, pinshapeDetails } from "./pinshape";
+import { toymakr3dImport, toymakr3dTrending, toymakr3dLists, toymakr3dDetails } from "./toymakr3d";
+import {
+  makerablesImport,
+  makerablesTrending,
+  makerablesLists,
+  makerablesDetails,
+  makerablesKeptId,
+} from "./makerables";
+import { cgtraderImport, cgtraderTrending, cgtraderLists, cgtraderDetails, cgtraderKeptId } from "./cgtrader";
+import { grabcadImport, grabcadTrending, grabcadLists, grabcadDetails } from "./grabcad";
 import { printablesImport, printablesTrending, printablesLists, printablesDetails } from "./printables";
 import { snapmakerImport, snapmakerTrending, snapmakerLists, snapmakerDetails } from "./snapmaker";
 import { thangsImport, thangsTrending, thangsLists, thangsDetails } from "./thangs";
@@ -53,6 +69,10 @@ import { makerworldConnection } from "./makerworld/connection";
 import { myminifactoryKeyConnection, myminifactorySessionConnection } from "./myminifactory/connection";
 import { nexprintConnection } from "./nexprint/connection";
 import { pinshapeConnection } from "./pinshape/connection";
+import { toymakr3dConnection } from "./toymakr3d/connection";
+import { makerablesConnection } from "./makerables/connection";
+import { cgtraderConnection } from "./cgtrader/connection";
+import { grabcadConnection } from "./grabcad/connection";
 import { snapmakerConnection } from "./snapmaker/connection";
 import { thangsConnection } from "./thangs/connection";
 import { thingiverseConnection } from "./thingiverse/connection";
@@ -68,6 +88,10 @@ import { thangsSync } from "./thangs/sync";
 import { cults3dSync } from "./cults3d/sync";
 import { eufymakeSync } from "./eufymake/sync";
 import { pinshapeSync } from "./pinshape/sync";
+import { toymakr3dSync } from "./toymakr3d/sync";
+import { makerablesSync } from "./makerables/sync";
+import { cgtraderSync } from "./cgtrader/sync";
+import { grabcadSync } from "./grabcad/sync";
 import { makerworldBrowse } from "./makerworld/browse";
 import { printablesBrowse } from "./printables/browse";
 import { thingiverseBrowse } from "./thingiverse/browse";
@@ -80,6 +104,10 @@ import { thangsBrowse } from "./thangs/browse";
 import { cults3dBrowse } from "./cults3d/browse";
 import { eufymakeBrowse } from "./eufymake/browse";
 import { pinshapeBrowse } from "./pinshape/browse";
+import { toymakr3dBrowse } from "./toymakr3d/browse";
+import { makerablesBrowse } from "./makerables/browse";
+import { cgtraderBrowse } from "./cgtrader/browse";
+import { grabcadBrowse } from "./grabcad/browse";
 import type { AuthSlot } from "./index.generated";
 import type {
   ConnectionSlot,
@@ -185,8 +213,9 @@ export function liftProviderHolds(): void {
   for (const id of PROVIDER_IDS) PROVIDERS[id].liftHolds?.();
 }
 
-// Loaded when used: its waiting imports reach the services that read this registry.
+// Loaded when used: their waiting imports reach the services that read this registry.
 const grabImports = () => import("./makeronline/grabImports");
+const owlcadExports = () => import("./owlcad/grabExports");
 
 type Manifests = typeof MANIFESTS;
 /** What a provider with collections or likes has for them. */
@@ -370,6 +399,79 @@ export const PROVIDERS = {
     browse: pinshapeBrowse,
     trending: pinshapeTrending,
     details: pinshapeDetails,
+  },
+  toymakr3d: {
+    starterCategories: toymakr3dCategories,
+    connection: { default: toymakr3dConnection },
+    // Its files and the liked products are read with the sign-in; its model pages read without one.
+    authStopText: grabSignInStop("toymakr3d"),
+    sourcedImport: toymakr3dImport,
+    lists: toymakr3dLists,
+    sync: toymakr3dSync,
+    browse: toymakr3dBrowse,
+    trending: toymakr3dTrending,
+    details: toymakr3dDetails,
+  },
+  makerables: {
+    starterCategories: makerablesCategories,
+    connection: { default: makerablesConnection },
+    // Only the saved projects are read with the sign-in; its projects and their files need none.
+    authStopText: grabSignInStop("makerables"),
+    sourcedImport: makerablesImport,
+    lists: makerablesLists,
+    sync: makerablesSync,
+    browse: makerablesBrowse,
+    trending: makerablesTrending,
+    details: makerablesDetails,
+    // A link may name a project by its id, where it is kept under the slug its page gives as canonical.
+    keptId: makerablesKeptId,
+  },
+  cgtrader: {
+    starterCategories: cgtraderCategories,
+    connection: { default: cgtraderConnection },
+    // Its files and the user's own lists are read with the sign-in; its model pages read without one.
+    authStopText: grabSignInStop("cgtrader"),
+    sourcedImport: cgtraderImport,
+    lists: cgtraderLists,
+    sync: cgtraderSync,
+    browse: cgtraderBrowse,
+    trending: cgtraderTrending,
+    details: cgtraderDetails,
+    // A link may name a model by its number, where it is kept under its slug.
+    keptId: cgtraderKeptId,
+    // AWS's bot check rather than Cloudflare's, which FlareSolverr gets a token past -- or the browser's, from Grab.
+    stopTexts: {
+      blocked: `${name("cgtrader")}'s bot check turned Thingport away — set up FlareSolverr in Administration → Connections, or download something on ${siteHost("cgtrader")} with Thingport Grab`,
+    },
+  },
+  grabcad: {
+    starterCategories: grabcadCategories,
+    connection: { default: grabcadConnection },
+    // Only its files are read with the sign-in; its models and anyone's likes read without one.
+    authStopText: grabSignInStop("grabcad"),
+    sourcedImport: grabcadImport,
+    lists: grabcadLists,
+    sync: grabcadSync,
+    browse: grabcadBrowse,
+    trending: grabcadTrending,
+    details: grabcadDetails,
+  },
+  owlcad: {
+    starterCategories: owlcadCategories,
+    // Nothing is kept for it: everything it serves answers without a sign-in.
+    connection: {},
+    // It turns no sign-in down, having none to turn down; a batch only stops on a model its editor has to build.
+    authStopText: `only ${siteHost("owlcad")}'s own editor can build it`,
+    customImport: owlcadImport,
+    grabQueue: {
+      queue: async (userId, url, options) => (await owlcadExports()).queueOwlcadExport(userId, url, options),
+      // Its gallery is one list, so there is no list import to park -- only single models.
+      queueList: () => Promise.reject(new Error("OwlCAD has no lists")),
+      notifyQueued: async (userId, count, opts) =>
+        (await owlcadExports()).notifyOwlcadExportsQueued(userId, count, opts),
+      clear: async (userId, modelId) => (await owlcadExports()).clearOwlcadExports(userId, modelId),
+    },
+    details: owlcadDetails,
   },
 } satisfies { [K in ProviderId]: Entry<K> } as { readonly [K in ProviderId]: ProviderBackend };
 

@@ -45,6 +45,7 @@ import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import BoltIcon from "@mui/icons-material/Bolt";
 import CableIcon from "@mui/icons-material/Cable";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
+import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
 import HistoryIcon from "@mui/icons-material/History";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import PeopleIcon from "@mui/icons-material/People";
@@ -56,12 +57,15 @@ import { type SearchResult, searchApi } from "../../../api/search";
 import { printsApi } from "../../../api/prints";
 import { IMPORT_PROVIDER_INFO } from "../../../constants/importProviders";
 import { SUPPORTED_LANGUAGES } from "../../../constants/languages";
+import { copyText } from "../../../utils/clipboard";
 import { detectImportProvider } from "../../../utils/importLinkDetection";
 import type { ThemeSelection } from "../../../constants/settingsOptions";
 import { useDebouncedValue } from "../../../hooks/useDebouncedValue";
 import { veilColor, VEIL_BLUR } from "../../../theme";
 import type { ConfigurationTab } from "../ConfigurationDialog";
 import Keys, { chipBg, MOD_KEY, SHIFT_KEY, isMac } from "./Keys";
+import { useTools } from "../../../hooks/useTools";
+import ToolIcon from "../../tools/ToolIcon";
 import { bangArgument, bangText, isBangQuery, matchBang, type Command } from "./commands";
 import { bestScore, minScoreFor } from "./match";
 import { matchSystemCollections } from "./systemCollections";
@@ -132,6 +136,7 @@ const PAGE_ICONS: Record<PageId, ReactNode> = {
   collections: <CollectionsIcon />,
   tags: <LocalOfferIcon />,
   downloads: <DownloadIcon />,
+  tools: <HandymanOutlinedIcon />,
   myModels: <ViewInArIcon />,
   profile: <PersonIcon />,
   // As in Administration's own menu.
@@ -140,6 +145,7 @@ const PAGE_ICONS: Record<PageId, ReactNode> = {
   adminStorage: <FolderOutlinedIcon />,
   adminAuth: <LockOutlinedIcon />,
   adminRendering: <ViewInArIcon />,
+  adminTools: <HandymanOutlinedIcon />,
   adminAi: <AutoAwesomeIcon />,
   adminUsers: <PeopleIcon />,
   adminQueue: <QueueIcon />,
@@ -196,6 +202,8 @@ export default function GlobalSearch({
     readRecents().filter((entry) => entry.kind !== "page" || pageFor(entry)),
   );
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  // The tools the user may open; null while they're still loading, which is only the first moment.
+  const tools = useTools();
   // Until the user arrows away, the selection tracks the top row, so results that arrive late take it.
   const userMovedRef = useRef(false);
   // Where focus was before the search took it; Escape hands it back, as a dialog does.
@@ -361,6 +369,24 @@ export default function GlobalSearch({
   const pageItem = (page: SearchPage): Item =>
     entryItem({ key: `page:${page.id}`, kind: "page", title: t(page.labelKey), path: page.path }, kindLabel("page"));
 
+  // "!tool" lists the tools the user can open, and "!tool qr" narrows them; picking one opens its window on the
+  // Tools page. Every tool an admin installs or a user saves turns up here on its own, by its own name.
+  const toolCommands: PaletteCommand[] = (tools?.tools ?? []).map((tool) => ({
+    id: `tool-${tool.id}`,
+    bang: "tool",
+    arg: tool.slug,
+    // Also found by what it's called, not only by its folder name: "!tool qr code".
+    argAlias: tool.manifest.name.toLowerCase(),
+    label: tool.manifest.name,
+    keywords: ["tool", "app", ...tool.manifest.name.toLowerCase().split(/\s+/)],
+    icon: (
+      <Box sx={{ display: "flex", color: "primary.main" }}>
+        <ToolIcon iconUrl={tool.manifest.iconUrl} size={20} />
+      </Box>
+    ),
+    run: () => navigate(`/tools?open=${encodeURIComponent(tool.id)}`),
+  }));
+
   const commands: PaletteCommand[] = [
     ...THEMES.map(({ theme: target, alias, keywords, icon }) => ({
       id: `theme-${target}`,
@@ -425,6 +451,8 @@ export default function GlobalSearch({
       icon: <LogoutIcon />,
       run: onLogout,
     },
+    // Last, so a bare "!" lists what Thingport itself does before the user's own tools.
+    ...toolCommands,
   ];
 
   // "!import" opens the import dialog; "!import <link>" imports a supported link, or else opens the
@@ -620,11 +648,10 @@ export default function GlobalSearch({
         key: "copyLink",
         label: t("app:search.copyLink"),
         keys: `${MOD_KEY} ${SHIFT_KEY} C`,
-        // The clipboard API only exists on HTTPS or localhost; elsewhere this quietly does nothing.
         run: async () => {
           setActionsOpen(false);
           try {
-            await navigator.clipboard.writeText(new URL(path, window.location.origin).href);
+            await copyText(new URL(path, window.location.origin).href);
             setCopied(true);
           } catch {
             // Nothing to fall back to: the link isn't on the page to select.

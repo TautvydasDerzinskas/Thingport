@@ -1,0 +1,28 @@
+---
+import Icon from "../Icon.astro";
+
+// Each page's file on GitHub, to read rather than edit (the loader and the docs' own pages set editUrl).
+const { editUrl } = Astro.locals.starlightRoute;
+---
+
+{
+  editUrl && (
+    <a href={editUrl} class="view-source print:hidden">
+      <Icon name="github" size={16} />
+      View this page on GitHub
+    </a>
+  )
+}
+
+<style>
+  .view-source {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--sl-color-gray-3);
+    text-decoration: none;
+  }
+  .view-source:hover {
+    color: var(--sl-color-white);
+  }
+</style>

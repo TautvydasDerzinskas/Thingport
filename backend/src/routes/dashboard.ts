@@ -32,6 +32,7 @@ function modelOut(m: DashboardModel) {
     id: m.id,
     name: m.name,
     thumb_url: m.thumbUrl,
+    photo_url: m.photoUrl,
     render_url: m.renderUrl,
     view_count: m.viewCount,
     print_count: m.printCount,

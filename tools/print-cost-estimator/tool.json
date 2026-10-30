@@ -1,0 +1,38 @@
+{
+  "name": "Print cost estimator",
+  "description": "Drop a model and get its print time, filament and real cost: material, power, machine wear, failures, your time and fees, with the price to charge for the margin you want.",
+  "version": "1.0.1",
+  "author": "Thingport contributors",
+  "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
+  "window": {
+    "width": 1240,
+    "height": 800
+  },
+  "hosts": [],
+  "category": "calculators",
+  "locales": [
+    "en",
+    "lt",
+    "es",
+    "fr"
+  ],
+  "screenshots": [
+    {
+      "file": "screenshots/estimate.webp",
+      "caption": "A model measured and priced: the faces that need holding up picked out in the view, what the print costs layer by layer, and what it makes at the price charged today."
+    },
+    {
+      "file": "screenshots/sliced.webp",
+      "caption": "A sliced file beside a model: its time and weight are the slicer's own, so nothing about it is estimated, and the order total follows the quantity."
+    },
+    {
+      "file": "screenshots/setup.webp",
+      "caption": "Setup, in the dark theme: the printer's cost, bed and print settings, the filament, and the rates a price is built from, kept for each user."
+    },
+    {
+      "file": "screenshots/library.webp",
+      "caption": "A part taken straight out of the library: search the models and pick the file to measure."
+    }
+  ],
+  "iconUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2048%2048%22%3E%3Cpath%20d%3D%22M10%2025.5%2024%2033.5%2038%2025.5%2024%2017.5Z%22%20fill%3D%22%239aa7b8%22%2F%3E%3Cpath%20d%3D%22M10%2025.5%2024%2033.5v9L10%2034.5Z%22%20fill%3D%22%236f7d91%22%2F%3E%3Cpath%20d%3D%22M38%2025.5%2024%2033.5v9l14-8Z%22%20fill%3D%22%2353606f%22%2F%3E%3Ccircle%20cx%3D%2231%22%20cy%3D%2215%22%20r%3D%2213%22%20fill%3D%22%2300b800%22%2F%3E%3Cpath%20d%3D%22M31%206.2v17.6M35.6%209.9h-6.9a2.9%202.9%200%200%200%200%205.8h4.6a2.9%202.9%200%200%201%200%205.8h-7.4%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E"
+}

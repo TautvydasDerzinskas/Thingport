@@ -6,18 +6,35 @@ export const REPO = "TautvydasDerzinskas/Thingport";
 export const REPO_URL = `https://github.com/${REPO}`;
 export const BRANCH = "main";
 
+/** The sites Thingport imports from, in the order lists show them, so counts in the copy follow providers/. */
+export const PROVIDER_NAMES = PROVIDER_DOCS.map((doc) => doc.title);
+
 export const SITE_NAME = "Thingport";
 export const TAGLINE = "Your personal 3D model library";
-export const SITE_DESCRIPTION =
-  "Thingport is a free, open-source, self-hosted library for your 3D printing models. Import from MakerWorld, Printables, Thingiverse and MyMiniFactory, preview STL, 3MF, STEP and OBJ files in your browser, and keep everything organized in one place.";
+export const SITE_DESCRIPTION = `Thingport is a free, open-source, self-hosted library for your 3D printing models. Import from MakerWorld, Printables, Thingiverse and ${PROVIDER_NAMES.length - 3} other sites, preview STL, 3MF, STEP and OBJ files in your browser, and keep everything organized in one place.`;
 
 export const LINKS = {
   github: REPO_URL,
   releases: `${REPO_URL}/releases`,
   issues: `${REPO_URL}/issues`,
+  discussions: `${REPO_URL}/discussions`,
   license: `${REPO_URL}/blob/${BRANCH}/LICENSE`,
   sponsors: "https://github.com/sponsors/TautvydasDerzinskas",
   coffee: "https://buymeacoffee.com/TautvydasDerzinskas",
+};
+
+/**
+ * Comment threads (components/Comments.astro): giscus (giscus.app) keeps each in a GitHub Discussion. Each kind has
+ * its own category, in the Announcement format so only giscus and maintainers start threads. Ids from `gh api graphql`.
+ */
+export const GISCUS = {
+  repo: REPO,
+  repoId: "R_kgDOUQb8fQ",
+  categories: {
+    blog: { name: "Blog comments", id: "DIC_kwDOUQb8fc4DJ-fO" },
+    providers: { name: "Provider notes", id: "DIC_kwDOUQb8fc4DJ-gL" },
+    docs: { name: "Docs feedback", id: "DIC_kwDOUQb8fc4DJ-gS" },
+  },
 };
 
 /**
@@ -33,16 +50,66 @@ export const DOCS = [
     description: "Run Thingport on any Docker host from the pre-built images, with no build step.",
   },
   {
+    slug: "install/unraid",
+    source: "docs/install/unraid/README.md",
+    group: "Getting started",
+    title: "Install on Unraid",
+    nav: "Unraid",
+    description: "Run the Thingport stack on Unraid with the built-in Compose support or Compose Manager.",
+  },
+  {
+    slug: "install/truenas",
+    source: "docs/install/truenas/README.md",
+    group: "Getting started",
+    title: "Install on TrueNAS SCALE",
+    nav: "TrueNAS SCALE",
+    description: "Run Thingport on TrueNAS SCALE as a Custom App or over SSH, with dataset-backed storage.",
+  },
+  {
+    slug: "install/casaos",
+    source: "docs/install/casaos/README.md",
+    group: "Getting started",
+    title: "Install on CasaOS",
+    nav: "CasaOS",
+    description: "Run Thingport on CasaOS as a customized app or over SSH.",
+  },
+  {
     slug: "providers",
     source: "docs/PROVIDER_SETUP.md",
-    group: "Getting started",
+    group: "Providers",
     title: "Providers",
-    nav: "Providers",
+    nav: "All providers",
     description:
       "What each model site needs, side by side: sign-ins, Thingport Grab and FlareSolverr, and what it imports.",
   },
   // Each provider's page, from its manifest and docs.ts (providers/).
   ...PROVIDER_DOCS,
+  {
+    slug: "grab",
+    source: "extension/README.md",
+    group: "Companion apps",
+    title: "Thingport Grab browser extension",
+    nav: "Thingport Grab",
+    description: `Import models straight from their own pages on all ${PROVIDER_NAMES.length} sites. Pair it with your Thingport, and no password is saved.`,
+  },
+  {
+    slug: "grab/privacy",
+    source: "extension/PRIVACY.md",
+    group: "Companion apps",
+    title: "Thingport Grab privacy policy",
+    nav: "Thingport Grab privacy",
+    description: "What the Thingport Grab browser extension stores, what it sends, and where.",
+    unlisted: true,
+  },
+  {
+    slug: "bridge",
+    source: "bridge/README.md",
+    group: "Companion apps",
+    title: "Thingport Bridge",
+    nav: "Thingport Bridge",
+    description:
+      "A small desktop helper that makes “Open in slicer” work for Bambu Studio, PrusaSlicer, Cura and Anycubic Slicer Next.",
+  },
   {
     slug: "guides/existing-library",
     source: "docs/guides/existing-library.md",
@@ -85,7 +152,7 @@ export const DOCS = [
     title: "Synced collections",
     nav: "Synced collections",
     description:
-      "Link a MakerWorld, Printables, Thingiverse or MyMiniFactory collection to Thingport, and models added to it later are imported on their own.",
+      "Link a collection or a list of likes on MakerWorld, Printables, Thingiverse or almost any other site Thingport imports from, and models added to it later are imported on their own.",
   },
   {
     slug: "guides/bookmarklet",
@@ -100,10 +167,9 @@ export const DOCS = [
     slug: "features/importing",
     source: "docs/features/importing.md",
     group: "Features",
-    title: "Import from MakerWorld, Printables, Thingiverse and MyMiniFactory",
+    title: "Import from MakerWorld, Printables, Thingiverse and more",
     nav: "Importing",
-    description:
-      "Import models, collections and likes with their files, photos, description, tags and author, by link or with Thingport Grab.",
+    description: `Import models from ${PROVIDER_NAMES.length} sites with their files, photos, description, tags and author, plus collections and likes where a site has them, by link or with Thingport Grab.`,
   },
   {
     slug: "features/3d-previews",
@@ -112,7 +178,7 @@ export const DOCS = [
     title: "3D previews",
     nav: "3D previews",
     description:
-      "Preview STL, 3MF, OBJ and STEP files in the browser, with plate thumbnails and simplified previews of very detailed models.",
+      "Preview STL, 3MF, OBJ and STEP files in the browser, in their own colours where a model has them, with plate thumbnails and simplified previews of very detailed models.",
   },
   {
     slug: "features/print-quality",
@@ -130,7 +196,7 @@ export const DOCS = [
     title: "Organize and search",
     nav: "Organize and search",
     description:
-      "Categories, folders, collections, tags, favourites and bookmarks, bulk actions and merges, plus search across your whole library.",
+      "Categories, folders, collections, tags, favourites and bookmarks, bulk actions and merges, a filter by site, plus search across your whole library.",
   },
   {
     slug: "features/dashboard",
@@ -180,7 +246,8 @@ export const DOCS = [
     group: "Features",
     title: "Everything to print it",
     nav: "Supporting files",
-    description: "Keep instructions, notes and a ready-to-print sliced file next to each model.",
+    description:
+      "Keep instructions, notes and a ready-to-print sliced file next to each model, and customize one that came with its OpenSCAD script right in your browser.",
   },
   {
     slug: "features/downloads",
@@ -196,7 +263,8 @@ export const DOCS = [
     group: "Features",
     title: "Plain files on your disk",
     nav: "Storage",
-    description: "Models stored as ordinary files, in a folder layout you choose and can change later.",
+    description:
+      "Models stored as ordinary files, in a folder layout you choose and can change later, and can be fetched again from their sites if the files go missing.",
   },
   {
     slug: "features/multi-user",
@@ -213,7 +281,8 @@ export const DOCS = [
     group: "Features",
     title: "Administration",
     nav: "Administration",
-    description: "Every instance-wide setting, a page per area, all in the browser.",
+    description:
+      "Every instance-wide setting, from providers and storage to tools and AI, a page per area, all in the browser.",
   },
   {
     slug: "features/appearance",
@@ -231,7 +300,7 @@ export const DOCS = [
     title: "System Health",
     nav: "System Health",
     description:
-      "Check that the database, storage, memory, FlareSolverr, Thingiverse, MyMiniFactory, AI and email all work, and fix what doesn't.",
+      "Check that the database, storage, memory, internet, FlareSolverr, Thingiverse, MyMiniFactory, Thingport Grab, AI and email all work, and fix what doesn't.",
   },
   {
     slug: "guides/ai",
@@ -252,56 +321,6 @@ export const DOCS = [
       "Let people sign in to Thingport with Authentik, Pocket ID, Keycloak or any other OpenID Connect provider.",
   },
   {
-    slug: "install/unraid",
-    source: "docs/install/unraid/README.md",
-    group: "Platform guides",
-    title: "Install on Unraid",
-    nav: "Unraid",
-    description: "Run the Thingport stack on Unraid with the built-in Compose support or Compose Manager.",
-  },
-  {
-    slug: "install/truenas",
-    source: "docs/install/truenas/README.md",
-    group: "Platform guides",
-    title: "Install on TrueNAS SCALE",
-    nav: "TrueNAS SCALE",
-    description: "Run Thingport on TrueNAS SCALE as a Custom App or over SSH, with dataset-backed storage.",
-  },
-  {
-    slug: "install/casaos",
-    source: "docs/install/casaos/README.md",
-    group: "Platform guides",
-    title: "Install on CasaOS",
-    nav: "CasaOS",
-    description: "Run Thingport on CasaOS as a customized app or over SSH.",
-  },
-  {
-    slug: "grab",
-    source: "extension/README.md",
-    group: "Companion apps",
-    title: "Thingport Grab browser extension",
-    nav: "Thingport Grab",
-    description: "Import MakerWorld, Printables, Thingiverse and MyMiniFactory models straight from their own pages.",
-  },
-  {
-    slug: "grab/privacy",
-    source: "extension/PRIVACY.md",
-    group: "Companion apps",
-    title: "Thingport Grab privacy policy",
-    nav: "Thingport Grab privacy",
-    description: "What the Thingport Grab browser extension stores, what it sends, and where.",
-    unlisted: true,
-  },
-  {
-    slug: "bridge",
-    source: "bridge/README.md",
-    group: "Companion apps",
-    title: "Thingport Bridge",
-    nav: "Thingport Bridge",
-    description:
-      "A small desktop helper that makes “Open in slicer” work for Bambu Studio, PrusaSlicer, Cura and Anycubic Slicer Next.",
-  },
-  {
     slug: "guides/api-token",
     source: "docs/guides/api-token.md",
     group: "Integrations",
@@ -317,7 +336,7 @@ export const DOCS = [
     title: "Connect an AI assistant with MCP",
     nav: "AI assistant (MCP)",
     description:
-      "Let Claude and other AI assistants search and read your library, and import models if you allow it, over the Model Context Protocol.",
+      "Let Claude and other AI assistants search and read your library, write you a widget or a tool, and import models if you allow it, over the Model Context Protocol.",
   },
   {
     slug: "guides/custom-widgets",
@@ -326,6 +345,77 @@ export const DOCS = [
     title: "Custom dashboard widgets",
     nav: "Custom widgets",
     description: "Write your own dashboard panels in JavaScript, or install ones the community has shared.",
+  },
+  {
+    slug: "guides/tools",
+    source: "docs/guides/tools.md",
+    group: "Integrations",
+    title: "Tools",
+    nav: "Tools",
+    description:
+      "Small apps that open in a window from the Tools page: planners, generators and calculators that work with your library.",
+  },
+  {
+    slug: "developers",
+    source: "docs/developers/overview.md",
+    group: "Build for Thingport",
+    title: "Build widgets and tools",
+    nav: "Overview",
+    description:
+      "How Thingport's dashboard widgets and tools run, what they can reach, which to write, and building one by hand or with an AI assistant.",
+  },
+  {
+    slug: "developers/first-widget",
+    source: "docs/developers/first-widget.md",
+    group: "Build for Thingport",
+    title: "Your first widget",
+    nav: "Your first widget",
+    description:
+      "Write a dashboard widget step by step: a panel of your newest models, with settings, labels and both themes.",
+  },
+  {
+    slug: "developers/first-tool",
+    source: "docs/developers/first-tool.md",
+    group: "Build for Thingport",
+    title: "Your first tool",
+    nav: "Your first tool",
+    description:
+      "Write a tool step by step: a tray generator that models with Manifold and saves STLs into your library.",
+  },
+  {
+    slug: "developers/sdk-reference",
+    source: "docs/developers/sdk-reference.md",
+    group: "Build for Thingport",
+    title: "SDK reference",
+    nav: "SDK reference",
+    description:
+      "Every member of the thingport object a widget's or a tool's script gets: the library, the theme, labels, fetch, the libraries and storage.",
+  },
+  {
+    slug: "developers/recipes",
+    source: "docs/developers/recipes.md",
+    group: "Build for Thingport",
+    title: "Widget and tool recipes",
+    nav: "Recipes",
+    description:
+      "Complete widgets and tools to start from: library totals, an OctoPrint printer, a tagging helper and an OpenSCAD box.",
+  },
+  {
+    slug: "developers/ai-assistant",
+    source: "docs/developers/ai-assistant.md",
+    group: "Build for Thingport",
+    title: "Build with an AI assistant",
+    nav: "With an AI assistant",
+    description:
+      "Describe a widget or a tool to Claude or another assistant over MCP, which writes it and saves it to your Thingport.",
+  },
+  {
+    slug: "developers/publishing",
+    source: "docs/developers/publishing.md",
+    group: "Build for Thingport",
+    title: "Publishing widgets and tools",
+    nav: "Publishing",
+    description: "Share a widget or a tool with every Thingport through a pull request to the repository.",
   },
   {
     slug: "contributing",
@@ -342,6 +432,15 @@ export const DOCS = [
     title: "Development setup",
     nav: "Development",
     description: "Run Thingport locally with hot reload, and run the test suites.",
+  },
+  {
+    slug: "tool-development",
+    source: "docs/TOOL_DEVELOPMENT.md",
+    group: "Contributing",
+    title: "Tool development",
+    nav: "Tool development",
+    description:
+      "Write a tool for the Tools page: the folder, the metadata, the models it brings, and getting it merged.",
   },
   {
     slug: "translating",
@@ -361,7 +460,29 @@ export const DOCS = [
   },
 ];
 
-export const NAV_DOCS = DOCS.filter((d) => !d.unlisted);
+const NAV_DOCS = DOCS.filter((d) => !d.unlisted);
+
+/** NAV_DOCS by sidebar group, in order. Providers counts the sites, not its "All providers" page. */
+export const DOCS_GROUPS = [...new Set(NAV_DOCS.map((d) => d.group))].map((group) => {
+  const docs = NAV_DOCS.filter((d) => d.group === group);
+  return { group, docs, count: group === "Providers" ? PROVIDER_DOCS.length : docs.length };
+});
+
+/** The docs sidebar (Starlight's): the docs home, then each group, collapsed unless it holds the page you're on. */
+export const DOCS_SIDEBAR = [
+  { label: "Overview", link: "/docs/" },
+  ...DOCS_GROUPS.map(({ group, docs, count }) => ({
+    label: group,
+    collapsed: true,
+    badge: { text: String(count), class: "group-count" },
+    items: docs.map((d) => ({
+      label: d.nav,
+      link: `/docs/${d.slug}/`,
+      // Lets the sidebar show each provider's logo beside its name.
+      ...(d.slug.startsWith("providers/") && { attrs: { "data-provider": d.slug.slice("providers/".length) } }),
+    })),
+  })),
+];
 
 /** Repo files that have a page on this site, so links between them stay on the site. */
 export const SITE_ROUTES_BY_SOURCE = {

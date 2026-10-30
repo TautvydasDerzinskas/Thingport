@@ -86,12 +86,16 @@
       "dashboard": "Dashboard",
       "administration": "Administration",
       "expandSidebar": "Expand sidebar",
+      "openNavigation": "Open navigation menu",
+      "navigationMenu": "Navigation menu",
+      "closeNavigation": "Close navigation menu",
       "collapseSidebar": "Collapse sidebar",
       "models": "Models",
       "collections": "Collections",
       "tags": "Tags",
       "downloads": "Downloads",
-      "bookmarks": "Bookmarks"
+      "bookmarks": "Bookmarks",
+      "tools": "Tools"
     },
     "uploadBar": {
       "uploading": "Uploading…",
@@ -322,6 +326,18 @@
             "save_widget": {
               "title": "Save a dashboard widget",
               "description": "Create or change your own dashboard widgets. Their scripts run in your dashboard."
+            },
+            "tool_guide": {
+              "title": "Tool guide",
+              "description": "Read how to write a tool for your Tools page."
+            },
+            "list_tools": {
+              "title": "List tools",
+              "description": "See the tools you can open, and the code of your own."
+            },
+            "save_tool": {
+              "title": "Save a tool",
+              "description": "Create or change your own tools. Their scripts run in your browser with your access."
             },
             "list_icons": {
               "title": "Find an icon",
@@ -1075,6 +1091,10 @@
               "prompt": "Make me a Thingport widget that charts how many models I added each month."
             }
           }
+        },
+        "labels": {
+          "help": "The words your widget shows, one file per language. The script asks for them by key with t(\"key\"), so they stay out of the logic and can be translated without touching it.",
+          "empty": "Your widget has no labels yet. Keep the words it shows in a file per language, and the script asks for them by key with t(\"key\") — so a translator never has to open the script."
         }
       }
     },
@@ -1776,6 +1796,7 @@
           "model_edited": "Model edited",
           "model_reimported": "Missing details fetched",
           "model_deleted": "Model deleted",
+          "models_repaired": "Models repaired",
           "collection_created": "Collection created",
           "collection_edited": "Collection edited",
           "collection_deleted": "Collection deleted",
@@ -1815,7 +1836,8 @@
         "aiRunSummary": "{{done}} of {{total}} checked — {{suggested}} suggested, {{applied}} applied, {{failed}} failed",
         "aiRunStopped": "(stopped)",
         "viaProvider": "via {{provider}}",
-        "merged": "{{merged}} → {{name}}"
+        "merged": "{{merged}} → {{name}}",
+        "repairSummary": "{{action}}: {{repaired}} repaired, {{deleted}} deleted, {{failed}} failed"
       },
       "rendering": {
         "heading": "Rendering",
@@ -2136,6 +2158,88 @@
         "users": {
           "placed": "On dashboard",
           "installed": "Installed only"
+        }
+      },
+      "tools": {
+        "heading": "Tools",
+        "subtitle": "Small apps users open from the Tools page: install them from the repository, and pick who sees them.",
+        "access": {
+          "heading": "Who sees tools",
+          "help": "Admins always see tools. Who else sees the Tools page, and gets each installed tool's models in their library. Tools run in the user's browser with their access to Thingport.",
+          "audience": "Who sees tools",
+          "admins": "Admins only",
+          "everyone": "Everyone",
+          "selected": "Selected users",
+          "users": "Users",
+          "usersHint": "Besides admins, who always see them.",
+          "failed": "Couldn't change who sees tools",
+          "userTools": "Users' own tools",
+          "userToolsHelp": "Lets those who see tools make their own, in an editor with a starter script. Their scripts run in their own browser, with their own access.",
+          "userToolsOn": "Those who see tools can make their own",
+          "userToolsOff": "Only installed tools"
+        },
+        "repo": {
+          "heading": "From the repository",
+          "help": "The tools in the Thingport repository's tools folder. Each is read before it's merged; installing one makes it available to everyone who sees tools.",
+          "refresh": "Check the repository again",
+          "failed": "Couldn't read the tools repository",
+          "unreachable": "The tools repository can't be read right now: {{error}}",
+          "empty": "The repository has no tools yet.",
+          "install": "Install",
+          "update": "Update",
+          "installed": "Installed {{name}}",
+          "updated": "Updated {{name}}",
+          "installFailed": "Couldn't install the tool",
+          "installedVersion": "Installed {{version}}",
+          "updateTo": "Update to {{version}}",
+          "latest": "Latest",
+          "latestTip": "{{name}} {{version}} is the newest the repository has",
+          "updateLabel": "Update {{name}} to {{version}}",
+          "gone": "No longer in the repository",
+          "by": "By {{name}}",
+          "brings_one": "Brings {{count}} model",
+          "brings_other": "Brings {{count}} models",
+          "fetching": "Fetching models: {{ready}} of {{total}}",
+          "missing_one": "{{count}} of {{total}} models hasn't come in yet",
+          "missing_other": "{{count}} of {{total}} models haven't come in yet",
+          "lastError": "Last try: {{error}}",
+          "retry": "Fetch missing models",
+          "more": "More",
+          "moreFor": "More for {{name}}",
+          "uninstall": "Uninstall",
+          "uninstallTitle": "Uninstall {{name}}?",
+          "uninstallMessage": "{{name}} goes from everyone's Tools page, with the data it kept for them.",
+          "uninstallWithModels": "{{name}} goes from everyone's Tools page, with the data it kept for them and its collection of models from every library. Models users saved from it stay.",
+          "uninstalled": "Uninstalled {{name}}",
+          "uninstallFailed": "Couldn't uninstall the tool",
+          "updateAvailable": "Update available",
+          "fromFolder": "Offered from the folder {{location}}",
+          "fromRepository": "Offered from {{location}}",
+          "open": "Open",
+          "openHint": "Open {{name}} — double-click",
+          "notInstalled": "Not installed",
+          "isInstalled": "installed",
+          "version": "v{{version}}",
+          "tileLabel": "{{name}}, {{state}}: press Enter for what it is, the context menu key for more",
+          "shelfHint": "Double-click a tool for what it is and what can be done with it; right-click an installed one for its menu.",
+          "installTitle": "Install {{name}}?",
+          "installBody_one": "It brings {{count}} model of its own: a part it works with, imported once for the whole instance.",
+          "installBody_other": "It brings {{count}} models of its own: the parts it works with, imported once for the whole instance.",
+          "withModels": "Import its models",
+          "modelsRoom": "{{count}} models is a large set; expect it to take gigabytes on this server, and a while to come in.",
+          "modelsLater": "Without them the tool only works while the site it fetches from is up and this server is online, and anything it builds from its parts can't be saved. You can import them later.",
+          "modelsLaterOwn": "The tool can't save anything that uses those parts until they're imported. They come with the tool itself, so no other site is involved. You can import them later.",
+          "modelsSkipped_one": "Installed without its {{count}} model.",
+          "modelsSkipped_other": "Installed without its {{count}} models.",
+          "importModels": "Import its models",
+          "importingModels": "Importing the models of {{name}}"
+        },
+        "own": {
+          "heading": "Users' own tools",
+          "help": "Tools users made themselves. Each runs only for the user who made it.",
+          "empty": "No one has made a tool yet.",
+          "off": "Users' own tools are off.",
+          "by": "{{name}} · {{email}}"
         }
       }
     },
@@ -2509,6 +2613,309 @@
         "popular": "Popular sites",
         "ai": "AI",
         "browsers": "Browsers"
+      }
+    },
+    "tools": {
+      "page": {
+        "title": "Tools",
+        "subtitle": "Double-click a tool to open it",
+        "new": "New tool",
+        "installed": "Installed",
+        "mine": "Mine",
+        "yours": "Yours",
+        "tileLabel": "{{name}}: press Enter to open, the context menu key for more",
+        "open": "Open",
+        "about": "About",
+        "models": "Its models",
+        "edit": "Edit",
+        "delete": "Delete",
+        "deleteTitle": "Delete this tool?",
+        "deleteMessage": "{{name}} and the data it kept go. Models you saved with it stay.",
+        "deleted": "Deleted {{name}}",
+        "empty": "No tools yet. An admin installs them.",
+        "emptyAdmin": "No tools yet. Install one from the repository.",
+        "emptyCreate": "No tools yet. Make your own, or ask an admin to install some.",
+        "install": "Install tools",
+        "noAccess": "Tools aren't available to you on this Thingport.",
+        "dropHere": "Drop a tool here",
+        "layout": "Show as",
+        "layoutFlat": "One grid",
+        "layoutCategories": "Shelves",
+        "moveTo": "Move to",
+        "sort": {
+          "name": "Name",
+          "newest": "Newest",
+          "author": "Author"
+        },
+        "uninstall": "Uninstall",
+        "uninstallTitle": "Uninstall this tool?",
+        "uninstallMessage": "{{name}} goes from everyone's Tools page, with the data it kept for them and its collection of models from every library. Models saved from it stay.",
+        "uninstalled": "Uninstalled {{name}}"
+      },
+      "categories": {
+        "generators": "Generators",
+        "planners": "Planners",
+        "calculators": "Calculators",
+        "files": "Files",
+        "library": "Library",
+        "other": "Other"
+      },
+      "window": {
+        "about": "About this tool",
+        "maximize": "Fill the screen",
+        "restore": "Back to its size",
+        "close": "Close"
+      },
+      "about": {
+        "version": "Version {{version}}",
+        "source": "From",
+        "fromRepo": "The Thingport repository, installed by an admin",
+        "own": "You made it",
+        "author": "Author",
+        "hosts": "Reaches",
+        "hostsHelp": "The services outside Thingport the tool may call, through Thingport.",
+        "noHosts": "Nothing outside Thingport",
+        "models": "Models",
+        "modelsHelp": "The models the tool brings, in a collection of their own in your library. They can be opened and printed but not changed, and they are listed in that collection rather than among your own models.",
+        "modelCount_one": "{{count}} model",
+        "modelCount_other": "{{count}} models",
+        "openModels": "Open its models",
+        "open": "Open",
+        "close": "Close"
+      },
+      "runner": {
+        "failed": "{{name}} stopped with an error",
+        "noExport": "The script has no default export to call"
+      },
+      "picker": {
+        "title": "Choose a collection",
+        "search": "Find a collection",
+        "noMatch": "No collection matches.",
+        "empty": "No collections yet. Name one below to make it.",
+        "count_one": "{{count}} model",
+        "count_other": "{{count}} models",
+        "newName": "New collection",
+        "create": "Make this collection",
+        "cancel": "Cancel",
+        "choose": "Choose"
+      },
+      "ai": {
+        "or": "or",
+        "open": "Use AI",
+        "title": "Build a tool with AI",
+        "back": "Back to the editor",
+        "connect": "Connect an AI",
+        "step1": "Connect your AI assistant to Thingport over MCP.",
+        "step2": "On your profile, give the token the <strong>Save a tool</strong> tool.",
+        "step3": "Ask for any tool, in your own words. For example:",
+        "step4": "It appears on your Tools page, ready to open. Ask again to change it, or fine-tune it here.",
+        "examplesLabel": "Example prompts",
+        "examples": {
+          "label": {
+            "label": "Label maker",
+            "name": "Label maker",
+            "prompt": "Make me a Thingport tool that turns a few words into a printable label and saves it to my library."
+          },
+          "box": {
+            "label": "Box maker",
+            "name": "Box maker",
+            "prompt": "Make me a Thingport tool that makes a box of any size with a lid, in millimetres."
+          },
+          "tidy": {
+            "label": "Tagging helper",
+            "name": "Tagging helper",
+            "prompt": "Make me a Thingport tool that lists my models with no tags and lets me tag them."
+          }
+        }
+      },
+      "editor": {
+        "newTitle": "New tool",
+        "editTitle": "Edit tool",
+        "part": "Part of the tool",
+        "details": "Details",
+        "script": "Script",
+        "html": "HTML & CSS",
+        "preview": "Preview",
+        "htmlPlaceholder": "Markup and a <style> block, put into the window before the script runs",
+        "previewHelp": "The tool running as it will in its window. Until it's saved, what it keeps lasts only as long as the preview, and it can't reach other hosts.",
+        "previewHelpSaved": "The tool running as it will in its window, with the data it keeps for you.",
+        "rerun": "Run again",
+        "reference": "SDK reference",
+        "showReference": "Show the SDK reference",
+        "hideReference": "Hide the SDK reference",
+        "referenceIntro": "What the script's default export gets as thingport. The starter script uses each.",
+        "trust": "A tool's script runs in your browser with your access to Thingport.",
+        "cancel": "Cancel",
+        "save": "Save",
+        "saved": "Saved {{name}}",
+        "fixFirst": "Fix the details marked first",
+        "name": "Name",
+        "version": "Version",
+        "description": "Description",
+        "icon": "Icon",
+        "iconHelp": "Shown on the Tools page and in the tool's window.",
+        "iconUrl": "Image address",
+        "iconNone": "Toolbox",
+        "window": "Window",
+        "windowHelp": "The size its window opens at, in pixels; a smaller screen gets what fits, and it can fill the screen.",
+        "width": "Width",
+        "height": "Height",
+        "author": "Author",
+        "authorHelp": "Credited on its About page.",
+        "authorName": "Name",
+        "authorUrl": "Page",
+        "hosts": "Hosts",
+        "hostsHelp": "The services outside Thingport its thingport.fetch may reach, through Thingport: a host name, *.example.com for its subdomains, and a port if it needs one.",
+        "hostsPlaceholder": "api.example.com",
+        "slug": "Folder name",
+        "slugHelp": "What the tool is saved as: saving one with the same folder name replaces it.",
+        "errors": {
+          "slug": "2-40 lowercase letters, digits and dashes",
+          "name": "Give it a name",
+          "url": "Not an http or https address"
+        },
+        "sdk": {
+          "root": "The window's element, with the tool's HTML in it, and a CSS selector for it.",
+          "theme": "Thingport's colours and font, for light and dark.",
+          "size": "The window's size, and a way to hear when it changes.",
+          "storage": "JSON values kept for the user, by key.",
+          "collections": "The user's collections, and making a new one.",
+          "collectionModels": "The models in a collection, and putting models in or out.",
+          "pick": "Asks the user for a collection, or a new one, as a Save dialog would.",
+          "models": "Models in the library: a page of them, a search, or one.",
+          "file": "One of a model's files, as an ArrayBuffer.",
+          "create": "A new model of the files given, e.g. an STL the tool made.",
+          "edit": "More files, gallery pictures, a file replaced, or its name, description and tags.",
+          "open": "Closes the tool and opens the model's page.",
+          "toolModels": "The models a repository tool brings, by key.",
+          "fetch": "A request to a host the tool declares, made by Thingport.",
+          "api": "Thingport's own API, as the user.",
+          "download": "Hands the user a file to keep.",
+          "ui": "A toast, a confirmation, or closing the window.",
+          "translate": "Your tool's own words, from its Labels, in the user's language.",
+          "language": "The language Thingport is in, and every language it has.",
+          "library": "A heavy library Thingport carries: Three.js, opentype, Manifold, its fonts."
+        },
+        "labels": {
+          "help": "The words your tool shows, one file per language. The script asks for them by key with t(\"key\"), so they stay out of the logic and can be translated without touching it.",
+          "empty": "Your tool has no labels yet. Keep the words it shows in a file per language, and the script asks for them by key with t(\"key\") — so a translator never has to open the script."
+        },
+        "category": "Category",
+        "categoryHelp": "Which shelf the Tools page puts it on. Anyone using it can move it themselves."
+      }
+    },
+    "screenshots": {
+      "title": "Screenshots of {{name}}",
+      "open": "Screenshot {{index}} of {{count}} of {{name}}",
+      "position": "{{index}} of {{count}}",
+      "previous": "Previous screenshot",
+      "next": "Next screenshot",
+      "close": "Close"
+    },
+    "labelsPanel": {
+      "tab": "Labels",
+      "start": "Start with English",
+      "add": "Add a language",
+      "file": "The {{code}} labels, as JSON",
+      "fallbackNote": "English is the fallback: anything another language is missing is shown from here.",
+      "untranslated_one": "{{count}} label still has no words in this language.",
+      "untranslated_other": "{{count}} labels still have no words in this language.",
+      "badJson": "This isn't valid JSON yet, so it won't be saved.",
+      "badShape": "Labels are a flat object of keys to text, like { \"save\": \"Save\" }.",
+      "removeTitle": "Remove the {{name}} labels?",
+      "removeBody": "The file and its words go. The other languages stay."
+    },
+    "missingFiles": {
+      "title": "Some models have lost their files",
+      "lead_one": "1 model in your library has no files left on disk — neither the model files nor the pictures. It can't be opened, printed or downloaded until they are back.",
+      "lead_other": "{{count}} models in your library have no files left on disk — neither the model files nor the pictures. They can't be opened, printed or downloaded until the files are back.",
+      "leadHelp": "Thingport keeps a model's files in its storage folder and only the model's details in the database. An instance moved without that folder, or a folder deleted by accident, leaves the details with nothing behind them. Fetching the files again from the site each model came from puts them back and leaves everything else — names, tags, collections, favourites — as it is.",
+      "notNow": "Not now",
+      "checking": "Looking through your models…",
+      "checkFailed": "Couldn't look through your models. Try again — and if it keeps failing, check that the storage folder is there.",
+      "checkFailedStale": "The latest check couldn't be made, so this is what the last one found.",
+      "allWell": "Every model has its files",
+      "allWellDetail_one": "Checked 1 model.",
+      "allWellDetail_other": "Checked {{count}} models.",
+      "checkAgain": "Check again",
+      "stats": {
+        "broken": "No files",
+        "server": "Thingport can fetch",
+        "grab": "Need Grab",
+        "noSource": "Uploads"
+      },
+      "fromSites": "Where they came from",
+      "whatNow": "What to do",
+      "manyWarning_one": "That is one model to fetch — quick work.",
+      "manyWarning_other": "{{count}} models is a lot to fetch at once: the sites may ask Thingport to slow down or wait, so it can take a while. It runs in the background and you can stop it at any time.",
+      "alreadyRunning": "A repair is already running.",
+      "startFailed": "Couldn't start the repair.",
+      "actions": {
+        "reimport": {
+          "title": "Fetch the missing files",
+          "detail_one": "Downloads 1 model's files again from the site it came from. Its name, tags, collections and favourite stay as they are.",
+          "detail_other": "Downloads {{count}} models' files again from the sites they came from. Names, tags, collections and favourites stay as they are.",
+          "grabOnly_one": "Only Thingport Grab can fetch this one's files. It waits for Grab's next visit to the site.",
+          "grabOnly_other": "Only Thingport Grab can fetch these files. {{count}} models wait for its next visit to the sites they came from.",
+          "none": "None of these models has a site to fetch from."
+        },
+        "delete": {
+          "title": "Delete these models",
+          "detail_one": "Removes 1 model from the library for good, with its details, tags and collection entries.",
+          "detail_other": "Removes {{count}} models from the library for good, with their details, tags and collection entries."
+        }
+      },
+      "confirm": {
+        "reimport": {
+          "title_one": "Fetch the files of 1 model?",
+          "title_other": "Fetch the files of {{count}} models?",
+          "message_one": "Thingport downloads the model's files from the site it came from. Nothing else about it changes, and if the site can't be reached the model is left exactly as it is now.",
+          "message_other": "Thingport downloads each model's files from the site it came from, one at a time. Nothing else about them changes, and any model whose site can't be reached is left exactly as it is now.",
+          "queued_one": "1 more model waits for Thingport Grab to visit the site its files come from.",
+          "queued_other": "{{count}} more models wait for Thingport Grab to visit the sites their files come from.",
+          "confirm": "Fetch the files",
+          "grabTitle": "Wait for Thingport Grab?",
+          "grabMessage_one": "Thingport can't fetch this model's files itself — only Thingport Grab can, on the site's own pages. The model waits for Grab's next visit there, and the files it brings take the place of the missing ones.",
+          "grabMessage_other": "Thingport can't fetch these files itself — only Thingport Grab can, on the sites' own pages. The {{count}} models wait for Grab's next visit, and the files it brings take the place of the missing ones.",
+          "grabConfirm": "Wait for Grab"
+        },
+        "delete": {
+          "title_one": "Delete 1 model?",
+          "title_other": "Delete {{count}} models?",
+          "message_one": "This can't be undone. The model, its details, tags and collection entries are removed for good. Only the model with no files is touched.",
+          "message_other": "This can't be undone. All {{count}} models, their details, tags and collection entries are removed for good. Only models with no files are touched.",
+          "confirm": "Delete the models"
+        }
+      }
+    },
+    "modelRepairProgress": {
+      "stop": "Stop the repair",
+      "stopping": "Stopping after the current model…",
+      "reimport": {
+        "starting": "Getting ready to fetch missing files…",
+        "label": "{{phrase}} {{done}} of {{total}}",
+        "phrases": [
+          "Fetching missing files…",
+          "Asking the site for that STL back…",
+          "Re-Thingporting your models…",
+          "Collecting 3MFs from the source…",
+          "Putting files back beside their models…",
+          "Finding what the move left behind…",
+          "Filling the empty shelves again…",
+          "Knocking on the designer's door…"
+        ]
+      },
+      "delete": {
+        "starting": "Getting ready to delete models…",
+        "label": "{{phrase}} {{done}} of {{total}}",
+        "phrases": [
+          "Deleting models with no files…",
+          "Clearing out the empty boxes…",
+          "Tidying away what's gone…",
+          "Taking out the recycling…",
+          "Dusting the empty shelf…",
+          "Saying goodbye to the ghosts…"
+        ]
       }
     }
   },
@@ -3187,7 +3594,8 @@
         "spin": "Spin",
         "zoomIn": "Zoom in",
         "zoomOut": "Zoom out",
-        "color": "Model color"
+        "color": "Model color",
+        "colorOwn": "This model came with its own colours, so there is none to pick"
       },
       "downloadFailed": "Download failed. Please try again.",
       "deleteFailed": "Failed to delete the model.",
@@ -3326,7 +3734,69 @@
       "downloadFile": "Download file",
       "moreOpenOptions": "Other slicers and downloads",
       "openActions": "Open or download",
-      "openInHeading": "Open in"
+      "openInHeading": "Open in",
+      "toolOwned": "Belongs to a tool",
+      "toolOwnedHint": "It can't be edited or deleted",
+      "customize": "Customize…",
+      "scriptWithheld": "Script not shared",
+      "scriptWithheldHint": "This model was built from a script, but its creator chose not to share it, so there is nothing here to customise. Only they can change that."
+    },
+    "customizer": {
+      "title": "Customizing {{model}}",
+      "model": {
+        "title": "Model",
+        "script": "Script"
+      },
+      "pane": {
+        "minimize": "Minimize",
+        "expand": "Expand"
+      },
+      "pick": {
+        "title": "Which script?",
+        "body": "This model came with {{count}} scripts. Pick the one to customize."
+      },
+      "form": {
+        "title": "Customize",
+        "generate": "Generate",
+        "generating": "Generating…",
+        "noParameters": "This script has nothing to change.",
+        "undo": "Undo",
+        "redo": "Redo",
+        "reset": "Back to the script's own values",
+        "code": "Show the code of {{name}}"
+      },
+      "busy": {
+        "reading": "Reading the script…",
+        "generating": "Generating…"
+      },
+      "stage": {
+        "empty": "Nothing generated yet."
+      },
+      "status": {
+        "generated": "Generated in {{seconds}} s · {{size}} kB"
+      },
+      "download": {
+        "threeMf": "Download as 3MF",
+        "stl": "Download as STL",
+        "stlNoColors": "Keeps the shape, not the colours"
+      },
+      "save": {
+        "action": "Save to Thingport",
+        "done": "Saved {{name}}",
+        "open": "Open the model",
+        "description": "Generated from {{script}}, which came with {{model}}."
+      },
+      "code": {
+        "label": "The code of {{name}}",
+        "lines": "{{count}} lines · read-only",
+        "copy": "Copy",
+        "copied": "Copied",
+        "download": "Download the script"
+      },
+      "error": {
+        "failed": "The script didn't generate a model.",
+        "noGeometry": "The script ran but produced no shape to show."
+      }
     },
     "edit": {
       "title": "Edit model",
@@ -3525,6 +3995,15 @@
         "deleted_other": "Deleted {{count}} collections",
         "merged_one": "Merged {{count}} collection into “{{name}}”",
         "merged_other": "Merged {{count}} collections into “{{name}}”"
+      },
+      "tool": {
+        "badge": "Belongs to the {{tool}} tool: it can't be edited or deleted, and goes when the tool is uninstalled",
+        "badgeUnknown": "Belongs to a tool: it can't be edited or deleted",
+        "status": "Belongs to {{tool}} · can't be changed",
+        "openCollection": "Open collection",
+        "openTool": "Open {{tool}}",
+        "openToolUnknown": "Open the tool",
+        "cantSelect": "A tool's collection can't be merged or deleted"
       }
     },
     "tags": {
@@ -3671,7 +4150,8 @@
       }
     },
     "manager": {
-      "title": "Manage categories & folders"
+      "title": "Manage categories & folders",
+      "repair": "Repair"
     },
     "selection": {
       "enter": "Select models",
@@ -3732,7 +4212,9 @@
       "collectionsUpdated_other": "Updated {{count}} collections",
       "collectionsFailed": "Failed to update the collections. Please try again.",
       "tagsPartlyUpdated_one": "Updated the tags of {{count}} model, but the rest failed. Please try again.",
-      "tagsPartlyUpdated_other": "Updated the tags of {{count}} models, but the rest failed. Please try again."
+      "tagsPartlyUpdated_other": "Updated the tags of {{count}} models, but the rest failed. Please try again.",
+      "toolOwned_one": "{{count}} of the models picked belongs to a tool: leave it out to do this",
+      "toolOwned_other": "{{count}} of the models picked belong to a tool: leave them out to do this"
     },
     "merge": {
       "action": "Merge",
@@ -3773,6 +4255,17 @@
         "othersGo_other": "{{names}} are removed. Their models are tagged “{{name}}” instead.",
         "keepsOwn": "Models already tagged “{{name}}” stay as they are."
       }
+    },
+    "filters": {
+      "title": "Filters",
+      "generative": "Generative models",
+      "generativeHint": "Only the models that came with the script they were generated from, which you can change and generate again",
+      "sources": "Sources",
+      "allSources": "All sites",
+      "noSources": "Nothing imported yet, so there are no sites to choose between.",
+      "noneSelected": "No sites are turned on, so there is nothing to list.",
+      "noMatch": "No models here match the filters.",
+      "clear": "Clear filters"
     }
   },
   "providers": {
@@ -4209,6 +4702,152 @@
       },
       "sync": {
         "notConnected": "Connect Pinshape in Configuration > Providers, or visit it with Thingport Grab, to see your likes and collections here."
+      }
+    },
+    "toymakr3d": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open toymakr3d.com while signed in. It connects your account, and sends a new sign-in whenever you sign in there again.",
+          "Or by hand: sign in at toymakr3d.com and open your browser's developer tools (F12).",
+          "Go to the Network tab, reload the page, click any toymakr3d.com request and copy its Cookie header, then paste it below."
+        ],
+        "placeholder": "The Cookie header of a signed-in toymakr3d.com request"
+      },
+      "status": {
+        "notConnected": "Toymakr3D gives its files to signed-in users only, the free models included. Connect your account to import them and to read your liked products.",
+        "expired": "Sign-in expired. Sign in on toymakr3d.com with Thingport Grab, or connect Toymakr3D again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "Toymakr3D: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "A one-designer site of articulated robot and mecha models, most of them free: Transformers, Megazords, Gundams and the like.",
+        "signIn": "Your own sign-in, for the files and your likes.",
+        "grab": "Sends your sign-in as you visit toymakr3d.com.",
+        "setup": [
+          "Install Thingport Grab, enable it on Toymakr3D and open toymakr3d.com signed in.",
+          "By hand: copy the Cookie header of a signed-in toymakr3d.com request and paste it in Configuration → Providers."
+        ]
+      },
+      "admin": {
+        "description": "Models and each user's liked products. Both need the user's own sign-in; only the model pages read without one."
+      },
+      "sync": {
+        "notConnected": "Connect Toymakr3D in Configuration > Providers, or visit it with Thingport Grab, to see your liked products here."
+      }
+    },
+    "makerables": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open makerables.com while signed in. It connects your account, and sends a new sign-in whenever you sign in there again.",
+          "Or by hand: sign in at makerables.com and open your browser's developer tools (F12).",
+          "Go to the Network tab, reload the page, click any makerables.com request and copy its Cookie header, then paste it below."
+        ],
+        "placeholder": "The Cookie header of a signed-in makerables.com request"
+      },
+      "status": {
+        "notConnected": "Connect your account to read the projects you saved on Makerables. Its projects import without it.",
+        "expired": "Sign-in expired. Sign in on makerables.com with Thingport Grab, or connect Makerables again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "Makerables: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "Makera's project site, mixing CNC and 3D printing: every project is free and carries its NC and CAM files beside the model files Thingport imports.",
+        "signIn": "None to import; your sign-in adds your saved projects.",
+        "grab": "Sends your sign-in as you visit makerables.com.",
+        "setup": [
+          "Import any project link; no sign-in is needed.",
+          "For your saved projects: install Thingport Grab, enable it on Makerables and open makerables.com signed in."
+        ]
+      },
+      "admin": {
+        "description": "Projects and each user's saved ones. Projects import without a sign-in; saved projects need the user's own."
+      },
+      "sync": {
+        "notConnected": "Connect Makerables in Configuration > Providers, or visit it with Thingport Grab, to see your saved projects here."
+      }
+    },
+    "cgtrader": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open cgtrader.com while signed in. It connects your account, and sends a new sign-in whenever yours changes there.",
+          "Or by hand: sign in at cgtrader.com and open your browser's developer tools (F12).",
+          "Go to the Network tab, reload the page, click any cgtrader.com request and copy its Cookie header, then paste it below."
+        ],
+        "placeholder": "The Cookie header of a signed-in cgtrader.com request"
+      },
+      "status": {
+        "notConnected": "CGTrader gives its files to signed-in users only, the free models included. Connect your account to import them and to read your liked models and wishlist.",
+        "expired": "Sign-in expired. Sign in on cgtrader.com with Thingport Grab, or connect CGTrader again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "CGTrader: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "A marketplace of over three million 3D models, founded in Vilnius: game and film assets, renders and a large 3D printing catalogue, many of its models free.",
+        "signIn": "Your own sign-in, for the files, your likes and your wishlist.",
+        "grab": "Sends your sign-in as you visit cgtrader.com, with the token your browser got for passing its bot check.",
+        "flaresolverr": "Gets Thingport a bot-check token of its own, so downloads don't wait for Grab's.",
+        "setup": [
+          "Install Thingport Grab, enable it on CGTrader and open cgtrader.com signed in.",
+          "By hand: copy the Cookie header of a signed-in cgtrader.com request and paste it in Configuration → Providers.",
+          "Its downloads sit behind AWS's bot check: set up FlareSolverr, or let Grab hand over your browser's token."
+        ]
+      },
+      "admin": {
+        "description": "Models, and each user's liked models and wishlist. All need the user's own sign-in, the downloads a bot-check token from Grab or FlareSolverr too; only the model pages read without one."
+      },
+      "sync": {
+        "notConnected": "Connect CGTrader in Configuration > Providers, or visit it with Thingport Grab, to see your liked models and wishlist here."
+      }
+    },
+    "grabcad": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open grabcad.com while signed in. It connects your account, and sends a new sign-in whenever yours changes there.",
+          "Or by hand: sign in at grabcad.com and open your browser's developer tools (F12).",
+          "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → grabcad.com, copy the value of _grabcad_session and paste it below. The Cookie header of a signed-in grabcad.com request works too."
+        ],
+        "placeholder": "The _grabcad_session cookie, or a signed-in request's Cookie header"
+      },
+      "status": {
+        "notConnected": "GrabCAD gives its files to signed-in users only. Connect your account to import its models; anyone's likes read without it.",
+        "expired": "Sign-in expired. Sign in on grabcad.com with Thingport Grab, or connect GrabCAD again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "GrabCAD: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "Stratasys's community of engineers: a free library of millions of CAD models, from machine parts to whole assemblies, mostly as STEP files.",
+        "signIn": "Your own sign-in, for the files; anyone's likes read without it.",
+        "grab": "Sends your sign-in as you visit grabcad.com. It lasts two days from its last use there, so a visit now and then keeps it.",
+        "setup": [
+          "Install Thingport Grab, enable it on GrabCAD and open grabcad.com signed in.",
+          "By hand: copy the _grabcad_session cookie of a signed-in grabcad.com tab and paste it in Configuration → Providers."
+        ]
+      },
+      "admin": {
+        "description": "Models, and anyone's likes. Likes read without a sign-in; the files need each user's own. Thingport imports their STEP, STL, 3MF and OBJ files, not CAD systems' own formats."
+      },
+      "sync": {
+        "notConnected": "Connect GrabCAD in Configuration > Providers, or visit it with Thingport Grab, to see your likes here."
+      }
+    },
+    "owlcad": {
+      "status": {
+        "alwaysConnected": "OwlCAD is connected by default: it needs no account or key."
+      },
+      "about": {
+        "summary": "A CAD app that runs in the browser. Its gallery holds a large library of CC0 and CC-BY parts, and the CAD models its users share.",
+        "signIn": "Nothing to connect.",
+        "grab": "Needed for its CAD projects: OwlCAD stores no file for one, so its editor builds it.",
+        "setup": [
+          "Nothing to set up: paste an OwlCAD link, or import from its page with Thingport Grab.",
+          "A library part imports straight away. A CAD project waits for Thingport Grab to open it on owlcad.com, where OwlCAD's editor exports it."
+        ]
+      },
+      "admin": {
+        "description": "A browser CAD app: its library parts import on their own, its CAD projects through Thingport Grab."
+      },
+      "sync": {
+        "notConnected": "OwlCAD can't be reached right now."
       }
     }
   }

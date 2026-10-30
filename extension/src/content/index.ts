@@ -19,8 +19,14 @@ import { trackViewedModel } from "./recentlyViewed";
 import { errorHtml } from "./panels/results";
 import { api } from "./runtime";
 import { closeSetupModal, openSetupModal } from "./setupModal";
-import { mountFab, mountHost, mountPanel, renderPanel, setPanelOpen, unmountHost } from "./shell";
-import { manifestOf } from "../providers/index.generated";
+import {
+  SHARED_SCRIPT_EXPLAINER,
+  SHARED_SCRIPT_NOTE_HTML,
+  WITHHELD_SCRIPT_EXPLAINER,
+  WITHHELD_SCRIPT_NOTE_HTML,
+} from "./scriptNote";
+import { mountFab, mountFabNote, mountHost, mountPanel, renderPanel, setPanelOpen, unmountHost } from "./shell";
+import { manifestOf, providerOfHost } from "../providers/index.generated";
 
 declare global {
   interface Window {
@@ -33,6 +39,15 @@ let initToken = 0;
 
 function reportTabIconState(active: boolean): void {
   void send("SET_TAB_ICON_STATE", { active });
+}
+
+// Which provider's site this is, so the popup can put it above the rest -- it has no way to read the address itself
+// (background/providerTab.ts). Said again whenever the tab comes back to the front, so the note is there even if
+// something cleared it meanwhile. Not part of init(): it holds for every page of the site, importable or not,
+// whether or not Grab is set up.
+function reportProviderSite(): void {
+  const provider = providerOfHost(location.hostname);
+  if (provider) void send("NOTE_PROVIDER_TAB", { provider });
 }
 
 function unmount(): void {
@@ -184,6 +199,21 @@ async function init(): Promise<void> {
   });
   reportTabIconState(true);
 
+  // A model built from a script says under the icon whether the script comes with it, before anyone opens the
+  // panel and finds out. Best-effort and last: a page that won't say is treated as any other model.
+  if (classification.kind === "single") {
+    void CONTENT_MODULES[classification.provider]
+      .scriptState?.(pageUrl)
+      .then((script) => {
+        if (!script || isStale()) return;
+        const [html, explainer] = script.withheld
+          ? [WITHHELD_SCRIPT_NOTE_HTML, WITHHELD_SCRIPT_EXPLAINER]
+          : [SHARED_SCRIPT_NOTE_HTML, SHARED_SCRIPT_EXPLAINER];
+        mountFabNote(root, html, explainer);
+      })
+      .catch(() => undefined);
+  }
+
   // A guided import that stopped early lands back here, so show why.
   if (jobRes?.ok && jobRes.data.error) {
     const { message, imported, total } = jobRes.data.error;
@@ -192,24 +222,21 @@ async function init(): Promise<void> {
   }
 }
 
-// All three sites are SPAs, so this script runs once per tab. Patch pushState/replaceState, listen
-// for popstate, and poll as a safety net.
+// The sites are SPAs, so this script runs once per tab and has to notice the address changing under it. A content
+// script can't hook the page's own history.pushState -- it runs in a JavaScript world of its own, so replacing
+// History's methods there only catches calls made from this script, of which there are none -- so popstate covers
+// going back and forward, and a poll covers the links.
 function installNavigationWatcher(): void {
   let lastHref = location.href;
   const onLocationChange = () => {
     if (location.href === lastHref) return;
     lastHref = location.href;
+    // Said again because the browser treats this as a navigation and drops what it knows about the tab, the note
+    // the popup features the site from included (background/providerTab.ts).
+    reportProviderSite();
     unmount();
     void init();
   };
-  for (const method of ["pushState", "replaceState"] as const) {
-    const original = history[method];
-    history[method] = function (this: History, ...args: Parameters<History["pushState"]>) {
-      const result = original.apply(this, args);
-      onLocationChange();
-      return result;
-    };
-  }
   window.addEventListener("popstate", onLocationChange);
   setInterval(onLocationChange, 1000);
 }
@@ -238,6 +265,11 @@ if (!window.thingportGrabInjected) {
     },
   });
 
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) reportProviderSite();
+  });
+
   installNavigationWatcher();
+  reportProviderSite();
   void init();
 }

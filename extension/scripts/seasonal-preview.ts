@@ -10,6 +10,12 @@ import * as esbuild from "esbuild";
 import * as sass from "sass";
 import { SEASONS, seasonFor, type Season } from "../src/shared/season";
 import { SEASONAL_PLACEMENT, composeSeasonalMark, svgDataUrl } from "../src/shared/seasonalMark";
+import {
+  SHARED_SCRIPT_EXPLAINER,
+  SHARED_SCRIPT_NOTE_HTML,
+  WITHHELD_SCRIPT_EXPLAINER,
+  WITHHELD_SCRIPT_NOTE_HTML,
+} from "../src/content/scriptNote";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SRC = path.join(ROOT, "src");
@@ -89,7 +95,7 @@ function popupHeader(overlay: string | null, dark: boolean): string {
 
 // The floating icon's stylesheet, with both palettes as classes instead of following the system.
 const fabCss = sass.compileString(
-  `@use "fab"; @use "../../styles/tokens" as t;
+  `@use "fab"; @use "fab-note"; @use "../../styles/tokens" as t;
    .tg-light { @include t.theme-vars(t.$palette-light); } .tg-dark { @include t.theme-vars(t.$palette-dark); }
    svg [stroke="#1f1f1f"] { stroke: t.c("text"); }`,
   { url: pathToFileURL(path.join(SRC, "content", "styles", "_preview.scss")) },
@@ -99,6 +105,13 @@ const mark = (overlay: string | null, dodge: boolean, extra = "") =>
 const fab = (overlay: string | null, dodge: boolean) =>
   `<button type="button" class="tg-fab" aria-label="Import to Thingport"><span class="tg-fab__body"><span class="tg-fab__blob"></span>` +
   `${mark(overlay, dodge)}</span></button>`;
+
+// The icon with the line it wears under it on a model built from a generator script (content/scriptNote.ts):
+// one for a script that comes along, one for a script its creator held back.
+const attr = (text: string) => text.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+const fabWithNote = (overlay: string | null, dodge: boolean, shared: boolean) =>
+  `${fab(overlay, dodge)}<div class="tg-fab-note" title="${attr(shared ? SHARED_SCRIPT_EXPLAINER : WITHHELD_SCRIPT_EXPLAINER)}">` +
+  `${shared ? SHARED_SCRIPT_NOTE_HTML : WITHHELD_SCRIPT_NOTE_HTML}</div>`;
 
 // The floating icon's own pull (src/content/magnet.ts), on each one here.
 const magnetJs = (
@@ -135,6 +148,10 @@ for (const season of [null, ...SEASONS] as (Season | null)[]) {
       <div class="stack">${popupHeader(overlay, false)}${popupHeader(overlay, true)}</div>
       <div class="page tg-light">${fab(overlay, dodge)}</div>
       <div class="page page--dark tg-dark">${fab(overlay, dodge)}</div>
+      <div class="page page--noted tg-light">${fabWithNote(overlay, dodge, true)}</div>
+      <div class="page page--noted page--dark tg-dark">${fabWithNote(overlay, dodge, true)}</div>
+      <div class="page page--noted tg-light">${fabWithNote(overlay, dodge, false)}</div>
+      <div class="page page--noted page--dark tg-dark">${fabWithNote(overlay, dodge, false)}</div>
     </div>
   </section>`);
 }
@@ -170,13 +187,17 @@ h1 { margin: 0 0 4px; font-size: 22px; }
   background: #eef0f4; border: 1px solid var(--line); }
 .page--dark { background: #12151c; }
 .page .tg-fab { position: relative; right: auto; bottom: auto; }
+/* Fixed to the viewport's corner on a real page; here the icon and its line are stacked so both can be seen. */
+.page--noted { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+.page--noted .tg-fab-note { position: relative; right: auto; bottom: auto; transform: none; animation: none; }
 </style>
 </head>
 <body>
 <h1>Grab seasonal icons</h1>
-<p class="lead">Each occasion's icon as Grab shows it: large, in the popup's header (light, dark) and as the floating
-icon on a page (light, dark). Bring the mouse near a floating icon to feel its pull; on April Fools' it dodges.
-Made ${dateLabel(new Date())}.</p>
+<p class="lead">Each occasion's icon as Grab shows it: large, in the popup's header (light, dark), as the floating
+icon on a page (light, dark), then with the line it wears under it on a model built from a generator script -- the
+script shared (light, dark), and the script kept back by its creator (light, dark). Bring the mouse near a floating
+icon to feel its pull; on April Fools' it dodges. Hover a line for what it says. Made ${dateLabel(new Date())}.</p>
 <div class="grid">${cards.join("\n")}</div>
 <script>${magnetJs}</script>
 </body>

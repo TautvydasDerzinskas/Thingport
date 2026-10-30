@@ -1,0 +1,7 @@
+{
+  "model_count": "Models",
+  "collection_count": "Collections",
+  "author_count": "Authors",
+  "category_count": "Categories",
+  "failed": "Couldn't read the library's totals."
+}

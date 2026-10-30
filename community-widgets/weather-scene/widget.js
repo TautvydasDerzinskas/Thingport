@@ -3,45 +3,47 @@ const API = "https://api.open-meteo.com/v1/forecast";
 const TWILIGHT = 50 * 60 * 1000;
 const places = new Map();
 
-// WMO weather codes, as Open-Meteo reports them.
+// WMO weather codes, as Open-Meteo reports them: the label key for each, and which scene it draws. The words
+// themselves are in locales/<code>.json, which Thingport reads and hands over as `t()`.
 const CODES = {
-  0: ["Clear", "clear"],
-  1: ["Mostly clear", "clear"],
-  2: ["Partly cloudy", "partly"],
-  3: ["Overcast", "overcast"],
-  45: ["Fog", "fog"],
-  48: ["Rime fog", "fog"],
-  51: ["Light drizzle", "drizzle"],
-  53: ["Drizzle", "drizzle"],
-  55: ["Heavy drizzle", "drizzle"],
-  56: ["Freezing drizzle", "drizzle"],
-  57: ["Freezing drizzle", "drizzle"],
-  61: ["Light rain", "rain"],
-  63: ["Rain", "rain"],
-  65: ["Heavy rain", "heavy"],
-  66: ["Freezing rain", "rain"],
-  67: ["Freezing rain", "heavy"],
-  71: ["Light snow", "snow"],
-  73: ["Snow", "snow"],
-  75: ["Heavy snow", "heavysnow"],
-  77: ["Snow grains", "snow"],
-  80: ["Showers", "rain"],
-  81: ["Showers", "rain"],
-  82: ["Heavy showers", "heavy"],
-  85: ["Snow showers", "snow"],
-  86: ["Heavy snow showers", "heavysnow"],
-  95: ["Thunderstorm", "storm"],
-  96: ["Thunderstorm, hail", "storm"],
-  99: ["Thunderstorm, hail", "storm"],
+  0: ["code.clear", "clear"],
+  1: ["code.mostlyClear", "clear"],
+  2: ["code.partly", "partly"],
+  3: ["code.overcast", "overcast"],
+  45: ["code.fog", "fog"],
+  48: ["code.rimeFog", "fog"],
+  51: ["code.lightDrizzle", "drizzle"],
+  53: ["code.drizzle", "drizzle"],
+  55: ["code.heavyDrizzle", "drizzle"],
+  56: ["code.freezingDrizzle", "drizzle"],
+  57: ["code.freezingDrizzle", "drizzle"],
+  61: ["code.lightRain", "rain"],
+  63: ["code.rain", "rain"],
+  65: ["code.heavyRain", "heavy"],
+  66: ["code.freezingRain", "rain"],
+  67: ["code.freezingRain", "heavy"],
+  71: ["code.lightSnow", "snow"],
+  73: ["code.snow", "snow"],
+  75: ["code.heavySnow", "heavysnow"],
+  77: ["code.snowGrains", "snow"],
+  80: ["code.showers", "rain"],
+  81: ["code.showers", "rain"],
+  82: ["code.heavyShowers", "heavy"],
+  85: ["code.snowShowers", "snow"],
+  86: ["code.heavySnowShowers", "heavysnow"],
+  95: ["code.storm", "storm"],
+  96: ["code.stormHail", "storm"],
+  99: ["code.stormHail", "storm"],
 };
+// What a fixed scene is called, when one is picked instead of the live weather.
 const PREVIEW = {
-  clear: "Clear",
-  partly: "Partly cloudy",
-  overcast: "Overcast",
-  rain: "Rain",
-  snow: "Snow",
-  storm: "Thunderstorm",
-  fog: "Fog",
+  clear: "code.clear",
+  partly: "code.partly",
+  overcast: "code.overcast",
+  rain: "code.rain",
+  snow: "code.snow",
+  storm: "code.storm",
+  fog: "code.fog",
 };
 
 // grey: 0 blue sky, 1 grey, 2 dark grey.
@@ -174,7 +176,7 @@ function moonMask(age) {
 }
 
 export default function mount(thingport) {
-  const { root, settings, theme } = thingport;
+  const { root, settings, theme, t } = thingport;
   const q = (c) => root.querySelector(c);
   const wx = q(".wx");
   const layer = {
@@ -343,19 +345,20 @@ export default function mount(thingport) {
     }
     const deg = (v) => `${Math.round(v)}°`;
     text.temp.textContent = deg(cur.temperature_2m);
-    text.desc.textContent = PREVIEW[settings.scene] ?? CODES[cur.weather_code]?.[0] ?? "";
+    const key = PREVIEW[settings.scene] ?? CODES[cur.weather_code]?.[0];
+    text.desc.textContent = key ? t(key) : "";
     const name = settings.label?.trim() || place?.name || "";
     const hi = data.daily.temperature_2m_max?.[1];
     const lo = data.daily.temperature_2m_min?.[1];
-    text.place.textContent = [name, hi != null && lo != null ? `H ${deg(hi)} L ${deg(lo)}` : ""]
+    text.place.textContent = [name, hi != null && lo != null ? t("temp.highLow", { high: deg(hi), low: deg(lo) }) : ""]
       .filter(Boolean)
       .join(" · ");
     text.extra.innerHTML = "";
     if (settings.details) {
       for (const line of [
-        `Feels ${deg(cur.apparent_temperature)}`,
-        `Wind ${Math.round(cur.wind_speed_10m)} ${data.current_units.wind_speed_10m}`,
-        `Humidity ${cur.relative_humidity_2m}%`,
+        t("extra.feels", { temp: deg(cur.apparent_temperature) }),
+        t("extra.wind", { speed: Math.round(cur.wind_speed_10m), unit: data.current_units.wind_speed_10m }),
+        t("extra.humidity", { percent: cur.relative_humidity_2m }),
       ]) {
         const div = document.createElement("div");
         div.textContent = line;
@@ -386,7 +389,7 @@ export default function mount(thingport) {
       showText();
     } catch (err) {
       if (stopped) return;
-      if (!data) showText(err.message === "notfound" ? "Location not found" : "Couldn't load weather");
+      if (!data) showText(t(err.message === "notfound" ? "error.notFound" : "error.failed"));
     }
     draw();
   }

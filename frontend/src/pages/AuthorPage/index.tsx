@@ -7,6 +7,9 @@ import Typography from "@mui/material/Typography";
 import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
+import ModelFiltersButton from "../../components/ModelFilters/ModelFiltersButton";
+import FiltersEmptyNote from "../../components/ModelFilters/FiltersEmptyNote";
+import { useLibrarySources, useModelFilters } from "../../hooks/useModelFilters";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import PersonIcon from "@mui/icons-material/Person";
 import { UnauthorizedError } from "../../api/client";
@@ -51,6 +54,9 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
   const confirmDialog = useConfirm();
   const showToast = useToast();
   const isSelf = authorId === SELF_AUTHOR_ID;
+  const filters = useModelFilters();
+  const { generative, hiddenProviders } = filters;
+  const sources = useLibrarySources(null);
   const viewerAvatarUrl = useGravatarUrl(viewer?.email, 112);
   const [author, setAuthor] = useState<Author | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -96,7 +102,13 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
       try {
         if (isSelf) {
           const [printsResult, linkedAuthors] = await Promise.all([
-            printsApi.list({ author_id: SELF_AUTHOR_ID, limit: PAGE_SIZE, offset: 0 }),
+            printsApi.list({
+              author_id: SELF_AUTHOR_ID,
+              generative: generative || undefined,
+              hide_providers: hiddenProviders,
+              limit: PAGE_SIZE,
+              offset: 0,
+            }),
             authorsApi.myLinks(),
           ]);
           if (cancelled) return;
@@ -109,7 +121,13 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
         }
         const [authorResult, printsResult, linkedAuthors] = await Promise.all([
           authorsApi.get(authorId),
-          printsApi.list({ author_id: authorId, limit: PAGE_SIZE, offset: 0 }),
+          printsApi.list({
+            author_id: authorId,
+            generative: generative || undefined,
+            hide_providers: hiddenProviders,
+            limit: PAGE_SIZE,
+            offset: 0,
+          }),
           authorsApi.myLinks(),
         ]);
         if (cancelled) return;
@@ -130,13 +148,19 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authorId, isSelf]);
+  }, [authorId, isSelf, generative, hiddenProviders]);
 
   const loadMore = async () => {
     if (loadingMore || !hasMore || !authorId) return;
     setLoadingMore(true);
     try {
-      const result = await printsApi.list({ author_id: isSelf ? SELF_AUTHOR_ID : authorId, limit: PAGE_SIZE, offset });
+      const result = await printsApi.list({
+        author_id: isSelf ? SELF_AUTHOR_ID : authorId,
+        generative: generative || undefined,
+        hide_providers: hiddenProviders,
+        limit: PAGE_SIZE,
+        offset,
+      });
       setItems((prev) => [...prev, ...result.items]);
       setOffset(offset + result.items.length);
       setHasMore(result.hasMore);
@@ -341,6 +365,9 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
                 onUpdated={(updated) => setItems((prev) => replacePrints(prev, updated))}
                 onUnauthorized={onUnauthorized}
               />
+              <Box sx={{ ml: "auto" }}>
+                <ModelFiltersButton filters={filters} sources={sources} />
+              </Box>
             </Stack>
             {items.length ? (
               <Stack spacing={2}>
@@ -368,9 +395,13 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
                 {hasMore && <Box ref={loadMoreSentinelRef} sx={{ height: 1 }} />}
               </Stack>
             ) : (
-              <Typography variant="body2" color="text.secondary">
-                {t("models:author.noModels")}
-              </Typography>
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ color: "text.secondary" }}>
+                {filters.active ? (
+                  <FiltersEmptyNote filters={filters} />
+                ) : (
+                  <Typography variant="body2">{t("models:author.noModels")}</Typography>
+                )}
+              </Stack>
             )}
           </Box>
         </Box>

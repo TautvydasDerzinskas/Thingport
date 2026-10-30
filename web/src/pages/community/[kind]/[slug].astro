@@ -1,0 +1,381 @@
+---
+import { render } from "astro:content";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import Icon from "../../../components/Icon.astro";
+import ItemIcon from "../../../components/community/ItemIcon.astro";
+import ScreenshotGallery from "../../../components/community/ScreenshotGallery.astro";
+import { communityItems, docsLink, KIND_NAMES, type CommunityItem, type Kind } from "../../../lib/community";
+import { url } from "../../../lib/url";
+
+export async function getStaticPaths() {
+  const kinds: Kind[] = ["widgets", "tools"];
+  const items = (await Promise.all(kinds.map(communityItems))).flat();
+  return items.map((item) => ({ params: { kind: item.kind, slug: item.slug }, props: { item } }));
+}
+
+const { item } = Astro.props as { item: CommunityItem };
+const Readme = item.readme && (await render(item.readme)).Content;
+const tool = item.kind === "tools";
+const guide = tool
+  ? { label: "Tools guide", href: await docsLink("guides/tools", "for-admins") }
+  : { label: "Custom widgets guide", href: await docsLink("guides/custom-widgets") };
+---
+
+<BaseLayout
+  title={`${item.name} · Thingport ${tool ? "tool" : "dashboard widget"}`}
+  description={item.description || undefined}
+  search
+>
+  <article class="container entry">
+    <header class="head">
+      <nav class="crumbs" aria-label="Breadcrumb" data-pagefind-ignore>
+        <ol>
+          <li><a href={url("community/")}>Widgets & tools</a></li>
+          <li><a href={url(`community/#${item.kind}`)}>{KIND_NAMES[item.kind]}</a></li>
+          {
+            item.shelf && (
+              <li>
+                <a href={url(`community/#${item.shelf.id}`)}>{item.shelf.label}</a>
+              </li>
+            )
+          }
+        </ol>
+      </nav>
+      <div class="title">
+        <ItemIcon src={item.icon} kind={item.kind} size={56} />
+        <h1>{item.name}</h1>
+      </div>
+      {item.description && <p class="lead">{item.description}</p>}
+    </header>
+
+    {
+      item.screenshots.length > 0 && (
+        <div class="shots">
+          <ScreenshotGallery shots={item.screenshots} name={item.name} />
+        </div>
+      )
+    }
+
+    <aside class="side" aria-label={`About this ${tool ? "tool" : "widget"}`} data-pagefind-ignore>
+      <section class="panel get" aria-labelledby="get-it">
+        <h2 id="get-it">Get it in Thingport</h2>
+        {
+          tool ? (
+            <>
+              <p>An admin installs it, for everyone who sees tools:</p>
+              <ol>
+                <li>
+                  Open <strong>Administration → Tools</strong>.
+                </li>
+                <li>
+                  Under <strong>From the repository</strong>, double-click {item.name} for its details.
+                </li>
+                <li>
+                  Choose <strong>Install</strong>. It opens from <strong>Tools</strong> in the sidebar.
+                </li>
+              </ol>
+              {item.models && item.models.from.length > 0 && (
+                <p class="note">
+                  Its models are imported from {item.models.from.join(" and ")} as it's installed: connect{" "}
+                  {item.models.from.length === 1 ? "that site" : "those sites"} first, under{" "}
+                  <strong>Configuration → Providers</strong>.
+                </p>
+              )}
+            </>
+          ) : (
+            <ol>
+              <li>
+                Open <strong>Customize dashboard → Custom widgets → Community</strong>.
+              </li>
+              <li>
+                Choose <strong>Install</strong> beside {item.name}.
+              </li>
+              <li>
+                Add it from <strong>Add panel</strong> while editing your dashboard.
+              </li>
+            </ol>
+          )
+        }
+        <a class="more" href={guide.href}>{guide.label}<span aria-hidden="true"> ›</span></a>
+      </section>
+
+      <section class="panel" aria-labelledby="details">
+        <h2 id="details">Details</h2>
+        <dl class="facts">
+          <div>
+            <dt>Version</dt>
+            <dd>{item.version}</dd>
+          </div>
+          {
+            item.author && (
+              <div>
+                <dt>Author</dt>
+                <dd>{item.authorUrl ? <a href={item.authorUrl}>{item.author}</a> : item.author}</dd>
+              </div>
+            )
+          }
+          {
+            item.languages.length > 0 && (
+              <div>
+                <dt>Languages</dt>
+                <dd>{item.languages.join(", ")}</dd>
+              </div>
+            )
+          }
+          {
+            item.window && (
+              <div>
+                <dt>Window</dt>
+                <dd>
+                  {item.window.width} × {item.window.height} px
+                </dd>
+              </div>
+            )
+          }
+          <div class:list={{ stack: item.hosts.length > 0 }}>
+            <dt>Reaches</dt>
+            <dd>
+              {
+                item.hosts.length ? (
+                  <ul class="hosts" role="list">
+                    {item.hosts.map((host) => (
+                      <li>
+                        <code>{host}</code>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  "Nothing outside Thingport"
+                )
+              }
+            </dd>
+          </div>
+          {
+            item.models && (
+              <div>
+                <dt>Models</dt>
+                <dd>
+                  {item.models.count} {item.models.count === 1 ? "model" : "models"}, in{" "}
+                  <strong>Tool: {item.models.collection}</strong>
+                </dd>
+              </div>
+            )
+          }
+          <div class="stack">
+            <dt>Source</dt>
+            <dd>
+              <a class="source" href={item.source}>
+                <Icon name="github" size={15} />
+                <code>{item.dir}</code>
+              </a>
+            </dd>
+          </div>
+        </dl>
+      </section>
+    </aside>
+
+    {
+      Readme && (
+        <section class="readme" aria-labelledby="about">
+          <h2 id="about" class="visually-hidden">
+            About {item.name}
+          </h2>
+          <div class="prose">
+            <Readme />
+          </div>
+        </section>
+      )
+    }
+  </article>
+</BaseLayout>
+
+<style>
+  .entry {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 19rem;
+    grid-template-areas:
+      "head head"
+      "shots side"
+      "readme side";
+    grid-template-rows: auto auto 1fr;
+    column-gap: 2.5rem;
+    padding-top: clamp(1.5rem, 4vw, 2.5rem);
+    padding-bottom: clamp(3rem, 8vw, 5rem);
+  }
+  .head {
+    grid-area: head;
+    margin-bottom: 1.75rem;
+  }
+  .shots {
+    grid-area: shots;
+  }
+  .side {
+    grid-area: side;
+    align-self: start;
+    display: grid;
+    gap: 1rem;
+  }
+  .readme {
+    grid-area: readme;
+    min-width: 0;
+  }
+  .shots ~ .readme {
+    margin-top: 2rem;
+  }
+
+  .crumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin: 0 0 0.75rem;
+    padding: 0;
+    list-style: none;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+  .crumbs li + li::before {
+    content: "/";
+    content: "/" / "";
+    margin-inline-end: 0.375rem;
+  }
+  .crumbs a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .crumbs a:hover {
+    color: var(--heading);
+    text-decoration: underline;
+  }
+  .title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .title h1 {
+    margin: 0;
+    font-size: clamp(1.9rem, 4.5vw, 2.5rem);
+  }
+  .lead {
+    max-width: 46rem;
+    margin: 0.875rem 0 0;
+    color: var(--text-muted);
+    font-size: 1.125rem;
+  }
+
+  .panel {
+    padding: 1rem 1.125rem 1.125rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--panel);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+  }
+  .panel h2 {
+    margin: 0 0 0.625rem;
+    font-size: 1.0625rem;
+    letter-spacing: normal;
+  }
+  .panel p {
+    margin: 0 0 0.5rem;
+  }
+  .get ol {
+    margin: 0 0 0.75rem;
+    padding-left: 1.25rem;
+  }
+  .get li + li {
+    margin-top: 0.375rem;
+  }
+  .get strong {
+    color: var(--heading);
+    font-weight: 600;
+  }
+  .note {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+  }
+  .more {
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .more:hover {
+    text-decoration: underline;
+  }
+
+  .facts {
+    display: grid;
+    gap: 0.625rem;
+    margin: 0;
+  }
+  .facts div {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    gap: 0.75rem;
+  }
+  /* Host names and paths need the panel's whole width, so they go under their label. */
+  .facts .stack {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.125rem;
+  }
+  .facts dt {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+  }
+  .facts dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  .facts strong {
+    font-weight: 600;
+  }
+  .hosts {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .facts code {
+    font-size: 0.8125rem;
+  }
+  .source {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    max-width: 100%;
+  }
+  .source :global(svg) {
+    flex: none;
+  }
+
+  /* A key/value table (its header's last cell empty), as the docs show one: full width, its labels muted. */
+  .readme :global(table:has(> thead > tr > th:last-child:empty)) {
+    display: table;
+    width: 100%;
+  }
+  .readme :global(table:has(> thead > tr > th:last-child:empty) td:first-child) {
+    width: 1%;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  /* Only where the whole panel fits beside the page, or its end would be out of reach. */
+  @media (min-width: 60rem) and (min-height: 50rem) {
+    .side {
+      position: sticky;
+      top: calc(var(--header-height) + 1.5rem);
+    }
+  }
+  @media (max-width: 59.99rem) {
+    .entry {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: "head" "shots" "side" "readme";
+      grid-template-rows: none;
+    }
+    .shots ~ .side {
+      margin-top: 1.75rem;
+    }
+    .readme {
+      margin-top: 2rem;
+    }
+  }
+</style>

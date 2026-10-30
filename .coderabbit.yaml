@@ -37,6 +37,14 @@ reviews:
         relative to the code they describe, but don't ask for comments that only restate the code.
         Commits follow Conventional Commits, and the type decides the next version of each package.
 
+        Thingport is self-hosted, and plain-HTTP instances (on a LAN, or locally, with no TLS certificate) are
+        supported on purpose. Don't suggest enforcing HTTPS for the instance or anything that talks to it (the web
+        app, the extension, Bridge, MCP and API clients): no redirects to https, HSTS, `upgrade-insecure-requests`,
+        cookies marked `Secure` regardless of the request's scheme, or validation that rejects or rewrites an
+        `http://` instance URL. Do flag changes that would break plain HTTP, including APIs that exist only in
+        secure contexts (`navigator.clipboard`, `crypto.randomUUID`, `crypto.subtle`) used without a fallback, and
+        an extension CSP that brings back `upgrade-insecure-requests`. Requiring https for third-party URLs is fine.
+
     - path: "backend/**"
       instructions: |
         Express + Prisma + TypeScript API. Check routes for missing authentication/authorisation (the app

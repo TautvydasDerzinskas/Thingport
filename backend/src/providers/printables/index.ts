@@ -44,7 +44,8 @@ export const printablesImport: SourcedImport<null, Model> = {
   missingMessage: "This Printables model could not be found, or isn't public.",
   noFilesMessage: "None of this model's files could be downloaded.",
   async downloadModel({ externalId }, model, _auth, _requested, kit) {
-    const modelFiles = model.plateFiles.filter((file) => kit.isModelFile(file.name));
+    // Scripts too: a model may publish the .scad it was generated from beside its meshes.
+    const modelFiles = model.plateFiles.filter((file) => kit.isImportableFile(file.name));
     if (!modelFiles.length) {
       throw new HttpError(
         400,

@@ -8,7 +8,9 @@ One folder per provider site Thingport imports from. How a provider is built, an
 - `_lib/`: the types and the small helpers every package shares.
 - `<id>/urls.ts`: how its links are read and written, the same in all three packages.
 - `<id>/urls.fixtures.json`: the URL corpus, see below.
-- `<id>/docs.ts`: what the docs say of it beyond the manifest, read only by the generator.
+- `<id>/docs.ts`: what the docs say of it beyond the manifest, read by the generator alone -- except `about`, two
+  or three sentences about the site itself, which it carries into the packages as `index.generated.ts`'s `ABOUT`
+  (Thingport Grab's popup shows it for the site you're on).
 
 The backend, frontend and extension build on their own, so `npm run providers:sync` (`scripts/sync-providers.mjs`)
 copies this folder into each of them, beside the package's own code for each provider, as `<file>.generated.ts`:

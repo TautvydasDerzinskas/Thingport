@@ -20,6 +20,33 @@ body:
         - Website or docs
     validations:
       required: true
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Provider
+      description: The site it's about, if any. It's then listed under Known problems on that site's docs page.
+      options:
+        - Not about a particular site
+        # providers:bug-form
+        # Written by scripts/sync-providers.mjs from providers/: change it there.
+        - MakerWorld
+        - Printables
+        - Thingiverse
+        - MyMiniFactory
+        - Snapmaker Space
+        - MakerOnline
+        - Creality Cloud
+        - NexPrint
+        - Thangs
+        - Cults3D
+        - eufyMake
+        - Pinshape
+        - OwlCAD
+        - Toymakr3D
+        - Makerables
+        - CGTrader
+        - GrabCAD
+        # /providers:bug-form
   - type: input
     id: backend_version
     attributes:

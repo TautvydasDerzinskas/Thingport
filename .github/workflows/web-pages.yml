@@ -13,12 +13,16 @@ on:
       - "extension/CONTRIBUTING.md"
       - "extension/PRIVACY.md"
       - "extension/docs/screenshots/**"
+      - "release-notes/screenshots/**"
       - "CONTRIBUTING.md"
       - "docker-compose.deploy.yml"
       - "install.sh"
       - ".env.example"
       - "frontend/src/assets/**"
       - "frontend/public/**"
+      - "frontend/src/utils/season.ts"
+      - "community-widgets/**"
+      - "tools/**"
       - ".github/workflows/web-pages.yml"
   pull_request:
     branches: [main, develop]
@@ -30,12 +34,16 @@ on:
       - "extension/CONTRIBUTING.md"
       - "extension/PRIVACY.md"
       - "extension/docs/screenshots/**"
+      - "release-notes/screenshots/**"
       - "CONTRIBUTING.md"
       - "docker-compose.deploy.yml"
       - "install.sh"
       - ".env.example"
       - "frontend/src/assets/**"
       - "frontend/public/**"
+      - "frontend/src/utils/season.ts"
+      - "community-widgets/**"
+      - "tools/**"
       - ".github/workflows/web-pages.yml"
   workflow_dispatch: {}
 
@@ -76,6 +84,8 @@ jobs:
           SITE_URL: ${{ steps.pages.outputs.origin }}
           # A custom domain has an empty base_path, which must become "/" (empty means "use the default").
           BASE_PATH: ${{ steps.pages.outputs.base_path || (github.event_name != 'pull_request' && '/' || '') }}
+          # The star count on the GitHub button (src/lib/github.mjs); a token lifts the API's anonymous rate limit.
+          GITHUB_TOKEN: ${{ github.token }}
       - if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:

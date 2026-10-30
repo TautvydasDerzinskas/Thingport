@@ -1,0 +1,32 @@
+{
+  "name": "Print cost estimator",
+  "description": "Drop a model and get its print time, filament and real cost: material, power, machine wear, failures, your time and fees, with the price to charge for the margin you want.",
+  "version": "1.0.1",
+  "author": "Thingport contributors",
+  "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
+  "window": {
+    "width": 1240,
+    "height": 800
+  },
+  "hosts": [],
+  "category": "calculators",
+  "locales": ["en", "lt", "es", "fr"],
+  "screenshots": [
+    {
+      "file": "screenshots/estimate.webp",
+      "caption": "A model measured and priced: the faces that need holding up picked out in the view, what the print costs layer by layer, and what it makes at the price charged today."
+    },
+    {
+      "file": "screenshots/sliced.webp",
+      "caption": "A sliced file beside a model: its time and weight are the slicer's own, so nothing about it is estimated, and the order total follows the quantity."
+    },
+    {
+      "file": "screenshots/setup.webp",
+      "caption": "Setup, in the dark theme: the printer's cost, bed and print settings, the filament, and the rates a price is built from, kept for each user."
+    },
+    {
+      "file": "screenshots/library.webp",
+      "caption": "A part taken straight out of the library: search the models and pick the file to measure."
+    }
+  ]
+}

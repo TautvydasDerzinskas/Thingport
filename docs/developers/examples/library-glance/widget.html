@@ -1,0 +1,32 @@
+<style>
+  .glance {
+    display: grid;
+    grid-template-columns: repeat(var(--columns, 4), 1fr);
+    gap: 8px;
+    height: 100%;
+    padding: 12px;
+    box-sizing: border-box;
+    font-family: var(--tp-font);
+    color: var(--tp-text);
+  }
+  .glance div {
+    display: grid;
+    align-content: center;
+    padding: 8px;
+    border-radius: 8px;
+    background: var(--tp-background);
+  }
+  .glance strong {
+    font-size: 22px;
+    font-variant-numeric: tabular-nums;
+  }
+  .glance span {
+    font-size: 12px;
+    color: var(--tp-text-muted);
+  }
+  .glance .failed {
+    grid-column: 1 / -1;
+    color: var(--tp-error);
+  }
+</style>
+<div class="glance"></div>

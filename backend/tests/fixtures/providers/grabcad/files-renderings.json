@@ -1,0 +1,35 @@
+{
+  "folder_path": [
+    {
+      "id": 469357,
+      "name": "Arduino Uno R3"
+    },
+    {
+      "id": 469358,
+      "name": "Renderings"
+    }
+  ],
+  "cached_slug": "arduino-uno-r3-1",
+  "folders": [],
+  "files": [
+    {
+      "id": 3956105,
+      "name": "ptabel_svdm.jpg",
+      "system": "Rendering",
+      "extension": "jpg",
+      "type": ".jpg",
+      "created_at": "2014-02-27T18:10:40Z",
+      "updated_at": "2014-02-27T18:10:40Z",
+      "is_viewable": false,
+      "download_url": "https://grabcad.com/community/api/v1/models/arduino-uno-r3-1/files/download?cadid=3ee38914ea3c23dca433750d692d6323",
+      "default_rendering": false,
+      "thumbnail": "https://grabcad.com/screenshots/pics/3ee38914ea3c23dca433750d692d6323/tiny.jpg",
+      "rendering_urls": {
+        "original": "https://grabcad.com/screenshots/pics/3ee38914ea3c23dca433750d692d6323/original.jpg",
+        "large": "https://grabcad.com/screenshots/pics/3ee38914ea3c23dca433750d692d6323/large.jpg",
+        "tiny": "https://grabcad.com/screenshots/pics/3ee38914ea3c23dca433750d692d6323/tiny.jpg"
+      },
+      "thumbnail_missing": "https://grabcad.com/screenshots/pics/missing_tiny.png"
+    }
+  ]
+}

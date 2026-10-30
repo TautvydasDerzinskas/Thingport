@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import { analyzeMesh, summarizeQuality, type MeshStats, type QualityReport } from "./meshQuality";
 import { loadThreeMfMeshes, type PreviewRefusal } from "./modelPreviewRender";
+import { loadStepMeshes } from "./stepLoader";
 
 // Loads a model file and runs the printability check on each mesh in it.
 //
@@ -31,6 +32,10 @@ export async function checkModelQuality(srcPath: string, ext: string): Promise<Q
         const position = mesh.isMesh ? mesh.geometry.getAttribute("position") : null;
         if (position) meshes.push(analyzeMesh(position.array, mesh.geometry.getIndex()?.array));
       });
+    } else if (ext === ".step" || ext === ".stp") {
+      const parts = await loadStepMeshes(srcPath);
+      if (parts.length === 0) return "unsupported";
+      meshes = parts.map((part) => analyzeMesh(part.positions, part.indices));
     } else {
       return "unsupported";
     }

@@ -1,161 +1,201 @@
 {
-  "version": "1.3.0",
-  "title": "Build your dashboard, or let AI build it",
-  "summary": "The dashboard is now a grid you arrange yourself, and a panel can be anything: describe one to your AI assistant and it makes it, or install one the community shared. There are also two new sites to import from, shared disk space for identical files, 17 new tools for AI assistants, bulk tag and collection editing, and all your slicers in one menu.",
+  "version": "1.4.0",
+  "title": "Tools that conjure models, and models you can change",
+  "summary": "Happy Halloween! 🎃 Thingport now runs small apps of its own — planners, generators and calculators that work with your library, with nine to install and an editor to write your own. A model that came with the script it was generated from can be customized and generated again in your browser, in colour, and multicolour models finally reach your slicer in the colours they were painted in. There's also pairing for Thingport Grab instead of a saved password, five new sites to import from, CGTrader and GrabCAD among them, a way to find the ghost models whose files have gone missing, and a redesigned thingport.net whose docs you can search from any page.",
   "items": [
     {
       "type": "feature",
       "highlight": true,
-      "title": "A dashboard you arrange yourself",
-      "description": "The dashboard is now a grid of panels. Click the pencil to drag panels around, resize them from the corner, merge several into tabs and change each one's settings. New panels show RSS feeds, whether your printers and servers are up, the server's CPU and memory, a launcher for your favourite sites and what's trending on the sites you pick, and you can add RSS, Launcher, Weather and Explore trending more than once. Templates save whole dashboards to switch between. The house icon opens yours on its own page, without the menus, to set as your browser's homepage, and ⌘S searches from there.",
+      "title": "Tools: small apps that work with your library",
+      "description": "A tool opens in a window of its own from Tools in the sidebar: a planner, a generator, a calculator. Nine come with Thingport — planners for Multiboard, Gridfinity, Skadis and enclosures, generators for QR codes and keyrings, a print cost estimator, a MakerWorld 3MF normalizer and a customizer for OpenSCAD scripts. An admin installs the ones they want under Administration → Tools, with screenshots to look through first, and chooses who may use them: admins only, everyone, or the users they pick. A tool works with your library — it can search your models, read their files, make collections and save what it builds back as a model of your own — and a tool that needs models of its own brings them in a collection of their own, kept once for the whole instance rather than once per person.",
       "images": [
         {
-          "src": "screenshots/1.3.0-dashboard.webp",
-          "caption": "The Homepage template, with a community widget on the right"
+          "src": "screenshots/1.4.0-tools-halloween.webp",
+          "caption": "The Tools page, with the tools on shelves by what they do"
         },
         {
-          "src": "screenshots/1.3.0-add-panel.webp",
-          "caption": "Add panel lists the built-in panels and your custom widgets"
-        }
-      ],
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/dashboard.md"
-    },
-    {
-      "type": "feature",
-      "highlight": true,
-      "title": "Ask AI for any panel you can think of",
-      "description": "A custom widget is a dashboard panel with its own code, so it can show anything a web page can: your printer's progress, your filament stock, a chart of your library. You don't have to write it. Connect your AI assistant to Thingport over MCP, allow its token to use Save a dashboard widget, and describe the panel you want. It reads Thingport's widget guide, writes the widget and saves it, ready under Add panel. To change it, ask again, or open it in the editor, where it runs next to its code as you type. Use AI in a new widget walks you through it.",
-      "code": "Make me a Thingport widget that shows my OctoPrint printer’s progress.",
-      "images": [
-        {
-          "src": "screenshots/1.3.0-widget-ai.webp",
-          "caption": "Use AI shows how to have your assistant make a widget"
+          "src": "screenshots/1.4.0-admin-tools-halloween.webp",
+          "caption": "Administration → Tools: install the ones you want, and say who may use them"
         },
-        { "src": "screenshots/1.3.0-widget-editor.webp", "caption": "The editor runs the widget next to its code" }
-      ],
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/custom-widgets.md"
-    },
-    {
-      "type": "feature",
-      "highlight": true,
-      "title": "Share widgets with every Thingport",
-      "description": "Widgets the community publishes install in one click under Customize dashboard → Custom widgets → Community. Before you install one, you see its author, version and description, and which sites it may reach. Updates wait until you approve them. The first, Weather scene, draws the weather as an animated sky. To share a widget you made, download it for publishing from Mine and open a pull request; once it's merged, every Thingport can install it. Admins can turn users' own and community widgets on or off under Administration → Dashboard, and see who uses which.",
-      "images": [
         {
-          "src": "screenshots/1.3.0-community-widgets.webp",
-          "caption": "Community widgets show who made them before you install"
+          "src": "screenshots/1.4.0-tool-qr-halloween.webp",
+          "caption": "The QR code generator, one of the nine, in a window of its own"
         }
       ],
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/tree/main/community-widgets"
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/tools.md"
     },
     {
       "type": "feature",
       "highlight": true,
-      "title": "Two new sites: eufyMake and Pinshape",
-      "description": "Thingport now imports from twelve sites. eufyMake models import without a sign-in, your eufyMake likes sync through Thingport Grab, and its models open straight in eufyMake Studio. Pinshape reads anyone's models, collections and likes without a sign-in. Downloading its files needs your Pinshape sign-in, which Grab sends from a signed-in tab. Both sites appear in the dashboard's Explore trending panel. Pinshape doesn't say which category a model is in, so its models arrive uncategorized.",
+      "title": "Make your own tool, or ask an AI to write it",
+      "description": "With Users' own tools on, New tool on the Tools page opens an editor: the tool's details, its script as an ES module, the words it shows in each language, its HTML and CSS, and a preview running beside them. It starts from a working tool, Cube maker, that uses most of what a tool can do, and the SDK reference beside it lists the rest. Quicker still, summon one: describe it to an AI assistant connected over MCP. A new API token already allows Save a tool, the assistant reads Thingport's own tool guide before it writes anything, and what it saves appears on your Tools page ready to open. Ask again to change it. Use AI on the Tools page shows the steps with example prompts to copy and the connect command ready to paste.",
+      "code": "Make me a Thingport tool that turns a few words into a printable label and saves it to my library.",
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/tools.md",
       "images": [
         {
-          "src": "screenshots/1.3.0-providers.webp",
-          "caption": "Both are on for everyone, under Administration → Providers"
-        }
-      ],
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/providers/pinshape.md"
-    },
-    {
-      "type": "feature",
-      "highlight": true,
-      "title": "Users importing the same model share its disk space",
-      "description": "When several users import the same model, each still gets their own copy. On btrfs, XFS and ZFS 2.2 or later, those copies can now share space on disk: a copy-on-write clone takes no extra space until one copy changes, and editing one never touches another user's. This covers model files, supporting and prepared print files, gallery pictures and description images, matched by their content. Admins turn it on under Administration → Storage → Identical files. Turning it on, or Check again, also goes over the files already stored, in the background. It's off by default, and on other filesystems files are stored as before.",
-      "images": [{ "src": "screenshots/1.3.0-identical-files.webp", "caption": "Off until an admin turns it on" }],
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/storage.md"
-    },
-    {
-      "type": "feature",
-      "highlight": true,
-      "title": "17 new tools for AI assistants",
-      "description": "Assistants connected over MCP can now do much more with your library. They can upload a model from files, read a model's files and look at its pictures, and edit its title, description, tags and category. They can also add, rename and remove a model's files, reorder its pictures and pick the cover, create categories, take models out of collections and delete models. Widget tools let them write dashboard widgets and find or upload icons for them. Tools that change your library start off for a token until you allow them under Token permissions, and the ones that remove or overwrite something tell the assistant so.",
-      "images": [
+          "src": "screenshots/1.4.0-tools-ai-halloween.webp",
+          "caption": "Use AI walks through connecting an assistant, with prompts to copy"
+        },
         {
-          "src": "screenshots/1.3.0-mcp-tools.webp",
-          "caption": "Tools that change your library stay off until you allow them"
+          "src": "screenshots/1.4.0-tool-editor-halloween.webp",
+          "caption": "The editor starts from a working tool, with the SDK reference beside it"
         }
-      ],
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/mcp.md"
-    },
-    {
-      "type": "feature",
-      "title": "Edit the tags and collections of many models at once",
-      "description": "Select models, then choose Edit tags or Edit collections. The dialog shows which tags or collections all the selected models have and which only some do, and how many. You can add a tag to all of them, take one off, or put the whole selection in a collection in one go. Nothing changes until you click the button, which says what it will do.",
-      "images": [
-        { "src": "screenshots/1.3.0-bulk-tags.webp", "caption": "Tags only some of the models have show how many" },
-        { "src": "screenshots/1.3.0-bulk-collections.webp", "caption": "The same for collections" }
       ]
     },
     {
       "type": "feature",
-      "title": "All your slicers, and eufyMake Studio",
-      "description": "Configuration → Slicer now takes every slicer on your computer, not just one. A model's button opens the one you used last. Its arrow lists the others and downloads the file, or all of a model's files as a zip, which replaces the separate download button. eufyMake Studio joins the list, and opens models straight from Thingport without Bridge.",
+      "highlight": true,
+      "title": "Change a model and generate it again",
+      "description": "A model that came with the OpenSCAD script it was generated from now leads with Customize rather than Open. It opens the creator's own sliders, choices and text boxes — read out of the script by OpenSCAD itself, grouped as they grouped them — with the model on a stage beside them. Every change can be undone and redone, with the buttons or Ctrl/Cmd+Z, so no experiment stays a monster for long, and the script itself is a button away. What comes out downloads as a 3MF or an STL, or saves back into your library as a model of its own with a copy of the script beside it, so it can be changed again in turn. The engine runs in your browser: the script and the values you pick never leave the tab, and there is nothing to install. Models now arrive with their script from every site that publishes one, not just MakerWorld, and a creator who kept theirs back is marked Script not shared so an empty menu isn't left to be misread.",
       "images": [
-        { "src": "screenshots/1.3.0-slicers.webp", "caption": "Turn on each slicer you have" },
-        { "src": "screenshots/1.3.0-open-in-slicer.webp", "caption": "The others are one click away" }
+        {
+          "src": "screenshots/1.4.0-generative-model-halloween.webp",
+          "caption": "Customize takes the main button on a model that came with its script"
+        },
+        {
+          "src": "screenshots/1.4.0-customizer-halloween.webp",
+          "caption": "The creator's own parameters, with what they build beside them"
+        },
+        {
+          "src": "screenshots/1.4.0-filters-halloween.webp",
+          "caption": "Generative narrows the library to the models that have a script"
+        }
       ],
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/slicers.md"
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/supporting-files.md"
     },
     {
       "type": "feature",
-      "title": "Thingport Grab: Thingiverse in dark mode, without ads",
-      "description": "Thingport Grab, updated through your browser's extension store, adds extras that work even without a Thingport: a dark theme for Thingiverse that follows your system theme, and hiding Thingiverse's banners, ad cards and video ads. Each can be switched off in the popup. The popup gets a dark theme of its own, and a History tab with your recent imports and the last models you opened. Disconnect now also removes Grab's connection from your Thingport profile.",
-      "images": [{ "src": "screenshots/1.3.0-grab-features.webp", "caption": "Extras that work without a Thingport" }]
+      "highlight": true,
+      "title": "Multicolour models, from import through to your slicer",
+      "description": "A model painted in several filaments — a MakerWorld or Bambu Studio project, or one a script coloured — now shows in its own colours in the 3D preview and as its first picture, where it used to draw flat in one. A generated model keeps its colours all the way into the file: a saved 3MF says them twice over, as a colour group that Bambu Studio and OrcaSlicer offer to put on filaments, and as per-face painting that Bambu Studio, OrcaSlicer and PrusaSlicer apply to filament slots straight away. The mesh stays in one piece either way, so nothing arrives at the plate as open shells. Thumbnails, cards and tag mosaics keep the grey render Thingport tints, so a list of models still reads as one set in whatever colour you picked, and the colour picker steps aside only for the models that brought colours of their own.",
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/3d-previews.md",
+      "images": [
+        {
+          "src": "screenshots/1.4.0-multicolor-halloween.webp",
+          "caption": "A painted model drawn in the colours it was painted in"
+        }
+      ]
     },
     {
       "type": "feature",
-      "title": "Stay signed in",
-      "description": "A Thingport tab left open, like a dashboard set as your homepage, no longer drops you on the sign-in page: your session renews itself, and survives your computer sleeping or the network dropping. Admins choose how long an unused browser stays signed in under Administration → Auth, a month by default. Changing your password signs out your other browsers."
+      "highlight": true,
+      "title": "Pair Thingport Grab instead of typing a password",
+      "description": "Connect in Grab's popup now leads with Pair with Thingport: it opens your instance in a tab to approve this browser and hands back a connection, so no password is ever saved in the extension. Entering credentials is still there under it, for instances too old to pair and anyone who would rather. The popup itself is two columns now, led by a card for the site the tab you're on belongs to — its logo, what that site is, and a tick or an Enable of its own — so the site in front of you takes no searching for. The import panel opens out of its floating icon and shows what you're importing, the model's picture and name read from the page, with one box that searches your collections and creates a new one as you type. On MakerWorld it also says, before you commit, whether the model's generator script comes with it.",
+      "images": [
+        {
+          "src": "screenshots/1.4.0-grab-pair-halloween.webp",
+          "caption": "Pairing opens a tab to approve this browser; no password is saved"
+        }
+      ]
     },
     {
       "type": "feature",
-      "title": "Search from anywhere",
-      "description": "The search button in the top bar opens search over the page you're on. ⌘K on a result opens it in a new tab or copies its link."
+      "highlight": true,
+      "title": "Five new sites: CGTrader, GrabCAD, OwlCAD, Toymakr3D and Makerables",
+      "description": "Thingport now imports from seventeen sites. CGTrader is a marketplace of over three million models with a large 3D printing catalogue: its free models import with your sign-in, and so do your liked models and your wishlist, in one go or synced. A paid one you haven't bought is refused before anything downloads. AWS's bot check stands in front of its downloads, and Thingport gets past it with your browser's token, which Thingport Grab sends, or one FlareSolverr gets for it. GrabCAD is Stratasys's free library of engineers' CAD models, from single parts to whole machines, shared mostly as STEP files a slicer opens as they are. Its files need your sign-in, which lasts two days from its last use: visiting the site now and then keeps it alive, and Grab sends a new one whenever it changes. Anyone's likes import, or sync, not just your own. OwlCAD is a parametric CAD app that runs in the browser and needs no sign-in at all: its library parts convert here, and its CAD projects — which have no file anywhere, only a script OwlCAD's own kernel builds into geometry — are exported by Thingport Grab from an editor tab. Toymakr3D is one designer's articulated robot and mecha models, most of them free, and asks for your sign-in even for those. Makerables is Makera's project site, where desktop CNC and 3D printing meet; its projects and their files import without a sign-in, and only the ones you saved need one. All five are on for everyone under Administration → Providers.",
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/PROVIDER_SETUP.md",
+      "images": [
+        {
+          "src": "screenshots/1.4.0-providers-halloween.webp",
+          "caption": "The newest five, at the foot of seventeen sites"
+        }
+      ]
+    },
+    {
+      "type": "feature",
+      "title": "Find the ghost models whose files have gone",
+      "description": "Thingport keeps a model's files in its storage folder and only the model's details in the database, so an instance moved without that folder, a backup restored against an empty one, or a folder deleted by accident leaves models with nothing behind them — ghosts with no pictures, and nothing to open, print or download. A look at your library now finds them and offers two ways out: fetch the files again from the sites the models came from, which keeps their names, tags, collections and favourites exactly as they are, or delete those models for good. Either way the work runs in the background with a bar at the bottom of the app, can be stopped, and ends in a notification. Models only Thingport Grab can fetch are left for its next visit to the site. It's under Repair in the models cog, which checks on demand.",
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/storage.md",
+      "images": [
+        {
+          "src": "screenshots/1.4.0-repair-halloween.webp",
+          "caption": "What the check found, where those models came from, and the two ways out"
+        }
+      ]
+    },
+    {
+      "type": "feature",
+      "title": "The Multiboard planner draws its own plates",
+      "description": "Installing the planner used to fetch 221 models from Thangs — about twelve gigabytes, as the admin who installed it, spread over several days of a free account's download limit. It now draws every plate itself, as a wall asks for it, so the tool carries only the thirteen joints and needs no Thangs account at all. The board preview is the plates themselves, with the fittings sitting over the holes they drop into and a slider that pulls the wall apart to show which snap bridges what. A finished wall saves into your library as one file per thing to print, with how many to print in each name, or downloads as a zip.",
+      "images": [
+        {
+          "src": "screenshots/1.4.0-multiboard-halloween.webp",
+          "caption": "The board as the real plates, with the spread slider pulling it apart"
+        }
+      ]
+    },
+    {
+      "type": "feature",
+      "title": "Choose the sites the models list shows",
+      "description": "After Downloads comes a filter button, with a badge counting the filters in force. Behind it: a chip for every site your library holds models from, with its logo and a count, and the Generative switch that used to sit in the toolbar beside the sort tabs, where it read as another sort. What the address keeps is the sites hidden rather than the sites shown, so the first model imported from a site new to your library is listed from the start instead of arriving already filtered out."
+    },
+    {
+      "type": "feature",
+      "title": "Update a tool from its tile",
+      "description": "Administration → Tools kept a tool's update behind its details dialog. Each installed tile now carries a chip under it: a blue Update where the repository has a newer version, which takes it in one click, or a green ✓ Latest where it hasn't — so the tools that need nothing say so at a glance. An update also takes a tool's models only where this instance already has them, rather than handing gigabytes to an instance that deliberately installed without them."
+    },
+    {
+      "type": "feature",
+      "title": "Thingport on a phone",
+      "description": "The navigation and the model filters fit a narrow screen. The menu drawer stays inside the visible viewport rather than running on behind the browser's own bar, and scrolling it no longer drags the page underneath along with it. The top bar keeps its search, add, notification and account buttons on one row and drops a long page title to a centred row of its own."
+    },
+    {
+      "type": "feature",
+      "title": "thingport.net, redone, with docs you can search",
+      "description": "The website has a new look. The docs run on Starlight, with a docs home that says where to start and a sidebar of groups instead of one long list, and search on every page of the site covers the docs, the blog, the feature tour and the gallery. Each provider's page leads with what sets it apart, then brings its related feature docs, a comparison with every other provider and a Notes from users thread. Blog posts take comments and docs pages take feedback, through GitHub Discussions. The site is light by default, with dark a click away, and a new Community → Widgets & tools gallery lists the dashboard widgets and tools Thingport offers, each with a page of its own.",
+      "url": "https://thingport.net/docs/"
     },
     {
       "type": "improvement",
-      "title": "An icon browser for launcher links and widgets, with Thingport's icons, popular self-hosted, media and 3D printing sites, and your own uploads"
+      "title": "OpenSCAD runs off the page's own thread, so the window keeps answering while a model is generated — and Cancel is noticed at once rather than after the render it was meant to stop"
     },
     {
       "type": "improvement",
-      "title": "Provider chips follow your accent colour"
+      "title": "A wall's plates are drawn several at a time, on as many of your machine's threads as it can spare"
+    },
+    {
+      "type": "improvement",
+      "title": "Grab's popup says what each site is, not just its name, and counts how many are switched on"
+    },
+    {
+      "type": "improvement",
+      "title": "A saved wall gets its plan as its picture, rather than a render of whichever plate happened to be first"
     },
     {
       "type": "fix",
-      "title": "Photos taken sideways import the right way up, and photos imported from other sites no longer keep their location data"
+      "title": "eufyMake sign-ins work again, now that the site base64-encodes the cookie they live in"
     },
     {
       "type": "fix",
-      "title": "Your MakerWorld sign-in is only ever sent to MakerWorld itself, over HTTPS, never to a look-alike domain"
+      "title": "Cults3D says plainly when your API key and your browser sign-in belong to different accounts, instead of failing with an internal error — and no longer places a free order on the wrong one"
     },
     {
       "type": "fix",
-      "title": "OrcaSlicer, Elegoo Slicer and Snapmaker Orca no longer fail with “File name too long” when opening a model"
+      "title": "A download that wraps the designer's own archive inside another zip imports its files, on every site"
     },
     {
       "type": "fix",
-      "title": "Thingport Bridge finds Bambu Studio on Windows, and the Download page's Bridge buttons work again"
+      "title": "Generator scripts now survive the import from Thingiverse, Printables, MyMiniFactory, Pinshape and MakerOnline, which all dropped them before"
     },
     {
       "type": "fix",
-      "title": "Long file names without spaces no longer stretch the model page's side panel"
+      "title": "A script written on Windows opens with all of its sliders and dropdowns, rather than none of them"
     },
     {
       "type": "fix",
-      "title": "Link imports get the right file name from more servers, and zips whose paths start with ./ import"
+      "title": "A yes/no option in a generator script sets the value you picked, not the opposite one"
     },
     {
       "type": "fix",
-      "title": "Clearer errors when Snapmaker, Cults3D or MyMiniFactory turn down a sign-in or a download"
+      "title": "Changing the sort, the category or a filter while a page of models is still loading no longer replaces the list with the older answer, or leaves scrolling stuck"
     },
     {
       "type": "fix",
-      "title": "Creality Cloud links show their import status when the model is known by another name, and filling gaps keeps a tag's capitalisation"
+      "title": "A model a tool or the customizer made is called generated or created, not uploaded"
+    },
+    {
+      "type": "fix",
+      "title": "Installing a tool no longer drops the sign-in from the request and lands on the sign-in form"
     }
   ]
 }

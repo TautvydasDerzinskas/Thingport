@@ -4,6 +4,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ThemeProvider, type Theme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import Box from "@mui/material/Box";
+import Drawer from "@mui/material/Drawer";
+import IconButton from "@mui/material/IconButton";
+import CloseIcon from "@mui/icons-material/Close";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import Alert from "@mui/material/Alert";
 import Sidebar from "./Sidebar";
 import AdminSubnav from "./AdminSubnav";
@@ -12,6 +16,9 @@ import ImportProgressBar from "./ImportProgressBar";
 import AiRunProgressBar from "./AiRunProgressBar";
 import StorageMoveProgressBar from "./StorageMoveProgressBar";
 import { StorageMoveProvider } from "./StorageMoveContext";
+import ModelRepairProgressBar from "./ModelRepairProgressBar";
+import { ModelRepairProvider } from "./ModelRepairContext";
+import MissingFilesDialog from "../missingFiles/MissingFilesDialog";
 import BackToTopButton from "./BackToTopButton";
 import { ConfirmProvider } from "../ConfirmProvider";
 import { ToastProvider, useToast } from "../ToastProvider";
@@ -168,7 +175,17 @@ function AppLayoutShell({
 }: ShellProps) {
   const { t } = useTranslation(["app", "common"]);
   const { title: routeTitle, subtitle: routeSubtitle, onBack: routeOnBack } = useRouteChrome();
-  const { pathname } = useLocation();
+  const { pathname, key: locationKey } = useLocation();
+  const mobile = useMediaQuery((theme: Theme) => theme.breakpoints.down("md"));
+  // Opened for the current route only: navigating, including back/forward and query-only changes, must not leave an
+  // overlay covering the page. Widening closes it too, so narrowing again doesn't bring it back: in an effect, since
+  // an update during render left useMediaQuery stuck on desktop when the drawer had been open.
+  const [navigation, setNavigation] = React.useState<string | null>(null);
+  const navigationOpen = mobile && navigation === locationKey;
+  const closeNavigation = () => setNavigation(null);
+  React.useEffect(() => {
+    if (!mobile) setNavigation(null);
+  }, [mobile]);
   const [pageHeader, setPageHeader] = React.useState<PageHeader>(null);
   const { refresh: refreshNotifications } = useNotifications();
   const showToast = useToast();
@@ -185,55 +202,108 @@ function AppLayoutShell({
     <ImportJobProvider onUnauthorized={onUnauthorized} onJobCompleted={handleJobCompleted}>
       <AiRunProvider onUnauthorized={onUnauthorized} onRunFinished={handleJobCompleted}>
         <StorageMoveProvider isAdmin={isAdmin} onUnauthorized={onUnauthorized}>
-          <Box
-            sx={{
-              background: (theme) => theme.thingport.pageBackground,
-              minHeight: "100vh",
-              display: "flex",
-            }}
-          >
-            <Sidebar isAdmin={isAdmin} onSelectCategory={onSelectCategory} bookmarksVersion={bookmarksVersion} />
-            {isAdmin && pathname.startsWith("/admin") && <AdminSubnav />}
-            <Box component="main" sx={{ flex: 1, minWidth: 0, p: 2, pt: 0 }}>
-              {apiUp === false && (
-                <Alert severity="error" sx={{ mb: 1.5 }}>
-                  {t("shell.apiUnreachable")}
-                </Alert>
+          <ModelRepairProvider onUnauthorized={onUnauthorized} onRepairFinished={handleJobCompleted}>
+            <Box
+              sx={{
+                background: (theme) => theme.thingport.pageBackground,
+                minHeight: "100vh",
+                display: "flex",
+              }}
+            >
+              {mobile ? (
+                <Drawer
+                  id="mobile-navigation"
+                  open={Boolean(navigationOpen)}
+                  onClose={closeNavigation}
+                  PaperProps={{
+                    role: "dialog",
+                    "aria-modal": true,
+                    "aria-label": t("sidebar.navigationMenu"),
+                    sx: {
+                      width: "min(320px, calc(100vw - 40px))",
+                      // MUI pins the paper to height:100%, which on a phone is the viewport with the URL bar
+                      // hidden -- taller than what's on screen. dvh follows the bar, so the menu ends where the
+                      // screen does, and the panel keeps its own scrolling instead of dragging the page with it.
+                      height: "100dvh",
+                      overscrollBehavior: "contain",
+                      pt: "env(safe-area-inset-top)",
+                      pb: "env(safe-area-inset-bottom)",
+                    },
+                  }}
+                >
+                  <Box sx={{ display: "flex", justifyContent: "flex-end", px: 1, pt: 1 }}>
+                    <IconButton
+                      aria-label={t("sidebar.closeNavigation")}
+                      onClick={closeNavigation}
+                      sx={{ width: 44, height: 44 }}
+                    >
+                      <CloseIcon />
+                    </IconButton>
+                  </Box>
+                  <Sidebar
+                    mobile
+                    isAdmin={isAdmin}
+                    onSelectCategory={(id) => {
+                      onSelectCategory(id);
+                      closeNavigation();
+                    }}
+                    bookmarksVersion={bookmarksVersion}
+                  />
+                  {isAdmin && pathname.startsWith("/admin") && <AdminSubnav mobile />}
+                </Drawer>
+              ) : (
+                <>
+                  <Sidebar isAdmin={isAdmin} onSelectCategory={onSelectCategory} bookmarksVersion={bookmarksVersion} />
+                  {isAdmin && pathname.startsWith("/admin") && <AdminSubnav />}
+                </>
               )}
-              <TopBar
-                title={pageHeader?.title || routeTitle}
-                subtitle={pageHeader?.subtitle ?? routeSubtitle}
-                onBack={pageHeader?.onBack ?? routeOnBack}
-                actions={pageHeader?.actions}
-                categoryId={categoryId}
-                makerworldCookie={makerworldCookie}
-                onUpdateMakerWorld={onUpdateMakerWorld}
-                onUploaded={onPrintsChanged}
-                onUnauthorized={onUnauthorized}
-                user={user}
-                theme={themeSelection}
-                onThemeChange={onThemeChange}
-                onOpenProfile={onOpenProfile}
-                onLogout={handleLogout}
-              />
-              <PageHeaderContext.Provider value={setPageHeader}>{children}</PageHeaderContext.Provider>
+              <Box component="main" sx={{ flex: 1, minWidth: 0, px: { xs: 1.5, md: 2 }, pb: 2 }}>
+                {apiUp === false && (
+                  <Alert severity="error" sx={{ mb: 1.5 }}>
+                    {t("shell.apiUnreachable")}
+                  </Alert>
+                )}
+                <TopBar
+                  onMenuClick={mobile ? () => setNavigation(locationKey) : undefined}
+                  menuOpen={Boolean(navigationOpen)}
+                  title={pageHeader?.title || routeTitle}
+                  subtitle={pageHeader?.subtitle ?? routeSubtitle}
+                  onBack={pageHeader?.onBack ?? routeOnBack}
+                  actions={pageHeader?.actions}
+                  categoryId={categoryId}
+                  makerworldCookie={makerworldCookie}
+                  onUpdateMakerWorld={onUpdateMakerWorld}
+                  onUploaded={onPrintsChanged}
+                  onUnauthorized={onUnauthorized}
+                  user={user}
+                  theme={themeSelection}
+                  onThemeChange={onThemeChange}
+                  onOpenProfile={onOpenProfile}
+                  onLogout={handleLogout}
+                />
+                <PageHeaderContext.Provider value={setPageHeader}>{children}</PageHeaderContext.Provider>
+              </Box>
             </Box>
-          </Box>
-          {/* Several can run at once, so they stack here rather than each pinning itself to the bottom. Under
+            {/* Several can run at once, so they stack here rather than each pinning itself to the bottom. Under
             dialogs and their backdrop, like the top bar. */}
-          <Box sx={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: (theme) => theme.zIndex.appBar }}>
-            <AiRunProgressBar kind="categorization" />
-            <AiRunProgressBar kind="descriptions" />
-            <ImportProgressBar />
-            <StorageMoveProgressBar />
-          </Box>
-          <BackToTopButton />
+            <Box sx={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: (theme) => theme.zIndex.appBar }}>
+              <AiRunProgressBar kind="categorization" />
+              <AiRunProgressBar kind="descriptions" />
+              <ImportProgressBar />
+              <StorageMoveProgressBar />
+              <ModelRepairProgressBar />
+            </Box>
+            <BackToTopButton />
+            {/* Comes up on its own when a look at the library finds models with no files left. */}
+            <MissingFilesDialog />
+          </ModelRepairProvider>
         </StorageMoveProvider>
       </AiRunProvider>
     </ImportJobProvider>
   );
 }
 
+/** Keeps responsive navigation inside the same theme, session and notification providers as the page. */
 export default function AppLayout({ muiTheme, onUnauthorized, ...shellProps }: AppLayoutProps) {
   return (
     <ThemeProvider theme={muiTheme}>

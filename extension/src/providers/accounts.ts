@@ -4,9 +4,12 @@
 import { send } from "../shared/messages";
 import type { ProviderId } from "./index.generated";
 import { cults3dSignedIn } from "./cults3d/content";
+import { grabcadSignedIn } from "./grabcad/content";
 import { syncMakeronline } from "./makeronline/content";
+import { syncOwlcad } from "./owlcad/content";
 import { captureMyminifactoryAccount } from "./myminifactory/account";
 import { pinshapeSignedIn } from "./pinshape/content";
+import { toymakr3dSignedIn } from "./toymakr3d/content";
 import { syncPrintables } from "./printables/content";
 import { captureThingiverseAccount } from "./thingiverse/account";
 
@@ -17,6 +20,8 @@ function syncSession(provider: ProviderId): void {
 /** What a page of each provider's sends on, once per tab. */
 export const CAPTURE: Partial<Record<ProviderId, (id: ProviderId) => void>> = {
   makeronline: () => void syncMakeronline(),
+  // It has no sign-in to send on: a visit is only the cue to export the CAD projects waiting for Grab.
+  owlcad: () => void syncOwlcad(),
   // Its sign-in downloads the files and reads the likes; a new one comes with each sign-in there.
   crealitycloud: syncSession,
   // Its sign-in downloads the files; the site renews it as it refreshes the token, and each new one is sent on.
@@ -35,6 +40,19 @@ export const CAPTURE: Partial<Record<ProviderId, (id: ProviderId) => void>> = {
   // Its sign-in downloads the files; sent once it changes, and only from a signed-in page.
   pinshape: (id) => {
     if (pinshapeSignedIn()) syncSession(id);
+  },
+  // Its sign-in downloads the files and reads the liked products; sent once it changes, and only from a signed-in page.
+  toymakr3d: (id) => {
+    if (toymakr3dSignedIn()) syncSession(id);
+  },
+  // Its sign-in reads the saved projects; only a signed-in visitor has the cookie at all, so each new one is sent on.
+  makerables: syncSession,
+  // Its sign-in downloads the files and reads the likes and wishlist; sent once it or the bot-check token beside it
+  // changes, and only while the browser is signed in (cgtrader/session.ts).
+  cgtrader: syncSession,
+  // Its sign-in downloads the files; sent once it changes, and only from a signed-in page.
+  grabcad: (id) => {
+    if (grabcadSignedIn()) syncSession(id);
   },
   printables: () => void syncPrintables(),
   myminifactory: captureMyminifactoryAccount,

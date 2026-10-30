@@ -67,6 +67,7 @@ import {
 } from "../services/printService";
 import { SLICER_IDS, getUserSlicerSettings, setUserSlicerSettings } from "../services/slicerPreferenceService";
 import { CATEGORIES_VIEWS, getCategoriesView, setCategoriesView } from "../services/categoriesViewService";
+import { getToolsView, setToolsView, toolsViewSchema } from "../services/toolsViewService";
 import {
   DASHBOARD_LAYOUTS,
   DASHBOARD_WIDGETS,
@@ -810,6 +811,22 @@ router.patch(
   asyncHandler(async (req, res) => {
     const body = parseBody(categoriesViewSchema, req.body);
     res.json({ view: await setCategoriesView(req.userId!, body.view) });
+  }),
+);
+
+router.get(
+  "/settings/tools-view",
+  asyncHandler(async (req, res) => {
+    res.json(await getToolsView(req.userId!));
+  }),
+);
+
+// Only what changed: switching the layout mustn't forget where the user put a tool.
+const toolsViewPatchSchema = toolsViewSchema.partial();
+router.patch(
+  "/settings/tools-view",
+  asyncHandler(async (req, res) => {
+    res.json(await setToolsView(req.userId!, parseBody(toolsViewPatchSchema, req.body)));
   }),
 );
 

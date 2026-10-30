@@ -14,6 +14,8 @@ export type FeatureSection = {
   points: readonly string[];
   link?: { label: string; href: string };
   image: ImageMetadata;
+  /** The dark theme's twin of `image`, shown in its place while the site is dark. */
+  dark?: ImageMetadata;
   /** The dark twin of an animated GIF in `image`, which Image would flatten to a still. */
   animated?: ImageMetadata;
   alt: string;
@@ -56,7 +58,24 @@ const { sections } = Astro.props;
               <img class={theme} src={img.src} alt={s.alt} width={img.width} height={img.height} loading="lazy" />
             ))
           ) : (
-            <Image src={s.image} alt={s.alt} widths={[480, 800, 1100]} sizes="(min-width: 48rem) 36rem, 100vw" />
+            <>
+              <Image
+                class={s.dark && "only-light"}
+                src={s.image}
+                alt={s.alt}
+                widths={[480, 800, 1100]}
+                sizes="(min-width: 48rem) 36rem, 100vw"
+              />
+              {s.dark && (
+                <Image
+                  class="only-dark"
+                  src={s.dark}
+                  alt={s.alt}
+                  widths={[480, 800, 1100]}
+                  sizes="(min-width: 48rem) 36rem, 100vw"
+                />
+              )}
+            </>
           )}
         </figure>
       </div>
@@ -131,6 +150,8 @@ const { sections } = Astro.props;
     display: block;
     width: 100%;
     height: auto;
+    /* .only-dark's display: revert makes the dark one inline; this keeps it flush with the frame. */
+    vertical-align: bottom;
   }
   @media (max-width: 48rem) {
     .split {

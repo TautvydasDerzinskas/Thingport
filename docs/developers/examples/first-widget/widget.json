@@ -1,0 +1,23 @@
+{
+  "name": "Newest models",
+  "description": "The models added to your library most recently, with their pictures.",
+  "iconUrl": "builtin:thingport/icon",
+  "version": "1.0.0",
+  "size": { "w": 4, "h": 4, "minW": 3, "minH": 3 },
+  "settings": [
+    {
+      "key": "count",
+      "type": "choice",
+      "label": "settings.count",
+      "default": "6",
+      "options": [
+        { "value": "3", "label": "3" },
+        { "value": "6", "label": "6" },
+        { "value": "12", "label": "12" }
+      ]
+    },
+    { "key": "tag", "type": "text", "label": "settings.tag", "placeholder": "settings.tagHint" }
+  ],
+  "hosts": [],
+  "locales": ["en"]
+}

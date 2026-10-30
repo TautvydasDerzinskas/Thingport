@@ -2,6 +2,7 @@ import { credentialRequest } from "../credentialRequest";
 import { IMPORT_TIMEOUT_SECONDS } from "../../config";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
 import { htmlToMarkdown } from "../../services/descriptionMarkdown";
+import { isGeneratorScript } from "../../services/printCreation";
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
 import {
@@ -246,9 +247,14 @@ export function makeronlineDownloadPlan(
   scope: MakeronlineProfileScope,
   requestedProfileId: string | null,
 ): MakeronlineDownloadRequest[] {
+  const modelFile = (file: { key: string; name: string }): MakeronlineDownloadRequest => ({
+    payload: { key: file.key, file_type: 1, is_batch_down: 0, mold_id: Number(modelId) },
+    name: file.name,
+    profile_id: null,
+  });
   const picked = selectMakeronlineProfiles(resolution, scope, requestedProfileId);
   if (picked.length) {
-    return picked.map((profileId) => {
+    const profiles: MakeronlineDownloadRequest[] = picked.map((profileId) => {
       const profile = resolution.profiles.find((p) => p.id === profileId)!;
       return {
         payload: { key: profile.fileKey!, file_type: 2, is_batch_down: 0, print_profile_id: Number(profileId) },
@@ -256,12 +262,11 @@ export function makeronlineDownloadPlan(
         profile_id: profileId,
       };
     });
+    // A profile is one printer's 3MF; the script the model was generated from belongs to the model, so it
+    // comes alongside and untagged. Without this a model with profiles never asks for its scripts at all.
+    return [...profiles, ...resolution.modelFiles.filter((file) => isGeneratorScript(file.name)).map(modelFile)];
   }
-  return resolution.modelFiles.map((file) => ({
-    payload: { key: file.key, file_type: 1, is_batch_down: 0, mold_id: Number(modelId) },
-    name: file.name,
-    profile_id: null,
-  }));
+  return resolution.modelFiles.map(modelFile);
 }
 
 /** The hosts MakerOnline's signed file links point at: its own, and its private S3 buckets. */

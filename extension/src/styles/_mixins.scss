@@ -25,7 +25,7 @@
   box-sizing: border-box;
   padding: 9px 10px;
   border: 1px solid transparent;
-  border-radius: t.$radius-md;
+  border-radius: t.r("md");
   font: 600 t.$font-size t.$font-stack;
   text-align: center;
   text-decoration: none;
@@ -82,7 +82,7 @@
   box-sizing: border-box;
   padding: 7px 8px;
   border: 1px solid t.c("border");
-  border-radius: t.$radius-sm;
+  border-radius: t.r("sm");
   font: t.$font-size t.$font-stack;
   color: t.c("text");
   background: t.c("surface");
@@ -93,7 +93,7 @@
   }
 }
 
-@mixin card($radius: t.$radius-lg) {
+@mixin card($radius: t.r("lg")) {
   background: t.c("surface-raised");
   border-radius: $radius;
   box-shadow: 0 8px 32px t.c("shadow");
