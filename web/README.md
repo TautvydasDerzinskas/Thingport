@@ -59,9 +59,9 @@ file that moves or is renamed can't quietly drop off the site.
   site's footer.
 - A provider's page has more than its Markdown: its logo, and a highlight in its brand colour, under the title
   (`starlight/PageTitle.astro`, `ProviderHighlight.astro`), then "Related" (`ProviderRelated.astro`), "Compare with
-  other providers" (`ProviderComparison.astro`) and "Notes from users" ([comments](#comments)) after it, all drawn
-  from `src/lib/providers.generated.mjs`, which `npm run providers:sync` writes from `providers/`. Every other docs
-  page but the home ends with "Feedback". The build fails if a page's own heading has the id of one of these
+  other providers" (`ProviderComparison.astro`), "Known problems" ([below](#report-a-problem)) and "Notes from
+  users" ([comments](#comments)) after it, all drawn from `src/lib/providers.generated.mjs`, which
+  `npm run providers:sync` writes from `providers/`. Every other docs page but the home ends with "Feedback". The build fails if a page's own heading has the id of one of these
   sections, or if a provider's links point at a page or heading that isn't there.
 - Every page's `<head>` has the same site-wide tags and JSON-LD graph, from [`src/lib/head.mjs`](src/lib/head.mjs):
   `BaseLayout.astro` writes them on the site's pages, and in the docs they're Starlight's `head` (in
@@ -84,6 +84,16 @@ threads. A category with an empty id turns that kind of thread off, and its sect
 A page's thread is found by name, not by its URL or title: `blog/<post id>`, `providers/<slug>` or `docs/<slug>`
 (giscus' `specific` mapping, in [`src/components/Comments.astro`](src/components/Comments.astro)). Renaming a post or
 a docs page's slug starts it on a new, empty thread.
+
+## Report a problem
+
+"Report a problem" links (`ReportLink.astro`, under "Known problems" on a provider's page and beside "Leave feedback"
+on the other docs pages) open the repo's bug form filled in from the link ([`src/lib/report.mjs`](src/lib/report.mjs)):
+"Where?", the provider, the page's URL and, for a provider, the title's start. GitHub fills a dropdown only with one of
+its options word for word, so the build fails if the form loses a field or option the links give. The form's Provider
+answer becomes a `provider: <name>` label (`.github/workflows/issue-provider-label.yml`), and "Known problems"
+(`KnownProblems.astro`) lists the open issues with the provider's label, fetched once per build with the star count's
+token and refreshed in the visitor's browser. Without GitHub at build time, it links to them instead.
 
 ## GitHub star count
 

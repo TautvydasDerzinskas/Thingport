@@ -36,6 +36,10 @@ they're out of date (`npm run providers:check`). Never edit them by hand:
   `MANIFESTS`, `ABOUT`, `URLS`, `TRENDING_PROVIDER_IDS`).
 - `docs/assets/providers/<docsSlug>.svg`, the docs logo, drawn from the manifest's logo.
 - The list and the comparison table in `docs/PROVIDER_SETUP.md`, between its `<!-- providers:… -->` markers.
+- The bug form's Provider options (`.github/ISSUE_TEMPLATE/bug_report.yml`) and a `provider: <name>` label for each in
+  `.github/labels.yml`, between their `# providers:…` comments. The website's "Report a problem" links fill the form
+  in, and `.github/workflows/issue-provider-label.yml` labels an issue by its answer, which lists it under Known
+  problems on the provider's page.
 - `web/src/lib/providers.generated.mjs`, the website's provider page entries (`PROVIDER_DOCS`), what each page shows
   besides its Markdown -- its brand accent, its highlight and the facts its links to feature pages are chosen by
   (`PROVIDER_PAGES`) -- and the comparison table at the foot of each (`PROVIDER_COMPARISON`), from the same data as

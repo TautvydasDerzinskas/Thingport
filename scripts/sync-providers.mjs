@@ -3,8 +3,9 @@
 // provider, named <file>.generated.ts (src/providers/<id>/manifest.generated.ts, src/providers/_lib/,
 // src/providers/index.generated.ts), and only *.generated.* files are ever written or removed there. It writes the docs
 // from the manifests and each <id>/docs.ts too: the logos in docs/assets/providers/, the list and table between the
-// providers: markers in docs/PROVIDER_SETUP.md, and the website's provider pages and the same table for their foot
-// (web/src/lib/providers.generated.mjs). All of it is committed:
+// providers: markers in docs/PROVIDER_SETUP.md, the website's provider pages and the same table for their foot
+// (web/src/lib/providers.generated.mjs), and the bug form's Provider options and a label for each, between the same
+// markers in .github/. All of it is committed:
 //
 //   npm run providers:sync    rewrite them
 //   npm run providers:check   fail when one is out of date (CI)
@@ -39,6 +40,8 @@ const SLICER_NAMES = Object.fromEntries(
   SLICER_OPTIONS.filter(({ id }) => id !== "other").map(({ id, label }) => [id, label]),
 );
 const WEB_DOCS = "web/src/lib/providers.generated.mjs";
+const BUG_FORM = ".github/ISSUE_TEMPLATE/bug_report.yml";
+const LABELS = ".github/labels.yml";
 
 /** `file.ts` as its copy is named. */
 const generatedName = (file) => file.replace(/\.ts$/, ".generated.ts");
@@ -229,7 +232,34 @@ function docsLogo({ logo }) {
 
 const SUPERSCRIPTS = "¹²³⁴⁵⁶⁷⁸⁹";
 const NEEDS = { required: "**Required**", recommended: "Recommended", optional: "Optional", none: "" };
-const GENERATED_NOTE = "<!-- Written by scripts/sync-providers.mjs from providers/: change it there. -->";
+const GENERATED_NOTE = "Written by scripts/sync-providers.mjs from providers/: change it there.";
+
+/** `text` with the lines between its `<!-- providers:<name> -->` markers replaced. */
+function fillMarkdown(text, file, name, lines) {
+  const open = `<!-- providers:${name} -->`;
+  const close = `<!-- /providers:${name} -->`;
+  const start = text.indexOf(open);
+  const end = text.indexOf(close);
+  if (start === -1 || end === -1) throw new Error(`${file} has no ${open} ... ${close}`);
+  return `${text.slice(0, start + open.length)}\n<!-- ${GENERATED_NOTE} -->\n\n${lines.join("\n")}\n\n${text.slice(end)}`;
+}
+
+/** The same in YAML, between `# providers:<name>` comment lines, the lines indented as the opening one is. */
+function fillYaml(text, file, name, lines) {
+  const block = new RegExp(`^( *)# providers:${name}\n[^]*?^ *# /providers:${name}$`, "m");
+  if (!block.test(text)) throw new Error(`${file} has no # providers:${name} ... # /providers:${name}`);
+  return text.replace(block, (_, indent) =>
+    [`# providers:${name}`, `# ${GENERATED_NOTE}`, ...lines, `# /providers:${name}`]
+      .map((line) => indent + line)
+      .join("\n"),
+  );
+}
+
+/** A YAML string: plain where that reads the same, quoted otherwise. */
+const yamlString = (text) => (/^[A-Za-z0-9][\w .()+-]*$/.test(text) && !/ #/.test(text) ? text : JSON.stringify(text));
+
+/** The label .github/workflows/issue-provider-label.yml puts on an issue about a provider. */
+const providerLabel = (name) => `provider: ${name}`;
 
 /**
  * The providers side by side: the providers page's table, and the one at the foot of each provider's page on the
@@ -296,15 +326,30 @@ function setupPage(manifests, compared, current) {
     "",
     ...compared.notes.map((note, i) => `${i + 1}. ${note}`),
   ];
-  const fill = (text, name, lines) => {
-    const open = `<!-- providers:${name} -->`;
-    const close = `<!-- /providers:${name} -->`;
-    const start = text.indexOf(open);
-    const end = text.indexOf(close);
-    if (start === -1 || end === -1) throw new Error(`${SETUP_PAGE} has no ${open} ... ${close}`);
-    return `${text.slice(0, start + open.length)}\n${GENERATED_NOTE}\n\n${lines.join("\n")}\n\n${text.slice(end)}`;
-  };
-  return fill(fill(current, "list", list), "table", table);
+  return fillMarkdown(fillMarkdown(current, SETUP_PAGE, "list", list), SETUP_PAGE, "table", table);
+}
+
+/** The bug form's Provider options: each provider's name, which the website's report links fill it in with. */
+const bugForm = (manifests, current) =>
+  fillYaml(
+    current,
+    BUG_FORM,
+    "bug-form",
+    manifests.map((m) => `- ${yamlString(m.name)}`),
+  );
+
+/** A label per provider, in its brand colour, for the repo's label sync (.github/workflows/labels.yml), which deletes
+ *  labels its file doesn't list. */
+function labels(manifests, current) {
+  const lines = manifests.flatMap((m) => {
+    if (!/^#[0-9a-f]{6}$/i.test(m.brand.accent)) throw new Error(`${m.id}'s brand.accent isn't a #rrggbb colour`);
+    return [
+      `- name: ${JSON.stringify(providerLabel(m.name))}`,
+      `  color: "${m.brand.accent.slice(1).toLowerCase()}"`,
+      `  description: ${yamlString(`About ${m.name}, from the bug form's Provider answer`)}`,
+    ];
+  });
+  return fillYaml(current, LABELS, "labels", lines);
 }
 
 /** What a provider's page on the website shows besides its Markdown and the comparison table. Kept out of its DOCS
@@ -381,8 +426,10 @@ async function docsOutputs(manifests) {
   for (const m of manifests) files.set(`${DOCS_LOGOS}/${m.docsSlug}.svg`, docsLogo(m.brand));
   files.set(SETUP_PAGE, setupPage(manifests, compared, readFileSync(path.join(ROOT, SETUP_PAGE), "utf8")));
   files.set(WEB_DOCS, webDocs(manifests, compared));
+  files.set(BUG_FORM, bugForm(manifests, readFileSync(path.join(ROOT, BUG_FORM), "utf8")));
+  files.set(LABELS, labels(manifests, readFileSync(path.join(ROOT, LABELS), "utf8")));
   const config = await prettier.resolveConfig(path.join(ROOT, "package.json"));
-  for (const file of [SETUP_PAGE, WEB_DOCS]) {
+  for (const file of [SETUP_PAGE, WEB_DOCS, BUG_FORM, LABELS]) {
     files.set(file, await prettier.format(files.get(file), { ...config, filepath: file }));
   }
   return files;

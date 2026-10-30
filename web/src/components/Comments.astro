@@ -17,6 +17,7 @@ type Props = {
   /** Loads giscus only when asked, for pages where most readers won't want it. The button's label. */
   loadLabel?: string;
 };
+// The `actions` slot: links beside the button, which stay once the thread's loaded.
 const { category, term, heading, id = "comments-title", docs, loadLabel } = Astro.props;
 const { name, id: categoryId } = GISCUS.categories[category];
 ---
@@ -31,10 +32,15 @@ const { name, id: categoryId } = GISCUS.categories[category];
         <slot />
       </p>
       <div class="thread not-content">
-        {loadLabel && (
-          <button type="button" class="load" data-load-comments>
-            {loadLabel}
-          </button>
+        {(loadLabel || Astro.slots.has("actions")) && (
+          <div class="actions">
+            {loadLabel && (
+              <button type="button" class="load" data-load-comments>
+                {loadLabel}
+              </button>
+            )}
+            <slot name="actions" />
+          </div>
         )}
         <div
           class="giscus"
@@ -132,6 +138,16 @@ const { name, id: categoryId } = GISCUS.categories[category];
   .docs .intro {
     font-size: var(--sl-text-sm);
     line-height: 1.55;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  .actions ~ .giscus[data-loading] {
+    margin-top: 1rem;
   }
 
   /* As the site's header buttons. */

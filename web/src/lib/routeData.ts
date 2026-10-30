@@ -6,6 +6,7 @@ import { GISCUS } from "./site.mjs";
  *  section's heading id and its entry in the page's table of contents. */
 export const RELATED_HEADING = { id: "related", toc: "Related" };
 export const COMPARISON_HEADING = { id: "compare-providers", toc: "Compare providers" };
+export const KNOWN_PROBLEMS_HEADING = { id: "known-problems", toc: "Known problems" };
 export const NOTES_HEADING = { id: "notes-from-users", toc: "Notes from users" };
 /** Where every other docs page ends, left out of the table of contents. */
 export const FEEDBACK_HEADING = { id: "feedback", text: "Feedback" };
@@ -18,7 +19,12 @@ export const onRequest = defineRouteMiddleware(({ locals: { starlightRoute: rout
   const provider = providerOfRoute(route.id);
   // The threads show only where their category is set (components/Comments.astro).
   const sections = provider
-    ? [RELATED_HEADING, COMPARISON_HEADING, ...(GISCUS.categories.providers.id ? [NOTES_HEADING] : [])]
+    ? [
+        RELATED_HEADING,
+        COMPARISON_HEADING,
+        KNOWN_PROBLEMS_HEADING,
+        ...(GISCUS.categories.providers.id ? [NOTES_HEADING] : []),
+      ]
     : [];
   const feedback = !provider && route.id !== "docs" && GISCUS.categories.docs.id ? [FEEDBACK_HEADING] : [];
 
