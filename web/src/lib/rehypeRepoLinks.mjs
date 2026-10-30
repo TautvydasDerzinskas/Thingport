@@ -27,10 +27,18 @@ export function rehypeRepoLinks({ base = "/" } = {}) {
     });
     // Inline HTML stays a raw string, so its attributes are rewritten textually.
     visit(tree, "raw", (node) => {
-      node.value = themedPictures(node.value).replace(
-        /\b(href|src)="([^"]*)"/g,
-        (_, attr, value) => `${attr}="${rewrite(attr, value, dir, basePrefix)}"`,
-      );
+      node.value = themedPictures(node.value)
+        .replace(/\b(href|src)="([^"]*)"/g, (_, attr, value) => `${attr}="${rewrite(attr, value, dir, basePrefix)}"`)
+        // A <picture> written on one line reaches here in pieces, too late for themedPictures; its dark source
+        // still has to load.
+        .replace(
+          /\bsrcset="([^"]*)"/g,
+          (_, set) =>
+            `srcset="${set
+              .split(",")
+              .map((entry) => entry.trim().replace(/^\S+/, (src) => rewrite("src", src, dir, basePrefix)))
+              .join(", ")}"`,
+        );
     });
   };
 }

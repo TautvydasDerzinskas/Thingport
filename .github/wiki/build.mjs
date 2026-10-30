@@ -77,7 +77,16 @@ function rewriteLinks(markdown, source) {
               /(!?)\[([^\]]*)\]\(([^)\s]+)\)/g,
               (_, bang, text, url) => `${bang}[${text}](${rewrite(bang ? "src" : "href", url, dir)})`,
             )
-            .replace(/\b(href|src)="([^"]*)"/g, (_, attr, url) => `${attr}="${rewrite(attr, url, dir)}"`),
+            .replace(/\b(href|src)="([^"]*)"/g, (_, attr, url) => `${attr}="${rewrite(attr, url, dir)}"`)
+            // A <picture>'s dark variant: left relative, it resolves to a wiki page and shows as a broken image.
+            .replace(
+              /\bsrcset="([^"]*)"/g,
+              (_, set) =>
+                `srcset="${set
+                  .split(",")
+                  .map((entry) => entry.trim().replace(/^\S+/, (url) => rewrite("src", url, dir)))
+                  .join(", ")}"`,
+            ),
     )
     .join("");
 }
