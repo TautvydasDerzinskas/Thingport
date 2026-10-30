@@ -1,5 +1,26 @@
 # Thingport Grab changelog
 
+# [thingport-grab-v1.9.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-grab-v1.8.1...thingport-grab-v1.9.0) (2026-10-30)
+
+
+### Bug Fixes
+
+* plain-HTTP instances ([#199](https://github.com/TautvydasDerzinskas/Thingport/issues/199)), MakerWorld scripts through an older Grab, and the page header ([#201](https://github.com/TautvydasDerzinskas/Thingport/issues/201)) ([b059936](https://github.com/TautvydasDerzinskas/Thingport/commit/b059936aa13d73f200d68d7727ba7984d9123879)), closes [#175](https://github.com/TautvydasDerzinskas/Thingport/issues/175)
+* pre-release fixes for Grab, model colours and the regression pack ([#194](https://github.com/TautvydasDerzinskas/Thingport/issues/194)) ([0c8a532](https://github.com/TautvydasDerzinskas/Thingport/commit/0c8a53270c788907fdda706aba7b700f5f7acf5c))
+
+
+### Features
+
+* add CGTrader as new provider in Thingport ([#195](https://github.com/TautvydasDerzinskas/Thingport/issues/195)) ([7ca0a86](https://github.com/TautvydasDerzinskas/Thingport/commit/7ca0a866dc5bf9d5f8febaf9608831e493859b94))
+* add generative scad scripts/models support + multicolors! ([0df9743](https://github.com/TautvydasDerzinskas/Thingport/commit/0df9743402807e95137c1f8d53ee26da93e2b3e2)), closes [#808080](https://github.com/TautvydasDerzinskas/Thingport/issues/808080)
+* Grab's popup in two columns with the site you're on, and a reworked import panel ([#187](https://github.com/TautvydasDerzinskas/Thingport/issues/187)) ([bed3678](https://github.com/TautvydasDerzinskas/Thingport/commit/bed36783be45529a1ff21434fbea11cf2e795942))
+* import from GrabCAD, its free CAD models and anyone's likes ([#196](https://github.com/TautvydasDerzinskas/Thingport/issues/196)) ([f6b45ea](https://github.com/TautvydasDerzinskas/Thingport/commit/f6b45ea112434b6b27e065947b56f85cbffd92fe))
+* import from Makerables, its projects and the ones you saved  ([#186](https://github.com/TautvydasDerzinskas/Thingport/issues/186)) ([8dce70f](https://github.com/TautvydasDerzinskas/Thingport/commit/8dce70f2108a086545d079e6ca281fde92a891b5))
+* import from OwlCAD, with Grab exporting its CAD projects ([#182](https://github.com/TautvydasDerzinskas/Thingport/issues/182)) ([50f40ba](https://github.com/TautvydasDerzinskas/Thingport/commit/50f40ba09d7a747fc22bbb0680c7b0b8b0733de6))
+* import from Toymakr3D, its models and your liked products ([#185](https://github.com/TautvydasDerzinskas/Thingport/issues/185)) ([07808a9](https://github.com/TautvydasDerzinskas/Thingport/commit/07808a9d2ff482bc6c6ad48bfa4c25731ff590ec))
+* pair Thingport Grab with your instance instead of typing a password ([#189](https://github.com/TautvydasDerzinskas/Thingport/issues/189)) ([f95f9aa](https://github.com/TautvydasDerzinskas/Thingport/commit/f95f9aab67572e38deb0b7440c23e84ea4f2725e))
+* **web:** the site redone, docs on Starlight ([#202](https://github.com/TautvydasDerzinskas/Thingport/issues/202)) ([4fec2dd](https://github.com/TautvydasDerzinskas/Thingport/commit/4fec2dd50874abce517370413e20602fb8ece0ca))
+
 # [thingport-grab-v1.8.1](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-grab-v1.8.0...thingport-grab-v1.8.1) (2026-10-25)
 
 
