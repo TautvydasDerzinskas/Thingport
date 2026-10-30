@@ -1,5 +1,33 @@
 # Thingport backend changelog
 
+# [thingport-backend-v1.4.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-backend-v1.3.1...thingport-backend-v1.4.0) (2026-10-30)
+
+
+### Bug Fixes
+
+* **backend:** Cults3D imports, when the sign-in is another account and when the zip holds a zip ([#181](https://github.com/TautvydasDerzinskas/Thingport/issues/181)) ([8a4268b](https://github.com/TautvydasDerzinskas/Thingport/commit/8a4268b0dadc08a0d887147c64c1eecce9430130))
+* plain-HTTP instances ([#199](https://github.com/TautvydasDerzinskas/Thingport/issues/199)), MakerWorld scripts through an older Grab, and the page header ([#201](https://github.com/TautvydasDerzinskas/Thingport/issues/201)) ([b059936](https://github.com/TautvydasDerzinskas/Thingport/commit/b059936aa13d73f200d68d7727ba7984d9123879)), closes [#175](https://github.com/TautvydasDerzinskas/Thingport/issues/175)
+* pre-release fixes for Grab, model colours and the regression pack ([#194](https://github.com/TautvydasDerzinskas/Thingport/issues/194)) ([0c8a532](https://github.com/TautvydasDerzinskas/Thingport/commit/0c8a53270c788907fdda706aba7b700f5f7acf5c))
+
+
+### Features
+
+* a model's own colours reach the slicer and its first picture ([#191](https://github.com/TautvydasDerzinskas/Thingport/issues/191)) ([0e1971f](https://github.com/TautvydasDerzinskas/Thingport/commit/0e1971fd0d0b12e612e83924670cce7d8f77cda5)), closes [#RRGGBBAA](https://github.com/TautvydasDerzinskas/Thingport/issues/RRGGBBAA)
+* a script's other .scad files in the customizer, and naming what's missing ([#206](https://github.com/TautvydasDerzinskas/Thingport/issues/206)) ([9b0d677](https://github.com/TautvydasDerzinskas/Thingport/commit/9b0d677b6e0bb2cac72b9a5f8d394b4bb4de1b56))
+* add CGTrader as new provider in Thingport ([#195](https://github.com/TautvydasDerzinskas/Thingport/issues/195)) ([7ca0a86](https://github.com/TautvydasDerzinskas/Thingport/commit/7ca0a866dc5bf9d5f8febaf9608831e493859b94))
+* add generative scad scripts/models support + multicolors! ([0df9743](https://github.com/TautvydasDerzinskas/Thingport/commit/0df9743402807e95137c1f8d53ee26da93e2b3e2)), closes [#808080](https://github.com/TautvydasDerzinskas/Thingport/issues/808080)
+* choose the sites the models list shows, behind its filter button ([#188](https://github.com/TautvydasDerzinskas/Thingport/issues/188)) ([d48c3c5](https://github.com/TautvydasDerzinskas/Thingport/commit/d48c3c582d78ad86aca308250310887643b26ebb))
+* every MakerWorld parameter in the customizer, with colour, font and file pickers ([#205](https://github.com/TautvydasDerzinskas/Thingport/issues/205)) ([aa327c1](https://github.com/TautvydasDerzinskas/Thingport/commit/aa327c10e2390b22a1e4f044871e232583c07d81))
+* find the models whose files are gone, and offer to fetch or delete them ([#190](https://github.com/TautvydasDerzinskas/Thingport/issues/190)) ([696c5fc](https://github.com/TautvydasDerzinskas/Thingport/commit/696c5fcfde2b4e4f85b1b72f52e6bcc0ef3b75b6))
+* Grab's popup in two columns with the site you're on, and a reworked import panel ([#187](https://github.com/TautvydasDerzinskas/Thingport/issues/187)) ([bed3678](https://github.com/TautvydasDerzinskas/Thingport/commit/bed36783be45529a1ff21434fbea11cf2e795942))
+* import from GrabCAD, its free CAD models and anyone's likes ([#196](https://github.com/TautvydasDerzinskas/Thingport/issues/196)) ([f6b45ea](https://github.com/TautvydasDerzinskas/Thingport/commit/f6b45ea112434b6b27e065947b56f85cbffd92fe))
+* import from Makerables, its projects and the ones you saved  ([#186](https://github.com/TautvydasDerzinskas/Thingport/issues/186)) ([8dce70f](https://github.com/TautvydasDerzinskas/Thingport/commit/8dce70f2108a086545d079e6ca281fde92a891b5))
+* import from OwlCAD, with Grab exporting its CAD projects ([#182](https://github.com/TautvydasDerzinskas/Thingport/issues/182)) ([50f40ba](https://github.com/TautvydasDerzinskas/Thingport/commit/50f40ba09d7a747fc22bbb0680c7b0b8b0733de6))
+* import from Toymakr3D, its models and your liked products ([#185](https://github.com/TautvydasDerzinskas/Thingport/issues/185)) ([07808a9](https://github.com/TautvydasDerzinskas/Thingport/commit/07808a9d2ff482bc6c6ad48bfa4c25731ff590ec))
+* **tools:** tools, installed from the repository or made by users ([#178](https://github.com/TautvydasDerzinskas/Thingport/issues/178)) ([350216c](https://github.com/TautvydasDerzinskas/Thingport/commit/350216ca55d60d28e880433b91c3e089a393fd0c))
+* update a tool from its tile, without opening it first ([#192](https://github.com/TautvydasDerzinskas/Thingport/issues/192)) ([b304675](https://github.com/TautvydasDerzinskas/Thingport/commit/b30467547b9f0db4ec3c6d9ebb9d92f8774d2d3d))
+* **web:** the site redone, docs on Starlight ([#202](https://github.com/TautvydasDerzinskas/Thingport/issues/202)) ([4fec2dd](https://github.com/TautvydasDerzinskas/Thingport/commit/4fec2dd50874abce517370413e20602fb8ece0ca))
+
 # [thingport-backend-v1.3.1](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-backend-v1.3.0...thingport-backend-v1.3.1) (2026-10-25)
 
 
