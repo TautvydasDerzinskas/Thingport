@@ -135,6 +135,8 @@ describe("scripts OpenSCAD's customizer can't read on its own", () => {
     ]);
     const limited = "shown = 2; // [1:5]\nmodule __Customizer_Limit__() {}\ninternal = 7;\ncube(shown + internal);\n";
     expect((await shown(limited)).map((p) => p.name)).toEqual(["shown"]);
+    const marked = "module __Customizer_Limit__() {}\ndetails = 120; // [60:Quick, 360:Slow]\ncube(details);\n";
+    expect(await shown(marked)).toEqual([]);
     expect(await shown("module m() { cube(1); }\nm();\n")).toEqual([]);
   }, 120000);
 

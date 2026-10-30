@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
@@ -35,6 +35,15 @@ export default function FileField({ name, value, initial, accept, onFile, onClea
   const chosen = value !== initial;
   const type = accept.slice(1).toUpperCase();
 
+  // A slow read only lands if nothing has happened since it began: no later choice, no change to the value (clearing
+  // it, undo, Reset), and the field still here.
+  const latest = useRef(0);
+  useEffect(() => () => void (latest.current += 1), []);
+  const valueNow = useRef(value);
+  useEffect(() => {
+    valueNow.current = value;
+  }, [value]);
+
   const pick = async (file: File) => {
     // The picker's filter is only a suggestion, and the engine reads nothing else: said here rather than as a
     // warning about an unreadable file after a render.
@@ -42,7 +51,10 @@ export default function FileField({ name, value, initial, accept, onFile, onClea
       showToast({ message: t("customizer.form.fileWrongType", { type }), severity: "error" });
       return;
     }
-    onFile(file.name, new Uint8Array(await file.arrayBuffer()));
+    const request = ++latest.current;
+    const valueThen = valueNow.current;
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    if (request === latest.current && valueThen === valueNow.current) onFile(file.name, bytes);
   };
 
   return (

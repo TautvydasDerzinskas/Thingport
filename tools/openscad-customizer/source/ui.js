@@ -44,6 +44,8 @@ export default async function mount(thingport) {
   let current = null;
   let generated = null;
   let busy = false;
+  /** Goes up each time the form is drawn afresh, so a slow file read can tell the field it was for has gone. */
+  let formDrawn = 0;
 
   // ---- loading a script --------------------------------------------------------------------------------------
 
@@ -102,6 +104,7 @@ export default async function mount(thingport) {
   // ---- the form ----------------------------------------------------------------------------------------------
 
   function buildForm() {
+    formDrawn += 1;
     const side = $("side");
     side.replaceChildren();
     const groups = groupParameters(current.parameters);
@@ -309,6 +312,8 @@ export default async function mount(thingport) {
     const row = document.createElement("div");
     row.className = "osc-file";
     const type = control.accept.slice(1).toUpperCase();
+    const drawn = formDrawn;
+    let latest = 0;
 
     const name = document.createElement("span");
     name.className = "osc-sub osc-file-name";
@@ -325,6 +330,7 @@ export default async function mount(thingport) {
       clear.hidden = !chosen;
     };
     clear.onclick = () => {
+      latest += 1;
       set(parameter.initial);
       show(parameter.initial);
     };
@@ -343,7 +349,10 @@ export default async function mount(thingport) {
         ui.toast(t("form.fileWrongType", { type }), "error");
         return;
       }
+      const request = ++latest;
       const bytes = new Uint8Array(await file.arrayBuffer());
+      // A slow read doesn't get to overwrite a later choice or a clear, or land on a form drawn since.
+      if (request !== latest || drawn !== formDrawn) return;
       const unique = uploadName(current.uploads, file.name, bytes);
       current.uploads.set(unique, bytes);
       set(unique);

@@ -155,13 +155,17 @@ export function scriptWidgets(source: string): Map<string, Pick<ScadParameter, "
   return widgets;
 }
 
+/** How an author says where a script's list ends. By this name only: a library pasted in first may well have an empty
+ *  module of its own, and taking that for the end of the list would hide everything below it. */
+const CUSTOMIZER_LIMIT = /^\s*module\s+__customizer_limit__\b/i;
+
 /**
  * The script as the engine should be given it: with the parameters below its first `{` moved above it.
  *
  * Marked ones always: a `// [...]` widget, one of the controls above, or a heading of their own. The rest only when
- * the script would otherwise offer nothing, which is how MakerWorld reads it, because authors also hide their workings
- * below a first module on purpose (`module __Customizer_Limit__() {}`) and those should stay hidden. A name assigned
- * twice stays put, since moving one could change which of them wins.
+ * the script would otherwise offer nothing, which is how MakerWorld reads it, because authors also keep their workings
+ * below a first module. Nothing below a `module __Customizer_Limit__() {}` moves, marked or not, since the author has
+ * said the list ends there. A name assigned twice stays put, since moving one could change which of them wins.
  */
 export function scriptForEngine(source: string): string {
   const scanned = scan(source);
@@ -169,11 +173,13 @@ export function scriptForEngine(source: string): string {
   const { firstBrace } = scanned;
   if (!firstBrace) return lines.join("\n");
 
+  const limit = lines.findIndex((text, line) => scanned.topLevel[line] && CUSTOMIZER_LIMIT.test(text));
   const visible = constantsOf(scanned, lines).filter((constant) => !/^hidden$/i.test(constant.heading?.name ?? ""));
   const above = visible.filter((constant) => constant.line < firstBrace.line);
   const below = visible.filter(
     (constant) =>
       constant.line >= firstBrace.line &&
+      (limit < 0 || constant.line < limit) &&
       scanned.assigned.get(constant.name) === 1 &&
       // A brace in its own text would end the reading all over again.
       !lines[constant.line].includes("{"),

@@ -75,6 +75,37 @@ describe("scriptForEngine", () => {
     expect(scriptForEngine(limited)).toBe(limited);
   });
 
+  it("moves nothing below a customizer limit, marked or not, however it's capitalised", () => {
+    for (const source of [
+      "a = 1; // [1:5]\nmodule __Customizer_Limit__() {}\ndetails = 120; // [60:Quick, 360:Slow]\ncube(a);\n",
+      "module __Customizer_Limit__ () {}\nw = 2;\nh = 3;\ncube([w, h, 1]);\n",
+      "module __customizer_limit__() {}\nw = 2; // [1:5]\ncube(w);\n",
+      "module __Customizer_Limit__()\n{\n}\nw = 2; // [1:5]\ncube(w);\n",
+    ]) {
+      expect(scriptForEngine(source)).toBe(source);
+    }
+  });
+
+  it("still moves what's above a limit further down", () => {
+    expect(
+      scriptForEngine("module m() { cube(1); }\na = 1; // [1:5]\nmodule __Customizer_Limit__() {}\nb = 2; // [1:5]\n"),
+    ).toBe(
+      "/* [Parameters] */\na = 1; // [1:5]\nmodule m() { cube(1); }\nmodule __Customizer_Limit__() {}\nb = 2; // [1:5]\n",
+    );
+  });
+
+  it("doesn't take any other empty module for a limit, which would hide what's below a library pasted in first", () => {
+    expect(scriptForEngine("module stub() {}\nSize = 12; // [1:100]\ncube(Size);\n")).toBe(
+      "/* [Parameters] */\nSize = 12; // [1:100]\nmodule stub() {}\ncube(Size);\n",
+    );
+  });
+
+  it("doesn't take a limit in a comment for one", () => {
+    expect(
+      scriptForEngine("module m() { cube(1); }\n// module __Customizer_Limit__() {}\n\nw = 2; // [1:5]\n"),
+    ).toContain("/* [Parameters] */\nw = 2; // [1:5]\nmodule m()");
+  });
+
   it("doesn't count $fn as the script offering something", () => {
     expect(scriptForEngine("$fn = 64;\nmodule m() { cube(1); }\nw = 2;\ncube(w);\n")).toContain(
       "$fn = 64;\n/* [Parameters] */\nw = 2;\nmodule m()",

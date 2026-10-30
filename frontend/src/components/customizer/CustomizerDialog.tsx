@@ -335,6 +335,8 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
       />
       {loaded && (
         <CustomizePane
+          // Afresh for each script: a file still being read for one has no business landing in the next.
+          key={loaded.script.id}
           scriptName={loaded.script.filename}
           parameters={loaded.parameters}
           values={values}
