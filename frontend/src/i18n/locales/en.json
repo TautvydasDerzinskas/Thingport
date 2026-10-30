@@ -4259,7 +4259,9 @@
       "sources": "Sources",
       "allSources": "All sites",
       "noSources": "Nothing imported yet, so there are no sites to choose between.",
-      "noneSelected": "No sites are turned on, so there is nothing to list."
+      "noneSelected": "No sites are turned on, so there is nothing to list.",
+      "noMatch": "No models here match the filters.",
+      "clear": "Clear filters"
     }
   },
   "providers": {

@@ -7,9 +7,9 @@ import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
 import type { PrintSource } from "../../api/prints";
-import HelpTip from "../../components/HelpTip";
+import HelpTip from "../HelpTip";
 import { printProviderInfo } from "../../constants/importProviders";
-import { hasProviderLogo, ProviderLogo } from "../../components/Layout/ConfigurationDialog/providerLogos";
+import { hasProviderLogo, ProviderLogo } from "../Layout/ConfigurationDialog/providerLogos";
 
 type Props = {
   anchorEl: HTMLElement | null;
