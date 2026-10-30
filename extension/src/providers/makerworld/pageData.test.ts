@@ -5,6 +5,9 @@ import { makerworldDesignForImport, makerworldScripts, type MakerworldDesign } f
 // them where the model was generated from one, and `protected` set on the ones its creator holds back.
 const design = (files: unknown[]): MakerworldDesign => ({ id: 1, designExtension: { model_files: files } });
 
+const getModelFiles = (sent: Record<string, unknown> | null): unknown =>
+  (sent?.designExtension as { model_files?: unknown } | undefined)?.model_files;
+
 describe("makerworldScripts", () => {
   it("finds nothing on a model with no script at all", () => {
     expect(makerworldScripts(design([{ modelName: "bauble.3mf", modelType: "3mf" }]))).toBeNull();
@@ -70,8 +73,33 @@ describe("makerworldDesignForImport", () => {
     expect(makerworldScripts(sent as MakerworldDesign)?.withheld).toBe(true);
   });
 
-  it("sends no model_files for a design with no script", () => {
+  // An empty list is an answer, where no list is not: without one the backend reads the design from MakerWorld.
+  it("says a design has no script with an empty list rather than none", () => {
     const sent = makerworldDesignForImport(design([{ modelName: "bauble.3mf", modelType: "3mf" }]));
+    expect(getModelFiles(sent)).toEqual([]);
     expect(makerworldScripts(sent as MakerworldDesign)).toBeNull();
+  });
+
+  it("sends no list where the page had none to read", () => {
+    expect(getModelFiles(makerworldDesignForImport({ id: 1 }))).toBeUndefined();
+  });
+
+  it("carries a script kept in one of the design's folders", () => {
+    const sent = makerworldDesignForImport(
+      design([
+        { modelName: "", modelType: "", isDir: true, dirName: "Example STLs", children: [{ modelName: "a.stl" }] },
+        {
+          modelName: "",
+          modelType: "",
+          isDir: true,
+          dirName: "SCAD File for the Parametric Model Maker",
+          children: [{ modelName: "Parametric Model Maker.scad", modelType: "scad", protected: false }],
+        },
+      ]),
+    );
+    expect(makerworldScripts(sent as MakerworldDesign)).toEqual({
+      filenames: ["Parametric Model Maker.scad"],
+      withheld: false,
+    });
   });
 });
