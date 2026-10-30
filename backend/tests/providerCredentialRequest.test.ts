@@ -3,6 +3,7 @@ import { assertCredentialDestination, credentialRequest } from "../src/providers
 import { resolveCults3dDownload } from "../src/providers/cults3d/api";
 
 import { checkEufymakeAuth } from "../src/providers/eufymake/api";
+import { resolvePinshapeDownload } from "../src/providers/pinshape/api";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -20,6 +21,12 @@ describe("provider credential destinations", () => {
     ["thangs-api", "https://thangs.com/api/models/1"],
     ["eufymake-api", "https://aiot-wapi-eu.ankermake.com/web/modelbase/list"],
     ["cults3d-api", "https://cults3d.com/graphql"],
+    ["cgtrader-session", "https://www.cgtrader.com/items/1/free-downloads/1"],
+    ["grabcad-session", "https://grabcad.com/community/api/v1/models/1"],
+    ["makerables-api", "https://www.makerables.com/api/projects/1"],
+    ["makerables-session", "https://www.makerables.com/auth/access-token"],
+    ["toymakr3d-session", "https://www.toymakr3d.com/models/1"],
+    ["pinshape-session", "https://pinshape.com/items/1"],
   ] as const)("permits %s at %s", (destination, url) => {
     expect(assertCredentialDestination(destination, url).href).toBe(url);
   });
@@ -32,6 +39,25 @@ describe("provider credential destinations", () => {
     "https://user:password@cults3d.com/model/1",
   ])("rejects unsafe Cults3D session destination %s", (url) => {
     expect(() => assertCredentialDestination("cults3d-session", url)).toThrow("Refusing to send");
+  });
+
+  it.each([
+    ["cgtrader-session", "https://www.cgtrader.com@attacker.example/items/1"],
+    ["grabcad-session", "https://grabcad.com.attacker.example/community/api/v1/models/1"],
+    ["makerables-api", "https://cdn.makerables.com/api/projects/1"],
+    ["toymakr3d-session", "https://toymakr3d.com/models/1"],
+    ["pinshape-session", "http://pinshape.com/items/1"],
+  ] as const)("rejects %s at %s", (destination, url) => {
+    expect(() => assertCredentialDestination(destination, url)).toThrow("Refusing to send");
+  });
+
+  it("keeps a Pinshape sign-in from a path that would change the host", async () => {
+    const sent = vi.fn<typeof fetch>();
+    vi.stubGlobal("fetch", sent);
+    await expect(resolvePinshapeDownload("@attacker.example/download", "session=secret")).rejects.toThrow(
+      "Refusing to send",
+    );
+    expect(sent).not.toHaveBeenCalled();
   });
 
   it.each(["attacker.makerworld.com", "nested.www.makerworld.com"])(

@@ -57,5 +57,23 @@ export const CREDENTIAL_HOSTS = {
   "eufymake-api": {
     exact: ["aiot-wapi-eu.ankermake.com"],
   },
+  "pinshape-session": {
+    exact: ["pinshape.com"],
+  },
+  "toymakr3d-session": {
+    exact: ["www.toymakr3d.com"],
+  },
+  "makerables-api": {
+    exact: ["www.makerables.com"],
+  },
+  "makerables-session": {
+    exact: ["www.makerables.com"],
+  },
+  "cgtrader-session": {
+    exact: ["www.cgtrader.com"],
+  },
+  "grabcad-session": {
+    exact: ["grabcad.com"],
+  },
 } as const;
 export type CredentialDestination = keyof typeof CREDENTIAL_HOSTS;

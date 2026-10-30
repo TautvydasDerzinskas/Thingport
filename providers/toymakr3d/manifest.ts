@@ -10,6 +10,7 @@ export default {
   site: "https://www.toymakr3d.com",
   docsSlug: "toymakr3d",
   hosts: ["toymakr3d.com"],
+  credentialHosts: { "toymakr3d-session": { exact: ["www.toymakr3d.com"] } },
   endpoints: { files: "https://cdn.toymakr3d.com" },
   brand: {
     logo: {

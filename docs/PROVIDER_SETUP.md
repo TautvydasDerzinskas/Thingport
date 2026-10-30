@@ -77,8 +77,9 @@ on OwlCAD it exports CAD projects from OwlCAD's own editor. Install it from the 
 **Pair with Thingport** in its popup: that opens your Thingport in a tab, where you approve that browser, so no password
 is kept in Grab (see [its setup](../extension/README.md#setup)). Sites after MakerWorld, Printables and Thingiverse
 need one click first, on the site in Grab's popup (a + marks one that's off) or on **Enable all**.
-If a reverse proxy redirects your Thingport instance URL (for example, from HTTP to HTTPS), enter the final
-HTTPS URL in Grab; instance requests reject redirects.
+If a reverse proxy upgrades your instance's `http://` address to `https://` on the same host, Grab follows that
+upgrade. It never sends your sign-in along any other redirect: then enter the final address in Grab instead. A
+connection made before this upgrade was followed may need connecting once more, so Grab may reach the `https://` address.
 
 ### FlareSolverr
 

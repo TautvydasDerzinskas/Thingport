@@ -1,3 +1,4 @@
+import { assertCredentialDestination } from "../credentialRequest";
 import * as cheerio from "cheerio";
 import { IMPORT_TIMEOUT_SECONDS } from "../../config";
 import { absoluteHttpUrl, htmlToMarkdown } from "../../services/descriptionMarkdown";
@@ -82,7 +83,9 @@ async function request(path: string, cookie: string | null, accept: string): Pro
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const res = await fetch(`${SITE_ORIGIN}${path}`, {
+    const url = `${SITE_ORIGIN}${path}`;
+    if (cookie) assertCredentialDestination("pinshape-session", url);
+    const res = await fetch(url, {
       headers: {
         Accept: accept,
         "Accept-Language": "en-US,en;q=0.9",
