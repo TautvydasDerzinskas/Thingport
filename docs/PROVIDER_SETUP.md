@@ -72,9 +72,11 @@ badge, shows the same in short.
 
 [Thingport Grab](../extension/README.md) is Thingport's browser extension for Chrome, Edge and Firefox. Besides
 importing straight from a model's page, it hands your browser's sign-in to Thingport, so the sites that need one connect
-by just being visited, and stay connected. On MakerOnline it does the downloading itself, so there it's required.
-Sites after MakerWorld, Printables and Thingiverse need one click first: **Enable** next to the site in Grab's popup.
-Install it from the **Downloads** page.
+by just being visited, and stay connected. On MakerOnline it does the downloading itself, so there it's required, and
+on OwlCAD it exports CAD projects from OwlCAD's own editor. Install it from the **Downloads** page and connect it with
+**Pair with Thingport** in its popup: that opens your Thingport in a tab, where you approve that browser, so no password
+is kept in Grab (see [its setup](../extension/README.md#setup)). Sites after MakerWorld, Printables and Thingiverse
+need one click first, on the site in Grab's popup (a + marks one that's off) or on **Enable all**.
 
 ### FlareSolverr
 
@@ -83,15 +85,21 @@ answering it. [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) gets 
 browser. It's part of the standard Docker Compose stack; its address is set under **Administration → Connections →
 FlareSolverr**, and [System Health](guides/system-health.md) checks it. Without it, imports and syncs from those sites
 fail whenever Cloudflare steps in. MakerWorld and Thangs use it only as a fallback, and it can't help with Cults3D.
+CGTrader's downloads sit behind AWS's bot check instead: FlareSolverr gets Thingport a token for it whenever the last
+one is turned down, and without FlareSolverr only the token Grab sends from your browser will do.
 
 ## Connecting a provider
 
 Connect them under **Configuration → Providers**: open the user menu (your avatar, top right) and choose
 **Configuration**, or click one of the provider chips at the bottom of that menu. Right-click a provider to connect or
-disconnect it, or double-click one that isn't connected yet. A green tick means it's connected. A provider your admin
-has [turned off](#turning-a-provider-off) isn't listed.
+disconnect it, or double-click one that isn't connected yet. A green tick means it's connected; a red cross, that it
+isn't or not fully, and hovering it says why. A provider your admin has [turned off](#turning-a-provider-off) isn't
+listed.
 
-![Configuration, Providers section with MakerWorld, Thingiverse, Printables and MyMiniFactory connected](../frontend/src/assets/screenshots/11_configuration_providers.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../frontend/src/assets/screenshots/dark/03_dashboard_configuration.png">
+  <img src="../frontend/src/assets/screenshots/light/03_dashboard_configuration.png" alt="Configuration, Providers section: each site with a green tick when it's connected or a red cross when it isn't" width="100%">
+</picture>
 
 ## Turning a provider off
 

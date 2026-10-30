@@ -60,5 +60,6 @@ Two things OwlCAD's editor won't do:
 ## Setup
 
 None. OwlCAD needs no account, no API key and nothing in **Configuration → Providers** -- it is connected from the
-start. For CAD projects, allow [Thingport Grab](../../extension/README.md) on owlcad.com: open Grab's popup, find
-**OwlCAD** under **Providers** and choose **Enable**.
+start. For CAD projects, allow [Thingport Grab](../../extension/README.md) on owlcad.com: in Grab's popup, click
+**OwlCAD** under **Providers** -- or **Enable** on the card at the top while you're on owlcad.com -- and let your
+browser give it access.

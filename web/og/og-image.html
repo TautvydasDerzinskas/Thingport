@@ -94,7 +94,7 @@
         display: flex;
         gap: 8px;
       }
-      /* Sized so four sites end before the screenshot. */
+      /* Sized so the pills end before the screenshot. */
       .pill {
         padding: 7px 11px;
         font-size: 17px;
@@ -105,12 +105,13 @@
       .pill.alt {
         background: var(--alt);
       }
-      /* The app's own badge colours for these two (frontend/src/constants/importProviders.ts). */
       .pill.thingiverse {
         background: #2b78fe;
       }
-      .pill.myminifactory {
-        background: #00866f;
+      .pill.more {
+        color: var(--heading);
+        background: var(--panel);
+        box-shadow: inset 0 0 0 1px var(--border);
       }
       .shot {
         position: absolute;
@@ -140,8 +141,8 @@
     <div class="pills">
       <span class="pill">MakerWorld</span>
       <span class="pill alt">Printables</span>
-      <span class="pill thingiverse">Thingiverse</span><span class="pill myminifactory">MyMiniFactory</span>
+      <span class="pill thingiverse">Thingiverse</span><span class="pill more">+14 more</span>
     </div>
-    <div class="shot"><img src="../../frontend/src/assets/screenshots/02_models.png" alt="" /></div>
+    <div class="shot"><img src="../../frontend/src/assets/screenshots/light/04_models.png" alt="" /></div>
   </body>
 </html>

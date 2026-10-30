@@ -42,7 +42,7 @@ in [`tools/index.json`](../tools/index.json).
 | ------------- | ---------------------------------------------------------------------------------------------- |
 | `name`        | 1–40 characters. Required                                                                      |
 | `description` | Up to 300 characters, shown to admins and in **About**                                         |
-| `version`     | Up to 20 characters, `1.0.0` by default. Raise it and admins are offered the update            |
+| `version`     | Up to 20 characters, `1.0.0` by default. Shown to admins, and what **Update** offers them      |
 | `author`      | Up to 60 characters, with an optional `authorUrl`. The validator insists on an author          |
 | `iconUrl`     | An image address, `builtin:<group>/<name>`, `/api/icons/<file>`, or an SVG as a `data:` URL    |
 | `window`      | `{ width, height }` in pixels: 320–1920 by 240–1200, `960 × 640` by default                    |
@@ -138,7 +138,8 @@ Admins look through these before installing, so show the tool working, not an em
 ## Working on one locally
 
 Run Thingport from a checkout (`npm run dev`, see [DEVELOPMENT.md](DEVELOPMENT.md)) and **Administration → Tools**
-offers the checkout's own `tools` folder, read afresh each time: edit a file, install or update the tool, and reload.
+offers the checkout's own `tools` folder, read afresh each time: edit a file, install the tool or take the **Update**
+its tile then offers, and reload.
 `TOOLS_DIR` points the backend at any other folder, and `TOOLS_URL` at a fork's `tools` folder on GitHub; the guide's
 [where the tools come from](guides/tools.md#where-the-tools-come-from) has the whole table.
 
@@ -164,5 +165,9 @@ It checks the folder the way Thingport reads it when an admin installs the tool,
 5. Open the pull request. A maintainer reads the script — see the [tools README](../tools/README.md) for what that
    looks for.
 
-After it's merged, any change raises `version`, so admins are offered the update; the tool stays exactly as installed on
-every instance until each admin takes it.
+After it's merged, raise `version` with every change. In **Administration → Tools**, an installed tool's tile carries a
+blue **Update** chip, offering the new version, wherever its metadata, script, markup or labels differ from the
+repository's, and a green **Latest** where they don't; the tool stays exactly as installed on every instance until an
+admin takes the update. An update brings the tool's models only where the instance already has them: one that
+installed it without them, or whose installed version brought none, gets a newly added collection only when an admin
+imports it from the tool's details.

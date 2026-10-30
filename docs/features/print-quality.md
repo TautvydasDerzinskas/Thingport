@@ -3,7 +3,10 @@
 Find out whether a model will print before you spend an hour slicing it. Thingport checks a model's STL, OBJ, 3MF and
 STEP files for the problems that spoil prints, and tells you what it found and how serious it is.
 
-![The Print quality report on a model, listing holes in the surface and non-manifold edges](../../frontend/src/assets/screenshots/light/08_model_print_quality.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/08_model_print_quality.png">
+  <img src="../../frontend/src/assets/screenshots/light/08_model_print_quality.png" alt="The Print quality report on a model, listing holes in the surface and non-manifold edges" width="100%">
+</picture>
 
 ## How it works
 

@@ -55,8 +55,8 @@ A few details worth knowing:
 
 - If model files sit directly in the folder you picked, that folder itself becomes the model.
 - Files in a folder without any model files are uploaded one per file, as in the other mode.
-- This is the right choice for downloads from MakerWorld, Printables, Thingiverse and MyMiniFactory that you unpacked into a folder
-  each. Every download ends up as one tidy model.
+- This is the right choice for downloads from model sites that you unpacked into a folder each. Every download ends up
+  as one tidy model.
 
 ## ZIPs inside the folder
 

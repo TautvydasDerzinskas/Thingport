@@ -4,11 +4,16 @@ A tool is a small app that opens in a window of its own from the **Tools** page:
 It's a short JavaScript module with some HTML and CSS, like a [custom dashboard widget](custom-widgets.md), and it works
 with your library: it can browse and make collections, find models, read their files, and save the models it makes.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/31_tools.png">
+  <img src="../../frontend/src/assets/screenshots/light/31_tools.png" alt="The Tools page, with the tools on shelves: Generators, Planners, Calculators and Files" width="100%">
+</picture>
+
 Open **Tools** in the sidebar. Double-click a tool to open it, or press <kbd>Enter</kbd> on it; right-click it, or press
-the context menu key, for **About**, **Its models** and, on your own tools, **Edit** and **Delete**. From anywhere,
-<kbd>⌘</kbd><kbd>K</kbd> and `!tool` lists them: every tool you can open is there by name, and picking one opens its
-window. An admin can open an installed tool straight from **Administration → Tools** as well, by double-clicking its
-icon or choosing **Open** from its ⋮ menu.
+the context menu key, for **About**, **Its models** and, on your own tools, **Edit** and **Delete** (an admin also gets
+**Uninstall** on an installed one). From anywhere, <kbd>⌘</kbd><kbd>S</kbd> (<kbd>Ctrl</kbd><kbd>S</kbd>) opens search,
+where `!tool` lists them: every tool you can open is there by name, and picking one opens its window. An admin can open
+an installed tool from **Administration → Tools** as well, with **Open** in its right-click menu or in its details.
 
 ### Arranging them
 
@@ -28,43 +33,79 @@ every device:
 > A tool's script runs in your browser with your access to Thingport, like code you paste into the browser console. The
 > tools in the repository are read before they're merged; only make or keep your own tools if you trust their code.
 
+## The tools in the repository
+
+Nine come with Thingport, for an admin to install:
+
+| Tool                      | Shelf       | What it does                                                                                                                                                       |
+| ------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Multiboard planner        | Planners    | Plans a Multiboard wall and every tile and mount to print it. It draws the plates itself and brings the 13 joints.                                                 |
+| Gridfinity drawer builder | Planners    | Fits a Gridfinity baseplate and bins to a drawer, cut to your printer's bed, and saves the set as one model.                                                       |
+| Skadis planner            | Planners    | Plans a wall of 3D-printed IKEA Skadis boards sized to your bed, with the mounts and the print order. It brings its 21 boards, mounts and spacers from MakerWorld. |
+| Enclosure generator       | Generators  | A case for electronics: box and lid with screws or snaps, PCB standoffs, port cutouts, vents and text.                                                             |
+| QR code generator         | Generators  | A printable QR code for a link, text, a Wi-Fi network or a contact, as a 3MF with a part per filament.                                                             |
+| Keyring generator         | Generators  | Your text as a keyring, with key rings and magnet pockets, in a 3MF that gives each piece its filament.                                                            |
+| Script customizer         | Generators  | Generates a model again from an OpenSCAD script: the one a model in your library came with, or a `.scad` file.                                                     |
+| Print cost estimator      | Calculators | A model's print time, filament and real cost, and the price to charge for the margin you want.                                                                     |
+| MakerWorld 3MF normalizer | Files       | Makes Bambu Studio and MakerWorld 3MFs open in other slicers with their colours, plates and print settings.                                                        |
+
+A model that came with its script doesn't need the Script customizer: **Customize…** on its own page opens its
+parameters whether the tool is installed or not.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/32_tool_window.png">
+  <img src="../../frontend/src/assets/screenshots/light/32_tool_window.png" alt="The QR code generator in its window: what the code says on the left, the printable tile on the right" width="100%">
+</picture>
+
 ## For admins
 
 **Administration → Tools** has three parts.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/30_admin_tools.png">
+  <img src="../../frontend/src/assets/screenshots/light/30_admin_tools.png" alt="Administration, Tools page: who sees tools, users' own tools switched off, and the nine repository tools installed, each marked Latest" width="100%">
+</picture>
 
 - **Who sees tools**: admins only, everyone, or admins and the users you pick; a new Thingport starts on everyone. Only
   they see **Tools** in the sidebar and get the models tools bring. **Users' own tools** lets them also make their own,
   in the editor below; it's off at first.
 - **From the repository**: the tools in the Thingport repository's [`tools`](../../tools) folder, none of them installed
-  until you install it, with screenshots to look through first: click one to see them large, and the arrow keys move
-  between them. **Install** makes one available to everyone who sees tools; **Update** appears when its author changes
-  it. Its ⋮ menu uninstalls it.
+  until you install it. Double-click one, or press <kbd>Enter</kbd> on it, for its details: what it does, how many
+  models it brings, and screenshots to look through first (click one to see them large, and the arrow keys move between
+  them). **Install** there makes it available to everyone who sees tools. Under each installed tool, a blue **Update**
+  chip means the repository has a newer version, which one click takes, and a green **Latest** that it hasn't; neither
+  shows while the repository can't be read. Right-click an installed tool to **Open** it, **Fetch missing models** when
+  some haven't come in, or **Uninstall** it.
 - **Users' own tools**: the tools users made, and whose they are.
 
 ### Tools that bring models
 
-A tool may need models: a wall planner its tiles, for example. They come in a collection of their own, **Tool:
-&lt;name&gt;**, in the library of everyone who sees tools, listed after their own collections. They open, download and go
-to a slicer like any other, but neither they nor the collection can be edited or deleted; they go, from every library,
-when you uninstall the tool. A user who loses access to tools loses them too, and gets them back with it.
+A tool may need models: a wall planner its mounts, for example. They come in a collection of their own, named **Tool:**
+and what the tool calls it, such as **Tool: Multiboard models**, in the library of everyone who sees tools, listed after
+their own collections. They open, download and go to a slicer like any other, but neither they nor the collection can be
+edited or deleted; they go, from every library, when you uninstall the tool. A user who loses access to tools loses
+them too, and gets them back with it.
 
 The collection is where they are and the only place they are listed: a planner with two hundred parts would otherwise
-bury your own models under it, so they stay out of the models page, its categories and search. Favourite one and it
-shows in Favourites, as anything you favourite does.
+bury your own models under it, so they stay out of the models page and its categories. Search still finds them.
+Favourite one and it shows in Favourites, as anything you favourite does.
 
-An admin may install a tool without them -- they can run to gigabytes -- and import them later from
-**Administration → Tools**. A tool asked meanwhile for something built out of a few of them can fetch just those,
-with the user's say-so, through `fetchToolModels`; the planner does this when you save a wall whose parts aren't
-here yet, and says so when the site they come from has had enough for one day.
+An admin may install a tool without them -- they can run to gigabytes -- by switching off **Import its models** as
+they install it, and import them later with **Import its models** in its details. An update, from its chip or its
+details, brings them only where this Thingport already has them, so a tool installed without them stays that way.
+Meanwhile a tool can fetch just the few that a piece of work needs, through `fetchToolModels`: one from a model page is
+imported then through this Thingport's first admin account, with its connection to that site, while the tool's own
+files come only with **Import its models**.
 
-The files behind them are the tool's, and are kept once for the instance however many people use the tool -- a
-planner that brings twelve gigabytes of parts takes twelve gigabytes, not twelve per person. Each user still has
-their own model, in their own collection and language; what they share is the bytes on disk.
+The files behind them are the tool's, and are kept once for the instance however many people use the tool -- parts
+that take a gigabyte take a gigabyte, not a gigabyte per person. Each user still has their own model, in their own
+collection and language; what they share is the bytes on disk.
 
-A tool's models are either files in its repository folder, or model pages Thingport imports when you install it, **as
-you**: for designs that may be downloaded but not passed on, such as Multiboard's. For those, connect the provider first
-(**Configuration → Providers**). The tool's row shows how many have come in; a provider that limits daily downloads, or
-a sign-in that's missing, stops the fetch, and **Fetch missing models** tries the rest again later.
+A tool's models are either files in its repository folder, such as the Multiboard planner's joints, or model pages
+Thingport imports when you install it, **as you**: for designs that may be downloaded but not passed on, such as the
+Skadis planner's boards from MakerWorld. For those, connect the provider first (**Configuration → Providers**). The
+tool's details show how many have come in; a provider that limits daily downloads, or a sign-in that's missing, stops
+the fetch, and **Fetch missing models** tries the rest again later.
 
 ## Have an AI write one
 
@@ -80,8 +121,8 @@ Thingport.
 4. Open it from **Tools** in the sidebar. To change it, ask again: `list_tools` lets the assistant read back the
    script, the HTML and the labels it wrote before.
 
-**New tool** on the Tools page shows these steps as well, under **Use AI**, with example prompts to copy and the
-**Connect an AI** command ready to paste.
+**Use AI**, beside the parts of the **New tool** editor, shows these steps as well, with three example prompts to copy.
+Its **Connect an AI** gives the command or settings for Claude Code, Claude, ChatGPT, Codex CLI, Cursor and VS Code.
 
 A tool an assistant saves is one of your own, so the same warning applies: its script runs in your browser with your
 access to Thingport. Read what it wrote in the editor if you're unsure, and remember that it can't bring models of its
@@ -91,14 +132,11 @@ own — only a tool from the repository does that.
 
 With **Users' own tools** on, **New tool** on the Tools page opens the editor:
 
-- **Details**: its name, icon, version, author, category, the size its window opens at, and the hosts it may reach.
-  The category is the shelf the Tools page starts it on; anyone using it can move it themselves.
+- **Details**: its name, folder name, description, icon, version, author, category, the size its window opens at, and
+  the hosts it may reach. Saving one with the same folder name replaces it. The category is the shelf the Tools page
+  starts it on; anyone using it can move it themselves.
 - **Script**: an ES module. The editor starts with a working tool, _Cube maker_, that uses most of what a tool can do;
   the **SDK reference** beside it lists the rest.
-- **Labels**: the words the tool shows, one file per language, so they aren't buried in the script. The script asks
-  for them by key with `t("key")`. English is the fallback, key by key, so a half-finished translation shows its own
-  words where it has them and English where it doesn't. **＋** adds a language, starting from English's keys with the
-  words blanked.
 - **HTML & CSS**: markup and a `<style>` block, put into the window before the script runs. Scope the styles to a class
   of your own so they stay in the tool. The theme is already on the window as CSS variables — `--tp-accent`,
   `--tp-accent-ink`, `--tp-background`, `--tp-paper`, `--tp-text`, `--tp-text-muted`, `--tp-divider`, `--tp-error`,
@@ -106,6 +144,10 @@ With **Users' own tools** on, **New tool** on the Tools page opens the editor:
   Text and icons on an accent-filled button take `--tp-accent-ink`, never the paper colour, which is dark in the dark
   theme. Watch the specificity while you're at it: a reset written `.yours button { color: inherit }` outranks
   `.yours-button { color: … }` and quietly wins, so wrap such a reset in `:where()`.
+- **Labels**: the words the tool shows, one file per language, so they aren't buried in the script. The script asks
+  for them by key with `t("key")`. English is the fallback, key by key, so a half-finished translation shows its own
+  words where it has them and English where it doesn't. **＋** adds a language, starting from English's keys with the
+  words blanked.
 - **Preview**: the tool running alone, as its window will show it. Until it's saved, what it keeps lasts only as long as
   the preview, and it can't reach other hosts.
 

@@ -1,0 +1,293 @@
+<!doctype html>
+<!-- Store screenshot 1, 1280x800: the logo among every site Grab works on, and what it does there. Rendered by
+     `npm run store-assets` (scripts/store-assets.ts), which calls render() with each site's name and logo from its
+     manifest, as the popup draws them. -->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="common.css" />
+    <style>
+      html,
+      body {
+        width: 1280px;
+        height: 800px;
+      }
+      .grid {
+        mask-image: radial-gradient(60% 70% at 50% 55%, #000 0%, transparent 85%);
+      }
+      header {
+        position: absolute;
+        top: 42px;
+        left: 0;
+        right: 0;
+        text-align: center;
+      }
+      .eyebrow {
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--accent-light);
+      }
+      h1 {
+        margin-top: 10px;
+        font-size: 46px;
+        line-height: 1.1;
+      }
+      header p {
+        margin-top: 12px;
+        font-size: 19px;
+        font-weight: 500;
+      }
+
+      /* The sites, around the hub; placed by render(). */
+      .orbit {
+        position: absolute;
+        inset: 0;
+      }
+      .links {
+        position: absolute;
+        inset: 0;
+      }
+      .hub {
+        position: absolute;
+        width: 220px;
+        height: 220px;
+        margin: -110px 0 0 -110px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: radial-gradient(closest-side, rgba(0, 184, 0, 0.32), rgba(0, 184, 0, 0.08) 70%, transparent);
+      }
+      .hub img {
+        width: 112px;
+        height: 112px;
+        filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.45));
+      }
+      .hub span {
+        position: absolute;
+        top: 178px;
+        white-space: nowrap;
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--heading);
+      }
+      .site {
+        position: absolute;
+        width: 0;
+        height: 0;
+      }
+      .site__chip {
+        position: absolute;
+        left: -33px;
+        top: -33px;
+        width: 66px;
+        height: 66px;
+        border-radius: 18px;
+        display: grid;
+        place-items: center;
+        background: #fff;
+        color: #1b2033;
+        box-shadow:
+          0 12px 28px rgba(0, 0, 0, 0.4),
+          0 0 0 4px rgba(255, 255, 255, 0.06);
+      }
+      .site__chip svg {
+        width: 38px;
+        height: 38px;
+      }
+      .site__name {
+        position: absolute;
+        top: 40px;
+        left: -70px;
+        width: 140px;
+        text-align: center;
+        font-size: 14px;
+        font-weight: 500;
+        color: #d6d9e0;
+        white-space: nowrap;
+      }
+
+      footer {
+        position: absolute;
+        left: 64px;
+        right: 64px;
+        bottom: 46px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 28px;
+      }
+      .feature {
+        display: grid;
+        grid-template-columns: 44px 1fr;
+        gap: 14px;
+        align-items: start;
+      }
+      .feature__icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: rgba(0, 184, 0, 0.16);
+        border: 1px solid rgba(91, 229, 132, 0.35);
+      }
+      .feature__icon svg {
+        width: 24px;
+        height: 24px;
+        stroke: var(--accent-light);
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .feature b {
+        display: block;
+        font-size: 19px;
+        color: var(--heading);
+      }
+      .feature span {
+        display: block;
+        margin-top: 4px;
+        font-size: 15px;
+        line-height: 1.4;
+      }
+      .fine {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 14px;
+        text-align: center;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.32);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="grid"></div>
+    <header>
+      <div class="eyebrow">Thingport Grab</div>
+      <h1><span id="count">17</span> model sites, <em>one library of your own</em></h1>
+      <p>Import from the sites you browse into your self-hosted Thingport, with the files, photos and details.</p>
+    </header>
+    <div class="orbit" id="orbit">
+      <svg class="links" id="links" width="1280" height="800"></svg>
+      <div class="hub" id="hub">
+        <img src="../../frontend/src/assets/logos/thingport-icon-on-dark.svg" alt="" />
+        <span>Thingport</span>
+      </div>
+    </div>
+    <footer>
+      <div class="feature">
+        <div class="feature__icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M9 15l6-6M11 6l1.5-1.5a4.2 4.2 0 0 1 6 6L17 12M13 18l-1.5 1.5a4.2 4.2 0 0 1-6-6L7 12" />
+          </svg>
+        </div>
+        <div><b>Connect</b><span>Pair with your Thingport once. No password is saved in the browser.</span></div>
+      </div>
+      <div class="feature">
+        <div class="feature__icon">
+          <svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>
+        </div>
+        <div><b>Import</b><span>One click on a model page brings its files, photos, description and author.</span></div>
+      </div>
+      <div class="feature">
+        <div class="feature__icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M20 11a8 8 0 0 0-14.5-4.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.5 4.5L20 16M20 20v-4h-4" />
+          </svg>
+        </div>
+        <div><b>Sync</b><span>Keep a collection or your likes in sync, and new models follow on their own.</span></div>
+      </div>
+    </footer>
+    <p class="fine">Not affiliated with or endorsed by the sites shown.</p>
+    <script>
+      // Every site on an ellipse round the hub, evenly spaced along it, the first at the top.
+      const CENTER = { x: 640, y: 425 };
+      const RADIUS = { x: 470, y: 195 };
+      const SVG_NS = "http://www.w3.org/2000/svg";
+
+      function ellipsePoints(count) {
+        const samples = 2000;
+        const pts = [];
+        let length = 0;
+        for (let i = 0; i <= samples; i++) {
+          const t = -Math.PI / 2 + (i / samples) * Math.PI * 2;
+          const p = { x: CENTER.x + RADIUS.x * Math.cos(t), y: CENTER.y + RADIUS.y * Math.sin(t) };
+          if (pts.length) length += Math.hypot(p.x - pts[pts.length - 1].x, p.y - pts[pts.length - 1].y);
+          pts.push({ ...p, at: length });
+        }
+        const out = [];
+        for (let k = 0; k < count; k++) {
+          const target = (k / count) * length;
+          out.push(pts.find((p) => p.at >= target));
+        }
+        return out;
+      }
+
+      window.render = ({ providers }) => {
+        document.getElementById("count").textContent = providers.length;
+        const hub = document.getElementById("hub");
+        hub.style.left = `${CENTER.x}px`;
+        hub.style.top = `${CENTER.y}px`;
+        const orbit = document.getElementById("orbit");
+        const links = document.getElementById("links");
+        const defs = document.createElementNS(SVG_NS, "defs");
+        links.append(defs);
+        ellipsePoints(providers.length).forEach((point, i) => {
+          const provider = providers[i];
+          // A line from the site to the hub, fading as it reaches the site, with a dot partway along.
+          const dx = point.x - CENTER.x;
+          const dy = point.y - CENTER.y;
+          const dist = Math.hypot(dx, dy);
+          const from = { x: CENTER.x + (dx / dist) * 92, y: CENTER.y + (dy / dist) * 92 };
+          const to = { x: point.x - (dx / dist) * 44, y: point.y - (dy / dist) * 44 };
+          const gradient = document.createElementNS(SVG_NS, "linearGradient");
+          gradient.id = `fade-${i}`;
+          gradient.setAttribute("gradientUnits", "userSpaceOnUse");
+          for (const [attr, value] of [
+            ["x1", from.x],
+            ["y1", from.y],
+            ["x2", to.x],
+            ["y2", to.y],
+          ]) {
+            gradient.setAttribute(attr, value);
+          }
+          gradient.innerHTML =
+            '<stop offset="0" stop-color="#5be584" stop-opacity="0.55"/><stop offset="1" stop-color="#5be584" stop-opacity="0.08"/>';
+          defs.append(gradient);
+          const line = document.createElementNS(SVG_NS, "line");
+          for (const [attr, value] of [
+            ["x1", from.x],
+            ["y1", from.y],
+            ["x2", to.x],
+            ["y2", to.y],
+          ]) {
+            line.setAttribute(attr, value);
+          }
+          line.setAttribute("stroke", `url(#fade-${i})`);
+          line.setAttribute("stroke-width", "1.6");
+          line.setAttribute("stroke-dasharray", "2 7");
+          line.setAttribute("stroke-linecap", "round");
+          links.append(line);
+          const dot = document.createElementNS(SVG_NS, "circle");
+          dot.setAttribute("cx", from.x + (to.x - from.x) * 0.42);
+          dot.setAttribute("cy", from.y + (to.y - from.y) * 0.42);
+          dot.setAttribute("r", "3");
+          dot.setAttribute("fill", "#5be584");
+          dot.setAttribute("opacity", "0.7");
+          links.append(dot);
+
+          const site = document.createElement("div");
+          site.className = "site";
+          site.style.left = `${point.x}px`;
+          site.style.top = `${point.y}px`;
+          site.innerHTML = `<div class="site__chip">${provider.logo}</div><div class="site__name"></div>`;
+          site.querySelector(".site__name").textContent = provider.name;
+          orbit.append(site);
+        });
+      };
+    </script>
+  </body>
+</html>

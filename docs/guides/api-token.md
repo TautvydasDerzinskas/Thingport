@@ -13,7 +13,10 @@ Each user has their own token, and it only sees that user's library.
 3. Copy the token straight away. It's shown only once, and Thingport keeps only a fingerprint of it, so it can't show
    it to you again.
 
-![The profile page, with the API token row under the email and password](../../frontend/src/assets/screenshots/10_profile.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/14_profile.png">
+  <img src="../../frontend/src/assets/screenshots/light/14_profile.png" alt="The profile page, with the API token row under the email and password, and the cog that opens its permissions" width="100%">
+</picture>
 
 The token starts with `tp_`. Afterwards your profile shows its last four characters, when it was created and when it
 was last used, so you can tell which token is in use and whether anything is still using it.
@@ -44,20 +47,20 @@ browser history and proxy logs.
 A new token can read everything you can. To narrow it, click the cog next to the token to open **Token permissions**,
 and under **Permissions** set each kind of data to **Allow** or **Deny**:
 
-| Permission      | What it reads                                                                     |
-| --------------- | --------------------------------------------------------------------------------- |
-| Search          | `/api/search`                                                                     |
-| Models          | `/api/prints`, the sites they came from, `/api/print/{id}`, and the files check   |
-| Dashboard       | `/api/dashboard/...`: library totals, most viewed and printed, the featured model |
-| Activity        | `/api/activity` and `/api/activity/feed`                                          |
-| Collections     | `/api/collections`, `/api/collection/{id}` and a model's collections              |
-| Tags            | `/api/tags` and `/api/tags/summary`                                               |
-| Categories      | `/api/categories`                                                                 |
-| Authors         | `/api/author/{id}`                                                                |
-| Images          | Thumbnails, renders and preview pictures                                          |
-| Model files     | Model files and 3D previews (`.glb`)                                              |
-| Imports         | The progress of running imports                                                   |
-| Everything else | Any other read: your settings, notifications, AI suggestions and so on            |
+| Permission      | What it reads                                                                                                                                                                         |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Search          | `/api/search`                                                                                                                                                                         |
+| Models          | `/api/prints`, the sites they came from, the files check, `/api/print/{id}` and its print quality report                                                                              |
+| Dashboard       | `/api/dashboard/...`: library totals, most viewed, printed and recently added, top authors, the featured model, and the weather, feeds, monitors and trending models its widgets show |
+| Activity        | `/api/activity` and `/api/activity/feed`                                                                                                                                              |
+| Collections     | `/api/collections`, `/api/collection/{id}`, a model's collections and your bookmarks                                                                                                  |
+| Tags            | `/api/tags`, `/api/tags/summary` and your bookmarked tags                                                                                                                             |
+| Categories      | `/api/categories`                                                                                                                                                                     |
+| Authors         | `/api/author/{id}` and the author profiles linked to you                                                                                                                              |
+| Images          | Thumbnails, renders, preview pictures, description images and tag mosaics                                                                                                             |
+| Model files     | Model files and 3D previews (`.glb`), supporting files, the sliced print, and a category as a ZIP                                                                                     |
+| Imports         | The progress of running imports, and the ones waiting for Thingport Grab                                                                                                              |
+| Everything else | Any other read: your settings, notifications, AI suggestions and so on                                                                                                                |
 
 Changes apply straight away, without a new token. A request the token isn't allowed is refused with `403` and a
 `scope` field naming the permission it needs. A search widget, for example, needs only **Search**, plus **Images** if
@@ -74,8 +77,8 @@ library, such as importing a model, stay off until you turn them on. See [Connec
 - **Read:** anything you can see in Thingport yourself, such as models, collections, tags, search, the dashboard and
   your activity, less whatever you deny it under [Permissions](#choose-what-the-token-can-read).
 - **Not write over the REST API:** any request that would add, change or delete something is refused with
-  `403 API tokens are read-only`. Only the [MCP tools](mcp.md) you turn on can change your library, and none of them
-  deletes or overwrites anything.
+  `403 API tokens are read-only`. Only the [MCP tools](mcp.md) you allow can change your library, and the ones that
+  delete or overwrite models, pictures or files stay off until you turn them on.
 - **Not manage itself:** a token can't be used to generate a new token, revoke one or sign in, so a leaked token can't
   be turned into anything more.
 - **Not reach administration:** even an admin's token can't open the admin pages or settings, which hold instance

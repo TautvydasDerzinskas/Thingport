@@ -184,15 +184,21 @@ from the Actions tab. When it fails, the HTML report, traces and container logs 
 
 The README and website screenshots in `frontend/src/assets/screenshots/` are captured from a running
 instance with a populated library, by `regression/screenshots.mjs` (the extension's screenshots
-aren't covered). It signs in, captures every shot at 1400×790 and 2× scale, and overwrites the files.
-The account's theme and Categories/Folders choice are switched for the shots and restored afterwards.
+aren't covered). It signs in, captures every shot in the light and the dark theme at 1400×790 and 2× scale,
+and overwrites the files in `light/` and `dark/`. The account's theme and Categories/Folders choice are switched
+for the shots and restored afterwards, and a shot that can't be taken is reported without stopping the run.
 
 ```bash
 cd regression
-THINGPORT_PASSWORD='…' npm run screenshots -- --url https://thingport.example --email you@example.com
+THINGPORT_PASSWORD='…' npm run screenshots -- --url https://thingport.example --email you@example.com \
+  --model <id> --quality-model <id> --ai-description-model <id>
 npm run screenshots -- --url … --email … --only 03,04     # just some shots
-npm run screenshots -- --url … --email … --model "Benchy" # model for the details and 3D shots
 ```
+
+Models are named by id: one for the details and 3D preview shots, one whose print quality check found problems,
+and one whose description AI rewrote (that shot is skipped without it). The customizer and collection sync shots
+take the library's first model with a script and first synced collection, unless `--generative-model` or
+`--synced-collection` names another.
 
 `--out` writes somewhere else instead, e.g. to compare before replacing. Self-signed certificates
 are accepted.

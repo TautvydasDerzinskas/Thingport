@@ -31,8 +31,7 @@ The copy button needs Thingport to be opened over HTTPS or on `localhost`. On a 
 
 ## Use it
 
-1. Open a model's page on any [supported site](../features/importing.md): MakerWorld, Printables, Thingiverse,
-   MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake or Pinshape.
+1. Open a model's page on any of the [sites Thingport imports from](../PROVIDER_SETUP.md).
 2. Click **Send to Thingport** in the bookmarks bar.
 3. Thingport opens with the link in the import dialog. Pick the print profiles to bring in if the site has them, then
    click **Import**.
@@ -41,7 +40,8 @@ If you're signed out, Thingport asks you to sign in first, and then opens the im
 
 Nothing is imported until you click **Import**, so clicking the bookmarklet on the wrong page only opens the
 dialog, which you can cancel. Anything the import dialog can't take, such as a MakerWorld
-collection, is still for Thingport Grab.
+collection, is still for Thingport Grab. A MakerOnline model or an OwlCAD CAD project imported this way waits for Grab,
+which brings it in the next time you open that site.
 
 ## If a new tab doesn't open
 

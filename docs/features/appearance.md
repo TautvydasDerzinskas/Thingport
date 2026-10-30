@@ -2,7 +2,10 @@
 
 Make Thingport look the way you like, under **Configuration → Appearance**, from the user menu.
 
-![Configuration, Appearance section, with language, theme, accent colour, render colour and model cards](../../frontend/src/assets/screenshots/light/15_profile_configuration.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/15_profile_configuration.png">
+  <img src="../../frontend/src/assets/screenshots/light/15_profile_configuration.png" alt="Configuration, Appearance section, with language, theme, accent colour, render colour and model cards" width="100%">
+</picture>
 
 - **Language:** English, Español, Français and Lietuvių, and any language someone has
   [translated it into](../TRANSLATING.md).
@@ -10,8 +13,9 @@ Make Thingport look the way you like, under **Configuration → Appearance**, fr
 - **Accent colour:** Thingport green, graphite, or a provider's brand colour: Thingiverse blue, Printables orange,
   Thangs yellow, MyMiniFactory teal or Cults3D purple. It recolours the whole app and its logo, and tints model renders,
   dashboard lists, tag tiles and the 3D preview.
-- **Render colour:** the colour generated 3D renders and the [3D preview](3d-previews.md) are drawn in. Picking an
-  accent sets it to match; pick one here to give renders a colour of their own, or light grey for no tint.
+- **Render colour:** the colour generated 3D renders and the [3D preview](3d-previews.md) are drawn in; a model that
+  carries colours of its own keeps them in the preview. Picking an accent sets it to match; pick one here to give
+  renders a colour of their own, or light grey for no tint.
 - **Model cards:** what cards show first. **Images** shows the pictures a model came with, or a 3D render where it has
   none. **3D renders** shows a render of every model in your render colour, for a uniform grid, falling back to its
   pictures where a file can't be drawn.

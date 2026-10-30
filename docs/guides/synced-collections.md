@@ -1,22 +1,21 @@
 # Synced collections
 
-A synced collection follows a collection on MakerWorld, Printables, Thingiverse, MyMiniFactory, MakerOnline, Creality
-Cloud, NexPrint, Thangs, Cults3D or Pinshape, your MakerOnline, Creality Cloud or Thangs likes, anyone's Cults3D or
-Pinshape likes, or your likes or bookmarks on Snapmaker Space. When a model is added
-to it there, Thingport imports that model into the matching Thingport collection on its own, without you visiting the
-page again.
+A synced collection follows a list on a model site -- a collection, someone's likes, or your bookmarks, wishlist or
+saved projects. When a model is added to it there, Thingport imports that model into the matching Thingport collection
+on its own, without you visiting the page again. Every site Thingport imports from can be synced except OwlCAD, which
+has no collections or likes; [what each one syncs](#what-each-site-syncs) is below.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../assets/collection-sync-dark.gif">
-  <img src="../assets/collection-sync-light.gif" alt="Models flowing from a MakerWorld, Printables, Thingiverse or MyMiniFactory collection, through Thingport, into a synced collection">
+  <img src="../assets/collection-sync-light.gif" alt="Models flowing from a MakerWorld, Printables or Thingiverse collection, through Thingport, into a synced collection">
 </picture>
 
 ## Why sync a collection
 
-- **Keep collecting where you already do.** Save models to a collection on MakerWorld, Printables, Thingiverse or
-  MyMiniFactory as you browse, even from your phone, and they turn up in your library later.
-- **Follow other people's collections.** Sync a designer's or a friend's public collection, and get each model they
-  add to it.
+- **Keep collecting where you already do.** Save or like models on the site as you browse, even from your phone, and
+  they turn up in your library later.
+- **Follow other people's collections.** Sync a designer's or a friend's public collection, or their likes where the
+  site shows them to anyone, and get each model they add to it.
 - **A real copy of everything.** Each new model is imported with its files, photos, description, tags and author, so
   it's still yours if the original page goes away.
 - **Nothing to remember.** Thingport checks the collection on a schedule and sends a notification saying what came in.
@@ -26,42 +25,60 @@ page again.
 ## Before you start
 
 - Sync can be turned on from Thingport itself, or with [Thingport Grab](../../extension/README.md), the browser
-  extension, on the provider collection's page.
+  extension, on the list's own page.
 - Connect the provider under **Configuration → Providers** where it needs it (see
-  [provider setup](../PROVIDER_SETUP.md)). Printables needs nothing. MakerWorld needs your session cookie to import
-  models, and to read a private collection. Thingiverse needs an App Token, and MyMiniFactory an API key. A
-  MyMiniFactory collection's paid models are left out of its sync. Snapmaker Space needs your own sign-in, which
-  Thingport Grab keeps fresh; if Grab's browser stays closed for a day it runs out, and Snapmaker syncs wait until
-  your next visit there. MakerOnline reads public collections with nothing; your likes and private collections need
-  your sign-in, and its new models always wait for Thingport Grab (see below). Creality Cloud reads collections with
-  nothing, but its files and your likes need your sign-in, which lasts a week from when you signed in there; Grab
-  sends the new one on your next visit. NexPrint reads collections, private ones too, with nothing, but its files need
-  your sign-in, which Grab sends on as you visit nexprint.com. Every Thangs sync needs your sign-in, which Thingport keeps
-  renewed; its paid models you don't own and its print-only ones are left out, and once your account's daily
-  downloads are used up, the rest come in on a later check. Cults3D syncs read your likes, anyone's likes and your own
-  printlists with your API key, and download with the browser sign-in Grab sends; its paid models you don't own are
-  left out, and if its Cloudflare turns Thingport away, the rest come in after your next visit to cults3d.com with Grab. eufyMake has no collections; syncing your likes needs your sign-in, which Grab sends as you visit
-  makeitreal.eufymake.com. Pinshape reads anyone's collections and likes with nothing, but its files need your sign-in,
-  which Grab sends as you visit pinshape.com; its profiles show only 12 of someone's likes, so a likes sync brings new
-  ones as they show up there.
+  [provider setup](../PROVIDER_SETUP.md)). The table says what each one needs.
+
+### What each site syncs
+
+| Site            | What syncs                                    | What it needs                                                                                             |
+| --------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| MakerWorld      | Collections, private ones too                 | Your session cookie, to import models and to read a private collection                                    |
+| Printables      | Collections; your private ones and likes too  | Nothing; [Grab for the private ones and likes](#private-printables-collections-and-your-printables-likes) |
+| Thingiverse     | Collections, and anyone's likes               | The admin's App Token                                                                                     |
+| MyMiniFactory   | Collections, less their paid models           | The admin's API key                                                                                       |
+| Snapmaker Space | Your likes and bookmarks                      | Your sign-in, which only Grab keeps fresh                                                                 |
+| MakerOnline     | Collections, and your likes                   | Your sign-in for likes and private collections; [Grab for the files](#makeronline)                        |
+| Creality Cloud  | Collections, private ones too, and your likes | Your sign-in, for the files and your likes                                                                |
+| NexPrint        | Collections, private ones too                 | Your sign-in, for the files                                                                               |
+| Thangs          | Collections, and your likes                   | Your sign-in, for every sync; Thingport keeps it renewed                                                  |
+| Cults3D         | Your printlists, and anyone's likes           | Your API key, and the browser sign-in Grab sends for the files                                            |
+| eufyMake        | Your likes                                    | Your sign-in                                                                                              |
+| Pinshape        | Anyone's collections and likes                | Your sign-in, for the files                                                                               |
+| Toymakr3D       | Your liked products                           | Your sign-in, for the list and the files                                                                  |
+| Makerables      | Your saved projects                           | Your sign-in, for the list; the files need none                                                           |
+| CGTrader        | Your liked models and your wishlist           | Your sign-in, and Grab's token or FlareSolverr for its bot check                                          |
+| GrabCAD         | Anyone's likes                                | Your sign-in, for the files                                                                               |
+
+A few have more to know:
+
+- **Sign-ins that run out.** Snapmaker's lasts a day and only Grab renews it, so if Grab's browser stays closed that
+  long, Snapmaker syncs wait until your next visit there. Creality Cloud's lasts a week from when you signed in there,
+  and Grab sends the new one on your next visit. GrabCAD's lasts two days from its last use, and visiting grabcad.com
+  with Grab now and then keeps it alive; without one, a GrabCAD sync waits rather than fail every model.
+- **Left out.** A MyMiniFactory collection's paid models; on Thangs and Cults3D the paid ones you don't own, and on
+  Thangs the print-only ones too. CGTrader's paid ones aren't left out: one you haven't bought is refused when the sync
+  reaches it, and counts as failed.
+- **Limits.** Once your Thangs account's daily downloads are used up, the rest come in on a later check. If Cults3D's
+  Cloudflare turns Thingport away, the rest come in after your next visit to cults3d.com with Grab.
+- **Pinshape likes.** Its profiles show only 12 of someone's likes, so a likes sync brings new ones as they show up
+  there.
 
 ## Turn sync on in Thingport
 
-1. Open the Thingport collection that should follow one on a provider, or create it first.
+1. Open the Thingport collection that should follow a list on a provider, or create it first.
 2. Choose **⋮ → Sync configuration**. A collection that isn't synced yet opens on **Browse**.
-3. Pick the provider. Your own collections there are listed: on MakerWorld through your cookie, private ones included;
-   on Printables, Thingiverse and MyMiniFactory, the public ones of the username you give the first time; on Snapmaker
-   Space, your likes and bookmarks; on MakerOnline, Creality Cloud and Thangs, your likes and your collections; on
-   NexPrint, your collections; on Cults3D, your likes and your printlists; on Pinshape, your likes, your collections and
-   the ones you subscribed to. Or paste any
-   collection's link, yours or someone else's.
-4. Pick a collection and click **Sync with "…"**. **Settings** sets how often it's checked, and for MakerWorld,
-   Snapmaker Space, MakerOnline, Creality Cloud and NexPrint which print profiles each new model brings, before you do.
+3. Pick the provider. Your own lists there are listed: on Printables, Thingiverse and MyMiniFactory, the public ones of
+   the username you give the first time; everywhere else, those of the account you connected, as the table says (on
+   Pinshape, the collections you subscribed to as well). Or paste the link of any list the site lets Thingport read,
+   yours or someone else's.
+4. Pick one and click **Sync**. **Settings** sets how often it's checked, and for MakerWorld, Snapmaker Space,
+   MakerOnline, Creality Cloud and NexPrint which print profiles each new model brings, before you do.
 
-What happens to the models already in the provider's collection depends on the provider. On Printables, Thingiverse,
-MyMiniFactory, Snapmaker Space, Creality Cloud, NexPrint, Thangs, Cults3D and Pinshape they're imported now, one at a time. MakerWorld rate-limits bulk imports quickly, so there only models
-added from now on come in; ones already in your library are added to the collection either way. A provider collection
-syncs with one Thingport collection at most, so one that's taken shows which collection follows it.
+The models already in the list are imported now, one at a time; MakerOnline's wait for Grab, as below. MakerWorld
+rate-limits bulk imports quickly, so there only models added from now on come in. Ones already in your library are
+added to the collection either way. A provider's list syncs with one Thingport collection at most, so one that's taken
+shows which collection follows it.
 
 ### MakerOnline
 
@@ -79,16 +96,24 @@ read it, and its models come in on that next visit.
 
 ## Turn sync on with Thingport Grab
 
-1. Open the collection's page on MakerWorld, Printables, Thingiverse or MyMiniFactory (allowed once from Thingport
-   Grab's popup first). A Thingiverse user's **Likes** page works too, and so does your own **Interactions** tab on
-   Snapmaker Space, where the panel's switch picks your likes or bookmarks. On MakerOnline and Creality Cloud, a
-   collection page or your own **Likes** page; on NexPrint, a collection open on its owner's page; on Thangs, a collection page or your own **Liked** page; on Cults3D, anyone's likes page or one of your own
-   printlists; on Pinshape, a collection page or anyone's **Likes** tab.
-2. Click the Thingport Grab button in the bottom-right corner. The panel lists the models in the collection.
-3. Tick **Keep this collection in sync** (**Keep these likes in sync** on a Likes page). It's off by default.
+1. Open the list's page on the site, with the site switched on in Grab's popup:
+   - a collection page on MakerWorld, Printables, Thingiverse, MyMiniFactory, MakerOnline, Creality Cloud, Thangs or
+     Pinshape, or on NexPrint one open on its owner's page;
+   - anyone's likes page on Thingiverse, Cults3D, Pinshape (its **Likes** tab) or GrabCAD, or your own on MakerOnline,
+     Creality Cloud, Thangs (**Liked**), eufyMake or Toymakr3D;
+   - one of your own printlists on Cults3D, your liked models or wishlist on CGTrader, or your **Interactions** tab on
+     Snapmaker Space, where the panel's switch picks your likes or bookmarks.
+
+   Makerables' **Saved** tab has no address of its own, so sync it from Thingport instead.
+
+2. Click the Thingport Grab button in the bottom-right corner. The panel lists the models in it.
+3. Tick **Keep this collection in sync** (**Keep these likes in sync** on a likes page). It's off by default.
 4. Pick the models to import now and click **Import selected** (**Start import** on MakerWorld).
 
-![Thingport Grab on a Printables collection, with Keep this collection in sync ticked](../../extension/docs/screenshots/collection-printables.jpg)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../extension/docs/screenshots/collection-printables-dark.jpg">
+  <img src="../../extension/docs/screenshots/collection-printables.jpg" alt="Thingport Grab on a Printables collection, with Keep this collection in sync ticked" width="100%">
+</picture>
 
 The models already in the collection are imported now, as with any collection import. The ones you leave unticked stay
 out: sync only picks up models added **after** you turn it on.
@@ -102,12 +127,18 @@ Thingport sends a notification once sync is on, naming the collection it follows
 
 A synced collection's tile on the **Collections** page shows the provider's logo with a green tick.
 
-![The Collections page, with synced collections marked by their provider's logo](../../frontend/src/assets/screenshots/05_collections.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/09_collections.png">
+  <img src="../../frontend/src/assets/screenshots/light/09_collections.png" alt="The Collections page, with synced collections marked by their provider's logo" width="100%">
+</picture>
 
 Open the collection and click the same logo above its models, or choose **⋮ → Sync configuration**, to see how it's
 linked:
 
-![A synced collection's sync configuration, Overview section](../../frontend/src/assets/screenshots/12_collection_sync.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/36_collection_sync.png">
+  <img src="../../frontend/src/assets/screenshots/light/36_collection_sync.png" alt="A synced collection's sync configuration, Overview section" width="100%">
+</picture>
 
 - **Overview** shows the chain from the provider's collection to yours, when it was last checked and when the next
   check is due, and a link to the collection on the provider's site. **Sync now** checks it right away. **Stop

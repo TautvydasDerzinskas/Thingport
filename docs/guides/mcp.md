@@ -31,7 +31,9 @@ claude mcp add --transport http thingport https://thingport.example.com/api/mcp 
 ```
 
 Any other MCP client works the same way, as long as it supports the Streamable HTTP transport and lets you set a
-header: point it at `https://thingport.example.com/api/mcp` and send `Authorization: Bearer tp_...`.
+header: point it at `https://thingport.example.com/api/mcp` and send `Authorization: Bearer tp_...`. **How to connect**,
+above the tools in **MCP permissions**, shows the command or settings for Claude Code, Claude, ChatGPT, Codex CLI,
+Cursor and VS Code with your address filled in.
 
 The token works only in that header. Putting it in the address as `?token=...` is refused.
 
@@ -57,7 +59,7 @@ These read your library, and are on for a new token:
 | `widget_guide`      | How to write a [custom dashboard widget](custom-widgets.md), read before saving one.                    |
 | `list_widgets`      | Your custom dashboard widgets, optionally with their code.                                              |
 | `tool_guide`        | How to write a [tool](tools.md) for your Tools page, read before saving one.                            |
-| `list_tools`        | The tools you can open, optionally with the code and labels of your own.                                |
+| `list_tools`        | The tools you can open, installed and your own, optionally with their script, HTML and labels.          |
 | `list_icons`        | Thingport's own icons and the ones you uploaded, searched by name, e.g. for a widget's icon.            |
 
 These change your library. `save_widget`, `save_tool` and `upload_icon` are on for a new token; the rest are off until
@@ -86,7 +88,7 @@ add. The rest change or take away what's there, so they're marked as destructive
 before calling them: `delete_model`, `edit_model_images` and `remove_model_file` delete models, pictures and files for
 good, `add_model_files` replaces a model's sliced print, `edit_model` and `rename_model_file` overwrite what they change,
 `remove_from_collection` takes models out of a collection (not your library), and `save_widget` and `save_tool` replace
-a widget or a tool with the same name.
+a widget or a tool with the same folder name.
 
 An import runs the same checks as **+ Add > Import** (a provider an admin turned off stays off, and a model already in
 your library isn't imported twice) and shows up in your notifications and the admin logs the same way. It doesn't ask for a captcha, even when imports do in the app: like Thingport Grab, an
@@ -112,7 +114,7 @@ the same token in the `Authorization: Bearer` header if the token may read **Mod
 if the token may read **Images**. With `include_pictures`, it also hands the assistant the first 8 pictures, scaled down
 to 512 px, so it can look at them, e.g. to pick a cover.
 
-`save_tool` needs tools turned on for you, with **Users' own tools** ticked, under **Administration → Tools**;
+`save_tool` needs tools turned on for you, with **Users' own tools** switched on, under **Administration → Tools**;
 `list_tools` says so when they aren't, so the assistant can tell you what to ask an admin for. A tool it saves is yours
 alone, and it can't bring models of its own — only a tool in the Thingport repository does that, where its files are
 what a reviewer reads.
@@ -142,7 +144,7 @@ look like instructions could talk it into calling another tool you gave it. `del
 `remove_model_file` delete models, pictures and files for good, and `edit_model` overwrites a model's title, description
 and tags; they're off for a new token, so turn them on only while you have the assistant edit your library. `save_widget` and
 `save_tool` write code that runs in your browser with your session, so a widget or a tool one saves can do in Thingport
-whatever you can, and either can replace one of yours with the same name. Both are on for a new token: deny them in
+whatever you can, and either can replace one of yours with the same folder name. Both are on for a new token: deny them in
 **Token permissions** if you don't have your assistant write widgets or tools, and keep the other tools that change the
 library off unless you use them.
 
