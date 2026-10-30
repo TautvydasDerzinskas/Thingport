@@ -5,7 +5,8 @@ first. When a model has several files, pick one in the **Files** box above the b
 use it.
 
 The button opens the slicer you used last. Its arrow lists your other slicers, downloads the chosen file, and, for a
-model with several files, downloads them all as a zip.
+model with several files, downloads them all as a zip. On a model that came with the script it was generated from,
+**Customize** takes the button's place and your slicers move under the arrow.
 
 Supported slicers:
 
@@ -28,6 +29,14 @@ button downloads the file instead, for when you'd rather open files yourself.
 Bambu Studio, PrusaSlicer, Cura and Anycubic Slicer Next won't open a link from a self-hosted server on their own.
 [Thingport Bridge](../../bridge/README.md) is a small helper app for Windows, macOS and Linux that takes the link from
 Thingport and opens the file in the slicer. Download it from Thingport's **Downloads** page.
+
+## Models generated in colour
+
+A model generated in colour from its script, in the [customizer](supporting-files.md#models-you-can-generate-again)
+or the Script customizer tool, is saved as a 3MF that names its colours twice over: as a colour group, which Bambu
+Studio and OrcaSlicer offer to put on filaments when they open it, and as per-face painting, which Bambu Studio,
+OrcaSlicer and PrusaSlicer put on filament slots straight away. A model with more than 16 colours, more than a slicer
+has filament slots for, keeps only the colour group. Downloaded as an STL, it keeps only its shape.
 
 ## MakerWorld models in other slicers
 

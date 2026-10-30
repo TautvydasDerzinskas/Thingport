@@ -57,12 +57,14 @@ default configuration points at your development database.
 Formatting is checked on every pull request (`npm run format:check`). The other workflows are
 path-filtered, so only the parts you touched run:
 
-| You changed    | CI runs                                                                                         |
-| -------------- | ----------------------------------------------------------------------------------------------- |
-| `backend/**`   | oxlint, then a multi-arch Docker image build (which runs `tsc`)                                 |
-| `frontend/**`  | oxlint, `tsc --noEmit`, then a Docker image build                                               |
-| `extension/**` | oxlint, `tsc --noEmit`, the Chrome/Edge/Firefox builds, and `web-ext lint` on the Firefox build |
-| `bridge/**`    | `go test ./...` and a build for Windows, Linux and macOS                                        |
+| You changed            | CI runs                                                                                         |
+| ---------------------- | ----------------------------------------------------------------------------------------------- |
+| `backend/**`           | oxlint, then a multi-arch Docker image build (which runs `tsc`)                                 |
+| `frontend/**`          | oxlint, `tsc --noEmit`, then a Docker image build                                               |
+| `extension/**`         | oxlint, `tsc --noEmit`, the Chrome/Edge/Firefox builds, and `web-ext lint` on the Firefox build |
+| `bridge/**`            | `go test ./...` and a build for Windows, Linux and macOS                                        |
+| `tools/**`             | `validateTools.ts`; tools built from `source/` rebuilt to match what's committed, and tested    |
+| `community-widgets/**` | `validateCommunityWidgets.ts`                                                                   |
 
 The [regression pack](docs/DEVELOPMENT.md#regression-pack), which runs end-to-end browser scenarios
 against the full stack, isn't run on pull requests. It runs weekly on `main`.

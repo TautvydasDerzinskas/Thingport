@@ -91,6 +91,11 @@ Have in mind that these screenshots follow your GitHub theme (matches it). Thing
     <td width="33%"><a href="frontend/src/assets/screenshots/dark/21_admin_captcha_search.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/light/21_admin_captcha_search.png"><img src="frontend/src/assets/screenshots/dark/21_admin_captcha_search.png" width="100%" alt="Search opened over the Captcha administration page"></picture></a><br><sub><b>Search</b> — in the other theme</sub></td>
   </tr>
   <tr>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/31_tools.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/31_tools.png"><img src="frontend/src/assets/screenshots/light/31_tools.png" width="100%" alt="Tools page, with the tools on shelves by what they do"></picture></a><br><sub><b>Tools</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/32_tool_window.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/32_tool_window.png"><img src="frontend/src/assets/screenshots/light/32_tool_window.png" width="100%" alt="The QR code generator tool open in its window"></picture></a><br><sub><b>Tools — QR Code Generator</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/35_model_customize.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/35_model_customize.png"><img src="frontend/src/assets/screenshots/light/35_model_customize.png" width="100%" alt="Customizer with a model's OpenSCAD parameters and the model it generated"></picture></a><br><sub><b>Customize a Model</b></sub></td>
+  </tr>
+  <tr>
     <td width="33%"><a href="extension/docs/screenshots/collection-printables.jpg" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="extension/docs/screenshots/collection-printables-dark.jpg"><img src="extension/docs/screenshots/collection-printables.jpg" width="100%" alt="Thingport Grab importing a Printables collection"></picture></a><br><sub><b>Thingport Grab — Collections</b></sub></td>
     <td width="33%"><a href="extension/docs/screenshots/panel-printables.jpg" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="extension/docs/screenshots/panel-printables-dark.jpg"><img src="extension/docs/screenshots/panel-printables.jpg" width="100%" alt="Thingport Grab on Printables"></picture></a><br><sub><b>Thingport Grab — Printables</b></sub></td>
     <td width="33%"><a href="extension/docs/screenshots/panel-thingiverse.jpg" target="_blank"><img src="extension/docs/screenshots/panel-thingiverse.jpg" width="100%" alt="Thingport Grab on Thingiverse"></a><br><sub><b>Thingport Grab — Thingiverse</b></sub></td>
@@ -104,8 +109,8 @@ Have in mind that these screenshots follow your GitHub theme (matches it). Thing
 
 <table>
   <tr>
-    <td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="extension/docs/screenshots/popup-setup-dark.png"><img src="extension/docs/screenshots/popup-setup.png" width="260" alt="Thingport Grab popup before an instance is added"></picture><br><sub><b>Thingport Grab — Setup</b></sub></td>
-    <td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="extension/docs/screenshots/popup-connected-dark.png"><img src="extension/docs/screenshots/popup-connected.png" width="260" alt="Thingport Grab popup with an instance added, its recent imports and providers"></picture><br><sub><b>Thingport Grab — Connected</b></sub></td>
+    <td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="extension/docs/screenshots/popup-setup-dark.png"><img src="extension/docs/screenshots/popup-setup.png" width="260" alt="Thingport Grab popup before an instance is added, with Pair with Thingport"></picture><br><sub><b>Thingport Grab — Setup</b></sub></td>
+    <td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="extension/docs/screenshots/popup-connected-dark.png"><img src="extension/docs/screenshots/popup-connected.png" width="260" alt="Thingport Grab popup connected to an instance, with the sites it runs on"></picture><br><sub><b>Thingport Grab — Connected</b></sub></td>
   </tr>
 </table>
 
@@ -295,12 +300,13 @@ To have Thingport import whatever you drop into a folder on the server, uncommen
 
 ## Features
 
-- **[Import from MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs and Cults3D](docs/features/importing.md)**
+- **[Import from 17 sites](docs/features/importing.md)** — MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerables, CGTrader and GrabCAD
 - **[Import bookmarklet](docs/guides/bookmarklet.md)**
 - **[Synced collections](docs/guides/synced-collections.md)**
 - **[Bring your existing library](docs/guides/existing-library.md)**
 - **[Consume folder](docs/guides/consume-folder.md)**
 - **[3D previews](docs/features/3d-previews.md)**
+- **[Multicolour models in their own colours](docs/features/3d-previews.md)**
 - **[Print quality checks](docs/features/print-quality.md)**
 - **[AI categorization and descriptions](docs/guides/ai.md)**
 - **[Organize, search and bulk-edit](docs/features/organize-and-search.md)**
@@ -310,8 +316,10 @@ To have Thingport import whatever you drop into a folder on the server, uncommen
 - **[Open in your slicer](docs/features/slicers.md)**
 - **[Normalized MakerWorld 3MFs](docs/features/normalized-3mf.md)**
 - **[Everything to print it](docs/features/supporting-files.md)**
+- **[Customize models that came with their OpenSCAD script](docs/features/supporting-files.md#models-you-can-generate-again)**
 - **[Download as ZIP](docs/features/downloads.md)**
 - **[Plain files on your disk](docs/features/storage.md)**
+- **[Repair models whose files are gone](docs/features/storage.md#when-the-files-are-gone)**
 - **[Multi-user](docs/features/multi-user.md)**
 - **[Single sign-on](docs/guides/single-sign-on.md)**
 - **[Administration](docs/features/administration.md)**
@@ -319,20 +327,21 @@ To have Thingport import whatever you drop into a folder on the server, uncommen
 - **[API token](docs/guides/api-token.md)**
 - **[Connect an AI assistant (MCP)](docs/guides/mcp.md)**
 - **[Custom dashboard widgets](docs/guides/custom-widgets.md)**
-- **[Tools](docs/guides/tools.md)**
+- **[Tools: planners, generators, calculators and a 3MF normalizer](docs/guides/tools.md)**
+- **[Make your own tools, or have an AI write them](docs/guides/tools.md#have-an-ai-write-one)**
 - **[Light and dark themes, accent colours, in English, Spanish, French and Lithuanian](docs/features/appearance.md)**
 - **[Self-hosted](#installation)**
 
 ## Companion Apps
 
-Thingport ships two small companion tools, each downloadable from the in-app Download page or GitHub Releases:
+Thingport ships two small companion apps, each downloadable from the in-app **Downloads** page or GitHub Releases:
 
 - **[Thingport Bridge](bridge/README.md)** — a lightweight desktop helper that makes "Open in {Slicer}" work for slicers (Bambu Studio, PrusaSlicer, Cura, Anycubic Slicer Next) whose own URL-protocol handlers won't accept a link from a self-hosted domain.
-- **[Thingport Grab](extension/README.md)** — a browser extension for Chrome, Edge and Firefox that imports MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs and Cults3D models straight from their own pages, without leaving the site (see the screenshots above). Even without a Thingport instance, it adds a "Download normalized" button to MakerWorld model pages that converts Bambu Studio projects into 3MFs other slicers open with their colours and settings. Get it from the [Chrome Web Store](https://chromewebstore.google.com/detail/nmblahmglpbplmfcggghdgohohlaeiee), [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/thingport-grab/) or [Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/kahfidpmojfocohinlmglnfoaimocbol).
+- **[Thingport Grab](extension/README.md)** — a browser extension for Chrome, Edge and Firefox that imports models from all 17 sites straight from their own pages, without leaving the site (see the screenshots above), and hands Thingport your sign-in on the sites that need one as you use them. **Pair with Thingport** connects it to your instance: Thingport opens in a tab to approve the browser, and no password is saved in the extension. Even without a Thingport instance, it adds a "Download normalized" button to MakerWorld model pages that converts Bambu Studio projects into 3MFs other slicers open with their colours and settings. Get it from the [Chrome Web Store](https://chromewebstore.google.com/detail/nmblahmglpbplmfcggghdgohohlaeiee), [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/thingport-grab/) or [Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/kahfidpmojfocohinlmglnfoaimocbol).
 
 ## Provider Setup
 
-MakerWorld needs each user's session cookie, Printables works with no setup, and Thingiverse needs an App Token an admin sets once for the whole instance. The newer sites each need their own sign-in or key, mostly handed over by [Thingport Grab](extension/README.md); MakerOnline's files come only through Grab, and Printables, Thingiverse and MyMiniFactory work best with FlareSolverr. Connect them under **Configuration → Providers** (from the user menu): right-click a provider to connect it, or choose **About** for what it needs. Admins can turn any provider off for the whole instance under **Administration → Providers**. See **[docs/PROVIDER_SETUP.md](docs/PROVIDER_SETUP.md)** for a comparison of them all, and a setup page for each.
+MakerWorld needs each user's session cookie, Printables works with no setup, and Thingiverse needs an App Token an admin sets once for the whole instance. Most of the others need a sign-in or key of their own, usually handed over by [Thingport Grab](extension/README.md); OwlCAD needs none at all, and eufyMake, MakerOnline and Makerables only for your likes or saved projects. MakerOnline's files come only through Grab, and so do OwlCAD's CAD projects. Printables, Thingiverse and MyMiniFactory work best with FlareSolverr, and CGTrader needs Grab or FlareSolverr to get its downloads past AWS's bot check. Connect them under **Configuration → Providers** (from the user menu): right-click a provider to connect it, or choose **About** for what it needs. All 17 are on by default; admins can turn any of them off for the whole instance under **Administration → Providers**. See **[docs/PROVIDER_SETUP.md](docs/PROVIDER_SETUP.md)** for a comparison of them all, and a setup page for each.
 
 ## Contributing
 

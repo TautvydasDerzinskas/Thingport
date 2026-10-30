@@ -1,35 +1,49 @@
-# Import from MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake and Pinshape
+# Import from MakerWorld, Printables, Thingiverse and more
 
 Thingport keeps a real copy of every model you import: its files, photos, title, description, tags, author and a link
 back to where it came from. If the original page disappears, the model is still in your library.
 
+It imports from 17 sites: MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality
+Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerables, CGTrader and GrabCAD.
+
 ## Ways to import
 
-- **Paste a link.** Click **Add → Import** and paste a model link from MakerWorld, Printables, Thingiverse,
-  MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake or Pinshape, or any direct link to a model file. Paste several links, one per line, and they're imported one after
-  another as a background job. You can also paste a link straight into the search bar.
+- **Paste a link.** Click **Add → Import** and paste a model link from any of them, or any direct link to a model file.
+  Paste several links, one per line, and they're imported one after another as a background job. You can also paste a
+  link straight into the search bar.
 - **Use Thingport Grab.** The [browser extension](../../extension/README.md) adds a Thingport button to model pages on
-  all twelve sites (MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake and Pinshape once you allow them, with a single click in its popup), so you can
-  import without leaving the page, file the model into a collection, and import whole collections.
-  This is the recommended way to import.
+  all 17 sites (MakerWorld, Printables and Thingiverse straight away, the others once you allow them, with a single
+  click in its popup), so you can import without leaving the page, file the model into a collection or a new one, and
+  import whole collections. **Pair with Thingport** in its popup connects it: you approve the browser in Thingport, and
+  no password is saved in the extension. This is the recommended way to import.
 - **Or use the bookmarklet.** Without the extension, drag the [bookmarklet](../guides/bookmarklet.md) to your
   bookmarks bar: clicking it on a model's page opens Thingport with the link already in the import dialog.
-- **Import a collection or your likes.** Paste a collection link, or your Thingiverse likes, and pick which models to
-  bring in. Your Snapmaker Space likes and bookmarks import from your profile's Interactions tab with Thingport Grab,
-  and your Creality Cloud, Thangs and eufyMake likes, and anyone's Cults3D and Pinshape likes, from their page, in Thingport or with Grab. MakerWorld collections are imported with Thingport Grab.
-- **MakerOnline goes through Thingport Grab.** MakerOnline hands out its files only to its own pages, so a MakerOnline
-  link pasted in Thingport, a MakerOnline collection or your likes imported here, and a synced MakerOnline collection
-  all wait for Grab: the next time you open makeronline.com in a browser with Grab, it imports them there.
+- **Import a collection or your likes.** Paste the link of a collection or another list, and pick which models to
+  bring in. Besides collections, that's anyone's likes on Thingiverse, Cults3D, Pinshape and GrabCAD, your own likes on
+  Creality Cloud, Thangs, eufyMake, Toymakr3D and CGTrader, your CGTrader wishlist and the projects you saved on
+  Makerables. MakerWorld collections, and your Snapmaker Space likes and bookmarks from your profile's Interactions
+  tab, are imported with Thingport Grab. [Providers](../PROVIDER_SETUP.md#at-a-glance) shows which lists each site
+  has.
+- **MakerOnline, and OwlCAD's CAD projects, go through Thingport Grab.** MakerOnline hands out its files only to its
+  own pages, and an OwlCAD CAD project has no file until OwlCAD's own editor builds one. So a MakerOnline link pasted
+  in Thingport, a MakerOnline collection or your likes imported here, a synced MakerOnline collection and an OwlCAD
+  CAD project pasted here all wait for Grab: the next time you open the site in a browser with Grab, it imports them
+  there.
 - **Keep a collection in sync.** A [synced collection](../guides/synced-collections.md) imports models added to it on
   the provider later, on its own.
 
 ## What comes with a model
 
-- Every file, and on MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud and NexPrint, its print profiles: the one the link points to, all of the
-  designer's, or the community's too. Each profile becomes its own file on the model.
+- Its model files, and on MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud and NexPrint, its print profiles:
+  the one the link points to, all of the designer's, or the community's too. Each profile becomes its own file on the
+  model.
+- The OpenSCAD script it was generated from, where its creator shared one, whichever site it came from, so it can be
+  [customised and generated again](supporting-files.md#models-you-can-generate-again). MakerWorld also says when a
+  creator kept the script back, and the model is marked **Script not shared**. On a MakerWorld page, Thingport Grab
+  says before you import whether the script comes along.
 - The photo gallery, the formatted description, tags and, where the site gives one, its category, which Thingport maps
   to your own [categories](organize-and-search.md).
-- The author, with their avatar and profile, linked to an [author page](authors.md).
+- The author, where the site names one, with their avatar and profile, linked to an [author page](authors.md).
 
 If a detail couldn't be fetched at the time, such as the author, **Fetch missing details** on the model page tries
 again.
@@ -43,11 +57,13 @@ from Thingport Grab wait in **Administration → Import queue** until they're st
 
 ## Before you start
 
-MakerWorld needs your session cookie, Printables and eufyMake work with no setup, and Thingiverse needs an App Token set
-by an admin. The other sites each need a key or your own sign-in, which Thingport Grab mostly hands over for you;
-MakerOnline's files come only through Grab. [Providers](../PROVIDER_SETUP.md) compares what each one needs, with a setup page per
-site. Admins can also [turn a provider off](../PROVIDER_SETUP.md#turning-a-provider-off) for the whole instance, and
-then nothing is imported from it.
+MakerWorld needs your session cookie and Thingiverse an App Token set by an admin, while Printables, eufyMake, OwlCAD
+and Makerables work with no setup. The other sites each need a key or your own sign-in, which Thingport Grab mostly
+hands over for you. MakerOnline's files come only through Grab, and CGTrader's downloads also need Grab or
+[FlareSolverr](../PROVIDER_SETUP.md#flaresolverr) to get past its bot check. [Providers](../PROVIDER_SETUP.md) compares
+what each one needs, with a setup page per site. Admins can also
+[turn a provider off](../PROVIDER_SETUP.md#turning-a-provider-off) for the whole instance, and then nothing is imported
+from it.
 
 Imported models can be categorized and their descriptions cleaned up on the way in with the optional
 [AI features](../guides/ai.md).

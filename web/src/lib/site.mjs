@@ -6,10 +6,12 @@ export const REPO = "TautvydasDerzinskas/Thingport";
 export const REPO_URL = `https://github.com/${REPO}`;
 export const BRANCH = "main";
 
+/** The sites Thingport imports from, in the order lists show them, so counts in the copy follow providers/. */
+export const PROVIDER_NAMES = PROVIDER_DOCS.map((doc) => doc.title);
+
 export const SITE_NAME = "Thingport";
 export const TAGLINE = "Your personal 3D model library";
-export const SITE_DESCRIPTION =
-  "Thingport is a free, open-source, self-hosted library for your 3D printing models. Import from MakerWorld, Printables, Thingiverse and MyMiniFactory, preview STL, 3MF, STEP and OBJ files in your browser, and keep everything organized in one place.";
+export const SITE_DESCRIPTION = `Thingport is a free, open-source, self-hosted library for your 3D printing models. Import from MakerWorld, Printables, Thingiverse and ${PROVIDER_NAMES.length - 3} other sites, preview STL, 3MF, STEP and OBJ files in your browser, and keep everything organized in one place.`;
 
 export const LINKS = {
   github: REPO_URL,
@@ -85,7 +87,7 @@ export const DOCS = [
     title: "Synced collections",
     nav: "Synced collections",
     description:
-      "Link a MakerWorld, Printables, Thingiverse or MyMiniFactory collection to Thingport, and models added to it later are imported on their own.",
+      "Link a collection or a list of likes on MakerWorld, Printables, Thingiverse or almost any other site Thingport imports from, and models added to it later are imported on their own.",
   },
   {
     slug: "guides/bookmarklet",
@@ -100,10 +102,9 @@ export const DOCS = [
     slug: "features/importing",
     source: "docs/features/importing.md",
     group: "Features",
-    title: "Import from MakerWorld, Printables, Thingiverse and MyMiniFactory",
+    title: "Import from MakerWorld, Printables, Thingiverse and more",
     nav: "Importing",
-    description:
-      "Import models, collections and likes with their files, photos, description, tags and author, by link or with Thingport Grab.",
+    description: `Import models from ${PROVIDER_NAMES.length} sites with their files, photos, description, tags and author, plus collections and likes where a site has them, by link or with Thingport Grab.`,
   },
   {
     slug: "features/3d-previews",
@@ -112,7 +113,7 @@ export const DOCS = [
     title: "3D previews",
     nav: "3D previews",
     description:
-      "Preview STL, 3MF, OBJ and STEP files in the browser, with plate thumbnails and simplified previews of very detailed models.",
+      "Preview STL, 3MF, OBJ and STEP files in the browser, in their own colours where a model has them, with plate thumbnails and simplified previews of very detailed models.",
   },
   {
     slug: "features/print-quality",
@@ -130,7 +131,7 @@ export const DOCS = [
     title: "Organize and search",
     nav: "Organize and search",
     description:
-      "Categories, folders, collections, tags, favourites and bookmarks, bulk actions and merges, plus search across your whole library.",
+      "Categories, folders, collections, tags, favourites and bookmarks, bulk actions and merges, a filter by site, plus search across your whole library.",
   },
   {
     slug: "features/dashboard",
@@ -180,7 +181,8 @@ export const DOCS = [
     group: "Features",
     title: "Everything to print it",
     nav: "Supporting files",
-    description: "Keep instructions, notes and a ready-to-print sliced file next to each model.",
+    description:
+      "Keep instructions, notes and a ready-to-print sliced file next to each model, and customize one that came with its OpenSCAD script right in your browser.",
   },
   {
     slug: "features/downloads",
@@ -196,7 +198,8 @@ export const DOCS = [
     group: "Features",
     title: "Plain files on your disk",
     nav: "Storage",
-    description: "Models stored as ordinary files, in a folder layout you choose and can change later.",
+    description:
+      "Models stored as ordinary files, in a folder layout you choose and can change later, and can be fetched again from their sites if the files go missing.",
   },
   {
     slug: "features/multi-user",
@@ -213,7 +216,8 @@ export const DOCS = [
     group: "Features",
     title: "Administration",
     nav: "Administration",
-    description: "Every instance-wide setting, a page per area, all in the browser.",
+    description:
+      "Every instance-wide setting, from providers and storage to tools and AI, a page per area, all in the browser.",
   },
   {
     slug: "features/appearance",
@@ -231,7 +235,7 @@ export const DOCS = [
     title: "System Health",
     nav: "System Health",
     description:
-      "Check that the database, storage, memory, FlareSolverr, Thingiverse, MyMiniFactory, AI and email all work, and fix what doesn't.",
+      "Check that the database, storage, memory, internet, FlareSolverr, Thingiverse, MyMiniFactory, Thingport Grab, AI and email all work, and fix what doesn't.",
   },
   {
     slug: "guides/ai",
@@ -281,7 +285,7 @@ export const DOCS = [
     group: "Companion apps",
     title: "Thingport Grab browser extension",
     nav: "Thingport Grab",
-    description: "Import MakerWorld, Printables, Thingiverse and MyMiniFactory models straight from their own pages.",
+    description: `Import models straight from their own pages on all ${PROVIDER_NAMES.length} sites. Pair it with your Thingport, and no password is saved.`,
   },
   {
     slug: "grab/privacy",
@@ -317,7 +321,7 @@ export const DOCS = [
     title: "Connect an AI assistant with MCP",
     nav: "AI assistant (MCP)",
     description:
-      "Let Claude and other AI assistants search and read your library, and import models if you allow it, over the Model Context Protocol.",
+      "Let Claude and other AI assistants search and read your library, write you a widget or a tool, and import models if you allow it, over the Model Context Protocol.",
   },
   {
     slug: "guides/custom-widgets",

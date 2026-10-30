@@ -15,6 +15,11 @@ Thingport has to know the address people open it at, so the provider knows where
 **Administration → Auth → Public URL**, for example `https://thingport.example.com`, with the port if there is one.
 On the first run it's taken from `PUBLIC_URL` in `.env`; after that it's managed on that page.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/22_admin_auth.png">
+  <img src="../../frontend/src/assets/screenshots/light/22_admin_auth.png" alt="Administration, Auth page: Public URL, Registrations, and Sign-in Methods below them" width="100%">
+</picture>
+
 ## Add a provider
 
 1. In your identity provider, create an application (often called a client) for Thingport, of the OpenID Connect /

@@ -126,15 +126,20 @@ files, it offers a repair:
 
 - **Fetch the missing files.** The files of each model are downloaded again from the site it came from. The models
   themselves stay as they are: names, tags, collections, favourites, view counts and collection order are untouched,
-  and a model whose site can't be reached is left exactly as it was rather than lost. Models whose files only
-  [Thingport Grab](../../extension/README.md) can fetch wait for its next visit to that site, and the files it brings
-  then replace theirs.
+  and a model whose site can't be reached is left exactly as it was rather than lost. Models from MakerOnline and
+  OwlCAD wait until [Thingport Grab](../../extension/README.md) next visits that site -- MakerOnline's files and
+  OwlCAD's CAD projects come only through it -- and the files it brings then replace theirs.
 - **Delete these models.** The models with no files are removed for good, with their details, tags and collection
   entries. Models whose files are there aren't touched.
 
+Uploads, and models from a site an admin has turned off, have nowhere to be fetched from, so a fetch leaves them as
+they are. A model that had several print profiles comes back with the files a fresh import of its link would bring;
+import the other profiles' links again to add them.
+
 Either way the work runs in the background with a bar at the bottom of the app, which can be stopped at any time, and
 a notification says how it went. A library's worth of re-imports asks a lot of the sites, so Thingport fetches one
-model at a time and stops if a site asks it to wait -- start it again later for the rest.
+model at a time, and stops when a site asks it to wait, has no downloads left for the day, turns the sign-in down or
+blocks it -- start it again later for the rest.
 
 The repair is also in **Models**, behind the cog on the panel on the left, under **Repair**, which checks on demand
 and says so when every model has its files.

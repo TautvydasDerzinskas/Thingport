@@ -30,27 +30,32 @@ Load the build output as an unpacked extension, and reload it (the circular arro
 src/
   shared/       code used by more than one script: storage keys, provider URL matching,
                 the typed message protocol (messages.ts), API types, the inline icon
-  background/   background script -- config/auth, every request to the Thingport instance,
-                imports, the guided MakerWorld collection job, recent imports, toolbar icon
-  content/      content script -- the floating icon, its panel flows (panels/), the setup dialog,
-                overlays, MakerWorld page-data and download-URL resolution, and the injected
-                Download normalized button (makerworld/)
+  background/   background script -- config/auth and pairing with an instance (pairing.ts), every
+                signed-in request to the Thingport instance, imports, the sign-ins sent on
+                (sessionSync.ts), recent imports, which provider site each tab is on
+                (providerTab.ts), toolbar icon
+  content/      content script -- the floating icon and the note under it, its panel flows
+                (panels/), the setup dialog, overlays, and the model's picture and name read off
+                the page (pageModel.ts); MakerWorld's page data, download-URL resolution, guided
+                collection import and Download normalized button are in providers/makerworld/
     styles/     its SCSS, compiled into the bundle and injected into its shadow root
   normalizer/   the Bambu 3MF normalizer and the worker that runs it
   providers/    each provider's own code in <id>/, beside the copies of its manifest and links
                 (*.generated.ts), and the tables that wire them in (content, sessions, accounts,
                 background); Thingiverse's dark mode and hidden ads are thingiverse/index.ts, a
                 second content script that runs at document_start
-  popup/        toolbar popup (popup.html, its script and styles/)
+  popup/        toolbar popup (popup.html, its script and styles/); the sites in two columns, led
+                by the card for the site the active tab is on, are sites.ts
   styles/       SCSS design tokens and mixins shared by the popup and the content UI
   assets/       the Thingport icon SVG (inlined into the bundles)
 public/         copied into every build as-is (the toolbar icon PNGs)
 scripts/        build.ts, manifest.ts (per-browser manifest), zip.ts, screenshots.ts
 ```
 
-The content script and the popup never call the Thingport instance themselves: they send a
-message to the background script, which owns the credentials and the instance's host permission.
-Every message and its reply is typed in `src/shared/messages.ts`.
+The content script and the popup don't call the Thingport instance themselves. The one exception is the popup's
+`/health` probe while an address is being typed, which carries no credentials and needs no host permission. Everything
+else is a message to the background script, which owns the credentials and the instance's host permission. Every
+message and its reply is typed in `src/shared/messages.ts`.
 
 On the web app's special days, Grab's icon in the popup and on pages wears the sidebar logo's seasonal overlay
 (`src/shared/seasonalMark.ts`). `src/shared/season.ts` and `src/assets/seasonal/` are copies of
@@ -77,9 +82,10 @@ part:
 - Its manifest's `extension` entry (`providers/<id>/manifest.ts`) says how Grab reaches its site. Make it
   `site: "optional"`: new host access in an update makes Chrome and Edge switch the extension off for every user until
   they approve it, so `npm run providers:sync` keeps the built-in sites, the ones in `manifest.json`, to the first
-  three. An optional site is listed in the popup under **Providers** with an **Enable** button that asks for access to
-  it; once granted, the background registers the content script there. Users who had granted all-sites access earlier
-  get it straight away.
+  three. An optional site is listed in the popup under **Providers**, where clicking it, or **Enable all**, asks for
+  access to it; once granted, the background registers the content script there. Users who had granted all-sites
+  access earlier get it straight away. On the site's own pages the popup leads with its card, which shows the `about`
+  of its `providers/<id>/docs.ts`.
 - What Grab does on its pages goes in `src/providers/<id>/`, entered in `CONTENT_MODULES` (`src/providers/content.ts`),
   which tsc insists on for every provider.
 - A sign-in the background sends the instance goes in `SESSION_SOURCES` (`src/providers/sessions.ts`), with
@@ -92,7 +98,7 @@ rejects notes of 2,000 characters or more (`npm run check:edge-notes`).
 
 ### Before opening a pull request
 
-- `npm run verify` passes (typecheck, lint, all three builds).
+- `npm run verify` passes (typecheck, lint, unit tests, the Edge notes check, all three builds).
 - The commit type says what the change means for users -- `feat:`, `fix:`, or `!` for breaking --
   since it decides the next version (see [Versioning](#versioning-how-the-next-version-is-picked)).
 - The change works in Chrome **and** Firefox: load `dist/chrome` and `dist/firefox` and try it on
@@ -118,7 +124,7 @@ rejects notes of 2,000 characters or more (`npm run check:edge-notes`).
 | `npm run lint:firefox`                                  | Builds for Firefox and runs `web-ext lint` on the result                  |
 | `npm run screenshots`                                   | Regenerates the README screenshots (see below)                            |
 | `npm run store-assets`                                  | Renders the store logo, promotional tiles and PNG screenshots (see below) |
-| `npm run verify`                                        | Typecheck + lint + build                                                  |
+| `npm run verify`                                        | Typecheck + lint + tests + Edge notes check + build                       |
 | `npm run release:dry-run`                               | Shows the next version semantic-release would release, and why            |
 
 The only difference between the browser builds is `manifest.json` (see `scripts/manifest.ts`):

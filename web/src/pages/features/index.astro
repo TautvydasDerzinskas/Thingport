@@ -3,21 +3,36 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import Icon from "../../components/Icon.astro";
 import FeatureJump from "../../components/FeatureJump.astro";
 import FeatureSections, { type FeatureSection } from "../../components/FeatureSections.astro";
+import { PROVIDER_NAMES } from "../../lib/site.mjs";
 import { url } from "../../lib/url";
-import models from "../../../../frontend/src/assets/screenshots/02_models.png";
-import preview3d from "../../../../frontend/src/assets/screenshots/04_model_details_3d_preview.png";
-import tags from "../../../../frontend/src/assets/screenshots/06_tags.png";
-import downloads from "../../../../frontend/src/assets/screenshots/07_downloads.png";
-import myModels from "../../../../frontend/src/assets/screenshots/08_my_models.png";
-import profile from "../../../../frontend/src/assets/screenshots/10_profile.png";
+import models from "../../../../frontend/src/assets/screenshots/light/04_models.png";
+import modelsDark from "../../../../frontend/src/assets/screenshots/dark/04_models.png";
+import preview3d from "../../../../frontend/src/assets/screenshots/light/07_model_3d_preview.png";
+import preview3dDark from "../../../../frontend/src/assets/screenshots/dark/07_model_3d_preview.png";
+import customize from "../../../../frontend/src/assets/screenshots/light/35_model_customize.png";
+import customizeDark from "../../../../frontend/src/assets/screenshots/dark/35_model_customize.png";
+import tags from "../../../../frontend/src/assets/screenshots/light/11_tags.png";
+import tagsDark from "../../../../frontend/src/assets/screenshots/dark/11_tags.png";
+import downloads from "../../../../frontend/src/assets/screenshots/light/13_downloads.png";
+import downloadsDark from "../../../../frontend/src/assets/screenshots/dark/13_downloads.png";
+import myModels from "../../../../frontend/src/assets/screenshots/light/33_my_models.png";
+import myModelsDark from "../../../../frontend/src/assets/screenshots/dark/33_my_models.png";
+import profile from "../../../../frontend/src/assets/screenshots/light/14_profile.png";
+import profileDark from "../../../../frontend/src/assets/screenshots/dark/14_profile.png";
+import toolWindow from "../../../../frontend/src/assets/screenshots/light/32_tool_window.png";
+import toolWindowDark from "../../../../frontend/src/assets/screenshots/dark/32_tool_window.png";
+import adminOverview from "../../../../frontend/src/assets/screenshots/light/16_admin_overview.png";
+import adminOverviewDark from "../../../../frontend/src/assets/screenshots/dark/16_admin_overview.png";
 import grabMakerworld from "../../../../extension/docs/screenshots/panel-makerworld.jpg";
+import grabMakerworldDark from "../../../../extension/docs/screenshots/panel-makerworld-dark.jpg";
 import grabCollection from "../../../../extension/docs/screenshots/collection-printables.jpg";
+import grabCollectionDark from "../../../../extension/docs/screenshots/collection-printables-dark.jpg";
 import folderImport from "../../../../docs/guides/images/folder-import-mode.png";
 import collectionSync from "../../../../docs/assets/collection-sync-light.gif";
 import collectionSyncDark from "../../../../docs/assets/collection-sync-dark.gif";
 import aiSuggestions from "../../../../frontend/src/assets/screenshots/22_ai_suggestions.png";
-import adminOverview from "../../../../frontend/src/assets/screenshots/13_admin_overview.png";
-import qrTool from "../../../../tools/qr-code-generator/screenshots/link.webp";
+
+const otherSites = PROVIDER_NAMES.length - 3;
 
 const SECTIONS: FeatureSection[] = [
   {
@@ -27,17 +42,18 @@ const SECTIONS: FeatureSection[] = [
     title: "Import from the sites you already use",
     intro: "Thingport keeps a real copy of every model, so it's still there if the original page disappears.",
     points: [
-      "Paste a MakerWorld, Printables, Thingiverse or MyMiniFactory link, or any direct link to a model file.",
+      `Paste a model link from MakerWorld, Printables, Thingiverse or ${otherSites} other sites, or any direct link to a model file.`,
       "No extension? Click the bookmarklet in your bookmarks bar on a model's page, and Thingport opens with the link ready to import.",
       "Import whole collections and your likes in one go. Big imports run as background jobs you can follow, with a notification when they finish.",
       "A model you already have is never imported twice, so running a collection import again only brings in what's new.",
       "Sync a collection, and models added to it later are imported on their own.",
       "Bring in a MakerWorld model's print profiles too: the designer's own, or all of them. Models with only STL/CAD files come in too.",
       "Title, description, tags, photos, author and source link come with the files.",
-      "Printables works with no setup. MakerWorld, Thingiverse and MyMiniFactory need a credential (see provider setup), and admins can turn off any provider they don't want used. MyMiniFactory models you bought come in through your own MyMiniFactory account.",
+      "Printables, eufyMake, Makerables and OwlCAD's library parts import with no setup. Most other sites need a key or your own sign-in, which Thingport Grab mostly hands over for you (see provider setup), and admins can turn off any provider they don't want used.",
     ],
     link: { label: "Provider setup", href: url("docs/providers/") },
     image: grabMakerworld,
+    dark: grabMakerworldDark,
     alt: "Thingport Grab's import panel on a MakerWorld model page",
   },
   {
@@ -46,10 +62,10 @@ const SECTIONS: FeatureSection[] = [
     icon: "sync",
     title: "Keep collections in sync",
     intro:
-      "Link a MakerWorld, Printables, Thingiverse or MyMiniFactory collection to Thingport once, and it keeps up with the collection from then on.",
+      "Link a collection or a list of likes to Thingport once, on MakerWorld, Printables, Thingiverse or almost any other site it imports from, and it keeps up with the list from then on.",
     points: [
       "Keep saving models to collections on the sites you browse, even from your phone. They turn up in your library on their own.",
-      "Follow someone else's public collection, or a Thingiverse user's likes, and get each model they add.",
+      "Follow someone else's public collection, or their likes on Thingiverse, Cults3D, Pinshape or GrabCAD, and get each model they add.",
       "Checked once a day, or every 6 hours or every hour, with a notification saying what came in, and Sync now for when you can't wait.",
       "New models are imported one at a time, a minute apart, so the provider's limits aren't hit.",
       "Sync only adds: removing a model on the provider never deletes it from Thingport, and a model you deleted isn't brought back.",
@@ -58,7 +74,7 @@ const SECTIONS: FeatureSection[] = [
     link: { label: "Synced collections", href: url("docs/guides/synced-collections/") },
     image: collectionSync,
     animated: collectionSyncDark,
-    alt: "Models flowing from a MakerWorld, Printables, Thingiverse or MyMiniFactory collection, through Thingport, into a synced collection",
+    alt: "Models flowing from a MakerWorld, Printables or Thingiverse collection, through Thingport, into a synced collection",
   },
   {
     id: "library",
@@ -85,16 +101,18 @@ const SECTIONS: FeatureSection[] = [
     intro:
       "A browser extension for Chrome, Edge and Firefox that adds a Thingport button to the model pages you're already on.",
     points: [
-      "Works on MakerWorld, Printables and Thingiverse model pages, plus collections and your Thingiverse likes. MyMiniFactory too, once you allow it with one click in its popup.",
+      `Works on all ${PROVIDER_NAMES.length} sites, on model pages and on the collections and likes they have. MakerWorld, Printables and Thingiverse from the start, the rest once you allow each with one click in its popup.`,
+      "Pair it with your Thingport from its popup: you approve the browser in Thingport, and no password is saved.",
       "Choose which MakerWorld print profiles to import, right from the model page.",
-      "Pick a Thingport collection to file the model into, then jump straight to it with Open in Thingport.",
-      "Uses your MakerWorld login from the browser, so there's no session cookie to paste.",
+      "File the model into a collection, or a new one you name as you type, then jump straight to it with Open in Thingport.",
+      "Hands Thingport your sign-in on the sites that need one, MakerWorld's included, so there's no cookie to paste.",
       "Hides itself on models you already have, and keeps your last few imports one click away in its toolbar popup.",
       "Useful on its own too: a Download normalized button on MakerWorld converts Bambu Studio projects in your browser, so PrusaSlicer, Cura and other slicers open them with their colours and settings. No Thingport instance needed.",
       "Talks only to your own Thingport instance. Nothing goes anywhere else.",
     ],
     link: { label: "Thingport Grab", href: url("docs/grab/") },
     image: grabCollection,
+    dark: grabCollectionDark,
     alt: "Thingport Grab on a Printables collection, picking which models to import",
   },
   {
@@ -106,6 +124,7 @@ const SECTIONS: FeatureSection[] = [
     points: [
       "An interactive 3D viewer for STL, 3MF, OBJ and STEP files, right in the browser.",
       "Thumbnails for every plate in a multi-plate 3MF project.",
+      "Multicolour models, from painted 3MF projects to STEP assemblies with coloured parts, show in their own colours, and one with no pictures of its own gets a render in them.",
       "Print quality checks find holes, non-manifold edges, flipped faces, loose fragments and models exported in the wrong unit, with a report that says how serious each one is.",
       "Very complex models can be simplified for a smooth preview. The files themselves are never changed.",
       "A photo gallery per model, separate from its printable files.",
@@ -113,7 +132,31 @@ const SECTIONS: FeatureSection[] = [
     ],
     link: { label: "3D previews", href: url("docs/features/3d-previews/") },
     image: preview3d,
+    dark: preview3dDark,
     alt: "A model's 3D preview in Thingport",
+  },
+  {
+    id: "customize",
+    short: "Customize",
+    icon: "sliders",
+    title: "Change a model and generate it again",
+    intro:
+      "Some models come with the OpenSCAD script that builds them. Thingport keeps it, so you can make the model again your way.",
+    points: [
+      "Such a model leads with Customize: the creator's own sliders, choices and text boxes, grouped as they grouped them, beside the model they make.",
+      "Undo and redo every change, and read the script itself a click away.",
+      "Download the result as a 3MF or an STL, or save it to your library as a model of its own, script included, so it can be changed again.",
+      "A script that colours what it builds is saved in those colours: Bambu Studio, OrcaSlicer and PrusaSlicer open the 3MF with each colour on a filament slot of its own.",
+      "Generating runs in your browser, so nothing is sent anywhere and there's nothing to install.",
+      "Scripts come in with models from every site that shares them, and a MakerWorld model whose creator kept theirs back is marked Script not shared.",
+    ],
+    link: {
+      label: "Models you can generate again",
+      href: url("docs/features/supporting-files/#models-you-can-generate-again"),
+    },
+    image: customize,
+    dark: customizeDark,
+    alt: "The customizer, with a model's own parameters beside the shape they generate",
   },
   {
     id: "organize",
@@ -127,11 +170,13 @@ const SECTIONS: FeatureSection[] = [
       "Select many models, collections or tags at once to file, tag, download, bookmark or delete them, or merge collections and tags after seeing exactly what changes.",
       "A dashboard with library stats, recently added models, your most viewed and most used models, and top authors.",
       "Full-text search across model names, tags, notes and authors.",
+      "Filter the models list by site, each with its logo and a count, or show only the generative models you can customize.",
       "Author pages with their cover, details and every model of theirs you've saved, plus a preview card when you hover an author's name.",
       "Link an author to your own account so your own designs show up under My models.",
     ],
     link: { label: "Organize and search", href: url("docs/features/organize-and-search/") },
     image: tags,
+    dark: tagsDark,
     alt: "Browsing models by tag in Thingport",
   },
   {
@@ -166,6 +211,7 @@ const SECTIONS: FeatureSection[] = [
     ],
     link: { label: "Connect other apps", href: url("docs/guides/api-token/") },
     image: profile,
+    dark: profileDark,
     alt: "A Thingport profile with its activity heatmap and timeline",
   },
   {
@@ -183,7 +229,8 @@ const SECTIONS: FeatureSection[] = [
     ],
     link: { label: "Thingport Bridge", href: url("docs/bridge/") },
     image: downloads,
-    alt: "The downloads view in Thingport",
+    dark: downloadsDark,
+    alt: "The Downloads page, with Thingport Grab and Thingport Bridge",
   },
   {
     id: "tools",
@@ -196,13 +243,14 @@ const SECTIONS: FeatureSection[] = [
       "A QR code generator that turns a link, a Wi-Fi network or a contact into a printable tile, with the code, the tile and the border each going to their own filament.",
       "Planners for Multiboard walls, Gridfinity drawers, Skadis boards and enclosures: arrange the parts, and the whole thing is saved to your library as one model.",
       "A keyring generator that cuts every letter's real outline, and a print cost estimator that prices a model from your own filament and electricity.",
-      "A MakerWorld 3MF normalizer, for Bambu Studio projects other slicers won't open.",
-      "Admins choose who sees tools and install the ones they want: a new Thingport starts with none of them.",
+      "A MakerWorld 3MF normalizer, for Bambu Studio projects other slicers won't open, and a customizer for OpenSCAD scripts.",
+      "Admins choose who sees tools, and install and update the ones they want: a new Thingport starts with none of them.",
       "With users' own tools turned on, anyone can write one in the editor, or ask a connected AI assistant to write it for them.",
     ],
     link: { label: "Tools", href: url("docs/guides/tools/") },
-    image: qrTool,
-    alt: "The QR code generator tool, showing a code on a printable tile in 3D",
+    image: toolWindow,
+    dark: toolWindowDark,
+    alt: "The QR code generator in its window, showing a code on a printable tile in 3D",
   },
   {
     id: "storage",
@@ -215,9 +263,11 @@ const SECTIONS: FeatureSection[] = [
       "Renaming a model renames its file too, so the folders stay readable.",
       "See how much disk space models, pictures and previews take, and browse the storage folder from the browser.",
       "Back up the storage folder with whatever tool you already use.",
+      "If models lose their files, say after a move without the storage volume, Thingport offers to fetch them again from their sites, keeping names, tags and collections, or to delete those models.",
     ],
     link: { label: "Plain files on your disk", href: url("docs/features/storage/") },
     image: models,
+    dark: modelsDark,
     alt: "The Thingport model library",
   },
   {
@@ -231,20 +281,22 @@ const SECTIONS: FeatureSection[] = [
       "Open sign-up, or invite-only with email invitations. Optional email verification and captcha.",
       "Single sign-on with Authentik, Pocket ID, Keycloak or any other OpenID Connect provider, next to email and password.",
       "Light and dark themes, an accent colour of your own, in English, Spanish, French and Lithuanian.",
+      "On a phone, the menu, the top bar and the model filters fit the narrow screen.",
     ],
     link: { label: "Single sign-on", href: url("docs/guides/single-sign-on/") },
     image: myModels,
+    dark: myModelsDark,
     alt: "A user's own models in Thingport",
   },
   {
     id: "admin",
     short: "Administration",
-    icon: "sliders",
+    icon: "shield",
     title: "Run it your way",
     intro:
       "Every instance-wide setting lives in Administration, a page per area, so admins can see and change everything from the browser.",
     points: [
-      "System Health checks the database, storage, memory, FlareSolverr, Thingiverse, MyMiniFactory, AI and email on demand, and says what to fix.",
+      "System Health checks the database, storage, memory, internet, FlareSolverr, Thingiverse, MyMiniFactory, Thingport Grab, AI and email on demand, and says what to fix.",
       "Choose which providers this Thingport imports from. Turn one off and nothing new comes from it for anyone.",
       "Manage users and roles, see how each person signs in, and follow imports and changes in the logs.",
       "Change the storage folder layout and let Thingport reorganize existing files in the background.",
@@ -253,14 +305,15 @@ const SECTIONS: FeatureSection[] = [
     ],
     link: { label: "Tour the administration", href: url("features/administration/") },
     image: adminOverview,
-    alt: "The Thingport administration overview, with storage use and System Health",
+    dark: adminOverviewDark,
+    alt: "The Thingport administration overview, with the update check, storage use and System Health",
   },
 ];
 ---
 
 <BaseLayout
   title="Features"
-  description="Everything Thingport can do: import from MakerWorld, Printables, Thingiverse and MyMiniFactory, bring in your existing folders and ZIPs, preview STL, 3MF, STEP and OBJ in 3D, organize with categories, tags and optional AI, and send files to your slicer."
+  description={`Everything Thingport can do: import from MakerWorld, Printables, Thingiverse and ${otherSites} other sites, bring in your existing folders and ZIPs, preview STL, 3MF, STEP and OBJ in 3D, customize generative models, run tools that make new ones, organize with categories, tags and optional AI, and send files to your slicer.`}
 >
   <div class="container page-head">
     <span class="eyebrow">Features</span>

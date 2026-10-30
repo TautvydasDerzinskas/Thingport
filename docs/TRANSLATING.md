@@ -58,6 +58,15 @@ npm --prefix frontend run i18n:check es
 It prints how much of the language is done, each key that's still missing, and any key that English no longer
 uses (which you can delete). Without a code, it checks every language.
 
+## Tools and shared widgets
+
+The [tools](guides/tools.md) in [`tools/`](../tools) and the shared dashboard widgets in
+[`community-widgets/`](../community-widgets) carry their own words, one file per language in each one's `locales`
+folder. To translate one, copy its `locales/en.json` to your language's code, translate the values, and add the code to
+`locales` in its metadata: a widget's `widget.json`, or a tool's `tool.json` and the `source/tool.base.json` it's built
+from, the same in both. Their placeholders take single braces, such as `{n}`, and there are no plural forms. One
+without your language shows English.
+
 ## Keeping up
 
 New features add English text first. Translations catch up whenever someone has time, and until then the new text

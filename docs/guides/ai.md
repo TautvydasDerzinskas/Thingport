@@ -6,7 +6,10 @@ are optional and off until an admin adds a model. Everything else in Thingport w
 The model can run on your own hardware, with [Ollama](https://ollama.com), LM Studio or vLLM, so nothing leaves your
 network. A cloud API such as OpenAI, OpenRouter or Google Gemini works too.
 
-![Administration, AI page with two models and both features switched on](../../frontend/src/assets/screenshots/17_admin_ai.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/20_admin_ai.png">
+  <img src="../../frontend/src/assets/screenshots/light/20_admin_ai.png" alt="Administration, AI page with a model and both features switched on" width="100%">
+</picture>
 
 ## AI categorization
 
@@ -53,20 +56,28 @@ It runs on import when **Improve descriptions for every new import** is on, on o
 **⋮ → Improve description with AI** menu, or over the whole library from the feature's **Manage** tab. A run skips
 models with nothing new since their last check.
 
-![An AI-suggested description shown next to the original](../../frontend/src/assets/screenshots/23_ai_description_compare.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/39_ai_description_compare.png">
+  <img src="../../frontend/src/assets/screenshots/light/39_ai_description_compare.png" alt="A description the AI rewrote, shown beside the original with a Revert button" width="100%">
+</picture>
 
 ## Set up an AI model
 
 Admins add models under **Administration → AI → Models → Add AI model**.
 
-![Adding an AI model](../../frontend/src/assets/screenshots/20_ai_add_model.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/37_ai_model.png">
+  <img src="../../frontend/src/assets/screenshots/light/37_ai_model.png" alt="The AI model dialog: API base URL, model name, API key, request timeout, concurrent requests and reasoning effort" width="100%">
+</picture>
 
 - **API base URL**: where the provider's OpenAI-compatible API is. `/v1` is added when the URL has no path.
 - **Model name**: the models the provider offers are listed as you type, and any other name can be typed in.
 - **API key**: needed by cloud APIs. Local servers such as Ollama usually don't need one.
 - **Concurrent requests** (1 to 4) and **Request timeout**: how many models are sent at once, and how long to wait for
   each answer. Raise the timeout for a slow local model.
-- **Let the model think before answering**: turn it off to speed up a reasoning model, such as qwen3, on slow hardware.
+- **Reasoning effort**: sent to the provider as `reasoning_effort`. Leave it on the provider's default unless a
+  reasoning model is slow or runs out of tokens: **None** stops qwen3 thinking, but gpt-oss can't stop and needs
+  **Low**. A provider that turns the setting down is asked again without it.
 
 **Test connection** asks the model to categorize a calibration cube, and saving tests it too, so a wrong URL, key or
 model name shows up straight away.
@@ -109,7 +120,10 @@ Under **Administration → AI → Features**, switch **AI Categorization** and *
 for its settings: which AI it uses, its mode, whether it runs on import, and whether the photo is sent. Its **Manage**
 tab starts a run over your library and lists what's waiting for review.
 
-![AI categorization settings](../../frontend/src/assets/screenshots/21_ai_categorization_settings.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/38_ai_categorization.png">
+  <img src="../../frontend/src/assets/screenshots/light/38_ai_categorization.png" alt="AI Categorization settings: which AI, the mode, categorizing new imports and sending the first preview image" width="100%">
+</picture>
 
 Once a feature is on, it's there for everyone on this Thingport, and each person's runs and suggestions cover their own
 library.

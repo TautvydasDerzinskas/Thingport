@@ -38,6 +38,11 @@ room. Under it, **Customize** holds the script's own parameters, grouped as the 
 **Generate** at the foot. Every change can be undone and redone — with the buttons, or Ctrl/Cmd+Z — and the
 `<>` button shows the script itself.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/35_model_customize.png">
+  <img src="../../frontend/src/assets/screenshots/light/35_model_customize.png" alt="The customizer: the model and its script's parameters on the left, the model they generated on the stage" width="100%">
+</picture>
+
 What comes out can be downloaded as a 3MF or an STL, or saved back into your library as a model of its own.
 A saved one keeps a copy of the script beside it, so it can be customised again in turn, and a script that
 colours what it builds is saved in those colours and opens again in them.
@@ -52,11 +57,11 @@ The engine runs in your browser, so generating sends nothing anywhere: the scrip
 the result stay in the tab. Downloading writes the file straight to your disk, and saving uploads it to your
 own instance like any other model — neither goes anywhere else. There is nothing to install.
 
-**Generative**, above the model grid, narrows the library to the models that have one.
+**Generative models**, behind the models list's filter button, narrows the library to the models that have one.
 
-A creator can choose not to share the script, and many don't. That model still imports, and is marked **Script
-not shared** so it's clear why there's nothing to customise rather than leaving it looking like a model that
-never had one — only its creator can change that.
+A creator can choose not to share the script, and many don't. MakerWorld says when one didn't: that model still
+imports, and is marked **Script not shared** so it's clear why there's nothing to customise rather than leaving it
+looking like a model that never had one — only its creator can change that.
 
 The [Script customizer](../../tools/openscad-customizer) tool does the same for a script that isn't a model's
 — one opened from a file on your disk, say. An admin installs it from **Administration → Tools**, like any
