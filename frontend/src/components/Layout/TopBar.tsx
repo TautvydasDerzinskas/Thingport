@@ -126,13 +126,14 @@ export default function TopBar({
           refuses to shrink below its content's natural width, which would push the tools off the
           edge well before the window actually runs out of room. Narrow, the full width is what
           breaks the title onto its own row, and `order` puts it after the buttons rather than
-          between them. */}
+          between them. Wide, it takes only its own width, so the page's actions stay beside the
+          title rather than drifting over to the app's tools. */}
       <Box
         sx={{
           minWidth: 0,
           order: { xs: 1, md: 0 },
           width: { xs: "100%", md: "auto" },
-          flex: { md: 1 },
+          flex: { md: "0 1 auto" },
           textAlign: { xs: "center", md: "left" },
         }}
       >
