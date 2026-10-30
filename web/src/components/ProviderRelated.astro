@@ -77,7 +77,7 @@ const cards: Card[] = [
         link: "features/organize-and-search#categories-and-folders",
         line: "Its categories map to yours",
       }
-    : { icon: "sparkle", link: "guides/ai#ai-categorization", line: "Sorts its imports into your categories" },
+    : { icon: "sparkle", link: "guides/ai#ai-categorization", line: "Optional AI sorts its imports into categories" },
 ].filter((card): card is Card => Boolean(card));
 
 const links = await Promise.all(cards.map((card) => docsLink(card.link, `${slug}'s Related card ${card.link}`)));

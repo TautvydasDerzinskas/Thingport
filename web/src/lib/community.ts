@@ -104,7 +104,11 @@ export async function communityItems(kind: Kind): Promise<CommunityItem[]> {
         item.window = data.window;
         const models = data.collection?.models ?? [];
         if (data.collection && models.length) {
-          const from = models.flatMap((model) => (model.source ? [new URL(model.source).hostname] : []));
+          // Nothing validates a tool's model sources, so a relative or malformed one is skipped, not a failed build.
+          const from = models.flatMap((model) => {
+            if (!URL.canParse(model.source ?? "")) return [];
+            return [new URL(model.source!).hostname];
+          });
           item.models = {
             count: models.length,
             collection: data.collection.name,
