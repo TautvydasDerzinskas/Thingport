@@ -4277,7 +4277,9 @@
       "sources": "Fuentes",
       "allSources": "Todos los sitios",
       "noSources": "Aún no has importado nada, así que no hay sitios entre los que elegir.",
-      "noneSelected": "No hay ningún sitio activado, así que no hay nada que mostrar."
+      "noneSelected": "No hay ningún sitio activado, así que no hay nada que mostrar.",
+      "noMatch": "Ningún modelo de aquí coincide con los filtros.",
+      "clear": "Quitar filtros"
     }
   },
   "providers": {

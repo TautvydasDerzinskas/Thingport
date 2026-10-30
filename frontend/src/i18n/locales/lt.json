@@ -4454,7 +4454,9 @@
       "sources": "Šaltiniai",
       "allSources": "Visos svetainės",
       "noSources": "Dar nieko neimportuota, tad nėra iš ko rinktis.",
-      "noneSelected": "Neįjungta nė viena svetainė, tad nėra ko rodyti."
+      "noneSelected": "Neįjungta nė viena svetainė, tad nėra ko rodyti.",
+      "noMatch": "Nė vienas čia esantis modelis neatitinka filtrų.",
+      "clear": "Išvalyti filtrus"
     }
   },
   "providers": {
