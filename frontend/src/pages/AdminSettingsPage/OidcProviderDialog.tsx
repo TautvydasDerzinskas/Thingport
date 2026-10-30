@@ -19,6 +19,7 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { UnauthorizedError } from "../../api/client";
 import { oidcApi, type OidcProvider, type OidcProviderInput } from "../../api/oidc";
+import { copyText } from "../../utils/clipboard";
 
 type Props = {
   /** The provider to edit, or null to add one. */
@@ -101,7 +102,7 @@ export default function OidcProviderDialog({ provider, publicUrl, onClose, onSav
   const copy = async () => {
     if (!redirectUri) return;
     try {
-      await navigator.clipboard.writeText(redirectUri);
+      await copyText(redirectUri);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1500);
     } catch {}

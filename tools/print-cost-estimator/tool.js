@@ -2444,8 +2444,23 @@ export default async function mount(thingport) {
       `Cost: ${money(figures.priced.cost)}`,
       `Price: ${money(figures.priced.recommended)} (${clean(business().margin, 40)}% margin)`,
     ].join("\n");
-    await navigator.clipboard.writeText(text);
+    await writeClipboard(text);
     ui.toast(t("toast.copied"), "success");
+  }
+
+  // navigator.clipboard is missing where Thingport is reached over plain HTTP; the copy command works on any origin.
+  async function writeClipboard(text) {
+    if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text);
+    const onCopy = (event) => {
+      event.clipboardData.setData("text/plain", text);
+      event.preventDefault();
+    };
+    document.addEventListener("copy", onCopy);
+    try {
+      if (!document.execCommand("copy")) throw new Error("The browser didn't allow copying");
+    } finally {
+      document.removeEventListener("copy", onCopy);
+    }
   }
 
   function saveEstimate(item) {

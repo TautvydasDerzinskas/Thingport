@@ -26,7 +26,7 @@ On a phone, or a browser that won't drop links on its bookmarks bar, add it by h
 2. Bookmark any page.
 3. Edit that bookmark: name it something like _Send to Thingport_, and paste the code in place of its address.
 
-The copy button needs Thingport to be opened over HTTPS or on `localhost`. On a plain-HTTP address, right-click
+The copy button works over plain HTTP as well as HTTPS. If your browser still won't copy, right-click
 **Send to Thingport** and copy the link instead.
 
 ## Use it

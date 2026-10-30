@@ -57,6 +57,7 @@ import { type SearchResult, searchApi } from "../../../api/search";
 import { printsApi } from "../../../api/prints";
 import { IMPORT_PROVIDER_INFO } from "../../../constants/importProviders";
 import { SUPPORTED_LANGUAGES } from "../../../constants/languages";
+import { copyText } from "../../../utils/clipboard";
 import { detectImportProvider } from "../../../utils/importLinkDetection";
 import type { ThemeSelection } from "../../../constants/settingsOptions";
 import { useDebouncedValue } from "../../../hooks/useDebouncedValue";
@@ -647,11 +648,10 @@ export default function GlobalSearch({
         key: "copyLink",
         label: t("app:search.copyLink"),
         keys: `${MOD_KEY} ${SHIFT_KEY} C`,
-        // The clipboard API only exists on HTTPS or localhost; elsewhere this quietly does nothing.
         run: async () => {
           setActionsOpen(false);
           try {
-            await navigator.clipboard.writeText(new URL(path, window.location.origin).href);
+            await copyText(new URL(path, window.location.origin).href);
             setCopied(true);
           } catch {
             // Nothing to fall back to: the link isn't on the page to select.
