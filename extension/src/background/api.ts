@@ -37,17 +37,57 @@ export class LoginRejectedError extends Error {
 // A JWT outlives a password change, so only signing in proves the saved password still works.
 const CONNECTION_RECHECK_MS = 10 * 60 * 1000;
 
-/** A provider session or Thingport token must not be replayed to a redirect target. */
-export async function fetchInstance(url: string, init: RequestInit): Promise<Response> {
-  // Browsers hide redirect targets behind opaqueredirect, even for same-origin redirects.
-  // Require the configured final URL instead of replaying credentials to any redirect.
-  const res = await fetch(url, { ...init, redirect: "manual" });
-  if (res.type === "opaqueredirect" || [301, 302, 303, 307, 308].includes(res.status)) {
-    await res.body?.cancel().catch(() => undefined);
-    throw new Error("Thingport instance redirected a credential-bearing request; configure its final URL");
-  }
-  return res;
+const isRedirect = (res: Response) => res.type === "opaqueredirect" || [301, 302, 303, 307, 308].includes(res.status);
+
+// http:// origins a reverse proxy was seen upgrading to https:// on the same host, so later requests go there directly.
+const httpsUpgrades = new Map<string, string>();
+
+/** Where an http:// URL ends up, asked without anything secret; the https:// origin when that's all the redirect does. */
+async function httpsUpgradeOf(url: URL): Promise<string | null> {
+  if (url.protocol !== "http:") return null;
+  const probe = await fetch(url.href, { method: "GET", redirect: "follow", credentials: "omit" }).catch(() => null);
+  await probe?.body?.cancel().catch(() => undefined);
+  if (!probe?.redirected || !probe.url) return null;
+  const final = new URL(probe.url);
+  const same = final.protocol === "https:" && final.hostname === url.hostname && final.pathname === url.pathname;
+  return same ? final.origin : null;
 }
+
+/** A provider session or Thingport token must not be replayed to a redirect target. The one redirect followed is a
+ *  reverse proxy upgrading http:// to https:// on the same host and path, found out without the credentials. */
+export async function fetchInstance(url: string, init: RequestInit): Promise<Response> {
+  const target = new URL(url);
+  const upgraded = httpsUpgrades.get(target.origin);
+  if (upgraded) return fetchUpgraded(target, upgraded, init);
+  // Browsers hide redirect targets behind opaqueredirect, even for same-origin redirects.
+  const res = await fetch(url, { ...init, redirect: "manual" });
+  if (!isRedirect(res)) return res;
+  await res.body?.cancel().catch(() => undefined);
+  const origin = await httpsUpgradeOf(target);
+  if (!origin) throw redirectError();
+  httpsUpgrades.set(target.origin, origin);
+  return fetchUpgraded(target, origin, init);
+}
+
+function fetchUpgraded(target: URL, origin: string, init: RequestInit): Promise<Response> {
+  return fetchInstanceOnce(new URL(`${target.pathname}${target.search}`, origin).href, init).catch((err: unknown) => {
+    // Typically a connection made before Grab asked for the https:// origin as well: it may not reach it yet.
+    if (err instanceof TypeError) {
+      throw new Error(`Thingport redirects to ${origin}: connect Grab again so it may reach that address`);
+    }
+    throw err;
+  });
+}
+
+async function fetchInstanceOnce(url: string, init: RequestInit): Promise<Response> {
+  const res = await fetch(url, { ...init, redirect: "manual" });
+  if (!isRedirect(res)) return res;
+  await res.body?.cancel().catch(() => undefined);
+  throw redirectError();
+}
+
+const redirectError = () =>
+  new Error("Thingport instance redirected a credential-bearing request; configure its final URL");
 
 /** Mirrored on the toolbar icon, so a broken connection shows before the user reaches a provider. */
 function setConnectionBadge(connected: boolean): void {
