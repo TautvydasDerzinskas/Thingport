@@ -32,6 +32,8 @@
   "form.fontFallback": "{name} (naudojamas {fallback})",
   "form.noParameters": "Šiame scenarijuje nėra ką keisti.",
   "form.pickColor": "Pasirinkti spalvą",
+  "notes.missingFiles": "Šiam scenarijui reikia {files}, bet šie failai nebuvo pridėti prie modelio.",
+  "notes.missingParts": "Rezultate gali trūkti dalių.",
   "pick.cancel": "Atsisakyti",
   "pick.search": "Ieškoti modelių",
   "pick.title": "Kurį modelį?",

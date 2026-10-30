@@ -10,6 +10,7 @@ import {
   defaultValues,
   generatedName,
   groupParameters,
+  missingFiles,
   readyScript,
   readableWarnings,
   scriptsAmong,
@@ -52,7 +53,7 @@ export default async function mount(thingport) {
   /** Whatever went wrong reading a model's files, said in the window rather than only in the console. */
   const unreadable = (err) => ui.toast(t("error.unreadable", { reason: err.message }), "error");
 
-  async function loadScript({ text: raw, name, from }) {
+  async function loadScript({ text: raw, name, from, read }) {
     setBusy(true, t("busy.reading"));
     try {
       const text = readyScript(raw);
@@ -60,7 +61,9 @@ export default async function mount(thingport) {
       const { parameters } = await openscad.parameters(text);
       // Only a script with a typeface to pick pays for the list of them.
       const fonts = parameters.some((parameter) => parameter.widget === "font") ? (await library("fonts")).list : [];
-      current = { text, name, from, parameters, fonts, values: defaultValues(parameters), uploads: new Map() };
+      // A script opened from a file has nothing beside it here: the render names what that leaves it without.
+      const files = read ? await openscad.includedFiles(text, read) : {};
+      current = { text, name, from, parameters, fonts, files, values: defaultValues(parameters), uploads: new Map() };
       $("name").textContent = name;
       $("where").textContent = from ? t("bar.fromModel", { model: from.name }) : t("bar.fromFile");
       buildForm();
@@ -93,7 +96,12 @@ export default async function mount(thingport) {
     const choose = async (fileId) => {
       const file = scripts.find((s) => s.id === fileId) ?? scripts[0];
       const text = await models.relatedText(model.id, file.id);
-      await loadScript({ text, name: file.name, from: model });
+      const read = async (fileName) => {
+        const wanted = fileName.toLowerCase();
+        const sibling = scripts.find((candidate) => candidate.name.toLowerCase() === wanted);
+        return sibling ? models.relatedText(model.id, sibling.id).catch(() => null) : null;
+      };
+      await loadScript({ text, name: file.name, from: model, read });
     };
     // Reading a file can fail on a network error or a file that went: said out loud rather than left as an
     // unhandled rejection with the window looking as though nothing happened.
@@ -402,7 +410,7 @@ export default async function mount(thingport) {
       const name = generatedName(current.name, current.from?.name, values);
       const result = await openscad.render(current.text, {
         parameters: values,
-        files: chosenFiles(current.uploads, values),
+        files: { ...current.files, ...chosenFiles(current.uploads, values) },
         name,
       });
       generated = { bytes: result.bytes, name };
@@ -411,14 +419,28 @@ export default async function mount(thingport) {
         seconds: result.seconds.toFixed(1),
         size: Math.max(1, Math.round(result.bytes.length / 1024)),
       });
-      showNotes(readableWarnings(result.log));
+      const missing = missingFiles(result.log);
+      showNotes([
+        ...(missing.length
+          ? [`${t("notes.missingFiles", { files: missing.join(", ") })} ${t("notes.missingParts")}`]
+          : []),
+        ...readableWarnings(result.log),
+      ]);
     } catch (err) {
       generated = null;
       viewer.clear();
       showNotes([]);
       $("status").textContent = "";
       ui.toast(t("error.failed"), "error");
-      showNotes(String(err.message).split("\n").slice(0, 6));
+      // In plain words where it's only that a file is missing, and the engine's own otherwise.
+      const said = String(err.message).split("\n");
+      const missing = missingFiles(said);
+      showNotes(
+        (missing.length
+          ? [t("notes.missingFiles", { files: missing.join(", ") }), ...readableWarnings(said)]
+          : said
+        ).slice(0, 6),
+      );
     } finally {
       setBusy(false);
     }

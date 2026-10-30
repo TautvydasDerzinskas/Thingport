@@ -3792,6 +3792,10 @@
         "fileClear": "Volver al sustituto",
         "fileWrongType": "Ese archivo no es {{type}}."
       },
+      "notes": {
+        "missingFiles": "Este script necesita {{files}}, que no venían con el modelo.",
+        "missingParts": "Pueden faltar partes en el resultado."
+      },
       "busy": {
         "reading": "Leyendo el script…",
         "generating": "Generando…"

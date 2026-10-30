@@ -10,6 +10,7 @@
 // some other way would do nothing: the engine has to see the parameters itself. So the script it is given has them
 // moved up to where it looks and its notes taken out of the way, neither of which changes what the script makes.
 
+import { SCAD_LIBRARIES } from "./scadLibraries";
 import { writeStl } from "./stl";
 import type { ScadParameter } from "./types";
 
@@ -236,5 +237,56 @@ export function standInFiles(source: string): Record<string, string | Uint8Array
       '<svg xmlns="http://www.w3.org/2000/svg" width="20mm" height="20mm" viewBox="0 0 20 20"><rect width="20" height="20"/></svg>';
   }
   if (source.includes("default.stl")) files["/default.stl"] = writeStl(CUBE);
+  return files;
+}
+
+/** What a script includes or uses, as it asks for them. Strings are matched only so a `//` in one isn't a comment. */
+function includesOf(text: string): string[] {
+  const code = text.replace(/"(?:[^"\\]|\\.)*"|\/\*[\s\S]*?\*\/|\/\/.*$/gm, " ");
+  return [...code.matchAll(/\b(?:include|use)\s*<([^>\n]+)>/g)].map((match) => match[1].trim());
+}
+
+/** Deeper than any real script nests. Files found by name alone can seem to reach each other at ever deeper paths: `a`
+ *  uses `lib/b`, `b` uses `a` from inside `lib`, so `a` asks for `lib/lib/b`, and so on without end. */
+const MAX_INCLUDE_DEPTH = 8;
+const MAX_INCLUDED_FILES = 256;
+
+/**
+ * The `.scad` files a script includes or uses, and what those include in turn, as `render()` wants them in `files`:
+ * each at the path it was asked for by, relative to whatever asked, since that's where the engine looks. A model's
+ * files keep no folders, so `read` is asked by file name alone, and once for each. The libraries Thingport carries are
+ * left to the engine.
+ */
+export async function scadIncludedFiles(
+  source: string,
+  read: (fileName: string) => Promise<string | null>,
+): Promise<Record<string, string>> {
+  const files: Record<string, string> = {};
+  const reads = new Map<string, Promise<string | null>>();
+  const visit = async (text: string, folder: string[]) => {
+    for (const asked of includesOf(text)) {
+      const parts = asked.split("/");
+      if (SCAD_LIBRARIES.includes(parts[0])) continue;
+      const resolved: string[] = [...folder];
+      for (const part of parts) {
+        if (part === "..") resolved.pop();
+        else if (part !== "." && part !== "") resolved.push(part);
+      }
+      const at = resolved.join("/");
+      if (!at || resolved.length > MAX_INCLUDE_DEPTH || Object.hasOwn(files, at)) continue;
+      if (Object.keys(files).length >= MAX_INCLUDED_FILES) continue;
+      const name = asked.split(/[\\/]/).at(-1) ?? asked;
+      let reading = reads.get(name);
+      if (!reading) {
+        reading = read(name);
+        reads.set(name, reading);
+      }
+      const found = await reading;
+      if (found === null) continue;
+      files[at] = found;
+      await visit(found, resolved.slice(0, -1));
+    }
+  };
+  await visit(source, []);
   return files;
 }

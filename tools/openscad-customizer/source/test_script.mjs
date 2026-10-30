@@ -8,6 +8,7 @@ import {
   defaultValues,
   generatedName,
   groupParameters,
+  missingFiles,
   readableWarnings,
   scriptsAmong,
   uploadName,
@@ -199,6 +200,28 @@ test("keeps the warnings a reader can act on, once each", () => {
     "ERROR: Parser error: syntax error in file /model.scad, line 3",
   ];
   assert.deepEqual(readableWarnings(log), ["WARNING: Can't get font Shrikhand", "ERROR: Parser error: syntax error"]);
+});
+
+test("names a missing file once, however it was asked for, and drops what only follows from it", () => {
+  const log = [
+    "WARNING: Can't open include file 'shapes.scad'. in file /model.scad, line 1",
+    "WARNING: Can't open include file '../openscad-bitmap/bitmap.scad'. in file /model.scad, line 2",
+    "WARNING: Can't open library 'helper.scad'. in file /model.scad, line 3",
+    "WARNING: Can't open import file '/part.stl', import() at line 4",
+    "ERROR: Can't open file '/art.svg', import() at line 5",
+    "WARNING: The file '/h.png' couldn't be opened.",
+    "WARNING: Ignoring unknown module 'hexagon' in file /model.scad, line 7",
+    "WARNING: Ignoring unknown module 'hexagon' in file /model.scad, line 8",
+    "WARNING: Normalized tree is growing past 200000 elements",
+  ];
+  assert.deepEqual(missingFiles(log), ["shapes.scad", "bitmap.scad", "helper.scad", "part.stl", "art.svg", "h.png"]);
+  assert.deepEqual(readableWarnings(log), ["WARNING: Normalized tree is growing past 200000 elements"]);
+});
+
+test("with nothing missing, an unknown module is news in itself", () => {
+  const log = ["WARNING: Ignoring unknown module 'hexagon' in file /model.scad, line 7"];
+  assert.deepEqual(missingFiles(log), []);
+  assert.deepEqual(readableWarnings(log), ["WARNING: Ignoring unknown module 'hexagon'"]);
 });
 
 if (!process.exitCode) console.log("\nall good");

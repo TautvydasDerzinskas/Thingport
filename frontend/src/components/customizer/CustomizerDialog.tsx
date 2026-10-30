@@ -27,7 +27,7 @@ import { type Print, printsApi } from "../../api/prints";
 import { UnauthorizedError } from "../../api/client";
 import { useToast } from "../ToastProvider";
 import ModelViewer from "../media/ModelViewer";
-import { scadParameters, scadRender, type ScadParameter } from "../../sdk/openscad";
+import { scadIncludedFiles, scadParameters, scadRender, type ScadParameter } from "../../sdk/openscad";
 import { writeStl } from "../../sdk/stl";
 import { isColored, type Mesh } from "../../sdk/threeMf";
 import { saveBytesToDisk } from "../../utils/downloadResponse";
@@ -42,6 +42,7 @@ import {
   defaultValues,
   generatedName,
   hasChanges,
+  missingFiles,
   readableWarnings,
   readyScript,
   uploadName,
@@ -53,7 +54,8 @@ const COLUMN_WIDTH = 348;
 
 type Script = { id: string; filename: string };
 
-type Loaded = { script: Script; source: string; parameters: ScadParameter[] };
+/** `files` is the other scripts this one includes, as the engine wants them. */
+type Loaded = { script: Script; source: string; parameters: ScadParameter[]; files: Record<string, string> };
 
 type Generated = {
   /** What a save and a 3MF download hand over, straight from the engine's run. */
@@ -64,6 +66,8 @@ type Generated = {
   name: string;
   seconds: number;
   warnings: string[];
+  /** What the script asked for that came with neither it nor the model. */
+  missing: string[];
 };
 
 type Props = {
@@ -163,7 +167,7 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
         const name = generatedName(current.script.filename, model.title || model.name, changed);
         const result = await scadRender(current.source, {
           parameters: changed,
-          files: chosenFiles(uploads.current, changed),
+          files: { ...current.files, ...chosenFiles(uploads.current, changed) },
           name,
         });
         if (token !== run.current) return;
@@ -176,6 +180,7 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
           name,
           seconds: result.seconds,
           warnings: readableWarnings(result.log),
+          missing: missingFiles(result.log),
         });
         setRenderedValues(JSON.stringify(wanted));
       } catch (err) {
@@ -221,8 +226,15 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
       try {
         const source = readyScript(await printsApi.supportingText(printId, script.id));
         const { parameters } = await scadParameters(source);
+        // Only what came with the model is there to find: one that can't be read is no different from one that isn't
+        // there, and the render names it either way.
+        const files = await scadIncludedFiles(source, async (fileName) => {
+          const wanted = fileName.toLowerCase();
+          const sibling = scriptsRef.current.find((candidate) => candidate.filename.toLowerCase() === wanted);
+          return sibling ? printsApi.supportingText(printId, sibling.id).catch(() => null) : null;
+        });
         if (token !== run.current) return;
-        const current = { script, source, parameters };
+        const current = { script, source, parameters, files };
         const initial = defaultValues(parameters);
         setLoaded(current);
         restart(initial);
@@ -281,9 +293,14 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
     if (!generated || !loaded) return;
     setBusy("saving");
     try {
+      // What it includes comes too, or the copy couldn't be generated again: once each, as a model's files keep no
+      // folders, and not the script itself where two include each other.
+      const included = new Map(Object.entries(loaded.files).map(([at, text]) => [at.split("/").at(-1) ?? at, text]));
+      included.delete(loaded.script.filename);
       const files = [
         new File([generated.threeMf as BlobPart], `${generated.name}.3mf`, { type: "model/3mf" }),
         new File([loaded.source], loaded.script.filename, { type: "text/plain" }),
+        ...[...included].map(([name, text]) => new File([text], name, { type: "text/plain" })),
       ];
       const result = await printsApi.upload(files, {
         title: generated.name,
@@ -304,6 +321,13 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
     } finally {
       setBusy(null);
     }
+  };
+
+  const missingNote = (files: string[]) => t("models:customizer.notes.missingFiles", { files: files.join(", ") });
+  /** A failure in plain words where it's only that a file is missing, and the engine's own otherwise. */
+  const engineNotes = (lines: string[]) => {
+    const missing = missingFiles(lines);
+    return missing.length ? [missingNote(missing), ...readableWarnings(lines)] : lines;
   };
 
   const column = (
@@ -418,14 +442,19 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
           <Alert severity="error" variant="filled" sx={{ maxWidth: 560, width: "100%", alignSelf: "flex-start" }}>
             <AlertTitle sx={{ mb: 0.25 }}>{t("models:customizer.error.failed")}</AlertTitle>
             <Typography variant="caption" sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-              {failure.split("\n").slice(0, 6).join("\n")}
+              {engineNotes(failure.split("\n")).slice(0, 6).join("\n")}
             </Typography>
           </Alert>
         )}
-        {!failure && generated?.warnings.length ? (
+        {!failure && (generated?.warnings.length || generated?.missing.length) ? (
           <Alert severity="warning" sx={{ maxWidth: 560, width: "100%", alignSelf: "flex-start" }}>
             <Typography variant="caption" component="div" sx={{ whiteSpace: "pre-wrap" }}>
-              {generated.warnings.slice(0, 4).join("\n")}
+              {[
+                ...(generated.missing.length
+                  ? [`${missingNote(generated.missing)} ${t("models:customizer.notes.missingParts")}`]
+                  : []),
+                ...generated.warnings.slice(0, 4),
+              ].join("\n")}
             </Typography>
           </Alert>
         ) : null}

@@ -32,6 +32,8 @@
   "form.fontFallback": "{name} (usa {fallback})",
   "form.noParameters": "Este script no tiene nada que cambiar.",
   "form.pickColor": "Elegir un color",
+  "notes.missingFiles": "Este script necesita {files}, que no venían con el modelo.",
+  "notes.missingParts": "Pueden faltar partes en el resultado.",
   "pick.cancel": "Cancelar",
   "pick.search": "Buscar en tus modelos",
   "pick.title": "¿Qué modelo?",

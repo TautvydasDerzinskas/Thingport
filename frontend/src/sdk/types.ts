@@ -340,8 +340,8 @@ export type ScadFormat = "3mf" | "mesh" | "stl" | "obj" | "off" | "amf";
 export interface ScadRenderOptions {
   /** By parameter name, as `parameters()` gives them. Anything left out keeps the script's own value. */
   parameters?: Record<string, unknown>;
-  /** The files the script reads, by the name a `"file"` parameter was set to. */
-  files?: Record<string, Uint8Array>;
+  /** The files the script reads, by the name a `"file"` parameter was set to, or as `includedFiles()` gives them. */
+  files?: Record<string, Uint8Array | string>;
   /** `"3mf"` when left out. */
   format?: ScadFormat;
   /** The title written into a 3MF, which slicers show. Ignored by the other formats. */
@@ -416,6 +416,22 @@ export interface SdkOpenscad {
    * thingport.download({ name: "box.3mf", data: bytes });
    */
   render(source: string, options?: ScadRenderOptions): Promise<ScadRender>;
+  /**
+   * The `.scad` files a script includes or uses, and what those include in turn, ready for `render()`'s `files`. A
+   * script that came with a model often needs the others kept beside it.
+   *
+   * @param source The script's text.
+   * @param read Reads a file by its name, without any folder; resolves to null when there's no such file.
+   * @returns Each file's text, by the path the script asks for it by. What `read` couldn't find is left out, and the
+   * render's log says so.
+   * @example
+   * const files = await openscad.includedFiles(source, async (name) => {
+   *   const file = related.find((candidate) => candidate.name === name);
+   *   return file ? thingport.models.relatedText(id, file.id) : null;
+   * });
+   * const { bytes } = await openscad.render(source, { files });
+   */
+  includedFiles(source: string, read: (fileName: string) => Promise<string | null>): Promise<Record<string, string>>;
   /** The OpenSCAD libraries a script may include, by folder name. */
   libraries: string[];
   /** How many renders to have in flight at once: one fewer than the machine has cores, from one to four. */

@@ -58,11 +58,13 @@ const loaders: { [K in SdkLibraryName]: () => Promise<SdkLibraries[K]> } = {
    * named inside it, rather than a dozen downloads.
    */
   openscad: async () => {
-    const { scadParameters, scadRender, SCAD_LIBRARIES, SCAD_CONCURRENCY } = await import("./openscad");
+    const { scadParameters, scadRender, scadIncludedFiles, SCAD_LIBRARIES, SCAD_CONCURRENCY } =
+      await import("./openscad");
     const { writeThreeMf, layoutRow, meshBounds } = await import("./threeMf");
     return {
       parameters: scadParameters,
       render: scadRender,
+      includedFiles: scadIncludedFiles,
       libraries: SCAD_LIBRARIES,
       /** How many renders a tool may have in flight at once without crowding the machine out. */
       concurrency: SCAD_CONCURRENCY,

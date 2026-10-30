@@ -144,12 +144,26 @@ export function chosenFiles(uploads, values) {
   return files;
 }
 
+/** How the engine says it couldn't open a file, which differs by what wanted it. */
+const MISSING_FILE =
+  /^(?:WARNING|ERROR):\s*(?:Can't open (?:include file|library|import file|DXF file|file)|The file) '([^']+)'/;
+
+/** The files the engine couldn't find, by name, once each. */
+export function missingFiles(log) {
+  return [...new Set(log.flatMap((line) => MISSING_FILE.exec(line)?.[1].split("/").at(-1) ?? []))];
+}
+
 /** A warning the engine printed that the reader can do something about; the rest is progress chatter. */
 export function readableWarnings(log) {
   const seen = new Set();
   const out = [];
+  const somethingMissing = missingFiles(log).length > 0;
   for (const line of log) {
     if (!/^(WARNING|ERROR):/i.test(line)) continue;
+    // Said by name instead, and what a missing file defined coming up unknown is only the same news again.
+    if (MISSING_FILE.test(line) || (somethingMissing && /Ignoring unknown (?:module|function|variable)/.test(line))) {
+      continue;
+    }
     // Said once per use of the font, which for a nameplate is once per letter.
     const text = line.replace(/\s+in file .*$/, "").trim();
     if (seen.has(text)) continue;

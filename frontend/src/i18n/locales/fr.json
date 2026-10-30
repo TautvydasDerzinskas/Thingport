@@ -3805,6 +3805,10 @@
         "fileClear": "Revenir au remplaçant",
         "fileWrongType": "Ce fichier n'est pas un {{type}}."
       },
+      "notes": {
+        "missingFiles": "Ce script a besoin de {{files}}, qui n'accompagnaient pas le modèle.",
+        "missingParts": "Il peut manquer des parties au résultat."
+      },
       "busy": {
         "reading": "Lecture du script…",
         "generating": "Génération…"
