@@ -52,7 +52,7 @@ The engine runs in your browser, so generating sends nothing anywhere: the scrip
 the result stay in the tab. Downloading writes the file straight to your disk, and saving uploads it to your
 own instance like any other model — neither goes anywhere else. There is nothing to install.
 
-**Generative**, above the model grid, narrows the library to the models that have one.
+**Generative models**, behind the models list's filter button, narrows the library to the models that have one.
 
 A creator can choose not to share the script, and many don't. That model still imports, and is marked **Script
 not shared** so it's clear why there's nothing to customise rather than leaving it looking like a model that
