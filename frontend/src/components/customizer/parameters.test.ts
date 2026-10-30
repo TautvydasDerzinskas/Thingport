@@ -8,6 +8,7 @@ import {
   generatedName,
   groupParameters,
   hasChanges,
+  missingFiles,
   readableWarnings,
   readyScript,
   uploadName,
@@ -218,6 +219,47 @@ describe("readableWarnings", () => {
         "Geometries in cache: 12",
       ]),
     ).toEqual(["WARNING: Can't find font Foo", "ERROR: Parser error: syntax error"]);
+  });
+});
+
+describe("missingFiles", () => {
+  const log = [
+    "WARNING: Can't open include file 'shapes.scad'. in file /model.scad, line 1",
+    "WARNING: Can't open include file '../openscad-bitmap/bitmap.scad'. in file /model.scad, line 2",
+    "WARNING: Can't open include file 'shapes.scad'. in file /model.scad, line 9",
+    "WARNING: Can't open library 'helper.scad'. in file /model.scad, line 3",
+    "WARNING: Can't open import file '/part.stl', import() at line 4",
+    "ERROR: Can't open file '/art.svg', import() at line 5",
+    "WARNING: Can't open DXF file '/art.dxf'.",
+    "WARNING: The file '/h.png' couldn't be opened.",
+    "WARNING: Ignoring unknown module 'hexagon' in file /model.scad, line 7",
+    "WARNING: Normalized tree is growing past 200000 elements",
+  ];
+
+  it("names each file once, by name alone, however it was asked for", () => {
+    expect(missingFiles(log)).toEqual([
+      "shapes.scad",
+      "bitmap.scad",
+      "helper.scad",
+      "part.stl",
+      "art.svg",
+      "art.dxf",
+      "h.png",
+    ]);
+  });
+
+  it("is nothing when nothing is missing", () => {
+    expect(missingFiles(["WARNING: Ignoring unknown module 'hexagon'", "Geometries in cache: 12"])).toEqual([]);
+  });
+
+  it("leaves readableWarnings only what isn't already said by name", () => {
+    expect(readableWarnings(log)).toEqual(["WARNING: Normalized tree is growing past 200000 elements"]);
+  });
+
+  it("still reports an unknown module when nothing is missing, since that's news in itself", () => {
+    expect(readableWarnings(["WARNING: Ignoring unknown module 'hexagon' in file /model.scad, line 7"])).toEqual([
+      "WARNING: Ignoring unknown module 'hexagon'",
+    ]);
   });
 });
 

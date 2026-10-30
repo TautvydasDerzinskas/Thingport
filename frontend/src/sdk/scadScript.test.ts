@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { scriptForEngine, scriptWidgets, standInFiles } from "./scadScript";
+import { scadIncludedFiles, scriptForEngine, scriptWidgets, standInFiles } from "./scadScript";
 
 describe("scriptForEngine", () => {
   it("leaves alone a script whose parameters are already where the engine looks", () => {
@@ -196,5 +196,85 @@ describe("standInFiles", () => {
       "/default.png",
       "/default.stl",
     ]);
+  });
+});
+
+describe("scadIncludedFiles", () => {
+  const reader = (files: Record<string, string>) => {
+    const asked: string[] = [];
+    const read = async (name: string) => {
+      asked.push(name);
+      return files[name] ?? null;
+    };
+    return { read, asked };
+  };
+
+  it("gathers what a script includes or uses, at the path it asks for", async () => {
+    const { read } = reader({ "a.scad": "A", "b.scad": "B", "c.scad": "C" });
+    expect(await scadIncludedFiles("include <a.scad>\nuse <lib/b.scad>\ninclude <../c.scad>\n", read)).toEqual({
+      "a.scad": "A",
+      "lib/b.scad": "B",
+      "c.scad": "C",
+    });
+  });
+
+  it("follows what those include, relative to whichever asked", async () => {
+    const { read } = reader({
+      "outer.scad": "include <deep/inner.scad>\n",
+      "inner.scad": "use <../sibling.scad>\n",
+      "sibling.scad": "S",
+    });
+    expect(await scadIncludedFiles("use <lib/outer.scad>\n", read)).toEqual({
+      "lib/outer.scad": "include <deep/inner.scad>\n",
+      "lib/deep/inner.scad": "use <../sibling.scad>\n",
+      "lib/sibling.scad": "S",
+    });
+  });
+
+  it("leaves out what isn't there, for the render to name", async () => {
+    const { read, asked } = reader({ "a.scad": "A" });
+    expect(await scadIncludedFiles("include <a.scad>\ninclude <shapes.scad>\n", read)).toEqual({ "a.scad": "A" });
+    expect(asked).toEqual(["a.scad", "shapes.scad"]);
+  });
+
+  it("doesn't go looking for a library Thingport carries", async () => {
+    const { read, asked } = reader({ "std.scad": "not this one" });
+    expect(await scadIncludedFiles("include <BOSL2/std.scad>\n", read)).toEqual({});
+    expect(asked).toEqual([]);
+  });
+
+  it("ignores what's commented out or inside a string", async () => {
+    const { read, asked } = reader({});
+    await scadIncludedFiles(
+      '// include <a.scad>\n/* use <b.scad> */\nlabel = "include <c.scad>";\nurl = "http://x"; include <d.scad>\n',
+      read,
+    );
+    expect(asked).toEqual(["d.scad"]);
+  });
+
+  it("survives files that include each other", async () => {
+    const { read } = reader({ "a.scad": "include <b.scad>\n", "b.scad": "include <a.scad>\n" });
+    expect(Object.keys(await scadIncludedFiles("include <a.scad>\n", read))).toEqual(["a.scad", "b.scad"]);
+  });
+
+  it("stops when files found by name seem to reach each other at ever deeper paths", async () => {
+    const { read, asked } = reader({ "main.scad": "use <lib/helper.scad>\n", "helper.scad": "use <main.scad>\n" });
+    const files = await scadIncludedFiles("use <lib/helper.scad>\n", read);
+    expect(Object.keys(files).every((at) => at.split("/").length <= 8)).toBe(true);
+    expect(files["lib/helper.scad"]).toBe("use <main.scad>\n");
+    expect(asked.toSorted()).toEqual(["helper.scad", "main.scad"]);
+  });
+
+  it("reads a file once, however many paths ask for it", async () => {
+    const { read, asked } = reader({ "a.scad": "A" });
+    const files = await scadIncludedFiles("use <a.scad>\nuse <lib/a.scad>\nuse <other/a.scad>\n", read);
+    expect(Object.keys(files)).toEqual(["a.scad", "lib/a.scad", "other/a.scad"]);
+    expect(asked).toEqual(["a.scad"]);
+  });
+
+  it("asks by file name alone, since a model's files keep no folders", async () => {
+    const { read, asked } = reader({});
+    await scadIncludedFiles("include <../openscad-bitmap/bitmap.scad>\ninclude <win\\path.scad>\n", read);
+    expect(asked).toEqual(["bitmap.scad", "path.scad"]);
   });
 });

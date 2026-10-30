@@ -139,8 +139,13 @@ async function run(
 ): Promise<ScadRender> {
   const log: string[] = [];
   const instance = await newInstance(log);
-  await mountDependencies(instance, source, log);
-  for (const [path, content] of Object.entries({ ...standInFiles(source), ...extraFiles })) {
+  // What the files it includes ask for counts too: a library, a typeface, a stand-in.
+  const scripts = Object.entries(extraFiles)
+    .filter(([path]) => path.endsWith(".scad"))
+    .map(([, content]) => (typeof content === "string" ? content : new TextDecoder().decode(content)));
+  const everything = [source, ...scripts].join("\n");
+  await mountDependencies(instance, everything, log);
+  for (const [path, content] of Object.entries({ ...standInFiles(everything), ...extraFiles })) {
     mkdirp(instance, path.slice(0, path.lastIndexOf("/")));
     instance.FS.writeFile(path, content);
   }
@@ -162,7 +167,9 @@ async function run(
   // An empty file counts as a failure: asked for a format the engine wasn't built with, it renders the model,
   // writes nothing and exits as though it had worked.
   if (!bytes?.length) {
-    const said = log.filter((line) => /error|not enabled|warning: (?:unknown|ignoring)/i.test(line));
+    const said = log.filter((line) =>
+      /error|not enabled|warning: (?:unknown|ignoring)|can't open|couldn't be/i.test(line),
+    );
     throw new Error(said.length ? said.join("\n") : "OpenSCAD produced nothing, and didn't say why.");
   }
   return { bytes, log, seconds };

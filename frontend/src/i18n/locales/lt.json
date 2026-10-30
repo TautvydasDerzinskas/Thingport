@@ -3887,6 +3887,10 @@
         "fileClear": "Grįžti prie pakaitalo",
         "fileWrongType": "Tai ne {{type}} failas."
       },
+      "notes": {
+        "missingFiles": "Šiam scenarijui reikia {{files}}, bet šie failai nebuvo pridėti prie modelio.",
+        "missingParts": "Rezultate gali trūkti dalių."
+      },
       "busy": {
         "reading": "Skaitomas scenarijus…",
         "generating": "Generuojama…"

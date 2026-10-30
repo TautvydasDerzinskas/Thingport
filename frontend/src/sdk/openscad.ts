@@ -14,6 +14,7 @@ import type { ScadParameters, ScadRender, ScadRenderOptions, ScadFormat, ScadPar
 
 export type { ScadParameters, ScadRender, ScadRenderOptions, ScadFormat, ScadParameter };
 export { SCAD_LIBRARIES };
+export { scadIncludedFiles } from "./scadScript";
 
 /**
  * How many renders may run at once.

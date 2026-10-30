@@ -32,8 +32,9 @@ It reads a model's files and creates a model when you ask it to. It changes noth
 The engine is OpenSCAD built for WebAssembly, carried in
 [`frontend/src/assets/openscad`](../../frontend/src/assets/openscad), and the libraries a script may include are in
 [`frontend/src/assets/scadLibraries`](../../frontend/src/assets/scadLibraries) — BOSL2 today, which is what nearly
-every script that includes anything includes. A script that reaches for a library Thingport doesn't carry will say
-so in the notes under the preview rather than quietly producing the wrong shape.
+every script that includes anything includes. Other `.scad` files that came with the same model are found too,
+whatever folder the script expects them in. A script reaching for anything else has the notes under the preview name
+what's missing, rather than quietly producing the wrong shape.
 
 Fonts are the ones Thingport ships for its tools. A script asking for a typeface that isn't among them still renders,
 in PT Sans, and OpenSCAD doesn't mention it: where the script declares the typeface as a parameter, its field says so.

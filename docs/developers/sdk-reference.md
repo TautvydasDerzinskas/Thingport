@@ -965,6 +965,29 @@ const { bytes, log } = await openscad.render(source, { parameters: { width: 60 }
 thingport.download({ name: "box.3mf", data: bytes });
 ```
 
+##### `openscad.includedFiles(source, read)`
+
+```ts
+openscad.includedFiles(source: string, read: (fileName: string) => Promise<string | null>): Promise<Record<string, string>>
+```
+
+The `.scad` files a script includes or uses, and what those include in turn, ready for `render()`'s `files`. A script that came with a model often needs the others kept beside it.
+
+| Parameter | What it is                                                                                |
+| --------- | ----------------------------------------------------------------------------------------- |
+| `source`  | The script's text.                                                                        |
+| `read`    | Reads a file by its name, without any folder; resolves to null when there's no such file. |
+
+**Returns:** Each file's text, by the path the script asks for it by. What `read` couldn't find is left out, and the render's log says so.
+
+```js
+const files = await openscad.includedFiles(source, async (name) => {
+  const file = related.find((candidate) => candidate.name === name);
+  return file ? thingport.models.relatedText(id, file.id) : null;
+});
+const { bytes } = await openscad.render(source, { files });
+```
+
 ##### `openscad.libraries`
 
 ```ts
@@ -1459,13 +1482,13 @@ type ScadFormat = "3mf" | "mesh" | "stl" | "obj" | "off" | "amf";
 
 How to render a script.
 
-| Field         | Type                         | What it is                                                                                       |
-| ------------- | ---------------------------- | ------------------------------------------------------------------------------------------------ |
-| `parameters?` | `Record<string, unknown>`    | By parameter name, as `parameters()` gives them. Anything left out keeps the script's own value. |
-| `files?`      | `Record<string, Uint8Array>` | The files the script reads, by the name a `"file"` parameter was set to.                         |
-| `format?`     | `ScadFormat`                 | `"3mf"` when left out.                                                                           |
-| `name?`       | `string`                     | The title written into a 3MF, which slicers show. Ignored by the other formats.                  |
-| `signal?`     | `AbortSignal`                | Cancels the render: the worker running it is let go there and then.                              |
+| Field         | Type                                   | What it is                                                                                                   |
+| ------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `parameters?` | `Record<string, unknown>`              | By parameter name, as `parameters()` gives them. Anything left out keeps the script's own value.             |
+| `files?`      | `Record<string, Uint8Array \| string>` | The files the script reads, by the name a `"file"` parameter was set to, or as `includedFiles()` gives them. |
+| `format?`     | `ScadFormat`                           | `"3mf"` when left out.                                                                                       |
+| `name?`       | `string`                               | The title written into a 3MF, which slicers show. Ignored by the other formats.                              |
+| `signal?`     | `AbortSignal`                          | Cancels the render: the worker running it is let go there and then.                                          |
 
 ### `ScadRender`
 

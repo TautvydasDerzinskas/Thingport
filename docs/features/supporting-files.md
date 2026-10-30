@@ -38,6 +38,11 @@ further down a script than OpenSCAD looks, and its colour, typeface and file pic
 carry comes out in PT Sans, and its field says so. A file starts on a plain stand-in until you choose one, and what
 you choose stays in your browser like everything else here.
 
+A script can include other `.scad` files, and any that came with the model are found, whatever folder the script
+expects them in. One that didn't come with it can't be: older scripts often rely on a library their author had
+installed, and the Thing or model page never held it. The customizer names what's missing and still generates what it
+can, so the result may lack parts.
+
 The **Model** pane keeps the model's picture, title and description in view, and folds away when you want the
 room. Under it, **Customize** holds the script's own parameters, grouped as the creator grouped them, with
 **Generate** at the foot. Every change can be undone and redone — with the buttons, or Ctrl/Cmd+Z — and the

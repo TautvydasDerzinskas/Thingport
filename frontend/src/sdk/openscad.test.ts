@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { TOOL_FONTS } from "./fonts";
 import { scadParameters, scadRender } from "./openscadEngine";
 import { SCAD_LIBRARIES } from "./scadLibraries";
-import { standInFiles } from "./scadScript";
+import { scadIncludedFiles, standInFiles } from "./scadScript";
 import { writeStl } from "./stl";
 
 // These run the real engine. It is several megabytes of WebAssembly and each case compiles geometry, so the
@@ -272,6 +272,61 @@ describe("scadRender", () => {
 
   it("says what went wrong rather than returning nothing", async () => {
     await expect(scadRender("this is not OpenSCAD at all(((")).rejects.toThrow(/error/i);
+  }, 120000);
+});
+
+describe("files a script includes", () => {
+  const off = async (source: string, files: Record<string, string>) => {
+    const { bytes, log } = await scadRender(source, { files, format: "off" });
+    return { model: new TextDecoder().decode(bytes), log };
+  };
+
+  it("finds them at the path it asks for, ../ included, and what those include in turn", async () => {
+    const script = "include <../lib/shapes.scad>\nuse <helper.scad>\nhelper();\nshape();\n";
+    const files = await scadIncludedFiles(script, async (name) =>
+      name === "shapes.scad"
+        ? "module shape() { translate([9, 0, 0]) cube(3); }\n"
+        : name === "helper.scad"
+          ? "use <deep/inner.scad>\nmodule helper() { inner(); }\n"
+          : name === "inner.scad"
+            ? "module inner() { cube(2); }\n"
+            : null,
+    );
+    const { model, log } = await off(script, files);
+    expect(log.filter((line) => /^(WARNING|ERROR)/.test(line))).toEqual([]);
+    expect(model).toContain("2 2 2");
+    expect(model).toContain("12 3 3");
+  }, 120000);
+
+  it("mounts a library or a typeface that only an included file asks for", async () => {
+    const script = "include <helper.scad>\nhelper();\n";
+    const library = await off(script, {
+      "helper.scad": "include <BOSL2/std.scad>\nmodule helper() { cuboid([4, 4, 4]); }\n",
+    });
+    expect(library.log.filter((line) => /Can't open/i.test(line))).toEqual([]);
+    expect(library.model).toMatch(/^OFF \d+ \d+ 0/);
+
+    const lettered = await off(script, {
+      "helper.scad": 'module helper() { linear_extrude(1) text("Ag", size = 10, font = "Bebas Neue"); }\n',
+    });
+    const direct = new TextDecoder().decode(
+      (await scadRender('linear_extrude(1) text("Ag", size = 10, font = "Bebas Neue");\n', { format: "off" })).bytes,
+    );
+    expect(lettered.model).toBe(direct);
+  }, 300000);
+
+  it("still makes the model when files found by name seem to reach each other at ever deeper paths", async () => {
+    const script = "use <helper.scad>\nuse <lib/helper.scad>\nhelper();\n";
+    const files = await scadIncludedFiles(script, async (name) =>
+      name === "main.scad" ? script : name === "helper.scad" ? "use <main.scad>\nmodule helper() { cube(2); }\n" : null,
+    );
+    expect((await off(script, files)).model).toContain("2 2 2");
+  }, 120000);
+
+  it("says which file it couldn't open when that leaves it with nothing to make", async () => {
+    await expect(scadRender("include <shapes.scad>\nhexagon(3, 3);\n", { format: "off" })).rejects.toThrow(
+      /Can't open include file 'shapes\.scad'/,
+    );
   }, 120000);
 });
 
