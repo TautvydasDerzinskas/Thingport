@@ -54,22 +54,56 @@ h1 em {
   font-style: normal;
   color: var(--accent-light);
 }
-.pills {
+/* A site's logo on a white tile, as the store images show the sites Grab works on. --chip sets its size; the corners,
+   logo and shadow keep the proportions of the 66px tiles in the first screenshot. */
+.chip {
+  display: grid;
+  place-items: center;
+  width: var(--chip);
+  height: var(--chip);
+  border-radius: calc(var(--chip) * 18 / 66);
+  background: #fff;
+  color: #1b2033;
+  box-shadow:
+    0 calc(var(--chip) * 12 / 66) calc(var(--chip) * 28 / 66) rgba(0, 0, 0, 0.4),
+    0 0 0 calc(var(--chip) * 4 / 66) rgba(255, 255, 255, 0.06);
+}
+.chip svg {
+  width: calc(var(--chip) * 38 / 66);
+  height: calc(var(--chip) * 38 / 66);
+}
+
+/* The promotional tiles' row under their copy: how many sites, then each site's logo, from the list render() is given
+   (it sets --count). The logos share the width beside the number, at most --per-row to a row with the rows evened
+   out, and are no bigger than --chip-max or than --max-height allows, so a longer list still fits the tile. */
+.marks {
   display: flex;
-  gap: 10px;
+  align-items: center;
 }
-.pill {
-  padding: 6px 14px;
+.marks__count {
+  flex: none;
   font-weight: 500;
-  color: #fff;
-  background: var(--accent);
+  white-space: nowrap;
 }
-.pill.alt {
-  background: var(--alt);
+.marks__count b {
+  font-weight: 700;
+  color: var(--accent-light);
 }
-.pill.ghost {
-  background: transparent;
-  border: 2px solid var(--border);
-  color: var(--text);
-  padding: 4px 12px;
+/* A container, so the logos can size themselves from the width beside the number (100cqw) without measuring it. */
+.marks__room {
+  flex: 1;
+  min-width: 0;
+  container-type: inline-size;
+}
+.marks__logos {
+  --rows: round(up, var(--count) / var(--per-row), 1);
+  --cols: round(up, var(--count) / var(--rows), 1);
+  --chip: min(
+    var(--chip-max),
+    (100cqw - (var(--cols) - 1) * var(--gap)) / var(--cols),
+    (var(--max-height) - (var(--rows) - 1) * var(--gap)) / var(--rows)
+  );
+  display: grid;
+  grid-template-columns: repeat(var(--cols), var(--chip));
+  gap: var(--gap);
 }

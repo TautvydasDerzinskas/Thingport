@@ -73,7 +73,7 @@ const exists = (file: string) =>
   );
 const fileUrl = async (file: string) => ((await exists(file)) ? pathToFileURL(file).href : null);
 
-// What the screenshot templates draw from, handed to their render().
+// What the tiles and screenshot templates draw from, handed to their render().
 const providers = PROVIDER_IDS.map((id) => ({ id, name: MANIFESTS[id].name, logo: logoSvg(id) }));
 const data = {
   providers,

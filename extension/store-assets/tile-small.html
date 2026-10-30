@@ -1,5 +1,6 @@
 <!doctype html>
-<!-- Small promotional tile, 440x280. Rendered by `npm run store-assets` (scripts/store-assets.ts). -->
+<!-- Small promotional tile, 440x280. Rendered by `npm run store-assets` (scripts/store-assets.ts), which calls
+     render() with every site Grab works on, each with its logo from its manifest. -->
 <html>
   <head>
     <meta charset="utf-8" />
@@ -28,19 +29,16 @@
         font-size: 34px;
         line-height: 1.08;
       }
-      /* Four sites to fit in 376px. */
-      .pills {
-        position: absolute;
-        left: 32px;
-        bottom: 28px;
-        gap: 6px;
-      }
-      .pill {
-        font-size: 12.5px;
-        padding: 5px 8px;
-      }
-      .pill.ghost {
-        padding: 3px 6px;
+      /* Two rows of logos under the headline, as one would make them too small to tell apart: up to 15 to a row,
+         so a third row only comes when it makes them bigger, and down to the tile's 28px bottom margin at most. */
+      .marks {
+        --per-row: 15;
+        --chip-max: 26px;
+        --max-height: 57px;
+        --gap: 5px;
+        margin-top: 26px;
+        gap: 10px;
+        font-size: 13px;
       }
     </style>
   </head>
@@ -49,10 +47,19 @@
     <div class="copy">
       <img class="logo" src="../../frontend/src/assets/logos/thingport-lockup-compact-on-dark.svg" alt="" />
       <h1>Save <em>3D models</em><br />in one click</h1>
+      <div class="marks" id="marks">
+        <span class="marks__count"><b id="count"></b> sites</span>
+        <div class="marks__room"><div class="marks__logos" id="logos"></div></div>
+      </div>
     </div>
-    <div class="pills">
-      <span class="pill">MakerWorld</span><span class="pill alt">Printables</span
-      ><span class="pill ghost">Thingiverse</span><span class="pill ghost">MyMiniFactory</span>
-    </div>
+    <script>
+      window.render = ({ providers }) => {
+        document.getElementById("marks").style.setProperty("--count", providers.length);
+        document.getElementById("count").textContent = providers.length;
+        document.getElementById("logos").innerHTML = providers
+          .map((provider) => `<span class="chip">${provider.logo}</span>`)
+          .join("");
+      };
+    </script>
   </body>
 </html>
