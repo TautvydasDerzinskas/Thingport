@@ -15,7 +15,7 @@ the context menu key, for **About**, **Its models** and, on your own tools, **Ed
 where `!tool` lists them: every tool you can open is there by name, and picking one opens its window. An admin can open
 an installed tool from **Administration → Tools** as well, with **Open** in its right-click menu or in its details.
 
-### Arranging them
+## Arranging them
 
 The row above the icons sets the page up, and what you choose is kept on your account, so it opens the same way on
 every device:

@@ -17,9 +17,24 @@ export const LINKS = {
   github: REPO_URL,
   releases: `${REPO_URL}/releases`,
   issues: `${REPO_URL}/issues`,
+  discussions: `${REPO_URL}/discussions`,
   license: `${REPO_URL}/blob/${BRANCH}/LICENSE`,
   sponsors: "https://github.com/sponsors/TautvydasDerzinskas",
   coffee: "https://buymeacoffee.com/TautvydasDerzinskas",
+};
+
+/**
+ * Comment threads (components/Comments.astro): giscus (giscus.app) keeps each in a GitHub Discussion. Each kind has
+ * its own category, in the Announcement format so only giscus and maintainers start threads. Ids from `gh api graphql`.
+ */
+export const GISCUS = {
+  repo: REPO,
+  repoId: "R_kgDOUQb8fQ",
+  categories: {
+    blog: { name: "Blog comments", id: "DIC_kwDOUQb8fc4DJ-fO" },
+    providers: { name: "Provider notes", id: "DIC_kwDOUQb8fc4DJ-gL" },
+    docs: { name: "Docs feedback", id: "DIC_kwDOUQb8fc4DJ-gS" },
+  },
 };
 
 /**
@@ -35,16 +50,66 @@ export const DOCS = [
     description: "Run Thingport on any Docker host from the pre-built images, with no build step.",
   },
   {
+    slug: "install/unraid",
+    source: "docs/install/unraid/README.md",
+    group: "Getting started",
+    title: "Install on Unraid",
+    nav: "Unraid",
+    description: "Run the Thingport stack on Unraid with the built-in Compose support or Compose Manager.",
+  },
+  {
+    slug: "install/truenas",
+    source: "docs/install/truenas/README.md",
+    group: "Getting started",
+    title: "Install on TrueNAS SCALE",
+    nav: "TrueNAS SCALE",
+    description: "Run Thingport on TrueNAS SCALE as a Custom App or over SSH, with dataset-backed storage.",
+  },
+  {
+    slug: "install/casaos",
+    source: "docs/install/casaos/README.md",
+    group: "Getting started",
+    title: "Install on CasaOS",
+    nav: "CasaOS",
+    description: "Run Thingport on CasaOS as a customized app or over SSH.",
+  },
+  {
     slug: "providers",
     source: "docs/PROVIDER_SETUP.md",
-    group: "Getting started",
+    group: "Providers",
     title: "Providers",
-    nav: "Providers",
+    nav: "All providers",
     description:
       "What each model site needs, side by side: sign-ins, Thingport Grab and FlareSolverr, and what it imports.",
   },
   // Each provider's page, from its manifest and docs.ts (providers/).
   ...PROVIDER_DOCS,
+  {
+    slug: "grab",
+    source: "extension/README.md",
+    group: "Companion apps",
+    title: "Thingport Grab browser extension",
+    nav: "Thingport Grab",
+    description: `Import models straight from their own pages on all ${PROVIDER_NAMES.length} sites. Pair it with your Thingport, and no password is saved.`,
+  },
+  {
+    slug: "grab/privacy",
+    source: "extension/PRIVACY.md",
+    group: "Companion apps",
+    title: "Thingport Grab privacy policy",
+    nav: "Thingport Grab privacy",
+    description: "What the Thingport Grab browser extension stores, what it sends, and where.",
+    unlisted: true,
+  },
+  {
+    slug: "bridge",
+    source: "bridge/README.md",
+    group: "Companion apps",
+    title: "Thingport Bridge",
+    nav: "Thingport Bridge",
+    description:
+      "A small desktop helper that makes “Open in slicer” work for Bambu Studio, PrusaSlicer, Cura and Anycubic Slicer Next.",
+  },
   {
     slug: "guides/existing-library",
     source: "docs/guides/existing-library.md",
@@ -256,56 +321,6 @@ export const DOCS = [
       "Let people sign in to Thingport with Authentik, Pocket ID, Keycloak or any other OpenID Connect provider.",
   },
   {
-    slug: "install/unraid",
-    source: "docs/install/unraid/README.md",
-    group: "Platform guides",
-    title: "Install on Unraid",
-    nav: "Unraid",
-    description: "Run the Thingport stack on Unraid with the built-in Compose support or Compose Manager.",
-  },
-  {
-    slug: "install/truenas",
-    source: "docs/install/truenas/README.md",
-    group: "Platform guides",
-    title: "Install on TrueNAS SCALE",
-    nav: "TrueNAS SCALE",
-    description: "Run Thingport on TrueNAS SCALE as a Custom App or over SSH, with dataset-backed storage.",
-  },
-  {
-    slug: "install/casaos",
-    source: "docs/install/casaos/README.md",
-    group: "Platform guides",
-    title: "Install on CasaOS",
-    nav: "CasaOS",
-    description: "Run Thingport on CasaOS as a customized app or over SSH.",
-  },
-  {
-    slug: "grab",
-    source: "extension/README.md",
-    group: "Companion apps",
-    title: "Thingport Grab browser extension",
-    nav: "Thingport Grab",
-    description: `Import models straight from their own pages on all ${PROVIDER_NAMES.length} sites. Pair it with your Thingport, and no password is saved.`,
-  },
-  {
-    slug: "grab/privacy",
-    source: "extension/PRIVACY.md",
-    group: "Companion apps",
-    title: "Thingport Grab privacy policy",
-    nav: "Thingport Grab privacy",
-    description: "What the Thingport Grab browser extension stores, what it sends, and where.",
-    unlisted: true,
-  },
-  {
-    slug: "bridge",
-    source: "bridge/README.md",
-    group: "Companion apps",
-    title: "Thingport Bridge",
-    nav: "Thingport Bridge",
-    description:
-      "A small desktop helper that makes “Open in slicer” work for Bambu Studio, PrusaSlicer, Cura and Anycubic Slicer Next.",
-  },
-  {
     slug: "guides/api-token",
     source: "docs/guides/api-token.md",
     group: "Integrations",
@@ -383,7 +398,29 @@ export const DOCS = [
   },
 ];
 
-export const NAV_DOCS = DOCS.filter((d) => !d.unlisted);
+const NAV_DOCS = DOCS.filter((d) => !d.unlisted);
+
+/** NAV_DOCS by sidebar group, in order. Providers counts the sites, not its "All providers" page. */
+export const DOCS_GROUPS = [...new Set(NAV_DOCS.map((d) => d.group))].map((group) => {
+  const docs = NAV_DOCS.filter((d) => d.group === group);
+  return { group, docs, count: group === "Providers" ? PROVIDER_DOCS.length : docs.length };
+});
+
+/** The docs sidebar (Starlight's): the docs home, then each group, collapsed unless it holds the page you're on. */
+export const DOCS_SIDEBAR = [
+  { label: "Overview", link: "/docs/" },
+  ...DOCS_GROUPS.map(({ group, docs, count }) => ({
+    label: group,
+    collapsed: true,
+    badge: { text: String(count), class: "group-count" },
+    items: docs.map((d) => ({
+      label: d.nav,
+      link: `/docs/${d.slug}/`,
+      // Lets the sidebar show each provider's logo beside its name.
+      ...(d.slug.startsWith("providers/") && { attrs: { "data-provider": d.slug.slice("providers/".length) } }),
+    })),
+  })),
+];
 
 /** Repo files that have a page on this site, so links between them stay on the site. */
 export const SITE_ROUTES_BY_SOURCE = {

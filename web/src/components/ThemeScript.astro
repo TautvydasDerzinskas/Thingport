@@ -1,0 +1,13 @@
+---
+// Light unless the visitor chose dark (ThemeToggle.astro). Inline in the <head> of every page, the docs' included
+// (starlight/ThemeProvider.astro), so it's set before the first paint and a returning visitor never sees a flash.
+import { THEME_KEY } from "../lib/theme.mjs";
+---
+
+<script is:inline define:vars={{ key: THEME_KEY }}>
+  try {
+    document.documentElement.dataset.theme = localStorage.getItem(key) === "dark" ? "dark" : "light";
+  } catch {
+    document.documentElement.dataset.theme = "light";
+  }
+</script>

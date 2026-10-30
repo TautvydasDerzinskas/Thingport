@@ -1,0 +1,40 @@
+---
+// A widget's or tool's icon, beside its name (so it says nothing itself). Without one the site can show, the app's
+// own stand-ins: a jigsaw piece for a widget, a toolbox for a tool.
+import Icon from "../Icon.astro";
+import type { Kind } from "../../lib/community";
+
+type Props = { src: string | null; kind: Kind; size?: number };
+const { src, kind, size = 40 } = Astro.props;
+---
+
+<span class:list={["item-icon", { fallback: !src }]} style={`--icon-size: ${size}px`}>
+  {
+    src ? (
+      <img src={src} alt="" width={size} height={size} />
+    ) : (
+      <Icon name={kind === "tools" ? "wrench" : "puzzle"} size={Math.round(size * 0.55)} />
+    )
+  }
+</span>
+
+<style>
+  .item-icon {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: var(--icon-size);
+    height: var(--icon-size);
+  }
+  .item-icon img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .fallback {
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    color: var(--link);
+  }
+</style>

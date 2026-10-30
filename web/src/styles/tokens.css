@@ -1,0 +1,111 @@
+/* Tokens come from frontend/src/theme.ts (THEME_DEFS) so the site looks like the app. Two text
+ * colours are nudged for readability of long-form text: light --text-muted and dark --text. Links
+ * and buttons use a deeper green than the brand #00b800, which is too light for AA text contrast.
+ *
+ * Shared by the site's own pages (global.css) and the docs (Starlight's customCss, with starlight.css).
+ * Light by default; dark only when the visitor picks it (ThemeToggle.astro sets data-theme). */
+
+@font-face {
+  font-family: "Thingport";
+  src: url("../../../frontend/src/assets/fonts/thingport-500.woff") format("woff");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Thingport";
+  src: url("../../../frontend/src/assets/fonts/thingport-700.woff") format("woff");
+  font-weight: 700;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light;
+  --bg: #f7f7f7;
+  --panel: #ffffff;
+  --panel-alt: #fbfbfb;
+  --border: #ebebeb;
+  --text: #1f1f1f;
+  --text-muted: #666666;
+  --heading: #1f1f1f;
+  --accent: #00b800;
+  --accent-light: #5be584;
+  --accent-soft: rgba(0, 184, 0, 0.12);
+  --link: #007a00;
+  --button: #008a00;
+  --button-hover: #007300;
+  --button-text: #ffffff;
+  --alt: rgb(255, 114, 32);
+  --code-bg: #ffffff;
+  /* A code block's title bar (a terminal's, or a file's tab bar) and the terminal's three dots. */
+  --code-bar-bg: var(--bg);
+  --code-dots: #8c8c8c;
+  --radius: 10px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.06);
+  --hero-glow: radial-gradient(60% 60% at 50% 0%, rgba(91, 229, 132, 0.28) 0%, rgba(91, 229, 132, 0) 70%);
+  /* The site's header and the docs' share it: the panel, a little see-through over a blur. */
+  --header-bg: color-mix(in srgb, var(--panel) 88%, transparent);
+  --header-height: 4rem;
+
+  --font-body: "Open Sans", system-ui, "Segoe UI", Roboto, Oxygen, Ubuntu, "Fira Sans", "Helvetica Neue", sans-serif;
+  --font-display: "Thingport", var(--font-body);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --container: 72rem;
+  --gutter: 1.25rem;
+}
+
+/* Phones: the header's first row (the docs' only one, beside the menu button). */
+@media (max-width: 49.99rem) {
+  :root {
+    --header-height: 3.5rem;
+  }
+}
+
+/* Dark mode. The app goes square everywhere in dark mode, so the site does too. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #181f39;
+  --panel: #1e2746;
+  --panel-alt: #1b2340;
+  --border: #333a54;
+  --text: #b3b7c0;
+  --text-muted: #969ba0;
+  --heading: #ffffff;
+  --accent-soft: rgba(0, 184, 0, 0.16);
+  --link: #5be584;
+  --code-bg: #111731;
+  --code-bar-bg: var(--panel);
+  --code-dots: #5f6680;
+  --shadow: none;
+  --radius: 0;
+  --radius-sm: 0;
+  --hero-glow: radial-gradient(60% 60% at 50% 0%, rgba(0, 184, 0, 0.22) 0%, rgba(0, 184, 0, 0) 70%);
+}
+
+/* Anything that has a light and a dark variant (logos, screenshots) carries one of these. */
+.only-dark {
+  display: none !important;
+}
+:root[data-theme="dark"] .only-light {
+  display: none !important;
+}
+/* revert-layer, not revert: on docs pages that keeps Starlight's display for images, so both variants sit alike. */
+:root[data-theme="dark"] .only-dark {
+  display: revert-layer !important;
+}
+
+/* Code blocks (Expressive Code, set up in ec.config.mjs), in the docs and on the blog. A frame with a title bar (a
+ * terminal, or a file's tab) shows its copy button all the time, in the bar, clear of the code. A plain frame keeps
+ * Expressive Code's own: shown on hover and focus, since it sits over the code. */
+.expressive-code .frame:is(.is-terminal, .has-title) {
+  --button-spacing: 0.125rem;
+}
+.expressive-code .frame:is(.is-terminal, .has-title) .copy button {
+  width: 1.75rem;
+  height: 1.75rem;
+  background: transparent;
+  opacity: 1;
+}
+.expressive-code .frame:is(.is-terminal, .has-title) .copy button::after {
+  margin: 0.3rem;
+}

@@ -1,0 +1,193 @@
+---
+import { GISCUS } from "../lib/site.mjs";
+
+type Props = {
+  category: keyof typeof GISCUS.categories;
+  /** The thread, by a name that never changes (not a title or URL, which can). */
+  term: string;
+  heading: string;
+  /** The heading's id, which names the section and is what links to it use. */
+  id?: string;
+  /**
+   * One more section of a docs page, spaced like the others. Its heading comes in the `heading` slot: the docs' own
+   * anchor heading, with the same id and text, which can't be drawn here without putting Starlight's styles on the
+   * blog's pages too.
+   */
+  docs?: boolean;
+  /** Loads giscus only when asked, for pages where most readers won't want it. The button's label. */
+  loadLabel?: string;
+};
+const { category, term, heading, id = "comments-title", docs, loadLabel } = Astro.props;
+const { name, id: categoryId } = GISCUS.categories[category];
+---
+
+{
+  categoryId && (
+    <section class:list={["comments", { docs }]} aria-labelledby={id} data-pagefind-ignore>
+      <slot name="heading">
+        <h2 id={id}>{heading}</h2>
+      </slot>
+      <p class="intro">
+        <slot />
+      </p>
+      <div class="thread not-content">
+        {loadLabel && (
+          <button type="button" class="load" data-load-comments>
+            {loadLabel}
+          </button>
+        )}
+        <div
+          class="giscus"
+          data-repo={GISCUS.repo}
+          data-repo-id={GISCUS.repoId}
+          data-category={name}
+          data-category-id={categoryId}
+          data-term={term}
+          data-on-demand={loadLabel ? "" : undefined}
+        />
+      </div>
+    </section>
+  )
+}
+
+<script>
+  // giscus draws the thread in an iframe from giscus.app, themed like the site and re-themed when the toggle switches.
+  const ORIGIN = "https://giscus.app";
+  const theme = () => (document.documentElement.dataset.theme === "dark" ? "transparent_dark" : "light");
+
+  const load = (box: HTMLElement) => {
+    const { repo, repoId, category, categoryId, term } = box.dataset;
+    const script = document.createElement("script");
+    Object.assign(script.dataset, {
+      repo,
+      repoId,
+      category,
+      categoryId,
+      mapping: "specific",
+      term,
+      strict: "1",
+      reactionsEnabled: "1",
+      emitMetadata: "0",
+      inputPosition: "top",
+      theme: theme(),
+      lang: "en",
+      loading: "lazy",
+    });
+    script.src = `${ORIGIN}/client.js`;
+    script.crossOrigin = "anonymous";
+    script.async = true;
+    box.dataset.loading = "";
+    box.after(script);
+
+    const sync = () =>
+      box
+        .querySelector<HTMLIFrameElement>("iframe.giscus-frame")
+        ?.contentWindow?.postMessage({ giscus: { setConfig: { theme: theme() } } }, ORIGIN);
+    new MutationObserver(sync).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    // The frame is made with the theme of the moment but loads only when scrolled near, and a switch before giscus
+    // listens is lost: so once giscus first speaks (it posts its height as soon as it's drawn), it's told again.
+    const ready = (event: MessageEvent) => {
+      if (event.origin !== ORIGIN) return;
+      removeEventListener("message", ready);
+      sync();
+    };
+    addEventListener("message", ready);
+  };
+
+  const box = document.querySelector<HTMLElement>(".giscus[data-term]");
+  const button = document.querySelector<HTMLButtonElement>("[data-load-comments]");
+  if (box && !("onDemand" in box.dataset)) load(box);
+  else if (box && button) {
+    button.addEventListener("click", () => {
+      // Focus moves to where the thread comes, rather than back to the top of the page with the button gone.
+      box.tabIndex = -1;
+      button.remove();
+      box.focus();
+      load(box);
+    });
+  }
+</script>
+
+<style>
+  .comments:not(.docs) {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+  .comments:not(.docs) h2 {
+    margin: 0 0 0.35rem;
+    font-size: 1.4rem;
+  }
+  .comments:not(.docs) .intro {
+    margin: 0 0 1.25rem;
+    font-size: 0.95rem;
+  }
+  .intro {
+    color: var(--text-muted);
+  }
+  /* On a docs page: spaced as a heading in its Markdown would be, and its intro the size of the docs' small print. */
+  .docs {
+    margin-top: calc(1.5 * var(--sl-text-h2));
+  }
+  .docs .intro {
+    font-size: var(--sl-text-sm);
+    line-height: 1.55;
+  }
+
+  /* As the site's header buttons. */
+  .load {
+    display: inline-flex;
+    align-items: center;
+    height: 2.4rem;
+    padding: 0 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--panel);
+    color: var(--heading);
+    font: 600 0.9rem/1 var(--font-body);
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .load:hover {
+    border-color: var(--accent);
+  }
+  .load:focus-visible {
+    outline: 2px solid var(--link);
+    outline-offset: 2px;
+  }
+
+  /* Until giscus has drawn the thread: a placeholder the size of its frame before it's sized to the thread. Only the
+   * frame pulses, so the text keeps its contrast. */
+  .giscus[data-loading]:is(:empty, :has(> .giscus-frame--loading)) {
+    position: relative;
+    min-height: 9.375rem;
+  }
+  .giscus[data-loading]:is(:empty, :has(> .giscus-frame--loading))::before,
+  .giscus[data-loading]:is(:empty, :has(> .giscus-frame--loading))::after {
+    position: absolute;
+    inset: 0;
+  }
+  .giscus[data-loading]:is(:empty, :has(> .giscus-frame--loading))::before {
+    content: "Loading…";
+    display: grid;
+    place-items: center;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+  }
+  .giscus[data-loading]:is(:empty, :has(> .giscus-frame--loading))::after {
+    content: "";
+    border: 1px dashed var(--text-muted);
+    border-radius: var(--radius-sm);
+    opacity: 0.45;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .giscus[data-loading]:is(:empty, :has(> .giscus-frame--loading))::after {
+      animation: pulse 1.2s ease-in-out infinite alternate;
+    }
+  }
+  @keyframes pulse {
+    to {
+      opacity: 0.15;
+    }
+  }
+</style>

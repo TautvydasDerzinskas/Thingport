@@ -1,0 +1,185 @@
+---
+// After a provider's own page: the other docs pages that apply to it, picked from its data (PROVIDER_PAGES), so a new
+// provider gets the right ones without anyone writing them.
+import AnchorHeading from "@astrojs/starlight/components/AnchorHeading.astro";
+import type { ComponentProps } from "astro/types";
+import { PROVIDER_COMPARISON } from "../lib/providers.generated.mjs";
+import { RELATED_HEADING } from "../lib/routeData";
+import Icon from "./Icon.astro";
+import { curly, docsLink, providerPage } from "./providerPage";
+
+type Props = {
+  /** The provider's docsSlug, as in /docs/providers/<docsSlug>/. */
+  slug: string;
+};
+
+const { slug } = Astro.props;
+const { name, facts, row } = providerPage(slug);
+
+const NEEDS: Record<string, string> = { required: "Required", recommended: "Recommended", optional: "Optional" };
+const list = (items: string[], last: string) =>
+  items.length > 1 ? `${items.slice(0, -1).join(", ")} ${last} ${items.at(-1)}` : items.join("");
+const capital = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
+const signIn = row.cells[PROVIDER_COMPARISON.columns.indexOf("Sign-in") - 1]?.text;
+if (!signIn) throw new Error("The comparison table has no Sign-in column to describe connecting with");
+const kept = (items: (string | false)[]) => items.filter((item): item is string => Boolean(item));
+const imports = kept([
+  "models",
+  facts.profiles && "print profiles",
+  facts.collections && "collections",
+  facts.likes && "likes",
+]);
+const synced = kept([facts.collections && "collections", facts.likes && "likes"]);
+
+type Card = { icon: ComponentProps<typeof Icon>["name"]; link: string; label?: string; line: string };
+const cards: Card[] = [
+  {
+    icon: "key",
+    link: "providers#connecting-a-provider",
+    label: `Connect ${name} in Thingport`,
+    line: facts.signIn === "none" ? "No sign-in needed" : `Sign-in: ${curly(signIn)}`,
+  },
+  facts.grab !== "none" && {
+    icon: "puzzle",
+    // Sites Grab doesn't take on as installed: the section on turning them on.
+    link: facts.grabSite === "optional" ? "grab#myminifactory-and-newer-sites-allow-them-once" : "grab",
+    line:
+      facts.grabSite === "optional"
+        ? `${NEEDS[facts.grab]}; enable ${name} once`
+        : `${NEEDS[facts.grab]}; already on for ${name}`,
+  },
+  facts.flaresolverr !== "none" && {
+    icon: "shield",
+    link: "providers#flaresolverr",
+    label: "FlareSolverr",
+    line:
+      facts.flaresolverr === "optional"
+        ? "Optional; a fallback for bot checks"
+        : `${NEEDS[facts.flaresolverr]}; gets past bot checks`,
+  },
+  {
+    icon: "import",
+    link: "features/importing",
+    line: capital(list(imports, "and")) + (synced.length ? "" : "; no collections or likes"),
+  },
+  facts.sync && {
+    icon: "sync",
+    link: "guides/synced-collections",
+    line: `${capital(list(synced, "and"))} kept up to date`,
+  },
+  facts.slicers.length > 0 && { icon: "printer", link: "features/slicers", line: list(facts.slicers, "or") },
+  facts.bambuProjects && { icon: "cube", link: "features/normalized-3mf", line: "Its 3MFs in other slicers" },
+  facts.trending && { icon: "activity", link: "features/dashboard", line: `Explore its ${facts.trending} models` },
+  facts.categories
+    ? {
+        icon: "folder",
+        link: "features/organize-and-search#categories-and-folders",
+        line: "Its categories map to yours",
+      }
+    : { icon: "sparkle", link: "guides/ai#ai-categorization", line: "Sorts its imports into your categories" },
+].filter((card): card is Card => Boolean(card));
+
+const links = await Promise.all(cards.map((card) => docsLink(card.link, `${slug}'s Related card ${card.link}`)));
+---
+
+<section class="related" data-pagefind-ignore>
+  <AnchorHeading level={2} id={RELATED_HEADING.id}>{RELATED_HEADING.toc}</AnchorHeading>
+  <ul class="cards not-content" role="list">
+    {
+      cards.map((card, i) => (
+        <li class="card">
+          <span class="icon" aria-hidden="true">
+            <Icon name={card.icon} size={18} />
+          </span>
+          <a href={links[i].href} aria-describedby={`related-${i + 1}`}>
+            {card.label ?? links[i].page}
+          </a>
+          <span class="line" id={`related-${i + 1}`}>
+            {card.line}
+          </span>
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  .related {
+    /* The space Starlight gives a heading after other content, as this one would have in the Markdown. */
+    margin-top: calc(1.5 * var(--sl-text-h2));
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 13.25rem), 1fr));
+    gap: 0.625rem;
+    /* Its top margin is the docs' own gap under a heading. */
+    margin-bottom: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .card {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-content: start;
+    column-gap: 0.625rem;
+    padding: 0.625rem 0.75rem 0.6875rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: var(--radius-sm);
+    background: var(--sl-color-bg);
+  }
+  .card:hover {
+    border-color: var(--accent);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .card {
+      transition:
+        border-color 0.15s,
+        transform 0.15s ease-out;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+    }
+  }
+
+  .icon {
+    display: grid;
+    grid-row: span 2;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    color: var(--sl-color-text-accent);
+  }
+
+  .card a {
+    color: var(--sl-color-white);
+    font-size: var(--sl-text-sm);
+    font-weight: 600;
+    line-height: 1.35;
+    text-decoration: none;
+  }
+  /* The whole card is the link, while only its label names it. */
+  .card a::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: var(--radius-sm);
+  }
+  .card a:focus-visible {
+    outline: none;
+  }
+  .card a:focus-visible::after {
+    outline: 2px solid var(--sl-color-text-accent);
+    outline-offset: 2px;
+  }
+  .line {
+    margin-top: 0.125rem;
+    color: var(--sl-color-gray-3);
+    font-size: var(--sl-text-xs);
+    line-height: 1.4;
+  }
+</style>

@@ -1,0 +1,61 @@
+---
+import AnchorHeading from "@astrojs/starlight/components/AnchorHeading.astro";
+import Default from "@astrojs/starlight/components/MarkdownContent.astro";
+import { FEEDBACK_HEADING, NOTES_HEADING, providerOfRoute } from "../../lib/routeData";
+import { LINKS } from "../../lib/site.mjs";
+import Comments from "../Comments.astro";
+import ProviderComparison from "../ProviderComparison.astro";
+import ProviderRelated from "../ProviderRelated.astro";
+import { providerPage } from "../providerPage";
+
+// A provider's page goes on with the pages that apply to it, how it compares with the others, and notes from people
+// who use it. Every other page but the docs home ends with a place to say what it gets wrong.
+const { id } = Astro.locals.starlightRoute;
+const provider = providerOfRoute(id);
+---
+
+<Default>
+  <slot />
+  {
+    provider ? (
+      <>
+        <ProviderRelated slug={provider} />
+        <ProviderComparison slug={provider} />
+        <Comments
+          category="providers"
+          term={`providers/${provider}`}
+          heading={NOTES_HEADING.toc}
+          id={NOTES_HEADING.id}
+          docs
+        >
+          <Fragment slot="heading">
+            <AnchorHeading level={2} id={NOTES_HEADING.id}>
+              {NOTES_HEADING.toc}
+            </AnchorHeading>
+          </Fragment>
+          Tips, workarounds and news about {providerPage(provider).name} from people who use it. Something broken in
+          Thingport? <a href={LINKS.issues}>Open an issue</a>.
+        </Comments>
+      </>
+    ) : (
+      id !== "docs" && (
+        <Comments
+          category="docs"
+          term={id}
+          heading={FEEDBACK_HEADING.text}
+          id={FEEDBACK_HEADING.id}
+          loadLabel="Leave feedback"
+          docs
+        >
+          <Fragment slot="heading">
+            <AnchorHeading level={2} id={FEEDBACK_HEADING.id}>
+              {FEEDBACK_HEADING.text}
+            </AnchorHeading>
+          </Fragment>
+          Something unclear, wrong or missing on this page? Say so here, or react. It’s kept in{" "}
+          <a href={LINKS.discussions}>GitHub Discussions</a>.
+        </Comments>
+      )
+    )
+  }
+</Default>
