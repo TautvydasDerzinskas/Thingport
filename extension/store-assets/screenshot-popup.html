@@ -1,0 +1,139 @@
+<!doctype html>
+<!-- Store screenshot 2, 1280x800: the popup before it's connected, then each of its tabs once it is. Rendered by
+     `npm run store-assets` (scripts/store-assets.ts) from docs/screenshots/popup-*.png, which
+     `npm run screenshots` takes of the real popup. -->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="common.css" />
+    <style>
+      html,
+      body {
+        width: 1280px;
+        height: 800px;
+      }
+      .grid {
+        mask-image: radial-gradient(70% 60% at 50% 30%, #000 0%, transparent 85%);
+      }
+      /* Header and popups together sit in the middle; the tallest popup sets how far down the block goes. */
+      header {
+        position: absolute;
+        top: 84px;
+        left: 0;
+        right: 0;
+        text-align: center;
+      }
+      .eyebrow {
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--accent-light);
+      }
+      h1 {
+        margin-top: 10px;
+        font-size: 42px;
+        line-height: 1.1;
+      }
+      header p {
+        margin-top: 10px;
+        font-size: 18px;
+        font-weight: 500;
+      }
+      .row {
+        position: absolute;
+        top: 238px;
+        left: 28px;
+        right: 28px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 24px;
+      }
+      .step__head {
+        display: grid;
+        grid-template-columns: 28px 1fr;
+        gap: 10px;
+        height: 66px;
+      }
+      .step__num {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-size: 15px;
+        font-weight: 700;
+        color: #fff;
+        background: var(--accent);
+      }
+      .step__head b {
+        display: block;
+        font-size: 18px;
+        line-height: 28px;
+        color: var(--heading);
+      }
+      .step__head span {
+        display: block;
+        font-size: 13.5px;
+        line-height: 1.35;
+      }
+      /* The popup hangs below its caption, as it drops from the toolbar. */
+      .step__shot {
+        margin-top: 12px;
+        max-height: 498px;
+        overflow: hidden;
+        border-radius: 14px;
+        box-shadow:
+          0 24px 60px rgba(0, 0, 0, 0.5),
+          0 0 0 1px rgba(255, 255, 255, 0.08);
+        background: #fff;
+      }
+      .step__shot img {
+        display: block;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="grid"></div>
+    <header>
+      <div class="eyebrow">In the toolbar</div>
+      <h1>Set it up once, <em>then just browse</em></h1>
+      <p>Pair with your Thingport, choose the sites, and find what you imported, all from the popup.</p>
+    </header>
+    <div class="row" id="row"></div>
+    <script>
+      const STEPS = [
+        {
+          popup: "setup",
+          title: "Pair with Thingport",
+          text: "Approve this browser in Thingport. No password is saved.",
+        },
+        { popup: "connected", title: "Choose the sites", text: "Every site Grab works on, each on or off." },
+        {
+          popup: "features",
+          title: "Extra features",
+          text: "Normalized MakerWorld 3MFs, Thingiverse dark mode, no ads.",
+        },
+        { popup: "history", title: "History", text: "What you imported, and the models you looked at lately." },
+      ];
+
+      window.render = ({ popups }) => {
+        const row = document.getElementById("row");
+        STEPS.forEach((step, i) => {
+          const el = document.createElement("div");
+          el.className = "step";
+          el.innerHTML =
+            `<div class="step__head"><div class="step__num">${i + 1}</div><div><b></b><span></span></div></div>` +
+            `<div class="step__shot"><img alt="" /></div>`;
+          el.querySelector("b").textContent = step.title;
+          el.querySelector("span").textContent = step.text;
+          const img = el.querySelector("img");
+          if (popups[step.popup]) img.src = popups[step.popup];
+          else el.querySelector(".step__shot").remove();
+          row.append(el);
+        });
+      };
+    </script>
+  </body>
+</html>

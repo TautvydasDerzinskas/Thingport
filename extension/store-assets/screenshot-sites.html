@@ -1,0 +1,134 @@
+<!doctype html>
+<!-- Store screenshot 3, 1280x800: the corner of a model page on every site Grab works on, with its button, or its
+     panel open, and the site's logo and name. Rendered by `npm run store-assets` (scripts/store-assets.ts) from the
+     corners `npm run screenshots -- --corners` takes of the live sites; a site with none is left out. -->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="common.css" />
+    <style>
+      html,
+      body {
+        width: 1280px;
+        height: 800px;
+      }
+      .grid {
+        mask-image: radial-gradient(50% 40% at 25% 12%, #000 0%, transparent 85%);
+      }
+      .mosaic {
+        position: absolute;
+        inset: 28px 32px;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        grid-auto-rows: 1fr;
+        gap: 16px;
+      }
+      .title {
+        grid-column: span 3;
+        padding: 18px 8px 0 4px;
+      }
+      .eyebrow {
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--accent-light);
+      }
+      h1 {
+        margin-top: 8px;
+        font-size: 40px;
+        line-height: 1.08;
+      }
+      .title p {
+        margin-top: 10px;
+        font-size: 17px;
+        line-height: 1.4;
+        font-weight: 500;
+        max-width: 640px;
+      }
+      .tile {
+        position: relative;
+        overflow: hidden;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow:
+          0 14px 34px rgba(0, 0, 0, 0.45),
+          0 0 0 1px rgba(255, 255, 255, 0.08);
+      }
+      /* The corner's bottom right holds Grab's button and panel, so that's what stays in view, a little closer. */
+      .tile img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: right bottom;
+        transform: scale(1.12);
+        transform-origin: right bottom;
+      }
+      .tile__site {
+        position: absolute;
+        left: 10px;
+        top: 10px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 5px 11px 5px 5px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.95);
+        color: #1b2033;
+        font-size: 13.5px;
+        font-weight: 700;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+      }
+      .tile__logo {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: #f1f3f6;
+      }
+      .tile__logo svg {
+        width: 17px;
+        height: 17px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="grid"></div>
+    <div class="mosaic" id="mosaic">
+      <div class="title">
+        <div class="eyebrow">On every model page</div>
+        <h1>
+          Import from <em><span id="count">17</span> sites</em>
+        </h1>
+        <p>
+          Grab's button waits in the corner of each model page. One click opens the panel that sends it to your
+          Thingport.
+        </p>
+      </div>
+    </div>
+    <script>
+      // Their bare corner has the site's own chat button or sign-up bar beside Grab's; the open panel covers it.
+      const PANEL_FIRST = new Set(["cgtrader", "grabcad"]);
+
+      window.render = ({ corners }) => {
+        const shown = corners.filter((corner) => corner.button);
+        document.getElementById("count").textContent = corners.length;
+        const mosaic = document.getElementById("mosaic");
+        shown.forEach((corner, i) => {
+          // Button and panel in turn, so the mosaic shows both.
+          const src = (i % 2 === 0 || PANEL_FIRST.has(corner.id)) && corner.panel ? corner.panel : corner.button;
+          const tile = document.createElement("div");
+          tile.className = "tile";
+          tile.innerHTML =
+            `<img alt="" src="${src}" />` +
+            `<div class="tile__site"><span class="tile__logo">${corner.logo}</span><span class="tile__name"></span></div>`;
+          tile.querySelector(".tile__name").textContent = corner.name;
+          mosaic.append(tile);
+        });
+      };
+    </script>
+  </body>
+</html>
