@@ -1,0 +1,39 @@
+[
+  {
+    "url": "https://www.makerables.com/project/acrylic-knife",
+    "expect": { "provider": "makerables", "kind": "model", "externalId": "acrylic-knife" }
+  },
+  {
+    "url": "https://makerables.com/project/40mm-coin-vise-2-sided-cnc-milling/",
+    "expect": { "provider": "makerables", "kind": "model", "externalId": "40mm-coin-vise-2-sided-cnc-milling" }
+  },
+  {
+    "url": "https://www.makerables.com/de/project/acrylic-knife",
+    "expect": { "provider": "makerables", "kind": "model", "externalId": "acrylic-knife" }
+  },
+  {
+    "url": "https://www.makerables.com/project/5dc045a5-9c17-4ffc-a719-2c50025f4078",
+    "expect": { "provider": "makerables", "kind": "model", "externalId": "5dc045a5-9c17-4ffc-a719-2c50025f4078" }
+  },
+  {
+    "url": "https://www.makerables.com/user/G1234567890?tab=saved",
+    "expect": {
+      "provider": "makerables",
+      "kind": "list",
+      "externalId": "saved-G1234567890",
+      "listKind": "bookmarks"
+    }
+  },
+  {
+    "url": "https://www.makerables.com/user/G1234567890",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://www.makerables.com/projects?sort=popular",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://cdn.makerables.com/projects/original-files/Acrylic_knife1-mv6kp05m.stp",
+    "expect": { "provider": null, "kind": null }
+  }
+]

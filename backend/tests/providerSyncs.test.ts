@@ -82,6 +82,7 @@ import { prisma } from "../src/db";
 import { fetchListing, runManualSync, syncCollection } from "../src/services/collectionSyncRunner";
 import { enableSync, modelIdFromUrl, modelUrlFor } from "../src/services/collectionSyncService";
 import {
+  BROWSABLE_PROVIDERS,
   getProviderAccounts,
   listProviderCollections,
   lookupProviderCollection,
@@ -429,7 +430,8 @@ describe("the Browse tab", () => {
     await connect.cults3d(userId);
     await connect.thangs(userId);
     const accounts = await getProviderAccounts(userId);
-    expect(Object.keys(accounts).toSorted()).toEqual([...PROVIDER_IDS].toSorted());
+    // The browsable ones only: a provider with neither collections nor likes has no Browse tab to report in.
+    expect(Object.keys(accounts).toSorted()).toEqual([...BROWSABLE_PROVIDERS].toSorted());
     expect(accounts).toMatchObject({
       snapmaker: { connected: false, account: null },
       thangs: { connected: true, account: null },
@@ -520,7 +522,7 @@ describe("the Browse tab", () => {
     await expect(listProviderCollections(userId, "thangs")).rejects.toMatchObject({ status: 429 });
     fns.listThangsCollections.mockRejectedValue(new ThangsAuthError());
     await expect(listProviderCollections(userId, "thangs")).rejects.toMatchObject({ status: 400 });
-    expect((await getProviderAccounts(userId)).thangs.connected).toBe(false);
+    expect((await getProviderAccounts(userId)).thangs?.connected).toBe(false);
   });
 
   it("finds a pasted list link as the same card", async () => {
@@ -612,6 +614,11 @@ describe("a sync's model links", () => {
       cults3d: "a-model",
       eufymake: "be7c829023dd11f19919128e55eac07e",
       pinshape: "111504",
+      owlcad: "0f7d8172-a9b7-4de1-9b1b-5a8c255ac274",
+      toymakr3d: "8",
+      makerables: "acrylic-knife",
+      cgtrader: "lotus-ring-with-opening-and-closing-mechanism",
+      grabcad: "arduino-uno-r3-1",
     };
     const readBack = Object.fromEntries(
       PROVIDER_IDS.map((provider) => [provider, modelIdFromUrl(provider, modelUrlFor(provider, ids[provider]))]),

@@ -8,6 +8,7 @@ import BookmarkAddOutlinedIcon from "@mui/icons-material/BookmarkAddOutlined";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useToast } from "./ToastProvider";
 import { buildBookmarklet } from "../utils/bookmarklet";
+import { copyText } from "../utils/clipboard";
 
 /** The bookmarklet as a button to drag to the bookmarks bar, with a button copying its code. */
 export default function BookmarkletButton() {
@@ -21,10 +22,10 @@ export default function BookmarkletButton() {
     linkRef.current?.setAttribute("href", code);
   }, [code]);
 
-  // The clipboard API needs HTTPS or localhost; on plain HTTP the link can still be dragged or copied by right-click.
+  // Where the browser won't copy, the link can still be dragged or copied by right-click.
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(code);
+      await copyText(code);
       showToast({ message: t("bookmarklet.copied"), severity: "success" });
     } catch {
       showToast({ message: t("bookmarklet.copyFailed"), severity: "warning" });

@@ -509,6 +509,50 @@ const pictures: Record<string, () => React.ReactNode> = {
       <Box sx={{ ...at(15, 15, 10, 10), borderRadius: "3px", bgcolor: "primary.main", animation: run(pulse, 1.6) }} />
     </>
   ),
+  // A tool's own window: its guide, the tools on the Tools page, and saving one.
+  tool_guide: () => (
+    <>
+      <Box sx={{ ...at(6, 8, 28, 24), borderRadius: "3px", border: 2, borderColor: "text.disabled" }} />
+      <Box sx={{ ...at(6, 8, 28, 6), bgcolor: "text.disabled", opacity: 0.5 }} />
+      {[0, 1, 2].map((i) => (
+        <Box key={i} sx={{ ...at(10, 18 + i * 5, 20 - i * 5, 2), borderRadius: 1, bgcolor: "text.disabled" }} />
+      ))}
+    </>
+  ),
+  list_tools: () => (
+    <>
+      {[0, 1, 2, 3].map((i) => (
+        <Box
+          key={i}
+          sx={{
+            ...at(8 + (i % 2) * 13, 8 + Math.floor(i / 2) * 13, 11, 11),
+            borderRadius: "3px",
+            border: 1.5,
+            borderColor: i === 0 ? "primary.main" : "text.disabled",
+            bgcolor: i === 0 ? "primary.main" : "transparent",
+            opacity: i === 0 ? 0.55 : 1,
+          }}
+        >
+          <Box sx={{ height: 3.5, bgcolor: "text.disabled", opacity: 0.5 }} />
+        </Box>
+      ))}
+    </>
+  ),
+  save_tool: () => (
+    <>
+      <Box
+        sx={{
+          ...at(6, 8, 28, 24),
+          borderRadius: "3px",
+          border: 2,
+          borderStyle: "dashed",
+          borderColor: "text.disabled",
+        }}
+      />
+      <Box sx={{ ...at(6, 8, 28, 6), bgcolor: "text.disabled", opacity: 0.35 }} />
+      <Box sx={{ ...at(14, 18, 12, 10), borderRadius: "3px", bgcolor: "primary.main", animation: run(pulse, 1.6) }} />
+    </>
+  ),
   // Icons: a grid of them with the one found lighting up in turn, and one carried up into it.
   list_icons: () => (
     <>

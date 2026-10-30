@@ -122,6 +122,43 @@ describe("own widgets", () => {
     expect((await request(app).delete(`/api/widgets/${saved.body.id}`).set(auth())).status).toBe(204);
   });
 
+  it("keeps the widget's labels, and names the languages it has from them", async () => {
+    const saved = await request(app)
+      .put("/api/widgets")
+      .set(auth())
+      .send({
+        slug: "worded",
+        metadata: METADATA,
+        script: SCRIPT,
+        locales: { en: { "state.loading": "Loading…" }, lt: { "state.loading": "Kraunama…" } },
+      });
+    expect(saved.status).toBe(200);
+    expect(saved.body.locales).toEqual({ en: { "state.loading": "Loading…" }, lt: { "state.loading": "Kraunama…" } });
+    // The metadata says which languages it has, whatever it was sent with.
+    expect(saved.body.manifest.locales.toSorted()).toEqual(["en", "lt"]);
+
+    // Changing only the words changes the widget, so the panel runs it again.
+    const changed = await request(app)
+      .put("/api/widgets")
+      .set(auth())
+      .send({ slug: "worded", metadata: METADATA, script: SCRIPT, locales: { en: { "state.loading": "Hang on…" } } });
+    expect(changed.body.sha).not.toBe(saved.body.sha);
+    expect(changed.body.manifest.locales).toEqual(["en"]);
+  });
+
+  it("refuses screenshots on a widget of your own, which carries no files", async () => {
+    const refused = await request(app)
+      .put("/api/widgets")
+      .set(auth())
+      .send({
+        slug: "shots",
+        metadata: JSON.stringify({ name: "Shots", screenshots: [{ file: "screenshots/one.png" }] }),
+        script: SCRIPT,
+      });
+    expect(refused.status).toBe(400);
+    expect(refused.body.detail).toMatch(/repository/i);
+  });
+
   it("credits the user when the metadata names no author, and keeps an author it names", async () => {
     const save = (metadata: object) =>
       request(app)
@@ -190,6 +227,33 @@ describe("community widgets", () => {
     await request(app).post("/api/widgets/community/countdown/install").set(auth());
     const updated = await request(app).get("/api/widgets/community").set(auth());
     expect(updated.body.widgets[0].installed).toMatchObject({ updateAvailable: false });
+  });
+
+  it("installs a shared widget's labels, and serves its screenshots", async () => {
+    repo["index.json"] = JSON.stringify({ widgets: ["worded"] });
+    repo["worded/widget.json"] = JSON.stringify({
+      name: "Worded",
+      locales: ["en", "lt"],
+      screenshots: [{ file: "screenshots/panel.png", caption: "On a dashboard" }],
+    });
+    repo["worded/widget.js"] = SCRIPT;
+    repo["worded/locales/en.json"] = JSON.stringify({ "state.loading": "Loading…" });
+    repo["worded/locales/lt.json"] = JSON.stringify({ "state.loading": "Kraunama…" });
+    repo["worded/screenshots/panel.png"] = "not really a png, but bytes all the same";
+    setCustomWidgetsFetchForTest(async (input) => respond(repo[String(input).split("/community-widgets/")[1]]));
+
+    const installed = await request(app).post("/api/widgets/community/worded/install").set(auth());
+    expect(installed.status).toBe(200);
+    expect(installed.body.locales).toEqual({
+      en: { "state.loading": "Loading…" },
+      lt: { "state.loading": "Kraunama…" },
+    });
+
+    const shot = await request(app).get("/api/widgets/community/worded/screenshots/0").set(auth());
+    expect(shot.status).toBe(200);
+    expect(shot.headers["content-type"]).toBe("image/png");
+    expect(shot.headers["x-content-type-options"]).toBe("nosniff");
+    expect((await request(app).get("/api/widgets/community/worded/screenshots/1").set(auth())).status).toBe(404);
   });
 
   it("lists who installed a community widget, and who has it on a dashboard", async () => {

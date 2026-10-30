@@ -1,0 +1,14 @@
+{
+  "tags": "Tags",
+  "tagsHint": "Tags, separated by commas",
+  "apply": "Tag the ticked models",
+  "looking": "Looking for models with no tags…",
+  "found": "{count} models have no tags",
+  "allTagged": "Every model has a tag.",
+  "nothing": "Tick some models and write a tag first.",
+  "confirmTitle": "Tag these models?",
+  "confirmMessage": "{count} models get the tags {tags}.",
+  "done": "Tagged {count} models",
+  "add": "Add {tag}",
+  "failed": "Couldn't read the library: {reason}"
+}

@@ -1,0 +1,127 @@
+{
+  "folder_path": [
+    {
+      "id": 469357,
+      "name": "Arduino Uno R3"
+    }
+  ],
+  "cached_slug": "arduino-uno-r3-1",
+  "folders": [
+    {
+      "id": 469358,
+      "name": "Renderings",
+      "created_at": "2014-01-03T17:43:49Z",
+      "updated_at": "2014-02-27T18:10:40Z"
+    }
+  ],
+  "files": [
+    {
+      "id": 558293493,
+      "name": "arduino uno.x_t",
+      "system": "Parasolid",
+      "extension": "x_t",
+      "type": "",
+      "created_at": "2021-05-22T11:55:34Z",
+      "updated_at": "2021-05-22T11:55:34Z",
+      "is_viewable": true,
+      "download_url": "https://grabcad.com/community/api/v1/models/arduino-uno-r3-1/files/download?cadid=ee53a145cb1f9d3315f9e1d0b557a86c",
+      "default_rendering": false,
+      "thumbnail": "https://grabcad.com/screenshots/pics/f7921b4395572f265b4d725e34f3b571/tiny.png",
+      "rendering_urls": {
+        "original": "https://grabcad.com/screenshots/pics/f7921b4395572f265b4d725e34f3b571/original.png",
+        "large": "https://grabcad.com/screenshots/pics/f7921b4395572f265b4d725e34f3b571/large.png",
+        "tiny": "https://grabcad.com/screenshots/pics/f7921b4395572f265b4d725e34f3b571/tiny.png"
+      },
+      "thumbnail_missing": "https://grabcad.com/screenshots/pics/missing_tiny.png"
+    },
+    {
+      "id": 558214021,
+      "name": "arduino uno.SLDPRT",
+      "system": "SOLIDWORKS",
+      "extension": "sldprt",
+      "type": "",
+      "created_at": "2021-05-21T10:25:05Z",
+      "updated_at": "2021-05-21T10:25:05Z",
+      "is_viewable": true,
+      "download_url": "https://grabcad.com/community/api/v1/models/arduino-uno-r3-1/files/download?cadid=d8a32d26c7e220963f87ff766b07290b",
+      "default_rendering": false,
+      "thumbnail": "https://grabcad.com/screenshots/pics/48646b564a82066f7411b8003d759aac/tiny.png",
+      "rendering_urls": {
+        "original": "https://grabcad.com/screenshots/pics/48646b564a82066f7411b8003d759aac/original.png",
+        "large": "https://grabcad.com/screenshots/pics/48646b564a82066f7411b8003d759aac/large.png",
+        "tiny": "https://grabcad.com/screenshots/pics/48646b564a82066f7411b8003d759aac/tiny.png"
+      },
+      "thumbnail_missing": "https://grabcad.com/screenshots/pics/missing_tiny.png"
+    },
+    {
+      "id": 16364329,
+      "name": "arduino11.jpg",
+      "system": "Rendering",
+      "extension": "jpg",
+      "type": ".jpg",
+      "created_at": "2014-11-14T21:01:37Z",
+      "updated_at": "2018-10-05T21:39:42Z",
+      "is_viewable": false,
+      "download_url": "https://grabcad.com/community/api/v1/models/arduino-uno-r3-1/files/download?cadid=b3baed0511f56c9d2f2928a58f95c27c",
+      "default_rendering": true,
+      "thumbnail": "https://grabcad.com/screenshots/pics/b3baed0511f56c9d2f2928a58f95c27c/tiny.jpg",
+      "rendering_urls": {
+        "original": "https://grabcad.com/screenshots/pics/b3baed0511f56c9d2f2928a58f95c27c/original.jpg",
+        "large": "https://grabcad.com/screenshots/pics/b3baed0511f56c9d2f2928a58f95c27c/large.jpg",
+        "tiny": "https://grabcad.com/screenshots/pics/b3baed0511f56c9d2f2928a58f95c27c/tiny.jpg"
+      },
+      "thumbnail_missing": "https://grabcad.com/screenshots/pics/missing_tiny.png"
+    },
+    {
+      "id": 3152452,
+      "name": "arduino uno.STEP",
+      "system": "STEP / IGES",
+      "extension": "step",
+      "type": ".STEP",
+      "created_at": "2014-01-03T17:43:51Z",
+      "updated_at": "2015-10-15T05:30:10Z",
+      "is_viewable": true,
+      "download_url": "https://grabcad.com/community/api/v1/models/arduino-uno-r3-1/files/download?cadid=ac3ad995ee83ea9fb1fd0e31f94860c7",
+      "default_rendering": false,
+      "thumbnail": "https://grabcad.com/screenshots/pics/400e49f1fddfd1a4ef2d45c14bf9dd8e/tiny.png",
+      "rendering_urls": {
+        "original": "https://grabcad.com/screenshots/pics/400e49f1fddfd1a4ef2d45c14bf9dd8e/original.png",
+        "large": "https://grabcad.com/screenshots/pics/400e49f1fddfd1a4ef2d45c14bf9dd8e/large.png",
+        "tiny": "https://grabcad.com/screenshots/pics/400e49f1fddfd1a4ef2d45c14bf9dd8e/tiny.png"
+      },
+      "thumbnail_missing": "https://grabcad.com/screenshots/pics/missing_tiny.png"
+    },
+    {
+      "id": 3152453,
+      "name": "arduino uno.IGS",
+      "system": "STEP / IGES",
+      "extension": "igs",
+      "type": ".IGS",
+      "created_at": "2014-01-03T17:43:51Z",
+      "updated_at": "2015-07-22T05:56:21Z",
+      "is_viewable": true,
+      "download_url": "https://grabcad.com/community/api/v1/models/arduino-uno-r3-1/files/download?cadid=a9617c9c2514f8cbc00b5edc841df3c9",
+      "default_rendering": false,
+      "thumbnail": "https://grabcad.com/screenshots/pics/695be3e0fb28f6f669827281a354a5f7/tiny.png",
+      "rendering_urls": {
+        "original": "https://grabcad.com/screenshots/pics/695be3e0fb28f6f669827281a354a5f7/original.png",
+        "large": "https://grabcad.com/screenshots/pics/695be3e0fb28f6f669827281a354a5f7/large.png",
+        "tiny": "https://grabcad.com/screenshots/pics/695be3e0fb28f6f669827281a354a5f7/tiny.png"
+      },
+      "thumbnail_missing": "https://grabcad.com/screenshots/pics/missing_tiny.png"
+    },
+    {
+      "id": 3152454,
+      "name": "arduino uno.zip",
+      "system": "SOLIDWORKS",
+      "extension": "zip",
+      "type": ".zip",
+      "created_at": "2014-01-03T17:43:51Z",
+      "updated_at": "2015-04-08T14:47:03Z",
+      "is_viewable": false,
+      "download_url": "https://grabcad.com/community/api/v1/models/arduino-uno-r3-1/files/download?cadid=ad07ab18ffae9ef2ff8570881104d849",
+      "default_rendering": false,
+      "thumbnail_missing": "https://grabcad.com/screenshots/pics/missing_tiny.png"
+    }
+  ]
+}

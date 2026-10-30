@@ -23,6 +23,8 @@ import { siteHost } from "../names";
 export const GRAB_IMPORT_MAX_ATTEMPTS = 3;
 
 const NAME = MANIFESTS.makeronline.name;
+/** Whose rows these are: GrabImport holds OwlCAD's waiting exports too. */
+const NAME_ID = MANIFESTS.makeronline.id;
 const SITE_HOST = siteHost(MANIFESTS.makeronline.id);
 
 export type GrabImportOptions = {
@@ -45,7 +47,7 @@ export async function queueGrabImport(userId: string, url: string, options: Grab
   };
   await prisma.grabImport.upsert({
     where: { userId_url: { userId, url } },
-    create: { userId, url, ...data },
+    create: { userId, provider: NAME_ID, url, ...data },
     update: { ...data, attempts: 0, lastError: null },
   });
 }
@@ -101,7 +103,10 @@ export type GrabImportOut = {
 };
 
 export async function listGrabImports(userId: string): Promise<GrabImportOut[]> {
-  const rows = await prisma.grabImport.findMany({ where: { userId }, orderBy: { createdAt: "asc" } });
+  const rows = await prisma.grabImport.findMany({
+    where: { userId, provider: NAME_ID },
+    orderBy: { createdAt: "asc" },
+  });
   return rows.map((row) => ({
     id: row.id,
     url: row.url,
@@ -112,14 +117,17 @@ export async function listGrabImports(userId: string): Promise<GrabImportOut[]> 
 }
 
 export async function getGrabImport(userId: string, id: string): Promise<GrabImport> {
-  const row = await prisma.grabImport.findFirst({ where: { id, userId } });
+  const row = await prisma.grabImport.findFirst({ where: { id, userId, provider: NAME_ID } });
   if (!row) throw new HttpError(404, "This waiting import is gone -- it may have been imported already");
   return row;
 }
 
 /** Imported: nothing waits for this model any more, whichever way it came in. */
 export async function clearGrabImports(userId: string, modelId: string): Promise<void> {
-  const rows = await prisma.grabImport.findMany({ where: { userId }, select: { id: true, url: true } });
+  const rows = await prisma.grabImport.findMany({
+    where: { userId, provider: NAME_ID },
+    select: { id: true, url: true },
+  });
   const done = rows.filter((row) => parseMakeronlineModelUrl(row.url)?.modelId === modelId).map((row) => row.id);
   if (done.length) await prisma.grabImport.deleteMany({ where: { id: { in: done } } });
 }

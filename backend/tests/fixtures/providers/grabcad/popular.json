@@ -1,0 +1,114 @@
+{
+  "per_page": 24,
+  "total_entries": 2400,
+  "models": [
+    {
+      "name": "Wilga Draco XL – RC Aircraft Inspired by Mike Patey’s Legendary Design",
+      "cached_slug": "wilga-draco-xl-rc-aircraft-inspired-by-mike-patey-s-legendary-design-1",
+      "preview_image": "https://grabcad.com/screenshots/pics/ee99bee75c0aceae5ca7a44f8db6a1d4/card.jpg",
+      "image_missing_url": "https://grabcad.com/screenshots/pics/missing_small.png",
+      "likes_count": 34,
+      "comments_count": 0,
+      "downloads_count": 225,
+      "created_at": "2026-09-10T05:44:55Z",
+      "softwares": [
+        {
+          "name": "AutoCAD"
+        },
+        {
+          "name": "Parasolid"
+        },
+        {
+          "name": "STEP / IGES"
+        },
+        {
+          "name": "STL"
+        },
+        {
+          "name": "Rendering"
+        },
+        {
+          "name": "3D Manufacturing Format"
+        }
+      ],
+      "is_tainted": false,
+      "is_hidden": false,
+      "author": {
+        "name": "Marko Roolaid",
+        "cached_slug": "marko.roolaid-1",
+        "avatar": "https://grabcad.com/members/avatars/1665002/feed.png?1772375296"
+      },
+      "can_like": false
+    },
+    {
+      "name": "All Terrain Robot Car",
+      "cached_slug": "all-terrain-robot-car-1",
+      "preview_image": "https://grabcad.com/screenshots/pics/d4354dc53fcf21ff8b513e863f85f3c2/card.jpg",
+      "image_missing_url": "https://grabcad.com/screenshots/pics/missing_small.png",
+      "likes_count": 18,
+      "comments_count": 5,
+      "downloads_count": 207,
+      "created_at": "2026-08-09T13:13:16Z",
+      "softwares": [
+        {
+          "name": "SOLIDWORKS"
+        },
+        {
+          "name": "STEP / IGES"
+        },
+        {
+          "name": "STL"
+        },
+        {
+          "name": "Rendering"
+        }
+      ],
+      "is_tainted": false,
+      "is_hidden": false,
+      "author": {
+        "name": "Khalil Kosbi",
+        "cached_slug": "khalil.kosbi-1",
+        "avatar": "https://grabcad.com/members/avatars/missing_feed.png"
+      },
+      "can_like": false
+    },
+    {
+      "name": "Kanban box Inside 210x100x100",
+      "cached_slug": "kanban-box-inside-210x100x100-1",
+      "preview_image": "https://grabcad.com/screenshots/pics/295eb25db6c6400cc0f5b94ea239f279/card.jpg",
+      "image_missing_url": "https://grabcad.com/screenshots/pics/missing_small.png",
+      "likes_count": 26,
+      "comments_count": 0,
+      "downloads_count": 187,
+      "created_at": "2026-07-18T20:57:48Z",
+      "softwares": [
+        {
+          "name": "OBJ"
+        },
+        {
+          "name": "Parasolid"
+        },
+        {
+          "name": "SOLIDWORKS"
+        },
+        {
+          "name": "STEP / IGES"
+        },
+        {
+          "name": "STL"
+        },
+        {
+          "name": "Rendering"
+        }
+      ],
+      "is_tainted": false,
+      "is_hidden": false,
+      "author": {
+        "name": "Özcan Özaltın",
+        "cached_slug": "ozcan.ozaltin-2",
+        "avatar": "https://grabcad.com/members/avatars/2073703/feed.jpg?1665687574"
+      },
+      "can_like": false
+    }
+  ]
+}

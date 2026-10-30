@@ -1,0 +1,55 @@
+[
+  {
+    "url": "https://grabcad.com/library/arduino-uno-r3-1",
+    "expect": { "provider": "grabcad", "kind": "model", "externalId": "arduino-uno-r3-1" }
+  },
+  {
+    "url": "https://grabcad.com/library/arduino-uno-r3-1/files?folder_id=469358",
+    "expect": { "provider": "grabcad", "kind": "model", "externalId": "arduino-uno-r3-1" }
+  },
+  {
+    "url": "https://www.grabcad.com/library/1000-gallon-tank/details/",
+    "expect": { "provider": "grabcad", "kind": "model", "externalId": "1000-gallon-tank" }
+  },
+  {
+    "url": "https://grabcad.com/library/-7821",
+    "expect": { "provider": "grabcad", "kind": "model", "externalId": "-7821" }
+  },
+  {
+    "url": "https://grabcad.com/andrew_whitham-1/likes",
+    "expect": { "provider": "grabcad", "kind": "list", "externalId": "likes:andrew_whitham-1", "listKind": "likes" }
+  },
+  {
+    "url": "https://grabcad.com/slimas.slimanauskas-1/likes?page=2",
+    "expect": {
+      "provider": "grabcad",
+      "kind": "list",
+      "externalId": "likes:slimas.slimanauskas-1",
+      "listKind": "likes"
+    }
+  },
+  {
+    "url": "https://grabcad.com/library/category/3d-printing",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://grabcad.com/library/software/stl",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://grabcad.com/library",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://grabcad.com/andrew_whitham-1/models",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://grabcad.com/tutorials/how-to-enable-solidworks-realview-graphics-step-by-step",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://fake-grabcad.com/library/arduino-uno-r3-1",
+    "expect": { "provider": null, "kind": null }
+  }
+]

@@ -4,6 +4,14 @@ import { useSearchParams } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import Collapse from "@mui/material/Collapse";
+import Divider from "@mui/material/Divider";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import type { Theme } from "@mui/material/styles";
+import FilterListIcon from "@mui/icons-material/FilterList";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { translateCategoryDisplay } from "../../utils/translateCategoryDisplay";
 import { UnauthorizedError } from "../../api/client";
 import { type Print, type PrintSortMode, printsApi } from "../../api/prints";
 import { type Category, type CategoryKind, type CategoryMetaInput, categoriesApi } from "../../api/categories";
@@ -13,12 +21,14 @@ import { type ResolvedTheme } from "../../constants/settingsOptions";
 import { usePageHeader } from "../../components/Layout/PageHeaderContext";
 import { buildCategoryTree, subtreeIds } from "../../utils/categoryTree";
 import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
+import { useLibrarySources, useModelFilters } from "../../hooks/useModelFilters";
 import { useCategoriesView } from "../../hooks/useCategoriesView";
 import CategoriesPanel from "./CategoriesPanel";
 import CategoriesViewToggle from "./CategoriesViewToggle";
 import CategoryBanner from "./CategoryBanner";
 import ModelCard from "./ModelCard";
 import SortTabs from "./SortTabs";
+import ModelFiltersButton from "../../components/ModelFilters/ModelFiltersButton";
 import ModelsManagerDialog, { type ModelsManagerSection } from "./ModelsManagerDialog";
 import { CardSkeletons } from "../../components/media/CardSkeleton";
 import { cardGridSx } from "../../components/media/cardGrid";
@@ -40,6 +50,7 @@ type Props = {
   viewer?: AuthUser | null;
 };
 
+/** Shares category selection between desktop filters and the collapsible mobile panel above the model grid. */
 export default function ModelsPage({
   categoryId,
   onSelectCategory,
@@ -51,7 +62,9 @@ export default function ModelsPage({
   previewMode,
   viewer,
 }: Props) {
-  const { t } = useTranslation(["models", "common"]);
+  const { t, i18n } = useTranslation(["models", "common"]);
+  const mobile = useMediaQuery((muiTheme: Theme) => muiTheme.breakpoints.down("md"));
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [items, setItems] = useState<Print[]>([]);
@@ -71,6 +84,12 @@ export default function ModelsPage({
   const sortModeParam = searchParams.get("orderBy");
   const sortMode: PrintSortMode =
     sortModeParam === "popular" || sortModeParam === "downloads" ? sortModeParam : "newest";
+
+  const filters = useModelFilters();
+  const { generative, hiddenProviders } = filters;
+  // Bumped when a model is removed from the list here, so the site it came from loses its chip once it holds nothing.
+  const [sourcesVersion, setSourcesVersion] = useState(0);
+  const refreshSources = useCallback(() => setSourcesVersion((version) => version + 1), []);
 
   const setSortMode = (mode: PrintSortMode) => {
     setSearchParams((prev) => {
@@ -150,44 +169,66 @@ export default function ModelsPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoriesVersion]);
 
+  const sources = useLibrarySources(`${printsVersion}/${libraryVersion}/${sourcesVersion}`, handleError);
+  // Every site the library has is off, so the grid says so rather than looking empty for no visible reason.
+  const noSources = sources.length > 0 && sources.every((source) => hiddenProviders.includes(source.provider));
+
+  // Which set of filters the list on screen belongs to. Changing one -- a category, the sort, or anything behind
+  // the filter button -- starts a new set, and an answer belonging to an older one is dropped rather than written over the newer
+  // list: the two requests are a page apart and the slower one can land last.
+  const listRun = useRef(0);
+
   useEffect(() => {
+    const run = ++listRun.current;
     setLoading(true);
     (async () => {
       try {
         const result = await printsApi.list({
           category_id: categoryIdFilter,
+          generative: generative || undefined,
+          hide_providers: hiddenProviders,
           order_by: sortMode,
           limit: PAGE_SIZE,
           offset: 0,
         });
+        if (run !== listRun.current) return;
         setItems(result.items);
         setOffset(result.items.length);
         setHasMore(result.hasMore);
       } catch (err) {
+        if (run !== listRun.current) return;
         handleError(err, t("models:errors.loadFailed"));
       } finally {
-        setLoading(false);
+        if (run === listRun.current) setLoading(false);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryIdFilter, printsVersion, libraryVersion, sortMode]);
+  }, [categoryIdFilter, printsVersion, libraryVersion, sortMode, generative, hiddenProviders]);
 
   const loadMore = async () => {
     if (loadingMore || !hasMore) return;
+    const run = listRun.current;
     setLoadingMore(true);
     try {
       const result = await printsApi.list({
         category_id: categoryIdFilter,
+        generative: generative || undefined,
+        hide_providers: hiddenProviders,
         order_by: sortMode,
         limit: PAGE_SIZE,
         offset,
       });
+      // A filter changed while this page was on its way: appending it would mix two lists together.
+      if (run !== listRun.current) return;
       setItems((prev) => [...prev, ...result.items]);
       setOffset(offset + result.items.length);
       setHasMore(result.hasMore);
     } catch (err) {
+      if (run !== listRun.current) return;
       handleError(err, t("models:errors.loadFailed"));
     } finally {
+      // Cleared whether or not this page still belongs to the list on screen: left set, it would turn
+      // "a page is on its way" into "no page may ever be asked for again".
       setLoadingMore(false);
     }
   };
@@ -260,6 +301,7 @@ export default function ModelsPage({
   // A selection from the other box would be invisible after the switch.
   const switchCategoriesView = (view: CategoriesView) => {
     setCategoriesView(view);
+    if (mobile) setFiltersOpen(true);
     if (selectedCategory && selectedCategory.kind !== (view === "folders" ? "folder" : "category")) {
       onSelectCategory(null);
     }
@@ -284,12 +326,19 @@ export default function ModelsPage({
           selection={selection}
           total={items.length}
           hasMore={hasMore}
-          onDeleted={(ids) => setItems((prev) => prev.filter((i) => !ids.includes(i.id)))}
+          onDeleted={(ids) => {
+            setItems((prev) => prev.filter((i) => !ids.includes(i.id)));
+            refreshSources();
+          }}
           onUpdated={(updated) => setItems((prev) => replacePrints(prev, updated))}
           onUnauthorized={onUnauthorized}
         />
-        <Box sx={{ ml: "auto" }}>
-          <SortTabs value={sortMode} onChange={setSortMode} />
+        <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1.5, width: { xs: "100%", md: "auto" } }}>
+          <Box sx={{ overflowX: "auto" }}>
+            <SortTabs value={sortMode} onChange={setSortMode} />
+          </Box>
+          <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
+          <ModelFiltersButton filters={filters} sources={sources} />
         </Box>
       </Box>
       <ModelsManagerDialog
@@ -307,16 +356,57 @@ export default function ModelsPage({
         onLibraryChanged={refreshLibrary}
         onUnauthorized={onUnauthorized}
       />
-      <Stack direction="row" spacing={2} alignItems="flex-start">
-        <CategoriesPanel
-          kind={panelKind}
-          categories={panelCategories}
-          loading={categoriesLoading || categoriesView === null}
-          selectedId={categoryId}
-          onSelect={onSelectCategory}
-          onManage={() => setManagerSection(panelKind === "folder" ? "folders" : "categories")}
-        />
-        <Box sx={{ flex: 1, minWidth: 0 }}>
+      <Button
+        variant="outlined"
+        startIcon={<FilterListIcon />}
+        endIcon={
+          <ExpandMoreIcon sx={{ transform: filtersOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
+        }
+        aria-expanded={filtersOpen}
+        onClick={() => setFiltersOpen((open) => !open)}
+        sx={{ display: { xs: "flex", md: "none" }, minHeight: 44, justifyContent: "flex-start", textTransform: "none" }}
+      >
+        <Box
+          component="span"
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            textAlign: "left",
+          }}
+        >
+          {t(panelKind === "folder" ? "models:view.folders" : "models:view.categories")}:{" "}
+          {selectedCategory?.kind === panelKind
+            ? translateCategoryDisplay(selectedCategory, i18n).name || t("models:categories.untitled")
+            : t("models:categories.all")}
+        </Box>
+      </Button>
+      <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems="flex-start">
+        <Collapse
+          id="model-category-filters"
+          in={!mobile || filtersOpen}
+          unmountOnExit
+          sx={{
+            width: { xs: "100%", md: 260 },
+            flexShrink: 0,
+            "& .MuiCollapse-wrapperInner > .MuiPaper-root": { width: "100%", boxSizing: "border-box" },
+          }}
+        >
+          <CategoriesPanel
+            kind={panelKind}
+            categories={panelCategories}
+            loading={categoriesLoading || categoriesView === null}
+            selectedId={categoryId}
+            onSelect={(id) => {
+              onSelectCategory(id);
+              if (mobile) setFiltersOpen(false);
+            }}
+            onManage={() => setManagerSection(panelKind === "folder" ? "folders" : "categories")}
+          />
+        </Collapse>
+        <Box sx={{ flex: 1, minWidth: 0, width: { xs: "100%", md: "auto" } }}>
           {selectedCategory?.meta_title && (
             <Box sx={{ mb: 2 }}>
               <CategoryBanner category={selectedCategory} />
@@ -335,7 +425,10 @@ export default function ModelsPage({
                     item={item}
                     theme={theme}
                     previewMode={previewMode}
-                    onDeleted={(deletedId) => setItems((prev) => prev.filter((i) => i.id !== deletedId))}
+                    onDeleted={(deletedId) => {
+                      setItems((prev) => prev.filter((i) => i.id !== deletedId));
+                      refreshSources();
+                    }}
                     onFavoriteChange={(updated) =>
                       setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)))
                     }
@@ -353,7 +446,14 @@ export default function ModelsPage({
             </Stack>
           ) : (
             <Stack alignItems="center" spacing={1} sx={{ py: 8, color: "text.secondary" }}>
-              <Typography variant="body2">{t("models:grid.empty")}</Typography>
+              <Typography variant="body2">
+                {t(noSources ? "models:filters.noneSelected" : "models:grid.empty")}
+              </Typography>
+              {noSources && (
+                <Button size="small" onClick={() => filters.setHiddenProviders([])}>
+                  {t("models:filters.allSources")}
+                </Button>
+              )}
             </Stack>
           )}
         </Box>

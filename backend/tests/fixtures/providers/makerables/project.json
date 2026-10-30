@@ -1,0 +1,158 @@
+{
+  "code": 200,
+  "success": true,
+  "message": "Success",
+  "data": {
+    "id": "5dc045a5-9c17-4ffc-a719-2c50025f4078",
+    "slug": "acrylic-knife",
+    "likes_count": 1,
+    "favorites_count": 1,
+    "comments_count": 0,
+    "downloads_count": 1,
+    "downloads_total_count": 5,
+    "uv_count": 44,
+    "pv_count": 3115,
+    "shares_count": 0,
+    "made_it_count": 0,
+    "made_it_average_score": null,
+    "made_it_score_distribution": [
+      {
+        "score": 1,
+        "count": 0
+      },
+      {
+        "score": 2,
+        "count": 0
+      },
+      {
+        "score": 3,
+        "count": 0
+      },
+      {
+        "score": 4,
+        "count": 0
+      },
+      {
+        "score": 5,
+        "count": 0
+      },
+      {
+        "score": 6,
+        "count": 0
+      },
+      {
+        "score": 7,
+        "count": 0
+      },
+      {
+        "score": 8,
+        "count": 0
+      },
+      {
+        "score": 9,
+        "count": 0
+      },
+      {
+        "score": 10,
+        "count": 0
+      }
+    ],
+    "is_recommend": false,
+    "is_official": false,
+    "created_at": "2026-10-17T03:32:33.040Z",
+    "updated_at": "2026-10-17T03:37:12.366Z",
+    "first_published_at": "2026-10-13T11:09:32.598Z",
+    "name": "Acrylic knife",
+    "description": "<p>This acrylic knife is manufactured using <strong>3-axis CNC machining</strong> . Milling is performed on both the <strong>front and back surfaces</strong> , as well as the central blade <strong>slot</strong> . After machining, the parts are fastened with four <strong>M2</strong> screws to complete the assembly. The product is made of <strong>acrylic</strong> , and the final surface finish can be achieved through <strong>flame</strong> <strong>polishing or UV texture printing.</strong></p>",
+    "creation_type": "original",
+    "derivative_sources": [],
+    "cover_web": "https://cdn.makerables.com/cdn-cgi/image/format=auto/projects/thumbnails/cover-mv6ku4tv.jpg?f=auto",
+    "cover_mobile": null,
+    "gallery": [
+      "https://cdn.makerables.com/cdn-cgi/image/format=auto/projects/gallery/6-mv6kzwzu.png?f=auto",
+      "https://cdn.makerables.com/cdn-cgi/image/format=auto/projects/gallery/15-mv6kzx0e.png?f=auto",
+      "https://cdn.makerables.com/cdn-cgi/image/format=auto/projects/gallery/14-mv6kzx05.png?f=auto",
+      "https://cdn.makerables.com/cdn-cgi/image/format=auto/projects/gallery/16-mv6kzx0j.png?f=auto",
+      "https://cdn.makerables.com/cdn-cgi/image/format=auto/projects/gallery/12-mv6kzx07.png?f=auto"
+    ],
+    "post_processing": "<img src=\"https://cdn.makerables.com/cdn-cgi/image/format=auto/m/upload-desc/images/15-mvbudkcc.png?f=auto\" alt=\"15\" title=\"15\"><p><strong>Surface finishing note:</strong> The finished part is recommended to be immersed in acrylic polishing liquid for about 3 seconds for surface treatment. Avoid touching the part directly with your hands during and after the process. Alternatively, flame polishing can be used.</p>",
+    "status": "published",
+    "visibility": "public",
+    "version_number": 4,
+    "review_status": "approved",
+    "published_at": "2026-10-17T03:37:08.948Z",
+    "creator": {
+      "id": "U2578095104",
+      "nick_name": "Makerables",
+      "picture": "https://cdn.makerables.com/cdn-cgi/image/format=auto/u/user-mo8dqow5.jpg?f=auto",
+      "is_deleted": false
+    },
+    "categories": [
+      {
+        "id": 3,
+        "name": "Home & Living",
+        "slug": "home-living",
+        "description": "Practical home items, organizers, décor, and everyday-use creations.",
+        "parent_id": null,
+        "level": 1
+      },
+      {
+        "id": 24,
+        "name": "Everyday Tools",
+        "slug": "everyday-tools",
+        "description": "Simple utility tools and practical items for daily tasks.",
+        "parent_id": 3,
+        "level": 0
+      }
+    ],
+    "license": {
+      "id": "b84724bc-2494-45f6-a6d1-3fab67eee4a6",
+      "name": "CC BY-NC-SA 4.0",
+      "code": "cc_by_nc_sa",
+      "description": "This license enables reusers to distribute, remix, adapt, and build upon the material in any medium or format for noncommercial purposes only, and only so long as attribution is given to the creator. If you remix, adapt, or build upon the material, you must license the modified material under identical terms.",
+      "thumbnail": "https://cdn.makerables.com/cdn-cgi/image/format=auto/cc/cc_by_nc_sa.png?f=auto",
+      "link": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+    },
+    "tags": [
+      {
+        "id": "80cfc545-d462-4c2c-bc08-6b677de9523a",
+        "name": "Simple Design",
+        "slug": "simple-design",
+        "aggregate_page_enabled": true
+      },
+      {
+        "id": "03d0cd56-7af9-4e36-8716-49a16192e1a0",
+        "name": "Multi-Part Assembly",
+        "slug": "assembly-project",
+        "aggregate_page_enabled": true
+      },
+      {
+        "id": "7e23c6ce-034c-47b9-a02a-9edcac8c5b70",
+        "name": "Finishing Required",
+        "slug": "finishing-required",
+        "aggregate_page_enabled": true
+      }
+    ],
+    "contest": null,
+    "is_contest_locked": false,
+    "is_liked": false,
+    "is_favorited": false,
+    "is_following": false,
+    "is_me": false,
+    "author_projects": [
+      {
+        "id": "f2dfba04-004e-4d20-a552-0566b5b0c396",
+        "name": "Phone stand",
+        "slug": "phone-stand",
+        "cover_web": "https://cdn.makerables.com/cdn-cgi/image/format=auto/projects/thumbnails/cover-munkaofv.jpg?f=auto",
+        "likes_count": 1
+      }
+    ],
+    "translation": {
+      "is_translated": true,
+      "source_locale": "en",
+      "target_locale": "en"
+    }
+  },
+  "timestamp": 1793216374298
+}

@@ -4,6 +4,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import Divider from "@mui/material/Divider";
 import { UnauthorizedError } from "../../api/client";
 import { type Print, type PrintSortMode, printsApi } from "../../api/prints";
 import { type Collection, collectionsApi } from "../../api/collections";
@@ -13,8 +14,11 @@ import type { AuthUser } from "../../api/auth";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
 import { usePageHeader } from "../../components/Layout/PageHeaderContext";
 import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
+import { useLibrarySources, useModelFilters } from "../../hooks/useModelFilters";
 import ModelCard from "../ModelsPage/ModelCard";
 import SortTabs from "../ModelsPage/SortTabs";
+import ModelFiltersButton from "../../components/ModelFilters/ModelFiltersButton";
+import FiltersEmptyNote from "../../components/ModelFilters/FiltersEmptyNote";
 import CollectionCard from "../CollectionsPage/CollectionCard";
 import TagBookmarkButton from "./TagBookmarkButton";
 import TagActionsMenu from "./TagActionsMenu";
@@ -50,6 +54,10 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
   const sortModeParam = searchParams.get("orderBy");
   const sortMode: PrintSortMode =
     sortModeParam === "popular" || sortModeParam === "downloads" ? sortModeParam : "newest";
+
+  const filters = useModelFilters();
+  const { generative, hiddenProviders } = filters;
+  const sources = useLibrarySources(null);
 
   const setSortMode = (mode: PrintSortMode) => {
     setSearchParams((prev) => {
@@ -100,7 +108,14 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
     setLoading(true);
     (async () => {
       try {
-        const result = await printsApi.list({ tags: [tag], order_by: sortMode, limit: PAGE_SIZE, offset: 0 });
+        const result = await printsApi.list({
+          tags: [tag],
+          generative: generative || undefined,
+          hide_providers: hiddenProviders,
+          order_by: sortMode,
+          limit: PAGE_SIZE,
+          offset: 0,
+        });
         if (cancelled) return;
         setItems(result.items);
         setOffset(result.items.length);
@@ -116,7 +131,7 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tag, sortMode]);
+  }, [tag, sortMode, generative, hiddenProviders]);
 
   useEffect(() => {
     if (!tag) return;
@@ -160,7 +175,14 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
     if (loadingMore || !hasMore || !tag) return;
     setLoadingMore(true);
     try {
-      const result = await printsApi.list({ tags: [tag], order_by: sortMode, limit: PAGE_SIZE, offset });
+      const result = await printsApi.list({
+        tags: [tag],
+        generative: generative || undefined,
+        hide_providers: hiddenProviders,
+        order_by: sortMode,
+        limit: PAGE_SIZE,
+        offset,
+      });
       setItems((prev) => [...prev, ...result.items]);
       setOffset(offset + result.items.length);
       setHasMore(result.hasMore);
@@ -194,8 +216,10 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
           onUpdated={(updated) => setItems((prev) => replacePrints(prev, updated))}
           onUnauthorized={onUnauthorized}
         />
-        <Box sx={{ ml: "auto" }}>
+        <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1.5 }}>
           <SortTabs value={sortMode} onChange={setSortMode} />
+          <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
+          <ModelFiltersButton filters={filters} sources={sources} />
         </Box>
       </Box>
       {collections.length || items.length ? (
@@ -249,7 +273,11 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
         </Stack>
       ) : (
         <Stack alignItems="center" spacing={1} sx={{ py: 8, color: "text.secondary" }}>
-          <Typography variant="body2">{t("models:tags.detail.empty")}</Typography>
+          {filters.active ? (
+            <FiltersEmptyNote filters={filters} />
+          ) : (
+            <Typography variant="body2">{t("models:tags.detail.empty")}</Typography>
+          )}
         </Stack>
       )}
     </Stack>

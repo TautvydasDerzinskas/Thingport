@@ -1,6 +1,7 @@
 <!doctype html>
 <!-- Large promotional tile, 1400x560. Rendered by `npm run store-assets` (scripts/store-assets.ts),
-     which also injects the extension's real content-script stylesheet (src/content/styles), so the
+     which calls render() with every site Grab works on, each with its logo from its manifest, and
+     also injects the extension's real content-script stylesheet (src/content/styles), so the
      panel and button below are the actual UI. The page behind them is a neutral placeholder rather
      than a live provider screenshot: no third-party models, trademarks or ads in a store image. -->
 <html>
@@ -34,18 +35,16 @@
         line-height: 1.4;
         font-weight: 500;
       }
-      .pills {
-        position: absolute;
-        left: 72px;
-        bottom: 60px;
-        gap: 12px;
-      }
-      .pill {
+      /* One row of logos across the copy's 560px, two past 17 sites, where two rows first make them bigger than one,
+         and down to the browser window's bottom edge at most. */
+      .marks {
+        --per-row: 17;
+        --chip-max: 30px;
+        --max-height: 52px;
+        --gap: 5px;
+        margin-top: 26px;
+        gap: 14px;
         font-size: 19px;
-        padding: 7px 15px;
-      }
-      .pill.ghost {
-        padding: 5px 13px;
       }
 
       /* A browser window with a stand-in model page. */
@@ -143,7 +142,7 @@
       }
 
       /* The real panel/button, placed inside the window instead of fixed to the viewport. */
-      .window .tg-panel {
+      .window .tg-panel-stack {
         position: absolute;
         right: 16px;
         bottom: 82px;
@@ -153,6 +152,20 @@
         right: 16px;
         bottom: 14px;
       }
+      /* The content script inlines its icons; these are files, sized as its SVGs are. The panel's thumbnail is the
+         placeholder page's photo. */
+      .window .tg-fab__mark img {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      .window .tg-head__thumb {
+        background: linear-gradient(145deg, #dfe3ea, #c9cfd9);
+      }
+      .window .tg-head__mark {
+        opacity: 0.35;
+        filter: grayscale(1);
+      }
     </style>
   </head>
   <body>
@@ -161,10 +174,10 @@
       <img class="logo" src="../../frontend/src/assets/logos/thingport-lockup-compact-on-dark.svg" alt="" />
       <h1>Save <em>3D models</em> to your own library in one click</h1>
       <p>Import from the page you're on, straight into your self-hosted Thingport.</p>
-    </div>
-    <div class="pills">
-      <span class="pill">MakerWorld</span><span class="pill alt">Printables</span
-      ><span class="pill ghost">Thingiverse</span><span class="pill ghost">MyMiniFactory</span>
+      <div class="marks" id="marks">
+        <span class="marks__count"><b id="count"></b> sites</span>
+        <div class="marks__room"><div class="marks__logos" id="logos"></div></div>
+      </div>
     </div>
 
     <div class="window tg-scope">
@@ -184,18 +197,49 @@
           <div class="btn"></div>
         </div>
       </div>
-      <div class="tg-panel">
-        <button class="tg-close" type="button">×</button>
-        <div class="tg-panel__content">
-          <div class="tg-title">Import "Cable organizer clip"</div>
-          <label class="tg-label">Add to collection (optional)</label>
-          <select class="tg-select">
-            <option>Workshop organizers</option>
-          </select>
-          <button class="tg-btn" type="button">Import</button>
+      <div class="tg-panel-stack">
+        <div class="tg-panel">
+          <button class="tg-close" type="button">×</button>
+          <div class="tg-panel__content">
+            <div class="tg-head">
+              <span class="tg-head__thumb"
+                ><img class="tg-head__mark" src="../../frontend/src/assets/logos/thingport-icon-dark.svg" alt=""
+              /></span>
+              <span class="tg-head__text">
+                <span class="tg-head__eyebrow">Import to Thingport</span>
+                <span class="tg-head__title">Cable organizer clip</span>
+              </span>
+            </div>
+            <label class="tg-label">Collection (optional)</label>
+            <div class="tg-combo">
+              <div class="tg-combo__field">
+                <input class="tg-combo__input" type="text" value="Workshop organizers" />
+                <button class="tg-combo__toggle" type="button">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <button class="tg-btn" type="button">Import</button>
+          </div>
         </div>
       </div>
-      <button class="tg-fab" type="button"><img src="../src/assets/thingport-icon-color.svg" alt="" /></button>
+      <button class="tg-fab" type="button">
+        <span class="tg-fab__body"
+          ><span class="tg-fab__blob"></span
+          ><span class="tg-fab__mark"><img src="../src/assets/thingport-icon-color.svg" alt="" /></span
+        ></span>
+      </button>
     </div>
+    <script>
+      window.render = ({ providers }) => {
+        document.getElementById("marks").style.setProperty("--count", providers.length);
+        document.getElementById("count").textContent = providers.length;
+        document.getElementById("logos").innerHTML = providers
+          .map((provider) => `<span class="chip">${provider.logo}</span>`)
+          .join("");
+      };
+    </script>
   </body>
 </html>

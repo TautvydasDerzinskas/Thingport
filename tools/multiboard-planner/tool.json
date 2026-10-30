@@ -1,0 +1,196 @@
+{
+  "name": "Multiboard planner",
+  "description": "Plans a Multiboard wall: the layout, and every tile and mount to print it, from your own library.",
+  "version": "1.0.1",
+  "author": "Thingport contributors",
+  "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
+  "window": {
+    "width": 1280,
+    "height": 780
+  },
+  "hosts": [],
+  "category": "planners",
+  "locales": [
+    "en",
+    "lt",
+    "es",
+    "fr"
+  ],
+  "screenshots": [
+    {
+      "file": "screenshots/grid-tiles.webp",
+      "caption": "Grid tiles with offset snaps: corners, edges and core tiles, and every snap counted, single, dual or quad."
+    },
+    {
+      "file": "screenshots/single-tiles-dark.webp",
+      "caption": "Single bordered tiles joined by dual clips, standing free, in the dark theme."
+    },
+    {
+      "file": "screenshots/inches.webp",
+      "caption": "A wall measured in inches, with the strips that fill its edges and the space left over."
+    }
+  ],
+  "collection": {
+    "name": "Multiboard models",
+    "description": "The Multiboard joints the planner mounts a wall with -- the snaps, the clip, the pillar and the foot -- which come with the tool itself. Its plates aren't here: those are drawn when a wall asks for one. Multiboard is MultiBuild's design: see multibuild.io/license.",
+    "models": [
+      {
+        "key": "thangs-1380149",
+        "name": "6.25 mm - Mounting Pillar",
+        "tags": [
+          "multiboard",
+          "mount"
+        ],
+        "files": [
+          "models/thangs-1380149/6.25 mm - Mounting Pillar.stl"
+        ]
+      },
+      {
+        "key": "thangs-974340",
+        "name": "6.25 mm - Offset Snap (DS Part A)",
+        "tags": [
+          "multiboard",
+          "mount"
+        ],
+        "files": [
+          "models/thangs-974340/6.25 mm - Offset Snap DS Part A.stl"
+        ]
+      },
+      {
+        "key": "thangs-974338",
+        "name": "6.25 mm - Dual Offset Snaps (DS Part A)",
+        "tags": [
+          "multiboard",
+          "mount"
+        ],
+        "files": [
+          "models/thangs-974338/6.25 mm - Dual Offset Snaps DS Part A.stl"
+        ]
+      },
+      {
+        "key": "thangs-993369",
+        "name": "6.25 mm - Quad Offset Snaps (DS Part A)",
+        "tags": [
+          "multiboard",
+          "mount"
+        ],
+        "files": [
+          "models/thangs-993369/6.25 mm - Quad Offset Snaps DS Part A - Part 1.stl",
+          "models/thangs-993369/6.25 mm - Quad Offset Snaps DS Part A - Part 2.stl"
+        ]
+      },
+      {
+        "key": "thangs-1323061",
+        "name": "Snap (DS Part B)",
+        "tags": [
+          "multiboard",
+          "mount"
+        ],
+        "files": [
+          "models/thangs-1323061/Snap DS Part B - Loose.stl",
+          "models/thangs-1323061/Snap DS Part B - Permanent.stl",
+          "models/thangs-1323061/Snap DS Part B - Standard.stl",
+          "models/thangs-1323061/Snap DS Part B - Tight.stl"
+        ]
+      },
+      {
+        "key": "thangs-974052",
+        "name": "Raised Double-Sided Snap (DS Part A)",
+        "tags": [
+          "multiboard",
+          "mount"
+        ],
+        "files": [
+          "models/thangs-974052/Raised Double-Sided Snap DS Part A.stl"
+        ]
+      },
+      {
+        "key": "thangs-974320",
+        "name": "Raised Dual Snap (DS Part A)",
+        "tags": [
+          "multiboard",
+          "mount"
+        ],
+        "files": [
+          "models/thangs-974320/Raised Dual Snap DS Part A.stl"
+        ]
+      },
+      {
+        "key": "thangs-974388",
+        "name": "Raised Quad Snap (DS Part A)",
+        "tags": [
+          "multiboard",
+          "mount"
+        ],
+        "files": [
+          "models/thangs-974388/Raised Quad Snap DS Part A.stl"
+        ]
+      },
+      {
+        "key": "thangs-974407",
+        "name": "Raised Double-Sided Snap (DS Part B)",
+        "tags": [
+          "multiboard",
+          "mount"
+        ],
+        "files": [
+          "models/thangs-974407/Raised Double-Sided Snap DS Part B - Loose.stl",
+          "models/thangs-974407/Raised Double-Sided Snap DS Part B - Permanent.stl",
+          "models/thangs-974407/Raised Double-Sided Snap DS Part B - Standard.stl",
+          "models/thangs-974407/Raised Double-Sided Snap DS Part B - Tight.stl"
+        ]
+      },
+      {
+        "key": "thangs-974162",
+        "name": "Raised Dual Snap (DS Part B)",
+        "tags": [
+          "multiboard",
+          "mount"
+        ],
+        "files": [
+          "models/thangs-974162/Raised Dual Snap DS Part B - Loose.stl",
+          "models/thangs-974162/Raised Dual Snap DS Part B - Permanent.stl",
+          "models/thangs-974162/Raised Dual Snap DS Part B - Standard.stl",
+          "models/thangs-974162/Raised Dual Snap DS Part B - Tight.stl"
+        ]
+      },
+      {
+        "key": "thangs-974127",
+        "name": "Raised Quad Snap (DS Part B)",
+        "tags": [
+          "multiboard",
+          "mount"
+        ],
+        "files": [
+          "models/thangs-974127/Raised Quad Snap DS Part B - Loose.stl",
+          "models/thangs-974127/Raised Quad Snap DS Part B - Permanent.stl",
+          "models/thangs-974127/Raised Quad Snap DS Part B - Standard.stl",
+          "models/thangs-974127/Raised Quad Snap DS Part B - Tight.stl"
+        ]
+      },
+      {
+        "key": "thangs-974105",
+        "name": "Screw In, Free-Standing Foot (optional)",
+        "tags": [
+          "multiboard",
+          "mount"
+        ],
+        "files": [
+          "models/thangs-974105/Screw In- Free-Standing Foot.stl"
+        ]
+      },
+      {
+        "key": "thangs-1009275",
+        "name": "Dual Clip",
+        "tags": [
+          "multiboard",
+          "mount"
+        ],
+        "files": [
+          "models/thangs-1009275/Dual Clip.stl"
+        ]
+      }
+    ]
+  },
+  "iconUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2048%2048%22%3E%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%2218%22%20rx%3D%224%22%20fill%3D%22%23ff6a1a%22%2F%3E%3Crect%20x%3D%2226%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%2218%22%20rx%3D%224%22%20fill%3D%22%239b9c9f%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%2226%22%20width%3D%2218%22%20height%3D%2218%22%20rx%3D%224%22%20fill%3D%22%239b9c9f%22%2F%3E%3Crect%20x%3D%2226%22%20y%3D%2226%22%20width%3D%2218%22%20height%3D%2218%22%20rx%3D%224%22%20fill%3D%22%23ff6a1a%22%2F%3E%3Cg%20fill%3D%22%231d1d1b%22%20opacity%3D%22.55%22%3E%3Ccircle%20cx%3D%2213%22%20cy%3D%2213%22%20r%3D%222.4%22%2F%3E%3Ccircle%20cx%3D%2235%22%20cy%3D%2213%22%20r%3D%222.4%22%2F%3E%3Ccircle%20cx%3D%2213%22%20cy%3D%2235%22%20r%3D%222.4%22%2F%3E%3Ccircle%20cx%3D%2235%22%20cy%3D%2235%22%20r%3D%222.4%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"
+}

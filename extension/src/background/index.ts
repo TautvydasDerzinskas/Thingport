@@ -21,6 +21,13 @@ import { clearRecentlyViewed, getRecentlyViewed, recordViewedModel } from "./rec
 import { syncSession } from "./sessionSync";
 import { onPairingTabClosed, onPairingTabUrl, startPairing } from "./pairing";
 import { openSetup } from "./setup";
+import {
+  forgetProviderTab,
+  forgetProviderTabs,
+  getTabProvider,
+  noteProviderTab,
+  onProviderTabUrl,
+} from "./providerTab";
 import { setTabIconState } from "./tabIcon";
 import { injectIntoOpenTabs, OPTIONAL_SITES, siteEnabled, syncSiteScripts } from "../shared/optionalSites";
 
@@ -41,6 +48,8 @@ listen<BackgroundMessages>({
   SYNC_PROVIDER_SESSION: ({ provider }) => syncSession(provider),
   OPEN_SETUP: (_payload, sender) => openSetup(sender.tab?.id),
   SET_TAB_ICON_STATE: ({ active }, sender) => setTabIconState(senderTabId(sender), active),
+  NOTE_PROVIDER_TAB: ({ provider }, sender) => noteProviderTab(provider, senderTabId(sender)),
+  GET_TAB_PROVIDER: ({ tabId }) => getTabProvider(tabId),
   API_CALL: ({ method, path, body }) => apiCall(method, path, body),
   IMPORT_SINGLE: (payload) => importSingle(payload),
   QUEUE_IMPORT: (payload) => queueImport(payload),
@@ -54,13 +63,21 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   // The approval tab's #fragment changing is how Thingport hands back the code; the url is visible because the
   // instance's host permission was granted first.
   void onPairingTabUrl(tabId, changeInfo.url ?? (changeInfo.status === "complete" ? tab.url : undefined));
-  // Per-tab icon overrides persist, so reset on every new navigation; the content script re-asserts it.
-  if (changeInfo.status === "loading") void setTabIconState(tabId, false);
+  // Per-tab icon overrides persist, so reset on every new navigation; the content script re-asserts it. The tab's
+  // provider note goes by the new address instead: a site's own links fire this without loading a document, so no
+  // content script runs afterwards to report the site again (see providerTab.ts).
+  if (changeInfo.status === "loading") {
+    void setTabIconState(tabId, false);
+    void onProviderTabUrl(tabId, changeInfo.url);
+  }
   if (changeInfo.status === "complete") onProviderTabLoaded(tabId);
 });
 
 // Before the user reaches a provider page, so the toolbar badge already shows a broken connection.
-chrome.runtime.onStartup.addListener(() => void checkConnection());
+chrome.runtime.onStartup.addListener(() => {
+  void checkConnection();
+  void forgetProviderTabs();
+});
 chrome.runtime.onInstalled.addListener(() => {
   void checkConnection();
   void chrome.storage.local.remove(LEGACY_SESSION_KEYS);
@@ -87,4 +104,5 @@ chrome.alarms.onAlarm.addListener((alarm) => onProviderAlarm(alarm.name));
 chrome.tabs.onRemoved.addListener((tabId) => {
   onProviderTabClosed(tabId);
   void onPairingTabClosed(tabId);
+  void forgetProviderTab(tabId);
 });

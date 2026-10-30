@@ -155,12 +155,24 @@ export type BackgroundMessages = {
   };
   /** On any MakerOnline page: import what waits on the instance for Grab. How many came in. */
   RUN_MAKERONLINE_WAITING: { payload: void; result: number };
+  /** On an OwlCAD model page: export it in OwlCAD's editor, then import it. A library part needs no export, and is
+   *  imported as any link is. */
+  IMPORT_OWLCAD_MODEL: {
+    payload: { url: string; collectionId: string | null; title: string | null };
+    result: Print | null;
+  };
+  /** On any OwlCAD page: export and import the CAD projects waiting on the instance. How many came in. */
+  RUN_OWLCAD_WAITING: { payload: void; result: number };
   /** What to read on Printables now, or null when it isn't time to read anything. */
   /** `now`: skip the hourly wait, e.g. right after a private collection's sync was turned on. */
   PRINTABLES_PUSH_DUE: { payload: { now?: boolean }; result: PrintablesPushPlan | null };
   PUSH_PRINTABLES: { payload: PrintablesPush; result: null };
   OPEN_SETUP: { payload: void; result: "popup" | "tab" };
   SET_TAB_ICON_STATE: { payload: { active: boolean }; result: null };
+  /** From a provider's page: this tab is on that provider's site (see background/providerTab.ts). */
+  NOTE_PROVIDER_TAB: { payload: { provider: Provider }; result: null };
+  /** The provider whose site a tab is on, as its page reported; the popup asks for the active tab's. */
+  GET_TAB_PROVIDER: { payload: { tabId: number }; result: Provider | null };
   API_CALL: { payload: ApiCallPayload; result: unknown };
   IMPORT_SINGLE: { payload: ImportSinglePayload; result: Print | null };
   QUEUE_IMPORT: { payload: QueueImportPayload; result: QueueImportResult };

@@ -1,0 +1,28 @@
+{
+  "name": "MakerWorld 3MF normalizer",
+  "description": "Makes Bambu Studio and MakerWorld 3MF files open in Cura, PrusaSlicer and other slicers, keeping painted colours, filaments, plates and the designer's print settings.",
+  "version": "1.0.2",
+  "author": "Thingport contributors",
+  "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
+  "window": {
+    "width": 1180,
+    "height": 760
+  },
+  "hosts": [],
+  "category": "files",
+  "locales": ["en", "lt", "es", "fr"],
+  "screenshots": [
+    {
+      "file": "screenshots/files.webp",
+      "caption": "Bambu Studio projects normalized side by side with the originals: the parts joined, every filament and painted face kept, and the designer's print settings carried over."
+    },
+    {
+      "file": "screenshots/dark.webp",
+      "caption": "The dark theme, with a file's menu and the list of what changed."
+    },
+    {
+      "file": "screenshots/library.webp",
+      "caption": "A model's 3MF taken from your library, to normalize and add back to the model it came from."
+    }
+  ]
+}

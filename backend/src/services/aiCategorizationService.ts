@@ -474,7 +474,8 @@ export function currentAiCategorizationRun(userId: string): AiCategorizationRun 
 
 export async function aiCategorizationCounts(userId: string) {
   const [uncategorized, folder, grouped] = await Promise.all([
-    prisma.print.count({ where: { userId, categoryId: null } }),
+    // A tool's models are kept as the tool brought them (toolsService.ts), so no run takes them.
+    prisma.print.count({ where: { userId, categoryId: null, toolId: null } }),
     prisma.print.count({ where: { userId, category: { is: { kind: "folder" } } } }),
     prisma.print.groupBy({
       by: ["categorySource"],
@@ -555,7 +556,7 @@ export function startAiCategorizationRun(userId: string, scope: AiRunScope): AiC
 
 async function runAiCategorization(userId: string, run: AiCategorizationRun, scope: AiRunScope): Promise<void> {
   const prints = await prisma.print.findMany({
-    where: { userId, ...(scope.printIds ? { id: { in: scope.printIds } } : {}) },
+    where: { userId, toolId: null, ...(scope.printIds ? { id: { in: scope.printIds } } : {}) },
     include: { category: { select: { kind: true } } },
     orderBy: { createdAt: "asc" },
   });

@@ -16,6 +16,22 @@ Read [CONTRIBUTING.md](../CONTRIBUTING.md) for the workflow, commit style and co
 Before adding or changing a provider (a model site Thingport imports from), read
 [docs/PROVIDER_DEVELOPMENT.md](../docs/PROVIDER_DEVELOPMENT.md) and follow its checklist.
 
+## Plain HTTP instances
+
+Thingport is self-hosted, and many instances run on a LAN or locally over plain HTTP with no TLS certificate. That is
+supported and must stay so: HTTPS works when someone sets it up, but nothing may require it. Don't enforce or silently
+assume HTTPS anywhere a client (the web app, Grab, Bridge, MCP clients, API token users) talks to an instance:
+
+- no redirects to https, HSTS (`Strict-Transport-Security`) or `upgrade-insecure-requests`, in nginx, the backend or
+  an extension manifest's CSP (Firefox's Manifest V3 default has it, which is why Grab sets its own, issue #199);
+- cookies get `Secure` only when the request really is HTTPS (`isHttps` in `sessionService.ts`), never always;
+- the instance's own URL accepts `http://` as well as `https://`, and isn't rewritten to https;
+- APIs that only exist in secure contexts (`navigator.clipboard`, `crypto.randomUUID`, `crypto.subtle`, geolocation,
+  service workers) get a fallback, since a LAN address like `http://192.168.1.20` isn't one, though `localhost` is:
+  use `copyText()` (`frontend/src/utils/clipboard.ts`) and `newLocalId()` (`frontend/src/utils/localId.ts`).
+
+Requiring https for third-party URLs (provider sites, announcement links) is fine; this is about the instance.
+
 ## API token permissions
 
 Third-party apps (dashboards, launchers such as Homarr and holm) read the REST API with a user's API token, and the

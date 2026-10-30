@@ -1,0 +1,9 @@
+{
+  "name": "Tray maker",
+  "description": "An open tray to the inside size you give it, as an STL to download or keep in your library.",
+  "version": "1.0.0",
+  "window": { "width": 440, "height": 360 },
+  "hosts": [],
+  "category": "generators",
+  "locales": ["en"]
+}

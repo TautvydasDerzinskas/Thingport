@@ -1,0 +1,34 @@
+{
+  "name": "Enclosure generator",
+  "description": "Designs a 3D-printable case for electronics: a box and lid with screws or snaps, PCB standoffs, port cutouts, vents and text, saved as a model or kept as a project to come back to.",
+  "version": "1.0.1",
+  "author": "Thingport contributors",
+  "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
+  "window": {
+    "width": 1280,
+    "height": 820
+  },
+  "hosts": [],
+  "category": "generators",
+  "locales": [
+    "en",
+    "lt",
+    "es",
+    "fr"
+  ],
+  "screenshots": [
+    {
+      "file": "screenshots/pi.webp",
+      "caption": "A Raspberry Pi 4 case: the board's standoffs from its preset, labelled ports on two walls, honeycomb vents and text in the lid, which is lifted to show inside."
+    },
+    {
+      "file": "screenshots/sensor.webp",
+      "caption": "A sensor box in the dark theme: snap latches with an opening groove, mounting flanges, vents in the walls, a window for a screen and raised text on the lid."
+    },
+    {
+      "file": "screenshots/projects.webp",
+      "caption": "Projects kept to open again, duplicate, download as JSON or delete."
+    }
+  ],
+  "iconUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2048%2048%22%3E%3Cpath%20d%3D%22M24%2020.5%2043%2011%2024%201.5%205%2011Z%22%20fill%3D%22%235be584%22%2F%3E%3Cpath%20d%3D%22M5%2011%2024%2020.5V27L5%2017.5Z%22%20fill%3D%22%2300b800%22%20opacity%3D%22.9%22%2F%3E%3Cpath%20d%3D%22M24%2020.5%2043%2011v6.5L24%2027Z%22%20fill%3D%22%23008f00%22%2F%3E%3Cpath%20d%3D%22M5%2021.5%2024%2031v15.5L5%2037Z%22%20fill%3D%22%2300b800%22%2F%3E%3Cpath%20d%3D%22M24%2031%2043%2021.5V37L24%2046.5Z%22%20fill%3D%22%23008f00%22%2F%3E%3Cpath%20d%3D%22M24%2031%205%2021.5l4-2L24%2027l15-7.5%204%202Z%22%20fill%3D%22%23c8f5d0%22%2F%3E%3Crect%20x%3D%2212.4%22%20y%3D%2230.6%22%20width%3D%225.6%22%20height%3D%223.4%22%20rx%3D%221.7%22%20transform%3D%22matrix(1%20.5%200%201%200%200)%22%20fill%3D%22%23003d00%22%20opacity%3D%22.55%22%2F%3E%3Cg%20fill%3D%22%23003d00%22%20opacity%3D%22.45%22%3E%3Cpath%20d%3D%22m29%2034.3%202-1v6l-2%201z%22%2F%3E%3Cpath%20d%3D%22m33%2032.3%202-1v6l-2%201z%22%2F%3E%3Cpath%20d%3D%22m37%2030.3%202-1v6l-2%201z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"
+}

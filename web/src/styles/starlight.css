@@ -1,0 +1,566 @@
+/* The docs (Starlight) in the site's colours and type: Starlight's --sl-* tokens point at tokens.css, and the rules below
+ * restyle its parts to match the site's own pages and the design. Starlight's styles sit in cascade layers, so these
+ * unlayered rules win without !important. ThemeProvider.astro always sets data-theme: light unless dark was chosen. */
+
+/* ---------- Tokens ---------- */
+
+:root {
+  --sl-font: var(--font-body);
+  --sl-font-mono: var(--font-mono);
+
+  /* Starlight's greys by role, which is the same in both themes: white is the strongest text, black the page. */
+  --sl-color-white: var(--heading);
+  --sl-color-gray-1: var(--heading);
+  --sl-color-gray-2: var(--text);
+  --sl-color-gray-3: var(--text-muted);
+  --sl-color-gray-4: #8c8c8c;
+  --sl-color-gray-5: var(--border);
+  --sl-color-gray-6: color-mix(in srgb, var(--text) 6%, var(--panel));
+  --sl-color-gray-7: var(--bg);
+  --sl-color-black: var(--panel);
+
+  --sl-color-accent-low: color-mix(in srgb, var(--accent) 14%, var(--sl-color-black));
+  --sl-color-accent: var(--link);
+  --sl-color-accent-high: var(--button-hover);
+
+  --sl-color-text: var(--text);
+  --sl-color-text-accent: var(--link);
+  --sl-color-text-invert: var(--sl-color-black);
+  --sl-color-bg-nav: var(--panel);
+  --sl-color-bg-sidebar: var(--bg);
+  --sl-color-bg-inline-code: var(--accent-soft);
+  --sl-color-bg-accent: var(--button);
+  --sl-color-hairline-light: var(--border);
+  --sl-color-hairline: var(--border);
+  --sl-color-hairline-shade: var(--border);
+
+  /* Callouts and badges: tip in the brand green, caution in the alt orange, note a quiet blue-grey. The base colour
+   * tints a box; -high is its icon, dark enough to read on that tint. */
+  --sl-color-green: var(--accent);
+  --sl-color-green-high: var(--link);
+  --sl-color-orange: var(--alt);
+  --sl-color-orange-high: #c2410c;
+  --sl-color-red: #e5484d;
+  --sl-color-red-high: #c62828;
+  --sl-color-blue: #64748b;
+  --sl-color-blue-high: #475569;
+  --sl-color-green-low: color-mix(in srgb, var(--sl-color-green) 8%, var(--sl-color-black));
+  --sl-color-orange-low: color-mix(in srgb, var(--sl-color-orange) 8%, var(--sl-color-black));
+  --sl-color-red-low: color-mix(in srgb, var(--sl-color-red) 8%, var(--sl-color-black));
+  --sl-color-blue-low: color-mix(in srgb, var(--sl-color-blue) 8%, var(--sl-color-black));
+
+  /* Type: the site's line height, and headings that suit a docs page rather than Starlight's large ones. */
+  --sl-line-height: 1.65;
+  --sl-text-h1: 2rem;
+  --sl-text-h2: 1.3125rem;
+  --sl-text-h3: 1.125rem;
+  --sl-text-h4: 1rem;
+  --sl-text-h5: 1rem;
+
+  /* Layout: the site's header height, a narrower sidebar, and room for the menu button the header's buttons match. */
+  --sl-nav-height: var(--header-height);
+  --sl-nav-gap: 0.5rem;
+  --sl-sidebar-width: 17rem;
+  --sl-menu-button-size: 2.4rem;
+  --sl-main-pad: 0 0 2.5rem;
+}
+
+:root,
+::backdrop {
+  --sl-color-backdrop-overlay: rgba(31, 31, 31, 0.4);
+}
+
+:root[data-theme="dark"] {
+  --sl-color-gray-4: #5f6680;
+  --sl-color-gray-6: var(--panel);
+  --sl-color-gray-7: var(--panel);
+  --sl-color-black: var(--bg);
+  --sl-color-accent: var(--accent);
+  --sl-color-accent-high: var(--link);
+  --sl-color-bg-sidebar: var(--panel-alt);
+  --sl-color-orange-high: var(--alt);
+  --sl-color-red-high: #ff7b72;
+  --sl-color-blue: #94a3b8;
+  --sl-color-blue-high: #a9b6cb;
+}
+
+[data-theme="dark"],
+[data-theme="dark"] ::backdrop {
+  --sl-color-backdrop-overlay: rgba(8, 11, 24, 0.7);
+}
+
+@media (min-width: 50rem) {
+  :root {
+    --sl-text-h1: 2.375rem;
+    --sl-text-h2: 1.5rem;
+    --sl-text-h3: 1.1875rem;
+    --sl-text-h4: 1.0625rem;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+}
+
+/* ---------- Header (the bar itself is components/starlight/Header.astro) ---------- */
+
+header.header {
+  padding-block: 0;
+  border-bottom-color: var(--border);
+  background-color: var(--header-bg);
+  backdrop-filter: saturate(1.4) blur(10px);
+}
+
+/* The phone menu button, Starlight's, as a square like the header's other buttons. */
+.sl-menu-button {
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: var(--panel);
+  box-shadow: none;
+  color: var(--heading);
+  font-size: 1.125rem;
+}
+.sl-menu-button:has(~ :popover-open) {
+  border-color: var(--accent);
+  background-color: var(--accent-soft);
+  color: var(--link);
+}
+
+/* ---------- Sidebar ---------- */
+
+.sidebar-pane {
+  border-inline-end-color: var(--border);
+}
+/* On phones the menu's foot (MobileMenuFooter.astro) ends it, so it has no padding below. */
+.sidebar-content {
+  padding: 1rem 0.75rem 0;
+}
+.sidebar-content ul {
+  --sl-sidebar-item-padding-inline: 0.625rem;
+}
+.sidebar-content .top-level > li + li {
+  margin-top: 0.125rem;
+}
+.sidebar-content :is(a, summary) {
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+.sidebar-content a {
+  padding-block: 0.3125rem;
+}
+.sidebar-content summary {
+  justify-content: flex-start;
+  gap: 0.375rem;
+  padding-block: 0.375rem;
+}
+.sidebar-content .large {
+  color: var(--heading);
+  font-weight: 600;
+}
+.sidebar-content summary .large {
+  font-size: inherit;
+}
+.sidebar-content a.large {
+  padding-block: 0.375rem;
+}
+.sidebar-content :is(a, summary):hover {
+  background-color: color-mix(in srgb, var(--heading) 5%, transparent);
+  color: var(--heading);
+}
+/* The current page: a soft tint, as in the app, rather than Starlight's solid pill. It's the header's current tab's
+ * tint, mixed with the panel rather than laid over the grey sidebar, which would leave the green text too faint. */
+.sidebar-content {
+  --current-bg: color-mix(in srgb, var(--accent) 12%, var(--panel));
+}
+:root[data-theme="dark"] .sidebar-content {
+  --current-bg: color-mix(in srgb, var(--accent) 16%, var(--panel));
+}
+.sidebar-content a[aria-current="page"],
+.sidebar-content a[aria-current="page"]:hover,
+.sidebar-content a[aria-current="page"]:focus {
+  background-color: var(--current-bg);
+  color: var(--link);
+  font-weight: 600;
+}
+
+/* A group: the caret first, then its name, then its page count as a plain number at the end. */
+.sidebar-content summary .caret {
+  order: -1;
+  margin-inline-start: -0.125rem;
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+.sidebar-content .group-label {
+  display: flex;
+  flex: 1;
+  align-items: baseline;
+  min-width: 0;
+}
+.sidebar-content .group-count {
+  margin-inline-start: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font: 500 0.75rem/1 var(--font-body);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A group's pages line up with its name, without Starlight's guide line. */
+.sidebar-content ul ul {
+  margin-top: 0.0625rem;
+  padding-inline-start: 1.25rem;
+}
+.sidebar-content ul ul li {
+  margin-inline-start: 0;
+  padding-inline-start: 0;
+  border-inline-start: 0;
+}
+.sidebar-content ul ul li + li {
+  margin-top: 0.0625rem;
+}
+
+@media (min-width: 50rem) {
+  .sidebar-content {
+    padding: 1.25rem 0.75rem 1.5rem;
+  }
+  .sidebar-content :is(a, summary) {
+    font-size: var(--sl-text-sm);
+  }
+}
+
+/* ---------- Page ---------- */
+
+.content-panel {
+  padding-block: 2rem 1rem;
+}
+.content-panel + .content-panel {
+  padding-top: 0;
+  border-top: 0;
+}
+
+h1#_top,
+.sl-markdown-content :is(h1, h2, h3, h4, h5):not(:where(.not-content *)) {
+  color: var(--heading);
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+h1#_top {
+  margin-top: 0;
+  font-size: var(--sl-text-h1);
+  line-height: 1.1;
+}
+
+/* The page's opening paragraph is its summary, a little larger as in the design. */
+.sl-markdown-content > p:first-child {
+  font-size: 1.0625rem;
+}
+
+.sl-markdown-content a:not(:where(.not-content *)),
+.sl-markdown-content a:hover:not(:where(.not-content *)) {
+  color: var(--link);
+  text-underline-offset: 0.18em;
+}
+.sl-markdown-content a:hover:not(:where(.not-content *)) {
+  text-decoration-thickness: 2px;
+}
+
+.sl-markdown-content code:not(:where(.not-content *)) {
+  padding: 0.125em 0.35em;
+  border-radius: calc(var(--radius-sm) / 2);
+  color: var(--heading);
+  font-size: 0.875em;
+}
+/* In a heading, code is just the mono face, as on the blog. */
+.sl-markdown-content :is(h1, h2, h3, h4, h5, h6) code:not(:where(.not-content *)) {
+  padding: 0;
+  background: none;
+  font-size: 0.9em;
+}
+.sl-markdown-content kbd:not(:where(.not-content *)) {
+  display: inline-block;
+  padding: 0.0625em 0.4em;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: calc(var(--radius-sm) / 2);
+  background-color: var(--sl-color-gray-7);
+  color: var(--heading);
+  font: 600 0.8125em/1.4 var(--font-body);
+}
+
+.sl-markdown-content blockquote:not(:where(.not-content *)) {
+  padding-block: 0.125rem;
+  border-inline-start: 3px solid color-mix(in srgb, var(--text) 22%, transparent);
+}
+
+.sl-markdown-content hr:not(:where(.not-content *)) {
+  margin-block: 2rem;
+  border-bottom-color: var(--border);
+}
+
+/* Screenshots get a frame; the small logos GitHub shows inline (align="absmiddle") stay inline. */
+.sl-markdown-content img:not([align]):not(:where(.not-content *)) {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.sl-markdown-content img[align]:not(:where(.not-content *)) {
+  display: inline-block;
+  vertical-align: middle;
+}
+/* An icon opening a heading (the Grab guide's browsers) has no space after it in the Markdown, which would put one
+   in the heading's anchor, so the gap is drawn here. */
+.sl-markdown-content :is(h2, h3, h4) img[align]:not(:where(.not-content *)) {
+  margin-inline-end: 0.45em;
+}
+/* A logo that is a link's picture (the Grab guide's store tiles) is no screenshot: no frame. */
+.sl-markdown-content a > img:not([align]):not(:where(.not-content *)) {
+  border: 0;
+  border-radius: 0;
+}
+
+/* Tables: a bordered box with a tinted header row, scrolling inside itself when too wide for the page. */
+.sl-markdown-content table:not(:where(.not-content *)) {
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: var(--sl-text-sm);
+  line-height: 1.5;
+}
+.sl-markdown-content :is(th, td):not(:where(.not-content *)),
+.sl-markdown-content :is(th:first-child, td:first-child, th:last-child, td:last-child):not(:where(.not-content *)) {
+  padding: 0.5rem 0.875rem;
+  border-bottom: 1px solid var(--border);
+}
+.sl-markdown-content tbody > tr:last-child > td:not(:where(.not-content *)) {
+  border-bottom: 0;
+}
+.sl-markdown-content th:not(:where(.not-content *)) {
+  background-color: var(--sl-color-gray-7);
+  color: var(--heading);
+  font-weight: 600;
+}
+/* A key/value table (its header's last cell empty, as each provider's "At a glance"): full width, labels muted. */
+.sl-markdown-content table:has(> thead > tr > th:last-child:empty):not(:where(.not-content *)) {
+  display: table;
+  width: 100%;
+}
+.sl-markdown-content table:has(> thead > tr > th:last-child:empty) th:first-child {
+  border-start-start-radius: calc(var(--radius) - 1px);
+}
+.sl-markdown-content table:has(> thead > tr > th:last-child:empty) th:last-child {
+  border-start-end-radius: calc(var(--radius) - 1px);
+}
+.sl-markdown-content table:has(> thead > tr > th:last-child:empty) td:first-child {
+  width: 1%;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.sl-markdown-content table:has(> thead > tr > th:last-child:empty) td:last-child {
+  overflow-wrap: anywhere;
+}
+/* A table of logos (the providers overview, eight columns): smaller type and padding, so it fits beside the sidebars on
+ * a desktop, and each logo stays beside its name. With a percentage max-width, a logo doesn't count towards its
+ * column's width, and the name runs into the next column. */
+.sl-markdown-content table:has(img[align]):not(:where(.not-content *)) {
+  font-size: var(--sl-text-xs);
+}
+.sl-markdown-content table:has(img[align]) :is(th, td):not(:where(.not-content *)) {
+  padding: 0.5rem;
+}
+.sl-markdown-content table:has(img[align]) td:first-child {
+  white-space: nowrap;
+}
+.sl-markdown-content table:has(img[align]) img[align] {
+  max-width: none;
+}
+
+.sl-markdown-content details:not(:where(.not-content *)) {
+  --sl-details-border-color: var(--border);
+  --sl-details-border-color--hover: var(--accent);
+  padding: 0.625rem 1rem;
+  border: 1px solid var(--sl-details-border-color);
+  border-radius: var(--radius-sm);
+  background-color: var(--sl-color-gray-7);
+}
+.sl-markdown-content details[open] > summary:not(:where(.not-content *)) {
+  margin-bottom: 0.75rem;
+}
+
+/* ---------- Asides (callouts, and the GitHub alerts in the repo's Markdown) ---------- */
+
+.starlight-aside {
+  padding: 0.75rem 1rem 0.875rem;
+  border: 1px solid var(--sl-color-asides-border);
+  border-radius: var(--radius);
+  color: var(--text);
+}
+.starlight-aside--note {
+  --sl-color-asides-text-accent: var(--sl-color-blue-high);
+  --sl-color-asides-border: color-mix(in srgb, var(--sl-color-blue) 32%, transparent);
+  background-color: color-mix(in srgb, var(--sl-color-blue) 7%, transparent);
+}
+.starlight-aside--tip {
+  --sl-color-asides-text-accent: var(--sl-color-green-high);
+  --sl-color-asides-border: color-mix(in srgb, var(--sl-color-green) 30%, transparent);
+  background-color: color-mix(in srgb, var(--sl-color-green) 7%, transparent);
+}
+.starlight-aside--caution {
+  --sl-color-asides-text-accent: var(--sl-color-orange-high);
+  --sl-color-asides-border: color-mix(in srgb, var(--sl-color-orange) 36%, transparent);
+  background-color: color-mix(in srgb, var(--sl-color-orange) 8%, transparent);
+}
+.starlight-aside--danger {
+  --sl-color-asides-text-accent: var(--sl-color-red-high);
+  --sl-color-asides-border: color-mix(in srgb, var(--sl-color-red) 36%, transparent);
+  background-color: color-mix(in srgb, var(--sl-color-red) 8%, transparent);
+}
+.starlight-aside__title {
+  color: var(--heading);
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.starlight-aside__icon {
+  color: var(--sl-color-asides-text-accent);
+  font-size: 1.25rem;
+}
+/* Wider than a phone, the text lines up under the title, beside the icon. */
+@media (min-width: 50rem) {
+  .starlight-aside__content {
+    padding-inline-start: 1.75rem;
+  }
+}
+.starlight-aside__title + .starlight-aside__content {
+  margin-top: 0.25rem;
+}
+
+/* ---------- Code blocks: in ec.config.mjs and tokens.css, as the blog has them too ---------- */
+
+/* ---------- Table of contents ---------- */
+
+.right-sidebar {
+  border-inline-start: 0;
+}
+.right-sidebar-panel {
+  padding: 2rem 1.25rem 1.5rem;
+}
+.right-sidebar-panel h2 {
+  margin-bottom: 0.625rem;
+  color: var(--heading);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+/* Each entry sits on a rail; the current one is marked on it in green. */
+starlight-toc a {
+  padding-block: 0.3125rem;
+  padding-inline: calc(0.75rem + 0.875rem * var(--depth, 0)) 0.25rem;
+  border-inline-start: 2px solid var(--border);
+  border-radius: 0;
+  color: var(--text-muted);
+  font-size: var(--sl-text-xs);
+  line-height: 1.35;
+}
+starlight-toc a:hover {
+  color: var(--heading);
+}
+starlight-toc a[aria-current="true"] {
+  border-inline-start-color: var(--accent);
+  color: var(--link);
+  font-weight: 600;
+}
+
+/* Below 72rem the contents fold into a bar under the header. */
+mobile-starlight-toc .toggle {
+  border-color: var(--border);
+  border-radius: var(--radius-sm);
+}
+mobile-starlight-toc details[open] .toggle,
+mobile-starlight-toc details .toggle:hover {
+  border-color: var(--accent);
+}
+
+/* ---------- Page footer: the GitHub link, then previous and next ---------- */
+
+footer .meta {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  font-size: var(--sl-text-xs);
+}
+.pagination-links {
+  gap: 0.875rem;
+}
+.pagination-links a {
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: none;
+  color: var(--text-muted);
+  font-size: var(--sl-text-xs);
+  line-height: 1.4;
+  transition: border-color 0.15s;
+}
+.pagination-links a:hover {
+  border-color: var(--accent);
+}
+.pagination-links a > svg {
+  color: var(--text-muted);
+  font-size: 1.125rem;
+}
+.pagination-links .link-title {
+  display: inline-block;
+  margin-top: 0.125rem;
+  color: var(--heading);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* ---------- Search dialog ---------- */
+
+site-search dialog {
+  border-color: var(--border);
+  background-color: var(--sl-color-gray-7);
+}
+#starlight__search {
+  --pagefind-ui-border-radius: var(--radius-sm);
+}
+/* One ring on the focused field, over its own border, rather than two. */
+#starlight__search input:focus-visible {
+  outline-offset: -1px;
+}
+/* A match above a page's first heading with an id (on the blog and the feature tour, whose titles have none) shows its
+ * excerpt under the title rather than in a section: a row of the result like the sections, lined up with the title. */
+#starlight__search .pagefind-ui__result-inner > .pagefind-ui__result-excerpt {
+  margin: 0;
+  padding: var(--sl-search-result-nested-pad-block) var(--sl-search-result-pad-inline-end);
+  padding-inline-start: var(--sl-search-result-pad-inline-start);
+  background-color: var(--sl-color-black);
+}
+@media (min-width: 50rem) {
+  site-search dialog {
+    border-radius: var(--radius);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+  }
+}

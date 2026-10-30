@@ -4,6 +4,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import Divider from "@mui/material/Divider";
 import { UnauthorizedError } from "../../api/client";
 import { type Collection, collectionsApi } from "../../api/collections";
 import { type Print, type PrintSortMode, printsApi } from "../../api/prints";
@@ -12,9 +13,12 @@ import type { AuthUser } from "../../api/auth";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
 import { usePageHeader } from "../../components/Layout/PageHeaderContext";
 import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
+import { useLibrarySources, useModelFilters } from "../../hooks/useModelFilters";
 import { collectionDisplayName } from "../../utils/collectionDisplay";
 import ModelCard from "../ModelsPage/ModelCard";
 import SortTabs from "../ModelsPage/SortTabs";
+import ModelFiltersButton from "../../components/ModelFilters/ModelFiltersButton";
+import FiltersEmptyNote from "../../components/ModelFilters/FiltersEmptyNote";
 import CollectionActionsMenu from "./CollectionActionsMenu";
 import CollectionBookmarkButton from "./CollectionBookmarkButton";
 import CollectionSyncDialog from "./CollectionSyncDialog";
@@ -59,6 +63,10 @@ export default function CollectionDetailPage({
   const sortMode: PrintSortMode =
     sortModeParam === "popular" || sortModeParam === "downloads" ? sortModeParam : "newest";
 
+  const filters = useModelFilters();
+  const { generative, hiddenProviders } = filters;
+  const sources = useLibrarySources(null);
+
   const setSortMode = (mode: PrintSortMode) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
@@ -85,13 +93,16 @@ export default function CollectionDetailPage({
             onBookmarksChanged={onBookmarksChanged}
             onToggled={(bookmarked) => setCollection((prev) => (prev ? { ...prev, bookmarked } : prev))}
           />
-          <CollectionActionsMenu
-            collection={collection}
-            onUpdated={setCollection}
-            onUnauthorized={onUnauthorized}
-            onDeleted={goBack}
-            onBookmarksChanged={onBookmarksChanged}
-          />
+          {/* A tool's collection can be bookmarked, nothing more. */}
+          {!collection.tool_id && (
+            <CollectionActionsMenu
+              collection={collection}
+              onUpdated={setCollection}
+              onUnauthorized={onUnauthorized}
+              onDeleted={goBack}
+              onBookmarksChanged={onBookmarksChanged}
+            />
+          )}
         </Stack>
       ) : undefined,
   });
@@ -115,7 +126,14 @@ export default function CollectionDetailPage({
       try {
         const [collectionResult, printsResult] = await Promise.all([
           collectionsApi.get(collectionId),
-          printsApi.list({ collection_id: collectionId, order_by: sortMode, limit: PAGE_SIZE, offset: 0 }),
+          printsApi.list({
+            collection_id: collectionId,
+            generative: generative || undefined,
+            hide_providers: hiddenProviders,
+            order_by: sortMode,
+            limit: PAGE_SIZE,
+            offset: 0,
+          }),
         ]);
         if (cancelled) return;
         setCollection(collectionResult);
@@ -134,7 +152,7 @@ export default function CollectionDetailPage({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [collectionId, sortMode]);
+  }, [collectionId, sortMode, generative, hiddenProviders]);
 
   const loadMore = async () => {
     if (loadingMore || !hasMore || !collectionId) return;
@@ -142,6 +160,8 @@ export default function CollectionDetailPage({
     try {
       const result = await printsApi.list({
         collection_id: collectionId,
+        generative: generative || undefined,
+        hide_providers: hiddenProviders,
         order_by: sortMode,
         limit: PAGE_SIZE,
         offset,
@@ -194,11 +214,14 @@ export default function CollectionDetailPage({
             )
           }
           onUnauthorized={onUnauthorized}
-          collectionId={collection.system_key ? undefined : collection.id}
+          collectionId={collection.system_key || collection.tool_id ? undefined : collection.id}
+          toolOwned={Boolean(collection.tool_id)}
           onRemovedFromCollection={(ids) => setItems((prev) => prev.filter((i) => !ids.includes(i.id)))}
         />
-        <Box sx={{ ml: "auto" }}>
+        <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1.5 }}>
           <SortTabs value={sortMode} onChange={setSortMode} />
+          <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
+          <ModelFiltersButton filters={filters} sources={sources} />
         </Box>
       </Box>
       {/* Its name is already the page's title. */}
@@ -229,7 +252,7 @@ export default function CollectionDetailPage({
                       : prev.map((i) => (i.id === updated.id ? updated : i)),
                   )
                 }
-                collectionId={collection && !collection.system_key ? collection.id : undefined}
+                collectionId={collection && !collection.system_key && !collection.tool_id ? collection.id : undefined}
                 onRemovedFromCollection={(removedId) => setItems((prev) => prev.filter((i) => i.id !== removedId))}
                 onUpdated={(updated) => setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)))}
                 onUnauthorized={onUnauthorized}
@@ -245,7 +268,11 @@ export default function CollectionDetailPage({
         </Stack>
       ) : (
         <Stack alignItems="center" spacing={1} sx={{ py: 8, color: "text.secondary" }}>
-          <Typography variant="body2">{t("models:collections.detail.empty")}</Typography>
+          {filters.active ? (
+            <FiltersEmptyNote filters={filters} />
+          ) : (
+            <Typography variant="body2">{t("models:collections.detail.empty")}</Typography>
+          )}
         </Stack>
       )}
     </Stack>

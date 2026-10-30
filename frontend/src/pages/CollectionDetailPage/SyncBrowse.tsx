@@ -52,8 +52,8 @@ function defaultProvider(
 ): BrowsableProvider {
   const forSlicer = available.find((provider) => slicer && manifestOf(provider).slicers?.includes(slicer));
   const preferred = forSlicer ?? available[0];
-  if (accounts[preferred].connected) return preferred;
-  return available.find((provider) => accounts[provider].connected) ?? preferred;
+  if (accounts[preferred]?.connected) return preferred;
+  return available.find((provider) => accounts[provider]?.connected) ?? preferred;
 }
 
 /** Picking the provider collection an unsynced Thingport collection should follow: the user's own

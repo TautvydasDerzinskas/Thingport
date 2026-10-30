@@ -1,0 +1,12 @@
+{
+  "code": 404,
+  "success": false,
+  "message": "Project not found or has been deleted",
+  "errorCode": "NOT_FOUND",
+  "error": {
+    "code": "NOT_FOUND",
+    "messageKey": "apiErrors.PROJECT_NOT_FOUND_OR_DELETED"
+  },
+  "data": null,
+  "timestamp": 1793216375986
+}

@@ -1,0 +1,54 @@
+[
+  {
+    "url": "https://www.cgtrader.com/3d-print-models/jewelry/ring/lotus-ring-with-opening-and-closing-mechanism",
+    "expect": {
+      "provider": "cgtrader",
+      "kind": "model",
+      "externalId": "lotus-ring-with-opening-and-closing-mechanism"
+    }
+  },
+  {
+    "url": "https://www.cgtrader.com/free-3d-print-models/art/sculpture/free-download-bronze-female-bust?utm_source=x",
+    "expect": { "provider": "cgtrader", "kind": "model", "externalId": "free-download-bronze-female-bust" }
+  },
+  {
+    "url": "https://www.cgtrader.com/3d-models/architectural/engineering/concrete-beams",
+    "expect": { "provider": "cgtrader", "kind": "model", "externalId": "concrete-beams" }
+  },
+  {
+    "url": "https://cgtrader.com/free-3d-models/furniture/chair/Wooden-Chair-2/",
+    "expect": { "provider": "cgtrader", "kind": "model", "externalId": "wooden-chair-2" }
+  },
+  {
+    "url": "https://www.cgtrader.com/products/concrete-beams",
+    "expect": { "provider": "cgtrader", "kind": "model", "externalId": "concrete-beams" }
+  },
+  {
+    "url": "https://www.cgtrader.com/profile/liked_models",
+    "expect": { "provider": "cgtrader", "kind": "list", "externalId": "likes", "listKind": "likes" }
+  },
+  {
+    "url": "https://www.cgtrader.com/profile/wish-lists/6130770",
+    "expect": { "provider": "cgtrader", "kind": "list", "externalId": "wishlist", "listKind": "bookmarks" }
+  },
+  {
+    "url": "https://www.cgtrader.com/3d-print-models/jewelry",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://www.cgtrader.com/3d-models/car/sports-car",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://www.cgtrader.com/items/6890774/free-downloads/24816773",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://www.cgtrader.com/designers/molena-design",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://fake-cgtrader.com/3d-print-models/jewelry/ring/lotus-ring",
+    "expect": { "provider": null, "kind": null }
+  }
+]

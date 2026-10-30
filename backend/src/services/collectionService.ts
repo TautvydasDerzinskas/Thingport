@@ -83,6 +83,13 @@ export async function createCollection(
   return collection;
 }
 
+/** A tool's collection (services/toolsService.ts) holds what the tool brought, and only the tool's uninstall changes
+ *  it. For the MCP tools; routes/toolLocks.ts refuses the REST routes' changes. */
+function assertNotToolCollection(collection: Collection): void {
+  if (collection.toolId)
+    throw new HttpError(403, `"${collection.name}" belongs to a tool and can't be changed`, "TOOL_OWNED");
+}
+
 /** Files the user's own models into one of their collections. Ids that aren't the user's models are
  *  left out and reported, as are models already in it. */
 export async function addModelsToCollection(
@@ -93,6 +100,7 @@ export async function addModelsToCollection(
   if (isSystemCollectionId(collectionId)) throw new HttpError(400, "This collection can't be edited");
   const collection = await prisma.collection.findFirst({ where: { id: collectionId, userId } });
   if (!collection) throw new HttpError(404, "Collection not found");
+  assertNotToolCollection(collection);
   const owned = new Set(
     (await prisma.print.findMany({ where: { id: { in: printIds }, userId }, select: { id: true } })).map((p) => p.id),
   );
@@ -133,6 +141,7 @@ export async function removeModelsFromCollection(
   if (isSystemCollectionId(collectionId)) throw new HttpError(400, "This collection can't be edited");
   const collection = await prisma.collection.findFirst({ where: { id: collectionId, userId } });
   if (!collection) throw new HttpError(404, "Collection not found");
+  assertNotToolCollection(collection);
   const present = await prisma.collectionItem.findMany({
     where: { collectionId, printId: { in: printIds }, print: { userId } },
     select: { printId: true },
@@ -215,6 +224,7 @@ async function ownCollections(userId: string, ids: string[]): Promise<Collection
   const unique = [...new Set(ids)];
   const rows = await prisma.collection.findMany({ where: { id: { in: unique }, userId } });
   if (rows.length !== unique.length) throw new HttpError(404, "Collection not found");
+  rows.forEach(assertNotToolCollection);
   const byId = new Map(rows.map((row) => [row.id, row]));
   return unique.map((id) => byId.get(id)!);
 }

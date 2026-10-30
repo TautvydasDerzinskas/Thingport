@@ -15,6 +15,9 @@ export class TtlCache<T> {
     this.entries.set(key, { at: Date.now(), value });
     if (this.entries.size > CACHE_LIMIT) this.entries.delete(this.entries.keys().next().value!);
   }
+  delete(key: string): void {
+    this.entries.delete(key);
+  }
   clear(): void {
     this.entries.clear();
   }

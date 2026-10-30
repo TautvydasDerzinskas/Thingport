@@ -18,8 +18,8 @@ export type Logo = {
   color: `#${string}` | "currentColor";
   path: string;
   fillRule?: "evenodd";
-  /** Shapes in colours of their own, drawn after `path`. */
-  layers?: readonly { d: string; color: `#${string}` }[];
+  /** Shapes in colours of their own, drawn after `path`; `fillRule` as on the mark itself, for one with holes. */
+  layers?: readonly { d: string; color: `#${string}`; fillRule?: "evenodd" }[];
 };
 
 export type ProviderManifest = {
@@ -143,12 +143,22 @@ export type ProviderUrls = {
 };
 
 /** What the docs say of a provider beyond what its manifest shows (docs/PROVIDER_SETUP.md and the website, written by
- *  scripts/sync-providers.mjs): <id>/docs.ts, read only by the generator, so no package carries it. */
+ *  scripts/sync-providers.mjs): <id>/docs.ts, read by the generator alone -- only `about` reaches the packages, as
+ *  index.generated.ts's ABOUT. */
 export type ProviderDocs = {
   /** Its line in the providers page's list, after its name: what it needs, in short. */
   summary: string;
+  /** The site itself in two or three sentences: who runs it, where it came from, what it's known for -- not what
+   *  Thingport does with it. Shown where a provider is introduced rather than listed, as in Grab's popup for the site
+   *  you're on, so the generator holds it to ABOUT_MAX_CHARS. */
+  about: string;
   /** Its page's description on the website. */
   description: string;
+  /** What sets it apart from the others once it's in Thingport: a title and a sentence or two of plain text, shown on
+   *  its page on the website, so the generator holds them to HIGHLIGHT_MAX_CHARS (48 and 220 characters). `link` is
+   *  the docs page that says more, by its slug on the website with an optional #anchor, as in
+   *  "grab#makeronline-files-only-through-grab". */
+  highlight: { title: string; text: string; link?: string };
   /** The comparison table's Sign-in cell. */
   signIn: string;
   /** The Collections cell, where the site calls its lists something else. */

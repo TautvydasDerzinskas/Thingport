@@ -60,7 +60,8 @@ test("each folder becomes one model: model files as plates, images as previews, 
 
   expect(vase.category_id).toBe(library!.id);
   expect(vase.plates.map((p) => p.filename)).toEqual(["vase.stl"]);
-  expect(vase.preview_images).toEqual([]);
+  // No image of its own; the preview the backend may already have rendered for it doesn't count.
+  expect(vase.preview_images.filter((p) => !p.generated)).toEqual([]);
 
   expect(lamp.category_id).toBe(deeper!.id);
   expect(lamp.plates[0].thumb_url).toBeTruthy();

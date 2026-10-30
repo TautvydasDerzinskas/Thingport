@@ -533,8 +533,9 @@ export function startAiDescriptionRun(userId: string, printIds?: string[]): AiDe
 }
 
 async function runAiDescriptions(userId: string, run: AiDescriptionRun, printIds?: string[]): Promise<void> {
+  // A tool's models are kept as the tool brought them (toolsService.ts).
   const prints = await prisma.print.findMany({
-    where: { userId, ...(printIds ? { id: { in: printIds } } : {}) },
+    where: { userId, toolId: null, ...(printIds ? { id: { in: printIds } } : {}) },
     select: { id: true },
     orderBy: { createdAt: "asc" },
   });

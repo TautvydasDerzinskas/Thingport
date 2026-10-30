@@ -15,6 +15,10 @@ imports a model with its print profiles, imports collections, and keeps them in 
 - Every file of the model, and its print profiles: the one the link points to, all of the designer's, or the
   community's too. Each profile becomes its own 3MF file on the model, tagged with the profile.
 - Models with no print profiles, only the files behind **Download STL/CAD files**, import with those files.
+- The OpenSCAD script behind a model made with **Parametric Model Maker**, kept beside it as a related file so the
+  model can be generated again rather than only printed as its creator set it up. A creator can choose not to share
+  the script, and about two in five don't; MakerWorld answers a request for a withheld one with an empty download
+  rather than a refusal, so Thingport goes by what the model's own file list says instead.
 - Collections, private ones included, through your cookie. MakerWorld rate-limits bulk imports quickly, so collections
   are imported with Thingport Grab, which waits between models, and a synced collection brings in only models added
   from then on.
@@ -49,3 +53,5 @@ and Grab or a fresh paste connects it again.
 ## Limits
 
 - A MakerWorld CAPTCHA or daily download limit pauses imports and syncs until it clears.
+- A model whose script is shared costs one extra download to import, since the script doesn't come with the print
+  profile: MakerWorld only hands out a model's raw files as a separate request.

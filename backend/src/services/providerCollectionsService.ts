@@ -22,11 +22,17 @@ import { NO_PROFILES_TEXT, providerName, providerNames } from "../providers/name
 import { PROVIDERS } from "../providers/registry";
 import type { ProviderAccount, ProviderBrowse } from "../providers/types";
 
-export const BROWSABLE_PROVIDERS = PROVIDER_IDS;
+/** The providers the Browse tab can list: those whose manifest says they have collections or likes. OwlCAD has
+ *  neither -- its gallery is one list, filtered by category -- so it isn't browsable, and has no `browse` module
+ *  for `browseOf` to find. */
+export const BROWSABLE_PROVIDERS = PROVIDER_IDS.filter(
+  (id) => manifestOf(id).capabilities.collections || manifestOf(id).capabilities.likes,
+);
 export type BrowsableProvider = ProviderId;
 
 export type ProviderAccountOut = ProviderAccount;
-export type ProviderAccountsOut = Record<BrowsableProvider, ProviderAccountOut>;
+/** Only the browsable providers have a row: one without a Browse tab has no account to report. */
+export type ProviderAccountsOut = Partial<Record<BrowsableProvider, ProviderAccountOut>>;
 
 export type ProviderCollectionOut = {
   id: string;
@@ -60,7 +66,9 @@ async function providerCall<T>(provider: BrowsableProvider, call: (browse: Provi
 }
 
 export async function getProviderAccounts(userId: string): Promise<ProviderAccountsOut> {
-  const accounts = await Promise.all(PROVIDER_IDS.map(async (id) => [id, await browseOf(id).account(userId)] as const));
+  const accounts = await Promise.all(
+    BROWSABLE_PROVIDERS.map(async (id) => [id, await browseOf(id).account(userId)] as const),
+  );
   return Object.fromEntries(accounts) as ProviderAccountsOut;
 }
 

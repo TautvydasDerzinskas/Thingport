@@ -92,6 +92,13 @@ Open <http://localhost:5173>. **The first account you register becomes the admin
 `backend/src/routes/auth.ts`, which bootstraps the first user as `ADMIN` and everyone after as
 `MEMBER`.
 
+## Tools
+
+Run from the checkout, the backend offers the tools in its own [`tools`](../tools) folder under **Administration →
+Tools**, not the repository's on GitHub, and reads them afresh on each visit: change a tool, refresh, and **Update**
+takes the change. The local `docker-compose.yml` mounts the folder for the same. See the [tools guide](guides/tools.md)
+for using them, and [tool development](TOOL_DEVELOPMENT.md) for writing one.
+
 ## Optional: FlareSolverr
 
 Thingiverse and MyMiniFactory sit behind Cloudflare, and some imports need FlareSolverr to get through. It's optional --
@@ -162,22 +169,61 @@ CI runs it every Saturday at 00:00 UTC (`.github/workflows/regression.yml`). You
 from the Actions tab. When it fails, the HTML report, traces and container logs are uploaded as the
 `regression-report` artifact.
 
+> [!IMPORTANT]
+> **A test that ends a session needs a session of its own, and one that changes the password or deletes the
+> account needs an account of its own.** The pack signs in once, in `tests/admin.setup.ts`, and every spec replays
+> that one token. The backend reads the session row on every request (`backend/src/auth.ts`), so a revoked token
+> stays revoked, and each spec that runs later -- files go in alphabetical order, one at a time -- fails with a 401
+> or sits waiting for a page that has bounced to the sign-in form. Signing out ends only the session it's done in:
+> `logs out` in `tests/auth.spec.ts` is the worked example: it sits in the `signed out` group, which starts from an
+> empty storage state, and signs in first so it has a session to end. A separate storage state isn't enough for
+> the other two, though: changing the password signs the account out everywhere else, and deleting it takes every
+> session with it. Register an account for those, as `tests/consume.spec.ts` does.
+
 ### App screenshots
 
 The README and website screenshots in `frontend/src/assets/screenshots/` are captured from a running
 instance with a populated library, by `regression/screenshots.mjs` (the extension's screenshots
-aren't covered). It signs in, captures every shot at 1400×790 and 2× scale, and overwrites the files.
-The account's theme and Categories/Folders choice are switched for the shots and restored afterwards.
+aren't covered). It signs in, captures every shot in the light and the dark theme at 1400×790 and 2× scale,
+and overwrites the files in `light/` and `dark/`. The account's theme and Categories/Folders choice are switched
+for the shots and restored afterwards, and a shot that can't be taken is reported without stopping the run.
 
 ```bash
 cd regression
-THINGPORT_PASSWORD='…' npm run screenshots -- --url https://thingport.example --email you@example.com
+THINGPORT_PASSWORD='…' npm run screenshots -- --url https://thingport.example --email you@example.com \
+  --model <id> --quality-model <id> --ai-description-model <id>
 npm run screenshots -- --url … --email … --only 03,04     # just some shots
-npm run screenshots -- --url … --email … --model "Benchy" # model for the details and 3D shots
 ```
+
+Models are named by id: one for the details and 3D preview shots, one whose print quality check found problems,
+and one whose description AI rewrote (that shot is skipped without it). The customizer and collection sync shots
+take the library's first model with a script and first synced collection, unless `--generative-model` or
+`--synced-collection` names another.
 
 `--out` writes somewhere else instead, e.g. to compare before replacing. Self-signed certificates
 are accepted.
+
+### Release notes pictures
+
+The What's new pictures are a different set: cropped to the thing each one is about, WebP, and named after the
+release. `regression/release-shots.mjs` captures them from a running instance into `release-notes/screenshots/`,
+the same way, and skips the shots whose tool isn't installed or whose model wasn't named rather than failing the
+run.
+
+```bash
+cd regression
+THINGPORT_PASSWORD='…' npm run release-shots -- --url https://thingport.example --email you@example.com \
+  --model <a multicolour model> --generative-model <a model that came with its script>
+npm run release-shots -- --url … --email … --only tools,admin-tools   # just some shots
+```
+
+A shot's file is what an item's `images` then names, so the two are written together -- an item naming a picture
+nothing captures leaves a gap in the dialog. Thingport Grab's own pictures come from
+`npm --prefix extension run screenshots` instead, and are converted to WebP by hand.
+
+The editor shots (`tools-ai`, `tool-editor`) need **Users' own tools**, a setting for the whole instance. If it's off
+the script turns it on for the run, so everyone who sees tools can make their own meanwhile, and off again at the end.
+A run stopped with Ctrl+C or killed leaves it on, so check **Administration → Tools** after one.
 
 ## Quality checks
 
@@ -257,6 +303,11 @@ ordinary notification (the System tab). To post one, add an entry to `entries` a
 - Entries older than 90 days aren't sent, so old ones can stay in the file or be removed.
 - `SYSTEM_NOTIFICATIONS_URL` points a backend at another file; an empty value turns fetching off.
 
+An entry past those 90 days is spent: no instance will ever be sent it again. Move it to
+[`system-notifications-archive.json`](../system-notifications-archive.json), which nothing fetches, rather than
+deleting it -- the record of what was announced is worth keeping, and an `id` must never be reused. Until an entry
+is that old, leave it where it is: an instance that has been off for a month still has it coming.
+
 ## Release notes (What's new)
 
 The first time a backend starts on a newer version than it last ran, every user gets a notification that opens
@@ -270,7 +321,17 @@ The dialog fetches its content from `main`, so it can be written after the relea
 2. Otherwise `backend/CHANGELOG.md` for that version, with the `frontend/CHANGELOG.md` release that went out with
    it. An instance that skipped versions gets every release since the one it ran before, up to five.
 
-To write the notes for a release, replace the file's contents:
+To write the notes for a release, first copy the current file into
+[`release-notes/archive/`](../release-notes/archive) under the version it names, so the release it describes isn't
+lost when the file is overwritten:
+
+```bash
+cp release-notes/latest-release-notes.json "release-notes/archive/$(node -p 'require("./release-notes/latest-release-notes.json").version').json"
+```
+
+Nothing reads the archive -- an instance that skipped a release still falls back to `CHANGELOG.md` for the ones in
+between -- and an archived file's `images` stay relative to `release-notes/`, where they were read from. Then
+replace the file's contents:
 
 ```json
 {

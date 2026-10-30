@@ -1,4 +1,4 @@
-import { authHeaders } from "../utils/auth";
+import { appendTokenToUrl, authHeaders } from "../utils/auth";
 import { apiBase, assertOk, readErrorMessage, UnauthorizedError } from "./client";
 
 export type WidgetSettingSpec =
@@ -21,7 +21,17 @@ export type WidgetManifest = {
   settings: WidgetSettingSpec[];
   /** The hosts its `thingport.fetch` may reach. */
   hosts: string[];
+  /** The languages it has labels for, as `locales/<code>.json` beside widget.json. */
+  locales: string[];
+  /** Pictures of it at work, which only a widget shared through the repository carries. */
+  screenshots: WidgetScreenshot[];
 };
+
+/** A picture of a shared widget at work, beside its metadata. */
+export type WidgetScreenshot = { file: string; caption?: string };
+
+/** A widget's words by language: `{ "en": { "wind.label": "Wind" } }`. English is the fallback, key by key. */
+export type WidgetLocales = Record<string, Record<string, string>>;
 
 export type CustomWidget = {
   id: string;
@@ -31,6 +41,8 @@ export type CustomWidget = {
   manifest: WidgetManifest;
   script: string;
   html: string | null;
+  /** Its labels by language; `{}` for a widget that ships none. */
+  locales: WidgetLocales;
   sha: string;
   updatedAt: string;
 };
@@ -72,6 +84,10 @@ async function failed(res: Response, fallback: string): Promise<never> {
   throw new Error(await readErrorMessage(res, fallback));
 }
 
+/** One of a community widget's screenshots, by its place in its metadata; an <img> sends the session as ?token=. */
+export const communityScreenshotUrl = (slug: string, index: number): string =>
+  appendTokenToUrl(`${apiBase()}/widgets/community/${encodeURIComponent(slug)}/screenshots/${index}`);
+
 export const widgetsApi = {
   /** Only widgets from the sources an admin allows. */
   list: async (): Promise<{ sources: WidgetSources; widgets: CustomWidget[] }> => {
@@ -86,6 +102,8 @@ export const widgetsApi = {
     metadata: string;
     script: string;
     html: string | null;
+    /** Its words by language, as its `locales/<code>.json` files hold them. */
+    locales?: WidgetLocales;
   }): Promise<CustomWidget> => {
     const res = await fetch(`${apiBase()}/widgets`, {
       method: "PUT",

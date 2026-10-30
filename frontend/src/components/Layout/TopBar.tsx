@@ -6,6 +6,7 @@ import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import MenuIcon from "@mui/icons-material/Menu";
 import type { AuthUser } from "../../api/auth";
 import type { ThemeSelection } from "../../constants/settingsOptions";
 import type { MakerWorldSettings } from "../../utils/settings";
@@ -21,6 +22,8 @@ import { UserMenu } from "./UserMenu";
 import GlobalSearch from "./GlobalSearch";
 
 type Props = {
+  onMenuClick?: () => void;
+  menuOpen?: boolean;
   title: string;
   /** The entity kind, shown under the title so a long name gets the full line. */
   subtitle?: string;
@@ -38,7 +41,10 @@ type Props = {
   onLogout: () => void;
 };
 
+/** Wraps route actions on narrow screens; the shell supplies a menu trigger only when navigation is modal. */
 export default function TopBar({
+  onMenuClick,
+  menuOpen,
   title,
   subtitle,
   onBack,
@@ -81,10 +87,13 @@ export default function TopBar({
     <Box
       ref={rootRef}
       sx={{
-        display: "grid",
-        gridTemplateColumns: "minmax(0, 1fr) auto",
+        display: "flex",
+        // Narrow: every button stays on the first row and only the title drops to a second one of its
+        // own, centred -- so a long name ellipsises in its own space instead of crowding the buttons.
+        flexWrap: { xs: "wrap", md: "nowrap" },
         alignItems: "center",
-        gap: 1.5,
+        columnGap: 1,
+        rowGap: 1,
         // Padding rather than margin so the spacing is part of the pinned, painted box.
         pt: 2,
         pb: 2,
@@ -95,30 +104,50 @@ export default function TopBar({
         bgcolor: (muiTheme) => muiTheme.thingport.pageBackground,
       }}
     >
-      {/* minWidth: 0 overrides the grid item default of `min-width: auto` -- without it, this
-          column refuses to shrink below its content's natural width (the title, mainly), which
-          would push the right column off the edge well before the window actually runs out of room. */}
-      <Stack direction="row" alignItems="center" spacing={1} minWidth={0}>
-        {onBack && (
-          <Tooltip title={t("shell.backToLibrary")}>
-            <IconButton size="small" onClick={onBack}>
-              <ArrowBackIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        )}
-        <Box sx={{ minWidth: 0 }}>
-          <Typography variant="h6" fontWeight={700} noWrap>
-            {title}
+      {onMenuClick && (
+        <IconButton
+          aria-label={t("sidebar.openNavigation")}
+          aria-expanded={Boolean(menuOpen)}
+          onClick={onMenuClick}
+          // The shell only passes a trigger when navigation is modal, which is the narrow layout.
+          sx={{ display: { xs: "inline-flex", md: "none" }, width: 44, height: 44, flexShrink: 0 }}
+        >
+          <MenuIcon />
+        </IconButton>
+      )}
+      {onBack && (
+        <Tooltip title={t("shell.backToLibrary")}>
+          <IconButton size="small" onClick={onBack} sx={{ flexShrink: 0 }}>
+            <ArrowBackIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      )}
+      {/* minWidth: 0 overrides the flex item default of `min-width: auto` -- without it, this box
+          refuses to shrink below its content's natural width, which would push the tools off the
+          edge well before the window actually runs out of room. Narrow, the full width is what
+          breaks the title onto its own row, and `order` puts it after the buttons rather than
+          between them. Wide, it takes only its own width, so the page's actions stay beside the
+          title rather than drifting over to the app's tools. */}
+      <Box
+        sx={{
+          minWidth: 0,
+          order: { xs: 1, md: 0 },
+          width: { xs: "100%", md: "auto" },
+          flex: { md: "0 1 auto" },
+          textAlign: { xs: "center", md: "left" },
+        }}
+      >
+        <Typography variant="h6" fontWeight={700} noWrap>
+          {title}
+        </Typography>
+        {subtitle && (
+          <Typography variant="caption" noWrap sx={{ display: "block", mt: "-4px", color: "text.secondary" }}>
+            {subtitle}
           </Typography>
-          {subtitle && (
-            <Typography variant="caption" noWrap sx={{ display: "block", mt: "-4px", color: "text.secondary" }}>
-              {subtitle}
-            </Typography>
-          )}
-        </Box>
-        {actions}
-      </Stack>
-      <Stack direction="row" alignItems="center" spacing={1} minWidth={0} justifySelf="end">
+        )}
+      </Box>
+      {actions}
+      <Stack direction="row" alignItems="center" spacing={1} minWidth={0} sx={{ ml: "auto", flexShrink: 0 }}>
         <GlobalSearch
           onUnauthorized={onUnauthorized}
           theme={theme}

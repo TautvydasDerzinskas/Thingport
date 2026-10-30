@@ -1,0 +1,971 @@
+<style>
+  /* Everything is under .skp, so none of it reaches the rest of Thingport. The colours are Thingport's own: tool.js
+     sets the variables below from the theme it's given, which is why there is no hex code in here. */
+  .skp {
+    --panel-2: color-mix(in srgb, var(--panel) 92%, var(--text));
+    --panel-3: color-mix(in srgb, var(--panel) 85%, var(--text));
+    --line: var(--divider);
+    --tint: color-mix(in srgb, var(--accent) 14%, transparent);
+    --ease: cubic-bezier(0.2, 0, 0.2, 1);
+    position: relative;
+    container-type: inline-size;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font: 13px/1.45 var(--font);
+  }
+  .skp *,
+  .skp *::before,
+  .skp *::after {
+    box-sizing: border-box;
+  }
+  /* `:where()` holds this reset at the specificity of the root class alone, so a button's own rule further down —
+     the accent-filled one, say — still decides its colour and its weight. Written as `.skp button`, the reset
+     outranks every single-class rule and quietly wins both. */
+  .skp :where(button, input, select) {
+    font: inherit;
+    color: inherit;
+  }
+  .skp :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .skp [hidden] {
+    display: none !important;
+  }
+  .skp svg {
+    flex-shrink: 0;
+  }
+  .skp h2,
+  .skp h3 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .skp code {
+    padding: 0 3px;
+    border-radius: 4px;
+    background: var(--panel-3);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11.5px;
+  }
+
+  /* ---- the bar across the top ---- */
+  .skp-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
+  }
+  .skp-spacer {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .skp-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel-2);
+    cursor: pointer;
+    white-space: nowrap;
+    transition:
+      background 140ms var(--ease),
+      border-color 140ms var(--ease),
+      transform 140ms var(--ease);
+  }
+  .skp-btn:hover:not(:disabled) {
+    background: var(--panel-3);
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  }
+  .skp-btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  .skp-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  .skp-btn-main {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+  }
+  .skp-btn-main:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 85%, var(--text));
+    border-color: color-mix(in srgb, var(--accent) 85%, var(--text));
+  }
+  .skp-btn-on {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+  .skp-icon {
+    width: 30px;
+    padding: 0;
+    justify-content: center;
+  }
+  .skp-danger {
+    color: var(--danger);
+  }
+  .skp-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel-2);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .skp-chip b {
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- the three columns ---- */
+  .skp-main {
+    flex: 1 1 auto;
+    display: grid;
+    gap: 10px;
+    padding: 10px;
+    min-height: 0;
+    grid-template-columns: 272px minmax(0, 1fr) 320px;
+    grid-template-rows: minmax(0, 1fr);
+  }
+  @container (max-width: 1099px) {
+    .skp-main {
+      grid-template-columns: 250px minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr) auto;
+    }
+    .skp-stage {
+      grid-column: 2;
+    }
+    .skp-form {
+      grid-row: span 2;
+    }
+  }
+  @container (max-width: 759px) {
+    .skp-main {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: none;
+      align-content: start;
+    }
+    .skp-form,
+    .skp-stage {
+      grid-column: auto;
+      grid-row: auto;
+    }
+  }
+  .skp-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--panel);
+    overflow: auto;
+    animation: skp-rise 220ms var(--ease) both;
+  }
+  @keyframes skp-rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+  .skp-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 24px;
+  }
+  .skp-hint {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 400;
+  }
+
+  /* ---- the form ---- */
+  .skp-group {
+    display: grid;
+    gap: 7px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .skp-group:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+  .skp-group h3 {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--muted);
+    font-size: 11.5px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .skp-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+    gap: 7px;
+  }
+  .skp-field {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+  }
+  .skp-field > span,
+  .skp-label {
+    color: var(--muted);
+    font-size: 11.5px;
+  }
+  .skp-in {
+    display: flex;
+    align-items: center;
+    height: 28px;
+    padding: 0 7px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--bg);
+    transition: border-color 140ms var(--ease);
+  }
+  .skp-in:focus-within {
+    border-color: var(--accent);
+  }
+  .skp-in input,
+  .skp-in select {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    background: none;
+    outline: none;
+    font-variant-numeric: tabular-nums;
+  }
+  .skp-in select {
+    cursor: pointer;
+  }
+  .skp-in i {
+    color: var(--muted);
+    font-size: 11px;
+    font-style: normal;
+    white-space: nowrap;
+  }
+  .skp-help {
+    width: 15px;
+    height: 15px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: var(--panel-2);
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1;
+    cursor: help;
+  }
+  .skp-help:hover {
+    color: var(--text);
+    border-color: var(--accent);
+  }
+  /* A choice between a few things, as a switchable bar rather than a dropdown. */
+  .skp-seg {
+    display: flex;
+    padding: 2px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--panel-2);
+  }
+  .skp-seg button {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 24px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 7px;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition:
+      background 140ms var(--ease),
+      color 140ms var(--ease);
+  }
+  .skp-seg button[aria-pressed="true"] {
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+  }
+  .skp-note {
+    margin: 0;
+    color: var(--muted);
+    font-size: 11.5px;
+  }
+  .skp-note b {
+    color: var(--text);
+  }
+  .skp-note-bad {
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--danger);
+    border-radius: 8px;
+    background: var(--panel-2);
+    color: var(--text);
+    font-size: 12px;
+  }
+
+  /* ---- the plan ---- */
+  .skp-stage {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--panel);
+    overflow: hidden;
+    animation: skp-rise 220ms var(--ease) both;
+  }
+  .skp-canvas-wrap {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 220px;
+  }
+  .skp-stage canvas {
+    display: block;
+    cursor: grab;
+    touch-action: none;
+  }
+  .skp-tools {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    gap: 4px;
+  }
+  .skp-status {
+    padding: 7px 12px;
+    border-top: 1px solid var(--line);
+    background: var(--panel-2);
+    color: var(--muted);
+    font-size: 11.5px;
+    font-variant-numeric: tabular-nums;
+  }
+  .skp-stage-note {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    color: var(--danger);
+    text-align: center;
+  }
+
+  /* ---- what to print ---- */
+  .skp-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+  }
+  .skp-step {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr);
+    gap: 8px;
+    padding: 7px 8px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--panel-2);
+    animation: skp-in 200ms var(--ease) both;
+  }
+  @keyframes skp-in {
+    from {
+      opacity: 0;
+      transform: translateX(-5px);
+    }
+  }
+  .skp-step-bad {
+    border-color: var(--danger);
+  }
+  .skp-step-n {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--panel-3);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .skp-count {
+    margin-left: 4px;
+    color: var(--accent);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .skp-flag {
+    margin-left: 5px;
+    padding: 0 5px;
+    border: 1px solid color-mix(in srgb, var(--warning) 50%, var(--line));
+    border-radius: 5px;
+    color: var(--warning);
+    font-size: 10.5px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .skp-dim {
+    color: var(--muted);
+    font-size: 11.5px;
+  }
+  .skp-bad {
+    color: var(--danger);
+    font-size: 11.5px;
+  }
+  .skp-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 3px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 11.5px;
+  }
+  .skp-link:hover {
+    text-decoration: underline;
+  }
+  .skp-total {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .skp-total b {
+    color: var(--text);
+  }
+  .skp-sub {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 11.5px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .skp-buy {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 3px;
+    font-variant-numeric: tabular-nums;
+  }
+  .skp-buy b {
+    display: inline-block;
+    min-width: 34px;
+    color: var(--text);
+  }
+  .skp-credit {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .skp-credit b {
+    color: var(--text);
+  }
+  .skp-empty {
+    padding: 12px 2px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  /* ---- the sheets ---- */
+  .skp-sheet {
+    position: absolute;
+    inset: 0;
+    z-index: 8;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: color-mix(in srgb, var(--bg) 70%, transparent);
+    animation: skp-fade 140ms var(--ease) both;
+  }
+  @keyframes skp-fade {
+    from {
+      opacity: 0;
+    }
+  }
+  .skp-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(540px, 100%);
+    max-height: 100%;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--panel);
+    box-shadow: 0 18px 50px color-mix(in srgb, #000 28%, transparent);
+    overflow: auto;
+    animation: skp-pop 200ms var(--ease) both;
+  }
+  @keyframes skp-pop {
+    from {
+      opacity: 0;
+      transform: translateY(10px) scale(0.985);
+    }
+  }
+  .skp-card h2 {
+    font-size: 14px;
+  }
+  .skp-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+    max-height: 46vh;
+    overflow: auto;
+  }
+  .skp-list li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 9px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--panel-2);
+    animation: skp-in 180ms var(--ease) both;
+  }
+  .skp-list li > div:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .skp-list b {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .skp-row-actions {
+    display: flex;
+    gap: 4px;
+  }
+  .skp-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .skp-check {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--muted);
+  }
+  .skp-switch {
+    position: relative;
+    display: inline-flex;
+    flex: 0 0 auto;
+    width: 36px;
+    height: 20px;
+  }
+  .skp-switch input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .skp-switch span {
+    width: 100%;
+    height: 100%;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--panel-3);
+    pointer-events: none;
+    transition:
+      background 160ms var(--ease),
+      border-color 160ms var(--ease);
+  }
+  .skp-switch span::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition:
+      transform 160ms var(--ease),
+      background 160ms var(--ease);
+  }
+  .skp-switch input:checked + span {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .skp-switch input:checked + span::after {
+    transform: translateX(16px);
+    background: var(--accent-ink);
+  }
+  .skp-switch input:focus-visible + span {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* Stacked, the window scrolls rather than each panel: these come last so they win over the rules above. */
+  @container (max-width: 759px) {
+    .skp {
+      overflow: auto;
+    }
+    .skp-main {
+      flex: 0 0 auto;
+      overflow: visible;
+    }
+    .skp-panel,
+    .skp-list {
+      max-height: none;
+      min-height: auto;
+      overflow: visible;
+    }
+    .skp-panel > * {
+      flex: 0 0 auto;
+    }
+    .skp-stage {
+      height: 420px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skp *,
+    .skp *::before,
+    .skp *::after {
+      animation-duration: 1ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 1ms !important;
+    }
+  }
+</style>
+
+<div class="skp">
+  <div class="skp-bar">
+    <button type="button" class="skp-btn skp-btn-main" id="skp-save">
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" />
+        <path d="M17 21v-8H7v8M7 3v5h8" />
+      </svg>
+      <span data-t="bar.save">Save to Thingport</span>
+    </button>
+    <button type="button" class="skp-btn" id="skp-parts">
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+      </svg>
+      <span data-t="bar.partList">Part list</span>
+    </button>
+    <button type="button" class="skp-btn" id="skp-projects-open">
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M3 7h6l2 2h10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+      </svg>
+      <span data-t="bar.plans">Plans</span>
+    </button>
+    <div class="skp-spacer"></div>
+    <div class="skp-chip" id="skp-summary" role="status" aria-live="polite" hidden></div>
+  </div>
+
+  <div class="skp-main">
+    <section class="skp-panel skp-form" aria-labelledby="skp-form-title">
+      <div class="skp-head">
+        <h2 id="skp-form-title"><span data-t="form.theWall">The wall</span></h2>
+      </div>
+      <div id="skp-form-body"></div>
+    </section>
+
+    <section class="skp-stage" data-t-aria="view.plan" aria-label="The plan">
+      <div class="skp-canvas-wrap">
+        <canvas
+          id="skp-canvas"
+          tabindex="0"
+          data-t-aria="view.canvas"
+          aria-label="The wall seen from the front: drag to move it, scroll to zoom"
+        ></canvas>
+        <div class="skp-tools">
+          <button
+            type="button"
+            class="skp-btn skp-icon"
+            id="skp-measure"
+            data-t-title="view.measure"
+            title="Measurements"
+            data-t-aria="view.measureAria"
+            aria-label="Show the measurements"
+            aria-pressed="true"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M2 9h20v6H2Zm4 0v3m4-3v3m4-3v3m4-3v3" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="skp-btn skp-icon"
+            id="skp-mounts"
+            data-t-title="view.mounts"
+            title="Mounting points"
+            data-t-aria="view.mountsAria"
+            aria-label="Show the mounting points"
+            aria-pressed="true"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 2v4m0 12v4M2 12h4m12 0h4" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="skp-btn skp-icon"
+            id="skp-zoom-out"
+            data-t-title="view.zoomOut"
+            title="Zoom out"
+            data-t-aria="view.zoomOut"
+            aria-label="Zoom out"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <path d="M5 12h14" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="skp-btn skp-icon"
+            id="skp-zoom-in"
+            data-t-title="view.zoomIn"
+            title="Zoom in"
+            data-t-aria="view.zoomIn"
+            aria-label="Zoom in"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="skp-btn skp-icon"
+            id="skp-fit"
+            data-t-title="view.fit"
+            title="Fit the wall"
+            data-t-aria="view.fitAria"
+            aria-label="Fit the wall in the view"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M4 9V4h5M20 9V4h-5M4 15v5h5m11-5v5h-5" />
+            </svg>
+          </button>
+        </div>
+        <div class="skp-stage-note" id="skp-stage-note" hidden></div>
+      </div>
+      <div class="skp-status" id="skp-status"></div>
+    </section>
+
+    <section class="skp-panel skp-list-panel" aria-labelledby="skp-list-title">
+      <div class="skp-head">
+        <h2 id="skp-list-title"><span data-t="list.printInThisOrder">Print in this order</span></h2>
+        <div class="skp-spacer"></div>
+        <span class="skp-hint"><span data-t="list.biggestFirst">biggest first</span></span>
+      </div>
+      <div id="skp-list-body"></div>
+    </section>
+  </div>
+
+  <div class="skp-sheet" id="skp-projects" role="dialog" aria-modal="true" aria-labelledby="skp-projects-title" hidden>
+    <div class="skp-card">
+      <div class="skp-head">
+        <h2 id="skp-projects-title"><span data-t="bar.plans">Plans</span></h2>
+        <span class="skp-hint"><span data-t="plans.kept">Kept in the tool, for you</span></span>
+        <div class="skp-spacer"></div>
+        <button
+          type="button"
+          class="skp-btn skp-icon"
+          id="skp-projects-close"
+          data-t-aria="plans.close"
+          aria-label="Close the plans"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </div>
+      <div class="skp-actions">
+        <div class="skp-in" style="flex: 1 1 200px">
+          <input
+            id="skp-project-name"
+            data-t-placeholder="plans.nameThis"
+            placeholder="Name this wall"
+            data-t-aria="plans.nameThis"
+            aria-label="Name this wall"
+          />
+        </div>
+        <button type="button" class="skp-btn skp-btn-main" id="skp-project-save">
+          <span data-t="plans.saveThe">Save the plan</span>
+        </button>
+      </div>
+      <ul class="skp-list" id="skp-projects-list"></ul>
+    </div>
+  </div>
+
+  <div class="skp-sheet" id="skp-save-sheet" role="dialog" aria-modal="true" aria-labelledby="skp-save-title" hidden>
+    <div class="skp-card">
+      <div class="skp-head">
+        <h2 id="skp-save-title"><span data-t="save.title">Save the plan to your library</span></h2>
+        <div class="skp-spacer"></div>
+        <button
+          type="button"
+          class="skp-btn skp-icon"
+          id="skp-save-close"
+          data-t-aria="common.close"
+          aria-label="Close"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </div>
+      <label class="skp-field"
+        ><span><span data-t="save.callIt">Call it</span></span>
+        <div class="skp-in"><input id="skp-save-name" data-t-aria="save.nameLabel" aria-label="Name" /></div
+      ></label>
+      <p class="skp-note">
+        <span data-t="save.note"
+          >One model with a plate for every part, in print order, each at its true size — a picture of the plan is its
+          cover and the print order is in its notes. The parts themselves stay where they came from: these plates are
+          the plan, not AU3D's files.</span
+        >
+      </p>
+      <label class="skp-check"
+        ><span class="skp-switch"><input type="checkbox" id="skp-save-collect" /><span></span></span>
+        <span data-t="save.putItIn">Put it in a collection</span></label
+      >
+      <div class="skp-actions">
+        <div class="skp-spacer"></div>
+        <button type="button" class="skp-btn skp-btn-main" id="skp-save-go">
+          <span data-t="plans.save">Save it</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

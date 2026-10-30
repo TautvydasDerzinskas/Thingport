@@ -1,0 +1,402 @@
+<style>
+  /* Everything is under .osc, so none of it reaches the rest of Thingport. The colours are Thingport's own:
+     tool.js sets the variables below from the theme it's given, which is why there is no hex code in here. */
+  .osc {
+    --panel-2: color-mix(in srgb, var(--panel) 92%, var(--text));
+    --line: var(--divider);
+    --tint: color-mix(in srgb, var(--accent) 14%, transparent);
+    --ease: cubic-bezier(0.2, 0, 0.2, 1);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font: 13px/1.45 var(--font);
+  }
+  .osc *,
+  .osc *::before,
+  .osc *::after {
+    box-sizing: border-box;
+  }
+  /* `:where()` holds this reset at the specificity of the root class alone, so a button's own rule further down
+     still decides its colour and its weight. */
+  .osc :where(button, input, select) {
+    font: inherit;
+    color: inherit;
+  }
+  .osc :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .osc [hidden] {
+    display: none !important;
+  }
+
+  .osc-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
+  }
+  .osc-bar .osc-grow {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .osc-title {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .osc-sub {
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .osc-body {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .osc-side {
+    width: 330px;
+    flex: 0 0 auto;
+    overflow: auto;
+    border-right: 1px solid var(--line);
+    background: var(--panel);
+  }
+  .osc-main {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  /* The window is narrow: the parameters go above the preview rather than beside it. */
+  @container (max-width: 720px) {
+    .osc-body {
+      flex-direction: column;
+    }
+    .osc-side {
+      width: auto;
+      max-height: 45%;
+      border-right: 0;
+      border-bottom: 1px solid var(--line);
+    }
+  }
+
+  .osc-group {
+    border-bottom: 1px solid var(--line);
+  }
+  .osc-group > summary {
+    cursor: pointer;
+    padding: 9px 12px;
+    font-weight: 600;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    user-select: none;
+  }
+  .osc-group > summary::-webkit-details-marker {
+    display: none;
+  }
+  .osc-group > summary::before {
+    content: "";
+    width: 0;
+    height: 0;
+    border: 4px solid transparent;
+    border-left-color: currentColor;
+    transition: transform 160ms var(--ease);
+  }
+  .osc-group[open] > summary::before {
+    transform: rotate(90deg) translateX(-1px);
+  }
+  .osc-fields {
+    padding: 2px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .osc-field > .osc-label {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .osc-field .osc-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .osc-field .osc-value {
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .osc-help {
+    all: unset;
+    cursor: help;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 13px;
+    text-align: center;
+    flex: 0 0 auto;
+  }
+  .osc-help:hover,
+  .osc-help:focus-visible {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .osc input[type="text"],
+  .osc input[type="number"],
+  .osc select {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--bg);
+  }
+  .osc input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+  }
+  .osc input[type="color"] {
+    display: block;
+    width: 100%;
+    height: 30px;
+    padding: 2px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--bg);
+    cursor: pointer;
+  }
+  .osc-file {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .osc-file-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .osc-file-clear {
+    all: unset;
+    cursor: pointer;
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    color: var(--muted);
+    line-height: 20px;
+    text-align: center;
+    transition:
+      background 140ms var(--ease),
+      color 140ms var(--ease);
+  }
+  .osc-file-clear:hover {
+    background: var(--tint);
+    color: var(--text);
+  }
+  .osc-segmented {
+    display: flex;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .osc-segmented button {
+    all: unset;
+    flex: 1 1 0;
+    min-width: 0;
+    text-align: center;
+    padding: 5px 6px;
+    cursor: pointer;
+    transition:
+      background 140ms var(--ease),
+      color 140ms var(--ease);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .osc-segmented button + button {
+    border-left: 1px solid var(--line);
+  }
+  .osc-segmented button[aria-pressed="true"] {
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+  }
+  .osc-switch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .osc-switch input {
+    accent-color: var(--accent);
+    width: 16px;
+    height: 16px;
+  }
+
+  .osc-btn {
+    all: unset;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    white-space: nowrap;
+    transition:
+      background 140ms var(--ease),
+      border-color 140ms var(--ease);
+  }
+  .osc-btn:hover:not(:disabled) {
+    background: var(--tint);
+    border-color: var(--accent);
+  }
+  .osc-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  .osc-btn.is-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+  }
+  .osc-btn.is-primary:hover:not(:disabled) {
+    filter: brightness(1.08);
+  }
+
+  .osc-view {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    background: var(--bg);
+  }
+  .osc-view canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+  }
+  .osc-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    color: var(--muted);
+  }
+  .osc-busy {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: color-mix(in srgb, var(--bg) 76%, transparent);
+    backdrop-filter: blur(1px);
+  }
+  .osc-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--line);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: osc-spin 720ms linear infinite;
+  }
+  @keyframes osc-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  .osc-foot {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    border-top: 1px solid var(--line);
+    background: var(--panel);
+  }
+  .osc-notes {
+    margin: 0;
+    padding: 8px 12px;
+    border-top: 1px solid var(--line);
+    background: var(--panel-2);
+    color: var(--muted);
+    max-height: 90px;
+    overflow: auto;
+    font-size: 12px;
+  }
+  .osc-notes li {
+    margin-left: 14px;
+  }
+
+  /* Everything that moves does so briefly, and not at all for a reader who would rather it didn't. */
+  @media (prefers-reduced-motion: reduce) {
+    .osc *,
+    .osc *::before {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>
+
+<div class="osc">
+  <div class="osc-bar">
+    <div class="osc-grow">
+      <div class="osc-title" id="osc-name" data-t="empty.none">No script yet</div>
+      <div class="osc-sub" id="osc-where"></div>
+    </div>
+    <select id="osc-script" hidden aria-label="Script"></select>
+    <button class="osc-btn" id="osc-pick" data-t="bar.pick">Choose a model…</button>
+    <button class="osc-btn" id="osc-open" data-t="bar.open">Open a script…</button>
+  </div>
+
+  <div class="osc-body">
+    <div class="osc-side" id="osc-side"></div>
+    <div class="osc-main">
+      <div class="osc-view" id="osc-view">
+        <div class="osc-empty" id="osc-empty">
+          <div data-t="empty.title">Nothing to customise yet</div>
+          <div class="osc-sub" data-t="empty.hint">
+            Choose a model that came with the script it was generated from, or open a .scad file.
+          </div>
+        </div>
+        <div class="osc-busy" id="osc-busy" hidden>
+          <span class="osc-spinner"></span>
+          <span data-t="busy.generating">Generating…</span>
+        </div>
+      </div>
+      <ul class="osc-notes" id="osc-notes" hidden></ul>
+      <div class="osc-foot">
+        <span class="osc-sub osc-grow" id="osc-status"></span>
+        <button class="osc-btn" id="osc-saved" data-t="foot.openSaved" hidden>Open the model</button>
+        <button class="osc-btn" id="osc-reset" data-t="foot.reset" disabled>Reset</button>
+        <button class="osc-btn" id="osc-download" data-t="foot.download" disabled>Download</button>
+        <button class="osc-btn is-primary" id="osc-generate" data-t="foot.generate" disabled>Generate</button>
+        <button class="osc-btn is-primary" id="osc-save" data-t="foot.save" disabled>Save to Thingport</button>
+      </div>
+    </div>
+  </div>
+</div>

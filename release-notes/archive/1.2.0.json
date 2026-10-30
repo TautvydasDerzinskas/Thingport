@@ -1,0 +1,107 @@
+{
+  "version": "1.2.0",
+  "title": "Catch print problems before you slice",
+  "summary": "Thingport now checks your models for the problems that ruin prints. You can also ask an AI assistant about your library, give Thingport your own colours (now in Spanish and French too), and tidy collections and tags in bulk.",
+  "items": [
+    {
+      "type": "feature",
+      "highlight": true,
+      "title": "Print quality checks",
+      "description": "The first time you open a model, each STL, OBJ and 3MF file is checked for holes, non-manifold edges, flipped or inside-out faces, loose fragments, missing 3MF parts, damaged files and sizes that suggest the wrong unit. A tick or a warning appears next to 3D Preview. Click it for a report that explains each problem and how serious it is. Admins can turn the checks off, all at once or one at a time, under Administration → Rendering.",
+      "images": [
+        { "src": "screenshots/1.2.0-quality-scan.webp", "caption": "Checking a model while you look at it" },
+        { "src": "screenshots/1.2.0-quality-report.webp", "caption": "The report explains what each problem means" }
+      ]
+    },
+    {
+      "type": "feature",
+      "highlight": true,
+      "title": "Ask an AI assistant about your library",
+      "description": "Thingport speaks MCP, so Claude and other assistants can search and read your library (\"which of my models are articulated dragons?\") and, if you let them, import models into collections. Generate an API token in Profile, pick its tools under Token permissions, then connect. The Profile page shows this command with your address and token already filled in:",
+      "code": "claude mcp add --transport http thingport https://thingport.example.com/api/mcp --header \"Authorization: Bearer tp_your_token\"",
+      "images": [{ "src": "screenshots/1.2.0-mcp-permissions.webp", "caption": "Allow or deny each tool per token" }],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/mcp.md"
+    },
+    {
+      "type": "feature",
+      "title": "Your colours",
+      "description": "Pick an accent in Configuration → Appearance: Thingport green, a new graphite, or a provider's brand colour. It recolours the app and its logo, and tints model renders, dashboard lists, tag tiles and the 3D preview. Renders can also have a colour of their own, and model cards can show 3D renders instead of photos for a uniform grid.",
+      "images": [
+        { "src": "screenshots/1.2.0-appearance.webp", "caption": "Accent, render colour and model cards" },
+        { "src": "screenshots/1.2.0-accent-renders.webp", "caption": "3D renders tinted with the accent" }
+      ]
+    },
+    {
+      "type": "feature",
+      "title": "Sort, select and merge collections and tags",
+      "description": "Collections sort by newest, name or most models, and tags can now sort by newest. Select several to bookmark, delete or merge them. Before a merge, you see which one is kept, what is removed and which syncs stop.",
+      "images": [{ "src": "screenshots/1.2.0-merge.webp", "caption": "A merge shows what will change first" }]
+    },
+    {
+      "type": "feature",
+      "title": "Español and Français",
+      "description": "Thingport now speaks Spanish and French as well as English and Lithuanian. Pick a language at the top of Configuration → Appearance."
+    },
+    {
+      "type": "feature",
+      "title": "Choose what an API token can read",
+      "description": "Dashboards and launchers such as Homarr read only the parts of your library you allow, set in the same Token permissions dialog. Existing tokens keep full access, so nothing that already uses one stops working."
+    },
+    {
+      "type": "feature",
+      "title": "Pictures and files stay with their model",
+      "description": "A model's pictures, renders and supporting files now go in an Images folder next to its model files. They follow your storage template and move with the model. Existing libraries are moved over automatically on the first start."
+    },
+    {
+      "type": "feature",
+      "title": "MakerWorld models with only STL/CAD files",
+      "description": "Listings with no print profiles, only the files behind \"Download STL/CAD files\", now import instead of failing."
+    },
+    {
+      "type": "feature",
+      "title": "Reset to defaults",
+      "description": "Restore your appearance settings in one click, or reset categories to the starter tree after previewing exactly what changes."
+    },
+    {
+      "type": "feature",
+      "title": "What's new after every update",
+      "description": "You're reading it. Admins can open it again any time from Update Checker in Administration."
+    },
+    {
+      "type": "improvement",
+      "title": "Faster model listings: only the files on the page you're viewing are loaded"
+    },
+    {
+      "type": "improvement",
+      "title": "The dashboard's top providers show each provider's logo and name"
+    },
+    {
+      "type": "improvement",
+      "title": "AI assistants get your most used tags with their counts and can search them, instead of the whole list at once"
+    },
+    {
+      "type": "fix",
+      "title": "Names with accents or non-Latin letters stay readable in zip downloads, and when the zip is imported back"
+    },
+    {
+      "type": "fix",
+      "title": "Reasoning AI models no longer use up their budget thinking and cut their answer short"
+    },
+    {
+      "type": "fix",
+      "title": "AI description suggestions for imported models are no longer lost while the import is still adding pictures"
+    },
+    {
+      "type": "fix",
+      "title": "A theme or accent that fails to save goes back to your saved one"
+    },
+    {
+      "type": "fix",
+      "title": "Editing tags at the same time from two places no longer loses changes"
+    },
+    {
+      "type": "fix",
+      "title": "Many missing Spanish and French translations filled in"
+    }
+  ]
+}

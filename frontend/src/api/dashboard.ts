@@ -7,6 +7,8 @@ export type DashboardModel = {
   id: string;
   name: string;
   thumb_url: string | null;
+  /** The model's own picture, where it has one: null for a model we have nothing but our own render of. */
+  photo_url: string | null;
   /** The first plate's render for the browser to tint; asking for one that isn't ready queues it. */
   render_url: string | null;
   view_count: number;

@@ -3,33 +3,46 @@ import { Image } from "astro:assets";
 import { getCollection } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Icon from "../components/Icon.astro";
-import { LINKS, SITE_DESCRIPTION, SITE_NAME } from "../lib/site.mjs";
+import { LINKS, PROVIDER_NAMES, SITE_DESCRIPTION, SITE_NAME } from "../lib/site.mjs";
 import { formatDate, url } from "../lib/url";
-import dashboard from "../../../frontend/src/assets/screenshots/01_dashboard.png";
-import dashboardDark from "../../../frontend/src/assets/screenshots/09_dark_theme.png";
-import models from "../../../frontend/src/assets/screenshots/02_models.png";
-import modelDetails from "../../../frontend/src/assets/screenshots/03_model_details.png";
-import preview3d from "../../../frontend/src/assets/screenshots/04_model_details_3d_preview.png";
-import collections from "../../../frontend/src/assets/screenshots/05_collections.png";
-import profile from "../../../frontend/src/assets/screenshots/10_profile.png";
-import configProviders from "../../../frontend/src/assets/screenshots/11_configuration_providers.png";
+import dashboard from "../../../frontend/src/assets/screenshots/light/01_dashboard.png";
+import dashboardDark from "../../../frontend/src/assets/screenshots/dark/01_dashboard.png";
+import configProviders from "../../../frontend/src/assets/screenshots/light/03_dashboard_configuration.png";
+import configProvidersDark from "../../../frontend/src/assets/screenshots/dark/03_dashboard_configuration.png";
+import models from "../../../frontend/src/assets/screenshots/light/04_models.png";
+import modelsDark from "../../../frontend/src/assets/screenshots/dark/04_models.png";
+import modelDetails from "../../../frontend/src/assets/screenshots/light/06_model_details.png";
+import modelDetailsDark from "../../../frontend/src/assets/screenshots/dark/06_model_details.png";
+import preview3d from "../../../frontend/src/assets/screenshots/light/07_model_3d_preview.png";
+import preview3dDark from "../../../frontend/src/assets/screenshots/dark/07_model_3d_preview.png";
+import collections from "../../../frontend/src/assets/screenshots/light/09_collections.png";
+import collectionsDark from "../../../frontend/src/assets/screenshots/dark/09_collections.png";
+import profile from "../../../frontend/src/assets/screenshots/light/14_profile.png";
+import profileDark from "../../../frontend/src/assets/screenshots/dark/14_profile.png";
+import toolWindow from "../../../frontend/src/assets/screenshots/light/32_tool_window.png";
+import toolWindowDark from "../../../frontend/src/assets/screenshots/dark/32_tool_window.png";
+import customize from "../../../frontend/src/assets/screenshots/light/35_model_customize.png";
+import customizeDark from "../../../frontend/src/assets/screenshots/dark/35_model_customize.png";
 import grabPrintables from "../../../extension/docs/screenshots/panel-printables.jpg";
+import grabPrintablesDark from "../../../extension/docs/screenshots/panel-printables-dark.jpg";
+
+const otherSites = PROVIDER_NAMES.length - 3;
 
 const FEATURES = [
   {
     icon: "import",
     title: "Import from anywhere",
-    text: "Paste a MakerWorld, Printables, Thingiverse or MyMiniFactory link, or bring in whole collections and likes at once, and keep them in sync. Already have a library? Upload folders and ZIPs, or copy it into a watched folder.",
+    text: `Paste a link from MakerWorld, Printables, Thingiverse or ${otherSites} other sites, or bring in whole collections and likes at once, and keep them in sync. Already have a library? Upload folders and ZIPs, or copy it into a watched folder.`,
   },
   {
     icon: "cube",
     title: "3D preview in the browser",
-    text: "Spin STL, 3MF, STEP and OBJ files without opening a slicer. Multi-plate 3MF projects get a thumbnail for every plate, and STL, OBJ and 3MF files are checked for print problems when you first open the model.",
+    text: "Spin STL, 3MF, STEP and OBJ files without opening a slicer, multicolour ones in their own colours. Multi-plate 3MF projects get a thumbnail for every plate, and STL, OBJ and 3MF files are checked for print problems when you first open the model.",
   },
   {
     icon: "folder",
     title: "Organized your way",
-    text: "Nested categories, collections, tags, favourites and browsing history, plus full-text search across everything you've saved.",
+    text: "Nested categories, collections, tags, favourites and browsing history, a filter by site, plus full-text search across everything you've saved.",
   },
   {
     icon: "printer",
@@ -37,9 +50,14 @@ const FEATURES = [
     text: "Keep instructions and sliced prints next to the model, and open files straight in Bambu Studio, OrcaSlicer, PrusaSlicer, Cura and other popular slicers.",
   },
   {
+    icon: "wrench",
+    title: "Tools that build models",
+    text: "Small apps in windows of their own: planners for Multiboard, Gridfinity and Skadis, QR code and keyring generators, a print cost estimator and more. A model that came with its OpenSCAD script can be changed and generated again, right in your browser.",
+  },
+  {
     icon: "server",
     title: "Your files, on your disk",
-    text: "Models are stored as plain files in a folder layout you choose, not in a black box. Change the layout later and existing files are moved to match.",
+    text: "Models are stored as plain files in a folder layout you choose, not in a black box. Change the layout later and existing files are moved to match, and if they ever go missing, Thingport can fetch them again from the sites they came from.",
   },
   {
     icon: "sparkle",
@@ -52,9 +70,9 @@ const FEATURES = [
     text: "Multiple accounts, open or invite-only sign-up, single sign-on through your own OIDC provider, light and dark themes with an accent colour of your own, and English, Spanish, French and Lithuanian out of the box.",
   },
   {
-    icon: "sliders",
+    icon: "shield",
     title: "Admin in the browser",
-    text: "System Health, users and logs, providers you can switch off, storage layout and AI models, all from the Administration pages.",
+    text: "System Health, users and logs, providers you can switch off, storage layout, AI models and tools, all from the Administration pages.",
   },
 ] as const;
 
@@ -91,8 +109,8 @@ const jsonLd = [
       <span class="eyebrow">Free · Open source · Self-hosted</span>
       <h1>Your personal <span class="accent">3D model library</span></h1>
       <p class="lead">
-        Collect, organize and preview the 3D printing models you find on MakerWorld, Printables, Thingiverse and
-        MyMiniFactory, in one library that runs on your own server.
+        Collect, organize and preview the 3D printing models you find on MakerWorld, Printables, Thingiverse and{" "}
+        {otherSites} other sites, in one library that runs on your own server.
       </p>
       <div class="ctas">
         <a class="btn btn-primary" href={url("docs/install/")}>Install Thingport <Icon name="arrow" /></a>
@@ -107,7 +125,7 @@ const jsonLd = [
         <Image
           class="only-light"
           src={dashboard}
-          alt="The Thingport dashboard, showing library stats, recent imports and top authors"
+          alt="The Thingport dashboard: clock, weather, uptime and server load, links to model sites, the top printed models and the Thingport blog"
           widths={[640, 960, 1280, 1600]}
           sizes="(min-width: 72rem) 70rem, 100vw"
           loading="eager"
@@ -116,7 +134,7 @@ const jsonLd = [
         <Image
           class="only-dark"
           src={dashboardDark}
-          alt="The Thingport dashboard in the dark theme"
+          alt="The Thingport dashboard: clock, weather, uptime and server load, links to model sites, the top printed models and the Thingport blog"
           widths={[640, 960, 1280, 1600]}
           sizes="(min-width: 72rem) 70rem, 100vw"
         />
@@ -130,7 +148,7 @@ const jsonLd = [
       <strong>MakerWorld</strong>
       <strong>Printables</strong>
       <strong>Thingiverse</strong>
-      <strong>MyMiniFactory</strong>
+      <a class="more-sites" href={url("docs/providers/")}>+{otherSites} more</a>
       <span class="muted">and your own</span>
       <strong>STL · 3MF · STEP · OBJ · ZIP</strong>
     </div>
@@ -172,15 +190,30 @@ const jsonLd = [
       <div class="gallery">
         {
           [
-            { img: models, caption: "Browse and filter the library" },
-            { img: modelDetails, caption: "Every model's files, photos and source" },
-            { img: preview3d, caption: "Inspect models in 3D" },
-            { img: collections, caption: "Group models into collections" },
-            { img: profile, caption: "Look back on your activity" },
-            { img: configProviders, caption: "Connect the sites you import from" },
-          ].map(({ img, caption }) => (
+            { img: models, dark: modelsDark, caption: "Browse and filter the library" },
+            { img: modelDetails, dark: modelDetailsDark, caption: "Every model's files, photos and source" },
+            { img: preview3d, dark: preview3dDark, caption: "Inspect models in 3D" },
+            { img: customize, dark: customizeDark, caption: "Change a model and generate it again" },
+            { img: collections, dark: collectionsDark, caption: "Group models into collections" },
+            { img: toolWindow, dark: toolWindowDark, caption: "Tools that make things to print" },
+            { img: profile, dark: profileDark, caption: "Look back on your activity" },
+            { img: configProviders, dark: configProvidersDark, caption: "Connect the sites you import from" },
+          ].map(({ img, dark, caption }) => (
             <figure class="shot">
-              <Image src={img} alt={caption} widths={[480, 800, 1100]} sizes="(min-width: 48rem) 34rem, 100vw" />
+              <Image
+                class="only-light"
+                src={img}
+                alt={caption}
+                widths={[480, 800, 1100]}
+                sizes="(min-width: 48rem) 34rem, 100vw"
+              />
+              <Image
+                class="only-dark"
+                src={dark}
+                alt={caption}
+                widths={[480, 800, 1100]}
+                sizes="(min-width: 48rem) 34rem, 100vw"
+              />
               <figcaption>{caption}</figcaption>
             </figure>
           ))
@@ -196,9 +229,9 @@ const jsonLd = [
         <h2>Save a model without leaving the page you found it on</h2>
         <p>
           <strong>Thingport Grab</strong> is a browser extension for Chrome, Edge and Firefox. It adds an import button to
-          MakerWorld, Printables, Thingiverse and MyMiniFactory model pages, and picks up your MakerWorld login for you. Even
-          without Thingport, it adds a “Download normalized” button to MakerWorld that converts Bambu Studio projects for
-          PrusaSlicer, Cura and other slicers, right in your browser.
+          model pages on all {PROVIDER_NAMES.length} sites, pairs with your Thingport without saving a password, and hands
+          it your sign-in on the sites that need one. Even without Thingport, it adds a “Download normalized” button to MakerWorld
+          that converts Bambu Studio projects for PrusaSlicer, Cura and other slicers, right in your browser.
         </p>
         <p>
           <strong>Thingport Bridge</strong> is a small desktop helper that lets “Open in slicer” launch Bambu Studio, PrusaSlicer,
@@ -211,7 +244,15 @@ const jsonLd = [
       </div>
       <div class="shot">
         <Image
+          class="only-light"
           src={grabPrintables}
+          alt="Thingport Grab's import panel on a Printables model page"
+          widths={[480, 800, 1100]}
+          sizes="(min-width: 48rem) 34rem, 100vw"
+        />
+        <Image
+          class="only-dark"
+          src={grabPrintablesDark}
           alt="Thingport Grab's import panel on a Printables model page"
           widths={[480, 800, 1100]}
           sizes="(min-width: 48rem) 34rem, 100vw"
@@ -313,7 +354,11 @@ const jsonLd = [
     font-size: clamp(2.3rem, 7vw, 4rem);
     margin-bottom: 1.25rem;
   }
+  /* The link green in light, where the brand green is too faint to read; dark keeps the brand green. */
   .accent {
+    color: var(--link);
+  }
+  :global(:root[data-theme="dark"]) .accent {
     color: var(--accent);
   }
   .lead {
@@ -348,6 +393,8 @@ const jsonLd = [
     display: block;
     width: 100%;
     height: auto;
+    /* .only-dark's display: revert makes the dark one inline; this keeps it flush with the frame. */
+    vertical-align: bottom;
   }
   .hero-shot {
     margin-top: clamp(2.5rem, 6vw, 4rem);
@@ -366,11 +413,14 @@ const jsonLd = [
     gap: 0.5rem 1.25rem;
     padding-block: 1.25rem;
   }
-  .sources strong {
-    color: var(--heading);
+  .sources strong,
+  .more-sites {
     font-family: var(--font-display);
     font-weight: 500;
     font-size: 1.1rem;
+  }
+  .sources strong {
+    color: var(--heading);
   }
   .feature-grid,
   .steps,

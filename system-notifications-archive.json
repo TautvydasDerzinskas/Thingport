@@ -1,0 +1,5 @@
+{
+  "_comment": "Spent entries moved out of system-notifications.json. Nothing fetches this file; it keeps the record of what was announced. See docs/DEVELOPMENT.md#system-notifications.",
+  "notifications": [],
+  "entries": []
+}

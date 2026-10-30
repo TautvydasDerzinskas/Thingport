@@ -40,21 +40,74 @@
   }
 }
 
-// Single sign-on, offered under the password form only by instances that support connecting by approval.
-.sso {
-  &__divider {
-    display: flex;
-    align-items: center;
-    gap: t.$space-2;
-    margin-top: t.$space-3;
-    color: t.c("text-muted");
-    font-size: 12px;
+// The older way in, under the Pair button that leads: one quiet line rather than a second form on show.
+.alt {
+  display: flex;
+  align-items: center;
+  gap: t.$space-2;
+  margin-top: t.$space-3;
+  color: t.c("text-muted");
+  font-size: 12px;
 
-    &::before,
-    &::after {
-      content: "";
-      flex: 1;
-      border-top: 1px solid t.c("border");
+  &::before,
+  &::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid t.c("border");
+  }
+}
+
+// The password form once it's out: it replaces the "or" rule above it, so it carries the line itself.
+.credentials {
+  margin-top: t.$space-3;
+  padding-top: t.$space-3;
+  border-top: 1px solid t.c("border");
+  animation: credentials-in 0.18s ease;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@keyframes credentials-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+// While Thingport's approval tab is open, so the wait reads as a wait.
+.note--pending {
+  display: flex;
+  align-items: center;
+  gap: t.$space-2;
+  color: t.c("text");
+
+  &::before {
+    content: "";
+    flex: none;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: t.c("accent");
+    animation: pair-wait 1.4s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::before {
+      animation: none;
     }
+  }
+}
+
+@keyframes pair-wait {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.7);
   }
 }

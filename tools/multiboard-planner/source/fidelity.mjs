@@ -1,0 +1,390 @@
+// Measures a generated plate against one of the plates the planner fetches, so plate.scad can be checked
+// rather than eyeballed. Everything here works off the mesh itself: no CAD kernel, no dependencies.
+//
+//   node source/fidelity.mjs <original.stl> <generated.stl>
+//
+// The fetched plates are not in the repository (Multiboard's licence covers them), so point the first
+// argument at an installed copy, under <storage>/tools/multiboard-planner/<sha>/<key>/files/.
+//
+// What it reports, and why each one matters:
+//   bounding box      the plate must be exactly cells x 25 mm and 6.2 mm thick, or it will not tile
+//   slice area + IoU  how much of each cross-section agrees, which catches wall thickness and taper errors
+//   hole lattice      every multihole and pegboard hole present, in the right place
+//   bore profile      the radii and thread lead a bolt or snap actually engages with
+
+import fs from "node:fs";
+
+/* ---- mesh ---------------------------------------------------------------------------------------------- */
+
+export function readStl(file) {
+  const buf = fs.readFileSync(file);
+  const n = buf.readUInt32LE(80);
+  if (buf.length !== 84 + n * 50) throw new Error(`${file}: not a binary STL`);
+  const tri = new Float32Array(n * 9);
+  for (let i = 0; i < n; i++) {
+    const o = 84 + i * 50 + 12;
+    for (let k = 0; k < 9; k++) tri[i * 9 + k] = buf.readFloatLE(o + k * 4);
+  }
+  return { n, tri };
+}
+
+export function bounds({ n, tri }) {
+  const mn = [Infinity, Infinity, Infinity],
+    mx = [-Infinity, -Infinity, -Infinity];
+  for (let i = 0; i < n * 9; i += 3)
+    for (let c = 0; c < 3; c++) {
+      const v = tri[i + c];
+      if (v < mn[c]) mn[c] = v;
+      if (v > mx[c]) mx[c] = v;
+    }
+  return { mn, mx, size: mx.map((v, i) => v - mn[i]) };
+}
+
+/** Segments where the mesh crosses z = k, flat as [x1,y1,x2,y2,...]. */
+export function segmentsAt({ n, tri }, k) {
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const o = i * 9,
+      z = [tri[o + 2], tri[o + 5], tri[o + 8]];
+    if (!(z.some((v) => v > k) && z.some((v) => v < k))) continue;
+    const hits = [];
+    for (let e = 0; e < 3; e++) {
+      const f = (e + 1) % 3;
+      const az = z[e],
+        bz = z[f];
+      if ((az < k && bz < k) || (az > k && bz > k) || az === bz) continue;
+      const t = (k - az) / (bz - az);
+      if (t < 0 || t > 1) continue;
+      hits.push([
+        tri[o + e * 3] + t * (tri[o + f * 3] - tri[o + e * 3]),
+        tri[o + e * 3 + 1] + t * (tri[o + f * 3 + 1] - tri[o + e * 3 + 1]),
+      ]);
+    }
+    const u = [];
+    for (const h of hits) if (!u.some((p) => Math.hypot(p[0] - h[0], p[1] - h[1]) < 1e-9)) u.push(h);
+    if (u.length === 2) out.push(u[0][0], u[0][1], u[1][0], u[1][1]);
+  }
+  return out;
+}
+
+/** Occupancy raster of the slice at z. Scanline even-odd, so helical thread sections need no chaining. */
+export function raster(mesh, z, box, cell) {
+  const segs = segmentsAt(mesh, z);
+  const nx = Math.ceil(box.w / cell),
+    ny = Math.ceil(box.h / cell);
+  const grid = new Uint8Array(nx * ny);
+  const rows = new Map();
+  for (let s = 0; s < segs.length; s += 4) {
+    const lo = Math.max(0, Math.ceil((Math.min(segs[s + 1], segs[s + 3]) - box.y0) / cell - 0.5));
+    const hi = Math.min(ny - 1, Math.floor((Math.max(segs[s + 1], segs[s + 3]) - box.y0) / cell - 0.5));
+    for (let r = lo; r <= hi; r++) {
+      if (!rows.has(r)) rows.set(r, []);
+      rows.get(r).push(s);
+    }
+  }
+  const xs = [];
+  for (const [r, list] of rows) {
+    const y = box.y0 + (r + 0.5) * cell;
+    xs.length = 0;
+    for (const s of list) {
+      const x1 = segs[s],
+        y1 = segs[s + 1],
+        x2 = segs[s + 2],
+        y2 = segs[s + 3];
+      if ((y1 <= y && y2 > y) || (y2 <= y && y1 > y)) xs.push(x1 + ((y - y1) / (y2 - y1)) * (x2 - x1));
+    }
+    if (xs.length < 2) continue;
+    xs.sort((a, b) => a - b);
+    for (let i = 0; i + 1 < xs.length; i += 2) {
+      const a = Math.max(0, Math.ceil((xs[i] - box.x0) / cell - 0.5));
+      const b = Math.min(nx - 1, Math.floor((xs[i + 1] - box.x0) / cell - 0.5));
+      for (let c = a; c <= b; c++) grid[r * nx + c] = 1;
+    }
+  }
+  return { grid, nx, ny, cell };
+}
+
+/** Enclosed empty regions: the holes, with where each sits and how big it is. */
+export function holes({ grid, nx, ny, cell }, box) {
+  const seen = new Uint8Array(nx * ny),
+    out = [],
+    stack = [];
+  for (let y0 = 0; y0 < ny; y0++)
+    for (let x0 = 0; x0 < nx; x0++) {
+      const i0 = y0 * nx + x0;
+      if (grid[i0] || seen[i0]) continue;
+      stack.length = 0;
+      stack.push(i0);
+      seen[i0] = 1;
+      let n = 0,
+        sx = 0,
+        sy = 0,
+        edge = false;
+      while (stack.length) {
+        const i = stack.pop(),
+          x = i % nx,
+          y = (i - x) / nx;
+        n++;
+        sx += x;
+        sy += y;
+        if (x === 0 || y === 0 || x === nx - 1 || y === ny - 1) edge = true;
+        for (const [dx, dy] of [
+          [1, 0],
+          [-1, 0],
+          [0, 1],
+          [0, -1],
+        ]) {
+          const X = x + dx,
+            Y = y + dy;
+          if (X < 0 || Y < 0 || X >= nx || Y >= ny) continue;
+          const j = Y * nx + X;
+          if (grid[j] || seen[j]) continue;
+          seen[j] = 1;
+          stack.push(j);
+        }
+      }
+      if (!edge)
+        out.push({ area: n * cell * cell, cx: box.x0 + (sx / n + 0.5) * cell, cy: box.y0 + (sy / n + 0.5) * cell });
+    }
+  return out;
+}
+
+/** Radius to the bore wall, by angle, at one height. */
+export function bore(mesh, cx, cy, z, angles = 360, rmax = 14) {
+  const segs = segmentsAt(mesh, z),
+    out = [];
+  for (let a = 0; a < angles; a++) {
+    const th = (a / angles) * 2 * Math.PI,
+      dx = Math.cos(th),
+      dy = Math.sin(th);
+    let best = Infinity;
+    for (let s = 0; s < segs.length; s += 4) {
+      const x1 = segs[s] - cx,
+        y1 = segs[s + 1] - cy,
+        ex = segs[s + 2] - segs[s],
+        ey = segs[s + 3] - segs[s + 1];
+      const den = dx * ey - dy * ex;
+      if (Math.abs(den) < 1e-12) continue;
+      const u = (dx * y1 - dy * x1) / -den;
+      if (u < 0 || u > 1) continue;
+      const t = (x1 + u * ex) * dx + (y1 + u * ey) * dy;
+      if (Math.hypot(x1 + u * ex - t * dx, y1 + u * ey - t * dy) > 1e-6) continue;
+      if (t > 1e-6 && t < best && t <= rmax) best = t;
+    }
+    out.push(best === Infinity ? NaN : best);
+  }
+  return out;
+}
+
+/** Thread lead from how far the bore's narrowest point turns as it rises. */
+export function lead(mesh, cx, cy, rmax, z0 = 1.2, z1 = 5.0, step = 0.2) {
+  const rows = [];
+  for (let z = z0; z <= z1 + 1e-9; z += step) {
+    const r = bore(mesh, cx, cy, z, 360, rmax);
+    const ok = r.map((v, i) => [v, i]).filter(([v]) => !Number.isNaN(v));
+    if (ok.length < 180) continue;
+    const rmin = Math.min(...ok.map(([v]) => v)),
+      rmx = Math.max(...ok.map(([v]) => v));
+    const near = ok.filter(([v]) => v <= rmin + (rmx - rmin) * 0.05).map(([, i]) => i);
+    let sx = 0,
+      sy = 0;
+    for (const i of near) {
+      sx += Math.cos((i * Math.PI) / 180);
+      sy += Math.sin((i * Math.PI) / 180);
+    }
+    let ang = (Math.atan2(sy, sx) * 180) / Math.PI;
+    if (ang < 0) ang += 360;
+    rows.push({ z, rmin, rmax: rmx, ang });
+  }
+  if (rows.length < 4) return null;
+  let acc = 0;
+  const un = [rows[0].ang];
+  for (let i = 1; i < rows.length; i++) {
+    let d = rows[i].ang - rows[i - 1].ang;
+    while (d > 180) d -= 360;
+    while (d < -180) d += 360;
+    acc += d;
+    un.push(rows[0].ang + acc);
+  }
+  const n = rows.length,
+    mz = rows.reduce((s, r) => s + r.z, 0) / n,
+    ma = un.reduce((s, v) => s + v, 0) / n;
+  let num = 0,
+    den = 0;
+  for (let i = 0; i < n; i++) {
+    num += (rows[i].z - mz) * (un[i] - ma);
+    den += (rows[i].z - mz) ** 2;
+  }
+  const slope = num / den;
+  let ss = 0,
+    st = 0;
+  for (let i = 0; i < n; i++) {
+    const p = ma + slope * (rows[i].z - mz);
+    ss += (un[i] - p) ** 2;
+    st += (un[i] - ma) ** 2;
+  }
+  const rmins = rows.map((r) => r.rmin),
+    rmaxs = rows.map((r) => r.rmax);
+  return {
+    pitch: Math.abs(360 / slope),
+    r2: 1 - ss / st,
+    rmin: rmins.reduce((s, v) => s + v, 0) / n,
+    rmax: rmaxs.reduce((s, v) => s + v, 0) / n,
+  };
+}
+
+/* ---- report -------------------------------------------------------------------------------------------- */
+
+const TOL = 0.25;
+// Ignore slivers: the plates carry the odd 2 mm2 chip at a face that no bolt or snap cares about, and
+// counting those as holes would read as a topology difference that is not one.
+const MIN_HOLE = 5; // Multiboard's own stated design tolerance
+const Z_SLICES = [0.1, 0.6, 1.35, 1.9, 2.9, 3.3, 4.4, 5.6, 6.1]; // clear of the symmetry plane and of every horizontal face in the model -- the slot cavity at 1.2 and 5.0, its mouth at 1.5 and 4.9, the relief channel at 2.05 and 4.15 -- where coplanar faces make a slice degenerate and read as a fault that is not there
+// Raster step. Fine enough to resolve a thread on a small plate, coarsened on a big one so a 16x16 does not
+// ask for 66 million cells a slice.
+const cellFor = (side) => (side <= 150 ? 0.05 : side <= 275 ? 0.1 : 0.2);
+
+function main() {
+  const [a, b] = process.argv.slice(2);
+  if (!a || !b) {
+    console.error("usage: node source/fidelity.mjs <original.stl> <generated.stl>");
+    process.exit(2);
+  }
+  const A = readStl(a),
+    B = readStl(b);
+  const ba = bounds(A),
+    bb = bounds(B);
+  const fail = [];
+  console.log(`original  ${a.split("/").pop()}   ${A.n.toLocaleString()} tris`);
+  console.log(`generated ${b.split("/").pop()}   ${B.n.toLocaleString()} tris   (${(B.n / A.n).toFixed(2)}x)\n`);
+
+  console.log(`bounding box (mm)`);
+  for (let c = 0; c < 3; c++) {
+    const d = bb.size[c] - ba.size[c],
+      ok = Math.abs(d) <= TOL;
+    if (!ok) fail.push(`${"XYZ"[c]} size off by ${d.toFixed(3)} mm`);
+    console.log(
+      `  ${"XYZ"[c]}  original ${ba.size[c].toFixed(3)}   generated ${bb.size[c].toFixed(3)}   diff ${d >= 0 ? "+" : ""}${d.toFixed(3)}  ${ok ? "ok" : "FAIL"}`,
+    );
+  }
+
+  const box = {
+    x0: Math.min(ba.mn[0], bb.mn[0]) - 0.5,
+    y0: Math.min(ba.mn[1], bb.mn[1]) - 0.5,
+    w: Math.max(ba.size[0], bb.size[0]) + 1,
+    h: Math.max(ba.size[1], bb.size[1]) + 1,
+  };
+  const CELL = cellFor(Math.max(ba.size[0], ba.size[1]));
+  console.log(`\ncross-sections (${CELL} mm raster)`);
+  console.log(`     z    solid mm2 orig / gen      IoU    holes orig / gen`);
+  for (const z of Z_SLICES) {
+    const ra = raster(A, z, box, CELL),
+      rb = raster(B, z, box, CELL);
+    let inter = 0,
+      uni = 0,
+      na = 0,
+      nb = 0;
+    for (let i = 0; i < ra.grid.length; i++) {
+      const p = ra.grid[i],
+        q = rb.grid[i];
+      na += p;
+      nb += q;
+      if (p & q) inter++;
+      if (p | q) uni++;
+    }
+    const iou = uni ? inter / uni : 1;
+    const ha = holes(ra, box).filter((h) => h.area > MIN_HOLE).length,
+      hb = holes(rb, box).filter((h) => h.area > MIN_HOLE).length;
+    const ok = iou >= 0.9 && ha === hb;
+    if (!ok) fail.push(`slice z=${z}: IoU ${iou.toFixed(3)}, holes ${ha} vs ${hb}`);
+    console.log(
+      `  ${z.toFixed(2)}   ${(na * CELL * CELL).toFixed(1).padStart(8)} / ${(nb * CELL * CELL).toFixed(1).padStart(8)}   ${iou.toFixed(3)}    ${String(ha).padStart(3)} / ${String(hb).padStart(3)}   ${ok ? "ok" : "FAIL"}`,
+    );
+  }
+
+  console.log(`\nbores (radius mm, thread lead mm/turn)`);
+  // The cell lattice always starts at the -X-Y corner, whatever the cell count's parity and whatever
+  // interfit pads do to the bounding box, so both probes are placed from there: a cell centre sits 37.5 mm
+  // in and a wall junction 50 mm in.
+  for (const [px, py, rmax, label] of [
+    [ba.mn[0] + 50, ba.mn[1] + 50, 6, "pegboard hole (wall junction)"],
+    [ba.mn[0] + 37.5, ba.mn[1] + 37.5, 14, "multihole (cell centre)"],
+  ]) {
+    const la = lead(A, px, py, rmax),
+      lb = lead(B, px, py, rmax);
+    if (!la || !lb) {
+      console.log(`  ${label}: not measurable (orig ${!!la}, gen ${!!lb})`);
+      fail.push(`${label} not measurable`);
+      continue;
+    }
+    console.log(`  ${label}`);
+    for (const [k, unit] of [
+      ["rmin", "mm"],
+      ["rmax", "mm"],
+      ["pitch", "mm/turn"],
+    ]) {
+      const d = lb[k] - la[k],
+        ok = Math.abs(d) <= TOL;
+      if (!ok) fail.push(`${label} ${k} off by ${d.toFixed(3)} ${unit}`);
+      console.log(
+        `     ${k.padEnd(6)} original ${la[k].toFixed(3)}   generated ${lb[k].toFixed(3)}   diff ${d >= 0 ? "+" : ""}${d.toFixed(3)}  ${ok ? "ok" : "FAIL"}`,
+      );
+    }
+    console.log(`     helix fit R2  original ${la.r2.toFixed(3)}   generated ${lb.r2.toFixed(3)}`);
+  }
+
+  // The bores over their whole surface, rather than at their radii. A thread can have its crest and root
+  // radii, its lead and its profile across a turn all right and still be started in the wrong place, and
+  // then nothing screws into it: only sampling by angle AND height sees that.
+  console.log(`\nbore surfaces (radius by angle and height, against the ${TOL} mm these parts are designed to)`);
+  for (const [ox, oy, rmax, label] of [
+    [50, 50, 6, "pegboard hole"],
+    [37.5, 37.5, 14, "multihole"],
+  ]) {
+    let n = 0,
+      sum = 0,
+      sq = 0,
+      worst = 0,
+      worstZ = 0,
+      ok25 = 0,
+      ok10 = 0;
+    for (let z = 0.6; z <= 5.6 + 1e-9; z += 0.1) {
+      const ra = bore(A, ba.mn[0] + ox, ba.mn[1] + oy, z, 360, rmax);
+      const rb = bore(B, bb.mn[0] + ox, bb.mn[1] + oy, z, 360, rmax);
+      for (let k = 0; k < 360; k++) {
+        const u = ra[k],
+          v = rb[k];
+        if (Number.isNaN(u) || Number.isNaN(v)) continue;
+        const d = v - u;
+        n++;
+        sum += d;
+        sq += d * d;
+        if (Math.abs(d) <= TOL) ok25++;
+        if (Math.abs(d) <= 0.1) ok10++;
+        if (Math.abs(d) > Math.abs(worst)) {
+          worst = d;
+          worstZ = z;
+        }
+      }
+    }
+    if (!n) {
+      console.log(`  ${label}: not measurable`);
+      fail.push(`${label} surface not measurable`);
+      continue;
+    }
+    const within = (100 * ok25) / n;
+    if (within < 95) fail.push(`${label}: only ${within.toFixed(1)}% of its surface within ${TOL} mm`);
+    console.log(
+      `  ${label.padEnd(14)} within ${TOL} mm ${within.toFixed(1)}%   within 0.10 mm ${((100 * ok10) / n).toFixed(1)}%   ` +
+        `RMS ${Math.sqrt(sq / n).toFixed(3)}   mean ${sum / n >= 0 ? "+" : ""}${(sum / n).toFixed(3)}   ` +
+        `worst ${worst >= 0 ? "+" : ""}${worst.toFixed(3)} at z=${worstZ.toFixed(2)}   ${within >= 95 ? "ok" : "FAIL"}`,
+    );
+  }
+
+  console.log(
+    `\n${fail.length ? `FAIL -- ${fail.length} check(s) outside ${TOL} mm:\n  ` + fail.join("\n  ") : `PASS -- every check within ${TOL} mm`}`,
+  );
+  process.exit(fail.length ? 1 : 0);
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) main();

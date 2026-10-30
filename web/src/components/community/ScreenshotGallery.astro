@@ -1,0 +1,323 @@
+---
+// A widget's or tool's screenshots with their captions. Each opens large in a viewer, as the app's do, where the arrow
+// keys move between them; without JavaScript it's a link to the picture itself.
+import type { Screenshot } from "../../lib/community";
+
+type Props = { shots: Screenshot[]; name: string };
+const { shots, name } = Astro.props;
+const altOf = (shot: Screenshot, i: number) => shot.caption ?? `${name}, screenshot ${i + 1} of ${shots.length}`;
+---
+
+<section class:list={["gallery", { odd: shots.length % 2 === 1 }]} aria-label="Screenshots" data-gallery>
+  <ul class="shots" role="list">
+    {
+      shots.map((shot, i) => (
+        <li>
+          <figure>
+            <a href={shot.src} class="shot" data-shot={i}>
+              <img
+                src={shot.src}
+                alt={altOf(shot, i)}
+                width={shot.width}
+                height={shot.height}
+                loading={i === 0 ? "eager" : "lazy"}
+                decoding="async"
+              />
+            </a>
+            {shot.caption && <figcaption>{shot.caption}</figcaption>}
+          </figure>
+        </li>
+      ))
+    }
+  </ul>
+
+  <dialog class="viewer" aria-label={`${name} screenshots`} data-pagefind-ignore>
+    <div class="viewer-bar">
+      <p class="viewer-count" data-count></p>
+      <button class="viewer-button" type="button" data-close aria-label="Close" title="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+      </button>
+    </div>
+    <figure class="viewer-figure">
+      <div class="viewer-stage">
+        <img data-image alt="" />
+        {
+          shots.length > 1 && (
+            <>
+              <button
+                class="viewer-button step prev"
+                type="button"
+                data-step="-1"
+                aria-label="Previous screenshot"
+                title="Previous (←)"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m15 6-6 6 6 6" />
+                </svg>
+              </button>
+              <button
+                class="viewer-button step next"
+                type="button"
+                data-step="1"
+                aria-label="Next screenshot"
+                title="Next (→)"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m9 6 6 6-6 6" />
+                </svg>
+              </button>
+            </>
+          )
+        }
+      </div>
+      <figcaption class="viewer-caption" data-caption aria-live="polite"></figcaption>
+    </figure>
+  </dialog>
+</section>
+
+<script>
+  for (const gallery of document.querySelectorAll<HTMLElement>("[data-gallery]")) {
+    const dialog = gallery.querySelector<HTMLDialogElement>("dialog")!;
+    const image = dialog.querySelector<HTMLImageElement>("[data-image]")!;
+    const caption = dialog.querySelector<HTMLElement>("[data-caption]")!;
+    const count = dialog.querySelector<HTMLElement>("[data-count]")!;
+    const shots = [...gallery.querySelectorAll<HTMLAnchorElement>("a[data-shot]")];
+    let current = 0;
+
+    const show = (index: number) => {
+      current = (index + shots.length) % shots.length;
+      const thumb = shots[current].querySelector("img")!;
+      image.src = shots[current].href;
+      image.alt = thumb.alt;
+      for (const size of ["width", "height"]) image.setAttribute(size, thumb.getAttribute(size) ?? "");
+      caption.textContent = shots[current].parentElement?.querySelector("figcaption")?.textContent ?? "";
+      count.textContent = shots.length > 1 ? `${current + 1} of ${shots.length}` : "";
+    };
+
+    for (const [index, shot] of shots.entries()) {
+      shot.addEventListener("click", (event) => {
+        // A new tab or a download still gets the picture itself.
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        show(index);
+        dialog.showModal();
+      });
+    }
+    for (const button of dialog.querySelectorAll<HTMLButtonElement>("[data-step]")) {
+      button.addEventListener("click", () => show(current + Number(button.dataset.step)));
+    }
+    dialog.querySelector("[data-close]")!.addEventListener("click", () => dialog.close());
+    dialog.addEventListener("keydown", (event) => {
+      if (shots.length < 2 || (event.key !== "ArrowLeft" && event.key !== "ArrowRight")) return;
+      event.preventDefault();
+      show(current + (event.key === "ArrowLeft" ? -1 : 1));
+    });
+    // A click on the backdrop lands on the dialog itself.
+    dialog.addEventListener("click", (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+  }
+</script>
+
+<style>
+  .shots {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  /* An odd one out leads, across the row, rather than trailing alone. */
+  .odd li:first-child {
+    grid-column: 1 / -1;
+  }
+  figure {
+    margin: 0;
+  }
+  .shot {
+    display: block;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--panel);
+    cursor: zoom-in;
+  }
+  .shot img {
+    display: block;
+    width: 100%;
+    height: auto;
+    transition: transform 0.2s ease-out;
+  }
+  .shot:hover img {
+    transform: scale(1.015);
+  }
+  figcaption {
+    margin-top: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  /* Phones: one row to swipe through, the next one peeking in. */
+  @media (max-width: 40rem) {
+    .shots {
+      grid-template-columns: none;
+      grid-auto-flow: column;
+      grid-auto-columns: 86%;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scroll-snap-type: x mandatory;
+      padding-bottom: 0.5rem;
+    }
+    .odd li:first-child {
+      grid-column: auto;
+    }
+    .shots li {
+      scroll-snap-align: start;
+    }
+  }
+
+  .viewer {
+    width: min(100% - 2rem, 92rem);
+    max-width: none;
+    height: calc(100% - 2rem);
+    max-height: none;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--panel);
+    color: var(--text);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .viewer[open] {
+    display: flex;
+    flex-direction: column;
+    animation: viewer-in 0.18s ease-out;
+  }
+  .viewer::backdrop {
+    background: rgb(0 0 0 / 0.72);
+    animation: backdrop-in 0.18s ease-out;
+  }
+  @keyframes viewer-in {
+    from {
+      opacity: 0;
+      transform: scale(0.98);
+    }
+  }
+  @keyframes backdrop-in {
+    from {
+      opacity: 0;
+    }
+  }
+  .viewer-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.375rem 0.375rem 0.375rem 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .viewer-count {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+  }
+  /* The picture takes what the bar and its caption leave, at its own size or smaller. */
+  .viewer-figure {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    margin: 0;
+  }
+  .viewer-stage {
+    position: relative;
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    background: var(--bg);
+  }
+  .viewer-stage img {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: 100%;
+  }
+  .viewer-caption {
+    margin: 0;
+    padding: 0.75rem 1rem 0.875rem;
+    border-top: 1px solid var(--border);
+    color: var(--text);
+    font-size: 0.9375rem;
+  }
+  .viewer-caption:empty {
+    display: none;
+  }
+  .viewer-button {
+    display: inline-grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--heading);
+    cursor: pointer;
+  }
+  .viewer-button svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .viewer-button:hover {
+    background: var(--accent-soft);
+  }
+  /* Over the picture, so they keep a panel of their own whatever is under them. */
+  .step {
+    position: absolute;
+    top: 50%;
+    border-color: var(--border);
+    background: var(--panel);
+    box-shadow: var(--shadow);
+    transform: translateY(-50%);
+  }
+  .step:hover {
+    border-color: var(--accent);
+    background: var(--panel);
+  }
+  .prev {
+    left: 0.75rem;
+  }
+  .next {
+    right: 0.75rem;
+  }
+  /* A phone held upright has room under a wide picture, so they go there rather than over it. */
+  @media (max-width: 40rem) and (orientation: portrait) {
+    .step {
+      top: auto;
+      bottom: 0.75rem;
+      transform: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .shot img {
+      transition: none;
+    }
+    .shot:hover img {
+      transform: none;
+    }
+    .viewer[open],
+    .viewer::backdrop {
+      animation: none;
+    }
+  }
+</style>

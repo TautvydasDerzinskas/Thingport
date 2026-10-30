@@ -28,11 +28,17 @@ The quickest way to make a widget is to describe it to an AI assistant connected
    its icon, the assistant searches Thingport's icons with `list_icons`, and uploads one of its own when none fits.
 3. Ask for what you want, e.g. _"Make me a Thingport widget showing my OctoPrint printer's progress. It's at
    http://octopi.local."_ The assistant reads the `widget_guide` tool first, which teaches it the format below, then
-   saves the widget.
+   saves the widget — labels and all, so ask for it in whichever languages you want.
 4. Add it from **Add panel** while editing your dashboard. To change it, ask again; `list_widgets` lets the assistant
    read what it wrote before.
 
+[Build with an AI assistant](../developers/ai-assistant.md) has more: the permissions it needs, example prompts, and
+checking what it made.
+
 ## What a widget is made of
+
+This is the shape of one. To write your own, start with [your first widget](../developers/first-widget.md), a
+step-by-step example; the [developer docs](../developers/overview.md) cover how a widget runs, the SDK and recipes.
 
 ### Metadata
 
@@ -68,11 +74,13 @@ hosts: [octopi.local]
 | `size`        | Its size when added, in grid cells (12 columns wide; rows 64 px tall). `minW`/`minH` limit how small it resizes.                                                                                                                                                                                                           |
 | `settings`    | What its cog lets you change: `text` (`secret: true` for tokens), `number`, `toggle` or `choice` (2 to 8).                                                                                                                                                                                                                 |
 | `hosts`       | The hosts `thingport.fetch` may call: `host`, `host:port` or `*.domain`. Local network addresses are fine.                                                                                                                                                                                                                 |
+| `locales`     | The languages it has labels for. Filled in from the **Labels** tab when you save, so there's nothing to type here.                                                                                                                                                                                                         |
+| `screenshots` | Only for a widget shared through the repository, which carries the image files: each `{ file, caption }`, up to eight.                                                                                                                                                                                                     |
 
 ### Script
 
 An ES module whose default export draws the widget. It's called each time the panel appears, and again when its
-settings or the theme change; the function it returns, if any, cleans up first.
+settings, the theme or the language change; the function it returns, if any, cleans up first.
 
 ```js
 export default function mount(thingport) {
@@ -90,33 +98,53 @@ export default function mount(thingport) {
 }
 ```
 
-Its `thingport` argument:
-
-| Property             | What it is                                                                                                                 |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `root`               | The element to draw into. It fills the panel.                                                                              |
-| `selector`           | A CSS selector for `root`, unique on the page, to scope styles: `${selector} .state { … }`.                                |
-| `size`               | `{ width, height }` in pixels and `{ cols, rows }` in grid cells, kept current as the panel is resized.                    |
-| `onResize(callback)` | Calls `callback(size)` when the size changes; returns a function that stops it.                                            |
-| `settings`           | The panel's settings, defaults filled in. Toggles are booleans; the rest are strings.                                      |
-| `theme`              | `mode`, `primary`, `background`, `paper`, `text`, `textSecondary`, `divider`, `fontFamily`.                                |
-| `fetch(url, init)`   | Like `fetch`, but made by the Thingport server, so CORS and your network don't get in the way. Only `hosts`; others throw. |
-| `api(path, init)`    | Calls Thingport's own API as you, e.g. `thingport.api("/dashboard/summary")`.                                              |
-| `widgetId`           | The widget's id, and `instanceId` the panel's, when it's on the dashboard more than once.                                  |
+Its `thingport` argument has the panel's element, size and settings, the theme, the widget's own words, your
+library, `fetch` through Thingport to the hosts it declares, Thingport's own API, and the libraries Thingport carries.
+Each is in the [SDK reference](../developers/sdk-reference.md), generated from the SDK itself.
 
 ### HTML
 
 Optional markup put into the panel before the script runs. Put a widget's CSS in a `<style>` element here, scoped
-with class names of its own.
+with class names of its own. The theme is already on the panel as the `--tp-*` variables above, so the stylesheet
+can use them without the script copying anything across.
+
+### The words it shows
+
+A widget's words don't belong in its script: buried there they can't be read as text or handed to a translator. The
+editor's **Labels** tab keeps them beside it instead, one file per language, a flat map of key to sentence:
+
+```
+en.json   { "state.loading": "Loading…", "state.printing": "Printing {state}" }
+lt.json   { "state.loading": "Kraunama…", "state.printing": "Spausdina {state}" }
+```
+
+The script asks for them by key — `t("state.printing", { state })` — and `{name}` is filled in from what you pass.
+**English is the fallback, key by key**, so a half-finished language shows its own words where it has them and
+English where it doesn't; a key with no words anywhere comes back as itself, so nothing silently disappears.
+
+The markup can carry the keys instead: `data-t` sets an element's text, and `data-t-title`, `data-t-aria` and
+`data-t-placeholder` fill those attributes. `labels()` fills them all in, and running it again after adding markup
+is harmless.
+
+A setting's **label** or **placeholder**, and a choice option's label, that is written as a label key — like
+`settings.refresh` — is shown in your language too, so the panel's cog needs nothing extra. One written as a
+sentence is shown as it is. The widget's `name` works the same way on the dashboard.
+
+The widget is drawn again when you change language, as it is when you change theme, so `t` is read at the top of
+the script rather than watched. At most 128 KB a language and 1 MB in all.
 
 ## Publishing to the community
 
 1. Under **Mine**, open your widget's ⋮ menu and choose **Download for publishing**. You get a zip with its
-   `widget.json`, `widget.js`, `widget.html` (if it has one) and a `README.md` to fill in.
+   `widget.json`, `widget.js`, `widget.html` (if it has one), its `locales/<code>.json` files and a `README.md` to
+   fill in.
 2. Fork the [Thingport repository](https://github.com/TautvydasDerzinskas/Thingport) and unzip it into
    `community-widgets/<slug>/`.
-3. Add `<slug>` to `community-widgets/index.json`, and say in the README what it does and which services it calls.
-4. Open a pull request. A check validates the widget, and a maintainer reads its code before merging; the
+3. Add a `screenshots/` folder with a picture or two of it on a dashboard, and list them under `screenshots` in
+   `widget.json` as `{ "file", "caption" }`: they're what someone looks through under **Community** before
+   installing it.
+4. Add `<slug>` to `community-widgets/index.json`, and say in the README what it does and which services it calls.
+5. Open a pull request. A check validates the widget, and a maintainer reads its code before merging; the
    [community widgets README](../../community-widgets/README.md) says what they look for.
 
 Once merged, it shows up under **Community** on every Thingport. Raise its `version` when you change it, and users

@@ -86,12 +86,16 @@
       "dashboard": "Valdymo skydas",
       "administration": "Administravimas",
       "expandSidebar": "Išskleisti šoninę juostą",
+      "openNavigation": "Atidaryti navigacijos meniu",
+      "navigationMenu": "Navigacijos meniu",
+      "closeNavigation": "Uždaryti navigacijos meniu",
       "collapseSidebar": "Suskleisti šoninę juostą",
       "models": "Modeliai",
       "collections": "Kolekcijos",
       "tags": "Žymos",
       "downloads": "Atsisiuntimai",
-      "bookmarks": "Įsimintos"
+      "bookmarks": "Įsimintos",
+      "tools": "Įrankiai"
     },
     "uploadBar": {
       "uploading": "Įkeliama…",
@@ -323,6 +327,18 @@
             "save_widget": {
               "title": "Išsaugoti suvestinės valdiklį",
               "description": "Kurti ar keisti savo suvestinės valdiklius. Jų skriptai veikia jūsų suvestinėje."
+            },
+            "tool_guide": {
+              "title": "Įrankių vadovas",
+              "description": "Perskaityti, kaip rašomas įrankis tavo Įrankių puslapiui."
+            },
+            "list_tools": {
+              "title": "Išvardyti įrankius",
+              "description": "Pamatyti, kuriuos įrankius gali atverti, ir savo įrankių kodą."
+            },
+            "save_tool": {
+              "title": "Įrašyti įrankį",
+              "description": "Sukurti ar pakeisti savo įrankius. Jų kodas vykdomas tavo naršyklėje su tavo teisėmis."
             },
             "list_icons": {
               "title": "Rasti piktogramą",
@@ -1090,6 +1106,10 @@
               "prompt": "Sukurk Thingport valdiklį su diagrama, kiek modelių pridėjau kiekvieną mėnesį."
             }
           }
+        },
+        "labels": {
+          "help": "Žodžiai, kuriuos rodo tavo valdiklis — po failą kiekvienai kalbai. Scenarijus jų prašo pagal raktą su t(\"raktas\"), tad jie nesimaišo su logika ir išverčiami jos nekeičiant.",
+          "empty": "Tavo valdiklis dar neturi užrašų. Rodomus žodžius laikyk po failą kiekvienai kalbai, o scenarijus jų prašys pagal raktą su t(\"raktas\") — vertėjui niekada nereikės atverti kodo."
         }
       }
     },
@@ -1810,6 +1830,7 @@
           "model_edited": "Modelis redaguotas",
           "model_reimported": "Gauta trūkstama informacija",
           "model_deleted": "Modelis ištrintas",
+          "models_repaired": "Modelių taisymas",
           "collection_created": "Kolekcija sukurta",
           "collection_edited": "Kolekcija redaguota",
           "collection_deleted": "Kolekcija ištrinta",
@@ -1853,7 +1874,8 @@
         "aiRunSummary": "Patikrinta {{done}} iš {{total}} — pasiūlyta {{suggested}}, pritaikyta {{applied}}, nepavyko {{failed}}",
         "aiRunStopped": "(sustabdyta)",
         "viaProvider": "per {{provider}}",
-        "merged": "{{merged}} → {{name}}"
+        "merged": "{{merged}} → {{name}}",
+        "repairSummary": "{{action}}: pataisyta {{repaired}}, ištrinta {{deleted}}, nepavyko {{failed}}"
       },
       "rendering": {
         "heading": "Atvaizdavimas",
@@ -2188,6 +2210,94 @@
         "users": {
           "placed": "Suvestinėje",
           "installed": "Tik įdiegtas"
+        }
+      },
+      "tools": {
+        "heading": "Įrankiai",
+        "subtitle": "Nedidelės programėlės, kurias naudotojai atsidaro puslapyje „Įrankiai“: įdiekite jas iš saugyklos ir pasirinkite, kas jas mato.",
+        "access": {
+          "heading": "Kas mato įrankius",
+          "help": "Administratoriai įrankius mato visada. Kas dar mato puslapį „Įrankiai“ ir gauna kiekvieno įdiegto įrankio modelius į savo biblioteką. Įrankiai veikia naudotojo naršyklėje su jo prieiga prie Thingport.",
+          "audience": "Kas mato įrankius",
+          "admins": "Tik administratoriai",
+          "everyone": "Visi",
+          "selected": "Pasirinkti naudotojai",
+          "users": "Naudotojai",
+          "usersHint": "Be administratorių, kurie juos mato visada.",
+          "failed": "Nepavyko pakeisti, kas mato įrankius",
+          "userTools": "Naudotojų įrankiai",
+          "userToolsHelp": "Leidžia tiems, kurie mato įrankius, kurti savo – redaktoriuje su pradiniu scenarijumi. Jų scenarijai veikia jų pačių naršyklėje, su jų pačių prieiga.",
+          "userToolsOn": "Tie, kurie mato įrankius, gali kurti savo",
+          "userToolsOff": "Tik įdiegti įrankiai"
+        },
+        "repo": {
+          "heading": "Iš saugyklos",
+          "help": "Įrankiai Thingport saugyklos aplanke tools. Kiekvienas peržiūrimas prieš įtraukiant; įdiegtas tampa prieinamas visiems, kurie mato įrankius.",
+          "refresh": "Dar kartą patikrinti saugyklą",
+          "failed": "Nepavyko perskaityti įrankių saugyklos",
+          "unreachable": "Įrankių saugyklos šiuo metu perskaityti nepavyksta: {{error}}",
+          "empty": "Saugykloje kol kas nėra įrankių.",
+          "install": "Įdiegti",
+          "update": "Atnaujinti",
+          "installed": "Įdiegta: {{name}}",
+          "updated": "Atnaujinta: {{name}}",
+          "installFailed": "Nepavyko įdiegti įrankio",
+          "installedVersion": "Įdiegta {{version}}",
+          "updateTo": "Atnaujinti į {{version}}",
+          "latest": "Naujausia",
+          "latestTip": "„{{name}}“ {{version}} – naujausia saugykloje esanti versija",
+          "updateLabel": "Atnaujinti „{{name}}“ į {{version}}",
+          "gone": "Saugykloje jo nebėra",
+          "by": "Autorius: {{name}}",
+          "brings_one": "Atsineša {{count}} modelį",
+          "brings_few": "Atsineša {{count}} modelius",
+          "brings_other": "Atsineša {{count}} modelių",
+          "fetching": "Gaunami modeliai: {{ready}} iš {{total}}",
+          "missing_one": "{{count}} iš {{total}} modelių dar negautas",
+          "missing_few": "{{count}} iš {{total}} modelių dar negauti",
+          "missing_other": "{{count}} iš {{total}} modelių dar negauta",
+          "lastError": "Paskutinis bandymas: {{error}}",
+          "retry": "Gauti trūkstamus modelius",
+          "more": "Daugiau",
+          "moreFor": "Daugiau: {{name}}",
+          "uninstall": "Pašalinti",
+          "uninstallTitle": "Pašalinti {{name}}?",
+          "uninstallMessage": "{{name}} dings iš visų puslapio „Įrankiai“ kartu su jų duomenimis, kuriuos jis saugojo.",
+          "uninstallWithModels": "{{name}} dings iš visų puslapio „Įrankiai“ kartu su jų duomenimis, kuriuos jis saugojo, ir jo modelių kolekcija iš kiekvienos bibliotekos. Su juo išsaugoti naudotojų modeliai liks.",
+          "uninstalled": "Pašalinta: {{name}}",
+          "uninstallFailed": "Nepavyko pašalinti įrankio",
+          "updateAvailable": "Yra atnaujinimas",
+          "fromFolder": "Siūloma iš aplanko {{location}}",
+          "fromRepository": "Siūloma iš {{location}}",
+          "open": "Atverti",
+          "openHint": "Atverti „{{name}}“ — dukart spustelėk",
+          "notInstalled": "Neįdiegta",
+          "isInstalled": "įdiegta",
+          "version": "v{{version}}",
+          "tileLabel": "{{name}}, {{state}}: spausk Enter, kad pamatytum, kas tai, kontekstinio meniu klavišą – daugiau",
+          "shelfHint": "Dukart spustelėk įrankį, kad pamatytum, kas tai ir ką galima padaryti; įdiegtą spustelėk dešiniuoju, kad atvertum meniu.",
+          "installTitle": "Įdiegti „{{name}}“?",
+          "installBody_one": "Jis atsineša {{count}} savo modelį – detalę, su kuria dirba; ji parsiunčiama vieną kartą visam serveriui.",
+          "installBody_few": "Jis atsineša {{count}} savo modelius – detales, su kuriomis dirba; jos parsiunčiamos vieną kartą visam serveriui.",
+          "installBody_many": "Jis atsineša {{count}} savo modelio – detales, su kuriomis dirba; jos parsiunčiamos vieną kartą visam serveriui.",
+          "installBody_other": "Jis atsineša {{count}} savo modelių – detales, su kuriomis dirba; jos parsiunčiamos vieną kartą visam serveriui.",
+          "withModels": "Parsisiųsti jo modelius",
+          "modelsRoom": "{{count}} modelių – didelis rinkinys; serveryje jie užims gigabaitus, o parsiuntimas užtruks.",
+          "modelsLater": "Be jų įrankis veiks tik tol, kol svetainė, iš kurios jis siunčia, pasiekiama ir serveris prijungtas prie interneto, o iš detalių sudėto darbo išsaugoti nepavyks. Modelius galėsi parsisiųsti vėliau.",
+          "modelsLaterOwn": "Kol modeliai neparsisiųsti, įrankis neišsaugos nieko, kam reikia tų detalių. Modeliai ateina su pačiu įrankiu, todėl jokia kita svetainė nedalyvauja. Modelius galėsi parsisiųsti vėliau.",
+          "modelsSkipped_one": "Įdiegta be jo {{count}} modelio.",
+          "modelsSkipped_few": "Įdiegta be jo {{count}} modelių.",
+          "modelsSkipped_many": "Įdiegta be jo {{count}} modelio.",
+          "modelsSkipped_other": "Įdiegta be jo {{count}} modelių.",
+          "importModels": "Parsisiųsti modelius",
+          "importingModels": "Parsiunčiami „{{name}}“ modeliai"
+        },
+        "own": {
+          "heading": "Naudotojų įrankiai",
+          "help": "Įrankiai, kuriuos naudotojai susikūrė patys. Kiekvienas veikia tik jį sukūrusiam naudotojui.",
+          "empty": "Kol kas niekas nesukūrė įrankio.",
+          "off": "Naudotojų įrankiai išjungti.",
+          "by": "{{name}} · {{email}}"
         }
       }
     },
@@ -2586,6 +2696,325 @@
         "popular": "Populiarios svetainės",
         "ai": "DI",
         "browsers": "Naršyklės"
+      }
+    },
+    "tools": {
+      "page": {
+        "title": "Įrankiai",
+        "subtitle": "Dukart spustelėkite įrankį, kad jį atidarytumėte",
+        "new": "Naujas įrankis",
+        "installed": "Įdiegti",
+        "mine": "Mano",
+        "yours": "Jūsų",
+        "tileLabel": "{{name}}: Enter – atidaryti, kontekstinio meniu klavišas – daugiau",
+        "open": "Atidaryti",
+        "about": "Apie",
+        "models": "Jo modeliai",
+        "edit": "Redaguoti",
+        "delete": "Ištrinti",
+        "deleteTitle": "Ištrinti šį įrankį?",
+        "deleteMessage": "{{name}} ir jo saugoti duomenys dings. Su juo išsaugoti modeliai liks.",
+        "deleted": "Ištrinta: {{name}}",
+        "empty": "Kol kas nėra įrankių. Juos įdiegia administratorius.",
+        "emptyAdmin": "Kol kas nėra įrankių. Įdiekite kurį nors iš saugyklos.",
+        "emptyCreate": "Kol kas nėra įrankių. Susikurkite savo arba paprašykite administratoriaus įdiegti.",
+        "install": "Įdiegti įrankius",
+        "noAccess": "Šiame Thingport įrankiai jums neprieinami.",
+        "dropHere": "Numesk įrankį čia",
+        "layout": "Rodyti kaip",
+        "layoutFlat": "Vieną tinklelį",
+        "layoutCategories": "Lentynas",
+        "moveTo": "Perkelti į",
+        "sort": {
+          "name": "Pavadinimas",
+          "newest": "Naujausi",
+          "author": "Autorius"
+        },
+        "uninstall": "Pašalinti",
+        "uninstallTitle": "Pašalinti šį įrankį?",
+        "uninstallMessage": "„{{name}}“ dings iš visų įrankių puslapio kartu su jų duomenimis ir jo modelių kolekcija iš kiekvienos bibliotekos. Juo išsaugoti modeliai lieka.",
+        "uninstalled": "„{{name}}“ pašalintas"
+      },
+      "categories": {
+        "generators": "Generatoriai",
+        "planners": "Planuokliai",
+        "calculators": "Skaičiuoklės",
+        "files": "Failai",
+        "library": "Biblioteka",
+        "other": "Kita"
+      },
+      "window": {
+        "about": "Apie šį įrankį",
+        "maximize": "Per visą ekraną",
+        "restore": "Grąžinti dydį",
+        "close": "Uždaryti"
+      },
+      "about": {
+        "version": "Versija {{version}}",
+        "source": "Iš",
+        "fromRepo": "Thingport saugyklos, įdiegė administratorius",
+        "own": "Sukūrėte jūs",
+        "author": "Autorius",
+        "hosts": "Pasiekia",
+        "hostsHelp": "Paslaugos už Thingport ribų, kurias įrankis gali kviesti per Thingport.",
+        "noHosts": "Nieko už Thingport ribų",
+        "models": "Modeliai",
+        "modelsHelp": "Įrankio atsinešami modeliai – atskiroje tavo bibliotekos kolekcijoje. Juos galima atidaryti ir spausdinti, bet ne keisti; jie rodomi toje kolekcijoje, o ne tarp tavo modelių.",
+        "modelCount_one": "{{count}} modelis",
+        "modelCount_few": "{{count}} modeliai",
+        "modelCount_other": "{{count}} modelių",
+        "openModels": "Atidaryti jo modelius",
+        "open": "Atidaryti",
+        "close": "Uždaryti"
+      },
+      "runner": {
+        "failed": "{{name}} sustojo dėl klaidos",
+        "noExport": "Scenarijus neturi numatytojo eksporto, kurį būtų galima iškviesti"
+      },
+      "picker": {
+        "title": "Pasirinkite kolekciją",
+        "search": "Rasti kolekciją",
+        "noMatch": "Jokia kolekcija neatitinka.",
+        "empty": "Kol kas nėra kolekcijų. Įrašykite pavadinimą žemiau, kad sukurtumėte.",
+        "count_one": "{{count}} modelis",
+        "count_few": "{{count}} modeliai",
+        "count_other": "{{count}} modelių",
+        "newName": "Nauja kolekcija",
+        "create": "Sukurti šią kolekciją",
+        "cancel": "Atšaukti",
+        "choose": "Pasirinkti"
+      },
+      "ai": {
+        "or": "arba",
+        "open": "Pasitelk AI",
+        "title": "Sukurk įrankį su AI",
+        "back": "Atgal į redaktorių",
+        "connect": "Prijungti AI",
+        "step1": "Prijunk savo AI asistentą prie Thingport per MCP.",
+        "step2": "Savo profilyje leisk raktui naudoti <strong>Įrašyti įrankį</strong>.",
+        "step3": "Paprašyk bet kokio įrankio savais žodžiais. Pavyzdžiui:",
+        "step4": "Jis atsiras tavo Įrankių puslapyje — tik atverk. Nori pakeisti? Paprašyk dar arba pataisyk čia.",
+        "examplesLabel": "Užklausų pavyzdžiai",
+        "examples": {
+          "label": {
+            "label": "Etikečių kūrėjas",
+            "name": "Etikečių kūrėjas",
+            "prompt": "Sukurk Thingport įrankį, kuris iš kelių žodžių padaro spausdinamą etiketę ir ją įrašo į mano biblioteką."
+          },
+          "box": {
+            "label": "Dėžių kūrėjas",
+            "name": "Dėžių kūrėjas",
+            "prompt": "Sukurk Thingport įrankį, kuris padaro bet kokio dydžio dėžę su dangteliu, milimetrais."
+          },
+          "tidy": {
+            "label": "Žymų pagalbininkas",
+            "name": "Žymų pagalbininkas",
+            "prompt": "Sukurk Thingport įrankį, kuris išvardija modelius be žymų ir leidžia jas uždėti."
+          }
+        }
+      },
+      "editor": {
+        "newTitle": "Naujas įrankis",
+        "editTitle": "Redaguoti įrankį",
+        "part": "Įrankio dalis",
+        "details": "Informacija",
+        "script": "Scenarijus",
+        "html": "HTML ir CSS",
+        "preview": "Peržiūra",
+        "htmlPlaceholder": "Žymėjimas ir <style> blokas, įdedami į langą prieš paleidžiant scenarijų",
+        "previewHelp": "Įrankis veikia taip, kaip veiks savo lange. Kol neišsaugotas, jo saugomi duomenys gyvuoja tik peržiūros metu, ir jis negali pasiekti kitų serverių.",
+        "previewHelpSaved": "Įrankis veikia taip, kaip veiks savo lange, su jūsų duomenimis, kuriuos jis saugo.",
+        "rerun": "Paleisti iš naujo",
+        "reference": "SDK žinynas",
+        "showReference": "Rodyti SDK žinyną",
+        "hideReference": "Slėpti SDK žinyną",
+        "referenceIntro": "Ką scenarijaus numatytasis eksportas gauna kaip thingport. Pradinis scenarijus naudoja kiekvieną.",
+        "trust": "Įrankio scenarijus veikia jūsų naršyklėje su jūsų prieiga prie Thingport.",
+        "cancel": "Atšaukti",
+        "save": "Išsaugoti",
+        "saved": "Išsaugota: {{name}}",
+        "fixFirst": "Pirmiausia pataisykite pažymėtus laukus",
+        "name": "Pavadinimas",
+        "version": "Versija",
+        "description": "Aprašymas",
+        "icon": "Piktograma",
+        "iconHelp": "Rodoma puslapyje „Įrankiai“ ir įrankio lange.",
+        "iconUrl": "Paveikslėlio adresas",
+        "iconNone": "Įrankių dėžė",
+        "window": "Langas",
+        "windowHelp": "Lango dydis atidarant, pikseliais; mažesniame ekrane – kiek telpa, ir jį galima išskleisti per visą ekraną.",
+        "width": "Plotis",
+        "height": "Aukštis",
+        "author": "Autorius",
+        "authorHelp": "Nurodomas lange „Apie“.",
+        "authorName": "Vardas",
+        "authorUrl": "Puslapis",
+        "hosts": "Serveriai",
+        "hostsHelp": "Paslaugos už Thingport ribų, kurias jo thingport.fetch gali pasiekti per Thingport: serverio vardas, *.example.com jo subdomenams ir prievadas, jei reikia.",
+        "hostsPlaceholder": "api.example.com",
+        "slug": "Aplanko pavadinimas",
+        "slugHelp": "Kaip įrankis išsaugomas: išsaugojus kitą tuo pačiu aplanko pavadinimu, jis pakeičiamas.",
+        "errors": {
+          "slug": "2–40 mažųjų raidžių, skaitmenų ir brūkšnelių",
+          "name": "Suteikite pavadinimą",
+          "url": "Tai ne http ar https adresas"
+        },
+        "sdk": {
+          "root": "Lango elementas su įrankio HTML ir CSS selektorius jam.",
+          "theme": "Thingport spalvos ir šriftas, šviesiai ir tamsiai temai.",
+          "size": "Lango dydis ir būdas sužinoti, kai jis pasikeičia.",
+          "storage": "Naudotojui saugomos JSON reikšmės pagal raktą.",
+          "collections": "Naudotojo kolekcijos ir naujos kūrimas.",
+          "collectionModels": "Kolekcijos modeliai ir modelių įdėjimas ar išėmimas.",
+          "pick": "Paprašo naudotojo pasirinkti kolekciją ar sukurti naują, kaip išsaugojimo langas.",
+          "models": "Bibliotekos modeliai: jų puslapis, paieška arba vienas.",
+          "file": "Vienas modelio failas kaip ArrayBuffer.",
+          "create": "Naujas modelis iš pateiktų failų, pvz., įrankio sukurtas STL.",
+          "edit": "Daugiau failų, galerijos paveikslėlių, pakeistas failas arba pavadinimas, aprašymas ir žymos.",
+          "open": "Uždaro įrankį ir atidaro modelio puslapį.",
+          "toolModels": "Saugyklos įrankio atsinešti modeliai pagal raktą.",
+          "fetch": "Užklausa įrankio nurodytam serveriui, kurią atlieka Thingport.",
+          "api": "Paties Thingport API naudotojo vardu.",
+          "download": "Duoda naudotojui failą pasilikti.",
+          "ui": "Pranešimas, patvirtinimas arba lango uždarymas.",
+          "translate": "Jūsų įrankio žodžiai iš jo užrašų, vartotojo kalba.",
+          "language": "Kalba, kuria rodomas Thingport, ir visos jo turimos kalbos.",
+          "library": "Sunki biblioteka, kurią turi Thingport: Three.js, opentype, Manifold, jo šriftai."
+        },
+        "labels": {
+          "help": "Žodžiai, kuriuos rodo jūsų įrankis — po failą kiekvienai kalbai. Scenarijus jų prašo pagal raktą su t(\"raktas\"), tad jie lieka atskirai nuo logikos ir verčiami jos neliečiant.",
+          "empty": "Jūsų įrankis dar neturi užrašų. Laikykite rodomus žodžius po failą kiekvienai kalbai, o scenarijus jų prašys pagal raktą su t(\"raktas\") — tad vertėjui niekada nereikės atverti scenarijaus."
+        },
+        "category": "Kategorija",
+        "categoryHelp": "Į kurią lentyną Įrankių puslapis jį padeda. Kiekvienas gali perkelti jį pats."
+      }
+    },
+    "screenshots": {
+      "title": "{{name}} ekrano vaizdai",
+      "open": "{{name}} ekrano vaizdas {{index}} iš {{count}}",
+      "position": "{{index}} iš {{count}}",
+      "previous": "Ankstesnis vaizdas",
+      "next": "Kitas vaizdas",
+      "close": "Uždaryti"
+    },
+    "labelsPanel": {
+      "tab": "Užrašai",
+      "start": "Pradėti nuo anglų kalbos",
+      "add": "Pridėti kalbą",
+      "file": "{{code}} užrašai JSON formatu",
+      "fallbackNote": "Anglų kalba yra atsarginė: ko trūksta kitoje kalboje, rodoma iš čia.",
+      "untranslated_one": "{{count}} užrašas šia kalba dar neturi teksto.",
+      "untranslated_few": "{{count}} užrašai šia kalba dar neturi teksto.",
+      "untranslated_many": "{{count}} užrašo šia kalba dar neturi teksto.",
+      "untranslated_other": "{{count}} užrašų šia kalba dar neturi teksto.",
+      "badJson": "Tai dar nėra taisyklingas JSON, tad nebus įrašyta.",
+      "badShape": "Užrašai — tai paprastas objektas, siejantis raktus su tekstu, pvz. { \"save\": \"Įrašyti\" }.",
+      "removeTitle": "Pašalinti {{name}} užrašus?",
+      "removeBody": "Failas ir jo žodžiai dings. Kitos kalbos liks."
+    },
+    "missingFiles": {
+      "title": "Kai kurie modeliai neberanda savo failų",
+      "lead_one": "1 bibliotekos modelis diske nebeturi nė vieno failo — nei modelio failų, nei paveikslėlių. Kol failai negrįš, jo nebus galima atverti, spausdinti ar atsisiųsti.",
+      "lead_few": "{{count}} bibliotekos modeliai diske nebeturi nė vieno failo — nei modelio failų, nei paveikslėlių. Kol failai negrįš, jų nebus galima atverti, spausdinti ar atsisiųsti.",
+      "lead_other": "{{count}} bibliotekos modelių diske nebeturi nė vieno failo — nei modelio failų, nei paveikslėlių. Kol failai negrįš, jų nebus galima atverti, spausdinti ar atsisiųsti.",
+      "leadHelp": "Thingport modelio failus laiko saugyklos kataloge, o duomenų bazėje — tik modelio aprašą. Perkėlus kopiją be to katalogo arba netyčia jį ištrynus, aprašai lieka be failų. Failus iš svetainės, iš kurios modelis atkeliavo, galima atsisiųsti iš naujo: visa kita — pavadinimai, žymos, kolekcijos, mėgstami — lieka kaip buvo.",
+      "notNow": "Ne dabar",
+      "checking": "Peržiūrimi modeliai…",
+      "checkFailed": "Nepavyko peržiūrėti modelių. Bandykite dar kartą, o jei nepavyksta ir toliau — patikrinkite, ar saugyklos katalogas vietoje.",
+      "checkFailedStale": "Naujausio patikrinimo atlikti nepavyko, todėl čia matote tai, ką rado paskutinis.",
+      "allWell": "Visi modeliai turi savo failus",
+      "allWellDetail_one": "Patikrintas 1 modelis.",
+      "allWellDetail_few": "Patikrinti {{count}} modeliai.",
+      "allWellDetail_other": "Patikrinta {{count}} modelių.",
+      "checkAgain": "Tikrinti dar kartą",
+      "stats": {
+        "broken": "Be failų",
+        "server": "Thingport gali atsiųsti",
+        "grab": "Reikia Grab",
+        "noSource": "Įkelti"
+      },
+      "fromSites": "Iš kur jie atkeliavo",
+      "whatNow": "Ką daryti",
+      "manyWarning_one": "Vienas modelis — greitas darbas.",
+      "manyWarning_few": "{{count}} modeliai iš karto — nemažai: svetainės gali paprašyti sulėtinti ar palūkėti, todėl gali užtrukti. Darbas vyksta fone, jį galima bet kada nutraukti.",
+      "manyWarning_other": "{{count}} modelių iš karto — nemažai: svetainės gali paprašyti sulėtinti ar palūkėti, todėl gali užtrukti. Darbas vyksta fone, jį galima bet kada nutraukti.",
+      "alreadyRunning": "Taisymas jau vyksta.",
+      "startFailed": "Nepavyko pradėti taisymo.",
+      "actions": {
+        "reimport": {
+          "title": "Atsiųsti trūkstamus failus",
+          "detail_one": "Iš naujo atsiunčia 1 modelio failus iš svetainės, iš kurios jis atkeliavo. Pavadinimas, žymos, kolekcijos ir mėgstamų žymė lieka kaip buvo.",
+          "detail_few": "Iš naujo atsiunčia {{count}} modelių failus iš svetainių, iš kurių jie atkeliavo. Pavadinimai, žymos, kolekcijos ir mėgstamų žymės lieka kaip buvo.",
+          "detail_other": "Iš naujo atsiunčia {{count}} modelių failus iš svetainių, iš kurių jie atkeliavo. Pavadinimai, žymos, kolekcijos ir mėgstamų žymės lieka kaip buvo.",
+          "grabOnly_one": "Šio modelio failus atsiųsti gali tik Thingport Grab. Jis lauks, kol Grab apsilankys svetainėje.",
+          "grabOnly_few": "Šiuos failus atsiųsti gali tik Thingport Grab. {{count}} modeliai lauks, kol jis apsilankys svetainėse, iš kurių jie atkeliavo.",
+          "grabOnly_other": "Šiuos failus atsiųsti gali tik Thingport Grab. {{count}} modelių lauks, kol jis apsilankys svetainėse, iš kurių jie atkeliavo.",
+          "none": "Nė vienas iš šių modelių neturi svetainės, iš kurios būtų galima atsiųsti."
+        },
+        "delete": {
+          "title": "Ištrinti šiuos modelius",
+          "detail_one": "Negrįžtamai pašalina 1 modelį su jo aprašu, žymomis ir įrašais kolekcijose.",
+          "detail_few": "Negrįžtamai pašalina {{count}} modelius su jų aprašais, žymomis ir įrašais kolekcijose.",
+          "detail_other": "Negrįžtamai pašalina {{count}} modelių su jų aprašais, žymomis ir įrašais kolekcijose."
+        }
+      },
+      "confirm": {
+        "reimport": {
+          "title_one": "Atsiųsti 1 modelio failus?",
+          "title_few": "Atsiųsti {{count}} modelių failus?",
+          "title_other": "Atsiųsti {{count}} modelių failus?",
+          "message_one": "Thingport atsiųs modelio failus iš svetainės, iš kurios jis atkeliavo. Daugiau nieko nepasikeis, o jei svetainės nepavyks pasiekti, modelis liks lygiai toks, koks yra dabar.",
+          "message_few": "Thingport po vieną atsiųs kiekvieno modelio failus iš svetainės, iš kurios jis atkeliavo. Daugiau nieko nepasikeis, o modeliai, kurių svetainės nepavyks pasiekti, liks lygiai tokie, kokie yra dabar.",
+          "message_other": "Thingport po vieną atsiųs kiekvieno modelio failus iš svetainės, iš kurios jis atkeliavo. Daugiau nieko nepasikeis, o modeliai, kurių svetainės nepavyks pasiekti, liks lygiai tokie, kokie yra dabar.",
+          "queued_one": "Dar 1 modelis lauks, kol Thingport Grab apsilankys svetainėje, iš kurios jo failai.",
+          "queued_few": "Dar {{count}} modeliai lauks, kol Thingport Grab apsilankys svetainėse, iš kurių jų failai.",
+          "queued_other": "Dar {{count}} modelių lauks, kol Thingport Grab apsilankys svetainėse, iš kurių jų failai.",
+          "confirm": "Atsiųsti failus",
+          "grabTitle": "Palikti Thingport Grab?",
+          "grabMessage_one": "Thingport pats šio modelio failų atsiųsti negali — tai gali tik Thingport Grab, pačios svetainės puslapiuose. Modelis lauks, kol Grab ten apsilankys, ir jo atnešti failai užims trūkstamųjų vietą.",
+          "grabMessage_few": "Thingport pats šių failų atsiųsti negali — tai gali tik Thingport Grab, pačių svetainių puslapiuose. {{count}} modeliai lauks, kol Grab apsilankys, ir jo atnešti failai užims trūkstamųjų vietą.",
+          "grabMessage_other": "Thingport pats šių failų atsiųsti negali — tai gali tik Thingport Grab, pačių svetainių puslapiuose. {{count}} modelių lauks, kol Grab apsilankys, ir jo atnešti failai užims trūkstamųjų vietą.",
+          "grabConfirm": "Palikti Grab"
+        },
+        "delete": {
+          "title_one": "Ištrinti 1 modelį?",
+          "title_few": "Ištrinti {{count}} modelius?",
+          "title_other": "Ištrinti {{count}} modelių?",
+          "message_one": "Veiksmo nebus galima atšaukti. Modelis, jo aprašas, žymos ir įrašai kolekcijose bus pašalinti negrįžtamai. Paliečiamas tik modelis be failų.",
+          "message_few": "Veiksmo nebus galima atšaukti. Visi {{count}} modeliai, jų aprašai, žymos ir įrašai kolekcijose bus pašalinti negrįžtamai. Paliečiami tik modeliai be failų.",
+          "message_other": "Veiksmo nebus galima atšaukti. Visi {{count}} modelių, jų aprašai, žymos ir įrašai kolekcijose bus pašalinti negrįžtamai. Paliečiami tik modeliai be failų.",
+          "confirm": "Ištrinti modelius"
+        }
+      }
+    },
+    "modelRepairProgress": {
+      "stop": "Nutraukti taisymą",
+      "stopping": "Baigiama su dabartiniu modeliu…",
+      "reimport": {
+        "starting": "Ruošiamasi atsiųsti trūkstamus failus…",
+        "label": "{{phrase}} {{done}} iš {{total}}",
+        "phrases": [
+          "Atsiunčiami trūkstami failai…",
+          "Prašoma to STL atgal…",
+          "Modeliai thingportinami iš naujo…",
+          "Renkami 3MF iš pirminio šaltinio…",
+          "Failai grąžinami prie savo modelių…",
+          "Ieškoma to, kas pasiliko po perkėlimo…",
+          "Tuščios lentynos pildomos vėl…",
+          "Beldžiama dizainerio durimis…"
+        ]
+      },
+      "delete": {
+        "starting": "Ruošiamasi trinti modelius…",
+        "label": "{{phrase}} {{done}} iš {{total}}",
+        "phrases": [
+          "Trinami modeliai be failų…",
+          "Išnešamos tuščios dėžės…",
+          "Tvarkoma tai, ko nebėra…",
+          "Išvežamos atliekos…",
+          "Nušluostoma tuščia lentyna…",
+          "Atsisveikinama su šmėklomis…"
+        ]
       }
     }
   },
@@ -3265,7 +3694,8 @@
         "spin": "Sukimas",
         "zoomIn": "Priartinti",
         "zoomOut": "Nutolinti",
-        "color": "Modelio spalva"
+        "color": "Modelio spalva",
+        "colorOwn": "Šis modelis atsiuntė su savo spalvomis, tad nėra ką rinktis"
       },
       "downloadFailed": "Nepavyko atsisiųsti. Bandykite dar kartą.",
       "deleteFailed": "Nepavyko ištrinti modelio.",
@@ -3411,7 +3841,88 @@
       "downloadFile": "Atsisiųsti failą",
       "moreOpenOptions": "Kitos pjaustyklės ir atsisiuntimai",
       "openActions": "Atverti arba atsisiųsti",
-      "openInHeading": "Atverti su"
+      "openInHeading": "Atverti su",
+      "toolOwned": "Priklauso įrankiui",
+      "toolOwnedHint": "Jo negalima redaguoti ar ištrinti",
+      "customize": "Keisti…",
+      "scriptWithheld": "Scenarijus nepateiktas",
+      "scriptWithheldHint": "Šis modelis sukurtas iš scenarijaus, bet jo autorius nusprendė juo nesidalinti, tad čia nėra ko keisti. Tai pakeisti gali tik jis."
+    },
+    "customizer": {
+      "title": "Keičiamas {{model}}",
+      "model": {
+        "title": "Modelis",
+        "script": "Scenarijus"
+      },
+      "pane": {
+        "minimize": "Sutraukti",
+        "expand": "Išskleisti"
+      },
+      "pick": {
+        "title": "Kuris scenarijus?",
+        "body": "Su šiuo modeliu atsiuntė {{count}} scenarijus. Pasirinkite, kurį keisti."
+      },
+      "form": {
+        "title": "Keitimas",
+        "generate": "Generuoti",
+        "generating": "Generuojama…",
+        "noParameters": "Šis scenarijus neturi ką keisti.",
+        "undo": "Atšaukti",
+        "redo": "Pakartoti",
+        "reset": "Atstatyti scenarijaus reikšmes",
+        "code": "Rodyti {{name}} kodą",
+        "pickColor": "Pasirinkti spalvą",
+        "fontFallback": "{{name}} (naudojamas {{fallback}})",
+        "fontGroup": {
+          "Sans": "Be užraitų",
+          "Condensed": "Siauras",
+          "Serif": "Su užraitais",
+          "Heavy": "Storas",
+          "Rounded": "Apvalus",
+          "Display": "Dekoratyvus",
+          "Script": "Rašytinis"
+        },
+        "chooseFile": "Pasirinkti {{type}}",
+        "fileStandIn": "Kol kas paprastas pakaitalas",
+        "fileClear": "Grįžti prie pakaitalo",
+        "fileWrongType": "Tai ne {{type}} failas."
+      },
+      "notes": {
+        "missingFiles": "Šiam scenarijui reikia {{files}}, bet šie failai nebuvo pridėti prie modelio.",
+        "missingParts": "Rezultate gali trūkti dalių."
+      },
+      "busy": {
+        "reading": "Skaitomas scenarijus…",
+        "generating": "Generuojama…"
+      },
+      "stage": {
+        "empty": "Kol kas nieko nesugeneruota."
+      },
+      "status": {
+        "generated": "Sugeneruota per {{seconds}} s · {{size}} kB"
+      },
+      "download": {
+        "threeMf": "Atsisiųsti kaip 3MF",
+        "stl": "Atsisiųsti kaip STL",
+        "stlNoColors": "Išlaiko formą, bet ne spalvas"
+      },
+      "save": {
+        "action": "Išsaugoti į Thingport",
+        "done": "Išsaugota {{name}}",
+        "open": "Atidaryti modelį",
+        "description": "Sugeneruota iš {{script}}, kuris atsiuntė su {{model}}."
+      },
+      "code": {
+        "label": "{{name}} kodas",
+        "lines": "{{count}} eilutės · tik skaitymui",
+        "copy": "Kopijuoti",
+        "copied": "Nukopijuota",
+        "download": "Atsisiųsti scenarijų"
+      },
+      "error": {
+        "failed": "Scenarijus nesugeneravo modelio.",
+        "noGeometry": "Scenarijus įvykdytas, bet nesukūrė jokios formos."
+      }
     },
     "edit": {
       "title": "Redaguoti modelį",
@@ -3639,6 +4150,15 @@
         "merged_few": "{{count}} kolekcijos sujungtos į „{{name}}“",
         "merged_many": "{{count}} kolekcijos sujungta į „{{name}}“",
         "merged_other": "{{count}} kolekcijų sujungta į „{{name}}“"
+      },
+      "tool": {
+        "badge": "Priklauso įrankiui „{{tool}}“: jos negalima redaguoti ar ištrinti, ji dings pašalinus įrankį",
+        "badgeUnknown": "Priklauso įrankiui: jos negalima redaguoti ar ištrinti",
+        "status": "Priklauso „{{tool}}“ · negalima keisti",
+        "openCollection": "Atidaryti kolekciją",
+        "openTool": "Atidaryti „{{tool}}“",
+        "openToolUnknown": "Atidaryti įrankį",
+        "cantSelect": "Įrankio kolekcijos negalima sujungti ar ištrinti"
       }
     },
     "tags": {
@@ -3807,7 +4327,8 @@
       }
     },
     "manager": {
-      "title": "Kategorijų ir aplankų tvarkymas"
+      "title": "Kategorijų ir aplankų tvarkymas",
+      "repair": "Taisymas"
     },
     "selection": {
       "enter": "Žymėti modelius",
@@ -3884,7 +4405,10 @@
       "collectionsFailed": "Nepavyko atnaujinti kolekcijų. Bandykite dar kartą.",
       "tagsPartlyUpdated_one": "Atnaujintos {{count}} modelio žymės, bet likusių nepavyko. Bandykite dar kartą.",
       "tagsPartlyUpdated_few": "Atnaujintos {{count}} modelių žymės, bet likusių nepavyko. Bandykite dar kartą.",
-      "tagsPartlyUpdated_other": "Atnaujintos {{count}} modelių žymės, bet likusių nepavyko. Bandykite dar kartą."
+      "tagsPartlyUpdated_other": "Atnaujintos {{count}} modelių žymės, bet likusių nepavyko. Bandykite dar kartą.",
+      "toolOwned_one": "{{count}} pažymėtas modelis priklauso įrankiui: praleiskite jį, kad tai atliktumėte",
+      "toolOwned_few": "{{count}} pažymėti modeliai priklauso įrankiui: praleiskite juos, kad tai atliktumėte",
+      "toolOwned_other": "{{count}} pažymėtų modelių priklauso įrankiui: praleiskite juos, kad tai atliktumėte"
     },
     "merge": {
       "action": "Sujungti",
@@ -3941,6 +4465,17 @@
         "othersGo_other": "{{names}} bus pašalintos. Jų modeliai bus pažymėti „{{name}}“.",
         "keepsOwn": "Modeliai, jau pažymėti „{{name}}“, nesikeičia."
       }
+    },
+    "filters": {
+      "title": "Filtrai",
+      "generative": "Generuojami modeliai",
+      "generativeHint": "Tik modeliai, atkeliavę su juos sugeneravusiu scenarijumi, kurį galite pakeisti ir sugeneruoti iš naujo",
+      "sources": "Šaltiniai",
+      "allSources": "Visos svetainės",
+      "noSources": "Dar nieko neimportuota, tad nėra iš ko rinktis.",
+      "noneSelected": "Neįjungta nė viena svetainė, tad nėra ko rodyti.",
+      "noMatch": "Nė vienas čia esantis modelis neatitinka filtrų.",
+      "clear": "Išvalyti filtrus"
     }
   },
   "providers": {
@@ -4377,6 +4912,152 @@
       },
       "sync": {
         "notConnected": "Prijunkite Pinshape skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte pamėgtus modelius ir kolekcijas."
+      }
+    },
+    "toymakr3d": {
+      "connect": {
+        "steps": [
+          "Paprasčiausia: su Thingport Grab tiesiog atverkite toymakr3d.com prisijungę. Jis prijungs jūsų paskyrą ir atsiųs naują prisijungimą kaskart, kai ten vėl prisijungsite.",
+          "Arba rankiniu būdu: prisijunkite prie toymakr3d.com ir atverkite naršyklės kūrėjo įrankius (F12).",
+          "Skiltyje Network iš naujo įkelkite puslapį, spustelėkite bet kurią toymakr3d.com užklausą, nukopijuokite jos Cookie antraštę ir įklijuokite ją žemiau."
+        ],
+        "placeholder": "Prisijungus siųstos toymakr3d.com užklausos Cookie antraštė"
+      },
+      "status": {
+        "notConnected": "Toymakr3D failus duoda tik prisijungusiems naudotojams, įskaitant ir nemokamus modelius. Prijunkite paskyrą, kad galėtumėte juos importuoti ir matyti pamėgtus modelius.",
+        "expired": "Prisijungimo galiojimas baigėsi. Prisijunkite toymakr3d.com su Thingport Grab arba vėl prijunkite Toymakr3D skiltyje Konfigūracija → Šaltiniai.",
+        "expiredStatus": "Prisijungimas nebegalioja",
+        "disabledReason": "Toymakr3D: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai"
+      },
+      "about": {
+        "summary": "Vieno kūrėjo svetainė su judančių robotų ir mechų modeliais, dauguma jų nemokami: transformeriai, megazordai, gundamai ir panašiai.",
+        "signIn": "Jūsų pačių prisijungimas, failams ir pamėgtiems modeliams.",
+        "grab": "Atsiunčia jūsų prisijungimą, kai lankotės toymakr3d.com.",
+        "setup": [
+          "Įdiekite Thingport Grab, įjunkite jį Toymakr3D ir atverkite toymakr3d.com prisijungę.",
+          "Rankiniu būdu: nukopijuokite prisijungus siųstos toymakr3d.com užklausos Cookie antraštę ir įklijuokite ją skiltyje Konfigūracija → Šaltiniai."
+        ]
+      },
+      "admin": {
+        "description": "Modeliai ir kiekvieno naudotojo pamėgti modeliai. Abiem reikia paties naudotojo prisijungimo; be jo skaitomi tik modelių puslapiai."
+      },
+      "sync": {
+        "notConnected": "Prijunkite Toymakr3D skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte pamėgtus modelius."
+      }
+    },
+    "makerables": {
+      "connect": {
+        "steps": [
+          "Paprasčiausia: su Thingport Grab tiesiog atverkite makerables.com prisijungę. Jis prijungs jūsų paskyrą ir atsiųs naują prisijungimą kaskart, kai ten vėl prisijungsite.",
+          "Arba rankiniu būdu: prisijunkite prie makerables.com ir atverkite naršyklės kūrėjo įrankius (F12).",
+          "Eikite į skiltį Network, perkraukite puslapį, spustelėkite bet kurią makerables.com užklausą, nukopijuokite jos Cookie antraštę ir įklijuokite žemiau."
+        ],
+        "placeholder": "Prisijungusio makerables.com užklausos Cookie antraštė"
+      },
+      "status": {
+        "notConnected": "Prijunkite paskyrą, kad Thingport matytų jūsų Makerables išsaugotus projektus. Projektai importuojami ir be jos.",
+        "expired": "Prisijungimo galiojimas baigėsi. Prisijunkite makerables.com su Thingport Grab arba vėl prijunkite Makerables skiltyje Konfigūracija → Šaltiniai.",
+        "expiredStatus": "Prisijungimas nebegalioja",
+        "disabledReason": "Makerables: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai"
+      },
+      "about": {
+        "summary": "Makera projektų svetainė, jungianti CNC ir 3D spausdinimą: visi projektai nemokami, o šalia modelių failų, kuriuos importuoja Thingport, turi NC ir CAM failus.",
+        "signIn": "Importuoti nereikia; prisijungimas prideda jūsų išsaugotus projektus.",
+        "grab": "Atsiunčia jūsų prisijungimą, kai lankotės makerables.com.",
+        "setup": [
+          "Importuokite bet kurio projekto nuorodą; prisijungti nereikia.",
+          "Išsaugotiems projektams: įdiekite Thingport Grab, įjunkite jį Makerables ir atverkite makerables.com prisijungę."
+        ]
+      },
+      "admin": {
+        "description": "Projektai ir kiekvieno naudotojo išsaugoti projektai. Projektai importuojami be prisijungimo; išsaugotiems reikia naudotojo paties."
+      },
+      "sync": {
+        "notConnected": "Prijunkite Makerables skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte išsaugotus projektus."
+      }
+    },
+    "cgtrader": {
+      "connect": {
+        "steps": [
+          "Paprasčiausia: su Thingport Grab tiesiog atverkite cgtrader.com prisijungę. Jis prijungs jūsų paskyrą ir atsiųs naują prisijungimą kaskart, kai jis ten pasikeis.",
+          "Arba rankiniu būdu: prisijunkite prie cgtrader.com ir atverkite naršyklės kūrėjo įrankius (F12).",
+          "Skiltyje Network iš naujo įkelkite puslapį, spustelėkite bet kurią cgtrader.com užklausą, nukopijuokite jos Cookie antraštę ir įklijuokite ją žemiau."
+        ],
+        "placeholder": "Prisijungus siųstos cgtrader.com užklausos Cookie antraštė"
+      },
+      "status": {
+        "notConnected": "CGTrader failus duoda tik prisijungusiems naudotojams, įskaitant ir nemokamus modelius. Prijunkite paskyrą, kad galėtumėte juos importuoti ir matyti pamėgtus modelius bei norų sąrašą.",
+        "expired": "Prisijungimo galiojimas baigėsi. Prisijunkite cgtrader.com su Thingport Grab arba vėl prijunkite CGTrader skiltyje Konfigūracija → Šaltiniai.",
+        "expiredStatus": "Prisijungimas nebegalioja",
+        "disabledReason": "CGTrader: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai"
+      },
+      "about": {
+        "summary": "Vilniuje įkurta daugiau nei trijų milijonų 3D modelių prekyvietė: žaidimų ir kino objektai, vizualizacijos ir didelis 3D spausdinimo katalogas, daug modelių nemokami.",
+        "signIn": "Jūsų pačių prisijungimas, failams, pamėgtiems modeliams ir norų sąrašui.",
+        "grab": "Atsiunčia jūsų prisijungimą, kai lankotės cgtrader.com, kartu su žetonu, kurį naršyklė gavo praėjusi jos robotų patikrą.",
+        "flaresolverr": "Gauna Thingport savą robotų patikros žetoną, kad atsisiuntimams nereikėtų laukti Grab žetono.",
+        "setup": [
+          "Įdiekite Thingport Grab, įjunkite jį CGTrader ir atverkite cgtrader.com prisijungę.",
+          "Rankiniu būdu: nukopijuokite prisijungus siųstos cgtrader.com užklausos Cookie antraštę ir įklijuokite ją skiltyje Konfigūracija → Šaltiniai.",
+          "Jos atsisiuntimus saugo AWS robotų patikra: nustatykite FlareSolverr arba leiskite Grab perduoti jūsų naršyklės žetoną."
+        ]
+      },
+      "admin": {
+        "description": "Modeliai ir kiekvieno naudotojo pamėgti modeliai bei norų sąrašas. Visiems reikia paties naudotojo prisijungimo, o atsisiuntimams – dar ir robotų patikros žetono iš Grab arba FlareSolverr; be prisijungimo skaitomi tik modelių puslapiai."
+      },
+      "sync": {
+        "notConnected": "Prijunkite CGTrader skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte pamėgtus modelius ir norų sąrašą."
+      }
+    },
+    "grabcad": {
+      "connect": {
+        "steps": [
+          "Paprasčiausia: su Thingport Grab tiesiog atverkite grabcad.com prisijungę. Jis prijungs jūsų paskyrą ir atsiųs naują prisijungimą kaskart, kai jis ten pasikeis.",
+          "Arba rankiniu būdu: prisijunkite prie grabcad.com ir atverkite naršyklės kūrėjo įrankius (F12).",
+          "Skiltyje Application (Chrome, Edge) arba Storage (Firefox) → Cookies → grabcad.com nukopijuokite _grabcad_session reikšmę ir įklijuokite ją žemiau. Tiks ir prisijungus siųstos grabcad.com užklausos Cookie antraštė."
+        ],
+        "placeholder": "_grabcad_session slapukas arba prisijungus siųstos užklausos Cookie antraštė"
+      },
+      "status": {
+        "notConnected": "GrabCAD failus duoda tik prisijungusiems naudotojams. Prijunkite paskyrą, kad galėtumėte importuoti jo modelius; bet kieno pamėgti modeliai skaitomi ir be jos.",
+        "expired": "Prisijungimo galiojimas baigėsi. Prisijunkite grabcad.com su Thingport Grab arba vėl prijunkite GrabCAD skiltyje Konfigūracija → Šaltiniai.",
+        "expiredStatus": "Prisijungimas nebegalioja",
+        "disabledReason": "GrabCAD: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai"
+      },
+      "about": {
+        "summary": "Stratasys inžinierių bendruomenė: nemokama milijonų CAD modelių biblioteka – nuo mašinų detalių iki ištisų mazgų, dažniausiai STEP failais.",
+        "signIn": "Jūsų pačių prisijungimas, failams; bet kieno pamėgti modeliai skaitomi ir be jo.",
+        "grab": "Atsiunčia jūsų prisijungimą, kai lankotės grabcad.com. Jis galioja dvi dienas nuo paskutinio naudojimo ten, tad retkarčiais apsilankius jis išlieka.",
+        "setup": [
+          "Įdiekite Thingport Grab, įjunkite jį GrabCAD ir atverkite grabcad.com prisijungę.",
+          "Rankiniu būdu: nukopijuokite prisijungusio grabcad.com skirtuko _grabcad_session slapuką ir įklijuokite jį skiltyje Konfigūracija → Šaltiniai."
+        ]
+      },
+      "admin": {
+        "description": "Modeliai ir bet kieno pamėgti modeliai. Pamėgti modeliai skaitomi be prisijungimo; failams reikia paties naudotojo prisijungimo. Thingport importuoja jų STEP, STL, 3MF ir OBJ failus, o ne pačių CAD sistemų formatus."
+      },
+      "sync": {
+        "notConnected": "Prijunkite GrabCAD skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte pamėgtus modelius."
+      }
+    },
+    "owlcad": {
+      "status": {
+        "alwaysConnected": "OwlCAD prijungtas iš karto: jam nereikia nei paskyros, nei rakto."
+      },
+      "about": {
+        "summary": "Naršyklėje veikianti CAD programa. Jos galerijoje – didelė CC0 ir CC-BY dalių biblioteka bei naudotojų pasidalyti CAD modeliai.",
+        "signIn": "Nieko jungti nereikia.",
+        "grab": "Reikalingas jos CAD projektams: OwlCAD nelaiko jų failo, todėl jį sukuria pati redaktorė.",
+        "setup": [
+          "Nieko nustatyti nereikia: įklijuok OwlCAD nuorodą arba importuok iš jo puslapio su Thingport Grab.",
+          "Bibliotekos dalis importuojama iš karto. CAD projektas laukia, kol Thingport Grab atvers jį owlcad.com, kur OwlCAD redaktorė jį eksportuoja."
+        ]
+      },
+      "admin": {
+        "description": "Naršyklės CAD programa: bibliotekos dalys importuojamos pačios, CAD projektai – per Thingport Grab."
+      },
+      "sync": {
+        "notConnected": "Šiuo metu OwlCAD nepasiekiamas."
       }
     }
   }

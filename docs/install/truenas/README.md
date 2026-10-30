@@ -55,7 +55,7 @@ Recommended should be green; anything that isn't means part of Thingport won't w
   it by that exact name over the compose network; renaming it breaks `/api/*` requests.
 - If the backend can't write to `$APPDATA_PATH/storage`, check the dataset's owning
   uid/gid (`ls -n` on the parent folder) and set `PUID`/`PGID` in your `.env` to match.
-- Provider setup (MakerWorld / Thingiverse / MyMiniFactory credentials) works the same as any other install
+- Provider setup (the sign-in, key or token each site needs) works the same as any other install
   -- see [`docs/PROVIDER_SETUP.md`](../../PROVIDER_SETUP.md) in the main repo.
 - To pin a specific build instead of `:latest`, see the tagging note in
   [`docker-compose.deploy.yml`](../../../docker-compose.deploy.yml) and set `BACKEND_IMAGE`/

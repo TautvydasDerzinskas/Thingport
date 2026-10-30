@@ -79,7 +79,9 @@ export const thingiverseImport: SourcedImport<string, Thing> = {
   noFilesMessage: "None of this Thing's files could be downloaded.",
   nameHint: (thingId) => `thing-${thingId}`,
   async downloadModel(_target, thing, _token, _requested, kit) {
-    const modelFiles = thing.plateFiles.filter((file) => kit.isModelFile(file.name));
+    // Scripts too, not only what becomes a plate: a customizable Thing publishes its .scad as an ordinary
+    // Thing File, and createPrint files it beside the model so it can be generated again.
+    const modelFiles = thing.plateFiles.filter((file) => kit.isImportableFile(file.name));
     const results = await mapWithConcurrency(modelFiles, DOWNLOAD_CONCURRENCY, (file) =>
       kit.downloadFile(file.url, file.name),
     );

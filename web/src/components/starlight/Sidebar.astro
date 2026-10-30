@@ -1,0 +1,28 @@
+---
+import Default from "@astrojs/starlight/components/Sidebar.astro";
+import { PROVIDER_LOGOS } from "../docs/providerLogos";
+
+// Each provider's link (DOCS_SIDEBAR marks it data-provider="<slug>") shows its logo. The URLs are only known once
+// Vite has hashed the files, so the rules that carry them are written here rather than in the stylesheet.
+const logos = Object.entries(PROVIDER_LOGOS)
+  .map(([slug, src]) => `[data-provider="${slug}"]{--provider-logo:url("${src}")}`)
+  .join("");
+---
+
+<style is:inline set:html={logos}></style>
+<Default />
+
+<style>
+  :global(.sidebar-content a[data-provider]) {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  :global(.sidebar-content a[data-provider]::before) {
+    content: "";
+    flex: none;
+    width: 1.125rem;
+    height: 1.125rem;
+    background: var(--provider-logo) center / contain no-repeat;
+  }
+</style>

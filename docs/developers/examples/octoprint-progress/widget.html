@@ -1,0 +1,45 @@
+<style>
+  .octo {
+    display: grid;
+    gap: 6px;
+    padding: 12px;
+    font-family: var(--tp-font);
+    color: var(--tp-text);
+  }
+  .octo .file {
+    overflow: hidden;
+    font-weight: 600;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .octo .bar {
+    height: 6px;
+    overflow: hidden;
+    border-radius: 3px;
+    background: var(--tp-divider);
+  }
+  .octo .bar div {
+    height: 100%;
+    background: var(--tp-accent);
+    transform-origin: left;
+    transform: scaleX(var(--done, 0));
+    transition: transform 300ms ease-out;
+  }
+  .octo .state {
+    font-size: 12px;
+    color: var(--tp-text-muted);
+  }
+  .octo.failed .state {
+    color: var(--tp-error);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .octo .bar div {
+      transition: none;
+    }
+  }
+</style>
+<div class="octo">
+  <div class="file" data-t="loading">Asking the printer…</div>
+  <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"><div></div></div>
+  <div class="state"></div>
+</div>

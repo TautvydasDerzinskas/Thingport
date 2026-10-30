@@ -92,6 +92,31 @@
     "group": "providers"
   },
   {
+    "value": "builtin:providers/owlcad",
+    "name": "OwlCAD",
+    "group": "providers"
+  },
+  {
+    "value": "builtin:providers/toymakr3d",
+    "name": "Toymakr3D",
+    "group": "providers"
+  },
+  {
+    "value": "builtin:providers/makerables",
+    "name": "Makerables",
+    "group": "providers"
+  },
+  {
+    "value": "builtin:providers/cgtrader",
+    "name": "CGTrader",
+    "group": "providers"
+  },
+  {
+    "value": "builtin:providers/grabcad",
+    "name": "GrabCAD",
+    "group": "providers"
+  },
+  {
     "value": "builtin:ai/ai21",
     "name": "AI21",
     "group": "ai"

@@ -6,7 +6,7 @@ import path from "node:path";
 import { MODEL_PREVIEWS, STORAGE } from "../src/config";
 import { prisma } from "../src/db";
 import { writeZip } from "../src/utils/zipWriter";
-import { plateAssetHome } from "../src/services/modelAssets";
+import { plateAssetHome, RENDER_FILE_TAG } from "../src/services/modelAssets";
 import {
   generateModelImage,
   generateModelPreviewGlb,
@@ -140,7 +140,7 @@ describe("model picture cache", () => {
     await writeZip(src, [{ arcname: "3D/model.model", filePath: modelPath }]);
     await generateModelImage(plateId, src, "elsewhere.3mf");
     expect(await modelImageState(plateId)).toBe("unsupported");
-    const marker = path.join(cacheDir(), `${plateId}.render.v2.error`);
+    const marker = path.join(cacheDir(), `${plateId}.${RENDER_FILE_TAG}.error`);
     const markedAt = (await fs.stat(marker)).mtimeMs;
     await generateModelImage(plateId, src, "elsewhere.3mf");
     expect((await fs.stat(marker)).mtimeMs).toBe(markedAt);
@@ -153,9 +153,16 @@ describe("model picture cache", () => {
   });
 
   it("ignores formats it can't draw", async () => {
-    const plateId = await newPlateId("step");
-    await generateModelImage(plateId, await file("part.step", "ISO-10303-21;"), "part.step");
+    const plateId = await newPlateId("lightburn");
+    await generateModelImage(plateId, await file("sign.lbrn", "<LightBurnProject/>"), "sign.lbrn");
     expect(fsSync.existsSync(await modelImagePath(plateId))).toBe(false);
+  });
+
+  it("draws a STEP file, which the CAD kernel has to tessellate first", async () => {
+    const plateId = await newPlateId("cad");
+    const src = path.join(__dirname, "fixtures", "box.step");
+    await generateModelImage(plateId, src, "box.step");
+    expect(await modelImageState(plateId)).toBe("ready");
   });
 
   it("lets a 3D preview go ahead of pictures already waiting", async () => {

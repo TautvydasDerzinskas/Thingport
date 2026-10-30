@@ -15,8 +15,8 @@ you open Thingport at, and the assistant signs in with your [API token](api-toke
 3. Click the cog next to the token to open **Token permissions**, and under **MCP permissions** set each tool to **Allow** or
    **Deny**. Changes apply at once, to the token you already have.
 
-A new token gets every tool that only reads, plus `save_widget` and `upload_icon`, so an assistant can make you a
-dashboard widget straight away. The other tools that change your library are marked **Changes your library**, stay off
+A new token gets every tool that only reads, plus `save_widget`, `save_tool` and `upload_icon`, so an assistant can
+make you a dashboard widget or a tool straight away. The other tools that change your library are marked **Changes your library**, stay off
 until you turn them on, and ask you to confirm when you do. The token still can't change anything over the REST API,
 and an MCP tool is only reachable if it's allowed here. Regenerating the token sets its tools back to these defaults.
 
@@ -31,7 +31,9 @@ claude mcp add --transport http thingport https://thingport.example.com/api/mcp 
 ```
 
 Any other MCP client works the same way, as long as it supports the Streamable HTTP transport and lets you set a
-header: point it at `https://thingport.example.com/api/mcp` and send `Authorization: Bearer tp_...`.
+header: point it at `https://thingport.example.com/api/mcp` and send `Authorization: Bearer tp_...`. **How to connect**,
+above the tools in **MCP permissions**, shows the command or settings for Claude Code, Claude, ChatGPT, Codex CLI,
+Cursor and VS Code with your address filled in.
 
 The token works only in that header. Putting it in the address as `?token=...` is refused.
 
@@ -56,9 +58,12 @@ These read your library, and are on for a new token:
 | `list_model_images` | A model's pictures, cover first, with the id `edit_model_images` takes, and the pictures if asked.      |
 | `widget_guide`      | How to write a [custom dashboard widget](custom-widgets.md), read before saving one.                    |
 | `list_widgets`      | Your custom dashboard widgets, optionally with their code.                                              |
+| `tool_guide`        | How to write a [tool](tools.md) for your Tools page, read before saving one.                            |
+| `list_tools`        | The tools you can open, installed and your own, optionally with their script, HTML and labels.          |
 | `list_icons`        | Thingport's own icons and the ones you uploaded, searched by name, e.g. for a widget's icon.            |
 
-These change your library. `save_widget` and `upload_icon` are on for a new token; the rest are off until you turn them on:
+These change your library. `save_widget`, `save_tool` and `upload_icon` are on for a new token; the rest are off until
+you turn them on:
 
 | Tool                     | What it does                                                                                                 |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------ |
@@ -75,14 +80,15 @@ These change your library. `save_widget` and `upload_icon` are on for a new toke
 | `add_to_collection`      | Adds models from your library to one of your collections.                                                    |
 | `remove_from_collection` | Takes models out of one of your collections; they stay in your library.                                      |
 | `save_widget`            | Creates one of your own [dashboard widgets](custom-widgets.md), or replaces one it or you saved earlier.     |
+| `save_tool`              | Creates one of your own [tools](tools.md), or replaces one it or you saved earlier.                          |
 | `upload_icon`            | Adds an image (an SVG, or a PNG, JPEG or WebP) to your icons, as the icon browser's **Upload** does.         |
 
 Only `import_model`, `upload_model`, `create_category`, `create_collection`, `add_to_collection` and `upload_icon` just
 add. The rest change or take away what's there, so they're marked as destructive and an assistant's app may ask you
 before calling them: `delete_model`, `edit_model_images` and `remove_model_file` delete models, pictures and files for
 good, `add_model_files` replaces a model's sliced print, `edit_model` and `rename_model_file` overwrite what they change,
-`remove_from_collection` takes models out of a collection (not your library) and `save_widget` replaces a widget with the
-same name.
+`remove_from_collection` takes models out of a collection (not your library), and `save_widget` and `save_tool` replace
+a widget or a tool with the same folder name.
 
 An import runs the same checks as **+ Add > Import** (a provider an admin turned off stays off, and a model already in
 your library isn't imported twice) and shows up in your notifications and the admin logs the same way. It doesn't ask for a captcha, even when imports do in the app: like Thingport Grab, an
@@ -108,6 +114,11 @@ the same token in the `Authorization: Bearer` header if the token may read **Mod
 if the token may read **Images**. With `include_pictures`, it also hands the assistant the first 8 pictures, scaled down
 to 512 px, so it can look at them, e.g. to pick a cover.
 
+`save_tool` needs tools turned on for you, with **Users' own tools** switched on, under **Administration → Tools**;
+`list_tools` says so when they aren't, so the assistant can tell you what to ask an admin for. A tool it saves is yours
+alone, and it can't bring models of its own — only a tool in the Thingport repository does that, where its files are
+what a reviewer reads.
+
 Every tool sees only your own library, exactly as you do in Thingport. Looking a model up through MCP doesn't count as a
 view, so it doesn't change your Browsing History or your most viewed models.
 
@@ -131,10 +142,11 @@ Since an MCP import doesn't ask for a captcha, an admin who requires one for imp
 Model descriptions come from the sites they were imported from, and the assistant reads them. A description written to
 look like instructions could talk it into calling another tool you gave it. `delete_model`, `edit_model_images` and
 `remove_model_file` delete models, pictures and files for good, and `edit_model` overwrites a model's title, description
-and tags; they're off for a new token, so turn them on only while you have the assistant edit your library. `save_widget`
-writes code that runs in your dashboard with your session, so a widget it saves can do in Thingport whatever you can, and
-it can replace a widget of yours with the same name. It's on for a new token: deny it in **Token permissions** if you
-don't have your assistant write widgets, and keep the other tools that change the library off unless you use them.
+and tags; they're off for a new token, so turn them on only while you have the assistant edit your library. `save_widget` and
+`save_tool` write code that runs in your browser with your session, so a widget or a tool one saves can do in Thingport
+whatever you can, and either can replace one of yours with the same folder name. Both are on for a new token: deny them in
+**Token permissions** if you don't have your assistant write widgets or tools, and keep the other tools that change the
+library off unless you use them.
 
 ## Turn it off
 

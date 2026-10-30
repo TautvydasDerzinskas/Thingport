@@ -73,10 +73,11 @@ async function downloadFromLibrary(
         : `This MyMiniFactory model downloads only when signed in. ${CONNECT}`,
     );
   }
-  const isModel = (name: string) => kit.isModelFile(name) || path.extname(name).toLowerCase() === ".zip";
+  // Scripts come too, so a model published with the .scad it was generated from arrives generative.
+  const isWanted = (name: string) => kit.isImportableFile(name) || path.extname(name).toLowerCase() === ".zip";
   const downloaded: NewPlateInput[] = [];
   try {
-    const files = await listMyminifactoryLibraryFiles(objectId, cookie, isModel);
+    const files = await listMyminifactoryLibraryFiles(objectId, cookie, isWanted);
     if (!files) {
       throw new HttpError(
         403,
@@ -93,7 +94,7 @@ async function downloadFromLibrary(
     if (!downloaded.length && files.length) {
       throw new HttpError(
         400,
-        files.every((file) => !isModel(file.name))
+        files.every((file) => !isWanted(file.name))
           ? "This model's files are in an archive Thingport can't open (such as RAR), and MyMiniFactory hasn't unpacked it."
           : "Couldn't download this model's files from your MyMiniFactory library. Try again later.",
       );

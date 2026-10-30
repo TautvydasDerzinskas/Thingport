@@ -8,8 +8,10 @@ import Typography from "@mui/material/Typography";
 import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
+import Tooltip from "@mui/material/Tooltip";
 import ButtonBase from "@mui/material/ButtonBase";
 import FolderIcon from "@mui/icons-material/Folder";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import StorageIcon from "@mui/icons-material/Storage";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PrintIcon from "@mui/icons-material/Print";
@@ -24,6 +26,7 @@ import { dividerBorderColor } from "../../theme";
 import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
 import { useDownloadPrint } from "./useDownloadPrint";
 import { useOpenInSlicer } from "./useOpenInSlicer";
+import { hasGeneratorScript, useCustomize } from "./useCustomize";
 import NormalizedOpenButton from "./NormalizedOpenButton";
 import ModelFileSelect from "./ModelFileSelect";
 import OpenInSlicerButton from "./OpenInSlicerButton";
@@ -56,6 +59,8 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
   const selectedFile = files.find((file) => file.key === selectedKey) ?? files[0] ?? null;
   const normalizedTarget = normalizedTargetFor(selectedFile);
   const normalized = useNormalizedOpen(print.id, recordUse, onUnauthorized);
+  // Opened from the button below rather than a menu, so there is no menu to close.
+  const customize = useCustomize(print, () => {}, onUnauthorized);
 
   const goToCategory = () => {
     if (!print.category_id) return;
@@ -165,6 +170,20 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
           </Box>
         )}
 
+        {/* Why there is nothing to customise here, which otherwise looks like a model that never had a script.
+            A model that does have one needs no chip: it leads with Customize. */}
+        {print.generator_script_withheld && !hasGeneratorScript(print) && (
+          <Tooltip title={t("models:detail.scriptWithheldHint")}>
+            <Chip
+              size="small"
+              icon={<LockOutlinedIcon />}
+              label={t("models:detail.scriptWithheld")}
+              variant="outlined"
+              sx={{ alignSelf: "flex-start", color: "text.secondary" }}
+            />
+          </Tooltip>
+        )}
+
         {print.ai_suggestion && (
           <Paper variant="outlined" sx={{ p: 1.5, bgcolor: "action.hover" }}>
             <Stack spacing={1}>
@@ -269,6 +288,7 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
             // The zip holds the plates and supporting files, not the prepared print.
             zipCount={files.filter((file) => file.plate).length}
             onDownloadZip={() => void downloadAllZip()}
+            onCustomize={customize.available ? customize.start : undefined}
           />
         )}
         {slicerOption && normalizedTarget && (
@@ -314,6 +334,7 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
           </Typography>
         )}
       </Stack>
+      {customize.window}
     </Paper>
   );
 }

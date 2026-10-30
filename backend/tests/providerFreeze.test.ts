@@ -36,6 +36,10 @@ describe("provider-module freeze", () => {
         "https://cults3d.com/en/3d-model/art/example",
         "https://makeitreal.eufymake.com/models/be7c829023dd11f19919128e55eac07e/",
         "https://pinshape.com/items/111504-articulated-dragon",
+        "https://www.toymakr3d.com/product/8-transformable-sofa-robot",
+        "https://www.makerables.com/project/acrylic-knife",
+        "https://www.cgtrader.com/3d-print-models/jewelry/ring/lotus-ring-with-opening-and-closing-mechanism",
+        "https://grabcad.com/library/arduino-uno-r3-1",
       ].map((url) => identifySourceModel(url)?.provider),
     ).toEqual([
       "makerworld",
@@ -50,6 +54,10 @@ describe("provider-module freeze", () => {
       "cults3d",
       "eufymake",
       "pinshape",
+      "toymakr3d",
+      "makerables",
+      "cgtrader",
+      "grabcad",
     ]);
   });
 
@@ -67,6 +75,11 @@ describe("provider-module freeze", () => {
       "cults3d",
       "eufymake",
       "pinshape",
+      "owlcad",
+      "toymakr3d",
+      "makerables",
+      "cgtrader",
+      "grabcad",
     ]);
   });
 
@@ -84,6 +97,10 @@ describe("provider-module freeze", () => {
       "cults3d",
       "eufymake",
       "pinshape",
+      "toymakr3d",
+      "makerables",
+      "cgtrader",
+      "grabcad",
     ]);
   });
 
@@ -101,6 +118,11 @@ describe("provider-module freeze", () => {
       "cults3d",
       "eufymake",
       "pinshape",
+      "owlcad",
+      "toymakr3d",
+      "makerables",
+      "cgtrader",
+      "grabcad",
     ]);
   });
 
@@ -118,6 +140,10 @@ describe("provider-module freeze", () => {
       "snapmaker",
       "eufymake",
       "pinshape",
+      "toymakr3d",
+      "makerables",
+      "cgtrader",
+      "grabcad",
     ]);
   });
 
@@ -135,6 +161,11 @@ describe("provider-module freeze", () => {
       "cults3d",
       "eufymake",
       "pinshape",
+      "owlcad",
+      "toymakr3d",
+      "makerables",
+      "cgtrader",
+      "grabcad",
     ]);
   });
 
@@ -163,9 +194,15 @@ describe("provider-module freeze", () => {
         "makeronline_grab",
         "myminifactory_session",
         "nexprint_session",
+        "owlcad_needs_grab",
         "provider_disabled",
         "snapmaker_session",
         "thangs_session",
+        "toymakr3d_session",
+        "makerables_session",
+        "cgtrader_session",
+        "CGTRADER_DOWNLOAD_LIMIT",
+        "grabcad_session",
       ].toSorted(),
     );
     // The dashboard's provider failure is a route-local literal, not a *_CODE constant.
@@ -303,6 +340,11 @@ describe("provider-module freeze", () => {
           "cults3d_cat_ids",
           "eufymake_cat_ids",
           "pinshape_cat_ids",
+          "owlcad_cat_ids",
+          "toymakr3d_cat_ids",
+          "makerables_cat_ids",
+          "cgtrader_cat_ids",
+          "grabcad_cat_ids",
         ].toSorted(),
       );
     } finally {

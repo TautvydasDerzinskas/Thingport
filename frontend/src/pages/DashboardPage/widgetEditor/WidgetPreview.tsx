@@ -6,7 +6,7 @@ import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import ReplayIcon from "@mui/icons-material/Replay";
-import type { CustomWidget, WidgetManifest } from "../../../api/widgets";
+import type { CustomWidget, WidgetLocales, WidgetManifest } from "../../../api/widgets";
 import Segmented from "../../../components/controls/Segmented";
 import HelpTip from "../../../components/HelpTip";
 import CustomWidgetCard from "../CustomWidgetCard";
@@ -40,12 +40,14 @@ type Props = {
   manifest: WidgetManifest;
   script: string;
   html: string;
+  /** Its words by language, so the preview shows them in the user's language as the dashboard will. */
+  locales: WidgetLocales;
   /** The saved widget's id, so requests through Thingport use its declared hosts; null for one not saved yet. */
   widgetId: string | null;
 };
 
 /** The widget running in a stand-in for the dashboard's grid, at its minimum size or the size it's added at. */
-export default function WidgetPreview({ manifest, script, html, widgetId }: Props) {
+export default function WidgetPreview({ manifest, script, html, locales, widgetId }: Props) {
   const { t } = useTranslation("app");
   const [sizing, setSizing] = useState<"min" | "default">("min");
   const [run, setRun] = useState(0);
@@ -54,14 +56,14 @@ export default function WidgetPreview({ manifest, script, html, widgetId }: Prop
   const [room, setRoom] = useState({ width: 0, height: 0 });
 
   // What the panel runs: the editor's text after a pause in typing.
-  const [shown, setShown] = useState({ manifest, script, html });
+  const [shown, setShown] = useState({ manifest, script, html, locales });
   useEffect(() => {
-    const timer = window.setTimeout(() => setShown({ manifest, script, html }), DEBOUNCE_MS);
+    const timer = window.setTimeout(() => setShown({ manifest, script, html, locales }), DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
-  }, [manifest, script, html]);
+  }, [manifest, script, html, locales]);
 
   const widget = useMemo((): CustomWidget => {
-    const sha = `draft-${fingerprint(`${shown.script}\0${shown.html}\0${run}`)}`;
+    const sha = `draft-${fingerprint(`${shown.script}\0${shown.html}\0${JSON.stringify(shown.locales)}\0${run}`)}`;
     return {
       id: widgetId ?? "draft",
       source: "own",
@@ -69,6 +71,7 @@ export default function WidgetPreview({ manifest, script, html, widgetId }: Prop
       manifest: shown.manifest,
       script: shown.script,
       html: shown.html.trim() ? shown.html : null,
+      locales: shown.locales,
       sha,
       updatedAt: "",
     };

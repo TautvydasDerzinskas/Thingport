@@ -13,6 +13,10 @@ import { nexprintSession } from "./nexprint/session";
 import { pinshapeSession } from "./pinshape/session";
 import { snapmakerSession } from "./snapmaker/session";
 import { thangsSession } from "./thangs/session";
+import { makerablesSession } from "./makerables/session";
+import { toymakr3dSession } from "./toymakr3d/session";
+import { cgtraderSession } from "./cgtrader/session";
+import { grabcadSession } from "./grabcad/session";
 
 export const SESSION_SOURCES: Partial<Record<ProviderId, SessionSource>> = {
   myminifactory: myminifactorySession,
@@ -24,4 +28,8 @@ export const SESSION_SOURCES: Partial<Record<ProviderId, SessionSource>> = {
   cults3d: cults3dSession,
   eufymake: eufymakeSession,
   pinshape: pinshapeSession,
+  toymakr3d: toymakr3dSession,
+  makerables: makerablesSession,
+  cgtrader: cgtraderSession,
+  grabcad: grabcadSession,
 };

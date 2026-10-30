@@ -36,7 +36,7 @@ describe("modelPreviewCache -- worker limits", () => {
   });
 
   afterAll(async () => {
-    for (const ext of [".v3.glb", ".v3.error", ".pending"]) {
+    for (const ext of [".v4.glb", ".v4.error", ".pending"]) {
       await fs.rm(path.join(cacheDir(), `${plateId}${ext}`), { force: true });
     }
   });
@@ -44,14 +44,14 @@ describe("modelPreviewCache -- worker limits", () => {
   it("kills a render that exceeds its memory budget and keeps the server process alive", async () => {
     await generateModelPreviewGlb(plateId, fixture);
     expect(modelPreviewGlbExists(plateId)).toBe(false);
-    const error = fsSync.readFileSync(path.join(cacheDir(), `${plateId}.v3.error`), "utf-8");
+    const error = fsSync.readFileSync(path.join(cacheDir(), `${plateId}.v4.error`), "utf-8");
     expect(error).toMatch(/^permanent: (memory grew|worker heap exceeded)/);
     expect(fsSync.existsSync(path.join(cacheDir(), `${plateId}.pending`))).toBe(false);
     expect(fsSync.readdirSync(cacheDir()).some((f) => f.startsWith(plateId) && f.endsWith(".tmp"))).toBe(false);
   });
 
   it("does not retry a limit failure, even once the cooldown has passed", async () => {
-    const errorPath = path.join(cacheDir(), `${plateId}.v3.error`);
+    const errorPath = path.join(cacheDir(), `${plateId}.v4.error`);
     const longAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
     await fs.utimes(errorPath, longAgo, longAgo);
     await generateModelPreviewGlb(plateId, fixture);

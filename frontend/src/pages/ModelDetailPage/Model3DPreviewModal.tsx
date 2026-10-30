@@ -72,6 +72,8 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
   const renderColor = useRenderColor();
   const [pickedColor, setPickedColor] = useState<RenderColor | null>(null);
   const modelColor = pickedColor ?? renderColor;
+  // A model printed in colours of its own is shown in those, so the palette has nothing left to offer.
+  const [ownColor, setOwnColor] = useState(false);
   const [cameraView, setCameraView] = useState<CameraView>("topFront");
   const [showGrid, setShowGrid] = useState(true);
   const [spin, setSpin] = useState(true);
@@ -97,6 +99,9 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
     // The viewer won't remount for the same file, so its plates wouldn't be re-reported.
     if (plateId === activePlate?.id) return;
     setActivePlateId(plateId);
+    // The next file answers for itself; until it does, the palette shouldn't stay disabled on the strength
+    // of the last one.
+    setOwnColor(false);
     setInternalPlates([]);
     setInternalThumbnails({});
     setSelectedInternalPlateId(null);
@@ -233,6 +238,7 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
               selectedPlateId={selectedInternalPlateId}
               previewGlbUrl={activePlate.preview_glb_url ? printsApi.fileUrl(activePlate.preview_glb_url) : null}
               onPlatesDetected={handlePlatesDetected}
+              onOwnColorChange={setOwnColor}
             />
           ) : (
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
@@ -269,6 +275,7 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
             onRenderStyleChange={setRenderStyle}
             color={modelColor}
             onColorChange={setPickedColor}
+            ownColor={ownColor}
             showGrid={showGrid}
             onShowGridChange={setShowGrid}
             spin={spin}

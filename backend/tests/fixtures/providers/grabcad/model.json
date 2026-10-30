@@ -1,0 +1,72 @@
+{
+  "name": "Arduino Uno R3",
+  "published": true,
+  "description": "<p>An Arduino Uno, Rev 3 in solidworks<br><br>Supplied as an assembly and a part for convenience <br><br>Dimensions taken directly from product data sheets and the EAGLE files for the Uno Reference design from the website, so the model really ought to be accurate.<br><br>Otherwise and as always with my models, it's probably useful to suppress the extraneous detail if it's not needed.<br><br>Please hit the \"Like\" Icon - if you do :)<br><br><br>edit: 14 Nov 2014<br>Steve Polus pointed out that I missed a component on the original and as it's nice to be right I added it. The decals for the board are also separately downloadable as BMP files, hope this is useful for those not in Solidworks land<br><br>Andy</p>",
+  "raw_description": "An Arduino Uno, Rev 3 in solidworks\n\nSupplied as an assembly and a part for convenience \n\nDimensions taken directly from product data sheets and the EAGLE files for the Uno Reference design from the website, so the model really ought to be accurate.\n\nOtherwise and as always with my models, it's probably useful to suppress the extraneous detail if it's not needed.\n\nPlease hit the \"Like\" Icon - if you do :)\n\n\nedit: 14 Nov 2014\nSteve Polus pointed out that I missed a component on the original and as it's nice to be right I added it. The decals for the board are also separately downloadable as BMP files, hope this is useful for those not in Solidworks land\n\nAndy",
+  "cached_slug": "arduino-uno-r3-1",
+  "created_at": "2014-01-03T17:43:49Z",
+  "updated_at": "2026-10-29T19:28:24Z",
+  "preview_image": "https://grabcad.com/screenshots/pics/b3baed0511f56c9d2f2928a58f95c27c/card.jpg",
+  "image_missing_url": "https://grabcad.com/screenshots/pics/missing_small.png",
+  "likes_count": 2103,
+  "downloads_count": 116400,
+  "comments_count": 0,
+  "contentfiles_count": 12,
+  "top_comments_count": 0,
+  "author": {
+    "name": "Andrew_Whitham",
+    "location": "Manchester, United Kingdom",
+    "cached_slug": "andrew_whitham-1",
+    "avatar": "https://grabcad.com/members/avatars/176389/feed.jpg?1438968088",
+    "models_count": 76,
+    "following": false
+  },
+  "archive_url": "https://grabcad.com/community/api/v1/models/arduino-uno-r3-1/files/download?cadid=a8f35a1d751df17ab726c82172dc6016",
+  "is_tainted": false,
+  "is_hidden": false,
+  "tags": ["arduino", "electronic", "robotics", "uno"],
+  "softwares": [
+    {
+      "name": "STEP / IGES",
+      "cached_slug": "step-slash-iges"
+    },
+    {
+      "name": "SOLIDWORKS",
+      "cached_slug": "solidworks"
+    },
+    {
+      "name": "Parasolid",
+      "cached_slug": "parasolid"
+    },
+    {
+      "name": "Rendering",
+      "cached_slug": "rendering"
+    },
+    {
+      "name": "SOLIDWORKS",
+      "cached_slug": "solidworks"
+    }
+  ],
+  "categories": [
+    {
+      "name": "Educational",
+      "cached_slug": "educational"
+    },
+    {
+      "name": "Electrical",
+      "cached_slug": "electrical"
+    },
+    {
+      "name": "Tech",
+      "cached_slug": "tech"
+    }
+  ],
+  "comments": [],
+  "likes": [],
+  "member_models": [],
+  "similar_models": [],
+  "can_like": true,
+  "has_liked": false,
+  "can_update": false,
+  "can_report": true
+}

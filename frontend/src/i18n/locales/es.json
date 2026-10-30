@@ -86,12 +86,16 @@
       "dashboard": "Panel",
       "administration": "Administración",
       "expandSidebar": "Desplegar barra lateral",
+      "openNavigation": "Abrir menú de navegación",
+      "navigationMenu": "Menú de navegación",
+      "closeNavigation": "Cerrar menú de navegación",
       "collapseSidebar": "Contraer barra lateral",
       "models": "Modelos",
       "collections": "Colecciones",
       "tags": "Etiquetas",
       "downloads": "Descargas",
-      "bookmarks": "Marcadores"
+      "bookmarks": "Marcadores",
+      "tools": "Herramientas"
     },
     "uploadBar": {
       "uploading": "Subiendo…",
@@ -325,6 +329,18 @@
             "save_widget": {
               "title": "Guardar un widget del panel",
               "description": "Crear o cambiar tus propios widgets del panel. Sus scripts se ejecutan en tu panel."
+            },
+            "tool_guide": {
+              "title": "Guía de herramientas",
+              "description": "Lee cómo se escribe una herramienta para tu página de Herramientas."
+            },
+            "list_tools": {
+              "title": "Listar herramientas",
+              "description": "Ver las herramientas que puedes abrir, y el código de las tuyas."
+            },
+            "save_tool": {
+              "title": "Guardar una herramienta",
+              "description": "Crear o cambiar tus propias herramientas. Su código se ejecuta en tu navegador con tu acceso."
             },
             "list_icons": {
               "title": "Buscar un icono",
@@ -1082,6 +1098,10 @@
               "prompt": "Hazme un widget de Thingport con un gráfico de cuántos modelos añadí cada mes."
             }
           }
+        },
+        "labels": {
+          "help": "Las palabras que muestra tu widget, un archivo por idioma. El script las pide por clave con t(\"clave\"), así que quedan fuera de la lógica y se traducen sin tocarla.",
+          "empty": "Tu widget aún no tiene textos. Guarda las palabras que muestra en un archivo por idioma, y el script las pedirá por clave con t(\"clave\"): quien traduzca nunca tendrá que abrir el script."
         }
       }
     },
@@ -1777,6 +1797,7 @@
           "model_edited": "Modelo editado",
           "model_reimported": "Detalles que faltaban obtenidos",
           "model_deleted": "Modelo eliminado",
+          "models_repaired": "Modelos reparados",
           "collection_created": "Colección creada",
           "collection_edited": "Colección editada",
           "collection_deleted": "Colección eliminada",
@@ -1818,7 +1839,8 @@
         "aiRunSummary": "{{done}} de {{total}} revisados — {{suggested}} sugeridos, {{applied}} aplicados, {{failed}} con error",
         "aiRunStopped": "(detenida)",
         "viaProvider": "mediante {{provider}}",
-        "merged": "{{merged}} → {{name}}"
+        "merged": "{{merged}} → {{name}}",
+        "repairSummary": "{{action}}: {{repaired}} reparados, {{deleted}} eliminados, {{failed}} fallidos"
       },
       "rendering": {
         "heading": "Renderizado",
@@ -2142,6 +2164,92 @@
         "users": {
           "placed": "En el panel",
           "installed": "Solo instalado"
+        }
+      },
+      "tools": {
+        "heading": "Herramientas",
+        "subtitle": "Pequeñas apps que los usuarios abren desde la página Herramientas: instálalas desde el repositorio y elige quién las ve.",
+        "access": {
+          "heading": "Quién ve las herramientas",
+          "help": "Los administradores siempre ven las herramientas. Quién más ve la página Herramientas y recibe en su biblioteca los modelos de cada herramienta instalada. Las herramientas se ejecutan en el navegador del usuario con su acceso a Thingport.",
+          "audience": "Quién ve las herramientas",
+          "admins": "Solo administradores",
+          "everyone": "Todos",
+          "selected": "Usuarios elegidos",
+          "users": "Usuarios",
+          "usersHint": "Además de los administradores, que siempre las ven.",
+          "failed": "No se pudo cambiar quién ve las herramientas",
+          "userTools": "Herramientas propias de los usuarios",
+          "userToolsHelp": "Permite a quienes ven las herramientas crear las suyas, en un editor con un script de inicio. Sus scripts se ejecutan en su propio navegador, con su propio acceso.",
+          "userToolsOn": "Quienes ven las herramientas pueden crear las suyas",
+          "userToolsOff": "Solo herramientas instaladas"
+        },
+        "repo": {
+          "heading": "Del repositorio",
+          "help": "Las herramientas de la carpeta tools del repositorio de Thingport. Cada una se revisa antes de incorporarla; al instalarla queda disponible para todos los que ven las herramientas.",
+          "refresh": "Volver a comprobar el repositorio",
+          "failed": "No se pudo leer el repositorio de herramientas",
+          "unreachable": "Ahora mismo no se puede leer el repositorio de herramientas: {{error}}",
+          "empty": "El repositorio aún no tiene herramientas.",
+          "install": "Instalar",
+          "update": "Actualizar",
+          "installed": "{{name}} instalada",
+          "updated": "{{name}} actualizada",
+          "installFailed": "No se pudo instalar la herramienta",
+          "installedVersion": "Instalada {{version}}",
+          "updateTo": "Actualizar a {{version}}",
+          "latest": "Al día",
+          "latestTip": "{{name}} {{version}} es la más nueva del repositorio",
+          "updateLabel": "Actualizar {{name}} a {{version}}",
+          "gone": "Ya no está en el repositorio",
+          "by": "De {{name}}",
+          "brings_one": "Trae {{count}} modelo",
+          "brings_many": "Trae {{count}} modelos",
+          "brings_other": "Trae {{count}} modelos",
+          "fetching": "Obteniendo modelos: {{ready}} de {{total}}",
+          "missing_one": "Aún falta {{count}} de {{total}} modelos",
+          "missing_many": "Aún faltan {{count}} de {{total}} modelos",
+          "missing_other": "Aún faltan {{count}} de {{total}} modelos",
+          "lastError": "Último intento: {{error}}",
+          "retry": "Obtener los modelos que faltan",
+          "more": "Más",
+          "moreFor": "Más de {{name}}",
+          "uninstall": "Desinstalar",
+          "uninstallTitle": "¿Desinstalar {{name}}?",
+          "uninstallMessage": "{{name}} desaparece de la página Herramientas de todos, con los datos que guardaba para ellos.",
+          "uninstallWithModels": "{{name}} desaparece de la página Herramientas de todos, con los datos que guardaba para ellos y su colección de modelos de cada biblioteca. Los modelos que los usuarios guardaron con ella se quedan.",
+          "uninstalled": "{{name}} desinstalada",
+          "uninstallFailed": "No se pudo desinstalar la herramienta",
+          "updateAvailable": "Actualización disponible",
+          "fromFolder": "Se ofrecen desde la carpeta {{location}}",
+          "fromRepository": "Se ofrecen desde {{location}}",
+          "open": "Abrir",
+          "openHint": "Abrir {{name}}: doble clic",
+          "notInstalled": "No instalada",
+          "isInstalled": "instalada",
+          "version": "v{{version}}",
+          "tileLabel": "{{name}}, {{state}}: pulsa Intro para ver qué es, la tecla de menú contextual para más",
+          "shelfHint": "Haz doble clic en una herramienta para ver qué es y qué puedes hacer con ella; clic derecho en una instalada para su menú.",
+          "installTitle": "¿Instalar {{name}}?",
+          "installBody_one": "Trae {{count}} modelo propio: una pieza con la que trabaja, importada una vez para todo el servidor.",
+          "installBody_other": "Trae {{count}} modelos propios: las piezas con las que trabaja, importadas una vez para todo el servidor.",
+          "withModels": "Importar sus modelos",
+          "modelsRoom": "{{count}} modelos es un conjunto grande: ocupará gigabytes en este servidor y tardará en llegar.",
+          "modelsLater": "Sin ellos la herramienta solo funciona mientras el sitio del que descarga esté disponible y este servidor en línea, y lo que arme con sus piezas no se podrá guardar. Puedes importarlos más tarde.",
+          "modelsLaterOwn": "La herramienta no podrá guardar nada que use esas piezas hasta que se importen. Vienen con la propia herramienta, así que no interviene ningún otro sitio. Puedes importarlos más tarde.",
+          "modelsSkipped_one": "Instalada sin su {{count}} modelo.",
+          "modelsSkipped_other": "Instalada sin sus {{count}} modelos.",
+          "importModels": "Importar sus modelos",
+          "importingModels": "Importando los modelos de {{name}}",
+          "installBody_many": "Trae {{count}} modelos propios: las piezas con las que trabaja, importadas una vez para todo el servidor.",
+          "modelsSkipped_many": "Instalada sin sus {{count}} modelos."
+        },
+        "own": {
+          "heading": "Herramientas propias de los usuarios",
+          "help": "Herramientas que los usuarios crearon. Cada una solo se ejecuta para quien la creó.",
+          "empty": "Nadie ha creado una herramienta todavía.",
+          "off": "Las herramientas propias de los usuarios están desactivadas.",
+          "by": "{{name}} · {{email}}"
         }
       }
     },
@@ -2515,6 +2623,311 @@
         "popular": "Sitios populares",
         "ai": "IA",
         "browsers": "Navegadores"
+      }
+    },
+    "tools": {
+      "page": {
+        "title": "Herramientas",
+        "subtitle": "Haz doble clic en una herramienta para abrirla",
+        "new": "Nueva herramienta",
+        "installed": "Instaladas",
+        "mine": "Mías",
+        "yours": "Tuya",
+        "tileLabel": "{{name}}: pulsa Intro para abrirla, la tecla de menú contextual para más",
+        "open": "Abrir",
+        "about": "Acerca de",
+        "models": "Sus modelos",
+        "edit": "Editar",
+        "delete": "Eliminar",
+        "deleteTitle": "¿Eliminar esta herramienta?",
+        "deleteMessage": "{{name}} y los datos que guardaba desaparecen. Los modelos que guardaste con ella se quedan.",
+        "deleted": "{{name}} eliminada",
+        "empty": "Aún no hay herramientas. Las instala un administrador.",
+        "emptyAdmin": "Aún no hay herramientas. Instala alguna desde el repositorio.",
+        "emptyCreate": "Aún no hay herramientas. Crea la tuya o pide a un administrador que instale alguna.",
+        "install": "Instalar herramientas",
+        "noAccess": "Las herramientas no están disponibles para ti en este Thingport.",
+        "dropHere": "Suelta una herramienta aquí",
+        "layout": "Mostrar como",
+        "layoutFlat": "Una cuadrícula",
+        "layoutCategories": "Estantes",
+        "moveTo": "Mover a",
+        "sort": {
+          "name": "Nombre",
+          "newest": "Más nuevas",
+          "author": "Autor"
+        },
+        "uninstall": "Desinstalar",
+        "uninstallTitle": "¿Desinstalar esta herramienta?",
+        "uninstallMessage": "{{name}} desaparece de la página Herramientas de todos, con los datos que guardó para ellos y su colección de modelos de todas las bibliotecas. Los modelos guardados con ella se quedan.",
+        "uninstalled": "{{name}} desinstalada"
+      },
+      "categories": {
+        "generators": "Generadores",
+        "planners": "Planificadores",
+        "calculators": "Calculadoras",
+        "files": "Archivos",
+        "library": "Biblioteca",
+        "other": "Otras"
+      },
+      "window": {
+        "about": "Acerca de esta herramienta",
+        "maximize": "Llenar la pantalla",
+        "restore": "Volver a su tamaño",
+        "close": "Cerrar"
+      },
+      "about": {
+        "version": "Versión {{version}}",
+        "source": "Origen",
+        "fromRepo": "El repositorio de Thingport, instalada por un administrador",
+        "own": "La creaste tú",
+        "author": "Autor",
+        "hosts": "Accede a",
+        "hostsHelp": "Los servicios fuera de Thingport a los que la herramienta puede llamar, a través de Thingport.",
+        "noHosts": "Nada fuera de Thingport",
+        "models": "Modelos",
+        "modelsHelp": "Los modelos que trae la herramienta, en una colección propia de tu biblioteca. Se pueden abrir e imprimir, pero no cambiar, y se listan en esa colección y no entre tus modelos.",
+        "modelCount_one": "{{count}} modelo",
+        "modelCount_many": "{{count}} modelos",
+        "modelCount_other": "{{count}} modelos",
+        "openModels": "Abrir sus modelos",
+        "open": "Abrir",
+        "close": "Cerrar"
+      },
+      "runner": {
+        "failed": "{{name}} se detuvo con un error",
+        "noExport": "El script no tiene una exportación por defecto a la que llamar"
+      },
+      "picker": {
+        "title": "Elige una colección",
+        "search": "Buscar una colección",
+        "noMatch": "Ninguna colección coincide.",
+        "empty": "Aún no hay colecciones. Escribe un nombre abajo para crearla.",
+        "count_one": "{{count}} modelo",
+        "count_many": "{{count}} modelos",
+        "count_other": "{{count}} modelos",
+        "newName": "Nueva colección",
+        "create": "Crear esta colección",
+        "cancel": "Cancelar",
+        "choose": "Elegir"
+      },
+      "ai": {
+        "or": "o",
+        "open": "Usar IA",
+        "title": "Crear una herramienta con IA",
+        "back": "Volver al editor",
+        "connect": "Conectar una IA",
+        "step1": "Conecta tu asistente de IA a Thingport por MCP.",
+        "step2": "En tu perfil, dale al token la herramienta <strong>Guardar una herramienta</strong>.",
+        "step3": "Pide la herramienta que quieras, con tus palabras. Por ejemplo:",
+        "step4": "Aparece en tu página de Herramientas, lista para abrir. Pide otra vez para cambiarla, o ajústala aquí.",
+        "examplesLabel": "Ejemplos de peticiones",
+        "examples": {
+          "label": {
+            "label": "Etiquetas",
+            "name": "Generador de etiquetas",
+            "prompt": "Hazme una herramienta de Thingport que convierta unas palabras en una etiqueta imprimible y la guarde en mi biblioteca."
+          },
+          "box": {
+            "label": "Cajas",
+            "name": "Generador de cajas",
+            "prompt": "Hazme una herramienta de Thingport que haga una caja de cualquier tamaño con tapa, en milímetros."
+          },
+          "tidy": {
+            "label": "Etiquetado",
+            "name": "Ayudante de etiquetas",
+            "prompt": "Hazme una herramienta de Thingport que liste mis modelos sin etiquetas y me deje etiquetarlos."
+          }
+        }
+      },
+      "editor": {
+        "newTitle": "Nueva herramienta",
+        "editTitle": "Editar herramienta",
+        "part": "Parte de la herramienta",
+        "details": "Detalles",
+        "script": "Script",
+        "html": "HTML y CSS",
+        "preview": "Vista previa",
+        "htmlPlaceholder": "Marcado y un bloque <style>, puestos en la ventana antes de ejecutar el script",
+        "previewHelp": "La herramienta funcionando como lo hará en su ventana. Hasta guardarla, lo que guarda dura lo que la vista previa, y no puede llegar a otros hosts.",
+        "previewHelpSaved": "La herramienta funcionando como lo hará en su ventana, con los datos que guarda para ti.",
+        "rerun": "Ejecutar de nuevo",
+        "reference": "Referencia del SDK",
+        "showReference": "Mostrar la referencia del SDK",
+        "hideReference": "Ocultar la referencia del SDK",
+        "referenceIntro": "Lo que recibe la exportación por defecto del script como thingport. El script de inicio usa cada cosa.",
+        "trust": "El script de una herramienta se ejecuta en tu navegador con tu acceso a Thingport.",
+        "cancel": "Cancelar",
+        "save": "Guardar",
+        "saved": "{{name}} guardada",
+        "fixFirst": "Corrige primero los detalles marcados",
+        "name": "Nombre",
+        "version": "Versión",
+        "description": "Descripción",
+        "icon": "Icono",
+        "iconHelp": "Se muestra en la página Herramientas y en la ventana de la herramienta.",
+        "iconUrl": "Dirección de la imagen",
+        "iconNone": "Caja de herramientas",
+        "window": "Ventana",
+        "windowHelp": "El tamaño con el que se abre su ventana, en píxeles; una pantalla más pequeña recibe lo que cabe, y puede llenar la pantalla.",
+        "width": "Ancho",
+        "height": "Alto",
+        "author": "Autor",
+        "authorHelp": "Se acredita en su página Acerca de.",
+        "authorName": "Nombre",
+        "authorUrl": "Página",
+        "hosts": "Hosts",
+        "hostsHelp": "Los servicios fuera de Thingport a los que su thingport.fetch puede llegar, a través de Thingport: un nombre de host, *.example.com para sus subdominios y un puerto si lo necesita.",
+        "hostsPlaceholder": "api.example.com",
+        "slug": "Nombre de la carpeta",
+        "slugHelp": "Cómo se guarda la herramienta: guardar otra con el mismo nombre de carpeta la sustituye.",
+        "errors": {
+          "slug": "De 2 a 40 letras minúsculas, cifras y guiones",
+          "name": "Ponle un nombre",
+          "url": "No es una dirección http o https"
+        },
+        "sdk": {
+          "root": "El elemento de la ventana, con el HTML de la herramienta, y un selector CSS para él.",
+          "theme": "Los colores y la fuente de Thingport, en claro y oscuro.",
+          "size": "El tamaño de la ventana y una forma de saber cuándo cambia.",
+          "storage": "Valores JSON guardados para el usuario, por clave.",
+          "collections": "Las colecciones del usuario y crear una nueva.",
+          "collectionModels": "Los modelos de una colección, y meter o sacar modelos.",
+          "pick": "Pide al usuario una colección, o una nueva, como haría un diálogo de guardar.",
+          "models": "Modelos de la biblioteca: una página, una búsqueda o uno.",
+          "file": "Uno de los archivos de un modelo, como ArrayBuffer.",
+          "create": "Un modelo nuevo con los archivos dados, p. ej. un STL que hizo la herramienta.",
+          "edit": "Más archivos, imágenes de galería, un archivo sustituido, o su nombre, descripción y etiquetas.",
+          "open": "Cierra la herramienta y abre la página del modelo.",
+          "toolModels": "Los modelos que trae una herramienta del repositorio, por clave.",
+          "fetch": "Una petición a un host que declara la herramienta, hecha por Thingport.",
+          "api": "La API propia de Thingport, como el usuario.",
+          "download": "Entrega al usuario un archivo para guardar.",
+          "ui": "Un aviso, una confirmación o cerrar la ventana.",
+          "translate": "Las palabras de tu herramienta, de sus Etiquetas, en el idioma del usuario.",
+          "language": "El idioma en que está Thingport, y todos los que tiene.",
+          "library": "Una biblioteca pesada que trae Thingport: Three.js, opentype, Manifold, sus tipografías."
+        },
+        "labels": {
+          "help": "Las palabras que muestra tu herramienta, un archivo por idioma. El script las pide por clave con t(\"clave\"), así que quedan fuera de la lógica y se pueden traducir sin tocarla.",
+          "empty": "Tu herramienta aún no tiene etiquetas. Guarda las palabras que muestra en un archivo por idioma, y el script las pedirá por clave con t(\"clave\"): así quien traduzca nunca tendrá que abrir el script."
+        },
+        "category": "Categoría",
+        "categoryHelp": "En qué estante lo pone la página de Herramientas. Quien la use puede moverla."
+      }
+    },
+    "screenshots": {
+      "title": "Capturas de {{name}}",
+      "open": "Captura {{index}} de {{count}} de {{name}}",
+      "position": "{{index}} de {{count}}",
+      "previous": "Captura anterior",
+      "next": "Captura siguiente",
+      "close": "Cerrar"
+    },
+    "labelsPanel": {
+      "tab": "Etiquetas",
+      "start": "Empezar por el inglés",
+      "add": "Añadir un idioma",
+      "file": "Las etiquetas en {{code}}, como JSON",
+      "fallbackNote": "El inglés es el recurso de reserva: lo que falte en otro idioma se muestra desde aquí.",
+      "untranslated_one": "{{count}} etiqueta sigue sin texto en este idioma.",
+      "untranslated_other": "{{count}} etiquetas siguen sin texto en este idioma.",
+      "badJson": "Esto todavía no es JSON válido, así que no se guardará.",
+      "badShape": "Las etiquetas son un objeto plano de claves a texto, como { \"save\": \"Guardar\" }.",
+      "removeTitle": "¿Quitar las etiquetas en {{name}}?",
+      "removeBody": "El archivo y sus palabras desaparecen. Los demás idiomas se quedan."
+    },
+    "missingFiles": {
+      "title": "Algunos modelos han perdido sus archivos",
+      "lead_one": "1 modelo de tu biblioteca ya no tiene archivos en el disco: ni los archivos del modelo ni las imágenes. No se puede abrir, imprimir ni descargar hasta que vuelvan.",
+      "lead_other": "{{count}} modelos de tu biblioteca ya no tienen archivos en el disco: ni los archivos del modelo ni las imágenes. No se pueden abrir, imprimir ni descargar hasta que vuelvan.",
+      "leadHelp": "Thingport guarda los archivos de un modelo en su carpeta de almacenamiento y solo los datos del modelo en la base de datos. Si mueves una instancia sin esa carpeta, o si se borra por accidente, los datos quedan sin nada detrás. Volver a descargar los archivos del sitio del que vino cada modelo los repone y deja todo lo demás —nombres, etiquetas, colecciones y favoritos— tal como está.",
+      "notNow": "Ahora no",
+      "checking": "Revisando tus modelos…",
+      "checkFailed": "No se pudieron revisar tus modelos. Inténtalo de nuevo y, si sigue fallando, comprueba que la carpeta de almacenamiento esté ahí.",
+      "checkFailedStale": "La última comprobación no se pudo hacer, así que esto es lo que encontró la anterior.",
+      "allWell": "Todos los modelos tienen sus archivos",
+      "allWellDetail_one": "Se revisó 1 modelo.",
+      "allWellDetail_other": "Se revisaron {{count}} modelos.",
+      "checkAgain": "Volver a comprobar",
+      "stats": {
+        "broken": "Sin archivos",
+        "server": "Thingport puede descargar",
+        "grab": "Necesitan Grab",
+        "noSource": "Subidos"
+      },
+      "fromSites": "De dónde vinieron",
+      "whatNow": "Qué hacer",
+      "manyWarning_one": "Es un solo modelo: cosa de un momento.",
+      "manyWarning_other": "{{count}} modelos de una vez son muchos: los sitios pueden pedir a Thingport que vaya más despacio o que espere, así que puede tardar. Se ejecuta en segundo plano y puedes detenerlo cuando quieras.",
+      "alreadyRunning": "Ya hay una reparación en marcha.",
+      "startFailed": "No se pudo iniciar la reparación.",
+      "actions": {
+        "reimport": {
+          "title": "Descargar los archivos que faltan",
+          "detail_one": "Vuelve a descargar los archivos de 1 modelo del sitio del que vino. Su nombre, etiquetas, colecciones y favorito se mantienen.",
+          "detail_other": "Vuelve a descargar los archivos de {{count}} modelos de los sitios de los que vinieron. Nombres, etiquetas, colecciones y favoritos se mantienen.",
+          "grabOnly_one": "Solo Thingport Grab puede descargar los archivos de este modelo. Esperará a su próxima visita al sitio.",
+          "grabOnly_other": "Solo Thingport Grab puede descargar estos archivos. {{count}} modelos esperarán a su próxima visita a los sitios de los que vinieron.",
+          "none": "Ninguno de estos modelos tiene un sitio del que descargar."
+        },
+        "delete": {
+          "title": "Eliminar estos modelos",
+          "detail_one": "Elimina 1 modelo de la biblioteca para siempre, con sus datos, etiquetas y entradas en colecciones.",
+          "detail_other": "Elimina {{count}} modelos de la biblioteca para siempre, con sus datos, etiquetas y entradas en colecciones."
+        }
+      },
+      "confirm": {
+        "reimport": {
+          "title_one": "¿Descargar los archivos de 1 modelo?",
+          "title_other": "¿Descargar los archivos de {{count}} modelos?",
+          "message_one": "Thingport descargará los archivos del modelo del sitio del que vino. No cambia nada más y, si no se puede acceder al sitio, el modelo queda exactamente como está ahora.",
+          "message_other": "Thingport descargará los archivos de cada modelo del sitio del que vino, uno a uno. No cambia nada más, y cualquier modelo cuyo sitio no se pueda alcanzar queda exactamente como está ahora.",
+          "queued_one": "1 modelo más esperará a que Thingport Grab visite el sitio del que vienen sus archivos.",
+          "queued_other": "{{count}} modelos más esperarán a que Thingport Grab visite los sitios de los que vienen sus archivos.",
+          "confirm": "Descargar los archivos",
+          "grabTitle": "¿Dejarlo en manos de Thingport Grab?",
+          "grabMessage_one": "Thingport no puede descargar los archivos de este modelo por sí mismo: solo Thingport Grab puede, en las propias páginas del sitio. El modelo esperará a la próxima visita de Grab, y los archivos que traiga ocuparán el lugar de los que faltan.",
+          "grabMessage_other": "Thingport no puede descargar estos archivos por sí mismo: solo Thingport Grab puede, en las propias páginas de los sitios. Los {{count}} modelos esperarán a la próxima visita de Grab, y los archivos que traiga ocuparán el lugar de los que faltan.",
+          "grabConfirm": "Esperar a Grab"
+        },
+        "delete": {
+          "title_one": "¿Eliminar 1 modelo?",
+          "title_other": "¿Eliminar {{count}} modelos?",
+          "message_one": "Esto no se puede deshacer. El modelo, sus datos, etiquetas y entradas en colecciones se eliminan para siempre. Solo se toca el modelo sin archivos.",
+          "message_other": "Esto no se puede deshacer. Los {{count}} modelos, sus datos, etiquetas y entradas en colecciones se eliminan para siempre. Solo se tocan los modelos sin archivos.",
+          "confirm": "Eliminar los modelos"
+        }
+      }
+    },
+    "modelRepairProgress": {
+      "stop": "Detener la reparación",
+      "stopping": "Se detendrá tras el modelo actual…",
+      "reimport": {
+        "starting": "Preparando la descarga de los archivos que faltan…",
+        "label": "{{phrase}} {{done}} de {{total}}",
+        "phrases": [
+          "Descargando los archivos que faltan…",
+          "Pidiendo ese STL de vuelta…",
+          "Volviendo a thingportear tus modelos…",
+          "Recogiendo 3MF del origen…",
+          "Devolviendo los archivos junto a sus modelos…",
+          "Buscando lo que quedó atrás en la mudanza…",
+          "Llenando otra vez las estanterías vacías…",
+          "Llamando a la puerta del diseñador…"
+        ]
+      },
+      "delete": {
+        "starting": "Preparando la eliminación de modelos…",
+        "label": "{{phrase}} {{done}} de {{total}}",
+        "phrases": [
+          "Eliminando modelos sin archivos…",
+          "Sacando las cajas vacías…",
+          "Recogiendo lo que ya no está…",
+          "Llevando el reciclaje…",
+          "Quitando el polvo del estante vacío…",
+          "Despidiendo a los fantasmas…"
+        ]
       }
     }
   },
@@ -3193,7 +3606,8 @@
         "spin": "Girar",
         "zoomIn": "Acercar",
         "zoomOut": "Alejar",
-        "color": "Color del modelo"
+        "color": "Color del modelo",
+        "colorOwn": "Este modelo trae sus propios colores, así que no hay ninguno que elegir"
       },
       "downloadFailed": "La descarga ha fallado. Inténtalo de nuevo.",
       "deleteFailed": "No se pudo eliminar el modelo.",
@@ -3332,7 +3746,88 @@
       "downloadFile": "Descargar archivo",
       "moreOpenOptions": "Otros slicers y descargas",
       "openActions": "Abrir o descargar",
-      "openInHeading": "Abrir en"
+      "openInHeading": "Abrir en",
+      "toolOwned": "Pertenece a una herramienta",
+      "toolOwnedHint": "No se puede editar ni eliminar",
+      "customize": "Personalizar…",
+      "scriptWithheld": "Script no compartido",
+      "scriptWithheldHint": "Este modelo se creó a partir de un script, pero su autor decidió no compartirlo, así que aquí no hay nada que personalizar. Solo él puede cambiarlo."
+    },
+    "customizer": {
+      "title": "Personalizando {{model}}",
+      "model": {
+        "title": "Modelo",
+        "script": "Script"
+      },
+      "pane": {
+        "minimize": "Minimizar",
+        "expand": "Expandir"
+      },
+      "pick": {
+        "title": "¿Qué script?",
+        "body": "Este modelo vino con {{count}} scripts. Elige el que quieras personalizar."
+      },
+      "form": {
+        "title": "Personalizar",
+        "generate": "Generar",
+        "generating": "Generando…",
+        "noParameters": "Este script no tiene nada que cambiar.",
+        "undo": "Deshacer",
+        "redo": "Rehacer",
+        "reset": "Volver a los valores del script",
+        "code": "Mostrar el código de {{name}}",
+        "pickColor": "Elegir un color",
+        "fontFallback": "{{name}} (usa {{fallback}})",
+        "fontGroup": {
+          "Sans": "Palo seco",
+          "Condensed": "Condensada",
+          "Serif": "Con remates",
+          "Heavy": "Gruesa",
+          "Rounded": "Redondeada",
+          "Display": "Decorativa",
+          "Script": "Manuscrita"
+        },
+        "chooseFile": "Elegir {{type}}",
+        "fileStandIn": "Por ahora, un sustituto sencillo",
+        "fileClear": "Volver al sustituto",
+        "fileWrongType": "Ese archivo no es {{type}}."
+      },
+      "notes": {
+        "missingFiles": "Este script necesita {{files}}, que no venían con el modelo.",
+        "missingParts": "Pueden faltar partes en el resultado."
+      },
+      "busy": {
+        "reading": "Leyendo el script…",
+        "generating": "Generando…"
+      },
+      "stage": {
+        "empty": "Aún no se ha generado nada."
+      },
+      "status": {
+        "generated": "Generado en {{seconds}} s · {{size}} kB"
+      },
+      "download": {
+        "threeMf": "Descargar como 3MF",
+        "stl": "Descargar como STL",
+        "stlNoColors": "Conserva la forma, no los colores"
+      },
+      "save": {
+        "action": "Guardar en Thingport",
+        "done": "Se guardó {{name}}",
+        "open": "Abrir el modelo",
+        "description": "Generado a partir de {{script}}, que vino con {{model}}."
+      },
+      "code": {
+        "label": "El código de {{name}}",
+        "lines": "{{count}} líneas · solo lectura",
+        "copy": "Copiar",
+        "copied": "Copiado",
+        "download": "Descargar el script"
+      },
+      "error": {
+        "failed": "El script no generó ningún modelo.",
+        "noGeometry": "El script se ejecutó pero no produjo ninguna forma que mostrar."
+      }
     },
     "edit": {
       "title": "Editar modelo",
@@ -3531,6 +4026,15 @@
         "deleted_other": "{{count}} colecciones eliminadas",
         "merged_one": "{{count}} colección fusionada en «{{name}}»",
         "merged_other": "{{count}} colecciones fusionadas en «{{name}}»"
+      },
+      "tool": {
+        "badge": "Pertenece a la herramienta {{tool}}: no se puede editar ni eliminar, y desaparece al desinstalarla",
+        "badgeUnknown": "Pertenece a una herramienta: no se puede editar ni eliminar",
+        "status": "Pertenece a {{tool}} · no se puede cambiar",
+        "openCollection": "Abrir colección",
+        "openTool": "Abrir {{tool}}",
+        "openToolUnknown": "Abrir la herramienta",
+        "cantSelect": "La colección de una herramienta no se puede combinar ni eliminar"
       }
     },
     "tags": {
@@ -3677,7 +4181,8 @@
       }
     },
     "manager": {
-      "title": "Gestionar categorías y carpetas"
+      "title": "Gestionar categorías y carpetas",
+      "repair": "Reparar"
     },
     "selection": {
       "enter": "Seleccionar modelos",
@@ -3739,7 +4244,10 @@
       "collectionsUpdated_other": "Se actualizaron {{count}} colecciones",
       "collectionsFailed": "No se pudieron actualizar las colecciones. Inténtalo de nuevo.",
       "tagsPartlyUpdated_one": "Se actualizaron las etiquetas de {{count}} modelo, pero el resto falló. Inténtalo de nuevo.",
-      "tagsPartlyUpdated_other": "Se actualizaron las etiquetas de {{count}} modelos, pero el resto falló. Inténtalo de nuevo."
+      "tagsPartlyUpdated_other": "Se actualizaron las etiquetas de {{count}} modelos, pero el resto falló. Inténtalo de nuevo.",
+      "toolOwned_one": "{{count}} de los modelos elegidos pertenece a una herramienta: déjalo fuera para hacer esto",
+      "toolOwned_other": "{{count}} de los modelos elegidos pertenecen a una herramienta: déjalos fuera para hacer esto",
+      "toolOwned_many": "{{count}} de los modelos elegidos pertenecen a una herramienta: déjalos fuera para hacer esto"
     },
     "merge": {
       "action": "Fusionar",
@@ -3780,6 +4288,17 @@
         "othersGo_other": "{{names}} se quitan. Sus modelos pasan a tener «{{name}}».",
         "keepsOwn": "Los modelos que ya tienen «{{name}}» no cambian."
       }
+    },
+    "filters": {
+      "title": "Filtros",
+      "generative": "Modelos generativos",
+      "generativeHint": "Solo los modelos que vinieron con el script que los generó, que puedes cambiar y volver a generar",
+      "sources": "Fuentes",
+      "allSources": "Todos los sitios",
+      "noSources": "Aún no has importado nada, así que no hay sitios entre los que elegir.",
+      "noneSelected": "No hay ningún sitio activado, así que no hay nada que mostrar.",
+      "noMatch": "Ningún modelo de aquí coincide con los filtros.",
+      "clear": "Quitar filtros"
     }
   },
   "providers": {
@@ -4216,6 +4735,152 @@
       },
       "sync": {
         "notConnected": "Conecta Pinshape en Configuración > Proveedores, o visítalo con Thingport Grab, para ver aquí tus me gusta y colecciones."
+      }
+    },
+    "toymakr3d": {
+      "connect": {
+        "steps": [
+          "Lo más fácil: con Thingport Grab, basta con abrir toymakr3d.com con la sesión iniciada. Conecta tu cuenta y envía un nuevo inicio de sesión cada vez que vuelvas a iniciarla allí.",
+          "O manualmente: inicia sesión en toymakr3d.com y abre las herramientas de desarrollador de tu navegador (F12).",
+          "En la pestaña Red, recarga la página, haz clic en cualquier petición a toymakr3d.com, copia su cabecera Cookie y pégala abajo."
+        ],
+        "placeholder": "La cabecera Cookie de una petición a toymakr3d.com con la sesión iniciada"
+      },
+      "status": {
+        "notConnected": "Toymakr3D solo entrega sus archivos a usuarios con sesión iniciada, también los modelos gratuitos. Conecta tu cuenta para importarlos y ver tus productos favoritos.",
+        "expired": "El inicio de sesión ha caducado. Inicia sesión en toymakr3d.com con Thingport Grab o vuelve a conectar Toymakr3D en Configuración → Proveedores.",
+        "expiredStatus": "Inicio de sesión caducado",
+        "disabledReason": "Toymakr3D: conecta tu cuenta en Configuración → Proveedores"
+      },
+      "about": {
+        "summary": "Un sitio de un solo diseñador con modelos articulados de robots y mechas, en su mayoría gratuitos: Transformers, Megazords, Gundams y similares.",
+        "signIn": "Tu propio inicio de sesión, para los archivos y tus favoritos.",
+        "grab": "Envía tu inicio de sesión cuando visitas toymakr3d.com.",
+        "setup": [
+          "Instala Thingport Grab, actívalo en Toymakr3D y abre toymakr3d.com con la sesión iniciada.",
+          "Manualmente: copia la cabecera Cookie de una petición a toymakr3d.com con la sesión iniciada y pégala en Configuración → Proveedores."
+        ]
+      },
+      "admin": {
+        "description": "Modelos y los productos favoritos de cada usuario. Ambos necesitan el inicio de sesión del propio usuario; solo las páginas de los modelos se leen sin él."
+      },
+      "sync": {
+        "notConnected": "Conecta Toymakr3D en Configuración > Proveedores, o visítalo con Thingport Grab, para ver aquí tus productos favoritos."
+      }
+    },
+    "makerables": {
+      "connect": {
+        "steps": [
+          "Lo más fácil: con Thingport Grab, basta con abrir makerables.com con la sesión iniciada. Conecta tu cuenta y envía un nuevo inicio de sesión cada vez que vuelvas a iniciarla allí.",
+          "O manualmente: inicia sesión en makerables.com y abre las herramientas de desarrollador de tu navegador (F12).",
+          "Ve a la pestaña Network, recarga la página, haz clic en cualquier petición a makerables.com, copia su cabecera Cookie y pégala abajo."
+        ],
+        "placeholder": "La cabecera Cookie de una petición a makerables.com con la sesión iniciada"
+      },
+      "status": {
+        "notConnected": "Conecta tu cuenta para leer los proyectos que guardaste en Makerables. Sus proyectos se importan sin ella.",
+        "expired": "El inicio de sesión ha caducado. Inicia sesión en makerables.com con Thingport Grab o vuelve a conectar Makerables en Configuración → Proveedores.",
+        "expiredStatus": "Inicio de sesión caducado",
+        "disabledReason": "Makerables: conecta tu cuenta en Configuración → Proveedores"
+      },
+      "about": {
+        "summary": "El sitio de proyectos de Makera, entre CNC e impresión 3D: todos los proyectos son gratuitos y llevan sus archivos NC y CAM junto a los archivos de modelo que importa Thingport.",
+        "signIn": "Ninguno para importar; tu inicio de sesión añade tus proyectos guardados.",
+        "grab": "Envía tu inicio de sesión cuando visitas makerables.com.",
+        "setup": [
+          "Importa cualquier enlace de proyecto; no hace falta iniciar sesión.",
+          "Para tus proyectos guardados: instala Thingport Grab, actívalo en Makerables y abre makerables.com con la sesión iniciada."
+        ]
+      },
+      "admin": {
+        "description": "Proyectos y los guardados de cada usuario. Los proyectos se importan sin iniciar sesión; los guardados necesitan la del propio usuario."
+      },
+      "sync": {
+        "notConnected": "Conecta Makerables en Configuración > Proveedores, o visítalo con Thingport Grab, para ver aquí tus proyectos guardados."
+      }
+    },
+    "cgtrader": {
+      "connect": {
+        "steps": [
+          "Lo más fácil: con Thingport Grab, basta con abrir cgtrader.com con la sesión iniciada. Conecta tu cuenta y envía un nuevo inicio de sesión cada vez que cambie allí.",
+          "O manualmente: inicia sesión en cgtrader.com y abre las herramientas de desarrollador de tu navegador (F12).",
+          "En la pestaña Red, recarga la página, haz clic en cualquier petición a cgtrader.com, copia su cabecera Cookie y pégala abajo."
+        ],
+        "placeholder": "La cabecera Cookie de una petición a cgtrader.com con la sesión iniciada"
+      },
+      "status": {
+        "notConnected": "CGTrader solo entrega sus archivos a usuarios con sesión iniciada, también los modelos gratuitos. Conecta tu cuenta para importarlos y ver tus modelos favoritos y tu lista de deseos.",
+        "expired": "El inicio de sesión ha caducado. Inicia sesión en cgtrader.com con Thingport Grab o vuelve a conectar CGTrader en Configuración → Proveedores.",
+        "expiredStatus": "Inicio de sesión caducado",
+        "disabledReason": "CGTrader: conecta tu cuenta en Configuración → Proveedores"
+      },
+      "about": {
+        "summary": "Un mercado fundado en Vilna con más de tres millones de modelos 3D: recursos para juegos y cine, renders y un amplio catálogo para impresión 3D, muchos de ellos gratuitos.",
+        "signIn": "Tu propio inicio de sesión, para los archivos, tus favoritos y tu lista de deseos.",
+        "grab": "Envía tu inicio de sesión cuando visitas cgtrader.com, con el token que tu navegador obtuvo al superar su control antibots.",
+        "flaresolverr": "Consigue para Thingport su propio token del control antibots, para que las descargas no esperen al de Grab.",
+        "setup": [
+          "Instala Thingport Grab, actívalo en CGTrader y abre cgtrader.com con la sesión iniciada.",
+          "Manualmente: copia la cabecera Cookie de una petición a cgtrader.com con la sesión iniciada y pégala en Configuración → Proveedores.",
+          "Sus descargas están tras el control antibots de AWS: configura FlareSolverr o deja que Grab entregue el token de tu navegador."
+        ]
+      },
+      "admin": {
+        "description": "Modelos, y los modelos favoritos y la lista de deseos de cada usuario. Todo necesita el inicio de sesión del propio usuario, y las descargas además un token del control antibots de Grab o FlareSolverr; solo las páginas de los modelos se leen sin él."
+      },
+      "sync": {
+        "notConnected": "Conecta CGTrader en Configuración > Proveedores, o visítalo con Thingport Grab, para ver aquí tus modelos favoritos y tu lista de deseos."
+      }
+    },
+    "grabcad": {
+      "connect": {
+        "steps": [
+          "Lo más fácil: con Thingport Grab, basta con abrir grabcad.com con la sesión iniciada. Conecta tu cuenta y envía un nuevo inicio de sesión cada vez que el tuyo cambie allí.",
+          "O manualmente: inicia sesión en grabcad.com y abre las herramientas de desarrollador de tu navegador (F12).",
+          "En Application (Chrome, Edge) o Storage (Firefox) → Cookies → grabcad.com, copia el valor de _grabcad_session y pégalo abajo. También sirve la cabecera Cookie de una petición a grabcad.com con la sesión iniciada."
+        ],
+        "placeholder": "La cookie _grabcad_session, o la cabecera Cookie de una petición con la sesión iniciada"
+      },
+      "status": {
+        "notConnected": "GrabCAD solo entrega sus archivos a usuarios con sesión iniciada. Conecta tu cuenta para importar sus modelos; los me gusta de cualquiera se leen sin ella.",
+        "expired": "El inicio de sesión ha caducado. Inicia sesión en grabcad.com con Thingport Grab o vuelve a conectar GrabCAD en Configuración → Proveedores.",
+        "expiredStatus": "Inicio de sesión caducado",
+        "disabledReason": "GrabCAD: conecta tu cuenta en Configuración → Proveedores"
+      },
+      "about": {
+        "summary": "La comunidad de ingenieros de Stratasys: una biblioteca gratuita de millones de modelos CAD, desde piezas de máquinas hasta conjuntos completos, sobre todo en STEP.",
+        "signIn": "Tu propio inicio de sesión, para los archivos; los me gusta de cualquiera se leen sin él.",
+        "grab": "Envía tu inicio de sesión cuando visitas grabcad.com. Dura dos días desde su último uso allí, así que basta una visita de vez en cuando para mantenerlo.",
+        "setup": [
+          "Instala Thingport Grab, actívalo en GrabCAD y abre grabcad.com con la sesión iniciada.",
+          "Manualmente: copia la cookie _grabcad_session de una pestaña de grabcad.com con la sesión iniciada y pégala en Configuración → Proveedores."
+        ]
+      },
+      "admin": {
+        "description": "Modelos, y los me gusta de cualquiera. Los me gusta se leen sin iniciar sesión; los archivos necesitan la del propio usuario. Thingport importa sus archivos STEP, STL, 3MF y OBJ, no los formatos propios de cada sistema CAD."
+      },
+      "sync": {
+        "notConnected": "Conecta GrabCAD en Configuración > Proveedores, o visítalo con Thingport Grab, para ver aquí tus me gusta."
+      }
+    },
+    "owlcad": {
+      "status": {
+        "alwaysConnected": "OwlCAD está conectado de forma predeterminada: no necesita cuenta ni clave."
+      },
+      "about": {
+        "summary": "Una aplicación CAD que funciona en el navegador. Su galería reúne una amplia biblioteca de piezas CC0 y CC-BY, y los modelos CAD que comparten sus usuarios.",
+        "signIn": "No hay nada que conectar.",
+        "grab": "Necesario para sus proyectos CAD: OwlCAD no guarda ningún archivo de ellos, así que lo crea su propio editor.",
+        "setup": [
+          "No hay nada que configurar: pega un enlace de OwlCAD, o importa desde su página con Thingport Grab.",
+          "Una pieza de la biblioteca se importa al momento. Un proyecto CAD espera a que Thingport Grab lo abra en owlcad.com, donde el editor de OwlCAD lo exporta."
+        ]
+      },
+      "admin": {
+        "description": "Una aplicación CAD de navegador: sus piezas de biblioteca se importan solas; sus proyectos CAD, mediante Thingport Grab."
+      },
+      "sync": {
+        "notConnected": "Ahora mismo no se puede acceder a OwlCAD."
       }
     }
   }

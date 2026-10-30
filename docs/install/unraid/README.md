@@ -48,7 +48,7 @@ Recommended should be green; anything that isn't means part of Thingport won't w
 
 - **Do not rename the `backend` service/container.** The frontend's nginx config resolves
   it by that exact name over the compose network; renaming it breaks `/api/*` requests.
-- Provider setup (MakerWorld / Thingiverse / MyMiniFactory credentials) works the same as any other install
+- Provider setup (the sign-in, key or token each site needs) works the same as any other install
   -- see [`docs/PROVIDER_SETUP.md`](../../PROVIDER_SETUP.md) in the main repo.
 - To pin a specific build instead of `:latest`, see the tagging note in
   [`docker-compose.deploy.yml`](../../../docker-compose.deploy.yml) and set `BACKEND_IMAGE`/

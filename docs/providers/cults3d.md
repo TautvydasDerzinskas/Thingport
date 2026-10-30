@@ -21,7 +21,9 @@ and downloads files with your browser's sign-in.
 
 ## Setup
 
-Per-user (**Configuration → Providers → Cults3D**), in two parts.
+Per-user (**Configuration → Providers → Cults3D**), in two parts. Both have to be the **same Cults3D account**: a
+download link comes from your API key's own orders, and Cults3D gives an order's files only to the account that placed
+it. Thingport reads which account your browser is signed in as and says so before an import if the two differ.
 
 ### 1. Your API key
 

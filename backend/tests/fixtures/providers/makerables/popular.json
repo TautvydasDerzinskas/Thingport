@@ -1,0 +1,342 @@
+{
+  "code": 200,
+  "success": true,
+  "message": "Success",
+  "data": {
+    "projects": [
+      {
+        "id": "02b385f8-50dc-4ce7-8a7f-8faa7ef08eec",
+        "name": "40mm Coin Vise for 2-Sided CNC Milling",
+        "slug": "40mm-coin-vise-2-sided-cnc-milling",
+        "description": "<h1>40 mm Coin Vise</h1><p>This is a <strong>40 mm coin vise designed for accurate 2-sided coin milling on Makera Carver…",
+        "creation_type": "original",
+        "cover_web": "https://cdn.makerables.com/cdn-cgi/image/format=auto/projects/gallery/PhotoMain2-msv60od4.jpg?f=auto",
+        "cover_mobile": null,
+        "likes_count": 95,
+        "favorites_count": 144,
+        "comments_count": 37,
+        "downloads_count": 525,
+        "downloads_total_count": 2793,
+        "uv_count": 1182,
+        "pv_count": 89205,
+        "shares_count": 4,
+        "is_recommend": false,
+        "is_official": false,
+        "rank_score": 0.8280181089374927,
+        "first_published_at": "2026-08-14T19:43:30.221Z",
+        "published_at": "2026-09-08T19:41:32.667Z",
+        "updated_at": "2026-10-20T22:17:46.767Z",
+        "created_at": "2026-08-14T17:32:04.039Z",
+        "creator": {
+          "id": "G7273713664",
+          "nick_name": "GabrielMaker",
+          "avatar_url": "https://cdn.makerables.com/cdn-cgi/image/format=auto/u/user-mst83qj0.jpg?f=auto",
+          "is_deleted": false
+        },
+        "categories": [
+          {
+            "id": 1,
+            "name": "Workshop Tools",
+            "slug": "workshop-tools",
+            "description": "Tools, upgrades, storage, and utility accessories for CNC workshops and maker spaces.",
+            "parent_id": null,
+            "level": 1
+          },
+          {
+            "id": 7,
+            "name": "Clamps & Jigs",
+            "slug": "clamps-jigs",
+            "description": "Workholding tools, alignment aids, fixtures, and positioning helpers for accurate work.",
+            "parent_id": 1,
+            "level": 0
+          }
+        ],
+        "contest": {
+          "id": "e836d212-56c1-4c02-987a-98ccb4e000a5",
+          "name": "Makerables Global Co-Creation, Build the Future of CNC"
+        },
+        "is_liked": false,
+        "is_favorited": false,
+        "is_me": false
+      },
+      {
+        "id": "3c8a2f94-dd55-4dd9-83a1-f75cee22acdf",
+        "name": "Adjustable Workholding CNC Edge Clamps / Push Clamps for 10mm Stock (Set of 2) Easy 2-Sided Milling",
+        "slug": "adjustable-workholding-cnc-edge-clamps-push-clamps-10mm",
+        "description": "<h3>CNC-Machined Aluminum Edge Clamps</h3><h3>⚠️ Important Note — Two Clamp Lengths</h3><p>There are <strong>two version…",
+        "creation_type": "original",
+        "cover_web": "https://cdn.makerables.com/cdn-cgi/image/format=auto/projects/thumbnails/cover-mv7b9314.jpg?f=auto",
+        "cover_mobile": null,
+        "likes_count": 90,
+        "favorites_count": 165,
+        "comments_count": 37,
+        "downloads_count": 607,
+        "downloads_total_count": 4527,
+        "uv_count": 1264,
+        "pv_count": 79503,
+        "shares_count": 3,
+        "is_recommend": false,
+        "is_official": false,
+        "rank_score": 0.8694830404802177,
+        "first_published_at": "2026-08-23T19:56:00.618Z",
+        "published_at": "2026-10-13T23:27:33.296Z",
+        "updated_at": "2026-10-27T22:32:41.087Z",
+        "created_at": "2026-08-23T09:43:41.099Z",
+        "creator": {
+          "id": "G7273713664",
+          "nick_name": "GabrielMaker",
+          "avatar_url": "https://cdn.makerables.com/cdn-cgi/image/format=auto/u/user-mst83qj0.jpg?f=auto",
+          "is_deleted": false
+        },
+        "categories": [
+          {
+            "id": 1,
+            "name": "Workshop Tools",
+            "slug": "workshop-tools",
+            "description": "Tools, upgrades, storage, and utility accessories for CNC workshops and maker spaces.",
+            "parent_id": null,
+            "level": 1
+          },
+          {
+            "id": 7,
+            "name": "Clamps & Jigs",
+            "slug": "clamps-jigs",
+            "description": "Workholding tools, alignment aids, fixtures, and positioning helpers for accurate work.",
+            "parent_id": 1,
+            "level": 0
+          }
+        ],
+        "contest": {
+          "id": "b64b1991-976e-48f1-9c68-fe869b710384",
+          "name": "Your First Makera Z1 Make"
+        },
+        "is_liked": false,
+        "is_favorited": false,
+        "is_me": false
+      },
+      {
+        "id": "9f948164-3e14-4b73-9c1d-2c8e94926937",
+        "name": "Top Clamp - 3D Feature",
+        "slug": "top-clamp-3d-feature",
+        "description": "<p>This is an official Makera project. Create a durable aluminum Top Clamp with your CNC machine and learn essential 3D …",
+        "creation_type": "original",
+        "cover_web": "https://cdn.makerables.com/cdn-cgi/image/format=auto/projects/gallery/MainPic-mqqlzg9n.png?f=auto",
+        "cover_mobile": null,
+        "likes_count": 58,
+        "favorites_count": 82,
+        "comments_count": 35,
+        "downloads_count": 1587,
+        "downloads_total_count": 4581,
+        "uv_count": 2433,
+        "pv_count": 163145,
+        "shares_count": 9,
+        "is_recommend": false,
+        "is_official": true,
+        "rank_score": 0.7861422403848745,
+        "first_published_at": "2026-06-23T12:24:58.148Z",
+        "published_at": "2026-07-16T03:57:07.032Z",
+        "updated_at": "2026-10-04T01:13:53.052Z",
+        "created_at": "2026-06-23T12:16:30.649Z",
+        "creator": {
+          "id": "U2578095104",
+          "nick_name": "Makerables",
+          "avatar_url": "https://cdn.makerables.com/cdn-cgi/image/format=auto/u/user-mo8dqow5.jpg?f=auto",
+          "is_deleted": false
+        },
+        "categories": [
+          {
+            "id": 1,
+            "name": "Workshop Tools",
+            "slug": "workshop-tools",
+            "description": "Tools, upgrades, storage, and utility accessories for CNC workshops and maker spaces.",
+            "parent_id": null,
+            "level": 1
+          },
+          {
+            "id": 7,
+            "name": "Clamps & Jigs",
+            "slug": "clamps-jigs",
+            "description": "Workholding tools, alignment aids, fixtures, and positioning helpers for accurate work.",
+            "parent_id": 1,
+            "level": 0
+          }
+        ],
+        "contest": null,
+        "is_liked": false,
+        "is_favorited": true,
+        "is_me": false
+      },
+      {
+        "id": "ff618dd1-7a3f-4b22-8a9d-5fd064025c92",
+        "name": "Top Clamps with Height-Adjustable Riser (For Secure Taller Stock Clamping, M5 Threaded)",
+        "slug": "top-clamps-height-adjustable-riser-secure-taller-stock",
+        "description": "<h2>Top Clamp with Height-Adjustable Riser</h2><p>A versatile <strong>Makera-style top clamp with an integrated height-a…",
+        "creation_type": "original",
+        "cover_web": "https://cdn.makerables.com/cdn-cgi/image/format=auto/projects/gallery/1-mt9bimsn.png?f=auto",
+        "cover_mobile": null,
+        "likes_count": 54,
+        "favorites_count": 80,
+        "comments_count": 13,
+        "downloads_count": 315,
+        "downloads_total_count": 2390,
+        "uv_count": 623,
+        "pv_count": 63327,
+        "shares_count": 0,
+        "is_recommend": false,
+        "is_official": false,
+        "rank_score": 0.8056847570467571,
+        "first_published_at": "2026-08-26T00:31:08.143Z",
+        "published_at": "2026-09-07T16:40:12.632Z",
+        "updated_at": "2026-10-05T03:38:38.461Z",
+        "created_at": "2026-08-25T18:15:43.371Z",
+        "creator": {
+          "id": "G7273713664",
+          "nick_name": "GabrielMaker",
+          "avatar_url": "https://cdn.makerables.com/cdn-cgi/image/format=auto/u/user-mst83qj0.jpg?f=auto",
+          "is_deleted": false
+        },
+        "categories": [
+          {
+            "id": 1,
+            "name": "Workshop Tools",
+            "slug": "workshop-tools",
+            "description": "Tools, upgrades, storage, and utility accessories for CNC workshops and maker spaces.",
+            "parent_id": null,
+            "level": 1
+          },
+          {
+            "id": 7,
+            "name": "Clamps & Jigs",
+            "slug": "clamps-jigs",
+            "description": "Workholding tools, alignment aids, fixtures, and positioning helpers for accurate work.",
+            "parent_id": 1,
+            "level": 0
+          }
+        ],
+        "contest": {
+          "id": "b64b1991-976e-48f1-9c68-fe869b710384",
+          "name": "Your First Makera Z1 Make"
+        },
+        "is_liked": false,
+        "is_favorited": false,
+        "is_me": false
+      },
+      {
+        "id": "af4353b4-4c60-4c7f-a98d-b4767dec0575",
+        "name": "Low Profile CNC Modular Vise & Fixture Plate for Makera Z1 CNC (YouTube Video WalkThru & PDF Manual)",
+        "slug": "low-profile-cnc-modular-vise-fixture-plate-makera",
+        "description": "<h1>Low Profile CNC Modular Vise and Fixture Plate for Makera Z1 CNC</h1><p><strong>Please read the entire description a…",
+        "creation_type": "original",
+        "cover_web": "https://cdn.makerables.com/cdn-cgi/image/format=auto/projects/thumbnails/cover-mv3xmxsr.jpg?f=auto",
+        "cover_mobile": null,
+        "likes_count": 37,
+        "favorites_count": 49,
+        "comments_count": 15,
+        "downloads_count": 135,
+        "downloads_total_count": 2084,
+        "uv_count": 400,
+        "pv_count": 27237,
+        "shares_count": 3,
+        "is_recommend": true,
+        "is_official": false,
+        "rank_score": 0.86912208541335,
+        "first_published_at": "2026-10-13T12:16:47.771Z",
+        "published_at": "2026-10-21T22:37:17.371Z",
+        "updated_at": "2026-10-25T00:04:41.998Z",
+        "created_at": "2026-10-11T03:45:55.585Z",
+        "creator": {
+          "id": "G7273713664",
+          "nick_name": "GabrielMaker",
+          "avatar_url": "https://cdn.makerables.com/cdn-cgi/image/format=auto/u/user-mst83qj0.jpg?f=auto",
+          "is_deleted": false
+        },
+        "categories": [
+          {
+            "id": 1,
+            "name": "Workshop Tools",
+            "slug": "workshop-tools",
+            "description": "Tools, upgrades, storage, and utility accessories for CNC workshops and maker spaces.",
+            "parent_id": null,
+            "level": 1
+          },
+          {
+            "id": 7,
+            "name": "Clamps & Jigs",
+            "slug": "clamps-jigs",
+            "description": "Workholding tools, alignment aids, fixtures, and positioning helpers for accurate work.",
+            "parent_id": 1,
+            "level": 0
+          }
+        ],
+        "contest": {
+          "id": "b64b1991-976e-48f1-9c68-fe869b710384",
+          "name": "Your First Makera Z1 Make"
+        },
+        "is_liked": false,
+        "is_favorited": false,
+        "is_me": false
+      },
+      {
+        "id": "39d7b51e-c278-440a-9488-d78f36b77143",
+        "name": "Makera Z1 Bed Layout & Custom Wasteboard (Spoilboard) Generator",
+        "slug": "makera-z1-bed-layout-custom-wasteboard-spoilboard-generator",
+        "description": "<h1>Makera Z1 Bed Layout &amp; Custom Wasteboard (Spoilboard) Generator</h1><h2>Important – Please Read Before Starting<…",
+        "creation_type": "original",
+        "cover_web": "https://cdn.makerables.com/cdn-cgi/image/format=auto/projects/thumbnails/cover-mvem3vwu.jpg?f=auto",
+        "cover_mobile": null,
+        "likes_count": 33,
+        "favorites_count": 39,
+        "comments_count": 7,
+        "downloads_count": 69,
+        "downloads_total_count": 498,
+        "uv_count": 195,
+        "pv_count": 9349,
+        "shares_count": 3,
+        "is_recommend": false,
+        "is_official": false,
+        "rank_score": 0.7952187251012944,
+        "first_published_at": "2026-10-19T02:13:54.832Z",
+        "published_at": "2026-10-19T02:13:54.832Z",
+        "updated_at": "2026-10-27T12:45:58.967Z",
+        "created_at": "2026-10-19T01:09:26.777Z",
+        "creator": {
+          "id": "G7273713664",
+          "nick_name": "GabrielMaker",
+          "avatar_url": "https://cdn.makerables.com/cdn-cgi/image/format=auto/u/user-mst83qj0.jpg?f=auto",
+          "is_deleted": false
+        },
+        "categories": [
+          {
+            "id": 1,
+            "name": "Workshop Tools",
+            "slug": "workshop-tools",
+            "description": "Tools, upgrades, storage, and utility accessories for CNC workshops and maker spaces.",
+            "parent_id": null,
+            "level": 1
+          },
+          {
+            "id": 6,
+            "name": "Machine Upgrades",
+            "slug": "machine-upgrades",
+            "description": "Performance improvements, replacement parts, reinforcement mods, and machine enhancements.",
+            "parent_id": 1,
+            "level": 0
+          }
+        ],
+        "contest": {
+          "id": "b64b1991-976e-48f1-9c68-fe869b710384",
+          "name": "Your First Makera Z1 Make"
+        },
+        "is_liked": false,
+        "is_favorited": false,
+        "is_me": false
+      }
+    ],
+    "pagination": {
+      "limit": 6,
+      "has_next": true,
+      "next_cursor": "eyJsaWtlc19jb3VudCI6MzMsImZpcnN0X3B1Ymxpc2hlZF9hdCI6IjIwMjYtMTAtMTlUMDI6MTM6NTQuODMyWiJ9"
+    }
+  },
+  "timestamp": 1793216375154
+}

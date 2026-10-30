@@ -1,0 +1,41 @@
+---
+// On phones the header has room for the logo and search only; the rest of it lives at the foot of the menu.
+import GitHubStars from "../GitHubStars.astro";
+import SiteNav from "../SiteNav.astro";
+import ThemeToggle from "../ThemeToggle.astro";
+---
+
+<div class="mobile-footer">
+  <SiteNav />
+  <div class="actions">
+    <GitHubStars />
+    <ThemeToggle />
+  </div>
+</div>
+
+<style>
+  .mobile-footer {
+    display: grid;
+    gap: 0.5rem;
+    padding-block: 0.75rem max(0.75rem, env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border);
+  }
+  /* The links' text lines up with the sidebar's above. */
+  .mobile-footer :global(.site-nav) {
+    margin-inline-start: -0.125rem;
+  }
+  .actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  /* Pinned to the bottom of the menu, so the theme and the rest of the site are always a tap away. */
+  :global(.sidebar-content > :has(> .mobile-footer)) {
+    position: sticky;
+    bottom: 0;
+    margin-top: auto;
+    background-color: var(--sl-color-black);
+  }
+</style>

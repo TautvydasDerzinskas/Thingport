@@ -5,7 +5,11 @@ import {
   isFlaresolverrEnabled,
   looksLikeCloudflareBlock,
 } from "../../services/flaresolverr";
-import { type ImportedAuthorInfo, type ImportedPageMetadata } from "../../services/importResolvers";
+import {
+  type ImportedAuthorInfo,
+  type ImportedPageMetadata,
+  type ParametricSourceInfo,
+} from "../../services/importResolvers";
 import {
   makerworldAuthorFromDesignCreator,
   makerworldInstanceCover,
@@ -322,6 +326,64 @@ function downloadReplyBody(result: { status: number; data: unknown } | null): Re
   return result.status === 200 && isRecord(result.data) ? result.data : null;
 }
 
+/** The signed URL for everything the page's "Download STL/CAD files" offers, as one zip, and the name it gives it. */
+async function fetchMakerworldRawFiles(
+  designId: string,
+  bearerToken: string,
+  paceMs?: number,
+): Promise<{ url: string; filename: string | null } | null> {
+  await maybeSleep(paceMs);
+  const body = downloadReplyBody(
+    await fetchCloudJson(`${DESIGN_API_BASE}/design/${designId}/model?modelType=all&type=download`, bearerToken),
+  );
+  const url = body && pickString(body, ["url"]);
+  return body && url ? { url, filename: pickString(body, ["name"]) } : null;
+}
+
+/**
+ * The raw files of a design that does have print profiles, wanted only for the scripts it is generated from: its
+ * own download is a profile's 3MF, which carries none of them.
+ *
+ * Best-effort on purpose. It spends one of the account's daily downloads and may meet the CAPTCHA or the daily
+ * limit, and none of that is worth failing an import that already has the model's plates. Skipped during the
+ * CAPTCHA cooloff, as a request into the block would only extend it for every other MakerWorld import.
+ */
+export async function resolveMakerworldSourcesUrl(
+  designId: string,
+  bearerToken: string,
+  paceMs?: number,
+): Promise<string | null> {
+  if (makerworldCaptchaCooloffActive()) return null;
+  try {
+    return (await fetchMakerworldRawFiles(designId, bearerToken, paceMs))?.url ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The scripts a design is generated from, with the zip to fetch them from where the creator shared them.
+ *
+ * `known` is what the caller read off the design already, or null where what it holds has no file list to read it
+ * from: the design is fetched for one then. Best-effort, as the zip is -- a design that can't be read leaves the
+ * model's plates without a script rather than failing the import.
+ */
+export async function resolveMakerworldParametricSource(
+  designId: string,
+  known: ParametricSourceInfo | undefined | null,
+  bearerToken: string,
+  paceMs?: number,
+): Promise<ParametricSourceInfo | undefined> {
+  let source = known;
+  if (source === null) {
+    const design = await fetchMakerworldDesign(designId, bearerToken, paceMs).catch(() => null);
+    source = design ? makerworldMetaFromDesign(design).parametricSource : undefined;
+  }
+  // Only worth a download when the creator shared them.
+  if (!source || source.withheld) return source;
+  return { ...source, zipUrl: await resolveMakerworldSourcesUrl(designId, bearerToken, paceMs) };
+}
+
 /** A design with no print profiles, only the raw files the page's "Download STL/CAD files" offers: all of them, as
  *  one zip, which the import unpacks. It belongs to no profile. */
 async function resolveMakerworldRawFiles(
@@ -330,12 +392,9 @@ async function resolveMakerworldRawFiles(
   bearerToken: string,
   paceMs?: number,
 ): Promise<MakerworldCloudResolution | null> {
-  await maybeSleep(paceMs);
-  const body = downloadReplyBody(
-    await fetchCloudJson(`${DESIGN_API_BASE}/design/${designId}/model?modelType=all&type=download`, bearerToken),
-  );
-  const url = body && pickString(body, ["url"]);
-  if (!body || !url) return null;
+  const raw = await fetchMakerworldRawFiles(designId, bearerToken, paceMs);
+  if (!raw) return null;
+  const { url, filename } = raw;
   const meta = makerworldMetaFromDesign(design);
   const author = await completeMakerworldAuthor(meta.author, paceMs);
   return {
@@ -343,7 +402,7 @@ async function resolveMakerworldRawFiles(
     meta: {
       ...meta,
       creator: author?.name ?? meta.creator,
-      filename: pickString(body, ["name"]),
+      filename,
       author,
       makerworldProfile: { instanceId: null },
     },
@@ -406,6 +465,14 @@ export async function resolveMakerworldViaCloudApi(
 
   const meta = makerworldMetaFromDesign(design);
   const author = await completeMakerworldAuthor(meta.author, paceMs);
+  // What is downloaded here is one profile's 3MF, so the scripts the design is generated from need fetching of
+  // their own.
+  const parametricSource = await resolveMakerworldParametricSource(
+    designId,
+    meta.parametricSource,
+    bearerToken,
+    paceMs,
+  );
 
   return {
     downloadUrl: body.url,
@@ -414,6 +481,7 @@ export async function resolveMakerworldViaCloudApi(
       creator: author?.name ?? meta.creator,
       filename: pickString(body, ["filename"]),
       author,
+      parametricSource,
       makerworldProfile: {
         instanceId: selected.id != null ? String(selected.id) : null,
         coverUrl: makerworldInstanceCover(design, selected.id != null ? String(selected.id) : null),

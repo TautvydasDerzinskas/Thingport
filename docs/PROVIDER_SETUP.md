@@ -19,6 +19,11 @@ how to connect it:
 - <img src="assets/providers/cults3d.svg" alt="" width="18" height="18" align="absmiddle"> [Cults3D](providers/cults3d.md) -- your own API key, and your browser's sign-in for files.
 - <img src="assets/providers/eufymake.svg" alt="" width="18" height="18" align="absmiddle"> [eufyMake](providers/eufymake.md) -- no sign-in to import; yours adds your likes.
 - <img src="assets/providers/pinshape.svg" alt="" width="18" height="18" align="absmiddle"> [Pinshape](providers/pinshape.md) -- your own sign-in, for the files; collections and likes read without it.
+- <img src="assets/providers/owlcad.svg" alt="" width="18" height="18" align="absmiddle"> [OwlCAD](providers/owlcad.md) -- no sign-in at all; its CAD projects need Thingport Grab.
+- <img src="assets/providers/toymakr3d.svg" alt="" width="18" height="18" align="absmiddle"> [Toymakr3D](providers/toymakr3d.md) -- your own sign-in, for the files and your likes; its models read without one.
+- <img src="assets/providers/makerables.svg" alt="" width="18" height="18" align="absmiddle"> [Makerables](providers/makerables.md) -- no sign-in to import; yours adds your saved projects.
+- <img src="assets/providers/cgtrader.svg" alt="" width="18" height="18" align="absmiddle"> [CGTrader](providers/cgtrader.md) -- your own sign-in, for the files, your likes and your wishlist; Grab or FlareSolverr for its bot check.
+- <img src="assets/providers/grabcad.svg" alt="" width="18" height="18" align="absmiddle"> [GrabCAD](providers/grabcad.md) -- your own sign-in, for the files; anyone's likes read without it.
 
 <!-- /providers:list -->
 
@@ -44,10 +49,18 @@ badge, shows the same in short.
 | <img src="assets/providers/cults3d.svg" alt="" width="18" height="18" align="absmiddle"> [Cults3D](providers/cults3d.md)                         | Your API key + browser sign-in  | Recommended³   |              | Printlists  | ✓     | ✓    |                |
 | <img src="assets/providers/eufymake.svg" alt="" width="18" height="18" align="absmiddle"> [eufyMake](providers/eufymake.md)                      | Yours, for likes only           | Recommended    |              |             | ✓     | ✓    |                |
 | <img src="assets/providers/pinshape.svg" alt="" width="18" height="18" align="absmiddle"> [Pinshape](providers/pinshape.md)                      | Yours, for the files            | Recommended    |              | ✓           | ✓     | ✓    |                |
+| <img src="assets/providers/owlcad.svg" alt="" width="18" height="18" align="absmiddle"> [OwlCAD](providers/owlcad.md)                            | None                            | Recommended⁴   |              |             |       |      |                |
+| <img src="assets/providers/toymakr3d.svg" alt="" width="18" height="18" align="absmiddle"> [Toymakr3D](providers/toymakr3d.md)                   | Yours, for the files            | Recommended    |              |             | ✓⁵    | ✓    |                |
+| <img src="assets/providers/makerables.svg" alt="" width="18" height="18" align="absmiddle"> [Makerables](providers/makerables.md)                | Yours, for saved projects only  | Recommended    |              | Saved       |       | ✓    |                |
+| <img src="assets/providers/cgtrader.svg" alt="" width="18" height="18" align="absmiddle"> [CGTrader](providers/cgtrader.md)                      | Yours, for the files            | Recommended⁶   | Recommended  | Wishlist    | ✓⁶    | ✓    |                |
+| <img src="assets/providers/grabcad.svg" alt="" width="18" height="18" align="absmiddle"> [GrabCAD](providers/grabcad.md)                         | Yours, for the files            | Recommended    |              |             | ✓     | ✓    |                |
 
 1. Your private Printables collections and your likes are read by Grab, while you're on Printables.
 2. Snapmaker's sign-in lasts a day and only Grab renews it; without Grab you paste a new one every day.
 3. Cults3D's files need your browser's Cloudflare clearance, and Thingport on the same IP address as that browser.
+4. A gallery item that is a CAD project, rather than a library part, has no stored mesh: OwlCAD's editor builds its file, so Thingport Grab exports it on owlcad.com.
+5. Toymakr3D hands a model's files to signed-in users only, the free ones included, and shows your likes to you alone.
+6. CGTrader shows your likes and wishlist to you alone, and its downloads sit behind AWS's bot check, which Thingport passes with Grab's token from your browser or FlareSolverr's own.
 
 <!-- /providers:table -->
 
@@ -59,9 +72,11 @@ badge, shows the same in short.
 
 [Thingport Grab](../extension/README.md) is Thingport's browser extension for Chrome, Edge and Firefox. Besides
 importing straight from a model's page, it hands your browser's sign-in to Thingport, so the sites that need one connect
-by just being visited, and stay connected. On MakerOnline it does the downloading itself, so there it's required.
-Sites after MakerWorld, Printables and Thingiverse need one click first: **Enable** next to the site in Grab's popup.
-Install it from the **Downloads** page.
+by just being visited, and stay connected. On MakerOnline it does the downloading itself, so there it's required, and
+on OwlCAD it exports CAD projects from OwlCAD's own editor. Install it from the **Downloads** page and connect it with
+**Pair with Thingport** in its popup: that opens your Thingport in a tab, where you approve that browser, so no password
+is kept in Grab (see [its setup](../extension/README.md#setup)). Sites after MakerWorld, Printables and Thingiverse
+need one click first, on the site in Grab's popup (a + marks one that's off) or on **Enable all**.
 
 ### FlareSolverr
 
@@ -70,15 +85,21 @@ answering it. [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) gets 
 browser. It's part of the standard Docker Compose stack; its address is set under **Administration → Connections →
 FlareSolverr**, and [System Health](guides/system-health.md) checks it. Without it, imports and syncs from those sites
 fail whenever Cloudflare steps in. MakerWorld and Thangs use it only as a fallback, and it can't help with Cults3D.
+CGTrader's downloads sit behind AWS's bot check instead: FlareSolverr gets Thingport a token for it whenever the last
+one is turned down, and without FlareSolverr only the token Grab sends from your browser will do.
 
 ## Connecting a provider
 
 Connect them under **Configuration → Providers**: open the user menu (your avatar, top right) and choose
 **Configuration**, or click one of the provider chips at the bottom of that menu. Right-click a provider to connect or
-disconnect it, or double-click one that isn't connected yet. A green tick means it's connected. A provider your admin
-has [turned off](#turning-a-provider-off) isn't listed.
+disconnect it, or double-click one that isn't connected yet. A green tick means it's connected; a red cross, that it
+isn't or not fully, and hovering it says why. A provider your admin has [turned off](#turning-a-provider-off) isn't
+listed.
 
-![Configuration, Providers section with MakerWorld, Thingiverse, Printables and MyMiniFactory connected](../frontend/src/assets/screenshots/11_configuration_providers.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../frontend/src/assets/screenshots/dark/03_dashboard_configuration.png">
+  <img src="../frontend/src/assets/screenshots/light/03_dashboard_configuration.png" alt="Configuration, Providers section: each site with a green tick when it's connected or a red cross when it isn't" width="100%">
+</picture>
 
 ## Turning a provider off
 

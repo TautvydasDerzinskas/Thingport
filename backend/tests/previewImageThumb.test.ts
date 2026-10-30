@@ -8,7 +8,7 @@ import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { attachImportedPreviewImages } from "../src/services/importService";
 import { plateThumbPath, saveThumbFromBytes } from "../src/services/printService";
-import { previewImagePath } from "../src/services/previewImageService";
+import { addPreviewImage, previewImagePath } from "../src/services/previewImageService";
 import { plateAssetHome, printAssetHome } from "../src/services/modelAssets";
 import { MOSAICS, renderTagMosaic } from "../src/services/tagMosaicService";
 import { TAG_MOSAICS } from "../src/config";
@@ -58,6 +58,20 @@ describe("preview images", () => {
     expect(res.status).toBe(200);
     expect(res.body.print.preview_images).toHaveLength(2);
     expect(res.body.print.thumb_url).not.toBeNull();
+  });
+
+  // Two pictures can reach one model at once: an import adds its gallery while our own card render of the first
+  // plate finishes and takes the cover. Both read the gallery's next position, and the import used to fail
+  // outright on the (printId, position) index rather than just look again.
+  it("gives two pictures added at the same moment positions of their own", async () => {
+    const print = await uploadStl();
+    const [image, render] = await Promise.all([
+      addPreviewImage(print.id, await png(20)),
+      addPreviewImage(print.id, await png(220), { generated: true }),
+    ]);
+    expect(image).not.toBeNull();
+    expect(render).not.toBeNull();
+    expect(image!.position).not.toBe(render!.position);
   });
 
   it("keeps photo EXIF while orienting gallery images and thumbnails", async () => {

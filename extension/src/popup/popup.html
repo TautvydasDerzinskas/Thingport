@@ -74,6 +74,28 @@
       <div class="tab-panel" role="tabpanel" id="panel-connect" aria-labelledby="tab-connect">
         <section id="configured-view" hidden>
           <div class="section">
+            <div class="sites__head">
+              <span class="sites__count" id="sites-count"></span>
+              <button
+                type="button"
+                class="text-btn"
+                id="sites-enable-all"
+                title="Asks your browser for access to every site Grab can import from"
+                hidden
+              >
+                Enable all
+              </button>
+            </div>
+            <!-- The provider whose site the active tab is on, lifted out of the grid below (popup/sites.ts). -->
+            <div class="featured" id="featured" hidden>
+              <div class="featured__head">
+                <span class="featured__logo" id="featured-logo"></span>
+                <span class="featured__name" id="featured-name"></span>
+                <span class="featured__here">this site</span>
+                <span class="featured__status" id="featured-status"></span>
+              </div>
+              <p class="featured__desc" id="featured-desc"></p>
+            </div>
             <ul class="sites" id="sites-list" aria-label="Providers"></ul>
           </div>
           <div class="error" id="configured-error" role="alert"></div>
@@ -89,23 +111,38 @@
             placeholder="https://thingport.example.com"
             required
           />
-          <label class="form__label" for="email">Email</label>
-          <input class="form__input" type="email" id="email" autocomplete="username" required />
-          <label class="form__label" for="password">Password</label>
-          <input class="form__input" type="password" id="password" autocomplete="current-password" required />
-          <p class="note">
-            If you're logged into MakerWorld in this browser, Thingport Grab reads your MakerWorld session cookie
-            locally to import from it -- it's sent only to the instance URL above, never anywhere else.
+          <!-- The way in: Thingport approves this browser, so no password is kept here. -->
+          <button type="button" class="btn" id="pair-btn" disabled>Pair with Thingport</button>
+          <p class="note" id="pair-note">
+            Opens Thingport in a tab to approve this browser. Nothing is saved here but the connection it hands back.
           </p>
-          <button type="submit" class="btn" id="save-btn">Save</button>
-          <button type="button" class="btn btn--secondary" id="cancel-btn" hidden>Cancel</button>
-          <div class="sso" id="sso-block" hidden>
-            <div class="sso__divider">or</div>
-            <button type="button" class="btn btn--secondary" id="sso-btn">Sign in with single sign-on</button>
-            <p class="note">Opens Thingport to approve this browser. No password is saved in the extension.</p>
+          <p class="note note--pending" id="pair-pending" hidden>
+            Finish connecting in the Thingport tab that just opened.
+          </p>
+
+          <!-- The older way, for instances that can't pair and anyone who'd rather type a password. -->
+          <div class="alt" id="credentials-toggle">
+            <span>or</span>
+            <button
+              type="button"
+              class="text-btn"
+              id="credentials-btn"
+              aria-expanded="false"
+              aria-controls="credentials-block"
+            >
+              Enter credentials
+            </button>
           </div>
+          <div class="credentials" id="credentials-block" hidden>
+            <label class="form__label" for="email">Email</label>
+            <input class="form__input" type="email" id="email" autocomplete="username" />
+            <label class="form__label" for="password">Password</label>
+            <input class="form__input" type="password" id="password" autocomplete="current-password" />
+            <button type="submit" class="btn" id="save-btn">Save</button>
+          </div>
+
+          <button type="button" class="btn btn--secondary" id="cancel-btn" hidden>Cancel</button>
           <p class="note" id="disconnected-note" hidden></p>
-          <p class="note" id="sso-pending" hidden>Finish connecting in the Thingport tab that just opened.</p>
           <div class="error" id="error" role="alert"></div>
         </form>
       </div>

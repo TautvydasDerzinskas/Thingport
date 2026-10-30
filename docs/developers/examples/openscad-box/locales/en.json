@@ -1,0 +1,12 @@
+{
+  "make": "Make and save…",
+  "cancel": "Cancel",
+  "starting": "Starting OpenSCAD…",
+  "making": "OpenSCAD is making the box…",
+  "made": "Made in {seconds} s.",
+  "name": "Box",
+  "modelName": "Box {width}x{depth}x{height}",
+  "saveTo": "Save the box to",
+  "saved": "Saved {name}",
+  "failed": "OpenSCAD couldn't make it: {reason}"
+}

@@ -27,6 +27,8 @@ const manifest: WidgetManifest = {
     },
   ],
   hosts: ["octopi.local"],
+  locales: [],
+  screenshots: [],
 };
 
 describe("widget editor draft", () => {

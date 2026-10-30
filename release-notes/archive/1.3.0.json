@@ -1,0 +1,161 @@
+{
+  "version": "1.3.0",
+  "title": "Build your dashboard, or let AI build it",
+  "summary": "The dashboard is now a grid you arrange yourself, and a panel can be anything: describe one to your AI assistant and it makes it, or install one the community shared. There are also two new sites to import from, shared disk space for identical files, 17 new tools for AI assistants, bulk tag and collection editing, and all your slicers in one menu.",
+  "items": [
+    {
+      "type": "feature",
+      "highlight": true,
+      "title": "A dashboard you arrange yourself",
+      "description": "The dashboard is now a grid of panels. Click the pencil to drag panels around, resize them from the corner, merge several into tabs and change each one's settings. New panels show RSS feeds, whether your printers and servers are up, the server's CPU and memory, a launcher for your favourite sites and what's trending on the sites you pick, and you can add RSS, Launcher, Weather and Explore trending more than once. Templates save whole dashboards to switch between. The house icon opens yours on its own page, without the menus, to set as your browser's homepage, and ⌘S searches from there.",
+      "images": [
+        {
+          "src": "screenshots/1.3.0-dashboard.webp",
+          "caption": "The Homepage template, with a community widget on the right"
+        },
+        {
+          "src": "screenshots/1.3.0-add-panel.webp",
+          "caption": "Add panel lists the built-in panels and your custom widgets"
+        }
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/dashboard.md"
+    },
+    {
+      "type": "feature",
+      "highlight": true,
+      "title": "Ask AI for any panel you can think of",
+      "description": "A custom widget is a dashboard panel with its own code, so it can show anything a web page can: your printer's progress, your filament stock, a chart of your library. You don't have to write it. Connect your AI assistant to Thingport over MCP, allow its token to use Save a dashboard widget, and describe the panel you want. It reads Thingport's widget guide, writes the widget and saves it, ready under Add panel. To change it, ask again, or open it in the editor, where it runs next to its code as you type. Use AI in a new widget walks you through it.",
+      "code": "Make me a Thingport widget that shows my OctoPrint printer’s progress.",
+      "images": [
+        {
+          "src": "screenshots/1.3.0-widget-ai.webp",
+          "caption": "Use AI shows how to have your assistant make a widget"
+        },
+        { "src": "screenshots/1.3.0-widget-editor.webp", "caption": "The editor runs the widget next to its code" }
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/custom-widgets.md"
+    },
+    {
+      "type": "feature",
+      "highlight": true,
+      "title": "Share widgets with every Thingport",
+      "description": "Widgets the community publishes install in one click under Customize dashboard → Custom widgets → Community. Before you install one, you see its author, version and description, and which sites it may reach. Updates wait until you approve them. The first, Weather scene, draws the weather as an animated sky. To share a widget you made, download it for publishing from Mine and open a pull request; once it's merged, every Thingport can install it. Admins can turn users' own and community widgets on or off under Administration → Dashboard, and see who uses which.",
+      "images": [
+        {
+          "src": "screenshots/1.3.0-community-widgets.webp",
+          "caption": "Community widgets show who made them before you install"
+        }
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/tree/main/community-widgets"
+    },
+    {
+      "type": "feature",
+      "highlight": true,
+      "title": "Two new sites: eufyMake and Pinshape",
+      "description": "Thingport now imports from twelve sites. eufyMake models import without a sign-in, your eufyMake likes sync through Thingport Grab, and its models open straight in eufyMake Studio. Pinshape reads anyone's models, collections and likes without a sign-in. Downloading its files needs your Pinshape sign-in, which Grab sends from a signed-in tab. Both sites appear in the dashboard's Explore trending panel. Pinshape doesn't say which category a model is in, so its models arrive uncategorized.",
+      "images": [
+        {
+          "src": "screenshots/1.3.0-providers.webp",
+          "caption": "Both are on for everyone, under Administration → Providers"
+        }
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/providers/pinshape.md"
+    },
+    {
+      "type": "feature",
+      "highlight": true,
+      "title": "Users importing the same model share its disk space",
+      "description": "When several users import the same model, each still gets their own copy. On btrfs, XFS and ZFS 2.2 or later, those copies can now share space on disk: a copy-on-write clone takes no extra space until one copy changes, and editing one never touches another user's. This covers model files, supporting and prepared print files, gallery pictures and description images, matched by their content. Admins turn it on under Administration → Storage → Identical files. Turning it on, or Check again, also goes over the files already stored, in the background. It's off by default, and on other filesystems files are stored as before.",
+      "images": [{ "src": "screenshots/1.3.0-identical-files.webp", "caption": "Off until an admin turns it on" }],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/storage.md"
+    },
+    {
+      "type": "feature",
+      "highlight": true,
+      "title": "17 new tools for AI assistants",
+      "description": "Assistants connected over MCP can now do much more with your library. They can upload a model from files, read a model's files and look at its pictures, and edit its title, description, tags and category. They can also add, rename and remove a model's files, reorder its pictures and pick the cover, create categories, take models out of collections and delete models. Widget tools let them write dashboard widgets and find or upload icons for them. Tools that change your library start off for a token until you allow them under Token permissions, and the ones that remove or overwrite something tell the assistant so.",
+      "images": [
+        {
+          "src": "screenshots/1.3.0-mcp-tools.webp",
+          "caption": "Tools that change your library stay off until you allow them"
+        }
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/mcp.md"
+    },
+    {
+      "type": "feature",
+      "title": "Edit the tags and collections of many models at once",
+      "description": "Select models, then choose Edit tags or Edit collections. The dialog shows which tags or collections all the selected models have and which only some do, and how many. You can add a tag to all of them, take one off, or put the whole selection in a collection in one go. Nothing changes until you click the button, which says what it will do.",
+      "images": [
+        { "src": "screenshots/1.3.0-bulk-tags.webp", "caption": "Tags only some of the models have show how many" },
+        { "src": "screenshots/1.3.0-bulk-collections.webp", "caption": "The same for collections" }
+      ]
+    },
+    {
+      "type": "feature",
+      "title": "All your slicers, and eufyMake Studio",
+      "description": "Configuration → Slicer now takes every slicer on your computer, not just one. A model's button opens the one you used last. Its arrow lists the others and downloads the file, or all of a model's files as a zip, which replaces the separate download button. eufyMake Studio joins the list, and opens models straight from Thingport without Bridge.",
+      "images": [
+        { "src": "screenshots/1.3.0-slicers.webp", "caption": "Turn on each slicer you have" },
+        { "src": "screenshots/1.3.0-open-in-slicer.webp", "caption": "The others are one click away" }
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/slicers.md"
+    },
+    {
+      "type": "feature",
+      "title": "Thingport Grab: Thingiverse in dark mode, without ads",
+      "description": "Thingport Grab, updated through your browser's extension store, adds extras that work even without a Thingport: a dark theme for Thingiverse that follows your system theme, and hiding Thingiverse's banners, ad cards and video ads. Each can be switched off in the popup. The popup gets a dark theme of its own, and a History tab with your recent imports and the last models you opened. Disconnect now also removes Grab's connection from your Thingport profile.",
+      "images": [{ "src": "screenshots/1.3.0-grab-features.webp", "caption": "Extras that work without a Thingport" }]
+    },
+    {
+      "type": "feature",
+      "title": "Stay signed in",
+      "description": "A Thingport tab left open, like a dashboard set as your homepage, no longer drops you on the sign-in page: your session renews itself, and survives your computer sleeping or the network dropping. Admins choose how long an unused browser stays signed in under Administration → Auth, a month by default. Changing your password signs out your other browsers."
+    },
+    {
+      "type": "feature",
+      "title": "Search from anywhere",
+      "description": "The search button in the top bar opens search over the page you're on. ⌘K on a result opens it in a new tab or copies its link."
+    },
+    {
+      "type": "improvement",
+      "title": "An icon browser for launcher links and widgets, with Thingport's icons, popular self-hosted, media and 3D printing sites, and your own uploads"
+    },
+    {
+      "type": "improvement",
+      "title": "Provider chips follow your accent colour"
+    },
+    {
+      "type": "fix",
+      "title": "Photos taken sideways import the right way up, and photos imported from other sites no longer keep their location data"
+    },
+    {
+      "type": "fix",
+      "title": "Your MakerWorld sign-in is only ever sent to MakerWorld itself, over HTTPS, never to a look-alike domain"
+    },
+    {
+      "type": "fix",
+      "title": "OrcaSlicer, Elegoo Slicer and Snapmaker Orca no longer fail with “File name too long” when opening a model"
+    },
+    {
+      "type": "fix",
+      "title": "Thingport Bridge finds Bambu Studio on Windows, and the Download page's Bridge buttons work again"
+    },
+    {
+      "type": "fix",
+      "title": "Long file names without spaces no longer stretch the model page's side panel"
+    },
+    {
+      "type": "fix",
+      "title": "Link imports get the right file name from more servers, and zips whose paths start with ./ import"
+    },
+    {
+      "type": "fix",
+      "title": "Clearer errors when Snapmaker, Cults3D or MyMiniFactory turn down a sign-in or a download"
+    },
+    {
+      "type": "fix",
+      "title": "Creality Cloud links show their import status when the model is known by another name, and filling gaps keeps a tag's capitalisation"
+    }
+  ]
+}

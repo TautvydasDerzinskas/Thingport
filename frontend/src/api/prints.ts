@@ -23,6 +23,7 @@ export type Plate = {
   thumb_generated?: boolean; // the thumb is our own render, not a picture from an import or upload
   preview_glb_url?: string | null; // /plate/{plateId}/preview.glb?v=... once background pre-render finishes
   render_url?: string | null; // /plate/{plateId}/render.png[?v=...]: grey shading for cards to tint; null if undrawable
+  own_colors?: boolean; // the file carries colours of its own, so our picture of it is a colour render
 };
 
 export type PrintFile = {
@@ -57,6 +58,8 @@ export type Author = {
 
 export type Print = {
   id: string;
+  /** Set on a model a tool brought: it can be opened, downloaded and printed, not edited or deleted. */
+  tool_id?: string | null;
   name: string;
   title?: string | null;
   notes?: string | null;
@@ -90,7 +93,13 @@ export type Print = {
   thumb_url?: string | null; // denormalized = plates[0].thumb_url
   thumb_generated?: boolean; // denormalized = plates[0].thumb_generated
   render_url?: string | null; // the first plate's render_url that isn't null
+  own_colors?: boolean; // any plate carries colours of its own
   supporting_file_count: number;
+  /** The scripts it can be generated again from, out of the files kept beside it; empty for an ordinary model. */
+  generator_scripts?: { id: string; filename: string }[];
+  /** The source had a script for it but its creator chose not to share it: there is none to open, and that is
+   *  why, which a model that simply never had one wouldn't explain. */
+  generator_script_withheld?: boolean;
   // Optional: an older backend (published separately) doesn't send it.
   total_size?: number;
   prepared_print?: PreparedPrint | null;
@@ -129,6 +138,9 @@ export type FillGapsResult = {
 
 /** "relevance" ranks by how well a model matches `q`, as the search palette does. */
 export type PrintSortMode = "newest" | "popular" | "downloads" | "relevance";
+
+/** A site the library's models came from; `provider` is "thingport" for the ones uploaded here. */
+export type PrintSource = { provider: string; model_count: number };
 
 export class PrintApiError extends Error {
   constructor(
@@ -215,6 +227,11 @@ export const printsApi = {
       category_id?: string | string[];
       collection_id?: string;
       author_id?: string;
+      /** Only the models that came with a script they can be generated from again. */
+      generative?: boolean;
+      /** Sites to leave out, by provider id ("thingport" for the ones uploaded here). Named as what to hide, so a
+       *  site the library gains later is listed from the start. */
+      hide_providers?: string[];
       order_by?: PrintSortMode;
       limit?: number;
       offset?: number;
@@ -223,6 +240,8 @@ export const printsApi = {
     const qs = new URLSearchParams();
     if (params.q) qs.set("q", params.q);
     if (params.tags && params.tags.length) qs.set("tags", params.tags.join(","));
+    if (params.generative) qs.set("generative", "1");
+    if (params.hide_providers?.length) qs.set("hide_providers", params.hide_providers.join(","));
     if (params.category_id && params.category_id.length) {
       qs.set("category_id", Array.isArray(params.category_id) ? params.category_id.join(",") : params.category_id);
     }
@@ -242,6 +261,13 @@ export const printsApi = {
     const totalRaw = res.headers.get("X-Total-Count");
     const total = totalRaw ? Number(totalRaw) : undefined;
     return { items, hasMore, nextOffset, total };
+  },
+
+  /** The sites the library's models came from, most models first, for the listing's source filter. */
+  sources: async (): Promise<PrintSource[]> => {
+    const res = await fetch(`${apiBase()}/prints/sources`, { headers: authHeaders() });
+    assertOk(res, "Failed to list sources");
+    return res.json();
   },
 
   get: async (id: string): Promise<Print> => {
@@ -294,6 +320,9 @@ export const printsApi = {
       mode?: "separate" | "multiplate";
       /** False for each request of a batch; the batch sends one summary (uploadSummary) instead. */
       notify?: boolean;
+      /** What the notification calls it: a model the customizer generated, or one a tool built. Left out for
+       *  files the user picked, which is what "uploaded" describes. */
+      origin?: "generated" | "created";
     } = {},
   ): Promise<UploadPrintsResult> => {
     const fd = new FormData();
@@ -306,6 +335,7 @@ export const printsApi = {
     if (opts.category_id) fd.set("category_id", opts.category_id);
     if (opts.mode && files.length > 1) fd.set("mode", opts.mode);
     if (opts.notify === false) fd.set("notify", "false");
+    if (opts.origin) fd.set("origin", opts.origin);
     const res = await fetch(`${apiBase()}/upload`, {
       method: "POST",
       body: fd,
@@ -423,6 +453,13 @@ export const printsApi = {
     const res = await fetch(`${apiBase()}/print/${id}/files`, { headers: authHeaders() });
     assertOk(res, "Failed to load supporting files");
     return res.json();
+  },
+
+  /** One supporting file as text, for the generator script the customizer runs. */
+  supportingText: async (printId: string, fileId: string): Promise<string> => {
+    const res = await fetch(`${apiBase()}/print/${printId}/files/${fileId}`, { headers: authHeaders() });
+    assertOk(res, "Failed to read the script");
+    return res.text();
   },
 
   uploadFile: async (id: string, file: File): Promise<Print> => {

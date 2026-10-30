@@ -1,0 +1,25 @@
+{
+  "Education": ["educational"],
+  "Education/Engineering": [
+    "machine-design",
+    "industrial-design",
+    "components",
+    "energy-and-power",
+    "piping",
+    "construction"
+  ],
+  "Fashion/Jewelry": ["jewellery"],
+  "Hobby & DIY": ["hobby"],
+  "Hobby & DIY/Electronics": ["electrical", "computer", "tech"],
+  "Hobby & DIY/Robotics": ["robotics"],
+  "Hobby & DIY/Sport & Outdoors": ["sport"],
+  "Hobby & DIY/Vehicles": ["automotive", "aerospace", "aviation", "marine", "military"],
+  "Household": ["household"],
+  "Household/Decor": ["interior-design", "furniture"],
+  "Household/Garden": ["agriculture"],
+  "Miniatures/Architecture": ["architecture"],
+  "Tools": ["tools"],
+  "Tools/Machine Tools": ["fixtures"],
+  "Tools/Medical Tools": ["medical"],
+  "Toys & Games": ["toys", "just-for-fun"]
+}

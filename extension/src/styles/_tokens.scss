@@ -9,10 +9,20 @@ $font-size: 13px;
 $font-size-sm: 12px;
 $font-size-xs: 11px;
 
+// Emitted as CSS custom properties, so one stylesheet can square them all off: Thingport's dark theme has no
+// rounded corners (frontend/src/theme.ts), and the in-page UI follows it (see `squared-in-dark`). Read them with
+// `r()`; the Sass values stay for the few places that need a number to compute with.
 $radius-sm: 6px;
 $radius-md: 8px;
 $radius-lg: 12px;
 $radius-xl: 16px;
+
+$radii: (
+  "sm": $radius-sm,
+  "md": $radius-md,
+  "lg": $radius-lg,
+  "xl": $radius-xl,
+);
 
 $space-1: 4px;
 $space-2: 8px;
@@ -74,15 +84,35 @@ $palette-dark: map.merge(
   }
 }
 
+@mixin radius-vars($squared: false) {
+  @each $name, $value in $radii {
+    --tg-radius-#{$name}: #{if($squared, 0px, $value)};
+  }
+}
+
 /** The light palette, and the dark one where the browser/OS prefers it. */
 @mixin themed {
   @include theme-vars($palette-light);
+  @include radius-vars;
 
   @media (prefers-color-scheme: dark) {
     @include theme-vars($palette-dark);
   }
 }
 
+/** Square corners on the dark theme, as the app has. Include it beside `themed` on a surface that follows the app's
+ *  shape; circles are drawn as 50% and stay round. */
+@mixin squared-in-dark {
+  @media (prefers-color-scheme: dark) {
+    @include radius-vars($squared: true);
+  }
+}
+
 @function c($name) {
   @return var(--tg-#{$name});
+}
+
+/** A corner radius: 0 on the dark theme where `squared-in-dark` is in force. */
+@function r($name) {
+  @return var(--tg-radius-#{$name});
 }

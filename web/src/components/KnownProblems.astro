@@ -1,0 +1,227 @@
+---
+// Near the foot of a provider's page: the open issues labelled with it, which .github/workflows/issue-provider-label.yml
+// labels by the bug form's Provider answer, and a link to report one, filled in for this provider.
+import AnchorHeading from "@astrojs/starlight/components/AnchorHeading.astro";
+import { openIssuesLabelled } from "../lib/github.mjs";
+import { labelledIssuesUrl, providerLabel, WHERE } from "../lib/report.mjs";
+import { KNOWN_PROBLEMS_HEADING } from "../lib/routeData";
+import { REPO } from "../lib/site.mjs";
+import Icon from "./Icon.astro";
+import { providerPage } from "./providerPage";
+import ReportLink from "./ReportLink.astro";
+
+type Props = {
+  /** The provider's docsSlug, as in /docs/providers/<docsSlug>/. */
+  slug: string;
+};
+
+// A short list: past this many, a link to the rest on GitHub.
+const SHOWN = 5;
+const { slug } = Astro.props;
+const { name } = providerPage(slug);
+const label = providerLabel(name);
+const issues = await openIssuesLabelled(REPO, label);
+const page = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
+const { id, toc } = KNOWN_PROBLEMS_HEADING;
+---
+
+<section
+  class="known"
+  aria-labelledby={id}
+  data-pagefind-ignore
+  data-known-problems
+  data-repo={REPO}
+  data-label={label}
+>
+  <AnchorHeading level={2} id={id}>{toc}</AnchorHeading>
+  <p class="intro">Open bug reports about {name} in Thingport, on GitHub.</p>
+  <div class="not-content">
+    <div class="panel">
+      <ul class="issues" role="list" hidden={!issues?.length} data-issues>
+        {
+          issues?.slice(0, SHOWN).map((issue) => (
+            <li>
+              <a href={issue.url}>
+                <span class="number">#{issue.number}</span>
+                <span class="title">{issue.title}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+      <template data-issue>
+        <li><a><span class="number"></span><span class="title"></span></a></li>
+      </template>
+      <p class="state" hidden={issues?.length !== 0} data-state="empty">
+        <Icon name="check" size={18} />
+        No known problems with {name}.
+      </p>
+      <p class="state" hidden={issues !== null} data-state="unknown">
+        <Icon name="globe" size={18} />
+        <span>Couldn’t reach GitHub: see <a href={labelledIssuesUrl(label)}>the open issues about {name}</a>.</span>
+      </p>
+    </div>
+    <div class="actions">
+      <ReportLink
+        label={`Report a problem with ${name}`}
+        title={`${name}: `}
+        where={WHERE.app}
+        provider={name}
+        page={page}
+      />
+      <a class="more" href={labelledIssuesUrl(label)} hidden={!issues || issues.length <= SHOWN} data-more>
+        All <span data-count>{issues?.length}</span> open on GitHub
+      </a>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { listedIssue, type Issue } from "../lib/github.mjs";
+
+  // The list is baked in at build time; check it once per visit so it doesn't go stale between deploys. A failed check
+  // (GitHub allows 60 an hour per visitor) is remembered too, rather than retried on every page.
+  const SHOWN = 5;
+  const section = document.querySelector<HTMLElement>("[data-known-problems]");
+  const { repo, label } = section?.dataset ?? {};
+
+  const show = (issues: Issue[]) => {
+    const list = section!.querySelector<HTMLUListElement>("[data-issues]")!;
+    const template = section!.querySelector<HTMLTemplateElement>("[data-issue]")!;
+    list.replaceChildren(
+      ...issues.slice(0, SHOWN).map((issue) => {
+        const item = template.content.firstElementChild!.cloneNode(true) as HTMLLIElement;
+        item.querySelector("a")!.href = issue.url;
+        item.querySelector(".number")!.textContent = `#${issue.number}`;
+        item.querySelector(".title")!.textContent = issue.title;
+        return item;
+      }),
+    );
+    list.hidden = issues.length === 0;
+    section!.querySelector<HTMLElement>('[data-state="empty"]')!.hidden = issues.length !== 0;
+    section!.querySelector<HTMLElement>('[data-state="unknown"]')!.hidden = true;
+    const more = section!.querySelector<HTMLElement>("[data-more]")!;
+    more.hidden = issues.length <= SHOWN;
+    more.querySelector("[data-count]")!.textContent = String(issues.length);
+  };
+
+  if (section && repo && label) {
+    const key = `thingport-known-problems:${label}`;
+    let checked: string | null = null;
+    try {
+      checked = sessionStorage.getItem(key);
+    } catch {
+      /* storage blocked: just fetch */
+    }
+    if (checked) show(JSON.parse(checked));
+    else if (checked === null) {
+      const query = new URLSearchParams({ labels: label, state: "open", per_page: "100" });
+      fetch(`https://api.github.com/repos/${repo}/issues?${query}`, {
+        headers: { Accept: "application/vnd.github+json" },
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .catch(() => null)
+        .then((items) => {
+          const issues = Array.isArray(items) ? items.map(listedIssue).filter((issue) => issue !== null) : null;
+          if (issues) show(issues);
+          try {
+            sessionStorage.setItem(key, issues ? JSON.stringify(issues) : "");
+          } catch {
+            /* storage blocked: the next page checks again */
+          }
+        });
+    }
+  }
+</script>
+
+<style>
+  .known {
+    /* The space Starlight gives a heading after other content, as this one would have in the Markdown. */
+    margin-top: calc(1.5 * var(--sl-text-h2));
+  }
+  .intro {
+    color: var(--text-muted);
+    font-size: var(--sl-text-sm);
+    line-height: 1.55;
+  }
+
+  .panel {
+    overflow: hidden;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: var(--radius-sm);
+    background: var(--sl-color-bg);
+  }
+  .issues {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .issues[hidden],
+  .state[hidden],
+  .more[hidden] {
+    display: none;
+  }
+  .issues li + li {
+    border-top: 1px solid var(--sl-color-hairline-light);
+  }
+  .issues a {
+    display: grid;
+    grid-template-columns: 3.25rem minmax(0, 1fr);
+    gap: 0.5rem;
+    align-items: baseline;
+    padding: 0.55rem 0.875rem;
+    color: var(--sl-color-white);
+    font-size: var(--sl-text-sm);
+    line-height: 1.45;
+    text-decoration: none;
+  }
+  .issues a:hover {
+    background: color-mix(in srgb, var(--sl-color-gray-5) 35%, transparent);
+  }
+  .issues a:hover .title {
+    text-decoration: underline;
+  }
+  .issues a:focus-visible {
+    outline: 2px solid var(--sl-color-text-accent);
+    outline-offset: -2px;
+  }
+  .number {
+    color: var(--sl-color-gray-3);
+    font-variant-numeric: tabular-nums;
+  }
+  .title {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .state {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    margin: 0;
+    padding: 0.75rem 0.875rem;
+    color: var(--sl-color-gray-2);
+    font-size: var(--sl-text-sm);
+    line-height: 1.45;
+  }
+  .state :global(svg) {
+    flex: none;
+    color: var(--sl-color-text-accent);
+  }
+  .state a {
+    color: var(--sl-color-text-accent);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    align-items: center;
+    margin-top: 0.75rem;
+  }
+  .more {
+    color: var(--sl-color-text-accent);
+    font-size: var(--sl-text-sm);
+    font-weight: 600;
+  }
+</style>

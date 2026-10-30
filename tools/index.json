@@ -1,0 +1,13 @@
+{
+  "tools": [
+    "multiboard-planner",
+    "gridfinity-drawer",
+    "makerworld-3mf-normalizer",
+    "enclosure-generator",
+    "print-cost-estimator",
+    "skadis-planner",
+    "keyring-generator",
+    "qr-code-generator",
+    "openscad-customizer"
+  ]
+}

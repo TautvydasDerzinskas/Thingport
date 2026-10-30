@@ -26,5 +26,7 @@ jobs:
       - run: npx prettier --check .
       - name: Provider copies match providers/
         run: npm run providers:check
+      - name: SDK reference matches frontend/src/sdk/types.ts, and the examples type-check
+        run: npm run sdk:check
       - name: gofmt
         run: test -z "$(gofmt -l bridge)" || { gofmt -l bridge; exit 1; }

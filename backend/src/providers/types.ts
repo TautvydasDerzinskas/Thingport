@@ -41,6 +41,14 @@ export type ImportKit = {
   downloadFile(url: string, name: string): Promise<PlainDownloadResult>;
   /** Whether a file is one a plate takes (a zip is unpacked instead). */
   isModelFile(name: string): boolean;
+  /**
+   * Whether a file is worth downloading at all: one a plate takes, or the script the model was generated
+   * from, which comes along as a SUPPORTING file so the model can be generated again.
+   *
+   * Separate from `isModelFile`, which answers the narrower question of what may become a plate -- a script
+   * holds no geometry, so it must never be one.
+   */
+  isImportableFile(name: string): boolean;
 };
 
 /** Whose import it is, and of which model, by the id it's kept under. */
@@ -112,6 +120,18 @@ export type PipelineKit = ImportKit & {
     profiles: { id: string; title: string; coverUrl?: string | null }[],
     options?: { names?: boolean },
   ): ProfileDetails;
+  /** Whether this model's files are gone -- every one of them (services/missingFilesService.ts). A provider whose
+   *  files only Thingport Grab can fetch asks before it decides what to fetch: a re-import of such a model is a
+   *  repair of its files rather than an addition to them. */
+  filesMissing(existing: ExistingImportedPrint): Promise<boolean>;
+  /** The downloaded files in place of the model's missing ones, and its pictures again where they went too.
+   *  Everything else about the model stays as its owner left it. Removes the files either way. */
+  replaceFiles(
+    existing: ExistingImportedPrint,
+    inputs: NewPlateInput[],
+    resolved: ResolvedModel | null,
+    details: ProfileDetails,
+  ): Promise<ImportResult>;
 };
 
 /** The escape hatch for a provider whose imports don't go the shared way (MakerOnline's files come from Grab). */

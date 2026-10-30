@@ -5,6 +5,7 @@ import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import CheckIcon from "@mui/icons-material/Check";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import { copyText } from "../utils/clipboard";
 
 /** A command or config to copy, in monospace, with a copy button. */
 export default function CodeBlock({ code }: { code: string }) {
@@ -16,11 +17,10 @@ export default function CodeBlock({ code }: { code: string }) {
     const timer = window.setTimeout(() => setCopyState("idle"), copyState === "failed" ? 4000 : 1500);
     return () => window.clearTimeout(timer);
   }, [copyState]);
-  // The clipboard API only exists on HTTPS or localhost, and self-hosted instances are often plain HTTP on a LAN
-  // address; there the command is selected, to copy by hand.
+  // Where the browser won't copy, the command is selected, to copy by hand.
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(code);
+      await copyText(code);
       setCopyState("copied");
     } catch {
       if (box.current) window.getSelection()?.selectAllChildren(box.current);

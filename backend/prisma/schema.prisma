@@ -69,6 +69,8 @@ model User {
   renderColor              String?
   // Which tree the models page shows: "categories" | "folders"; null means categories.
   categoriesView           String?
+  // How the Tools page is arranged: { layout, sort, categories: { [toolId]: category } }. Null until it's changed.
+  toolsView                Json?
   // The dashboard widgets the user had switched on or off, as { [widgetId]: boolean }. Superseded by
   // dashboardTemplates; read only to carry the user's choices into their first template.
   dashboardWidgets         Json?
@@ -91,6 +93,8 @@ model User {
   prints                   Print[]
   collections              Collection[]
   customWidgets            CustomWidget[]
+  tools                    Tool[]
+  toolData                 ToolData[]
   icons                    UserIcon[]
   collectionSyncs          CollectionSync[]
   providerListings         ProviderListing[]
@@ -169,6 +173,11 @@ model Print {
   sourceExternalId         String?
   // Gaps (see services/sourceGaps.ts) the source had nothing for at the last fill.
   unfillableGaps           String[]                 @default([])
+  // The source published the script this model is generated from, but its creator chose not to share it. Worth
+  // keeping, because from the outside a withheld script and a model that never had one look identical: no script
+  // beside it and no way to customize it. The site says so only at import, and answers the request for a withheld
+  // one with an empty download rather than a refusal.
+  generatorScriptWithheld  Boolean                  @default(false)
   categoryId               String?
   category                 Category?                @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   categorySource           CategorySource?
@@ -197,6 +206,12 @@ model Print {
   preparedFile             PrintFile?               @relation("PreparedFile", fields: [preparedFileId], references: [id], onDelete: SetNull)
   preparedMetadata         Json?
   collectionItems          CollectionItem[]
+  // Set on a model a tool brought with it (services/toolsService.ts): it can't be edited or deleted, and goes when
+  // an admin uninstalls the tool.
+  toolId                   String?
+  tool                     Tool?                    @relation(fields: [toolId], references: [id], onDelete: SetNull)
+  // Which of the tool's models it is, from the tool's metadata.
+  toolKey                  String?
   createdAt                DateTime                 @default(now())
   updatedAt                DateTime                 @updatedAt
   // Generated column (name A, tags B, notes C, creator D) created with its GIN index in a
@@ -205,11 +220,13 @@ model Print {
 
   @@unique([userId, categoryId, nameNormalized])
   @@unique([userId, sourceProvider, sourceExternalId])
+  @@unique([userId, toolId, toolKey])
   @@index([userId, categoryId, name])
   @@index([tags], type: Gin)
   @@index([authorId])
   @@index([userId, favoritedAt])
   @@index([userId, lastViewedAt])
+  @@index([toolId])
 }
 
 /// A user-curated group of models. Collection imports reuse a row by nameNormalized.
@@ -224,6 +241,9 @@ model Collection {
   items          CollectionItem[]
   bookmarks      Bookmark[]
   sync           CollectionSync?
+  // Set on the collection a tool keeps its models in: fixed, listed last, and gone with the tool.
+  toolId         String?
+  tool           Tool?                    @relation(fields: [toolId], references: [id], onDelete: Cascade)
   createdAt      DateTime                 @default(now())
   updatedAt      DateTime                 @updatedAt
   // Generated column (name A, tags B, description C); see Print.searchVector.
@@ -231,6 +251,7 @@ model Collection {
 
   @@unique([userId, nameNormalized])
   @@index([tags], type: Gin)
+  @@index([toolId])
 }
 
 /// Keeps a collection in step with one on a provider: models added there later are imported into
@@ -280,13 +301,16 @@ model ProviderListing {
   @@unique([userId, provider, key])
 }
 
-/// An import waiting for Thingport Grab. MakerOnline signs its download links only for a page its own anti-bot script
-/// runs on, so a MakerOnline import started in the app, the queue or a sync waits here until Grab, on the next
-/// makeronline.com page it sees, signs the files and imports it.
+/// An import waiting for Thingport Grab, because its files only a page of the site's own can get: MakerOnline signs
+/// its download links solely for a page its anti-bot script runs on, and an OwlCAD CAD project has no stored mesh at
+/// all -- its editor builds the file. An import started in the app, the queue or a sync waits here until Grab, on the
+/// next page it sees of that site, fetches the files and imports it.
 model GrabImport {
   id           String   @id @default(cuid())
   userId       String
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Whose row it is: Grab asks for one provider's at a time, on that provider's own pages.
+  provider     String   @default("makeronline")
   /// The model's page, with `#profileId-<id>` when it names a print profile.
   url          String
   /// "url" | "designer" | "all", as for MakerWorld.
@@ -301,6 +325,7 @@ model GrabImport {
   updatedAt    DateTime @updatedAt
 
   @@unique([userId, url])
+  @@index([userId, provider])
 }
 
 enum BookmarkType {
@@ -605,10 +630,12 @@ model CustomWidget {
   source    String
   /// The folder name: unique among a user's own widgets, and the community repository's for an installed one.
   slug      String
-  /// The validated metadata: name, description, icon, size, settings, hosts.
+  /// The validated metadata: name, description, icon, size, settings, hosts, labels and screenshots.
   manifest  Json
   script    String
   html      String?
+  /// Its labels by language, as { "en": { "key": "text" } }: what `thingport.t()` reads.
+  locales   Json?
   /// Of the installed files, to tell when the community repository's copy has changed.
   sha       String
   createdAt DateTime @default(now())
@@ -619,6 +646,58 @@ model CustomWidget {
 }
 
 /// An image the user uploaded to pick as an icon, for a launcher link or a custom widget.
+/// A tool: a small app that opens in a window from the Tools page. An admin installs one from the repository's tools
+/// folder for the whole instance, or a user makes their own (services/toolsService.ts).
+model Tool {
+  id           String       @id @default(cuid())
+  /// "repo" for one installed from the repository, "own" for one a user made.
+  source       String
+  /// "repo" for a repository tool, its owner's id for an own one: the unique index covers both, where a null owner
+  /// wouldn't (Postgres treats nulls as distinct).
+  scope        String
+  slug         String
+  /// The maker of an own tool; null for a repository one.
+  userId       String?
+  user         User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// The validated metadata: name, description, icon, window size, hosts and, for a repository tool, its models.
+  manifest     Json
+  script       String
+  html         String?
+  /// Its labels by language, as { "en": { "key": "text" } }: what `thingport.t()` reads.
+  locales      Json?
+  /// Of the installed files, to tell when the repository's copy has changed.
+  sha          String
+  /// Of the models it brings, so an update that leaves them alone doesn't make everyone's copies again.
+  modelsSha    String?
+  /// The models that couldn't be fetched at the last try, as { [key]: reason }.
+  modelsFailed Json?
+  data         ToolData[]
+  collections  Collection[]
+  prints       Print[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@unique([scope, slug])
+  @@index([userId])
+}
+
+/// What a tool keeps for a user through `thingport.storage`: JSON values by key.
+model ToolData {
+  id        String   @id @default(cuid())
+  toolId    String
+  tool      Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key       String
+  value     Json
+  /// The value's size as JSON, so the quota is a sum rather than a scan of every value.
+  size      Int
+  updatedAt DateTime @updatedAt
+
+  @@unique([toolId, userId, key])
+  @@index([userId])
+}
+
 model UserIcon {
   /// Random, as it's also the public file name: /api/icons/<id>.<ext>.
   id        String   @id

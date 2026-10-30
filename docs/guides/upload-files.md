@@ -15,8 +15,8 @@ BMP, GIF, SVG), and ZIP archives. Each file can be up to 512 MB by default.
 
 The model is named after the file (`Benchy.stl` becomes "Benchy") and opens straight in its edit dialog, so you can
 fix the title, add tags and notes, and choose a category or folder before you move on. A 3MF that carries a thumbnail, as most
-slicer projects do, uses it right away. For an STL or OBJ, Thingport renders a thumbnail the first time the model is
-shown.
+slicer projects do, uses it right away. For an STL, OBJ or STEP file, Thingport renders a thumbnail the first time the
+model is shown.
 
 To put new models straight into an existing folder, open that folder on the **Models** page before you upload.
 
