@@ -1,31 +1,98 @@
 name: Release PR
 
-# GitHub can't choose a pull request template by branch, so add the release one once the pull request exists.
+# GitHub can't choose a pull request template by branch, so add the release one once the pull request exists, with what
+# a merge would release: the backend's next version as the title and first line, and the release notes last.
 on:
   pull_request:
-    types: [opened]
+    # A pull request opened with conflicts runs nothing until a push resolves them, and a push can change what's next.
+    types: [opened, synchronize]
     branches: [main]
 
 permissions:
   contents: read
   pull-requests: write
 
+concurrency:
+  group: release-pr-${{ github.event.pull_request.number }}
+  # Two runs finishing out of order would leave the older result in place.
+  cancel-in-progress: true
+
 jobs:
   template:
     if: github.head_ref == 'develop' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      # What a merge into main releases. The extension goes out on a schedule of its own.
+      PROJECTS: backend frontend bridge
     steps:
       - uses: actions/checkout@v4
         with:
-          sparse-checkout: .github
+          fetch-depth: 0 # semantic-release needs the full history and tags
+          persist-credentials: false
+
+      # Not knowing what's next mustn't cost the reminder, so neither of these can fail the job.
+      - uses: actions/setup-node@v4
+        continue-on-error: true
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: What a merge would release
+        continue-on-error: true
+        shell: bash
+        env:
+          HUSKY: "0"
+        run: |
+          npm ci --no-audit --no-fund
+          # semantic-release only reads main. So the merge GitHub prepared for this pull request plays it, and the real
+          # repository's URL, which the release notes link to, leads to a copy of this checkout instead.
+          git switch -C main
+          git clone --quiet --bare . "$RUNNER_TEMP/origin.git"
+          git config url."file://$RUNNER_TEMP/origin.git".insteadOf "https://github.com/$GITHUB_REPOSITORY.git"
+          for project in $PROJECTS; do
+            (cd "$project" && node ../.github/scripts/next-release.mjs "$RUNNER_TEMP/$project.json") || true
+          done
+
       - uses: actions/github-script@v7
         with:
           script: |
-            const template = require('fs').readFileSync('.github/PULL_REQUEST_TEMPLATE/release.md', 'utf8').trim();
-            const body = context.payload.pull_request.body ?? '';
-            if (body.includes(template)) return;
+            const fs = require('fs');
+            const read = (project) => {
+              try {
+                return JSON.parse(fs.readFileSync(`${process.env.RUNNER_TEMP}/${project}.json`, 'utf8'));
+              } catch {
+                return null;
+              }
+            };
+            const projects = process.env.PROJECTS.split(' ');
+            const releases = Object.fromEntries(projects.map((project) => [project, read(project)]));
+            const version = releases.backend?.version;
+            const unread = projects.filter((project) => !releases[project]);
+            const notes = projects
+              .map((project) => releases[project]?.notes)
+              .filter(Boolean)
+              .join('\n\n')
+              // A description holds 65,536 characters, and going over would cost the reminder too.
+              .slice(0, 60000);
+            const generated = [
+              version && `Release ${version}`,
+              fs.readFileSync('.github/PULL_REQUEST_TEMPLATE/release.md', 'utf8').trim(),
+              unread.length > 0 &&
+                `Couldn't work out the next release of ${unread.join(', ')}: see the Release PR run.`,
+              notes,
+            ]
+              .filter(Boolean)
+              .join('\n\n');
+
+            // Read now, not from the event, so an edit made while this waited to run isn't overwritten.
+            const { data: pull } = await github.rest.pulls.get({ ...context.repo, pull_number: context.issue.number });
+            const typed = (pull.body ?? '').replace(/<!-- release-pr -->[\s\S]*?<!-- \/release-pr -->/, '').trim();
             await github.rest.pulls.update({
               ...context.repo,
               pull_number: context.issue.number,
-              body: `${template}\n\n${body}`,
+              // Replaced whole on each push. Anything typed outside it stays, below it.
+              body: [`<!-- release-pr -->\n${generated}\n<!-- /release-pr -->`, typed].filter(Boolean).join('\n\n'),
+              ...(version && { title: `Release ${version}` }),
             });
