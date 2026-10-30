@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../db";
-import { FLARESOLVERR_URL, PUBLIC_URL } from "../config";
+import { FLARESOLVERR_REQUIRE_HTTPS, FLARESOLVERR_URL, PUBLIC_URL } from "../config";
 import { QUALITY_CHECK_KEYS, type QualityCheckKey } from "./meshQuality";
 
 async function getBoolSetting(key: string, fallback: boolean): Promise<boolean> {
@@ -246,12 +246,9 @@ export function normalizeFlaresolverrUrl(value: string | null | undefined): stri
   return /\/v1$/i.test(trimmed) ? trimmed : `${trimmed}/v1`;
 }
 
-export const FLARESOLVERR_URL_POLICY_ERROR =
-  "Use HTTPS for a remote FlareSolverr. HTTP is allowed only for flaresolverr, localhost, 127.0.0.1 or [::1].";
-
 /** Credentials may travel to the solver. Only the standard Compose service and explicit loopback names
- * may use plaintext HTTP; do not infer trust from DNS, LAN ranges or URL parser IP aliases. */
-export function isAllowedFlaresolverrUrl(value: string): boolean {
+ * count as safe over plaintext HTTP; do not infer trust from DNS, LAN ranges or URL parser IP aliases. */
+export function isSecureFlaresolverrUrl(value: string): boolean {
   try {
     const url = new URL(value);
     if (url.username || url.password) return false;
@@ -263,6 +260,24 @@ export function isAllowedFlaresolverrUrl(value: string): boolean {
   } catch {
     return false;
   }
+}
+
+/** Any HTTP(S) solver, as before, unless FLARESOLVERR_REQUIRE_HTTPS asks for a secure one. fetch can't send a
+ * login in the URL, so one is refused either way. */
+export function isAllowedFlaresolverrUrl(value: string): boolean {
+  if (FLARESOLVERR_REQUIRE_HTTPS) return isSecureFlaresolverrUrl(value);
+  try {
+    const url = new URL(value);
+    return (url.protocol === "http:" || url.protocol === "https:") && !url.username && !url.password;
+  } catch {
+    return false;
+  }
+}
+
+export function flaresolverrUrlPolicyError(): string {
+  return FLARESOLVERR_REQUIRE_HTTPS
+    ? "FLARESOLVERR_REQUIRE_HTTPS is on: use HTTPS for a remote FlareSolverr. HTTP is allowed only for flaresolverr, localhost, 127.0.0.1 or [::1]."
+    : "Use an http:// or https:// URL without a login in it.";
 }
 
 // Until a row exists (seeded at startup or saved by an admin) the env var is the fallback; after that the row wins.

@@ -1,6 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const config = vi.hoisted(() => ({ url: "https://solver.example/v1" as string | null }));
+const config = vi.hoisted(() => ({ url: "https://solver.example/v1" as string | null, requireHttps: true }));
+
+vi.mock("../src/config", async (original) => ({
+  ...(await original<typeof import("../src/config")>()),
+  get FLARESOLVERR_REQUIRE_HTTPS() {
+    return config.requireHttps;
+  },
+}));
 
 vi.mock("../src/services/settingsService", async (original) => ({
   ...(await original<typeof import("../src/services/settingsService")>()),
@@ -21,6 +28,7 @@ import { fetchJsonFromUrl } from "../src/services/importResolvers";
 afterEach(() => {
   vi.restoreAllMocks();
   config.url = "https://solver.example/v1";
+  config.requireHttps = true;
 });
 
 describe("FlareSolverr credential boundary", () => {
@@ -114,7 +122,7 @@ describe("FlareSolverr credential boundary", () => {
     "http://127.1/v1",
     "http://localhost./v1",
     "http://flaresolverr.evil/v1",
-  ])("never sends cookies or query credentials to a rejected configured endpoint: %s", async (endpoint) => {
+  ])("with HTTPS required, never sends cookies or query credentials to a plaintext endpoint: %s", async (endpoint) => {
     config.url = endpoint;
     const sent = vi.spyOn(globalThis, "fetch");
     expect(await fetchViaFlaresolverr("https://makerworld.com/en/models/1", "token=secret")).toBeNull();
@@ -137,6 +145,19 @@ describe("FlareSolverr credential boundary", () => {
     expect(await fetchViaFlaresolverr("https://makerworld.com/en/models/1", "token=secret")).not.toBeNull();
     expect(sent).toHaveBeenCalledWith(endpoint, expect.objectContaining({ redirect: "error" }));
   });
+
+  it.each(["http://solver.example/v1", "http://192.168.1.5:8191/v1"])(
+    "keeps using a plaintext endpoint while HTTPS isn't required: %s",
+    async (endpoint) => {
+      config.url = endpoint;
+      config.requireHttps = false;
+      const sent = vi
+        .spyOn(globalThis, "fetch")
+        .mockImplementation(async () => new Response(JSON.stringify({ status: "ok", solution: { response: "{}" } })));
+      expect(await fetchViaFlaresolverr("https://api.thingiverse.com/things/123?access_token=secret")).not.toBeNull();
+      expect(sent).toHaveBeenCalledWith(endpoint, expect.objectContaining({ redirect: "error" }));
+    },
+  );
 
   it.each(["", "/likes", "/collections"])(
     "preserves dotted Thingiverse usernames on /users/alice.smith%s",

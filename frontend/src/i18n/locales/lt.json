@@ -1195,7 +1195,10 @@
             "problems": {
               "not_configured": "Nesukonfigūruota. Importai veikia, kol tiekėjas neparodo Cloudflare patikros; nurodykite FlareSolverr adresą, kad jie veiktų ir tada.",
               "unreachable": "FlareSolverr neatsako. Patikrinkite, ar veikia jo konteineris ir ar adresas skiltyje „Ryšiai > FlareSolverr“ teisingas, įskaitant prievadą (dažniausiai 8191).",
-              "timeout": "FlareSolverr laiku neatsakė. Jis gali dar tik pasileisti arba būti užimtas."
+              "timeout": "FlareSolverr laiku neatsakė. Jis gali dar tik pasileisti arba būti užimtas.",
+              "insecure": "Veikia, bet nešifruotu HTTP į kitą kompiuterį, todėl tiekėjų slapukai ir API raktai tinklu keliauja nešifruoti. Įjunkite FlareSolverr HTTPS arba paleiskite jį tame pačiame Compose rinkinyje kaip http://flaresolverr:8191.",
+              "insecure_refused": "Įjungtas FLARESOLVERR_REQUIRE_HTTPS, todėl šis nešifruotas HTTP URL atmetamas ir jam nieko nesiunčiama. Pakeiskite URL į HTTPS arba pašalinkite kintamąjį.",
+              "https_ready": "Ryšys saugus. Nustatykite FLARESOLVERR_REQUIRE_HTTPS=true, kad nuo šiol nesaugūs sprendiklio URL būtų atmetami."
             }
           },
           "thingiverse": {

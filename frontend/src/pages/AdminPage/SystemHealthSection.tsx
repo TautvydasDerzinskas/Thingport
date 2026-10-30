@@ -117,7 +117,8 @@ function ComponentRow({
   const { t, i18n } = useTranslation("app");
   const info = componentInfo(component);
   const base = `adminSettings.health.components.${component}`;
-  const problem = result && result.status !== "ok";
+  // A green result can still carry a hint, such as FlareSolverr being ready for FLARESOLVERR_REQUIRE_HTTPS.
+  const problem = result && (result.status !== "ok" || result.code !== "ok");
   return (
     <Box sx={{ px: 2, py: 1.5, "&:not(:last-of-type)": { borderBottom: 1, borderColor: "divider" } }}>
       {/* Two columns: what it is and how it's doing, as wide as the actions beside it allow. A phone stacks them. */}

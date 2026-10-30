@@ -51,6 +51,10 @@ pull the AI model on Ollama.
   `PUID` and `PGID` in `.env` to the folder's owner and run `docker compose up -d` again.
 - **Memory low**: give the container more memory, or turn on **Simplify previews** under **Administration →
   Rendering** so heavy models need less.
+- **FlareSolverr over plain HTTP** (warning): it works, but provider cookies and API tokens reach a solver on
+  another machine unencrypted. Put it behind HTTPS or run it in the Compose stack (`http://flaresolverr:8191`). When
+  FlareSolverr is green with a hint, the connection is secure and you can set `FLARESOLVERR_REQUIRE_HTTPS=true` to
+  keep it that way; with the variable on, a plain HTTP remote URL is refused and shown as an error.
 - **FlareSolverr not answering**: check that its container is running and that the URL under **Administration →
   Connections → FlareSolverr** is right, port included (usually `http://flaresolverr:8191`).
 - **Thingiverse token rejected**: generate a new one at [thingiverse.com/apps/create](https://www.thingiverse.com/apps/create)

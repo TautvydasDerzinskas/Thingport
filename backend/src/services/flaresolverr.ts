@@ -4,7 +4,7 @@ import {
   getFlaresolverrUrl,
   normalizeFlaresolverrUrl,
   isAllowedFlaresolverrUrl,
-  FLARESOLVERR_URL_POLICY_ERROR,
+  flaresolverrUrlPolicyError,
 } from "./settingsService";
 
 const TEST_TIMEOUT_MS = 10000;
@@ -21,7 +21,7 @@ export async function testFlaresolverr(
 ): Promise<{ ok: true; latencyMs: number; version: string | null } | { ok: false; error: string }> {
   const endpoint = normalizeFlaresolverrUrl(url);
   if (!endpoint) return { ok: false, error: "Enter the FlareSolverr URL first" };
-  if (!isAllowedFlaresolverrUrl(endpoint)) return { ok: false, error: FLARESOLVERR_URL_POLICY_ERROR };
+  if (!isAllowedFlaresolverrUrl(endpoint)) return { ok: false, error: flaresolverrUrlPolicyError() };
   const start = Date.now();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), TEST_TIMEOUT_MS);

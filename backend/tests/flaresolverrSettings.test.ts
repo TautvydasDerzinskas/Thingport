@@ -5,9 +5,14 @@ import { prisma } from "../src/db";
 import { fetchViaFlaresolverr, testFlaresolverr } from "../src/services/flaresolverr";
 import { getFlaresolverrUrl, seedFlaresolverrUrl, setFlaresolverrUrl } from "../src/services/settingsService";
 
+const policy = vi.hoisted(() => ({ requireHttps: true }));
+
 vi.mock("../src/config", async (original) => ({
   ...(await original<typeof import("../src/config")>()),
   FLARESOLVERR_URL: "http://legacy-env.example:8191",
+  get FLARESOLVERR_REQUIRE_HTTPS() {
+    return policy.requireHttps;
+  },
 }));
 
 const app = createApp();
@@ -27,6 +32,7 @@ const originalFetch = global.fetch;
 
 afterEach(async () => {
   global.fetch = originalFetch;
+  policy.requireHttps = true;
   await prisma.setting.deleteMany({ where: { key: { startsWith: "flaresolverr_" } } });
 });
 
@@ -42,7 +48,17 @@ function fakeFlaresolverr(answer: () => Response) {
 const ready = () => new Response(JSON.stringify({ status: "ok", sessions: [], version: "3.3.21" }), { status: 200 });
 
 describe("FlareSolverr URL setting", () => {
-  it("rejects an unseeded legacy environment endpoint before sending credentials", async () => {
+  it("keeps using an unseeded plain HTTP environment endpoint while HTTPS isn't required", async () => {
+    policy.requireHttps = false;
+    await prisma.setting.deleteMany({ where: { key: "flaresolverr_url" } });
+    const calls = fakeFlaresolverr(
+      () => new Response(JSON.stringify({ status: "ok", solution: { response: "<html></html>" } })),
+    );
+    expect(await fetchViaFlaresolverr("https://api.thingiverse.com/things/123?access_token=secret")).not.toBeNull();
+    expect(calls).toEqual(["http://legacy-env.example:8191/v1"]);
+  });
+
+  it("with HTTPS required, rejects an unseeded legacy environment endpoint before sending credentials", async () => {
     await prisma.setting.deleteMany({ where: { key: "flaresolverr_url" } });
     const calls = fakeFlaresolverr(ready);
     expect(await getFlaresolverrUrl()).toBe("http://legacy-env.example:8191/v1");
@@ -111,7 +127,7 @@ describe("FlareSolverr URL setting", () => {
   });
 
   it.each(["http://remote.example:8191", "http://192.168.1.10:8191", "ftp://localhost:8191", "http://127.1:8191"])(
-    "rejects unsafe settings and legacy configured endpoints without any request: %s",
+    "with HTTPS required, rejects unsafe settings and legacy configured endpoints without any request: %s",
     async (url) => {
       const calls = fakeFlaresolverr(ready);
       // Even an unchanged legacy DB value cannot bypass the endpoint policy.
@@ -131,9 +147,12 @@ describe("FlareSolverr URL setting", () => {
               .set({ Authorization: `Bearer ${adminToken}` })
               .send({ url });
         expect(response.status).toBe(400);
-        expect(JSON.stringify(response.body)).toContain("Use HTTPS");
+        expect(JSON.stringify(response.body)).toContain("FLARESOLVERR_REQUIRE_HTTPS is on");
       }
-      expect(await testFlaresolverr(url)).toMatchObject({ ok: false, error: expect.stringContaining("Use HTTPS") });
+      expect(await testFlaresolverr(url)).toMatchObject({
+        ok: false,
+        error: expect.stringContaining("FLARESOLVERR_REQUIRE_HTTPS is on"),
+      });
       expect(await fetchViaFlaresolverr("https://makerworld.com/en/models/1", "token=secret")).toBeNull();
       expect(await fetchViaFlaresolverr("https://api.thingiverse.com/things/123?access_token=secret")).toBeNull();
       await prisma.setting.deleteMany({ where: { key: "flaresolverr_url" } });
@@ -160,6 +179,36 @@ describe("FlareSolverr URL setting", () => {
     expect(calls).toEqual([`${url}/v1`]);
     expect(global.fetch).toHaveBeenCalledWith(`${url}/v1`, expect.objectContaining({ redirect: "error" }));
   });
+
+  it.each(["http://remote.example:8191", "http://192.168.1.10:8191"])(
+    "tests and saves plain HTTP endpoint %s while HTTPS isn't required",
+    async (url) => {
+      policy.requireHttps = false;
+      const calls = fakeFlaresolverr(ready);
+      const saved = await request(app)
+        .patch("/api/settings/flaresolverr")
+        .set({ Authorization: `Bearer ${adminToken}` })
+        .send({ url })
+        .expect(200);
+      expect(saved.body).toEqual({ url: `${url}/v1` });
+      expect(calls).toEqual([`${url}/v1`]);
+    },
+  );
+
+  it.each(["ftp://localhost:8191", "http://user:pass@remote.example:8191"])(
+    "rejects %s even while HTTPS isn't required",
+    async (url) => {
+      policy.requireHttps = false;
+      const calls = fakeFlaresolverr(ready);
+      const response = await request(app)
+        .patch("/api/settings/flaresolverr")
+        .set({ Authorization: `Bearer ${adminToken}` })
+        .send({ url });
+      expect(response.status).toBe(400);
+      expect(JSON.stringify(response.body)).toContain("without a login");
+      expect(calls).toEqual([]);
+    },
+  );
 
   it("clears the URL without testing it", async () => {
     const calls = fakeFlaresolverr(ready);

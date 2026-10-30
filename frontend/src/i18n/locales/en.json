@@ -1179,7 +1179,10 @@
             "problems": {
               "not_configured": "Not set up. Imports work until a provider shows a Cloudflare challenge; add a FlareSolverr URL so they keep working when it does.",
               "unreachable": "FlareSolverr isn't answering. Check that its container is running and that the URL in Connections > FlareSolverr is right, including the port (usually 8191).",
-              "timeout": "FlareSolverr didn't answer in time. It may still be starting, or be busy."
+              "timeout": "FlareSolverr didn't answer in time. It may still be starting, or be busy.",
+              "insecure": "Working, but over plain HTTP to another machine, so provider cookies and API tokens cross the network unencrypted. Put FlareSolverr behind HTTPS, or run it in the same Compose stack as http://flaresolverr:8191.",
+              "insecure_refused": "FLARESOLVERR_REQUIRE_HTTPS is on, so this plain HTTP URL is refused and nothing is sent to it. Switch the URL to HTTPS, or remove the variable.",
+              "https_ready": "Connection is secure. Set FLARESOLVERR_REQUIRE_HTTPS=true to refuse insecure solver URLs from now on."
             }
           },
           "thingiverse": {
