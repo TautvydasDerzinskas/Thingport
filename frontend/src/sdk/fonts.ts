@@ -6,8 +6,10 @@
 // reason they are all static fonts in that folder's README; the list below is only the names and the grouping the
 // pickers show.
 
-/** A typeface on offer: `id` is the file's name without its extension, and what `library("fonts")` takes. */
-export type ToolFont = { id: string; name: string; group: string };
+import type { SdkFont, SdkFonts } from "./types";
+
+/** A typeface on offer: `id` is the file's name without its extension. */
+export type ToolFont = SdkFont;
 
 /** In the order a picker should show them: the plain faces first, then the loud ones, then handwriting. */
 export const TOOL_FONTS: readonly ToolFont[] = [
@@ -52,11 +54,7 @@ export const TOOL_FONT_URLS: ReadonlyMap<string, string> = new Map(
 );
 
 /** What a tool gets from `library("fonts")`. */
-export type ToolFontLibrary = {
-  list: readonly ToolFont[];
-  bytes: (id: string) => Promise<ArrayBuffer>;
-  load: (id: string) => Promise<unknown>;
-};
+export type ToolFontLibrary = SdkFonts;
 
 export function toolFontLibrary(opentype: () => Promise<unknown>): ToolFontLibrary {
   const downloads = new Map<string, Promise<ArrayBuffer>>();
@@ -90,7 +88,6 @@ export function toolFontLibrary(opentype: () => Promise<unknown>): ToolFontLibra
   return {
     list: TOOL_FONTS,
     bytes,
-    /** The font parsed, by the same opentype.js every other tool is using. */
     load: (id: string) =>
       remember(parsed, id, async () => {
         const [library, data] = await Promise.all([opentype(), bytes(id)]);

@@ -1,5 +1,9 @@
 // How to write a custom dashboard widget: what the `widget_guide` MCP tool hands an AI before it writes one, and what
-// docs/guides/custom-widgets.md explains to people. The format itself is checked by customWidgetsService.
+// docs/guides/custom-widgets.md and docs/developers/ explain to people. The format itself is checked by
+// customWidgetsService. What the script's `thingport` has is generated from the SDK's types (sdkReference.generated.ts),
+// the same text docs/developers/sdk-reference.md shows, so it isn't written out here.
+
+import { WIDGET_SDK_REFERENCE } from "./sdkReference.generated";
 
 export const CUSTOM_WIDGET_GUIDE = `# Writing a Thingport dashboard widget
 
@@ -95,40 +99,13 @@ export default function mount(thingport) {
 }
 \`\`\`
 
-The \`thingport\` argument has:
+What the \`thingport\` argument has is listed under **What \`thingport\` has** below. The theme's colours are on the
+panel as CSS variables as well (the \`SdkTheme\` table names them), so a stylesheet can use them without the script
+copying anything across.
 
-- **root**: the element to draw into. It fills the panel. Draw only inside it. **selector**: a CSS selector for it,
-  unique on the page, for scoping styles: \`\${selector} .status { … }\`.
-- **settings**: the values of the settings the metadata declares, with their defaults filled in. Toggles are
-  booleans; everything else is a string, numbers included.
-- **size**: \`{ width, height }\` in pixels and \`{ cols, rows }\` in grid cells, as the user resizes the panel.
-  **onResize(callback)**: calls \`callback(size)\` when that changes; returns a function that stops it.
-- **theme**: \`{ mode: "light" | "dark", primary, primaryContrast, background, paper, text, textSecondary, divider,
-  error, warning, success, fontFamily }\`. The same colours are already on the panel as CSS variables —
-  \`--tp-accent\`, \`--tp-accent-ink\`, \`--tp-background\`, \`--tp-paper\`, \`--tp-text\`, \`--tp-text-muted\`,
-  \`--tp-divider\`, \`--tp-error\`, \`--tp-warning\`, \`--tp-success\` and \`--tp-font\` — so a stylesheet in the HTML
-  can use them without the script copying anything across. Text and icons on an accent-filled button take
-  \`--tp-accent-ink\`, never the paper colour, which is dark in the dark theme.
-- **t(key, vars)**, **labels(where?)**, **language**, **languages**: the widget's own words. See below.
-- **models**: \`list({ q, tags, collectionId, limit, offset })\`, \`search(q)\`, \`get(id)\`,
-  \`file(id, fileId?)\` (an \`ArrayBuffer\`), \`create({ name, description, tags, collectionId, files })\` where each
-  file is \`{ name, data }\`, \`addFiles\`, \`addImages\`, \`replaceFile\`, \`update(id, { name, description, tags })\`
-  and \`open(id)\`, which leaves the dashboard for the model's page. A panel usually only reads.
-- **collections**: \`list()\`, \`get(id)\`, \`create({ name, description, tags })\`, \`models(id)\`,
-  \`add(id, modelIds)\`, \`remove(id, modelIds)\`. A dashboard has no "save where?" dialog, so there is no
-  \`collections.pick\` here (a tool has one): save into a collection the widget's settings name instead.
-- **library(name)**, **libraries**: a library Thingport carries, so the widget needn't ship it: \`"three"\` to draw
-  geometry, \`"opentype"\` for a font's real outlines, \`"manifold"\` for solid modelling, \`"fonts"\` for the
-  typefaces Thingport ships. Fetched the first time anything asks and shared with every widget and tool after that,
-  so load one only if the widget really needs it — a panel that draws itself in HTML should not pull in WebAssembly.
-- **fetch(url, init)**: like \`window.fetch\`, but made by the Thingport server, so CORS and the local network aren't
-  in the way. Only to the metadata's \`hosts\`: any other host throws. Returns a \`Response\`.
-- **api(path, init)**: Thingport's own API as the user, e.g. \`thingport.api("/dashboard/summary")\`.
-- **download({ name, data })**: hands the user a file to keep.
-- **ui**: \`toast(message, severity)\`, \`confirm({ title, message, confirmLabel, destructive })\`,
-  \`openModel(id)\`. Use these rather than \`alert\` or \`window.confirm\`.
-- **widget**: \`{ id, slug, name, version, source }\`. **widgetId** and **instanceId**: the widget's id, and this
-  panel's, where several panels show the same widget.
+## What \`thingport\` has
+
+${WIDGET_SDK_REFERENCE}
 
 ## The words it shows
 
@@ -154,9 +131,6 @@ they go beside it, a flat map of key to sentence per language, which \`save_widg
   option's \`label\`, that is written as a label key — \`settings.refresh\` — is shown in the user's language; one
   written as a sentence is shown as it is. So the cog translates with no second place to declare anything. The
   widget's \`name\` works the same way.
-- \`language\` is the language Thingport is in, and \`languages\` every language it has. The widget is drawn again
-  when the user changes language, as it is when they change theme, so \`t\` is read at the top of \`mount\` rather
-  than watched.
 - At most 128 KB a language and 1 MB in all.
 
 Write the words the user asked for in their own language. If you don't know which that is, ask, or write English and

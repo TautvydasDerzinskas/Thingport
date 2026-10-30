@@ -3,7 +3,9 @@
 Dashboard widgets anyone can install from **Customize dashboard → Custom widgets → Community** in Thingport. Each
 folder here is one widget; [`index.json`](index.json) lists the ones Thingport offers.
 
-To write one, and to use an AI assistant to write it for you, see the
+To write one, see [your first widget](../docs/developers/first-widget.md) and the
+[SDK reference](../docs/developers/sdk-reference.md); to have an AI assistant write it for you, see
+[build with an AI assistant](../docs/developers/ai-assistant.md). Installing and using them is in the
 [custom widgets guide](../docs/guides/custom-widgets.md).
 
 ## Sharing yours

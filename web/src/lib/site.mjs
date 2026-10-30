@@ -356,6 +356,68 @@ export const DOCS = [
       "Small apps that open in a window from the Tools page: planners, generators and calculators that work with your library.",
   },
   {
+    slug: "developers",
+    source: "docs/developers/overview.md",
+    group: "Build for Thingport",
+    title: "Build widgets and tools",
+    nav: "Overview",
+    description:
+      "How Thingport's dashboard widgets and tools run, what they can reach, which to write, and building one by hand or with an AI assistant.",
+  },
+  {
+    slug: "developers/first-widget",
+    source: "docs/developers/first-widget.md",
+    group: "Build for Thingport",
+    title: "Your first widget",
+    nav: "Your first widget",
+    description:
+      "Write a dashboard widget step by step: a panel of your newest models, with settings, labels and both themes.",
+  },
+  {
+    slug: "developers/first-tool",
+    source: "docs/developers/first-tool.md",
+    group: "Build for Thingport",
+    title: "Your first tool",
+    nav: "Your first tool",
+    description:
+      "Write a tool step by step: a tray generator that models with Manifold and saves STLs into your library.",
+  },
+  {
+    slug: "developers/sdk-reference",
+    source: "docs/developers/sdk-reference.md",
+    group: "Build for Thingport",
+    title: "SDK reference",
+    nav: "SDK reference",
+    description:
+      "Every member of the thingport object a widget's or a tool's script gets: the library, the theme, labels, fetch, the libraries and storage.",
+  },
+  {
+    slug: "developers/recipes",
+    source: "docs/developers/recipes.md",
+    group: "Build for Thingport",
+    title: "Widget and tool recipes",
+    nav: "Recipes",
+    description:
+      "Complete widgets and tools to start from: library totals, an OctoPrint printer, a tagging helper and an OpenSCAD box.",
+  },
+  {
+    slug: "developers/ai-assistant",
+    source: "docs/developers/ai-assistant.md",
+    group: "Build for Thingport",
+    title: "Build with an AI assistant",
+    nav: "With an AI assistant",
+    description:
+      "Describe a widget or a tool to Claude or another assistant over MCP, which writes it and saves it to your Thingport.",
+  },
+  {
+    slug: "developers/publishing",
+    source: "docs/developers/publishing.md",
+    group: "Build for Thingport",
+    title: "Publishing widgets and tools",
+    nav: "Publishing",
+    description: "Share a widget or a tool with every Thingport through a pull request to the repository.",
+  },
+  {
     slug: "contributing",
     source: "CONTRIBUTING.md",
     group: "Contributing",

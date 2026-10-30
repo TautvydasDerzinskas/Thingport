@@ -1,42 +1,13 @@
 import { collectionsApi, type Collection } from "../api/collections";
 import { printsApi, type Print } from "../api/prints";
 import { searchApi } from "../api/search";
+import type { SdkCollection, SdkCollections, SdkFileInput, SdkModel, SdkModels, SdkRelatedFile } from "./types";
 
 // The user's own library, as a widget's or a tool's script reaches it: the same API the app itself uses, as the
 // user. Kept small and plain — no Print objects, no React — so it stays the same as the app changes, and so what a
 // script may do with the library is one list, in one place, however the script is run.
 
-export type SdkModel = {
-  id: string;
-  name: string;
-  description: string | null;
-  tags: string[];
-  /** A picture of it, an address an <img> can show. */
-  thumbnail: string | null;
-  /** Its 3D files (plates), in order. */
-  files: { id: string; name: string; size: number; url: string }[];
-  /** How many files are kept beside it that aren't plates, so a list can be narrowed without asking for each. */
-  relatedCount: number;
-  /** Brought by a tool: it can be read, not changed. */
-  toolOwned: boolean;
-  createdAt: string | null;
-};
-
-export type SdkCollection = {
-  id: string;
-  name: string;
-  description: string | null;
-  tags: string[];
-  modelCount: number;
-  /** A tool's own collection, which can't be saved into. */
-  toolOwned: boolean;
-};
-
-/** A file kept beside a model rather than being one of its plates. */
-export type SdkRelatedFile = { id: string; name: string; type: string; size: number; url: string };
-
-/** A file to save: its name (with the extension, e.g. "bin-2x3.stl") and its content. */
-export type SdkFileInput = { name: string; data: Blob | ArrayBuffer | ArrayBufferView | string; type?: string };
+export type { SdkCollection, SdkFileInput, SdkModel, SdkRelatedFile } from "./types";
 
 const toModel = (print: Print): SdkModel => ({
   id: print.id,
@@ -77,21 +48,17 @@ function listOptions(options: { limit?: number; offset?: number } = {}) {
 /**
  * The `models` and `collections` objects a script is given.
  *
- * `openModel` is how the host leaves for a model's page — a tool closes its window first, a panel just navigates —
- * and `pickCollection` is the host's own "save where?" dialog, which a tool has and a dashboard panel hasn't: left
- * out, `collections.pick` is simply not there, and a script saves into the collection it was told about instead.
+ * `openModel` is how the host leaves for a model's page — a tool closes its window first, a panel just navigates. A
+ * tool adds `collections.pick` itself, as only it has a "save where?" dialog.
  */
-export function buildUserLibrary({
-  openModel,
-  pickCollection,
-}: {
-  openModel: (id: string) => void;
-  pickCollection?: (options?: { title?: string }) => Promise<SdkCollection | null>;
-}) {
+export function buildUserLibrary({ openModel }: { openModel: (id: string) => void }): {
+  models: SdkModels;
+  collections: SdkCollections;
+} {
   const getModel = async (id: string) => toModel(await printsApi.get(id));
 
-  const models = {
-    /** Models in the library, newest first; `q` searches as the models page does. */
+  // What each member does is in types.ts, which the reference is written from.
+  const models: SdkModels = {
     list: async (
       options: { q?: string; tags?: string[]; collectionId?: string; limit?: number; offset?: number } = {},
     ) => {
@@ -103,7 +70,6 @@ export function buildUserLibrary({
       });
       return { models: page.items.map(toModel), hasMore: page.hasMore, total: page.total ?? null };
     },
-    /** The best matches for a search, as the search box finds them. */
     search: async (q: string) => {
       const result = await searchApi.search(q);
       return {
@@ -113,7 +79,6 @@ export function buildUserLibrary({
       };
     },
     get: getModel,
-    /** One of its files' content; the first when `fileId` is left out. */
     file: async (id: string, fileId?: string): Promise<ArrayBuffer> => {
       const model = await getModel(id);
       const file = fileId ? model.files.find((f) => f.id === fileId) : model.files[0];
@@ -125,10 +90,6 @@ export function buildUserLibrary({
       if (!res.ok) throw new Error(`Couldn't read ${file.name} (HTTP ${res.status})`);
       return res.arrayBuffer();
     },
-    /**
-     * The files kept beside a model that aren't plates: the script it was generated from, a wiring diagram, a
-     * readme. Separate from `files` because they are not geometry and nothing renders them.
-     */
     relatedFiles: async (id: string): Promise<SdkRelatedFile[]> =>
       (await printsApi.listFiles(id)).map((file) => ({
         id: file.id,
@@ -137,7 +98,6 @@ export function buildUserLibrary({
         size: file.size,
         url: printsApi.fileUrl(file.url),
       })),
-    /** One of them as text, for the ones that are: a generator script, a readme. */
     relatedText: async (id: string, fileId: string): Promise<string> => {
       const files = await models.relatedFiles(id);
       const file = files.find((f) => f.id === fileId);
@@ -147,7 +107,6 @@ export function buildUserLibrary({
       if (!res.ok) throw new Error(`Couldn't read ${file.name} (HTTP ${res.status})`);
       return res.text();
     },
-    /** A new model of the files given, each a plate, saved into a collection when one is given. */
     create: async (input: {
       name: string;
       description?: string;
@@ -167,13 +126,10 @@ export function buildUserLibrary({
       if (input.collectionId) await collectionsApi.addItems(input.collectionId, [print.id]);
       return toModel(print);
     },
-    /** Adds files to a model, each a plate. */
     addFiles: async (id: string, files: SdkFileInput[]) =>
       toModel((await printsApi.addPlates(id, files.map(toFile))).print),
-    /** Adds pictures (PNG, JPEG, WebP) to a model's gallery; the first becomes its cover in place of the render. */
     addImages: async (id: string, images: SdkFileInput[]) =>
       toModel((await printsApi.addPreviewImages(id, images.map(toFile))).print),
-    /** Replaces one of a model's files with a new one, in its place. */
     replaceFile: async (id: string, fileId: string, file: SdkFileInput) => {
       const before = await printsApi.get(id);
       const order = before.plates.map((plate) => plate.id);
@@ -187,7 +143,6 @@ export function buildUserLibrary({
       );
       return toModel((await printsApi.deletePlate(id, fileId)).print);
     },
-    /** Its name, description or tags. */
     update: async (id: string, patch: { name?: string; description?: string; tags?: string[] }) => {
       if (patch.name !== undefined || patch.description !== undefined)
         await printsApi.updateMeta(id, {
@@ -197,12 +152,10 @@ export function buildUserLibrary({
       if (patch.tags) await printsApi.setTags(id, patch.tags);
       return getModel(id);
     },
-    /** Leaves for the model's page. */
     open: (id: string) => openModel(id),
   };
 
-  const collections = {
-    /** The user's collections, not the built-in Favourites and History. */
+  const collections: SdkCollections = {
     list: async () => (await collectionsApi.list()).filter((collection) => !collection.system_key).map(toCollection),
     get: async (id: string) => toCollection(await collectionsApi.get(id)),
     create: async (input: { name: string; description?: string; tags?: string[] }) =>
@@ -211,8 +164,6 @@ export function buildUserLibrary({
       models.list({ ...options, collectionId: id }),
     add: (id: string, modelIds: string[]) => collectionsApi.addItems(id, modelIds),
     remove: (id: string, modelIds: string[]) => collectionsApi.removeItems(id, modelIds),
-    /** Asks the user which collection, as a Save dialog would; only where the host has such a dialog. */
-    ...(pickCollection ? { pick: (options?: { title?: string }) => pickCollection(options) } : {}),
   };
 
   return { models, collections };

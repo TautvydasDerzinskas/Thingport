@@ -54,8 +54,10 @@ default configuration points at your development database.
 
 ## What CI checks
 
-Formatting is checked on every pull request (`npm run format:check`). The other workflows are
-path-filtered, so only the parts you touched run:
+Formatting is checked on every pull request (`npm run format:check`), and so are the files written from `providers/`
+(`npm run providers:check`) and from the widget and tool SDK's types in `frontend/src/sdk/types.ts` (`npm run sdk:check`,
+which also type-checks the examples in `docs/developers/examples/`). The other workflows are path-filtered, so only the
+parts you touched run:
 
 | You changed            | CI runs                                                                                         |
 | ---------------------- | ----------------------------------------------------------------------------------------------- |

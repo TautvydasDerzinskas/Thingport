@@ -6,32 +6,18 @@
 // is a fraction of it -- and it is the format Thingport keeps models in everywhere else.
 
 import { zipSync, strToU8 } from "fflate";
+import type { SdkMesh, ThreeMfPart } from "./types";
 
-export type Mesh = {
-  /** Flat x, y, z triples. */
-  vertices: Float64Array;
-  /** Flat vertex-index triples. */
-  triangles: Uint32Array;
-  /**
-   * The distinct colours the script gave the model, as "#rrggbb", or absent where it never coloured it.
-   *
-   * A palette with an index per triangle rather than a colour per triangle: colour arrives a region at a time
-   * -- one `color()` call, one painted part -- so a model of a hundred thousand triangles has a handful of
-   * colours, and this is the shape 3MF and a slicer's filament slots want anyway.
-   */
-  palette?: string[];
-  /** One entry per triangle, indexing `palette`. Present whenever `palette` is. */
-  colors?: Uint16Array;
-  /**
-   * The palette entry standing in for the faces the script never coloured, where it coloured some of them.
-   *
-   * Those faces have no colour of the model's own: they are a shape, like an uncoloured model's, so they are
-   * drawn in the theme's colour or the reader's. The entry holds a plain grey for the formats that need every
-   * face to name a colour, and this says which entry it is, which the colour alone can't (a script may name
-   * that grey itself).
-   */
-  uncolored?: number;
-};
+// A mesh and a part are declared in types.ts, as a tool gets them from `library("openscad")`.
+//
+// A mesh's colours come as a palette with an index per triangle rather than a colour per triangle: colour arrives a
+// region at a time -- one `color()` call, one painted part -- so a model of a hundred thousand triangles has a handful
+// of colours, and this is the shape 3MF and a slicer's filament slots want anyway. Where a script coloured only some
+// faces, the rest have no colour of the model's own: they are a shape, like an uncoloured model's, drawn in the
+// theme's colour or the reader's. Their `uncolored` entry holds a plain grey for the formats that need every face to
+// name a colour, and says which entry it is, which the colour alone can't (a script may name that grey itself).
+export type Mesh = SdkMesh;
+export type { ThreeMfPart };
 
 /** The mesh's colours, in the form a caller that only wants to know "did the script colour this" can ask. */
 export const isColored = (mesh: Mesh): boolean => (mesh.palette?.length ?? 0) > 0;
@@ -203,17 +189,6 @@ function paintState(slot: number): string {
   if (state <= 2) return (((state & 1) << 2) | (((state >> 1) & 1) << 3)).toString(16).toUpperCase();
   return `${(state - 3).toString(16).toUpperCase()}C`;
 }
-
-/** One of the things a 3MF holds: a mesh, what a slicer should call it, and where it sits on the plate. */
-export type ThreeMfPart = {
-  mesh: Mesh;
-  /** Shown in the slicer's object list. A count belongs here -- "8x8 Core Tile x4" -- since 3MF carries one
-   *  copy of a shape however many are wanted, and the name is where a person reads how many to print. */
-  name?: string;
-  /** Millimetres from the origin. Left out, the part sits where its mesh already is, which is only what you
-   *  want for a single part: several of them would land on top of each other. See `layoutRow`. */
-  at?: { x: number; y: number; z?: number };
-};
 
 /** The bounding box of a mesh, in millimetres. */
 export function meshBounds(mesh: Mesh): { min: [number, number, number]; max: [number, number, number] } {

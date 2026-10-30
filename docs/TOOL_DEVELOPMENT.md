@@ -1,8 +1,9 @@
 # Tool development
 
 How a tool (a small app that opens in a window from the **Tools** page) is built, what the format allows, and the steps
-to get one into the repository. How people install and use them is in the [tools guide](guides/tools.md), which also
-carries the SDK reference; what reviewers look for is in the [tools README](../tools/README.md).
+to get one into the repository. How people install and use them is in the [tools guide](guides/tools.md), what a tool's script
+gets is in the [SDK reference](developers/sdk-reference.md), and what reviewers look for is in the
+[tools README](../tools/README.md). [Your first tool](developers/first-tool.md) builds one step by step.
 
 A tool is plain web code: an ES module, optional markup and styles, and a JSON file saying what it is. It runs in its
 user's page with their access to Thingport, so nothing about it is compiled, bundled by us, or fetched at run time —
@@ -66,8 +67,8 @@ export default async function mount(thingport) {
 }
 ```
 
-What `thingport` carries — storage, models, collections, `fetch`, `library()`, `ui`, `t()` and the rest — is listed in
-[what a tool's script gets](guides/tools.md#what-a-tools-script-gets). The rules the format itself enforces, or the
+What `thingport` carries — storage, models, collections, `fetch`, `library()`, `ui`, `t()` and the rest — is in the
+[SDK reference](developers/sdk-reference.md). The rules the format itself enforces, or the
 review does:
 
 - It draws only inside `thingport.root` and scopes its styles to a class of its own. Wrap a reset in `:where()` so it

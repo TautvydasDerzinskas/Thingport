@@ -1,0 +1,30 @@
+{
+  "name": "OctoPrint progress",
+  "description": "What an OctoPrint printer is printing, how far along it is and how long is left.",
+  "iconUrl": "builtin:services/octoprint",
+  "version": "1.0.0",
+  "size": { "w": 4, "h": 2, "minW": 3, "minH": 2 },
+  "settings": [
+    {
+      "key": "address",
+      "type": "text",
+      "label": "settings.address",
+      "default": "http://octopi.local",
+      "placeholder": "http://octopi.local"
+    },
+    { "key": "apiKey", "type": "text", "label": "settings.apiKey", "secret": true },
+    {
+      "key": "refresh",
+      "type": "choice",
+      "label": "settings.refresh",
+      "default": "10",
+      "options": [
+        { "value": "5", "label": "settings.seconds5" },
+        { "value": "10", "label": "settings.seconds10" },
+        { "value": "30", "label": "settings.seconds30" }
+      ]
+    }
+  ],
+  "hosts": ["octopi.local"],
+  "locales": ["en"]
+}

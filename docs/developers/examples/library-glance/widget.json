@@ -1,0 +1,10 @@
+{
+  "name": "Library at a glance",
+  "description": "How many models, collections, authors and categories your library has.",
+  "iconUrl": "builtin:thingport/icon",
+  "version": "1.0.0",
+  "size": { "w": 4, "h": 2, "minW": 2, "minH": 2 },
+  "settings": [],
+  "hosts": [],
+  "locales": ["en"]
+}

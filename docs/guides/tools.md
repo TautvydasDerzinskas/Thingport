@@ -121,6 +121,9 @@ Thingport.
 4. Open it from **Tools** in the sidebar. To change it, ask again: `list_tools` lets the assistant read back the
    script, the HTML and the labels it wrote before.
 
+[Build with an AI assistant](../developers/ai-assistant.md) has more: the permissions it needs, example prompts, and
+checking what it made.
+
 **Use AI**, beside the parts of the **New tool** editor, shows these steps as well, with three example prompts to copy.
 Its **Connect an AI** gives the command or settings for Claude Code, Claude, ChatGPT, Codex CLI, Cursor and VS Code.
 
@@ -136,7 +139,8 @@ With **Users' own tools** on, **New tool** on the Tools page opens the editor:
   the hosts it may reach. Saving one with the same folder name replaces it. The category is the shelf the Tools page
   starts it on; anyone using it can move it themselves.
 - **Script**: an ES module. The editor starts with a working tool, _Cube maker_, that uses most of what a tool can do;
-  the **SDK reference** beside it lists the rest.
+  the **SDK reference** beside it lists the rest, and the [full reference](../developers/sdk-reference.md) has each
+  member in detail.
 - **HTML & CSS**: markup and a `<style>` block, put into the window before the script runs. Scope the styles to a class
   of your own so they stay in the tool. The theme is already on the window as CSS variables — `--tp-accent`,
   `--tp-accent-ink`, `--tp-background`, `--tp-paper`, `--tp-text`, `--tp-text-muted`, `--tp-divider`, `--tp-error`,
@@ -171,35 +175,12 @@ export default async function mount(thingport) {
 }
 ```
 
-| `thingport.`                                                                                                                      | What it is                                                                                                                                                                                                                                                                                                                |
-| --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `root`, `selector`                                                                                                                | The window's element, with the tool's HTML in it, and a CSS selector for it                                                                                                                                                                                                                                               |
-| `theme`                                                                                                                           | `{ mode, primary, primaryContrast, background, paper, text, textSecondary, divider, error, warning, success, fontFamily }`                                                                                                                                                                                                |
-| `size`, `onResize(fn)`                                                                                                            | The window's size in pixels, and a way to hear when it changes                                                                                                                                                                                                                                                            |
-| `tool`                                                                                                                            | `{ id, slug, name, version, source }`                                                                                                                                                                                                                                                                                     |
-| `storage.get(key)`, `set(key, value)`, `remove(key)`, `keys()`                                                                    | JSON kept for the user, by key: up to 1 MB a value and 20 MB a tool                                                                                                                                                                                                                                                       |
-| `collections.list()`, `get(id)`, `create({ name, description, tags })`                                                            | The user's collections                                                                                                                                                                                                                                                                                                    |
-| `collections.models(id)`, `add(id, modelIds)`, `remove(id, modelIds)`                                                             | A collection's models                                                                                                                                                                                                                                                                                                     |
-| `collections.pick({ title })`                                                                                                     | Asks the user for one of their collections, or a new one; `null` when they cancel                                                                                                                                                                                                                                         |
-| `models.list({ q, tags, collectionId, limit, offset })`, `search(q)`, `get(id)`                                                   | Models in the library                                                                                                                                                                                                                                                                                                     |
-| `models.file(id, fileId?)`                                                                                                        | One of a model's files, as an `ArrayBuffer`                                                                                                                                                                                                                                                                               |
-| `models.relatedFiles(id)`, `relatedText(id, fileId)`                                                                              | The files kept beside a model that aren't plates -- the script it was generated from, a readme -- and one of them as text                                                                                                                                                                                                 |
-| `models.create({ name, description, tags, collectionId, files })`                                                                 | A new model; each file `{ name, data }`, data a `Blob`, `ArrayBuffer` or string                                                                                                                                                                                                                                           |
-| `models.addFiles(id, files)`, `addImages(id, images)`, `replaceFile(id, fileId, file)`, `update(id, { name, description, tags })` | Changing a model the user owns: its files, gallery pictures (the first is its cover), name, description and tags                                                                                                                                                                                                          |
-| `models.open(id)`                                                                                                                 | Closes the tool and opens the model's page                                                                                                                                                                                                                                                                                |
-| `context`                                                                                                                         | What the tool was opened on: `{ modelId }` when it was opened from a model's own menu, empty from the Tools page                                                                                                                                                                                                          |
-| `toolModels()`                                                                                                                    | The models a repository tool brings: `{ key, name, source, printId }`, `printId` null until it's come in                                                                                                                                                                                                                  |
-| `fetchToolModels(keys)`                                                                                                           | Fetches those of the tool's models that aren't here yet and gives the user their copies: `{ ready, failed }`, each `failed` carrying the provider's own reason, a daily download limit included                                                                                                                           |
-| `library(name)`, `libraries`                                                                                                      | A library Thingport carries, so a tool needn't: `"three"` to build or draw geometry, `"opentype"` for a font's real outlines, `"manifold"` for watertight solid modelling, `"fonts"` for the typefaces it ships, `"openscad"` to generate a model from a script. Loaded when the first tool asks and shared with the rest |
-| `fetch(url, init)`                                                                                                                | A request through Thingport to one of the tool's declared hosts, answered like `fetch`                                                                                                                                                                                                                                    |
-| `api(path, init)`                                                                                                                 | Thingport's own API, as the user                                                                                                                                                                                                                                                                                          |
-| `download({ name, data })`                                                                                                        | Hands the user a file                                                                                                                                                                                                                                                                                                     |
-| `ui.toast(message, severity)`, `ui.confirm({ title, message })`, `ui.close()`                                                     | Thingport's own toast, confirmation and closing the window                                                                                                                                                                                                                                                                |
-| `t(key, vars)`                                                                                                                    | The tool's own words, in the user's language: `t("rings.ring", { n: 2 })`                                                                                                                                                                                                                                                 |
-| `labels(where?)`                                                                                                                  | Fills in every `data-t` under `where` (the window by default) from the labels, so the markup carries the keys                                                                                                                                                                                                             |
-| `language`, `languages`                                                                                                           | The language Thingport is in (`"lt"`), and every language it has: `{ code, label, englishName }`                                                                                                                                                                                                                          |
-
-A model's files are `{ id, name, size, url }`; a model a tool brought has `toolOwned: true` and can't be changed.
+`thingport` has the window's element and size, the theme, storage kept for the user, their models and collections,
+the dialog that asks which collection to save into, the models a repository tool brings, `fetch` through Thingport to
+the hosts the tool declares, Thingport's own API, and the libraries below. Each is in the
+[SDK reference](../developers/sdk-reference.md), generated from the SDK itself, which also says what a widget has that
+a tool doesn't and the other way round. [Your first tool](../developers/first-tool.md) builds one step by step, and
+the [recipes](../developers/recipes.md) are complete tools to start from.
 
 ### The words a tool shows
 
@@ -253,54 +234,16 @@ adding more markup.
 
 A tool is one script with a size limit, and a reviewer reads it before it's merged, so the big machinery lives in
 Thingport rather than in the tool: a font parser or a solid modelling kernel is most of a tool's budget on its own,
-and one of them is a WebAssembly binary nobody could read. `library(name)` hands over Thingport's own copy. Nothing
-is fetched until a tool asks, and every tool after that gets the same instance from the same promise, so two tools
-open at once share one download.
+and one of them is a WebAssembly binary nobody could read. `thingport.library(name)` hands over Thingport's own copy
+of Three.js, opentype.js, Manifold, its fonts or OpenSCAD, fetched the first time a tool asks and shared with every
+tool after that.
 
-| `library(…)` | What comes back                                                                                                     |
-| ------------ | ------------------------------------------------------------------------------------------------------------------- |
-| `"three"`    | Three.js, the one Thingport draws models with, plus `mergeGeometries` and `mergeVertices`                           |
-| `"opentype"` | opentype.js: a glyph's real outline, counters and all                                                               |
-| `"manifold"` | Manifold, started and ready: watertight booleans, and the 2D cross-sections and offsetting that go with them        |
-| `"fonts"`    | `{ list, bytes(id), load(id) }` — the typefaces Thingport ships, `load` giving one parsed by the opentype above     |
-| `"openscad"` | `{ parameters, render, libraries, concurrency, writeThreeMf, layoutRow, meshBounds }` — OpenSCAD and its 3MF writer |
-
-```js
-const [{ CrossSection }, fonts] = await Promise.all([thingport.library("manifold"), thingport.library("fonts")]);
-const font = await fonts.load(fonts.list[0].id); // or fonts.bytes(id) for the file itself
-```
-
-`library("openscad")` is OpenSCAD itself, built for the browser. `parameters(source)` gives what the script
-offers -- its groups, ranges, captions and the choices behind `// [a, b, c]` -- read by OpenSCAD rather than by
-anything of Thingport's, so it is the same list the script's author saw. `render(source, { parameters, format,
-name, signal })` gives the model back as a 3MF by default, or as `stl`, `obj`, `off` or `amf`; `format: "mesh"`
-hands back the geometry without building a 3MF from it, which is seconds of held thread on a big model and wasted
-on a tool that writes its own file. The libraries a script may include are in
-[`frontend/src/assets/scadLibraries`](../../frontend/src/assets/scadLibraries) and are mounted only when the
-script mentions one.
-
-```js
-const openscad = await thingport.library("openscad");
-const { parameters } = await openscad.parameters(source);
-const { bytes, log, seconds } = await openscad.render(source, { parameters: { TEXT: "Hello", size: 40 } });
-```
-
-A render runs in a worker, so the window keeps drawing while it works, and `signal` really stops one: the worker
-running it is let go there and then rather than the call being left to finish into nothing. `concurrency` says how
-many a tool may have in flight at once -- one fewer than the machine has cores, at least one and at most four --
-so a planner whose parts don't depend on each other can draw that many at a time instead of one.
-
-`writeThreeMf(mesh | parts, { name })` writes one mesh, or a list of `{ mesh, name }` parts, into a single 3MF,
-with `layoutRow(parts)` to stand them side by side and `meshBounds(mesh)` for one's extents. A 3MF holds one copy
-of a shape however many are wanted, so a part's name is where its count belongs: `"8x8 Core Tile x4"`.
-
-Generating happens entirely in the browser: the script, the parameters and the result go nowhere on their own.
-Saving the result is a separate step — `models.create` uploads it to the instance like any other model.
-
+What each one hands over is in [the SDK reference](../developers/sdk-reference.md#libraryname). OpenSCAD renders in a
+worker and entirely in the browser: the script, the parameters and the result go nowhere until the tool saves them. The
+libraries a script may include are in [`frontend/src/assets/scadLibraries`](../../frontend/src/assets/scadLibraries).
 The fonts are all static faces, under the Open Font License, listed in
-[`frontend/src/assets/toolFonts`](../../frontend/src/assets/toolFonts). A variable font is deliberately not among
-them: its outlines are only right once its deltas have been applied, which the parser doesn't do, so letters come
-back collapsed and a counter that has lost its winding fills in when it's made solid.
+[`frontend/src/assets/toolFonts`](../../frontend/src/assets/toolFonts): a variable font's letters come back collapsed,
+as the parser doesn't apply its deltas.
 
 ## Sharing a tool
 

@@ -1,0 +1,81 @@
+<style>
+  .tagger {
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    gap: 12px;
+    height: 100%;
+    padding: 16px;
+    box-sizing: border-box;
+    font-family: var(--tp-font);
+    color: var(--tp-text);
+  }
+  .tagger form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .tagger input[name="tags"] {
+    flex: 1;
+    min-width: 160px;
+  }
+  .tagger input,
+  .tagger button {
+    padding: 6px 10px;
+    border: 1px solid var(--tp-divider);
+    border-radius: 8px;
+    background: var(--tp-paper);
+    color: var(--tp-text);
+    font: inherit;
+  }
+  .tagger button {
+    cursor: pointer;
+  }
+  .tagger button[type="submit"] {
+    border-color: transparent;
+    background: var(--tp-accent);
+    color: var(--tp-accent-ink);
+  }
+  .tagger .recent {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .tagger .recent button {
+    padding: 2px 8px;
+    font-size: 12px;
+  }
+  .tagger ul {
+    margin: 0;
+    padding: 0;
+    overflow: auto;
+    list-style: none;
+  }
+  .tagger li label {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--tp-divider);
+  }
+  .tagger .status {
+    font-size: 12px;
+    color: var(--tp-text-muted);
+  }
+</style>
+<div class="tagger">
+  <form>
+    <input
+      name="tags"
+      aria-label="Tags"
+      data-t-aria="tags"
+      data-t-placeholder="tagsHint"
+      placeholder="Tags, separated by commas"
+    />
+    <button type="submit" data-t="apply">Tag the ticked models</button>
+  </form>
+  <div class="recent"></div>
+  <div>
+    <p class="status" data-t="looking">Looking for models with no tags…</p>
+    <ul></ul>
+  </div>
+</div>

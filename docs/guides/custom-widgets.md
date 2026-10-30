@@ -32,7 +32,13 @@ The quickest way to make a widget is to describe it to an AI assistant connected
 4. Add it from **Add panel** while editing your dashboard. To change it, ask again; `list_widgets` lets the assistant
    read what it wrote before.
 
+[Build with an AI assistant](../developers/ai-assistant.md) has more: the permissions it needs, example prompts, and
+checking what it made.
+
 ## What a widget is made of
+
+This is the shape of one. To write your own, start with [your first widget](../developers/first-widget.md), a
+step-by-step example; the [developer docs](../developers/overview.md) cover how a widget runs, the SDK and recipes.
 
 ### Metadata
 
@@ -74,7 +80,7 @@ hosts: [octopi.local]
 ### Script
 
 An ES module whose default export draws the widget. It's called each time the panel appears, and again when its
-settings or the theme change; the function it returns, if any, cleans up first.
+settings, the theme or the language change; the function it returns, if any, cleans up first.
 
 ```js
 export default function mount(thingport) {
@@ -92,27 +98,9 @@ export default function mount(thingport) {
 }
 ```
 
-Its `thingport` argument:
-
-| Property                   | What it is                                                                                                                                                                                                                                                                                                                                                                                                       |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `root`                     | The element to draw into. It fills the panel.                                                                                                                                                                                                                                                                                                                                                                    |
-| `selector`                 | A CSS selector for `root`, unique on the page, to scope styles: `${selector} .state { … }`.                                                                                                                                                                                                                                                                                                                      |
-| `size`                     | `{ width, height }` in pixels and `{ cols, rows }` in grid cells, kept current as the panel is resized.                                                                                                                                                                                                                                                                                                          |
-| `onResize(callback)`       | Calls `callback(size)` when the size changes; returns a function that stops it.                                                                                                                                                                                                                                                                                                                                  |
-| `settings`                 | The panel's settings, defaults filled in. Toggles are booleans; the rest are strings.                                                                                                                                                                                                                                                                                                                            |
-| `theme`                    | `mode`, `primary`, `primaryContrast`, `background`, `paper`, `text`, `textSecondary`, `divider`, `error`, `warning`, `success`, `fontFamily`. The same colours are on the panel as `--tp-accent`, `--tp-accent-ink`, `--tp-background`, `--tp-paper`, `--tp-text`, `--tp-text-muted`, `--tp-divider`, `--tp-error`, `--tp-warning`, `--tp-success` and `--tp-font`, so a stylesheet can use them with no script. |
-| `t(key, vars)`             | The widget's own words, in your language: `t("state.printing", { state })`. See [the words it shows](#the-words-it-shows).                                                                                                                                                                                                                                                                                       |
-| `labels(where?)`           | Fills in every `data-t` under `where` (the panel by default) from those words, so the markup carries the keys.                                                                                                                                                                                                                                                                                                   |
-| `language`, `languages`    | The language Thingport is in, and every language it has.                                                                                                                                                                                                                                                                                                                                                         |
-| `models`                   | The library: `list`, `search`, `get`, `file`, `create`, `addFiles`, `addImages`, `replaceFile`, `update`, `open`.                                                                                                                                                                                                                                                                                                |
-| `collections`              | `list`, `get`, `create`, `models`, `add`, `remove`. A dashboard has no "save where?" dialog, so there's no `pick` here.                                                                                                                                                                                                                                                                                          |
-| `library(name)`            | A library Thingport carries, rather than one the widget ships: `"three"`, `"opentype"`, `"manifold"`, `"fonts"`. Loaded when the first widget or tool asks, and shared from then on — so ask only if you need it.                                                                                                                                                                                                |
-| `fetch(url, init)`         | Like `fetch`, but made by the Thingport server, so CORS and your network don't get in the way. Only `hosts`; others throw.                                                                                                                                                                                                                                                                                       |
-| `api(path, init)`          | Calls Thingport's own API as you, e.g. `thingport.api("/dashboard/summary")`.                                                                                                                                                                                                                                                                                                                                    |
-| `download({ name, data })` | Hands you a file to keep.                                                                                                                                                                                                                                                                                                                                                                                        |
-| `ui`                       | `toast(message, severity)`, `confirm({ title, message })`, `openModel(id)`: Thingport's own, not `alert`.                                                                                                                                                                                                                                                                                                        |
-| `widgetId`                 | The widget's id, and `instanceId` the panel's, when it's on the dashboard more than once. `widget` has its name and version.                                                                                                                                                                                                                                                                                     |
+Its `thingport` argument has the panel's element, size and settings, the theme, the widget's own words, your
+library, `fetch` through Thingport to the hosts it declares, Thingport's own API, and the libraries Thingport carries.
+Each is in the [SDK reference](../developers/sdk-reference.md), generated from the SDK itself.
 
 ### HTML
 

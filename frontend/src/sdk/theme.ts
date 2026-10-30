@@ -1,4 +1,5 @@
 import type { Theme } from "@mui/material/styles";
+import type { SdkTheme } from "./types";
 
 // Thingport's colours, as a widget's or a tool's script gets them.
 //
@@ -7,22 +8,7 @@ import type { Theme } from "@mui/material/styles";
 // the script copying anything across. Copying them by hand is where a widget or tool usually stops looking like
 // the rest of Thingport, so neither has to.
 
-export type SdkTheme = {
-  mode: "light" | "dark";
-  primary: string;
-  /** What reads on `primary`: white for most accents, dark for the light ones such as amber. Text and icons on an
-   *  accent-filled button take this, not the paper colour, which is dark in the dark theme. */
-  primaryContrast: string;
-  background: string;
-  paper: string;
-  text: string;
-  textSecondary: string;
-  divider: string;
-  error: string;
-  warning: string;
-  success: string;
-  fontFamily: string;
-};
+export type { SdkTheme };
 
 /** The theme as a script sees it. */
 export function sdkTheme(theme: Theme): SdkTheme {
@@ -42,7 +28,8 @@ export function sdkTheme(theme: Theme): SdkTheme {
   };
 }
 
-/** Each colour's CSS variable, so the names are in one place and the guide can list them. */
+/** Each colour's CSS variable, so the names are in one place: scripts/sync-sdk-docs.mjs reads them from here for the
+ *  reference. */
 export const THEME_VARIABLES: Record<keyof SdkTheme, string | null> = {
   mode: null, // not a colour: a script reads it from `theme.mode`
   primary: "--tp-accent",

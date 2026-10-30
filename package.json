@@ -12,13 +12,16 @@
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-sh": "^0.20.2",
     "semantic-release": "^25.0.9",
-    "semantic-release-monorepo": "^8.0.2"
+    "semantic-release-monorepo": "^8.0.2",
+    "typescript": "^5.9.3"
   },
   "scripts": {
     "prepare": "husky",
     "format": "prettier --write . && gofmt -w bridge && npm --prefix backend exec -- prisma format --schema backend/prisma/schema.prisma",
     "format:check": "prettier --check . && test -z \"$(gofmt -l bridge)\"",
     "providers:sync": "node scripts/sync-providers.mjs",
-    "providers:check": "node scripts/sync-providers.mjs --check"
+    "providers:check": "node scripts/sync-providers.mjs --check",
+    "sdk:sync": "node scripts/sync-sdk-docs.mjs",
+    "sdk:check": "node scripts/sync-sdk-docs.mjs --check"
   }
 }

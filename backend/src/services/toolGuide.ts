@@ -1,5 +1,9 @@
 // How to write a Thingport tool: what the `tool_guide` MCP tool hands an AI before it writes one, and what
-// docs/guides/tools.md explains to people. The format itself is checked by toolFormat.ts and toolsService.ts.
+// docs/guides/tools.md and docs/developers/ explain to people. The format itself is checked by toolFormat.ts and
+// toolsService.ts. What the script's `thingport` has is generated from the SDK's types (sdkReference.generated.ts), the
+// same text docs/developers/sdk-reference.md shows, so it isn't written out here.
+
+import { TOOL_SDK_REFERENCE } from "./sdkReference.generated";
 
 export const TOOL_GUIDE = `# Writing a Thingport tool
 
@@ -85,43 +89,13 @@ export default async function mount(thingport) {
 }
 \`\`\`
 
-The \`thingport\` argument has:
+What the \`thingport\` argument has is listed under **What \`thingport\` has** below. The theme's colours are on the
+window as CSS variables as well (the \`SdkTheme\` table names them), so a stylesheet can use them without the script
+copying anything across.
 
-- **root**: the window's element, with the tool's HTML already in it. Draw only inside it. **selector**: a CSS
-  selector for it, unique on the page, for scoping styles.
-- **theme**: \`{ mode: "light" | "dark", primary, primaryContrast, background, paper, text, textSecondary, divider,
-  error, warning, success, fontFamily }\`. The same colours are already on the window as CSS variables —
-  \`--tp-accent\`, \`--tp-accent-ink\`, \`--tp-background\`, \`--tp-paper\`, \`--tp-text\`, \`--tp-text-muted\`,
-  \`--tp-divider\`, \`--tp-error\`, \`--tp-warning\`, \`--tp-success\` and \`--tp-font\` — so a stylesheet can use them
-  without the script copying anything across. Text and icons on an accent-filled button take \`--tp-accent-ink\`,
-  never the paper colour, which is dark in the dark theme.
-- **size**, **onResize(callback)**: the window's size in pixels, and a way to hear when it changes.
-- **tool**: \`{ id, slug, name, version, source }\`.
-- **storage**: \`get(key)\`, \`set(key, value)\`, \`remove(key)\`, \`keys()\`. JSON kept for this user and this tool, up
-  to 1 MB a value and 20 MB a tool. Keep what the user was working on here, so the window opens where they left it.
-- **collections**: \`list()\`, \`get(id)\`, \`create({ name, description, tags })\`, \`models(id)\`,
-  \`add(id, modelIds)\`, \`remove(id, modelIds)\`, and \`pick({ title })\`, which asks the user for one of their
-  collections or a new one and gives \`null\` when they cancel.
-- **models**: \`list({ q, tags, collectionId, limit, offset })\`, \`search(q)\`, \`get(id)\`,
-  \`file(id, fileId?)\` (an \`ArrayBuffer\`), \`create({ name, description, tags, collectionId, files })\` where each
-  file is \`{ name, data }\` and data a \`Blob\`, \`ArrayBuffer\` or string, \`addFiles(id, files)\`,
-  \`addImages(id, images)\` (the first becomes the cover), \`replaceFile(id, fileId, file)\`,
-  \`update(id, { name, description, tags })\`, and \`open(id)\`, which closes the tool and opens the model's page.
-- **toolModels()**: the models a repository tool brings, by the keys its metadata gave them. \`printId\` is null
-  for one that isn't here: an admin may have installed the tool without its models, which is usual where they are
-  large.
-- **fetchToolModels(keys)**: fetches those of them, and gives the user their copies. Ask for the few a piece of
-  work needs rather than the lot, and only once the user has said yes to waiting for them. It answers
-  \`{ ready, failed }\`, and a \`failed\` entry's \`reason\` is the provider's own -- a daily download limit
-  included -- so it can be read back to the user.
-- **library(name)**, **libraries**: a library Thingport carries, so the tool needn't ship it. See below.
-- **fetch(url, init)**: a request made by the Thingport server to one of the metadata's \`hosts\`, answered like
-  \`fetch\`, so CORS and the local network aren't in the way. Any other host throws.
-- **api(path, init)**: Thingport's own API, as the user: \`api("/prints?limit=5")\`.
-- **download({ name, data })**: hands the user a file to keep.
-- **ui**: \`toast(message, severity)\`, \`confirm({ title, message, confirmLabel, destructive })\`, \`close()\`.
-  Use these rather than \`alert\` or \`window.confirm\`, which look nothing like the rest of Thingport.
-- **t(key, vars)**, **labels(where?)**, **language**, **languages**: the tool's own words. See below.
+## What \`thingport\` has
+
+${TOOL_SDK_REFERENCE}
 
 ## The words it shows
 
@@ -143,37 +117,10 @@ they go beside it, a flat map of key to sentence per language, which \`save_tool
 - The markup carries the key where the sentence would be, and \`labels()\` fills them all in: \`data-t\` sets the
   text, and \`data-t-title\`, \`data-t-aria\` and \`data-t-placeholder\` fill those attributes. Leave readable English
   in the HTML as well — it is what someone reading the markup sees, and what shows if the labels never arrive.
-- \`language\` is the language Thingport is in, and \`languages\` every language it has. The tool is started again
-  when the user changes language, as it is when they change theme, so \`t\` is read at the top of \`mount\` rather
-  than watched.
 - At most 128 KB a language and 1 MB in all.
 
 Write the words the user asked for in their own language. If you don't know which that is, ask, or write English and
 say so.
-
-## The libraries a tool can borrow
-
-A tool is one script, and the big machinery lives in Thingport rather than in it. \`library(name)\` hands over
-Thingport's own copy; nothing is fetched until a tool asks, and every tool after that shares it.
-
-| \`library(…)\` | What comes back |
-| --- | --- |
-| \`"three"\` | Three.js, the one Thingport draws models with, plus \`mergeGeometries\` and \`mergeVertices\` |
-| \`"opentype"\` | opentype.js: a glyph's real outline, counters and all |
-| \`"manifold"\` | Manifold, started and ready: watertight booleans, and 2D cross-sections and offsetting |
-| \`"fonts"\` | \`{ list, bytes(id), load(id) }\` — the typefaces Thingport ships, \`load\` giving one parsed by opentype |
-
-\`\`\`js
-const [{ CrossSection, Manifold }, fonts] = await Promise.all([
-  thingport.library("manifold"),
-  thingport.library("fonts"),
-]);
-const font = await fonts.load(fonts.list[0].id);
-\`\`\`
-
-The fonts are all static faces: a variable font's outlines are only right once its deltas are applied, which the
-parser doesn't do, so letters come back collapsed. Load a library only when the tool actually needs it — a window
-that opens instantly is worth more than one that waits on a WebAssembly download it may never use.
 
 ## Rules
 

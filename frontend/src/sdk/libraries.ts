@@ -7,11 +7,13 @@
 // panel on the dashboard share one instance and one download.
 
 import { toolFontLibrary } from "./fonts";
+import type { SdkLibraries, SdkLibraryName } from "./types";
 
 /** The promise for each library, kept for the life of the page: asking twice never loads twice. */
 const loading = new Map<string, Promise<unknown>>();
 
-const loaders: Record<string, () => Promise<unknown>> = {
+// Typed by what types.ts says each one hands over, so the reference written from it can't promise what isn't here.
+const loaders: { [K in SdkLibraryName]: () => Promise<SdkLibraries[K]> } = {
   /** Three.js, which Thingport draws models with. */
   three: async () => {
     const [core, utils] = await Promise.all([
@@ -71,18 +73,19 @@ const loaders: Record<string, () => Promise<unknown>> = {
   },
 };
 
-export const LIBRARIES = Object.keys(loaders);
+export const LIBRARIES = Object.keys(loaders) as SdkLibraryName[];
 
 /**
  * One of the libraries above, by name. The same promise comes back every time, so the download and the start-up
  * happen once however many tools ask.
  */
-export function library(name: string): Promise<unknown> {
-  const loader = loaders[name];
-  if (!loader) throw new Error(`Thingport has no library called "${name}". It has: ${LIBRARIES.join(", ")}`);
-  let loaded = loading.get(name);
+export function library<K extends SdkLibraryName>(name: K): Promise<SdkLibraries[K]> {
+  // A script is plain JavaScript and may ask for anything.
+  if (!Object.hasOwn(loaders, name))
+    throw new Error(`Thingport has no library called "${name}". It has: ${LIBRARIES.join(", ")}`);
+  let loaded = loading.get(name) as Promise<SdkLibraries[K]> | undefined;
   if (!loaded) {
-    loaded = loader();
+    loaded = loaders[name]();
     loading.set(name, loaded);
     // A library that fails to load is tried afresh next time rather than failing for the rest of the session.
     loaded.catch(() => loading.delete(name));
