@@ -71,14 +71,14 @@ test("each file becomes a model and each directory a folder, leaving the folder 
   // The bell only polls every 45s, so reload to pick it up.
   await page.goto("/");
   await page.getByRole("button", { name: "Notifications" }).click();
-  await page.getByRole("menuitem", { name: /Imported 4 models from the consume folder/ }).click();
+  await page.getByRole("link", { name: /Imported 4 models from the consume folder/ }).click();
   await expect(page).toHaveURL(/\/models$/);
 });
 
 test("in folder mode, set from the admin settings, each folder of model files is one model", async ({ page, api }) => {
   await page.goto("/admin-storage");
   await expect(page.getByText("Watching /app/consume.", { exact: false })).toBeVisible();
-  await page.getByRole("radio", { name: /^Each folder is one model/ }).check();
+  await page.getByRole("button", { name: "Each folder is a model" }).click();
   await page.getByRole("button", { name: "Save consume settings" }).click();
   await expect(page.getByText("Consume settings saved.")).toBeVisible();
   expect((await api.consume()).mode).toBe("folder");

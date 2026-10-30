@@ -67,7 +67,7 @@ export type Print = {
   title: string | null;
   category_id: string | null;
   plates: Plate[];
-  preview_images: { id: string; position: number }[];
+  preview_images: { id: string; position: number; generated?: boolean }[];
   supporting_file_count: number;
   thumb_url: string | null;
 };

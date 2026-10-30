@@ -168,8 +168,11 @@ test("collapses to an icon rail and expands again", async ({ page }) => {
   await expect(pageTitle(page)).toHaveText(TAG_A);
   await nav.getByRole("button", { name: "Administration" }).click();
   await expect(page).toHaveURL(/\/admin$/);
+  // Administration always folds it, beside its own menu, so there's nothing to expand there.
+  await expect(nav.getByRole("button", { name: "Expand sidebar" })).toHaveCount(0);
 
   // The choice survives a reload.
+  await page.goto("/");
   await page.reload();
   await expect.poll(width).toBe(72);
 

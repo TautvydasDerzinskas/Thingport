@@ -177,14 +177,15 @@ function AppLayoutShell({
   const { title: routeTitle, subtitle: routeSubtitle, onBack: routeOnBack } = useRouteChrome();
   const { pathname, key: locationKey } = useLocation();
   const mobile = useMediaQuery((theme: Theme) => theme.breakpoints.down("md"));
-  // Associate opening with the current route and breakpoint: navigating, including
-  // back/forward and query-only changes, must not leave an overlay covering the page.
-  const [navigation, setNavigation] = React.useState<{ key: string; mobile: boolean } | null>(null);
-  const navigationOpen = mobile && navigation?.key === locationKey && navigation.mobile;
+  // Opened for the current route only: navigating, including back/forward and query-only changes, must not leave an
+  // overlay covering the page. Widening closes it too, so narrowing again doesn't bring it back: in an effect, since
+  // an update during render left useMediaQuery stuck on desktop when the drawer had been open.
+  const [navigation, setNavigation] = React.useState<string | null>(null);
+  const navigationOpen = mobile && navigation === locationKey;
   const closeNavigation = () => setNavigation(null);
-  if (navigation && (navigation.key !== locationKey || navigation.mobile !== mobile)) {
-    setNavigation(null);
-  }
+  React.useEffect(() => {
+    if (!mobile) setNavigation(null);
+  }, [mobile]);
   const [pageHeader, setPageHeader] = React.useState<PageHeader>(null);
   const { refresh: refreshNotifications } = useNotifications();
   const showToast = useToast();
@@ -263,7 +264,7 @@ function AppLayoutShell({
                   </Alert>
                 )}
                 <TopBar
-                  onMenuClick={mobile ? () => setNavigation({ key: locationKey, mobile }) : undefined}
+                  onMenuClick={mobile ? () => setNavigation(locationKey) : undefined}
                   menuOpen={Boolean(navigationOpen)}
                   title={pageHeader?.title || routeTitle}
                   subtitle={pageHeader?.subtitle ?? routeSubtitle}
