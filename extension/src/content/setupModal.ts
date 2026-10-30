@@ -15,7 +15,7 @@ function setupBodyHtml(): string {
         that instance needs to know this browser:
       </div>
       <ul class="tg-modal__list">
-        <li><strong>Instance URL</strong>, e.g. https://thingport.example.com</li>
+        <li><strong>Instance URL</strong>, e.g. http://192.168.1.20 or https://thingport.example.com</li>
         <li><strong>Pair</strong> -- Thingport opens in a tab and asks you to approve this browser</li>
       </ul>
       <div class="tg-hint">

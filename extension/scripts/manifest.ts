@@ -51,6 +51,10 @@ export function buildManifest(target: Target, pkg: { version: string; descriptio
   };
 
   if (target === "firefox") {
+    // Firefox's MV3 default is "script-src 'self'; upgrade-insecure-requests;", which turns every request to an
+    // http:// instance into an https:// one that fails. Plenty of instances are plain HTTP on a LAN, so this is
+    // that default without the upgrade. Chrome's and Edge's defaults never upgrade, so they keep theirs.
+    manifest.content_security_policy = { extension_pages: "script-src 'self'" };
     manifest.browser_specific_settings = {
       gecko: {
         // Never change once builds have been distributed: it ties signed versions together.

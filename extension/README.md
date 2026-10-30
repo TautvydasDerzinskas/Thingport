@@ -161,11 +161,11 @@ supporter membership removes ads for real.
 
 ## Setup
 
-The popup asks for your instance URL (e.g. `https://thingport.example.com`), then **Pair with
-Thingport**: it opens that instance in a tab, where you approve this browser while signed in there,
-and it hands the extension a connection of its own. No password is kept in the extension, and your Thingport profile
-lists the connection as Thingport Grab in that browser (say, "Chrome on macOS"), with **Remove** to take it away at any
-time. Under the Pair button, **Enter
+The popup asks for your instance URL (e.g. `https://thingport.example.com`, or a plain-HTTP address such as
+`http://192.168.1.20:8080`), then **Pair with Thingport**: it opens that instance in a tab, where you approve this
+browser while signed in there, and it hands the extension a connection of its own. No password is kept in the
+extension, and your Thingport profile lists the connection as Thingport Grab in that browser (say, "Chrome on
+macOS"), with **Remove** to take it away at any time. Under the Pair button, **Enter
 credentials** opens the older email/password form, for instances too old to pair and anyone who'd
 rather save a password. Until one of those is done, importable pages show a grayed-out Thingport icon;
 clicking it explains what's needed and opens that same setup form (the toolbar popup, or the same form

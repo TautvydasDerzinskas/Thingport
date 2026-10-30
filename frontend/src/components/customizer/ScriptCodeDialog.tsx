@@ -14,6 +14,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DownloadIcon from "@mui/icons-material/Download";
 import CodeEditor from "../CodeEditor";
+import { copyText } from "../../utils/clipboard";
 import { saveBytesToDisk } from "../../utils/downloadResponse";
 
 type Props = {
@@ -29,11 +30,11 @@ export default function ScriptCodeDialog({ name, source, onClose }: Props) {
 
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(source);
+      await copyText(source);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1600);
     } catch {
-      // No clipboard permission; the text is selectable, which is the fallback.
+      // The browser wouldn't copy; the text is selectable, which is the fallback.
     }
   };
 

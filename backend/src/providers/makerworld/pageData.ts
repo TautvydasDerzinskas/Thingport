@@ -105,6 +105,17 @@ function makerworldGalleryImages(design: Record<string, unknown>): { url: string
   return images;
 }
 
+/** A design's files, the ones in its folders included: a folder is an entry of its own, with its files as
+ *  `children`, and a creator may well keep the script in one ("SCAD File for the Parametric Model Maker"). */
+function makerworldModelFiles(files: unknown[]): Record<string, unknown>[] {
+  const flat: Record<string, unknown>[] = [];
+  for (const file of files.filter(isRecord)) {
+    flat.push(file);
+    if (Array.isArray(file.children)) flat.push(...makerworldModelFiles(file.children));
+  }
+  return flat;
+}
+
 /**
  * The OpenSCAD scripts a design is generated from, as its file list gives them.
  *
@@ -119,13 +130,12 @@ function makerworldGalleryImages(design: Record<string, unknown>): { url: string
 function makerworldParametricSource(design: Record<string, unknown>): ParametricSourceInfo | undefined {
   const extension = design.designExtension;
   if (!isRecord(extension) || !Array.isArray(extension.model_files)) return undefined;
-  const sources = extension.model_files.filter(
-    (file): file is Record<string, unknown> =>
-      isRecord(file) &&
-      (String(file.modelType ?? "").toLowerCase() === "scad" ||
-        String(file.modelName ?? "")
-          .toLowerCase()
-          .endsWith(".scad")),
+  const sources = makerworldModelFiles(extension.model_files).filter(
+    (file) =>
+      String(file.modelType ?? "").toLowerCase() === "scad" ||
+      String(file.modelName ?? "")
+        .toLowerCase()
+        .endsWith(".scad"),
   );
   if (!sources.length) return undefined;
   const filenames = sources

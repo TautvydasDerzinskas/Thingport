@@ -175,6 +175,9 @@ exports[`browser manifests > firefox manifest 1`] = `
       "run_at": "document_start",
     },
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'",
+  },
   "description": "Import MakerWorld, Thingiverse, Printables and MyMiniFactory models into Thingport, and convert MakerWorld 3MFs for other slicers.",
   "host_permissions": [
     "*://*.makerworld.com/*",

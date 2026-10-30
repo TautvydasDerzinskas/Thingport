@@ -296,7 +296,7 @@ async function pairWithInstance(): Promise<void> {
   try {
     origin = new URL(instanceUrl).origin;
   } catch {
-    showError("Enter a valid instance URL, e.g. https://thingport.example.com");
+    showError("Enter a valid instance URL, e.g. http://192.168.1.20 or https://thingport.example.com");
     return;
   }
   setPairing(true);
@@ -390,7 +390,7 @@ els.setupForm.addEventListener("submit", async (event) => {
   try {
     origin = new URL(normalized).origin;
   } catch {
-    showError("Enter a valid instance URL, e.g. https://thingport.example.com");
+    showError("Enter a valid instance URL, e.g. http://192.168.1.20 or https://thingport.example.com");
     return;
   }
 

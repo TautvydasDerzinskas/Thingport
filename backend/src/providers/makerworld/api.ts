@@ -5,7 +5,11 @@ import {
   isFlaresolverrEnabled,
   looksLikeCloudflareBlock,
 } from "../../services/flaresolverr";
-import { type ImportedAuthorInfo, type ImportedPageMetadata } from "../../services/importResolvers";
+import {
+  type ImportedAuthorInfo,
+  type ImportedPageMetadata,
+  type ParametricSourceInfo,
+} from "../../services/importResolvers";
 import {
   makerworldAuthorFromDesignCreator,
   makerworldInstanceCover,
@@ -357,6 +361,29 @@ export async function resolveMakerworldSourcesUrl(
   }
 }
 
+/**
+ * The scripts a design is generated from, with the zip to fetch them from where the creator shared them.
+ *
+ * `known` is what the caller read off the design already, or null where what it holds has no file list to read it
+ * from: the design is fetched for one then. Best-effort, as the zip is -- a design that can't be read leaves the
+ * model's plates without a script rather than failing the import.
+ */
+export async function resolveMakerworldParametricSource(
+  designId: string,
+  known: ParametricSourceInfo | undefined | null,
+  bearerToken: string,
+  paceMs?: number,
+): Promise<ParametricSourceInfo | undefined> {
+  let source = known;
+  if (source === null) {
+    const design = await fetchMakerworldDesign(designId, bearerToken, paceMs).catch(() => null);
+    source = design ? makerworldMetaFromDesign(design).parametricSource : undefined;
+  }
+  // Only worth a download when the creator shared them.
+  if (!source || source.withheld) return source;
+  return { ...source, zipUrl: await resolveMakerworldSourcesUrl(designId, bearerToken, paceMs) };
+}
+
 /** A design with no print profiles, only the raw files the page's "Download STL/CAD files" offers: all of them, as
  *  one zip, which the import unpacks. It belongs to no profile. */
 async function resolveMakerworldRawFiles(
@@ -439,11 +466,13 @@ export async function resolveMakerworldViaCloudApi(
   const meta = makerworldMetaFromDesign(design);
   const author = await completeMakerworldAuthor(meta.author, paceMs);
   // What is downloaded here is one profile's 3MF, so the scripts the design is generated from need fetching of
-  // their own. Only worth a request when the creator shared them.
-  const parametricSource =
-    meta.parametricSource && !meta.parametricSource.withheld
-      ? { ...meta.parametricSource, zipUrl: await resolveMakerworldSourcesUrl(designId, bearerToken, paceMs) }
-      : meta.parametricSource;
+  // their own.
+  const parametricSource = await resolveMakerworldParametricSource(
+    designId,
+    meta.parametricSource,
+    bearerToken,
+    paceMs,
+  );
 
   return {
     downloadUrl: body.url,

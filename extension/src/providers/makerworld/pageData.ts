@@ -125,16 +125,25 @@ export function pickMakerworldInstanceId(design: MakerworldDesign, requestedInst
 function scadEntries(design: MakerworldDesign): Record<string, unknown>[] {
   const files = design.designExtension?.model_files;
   if (!Array.isArray(files)) return [];
-  return files.filter((file): file is Record<string, unknown> => {
-    if (!file || typeof file !== "object") return false;
-    const entry = file as Record<string, unknown>;
-    return (
+  return modelFiles(files).filter(
+    (entry) =>
       String(entry.modelType ?? "").toLowerCase() === "scad" ||
       String(entry.modelName ?? "")
         .toLowerCase()
-        .endsWith(".scad")
-    );
-  });
+        .endsWith(".scad"),
+  );
+}
+
+/** The files in the design's folders too: a folder is an entry of its own, with its files as `children`. */
+function modelFiles(files: unknown[]): Record<string, unknown>[] {
+  const flat: Record<string, unknown>[] = [];
+  for (const file of files) {
+    if (!file || typeof file !== "object") continue;
+    const entry = file as Record<string, unknown>;
+    flat.push(entry);
+    if (Array.isArray(entry.children)) flat.push(...modelFiles(entry.children));
+  }
+  return flat;
 }
 
 export function makerworldScripts(design: MakerworldDesign): { filenames: string[]; withheld: boolean } | null {
@@ -187,15 +196,17 @@ export function makerworldDesignForImport(design: MakerworldDesign): Record<stri
     if (source[key] !== undefined) out[key] = source[key];
   }
   const pictures = getPath(source, "designExtension", "design_pictures");
+  const hasFileList = Array.isArray(design.designExtension?.model_files);
   // Only the .scad entries, and only the three fields the backend reads off them: it decides from these whether
   // the model came with the script it was generated from, and whether its creator shared it. Sending the whole
-  // model_files list would spend the budget below on files the import already gets another way.
+  // model_files list would spend the budget below on files the import already gets another way. Sent even when
+  // empty, as the design has no script then: without a list the backend reads the design from MakerWorld itself.
   const scripts = scadEntries(design).map((file) => ({
     modelType: file.modelType,
     modelName: file.modelName,
     protected: file.protected,
   }));
-  if (Array.isArray(pictures) || scripts.length) {
+  if (Array.isArray(pictures) || hasFileList) {
     out.designExtension = {
       ...(Array.isArray(pictures)
         ? {
@@ -205,7 +216,7 @@ export function makerworldDesignForImport(design: MakerworldDesign): Record<stri
             })),
           }
         : {}),
-      ...(scripts.length ? { model_files: scripts } : {}),
+      ...(hasFileList ? { model_files: scripts } : {}),
     };
   }
   if (Array.isArray(source.categories))

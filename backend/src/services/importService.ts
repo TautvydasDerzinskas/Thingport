@@ -32,6 +32,7 @@ import {
   emptyImportedPageMetadata,
   extractPageMetadata,
   findDownloadUrl,
+  getPath,
   type ImportCookies,
   type ImportedPageMetadata,
   type ParametricSourceInfo,
@@ -58,7 +59,7 @@ import {
   MAKERWORLD_DOWNLOAD_LIMIT_CODE,
   MakerworldDownloadLimitError,
   parseMakerworldModelUrl,
-  resolveMakerworldSourcesUrl,
+  resolveMakerworldParametricSource,
   resolveMakerworldViaCloudApi,
   completeMakerworldAuthor,
 } from "../providers/makerworld/api";
@@ -176,14 +177,20 @@ async function makerworldMetaFromExtension(url: string, body: ImportRequestBody)
   // What Grab resolved is one profile's 3MF, as the cloud API's download is, so the scripts the design is
   // generated from need fetching of their own. Without this an import through Grab brought no script at all,
   // while the same model pasted as a link did. Best-effort: no token, or a refusal, leaves the model's plates.
+  //
+  // The design Grab sent is trimmed to fit the request, and a Grab from before it kept the file list (1.8.1 and
+  // older) sends none at all, which reads as a model with no script. So what it sent is taken at its word only
+  // where it has a file list; otherwise the design is read from MakerWorld.
   const bearerToken = extractMakerworldBearerToken(resolveMakerworldCookie(body));
-  const parametricSource =
-    meta.parametricSource && !meta.parametricSource.withheld && bearerToken
-      ? {
-          ...meta.parametricSource,
-          zipUrl: await resolveMakerworldSourcesUrl(parsed.designId, bearerToken, body.makerworldPaceMs),
-        }
-      : meta.parametricSource;
+  const sentFileList = Array.isArray(getPath(design, "designExtension", "model_files"));
+  const parametricSource = bearerToken
+    ? await resolveMakerworldParametricSource(
+        parsed.designId,
+        sentFileList ? meta.parametricSource : null,
+        bearerToken,
+        body.makerworldPaceMs,
+      )
+    : meta.parametricSource;
   return {
     ...meta,
     author,
@@ -466,6 +473,8 @@ export async function openImportResponse(
       siteCategoryIds: extracted.siteCategoryIds.length ? extracted.siteCategoryIds : inheritedMeta.siteCategoryIds,
       categorySite: extracted.categorySite ?? inheritedMeta.categorySite,
       makerworldProfile: inheritedMeta.makerworldProfile,
+      // Whether the creator withheld the script is read off the design, before anything downloads.
+      parametricSource: extracted.parametricSource ?? inheritedMeta.parametricSource,
     };
     if (URLS.makerworld.isHost(pageHost) && extracted.author) {
       resolvedMeta.author = await completeMakerworldAuthor(extracted.author, body.makerworldPaceMs);

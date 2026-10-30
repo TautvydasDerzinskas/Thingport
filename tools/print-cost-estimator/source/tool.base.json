@@ -1,7 +1,7 @@
 {
   "name": "Print cost estimator",
   "description": "Drop a model and get its print time, filament and real cost: material, power, machine wear, failures, your time and fees, with the price to charge for the margin you want.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Thingport contributors",
   "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
   "window": {
