@@ -295,7 +295,9 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
     try {
       // What it includes comes too, or the copy couldn't be generated again: once each, as a model's files keep no
       // folders, and not the script itself where two include each other.
-      const included = new Map(Object.entries(loaded.files).map(([at, text]) => [at.split("/").at(-1) ?? at, text]));
+      const included = new Map(
+        Object.entries(loaded.files).map(([at, text]) => [at.split(/[\\/]/).at(-1) ?? at, text]),
+      );
       included.delete(loaded.script.filename);
       const files = [
         new File([generated.threeMf as BlobPart], `${generated.name}.3mf`, { type: "model/3mf" }),
