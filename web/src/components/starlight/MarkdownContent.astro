@@ -1,0 +1,68 @@
+---
+import AnchorHeading from "@astrojs/starlight/components/AnchorHeading.astro";
+import Default from "@astrojs/starlight/components/MarkdownContent.astro";
+import { WHERE } from "../../lib/report.mjs";
+import { FEEDBACK_HEADING, KNOWN_PROBLEMS_HEADING, NOTES_HEADING, providerOfRoute } from "../../lib/routeData";
+import { LINKS } from "../../lib/site.mjs";
+import Comments from "../Comments.astro";
+import KnownProblems from "../KnownProblems.astro";
+import ProviderComparison from "../ProviderComparison.astro";
+import ProviderRelated from "../ProviderRelated.astro";
+import { providerPage } from "../providerPage";
+import ReportLink from "../ReportLink.astro";
+
+// A provider's page goes on with the pages that apply to it, how it compares with the others, its open bug reports
+// and notes from people who use it. Every other page but the docs home ends with a place to say what it gets wrong,
+// and a link to report what's broken.
+const { id } = Astro.locals.starlightRoute;
+const provider = providerOfRoute(id);
+const page = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
+---
+
+<Default>
+  <slot />
+  {
+    provider ? (
+      <>
+        <ProviderRelated slug={provider} />
+        <ProviderComparison slug={provider} />
+        <KnownProblems slug={provider} />
+        <Comments
+          category="providers"
+          term={`providers/${provider}`}
+          heading={NOTES_HEADING.toc}
+          id={NOTES_HEADING.id}
+          docs
+        >
+          <Fragment slot="heading">
+            <AnchorHeading level={2} id={NOTES_HEADING.id}>
+              {NOTES_HEADING.toc}
+            </AnchorHeading>
+          </Fragment>
+          Tips, workarounds and news about {providerPage(provider).name} from people who use it. Something broken in
+          Thingport? See <a href={`#${KNOWN_PROBLEMS_HEADING.id}`}>{KNOWN_PROBLEMS_HEADING.toc}</a>.
+        </Comments>
+      </>
+    ) : (
+      id !== "docs" && (
+        <Comments
+          category="docs"
+          term={id}
+          heading={FEEDBACK_HEADING.text}
+          id={FEEDBACK_HEADING.id}
+          loadLabel="Leave feedback"
+          docs
+        >
+          <Fragment slot="heading">
+            <AnchorHeading level={2} id={FEEDBACK_HEADING.id}>
+              {FEEDBACK_HEADING.text}
+            </AnchorHeading>
+          </Fragment>
+          Something unclear, wrong or missing on this page? Say so here, or react. It’s kept in{" "}
+          <a href={LINKS.discussions}>GitHub Discussions</a>. Something broken? Report it as a bug.
+          <ReportLink slot="actions" label="Report a problem with this page" where={WHERE.docs} page={page} />
+        </Comments>
+      )
+    )
+  }
+</Default>

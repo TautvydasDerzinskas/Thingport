@@ -1,0 +1,205 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import ItemCard from "../../components/community/ItemCard.astro";
+import { communityItems, docsLink, KIND_NAMES, shelvesOf } from "../../lib/community";
+
+const widgets = await communityItems("widgets");
+const tools = await communityItems("tools");
+const shelves = shelvesOf(tools);
+const links = {
+  widgets: await docsLink("guides/custom-widgets"),
+  tools: await docsLink("guides/tools"),
+  publishWidget: await docsLink("guides/custom-widgets", "publishing-to-the-community"),
+  shareTool: await docsLink("tool-development"),
+};
+const names = [...widgets, ...tools].map((item) => item.name);
+const some = names.length > 4 ? `${names.slice(0, 4).join(", ")} and more` : names.join(", ");
+const description = `Dashboard widgets and tools for Thingport, from its repository${some && `: ${some}`}. Each is read by a maintainer before it's merged.`;
+---
+
+<BaseLayout title="Widgets & tools" description={description} search>
+  <div class="container page-head">
+    <span class="eyebrow" data-pagefind-ignore>Community</span>
+    <h1>Widgets & tools</h1>
+    <p>
+      Dashboard widgets anyone can install, and tools an admin adds for everyone: the ones Thingport offers, from its
+      repository, each read by a maintainer before it's merged.
+    </p>
+  </div>
+
+  <div class="container gallery" data-pagefind-ignore>
+    <section class="kind" aria-labelledby="widgets">
+      <div class="kind-head">
+        <h2 id="widgets">{KIND_NAMES.widgets} <span class="count">{widgets.length}</span></h2>
+        <a class="kind-link" href={links.widgets}>Custom widgets guide<span aria-hidden="true"> ›</span></a>
+      </div>
+      {
+        widgets.length ? (
+          <ul class="cards" role="list">
+            {widgets.map((item) => (
+              <ItemCard item={item} level={3} />
+            ))}
+          </ul>
+        ) : (
+          <p class="empty">
+            No community widgets yet. <a href={links.publishWidget}>Share the first one</a>.
+          </p>
+        )
+      }
+    </section>
+
+    <section class="kind" aria-labelledby="tools">
+      <div class="kind-head">
+        <h2 id="tools">{KIND_NAMES.tools} <span class="count">{tools.length}</span></h2>
+        <a class="kind-link" href={links.tools}>Tools guide<span aria-hidden="true"> ›</span></a>
+      </div>
+      {
+        shelves.length ? (
+          <div class="shelves">
+            {shelves.map((shelf) => (
+              <section class:list={["shelf", `span-${Math.min(shelf.items.length, 3)}`]} aria-labelledby={shelf.id}>
+                <h3 class="shelf-title" id={shelf.id}>
+                  {shelf.label} <span class="count">{shelf.items.length}</span>
+                </h3>
+                <ul class="cards" role="list">
+                  {shelf.items.map((item) => (
+                    <ItemCard item={item} level={4} />
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
+        ) : (
+          <p class="empty">
+            No tools in the repository yet. <a href={links.shareTool}>Share the first one</a>.
+          </p>
+        )
+      }
+    </section>
+
+    <section class="share card" aria-labelledby="share">
+      <h2 id="share">Made one of your own?</h2>
+      <p>
+        Open a pull request with it, and once it's merged every Thingport offers it. See{" "}
+        <a href={links.publishWidget}>publishing a widget</a> and <a href={links.shareTool}>adding a tool</a>.
+      </p>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .gallery {
+    --columns: 1;
+    padding-bottom: clamp(3rem, 8vw, 5rem);
+  }
+  @media (min-width: 36rem) {
+    .gallery {
+      --columns: 2;
+    }
+  }
+  @media (min-width: 56rem) {
+    .gallery {
+      --columns: 3;
+    }
+  }
+  .kind {
+    margin-top: 2rem;
+  }
+  .kind-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.25rem 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .kind-head h2 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+  .kind-link {
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .kind-link:hover {
+    text-decoration: underline;
+  }
+  .count {
+    margin-left: 0.25rem;
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 0.75em;
+    font-weight: 600;
+  }
+  /* Each shelf takes the columns its tools fill, so shelves of one or two share a row, in order, while every card
+     keeps the grid's columns. */
+  .shelves {
+    display: grid;
+    grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+    gap: 1.75rem 0.75rem;
+  }
+  .shelf {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-content: start;
+  }
+  @media (min-width: 36rem) {
+    .span-1 {
+      grid-column: span 1;
+    }
+  }
+  @media (min-width: 56rem) {
+    .span-2 {
+      grid-column: span 2;
+    }
+  }
+  .shelf > * {
+    grid-column: 1 / -1;
+  }
+  .shelf .cards {
+    grid-template-columns: subgrid;
+  }
+  /* As the docs home titles its blocks. */
+  .shelf-title {
+    margin: 0 0 0.75rem;
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    line-height: 1.4;
+    text-transform: uppercase;
+  }
+  .shelf-title .count {
+    margin-left: 0.375rem;
+    font-size: 1em;
+    letter-spacing: normal;
+  }
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .empty {
+    color: var(--text-muted);
+  }
+  .share {
+    margin-top: 2.5rem;
+    padding: 1.25rem 1.5rem;
+  }
+  .share h2 {
+    margin: 0 0 0.35rem;
+    font-size: 1.125rem;
+  }
+  .share p {
+    margin: 0;
+    color: var(--text-muted);
+  }
+</style>

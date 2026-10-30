@@ -314,9 +314,10 @@ const SECTIONS: FeatureSection[] = [
 <BaseLayout
   title="Features"
   description={`Everything Thingport can do: import from MakerWorld, Printables, Thingiverse and ${otherSites} other sites, bring in your existing folders and ZIPs, preview STL, 3MF, STEP and OBJ in 3D, customize generative models, run tools that make new ones, organize with categories, tags and optional AI, and send files to your slicer.`}
+  search
 >
   <div class="container page-head">
-    <span class="eyebrow">Features</span>
+    <span class="eyebrow" data-pagefind-ignore>Features</span>
     <h1>Everything you need to keep your 3D models under control</h1>
     <p>From finding a model to printing it, Thingport covers every step, and it all runs on hardware you own.</p>
     <FeatureJump sections={SECTIONS} />
@@ -324,7 +325,7 @@ const SECTIONS: FeatureSection[] = [
 
   <FeatureSections sections={SECTIONS} />
 
-  <section class="section">
+  <section class="section" data-pagefind-ignore>
     <div class="container final">
       <h2>Ready to give it a try?</h2>
       <p class="muted">It takes about five minutes on any machine that runs Docker.</p>

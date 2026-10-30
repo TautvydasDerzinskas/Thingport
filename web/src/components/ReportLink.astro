@@ -1,0 +1,42 @@
+---
+// "Report a problem": the repo's bug form, filled in for what the page is about (lib/report.mjs). Drawn as the site's
+// secondary buttons are, as it sits beside them.
+import { reportUrl } from "../lib/report.mjs";
+import Icon from "./Icon.astro";
+
+type Props = Parameters<typeof reportUrl>[0] & { label: string };
+const { label, ...report } = Astro.props;
+---
+
+<a class="report" href={reportUrl(report)} rel="noopener">
+  <Icon name="flag" size={16} />
+  <span>{label}</span>
+</a>
+
+<style>
+  .report {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 2.4rem;
+    padding: 0.4rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--panel);
+    color: var(--heading);
+    font: 600 0.9rem/1.25 var(--font-body);
+    text-decoration: none;
+    transition: border-color 0.15s;
+  }
+  .report:hover {
+    border-color: var(--accent);
+  }
+  .report:focus-visible {
+    outline: 2px solid var(--link);
+    outline-offset: 2px;
+  }
+  .report :global(svg) {
+    flex: none;
+    color: var(--alt);
+  }
+</style>

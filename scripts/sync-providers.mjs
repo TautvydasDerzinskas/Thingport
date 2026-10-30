@@ -3,18 +3,21 @@
 // provider, named <file>.generated.ts (src/providers/<id>/manifest.generated.ts, src/providers/_lib/,
 // src/providers/index.generated.ts), and only *.generated.* files are ever written or removed there. It writes the docs
 // from the manifests and each <id>/docs.ts too: the logos in docs/assets/providers/, the list and table between the
-// providers: markers in docs/PROVIDER_SETUP.md, and the website's provider pages (web/src/lib/providers.generated.mjs).
-// All of it is committed:
+// providers: markers in docs/PROVIDER_SETUP.md, the website's provider pages and the same table for their foot
+// (web/src/lib/providers.generated.mjs), and the bug form's Provider options and a label for each, between the same
+// markers in .github/. All of it is committed:
 //
 //   npm run providers:sync    rewrite them
 //   npm run providers:check   fail when one is out of date (CI)
 //
-// Manifests import only types, so Node's own type stripping loads them; nothing needs compiling.
+// Manifests import only types, so Node's own type stripping loads them, as it does the app's slicer list; nothing needs
+// compiling.
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import * as prettier from "prettier";
+import { SLICER_OPTIONS } from "../frontend/src/constants/settingsOptions.ts";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SOURCE = path.join(ROOT, "providers");
@@ -28,7 +31,17 @@ const DOCS_LOGOS = "docs/assets/providers";
 const SETUP_PAGE = "docs/PROVIDER_SETUP.md";
 // docs.ts `about` is shown in a card in Grab's popup, which is 380px wide: longer than this and it stops fitting.
 const ABOUT_MAX_CHARS = 240;
+// docs.ts `highlight` is read at a glance on the provider's page on the website, before the page itself.
+const HIGHLIGHT_MAX_CHARS = { title: 48, text: 220 };
+// A website docs page by its slug, as in /docs/<slug>/, and maybe the anchor of one of its headings.
+const DOCS_LINK = /^[a-z0-9-]+(\/[a-z0-9-]+)*(#[a-z0-9-]+)?$/;
+// Manifests' slicer ids as the app's slicer setting names them, for the website. "other" is the setting's, not a slicer.
+const SLICER_NAMES = Object.fromEntries(
+  SLICER_OPTIONS.filter(({ id }) => id !== "other").map(({ id, label }) => [id, label]),
+);
 const WEB_DOCS = "web/src/lib/providers.generated.mjs";
+const BUG_FORM = ".github/ISSUE_TEMPLATE/bug_report.yml";
+const LABELS = ".github/labels.yml";
 
 /** `file.ts` as its copy is named. */
 const generatedName = (file) => file.replace(/\.ts$/, ".generated.ts");
@@ -66,11 +79,38 @@ async function loadManifests() {
   if (cookies.length) throw new Error(`Only built-in sites take cookies in the manifest, not ${cookies.join(", ")}`);
   const tooLong = manifests.filter((manifest) => manifest.docs.about.length > ABOUT_MAX_CHARS).map((m) => m.id);
   if (tooLong.length) throw new Error(`docs.ts "about" is over ${ABOUT_MAX_CHARS} characters: ${tooLong.join(", ")}`);
+  const highlights = manifests.flatMap((m) =>
+    highlightProblems(m.docs.highlight).map((problem) => `${m.id}: ${problem}`),
+  );
+  if (highlights.length) throw new Error(`docs.ts "highlight" is wrong:\n  ${highlights.join("\n  ")}`);
+  const unnamed = manifests.flatMap((m) =>
+    (m.slicers ?? []).filter((id) => !Object.hasOwn(SLICER_NAMES, id)).map((id) => `${m.id}'s "${id}"`),
+  );
+  if (unnamed.length) {
+    throw new Error(`Slicers the app's slicer setting (SLICER_OPTIONS) doesn't list: ${unnamed.join(", ")}`);
+  }
   const ranks = manifests.flatMap((manifest) =>
     manifest.capabilities.trending ? [manifest.capabilities.trending.rank] : [],
   );
   if (new Set(ranks).size !== ranks.length) throw new Error(`Two providers share a trending rank: ${ranks.join(", ")}`);
   return manifests;
+}
+
+/** What's wrong with a docs.ts `highlight`, if anything. */
+function highlightProblems(highlight) {
+  const isText = (value) => typeof value === "string" && value.trim() !== "";
+  if (!isText(highlight?.title) || !isText(highlight.text)) return ["it needs a title and a text"];
+  const problems = Object.entries(HIGHLIGHT_MAX_CHARS)
+    .filter(([field, max]) => highlight[field].length > max)
+    .map(([field, max]) => `its ${field} is ${highlight[field].length} characters, over ${max}`);
+  const { link } = highlight;
+  if (link !== undefined && !(typeof link === "string" && DOCS_LINK.test(link))) {
+    problems.push(
+      `its link ${JSON.stringify(link)} isn't a website docs page's slug with an optional #anchor, ` +
+        `as in "guides/ai#ai-categorization"`,
+    );
+  }
+  return problems;
 }
 
 function index(manifests) {
@@ -192,54 +232,155 @@ function docsLogo({ logo }) {
 
 const SUPERSCRIPTS = "¹²³⁴⁵⁶⁷⁸⁹";
 const NEEDS = { required: "**Required**", recommended: "Recommended", optional: "Optional", none: "" };
-const GENERATED_NOTE = "<!-- Written by scripts/sync-providers.mjs from providers/: change it there. -->";
+const GENERATED_NOTE = "Written by scripts/sync-providers.mjs from providers/: change it there.";
+
+/** `text` with the lines between its `<!-- providers:<name> -->` markers replaced. */
+function fillMarkdown(text, file, name, lines) {
+  const open = `<!-- providers:${name} -->`;
+  const close = `<!-- /providers:${name} -->`;
+  const start = text.indexOf(open);
+  const end = text.indexOf(close);
+  if (start === -1 || end === -1) throw new Error(`${file} has no ${open} ... ${close}`);
+  return `${text.slice(0, start + open.length)}\n<!-- ${GENERATED_NOTE} -->\n\n${lines.join("\n")}\n\n${text.slice(end)}`;
+}
+
+/** The same in YAML, between `# providers:<name>` comment lines, the lines indented as the opening one is. */
+function fillYaml(text, file, name, lines) {
+  const block = new RegExp(`^( *)# providers:${name}\n[^]*?^ *# /providers:${name}$`, "m");
+  if (!block.test(text)) throw new Error(`${file} has no # providers:${name} ... # /providers:${name}`);
+  return text.replace(block, (_, indent) =>
+    [`# providers:${name}`, `# ${GENERATED_NOTE}`, ...lines, `# /providers:${name}`]
+      .map((line) => indent + line)
+      .join("\n"),
+  );
+}
+
+/** A YAML string: plain where that reads the same, quoted otherwise. */
+const yamlString = (text) => (/^[A-Za-z0-9][\w .()+-]*$/.test(text) && !/ #/.test(text) ? text : JSON.stringify(text));
+
+/** The label .github/workflows/issue-provider-label.yml puts on an issue about a provider. */
+const providerLabel = (name) => `provider: ${name}`;
+
+/**
+ * The providers side by side: the providers page's table, and the one at the foot of each provider's page on the
+ * website, are both drawn from this alone, so they can't disagree. A row per provider, with a cell for each column
+ * after Provider: `{ text }`, `{ need }` (Grab's or FlareSolverr's, "none" included) or `{ yes }`, and `note`, the
+ * number of the footnote the cell carries.
+ */
+function comparison(manifests) {
+  const noted = manifests.filter((m) => m.docs.note);
+  const empty = (cell) => cell.need === "none" || cell.yes === false;
+  const rows = manifests.map((m) => {
+    const { capabilities: c, docs, helpers } = m;
+    // Marked on the cells it qualifies that have something in them to qualify.
+    const note = (column, cell) =>
+      docs.note?.on.includes(column) && !empty(cell) ? { ...cell, note: noted.indexOf(m) + 1 } : cell;
+    return {
+      docsSlug: m.docsSlug,
+      name: m.name,
+      cells: [
+        { text: docs.signIn },
+        note("grab", { need: helpers.grab }),
+        { need: helpers.flaresolverr },
+        // Named where the site calls its lists something else.
+        c.collections && docs.collections ? { text: docs.collections } : { yes: c.collections },
+        note("likes", { yes: c.likes }),
+        { yes: c.collections || c.likes },
+        { yes: c.profiles },
+      ],
+    };
+  });
+  return {
+    columns: [
+      "Provider",
+      "Sign-in",
+      "Thingport Grab",
+      "FlareSolverr",
+      "Collections",
+      "Likes",
+      "Sync",
+      "Print profiles",
+    ],
+    rows,
+    notes: noted.map((m) => m.docs.note.text),
+  };
+}
+
+/** A comparison cell as the providers page's Markdown writes it. */
+function markdownCell(cell) {
+  const value = cell.text ?? (cell.need ? NEEDS[cell.need] : cell.yes ? "✓" : "");
+  return cell.note ? `${value}${SUPERSCRIPTS[cell.note - 1]}` : value;
+}
 
 /** The providers page's list and comparison table, between its markers. */
-function setupPage(manifests, current) {
+function setupPage(manifests, compared, current) {
   const icon = ({ docsSlug }) =>
     `<img src="assets/providers/${docsSlug}.svg" alt="" width="18" height="18" align="absmiddle">`;
   const link = (m) => `${icon(m)} [${m.name}](providers/${m.docsSlug}.md)`;
   const list = manifests.map((m) => `- ${link(m)} -- ${m.docs.summary}`);
-  const notes = manifests.filter((m) => m.docs.note).map((m) => m.docs.note);
-  const mark = (m, column, text) => {
-    const index = notes.indexOf(m.docs.note);
-    return text && m.docs.note?.on.includes(column) ? `${text}${SUPERSCRIPTS[index]}` : text;
-  };
-  const tick = (on) => (on ? "✓" : "");
-  const rows = manifests.map((m) => {
-    const { capabilities: c, helpers } = m;
-    const cells = [
-      link(m),
-      m.docs.signIn,
-      mark(m, "grab", NEEDS[helpers.grab]),
-      NEEDS[helpers.flaresolverr],
-      c.collections ? (m.docs.collections ?? "✓") : "",
-      mark(m, "likes", tick(c.likes)),
-      tick(c.collections || c.likes),
-      tick(c.profiles),
-    ];
-    return `| ${cells.join(" | ")} |`;
-  });
+  const row = (cells) => `| ${cells.join(" | ")} |`;
   const table = [
-    "| Provider | Sign-in | Thingport Grab | FlareSolverr | Collections | Likes | Sync | Print profiles |",
-    "| --- | --- | --- | --- | --- | --- | --- | --- |",
-    ...rows,
+    row(compared.columns),
+    row(compared.columns.map(() => "---")),
+    ...compared.rows.map((r) => row([link(r), ...r.cells.map(markdownCell)])),
     "",
-    ...notes.map((note, i) => `${i + 1}. ${note.text}`),
+    ...compared.notes.map((note, i) => `${i + 1}. ${note}`),
   ];
-  const fill = (text, name, lines) => {
-    const open = `<!-- providers:${name} -->`;
-    const close = `<!-- /providers:${name} -->`;
-    const start = text.indexOf(open);
-    const end = text.indexOf(close);
-    if (start === -1 || end === -1) throw new Error(`${SETUP_PAGE} has no ${open} ... ${close}`);
-    return `${text.slice(0, start + open.length)}\n${GENERATED_NOTE}\n\n${lines.join("\n")}\n\n${text.slice(end)}`;
-  };
-  return fill(fill(current, "list", list), "table", table);
+  return fillMarkdown(fillMarkdown(current, SETUP_PAGE, "list", list), SETUP_PAGE, "table", table);
 }
 
-/** The website's page for each provider, in docs/providers/. */
-function webDocs(manifests) {
+/** The bug form's Provider options: each provider's name, which the website's report links fill it in with. */
+const bugForm = (manifests, current) =>
+  fillYaml(
+    current,
+    BUG_FORM,
+    "bug-form",
+    manifests.map((m) => `- ${yamlString(m.name)}`),
+  );
+
+/** A label per provider, in its brand colour, for the repo's label sync (.github/workflows/labels.yml), which deletes
+ *  labels its file doesn't list. */
+function labels(manifests, current) {
+  const lines = manifests.flatMap((m) => {
+    if (!/^#[0-9a-f]{6}$/i.test(m.brand.accent)) throw new Error(`${m.id}'s brand.accent isn't a #rrggbb colour`);
+    return [
+      `- name: ${JSON.stringify(providerLabel(m.name))}`,
+      `  color: "${m.brand.accent.slice(1).toLowerCase()}"`,
+      `  description: ${yamlString(`About ${m.name}, from the bug form's Provider answer`)}`,
+    ];
+  });
+  return fillYaml(current, LABELS, "labels", lines);
+}
+
+/** What a provider's page on the website shows besides its Markdown and the comparison table. Kept out of its DOCS
+ *  entry, as DOCS is read wherever the docs are listed, the wiki's build among them. */
+function pageExtras(m) {
+  const { capabilities: c, docs, helpers } = m;
+  const { title, text, link } = docs.highlight;
+  return {
+    docsSlug: m.docsSlug,
+    accent: m.brand.accent,
+    highlight: { title, text, ...(link && { link }) },
+    facts: {
+      signIn: m.signIn,
+      grab: helpers.grab,
+      grabSite: m.extension.site,
+      flaresolverr: helpers.flaresolverr,
+      collections: c.collections,
+      likes: c.likes,
+      sync: c.collections || c.likes,
+      profiles: c.profiles,
+      slicers: (m.slicers ?? []).map((id) => SLICER_NAMES[id]),
+      bambuProjects: c.bambuProjects ?? false,
+      trending: c.trending ? c.trending.kind : null,
+      categories: c.categoryIds !== "none",
+    },
+  };
+}
+
+/** The website's page for each provider, in docs/providers/, what it shows besides its Markdown, and the table at
+ *  their foot. */
+function webDocs(manifests, compared) {
   const pages = manifests.map((m) => ({
     slug: `providers/${m.docsSlug}`,
     source: `docs/providers/${m.docsSlug}.md`,
@@ -248,20 +389,47 @@ function webDocs(manifests) {
     nav: m.name,
     description: m.docs.description,
   }));
+  const max = HIGHLIGHT_MAX_CHARS;
   return `${header("providers/*/")}
 /** The providers' pages, in the order lists show them. */
 export const PROVIDER_DOCS = ${JSON.stringify(pages, null, 2)};
+
+/** What each provider's page shows besides its Markdown and the comparison table, from its manifest and docs.ts: a
+ *  row per provider in the order lists show them, by its \`docsSlug\` (/docs/providers/<docsSlug>/), with
+ *  - \`accent\`: its own colour, as hex (brand.accent). Few have text contrast in both themes (Thangs' yellow on white,
+ *    Cults3D's purple on the dark one), so tint with it, or shift it for text and icons.
+ *  - \`highlight\`: \`{ title, text, link? }\`, what sets it apart, in plain text: a title of at most
+ *    ${max.title} characters and a sentence or two of at most ${max.text}. \`link\` is the docs page that says more,
+ *    by its slug, with an optional anchor: "grab#setup" is /docs/grab/#setup.
+ *  - \`facts\`: what the links to its feature pages are chosen by. \`signIn\`: "none", "admin", "user", "adminUser"
+ *    or "userOptional" (the manifest's). \`grab\` and \`flaresolverr\`: how much it leans on each, "required",
+ *    "recommended", "optional" or "none". \`grabSite\`: "builtin", or "optional", which Grab's popup turns on once.
+ *    \`collections\` and \`likes\`, and \`sync\`, true with either: a sync follows both. \`profiles\`: print profiles.
+ *    \`slicers\`: the names of its printer maker's own, if any. \`bambuProjects\`: Bambu Studio 3MFs, which other
+ *    slicers open normalized. \`trending\`: the dashboard's trending panel's list, "trending", "popular", "featured"
+ *    or "recommended", or null where it has none. \`categories\`: false where its models name none, so they come in
+ *    uncategorized. */
+export const PROVIDER_PAGES = ${JSON.stringify(manifests.map(pageExtras), null, 2)};
+
+/** The comparison table of docs/PROVIDER_SETUP.md, for the foot of each provider's page: the columns' headings, a row
+ *  per provider in the order lists show them, and the footnotes. A row has a cell for each column after Provider:
+ *  \`{ text }\`, \`{ need }\` ("required", "recommended", "optional" or "none") or \`{ yes }\`, and \`note\`, the
+ *  number of the footnote the cell carries. */
+export const PROVIDER_COMPARISON = ${JSON.stringify(compared)};
 `;
 }
 
 /** The docs files the generator owns, by path from the repository's root. */
 async function docsOutputs(manifests) {
   const files = new Map();
+  const compared = comparison(manifests);
   for (const m of manifests) files.set(`${DOCS_LOGOS}/${m.docsSlug}.svg`, docsLogo(m.brand));
-  files.set(SETUP_PAGE, setupPage(manifests, readFileSync(path.join(ROOT, SETUP_PAGE), "utf8")));
-  files.set(WEB_DOCS, webDocs(manifests));
+  files.set(SETUP_PAGE, setupPage(manifests, compared, readFileSync(path.join(ROOT, SETUP_PAGE), "utf8")));
+  files.set(WEB_DOCS, webDocs(manifests, compared));
+  files.set(BUG_FORM, bugForm(manifests, readFileSync(path.join(ROOT, BUG_FORM), "utf8")));
+  files.set(LABELS, labels(manifests, readFileSync(path.join(ROOT, LABELS), "utf8")));
   const config = await prettier.resolveConfig(path.join(ROOT, "package.json"));
-  for (const file of [SETUP_PAGE, WEB_DOCS]) {
+  for (const file of [SETUP_PAGE, WEB_DOCS, BUG_FORM, LABELS]) {
     files.set(file, await prettier.format(files.get(file), { ...config, filepath: file }));
   }
   return files;

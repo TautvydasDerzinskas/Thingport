@@ -1,0 +1,95 @@
+---
+import { formatStars, starCount } from "../lib/github.mjs";
+import { LINKS, REPO } from "../lib/site.mjs";
+import Icon from "./Icon.astro";
+
+const count = await starCount(REPO);
+const label = (stars: number | null) =>
+  stars === null ? "Thingport on GitHub" : `Thingport on GitHub, ${stars} stars`;
+---
+
+<a class="github-stars" href={LINKS.github} rel="noopener" aria-label={label(count)} data-repo={REPO}>
+  <Icon name="github" size={18} />
+  <span class="name">GitHub</span>
+  <span class="count" hidden={count === null}>
+    <Icon name="star" size={14} />
+    <span data-stars>{count === null ? "" : formatStars(count)}</span>
+  </span>
+</a>
+
+<script>
+  import { formatStars } from "../lib/github.mjs";
+
+  // The count is baked in at build time; check it once per visit so it doesn't go stale between deploys. A failed
+  // check (GitHub allows 60 an hour per visitor) is remembered too, rather than retried on every page.
+  const KEY = "thingport-stars";
+  const show = (stars: number) => {
+    for (const link of document.querySelectorAll<HTMLAnchorElement>(".github-stars")) {
+      link.querySelector("[data-stars]")!.textContent = formatStars(stars);
+      link.querySelector<HTMLElement>(".count")!.hidden = false;
+      link.setAttribute("aria-label", `Thingport on GitHub, ${stars} stars`);
+    }
+  };
+
+  const repo = document.querySelector<HTMLElement>(".github-stars")?.dataset.repo;
+  let checked: string | null = null;
+  try {
+    checked = sessionStorage.getItem(KEY);
+  } catch {
+    /* storage blocked: just fetch */
+  }
+  if (checked) show(Number(checked));
+  else if (checked === null && repo) {
+    fetch(`https://api.github.com/repos/${repo}`, { headers: { Accept: "application/vnd.github+json" } })
+      .then((res) => (res.ok ? res.json() : null))
+      .catch(() => null)
+      .then((data) => {
+        const stars = typeof data?.stargazers_count === "number" ? data.stargazers_count : null;
+        if (stars !== null) show(stars);
+        try {
+          sessionStorage.setItem(KEY, stars === null ? "" : String(stars));
+        } catch {
+          /* storage blocked: the next page checks again */
+        }
+      });
+  }
+</script>
+
+<style>
+  .github-stars {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    height: 2.4rem;
+    padding: 0 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--panel);
+    color: var(--heading);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: border-color 0.15s;
+  }
+  .github-stars:hover {
+    border-color: var(--accent);
+  }
+  .count {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding-left: 0.55rem;
+    border-left: 1px solid var(--border);
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .count[hidden] {
+    display: none;
+  }
+  .count :global(svg) {
+    color: var(--alt);
+  }
+</style>

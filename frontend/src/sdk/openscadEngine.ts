@@ -9,60 +9,17 @@
 import OpenSCAD from "../assets/openscad/openscad.js";
 import { TOOL_FONT_URLS } from "./fonts";
 import { LIBRARY_FILES, libraryPath, SCAD_LIBRARIES } from "./scadLibraries";
-// Type only, so the writer itself stays behind the dynamic import at the bottom of this file.
-import type { Mesh } from "./threeMf";
+import type { ScadParameters, ScadRender, ScadRenderOptions } from "./types";
 
-/** A parameter as OpenSCAD's own customizer describes it: enough to build the control for it without guessing. */
-export type ScadParameter = {
-  name: string;
-  /** The `/* [Group] *\/` heading it was declared under; "Parameters" for the ones before any heading. */
-  group: string;
-  type: "number" | "string" | "boolean" | "vector" | string;
-  initial: unknown;
-  /** The comment above the declaration, which the site shows as the parameter's explanation. */
-  caption?: string;
-  min?: number;
-  max?: number;
-  step?: number;
-  /** Set where the declaration ends in `// [a, b, c]`, which makes it a choice rather than free entry. */
-  options?: { name: string; value: unknown }[];
-};
-
-export type ScadParameters = { title: string; parameters: ScadParameter[] };
-
-/** What a run produced: the file, and everything the engine said while making it. */
-export type ScadRender = {
-  bytes: Uint8Array;
-  /** Warnings and errors, in the order they were printed. A missing font is in here and nowhere else. */
-  log: string[];
-  /** Seconds the engine spent, for a UI that wants to say why it took a moment. */
-  seconds: number;
-  /** The geometry behind the bytes, when the format is one made here: it is already parsed, so a tool that
-   *  wants to draw what it just generated needn't render a second time to get at it. */
-  mesh?: Mesh;
-};
-
-/**
- * The formats a render can come back as.
- *
- * 3MF is the default and is Thingport's own: the WebAssembly build is made without lib3mf, and asked for one
- * directly it renders, writes nothing and exits as though it had worked. So the engine is asked for OFF, which
- * lists each vertex once, and that is turned into a 3MF here. The difference is not small -- a generator's
- * output is tens of megabytes as the ASCII STL the engine writes, against a couple as a 3MF.
- *
- * The rest are the engine's own, for a tool that wants what it writes untouched.
- */
-export type ScadFormat = "3mf" | "mesh" | "stl" | "obj" | "off" | "amf";
-
-export type ScadRenderOptions = {
-  /** By parameter name, as `parameters()` gives them. Anything left out keeps the script's own value. */
-  parameters?: Record<string, unknown>;
-  format?: ScadFormat;
-  /** The title written into a 3MF, which slicers show. Ignored by the engine's own formats. */
-  name?: string;
-  /** Cancels the render. The worker running it is let go, which is the only way to stop one part way. */
-  signal?: AbortSignal;
-};
+// What a tool sees of OpenSCAD -- the parameters, the render and its options -- is declared in types.ts, which the
+// SDK reference is written from.
+//
+// 3MF is the default format and is Thingport's own: the WebAssembly build is made without lib3mf, and asked for one
+// directly it renders, writes nothing and exits as though it had worked. So the engine is asked for OFF, which lists
+// each vertex once, and that is turned into a 3MF here. The difference is not small -- a generator's output is tens
+// of megabytes as the ASCII STL the engine writes, against a couple as a 3MF. The rest are the engine's own, for a
+// tool that wants what it writes untouched.
+export type { ScadFormat, ScadParameter, ScadParameters, ScadRender, ScadRenderOptions } from "./types";
 
 type Instance = {
   FS: {

@@ -152,6 +152,11 @@ export type ProviderDocs = {
   about: string;
   /** Its page's description on the website. */
   description: string;
+  /** What sets it apart from the others once it's in Thingport: a title and a sentence or two of plain text, shown on
+   *  its page on the website, so the generator holds them to HIGHLIGHT_MAX_CHARS (48 and 220 characters). `link` is
+   *  the docs page that says more, by its slug on the website with an optional #anchor, as in
+   *  "grab#makeronline-files-only-through-grab". */
+  highlight: { title: string; text: string; link?: string };
   /** The comparison table's Sign-in cell. */
   signIn: string;
   /** The Collections cell, where the site calls its lists something else. */

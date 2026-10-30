@@ -1,0 +1,244 @@
+---
+// Search on the site's own pages (home, features, blog, community), over the same Pagefind index as the docs'
+// header search: docs, blog posts, the feature tour and the gallery.
+import Icon from "./Icon.astro";
+---
+
+<site-wide-search>
+  <button class="open" type="button" aria-label="Search" aria-keyshortcuts="Control+K" data-open>
+    <Icon name="magnifier" size={16} />
+    <span class="label">Search</span>
+    <kbd class="keys" aria-hidden="true"><kbd data-modifier>Ctrl</kbd><kbd>K</kbd></kbd>
+  </button>
+  <dialog aria-label="Search">
+    <div class="frame">
+      <div class="head">
+        <span>Search the docs, the blog and the rest of the site</span>
+        <button class="close" type="button" aria-label="Close search" data-close>
+          <Icon name="close" size={18} />
+        </button>
+      </div>
+      <div class="results" data-results>
+        <p class="unavailable" hidden data-unavailable>Search is only in the built site.</p>
+      </div>
+    </div>
+  </dialog>
+</site-wide-search>
+
+<script>
+  class SiteWideSearch extends HTMLElement {
+    connectedCallback() {
+      const dialog = this.querySelector("dialog")!;
+      const openButton = this.querySelector<HTMLButtonElement>("[data-open]")!;
+      const results = this.querySelector<HTMLElement>("[data-results]")!;
+      let started = false;
+
+      if (/Mac|iPhone|iPad/.test(navigator.platform)) {
+        this.querySelector("[data-modifier]")!.textContent = "⌘";
+        openButton.setAttribute("aria-keyshortcuts", "Meta+K");
+      }
+
+      // Pagefind's UI loads on first use, not with every page.
+      const start = async () => {
+        if (started) return;
+        started = true;
+        if (import.meta.env.DEV) {
+          results.querySelector<HTMLElement>("[data-unavailable]")!.hidden = false;
+          return;
+        }
+        // @ts-expect-error -- the package ships no types.
+        const { PagefindUI } = await import("@pagefind/default-ui");
+        const base = import.meta.env.BASE_URL.replace(/\/?$/, "/");
+        new PagefindUI({
+          element: results,
+          baseUrl: base,
+          bundlePath: `${base}pagefind/`,
+          showImages: false,
+          showSubResults: true,
+        });
+      };
+
+      const open = async () => {
+        dialog.showModal();
+        document.body.style.overflow = "hidden";
+        await start();
+        results.querySelector<HTMLInputElement>("input")?.focus();
+      };
+      const close = () => dialog.close();
+
+      openButton.addEventListener("click", open);
+      this.querySelector("[data-close]")!.addEventListener("click", close);
+      dialog.addEventListener("close", () => (document.body.style.overflow = ""));
+      // A click on the backdrop (the dialog itself, outside its frame) closes it.
+      dialog.addEventListener("click", (event) => {
+        if (event.target === dialog) close();
+      });
+      window.addEventListener("keydown", (event) => {
+        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+          event.preventDefault();
+          if (dialog.open) close();
+          else void open();
+        }
+      });
+    }
+  }
+  customElements.define("site-wide-search", SiteWideSearch);
+</script>
+
+<style is:global>
+  @import "@pagefind/default-ui/css/ui.css";
+
+  site-wide-search {
+    display: contents;
+  }
+  site-wide-search .open {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    height: 2.4rem;
+    padding: 0 0.375rem 0 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--text-muted);
+    font: 0.875rem var(--font-body);
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  site-wide-search .open:hover {
+    border-color: var(--accent);
+    color: var(--heading);
+  }
+  site-wide-search .open svg {
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+  }
+  site-wide-search .open .label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* Sized and spaced as the docs' chip (Starlight's). */
+  site-wide-search .keys {
+    display: inline-flex;
+    flex: none;
+    gap: 0.25em;
+    padding: 0.125rem 0.375rem;
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius-sm) * 0.75);
+    background: var(--panel);
+    color: var(--text-muted);
+    font: 0.6875rem/1.4 var(--font-body);
+  }
+  site-wide-search .keys kbd {
+    font: inherit;
+  }
+  /* Phones: an icon button, like the docs header's. */
+  @media (max-width: 49.99rem) {
+    site-wide-search .open {
+      justify-content: center;
+      width: 2.4rem;
+      padding: 0;
+      background: var(--panel);
+      color: var(--heading);
+    }
+    site-wide-search .open svg {
+      width: 1.125rem;
+      height: 1.125rem;
+    }
+    site-wide-search .open :is(.label, .keys) {
+      display: none;
+    }
+  }
+
+  site-wide-search dialog {
+    width: min(40rem, calc(100vw - 2rem));
+    max-height: calc(100dvh - 6rem);
+    margin: 4rem auto auto;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--panel);
+    color: var(--text);
+    box-shadow: 0 24px 64px rgba(16, 24, 40, 0.24);
+  }
+  site-wide-search dialog::backdrop {
+    background: rgba(31, 31, 31, 0.4);
+  }
+  :root[data-theme="dark"] site-wide-search dialog::backdrop {
+    background: rgba(8, 11, 24, 0.7);
+  }
+  site-wide-search .frame {
+    position: relative;
+    padding: 1rem;
+  }
+  site-wide-search .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: -0.25rem 0 0.75rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+  site-wide-search .close {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+  site-wide-search .close:hover {
+    color: var(--heading);
+  }
+  site-wide-search .unavailable {
+    margin: 0;
+    padding: 1rem 0.25rem;
+    color: var(--text-muted);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    site-wide-search dialog[open] {
+      animation: site-search-in 0.15s ease-out;
+    }
+  }
+  @keyframes site-search-in {
+    from {
+      opacity: 0;
+      transform: translateY(0.5rem);
+    }
+  }
+
+  /* Pagefind's own UI in the site's colours and type, as the docs' search is. */
+  site-wide-search .pagefind-ui {
+    --pagefind-ui-primary: var(--link);
+    --pagefind-ui-text: var(--text);
+    --pagefind-ui-background: var(--panel);
+    --pagefind-ui-border: var(--border);
+    --pagefind-ui-tag: var(--bg);
+    --pagefind-ui-border-width: 1px;
+    --pagefind-ui-border-radius: var(--radius-sm);
+    --pagefind-ui-font: var(--font-body);
+    --pagefind-ui-scale: 0.9;
+  }
+  site-wide-search .pagefind-ui__result-link {
+    color: var(--heading);
+  }
+  site-wide-search .pagefind-ui__result-link:hover {
+    color: var(--link);
+  }
+  site-wide-search .pagefind-ui mark {
+    background: var(--accent-soft);
+    color: var(--heading);
+  }
+</style>

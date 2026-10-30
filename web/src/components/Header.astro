@@ -1,32 +1,20 @@
 ---
-import { LINKS } from "../lib/site.mjs";
+// The same bar as the docs' (starlight/Header.astro): full width, so the logo, nav and buttons stay put between them.
 import { url } from "../lib/url";
-import Icon from "./Icon.astro";
+import GitHubStars from "./GitHubStars.astro";
 import Logo from "./Logo.astro";
+import SiteNav from "./SiteNav.astro";
+import SiteSearch from "./SiteSearch.astro";
 import ThemeToggle from "./ThemeToggle.astro";
-
-const NAV = [
-  { label: "Features", route: "features/" },
-  { label: "Docs", route: "docs/" },
-  { label: "Blog", route: "blog/" },
-];
-const current = Astro.url.pathname;
 ---
 
 <header class="site-header">
-  <div class="container bar">
-    <a class="brand" href={url()} aria-label="Thingport home"><Logo seasonal /></a>
-    <nav class="nav" aria-label="Main">
-      {
-        NAV.map((item) => (
-          <a href={url(item.route)} aria-current={current.startsWith(url(item.route)) ? "page" : undefined}>
-            {item.label}
-          </a>
-        ))
-      }
-    </nav>
+  <div class="bar">
+    <a class="brand" href={url()} aria-label="Thingport home"><Logo seasonal height={28} /></a>
+    <SiteNav class="nav" />
+    <div class="search"><SiteSearch /></div>
     <div class="actions">
-      <a class="gh" href={LINKS.github} rel="noopener"><Icon name="github" size={18} /><span>GitHub</span></a>
+      <GitHubStars />
       <ThemeToggle />
     </div>
   </div>
@@ -37,67 +25,63 @@ const current = Astro.url.pathname;
     position: sticky;
     top: 0;
     z-index: 50;
-    background: color-mix(in srgb, var(--panel) 88%, transparent);
+    background: var(--header-bg);
     backdrop-filter: saturate(1.4) blur(10px);
     border-bottom: 1px solid var(--border);
   }
   .bar {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
-    min-height: 4rem;
-    flex-wrap: wrap;
+    gap: 1.25rem;
+    min-height: calc(var(--header-height) - 1px);
+    padding-inline: 1.5rem;
   }
   .brand {
     display: inline-flex;
     align-items: center;
+    flex: none;
   }
-  .nav {
+  /* Placed and sized as the docs header's search, so the field doesn't move between the site and the docs. */
+  .search {
     display: flex;
-    gap: 0.25rem;
-    margin-right: auto;
+    flex: 0 1 18.75rem;
+    min-width: 0;
+    margin-left: auto;
   }
-  .nav a,
-  .gh {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.45rem 0.75rem;
-    border-radius: var(--radius-sm);
-    color: var(--text);
-    font-weight: 600;
-    font-size: 0.95rem;
-    text-decoration: none;
-  }
-  .nav a:hover,
-  .gh:hover {
-    color: var(--heading);
-    background: var(--accent-soft);
-  }
-  .nav a[aria-current="page"] {
-    color: var(--link);
-    background: var(--accent-soft);
-  }
+  /* Never squeezed: the search gives way instead (shrunk, the buttons' icons collapse to nothing). */
   .actions {
     display: flex;
+    flex: none;
     align-items: center;
     gap: 0.5rem;
   }
-  /* Phones: logo + actions on the first row, the nav as a full-width second row. */
-  @media (max-width: 40rem) {
-    .bar {
-      gap: 0.5rem 1rem;
-      padding-block: 0.6rem;
+  /* As in the docs' header: until there's room for it, GitHub shows its icon and stars without its name. */
+  @media (min-width: 50rem) and (max-width: 63.99rem) {
+    .actions :global(.github-stars .name) {
+      display: none;
     }
-    .nav {
+  }
+  /* Phones: logo and buttons on the first row, as tall as the docs' header, and the nav as a second row. */
+  @media (max-width: 49.99rem) {
+    .bar {
+      flex-wrap: wrap;
+      gap: 0 1rem;
+      padding-inline: 1rem;
+    }
+    .brand,
+    .actions {
+      min-height: calc(var(--header-height) - 1px);
+    }
+    .bar :global(.nav) {
       order: 3;
       width: 100%;
-      margin: 0 0 0 -0.75rem;
+      margin-left: -0.75rem;
+      padding-bottom: 0.5rem;
     }
-    .actions {
-      margin-left: auto;
+    .search {
+      flex: none;
     }
-    .gh span {
+    .actions :global(.github-stars .name) {
       display: none;
     }
   }

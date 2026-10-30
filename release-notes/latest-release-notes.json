@@ -1,7 +1,7 @@
 {
   "version": "1.4.0",
-  "title": "Tools that build models, and models you can change",
-  "summary": "Thingport now runs small apps of its own — planners, generators and calculators that work with your library, with nine to install and an editor to write your own. A model that came with the script it was generated from can be customized and generated again in your browser, in colour, and multicolour models finally reach your slicer in the colours they were painted in. There's also pairing for Thingport Grab instead of a saved password, five new sites to import from, CGTrader and GrabCAD among them, and a way to find the models whose files have gone missing.",
+  "title": "Tools that conjure models, and models you can change",
+  "summary": "Happy Halloween! 🎃 Thingport now runs small apps of its own — planners, generators and calculators that work with your library, with nine to install and an editor to write your own. A model that came with the script it was generated from can be customized and generated again in your browser, in colour, and multicolour models finally reach your slicer in the colours they were painted in. There's also pairing for Thingport Grab instead of a saved password, five new sites to import from, CGTrader and GrabCAD among them, a way to find the ghost models whose files have gone missing, and a redesigned thingport.net whose docs you can search from any page.",
   "items": [
     {
       "type": "feature",
@@ -10,15 +10,15 @@
       "description": "A tool opens in a window of its own from Tools in the sidebar: a planner, a generator, a calculator. Nine come with Thingport — planners for Multiboard, Gridfinity, Skadis and enclosures, generators for QR codes and keyrings, a print cost estimator, a MakerWorld 3MF normalizer and a customizer for OpenSCAD scripts. An admin installs the ones they want under Administration → Tools, with screenshots to look through first, and chooses who may use them: admins only, everyone, or the users they pick. A tool works with your library — it can search your models, read their files, make collections and save what it builds back as a model of your own — and a tool that needs models of its own brings them in a collection of their own, kept once for the whole instance rather than once per person.",
       "images": [
         {
-          "src": "screenshots/1.4.0-tools.webp",
+          "src": "screenshots/1.4.0-tools-halloween.webp",
           "caption": "The Tools page, with the tools on shelves by what they do"
         },
         {
-          "src": "screenshots/1.4.0-admin-tools.webp",
+          "src": "screenshots/1.4.0-admin-tools-halloween.webp",
           "caption": "Administration → Tools: install the ones you want, and say who may use them"
         },
         {
-          "src": "screenshots/1.4.0-tool-qr.webp",
+          "src": "screenshots/1.4.0-tool-qr-halloween.webp",
           "caption": "The QR code generator, one of the nine, in a window of its own"
         }
       ],
@@ -28,16 +28,16 @@
       "type": "feature",
       "highlight": true,
       "title": "Make your own tool, or ask an AI to write it",
-      "description": "With Users' own tools on, New tool on the Tools page opens an editor: the tool's details, its script as an ES module, the words it shows in each language, its HTML and CSS, and a preview running beside them. It starts from a working tool, Cube maker, that uses most of what a tool can do, and the SDK reference beside it lists the rest. Quicker still, describe one to an AI assistant connected over MCP. A new API token already allows Save a tool, the assistant reads Thingport's own tool guide before it writes anything, and what it saves appears on your Tools page ready to open. Ask again to change it. Use AI on the Tools page shows the steps with example prompts to copy and the connect command ready to paste.",
+      "description": "With Users' own tools on, New tool on the Tools page opens an editor: the tool's details, its script as an ES module, the words it shows in each language, its HTML and CSS, and a preview running beside them. It starts from a working tool, Cube maker, that uses most of what a tool can do, and the SDK reference beside it lists the rest. Quicker still, summon one: describe it to an AI assistant connected over MCP. A new API token already allows Save a tool, the assistant reads Thingport's own tool guide before it writes anything, and what it saves appears on your Tools page ready to open. Ask again to change it. Use AI on the Tools page shows the steps with example prompts to copy and the connect command ready to paste.",
       "code": "Make me a Thingport tool that turns a few words into a printable label and saves it to my library.",
       "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/tools.md",
       "images": [
         {
-          "src": "screenshots/1.4.0-tools-ai.webp",
+          "src": "screenshots/1.4.0-tools-ai-halloween.webp",
           "caption": "Use AI walks through connecting an assistant, with prompts to copy"
         },
         {
-          "src": "screenshots/1.4.0-tool-editor.webp",
+          "src": "screenshots/1.4.0-tool-editor-halloween.webp",
           "caption": "The editor starts from a working tool, with the SDK reference beside it"
         }
       ]
@@ -46,18 +46,18 @@
       "type": "feature",
       "highlight": true,
       "title": "Change a model and generate it again",
-      "description": "A model that came with the OpenSCAD script it was generated from now leads with Customize rather than Open. It opens the creator's own sliders, choices and text boxes — read out of the script by OpenSCAD itself, grouped as they grouped them — with the model on a stage beside them. Every change can be undone and redone, with the buttons or Ctrl/Cmd+Z, and the script itself is a button away. What comes out downloads as a 3MF or an STL, or saves back into your library as a model of its own with a copy of the script beside it, so it can be changed again in turn. The engine runs in your browser: the script and the values you pick never leave the tab, and there is nothing to install. Models now arrive with their script from every site that publishes one, not just MakerWorld, and a creator who kept theirs back is marked Script not shared so an empty menu isn't left to be misread.",
+      "description": "A model that came with the OpenSCAD script it was generated from now leads with Customize rather than Open. It opens the creator's own sliders, choices and text boxes — read out of the script by OpenSCAD itself, grouped as they grouped them — with the model on a stage beside them. Every change can be undone and redone, with the buttons or Ctrl/Cmd+Z, so no experiment stays a monster for long, and the script itself is a button away. What comes out downloads as a 3MF or an STL, or saves back into your library as a model of its own with a copy of the script beside it, so it can be changed again in turn. The engine runs in your browser: the script and the values you pick never leave the tab, and there is nothing to install. Models now arrive with their script from every site that publishes one, not just MakerWorld, and a creator who kept theirs back is marked Script not shared so an empty menu isn't left to be misread.",
       "images": [
         {
-          "src": "screenshots/1.4.0-generative-model.webp",
+          "src": "screenshots/1.4.0-generative-model-halloween.webp",
           "caption": "Customize takes the main button on a model that came with its script"
         },
         {
-          "src": "screenshots/1.4.0-customizer.webp",
+          "src": "screenshots/1.4.0-customizer-halloween.webp",
           "caption": "The creator's own parameters, with what they build beside them"
         },
         {
-          "src": "screenshots/1.4.0-filters.webp",
+          "src": "screenshots/1.4.0-filters-halloween.webp",
           "caption": "Generative narrows the library to the models that have a script"
         }
       ],
@@ -71,7 +71,7 @@
       "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/3d-previews.md",
       "images": [
         {
-          "src": "screenshots/1.4.0-multicolor.webp",
+          "src": "screenshots/1.4.0-multicolor-halloween.webp",
           "caption": "A painted model drawn in the colours it was painted in"
         }
       ]
@@ -83,7 +83,7 @@
       "description": "Connect in Grab's popup now leads with Pair with Thingport: it opens your instance in a tab to approve this browser and hands back a connection, so no password is ever saved in the extension. Entering credentials is still there under it, for instances too old to pair and anyone who would rather. The popup itself is two columns now, led by a card for the site the tab you're on belongs to — its logo, what that site is, and a tick or an Enable of its own — so the site in front of you takes no searching for. The import panel opens out of its floating icon and shows what you're importing, the model's picture and name read from the page, with one box that searches your collections and creates a new one as you type. On MakerWorld it also says, before you commit, whether the model's generator script comes with it.",
       "images": [
         {
-          "src": "screenshots/1.4.0-grab-pair.webp",
+          "src": "screenshots/1.4.0-grab-pair-halloween.webp",
           "caption": "Pairing opens a tab to approve this browser; no password is saved"
         }
       ]
@@ -96,19 +96,19 @@
       "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/PROVIDER_SETUP.md",
       "images": [
         {
-          "src": "screenshots/1.4.0-providers.webp",
+          "src": "screenshots/1.4.0-providers-halloween.webp",
           "caption": "The newest five, at the foot of seventeen sites"
         }
       ]
     },
     {
       "type": "feature",
-      "title": "Find the models whose files have gone",
-      "description": "Thingport keeps a model's files in its storage folder and only the model's details in the database, so an instance moved without that folder, a backup restored against an empty one, or a folder deleted by accident leaves models with nothing behind them — no pictures, and nothing to open, print or download. A look at your library now finds them and offers two ways out: fetch the files again from the sites the models came from, which keeps their names, tags, collections and favourites exactly as they are, or delete those models for good. Either way the work runs in the background with a bar at the bottom of the app, can be stopped, and ends in a notification. Models only Thingport Grab can fetch are left for its next visit to the site. It's under Repair in the models cog, which checks on demand.",
+      "title": "Find the ghost models whose files have gone",
+      "description": "Thingport keeps a model's files in its storage folder and only the model's details in the database, so an instance moved without that folder, a backup restored against an empty one, or a folder deleted by accident leaves models with nothing behind them — ghosts with no pictures, and nothing to open, print or download. A look at your library now finds them and offers two ways out: fetch the files again from the sites the models came from, which keeps their names, tags, collections and favourites exactly as they are, or delete those models for good. Either way the work runs in the background with a bar at the bottom of the app, can be stopped, and ends in a notification. Models only Thingport Grab can fetch are left for its next visit to the site. It's under Repair in the models cog, which checks on demand.",
       "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/storage.md",
       "images": [
         {
-          "src": "screenshots/1.4.0-repair.webp",
+          "src": "screenshots/1.4.0-repair-halloween.webp",
           "caption": "What the check found, where those models came from, and the two ways out"
         }
       ]
@@ -119,7 +119,7 @@
       "description": "Installing the planner used to fetch 221 models from Thangs — about twelve gigabytes, as the admin who installed it, spread over several days of a free account's download limit. It now draws every plate itself, as a wall asks for it, so the tool carries only the thirteen joints and needs no Thangs account at all. The board preview is the plates themselves, with the fittings sitting over the holes they drop into and a slider that pulls the wall apart to show which snap bridges what. A finished wall saves into your library as one file per thing to print, with how many to print in each name, or downloads as a zip.",
       "images": [
         {
-          "src": "screenshots/1.4.0-multiboard.webp",
+          "src": "screenshots/1.4.0-multiboard-halloween.webp",
           "caption": "The board as the real plates, with the spread slider pulling it apart"
         }
       ]
@@ -138,6 +138,12 @@
       "type": "feature",
       "title": "Thingport on a phone",
       "description": "The navigation and the model filters fit a narrow screen. The menu drawer stays inside the visible viewport rather than running on behind the browser's own bar, and scrolling it no longer drags the page underneath along with it. The top bar keeps its search, add, notification and account buttons on one row and drops a long page title to a centred row of its own."
+    },
+    {
+      "type": "feature",
+      "title": "thingport.net, redone, with docs you can search",
+      "description": "The website has a new look. The docs run on Starlight, with a docs home that says where to start and a sidebar of groups instead of one long list, and search on every page of the site covers the docs, the blog, the feature tour and the gallery. Each provider's page leads with what sets it apart, then brings its related feature docs, a comparison with every other provider and a Notes from users thread. Blog posts take comments and docs pages take feedback, through GitHub Discussions. The site is light by default, with dark a click away, and a new Community → Widgets & tools gallery lists the dashboard widgets and tools Thingport offers, each with a page of its own.",
+      "url": "https://thingport.net/docs/"
     },
     {
       "type": "improvement",

@@ -12,4 +12,9 @@ export default {
     text: "A gallery item that is a CAD project, rather than a library part, has no stored mesh: OwlCAD's editor builds its file, so Thingport Grab exports it on owlcad.com.",
     on: ["grab"],
   },
+  highlight: {
+    title: "CAD projects import only through Grab",
+    text: "A shared CAD project has no file until OwlCAD's editor builds one, so Thingport Grab exports it on owlcad.com. One pasted into Thingport waits for your next visit there with Grab.",
+    link: "grab",
+  },
 } satisfies ProviderDocs;

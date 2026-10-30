@@ -1,0 +1,30 @@
+name: Issue provider label
+
+# The bug form's Provider answer as a label, "provider: <Name>", which lists the issue under Known problems on that
+# provider's page on the website. The body is read in JavaScript only, never put into a command.
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  contents: read
+  issues: write
+
+# One run at a time per issue, so quick edits can't add and remove its labels out of order.
+concurrency:
+  group: issue-provider-label-${{ github.event.issue.number }}
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github
+          persist-credentials: false
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const root = process.env.GITHUB_WORKSPACE;
+            const { default: label } = await import(`${root}/.github/scripts/issue-provider-label.mjs`);
+            await label({ github, context, core, labelsFile: `${root}/.github/labels.yml` });

@@ -4,7 +4,7 @@ Tools an admin can install from **Administration → Tools** in Thingport. Each 
 lists the ones Thingport offers. An installed tool opens from the **Tools** page, for the users the admin allows.
 
 To write one, see [tool development](../docs/TOOL_DEVELOPMENT.md) for the format and the steps, and the
-[tools guide](../docs/guides/tools.md) for the SDK a tool's script gets.
+[SDK reference](../docs/developers/sdk-reference.md) for what a tool's script gets.
 
 ## A tool's folder
 

@@ -1,0 +1,9 @@
+{
+  "title": "Newest models",
+  "loading": "Loading…",
+  "empty": "Nothing here yet. Import or upload a model and it shows up here.",
+  "failed": "Couldn't load the models: {reason}",
+  "settings.count": "Models shown",
+  "settings.tag": "Only with the tag",
+  "settings.tagHint": "e.g. gridfinity"
+}

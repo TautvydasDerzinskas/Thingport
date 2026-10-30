@@ -36,11 +36,20 @@ they're out of date (`npm run providers:check`). Never edit them by hand:
   `MANIFESTS`, `ABOUT`, `URLS`, `TRENDING_PROVIDER_IDS`).
 - `docs/assets/providers/<docsSlug>.svg`, the docs logo, drawn from the manifest's logo.
 - The list and the comparison table in `docs/PROVIDER_SETUP.md`, between its `<!-- providers:… -->` markers.
-- `web/src/lib/providers.generated.mjs`, the website's provider page entries.
+- The bug form's Provider options (`.github/ISSUE_TEMPLATE/bug_report.yml`) and a `provider: <name>` label for each in
+  `.github/labels.yml`, between their `# providers:…` comments. The website's "Report a problem" links fill the form
+  in, and `.github/workflows/issue-provider-label.yml` labels an issue by its answer, which lists it under Known
+  problems on the provider's page.
+- `web/src/lib/providers.generated.mjs`, the website's provider page entries (`PROVIDER_DOCS`), what each page shows
+  besides its Markdown -- its brand accent, its highlight and the facts its links to feature pages are chosen by
+  (`PROVIDER_PAGES`) -- and the comparison table at the foot of each (`PROVIDER_COMPARISON`), from the same data as
+  `docs/PROVIDER_SETUP.md`'s table.
 
 The generator also checks the manifests. It fails when two providers share an `order` or a trending `rank`, when the
-set of built-in Grab sites changes, when an optional site asks for cookies in its manifest, and when a `docs.ts`
-`about` runs past 240 characters.
+set of built-in Grab sites changes, when an optional site asks for cookies in its manifest, when a `docs.ts`
+`about` runs past 240 characters or its `highlight` is missing, too long or links oddly, and when a manifest names
+a slicer the app's slicer setting doesn't list (`SLICER_OPTIONS` in `frontend/src/constants/settingsOptions.ts`, which
+names them on the website too).
 
 ### Storage
 
@@ -237,7 +246,8 @@ Open an issue first, then:
 2. **`providers/<id>/urls.ts`**, with cases in `urls.fixtures.json`, and **`providers/<id>/docs.ts`**: the providers
    page's list line and table cells, the website description, and `about` -- two or three sentences on the site itself
    (who runs it, where it came from, what it's known for, not what Thingport does with it), which Thingport Grab's
-   popup shows for the site you're on.
+   popup shows for the site you're on. Its `highlight` is what sets the provider apart once it's in Thingport: a title
+   and a sentence or two for its page on the website, with a link to the docs page that says more.
 3. **`npm run providers:sync`** writes the generated files listed above.
 4. **Backend**, `backend/src/providers/<id>/`: `api.ts`, `index.ts`, `session.ts` and `connection.ts` for a sign-in,
    `browse.ts` and `sync.ts` for its lists, and `categories.json`. Add its entry to `PROVIDERS` in

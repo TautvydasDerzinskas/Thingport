@@ -109,7 +109,7 @@ const jsonLd = [
       <span class="eyebrow">Free · Open source · Self-hosted</span>
       <h1>Your personal <span class="accent">3D model library</span></h1>
       <p class="lead">
-        Collect, organize and preview the 3D printing models you find on MakerWorld, Printables, Thingiverse and
+        Collect, organize and preview the 3D printing models you find on MakerWorld, Printables, Thingiverse and{" "}
         {otherSites} other sites, in one library that runs on your own server.
       </p>
       <div class="ctas">
@@ -354,7 +354,11 @@ const jsonLd = [
     font-size: clamp(2.3rem, 7vw, 4rem);
     margin-bottom: 1.25rem;
   }
+  /* The link green in light, where the brand green is too faint to read; dark keeps the brand green. */
   .accent {
+    color: var(--link);
+  }
+  :global(:root[data-theme="dark"]) .accent {
     color: var(--accent);
   }
   .lead {

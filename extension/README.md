@@ -13,9 +13,13 @@ button that turns the Bambu Studio project into a 3MF that PrusaSlicer, Cura and
 with its colors and print settings intact. See [Download normalized](#download-normalized-no-thingport-needed).
 It can also give Thingiverse a [dark theme and hide its ads](#thingiverse-dark-mode-and-hidden-ads-no-thingport-needed).
 
-**Get it from the [Chrome Web Store](https://chromewebstore.google.com/detail/nmblahmglpbplmfcggghdgohohlaeiee),
-[Firefox Add-ons](https://addons.mozilla.org/firefox/addon/thingport-grab/) or
-[Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/kahfidpmojfocohinlmglnfoaimocbol).**
+<table>
+  <tr>
+    <td width="33%" align="center"><a href="https://chromewebstore.google.com/detail/nmblahmglpbplmfcggghdgohohlaeiee"><img src="../frontend/src/assets/logos/browsers/chrome.svg" alt="" width="48" height="48"><br><b>Get it from the Chrome Web Store</b></a><br><sub>Chrome, Brave, Vivaldi and Opera</sub></td>
+    <td width="33%" align="center"><a href="https://addons.mozilla.org/firefox/addon/thingport-grab/"><img src="../frontend/src/assets/logos/browsers/firefox.svg" alt="" width="48" height="48"><br><b>Get it from Firefox Add-ons</b></a><br><sub>Firefox</sub></td>
+    <td width="33%" align="center"><a href="https://microsoftedge.microsoft.com/addons/detail/kahfidpmojfocohinlmglnfoaimocbol"><img src="../frontend/src/assets/logos/browsers/edge.svg" alt="" width="48" height="48"><br><b>Get it from Microsoft Edge Add-ons</b></a><br><sub>Microsoft Edge</sub></td>
+  </tr>
+</table>
 
 It talks directly to your Thingport instance's API from the extension's background script -- no
 separate server, no data sent anywhere else -- and converts files in your browser. See the [privacy policy](PRIVACY.md) for exactly what
@@ -55,7 +59,7 @@ it stores and sends.
 
 ## Install
 
-### Chrome / other Chromium browsers
+### <img src="../frontend/src/assets/logos/browsers/chrome.svg" alt="" width="24" height="24" align="absmiddle">Chrome / other Chromium browsers
 
 Install **[Thingport Grab from the Chrome Web Store](https://chromewebstore.google.com/detail/nmblahmglpbplmfcggghdgohohlaeiee)**
 -- click **Add to Chrome**, then click the new Thingport icon in your toolbar (it may be under the
@@ -78,7 +82,7 @@ Only needed if you can't use the store, e.g. to get a release before the store's
 A hand-installed copy doesn't update itself -- repeat these steps for a newer version.
 </details>
 
-### Firefox
+### <img src="../frontend/src/assets/logos/browsers/firefox.svg" alt="" width="24" height="24" align="absmiddle">Firefox
 
 Install **[Thingport Grab from Firefox Add-ons](https://addons.mozilla.org/firefox/addon/thingport-grab/)**
 -- click **Add to Firefox**, then click the new Thingport icon in your toolbar (it may be under the
@@ -101,7 +105,7 @@ guide):
 
 </details>
 
-### Microsoft Edge
+### <img src="../frontend/src/assets/logos/browsers/edge.svg" alt="" width="24" height="24" align="absmiddle">Microsoft Edge
 
 Install **[Thingport Grab from Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/kahfidpmojfocohinlmglnfoaimocbol)**
 -- click **Get**, then click the new Thingport icon in your toolbar (it may be under the

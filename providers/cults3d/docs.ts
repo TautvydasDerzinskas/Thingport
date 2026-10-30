@@ -11,4 +11,9 @@ export default {
     text: "Cults3D's files need your browser's Cloudflare clearance, and Thingport on the same IP address as that browser.",
     on: ["grab"],
   },
+  highlight: {
+    title: "Thingport must use the same IP as your browser",
+    text: "Cults3D's files need your browser's Cloudflare clearance, which Thingport Grab sends as you visit cults3d.com signed in. Cloudflare ties it to your IP address, which a server at home shares.",
+    link: "grab#cults3d-your-api-key-and-the-browsers-sign-in",
+  },
 } satisfies ProviderDocs;

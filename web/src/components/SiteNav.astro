@@ -1,0 +1,53 @@
+---
+import { url } from "../lib/url";
+
+type Props = { class?: string };
+
+const NAV = [
+  { label: "Features", route: "features/" },
+  { label: "Docs", route: "docs/" },
+  { label: "Community", route: "community/" },
+  { label: "Blog", route: "blog/" },
+];
+const current = Astro.url.pathname;
+---
+
+<nav class:list={["site-nav", Astro.props.class]} aria-label="Site">
+  {
+    NAV.map((item) => (
+      <a href={url(item.route)} aria-current={current.startsWith(url(item.route)) ? "page" : undefined}>
+        {item.label}
+      </a>
+    ))
+  }
+</nav>
+
+<style>
+  .site-nav {
+    display: flex;
+    gap: 0.25rem;
+  }
+  .site-nav a {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.45rem 0.75rem;
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    text-decoration: none;
+    transition:
+      background-color 0.15s,
+      color 0.15s;
+  }
+  .site-nav a:hover {
+    color: var(--heading);
+    background: var(--accent-soft);
+  }
+  .site-nav a[aria-current="page"] {
+    color: var(--link);
+    background: var(--accent-soft);
+  }
+</style>

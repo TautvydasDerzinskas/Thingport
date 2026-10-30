@@ -11,4 +11,9 @@ export default {
     text: "Your private Printables collections and your likes are read by Grab, while you're on Printables.",
     on: ["grab", "likes"],
   },
+  highlight: {
+    title: "Your likes and private collections need Grab",
+    text: "Printables shows your likes and private collections to you alone, so Thingport Grab reads them while you're there, signed in. Synced ones get new models after your next visit, not on a schedule.",
+    link: "guides/synced-collections#private-printables-collections-and-your-printables-likes",
+  },
 } satisfies ProviderDocs;

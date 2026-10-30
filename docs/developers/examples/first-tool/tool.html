@@ -1,0 +1,80 @@
+<style>
+  .tray {
+    display: grid;
+    gap: 12px;
+    padding: 16px;
+    font-family: var(--tp-font);
+    color: var(--tp-text);
+  }
+  .tray h2 {
+    margin: 0;
+    font-size: 16px;
+  }
+  .tray .sizes {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+    gap: 8px;
+  }
+  .tray label {
+    display: grid;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--tp-text-muted);
+  }
+  .tray input,
+  .tray button {
+    padding: 6px 10px;
+    border: 1px solid var(--tp-divider);
+    border-radius: 8px;
+    background: var(--tp-paper);
+    color: var(--tp-text);
+    font: inherit;
+  }
+  .tray .actions {
+    display: flex;
+    gap: 8px;
+  }
+  .tray button {
+    cursor: pointer;
+  }
+  .tray button[data-action="save"] {
+    border-color: transparent;
+    background: var(--tp-accent);
+    color: var(--tp-accent-ink);
+  }
+  .tray button:disabled {
+    opacity: 0.6;
+    cursor: progress;
+  }
+  .tray output {
+    min-height: 1.4em;
+    font-size: 12px;
+    color: var(--tp-text-muted);
+  }
+</style>
+<form class="tray">
+  <h2 data-t="title">Tray maker</h2>
+  <div class="sizes">
+    <label>
+      <span data-t="width">Width (mm)</span>
+      <input name="width" type="number" min="10" max="300" required />
+    </label>
+    <label>
+      <span data-t="depth">Depth (mm)</span>
+      <input name="depth" type="number" min="10" max="300" required />
+    </label>
+    <label>
+      <span data-t="height">Height (mm)</span>
+      <input name="height" type="number" min="2" max="200" required />
+    </label>
+    <label>
+      <span data-t="wall">Wall (mm)</span>
+      <input name="wall" type="number" min="0.8" max="10" step="0.1" required />
+    </label>
+  </div>
+  <div class="actions">
+    <button type="submit" data-action="save" data-t="save">Save to a collection…</button>
+    <button type="submit" data-action="download" data-t="download">Download STL</button>
+  </div>
+  <output aria-live="polite"></output>
+</form>

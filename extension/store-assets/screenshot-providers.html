@@ -78,23 +78,10 @@
         height: 0;
       }
       .site__chip {
+        --chip: 66px;
         position: absolute;
         left: -33px;
         top: -33px;
-        width: 66px;
-        height: 66px;
-        border-radius: 18px;
-        display: grid;
-        place-items: center;
-        background: #fff;
-        color: #1b2033;
-        box-shadow:
-          0 12px 28px rgba(0, 0, 0, 0.4),
-          0 0 0 4px rgba(255, 255, 255, 0.06);
-      }
-      .site__chip svg {
-        width: 38px;
-        height: 38px;
       }
       .site__name {
         position: absolute;
@@ -283,7 +270,7 @@
           site.className = "site";
           site.style.left = `${point.x}px`;
           site.style.top = `${point.y}px`;
-          site.innerHTML = `<div class="site__chip">${provider.logo}</div><div class="site__name"></div>`;
+          site.innerHTML = `<div class="site__chip chip">${provider.logo}</div><div class="site__name"></div>`;
           site.querySelector(".site__name").textContent = provider.name;
           orbit.append(site);
         });
