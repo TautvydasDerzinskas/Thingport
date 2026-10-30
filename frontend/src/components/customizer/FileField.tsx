@@ -36,13 +36,14 @@ export default function FileField({ name, value, initial, accept, onFile, onClea
   const type = accept.slice(1).toUpperCase();
 
   // A slow read only lands if nothing has happened since it began: no later choice, no change to the value (clearing
-  // it, undo, Reset), and the field still here.
+  // it, undo, Reset, even back to what it was), and the field still here.
   const latest = useRef(0);
-  useEffect(() => () => void (latest.current += 1), []);
-  const valueNow = useRef(value);
+  const seen = useRef(value);
   useEffect(() => {
-    valueNow.current = value;
+    if (seen.current !== value) latest.current += 1;
+    seen.current = value;
   }, [value]);
+  useEffect(() => () => void (latest.current += 1), []);
 
   const pick = async (file: File) => {
     // The picker's filter is only a suggestion, and the engine reads nothing else: said here rather than as a
@@ -52,9 +53,8 @@ export default function FileField({ name, value, initial, accept, onFile, onClea
       return;
     }
     const request = ++latest.current;
-    const valueThen = valueNow.current;
     const bytes = new Uint8Array(await file.arrayBuffer());
-    if (request === latest.current && valueThen === valueNow.current) onFile(file.name, bytes);
+    if (request === latest.current) onFile(file.name, bytes);
   };
 
   return (
