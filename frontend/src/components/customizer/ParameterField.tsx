@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import MenuItem from "@mui/material/MenuItem";
@@ -8,14 +9,19 @@ import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import HelpTip from "../HelpTip";
+import ColorField from "../controls/ColorField";
 import Segmented from "../controls/Segmented";
 import type { ScadParameter } from "../../sdk/openscad";
+import FileField from "./FileField";
+import FontField from "./FontField";
 import { controlFor } from "./parameters";
 
 type Props = {
   parameter: ScadParameter;
   value: unknown;
   onChange: (value: unknown) => void;
+  /** A file chosen for a parameter that reads one. */
+  onFile: (fileName: string, bytes: Uint8Array) => void;
   disabled?: boolean;
 };
 
@@ -26,7 +32,8 @@ const optionKey = (index: number) => String(index);
 const AXES = ["X", "Y", "Z", "W"];
 
 /** One parameter, as the control its declaration asks for. */
-export default function ParameterField({ parameter, value, onChange, disabled }: Props) {
+export default function ParameterField({ parameter, value, onChange, onFile, disabled }: Props) {
+  const { t } = useTranslation("models");
   const control = controlFor(parameter);
 
   const label = (
@@ -143,6 +150,47 @@ export default function ParameterField({ parameter, value, onChange, disabled }:
     );
   }
 
+  if (control.kind === "color") {
+    return (
+      <Stack spacing={0.5}>
+        {label}
+        <ColorField
+          value={String(value ?? "")}
+          onChange={onChange}
+          label={parameter.name}
+          pickLabel={t("customizer.form.pickColor")}
+          disabled={disabled}
+        />
+      </Stack>
+    );
+  }
+
+  if (control.kind === "font") {
+    return (
+      <Stack spacing={0.5}>
+        {label}
+        <FontField name={parameter.name} value={String(value ?? "")} onChange={onChange} disabled={disabled} />
+      </Stack>
+    );
+  }
+
+  if (control.kind === "file") {
+    return (
+      <Stack spacing={0.5}>
+        {label}
+        <FileField
+          name={parameter.name}
+          value={String(value ?? "")}
+          initial={String(parameter.initial)}
+          accept={control.accept}
+          onFile={onFile}
+          onClear={() => onChange(parameter.initial)}
+          disabled={disabled}
+        />
+      </Stack>
+    );
+  }
+
   return (
     <Stack spacing={0.5}>
       {label}
@@ -172,12 +220,7 @@ function numberOr(text: string, fallback: number): number {
  * Almost every vector a script declares is a size or a position, so three numbers side by side say what they
  * are. Its length is taken from the value it came with, since that is what the script expects back.
  */
-function VectorField({
-  parameter,
-  value,
-  onChange,
-  disabled,
-}: Omit<Props, "parameter"> & { parameter: ScadParameter }) {
+function VectorField({ parameter, value, onChange, disabled }: Omit<Props, "onFile">) {
   const current = Array.isArray(value) ? value : [];
   const incoming = JSON.stringify(current);
   // Held as text while a component is being edited: a half-typed "-" or "1." is not yet a number, and

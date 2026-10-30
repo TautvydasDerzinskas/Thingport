@@ -930,7 +930,7 @@ OpenSCAD itself, built for the browser, for the models that came with the script
 openscad.parameters(source: string): Promise<ScadParameters>
 ```
 
-What parameters a script offers, read by OpenSCAD itself, so it's the list the script's author saw.
+What parameters a script offers, read by OpenSCAD itself, so it's the list the script's author saw. That includes the ones a script declares below its first `{`, which OpenSCAD alone wouldn't read but a site's customizer may.
 
 | Parameter | What it is         |
 | --------- | ------------------ |
@@ -1424,17 +1424,19 @@ A typeface `library("fonts")` offers.
 
 A parameter an OpenSCAD script offers, as OpenSCAD's own customizer describes it.
 
-| Field      | Type                                                      | What it is                                                                                       |
-| ---------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `name`     | `string`                                                  |                                                                                                  |
-| `group`    | `string`                                                  | The `/* [Group] */` heading it was declared under; "Parameters" for the ones before any heading. |
-| `type`     | `"number" \| "string" \| "boolean" \| "vector" \| string` |                                                                                                  |
-| `initial`  | `unknown`                                                 | The value the script gives it.                                                                   |
-| `caption?` | `string`                                                  | The comment above the declaration, which explains it.                                            |
-| `min?`     | `number`                                                  |                                                                                                  |
-| `max?`     | `number`                                                  |                                                                                                  |
-| `step?`    | `number`                                                  |                                                                                                  |
-| `options?` | `{ name: string; value: unknown }[]`                      | Where the declaration ends in `// [a, b, c]`: a choice rather than free entry.                   |
+| Field      | Type                                                      | What it is                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ---------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`     | `string`                                                  |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `group`    | `string`                                                  | The `/* [Group] */` heading it was declared under; "Parameters" for the ones before any heading.                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `type`     | `"number" \| "string" \| "boolean" \| "vector" \| string` |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `initial`  | `unknown`                                                 | The value the script gives it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `caption?` | `string`                                                  | The comment above the declaration, which explains it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `min?`     | `number`                                                  |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `max?`     | `number`                                                  |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `step?`    | `number`                                                  |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `options?` | `{ name: string; value: unknown }[]`                      | Where the declaration ends in `// [a, b, c]`: a choice rather than free entry.                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `widget?`  | `"color" \| "font" \| "file"`                             | A control OpenSCAD has no word for, in the spelling of MakerWorld, whose scripts use them. `"color"` holds a `"#rrggbb"` (declared with `// color`). `"font"` holds a typeface's name (`// font`), of which only the ones in `library("fonts")` are there to draw with; any other comes out in the plainest. `"file"` holds the name of a file the script reads (declared with a default called `default.png`, `.svg` or `.stl`), passed to `render()` in `files`; until there is one the script gets a plain stand-in. |
+| `accept?`  | `string`                                                  | For a `"file"` widget, the file's extension: `".png"`, `".svg"` or `".stl"`.                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
 ### `ScadParameters`
 
@@ -1457,23 +1459,24 @@ type ScadFormat = "3mf" | "mesh" | "stl" | "obj" | "off" | "amf";
 
 How to render a script.
 
-| Field         | Type                      | What it is                                                                                       |
-| ------------- | ------------------------- | ------------------------------------------------------------------------------------------------ |
-| `parameters?` | `Record<string, unknown>` | By parameter name, as `parameters()` gives them. Anything left out keeps the script's own value. |
-| `format?`     | `ScadFormat`              | `"3mf"` when left out.                                                                           |
-| `name?`       | `string`                  | The title written into a 3MF, which slicers show. Ignored by the other formats.                  |
-| `signal?`     | `AbortSignal`             | Cancels the render: the worker running it is let go there and then.                              |
+| Field         | Type                         | What it is                                                                                       |
+| ------------- | ---------------------------- | ------------------------------------------------------------------------------------------------ |
+| `parameters?` | `Record<string, unknown>`    | By parameter name, as `parameters()` gives them. Anything left out keeps the script's own value. |
+| `files?`      | `Record<string, Uint8Array>` | The files the script reads, by the name a `"file"` parameter was set to.                         |
+| `format?`     | `ScadFormat`                 | `"3mf"` when left out.                                                                           |
+| `name?`       | `string`                     | The title written into a 3MF, which slicers show. Ignored by the other formats.                  |
+| `signal?`     | `AbortSignal`                | Cancels the render: the worker running it is let go there and then.                              |
 
 ### `ScadRender`
 
 What a render produced: the file, and everything the engine said while making it.
 
-| Field     | Type         | What it is                                                                                       |
-| --------- | ------------ | ------------------------------------------------------------------------------------------------ |
-| `bytes`   | `Uint8Array` |                                                                                                  |
-| `log`     | `string[]`   | Warnings and errors, in the order they were printed. A missing font is in here and nowhere else. |
-| `seconds` | `number`     | Seconds the engine spent.                                                                        |
-| `mesh?`   | `SdkMesh`    | The geometry behind the bytes, for the formats Thingport builds itself (3MF and mesh).           |
+| Field     | Type         | What it is                                                                                                                                             |
+| --------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `bytes`   | `Uint8Array` |                                                                                                                                                        |
+| `log`     | `string[]`   | Warnings and errors, in the order they were printed. A typeface Thingport doesn't carry isn't among them: it comes out in the plainest without a word. |
+| `seconds` | `number`     | Seconds the engine spent.                                                                                                                              |
+| `mesh?`   | `SdkMesh`    | The geometry behind the bytes, for the formats Thingport builds itself (3MF and mesh).                                                                 |
 
 ### `SdkMesh`
 

@@ -2,7 +2,8 @@
 //
 // Nothing here parses OpenSCAD. The parameter list comes from OpenSCAD itself through the SDK, which is the
 // whole point: the groups, ranges, captions and choices are the ones the script's author wrote, read by the
-// program that will run the script, not by a guess at its comment syntax.
+// program that will run the script, not by a guess at its comment syntax. What it can't read unaided is the
+// SDK's to deal with too, in sdk/scadScript.ts.
 //
 // The openscad-customizer tool carries its own copy of this logic. A tool is a sandboxed bundle of its own and
 // can't import from the app, so the two are deliberately separate rather than shared.
@@ -24,6 +25,9 @@ export type Control =
   | { kind: "slider"; min: number; max: number; step: number }
   | { kind: "number"; step: number }
   | { kind: "vector" }
+  | { kind: "color" }
+  | { kind: "font" }
+  | { kind: "file"; accept: string }
   | { kind: "text" };
 
 /**
@@ -61,6 +65,9 @@ function stepFor(min: number, max: number): number {
  * buttons, a long list is a dropdown, a number with both ends is a slider, and everything else is a field.
  */
 export function controlFor(parameter: ScadParameter): Control {
+  if (parameter.widget === "color") return { kind: "color" };
+  if (parameter.widget === "font") return { kind: "font" };
+  if (parameter.widget === "file") return { kind: "file", accept: parameter.accept ?? "" };
   const options = parameter.options ?? [];
   if (options.length) {
     const yesNo = options.length === 2 && options.every((option) => YES_NO.test(String(option.value)));
@@ -128,9 +135,47 @@ export function hasChanges(parameters: ScadParameter[], values: ParameterValues)
 export function generatedName(scriptName: string, modelName: string | undefined, values: ParameterValues): string {
   const base = (modelName || scriptName.replace(/\.scad$/i, "")).trim() || "model";
   const text = Object.values(values).find(
-    (value) => typeof value === "string" && /\S/.test(value) && value.length < 24,
+    // A colour is a value, not a name: "Keyring - #ff0000" tells nobody anything, and a # is a nuisance in a filename.
+    (value) => typeof value === "string" && /\S/.test(value) && value.length < 24 && !/^#[0-9a-f]{6}$/i.test(value),
   );
   return text ? `${base} - ${text}` : base;
+}
+
+const sameBytes = (a: Uint8Array, b: Uint8Array) => a.length === b.length && a.every((byte, at) => byte === b[at]);
+
+/** Where the stand-ins live. A chosen file under one of these would read as nothing chosen, and would replace the
+ *  stand-in for any other parameter still on it. */
+const STAND_IN_NAME = /^default\.(png|svg|stl)$/;
+
+/**
+ * The name a chosen file goes to the engine under: its own, unless a different file already has it.
+ *
+ * Choosing the same file again lands on the same name, so it isn't another step to undo; a different one of the
+ * same name, or the same one edited since, gets a name of its own rather than swapping out what an earlier value
+ * in the history pointed at.
+ */
+export function uploadName(uploads: ReadonlyMap<string, Uint8Array>, fileName: string, bytes: Uint8Array): string {
+  const dot = fileName.lastIndexOf(".");
+  const [stem, extension] = dot > 0 ? [fileName.slice(0, dot), fileName.slice(dot)] : [fileName, ""];
+  for (let copy = 1; ; copy++) {
+    const name = copy === 1 ? fileName : `${stem} (${copy})${extension}`;
+    if (STAND_IN_NAME.test(name)) continue;
+    const held = uploads.get(name);
+    if (!held || sameBytes(held, bytes)) return name;
+  }
+}
+
+/** Of the files chosen so far, the ones these values point at, as a render takes them. */
+export function chosenFiles(
+  uploads: ReadonlyMap<string, Uint8Array>,
+  values: ParameterValues,
+): Record<string, Uint8Array> {
+  const files: Record<string, Uint8Array> = {};
+  for (const value of Object.values(values)) {
+    const bytes = typeof value === "string" ? uploads.get(value) : undefined;
+    if (bytes) files[value as string] = bytes;
+  }
+  return files;
 }
 
 /** A warning the engine printed that the reader can do something about; the rest is progress chatter. */

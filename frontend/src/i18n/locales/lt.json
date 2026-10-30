@@ -3870,7 +3870,22 @@
         "undo": "Atšaukti",
         "redo": "Pakartoti",
         "reset": "Atstatyti scenarijaus reikšmes",
-        "code": "Rodyti {{name}} kodą"
+        "code": "Rodyti {{name}} kodą",
+        "pickColor": "Pasirinkti spalvą",
+        "fontFallback": "{{name}} (naudojamas {{fallback}})",
+        "fontGroup": {
+          "Sans": "Be užraitų",
+          "Condensed": "Siauras",
+          "Serif": "Su užraitais",
+          "Heavy": "Storas",
+          "Rounded": "Apvalus",
+          "Display": "Dekoratyvus",
+          "Script": "Rašytinis"
+        },
+        "chooseFile": "Pasirinkti {{type}}",
+        "fileStandIn": "Kol kas paprastas pakaitalas",
+        "fileClear": "Grįžti prie pakaitalo",
+        "fileWrongType": "Tai ne {{type}} failas."
       },
       "busy": {
         "reading": "Skaitomas scenarijus…",

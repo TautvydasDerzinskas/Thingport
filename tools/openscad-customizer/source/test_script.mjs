@@ -3,12 +3,14 @@
 import assert from "node:assert/strict";
 import {
   changedValues,
+  chosenFiles,
   controlFor,
   defaultValues,
   generatedName,
   groupParameters,
   readableWarnings,
   scriptsAmong,
+  uploadName,
 } from "./script.js";
 
 // The parameters below are shaped as OpenSCAD's own `--export-format param` writes them, which is where the
@@ -143,6 +145,49 @@ test("names the file after the model, and after the text where there is some", (
   assert.equal(generatedName("keychain.scad", null, {}), "keychain");
   // A paragraph in a text parameter would make an unusable filename.
   assert.equal(generatedName("a.scad", "Model", { note: "x".repeat(40) }), "Model");
+});
+
+test("gives a widget the control it names", () => {
+  assert.deepEqual(controlFor({ name: "c", type: "string", widget: "color" }), { kind: "color" });
+  assert.deepEqual(controlFor({ name: "f", type: "string", widget: "font" }), { kind: "font" });
+  assert.deepEqual(controlFor({ name: "i", type: "string", widget: "file", accept: ".png" }), {
+    kind: "file",
+    accept: ".png",
+  });
+  assert.equal(controlFor({ name: "v", type: "vector", initial: [1, 2, 3] }).kind, "vector");
+});
+
+test("doesn't take a colour for a name", () => {
+  assert.equal(generatedName("a.scad", "Model", { tint: "#ff0000" }), "Model");
+  assert.equal(generatedName("a.scad", "Model", { tint: "#FF0000", TEXT: "Ada" }), "Model - Ada");
+});
+
+test("a different file of the same name gets a name of its own, and the same file doesn't", () => {
+  const one = Uint8Array.from([1, 2, 3]);
+  const uploads = new Map([["logo.png", one]]);
+  assert.equal(uploadName(new Map(), "logo.png", one), "logo.png");
+  assert.equal(uploadName(uploads, "logo.png", Uint8Array.from([1, 2, 3])), "logo.png");
+  assert.equal(uploadName(uploads, "logo.png", Uint8Array.from([1, 2, 4])), "logo (2).png");
+});
+
+test("a chosen file never takes a stand-in's name, which would read as nothing chosen", () => {
+  const one = Uint8Array.from([1]);
+  const name = uploadName(new Map(), "default.png", one);
+  assert.equal(name, "default (2).png");
+  assert.equal(uploadName(new Map(), "default.stl", one), "default (2).stl");
+  assert.equal(uploadName(new Map(), "default.svg", one), "default (2).svg");
+  // The whole way through: the value still counts as a change, so the file still reaches the engine.
+  const changed = changedValues([{ name: "image", type: "string", initial: "default.png" }], { image: name });
+  assert.deepEqual(chosenFiles(new Map([[name, one]]), changed), { [name]: one });
+});
+
+test("hands over only the files the values point at", () => {
+  const logo = Uint8Array.from([1]);
+  const uploads = new Map([
+    ["logo.png", logo],
+    ["old.png", Uint8Array.from([2])],
+  ]);
+  assert.deepEqual(chosenFiles(uploads, { image: "logo.png", label: "Ada", size: 3 }), { "logo.png": logo });
 });
 
 test("keeps the warnings a reader can act on, once each", () => {

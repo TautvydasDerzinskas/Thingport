@@ -3788,7 +3788,22 @@
         "undo": "Annuler",
         "redo": "Rétablir",
         "reset": "Revenir aux valeurs du script",
-        "code": "Afficher le code de {{name}}"
+        "code": "Afficher le code de {{name}}",
+        "pickColor": "Choisir une couleur",
+        "fontFallback": "{{name}} (utilise {{fallback}})",
+        "fontGroup": {
+          "Sans": "Sans empattement",
+          "Condensed": "Étroite",
+          "Serif": "À empattements",
+          "Heavy": "Grasse",
+          "Rounded": "Arrondie",
+          "Display": "Fantaisie",
+          "Script": "Manuscrite"
+        },
+        "chooseFile": "Choisir {{type}}",
+        "fileStandIn": "Un remplaçant simple pour l'instant",
+        "fileClear": "Revenir au remplaçant",
+        "fileWrongType": "Ce fichier n'est pas un {{type}}."
       },
       "busy": {
         "reading": "Lecture du script…",

@@ -33,6 +33,11 @@ It opens the customizer: the same sliders, choices and text boxes the creator se
 OpenSCAD itself. A model that came with several scripts asks which one first, and you can switch between them
 without leaving.
 
+Scripts written for MakerWorld get what its customizer offers and OpenSCAD's own doesn't: parameters declared
+further down a script than OpenSCAD looks, and its colour, typeface and file pickers. A typeface Thingport doesn't
+carry comes out in PT Sans, and its field says so. A file starts on a plain stand-in until you choose one, and what
+you choose stays in your browser like everything else here.
+
 The **Model** pane keeps the model's picture, title and description in view, and folds away when you want the
 room. Under it, **Customize** holds the script's own parameters, grouped as the creator grouped them, with
 **Generate** at the foot. Every change can be undone and redone — with the buttons, or Ctrl/Cmd+Z — and the

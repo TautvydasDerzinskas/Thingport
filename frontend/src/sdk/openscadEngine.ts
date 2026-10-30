@@ -7,8 +7,9 @@
 // all stay in the tab.
 
 import OpenSCAD from "../assets/openscad/openscad.js";
-import { TOOL_FONT_URLS } from "./fonts";
+import { FALLBACK_TOOL_FONT, TOOL_FONT_URLS } from "./fonts";
 import { LIBRARY_FILES, libraryPath, SCAD_LIBRARIES } from "./scadLibraries";
+import { DEFAULT_GROUP, scriptForEngine, scriptWidgets, standInFiles } from "./scadScript";
 import type { ScadParameters, ScadRender, ScadRenderOptions } from "./types";
 
 // What a tool sees of OpenSCAD -- the parameters, the render and its options -- is declared in types.ts, which the
@@ -105,10 +106,11 @@ async function mountDependencies(instance: Instance, source: string, log: string
 
   if (!/\btext\s*\(|\bfont\b/i.test(source)) return;
   mkdirp(instance, "/fonts");
-  // An empty config is what the engine's own playground mounts: fontconfig only has to find the folder.
+  // Fontconfig only has to find the folder, and to know what to draw a name it can't match in: left to itself it
+  // picks a script face, for a text() that asks for nothing as much as for one asking for Arial.
   instance.FS.writeFile(
     "/fonts/fonts.conf",
-    '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">\n<fontconfig>\n</fontconfig>\n',
+    `<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">\n<fontconfig>\n<match target="pattern"><edit name="family" mode="append_last" binding="weak"><string>${FALLBACK_TOOL_FONT.name}</string></edit></match>\n</fontconfig>\n`,
   );
   await Promise.all(
     [...TOOL_FONT_URLS].map(async ([id, url]) => {
@@ -133,13 +135,17 @@ async function run(
   source: string,
   args: string[],
   outputPath: string,
-  extraFiles: Record<string, string> = {},
+  extraFiles: Record<string, string | Uint8Array> = {},
 ): Promise<ScadRender> {
   const log: string[] = [];
   const instance = await newInstance(log);
   await mountDependencies(instance, source, log);
-  instance.FS.writeFile("/model.scad", source);
-  for (const [path, content] of Object.entries(extraFiles)) instance.FS.writeFile(path, content);
+  for (const [path, content] of Object.entries({ ...standInFiles(source), ...extraFiles })) {
+    mkdirp(instance, path.slice(0, path.lastIndexOf("/")));
+    instance.FS.writeFile(path, content);
+  }
+  // Last, so a file that happens to share its name can't take the script's place.
+  instance.FS.writeFile("/model.scad", scriptForEngine(source));
 
   const started = Date.now();
   // Manifold, not the CGAL the engine still falls back to: the same script is minutes against seconds, and on
@@ -166,7 +172,18 @@ async function run(
 export async function scadParameters(source: string): Promise<ScadParameters> {
   const { bytes } = await run(source, ["--export-format", "param"], "/parameters.json");
   const parsed = JSON.parse(new TextDecoder().decode(bytes)) as Partial<ScadParameters>;
-  return { title: parsed.title ?? "", parameters: parsed.parameters ?? [] };
+  const parameters = parsed.parameters ?? [];
+  const widgets = scriptWidgets(source);
+  for (const parameter of parameters) {
+    // Left out under an empty heading, `/* [] */`.
+    parameter.group ||= DEFAULT_GROUP;
+    // The engine calls a vector a number, for what it holds. Taken at its word a size of three numbers becomes one
+    // number, and the script that wanted three no longer makes what it did.
+    if (Array.isArray(parameter.initial)) parameter.type = "vector";
+    // The author's own list of choices wins, as it does on the site these controls come from.
+    if (!parameter.options?.length) Object.assign(parameter, widgets.get(parameter.name));
+  }
+  return { title: parsed.title ?? "", parameters };
 }
 
 /** The model the script makes with the parameters given. */
@@ -179,13 +196,16 @@ export async function scadRender(source: string, options: ScadRenderOptions = {}
   const entries = Object.entries(options.parameters ?? {});
 
   let args: string[] = [];
-  let extra: Record<string, string> = {};
+  // Beside the script, where a relative import() or surface() looks.
+  const extra: Record<string, string | Uint8Array> = Object.fromEntries(
+    Object.entries(options.files ?? {}).map(([name, bytes]) => [`/${name.replace(/^\/+/, "")}`, bytes]),
+  );
   if (entries.length) {
     // Through a parameter set rather than -D: the engine does its own typing, so a value holding a bracket or a
     // quote can't turn into something else on the way through a command line.
     const set = Object.fromEntries(entries.map(([name, value]) => [name, parameterValue(value)]));
     args = ["-p", "/parameters.json", "-P", "thingport"];
-    extra = { "/parameters.json": JSON.stringify({ parameterSets: { thingport: set }, fileFormatVersion: "1" }) };
+    extra["/parameters.json"] = JSON.stringify({ parameterSets: { thingport: set }, fileFormatVersion: "1" });
   }
 
   const rendered = await run(source, args, `/model.${asked}`, extra);
