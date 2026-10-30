@@ -80,8 +80,14 @@ for (const width of [320, 393, 768]) {
       const filterButton = main.getByRole("button", { name: "Categories: All", exact: true });
       await filterButton.click();
       const filters = page.locator("#model-category-filters");
+      // Rows are only clicked once the panel has finished opening: a row still below its growing edge is scrolled
+      // to inside it, then moves as it grows, and the click lands on another row.
+      const pick = async (name: string) => {
+        await expect(filters).toHaveClass(/MuiCollapse-entered/);
+        await filters.getByRole("button", { name, exact: true }).click();
+      };
       await expect(filters).toBeVisible();
-      await filters.getByRole("button", { name: "All", exact: true }).click();
+      await pick("All");
       await expect(filters).toBeHidden();
 
       const card = main.locator(".MuiPaper-root").filter({ has: page.getByText(title, { exact: true }) });
@@ -95,14 +101,14 @@ for (const width of [320, 393, 768]) {
       await expect(filters).toBeHidden();
 
       await filterButton.click();
-      await filters.getByRole("button", { name: category.name, exact: true }).click();
+      await pick(category.name);
       await expect(filters).toBeHidden();
       const selectedCategoryButton = main.getByRole("button", { name: `Categories: ${category.name}`, exact: true });
       await expect(selectedCategoryButton).toHaveAttribute("aria-expanded", "false");
       await expect.poll(() => new URL(page.url()).searchParams.get("category")).toBe(category.id);
       await expect(card).toBeVisible();
       await selectedCategoryButton.click();
-      await filters.getByRole("button", { name: "All", exact: true }).click();
+      await pick("All");
       await expect(filters).toBeHidden();
 
       const assignedFolder = await request.post(`/api/print/${id}/category`, {
@@ -112,14 +118,14 @@ for (const width of [320, 393, 768]) {
       expect(assignedFolder.ok()).toBeTruthy();
       await main.getByRole("button", { name: "Folders", exact: true }).click();
       await expect(filters.getByRole("heading", { name: "Folders" })).toBeVisible();
-      await filters.getByRole("button", { name: folder.name, exact: true }).click();
+      await pick(folder.name);
       await expect(filters).toBeHidden();
       const selectedFolderButton = main.getByRole("button", { name: `Folders: ${folder.name}`, exact: true });
       await expect(selectedFolderButton).toHaveAttribute("aria-expanded", "false");
       await expect.poll(() => new URL(page.url()).searchParams.get("category")).toBe(folder.id);
       await expect(card).toBeVisible();
       await selectedFolderButton.click();
-      await filters.getByRole("button", { name: "All", exact: true }).click();
+      await pick("All");
       await expect(filters).toBeHidden();
       await expectNoHorizontalOverflow(page);
 
