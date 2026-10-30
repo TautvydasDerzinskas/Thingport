@@ -36,7 +36,16 @@ import { renderSwatch } from "../../theme";
 import CustomizePane from "./CustomizePane";
 import ModelPane from "./ModelPane";
 import ScriptCodeDialog from "./ScriptCodeDialog";
-import { changedValues, defaultValues, generatedName, hasChanges, readableWarnings, readyScript } from "./parameters";
+import {
+  changedValues,
+  chosenFiles,
+  defaultValues,
+  generatedName,
+  hasChanges,
+  readableWarnings,
+  readyScript,
+  uploadName,
+} from "./parameters";
 import { useValueHistory } from "./useValueHistory";
 
 /** The left column's width on a window wide enough to float it over the model. */
@@ -95,6 +104,18 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
   const history = useValueHistory({});
   const { values, set, replace, restart, undo, redo, canUndo, canRedo } = history;
 
+  // The files chosen for parameters that read one, by the name each goes to the engine under. Apart from the values,
+  // which stay small enough to snapshot, and kept while the dialog is open, so undoing back to a file still finds it.
+  const uploads = useRef(new Map<string, Uint8Array>());
+  const onFile = useCallback(
+    (name: string, fileName: string, bytes: Uint8Array) => {
+      const unique = uploadName(uploads.current, fileName, bytes);
+      uploads.current.set(unique, bytes);
+      set(name, unique);
+    },
+    [set],
+  );
+
   // The values the model on screen was made from, to tell a stale view from a current one.
   const [renderedValues, setRenderedValues] = useState<string | null>(null);
   const stale = Boolean(loaded) && renderedValues !== null && JSON.stringify(values) !== renderedValues;
@@ -140,7 +161,11 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
         const model = printRef.current;
         const changed = changedValues(current.parameters, wanted);
         const name = generatedName(current.script.filename, model.title || model.name, changed);
-        const result = await scadRender(current.source, { parameters: changed, name });
+        const result = await scadRender(current.source, {
+          parameters: changed,
+          files: chosenFiles(uploads.current, changed),
+          name,
+        });
         if (token !== run.current) return;
         // 3MF is the default format, so the geometry behind it comes back parsed with it.
         if (!result.mesh?.triangles.length) throw new Error(t("models:customizer.error.noGeometry"));
@@ -314,6 +339,7 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
           parameters={loaded.parameters}
           values={values}
           onChange={set}
+          onFile={onFile}
           onGenerate={onGenerate}
           onReset={onReset}
           onShowCode={() => setShowCode(true)}

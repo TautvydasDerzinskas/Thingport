@@ -310,6 +310,16 @@ export interface ScadParameter {
   step?: number;
   /** Where the declaration ends in `// [a, b, c]`: a choice rather than free entry. */
   options?: { name: string; value: unknown }[];
+  /**
+   * A control OpenSCAD has no word for, in the spelling of MakerWorld, whose scripts use them. `"color"` holds a
+   * `"#rrggbb"` (declared with `// color`). `"font"` holds a typeface's name (`// font`), of which only the ones in
+   * `library("fonts")` are there to draw with; any other comes out in the plainest. `"file"` holds the name of a file
+   * the script reads (declared with a default called `default.png`, `.svg` or `.stl`), passed to `render()` in `files`;
+   * until there is one the script gets a plain stand-in.
+   */
+  widget?: "color" | "font" | "file";
+  /** For a `"file"` widget, the file's extension: `".png"`, `".svg"` or `".stl"`. */
+  accept?: string;
 }
 
 /** What an OpenSCAD script offers. */
@@ -325,6 +335,8 @@ export type ScadFormat = "3mf" | "mesh" | "stl" | "obj" | "off" | "amf";
 export interface ScadRenderOptions {
   /** By parameter name, as `parameters()` gives them. Anything left out keeps the script's own value. */
   parameters?: Record<string, unknown>;
+  /** The files the script reads, by the name a `"file"` parameter was set to. */
+  files?: Record<string, Uint8Array>;
   /** `"3mf"` when left out. */
   format?: ScadFormat;
   /** The title written into a 3MF, which slicers show. Ignored by the other formats. */
@@ -376,7 +388,8 @@ export interface ThreeMfPart {
  */
 export interface SdkOpenscad {
   /**
-   * What parameters a script offers, read by OpenSCAD itself, so it's the list the script's author saw.
+   * What parameters a script offers, read by OpenSCAD itself, so it's the list the script's author saw. That includes
+   * the ones a script declares below its first `{`, which OpenSCAD alone wouldn't read but a site's customizer may.
    *
    * @param source The script's text.
    * @example

@@ -30,6 +30,9 @@ export function scriptsAmong(relatedFiles) {
  * buttons, a long list is a dropdown, a number with both ends is a slider, and everything else is a field.
  */
 export function controlFor(parameter) {
+  if (parameter.widget === "color") return { kind: "color" };
+  if (parameter.widget === "font") return { kind: "font" };
+  if (parameter.widget === "file") return { kind: "file", accept: parameter.accept ?? "" };
   const options = parameter.options ?? [];
   if (options.length) {
     const yesNo = options.length === 2 && options.every((o) => /^(yes|no|true|false|on|off)$/i.test(String(o.value)));
@@ -104,9 +107,36 @@ export function changedValues(parameters, values) {
 export function generatedName(scriptName, modelName, values) {
   const base = (modelName || scriptName.replace(/\.scad$/i, "")).trim() || "model";
   const text = Object.values(values).find(
-    (value) => typeof value === "string" && /\S/.test(value) && value.length < 24,
+    // A colour is a value, not a name: "Keyring - #ff0000" tells nobody anything, and a # is a nuisance in a filename.
+    (value) => typeof value === "string" && /\S/.test(value) && value.length < 24 && !/^#[0-9a-f]{6}$/i.test(value),
   );
   return text ? `${base} - ${text}` : base;
+}
+
+const sameBytes = (a, b) => a.length === b.length && a.every((byte, at) => byte === b[at]);
+
+/**
+ * The name a chosen file goes to the engine under: its own, unless a different file already has it, so a second
+ * file of the same name doesn't swap out what the first parameter pointed at.
+ */
+export function uploadName(uploads, fileName, bytes) {
+  const dot = fileName.lastIndexOf(".");
+  const [stem, extension] = dot > 0 ? [fileName.slice(0, dot), fileName.slice(dot)] : [fileName, ""];
+  for (let copy = 1; ; copy++) {
+    const name = copy === 1 ? fileName : `${stem} (${copy})${extension}`;
+    const held = uploads.get(name);
+    if (!held || sameBytes(held, bytes)) return name;
+  }
+}
+
+/** Of the files chosen so far, the ones these values point at, as a render takes them. */
+export function chosenFiles(uploads, values) {
+  const files = {};
+  for (const value of Object.values(values)) {
+    const bytes = typeof value === "string" ? uploads.get(value) : undefined;
+    if (bytes) files[value] = bytes;
+  }
+  return files;
 }
 
 /** A warning the engine printed that the reader can do something about; the rest is progress chatter. */

@@ -3775,7 +3775,22 @@
         "undo": "Deshacer",
         "redo": "Rehacer",
         "reset": "Volver a los valores del script",
-        "code": "Mostrar el código de {{name}}"
+        "code": "Mostrar el código de {{name}}",
+        "pickColor": "Elegir un color",
+        "fontFallback": "{{name}} (usa {{fallback}})",
+        "fontGroup": {
+          "Sans": "Palo seco",
+          "Condensed": "Condensada",
+          "Serif": "Con remates",
+          "Heavy": "Gruesa",
+          "Rounded": "Redondeada",
+          "Display": "Decorativa",
+          "Script": "Manuscrita"
+        },
+        "chooseFile": "Elegir {{type}}",
+        "fileStandIn": "Por ahora, un sustituto sencillo",
+        "fileClear": "Volver al sustituto",
+        "fileWrongType": "Ese archivo no es {{type}}."
       },
       "busy": {
         "reading": "Leyendo el script…",

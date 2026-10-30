@@ -5,6 +5,7 @@
 
 import {
   changedValues,
+  chosenFiles,
   controlFor,
   defaultValues,
   generatedName,
@@ -12,6 +13,7 @@ import {
   readyScript,
   readableWarnings,
   scriptsAmong,
+  uploadName,
 } from "./script.js";
 import { createViewer } from "./viewer.js";
 
@@ -54,7 +56,9 @@ export default async function mount(thingport) {
       const text = readyScript(raw);
       const openscad = await library("openscad");
       const { parameters } = await openscad.parameters(text);
-      current = { text, name, from, parameters, values: defaultValues(parameters) };
+      // Only a script with a typeface to pick pays for the list of them.
+      const fonts = parameters.some((parameter) => parameter.widget === "font") ? (await library("fonts")).list : [];
+      current = { text, name, from, parameters, fonts, values: defaultValues(parameters), uploads: new Map() };
       $("name").textContent = name;
       $("where").textContent = from ? t("bar.fromModel", { model: from.name }) : t("bar.fromFile");
       buildForm();
@@ -152,9 +156,11 @@ export default async function mount(thingport) {
     }
     field.append(label);
 
+    // A typeface and a file say what they hold in the control itself.
+    const showsItself = ["font", "file"].includes(controlFor(parameter).kind);
     const set = (value) => {
       current.values[parameter.name] = value;
-      shown.textContent = typeof value === "boolean" ? "" : String(value);
+      shown.textContent = typeof value === "boolean" || showsItself ? "" : String(value);
       $("generate").disabled = busy;
     };
     field.append(controlElement(parameter, set));
@@ -230,6 +236,19 @@ export default async function mount(thingport) {
       return input;
     }
 
+    if (control.kind === "color") {
+      const input = document.createElement("input");
+      input.type = "color";
+      input.value = String(value).toLowerCase();
+      input.title = t("form.pickColor");
+      input.setAttribute("aria-label", `${parameter.name}: ${t("form.pickColor")}`);
+      input.oninput = () => set(input.value);
+      return input;
+    }
+
+    if (control.kind === "font") return fontElement(parameter, value, set);
+    if (control.kind === "file") return fileElement(parameter, control, value, set);
+
     const input = document.createElement("input");
     input.type = control.kind === "number" ? "number" : "text";
     if (control.kind === "number") input.step = String(control.step);
@@ -246,6 +265,101 @@ export default async function mount(thingport) {
       } else set(input.value);
     };
     return input;
+  }
+
+  /**
+   * A typeface, from the ones Thingport carries. A script may start on one that isn't here: it stays in the list under
+   * its own name, saying what it comes out in instead, rather than the field quietly claiming something else.
+   */
+  function fontElement(parameter, value, set) {
+    const fonts = current.fonts;
+    const select = document.createElement("select");
+    select.setAttribute("aria-label", parameter.name);
+    const optionOf = (label, name) => {
+      const option = document.createElement("option");
+      option.value = name;
+      option.textContent = label;
+      return option;
+    };
+    if (!fonts.some((font) => font.name === value)) {
+      // A style after the family, "PT Sans:style=Bold", is still that family.
+      const family = String(value).split(":")[0].trim();
+      const carried = fonts.some((font) => font.name === family);
+      select.append(
+        optionOf(carried ? value : t("form.fontFallback", { name: value, fallback: fonts[0]?.name }), value),
+      );
+    }
+    const groups = new Map();
+    for (const font of fonts) {
+      if (!groups.has(font.group)) {
+        const group = document.createElement("optgroup");
+        group.label = t(`font.${font.group}`);
+        groups.set(font.group, group);
+        select.append(group);
+      }
+      groups.get(font.group).append(optionOf(font.name, font.name));
+    }
+    select.value = String(value);
+    select.onchange = () => set(select.value);
+    return select;
+  }
+
+  /** A file the script reads. Nothing goes anywhere: the bytes stay in the tab and are handed to the engine here. */
+  function fileElement(parameter, control, value, set) {
+    const row = document.createElement("div");
+    row.className = "osc-file";
+    const type = control.accept.slice(1).toUpperCase();
+
+    const name = document.createElement("span");
+    name.className = "osc-sub osc-file-name";
+    const clear = document.createElement("button");
+    clear.type = "button";
+    clear.className = "osc-file-clear";
+    clear.textContent = "×";
+    clear.title = t("form.fileClear");
+    clear.setAttribute("aria-label", t("form.fileClear"));
+    const show = (now) => {
+      const chosen = now !== parameter.initial;
+      name.textContent = chosen ? now : t("form.fileStandIn");
+      name.title = chosen ? now : "";
+      clear.hidden = !chosen;
+    };
+    clear.onclick = () => {
+      set(parameter.initial);
+      show(parameter.initial);
+    };
+
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = control.accept;
+    input.hidden = true;
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      // Cleared so choosing the same file again still says something changed.
+      input.value = "";
+      if (!file) return;
+      // The picker's filter is only a suggestion, and the engine reads nothing else.
+      if (!file.name.toLowerCase().endsWith(control.accept)) {
+        ui.toast(t("form.fileWrongType", { type }), "error");
+        return;
+      }
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const unique = uploadName(current.uploads, file.name, bytes);
+      current.uploads.set(unique, bytes);
+      set(unique);
+      show(unique);
+    };
+
+    const choose = document.createElement("button");
+    choose.type = "button";
+    choose.className = "osc-btn";
+    choose.textContent = t("form.chooseFile", { type });
+    choose.setAttribute("aria-label", `${parameter.name}: ${t("form.chooseFile", { type })}`);
+    choose.onclick = () => input.click();
+
+    show(value);
+    row.append(choose, name, clear, input);
+    return row;
   }
 
   // ---- generating --------------------------------------------------------------------------------------------
@@ -277,7 +391,11 @@ export default async function mount(thingport) {
       const openscad = await library("openscad");
       const values = changedValues(current.parameters, current.values);
       const name = generatedName(current.name, current.from?.name, values);
-      const result = await openscad.render(current.text, { parameters: values, name });
+      const result = await openscad.render(current.text, {
+        parameters: values,
+        files: chosenFiles(current.uploads, values),
+        name,
+      });
       generated = { bytes: result.bytes, name };
       viewer.show(result.mesh);
       $("status").textContent = t("status.generated", {

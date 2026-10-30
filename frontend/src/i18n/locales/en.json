@@ -3759,7 +3759,22 @@
         "undo": "Undo",
         "redo": "Redo",
         "reset": "Back to the script's own values",
-        "code": "Show the code of {{name}}"
+        "code": "Show the code of {{name}}",
+        "pickColor": "Pick a colour",
+        "fontFallback": "{{name}} (uses {{fallback}})",
+        "fontGroup": {
+          "Sans": "Sans",
+          "Condensed": "Condensed",
+          "Serif": "Serif",
+          "Heavy": "Heavy",
+          "Rounded": "Rounded",
+          "Display": "Display",
+          "Script": "Script"
+        },
+        "chooseFile": "Choose {{type}}",
+        "fileStandIn": "A plain stand-in for now",
+        "fileClear": "Back to the stand-in",
+        "fileWrongType": "That isn't a {{type}} file."
       },
       "busy": {
         "reading": "Reading the script…",
