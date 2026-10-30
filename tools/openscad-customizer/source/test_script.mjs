@@ -170,6 +170,17 @@ test("a different file of the same name gets a name of its own, and the same fil
   assert.equal(uploadName(uploads, "logo.png", Uint8Array.from([1, 2, 4])), "logo (2).png");
 });
 
+test("a chosen file never takes a stand-in's name, which would read as nothing chosen", () => {
+  const one = Uint8Array.from([1]);
+  const name = uploadName(new Map(), "default.png", one);
+  assert.equal(name, "default (2).png");
+  assert.equal(uploadName(new Map(), "default.stl", one), "default (2).stl");
+  assert.equal(uploadName(new Map(), "default.svg", one), "default (2).svg");
+  // The whole way through: the value still counts as a change, so the file still reaches the engine.
+  const changed = changedValues([{ name: "image", type: "string", initial: "default.png" }], { image: name });
+  assert.deepEqual(chosenFiles(new Map([[name, one]]), changed), { [name]: one });
+});
+
 test("hands over only the files the values point at", () => {
   const logo = Uint8Array.from([1]);
   const uploads = new Map([

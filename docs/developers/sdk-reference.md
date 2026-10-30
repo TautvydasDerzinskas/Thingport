@@ -1471,12 +1471,12 @@ How to render a script.
 
 What a render produced: the file, and everything the engine said while making it.
 
-| Field     | Type         | What it is                                                                                       |
-| --------- | ------------ | ------------------------------------------------------------------------------------------------ |
-| `bytes`   | `Uint8Array` |                                                                                                  |
-| `log`     | `string[]`   | Warnings and errors, in the order they were printed. A missing font is in here and nowhere else. |
-| `seconds` | `number`     | Seconds the engine spent.                                                                        |
-| `mesh?`   | `SdkMesh`    | The geometry behind the bytes, for the formats Thingport builds itself (3MF and mesh).           |
+| Field     | Type         | What it is                                                                                                                                             |
+| --------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `bytes`   | `Uint8Array` |                                                                                                                                                        |
+| `log`     | `string[]`   | Warnings and errors, in the order they were printed. A typeface Thingport doesn't carry isn't among them: it comes out in the plainest without a word. |
+| `seconds` | `number`     | Seconds the engine spent.                                                                                                                              |
+| `mesh?`   | `SdkMesh`    | The geometry behind the bytes, for the formats Thingport builds itself (3MF and mesh).                                                                 |
 
 ### `SdkMesh`
 

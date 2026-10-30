@@ -109,6 +109,13 @@ describe("scriptForEngine", () => {
     const source = 'label = "/* hi */";\n';
     expect(scriptForEngine(source)).toBe(source);
   });
+
+  it("reads a script with Windows line endings the same, and hands it on without them", () => {
+    expect(scriptForEngine("module m() { cube(1); }\r\nw = 5; // [1:10]\r\nm();\r\n")).toBe(
+      "/* [Parameters] */\nw = 5; // [1:10]\nmodule m() { cube(1); }\nm();\n",
+    );
+    expect(scriptForEngine("w = 5; // [1:10]\r\ncube(w);\r\n")).toBe("w = 5; // [1:10]\ncube(w);\n");
+  });
 });
 
 describe("scriptWidgets", () => {
@@ -141,6 +148,13 @@ describe("scriptWidgets", () => {
 
   it("ignores a module's locals", () => {
     expect(scriptWidgets('module m() {\n  tint = "#ff0000"; // color\n}\n').size).toBe(0);
+  });
+
+  it("reads a script with Windows line endings the same", () => {
+    expect(Object.fromEntries(scriptWidgets('tint = "#ff0000"; // color\r\nface = "Arial"; // font\r\n'))).toEqual({
+      tint: { widget: "color" },
+      face: { widget: "font" },
+    });
   });
 });
 

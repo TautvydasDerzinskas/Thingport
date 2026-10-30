@@ -115,6 +115,10 @@ export function generatedName(scriptName, modelName, values) {
 
 const sameBytes = (a, b) => a.length === b.length && a.every((byte, at) => byte === b[at]);
 
+/** Where the stand-ins live. A chosen file under one of these would read as nothing chosen, and would replace the
+ *  stand-in for any other parameter still on it. */
+const STAND_IN_NAME = /^default\.(png|svg|stl)$/;
+
 /**
  * The name a chosen file goes to the engine under: its own, unless a different file already has it, so a second
  * file of the same name doesn't swap out what the first parameter pointed at.
@@ -124,6 +128,7 @@ export function uploadName(uploads, fileName, bytes) {
   const [stem, extension] = dot > 0 ? [fileName.slice(0, dot), fileName.slice(dot)] : [fileName, ""];
   for (let copy = 1; ; copy++) {
     const name = copy === 1 ? fileName : `${stem} (${copy})${extension}`;
+    if (STAND_IN_NAME.test(name)) continue;
     const held = uploads.get(name);
     if (!held || sameBytes(held, bytes)) return name;
   }

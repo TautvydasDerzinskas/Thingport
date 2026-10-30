@@ -348,7 +348,10 @@ export interface ScadRenderOptions {
 /** What a render produced: the file, and everything the engine said while making it. */
 export interface ScadRender {
   bytes: Uint8Array;
-  /** Warnings and errors, in the order they were printed. A missing font is in here and nowhere else. */
+  /**
+   * Warnings and errors, in the order they were printed. A typeface Thingport doesn't carry isn't among them: it comes
+   * out in the plainest without a word.
+   */
   log: string[];
   /** Seconds the engine spent. */
   seconds: number;

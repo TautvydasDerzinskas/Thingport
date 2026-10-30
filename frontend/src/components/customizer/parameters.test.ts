@@ -179,6 +179,20 @@ describe("uploadName", () => {
     expect(uploadName(uploads, "logo.png", Uint8Array.from([9]))).toBe("logo (3).png");
     expect(uploadName(new Map([["logo", one]]), "logo", other)).toBe("logo (2)");
   });
+
+  it("never takes a stand-in's name, which would read as nothing chosen", () => {
+    const uploads = new Map<string, Uint8Array>();
+    expect(uploadName(uploads, "default.svg", one)).toBe("default (2).svg");
+    expect(uploadName(uploads, "default.stl", one)).toBe("default (2).stl");
+
+    const name = uploadName(uploads, "default.png", one);
+    expect(name).toBe("default (2).png");
+    // The whole way through: the value still counts as a change, so the file still reaches the engine.
+    const changed = changedValues([parameter({ name: "image", type: "string", initial: "default.png" })], {
+      image: name,
+    });
+    expect(chosenFiles(new Map([[name, one]]), changed)).toEqual({ [name]: one });
+  });
 });
 
 describe("chosenFiles", () => {

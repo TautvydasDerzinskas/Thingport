@@ -32,7 +32,8 @@ type Scan = {
 };
 
 function scan(source: string): Scan {
-  const lines = source.split("\n");
+  // A trailing CR hides a line's comment, from the engine as much as from anything here.
+  const lines = source.replace(/\r\n/g, "\n").split("\n");
   const result: Scan = { lines, topLevel: [], assigned: new Map(), headings: [], notes: [], firstBrace: null };
   let depth = 0;
   let inBlockComment = false;

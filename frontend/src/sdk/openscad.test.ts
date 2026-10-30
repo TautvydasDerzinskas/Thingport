@@ -52,6 +52,17 @@ describe("scadParameters", () => {
     expect(parameters[0]).toMatchObject({ name: "size", type: "vector", initial: [10, 20, 30] });
     expect(parameters[1]).toMatchObject({ name: "n", type: "number" });
   }, 120000);
+
+  it("reads a script with Windows line endings the same, without its caller having to clean it", async () => {
+    const { parameters } = await scadParameters(
+      '/* [Size] */\r\nw = 5; // [1:10]\r\ntint = "#ff0000"; // color\r\nmodule m() { cube(w); }\r\nh = 2; // [1:9]\r\nm();\r\n',
+    );
+    expect(parameters.map(({ name, group, min, max, widget }) => [name, group, min, max, widget])).toEqual([
+      ["w", "Size", 1, 10, undefined],
+      ["tint", "Size", undefined, undefined, "color"],
+      ["h", "Size", 1, 9, undefined],
+    ]);
+  }, 120000);
 });
 
 // The shape of a real one (MakerWorld 1988702): a library pasted in first, so the only parameter is far below the

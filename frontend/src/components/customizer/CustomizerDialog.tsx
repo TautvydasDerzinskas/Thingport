@@ -181,7 +181,7 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
       } catch (err) {
         if (token !== run.current) return;
         setGenerated(null);
-        // The engine's own words: a missing font or an unbalanced bracket is said here and nowhere else.
+        // The engine's own words: an unbalanced bracket is said here and nowhere else.
         setFailure(err instanceof Error ? err.message : String(err));
       } finally {
         if (token === run.current) setBusy(null);
