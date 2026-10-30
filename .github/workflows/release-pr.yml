@@ -1,0 +1,31 @@
+name: Release PR
+
+# GitHub can't choose a pull request template by branch, so add the release one once the pull request exists.
+on:
+  pull_request:
+    types: [opened]
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  template:
+    if: github.head_ref == 'develop' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const template = require('fs').readFileSync('.github/PULL_REQUEST_TEMPLATE/release.md', 'utf8').trim();
+            const body = context.payload.pull_request.body ?? '';
+            if (body.includes(template)) return;
+            await github.rest.pulls.update({
+              ...context.repo,
+              pull_number: context.issue.number,
+              body: `${template}\n\n${body}`,
+            });
