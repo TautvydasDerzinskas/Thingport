@@ -204,6 +204,10 @@ A shot's file is what an item's `images` then names, so the two are written toge
 nothing captures leaves a gap in the dialog. Thingport Grab's own pictures come from
 `npm --prefix extension run screenshots` instead, and are converted to WebP by hand.
 
+The editor shots (`tools-ai`, `tool-editor`) need **Users' own tools**, a setting for the whole instance. If it's off
+the script turns it on for the run, so everyone who sees tools can make their own meanwhile, and off again at the end.
+A run stopped with Ctrl+C or killed leaves it on, so check **Administration → Tools** after one.
+
 ## Quality checks
 
 | Command                               | What it runs                     |

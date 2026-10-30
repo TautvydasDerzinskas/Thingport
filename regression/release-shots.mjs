@@ -21,6 +21,10 @@
 // the rest still run. Nothing in the library is changed: dialogs and panels are only opened. Email addresses are
 // blurred. The account's theme is switched for the run and restored afterwards.
 //
+// The editor shots (tools-ai, tool-editor) need Users' own tools, a setting for the whole instance: if it's off it's
+// turned on for the run, so everyone who sees tools can make their own meanwhile, and off again at the end. A run
+// stopped with Ctrl+C or killed leaves it on -- check Administration → Tools after one.
+//
 // Thingport Grab's own pictures aren't covered: they come from `npm --prefix extension run screenshots`, which
 // loads the built extension into a visible browser. Convert the ones you want with `sharp` as this script does.
 //
@@ -284,8 +288,13 @@ const SHOTS = [
     run: async (page) => {
       // On a library that has lost files, the dialog comes up on its own and says what was found; the panel
       // behind Manage categories is the way in otherwise, and all a healthy library has to show.
-      await page.evaluate(() => localStorage.removeItem("thingport.missingFiles.dismissedAt"));
+      // The init script below marks it dismissed on every page load, so it's told to hold off for this one.
+      await page.evaluate(() => {
+        localStorage.setItem("release-shots.missingFilesPrompt", "1");
+        localStorage.removeItem("thingport.missingFiles.dismissedAt");
+      });
       await page.goto("/");
+      await page.evaluate(() => localStorage.removeItem("release-shots.missingFilesPrompt"));
       await settle(page, 0);
       const prompt = page.getByRole("dialog").filter({ hasText: "Some models have lost their files" });
       if (await prompt.isVisible().catch(() => false)) {
@@ -355,8 +364,10 @@ await context.addInitScript(() => {
   localStorage.setItem("thingport_sidebar_collapsed", "false");
   // A library that has lost files greets every visit with a dialog, seconds after the page loads, and an open
   // dialog takes everything behind it out of the accessibility tree -- so no other shot could find what it came
-  // for. Marked dismissed before anything loads it never opens; the repair shot, which wants it, clears this.
-  localStorage.setItem("thingport.missingFiles.dismissedAt", "999999");
+  // for. Marked dismissed before anything loads it never opens -- except for the repair shot, which wants it.
+  if (!localStorage.getItem("release-shots.missingFilesPrompt")) {
+    localStorage.setItem("thingport.missingFiles.dismissedAt", "999999");
+  }
 });
 const page = await context.newPage();
 

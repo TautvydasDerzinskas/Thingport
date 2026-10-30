@@ -32,8 +32,8 @@ own, kept once for the whole instance rather than once per person who opens it.
 ![Administration → Tools: install the ones you want, and say who may use them](../../../../release-notes/screenshots/1.4.0-admin-tools.webp)
 
 An admin installs the ones they want under **Administration → Tools**, with screenshots to look through first, and
-chooses who may use each one: admins only, everyone, or the users they pick. Nothing is installed until someone asks
-for it.
+says who sees tools: admins only, everyone, or the users they pick. That one setting covers every installed tool.
+Nothing is installed until someone asks for it.
 
 ![The QR code generator, one of the nine, in a window of its own](../../../../release-notes/screenshots/1.4.0-tool-qr.webp)
 
@@ -61,7 +61,9 @@ anything, and what it saves turns up on your Tools page ready to open. Ask again
 
 ![The editor starts from a working tool, with the SDK reference beside it](../../../../release-notes/screenshots/1.4.0-tool-editor.webp)
 
-What a tool may reach, and how it's sandboxed, is in [Tool development](/docs/tool-development/).
+A tool's script runs in your browser with your access to Thingport, like code you paste into the browser console, so
+only keep one whose code you trust ([Tools](/docs/guides/tools/)). How a tool is built, and what it may call, is in
+[Tool development](/docs/tool-development/).
 
 ## Change a model and generate it again
 
@@ -206,10 +208,16 @@ print, with how many to print in each name, or downloads as a zip.
 
 ## Get it
 
-Pull the new images and restart:
+Pull the new images and restart, as in [Updating](/docs/install/#updating):
 
 ```bash
 docker compose pull && docker compose up -d
+```
+
+Built from a checkout instead? Pull the code and build the images again:
+
+```bash
+git pull && docker compose up -d --build
 ```
 
 Everyone on your instance then gets a notification that opens the release notes in the app. Thingport Grab updates
