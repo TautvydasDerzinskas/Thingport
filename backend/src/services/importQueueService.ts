@@ -16,6 +16,7 @@ import {
   type QueuedLinkOptions,
 } from "./importJobRunner";
 import { liftProviderHolds, withLinkAuth } from "../providers/registry";
+import { getImportQueueAutoStart } from "./settingsService";
 
 /** The shared body a LINKS job reruns with: its stored payload plus the owner's saved sign-in for LINK_PROVIDER. The
  *  sign-in is never stored on the job. */
@@ -131,6 +132,7 @@ export async function queueLink(userId: string, url: string, options: QueuedLink
       where: { userId, type: "LINKS", status: "PAUSED", collectionSyncId: null },
       orderBy: { createdAt: "asc" },
     });
+    const autoStart = await getImportQueueAutoStart();
     if (!job) {
       job = await prisma.importJob.create({
         data: {
@@ -142,7 +144,8 @@ export async function queueLink(userId: string, url: string, options: QueuedLink
           payload: { notes: null, tags: [], category_id: null, scope: "url" },
         },
       });
-      await notifyQueueStarted(userId);
+      // It starts itself, so there's nothing for the person to go and start.
+      if (!autoStart) await notifyQueueStarted(userId);
     }
 
     const existing = await prisma.importJobItem.findFirst({
@@ -165,6 +168,8 @@ export async function queueLink(userId: string, url: string, options: QueuedLink
       });
     }
     const waiting = await prisma.importJobItem.count({ where: { jobId: job.id, status: "PENDING" } });
+    // Also for a duplicate: it may be a link that failed or one left paused before the setting was switched on.
+    if (autoStart) autoStartJob(job.id);
     return { job, itemId, duplicate: Boolean(existing), waiting };
   });
 }
@@ -295,15 +300,22 @@ async function drainBulkQueue(): Promise<void> {
   }
 }
 
-/** Bulk runs are started by hand, so they lift providers' pauses once (see startLinksJob). Not per job: after a
- *  CAPTCHA, the jobs behind it should fail fast, not each probe the site again. */
-function enqueueBulk(entries: BulkEntry[]): number {
-  if (entries.length) liftProviderHolds();
+/** Bulk runs started by hand lift providers' pauses once (see startLinksJob). Not per job: after a
+ *  CAPTCHA, the jobs behind it should fail fast, not each probe the site again. An automatic start
+ *  (`manual: false`) leaves the pauses alone, so it never keeps probing a site that asked for a CAPTCHA. */
+function enqueueBulk(entries: BulkEntry[], { manual = true }: { manual?: boolean } = {}): number {
+  if (entries.length && manual) liftProviderHolds();
   const known = new Set([bulkCurrent, ...bulkQueue.map((e) => e.jobId)]);
   const fresh = entries.filter((e) => !known.has(e.jobId));
   bulkQueue.push(...fresh);
   void drainBulkQueue();
   return fresh.length;
+}
+
+/** Starts a job that links were just added to, behind whatever is already running: the setting "Auto start newly
+ *  added items". A job that can't start (its owner has another import going) stays paused for the admin. */
+function autoStartJob(jobId: string): void {
+  enqueueBulk([{ jobId, retryFailed: false }], { manual: false });
 }
 
 /** Every PAUSED link-list job, oldest first. */

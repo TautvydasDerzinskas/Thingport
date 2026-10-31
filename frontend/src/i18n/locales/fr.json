@@ -1922,6 +1922,8 @@
         "retryAll": "Réessayer tous les échecs ({{count}})",
         "pauseAll": "Tout suspendre",
         "clearFinished": "Effacer les terminées",
+        "autoStart": "Démarrer automatiquement les nouveaux éléments",
+        "autoStartHelp": "Les liens ajoutés à la file à partir de maintenant démarrent d’eux-mêmes, une importation à la fois, au lieu d’attendre ici. Les liens déjà en attente restent jusqu’à ce que vous les démarriez.",
         "startedAll": "{{count}} importation(s) lancée(s). Elles s’exécutent une à la fois.",
         "retriedAll": "Nouvelle tentative pour {{count}} importation(s), une à la fois.",
         "cleared": "{{count}} importation(s) terminée(s) effacée(s).",

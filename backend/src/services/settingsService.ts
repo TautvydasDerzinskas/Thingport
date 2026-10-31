@@ -118,6 +118,17 @@ export async function setSimplifyPreviews(value: boolean): Promise<void> {
   await setBoolSetting(SIMPLIFY_PREVIEWS_KEY, value);
 }
 
+const IMPORT_QUEUE_AUTO_START_KEY = "import_queue_auto_start";
+
+// Instance-wide. Off by default: links wait for an admin to start them, who may want to review or hold them first.
+export async function getImportQueueAutoStart(): Promise<boolean> {
+  return getBoolSetting(IMPORT_QUEUE_AUTO_START_KEY, false);
+}
+
+export async function setImportQueueAutoStart(value: boolean): Promise<void> {
+  await setBoolSetting(IMPORT_QUEUE_AUTO_START_KEY, value);
+}
+
 const QUALITY_CHECKS_KEY = "quality_checks";
 
 // Instance-wide. On by default: a model is only checked when opened, so the cost comes a model at a time.

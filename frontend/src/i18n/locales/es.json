@@ -1922,6 +1922,8 @@
         "retryAll": "Reintentar todas las fallidas ({{count}})",
         "pauseAll": "Pausar todas",
         "clearFinished": "Borrar terminadas",
+        "autoStart": "Iniciar automáticamente los elementos nuevos",
+        "autoStartHelp": "Los enlaces que se añadan a la cola a partir de ahora se inician solos, de una importación en una, en vez de esperar aquí. Los que ya esperan se quedan hasta que los inicies.",
         "startedAll": "Se han iniciado {{count}} importación(es). Se ejecutan de una en una.",
         "retriedAll": "Reintentando {{count}} importación(es), de una en una.",
         "cleared": "Se han borrado {{count}} importación(es) terminada(s).",

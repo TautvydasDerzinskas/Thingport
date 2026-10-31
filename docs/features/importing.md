@@ -71,7 +71,8 @@ model.
 Collections and lists of links run as background jobs. A progress bar shows how far along they are, and a notification
 says what came in when they finish. A model you already have is never imported twice, so importing the same collection
 again only brings in what's new. Failed links can be retried once the cause is fixed, and imports sent to the queue
-from Thingport Grab wait in **Administration → Import queue** until they're started.
+from Thingport Grab wait in **Administration → Import queue** until they're started, unless an admin switches on
+**Auto start newly added items** there: links added from then on start by themselves, one import at a time.
 
 ## Before you start
 

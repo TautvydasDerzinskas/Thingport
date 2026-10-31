@@ -8,7 +8,13 @@ import { parseBody } from "../utils/validate";
 import { deleteAllPrintsForUser, getStorageUsage, listLogs, listUsersWithPrintCounts } from "../services/adminService";
 import { createLog } from "../services/auditLog";
 import { communityWidgetUsage, widgetsInUse } from "../services/customWidgetsService";
-import { getToolsAccess, setToolsAccess, TOOLS_AUDIENCES } from "../services/settingsService";
+import {
+  getImportQueueAutoStart,
+  getToolsAccess,
+  setImportQueueAutoStart,
+  setToolsAccess,
+  TOOLS_AUDIENCES,
+} from "../services/settingsService";
 import {
   adminToolCatalog,
   importToolModels,
@@ -240,7 +246,23 @@ router.get(
   "/import-queue",
   asyncHandler(async (_req, res) => {
     const jobs = await listQueueJobs();
-    res.json({ jobs: jobs.map(toAdminImportJobOut), bulk: bulkRunState() });
+    res.json({
+      jobs: jobs.map(toAdminImportJobOut),
+      bulk: bulkRunState(),
+      auto_start: await getImportQueueAutoStart(),
+    });
+  }),
+);
+
+const queueSettingsSchema = z.object({ auto_start: z.boolean() });
+
+// Links added while this is on start by themselves; the ones already waiting stay for "Start all".
+router.put(
+  "/import-queue/settings",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(queueSettingsSchema, req.body);
+    await setImportQueueAutoStart(body.auto_start);
+    res.json({ auto_start: body.auto_start });
   }),
 );
 

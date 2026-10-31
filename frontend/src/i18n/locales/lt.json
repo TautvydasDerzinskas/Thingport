@@ -1957,6 +1957,8 @@
         "retryAll": "Kartoti visus nepavykusius ({{count}})",
         "pauseAll": "Pristabdyti visus",
         "clearFinished": "Išvalyti baigtus",
+        "autoStart": "Automatiškai pradėti naujai pridėtus elementus",
+        "autoStartHelp": "Nuo šiol į eilę pridėtos nuorodos pradedamos importuoti pačios, po vieną importą, o ne laukia čia, kol jas paleisite. Jau laukiančios nuorodos lieka, kol jas paleisite.",
         "startedAll": "Paleista importų: {{count}}. Jie vykdomi po vieną.",
         "retriedAll": "Kartojama importų: {{count}}, po vieną.",
         "cleared": "Išvalyta baigtų importų: {{count}}.",
