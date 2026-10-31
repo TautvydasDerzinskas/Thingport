@@ -52,6 +52,7 @@ type Props = {
   /** Only for a real collection; shows "Remove from collection". */
   collectionId?: string;
   onRemovedFromCollection?: () => void;
+  onCollectionCountChange?: (count: number) => void;
   triggerSx?: SxProps<Theme>;
   /** Glyph size in px; defaults to fontSize="small". */
   iconFontSize?: number;
@@ -69,6 +70,7 @@ export default function ModelActionsMenu({
   onUpdated,
   collectionId,
   onRemovedFromCollection,
+  onCollectionCountChange,
   triggerSx,
   iconFontSize,
   viewer,
@@ -477,6 +479,7 @@ export default function ModelActionsMenu({
         onUnauthorized={onUnauthorized}
         collectionId={collectionId}
         onRemovedFromCollection={onRemovedFromCollection}
+        onCountChange={onCollectionCountChange}
       />
 
       {editOpen && (

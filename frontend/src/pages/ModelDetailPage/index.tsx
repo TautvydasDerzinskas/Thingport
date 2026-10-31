@@ -14,6 +14,7 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { UnauthorizedError } from "../../api/client";
 import { type Print, printsApi } from "../../api/prints";
+import { collectionsApi } from "../../api/collections";
 import type { AuthUser } from "../../api/auth";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
 import { dividerBorderColor } from "../../theme";
@@ -48,6 +49,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
   const navigate = useNavigate();
   const { t } = useTranslation(["models", "common", "library"]);
   const [print, setPrint] = useState<Print | null>(null);
+  const [collectionCount, setCollectionCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -70,6 +72,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
           onUnauthorized={onUnauthorized}
           onDeleted={goBack}
           onUpdated={setPrint}
+          onCollectionCountChange={setCollectionCount}
           viewer={viewer}
         />
       </Stack>
@@ -83,9 +86,14 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
     setNotFound(false);
     (async () => {
       try {
-        const data = await printsApi.get(printId);
+        const [data, memberships] = await Promise.all([
+          printsApi.get(printId),
+          // Only the side panel's number hangs on this: the model still opens without it.
+          collectionsApi.listForPrint(printId).catch(() => null),
+        ]);
         if (cancelled) return;
         setPrint(data);
+        setCollectionCount(memberships && memberships.filter((c) => c.in_collection).length);
         setActiveImageIndex(0);
         setRenderUnavailable(false);
       } catch (err) {
@@ -426,6 +434,8 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
         <Box sx={{ alignSelf: "stretch", minWidth: 0 }}>
           <ModelSidePanel
             print={print}
+            collectionCount={collectionCount}
+            onCollectionCountChange={setCollectionCount}
             onSelectCategory={onSelectCategory}
             onUnauthorized={onUnauthorized}
             onUpdated={setPrint}

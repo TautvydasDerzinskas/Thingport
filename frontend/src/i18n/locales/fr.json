@@ -3626,6 +3626,7 @@
       "deleteFailed": "Échec de la suppression du modèle.",
       "confirmDelete": "Supprimer « {{name}} » ? Cette action est irréversible.",
       "addToCollection": "Ajouter à une collection",
+      "addToCollectionAlreadyIn": "Ajouter à une collection (déjà dans {{count}})",
       "addToCollectionTitle": "Ajouter à une collection",
       "addToCollectionEmpty": "Vous n’avez encore aucune collection.",
       "addToCollectionLoadFailed": "Impossible de charger les collections. Veuillez réessayer.",

@@ -22,6 +22,8 @@ type Props = {
   /** Toggling this collection off also fires onRemovedFromCollection so the card leaves the grid. */
   collectionId?: string;
   onRemovedFromCollection?: () => void;
+  /** How many collections hold the model, each time that's loaded or changed. */
+  onCountChange?: (count: number) => void;
 };
 
 /** Each chip click toggles membership immediately; there's no save step. */
@@ -32,6 +34,7 @@ export default function AddToCollectionModal({
   onUnauthorized,
   collectionId,
   onRemovedFromCollection,
+  onCountChange,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const [collections, setCollections] = useState<CollectionMembership[] | null>(null);
@@ -54,6 +57,10 @@ export default function AddToCollectionModal({
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, printId]);
+
+  useEffect(() => {
+    if (collections) onCountChange?.(collections.filter((c) => c.in_collection).length);
+  }, [collections, onCountChange]);
 
   const toggle = async (collection: CollectionMembership) => {
     if (pendingId) return;

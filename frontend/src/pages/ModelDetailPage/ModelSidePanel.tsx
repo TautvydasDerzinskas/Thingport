@@ -14,6 +14,8 @@ import FolderIcon from "@mui/icons-material/Folder";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import StorageIcon from "@mui/icons-material/Storage";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import BookmarkIcon from "@mui/icons-material/Bookmark";
+import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import PrintIcon from "@mui/icons-material/Print";
 import type { Print } from "../../api/prints";
 import { aiCategorizationApi } from "../../api/aiCategorization";
@@ -31,12 +33,18 @@ import NormalizedOpenButton from "./NormalizedOpenButton";
 import ModelFileSelect from "./ModelFileSelect";
 import OpenInSlicerButton from "./OpenInSlicerButton";
 import { useNormalizedOpen } from "./useNormalizedOpen";
+import AddToCollectionModal from "./AddToCollectionModal";
 import RollingNumber from "../../components/RollingNumber";
 import { formatFileSize } from "../../utils/fileSize";
 import AuthorHoverCard from "../../components/AuthorHoverCard";
 
+const statChipSx = { flex: 1, px: 0.5, py: 1, border: "1px solid", borderColor: "divider", borderRadius: 2 };
+
 type Props = {
   print: Print;
+  /** Null when it couldn't be loaded: the chip then opens the dialog without showing a number. */
+  collectionCount: number | null;
+  onCollectionCountChange: (count: number) => void;
   onSelectCategory: (id: string) => void;
   onUnauthorized?: () => void;
   onUpdated?: (print: Print) => void;
@@ -45,11 +53,20 @@ type Props = {
 };
 
 /** The detail page's sticky summary card. */
-export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized, onUpdated, viewer }: Props) {
+export default function ModelSidePanel({
+  print,
+  collectionCount,
+  onCollectionCountChange,
+  onSelectCategory,
+  onUnauthorized,
+  onUpdated,
+  viewer,
+}: Props) {
   const { t } = useTranslation(["models", "common"]);
   const navigate = useNavigate();
   const showToast = useToast();
   const [suggestionBusy, setSuggestionBusy] = useState(false);
+  const [collectionsOpen, setCollectionsOpen] = useState(false);
   const viewerAvatarUrl = useGravatarUrl(viewer?.email, 56);
   const { downloading, downloadFile, downloadAllZip, recordUse } = useDownloadPrint(print, onUnauthorized, onUpdated);
 
@@ -78,6 +95,9 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
   const authorName =
     print.author?.name || print.author?.handle || print.creator || (showViewerAsAuthor ? viewer!.display_name : null);
   const authorAvatarUrl = print.author?.avatar_url || (showViewerAsAuthor ? viewerAvatarUrl : undefined);
+  const collectionsLabel = collectionCount
+    ? t("models:detail.addToCollectionAlreadyIn", { count: collectionCount })
+    : t("models:detail.addToCollection");
 
   return (
     <Paper
@@ -301,26 +321,38 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
           />
         )}
 
-        <Stack direction="row" spacing={1.5}>
-          <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="center"
-            spacing={0.75}
-            sx={{ flex: 1, py: 1, border: "1px solid", borderColor: "divider", borderRadius: 2 }}
-          >
+        <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.5}>
+          <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.75} sx={statChipSx}>
             <VisibilityIcon fontSize="small" sx={{ color: "text.secondary" }} />
             <Typography variant="body2" fontWeight={600}>
               {print.view_count}
             </Typography>
           </Stack>
-          <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="center"
-            spacing={0.75}
-            sx={{ flex: 1, py: 1, border: "1px solid", borderColor: "divider", borderRadius: 2 }}
-          >
+          <Tooltip title={collectionsLabel}>
+            <ButtonBase
+              onClick={() => setCollectionsOpen(true)}
+              aria-label={collectionsLabel}
+              sx={{
+                ...statChipSx,
+                gap: 0.75,
+                transition: (muiTheme) => muiTheme.transitions.create("background-color", { duration: 150 }),
+                "&:hover": { bgcolor: "action.hover" },
+                "&.Mui-focusVisible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: 2 },
+              }}
+            >
+              {collectionCount ? (
+                <BookmarkIcon fontSize="small" color="primary" />
+              ) : (
+                <BookmarkBorderIcon fontSize="small" sx={{ color: "text.secondary" }} />
+              )}
+              {collectionCount !== null && (
+                <Typography variant="body2" fontWeight={600}>
+                  <RollingNumber value={collectionCount} />
+                </Typography>
+              )}
+            </ButtonBase>
+          </Tooltip>
+          <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.75} sx={statChipSx}>
             <PrintIcon fontSize="small" sx={{ color: "text.secondary" }} />
             <Typography variant="body2" fontWeight={600}>
               <RollingNumber value={print.print_count} />
@@ -335,6 +367,13 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
         )}
       </Stack>
       {customize.window}
+      <AddToCollectionModal
+        open={collectionsOpen}
+        onClose={() => setCollectionsOpen(false)}
+        printId={print.id}
+        onUnauthorized={onUnauthorized}
+        onCountChange={onCollectionCountChange}
+      />
     </Paper>
   );
 }
