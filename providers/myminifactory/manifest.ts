@@ -51,6 +51,8 @@ export default {
     "https://myminifactory.com",
     "https://www.myminifactory.com",
     "https://assets.myminifactory.com",
+    "https://cdn.myminifactory.com",
+    "https://dl.myminifactory.com",
     "https://dl2.myminifactory.com",
     "https://dl4.myminifactory.com",
   ],

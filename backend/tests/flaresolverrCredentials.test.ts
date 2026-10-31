@@ -70,6 +70,7 @@ describe("FlareSolverr credential boundary", () => {
 
   it.each([
     "https://makerworld.com/api/v1/design-service/favorites/123/designs?seed=0&collectionId=123&limit=20&offset=0",
+    "https://makerworld.com/models/123",
     "https://api.thingiverse.com/things/123",
     "https://api.thingiverse.com/things/123?access_token=opaque%2B%2F%3Dtoken",
     "https://www.myminifactory.com/api/v2/objects/123?key=opaque%2B%2F%3Dkey",

@@ -38,7 +38,7 @@ export default {
   solverRoutes: [
     {
       host: "makerworld.com",
-      path: /^(?:\/[a-z]{2}\/models\/\d+(?:-[\w%-]+)?\/?|\/api\/v1\/models?\/\d+(?:\/files|\/download)?|\/api\/v1\/design-service\/instance\/\d+\/f3mf|\/api\/v1\/design-service\/favorites\/\d+(?:\/designs)?|\/api\/v1\/design-user-service\/user\/profile\/[\w%-]+)$/,
+      path: /^(?:(?:\/[a-z]{2})?\/models\/\d+(?:-[\w%-]+)?\/?|\/api\/v1\/models?\/\d+(?:\/files|\/download)?|\/api\/v1\/design-service\/instance\/\d+\/f3mf|\/api\/v1\/design-service\/favorites\/\d+(?:\/designs)?|\/api\/v1\/design-user-service\/user\/profile\/[\w%-]+)$/,
       query: ["type", "fileType", "seed", "collectionId", "limit", "offset"],
       credentials: { cookies: true },
     },

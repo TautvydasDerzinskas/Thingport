@@ -87,21 +87,25 @@ describe("connection-time DNS policy", () => {
     expect(vi.mocked(browserFetch).mock.calls[0][0]).toBe("https://cdn.thingiverse.com/file.stl");
   });
 
-  it.each(["cdn.thingiverse.com", "assets.myminifactory.com", "dl2.myminifactory.com", "dl4.myminifactory.com"])(
-    "preserves browser transport for downloads from %s",
-    async (host) => {
-      vi.spyOn(dnsPromises, "resolve4").mockResolvedValue(["8.8.8.8"] as never);
-      vi.spyOn(dnsPromises, "resolve6").mockResolvedValue([] as never);
-      const native = vi.fn<typeof fetch>().mockResolvedValue(new Response("solid test\nendsolid test"));
-      vi.stubGlobal("fetch", native);
-      vi.mocked(browserFetch).mockResolvedValue(new Response("solid test\nendsolid test"));
-      const result = await downloadPlainFileToTemp(`https://${host}/file.stl`, "file.stl");
-      expect(browserFetch).toHaveBeenCalledOnce();
-      expect(native).not.toHaveBeenCalled();
-      expect(result && "input" in result).toBe(true);
-      if (result && "input" in result) await fs.rm(result.input.tempFilePath!, { force: true });
-    },
-  );
+  it.each([
+    "cdn.thingiverse.com",
+    "assets.myminifactory.com",
+    "cdn.myminifactory.com",
+    "dl.myminifactory.com",
+    "dl2.myminifactory.com",
+    "dl4.myminifactory.com",
+  ])("preserves browser transport for downloads from %s", async (host) => {
+    vi.spyOn(dnsPromises, "resolve4").mockResolvedValue(["8.8.8.8"] as never);
+    vi.spyOn(dnsPromises, "resolve6").mockResolvedValue([] as never);
+    const native = vi.fn<typeof fetch>().mockResolvedValue(new Response("solid test\nendsolid test"));
+    vi.stubGlobal("fetch", native);
+    vi.mocked(browserFetch).mockResolvedValue(new Response("solid test\nendsolid test"));
+    const result = await downloadPlainFileToTemp(`https://${host}/file.stl`, "file.stl");
+    expect(browserFetch).toHaveBeenCalledOnce();
+    expect(native).not.toHaveBeenCalled();
+    expect(result && "input" in result).toBe(true);
+    if (result && "input" in result) await fs.rm(result.input.tempFilePath!, { force: true });
+  });
 
   it.each(["64:ff9b::808:808", "64:ff9b::8.8.8.8", "64:ff9b:0:0:0:0:808:808"])(
     "allows public or fake-IP address %s",
