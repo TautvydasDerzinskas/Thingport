@@ -34,8 +34,13 @@ function decodeDataUri(uri: string): { bytes: Buffer; mime: string } | null {
   const match = /^data:([^;,]*)((?:;[^;,]*)*?),(.*)$/s.exec(uri);
   if (!match) return null;
   const base64 = match[2].split(";").includes("base64");
-  const bytes = base64 ? Buffer.from(match[3], "base64") : Buffer.from(decodeURIComponent(match[3]), "utf8");
-  return { bytes, mime: match[1] };
+  try {
+    const bytes = base64 ? Buffer.from(match[3], "base64") : Buffer.from(decodeURIComponent(match[3]), "utf8");
+    return { bytes, mime: match[1] };
+  } catch {
+    // A stray % in the payload: unreadable, as a missing file is.
+    return null;
+  }
 }
 
 function parseGltf(bytes: Buffer, name: string): GltfJson {
@@ -153,7 +158,8 @@ export async function packGltf(
 export type PackableFile = { name: string; path: string };
 
 /** `uri`, as written in the .gltf at `gltfName`, among `files`: by its path from the .gltf's folder, else by its
- *  file name alone, when only one file has it (an upload carries names, not folders). */
+ *  file name alone, when only one file in that folder or below has it (an upload carries names, not folders), so a
+ *  scene doesn't take a file that belongs to another model's folder. */
 function findReferenced<T extends PackableFile>(files: T[], gltfName: string, uri: string): T | undefined {
   let decoded = uri;
   try {
@@ -161,11 +167,17 @@ function findReferenced<T extends PackableFile>(files: T[], gltfName: string, ur
   } catch {
     // A stray % in a file name: match it as written.
   }
-  const wanted = path.posix.normalize(path.posix.join(path.posix.dirname(gltfName.replace(/\\/g, "/")), decoded));
-  const byPath = files.find((file) => path.posix.normalize(file.name.replace(/\\/g, "/")) === wanted);
+  const folder = path.posix.dirname(gltfName.replace(/\\/g, "/"));
+  const wanted = path.posix.normalize(path.posix.join(folder, decoded));
+  const pathOf = (file: T) => path.posix.normalize(file.name.replace(/\\/g, "/"));
+  const byPath = files.find((file) => pathOf(file) === wanted);
   if (byPath) return byPath;
   const base = path.posix.basename(wanted).toLowerCase();
-  const byName = files.filter((file) => path.posix.basename(file.name.replace(/\\/g, "/")).toLowerCase() === base);
+  const byName = files.filter(
+    (file) =>
+      path.posix.basename(pathOf(file)).toLowerCase() === base &&
+      (folder === "." || pathOf(file).startsWith(`${folder}/`)),
+  );
   return byName.length === 1 ? byName[0] : undefined;
 }
 

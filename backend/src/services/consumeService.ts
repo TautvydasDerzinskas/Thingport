@@ -187,7 +187,9 @@ export async function consumeFolder(dir = CONSUME_DIR): Promise<ConsumeSummary |
     if (sources) {
       packedFrom.delete(item);
       await fs.rm(item.path, { force: true });
-      for (const source of sources) await notImported(source);
+      // A file another scene was packed from too stays for that one, and goes aside with it if it fails as well.
+      const stillUsed = new Set([...packedFrom.values()].flat());
+      for (const source of sources) if (!stillUsed.has(source)) await notImported(source);
       return;
     }
     summary.failed.push(item.rel);
@@ -223,9 +225,11 @@ export async function consumeFolder(dir = CONSUME_DIR): Promise<ConsumeSummary |
 
   // A .gltf goes in as one .glb holding it and the files it points at, so its textures don't become models of their
   // own and a texture folder isn't split from the scene that uses it.
+  // Taken before any is packed, so scenes sharing a .bin or a texture each get it.
+  const loose = importable.filter((item) => !isGltfName(item.rel));
   for (const gltf of importable.filter((item) => isGltfName(item.rel))) {
     try {
-      const candidates = [gltf, ...importable.filter((item) => !isGltfName(item.rel))];
+      const candidates = [gltf, ...loose];
       const { files: left, packed } = await packGltfFiles(
         candidates.map((item) => ({ name: item.rel, path: item.path, item })),
         tempPath,

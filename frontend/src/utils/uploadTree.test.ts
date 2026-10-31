@@ -53,17 +53,33 @@ describe("gltfBundles", () => {
     ]);
   });
 
-  it("follows ../ and URL-encoded names, and falls back to a name only one file has", async () => {
+  it("follows ../ and URL-encoded names, and falls back to a name only one file in its folder has", async () => {
     const entries = [
       entry("Pack/Model/scene.gltf", gltf("../shared/geo%20data.bin", "elsewhere/base.png")),
       entry("Pack/shared/geo data.bin"),
-      entry("Pack/pictures/base.png"),
+      entry("Pack/Model/pictures/base.png"),
     ];
     const bundles = await gltfBundles(entries);
     expect(bundles.get(entries[0])?.map((e) => e.relativePath)).toEqual([
       "Pack/shared/geo data.bin",
-      "Pack/pictures/base.png",
+      "Pack/Model/pictures/base.png",
     ]);
+  });
+
+  it("doesn't take a file of the same name from another model's folder", async () => {
+    const entries = [entry("A/scene.gltf", gltf("scene.bin", "base.png")), entry("A/scene.bin"), entry("B/base.png")];
+    const bundles = await gltfBundles(entries);
+    expect(bundles.get(entries[0])?.map((e) => e.relativePath)).toEqual(["A/scene.bin"]);
+  });
+
+  it("falls back to a name anywhere in a flat pick, which has no folders", async () => {
+    const entries = [
+      entry("scene.gltf", gltf("geo/scene.bin", "textures/base.png")),
+      entry("scene.bin"),
+      entry("base.png"),
+    ];
+    const bundles = await gltfBundles(entries);
+    expect(bundles.get(entries[0])?.map((e) => e.relativePath)).toEqual(["scene.bin", "base.png"]);
   });
 
   it("leaves out a texture two files could be, and a .gltf that doesn't parse", async () => {

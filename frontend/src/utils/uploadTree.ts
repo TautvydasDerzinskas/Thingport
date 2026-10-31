@@ -163,7 +163,7 @@ async function gltfReferences(file: File): Promise<string[]> {
 /**
  * For each .gltf among `entries`, the entries it points at. A .gltf keeps its geometry in a .bin and its textures in
  * images beside it; they upload with it as one model, which the server packs into a .glb, rather than as models or
- * gallery pictures of their own. Found by path from the .gltf's folder, or by name when only one file has it.
+ * gallery pictures of their own. Found by path from the .gltf's folder, or by name when only one file in that folder or below has it.
  */
 export async function gltfBundles(entries: UploadEntry[]): Promise<Map<UploadEntry, UploadEntry[]>> {
   const bundles = new Map<UploadEntry, UploadEntry[]>();
@@ -184,7 +184,10 @@ export async function gltfBundles(entries: UploadEntry[]): Promise<Map<UploadEnt
       const wanted = normalizeSegments(`${folder}/${decoded.replace(/\\/g, "/")}`);
       const byPath = others.find((entry) => pathOf(entry) === wanted);
       const name = wanted.split("/").pop()!.toLowerCase();
-      const byName = others.filter((entry) => nameOf(entry) === name);
+      // Only within the scene's own folder tree, so it can't take another model's file; a flat pick has no folders.
+      const byName = others.filter(
+        (entry) => nameOf(entry) === name && (!folder || pathOf(entry).startsWith(`${folder}/`)),
+      );
       const match = byPath ?? (byName.length === 1 ? byName[0] : undefined);
       if (match) found.add(match);
     }

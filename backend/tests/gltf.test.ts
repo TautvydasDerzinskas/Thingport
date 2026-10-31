@@ -153,6 +153,21 @@ describe("packing a .gltf into a .glb", () => {
     await expect(packGltf(Buffer.from("[]"), "list.gltf", reader({}))).rejects.toThrow("isn't a readable glTF");
   });
 
+  it("treats a garbled inline data URI as missing: a 400 for a buffer, a skipped texture for an image", async () => {
+    const { json, bin } = cubeGltf();
+    json.buffers[0].uri = "data:,%";
+    const packing = packGltf(Buffer.from(JSON.stringify(json)), "scene.gltf", reader({}));
+    await expect(packing).rejects.toBeInstanceOf(HttpError);
+    await expect(packing).rejects.toThrow("scene.gltf needs data:,%");
+
+    const { json: withImage } = cubeGltf();
+    withImage.images[0].uri = "data:image/png,%E0%A4%A";
+    const { json: packed } = readGlb(
+      await packGltf(Buffer.from(JSON.stringify(withImage)), "scene.gltf", reader({ "scene.bin": bin })),
+    );
+    expect(packed.images).toEqual([{ uri: "data:image/png,%E0%A4%A" }]);
+  });
+
   it("keeps the scene when a texture is missing, still pointing where it did", async () => {
     const { gltf, bin } = cubeGltf();
     const { json } = readGlb(await packGltf(gltf, "scene.gltf", reader({ "scene.bin": bin })));
@@ -217,6 +232,14 @@ describe("finding what a .gltf points at among files", () => {
     ];
     const { files: left } = await packGltfFiles(files, tempPath, made);
     expect(left.map((f) => f.name)).toEqual(["Model/scene.glb", "Model/a/base.png", "Model/b/base.png"]);
+  });
+
+  it("doesn't take a file of the same name from another model's folder", async () => {
+    const { gltf, bin } = cubeGltf({ imageUri: "base.png" });
+    const files = [write("Shelf/scene.gltf", gltf), write("Shelf/scene.bin", bin), write("Desk/base.png", await png())];
+    const { files: left } = await packGltfFiles(files, tempPath, made);
+    expect(left.map((f) => f.name)).toEqual(["Shelf/scene.glb", "Desk/base.png"]);
+    expect(readGlb(fs.readFileSync(left[0].path)).json.images).toEqual([{ uri: "base.png" }]);
   });
 
   it("doesn't reach outside the files it's given for a path climbing out of the folder", async () => {
@@ -410,6 +433,39 @@ describe("uploading and consuming a .gltf", () => {
       include: { plates: true },
     });
     expect(created.map((p) => p.plates.map((plate) => plate.filename))).toEqual([["scene.glb"]]);
+    expect(fs.readdirSync(dir)).toEqual([]);
+  });
+
+  it("gives a .bin two scenes share to both, follows ../, and leaves another folder's files alone", async () => {
+    const dir = fs.mkdtempSync(path.join(tmp, "consume-"));
+    const put = (rel: string, data: Buffer | string) => {
+      fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
+      fs.writeFileSync(path.join(dir, rel), data);
+    };
+    const lamp = cubeGltf({ binUri: "lamp.bin", imageUri: "lamp.png" });
+    put("Lamp/on.gltf", lamp.gltf);
+    put("Lamp/off.gltf", lamp.gltf);
+    put("Lamp/lamp.bin", lamp.bin);
+    put("Lamp/lamp.png", await png());
+    // Its .bin one folder up; its texture missing, though a file of that name sits in another model's folder.
+    const shelf = cubeGltf({ binUri: "../shared.bin", imageUri: "base.png" });
+    put("Shelf/Top/top.gltf", shelf.gltf);
+    put("Shelf/shared.bin", shelf.bin);
+    put("Desk/desk.stl", "solid d endsolid d\n");
+    put("Desk/base.png", await png());
+    await setConsumeSettings({ userId, mode: "folder" });
+
+    const summary = await consumeFolder(dir);
+    expect(summary).toMatchObject({ models: 3, failed: [] });
+    const created = await prisma.print.findMany({
+      where: { id: { in: summary!.printIds } },
+      include: { plates: true, previewImages: true },
+    });
+    const byName = Object.fromEntries(created.map((p) => [p.name, p]));
+    expect(byName.Lamp.plates.map((p) => p.filename).toSorted()).toEqual(["off.glb", "on.glb"]);
+    expect(byName.Lamp.previewImages).toHaveLength(0);
+    expect(byName.Top.plates.map((p) => p.filename)).toEqual(["top.glb"]);
+    expect(byName.Desk.previewImages).toHaveLength(1);
     expect(fs.readdirSync(dir)).toEqual([]);
   });
 
