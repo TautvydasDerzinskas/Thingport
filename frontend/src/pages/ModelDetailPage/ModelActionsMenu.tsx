@@ -494,7 +494,9 @@ export default function ModelActionsMenu({
         downloadPlate={downloadPlate}
       />
 
+      {/* The page header keeps this menu across models: a write on its way mustn't land on the next one's list. */}
       <AddToCollectionModal
+        key={print.id}
         open={addToCollectionOpen}
         onClose={() => setAddToCollectionOpen(false)}
         printId={print.id}
