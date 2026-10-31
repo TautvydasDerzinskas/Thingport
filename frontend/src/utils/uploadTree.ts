@@ -129,7 +129,68 @@ function extOf(name: string) {
 }
 
 function isModelFile(name: string) {
-  return MODEL_EXTS.has(extOf(name));
+  return MODEL_EXTS.has(extOf(name)) || isGltf(name);
+}
+
+const isGltf = (name: string) => extOf(name) === "gltf";
+const isDataUri = (uri: string) => uri.startsWith("data:");
+const isRemoteUri = (uri: string) => /^[a-z][a-z0-9+.-]*:/i.test(uri) && !isDataUri(uri);
+
+/** `path` with its `.` and `..` segments resolved, as the server resolves a .gltf's references. */
+function normalizeSegments(path: string) {
+  const out: string[] = [];
+  for (const segment of path.split("/")) {
+    if (!segment || segment === ".") continue;
+    if (segment === "..") out.pop();
+    else out.push(segment);
+  }
+  return out.join("/");
+}
+
+/** The files a .gltf points at (its .bin buffers and textures), as written in it. None when it doesn't parse: the
+ *  server says what's wrong with it when it's uploaded. */
+async function gltfReferences(file: File): Promise<string[]> {
+  try {
+    const json = JSON.parse(await file.text()) as { buffers?: { uri?: unknown }[]; images?: { uri?: unknown }[] };
+    return [...(json.buffers ?? []), ...(json.images ?? [])]
+      .map((entry) => entry?.uri)
+      .filter((uri): uri is string => typeof uri === "string" && !isDataUri(uri) && !isRemoteUri(uri));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * For each .gltf among `entries`, the entries it points at. A .gltf keeps its geometry in a .bin and its textures in
+ * images beside it; they upload with it as one model, which the server packs into a .glb, rather than as models or
+ * gallery pictures of their own. Found by path from the .gltf's folder, or by name when only one file has it.
+ */
+export async function gltfBundles(entries: UploadEntry[]): Promise<Map<UploadEntry, UploadEntry[]>> {
+  const bundles = new Map<UploadEntry, UploadEntry[]>();
+  const pathOf = (entry: UploadEntry) =>
+    normalizeSegments(normalizeRelativePath(entry.relativePath || entry.file.name));
+  const nameOf = (entry: UploadEntry) => entry.file.name.toLowerCase();
+  const others = entries.filter((entry) => !isGltf(entry.file.name));
+  for (const gltf of entries.filter((entry) => isGltf(entry.file.name))) {
+    const folder = pathOf(gltf).split("/").slice(0, -1).join("/");
+    const found = new Set<UploadEntry>();
+    for (const uri of await gltfReferences(gltf.file)) {
+      let decoded = uri;
+      try {
+        decoded = decodeURIComponent(uri);
+      } catch {
+        // A stray % in a file name: match it as written.
+      }
+      const wanted = normalizeSegments(`${folder}/${decoded.replace(/\\/g, "/")}`);
+      const byPath = others.find((entry) => pathOf(entry) === wanted);
+      const name = wanted.split("/").pop()!.toLowerCase();
+      const byName = others.filter((entry) => nameOf(entry) === name);
+      const match = byPath ?? (byName.length === 1 ? byName[0] : undefined);
+      if (match) found.add(match);
+    }
+    bundles.set(gltf, [...found]);
+  }
+  return bundles;
 }
 
 // Larger images than the preview-image endpoint takes are attached to the model as files instead.
@@ -183,7 +244,9 @@ async function uploadEach(
   let uploaded = 0;
   const uploadedEntries: UploadEntry[] = [];
   const prints: Print[] = [];
-  const todo = uploadable(entries);
+  const bundles = await gltfBundles(entries);
+  const bundled = new Set([...bundles.values()].flat());
+  const todo = uploadable(entries).filter((entry) => !bundled.has(entry));
   const batched = partOfBatch || todo.length > 1;
 
   for (const entry of todo) {
@@ -198,10 +261,14 @@ async function uploadEach(
         failed.push(entry.file.name);
         continue;
       }
-      // Folder-tree leaves are always single-plate prints.
-      const result = await printsApi.upload([entry.file], { category_id: categoryId || undefined, notify: !batched });
+      // Folder-tree leaves are always single-plate prints; a .gltf brings the files it points at along.
+      const parts = [entry, ...(bundles.get(entry) ?? [])];
+      const result = await printsApi.upload(
+        parts.map((part) => part.file),
+        { category_id: categoryId || undefined, notify: !batched, ...(parts.length > 1 ? { mode: "multiplate" } : {}) },
+      );
       uploaded += 1;
-      uploadedEntries.push(entry);
+      uploadedEntries.push(...parts);
       prints.push(...result.prints);
     } catch (err) {
       if (err instanceof UnauthorizedError) {
@@ -226,11 +293,17 @@ export async function uploadFoldersAsModels(
   onUnauthorized?: () => void,
 ) {
   const groups = new Map<string, { segments: string[]; entries: UploadEntry[] }>();
+  // A .gltf's .bin and textures go in its folder's model, wherever they sit below it (a "textures" folder, often).
+  const bundles = await gltfBundles(entries);
+  const bundled = new Set([...bundles.values()].flat());
   for (const entry of entries) {
+    if (bundled.has(entry)) continue;
     const segments = splitPath(entry);
     const key = segments.join("/");
     const group = groups.get(key) ?? { segments, entries: [] };
-    group.entries.push(entry);
+    // Two scenes in a folder can share a file: it goes once.
+    for (const part of [entry, ...(bundles.get(entry) ?? [])])
+      if (!group.entries.includes(part)) group.entries.push(part);
     groups.set(key, group);
   }
 
@@ -249,8 +322,9 @@ export async function uploadFoldersAsModels(
   for (const group of modelGroups) {
     const folderName = group.segments[group.segments.length - 1];
     const sorted = group.entries.toSorted(byName);
-    const images = sorted.filter((e) => isPreviewImage(e.file));
-    const files = sorted.filter((e) => !isPreviewImage(e.file));
+    // A texture is part of the scene that uses it, not a picture of the model.
+    const images = sorted.filter((e) => isPreviewImage(e.file) && !bundled.has(e));
+    const files = sorted.filter((e) => !images.includes(e));
     try {
       let categoryId: string | null;
       try {

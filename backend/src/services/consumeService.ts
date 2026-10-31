@@ -12,6 +12,7 @@ import { createPrint, type NewPlateInput } from "./printCreation";
 import { saveFileFromTemp } from "./printFileService";
 import { addPreviewImage, preferImageOverRenders } from "./previewImageService";
 import { createNotification } from "./notificationService";
+import { isGltfName, packGltfFiles } from "./gltfPacker";
 
 export const CONSUME_MODES = ["separate", "folder"] as const;
 export type ConsumeMode = (typeof CONSUME_MODES)[number];
@@ -178,7 +179,17 @@ export async function consumeFolder(dir = CONSUME_DIR): Promise<ConsumeSummary |
   const mode = await getConsumeMode();
   const summary: ConsumeSummary = { models: 0, files: 0, failed: [], printIds: [] };
 
+  // Each .glb packed here from a .gltf, and the files it was packed from: those stay where they are until it's in.
+  const packedFrom = new Map<Item, Item[]>();
+
   const notImported = async (item: Item) => {
+    const sources = packedFrom.get(item);
+    if (sources) {
+      packedFrom.delete(item);
+      await fs.rm(item.path, { force: true });
+      for (const source of sources) await notImported(source);
+      return;
+    }
     summary.failed.push(item.rel);
     try {
       await moveFile(item.path, await freePath(path.join(dir, NOT_IMPORTED_DIR, item.rel)));
@@ -204,10 +215,32 @@ export async function consumeFolder(dir = CONSUME_DIR): Promise<ConsumeSummary |
   }
 
   // The same cap as every other way in.
-  const importable: Item[] = [];
+  let importable: Item[] = [];
   for (const item of items) {
     if (item.size > IMPORT_MAX_BYTES) await notImported(item);
     else importable.push(item);
+  }
+
+  // A .gltf goes in as one .glb holding it and the files it points at, so its textures don't become models of their
+  // own and a texture folder isn't split from the scene that uses it.
+  for (const gltf of importable.filter((item) => isGltfName(item.rel))) {
+    try {
+      const candidates = [gltf, ...importable.filter((item) => !isGltfName(item.rel))];
+      const { files: left, packed } = await packGltfFiles(
+        candidates.map((item) => ({ name: item.rel, path: item.path, item })),
+        tempPath,
+        (_, glbPath, glbName) => ({ name: glbName, path: glbPath, item: { rel: glbName, path: glbPath, size: 0 } }),
+      );
+      const glb = left.find((file) => !candidates.includes(file.item))!.item;
+      glb.size = (await fs.stat(glb.path)).size;
+      const used = new Set(packed.map((file) => file.item));
+      importable = importable.flatMap((item) => (item === gltf ? [glb] : used.has(item) ? [] : [item]));
+      packedFrom.set(glb, [...used]);
+    } catch (err) {
+      console.error("Consume folder: couldn't pack", gltf.rel, err);
+      importable = importable.filter((item) => item !== gltf);
+      await notImported(gltf);
+    }
   }
 
   const categoryCache = new Map<string, string>();
@@ -323,6 +356,8 @@ export async function consumeFolder(dir = CONSUME_DIR): Promise<ConsumeSummary |
     for (const item of importable) await importEach(item);
   }
 
+  // What's left here went in: the .glbs that didn't were set aside with their files.
+  for (const sources of packedFrom.values()) for (const source of sources) await fs.rm(source.path, { force: true });
   for (const zip of zips) await fs.rm(zip.abs, { force: true });
   await removeEmptyFolders(dir, files);
 

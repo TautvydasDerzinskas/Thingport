@@ -17,7 +17,7 @@ import { getQualityChecks, getQualityChecksOff } from "./settingsService";
 // Printability checks run when a model is opened, never on import: each file is checked once, the first time its
 // model is viewed with checks switched on, and again only when the rules change (QUALITY_CHECK_VERSION).
 
-export const QUALITY_CHECK_EXTS = new Set([".stl", ".obj", ".3mf"]);
+export const QUALITY_CHECK_EXTS = new Set([".stl", ".obj", ".3mf", ".glb"]);
 
 type SkippedCheck = { version: number; status: "skipped"; reason: string };
 type StoredCheck = QualityReport | SkippedCheck;

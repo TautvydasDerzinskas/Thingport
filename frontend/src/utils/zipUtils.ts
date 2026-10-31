@@ -17,6 +17,8 @@ const MIME_BY_EXT: Record<string, string> = {
   ".step": "model/step",
   ".stp": "model/step",
   ".obj": "model/obj",
+  ".glb": "model/gltf-binary",
+  ".gltf": "model/gltf+json",
 };
 
 function normalizePath(path: string) {

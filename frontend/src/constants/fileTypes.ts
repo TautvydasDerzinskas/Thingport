@@ -1,4 +1,4 @@
-export const MODEL_EXTS = new Set(["stl", "3mf", "step", "stp", "obj"]);
+export const MODEL_EXTS = new Set(["stl", "3mf", "step", "stp", "obj", "glb"]);
 
 export const LIGHTBURN_EXTS = new Set(["lbrn", "lbrn2"]);
 
@@ -16,6 +16,9 @@ export const UPLOAD_EXTS = [
   "stp",
   "3mf",
   "obj",
+  "glb",
+  // The server packs it into a .glb with the .bin and textures uploaded beside it (utils/uploadTree.ts).
+  "gltf",
   "f3d",
   "lbrn",
   "lbrn2",
