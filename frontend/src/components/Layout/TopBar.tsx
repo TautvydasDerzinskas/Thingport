@@ -147,7 +147,7 @@ export default function TopBar({
         )}
       </Box>
       {actions}
-      <Stack direction="row" alignItems="center" spacing={1} minWidth={0} sx={{ ml: "auto", flexShrink: 0 }}>
+      <Stack direction="row" alignItems="center" spacing={0.75} minWidth={0} sx={{ ml: "auto", flexShrink: 0 }}>
         <GlobalSearch
           onUnauthorized={onUnauthorized}
           theme={theme}

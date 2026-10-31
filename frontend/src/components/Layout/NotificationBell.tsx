@@ -11,8 +11,8 @@ import Popover from "@mui/material/Popover";
 import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import NotificationsIcon from "@mui/icons-material/Notifications";
 import { useNotifications } from "./NotificationsContext";
+import { NotificationsTwoToneIcon, topBarButtonSx } from "./topBarIcons";
 import { useConfirm } from "../ConfirmProvider";
 import NotificationList from "../notifications/NotificationList";
 import NotificationTabs, { clearConfirmKey, emptyKey } from "../notifications/NotificationTabs";
@@ -99,9 +99,30 @@ export default function NotificationBell() {
   return (
     <>
       <Tooltip title={t("notifications.label")}>
-        <IconButton size="small" onClick={(e) => setAnchorEl(e.currentTarget)} aria-label={t("notifications.label")}>
-          <Badge badgeContent={unreadCount} color="error" max={99}>
-            <NotificationsIcon fontSize="small" />
+        <IconButton
+          size="small"
+          onClick={(e) => setAnchorEl(e.currentTarget)}
+          aria-label={t("notifications.label")}
+          sx={topBarButtonSx}
+        >
+          <Badge
+            badgeContent={unreadCount}
+            color="error"
+            max={99}
+            // On the button's corner, small enough to leave the bell in sight.
+            sx={{
+              "& .MuiBadge-badge": {
+                top: -3,
+                right: -4,
+                minWidth: 16,
+                height: 16,
+                px: 0.5,
+                fontSize: "0.625rem",
+                boxShadow: (muiTheme) => `0 0 0 2px ${muiTheme.thingport.pageBackground}`,
+              },
+            }}
+          >
+            <NotificationsTwoToneIcon />
           </Badge>
         </IconButton>
       </Tooltip>
