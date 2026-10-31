@@ -128,11 +128,19 @@ export async function queueLink(userId: string, url: string, options: QueuedLink
   }
   return withUserLock(userId, async () => {
     // A paused sync job is that sync's own; links sent from Grab start a queue of their own.
+    const autoStart = await getImportQueueAutoStart();
+    // With auto start on, only a queue that was itself created under it is added to: starting a queue that holds links
+    // from before the switch was turned on would start those too, which were meant to wait for an admin.
     let job = await prisma.importJob.findFirst({
-      where: { userId, type: "LINKS", status: "PAUSED", collectionSyncId: null },
+      where: {
+        userId,
+        type: "LINKS",
+        status: "PAUSED",
+        collectionSyncId: null,
+        ...(autoStart ? { payload: { path: ["auto_start"], equals: true } } : {}),
+      },
       orderBy: { createdAt: "asc" },
     });
-    const autoStart = await getImportQueueAutoStart();
     if (!job) {
       job = await prisma.importJob.create({
         data: {
@@ -141,7 +149,13 @@ export async function queueLink(userId: string, url: string, options: QueuedLink
           status: "PAUSED",
           sourceUrl: url,
           sourceLabel: "Sent from Thingport Grab",
-          payload: { notes: null, tags: [], category_id: null, scope: "url" },
+          payload: {
+            notes: null,
+            tags: [],
+            category_id: null,
+            scope: "url",
+            ...(autoStart ? { auto_start: true } : {}),
+          },
         },
       });
       // It starts itself, so there's nothing for the person to go and start.
@@ -168,7 +182,6 @@ export async function queueLink(userId: string, url: string, options: QueuedLink
       });
     }
     const waiting = await prisma.importJobItem.count({ where: { jobId: job.id, status: "PENDING" } });
-    // Also for a duplicate: it may be a link that failed or one left paused before the setting was switched on.
     if (autoStart) autoStartJob(job.id);
     return { job, itemId, duplicate: Boolean(existing), waiting };
   });

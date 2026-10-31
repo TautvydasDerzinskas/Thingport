@@ -353,6 +353,18 @@ describe("the import queue", () => {
       expect(designCalls.size).toBe(0);
     });
 
+    it("starts only the new link when older ones are waiting in the same user's queue", async () => {
+      const old = await queue(member, { url: modelUrl(base + 206) });
+      await setAutoStart(admin, true);
+      const fresh = await queue(member, { url: modelUrl(base + 207) });
+      expect(fresh.body.job_id).not.toBe(old.body.job_id);
+
+      await waitStatus(fresh.body.job_id, "DONE");
+      expect((await job(old.body.job_id)).status).toBe("PAUSED");
+      expect((await items(old.body.job_id)).map((i) => i.status)).toEqual(["PENDING"]);
+      expect(designCalls.get(String(base + 206)) ?? 0).toBe(0);
+    });
+
     it("doesn't lift a CAPTCHA cooloff the way a manual start does", async () => {
       await setAutoStart(admin, true);
       challenged.add(String(base + 204));
