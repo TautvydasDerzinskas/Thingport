@@ -55,6 +55,7 @@ type Props = {
   /** Only for a real collection; shows "Remove from collection". */
   collectionId?: string;
   onRemovedFromCollection?: () => void;
+  onCollectionCountChange?: (count: number) => void;
   triggerSx?: SxProps<Theme>;
   /** Glyph size in px; defaults to fontSize="small". */
   iconFontSize?: number;
@@ -74,6 +75,7 @@ export default function ModelActionsMenu({
   onUpdated,
   collectionId,
   onRemovedFromCollection,
+  onCollectionCountChange,
   triggerSx,
   iconFontSize,
   viewer,
@@ -492,13 +494,16 @@ export default function ModelActionsMenu({
         downloadPlate={downloadPlate}
       />
 
+      {/* The page header keeps this menu across models: a write on its way mustn't land on the next one's list. */}
       <AddToCollectionModal
+        key={print.id}
         open={addToCollectionOpen}
         onClose={() => setAddToCollectionOpen(false)}
         printId={print.id}
         onUnauthorized={onUnauthorized}
         collectionId={collectionId}
         onRemovedFromCollection={onRemovedFromCollection}
+        onCountChange={onCollectionCountChange}
       />
 
       {editOpen && (

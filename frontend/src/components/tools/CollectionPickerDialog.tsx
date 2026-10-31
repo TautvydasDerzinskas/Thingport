@@ -6,37 +6,35 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import TextField from "@mui/material/TextField";
-import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import AddIcon from "@mui/icons-material/Add";
 import CheckIcon from "@mui/icons-material/Check";
 import CollectionsOutlinedIcon from "@mui/icons-material/CollectionsOutlined";
 import SearchIcon from "@mui/icons-material/Search";
+import { UnauthorizedError } from "../../api/client";
 import { collectionsApi, type Collection } from "../../api/collections";
 import { ListRowSkeletons } from "../ListSkeleton";
+import NewCollectionField from "../NewCollectionField";
 import { toCollection, type ToolCollection } from "./toolSdk";
 
 type Props = {
   open: boolean;
   title?: string;
   onClose: (picked: ToolCollection | null) => void;
+  onUnauthorized?: () => void;
 };
 
 /** Which of the user's collections a tool saves to, or a new one made here: a tool's Save dialog. */
-export default function CollectionPickerDialog({ open, title, onClose }: Props) {
+export default function CollectionPickerDialog({ open, title, onClose, onUnauthorized }: Props) {
   const { t } = useTranslation("app");
   const [collections, setCollections] = useState<Collection[] | null>(null);
   const [query, setQuery] = useState("");
   const [chosen, setChosen] = useState<string | null>(null);
-  const [newName, setNewName] = useState("");
-  const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -50,33 +48,24 @@ export default function CollectionPickerDialog({ open, title, onClose }: Props) 
       .list()
       // Only ones it can save into: not the built-in ones, nor a tool's own.
       .then((all) => active && setCollections(all.filter((c) => !c.system_key && !c.tool_id)))
-      .catch((err: unknown) => active && setError(err instanceof Error ? err.message : String(err)));
+      .catch((err: unknown) => {
+        if (!active) return;
+        if (err instanceof UnauthorizedError && onUnauthorized) {
+          onUnauthorized();
+          return;
+        }
+        setError(err instanceof Error ? err.message : String(err));
+      });
     return () => {
       active = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
     return (collections ?? []).filter((c) => !q || c.name.toLowerCase().includes(q));
   }, [collections, query]);
-
-  const create = async () => {
-    const name = newName.trim();
-    if (!name) return;
-    setCreating(true);
-    setError(null);
-    try {
-      const made = await collectionsApi.create({ name });
-      setCollections((prev) => [made, ...(prev ?? [])]);
-      setChosen(made.id);
-      setNewName("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setCreating(false);
-    }
-  };
 
   const picked = collections?.find((c) => c.id === chosen) ?? null;
 
@@ -136,38 +125,11 @@ export default function CollectionPickerDialog({ open, title, onClose }: Props) 
             </List>
           )}
         </Box>
-        <TextField
-          size="small"
-          placeholder={t("tools.picker.newName")}
-          value={newName}
-          onChange={(event) => setNewName(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              void create();
-            }
-          }}
-          slotProps={{
-            htmlInput: { maxLength: 200, "aria-label": t("tools.picker.newName") },
-            input: {
-              endAdornment: (
-                <InputAdornment position="end">
-                  <Tooltip title={t("tools.picker.create")}>
-                    <span>
-                      <IconButton
-                        size="small"
-                        edge="end"
-                        aria-label={t("tools.picker.create")}
-                        disabled={!newName.trim() || creating}
-                        onClick={() => void create()}
-                      >
-                        <AddIcon fontSize="small" />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                </InputAdornment>
-              ),
-            },
+        <NewCollectionField
+          onUnauthorized={onUnauthorized}
+          onCreated={(made) => {
+            setCollections((prev) => [made, ...(prev ?? [])]);
+            setChosen(made.id);
           }}
         />
         {error && (

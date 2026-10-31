@@ -2780,8 +2780,6 @@
         "count_one": "{{count}} modelis",
         "count_few": "{{count}} modeliai",
         "count_other": "{{count}} modelių",
-        "newName": "Nauja kolekcija",
-        "create": "Sukurti šią kolekciją",
         "cancel": "Atšaukti",
         "choose": "Pasirinkti"
       },
@@ -3735,6 +3733,7 @@
       "deleteFailed": "Nepavyko ištrinti modelio.",
       "confirmDelete": "Ištrinti „{{name}}“? Šio veiksmo nebus galima atšaukti.",
       "addToCollection": "Pridėti prie kolekcijos",
+      "addToCollectionAlreadyIn": "Pridėti prie kolekcijos (jau yra {{count}})",
       "addToCollectionTitle": "Pridėti prie kolekcijos",
       "addToCollectionEmpty": "Kol kas neturite jokių kolekcijų.",
       "addToCollectionLoadFailed": "Nepavyko įkelti kolekcijų. Bandykite dar kartą.",

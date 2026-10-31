@@ -14,6 +14,7 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { UnauthorizedError } from "../../api/client";
 import { type Print, printsApi } from "../../api/prints";
+import { collectionsApi } from "../../api/collections";
 import type { AuthUser } from "../../api/auth";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
 import { dividerBorderColor } from "../../theme";
@@ -28,7 +29,7 @@ import { useSmartBack } from "../../components/Layout/NavigationHistoryContext";
 import Model3DPreviewModal from "./Model3DPreviewModal";
 import ModelActionsMenu from "./ModelActionsMenu";
 import FavoriteButton from "./FavoriteButton";
-import ModelSidePanel from "./ModelSidePanel";
+import ModelSidePanel, { type CollectionCount } from "./ModelSidePanel";
 import MarkdownDescription from "../../components/MarkdownDescription";
 import AiDescriptionReview, { AiDescriptionChip } from "./AiDescriptionReview";
 import Skeleton from "@mui/material/Skeleton";
@@ -48,6 +49,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
   const navigate = useNavigate();
   const { t } = useTranslation(["models", "common", "library"]);
   const [print, setPrint] = useState<Print | null>(null);
+  const [collectionCount, setCollectionCount] = useState<CollectionCount>("loading");
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -70,6 +72,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
           onUnauthorized={onUnauthorized}
           onDeleted={goBack}
           onUpdated={setPrint}
+          onCollectionCountChange={setCollectionCount}
           viewer={viewer}
           offerLink
         />
@@ -105,6 +108,24 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
       cancelled = true;
     };
   }, [printId, onUnauthorized]);
+
+  // Apart from the model, which shouldn't wait for it: only the side panel's chip does.
+  useEffect(() => {
+    if (!printId) return;
+    let cancelled = false;
+    setCollectionCount("loading");
+    collectionsApi
+      .listForPrint(printId)
+      .then((memberships) => memberships.filter((c) => c.in_collection).length)
+      .catch(() => "failed" as const)
+      .then((count) => {
+        // The dialog may have opened and answered first, and by now knows better.
+        if (!cancelled) setCollectionCount((prev) => (prev === "loading" ? count : prev));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [printId]);
 
   if (loading) {
     return (
@@ -427,6 +448,8 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
         <Box sx={{ alignSelf: "stretch", minWidth: 0 }}>
           <ModelSidePanel
             print={print}
+            collectionCount={collectionCount}
+            onCollectionCountChange={setCollectionCount}
             onSelectCategory={onSelectCategory}
             onUnauthorized={onUnauthorized}
             onUpdated={setPrint}

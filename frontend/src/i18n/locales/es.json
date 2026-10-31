@@ -2707,8 +2707,6 @@
         "count_one": "{{count}} modelo",
         "count_many": "{{count}} modelos",
         "count_other": "{{count}} modelos",
-        "newName": "Nueva colección",
-        "create": "Crear esta colección",
         "cancel": "Cancelar",
         "choose": "Elegir"
       },
@@ -3645,6 +3643,7 @@
       "deleteFailed": "No se pudo eliminar el modelo.",
       "confirmDelete": "¿Eliminar «{{name}}»? Esta acción no se puede deshacer.",
       "addToCollection": "Añadir a colección",
+      "addToCollectionAlreadyIn": "Añadir a colección (ya está en {{count}})",
       "addToCollectionTitle": "Añadir a colección",
       "addToCollectionEmpty": "Todavía no tienes ninguna colección.",
       "addToCollectionLoadFailed": "No se pudieron cargar las colecciones. Inténtalo de nuevo.",

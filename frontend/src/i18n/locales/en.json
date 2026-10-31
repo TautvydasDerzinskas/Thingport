@@ -2691,8 +2691,6 @@
         "empty": "No collections yet. Name one below to make it.",
         "count_one": "{{count}} model",
         "count_other": "{{count}} models",
-        "newName": "New collection",
-        "create": "Make this collection",
         "cancel": "Cancel",
         "choose": "Choose"
       },
@@ -3629,6 +3627,7 @@
       "deleteFailed": "Failed to delete the model.",
       "confirmDelete": "Delete \"{{name}}\"? This cannot be undone.",
       "addToCollection": "Add to collection",
+      "addToCollectionAlreadyIn": "Add to collection (already in {{count}})",
       "addToCollectionTitle": "Add to collection",
       "addToCollectionEmpty": "You don't have any collections yet.",
       "addToCollectionLoadFailed": "Failed to load collections. Please try again.",
