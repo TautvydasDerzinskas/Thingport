@@ -58,6 +58,10 @@ export async function startLinksJob(
   const active = await getActiveJob(job.userId);
   if (active && active.id !== job.id) throw new HttpError(409, "An import is already in progress");
 
+  // Before anything changes: if the owner's sign-in can't be resolved, the job stays as it was instead of being left
+  // RUNNING with no runner.
+  const body = await linksJobBody(job);
+
   if (opts.retryFailed) {
     const failed = await resetFailedItems(job.id);
     // Links an interrupted run never reached are rerun too, so a retry alone can finish it.
@@ -83,7 +87,6 @@ export async function startLinksJob(
   });
   if (!count) throw new HttpError(409, "This import changed while it was being started, reload and try again");
   if (opts.manual) liftProviderHolds();
-  const body = await linksJobBody(job);
   return { run: runLinksImportJob(job.id, job.userId, body) };
 }
 
