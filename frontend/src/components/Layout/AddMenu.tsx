@@ -6,6 +6,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import Button from "@mui/material/Button";
+import Divider from "@mui/material/Divider";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
@@ -21,14 +22,11 @@ import Stack from "@mui/material/Stack";
 import IconButton from "@mui/material/IconButton";
 import Alert from "@mui/material/Alert";
 import Typography from "@mui/material/Typography";
-import AddIcon from "@mui/icons-material/Add";
-import UploadFileIcon from "@mui/icons-material/UploadFile";
-import DriveFolderUploadIcon from "@mui/icons-material/DriveFolderUpload";
-import LinkIcon from "@mui/icons-material/Link";
 import BookmarkAddOutlinedIcon from "@mui/icons-material/BookmarkAddOutlined";
 import BookmarkletGuideDialog from "../BookmarkletGuideDialog";
 import { useUploadImport } from "../uploads/useUploadImport";
 import { useImportJob } from "./ImportJobContext";
+import { AddModelIcon, ImportLinkIcon, topBarButtonSx, UploadFilesIcon, UploadFolderIcon } from "./topBarIcons";
 import { useToast } from "../ToastProvider";
 import { IMPORT_PROVIDER_INFO } from "../../constants/importProviders";
 import { COMING_SOON_PROVIDERS, ProviderLogo } from "./ConfigurationDialog/providerLogos";
@@ -61,7 +59,7 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-/** The top bar's "+ Add" button. Lists of a provider that imports them through Thingport Grab only are blocked here. */
+/** The top bar's Add button. Lists of a provider that imports them through Thingport Grab only are blocked here. */
 const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
   { categoryId, makerworldCookie, onUploaded, onUnauthorized },
   ref,
@@ -169,45 +167,56 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
     setImportOpen(false);
   };
 
+  const addLabel = upload.uploading ? t("uploadBar.uploading") : t("common:add");
+  const canImport = !allProvidersOff(disabledProviders);
+
   return (
     <>
       {upload.fileInput}
       {upload.folderInput}
-      <Tooltip title={isImporting ? t("addMenu.disabledWhileImporting") : ""}>
+      <Tooltip title={isImporting ? t("addMenu.disabledWhileImporting") : addLabel}>
         <span>
-          <Button
-            variant="contained"
+          <IconButton
             size="small"
-            startIcon={<AddIcon fontSize="small" />}
+            aria-label={addLabel}
             disabled={upload.isBusy || isImporting}
             onClick={(e) => setAnchorEl(e.currentTarget)}
+            sx={{ ...topBarButtonSx, "&.Mui-disabled svg": { opacity: 0.45 } }}
           >
-            {upload.uploading ? t("uploadBar.uploading") : t("common:add")}
-          </Button>
+            {upload.uploading ? <CircularProgress size={18} /> : <AddModelIcon />}
+          </IconButton>
         </span>
       </Tooltip>
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={closeMenu}>
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={closeMenu}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        slotProps={{ paper: { sx: { mt: 0.75 } } }}
+      >
+        {/* Nothing to import from with every provider turned off. */}
+        {canImport && (
+          <MenuItem onClick={() => openImport()}>
+            <ListItemIcon>
+              <ImportLinkIcon />
+            </ListItemIcon>
+            <ListItemText>{t("common:import")}</ListItemText>
+          </MenuItem>
+        )}
+        {canImport && <Divider />}
         <MenuItem onClick={handleUpload}>
           <ListItemIcon>
-            <UploadFileIcon fontSize="small" />
+            <UploadFilesIcon />
           </ListItemIcon>
           <ListItemText>{t("addMenu.uploadFiles")}</ListItemText>
         </MenuItem>
         <MenuItem onClick={handleFolderUpload}>
           <ListItemIcon>
-            <DriveFolderUploadIcon fontSize="small" />
+            <UploadFolderIcon />
           </ListItemIcon>
           <ListItemText>{t("addMenu.uploadFolder")}</ListItemText>
         </MenuItem>
-        {/* Nothing to import from with every provider turned off. */}
-        {!allProvidersOff(disabledProviders) && (
-          <MenuItem onClick={() => openImport()}>
-            <ListItemIcon>
-              <LinkIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>{t("common:import")}</ListItemText>
-          </MenuItem>
-        )}
       </Menu>
 
       <Dialog open={importOpen} onClose={closeImport} fullWidth maxWidth="sm">

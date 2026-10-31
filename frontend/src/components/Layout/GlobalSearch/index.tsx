@@ -64,6 +64,7 @@ import { useDebouncedValue } from "../../../hooks/useDebouncedValue";
 import { veilColor, VEIL_BLUR } from "../../../theme";
 import type { ConfigurationTab } from "../ConfigurationDialog";
 import Keys, { chipBg, MOD_KEY, SHIFT_KEY, isMac } from "./Keys";
+import { SearchTwoToneIcon, topBarButtonSx } from "../topBarIcons";
 import { useTools } from "../../../hooks/useTools";
 import ToolIcon from "../../tools/ToolIcon";
 import { bangArgument, bangText, isBangQuery, matchBang, type Command } from "./commands";
@@ -817,6 +818,7 @@ export default function GlobalSearch({
               transition: "background-color 150ms ease, color 150ms ease, opacity 150ms ease",
               "&:hover": { bgcolor: chipBg(muiTheme), color: "text.primary" },
               "&.Mui-focusVisible": { outline: 2, outlineColor: "primary.main", outlineOffset: 2 },
+              ...(trigger === "button" && { ...topBarButtonSx, p: 0, borderRadius: "50%" }),
               ...(trigger === "corner" && {
                 position: "fixed",
                 right: 20,
@@ -833,13 +835,16 @@ export default function GlobalSearch({
               }),
             })}
           >
-            <SearchIcon fontSize="small" />
-            <Box
-              component="span"
-              sx={{ display: trigger === "button" ? { xs: "none", sm: "inline-flex" } : "inline-flex" }}
-            >
-              <Keys keys={SHORTCUT} />
-            </Box>
+            {trigger === "button" ? (
+              <SearchTwoToneIcon />
+            ) : (
+              <>
+                <SearchIcon fontSize="small" />
+                <Box component="span" sx={{ display: "inline-flex" }}>
+                  <Keys keys={SHORTCUT} />
+                </Box>
+              </>
+            )}
           </ButtonBase>
         </Tooltip>
       )}
