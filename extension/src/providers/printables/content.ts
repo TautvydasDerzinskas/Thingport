@@ -3,6 +3,7 @@
 // what Printables shows its owner only: private collections and likes (see background/
 // providerAccounts.ts for where it goes).
 
+import { providerCredentialRequest } from "../../shared/providerCredentialRequest";
 import type { PrintablesPush, PrintablesPushPlan } from "../../shared/messages";
 import { request } from "../../shared/messages";
 import { sleep } from "../../content/runtime";
@@ -18,7 +19,7 @@ const CARD_THUMBNAILS = 3;
 type Me = { id: string; handle: string };
 
 async function graphql(token: string, query: string, variables: Record<string, unknown> = {}): Promise<unknown> {
-  const res = await fetch(GRAPHQL_URL, {
+  const res = await providerCredentialRequest("printables-api", GRAPHQL_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ query, variables }),

@@ -140,7 +140,7 @@ describe("a 3D render made while an import runs", () => {
       .withExifMerge({ IFD0: { Artist: "Remote photographer" } })
       .toBuffer();
     global.fetch = (async () => new Response(photo, { headers: { "content-type": "image/jpeg" } })) as typeof fetch;
-    await attachImportedPreviewImages(print.id, plate.id, "https://img.example.com/photo.jpg", [], 0);
+    await attachImportedPreviewImages(print.id, plate.id, "https://8.8.8.8/photo.jpg", [], 0);
 
     const image = await prisma.previewImage.findFirstOrThrow({ where: { printId: print.id } });
     for (const file of [
@@ -167,8 +167,8 @@ describe("a 3D render made while an import runs", () => {
     expect(render.body.print.preview_images).toHaveLength(1);
 
     const images: Record<string, Buffer> = {
-      "https://img.example.com/cover.png": await png(200),
-      "https://img.example.com/gallery.png": await png(120),
+      "https://8.8.8.8/cover.png": await png(200),
+      "https://8.8.8.8/gallery.png": await png(120),
     };
     global.fetch = (async (input: RequestInfo | URL) => {
       const body = images[String(input)];
@@ -179,8 +179,8 @@ describe("a 3D render made while an import runs", () => {
     await attachImportedPreviewImages(
       print.id,
       plate.id,
-      "https://img.example.com/cover.png",
-      [{ url: "https://img.example.com/gallery.png", filename: "gallery.png" }],
+      "https://8.8.8.8/cover.png",
+      [{ url: "https://8.8.8.8/gallery.png", filename: "gallery.png" }],
       0,
     );
 

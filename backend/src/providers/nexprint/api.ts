@@ -1,3 +1,4 @@
+import { credentialRequest } from "../credentialRequest";
 import { IMPORT_TIMEOUT_SECONDS } from "../../config";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
 import { htmlToMarkdown } from "../../services/descriptionMarkdown";
@@ -87,7 +88,7 @@ async function fetchApi(
   let json: unknown;
   let status: number;
   try {
-    const res = await fetch(url, {
+    const res = await credentialRequest("nexprint-api", url, {
       method: body === undefined ? "GET" : "POST",
       headers: headers(token, body !== undefined),
       body: body === undefined ? undefined : JSON.stringify(body),

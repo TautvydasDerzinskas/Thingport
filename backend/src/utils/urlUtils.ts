@@ -2,7 +2,7 @@ import dns from "node:dns/promises";
 import net from "node:net";
 import { HttpError } from "./fileUtils";
 
-function isBlockedIp(address: string): boolean {
+export function isBlockedIp(address: string): boolean {
   const type = net.isIP(address);
   if (!type) return true;
   if (type === 4) {
@@ -13,19 +13,32 @@ function isBlockedIp(address: string): boolean {
     if (a === 172 && b >= 16 && b <= 31) return true;
     if (a === 192 && b === 168) return true;
     if (a === 0) return true;
+    if (a === 100 && b >= 64 && b <= 127) return true; // shared address space
+    if (a === 198 && (b === 18 || b === 19)) return true; // benchmarking
     if (a >= 224) return true; // multicast/reserved
     return false;
   }
-  const lower = address.toLowerCase();
-  if (lower === "::1") return true;
-  if (lower.startsWith("fe80:")) return true;
-  if (lower.startsWith("fc") || lower.startsWith("fd")) return true; // unique local
-  if (lower.startsWith("ff")) return true; // multicast
-  if (lower === "::") return true;
-  return false;
+  // Canonicalise alternate spellings before checking IPv6 ranges.
+  // This also rejects IPv4-mapped/compatible addresses, link-local /10, ULA,
+  // unspecified and multicast without textual bypasses.
+  const canonical = new URL(`http://[${address}]/`).hostname.slice(1, -1);
+  // DNS64's well-known /96 prefix preserves the destination in its last 32 bits.
+  // Apply the IPv4 policy there too, so NAT64 cannot reach private destinations.
+  if (canonical.startsWith("64:ff9b::")) {
+    const tail = canonical.slice("64:ff9b::".length).split(":").filter(Boolean);
+    if (tail.length > 2) return true;
+    const low = parseInt(tail.pop() || "0", 16);
+    const high = parseInt(tail.pop() || "0", 16);
+    return isBlockedIp(`${high >> 8}.${high & 255}.${low >> 8}.${low & 255}`);
+  }
+  const first = parseInt(canonical.split(":")[0], 16);
+  if (first < 0x2000 || first > 0x3fff || !Number.isFinite(first)) return true;
+  // Teredo and 6to4 can encapsulate private IPv4 destinations.
+  return canonical.startsWith("2001:0:") || canonical.startsWith("2001::") || canonical.startsWith("2002:");
 }
 
 export async function validateRemoteHost(host: string): Promise<void> {
+  host = host.replace(/^\[|\]$/g, "");
   if (!host) throw new HttpError(400, "Invalid URL host");
   const lowered = host.toLowerCase();
   if (lowered === "localhost" || lowered.endsWith(".local")) {

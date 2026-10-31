@@ -37,6 +37,68 @@ export class LoginRejectedError extends Error {
 // A JWT outlives a password change, so only signing in proves the saved password still works.
 const CONNECTION_RECHECK_MS = 10 * 60 * 1000;
 
+const isRedirect = (res: Response) => res.type === "opaqueredirect" || [301, 302, 303, 307, 308].includes(res.status);
+
+// http:// origins a reverse proxy was seen upgrading to https:// on the same host, so later requests go there directly.
+const httpsUpgrades = new Map<string, string>();
+
+/** Where an http:// URL ends up, asked without anything secret; the https:// origin when that's all the redirect does. */
+async function httpsUpgradeOf(url: URL, signal: RequestInit["signal"]): Promise<string | null> {
+  if (url.protocol !== "http:") return null;
+  const probe = await fetch(url.href, { method: "GET", redirect: "follow", credentials: "omit", signal }).catch(
+    () => null,
+  );
+  await probe?.body?.cancel().catch(() => undefined);
+  signal?.throwIfAborted();
+  if (!probe?.redirected || !probe.url) return null;
+  const final = new URL(probe.url);
+  const same = final.protocol === "https:" && final.hostname === url.hostname && final.pathname === url.pathname;
+  return same ? final.origin : null;
+}
+
+/** A provider session or Thingport token must not be replayed to a redirect target. The one redirect followed is a
+ *  reverse proxy upgrading http:// to https:// on the same host and path, found out without the credentials. */
+export async function fetchInstance(url: string, init: RequestInit): Promise<Response> {
+  const target = new URL(url);
+  const upgraded = httpsUpgrades.get(target.origin);
+  if (upgraded) return fetchUpgraded(target, upgraded, init);
+  // Browsers hide redirect targets behind opaqueredirect, even for same-origin redirects.
+  const res = await fetch(url, { ...init, redirect: "manual" });
+  if (!isRedirect(res)) return res;
+  await res.body?.cancel().catch(() => undefined);
+  init.signal?.throwIfAborted();
+  const origin = await httpsUpgradeOf(target, init.signal);
+  if (!origin) throw redirectError();
+  httpsUpgrades.set(target.origin, origin);
+  return fetchUpgraded(target, origin, init);
+}
+
+function fetchUpgraded(target: URL, origin: string, init: RequestInit): Promise<Response> {
+  init.signal?.throwIfAborted();
+  const upgraded = new URL(origin);
+  // Assign the path as data: resolving a leading // as a relative URL would replace the verified host.
+  upgraded.pathname = target.pathname;
+  upgraded.search = target.search;
+  return fetchInstanceOnce(upgraded.href, init).catch((err: unknown) => {
+    init.signal?.throwIfAborted();
+    // Typically a connection made before Grab asked for the https:// origin as well: it may not reach it yet.
+    if (err instanceof TypeError) {
+      throw new Error(`Thingport redirects to ${origin}: connect Grab again so it may reach that address`);
+    }
+    throw err;
+  });
+}
+
+async function fetchInstanceOnce(url: string, init: RequestInit): Promise<Response> {
+  const res = await fetch(url, { ...init, redirect: "manual" });
+  if (!isRedirect(res)) return res;
+  await res.body?.cancel().catch(() => undefined);
+  throw redirectError();
+}
+
+const redirectError = () =>
+  new Error("Thingport instance redirected a credential-bearing request; configure its final URL");
+
 /** Mirrored on the toolbar icon, so a broken connection shows before the user reaches a provider. */
 function setConnectionBadge(connected: boolean): void {
   void chrome.action.setBadgeText({ text: connected ? "" : "!" }).catch(() => undefined);
@@ -46,15 +108,18 @@ function setConnectionBadge(connected: boolean): void {
 /** Also called once on a 401, so a password change doesn't require reopening the popup. A connection made by
  *  approval trades its token for a session instead. */
 export async function loginAndStoreToken(credentials: Credentials): Promise<string> {
-  const res = await fetch(apiUrl(credentials.instanceUrl, credentials.connectionToken ? "/grab/session" : "/login"), {
-    method: "POST",
-    headers: { ...CLIENT_HEADERS, "Content-Type": "application/json" },
-    body: JSON.stringify(
-      credentials.connectionToken
-        ? { connection_token: credentials.connectionToken }
-        : { email: credentials.email, password: credentials.password },
-    ),
-  });
+  const res = await fetchInstance(
+    apiUrl(credentials.instanceUrl, credentials.connectionToken ? "/grab/session" : "/login"),
+    {
+      method: "POST",
+      headers: { ...CLIENT_HEADERS, "Content-Type": "application/json" },
+      body: JSON.stringify(
+        credentials.connectionToken
+          ? { connection_token: credentials.connectionToken }
+          : { email: credentials.email, password: credentials.password },
+      ),
+    },
+  );
   if (!res.ok) {
     const detail = await errorDetail(res, `Could not sign in to this Thingport instance (${res.status})`);
     throw res.status === 401 || res.status === 403 ? new LoginRejectedError(detail) : new Error(detail);
@@ -182,7 +247,7 @@ export async function apiCall<T = unknown>(method: string, path: string, body?: 
   }
 
   const doFetch = (token: string) =>
-    fetch(apiUrl(config.instanceUrl, path), {
+    fetchInstance(apiUrl(config.instanceUrl, path), {
       method,
       headers: {
         ...CLIENT_HEADERS,
@@ -200,7 +265,7 @@ export async function apiCall<T = unknown>(method: string, path: string, body?: 
 }
 
 export async function apiFetchBlob(config: ConfiguredConfig, path: string): Promise<Blob | null> {
-  const res = await fetch(apiUrl(config.instanceUrl, path), {
+  const res = await fetchInstance(apiUrl(config.instanceUrl, path), {
     headers: { ...CLIENT_HEADERS, Authorization: `Bearer ${await ensureToken(config)}` },
   });
   return res.ok ? res.blob() : null;
@@ -233,7 +298,7 @@ export async function disconnect(): Promise<{ approvalKept: boolean }> {
   let approvalKept = false;
   if (config.instanceUrl) {
     const post = (path: string, init: RequestInit = {}) =>
-      fetch(apiUrl(config.instanceUrl!, path), {
+      fetchInstance(apiUrl(config.instanceUrl!, path), {
         method: "POST",
         ...init,
         headers: { ...CLIENT_HEADERS, "Content-Type": "application/json", ...init.headers },

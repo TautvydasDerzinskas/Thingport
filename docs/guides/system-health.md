@@ -26,7 +26,7 @@ for.
 | File storage   | Required    | Where model files, pictures and 3D previews are kept. Uploads, imports and downloads fail if it isn't writable or runs out of space.                                                                                                                                                                                                                                                      |
 | Memory         | Required    | Building 3D previews of large models takes the most. With too little, previews fail or the server restarts.                                                                                                                                                                                                                                                                               |
 | Internet       | Recommended | The server reaching the outside world, checked with a request to where system notifications come from (GitHub, unless `SYSTEM_NOTIFICATIONS_URL` says otherwise). Without it no site can be reached: imports, synced collections and the update check stop.                                                                                                                               |
-| FlareSolverr   | Recommended | Gets past Cloudflare's checks, mostly on Printables, Thingiverse and MyMiniFactory (MakerWorld and Thangs use it only as a fallback), and gets Thingport a token for the AWS bot check in front of CGTrader's downloads. Without it, imports and syncs from those three are blocked whenever Cloudflare challenges the server.                                                            |
+| FlareSolverr   | Recommended | Gets past Cloudflare's checks on supported pages, mostly Printables (MakerWorld and Thangs use it only as a fallback), retries challenged reads on declared Thingiverse and MyMiniFactory API routes, and gets Thingport a token for the AWS bot check in front of CGTrader's downloads. It can't relay binary downloads.                                                                 |
 | Thingiverse    | Recommended | The instance's Thingiverse App Token, used for every Thingiverse import, synced collection and author lookup. Not checked while Thingiverse is [turned off](../PROVIDER_SETUP.md#turning-a-provider-off).                                                                                                                                                                                 |
 | MyMiniFactory  | Optional    | The instance's MyMiniFactory API key, used to read models, synced collections and authors from MyMiniFactory. Not checked while MyMiniFactory is [turned off](../PROVIDER_SETUP.md#turning-a-provider-off).                                                                                                                                                                               |
 | Thingport Grab | Recommended | The [browser extension](../../extension/README.md) for importing from a model's or a collection's own page as you browse, and for handing Thingport your sign-ins to the sites that need one. Some things come only through it: MakerOnline's files, OwlCAD's CAD projects, and your Printables likes and private collections. Shown as seen once any browser uses it with this instance. |
@@ -40,8 +40,9 @@ for.
   an error.
 - **Error** (red): not working. For a Required or Recommended part, Thingport or the features that depend on it are
   broken until it's fixed.
-- **Not configured** (grey): not set up. Fine for an optional part you don't use. For FlareSolverr, Thingiverse or
-  MyMiniFactory, imports from those sites will fail sooner or later. Thingport can't look into anyone's browser, so Grab
+- **Not configured** (grey): not set up. Fine for an optional part you don't use. Without FlareSolverr, supported page
+  imports can fail when Cloudflare challenges the server. Thingiverse and MyMiniFactory still need their configured
+  App Token and API key. Thingport can't look into anyone's browser, so Grab
   stays grey until it's first used with this instance; get it from the **Downloads** page.
 - **Not tested**: hasn't been checked yet. Click **Test** or **Run full test**.
 
@@ -57,6 +58,10 @@ pull the AI model on Ollama.
   Rendering** so heavy models need less.
 - **Internet offline**: check the server's network, DNS and any proxy or firewall in front of it; Docker containers
   need outbound access too. Uploading and browsing your library still work meanwhile.
+- **FlareSolverr over plain HTTP** (warning): it works, but provider cookies and API tokens reach a solver on
+  another machine unencrypted. Put it behind HTTPS or run it in the Compose stack (`http://flaresolverr:8191`). When
+  FlareSolverr is green with a hint, the connection is secure and you can set `FLARESOLVERR_REQUIRE_HTTPS=true` to
+  keep it that way; with the variable on, a plain HTTP remote URL is refused and shown as an error.
 - **FlareSolverr not answering**: check that its container is running and that the URL under **Administration →
   Connections → FlareSolverr** is right, port included (usually `http://flaresolverr:8191`).
 - **Thingiverse token rejected**: generate a new one at [thingiverse.com/apps/create](https://www.thingiverse.com/apps/create)

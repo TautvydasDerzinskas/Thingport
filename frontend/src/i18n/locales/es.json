@@ -1206,7 +1206,10 @@
             "problems": {
               "not_configured": "No configurado. Las importaciones funcionan hasta que un proveedor muestre un desafío de Cloudflare; añade una URL de FlareSolverr para que sigan funcionando cuando eso ocurra.",
               "unreachable": "FlareSolverr no responde. Comprueba que su contenedor esté en marcha y que la URL en Conexiones > FlareSolverr sea correcta, incluido el puerto (normalmente 8191).",
-              "timeout": "FlareSolverr no respondió a tiempo. Puede que aún se esté iniciando o que esté ocupado."
+              "timeout": "FlareSolverr no respondió a tiempo. Puede que aún se esté iniciando o que esté ocupado.",
+              "insecure": "Funciona, pero por HTTP sin cifrar hacia otra máquina, así que las cookies y los tokens de API de los proveedores viajan por la red sin cifrar. Pon FlareSolverr detrás de HTTPS o ejecútalo en el mismo stack de Compose como http://flaresolverr:8191.",
+              "insecure_refused": "FLARESOLVERR_REQUIRE_HTTPS está activado, así que esta URL HTTP sin cifrar se rechaza y no se le envía nada. Cambia la URL a HTTPS o quita la variable.",
+              "https_ready": "La conexión es segura. Define FLARESOLVERR_REQUIRE_HTTPS=true para rechazar a partir de ahora las URL de solver no seguras."
             }
           },
           "thingiverse": {

@@ -9,6 +9,7 @@ export default {
   site: "https://www.thingiverse.com",
   docsSlug: "thingiverse",
   hosts: ["thingiverse.com"],
+  credentialHosts: { "thingiverse-api": { exact: ["api.thingiverse.com"] } },
   endpoints: { api: "https://api.thingiverse.com" },
   brand: {
     logo: {
@@ -28,7 +29,21 @@ export default {
   ],
   modelNoun: "things",
   helpers: { grab: "optional", flaresolverr: "recommended" },
-  browserFetch: true,
+  solverRoutes: [
+    {
+      host: "api.thingiverse.com",
+      path: /^\/(?:things\/\d+(?:\/categories)?|users\/[\w.%-]+(?:\/likes|\/collections)?|collections\/\d+(?:\/things)?|popular)$/,
+      query: ["page", "per_page"],
+      credentials: { query: ["access_token"] },
+    },
+    { host: "www.thingiverse.com", path: /^\/thing:\d+\/?$/, query: [] },
+  ],
+  browserFetchOrigins: [
+    "https://thingiverse.com",
+    "https://www.thingiverse.com",
+    "https://api.thingiverse.com",
+    "https://cdn.thingiverse.com",
+  ],
   slicers: ["cura"],
   capabilities: {
     collections: true,

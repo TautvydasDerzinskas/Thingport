@@ -1,8 +1,8 @@
+import { credentialRequest } from "../credentialRequest";
 import { IMPORT_BROWSER_USER_AGENT, IMPORT_TIMEOUT_SECONDS } from "../../config";
 import {
   extractJsonFromBrowserBody,
   fetchViaFlaresolverr,
-  isFlaresolverrEnabled,
   looksLikeCloudflareBlock,
 } from "../../services/flaresolverr";
 import {
@@ -49,7 +49,7 @@ const DESIGN_API_BASE = `${manifest.endpoints.cloudApi}/design-service`;
 const PROFILE_DOWNLOAD_BASE = `${manifest.endpoints.cloudApi}/iot-service/api/user/profile`;
 const AUTHOR_PROFILE_BASE = `${manifest.endpoints.api}/design-user-service/user/profile`;
 // Only succeeds for a logged-in session, so it doubles as the cookie check.
-const SELF_PREFERENCE_URL = `${manifest.endpoints.api}/design-user-service/my/preference`;
+const SELF_PREFERENCE_URL = `${manifest.endpoints.cloudApi}/design-user-service/my/preference`;
 const CLOUD_API_TIMEOUT_MS = IMPORT_TIMEOUT_SECONDS * 1000;
 const MAKERWORLD_PROVIDER = manifest.id;
 const REFERER = `${manifest.site}/`;
@@ -78,7 +78,7 @@ async function fetchCloudJson(url: string, bearerToken: string): Promise<{ statu
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), CLOUD_API_TIMEOUT_MS);
     try {
-      const res = await fetch(url, {
+      const res = await credentialRequest("makerworld-cloud", url, {
         headers: cloudApiHeaders(bearerToken),
         redirect: "follow",
         signal: controller.signal,
@@ -111,7 +111,7 @@ async function fetchCloudJson(url: string, bearerToken: string): Promise<{ statu
 
 /** Pulls the `token` value out of a pasted `Cookie:` header, or accepts a bare token. */
 export function extractMakerworldBearerToken(rawCookieOrToken: string | null | undefined): string | null {
-  const raw = (rawCookieOrToken || "").trim();
+  const raw = (rawCookieOrToken || "").trim().replace(/^Cookie:\s*/i, "");
   if (!raw) return null;
   const match = raw.match(TOKEN_PAIR);
   if (match) {
@@ -124,11 +124,9 @@ export function extractMakerworldBearerToken(rawCookieOrToken: string | null | u
   return null;
 }
 
-/** "unverifiable" means the check never reached MakerWorld, so the cookie may still be fine. */
+/** "unverifiable" means the provider did not establish whether the cookie is valid. */
 export type MakerworldCookieCheck =
-  | { result: "valid" }
-  | { result: "invalid" }
-  | { result: "unverifiable"; reason: "cloudflare_no_flaresolverr" | "flaresolverr_failed" | "network" };
+  { result: "valid" } | { result: "invalid" } | { result: "unverifiable"; reason: "provider" | "network" };
 
 export async function verifyMakerworldCookie(rawCookieOrToken: string): Promise<MakerworldCookieCheck> {
   const bearerToken = extractMakerworldBearerToken(rawCookieOrToken);
@@ -136,7 +134,7 @@ export async function verifyMakerworldCookie(rawCookieOrToken: string): Promise<
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), CLOUD_API_TIMEOUT_MS);
   try {
-    const res = await fetch(SELF_PREFERENCE_URL, {
+    const res = await credentialRequest("makerworld-cloud", SELF_PREFERENCE_URL, {
       headers: {
         "User-Agent": IMPORT_BROWSER_USER_AGENT,
         Accept: "application/json",
@@ -146,15 +144,19 @@ export async function verifyMakerworldCookie(rawCookieOrToken: string): Promise<
       redirect: "follow",
       signal: controller.signal,
     });
-    if (res.status === 403 && looksLikeCloudflareBlock(res.headers)) {
-      if (!(await isFlaresolverrEnabled())) return { result: "unverifiable", reason: "cloudflare_no_flaresolverr" };
-      // Through FlareSolverr this answers 200 even when logged out; only a real session has a `uid`.
-      const solved = await fetchViaFlaresolverr(SELF_PREFERENCE_URL, `${TOKEN_COOKIE}=${bearerToken}`);
-      if (!solved) return { result: "unverifiable", reason: "flaresolverr_failed" };
-      const data = extractJsonFromBrowserBody(solved.body);
-      return isRecord(data) && data.uid != null ? { result: "valid" } : { result: "invalid" };
+    if (res.status === 401) return { result: "invalid" };
+    if (!res.ok) return { result: "unverifiable", reason: "provider" };
+    let data: unknown;
+    try {
+      data = await res.json();
+    } catch {
+      return { result: "unverifiable", reason: "provider" };
     }
-    return res.ok ? { result: "valid" } : { result: "invalid" };
+    const uid = isRecord(data) ? data.uid : null;
+    const hasUid =
+      (typeof uid === "string" && uid.trim().length > 0) ||
+      (typeof uid === "number" && Number.isFinite(uid) && uid > 0);
+    return hasUid ? { result: "valid" } : { result: "unverifiable", reason: "provider" };
   } catch {
     return { result: "unverifiable", reason: "network" };
   } finally {

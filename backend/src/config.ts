@@ -140,6 +140,8 @@ export const IMPORT_BROWSER_USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36";
 
 export const FLARESOLVERR_URL = (process.env.FLARESOLVERR_URL || "").trim();
+// Opt-in: once every setup can, plaintext HTTP is refused for any solver but the local ones (System Health says when).
+export const FLARESOLVERR_REQUIRE_HTTPS = process.env.FLARESOLVERR_REQUIRE_HTTPS === "true";
 export const FLARESOLVERR_TIMEOUT_MS = envInt("FLARESOLVERR_TIMEOUT_MS", 60000);
 export const FLARESOLVERR_SESSION_TTL_MS = envInt("FLARESOLVERR_SESSION_TTL_MS", 15 * 60 * 1000);
 

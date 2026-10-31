@@ -88,11 +88,26 @@ how lists are read. When a new site resembles one of these, copy that provider's
 
 **Cloudflare:**
 
-- `browserFetch: true` in the manifest sends every request to the provider's hosts with a browser's TLS handshake
-  (`backend/src/utils/browserFetch.ts`). Use it where Cloudflare tells Node's fetch apart by its handshake, as with
-  Thingiverse, MyMiniFactory and Thangs. Headers and cookies don't help there.
-- FlareSolverr is a fallback for challenge pages (`services/flaresolverr.ts`), used by MakerWorld, Thingiverse,
-  MyMiniFactory and Thangs. `helpers.flaresolverr` in the manifest says how much the provider leans on it.
+- `browserFetchOrigins` in the manifest lists the exact HTTPS origins that need a browser's TLS handshake
+  (`backend/src/utils/browserFetch.ts`). Include every affected origin, including CDN and download hosts, as with
+  Thingiverse, MyMiniFactory and Thangs. Headers and cookies don't help where Cloudflare distinguishes the handshake.
+- FlareSolverr is a fallback for declared pages and API reads (`services/flaresolverr.ts`). A manifest's
+  `solverRoutes` owns exact hosts, anchored path patterns, allowed query names and route-specific `credentials`
+  (`query` names or `cookies: true`). Only those HTTPS destinations may enter the solver; ordinary query fields
+  cannot carry credentials. Callers cannot override this policy. API tokens belong on API routes only.
+  `encodedSpaceSegment` permits `%20` in a single pathname segment where needed for usernames; encoded delimiters,
+  controls and double encoding remain rejected.
+  `helpers.flaresolverr` describes the provider's recommendation. Configuring the global solver URL enables
+  fallback for all declared routes; clearing it disables every solve, including warm page-proxy cache requests.
+  Thingiverse and MyMiniFactory still try guarded direct transport first and solve a 429, a declared Cloudflare
+  challenge, or a non-JSON 403 from Cloudflare. A 401 rejects either provider's instance credential; a JSON 403
+  rejects Thingiverse's App Token, while MyMiniFactory also uses 403 for nonpublic resources and leaves it as an
+  inaccessible resource. An unsolved Cloudflare HTML 403 is a block, not proof of a rejected credential.
+- Solver navigation can redirect or load third parties outside Thingport's per-hop destination guard. A declaration
+  permits credential exposure to the configured solver and potentially its logs; it does not constrain the browser's
+  later requests. Document that trust requirement and recommend a private, isolated solver. Binary downloads,
+  authenticated Cults3D calls and MakerWorld's `api.bambulab.com` cloud API are unsupported; Cults3D's declaration is
+  for public pages only. Regenerate all manifest copies with `npm run providers:sync`.
 - Creality Cloud only needs a browser's User-Agent. So does GrabCAD's CloudFront, which turns away a request without
   one, its pictures and files included; the import pipeline's own downloads send one.
 - Cults3D's site gets past no challenge at all. Its downloads use the browser's own `cf_clearance`, sent with the
@@ -232,7 +247,7 @@ Rules of thumb:
 
 1. Find what the site's own pages call, and which calls need a sign-in. Record real responses for the contract test.
 2. Keep everything server-side if the site allows it, with the sign-in Grab hands over.
-3. If Cloudflare blocks Node, try `browserFetch` first and FlareSolverr second.
+3. If Cloudflare blocks Node, declare the affected `browserFetchOrigins` first and try FlareSolverr second.
 4. Fall back to Grab doing the work on the site's pages (MakerOnline, OwlCAD) only when nothing server-side works.
 5. Prefer the generic shape. When a site doesn't fit, declare the exception rather than bending the shared code:
    `customImport`, `providers/routes.ts`, `PROVIDER_UI`, or a content or session module of its own.
