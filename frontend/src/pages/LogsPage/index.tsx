@@ -50,6 +50,7 @@ const ACTION_COLORS: Record<LogAction, ActionColor> = {
   import_completed: "info",
   model_edited: "warning",
   model_reimported: "info",
+  model_linked: "info",
   model_deleted: "error",
   models_repaired: "warning",
   collection_created: "success",
@@ -155,6 +156,7 @@ export default function LogsPage({ onUnauthorized }: Props) {
       case "model_edited":
         return typeof d.field === "string" ? t("adminSettings.logs.editedField", { field: d.field }) : "";
       case "model_reimported":
+      case "model_linked":
         return typeof d.source_url === "string" ? d.source_url : "";
       case "models_repaired": {
         // The run's own word for what it did, rather than the action as it is stored.

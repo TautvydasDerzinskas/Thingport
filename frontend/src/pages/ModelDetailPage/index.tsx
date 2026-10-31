@@ -71,6 +71,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
           onDeleted={goBack}
           onUpdated={setPrint}
           viewer={viewer}
+          offerLink
         />
       </Stack>
     ) : undefined,

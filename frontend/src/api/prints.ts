@@ -85,6 +85,8 @@ export type Print = {
     reason: string;
     model: string;
     created_at: string;
+    /** Set when it's the category this provider's own maps to, rather than AI's answer. */
+    provider?: string | null;
   } | null;
   created_at: string;
   storage_path?: string | null;
@@ -547,6 +549,17 @@ export const printsApi = {
       throw new Error(await readErrorMessage(res, "Filling in missing details failed"));
     }
     return res.json();
+  },
+
+  linkSource: async (id: string, url: string): Promise<Print> => {
+    const res = await fetch(`${apiBase()}/print/${id}/link-source`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ url }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Linking this model failed"));
+    return ((await res.json()) as { print: Print }).print;
   },
 
   delete: async (id: string) => {

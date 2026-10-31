@@ -48,6 +48,24 @@ Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerab
 If a detail couldn't be fetched at the time, such as the author, **Fetch missing details** on the model page tries
 again.
 
+## Link a model you already have
+
+A model you uploaded yourself can be linked to its page on any of the 17 sites, without importing it again. Choose
+**Link to a provider** in the model page's **⋮** menu, or on the Models page with the Folders view on, in a card's **⋮**
+menu or, with exactly one model selected, the selection toolbar. Paste the model's link, check the preview, and link it.
+
+- **What it brings:** the page's pictures, description, tags and author, and the provider's badge and link. The
+  pictures go ahead of your own, so its cover becomes the model's, and your own stay. Tags are added to yours. The
+  description and author replace what's there, where the site has them, and that can't be undone. A title you set stays.
+- **What it leaves alone:** your files. Nothing is downloaded, so the page's other files and print profiles don't come.
+- **Category:** the model stays where it is. If the site's category maps to one of yours, it's suggested on the model
+  page, to accept or reject like an AI suggestion, and works without AI. An AI run replaces it with its own answer, or
+  clears it if nothing fits.
+
+A linked model counts as imported from then on, so importing the same link later won't bring the page's files. On sites
+with print profiles, importing a link to one of its profiles still adds that profile. A page can only be linked to one
+model.
+
 ## Big imports
 
 Collections and lists of links run as background jobs. A progress bar shows how far along they are, and a notification
