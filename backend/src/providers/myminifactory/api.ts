@@ -4,7 +4,12 @@ import { browserFetch } from "../../utils/browserFetch";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
 import { htmlToMarkdown } from "../../services/descriptionMarkdown";
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
-import { isCloudflareChallenge, fetchViaFlaresolverr, extractJsonFromBrowserBody } from "../../services/flaresolverr";
+import {
+  isCloudflareChallenge,
+  looksLikeCloudflareBlock,
+  fetchViaFlaresolverr,
+  extractJsonFromBrowserBody,
+} from "../../services/flaresolverr";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
 import {
   myminifactoryCollectionKey,
@@ -66,26 +71,35 @@ async function fetchApi(path: string, apiKey: string): Promise<{ ok: boolean; st
   const res = await browserCredentialRequest("myminifactory-api", url, {
     headers: { Accept: "application/json" },
     timeoutMs: API_TIMEOUT_MS,
+    signal: AbortSignal.timeout(API_TIMEOUT_MS),
   });
-  if (res.status === 429 || isCloudflareChallenge(res.headers)) {
-    await res.body?.cancel().catch(() => undefined);
-    const solved = await fetchViaFlaresolverr(url);
-    if (!solved || solved.status === 429) throw new MyminifactoryRateLimitError();
-    const data = extractJsonFromBrowserBody(solved.body);
-    if (solved.status === 401 || (solved.status === 403 && data !== null)) throw new MyminifactoryAuthError();
-    if (data === null || solved.status === 403) throw new MyminifactoryRateLimitError();
-    return { ok: solved.status >= 200 && solved.status < 300, status: solved.status, data };
-  }
-  const text = await res.text();
+  const challenged = res.status === 429 || isCloudflareChallenge(res.headers);
   let data: unknown = null;
-  if (text.trim()) {
+  if (!challenged) {
+    const text = await res.text();
     try {
       data = JSON.parse(text);
     } catch {
       data = null;
     }
   }
-  if (res.status === 401 || res.status === 403) throw new MyminifactoryAuthError();
+  // Cloudflare can send an HTML 403 without cf-mitigated. Its server header alone
+  // is not enough: ordinary JSON API denials carry that header too.
+  if (challenged || (res.status === 403 && data === null && looksLikeCloudflareBlock(res.headers))) {
+    await res.body?.cancel().catch(() => undefined);
+    const solved = await fetchViaFlaresolverr(url);
+    if (!solved || solved.status === 429) throw new MyminifactoryRateLimitError();
+    data = extractJsonFromBrowserBody(solved.body);
+    if (solved.status === 401) throw new MyminifactoryAuthError();
+    // Missing resources and upstream outages can be HTML too; only an otherwise
+    // successful solve or another 403 without API JSON still looks like a challenge.
+    if (data === null && (solved.status === 403 || (solved.status >= 200 && solved.status < 300))) {
+      throw new MyminifactoryRateLimitError();
+    }
+    return { ok: solved.status >= 200 && solved.status < 300, status: solved.status, data };
+  }
+  // MyMiniFactory also uses 403 for objects that are not public; only 401 rejects the API key.
+  if (res.status === 401) throw new MyminifactoryAuthError();
   return { ok: res.ok, status: res.status, data };
 }
 

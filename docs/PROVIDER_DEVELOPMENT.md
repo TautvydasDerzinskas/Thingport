@@ -98,8 +98,11 @@ how lists are read. When a new site resembles one of these, copy that provider's
   `encodedSpaceSegment` permits `%20` in a single pathname segment where needed for usernames; encoded delimiters,
   controls and double encoding remain rejected.
   `helpers.flaresolverr` describes the provider's recommendation. Configuring the global solver URL enables
-  fallback for all declared routes; clearing it disables every solve, including warm page-proxy cache requests. Thingiverse and MyMiniFactory still try guarded direct transport first and solve only a 429 or
-  Cloudflare challenge; ordinary 401/403 responses remain credential rejections.
+  fallback for all declared routes; clearing it disables every solve, including warm page-proxy cache requests.
+  Thingiverse and MyMiniFactory still try guarded direct transport first and solve a 429, a declared Cloudflare
+  challenge, or a non-JSON 403 from Cloudflare. A 401 rejects either provider's instance credential; a JSON 403
+  rejects Thingiverse's App Token, while MyMiniFactory also uses 403 for nonpublic resources and leaves it as an
+  inaccessible resource. An unsolved Cloudflare HTML 403 is a block, not proof of a rejected credential.
 - Solver navigation can redirect or load third parties outside Thingport's per-hop destination guard. A declaration
   permits credential exposure to the configured solver and potentially its logs; it does not constrain the browser's
   later requests. Document that trust requirement and recommend a private, isolated solver. Binary downloads,

@@ -3,7 +3,12 @@ import { IMPORT_TIMEOUT_SECONDS } from "../../config";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
 import { cleanThingiverseMarkdown } from "./markdown";
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
-import { isCloudflareChallenge, fetchViaFlaresolverr, extractJsonFromBrowserBody } from "../../services/flaresolverr";
+import {
+  isCloudflareChallenge,
+  looksLikeCloudflareBlock,
+  fetchViaFlaresolverr,
+  extractJsonFromBrowserBody,
+} from "../../services/flaresolverr";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
 import {
   parseThingiverseCollectionUrl,
@@ -52,6 +57,7 @@ async function rawApiFetch(url: string): Promise<Response> {
   return browserCredentialRequest("thingiverse-api", url, {
     headers: { Accept: "application/json" },
     timeoutMs: API_TIMEOUT_MS,
+    signal: AbortSignal.timeout(API_TIMEOUT_MS),
   });
 }
 
@@ -70,26 +76,34 @@ async function fetchThingiverseApi(
   // Try the guarded direct transport first, including when a page proxy cache is warm.
   const res = await rawApiFetch(url);
 
-  if (res.status === 429 || isCloudflareChallenge(res.headers)) {
-    await res.body?.cancel().catch(() => undefined);
-    const solved = await fetchViaFlaresolverr(url);
-    if (!solved || solved.status === 429) throw new ThingiverseRateLimitError();
-    const data = extractJsonFromBrowserBody(solved.body);
-    if (solved.status === 401 || (solved.status === 403 && data !== null)) throw new ThingiverseAuthError();
-    if (data === null || solved.status === 403) throw new ThingiverseRateLimitError();
-    return { ok: solved.status >= 200 && solved.status < 300, status: solved.status, data };
-  }
-  const text = await res.text();
+  const challenged = res.status === 429 || isCloudflareChallenge(res.headers);
   let data: unknown = null;
-  if (text.trim()) {
+  if (!challenged) {
+    const text = await res.text();
     try {
       data = JSON.parse(text);
     } catch {
       data = null;
     }
   }
-  // An unsolved challenge is a 403 too; it says nothing about the token.
-  if (res.status === 401 || res.status === 403) throw new ThingiverseAuthError();
+  // Cloudflare can send an HTML 403 without cf-mitigated. Its server header alone
+  // is not enough: ordinary JSON API denials carry that header too.
+  if (challenged || (res.status === 403 && data === null && looksLikeCloudflareBlock(res.headers))) {
+    await res.body?.cancel().catch(() => undefined);
+    const solved = await fetchViaFlaresolverr(url);
+    if (!solved || solved.status === 429) throw new ThingiverseRateLimitError();
+    data = extractJsonFromBrowserBody(solved.body);
+    if (solved.status === 401 || (solved.status === 403 && data !== null)) throw new ThingiverseAuthError();
+    // Missing resources and upstream outages can be HTML too; only an otherwise
+    // successful solve or another 403 without API JSON still looks like a challenge.
+    if (data === null && (solved.status === 403 || (solved.status >= 200 && solved.status < 300))) {
+      throw new ThingiverseRateLimitError();
+    }
+    return { ok: solved.status >= 200 && solved.status < 300, status: solved.status, data };
+  }
+  // An HTML denial says nothing about whether the App Token is valid.
+  if (res.status === 403 && data === null) throw new ThingiverseRateLimitError();
+  if (res.status === 401 || (res.status === 403 && data !== null)) throw new ThingiverseAuthError();
   return { ok: res.ok, status: res.status, data };
 }
 
