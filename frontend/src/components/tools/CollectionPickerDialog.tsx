@@ -16,6 +16,7 @@ import Typography from "@mui/material/Typography";
 import CheckIcon from "@mui/icons-material/Check";
 import CollectionsOutlinedIcon from "@mui/icons-material/CollectionsOutlined";
 import SearchIcon from "@mui/icons-material/Search";
+import { UnauthorizedError } from "../../api/client";
 import { collectionsApi, type Collection } from "../../api/collections";
 import { ListRowSkeletons } from "../ListSkeleton";
 import NewCollectionField from "../NewCollectionField";
@@ -25,10 +26,11 @@ type Props = {
   open: boolean;
   title?: string;
   onClose: (picked: ToolCollection | null) => void;
+  onUnauthorized?: () => void;
 };
 
 /** Which of the user's collections a tool saves to, or a new one made here: a tool's Save dialog. */
-export default function CollectionPickerDialog({ open, title, onClose }: Props) {
+export default function CollectionPickerDialog({ open, title, onClose, onUnauthorized }: Props) {
   const { t } = useTranslation("app");
   const [collections, setCollections] = useState<Collection[] | null>(null);
   const [query, setQuery] = useState("");
@@ -46,10 +48,18 @@ export default function CollectionPickerDialog({ open, title, onClose }: Props) 
       .list()
       // Only ones it can save into: not the built-in ones, nor a tool's own.
       .then((all) => active && setCollections(all.filter((c) => !c.system_key && !c.tool_id)))
-      .catch((err: unknown) => active && setError(err instanceof Error ? err.message : String(err)));
+      .catch((err: unknown) => {
+        if (!active) return;
+        if (err instanceof UnauthorizedError && onUnauthorized) {
+          onUnauthorized();
+          return;
+        }
+        setError(err instanceof Error ? err.message : String(err));
+      });
     return () => {
       active = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const shown = useMemo(() => {
@@ -116,6 +126,7 @@ export default function CollectionPickerDialog({ open, title, onClose }: Props) 
           )}
         </Box>
         <NewCollectionField
+          onUnauthorized={onUnauthorized}
           onCreated={(made) => {
             setCollections((prev) => [made, ...(prev ?? [])]);
             setChosen(made.id);
