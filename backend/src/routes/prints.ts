@@ -22,6 +22,7 @@ import { createLog } from "../services/auditLog";
 import { recordActivity } from "../services/activityService";
 import { notifyUpload, type UploadOrigin } from "../services/modelNotifications";
 import { fillSourceGaps } from "../services/fillGapsService";
+import { linkPrintToSource } from "../services/modelLinkService";
 import { deletePrint, setPrintTags, updatePrintMeta } from "../services/printEditService";
 import { isNormalizable3mf, normalize3mfStatus, normalized3mfFor } from "../services/normalized3mfCache";
 import {
@@ -597,5 +598,16 @@ async function fillGaps(req: Request, res: Response): Promise<void> {
 router.post("/print/:id/fill-gaps", asyncHandler(fillGaps));
 // Extension versions up to 1.3.0 call it by its old name.
 router.post("/print/:id/reimport", asyncHandler(fillGaps));
+
+const linkSourceSchema = z.object({ url: z.string() });
+
+router.post(
+  "/print/:id/link-source",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(linkSourceSchema, req.body);
+    await linkPrintToSource(req.userId!, req.params.id, body.url);
+    res.json({ print: await printOutById(req.userId!, req.params.id) });
+  }),
+);
 
 export default router;

@@ -25,6 +25,7 @@ import { notifyImportRun } from "../services/modelNotifications";
 import { toImportJobItemOut, toImportJobOut } from "../dto";
 import type { Prisma } from "@prisma/client";
 import { importAndDescribe, prepareSingleImport } from "../services/singleImport";
+import { previewSourceLink } from "../services/modelLinkService";
 import {
   isProviderId,
   type LegacyIdsField,
@@ -107,6 +108,15 @@ router.post(
     const url = await enabledImportUrl(body.url);
     const result = await inspectImportLink(url, body);
     res.json(result);
+  }),
+);
+
+// What linking an existing model to this link would bring (services/modelLinkService.ts).
+router.post(
+  "/import/preview",
+  asyncHandler(async (req, res) => {
+    const { url } = parseBody(z.object({ url: z.string() }), req.body);
+    res.json(await previewSourceLink(req.userId!, url));
   }),
 );
 

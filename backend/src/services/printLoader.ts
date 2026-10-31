@@ -44,7 +44,7 @@ export async function printOutById(userId: string, printId: string): Promise<Pri
     full.print.author,
     full.previewImages,
     full.print.category,
-    suggestionsShown ? await aiSuggestionOut(userId, full.print.aiSuggestion, categoryPaths) : null,
+    await aiSuggestionOut(userId, full.print.aiSuggestion, categoryPaths, suggestionsShown),
     await aiDescriptionOut(full.print),
   );
 }
@@ -88,7 +88,7 @@ export async function printOutsByIds(userId: string, printIds: string[]): Promis
         previewsByPrint.get(print.id) || [],
         // The search palette shows it under each model.
         print.category,
-        suggestionsShown ? await aiSuggestionOut(userId, print.aiSuggestion, categoryPaths) : null,
+        await aiSuggestionOut(userId, print.aiSuggestion, categoryPaths, suggestionsShown),
       ),
     );
   }

@@ -1,4 +1,4 @@
-/** URL-shape detection shared by useUploadImport and AddMenu so they can't drift apart. The parsing itself is the
+/** URL-shape detection shared by useUploadImport, AddMenu and LinkSourceDialog so they can't drift apart. The parsing itself is the
  *  providers' own (providers/<id>/urls.ts), the same the backend and Grab use; this only adds what the import box
  *  needs, such as taking a link pasted without its scheme. */
 
@@ -44,4 +44,17 @@ export const mayBeRawFilesZip = (provider: ProviderId) => !!manifestOf(provider)
 export function hasPrintProfiles(url: string): boolean {
   const model = modelLinkOf(url);
   return !!model && MANIFESTS[model.provider].capabilities.profiles;
+}
+
+export type ModelLinkProblem = "several" | "list" | "notModel" | "disabled";
+
+/** Why a link can't be the page a model is linked to, or null when it can: it takes one model's page, on a provider
+ *  an admin hasn't turned off. */
+export function modelLinkProblem(link: string, disabled: ReadonlySet<ProviderId>): ModelLinkProblem | null {
+  const url = link.trim();
+  if (/\s/.test(url)) return "several";
+  if (listLinkOf(url)) return "list";
+  const model = modelLinkOf(url);
+  if (!model) return "notModel";
+  return disabled.has(model.provider) ? "disabled" : null;
 }

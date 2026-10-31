@@ -21,6 +21,7 @@ import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import AutoFixNormalIcon from "@mui/icons-material/AutoFixNormal";
 import LaunchIcon from "@mui/icons-material/Launch";
+import AddLinkIcon from "@mui/icons-material/AddLink";
 import type { SxProps, Theme } from "@mui/material/styles";
 import { UnauthorizedError } from "../../api/client";
 import { type Print, PrintApiError, printsApi } from "../../api/prints";
@@ -31,6 +32,8 @@ import type { AuthUser } from "../../api/auth";
 import { collectionsApi } from "../../api/collections";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { importProviderInfo } from "../../constants/importProviders";
+import { allProvidersOff, useDisabledProviders } from "../../hooks/useProviders";
+import LinkSourceDialog from "../../components/linkSource/LinkSourceDialog";
 import { useDownloadPrint } from "./useDownloadPrint";
 import { useOpenInSlicer } from "./useOpenInSlicer";
 import SlicerFileMenu, { type MenuAnchor } from "./SlicerFileMenu";
@@ -59,6 +62,8 @@ type Props = {
   /** Opens the menu at this point instead of at the trigger, as on a right-click. */
   contextMenuAt?: { top: number; left: number } | null;
   onContextMenuClose?: () => void;
+  /** Offers linking a model with no source to its page on a provider. */
+  offerLink?: boolean;
 };
 
 /** The "..." menu for a model, shared by the detail header and grid cards. */
@@ -74,9 +79,12 @@ export default function ModelActionsMenu({
   viewer,
   contextMenuAt,
   onContextMenuClose,
+  offerLink = false,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const toolOwned = Boolean(print.tool_id);
+  const disabledProviders = useDisabledProviders();
+  const canLink = offerLink && !print.source_provider && !toolOwned && !allProvidersOff(disabledProviders);
   const confirmDialog = useConfirm();
   const showToast = useToast();
   const [aiEnabled, setAiEnabled] = useState(false);
@@ -112,6 +120,7 @@ export default function ModelActionsMenu({
   const [removingFromCollection, setRemovingFromCollection] = useState(false);
   const [addToCollectionOpen, setAddToCollectionOpen] = useState(false);
   const [fillGapsOpen, setFillGapsOpen] = useState(false);
+  const [linkOpen, setLinkOpen] = useState(false);
   const sourceGaps = print.source_gaps ?? [];
   // Driven by ?edit=<id> so links and the back button open/close it.
   const editOpen = searchParams.get("edit") === print.id;
@@ -415,6 +424,19 @@ export default function ModelActionsMenu({
             <ListItemText>{normalizedMenuLabel(slicerOption.label)}</ListItemText>
           </MenuItem>
         )}
+        {canLink && (
+          <MenuItem
+            onClick={() => {
+              closeMenu();
+              setLinkOpen(true);
+            }}
+          >
+            <ListItemIcon>
+              <AddLinkIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t("models:linkSource.action")}</ListItemText>
+          </MenuItem>
+        )}
         {providerInfo && print.source_url && (
           <MenuItem component="a" href={print.source_url} target="_blank" rel="noopener noreferrer" onClick={closeMenu}>
             <ListItemIcon>
@@ -496,6 +518,15 @@ export default function ModelActionsMenu({
           gaps={sourceGaps}
           onClose={() => setFillGapsOpen(false)}
           onUpdated={(updated) => onUpdated?.(updated)}
+          onUnauthorized={onUnauthorized}
+        />
+      )}
+
+      {linkOpen && (
+        <LinkSourceDialog
+          print={print}
+          onClose={() => setLinkOpen(false)}
+          onLinked={(updated) => onUpdated?.(updated)}
           onUnauthorized={onUnauthorized}
         />
       )}

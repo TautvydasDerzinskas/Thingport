@@ -117,6 +117,7 @@
   "POST /api/import/nexprint-collection",
   "POST /api/import/nexprint-collection/entries",
   "POST /api/import/nexprint-profiles",
+  "POST /api/import/preview",
   "POST /api/import/printables-collection",
   "POST /api/import/printables-collection/entries",
   "POST /api/import/queue",

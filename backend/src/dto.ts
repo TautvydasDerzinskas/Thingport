@@ -164,6 +164,8 @@ export type PrintOut = {
     reason: string;
     model: string;
     created_at: string;
+    /** Set when it's the category this provider's own maps to, rather than AI's answer. */
+    provider: string | null;
   } | null;
   created_at: string;
   storage_path: string | null;

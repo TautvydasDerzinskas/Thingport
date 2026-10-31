@@ -593,7 +593,7 @@ export async function inspectImportLink(
 }
 
 const PREVIEW_IMAGE_MAX_BYTES = 16 * 1024 * 1024;
-const PREVIEW_IMAGE_MAX_COUNT = 20;
+export const PREVIEW_IMAGE_MAX_COUNT = 20;
 
 async function fetchImageBytes(url: string): Promise<Buffer | null> {
   try {

@@ -24,6 +24,7 @@ import { useGravatarUrl } from "../../hooks/useGravatarUrl";
 import { switchSlicer } from "../../hooks/useSlicerPreference";
 import { dividerBorderColor } from "../../theme";
 import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
+import { importProviderInfo } from "../../constants/importProviders";
 import { useDownloadPrint } from "./useDownloadPrint";
 import { useOpenInSlicer } from "./useOpenInSlicer";
 import { hasGeneratorScript, useCustomize } from "./useCustomize";
@@ -50,6 +51,8 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
   const navigate = useNavigate();
   const showToast = useToast();
   const [suggestionBusy, setSuggestionBusy] = useState(false);
+  // The provider whose own category this maps from, when it isn't AI's answer.
+  const suggestedBy = importProviderInfo(print.ai_suggestion?.provider)?.label;
   const viewerAvatarUrl = useGravatarUrl(viewer?.email, 56);
   const { downloading, downloadFile, downloadAllZip, recordUse } = useDownloadPrint(print, onUnauthorized, onUpdated);
 
@@ -188,10 +191,13 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
           <Paper variant="outlined" sx={{ p: 1.5, bgcolor: "action.hover" }}>
             <Stack spacing={1}>
               <Typography variant="caption" color="text.secondary">
-                {t("models:aiCategorization.suggestionLabel")}
+                {suggestedBy
+                  ? t("models:aiCategorization.suggestionFromProvider", { provider: suggestedBy })
+                  : t("models:aiCategorization.suggestionLabel")}
               </Typography>
               <Typography variant="body2" fontWeight={600}>
-                {print.ai_suggestion.category_path} · {Math.round(print.ai_suggestion.confidence * 100)}%
+                {print.ai_suggestion.category_path}
+                {!suggestedBy && ` · ${Math.round(print.ai_suggestion.confidence * 100)}%`}
               </Typography>
               {print.ai_suggestion.reason && (
                 <Typography variant="caption" color="text.secondary">
@@ -209,7 +215,13 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
                       try {
                         const result = await aiCategorizationApi.accept(print.id);
                         onUpdated?.(result.print);
-                        showToast({ message: t("models:aiCategorization.accepted") });
+                        showToast({
+                          message: t(
+                            suggestedBy
+                              ? "models:aiCategorization.suggestionAccepted"
+                              : "models:aiCategorization.accepted",
+                          ),
+                        });
                       } catch (err) {
                         if (err instanceof UnauthorizedError) onUnauthorized?.();
                         else
@@ -232,7 +244,13 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
                       try {
                         const result = await aiCategorizationApi.reject(print.id);
                         onUpdated?.(result.print);
-                        showToast({ message: t("models:aiCategorization.rejected") });
+                        showToast({
+                          message: t(
+                            suggestedBy
+                              ? "models:aiCategorization.suggestionRejected"
+                              : "models:aiCategorization.rejected",
+                          ),
+                        });
                       } catch (err) {
                         if (err instanceof UnauthorizedError) onUnauthorized?.();
                         else
