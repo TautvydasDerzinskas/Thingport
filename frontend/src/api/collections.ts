@@ -98,7 +98,7 @@ export const collectionsApi = {
       headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(input),
     });
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Create collection failed"));
+    await assertOkWithMessage(res, "Create collection failed");
     return res.json();
   },
 

@@ -6,21 +6,19 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import TextField from "@mui/material/TextField";
-import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import AddIcon from "@mui/icons-material/Add";
 import CheckIcon from "@mui/icons-material/Check";
 import CollectionsOutlinedIcon from "@mui/icons-material/CollectionsOutlined";
 import SearchIcon from "@mui/icons-material/Search";
 import { collectionsApi, type Collection } from "../../api/collections";
 import { ListRowSkeletons } from "../ListSkeleton";
+import NewCollectionField from "../NewCollectionField";
 import { toCollection, type ToolCollection } from "./toolSdk";
 
 type Props = {
@@ -35,8 +33,6 @@ export default function CollectionPickerDialog({ open, title, onClose }: Props) 
   const [collections, setCollections] = useState<Collection[] | null>(null);
   const [query, setQuery] = useState("");
   const [chosen, setChosen] = useState<string | null>(null);
-  const [newName, setNewName] = useState("");
-  const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -60,23 +56,6 @@ export default function CollectionPickerDialog({ open, title, onClose }: Props) 
     const q = query.trim().toLowerCase();
     return (collections ?? []).filter((c) => !q || c.name.toLowerCase().includes(q));
   }, [collections, query]);
-
-  const create = async () => {
-    const name = newName.trim();
-    if (!name) return;
-    setCreating(true);
-    setError(null);
-    try {
-      const made = await collectionsApi.create({ name });
-      setCollections((prev) => [made, ...(prev ?? [])]);
-      setChosen(made.id);
-      setNewName("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setCreating(false);
-    }
-  };
 
   const picked = collections?.find((c) => c.id === chosen) ?? null;
 
@@ -136,38 +115,10 @@ export default function CollectionPickerDialog({ open, title, onClose }: Props) 
             </List>
           )}
         </Box>
-        <TextField
-          size="small"
-          placeholder={t("tools.picker.newName")}
-          value={newName}
-          onChange={(event) => setNewName(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              void create();
-            }
-          }}
-          slotProps={{
-            htmlInput: { maxLength: 200, "aria-label": t("tools.picker.newName") },
-            input: {
-              endAdornment: (
-                <InputAdornment position="end">
-                  <Tooltip title={t("tools.picker.create")}>
-                    <span>
-                      <IconButton
-                        size="small"
-                        edge="end"
-                        aria-label={t("tools.picker.create")}
-                        disabled={!newName.trim() || creating}
-                        onClick={() => void create()}
-                      >
-                        <AddIcon fontSize="small" />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                </InputAdornment>
-              ),
-            },
+        <NewCollectionField
+          onCreated={(made) => {
+            setCollections((prev) => [made, ...(prev ?? [])]);
+            setChosen(made.id);
           }}
         />
         {error && (

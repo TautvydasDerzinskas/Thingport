@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -12,7 +12,9 @@ import Alert from "@mui/material/Alert";
 import Typography from "@mui/material/Typography";
 import CheckIcon from "@mui/icons-material/Check";
 import { UnauthorizedError } from "../../api/client";
-import { collectionsApi, type CollectionMembership } from "../../api/collections";
+import { type Collection, collectionsApi, type CollectionMembership } from "../../api/collections";
+import NewCollectionField from "../../components/NewCollectionField";
+import { freshChipSx } from "../../components/controls/MixedStateChip";
 
 type Props = {
   open: boolean;
@@ -40,6 +42,8 @@ export default function AddToCollectionModal({
   const [collections, setCollections] = useState<CollectionMembership[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [createdId, setCreatedId] = useState<string | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -62,9 +66,7 @@ export default function AddToCollectionModal({
     if (collections) onCountChange?.(collections.filter((c) => c.in_collection).length);
   }, [collections, onCountChange]);
 
-  const toggle = async (collection: CollectionMembership) => {
-    if (pendingId) return;
-    const nextIn = !collection.in_collection;
+  const setMembership = async (collection: CollectionMembership, nextIn: boolean) => {
     setPendingId(collection.id);
     setError(null);
     try {
@@ -89,6 +91,19 @@ export default function AddToCollectionModal({
     }
   };
 
+  const toggle = (collection: CollectionMembership) => {
+    if (!pendingId) void setMembership(collection, !collection.in_collection);
+  };
+
+  // There's no save step here either, so the model goes straight in. Listed first: if that fails, it still exists.
+  const addCreated = (made: Collection) => {
+    const row = { id: made.id, name: made.name, in_collection: false };
+    setCollections((prev) => [row, ...(prev ?? [])]);
+    setCreatedId(made.id);
+    listRef.current?.scrollTo({ top: 0 });
+    void setMembership(row, true);
+  };
+
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle>{t("models:detail.addToCollectionTitle")}</DialogTitle>
@@ -109,7 +124,7 @@ export default function AddToCollectionModal({
           </Typography>
         )}
         {collections && collections.length > 0 && (
-          <Stack direction="row" flexWrap="wrap" gap={1}>
+          <Stack ref={listRef} direction="row" flexWrap="wrap" gap={1} sx={{ maxHeight: 280, overflowY: "auto" }}>
             {collections.map((c) => (
               <Chip
                 key={c.id}
@@ -126,10 +141,18 @@ export default function AddToCollectionModal({
                     <CheckIcon fontSize="small" />
                   ) : undefined
                 }
+                sx={c.id === createdId ? freshChipSx : undefined}
               />
             ))}
           </Stack>
         )}
+        <NewCollectionField
+          onCreated={addCreated}
+          disabled={collections === null}
+          focused={collections?.length === 0}
+          onUnauthorized={onUnauthorized}
+          sx={{ mt: 2 }}
+        />
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>{t("common:close")}</Button>

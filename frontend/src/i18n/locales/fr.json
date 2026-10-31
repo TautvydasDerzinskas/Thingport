@@ -2719,8 +2719,6 @@
         "count_one": "{{count}} modèle",
         "count_many": "{{count}} modèles",
         "count_other": "{{count}} modèles",
-        "newName": "Nouvelle collection",
-        "create": "Créer cette collection",
         "cancel": "Annuler",
         "choose": "Choisir"
       },

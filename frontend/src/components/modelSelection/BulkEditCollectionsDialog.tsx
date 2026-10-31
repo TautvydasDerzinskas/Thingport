@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -11,9 +11,10 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import Typography from "@mui/material/Typography";
 import { UnauthorizedError } from "../../api/client";
-import { collectionsApi } from "../../api/collections";
+import { type Collection, collectionsApi } from "../../api/collections";
 import { useToast } from "../ToastProvider";
 import HelpTip from "../HelpTip";
+import NewCollectionField from "../NewCollectionField";
 import MixedStateChip, { type MixedState, nextMixedState, startMixedState } from "../controls/MixedStateChip";
 
 type Props = {
@@ -26,7 +27,7 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-type Row = { id: string; name: string; has: number; state: MixedState };
+type Row = { id: string; name: string; has: number; state: MixedState; fresh?: boolean };
 
 /** The selected models' collections, each made to hold all of them, none of them, or left as it is. */
 export default function BulkEditCollectionsDialog({
@@ -43,6 +44,7 @@ export default function BulkEditCollectionsDialog({
   const [rows, setRows] = useState<Row[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
 
   const failed = (err: unknown, fallback: string) => {
     if (err instanceof UnauthorizedError) {
@@ -84,6 +86,12 @@ export default function BulkEditCollectionsDialog({
         prev?.map((row) => (row.id === id ? { ...row, state: nextMixedState(row.state, row.has, total) } : row)) ??
         null,
     );
+
+  // Already made, and picked for the models: they go in with the rest on save.
+  const addCreated = (made: Collection) => {
+    setRows((prev) => prev && [{ id: made.id, name: made.name, has: 0, state: "all", fresh: true }, ...prev]);
+    listRef.current?.scrollTo({ top: 0 });
+  };
 
   const save = async () => {
     setSaving(true);
@@ -140,7 +148,7 @@ export default function BulkEditCollectionsDialog({
           </Typography>
         )}
         {rows && rows.length > 0 && (
-          <Stack direction="row" flexWrap="wrap" gap={0.75} sx={{ maxHeight: 280, overflowY: "auto" }}>
+          <Stack ref={listRef} direction="row" flexWrap="wrap" gap={0.75} sx={{ maxHeight: 280, overflowY: "auto" }}>
             {rows.map((row) => (
               <MixedStateChip
                 key={row.id}
@@ -148,6 +156,7 @@ export default function BulkEditCollectionsDialog({
                 has={row.has}
                 total={total}
                 state={row.state}
+                fresh={row.fresh}
                 disabled={saving}
                 onClick={() => cycle(row.id)}
                 someLabel={t("models:selection.onSome", { name: row.name, count: row.has, total })}
@@ -155,6 +164,13 @@ export default function BulkEditCollectionsDialog({
             ))}
           </Stack>
         )}
+        <NewCollectionField
+          onCreated={addCreated}
+          disabled={rows === null || saving}
+          focused={rows?.length === 0}
+          onUnauthorized={onUnauthorized}
+          sx={{ mt: 2 }}
+        />
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={saving}>

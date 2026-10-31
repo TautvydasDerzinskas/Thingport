@@ -10,6 +10,8 @@ import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Tooltip from "@mui/material/Tooltip";
 import ButtonBase from "@mui/material/ButtonBase";
+import Skeleton from "@mui/material/Skeleton";
+import { keyframes } from "@mui/material/styles";
 import FolderIcon from "@mui/icons-material/Folder";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import StorageIcon from "@mui/icons-material/Storage";
@@ -40,10 +42,35 @@ import AuthorHoverCard from "../../components/AuthorHoverCard";
 
 const statChipSx = { flex: 1, px: 0.5, py: 1, border: "1px solid", borderColor: "divider", borderRadius: 2 };
 
+const fillUp = keyframes`
+  from { clip-path: inset(100% 0 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+`;
+
+/** A bookmark filling up and draining again, while the model's collections load. */
+function BookmarkLoader() {
+  return (
+    <Box component="span" sx={{ position: "relative", display: "inline-flex", color: "text.secondary" }}>
+      <BookmarkBorderIcon fontSize="small" />
+      <BookmarkIcon
+        fontSize="small"
+        sx={{
+          position: "absolute",
+          inset: 0,
+          animation: `${fillUp} 700ms ease-in-out infinite alternate`,
+          "@media (prefers-reduced-motion: reduce)": { display: "none" },
+        }}
+      />
+    </Box>
+  );
+}
+
+/** "failed" still opens the dialog, just without showing a number. */
+export type CollectionCount = number | "loading" | "failed";
+
 type Props = {
   print: Print;
-  /** Null when it couldn't be loaded: the chip then opens the dialog without showing a number. */
-  collectionCount: number | null;
+  collectionCount: CollectionCount;
   onCollectionCountChange: (count: number) => void;
   onSelectCategory: (id: string) => void;
   onUnauthorized?: () => void;
@@ -95,9 +122,10 @@ export default function ModelSidePanel({
   const authorName =
     print.author?.name || print.author?.handle || print.creator || (showViewerAsAuthor ? viewer!.display_name : null);
   const authorAvatarUrl = print.author?.avatar_url || (showViewerAsAuthor ? viewerAvatarUrl : undefined);
-  const collectionsLabel = collectionCount
-    ? t("models:detail.addToCollectionAlreadyIn", { count: collectionCount })
-    : t("models:detail.addToCollection");
+  const collectionsLabel =
+    typeof collectionCount === "number" && collectionCount > 0
+      ? t("models:detail.addToCollectionAlreadyIn", { count: collectionCount })
+      : t("models:detail.addToCollection");
 
   return (
     <Paper
@@ -332,6 +360,7 @@ export default function ModelSidePanel({
             <ButtonBase
               onClick={() => setCollectionsOpen(true)}
               aria-label={collectionsLabel}
+              aria-busy={collectionCount === "loading"}
               sx={{
                 ...statChipSx,
                 gap: 0.75,
@@ -340,15 +369,31 @@ export default function ModelSidePanel({
                 "&.Mui-focusVisible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: 2 },
               }}
             >
-              {collectionCount ? (
-                <BookmarkIcon fontSize="small" color="primary" />
+              {collectionCount === "loading" ? (
+                <>
+                  <BookmarkLoader />
+                  <Skeleton
+                    variant="text"
+                    width={8}
+                    sx={{
+                      fontSize: "0.875rem",
+                      "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+                    }}
+                  />
+                </>
               ) : (
-                <BookmarkBorderIcon fontSize="small" sx={{ color: "text.secondary" }} />
-              )}
-              {collectionCount !== null && (
-                <Typography variant="body2" fontWeight={600}>
-                  <RollingNumber value={collectionCount} />
-                </Typography>
+                <>
+                  {typeof collectionCount === "number" && collectionCount > 0 ? (
+                    <BookmarkIcon fontSize="small" color="primary" />
+                  ) : (
+                    <BookmarkBorderIcon fontSize="small" sx={{ color: "text.secondary" }} />
+                  )}
+                  {typeof collectionCount === "number" && (
+                    <Typography variant="body2" fontWeight={600}>
+                      <RollingNumber value={collectionCount} />
+                    </Typography>
+                  )}
+                </>
               )}
             </ButtonBase>
           </Tooltip>

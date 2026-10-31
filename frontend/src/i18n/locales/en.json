@@ -2690,8 +2690,6 @@
         "empty": "No collections yet. Name one below to make it.",
         "count_one": "{{count}} model",
         "count_other": "{{count}} models",
-        "newName": "New collection",
-        "create": "Make this collection",
         "cancel": "Cancel",
         "choose": "Choose"
       },
