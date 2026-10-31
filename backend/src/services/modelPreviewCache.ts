@@ -313,7 +313,7 @@ async function renderPlateFile<T extends { status: string }>(
 // loading the model rather than drawing it. They share the GLB queue and memory limit, so they wait behind GLBs.
 
 /** Server-side picture formats; a STEP file goes through the CAD kernel first (services/stepLoader.ts). */
-export const MODEL_IMAGE_EXTS = new Set([".stl", ".obj", ".3mf", ".step", ".stp"]);
+export const MODEL_IMAGE_EXTS = new Set([".stl", ".obj", ".3mf", ".step", ".stp", ".glb"]);
 export type ModelImageKind = "render";
 type ModelImageKindDef = {
   /** Part of the filename, with a version, so changing a look regenerates older pictures on next request. */

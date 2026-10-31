@@ -1,3 +1,6 @@
+import crypto from "node:crypto";
+import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import type { Print } from "@prisma/client";
 import { prisma } from "../db";
@@ -16,6 +19,7 @@ import { isPreparedPrintFilename } from "./preparedPrint";
 import { addPreviewImage, preferImageOverRenders } from "./previewImageService";
 import { recordActivity } from "./activityService";
 import { createLog } from "./auditLog";
+import { isGltfName, packGltfFiles } from "./gltfPacker";
 
 // A model made from the user's own files, as + Add > Upload makes it. Shared by POST /upload and the MCP
 // upload_model tool, so both build the same model and leave the same trail.
@@ -32,10 +36,44 @@ function isRenderable(file: UploadedFile): boolean {
   return RENDERABLE_MODEL_EXTS.has(path.extname(file.originalname).toLowerCase());
 }
 
+/** `files` with each .gltf packed, with the files it points at, into one .glb that takes its place. The files it
+ *  used leave the list, for the caller to clean up with the rest; the .glbs are new temp files. */
+async function withGltfPacked<T extends UploadedFile>(files: T[]): Promise<{ files: T[]; glbs: string[] }> {
+  if (!files.some((f) => isGltfName(f.originalname))) return { files, glbs: [] };
+  const named = files.map((file) => ({ name: file.originalname, path: file.path, file }));
+  const { files: left } = await packGltfFiles(
+    named,
+    () => path.join(os.tmpdir(), `thingport-glb-${crypto.randomBytes(8).toString("hex")}.glb`),
+    (gltf, glbPath, glbName) => ({
+      name: glbName,
+      path: glbPath,
+      file: { ...gltf.file, path: glbPath, originalname: glbName, mimetype: "model/gltf-binary" },
+    }),
+  );
+  const glbs = left.filter((f) => !files.includes(f.file)).map((f) => f.path);
+  return { files: left.map((f) => f.file), glbs };
+}
+
+const removeAll = (paths: string[]) => Promise.all(paths.map((p) => fs.rm(p, { force: true }).catch(() => undefined)));
+
 /** One model from `files`: the renderable ones become its plates and the rest supporting files. If nothing is
  *  renderable, every file becomes a plate so the model still has one. All or nothing: a file that can't be stored
  *  takes the model with it. */
-export async function createUploadedModel(userId: string, meta: PrintMetaInput, files: UploadedFile[]): Promise<Print> {
+export async function createUploadedModel(
+  userId: string,
+  meta: PrintMetaInput,
+  uploaded: UploadedFile[],
+): Promise<Print> {
+  const { files, glbs } = await withGltfPacked(uploaded);
+  try {
+    return await createModelFrom(userId, meta, files);
+  } finally {
+    // Moved into storage when the model was made; still here when it wasn't.
+    await removeAll(glbs);
+  }
+}
+
+async function createModelFrom(userId: string, meta: PrintMetaInput, files: UploadedFile[]): Promise<Print> {
   const renderable = files.filter(isRenderable);
   const supporting = renderable.length ? files.filter((f) => !isRenderable(f)) : [];
   const plateFiles = renderable.length ? renderable : files;
@@ -65,10 +103,24 @@ export type FileKind = "plate" | "supporting";
 export async function addUploadedFiles(
   userId: string,
   printId: string,
-  files: (UploadedFile & { kind?: FileKind })[],
+  uploaded: (UploadedFile & { kind?: FileKind })[],
 ): Promise<{ plates: number; files: number }> {
   const print = await prisma.print.findFirst({ where: { id: printId, userId } });
   if (!print) throw new HttpError(404, "Print not found");
+  const { files, glbs } = await withGltfPacked(uploaded);
+  try {
+    return await addFilesTo(userId, print, files);
+  } finally {
+    await removeAll(glbs);
+  }
+}
+
+async function addFilesTo(
+  userId: string,
+  print: Print,
+  files: (UploadedFile & { kind?: FileKind })[],
+): Promise<{ plates: number; files: number }> {
+  const printId = print.id;
   const isPlate = (f: (typeof files)[number]) =>
     f.kind ? f.kind === "plate" : isRenderable(f) && !isPreparedPrintFilename(f.originalname);
 
