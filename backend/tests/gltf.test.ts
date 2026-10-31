@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -12,6 +12,17 @@ import { glbWithoutTextures, loadGlbScene } from "../src/services/gltfScene";
 import { renderModelImage } from "../src/services/modelImageRender";
 import { checkModelQuality } from "../src/services/modelQualityCheck";
 import { NOT_IMPORTED_DIR, consumeFolder, setConsumeSettings } from "../src/services/consumeService";
+
+// A model whose first file is named here fails to go in, as one would on a full disk.
+const failingPlates = vi.hoisted(() => new Set<string>());
+vi.mock("../src/services/printCreation", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/services/printCreation")>();
+  const createPrint: typeof actual.createPrint = async (...args) => {
+    if (failingPlates.has(args[3][0]?.filename)) throw new Error("No space left on device");
+    return actual.createPrint(...args);
+  };
+  return { ...actual, createPrint };
+});
 
 const app = createApp();
 
@@ -467,6 +478,65 @@ describe("uploading and consuming a .gltf", () => {
     expect(byName.Top.plates.map((p) => p.filename)).toEqual(["top.glb"]);
     expect(byName.Desk.previewImages).toHaveLength(1);
     expect(fs.readdirSync(dir)).toEqual([]);
+  });
+
+  it("sets a failed scene aside with the files it shares, once, while the scene that went in keeps them", async () => {
+    const dir = fs.mkdtempSync(path.join(tmp, "consume-"));
+    const put = (rel: string, data: Buffer | string) => {
+      fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
+      fs.writeFileSync(path.join(dir, rel), data);
+    };
+    // One of two scenes sharing a .bin and a texture fails; both of two others do.
+    const lamp = cubeGltf({ binUri: "lamp.bin", imageUri: "lamp.png" });
+    put("Lamp/on.gltf", lamp.gltf);
+    put("Lamp/off.gltf", lamp.gltf);
+    put("Lamp/lamp.bin", lamp.bin);
+    put("Lamp/lamp.png", await png());
+    const shelf = cubeGltf({ binUri: "shelf.bin", imageUri: "tex/shelf.png" });
+    put("Shelf/left.gltf", shelf.gltf);
+    put("Shelf/right.gltf", shelf.gltf);
+    put("Shelf/shelf.bin", shelf.bin);
+    put("Shelf/tex/shelf.png", await png());
+    await setConsumeSettings({ userId, mode: "separate" });
+
+    failingPlates.add("off.glb").add("left.glb").add("right.glb");
+    let summary;
+    try {
+      summary = await consumeFolder(dir);
+    } finally {
+      failingPlates.clear();
+    }
+
+    expect(summary).toMatchObject({ models: 1 });
+    expect(summary!.failed.toSorted()).toEqual([
+      "Lamp/lamp.bin",
+      "Lamp/lamp.png",
+      "Lamp/off.gltf",
+      "Shelf/left.gltf",
+      "Shelf/right.gltf",
+      "Shelf/shelf.bin",
+      "Shelf/tex/shelf.png",
+    ]);
+    const aside = path.join(dir, NOT_IMPORTED_DIR);
+    expect(fs.readdirSync(path.join(aside, "Lamp")).toSorted()).toEqual(["lamp.bin", "lamp.png", "off.gltf"]);
+    expect(fs.readdirSync(path.join(aside, "Shelf")).toSorted()).toEqual([
+      "left.gltf",
+      "right.gltf",
+      "shelf.bin",
+      "tex",
+    ]);
+    expect(fs.readdirSync(path.join(aside, "Shelf/tex"))).toEqual(["shelf.png"]);
+    expect(fs.readFileSync(path.join(aside, "Lamp/lamp.bin")).equals(lamp.bin)).toBe(true);
+    // What's set aside packs as it was meant to.
+    const files = ["off.gltf", "lamp.bin", "lamp.png"].map((name) => ({ name, path: path.join(aside, "Lamp", name) }));
+    const repacked = await packGltfFiles(
+      files,
+      () => path.join(tmp, `repack-${Date.now()}.glb`),
+      (_, glbPath, name) => ({ name, path: glbPath }),
+    );
+    expect(repacked.packed.map((file) => file.name).toSorted()).toEqual(["lamp.bin", "lamp.png", "off.gltf"]);
+    // Nothing else is left behind to be taken in again.
+    expect(fs.readdirSync(dir)).toEqual([NOT_IMPORTED_DIR]);
   });
 
   it("sets a .gltf it can't pack aside and imports the rest as usual", async () => {

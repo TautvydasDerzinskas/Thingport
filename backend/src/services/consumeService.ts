@@ -182,19 +182,42 @@ export async function consumeFolder(dir = CONSUME_DIR): Promise<ConsumeSummary |
   // Each .glb packed here from a .gltf, and the files it was packed from: those stay where they are until it's in.
   const packedFrom = new Map<Item, Item[]>();
 
+  // Files a failed scene shares with another, copied aside for it while the original stays for the other.
+  const copiedAside = new Set<Item>();
+
   const notImported = async (item: Item) => {
     const sources = packedFrom.get(item);
     if (sources) {
       packedFrom.delete(item);
       await fs.rm(item.path, { force: true });
-      // A file another scene was packed from too stays for that one, and goes aside with it if it fails as well.
+      // A file another scene still needs stays for it, and a copy goes aside with this one, so the .gltf set aside
+      // has its files even when the other scene goes in and its sources are cleared. Set aside once, however many fail.
       const stillUsed = new Set([...packedFrom.values()].flat());
-      for (const source of sources) if (!stillUsed.has(source)) await notImported(source);
+      for (const source of sources) {
+        if (copiedAside.has(source)) {
+          if (!stillUsed.has(source)) await fs.rm(source.path, { force: true });
+        } else if (stillUsed.has(source)) {
+          copiedAside.add(source);
+          await setAside(source, true);
+        } else {
+          await notImported(source);
+        }
+      }
       return;
     }
+    await setAside(item, false);
+  };
+
+  const setAside = async (item: Item, copy: boolean) => {
     summary.failed.push(item.rel);
     try {
-      await moveFile(item.path, await freePath(path.join(dir, NOT_IMPORTED_DIR, item.rel)));
+      const to = await freePath(path.join(dir, NOT_IMPORTED_DIR, item.rel));
+      if (copy) {
+        await fs.mkdir(path.dirname(to), { recursive: true });
+        await fs.copyFile(item.path, to);
+      } else {
+        await moveFile(item.path, to);
+      }
     } catch (err) {
       console.error("Consume folder: couldn't set aside", item.rel, err);
     }
