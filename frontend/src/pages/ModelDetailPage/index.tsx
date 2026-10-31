@@ -74,6 +74,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
           onUpdated={setPrint}
           onCollectionCountChange={setCollectionCount}
           viewer={viewer}
+          offerLink
         />
       </Stack>
     ) : undefined,

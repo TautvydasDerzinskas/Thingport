@@ -91,6 +91,15 @@ export default function ModelsPage({
   const [sourcesVersion, setSourcesVersion] = useState(0);
   const refreshSources = useCallback(() => setSourcesVersion((version) => version + 1), []);
 
+  // Linking a model can bring a site into the sources it's filtered by.
+  const applyUpdates = (updated: Print[]) => {
+    const linked = updated.some(
+      (print) => print.source_provider && !items.find((item) => item.id === print.id)?.source_provider,
+    );
+    setItems((prev) => replacePrints(prev, updated));
+    if (linked) refreshSources();
+  };
+
   const setSortMode = (mode: PrintSortMode) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
@@ -330,8 +339,9 @@ export default function ModelsPage({
             setItems((prev) => prev.filter((i) => !ids.includes(i.id)));
             refreshSources();
           }}
-          onUpdated={(updated) => setItems((prev) => replacePrints(prev, updated))}
+          onUpdated={applyUpdates}
           onUnauthorized={onUnauthorized}
+          offerLink={categoriesView === "folders"}
         />
         <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1.5, width: { xs: "100%", md: "auto" } }}>
           <Box sx={{ overflowX: "auto" }}>
@@ -432,12 +442,13 @@ export default function ModelsPage({
                     onFavoriteChange={(updated) =>
                       setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)))
                     }
-                    onUpdated={(updated) => setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)))}
+                    onUpdated={(updated) => applyUpdates([updated])}
                     onUnauthorized={onUnauthorized}
                     viewer={viewer}
                     selectMode={selection.active}
                     selected={selection.isSelected(item.id)}
                     onToggleSelect={(range) => selection.toggle(item.id, range)}
+                    offerLink={categoriesView === "folders"}
                   />
                 ))}
                 {loadingMore && <CardSkeletons count={5} />}

@@ -82,7 +82,33 @@ type ImportLinkPayload = {
 /** "profile_added": an existing MakerWorld model gained another profile's file. */
 export type ImportOutcome = "created" | "profile_added" | "already_imported";
 
+/** What linking a model to a provider's page would bring. */
+export type SourcePreview = {
+  provider: ProviderId;
+  source_url: string | null;
+  /** The model that already has this source, which another can't take; the rest is empty then. */
+  linked_print: { id: string; name: string } | null;
+  title: string | null;
+  author_name: string | null;
+  author_avatar_url: string | null;
+  cover_url: string | null;
+  image_count: number;
+  tag_count: number;
+  has_description: boolean;
+};
+
 export const importsApi = {
+  preview: async (url: string): Promise<SourcePreview> => {
+    const res = await fetch(`${apiBase()}/import/preview`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ url }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Couldn't read this model"));
+    return res.json();
+  },
+
   fromLink: async (payload: ImportLinkPayload): Promise<Print & { import_outcome?: ImportOutcome }> => {
     const res = await fetch(`${apiBase()}/import`, {
       method: "POST",

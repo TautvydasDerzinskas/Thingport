@@ -9,7 +9,12 @@ import {
   type AiCategorizationPrefs,
 } from "../src/services/settingsService";
 import { createAiConnection, type AiConnectionInput } from "../src/services/aiConnectionService";
-import { aiCategoryPaths, setAiCategorizationRetryDelayForTest } from "../src/services/aiCategorizationService";
+import {
+  aiCategoryPaths,
+  categorizePrint,
+  setAiCategorizationRetryDelayForTest,
+  suggestMappedCategory,
+} from "../src/services/aiCategorizationService";
 
 const app = createApp();
 const stamp = Date.now();
@@ -296,6 +301,37 @@ describe("AI categorization", () => {
     expect((await request(app).get(`/api/print/${model.id}`).set(auth())).body.ai_suggestion).toMatchObject({
       category_id: target.id,
     });
+  });
+
+  it("lets AI replace a provider's mapped suggestion, or clear it when nothing fits", async () => {
+    const mapped = await category("Mapped by a provider");
+    const better = await category("AI's pick");
+    const answers: ProviderAnswer[] = [
+      { category_id: better.id, confidence: 0.6, reason: "fits" },
+      { category_id: null, confidence: 0, reason: "nothing fits" },
+    ];
+    const replaced = await print();
+    const cleared = await print();
+    for (const model of [replaced, cleared]) {
+      await suggestMappedCategory({ ...model, aiRejectedCategoryIds: [] }, mapped.id, "makerworld");
+    }
+    const suggestionOf = async (id: string) =>
+      (await request(app).get(`/api/print/${id}`).set(auth())).body.ai_suggestion;
+    expect(await suggestionOf(replaced.id)).toMatchObject({ category_id: mapped.id, provider: "makerworld" });
+
+    await enable(await startProvider(() => answers.shift()!));
+    // A request for this one model waits for the owner's answer, as with an AI suggestion...
+    const refused = await request(app)
+      .post(`/api/print/${replaced.id}/recategorize`)
+      .set(auth())
+      .send({ background: true });
+    expect(refused.body.code).toBe("suggestion_pending");
+    // ...and a run goes ahead.
+    await categorizePrint(userId, replaced.id, { source: "run" });
+    await categorizePrint(userId, cleared.id, { source: "run" });
+
+    expect(await suggestionOf(replaced.id)).toMatchObject({ category_id: better.id, provider: null });
+    expect(await suggestionOf(cleared.id)).toBeNull();
   });
 
   it("reads settings saved when off was a mode", async () => {

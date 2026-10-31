@@ -17,6 +17,7 @@ import Typography from "@mui/material/Typography";
 import { UnauthorizedError } from "../../api/client";
 import { aiCategorizationApi, type AiRunCounts, type AiRunScope } from "../../api/aiCategorization";
 import type { Print } from "../../api/prints";
+import { importProviderInfo } from "../../constants/importProviders";
 import { useToast } from "../../components/ToastProvider";
 import { ListRowSkeletons } from "../../components/ListSkeleton";
 import HelpTip from "../../components/HelpTip";
@@ -272,9 +273,16 @@ export default function AiCategorizationPanel({
                       item.ai_suggestion && (
                         <>
                           <Typography component="span" variant="body2" fontWeight={600} sx={{ display: "block" }}>
-                            {`${item.ai_suggestion.category_path} · ${Math.round(item.ai_suggestion.confidence * 100)}%`}
+                            {item.ai_suggestion.provider
+                              ? item.ai_suggestion.category_path
+                              : `${item.ai_suggestion.category_path} · ${Math.round(item.ai_suggestion.confidence * 100)}%`}
                           </Typography>
-                          {item.ai_suggestion.reason}
+                          {item.ai_suggestion.provider
+                            ? t("models:aiCategorization.suggestionFromProvider", {
+                                provider:
+                                  importProviderInfo(item.ai_suggestion.provider)?.label ?? item.ai_suggestion.provider,
+                              })
+                            : item.ai_suggestion.reason}
                         </>
                       )
                     }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectImportProvider, hostIs, listLinkOf, modelLinkOf } from "./importLinkDetection";
+import { detectImportProvider, hostIs, listLinkOf, modelLinkOf, modelLinkProblem } from "./importLinkDetection";
 
 describe("hostIs", () => {
   it("matches the domain and its subdomains, in any case", () => {
@@ -94,4 +94,27 @@ describe("provider URL fixtures", () => {
       expect(actual).toEqual(expected);
     },
   );
+});
+
+describe("modelLinkProblem", () => {
+  const NONE = new Set<never>();
+
+  it("takes one model's page, with or without its scheme", () => {
+    expect(modelLinkProblem("https://makerworld.com/en/models/123", NONE)).toBeNull();
+    expect(modelLinkProblem("  makerworld.com/en/models/123  ", NONE)).toBeNull();
+  });
+
+  it("says why it won't take anything else", () => {
+    expect(modelLinkProblem("https://makerworld.com/en/models/1\nhttps://makerworld.com/en/models/2", NONE)).toBe(
+      "several",
+    );
+    expect(modelLinkProblem("https://makerworld.com/en/collections/456", NONE)).toBe("list");
+    expect(modelLinkProblem("https://example.com/model.stl", NONE)).toBe("notModel");
+    expect(modelLinkProblem("not a link", NONE)).toBe("several");
+    expect(modelLinkProblem("nonsense", NONE)).toBe("notModel");
+  });
+
+  it("refuses a provider an admin turned off", () => {
+    expect(modelLinkProblem("https://makerworld.com/en/models/123", new Set(["makerworld"] as const))).toBe("disabled");
+  });
 });
