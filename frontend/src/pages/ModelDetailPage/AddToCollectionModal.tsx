@@ -41,9 +41,12 @@ export default function AddToCollectionModal({
   const { t } = useTranslation(["models", "common"]);
   const [collections, setCollections] = useState<CollectionMembership[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [pendingIds, setPendingIds] = useState<string[]>([]);
+  const [creating, setCreating] = useState(false);
   const [createdId, setCreatedId] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  // A write landing after closing would report a stale count, and either copy could list the old membership.
+  const busy = pendingIds.length > 0 || creating;
 
   useEffect(() => {
     if (!open) return;
@@ -75,7 +78,7 @@ export default function AddToCollectionModal({
   }, [collections, onCountChange]);
 
   const setMembership = async (collection: CollectionMembership, nextIn: boolean) => {
-    setPendingId(collection.id);
+    setPendingIds((prev) => [...prev, collection.id]);
     setError(null);
     try {
       if (nextIn) {
@@ -95,12 +98,12 @@ export default function AddToCollectionModal({
       console.error(err);
       setError(err instanceof Error ? err.message : t("models:detail.addToCollectionFailed"));
     } finally {
-      setPendingId(null);
+      setPendingIds((prev) => prev.filter((id) => id !== collection.id));
     }
   };
 
   const toggle = (collection: CollectionMembership) => {
-    if (!pendingId) void setMembership(collection, !collection.in_collection);
+    if (pendingIds.length === 0) void setMembership(collection, !collection.in_collection);
   };
 
   // There's no save step here either, so the model goes straight in. Listed first: if that fails, it still exists.
@@ -113,7 +116,7 @@ export default function AddToCollectionModal({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
+    <Dialog open={open} onClose={busy ? undefined : onClose} fullWidth maxWidth="xs">
       <DialogTitle>{t("models:detail.addToCollectionTitle")}</DialogTitle>
       <DialogContent>
         {error && (
@@ -138,12 +141,12 @@ export default function AddToCollectionModal({
                 key={c.id}
                 label={c.name}
                 clickable
-                disabled={pendingId === c.id}
+                disabled={pendingIds.includes(c.id)}
                 onClick={() => toggle(c)}
                 color={c.in_collection ? "primary" : "default"}
                 variant={c.in_collection ? "filled" : "outlined"}
                 icon={
-                  pendingId === c.id ? (
+                  pendingIds.includes(c.id) ? (
                     <CircularProgress size={14} color="inherit" />
                   ) : c.in_collection ? (
                     <CheckIcon fontSize="small" />
@@ -158,12 +161,15 @@ export default function AddToCollectionModal({
           onCreated={addCreated}
           disabled={collections === null}
           focused={collections?.length === 0}
+          onCreatingChange={setCreating}
           onUnauthorized={onUnauthorized}
           sx={{ mt: 2 }}
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>{t("common:close")}</Button>
+        <Button onClick={onClose} disabled={busy}>
+          {t("common:close")}
+        </Button>
       </DialogActions>
     </Dialog>
   );
