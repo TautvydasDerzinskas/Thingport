@@ -43,10 +43,13 @@ const isRedirect = (res: Response) => res.type === "opaqueredirect" || [301, 302
 const httpsUpgrades = new Map<string, string>();
 
 /** Where an http:// URL ends up, asked without anything secret; the https:// origin when that's all the redirect does. */
-async function httpsUpgradeOf(url: URL): Promise<string | null> {
+async function httpsUpgradeOf(url: URL, signal: RequestInit["signal"]): Promise<string | null> {
   if (url.protocol !== "http:") return null;
-  const probe = await fetch(url.href, { method: "GET", redirect: "follow", credentials: "omit" }).catch(() => null);
+  const probe = await fetch(url.href, { method: "GET", redirect: "follow", credentials: "omit", signal }).catch(
+    () => null,
+  );
   await probe?.body?.cancel().catch(() => undefined);
+  signal?.throwIfAborted();
   if (!probe?.redirected || !probe.url) return null;
   const final = new URL(probe.url);
   const same = final.protocol === "https:" && final.hostname === url.hostname && final.pathname === url.pathname;
@@ -63,14 +66,21 @@ export async function fetchInstance(url: string, init: RequestInit): Promise<Res
   const res = await fetch(url, { ...init, redirect: "manual" });
   if (!isRedirect(res)) return res;
   await res.body?.cancel().catch(() => undefined);
-  const origin = await httpsUpgradeOf(target);
+  init.signal?.throwIfAborted();
+  const origin = await httpsUpgradeOf(target, init.signal);
   if (!origin) throw redirectError();
   httpsUpgrades.set(target.origin, origin);
   return fetchUpgraded(target, origin, init);
 }
 
 function fetchUpgraded(target: URL, origin: string, init: RequestInit): Promise<Response> {
-  return fetchInstanceOnce(new URL(`${target.pathname}${target.search}`, origin).href, init).catch((err: unknown) => {
+  init.signal?.throwIfAborted();
+  const upgraded = new URL(origin);
+  // Assign the path as data: resolving a leading // as a relative URL would replace the verified host.
+  upgraded.pathname = target.pathname;
+  upgraded.search = target.search;
+  return fetchInstanceOnce(upgraded.href, init).catch((err: unknown) => {
+    init.signal?.throwIfAborted();
     // Typically a connection made before Grab asked for the https:// origin as well: it may not reach it yet.
     if (err instanceof TypeError) {
       throw new Error(`Thingport redirects to ${origin}: connect Grab again so it may reach that address`);

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
 import { fetchInstance } from "./api";
+import { apiUrl, normalizeInstanceUrl } from "../shared/storage";
 
 test("instance redirects cannot replay a provider session", async () => {
   const originalFetch = globalThis.fetch;
@@ -89,6 +90,109 @@ test("follows a reverse proxy's http to https upgrade on the same host, found ou
       calls.map((c) => c.url),
       ["https://lan-upgrade.example/api/me"],
     );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test.each([false, true])("upgrade keeps a leading double slash in the instance path (cached: %s)", async (cached) => {
+  const originalFetch = globalThis.fetch;
+  const calls: { url: string; init?: RequestInit }[] = [];
+  const origin = `http://path-upgrade-${cached}.example`;
+  const instanceUrl = normalizeInstanceUrl(`${origin}//other.example/`);
+  globalThis.fetch = async (input, init) => {
+    const url = String(input);
+    calls.push({ url, init });
+    if (init?.redirect === "follow") {
+      const probe = new Response(null, { status: 404 });
+      Object.defineProperties(probe, {
+        redirected: { value: true },
+        url: { value: url.replace("http://", "https://") },
+      });
+      return probe;
+    }
+    if (url.startsWith("http://")) return { type: "opaqueredirect", status: 0 } as Response;
+    return new Response("{}", { status: 200 });
+  };
+  try {
+    if (cached) {
+      await fetchInstance(`${origin}/api/me`, {});
+      calls.length = 0;
+    }
+    await fetchInstance(apiUrl(instanceUrl, "/login?next=%2Fmodels"), { method: "POST", body: "secret" });
+    const expected = [
+      [`${origin}//other.example/api/login?next=%2Fmodels`, "secret"],
+      [`${origin}//other.example/api/login?next=%2Fmodels`, null],
+      [`${origin.replace("http://", "https://")}//other.example/api/login?next=%2Fmodels`, "secret"],
+    ];
+    assert.deepEqual(
+      calls.map((c) => [c.url, c.init?.body ?? null]),
+      cached ? expected.slice(-1) : expected,
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("aborting the caller aborts the upgrade probe without replaying credentials", async () => {
+  const originalFetch = globalThis.fetch;
+  const controller = new AbortController();
+  const reason = new DOMException("Request timed out", "TimeoutError");
+  const calls: { url: string; init?: RequestInit }[] = [];
+  globalThis.fetch = async (input, init) => {
+    calls.push({ url: String(input), init });
+    if (init?.redirect === "follow") {
+      return new Promise<Response>((_resolve, reject) => {
+        init.signal?.addEventListener("abort", () => reject(init.signal?.reason), { once: true });
+        controller.abort(reason);
+        // Fail promptly even if the probe lost the caller's signal.
+        if (!init.signal) reject(new Error("Probe has no abort signal"));
+      });
+    }
+    return { type: "opaqueredirect", status: 0 } as Response;
+  };
+  try {
+    await assert.rejects(
+      fetchInstance("http://abort-upgrade.example/api/grab/disconnect", {
+        method: "POST",
+        body: "secret",
+        signal: controller.signal,
+      }),
+      (err) => err === reason,
+    );
+    assert.equal(calls.length, 2);
+    assert.equal(calls[1].init?.signal, controller.signal);
+    assert.equal(calls[1].init?.body, undefined);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("an abort as the probe completes prevents the upgraded credential request", async () => {
+  const originalFetch = globalThis.fetch;
+  const controller = new AbortController();
+  const reason = new DOMException("Request aborted", "AbortError");
+  const sent: string[] = [];
+  globalThis.fetch = async (input, init) => {
+    const url = String(input);
+    sent.push(url);
+    if (init?.redirect === "follow") {
+      const probe = new Response(null, { status: 404 });
+      Object.defineProperties(probe, {
+        redirected: { value: true },
+        url: { value: url.replace("http://", "https://") },
+      });
+      controller.abort(reason);
+      return probe;
+    }
+    return new Response(null, { status: 307 });
+  };
+  try {
+    await assert.rejects(
+      fetchInstance("http://abort-complete.example/api/logout", { method: "POST", signal: controller.signal }),
+      (err) => err === reason,
+    );
+    assert.deepEqual(sent, ["http://abort-complete.example/api/logout", "http://abort-complete.example/api/logout"]);
   } finally {
     globalThis.fetch = originalFetch;
   }
