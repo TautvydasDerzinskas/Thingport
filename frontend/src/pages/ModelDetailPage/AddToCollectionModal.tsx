@@ -47,18 +47,26 @@ export default function AddToCollectionModal({
 
   useEffect(() => {
     if (!open) return;
+    // Answering after closing, it could overwrite a newer count from the page's other dialog.
+    let cancelled = false;
     setError(null);
     setCollections(null);
     collectionsApi
       .listForPrint(printId)
-      .then(setCollections)
+      .then((list) => {
+        if (!cancelled) setCollections(list);
+      })
       .catch((err) => {
+        if (cancelled) return;
         if (err instanceof UnauthorizedError) {
           onUnauthorized?.();
           return;
         }
         setError(err instanceof Error ? err.message : t("models:detail.addToCollectionLoadFailed"));
       });
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, printId]);
 

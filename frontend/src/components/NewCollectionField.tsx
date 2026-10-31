@@ -15,12 +15,21 @@ type Props = {
   disabled?: boolean;
   /** Takes the cursor once usable: with no collections yet, there's nothing else to do in the dialog. */
   focused?: boolean;
+  /** For a dialog that saves the new collection along with its other changes, and so has to wait for it. */
+  onCreatingChange?: (creating: boolean) => void;
   onUnauthorized?: () => void;
   sx?: SxProps<Theme>;
 };
 
 /** Names a new collection and makes it on the spot, for any dialog that picks from the user's collections. */
-export default function NewCollectionField({ onCreated, disabled, focused, onUnauthorized, sx }: Props) {
+export default function NewCollectionField({
+  onCreated,
+  disabled,
+  focused,
+  onCreatingChange,
+  onUnauthorized,
+  sx,
+}: Props) {
   const { t } = useTranslation("models");
   const inputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
@@ -35,6 +44,7 @@ export default function NewCollectionField({ onCreated, disabled, focused, onUna
     const trimmed = name.trim();
     if (!trimmed || creating) return;
     setCreating(true);
+    onCreatingChange?.(true);
     setError(null);
     try {
       onCreated(await collectionsApi.create({ name: trimmed }));
@@ -47,6 +57,7 @@ export default function NewCollectionField({ onCreated, disabled, focused, onUna
       setError(err instanceof Error ? err.message : t("collections.form.saveFailed"));
     } finally {
       setCreating(false);
+      onCreatingChange?.(false);
     }
   };
 

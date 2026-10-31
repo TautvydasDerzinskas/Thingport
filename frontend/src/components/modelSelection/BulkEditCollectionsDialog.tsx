@@ -44,6 +44,7 @@ export default function BulkEditCollectionsDialog({
   const [rows, setRows] = useState<Row[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [creating, setCreating] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
   const failed = (err: unknown, fallback: string) => {
@@ -79,6 +80,8 @@ export default function BulkEditCollectionsDialog({
   const add = (rows ?? []).filter((row) => row.state === "all" && row.has < total);
   const remove = (rows ?? []).filter((row) => row.state === "none" && row.has > 0);
   const dirty = add.length > 0 || remove.length > 0;
+  // A collection still being made isn't in the rows yet, so Apply would leave the models out of it.
+  const busy = saving || creating;
 
   const cycle = (id: string) =>
     setRows(
@@ -124,7 +127,7 @@ export default function BulkEditCollectionsDialog({
   ].filter(Boolean);
 
   return (
-    <Dialog open={open} onClose={saving ? undefined : onClose} fullWidth maxWidth="xs">
+    <Dialog open={open} onClose={busy ? undefined : onClose} fullWidth maxWidth="xs">
       <DialogTitle>
         {t("models:selection.editCollectionsTitle", { count: total })}
         <HelpTip text={t("models:selection.editCollectionsHelp")} />
@@ -168,18 +171,19 @@ export default function BulkEditCollectionsDialog({
           onCreated={addCreated}
           disabled={rows === null || saving}
           focused={rows?.length === 0}
+          onCreatingChange={setCreating}
           onUnauthorized={onUnauthorized}
           sx={{ mt: 2 }}
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={saving}>
+        <Button onClick={onClose} disabled={busy}>
           {t("common:cancel")}
         </Button>
         <Button
           variant="contained"
           onClick={() => void save()}
-          disabled={saving || !dirty}
+          disabled={busy || !dirty}
           startIcon={saving ? <CircularProgress size={16} color="inherit" /> : undefined}
         >
           {dirty ? summary.join(" · ") : t("models:selection.apply")}
