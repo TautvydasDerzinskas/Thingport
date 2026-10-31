@@ -191,7 +191,7 @@ export type AdminImportJob = ImportJob & {
 /** "Start all" and "Retry all failed" run jobs one after another, across users. */
 export type ImportQueueBulk = { running: boolean; currentJobId: string | null; remaining: number };
 
-export type ImportQueue = { jobs: AdminImportJob[]; bulk: ImportQueueBulk };
+export type ImportQueue = { jobs: AdminImportJob[]; bulk: ImportQueueBulk; auto_start: boolean };
 
 async function queueAction<T>(method: "POST" | "DELETE", path: string, fallback: string): Promise<T> {
   const res = await fetch(`${apiBase()}/admin/import-queue${path}`, { method, headers: authHeaders() });
@@ -323,6 +323,17 @@ export const adminApi = {
   getImportQueueItems: async (jobId: string): Promise<ImportJobItem[]> => {
     const res = await fetch(`${apiBase()}/admin/import-queue/jobs/${jobId}/items`, { headers: authHeaders() });
     assertOk(res, "Failed to load the import's links");
+    return res.json();
+  },
+
+  setImportQueueAutoStart: async (autoStart: boolean): Promise<{ auto_start: boolean }> => {
+    const res = await fetch(`${apiBase()}/admin/import-queue/settings`, {
+      method: "PUT",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ auto_start: autoStart }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to save the setting"));
     return res.json();
   },
 

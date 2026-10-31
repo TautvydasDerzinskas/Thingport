@@ -305,6 +305,83 @@ describe("the import queue", () => {
     });
   });
 
+  describe("auto start", () => {
+    const setAutoStart = (account: Account, auto_start: boolean) =>
+      request(app).put("/api/admin/import-queue/settings").set(auth(account)).send({ auto_start });
+
+    afterEach(async () => {
+      await prisma.setting.deleteMany({ where: { key: "import_queue_auto_start" } });
+    });
+
+    it("is off by default, and only an admin can switch it", async () => {
+      const listed = await request(app).get("/api/admin/import-queue").set(auth(admin));
+      expect(listed.body.auto_start).toBe(false);
+      expect((await setAutoStart(member, true)).status).toBe(403);
+      expect((await request(app).put("/api/admin/import-queue/settings").set(auth(admin)).send({})).status).toBe(400);
+
+      expect((await setAutoStart(admin, true)).body).toEqual({ auto_start: true });
+      expect((await request(app).get("/api/admin/import-queue").set(auth(admin))).body.auto_start).toBe(true);
+    });
+
+    it("imports a newly queued link without anyone starting it, and skips the 'waiting' notification", async () => {
+      await setAutoStart(admin, true);
+      await prisma.notification.deleteMany({ where: { userId: member.id } });
+      const sent = await queue(member, { url: modelUrl(base + 200) });
+      const finished = await waitStatus(sent.body.job_id, "DONE");
+      expect(finished.imported).toBe(1);
+      expect(await prisma.print.count({ where: { userId: member.id, sourceExternalId: String(base + 200) } })).toBe(1);
+      expect(
+        await prisma.notification.count({
+          where: { userId: member.id, title: "Links are waiting in the import queue" },
+        }),
+      ).toBe(0);
+    });
+
+    it("runs jobs of different users one at a time", async () => {
+      await setAutoStart(admin, true);
+      const a = await queue(member, { url: modelUrl(base + 201) });
+      const b = await queue(other, { url: modelUrl(base + 202) });
+      for (const id of [a.body.job_id, b.body.job_id]) await waitStatus(id, "DONE");
+      expect(maxInFlight).toBe(1);
+    });
+
+    it("leaves links that were already waiting alone", async () => {
+      const waiting = await queue(member, { url: modelUrl(base + 203) });
+      await setAutoStart(admin, true);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      expect((await job(waiting.body.job_id)).status).toBe("PAUSED");
+      expect(designCalls.size).toBe(0);
+    });
+
+    it("starts only the new link when older ones are waiting in the same user's queue", async () => {
+      const old = await queue(member, { url: modelUrl(base + 206) });
+      await setAutoStart(admin, true);
+      const fresh = await queue(member, { url: modelUrl(base + 207) });
+      expect(fresh.body.job_id).not.toBe(old.body.job_id);
+
+      await waitStatus(fresh.body.job_id, "DONE");
+      expect((await job(old.body.job_id)).status).toBe("PAUSED");
+      expect((await items(old.body.job_id)).map((i) => i.status)).toEqual(["PENDING"]);
+      expect(designCalls.get(String(base + 206)) ?? 0).toBe(0);
+    });
+
+    it("doesn't lift a CAPTCHA cooloff the way a manual start does", async () => {
+      await setAutoStart(admin, true);
+      challenged.add(String(base + 204));
+      const first = await queue(member, { url: modelUrl(base + 204) });
+      await waitStatus(first.body.job_id, "DONE");
+      const calls = designCalls.get(String(base + 204)) ?? 0;
+
+      // The cooloff now holds MakerWorld: the next automatic start fails its link without probing the site.
+      challenged.clear();
+      const second = await queue(member, { url: modelUrl(base + 205) });
+      const finished = await waitStatus(second.body.job_id, "DONE");
+      expect(finished.failedCount).toBe(1);
+      expect(designCalls.get(String(base + 205)) ?? 0).toBe(0);
+      expect(designCalls.get(String(base + 204)) ?? 0).toBe(calls);
+    });
+  });
+
   describe("the admin queue page", () => {
     it("is admin-only", async () => {
       expect((await request(app).get("/api/admin/import-queue").set(auth(member))).status).toBe(403);

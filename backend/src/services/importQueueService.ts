@@ -16,6 +16,7 @@ import {
   type QueuedLinkOptions,
 } from "./importJobRunner";
 import { liftProviderHolds, withLinkAuth } from "../providers/registry";
+import { getImportQueueAutoStart } from "./settingsService";
 
 /** The shared body a LINKS job reruns with: its stored payload plus the owner's saved sign-in for LINK_PROVIDER. The
  *  sign-in is never stored on the job. */
@@ -57,6 +58,10 @@ export async function startLinksJob(
   const active = await getActiveJob(job.userId);
   if (active && active.id !== job.id) throw new HttpError(409, "An import is already in progress");
 
+  // Before anything changes: if the owner's sign-in can't be resolved, the job stays as it was instead of being left
+  // RUNNING with no runner.
+  const body = await linksJobBody(job);
+
   if (opts.retryFailed) {
     const failed = await resetFailedItems(job.id);
     // Links an interrupted run never reached are rerun too, so a retry alone can finish it.
@@ -82,7 +87,6 @@ export async function startLinksJob(
   });
   if (!count) throw new HttpError(409, "This import changed while it was being started, reload and try again");
   if (opts.manual) liftProviderHolds();
-  const body = await linksJobBody(job);
   return { run: runLinksImportJob(job.id, job.userId, body) };
 }
 
@@ -127,8 +131,17 @@ export async function queueLink(userId: string, url: string, options: QueuedLink
   }
   return withUserLock(userId, async () => {
     // A paused sync job is that sync's own; links sent from Grab start a queue of their own.
+    const autoStart = await getImportQueueAutoStart();
+    // With auto start on, only a queue that was itself created under it is added to: starting a queue that holds links
+    // from before the switch was turned on would start those too, which were meant to wait for an admin.
     let job = await prisma.importJob.findFirst({
-      where: { userId, type: "LINKS", status: "PAUSED", collectionSyncId: null },
+      where: {
+        userId,
+        type: "LINKS",
+        status: "PAUSED",
+        collectionSyncId: null,
+        ...(autoStart ? { payload: { path: ["auto_start"], equals: true } } : {}),
+      },
       orderBy: { createdAt: "asc" },
     });
     if (!job) {
@@ -139,10 +152,17 @@ export async function queueLink(userId: string, url: string, options: QueuedLink
           status: "PAUSED",
           sourceUrl: url,
           sourceLabel: "Sent from Thingport Grab",
-          payload: { notes: null, tags: [], category_id: null, scope: "url" },
+          payload: {
+            notes: null,
+            tags: [],
+            category_id: null,
+            scope: "url",
+            ...(autoStart ? { auto_start: true } : {}),
+          },
         },
       });
-      await notifyQueueStarted(userId);
+      // It starts itself, so there's nothing for the person to go and start.
+      if (!autoStart) await notifyQueueStarted(userId);
     }
 
     const existing = await prisma.importJobItem.findFirst({
@@ -165,6 +185,7 @@ export async function queueLink(userId: string, url: string, options: QueuedLink
       });
     }
     const waiting = await prisma.importJobItem.count({ where: { jobId: job.id, status: "PENDING" } });
+    if (autoStart) autoStartJob(job.id);
     return { job, itemId, duplicate: Boolean(existing), waiting };
   });
 }
@@ -295,15 +316,22 @@ async function drainBulkQueue(): Promise<void> {
   }
 }
 
-/** Bulk runs are started by hand, so they lift providers' pauses once (see startLinksJob). Not per job: after a
- *  CAPTCHA, the jobs behind it should fail fast, not each probe the site again. */
-function enqueueBulk(entries: BulkEntry[]): number {
-  if (entries.length) liftProviderHolds();
+/** Bulk runs started by hand lift providers' pauses once (see startLinksJob). Not per job: after a
+ *  CAPTCHA, the jobs behind it should fail fast, not each probe the site again. An automatic start
+ *  (`manual: false`) leaves the pauses alone, so it never keeps probing a site that asked for a CAPTCHA. */
+function enqueueBulk(entries: BulkEntry[], { manual = true }: { manual?: boolean } = {}): number {
+  if (entries.length && manual) liftProviderHolds();
   const known = new Set([bulkCurrent, ...bulkQueue.map((e) => e.jobId)]);
   const fresh = entries.filter((e) => !known.has(e.jobId));
   bulkQueue.push(...fresh);
   void drainBulkQueue();
   return fresh.length;
+}
+
+/** Starts a job that links were just added to, behind whatever is already running: the setting "Auto start newly
+ *  added items". A job that can't start (its owner has another import going) stays paused for the admin. */
+function autoStartJob(jobId: string): void {
+  enqueueBulk([{ jobId, retryFailed: false }], { manual: false });
 }
 
 /** Every PAUSED link-list job, oldest first. */

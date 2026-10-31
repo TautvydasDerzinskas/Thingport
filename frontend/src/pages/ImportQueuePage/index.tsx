@@ -14,6 +14,8 @@ import Alert from "@mui/material/Alert";
 import Link from "@mui/material/Link";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import Switch from "@mui/material/Switch";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import Typography from "@mui/material/Typography";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -34,6 +36,7 @@ import { adminApi, type AdminImportJob, type ImportQueue } from "../../api/admin
 import type { ImportJobItem } from "../../api/imports";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { useToast } from "../../components/ToastProvider";
+import HelpTip from "../../components/HelpTip";
 
 type Props = {
   onUnauthorized?: () => void;
@@ -219,6 +222,23 @@ export default function ImportQueuePage({ onUnauthorized }: Props) {
               {t("adminSettings.importQueue.clearFinished")}
             </Button>
           </Stack>
+          <FormControlLabel
+            sx={{ mr: 0, alignSelf: "flex-start" }}
+            disabled={!queue || busy !== null}
+            control={
+              <Switch
+                size="small"
+                checked={queue?.auto_start ?? false}
+                onChange={(_e, checked) => void run("autoStart", () => adminApi.setImportQueueAutoStart(checked))}
+              />
+            }
+            label={
+              <Typography variant="body2" component="span">
+                {t("adminSettings.importQueue.autoStart")}
+                <HelpTip text={t("adminSettings.importQueue.autoStartHelp")} />
+              </Typography>
+            }
+          />
           {queue?.bulk.running && (
             <Typography variant="body2" color="text.secondary">
               {t("adminSettings.importQueue.bulkRunning", { count: queue.bulk.remaining })}

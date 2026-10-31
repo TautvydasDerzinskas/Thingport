@@ -1915,6 +1915,8 @@
         "retryAll": "Retry all failed ({{count}})",
         "pauseAll": "Pause all",
         "clearFinished": "Clear finished",
+        "autoStart": "Auto start newly added items",
+        "autoStartHelp": "Links added to the queue from now on start by themselves, one import at a time, instead of waiting here to be started. Links already waiting stay until you start them.",
         "startedAll": "Started {{count}} import(s). They run one at a time.",
         "retriedAll": "Retrying {{count}} import(s), one at a time.",
         "cleared": "Cleared {{count}} finished import(s).",
