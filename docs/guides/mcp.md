@@ -96,7 +96,7 @@ assistant has nowhere to show one. Most imports finish within the call; a long o
 assistant follows it with `get_import_status`.
 
 `upload_model` takes the files and pictures as base64 in the call, up to 24 MB in all, and makes one model of them: the
-3D files (STL, 3MF, STEP, OBJ) become its plates and anything else a supporting file; if none is a 3D file, every file
+3D files (STL, 3MF, STEP, OBJ, glTF) become its plates and anything else a supporting file; if none is a 3D file, every file
 becomes a plate. It shows up in your notifications
 and the admin logs as an upload from the app does.
 

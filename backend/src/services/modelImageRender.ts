@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import { loadThreeMfGroup, simplifyGroupMeshes, type PreviewRefusal } from "./modelPreviewRender";
 import { loadStepMeshes } from "./stepLoader";
 import { writeRgbaPng } from "./imageProcessing";
+import { loadGlbScene } from "./gltfScene";
 
 // A small picture of a model: one colour, simple light, transparent background. A software
 // rasterizer rather than WebGL, so it runs anywhere Node does, with no GPU or native deps.
@@ -89,6 +90,11 @@ async function loadTriangles(srcPath: string, ext: string, wantColors: boolean):
     root = group;
     // CAD files are Z-up, as print files are.
     root.rotateX(-Math.PI / 2);
+  } else if (ext === ".glb") {
+    // Already Y-up.
+    const scene = await loadGlbScene(srcPath);
+    if (typeof scene === "string") return scene;
+    root = scene;
   } else {
     return "unsupported";
   }
