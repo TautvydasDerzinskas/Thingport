@@ -341,7 +341,7 @@ describe("the import queue", () => {
       await setAutoStart(admin, true);
       const a = await queue(member, { url: modelUrl(base + 201) });
       const b = await queue(other, { url: modelUrl(base + 202) });
-      for (const id of [a.body.job_id, b.body.job_id]) await waitStatus(id, "DONE");
+      for (const id of [a.body.job_id, b.body.job_id]) expect((await waitStatus(id, "DONE")).status).toBe("DONE");
       expect(maxInFlight).toBe(1);
     });
 
@@ -359,7 +359,10 @@ describe("the import queue", () => {
       const fresh = await queue(member, { url: modelUrl(base + 207) });
       expect(fresh.body.job_id).not.toBe(old.body.job_id);
 
-      await waitStatus(fresh.body.job_id, "DONE");
+      const finished = await waitStatus(fresh.body.job_id, "DONE");
+      expect(finished.status).toBe("DONE");
+      expect(finished.imported).toBe(1);
+      expect(designCalls.get(String(base + 207))).toBe(1);
       expect((await job(old.body.job_id)).status).toBe("PAUSED");
       expect((await items(old.body.job_id)).map((i) => i.status)).toEqual(["PENDING"]);
       expect(designCalls.get(String(base + 206)) ?? 0).toBe(0);
@@ -369,13 +372,14 @@ describe("the import queue", () => {
       await setAutoStart(admin, true);
       challenged.add(String(base + 204));
       const first = await queue(member, { url: modelUrl(base + 204) });
-      await waitStatus(first.body.job_id, "DONE");
+      expect((await waitStatus(first.body.job_id, "DONE")).status).toBe("DONE");
       const calls = designCalls.get(String(base + 204)) ?? 0;
 
       // The cooloff now holds MakerWorld: the next automatic start fails its link without probing the site.
       challenged.clear();
       const second = await queue(member, { url: modelUrl(base + 205) });
       const finished = await waitStatus(second.body.job_id, "DONE");
+      expect(finished.status).toBe("DONE");
       expect(finished.failedCount).toBe(1);
       expect(designCalls.get(String(base + 205)) ?? 0).toBe(0);
       expect(designCalls.get(String(base + 204)) ?? 0).toBe(calls);
