@@ -39,9 +39,9 @@ it("canonicalizes www before the authenticated MakerWorld page fallback", async 
     apex,
     expect.objectContaining({
       redirect: "manual",
-      headers: expect.objectContaining({ Cookie: "token=fallback-secret" }),
     }),
   );
+  expect(new Headers(transport.mock.calls[0][1]?.headers).get("cookie")).toBe("token=fallback-secret");
 });
 
 it.each([
@@ -60,7 +60,7 @@ it.each([
     url,
     expect.objectContaining({
       redirect: "manual",
-      headers: expect.objectContaining({ Cookie: "token=fallback-secret" }),
     }),
   );
+  expect(new Headers(transport.mock.calls[0][1]?.headers).get("cookie")).toBe("token=fallback-secret");
 });

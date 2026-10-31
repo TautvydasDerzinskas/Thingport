@@ -64,14 +64,18 @@ describe("importing with a stored MakerWorld cookie", () => {
     "solid t\nfacet normal 0 0 1\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 0 1 0\nendloop\nendfacet\nendsolid t\n",
   );
 
-  type Call = { url: string; headers: Record<string, string> };
-  function stubFetch(): Call[] {
+  type Call = { url: string; headers: Headers };
+  function stubFetch(redirectTo?: string): Call[] {
     const calls: Call[] = [];
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = String(input);
-        calls.push({ url, headers: { ...(init?.headers as Record<string, string> | undefined) } });
+        // Snapshot before the redirect guard removes credentials for the next hop.
+        calls.push({ url, headers: new Headers(init?.headers) });
+        if (redirectTo && calls.length === 1) {
+          return new Response(null, { status: 302, headers: { location: redirectTo } });
+        }
         return new Response(modelFile, {
           headers: {
             "content-type": "application/octet-stream",
@@ -108,18 +112,23 @@ describe("importing with a stored MakerWorld cookie", () => {
     expect(calls.length).toBeGreaterThan(0);
     for (const call of calls) {
       expect(new URL(call.url).hostname).toBe("fake-makerworld.com");
-      expect(JSON.stringify(call.headers)).not.toContain(SECRET);
+      expect(call.headers.get("cookie")).toBeNull();
+      expect(call.headers.get("authorization")).toBeNull();
     }
   });
 
-  it("rejects arbitrary MakerWorld subdomains before sending the saved cookie", async () => {
+  it("imports arbitrary MakerWorld subdomains anonymously with a saved cookie", async () => {
     const calls = stubFetch();
-    await request(app)
+    const res = await request(app)
       .post("/api/import")
       .set({ Authorization: `Bearer ${token}` })
       .send({ url: "https://attacker.makerworld.com/en/models/123" });
 
-    expect(calls).toEqual([]);
+    expect(res.status).toBe(200);
+    expect(res.body.import_outcome).toBe("created");
+    expect(calls.map((call) => call.url)).toEqual(["https://attacker.makerworld.com/en/models/123"]);
+    expect(calls[0].headers.get("cookie")).toBeNull();
+    expect(calls[0].headers.get("authorization")).toBeNull();
   });
 
   it("sends it to the canonical MakerWorld origin for apex and www model URLs", async () => {
@@ -131,11 +140,32 @@ describe("importing with a stored MakerWorld cookie", () => {
         .send({ url: `https://${host}/en/models/${(stamp % 1_000_000) + host.length}` });
 
       const page = calls.find((call) => call.url.startsWith("https://makerworld.com/"));
-      expect(page?.headers.Cookie).toContain(SECRET);
+      expect(page?.headers.get("cookie")).toContain(SECRET);
       expect(calls.every((call) => new URL(call.url).hostname === "makerworld.com")).toBe(true);
       vi.unstubAllGlobals();
     }
   });
+
+  it.each(["makerworld.com", "www.makerworld.com"])(
+    "imports a %s non-model link that redirects to a public download without leaking its cookie",
+    async (host) => {
+      const initial = `https://${host}/files/${stamp}-redirect.stl`;
+      const download = `https://public-download.example/${host}-part.stl`;
+      const calls = stubFetch(download);
+      const res = await request(app)
+        .post("/api/import")
+        .set({ Authorization: `Bearer ${token}` })
+        .send({ url: initial });
+
+      expect(res.status).toBe(200);
+      expect(res.body.import_outcome).toBe("created");
+      expect(calls.map((call) => call.url)).toEqual([initial, download]);
+      expect(calls[0].headers.get("cookie")).toContain(SECRET);
+      expect(calls[1].headers.get("cookie")).toBeNull();
+      expect(calls[1].headers.get("authorization")).toBeNull();
+      expect(calls[1].headers.get("proxy-authorization")).toBeNull();
+    },
+  );
 
   it("doesn't send the cookie to MakerWorld over HTTP", async () => {
     for (const host of ["makerworld.com", "www.makerworld.com"]) {
@@ -147,7 +177,7 @@ describe("importing with a stored MakerWorld cookie", () => {
 
       const page = calls.find((call) => call.url.startsWith("http://makerworld.com/"));
       expect(page).toBeDefined();
-      for (const call of calls) expect(JSON.stringify(call.headers)).not.toContain(SECRET);
+      for (const call of calls) expect(call.headers.get("cookie")).toBeNull();
       vi.unstubAllGlobals();
     }
   });
