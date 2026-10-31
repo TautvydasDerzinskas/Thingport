@@ -12,7 +12,7 @@ import { createPrint, type NewPlateInput } from "./printCreation";
 import { saveFileFromTemp } from "./printFileService";
 import { addPreviewImage, preferImageOverRenders } from "./previewImageService";
 import { createNotification } from "./notificationService";
-import { isGltfName, packGltfFiles } from "./gltfPacker";
+import { gltfReferencedFiles, isGltfName, packGltfFiles } from "./gltfPacker";
 
 export const CONSUME_MODES = ["separate", "folder"] as const;
 export type ConsumeMode = (typeof CONSUME_MODES)[number];
@@ -250,13 +250,19 @@ export async function consumeFolder(dir = CONSUME_DIR): Promise<ConsumeSummary |
   // own and a texture folder isn't split from the scene that uses it.
   // Taken before any is packed, so scenes sharing a .bin or a texture each get it.
   const loose = importable.filter((item) => !isGltfName(item.rel));
+  const packable = (item: Item) => ({ name: item.rel, path: item.path, item });
+  const unpacked: Item[] = [];
   for (const gltf of importable.filter((item) => isGltfName(item.rel))) {
     try {
       const candidates = [gltf, ...loose];
       const { files: left, packed } = await packGltfFiles(
-        candidates.map((item) => ({ name: item.rel, path: item.path, item })),
+        candidates.map(packable),
         tempPath,
-        (_, glbPath, glbName) => ({ name: glbName, path: glbPath, item: { rel: glbName, path: glbPath, size: 0 } }),
+        (_, glbPath, glbName) => ({
+          name: glbName,
+          path: glbPath,
+          item: { rel: glbName, path: glbPath, size: 0 },
+        }),
       );
       const glb = left.find((file) => !candidates.includes(file.item))!.item;
       glb.size = (await fs.stat(glb.path)).size;
@@ -265,8 +271,21 @@ export async function consumeFolder(dir = CONSUME_DIR): Promise<ConsumeSummary |
       packedFrom.set(glb, [...used]);
     } catch (err) {
       console.error("Consume folder: couldn't pack", gltf.rel, err);
-      importable = importable.filter((item) => item !== gltf);
-      await notImported(gltf);
+      const referenced = await gltfReferencedFiles(loose.map(packable), packable(gltf));
+      const scene = new Set([gltf, ...referenced.map((file) => file.item)]);
+      importable = importable.filter((item) => !scene.has(item));
+      unpacked.push(...scene);
+    }
+  }
+  // A .gltf that couldn't be packed goes aside with the files it points at, so it can be fixed and dropped in again
+  // whole, rather than its textures becoming models. A file a scene that did pack uses too stays for it, as a copy.
+  const packedSources = new Set([...packedFrom.values()].flat());
+  for (const item of new Set(unpacked)) {
+    if (packedSources.has(item)) {
+      copiedAside.add(item);
+      await setAside(item, true);
+    } else {
+      await setAside(item, false);
     }
   }
 

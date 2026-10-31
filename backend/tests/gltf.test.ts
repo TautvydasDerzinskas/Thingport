@@ -539,6 +539,60 @@ describe("uploading and consuming a .gltf", () => {
     expect(fs.readdirSync(dir)).toEqual([NOT_IMPORTED_DIR]);
   });
 
+  it("sets a .gltf it can't pack aside with the files it points at, copying one a packed scene uses", async () => {
+    const dir = fs.mkdtempSync(path.join(tmp, "consume-"));
+    const put = (rel: string, data: Buffer | string) => {
+      fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
+      fs.writeFileSync(path.join(dir, rel), data);
+    };
+    // Two scenes share a wall texture; one's .bin is cut short, so it can't be packed.
+    const ok = cubeGltf({ binUri: "ok.bin", imageUri: "wall.png" });
+    const bad = cubeGltf({ binUri: "bad.bin", imageUri: "wall.png" });
+    put("Room/ok.gltf", ok.gltf);
+    put("Room/ok.bin", ok.bin);
+    put("Room/bad.gltf", bad.gltf);
+    put("Room/bad.bin", bad.bin.subarray(0, 8));
+    put("Room/wall.png", await png());
+    put("Room/readme.txt", "notes");
+    await setConsumeSettings({ userId, mode: "folder" });
+
+    const summary = await consumeFolder(dir);
+    expect(summary).toMatchObject({ models: 1 });
+    expect(summary!.failed.toSorted()).toEqual(["Room/bad.bin", "Room/bad.gltf", "Room/wall.png"]);
+    const [room] = await prisma.print.findMany({
+      where: { id: { in: summary!.printIds } },
+      include: { plates: true, files: true, previewImages: true },
+    });
+    expect(room.plates.map((p) => p.filename)).toEqual(["ok.glb"]);
+    expect(room.files.filter((f) => f.role === "SUPPORTING").map((f) => f.filename)).toEqual(["readme.txt"]);
+    // The texture went in the .glb, not the gallery; the broken scene's files didn't attach to the room.
+    expect(room.previewImages).toHaveLength(0);
+    const aside = path.join(dir, NOT_IMPORTED_DIR, "Room");
+    expect(fs.readdirSync(aside).toSorted()).toEqual(["bad.bin", "bad.gltf", "wall.png"]);
+    expect(fs.readdirSync(dir)).toEqual([NOT_IMPORTED_DIR]);
+  });
+
+  it("doesn't make the textures of a .gltf it can't pack models of their own", async () => {
+    const dir = fs.mkdtempSync(path.join(tmp, "consume-"));
+    const { gltf, bin } = cubeGltf();
+    fs.mkdirSync(path.join(dir, "Desk/textures"), { recursive: true });
+    fs.writeFileSync(path.join(dir, "Desk/scene.gltf"), gltf);
+    fs.writeFileSync(path.join(dir, "Desk/scene.bin"), bin.subarray(0, 8));
+    fs.writeFileSync(path.join(dir, "Desk/textures/base.png"), await png());
+    fs.writeFileSync(path.join(dir, "Desk/clip.stl"), "solid c endsolid c\n");
+    await setConsumeSettings({ userId, mode: "separate" });
+
+    const summary = await consumeFolder(dir);
+    expect(summary).toMatchObject({ models: 1 });
+    expect(summary!.failed.toSorted()).toEqual(["Desk/scene.bin", "Desk/scene.gltf", "Desk/textures/base.png"]);
+    const created = await prisma.print.findMany({
+      where: { id: { in: summary!.printIds } },
+      include: { plates: true },
+    });
+    expect(created.map((p) => p.plates.map((plate) => plate.filename))).toEqual([["clip.stl"]]);
+    expect(fs.existsSync(path.join(dir, NOT_IMPORTED_DIR, "Desk/textures/base.png"))).toBe(true);
+  });
+
   it("sets a .gltf it can't pack aside and imports the rest as usual", async () => {
     const dir = fs.mkdtempSync(path.join(tmp, "consume-"));
     const { gltf } = cubeGltf();

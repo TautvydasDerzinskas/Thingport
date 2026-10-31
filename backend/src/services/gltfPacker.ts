@@ -186,6 +186,18 @@ function findReferenced<T extends PackableFile>(files: T[], gltfName: string, ur
  * each .gltf a .glb written to a new path from `tempPath`, named as the .gltf was (`made` gives it the rest of its
  * shape). The packed files leave the list but stay on disk, for the caller to clean up with the rest.
  */
+/** The files among `files` the .gltf `gltf` points at, found as packing finds them; none when it can't be read. */
+export async function gltfReferencedFiles<T extends PackableFile>(files: T[], gltf: T): Promise<T[]> {
+  let uris: string[];
+  try {
+    uris = gltfFileReferences(await fs.readFile(gltf.path), path.basename(gltf.name));
+  } catch {
+    return [];
+  }
+  const found = uris.map((uri) => findReferenced(files, gltf.name, uri));
+  return [...new Set(found.filter((file): file is T => !!file && !isGltfName(file.name)))];
+}
+
 export async function packGltfFiles<T extends PackableFile>(
   files: T[],
   tempPath: () => string,
