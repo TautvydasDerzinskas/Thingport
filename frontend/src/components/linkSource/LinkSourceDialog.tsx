@@ -52,8 +52,9 @@ const previewBoxSx = {
   "@media (prefers-reduced-motion: reduce)": { animation: "none" },
 };
 
-type PreviewState =
-  { status: "idle" | "loading" } | { status: "ready"; preview: SourcePreview } | { status: "failed"; reason: string };
+type PreviewAnswer = { url: string } & (
+  { status: "ready"; preview: SourcePreview } | { status: "failed"; reason: string }
+);
 
 type Props = {
   print: Print;
@@ -69,7 +70,7 @@ export default function LinkSourceDialog({ print, onClose, onLinked, onUnauthori
   const showToast = useToast();
   const disabledProviders = useDisabledProviders();
   const [link, setLink] = useState("");
-  const [preview, setPreview] = useState<PreviewState>({ status: "idle" });
+  const [answer, setAnswer] = useState<PreviewAnswer | null>(null);
   const [linking, setLinking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,25 +79,24 @@ export default function LinkSourceDialog({ print, onClose, onLinked, onUnauthori
   const linkable = url && !problem ? url : null;
   const provider = linkable ? (modelLinkOf(linkable)?.provider ?? null) : null;
   const providerLabel = importProviderInfo(provider)?.label ?? "";
-  const ready = preview.status === "ready" ? preview.preview : null;
+  // Worked out here, not set by the effect: its update can land after a paint, or an Enter, with the old link's answer.
+  const current = answer?.url === linkable ? answer : null;
+  const loading = Boolean(linkable) && !current;
+  const ready = current?.status === "ready" ? current.preview : null;
   const takenBy = ready?.linked_print ?? null;
-  const canLink = Boolean(linkable) && !linking && preview.status !== "loading" && !takenBy;
+  const canLink = Boolean(linkable) && !linking && !loading && !takenBy;
 
   useEffect(() => {
     setError(null);
-    if (!linkable) {
-      setPreview({ status: "idle" });
-      return;
-    }
-    setPreview({ status: "loading" });
+    if (!linkable) return;
     let live = true;
     const timer = setTimeout(() => {
       importsApi.preview(linkable).then(
-        (result) => live && setPreview({ status: "ready", preview: result }),
+        (result) => live && setAnswer({ url: linkable, status: "ready", preview: result }),
         (err: unknown) => {
           if (!live) return;
           if (err instanceof UnauthorizedError) onUnauthorized?.();
-          else setPreview({ status: "failed", reason: err instanceof Error ? err.message : "" });
+          else setAnswer({ url: linkable, status: "failed", reason: err instanceof Error ? err.message : "" });
         },
       );
     }, PREVIEW_DELAY_MS);
@@ -173,7 +173,7 @@ export default function LinkSourceDialog({ print, onClose, onLinked, onUnauthori
           }}
         />
 
-        {preview.status === "loading" && (
+        {loading && (
           <Paper variant="outlined" aria-hidden sx={previewBoxSx}>
             <Skeleton variant="rounded" width={COVER_WIDTH} height={COVER_HEIGHT} sx={{ flexShrink: 0 }} />
             <Stack spacing={0.75} sx={{ flex: 1, minWidth: 0 }}>
@@ -208,9 +208,9 @@ export default function LinkSourceDialog({ print, onClose, onLinked, onUnauthori
             {t("models:linkSource.linkedElsewhere", { name: takenBy.name })}
           </Alert>
         )}
-        {preview.status === "failed" && (
+        {current?.status === "failed" && (
           <Alert severity="warning" sx={{ mt: 1.5 }}>
-            {t("models:linkSource.previewFailed", { reason: preview.reason })}
+            {t("models:linkSource.previewFailed", { reason: current.reason })}
           </Alert>
         )}
         {error && (
