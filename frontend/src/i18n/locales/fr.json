@@ -2338,6 +2338,8 @@
           "outdated_one": "{{count}} sur une version antérieure",
           "outdated_many": "{{count}} sur une version antérieure",
           "outdated_other": "{{count}} sur une version antérieure",
+          "fromFolder": "Proposés depuis le dossier {{location}}",
+          "fromRepository": "Proposés depuis {{location}}",
           "source": "Voir le code",
           "off": "Les widgets de la communauté sont désactivés : les utilisateurs ne peuvent pas les installer et ceux installés ne se chargent pas.",
           "empty": "Le dépôt de la communauté n’a pas encore de widgets.",

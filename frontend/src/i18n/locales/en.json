@@ -2308,6 +2308,8 @@
           "installs_other": "{{count}} installs",
           "outdated_one": "{{count}} on an older version",
           "outdated_other": "{{count}} on an older version",
+          "fromFolder": "Offered from the folder {{location}}",
+          "fromRepository": "Offered from {{location}}",
           "source": "View source",
           "off": "Community widgets are off: users can't install these, and installed ones don't load.",
           "empty": "The community repository has no widgets yet.",

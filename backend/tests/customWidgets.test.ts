@@ -1,14 +1,19 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import {
   blockingLookup,
+  communityWidgetsSource,
   hostAllowed,
   metadataHost,
   parseManifest,
+  setCommunityWidgetsDirForTest,
   setCustomWidgetsFetchForTest,
   widgetsInUse,
 } from "../src/services/customWidgetsService";
@@ -253,6 +258,7 @@ describe("community widgets", () => {
     expect(shot.status).toBe(200);
     expect(shot.headers["content-type"]).toBe("image/png");
     expect(shot.headers["x-content-type-options"]).toBe("nosniff");
+    expect(shot.headers["cache-control"]).toBe("private, max-age=3600");
     expect((await request(app).get("/api/widgets/community/worded/screenshots/1").set(auth())).status).toBe(404);
   });
 
@@ -367,6 +373,134 @@ describe("admin switches", () => {
     expect(browse.status).toBe(403);
     expect(browse.body.code).toBe("COMMUNITY_WIDGETS_OFF");
     expect((await request(app).post("/api/widgets/community/countdown/install").set(auth())).status).toBe(403);
+  });
+});
+
+describe("where community widgets come from", () => {
+  let dir: string;
+  let adminToken: string;
+  const write = (file: string, content: string) => {
+    fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+    fs.writeFileSync(path.join(dir, file), content);
+  };
+
+  beforeAll(async () => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), "thingport-widgets-"));
+    const email = `custom-widgets-admin-${stamp}@example.com`;
+    const admin = await request(app)
+      .post("/api/register")
+      .send({ displayName: "Widgets admin", email, password: "password123" });
+    await prisma.user.update({ where: { id: admin.body.user.id }, data: { role: "ADMIN" } });
+    adminToken = (await request(app).post("/api/login").send({ email, password: "password123" })).body.token;
+  });
+
+  // A developer's backend/.env may point their instance elsewhere.
+  const stubSource = (env: { dir?: string; url?: string }) => {
+    vi.stubEnv("COMMUNITY_WIDGETS_DIR", env.dir ?? "");
+    vi.stubEnv("COMMUNITY_WIDGETS_URL", env.url ?? "");
+    setCustomWidgetsFetchForTest();
+  };
+
+  afterEach(() => vi.unstubAllEnvs());
+  afterAll(() => fs.rmSync(dir, { recursive: true, force: true }));
+
+  it("goes where it's told before looking for a checkout", async () => {
+    stubSource({ url: "https://example.com/widgets/" });
+    expect(communityWidgetsSource().kind).toBe("repository");
+    // The address is read once, as the service loads.
+    vi.resetModules();
+    const reloaded = await import("../src/services/customWidgetsService");
+    expect(reloaded.communityWidgetsSource()).toEqual({ kind: "repository", location: "https://example.com/widgets" });
+
+    stubSource({ dir, url: "https://example.com/widgets" });
+    expect(communityWidgetsSource()).toEqual({ kind: "folder", location: dir });
+  });
+
+  it("reads the checkout's own folder when run from one", async () => {
+    stubSource({});
+    const folder = path.resolve(__dirname, "../../community-widgets");
+    expect(communityWidgetsSource()).toEqual({ kind: "folder", location: folder });
+
+    const listed = await request(app).get("/api/widgets/community").set(auth());
+    const { widgets } = JSON.parse(fs.readFileSync(path.join(folder, "index.json"), "utf8")) as { widgets: string[] };
+    expect(listed.body.widgets.map((w: { slug: string }) => w.slug)).toEqual(widgets);
+  });
+
+  it("reads a folder afresh, so a widget being worked on shows its changes at once", async () => {
+    setCommunityWidgetsDirForTest(dir);
+    write("index.json", JSON.stringify({ widgets: ["on-disk"] }));
+    write(
+      "on-disk/widget.json",
+      JSON.stringify({
+        name: "On disk",
+        locales: ["en"],
+        screenshots: [{ file: "screenshots/panel.png", caption: "On a dashboard" }],
+      }),
+    );
+    write("on-disk/widget.js", SCRIPT);
+    write("on-disk/locales/en.json", JSON.stringify({ "state.loading": "Loading…" }));
+    write("on-disk/screenshots/panel.png", "first");
+
+    const listed = await request(app).get("/api/widgets/community").set(auth());
+    expect(listed.body.widgets).toMatchObject([{ slug: "on-disk", installed: null }]);
+    const installed = await request(app).post("/api/widgets/community/on-disk/install").set(auth());
+    expect(installed.body).toMatchObject({ script: SCRIPT, locales: { en: { "state.loading": "Loading…" } } });
+
+    write("on-disk/widget.js", `${SCRIPT}\n// v2`);
+    const changed = await request(app).get("/api/widgets/community").set(auth());
+    expect(changed.body.widgets[0].installed).toMatchObject({ updateAvailable: true });
+
+    const updated = await request(app).post("/api/widgets/community/on-disk/install").set(auth());
+    expect(updated.body.id).toBe(installed.body.id);
+    expect(updated.body.script).toBe(`${SCRIPT}\n// v2`);
+
+    const shot = () => request(app).get("/api/widgets/community/on-disk/screenshots/0").set(auth());
+    const first = await shot();
+    expect(first.body.toString()).toBe("first");
+    // Or the browser would keep showing the old one for the hour.
+    expect(first.headers["cache-control"]).toBe("private, no-cache");
+    write("on-disk/screenshots/panel.png", "second");
+    expect((await shot()).body.toString()).toBe("second");
+
+    fs.rmSync(path.join(dir, "on-disk/widget.js"));
+    expect((await request(app).post("/api/widgets/community/on-disk/install").set(auth())).status).toBe(404);
+  });
+
+  it("follows a link within the folder, but not one leading out of it", async () => {
+    const outside = fs.mkdtempSync(path.join(os.tmpdir(), "thingport-outside-"));
+    fs.writeFileSync(path.join(outside, "secret.png"), "secret");
+    setCommunityWidgetsDirForTest(dir);
+    write(
+      "linked/widget.json",
+      JSON.stringify({
+        name: "Linked",
+        screenshots: [{ file: "screenshots/in.png" }, { file: "screenshots/out.png" }],
+      }),
+    );
+    write("linked/widget.js", SCRIPT);
+    write("linked/screenshots/real.png", "inside");
+    fs.symlinkSync("real.png", path.join(dir, "linked/screenshots/in.png"));
+    fs.symlinkSync(path.join(outside, "secret.png"), path.join(dir, "linked/screenshots/out.png"));
+
+    const shot = (index: number) => request(app).get(`/api/widgets/community/linked/screenshots/${index}`).set(auth());
+    expect((await shot(0)).body.toString()).toBe("inside");
+    expect((await shot(1)).status).toBe(404);
+    fs.rmSync(outside, { recursive: true, force: true });
+  });
+
+  it("tells admins which", async () => {
+    const admin = { Authorization: `Bearer ${adminToken}` };
+    setCommunityWidgetsDirForTest(dir);
+    write("index.json", JSON.stringify({ widgets: [] }));
+    const folder = await request(app).get("/api/admin/widgets/community").set(admin);
+    expect(folder.body.source).toEqual({ kind: "folder", location: dir });
+
+    setCustomWidgetsFetchForTest(async () => respond(JSON.stringify({ widgets: [] })));
+    const repository = await request(app).get("/api/admin/widgets/community").set(admin);
+    expect(repository.body.source).toEqual({
+      kind: "repository",
+      location: expect.stringMatching(/\/community-widgets$/),
+    });
   });
 });
 
