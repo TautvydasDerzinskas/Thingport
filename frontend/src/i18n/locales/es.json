@@ -3799,7 +3799,7 @@
       "noDescription": "Aún no hay descripción.",
       "fileLabel": "Archivo {{n}}",
       "fileMeta": "Archivo {{n}} · {{type}}",
-      "profileNozzle": "boquilla {{value}}",
+      "profileNozzle": "boquilla {{value}} mm",
       "profileLayer": "{{value}} mm",
       "profilePlates_one": "{{count}} placa",
       "profilePlates_many": "{{count}} placas",

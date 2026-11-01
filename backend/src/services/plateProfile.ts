@@ -23,7 +23,7 @@ export type PlateProfile = {
 export type StoredPlateProfile = PlateProfile & { version: number };
 
 const MODEL_ENTRY = "3D/3dmodel.model";
-const MODEL_PREFIX_BYTES = 64 * 1024;
+const MODEL_PREFIX_BYTES = 512 * 1024;
 const SMALL_ENTRY_BYTES = 1024 * 1024;
 
 const PRINTER_KEYS = ["printer_model", "printer_settings_id", "printer_name"];
@@ -60,8 +60,16 @@ export function hasAnyProfileValue(p: PlateProfile): boolean {
   );
 }
 
+function codePointToString(code: number, original: string): string {
+  return Number.isInteger(code) && code > 0 && code <= 0x10ffff && !(code >= 0xd800 && code <= 0xdfff)
+    ? String.fromCodePoint(code)
+    : original;
+}
+
 function decodeEntities(text: string): string {
   return text
+    .replace(/&#x([0-9a-f]{1,6});/gi, (m, hex: string) => codePointToString(parseInt(hex, 16), m))
+    .replace(/&#(\d{1,7});/g, (m, dec: string) => codePointToString(parseInt(dec, 10), m))
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
@@ -140,14 +148,14 @@ function parseIniSettings(text: string): Settings {
 
 function parseAttributes(tag: string): Map<string, string> {
   const attributes = new Map<string, string>();
-  for (const m of tag.matchAll(/([A-Za-z_:][\w:.-]*)\s*=\s*"([^"]*)"/g)) {
+  // The name must follow whitespace, so a long tag without `=` is scanned in linear time.
+  for (const m of tag.matchAll(/\s([A-Za-z_:][\w:.-]*)\s*=\s*"([^"]*)"/g)) {
     attributes.set(m[1].toLowerCase(), decodeEntities(m[2]));
   }
   return attributes;
 }
 
 type SliceInfo = {
-  printer: string | null;
   nozzle: number | null;
   layerHeight: number | null;
   materials: string[];
@@ -160,7 +168,7 @@ function parseSliceInfo(text: string): SliceInfo {
   let seconds = 0;
   let weight = 0;
   const other = new Map<string, string>();
-  for (const m of text.matchAll(/<metadata\b[^>]*>/gi)) {
+  for (const m of text.matchAll(/<metadata\b[^>]{0,4096}>/gi)) {
     const attributes = parseAttributes(m[0]);
     const key = attributes.get("key")?.toLowerCase();
     const value = attributes.get("value");
@@ -170,12 +178,11 @@ function parseSliceInfo(text: string): SliceInfo {
     else if (!other.has(key)) other.set(key, value);
   }
   const materials: string[] = [];
-  for (const m of text.matchAll(/<filament\b[^>]*>/gi)) {
+  for (const m of text.matchAll(/<filament\b[^>]{0,4096}>/gi)) {
     const type = cleanString(parseAttributes(m[0]).get("type"));
     if (type) materials.push(type);
   }
   return {
-    printer: cleanString(other.get("printer_model_id")),
     nozzle: firstNumber(toListItems(other.get("nozzle_diameters"))),
     layerHeight: toPositive(other.get("layer_height")),
     materials,
@@ -247,12 +254,13 @@ export async function readPlateProfile(filePath: string): Promise<PlateProfile> 
   const sliceText = await readText("Metadata/slice_info.config");
   const slice = sliceText ? parseSliceInfo(sliceText) : null;
 
-  profile.printer = lookup(sources, PRINTER_KEYS).flatMap(toStrings)[0] ?? slice?.printer ?? null;
+  profile.printer = lookup(sources, PRINTER_KEYS).flatMap(toStrings)[0] ?? null;
   profile.nozzle_mm = firstNumber(lookup(sources, NOZZLE_KEYS).flatMap(toListItems)) ?? slice?.nozzle ?? null;
   profile.layer_height_mm = firstNumber(lookup(sources, LAYER_KEYS).flatMap(toListItems)) ?? slice?.layerHeight ?? null;
 
-  let materials = lookup(sources, MATERIAL_KEYS).flatMap(toListItems);
-  if (materials.length === 0) materials = slice?.materials ?? [];
+  // The filaments a sliced file really uses beat the project's full list of AMS slots.
+  let materials = slice?.materials ?? [];
+  if (materials.length === 0) materials = lookup(sources, MATERIAL_KEYS).flatMap(toListItems);
   if (materials.length === 0) {
     materials = lookup(sources, ["filament_settings_id"])
       .flatMap(toStrings)

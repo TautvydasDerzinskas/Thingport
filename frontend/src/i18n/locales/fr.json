@@ -3812,7 +3812,7 @@
       "noDescription": "Aucune description pour le moment.",
       "fileLabel": "Fichier {{n}}",
       "fileMeta": "Fichier {{n}} · {{type}}",
-      "profileNozzle": "buse {{value}}",
+      "profileNozzle": "buse {{value}} mm",
       "profileLayer": "{{value}} mm",
       "profilePlates_one": "{{count}} plaque",
       "profilePlates_many": "{{count}} plaques",

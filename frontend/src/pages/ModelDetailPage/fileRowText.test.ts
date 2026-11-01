@@ -49,7 +49,7 @@ describe("fileRowText", () => {
     };
     expect(fileRowText(t, "part.3mf", 0, profile)).toEqual({
       primary: "0.22mm layer, 2 walls, 10% infill",
-      secondary: "Bambu Lab A1 mini · 0.4 nozzle · 0.22 mm · PLA · 3 plates",
+      secondary: "part · Bambu Lab A1 mini · 0.4 nozzle · 0.22 mm · PLA · 3 plates",
     });
   });
 
@@ -77,7 +77,7 @@ describe("fileRowText", () => {
   it("keeps the title with today's secondary text when there are no chips", () => {
     expect(fileRowText(t, "part.3mf", 0, { ...empty, title: "Draft" })).toEqual({
       primary: "Draft",
-      secondary: "File 1 · 3MF",
+      secondary: "part · File 1 · 3MF",
     });
   });
 });

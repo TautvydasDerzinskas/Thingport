@@ -127,6 +127,43 @@ describe("readPlateProfile", () => {
     expect((await readPlateProfile(file)).title).toBe("Big one");
   });
 
+  it("finds ProfileTitle after a long Description", async () => {
+    const file = await write3mf({
+      "3D/3dmodel.model": model({ Description: "d".repeat(300 * 1024), ProfileTitle: "After the text" }),
+    });
+    expect((await readPlateProfile(file)).title).toBe("After the text");
+  });
+
+  it("decodes named and numeric entities in the title", async () => {
+    const file = await write3mf({ "3D/3dmodel.model": model({ ProfileTitle: "K&#228;se &#xE4; &amp; &lt;x&gt;" }) });
+    expect((await readPlateProfile(file)).title).toBe("Käse ä & <x>");
+  });
+
+  it("parses a huge metadata tag without '=' quickly", async () => {
+    const file = await write3mf({
+      "Metadata/slice_info.config": `<config><metadata ${"a ".repeat(400 * 1024)}/><plate><metadata key="weight" value="3"/></plate></config>`,
+    });
+    const start = Date.now();
+    const profile = await readPlateProfile(file);
+    expect(Date.now() - start).toBeLessThan(1000);
+    expect(profile.weight_g).toBe(3);
+  });
+
+  it("prefers the filaments used in slice_info over the project's slots", async () => {
+    const file = await write3mf({
+      "Metadata/project_settings.config": JSON.stringify({ filament_type: ["PLA", "PETG", "ABS", "TPU"] }),
+      "Metadata/slice_info.config": `<config><plate><filament id="1" type="PETG"/></plate></config>`,
+    });
+    expect((await readPlateProfile(file)).materials).toEqual(["PETG"]);
+  });
+
+  it("does not take the printer model id as the printer name", async () => {
+    const file = await write3mf({
+      "Metadata/slice_info.config": `<config><plate><metadata key="printer_model_id" value="C12"/></plate></config>`,
+    });
+    expect((await readPlateProfile(file)).printer).toBeNull();
+  });
+
   it("returns all nulls for a 3MF with only geometry", async () => {
     const file = await write3mf({ "3D/3dmodel.model": "<model><resources/></model>" });
     const profile = await readPlateProfile(file);

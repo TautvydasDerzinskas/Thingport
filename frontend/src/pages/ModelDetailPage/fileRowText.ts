@@ -28,12 +28,13 @@ export function fileRowText(
 ): { primary: string; secondary: string } {
   const type = extOf(filename).toUpperCase();
   const chips = profile ? profileChips(t, profile) : [];
-  return {
-    primary: profile?.title || stemOf(filename),
-    secondary: chips.length
-      ? chips.join(" · ")
-      : type
-        ? t("models:detail.fileMeta", { n: index + 1, type })
-        : t("models:detail.fileLabel", { n: index + 1 }),
-  };
+  const stem = stemOf(filename);
+  const title = profile?.title || null;
+  const secondary = chips.length
+    ? chips.join(" · ")
+    : type
+      ? t("models:detail.fileMeta", { n: index + 1, type })
+      : t("models:detail.fileLabel", { n: index + 1 });
+  // A title replaces the name as the headline, so the name moves to the second line instead of vanishing.
+  return { primary: title || stem, secondary: title ? `${stem} · ${secondary}` : secondary };
 }

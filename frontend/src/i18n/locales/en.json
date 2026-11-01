@@ -3763,7 +3763,7 @@
       "noDescription": "No description yet.",
       "fileLabel": "File {{n}}",
       "fileMeta": "File {{n}} · {{type}}",
-      "profileNozzle": "{{value}} nozzle",
+      "profileNozzle": "{{value}} mm nozzle",
       "profileLayer": "{{value}} mm",
       "profilePlates_one": "{{count}} plate",
       "profilePlates_other": "{{count}} plates",
