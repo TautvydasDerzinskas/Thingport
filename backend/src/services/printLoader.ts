@@ -1,4 +1,5 @@
 import { prisma } from "../db";
+import { ensurePlateProfiles } from "./plateProfile";
 import { HttpError } from "../utils/fileUtils";
 import { toPrintOut, type PrintOut } from "../dto";
 import { aiCategoryPaths, aiSuggestionOut, aiSuggestionsShown } from "./aiCategorizationService";
@@ -36,6 +37,7 @@ export async function printOutById(userId: string, printId: string): Promise<Pri
     aiCategoryPaths(userId),
     aiSuggestionsShown(),
   ]);
+  await ensurePlateProfiles(full.plates);
   return toPrintOut(
     full.print,
     full.plates,

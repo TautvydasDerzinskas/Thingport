@@ -39,6 +39,7 @@ import { listTools as listUserTools, saveOwnTool } from "../services/toolsServic
 import { parseToolManifest, toolLocalesSchema, validateToolManifest } from "../services/toolFormat";
 import { TOOL_GUIDE } from "../services/toolGuide";
 import { ICON_MAX_BYTES, listIcons as listUserIcons, saveIcon } from "../services/iconService";
+import { ensurePlateProfiles, plateProfileOut, type PlateProfile } from "../services/plateProfile";
 import { removePlate, renamePlate, resolvePlateFilePath } from "../services/printCreation";
 import { deletePreparedFile, deleteSupportingFile, managedPrintFilePath } from "../services/printFileService";
 import { notifyUpload } from "../services/modelNotifications";
@@ -768,6 +769,8 @@ type ModelFile = {
   /** Under /api; read with the token when it may read Model files. */
   apiPath: string;
   diskPath: () => string | null;
+  /** Set on plates only. */
+  profile?: PlateProfile | null;
 };
 
 /** Every file of one of the user's models: its plates, supporting files and sliced print. */
@@ -777,6 +780,7 @@ async function modelFiles(userId: string, modelId: string): Promise<ModelFile[]>
     include: { plates: { orderBy: { position: "asc" } }, files: { orderBy: { createdAt: "asc" } } },
   });
   if (!print) throw new HttpError(404, "Print not found");
+  await ensurePlateProfiles(print.plates);
   const plates = print.plates.map((plate): ModelFile => ({
     id: plate.id,
     name: plate.filename,
@@ -785,6 +789,7 @@ async function modelFiles(userId: string, modelId: string): Promise<ModelFile[]>
     size_bytes: plate.size,
     apiPath: `/print/${print.id}/plate/${plate.id}/file/${encodeURIComponent(plate.filename)}`,
     diskPath: () => resolvePlateFilePath(plate),
+    profile: plateProfileOut(plate.profileMeta),
   }));
   const others = print.files.map((file): ModelFile => ({
     id: file.id,
@@ -807,6 +812,7 @@ function fileOut(ctx: McpToolContext, file: ModelFile) {
     size_bytes: file.size_bytes,
     api_path: `/api${file.apiPath}`,
     download_url: ctx.publicUrl ? `${ctx.publicUrl}/api${file.apiPath}` : null,
+    ...(file.profile !== undefined && { profile: file.profile }),
   };
 }
 
@@ -816,7 +822,8 @@ const listModelFiles: McpToolDefinition = {
   description:
     "A model's files: its plates (the 3D files), supporting files and sliced print, each with the id get_model_file " +
     "takes. api_path (on the server's own address) or download_url, when the server knows its address, opens with " +
-    "the same token as 'Authorization: Bearer' if it may read Model files.",
+    "the same token as 'Authorization: Bearer' if it may read Model files. 3MF plates also carry their slicer " +
+    "profile (title, printer, nozzle, layer height, materials, plates, and for a sliced file print time and weight per plate), each part null when the file doesn't say.",
   readOnly: true,
   inputSchema: { model_id: z.string().min(1).describe("The model's id, from search_models or list_models.") },
   async run(ctx, args) {

@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { plateProfileOut, type PlateProfile } from "./services/plateProfile";
 import { LIKES_ID_PREFIX, PROVIDER_IDS, type ProviderId } from "./providers/index.generated";
 import { syncLikesUsername } from "./providers/names";
 import { nextSyncAt, syncNowAvailableAt } from "./services/collectionSyncSchedule";
@@ -117,6 +118,8 @@ export type PlateOut = {
   /** The file carries colours of its own -- a painted project, or a script's `color()` calls. True once the
    *  render found them, so its picture of the model is a colour one rather than the grey cards tint. */
   own_colors: boolean;
+  /** What the 3MF says about its slicer profile; null for other files and 3MFs that say nothing. */
+  profile: PlateProfile | null;
 };
 
 export type PrintFileOut = {
@@ -262,6 +265,7 @@ export function toPlateOut(printId: string, plate: Plate, home: AssetHome): Plat
     preview_glb_url: previewGlbUrl(plate),
     render_url: renderUrl(plate, home),
     own_colors: modelColorImagePath(plate.id, home) !== null,
+    profile: plateProfileOut(plate.profileMeta),
   };
 }
 
