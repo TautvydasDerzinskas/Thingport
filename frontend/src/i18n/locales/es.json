@@ -1964,6 +1964,7 @@
       },
       "flaresolverr": {
         "tabLabel": "FlareSolverr",
+        "trustDisclosure": "El solver configurado recibe las cookies de los proveedores y los tokens de API de las URL; sus registros pueden guardarlos. Su navegación y sus solicitudes a terceros quedan fuera de la comprobación de destino que Thingport hace en cada redirección. Usa un solver privado y aislado.",
         "helpText": "FlareSolverr permite que las importaciones superen los desafíos de Cloudflare en MakerWorld y Thingiverse. Introduce su URL (con o sin /v1), o déjalo en blanco para desactivarlo. Al guardar, primero se comprueba que FlareSolverr responde.",
         "urlLabel": "URL",
         "urlPlaceholder": "http://flaresolverr:8191",

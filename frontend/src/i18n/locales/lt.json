@@ -1991,6 +1991,7 @@
       },
       "flaresolverr": {
         "tabLabel": "FlareSolverr",
+        "trustDisclosure": "Sukonfigūruotas sprendiklis gauna tiekėjų slapukus ir URL esančius API raktus; jo žurnalai gali juos įrašyti. Jo naršyklės veiksmai ir užklausos trečiosioms šalims nepatenka į Thingport atliekamą kiekvieno peradresavimo paskirties patikrą. Naudokite privatų, izoliuotą sprendiklį.",
         "helpText": "FlareSolverr padeda importuojant apeiti Cloudflare patikras MakerWorld ir Thingiverse svetainėse. Įveskite jo URL (su /v1 arba be jo) arba palikite tuščią, kad išjungtumėte. Prieš išsaugant patikrinama, ar FlareSolverr atsako.",
         "urlLabel": "URL",
         "urlPlaceholder": "http://flaresolverr:8191",
