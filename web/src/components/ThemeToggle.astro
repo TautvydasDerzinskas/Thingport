@@ -61,7 +61,8 @@ import Icon from "./Icon.astro";
   };
 
   render();
-  systemDark.addEventListener("change", render);
+  // Safari before 14 lacks this: it misses a live OS change, but the button below still works.
+  systemDark.addEventListener?.("change", render);
   for (const button of document.querySelectorAll("[data-theme-toggle]")) {
     button.addEventListener("click", cycle);
   }

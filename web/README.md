@@ -49,7 +49,7 @@ file that moves or is renamed can't quietly drop off the site.
   (`starlight.css` points Starlight's variables at them). The site follows the system's theme until the visitor picks
   light or dark with the header button, which [`src/components/ThemeScript.astro`](src/components/ThemeScript.astro)
   applies before the first paint on every page (in the docs as `starlight/ThemeProvider.astro`). Without JavaScript,
-  every page is light.
+  every page is light and the button is hidden.
 
 ## The docs (Starlight)
 
