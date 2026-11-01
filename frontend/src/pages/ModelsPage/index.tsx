@@ -92,12 +92,24 @@ export default function ModelsPage({
   const [sourcesVersion, setSourcesVersion] = useState(0);
   const refreshSources = useCallback(() => setSourcesVersion((version) => version + 1), []);
 
-  // Linking a model can bring a site into the sources it's filtered by.
+  // Models gone from the list here move later ones up, so the next page starts that much earlier: it would skip them.
+  const dropFromList = (ids: string[]) => {
+    setItems((prev) => prev.filter((item) => !ids.includes(item.id)));
+    setOffset((prev) => Math.max(0, prev - ids.length));
+  };
+
+  // Linking a model can bring a site into the sources it's filtered by, and one given another category or folder
+  // leaves the open one's list.
   const applyUpdates = (updated: Print[]) => {
     const linked = updated.some(
       (print) => print.source_provider && !items.find((item) => item.id === print.id)?.source_provider,
     );
+    const open = categoryIdFilter === undefined ? null : [categoryIdFilter].flat();
+    const left = open
+      ? updated.filter((print) => !open.includes(print.category_id ?? "")).map((print) => print.id)
+      : [];
     setItems((prev) => replacePrints(prev, updated));
+    if (left.length) dropFromList(left);
     if (linked) refreshSources();
   };
 
@@ -339,12 +351,12 @@ export default function ModelsPage({
           total={items.length}
           hasMore={hasMore}
           onDeleted={(ids) => {
-            setItems((prev) => prev.filter((i) => !ids.includes(i.id)));
+            dropFromList(ids);
             refreshSources();
           }}
           onUpdated={applyUpdates}
           onUnauthorized={onUnauthorized}
-          offerLink={categoriesView === "folders"}
+          foldersView={categoriesView === "folders"}
         />
         <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1.5, width: { xs: "100%", md: "auto" } }}>
           <Box sx={{ overflowX: "auto" }}>

@@ -586,6 +586,40 @@ export const printsApi = {
     return result;
   },
 
+  /** Moves the others' files, pictures and descriptions into `primaryId` and deletes them. */
+  merge: async (primaryId: string, ids: string[]): Promise<{ print: Print; merged_ids: string[] }> => {
+    const res = await fetch(`${apiBase()}/prints/merge`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ primary_id: primaryId, ids }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Merge failed"));
+    return res.json();
+  },
+
+  /** Each model on its own: imported ones are skipped, ones that fail are counted, the rest still get the category. */
+  bulkAssignCategory: async (
+    ids: string[],
+    categoryId: string,
+  ): Promise<{ prints: Print[]; skipped: number; failed: number }> => {
+    const result = { prints: [] as Print[], skipped: 0, failed: 0 };
+    for (const chunk of bulkChunks(ids)) {
+      const res = await fetch(`${apiBase()}/prints/category`, {
+        method: "POST",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ print_ids: chunk, category_id: categoryId }),
+      });
+      if (res.status === 401) throw new UnauthorizedError();
+      if (!res.ok) throw new Error(await readErrorMessage(res, "Category update failed"));
+      const part = (await res.json()) as { prints: Print[]; skipped: number; failed: number };
+      result.prints.push(...part.prints);
+      result.skipped += part.skipped;
+      result.failed += part.failed;
+    }
+    return result;
+  },
+
   bulkFavorite: async (ids: string[], favorite: boolean): Promise<Print[]> => {
     const prints: Print[] = [];
     for (const chunk of bulkChunks(ids)) {

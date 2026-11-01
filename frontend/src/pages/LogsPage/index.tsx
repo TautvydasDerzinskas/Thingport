@@ -52,6 +52,7 @@ const ACTION_COLORS: Record<LogAction, ActionColor> = {
   model_reimported: "info",
   model_linked: "info",
   model_deleted: "error",
+  models_merged: "warning",
   models_repaired: "warning",
   collection_created: "success",
   collection_edited: "warning",
@@ -194,6 +195,7 @@ export default function LogsPage({ onUnauthorized }: Props) {
         });
       case "collections_merged":
       case "tags_merged":
+      case "models_merged":
         return t("adminSettings.logs.merged", {
           name: typeof d.name === "string" ? d.name : "",
           merged: Array.isArray(d.merged) ? d.merged.join(", ") : "",

@@ -338,6 +338,11 @@ function normalizeName(name: string): string {
   return name.trim().toLowerCase();
 }
 
+/** Neither imported nor a tool's: what merging and bulk assigning a category work on. */
+export function isOwnUpload(print: Pick<Print, "sourceProvider" | "toolId">): boolean {
+  return !print.sourceProvider && !print.toolId;
+}
+
 /** Throws 409 if `requested` is already taken in this category (for this user). Used for
  * explicit renames. */
 export async function uniqueModelName(
@@ -397,7 +402,11 @@ export async function availablePlateFilename(
     where: { printId, ...(excludePlateId ? { id: { not: excludePlateId } } : {}) },
     select: { filename: true },
   });
-  const taken = new Set(siblings.map((p) => p.filename.toLowerCase()));
+  return freePlateFilename(desiredFilename, new Set(siblings.map((p) => p.filename.toLowerCase())));
+}
+
+/** `desiredFilename`, or "name (2).ext" and on where it's in `taken`, which holds lowercased names. */
+export function freePlateFilename(desiredFilename: string, taken: ReadonlySet<string>): string {
   if (!taken.has(desiredFilename.toLowerCase())) return desiredFilename;
   const ext = path.extname(desiredFilename);
   const stem = path.basename(desiredFilename, ext);
@@ -432,7 +441,7 @@ async function moveStored(oldPath: string, newPath: string, save: () => Promise<
 }
 
 /** Moves files that one record finds, as moveStored; returns how many were there to move. */
-async function moveAllStored(moves: [string, string][], save: () => Promise<unknown>): Promise<number> {
+export async function moveAllStored(moves: [string, string][], save: () => Promise<unknown>): Promise<number> {
   // Under the storage lock, so the file reuse backfill never swaps one of these files for a clone in the middle of it.
   return withStorageLock(async () => {
     const present = moves.filter(([oldPath]) => fsSync.existsSync(oldPath));

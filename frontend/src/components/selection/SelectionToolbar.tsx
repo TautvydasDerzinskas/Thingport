@@ -80,6 +80,8 @@ export default function SelectionToolbar({
           role="toolbar"
           aria-label={labels.toolbar}
           sx={{
+            flexWrap: "wrap",
+            rowGap: 0.5,
             animation: `${slideIn} 200ms ease-out`,
             "@media (prefers-reduced-motion: reduce)": { animation: "none" },
           }}

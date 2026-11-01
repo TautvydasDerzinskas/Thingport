@@ -2050,6 +2050,7 @@
           "model_reimported": "Detalles que faltaban obtenidos",
           "model_linked": "Modelo vinculado a un proveedor",
           "model_deleted": "Modelo eliminado",
+          "models_merged": "Modelos fusionados",
           "models_repaired": "Modelos reparados",
           "collection_created": "Colección creada",
           "collection_edited": "Colección editada",
@@ -4398,7 +4399,30 @@
       "title": "Gestionar categorías y carpetas",
       "repair": "Reparar"
     },
+    "categoryPicker": {
+      "filter": "Filtrar categorías",
+      "noMatches": "Ninguna categoría coincide con «{{query}}»"
+    },
+    "assignCategory": {
+      "action": "Asignar categoría",
+      "needOne": "Selecciona al menos 1 modelo que no se haya importado",
+      "title_one": "Asignar una categoría a {{count}} modelo",
+      "title_other": "Asignar una categoría a {{count}} modelos",
+      "category": "Categoría",
+      "folderWarning": "Asignar una categoría quita los modelos de la estructura de carpetas: después no estarán en ninguna carpeta.",
+      "replaces_one": "{{count}} modelo seleccionado ya tiene una categoría, que se sustituirá.",
+      "replaces_other": "{{count}} modelos seleccionados ya tienen una categoría, que se sustituirá.",
+      "empty": "Aún no hay categorías para elegir. Añade algunas en «Gestionar categorías y carpetas».",
+      "done_one": "«{{name}}» asignada a {{count}} modelo.",
+      "done_other": "«{{name}}» asignada a {{count}} modelos.",
+      "partlyFailed_one": "No se pudo cambiar {{count}} modelo.",
+      "partlyFailed_other": "No se pudieron cambiar {{count}} modelos.",
+      "failed": "No se pudo asignar la categoría. Inténtalo de nuevo.",
+      "loadFailed": "No se pudieron cargar tus categorías. Inténtalo de nuevo."
+    },
     "selection": {
+      "skipped_one": "{{count}} modelo seleccionado queda fuera: se importó o pertenece a una herramienta.",
+      "skipped_other": "{{count}} modelos seleccionados quedan fuera: se importaron o pertenecen a una herramienta.",
       "enter": "Seleccionar modelos",
       "exit": "Terminar selección",
       "toolbar": "Acciones para los modelos seleccionados",
@@ -4501,6 +4525,25 @@
         "othersGo_one": "{{names}} se quita. Sus modelos pasan a tener «{{name}}».",
         "othersGo_other": "{{names}} se quitan. Sus modelos pasan a tener «{{name}}».",
         "keepsOwn": "Los modelos que ya tienen «{{name}}» no cambian."
+      },
+      "models": {
+        "action": "Fusionar modelos",
+        "needTwo": "Selecciona al menos 2 modelos que no se hayan importado",
+        "title_one": "Fusionar {{count}} modelo",
+        "title_other": "Fusionar {{count}} modelos",
+        "keepHelp": "Elige el modelo principal. Los archivos, imágenes y descripciones de los demás pasan a él y luego los demás se eliminan.",
+        "goes": "Se elimina",
+        "othersGo_one": "{{names}} se elimina. Sus archivos, imágenes y descripción pasan a «{{name}}».",
+        "othersGo_other": "{{names}} se eliminan. Sus archivos, imágenes y descripciones pasan a «{{name}}».",
+        "keepsOwn": "«{{name}}» conserva su nombre y su categoría o carpeta. Las etiquetas y colecciones se combinan.",
+        "fileCount_one": "{{count}} archivo",
+        "fileCount_other": "{{count}} archivos",
+        "pictureCount_one": "{{count}} imagen",
+        "pictureCount_other": "{{count}} imágenes",
+        "fileUnit_one": "archivo",
+        "fileUnit_other": "archivos",
+        "merged_one": "{{count}} modelo fusionado en «{{name}}».",
+        "merged_other": "{{count}} modelos fusionados en «{{name}}»."
       }
     },
     "filters": {

@@ -69,7 +69,19 @@ A **merge** moves every model into one collection or tag you pick, and deletes t
 you've seen what changes: which one is kept, which are deleted, how many models it ends up with, and which synced
 collections stop syncing. A kept collection keeps its name, description, tags and sync; keep a synced one to carry on
 syncing it.
-A merge can't be undone, but no model is ever deleted by one.
+A merge can't be undone, but merging collections or tags never deletes a model.
+
+In the **Folders** view, two more actions help tidy up your own uploads. Models imported from a site are left out of
+both, and the dialog says how many were skipped.
+
+- **Merge models** is for a model whose parts each arrived as a model of their own. Pick the main model, and the
+  others' files, pictures and descriptions move into it, each description under its model's name. Tags and collections
+  are combined; the main model keeps its name and its category or folder. The other models are then deleted, along
+  with their thumbnails, and this can't be undone.
+- **Assign category** gives every selected model one category, replacing any it already has. Type to filter the
+  categories, or open a top-level one to pick from what's under it. A model with a category isn't in any folder, so
+  this takes it out of the folder structure. If the category already holds a model of that name, the incoming one is
+  renamed, like `Name (2)`.
 
 ## Search
 
