@@ -123,7 +123,8 @@ Any `http://` or `https://` solver URL works by default, so existing LAN setups 
 `FLARESOLVERR_REQUIRE_HTTPS=true` to require HTTPS for remote solvers: HTTP is then allowed only for exact
 `flaresolverr`, `localhost`, `127.0.0.1` or `[::1]` hosts, with an optional port, and saved settings and
 `FLARESOLVERR_URL` cannot bypass it. System Health warns about a plaintext remote solver and suggests the variable
-once the URL is secure. Solver requests and connection tests refuse endpoint redirects either way.
+once the URL is secure. Solver requests and connection tests refuse endpoint redirects either way, so a proxy in front
+of the solver has to answer `/v1` itself: a 307 or 308, even just to `/v1/`, fails until the proxy is changed.
 
 Provider manifests own `solverRoutes`: exact host, anchored path pattern, ordinary query names and any permitted
 query credentials or cookies. The shared solver enforces HTTPS and those declarations; callers cannot request a
