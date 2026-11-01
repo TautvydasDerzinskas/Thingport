@@ -114,7 +114,11 @@ test("follows a reverse proxy's http to https upgrade on the same host, found ou
     return new Response("{}", { status: 200 });
   };
   try {
-    const res = await fetchInstance("http://lan-upgrade.example/api/login", { method: "POST", body: "secret" });
+    const res = await fetchInstance("http://lan-upgrade.example/api/login", {
+      method: "POST",
+      body: "secret",
+      headers: { Authorization: "Bearer t" },
+    });
     assert.equal(res.status, 200);
     assert.deepEqual(
       calls.map((c) => [c.url, c.init?.redirect, c.init?.body ?? null]),
@@ -124,6 +128,8 @@ test("follows a reverse proxy's http to https upgrade on the same host, found ou
         ["https://lan-upgrade.example/api/login", "manual", "secret"],
       ],
     );
+    assert.equal(calls[1].init?.headers, undefined);
+    assert.equal(calls[1].init?.credentials, "omit");
     // Remembered: the next request goes to https:// straight away.
     calls.length = 0;
     await fetchInstance("http://lan-upgrade.example/api/me", { headers: { Authorization: "Bearer t" } });
