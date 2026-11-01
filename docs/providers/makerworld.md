@@ -55,3 +55,8 @@ and Grab or a fresh paste connects it again.
 - A MakerWorld CAPTCHA or daily download limit pauses imports and syncs until it clears.
 - A model whose script is shared costs one extra download to import, since the script doesn't come with the print
   profile: MakerWorld only hands out a model's raw files as a separate request.
+- With a solver URL configured, FlareSolverr covers declared MakerWorld page/API routes and can send your session cookie to
+  the configured solver. Use a private, isolated solver; its logs may record credentials, and its browser navigation
+  and third-party requests are outside Thingport's per-hop destination guard.
+- MakerWorld's separate Bambu cloud API (`api.bambulab.com`), including the user's collection listing, has no solver
+  fallback. A challenge there remains blocked even when FlareSolverr is configured.

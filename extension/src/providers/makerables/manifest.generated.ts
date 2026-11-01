@@ -11,6 +11,10 @@ export default {
   site: "https://www.makerables.com",
   docsSlug: "makerables",
   hosts: ["makerables.com"],
+  credentialHosts: {
+    "makerables-api": { exact: ["www.makerables.com"] },
+    "makerables-session": { exact: ["www.makerables.com"] },
+  },
   endpoints: { api: "https://www.makerables.com/api", files: "https://cdn.makerables.com" },
   brand: {
     logo: {

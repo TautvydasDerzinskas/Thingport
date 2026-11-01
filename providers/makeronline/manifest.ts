@@ -8,6 +8,10 @@ export default {
   site: "https://www.makeronline.com",
   docsSlug: "makeronline",
   hosts: ["makeronline.com"],
+  credentialHosts: {
+    "makeronline-api": { exact: ["www.makeronline.com"] },
+    "makeronline-site": { exact: ["makeronline.com", "www.makeronline.com"] },
+  },
   brand: {
     logo: {
       viewBox: "0.15 -10.2 50 50",

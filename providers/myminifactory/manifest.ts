@@ -8,6 +8,10 @@ export default {
   site: "https://www.myminifactory.com",
   docsSlug: "myminifactory",
   hosts: ["myminifactory.com"],
+  credentialHosts: {
+    "myminifactory-api": { exact: ["www.myminifactory.com"] },
+    "myminifactory-session": { exact: ["www.myminifactory.com"] },
+  },
   brand: {
     logo: {
       color: "#00C4A6",
@@ -33,7 +37,25 @@ export default {
   ],
   modelNoun: "objects",
   helpers: { grab: "optional", flaresolverr: "recommended" },
-  browserFetch: true,
+  solverRoutes: [
+    { host: "www.myminifactory.com", path: /^\/object\/3d-print-[\w%-]+$/, query: [] },
+    {
+      host: "www.myminifactory.com",
+      path: /^\/api\/v2\/(?:objects\/\d+|users\/[\w%.-]+(?:\/collections(?:\/[\w%-]+)?)?|search)$/,
+      query: ["q", "sort", "page", "per_page"],
+      encodedSpaceSegment: 3,
+      credentials: { query: ["key"] },
+    },
+  ],
+  browserFetchOrigins: [
+    "https://myminifactory.com",
+    "https://www.myminifactory.com",
+    "https://assets.myminifactory.com",
+    "https://cdn.myminifactory.com",
+    "https://dl.myminifactory.com",
+    "https://dl2.myminifactory.com",
+    "https://dl4.myminifactory.com",
+  ],
   capabilities: {
     collections: true,
     likes: false,

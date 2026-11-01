@@ -71,7 +71,7 @@ export type ImportFailureReason =
 export type StopReason = "rateLimited" | "downloadLimit" | "auth" | "blocked";
 
 const BLOCKED_RETRY_TEXT =
-  "Cloudflare blocked the request and FlareSolverr didn't get past it — check FlareSolverr in Administration → Connections, then retry";
+  "Cloudflare blocked the request and FlareSolverr couldn't help: it only covers supported provider pages. Check it in Administration → Connections, then retry";
 
 /** A provider's own words for why it stopped, where it has them. */
 function stopTexts(provider: string | null): StopTexts {
@@ -86,9 +86,7 @@ function blockedRetryText(url: string | null): string {
 
 /** A Cloudflare block, as a sync's. */
 function blockedText(provider: string): string {
-  return (
-    stopTexts(provider).blocked ?? `Cloudflare blocked ${providerName(provider)} and FlareSolverr didn't get past it`
-  );
+  return stopTexts(provider).blocked ?? `Cloudflare blocked ${providerName(provider)} and FlareSolverr couldn't help`;
 }
 
 export const PROVIDER_OFF_TEXT = (name: string) =>
@@ -1107,7 +1105,7 @@ async function notifySyncJobDone(
               ? `${more} will come in on a later sync: ${providerName(sync.provider)} turned Thingport's sign-in down.`
               : own.blocked
                 ? `${more} will come in on a later sync: ${own.blocked}.`
-                : `${more} will come in on a later sync: Cloudflare blocked ${providerName(sync.provider)} and FlareSolverr didn't get past it. An admin can check FlareSolverr in Administration → Connections.`,
+                : `${more} will come in on a later sync: Cloudflare blocked ${providerName(sync.provider)} and FlareSolverr couldn't help. An admin can check FlareSolverr in Administration → Connections.`,
     );
   }
   if (failedCount) {

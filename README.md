@@ -185,6 +185,7 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-thingport}:${POSTGRES_PASSWORD:-thingport}@db:5432/${POSTGRES_DB:-thingport}?schema=public
       - CORS_ORIGINS=${CORS_ORIGINS:-}
       - FLARESOLVERR_URL=${FLARESOLVERR_URL:-http://flaresolverr:8191/v1}
+      - FLARESOLVERR_REQUIRE_HTTPS=${FLARESOLVERR_REQUIRE_HTTPS:-false}
     depends_on:
       db:
         condition: service_healthy
@@ -249,6 +250,8 @@ SMTP_PASS=
 SMTP_FROM=Thingport <no-reply@localhost>
 # first-run default only; once Thingport has started, change it in Administration -> Connections -> FlareSolverr
 FLARESOLVERR_URL=http://flaresolverr:8191/v1
+# true refuses a plain HTTP FlareSolverr unless it runs locally (flaresolverr, localhost); System Health says when it's safe
+FLARESOLVERR_REQUIRE_HTTPS=false
 TZ=UTC
 ```
 

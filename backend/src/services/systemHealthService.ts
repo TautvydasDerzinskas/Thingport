@@ -6,6 +6,7 @@ import type { Prisma } from "@prisma/client";
 import {
   cgroupMemoryLimitBytes,
   DEFAULT_SYSTEM_NOTIFICATIONS_URL,
+  FLARESOLVERR_REQUIRE_HTTPS,
   MODEL_PREVIEW_MAX_MEMORY_MB,
   STORAGE,
   SYSTEM_NOTIFICATIONS_URL,
@@ -15,7 +16,13 @@ import { clientLastSeen } from "./clientActivityService";
 import { listAiProviderModels } from "./aiCategorizationService";
 import { resolveAiConnection } from "./aiConnectionService";
 import { testFlaresolverr } from "./flaresolverr";
-import { getFlaresolverrUrl, getSmtpSettings } from "./settingsService";
+import {
+  flaresolverrUrlPolicyError,
+  getFlaresolverrUrl,
+  getSmtpSettings,
+  isAllowedFlaresolverrUrl,
+  isSecureFlaresolverrUrl,
+} from "./settingsService";
 import { isProviderId, PROVIDER_IDS, type ProviderId } from "../providers/index.generated";
 import { PROVIDERS } from "../providers/registry";
 import { isProviderEnabled } from "./providerSettingsService";
@@ -180,10 +187,15 @@ async function checkInternet(): Promise<Found> {
 async function checkFlaresolverr(): Promise<Found> {
   const url = await getFlaresolverrUrl();
   if (!url) return found("not_configured", "not_configured");
+  // With FLARESOLVERR_REQUIRE_HTTPS on, a plaintext remote solver is refused before anything is sent to it.
+  if (!isAllowedFlaresolverrUrl(url)) return found("error", "insecure_refused", { url }, flaresolverrUrlPolicyError());
   const result = await testFlaresolverr(url);
-  return result.ok
-    ? { ...found("ok", "ok", { url, version: result.version }), latency_ms: result.latencyMs }
-    : found("error", "unreachable", { url }, result.error);
+  if (!result.ok) return found("error", "unreachable", { url }, result.error);
+  const facts = { url, version: result.version };
+  // Working, but provider cookies and API tokens cross the network in plaintext.
+  if (!isSecureFlaresolverrUrl(url)) return { ...found("warning", "insecure", facts), latency_ms: result.latencyMs };
+  // Ready for FLARESOLVERR_REQUIRE_HTTPS: still green, with the suggestion to turn it on.
+  return { ...found("ok", FLARESOLVERR_REQUIRE_HTTPS ? "ok" : "https_ready", facts), latency_ms: result.latencyMs };
 }
 
 async function checkProvider(id: ProviderId): Promise<Found> {

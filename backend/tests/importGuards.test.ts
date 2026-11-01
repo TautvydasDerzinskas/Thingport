@@ -117,6 +117,17 @@ describe("a body that goes silent", () => {
   }
   const STALLED = { transient: true, inTime: true };
 
+  // rawFetch refuses local addresses, so it's given a public one and the request lands on this server.
+  const PUBLIC_ORIGIN = "http://93.184.216.34";
+  async function fromPublicHost<T>(read: () => Promise<T>): Promise<T> {
+    global.fetch = ((url, init) => originalFetch(`${origin}${new URL(String(url)).pathname}`, init)) as typeof fetch;
+    try {
+      return await read();
+    } finally {
+      global.fetch = originalFetch;
+    }
+  }
+
   it("fails readCapped as transient", async () => {
     const res = await fetch(`${origin}/stalls-read`);
     expect(await stall("/stalls-read", () => readCapped(res, 1000))).toEqual(STALLED);
@@ -136,7 +147,8 @@ describe("a body that goes silent", () => {
 
   it("gives no picture from fetchImageBytes, within the limit", async () => {
     const from = Date.now();
-    await expect(fetchImageBytes(`${origin}/stalls-image`)).resolves.toBeNull();
+    await expect(fromPublicHost(() => fetchImageBytes(`${PUBLIC_ORIGIN}/stalls-image`))).resolves.toBeNull();
+    await vi.waitFor(() => expect(hungUp.has("/stalls-image")).toBe(true));
     expect(Date.now() - from).toBeLessThan(IDLE_MS * 5);
   });
 
@@ -152,7 +164,8 @@ describe("a body that goes silent", () => {
     expect((await fs.readFile(file)).length).toBe(TRICKLED);
     await fs.rm(dir, { recursive: true, force: true });
 
-    expect((await fetchImageBytes(`${origin}/trickle-image`))?.length).toBe(TRICKLED);
+    const picture = await fromPublicHost(() => fetchImageBytes(`${PUBLIC_ORIGIN}/trickle-image`));
+    expect(picture?.length).toBe(TRICKLED);
   });
 
   it("still gives no picture past the cap", async () => {
@@ -166,7 +179,9 @@ describe("a body that goes silent", () => {
 
   it("is a sign of life per chunk, and so is asking", async () => {
     const asked = { lastActivity: 0 };
-    const res = await withImportActivity(asked, () => rawFetch(`${origin}/trickle-beat`, {}));
+    const res = await fromPublicHost(() =>
+      withImportActivity(asked, () => rawFetch(`${PUBLIC_ORIGIN}/trickle-beat`, {})),
+    );
     expect(asked.lastActivity).toBeGreaterThan(0);
 
     const reading = { lastActivity: 0 };

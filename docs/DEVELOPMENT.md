@@ -101,16 +101,35 @@ for using them, and [tool development](TOOL_DEVELOPMENT.md) for writing one.
 
 ## Optional: FlareSolverr
 
-Thingiverse and MyMiniFactory sit behind Cloudflare, and some imports need FlareSolverr to get through. It's optional --
-without it those imports will simply fail.
+FlareSolverr is an optional fallback for declared provider pages and API reads challenged by Cloudflare.
+Thingiverse and MyMiniFactory first use guarded direct transport; a 429 or challenge may retry through the solver
+with the API token in the URL. MakerWorld may send session cookies. The configured solver and its logs therefore
+receive credentials. Use a private, isolated solver: its browser redirects and third-party requests are outside
+Thingport's per-hop destination guard, even though Thingport validates the initial destination.
+
+Binary downloads, authenticated Cults3D calls and MakerWorld's Bambu cloud API are unsupported. Cults3D's solver
+routes cover public pages only.
 
 ```bash
-docker run -d --name thingport-flaresolverr -p 8191:8191 ghcr.io/flaresolverr/flaresolverr:latest
+docker run -d --name thingport-flaresolverr -p 127.0.0.1:8191:8191 ghcr.io/flaresolverr/flaresolverr:latest
 ```
 
 Then set its URL (`http://localhost:8191`, with or without `/v1`) in **Administration → Connections →
 FlareSolverr**. `FLARESOLVERR_URL` in `backend/.env` is copied into that setting on the first startup; after that the
-saved value wins and the env var is ignored.
+saved value wins and the env var is ignored. Configuring the URL enables fallback for all declared provider
+routes; clearing it disables FlareSolverr globally, including cached page-proxy decisions.
+
+Any `http://` or `https://` solver URL works by default, so existing LAN setups keep running. Set
+`FLARESOLVERR_REQUIRE_HTTPS=true` to require HTTPS for remote solvers: HTTP is then allowed only for exact
+`flaresolverr`, `localhost`, `127.0.0.1` or `[::1]` hosts, with an optional port, and saved settings and
+`FLARESOLVERR_URL` cannot bypass it. System Health warns about a plaintext remote solver and suggests the variable
+once the URL is secure. Solver requests and connection tests refuse endpoint redirects either way, so a proxy in front
+of the solver has to answer `/v1` itself: a 307 or 308, even just to `/v1/`, fails until the proxy is changed.
+
+Provider manifests own `solverRoutes`: exact host, anchored path pattern, ordinary query names and any permitted
+query credentials or cookies. The shared solver enforces HTTPS and those declarations; callers cannot request a
+credential bypass. Keep API credentials on API-only routes and regenerate copies with `npm run providers:sync`.
+See [Provider development](PROVIDER_DEVELOPMENT.md) for the module contract.
 
 ## Running the tests
 

@@ -12,6 +12,7 @@ export default {
   site: "https://www.cgtrader.com",
   docsSlug: "cgtrader",
   hosts: ["cgtrader.com"],
+  credentialHosts: { "cgtrader-session": { exact: ["www.cgtrader.com"] } },
   endpoints: { files: "https://secure-files.cgtrader.com" },
   brand: {
     logo: {

@@ -23,6 +23,9 @@ import {
   getQualityChecksOff,
   getSmtpSettings,
   getFlaresolverrUrl,
+  normalizeFlaresolverrUrl,
+  isAllowedFlaresolverrUrl,
+  flaresolverrUrlPolicyError,
   getPublicUrl,
   normalizeAiBaseUrl,
   normalizePublicUrl,
@@ -656,16 +659,20 @@ router.get(
   }),
 );
 
-const flaresolverrUrlSchema = z.string().trim().url("Enter a full URL, like http://flaresolverr:8191");
+const flaresolverrUrlSchema = z
+  .string()
+  .trim()
+  .url("Enter a full URL, like http://flaresolverr:8191")
+  .refine(isAllowedFlaresolverrUrl, () => ({ message: flaresolverrUrlPolicyError() }));
 
-// A URL is only saved once FlareSolverr answers on it; clearing it turns FlareSolverr off without a test.
+// A changed URL is only saved once FlareSolverr answers; clearing it or saving it unchanged needs no test.
 const flaresolverrSettingsSchema = z.object({ url: flaresolverrUrlSchema.nullable().or(z.literal("")) }).strict();
 router.patch(
   "/settings/flaresolverr",
   requireAdmin,
   asyncHandler(async (req, res) => {
     const body = parseBody(flaresolverrSettingsSchema, req.body);
-    if (body.url) {
+    if (body.url && normalizeFlaresolverrUrl(body.url) !== (await getFlaresolverrUrl())) {
       const result = await testFlaresolverr(body.url);
       if (!result.ok)
         throw new HttpError(

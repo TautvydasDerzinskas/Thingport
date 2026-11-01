@@ -1,3 +1,4 @@
+import { assertCredentialDestination, credentialRequest } from "../credentialRequest";
 import { IMPORT_TIMEOUT_SECONDS } from "../../config";
 import { htmlToMarkdown } from "../../services/descriptionMarkdown";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
@@ -79,7 +80,8 @@ async function request(path: string, token: string | null): Promise<Envelope> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const res = await fetch(`${API_ORIGIN}${path}`, {
+    const url = `${API_ORIGIN}${path}`;
+    const init: RequestInit = {
       headers: {
         Accept: "application/json",
         "Accept-Language": "en-US,en;q=0.9",
@@ -89,7 +91,9 @@ async function request(path: string, token: string | null): Promise<Envelope> {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       signal: controller.signal,
-    });
+    };
+    // With a token, each redirect hop is checked before the token goes along.
+    const res = token ? await credentialRequest("makerables-api", url, init) : await fetch(url, init);
     const body = (await res.json().catch(() => null)) as Record<string, unknown> | null;
     return {
       status: res.status,
@@ -384,7 +388,9 @@ export async function mintMakerablesToken(cookie: string): Promise<MakerablesTok
   let res: Response;
   let body: Record<string, unknown> | null;
   try {
-    res = await fetch(`${SITE_ORIGIN}/auth/access-token`, {
+    const url = `${SITE_ORIGIN}/auth/access-token`;
+    assertCredentialDestination("makerables-session", url);
+    res = await fetch(url, {
       headers: { Accept: "application/json", "User-Agent": USER_AGENT, Cookie: cookie },
       // Its redirect to the sign-in page is an answer, not a hop to follow: followed, it would come back as the
       // page's HTML and read as a sign-in it won't take.

@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import dnsPromises from "node:dns/promises";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
@@ -215,6 +216,23 @@ describe("description images", () => {
       expect(await prisma.descriptionImage.count({ where: { printId: id } })).toBe(0);
       const print = await prisma.print.findUniqueOrThrow({ where: { id } });
       expect(print.notes).toBe(`![](${STEP_IMAGE})`);
+    });
+
+    it("uses the connection-time DNS guard for an arbitrary image host", async () => {
+      const imageUrl = "https://untrusted.example/image.gif";
+      vi.spyOn(dnsPromises, "resolve4").mockResolvedValue(["8.8.8.8"] as never);
+      vi.spyOn(dnsPromises, "resolve6").mockResolvedValue([] as never);
+      const fetchMock = vi.fn<
+        (input: RequestInfo | URL, init?: RequestInit & { dispatcher?: unknown }) => Promise<Response>
+      >(async (_input, init) => {
+        expect(init?.dispatcher).toBeDefined();
+        return new Response(Buffer.from(ONE_PIXEL_GIF_BASE64, "base64"), { status: 200 });
+      });
+      global.fetch = fetchMock as unknown as typeof fetch;
+      const id = await printWithImage(imageUrl);
+      await localizeDescriptionImages(id);
+      expect(fetchMock).toHaveBeenCalledOnce();
+      expect(await prisma.descriptionImage.count({ where: { printId: id } })).toBe(1);
     });
 
     it("leaves an edit saved during the download alone", async () => {

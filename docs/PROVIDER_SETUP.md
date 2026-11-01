@@ -77,16 +77,41 @@ on OwlCAD it exports CAD projects from OwlCAD's own editor. Install it from the 
 **Pair with Thingport** in its popup: that opens your Thingport in a tab, where you approve that browser, so no password
 is kept in Grab (see [its setup](../extension/README.md#setup)). Sites after MakerWorld, Printables and Thingiverse
 need one click first, on the site in Grab's popup (a + marks one that's off) or on **Enable all**.
+If a reverse proxy upgrades your instance's `http://` address to `https://` on the same host, Grab follows that
+upgrade. It never sends your sign-in along any other redirect: then enter the final address in Grab instead. Grab spots
+the upgrade with a GET request, so a proxy that redirects only other methods, such as POST, needs the final address too.
+A connection made before this upgrade was followed may need connecting once more, so Grab may reach the `https://`
+address.
 
 ### FlareSolverr
 
-Printables, Thingiverse and MyMiniFactory sit behind Cloudflare, which now and then challenges a server instead of
-answering it. [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) gets past those challenges with a real
-browser. It's part of the standard Docker Compose stack; its address is set under **Administration → Connections →
-FlareSolverr**, and [System Health](guides/system-health.md) checks it. Without it, imports and syncs from those sites
-fail whenever Cloudflare steps in. MakerWorld and Thangs use it only as a fallback, and it can't help with Cults3D.
+[FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) uses a real browser to solve Cloudflare challenges.
+It's part of the standard Docker Compose stack. Set its global URL under **Administration → Connections →
+FlareSolverr** to enable fallback for all declared provider routes. [System Health](guides/system-health.md) checks
+the service. Clearing the URL disables all fallbacks, including when a previous request warmed the proxy cache.
 CGTrader's downloads sit behind AWS's bot check instead: FlareSolverr gets Thingport a token for it whenever the last
 one is turned down, and without FlareSolverr only the token Grab sends from your browser will do.
+
+Prefer HTTPS for a solver on another machine: provider cookies and API tokens travel to it. Plain HTTP keeps
+working, and System Health shows a warning for it. Once the URL is HTTPS, or one of the local endpoints
+`flaresolverr` (the Compose service), `localhost`, `127.0.0.1` or `[::1]`, set `FLARESOLVERR_REQUIRE_HTTPS=true` to
+refuse plaintext remote solvers from then on, saved and environment URLs included.
+
+Thingport doesn't follow a redirect from the solver's address, since credentials would go along. A reverse proxy in
+front of the solver has to answer `/v1` itself: one that redirects it, even just to `/v1/`, needs changing, because
+until then the URL can't be saved and solver requests fail.
+
+Thingiverse and MyMiniFactory API requests first use guarded direct transport with a Chrome-like TLS handshake.
+Only a 429 or Cloudflare challenge retries through the enabled solver, including the Thingiverse `access_token` or
+MyMiniFactory `key` in the URL. A 401 rejects the credential, and so does a JSON 403 from Thingiverse. MyMiniFactory
+also answers 403 for models that aren't public, so there it only means the model can't be reached. MakerWorld,
+Printables and Thangs support selected page/API fallbacks; Cults3D supports public pages only. Binary downloads,
+authenticated Cults3D calls and MakerWorld's separate Bambu cloud API do not support solver fallback.
+
+**Use a private, isolated solver.** It receives provider cookies and URL API tokens, and its logs may record them.
+Thingport checks the initial HTTPS host, path and query against each provider's declarations, but the solver's
+browser navigation, redirects and third-party requests are outside Thingport's per-hop destination guard. Isolate
+its network access from private services and restrict access to the solver and its logs.
 
 ## Connecting a provider
 

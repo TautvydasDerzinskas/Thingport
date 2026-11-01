@@ -113,6 +113,8 @@ export default function FlaresolverrTab({ onUnauthorized }: Props) {
         fullWidth
       />
 
+      <Alert severity="info">{t("adminSettings.flaresolverr.trustDisclosure")}</Alert>
+
       <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
         <Button
           variant="contained"

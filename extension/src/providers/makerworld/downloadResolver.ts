@@ -5,6 +5,7 @@
 // same wall.
 
 import type { ResolvedDownload } from "../../shared/messages";
+import { providerCredentialRequest } from "../../shared/providerCredentialRequest";
 import { send } from "../../shared/messages";
 import { parseMakerworldModelUrl } from "./urls.generated";
 import { sleep } from "../../content/runtime";
@@ -96,7 +97,7 @@ async function fetchMakerworldApiJson(url: string, nonce: string | null): Promis
   try {
     const headers: Record<string, string> = { Accept: "application/json", ...MAKERWORLD_CLIENT_HEADERS };
     if (nonce) headers["X-Nonce"] = nonce;
-    const res = await fetch(url, { headers, signal: controller.signal });
+    const res = await providerCredentialRequest("makerworld-extension", url, { headers, signal: controller.signal });
     if (res.status === 418) throw new MakerworldCaptchaError();
     const data: unknown = await res.json();
     if (extractDownloadUrl(data)) return data;

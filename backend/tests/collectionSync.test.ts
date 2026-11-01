@@ -851,7 +851,7 @@ describe("synced collections", () => {
     const after = await syncOf(collectionId);
     expect(after.knownIds).not.toContain(first);
     expect(after.knownIds).not.toContain(second);
-    expect(after.lastError).toBe("Cloudflare blocked MakerWorld and FlareSolverr didn't get past it");
+    expect(after.lastError).toBe("Cloudflare blocked MakerWorld and FlareSolverr couldn't help");
     const job = await prisma.importJob.findFirstOrThrow({ where: { collectionSyncId: sync.id } });
     expect(await prisma.importJobItem.count({ where: { jobId: job.id } })).toBe(0);
     expect((await latestNotification()).body).toContain(
