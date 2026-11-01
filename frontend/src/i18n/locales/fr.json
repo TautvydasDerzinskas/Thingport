@@ -2050,6 +2050,7 @@
           "model_reimported": "Détails manquants récupérés",
           "model_linked": "Modèle lié à un fournisseur",
           "model_deleted": "Modèle supprimé",
+          "models_merged": "Modèles fusionnés",
           "models_repaired": "Modèles réparés",
           "collection_created": "Collection créée",
           "collection_edited": "Collection modifiée",
@@ -4411,7 +4412,30 @@
       "title": "Gérer les catégories et les dossiers",
       "repair": "Réparer"
     },
+    "categoryPicker": {
+      "filter": "Filtrer les catégories",
+      "noMatches": "Aucune catégorie ne correspond à « {{query}} »"
+    },
+    "assignCategory": {
+      "action": "Attribuer une catégorie",
+      "needOne": "Sélectionnez au moins 1 modèle non importé",
+      "title_one": "Attribuer une catégorie à {{count}} modèle",
+      "title_other": "Attribuer une catégorie à {{count}} modèles",
+      "category": "Catégorie",
+      "folderWarning": "Attribuer une catégorie retire les modèles de la structure de dossiers : ils ne seront ensuite dans aucun dossier.",
+      "replaces_one": "{{count}} modèle sélectionné a déjà une catégorie, qui sera remplacée.",
+      "replaces_other": "{{count}} modèles sélectionnés ont déjà une catégorie, qui sera remplacée.",
+      "empty": "Aucune catégorie à choisir pour l'instant. Ajoutez-en dans « Gérer les catégories et les dossiers ».",
+      "done_one": "« {{name}} » attribuée à {{count}} modèle.",
+      "done_other": "« {{name}} » attribuée à {{count}} modèles.",
+      "partlyFailed_one": "{{count}} modèle n'a pas pu être modifié.",
+      "partlyFailed_other": "{{count}} modèles n'ont pas pu être modifiés.",
+      "failed": "Impossible d'attribuer la catégorie. Veuillez réessayer.",
+      "loadFailed": "Impossible de charger vos catégories. Veuillez réessayer."
+    },
     "selection": {
+      "skipped_one": "{{count}} modèle sélectionné est exclu : il a été importé ou appartient à un outil.",
+      "skipped_other": "{{count}} modèles sélectionnés sont exclus : ils ont été importés ou appartiennent à un outil.",
       "enter": "Sélectionner des modèles",
       "exit": "Terminer la sélection",
       "toolbar": "Actions pour les modèles sélectionnés",
@@ -4514,6 +4538,25 @@
         "othersGo_one": "{{names}} est retirée. Ses modèles reçoivent « {{name}} » à la place.",
         "othersGo_other": "{{names}} sont retirées. Leurs modèles reçoivent « {{name}} » à la place.",
         "keepsOwn": "Les modèles qui ont déjà « {{name}} » ne changent pas."
+      },
+      "models": {
+        "action": "Fusionner les modèles",
+        "needTwo": "Sélectionnez au moins 2 modèles non importés",
+        "title_one": "Fusionner {{count}} modèle",
+        "title_other": "Fusionner {{count}} modèles",
+        "keepHelp": "Choisissez le modèle principal. Les fichiers, images et descriptions des autres y sont déplacés, puis les autres sont supprimés.",
+        "goes": "Supprimé",
+        "othersGo_one": "{{names}} est supprimé. Ses fichiers, images et sa description sont déplacés vers « {{name}} ».",
+        "othersGo_other": "{{names}} sont supprimés. Leurs fichiers, images et descriptions sont déplacés vers « {{name}} ».",
+        "keepsOwn": "« {{name}} » conserve son nom et sa catégorie ou son dossier. Les étiquettes et les collections sont combinées.",
+        "fileCount_one": "{{count}} fichier",
+        "fileCount_other": "{{count}} fichiers",
+        "pictureCount_one": "{{count}} image",
+        "pictureCount_other": "{{count}} images",
+        "fileUnit_one": "fichier",
+        "fileUnit_other": "fichiers",
+        "merged_one": "{{count}} modèle fusionné dans « {{name}} ».",
+        "merged_other": "{{count}} modèles fusionnés dans « {{name}} »."
       }
     },
     "filters": {

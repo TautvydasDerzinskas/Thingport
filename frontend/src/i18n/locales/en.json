@@ -2025,6 +2025,7 @@
           "model_reimported": "Missing details fetched",
           "model_linked": "Model linked to a provider",
           "model_deleted": "Model deleted",
+          "models_merged": "Models merged",
           "models_repaired": "Models repaired",
           "collection_created": "Collection created",
           "collection_edited": "Collection edited",
@@ -4362,7 +4363,30 @@
       "title": "Manage categories & folders",
       "repair": "Repair"
     },
+    "categoryPicker": {
+      "filter": "Filter categories",
+      "noMatches": "No categories match “{{query}}”"
+    },
+    "assignCategory": {
+      "action": "Assign category",
+      "needOne": "Select at least 1 model that wasn't imported",
+      "title_one": "Assign a category to {{count}} model",
+      "title_other": "Assign a category to {{count}} models",
+      "category": "Category",
+      "folderWarning": "Assigning a category removes models from the folder structure: they won't be in any folder afterwards.",
+      "replaces_one": "{{count}} selected model already has a category, which this replaces.",
+      "replaces_other": "{{count}} selected models already have a category, which this replaces.",
+      "empty": "No categories to pick from yet. Add some under “Manage categories & folders”.",
+      "done_one": "Assigned “{{name}}” to {{count}} model.",
+      "done_other": "Assigned “{{name}}” to {{count}} models.",
+      "partlyFailed_one": "{{count}} model couldn't be changed.",
+      "partlyFailed_other": "{{count}} models couldn't be changed.",
+      "failed": "Couldn't assign the category. Please try again.",
+      "loadFailed": "Couldn't load your categories. Please try again."
+    },
     "selection": {
+      "skipped_one": "{{count}} selected model is left out: it was imported or belongs to a tool.",
+      "skipped_other": "{{count}} selected models are left out: they were imported or belong to a tool.",
       "enter": "Select models",
       "exit": "Done selecting",
       "toolbar": "Actions for the selected models",
@@ -4463,6 +4487,25 @@
         "othersGo_one": "{{names}} is removed. Its models are tagged “{{name}}” instead.",
         "othersGo_other": "{{names}} are removed. Their models are tagged “{{name}}” instead.",
         "keepsOwn": "Models already tagged “{{name}}” stay as they are."
+      },
+      "models": {
+        "action": "Merge models",
+        "needTwo": "Select at least 2 models that weren't imported",
+        "title_one": "Merge {{count}} model",
+        "title_other": "Merge {{count}} models",
+        "keepHelp": "Pick the main model. The others' files, pictures and descriptions move into it, then the others are deleted.",
+        "goes": "Deleted",
+        "othersGo_one": "{{names}} is deleted. Its files, pictures and description move into “{{name}}”.",
+        "othersGo_other": "{{names}} are deleted. Their files, pictures and descriptions move into “{{name}}”.",
+        "keepsOwn": "“{{name}}” keeps its name and its category or folder. Tags and collections are combined.",
+        "fileCount_one": "{{count}} file",
+        "fileCount_other": "{{count}} files",
+        "pictureCount_one": "{{count}} picture",
+        "pictureCount_other": "{{count}} pictures",
+        "fileUnit_one": "file",
+        "fileUnit_other": "files",
+        "merged_one": "Merged {{count}} model into “{{name}}”.",
+        "merged_other": "Merged {{count}} models into “{{name}}”."
       }
     },
     "filters": {

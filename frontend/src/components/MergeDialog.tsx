@@ -28,8 +28,10 @@ import { SectionLabel } from "./Layout/ConfigurationDialog/parts";
 export type MergeItem = {
   key: string;
   name: string;
-  /** Models in it, or with it. */
+  /** Models in it or with it; for a model, its files. */
   count: number;
+  /** Says under its name what it holds, in place of its count of models. */
+  caption?: string;
   /** A small square picture of it. */
   thumbnail: ReactNode;
   bookmarked: boolean;
@@ -40,13 +42,15 @@ export type MergeItem = {
 type Props = {
   open: boolean;
   onClose: () => void;
-  kind: "collection" | "tag";
+  kind: "collection" | "tag" | "model";
   items: MergeItem[];
-  /** Every model in any of `items`, once: the merged one's count, whichever is kept. */
+  /** Every model (for models, every file) in any of `items`, once: the merged one's count, whichever is kept. */
   loadPreview: () => Promise<{ models: number }>;
   /** Runs the merge; throws to keep the dialog open with the error. */
   onMerge: (primary: MergeItem, others: MergeItem[]) => Promise<void>;
   onUnauthorized?: () => void;
+  /** Something else the merge's outcome depends on, such as what the selection left out. */
+  notice?: ReactNode;
 };
 
 const fadeIn = keyframes`
@@ -59,9 +63,20 @@ const motion = { "@media (prefers-reduced-motion: reduce)": { animation: "none",
 const defaultPrimary = (items: MergeItem[]) =>
   items.reduce((best, item) => (item.count > best.count ? item : best), items[0])?.key ?? "";
 
-/** Merges several collections or tags into one the user picks, showing what each will become and what the merged one
- *  will hold before anything changes. */
-export default function MergeDialog({ open, onClose, kind, items, loadPreview, onMerge, onUnauthorized }: Props) {
+const KEY_OF_KIND = { collection: "collections", tag: "tags", model: "models" } as const;
+
+/** Merges several collections, tags or models into one the user picks, showing what each will become and what the
+ *  merged one will hold before anything changes. */
+export default function MergeDialog({
+  open,
+  onClose,
+  kind,
+  items,
+  loadPreview,
+  onMerge,
+  onUnauthorized,
+  notice,
+}: Props) {
   const { t, i18n } = useTranslation(["models", "common"]);
   const [primaryKey, setPrimaryKey] = useState("");
   const [union, setUnion] = useState<number | null>(null);
@@ -103,7 +118,7 @@ export default function MergeDialog({ open, onClose, kind, items, loadPreview, o
   const added = union === null ? null : Math.max(0, union - primary.count);
   const bookmarkMoves = !primary.bookmarked && others.some((item) => item.bookmarked);
   const syncsLost = others.filter((item) => item.syncProvider);
-  const k = kind === "collection" ? "collections" : "tags";
+  const k = KEY_OF_KIND[kind];
 
   const merge = async () => {
     setMerging(true);
@@ -183,7 +198,7 @@ export default function MergeDialog({ open, onClose, kind, items, loadPreview, o
                         {item.name}
                       </Typography>
                       <Typography variant="caption" color="text.secondary" component="div" noWrap>
-                        {t("models:collections.card.itemCount", { count: item.count })}
+                        {item.caption ?? t("models:collections.card.itemCount", { count: item.count })}
                         {item.syncProvider && ` · ${t("models:merge.syncsWith", { provider: item.syncProvider })}`}
                       </Typography>
                     </Box>
@@ -217,7 +232,9 @@ export default function MergeDialog({ open, onClose, kind, items, loadPreview, o
                       <Box component="span" sx={{ color: "text.primary", fontWeight: 600 }}>
                         <RollingNumber value={union} />
                       </Box>{" "}
-                      {t("models:merge.modelUnit", { count: union })}
+                      {t(kind === "model" ? "models:merge.models.fileUnit" : "models:merge.modelUnit", {
+                        count: union,
+                      })}
                       {added !== null && added > 0 && (
                         <Box component="span" sx={{ color: "success.main", fontWeight: 600 }}>
                           {" · +"}
@@ -245,6 +262,7 @@ export default function MergeDialog({ open, onClose, kind, items, loadPreview, o
             </Box>
           </Box>
 
+          {notice}
           {syncsLost.length > 0 && (
             <Alert severity="warning" icon={<SyncDisabledIcon fontSize="inherit" />} sx={{ py: 0.25 }}>
               {t("models:merge.collections.syncStops", {
