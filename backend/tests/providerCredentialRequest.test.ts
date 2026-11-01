@@ -109,7 +109,7 @@ describe("provider credential destinations", () => {
 
   it("follows a same-origin redirect with its credential", async () => {
     const transport = vi
-      .fn<(url: string) => Promise<Response>>()
+      .fn<(url: string, init: RequestInit) => Promise<Response>>()
       .mockResolvedValueOnce(new Response(null, { status: 307, headers: { Location: "/api/next" } }))
       .mockResolvedValueOnce(new Response("ok"));
     const response = await credentialRequest(
@@ -120,6 +120,7 @@ describe("provider credential destinations", () => {
     );
     expect(await response.text()).toBe("ok");
     expect(transport.mock.calls[1][0]).toBe("https://api-models.snapmaker.com/api/next");
+    expect(transport.mock.calls[1][1]).toMatchObject({ headers: { Authorization: "Bearer secret" } });
   });
 
   it("does not send a Cults3D session over HTTP", async () => {

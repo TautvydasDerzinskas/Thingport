@@ -182,6 +182,39 @@ describe("connection-time DNS policy", () => {
     expect(native.mock.calls[0][1].dispatcher).toBeDefined();
   });
 
+  it("follows a relative redirect from a browser-served hop", async () => {
+    vi.spyOn(dnsPromises, "resolve4").mockResolvedValue(["8.8.8.8"] as never);
+    vi.spyOn(dnsPromises, "resolve6").mockResolvedValue([] as never);
+    const cancel = vi.fn<() => void>();
+    const final = new Response("ok");
+    vi.mocked(browserFetch)
+      .mockResolvedValueOnce(
+        new Response(new ReadableStream({ cancel }), { status: 302, headers: { location: "/end" } }),
+      )
+      .mockResolvedValueOnce(final);
+    const native = vi.fn<typeof fetch>();
+    vi.stubGlobal("fetch", native);
+    expect(await remoteRequest("https://www.thingiverse.com/start", {}, true)).toBe(final);
+    expect(vi.mocked(browserFetch).mock.calls[1][0]).toBe("https://www.thingiverse.com/end");
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(native).not.toHaveBeenCalled();
+  });
+
+  it("caps redirect loops on browser-served hops", async () => {
+    vi.spyOn(dnsPromises, "resolve4").mockResolvedValue(["8.8.8.8"] as never);
+    vi.spyOn(dnsPromises, "resolve6").mockResolvedValue([] as never);
+    vi.mocked(browserFetch).mockImplementation(
+      async () => new Response(null, { status: 302, headers: { location: "/loop" } }),
+    );
+    const native = vi.fn<typeof fetch>();
+    vi.stubGlobal("fetch", native);
+    await expect(remoteRequest("https://www.thingiverse.com/start", {}, true)).rejects.toThrow(
+      "Too many remote redirects",
+    );
+    expect(browserFetch).toHaveBeenCalledTimes(11);
+    expect(native).not.toHaveBeenCalled();
+  });
+
   it.each([
     "https://evil.thingiverse.com/file",
     "https://evil.myminifactory.com/file",
