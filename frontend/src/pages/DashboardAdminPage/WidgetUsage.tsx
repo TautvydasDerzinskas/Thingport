@@ -212,24 +212,26 @@ function InUseTile({ widget, index, onOpen }: { widget: WidgetInUse; index: numb
   );
 }
 
-function CommunityTile({ widget, index }: { widget: CommunityWidgetUsage; index: number }) {
+function CommunityTile({ widget, index, linked }: { widget: CommunityWidgetUsage; index: number; linked: boolean }) {
   const { t } = useTranslation("app");
   return (
     <Box sx={{ ...tileSx, ...appear(index), display: "flex", flexDirection: "column", gap: 1 }}>
       <WidgetHead
         manifest={widget.manifest}
         badge={
-          <Tooltip title={t("adminSettings.dashboard.community.source")}>
-            <IconButton
-              size="small"
-              href={`${SOURCE_URL}/${widget.slug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`${t("adminSettings.dashboard.community.source")}: ${widget.manifest.name}`}
-            >
-              <OpenInNewIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+          linked && (
+            <Tooltip title={t("adminSettings.dashboard.community.source")}>
+              <IconButton
+                size="small"
+                href={`${SOURCE_URL}/${widget.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${t("adminSettings.dashboard.community.source")}: ${widget.manifest.name}`}
+              >
+                <OpenInNewIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )
         }
       />
       {widget.manifest.description && (
@@ -447,7 +449,7 @@ export default function WidgetUsage({ communityOn, onUnauthorized }: Props) {
       {tab === "community" && (
         <Stack spacing={1.5}>
           {!communityOn && <Alert severity="info">{t("adminSettings.dashboard.community.off")}</Alert>}
-          {community && !communityError && (
+          {community?.source && !communityError && (
             <Typography
               variant="caption"
               color="text.secondary"
@@ -474,7 +476,13 @@ export default function WidgetUsage({ communityOn, onUnauthorized }: Props) {
           ) : (
             <Box sx={{ ...GRID, opacity: communityOn ? 1 : 0.6, transition: "opacity 200ms" }}>
               {community.widgets.map((widget, index) => (
-                <CommunityTile key={widget.slug} widget={widget} index={index} />
+                // One read from a folder may not be on GitHub at all.
+                <CommunityTile
+                  key={widget.slug}
+                  widget={widget}
+                  index={index}
+                  linked={community.source?.kind !== "folder"}
+                />
               ))}
             </Box>
           )}

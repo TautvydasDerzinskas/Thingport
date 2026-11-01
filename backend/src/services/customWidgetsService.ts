@@ -256,8 +256,12 @@ export function setCommunityWidgetsDirForTest(dir: string): void {
 /** A file of the repository's community-widgets folder; null when it has none. */
 async function fetchFile(path: string, maxBytes = FILE_MAX_BYTES): Promise<Buffer | null> {
   if (communityDir) {
-    const full = nodePath.resolve(communityDir, path);
-    if (!full.startsWith(communityDir + nodePath.sep)) return null;
+    // Through any links, so one in the folder can't serve a file from outside it.
+    const [root, full] = await Promise.all([
+      fs.realpath(communityDir),
+      fs.realpath(nodePath.resolve(communityDir, path)),
+    ]).catch(() => [null, null]);
+    if (!root || !full?.startsWith(nodePath.join(root, nodePath.sep))) return null;
     const stat = await fs.stat(full).catch(() => null);
     if (!stat?.isFile()) return null;
     if (stat.size > maxBytes) throw new HttpError(502, `${path} is larger than ${Math.round(maxBytes / 1048576)} MB`);

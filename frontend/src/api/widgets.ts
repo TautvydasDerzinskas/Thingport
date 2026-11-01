@@ -67,7 +67,7 @@ export type CommunityWidgetUsage = { slug: string; manifest: WidgetManifest; ins
  *  or the repository's community-widgets folder on GitHub, on the branch the image follows. */
 export type CommunityWidgetsSource = { kind: "folder" | "repository"; location: string };
 
-export type CommunityUsage = { widgets: CommunityWidgetUsage[]; source: CommunityWidgetsSource };
+export type CommunityUsage = { widgets: CommunityWidgetUsage[]; source?: CommunityWidgetsSource };
 
 export type CommunityWidget = {
   slug: string;

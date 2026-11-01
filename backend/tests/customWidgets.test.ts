@@ -258,6 +258,7 @@ describe("community widgets", () => {
     expect(shot.status).toBe(200);
     expect(shot.headers["content-type"]).toBe("image/png");
     expect(shot.headers["x-content-type-options"]).toBe("nosniff");
+    expect(shot.headers["cache-control"]).toBe("private, max-age=3600");
     expect((await request(app).get("/api/widgets/community/worded/screenshots/1").set(auth())).status).toBe(404);
   });
 
@@ -403,9 +404,14 @@ describe("where community widgets come from", () => {
   afterEach(() => vi.unstubAllEnvs());
   afterAll(() => fs.rmSync(dir, { recursive: true, force: true }));
 
-  it("goes where it's told before looking for a checkout", () => {
-    stubSource({ url: "https://example.com/widgets" });
+  it("goes where it's told before looking for a checkout", async () => {
+    stubSource({ url: "https://example.com/widgets/" });
     expect(communityWidgetsSource().kind).toBe("repository");
+    // The address is read once, as the service loads.
+    vi.resetModules();
+    const reloaded = await import("../src/services/customWidgetsService");
+    expect(reloaded.communityWidgetsSource()).toEqual({ kind: "repository", location: "https://example.com/widgets" });
+
     stubSource({ dir, url: "https://example.com/widgets" });
     expect(communityWidgetsSource()).toEqual({ kind: "folder", location: dir });
   });
@@ -448,14 +454,38 @@ describe("where community widgets come from", () => {
     expect(updated.body.id).toBe(installed.body.id);
     expect(updated.body.script).toBe(`${SCRIPT}\n// v2`);
 
-    const shot = async () =>
-      (await request(app).get("/api/widgets/community/on-disk/screenshots/0").set(auth())).body.toString();
-    expect(await shot()).toBe("first");
+    const shot = () => request(app).get("/api/widgets/community/on-disk/screenshots/0").set(auth());
+    const first = await shot();
+    expect(first.body.toString()).toBe("first");
+    // Or the browser would keep showing the old one for the hour.
+    expect(first.headers["cache-control"]).toBe("private, no-cache");
     write("on-disk/screenshots/panel.png", "second");
-    expect(await shot()).toBe("second");
+    expect((await shot()).body.toString()).toBe("second");
 
     fs.rmSync(path.join(dir, "on-disk/widget.js"));
     expect((await request(app).post("/api/widgets/community/on-disk/install").set(auth())).status).toBe(404);
+  });
+
+  it("follows a link within the folder, but not one leading out of it", async () => {
+    const outside = fs.mkdtempSync(path.join(os.tmpdir(), "thingport-outside-"));
+    fs.writeFileSync(path.join(outside, "secret.png"), "secret");
+    setCommunityWidgetsDirForTest(dir);
+    write(
+      "linked/widget.json",
+      JSON.stringify({
+        name: "Linked",
+        screenshots: [{ file: "screenshots/in.png" }, { file: "screenshots/out.png" }],
+      }),
+    );
+    write("linked/widget.js", SCRIPT);
+    write("linked/screenshots/real.png", "inside");
+    fs.symlinkSync("real.png", path.join(dir, "linked/screenshots/in.png"));
+    fs.symlinkSync(path.join(outside, "secret.png"), path.join(dir, "linked/screenshots/out.png"));
+
+    const shot = (index: number) => request(app).get(`/api/widgets/community/linked/screenshots/${index}`).set(auth());
+    expect((await shot(0)).body.toString()).toBe("inside");
+    expect((await shot(1)).status).toBe(404);
+    fs.rmSync(outside, { recursive: true, force: true });
   });
 
   it("tells admins which", async () => {

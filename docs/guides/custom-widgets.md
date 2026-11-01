@@ -165,5 +165,5 @@ The **Community** tab under **Administration → Dashboard** says which of these
 
 `COMMUNITY_WIDGETS_DIR` points the backend at any folder instead, and `COMMUNITY_WIDGETS_URL` at another repository's
 `community-widgets` folder as raw files, such as a fork's
-(`https://raw.githubusercontent.com/<you>/Thingport/<branch>/community-widgets`). From GitHub, a widget's files are read
-again at most hourly.
+(`https://raw.githubusercontent.com/<you>/Thingport/<branch>/community-widgets`). If both are set, the folder is used.
+Symlinks leading out of the folder aren't followed. From GitHub, a widget's files are read again at most hourly.
