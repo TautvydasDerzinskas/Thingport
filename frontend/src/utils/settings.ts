@@ -1,4 +1,4 @@
-import { providersApi } from "../api/providers";
+import { ConnectionRefusedError, providersApi } from "../api/providers";
 
 // Older versions kept a copy of the MakerWorld cookie in this browser and sent it with imports. Nothing reads it now, as
 // the server fills in the saved sign-in itself, so it goes. It may be the only copy, though: the server's began later and
@@ -20,7 +20,7 @@ function forgetRetiredSettings(): void {
   } catch {}
 }
 
-/** Once signed in. Kept for the next visit only when the server couldn't be reached. */
+/** Once signed in. Goes once the server has it or has turned it down; anything else, and the next visit tries again. */
 export async function settleRetiredSettings(): Promise<void> {
   const cookie = readRetiredCookie();
   try {
@@ -32,7 +32,7 @@ export async function settleRetiredSettings(): Promise<void> {
       }
     }
   } catch (err) {
-    if (err instanceof TypeError) return;
+    if (!(err instanceof ConnectionRefusedError)) return;
   }
   forgetRetiredSettings();
 }

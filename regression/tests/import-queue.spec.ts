@@ -235,12 +235,17 @@ for (const link of ["/admin-queue", "/import-queue"]) {
   });
 }
 
-test("Administration's entry opens everyone's imports over the page it's on", async ({ page }) => {
+test("Administration has no entry for the queue: everyone's imports open from the top bar, over the page", async ({
+  page,
+}) => {
   await page.goto("/admin-users");
-  await page.getByRole("navigation", { name: "Administration" }).getByRole("button", { name: "Import queue" }).click();
-  const dialog = queueDialog(page, "Server import queue");
-  await expect(dialog).toBeVisible();
-  await expectChosen(section(dialog, "Waiting"));
+  const administration = page.getByRole("navigation", { name: "Administration" });
+  await expect(administration.getByRole("button", { name: "Users" })).toBeVisible();
+  await expect(administration.getByRole("button", { name: "Import queue" })).toHaveCount(0);
+
+  await indicator(page).click();
+  await whose(queueDialog(page), "Everyone").click();
+  await expect(queueDialog(page, "Server import queue")).toBeVisible();
   await expect(page).toHaveURL(/\/admin-users$/);
 });
 

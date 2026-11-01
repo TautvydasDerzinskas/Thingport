@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { providersApi, type ProviderState } from "../api/providers";
+import { ConnectionRefusedError, providersApi, type ProviderState } from "../api/providers";
 import { UnauthorizedError } from "../api/client";
 import { settleRetiredSettings } from "./settings";
 
@@ -46,19 +46,23 @@ describe("settleRetiredSettings", () => {
   });
 
   it("forgets a copy the server turned down, as it would only be turned down again", async () => {
-    makerworldIs("disconnected").mockRejectedValue(new Error("This cookie doesn't work"));
+    makerworldIs("disconnected").mockRejectedValue(new ConnectionRefusedError("This cookie doesn't work"));
     await settleRetiredSettings();
     expect(stored.has("thingport_settings")).toBe(false);
   });
 
-  it("forgets it after a signed-out answer too, as the next sign-in has no way of knowing whose it was", async () => {
-    vi.spyOn(providersApi, "list").mockRejectedValue(new UnauthorizedError());
+  it.each([
+    ["the server can't be reached", new TypeError("Failed to fetch")],
+    ["the session has ended", new UnauthorizedError()],
+    ["the server fails", new Error("Failed to load providers")],
+  ])("keeps it for the next visit when %s", async (_name, failure) => {
+    vi.spyOn(providersApi, "list").mockRejectedValue(failure);
     await settleRetiredSettings();
-    expect(stored.has("thingport_settings")).toBe(false);
+    expect(stored.get("thingport_settings")).toBe(OLD_COPY);
   });
 
-  it("keeps it for the next visit when the server can't be reached", async () => {
-    vi.spyOn(providersApi, "list").mockRejectedValue(new TypeError("Failed to fetch"));
+  it("keeps it when saving fails without the server having judged it", async () => {
+    makerworldIs("disconnected").mockRejectedValue(new Error("Failed to update the connection"));
     await settleRetiredSettings();
     expect(stored.get("thingport_settings")).toBe(OLD_COPY);
   });

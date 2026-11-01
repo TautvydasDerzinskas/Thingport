@@ -24,5 +24,5 @@ All of these are under **Administration → Auth** and **Administration → Capt
 
 The **Users** page lists everyone with their model and collection counts, how they sign in, and whether their
 MakerWorld account is connected. Admins can change roles, delete an account with all its models, follow what each
-person does in **Administration → Logs**, and see everyone's imports in **Administration → Import queue**. See
-[administration](administration.md).
+person does in **Administration → Logs**, and see everyone's imports under **Everyone** in the
+[import queue](importing.md#the-import-queue). See [administration](administration.md).

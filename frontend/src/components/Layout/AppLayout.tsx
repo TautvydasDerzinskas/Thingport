@@ -246,7 +246,7 @@ function AppLayoutShell({
                     }}
                     bookmarksVersion={bookmarksVersion}
                   />
-                  {isAdmin && pathname.startsWith("/admin") && <AdminSubnav mobile onDialogOpened={closeNavigation} />}
+                  {isAdmin && pathname.startsWith("/admin") && <AdminSubnav mobile />}
                 </Drawer>
               ) : (
                 <>

@@ -15,9 +15,8 @@ import type { Theme } from "@mui/material/styles";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
-import { ADMIN_QUEUE_PATH, ADMIN_SECTIONS } from "../../constants/adminSections";
+import { ADMIN_SECTIONS } from "../../constants/adminSections";
 import { dividerBorderColor } from "../../theme";
-import { useImportQueue } from "../importQueue/ImportQueueContext";
 import { CollapsedNavIcon, navRowSx, SIDEBAR_COLLAPSED_WIDTH } from "./Sidebar";
 
 const WIDTH = 220;
@@ -35,18 +34,10 @@ function readCollapsed(): boolean {
  * Administration's own pages, in a second column beside the sidebar while one of them is open. The sidebar folds to
  * icons meanwhile, so this one has the collapse button; folded, it's an icon rail too.
  */
-export default function AdminSubnav({
-  mobile = false,
-  onDialogOpened,
-}: {
-  mobile?: boolean;
-  /** An entry opened a dialog in place, so no navigation closes the menu this sits in. */
-  onDialogOpened?: () => void;
-}) {
+export default function AdminSubnav({ mobile = false }: { mobile?: boolean }) {
   const { t } = useTranslation(["app", "common"]);
   const location = useLocation();
   const navigate = useNavigate();
-  const { open: openQueue } = useImportQueue();
   const [collapsedByUser, setCollapsed] = useState(readCollapsed);
   // Too narrow for a second open column beside the page.
   const narrow = useMediaQuery((theme: Theme) => theme.breakpoints.down("md"));
@@ -55,15 +46,6 @@ export default function AdminSubnav({
     { path: "/admin", icon: <DashboardOutlinedIcon fontSize="small" />, label: t("sidebar.adminOverview") },
     ...ADMIN_SECTIONS.map((section) => ({ path: section.path, icon: section.icon, label: t(section.labelKey) })),
   ];
-
-  const go = (path: string) => {
-    if (path !== ADMIN_QUEUE_PATH) {
-      navigate(path);
-      return;
-    }
-    openQueue("wait", "everyone");
-    onDialogOpened?.();
-  };
 
   const toggle = () =>
     setCollapsed((previous) => {
@@ -127,13 +109,13 @@ export default function AdminSubnav({
               icon={page.icon}
               label={page.label}
               selected={selected}
-              onClick={() => go(page.path)}
+              onClick={() => navigate(page.path)}
             />
           ) : (
             <ListItemButton
               key={page.path}
               selected={selected}
-              onClick={() => go(page.path)}
+              onClick={() => navigate(page.path)}
               aria-current={selected ? "page" : undefined}
               sx={{ borderRadius: 1, mb: 0.5, ...navRowSx(selected) }}
             >

@@ -377,12 +377,19 @@ const SHOTS = [
       await page.route(/\/api\/import\/queue$/, (route) => route.fulfill({ json: own }));
       await page.route(/\/api\/admin\/import-queue\?queue=1$/, (route) => route.fulfill({ json: everyone }));
       await open(page, "/admin");
-      // Administration's own entry leaves its page behind the dialog, where the /admin-queue address has the dashboard.
+      // From the top bar, which leaves this page behind the dialog, where the /admin-queue address has the dashboard.
+      await page.getByRole("button", { name: /^Import queue: / }).click();
       await page
-        .getByRole("navigation", { name: "Administration" })
-        .getByRole("button", { name: "Import queue" })
+        .getByRole("dialog")
+        .getByRole("group", { name: "Whose imports" })
+        .getByRole("button", { name: "Everyone" })
         .click();
-      await page.getByRole("dialog", { name: "Server import queue" }).getByRole("article").first().waitFor();
+      const dialog = page.getByRole("dialog", { name: "Server import queue" });
+      await dialog
+        .getByRole("button", { name: /^Waiting/ })
+        .first()
+        .click();
+      await dialog.getByRole("article").first().waitFor();
     },
   },
   { name: "25_admin_logs", run: (page) => open(page, "/admin-logs") },

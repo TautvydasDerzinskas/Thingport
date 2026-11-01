@@ -89,8 +89,7 @@ your [synced collections](../guides/synced-collections.md#how-it-works) only rea
 button for all of its imports at once.
 
 Other people's imports show in your line as **Private import** rows, which say nothing about whose or what they are.
-Admins can switch the dialog from **Mine** to **Everyone**, or open it from **Administration → Import queue**, to see
-everyone's imports by person and act on them.
+Admins can switch the dialog from **Mine** to **Everyone** to see everyone's imports by person and act on them.
 
 ### What's outside the line
 
