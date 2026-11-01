@@ -41,6 +41,7 @@ const NO_VALUES = {
   plates: null,
   estimated_seconds: null,
   weight_g: null,
+  plate_stats: [],
 };
 
 describe("readZipEntryPrefix", () => {
@@ -75,6 +76,7 @@ describe("readPlateProfile", () => {
       plates: 3,
       estimated_seconds: null,
       weight_g: null,
+      plate_stats: [],
     });
   });
 
@@ -120,6 +122,33 @@ describe("readPlateProfile", () => {
       "Metadata/slice_info.config": `<config><plate><metadata key="prediction" value="600"/><metadata key="weight" value="10.5"/></plate><plate><metadata key="prediction" value="900"/><metadata key="weight" value="4.5"/></plate></config>`,
     });
     expect(await readPlateProfile(file)).toMatchObject({ estimated_seconds: 1500, weight_g: 15 });
+  });
+
+  it("reads time and weight per plate", async () => {
+    const file = await write3mf({
+      "Metadata/slice_info.config": `<config><header/><plate><metadata key="index" value="1"/><metadata key="prediction" value="600"/><metadata key="weight" value="10.5"/></plate><plate><metadata key="index" value="2"/><metadata key="prediction" value="900"/><metadata key="weight" value="4.5"/></plate></config>`,
+    });
+    expect((await readPlateProfile(file)).plate_stats).toEqual([
+      { index: 1, estimated_seconds: 600, weight_g: 10.5 },
+      { index: 2, estimated_seconds: 900, weight_g: 4.5 },
+    ]);
+  });
+
+  it("gives null for the values a plate lacks", async () => {
+    const file = await write3mf({
+      "Metadata/slice_info.config": `<config><plate><metadata key="index" value="1"/><metadata key="prediction" value="600"/><metadata key="weight" value="10"/></plate><plate><metadata key="index" value="2"/><metadata key="weight" value="0"/></plate></config>`,
+    });
+    const profile = await readPlateProfile(file);
+    expect(profile.plate_stats).toEqual([
+      { index: 1, estimated_seconds: 600, weight_g: 10 },
+      { index: 2, estimated_seconds: null, weight_g: null },
+    ]);
+    expect(profile).toMatchObject({ estimated_seconds: 600, weight_g: 10 });
+  });
+
+  it("has no plate stats for an unsliced file", async () => {
+    const file = await write3mf({ "Metadata/project_settings.config": JSON.stringify({ printer_model: "X" }) });
+    expect((await readPlateProfile(file)).plate_stats).toEqual([]);
   });
 
   it("finds ProfileTitle at the start of a large model file", async () => {

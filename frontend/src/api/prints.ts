@@ -21,6 +21,14 @@ export type PlateProfile = {
   plates: number | null;
   estimated_seconds: number | null;
   weight_g: number | null;
+  /** Per sliced plate; empty when unknown. Values the plate doesn't give are null. */
+  plate_stats: PlateStat[];
+};
+
+export type PlateStat = {
+  index: number; // as slice_info.config numbers plates (1-based)
+  estimated_seconds: number | null;
+  weight_g: number | null;
 };
 
 export type Plate = {

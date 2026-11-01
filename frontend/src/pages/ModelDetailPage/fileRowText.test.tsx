@@ -18,6 +18,7 @@ const empty: PlateProfile = {
   materials: [],
   plates: null,
   estimated_seconds: null,
+  plate_stats: [],
   weight_g: null,
 };
 

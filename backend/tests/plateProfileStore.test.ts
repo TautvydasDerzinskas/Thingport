@@ -63,7 +63,7 @@ async function getPrint(printId: string) {
 describe("the 3MF profile of a plate", () => {
   it("stores the profile when a 3MF plate is created", async () => {
     const { printId, plateId } = await makePlate("model.3mf", await threeMf(true));
-    expect(await stored(plateId)).toMatchObject({ profileMeta: { version: 1, title: TITLE } });
+    expect(await stored(plateId)).toMatchObject({ profileMeta: { version: 2, title: TITLE } });
     const plate = await getPrint(printId);
     expect(plate.profile).toMatchObject({ title: TITLE, printer: "Bambu Lab A1 mini", nozzle_mm: 0.4 });
     expect(plate.profile).not.toHaveProperty("version");
@@ -73,14 +73,23 @@ describe("the 3MF profile of a plate", () => {
     const { printId, plateId } = await makePlate("model.3mf", await threeMf(true));
     await prisma.plate.update({ where: { id: plateId }, data: { profileMeta: Prisma.JsonNull } });
     expect((await getPrint(printId)).profile.title).toBe(TITLE);
-    expect(await stored(plateId)).toMatchObject({ profileMeta: { version: 1, title: TITLE } });
+    expect(await stored(plateId)).toMatchObject({ profileMeta: { version: 2, title: TITLE } });
   });
 
   it("re-reads an outdated version", async () => {
     const { printId, plateId } = await makePlate("model.3mf", await threeMf(true));
     await prisma.plate.update({ where: { id: plateId }, data: { profileMeta: { version: 0 } } });
     expect((await getPrint(printId)).profile.title).toBe(TITLE);
-    expect(await stored(plateId)).toMatchObject({ profileMeta: { version: 1 } });
+    expect(await stored(plateId)).toMatchObject({ profileMeta: { version: 2 } });
+  });
+
+  it("re-reads a version 1 profile, which has no plate_stats", async () => {
+    const { printId, plateId } = await makePlate("model.3mf", await threeMf(true));
+    await prisma.plate.update({ where: { id: plateId }, data: { profileMeta: { version: 1, title: "old" } } });
+    const profile = (await getPrint(printId)).profile;
+    expect(profile.title).toBe(TITLE);
+    expect(profile.plate_stats).toEqual([]);
+    expect(await stored(plateId)).toMatchObject({ profileMeta: { version: 2, plate_stats: [] } });
   });
 
   it("leaves STL plates alone", async () => {
@@ -102,6 +111,6 @@ describe("the 3MF profile of a plate", () => {
   it("returns null profile for a 3MF without metadata", async () => {
     const { printId, plateId } = await makePlate("model.3mf", await threeMf(false));
     expect((await getPrint(printId)).profile).toBeNull();
-    expect((await stored(plateId)).profileMeta).toMatchObject({ version: 1, title: null, materials: [] });
+    expect((await stored(plateId)).profileMeta).toMatchObject({ version: 2, title: null, materials: [] });
   });
 });

@@ -5,7 +5,7 @@ import { resolvePlateFilePath } from "./printCreation";
 import { listZipEntries, readZipEntry, readZipEntryPrefix } from "../utils/zipReader";
 
 /** Bump when the parser learns new fields, so stored results can be told apart from older ones. */
-export const PLATE_PROFILE_VERSION = 1;
+export const PLATE_PROFILE_VERSION = 2;
 
 export type PlateProfile = {
   title: string | null;
@@ -16,6 +16,15 @@ export type PlateProfile = {
   materials: string[];
   plates: number | null;
   /** Only in a sliced file (.gcode.3mf). */
+  estimated_seconds: number | null;
+  weight_g: number | null;
+  /** Per sliced plate; empty means unknown (no slice_info). A value the plate doesn't give (or 0) is null. */
+  plate_stats: PlateStat[];
+};
+
+export type PlateStat = {
+  /** The plate number as slice_info.config writes it (Bambu Studio counts from 1). */
+  index: number;
   estimated_seconds: number | null;
   weight_g: number | null;
 };
@@ -44,6 +53,7 @@ function emptyProfile(): PlateProfile {
     plates: null,
     estimated_seconds: null,
     weight_g: null,
+    plate_stats: [],
   };
 }
 
@@ -56,7 +66,8 @@ export function hasAnyProfileValue(p: PlateProfile): boolean {
     p.materials.length > 0 ||
     p.plates !== null ||
     p.estimated_seconds !== null ||
-    p.weight_g !== null
+    p.weight_g !== null ||
+    p.plate_stats.length > 0
   );
 }
 
@@ -161,6 +172,7 @@ type SliceInfo = {
   materials: string[];
   seconds: number | null;
   weight: number | null;
+  plateStats: PlateStat[];
 };
 
 /** slice_info.config: `<metadata key=".." value=".."/>` per plate, `<filament type=".."/>` per used filament. */
@@ -177,6 +189,26 @@ function parseSliceInfo(text: string): SliceInfo {
     else if (key === "weight") weight += toPositive(value) ?? 0;
     else if (!other.has(key)) other.set(key, value);
   }
+  const plateStats: PlateStat[] = [];
+  let position = 0;
+  for (const block of text.matchAll(/<plate\b[^>]{0,4096}>([\s\S]*?)<\/plate>/gi)) {
+    position += 1;
+    const values = new Map<string, string>();
+    for (const m of block[1].matchAll(/<metadata\b[^>]{0,4096}>/gi)) {
+      const attributes = parseAttributes(m[0]);
+      const key = attributes.get("key")?.toLowerCase();
+      const value = attributes.get("value");
+      if (key && value !== undefined && !values.has(key)) values.set(key, value);
+    }
+    const index = toPositive(values.get("index"));
+    const plateSeconds = toPositive(values.get("prediction"));
+    const plateWeight = toPositive(values.get("weight"));
+    plateStats.push({
+      index: index !== null && Number.isInteger(index) ? index : position,
+      estimated_seconds: plateSeconds,
+      weight_g: plateWeight !== null ? Math.round(plateWeight * 100) / 100 : null,
+    });
+  }
   const materials: string[] = [];
   for (const m of text.matchAll(/<filament\b[^>]{0,4096}>/gi)) {
     const type = cleanString(parseAttributes(m[0]).get("type"));
@@ -188,6 +220,7 @@ function parseSliceInfo(text: string): SliceInfo {
     materials,
     seconds: seconds > 0 ? seconds : null,
     weight: weight > 0 ? Math.round(weight * 100) / 100 : null,
+    plateStats,
   };
 }
 
@@ -275,6 +308,7 @@ export async function readPlateProfile(filePath: string): Promise<PlateProfile> 
 
   profile.estimated_seconds = slice?.seconds ?? null;
   profile.weight_g = slice?.weight ?? null;
+  profile.plate_stats = slice?.plateStats ?? [];
   return profile;
 }
 
@@ -330,6 +364,16 @@ export function plateProfileOut(profileMeta: Prisma.JsonValue | null): PlateProf
     plates: num(m.plates),
     estimated_seconds: num(m.estimated_seconds),
     weight_g: num(m.weight_g),
+    plate_stats: Array.isArray(m.plate_stats)
+      ? m.plate_stats.flatMap((v): PlateStat[] => {
+          if (!v || typeof v !== "object") return [];
+          const o = v as Record<string, unknown>;
+          const index = num(o.index);
+          return index === null
+            ? []
+            : [{ index, estimated_seconds: num(o.estimated_seconds), weight_g: num(o.weight_g) }];
+        })
+      : [],
   };
   return hasAnyProfileValue(profile) ? profile : null;
 }
