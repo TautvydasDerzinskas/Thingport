@@ -10,8 +10,10 @@ import type { MANIFESTS, ProviderId } from "../providers/index.generated";
 export type ExtensionState = {
   configured: boolean;
   disabled: boolean;
-  /** Admins can send an import to the instance's paused import queue instead. */
-  isAdmin: boolean;
+  /** "Add to the queue" is on offer: to admins anywhere, to everyone where the instance has `importQueue`. */
+  canQueue: boolean;
+  /** The instance gives everyone an import queue of their own. False on an older one, where only an admin starts it. */
+  importQueue: boolean;
   instanceUrl: string;
   email: string;
   /** Connected by approving Grab in Thingport, not with a saved password. */
@@ -120,6 +122,10 @@ export type MakerworldJob = {
 };
 
 export type MakerworldJobError = { message: string; imported: number; total: number };
+
+/** IMPORT_SINGLE's error for a job that stopped without finishing. A reply carries nothing but words, so the panel goes
+ *  by these to show it as paused rather than failed. */
+export const IMPORT_PAUSED = "This import was paused before it finished.";
 
 export type ApiCallPayload = { method: string; path: string; body?: unknown };
 

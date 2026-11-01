@@ -14,7 +14,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import type { ImportCollectionEntry } from "../../../api/imports";
 import CollectionEntryList from "./CollectionEntryList";
 
-type CollectionPromptConfig = {
+export type CollectionPromptConfig = {
   label: string;
   loadEntries: () => Promise<{
     title: string | null;
@@ -85,7 +85,8 @@ export function useCollectionImportPrompt() {
   };
 
   const prompt = (config: CollectionPromptConfig) => {
-    if (state) {
+    // Not `state`: a prompt that waited its turn is from an older render.
+    if (resolveRef.current) {
       return Promise.resolve();
     }
     reset();

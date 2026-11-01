@@ -3,10 +3,11 @@ import { useTranslation } from "react-i18next";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import Box from "@mui/material/Box";
-import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import AppLayout from "./components/Layout/AppLayout";
+import { QUEUE_PARAM, queueLinkPath } from "./components/importQueue/queueView";
 import DashboardPage, { HOMEPAGE_PATH } from "./pages/DashboardPage";
 import HomepageView from "./pages/DashboardPage/HomepageView";
 import ModelsPage from "./pages/ModelsPage";
@@ -41,7 +42,6 @@ import NotificationsPage from "./pages/NotificationsPage";
 import TriggersPage from "./pages/TriggersPage";
 import ConnectionsPage from "./pages/ConnectionsPage";
 import CaptchaPage from "./pages/CaptchaPage";
-import ImportQueuePage from "./pages/ImportQueuePage";
 import RenderingPage from "./pages/RenderingPage";
 import AiPage from "./pages/AiPage";
 import { healthApi, type HealthInfo } from "./api/health";
@@ -93,7 +93,6 @@ type AppShellProps = {
   isAdmin: boolean;
   user: AuthUser | null;
   apiUp: boolean | null;
-  settings: AppSettings;
   setSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
   previewMode: PreviewMode;
   setPreviewMode: (mode: PreviewMode) => void;
@@ -106,12 +105,16 @@ type AppShellProps = {
   onUserUpdated: (user: AuthUser) => void;
 };
 
+function ImportQueueLink() {
+  const [params] = useSearchParams();
+  return <Navigate to={queueLinkPath(params.get(QUEUE_PARAM))} replace />;
+}
+
 /** Split out so App can stay outside <BrowserRouter>. */
 function AppShell({
   isAdmin,
   user,
   apiUp,
-  settings,
   setSettings,
   previewMode,
   setPreviewMode,
@@ -178,7 +181,6 @@ function AppShell({
       isAdmin={isAdmin}
       onOpenProfile={() => navigate("/profile")}
       onLogout={onLogout}
-      makerworldCookie={settings.makerworld.cookie}
       onUpdateMakerWorld={updateMakerWorld}
       user={user}
       onThemeChange={onThemeChange}
@@ -342,10 +344,9 @@ function AppShell({
           path="/admin-connections"
           element={isAdmin ? <ConnectionsPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
         />
-        <Route
-          path="/admin-queue"
-          element={isAdmin ? <ImportQueuePage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
-        />
+        {/* The queue's page became a dialog; stored notifications, Thingport Grab and bookmarks still come here. */}
+        <Route path="/admin-queue" element={<ImportQueueLink />} />
+        <Route path="/import-queue" element={<ImportQueueLink />} />
         <Route
           path="/admin-captcha"
           element={isAdmin ? <CaptchaPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
@@ -677,7 +678,6 @@ export default function App() {
           isAdmin={isAdmin}
           user={user}
           apiUp={apiUp}
-          settings={settings}
           setSettings={setSettings}
           previewMode={previewMode}
           setPreviewMode={setPreviewMode}

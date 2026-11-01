@@ -4,7 +4,7 @@
 // flow below, which is every provider's.
 
 import type { FillGapsResult, InspectResult, SourceGap, ZipEntriesResult } from "../../shared/api";
-import { request } from "../../shared/messages";
+import { IMPORT_PAUSED, request } from "../../shared/messages";
 import { ctx } from "../context";
 import {
   isMakerworldBlockingError,
@@ -17,7 +17,7 @@ import { api, escapeHtml } from "../runtime";
 import { onPanelAction, panelQuery, panelQueryAll, renderPanel, setPanelNote } from "../shell";
 import { modelHeadHtml, modelTitle } from "./modelHead";
 import { collectionIdFor, collectionPickerHtml, readCollectionChoice, wireCollectionPicker } from "./collectionPicker";
-import { errorHtml, statusHtml, successHtml } from "./results";
+import { errorHtml, pausedHtml, queuedHtml, statusHtml, successHtml } from "./results";
 import { SHARED_SCRIPT_PANEL_NOTE_HTML, WITHHELD_SCRIPT_PANEL_NOTE_HTML } from "../scriptNote";
 import {
   checkingLinkPhrases,
@@ -94,8 +94,8 @@ function startScriptNote(): void {
   void CONTENT_MODULES[provider].scriptState?.(ctx().url).then(showScriptNote, () => undefined);
 }
 
-/** Admins only: the same import, but waiting paused in the instance's import queue. Not where only Grab gets the files:
- *  the queue would only hand the link back to it. */
+/** Whoever `canQueue` lets: the same import, but waiting in the instance's import queue. Not where only Grab gets the
+ *  files: the queue would only hand the link back to it. */
 function queueButtonHtml(): string {
   return ctx().canQueue && manifestOf(ctx().classification.provider).helpers.grab !== "required"
     ? `<button class="tg-btn tg-btn--secondary" type="button" data-action="queue">Add to the queue</button>`
@@ -336,7 +336,8 @@ async function runDirectImport(opts?: { entries?: string[] }): Promise<void> {
       renderPanel(successHtml(link));
     }
   } catch (err) {
-    renderBlockedError(err, "url", collectionId);
+    if (err instanceof Error && err.message === IMPORT_PAUSED) renderPanel(pausedHtml(instanceUrl));
+    else renderBlockedError(err, "url", collectionId);
   }
 }
 
@@ -380,9 +381,9 @@ async function runOwlcadImport(collectionId: string | null): Promise<void> {
   }
 }
 
-/** A CAPTCHA or the daily limit won't clear by clicking Import again, so an admin can park the
- *  link in the queue with the same choices instead, and start it once MakerWorld lets go. The
- *  backend's errors arrive as plain text, hence the message check. */
+/** A CAPTCHA or the daily limit won't clear by clicking Import again, so whoever `canQueue` lets can
+ *  park the link in the queue with the same choices instead, and have it started once MakerWorld
+ *  lets go. The backend's errors arrive as plain text, hence the message check. */
 function renderBlockedError(err: unknown, scope: ProfileScope, collectionId: string | null): void {
   const blocked =
     isMakerworldBlockingError(err) || (err instanceof Error && /captcha|download limit/i.test(err.message));
@@ -460,24 +461,14 @@ async function runProfilesImport(scope: ProfileScope, collectionId: string | nul
   );
 }
 
-/** Sends the link to the paused import queue with the panel's collection and profile choices. No
- *  download is resolved here: the instance does that once the queue is started. */
+/** Sends the link to the import queue with the panel's collection and profile choices. No download
+ *  is resolved here: the instance does that when the link's turn comes. */
 async function runQueueImport(scope: ProfileScope, collectionId: string | null): Promise<void> {
-  const { url, instanceUrl, title } = ctx();
+  const { url, instanceUrl, title, importQueue } = ctx();
   renderPanel(statusHtml("Adding to the queue…"));
   try {
     const result = await request("QUEUE_IMPORT", { url, collectionId, scope, title: title ?? null });
-    const waiting = `${result.waiting} link${result.waiting === 1 ? "" : "s"} waiting`;
-    renderPanel(
-      successHtml(
-        `${instanceUrl}/admin-queue`,
-        result.duplicate
-          ? `This link was already waiting in the queue (${waiting}).`
-          : `Paused until it's started from Administration > Import queue (${waiting}).`,
-        result.duplicate ? "Already in the queue" : "Added to the queue",
-        "Open import queue",
-      ),
-    );
+    renderPanel(queuedHtml(instanceUrl, result, importQueue));
   } catch (err) {
     renderPanel(errorHtml(err));
   }

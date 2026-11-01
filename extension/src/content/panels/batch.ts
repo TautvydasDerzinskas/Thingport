@@ -3,14 +3,14 @@
 // Printables collection is read as its owner (providers/printables/content.ts), and Snapmaker's likes and bookmarks
 // share one page, which the panel switches between.
 
-import type { BatchEntriesResult, ImportJob, SyncLookup } from "../../shared/api";
+import { jobInProgress, type BatchEntriesResult, type ImportJob, type SyncLookup } from "../../shared/api";
 import { ctx, setContext } from "../context";
 import { MANIFESTS, manifestOf } from "../../providers/index.generated";
 import { parseSnapmakerListUrl, snapmakerListUrl, type SnapmakerList } from "../../shared/urls";
 import { request } from "../../shared/messages";
 import { api, escapeHtml, sleep } from "../runtime";
 import { isPanelMounted, onPanelAction, panelQueryAll, renderPanel } from "../shell";
-import { errorHtml, statusHtml, successHtml } from "./results";
+import { errorHtml, pausedHtml, statusHtml, successHtml } from "./results";
 import { loadingModelsPhrases, renderFunStatus } from "./funStatus";
 import { applySyncToggle, loadSyncState, readSyncToggle, syncChangeNote, syncToggleHtml } from "./syncToggle";
 import { printablesToken, readCollectionForPanel } from "../../providers/printables/content";
@@ -226,13 +226,17 @@ async function pollJobWithProgress(jobId: string, instanceUrl: string, note: str
     if (!isPanelMounted()) return;
     const job = await api<ImportJob>("GET", `/import/jobs/${jobId}`);
     if (!isPanelMounted()) return;
-    if (job.status === "RUNNING") {
+    if (jobInProgress(job)) {
       renderPanel(statusHtml(`Importing ${job.processed} of ${job.total}…`));
       await sleep(1000);
       continue;
     }
     if (job.status === "ERROR") {
       renderPanel(errorHtml(new Error(job.error_message || "Import failed")));
+      return;
+    }
+    if (job.status !== "DONE") {
+      renderPanel(pausedHtml(instanceUrl, job.total ? `Imported ${job.imported} of ${job.total} so far.` : null, note));
       return;
     }
     const link = job.result_print_id ? `${instanceUrl}/models/${job.result_print_id}` : `${instanceUrl}/models`;

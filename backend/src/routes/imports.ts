@@ -1,14 +1,14 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { type Request, type Response, Router } from "express";
-import { z } from "zod";
+import { z, type ZodType, type ZodTypeDef } from "zod";
 import { requireAuth } from "../auth";
 import { HttpError } from "../utils/fileUtils";
 import { prisma } from "../db";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { requireCaptcha } from "../services/captchaService";
-import { enabledImportUrl, importRequestSchema } from "./importRequest";
+import { enabledImportUrl, importRequestSchema, mustRunNow } from "./importRequest";
 import {
   checkImportStatus,
   downloadImportToTemp,
@@ -18,11 +18,20 @@ import {
 import { findLibraryPrints } from "../services/collectionSyncService";
 import { listZipEntries } from "../services/zipService";
 import { createJob, createJobItems, getActiveJob, getJob, listJobItems } from "../services/importJobService";
-import { queueLink, startLinksJob } from "../services/importQueueService";
+import {
+  type EnqueuedJob,
+  enqueueLinksImport,
+  enqueueListImport,
+  enqueueProfilesImport,
+  enqueueSingleImport,
+  enqueueZipImport,
+  queueLink,
+  startQueueJob,
+} from "../services/importQueueService";
 import { getImportTask, startImportTask } from "../services/importTaskService";
 import { profilesImportJob, runLinksImportJob, runListImportJob, runZipImportJob } from "../services/importJobRunner";
 import { notifyImportRun } from "../services/modelNotifications";
-import { toImportJobItemOut, toImportJobOut } from "../dto";
+import { maskQueued, toImportJobItemOut, toImportJobOut } from "../dto";
 import type { Prisma } from "@prisma/client";
 import { importAndDescribe, prepareSingleImport } from "../services/singleImport";
 import { previewSourceLink } from "../services/modelLinkService";
@@ -43,11 +52,35 @@ import type { ProviderLists } from "../providers/types";
 const router = Router();
 router.use(requireAuth);
 
+// The line is opt-in. `?queue=1` is a client saying it knows what a job waiting there reads like; one that doesn't
+// (Thingport Grab from before it, a tab left open, a script) gets what these routes have always done, 409s included.
+
+/** The request, when it asked for the line and can wait there. */
+function lineRequest<T extends Parameters<typeof mustRunNow>[0]>(
+  req: Request,
+  schema: ZodType<T, ZodTypeDef, unknown>,
+): T | null {
+  if (req.query.queue !== "1") return null;
+  const body = parseBody(schema, req.body);
+  return mustRunNow(body) ? null : body;
+}
+
+/** Never the key `queued`: that's a list waiting for Grab. */
+function answerInLine(res: Response, { job, position }: EnqueuedJob): void {
+  res.status(202).json({ job_id: job.id, status: "QUEUED", position });
+}
+
 // `?async=1` answers 202 with a task id to poll at /import/tasks/:id (see importTaskService.ts).
 router.post(
   "/import",
   requireCaptcha("import"),
   asyncHandler(async (req, res) => {
+    const forLine = lineRequest(req, importRequestSchema);
+    if (forLine) {
+      const { url } = await prepareSingleImport(req.userId!, forLine);
+      answerInLine(res, await enqueueSingleImport(req.userId!, url, forLine));
+      return;
+    }
     const { url, body } = await prepareSingleImport(req.userId!, parseBody(importRequestSchema, req.body));
     if (req.query.async === "1") {
       const taskId = startImportTask(req.userId!, () => importAndDescribe(req.userId!, url, body));
@@ -239,6 +272,11 @@ async function importList(
     listImportSchema.extend({ model_ids: lists.modelIds ?? listImportSchema.shape.model_ids }),
     renamed,
   );
+  if (req.query.queue === "1" && !lists.waitsForGrab && !mustRunNow(body)) {
+    const url = await listUrlOf(provider, body.url, kinds);
+    answerInLine(res, await enqueueListImport(userId, provider, url, body));
+    return;
+  }
   if (!lists.waitsForGrab) await assertNoActiveJob(userId);
   const url = await listUrlOf(provider, body.url, kinds);
   const start = await lists.start(userId, url, { ...body, url });
@@ -260,6 +298,12 @@ async function importProfiles(req: Request, res: Response, provider: ProviderId)
   const run = profilesImportJob(provider);
   if (!run) throw new HttpError(404, `${name} has no print profiles to import together`);
   const body = parseBody(profilesImportSchema, req.body);
+  if (req.query.queue === "1" && !mustRunNow(body)) {
+    const url = await enabledImportUrl(body.url);
+    if (parseModelUrl(url)?.provider !== provider) throw new HttpError(400, `Not a ${name} model link`);
+    answerInLine(res, await enqueueProfilesImport(userId, provider, url, body));
+    return;
+  }
   await assertNoActiveJob(userId);
   const url = await enabledImportUrl(body.url);
   if (parseModelUrl(url)?.provider !== provider) throw new HttpError(400, `Not a ${name} model link`);
@@ -306,8 +350,8 @@ for (const provider of PROVIDER_IDS) {
   }
 }
 
-// Batch imports run in the background and are polled via GET /import/jobs/:id. One RUNNING job
-// per user doubles as the "already in progress" lock.
+// Without ?queue=1, a batch import runs in the background at once and is polled via GET /import/jobs/:id.
+// One RUNNING job per user doubles as the "already in progress" lock.
 
 async function assertNoActiveJob(userId: string): Promise<void> {
   const active = await getActiveJob(userId);
@@ -320,6 +364,13 @@ router.post(
   "/import/zip",
   requireCaptcha("import"),
   asyncHandler(async (req, res) => {
+    const forLine = lineRequest(req, zipExtractRequestSchema);
+    if (forLine) {
+      const url = await enabledImportUrl(forLine.url);
+      if (!forLine.entries.length) throw new HttpError(400, "No files to import");
+      answerInLine(res, await enqueueZipImport(req.userId!, url, forLine));
+      return;
+    }
     const body = parseBody(zipExtractRequestSchema, req.body);
     await assertNoActiveJob(req.userId!);
     const url = await enabledImportUrl(body.url);
@@ -361,6 +412,16 @@ router.post(
   "/import/links",
   requireCaptcha("import"),
   asyncHandler(async (req, res) => {
+    const forLine = lineRequest(req, linksImportRequestSchema);
+    if (forLine) {
+      const urls: string[] = [];
+      for (const raw of forLine.urls) {
+        const url = await enabledImportUrl(raw.trim());
+        if (!urls.includes(url)) urls.push(url);
+      }
+      answerInLine(res, await enqueueLinksImport(req.userId!, urls, forLine));
+      return;
+    }
     const body = await withLinkAuth(req.userId!, parseBody(linksImportRequestSchema, req.body));
     await assertNoActiveJob(req.userId!);
     const urls: string[] = [];
@@ -381,14 +442,14 @@ router.post(
 );
 
 /** Reruns just the links that failed, so a CAPTCHA cooloff or a cookie fix is enough to finish a
- * batch. */
+ * batch. It joins the line, which someone following the job reads as still running. */
 router.post(
   "/import/jobs/:id/retry",
   requireCaptcha("import"),
   asyncHandler(async (req, res) => {
     const job = await getJob(req.params.id, req.userId!);
     if (!job) throw new HttpError(404, "Import job not found");
-    await startLinksJob(job, { retryFailed: true, manual: true });
+    await startQueueJob(job, { retryFailed: true, manual: true });
     res.status(202).json({ job_id: job.id });
   }),
 );
@@ -400,8 +461,9 @@ const queueLinkRequestSchema = z.object({
   title: z.string().max(500).nullable().optional(),
 });
 
-/** The extension's "Add to the queue": the link waits, paused, in the user's queue until it's started
- *  from the admin import queue. Nothing is fetched now, so this is quick and never trips a CAPTCHA. */
+/** The extension's "Add to the queue": the link waits, paused, in the user's queue until they start it from the import
+ *  queue, or joins the line by itself if they've asked for that (`started`). Nothing is fetched now, so this is quick
+ *  and never trips a CAPTCHA. */
 router.post(
   "/import/queue",
   requireCaptcha("import"),
@@ -419,6 +481,8 @@ router.post(
       item_id: result.itemId,
       duplicate: result.duplicate,
       waiting: result.waiting,
+      started: result.started,
+      position: result.position,
     });
   }),
 );
@@ -437,7 +501,8 @@ router.get(
   asyncHandler(async (req, res) => {
     const job = await getJob(req.params.id, req.userId!);
     if (!job) throw new HttpError(404, "Import job not found");
-    res.json(toImportJobOut(job));
+    const out = toImportJobOut(job);
+    res.json(req.query.queue === "1" ? out : maskQueued(out));
   }),
 );
 

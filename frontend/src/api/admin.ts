@@ -1,6 +1,6 @@
 import { authHeaders } from "../utils/auth";
 import { apiBase, assertOk, readErrorMessage, UnauthorizedError } from "./client";
-import type { ImportJob, ImportJobItem } from "./imports";
+import type { ImportJob } from "./imports";
 import type { ProviderId } from "../providers/index.generated";
 
 export type AdminUser = {
@@ -188,18 +188,6 @@ export type AdminImportJob = ImportJob & {
   updated_at: string;
 };
 
-/** "Start all" and "Retry all failed" run jobs one after another, across users. */
-export type ImportQueueBulk = { running: boolean; currentJobId: string | null; remaining: number };
-
-export type ImportQueue = { jobs: AdminImportJob[]; bulk: ImportQueueBulk };
-
-async function queueAction<T>(method: "POST" | "DELETE", path: string, fallback: string): Promise<T> {
-  const res = await fetch(`${apiBase()}/admin/import-queue${path}`, { method, headers: authHeaders() });
-  if (res.status === 401) throw new UnauthorizedError();
-  if (!res.ok) throw new Error(await readErrorMessage(res, fallback));
-  return res.json();
-}
-
 export const adminApi = {
   browseStorage: async (folder: string): Promise<StorageListing> => {
     const res = await fetch(`${apiBase()}/admin/storage/browse?${new URLSearchParams({ path: folder })}`, {
@@ -313,29 +301,6 @@ export const adminApi = {
     if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to delete models"));
     return res.json();
   },
-
-  getImportQueue: async (): Promise<ImportQueue> => {
-    const res = await fetch(`${apiBase()}/admin/import-queue`, { headers: authHeaders() });
-    assertOk(res, "Failed to load the import queue");
-    return res.json();
-  },
-
-  getImportQueueItems: async (jobId: string): Promise<ImportJobItem[]> => {
-    const res = await fetch(`${apiBase()}/admin/import-queue/jobs/${jobId}/items`, { headers: authHeaders() });
-    assertOk(res, "Failed to load the import's links");
-    return res.json();
-  },
-
-  startQueueJob: (jobId: string) => queueAction<{ ok: true }>("POST", `/jobs/${jobId}/start`, "Failed to start"),
-  retryQueueJob: (jobId: string) => queueAction<{ ok: true }>("POST", `/jobs/${jobId}/retry`, "Failed to retry"),
-  pauseQueueJob: (jobId: string) => queueAction<{ ok: true }>("POST", `/jobs/${jobId}/pause`, "Failed to pause"),
-  deleteQueueJob: (jobId: string) => queueAction<{ ok: true }>("DELETE", `/jobs/${jobId}`, "Failed to delete"),
-  removeQueueItem: (itemId: string) =>
-    queueAction<{ jobDeleted: boolean }>("DELETE", `/items/${itemId}`, "Failed to remove the link"),
-  startAllQueued: () => queueAction<{ queued: number }>("POST", "/start-all", "Failed to start the queue"),
-  retryAllFailed: () => queueAction<{ queued: number }>("POST", "/retry-failed", "Failed to retry"),
-  pauseAllQueued: () => queueAction<{ paused: number }>("POST", "/pause-all", "Failed to pause the queue"),
-  clearFinishedQueued: () => queueAction<{ deleted: number }>("POST", "/clear-finished", "Failed to clear"),
 
   listLogs: async (filter: { userId?: string; from?: string; to?: string }): Promise<LogEntry[]> => {
     const params = new URLSearchParams();

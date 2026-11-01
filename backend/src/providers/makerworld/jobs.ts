@@ -6,11 +6,12 @@ import { createLogger } from "../../logger";
 import { createLog } from "../../services/auditLog";
 import { addPrintsToCollection, findOrCreateCollectionByName } from "../../services/collectionService";
 import { syncedCollectionFor } from "../../services/collectionSyncService";
-import { updateJob } from "../../services/importJobService";
+import { jobProgress, QUEUE_ATTENTION_PATH, updateJob } from "../../services/importJobService";
 import {
   classifyImportFailure,
   importProfileUrlsSequentially,
   markJobFailed,
+  noteFailureSummary,
   PROVIDER_OFF_TEXT,
   type ProfilesImportJobBody,
 } from "../../services/importJobRunner";
@@ -60,18 +61,16 @@ async function runMakerworldProfilesImportJob(
     await updateJob(jobId, { total: profileUrls.length, sourceLabel: title });
     log.info("makerworld profiles job started", { job: jobId, url: body.url, profiles: profileUrls.length });
 
-    const totals = await importProfileUrlsSequentially(
-      userId,
-      profileUrls,
-      body,
-      (t) =>
-        void updateJob(jobId, {
-          processed: t.processed,
-          imported: t.imported,
-          alreadyInLibrary: t.alreadyInLibrary,
-          failedCount: t.failed,
-        }).catch(() => undefined),
+    const progress = jobProgress(jobId);
+    const totals = await importProfileUrlsSequentially(userId, profileUrls, body, (t) =>
+      progress.write({
+        processed: t.processed,
+        imported: t.imported,
+        alreadyInLibrary: t.alreadyInLibrary,
+        failedCount: t.failed,
+      }),
     );
+    await progress.settled();
     const { imported, alreadyInLibrary, failed, stopReason } = totals;
     const printId = totals.printId;
     log.info("makerworld profiles job done", {
@@ -98,23 +97,24 @@ async function runMakerworldProfilesImportJob(
     });
 
     if (stopReason === "auth") await noteMakerworldRejected(userId);
-    const bodyParts: string[] = [];
-    if (alreadyInLibrary) bodyParts.push(`${alreadyInLibrary} already on the model`);
+    const failureParts: string[] = [];
     if (stopReason === "rateLimited") {
-      bodyParts.push(
+      failureParts.push(
         `the rest blocked by a ${NAME} CAPTCHA challenge — this usually clears in 1-4 hours, then import the model again to add the missing profiles`,
       );
     } else if (stopReason === "downloadLimit") {
-      bodyParts.push(
+      failureParts.push(
         `the rest not downloaded — ${NAME}'s daily download limit was reached, import the model again tomorrow to add the missing profiles`,
       );
     } else if (stopReason === "auth") {
-      bodyParts.push(
+      failureParts.push(
         `the rest failed because your ${NAME} session expired — update the cookie in Settings and import again`,
       );
     } else if (failed) {
-      bodyParts.push(`${failed} failed`);
+      failureParts.push(`${failed} failed`);
     }
+    await noteFailureSummary(jobId, failureParts);
+    const bodyParts = [...(alreadyInLibrary ? [`${alreadyInLibrary} already on the model`] : []), ...failureParts];
     const label = title ? `"${title}"` : `a ${NAME} model`;
     await createNotification(userId, {
       type: "import",
@@ -124,7 +124,7 @@ async function runMakerworldProfilesImportJob(
         : `Imported ${imported} of ${profileUrls.length} print profiles from ${NAME}`,
       body: bodyParts.length ? `Of ${label} — ${bodyParts.join(", ")}.` : `Of ${label}.`,
       externalUrl: body.url,
-      internalPath: printId ? `/models/${printId}` : null,
+      internalPath: printId ? `/models/${printId}` : failed ? QUEUE_ATTENTION_PATH : null,
     });
   } catch (err) {
     await markJobFailed(jobId, err);
@@ -220,7 +220,8 @@ export async function runCollectionImportJob(
     });
     await updateJob(jobId, {
       status: "DONE",
-      sourceLabel: collectionTitle,
+      // Nothing came in to name it by: a job from the line keeps the title it was added with.
+      sourceLabel: collectionTitle ?? undefined,
       resultCollectionId,
       resultPrintId: successPrintIds.length === 1 ? successPrintIds[0] : null,
       processed,
@@ -243,32 +244,37 @@ export async function runCollectionImportJob(
 
     if (authFailed) await noteMakerworldRejected(userId);
     const label = collectionTitle ? `"${collectionTitle}"` : `a ${NAME} collection`;
-    const bodyParts: string[] = [];
-    if (alreadyInLibrary) bodyParts.push(`${alreadyInLibrary} already in your library`);
+    const failureParts: string[] = [];
     const otherFailed = failed.length - unavailable - rateLimited - downloadLimited - authFailed - providerOff;
-    if (unavailable) bodyParts.push(`${unavailable} unavailable (private, deleted, or hidden)`);
-    if (providerOff) bodyParts.push(`${providerOff} skipped — ${PROVIDER_OFF_TEXT(NAME)}`);
+    if (unavailable) failureParts.push(`${unavailable} unavailable (private, deleted, or hidden)`);
+    if (providerOff) failureParts.push(`${providerOff} skipped — ${PROVIDER_OFF_TEXT(NAME)}`);
     if (rateLimited) {
-      bodyParts.push(
+      failureParts.push(
         `${rateLimited} blocked by a ${NAME} CAPTCHA challenge (too many requests at once) — this usually clears in 1-4 hours, then retry the same collection`,
       );
     }
     if (downloadLimited) {
-      bodyParts.push(
+      failureParts.push(
         `${downloadLimited} not downloaded — ${NAME}'s daily download limit was reached, retry the same collection tomorrow`,
       );
     }
     if (authFailed)
-      bodyParts.push(
+      failureParts.push(
         `${authFailed} failed because your ${NAME} session expired — update the cookie in Settings and retry`,
       );
-    if (otherFailed) bodyParts.push(`${otherFailed} failed`);
+    if (otherFailed) failureParts.push(`${otherFailed} failed`);
+    await noteFailureSummary(jobId, failureParts);
+    const bodyParts = [...(alreadyInLibrary ? [`${alreadyInLibrary} already in your library`] : []), ...failureParts];
     await createNotification(userId, {
       type: "import",
       title: `Imported ${imported} of ${body.design_ids.length} models from ${NAME}`,
       body: bodyParts.length ? `From ${label} — ${bodyParts.join(", ")}.` : `From ${label}.`,
       externalUrl: body.url,
-      internalPath: resultCollectionId ? `/models/collections/${resultCollectionId}` : null,
+      internalPath: resultCollectionId
+        ? `/models/collections/${resultCollectionId}`
+        : failed.length
+          ? QUEUE_ATTENTION_PATH
+          : null,
     });
   } catch (err) {
     await markJobFailed(jobId, err);

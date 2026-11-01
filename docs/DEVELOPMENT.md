@@ -149,10 +149,12 @@ against an empty suite. New tests are welcome.
 ### Regression pack
 
 Playwright scenarios in `regression/` that drive the real app in Chromium: sign-up, sign-in,
-uploading (single and multiple files, zips, folder trees), the consume folder, collections, and the
+uploading (single and multiple files, zips, folder trees), the consume folder, the import queue, collections, and the
 sidebar (navigation, the admin-only route, bookmarks and their drag-to-reorder, collapsing). Upload
 fixtures are generated in `tests/fixtures.ts` rather than checked in. The consume folder is
-`regression/consume/`, bind-mounted into the backend for the run. `run.sh` builds the backend and
+`regression/consume/`, bind-mounted into the backend for the run. MakerWorld links import with no network:
+`fixtures/fake-provider.cjs`, preloaded into the backend for the run, answers their calls, and the first digit of a
+model's id says whether it imports at once, waits for a test to let it go, or fails. `run.sh` builds the backend and
 frontend images from your checkout, starts them with Postgres on port 8090, runs the scenarios, and
 then removes the stack. The database and storage live on tmpfs, so every run starts empty and leaves nothing behind.
 It never touches your development database. It needs Docker.
@@ -186,7 +188,8 @@ The README and website screenshots in `frontend/src/assets/screenshots/` are cap
 instance with a populated library, by `regression/screenshots.mjs` (the extension's screenshots
 aren't covered). It signs in, captures every shot in the light and the dark theme at 1400×790 and 2× scale,
 and overwrites the files in `light/` and `dark/`. The account's theme and Categories/Folders choice are switched
-for the shots and restored afterwards, and a shot that can't be taken is reported without stopping the run.
+for the shots and restored afterwards, and a shot that can't be taken is reported without stopping the run. The import
+queue's rows are made up and answered in the browser, so nothing is queued on the instance.
 
 ```bash
 cd regression

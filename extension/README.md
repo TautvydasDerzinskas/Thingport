@@ -373,7 +373,7 @@ also be turned on in Thingport, from the collection's **Sync configuration**.
   and the other way round: if a collection of the same name already follows another source, the
   new one gets its own, named after the provider (e.g. "Things (MakerWorld)").
 - If the provider rate-limits the imports (a MakerWorld CAPTCHA or daily download limit, say), the
-  rest wait, paused, in the import queue until it's started again from Administration > Import queue.
+  rest wait, paused, in the import queue until it's started again there.
 - If the provider's collection is deleted, the Thingport collection is unsynced (its models stay)
   and you get a notification. Deleting the Thingport collection removes the sync with it.
 - **Sync now** checks the collection right away instead of waiting for the next check, and a notification

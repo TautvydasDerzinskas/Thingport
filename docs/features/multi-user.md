@@ -1,7 +1,8 @@
 # Multi-user
 
 One Thingport, separate libraries for everyone in the household or workshop. Each person has their own models,
-collections, categories, tags and settings.
+collections, categories, tags and settings. Imports take turns in one line for the whole server, but everyone has their
+own [import queue](importing.md#the-import-queue) and sees other people's imports there only as private rows.
 
 ## Accounts
 
@@ -22,5 +23,6 @@ All of these are under **Administration → Auth** and **Administration → Capt
 ## For admins
 
 The **Users** page lists everyone with their model and collection counts, how they sign in, and whether their
-MakerWorld account is connected. Admins can change roles, delete an account with all its models, and follow what
-each person does in **Administration → Logs**. See [administration](administration.md).
+MakerWorld account is connected. Admins can change roles, delete an account with all its models, follow what each
+person does in **Administration → Logs**, and see everyone's imports in **Administration → Import queue**. See
+[administration](administration.md).

@@ -13,15 +13,27 @@ type Props<T extends string> = {
   onChange: (value: T) => void;
   label: string;
   disabled?: boolean;
+  /** Takes the whole width, with the options sharing it evenly. */
+  fullWidth?: boolean;
 };
 
 /** One track, the chosen option raised on a lighter pill. */
-export default function Segmented<T extends string>({ value, options, onChange, label, disabled }: Props<T>) {
+export default function Segmented<T extends string>({
+  value,
+  options,
+  onChange,
+  label,
+  disabled,
+  fullWidth,
+}: Props<T>) {
   return (
     <Box
+      // A fieldset has layout rules of its own, and this is only a row of buttons.
+      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
+      role="group"
       aria-label={label}
       sx={{
-        display: "inline-flex",
+        display: fullWidth ? "flex" : "inline-flex",
         // Many options wrap on a narrow screen instead of running off it.
         flexWrap: "wrap",
         maxWidth: "100%",
@@ -46,6 +58,7 @@ export default function Segmented<T extends string>({ value, options, onChange, 
             disabled={disabled}
             onClick={() => onChange(option.value)}
             sx={{
+              flex: fullWidth ? 1 : undefined,
               border: 0,
               cursor: disabled ? "default" : "pointer",
               opacity: disabled && !chosen ? 0.6 : 1,
@@ -56,7 +69,7 @@ export default function Segmented<T extends string>({ value, options, onChange, 
               borderRadius: "7px",
               font: "inherit",
               fontSize: "0.8rem",
-              color: chosen ? "text.primary" : "text.secondary",
+              color: chosen ? (theme) => theme.thingport.headingText : "text.secondary",
               bgcolor: chosen ? chosenBg : "transparent",
               boxShadow: chosen ? "0 1px 3px rgba(0, 0, 0, 0.2)" : "none",
               transition: "background-color 150ms, color 150ms",

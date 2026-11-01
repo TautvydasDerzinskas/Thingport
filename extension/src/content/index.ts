@@ -184,7 +184,8 @@ async function init(): Promise<void> {
     instanceUrl: stateRes.data.instanceUrl,
     classification,
     library,
-    canQueue: stateRes.data.isAdmin,
+    canQueue: stateRes.data.canQueue,
+    importQueue: stateRes.data.importQueue,
   });
   const root = mountHost();
   const togglePanel = mountPanel(root, () => void loadPanel());

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Box from "@mui/material/Box";
@@ -28,6 +28,8 @@ import { CardSkeletons } from "../../components/media/CardSkeleton";
 import { cardGridSx } from "../../components/media/cardGrid";
 import ModelSelectionToolbar from "../../components/modelSelection/ModelSelectionToolbar";
 import { replacePrints, useModelSelection } from "../../hooks/useModelSelection";
+import { useFinishedVersion } from "../../components/importQueue/ImportQueueContext";
+import { keepLoaded, useBackgroundReload } from "../../hooks/useBackgroundReload";
 
 const PAGE_SIZE = 24;
 
@@ -57,6 +59,10 @@ export default function CollectionDetailPage({
   const [loadingMore, setLoadingMore] = useState(false);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
+  const finishedVersion = useFinishedVersion();
+  const isBackgroundReload = useBackgroundReload(finishedVersion);
+  // A page on its way when the list reloads belongs to the old list, and is dropped.
+  const listRun = useRef(0);
   const selection = useModelSelection(items);
   const [searchParams, setSearchParams] = useSearchParams();
   const sortModeParam = searchParams.get("orderBy");
@@ -120,8 +126,12 @@ export default function CollectionDetailPage({
   useEffect(() => {
     if (!collectionId) return;
     let cancelled = false;
-    setLoading(true);
-    setNotFound(false);
+    listRun.current += 1;
+    const background = isBackgroundReload();
+    if (!background) {
+      setLoading(true);
+      setNotFound(false);
+    }
     (async () => {
       try {
         const [collectionResult, printsResult] = await Promise.all([
@@ -131,7 +141,7 @@ export default function CollectionDetailPage({
             generative: generative || undefined,
             hide_providers: hiddenProviders,
             order_by: sortMode,
-            limit: PAGE_SIZE,
+            limit: background ? keepLoaded(PAGE_SIZE, offset) : PAGE_SIZE,
             offset: 0,
           }),
         ]);
@@ -142,7 +152,7 @@ export default function CollectionDetailPage({
         setHasMore(printsResult.hasMore);
       } catch (err) {
         if (cancelled) return;
-        if (handleError(err)) return;
+        if (handleError(err) || background) return;
         setNotFound(true);
       } finally {
         if (!cancelled) setLoading(false);
@@ -152,10 +162,11 @@ export default function CollectionDetailPage({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [collectionId, sortMode, generative, hiddenProviders]);
+  }, [collectionId, sortMode, generative, hiddenProviders, finishedVersion]);
 
   const loadMore = async () => {
     if (loadingMore || !hasMore || !collectionId) return;
+    const run = listRun.current;
     setLoadingMore(true);
     try {
       const result = await printsApi.list({
@@ -166,6 +177,7 @@ export default function CollectionDetailPage({
         limit: PAGE_SIZE,
         offset,
       });
+      if (run !== listRun.current) return;
       setItems((prev) => [...prev, ...result.items]);
       setOffset(offset + result.items.length);
       setHasMore(result.hasMore);

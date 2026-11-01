@@ -30,6 +30,8 @@ import CollectionFormModal from "./CollectionFormModal";
 import CollectionsActionsMenu from "./CollectionsActionsMenu";
 import { CardSkeletons } from "../../components/media/CardSkeleton";
 import { cardGridSx } from "../../components/media/cardGrid";
+import { useFinishedVersion } from "../../components/importQueue/ImportQueueContext";
+import { useBackgroundReload } from "../../hooks/useBackgroundReload";
 
 type Props = {
   onUnauthorized?: () => void;
@@ -69,21 +71,25 @@ export default function CollectionsPage({ onUnauthorized, onBookmarksChanged, th
     showToast({ message: err instanceof Error && err.message ? err.message : message, severity: "error" });
   };
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (background = false) => {
+    if (!background) setLoading(true);
     try {
       setCollections(await collectionsApi.list());
     } catch (err) {
+      if (background && !(err instanceof UnauthorizedError)) return;
       handleError(err, t("models:collections.errors.loadFailed"));
     } finally {
       setLoading(false);
     }
   };
 
+  const finishedVersion = useFinishedVersion();
+  const isBackgroundReload = useBackgroundReload(finishedVersion);
+
   useEffect(() => {
-    load();
+    load(isBackgroundReload());
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [finishedVersion]);
 
   // The built-in ones stay first; the server sends the rest newest first.
   const sorted = useMemo(() => {

@@ -47,6 +47,11 @@ function isArchiveJunk(path: string) {
   return parts.includes("__MACOSX") || isSystemFile(parts[parts.length - 1]);
 }
 
+/** What starts ticked when picking from a zip: everything but what the OS left in it, which still shows, to tick. */
+export function startingSelection(entries: Pick<ZipEntry, "path">[]): Set<string> {
+  return new Set(entries.map((entry) => entry.path).filter((path) => !isArchiveJunk(path)));
+}
+
 export function isZipFile(name: string) {
   return (name || "").toLowerCase().endsWith(".zip");
 }

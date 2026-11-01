@@ -1,5 +1,21 @@
 import { PrismaClient } from "@prisma/client";
 import { setActiveClient } from "../db";
+import { createLogger } from "../logger";
+import { hasActiveCollectionSync } from "./collectionSyncRunner";
+import { liveRunnerIds } from "./importJobRunner";
+import { hasRunningImportTasks } from "./importTaskService";
+import {
+  beginDatabaseSwitch,
+  countRunningRows,
+  endDatabaseSwitch,
+  forgetJobsOfLastDatabase,
+  importWorkerIdle,
+  importWorkerStatus,
+  recoverAfterDatabaseSwitch,
+} from "./importWorker";
+
+const log = createLogger("import");
+const POLL_WAIT_MS = 2_000;
 
 export type PostgresCredentials = {
   database: string;
@@ -65,21 +81,69 @@ function friendlyConnectionError(err: unknown): string {
   return `Could not connect: ${message}`;
 }
 
-/** Hot-swaps the live connection only after the candidate credentials pass a test. */
-export async function testAndSwitchDatabase(creds: PostgresCredentials): Promise<DatabaseInfo> {
-  const url = buildCandidateUrl(creds);
-  if (!url) throw new Error("DATABASE_URL is not set for this instance -- nothing to switch relative to.");
-
+async function connectCandidate(url: string): Promise<PrismaClient> {
   const candidate = new PrismaClient({ datasources: { db: { url } } });
   try {
     await candidate.$connect();
     await candidate.$queryRawUnsafe('SELECT 1 FROM "User" LIMIT 1');
+    return candidate;
   } catch (err) {
     await candidate.$disconnect().catch(() => undefined);
     throw new Error(friendlyConnectionError(err), { cause: err });
   }
+}
 
-  setActiveClient(candidate);
-  active = creds;
-  return getDatabaseInfo();
+/** A read of the line that was already out comes back and sees the gate. A job the worker is on won't be done in time,
+ *  which the check after this will see. */
+async function pollSettled(): Promise<void> {
+  let timer: NodeJS.Timeout | undefined;
+  await Promise.race([
+    importWorkerIdle(),
+    new Promise((resolve) => {
+      timer = setTimeout(resolve, POLL_WAIT_MS);
+    }),
+  ]);
+  clearTimeout(timer);
+}
+
+/** Direct ZIP, list and profile imports can only be told by their rows. A database that can't answer has none to
+ *  protect: leaving a dead one is what this switch is for. */
+async function runningRows(): Promise<number> {
+  try {
+    return await countRunningRows();
+  } catch (err) {
+    log.warn("couldn't count running imports before a database switch", { error: err });
+    return 0;
+  }
+}
+
+const inMemoryImportWork = () =>
+  importWorkerStatus().currentJobId !== null ||
+  liveRunnerIds().length > 0 ||
+  hasRunningImportTasks() ||
+  hasActiveCollectionSync();
+
+/** Hot-swaps the live connection only after the candidate credentials pass a test, and only with no import running:
+ *  a job's next write would land in the new database. Refused rather than waited for, as an import can run for hours. */
+export async function testAndSwitchDatabase(creds: PostgresCredentials): Promise<DatabaseInfo> {
+  const url = buildCandidateUrl(creds);
+  if (!url) throw new Error("DATABASE_URL is not set for this instance -- nothing to switch relative to.");
+  if (!beginDatabaseSwitch()) throw new Error("Another database switch is under way.");
+  try {
+    const candidate = await connectCandidate(url);
+    await pollSettled();
+    const rows = await runningRows();
+    // Nothing awaited from this check to the swap, so nothing can start in between.
+    if (rows > 0 || inMemoryImportWork()) {
+      await candidate.$disconnect().catch(() => undefined);
+      throw new Error("Imports are running. Pause them or let them finish, then try again.");
+    }
+    setActiveClient(candidate);
+    active = creds;
+    forgetJobsOfLastDatabase();
+    await recoverAfterDatabaseSwitch();
+    return getDatabaseInfo();
+  } finally {
+    endDatabaseSwitch();
+  }
 }

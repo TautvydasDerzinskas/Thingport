@@ -60,6 +60,16 @@ export function NotificationsTwoToneIcon(props: SvgIconProps) {
   );
 }
 
+/** A tray with an arrow dropping into it. */
+export function ImportQueueIcon(props: SvgIconProps) {
+  return (
+    <TwoToneIcon {...props}>
+      <path d="M4 14h3.5l1.5 3h6l1.5-3H20v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-5z" />
+      <path className="detail" d="M11 3h2v6.2l2.3-2.3 1.4 1.4L12 13 7.3 8.3l1.4-1.4L11 9.2V3z" />
+    </TwoToneIcon>
+  );
+}
+
 export function ImportLinkIcon(props: SvgIconProps) {
   return (
     <TwoToneIcon {...props}>

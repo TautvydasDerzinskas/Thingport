@@ -1,5 +1,5 @@
-import type { ImportJob, Print, QueueImportResult } from "../shared/api";
-import type { ImportSinglePayload, QueueImportPayload } from "../shared/messages";
+import { jobInProgress, type ImportJob, type Print, type QueueImportResult } from "../shared/api";
+import { IMPORT_PAUSED, type ImportSinglePayload, type QueueImportPayload } from "../shared/messages";
 import { apiCall } from "./api";
 import { recordRecentImport } from "./recentImports";
 
@@ -8,7 +8,7 @@ const JOB_POLL_INTERVAL_MS = 1000;
 export async function pollJobToCompletion(jobId: string): Promise<ImportJob> {
   for (;;) {
     const job = await apiCall<ImportJob>("GET", `/import/jobs/${jobId}`);
-    if (job.status !== "RUNNING") return job;
+    if (!jobInProgress(job)) return job;
     await new Promise((resolve) => setTimeout(resolve, JOB_POLL_INTERVAL_MS));
   }
 }
@@ -50,6 +50,7 @@ export async function importSingle(
     const { job_id } = await apiCall<{ job_id: string }>("POST", "/import/zip", { url, entries, ...extra });
     const job = await pollJobToCompletion(job_id);
     if (job.status === "ERROR") throw new Error(job.error_message || "Import failed");
+    if (job.status !== "DONE") throw new Error(IMPORT_PAUSED);
     print = job.result_print_id ? { id: job.result_print_id } : null;
   } else {
     // Asynchronous so the request never outlives the worker: Chromium kills an extension service
@@ -73,8 +74,9 @@ export async function importSingle(
   return print;
 }
 
-/** "Add to the queue": nothing is fetched now; the link waits, paused, until it's started from the
- *  instance's Administration > Import queue, which then imports it with the panel's choices. */
+/** "Add to the queue": nothing is fetched now; the link waits in the instance's import queue, which then imports it
+ *  with the panel's choices. It's on hold until started there, by its owner or, on an older instance, by an admin;
+ *  or in line, if the user's setting there says so. */
 export async function queueImport({ url, collectionId, scope, title }: QueueImportPayload): Promise<QueueImportResult> {
   return apiCall<QueueImportResult>("POST", "/import/queue", {
     url,

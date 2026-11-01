@@ -100,7 +100,6 @@
     "uploadBar": {
       "uploading": "Įkeliama…",
       "linkPlaceholder": "Įklijuokite modelio nuorodą (MakerWorld, Printables, Thingiverse, MyMiniFactory...)",
-      "importing": "Importuojama…",
       "importFailed": "Importuoti nepavyko",
       "uploadFailed": "Nepavyko įkelti: {{files}}",
       "multiplateImportFailedWithMessage": "Kelių failų importas ({{message}})",
@@ -121,6 +120,7 @@
       "prompt": "Kaip norėtumėte tvarkyti šį zip failą?",
       "importAsZip": "Importuoti kaip zip",
       "importAndUnzip": "Importuoti ir išpakuoti",
+      "reading": "Skaitomas zip failas…",
       "selectedCount": "Pažymėta {{selected}} iš {{total}}",
       "selectAll": "Pažymėti visus",
       "clear": "Išvalyti",
@@ -410,7 +410,7 @@
             },
             "imports": {
               "title": "Importai",
-              "description": "Vykdomų importų eiga."
+              "description": "Jūsų importavimo eilė ir importų eiga."
             },
             "other": {
               "title": "Visa kita",
@@ -467,7 +467,7 @@
       "uploadFiles": "Įkelti failus",
       "uploadFolder": "Įkelti aplanką",
       "importTitle": "Importuoti iš nuorodos",
-      "disabledWhileImporting": "Palaukite, kol baigsis dabartinis importas, prieš pradėdami kitą",
+      "finishFirst": "Pirmiausia užbaikite tai, ką pridedate",
       "exampleLinksFor": "Pavyzdinės {{provider}} nuorodos",
       "exampleModel": "Modelis",
       "exampleCollection": "Kolekcija",
@@ -611,34 +611,257 @@
         "stop": "Stabdyti aprašymų tobulinimą"
       }
     },
-    "importProgress": {
-      "starting": "Pradedamas importas…",
-      "label": "{{phrase}} {{processed}} iš {{total}}",
-      "phrases": [
-        "Thingportuojami modeliai…",
-        "Atveriami vartai į modelį…",
-        "Failai perkeliami į jūsų biblioteką…",
-        "Išpakuojamas 3MF…",
-        "Skaičiuojamos plokštės…",
-        "Ieškoma Benchy…",
-        "Modeliai gelbstimi iš interneto…",
-        "Teleportuojama be gijos…",
-        "Gaudomi STL failai, kol nepabėgo…",
-        "Nuvalomos miniatiūros…"
-      ],
-      "tooltip": "{{imported}} importuota, {{alreadyInLibrary}} jau bibliotekoje, {{failedCount}} nepavyko. Spustelėkite, kad pamatytumėte eilę.",
-      "done": "Importuota {{imported}}, {{alreadyInLibrary}} jau bibliotekoje. Spustelėkite, kad pamatytumėte eilę.",
-      "doneWithFailures": "Importuota {{imported}}, {{alreadyInLibrary}} jau bibliotekoje, {{failedCount}} nepavyko. Spustelėkite, kad pamatytumėte, kurios ir kodėl.",
-      "tooltipFailed": "{{failedCount}} nuorodos nepavyko. Spustelėkite, kad pamatytumėte, kurios ir kodėl.",
-      "retryFailed": "Pakartoti nepavykusius",
-      "dismiss": "Uždaryti",
-      "queueTitle": "Importo eilė",
-      "queueEmpty": "Šioje eilėje nėra nuorodų.",
-      "queueClose": "Uždaryti",
-      "itemPending": "laukiama",
-      "itemRunning": "importuojama",
-      "itemDone": "importuota",
-      "itemFailed": "nepavyko"
+    "importQueue": {
+      "title": "Importavimo eilė",
+      "titleEveryone": "Serverio importavimo eilė",
+      "importingNow": "Dabar importuojama: {{count}}",
+      "settings": "Eilės nustatymai",
+      "sectionsLabel": "Eilės skiltys",
+      "autoStart": "Automatiškai paleisti nuorodas iš Grab",
+      "autoStartOn": "Naujos nuorodos iškart patenka į eilę.",
+      "autoStartOff": "Naujos nuorodos lieka sulaikytos, kol jas paleisite.",
+      "scope": {
+        "label": "Kieno importai",
+        "mine": "Mano",
+        "everyone": "Visų"
+      },
+      "people": "Žmonės",
+      "everyone": "Visi",
+      "loadFailed": "Nepavyko įkelti importavimo eilės.",
+      "sentFromGrab": "Išsiųsta iš Thingport Grab",
+      "untitled": "Importas be pavadinimo",
+      "sections": {
+        "run": "Importuojama",
+        "att": "Reikia dėmesio",
+        "wait": "Laukia",
+        "done": "Baigta"
+      },
+      "panel": {
+        "run": {
+          "sub": "Kas vykdoma dabar, gyvai."
+        },
+        "att": {
+          "sub": "Nepavykę arba nutraukti importai ir ką daryti toliau."
+        },
+        "wait": {
+          "subMine": "Vienu metu vykdomas vienas importas, eilės tvarka. Kitų žmonių importai lieka privatūs.",
+          "subAll": "Visame serveryje vienu metu vykdomas vienas importas, eilės tvarka."
+        },
+        "done": {
+          "sub": "Pasibaigę importai."
+        }
+      },
+      "empty": {
+        "running": {
+          "busyTitle": "Vykdomas kitas importas",
+          "busyNext": "Jūsų kitas importas yra #{{n}} eilėje ir prasidės savaime.",
+          "busyNone": "Importai vykdomi po vieną. Jūsų importai prasidės savaime, kai ateis jų eilė.",
+          "title": "Niekas neimportuojama",
+          "text": "Kol importai vykdomi, jų eiga rodoma čia."
+        },
+        "att": {
+          "title": "Viskas tvarkoje",
+          "text": "Čia patenka nepavykę ir nutraukti importai."
+        },
+        "wait": {
+          "title": "Niekas nelaukia",
+          "text": "Nauji importai čia laukia savo eilės. Nuorodos, išsiųstos iš Thingport Grab mygtuku „Pridėti į eilę“, lieka sulaikytos, kol jas paleisite."
+        },
+        "done": {
+          "title": "Dar niekas nebaigta",
+          "text": "Baigti importai lieka čia, kol juos išvalysite."
+        }
+      },
+      "group": {
+        "inLine": "Eilėje",
+        "onHold": "Sulaikyti",
+        "inLineHintMine": "Jūsų numeris tik mažėja",
+        "inLineHintAll": "Prasideda savaime",
+        "onHoldHint": "Nebus vykdomi, kol nepaleisite",
+        "onHoldHintAuto": "Naujos Grab nuorodos čia nepatenka"
+      },
+      "line": {
+        "now": "Dabar",
+        "yourImport": "Jūsų importas: {{label}}",
+        "private": "Privatus importas",
+        "privateMany_one": "{{count}} privatus importas",
+        "privateMany_few": "{{count}} privatūs importai",
+        "privateMany_other": "{{count}} privačių importų",
+        "nextUp": "Kitas eilėje",
+        "place": "#{{n}} eilėje",
+        "ahead_one": "Prieš jį {{count}} importas",
+        "ahead_few": "Prieš jį {{count}} importai",
+        "ahead_other": "Prieš jį {{count}} importų"
+      },
+      "unit": {
+        "link_one": "{{count}} nuoroda",
+        "link_few": "{{count}} nuorodos",
+        "link_other": "{{count}} nuorodų",
+        "model_one": "{{count}} modelis",
+        "model_few": "{{count}} modeliai",
+        "model_other": "{{count}} modelių"
+      },
+      "action": {
+        "hold": "Sulaikyti",
+        "pause": "Pristabdyti",
+        "pauseHint": "Pristabdyti po dabartinės nuorodos",
+        "start": "Paleisti",
+        "retry": "Kartoti",
+        "retryMany": "Kartoti {{count}}",
+        "pauseAll": "Pristabdyti visus",
+        "retryAll": "Kartoti visus ({{count}})",
+        "startAll": "Paleisti visus sulaikytus ({{count}})",
+        "clearFinished": "Išvalyti baigtus ({{count}})"
+      },
+      "menu": {
+        "more": "Daugiau veiksmų: {{label}}",
+        "openSource": "Atverti šaltinį",
+        "openModel": "Atverti modelį",
+        "openCollection": "Atverti kolekciją",
+        "delete": "Ištrinti importą"
+      },
+      "clear": {
+        "title": "Išvalyti baigtus importus?",
+        "message": "Jie dings iš šio sąrašo kartu su nepavykusiomis nuorodomis, kurių vėliau nebebus galima pakartoti. Jau importuoti modeliai lieka bibliotekoje.",
+        "confirm": "Išvalyti"
+      },
+      "delete": {
+        "title": "Ištrinti šį importą?",
+        "message": "„{{label}}“ bus pašalintas iš eilės. Jau importuoti modeliai lieka bibliotekoje.",
+        "messageSync": "„{{label}}“ bus pašalintas iš eilės visam laikui: sinchronizavimas šių nuorodų nebesugrąžins. Jau importuoti modeliai lieka bibliotekoje.",
+        "confirm": "Ištrinti"
+      },
+      "links": {
+        "show_one": "Rodyti {{count}} nuorodą",
+        "show_few": "Rodyti {{count}} nuorodas",
+        "show_other": "Rodyti {{count}} nuorodų",
+        "hide_one": "Slėpti {{count}} nuorodą",
+        "hide_few": "Slėpti {{count}} nuorodas",
+        "hide_other": "Slėpti {{count}} nuorodų",
+        "remove": "Pašalinti nuorodą",
+        "empty": "Šioje eilėje nėra nuorodų.",
+        "loadFailed": "Nepavyko įkelti nuorodų."
+      },
+      "itemStatus": {
+        "PENDING": "laukia",
+        "RUNNING": "importuojama",
+        "DONE": "importuota",
+        "FAILED": "nepavyko",
+        "cutOff": "nutraukta"
+      },
+      "linkScope": {
+        "designer": "Visi dizainerio spausdinimo profiliai",
+        "all": "Dizainerio ir bendruomenės spausdinimo profiliai"
+      },
+      "syncTag": "SINCH",
+      "syncTagHint": "Sinchronizuojamos kolekcijos vykdomos šalia eilės, todėl jos niekada nestabdo",
+      "syncWaitingHelp": "Sinchronizuojamos kolekcijos vykdomos po vieną šalia eilės ir užleidžia vietą, kol eilė importuoja iš tos pačios svetainės",
+      "type": {
+        "LINKS": "Nuorodos",
+        "COLLECTION": "Kolekcija",
+        "ZIP": "ZIP",
+        "PROFILES": "Spausdinimo profiliai",
+        "SINGLE": "Viena nuoroda"
+      },
+      "status": {
+        "running": "Importuojama",
+        "queued": "Eilėje",
+        "paused": "Sulaikytas",
+        "pausing": "Stabdomas",
+        "error": "Klaida",
+        "partial": "Dalis nepavyko",
+        "done": "Baigtas",
+        "unknown": "Nežinoma"
+      },
+      "statusHint": {
+        "running": "Dabar importuojama.",
+        "queued": "Prasidės savaime, kai ateis jo eilė.",
+        "paused": "Nebus vykdomas, kol kas nors jo nepaleis.",
+        "pausing": "Baigia dabartinę nuorodą ir sustoja.",
+        "error": "Importas nepavyko.",
+        "partial": "Baigta, bet kai kurios nuorodos nepavyko.",
+        "done": "Visos nuorodos importuotos.",
+        "unknown": "Ši Thingport versija tokios būsenos nežino."
+      },
+      "progress": "{{processed}} iš {{total}}",
+      "progressFailed": "{{processed}} iš {{total}}, nepavyko {{failed}}",
+      "why": {
+        "linksFailed_one": "Nepavyko {{count}} nuoroda. Atverkite nuorodas, kad pamatytumėte kodėl.",
+        "linksFailed_few": "Nepavyko {{count}} nuorodos. Atverkite nuorodas, kad pamatytumėte kodėl.",
+        "linksFailed_other": "Nepavyko {{count}} nuorodų. Atverkite nuorodas, kad pamatytumėte kodėl.",
+        "modelsFailed_one": "Nepavyko {{count}} modelis.",
+        "modelsFailed_few": "Nepavyko {{count}} modeliai.",
+        "modelsFailed_other": "Nepavyko {{count}} modelių.",
+        "interruptedNoRetry": "Nutraukta paleidus serverį iš naujo. Dalis failų jau gali būti jūsų bibliotekoje.",
+        "interrupted": "Nutraukta paleidus serverį iš naujo. Modelis jūsų bibliotekoje gali būti nepilnas: prieš kartodami jį ištrinkite.",
+        "interruptedZip": "Nutraukta paleidus serverį iš naujo. Dalis modelių jau importuoti. Pradėkite naują importą tik su trūkstamais failais.",
+        "stalled": "Šis importas nustojo reaguoti, todėl eilė pajudėjo toliau. Jei kartoti nesiūloma, paleiskite serverį iš naujo.",
+        "noRequest": "Šis senesnis importas neturi išsaugotos užklausos."
+      },
+      "when": {
+        "started": "Pradėta {{time}}",
+        "startedJustNow": "Pradėta ką tik",
+        "added": "Pridėta {{time}}",
+        "addedJustNow": "Pridėta ką tik",
+        "waiting": "Laukia",
+        "onHold": "Sulaikytas",
+        "justNow": "Ką tik",
+        "today": "Šiandien, {{time}}",
+        "yesterday": "Vakar"
+      },
+      "indicator": {
+        "label": "Importavimo eilė: {{tip}}",
+        "importing": "Importuojama, {{pct}} %",
+        "importingNoPercent": "Importuojama",
+        "inLine": "Eilėje: {{count}}",
+        "needsAttention_one": "Reikia dėmesio: {{count}}",
+        "needsAttention_few": "Reikia dėmesio: {{count}}",
+        "needsAttention_other": "Reikia dėmesio: {{count}}",
+        "nextUp": "Jūsų importas bus kitas",
+        "nextPlace": "Jūsų kitas importas yra #{{n}} eilėje",
+        "finished": "Visi importai baigti",
+        "onHold": "Sulaikyta: {{count}}",
+        "syncing": "Atnaujinama sinchronizuojama kolekcija",
+        "empty": "Importavimo eilė tuščia"
+      },
+      "toast": {
+        "added": "Pridėta į eilę. Jis bus kitas.",
+        "addedPlace": "Pridėta į eilę. Jis yra #{{n}} eilėje.",
+        "addedPlain": "Pridėta į eilę.",
+        "started": "Importas pradėtas.",
+        "open": "Atverti",
+        "tryAgain": "Bandyti dar kartą",
+        "retriedAll_one": "Vėl eilėje: {{count}} importas.",
+        "retriedAll_few": "Vėl eilėje: {{count}} importai.",
+        "retriedAll_other": "Vėl eilėje: {{count}} importų.",
+        "startedAll_one": "Į eilę pridėtas {{count}} importas.",
+        "startedAll_few": "Į eilę pridėti {{count}} importai.",
+        "startedAll_other": "Į eilę pridėta {{count}} importų.",
+        "cleared_one": "Išvalytas {{count}} baigtas importas.",
+        "cleared_few": "Išvalyti {{count}} baigti importai.",
+        "cleared_other": "Išvalyta {{count}} baigtų importų.",
+        "finishFailed": "Nepavyko importuoti „{{name}}“",
+        "finishedPlain": "„{{name}}“ baigtas",
+        "finishedImported_one": "Importuotas {{count}} modelis.",
+        "finishedImported_few": "Importuoti {{count}} modeliai.",
+        "finishedImported_other": "Importuota {{count}} modelių.",
+        "finishedWithExisting": "Importuota {{imported}}, {{alreadyInLibrary}} jau bibliotekoje.",
+        "finishedWithFailures": "Importuota {{imported}}, {{alreadyInLibrary}} jau bibliotekoje, nepavyko {{failedCount}}.",
+        "finishedSomeFailed_one": "Importuotas {{count}} modelis, nepavyko {{failedCount}}.",
+        "finishedSomeFailed_few": "Importuoti {{count}} modeliai, nepavyko {{failedCount}}.",
+        "finishedSomeFailed_other": "Importuota {{count}} modelių, nepavyko {{failedCount}}.",
+        "finishedAllFailed_one": "Nepavyko importuoti {{count}} modelio.",
+        "finishedAllFailed_few": "Nepavyko importuoti {{count}} modelių.",
+        "finishedAllFailed_other": "Nepavyko importuoti {{count}} modelių.",
+        "finishedExistingFailed": "{{alreadyInLibrary}} jau bibliotekoje, nepavyko {{failedCount}}.",
+        "finishedOnlyExisting": "{{alreadyInLibrary}} jau bibliotekoje.",
+        "finishedMany_one": "Baigtas {{count}} importas.",
+        "finishedMany_few": "Baigti {{count}} importai.",
+        "finishedMany_other": "Baigta {{count}} importų.",
+        "finishedManyFailed_one": "Baigtas {{count}} importas, su klaidomis.",
+        "finishedManyFailed_few": "Baigti {{count}} importai, kai kurie su klaidomis.",
+        "finishedManyFailed_other": "Baigta {{count}} importų, kai kurie su klaidomis."
+      }
     },
     "dashboard": {
       "loadError": "Nepavyko įkelti valdymo skydo.",
@@ -1946,77 +2169,6 @@
               "desc": "Mažiau nei 1 mm arba daugiau nei 2 m: tikriausiai eksportuotas netinkamais vienetais."
             }
           }
-        }
-      },
-      "importQueue": {
-        "heading": "Importavimo eilė",
-        "loadFailed": "Nepavyko įkelti importavimo eilės.",
-        "empty": "Eilė tuščia. Nuorodos, išsiųstos iš Thingport Grab mygtuku „Pridėti į eilę“, laukia čia, kol jas paleisite.",
-        "emptyFilter": "Nėra importų pagal šį filtrą.",
-        "startAll": "Paleisti visus ({{count}})",
-        "retryAll": "Kartoti visus nepavykusius ({{count}})",
-        "pauseAll": "Pristabdyti visus",
-        "clearFinished": "Išvalyti baigtus",
-        "startedAll": "Paleista importų: {{count}}. Jie vykdomi po vieną.",
-        "retriedAll": "Kartojama importų: {{count}}, po vieną.",
-        "cleared": "Išvalyta baigtų importų: {{count}}.",
-        "bulkRunning": "Importai vykdomi po vieną, dar laukia: {{count}}.",
-        "filter": {
-          "all": "Visi",
-          "paused": "Pristabdyti",
-          "running": "Vykdomi",
-          "failed": "Su klaidomis",
-          "done": "Baigti"
-        },
-        "columnSource": "Importas",
-        "columnUser": "Naudotojas",
-        "columnStatus": "Būsena",
-        "columnProgress": "Eiga",
-        "columnCreated": "Sukurta",
-        "columnActions": "Veiksmai",
-        "progress": "{{processed}} iš {{total}}, importuota {{imported}}, nepavyko {{failed}}",
-        "type": {
-          "LINKS": "Nuorodos",
-          "COLLECTION": "Kolekcija",
-          "ZIP": "ZIP",
-          "PROFILES": "Spausdinimo profiliai"
-        },
-        "status": {
-          "paused": "Pristabdytas",
-          "pausing": "Stabdomas",
-          "running": "Vykdomas",
-          "stalled": "Įstrigęs",
-          "error": "Klaida",
-          "done": "Baigtas",
-          "doneWithFailures": "Baigtas su klaidomis"
-        },
-        "statusHint": {
-          "paused": "Laukia paleidimo.",
-          "pausing": "Baigia dabartinę nuorodą ir sustoja.",
-          "running": "Dabar importuojama.",
-          "stalled": "Nutrauktas paleidus serverį iš naujo. Pristabdykite ir paleiskite vėl, kad užbaigtumėte.",
-          "error": "Importas nepavyko.",
-          "done": "Visos nuorodos importuotos.",
-          "doneWithFailures": "Baigta, bet kai kurios nuorodos nepavyko. Pakartokite jas, kai priežastis bus pašalinta."
-        },
-        "start": "Paleisti",
-        "pause": "Pristabdyti po dabartinės nuorodos",
-        "retry": "Kartoti nepavykusias ({{count}})",
-        "delete": "Ištrinti",
-        "deleteTitle": "Ištrinti šį importą?",
-        "deleteMessage": "Jo nuorodos ({{count}}) pašalinamos iš eilės. Jau importuoti modeliai lieka bibliotekoje.",
-        "showLinks": "Rodyti nuorodas",
-        "hideLinks": "Slėpti nuorodas",
-        "removeLink": "Pašalinti iš eilės",
-        "itemStatus": {
-          "PENDING": "laukia",
-          "RUNNING": "importuojama",
-          "DONE": "importuota",
-          "FAILED": "nepavyko"
-        },
-        "scope": {
-          "designer": "Visi dizainerio spausdinimo profiliai",
-          "all": "Dizainerio ir bendruomenės spausdinimo profiliai"
         }
       },
       "storageBrowser": {

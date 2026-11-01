@@ -100,7 +100,6 @@
     "uploadBar": {
       "uploading": "Subiendo…",
       "linkPlaceholder": "Pega el enlace del modelo (MakerWorld, Printables, Thingiverse, MyMiniFactory...)",
-      "importing": "Importando…",
       "importFailed": "Error al importar",
       "uploadFailed": "No se pudo subir: {{files}}",
       "multiplateImportFailedWithMessage": "Importación de varios archivos ({{message}})",
@@ -120,6 +119,7 @@
       "prompt": "¿Cómo quieres gestionar este archivo ZIP?",
       "importAsZip": "Importar como ZIP",
       "importAndUnzip": "Importar y descomprimir",
+      "reading": "Leyendo el ZIP…",
       "selectedCount": "{{selected}} de {{total}} seleccionados",
       "selectAll": "Seleccionar todo",
       "clear": "Desmarcar todo",
@@ -409,7 +409,7 @@
             },
             "imports": {
               "title": "Importaciones",
-              "description": "Progreso de las importaciones en curso."
+              "description": "Tu cola de importación y el progreso de tus importaciones."
             },
             "other": {
               "title": "Todo lo demás",
@@ -466,7 +466,7 @@
       "uploadFiles": "Subir archivos",
       "uploadFolder": "Subir carpeta",
       "importTitle": "Importar desde un enlace",
-      "disabledWhileImporting": "Espera a que termine la importación actual antes de empezar otra",
+      "finishFirst": "Termina primero lo que estás añadiendo",
       "exampleLinksFor": "Enlaces de ejemplo de {{provider}}",
       "exampleModel": "Modelo",
       "exampleCollection": "Colección",
@@ -606,34 +606,257 @@
         "stop": "Dejar de mejorar las descripciones"
       }
     },
-    "importProgress": {
-      "starting": "Iniciando importación…",
-      "label": "{{phrase}} {{processed}} de {{total}}",
-      "phrases": [
-        "Thingportando modelos…",
-        "Abriendo un portal al modelo…",
-        "Teletransportando archivos a tu biblioteca…",
-        "Desempaquetando el 3MF…",
-        "Contando las placas…",
-        "Buscando un Benchy…",
-        "Rescatando modelos de internet…",
-        "Teletransportando sin filamento…",
-        "Agarrando los STL antes de que se alejen…",
-        "Sacudiendo el polvo de las miniaturas…"
-      ],
-      "tooltip": "{{imported}} importados, {{alreadyInLibrary}} ya en tu biblioteca, {{failedCount}} con error. Haz clic para ver la cola.",
-      "done": "Importados: {{imported}}; ya en tu biblioteca: {{alreadyInLibrary}}. Haz clic para ver la cola.",
-      "doneWithFailures": "Importados: {{imported}}; ya en tu biblioteca: {{alreadyInLibrary}}; con error: {{failedCount}}. Haz clic para ver cuáles y por qué.",
-      "tooltipFailed": "{{failedCount}} enlaces han fallado. Haz clic para ver cuáles y por qué.",
-      "retryFailed": "Reintentar fallidos",
-      "dismiss": "Descartar",
-      "queueTitle": "Cola de importación",
-      "queueEmpty": "No hay enlaces en esta cola.",
-      "queueClose": "Cerrar",
-      "itemPending": "en espera",
-      "itemRunning": "importando",
-      "itemDone": "importado",
-      "itemFailed": "con error"
+    "importQueue": {
+      "title": "Cola de importación",
+      "titleEveryone": "Cola de importación del servidor",
+      "importingNow": "Importando ahora: {{count}}",
+      "settings": "Ajustes de la cola",
+      "sectionsLabel": "Secciones de la cola",
+      "autoStart": "Iniciar automáticamente los enlaces de Grab",
+      "autoStartOn": "Los enlaces nuevos entran directamente en la fila.",
+      "autoStartOff": "Los enlaces nuevos quedan retenidos hasta que los inicies.",
+      "scope": {
+        "label": "De quién son las importaciones",
+        "mine": "Mías",
+        "everyone": "De todos"
+      },
+      "people": "Personas",
+      "everyone": "Todos",
+      "loadFailed": "No se pudo cargar la cola de importación.",
+      "sentFromGrab": "Enviado desde Thingport Grab",
+      "untitled": "Importación sin título",
+      "sections": {
+        "run": "Importando",
+        "att": "Requiere atención",
+        "wait": "En espera",
+        "done": "Terminadas"
+      },
+      "panel": {
+        "run": {
+          "sub": "Lo que se está ejecutando ahora, en directo."
+        },
+        "att": {
+          "sub": "Fallidas o interrumpidas, con qué hacer a continuación."
+        },
+        "wait": {
+          "subMine": "Se ejecuta una importación cada vez, por orden. Las importaciones de otras personas son privadas.",
+          "subAll": "Se ejecuta una importación cada vez en todo el servidor, por orden."
+        },
+        "done": {
+          "sub": "Importaciones terminadas."
+        }
+      },
+      "empty": {
+        "running": {
+          "busyTitle": "Hay otra importación en curso",
+          "busyNext": "Tu próxima importación es la #{{n}} de la fila y empezará sola.",
+          "busyNone": "Las importaciones se ejecutan de una en una. Las tuyas empezarán solas cuando les toque.",
+          "title": "Nada importándose",
+          "text": "Aquí se muestra el progreso de las importaciones mientras se ejecutan."
+        },
+        "att": {
+          "title": "Todo en orden",
+          "text": "Aquí llegan las importaciones fallidas e interrumpidas."
+        },
+        "wait": {
+          "title": "Nada en espera",
+          "text": "Las importaciones nuevas esperan aquí su turno. Los enlaces que envías con «Añadir a la cola» en Thingport Grab quedan retenidos hasta que los inicies."
+        },
+        "done": {
+          "title": "Aún no ha terminado nada",
+          "text": "Las importaciones completadas se quedan aquí hasta que las borres."
+        }
+      },
+      "group": {
+        "inLine": "En la fila",
+        "onHold": "Retenidas",
+        "inLineHintMine": "Tu número solo baja",
+        "inLineHintAll": "Empiezan solas",
+        "onHoldHint": "No se ejecutan hasta que se inicien",
+        "onHoldHintAuto": "Los enlaces nuevos de Grab no pasan por aquí"
+      },
+      "line": {
+        "now": "Ahora",
+        "yourImport": "Tu importación: {{label}}",
+        "private": "Importación privada",
+        "privateMany_one": "{{count}} importación privada",
+        "privateMany_many": "{{count}} importaciones privadas",
+        "privateMany_other": "{{count}} importaciones privadas",
+        "nextUp": "La siguiente",
+        "place": "#{{n}} en la fila",
+        "ahead_one": "{{count}} importación por delante",
+        "ahead_many": "{{count}} importaciones por delante",
+        "ahead_other": "{{count}} importaciones por delante"
+      },
+      "unit": {
+        "link_one": "{{count}} enlace",
+        "link_many": "{{count}} enlaces",
+        "link_other": "{{count}} enlaces",
+        "model_one": "{{count}} modelo",
+        "model_many": "{{count}} modelos",
+        "model_other": "{{count}} modelos"
+      },
+      "action": {
+        "hold": "Retener",
+        "pause": "Pausar",
+        "pauseHint": "Pausar tras el enlace actual",
+        "start": "Iniciar",
+        "retry": "Reintentar",
+        "retryMany": "Reintentar {{count}}",
+        "pauseAll": "Pausar todas",
+        "retryAll": "Reintentar todas ({{count}})",
+        "startAll": "Iniciar todas las retenidas ({{count}})",
+        "clearFinished": "Borrar terminadas ({{count}})"
+      },
+      "menu": {
+        "more": "Más acciones para {{label}}",
+        "openSource": "Abrir origen",
+        "openModel": "Abrir modelo",
+        "openCollection": "Abrir colección",
+        "delete": "Eliminar importación"
+      },
+      "clear": {
+        "title": "¿Borrar las importaciones terminadas?",
+        "message": "Salen de esta lista junto con sus enlaces fallidos, que ya no se podrán reintentar. Los modelos ya importados se mantienen en la biblioteca.",
+        "confirm": "Borrar"
+      },
+      "delete": {
+        "title": "¿Eliminar esta importación?",
+        "message": "Esto quita «{{label}}» de la cola. Los modelos ya importados se mantienen en la biblioteca.",
+        "messageSync": "Esto quita «{{label}}» de la cola para siempre: la sincronización no volverá a traer sus enlaces. Los modelos ya importados se mantienen en la biblioteca.",
+        "confirm": "Eliminar"
+      },
+      "links": {
+        "show_one": "Mostrar {{count}} enlace",
+        "show_many": "Mostrar {{count}} enlaces",
+        "show_other": "Mostrar {{count}} enlaces",
+        "hide_one": "Ocultar {{count}} enlace",
+        "hide_many": "Ocultar {{count}} enlaces",
+        "hide_other": "Ocultar {{count}} enlaces",
+        "remove": "Quitar enlace",
+        "empty": "No hay enlaces en esta cola.",
+        "loadFailed": "No se pudieron cargar los enlaces."
+      },
+      "itemStatus": {
+        "PENDING": "en espera",
+        "RUNNING": "importando",
+        "DONE": "importado",
+        "FAILED": "con error",
+        "cutOff": "interrumpido"
+      },
+      "linkScope": {
+        "designer": "Todos los perfiles de impresión de diseñadores",
+        "all": "Perfiles de impresión de diseñadores y de la comunidad"
+      },
+      "syncTag": "SINC",
+      "syncTagHint": "Las colecciones sincronizadas se ejecutan junto a la fila, así que nunca la retrasan",
+      "syncWaitingHelp": "Las colecciones sincronizadas se ejecutan de una en una junto a la fila, y ceden el paso mientras esta importa del mismo sitio",
+      "type": {
+        "LINKS": "Enlaces",
+        "COLLECTION": "Colección",
+        "ZIP": "ZIP",
+        "PROFILES": "Perfiles de impresión",
+        "SINGLE": "Un enlace"
+      },
+      "status": {
+        "running": "Importando",
+        "queued": "En la fila",
+        "paused": "Retenida",
+        "pausing": "Pausando",
+        "error": "Error",
+        "partial": "Algunos fallaron",
+        "done": "Terminada",
+        "unknown": "Desconocido"
+      },
+      "statusHint": {
+        "running": "Importando ahora.",
+        "queued": "Empieza sola cuando le toque.",
+        "paused": "No se ejecutará hasta que alguien la inicie.",
+        "pausing": "Terminando el enlace en curso y después se detiene.",
+        "error": "La importación ha fallado.",
+        "partial": "Terminada, pero algunos enlaces han fallado.",
+        "done": "Todos los enlaces importados.",
+        "unknown": "Esta versión de Thingport no conoce este estado."
+      },
+      "progress": "{{processed}} de {{total}}",
+      "progressFailed": "{{processed}} de {{total}}, {{failed}} con error",
+      "why": {
+        "linksFailed_one": "{{count}} enlace ha fallado. Abre los enlaces para ver por qué.",
+        "linksFailed_many": "{{count}} enlaces han fallado. Abre los enlaces para ver por qué.",
+        "linksFailed_other": "{{count}} enlaces han fallado. Abre los enlaces para ver por qué.",
+        "modelsFailed_one": "{{count}} modelo ha fallado.",
+        "modelsFailed_many": "{{count}} modelos han fallado.",
+        "modelsFailed_other": "{{count}} modelos han fallado.",
+        "interruptedNoRetry": "Interrumpida por un reinicio del servidor. Puede que algunos archivos ya estén en tu biblioteca.",
+        "interrupted": "Interrumpida por un reinicio del servidor. Puede que un modelo esté incompleto en tu biblioteca: bórralo antes de reintentar.",
+        "interruptedZip": "Interrumpida por un reinicio del servidor. Algunos modelos ya están dentro. Empieza una nueva importación solo con los archivos que faltan.",
+        "stalled": "Esta importación dejó de responder, así que la fila siguió adelante. Si no se ofrece Reintentar, reinicia el servidor.",
+        "noRequest": "Esta importación antigua no tiene una solicitud guardada."
+      },
+      "when": {
+        "started": "Iniciada {{time}}",
+        "startedJustNow": "Iniciada ahora mismo",
+        "added": "Añadida {{time}}",
+        "addedJustNow": "Añadida ahora mismo",
+        "waiting": "En espera",
+        "onHold": "Retenida",
+        "justNow": "Ahora mismo",
+        "today": "Hoy, {{time}}",
+        "yesterday": "Ayer"
+      },
+      "indicator": {
+        "label": "Cola de importación: {{tip}}",
+        "importing": "Importando, {{pct}} %",
+        "importingNoPercent": "Importando",
+        "inLine": "En la fila: {{count}}",
+        "needsAttention_one": "{{count}} requiere atención",
+        "needsAttention_many": "{{count}} requieren atención",
+        "needsAttention_other": "{{count}} requieren atención",
+        "nextUp": "Tu próxima importación es la siguiente",
+        "nextPlace": "Tu próxima importación es la #{{n}} de la fila",
+        "finished": "Todas las importaciones han terminado",
+        "onHold": "Retenidas: {{count}}",
+        "syncing": "Se está actualizando una colección sincronizada",
+        "empty": "La cola de importación está vacía"
+      },
+      "toast": {
+        "added": "Añadida a la cola. Es la siguiente.",
+        "addedPlace": "Añadida a la cola. Es la #{{n}} de la fila.",
+        "addedPlain": "Añadida a la cola.",
+        "started": "Importación iniciada.",
+        "open": "Abrir",
+        "tryAgain": "Reintentar",
+        "retriedAll_one": "De vuelta en la fila: {{count}} importación.",
+        "retriedAll_many": "De vuelta en la fila: {{count}} importaciones.",
+        "retriedAll_other": "De vuelta en la fila: {{count}} importaciones.",
+        "startedAll_one": "Se ha añadido {{count}} importación a la fila.",
+        "startedAll_many": "Se han añadido {{count}} importaciones a la fila.",
+        "startedAll_other": "Se han añadido {{count}} importaciones a la fila.",
+        "cleared_one": "Se ha borrado {{count}} importación terminada.",
+        "cleared_many": "Se han borrado {{count}} importaciones terminadas.",
+        "cleared_other": "Se han borrado {{count}} importaciones terminadas.",
+        "finishFailed": "No se pudo importar “{{name}}”",
+        "finishedPlain": "“{{name}}” ha terminado",
+        "finishedImported_one": "Importado {{count}} modelo.",
+        "finishedImported_many": "Importados {{count}} modelos.",
+        "finishedImported_other": "Importados {{count}} modelos.",
+        "finishedWithExisting": "Importados: {{imported}}; ya en tu biblioteca: {{alreadyInLibrary}}.",
+        "finishedWithFailures": "Importados: {{imported}}; ya en tu biblioteca: {{alreadyInLibrary}}; con error: {{failedCount}}.",
+        "finishedSomeFailed_one": "Importado {{count}} modelo; con error: {{failedCount}}.",
+        "finishedSomeFailed_many": "Importados {{count}} modelos; con error: {{failedCount}}.",
+        "finishedSomeFailed_other": "Importados {{count}} modelos; con error: {{failedCount}}.",
+        "finishedAllFailed_one": "No se pudo importar {{count}} modelo.",
+        "finishedAllFailed_many": "No se pudieron importar {{count}} modelos.",
+        "finishedAllFailed_other": "No se pudieron importar {{count}} modelos.",
+        "finishedExistingFailed": "Ya en tu biblioteca: {{alreadyInLibrary}}; con error: {{failedCount}}.",
+        "finishedOnlyExisting": "Ya en tu biblioteca: {{alreadyInLibrary}}.",
+        "finishedMany_one": "{{count}} importación terminada.",
+        "finishedMany_many": "{{count}} importaciones terminadas.",
+        "finishedMany_other": "{{count}} importaciones terminadas.",
+        "finishedManyFailed_one": "{{count}} importación terminada, con problemas.",
+        "finishedManyFailed_many": "{{count}} importaciones terminadas, algunas con problemas.",
+        "finishedManyFailed_other": "{{count}} importaciones terminadas, algunas con problemas."
+      }
     },
     "dashboard": {
       "loadError": "No se pudo cargar tu panel.",
@@ -1911,77 +2134,6 @@
               "desc": "Menos de 1 mm o más de 2 m: probablemente se exportó en la unidad equivocada."
             }
           }
-        }
-      },
-      "importQueue": {
-        "heading": "Cola de importación",
-        "loadFailed": "No se pudo cargar la cola de importación.",
-        "empty": "No hay nada en la cola. Los enlaces enviados desde Thingport Grab con «Añadir a la cola» esperan aquí hasta que los inicies.",
-        "emptyFilter": "Ninguna importación coincide con este filtro.",
-        "startAll": "Iniciar todas ({{count}})",
-        "retryAll": "Reintentar todas las fallidas ({{count}})",
-        "pauseAll": "Pausar todas",
-        "clearFinished": "Borrar terminadas",
-        "startedAll": "Se han iniciado {{count}} importación(es). Se ejecutan de una en una.",
-        "retriedAll": "Reintentando {{count}} importación(es), de una en una.",
-        "cleared": "Se han borrado {{count}} importación(es) terminada(s).",
-        "bulkRunning": "Importaciones en curso de una en una, {{count}} más en espera.",
-        "filter": {
-          "all": "Todas",
-          "paused": "En pausa",
-          "running": "En curso",
-          "failed": "Con errores",
-          "done": "Terminadas"
-        },
-        "columnSource": "Importación",
-        "columnUser": "Usuario",
-        "columnStatus": "Estado",
-        "columnProgress": "Progreso",
-        "columnCreated": "Creada",
-        "columnActions": "Acciones",
-        "progress": "{{processed}} de {{total}}, {{imported}} importados, {{failed}} con error",
-        "type": {
-          "LINKS": "Enlaces",
-          "COLLECTION": "Colección",
-          "ZIP": "ZIP",
-          "PROFILES": "Perfiles de impresión"
-        },
-        "status": {
-          "paused": "En pausa",
-          "pausing": "Pausando",
-          "running": "En curso",
-          "stalled": "Bloqueada",
-          "error": "Error",
-          "done": "Terminada",
-          "doneWithFailures": "Terminada, con errores"
-        },
-        "statusHint": {
-          "paused": "Esperando a que se inicie.",
-          "pausing": "Terminando el enlace en curso y después se detiene.",
-          "running": "Importando ahora.",
-          "stalled": "Interrumpida por un reinicio. Ponla en pausa y luego vuelve a iniciarla para terminar.",
-          "error": "La importación ha fallado.",
-          "done": "Todos los enlaces importados.",
-          "doneWithFailures": "Terminada, pero algunos enlaces han fallado. Reinténtalos cuando se solucione la causa."
-        },
-        "start": "Iniciar",
-        "pause": "Pausar tras el enlace actual",
-        "retry": "Reintentar {{count}} fallidos",
-        "delete": "Eliminar",
-        "deleteTitle": "¿Eliminar esta importación?",
-        "deleteMessage": "Sus {{count}} enlace(s) se quitan de la cola. Los modelos ya importados se mantienen en la biblioteca.",
-        "showLinks": "Mostrar enlaces",
-        "hideLinks": "Ocultar enlaces",
-        "removeLink": "Quitar de la cola",
-        "itemStatus": {
-          "PENDING": "en espera",
-          "RUNNING": "importando",
-          "DONE": "importado",
-          "FAILED": "con error"
-        },
-        "scope": {
-          "designer": "Todos los perfiles de impresión de diseñadores",
-          "all": "Perfiles de impresión de diseñadores y de la comunidad"
         }
       },
       "storageBrowser": {

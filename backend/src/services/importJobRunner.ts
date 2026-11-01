@@ -18,7 +18,23 @@ import {
 } from "../providers/registry";
 import type { ListBatch, ListImportBody, ProfileScope, SourcedImport, StopTexts } from "../providers/types";
 import { IMPORT_COLLECTION_DELAY_MS, IMPORT_MAKERWORLD_CALL_DELAY_MS } from "../config";
-import { countJobItems, getJob, getJobStatus, listJobItems, updateJob, updateJobItem } from "./importJobService";
+import { syncSchedulerEnabled } from "./collectionSyncSchedule";
+import {
+  countJobItems,
+  getJob,
+  getJobStatus,
+  isImportingFrom,
+  jobPayload,
+  jobProgress,
+  listJobItems,
+  QUEUE_ATTENTION_PATH,
+  QUEUE_WAITING_PATH,
+  saveFailureSummary,
+  updateJob,
+  updateJobItem,
+} from "./importJobService";
+import { noteImportActivity } from "./importActivity";
+import { type ImportOutcome, notifySingleImport } from "./modelNotifications";
 import { createNotification } from "./notificationService";
 import { addPrintsToCollection, findOrCreateCollectionByName } from "./collectionService";
 import { modelIdFromUrl, providerName, syncedCollectionFor } from "./collectionSyncService";
@@ -33,7 +49,7 @@ import { CLOUDFLARE_BLOCKED_CODE } from "./flaresolverr";
 import { PROVIDER_DISABLED_CODE } from "./providerSettingsService";
 import { HttpError } from "../utils/fileUtils";
 import { prisma } from "../db";
-import type { ImportJob } from "@prisma/client";
+import type { ImportJob, Prisma } from "@prisma/client";
 import { createLogger } from "../logger";
 
 const log = createLogger("import");
@@ -97,10 +113,26 @@ function asStopReason(reason: ImportFailureReason): StopReason | null {
     : null;
 }
 
+/** All undici says when a connection drops partway through a body. */
+function isDownloadCutOff(err: unknown): boolean {
+  return err instanceof TypeError && err.message === "terminated";
+}
+
+const DOWNLOAD_CUT_OFF_TEXT = "The download was cut off.";
+
 export async function markJobFailed(jobId: string, err: unknown): Promise<void> {
-  const message = err instanceof Error ? err.message : "Import failed";
+  const message = isDownloadCutOff(err) ? DOWNLOAD_CUT_OFF_TEXT : err instanceof Error ? err.message : "Import failed";
   log.error("job failed", { job: jobId, error: err });
   await updateJob(jobId, { status: "ERROR", errorMessage: message }).catch(() => undefined);
+}
+
+/** What a batch's notification says went wrong, as a line of its own for its card. Best effort, as a notification is. */
+export async function noteFailureSummary(jobId: string, parts: string[]): Promise<void> {
+  if (!parts.length) return;
+  const text = parts.join(", ");
+  await saveFailureSummary(jobId, `${text.charAt(0).toUpperCase()}${text.slice(1)}.`).catch((err) =>
+    log.warn("couldn't save why a job's models failed", { job: jobId, error: err }),
+  );
 }
 
 export type ProfileImportTotals = {
@@ -129,6 +161,7 @@ export async function importProfileUrlsSequentially(
     stopReason: null,
   };
   for (const profileUrl of profileUrls) {
+    noteImportActivity();
     if (totals.stopReason) {
       totals.failed++;
     } else {
@@ -166,18 +199,16 @@ async function runProfilesImportJob(
     const { title, urls } = await profileUrls(body.url, body.scope);
     await updateJob(jobId, { total: urls.length, sourceLabel: title });
     log.info(`${provider} profiles job started`, { job: jobId, url: body.url, profiles: urls.length });
-    const totals = await importProfileUrlsSequentially(
-      userId,
-      urls,
-      body,
-      (t) =>
-        void updateJob(jobId, {
-          processed: t.processed,
-          imported: t.imported,
-          alreadyInLibrary: t.alreadyInLibrary,
-          failedCount: t.failed,
-        }).catch(() => undefined),
+    const progress = jobProgress(jobId);
+    const totals = await importProfileUrlsSequentially(userId, urls, body, (t) =>
+      progress.write({
+        processed: t.processed,
+        imported: t.imported,
+        alreadyInLibrary: t.alreadyInLibrary,
+        failedCount: t.failed,
+      }),
     );
+    await progress.settled();
     const { imported, alreadyInLibrary, failed, stopReason, printId } = totals;
     await updateJob(jobId, {
       status: "DONE",
@@ -193,17 +224,18 @@ async function runProfilesImportJob(
       targetId: printId,
       details: { provider: provider, sourceLabel: title, imported, alreadyInLibrary, failed },
     });
-    const bodyParts: string[] = [];
-    if (alreadyInLibrary) bodyParts.push(`${alreadyInLibrary} already on the model`);
-    if (stopReason === "auth") bodyParts.push(`the rest failed because ${PROVIDERS[provider].authStopText}`);
-    else if (failed) bodyParts.push(`${failed} failed`);
+    const failureParts: string[] = [];
+    if (stopReason === "auth") failureParts.push(`the rest failed because ${PROVIDERS[provider].authStopText}`);
+    else if (failed) failureParts.push(`${failed} failed`);
+    await noteFailureSummary(jobId, failureParts);
+    const bodyParts = [...(alreadyInLibrary ? [`${alreadyInLibrary} already on the model`] : []), ...failureParts];
     const label = title ? `"${title}"` : `a ${name} model`;
     await createNotification(userId, {
       type: "import",
       title: `Imported ${imported} of ${urls.length} print profiles from ${name}`,
       body: bodyParts.length ? `Of ${label} — ${bodyParts.join(", ")}.` : `Of ${label}.`,
       externalUrl: body.url,
-      internalPath: printId ? `/models/${printId}` : null,
+      internalPath: printId ? `/models/${printId}` : failed ? QUEUE_ATTENTION_PATH : null,
     });
   } catch (err) {
     await markJobFailed(jobId, err);
@@ -320,34 +352,41 @@ export async function runListImportJob(
       details: { provider, sourceLabel: collectionTitle, imported, alreadyInLibrary, failed: failed.length },
     });
 
-    const bodyParts: string[] = [];
-    if (alreadyInLibrary) bodyParts.push(`${alreadyInLibrary} already in your library`);
+    const failureParts: string[] = [];
     const otherFailed = failed.length - unavailable - rateLimited - authFailed - providerOff - downloadLimited;
     if (unavailable)
-      bodyParts.push(`${unavailable} ${lists?.unavailableText ?? "unavailable (private, deleted, paid, or hidden)"}`);
-    if (providerOff) bodyParts.push(`${providerOff} skipped — ${PROVIDER_OFF_TEXT(name)}`);
+      failureParts.push(
+        `${unavailable} ${lists?.unavailableText ?? "unavailable (private, deleted, paid, or hidden)"}`,
+      );
+    if (providerOff) failureParts.push(`${providerOff} skipped — ${PROVIDER_OFF_TEXT(name)}`);
     if (rateLimited) {
       const possessive = name.endsWith("s") ? `${name}'` : `${name}'s`;
-      bodyParts.push(
+      failureParts.push(
         `${rateLimited} ${lists?.rateLimitText ?? `blocked by ${possessive} rate limit — wait a while, then retry`}`,
       );
     }
     if (authFailed) {
-      bodyParts.push(`${authFailed} ${lists?.authText ?? `failed because ${PROVIDERS[provider].authStopText}`}`);
+      failureParts.push(`${authFailed} ${lists?.authText ?? `failed because ${PROVIDERS[provider].authStopText}`}`);
     }
     if (downloadLimited) {
-      bodyParts.push(
+      failureParts.push(
         `${downloadLimited} not downloaded — ${name}'s daily download limit was reached, retry the same collection tomorrow`,
       );
     }
-    if (otherFailed) bodyParts.push(`${otherFailed} failed`);
+    if (otherFailed) failureParts.push(`${otherFailed} failed`);
+    await noteFailureSummary(jobId, failureParts);
+    const bodyParts = [...(alreadyInLibrary ? [`${alreadyInLibrary} already in your library`] : []), ...failureParts];
     const label = batch.label?.(collectionTitle) ?? `"${collectionTitle}"`;
     await createNotification(userId, {
       type: "import",
       title: `Imported ${imported} of ${ids.length} models from ${name}`,
       body: bodyParts.length ? `From ${label} — ${bodyParts.join(", ")}.` : `From ${label}.`,
       externalUrl: body.url,
-      internalPath: resultCollectionId ? `/models/collections/${resultCollectionId}` : null,
+      internalPath: resultCollectionId
+        ? `/models/collections/${resultCollectionId}`
+        : failed.length
+          ? QUEUE_ATTENTION_PATH
+          : null,
     });
   } catch (err) {
     await markJobFailed(jobId, err);
@@ -366,6 +405,7 @@ export async function runZipImportJob(jobId: string, userId: string, body: ZipIm
     log.info("zip job started", { job: jobId, file: filename, entries: body.entries.length });
 
     const author = await upsertAuthorFromImport(meta.author);
+    const progress = jobProgress(jobId);
     const { prints, failed } = await extractZipEntriesToPrints(
       userId,
       tempPath,
@@ -381,9 +421,10 @@ export async function runZipImportJob(jobId: string, userId: string, body: ZipIm
         galleryImages: meta.galleryImages,
       },
       (processed, total, imported, failedSoFar) => {
-        void updateJob(jobId, { processed, total, imported, failedCount: failedSoFar });
+        progress.write({ processed, total, imported, failedCount: failedSoFar });
       },
     );
+    await progress.settled();
 
     log.info("zip job done", { job: jobId, file: filename, imported: prints.length, failed: failed.length });
     await updateJob(jobId, {
@@ -401,6 +442,7 @@ export async function runZipImportJob(jobId: string, userId: string, body: ZipIm
 
     const bodyParts: string[] = [];
     if (failed.length) bodyParts.push(`${failed.length} failed`);
+    await noteFailureSummary(jobId, bodyParts);
     await createNotification(userId, {
       type: "import",
       title: `Imported ${prints.length} of ${body.entries.length} models from ${filename}`,
@@ -419,7 +461,7 @@ export async function runZipImportJob(jobId: string, userId: string, body: ZipIm
 export type LinksImportJobBody = ImportRequestBody & { scope?: ProfileScope; itemDelayMs?: number };
 
 /** What a link sent from the extension's "Add to the queue" carries on its own item, over the job's
- *  shared body: the panel's collection and profile scope, and the page title for the queue page. */
+ *  shared body: the panel's collection and profile scope, and the page title to list it by. */
 export type QueuedLinkOptions = {
   collection_id?: string | null;
   scope?: ProfileScope;
@@ -436,17 +478,31 @@ export function parseQueuedLinkOptions(payload: unknown): QueuedLinkOptions {
   };
 }
 
-// Runners alive in this process, by job. A PAUSED job's runner may still be finishing its current
-// link, and a DONE one its notification; starting the job again before then would run it twice.
+// Runners alive in this process, by job: every LINKS job's, and whatever the worker runs. A PAUSED job's runner may
+// still be finishing its current link, and a DONE one its notification; starting the job again before then would run
+// it twice.
 const liveRunners = new Map<string, Promise<void>>();
 
 export function isRunnerLive(jobId: string): boolean {
   return liveRunners.has(jobId);
 }
 
+export function liveRunnerIds(): string[] {
+  return [...liveRunners.keys()];
+}
+
 /** Settles when the job's runner stops, or right away when none is alive. */
 export function runnerSettled(jobId: string): Promise<void> {
   return liveRunners.get(jobId) ?? Promise.resolve();
+}
+
+/** Makes `run` the job's runner until it settles, so the job counts as owned up to its last write. */
+export function trackRunner(jobId: string, run: Promise<void>): Promise<void> {
+  const tracked = run.finally(() => {
+    if (liveRunners.get(jobId) === tracked) liveRunners.delete(jobId);
+  });
+  liveRunners.set(jobId, tracked);
+  return tracked;
 }
 
 // Three tries for a network-ish failure; a provider's own 4xx answer won't change on a retry.
@@ -477,6 +533,7 @@ function isTransientImportFailure(err: unknown): boolean {
 }
 
 function failureMessage(err: unknown): string {
+  if (isDownloadCutOff(err)) return DOWNLOAD_CUT_OFF_TEXT;
   return err instanceof Error && err.message.trim() ? err.message.trim() : "Import failed";
 }
 
@@ -494,12 +551,13 @@ async function importOneLink(
   userId: string,
   url: string,
   body: LinksImportJobBody,
-): Promise<ProfileImportTotals & { profiles: boolean }> {
+): Promise<ProfileImportTotals & { profiles: boolean; outcome: ImportOutcome }> {
   const provider = detectProvider(url);
   const profileUrls = provider && profileUrlsOf(provider);
   if (profileUrls && URLS[provider!].parseModel(url) && body.scope && body.scope !== "url") {
     const { urls } = await profileUrls(url, body.scope, body);
-    return { ...(await importProfileUrlsSequentially(userId, urls, { ...body, url })), profiles: true };
+    const totals = await importProfileUrlsSequentially(userId, urls, { ...body, url });
+    return { ...totals, profiles: true, outcome: totals.imported ? "created" : "already_imported" };
   }
   const result = await importPrintFromUrl(userId, url, { ...body, url });
   return {
@@ -510,6 +568,7 @@ async function importOneLink(
     printId: result.print.id,
     stopReason: null,
     profiles: false,
+    outcome: result.alreadyImported ? "already_imported" : result.profileAdded ? "profile_added" : "created",
   };
 }
 
@@ -522,17 +581,47 @@ export function runLinksImportJob(jobId: string, userId: string, body: LinksImpo
     log.warn("a runner is already working on this job, not starting another", { job: jobId });
     return Promise.resolve();
   }
-  const run = runLinks(jobId, userId, body).finally(() => {
-    if (liveRunners.get(jobId) === run) liveRunners.delete(jobId);
-  });
-  liveRunners.set(jobId, run);
-  return run;
+  return trackRunner(jobId, runLinks(jobId, userId, body));
+}
+
+const SINGLE_FAILED_TEXT = "Something went wrong on the server.";
+
+/** A one-link job's end, as any import of one link's (services/singleImport.ts): told by itself, not as a batch.
+ *  `failure`: what went wrong in this run; a link cut off by a restart says it on its item. */
+async function finishSingleJob(
+  job: ImportJob,
+  print: { id: string; name: string; title: string | null } | null,
+  outcome: ImportOutcome | null,
+  failure: string | null,
+): Promise<void> {
+  const url = job.sourceUrl;
+  let result: Parameters<typeof notifySingleImport>[2];
+  if (print && outcome) {
+    void createLog({
+      userId: job.userId,
+      action: "model_imported",
+      targetId: print.id,
+      details: { name: print.name, url },
+    });
+    result = { printId: print.id, name: print.title || print.name, outcome };
+  } else {
+    const failed = (await listJobItems(job.id)).find((item) => item.status === "FAILED");
+    result = { error: failure ?? failed?.errorMessage ?? SINGLE_FAILED_TEXT, internalPath: QUEUE_ATTENTION_PATH };
+  }
+  await notifySingleImport(job.userId, url, result).catch((err) =>
+    log.error("couldn't notify about an import", { job: job.id, error: err }),
+  );
 }
 
 async function runLinks(jobId: string, userId: string, body: LinksImportJobBody): Promise<void> {
   try {
     const job = await getJob(jobId, userId);
     if (!job) throw new HttpError(404, "Import job not found");
+    const payload = jobPayload(job);
+    const single = payload.single === true;
+    // A one-link job's outcome, and why it failed, in the words a person is told.
+    let outcome: ImportOutcome | null = null;
+    let failure: string | null = null;
     const items = (await listJobItems(jobId)).filter((item) => item.status === "PENDING");
     const total = await countJobItems(jobId, { in: ["PENDING", "RUNNING", "DONE", "FAILED"] });
     log.info("links job running", { job: jobId, pending: items.length, total });
@@ -551,21 +640,35 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
     // A link's provider was turned off; links from other providers carry on.
     let providerOff = false;
     let processed = (await countJobItems(jobId, "DONE")) + (await countJobItems(jobId, "FAILED"));
-    // The models this run brought in new, for a sync's notification.
-    const newPrintIds: string[] = [];
+    // The models this job has brought in new, for a sync's notification: it comes at the end of the last run, and a job
+    // that gave way or was held has had others before it.
+    const newPrintIds: string[] = Array.isArray(payload.sync_new) ? (payload.sync_new as string[]).slice() : [];
+    const filedBefore = syncFiled(job);
     // MakerOnline links, handed to Thingport Grab: only it can get their files.
     let waitingForGrab = 0;
 
     for (const [index, item] of items.entries()) {
       if (index > 0 && body.itemDelayMs) await sleep(body.itemDelayMs);
-      // Pausing only flips the status; the link that's importing finishes and the rest wait.
-      if ((await getJobStatus(jobId)) === "PAUSED") {
-        log.info("links job paused", { job: jobId, processed, total });
+      // Pausing only flips the status; the link that's importing finishes and the rest wait. So it goes for anything
+      // else that took the job from its runner: the watchdog, or its owner's account going with it.
+      const status = await getJobStatus(jobId);
+      if (status !== "RUNNING") {
+        log.info("links job stopped", { job: jobId, status, processed, total });
         return;
       }
       const options = parseQueuedLinkOptions(item.payload);
       const itemBody: LinksImportJobBody = options.scope ? { ...body, scope: options.scope } : body;
       const itemProvider = detectProvider(item.url);
+      // A sync gives way to an import from the same provider and hands the lane on, its links waiting for a later look.
+      // A person's pause, just made, stays a pause.
+      if (job.collectionSyncId && itemProvider && (await isImportingFrom(itemProvider, jobId))) {
+        await prisma.importJob.updateMany({
+          where: { id: jobId, status: "RUNNING" },
+          data: { status: "PAUSED", errorMessage: SYNC_JOB_WAITING },
+        });
+        syncLog.info("job gave way", { job: jobId, provider: itemProvider });
+        return;
+      }
       const grabQueue = itemProvider ? PROVIDERS[itemProvider].grabQueue : undefined;
       if (grabQueue && URLS[itemProvider!].parseModel(item.url)) {
         await grabQueue.queue(userId, item.url, {
@@ -601,6 +704,7 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
         }
         try {
           const result = await importOneLink(userId, item.url, itemBody);
+          outcome = result.outcome;
           // A link is one model however many of its profiles came in.
           if (result.imported && result.printId) newPrintIds.push(result.printId);
           if (result.imported) imported++;
@@ -634,6 +738,7 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
           }
         } catch (err) {
           itemError = failureMessage(err);
+          failure = err instanceof HttpError ? err.message : isDownloadCutOff(err) ? itemError : SINGLE_FAILED_TEXT;
           stopReason = asStopReason(classifyImportFailure(err)) ?? stopReason;
           if (classifyImportFailure(err) === "disabled") providerOff = true;
           if (!isTransientImportFailure(err) || attempts >= LINKS_MAX_ATTEMPTS) {
@@ -695,6 +800,16 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
         imported: job.imported + imported,
         alreadyInLibrary: job.alreadyInLibrary + alreadyInLibrary,
         failedCount: await countJobItems(jobId, "FAILED"),
+        // With every link: a sync's run can end at any of them, by giving way, a person's pause or a restart.
+        ...(job.collectionSyncId
+          ? {
+              payload: {
+                ...payload,
+                sync_filed: filedBefore + alreadyInLibrary,
+                sync_new: newPrintIds,
+              } as Prisma.InputJsonValue,
+            }
+          : {}),
       }).catch(() => undefined);
     }
 
@@ -706,20 +821,36 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
       already_in_library: job.alreadyInLibrary + alreadyInLibrary,
       failed: failedCount,
     });
+    // A link handed to Grab hasn't imported anything yet, and one with nothing to tell (cut off after it finished) has
+    // no model to name: both end as any job does.
+    const singlePrint =
+      single && !waitingForGrab && !failedCount && printId
+        ? await prisma.print.findUnique({ where: { id: printId }, select: { id: true, name: true, title: true } })
+        : null;
+    const singleTrail = single && !waitingForGrab && (failedCount > 0 || singlePrint !== null);
     await updateJob(jobId, {
       status: "DONE",
       processed,
       imported: totalImported,
       alreadyInLibrary: job.alreadyInLibrary + alreadyInLibrary,
       failedCount,
-      resultPrintId: totalImported === 1 ? (printId ?? job.resultPrintId) : null,
+      // A model already in the library must still open.
+      resultPrintId: totalImported === 1 || singleTrail ? (printId ?? job.resultPrintId) : null,
+      ...(singlePrint && outcome
+        ? {
+            sourceLabel: singlePrint.title || singlePrint.name,
+            payload: { ...jobPayload(job), outcome } as Prisma.InputJsonValue,
+          }
+        : {}),
     });
-    void createLog({
-      userId,
-      action: "import_completed",
-      targetId: printId ?? job.resultPrintId,
-      details: { provider: "links", imported, alreadyInLibrary, failed: failedCount },
-    });
+    if (!singleTrail) {
+      void createLog({
+        userId,
+        action: "import_completed",
+        targetId: printId ?? job.resultPrintId,
+        details: { provider: "links", imported, alreadyInLibrary, failed: failedCount },
+      });
+    }
 
     const stopProvider = stopReason === "auth" && stopUrl ? detectProvider(stopUrl) : null;
     if (stopProvider) {
@@ -733,7 +864,28 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
     if (job.collectionSyncId && (await notifySyncJobDone(job, newPrintIds, alreadyInLibrary, failedCount, deferred))) {
       return;
     }
+    if (singleTrail) {
+      await finishSingleJob(job, singlePrint, outcome, failure);
+      return;
+    }
 
+    const failureParts: string[] = [];
+    if (stopReason === "rateLimited") {
+      failureParts.push(
+        `the rest not imported: ${rateLimitText(stopUrl ?? job.sourceUrl)} — this usually clears in 1-4 hours, then retry the failed links`,
+      );
+    } else if (stopReason === "downloadLimit") {
+      failureParts.push(
+        `the rest not downloaded — ${downloadLimitSite(stopUrl)}'s daily download limit was reached, retry the failed links tomorrow`,
+      );
+    } else if (stopReason === "auth") {
+      failureParts.push(`the rest failed because ${authStopText(stopUrl ?? job.sourceUrl)}`);
+    } else if (stopReason === "blocked") {
+      failureParts.push(`the rest failed: ${blockedRetryText(stopUrl ?? job.sourceUrl)}`);
+    } else if (failedCount) {
+      failureParts.push(`${failedCount} failed — retry them from the import queue`);
+    }
+    await noteFailureSummary(jobId, failureParts);
     const bodyParts: string[] = [];
     if (profilesProcessed) bodyParts.push(`${profilesImported} of ${profilesProcessed} print profiles imported`);
     if (waitingForGrab) {
@@ -742,28 +894,17 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
       );
     }
     if (alreadyInLibrary) bodyParts.push(`${alreadyInLibrary} already in your library`);
-    if (stopReason === "rateLimited") {
-      bodyParts.push(
-        `the rest not imported: ${rateLimitText(stopUrl ?? job.sourceUrl)} — this usually clears in 1-4 hours, then retry the failed links`,
-      );
-    } else if (stopReason === "downloadLimit") {
-      bodyParts.push(
-        `the rest not downloaded — ${downloadLimitSite(stopUrl)}'s daily download limit was reached, retry the failed links tomorrow`,
-      );
-    } else if (stopReason === "auth") {
-      bodyParts.push(`the rest failed because ${authStopText(stopUrl ?? job.sourceUrl)}`);
-    } else if (stopReason === "blocked") {
-      bodyParts.push(`the rest failed: ${blockedRetryText(stopUrl ?? job.sourceUrl)}`);
-    } else if (failedCount) {
-      bodyParts.push(`${failedCount} failed — retry them from the import's progress bar`);
-    }
+    bodyParts.push(...failureParts);
     await createNotification(userId, {
       type: "import",
       title: `Imported ${totalImported} of ${total} models`,
       body: bodyParts.length ? `${bodyParts.join(", ")}.` : null,
       externalUrl: job.sourceUrl,
-      internalPath:
-        totalImported === 1 && (printId ?? job.resultPrintId) ? `/models/${printId ?? job.resultPrintId}` : null,
+      internalPath: failedCount
+        ? QUEUE_ATTENTION_PATH
+        : totalImported === 1 && (printId ?? job.resultPrintId)
+          ? `/models/${printId ?? job.resultPrintId}`
+          : null,
     });
   } catch (err) {
     await markJobFailed(jobId, err);
@@ -775,6 +916,28 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
 /** The pause reason a restart leaves on a sync job, so the next sync picks it up again by itself.
  *  A rate-limited one waits for someone to start it. */
 export const SYNC_JOB_INTERRUPTED = "Interrupted by server restart";
+/** A sync job a person started, or one that gave way, waiting for the sync lane. */
+export const SYNC_JOB_WAITING = "Waiting for its turn among the synced collections";
+export const SYNC_RESUME_MARKS = [SYNC_JOB_INTERRUPTED, SYNC_JOB_WAITING];
+
+type SyncJobState = Pick<ImportJob, "status" | "collectionSyncId" | "errorMessage">;
+
+/** A sync job that carries on when the lane gets to its collection, whatever brought the lane there. */
+export function hasResumeMark(job: SyncJobState): boolean {
+  return job.status === "PAUSED" && Boolean(job.collectionSyncId) && SYNC_RESUME_MARKS.includes(job.errorMessage ?? "");
+}
+
+/** A sync job the lane picks up by itself. Any other PAUSED job waits for a person, and so does one a restart cut off
+ *  with scheduled sync off, where nothing comes round to it, as it always has. */
+export function isWaitingSyncJob(job: SyncJobState): boolean {
+  return hasResumeMark(job) && (syncSchedulerEnabled() || job.errorMessage === SYNC_JOB_WAITING);
+}
+
+/** How many models a sync's job has filed as already in the library, over its earlier runs. */
+function syncFiled(job: Pick<ImportJob, "payload">): number {
+  const filed = jobPayload(job).sync_filed;
+  return typeof filed === "number" ? filed : 0;
+}
 
 const SYNC_NAMES_SHOWN = 3;
 
@@ -818,25 +981,19 @@ async function pauseSyncJob(job: ImportJob, reason: StopReason, newPrintIds: str
     failedCount: await countJobItems(job.id, "FAILED"),
   });
   syncLog.warn("job paused", { job: job.id, reason: stopText, waiting });
-  const owner = await prisma.user.findUnique({ where: { id: job.userId }, select: { role: true } });
-  const isAdmin = owner?.role === "ADMIN";
   const name = sync?.collection.name ?? job.sourceLabel ?? "a synced collection";
   const parts: string[] = [];
   if (newPrintIds.length) parts.push(`${await modelNames(newPrintIds)} came in first.`);
   parts.push(
     `${waiting} new model${waiting === 1 ? "" : "s"} wait${waiting === 1 ? "s" : ""} in the import queue, paused because ${stopText}.`,
   );
-  parts.push(
-    isAdmin
-      ? "Start it again from Administration > Import queue once that clears."
-      : "An admin can start it again from the import queue once that clears.",
-  );
+  parts.push("Start it again from the import queue once that clears.");
   await createNotification(job.userId, {
     type: "sync",
     title: `Syncing "${name}" is paused`,
     body: parts.join(" "),
     externalUrl: sync?.sourceUrl ?? job.sourceUrl,
-    internalPath: isAdmin ? "/admin-queue" : sync ? `/models/collections/${sync.collectionId}` : null,
+    internalPath: QUEUE_WAITING_PATH,
   });
 }
 
@@ -895,8 +1052,7 @@ async function notifySyncJobDone(
 ): Promise<boolean> {
   const sync = await syncOfJob(job);
   if (!sync) return false;
-  const payload = (job.payload ?? {}) as Record<string, unknown>;
-  const filed = (typeof payload.sync_filed === "number" ? payload.sync_filed : 0) + alreadyInLibrary;
+  const filed = syncFiled(job) + alreadyInLibrary;
   const name = sync.collection.name;
   const parts: string[] = [];
   if (newPrintIds.length) parts.push(`${await modelNames(newPrintIds)} from ${providerName(sync.provider)}.`);

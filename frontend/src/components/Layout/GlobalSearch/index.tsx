@@ -138,6 +138,7 @@ const PAGE_ICONS: Record<PageId, ReactNode> = {
   tags: <LocalOfferIcon />,
   downloads: <DownloadIcon />,
   tools: <HandymanOutlinedIcon />,
+  importQueue: <QueueIcon />,
   myModels: <ViewInArIcon />,
   profile: <PersonIcon />,
   // As in Administration's own menu.
@@ -149,7 +150,6 @@ const PAGE_ICONS: Record<PageId, ReactNode> = {
   adminTools: <HandymanOutlinedIcon />,
   adminAi: <AutoAwesomeIcon />,
   adminUsers: <PeopleIcon />,
-  adminQueue: <QueueIcon />,
   adminLogs: <HistoryIcon />,
   adminTriggers: <BoltIcon />,
   adminConnections: <CableIcon />,

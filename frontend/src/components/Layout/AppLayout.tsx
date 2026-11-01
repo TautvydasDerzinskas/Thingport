@@ -12,7 +12,6 @@ import Alert from "@mui/material/Alert";
 import Sidebar from "./Sidebar";
 import AdminSubnav from "./AdminSubnav";
 import TopBar from "./TopBar";
-import ImportProgressBar from "./ImportProgressBar";
 import AiRunProgressBar from "./AiRunProgressBar";
 import StorageMoveProgressBar from "./StorageMoveProgressBar";
 import { StorageMoveProvider } from "./StorageMoveContext";
@@ -26,7 +25,8 @@ import { ProviderAboutProvider } from "../providerAbout/ProviderAboutProvider";
 import { WhatsNewProvider } from "../whatsNew/WhatsNewProvider";
 import { PageHeaderContext, type PageHeader } from "./PageHeaderContext";
 import { NavigationHistoryProvider, useSmartBack } from "./NavigationHistoryContext";
-import { ImportJobProvider } from "./ImportJobContext";
+import { ImportQueueProvider } from "../importQueue/ImportQueueContext";
+import ImportQueueDialog from "../importQueue/ImportQueueDialog";
 import { AiRunProvider } from "./AiRunContext";
 import { NotificationsProvider, useNotifications } from "./NotificationsContext";
 import type { ThemeSelection } from "../../constants/settingsOptions";
@@ -46,7 +46,6 @@ type AppLayoutProps = {
   isAdmin: boolean;
   onOpenProfile: () => void;
   onLogout: () => Promise<void>;
-  makerworldCookie: string;
   onUpdateMakerWorld: (patch: Partial<MakerWorldSettings>) => void;
   user: AuthUser | null;
   onThemeChange: (theme: ThemeSelection) => Promise<boolean>;
@@ -133,9 +132,6 @@ function useRouteChrome() {
   } else if (path.startsWith("/admin-users")) {
     title = t("adminSettings.users.heading");
     onBack = () => navigate("/admin");
-  } else if (path.startsWith("/admin-queue")) {
-    title = t("adminSettings.importQueue.heading");
-    onBack = () => navigate("/admin");
   } else if (path.startsWith("/admin-logs")) {
     title = t("adminSettings.logs.heading");
     onBack = () => navigate("/admin");
@@ -167,7 +163,6 @@ function AppLayoutShell({
   isAdmin,
   onOpenProfile,
   onLogout,
-  makerworldCookie,
   onUpdateMakerWorld,
   user,
   onThemeChange,
@@ -199,7 +194,12 @@ function AppLayoutShell({
   }, [onPrintsChanged, refreshNotifications]);
 
   return (
-    <ImportJobProvider onUnauthorized={onUnauthorized} onJobCompleted={handleJobCompleted}>
+    <ImportQueueProvider
+      viewerId={user?.id ?? null}
+      isAdmin={isAdmin}
+      onUnauthorized={onUnauthorized}
+      onJobCompleted={handleJobCompleted}
+    >
       <AiRunProvider onUnauthorized={onUnauthorized} onRunFinished={handleJobCompleted}>
         <StorageMoveProvider isAdmin={isAdmin} onUnauthorized={onUnauthorized}>
           <ModelRepairProvider onUnauthorized={onUnauthorized} onRepairFinished={handleJobCompleted}>
@@ -249,7 +249,7 @@ function AppLayoutShell({
                     }}
                     bookmarksVersion={bookmarksVersion}
                   />
-                  {isAdmin && pathname.startsWith("/admin") && <AdminSubnav mobile />}
+                  {isAdmin && pathname.startsWith("/admin") && <AdminSubnav mobile onDialogOpened={closeNavigation} />}
                 </Drawer>
               ) : (
                 <>
@@ -271,7 +271,6 @@ function AppLayoutShell({
                   onBack={pageHeader?.onBack ?? routeOnBack}
                   actions={pageHeader?.actions}
                   categoryId={categoryId}
-                  makerworldCookie={makerworldCookie}
                   onUpdateMakerWorld={onUpdateMakerWorld}
                   onUploaded={onPrintsChanged}
                   onUnauthorized={onUnauthorized}
@@ -289,17 +288,17 @@ function AppLayoutShell({
             <Box sx={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: (theme) => theme.zIndex.appBar }}>
               <AiRunProgressBar kind="categorization" />
               <AiRunProgressBar kind="descriptions" />
-              <ImportProgressBar />
               <StorageMoveProgressBar />
               <ModelRepairProgressBar />
             </Box>
             <BackToTopButton />
+            <ImportQueueDialog isAdmin={isAdmin} />
             {/* Comes up on its own when a look at the library finds models with no files left. */}
             <MissingFilesDialog />
           </ModelRepairProvider>
         </StorageMoveProvider>
       </AiRunProvider>
-    </ImportJobProvider>
+    </ImportQueueProvider>
   );
 }
 

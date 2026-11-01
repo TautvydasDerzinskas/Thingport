@@ -22,6 +22,7 @@ import printFilesRoutes from "./routes/printFiles";
 import tagsRoutes from "./routes/tags";
 import settingsRoutes from "./routes/settings";
 import importsRoutes from "./routes/imports";
+import importQueueRoutes from "./routes/importQueue";
 import providerRoutes, { providerBodyLimits } from "./providers/routes";
 import collectionsRoutes from "./routes/collections";
 import collectionSyncsRoutes from "./routes/collectionSyncs";
@@ -90,6 +91,7 @@ export function createApp(): Express {
   app.use("/api", tagsRoutes);
   app.use("/api", providerRoutes);
   app.use("/api", importsRoutes);
+  app.use("/api", importQueueRoutes);
   app.use("/api", collectionsRoutes);
   app.use("/api", collectionSyncsRoutes);
   app.use("/api", providerCollectionsRoutes);

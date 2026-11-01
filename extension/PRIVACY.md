@@ -1,6 +1,6 @@
 # Thingport Grab privacy policy
 
-_Effective 29 October 2026._
+_Effective 31 October 2026._
 
 Thingport Grab is a browser extension that imports 3D-printing models from MakerWorld, Printables,
 Thingiverse and, once you allow them, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, Toymakr3D, Makerables, CGTrader, GrabCAD and OwlCAD into **your own self-hosted Thingport instance**, and converts MakerWorld files for
@@ -25,9 +25,9 @@ instance or account, so the new one has to be told.
   finishes or is cancelled, or that tab is closed, and it can't finish a pairing more than 15 minutes old.
 - **A session token** your Thingport instance issues when the extension signs in, and when it expires.
 - **Your settings:** whether the extension is switched on, which Offline features are on (the MakerWorld Download
-  normalized button, Thingiverse dark mode and hidden Thingiverse ads), and whether your Thingport account is an
-  admin's, so the import panel can offer admins **Add to the queue**. Which optional sites you turned on is kept by
-  your browser, as the access you granted.
+  normalized button, Thingiverse dark mode and hidden Thingiverse ads), whether your Thingport account is an admin's,
+  and whether your instance gives everyone an import queue of their own, so the import panel knows whether to offer
+  **Add to the queue**. Which optional sites you turned on is kept by your browser, as the access you granted.
 - **Recent imports:** the title, a link, the address of the page it was imported from and of that page's picture of
   it, for the last five models you imported through the extension, shown in its toolbar popup. This list is kept in your browser's sync storage, so it
   appears in the extension on your other browsers and devices where you're signed in to the same
@@ -89,6 +89,8 @@ from the image servers of the sites you viewed them on, without saying which pag
 
 - While you type its address into the popup's setup form: a request to that address's public health check, to see
   whether it can pair, which carries nothing of yours.
+- After each sign-in, and until your instance has answered once: a request to the same health check, to see whether it
+  gives everyone an import queue of their own, which carries nothing of yours either.
 - To sign in: the connection your instance issued when you paired the extension with it, or, if you entered
   credentials instead, your email and password.
 - When you pair the extension: the name of your browser and its operating system, such as "Chrome on macOS" (worked
@@ -101,8 +103,8 @@ from the image servers of the sites you viewed them on, without saying which pag
   model. This happens when the page opens, so the extension
   knows whether to show its button. On a MakerWorld collection page, the same check runs for each
   model in the collection when you open the extension's panel there.
-- The address of whatever you import, and your choice of collection, when you import it or, as an admin, add it to
-  your instance's import queue; with the queue, and with an OwlCAD export, also the model's name as its page shows it.
+- The address of whatever you import, and your choice of collection, when you import it or add it to your instance's
+  import queue; with the queue, and with an OwlCAD export, also the model's name as its page shows it.
   Where the page got a MakerWorld model's download link from MakerWorld, its import carries that link and the model's
   details as the page holds them (its title, summary, tags, pictures, creator and categories, its print profiles' names
   and pictures, and which of its files are generator scripts), so your instance needn't ask MakerWorld for them again.

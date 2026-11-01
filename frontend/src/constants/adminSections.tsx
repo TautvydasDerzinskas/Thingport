@@ -18,6 +18,9 @@ export type AdminSection = {
   labelKey: string;
 };
 
+/** Not a page any more: everyone's imports open in the import queue's dialog, over whatever is on screen. */
+export const ADMIN_QUEUE_PATH = "/admin-queue";
+
 /** Administration's pages, under its entry in the sidebar; /admin itself is the overview. */
 export const ADMIN_SECTIONS: AdminSection[] = [
   { path: "/admin-providers", icon: <PublicIcon fontSize="small" />, labelKey: "adminSettings.providers.heading" },
@@ -36,7 +39,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
   { path: "/admin-tools", icon: <HandymanOutlinedIcon fontSize="small" />, labelKey: "adminSettings.tools.heading" },
   { path: "/admin-ai", icon: <AutoAwesomeIcon fontSize="small" />, labelKey: "adminSettings.ai.heading" },
   { path: "/admin-users", icon: <PeopleIcon fontSize="small" />, labelKey: "adminSettings.users.heading" },
-  { path: "/admin-queue", icon: <QueueIcon fontSize="small" />, labelKey: "adminSettings.importQueue.heading" },
+  { path: ADMIN_QUEUE_PATH, icon: <QueueIcon fontSize="small" />, labelKey: "importQueue.title" },
   { path: "/admin-logs", icon: <HistoryIcon fontSize="small" />, labelKey: "adminSettings.logs.heading" },
   { path: "/admin-triggers", icon: <BoltIcon fontSize="small" />, labelKey: "adminSettings.triggers.heading" },
   { path: "/admin-connections", icon: <CableIcon fontSize="small" />, labelKey: "adminSettings.connections.heading" },

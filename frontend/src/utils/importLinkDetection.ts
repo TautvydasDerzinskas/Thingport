@@ -37,9 +37,6 @@ export function isGrabOnlyList(url: string): boolean {
 /** Whether a provider's model files come only through Thingport Grab, on its own pages. */
 export const filesNeedGrab = (provider: ProviderId) => MANIFESTS[provider].helpers.grab === "required";
 
-/** Whether a model's link may download a zip of its raw files, which the user picks how to import. */
-export const mayBeRawFilesZip = (provider: ProviderId) => !!manifestOf(provider).capabilities.rawFilesZip;
-
 /** Whether a link is a model with print profiles to pick between. */
 export function hasPrintProfiles(url: string): boolean {
   const model = modelLinkOf(url);

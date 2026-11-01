@@ -30,8 +30,10 @@ import {
 } from "./services/modelPreviewCache";
 import { buildImportSourceUrl } from "./services/importService";
 import { openSourceGaps, type SourceGap } from "./services/sourceGaps";
-import { parseQueuedLinkOptions } from "./services/importJobRunner";
-import type { QueueJobRow } from "./services/importQueueService";
+import { parseQueuedLinkOptions, SYNC_RESUME_MARKS } from "./services/importJobRunner";
+import { jobPayload } from "./services/importJobService";
+import type { LineOut, OwnQueue, QueueJobRow, QueueJobView } from "./services/importQueueService";
+import type { ImportOutcome } from "./services/modelNotifications";
 
 export type UserOut = {
   id: string;
@@ -541,7 +543,8 @@ export function toCategoryOut(
 export type ImportJobOut = {
   id: string;
   type: "COLLECTION" | "ZIP" | "PROFILES" | "LINKS";
-  status: "RUNNING" | "DONE" | "ERROR" | "PAUSED";
+  /** QUEUED only reaches someone who asked for it: see maskQueued. */
+  status: "RUNNING" | "DONE" | "ERROR" | "PAUSED" | "QUEUED";
   source_url: string;
   source_label: string | null;
   provider: string | null;
@@ -555,14 +558,14 @@ export type ImportJobOut = {
   result_print_id: string | null;
 };
 
-/** The queue's per-link state, so the progress bar can show what's importing and what failed. */
+/** The queue's per-link state, so a job can show what's importing and what failed. */
 export type ImportJobItemOut = {
   id: string;
   url: string;
   status: "PENDING" | "RUNNING" | "DONE" | "FAILED";
   attempts: number;
   error_message: string | null;
-  /** Page title, collection and profile scope of a link sent from the extension's queue. */
+  /** Page title, collection and profile scope of a link added to the queue on its own. */
   title: string | null;
   collection_id: string | null;
   scope: "url" | "designer" | "all" | null;
@@ -601,6 +604,12 @@ export function toImportJobOut(job: ImportJob): ImportJobOut {
   };
 }
 
+/** A waiting job reads as RUNNING for whoever didn't ask for the real status: clients from before the line take any
+ *  other status for finished, and would stop following it. */
+export function maskQueued<T extends Pick<ImportJobOut, "status">>(out: T): T {
+  return out.status === "QUEUED" ? { ...out, status: "RUNNING" } : out;
+}
+
 /** A row of the admin import queue: any user's job, with its links counted by status. */
 export type AdminImportJobOut = ImportJobOut & {
   owner: { id: string; display_name: string; email: string };
@@ -608,23 +617,120 @@ export type AdminImportJobOut = ImportJobOut & {
   running_count: number;
   done_count: number;
   failed_items_count: number;
-  /** False on a RUNNING job means its runner is gone (a restart): pause it, then start it again. */
+  /** False on a RUNNING job means its runner is gone (a restart): pause it, then start it again. So it's true on a
+   *  job that only reads as RUNNING, being in line. */
   runner_live: boolean;
   created_at: string;
   updated_at: string;
 };
 
+function jobOwnerOut({ user }: QueueJobRow): AdminImportJobOut["owner"] {
+  return { id: user.id, display_name: user.displayName, email: user.email };
+}
+
 export function toAdminImportJobOut(row: QueueJobRow): AdminImportJobOut {
   return {
+    ...maskQueued(toImportJobOut(row)),
+    owner: jobOwnerOut(row),
+    pending_count: row.counts.pending,
+    running_count: row.counts.running,
+    done_count: row.counts.done,
+    failed_items_count: row.counts.failed,
+    runner_live: row.runnerLive || row.status === "QUEUED",
+    created_at: row.createdAt.toISOString(),
+    updated_at: row.updatedAt.toISOString(),
+  };
+}
+
+/** A job as the import queue shows it, with its real status. */
+export type QueueJobOut = ImportJobOut & {
+  /** One link: no bar, no link list, no Pause. */
+  single: boolean;
+  /** Its place in the line, 1 being next up; null unless QUEUED. */
+  position: number | null;
+  queued_at: string | null;
+  started_at: string | null;
+  created_at: string;
+  updated_at: string;
+  pending_count: number;
+  running_count: number;
+  done_count: number;
+  failed_items_count: number;
+  runner_live: boolean;
+  collection_sync_id: string | null;
+  sync_waiting: boolean;
+  /** Something for its owner to deal with; older failures just count as finished. */
+  attention: boolean;
+  failure_reason: string | null;
+  /** How a one-link job came out. */
+  outcome: ImportOutcome | null;
+  can_start: boolean;
+  can_pause: boolean;
+  can_retry: boolean;
+  can_delete: boolean;
+};
+
+export function toQueueJobOut(row: QueueJobView): QueueJobOut {
+  const payload = jobPayload(row);
+  // A resume mark says how a sync's job is waiting, not that it failed. The same text on an ERROR job is its failure.
+  const message =
+    row.status === "PAUSED" && SYNC_RESUME_MARKS.includes(row.errorMessage ?? "") ? null : row.errorMessage;
+  const summary = typeof payload.failure_summary === "string" ? payload.failure_summary : null;
+  return {
     ...toImportJobOut(row),
-    owner: { id: row.user.id, display_name: row.user.displayName, email: row.user.email },
+    error_message: message,
+    single: payload.single === true,
+    position: row.position,
+    queued_at: row.queuedAt?.toISOString() ?? null,
+    started_at: row.startedAt?.toISOString() ?? null,
+    created_at: row.createdAt.toISOString(),
+    updated_at: row.updatedAt.toISOString(),
     pending_count: row.counts.pending,
     running_count: row.counts.running,
     done_count: row.counts.done,
     failed_items_count: row.counts.failed,
     runner_live: row.runnerLive,
-    created_at: row.createdAt.toISOString(),
-    updated_at: row.updatedAt.toISOString(),
+    collection_sync_id: row.collectionSyncId,
+    sync_waiting: row.syncWaiting,
+    attention: row.attention,
+    failure_reason: message ?? summary ?? row.firstFailure,
+    outcome:
+      payload.outcome === "created" || payload.outcome === "profile_added" || payload.outcome === "already_imported"
+        ? payload.outcome
+        : null,
+    can_start: row.actions.canStart,
+    can_pause: row.actions.canPause,
+    can_retry: row.actions.canRetry,
+    can_delete: row.actions.canDelete,
+  };
+}
+
+/** A row of the admin list for whoever asked for the real status: all the queue shows, and whose it is. */
+export type AdminQueueJobOut = QueueJobOut & Pick<AdminImportJobOut, "owner">;
+
+export function toAdminQueueJobOut(row: QueueJobRow): AdminQueueJobOut {
+  return { ...toQueueJobOut(row), owner: jobOwnerOut(row) };
+}
+
+export type { LineOut };
+
+export type QueueSettingsOut = { start_grab_links: boolean };
+
+/** Someone's own imports. */
+export type QueueOut = {
+  jobs: QueueJobOut[];
+  /** Every finished job not asking for attention, the number Clear finished acts on; `jobs` has the newest of them. */
+  finished_total: number;
+  line: LineOut;
+  settings: QueueSettingsOut;
+};
+
+export function toQueueOut(queue: OwnQueue): QueueOut {
+  return {
+    jobs: queue.jobs.map(toQueueJobOut),
+    finished_total: queue.finishedTotal,
+    line: queue.line,
+    settings: { start_grab_links: queue.startGrabLinks },
   };
 }
 

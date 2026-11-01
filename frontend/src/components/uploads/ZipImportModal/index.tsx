@@ -8,12 +8,13 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import Alert from "@mui/material/Alert";
+import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
-import type { ZipEntry } from "../../../utils/zipUtils";
+import { startingSelection, type ZipEntry } from "../../../utils/zipUtils";
 import ZipEntryList from "./ZipEntryList";
 
-type ZipPromptConfig = {
+export type ZipPromptConfig = {
   label: string;
   onImportAsZip: () => Promise<void>;
   loadEntries: () => Promise<ZipEntry[]>;
@@ -38,6 +39,8 @@ export function useZipImportPrompt() {
   const [entries, setEntries] = useState<ZipEntry[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
+  // Reading a link's zip can take seconds, with nothing else on screen to say so.
+  const [reading, setReading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const resolveRef = useRef<(() => void) | null>(null);
 
@@ -46,6 +49,7 @@ export function useZipImportPrompt() {
     setEntries([]);
     setSelected(new Set());
     setBusy(false);
+    setReading(false);
     setError(null);
   };
 
@@ -59,7 +63,8 @@ export function useZipImportPrompt() {
   };
 
   const prompt = (config: ZipPromptConfig) => {
-    if (state) {
+    // Not `state`: a prompt that waited its turn is from an older render.
+    if (resolveRef.current) {
       return Promise.resolve();
     }
     reset();
@@ -72,16 +77,18 @@ export function useZipImportPrompt() {
   const loadEntries = async () => {
     if (!state) return;
     setBusy(true);
+    setReading(true);
     setError(null);
     try {
       const list = await state.config.loadEntries();
       setEntries(list);
-      setSelected(new Set(list.map((entry) => entry.path)));
+      setSelected(startingSelection(list));
       setStage("select");
     } catch (err) {
       setError(errorMessage(err, t("zipImport.readError")));
     } finally {
       setBusy(false);
+      setReading(false);
     }
   };
 
@@ -145,6 +152,7 @@ export function useZipImportPrompt() {
       selectedCount={selectedCount}
       allSelected={allSelected}
       busy={busy}
+      reading={reading}
       error={error}
       onClose={close}
       onImportAsZip={importAsZip}
@@ -159,7 +167,7 @@ export function useZipImportPrompt() {
   return { prompt, modal, isOpen: Boolean(state) };
 }
 
-function ZipImportModal({
+export function ZipImportModal({
   label,
   stage,
   entries,
@@ -167,6 +175,7 @@ function ZipImportModal({
   selectedCount,
   allSelected,
   busy,
+  reading,
   error,
   onClose,
   onImportAsZip,
@@ -183,6 +192,7 @@ function ZipImportModal({
   selectedCount: number;
   allSelected: boolean;
   busy: boolean;
+  reading: boolean;
   error: string | null;
   onClose: () => void;
   onImportAsZip: () => void;
@@ -223,8 +233,14 @@ function ZipImportModal({
                 <Button variant="contained" onClick={onImportAsZip} disabled={busy}>
                   {t("zipImport.importAsZip")}
                 </Button>
-                <Button variant="outlined" onClick={onLoadEntries} disabled={busy}>
-                  {t("zipImport.importAndUnzip")}
+                <Button
+                  variant="outlined"
+                  onClick={onLoadEntries}
+                  disabled={busy}
+                  aria-busy={reading}
+                  startIcon={reading ? <CircularProgress size={16} color="inherit" /> : undefined}
+                >
+                  {t(reading ? "zipImport.reading" : "zipImport.importAndUnzip")}
                 </Button>
               </Stack>
             </Stack>
