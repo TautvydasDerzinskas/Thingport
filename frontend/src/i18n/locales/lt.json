@@ -463,6 +463,12 @@
         "disconnectMessage": "Negalėsite prisijungti per {{name}}, kol vėl jo neprijungsite."
       }
     },
+    "retiredMakerworldCookie": {
+      "title": "Palikti šį „MakerWorld“ prisijungimą?",
+      "message": "Senesnė „Thingport“ versija šioje naršyklėje laikė „MakerWorld“ prisijungimą. Išsaugokite jį paskyroje {{name}} tik jei jis jūsų: bendrai naudojamoje naršyklėje jis gali būti kito žmogaus.",
+      "keep": "Išsaugoti mano paskyroje",
+      "discard": "Atmesti"
+    },
     "addMenu": {
       "uploadFiles": "Įkelti failus",
       "uploadFolder": "Įkelti aplanką",

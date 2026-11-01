@@ -38,8 +38,8 @@ export const providersApi = {
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) {
       const message = await readErrorMessage(res, "Failed to update the connection");
-      const refused = res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429;
-      throw refused ? new ConnectionRefusedError(message) : new Error(message);
+      // 422 is the provider's own no. A proxy's 403, or a 503 when it couldn't be asked, says nothing of the credential.
+      throw res.status === 422 ? new ConnectionRefusedError(message) : new Error(message);
     }
   },
 };

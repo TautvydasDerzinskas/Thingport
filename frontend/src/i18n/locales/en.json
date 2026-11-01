@@ -462,6 +462,12 @@
         "disconnectMessage": "You won't be able to sign in with {{name}} until you connect it again."
       }
     },
+    "retiredMakerworldCookie": {
+      "title": "Keep this MakerWorld sign-in?",
+      "message": "An older version of Thingport kept a MakerWorld sign-in in this browser. Save it to {{name}}'s account only if it's yours: on a shared browser it may be someone else's.",
+      "keep": "Save to my account",
+      "discard": "Discard"
+    },
     "addMenu": {
       "uploadFiles": "Upload files",
       "uploadFolder": "Upload folder",

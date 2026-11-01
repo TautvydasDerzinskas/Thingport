@@ -720,6 +720,41 @@ test("another person's waiting import is a private row, and only an admin sees w
   await member.context.close();
 });
 
+test("an old browser's MakerWorld cookie isn't filed under an account without asking", async ({ page }) => {
+  await page.goto("/models");
+  const stored = () => page.evaluate(() => localStorage.getItem("thingport_settings"));
+  await page.evaluate(() =>
+    localStorage.setItem("thingport_settings", JSON.stringify({ makerworld: { cookie: "token=old" } })),
+  );
+  const saves: string[] = [];
+  page.on("request", (request) => {
+    if (request.method() === "PATCH" && request.url().includes("/connection/")) saves.push(request.url());
+  });
+  // Whatever this account has connected, this is the case that asks.
+  await page.route("**/api/providers", async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    for (const provider of body.providers) {
+      if (provider.id === "makerworld") provider.slots.default = { status: "disconnected", account: null };
+    }
+    await route.fulfill({ response, json: body });
+  });
+
+  await page.reload();
+  const ask = page.getByRole("dialog", { name: "Keep this MakerWorld sign-in?" });
+  await expect(ask).toBeVisible();
+  // Until it's answered, the copy stays.
+  expect(await stored()).not.toBeNull();
+  await ask.getByRole("button", { name: "Discard" }).click();
+  await expect(ask).toBeHidden();
+  await expect.poll(stored).toBeNull();
+  expect(saves).toEqual([]);
+
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Add", exact: true })).toBeVisible();
+  await expect(ask).toHaveCount(0);
+});
+
 test("the cog's switch stays through a reload", async ({ page }) => {
   const setting = page.getByRole("switch", { name: /^Start links from Grab automatically/ });
   try {

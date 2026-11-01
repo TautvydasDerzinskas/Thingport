@@ -462,6 +462,12 @@
         "disconnectMessage": "No podrás iniciar sesión con {{name}} hasta que vuelvas a conectarlo."
       }
     },
+    "retiredMakerworldCookie": {
+      "title": "¿Conservar este inicio de sesión de MakerWorld?",
+      "message": "Una versión anterior de Thingport guardó un inicio de sesión de MakerWorld en este navegador. Guárdalo en la cuenta de {{name}} solo si es tuyo: en un navegador compartido puede ser de otra persona.",
+      "keep": "Guardar en mi cuenta",
+      "discard": "Descartar"
+    },
     "addMenu": {
       "uploadFiles": "Subir archivos",
       "uploadFolder": "Subir carpeta",

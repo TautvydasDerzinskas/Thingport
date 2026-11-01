@@ -462,6 +462,12 @@
         "disconnectMessage": "Vous ne pourrez pas vous connecter avec {{name}} tant que vous ne l’aurez pas reconnecté."
       }
     },
+    "retiredMakerworldCookie": {
+      "title": "Conserver cette connexion MakerWorld ?",
+      "message": "Une ancienne version de Thingport a gardé une connexion MakerWorld dans ce navigateur. Enregistrez-la sur le compte de {{name}} seulement si elle est à vous : sur un navigateur partagé, elle peut appartenir à quelqu’un d’autre.",
+      "keep": "Enregistrer sur mon compte",
+      "discard": "Ignorer"
+    },
     "addMenu": {
       "uploadFiles": "Téléverser des fichiers",
       "uploadFolder": "Téléverser un dossier",

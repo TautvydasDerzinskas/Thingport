@@ -24,7 +24,6 @@ import VerifyEmailPage from "./pages/VerifyEmailPage";
 import OidcCallbackPage from "./pages/OidcCallbackPage";
 import ConnectGrabPage from "./pages/ConnectGrabPage";
 import { rememberReturnPath } from "./utils/returnPath";
-import { settleRetiredSettings } from "./utils/settings";
 import { IMPORT_PATH } from "./utils/bookmarklet";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -389,7 +388,6 @@ export default function App() {
   }, []);
   React.useEffect(() => {
     if (!token) return;
-    void settleRetiredSettings();
     (async () => {
       try {
         setPreviewMode((await settingsApi.getPreviews()).mode);

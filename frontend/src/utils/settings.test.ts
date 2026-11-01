@@ -12,6 +12,8 @@ function makerworldIs(status: "connected" | "expired" | "disconnected") {
   return vi.spyOn(providersApi, "saveConnection").mockResolvedValue();
 }
 
+const yes = () => Promise.resolve(true);
+
 beforeEach(() => {
   stored = new Map([
     ["thingport_settings", OLD_COPY],
@@ -31,23 +33,41 @@ afterEach(() => {
 });
 
 describe("settleRetiredSettings", () => {
-  it("hands the old copy to a server that has no sign-in, then forgets it", async () => {
+  it("hands the old copy over once the person says it's theirs, then forgets it", async () => {
     const save = makerworldIs("disconnected");
-    await settleRetiredSettings();
+    const isTheirs = vi.fn<() => Promise<boolean | null>>(yes);
+    await settleRetiredSettings(isTheirs);
+    expect(isTheirs).toHaveBeenCalledOnce();
     expect(save).toHaveBeenCalledWith("makerworld", "default", { cookie: "token=secret" });
     expect([...stored.keys()]).toEqual(["thingport_auth_token"]);
   });
 
-  it("doesn't overwrite a sign-in the server already has", async () => {
+  it("never files it under an account whose person says it isn't theirs, and forgets it", async () => {
+    const save = makerworldIs("disconnected");
+    await settleRetiredSettings(() => Promise.resolve(false));
+    expect(save).not.toHaveBeenCalled();
+    expect(stored.has("thingport_settings")).toBe(false);
+  });
+
+  it("keeps it, to ask again, when the question is dismissed without an answer", async () => {
+    const save = makerworldIs("disconnected");
+    await settleRetiredSettings(() => Promise.resolve(null));
+    expect(save).not.toHaveBeenCalled();
+    expect(stored.get("thingport_settings")).toBe(OLD_COPY);
+  });
+
+  it("doesn't ask, or overwrite, when the account already has a sign-in", async () => {
     const save = makerworldIs("connected");
-    await settleRetiredSettings();
+    const isTheirs = vi.fn<() => Promise<boolean | null>>(yes);
+    await settleRetiredSettings(isTheirs);
+    expect(isTheirs).not.toHaveBeenCalled();
     expect(save).not.toHaveBeenCalled();
     expect([...stored.keys()]).toEqual(["thingport_auth_token"]);
   });
 
   it("forgets a copy the server turned down, as it would only be turned down again", async () => {
     makerworldIs("disconnected").mockRejectedValue(new ConnectionRefusedError("This cookie doesn't work"));
-    await settleRetiredSettings();
+    await settleRetiredSettings(yes);
     expect(stored.has("thingport_settings")).toBe(false);
   });
 
@@ -57,22 +77,34 @@ describe("settleRetiredSettings", () => {
     ["the server fails", new Error("Failed to load providers")],
   ])("keeps it for the next visit when %s", async (_name, failure) => {
     vi.spyOn(providersApi, "list").mockRejectedValue(failure);
-    await settleRetiredSettings();
+    await settleRetiredSettings(yes);
     expect(stored.get("thingport_settings")).toBe(OLD_COPY);
   });
 
   it("keeps it when saving fails without the server having judged it", async () => {
     makerworldIs("disconnected").mockRejectedValue(new Error("Failed to update the connection"));
-    await settleRetiredSettings();
+    await settleRetiredSettings(yes);
     expect(stored.get("thingport_settings")).toBe(OLD_COPY);
+  });
+
+  it("asks once, however many times it's called while waiting for the answer", async () => {
+    makerworldIs("disconnected");
+    let answer = (_value: boolean) => {};
+    const isTheirs = vi.fn<() => Promise<boolean | null>>(() => new Promise((resolve) => (answer = resolve)));
+    const first = settleRetiredSettings(isTheirs);
+    await vi.waitFor(() => expect(isTheirs).toHaveBeenCalled());
+    await settleRetiredSettings(isTheirs);
+    answer(false);
+    await first;
+    expect(isTheirs).toHaveBeenCalledOnce();
   });
 
   it("asks nothing when there's no copy, and survives a broken one", async () => {
     const list = vi.spyOn(providersApi, "list");
     stored.delete("thingport_settings");
-    await settleRetiredSettings();
+    await settleRetiredSettings(yes);
     stored.set("thingport_settings", "{not json");
-    await settleRetiredSettings();
+    await settleRetiredSettings(yes);
     expect(list).not.toHaveBeenCalled();
     expect(stored.has("thingport_settings")).toBe(false);
   });
@@ -83,6 +115,27 @@ describe("settleRetiredSettings", () => {
         throw new DOMException("Blocked", "SecurityError");
       },
     });
-    await expect(settleRetiredSettings()).resolves.toBeUndefined();
+    await expect(settleRetiredSettings(yes)).resolves.toBeUndefined();
+  });
+});
+
+describe("providersApi.saveConnection", () => {
+  const answering = (status: number) =>
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ detail: "No" }), { status })),
+    );
+  const save = () => providersApi.saveConnection("makerworld", "default", { cookie: "c" });
+
+  it("takes only a 422 as the server turning the credential down", async () => {
+    answering(422);
+    await expect(save()).rejects.toBeInstanceOf(ConnectionRefusedError);
+  });
+
+  it.each([400, 403, 404, 429, 502, 503])("doesn't take a %i for that", async (status) => {
+    answering(status);
+    const failure = await save().catch((err: unknown) => err);
+    expect(failure).toBeInstanceOf(Error);
+    expect(failure).not.toBeInstanceOf(ConnectionRefusedError);
   });
 });
