@@ -125,7 +125,21 @@ export default function ProfileBadges({ profile }: { profile: PlateProfile }) {
   if (!shown.length) return null;
 
   return (
-    <Box component="span" sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0, overflow: "hidden" }}>
+    // Badges that don't fit wrap onto a second line, which is cut off: a badge shows whole or not at all, so a
+    // clipped "0.2" never reads as "0.". Screen readers still get every badge.
+    <Box
+      component="span"
+      sx={{
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "center",
+        columnGap: 1,
+        rowGap: 0,
+        minWidth: 0,
+        height: "1lh",
+        overflow: "hidden",
+      }}
+    >
       {shown.map((i) => (
         // Without describeChild the tooltip text becomes the badge's aria-label, its name for screen readers.
         <Tooltip key={i.key} title={i.label}>
@@ -140,7 +154,8 @@ export default function ProfileBadges({ profile }: { profile: PlateProfile }) {
               alignItems: "center",
               gap: 0.25,
               minWidth: 0,
-              flexShrink: i.key === "printer" ? 1 : 0,
+              // The printer takes the rest of the line once its first few letters fit, then ellipsizes.
+              flex: i.key === "printer" ? "1 1 7ch" : "0 0 auto",
               "& .MuiSvgIcon-root": { fontSize: "1.05em", flexShrink: 0 },
             }}
           >
