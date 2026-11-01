@@ -2,41 +2,58 @@
 import Icon from "./Icon.astro";
 ---
 
-<!-- Light by default; the button switches between light and dark, remembered across the site, docs included. -->
+<!-- Follows the system by default; the button cycles system, light, dark, remembered across the site, docs included. -->
 <button
   class="theme-toggle"
   type="button"
   data-theme-toggle
-  aria-label="Switch to the dark theme"
-  title="Switch to the dark theme"
+  aria-label="Theme: system. Switch to light"
+  title="Theme: system. Switch to light"
 >
-  <span data-mode="light"><Icon name="moon" size={18} /></span>
-  <span data-mode="dark" hidden><Icon name="sun" size={18} /></span>
+  <span data-mode="system"><Icon name="monitor" size={18} /></span>
+  <span data-mode="light" hidden><Icon name="sun" size={18} /></span>
+  <span data-mode="dark" hidden><Icon name="moon" size={18} /></span>
 </button>
 
 <script>
   import { THEME_COLORS, THEME_KEY } from "../lib/theme.mjs";
 
-  type Theme = "light" | "dark";
+  const MODES = ["system", "light", "dark"] as const;
+  type Mode = (typeof MODES)[number];
 
-  const current = (): Theme => (document.documentElement.dataset.theme === "dark" ? "dark" : "light");
+  const systemDark = matchMedia("(prefers-color-scheme: dark)");
+
+  const storedMode = (): Mode => {
+    try {
+      const stored = localStorage.getItem(THEME_KEY);
+      return stored === "light" || stored === "dark" ? stored : "system";
+    } catch {
+      return "system";
+    }
+  };
+
+  // Held here, not read back from storage, so the button still cycles when storage is blocked.
+  let mode = storedMode();
+
+  const nextMode = () => MODES[(MODES.indexOf(mode) + 1) % MODES.length];
 
   const render = () => {
-    const theme = current();
-    const label = theme === "dark" ? "Switch to the light theme" : "Switch to the dark theme";
+    const theme = mode === "system" ? (systemDark.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = theme;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", THEME_COLORS[theme]);
+    const label = `Theme: ${mode}. Switch to ${nextMode()}`;
     for (const button of document.querySelectorAll<HTMLButtonElement>("[data-theme-toggle]")) {
       button.setAttribute("aria-label", label);
       button.title = label;
-      for (const icon of button.querySelectorAll<HTMLElement>("[data-mode]")) icon.hidden = icon.dataset.mode !== theme;
+      for (const icon of button.querySelectorAll<HTMLElement>("[data-mode]")) icon.hidden = icon.dataset.mode !== mode;
     }
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", THEME_COLORS[theme]);
   };
 
-  const apply = (theme: Theme) => {
-    document.documentElement.dataset.theme = theme;
+  const cycle = () => {
+    mode = nextMode();
     try {
-      if (theme === "dark") localStorage.setItem(THEME_KEY, theme);
-      else localStorage.removeItem(THEME_KEY);
+      if (mode === "system") localStorage.removeItem(THEME_KEY);
+      else localStorage.setItem(THEME_KEY, mode);
     } catch {
       /* storage blocked: the choice just won't persist */
     }
@@ -44,8 +61,9 @@ import Icon from "./Icon.astro";
   };
 
   render();
+  systemDark.addEventListener("change", render);
   for (const button of document.querySelectorAll("[data-theme-toggle]")) {
-    button.addEventListener("click", () => apply(current() === "dark" ? "light" : "dark"));
+    button.addEventListener("click", cycle);
   }
 </script>
 

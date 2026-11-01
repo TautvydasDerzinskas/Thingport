@@ -3,7 +3,7 @@
  * and buttons use a deeper green than the brand #00b800, which is too light for AA text contrast.
  *
  * Shared by the site's own pages (global.css) and the docs (Starlight's customCss, with starlight.css).
- * Light by default; dark only when the visitor picks it (ThemeToggle.astro sets data-theme). */
+ * Light here; dark below, on the data-theme that ThemeScript.astro sets from the visitor's choice or their system. */
 
 @font-face {
   font-family: "Thingport";

@@ -46,10 +46,10 @@ file that moves or is renamed can't quietly drop off the site.
 - **Logos, fonts, favicons and screenshots** come from `frontend/`, so the site always matches the app.
 - **Colours** mirror `THEME_DEFS` in `frontend/src/theme.ts`, as CSS variables in
   [`src/styles/tokens.css`](src/styles/tokens.css), used by the site's pages (`global.css`) and the docs
-  (`starlight.css` points Starlight's variables at them). The site is light; it's dark only when the visitor picks
-  that with the header button, which [`src/components/ThemeScript.astro`](src/components/ThemeScript.astro) applies
-  before the first paint on every page (in the docs as `starlight/ThemeProvider.astro`). Without JavaScript, every
-  page is light.
+  (`starlight.css` points Starlight's variables at them). The site follows the system's theme until the visitor picks
+  light or dark with the header button, which [`src/components/ThemeScript.astro`](src/components/ThemeScript.astro)
+  applies before the first paint on every page (in the docs as `starlight/ThemeProvider.astro`). Without JavaScript,
+  every page is light.
 
 ## The docs (Starlight)
 

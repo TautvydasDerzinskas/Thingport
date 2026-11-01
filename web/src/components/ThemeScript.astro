@@ -1,13 +1,16 @@
 ---
-// Light unless the visitor chose dark (ThemeToggle.astro). Inline in the <head> of every page, the docs' included
-// (starlight/ThemeProvider.astro), so it's set before the first paint and a returning visitor never sees a flash.
+// The system's theme unless the visitor chose one (ThemeToggle.astro). Inline in the <head> of every page, the docs'
+// included (starlight/ThemeProvider.astro), so it's set before the first paint and a visitor never sees a flash.
 import { THEME_KEY } from "../lib/theme.mjs";
 ---
 
 <script is:inline define:vars={{ key: THEME_KEY }}>
+  let theme = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   try {
-    document.documentElement.dataset.theme = localStorage.getItem(key) === "dark" ? "dark" : "light";
+    const stored = localStorage.getItem(key);
+    if (stored === "light" || stored === "dark") theme = stored;
   } catch {
-    document.documentElement.dataset.theme = "light";
+    /* storage blocked: follow the system */
   }
+  document.documentElement.dataset.theme = theme;
 </script>
