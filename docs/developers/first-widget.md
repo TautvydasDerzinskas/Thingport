@@ -116,6 +116,10 @@ filled in from the labels; the English left in them is what shows if the labels 
 
 <!-- /sdk:example -->
 
+Thingport's dark themes make every corner on the page square, your widget's included, so buttons and cards match the
+app without any work. If you draw a shape that has to stay round, like a moon or a dot, give its `border-radius`
+`!important`, or draw it as SVG.
+
 ## 5. The script
 
 Replace the **Script** with this:

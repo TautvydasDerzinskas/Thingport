@@ -1,4 +1,6 @@
 <style>
+  /* In its dark themes Thingport sets every element on the page square with !important. A moon and clouds aren't
+     interface, so their radii are !important too; .wx itself is left alone, as its corners are the panel's. */
   .wx {
     position: relative;
     width: 100%;
@@ -9,6 +11,7 @@
     --u: 2px;
     color: #fff;
     user-select: none;
+    touch-action: manipulation;
   }
   .wx-layer {
     position: absolute;
@@ -26,7 +29,7 @@
     position: absolute;
     width: 2px;
     height: 2px;
-    border-radius: 50%;
+    border-radius: 50% !important;
     background: #fff;
     animation: wx-twinkle 3s ease-in-out infinite alternate;
   }
@@ -42,14 +45,14 @@
   .wx-sun {
     position: absolute;
     inset: 0;
-    border-radius: 50%;
+    border-radius: 50% !important;
     background: radial-gradient(circle at 40% 40%, #fff8c8, #ffd54f 60%, #ffb020);
     box-shadow: 0 0 calc(var(--u) * 6) calc(var(--u) * 2) rgba(255, 210, 80, 0.55);
   }
   .wx-rays {
     position: absolute;
     inset: -70%;
-    border-radius: 50%;
+    border-radius: 50% !important;
     background: repeating-conic-gradient(rgba(255, 232, 150, 0.4) 0 7deg, transparent 7deg 22deg);
     -webkit-mask: radial-gradient(circle, #000 25%, transparent 68%);
     mask: radial-gradient(circle, #000 25%, transparent 68%);
@@ -65,7 +68,7 @@
   .wx-moonbase {
     position: absolute;
     inset: 0;
-    border-radius: 50%;
+    border-radius: 50% !important;
     background: rgba(255, 255, 255, 0.07);
   }
   .wx-moonglow {
@@ -76,7 +79,7 @@
   .wx-moon {
     position: absolute;
     inset: 0;
-    border-radius: 50%;
+    border-radius: 50% !important;
     background: radial-gradient(circle at 35% 35%, #fdfbf0, #d6d9e0 70%);
   }
 
@@ -102,14 +105,14 @@
     top: 0;
     width: var(--w);
     height: calc(var(--w) * 0.34);
-    border-radius: 999px;
+    border-radius: 999px !important;
     background: var(--cc);
   }
   .wx-cloud::before,
   .wx-cloud::after {
     content: "";
     position: absolute;
-    border-radius: 50%;
+    border-radius: 50% !important;
     background: inherit;
   }
   .wx-cloud::before {
@@ -125,13 +128,50 @@
     height: 115%;
   }
 
-  .wx-ground {
+  .wx-ground,
+  .wx-front,
+  .wx-sprite {
     filter: brightness(var(--gb, 1)) saturate(var(--gs, 1));
     transition: filter 600ms;
   }
+  .wx-art {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .wx-mist {
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(255, 255, 255, 0.22));
+  }
+  .wx-standing {
+    position: absolute;
+    overflow: visible;
+    transform-origin: 50% 100%;
+    animation: wx-sway 5s ease-in-out infinite alternate;
+  }
+  .wx-lights {
+    transition: opacity 600ms;
+  }
+  .wx-flicker {
+    animation: wx-flicker 11s steps(1) infinite;
+  }
+  .wx-beacon {
+    animation: wx-glow 2.4s ease-in-out infinite;
+  }
+  .wx-lamp {
+    position: absolute;
+    width: calc(var(--u) * 16);
+    height: calc(var(--u) * 16);
+    transform: translate(-50%, 50%);
+    background: radial-gradient(circle, rgba(255, 224, 150, 0.85), rgba(255, 214, 130, 0.2) 22%, transparent 68%);
+  }
   .wx-hill {
     position: absolute;
-    border-radius: 50%;
+    border-radius: 50% !important;
   }
   .wx-hill.far {
     left: -25%;
@@ -151,7 +191,7 @@
     position: absolute;
     width: calc(var(--u) * 1.6);
     height: calc(var(--u) * 1.6);
-    border-radius: 50%;
+    border-radius: 50% !important;
   }
   .wx-tree {
     position: absolute;
@@ -166,7 +206,7 @@
   .wx-branch {
     position: absolute;
     background: #5b3b25;
-    border-radius: 2px;
+    border-radius: 2px !important;
   }
   .wx-trunk {
     left: 45%;
@@ -180,7 +220,7 @@
     right: 0;
     top: 0;
     height: 70%;
-    border-radius: 50% 50% 45% 45%;
+    border-radius: 50% 50% 45% 45% !important;
     background: var(--crown);
   }
   .wx-crown::before,
@@ -190,7 +230,7 @@
     top: 30%;
     width: 55%;
     height: 55%;
-    border-radius: 50%;
+    border-radius: 50% !important;
     background: inherit;
   }
   .wx-crown::before {
@@ -249,13 +289,13 @@
   .wx-drop > b {
     width: 1.5px;
     height: calc(var(--u) * 7);
-    border-radius: 1px;
+    border-radius: 1px !important;
     background: linear-gradient(transparent, rgba(215, 232, 255, 0.85));
   }
   .wx-flake > b {
     width: var(--s);
     height: var(--s);
-    border-radius: 50%;
+    border-radius: 50% !important;
     background: #fff;
     box-shadow: 0 0 3px rgba(255, 255, 255, 0.8);
     animation: wx-sway-x 3s ease-in-out infinite alternate;
@@ -263,7 +303,7 @@
   .wx-leaf > b {
     width: var(--s);
     height: var(--s);
-    border-radius: 0 100% 0 100%;
+    border-radius: 0 100% 0 100% !important;
     background: var(--c);
     animation: wx-tumble 4s ease-in-out infinite;
   }
@@ -271,12 +311,162 @@
     position: absolute;
     width: 3px;
     height: 3px;
-    border-radius: 50%;
+    border-radius: 50% !important;
     background: #eaff8f;
     box-shadow: 0 0 6px 2px rgba(220, 255, 120, 0.7);
     animation:
       wx-glow 2.6s ease-in-out infinite,
       wx-wander 7s ease-in-out infinite alternate;
+  }
+
+  /* Whatever passes through: wx-track carries it across once, and the sprites inside move their own limbs. */
+  .wx-cross {
+    animation-iteration-count: 1;
+    animation-fill-mode: both;
+  }
+  .wx-cross.back {
+    animation-direction: reverse;
+  }
+  .wx-troupe {
+    position: absolute;
+    right: 100%;
+    bottom: 0;
+    height: 0;
+  }
+  .wx-cross.back .wx-troupe {
+    transform: scaleX(-1);
+  }
+  .wx-sprite {
+    position: absolute;
+    bottom: 0;
+    overflow: visible;
+  }
+  .wx-sprite .leg,
+  .wx-sprite .arm {
+    transform-box: fill-box;
+    transform-origin: 50% 0;
+    animation: wx-stride var(--pace, 0.4s) ease-in-out var(--delay, 0s) infinite alternate;
+  }
+  .wx-sprite .b {
+    animation-direction: alternate-reverse;
+  }
+  .wx-sprite .lope {
+    transform-box: fill-box;
+    transform-origin: 50% 50%;
+    animation: wx-lope var(--pace, 0.4s) ease-in-out var(--delay, 0s) infinite alternate;
+  }
+  .wx-sprite .wag {
+    transform-box: fill-box;
+    transform-origin: 100% 100%;
+    animation: wx-wag 0.22s ease-in-out infinite alternate;
+  }
+  .wx-ball {
+    position: absolute;
+    bottom: 0;
+    width: calc(var(--u) * 3);
+    height: calc(var(--u) * 3);
+    animation: wx-bounce var(--pace, 0.34s) cubic-bezier(0.2, 0.6, 0.4, 1) infinite alternate;
+  }
+  .wx-ball .spin {
+    transform-box: fill-box;
+    transform-origin: 50% 50%;
+    animation: wx-spin 0.5s linear infinite;
+  }
+  .wx-beam {
+    position: absolute;
+    bottom: calc(var(--u) * 0.6);
+    width: calc(var(--u) * 26);
+    height: calc(var(--u) * 7);
+    background: linear-gradient(90deg, rgba(255, 244, 200, 0.75), transparent);
+    clip-path: polygon(0 62%, 100% 0, 100% 100%, 0 82%);
+  }
+  .wx-flock {
+    position: absolute;
+    bottom: 0;
+    animation: wx-glide 3.4s ease-in-out infinite alternate;
+  }
+  .wx-bird {
+    position: absolute;
+    display: block;
+    overflow: visible;
+  }
+  .wx-bird.owl {
+    animation: wx-flap var(--pace, 0.6s) ease-in-out infinite alternate;
+  }
+  .wx-bird .wing {
+    transform-origin: 10px 5px;
+    animation: wx-wing var(--pace, 0.34s) ease-in-out infinite alternate;
+    animation-delay: inherit;
+  }
+  .wx-bird .wing.right {
+    --beat: -1;
+  }
+  .wx-meteor {
+    position: absolute;
+    width: calc(var(--u) * 22);
+    height: 1.5px;
+    transform-origin: 0 50%;
+    background: linear-gradient(90deg, transparent, #fff);
+    animation: wx-meteor 1.1s ease-out both;
+  }
+
+  /* The guest who comes when the scene is double-clicked: visit() in widget.js moves it and sets these states. */
+  .wx-visitor {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 0;
+  }
+  .wx-visitor.back .wx-sprite {
+    transform: scaleX(-1);
+  }
+  .wx-sprite.wx-figure {
+    left: 50%;
+    filter: brightness(var(--mb, 1));
+  }
+  .wx-sprite.wx-figure .arm {
+    transform-box: view-box;
+    transform-origin: var(--shoulder) 46px;
+  }
+  .wx-sprite.still .leg,
+  .wx-sprite.still .arm,
+  .wx-sprite.still .lope {
+    animation: none;
+  }
+  .wx-figure .gaze {
+    transform: translateX(4px);
+    transition: transform 250ms;
+  }
+  .wx-figure.still .gaze {
+    transform: none;
+  }
+  /* The eyes and sunglasses hide most of the logo, so they get out of its way now and then. A long blink comes every
+     2.8 s, as long as it stands facing the viewer, so there's always one to see. */
+  .wx-figure .eyes {
+    transform-box: fill-box;
+    transform-origin: 50% 50%;
+    animation: wx-blink 5.6s ease-in-out var(--blink, 0s) infinite;
+  }
+  .wx-figure .shades {
+    animation: wx-slip 5.6s ease-in-out var(--blink, 0s) infinite;
+  }
+  .wx-figure .smile {
+    opacity: 0;
+    transition: opacity 200ms;
+  }
+  .wx-figure.still .smile {
+    opacity: 1;
+  }
+  .wx-figure .wave {
+    display: none;
+    transform-origin: 22px 46px;
+    animation: wx-wave 0.28s ease-in-out infinite alternate;
+  }
+  .wx-figure.waving .wave {
+    display: inline;
+  }
+  .wx-figure.waving .arm.left {
+    display: none;
   }
 
   .wx-fogband {
@@ -453,6 +643,131 @@
       opacity: 1;
     }
   }
+  @keyframes wx-flicker {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    38%,
+    71% {
+      opacity: 0;
+    }
+    52% {
+      opacity: 1;
+    }
+  }
+  @keyframes wx-stride {
+    from {
+      transform: rotate(var(--reach, 30deg));
+    }
+    to {
+      transform: rotate(calc(var(--reach, 30deg) * -1));
+    }
+  }
+  @keyframes wx-lope {
+    from {
+      transform: translateY(0) rotate(var(--pitch, 0deg));
+    }
+    to {
+      transform: translateY(var(--lift, -1.5px)) rotate(calc(var(--pitch, 0deg) * -1));
+    }
+  }
+  @keyframes wx-wag {
+    from {
+      transform: rotate(-14deg);
+    }
+    to {
+      transform: rotate(18deg);
+    }
+  }
+  @keyframes wx-bounce {
+    from {
+      transform: translateY(calc(var(--u) * -7));
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+  @keyframes wx-glide {
+    from {
+      transform: translateY(calc(var(--u) * -1.5));
+    }
+    to {
+      transform: translateY(calc(var(--u) * 1.5));
+    }
+  }
+  @keyframes wx-flap {
+    from {
+      transform: scaleY(1);
+    }
+    to {
+      transform: scaleY(0.45);
+    }
+  }
+  @keyframes wx-wing {
+    from {
+      transform: rotate(calc(var(--beat, 1) * 16deg));
+    }
+    to {
+      transform: rotate(calc(var(--beat, 1) * -30deg));
+    }
+  }
+  @keyframes wx-meteor {
+    0% {
+      opacity: 0;
+      transform: rotate(var(--a)) translateX(0);
+    }
+    25% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: rotate(var(--a)) translateX(calc(var(--u) * 46));
+    }
+  }
+  @keyframes wx-blink {
+    0%,
+    10%,
+    22%,
+    44%,
+    47%,
+    60%,
+    72%,
+    100% {
+      transform: scaleY(1);
+    }
+    12%,
+    20%,
+    45.5%,
+    62%,
+    70% {
+      transform: scaleY(0.06);
+    }
+  }
+  @keyframes wx-slip {
+    0%,
+    9%,
+    24%,
+    59%,
+    74%,
+    100% {
+      transform: translateY(0);
+    }
+    13%,
+    20%,
+    63%,
+    70% {
+      transform: translateY(27px);
+    }
+  }
+  @keyframes wx-wave {
+    from {
+      transform: rotate(-18deg);
+    }
+    to {
+      transform: rotate(16deg);
+    }
+  }
   @keyframes wx-in {
     from {
       opacity: 0;
@@ -475,6 +790,10 @@
     .wx-bolt {
       display: none;
     }
+    /* Paused, it would stay on its first frame, which is invisible. */
+    .wx-info {
+      animation: none;
+    }
   }
 </style>
 <div class="wx">
@@ -483,6 +802,11 @@
   <div class="wx-body"></div>
   <div class="wx-layer wx-clouds"></div>
   <div class="wx-layer wx-ground"></div>
+  <div class="wx-layer wx-lights"></div>
+  <div class="wx-layer wx-events"></div>
+  <div class="wx-layer wx-guest"></div>
+  <div class="wx-layer wx-front"></div>
+  <div class="wx-layer wx-halos"></div>
   <div class="wx-layer wx-shade"></div>
   <div class="wx-layer wx-precip"></div>
   <div class="wx-layer wx-fog"></div>

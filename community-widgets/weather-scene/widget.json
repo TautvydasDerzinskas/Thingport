@@ -1,8 +1,8 @@
 {
   "name": "Weather scene",
-  "description": "Current weather from Open-Meteo, drawn as an animated sky that follows the weather, the time of day and the season.",
+  "description": "Current weather from Open-Meteo, drawn as an animated field, forest, mountains or city that follows the weather, the time of day and the season.",
   "iconUrl": "builtin:thingport/weather",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "author": "Dante D.",
   "size": {
     "w": 4,
@@ -64,6 +64,40 @@
       "key": "details",
       "type": "toggle",
       "label": "settings.details",
+      "default": true
+    },
+    {
+      "key": "landscape",
+      "type": "choice",
+      "label": "settings.landscape",
+      "default": "field",
+      "options": [
+        {
+          "value": "field",
+          "label": "settings.field"
+        },
+        {
+          "value": "forest",
+          "label": "settings.forest"
+        },
+        {
+          "value": "mountains",
+          "label": "settings.mountains"
+        },
+        {
+          "value": "city",
+          "label": "settings.city"
+        },
+        {
+          "value": "random",
+          "label": "settings.random"
+        }
+      ]
+    },
+    {
+      "key": "events",
+      "type": "toggle",
+      "label": "settings.events",
       "default": true
     },
     {
@@ -168,11 +202,23 @@
   "screenshots": [
     {
       "file": "screenshots/day.webp",
-      "caption": "A clear summer afternoon: the sun on its arc, drifting clouds, and the temperature with today's high and low."
+      "caption": "A clear summer afternoon in the field: the sun on its arc, drifting clouds, and the temperature with today's high and low."
+    },
+    {
+      "file": "screenshots/forest.webp",
+      "caption": "The forest in autumn, with deer running between the trees."
+    },
+    {
+      "file": "screenshots/mountains.webp",
+      "caption": "Mountains on a snowy winter day: pines dusted white under the peaks."
+    },
+    {
+      "file": "screenshots/city.webp",
+      "caption": "The city at night: lit windows and street lamps, and a car with its headlights on."
     },
     {
       "file": "screenshots/night.webp",
-      "caption": "The same panel at night in winter: stars, the moon at its phase, snow falling and bare trees."
+      "caption": "The field at night in winter: stars, the moon at its phase, snow falling and bare trees."
     },
     {
       "file": "screenshots/storm.webp",
