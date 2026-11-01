@@ -41,26 +41,26 @@ The token works only in that header. Putting it in the address as `?token=...` i
 
 These read your library, and are on for a new token:
 
-| Tool                | What it does                                                                                            |
-| ------------------- | ------------------------------------------------------------------------------------------------------- |
-| `search_models`     | Finds models by words in their title, tags, creator or description, plus matching collections and tags. |
-| `list_models`       | Lists models by tag, category, collection or author, newest, most viewed or most printed first.         |
-| `get_model`         | One model's description, files, tags, category, author, collections and where it was imported from.     |
-| `list_collections`  | Your collections and how many models each holds, plus Favourites and Browsing History.                  |
-| `get_collection`    | The models in one collection.                                                                           |
-| `list_tags`         | Your tags, most used first, narrowed by a word if you like.                                             |
-| `list_categories`   | Your category and folder tree.                                                                          |
-| `get_author`        | A designer, where to find them, and their models in your library.                                       |
-| `library_stats`     | Your totals, and your most viewed, most printed and newest models.                                      |
-| `get_import_status` | How an import that `import_model` left running is getting on.                                           |
-| `list_model_files`  | A model's files (plates, supporting files and sliced print), each with the id `get_model_file` takes.   |
-| `get_model_file`    | One of a model's files, base64-encoded up to 10 MB, e.g. for the assistant to slice or convert it.      |
-| `list_model_images` | A model's pictures, cover first, with the id `edit_model_images` takes, and the pictures if asked.      |
-| `widget_guide`      | How to write a [custom dashboard widget](custom-widgets.md), read before saving one.                    |
-| `list_widgets`      | Your custom dashboard widgets, optionally with their code.                                              |
-| `tool_guide`        | How to write a [tool](tools.md) for your Tools page, read before saving one.                            |
-| `list_tools`        | The tools you can open, installed and your own, optionally with their script, HTML and labels.          |
-| `list_icons`        | Thingport's own icons and the ones you uploaded, searched by name, e.g. for a widget's icon.            |
+| Tool                | What it does                                                                                                                                   |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `search_models`     | Finds models by words in their title, tags, creator or description, plus matching collections and tags.                                        |
+| `list_models`       | Lists models by tag, category, collection or author, newest, most viewed or most printed first.                                                |
+| `get_model`         | One model's description, files, tags, category, author, collections and where it was imported from.                                            |
+| `list_collections`  | Your collections and how many models each holds, plus Favourites and Browsing History.                                                         |
+| `get_collection`    | The models in one collection.                                                                                                                  |
+| `list_tags`         | Your tags, most used first, narrowed by a word if you like.                                                                                    |
+| `list_categories`   | Your category and folder tree.                                                                                                                 |
+| `get_author`        | A designer, where to find them, and their models in your library.                                                                              |
+| `library_stats`     | Your totals, and your most viewed, most printed and newest models.                                                                             |
+| `get_import_status` | How an import that `import_model` left running is getting on.                                                                                  |
+| `list_model_files`  | A model's files (plates, supporting files and sliced print), each with the id `get_model_file` takes, and for 3MF plates their slicer profile. |
+| `get_model_file`    | One of a model's files, base64-encoded up to 10 MB, e.g. for the assistant to slice or convert it.                                             |
+| `list_model_images` | A model's pictures, cover first, with the id `edit_model_images` takes, and the pictures if asked.                                             |
+| `widget_guide`      | How to write a [custom dashboard widget](custom-widgets.md), read before saving one.                                                           |
+| `list_widgets`      | Your custom dashboard widgets, optionally with their code.                                                                                     |
+| `tool_guide`        | How to write a [tool](tools.md) for your Tools page, read before saving one.                                                                   |
+| `list_tools`        | The tools you can open, installed and your own, optionally with their script, HTML and labels.                                                 |
+| `list_icons`        | Thingport's own icons and the ones you uploaded, searched by name, e.g. for a widget's icon.                                                   |
 
 These change your library. `save_widget`, `save_tool` and `upload_icon` are on for a new token; the rest are off until
 you turn them on:

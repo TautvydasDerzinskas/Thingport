@@ -549,6 +549,8 @@ model Plate {
   // The printability check's result (services/meshQuality.ts QualityReport), or { version, status: "skipped" }
   // for a file it couldn't check. Null until the model is first opened with checks on.
   qualityCheck     Json?
+  // Slicer profile read from the 3MF (services/plateProfile.ts StoredPlateProfile). Null until read; non-3MF plates stay null.
+  profileMeta      Json?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

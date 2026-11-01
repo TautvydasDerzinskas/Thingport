@@ -1,3 +1,7 @@
+import path from "node:path";
+import type { Plate, Prisma } from "@prisma/client";
+import { prisma } from "../db";
+import { resolvePlateFilePath } from "./printCreation";
 import { listZipEntries, readZipEntry, readZipEntryPrefix } from "../utils/zipReader";
 
 /** Bump when the parser learns new fields, so stored results can be told apart from older ones. */
@@ -264,4 +268,60 @@ export async function readPlateProfile(filePath: string): Promise<PlateProfile> 
   profile.estimated_seconds = slice?.seconds ?? null;
   profile.weight_g = slice?.weight ?? null;
   return profile;
+}
+
+function is3mf(filename: string): boolean {
+  return path.extname(filename).toLowerCase() === ".3mf";
+}
+
+/** Reads the file's profile and saves it on the plate. */
+export async function storePlateProfile(plateId: string, filePath: string): Promise<StoredPlateProfile> {
+  const stored: StoredPlateProfile = { ...(await readPlateProfile(filePath)), version: PLATE_PROFILE_VERSION };
+  await prisma.plate.update({
+    where: { id: plateId },
+    data: { profileMeta: stored as unknown as Prisma.InputJsonValue },
+  });
+  return stored;
+}
+
+function isCurrent(value: Prisma.JsonValue | null): boolean {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const version = (value as { version?: unknown }).version;
+  return typeof version === "number" && version >= PLATE_PROFILE_VERSION;
+}
+
+/** Reads the missing or outdated profiles of 3MF plates, saves them and sets them on the given objects. A plate whose
+ *  file is gone is skipped and stays unread, so it is tried again once the file is back. */
+export async function ensurePlateProfiles<
+  T extends Pick<Plate, "id" | "filename" | "storagePath" | "sourcePath" | "profileMeta">,
+>(plates: T[]): Promise<void> {
+  for (const plate of plates) {
+    if (!is3mf(plate.filename) || isCurrent(plate.profileMeta)) continue;
+    try {
+      const filePath = resolvePlateFilePath(plate);
+      if (!filePath) continue;
+      plate.profileMeta = (await storePlateProfile(plate.id, filePath)) as unknown as Prisma.JsonValue;
+    } catch (err) {
+      console.error(`Reading the 3MF profile of plate ${plate.id} failed:`, err);
+    }
+  }
+}
+
+/** The stored profile as the API shows it; null when none was read or it holds nothing. */
+export function plateProfileOut(profileMeta: Prisma.JsonValue | null): PlateProfile | null {
+  if (!profileMeta || typeof profileMeta !== "object" || Array.isArray(profileMeta)) return null;
+  const m = profileMeta as Record<string, unknown>;
+  const str = (v: unknown) => (typeof v === "string" && v ? v : null);
+  const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+  const profile: PlateProfile = {
+    title: str(m.title),
+    printer: str(m.printer),
+    nozzle_mm: num(m.nozzle_mm),
+    layer_height_mm: num(m.layer_height_mm),
+    materials: Array.isArray(m.materials) ? m.materials.filter((v): v is string => typeof v === "string" && !!v) : [],
+    plates: num(m.plates),
+    estimated_seconds: num(m.estimated_seconds),
+    weight_g: num(m.weight_g),
+  };
+  return hasAnyProfileValue(profile) ? profile : null;
 }

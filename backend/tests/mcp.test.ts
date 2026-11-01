@@ -4,9 +4,11 @@ import path from "node:path";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import sharp from "sharp";
+import JSZip from "jszip";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { DEFAULT_MCP_TOOL_NAMES, MCP_TOOLS, mcpImportTiming } from "../src/mcp/tools";
+import { createPrint } from "../src/services/printCreation";
 import { setMcpAccess } from "../src/services/settingsService";
 
 // /api/mcp end to end: who gets in, which tools each token sees, and that every tool only ever
@@ -359,6 +361,31 @@ describe("the tools", () => {
     expect(data.files[0].api_path).toBe(`/api/print/${dragonId}/plate/${data.files[0].id}/file/dragon.stl`);
     const file = await callTool(alice.token, "get_model_file", { model_id: dragonId, file_id: data.files[0].id });
     expect(Buffer.from(file.data.base64, "base64").toString()).toBe("solid dragon.stl\nendsolid dragon.stl\n");
+  });
+
+  it("list_model_files gives 3MF plates their profile", async () => {
+    const zip = new JSZip();
+    zip.file("3D/3dmodel.model", '<model><metadata name="ProfileTitle">Fast</metadata></model>');
+    zip.file("Metadata/project_settings.config", JSON.stringify({ printer_model: "Bambu Lab A1 mini" }));
+    const temp = path.join(os.tmpdir(), `mcp-profile-${Date.now()}.3mf`);
+    fs.writeFileSync(temp, await zip.generateAsync({ type: "nodebuffer" }));
+    const { print } = await createPrint(alice.userId, { title: "Profiled" }, "profiled", [
+      { filename: "profiled.3mf", tempFilePath: temp },
+    ]);
+    await prisma.printFile.create({
+      data: {
+        printId: print.id,
+        filename: "notes.txt",
+        mime: "text/plain",
+        size: 1,
+        role: "SUPPORTING",
+        storagePath: `mcp-profile/${Date.now()}.txt`,
+      },
+    });
+    const { data } = await callTool(alice.token, "list_model_files", { model_id: print.id });
+    const plate = data.files.find((f: { kind: string }) => f.kind === "plate");
+    expect(plate.profile).toMatchObject({ title: "Fast", printer: "Bambu Lab A1 mini" });
+    expect(data.files.find((f: { kind: string }) => f.kind === "supporting")).not.toHaveProperty("profile");
   });
 
   it("get_model_file won't read another user's model, nor a file of another model", async () => {
