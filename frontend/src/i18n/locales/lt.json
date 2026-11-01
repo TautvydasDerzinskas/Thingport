@@ -2108,7 +2108,10 @@
           "mcp_access_changed": "Pakeitė MCP prieigą",
           "file_reuse_changed": "Pakeitė, kaip saugomi vienodi failai",
           "file_reuse_backfill_started": "Pradėjo tikrinti išsaugotus failus dėl vienodo turinio",
-          "custom_widgets_changed": "Pakeista, kurie pasirinktiniai valdikliai leidžiami"
+          "custom_widgets_changed": "Pakeista, kurie pasirinktiniai valdikliai leidžiami",
+          "tool_installed": "Įrankis įdiegtas",
+          "tool_uninstalled": "Įrankis pašalintas",
+          "tools_access_changed": "Pakeista prieiga prie įrankių"
         },
         "authorsLinked": "Susieta modelių: {{count}}",
         "descriptionsRefetched": "{{email}} — pakeista aprašymų: {{updated}} iš {{total}}",
@@ -4211,6 +4214,12 @@
       "pageTitle": "Kolekcijos",
       "newCollection": "Nauja kolekcija",
       "empty": "Kol kas nėra kolekcijų.",
+      "noneShown": "Nė viena kolekcija neatitinka filtrų.",
+      "types": {
+        "system": "Sisteminės kolekcijos",
+        "user": "Naudotojo kolekcijos",
+        "tool": "Įrankių kolekcijos"
+      },
       "bookmarkCollection": "Įsiminti kolekciją",
       "unbookmarkCollection": "Pašalinti iš įsimintų",
       "bookmarkFailed": "Nepavyko atnaujinti įsimintos kolekcijos. Bandykite dar kartą.",
@@ -4381,8 +4390,9 @@
       "pageTitle": "Žymos",
       "sortByName": "Pavadinimas",
       "empty": "Kol kas nėra žymų.",
-      "hideRarelyUsed": "Slėpti vieną kartą naudotas žymas",
-      "allHidden": "Nėra žymų su 2+ modeliais. Išjunkite filtrą aukščiau, kad matytumėte visas žymas.",
+      "minCount": "Slėpti žymas, kuriose modelių mažiau nei",
+      "allHidden": "Nėra žymų su {{min}}+ modeliais.",
+      "showAll": "Rodyti visas žymas",
       "bookmarkTag": "Įsiminti žymą",
       "unbookmarkTag": "Pašalinti iš įsimintų",
       "deleteTag": "Ištrinti žymą",
