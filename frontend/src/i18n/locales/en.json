@@ -3765,6 +3765,8 @@
       "fileMeta": "File {{n}} · {{type}}",
       "profileNozzle": "{{value}} mm nozzle",
       "profileLayer": "{{value}} mm",
+      "profileTime": "Print time {{value}}",
+      "profileWeight": "Filament {{value}}",
       "profilePlates_one": "{{count}} plate",
       "profilePlates_other": "{{count}} plates",
       "plateLabel": "Plate {{n}}",

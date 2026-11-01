@@ -3814,6 +3814,8 @@
       "fileMeta": "Fichier {{n}} · {{type}}",
       "profileNozzle": "buse {{value}} mm",
       "profileLayer": "{{value}} mm",
+      "profileTime": "Durée d’impression {{value}}",
+      "profileWeight": "Filament {{value}}",
       "profilePlates_one": "{{count}} plaque",
       "profilePlates_many": "{{count}} plaques",
       "profilePlates_other": "{{count}} plaques",

@@ -3890,6 +3890,8 @@
       "fileMeta": "Failas {{n}} · {{type}}",
       "profileNozzle": "{{value}} mm tūtelė",
       "profileLayer": "{{value}} mm",
+      "profileTime": "Spausdinimo laikas {{value}}",
+      "profileWeight": "Filamentas {{value}}",
       "profilePlates_one": "{{count}} plokštė",
       "profilePlates_few": "{{count}} plokštės",
       "profilePlates_other": "{{count}} plokščių",

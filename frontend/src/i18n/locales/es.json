@@ -3801,6 +3801,8 @@
       "fileMeta": "Archivo {{n}} · {{type}}",
       "profileNozzle": "boquilla {{value}} mm",
       "profileLayer": "{{value}} mm",
+      "profileTime": "Tiempo de impresión {{value}}",
+      "profileWeight": "Filamento {{value}}",
       "profilePlates_one": "{{count}} placa",
       "profilePlates_many": "{{count}} placas",
       "profilePlates_other": "{{count}} placas",
